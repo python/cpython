@@ -6826,6 +6826,28 @@ class TestMacOSTCPFlags(unittest.TestCase):
     def test_tcp_keepalive(self):
         self.assertTrue(socket.TCP_KEEPALIVE)
 
+@unittest.skipUnless(hasattr(socket, 'TCP_QUICKACK'), 'need socket.TCP_QUICKACK')
+class TestQuickackFlag(unittest.TestCase):
+    def check_set_quickack(self, sock):
+        # quickack already true by default on some OS distributions
+        opt = sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_QUICKACK)
+        if opt:
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_QUICKACK, 0)
+
+        opt = sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_QUICKACK)
+        self.assertFalse(opt)
+
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_QUICKACK, 1)
+
+        opt = sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_QUICKACK)
+        self.assertTrue(opt)
+
+    def test_set_quickack(self):
+        sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
+                             proto=socket.IPPROTO_TCP)
+        with sock:
+            self.check_set_quickack(sock)
+
 
 @unittest.skipUnless(sys.platform.startswith("win"), "requires Windows")
 class TestMSWindowsTCPFlags(unittest.TestCase):
@@ -6839,7 +6861,9 @@ class TestMSWindowsTCPFlags(unittest.TestCase):
                        'TCP_KEEPCNT',
                        # available starting with Windows 10 1709
                        'TCP_KEEPIDLE',
-                       'TCP_KEEPINTVL'
+                       'TCP_KEEPINTVL',
+                       # available starting with Windows 7 / Server 2008 R2
+                       'TCP_QUICKACK',
                        }
 
     def test_new_tcp_flags(self):
