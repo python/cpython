@@ -63,6 +63,14 @@ class CookieTests(unittest.TestCase):
         # Test cases with different days and dates in obsolete RFC 850 format
         test_cases = [
             {
+                'data': 'key=value; expires=Saturday, 01-Jan-83 00:00:00 EST',
+                'output': 'Saturday, 01-Jan-83 00:00:00 EST'
+            },
+            {
+                'data': 'key=value; expires=Friday, 19-Nov-82 16:59:30 EST',
+                'output': 'Friday, 19-Nov-82 16:59:30 EST'
+            },
+            {
                 'data': 'key=value; expires=Sunday, 06-Nov-94 08:49:37 GMT',
                 'output': 'Sunday, 06-Nov-94 08:49:37 GMT'
             },
