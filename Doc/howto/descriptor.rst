@@ -389,7 +389,9 @@ Here are three practical data validation utilities:
 
         def validate(self, value):
             if value not in self.options:
-                raise ValueError(f'Expected {value!r} to be one of {self.options!r}')
+                raise ValueError(
+                    f'Expected {value!r} to be one of {self.options!r}'
+                )
 
     class Number(Validator):
 
