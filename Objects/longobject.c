@@ -133,7 +133,7 @@ long_normalize(PyLongObject *v)
 /* Allocate a new int object with size digits.
    Return NULL and set exception if we run out of memory. */
 
-#if SIZEOF_SIZE_T < 4
+#if SIZEOF_SIZE_T < 8
 # define MAX_LONG_DIGITS \
     ((PY_SSIZE_T_MAX - offsetof(PyLongObject, long_value.ob_digit))/sizeof(digit))
 #else
