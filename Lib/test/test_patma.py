@@ -3100,7 +3100,7 @@ class TestSourceLocations(unittest.TestCase):
             x += 1
 
         for inst in dis.get_instructions(f):
-            if inst.opcode in dis.hasjump:
+            if inst.opcode in dis.hasjrel or inst.opcode in dis.hasjabs:
                 self.assertIsNotNone(inst.positions.lineno, "jump without location")
 
 class TestTracing(unittest.TestCase):
