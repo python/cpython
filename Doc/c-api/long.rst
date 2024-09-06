@@ -733,7 +733,7 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
    *negative* is ``1`` if the number is negative, or ``0`` otherwise.
 
    *ndigits* is the number of digits in the *digits* array. It must be
-   positive.
+   greater than or equal to 0.
 
    The caller must initialize the array of digits *digits* and then call
    :c:func:`PyLongWriter_Finish` to get a Python :class:`int`. Digits must be
