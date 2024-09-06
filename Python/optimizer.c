@@ -643,7 +643,7 @@ translate_bytecode_to_trace(
                 int bitcount = _Py_popcount32(counter);
                 int jump_likely = bitcount > 8;
                 /* If bitcount is 8 (half the jumps were taken), adjust confidence by 50%.
-                   If it's 16 or 0 (all or none were taken), adjust by ~6%
+                   If it's 16 or 0 (all or none were taken), adjust by 1/18th.
                    (since the future is still somewhat uncertain - see Laplace's
                    rule of succession, used here with 16 observations).
                    For values in between, adjust proportionally. */
