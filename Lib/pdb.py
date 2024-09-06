@@ -309,7 +309,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     _last_pdb_instance = None
 
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
-                 nosigint=False, readrc=True):
+                 nosigint=False, readrc=True, allow_restart=False):
         bdb.Bdb.__init__(self, skip=skip)
         cmd.Cmd.__init__(self, completekey, stdin, stdout)
         sys.audit("pdb.Pdb")
@@ -321,6 +321,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.mainpyfile = ''
         self._wait_for_mainpyfile = False
         self.tb_lineno = {}
+        self.allow_restart = allow_restart
         # Try to load readline if it exists
         try:
             import readline
@@ -1607,6 +1608,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         sys.argv.  History, breakpoints, actions and debugger options
         are preserved.  "restart" is an alias for "run".
         """
+        if not self.allow_restart:
+            self.error('run/restart command is only allowed in command line usage:\n'
+                       'e.g. "python -m pdb myscript.py"')
+            return
         if arg:
             import shlex
             argv0 = sys.argv[0:1]
@@ -2476,7 +2481,7 @@ def main():
     # modified by the script being debugged. It's a bad idea when it was
     # changed by the user from the command line. There is a "restart" command
     # which allows explicit specification of command line arguments.
-    pdb = Pdb()
+    pdb = Pdb(allow_restart=True)
     pdb.rcLines.extend(opts.commands)
     while True:
         try:
