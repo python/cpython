@@ -185,8 +185,7 @@ pylong_asdigitarray(PyObject *module, PyObject *obj)
     const Py_digit *array_digits = array.digits;
 
     PyObject *digits = PyList_New(0);
-    assert(array.ndigits != SIZE_MAX);
-    for (size_t i=0; i < array.ndigits; i++) {
+    for (Py_ssize_t i=0; i < array.ndigits; i++) {
         PyObject *digit = PyLong_FromUnsignedLong(array_digits[i]);
         if (digit == NULL) {
             goto error;
@@ -245,7 +244,7 @@ pylongwriter_create(PyObject *module, PyObject *args)
     }
 
     void *writer_digits;
-    PyLongWriter *writer = PyLongWriter_Create(negative, (size_t)ndigits,
+    PyLongWriter *writer = PyLongWriter_Create(negative, ndigits,
                                                &writer_digits);
     if (writer == NULL) {
         goto error;
