@@ -3,6 +3,7 @@ import io
 import os
 import errno
 import stat
+import sys
 import unittest
 
 from pathlib._os import UnsupportedOperation
@@ -2636,6 +2637,16 @@ class DummyPathTest(DummyPurePathTest):
     def test_unlink_missing_ok(self):
         p = self.cls(self.base) / 'fileAAA'
         self.assertFileNotFound(p.unlink)
+        p.unlink(missing_ok=True)
+
+    def test_unlink_missing_ok_intermediate_file(self):
+        p = self.cls(self.base) / 'fileAAA'
+        p.touch()
+        p = p / 'fileBBB'
+        if sys.platform.startswith("win"):
+            self.assertFileNotFound(p.unlink)
+        else:
+            self.assertNotADirectory(p.unlink)
         p.unlink(missing_ok=True)
 
     def test_rmdir(self):
