@@ -479,7 +479,7 @@ class WindowsConsole(Console):
         while True:
             if msvcrt.kbhit(): # type: ignore[attr-defined]
                 return True
-            if timeout and time.time() - start_time > timeout:
+            if timeout and time.time() - start_time > timeout / 1000:
                 return False
             time.sleep(0.01)
 
