@@ -7,7 +7,7 @@ import sys
 import tempfile
 import textwrap
 import unittest
-from test.support import requires_gil_enabled, verbose
+from test.support import verbose
 from test.support.import_helper import import_module
 from test.support.os_helper import unlink, temp_dir, TESTFN
 from test.support.pty_helper import run_pty
@@ -351,7 +351,6 @@ readline.write_history_file(history_file)
             self.assertEqual(lines[-1].strip(), b"last input")
 
     @requires_working_threading()
-    @requires_gil_enabled()
     def test_gh123321_threadsafe(self):
         """gh-123321: readline should be thread-safe and not crash"""
         script = textwrap.dedent(r"""
