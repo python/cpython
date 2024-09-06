@@ -216,18 +216,6 @@ extern int PyObject_stginfo(PyObject *self, Py_ssize_t *psize, Py_ssize_t *palig
 
 extern struct fielddesc *_ctypes_get_fielddesc(const char *fmt);
 
-typedef enum {
-    LAYOUT_MODE_MS,
-    LAYOUT_MODE_GCC_SYSV,
-} LayoutMode;
-
-extern PyObject *
-PyCField_FromDesc(ctypes_state *st, PyObject *desc, Py_ssize_t index,
-                Py_ssize_t *pfield_size, Py_ssize_t bitsize,
-                Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset,
-                Py_ssize_t *palign,
-                int pack, int is_big_endian, LayoutMode layout_mode);
-
 extern PyObject *PyCData_AtAddress(ctypes_state *st, PyObject *type, void *buf);
 extern PyObject *PyCData_FromBytes(ctypes_state *st, PyObject *type, char *data, Py_ssize_t length);
 
@@ -259,16 +247,18 @@ struct fielddesc {
     GETFUNC getfunc_swapped;
 };
 
-typedef struct {
+typedef struct CFieldObject {
     PyObject_HEAD
     Py_ssize_t offset;
     Py_ssize_t size;
     Py_ssize_t index;                   /* Index into CDataObject's
                                        object array */
-    PyObject *proto;                    /* a type or NULL */
+    PyObject *proto;                    /* underlying ctype; must have StgInfo */
     GETFUNC getfunc;                    /* getter function if proto is NULL */
     SETFUNC setfunc;                    /* setter function if proto is NULL */
     int anonymous;
+
+    PyObject *name;                     /* exact PyUnicode */
 } CFieldObject;
 
 /****************************************************************
@@ -379,8 +369,6 @@ PyObject *_ctypes_callproc(ctypes_state *st,
 
 #define TYPEFLAG_ISPOINTER 0x100
 #define TYPEFLAG_HASPOINTER 0x200
-#define TYPEFLAG_HASUNION 0x400
-#define TYPEFLAG_HASBITFIELD 0x800
 
 #define DICTFLAG_FINAL 0x1000
 
@@ -436,10 +424,6 @@ extern void *_ctypes_alloc_closure(void);
 
 extern PyObject *PyCData_FromBaseObj(ctypes_state *st, PyObject *type,
                                      PyObject *base, Py_ssize_t index, char *adr);
-extern char *_ctypes_alloc_format_string(const char *prefix, const char *suffix);
-extern char *_ctypes_alloc_format_string_with_shape(int ndim,
-                                                const Py_ssize_t *shape,
-                                                const char *prefix, const char *suffix);
 
 extern int _ctypes_simple_instance(ctypes_state *st, PyObject *obj);
 
