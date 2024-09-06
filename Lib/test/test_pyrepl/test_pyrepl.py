@@ -676,6 +676,45 @@ class TestPyReplOutput(TestCase):
         self.assertEqual(output, "c\x1d")
         self.assertEqual(clean_screen(reader.screen), "c")
 
+    def test_history_search_backward(self):
+        # Test <page up> history search backward with "imp" input
+        events = itertools.chain(
+            code_to_events("import os\n"),
+            code_to_events("imp"),
+            [
+                Event(evt='key', data='page up', raw=bytearray(b'\x1b[5~')),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ],
+        )
+
+        # fill the history
+        reader = self.prepare_reader(events)
+        multiline_input(reader)
+
+        # search for "imp" in history
+        output = multiline_input(reader)
+        self.assertEqual(output, "import os")
+        self.assertEqual(clean_screen(reader.screen), "import os")
+
+    def test_history_search_backward_empty(self):
+        # Test <page up> history search backward with an empty input
+        events = itertools.chain(
+            code_to_events("import os\n"),
+            [
+                Event(evt='key', data='page up', raw=bytearray(b'\x1b[5~')),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ],
+        )
+
+        # fill the history
+        reader = self.prepare_reader(events)
+        multiline_input(reader)
+
+        # search backward in history
+        output = multiline_input(reader)
+        self.assertEqual(output, "import os")
+        self.assertEqual(clean_screen(reader.screen), "import os")
+
 
 class TestPyReplCompleter(TestCase):
     def prepare_reader(self, events, namespace):

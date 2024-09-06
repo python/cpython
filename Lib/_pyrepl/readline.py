@@ -438,7 +438,7 @@ class _ReadlineWrapper:
                 else:
                     line = self._histline(line)
                     if buffer:
-                        line = "".join(buffer).replace("\r", "") + line
+                        line = self._histline("".join(buffer).replace("\r", "") + line)
                         del buffer[:]
                     if line:
                         history.append(line)
