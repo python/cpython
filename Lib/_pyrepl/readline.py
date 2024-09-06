@@ -249,7 +249,7 @@ def _should_auto_indent(buffer: list[str], pos: int) -> bool:
     while pos > 0:
         pos -= 1
         if last_char is None:
-            if buffer[pos] not in " \t\n":  # ignore whitespaces
+            if buffer[pos] not in " \t\n#":  # ignore whitespaces and comments
                 last_char = buffer[pos]
         else:
             # even if we found a non-whitespace character before
@@ -438,7 +438,7 @@ class _ReadlineWrapper:
                 else:
                     line = self._histline(line)
                     if buffer:
-                        line = "".join(buffer).replace("\r", "") + line
+                        line = self._histline("".join(buffer).replace("\r", "") + line)
                         del buffer[:]
                     if line:
                         history.append(line)
