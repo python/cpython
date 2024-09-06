@@ -270,3 +270,9 @@ Windows
 
 Due to a limitation of the official Windows installer, you will need to
 manually define ``Py_GIL_DISABLED=1`` when building extensions from source.
+
+.. seealso::
+
+   `Porting Extension Modules to Support Free-Threading
+   <https://py-free-threading.github.io/porting/>`_:
+   A community-maintained porting guide for extension authors.
