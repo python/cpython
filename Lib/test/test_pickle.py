@@ -57,18 +57,6 @@ class PyUnpicklerTests(AbstractUnpickleTests, unittest.TestCase):
         u = self.unpickler(f, **kwds)
         return u.load()
 
-    def test_too_large_put(self):
-        data = lambda n: (b'((lp' + str(n).encode() + b'\n' +
-                          b'g' + str(n).encode() + b'\nt.')
-        for idx in [10**6, 10**9, 10**12]:
-            self.assertEqual(self.loads(data(idx)), ([],)*2)
-
-    def test_too_large_long_binput(self):
-        data = lambda n: (b'(]r' + struct.pack('<I', n) +
-                          b'j' + struct.pack('<I', n) + b't.')
-        for idx in self.itersize(1 << 17, min(sys.maxsize, (1 << 32) - 1)):
-            self.assertEqual(self.loads(data(idx)), ([],)*2)
-
 
 class PyPicklingErrorTests(AbstractPicklingErrorTests, unittest.TestCase):
 
@@ -300,24 +288,6 @@ if has_c_implementation:
         truncated_data_error = (pickle.UnpicklingError, 'truncated')
         size_overflow_error = (OverflowError, 'exceeds')
 
-        def test_too_large_put(self):
-            data = lambda n: (b'((lp' + str(n).encode() + b'\n' +
-                              b'g' + str(n).encode() + b'\nt.')
-            self.assertEqual(self.loads(data(100000)), ([],)*2) # self-testing
-            for idx in [10**6, 10**9, min(sys.maxsize, 10**12)]:
-                with self.assertRaisesRegex(pickle.UnpicklingError,
-                                            'too sparse memo indices'):
-                    self.loads(data(idx))
-
-        def test_too_large_long_binput(self):
-            data = lambda n: (b'(]r' + struct.pack('<I', n) +
-                              b'j' + struct.pack('<I', n) + b't.')
-            self.assertEqual(self.loads(data(1 << 16)), ([],)*2) # self-testing
-            for idx in self.itersize(1 << 20, min(sys.maxsize, (1 << 32) - 1)):
-                with self.assertRaisesRegex(pickle.UnpicklingError,
-                                            'too sparse memo indices'):
-                    self.loads(data(idx))
-
     class CPicklingErrorTests(PyPicklingErrorTests):
         pickler = _pickle.Pickler
 
@@ -420,7 +390,7 @@ if has_c_implementation:
                 0)  # Write buffer is cleared after every dump().
 
         def test_unpickler(self):
-            basesize = support.calcobjsize('2P2nP 2P2n2i5P 2P3n8P2n2i')
+            basesize = support.calcobjsize('2P2n2P 2P2n2i5P 2P3n8P2n2i')
             unpickler = _pickle.Unpickler
             P = struct.calcsize('P')  # Size of memo table entry.
             n = struct.calcsize('n')  # Size of mark table entry.

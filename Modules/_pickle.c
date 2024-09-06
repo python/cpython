@@ -651,10 +651,11 @@ typedef struct UnpicklerObject {
     Pdata *stack;               /* Pickle data stack, store unpickled objects. */
 
     /* The unpickler memo is just an array of PyObject *s. Using a dict
-       is unnecessary, since the keys are contiguous ints. */
+       is unnecessary, since the keys usually are contiguous ints. */
     PyObject **memo;
     size_t memo_size;       /* Capacity of the memo array */
     size_t memo_len;        /* Number of objects in the memo */
+    PyObject *memo_dict;    /* The backup memo dict for non-continuous keys. */
 
     PyObject *persistent_load;  /* persistent_load() method, can be NULL. */
 
@@ -1546,32 +1547,64 @@ _Unpickler_ResizeMemoList(UnpicklerObject *self, size_t new_size)
 
 /* Returns NULL if idx is out of bounds. */
 static PyObject *
-_Unpickler_MemoGet(UnpicklerObject *self, size_t idx)
+_Unpickler_MemoGet(PickleState *st, UnpicklerObject *self, size_t idx)
 {
-    if (idx >= self->memo_size)
-        return NULL;
-
-    return self->memo[idx];
+    PyObject *value;
+    if (idx < self->memo_size) {
+        value = self->memo[idx];
+        if (value != NULL) {
+            return value;
+        }
+    }
+    if (self->memo_dict != NULL) {
+        PyObject *key = PyLong_FromSsize_t(idx);
+        if (key == NULL) {
+            return NULL;
+        }
+        if (idx < self->memo_size) {
+            (void)PyDict_Pop(self->memo_dict, key, &value);
+            self->memo[idx] = value;
+        }
+        else {
+            value = PyDict_GetItemWithError(self->memo_dict, key);
+        }
+        Py_DECREF(key);
+        if (value != NULL || PyErr_Occurred()) {
+            return value;
+        }
+    }
+    PyErr_Format(st->UnpicklingError, "Memo value not found at index %zd", idx);
+    return NULL;
 }
 
 /* Returns -1 (with an exception set) on failure, 0 on success.
    This takes its own reference to `value`. */
 static int
-_Unpickler_MemoPut(PickleState *st, UnpicklerObject *self, size_t idx, PyObject *value)
+_Unpickler_MemoPut(UnpicklerObject *self, size_t idx, PyObject *value)
 {
     PyObject *old_item;
 
     if (idx >= self->memo_size) {
-        /* MAX_MEMO_INDICES_GAP was introduced mainly for making testing of
-         * PUT, BINPUT and LONG_BINPUT opcodes simpler.  It should be more
-         * than 1<<16 for LONG_BINPUT.
-         * The standard pickler never produces data that requires more than 0.
-         * The Python code does not have such limitation.
-         */
-        const int MAX_MEMO_INDICES_GAP = 1 << 17;
-        if (idx > self->memo_len * 2 + MAX_MEMO_INDICES_GAP) {
-            PyErr_SetString(st->UnpicklingError, "too sparse memo indices");
-            return -1;
+        if (idx > self->memo_len * 2) {
+            /* The memo keys are too sparse. Use a dict instead of
+             * a continuous array for the memo. */
+            if (self->memo_dict == NULL) {
+                self->memo_dict = PyDict_New();
+                if (self->memo_dict == NULL) {
+                    return -1;
+                }
+            }
+            PyObject *key = PyLong_FromSize_t(idx);
+            if (key == NULL) {
+                return -1;
+            }
+
+            if (PyDict_SetItem(self->memo_dict, key, value) < 0) {
+                Py_DECREF(key);
+                return -1;
+            }
+            Py_DECREF(key);
+            return 0;
         }
         if (_Unpickler_ResizeMemoList(self, idx * 2) < 0)
             return -1;
@@ -1642,6 +1675,7 @@ _Unpickler_New(PyObject *module)
     self->memo = memo;
     self->memo_size = MEMO_SIZE;
     self->memo_len = 0;
+    self->memo_dict = NULL;
     self->persistent_load = NULL;
     memset(&self->buffer, 0, sizeof(Py_buffer));
     self->input_buffer = NULL;
@@ -6149,20 +6183,15 @@ load_get(PickleState *st, UnpicklerObject *self)
     if (key == NULL)
         return -1;
     idx = PyLong_AsSsize_t(key);
+    Py_DECREF(key);
     if (idx == -1 && PyErr_Occurred()) {
-        Py_DECREF(key);
         return -1;
     }
 
-    value = _Unpickler_MemoGet(self, idx);
+    value = _Unpickler_MemoGet(st, self, idx);
     if (value == NULL) {
-        if (!PyErr_Occurred()) {
-           PyErr_Format(st->UnpicklingError, "Memo value not found at index %ld", idx);
-        }
-        Py_DECREF(key);
         return -1;
     }
-    Py_DECREF(key);
 
     PDATA_APPEND(self->stack, value, -1);
     return 0;
@@ -6180,13 +6209,8 @@ load_binget(PickleState *st, UnpicklerObject *self)
 
     idx = Py_CHARMASK(s[0]);
 
-    value = _Unpickler_MemoGet(self, idx);
+    value = _Unpickler_MemoGet(st, self, idx);
     if (value == NULL) {
-        PyObject *key = PyLong_FromSsize_t(idx);
-        if (key != NULL) {
-            PyErr_Format(st->UnpicklingError, "Memo value not found at index %ld", idx);
-            Py_DECREF(key);
-        }
         return -1;
     }
 
@@ -6206,13 +6230,8 @@ load_long_binget(PickleState *st, UnpicklerObject *self)
 
     idx = calc_binsize(s, 4);
 
-    value = _Unpickler_MemoGet(self, idx);
+    value = _Unpickler_MemoGet(st, self, idx);
     if (value == NULL) {
-        PyObject *key = PyLong_FromSsize_t(idx);
-        if (key != NULL) {
-            PyErr_Format(st->UnpicklingError, "Memo value not found at index %ld", idx);
-            Py_DECREF(key);
-        }
         return -1;
     }
 
@@ -6337,7 +6356,7 @@ load_put(PickleState *state, UnpicklerObject *self)
         return -1;
     }
 
-    return _Unpickler_MemoPut(state, self, idx, value);
+    return _Unpickler_MemoPut(self, idx, value);
 }
 
 static int
@@ -6356,7 +6375,7 @@ load_binput(PickleState *state, UnpicklerObject *self)
 
     idx = Py_CHARMASK(s[0]);
 
-    return _Unpickler_MemoPut(state, self, idx, value);
+    return _Unpickler_MemoPut(self, idx, value);
 }
 
 static int
@@ -6380,7 +6399,7 @@ load_long_binput(PickleState *state, UnpicklerObject *self)
         return -1;
     }
 
-    return _Unpickler_MemoPut(state, self, idx, value);
+    return _Unpickler_MemoPut(self, idx, value);
 }
 
 static int
@@ -6392,7 +6411,7 @@ load_memoize(PickleState *state, UnpicklerObject *self)
         return Pdata_stack_underflow(state, self->stack);
     value = self->stack->data[Py_SIZE(self->stack) - 1];
 
-    return _Unpickler_MemoPut(state, self, self->memo_len, value);
+    return _Unpickler_MemoPut(self, self->memo_len, value);
 }
 
 static int
@@ -7141,6 +7160,13 @@ _pickle_Unpickler___sizeof___impl(UnpicklerObject *self)
     size_t res = _PyObject_SIZE(Py_TYPE(self));
     if (self->memo != NULL)
         res += self->memo_size * sizeof(PyObject *);
+    if (self->memo_dict != NULL) {
+        size_t s = _PySys_GetSizeOf(self->memo_dict);
+        if (s == (size_t)-1) {
+            return -1;
+        }
+        res += s;
+    }
     if (self->marks != NULL)
         res += (size_t)self->marks_size * sizeof(Py_ssize_t);
     if (self->input_line != NULL)
@@ -7175,6 +7201,7 @@ Unpickler_clear(UnpicklerObject *self)
         self->buffer.buf = NULL;
     }
 
+    Py_CLEAR(self->memo_dict);
     _Unpickler_MemoCleanup(self);
     PyMem_Free(self->marks);
     self->marks = NULL;
@@ -7209,6 +7236,7 @@ Unpickler_traverse(UnpicklerObject *self, visitproc visit, void *arg)
     Py_VISIT(self->stack);
     Py_VISIT(self->persistent_load);
     Py_VISIT(self->buffers);
+    Py_VISIT(self->memo_dict);
     PyObject **memo = self->memo;
     if (memo) {
         Py_ssize_t i = self->memo_size;
@@ -7514,7 +7542,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored
                                 "memo key must be positive integers.");
                 goto error;
             }
-            if (_Unpickler_MemoPut(state, self, idx, value) < 0)
+            if (_Unpickler_MemoPut(self, idx, value) < 0)
                 goto error;
         }
     }

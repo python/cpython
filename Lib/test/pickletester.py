@@ -1127,6 +1127,18 @@ class AbstractUnpickleTests:
             size <<= 1
         yield stop
 
+    def test_too_large_put(self):
+        data = lambda n: (b'((lp' + str(n).encode() + b'\n' +
+                          b'g' + str(n).encode() + b'\nt.')
+        for idx in [10**6, 10**9, 10**12]:
+            self.assertEqual(self.loads(data(idx)), ([],)*2)
+
+    def test_too_large_long_binput(self):
+        data = lambda n: (b'(]r' + struct.pack('<I', n) +
+                          b'j' + struct.pack('<I', n) + b't.')
+        for idx in self.itersize(1 << 20, min(sys.maxsize, (1 << 32) - 1)):
+            self.assertEqual(self.loads(data(idx)), ([],)*2)
+
     def _test_truncated_data(self, dumped, expected_error=None):
         if expected_error is None:
             expected_error = self.truncated_data_error
