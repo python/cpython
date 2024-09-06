@@ -172,7 +172,7 @@ If the loop exits without executing the break, the else clause executes.
 In a :keyword:`for` loop, the :keyword:`!else` clause is executed
 after the loop reaches its final iteration if no break occurred.
 
-In a :keyword:`while` loop, it's executed after the loop's condition becomes false if not break occurred.
+In a :keyword:`while` loop, it's executed after the loop's condition becomes false if no break occurred.
 
 This is exemplified in the following :keyword:`!for` loop,
 which searches for prime numbers::
