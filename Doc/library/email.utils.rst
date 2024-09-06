@@ -67,7 +67,7 @@ of the new API.
 
    If *strict* is true, use a strict parser which rejects malformed inputs.
 
-   .. versionchanged:: 3.13
+   .. versionchanged:: 3.12.6
       Add *strict* optional parameter and reject malformed inputs by default.
 
 
@@ -105,7 +105,7 @@ of the new API.
       resent_ccs = msg.get_all('resent-cc', [])
       all_recipients = getaddresses(tos + ccs + resent_tos + resent_ccs)
 
-   .. versionchanged:: 3.13
+   .. versionchanged:: 3.12.6
       Add *strict* optional parameter and reject malformed inputs by default.
 
 
