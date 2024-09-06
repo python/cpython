@@ -242,6 +242,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
     def test_asyncio_repl_is_ok(self):
         m, s = pty.openpty()
         cmd = [sys.executable, "-I", "-m", "asyncio"]
+        env = os.environ.copy()
         proc = subprocess.Popen(
             cmd,
             stdin=s,
@@ -249,7 +250,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
             stderr=s,
             text=True,
             close_fds=True,
-            env=os.environ,
+            env=env,
         )
         os.close(s)
         os.write(m, b"await asyncio.sleep(0)\n")
