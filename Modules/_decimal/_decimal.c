@@ -788,7 +788,7 @@ signaldict_copy(PyObject *self, PyObject *Py_UNUSED(dummy))
 
 
 static PyMethodDef signaldict_methods[] = {
-    { "copy", (PyCFunction)signaldict_copy, METH_NOARGS, NULL},
+    { "copy", signaldict_copy, METH_NOARGS, NULL},
     {NULL, NULL}
 };
 
@@ -5718,9 +5718,9 @@ static PyMethodDef context_methods [] =
 #endif
 
   /* Miscellaneous */
-  { "__copy__", (PyCFunction)context_copy, METH_NOARGS, NULL },
+  { "__copy__", context_copy, METH_NOARGS, NULL },
   { "__reduce__", context_reduce, METH_NOARGS, NULL },
-  { "copy", (PyCFunction)context_copy, METH_NOARGS, doc_ctx_copy },
+  { "copy", context_copy, METH_NOARGS, doc_ctx_copy },
   { "create_decimal", ctx_create_decimal, METH_VARARGS, doc_ctx_create_decimal },
   { "create_decimal_from_float", ctx_from_float, METH_O, doc_ctx_create_decimal_from_float },
 
@@ -5753,11 +5753,11 @@ static PyType_Spec context_spec = {
 
 static PyMethodDef _decimal_methods [] =
 {
-  { "getcontext", (PyCFunction)PyDec_GetCurrentContext, METH_NOARGS, doc_getcontext},
-  { "setcontext", (PyCFunction)PyDec_SetCurrentContext, METH_O, doc_setcontext},
+  { "getcontext", PyDec_GetCurrentContext, METH_NOARGS, doc_getcontext},
+  { "setcontext", PyDec_SetCurrentContext, METH_O, doc_setcontext},
   { "localcontext", _PyCFunction_CAST(ctxmanager_new), METH_VARARGS|METH_KEYWORDS, doc_localcontext},
 #ifdef EXTRA_FUNCTIONALITY
-  { "IEEEContext", (PyCFunction)ieee_context, METH_O, doc_ieee_context},
+  { "IEEEContext", ieee_context, METH_O, doc_ieee_context},
 #endif
   { NULL, NULL, 1, NULL }
 };
