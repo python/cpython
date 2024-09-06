@@ -178,8 +178,12 @@ PyAPI_FUNC(int) _PyLong_Size_t_Converter(PyObject *, void *);
  * we define them to the numbers in both places and then assert that
  * they're the same.
  */
-static_assert(SIGN_MASK == _PyLong_SIGN_MASK, "SIGN_MASK does not match _PyLong_SIGN_MASK");
-static_assert(NON_SIZE_BITS == _PyLong_NON_SIZE_BITS, "NON_SIZE_BITS does not match _PyLong_NON_SIZE_BITS");
+#if SIGN_MASK != _PyLong_SIGN_MASK
+#  error "SIGN_MASK does not match _PyLong_SIGN_MASK"
+#endif
+#if NON_SIZE_BITS != _PyLong_NON_SIZE_BITS
+#  error "NON_SIZE_BITS does not match _PyLong_NON_SIZE_BITS"
+#endif
 
 /* All *compact" values are guaranteed to fit into
  * a Py_ssize_t with at least one bit to spare.
