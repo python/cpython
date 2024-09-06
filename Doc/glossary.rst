@@ -591,6 +591,14 @@ Glossary
       :ref:`idle` is a basic editor and interpreter environment
       which ships with the standard distribution of Python.
 
+   immortal
+      *Immortal objects* are a CPython implementation detail introduced
+      in :pep:`683`.
+
+      If an object is immortal, its :term:`reference count` is never modified,
+      and therefore it is never deallocated while the interpreter is running.
+      For example, :const:`True` and :const:`None` are immortal in CPython.
+
    immutable
       An object with a fixed value.  Immutable objects include numbers, strings and
       tuples.  Such an object cannot be altered.  A new object has to
