@@ -41,7 +41,7 @@ def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
     # path may be used by Py_GetPath() to build the default module search
     # path.
     stdin_fname = os.path.join(os.path.dirname(sys.executable), "<stdin>")
-    cmd_line = [stdin_fname, '-E', '-i']
+    cmd_line = [stdin_fname, '-I', '-i']
     cmd_line.extend(args)
 
     # Set TERM=vt100, for the rationale see the comments in spawn_python() of
@@ -228,6 +228,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
                 f.write("exit(0)" + os.linesep)
 
             env = os.environ.copy()
+            env["PYTHON_HISTORY"] = os.path.join(tmpdir, ".asyncio_history")
             env["PYTHONSTARTUP"] = script
             subprocess.check_call(
                 [sys.executable, "-m", "asyncio"],
@@ -240,7 +241,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
     @unittest.skipUnless(pty, "requires pty")
     def test_asyncio_repl_is_ok(self):
         m, s = pty.openpty()
-        cmd = [sys.executable, "-m", "asyncio"]
+        cmd = [sys.executable, "-I", "-m", "asyncio"]
         proc = subprocess.Popen(
             cmd,
             stdin=s,
