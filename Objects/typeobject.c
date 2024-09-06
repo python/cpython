@@ -6940,7 +6940,7 @@ object_getstate_default(PyObject *obj, int required)
                iterate over it */
             if (slotnames_size != PyList_GET_SIZE(slotnames)) {
                 PyErr_Format(PyExc_RuntimeError,
-                             "__slotsname__ changed size during iteration");
+                             "__slotnames__ changed size during iteration");
                 goto error;
             }
 
