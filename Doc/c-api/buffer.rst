@@ -265,12 +265,10 @@ readonly, format
 Since :c:macro:`PyBUF_SIMPLE` is defined as 0, :c:macro:`PyBUF_WRITABLE`
 can be used as a stand-alone flag to request a simple writable buffer.
 
-:c:macro:`PyBUF_FORMAT` can be \|'d to any of the flags except :c:macro:`PyBUF_SIMPLE`, because
-the latter already implies format ``B`` (unsigned bytes). :c:macro:`PyBUF_FORMAT` also cannot
-be standalone, because :c:macro:`PyBUF_SIMPLE` is defined as zero, so it's equivalent
-to :c:expr:`PyBUF_SIMPLE | PyBUF_FORMAT`. However, standalone :c:macro:`PyBUF_FORMAT` is not directly
-disallowed by :c:func:`PyBuffer_FillInfo`, so it's possible to do this on some objects (for
-example, :class:`bytes` supports this, but :class:`memoryview` does not).
+:c:macro:`PyBUF_FORMAT` can be \|'d to any of the flags except :c:macro:`PyBUF_SIMPLE`.
+The latter already implies format ``B`` (unsigned bytes).
+Since :c:macro:`!PyBUF_SIMPLE` is defined as 0, :c:macro:`!PyBUF_FORMAT` cannot be
+used as a stand-alone flag.
 
 
 shape, strides, suboffsets
