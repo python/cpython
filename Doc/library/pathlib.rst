@@ -1631,20 +1631,18 @@ Copying, renaming and deleting
    use :func:`Path.rmdir` instead.
 
    If *missing_ok* is false (the default), this method propagates any
-   :exc:`OSError` from the operating system, including :exc:`FileNotFoundError`.
+   :exc:`OSError` from the operating system.
 
-   If *missing_ok* is true, this shows similar behavior to the POSIX ``rm -f``
-   command and any :exc:`FileNotFoundError` or :exc:`NotADirectoryError`
-   exceptions will be ignored. This means that the file does not exist after
-   execution, but cannot guarantee that the file did exist before. Any other
-   :exc:`OSError` which is encountered will continue to be propogated.
+   If *missing_ok* is true, :exc:`FileNotFoundError` and
+   :exc:`NotADirectoryError` exceptions will be ignored. This behavior is
+   similar to the POSIX ``rm -f`` command.
 
    .. versionchanged:: 3.8
       The *missing_ok* parameter was added.
 
-   .. versionchanged:: 3.??
-      The *missing_ok* parameter will also ignore :exc:`NotADirectoryError`
-
+   .. versionchanged:: 3.14
+      Suppresses :exc:`NotADirectoryError` exceptions when *missing_ok* is
+      true.
 
 .. method:: Path.rmdir()
 
