@@ -1717,11 +1717,13 @@ current_context(decimal_state *modstate)
 }
 
 /* ctxobj := borrowed reference to the current context */
-#define CURRENT_CONTEXT(state, ctxobj) \
-    ctxobj = current_context(state); \
-    if (ctxobj == NULL) {       \
-        return NULL;            \
-    }
+#define CURRENT_CONTEXT(STATE, CTXOBJ)      \
+    do {                                    \
+        CTXOBJ = current_context(STATE);    \
+        if (CTXOBJ == NULL) {               \
+            return NULL;                    \
+        }                                   \
+    } while (0)
 
 /* Return a new reference to the current context */
 static PyObject *
@@ -1810,12 +1812,14 @@ current_context(decimal_state *state)
 }
 
 /* ctxobj := borrowed reference to the current context */
-#define CURRENT_CONTEXT(state, ctxobj) \
-    ctxobj = current_context(state);   \
-    if (ctxobj == NULL) {       \
-        return NULL;            \
-    }                           \
-    Py_DECREF(ctxobj);
+#define CURRENT_CONTEXT(STATE, CTXOBJ)      \
+    do {                                    \
+        CTXOBJ = current_context(STATE);    \
+        if (CTXOBJ == NULL) {               \
+            return NULL;                    \
+        }                                   \
+        Py_DECREF(CTXOBJ);                  \
+    } while (0)
 
 /* Return a new reference to the current context */
 static PyObject *
