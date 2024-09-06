@@ -4814,6 +4814,8 @@ class TCPCloserTest(ThreadedTCPSocketTest):
         self.assertEqual(read, [conn])
         self.assertEqual(conn.recv(1), b'x')
 
+        conn.close()
+
         # Calling close() many times should be safe.
         conn.close()
         conn.close()
@@ -4822,6 +4824,9 @@ class TCPCloserTest(ThreadedTCPSocketTest):
         self.cli.connect((HOST, self.port))
         self.cli.send(b'x')
         time.sleep(1.0)
+        read, write, _ = select.select([self.cli], [], [], 0.1)
+        self.assertEqual(read, [self.cli])
+        self.assertEqual(self.cli.recv(1), b'')
 
 
 class BasicSocketPairTest(SocketPairTest):
