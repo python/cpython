@@ -1,0 +1,1 @@
+Only allow command line usage of :mod:`pdb` to use ``restart`` command.
