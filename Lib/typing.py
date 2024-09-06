@@ -1290,13 +1290,30 @@ class _BaseGenericAlias(_Final, _root=True):
         if not self._inst:
             raise TypeError(f"Type {self._name} cannot be instantiated; "
                             f"use {self.__origin__.__name__}() instead")
-        result = self.__origin__(*args, **kwargs)
+        clas = self.__origin__
+        is_python_type = clas.__new__ is type.__new__
+
+        if is_python_type:
+            # GH-123777: Some types try and access __orig_class__ in their __init__
+            result = clas.__new__(clas, *args, **kwargs)
+        else:
+            # This is a C type with a custom __new__
+            #
+            # I'm worried that trying to set attributes on C types before they've been
+            # fully initialized will be problematic, so let's just disallow them
+            # from using the __orig_class__ in the initializer for now.
+            result = clas(*args, **kwargs)
+
         try:
             result.__orig_class__ = self
         # Some objects raise TypeError (or something even more exotic)
         # if you try to set attributes on them; we guard against that here
         except Exception:
             pass
+
+        if is_python_type:
+            result.__init__(*args, **kwargs)
+
         return result
 
     def __mro_entries__(self, bases):
