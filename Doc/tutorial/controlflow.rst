@@ -166,7 +166,7 @@ arguments.  In chapter :ref:`tut-structures`, we will discuss in more detail abo
 The :keyword:`break` statement breaks out of the innermost enclosing
 :keyword:`for` or :keyword:`while` loop.
 
-The :keyword:`!break` statement may be paired with an :keyword:`!else` clause. 
+The :keyword:`!break` statement may be paired with an :keyword:`!else` clause.
 If the loop exits without executing the break, the else clause executes.
 
 In a :keyword:`for` loop, the :keyword:`!else` clause is executed
