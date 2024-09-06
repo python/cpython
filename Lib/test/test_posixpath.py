@@ -3,7 +3,7 @@ import os
 import posixpath
 import sys
 import unittest
-from posixpath import realpath, abspath, dirname, basename
+from posixpath import _MAXLINKS, realpath, abspath, dirname, basename
 from test import test_genericpath
 from test.support import import_helper
 from test.support import cpython_only, os_helper
@@ -692,25 +692,24 @@ class PosixPathTest(unittest.TestCase):
     @os_helper.skip_unless_symlink
     @skip_if_ABSTFN_contains_backslash
     def test_realpath_too_many_symlinks(self):
-        maxlinks = 40  # TODO: use limit set by OS
         try:
             os.mkdir(ABSTFN)
             os.symlink('.', f'{ABSTFN}/link')
-            self.assertEqual(realpath(ABSTFN + '/link' * maxlinks), ABSTFN)
-            self.assertEqual(realpath(ABSTFN + '/link' * maxlinks,
+            self.assertEqual(realpath(ABSTFN + '/link' * _MAXLINKS), ABSTFN)
+            self.assertEqual(realpath(ABSTFN + '/link' * _MAXLINKS,
                                       strict=True), ABSTFN)
-            self.assertEqual(realpath(ABSTFN + '/link' * (maxlinks+1)), ABSTFN)
+            self.assertEqual(realpath(ABSTFN + '/link' * (_MAXLINKS+1)), ABSTFN)
             with self.assertRaises(OSError):
-                realpath(ABSTFN + '/link' * (maxlinks+1), strict=True)
+                realpath(ABSTFN + '/link' * (_MAXLINKS+1), strict=True)
 
             # Test using relative path as well.
             with os_helper.change_cwd(ABSTFN):
-                self.assertEqual(realpath('link/' * maxlinks), ABSTFN)
-                self.assertEqual(realpath('link/' * maxlinks, strict=True),
+                self.assertEqual(realpath('link/' * _MAXLINKS), ABSTFN)
+                self.assertEqual(realpath('link/' * _MAXLINKS, strict=True),
                                  ABSTFN)
-                self.assertEqual(realpath('link/' * (maxlinks+1)), ABSTFN)
+                self.assertEqual(realpath('link/' * (_MAXLINKS+1)), ABSTFN)
                 with self.assertRaises(OSError):
-                    realpath('link/' * (maxlinks+1), strict=True)
+                    realpath('link/' * (_MAXLINKS+1), strict=True)
         finally:
             os_helper.unlink(f'{ABSTFN}/link')
             safe_rmdir(ABSTFN)
