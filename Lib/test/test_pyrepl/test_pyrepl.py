@@ -1217,11 +1217,33 @@ class TestMain(TestCase):
         cmdline_args: list[str] | None = None,
         cwd: str | None = None,
     ) -> tuple[str, int]:
+        temp_dir = None
+        if cwd is None:
+            temp_dir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+            cwd = temp_dir.name
+        try:
+            return self._run_repl(
+                repl_input, env=env, cmdline_args=cmdline_args, cwd=cwd
+            )
+        finally:
+            if temp_dir is not None:
+                temp_dir.cleanup()
+
+    def _run_repl(
+        self,
+        repl_input: str | list[str],
+        *,
+        env: dict | None,
+        cmdline_args: list[str] | None,
+        cwd: str,
+    ) -> tuple[str, int]:
         assert pty
         master_fd, slave_fd = pty.openpty()
         cmd = [sys.executable, "-i", "-u"]
         if env is None:
             cmd.append("-I")
+        elif "PYTHON_HISTORY" not in env:
+            env["PYTHON_HISTORY"] = os.path.join(cwd, ".regrtest_history")
         if cmdline_args is not None:
             cmd.extend(cmdline_args)
         process = subprocess.Popen(
