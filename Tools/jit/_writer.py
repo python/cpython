@@ -7,12 +7,15 @@ import _stencils
 
 
 def _dump_footer(groups: dict[str, _stencils.StencilGroup]) -> typing.Iterator[str]:
+    yield f"typedef uint32_t SymbolMask[{_stencils.SYMBOL_MASK_SIZE}];"
+    yield ""
     yield "typedef struct {"
     yield "    void (*emit)("
     yield "        unsigned char *code, unsigned char *data, _PyExecutorObject *executor,"
     yield "        const _PyUOpInstruction *instruction, uintptr_t instruction_starts[]);"
     yield "    size_t code_size;"
     yield "    size_t data_size;"
+    yield "    SymbolMask trampoline_mask;"
     yield "} StencilGroup;"
     yield ""
     yield f"static const StencilGroup trampoline = {groups['trampoline'].as_c('trampoline')};"
@@ -22,6 +25,11 @@ def _dump_footer(groups: dict[str, _stencils.StencilGroup]) -> typing.Iterator[s
         if opname == "trampoline":
             continue
         yield f"    [{opname}] = {group.as_c(opname)},"
+    yield "};"
+    yield ""
+    yield "static const void * const symbols_map[] = {"
+    for symbol, ordinal in _stencils.known_symbols.items():
+        yield f"    [{ordinal}] = &{symbol},"
     yield "};"
 
 

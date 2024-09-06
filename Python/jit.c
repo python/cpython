@@ -3,6 +3,7 @@
 #include "Python.h"
 
 #include "pycore_abstract.h"
+#include "pycore_bitutils.h"
 #include "pycore_call.h"
 #include "pycore_ceval.h"
 #include "pycore_critical_section.h"
@@ -390,7 +391,69 @@ patch_x86_64_32rx(unsigned char *location, uint64_t value)
     patch_32r(location, value);
 }
 
+void patch_aarch64_trampoline(unsigned char *location, int ordinal);
+
 #include "jit_stencils.h"
+
+typedef struct {
+    void *mem;
+    SymbolMask mask;
+    size_t size;
+} TrampolineState;
+
+//TODO: remove as global variable
+TrampolineState trampoline_state;
+
+#if defined(__aarch64__) || defined(_M_ARM64)
+    #define TRAMPOLINE_SIZE 16
+#else
+    #define TRAMPOLINE_SIZE 0
+#endif
+
+// Generate and patch AArch64 trampolines. The symbols to jump to are stored
+// in the jit_stencils.h in the symbols_map.
+void
+patch_aarch64_trampoline(unsigned char *location, int ordinal)
+{
+    // Masking is done modulo 32 as the mask is stored as an array of uint32_t
+    const uint32_t symbol_mask = 1 << (ordinal % 32);
+    const uint32_t trampoline_mask = trampoline_state.mask[ordinal / 32];
+    assert(symbol_mask & trampoline_mask);
+
+    // Count the number of set bits in the trampoline mask lower than ordinal,
+    // this gives the index into the array of trampolines.
+    int index = _Py_popcount32(trampoline_mask & (symbol_mask - 1));
+    for (int i = 0; i < ordinal / 32; i++) {
+        index += _Py_popcount32(trampoline_state.mask[i]);
+    }
+
+    uint32_t *p = trampoline_state.mem + index * TRAMPOLINE_SIZE;
+    assert((size_t)index * TRAMPOLINE_SIZE < trampoline_state.size);
+
+    uintptr_t value = (uintptr_t)symbols_map[ordinal];
+
+    /* Generate the trampoline
+       0: 58000048      ldr     x8, 8
+       4: d61f0100      br      x8
+       8: 00000000      // The next two words contain the 64-bit address to jump to.
+       c: 00000000
+    */
+    p[0] = 0x58000048;
+    p[1] = 0xD61F0100;
+    p[2] = value & 0xffffffff;
+    p[3] = value >> 32;
+
+    patch_aarch64_26r(location, (uintptr_t)p);
+}
+
+static void
+combine_symbol_mask(const SymbolMask src, SymbolMask dest, size_t size)
+{
+    // Calculate the union of the trampolines required by each StencilGroup
+    for (size_t i = 0; i < size; i++) {
+        dest[i] |= src[i];
+    }
+}
 
 // Compiles executor in-place. Don't forget to call _PyJIT_Free later!
 int
@@ -401,6 +464,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     uintptr_t instruction_starts[UOP_MAX_TRACE_LENGTH];
     size_t code_size = 0;
     size_t data_size = 0;
+    trampoline_state = (TrampolineState){};
     group = &trampoline;
     code_size += group->code_size;
     data_size += group->data_size;
@@ -410,15 +474,25 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
         instruction_starts[i] = code_size;
         code_size += group->code_size;
         data_size += group->data_size;
+        combine_symbol_mask(group->trampoline_mask,
+                            trampoline_state.mask,
+                            Py_ARRAY_LENGTH(trampoline_state.mask));
     }
     group = &stencil_groups[_FATAL_ERROR];
     code_size += group->code_size;
     data_size += group->data_size;
+    combine_symbol_mask(group->trampoline_mask,
+                        trampoline_state.mask,
+                        Py_ARRAY_LENGTH(trampoline_state.mask));
+    // Calculate the size of the trampolines required by the whole trace
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(trampoline_state.mask); i++) {
+        trampoline_state.size += _Py_popcount32(trampoline_state.mask[i]) * TRAMPOLINE_SIZE;
+    }
     // Round up to the nearest page:
     size_t page_size = get_page_size();
     assert((page_size & (page_size - 1)) == 0);
-    size_t padding = page_size - ((code_size + data_size) & (page_size - 1));
-    size_t total_size = code_size + data_size + padding;
+    size_t padding = page_size - ((code_size + data_size + trampoline_state.size) & (page_size - 1));
+    size_t total_size = code_size + data_size + trampoline_state.size + padding;
     unsigned char *memory = jit_alloc(total_size);
     if (memory == NULL) {
         return -1;
@@ -430,6 +504,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     // Loop again to emit the code:
     unsigned char *code = memory;
     unsigned char *data = memory + code_size;
+    trampoline_state.mem = memory + code_size + data_size;
     // Compile the trampoline, which handles converting between the native
     // calling convention and the calling convention used by jitted code
     // (which may be different for efficiency reasons). On platforms where
