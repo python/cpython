@@ -1466,7 +1466,7 @@ printed to standard error when the argument is used::
    snake.py: warning: option '--legs' is deprecated
    Namespace(legs=4)
 
-.. versionchanged:: 3.13
+.. versionadded:: 3.13
 
 
 Action classes

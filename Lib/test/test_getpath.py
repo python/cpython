@@ -844,6 +844,7 @@ DEFAULT_NAMESPACE = dict(
     PYDEBUGEXT="",
     VERSION_MAJOR=9,    # fixed version number for ease
     VERSION_MINOR=8,    # of testing
+    ABI_THREAD="",
     PYWINVER=None,
     EXE_SUFFIX=None,
 

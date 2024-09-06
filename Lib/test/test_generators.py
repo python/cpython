@@ -2247,6 +2247,16 @@ Traceback (most recent call last):
   ...
 SyntaxError: 'yield' outside function
 
+>>> f=lambda: (yield from (1,2)), (yield from (3,4))
+Traceback (most recent call last):
+  ...
+SyntaxError: 'yield from' outside function
+
+>>> yield from [1,2]
+Traceback (most recent call last):
+  ...
+SyntaxError: 'yield from' outside function
+
 >>> def f(): x = yield = y
 Traceback (most recent call last):
   ...

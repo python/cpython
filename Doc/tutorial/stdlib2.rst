@@ -352,11 +352,11 @@ not want to run a full list sort::
 
 .. _tut-decimal-fp:
 
-Decimal Floating Point Arithmetic
+Decimal Floating-Point Arithmetic
 =================================
 
 The :mod:`decimal` module offers a :class:`~decimal.Decimal` datatype for
-decimal floating point arithmetic.  Compared to the built-in :class:`float`
+decimal floating-point arithmetic.  Compared to the built-in :class:`float`
 implementation of binary floating point, the class is especially helpful for
 
 * financial applications and other uses which require exact decimal

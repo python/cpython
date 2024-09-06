@@ -5,8 +5,8 @@ paths with operations that have semantics appropriate for different
 operating systems.
 """
 
-from ._abc import *
-from ._local import *
+from pathlib._abc import *
+from pathlib._local import *
 
 __all__ = (_abc.__all__ +
            _local.__all__)

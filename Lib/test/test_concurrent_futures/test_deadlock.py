@@ -236,7 +236,7 @@ class ExecutorDeadlockTest:
         executor_manager.join()
 
     def test_crash_big_data(self):
-        # Test that there is a clean exception instad of a deadlock when a
+        # Test that there is a clean exception instead of a deadlock when a
         # child process crashes while some data is being written into the
         # queue.
         # https://github.com/python/cpython/issues/94777

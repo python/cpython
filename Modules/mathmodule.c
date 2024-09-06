@@ -107,7 +107,7 @@ typedef struct{ double hi; double lo; } DoubleLength;
 static DoubleLength
 dl_fast_sum(double a, double b)
 {
-    /* Algorithm 1.1. Compensated summation of two floating point numbers. */
+    /* Algorithm 1.1. Compensated summation of two floating-point numbers. */
     assert(fabs(a) >= fabs(b));
     double x = a + b;
     double y = (a - x) + b;
@@ -534,43 +534,6 @@ m_lgamma(double x)
         errno = ERANGE;
     return r;
 }
-
-/*
-   wrapper for atan2 that deals directly with special cases before
-   delegating to the platform libm for the remaining cases.  This
-   is necessary to get consistent behaviour across platforms.
-   Windows, FreeBSD and alpha Tru64 are amongst platforms that don't
-   always follow C99.
-*/
-
-static double
-m_atan2(double y, double x)
-{
-    if (isnan(x) || isnan(y))
-        return Py_NAN;
-    if (isinf(y)) {
-        if (isinf(x)) {
-            if (copysign(1., x) == 1.)
-                /* atan2(+-inf, +inf) == +-pi/4 */
-                return copysign(0.25*Py_MATH_PI, y);
-            else
-                /* atan2(+-inf, -inf) == +-pi*3/4 */
-                return copysign(0.75*Py_MATH_PI, y);
-        }
-        /* atan2(+-inf, x) == +-pi/2 for finite x */
-        return copysign(0.5*Py_MATH_PI, y);
-    }
-    if (isinf(x) || y == 0.) {
-        if (copysign(1., x) == 1.)
-            /* atan2(+-y, +inf) = atan2(+-0, +x) = +-0. */
-            return copysign(0., y);
-        else
-            /* atan2(+-y, -inf) = atan2(+-0., -x) = +-pi. */
-            return copysign(Py_MATH_PI, y);
-    }
-    return atan2(y, x);
-}
-
 
 /* IEEE 754-style remainder operation: x - n*y where n*y is the nearest
    multiple of y to x, taking n even in the case of a tie. Assuming an IEEE 754
@@ -1103,7 +1066,7 @@ FUNC1(atan, atan, 0,
       "atan($module, x, /)\n--\n\n"
       "Return the arc tangent (measured in radians) of x.\n\n"
       "The result is between -pi/2 and pi/2.")
-FUNC2(atan2, m_atan2,
+FUNC2(atan2, atan2,
       "atan2($module, y, x, /)\n--\n\n"
       "Return the arc tangent (measured in radians) of y/x.\n\n"
       "Unlike atan(y/x), the signs of both x and y are considered.")
@@ -1354,14 +1317,14 @@ math.fsum
     seq: object
     /
 
-Return an accurate floating point sum of values in the iterable seq.
+Return an accurate floating-point sum of values in the iterable seq.
 
-Assumes IEEE-754 floating point arithmetic.
+Assumes IEEE-754 floating-point arithmetic.
 [clinic start generated code]*/
 
 static PyObject *
 math_fsum(PyObject *module, PyObject *seq)
-/*[clinic end generated code: output=ba5c672b87fe34fc input=c51b7d8caf6f6e82]*/
+/*[clinic end generated code: output=ba5c672b87fe34fc input=4506244ded6057dc]*/
 {
     PyObject *item, *iter, *sum = NULL;
     Py_ssize_t i, j, n = 0, m = NUM_PARTIALS;
@@ -1694,7 +1657,7 @@ math_isqrt(PyObject *module, PyObject *n)
 /*[clinic end generated code: output=35a6f7f980beab26 input=5b6e7ae4fa6c43d6]*/
 {
     int a_too_large, c_bit_length;
-    size_t c, d;
+    uint64_t c, d;
     uint64_t m;
     uint32_t u;
     PyObject *a = NULL, *b;
@@ -1717,7 +1680,7 @@ math_isqrt(PyObject *module, PyObject *n)
 
     /* c = (n.bit_length() - 1) // 2 */
     c = _PyLong_NumBits(n);
-    if (c == (size_t)(-1)) {
+    if (c == (uint64_t)(-1)) {
         goto error;
     }
     c = (c - 1U) / 2U;
@@ -1764,7 +1727,7 @@ math_isqrt(PyObject *module, PyObject *n)
 
     for (int s = c_bit_length - 6; s >= 0; --s) {
         PyObject *q;
-        size_t e = d;
+        uint64_t e = d;
 
         d = c >> s;
 
@@ -2222,7 +2185,7 @@ loghelper(PyObject* arg, double (*func)(double))
     /* If it is int, do it ourselves. */
     if (PyLong_Check(arg)) {
         double x, result;
-        Py_ssize_t e;
+        int64_t e;
 
         /* Negative or zero inputs give a ValueError. */
         if (!_PyLong_IsPositive((PyLongObject *)arg)) {
@@ -2453,7 +2416,7 @@ Since lo**2 is less than 1/2 ulp(csum), we have csum+lo*lo == csum.
 To minimize loss of information during the accumulation of fractional
 values, each term has a separate accumulator.  This also breaks up
 sequential dependencies in the inner loop so the CPU can maximize
-floating point throughput. [4]  On an Apple M1 Max, hypot(*vec)
+floating-point throughput. [4]  On an Apple M1 Max, hypot(*vec)
 takes only 3.33 µsec when len(vec) == 1000.
 
 The square root differential correction is needed because a
@@ -3136,7 +3099,7 @@ math.isclose -> bool
         maximum difference for being considered "close", regardless of the
         magnitude of the input values
 
-Determine whether two floating point numbers are close in value.
+Determine whether two floating-point numbers are close in value.
 
 Return True if a is close in value to b, and False otherwise.
 
@@ -3151,7 +3114,7 @@ only close to themselves.
 static int
 math_isclose_impl(PyObject *module, double a, double b, double rel_tol,
                   double abs_tol)
-/*[clinic end generated code: output=b73070207511952d input=f28671871ea5bfba]*/
+/*[clinic end generated code: output=b73070207511952d input=12d41764468bfdb8]*/
 {
     double diff = 0.0;
 
