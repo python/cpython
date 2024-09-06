@@ -273,6 +273,6 @@ manually define ``Py_GIL_DISABLED=1`` when building extensions from source.
 
 .. seealso::
 
-   https://py-free-threading.github.io/porting/
-
+   `Porting Extension Modules to Support Free-Threading
+   <https://py-free-threading.github.io/porting/>`_:
    A community-maintained porting guide for extension authors.
