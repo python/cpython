@@ -345,7 +345,10 @@ class Reader:
         pos = self.pos
         pos -= offset
 
+        prompt_from_cache = (offset and self.buffer[offset - 1] != "\n")
+
         lines = "".join(self.buffer[offset:]).split("\n")
+
         cursor_found = False
         lines_beyond_cursor = 0
         for ln, line in enumerate(lines, num_common_lines):
@@ -359,7 +362,12 @@ class Reader:
                     # No need to keep formatting lines.
                     # The console can't show them.
                     break
-            prompt = self.get_prompt(ln, ll >= pos >= 0)
+            if prompt_from_cache:
+                # Only the first line's prompt can come from the cache
+                prompt_from_cache = False
+                prompt = ""
+            else:
+                prompt = self.get_prompt(ln, ll >= pos >= 0)
             while "\n" in prompt:
                 pre_prompt, _, prompt = prompt.partition("\n")
                 last_refresh_line_end_offsets.append(offset)

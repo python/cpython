@@ -1803,13 +1803,15 @@ memo_put(PickleState *st, PicklerObject *self, PyObject *obj)
 }
 
 static PyObject *
-get_dotted_path(PyObject *obj, PyObject *name)
+get_dotted_path(PyObject *name)
 {
-    PyObject *dotted_path;
+    return PyUnicode_Split(name, _Py_LATIN1_CHR('.'), -1);
+}
+
+static int
+check_dotted_path(PyObject *obj, PyObject *name, PyObject *dotted_path)
+{
     Py_ssize_t i, n;
-    dotted_path = PyUnicode_Split(name, _Py_LATIN1_CHR('.'), -1);
-    if (dotted_path == NULL)
-        return NULL;
     n = PyList_GET_SIZE(dotted_path);
     assert(n >= 1);
     for (i = 0; i < n; i++) {
@@ -1821,60 +1823,32 @@ get_dotted_path(PyObject *obj, PyObject *name)
             else
                 PyErr_Format(PyExc_AttributeError,
                              "Can't get local attribute %R on %R", name, obj);
-            Py_DECREF(dotted_path);
-            return NULL;
+            return -1;
         }
     }
-    return dotted_path;
+    return 0;
 }
 
 static PyObject *
-get_deep_attribute(PyObject *obj, PyObject *names, PyObject **pparent)
+getattribute(PyObject *obj, PyObject *names)
 {
     Py_ssize_t i, n;
-    PyObject *parent = NULL;
 
     assert(PyList_CheckExact(names));
     Py_INCREF(obj);
     n = PyList_GET_SIZE(names);
     for (i = 0; i < n; i++) {
         PyObject *name = PyList_GET_ITEM(names, i);
-        Py_XSETREF(parent, obj);
+        PyObject *parent = obj;
         (void)PyObject_GetOptionalAttr(parent, name, &obj);
+        Py_DECREF(parent);
         if (obj == NULL) {
-            Py_DECREF(parent);
             return NULL;
         }
     }
-    if (pparent != NULL)
-        *pparent = parent;
-    else
-        Py_XDECREF(parent);
     return obj;
 }
 
-
-static PyObject *
-getattribute(PyObject *obj, PyObject *name, int allow_qualname)
-{
-    PyObject *dotted_path, *attr;
-
-    if (allow_qualname) {
-        dotted_path = get_dotted_path(obj, name);
-        if (dotted_path == NULL)
-            return NULL;
-        attr = get_deep_attribute(obj, dotted_path, NULL);
-        Py_DECREF(dotted_path);
-    }
-    else {
-        (void)PyObject_GetOptionalAttr(obj, name, &attr);
-    }
-    if (attr == NULL && !PyErr_Occurred()) {
-        PyErr_Format(PyExc_AttributeError,
-                     "Can't get attribute %R on %R", name, obj);
-    }
-    return attr;
-}
 
 static int
 _checkmodule(PyObject *module_name, PyObject *module,
@@ -1888,7 +1862,7 @@ _checkmodule(PyObject *module_name, PyObject *module,
         return -1;
     }
 
-    PyObject *candidate = get_deep_attribute(module, dotted_path, NULL);
+    PyObject *candidate = getattribute(module, dotted_path);
     if (candidate == NULL) {
         return -1;
     }
@@ -1901,7 +1875,7 @@ _checkmodule(PyObject *module_name, PyObject *module,
 }
 
 static PyObject *
-whichmodule(PyObject *global, PyObject *dotted_path)
+whichmodule(PickleState *st, PyObject *global, PyObject *global_name, PyObject *dotted_path)
 {
     PyObject *module_name;
     PyObject *module = NULL;
@@ -1911,63 +1885,110 @@ whichmodule(PyObject *global, PyObject *dotted_path)
     if (PyObject_GetOptionalAttr(global, &_Py_ID(__module__), &module_name) < 0) {
         return NULL;
     }
-    if (module_name) {
+    if (module_name == NULL || module_name == Py_None) {
         /* In some rare cases (e.g., bound methods of extension types),
            __module__ can be None. If it is so, then search sys.modules for
            the module of global. */
-        if (module_name != Py_None)
-            return module_name;
         Py_CLEAR(module_name);
-    }
-    assert(module_name == NULL);
-
-    /* Fallback on walking sys.modules */
-    PyThreadState *tstate = _PyThreadState_GET();
-    modules = _PySys_GetAttr(tstate, &_Py_ID(modules));
-    if (modules == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
-        return NULL;
-    }
-    if (PyDict_CheckExact(modules)) {
-        i = 0;
-        while (PyDict_Next(modules, &i, &module_name, &module)) {
-            if (_checkmodule(module_name, module, global, dotted_path) == 0) {
-                return Py_NewRef(module_name);
-            }
-            if (PyErr_Occurred()) {
-                return NULL;
-            }
-        }
-    }
-    else {
-        PyObject *iterator = PyObject_GetIter(modules);
-        if (iterator == NULL) {
+        if (check_dotted_path(NULL, global_name, dotted_path) < 0) {
             return NULL;
         }
-        while ((module_name = PyIter_Next(iterator))) {
-            module = PyObject_GetItem(modules, module_name);
-            if (module == NULL) {
-                Py_DECREF(module_name);
-                Py_DECREF(iterator);
-                return NULL;
-            }
-            if (_checkmodule(module_name, module, global, dotted_path) == 0) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        modules = _PySys_GetAttr(tstate, &_Py_ID(modules));
+        if (modules == NULL) {
+            PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
+            return NULL;
+        }
+        if (PyDict_CheckExact(modules)) {
+            i = 0;
+            while (PyDict_Next(modules, &i, &module_name, &module)) {
+                Py_INCREF(module_name);
+                Py_INCREF(module);
+                if (_checkmodule(module_name, module, global, dotted_path) == 0) {
+                    Py_DECREF(module);
+                    return module_name;
+                }
                 Py_DECREF(module);
-                Py_DECREF(iterator);
-                return module_name;
-            }
-            Py_DECREF(module);
-            Py_DECREF(module_name);
-            if (PyErr_Occurred()) {
-                Py_DECREF(iterator);
-                return NULL;
+                Py_DECREF(module_name);
+                if (PyErr_Occurred()) {
+                    return NULL;
+                }
             }
         }
-        Py_DECREF(iterator);
+        else {
+            PyObject *iterator = PyObject_GetIter(modules);
+            if (iterator == NULL) {
+                return NULL;
+            }
+            while ((module_name = PyIter_Next(iterator))) {
+                module = PyObject_GetItem(modules, module_name);
+                if (module == NULL) {
+                    Py_DECREF(module_name);
+                    Py_DECREF(iterator);
+                    return NULL;
+                }
+                if (_checkmodule(module_name, module, global, dotted_path) == 0) {
+                    Py_DECREF(module);
+                    Py_DECREF(iterator);
+                    return module_name;
+                }
+                Py_DECREF(module);
+                Py_DECREF(module_name);
+                if (PyErr_Occurred()) {
+                    Py_DECREF(iterator);
+                    return NULL;
+                }
+            }
+            Py_DECREF(iterator);
+        }
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+
+        /* If no module is found, use __main__. */
+        module_name = Py_NewRef(&_Py_ID(__main__));
     }
 
-    /* If no module is found, use __main__. */
-    return &_Py_ID(__main__);
+    /* XXX: Change to use the import C API directly with level=0 to disallow
+       relative imports.
+
+       XXX: PyImport_ImportModuleLevel could be used. However, this bypasses
+       builtins.__import__. Therefore, _pickle, unlike pickle.py, will ignore
+       custom import functions (IMHO, this would be a nice security
+       feature). The import C API would need to be extended to support the
+       extra parameters of __import__ to fix that. */
+    module = PyImport_Import(module_name);
+    if (module == NULL) {
+        PyErr_Format(st->PicklingError,
+                     "Can't pickle %R: import of module %R failed",
+                     global, module_name);
+        Py_DECREF(module_name);
+        return NULL;
+    }
+    if (check_dotted_path(module, global_name, dotted_path) < 0) {
+        Py_DECREF(module_name);
+        Py_DECREF(module);
+        return NULL;
+    }
+    PyObject *actual = getattribute(module, dotted_path);
+    Py_DECREF(module);
+    if (actual == NULL) {
+        PyErr_Format(st->PicklingError,
+                     "Can't pickle %R: attribute lookup %S on %S failed",
+                     global, global_name, module_name);
+        Py_DECREF(module_name);
+        return NULL;
+    }
+    if (actual != global) {
+        Py_DECREF(actual);
+        PyErr_Format(st->PicklingError,
+                     "Can't pickle %R: it's not the same object as %S.%S",
+                     global, module_name, global_name);
+        Py_DECREF(module_name);
+        return NULL;
+    }
+    Py_DECREF(actual);
+    return module_name;
 }
 
 /* fast_save_enter() and fast_save_leave() are guards against recursive
@@ -2119,7 +2140,7 @@ save_long(PicklerObject *self, PyObject *obj)
 
     if (self->proto >= 2) {
         /* Linear-time pickling. */
-        size_t nbits;
+        uint64_t nbits;
         size_t nbytes;
         unsigned char *pdata;
         char header[5];
@@ -2134,7 +2155,7 @@ save_long(PicklerObject *self, PyObject *obj)
             return 0;
         }
         nbits = _PyLong_NumBits(obj);
-        if (nbits == (size_t)-1 && PyErr_Occurred())
+        if (nbits == (uint64_t)-1 && PyErr_Occurred())
             goto error;
         /* How many bytes do we need?  There are nbits >> 3 full
          * bytes of data, and nbits & 7 leftover bits.  If there
@@ -2150,7 +2171,7 @@ save_long(PicklerObject *self, PyObject *obj)
          * for in advance, though, so we always grab an extra
          * byte at the start, and cut it back later if possible.
          */
-        nbytes = (nbits >> 3) + 1;
+        nbytes = (size_t)((nbits >> 3) + 1);
         if (nbytes > 0x7fffffffL) {
             PyErr_SetString(PyExc_OverflowError,
                             "int too large to pickle");
@@ -3590,10 +3611,7 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
 {
     PyObject *global_name = NULL;
     PyObject *module_name = NULL;
-    PyObject *module = NULL;
-    PyObject *parent = NULL;
     PyObject *dotted_path = NULL;
-    PyObject *cls;
     int status = 0;
 
     const char global_op = GLOBAL;
@@ -3611,43 +3629,12 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
         }
     }
 
-    dotted_path = get_dotted_path(module, global_name);
+    dotted_path = get_dotted_path(global_name);
     if (dotted_path == NULL)
         goto error;
-    module_name = whichmodule(obj, dotted_path);
+    module_name = whichmodule(st, obj, global_name, dotted_path);
     if (module_name == NULL)
         goto error;
-
-    /* XXX: Change to use the import C API directly with level=0 to disallow
-       relative imports.
-
-       XXX: PyImport_ImportModuleLevel could be used. However, this bypasses
-       builtins.__import__. Therefore, _pickle, unlike pickle.py, will ignore
-       custom import functions (IMHO, this would be a nice security
-       feature). The import C API would need to be extended to support the
-       extra parameters of __import__ to fix that. */
-    module = PyImport_Import(module_name);
-    if (module == NULL) {
-        PyErr_Format(st->PicklingError,
-                     "Can't pickle %R: import of module %R failed",
-                     obj, module_name);
-        goto error;
-    }
-    cls = get_deep_attribute(module, dotted_path, &parent);
-    if (cls == NULL) {
-        PyErr_Format(st->PicklingError,
-                     "Can't pickle %R: attribute lookup %S on %S failed",
-                     obj, global_name, module_name);
-        goto error;
-    }
-    if (cls != obj) {
-        Py_DECREF(cls);
-        PyErr_Format(st->PicklingError,
-                     "Can't pickle %R: it's not the same object as %S.%S",
-                     obj, module_name, global_name);
-        goto error;
-    }
-    Py_DECREF(cls);
 
     if (self->proto >= 2) {
         /* See whether this is in the extension registry, and if
@@ -3663,34 +3650,24 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
         if (extension_key == NULL) {
             goto error;
         }
-        code_obj = PyDict_GetItemWithError(st->extension_registry,
-                                           extension_key);
+        if (PyDict_GetItemRef(st->extension_registry, extension_key, &code_obj) < 0) {
+            Py_DECREF(extension_key);
+            goto error;
+        }
         Py_DECREF(extension_key);
-        /* The object is not registered in the extension registry.
-           This is the most likely code path. */
         if (code_obj == NULL) {
-            if (PyErr_Occurred()) {
-                goto error;
-            }
+            /* The object is not registered in the extension registry.
+               This is the most likely code path. */
             goto gen_global;
         }
 
-        /* XXX: pickle.py doesn't check neither the type, nor the range
-           of the value returned by the extension_registry. It should for
-           consistency. */
-
-        /* Verify code_obj has the right type and value. */
-        if (!PyLong_Check(code_obj)) {
-            PyErr_Format(st->PicklingError,
-                         "Can't pickle %R: extension code %R isn't an integer",
-                         obj, code_obj);
-            goto error;
-        }
-        code = PyLong_AS_LONG(code_obj);
+        code = PyLong_AsLong(code_obj);
+        Py_DECREF(code_obj);
         if (code <= 0 || code > 0x7fffffffL) {
+            /* Should never happen in normal circumstances, since the type and
+               the value of the code are checked in copyreg.add_extension(). */
             if (!PyErr_Occurred())
-                PyErr_Format(st->PicklingError, "Can't pickle %R: extension "
-                             "code %ld is out of range", obj, code);
+                PyErr_Format(PyExc_RuntimeError, "extension code %ld is out of range", code);
             goto error;
         }
 
@@ -3720,12 +3697,6 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
     }
     else {
   gen_global:
-        if (parent == module) {
-            Py_SETREF(global_name,
-                Py_NewRef(PyList_GET_ITEM(dotted_path,
-                                          PyList_GET_SIZE(dotted_path) - 1)));
-            Py_CLEAR(dotted_path);
-        }
         if (self->proto >= 4) {
             const char stack_global_op = STACK_GLOBAL;
 
@@ -3845,8 +3816,6 @@ save_global(PickleState *st, PicklerObject *self, PyObject *obj,
     }
     Py_XDECREF(module_name);
     Py_XDECREF(global_name);
-    Py_XDECREF(module);
-    Py_XDECREF(parent);
     Py_XDECREF(dotted_path);
 
     return status;
@@ -7063,7 +7032,27 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self, PyTypeObject *cls,
     if (module == NULL) {
         return NULL;
     }
-    global = getattribute(module, global_name, self->proto >= 4);
+    if (self->proto >= 4) {
+        PyObject *dotted_path = get_dotted_path(global_name);
+        if (dotted_path == NULL) {
+            Py_DECREF(module);
+            return NULL;
+        }
+        if (check_dotted_path(module, global_name, dotted_path) < 0) {
+            Py_DECREF(dotted_path);
+            Py_DECREF(module);
+            return NULL;
+        }
+        global = getattribute(module, dotted_path);
+        Py_DECREF(dotted_path);
+        if (global == NULL && !PyErr_Occurred()) {
+            PyErr_Format(PyExc_AttributeError,
+                         "Can't get attribute %R on %R", global_name, module);
+        }
+    }
+    else {
+        global = PyObject_GetAttr(module, global_name);
+    }
     Py_DECREF(module);
     return global;
 }

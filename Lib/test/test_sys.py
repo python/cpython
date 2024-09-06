@@ -1710,6 +1710,7 @@ class SizeofTest(unittest.TestCase):
         fmt = 'P2nPI13Pl4Pn9Pn12PIPc'
         s = vsize(fmt)
         check(int, s)
+        typeid = 'n' if support.Py_GIL_DISABLED else ''
         # class
         s = vsize(fmt +                 # PyTypeObject
                   '4P'                  # PyAsyncMethods
@@ -1718,7 +1719,8 @@ class SizeofTest(unittest.TestCase):
                   '10P'                 # PySequenceMethods
                   '2P'                  # PyBufferProcs
                   '6P'
-                  '1PIP'                 # Specializer cache
+                  '1PIP'                # Specializer cache
+                  + typeid              # heap type id (free-threaded only)
                   )
         class newstyleclass(object): pass
         # Separate block for PyDictKeysObject with 8 keys and 5 entries
