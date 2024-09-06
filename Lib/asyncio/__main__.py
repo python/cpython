@@ -91,6 +91,8 @@ class REPLThread(threading.Thread):
             console.write(banner)
 
             if startup_path := os.getenv("PYTHONSTARTUP"):
+                sys.audit("cpython.run_startup", startup_path)
+
                 import tokenize
                 with tokenize.open(startup_path) as f:
                     startup_code = compile(f.read(), startup_path, "exec")
@@ -127,6 +129,8 @@ class REPLThread(threading.Thread):
 
 
 if __name__ == '__main__':
+    sys.audit("cpython.run_stdin")
+
     if os.getenv('PYTHON_BASIC_REPL'):
         CAN_USE_PYREPL = False
     else:
@@ -155,6 +159,7 @@ if __name__ == '__main__':
     interactive_hook = getattr(sys, "__interactivehook__", None)
 
     if interactive_hook is not None:
+        sys.audit("cpython.run_interactivehook", interactive_hook)
         interactive_hook()
 
     if interactive_hook is site.register_readline:

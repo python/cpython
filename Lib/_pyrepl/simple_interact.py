@@ -76,6 +76,7 @@ REPL_COMMANDS = {
     "copyright": _sitebuiltins._Printer('copyright', sys.copyright),
     "help": "help",
     "clear": _clear_screen,
+    "\x1a": _sitebuiltins.Quitter('\x1a', ''),
 }
 
 
@@ -162,7 +163,8 @@ def run_multiline_interactive_console(
                 r.isearch_direction = ''
                 r.console.forgetinput()
                 r.pop_input_trans()
-                r.dirty = True
+            r.pos = len(r.get_unicode())
+            r.dirty = True
             r.refresh()
             r.in_bracketed_paste = False
             console.write("\nKeyboardInterrupt\n")

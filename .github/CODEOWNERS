@@ -211,9 +211,11 @@ Doc/c-api/stable.rst          @encukou
 
 **/*ensurepip*                @pfmoore @pradyunsg
 
-**/*idlelib*                  @terryjreedy
 /Doc/library/idle.rst         @terryjreedy
+**/*idlelib*                  @terryjreedy
+**/*turtledemo*               @terryjreedy
 
+**/*annotationlib*            @JelleZijlstra
 **/*typing*                   @JelleZijlstra @AlexWaygood
 
 **/*ftplib                    @giampaolo

@@ -226,6 +226,10 @@ To allow tools to monitor for real exceptions without slowing down generators
 and coroutines, the :monitoring-event:`STOP_ITERATION` event is provided.
 :monitoring-event:`STOP_ITERATION` can be locally disabled, unlike :monitoring-event:`RAISE`.
 
+Note that the :monitoring-event:`STOP_ITERATION` event and the :monitoring-event:`RAISE`
+event for a :exc:`StopIteration` exception are equivalent, and are treated as interchangeable
+when generating events. Implementations will favor :monitoring-event:`STOP_ITERATION` for
+performance reasons, but may generate a :monitoring-event:`RAISE` event with a :exc:`StopIteration`.
 
 Turning events on and off
 -------------------------

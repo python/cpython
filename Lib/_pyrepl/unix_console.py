@@ -29,6 +29,7 @@ import signal
 import struct
 import termios
 import time
+import platform
 from fcntl import ioctl
 
 from . import curses
@@ -109,7 +110,7 @@ delayprog = re.compile(b"\\$<([0-9]+)((?:/|\\*){0,2})>")
 try:
     poll: type[select.poll] = select.poll
 except AttributeError:
-    # this is exactly the minumum necessary to support what we
+    # this is exactly the minimum necessary to support what we
     # do with poll objects
     class MinimalPoll:
         def __init__(self):
@@ -334,6 +335,10 @@ class UnixConsole(Console):
         raw.cc[termios.VTIME] = 0
         tcsetattr(self.input_fd, termios.TCSADRAIN, raw)
 
+        # In macOS terminal we need to deactivate line wrap via ANSI escape code
+        if platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal":
+            os.write(self.output_fd, b"\033[?7l")
+
         self.screen = []
         self.height, self.width = self.getheightwidth()
 
@@ -361,6 +366,9 @@ class UnixConsole(Console):
         self.__maybe_write_code(self._rmkx)
         self.flushoutput()
         tcsetattr(self.input_fd, termios.TCSADRAIN, self.__svtermstate)
+
+        if platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal":
+            os.write(self.output_fd, b"\033[?7h")
 
         if hasattr(self, "old_sigwinch"):
             signal.signal(signal.SIGWINCH, self.old_sigwinch)
@@ -613,7 +621,7 @@ class UnixConsole(Console):
 
         # reuse the oldline as much as possible, but stop as soon as we
         # encounter an ESCAPE, because it might be the start of an escape
-        # sequene
+        # sequence
         while (
             x_coord < minlen
             and oldline[x_pos] == newline[x_pos]

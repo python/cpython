@@ -11,6 +11,7 @@ extern "C" {
 #include "pycore_object_deferred.h"
 
 #include <stddef.h>
+#include <stdbool.h>
 
 /*
   This file introduces a new API for handling references on the stack, called
@@ -149,8 +150,7 @@ PyStackRef_FromPyObjectNew(PyObject *obj)
     // Make sure we don't take an already tagged value.
     assert(((uintptr_t)obj & Py_TAG_BITS) == 0);
     assert(obj != NULL);
-    // TODO (gh-117139): Add deferred objects later.
-    if (_Py_IsImmortal(obj)) {
+    if (_Py_IsImmortal(obj) || _PyObject_HasDeferredRefcount(obj)) {
         return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_DEFERRED };
     }
     else {
@@ -190,18 +190,15 @@ PyStackRef_FromPyObjectImmortal(PyObject *obj)
     } while (0)
 
 #ifdef Py_GIL_DISABLED
-static inline void
-PyStackRef_CLOSE(_PyStackRef stackref)
-{
-    if (PyStackRef_IsDeferred(stackref)) {
-        // No assert for being immortal or deferred here.
-        // The GC unsets deferred objects right before clearing.
-        return;
-    }
-    Py_DECREF(PyStackRef_AsPyObjectBorrow(stackref));
-}
+#   define PyStackRef_CLOSE(REF)                                        \
+        do {                                                            \
+            _PyStackRef _close_tmp = (REF);                             \
+            if (!PyStackRef_IsDeferred(_close_tmp)) {                   \
+                Py_DECREF(PyStackRef_AsPyObjectBorrow(_close_tmp));     \
+            }                                                           \
+        } while (0)
 #else
-#   define PyStackRef_CLOSE(stackref) Py_DECREF(PyStackRef_AsPyObjectBorrow(stackref));
+#   define PyStackRef_CLOSE(stackref) Py_DECREF(PyStackRef_AsPyObjectBorrow(stackref))
 #endif
 
 #define PyStackRef_XCLOSE(stackref) \
@@ -219,14 +216,15 @@ PyStackRef_DUP(_PyStackRef stackref)
 {
     if (PyStackRef_IsDeferred(stackref)) {
         assert(PyStackRef_IsNull(stackref) ||
-            _Py_IsImmortal(PyStackRef_AsPyObjectBorrow(stackref)));
+            _Py_IsImmortal(PyStackRef_AsPyObjectBorrow(stackref)) ||
+            _PyObject_HasDeferredRefcount(PyStackRef_AsPyObjectBorrow(stackref)));
         return stackref;
     }
     Py_INCREF(PyStackRef_AsPyObjectBorrow(stackref));
     return stackref;
 }
 #else
-#   define PyStackRef_DUP(stackref) PyStackRef_FromPyObjectSteal(Py_NewRef(PyStackRef_AsPyObjectBorrow(stackref)));
+#   define PyStackRef_DUP(stackref) PyStackRef_FromPyObjectSteal(Py_NewRef(PyStackRef_AsPyObjectBorrow(stackref)))
 #endif
 
 static inline void
@@ -237,6 +235,38 @@ _PyObjectStack_FromStackRefStack(PyObject **dst, const _PyStackRef *src, size_t 
     }
 }
 
+// StackRef type checks
+
+static inline bool
+PyStackRef_GenCheck(_PyStackRef stackref)
+{
+    return PyGen_Check(PyStackRef_AsPyObjectBorrow(stackref));
+}
+
+static inline bool
+PyStackRef_BoolCheck(_PyStackRef stackref)
+{
+    return PyBool_Check(PyStackRef_AsPyObjectBorrow(stackref));
+}
+
+static inline bool
+PyStackRef_LongCheck(_PyStackRef stackref)
+{
+    return PyLong_Check(PyStackRef_AsPyObjectBorrow(stackref));
+}
+
+static inline bool
+PyStackRef_ExceptionInstanceCheck(_PyStackRef stackref)
+{
+    return PyExceptionInstance_Check(PyStackRef_AsPyObjectBorrow(stackref));
+}
+
+
+static inline bool
+PyStackRef_FunctionCheck(_PyStackRef stackref)
+{
+    return PyFunction_Check(PyStackRef_AsPyObjectBorrow(stackref));
+}
 
 #ifdef __cplusplus
 }

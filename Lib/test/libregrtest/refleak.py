@@ -145,7 +145,7 @@ def runtest_refleak(test_name, test_func,
             # Use an internal-only keyword argument that mypy doesn't know yet
             _only_immortal=True)  # type: ignore[call-arg]
         alloc_after = getallocatedblocks() - interned_immortal_after
-        rc_after = gettotalrefcount() - interned_immortal_after * 2
+        rc_after = gettotalrefcount()
         fd_after = fd_count()
 
         rc_deltas[i] = get_pooled_int(rc_after - rc_before)
