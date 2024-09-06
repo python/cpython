@@ -454,7 +454,9 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
 extern void _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size);
 
 #ifdef Py_GIL_DISABLED
+extern void _PyCode_DisableSpecialization(_Py_CODEUNIT *instructions, Py_ssize_t size);
 static _PyCodeArray * _PyCodeArray_New(Py_ssize_t size);
+static void release_bytes_for_specialized_code(Py_ssize_t nbytes);
 #endif
 
 static int
@@ -534,7 +536,16 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
         entry_point++;
     }
     co->_co_firsttraceable = entry_point;
+#ifdef Py_GIL_DISABLED
+    if (interp->new_thread_local_bytecode_disabled) {
+        _PyCode_DisableSpecialization(_PyCode_CODE(co), Py_SIZE(co));
+    }
+    else {
+        _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co));
+    }
+#else
     _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co));
+#endif
     notify_code_watchers(PY_CODE_EVENT_CREATE, co);
     return 0;
 }
@@ -1895,9 +1906,15 @@ code_dealloc(PyCodeObject *co)
 #ifdef Py_GIL_DISABLED
     // The first element always points to the mutable bytecode at the end of
     // the code object, which will be freed when the code object is freed.
+    Py_ssize_t bytes_freed = 0;
     for (Py_ssize_t i = 1; i < co->co_specialized_code->size; i++) {
-        PyMem_Free(co->co_specialized_code->entries[i]);
+        _PyMutBytecode *entry = co->co_specialized_code->entries[i];
+        if (entry != NULL) {
+            PyMem_Free(entry);
+            bytes_freed += _PyCode_NBYTES(co);
+        }
     }
+    release_bytes_for_specialized_code(bytes_freed);
     PyMem_Free(co->co_specialized_code);
 #endif
     PyObject_Free(co);
@@ -2704,12 +2721,10 @@ get_pow2_greater(Py_ssize_t initial, Py_ssize_t limit)
     return res;
 }
 
-static _PyMutBytecode *
-create_specializable_code_lock_held(PyCodeObject *co)
+static _Py_CODEUNIT *
+create_specializable_code_lock_held(PyCodeObject *co, Py_ssize_t idx)
 {
     _PyCodeArray *spec_code = co->co_specialized_code;
-    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *) PyThreadState_GET();
-    Py_ssize_t idx = tstate->specialized_code_index;
     if (idx >= spec_code->size) {
         Py_ssize_t new_size = get_pow2_greater(spec_code->size, idx + 1);
         if (!new_size) {
@@ -2731,16 +2746,104 @@ create_specializable_code_lock_held(PyCodeObject *co)
         return NULL;
     }
     copy_code(bc, co);
+    assert(spec_code->entries[idx] == NULL);
     spec_code->entries[idx] = bc;
-    return bc;
+    return (_Py_CODEUNIT *) bc->bytecode;
 }
 
-_PyMutBytecode *
-_PyCode_CreateSpecializableCode(PyCodeObject *co)
+static Py_ssize_t
+reserve_bytes_for_specialized_code(PyCodeObject *co)
 {
-    _PyMutBytecode *result;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    Py_ssize_t nbytes_reserved = -1;
+    Py_ssize_t code_size = _PyCode_NBYTES(co);
+    PyMutex_LockFlags(&interp->specialized_code_bytes_free_mutex, _Py_LOCK_DONT_DETACH);
+    if (interp->specialized_code_bytes_free >= code_size) {
+        interp->specialized_code_bytes_free -= code_size;
+        nbytes_reserved = code_size;
+    }
+    PyMutex_Unlock(&interp->specialized_code_bytes_free_mutex);
+    return nbytes_reserved;
+}
+
+static void
+release_bytes_for_specialized_code(Py_ssize_t nbytes)
+{
+    assert(nbytes >= 0);
+    if (nbytes == 0) {
+        return;
+    }
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyMutex_LockFlags(&interp->specialized_code_bytes_free_mutex, _Py_LOCK_DONT_DETACH);
+    interp->specialized_code_bytes_free += nbytes;
+    PyMutex_Unlock(&interp->specialized_code_bytes_free_mutex);
+}
+
+static int
+disable_specialization(PyObject *obj, void*)
+{
+    if (!PyCode_Check(obj)) {
+        return 1;
+    }
+    PyCodeObject *co = (PyCodeObject *) obj;
+    _PyCode_DisableSpecialization(_PyCode_CODE(co), Py_SIZE(co));
+    return 1;
+}
+
+static void
+disable_new_thread_local_bytecode(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->new_thread_local_bytecode_disabled) {
+        return;
+    }
+    // Disable creation of new thread-local copies of bytecode. We disable
+    // further specialization of the "main" copy of the bytecode (the bytecode
+    // that is embedded in the code object), so that multiple threads can
+    // safely execute it. From this point on, threads are free to specialize
+    // existing thread-local copies of the bytecode (other than the main copy),
+    // but any attempts to create new copies of bytecode will fail, and the
+    // main, unspecializable copy will be used.
+    _PyEval_StopTheWorld(interp);
+    interp->new_thread_local_bytecode_disabled = true;
+    _PyEval_StartTheWorld(interp);
+    PyUnstable_GC_VisitObjects(disable_specialization, NULL);
+    if (PyErr_WarnEx(PyExc_ResourceWarning, "Reached memory limit for thread-local bytecode", 1) < 0) {
+        PyErr_WriteUnraisable(NULL);
+    }
+}
+
+static _Py_CODEUNIT *
+get_executable_code_lock_held(PyCodeObject *co)
+{
+    _PyCodeArray *spec_code = co->co_specialized_code;
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *) PyThreadState_GET();
+    Py_ssize_t idx = tstate->specialized_code_index;
+    if (idx < spec_code->size && spec_code->entries[idx] != NULL) {
+        return (_Py_CODEUNIT *) spec_code->entries[idx]->bytecode;
+    }
+    Py_ssize_t reserved = reserve_bytes_for_specialized_code(co);
+    if (reserved == -1) {
+        disable_new_thread_local_bytecode();
+        return (_Py_CODEUNIT *) spec_code->entries[0]->bytecode;
+    }
+    _Py_CODEUNIT *result = create_specializable_code_lock_held(co, idx);
+    if (result == NULL) {
+        release_bytes_for_specialized_code(reserved);
+    }
+    return result;
+}
+
+_Py_CODEUNIT *
+_PyCode_GetExecutableCodeSlow(PyCodeObject *co)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->new_thread_local_bytecode_disabled) {
+        return (_Py_CODEUNIT *) co->co_specialized_code->entries[0]->bytecode;
+    }
+    _Py_CODEUNIT *result;
     Py_BEGIN_CRITICAL_SECTION(co);
-    result = create_specializable_code_lock_held(co);
+    result = get_executable_code_lock_held(co);
     Py_END_CRITICAL_SECTION();
     return result;
 }

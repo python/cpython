@@ -471,6 +471,24 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size)
     #endif /* ENABLE_SPECIALIZATION */
 }
 
+#ifdef Py_GIL_DISABLED
+
+void
+_PyCode_DisableSpecialization(_Py_CODEUNIT *instructions, Py_ssize_t size)
+{
+    /* The last code unit cannot have a cache, so we don't need to check it */
+    for (Py_ssize_t i = 0; i < size-1; i++) {
+        int opcode = instructions[i].op.code;
+        int caches = _PyOpcode_Caches[opcode];
+        if (caches) {
+            instructions[i + 1].counter = initial_unreachable_backoff_counter();
+            i += caches;
+        }
+    }
+}
+
+#endif
+
 #define SIMPLE_FUNCTION 0
 
 /* Common */

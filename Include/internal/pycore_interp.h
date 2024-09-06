@@ -225,6 +225,11 @@ struct _is {
     struct _Py_type_id_pool type_ids;
     PyMutex weakref_locks[NUM_WEAKREF_LIST_LOCKS];
     _PyIndexPool specialized_code_indices;
+    // Number of bytes available for thread-local bytecode, counts down to zero
+    Py_ssize_t specialized_code_bytes_free;
+    PyMutex specialized_code_bytes_free_mutex;
+    // This is monotonic; once true it will remain true
+    bool new_thread_local_bytecode_disabled;
 #endif
 
     // Per-interpreter state for the obmalloc allocator.  For the main

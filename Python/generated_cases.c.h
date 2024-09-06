@@ -4492,10 +4492,10 @@
             // _LOAD_BYTECODE
             {
                 #ifdef Py_GIL_DISABLED
-                _PyMutBytecode *code = _PyCode_GetSpecializableCode(_PyFrame_GetCode(frame));
-                if (frame->bytecode != (_Py_CODEUNIT *) code->bytecode) {
+                _Py_CODEUNIT *bytecode = _PyCode_GetExecutableCode(_PyFrame_GetCode(frame));
+                if (frame->bytecode != bytecode) {
                     int off = this_instr - frame->bytecode;
-                    frame->bytecode = (_Py_CODEUNIT *) code->bytecode;
+                    frame->bytecode = bytecode;
                     frame->instr_ptr = frame->bytecode + off;
                     this_instr = frame->instr_ptr;
                     next_instr = frame->instr_ptr + 1;
@@ -6444,10 +6444,10 @@
             // _LOAD_BYTECODE
             {
                 #ifdef Py_GIL_DISABLED
-                _PyMutBytecode *code = _PyCode_GetSpecializableCode(_PyFrame_GetCode(frame));
-                if (frame->bytecode != (_Py_CODEUNIT *) code->bytecode) {
+                _Py_CODEUNIT *bytecode = _PyCode_GetExecutableCode(_PyFrame_GetCode(frame));
+                if (frame->bytecode != bytecode) {
                     int off = this_instr - frame->bytecode;
-                    frame->bytecode = (_Py_CODEUNIT *) code->bytecode;
+                    frame->bytecode = bytecode;
                     frame->instr_ptr = frame->bytecode + off;
                     this_instr = frame->instr_ptr;
                     next_instr = frame->instr_ptr + 1;

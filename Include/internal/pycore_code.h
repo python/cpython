@@ -633,25 +633,20 @@ PyAPI_DATA(const struct _PyCode8) _Py_InitCleanup;
 
 #ifdef Py_GIL_DISABLED
 
-extern _PyMutBytecode *_PyCode_CreateSpecializableCode(PyCodeObject *co);
+extern _Py_CODEUNIT *_PyCode_GetExecutableCodeSlow(PyCodeObject *co);
 
-/* Return bytecode that should be executed.
- * Will not return NULL, but may disable specialization, in which case the
- * returned bytecode should not be specialized.
- *
- * XXX - This is a confusing contract.
- */
-static inline _PyMutBytecode *
-_PyCode_GetSpecializableCode(PyCodeObject *co)
+// Return the bytecode that should be executed by the current thread, creating
+// a copy if necessary.
+static inline _Py_CODEUNIT *
+_PyCode_GetExecutableCode(PyCodeObject *co)
 {
     _PyCodeArray *code = _Py_atomic_load_ptr_acquire(&co->co_specialized_code);
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *) PyThreadState_GET();
     Py_ssize_t idx = tstate->specialized_code_index;
     if (idx < code->size && code->entries[idx] != NULL) {
-        // XXX - Do we need to worry about alignment here?
-        return code->entries[idx];
+        return (_Py_CODEUNIT *) code->entries[idx]->bytecode;
     }
-    return _PyCode_CreateSpecializableCode(co);
+    return _PyCode_GetExecutableCodeSlow(co);
 }
 extern int _Py_ReserveSpecializedCodeIndex(PyInterpreterState *interp);
 extern void _Py_ClearSpecializedCodeIndex(_PyThreadStateImpl *tstate);
