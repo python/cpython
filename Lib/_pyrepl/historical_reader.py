@@ -320,23 +320,35 @@ class HistoricalReader(Reader):
             return super().get_prompt(lineno, cursor_on_line)
 
     def search_next(self, *, forwards: bool) -> None:
+        """Search history for the current line contents up to the cursor.
+
+        Selects the first item found. If nothing is under the cursor, any next
+        item in history is selected.
+        """
         pos = self.pos
         s = self.get_unicode()
-        i = self.historyi
-        st = s[:pos]
+        history_index = self.historyi
 
-        match_prefix = True
-        if i < len(self.history):
-            len_item = len(self.get_item(i))
-        else:
-            len_item = 0
+        # In multiline contexts, we're only interested in the current line.
+        nl_index = s.rfind('\n', 0, pos)
+        prefix = s[nl_index + 1:pos]
+        pos = len(prefix)
+
+        match_prefix = len(prefix)
+        len_item = 0
+        if history_index < len(self.history):
+            len_item = len(self.get_item(history_index))
         if len_item and pos == len_item:
             match_prefix = False
         elif not pos:
             match_prefix = False
 
         while 1:
-            if (forwards and i >= len(self.history) - 1) or (not forwards and i == 0):
+            if forwards:
+                out_of_bounds = history_index >= len(self.history) - 1
+            else:
+                out_of_bounds = history_index == 0
+            if out_of_bounds:
                 if forwards and not match_prefix:
                     self.pos = 0
                     self.buffer = []
@@ -345,21 +357,20 @@ class HistoricalReader(Reader):
                     self.error("not found")
                 return
 
-            if forwards:
-                i += 1
-                s = self.get_item(i)
-            else:
-                i -= 1
-                s = self.get_item(i)
+            history_index += 1 if forwards else -1
+            s = self.get_item(history_index)
 
             if not match_prefix:
-                self.select_item(i)
+                self.select_item(history_index)
                 return
 
-            if s.startswith(st):
-                self.select_item(i)
-                self.pos = pos
-                return
+            len_acc = 0
+            for i, line in enumerate(s.splitlines(keepends=True)):
+                if line.startswith(prefix):
+                    self.select_item(history_index)
+                    self.pos = pos + len_acc
+                    return
+                len_acc += len(line)
 
     def isearch_next(self) -> None:
         st = self.isearch_term
