@@ -15,8 +15,9 @@ import can be suppressed using the interpreter's :option:`-S` option.
 
 .. index:: triple: module; search; path
 
-Importing this module will append site-specific paths to the module search path
-and add a few builtins, unless :option:`-S` was used.  In that case, this module
+Importing this module normally appends site-specific paths to the module search path
+and adds :ref:`callables <site-consts>`, including :func:`help` to the built-in
+namespace. However, Python startup option :option:`-S` blocks this and this module
 can be safely imported with no automatic modifications to the module search path
 or additions to the builtins.  To explicitly trigger the usual site-specific
 additions, call the :func:`main` function.
