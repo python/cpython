@@ -127,6 +127,15 @@ class REPLThread(threading.Thread):
 
             loop.call_soon_threadsafe(loop.stop)
 
+    def interrupt(self) -> None:
+        if not CAN_USE_PYREPL:
+            return
+
+        from _pyrepl.simple_interact import _get_reader
+        r = _get_reader()
+        if r.threading_hook is not None:
+            r.threading_hook.add("")  # type: ignore
+
 
 if __name__ == '__main__':
     sys.audit("cpython.run_stdin")
@@ -184,6 +193,7 @@ if __name__ == '__main__':
             keyboard_interrupted = True
             if repl_future and not repl_future.done():
                 repl_future.cancel()
+            repl_thread.interrupt()
             continue
         else:
             break
