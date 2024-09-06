@@ -270,7 +270,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
             proc.kill()
             exit_code = proc.wait()
 
-        self.assertEqual(exit_code, 0)
+        self.assertEqual(exit_code, 0, "".join(output))
 
 class TestInteractiveModeSyntaxErrors(unittest.TestCase):
 
