@@ -249,7 +249,7 @@ def _should_auto_indent(buffer: list[str], pos: int) -> bool:
     while pos > 0:
         pos -= 1
         if last_char is None:
-            if buffer[pos] not in " \t\n":  # ignore whitespaces
+            if buffer[pos] not in " \t\n#":  # ignore whitespaces and comments
                 last_char = buffer[pos]
         else:
             # even if we found a non-whitespace character before

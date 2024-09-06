@@ -466,6 +466,24 @@ class TestPyReplAutoindent(TestCase):
         output = multiline_input(reader)
         self.assertEqual(output, output_code)
 
+    def test_auto_indent_with_multicomment(self):
+        # fmt: off
+        events = code_to_events(
+            "def f():  ## foo\n"
+                "pass\n\n"
+        )
+
+        output_code = (
+            "def f():  ## foo\n"
+            "    pass\n"
+            "    "
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
     def test_auto_indent_ignore_comments(self):
         # fmt: off
         events = code_to_events(
