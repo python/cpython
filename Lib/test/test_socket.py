@@ -4823,8 +4823,7 @@ class TCPCloserTest(ThreadedTCPSocketTest):
     def _testClose(self):
         self.cli.connect((HOST, self.port))
         self.cli.send(b'x')
-        time.sleep(1.0)
-        read, write, _ = select.select([self.cli], [], [], 0.1)
+        read, write, _ = select.select([self.cli], [], [], 1.0)
         self.assertEqual(read, [self.cli])
         self.assertEqual(self.cli.recv(1), b'')
 
