@@ -552,6 +552,11 @@ Deprecated
   use :func:`inspect.iscoroutinefunction` instead.
   (Contributed by Jiahao Li and Kumar Aditya in :gh:`122875`.)
 
+* Providing anything but a string or bytes object to :mod:`urllib.parse`
+  functions expecting strings or bytes now raises :exc:`DeprecationWarning`
+  if the value tests false, or :exc:`TypeError` if it tests true.
+  (Contributed by Jacob Walls in :issue:`19094`.)
+
 .. Add deprecations above alphabetically, not here at the end.
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
