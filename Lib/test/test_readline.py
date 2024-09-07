@@ -5,12 +5,14 @@ import locale
 import os
 import sys
 import tempfile
+import textwrap
 import unittest
 from test.support import verbose
 from test.support.import_helper import import_module
 from test.support.os_helper import unlink, temp_dir, TESTFN
 from test.support.pty_helper import run_pty
 from test.support.script_helper import assert_python_ok
+from test.support.threading_helper import requires_working_threading
 
 # Skip tests if there is no readline module
 readline = import_module('readline')
@@ -18,7 +20,7 @@ readline = import_module('readline')
 if hasattr(readline, "_READLINE_LIBRARY_VERSION"):
     is_editline = ("EditLine wrapper" in readline._READLINE_LIBRARY_VERSION)
 else:
-    is_editline = (readline.__doc__ and "libedit" in readline.__doc__)
+    is_editline = readline.backend == "editline"
 
 
 def setUpModule():
@@ -131,6 +133,32 @@ class TestHistoryManipulation (unittest.TestCase):
         self.assertEqual(readline.get_history_item(1), "entrée 1")
         self.assertEqual(readline.get_history_item(2), "entrée 22")
 
+    def test_write_read_limited_history(self):
+        previous_length = readline.get_history_length()
+        self.addCleanup(readline.set_history_length, previous_length)
+
+        readline.clear_history()
+        readline.add_history("first line")
+        readline.add_history("second line")
+        readline.add_history("third line")
+
+        readline.set_history_length(2)
+        self.assertEqual(readline.get_history_length(), 2)
+        readline.write_history_file(TESTFN)
+        self.addCleanup(os.remove, TESTFN)
+
+        readline.clear_history()
+        self.assertEqual(readline.get_current_history_length(), 0)
+        self.assertEqual(readline.get_history_length(), 2)
+
+        readline.read_history_file(TESTFN)
+        self.assertEqual(readline.get_history_item(1), "second line")
+        self.assertEqual(readline.get_history_item(2), "third line")
+        self.assertEqual(readline.get_history_item(3), None)
+
+        # Readline seems to report an additional history element.
+        self.assertIn(readline.get_current_history_length(), (2, 3))
+
 
 class TestReadline(unittest.TestCase):
 
@@ -143,6 +171,9 @@ class TestReadline(unittest.TestCase):
         rc, stdout, stderr = assert_python_ok('-c', 'import readline',
                                               TERM='xterm-256color')
         self.assertEqual(stdout, b'')
+
+    def test_backend(self):
+        self.assertIn(readline.backend, ("readline", "editline"))
 
     auto_history_script = """\
 import readline
@@ -163,6 +194,25 @@ print("History length:", readline.get_current_history_length())
         # end, so don't expect it in the output.
         self.assertIn(b"History length: 0", output)
 
+    def test_set_complete_delims(self):
+        script = textwrap.dedent("""
+            import readline
+            def complete(text, state):
+                if state == 0 and text == "$":
+                    return "$complete"
+                return None
+            if readline.backend == "editline":
+                readline.parse_and_bind(r'bind "\\t" rl_complete')
+            else:
+                readline.parse_and_bind(r'"\\t": complete')
+            readline.set_completer_delims(" \\t\\n")
+            readline.set_completer(complete)
+            print(input())
+        """)
+
+        output = run_pty(script, input=b"$\t\n")
+        self.assertIn(b"$complete", output)
+
     def test_nonascii(self):
         loc = locale.setlocale(locale.LC_CTYPE, None)
         if loc in ('C', 'POSIX'):
@@ -178,7 +228,7 @@ print("History length:", readline.get_current_history_length())
 
         script = r"""import readline
 
-is_editline = readline.__doc__ and "libedit" in readline.__doc__
+is_editline = readline.backend == "editline"
 inserted = "[\xEFnserted]"
 macro = "|t\xEB[after]"
 set_pre_input_hook = getattr(readline, "set_pre_input_hook", None)
@@ -299,6 +349,50 @@ readline.write_history_file(history_file)
                 lines = f.readlines()
             self.assertEqual(len(lines), history_size)
             self.assertEqual(lines[-1].strip(), b"last input")
+
+    @requires_working_threading()
+    def test_gh123321_threadsafe(self):
+        """gh-123321: readline should be thread-safe and not crash"""
+        script = textwrap.dedent(r"""
+            import threading
+            from test.support.threading_helper import join_thread
+
+            def func():
+                input()
+
+            thread1 = threading.Thread(target=func)
+            thread2 = threading.Thread(target=func)
+            thread1.start()
+            thread2.start()
+            join_thread(thread1)
+            join_thread(thread2)
+            print("done")
+        """)
+
+        output = run_pty(script, input=b"input1\rinput2\r")
+
+        self.assertIn(b"done", output)
+
+
+    def test_write_read_limited_history(self):
+        previous_length = readline.get_history_length()
+        self.addCleanup(readline.set_history_length, previous_length)
+
+        readline.add_history("first line")
+        readline.add_history("second line")
+        readline.add_history("third line")
+
+        readline.set_history_length(2)
+        self.assertEqual(readline.get_history_length(), 2)
+        readline.write_history_file(TESTFN)
+        self.addCleanup(os.remove, TESTFN)
+
+        readline.read_history_file(TESTFN)
+        # Without clear_history() there's no good way to test if
+        # the correct entries are present (we're combining history limiting and
+        # possible deduplication with arbitrary previous content).
+        # So, we've only tested that the read did not fail.
+        # See TestHistoryManipulation for the full test.
 
 
 if __name__ == "__main__":

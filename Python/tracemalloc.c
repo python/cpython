@@ -312,7 +312,7 @@ traceback_hash(traceback_t *traceback)
     /* code based on tuplehash() of Objects/tupleobject.c */
     Py_uhash_t x, y;  /* Unsigned for defined overflow behavior. */
     int len = traceback->nframe;
-    Py_uhash_t mult = _PyHASH_MULTIPLIER;
+    Py_uhash_t mult = PyHASH_MULTIPLIER;
     frame_t *frame;
 
     x = 0x345678UL;
@@ -838,7 +838,7 @@ _PyTraceMalloc_Init(void)
 
     tracemalloc_tracebacks = hashtable_new(hashtable_hash_traceback,
                                            hashtable_compare_traceback,
-                                           NULL, raw_free);
+                                           raw_free, NULL);
 
     tracemalloc_traces = tracemalloc_create_traces_table();
     tracemalloc_domains = tracemalloc_create_domains_table();
@@ -903,6 +903,10 @@ _PyTraceMalloc_Start(int max_nframe)
     }
 
     if (_PyTraceMalloc_Init() < 0) {
+        return -1;
+    }
+
+    if (PyRefTracer_SetTracer(_PyTraceMalloc_TraceRef, NULL) < 0) {
         return -1;
     }
 
@@ -1352,8 +1356,12 @@ _PyTraceMalloc_Fini(void)
    Do nothing if tracemalloc is not tracing memory allocations
    or if the object memory block is not already traced. */
 int
-_PyTraceMalloc_NewReference(PyObject *op)
+_PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event, void* Py_UNUSED(ignore))
 {
+    if (event != PyRefTracer_CREATE) {
+        return 0;
+    }
+
     assert(PyGILState_Check());
 
     if (!tracemalloc_config.tracing) {

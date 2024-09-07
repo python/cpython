@@ -1,5 +1,0 @@
-Add ``Tools/build/regen-configure.sh`` script to regenerate the ``configure``
-with an Ubuntu container image. The ``quay.io/tiran/cpython_autoconf:271``
-container image (`tiran/cpython_autoconf
-<https://github.com/tiran/cpython_autoconf>`_) is no longer used. Patch by
-Victor Stinner.

@@ -29,7 +29,7 @@ without intermediate copying.
 Python provides such a facility at the C level in the form of the :ref:`buffer
 protocol <bufferobjects>`.  This protocol has two sides:
 
-.. index:: single: PyBufferProcs
+.. index:: single: PyBufferProcs (C type)
 
 - on the producer side, a type can export a "buffer interface" which allows
   objects of that type to expose information about their underlying buffer.
@@ -147,9 +147,9 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
       or a :c:macro:`PyBUF_WRITABLE` request, the consumer must disregard
       :c:member:`~Py_buffer.itemsize` and assume ``itemsize == 1``.
 
-   .. c:member:: const char *format
+   .. c:member:: char *format
 
-      A *NUL* terminated string in :mod:`struct` module style syntax describing
+      A *NULL* terminated string in :mod:`struct` module style syntax describing
       the contents of a single item. If this is ``NULL``, ``"B"`` (unsigned bytes)
       is assumed.
 

@@ -153,7 +153,8 @@ on an arbitrary object ``o``:
   unwrap it by accessing either ``o.__wrapped__`` or ``o.func`` as
   appropriate, until you have found the root unwrapped function.
 * If ``o`` is a callable (but not a class), use
-  ``o.__globals__`` as the globals when calling :func:`eval`.
+  :attr:`o.__globals__ <function.__globals__>` as the globals when calling
+  :func:`eval`.
 
 However, not all string values used as annotations can
 be successfully turned into Python values by :func:`eval`.

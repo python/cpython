@@ -58,7 +58,7 @@
         PyMutex_Unlock(&(obj)->mutex); \
     }
 
-#ifdef Py_NOGIL
+#ifdef Py_GIL_DISABLED
 #define HASHLIB_INIT_MUTEX(obj) \
     do { \
         (obj)->mutex = (PyMutex){0}; \

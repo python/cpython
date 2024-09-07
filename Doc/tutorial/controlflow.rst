@@ -61,7 +61,7 @@ they appear in the sequence.  For example (no pun intended):
 ::
 
    >>> # Measure some strings:
-   ... words = ['cat', 'window', 'defenestrate']
+   >>> words = ['cat', 'window', 'defenestrate']
    >>> for w in words:
    ...     print(w, len(w))
    ...
@@ -445,7 +445,7 @@ boundary::
    ...     print()
    ...
    >>> # Now call the function we just defined:
-   ... fib(2000)
+   >>> fib(2000)
    0 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597
 
 .. index::
@@ -559,10 +559,10 @@ defined to allow.  For example::
 
    def ask_ok(prompt, retries=4, reminder='Please try again!'):
        while True:
-           ok = input(prompt)
-           if ok in ('y', 'ye', 'yes'):
+           reply = input(prompt)
+           if reply in {'y', 'ye', 'yes'}:
                return True
-           if ok in ('n', 'no', 'nop', 'nope'):
+           if reply in {'n', 'no', 'nop', 'nope'}:
                return False
            retries = retries - 1
            if retries < 0:
