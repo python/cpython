@@ -320,7 +320,7 @@ _ctypes_alloc_format_string_for_type(char code, int big_endian)
   indicator set.  If called with a suffix of NULL the error indicator must
   already be set.
  */
-char *
+static char *
 _ctypes_alloc_format_string(const char *prefix, const char *suffix)
 {
     size_t len;
@@ -352,7 +352,7 @@ _ctypes_alloc_format_string(const char *prefix, const char *suffix)
   Returns NULL on failure, with the error indicator set.  If called with
   a suffix of NULL the error indicator must already be set.
  */
-char *
+static char *
 _ctypes_alloc_format_string_with_shape(int ndim, const Py_ssize_t *shape,
                                        const char *prefix, const char *suffix)
 {
@@ -663,9 +663,6 @@ StructUnionType_init(PyObject *self, PyObject *args, PyObject *kwds, int isStruc
     if (!info) {
         Py_DECREF(attrdict);
         return -1;
-    }
-    if (!isStruct) {
-        info->flags |= TYPEFLAG_HASUNION;
     }
 
     info->format = _ctypes_alloc_format_string(NULL, "B");
@@ -2534,6 +2531,10 @@ converters_from_argtypes(ctypes_state *st, PyObject *ob)
             return -1;
         }
 
+        // TYPEFLAG_HASUNION and TYPEFLAG_HASBITFIELD used to be set
+        // if there were any unions/bitfields;
+        // if the check is re-enabled we either need to loop here or
+        // restore the flag
         if (stginfo != NULL) {
             if (stginfo->flags & TYPEFLAG_HASUNION) {
                 Py_DECREF(converters);
@@ -5780,7 +5781,7 @@ _ctypes_add_types(PyObject *mod)
      * Simple classes
      */
 
-    CREATE_TYPE(st->PyCField_Type, &cfield_spec, NULL, NULL);
+    MOD_ADD_TYPE(st->PyCField_Type, &cfield_spec, NULL, NULL);
 
     /*************************************************
      *
