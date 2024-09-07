@@ -1,2 +1,0 @@
-Fixes data type confusion in audit event raised by
-``_winapi.CreateNamedPipe``.
