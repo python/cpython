@@ -359,6 +359,10 @@ free-threaded build.
    :pep:`703` "Making the Global Interpreter Lock Optional in CPython"
    contains rationale and information surrounding this work.
 
+   `Porting Extension Modules to Support Free-Threading
+   <https://py-free-threading.github.io/porting/>`_: A community-maintained
+   porting guide for extension authors.
+
 
 .. _whatsnew313-jit-compiler:
 
