@@ -4,6 +4,7 @@ import re
 import sys
 import types
 import pickle
+from importlib._bootstrap_external import NamespaceLoader
 from test import support
 from test.support import import_helper
 
@@ -852,10 +853,13 @@ class TestDiscovery(unittest.TestCase):
         loader = unittest.TestLoader()
 
         package = types.ModuleType('package')
+        package.__name__ = "tests"
         package.__path__ = ['/a', '/b']
+        package.__file__ = None
         package.__spec__ = types.SimpleNamespace(
-           loader=None,
-           submodule_search_locations=['/a', '/b']
+            name=package.__name__,
+            loader=NamespaceLoader(package.__name__, package.__path__, None),
+            submodule_search_locations=['/a', '/b']
         )
 
         def _import(packagename, *args, **kwargs):

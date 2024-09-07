@@ -288,47 +288,42 @@ class TestLoader(object):
                 is_not_importable = True
             else:
                 the_module = sys.modules[start_dir]
-                top_part = start_dir.split('.')[0]
-                try:
-                    start_dir = os.path.abspath(
-                       os.path.dirname((the_module.__file__)))
-                except AttributeError:
+                if not hasattr(the_module, "__file__") or the_module.__file__ is None:
                     # look for namespace packages
                     try:
                         spec = the_module.__spec__
                     except AttributeError:
                         spec = None
 
-                    if spec and spec.loader is None:
-                        if spec.submodule_search_locations is not None:
-                            is_namespace = True
+                    if spec and spec.submodule_search_locations is not None:
+                        is_namespace = True
 
-                            for path in the_module.__path__:
-                                if (not set_implicit_top and
-                                    not path.startswith(top_level_dir)):
-                                    continue
-                                self._top_level_dir = \
-                                    (path.split(the_module.__name__
-                                         .replace(".", os.path.sep))[0])
-                                tests.extend(self._find_tests(path,
-                                                              pattern,
-                                                              namespace=True))
+                        for path in the_module.__path__:
+                            if (not set_implicit_top and
+                                not path.startswith(top_level_dir)):
+                                continue
+                            self._top_level_dir = \
+                                (path.split(the_module.__name__
+                                        .replace(".", os.path.sep))[0])
+                            tests.extend(self._find_tests(path, pattern, namespace=True))
                     elif the_module.__name__ in sys.builtin_module_names:
                         # builtin module
                         raise TypeError('Can not use builtin modules '
                                         'as dotted module names') from None
                     else:
                         raise TypeError(
-                            'don\'t know how to discover from {!r}'
-                            .format(the_module)) from None
+                            f"don't know how to discover from {the_module!r}"
+                            ) from None
+
+                else:
+                    top_part = start_dir.split('.')[0]
+                    start_dir = os.path.abspath(os.path.dirname((the_module.__file__)))
 
                 if set_implicit_top:
                     if not is_namespace:
                         self._top_level_dir = \
                            self._get_directory_containing_module(top_part)
-                        sys.path.remove(top_level_dir)
-                    else:
-                        sys.path.remove(top_level_dir)
+                    sys.path.remove(top_level_dir)
 
         if is_not_importable:
             raise ImportError('Start directory is not importable: %r' % start_dir)
