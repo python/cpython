@@ -262,6 +262,9 @@ typedef struct {
     PyObject_HEAD
     PyObject *it;
     PyObject *old;
+#ifdef Py_GIL_DISABLED
+    int iterator_exhausted;
+#endif
     PyObject *result;
 } pairwiseobject;
 
@@ -294,6 +297,9 @@ pairwise_new_impl(PyTypeObject *type, PyObject *iterable)
     }
     po->it = it;
     po->old = NULL;
+#ifdef Py_GIL_DISABLED
+    po->iterator_exhausted = 0;
+#endif
     po->result = PyTuple_Pack(2, Py_None, Py_None);
     if (po->result == NULL) {
         Py_DECREF(po);
@@ -327,18 +333,29 @@ pairwise_traverse(pairwiseobject *po, visitproc visit, void *arg)
 static PyObject *
 pairwise_next(pairwiseobject *po)
 {
-    PyObject *it = po->it;
-    PyObject *old = po->old;
+    PyObject *it = FT_ATOMIC_LOAD_PTR(po->it);
+    PyObject *old = FT_ATOMIC_LOAD_PTR(po->old);
     PyObject *new, *result;
+    result = FT_ATOMIC_LOAD_PTR(po->result);
 
+#ifndef Py_GIL_DISABLED
     if (it == NULL) {
         return NULL;
     }
+#else
+    if (_Py_atomic_load_int_relaxed(&po->iterator_exhausted)) {
+        return NULL;
+    }
+#endif
     if (old == NULL) {
         old = (*Py_TYPE(it)->tp_iternext)(it);
         Py_XSETREF(po->old, old);
         if (old == NULL) {
+#ifndef Py_GIL_DISABLED
             Py_CLEAR(po->it);
+#else
+            _Py_atomic_store_int_relaxed(&po->iterator_exhausted, 1);
+#endif
             return NULL;
         }
         it = po->it;
@@ -350,14 +367,18 @@ pairwise_next(pairwiseobject *po)
     Py_INCREF(old);
     new = (*Py_TYPE(it)->tp_iternext)(it);
     if (new == NULL) {
+#ifndef Py_GIL_DISABLED
         Py_CLEAR(po->it);
+#else
+        _Py_atomic_store_int_relaxed(&po->iterator_exhausted, 1);
+#endif
         Py_CLEAR(po->old);
         Py_DECREF(old);
         return NULL;
     }
 
-    result = po->result;
-    if (Py_REFCNT(result) == 1) {
+    assert(result != NULL);
+    if (_PyObject_IsUniquelyReferenced(result)) {
         Py_INCREF(result);
         PyObject *last_old = PyTuple_GET_ITEM(result, 0);
         PyObject *last_new = PyTuple_GET_ITEM(result, 1);
@@ -379,7 +400,7 @@ pairwise_next(pairwiseobject *po)
         }
     }
 
-    Py_XSETREF(po->old, new);
+    Py_XSETREF(po->old, new); // this should be atomic in the FT build
     Py_DECREF(old);
     return result;
 }
