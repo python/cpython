@@ -97,7 +97,7 @@ class Restart(Exception):
     pass
 
 __all__ = ["run", "pm", "Pdb", "runeval", "runctx", "runcall", "set_trace",
-           "post_mortem", "help"]
+           "post_mortem", "help", "PdbInvokeType"]
 
 
 class PdbInvokeType(enum.Enum):
