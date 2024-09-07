@@ -1098,7 +1098,7 @@ with sub-interpreters:
    If sub-interpreters are active, this function puts you in the global
    interpreter (created by :c:func:`Py_Initialize`). If you create a sub-interpreter
    right after you call this function, then the current thread's interpreter state is
-   switched to of that of the sub-interpreter, and you no longer have the
+   switched to that of the sub-interpreter, and you no longer have the
    :c:type:`PyGILState_STATE` of the global interpreter. In which case, you must call
    :c:func:`Py_EndInterpreter` instead of :c:func:`PyGILState_Release`.
 
