@@ -1098,7 +1098,8 @@ with sub-interpreters:
    When the function returns, the current thread will hold the GIL and be able
    to call arbitrary Python code.  Failure is a fatal error.
 
-   If no interpreter state has been initialized for the thread, then this function returns the state of the global interpreter (created by :c:func:`Py_Initialize`).
+   If no interpreter state has been initialized for the thread, then this function returns
+   the state of the global interpreter (created by :c:func:`Py_Initialize`).
 
    .. note::
       Calling this function from a thread when the runtime is finalizing
