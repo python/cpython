@@ -9,6 +9,24 @@
 #endif
 
 
+// Preprocessor check for a builtin preprocessor function. Always return 0
+// if __has_builtin() macro is not defined.
+//
+// __has_builtin() is available on clang and GCC 10.
+#ifdef __has_builtin
+#  define _Py__has_builtin(x) __has_builtin(x)
+#else
+#  define _Py__has_builtin(x) 0
+#endif
+
+// Preprocessor check for a compiler __attribute__. Always return 0
+// if __has_attribute() macro is not defined.
+#ifdef __has_attribute
+#  define _Py__has_attribute(x) __has_attribute(x)
+#else
+#  define _Py__has_attribute(x) 0
+#endif
+
 // Macro to use C++ static_cast<> in the Python C API.
 #ifdef __cplusplus
 #  define _Py_STATIC_CAST(type, expr) static_cast<type>(expr)
@@ -180,6 +198,7 @@ typedef Py_ssize_t Py_ssize_clean_t;
 #  define Py_LOCAL_INLINE(type) static inline type
 #endif
 
+// Soft deprecated since Python 3.14, use memcpy() instead.
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_MEMCPY memcpy
 #endif
@@ -470,6 +489,14 @@ extern "C" {
 #  define WITH_THREAD
 #endif
 
+/* Some WebAssembly platforms do not provide a working pthread implementation.
+ * Thread support is stubbed and any attempt to create a new thread fails.
+ */
+#if (!defined(HAVE_PTHREAD_STUBS) && \
+      (!defined(__EMSCRIPTEN__) || defined(__EMSCRIPTEN_PTHREADS__)))
+#  define Py_CAN_START_THREADS 1
+#endif
+
 #ifdef WITH_THREAD
 #  ifdef Py_BUILD_CORE
 #    ifdef HAVE_THREAD_LOCAL
@@ -523,16 +550,6 @@ extern "C" {
 #endif
 
 
-// Preprocessor check for a builtin preprocessor function. Always return 0
-// if __has_builtin() macro is not defined.
-//
-// __has_builtin() is available on clang and GCC 10.
-#ifdef __has_builtin
-#  define _Py__has_builtin(x) __has_builtin(x)
-#else
-#  define _Py__has_builtin(x) 0
-#endif
-
 // _Py_TYPEOF(expr) gets the type of an expression.
 //
 // Example: _Py_TYPEOF(x) x_copy = (x);
@@ -555,9 +572,17 @@ extern "C" {
 #      define _Py_ADDRESS_SANITIZER
 #    endif
 #  endif
+#  if __has_feature(thread_sanitizer)
+#    if !defined(_Py_THREAD_SANITIZER)
+#      define _Py_THREAD_SANITIZER
+#    endif
+#  endif
 #elif defined(__GNUC__)
 #  if defined(__SANITIZE_ADDRESS__)
 #    define _Py_ADDRESS_SANITIZER
+#  endif
+#  if defined(__SANITIZE_THREAD__)
+#    define _Py_THREAD_SANITIZER
 #  endif
 #endif
 
@@ -578,8 +603,33 @@ extern "C" {
 #   define ALIGNOF_MAX_ALIGN_T _Alignof(long double)
 #endif
 
+#ifndef PY_CXX_CONST
+#  ifdef __cplusplus
+#    define PY_CXX_CONST const
+#  else
+#    define PY_CXX_CONST
+#  endif
+#endif
+
 #if defined(__sgi) && !defined(_SGI_MP_SOURCE)
 #  define _SGI_MP_SOURCE
+#endif
+
+// Explicit fallthrough in switch case to avoid warnings
+// with compiler flag -Wimplicit-fallthrough.
+//
+// Usage example:
+//
+//     switch (value) {
+//     case 1: _Py_FALLTHROUGH;
+//     case 2: code; break;
+//     }
+//
+// __attribute__((fallthrough)) was introduced in GCC 7.
+#if _Py__has_attribute(fallthrough)
+#  define _Py_FALLTHROUGH __attribute__((fallthrough))
+#else
+#  define _Py_FALLTHROUGH do { } while (0)
 #endif
 
 #endif /* Py_PYPORT_H */

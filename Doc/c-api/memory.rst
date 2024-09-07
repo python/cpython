@@ -41,10 +41,10 @@ buffers is performed on demand by the Python memory manager through the Python/C
 API functions listed in this document.
 
 .. index::
-   single: malloc()
-   single: calloc()
-   single: realloc()
-   single: free()
+   single: malloc (C function)
+   single: calloc (C function)
+   single: realloc (C function)
+   single: free (C function)
 
 To avoid memory corruption, extension writers should never try to operate on
 Python objects with the functions exported by the C library: :c:func:`malloc`,
@@ -267,14 +267,14 @@ The following type-oriented macros are provided for convenience.  Note  that
 .. c:macro:: PyMem_New(TYPE, n)
 
    Same as :c:func:`PyMem_Malloc`, but allocates ``(n * sizeof(TYPE))`` bytes of
-   memory.  Returns a pointer cast to :c:expr:`TYPE*`.  The memory will not have
+   memory.  Returns a pointer cast to ``TYPE*``.  The memory will not have
    been initialized in any way.
 
 
 .. c:macro:: PyMem_Resize(p, TYPE, n)
 
    Same as :c:func:`PyMem_Realloc`, but the memory block is resized to ``(n *
-   sizeof(TYPE))`` bytes.  Returns a pointer cast to :c:expr:`TYPE*`. On return,
+   sizeof(TYPE))`` bytes.  Returns a pointer cast to ``TYPE*``. On return,
    *p* will be a pointer to the new memory area, or ``NULL`` in the event of
    failure.
 
@@ -734,7 +734,7 @@ The same code using the type-oriented function set::
        return PyErr_NoMemory();
    /* ...Do some I/O operation involving buf... */
    res = PyBytes_FromString(buf);
-   PyMem_Del(buf); /* allocated with PyMem_New */
+   PyMem_Free(buf); /* allocated with PyMem_New */
    return res;
 
 Note that in the two examples above, the buffer is always manipulated via
@@ -750,11 +750,11 @@ allocators operating on different heaps. ::
    ...
    PyMem_Del(buf3);  /* Wrong -- should be PyMem_Free() */
    free(buf2);       /* Right -- allocated via malloc() */
-   free(buf1);       /* Fatal -- should be PyMem_Del()  */
+   free(buf1);       /* Fatal -- should be PyMem_Free()  */
 
 In addition to the functions aimed at handling raw memory blocks from the Python
 heap, objects in Python are allocated and released with :c:macro:`PyObject_New`,
-:c:macro:`PyObject_NewVar` and :c:func:`PyObject_Del`.
+:c:macro:`PyObject_NewVar` and :c:func:`PyObject_Free`.
 
 These will be explained in the next chapter on defining and implementing new
 object types in C.

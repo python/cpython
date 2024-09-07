@@ -1,0 +1,2 @@
+Remove ``subprocess._USE_VFORK`` escape hatch code and documentation.
+It was added just in case, and doesn't have any known cases that require it.

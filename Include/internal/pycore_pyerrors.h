@@ -68,30 +68,6 @@ extern PyStatus _PyErr_InitTypes(PyInterpreterState *);
 extern void _PyErr_FiniTypes(PyInterpreterState *);
 
 
-/* exception snapshots */
-
-// Ultimately we'd like to preserve enough information about the
-// exception and traceback that we could re-constitute (or at least
-// simulate, a la traceback.TracebackException), and even chain, a copy
-// of the exception in the calling interpreter.
-
-typedef struct _excinfo {
-    const char *type;
-    const char *msg;
-} _Py_excinfo;
-
-extern void _Py_excinfo_Clear(_Py_excinfo *info);
-extern int _Py_excinfo_Copy(_Py_excinfo *dest, _Py_excinfo *src);
-extern const char * _Py_excinfo_InitFromException(
-    _Py_excinfo *info,
-    PyObject *exc);
-extern void _Py_excinfo_Apply(_Py_excinfo *info, PyObject *exctype);
-extern const char * _Py_excinfo_AsUTF8(
-    _Py_excinfo *info,
-    char *buf,
-    size_t bufsize);
-
-
 /* other API */
 
 static inline PyObject* _PyErr_Occurred(PyThreadState *tstate)
@@ -119,7 +95,7 @@ extern void _PyErr_Fetch(
 
 extern PyObject* _PyErr_GetRaisedException(PyThreadState *tstate);
 
-extern int _PyErr_ExceptionMatches(
+PyAPI_FUNC(int) _PyErr_ExceptionMatches(
     PyThreadState *tstate,
     PyObject *exc);
 
@@ -138,18 +114,18 @@ extern void _PyErr_SetObject(
 
 extern void _PyErr_ChainStackItem(void);
 
-extern void _PyErr_Clear(PyThreadState *tstate);
+PyAPI_FUNC(void) _PyErr_Clear(PyThreadState *tstate);
 
 extern void _PyErr_SetNone(PyThreadState *tstate, PyObject *exception);
 
 extern PyObject* _PyErr_NoMemory(PyThreadState *tstate);
 
-extern void _PyErr_SetString(
+PyAPI_FUNC(void) _PyErr_SetString(
     PyThreadState *tstate,
     PyObject *exception,
     const char *string);
 
-extern PyObject* _PyErr_Format(
+PyAPI_FUNC(PyObject*) _PyErr_Format(
     PyThreadState *tstate,
     PyObject *exception,
     const char *format,
@@ -185,14 +161,17 @@ extern PyObject* _Py_Offer_Suggestions(PyObject* exception);
 PyAPI_FUNC(Py_ssize_t) _Py_UTF8_Edit_Cost(PyObject *str_a, PyObject *str_b,
                                           Py_ssize_t max_cost);
 
-void _PyErr_FormatNote(const char *format, ...);
+// Export for '_json' shared extension
+PyAPI_FUNC(void) _PyErr_FormatNote(const char *format, ...);
 
 /* Context manipulation (PEP 3134) */
 
 Py_DEPRECATED(3.12) extern void _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
 
-// Export for '_zoneinfo' shared extension
-PyAPI_FUNC(void) _PyErr_ChainExceptions1(PyObject *);
+// implementation detail for the codeop module.
+// Exported for test.test_peg_generator.test_c_parser
+PyAPI_DATA(PyTypeObject) _PyExc_IncompleteInputError;
+#define PyExc_IncompleteInputError ((PyObject *)(&_PyExc_IncompleteInputError))
 
 #ifdef __cplusplus
 }

@@ -1,8 +1,8 @@
 .. _descriptorhowto:
 
-======================
-Descriptor HowTo Guide
-======================
+================
+Descriptor Guide
+================
 
 :Author: Raymond Hettinger
 :Contact: <python at rcn dot com>
@@ -513,7 +513,7 @@ were defined.
 
 Descriptors are a powerful, general purpose protocol.  They are the mechanism
 behind properties, methods, static methods, class methods, and
-:func:`super()`.  They are used throughout Python itself.  Descriptors
+:func:`super`.  They are used throughout Python itself.  Descriptors
 simplify the underlying C code and offer a flexible set of new tools for
 everyday Python programs.
 
@@ -521,11 +521,11 @@ everyday Python programs.
 Descriptor protocol
 -------------------
 
-``descr.__get__(self, obj, type=None) -> value``
+``descr.__get__(self, obj, type=None)``
 
-``descr.__set__(self, obj, value) -> None``
+``descr.__set__(self, obj, value)``
 
-``descr.__delete__(self, obj) -> None``
+``descr.__delete__(self, obj)``
 
 That is all there is to it.  Define any of these methods and an object is
 considered a descriptor and can override default behavior upon being looked up
@@ -787,7 +787,7 @@ Invocation from super
 ---------------------
 
 The logic for super's dotted lookup is in the :meth:`__getattribute__` method for
-object returned by :class:`super()`.
+object returned by :func:`super`.
 
 A dotted lookup such as ``super(A, obj).m`` searches ``obj.__class__.__mro__``
 for the base class ``B`` immediately following ``A`` and then returns
@@ -803,7 +803,7 @@ The full C implementation can be found in :c:func:`!super_getattro` in
 Summary of invocation logic
 ---------------------------
 
-The mechanism for descriptors is embedded in the :meth:`__getattribute__()`
+The mechanism for descriptors is embedded in the :meth:`__getattribute__`
 methods for :class:`object`, :class:`type`, and :func:`super`.
 
 The important points to remember are:
@@ -990,7 +990,7 @@ The documentation shows a typical use to define a managed attribute ``x``:
     AttributeError: 'C' object has no attribute '_C__x'
 
 To see how :func:`property` is implemented in terms of the descriptor protocol,
-here is a pure Python equivalent:
+here is a pure Python equivalent that implements most of the core functionality:
 
 .. testcode::
 
@@ -1004,42 +1004,36 @@ here is a pure Python equivalent:
             if doc is None and fget is not None:
                 doc = fget.__doc__
             self.__doc__ = doc
-            self._name = ''
+            self.__name__ = ''
 
         def __set_name__(self, owner, name):
-            self._name = name
+            self.__name__ = name
 
         def __get__(self, obj, objtype=None):
             if obj is None:
                 return self
             if self.fget is None:
-                raise AttributeError(f"property '{self._name}' has no getter")
+                raise AttributeError
             return self.fget(obj)
 
         def __set__(self, obj, value):
             if self.fset is None:
-                raise AttributeError(f"property '{self._name}' has no setter")
+                raise AttributeError
             self.fset(obj, value)
 
         def __delete__(self, obj):
             if self.fdel is None:
-                raise AttributeError(f"property '{self._name}' has no deleter")
+                raise AttributeError
             self.fdel(obj)
 
         def getter(self, fget):
-            prop = type(self)(fget, self.fset, self.fdel, self.__doc__)
-            prop._name = self._name
-            return prop
+            return type(self)(fget, self.fset, self.fdel, self.__doc__)
 
         def setter(self, fset):
-            prop = type(self)(self.fget, fset, self.fdel, self.__doc__)
-            prop._name = self._name
-            return prop
+            return type(self)(self.fget, fset, self.fdel, self.__doc__)
 
         def deleter(self, fdel):
-            prop = type(self)(self.fget, self.fset, fdel, self.__doc__)
-            prop._name = self._name
-            return prop
+            return type(self)(self.fget, self.fset, fdel, self.__doc__)
 
 .. testcode::
     :hide:
@@ -1054,6 +1048,11 @@ here is a pure Python equivalent:
         def delx(self):
             del self.__x
         x = Property(getx, setx, delx, "I'm the 'x' property.")
+        no_getter = Property(None, setx, delx, "I'm the 'x' property.")
+        no_setter = Property(getx, None, delx, "I'm the 'x' property.")
+        no_deleter = Property(getx, setx, None, "I'm the 'x' property.")
+        no_doc = Property(getx, setx, delx, None)
+
 
     # Now do it again but use the decorator style
 
@@ -1091,6 +1090,32 @@ here is a pure Python equivalent:
     >>> del ccc.x
     >>> hasattr(ccc, 'x')
     False
+
+    >>> cc = CC()
+    >>> cc.x = 33
+    >>> try:
+    ...     cc.no_getter
+    ... except AttributeError as e:
+    ...     type(e).__name__
+    ...
+    'AttributeError'
+
+    >>> try:
+    ...     cc.no_setter = 33
+    ... except AttributeError as e:
+    ...     type(e).__name__
+    ...
+    'AttributeError'
+
+    >>> try:
+    ...     del cc.no_deleter
+    ... except AttributeError as e:
+    ...     type(e).__name__
+    ...
+    'AttributeError'
+
+    >>> CC.no_doc.__doc__ is None
+    True
 
 The :func:`property` builtin helps whenever a user interface has granted
 attribute access and then subsequent changes require the intervention of a
@@ -1155,6 +1180,10 @@ roughly equivalent to:
             "Emulate method_getattro() in Objects/classobject.c"
             return getattr(self.__func__, name)
 
+        def __get__(self, obj, objtype=None):
+            "Emulate method_descr_get() in Objects/classobject.c"
+            return self
+
 To support automatic creation of methods, functions include the
 :meth:`__get__` method for binding methods during attribute access.  This
 means that functions are non-data descriptors that return bound methods
@@ -1177,8 +1206,20 @@ descriptor works in practice:
 .. testcode::
 
     class D:
-        def f(self, x):
-             return x
+        def f(self):
+             return self
+
+    class D2:
+        pass
+
+.. doctest::
+    :hide:
+
+    >>> d = D()
+    >>> d2 = D2()
+    >>> d2.f = d.f.__get__(d2, D2)
+    >>> d2.f() is d
+    True
 
 The function has a :term:`qualified name` attribute to support introspection:
 
@@ -1213,7 +1254,7 @@ instance::
     <function D.f at 0x00C45070>
 
     >>> d.f.__self__
-    <__main__.D object at 0x1012e1f98>
+    <__main__.D object at 0x00B18C90>
 
 If you have ever wondered where *self* comes from in regular methods or where
 *cls* comes from in class methods, this is it!
@@ -1302,10 +1343,15 @@ Using the non-data descriptor protocol, a pure Python version of
         def __call__(self, *args, **kwds):
             return self.f(*args, **kwds)
 
+        @property
+        def __annotations__(self):
+            return self.f.__annotations__
+
 The :func:`functools.update_wrapper` call adds a ``__wrapped__`` attribute
 that refers to the underlying function.  Also it carries forward
 the attributes necessary to make the wrapper look like the wrapped
-function: ``__name__``, ``__qualname__``, ``__doc__``, and ``__annotations__``.
+function, including :attr:`~function.__name__`, :attr:`~function.__qualname__`,
+and :attr:`~function.__doc__`.
 
 .. testcode::
     :hide:
@@ -1485,8 +1531,9 @@ Using the non-data descriptor protocol, a pure Python version of
 The :func:`functools.update_wrapper` call in ``ClassMethod`` adds a
 ``__wrapped__`` attribute that refers to the underlying function.  Also
 it carries forward the attributes necessary to make the wrapper look
-like the wrapped function: ``__name__``, ``__qualname__``, ``__doc__``,
-and ``__annotations__``.
+like the wrapped function: :attr:`~function.__name__`,
+:attr:`~function.__qualname__`, :attr:`~function.__doc__`,
+and :attr:`~function.__annotations__`.
 
 
 Member objects and __slots__

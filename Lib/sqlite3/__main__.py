@@ -117,7 +117,7 @@ def main(*args):
             # No SQL provided; start the REPL.
             console = SqliteInteractiveConsole(con)
             try:
-                import readline
+                import readline  # noqa: F401
             except ImportError:
                 pass
             console.interact(banner, exitmsg="")

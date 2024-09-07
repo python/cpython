@@ -197,7 +197,7 @@ PyDoc_STRVAR(float_new__doc__,
 "float(x=0, /)\n"
 "--\n"
 "\n"
-"Convert a string or number to a floating point number, if possible.");
+"Convert a string or number to a floating-point number, if possible.");
 
 static PyObject *
 float_new_impl(PyTypeObject *type, PyObject *x);
@@ -226,6 +226,15 @@ skip_optional:
 exit:
     return return_value;
 }
+
+PyDoc_STRVAR(float_from_number__doc__,
+"from_number($type, number, /)\n"
+"--\n"
+"\n"
+"Convert real number to a floating-point number.");
+
+#define FLOAT_FROM_NUMBER_METHODDEF    \
+    {"from_number", (PyCFunction)float_from_number, METH_O|METH_CLASS, float_from_number__doc__},
 
 PyDoc_STRVAR(float___getnewargs____doc__,
 "__getnewargs__($self, /)\n"
@@ -256,7 +265,7 @@ PyDoc_STRVAR(float___getformat____doc__,
 "It exists mainly to be used in Python\'s test suite.\n"
 "\n"
 "This function returns whichever of \'unknown\', \'IEEE, big-endian\' or \'IEEE,\n"
-"little-endian\' best describes the format of floating point numbers used by the\n"
+"little-endian\' best describes the format of floating-point numbers used by the\n"
 "C type named by typestr.");
 
 #define FLOAT___GETFORMAT___METHODDEF    \
@@ -275,8 +284,13 @@ float___getformat__(PyTypeObject *type, PyObject *arg)
         _PyArg_BadArgument("__getformat__", "argument", "str", arg);
         goto exit;
     }
-    typestr = PyUnicode_AsUTF8(arg);
+    Py_ssize_t typestr_length;
+    typestr = PyUnicode_AsUTF8AndSize(arg, &typestr_length);
     if (typestr == NULL) {
+        goto exit;
+    }
+    if (strlen(typestr) != (size_t)typestr_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = float___getformat___impl(type, typestr);
@@ -313,4 +327,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=01f6fbd082eefead input=a9049054013a1b77]*/
+/*[clinic end generated code: output=366cea9463cc5bf6 input=a9049054013a1b77]*/

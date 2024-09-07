@@ -1,5 +1,5 @@
-:mod:`http.cookiejar` --- Cookie handling for HTTP clients
-==========================================================
+:mod:`!http.cookiejar` --- Cookie handling for HTTP clients
+===========================================================
 
 .. module:: http.cookiejar
    :synopsis: Classes for automatic handling of HTTP cookies.
@@ -647,6 +647,11 @@ internal consistency, so you should know what you're doing if you do that.
 
    String representing a port or a set of ports (eg. '80', or '80,8080'), or
    :const:`None`.
+
+
+.. attribute:: Cookie.domain
+
+   Cookie domain (a string).
 
 
 .. attribute:: Cookie.path

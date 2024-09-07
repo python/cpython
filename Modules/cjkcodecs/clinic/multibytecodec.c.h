@@ -12,7 +12,7 @@ PyDoc_STRVAR(_multibytecodec_MultibyteCodec_encode__doc__,
 "encode($self, /, input, errors=None)\n"
 "--\n"
 "\n"
-"Return an encoded string version of `input\'.\n"
+"Return an encoded string version of \'input\'.\n"
 "\n"
 "\'errors\' may be given to set a different error handling scheme. Default is\n"
 "\'strict\' meaning that encoding errors raise a UnicodeEncodeError. Other possible\n"
@@ -73,8 +73,13 @@ _multibytecodec_MultibyteCodec_encode(MultibyteCodecObject *self, PyObject *cons
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -156,8 +161,13 @@ _multibytecodec_MultibyteCodec_decode(MultibyteCodecObject *self, PyObject *cons
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -658,7 +668,7 @@ _multibytecodec_MultibyteStreamWriter_reset_impl(MultibyteStreamWriterObject *se
 static PyObject *
 _multibytecodec_MultibyteStreamWriter_reset(MultibyteStreamWriterObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "reset() takes no arguments");
         return NULL;
     }
@@ -672,4 +682,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=b35a5c3797e0e54a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f09052c5a28cc6e6 input=a9049054013a1b77]*/

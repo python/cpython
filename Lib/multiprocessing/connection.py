@@ -11,15 +11,14 @@ __all__ = [ 'Client', 'Listener', 'Pipe', 'wait' ]
 
 import errno
 import io
+import itertools
 import os
 import sys
 import socket
 import struct
-import time
 import tempfile
-import itertools
+import time
 
-import _multiprocessing
 
 from . import util
 
@@ -28,6 +27,7 @@ from .context import reduction
 _ForkingPickler = reduction.ForkingPickler
 
 try:
+    import _multiprocessing
     import _winapi
     from _winapi import WAIT_OBJECT_0, WAIT_ABANDONED_0, WAIT_TIMEOUT, INFINITE
 except ImportError:
@@ -39,7 +39,9 @@ except ImportError:
 #
 #
 
-BUFSIZE = 8192
+# 64 KiB is the default PIPE buffer size of most POSIX platforms.
+BUFSIZE = 64 * 1024
+
 # A very generous timeout when it comes to local connections...
 CONNECTION_TIMEOUT = 20.
 
@@ -392,7 +394,8 @@ class Connection(_ConnectionBase):
         handle = self._handle
         remaining = size
         while remaining > 0:
-            chunk = read(handle, remaining)
+            to_read = min(BUFSIZE, remaining)
+            chunk = read(handle, to_read)
             n = len(chunk)
             if n == 0:
                 if remaining == size:
@@ -476,8 +479,9 @@ class Listener(object):
         '''
         if self._listener is None:
             raise OSError('listener is closed')
+
         c = self._listener.accept()
-        if self._authkey:
+        if self._authkey is not None:
             deliver_challenge(c, self._authkey)
             answer_challenge(c, self._authkey)
         return c
@@ -1011,8 +1015,20 @@ if sys.platform == 'win32':
         # returning the first signalled might create starvation issues.)
         L = list(handles)
         ready = []
+        # Windows limits WaitForMultipleObjects at 64 handles, and we use a
+        # few for synchronisation, so we switch to batched waits at 60.
+        if len(L) > 60:
+            try:
+                res = _winapi.BatchedWaitForMultipleObjects(L, False, timeout)
+            except TimeoutError:
+                return []
+            ready.extend(L[i] for i in res)
+            if res:
+                L = [h for i, h in enumerate(L) if i > res[0] & i not in res]
+            timeout = 0
         while L:
-            res = _winapi.WaitForMultipleObjects(L, False, timeout)
+            short_L = L[:60] if len(L) > 60 else L
+            res = _winapi.WaitForMultipleObjects(short_L, False, timeout)
             if res == WAIT_TIMEOUT:
                 break
             elif WAIT_OBJECT_0 <= res < WAIT_OBJECT_0 + len(L):

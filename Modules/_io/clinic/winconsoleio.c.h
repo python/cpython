@@ -29,7 +29,7 @@ _io__WindowsConsoleIO_close_impl(winconsoleio *self, PyTypeObject *cls);
 static PyObject *
 _io__WindowsConsoleIO_close(winconsoleio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "close() takes no arguments");
         return NULL;
     }
@@ -106,8 +106,13 @@ _io__WindowsConsoleIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             _PyArg_BadArgument("_WindowsConsoleIO", "argument 'mode'", "str", fastargs[1]);
             goto exit;
         }
-        mode = PyUnicode_AsUTF8(fastargs[1]);
+        Py_ssize_t mode_length;
+        mode = PyUnicode_AsUTF8AndSize(fastargs[1], &mode_length);
         if (mode == NULL) {
+            goto exit;
+        }
+        if (strlen(mode) != (size_t)mode_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -452,4 +457,4 @@ _io__WindowsConsoleIO_isatty(winconsoleio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
     #define _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
 #endif /* !defined(_IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF) */
-/*[clinic end generated code: output=76408dd67894bc9c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2c2bc86713b21dd6 input=a9049054013a1b77]*/

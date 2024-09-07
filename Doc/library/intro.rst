@@ -58,7 +58,7 @@ Notes on availability
   operating system.
 
 * If not separately noted, all functions that claim "Availability: Unix" are
-  supported on macOS, which builds on a Unix core.
+  supported on macOS and iOS, both of which build on a Unix core.
 
 * If an availability note contains both a minimum Kernel version and a minimum
   libc version, then both conditions must hold. For example a feature with note
@@ -119,3 +119,44 @@ DOM APIs as well as limited networking capabilities with JavaScript's
 .. _wasmtime: https://wasmtime.dev/
 .. _Pyodide: https://pyodide.org/
 .. _PyScript: https://pyscript.net/
+
+.. _iOS-availability:
+
+iOS
+---
+
+iOS is, in most respects, a POSIX operating system. File I/O, socket handling,
+and threading all behave as they would on any POSIX operating system. However,
+there are several major differences between iOS and other POSIX systems.
+
+* iOS can only use Python in "embedded" mode. There is no Python REPL, and no
+  ability to execute binaries that are part of the normal Python developer
+  experience, such as :program:`pip`. To add Python code to your iOS app, you must use
+  the :ref:`Python embedding API <embedding>` to add a Python interpreter to an
+  iOS app created with Xcode. See the :ref:`iOS usage guide <using-ios>` for
+  more details.
+
+* An iOS app cannot use any form of subprocessing, background processing, or
+  inter-process communication. If an iOS app attempts to create a subprocess,
+  the process creating the subprocess will either lock up, or crash. An iOS app
+  has no visibility of other applications that are running, nor any ability to
+  communicate with other running applications, outside of the iOS-specific APIs
+  that exist for this purpose.
+
+* iOS apps have limited access to modify system resources (such as the system
+  clock). These resources will often be *readable*, but attempts to modify
+  those resources will usually fail.
+
+* iOS apps have a limited concept of console input and output. ``stdout`` and
+  ``stderr`` *exist*, and content written to ``stdout`` and ``stderr`` will be
+  visible in logs when running in Xcode, but this content *won't* be recorded
+  in the system log. If a user who has installed your app provides their app
+  logs as a diagnostic aid, they will not include any detail written to
+  ``stdout`` or ``stderr``.
+
+  iOS apps have no concept of  ``stdin`` at all. While iOS apps can have a
+  keyboard, this is a software feature, not something that is attached to
+  ``stdin``.
+
+  As a result, Python library that involve console manipulation (such as
+  :mod:`curses` and :mod:`readline`) are not available on iOS.

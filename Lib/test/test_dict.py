@@ -8,7 +8,7 @@ import sys
 import unittest
 import weakref
 from test import support
-from test.support import import_helper, Py_C_RECURSION_LIMIT
+from test.support import import_helper, get_c_recursion_limit
 
 
 class DictTest(unittest.TestCase):
@@ -596,7 +596,7 @@ class DictTest(unittest.TestCase):
 
     def test_repr_deep(self):
         d = {}
-        for i in range(Py_C_RECURSION_LIMIT + 1):
+        for i in range(get_c_recursion_limit() + 1):
             d = {1: d}
         self.assertRaises(RecursionError, repr, d)
 
@@ -1475,6 +1475,24 @@ class DictTest(unittest.TestCase):
         it = reversed({None: []}.items())
         gc.collect()
         self.assertTrue(gc.is_tracked(next(it)))
+
+    def test_store_evilattr(self):
+        class EvilAttr:
+            def __init__(self, d):
+                self.d = d
+
+            def __del__(self):
+                if 'attr' in self.d:
+                    del self.d['attr']
+                gc.collect()
+
+        class Obj:
+            pass
+
+        obj = Obj()
+        obj.__dict__ = {}
+        for _ in range(10):
+            obj.attr = EvilAttr(obj.__dict__)
 
     def test_str_nonstr(self):
         # cpython uses a different lookup function if the dict only contains

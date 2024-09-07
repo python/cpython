@@ -1,0 +1,2 @@
+Fix a NameError happening in ``asyncio.staggered.staggered_race``. This
+function is now tested.
