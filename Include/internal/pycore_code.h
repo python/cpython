@@ -633,6 +633,7 @@ PyAPI_DATA(const struct _PyCode8) _Py_InitCleanup;
 
 #ifdef Py_GIL_DISABLED
 
+extern void _PyCode_InitState(PyInterpreterState *interp);
 extern _Py_CODEUNIT *_PyCode_GetExecutableCodeSlow(PyCodeObject *co);
 
 // Return the bytecode that should be executed by the current thread, creating

@@ -226,8 +226,8 @@ struct _is {
     PyMutex weakref_locks[NUM_WEAKREF_LIST_LOCKS];
     _PyIndexPool specialized_code_indices;
     // Number of bytes available for thread-local bytecode, counts down to zero
-    Py_ssize_t specialized_code_bytes_free;
-    PyMutex specialized_code_bytes_free_mutex;
+    Py_ssize_t thread_local_bytecode_avail;
+    PyMutex thread_local_bytecode_avail_mutex;
     // This is monotonic; once true it will remain true
     bool new_thread_local_bytecode_disabled;
 #endif

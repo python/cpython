@@ -134,6 +134,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(dump_refs_file, WSTR_OPT, READ_ONLY, NO_SYS),
 #ifdef Py_GIL_DISABLED
     SPEC(enable_gil, INT, READ_ONLY, NO_SYS),
+    SPEC(thread_local_bytecode_limit, INT),
 #endif
     SPEC(faulthandler, BOOL, READ_ONLY, NO_SYS),
     SPEC(filesystem_encoding, WSTR, READ_ONLY, NO_SYS),
@@ -315,8 +316,14 @@ The following implementation-specific options are available:\n\
 "\
 -X showrefcount: output the total reference count and number of used\n\
          memory blocks when the program finishes or after each statement in\n\
-         the interactive interpreter; only works on debug builds\n\
--X tracemalloc[=N]: trace Python memory allocations; N sets a traceback limit\n\
+         the interactive interpreter; only works on debug builds\n"
+#ifdef Py_GIL_DISABLED
+"-X thread_local_bc_limit=N: limit the total size of thread-local bytecode,\n\
+         per-interpreter, to N bytes. A value < 0 means unlimited. A value of\n\
+         0 disables thread-local bytecode. Also PYTHON_THREAD_LOCAL_BC_LIMIT\n"
+#endif
+"\
+-X tracemalloc[=N]: trace Python memory allocations; N sets a traceback limit\n \
          of N frames (default: 1); also PYTHONTRACEMALLOC=N\n\
 -X utf8[=0|1]: enable (1) or disable (0) UTF-8 mode; also PYTHONUTF8\n\
 -X warn_default_encoding: enable opt-in EncodingWarning for 'encoding=None';\n\
@@ -399,6 +406,10 @@ static const char usage_envvars[] =
 "PYTHONSAFEPATH  : don't prepend a potentially unsafe path to sys.path.\n"
 #ifdef Py_STATS
 "PYTHONSTATS     : turns on statistics gathering (-X pystats)\n"
+#endif
+#ifdef Py_GIL_DISABLED
+"PYTHON_THREAD_LOCAL_BC_LIMT: limit the total size of thread-local bytecode\n"
+"                  (-X thread-local-bc-limit)\n"
 #endif
 "PYTHONTRACEMALLOC: trace Python memory allocations (-X tracemalloc)\n"
 "PYTHONUNBUFFERED: disable stdout/stderr buffering (-u)\n"
@@ -979,6 +990,8 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->cpu_count = -1;
 #ifdef Py_GIL_DISABLED
     config->enable_gil = _PyConfig_GIL_DEFAULT;
+    // 100 MiB
+    config->thread_local_bytecode_limit = 100 * (1 << 20);
 #endif
 }
 
@@ -1863,6 +1876,34 @@ error:
 }
 
 static PyStatus
+config_init_thread_local_bytecode_limit(PyConfig *config)
+{
+#ifdef Py_GIL_DISABLED
+    const char *env = config_get_env(config, "PYTHON_THREAD_LOCAL_BC_LIMIT");
+    if (env) {
+        int limit = -1;
+        if (_Py_str_to_int(env, &limit) < 0) {
+            return _PyStatus_ERR(
+                "PYTHON_THREAD_LOCAL_BC_LIMIT=N: N is missing or invalid");
+        }
+        config->thread_local_bytecode_limit = limit;
+    }
+
+    const wchar_t *xoption = config_get_xoption(config, L"thread_local_bc_limit");
+    if (xoption) {
+        int limit = -1;
+        const wchar_t *sep = wcschr(xoption, L'=');
+        if (!sep || (config_wstr_to_int(sep + 1, &limit) < 0)) {
+            return _PyStatus_ERR(
+                "-X thread_local_bc_limit=n: n is missing or invalid");
+        }
+        config->thread_local_bytecode_limit = limit;
+    }
+    return _PyStatus_OK();
+#endif
+}
+
+static PyStatus
 config_init_perf_profiling(PyConfig *config)
 {
     int active = 0;
@@ -2110,6 +2151,11 @@ config_read_complex_options(PyConfig *config)
         }
     }
 #endif
+
+    status = config_init_thread_local_bytecode_limit(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     return _PyStatus_OK();
 }

@@ -2686,6 +2686,14 @@ _PyCode_Fini(PyInterpreterState *interp)
 
 #ifdef Py_GIL_DISABLED
 
+void
+_PyCode_InitState(PyInterpreterState *interp)
+{
+    int limit = interp->config.thread_local_bytecode_limit;
+    interp->thread_local_bytecode_avail = limit;
+    interp->new_thread_local_bytecode_disabled = limit == 0;
+}
+
 static _PyCodeArray *
 _PyCodeArray_New(Py_ssize_t size)
 {
@@ -2757,12 +2765,15 @@ reserve_bytes_for_specialized_code(PyCodeObject *co)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     Py_ssize_t nbytes_reserved = -1;
     Py_ssize_t code_size = _PyCode_NBYTES(co);
-    PyMutex_LockFlags(&interp->specialized_code_bytes_free_mutex, _Py_LOCK_DONT_DETACH);
-    if (interp->specialized_code_bytes_free >= code_size) {
-        interp->specialized_code_bytes_free -= code_size;
+    PyMutex_LockFlags(&interp->thread_local_bytecode_avail_mutex, _Py_LOCK_DONT_DETACH);
+    if (interp->thread_local_bytecode_avail < 0) {
         nbytes_reserved = code_size;
     }
-    PyMutex_Unlock(&interp->specialized_code_bytes_free_mutex);
+    else if (interp->thread_local_bytecode_avail >= code_size) {
+        interp->thread_local_bytecode_avail -= code_size;
+        nbytes_reserved = code_size;
+    }
+    PyMutex_Unlock(&interp->thread_local_bytecode_avail_mutex);
     return nbytes_reserved;
 }
 
@@ -2774,9 +2785,11 @@ release_bytes_for_specialized_code(Py_ssize_t nbytes)
         return;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyMutex_LockFlags(&interp->specialized_code_bytes_free_mutex, _Py_LOCK_DONT_DETACH);
-    interp->specialized_code_bytes_free += nbytes;
-    PyMutex_Unlock(&interp->specialized_code_bytes_free_mutex);
+    PyMutex_LockFlags(&interp->thread_local_bytecode_avail_mutex, _Py_LOCK_DONT_DETACH);
+    if (interp->thread_local_bytecode_avail >= 0) {
+        interp->thread_local_bytecode_avail += nbytes;
+    }
+    PyMutex_Unlock(&interp->thread_local_bytecode_avail_mutex);
 }
 
 static int
@@ -2800,10 +2813,10 @@ disable_new_thread_local_bytecode(void)
     // Disable creation of new thread-local copies of bytecode. We disable
     // further specialization of the "main" copy of the bytecode (the bytecode
     // that is embedded in the code object), so that multiple threads can
-    // safely execute it. From this point on, threads are free to specialize
-    // existing thread-local copies of the bytecode (other than the main copy),
-    // but any attempts to create new copies of bytecode will fail, and the
-    // main, unspecializable copy will be used.
+    // safely execute it concurrently. From this point on, threads are free to
+    // specialize existing thread-local copies of the bytecode (other than the
+    // main copy), but any attempts to create new copies of bytecode will fail,
+    // and the main, unspecializable copy will be used.
     _PyEval_StopTheWorld(interp);
     interp->new_thread_local_bytecode_disabled = true;
     _PyEval_StartTheWorld(interp);

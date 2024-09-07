@@ -12,6 +12,7 @@ import unittest
 from test import support
 from test.support import os_helper
 from test.support import force_not_colorized
+from test.support import threading_helper
 from test.support.script_helper import (
     spawn_python, kill_python, assert_python_ok, assert_python_failure,
     interpreter_requires_environment
@@ -1067,6 +1068,34 @@ class CmdLineTest(unittest.TestCase):
     def res2int(self, res):
         out = res.out.strip().decode("utf-8")
         return tuple(int(i) for i in out.split())
+
+    @unittest.skipUnless(support.Py_GIL_DISABLED,
+                         "PYTHON_THREAD_LOCAL_BC_LIMIT and -X thread_local_bc_limit"
+                         " only supported in Py_GIL_DISABLED builds")
+    @threading_helper.requires_working_threading()
+    def test_set_thread_local_bytecode_limit(self):
+        code = """if 1:
+            import threading
+            def test(x, y):
+                return x + y
+            t = threading.Thread(target=test, args=(1,2))
+            t.start()
+            t.join()"""
+        rc, out, err = assert_python_ok("-W", "always", "-X", "thread_local_bc_limit=1", "-c", code)
+        self.assertIn(b"Reached memory limit for thread-local bytecode", err)
+        rc, out, err = assert_python_ok("-W", "always", "-c", code, PYTHON_THREAD_LOCAL_BC_LIMIT="1")
+        self.assertIn(b"Reached memory limit for thread-local bytecode", err)
+
+    @unittest.skipUnless(support.Py_GIL_DISABLED,
+                         "PYTHON_THREAD_LOCAL_BC_LIMIT and -X thread_local_bc_limit"
+                         " only supported in Py_GIL_DISABLED builds")
+    def test_invalid_thread_local_bytecode_limit(self):
+        rc, out, err = assert_python_failure("-X", "thread_local_bc_limit")
+        self.assertIn(b"thread_local_bc_limit=n: n is missing or invalid", err)
+        rc, out, err = assert_python_failure("-X", "thread_local_bc_limit=foo")
+        self.assertIn(b"thread_local_bc_limit=n: n is missing or invalid", err)
+        rc, out, err = assert_python_failure(PYTHON_THREAD_LOCAL_BC_LIMIT="foo")
+        self.assertIn(b"PYTHON_THREAD_LOCAL_BC_LIMIT=N: N is missing or invalid", err)
 
 
 @unittest.skipIf(interpreter_requires_environment(),
