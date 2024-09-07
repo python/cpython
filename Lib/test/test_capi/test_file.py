@@ -1,6 +1,5 @@
-import unittest
 import io
-import os
+import unittest
 
 from test.support import import_helper, os_helper
 
@@ -20,65 +19,77 @@ class TestPyFile_FromFd(_TempFileMixin, unittest.TestCase):
     # `_io.open` which is fully tested in `test_io`.
 
     def test_file_from_fd(self):
+        from_fd = _testcapi.file_from_fd
         with open(os_helper.TESTFN, "w", encoding="utf-8") as f:
-            file_obj = _testcapi.file_from_fd(
-                f.fileno(), os_helper.TESTFN, "w",
-                1, "utf-8", "strict", "\n", 0,
-            )
-        self.assertIsInstance(file_obj, io.TextIOWrapper)
+            file_obj = from_fd(f.fileno(), os_helper.TESTFN, "w",
+                               1, "utf-8", "strict", "\n", 0)
+            self.assertIsInstance(file_obj, io.TextIOWrapper)
+            self.assertEqual(file_obj.name, f.fileno())
 
     def test_name_null(self):
+        from_fd = _testcapi.file_from_fd
         with open(os_helper.TESTFN, "w", encoding="utf-8") as f:
-            file_obj = _testcapi.file_from_fd(
-                f.fileno(), NULL, "w",
-                1, "utf-8", "strict", "\n", 0,
-            )
-        self.assertIsInstance(file_obj, io.TextIOWrapper)
+            file_obj = from_fd(f.fileno(), NULL, "w",
+                               1, "utf-8", "strict", "\n", 0)
+            self.assertIsInstance(file_obj, io.TextIOWrapper)
+            self.assertEqual(file_obj.name, f.fileno())
 
-    def test_name_invalid_utf(self):
+    def test_name_invalid_utf(self):  # TODO: use bytes
+        from_fd = _testcapi.file_from_fd
         with open(os_helper.TESTFN, "w", encoding="utf-8") as f:
-            file_obj = _testcapi.file_from_fd(
-                f.fileno(), "abc\xe9", "w",
-                1, "utf-8", "strict", "\n", 0,
-            )
+            file_obj = from_fd(f.fileno(), "abc\xe9", "w",
+                               1, "utf-8", "strict", "\n", 0)
         self.assertIsInstance(file_obj, io.TextIOWrapper)
 
     def test_mode_as_null(self):
+        from_fd = _testcapi.file_from_fd
         with open(os_helper.TESTFN, "w", encoding="utf-8") as f:
-            self.assertRaisesRegex(
+            with self.assertRaisesRegex(
                 TypeError,
                 r"open\(\) argument 'mode' must be str, not None",
-                _testcapi.file_from_fd,
-                f.fileno(), "abc\xe9", NULL,
-                1, "utf-8", "strict", "\n", 0,
-            )
+            ):
+                from_fd(f.fileno(), "abc\xe9", NULL,
+                        1, "utf-8", "strict", "\n", 0)
 
     def test_string_args_as_null(self):
-        for arg_pos in (4, 5, 6):
-            with self.subTest(arg_pos=arg_pos):
-                with open(os_helper.TESTFN, "w", encoding="utf-8") as f:
-                    args = [
-                        f.fileno(), os_helper.TESTFN, "w",
-                        1, "utf-8", "strict", "\n", 0,
-                    ]
-                    args[arg_pos] = NULL
-                    file_obj = _testcapi.file_from_fd(*args)
-                self.assertIsInstance(file_obj, io.TextIOWrapper)
+        from_fd = _testcapi.file_from_fd
+
+        with open(os_helper.TESTFN, "w", encoding="utf-8") as f:
+            file_obj = from_fd(f.fileno(), os_helper.TESTFN, "w",
+                               1, NULL, "strict", "\n", 0)
+        self.assertIsInstance(file_obj, io.TextIOWrapper)
+        self.assertEqual(file_obj.encoding, "UTF-8")
+
+        with open(os_helper.TESTFN, "w", encoding="utf-8") as f:
+            file_obj = from_fd(f.fileno(), os_helper.TESTFN, "w",
+                               1, "utf-8", NULL, "\n", 0)
+        self.assertIsInstance(file_obj, io.TextIOWrapper)
+        self.assertEqual(file_obj.errors, "strict")
+
+        with open(os_helper.TESTFN, "w", encoding="utf-8") as f:
+            file_obj = from_fd(f.fileno(), os_helper.TESTFN, "w",
+                               1, "utf-8", "strict", NULL, 0)
+        self.assertIsInstance(file_obj, io.TextIOWrapper)
+        self.assertIsNone(file_obj.newlines)
 
     def test_string_args_as_invalid_utf(self):
-        for arg_pos in (4, 5, 6):
-            with self.subTest(arg_pos=arg_pos):
-                with open(os_helper.TESTFN, "w", encoding="utf-8") as f:
-                    args = [
-                        f.fileno(), os_helper.TESTFN, "w",
-                        1, "utf-8", "strict", "\n", 0,
-                    ]
-                    args[arg_pos] = "\xc3\x28"  # invalid utf string
-                    self.assertRaises(
-                        (ValueError, LookupError),
-                        _testcapi.file_from_fd,
-                        *args,
-                    )
+        from_fd = _testcapi.file_from_fd
+        invalid_utf = "\xc3\x28"  # TODO: use bytes
+
+        with open(os_helper.TESTFN, "w", encoding="utf-8") as f:
+            with self.assertRaises((ValueError, LookupError)):
+                from_fd(f.fileno(), os_helper.TESTFN, "w",
+                        1, invalid_utf, "strict", "\n", 0)
+
+        with open(os_helper.TESTFN, "w", encoding="utf-8") as f:
+            with self.assertRaises((ValueError, LookupError)):
+                from_fd(f.fileno(), os_helper.TESTFN, "w",
+                        1, "utf-8", invalid_utf, "\n", 0)
+
+        with open(os_helper.TESTFN, "w", encoding="utf-8") as f:
+            with self.assertRaises((ValueError, LookupError)):
+                from_fd(f.fileno(), os_helper.TESTFN, "w",
+                        1, "utf-8", "strict", invalid_utf, 0)
 
 
 class TestPyFile_GetLine(_TempFileMixin, unittest.TestCase):
@@ -109,8 +120,8 @@ class TestPyFile_GetLine(_TempFileMixin, unittest.TestCase):
 
     def test_file_empty_line(self):
         first_line = ""
-        with open(os_helper.TESTFN, "w", encoding="utf-8") as f:
-            f.writelines([first_line])
+        with open(os_helper.TESTFN, "w", encoding="utf-8"):
+            pass
         self.assertGetLine(first_line, eof=True)
 
     def test_file_single_unicode_line(self):
@@ -122,7 +133,7 @@ class TestPyFile_GetLine(_TempFileMixin, unittest.TestCase):
                 self.assertGetLine(first_line)
 
     def test_file_single_unicode_line_invalid_utf(self):
-        first_line = "\xc3\x28\n"
+        first_line = "\xc3\x28\n"  # TODO: use bytes
         with open(os_helper.TESTFN, "w", encoding="utf-8") as f:
             f.writelines([first_line])
         self.assertGetLine(first_line)
@@ -153,9 +164,7 @@ class TestPyFile_GetLine(_TempFileMixin, unittest.TestCase):
     def test_file_get_line_from_file_like(self):
         first_line = "text with юникод 统一码\n"
         second_line = "second line\n"
-        contents = io.StringIO()
-        contents.writelines([first_line, second_line])
-        contents.seek(0)
+        contents = io.StringIO(f"{first_line}{second_line}")
         self.assertEqual(self.get_line(contents, 0), first_line)
         self.assertEqual(self.get_line(contents, 0), second_line)
 
@@ -220,6 +229,23 @@ class TestPyFile_WriteObject(_TempFileMixin, unittest.TestCase):
             "<str>",
         )
 
+    def test_file_write_custom_obj_raises(self):
+        class ReprRaises:
+            def __repr__(self):
+                raise ValueError("repr raised")
+
+        with self.assertRaisesRegex(ValueError, "repr raised"):
+            self.write_and_return(ReprRaises())
+        with self.assertRaisesRegex(ValueError, "repr raised"):
+            self.write_and_return(ReprRaises(), flags=_testcapi.Py_PRINT_RAW)
+
+        class StrRaises:
+            def __str__(self):
+                raise ValueError("str raised")
+
+        with self.assertRaisesRegex(ValueError, "str raised"):
+            self.write_and_return(StrRaises(), flags=_testcapi.Py_PRINT_RAW)
+
     def test_file_write_null(self):
         self.assertEqual(self.write_and_return(NULL), "<NULL>")
 
@@ -243,11 +269,21 @@ class TestPyFile_WriteObject(_TempFileMixin, unittest.TestCase):
             )
 
     def test_file_write_invalid(self):
-        self.assertRaises(TypeError, self.write, object(), io.BytesIO(), 0)
-        self.assertRaises(AttributeError, self.write, object(), object(), 0)
-        self.assertRaises(TypeError, self.write, object(), NULL, 0)
-        self.assertRaises(AttributeError, self.write, NULL, object(), 0)
-        self.assertRaises(TypeError, self.write, NULL, NULL, 0)
+        wr = self.write
+        self.assertRaises(TypeError, wr, object(), io.BytesIO(), 0)
+        self.assertRaises(AttributeError, wr, object(), object(), 0)
+        self.assertRaises(TypeError, wr, object(), NULL, 0)
+        self.assertRaises(AttributeError, wr, NULL, object(), 0)
+        self.assertRaises(TypeError, wr, NULL, NULL, 0)
+
+    def test_file_write_invalid_print_raw(self):
+        wr = self.write
+        raw = _testcapi.Py_PRINT_RAW
+        self.assertRaises(TypeError, wr, object(), io.BytesIO(), raw)
+        self.assertRaises(AttributeError, wr, object(), object(), raw)
+        self.assertRaises(TypeError, wr, object(), NULL, raw)
+        self.assertRaises(AttributeError, wr, NULL, object(), raw)
+        self.assertRaises(TypeError, wr, NULL, NULL, raw)
 
 
 class TestPyFile_WriteString(unittest.TestCase):
@@ -264,6 +300,7 @@ class TestPyFile_WriteString(unittest.TestCase):
             self.write_and_return("text with юникод 统一码"),
             "text with юникод 统一码",
         )
+        # TODO: use real invalid utf8 via bytes
         self.assertEqual(self.write_and_return("\xc3\x28"), "\xc3\x28")
 
     def test_invalid_write(self):
