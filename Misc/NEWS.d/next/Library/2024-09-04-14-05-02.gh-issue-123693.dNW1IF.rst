@@ -1,1 +1,0 @@
-Use platform-agnostic behavior when computing ``zipfile.Path.name``.

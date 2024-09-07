@@ -1,3 +1,0 @@
-A deadlock involving ``pystate.c``'s ``HEAD_LOCK`` in ``posixmodule.c``
-at fork is now fixed. Patch by ChuBoning based on previous Python 3.12
-fix by Victor Stinner.

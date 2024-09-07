@@ -1,0 +1,218 @@
+.. date: 2024-05-29-17-05-28
+.. gh-issue: 119690
+.. nonce: U6RMtm
+.. release date: 2024-09-07
+.. section: Windows
+
+Fixes data type confusion in audit events raised by ``_winapi.CreateFile``
+and ``_winapi.CreateNamedPipe``.
+
+..
+
+.. date: 2024-03-14-01-58-22
+.. gh-issue: 116773
+.. nonce: H2UldY
+.. section: Windows
+
+Fix instances of ``<_overlapped.Overlapped object at 0xXXX> still has
+pending operation at deallocation, the process may crash``.
+
+..
+
+.. date: 2024-05-25-17-06-01
+.. gh-issue: 112769
+.. nonce: kdLJmS
+.. section: Tests
+
+The tests now correctly compare zlib version when
+:const:`zlib.ZLIB_RUNTIME_VERSION` contains non-integer suffixes. For
+example zlib-ng defines the version as ``1.3.0.zlib-ng``.
+
+..
+
+.. date: 2024-03-24-23-49-25
+.. gh-issue: 117187
+.. nonce: eMLT5n
+.. section: Tests
+
+Fix XML tests for vanilla Expat <2.6.0.
+
+..
+
+.. date: 2022-12-23-13-29-55
+.. gh-issue: 100454
+.. nonce: 3no0cW
+.. section: Tests
+
+Fix SSL tests CI for OpenSSL 3.1+
+
+..
+
+.. date: 2024-09-04-12-41-35
+.. gh-issue: 123678
+.. nonce: N41y9n
+.. section: Security
+
+Upgrade libexpat to 2.6.3
+
+..
+
+.. date: 2024-07-22-13-14-38
+.. gh-issue: 121957
+.. nonce: FYkcOt
+.. section: Security
+
+Fixed missing audit events around interactive use of Python, now also
+properly firing for ``python -i``, as well as for ``python -m asyncio``. The
+event in question is ``cpython.run_stdin``.
+
+..
+
+.. date: 2024-07-22-13-11-28
+.. gh-issue: 122133
+.. nonce: 0mPeta
+.. section: Security
+
+Authenticate the socket connection for the ``socket.socketpair()`` fallback
+on platforms where ``AF_UNIX`` is not available like Windows.
+
+Patch by Gregory P. Smith <greg@krypto.org> and Seth Larson
+<seth@python.org>. Reported by Ellie <el@horse64.org>
+
+..
+
+.. date: 2024-07-02-13-39-20
+.. gh-issue: 121285
+.. nonce: hrl-yI
+.. section: Security
+
+Remove backtracking from tarfile header parsing for ``hdrcharset``, PAX, and
+GNU sparse headers.
+
+..
+
+.. date: 2024-05-01-20-57-09
+.. gh-issue: 118486
+.. nonce: K44KJG
+.. section: Security
+
+:func:`os.mkdir` on Windows now accepts *mode* of ``0o700`` to restrict the
+new directory to the current user. This fixes CVE-2024-4030 affecting
+:func:`tempfile.mkdtemp` in scenarios where the base temporary directory is
+more permissive than the default.
+
+..
+
+.. date: 2024-03-27-13-50-02
+.. gh-issue: 116741
+.. nonce: ZoGryG
+.. section: Security
+
+Update bundled libexpat to 2.6.2
+
+..
+
+.. date: 2024-09-04-14-05-02
+.. gh-issue: 123693
+.. nonce: dNW1IF
+.. section: Library
+
+Use platform-agnostic behavior when computing ``zipfile.Path.name``.
+
+..
+
+.. date: 2024-08-26-13-45-20
+.. gh-issue: 123270
+.. nonce: gXHvNJ
+.. section: Library
+
+Applied a more surgical fix for malformed payloads in :class:`zipfile.Path`
+causing infinite loops (gh-122905) without breaking contents using
+legitimate characters.
+
+..
+
+.. date: 2024-08-16-19-13-21
+.. gh-issue: 123067
+.. nonce: Nx9O4R
+.. section: Library
+
+Fix quadratic complexity in parsing ``"``-quoted cookie values with
+backslashes by :mod:`http.cookies`.
+
+..
+
+.. date: 2024-08-11-14-08-04
+.. gh-issue: 122905
+.. nonce: 7tDsxA
+.. section: Library
+
+:class:`zipfile.Path` objects now sanitize names from the zipfile.
+
+..
+
+.. date: 2024-07-27-16-10-41
+.. gh-issue: 121650
+.. nonce: nf6oc9
+.. section: Library
+
+:mod:`email` headers with embedded newlines are now quoted on output. The
+:mod:`~email.generator` will now refuse to serialize (write) headers that
+are unsafely folded or delimited; see
+:attr:`~email.policy.Policy.verify_generated_headers`. (Contributed by Bas
+Bloemsaat and Petr Viktorin in :gh:`121650`.)
+
+..
+
+.. date: 2024-03-14-01-38-44
+.. gh-issue: 113171
+.. nonce: VFnObz
+.. section: Library
+
+Fixed various false positives and false negatives in
+
+* :attr:`ipaddress.IPv4Address.is_private` (see these docs for details)
+* :attr:`ipaddress.IPv4Address.is_global`
+* :attr:`ipaddress.IPv6Address.is_private`
+* :attr:`ipaddress.IPv6Address.is_global`
+
+Also in the corresponding :class:`ipaddress.IPv4Network` and
+:class:`ipaddress.IPv6Network` attributes.
+
+..
+
+.. date: 2023-10-20-15-28-08
+.. gh-issue: 102988
+.. nonce: dStNO7
+.. section: Library
+
+:func:`email.utils.getaddresses` and :func:`email.utils.parseaddr` now
+return ``('', '')`` 2-tuples in more situations where invalid email
+addresses are encountered instead of potentially inaccurate values. Add
+optional *strict* parameter to these two functions: use ``strict=False`` to
+get the old behavior, accept malformed inputs. ``getattr(email.utils,
+'supports_strict_parsing', False)`` can be use to check if the *strict*
+paramater is available. Patch by Thomas Dwyer and Victor Stinner to improve
+the CVE-2023-27043 fix.
+
+..
+
+.. date: 2019-08-27-01-16-50
+.. gh-issue: 67693
+.. nonce: 4NIAiy
+.. section: Library
+
+Fix :func:`urllib.parse.urlunparse` and :func:`urllib.parse.urlunsplit` for
+URIs with path starting with multiple slashes and no authority. Based on
+patch by Ashwin Ramaswami.
+
+..
+
+.. date: 2024-09-04-18-20-11
+.. gh-issue: 112275
+.. nonce: W_iMiB
+.. section: Core and Builtins
+
+A deadlock involving ``pystate.c``'s ``HEAD_LOCK`` in ``posixmodule.c`` at
+fork is now fixed. Patch by ChuBoning based on previous Python 3.12 fix by
+Victor Stinner.
