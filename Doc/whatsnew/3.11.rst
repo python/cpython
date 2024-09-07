@@ -2028,10 +2028,6 @@ Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
 * Removed the deprecated :meth:`!split` method of :class:`!_tkinter.TkappType`.
   (Contributed by Erlend E. Aasland in :issue:`38371`.)
 
-* Removed namespace package support from :mod:`unittest` discovery.
-  It was introduced in Python 3.4 but has been broken since Python 3.7.
-  (Contributed by Inada Naoki in :issue:`23882`.)
-
 * Removed the undocumented private :meth:`!float.__set_format__` method,
   previously known as :meth:`!float.__setformat__` in Python 3.7.
   Its docstring said: "You probably don't want to use this function.
