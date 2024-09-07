@@ -356,7 +356,7 @@ free-threaded build.
 
 This project has been contributed by many people and the community,
 including Brett Simmers, Dino Viehland, Donghee Na, Ken Jin, Matt Page, and Sam Gross.
-Meta has been supported in the form of many engineer-years to this project.
+Meta has supported in the form of many engineer-years to this project.
 
 .. seealso::
 
