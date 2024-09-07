@@ -102,8 +102,9 @@ __all__ = ["run", "pm", "Pdb", "runeval", "runctx", "runcall", "set_trace",
 
 class PdbInvokeType(enum.Enum):
     """Enum to specify the type of invocation for the debugger."""
-    CommandLine = 1
-    InlineBreakpoint = 2
+    Unknown = "Unknown"
+    CommandLine = "CommandLine"
+    InlineBreakpoint = "InlineBreakpoint"
 
 
 def find_first_executable_line(code):
@@ -316,7 +317,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     _last_pdb_instance = None
 
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
-                 nosigint=False, readrc=True, invoke_type=None):
+                 nosigint=False, readrc=True, invoke_type=PdbInvokeType.Unknown):
         bdb.Bdb.__init__(self, skip=skip)
         cmd.Cmd.__init__(self, completekey, stdin, stdout)
         sys.audit("pdb.Pdb")
