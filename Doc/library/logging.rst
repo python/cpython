@@ -1094,11 +1094,11 @@ information into logging calls. For a usage example, see the section on
 
    .. attribute:: manager
 
-      Delegates to the underlying :attr:`!manager`` on *logger*.
+      Delegates to the underlying :attr:`!manager` on *logger*.
 
    .. attribute:: _log
 
-      Delegates to the underlying :meth:`!_log`` method on *logger*.
+      Delegates to the underlying :meth:`!_log` method on *logger*.
 
    In addition to the above, :class:`LoggerAdapter` supports the following
    methods of :class:`Logger`: :meth:`~Logger.debug`, :meth:`~Logger.info`,
