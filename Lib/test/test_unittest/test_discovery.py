@@ -11,6 +11,7 @@ from test.support import import_helper
 import unittest
 import unittest.mock
 import test.test_unittest
+from test.test_importlib import util as test_util
 
 
 class TestableTestProgram(unittest.TestProgram):
@@ -878,7 +879,7 @@ class TestDiscovery(unittest.TestCase):
             # Since loader.discover() can modify sys.path, restore it when done.
             with import_helper.DirsOnSysPath():
                 # Make sure to remove 'package' from sys.modules when done.
-                with test.test_importlib.util.uncache('package'):
+                with test_util.uncache('package'):
                     suite = loader.discover('package')
 
         self.assertEqual(suite, ['/a/tests', '/b/tests'])
