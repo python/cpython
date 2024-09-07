@@ -125,6 +125,7 @@
 #  define HAVE_PWRITEV_RUNTIME __builtin_available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
 #  define HAVE_MKFIFOAT_RUNTIME __builtin_available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 #  define HAVE_MKNODAT_RUNTIME __builtin_available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
+#  define HAVE_PTSNAME_R_RUNTIME __builtin_available(macOS 10.13.4, iOS 11.3, tvOS 11.3, watchOS 4.3, *)
 
 #  define HAVE_POSIX_SPAWN_SETSID_RUNTIME __builtin_available(macOS 10.15, *)
 
@@ -206,6 +207,10 @@
 #    define HAVE_MKNODAT_RUNTIME (mknodat != NULL)
 #  endif
 
+#  ifdef HAVE_PTSNAME_R
+#    define HAVE_PTSNAME_R_RUNTIME (ptsname_r != NULL)
+#  endif
+
 #endif
 
 #ifdef HAVE_FUTIMESAT
@@ -231,6 +236,7 @@
 #  define HAVE_PWRITEV_RUNTIME 1
 #  define HAVE_MKFIFOAT_RUNTIME 1
 #  define HAVE_MKNODAT_RUNTIME 1
+#  define HAVE_PTSNAME_R_RUNTIME 1
 #endif
 
 
@@ -8656,7 +8662,12 @@ os_ptsname_impl(PyObject *module, int fd)
     int ret;
     char name[MAXPATHLEN+1];
 
-    ret = ptsname_r(fd, name, sizeof(name));
+    if (HAVE_PTSNAME_R_RUNTIME) {
+        ret = ptsname_r(fd, name, sizeof(name));
+    }
+    else {
+        ret = -1;
+    }
     if (ret != 0) {
         errno = ret;
         return posix_error();
@@ -17751,6 +17762,9 @@ PROBE(probe_futimens, HAVE_FUTIMENS_RUNTIME)
 PROBE(probe_utimensat, HAVE_UTIMENSAT_RUNTIME)
 #endif
 
+#ifdef HAVE_PTSNAME_R
+PROBE(probe_ptsname_r, HAVE_PTSNAME_R_RUNTIME)
+#endif
 
 
 
@@ -17889,6 +17903,10 @@ static const struct have_function {
 
 #ifdef HAVE_UTIMENSAT
     { "HAVE_UTIMENSAT", probe_utimensat },
+#endif
+
+#ifdef HAVE_PTSNAME_R
+    { "HAVE_PTSNAME_R", probe_ptsname_r },
 #endif
 
 #ifdef MS_WINDOWS
