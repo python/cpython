@@ -1078,8 +1078,11 @@ with sub-interpreters:
    Ensure that the current thread is ready to call the Python C API regardless
    of the current state of Python, or of the global interpreter lock. This may
    be called as many times as desired by a thread as long as each call is
-   matched with a call to :c:func:`PyGILState_Release`. In general, other
-   thread-related APIs may be used between :c:func:`PyGILState_Ensure` and
+   matched with a call to :c:func:`PyGILState_Release`, *except* when the
+   thread creates a sub-interpreter with it's own :term:`GIL` (see :c:member:`PyInterpreterConfig.gil`).
+   In that case, the call to :c:func:`PyGILState_Release` should be replaced with :c:func:`Py_EndInterpreter`.
+
+   In general, other thread-related APIs may be used between :c:func:`PyGILState_Ensure` and
    :c:func:`PyGILState_Release` calls as long as the thread state is restored to
    its previous state before the Release().  For example, normal usage of the
    :c:macro:`Py_BEGIN_ALLOW_THREADS` and :c:macro:`Py_END_ALLOW_THREADS` macros is
@@ -1095,12 +1098,7 @@ with sub-interpreters:
    When the function returns, the current thread will hold the GIL and be able
    to call arbitrary Python code.  Failure is a fatal error.
 
-   If sub-interpreters are active, this function puts you in the global
-   interpreter (created by :c:func:`Py_Initialize`). If you create a sub-interpreter
-   right after you call this function, then the current thread's interpreter state is
-   switched to of that of the sub-interpreter, and you no longer have the
-   :c:type:`PyGILState_STATE` of the global interpreter. In which case, you must call
-   :c:func:`Py_EndInterpreter` instead of :c:func:`PyGILState_Release`.
+   If no interpreter state has been initialized for the thread, then this function returns the state of the global interpreter (created by :c:func:`Py_Initialize`).
 
    .. note::
       Calling this function from a thread when the runtime is finalizing
