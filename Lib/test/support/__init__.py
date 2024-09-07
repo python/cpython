@@ -367,10 +367,10 @@ def requires_mac_ver(*min_version):
     return decorator
 
 
-def check_sanitizer(*, address=False, memory=False, ub=False):
+def check_sanitizer(*, address=False, memory=False, ub=False, thread=False):
     """Returns True if Python is compiled with sanitizer support"""
-    if not (address or memory or ub):
-        raise ValueError('At least one of address, memory, or ub must be True')
+    if not (address or memory or ub or thread):
+        raise ValueError('At least one of address, memory, ub or thread must be True')
 
 
     _cflags = sysconfig.get_config_var('CFLAGS') or ''
@@ -387,18 +387,23 @@ def check_sanitizer(*, address=False, memory=False, ub=False):
         '-fsanitize=undefined' in _cflags or
         '--with-undefined-behavior-sanitizer' in _config_args
     )
+    thread_sanitizer = (
+        '-fsanitize=thread' in _cflags or
+        '--with-thread-sanitizer' in _config_args
+    )
     return (
         (memory and memory_sanitizer) or
         (address and address_sanitizer) or
-        (ub and ub_sanitizer)
+        (ub and ub_sanitizer) or
+        (thread and thread_sanitizer)
     )
 
 
-def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False):
+def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False, thread=False):
     """Decorator raising SkipTest if running with a sanitizer active."""
     if not reason:
         reason = 'not working with sanitizers active'
-    skip = check_sanitizer(address=address, memory=memory, ub=ub)
+    skip = check_sanitizer(address=address, memory=memory, ub=ub, thread=thread)
     return unittest.skipIf(skip, reason)
 
 
