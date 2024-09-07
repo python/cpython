@@ -52,7 +52,7 @@ randomness that your operating system provides.
 
 .. function:: randbits(k)
 
-   Return an int with *k* random bits, generating non-negative integers only.
+   Returns a non-negative Python integer with *k* random bits.
 
 
 Generating tokens
