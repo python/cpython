@@ -922,7 +922,8 @@ supports the creation of additional interpreters (using
 :c:func:`Py_NewInterpreter`), but switching between interpreters via the
 ``PyGILState_*`` API is unsupported.  If you call ``PyGILState_Ensure``
 in order to create a sub-interpreter, you must never try and interact
-with the GIL of other interpreters.
+with the GIL of other interpreters (including trying to release the GIL
+to return back to the previous interpreter).
 
 
 .. _fork-and-threads:
