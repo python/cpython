@@ -920,7 +920,9 @@ Note that the ``PyGILState_*`` functions assume there is only one global
 interpreter (created automatically by :c:func:`Py_Initialize`).  Python
 supports the creation of additional interpreters (using
 :c:func:`Py_NewInterpreter`), but switching between interpreters via the
-``PyGILState_*`` API is unsupported.
+``PyGILState_*`` API is unsupported.  If you call ``PyGILState_Ensure``
+in order to create a sub-interpreter, you must never try and interact
+with the GIL of other interpreters.
 
 
 .. _fork-and-threads:
@@ -1090,6 +1092,13 @@ with sub-interpreters:
 
    When the function returns, the current thread will hold the GIL and be able
    to call arbitrary Python code.  Failure is a fatal error.
+
+   If sub-interpreters are active, this function puts you in the global
+   interpreter (created by :c:func:`Py_Initialize`). If you create a sub-interpreter
+   right after you call this function, then the current thread is switched to that
+   sub-interpreter, and you no longer have the :c:type:`PyGILState_STATE` of the global
+   interpreter. In which case, you must call :c:func:`Py_EndInterpreter` instead of
+   :c:func:`PyGILState_Release`.
 
    .. note::
       Calling this function from a thread when the runtime is finalizing
