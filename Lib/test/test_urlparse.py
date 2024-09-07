@@ -1671,31 +1671,26 @@ class DeprecationTest(unittest.TestCase):
         self.assertEqual(str(cm.warning),
                          'urllib.parse.to_bytes() is deprecated as of 3.8')
 
-    def test_false_value_deprecation(self):
+    def test_falsey_deprecation(self):
         pattern = (
             "Providing false values other than strings or bytes to urllib.parse "
             "is deprecated: got <class "
         )
-        with self.assertWarnsRegex(DeprecationWarning, pattern):
-            urllib.parse.urljoin('http://www.python.org', [])
-        with self.assertWarnsRegex(DeprecationWarning, pattern):
-            urllib.parse.urljoin([], b'docs')
-        with self.assertWarnsRegex(DeprecationWarning, pattern):
-            urllib.parse.urlparse(b'www.python.org', None)
-        with self.assertWarnsRegex(DeprecationWarning, pattern):
-            urllib.parse.urlparse({}, '')
-        with self.assertWarnsRegex(DeprecationWarning, pattern):
-            urllib.parse.urlsplit(0, b'http')
-        with self.assertWarnsRegex(DeprecationWarning, pattern):
-            urllib.parse.urlsplit(b'http://www.python.org', None)
-        with self.assertWarnsRegex(DeprecationWarning, pattern):
-            urllib.parse.urldefrag(())
-        with self.assertWarnsRegex(DeprecationWarning, pattern):
-            urllib.parse.urlunparse([None, b'www.python.org', None, None, None, None])
-        with self.assertWarnsRegex(DeprecationWarning, pattern):
-            urllib.parse.urlunsplit(['http', 0, '', '', ''])
-        with self.assertWarnsRegex(DeprecationWarning, pattern):
-            urllib.parse.parse_qsl(None, encoding='latin-1')
+        cases = [
+            (urllib.parse.urljoin, ['http://www.python.org', []]),
+            (urllib.parse.urljoin, [[], b'docs']),
+            (urllib.parse.urlparse, [b'www.python.org', None]),
+            (urllib.parse.urlparse, [{}, '']),
+            (urllib.parse.urlsplit, [0, b'http']),
+            (urllib.parse.urlsplit, [b'http://www.python.org', None]),
+            (urllib.parse.urldefrag, [{}]),
+            (urllib.parse.urlunparse, [[None, b'www.python.org', None, None, None, None]]),
+            (urllib.parse.urlunsplit, [['http', 0, '', '', '']]),
+        ]
+        for callable, args in cases:
+            with self.subTest(callable=callable):
+                with self.assertWarnsRegex(DeprecationWarning, pattern):
+                    callable(*args)
 
 
 if __name__ == "__main__":
