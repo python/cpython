@@ -1042,6 +1042,10 @@ is meant to be exhaustive. Notice that spelling alternatives that only differ in
 case or use a hyphen instead of an underscore are also valid aliases; therefore,
 e.g. ``'utf-8'`` is a valid alias for the ``'utf_8'`` codec.
 
+On Windows, ``cpXXX`` codecs are available for all code pages.
+But only codecs listed in the following table are guarantead to exist on
+other platforms.
+
 .. impl-detail::
 
    Some common encodings can bypass the codecs lookup machinery to
@@ -1306,6 +1310,9 @@ particular, the following variants typically exist:
 
 .. versionchanged:: 3.8
    ``cp65001`` is now an alias to ``utf_8``.
+
+.. versionchanged:: 3.14
+   On Windows, ``cpXXX`` codecs are now available for all code pages.
 
 
 Python Specific Encodings
