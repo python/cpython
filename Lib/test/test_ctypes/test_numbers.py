@@ -7,7 +7,6 @@ from ctypes import (byref, sizeof, alignment,
                     c_char, c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulong, c_longlong, c_ulonglong,
                     c_float, c_double, c_longdouble, c_bool)
-from test.support.testcase import ComplexesAreIdenticalMixin
 
 
 def valid_ranges(*types):
@@ -40,7 +39,7 @@ signed_ranges = valid_ranges(*signed_types)
 bool_values = [True, False, 0, 1, -1, 5000, 'test', [], [1]]
 
 
-class NumberTestCase(unittest.TestCase, ComplexesAreIdenticalMixin):
+class NumberTestCase(unittest.TestCase):
 
     def test_default_init(self):
         # default values are set to zero
