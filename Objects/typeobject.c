@@ -5292,28 +5292,15 @@ get_base_by_token_recursive(PyTypeObject *type, void *token)
     return NULL;
 }
 
-PyTypeObject *
-_PyType_GetBaseByTokenNoNewRef(PyTypeObject *type, void *token)
+static inline PyTypeObject *
+get_base_by_token_from_mro(PyTypeObject *type, void *token)
 {
-    assert(token != NULL);
-    assert(PyType_Check(type));
-    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-        // Static type MRO contains no heap type,
-        // which type_ready_mro() ensures.
-        return NULL;
-    }
-    if (((PyHeapTypeObject*)type)->ht_token == token) {
-        return type;
-    }
     PyObject *mro = type->tp_mro;
-    if (mro == NULL) {
-        return get_base_by_token_recursive(type, token);
-    }
     assert(PyTuple_Check(mro));
     // mro_invoke() ensures that the type MRO cannot be empty.
     assert(PyTuple_GET_SIZE(mro) >= 1);
-    // Also, the first item in the MRO is the type itself, which
-    // we already checked above. We skip it in the loop.
+    // Also, the first item in the MRO is the type itself, which is supposed
+    // to be already checked by the caller. We skip it in the loop.
     assert(PyTuple_GET_ITEM(mro, 0) == (PyObject *)type);
     Py_ssize_t n = PyTuple_GET_SIZE(mro);
     for (Py_ssize_t i = 1; i < n; i++) {
@@ -5328,39 +5315,54 @@ _PyType_GetBaseByTokenNoNewRef(PyTypeObject *type, void *token)
     return NULL;
 }
 
-// MSVC seems to prefer this to goto jumps and duplicated branches on PGO,
-// which can affect the performance of setting a result.
 static inline int
-_token_not_found(PyTypeObject **result, int ret)
+_token_found(PyTypeObject **result, PyTypeObject *base)
 {
-    assert(ret == 0 || ret == -1);
     if (result != NULL) {
-        *result = NULL;
+       *result = (PyTypeObject *)Py_NewRef(base);
     }
-    return ret;
+    return 1;
 }
 
 int
 PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
 {
+    if (result != NULL) {
+        *result = NULL;
+    }
     if (token == NULL) {
+        // varargs avoids unnecessarily being inlined
         PyErr_Format(PyExc_SystemError,
                      "PyType_GetBaseByToken called with token=NULL");
-        return _token_not_found(result, -1);
+        return -1;
     }
     if (!PyType_Check(type)) {
         PyErr_Format(PyExc_TypeError,
                      "expected a type, got a '%T' object", type);
-        return _token_not_found(result, -1);
+        return -1;
     }
-    PyTypeObject *base = _PyType_GetBaseByTokenNoNewRef(type, token);
-    if (base == NULL) {
-        return _token_not_found(result, 0);
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        // Static type MRO contains no heap type,
+        // which type_ready_mro() ensures.
+        return 0;
     }
-    if (result != NULL) {
-        *result = (PyTypeObject *)Py_NewRef(base);
+    if (((PyHeapTypeObject*)type)->ht_token == token) {
+        return _token_found(result, type);
     }
-    return 1;
+
+    PyTypeObject *base;
+    if (type->tp_mro != NULL) {
+        base = get_base_by_token_from_mro(type, token);
+    }
+    else {
+        base = get_base_by_token_recursive(type, token);
+    }
+    if (base != NULL) {
+        return _token_found(result, base);
+    }
+    // This section will be placed in a cold path due to the low score of PGO
+    // exercise, so `*result` is redundantly cleared first as a common case.
+    return 0;
 }
 
 
