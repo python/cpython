@@ -355,7 +355,8 @@ pip 24.1 or newer is required to install packages with C extensions in the
 free-threaded build.
 
 This project has been contributed by many people and the community,
-including Brett Simmers, Dino Viehland, Donghee Na, Ken Jin, Matt Page, and Sam Gross.
+including Brett Simmers, Dino Viehland, Donghee Na, Itamar Oren, Ken Jin,
+Matt Page, and Sam Gross.
 Meta has supported in the form of many engineer-years to this project.
 
 .. seealso::
