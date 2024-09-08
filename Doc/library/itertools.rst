@@ -474,7 +474,7 @@ loops that truncate the stream.
    If *start* is zero or ``None``, iteration starts at zero.  Otherwise,
    elements from the iterable are skipped until *start* is reached.
 
-   If *stop* is ``None``, iteration continues until the iterator is
+   If *stop* is ``None``, iteration continues until the iterable is
    exhausted, if at all.  Otherwise, it stops at the specified position.
 
    If *step* is ``None``, the step defaults to one.  Elements are returned
@@ -502,6 +502,10 @@ loops that truncate the stream.
               if i == next_i:
                   yield element
                   next_i += step
+
+   If the input is an iterator, then fully consuming the *islice*
+   advances the input iterator by ``max(start, stop)`` steps regardless
+   of the *step* value.
 
 
 .. function:: pairwise(iterable)
