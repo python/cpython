@@ -681,9 +681,10 @@ de_instrument_line(_Py_CODEUNIT *bytecode, _PyCoMonitoringData *monitoring, int 
     }
     CHECK(original_opcode != 0);
     CHECK(original_opcode == _PyOpcode_Deopt[original_opcode]);
-    instr->op.code = original_opcode;
+    FT_ATOMIC_STORE_UINT8(instr->op.code, original_opcode);
     if (_PyOpcode_Caches[original_opcode]) {
-        instr[1].counter = adaptive_counter_warmup();
+        FT_ATOMIC_STORE_UINT16_RELAXED(instr[1].counter.as_counter,
+                                       adaptive_counter_warmup().as_counter);
     }
     assert(instr->op.code != INSTRUMENTED_LINE);
 }
@@ -705,9 +706,10 @@ de_instrument_per_instruction(_Py_CODEUNIT *bytecode,
     int original_opcode = monitoring->per_instruction_opcodes[i];
     CHECK(original_opcode != 0);
     CHECK(original_opcode == _PyOpcode_Deopt[original_opcode]);
-    *opcode_ptr = original_opcode;
+    FT_ATOMIC_STORE_UINT8_RELAXED(*opcode_ptr, original_opcode);
     if (_PyOpcode_Caches[original_opcode]) {
-        instr[1].counter = adaptive_counter_warmup();
+        FT_ATOMIC_STORE_UINT16_RELAXED(instr[1].counter.as_counter,
+                                       adaptive_counter_warmup().as_counter);
     }
     assert(*opcode_ptr != INSTRUMENTED_INSTRUCTION);
     assert(instr->op.code != INSTRUMENTED_INSTRUCTION);
@@ -740,7 +742,6 @@ instrument(_Py_CODEUNIT *bytecode, _PyCoMonitoringData *monitoring, int i)
         if (_PyOpcode_Caches[deopt]) {
             FT_ATOMIC_STORE_UINT16_RELAXED(instr[1].counter.as_counter,
                                            adaptive_counter_warmup().as_counter);
-            instr[1].counter = adaptive_counter_warmup();
         }
     }
 }
@@ -756,7 +757,7 @@ instrument_line(_Py_CODEUNIT *bytecode, _PyCoMonitoringData *monitoring, int i)
     _PyCoLineInstrumentationData *lines = &monitoring->lines[i];
     lines->original_opcode = _PyOpcode_Deopt[opcode];
     CHECK(lines->original_opcode > 0);
-    *opcode_ptr = INSTRUMENTED_LINE;
+    FT_ATOMIC_STORE_UINT8_RELAXED(*opcode_ptr, INSTRUMENTED_LINE);
 }
 
 static void
@@ -786,7 +787,7 @@ instrument_per_instruction(_Py_CODEUNIT *bytecode,
         monitoring->per_instruction_opcodes[i] = _PyOpcode_Deopt[opcode];
     }
     assert(monitoring->per_instruction_opcodes[i] > 0);
-    *opcode_ptr = INSTRUMENTED_INSTRUCTION;
+    FT_ATOMIC_STORE_UINT8_RELAXED(*opcode_ptr, INSTRUMENTED_INSTRUCTION);
 }
 
 static void
