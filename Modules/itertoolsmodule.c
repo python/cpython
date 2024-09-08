@@ -349,8 +349,8 @@ pairwise_next(pairwiseobject *po)
 #endif
     if (old == NULL) {
         old = (*Py_TYPE(it)->tp_iternext)(it);
-        Py_XSETREF(po->old, old);
 #ifndef Py_GIL_DISABLED
+        Py_XSETREF(po->old, old);
         if (old == NULL) {
             Py_CLEAR(po->it);
             return NULL;
@@ -365,22 +365,34 @@ pairwise_next(pairwiseobject *po)
             _Py_atomic_store_int_relaxed(&po->iterator_exhausted, 1);
             return NULL;
         }
+        PyObject *po_old =  ( PyObject *)_Py_atomic_exchange_ptr(&po->old, old);
+        //  we expect po_old to be zero, but it can have been set by
+        // a concurrent thread
+        Py_XDECREF(po_old);
 #endif
     }
+
+#ifndef Py_GIL_DISABLED
     Py_INCREF(old);
     new = (*Py_TYPE(it)->tp_iternext)(it);
     if (new == NULL) {
-#ifndef Py_GIL_DISABLED
         Py_CLEAR(po->it);
         Py_CLEAR(po->old);
-#else
-        _Py_atomic_store_int_relaxed(&po->iterator_exhausted, 1);
-        PyObject *po_old =  ( PyObject *)_Py_atomic_exchange_ptr(&po->old, 0);
-        Py_XDECREF(po_old);
-#endif
         Py_DECREF(old);
         return NULL;
     }
+#else
+    // at this stage we know that po->old has been set, but we have to make
+    // sure that po->old is valid at every moment so we atomically swap old
+    // and new. for that we first need to acquire a new object
+    new = (*Py_TYPE(it)->tp_iternext)(it);
+    if (new == NULL) {
+        _Py_atomic_store_int_relaxed(&po->iterator_exhausted, 1);
+        return NULL;
+    }
+    old =  ( PyObject *)_Py_atomic_exchange_ptr(&po->old, new);
+    // we have acquired old and we hold a reference to it
+#endif
 
     assert(result != NULL);
     if (_PyObject_IsUniquelyReferenced(result)) {
@@ -408,9 +420,7 @@ pairwise_next(pairwiseobject *po)
 #ifndef Py_GIL_DISABLED
     Py_XSETREF(po->old, new);
 #else
-     // this should be atomic in the FT build
-    PyObject *po_old =  ( PyObject *)_Py_atomic_exchange_ptr(&po->old, new);
-    Py_XDECREF(po_old);
+    // update was already done
 #endif
 
     Py_DECREF(old);
