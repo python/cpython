@@ -355,10 +355,10 @@ pip 24.1 or newer is required to install packages with C extensions in the
 free-threaded build.
 
 This work is thanks to many people and organisations, including the large community of contributors
-to Python and third party projects to test and enable free-threading support.
+to Python and third-party projects to test and enable free-threading support.
 This includes, but is not limited to:
 Sam Gross, Ken Jin, Donghee Na, Itamar Oren, Matt Page, Brett Simmers, and Dino Viehland.
-Many of these contributors are employed by Meta Inc,
+Many of these contributors are employed by Meta,
 which has provided significant manpower to support this project.
 
 .. seealso::
