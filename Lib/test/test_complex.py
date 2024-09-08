@@ -1,6 +1,7 @@
 import unittest
 import sys
 from test import support
+from test.support.testcase import ComplexesAreIdenticalMixin
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 
@@ -52,7 +53,7 @@ class WithComplex:
     def __complex__(self):
         return self.value
 
-class ComplexTest(unittest.TestCase):
+class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
     def assertAlmostEqual(self, a, b):
         if isinstance(a, complex):
@@ -80,33 +81,6 @@ class ComplexTest(unittest.TestCase):
             return abs(y) < eps
         # check that relative difference < eps
         self.assertTrue(abs((x-y)/y) < eps)
-
-    def assertFloatsAreIdentical(self, x, y):
-        """assert that floats x and y are identical, in the sense that:
-        (1) both x and y are nans, or
-        (2) both x and y are infinities, with the same sign, or
-        (3) both x and y are zeros, with the same sign, or
-        (4) x and y are both finite and nonzero, and x == y
-
-        """
-        msg = 'floats {!r} and {!r} are not identical'
-
-        if isnan(x) or isnan(y):
-            if isnan(x) and isnan(y):
-                return
-        elif x == y:
-            if x != 0.0:
-                return
-            # both zero; check that signs match
-            elif copysign(1.0, x) == copysign(1.0, y):
-                return
-            else:
-                msg += ': zeros have different signs'
-        self.fail(msg.format(x, y))
-
-    def assertComplexesAreIdentical(self, x, y):
-        self.assertFloatsAreIdentical(x.real, y.real)
-        self.assertFloatsAreIdentical(x.imag, y.imag)
 
     def assertClose(self, x, y, eps=1e-9):
         """Return true iff complexes x and y "are close"."""
@@ -829,8 +803,7 @@ class ComplexTest(unittest.TestCase):
             for y in vals:
                 z = complex(x, y)
                 roundtrip = complex(repr(z))
-                self.assertFloatsAreIdentical(z.real, roundtrip.real)
-                self.assertFloatsAreIdentical(z.imag, roundtrip.imag)
+                self.assertComplexesAreIdentical(z, roundtrip)
 
         # if we predefine some constants, then eval(repr(z)) should
         # also work, except that it might change the sign of zeros
