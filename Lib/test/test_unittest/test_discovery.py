@@ -884,6 +884,20 @@ class TestDiscovery(unittest.TestCase):
 
         self.assertEqual(suite, ['/a/tests', '/b/tests'])
 
+    def test_discovery_start_dir_is_namespace(self):
+        """Subdirectory discovery not affected if start_dir is a namespace pkg."""
+        loader = unittest.TestLoader()
+        with (
+            import_helper.DirsOnSysPath(os.path.join(os.path.dirname(__file__))),
+            test_util.uncache('namespace_test_pkg')
+        ):
+            suite = loader.discover('namespace_test_pkg')
+        self.assertEqual(
+            {list(suite)[0]._tests[0].__module__ for suite in suite._tests if list(suite)},
+            # files under namespace_test_pkg.noop not discovered.
+            {'namespace_test_pkg.test_foo', 'namespace_test_pkg.bar.test_bar'},
+        )
+
     def test_discovery_failed_discovery(self):
         from test.test_importlib import util
 

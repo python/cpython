@@ -393,7 +393,7 @@ class TestLoader(object):
         for path in paths:
             full_path = os.path.join(start_dir, path)
             tests, should_recurse = self._find_test_path(
-                full_path, pattern, namespace)
+                full_path, pattern, False)
             if tests is not None:
                 yield tests
             if should_recurse:
@@ -401,7 +401,7 @@ class TestLoader(object):
                 name = self._get_name_from_path(full_path)
                 self._loading_packages.add(name)
                 try:
-                    yield from self._find_tests(full_path, pattern, namespace)
+                    yield from self._find_tests(full_path, pattern, False)
                 finally:
                     self._loading_packages.discard(name)
 
