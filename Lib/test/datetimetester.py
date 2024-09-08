@@ -1,6 +1,6 @@
 """Test date/time type.
 
-See https://www.zope.dev/Members/fdrake/DateTimeWiki/TestCases
+See https://web.archive.org/web/20050205022813/https://www.zope.org/Members/fdrake/DateTimeWiki/TestCases
 """
 import bisect
 import copy
