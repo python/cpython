@@ -282,5 +282,6 @@ client::
 
     asyncio.run(main())
 
-    # To test it you can use telnet:
+    # To test it you can use telnet or curl:
     #     telnet 127.0.0.1 8081
+    #     curl --http0.9 127.0.0.1:8081
