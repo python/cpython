@@ -1081,8 +1081,8 @@ with sub-interpreters:
    matched with a call to :c:func:`PyGILState_Release`, *except* when the
    thread creates a sub-interpreter with its own GIL (see
    :c:member:`PyInterpreterConfig.gil`).
-   In that case, :c:func:`PyGILState_Release` should be used instead of
-   :c:func:`Py_EndInterpreter` to release that interpreter's GIL.
+   In that case, :c:func:`Py_EndInterpreter` should be used instead to
+   release that interpreter's GIL.
 
    In general, other thread-related APIs may be used between :c:func:`PyGILState_Ensure` and
    :c:func:`PyGILState_Release` calls as long as the thread state is restored to
