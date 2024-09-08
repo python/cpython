@@ -1013,7 +1013,7 @@ def _parse_args(arg_list: list[str] | None):
         help="print a random integer between 1 and N inclusive")
     group.add_argument(
         "-f", "--float", type=float, metavar="N",
-        help="print a random floating point number between 1 and N inclusive")
+        help="print a random floating-point number between 1 and N inclusive")
     group.add_argument(
         "--test", type=int, const=10_000, nargs="?",
         help=argparse.SUPPRESS)

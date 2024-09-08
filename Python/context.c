@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_VectorcallTstate()
 #include "pycore_context.h"
+#include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
 #include "pycore_gc.h"            // _PyObject_GC_MAY_BE_TRACKED()
 #include "pycore_hamt.h"
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -62,16 +63,6 @@ contextvar_set(PyContextVar *var, PyObject *val);
 
 static int
 contextvar_del(PyContextVar *var);
-
-
-#ifdef WITH_FREELISTS
-static struct _Py_context_freelist *
-get_context_freelist(void)
-{
-    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
-    return &freelists->contexts;
-}
-#endif
 
 
 PyObject *
@@ -203,6 +194,7 @@ PyContextVar_Get(PyObject *ovar, PyObject *def, PyObject **val)
         goto not_found;
     }
 
+#ifndef Py_GIL_DISABLED
     if (var->var_cached != NULL &&
             var->var_cached_tsid == ts->id &&
             var->var_cached_tsver == ts->context_ver)
@@ -210,6 +202,7 @@ PyContextVar_Get(PyObject *ovar, PyObject *def, PyObject **val)
         *val = var->var_cached;
         goto found;
     }
+#endif
 
     assert(PyContext_CheckExact(ts->context));
     PyHamtObject *vars = ((PyContext *)ts->context)->ctx_vars;
@@ -221,9 +214,11 @@ PyContextVar_Get(PyObject *ovar, PyObject *def, PyObject **val)
     }
     if (res == 1) {
         assert(found != NULL);
+#ifndef Py_GIL_DISABLED
         var->var_cached = found;  /* borrow */
         var->var_cached_tsid = ts->id;
         var->var_cached_tsver = ts->context_ver;
+#endif
 
         *val = found;
         goto found;
@@ -339,20 +334,8 @@ class _contextvars.Context "PyContext *" "&PyContext_Type"
 static inline PyContext *
 _context_alloc(void)
 {
-    PyContext *ctx;
-#ifdef WITH_FREELISTS
-    struct _Py_context_freelist *context_freelist = get_context_freelist();
-    if (context_freelist->numfree > 0) {
-        context_freelist->numfree--;
-        ctx = context_freelist->items;
-        context_freelist->items = (PyContext *)ctx->ctx_weakreflist;
-        OBJECT_STAT_INC(from_freelist);
-        ctx->ctx_weakreflist = NULL;
-        _Py_NewReference((PyObject *)ctx);
-    }
-    else
-#endif
-    {
+    PyContext *ctx = _Py_FREELIST_POP(PyContext, contexts);
+    if (ctx == NULL) {
         ctx = PyObject_GC_New(PyContext, &PyContext_Type);
         if (ctx == NULL) {
             return NULL;
@@ -467,19 +450,7 @@ context_tp_dealloc(PyContext *self)
     }
     (void)context_tp_clear(self);
 
-#ifdef WITH_FREELISTS
-    struct _Py_context_freelist *context_freelist = get_context_freelist();
-    if (context_freelist->numfree >= 0 && context_freelist->numfree < PyContext_MAXFREELIST) {
-        context_freelist->numfree++;
-        self->ctx_weakreflist = (PyObject *)context_freelist->items;
-        context_freelist->items = self;
-        OBJECT_STAT_INC(to_freelist);
-    }
-    else
-#endif
-    {
-        Py_TYPE(self)->tp_free(self);
-    }
+    _Py_FREELIST_FREE(contexts, self, Py_TYPE(self)->tp_free);
 }
 
 static PyObject *
@@ -723,8 +694,10 @@ PyTypeObject PyContext_Type = {
 static int
 contextvar_set(PyContextVar *var, PyObject *val)
 {
+#ifndef Py_GIL_DISABLED
     var->var_cached = NULL;
     PyThreadState *ts = _PyThreadState_GET();
+#endif
 
     PyContext *ctx = context_get();
     if (ctx == NULL) {
@@ -739,16 +712,20 @@ contextvar_set(PyContextVar *var, PyObject *val)
 
     Py_SETREF(ctx->ctx_vars, new_vars);
 
+#ifndef Py_GIL_DISABLED
     var->var_cached = val;  /* borrow */
     var->var_cached_tsid = ts->id;
     var->var_cached_tsver = ts->context_ver;
+#endif
     return 0;
 }
 
 static int
 contextvar_del(PyContextVar *var)
 {
+#ifndef Py_GIL_DISABLED
     var->var_cached = NULL;
+#endif
 
     PyContext *ctx = context_get();
     if (ctx == NULL) {
@@ -823,9 +800,11 @@ contextvar_new(PyObject *name, PyObject *def)
 
     var->var_default = Py_XNewRef(def);
 
+#ifndef Py_GIL_DISABLED
     var->var_cached = NULL;
     var->var_cached_tsid = 0;
     var->var_cached_tsver = 0;
+#endif
 
     if (_PyObject_GC_MAY_BE_TRACKED(name) ||
             (def != NULL && _PyObject_GC_MAY_BE_TRACKED(def)))
@@ -863,9 +842,11 @@ contextvar_tp_clear(PyContextVar *self)
 {
     Py_CLEAR(self->var_name);
     Py_CLEAR(self->var_default);
+#ifndef Py_GIL_DISABLED
     self->var_cached = NULL;
     self->var_cached_tsid = 0;
     self->var_cached_tsver = 0;
+#endif
     return 0;
 }
 
@@ -1248,24 +1229,6 @@ get_token_missing(void)
 
 
 ///////////////////////////
-
-
-void
-_PyContext_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization)
-{
-#ifdef WITH_FREELISTS
-    struct _Py_context_freelist *state = &freelists->contexts;
-    for (; state->numfree > 0; state->numfree--) {
-        PyContext *ctx = state->items;
-        state->items = (PyContext *)ctx->ctx_weakreflist;
-        ctx->ctx_weakreflist = NULL;
-        PyObject_GC_Del(ctx);
-    }
-    if (is_finalization) {
-        state->numfree = -1;
-    }
-#endif
-}
 
 
 PyStatus

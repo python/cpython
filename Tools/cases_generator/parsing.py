@@ -60,6 +60,12 @@ class Node:
         end = context.end
         return tokens[begin:end]
 
+    @property
+    def first_token(self) -> lx.Token:
+        context = self.context
+        assert context is not None
+        return context.owner.tokens[context.begin]
+
 
 @dataclass
 class Block(Node):
@@ -421,7 +427,9 @@ class Parser(PLexer):
                                     raise self.make_syntax_error("Expected {")
                                 if members := self.members():
                                     if self.expect(lx.RBRACE) and self.expect(lx.SEMI):
-                                        return Pseudo(tkn.text, inp, outp, flags, members)
+                                        return Pseudo(
+                                            tkn.text, inp, outp, flags, members
+                                        )
         return None
 
     def members(self) -> list[str] | None:

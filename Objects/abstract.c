@@ -1000,20 +1000,6 @@ binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
     PyObject *result = BINARY_OP1(v, w, op_slot, op_name);
     if (result == Py_NotImplemented) {
         Py_DECREF(result);
-
-        if (op_slot == NB_SLOT(nb_rshift) &&
-            PyCFunction_CheckExact(v) &&
-            strcmp(((PyCFunctionObject *)v)->m_ml->ml_name, "print") == 0)
-        {
-            PyErr_Format(PyExc_TypeError,
-                "unsupported operand type(s) for %.100s: "
-                "'%.100s' and '%.100s'. Did you mean \"print(<message>, "
-                "file=<output_stream>)\"?",
-                op_name,
-                Py_TYPE(v)->tp_name,
-                Py_TYPE(w)->tp_name);
-            return NULL;
-        }
         return binop_type_error(v, w, op_name);
     }
     return result;
@@ -2881,7 +2867,50 @@ PyAIter_Check(PyObject *obj)
             tp->tp_as_async->am_anext != &_PyObject_NextNotImplemented);
 }
 
+static int
+iternext(PyObject *iter, PyObject **item)
+{
+    iternextfunc tp_iternext = Py_TYPE(iter)->tp_iternext;
+    if ((*item = tp_iternext(iter))) {
+        return 1;
+    }
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    /* When the iterator is exhausted it must return NULL;
+     * a StopIteration exception may or may not be set. */
+    if (!_PyErr_Occurred(tstate)) {
+        return 0;
+    }
+    if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+        _PyErr_Clear(tstate);
+        return 0;
+    }
+
+    /* Error case: an exception (different than StopIteration) is set. */
+    return -1;
+}
+
+/* Return 1 and set 'item' to the next item of 'iter' on success.
+ * Return 0 and set 'item' to NULL when there are no remaining values.
+ * Return -1, set 'item' to NULL and set an exception on error.
+ */
+int
+PyIter_NextItem(PyObject *iter, PyObject **item)
+{
+    assert(iter != NULL);
+    assert(item != NULL);
+
+    if (Py_TYPE(iter)->tp_iternext == NULL) {
+        *item = NULL;
+        PyErr_Format(PyExc_TypeError, "expected an iterator, got '%T'", iter);
+        return -1;
+    }
+
+    return iternext(iter, item);
+}
+
 /* Return next item.
+ *
  * If an error occurs, return NULL.  PyErr_Occurred() will be true.
  * If the iteration terminates normally, return NULL and clear the
  * PyExc_StopIteration exception (if it was set).  PyErr_Occurred()
@@ -2891,17 +2920,9 @@ PyAIter_Check(PyObject *obj)
 PyObject *
 PyIter_Next(PyObject *iter)
 {
-    PyObject *result;
-    result = (*Py_TYPE(iter)->tp_iternext)(iter);
-    if (result == NULL) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        if (_PyErr_Occurred(tstate)
-            && _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))
-        {
-            _PyErr_Clear(tstate);
-        }
-    }
-    return result;
+    PyObject *item;
+    (void)iternext(iter, &item);
+    return item;
 }
 
 PySendResult

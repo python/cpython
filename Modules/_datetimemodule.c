@@ -1853,7 +1853,12 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 
 #ifdef Py_NORMALIZE_CENTURY
     /* Buffer of maximum size of formatted year permitted by long. */
-    char buf[SIZEOF_LONG*5/2+2];
+    char buf[SIZEOF_LONG * 5 / 2 + 2
+#ifdef Py_STRFTIME_C99_SUPPORT
+    /* Need 6 more to accommodate dashes, 2-digit month and day for %F. */
+             + 6
+#endif
+    ];
 #endif
 
     assert(object && format && timetuple);
@@ -1950,11 +1955,18 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             ntoappend = PyBytes_GET_SIZE(freplacement);
         }
 #ifdef Py_NORMALIZE_CENTURY
-        else if (ch == 'Y' || ch == 'G') {
+        else if (ch == 'Y' || ch == 'G'
+#ifdef Py_STRFTIME_C99_SUPPORT
+                 || ch == 'F' || ch == 'C'
+#endif
+        ) {
             /* 0-pad year with century as necessary */
-            PyObject *item = PyTuple_GET_ITEM(timetuple, 0);
+            PyObject *item = PySequence_GetItem(timetuple, 0);
+            if (item == NULL) {
+                goto Done;
+            }
             long year_long = PyLong_AsLong(item);
-
+            Py_DECREF(item);
             if (year_long == -1 && PyErr_Occurred()) {
                 goto Done;
             }
@@ -1980,8 +1992,16 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                     goto Done;
                 }
             }
-
-            ntoappend = PyOS_snprintf(buf, sizeof(buf), "%04ld", year_long);
+            ntoappend = PyOS_snprintf(buf, sizeof(buf),
+#ifdef Py_STRFTIME_C99_SUPPORT
+                                      ch == 'F' ? "%04ld-%%m-%%d" :
+#endif
+                                      "%04ld", year_long);
+#ifdef Py_STRFTIME_C99_SUPPORT
+            if (ch == 'C') {
+                ntoappend -= 2;
+            }
+#endif
             ptoappend = buf;
         }
 #endif
@@ -3822,7 +3842,7 @@ datetime_date_replace_impl(PyDateTime_Date *self, int year, int month,
 static Py_hash_t
 generic_hash(unsigned char *data, int len)
 {
-    return _Py_HashBytes(data, len);
+    return Py_HashBuffer(data, len);
 }
 
 
@@ -7256,49 +7276,51 @@ _datetime_exec(PyObject *module)
         Py_DECREF(value);                               \
     } while(0)
 
-    /* timedelta values */
-    PyObject *d = _PyType_GetDict(&PyDateTime_DeltaType);
-    DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
-    DATETIME_ADD_MACRO(d, "min", new_delta(-MAX_DELTA_DAYS, 0, 0, 0));
-    DATETIME_ADD_MACRO(d, "max",
-                       new_delta(MAX_DELTA_DAYS, 24*3600-1, 1000000-1, 0));
+    if (!reloading) {
+        /* timedelta values */
+        PyObject *d = _PyType_GetDict(&PyDateTime_DeltaType);
+        DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
+        DATETIME_ADD_MACRO(d, "min", new_delta(-MAX_DELTA_DAYS, 0, 0, 0));
+        DATETIME_ADD_MACRO(d, "max",
+                           new_delta(MAX_DELTA_DAYS, 24*3600-1, 1000000-1, 0));
 
-    /* date values */
-    d = _PyType_GetDict(&PyDateTime_DateType);
-    DATETIME_ADD_MACRO(d, "min", new_date(1, 1, 1));
-    DATETIME_ADD_MACRO(d, "max", new_date(MAXYEAR, 12, 31));
-    DATETIME_ADD_MACRO(d, "resolution", new_delta(1, 0, 0, 0));
+        /* date values */
+        d = _PyType_GetDict(&PyDateTime_DateType);
+        DATETIME_ADD_MACRO(d, "min", new_date(1, 1, 1));
+        DATETIME_ADD_MACRO(d, "max", new_date(MAXYEAR, 12, 31));
+        DATETIME_ADD_MACRO(d, "resolution", new_delta(1, 0, 0, 0));
 
-    /* time values */
-    d = _PyType_GetDict(&PyDateTime_TimeType);
-    DATETIME_ADD_MACRO(d, "min", new_time(0, 0, 0, 0, Py_None, 0));
-    DATETIME_ADD_MACRO(d, "max", new_time(23, 59, 59, 999999, Py_None, 0));
-    DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
+        /* time values */
+        d = _PyType_GetDict(&PyDateTime_TimeType);
+        DATETIME_ADD_MACRO(d, "min", new_time(0, 0, 0, 0, Py_None, 0));
+        DATETIME_ADD_MACRO(d, "max", new_time(23, 59, 59, 999999, Py_None, 0));
+        DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
 
-    /* datetime values */
-    d = _PyType_GetDict(&PyDateTime_DateTimeType);
-    DATETIME_ADD_MACRO(d, "min",
-                       new_datetime(1, 1, 1, 0, 0, 0, 0, Py_None, 0));
-    DATETIME_ADD_MACRO(d, "max", new_datetime(MAXYEAR, 12, 31, 23, 59, 59,
-                                              999999, Py_None, 0));
-    DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
+        /* datetime values */
+        d = _PyType_GetDict(&PyDateTime_DateTimeType);
+        DATETIME_ADD_MACRO(d, "min",
+                           new_datetime(1, 1, 1, 0, 0, 0, 0, Py_None, 0));
+        DATETIME_ADD_MACRO(d, "max", new_datetime(MAXYEAR, 12, 31, 23, 59, 59,
+                                                  999999, Py_None, 0));
+        DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
 
-    /* timezone values */
-    d = _PyType_GetDict(&PyDateTime_TimeZoneType);
-    if (PyDict_SetItemString(d, "utc", (PyObject *)&utc_timezone) < 0) {
-        goto error;
+        /* timezone values */
+        d = _PyType_GetDict(&PyDateTime_TimeZoneType);
+        if (PyDict_SetItemString(d, "utc", (PyObject *)&utc_timezone) < 0) {
+            goto error;
+        }
+
+        /* bpo-37642: These attributes are rounded to the nearest minute for backwards
+        * compatibility, even though the constructor will accept a wider range of
+        * values. This may change in the future.*/
+
+        /* -23:59 */
+        DATETIME_ADD_MACRO(d, "min", create_timezone_from_delta(-1, 60, 0, 1));
+
+        /* +23:59 */
+        DATETIME_ADD_MACRO(
+                d, "max", create_timezone_from_delta(0, (23 * 60 + 59) * 60, 0, 0));
     }
-
-    /* bpo-37642: These attributes are rounded to the nearest minute for backwards
-     * compatibility, even though the constructor will accept a wider range of
-     * values. This may change in the future.*/
-
-    /* -23:59 */
-    DATETIME_ADD_MACRO(d, "min", create_timezone_from_delta(-1, 60, 0, 1));
-
-    /* +23:59 */
-    DATETIME_ADD_MACRO(
-            d, "max", create_timezone_from_delta(0, (23 * 60 + 59) * 60, 0, 0));
 
 #undef DATETIME_ADD_MACRO
 
@@ -7341,12 +7363,6 @@ _datetime_exec(PyObject *module)
      */
     static_assert(DI100Y == 25 * DI4Y - 1, "DI100Y");
     assert(DI100Y == days_before_year(100+1));
-
-    if (reloading) {
-        for (size_t i = 0; i < Py_ARRAY_LENGTH(capi_types); i++) {
-            PyType_Modified(capi_types[i]);
-        }
-    }
 
     if (set_current_module(interp, module) < 0) {
         goto error;

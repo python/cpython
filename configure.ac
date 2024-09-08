@@ -382,7 +382,7 @@ AC_MSG_RESULT(["$MACHDEP"])
 # On cross-compile builds, configure will look for a host-specific compiler by
 # prepending the user-provided host triple to the required binary name.
 #
-# On iOS, this results in binaries like "arm64-apple-ios12.0-simulator-gcc",
+# On iOS, this results in binaries like "arm64-apple-ios13.0-simulator-gcc",
 # which isn't a binary that exists, and isn't very convenient, as it contains the
 # iOS version. As the default cross-compiler name won't exist, configure falls
 # back to gcc, which *definitely* won't work. We're providing wrapper scripts for
@@ -418,9 +418,9 @@ if test -z "$CPP"; then
 fi
 if test -z "$CXX"; then
 	case "$host" in
-		aarch64-apple-ios*-simulator) CXX=arm64-apple-ios-simulator-clang ;;
-		aarch64-apple-ios*)           CXX=arm64-apple-ios-clang ;;
-		x86_64-apple-ios*-simulator)  CXX=x86_64-apple-ios-simulator-clang ;;
+		aarch64-apple-ios*-simulator) CXX=arm64-apple-ios-simulator-clang++ ;;
+		aarch64-apple-ios*)           CXX=arm64-apple-ios-clang++ ;;
+		x86_64-apple-ios*-simulator)  CXX=x86_64-apple-ios-simulator-clang++ ;;
 		*)
 	esac
 fi
@@ -710,8 +710,6 @@ AC_ARG_WITH(
         Darwin|iOS)
           # iOS is able to share the macOS patch
           APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
-          APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
-          APP_STORE_COMPLIANCE_PATCH_FLAGS=
           ;;
         *) AC_MSG_ERROR([no default app store compliance patch available for $ac_sys_system]) ;;
       esac
@@ -719,8 +717,6 @@ AC_ARG_WITH(
       ;;
     *)
       APP_STORE_COMPLIANCE_PATCH="${withval}"
-      APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
-      APP_STORE_COMPLIANCE_PATCH_FLAGS=
       AC_MSG_RESULT([applying custom app store compliance patch])
       ;;
     esac
@@ -729,29 +725,16 @@ AC_ARG_WITH(
       iOS)
         # Always apply the compliance patch on iOS; we can use the macOS patch
         APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
-        APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
-        APP_STORE_COMPLIANCE_PATCH_FLAGS=
         AC_MSG_RESULT([applying default app store compliance patch])
         ;;
-      Darwin)
-        # Always *check* the compliance patch on macOS
-        APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
-        APP_STORE_COMPLIANCE_PATCH_TARGET="build/app-store-compliant"
-        APP_STORE_COMPLIANCE_PATCH_FLAGS="--dry-run"
-        AC_MSG_RESULT([checking (not applying) default app store compliance patch])
-        ;;
       *)
-        # No app compliance patching on any other platform
+        # No default app compliance patching on any other platform
         APP_STORE_COMPLIANCE_PATCH=
-        APP_STORE_COMPLIANCE_PATCH_TARGET=
-        APP_STORE_COMPLIANCE_PATCH_FLAGS=
         AC_MSG_RESULT([not patching for app store compliance])
         ;;
     esac
 ])
 AC_SUBST([APP_STORE_COMPLIANCE_PATCH])
-AC_SUBST([APP_STORE_COMPLIANCE_PATCH_TARGET])
-AC_SUBST([APP_STORE_COMPLIANCE_PATCH_FLAGS])
 
 AC_SUBST([_PYTHON_HOST_PLATFORM])
 if test "$cross_compiling" = yes; then
@@ -774,8 +757,10 @@ if test "$cross_compiling" = yes; then
 		_host_device=${_host_device:=os}
 
 		# IPHONEOS_DEPLOYMENT_TARGET is the minimum supported iOS version
-		IPHONEOS_DEPLOYMENT_TARGET=${_host_os:3}
-		IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET:=12.0}
+		AC_MSG_CHECKING([iOS deployment target])
+		IPHONEOS_DEPLOYMENT_TARGET=$(echo ${_host_os} | cut -c4-)
+		IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET:=13.0}
+		AC_MSG_RESULT([$IPHONEOS_DEPLOYMENT_TARGET])
 
 		case "$host_cpu" in
 			aarch64)
@@ -2514,8 +2499,29 @@ AS_VAR_IF([with_strict_overflow], [yes],
 
 # Enable flags that warn and protect for potential security vulnerabilities.
 # These flags should be enabled by default for all builds.
-AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [BASECFLAGS="$BASECFLAGS -fstack-protector-strong"], [AC_MSG_WARN([-fstack-protector-strong not supported])], [-Werror])
-AX_CHECK_COMPILE_FLAG([-Wtrampolines], [BASECFLAGS="$BASECFLAGS -Wtrampolines"], [AC_MSG_WARN([-Wtrampolines not supported])], [-Werror])
+
+AC_MSG_CHECKING([for --disable-safety])
+AC_ARG_ENABLE([safety],
+  [AS_HELP_STRING([--disable-safety], [disable usage of the security compiler options with no performance overhead])],
+  [AS_VAR_IF([enable_safety], [yes], [disable_safety=no], [disable_safety=yes])], [disable_safety=no])
+AC_MSG_RESULT([$disable_safety])
+
+if test "$disable_safety" = "no"
+then
+  AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [CFLAGS_NODIST="$CFLAGS_NODIST -fstack-protector-strong"], [AC_MSG_WARN([-fstack-protector-strong not supported])], [-Werror])
+  AX_CHECK_COMPILE_FLAG([-Wtrampolines], [CFLAGS_NODIST="$CFLAGS_NODIST -Wtrampolines"], [AC_MSG_WARN([-Wtrampolines not supported])], [-Werror])
+fi
+
+AC_MSG_CHECKING([for --enable-slower-safety])
+AC_ARG_ENABLE([slower-safety],
+  [AS_HELP_STRING([--enable-slower-safety], [enable usage of the security compiler options with performance overhead])],
+  [AS_VAR_IF([disable_slower_safety], [yes], [enable_slower_safety=no], [enable_slower_safety=yes])], [enable_slower_safety=no])
+AC_MSG_RESULT([$enable_slower_safety])
+
+if test "$enable_slower_safety" = "yes"
+then
+  AX_CHECK_COMPILE_FLAG([-D_FORTIFY_SOURCE=3], [CFLAGS_NODIST="$CFLAGS_NODIST -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3"], [AC_MSG_WARN([-D_FORTIFY_SOURCE=3 not supported])], [-Werror])
+fi
 
 case $GCC in
 yes)
@@ -6218,16 +6224,19 @@ AC_MSG_CHECKING([LDVERSION])
 LDVERSION='$(VERSION)$(ABIFLAGS)'
 AC_MSG_RESULT([$LDVERSION])
 
-# Configure the flags and dependencies used when compiling shared modules
+# Configure the flags and dependencies used when compiling shared modules.
+# Do not rename LIBPYTHON - it's accessed via sysconfig by package build
+# systems (e.g. Meson) to decide whether to link extension modules against
+# libpython.
 AC_SUBST([MODULE_DEPS_SHARED])
-AC_SUBST([MODULE_LDFLAGS])
+AC_SUBST([LIBPYTHON])
 MODULE_DEPS_SHARED='$(MODULE_DEPS_STATIC) $(EXPORTSYMS)'
-MODULE_LDFLAGS=''
+LIBPYTHON=''
 
 # On Android and Cygwin the shared libraries must be linked with libpython.
 if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MACHDEP" = "cygwin"); then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(LDLIBRARY)"
-  MODULE_LDFLAGS="\$(BLDLIBRARY)"
+  LIBPYTHON="\$(BLDLIBRARY)"
 fi
 
 # On iOS the shared libraries must be linked with the Python framework
@@ -6692,6 +6701,34 @@ if test "$ac_cv_normalize_century" = yes
 then
   AC_DEFINE([Py_NORMALIZE_CENTURY], [1],
   [Define if year with century should be normalized for strftime.])
+fi
+
+AC_CACHE_CHECK([whether C99-specific strftime specifiers are supported], [ac_cv_strftime_c99_support], [
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <time.h>
+#include <string.h>
+
+int main(void)
+{
+  char full_date[11];
+  struct tm date = {
+    .tm_year = 0,
+    .tm_mon = 0,
+    .tm_mday = 1
+  };
+  if (strftime(full_date, sizeof(full_date), "%F", &date) && !strcmp(full_date, "1900-01-01")) {
+    return 0;
+  }
+  return 1;
+}
+]])],
+[ac_cv_strftime_c99_support=yes],
+[ac_cv_strftime_c99_support=no],
+[ac_cv_strftime_c99_support=no])])
+if test "$ac_cv_strftime_c99_support" = yes
+then
+  AC_DEFINE([Py_STRFTIME_C99_SUPPORT], [1],
+  [Define if C99-specific strftime specifiers are supported.])
 fi
 
 dnl check for ncursesw/ncurses and panelw/panel
@@ -7397,8 +7434,6 @@ AC_DEFINE([PY_SSL_DEFAULT_CIPHERS], [1])
 
 # builtin hash modules
 default_hashlib_hashes="md5,sha1,sha2,sha3,blake2"
-AC_DEFINE([PY_BUILTIN_HASHLIB_HASHES], [], [enabled builtin hash modules]
-)
 AC_MSG_CHECKING([for --with-builtin-hashlib-hashes])
 AC_ARG_WITH(
   [builtin-hashlib-hashes],
@@ -7415,7 +7450,8 @@ AC_ARG_WITH(
 
 AC_MSG_RESULT([$with_builtin_hashlib_hashes])
 AC_DEFINE_UNQUOTED([PY_BUILTIN_HASHLIB_HASHES],
-  ["$with_builtin_hashlib_hashes"])
+                   ["$with_builtin_hashlib_hashes"],
+                   [enabled builtin hash modules])
 
 as_save_IFS=$IFS
 IFS=,
@@ -7429,15 +7465,6 @@ for builtin_hash in $with_builtin_hashlib_hashes; do
     )
 done
 IFS=$as_save_IFS
-
-dnl libb2 for blake2. _blake2 module falls back to vendored copy.
-AS_VAR_IF([with_builtin_blake2], [yes], [
-  PKG_CHECK_MODULES([LIBB2], [libb2], [
-    have_libb2=yes
-    AC_DEFINE([HAVE_LIBB2], [1],
-              [Define to 1 if you want to build _blake2 module with libb2])
-  ], [have_libb2=no])
-])
 
 # Check whether to disable test modules. Once set, setup.py will not build
 # test extension modules and "make install" will not install test suites.
@@ -7759,19 +7786,40 @@ PY_STDLIB_MOD_SIMPLE([unicodedata])
 
 dnl By default we always compile these even when OpenSSL is available
 dnl (issue #14693). The modules are small.
-PY_STDLIB_MOD([_md5],
-  [test "$with_builtin_md5" = yes], [],
-  [-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE])
-PY_STDLIB_MOD([_sha1],
-  [test "$with_builtin_sha1" = yes], [],
-  [-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE])
-PY_STDLIB_MOD([_sha2],
-  [test "$with_builtin_sha2" = yes], [],
-  [-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE])
+PY_STDLIB_MOD([_md5], [test "$with_builtin_md5" = yes])
+PY_STDLIB_MOD([_sha1], [test "$with_builtin_sha1" = yes])
+PY_STDLIB_MOD([_sha2], [test "$with_builtin_sha2" = yes])
 PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
-PY_STDLIB_MOD([_blake2],
-  [test "$with_builtin_blake2" = yes], [],
-  [$LIBB2_CFLAGS], [$LIBB2_LIBS])
+PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
+
+LIBHACL_CFLAGS='-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)'
+case "$ac_sys_system" in
+  Linux*)
+    if test "$ac_cv_func_explicit_bzero" = "no"; then
+      LIBHACL_CFLAGS="$LIBHACL_CFLAGS -DLINUX_NO_EXPLICIT_BZERO"
+    fi
+  ;;
+esac
+AC_SUBST([LIBHACL_CFLAGS])
+
+dnl This can be extended here to detect e.g. Power8, which HACL* should also support.
+AX_CHECK_COMPILE_FLAG([-msse -msse2 -msse3 -msse4.1 -msse4.2],[
+  [LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"]
+  [LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"]
+  AC_DEFINE([HACL_CAN_COMPILE_SIMD128], [1], [HACL* library can compile SIMD128 implementations])
+], [], [-Werror])
+
+AC_SUBST([LIBHACL_SIMD128_FLAGS])
+AC_SUBST([LIBHACL_SIMD128_OBJS])
+
+AX_CHECK_COMPILE_FLAG([-mavx2],[
+  [LIBHACL_SIMD256_FLAGS="-mavx2"]
+  [LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"]
+  AC_DEFINE([HACL_CAN_COMPILE_SIMD256], [1], [HACL* library can compile SIMD256 implementations])
+], [], [-Werror])
+
+AC_SUBST([LIBHACL_SIMD256_FLAGS])
+AC_SUBST([LIBHACL_SIMD256_OBJS])
 
 PY_STDLIB_MOD([_ctypes],
   [], [test "$have_libffi" = yes],

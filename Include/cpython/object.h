@@ -270,6 +270,9 @@ typedef struct _heaptypeobject {
     PyObject *ht_module;
     char *_ht_tpname;  // Storage for "tp_name"; see PyType_FromModuleAndSpec
     struct _specialization_cache _spec_cache; // For use by the specializer.
+#ifdef Py_GIL_DISABLED
+    Py_ssize_t unique_id;  // ID used for thread-local refcounting
+#endif
     /* here are optional user slots, followed by the members. */
 } PyHeapTypeObject;
 
