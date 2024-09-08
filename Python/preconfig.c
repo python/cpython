@@ -470,14 +470,18 @@ preconfig_get_global_vars(PyPreConfig *config)
         return;
     }
 
-#define COPY_FLAG(ATTR, VALUE) \
-    if (config->ATTR < 0) { \
-        config->ATTR = VALUE; \
-    }
-#define COPY_NOT_FLAG(ATTR, VALUE) \
-    if (config->ATTR < 0) { \
-        config->ATTR = !(VALUE); \
-    }
+#define COPY_FLAG(ATTR, VALUE)      \
+    do {                            \
+        if (config->ATTR < 0) {     \
+            config->ATTR = VALUE;   \
+        }                           \
+    } while (0)
+#define COPY_NOT_FLAG(ATTR, VALUE)      \
+    do {                                \
+        if (config->ATTR < 0) {         \
+            config->ATTR = !(VALUE);    \
+        }                               \
+    } while (0)
 
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
@@ -499,14 +503,18 @@ _Py_COMP_DIAG_POP
 static void
 preconfig_set_global_vars(const PyPreConfig *config)
 {
-#define COPY_FLAG(ATTR, VAR) \
-    if (config->ATTR >= 0) { \
-        VAR = config->ATTR; \
-    }
-#define COPY_NOT_FLAG(ATTR, VAR) \
-    if (config->ATTR >= 0) { \
-        VAR = !config->ATTR; \
-    }
+#define COPY_FLAG(ATTR, VAR)        \
+    do {                            \
+        if (config->ATTR >= 0) {    \
+            VAR = config->ATTR;     \
+        }                           \
+    } while (0)
+#define COPY_NOT_FLAG(ATTR, VAR)    \
+    do {                            \
+        if (config->ATTR >= 0) {    \
+            VAR = !config->ATTR;    \
+        }                           \
+    } while (0)
 
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
