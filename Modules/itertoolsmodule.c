@@ -350,12 +350,9 @@ pairwise_next(pairwiseobject *po)
     if (old == NULL) {
         old = (*Py_TYPE(it)->tp_iternext)(it);
         Py_XSETREF(po->old, old);
-        if (old == NULL) {
 #ifndef Py_GIL_DISABLED
+        if (old == NULL) {
             Py_CLEAR(po->it);
-#else
-            _Py_atomic_store_int_relaxed(&po->iterator_exhausted, 1);
-#endif
             return NULL;
         }
         it = po->it;
@@ -363,16 +360,24 @@ pairwise_next(pairwiseobject *po)
             Py_CLEAR(po->old);
             return NULL;
         }
+#else
+        if (old == NULL) {
+            _Py_atomic_store_int_relaxed(&po->iterator_exhausted, 1);
+            return NULL;
+        }
+#endif
     }
     Py_INCREF(old);
     new = (*Py_TYPE(it)->tp_iternext)(it);
     if (new == NULL) {
 #ifndef Py_GIL_DISABLED
         Py_CLEAR(po->it);
+        Py_CLEAR(po->old);
 #else
         _Py_atomic_store_int_relaxed(&po->iterator_exhausted, 1);
+        PyObject *po_old =  ( PyObject *)_Py_atomic_exchange_ptr(&po->old, 0);
+        Py_XDECREF(po_old);
 #endif
-        Py_CLEAR(po->old);
         Py_DECREF(old);
         return NULL;
     }
@@ -400,7 +405,14 @@ pairwise_next(pairwiseobject *po)
         }
     }
 
-    Py_XSETREF(po->old, new); // this should be atomic in the FT build
+#ifndef Py_GIL_DISABLED
+    Py_XSETREF(po->old, new);
+#else
+     // this should be atomic in the FT build
+    PyObject *po_old =  ( PyObject *)_Py_atomic_exchange_ptr(&po->old, new);
+    Py_XDECREF(po_old);
+#endif
+
     Py_DECREF(old);
     return result;
 }
