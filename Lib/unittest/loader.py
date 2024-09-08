@@ -321,8 +321,13 @@ class TestLoader(object):
 
                 if set_implicit_top:
                     if not is_namespace:
-                        self._top_level_dir = \
-                           self._get_directory_containing_module(top_part)
+                        if sys.modules[top_part].__file__ is None:
+                            self._top_level_dir = os.path.dirname(the_module.__file__)
+                            if self._top_level_dir not in sys.path:
+                                sys.path.insert(0, self._top_level_dir)
+                        else:
+                            self._top_level_dir = \
+                                self._get_directory_containing_module(top_part)
                     sys.path.remove(top_level_dir)
 
         if is_not_importable:
