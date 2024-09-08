@@ -414,6 +414,52 @@ reported by :meth:`asyncio.Task.cancelling`.
    Improved handling of simultaneous internal and external cancellations
    and correct preservation of cancellation counts.
 
+Group Cancellation
+------------------
+
+Cancelling an entire task group is not natively supported by the standard
+library but can be achieved by adding a task to the group that raises an
+exception and ignoring that exception:
+
+.. code-block:: python
+
+   import asyncio
+   from asyncio import TaskGroup
+
+   class CancelTaskGroup(Exception):
+     """Exception raised to cancel a task group."""
+
+   async def job(task_id, sleep_time):
+      print(f'Task {task_id}: start')
+      await asyncio.sleep(sleep_time)
+      print(f'Task {task_id}: done')
+
+   async def cancel_task_group():
+      """A task that would cancel the group it belongs to."""
+      raise CancelTaskGroup()
+
+   async def main():
+       try:
+          async with TaskGroup() as group:
+              # ... spawn some tasks ...
+              group.create_task(job(1, 1))
+              group.create_task(job(2, 2))
+              # create a task that would cancel the group after 1.5 seconds
+              await asyncio.sleep(1.5)
+              group.create_task(cancel_task_group())
+       except* CancelTaskGroup:
+          pass
+
+   asyncio.run(main())
+
+Expected output:
+
+.. code-block:: text
+
+   Task 1: start
+   Task 2: start
+   Task 1: done
+
 Sleeping
 ========
 
