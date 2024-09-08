@@ -430,17 +430,19 @@ elfctx_append_uleb128(ELFObjectContext* ctx, uint32_t v)
 #define DWRF_UV(x) (ctx->p = p, elfctx_append_uleb128(ctx, (x)), p = ctx->p)
 #define DWRF_SV(x) (ctx->p = p, elfctx_append_sleb128(ctx, (x)), p = ctx->p)
 #define DWRF_STR(str) (ctx->p = p, elfctx_append_string(ctx, (str)), p = ctx->p)
-#define DWRF_ALIGNNOP(s)                                                                                \
-    while ((uintptr_t)p & ((s)-1)) {                                                                    \
-        *p++ = DWRF_CFA_nop;                                                                            \
-    }
-#define DWRF_SECTION(name, stmt)                                                                        \
-    {                                                                                                   \
-        uint32_t* szp_##name = (uint32_t*)p;                                                            \
-        p += 4;                                                                                         \
-        stmt;                                                                                           \
-        *szp_##name = (uint32_t)((p - (uint8_t*)szp_##name) - 4);                                       \
-    }
+#define DWRF_ALIGNNOP(s)                    \
+    do {                                    \
+        while ((uintptr_t)p & ((s)-1)) {    \
+            *p++ = DWRF_CFA_nop;            \
+        }                                   \
+    } while (0)
+#define DWRF_SECTION(NAME, STMT)                                    \
+    do {                                                            \
+        uint32_t* szp_##NAME = (uint32_t*)p;                        \
+        p += 4;                                                     \
+        STMT;                                                       \
+        *szp_##NAME = (uint32_t)((p - (uint8_t*)szp_##NAME) - 4);   \
+    } while (0)
 
 /* Initialize .eh_frame section. */
 static void
@@ -461,7 +463,7 @@ elf_init_ehframe(ELFObjectContext* ctx)
                  DWRF_U8(DWRF_CFA_def_cfa); DWRF_UV(DWRF_REG_SP); DWRF_UV(sizeof(uintptr_t));
                  DWRF_U8(DWRF_CFA_offset|DWRF_REG_RA); DWRF_UV(1);
                  DWRF_ALIGNNOP(sizeof(uintptr_t));
-    )
+    );
 
     ctx->eh_frame_p = p;
 
@@ -490,7 +492,7 @@ elf_init_ehframe(ELFObjectContext* ctx)
 #else
 #    error "Unsupported target architecture"
 #endif
-                 DWRF_ALIGNNOP(sizeof(uintptr_t));)
+                 DWRF_ALIGNNOP(sizeof(uintptr_t)););
 
     ctx->p = p;
 }
