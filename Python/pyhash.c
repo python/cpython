@@ -352,19 +352,25 @@ static PyHash_FuncDef PyHash_Func = {fnv, "fnv", 8 * SIZEOF_PY_HASH_T,
 #  define ROTATE(x, b) (uint64_t)( ((x) << (b)) | ( (x) >> (64 - (b))) )
 #endif
 
-#define HALF_ROUND(a,b,c,d,s,t)     \
-    a += b; c += d;                 \
-    b = ROTATE(b, s) ^ a;           \
-    d = ROTATE(d, t) ^ c;           \
-    a = ROTATE(a, 32);
+#define HALF_ROUND(a,b,c,d,s,t) \
+    do {                        \
+        a += b; c += d;         \
+        b = ROTATE(b, s) ^ a;   \
+        d = ROTATE(d, t) ^ c;   \
+        a = ROTATE(a, 32);      \
+    } while (0)
 
-#define SINGLE_ROUND(v0,v1,v2,v3)   \
-    HALF_ROUND(v0,v1,v2,v3,13,16);  \
-    HALF_ROUND(v2,v1,v0,v3,17,21);
+#define SINGLE_ROUND(v0,v1,v2,v3)       \
+    do {                                \
+        HALF_ROUND(v0,v1,v2,v3,13,16);  \
+        HALF_ROUND(v2,v1,v0,v3,17,21);  \
+    } while (0)
 
 #define DOUBLE_ROUND(v0,v1,v2,v3)   \
-    SINGLE_ROUND(v0,v1,v2,v3);      \
-    SINGLE_ROUND(v0,v1,v2,v3);
+    do {                            \
+        SINGLE_ROUND(v0,v1,v2,v3);  \
+        SINGLE_ROUND(v0,v1,v2,v3);  \
+    } while (0)
 
 
 static uint64_t
