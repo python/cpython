@@ -354,6 +354,16 @@ disabled with the :envvar:`PYTHON_GIL` environment variable or the
 pip 24.1 or newer is required to install packages with C extensions in the
 free-threaded build.
 
+This work was made possible thanks to many individuals and
+organizations, including the large community of contributors to Python
+and third-party projects to test and enable free-threading support.
+Notable contributors include:
+Sam Gross, Ken Jin, Donghee Na, Itamar Oren, Matt Page, Brett Simmers,
+Dino Viehland, Carl Meyer, Nathan Goldbaum, Ralf Gommers,
+Lysandros Nikolaou, and many others.
+Many of these contributors are employed by Meta, which has
+provided significant engineering resources to support this project.
+
 .. seealso::
 
    :pep:`703` "Making the Global Interpreter Lock Optional in CPython"
