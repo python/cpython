@@ -1,6 +1,8 @@
 from ctypes import *
 import unittest
 import struct
+from test.support.testcase import ComplexesAreIdenticalMixin
+
 
 def valid_ranges(*types):
     # given a sequence of numeric types, collect their _type_
@@ -50,7 +52,7 @@ bool_values = [True, False, 0, 1, -1, 5000, 'test', [], [1]]
 
 ################################################################
 
-class NumberTestCase(unittest.TestCase):
+class NumberTestCase(unittest.TestCase, ComplexesAreIdenticalMixin):
 
     def test_default_init(self):
         # default values are set to zero
