@@ -16,9 +16,11 @@
 #define ERROR -1
 
 #define RETURN_IF_ERROR(X)  \
-    if ((X) == -1) {        \
-        return ERROR;       \
-    }
+    do {                    \
+        if ((X) == -1) {    \
+            return ERROR;   \
+        }                   \
+    } while (0)             \
 
 #define DEFAULT_BLOCK_SIZE 16
 
