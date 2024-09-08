@@ -864,6 +864,28 @@ class ReprTestCase(unittest.TestCase):
 @support.requires_IEEE_754
 class RoundTestCase(unittest.TestCase):
 
+    def assertFloatsAreIdentical(self, x, y):
+        """Fail unless floats x and y are identical, in the sense that:
+        (1) both x and y are nans, or
+        (2) both x and y are infinities, with the same sign, or
+        (3) both x and y are zeros, with the same sign, or
+        (4) x and y are both finite and nonzero, and x == y
+        """
+        msg = 'floats {!r} and {!r} are not identical'
+
+        if isnan(x) or isnan(y):
+            if isnan(x) and isnan(y):
+                return
+        elif x == y:
+            if x != 0.0:
+                return
+            # both zero; check that signs match
+            elif copysign(1.0, x) == copysign(1.0, y):
+                return
+            else:
+                msg += ': zeros have different signs'
+        self.fail(msg.format(x, y))
+
     def test_inf_nan(self):
         self.assertRaises(OverflowError, round, INF)
         self.assertRaises(OverflowError, round, -INF)
@@ -892,10 +914,10 @@ class RoundTestCase(unittest.TestCase):
 
     def test_small_n(self):
         for n in [-308, -309, -400, 1-2**31, -2**31, -2**31-1, -2**100]:
-            self.assertEqual(round(123.456, n), 0.0)
-            self.assertEqual(round(-123.456, n), -0.0)
-            self.assertEqual(round(1e300, n), 0.0)
-            self.assertEqual(round(1e-320, n), 0.0)
+            self.assertFloatsAreIdentical(round(123.456, n), 0.0)
+            self.assertFloatsAreIdentical(round(-123.456, n), -0.0)
+            self.assertFloatsAreIdentical(round(1e300, n), 0.0)
+            self.assertFloatsAreIdentical(round(1e-320, n), 0.0)
 
     def test_overflow(self):
         self.assertRaises(OverflowError, round, 1.6e308, -308)
