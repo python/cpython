@@ -381,20 +381,6 @@ pairwise_next(pairwiseobject *po)
         Py_DECREF(old);
         return NULL;
     }
-#else
-    // at this stage we know that po->old has been set, but we have to make
-    // sure that po->old is valid at every moment so we atomically swap old
-    // and new. for that we first need to acquire a new object
-    new = (*Py_TYPE(it)->tp_iternext)(it);
-    if (new == NULL) {
-        _Py_atomic_store_int_relaxed(&po->iterator_exhausted, 1);
-        return NULL;
-    }
-    // we need to incref new before handing it over to po->old
-    Py_INCREF(new);
-    old =  ( PyObject *)_Py_atomic_exchange_ptr(&po->old, new);
-    // we have acquired old and we hold a reference to it
-#endif
 
     assert(result != NULL);
     if (_PyObject_IsUniquelyReferenced(result)) {
@@ -418,14 +404,47 @@ pairwise_next(pairwiseobject *po)
             PyTuple_SET_ITEM(result, 1, Py_NewRef(new));
         }
     }
-
-#ifndef Py_GIL_DISABLED
     Py_XSETREF(po->old, new);
+
 #else
-    // update to old was already done, but we still have to decref new
-    // note: we can avoid the incref/decref on new, but this would duplicate a
-    // bit more code from the normal and free-threading build
-    Py_DECREF(new);
+    // at this stage we know that po->old has been set, but we have to make
+    // sure that po->old is valid at every moment so we atomically swap old
+    // and new. for that we first need to acquire a new object
+    new = (*Py_TYPE(it)->tp_iternext)(it);
+    if (new == NULL) {
+        _Py_atomic_store_int_relaxed(&po->iterator_exhausted, 1);
+        return NULL;
+    }
+    // we need to incref new before handing it over to po->old
+    Py_INCREF(new);
+    old =  ( PyObject *)_Py_atomic_exchange_ptr(&po->old, new);
+    // we have acquired old and we hold a reference to it
+
+    assert(result != NULL);
+    if (_PyObject_IsUniquelyReferenced(result)) {
+        Py_INCREF(result);
+        PyObject *last_old = PyTuple_GET_ITEM(result, 0);
+        PyObject *last_new = PyTuple_GET_ITEM(result, 1);
+        PyTuple_SET_ITEM(result, 0, Py_NewRef(old));
+        PyTuple_SET_ITEM(result, 1, new); // steal reference
+        Py_DECREF(last_old);
+        Py_DECREF(last_new);
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
+        // recycling it, make sure it's tracked again:
+        if (!_PyObject_GC_IS_TRACKED(result)) {
+            _PyObject_GC_TRACK(result);
+        }
+    }
+    else {
+        result = PyTuple_New(2);
+        if (result != NULL) {
+            PyTuple_SET_ITEM(result, 0, Py_NewRef(old));
+            PyTuple_SET_ITEM(result, 1, new); // steal reference
+        }
+        else {
+            Py_DECREF(new);
+        }
+    }
 #endif
 
     Py_DECREF(old);

@@ -1,1 +1,1 @@
-Make concurrent iterations over the same :func:`pairwise` iterator safe under free-threading.
+Make concurrent iterations over the same :func:`itertools.pairwise` iterator safe under free-threading.
