@@ -538,11 +538,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "e52071a35fc1893928804fe91b098ad5682c2508"
+          "checksumValue": "47ce34375d43a27312e1fffb96b8965610b05855"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "c4424a4851cd2d4f27633ca19faf5cb1135a680443727a8d1b134737f9a71e62"
+          "checksumValue": "8affd767d7644150064d8bccd05d7bf4c4ae41fd4bb5bf5b8e943eabf09f3d74"
         }
       ],
       "fileName": "Modules/_hacl/Lib_Memzero0.c"

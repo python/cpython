@@ -76,8 +76,9 @@ typedef struct {
 #ifndef WITH_DECIMAL_CONTEXTVAR
     /* Key for thread state dictionary */
     PyObject *tls_context_key;
-    /* Invariant: NULL or the most recently accessed thread local context */
-    struct PyDecContextObject *cached_context;
+    /* Invariant: NULL or a strong reference to the most recently accessed
+       thread local context. */
+    struct PyDecContextObject *cached_context;  /* Not borrowed */
 #else
     PyObject *current_context_var;
 #endif
@@ -1419,12 +1420,6 @@ context_dealloc(PyDecContextObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-#ifndef WITH_DECIMAL_CONTEXTVAR
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
-    if (self == state->cached_context) {
-        state->cached_context = NULL;
-    }
-#endif
     (void)context_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -1701,7 +1696,8 @@ current_context_from_dict(decimal_state *modstate)
 
     /* Cache the context of the current thread, assuming that it
      * will be accessed several times before a thread switch. */
-    modstate->cached_context = (PyDecContextObject *)tl_context;
+    Py_XSETREF(modstate->cached_context,
+               (PyDecContextObject *)Py_NewRef(tl_context));
     modstate->cached_context->tstate = tstate;
 
     /* Borrowed reference with refcount==1 */
@@ -1769,7 +1765,7 @@ PyDec_SetCurrentContext(PyObject *self, PyObject *v)
         Py_INCREF(v);
     }
 
-    state->cached_context = NULL;
+    Py_CLEAR(state->cached_context);
     if (PyDict_SetItem(dict, state->tls_context_key, v) < 0) {
         Py_DECREF(v);
         return NULL;
@@ -6122,6 +6118,16 @@ decimal_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->Rational);
     Py_VISIT(state->SignalTuple);
 
+    if (state->signal_map != NULL) {
+        for (DecCondMap *cm = state->signal_map; cm->name != NULL; cm++) {
+            Py_VISIT(cm->ex);
+        }
+    }
+    if (state->cond_map != NULL) {
+        for (DecCondMap *cm = state->cond_map + 1; cm->name != NULL; cm++) {
+            Py_VISIT(cm->ex);
+        }
+    }
     return 0;
 }
 
