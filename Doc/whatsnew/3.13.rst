@@ -359,7 +359,7 @@ to Python and third-party projects to test and enable free-threading support.
 This includes, but is not limited to:
 Sam Gross, Ken Jin, Donghee Na, Itamar Oren, Matt Page, Brett Simmers, and Dino Viehland.
 Many of these contributors are employed by Meta,
-which has provided significant manpower to support this project.
+which has provided significant engineering resources to support this project.
 
 .. seealso::
 
