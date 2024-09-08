@@ -310,6 +310,18 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         (COUNTER) = pause_backoff_counter((COUNTER)); \
     } while (0);
 
+#ifdef ENABLE_SPECIALIZATION
+/* Multiple threads may execute these concurrently if the thread-local bytecode
+ * limit is reached and they all execute the main copy of the bytecode. This is
+ * approximate, we do not need the RMW cycle to be atomic.
+ */
+#define RECORD_BRANCH_TAKEN(bitset, flag)  \
+    FT_ATOMIC_STORE_UINT16_RELAXED(bitset,  \
+        (FT_ATOMIC_LOAD_UINT16_RELAXED(bitset) << 1) | (flag))
+#else
+#define RECORD_BRANCH_TAKEN(bitset, flag)
+#endif
+
 #define UNBOUNDLOCAL_ERROR_MSG \
     "cannot access local variable '%s' where it is not associated with a value"
 #define UNBOUNDFREE_ERROR_MSG \
