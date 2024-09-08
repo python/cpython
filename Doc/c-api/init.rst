@@ -922,7 +922,7 @@ supports the creation of additional interpreters (using
 :c:func:`Py_NewInterpreter`), but switching between interpreters via the
 ``PyGILState_*`` API is unsupported.  Similiarly, after creating a
 sub-interpreter via :c:func:`!PyGILState_Ensure`, interacting with
-the GIL of other interpreters (including, but not limited to trying
+the GIL of other interpreters (including, but not limited to, trying
 to release the GIL to return back to the previous interpreter) is not
 supported.
 
