@@ -688,6 +688,8 @@ loops that truncate the stream.
    Roughly equivalent to::
 
         def tee(iterable, n=2):
+            if n < 0:
+                raise ValueError('n must be >= 0')
             iterator = iter(iterable)
             shared_link = [None, None]
             return tuple(_tee(iterator, shared_link) for _ in range(n))

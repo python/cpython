@@ -1754,6 +1754,8 @@ class TestPurePythonRoughEquivalents(unittest.TestCase):
         # Begin tee() recipe ###########################################
 
         def tee(iterable, n=2):
+            if n < 0:
+                raise ValueError('n must be >= 0')
             iterator = iter(iterable)
             shared_link = [None, None]
             return tuple(_tee(iterator, shared_link) for _ in range(n))
@@ -1829,11 +1831,9 @@ class TestPurePythonRoughEquivalents(unittest.TestCase):
         self.assertEqual(list(a), list(range(100,2000)))
         self.assertEqual(list(c), list(range(2,2000)))
 
-        # Tests not applicable to the tee() recipe
-        if False:
-            # test invalid values of n
-            self.assertRaises(TypeError, tee, 'abc', 'invalid')
-            self.assertRaises(ValueError, tee, [], -1)
+        # test invalid values of n
+        self.assertRaises(TypeError, tee, 'abc', 'invalid')
+        self.assertRaises(ValueError, tee, [], -1)
 
         for n in range(5):
             result = tee('abc', n)
