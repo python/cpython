@@ -2274,7 +2274,7 @@ Methods specific to Screen, not inherited from TurtleScreen
 
    Save the current turtle drawing (and turtles) as a PostScript file.
 
-   :param filename: the path of the saved postscript file
+   :param filename: the path of the saved PostScript file
    :param overwrite: if ``False`` and there already exists a file with the given
                      filename, then the function will raise a
                      ``FileExistsError``. If it is ``True``, the file will be

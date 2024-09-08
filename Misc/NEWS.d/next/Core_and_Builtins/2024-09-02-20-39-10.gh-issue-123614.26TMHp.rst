@@ -1,1 +1,1 @@
-Add :func:`turtle.save` to easily save Turtle drawings as postscript files
+Add :func:`turtle.save` to easily save Turtle drawings as PostScript files.

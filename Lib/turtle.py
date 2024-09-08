@@ -1493,12 +1493,12 @@ class TurtleScreen(TurtleScreenBase):
         """
         return self._resize(canvwidth, canvheight, bg)
 
-    def save(self, filename, overwrite=False):
-        """Save the drawing as a postscript file
+    def save(self, filename, *, overwrite=False):
+        """Save the drawing as a PostScript file
 
         Arguments:
         filename -- a string, the path of the created file.
-                    Must end with '.ps' or '.eps'
+                    Must end with '.ps' or '.eps'.
 
         Optional arguments:
         overwrite -- boolean, if true, then existing files will be overwritten
@@ -1510,7 +1510,7 @@ class TurtleScreen(TurtleScreenBase):
         if not filename.parent.exists():
             raise FileNotFoundError(
                 f"The directory '{filename.parent}' does not exist."
-                " Cannot save to it"
+                " Cannot save to it."
             )
         if not overwrite and filename.exists():
             raise FileExistsError(
