@@ -354,10 +354,12 @@ disabled with the :envvar:`PYTHON_GIL` environment variable or the
 pip 24.1 or newer is required to install packages with C extensions in the
 free-threaded build.
 
-This project has been contributed by many people and the community,
-including Brett Simmers, Dino Viehland, Donghee Na, Itamar Oren, Ken Jin,
-Matt Page, and Sam Gross.
-Meta has supported in the form of many engineer-years to this project.
+This work is thanks to many people and organisations, including the large community of contributors
+to Python and third party projects to test and enable free-threading support.
+This includes, but is not limited to:
+Sam Gross, Ken Jin, Donghee Na, Itamar Oren, Matt Page, Brett Simmers, and Dino Viehland.
+Many of these contributors are employed by Meta Inc,
+which has provided significant manpower to support this project.
 
 .. seealso::
 
