@@ -390,6 +390,8 @@ pairwise_next(pairwiseobject *po)
         _Py_atomic_store_int_relaxed(&po->iterator_exhausted, 1);
         return NULL;
     }
+    // we need to incref new before handing it over to po->old
+    Py_INCREF(new);
     old =  ( PyObject *)_Py_atomic_exchange_ptr(&po->old, new);
     // we have acquired old and we hold a reference to it
 #endif
@@ -420,7 +422,10 @@ pairwise_next(pairwiseobject *po)
 #ifndef Py_GIL_DISABLED
     Py_XSETREF(po->old, new);
 #else
-    // update was already done
+    // update to old was already done, but we still have to decref new
+    // note: we can avoid the incref/decref on new, but this would duplicate a
+    // bit more code from the normal and free-threading build
+    Py_DECREF(new);
 #endif
 
     Py_DECREF(old);
