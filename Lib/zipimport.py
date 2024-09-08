@@ -523,7 +523,7 @@ def _read_directory(archive):
 
                             # N.b. Here be dragons: the ordering of these is different than
                             # the header fields, and it's really easy to get it wrong since
-                            # naturally-occuring zips that use all 3 are >4GB
+                            # naturally-occurring zips that use all 3 are >4GB
                             if file_size == MAX_UINT32:
                                 file_size = values.pop(0)
                             if data_size == MAX_UINT32:
@@ -705,7 +705,7 @@ def _unmarshal_code(self, pathname, fullpath, fullname, data):
             source_bytes = _get_pyc_source(self, fullpath)
             if source_bytes is not None:
                 source_hash = _imp.source_hash(
-                    _bootstrap_external._RAW_MAGIC_NUMBER,
+                    _imp.pyc_magic_number_token,
                     source_bytes,
                 )
 

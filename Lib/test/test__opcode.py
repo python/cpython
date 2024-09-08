@@ -17,7 +17,7 @@ class OpListTests(unittest.TestCase):
                 self.assertEqual(func(op), expected)
 
     def test_invalid_opcodes(self):
-        invalid = [-100, -1, 255, 512, 513, 1000]
+        invalid = [-100, -1, 512, 513, 1000]
         self.check_bool_function_result(_opcode.is_valid, invalid, False)
         self.check_bool_function_result(_opcode.has_arg, invalid, False)
         self.check_bool_function_result(_opcode.has_const, invalid, False)
