@@ -1,6 +1,6 @@
-"""Concrete date/time and related types.
+"""Specific date/time and related types.
 
-See http://www.iana.org/time-zones/repository/tz-link.html for
+See https://data.iana.org/time-zones/tz-link.html for
 time zone and DST data sources.
 """
 
