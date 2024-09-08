@@ -709,6 +709,12 @@ loops that truncate the stream.
    used anywhere else; otherwise, the *iterable* could get advanced without
    the tee objects being informed.
 
+   When the input *iterable* is already a tee iterator object, all
+   members of the return tuple are constructed as if they had been
+   produced by the upstream :func:`tee` call.  This "flattening step"
+   allows nested :func:`tee` calls to share the same underlying data
+   chain and to have a single update step rather than a chain of calls.
+
    ``tee`` iterators are not threadsafe. A :exc:`RuntimeError` may be
    raised when simultaneously using iterators returned by the same :func:`tee`
    call, even if the original *iterable* is threadsafe.
