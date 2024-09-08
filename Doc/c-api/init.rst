@@ -1079,7 +1079,8 @@ with sub-interpreters:
    of the current state of Python, or of the global interpreter lock. This may
    be called as many times as desired by a thread as long as each call is
    matched with a call to :c:func:`PyGILState_Release`, *except* when the
-   thread creates a sub-interpreter with it's own :term:`GIL` (see :c:member:`PyInterpreterConfig.gil`).
+   thread creates a sub-interpreter with its own GIL (see
+   :c:member:`PyInterpreterConfig.gil`).
    In that case, the call to :c:func:`PyGILState_Release` should be replaced with :c:func:`Py_EndInterpreter`.
 
    In general, other thread-related APIs may be used between :c:func:`PyGILState_Ensure` and
