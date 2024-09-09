@@ -650,12 +650,11 @@ typedef enum {
 } _Py_TLBC_State;
 
 extern void _PyCode_InitState(PyInterpreterState *interp);
-extern _Py_CODEUNIT *_PyCode_GetExecutableCodeSlow(PyCodeObject *co);
 
-// Return the bytecode that should be executed by the current thread, creating
-// a copy if necessary.
+// Return a pointer to the thread-local bytecode for the current thread, if it
+// exists.
 static inline _Py_CODEUNIT *
-_PyCode_GetExecutableCode(PyCodeObject *co)
+_PyCode_GetTLBCFast(PyCodeObject *co)
 {
     _PyCodeArray *code = _Py_atomic_load_ptr_acquire(&co->co_tlbc);
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *) PyThreadState_GET();
@@ -663,7 +662,31 @@ _PyCode_GetExecutableCode(PyCodeObject *co)
     if (idx < code->size && code->entries[idx] != NULL) {
         return (_Py_CODEUNIT *) code->entries[idx]->bytecode;
     }
-    return _PyCode_GetExecutableCodeSlow(co);
+    return NULL;
+}
+
+// Return a pointer to the thread-local bytecode for the current thread, creating
+// it if it doesn't exist.
+//
+// On error, NULL is returned, new thread-local bytecode is disabled, and
+// specialization is disabled for the "main" copy of the bytecode (the bytecode
+// embedded in the code object) for all code objects.
+extern _Py_CODEUNIT *_PyCode_GetTLBCSlow(PyCodeObject *co);
+
+// Return the bytecode that should be executed by the current thread, creating
+// a copy if necessary.
+static inline _Py_CODEUNIT *
+_PyCode_GetExecutableCode(PyCodeObject *co)
+{
+    _Py_CODEUNIT *res = _PyCode_GetTLBCFast(co);
+    if (res != NULL) {
+        return res;
+    }
+    res = _PyCode_GetTLBCSlow(co);
+    if (res != NULL) {
+        return res;
+    }
+    return _PyCode_CODE(co);
 }
 
 extern void _PyCode_LockTLBC(PyCodeObject *co);

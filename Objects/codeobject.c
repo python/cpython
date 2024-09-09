@@ -2877,7 +2877,7 @@ get_tlbc_lock_held(PyCodeObject *co)
     Py_ssize_t reserved = reserve_bytes_for_tlbc(co);
     if (reserved == -1) {
         disable_new_tlbc();
-        return (_Py_CODEUNIT *) tlbc->entries[0]->bytecode;
+        return NULL;
     }
     _Py_CODEUNIT *result = create_tlbc_lock_held(co, idx);
     if (result == NULL) {
@@ -2887,11 +2887,11 @@ get_tlbc_lock_held(PyCodeObject *co)
 }
 
 _Py_CODEUNIT *
-_PyCode_GetExecutableCodeSlow(PyCodeObject *co)
+_PyCode_GetTLBCSlow(PyCodeObject *co)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->tlbc_state == _PY_TLBC_DISABLED) {
-        return (_Py_CODEUNIT *) co->co_tlbc->entries[0]->bytecode;
+        return NULL;
     }
     _Py_CODEUNIT *result;
     Py_BEGIN_CRITICAL_SECTION(co);
