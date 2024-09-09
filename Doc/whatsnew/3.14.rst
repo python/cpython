@@ -221,6 +221,9 @@ pickle
 * Set the default protocol version on the :mod:`pickle` module to 5.
   For more details, please see :ref:`pickle protocols <pickle-protocols>`.
 
+* Add notes for pickle serialization errors that allow to identify the source
+  of the error.
+  (Contributed by Serhiy Storchaka in :gh:`122213`.)
 
 symtable
 --------
