@@ -1,0 +1,3 @@
+Update the table of Windows language code identifiers (LCIDs) used by
+:func:`locale.getdefaultlocale()` on Windows to protocol version 16.0
+(4/23/2024).
