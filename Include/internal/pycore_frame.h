@@ -128,6 +128,13 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
     // Don't leave a dangling pointer to the old frame when creating generators
     // and coroutines:
     dest->previous = NULL;
+
+#ifdef Py_GIL_DISABLED
+    PyCodeObject *co = (PyCodeObject *)dest->f_executable;
+    for (int i = stacktop; i < co->co_nlocalsplus + co->co_stacksize; i++) {
+        dest->localsplus[i] = PyStackRef_NULL;
+    }
+#endif
 }
 
 /* Consumes reference to func and locals.
@@ -137,8 +144,9 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
 static inline void
 _PyFrame_Initialize(
     _PyInterpreterFrame *frame, PyFunctionObject *func,
-    PyObject *locals, PyCodeObject *code, int null_locals_from)
+    PyObject *locals, PyCodeObject *code, int null_locals_from, _PyInterpreterFrame *previous)
 {
+    frame->previous = previous;
     frame->f_funcobj = (PyObject *)func;
     frame->f_executable = Py_NewRef(code);
     frame->f_builtins = func->func_builtins;
@@ -153,6 +161,16 @@ _PyFrame_Initialize(
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = PyStackRef_NULL;
     }
+
+#ifdef Py_GIL_DISABLED
+    // On GIL disabled, we walk the entire stack in GC. Since stacktop
+    // is not always in sync with the real stack pointer, we have
+    // no choice but to traverse the entire stack.
+    // This just makes sure we don't pass the GC invalid stack values.
+    for (int i = code->co_nlocalsplus; i < code->co_nlocalsplus + code->co_stacksize; i++) {
+        frame->localsplus[i] = PyStackRef_NULL;
+    }
+#endif
 }
 
 /* Gets the pointer to the locals array
@@ -281,26 +299,27 @@ PyAPI_FUNC(void) _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFr
  * Must be guarded by _PyThreadState_HasStackSpace()
  * Consumes reference to func. */
 static inline _PyInterpreterFrame *
-_PyFrame_PushUnchecked(PyThreadState *tstate, PyFunctionObject *func, int null_locals_from)
+_PyFrame_PushUnchecked(PyThreadState *tstate, PyFunctionObject *func, int null_locals_from, _PyInterpreterFrame * previous)
 {
     CALL_STAT_INC(frames_pushed);
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     _PyInterpreterFrame *new_frame = (_PyInterpreterFrame *)tstate->datastack_top;
     tstate->datastack_top += code->co_framesize;
     assert(tstate->datastack_top < tstate->datastack_limit);
-    _PyFrame_Initialize(new_frame, func, NULL, code, null_locals_from);
+    _PyFrame_Initialize(new_frame, func, NULL, code, null_locals_from, previous);
     return new_frame;
 }
 
 /* Pushes a trampoline frame without checking for space.
  * Must be guarded by _PyThreadState_HasStackSpace() */
 static inline _PyInterpreterFrame *
-_PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int stackdepth)
+_PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int stackdepth, _PyInterpreterFrame * previous)
 {
     CALL_STAT_INC(frames_pushed);
     _PyInterpreterFrame *frame = (_PyInterpreterFrame *)tstate->datastack_top;
     tstate->datastack_top += code->co_framesize;
     assert(tstate->datastack_top < tstate->datastack_limit);
+    frame->previous = previous;
     frame->f_funcobj = Py_None;
     frame->f_executable = Py_NewRef(code);
 #ifdef Py_DEBUG
@@ -314,13 +333,21 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->instr_ptr = _PyCode_CODE(code);
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->return_offset = 0;
+
+#ifdef Py_GIL_DISABLED
+    assert(code->co_nlocalsplus == 0);
+    for (int i = 0; i < code->co_stacksize; i++) {
+        frame->localsplus[i] = PyStackRef_NULL;
+    }
+#endif
     return frame;
 }
 
 PyAPI_FUNC(_PyInterpreterFrame *)
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, _PyStackRef const* args,
-                        size_t argcount, PyObject *kwnames);
+                        size_t argcount, PyObject *kwnames,
+                        _PyInterpreterFrame *previous);
 
 #ifdef __cplusplus
 }

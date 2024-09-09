@@ -4,6 +4,7 @@ import ast
 import asyncio
 import builtins
 import collections
+import contextlib
 import decimal
 import fractions
 import gc
@@ -31,6 +32,7 @@ from types import AsyncGeneratorType, FunctionType, CellType
 from operator import neg
 from test import support
 from test.support import (cpython_only, swap_attr, maybe_get_event_loop_policy)
+from test.support.import_helper import import_module
 from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok
 from test.support.warnings_helper import check_warnings
@@ -1778,6 +1780,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, sum, [], '')
         self.assertRaises(TypeError, sum, [], b'')
         self.assertRaises(TypeError, sum, [], bytearray())
+        self.assertRaises(OverflowError, sum, [1.0, 10**1000])
+        self.assertRaises(OverflowError, sum, [1j, 10**1000])
 
         class BadSeq:
             def __getitem__(self, index):
@@ -1803,6 +1807,9 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(sum([1.0, 10E100, 1.0, -10E100, 2j]), 2+2j)
         self.assertEqual(sum([2+1j, 10E100j, 1j, -10E100j]), 2+2j)
         self.assertEqual(sum([1j, 1, 10E100j, 1j, 1.0, -10E100j]), 2+2j)
+        self.assertEqual(sum([2j, 1., 10E100, 1., -10E100]), 2+2j)
+        self.assertEqual(sum([1.0, 10**100, 1.0, -10**100]), 2.0)
+        self.assertEqual(sum([2j, 1.0, 10**100, 1.0, -10**100]), 2+2j)
         self.assertEqual(sum([0.1j]*10 + [fractions.Fraction(1, 10)]), 0.1+1j)
 
     def test_type(self):
@@ -2407,7 +2414,8 @@ class PtyTests(unittest.TestCase):
                 print(ascii(input(prompt)), file=wpipe)
             except BaseException as e:
                 print(ascii(f'{e.__class__.__name__}: {e!s}'), file=wpipe)
-        lines = self.run_child(child, terminal_input + b"\r\n")
+        with self.detach_readline():
+            lines = self.run_child(child, terminal_input + b"\r\n")
         # Check we did exercise the GNU readline path
         self.assertIn(lines[0], {'tty = True', 'tty = False'})
         if lines[0] != 'tty = True':
@@ -2420,28 +2428,36 @@ class PtyTests(unittest.TestCase):
                 expected = terminal_input.decode(sys.stdin.encoding)  # what else?
         self.assertEqual(input_result, expected)
 
-    def test_input_tty(self):
-        # Test input() functionality when wired to a tty (the code path
-        # is different and invokes GNU readline if available).
-        self.check_input_tty("prompt", b"quux")
-
-    def skip_if_readline(self):
+    @contextlib.contextmanager
+    def detach_readline(self):
         # bpo-13886: When the readline module is loaded, PyOS_Readline() uses
         # the readline implementation. In some cases, the Python readline
         # callback rlhandler() is called by readline with a string without
-        # non-ASCII characters. Skip tests on non-ASCII characters if the
-        # readline module is loaded, since test_builtin is not intended to test
+        # non-ASCII characters.
+        # Unlink readline temporarily from PyOS_Readline() for those tests,
+        # since test_builtin is not intended to test
         # the readline module, but the builtins module.
-        if 'readline' in sys.modules:
-            self.skipTest("the readline module is loaded")
+        if "readline" in sys.modules:
+            c = import_module("ctypes")
+            fp_api = "PyOS_ReadlineFunctionPointer"
+            prev_value = c.c_void_p.in_dll(c.pythonapi, fp_api).value
+            c.c_void_p.in_dll(c.pythonapi, fp_api).value = None
+            try:
+                yield
+            finally:
+                c.c_void_p.in_dll(c.pythonapi, fp_api).value = prev_value
+        else:
+            yield
+
+    def test_input_tty(self):
+        # Test input() functionality when wired to a tty
+        self.check_input_tty("prompt", b"quux")
 
     def test_input_tty_non_ascii(self):
-        self.skip_if_readline()
         # Check stdin/stdout encoding is used when invoking PyOS_Readline()
         self.check_input_tty("prompté", b"quux\xc3\xa9", "utf-8")
 
     def test_input_tty_non_ascii_unicode_errors(self):
-        self.skip_if_readline()
         # Check stdin/stdout error handler is used when invoking PyOS_Readline()
         self.check_input_tty("prompté", b"quux\xe9", "ascii")
 
@@ -2451,14 +2467,12 @@ class PtyTests(unittest.TestCase):
                          'null characters')
 
     def test_input_tty_nonencodable_prompt(self):
-        self.skip_if_readline()
         self.check_input_tty("prompté", b"quux", "ascii", stdout_errors='strict',
                 expected="UnicodeEncodeError: 'ascii' codec can't encode "
                          "character '\\xe9' in position 6: ordinal not in "
                          "range(128)")
 
     def test_input_tty_nondecodable_input(self):
-        self.skip_if_readline()
         self.check_input_tty("prompt", b"quux\xe9", "ascii", stdin_errors='strict',
                 expected="UnicodeDecodeError: 'ascii' codec can't decode "
                          "byte 0xe9 in position 4: ordinal not in "

@@ -283,17 +283,23 @@ Class attributes:
 Note that, because of normalization, ``timedelta.max`` is greater than ``-timedelta.min``.
 ``-timedelta.max`` is not representable as a :class:`timedelta` object.
 
+
 Instance attributes (read-only):
 
-+------------------+--------------------------------------------+
-| Attribute        | Value                                      |
-+==================+============================================+
-| ``days``         | Between -999999999 and 999999999 inclusive |
-+------------------+--------------------------------------------+
-| ``seconds``      | Between 0 and 86399 inclusive              |
-+------------------+--------------------------------------------+
-| ``microseconds`` | Between 0 and 999999 inclusive             |
-+------------------+--------------------------------------------+
+.. attribute:: timedelta.days
+
+   Between -999,999,999 and 999,999,999 inclusive.
+
+
+.. attribute:: timedelta.seconds
+
+   Between 0 and 86,399 inclusive.
+
+
+.. attribute:: timedelta.microseconds
+
+   Between 0 and 999,999 inclusive.
+
 
 Supported operations:
 
@@ -1053,7 +1059,7 @@ Other constructors, all class methods:
    .. versionadded:: 3.7
    .. versionchanged:: 3.11
       Previously, this method only supported formats that could be emitted by
-      :meth:`date.isoformat()` or :meth:`datetime.isoformat()`.
+      :meth:`date.isoformat` or :meth:`datetime.isoformat`.
 
 
 .. classmethod:: datetime.fromisocalendar(year, week, day)
@@ -1861,7 +1867,7 @@ Other constructor:
    .. versionadded:: 3.7
    .. versionchanged:: 3.11
       Previously, this method only supported formats that could be emitted by
-      :meth:`time.isoformat()`.
+      :meth:`time.isoformat`.
 
 
 Instance methods:

@@ -153,6 +153,19 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 | f_trace           | tracing function for this |
 |                 |                   | frame, or ``None``        |
 +-----------------+-------------------+---------------------------+
+|                 | f_trace_lines     | indicate whether a        |
+|                 |                   | tracing event is          |
+|                 |                   | triggered for each source |
+|                 |                   | source line               |
++-----------------+-------------------+---------------------------+
+|                 | f_trace_opcodes   | indicate whether          |
+|                 |                   | per-opcode events are     |
+|                 |                   | requested                 |
++-----------------+-------------------+---------------------------+
+|                 | clear()           | used to clear all         |
+|                 |                   | references to local       |
+|                 |                   | variables                 |
++-----------------+-------------------+---------------------------+
 | code            | co_argcount       | number of arguments (not  |
 |                 |                   | including keyword only    |
 |                 |                   | arguments, \* or \*\*     |
@@ -213,6 +226,18 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 | co_varnames       | tuple of names of         |
 |                 |                   | arguments and local       |
 |                 |                   | variables                 |
++-----------------+-------------------+---------------------------+
+|                 | co_lines()        | returns an iterator that  |
+|                 |                   | yields successive         |
+|                 |                   | bytecode ranges           |
++-----------------+-------------------+---------------------------+
+|                 | co_positions()    | returns an iterator of    |
+|                 |                   | source code positions for |
+|                 |                   | each bytecode instruction |
++-----------------+-------------------+---------------------------+
+|                 | replace()         | returns a copy of the     |
+|                 |                   | code object with new      |
+|                 |                   | values                    |
 +-----------------+-------------------+---------------------------+
 | generator       | __name__          | name                      |
 +-----------------+-------------------+---------------------------+
