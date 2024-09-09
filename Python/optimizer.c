@@ -1,3 +1,4 @@
+/* edited to trigger JIT checks */
 #ifdef _Py_TIER2
 
 #include "Python.h"
