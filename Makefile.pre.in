@@ -429,7 +429,7 @@ PYTHON_OBJS=	\
 		Python/brc.o \
 		Python/ceval.o \
 		Python/codecs.o \
-                Python/codegen.o \
+		Python/codegen.o \
 		Python/compile.o \
 		Python/context.o \
 		Python/critical_section.o \
