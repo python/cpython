@@ -62,7 +62,8 @@
     } \
 }
 
-struct compiler;
+struct _PyCompiler;
+typedef struct _PyCompiler compiler;
 
 #define IS_TOP_LEVEL_AWAIT(C) _PyCompiler_IsTopLevelAwait(C)
 #define INSTR_SEQUENCE(C) _PyCompiler_InstrSequence(C)
@@ -188,51 +189,51 @@ typedef struct {
     Py_ssize_t on_top;
 } pattern_context;
 
-static int codegen_nameop(struct compiler *, location, identifier, expr_context_ty);
+static int codegen_nameop(compiler *, location, identifier, expr_context_ty);
 
-static int codegen_visit_stmt(struct compiler *, stmt_ty);
-static int codegen_visit_keyword(struct compiler *, keyword_ty);
-static int codegen_visit_expr(struct compiler *, expr_ty);
-static int codegen_augassign(struct compiler *, stmt_ty);
-static int codegen_annassign(struct compiler *, stmt_ty);
-static int codegen_subscript(struct compiler *, expr_ty);
-static int codegen_slice(struct compiler *, expr_ty);
+static int codegen_visit_stmt(compiler *, stmt_ty);
+static int codegen_visit_keyword(compiler *, keyword_ty);
+static int codegen_visit_expr(compiler *, expr_ty);
+static int codegen_augassign(compiler *, stmt_ty);
+static int codegen_annassign(compiler *, stmt_ty);
+static int codegen_subscript(compiler *, expr_ty);
+static int codegen_slice(compiler *, expr_ty);
 
 static bool are_all_items_const(asdl_expr_seq *, Py_ssize_t, Py_ssize_t);
 
 
-static int codegen_with(struct compiler *, stmt_ty, int);
-static int codegen_async_with(struct compiler *, stmt_ty, int);
-static int codegen_async_for(struct compiler *, stmt_ty);
-static int codegen_call_simple_kw_helper(struct compiler *c,
+static int codegen_with(compiler *, stmt_ty, int);
+static int codegen_async_with(compiler *, stmt_ty, int);
+static int codegen_async_for(compiler *, stmt_ty);
+static int codegen_call_simple_kw_helper(compiler *c,
                                          location loc,
                                          asdl_keyword_seq *keywords,
                                          Py_ssize_t nkwelts);
-static int codegen_call_helper(struct compiler *c, location loc,
+static int codegen_call_helper(compiler *c, location loc,
                                int n, asdl_expr_seq *args,
                                asdl_keyword_seq *keywords);
-static int codegen_try_except(struct compiler *, stmt_ty);
-static int codegen_try_star_except(struct compiler *, stmt_ty);
+static int codegen_try_except(compiler *, stmt_ty);
+static int codegen_try_star_except(compiler *, stmt_ty);
 
 static int codegen_sync_comprehension_generator(
-                                      struct compiler *c, location loc,
+                                      compiler *c, location loc,
                                       asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
                                       expr_ty elt, expr_ty val, int type,
                                       int iter_on_stack);
 
 static int codegen_async_comprehension_generator(
-                                      struct compiler *c, location loc,
+                                      compiler *c, location loc,
                                       asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
                                       expr_ty elt, expr_ty val, int type,
                                       int iter_on_stack);
 
-static int codegen_pattern(struct compiler *, pattern_ty, pattern_context *);
-static int codegen_match(struct compiler *, stmt_ty);
-static int codegen_pattern_subpattern(struct compiler *,
+static int codegen_pattern(compiler *, pattern_ty, pattern_context *);
+static int codegen_match(compiler *, stmt_ty);
+static int codegen_pattern_subpattern(compiler *,
                                       pattern_ty, pattern_context *);
-static int codegen_make_closure(struct compiler *c, location loc,
+static int codegen_make_closure(compiler *c, location loc,
                                 PyCodeObject *co, Py_ssize_t flags);
 
 
@@ -274,7 +275,7 @@ codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
     RETURN_IF_ERROR_IN_SCOPE((C), codegen_addop_noarg(INSTR_SEQUENCE(C), (OP), (LOC)))
 
 static int
-codegen_addop_load_const(struct compiler *c, location loc, PyObject *o)
+codegen_addop_load_const(compiler *c, location loc, PyObject *o)
 {
     Py_ssize_t arg = _PyCompiler_AddConst(c, o);
     if (arg < 0) {
@@ -304,7 +305,7 @@ codegen_addop_load_const(struct compiler *c, location loc, PyObject *o)
 }
 
 static int
-codegen_addop_o(struct compiler *c, location loc,
+codegen_addop_o(compiler *c, location loc,
                 int opcode, PyObject *dict, PyObject *o)
 {
     Py_ssize_t arg = _PyCompile_DictAddObj(dict, o);
@@ -333,7 +334,7 @@ codegen_addop_o(struct compiler *c, location loc,
 #define LOAD_ZERO_SUPER_METHOD -4
 
 static int
-codegen_addop_name(struct compiler *c, location loc,
+codegen_addop_name(compiler *c, location loc,
                    int opcode, PyObject *dict, PyObject *o)
 {
     PyObject *mangled = _PyCompiler_MaybeMangle(c, o);
@@ -441,7 +442,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
 }
 
 static int
-codegen_call_exit_with_nones(struct compiler *c, location loc)
+codegen_call_exit_with_nones(compiler *c, location loc)
 {
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADDOP_LOAD_CONST(c, loc, Py_None);
@@ -451,7 +452,7 @@ codegen_call_exit_with_nones(struct compiler *c, location loc)
 }
 
 static int
-codegen_add_yield_from(struct compiler *c, location loc, int await)
+codegen_add_yield_from(compiler *c, location loc, int await)
 {
     NEW_JUMP_TARGET_LABEL(c, send);
     NEW_JUMP_TARGET_LABEL(c, fail);
@@ -476,7 +477,7 @@ codegen_add_yield_from(struct compiler *c, location loc, int await)
 }
 
 static int
-codegen_pop_except_and_reraise(struct compiler *c, location loc)
+codegen_pop_except_and_reraise(compiler *c, location loc)
 {
     /* Stack contents
      * [exc_info, lasti, exc]            COPY        3
@@ -497,7 +498,7 @@ codegen_pop_except_and_reraise(struct compiler *c, location loc)
  * be popped.
  */
 static int
-codegen_unwind_fblock(struct compiler *c, location *ploc,
+codegen_unwind_fblock(compiler *c, location *ploc,
                       fblockinfo *info, int preserve_tos)
 {
     switch (info->fb_type) {
@@ -601,7 +602,7 @@ codegen_unwind_fblock(struct compiler *c, location *ploc,
 
 /** Unwind block stack. If loop is not NULL, then stop when the first loop is encountered. */
 static int
-codegen_unwind_fblock_stack(struct compiler *c, location *ploc,
+codegen_unwind_fblock_stack(compiler *c, location *ploc,
                             int preserve_tos, fblockinfo **loop)
 {
     fblockinfo *top = _PyCompiler_TopFBlock(c);
@@ -627,7 +628,7 @@ codegen_unwind_fblock_stack(struct compiler *c, location *ploc,
 }
 
 static int
-codegen_enter_scope(struct compiler *c, identifier name, int scope_type,
+codegen_enter_scope(compiler *c, identifier name, int scope_type,
                     void *key, int lineno, PyObject *private,
                     _PyCompile_CodeUnitMetadata *umd)
 {
@@ -642,7 +643,7 @@ codegen_enter_scope(struct compiler *c, identifier name, int scope_type,
 }
 
 static int
-codegen_setup_annotations_scope(struct compiler *c, location loc,
+codegen_setup_annotations_scope(compiler *c, location loc,
                                 void *key, PyObject *name)
 {
     _PyCompile_CodeUnitMetadata umd = {
@@ -666,7 +667,7 @@ codegen_setup_annotations_scope(struct compiler *c, location loc,
 }
 
 static int
-codegen_leave_annotations_scope(struct compiler *c, location loc,
+codegen_leave_annotations_scope(compiler *c, location loc,
                                 Py_ssize_t annotations_len)
 {
     ADDOP_I(c, loc, BUILD_MAP, annotations_len);
@@ -683,7 +684,7 @@ codegen_leave_annotations_scope(struct compiler *c, location loc,
 }
 
 static int
-codegen_process_deferred_annotations(struct compiler *c, location loc)
+codegen_process_deferred_annotations(compiler *c, location loc)
 {
     PyObject *deferred_anno = _PyCompiler_DeferredAnnotations(c);
     if (deferred_anno == NULL) {
@@ -732,7 +733,7 @@ codegen_process_deferred_annotations(struct compiler *c, location loc)
 
 /* Compile an expression */
 int
-_PyCodegen_Expression(struct compiler *c, expr_ty e)
+_PyCodegen_Expression(compiler *c, expr_ty e)
 {
     VISIT(c, expr, e);
     return SUCCESS;
@@ -742,7 +743,7 @@ _PyCodegen_Expression(struct compiler *c, expr_ty e)
    and for annotations. */
 
 int
-_PyCodegen_Body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
+_PyCodegen_Body(compiler *c, location loc, asdl_stmt_seq *stmts)
 {
     /* If from __future__ import annotations is active,
      * every annotated class and module should have __annotations__.
@@ -786,7 +787,7 @@ _PyCodegen_Body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
 }
 
 int
-_PyCodegen_EnterAnonymousScope(struct compiler* c, mod_ty mod)
+_PyCodegen_EnterAnonymousScope(compiler* c, mod_ty mod)
 {
     _Py_DECLARE_STR(anon_module, "<module>");
     RETURN_IF_ERROR(
@@ -796,7 +797,7 @@ _PyCodegen_EnterAnonymousScope(struct compiler* c, mod_ty mod)
 }
 
 static int
-codegen_make_closure(struct compiler *c, location loc,
+codegen_make_closure(compiler *c, location loc,
                      PyCodeObject *co, Py_ssize_t flags)
 {
     if (co->co_nfreevars) {
@@ -836,7 +837,7 @@ codegen_make_closure(struct compiler *c, location loc,
 }
 
 static int
-codegen_decorators(struct compiler *c, asdl_expr_seq* decos)
+codegen_decorators(compiler *c, asdl_expr_seq* decos)
 {
     if (!decos) {
         return SUCCESS;
@@ -849,7 +850,7 @@ codegen_decorators(struct compiler *c, asdl_expr_seq* decos)
 }
 
 static int
-codegen_apply_decorators(struct compiler *c, asdl_expr_seq* decos)
+codegen_apply_decorators(compiler *c, asdl_expr_seq* decos)
 {
     if (!decos) {
         return SUCCESS;
@@ -863,7 +864,7 @@ codegen_apply_decorators(struct compiler *c, asdl_expr_seq* decos)
 }
 
 static int
-codegen_kwonlydefaults(struct compiler *c, location loc,
+codegen_kwonlydefaults(compiler *c, location loc,
                        asdl_arg_seq *kwonlyargs, asdl_expr_seq *kw_defaults)
 {
     /* Push a dict of keyword-only default values.
@@ -894,7 +895,7 @@ codegen_kwonlydefaults(struct compiler *c, location loc,
 }
 
 static int
-codegen_visit_annexpr(struct compiler *c, expr_ty annotation)
+codegen_visit_annexpr(compiler *c, expr_ty annotation)
 {
     location loc = LOC(annotation);
     ADDOP_LOAD_CONST_NEW(c, loc, _PyAST_ExprAsUnicode(annotation));
@@ -902,7 +903,7 @@ codegen_visit_annexpr(struct compiler *c, expr_ty annotation)
 }
 
 static int
-codegen_argannotation(struct compiler *c, identifier id,
+codegen_argannotation(compiler *c, identifier id,
     expr_ty annotation, Py_ssize_t *annotations_len, location loc)
 {
     if (!annotation) {
@@ -936,7 +937,7 @@ codegen_argannotation(struct compiler *c, identifier id,
 }
 
 static int
-codegen_argannotations(struct compiler *c, asdl_arg_seq* args,
+codegen_argannotations(compiler *c, asdl_arg_seq* args,
                        Py_ssize_t *annotations_len, location loc)
 {
     int i;
@@ -954,7 +955,7 @@ codegen_argannotations(struct compiler *c, asdl_arg_seq* args,
 }
 
 static int
-codegen_annotations_in_scope(struct compiler *c, location loc,
+codegen_annotations_in_scope(compiler *c, location loc,
                              arguments_ty args, expr_ty returns,
                              Py_ssize_t *annotations_len)
 {
@@ -986,7 +987,7 @@ codegen_annotations_in_scope(struct compiler *c, location loc,
 }
 
 static int
-codegen_annotations(struct compiler *c, location loc,
+codegen_annotations(compiler *c, location loc,
                     arguments_ty args, expr_ty returns)
 {
     /* Push arg annotation names and values.
@@ -1024,7 +1025,7 @@ codegen_annotations(struct compiler *c, location loc,
 }
 
 static int
-codegen_defaults(struct compiler *c, arguments_ty args,
+codegen_defaults(compiler *c, arguments_ty args,
                         location loc)
 {
     VISIT_SEQ(c, expr, args->defaults);
@@ -1033,7 +1034,7 @@ codegen_defaults(struct compiler *c, arguments_ty args,
 }
 
 static Py_ssize_t
-codegen_default_arguments(struct compiler *c, location loc,
+codegen_default_arguments(compiler *c, location loc,
                           arguments_ty args)
 {
     Py_ssize_t funcflags = 0;
@@ -1054,7 +1055,7 @@ codegen_default_arguments(struct compiler *c, location loc,
 }
 
 static int
-codegen_wrap_in_stopiteration_handler(struct compiler *c)
+codegen_wrap_in_stopiteration_handler(compiler *c)
 {
     NEW_JUMP_TARGET_LABEL(c, handler);
 
@@ -1073,7 +1074,7 @@ codegen_wrap_in_stopiteration_handler(struct compiler *c)
 }
 
 static int
-codegen_type_param_bound_or_default(struct compiler *c, expr_ty e,
+codegen_type_param_bound_or_default(compiler *c, expr_ty e,
                                     identifier name, void *key,
                                     bool allow_starred)
 {
@@ -1100,7 +1101,7 @@ codegen_type_param_bound_or_default(struct compiler *c, expr_ty e,
 }
 
 static int
-codegen_type_params(struct compiler *c, asdl_type_param_seq *type_params)
+codegen_type_params(compiler *c, asdl_type_param_seq *type_params)
 {
     if (!type_params) {
         return SUCCESS;
@@ -1189,7 +1190,7 @@ codegen_type_params(struct compiler *c, asdl_type_param_seq *type_params)
 }
 
 static int
-codegen_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags,
+codegen_function_body(compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags,
                       int firstlineno)
 {
     arguments_ty args;
@@ -1273,7 +1274,7 @@ codegen_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t fu
 }
 
 static int
-codegen_function(struct compiler *c, stmt_ty s, int is_async)
+codegen_function(compiler *c, stmt_ty s, int is_async)
 {
     arguments_ty args;
     expr_ty returns;
@@ -1388,7 +1389,7 @@ codegen_function(struct compiler *c, stmt_ty s, int is_async)
 }
 
 static int
-codegen_set_type_params_in_class(struct compiler *c, location loc)
+codegen_set_type_params_in_class(compiler *c, location loc)
 {
     _Py_DECLARE_STR(type_params, ".type_params");
     RETURN_IF_ERROR(codegen_nameop(c, loc, &_Py_STR(type_params), Load));
@@ -1398,7 +1399,7 @@ codegen_set_type_params_in_class(struct compiler *c, location loc)
 
 
 static int
-codegen_class_body(struct compiler *c, stmt_ty s, int firstlineno)
+codegen_class_body(compiler *c, stmt_ty s, int firstlineno)
 {
     /* ultimately generate code for:
          <name> = __build_class__(<func>, <name>, *<bases>, **<keywords>)
@@ -1502,7 +1503,7 @@ codegen_class_body(struct compiler *c, stmt_ty s, int firstlineno)
 }
 
 static int
-codegen_class(struct compiler *c, stmt_ty s)
+codegen_class(compiler *c, stmt_ty s)
 {
     asdl_expr_seq *decos = s->v.ClassDef.decorator_list;
 
@@ -1597,7 +1598,7 @@ codegen_class(struct compiler *c, stmt_ty s)
 }
 
 static int
-codegen_typealias_body(struct compiler *c, stmt_ty s)
+codegen_typealias_body(compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     PyObject *name = s->v.TypeAlias.name->v.Name.id;
@@ -1625,7 +1626,7 @@ codegen_typealias_body(struct compiler *c, stmt_ty s)
 }
 
 static int
-codegen_typealias(struct compiler *c, stmt_ty s)
+codegen_typealias(compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     asdl_type_param_seq *type_params = s->v.TypeAlias.type_params;
@@ -1694,7 +1695,7 @@ static PyTypeObject * infer_type(expr_ty e);
    Emit a warning if any operand is a constant except named singletons.
  */
 static int
-codegen_check_compare(struct compiler *c, expr_ty e)
+codegen_check_compare(compiler *c, expr_ty e)
 {
     Py_ssize_t i, n;
     bool left = check_is_arg(e->v.Compare.left);
@@ -1722,7 +1723,7 @@ codegen_check_compare(struct compiler *c, expr_ty e)
 }
 
 static int
-codegen_addcompare(struct compiler *c, location loc, cmpop_ty op)
+codegen_addcompare(compiler *c, location loc, cmpop_ty op)
 {
     int cmp;
     switch (op) {
@@ -1768,7 +1769,7 @@ codegen_addcompare(struct compiler *c, location loc, cmpop_ty op)
 }
 
 static int
-codegen_jump_if(struct compiler *c, location loc,
+codegen_jump_if(compiler *c, location loc,
                 expr_ty e, jump_target_label next, int cond)
 {
     switch (e->kind) {
@@ -1862,7 +1863,7 @@ codegen_jump_if(struct compiler *c, location loc,
 }
 
 static int
-codegen_ifexp(struct compiler *c, expr_ty e)
+codegen_ifexp(compiler *c, expr_ty e)
 {
     assert(e->kind == IfExp_kind);
     NEW_JUMP_TARGET_LABEL(c, end);
@@ -1882,7 +1883,7 @@ codegen_ifexp(struct compiler *c, expr_ty e)
 }
 
 static int
-codegen_lambda(struct compiler *c, expr_ty e)
+codegen_lambda(compiler *c, expr_ty e)
 {
     PyCodeObject *co;
     Py_ssize_t funcflags;
@@ -1928,7 +1929,7 @@ codegen_lambda(struct compiler *c, expr_ty e)
 }
 
 static int
-codegen_if(struct compiler *c, stmt_ty s)
+codegen_if(compiler *c, stmt_ty s)
 {
     jump_target_label next;
     assert(s->kind == If_kind);
@@ -1956,7 +1957,7 @@ codegen_if(struct compiler *c, stmt_ty s)
 }
 
 static int
-codegen_for(struct compiler *c, stmt_ty s)
+codegen_for(compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     NEW_JUMP_TARGET_LABEL(c, start);
@@ -2003,7 +2004,7 @@ codegen_for(struct compiler *c, stmt_ty s)
 
 
 static int
-codegen_async_for(struct compiler *c, stmt_ty s)
+codegen_async_for(compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
 
@@ -2048,7 +2049,7 @@ codegen_async_for(struct compiler *c, stmt_ty s)
 }
 
 static int
-codegen_while(struct compiler *c, stmt_ty s)
+codegen_while(compiler *c, stmt_ty s)
 {
     NEW_JUMP_TARGET_LABEL(c, loop);
     NEW_JUMP_TARGET_LABEL(c, end);
@@ -2074,7 +2075,7 @@ codegen_while(struct compiler *c, stmt_ty s)
 }
 
 static int
-codegen_return(struct compiler *c, stmt_ty s)
+codegen_return(compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     int preserve_tos = ((s->v.Return.value != NULL) &&
@@ -2115,7 +2116,7 @@ codegen_return(struct compiler *c, stmt_ty s)
 }
 
 static int
-codegen_break(struct compiler *c, location loc)
+codegen_break(compiler *c, location loc)
 {
     fblockinfo *loop = NULL;
     location origin_loc = loc;
@@ -2131,7 +2132,7 @@ codegen_break(struct compiler *c, location loc)
 }
 
 static int
-codegen_continue(struct compiler *c, location loc)
+codegen_continue(compiler *c, location loc)
 {
     fblockinfo *loop = NULL;
     location origin_loc = loc;
@@ -2176,7 +2177,7 @@ codegen_continue(struct compiler *c, location loc)
 */
 
 static int
-codegen_try_finally(struct compiler *c, stmt_ty s)
+codegen_try_finally(compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
 
@@ -2227,7 +2228,7 @@ codegen_try_finally(struct compiler *c, stmt_ty s)
 }
 
 static int
-codegen_try_star_finally(struct compiler *c, stmt_ty s)
+codegen_try_star_finally(compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
 
@@ -2307,7 +2308,7 @@ codegen_try_star_finally(struct compiler *c, stmt_ty s)
    Of course, parts are not generated if Vi or Ei is not present.
 */
 static int
-codegen_try_except(struct compiler *c, stmt_ty s)
+codegen_try_except(compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     Py_ssize_t i, n;
@@ -2490,7 +2491,7 @@ codegen_try_except(struct compiler *c, stmt_ty s)
    []                               L0:       <next statement>
 */
 static int
-codegen_try_star_except(struct compiler *c, stmt_ty s)
+codegen_try_star_except(compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
 
@@ -2657,7 +2658,7 @@ codegen_try_star_except(struct compiler *c, stmt_ty s)
 }
 
 static int
-codegen_try(struct compiler *c, stmt_ty s) {
+codegen_try(compiler *c, stmt_ty s) {
     if (s->v.Try.finalbody && asdl_seq_LEN(s->v.Try.finalbody))
         return codegen_try_finally(c, s);
     else
@@ -2665,7 +2666,7 @@ codegen_try(struct compiler *c, stmt_ty s) {
 }
 
 static int
-codegen_try_star(struct compiler *c, stmt_ty s)
+codegen_try_star(compiler *c, stmt_ty s)
 {
     if (s->v.TryStar.finalbody && asdl_seq_LEN(s->v.TryStar.finalbody)) {
         return codegen_try_star_finally(c, s);
@@ -2676,7 +2677,7 @@ codegen_try_star(struct compiler *c, stmt_ty s)
 }
 
 static int
-codegen_import_as(struct compiler *c, location loc,
+codegen_import_as(compiler *c, location loc,
                   identifier name, identifier asname)
 {
     /* The IMPORT_NAME opcode was already generated.  This function
@@ -2718,7 +2719,7 @@ codegen_import_as(struct compiler *c, location loc,
 }
 
 static int
-codegen_import(struct compiler *c, stmt_ty s)
+codegen_import(compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     /* The Import node stores a module name like a.b.c as a single
@@ -2764,7 +2765,7 @@ codegen_import(struct compiler *c, stmt_ty s)
 }
 
 static int
-codegen_from_import(struct compiler *c, stmt_ty s)
+codegen_from_import(compiler *c, stmt_ty s)
 {
     Py_ssize_t n = asdl_seq_LEN(s->v.ImportFrom.names);
 
@@ -2815,7 +2816,7 @@ codegen_from_import(struct compiler *c, stmt_ty s)
 }
 
 static int
-codegen_assert(struct compiler *c, stmt_ty s)
+codegen_assert(compiler *c, stmt_ty s)
 {
     /* Always emit a warning if the test is a non-zero length tuple */
     if ((s->v.Assert.test->kind == Tuple_kind &&
@@ -2845,7 +2846,7 @@ codegen_assert(struct compiler *c, stmt_ty s)
 }
 
 static int
-codegen_stmt_expr(struct compiler *c, location loc, expr_ty value)
+codegen_stmt_expr(compiler *c, location loc, expr_ty value)
 {
     if (IS_INTERACTIVE(c) && !IS_NESTED_SCOPE(c)) {
         VISIT(c, expr, value);
@@ -2866,7 +2867,7 @@ codegen_stmt_expr(struct compiler *c, location loc, expr_ty value)
 }
 
 static int
-codegen_visit_stmt(struct compiler *c, stmt_ty s)
+codegen_visit_stmt(compiler *c, stmt_ty s)
 {
 
     switch (s->kind) {
@@ -2979,7 +2980,7 @@ unaryop(unaryop_ty op)
 }
 
 static int
-addop_binary(struct compiler *c, location loc, operator_ty binop,
+addop_binary(compiler *c, location loc, operator_ty binop,
              bool inplace)
 {
     int oparg;
@@ -3034,7 +3035,7 @@ addop_binary(struct compiler *c, location loc, operator_ty binop,
 
 
 static int
-codegen_addop_yield(struct compiler *c, location loc) {
+codegen_addop_yield(compiler *c, location loc) {
     PySTEntryObject *ste = SYMTABLE_ENTRY(c);
     if (ste->ste_generator && ste->ste_coroutine) {
         ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_ASYNC_GEN_WRAP);
@@ -3045,14 +3046,14 @@ codegen_addop_yield(struct compiler *c, location loc) {
 }
 
 static int
-codegen_load_classdict_freevar(struct compiler *c, location loc)
+codegen_load_classdict_freevar(compiler *c, location loc)
 {
     ADDOP_N(c, loc, LOAD_DEREF, &_Py_ID(__classdict__), freevars);
     return SUCCESS;
 }
 
 static int
-codegen_nameop(struct compiler *c, location loc,
+codegen_nameop(compiler *c, location loc,
                identifier name, expr_context_ty ctx)
 {
     assert(!_PyUnicode_EqualToASCIIString(name, "None") &&
@@ -3066,7 +3067,7 @@ codegen_nameop(struct compiler *c, location loc,
 
     int scope = _PyST_GetScope(SYMTABLE_ENTRY(c), mangled);
     RETURN_IF_ERROR(scope);
-    compiler_optype optype;
+    _PyCompiler_optype optype;
     Py_ssize_t arg = 0;
     if (_PyCompiler_ResolveNameop(c, mangled, scope, &optype, &arg) < 0) {
         Py_DECREF(mangled);
@@ -3156,7 +3157,7 @@ error:
 }
 
 static int
-codegen_boolop(struct compiler *c, expr_ty e)
+codegen_boolop(compiler *c, expr_ty e)
 {
     int jumpi;
     Py_ssize_t i, n;
@@ -3186,7 +3187,7 @@ codegen_boolop(struct compiler *c, expr_ty e)
 }
 
 static int
-starunpack_helper(struct compiler *c, location loc,
+starunpack_helper(compiler *c, location loc,
                   asdl_expr_seq *elts, int pushed,
                   int build, int add, int extend, int tuple)
 {
@@ -3271,7 +3272,7 @@ starunpack_helper(struct compiler *c, location loc,
 }
 
 static int
-unpack_helper(struct compiler *c, location loc, asdl_expr_seq *elts)
+unpack_helper(compiler *c, location loc, asdl_expr_seq *elts)
 {
     Py_ssize_t n = asdl_seq_LEN(elts);
     int seen_star = 0;
@@ -3299,7 +3300,7 @@ unpack_helper(struct compiler *c, location loc, asdl_expr_seq *elts)
 }
 
 static int
-assignment_helper(struct compiler *c, location loc, asdl_expr_seq *elts)
+assignment_helper(compiler *c, location loc, asdl_expr_seq *elts)
 {
     Py_ssize_t n = asdl_seq_LEN(elts);
     RETURN_IF_ERROR(unpack_helper(c, loc, elts));
@@ -3311,7 +3312,7 @@ assignment_helper(struct compiler *c, location loc, asdl_expr_seq *elts)
 }
 
 static int
-codegen_list(struct compiler *c, expr_ty e)
+codegen_list(compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     asdl_expr_seq *elts = e->v.List.elts;
@@ -3329,7 +3330,7 @@ codegen_list(struct compiler *c, expr_ty e)
 }
 
 static int
-codegen_tuple(struct compiler *c, expr_ty e)
+codegen_tuple(compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     asdl_expr_seq *elts = e->v.Tuple.elts;
@@ -3347,7 +3348,7 @@ codegen_tuple(struct compiler *c, expr_ty e)
 }
 
 static int
-codegen_set(struct compiler *c, expr_ty e)
+codegen_set(compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     return starunpack_helper(c, loc, e->v.Set.elts, 0,
@@ -3367,7 +3368,7 @@ are_all_items_const(asdl_expr_seq *seq, Py_ssize_t begin, Py_ssize_t end)
 }
 
 static int
-codegen_subdict(struct compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end)
+codegen_subdict(compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end)
 {
     Py_ssize_t i, n = end - begin;
     int big = n*2 > STACK_USE_GUIDELINE;
@@ -3389,7 +3390,7 @@ codegen_subdict(struct compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end)
 }
 
 static int
-codegen_dict(struct compiler *c, expr_ty e)
+codegen_dict(compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     Py_ssize_t i, n, elements;
@@ -3444,7 +3445,7 @@ codegen_dict(struct compiler *c, expr_ty e)
 }
 
 static int
-codegen_compare(struct compiler *c, expr_ty e)
+codegen_compare(compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     Py_ssize_t i, n;
@@ -3514,7 +3515,7 @@ infer_type(expr_ty e)
 }
 
 static int
-check_caller(struct compiler *c, expr_ty e)
+check_caller(compiler *c, expr_ty e)
 {
     switch (e->kind) {
     case Constant_kind:
@@ -3539,7 +3540,7 @@ check_caller(struct compiler *c, expr_ty e)
 }
 
 static int
-check_subscripter(struct compiler *c, expr_ty e)
+check_subscripter(compiler *c, expr_ty e)
 {
     PyObject *v;
 
@@ -3568,7 +3569,7 @@ check_subscripter(struct compiler *c, expr_ty e)
 }
 
 static int
-check_index(struct compiler *c, expr_ty e, expr_ty s)
+check_index(compiler *c, expr_ty e, expr_ty s)
 {
     PyObject *v;
 
@@ -3604,7 +3605,7 @@ check_index(struct compiler *c, expr_ty e, expr_ty s)
 }
 
 static int
-is_import_originated(struct compiler *c, expr_ty e)
+is_import_originated(compiler *c, expr_ty e)
 {
     /* Check whether the global scope has an import named
      e, if it is a Name object. For not traversing all the
@@ -3622,7 +3623,7 @@ is_import_originated(struct compiler *c, expr_ty e)
 }
 
 static int
-can_optimize_super_call(struct compiler *c, expr_ty attr)
+can_optimize_super_call(compiler *c, expr_ty attr)
 {
     expr_ty e = attr->v.Attribute.value;
     if (e->kind != Call_kind ||
@@ -3677,7 +3678,7 @@ can_optimize_super_call(struct compiler *c, expr_ty attr)
 }
 
 static int
-load_args_for_super(struct compiler *c, expr_ty e) {
+load_args_for_super(compiler *c, expr_ty e) {
     location loc = LOC(e);
 
     // load super() global
@@ -3709,7 +3710,7 @@ load_args_for_super(struct compiler *c, expr_ty e) {
 // If an attribute access spans multiple lines, update the current start
 // location to point to the attribute name.
 static location
-update_start_location_to_match_attr(struct compiler *c, location loc,
+update_start_location_to_match_attr(compiler *c, location loc,
                                     expr_ty attr)
 {
     assert(attr->kind == Attribute_kind);
@@ -3736,7 +3737,7 @@ update_start_location_to_match_attr(struct compiler *c, location loc,
 
 // Return 1 if the method call was optimized, 0 if not, and -1 on error.
 static int
-maybe_optimize_method_call(struct compiler *c, expr_ty e)
+maybe_optimize_method_call(compiler *c, expr_ty e)
 {
     Py_ssize_t argsl, i, kwdsl;
     expr_ty meth = e->v.Call.func;
@@ -3811,7 +3812,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
 }
 
 static int
-codegen_validate_keywords(struct compiler *c, asdl_keyword_seq *keywords)
+codegen_validate_keywords(compiler *c, asdl_keyword_seq *keywords)
 {
     Py_ssize_t nkeywords = asdl_seq_LEN(keywords);
     for (Py_ssize_t i = 0; i < nkeywords; i++) {
@@ -3830,7 +3831,7 @@ codegen_validate_keywords(struct compiler *c, asdl_keyword_seq *keywords)
 }
 
 static int
-codegen_call(struct compiler *c, expr_ty e)
+codegen_call(compiler *c, expr_ty e)
 {
     RETURN_IF_ERROR(codegen_validate_keywords(c, e->v.Call.keywords));
     int ret = maybe_optimize_method_call(c, e);
@@ -3851,7 +3852,7 @@ codegen_call(struct compiler *c, expr_ty e)
 }
 
 static int
-codegen_joined_str(struct compiler *c, expr_ty e)
+codegen_joined_str(compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     Py_ssize_t value_count = asdl_seq_LEN(e->v.JoinedStr.values);
@@ -3881,7 +3882,7 @@ codegen_joined_str(struct compiler *c, expr_ty e)
 
 /* Used to implement f-strings. Format a single value. */
 static int
-codegen_formatted_value(struct compiler *c, expr_ty e)
+codegen_formatted_value(compiler *c, expr_ty e)
 {
     /* Our oparg encodes 2 pieces of information: the conversion
        character, and whether or not a format_spec was provided.
@@ -3927,7 +3928,7 @@ codegen_formatted_value(struct compiler *c, expr_ty e)
 }
 
 static int
-codegen_subkwargs(struct compiler *c, location loc,
+codegen_subkwargs(compiler *c, location loc,
                   asdl_keyword_seq *keywords,
                   Py_ssize_t begin, Py_ssize_t end)
 {
@@ -3956,7 +3957,7 @@ codegen_subkwargs(struct compiler *c, location loc,
  * a tuple of keyword names before CALL.
  */
 static int
-codegen_call_simple_kw_helper(struct compiler *c, location loc,
+codegen_call_simple_kw_helper(compiler *c, location loc,
                               asdl_keyword_seq *keywords, Py_ssize_t nkwelts)
 {
     PyObject *names;
@@ -3975,7 +3976,7 @@ codegen_call_simple_kw_helper(struct compiler *c, location loc,
 
 /* shared code between codegen_call and codegen_class */
 static int
-codegen_call_helper(struct compiler *c, location loc,
+codegen_call_helper(compiler *c, location loc,
                     int n, /* Args already pushed */
                     asdl_expr_seq *args,
                     asdl_keyword_seq *keywords)
@@ -4089,7 +4090,7 @@ ex_call:
 
 
 static int
-codegen_comprehension_generator(struct compiler *c, location loc,
+codegen_comprehension_generator(compiler *c, location loc,
                                 asdl_comprehension_seq *generators, int gen_index,
                                 int depth,
                                 expr_ty elt, expr_ty val, int type,
@@ -4109,7 +4110,7 @@ codegen_comprehension_generator(struct compiler *c, location loc,
 }
 
 static int
-codegen_sync_comprehension_generator(struct compiler *c, location loc,
+codegen_sync_comprehension_generator(compiler *c, location loc,
                                      asdl_comprehension_seq *generators,
                                      int gen_index, int depth,
                                      expr_ty elt, expr_ty val, int type,
@@ -4233,7 +4234,7 @@ codegen_sync_comprehension_generator(struct compiler *c, location loc,
 }
 
 static int
-codegen_async_comprehension_generator(struct compiler *c, location loc,
+codegen_async_comprehension_generator(compiler *c, location loc,
                                       asdl_comprehension_seq *generators,
                                       int gen_index, int depth,
                                       expr_ty elt, expr_ty val, int type,
@@ -4332,7 +4333,7 @@ codegen_async_comprehension_generator(struct compiler *c, location loc,
 }
 
 static int
-codegen_push_inlined_comprehension_locals(struct compiler *c, location loc,
+codegen_push_inlined_comprehension_locals(compiler *c, location loc,
                                           PySTEntryObject *comp,
                                           _PyCompille_InlinedComprehensionState *state)
 {
@@ -4400,7 +4401,7 @@ codegen_push_inlined_comprehension_locals(struct compiler *c, location loc,
 }
 
 static int
-push_inlined_comprehension_state(struct compiler *c, location loc,
+push_inlined_comprehension_state(compiler *c, location loc,
                                  PySTEntryObject *comp,
                                  _PyCompille_InlinedComprehensionState *state)
 {
@@ -4412,7 +4413,7 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
 }
 
 static int
-restore_inlined_comprehension_locals(struct compiler *c, location loc,
+restore_inlined_comprehension_locals(compiler *c, location loc,
                                      _PyCompille_InlinedComprehensionState *state)
 {
     PyObject *k;
@@ -4434,7 +4435,7 @@ restore_inlined_comprehension_locals(struct compiler *c, location loc,
 }
 
 static int
-codegen_pop_inlined_comprehension_locals(struct compiler *c, location loc,
+codegen_pop_inlined_comprehension_locals(compiler *c, location loc,
                                          _PyCompille_InlinedComprehensionState *state)
 {
     if (state->pushed_locals) {
@@ -4459,7 +4460,7 @@ codegen_pop_inlined_comprehension_locals(struct compiler *c, location loc,
 }
 
 static int
-pop_inlined_comprehension_state(struct compiler *c, location loc,
+pop_inlined_comprehension_state(compiler *c, location loc,
                                 _PyCompille_InlinedComprehensionState *state)
 {
     RETURN_IF_ERROR(codegen_pop_inlined_comprehension_locals(c, loc, state));
@@ -4468,7 +4469,7 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
 }
 
 static inline int
-codegen_comprehension_iter(struct compiler *c, comprehension_ty comp)
+codegen_comprehension_iter(compiler *c, comprehension_ty comp)
 {
     VISIT(c, expr, comp->iter);
     if (comp->is_async) {
@@ -4481,7 +4482,7 @@ codegen_comprehension_iter(struct compiler *c, comprehension_ty comp)
 }
 
 static int
-codegen_comprehension(struct compiler *c, expr_ty e, int type,
+codegen_comprehension(compiler *c, expr_ty e, int type,
                       identifier name, asdl_comprehension_seq *generators, expr_ty elt,
                       expr_ty val)
 {
@@ -4612,7 +4613,7 @@ error:
 }
 
 static int
-codegen_genexp(struct compiler *c, expr_ty e)
+codegen_genexp(compiler *c, expr_ty e)
 {
     assert(e->kind == GeneratorExp_kind);
     _Py_DECLARE_STR(anon_genexpr, "<genexpr>");
@@ -4622,7 +4623,7 @@ codegen_genexp(struct compiler *c, expr_ty e)
 }
 
 static int
-codegen_listcomp(struct compiler *c, expr_ty e)
+codegen_listcomp(compiler *c, expr_ty e)
 {
     assert(e->kind == ListComp_kind);
     _Py_DECLARE_STR(anon_listcomp, "<listcomp>");
@@ -4632,7 +4633,7 @@ codegen_listcomp(struct compiler *c, expr_ty e)
 }
 
 static int
-codegen_setcomp(struct compiler *c, expr_ty e)
+codegen_setcomp(compiler *c, expr_ty e)
 {
     assert(e->kind == SetComp_kind);
     _Py_DECLARE_STR(anon_setcomp, "<setcomp>");
@@ -4643,7 +4644,7 @@ codegen_setcomp(struct compiler *c, expr_ty e)
 
 
 static int
-codegen_dictcomp(struct compiler *c, expr_ty e)
+codegen_dictcomp(compiler *c, expr_ty e)
 {
     assert(e->kind == DictComp_kind);
     _Py_DECLARE_STR(anon_dictcomp, "<dictcomp>");
@@ -4654,7 +4655,7 @@ codegen_dictcomp(struct compiler *c, expr_ty e)
 
 
 static int
-codegen_visit_keyword(struct compiler *c, keyword_ty k)
+codegen_visit_keyword(compiler *c, keyword_ty k)
 {
     VISIT(c, expr, k->value);
     return SUCCESS;
@@ -4662,7 +4663,7 @@ codegen_visit_keyword(struct compiler *c, keyword_ty k)
 
 
 static int
-codegen_with_except_finish(struct compiler *c, jump_target_label cleanup) {
+codegen_with_except_finish(compiler *c, jump_target_label cleanup) {
     NEW_JUMP_TARGET_LABEL(c, suppress);
     ADDOP(c, NO_LOCATION, TO_BOOL);
     ADDOP_JUMP(c, NO_LOCATION, POP_JUMP_IF_TRUE, suppress);
@@ -4710,7 +4711,7 @@ codegen_with_except_finish(struct compiler *c, jump_target_label cleanup) {
            raise
  */
 static int
-codegen_async_with(struct compiler *c, stmt_ty s, int pos)
+codegen_async_with(compiler *c, stmt_ty s, int pos)
 {
     location loc = LOC(s);
     withitem_ty item = asdl_seq_GET(s->v.AsyncWith.items, pos);
@@ -4813,7 +4814,7 @@ codegen_async_with(struct compiler *c, stmt_ty s, int pos)
  */
 
 static int
-codegen_with(struct compiler *c, stmt_ty s, int pos)
+codegen_with(compiler *c, stmt_ty s, int pos)
 {
     withitem_ty item = asdl_seq_GET(s->v.With.items, pos);
 
@@ -4882,7 +4883,7 @@ codegen_with(struct compiler *c, stmt_ty s, int pos)
 }
 
 static int
-codegen_visit_expr(struct compiler *c, expr_ty e)
+codegen_visit_expr(compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     switch (e->kind) {
@@ -5044,7 +5045,7 @@ is_two_element_slice(expr_ty s)
 }
 
 static int
-codegen_augassign(struct compiler *c, stmt_ty s)
+codegen_augassign(compiler *c, stmt_ty s)
 {
     assert(s->kind == AugAssign_kind);
     expr_ty e = s->v.AugAssign.target;
@@ -5119,7 +5120,7 @@ codegen_augassign(struct compiler *c, stmt_ty s)
 }
 
 static int
-codegen_check_ann_expr(struct compiler *c, expr_ty e)
+codegen_check_ann_expr(compiler *c, expr_ty e)
 {
     VISIT(c, expr, e);
     ADDOP(c, LOC(e), POP_TOP);
@@ -5127,7 +5128,7 @@ codegen_check_ann_expr(struct compiler *c, expr_ty e)
 }
 
 static int
-codegen_check_annotation(struct compiler *c, stmt_ty s)
+codegen_check_annotation(compiler *c, stmt_ty s)
 {
     /* Annotations of complex targets does not produce anything
        under annotations future */
@@ -5144,7 +5145,7 @@ codegen_check_annotation(struct compiler *c, stmt_ty s)
 }
 
 static int
-codegen_check_ann_subscr(struct compiler *c, expr_ty e)
+codegen_check_ann_subscr(compiler *c, expr_ty e)
 {
     /* We check that everything in a subscript is defined at runtime. */
     switch (e->kind) {
@@ -5174,7 +5175,7 @@ codegen_check_ann_subscr(struct compiler *c, expr_ty e)
 }
 
 static int
-codegen_annassign(struct compiler *c, stmt_ty s)
+codegen_annassign(compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     expr_ty targ = s->v.AnnAssign.target;
@@ -5233,7 +5234,7 @@ codegen_annassign(struct compiler *c, stmt_ty s)
 }
 
 static int
-codegen_subscript(struct compiler *c, expr_ty e)
+codegen_subscript(compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     expr_context_ty ctx = e->v.Subscript.ctx;
@@ -5271,7 +5272,7 @@ codegen_subscript(struct compiler *c, expr_ty e)
 /* Returns the number of the values emitted,
  * thus are needed to build the slice, or -1 if there is an error. */
 static int
-codegen_slice(struct compiler *c, expr_ty s)
+codegen_slice(compiler *c, expr_ty s)
 {
     int n = 2;
     assert(s->kind == Slice_kind);
@@ -5323,7 +5324,7 @@ codegen_slice(struct compiler *c, expr_ty s)
 
 // Allocate or resize pc->fail_pop to allow for n items to be popped on failure.
 static int
-ensure_fail_pop(struct compiler *c, pattern_context *pc, Py_ssize_t n)
+ensure_fail_pop(compiler *c, pattern_context *pc, Py_ssize_t n)
 {
     Py_ssize_t size = n + 1;
     if (size <= pc->fail_pop_size) {
@@ -5345,7 +5346,7 @@ ensure_fail_pop(struct compiler *c, pattern_context *pc, Py_ssize_t n)
 
 // Use op to jump to the correct fail_pop block.
 static int
-jump_to_fail_pop(struct compiler *c, location loc,
+jump_to_fail_pop(compiler *c, location loc,
                  pattern_context *pc, int op)
 {
     // Pop any items on the top of the stack, plus any objects we were going to
@@ -5358,7 +5359,7 @@ jump_to_fail_pop(struct compiler *c, location loc,
 
 // Build all of the fail_pop blocks and reset fail_pop.
 static int
-emit_and_reset_fail_pop(struct compiler *c, location loc,
+emit_and_reset_fail_pop(compiler *c, location loc,
                         pattern_context *pc)
 {
     if (!pc->fail_pop_size) {
@@ -5381,7 +5382,7 @@ emit_and_reset_fail_pop(struct compiler *c, location loc,
 }
 
 static int
-codegen_error_duplicate_store(struct compiler *c, location loc, identifier n)
+codegen_error_duplicate_store(compiler *c, location loc, identifier n)
 {
     return _PyCompiler_Error(c, loc,
         "multiple assignments to name %R in pattern", n);
@@ -5389,7 +5390,7 @@ codegen_error_duplicate_store(struct compiler *c, location loc, identifier n)
 
 // Duplicate the effect of 3.10's ROT_* instructions using SWAPs.
 static int
-codegen_pattern_helper_rotate(struct compiler *c, location loc, Py_ssize_t count)
+codegen_pattern_helper_rotate(compiler *c, location loc, Py_ssize_t count)
 {
     while (1 < count) {
         ADDOP_I(c, loc, SWAP, count--);
@@ -5398,7 +5399,7 @@ codegen_pattern_helper_rotate(struct compiler *c, location loc, Py_ssize_t count
 }
 
 static int
-codegen_pattern_helper_store_name(struct compiler *c, location loc,
+codegen_pattern_helper_store_name(compiler *c, location loc,
                                   identifier n, pattern_context *pc)
 {
     if (n == NULL) {
@@ -5420,7 +5421,7 @@ codegen_pattern_helper_store_name(struct compiler *c, location loc,
 
 
 static int
-codegen_pattern_unpack_helper(struct compiler *c, location loc,
+codegen_pattern_unpack_helper(compiler *c, location loc,
                               asdl_pattern_seq *elts)
 {
     Py_ssize_t n = asdl_seq_LEN(elts);
@@ -5449,7 +5450,7 @@ codegen_pattern_unpack_helper(struct compiler *c, location loc,
 }
 
 static int
-pattern_helper_sequence_unpack(struct compiler *c, location loc,
+pattern_helper_sequence_unpack(compiler *c, location loc,
                                asdl_pattern_seq *patterns, Py_ssize_t star,
                                pattern_context *pc)
 {
@@ -5471,7 +5472,7 @@ pattern_helper_sequence_unpack(struct compiler *c, location loc,
 // UNPACK_SEQUENCE / UNPACK_EX. This is more efficient for patterns with a
 // starred wildcard like [first, *_] / [first, *_, last] / [*_, last] / etc.
 static int
-pattern_helper_sequence_subscr(struct compiler *c, location loc,
+pattern_helper_sequence_subscr(compiler *c, location loc,
                                asdl_pattern_seq *patterns, Py_ssize_t star,
                                pattern_context *pc)
 {
@@ -5509,7 +5510,7 @@ pattern_helper_sequence_subscr(struct compiler *c, location loc,
 
 // Like codegen_pattern, but turn off checks for irrefutability.
 static int
-codegen_pattern_subpattern(struct compiler *c,
+codegen_pattern_subpattern(compiler *c,
                             pattern_ty p, pattern_context *pc)
 {
     int allow_irrefutable = pc->allow_irrefutable;
@@ -5520,7 +5521,7 @@ codegen_pattern_subpattern(struct compiler *c,
 }
 
 static int
-codegen_pattern_as(struct compiler *c, pattern_ty p, pattern_context *pc)
+codegen_pattern_as(compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchAs_kind);
     if (p->v.MatchAs.pattern == NULL) {
@@ -5546,7 +5547,7 @@ codegen_pattern_as(struct compiler *c, pattern_ty p, pattern_context *pc)
 }
 
 static int
-codegen_pattern_star(struct compiler *c, pattern_ty p, pattern_context *pc)
+codegen_pattern_star(compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchStar_kind);
     RETURN_IF_ERROR(
@@ -5555,7 +5556,7 @@ codegen_pattern_star(struct compiler *c, pattern_ty p, pattern_context *pc)
 }
 
 static int
-validate_kwd_attrs(struct compiler *c, asdl_identifier_seq *attrs, asdl_pattern_seq* patterns)
+validate_kwd_attrs(compiler *c, asdl_identifier_seq *attrs, asdl_pattern_seq* patterns)
 {
     // Any errors will point to the pattern rather than the arg name as the
     // parser is only supplying identifiers rather than Name or keyword nodes
@@ -5575,7 +5576,7 @@ validate_kwd_attrs(struct compiler *c, asdl_identifier_seq *attrs, asdl_pattern_
 }
 
 static int
-codegen_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
+codegen_pattern_class(compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchClass_kind);
     asdl_pattern_seq *patterns = p->v.MatchClass.patterns;
@@ -5639,7 +5640,7 @@ codegen_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
 }
 
 static int
-codegen_pattern_mapping_key(struct compiler *c, PyObject *seen, pattern_ty p, Py_ssize_t i)
+codegen_pattern_mapping_key(compiler *c, PyObject *seen, pattern_ty p, Py_ssize_t i)
 {
     asdl_expr_seq *keys = p->v.MatchMapping.keys;
     asdl_pattern_seq *patterns = p->v.MatchMapping.patterns;
@@ -5669,7 +5670,7 @@ codegen_pattern_mapping_key(struct compiler *c, PyObject *seen, pattern_ty p, Py
 }
 
 static int
-codegen_pattern_mapping(struct compiler *c, pattern_ty p,
+codegen_pattern_mapping(compiler *c, pattern_ty p,
                         pattern_context *pc)
 {
     assert(p->kind == MatchMapping_kind);
@@ -5770,7 +5771,7 @@ codegen_pattern_mapping(struct compiler *c, pattern_ty p,
 }
 
 static int
-codegen_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
+codegen_pattern_or(compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchOr_kind);
     NEW_JUMP_TARGET_LABEL(c, end);
@@ -5922,7 +5923,7 @@ error:
 
 
 static int
-codegen_pattern_sequence(struct compiler *c, pattern_ty p,
+codegen_pattern_sequence(compiler *c, pattern_ty p,
                          pattern_context *pc)
 {
     assert(p->kind == MatchSequence_kind);
@@ -5980,7 +5981,7 @@ codegen_pattern_sequence(struct compiler *c, pattern_ty p,
 }
 
 static int
-codegen_pattern_value(struct compiler *c, pattern_ty p, pattern_context *pc)
+codegen_pattern_value(compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchValue_kind);
     expr_ty value = p->v.MatchValue.value;
@@ -5996,7 +5997,7 @@ codegen_pattern_value(struct compiler *c, pattern_ty p, pattern_context *pc)
 }
 
 static int
-codegen_pattern_singleton(struct compiler *c, pattern_ty p, pattern_context *pc)
+codegen_pattern_singleton(compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchSingleton_kind);
     ADDOP_LOAD_CONST(c, LOC(p), p->v.MatchSingleton.value);
@@ -6006,7 +6007,7 @@ codegen_pattern_singleton(struct compiler *c, pattern_ty p, pattern_context *pc)
 }
 
 static int
-codegen_pattern(struct compiler *c, pattern_ty p, pattern_context *pc)
+codegen_pattern(compiler *c, pattern_ty p, pattern_context *pc)
 {
     switch (p->kind) {
         case MatchValue_kind:
@@ -6033,7 +6034,7 @@ codegen_pattern(struct compiler *c, pattern_ty p, pattern_context *pc)
 }
 
 static int
-codegen_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
+codegen_match_inner(compiler *c, stmt_ty s, pattern_context *pc)
 {
     VISIT(c, expr, s->v.Match.subject);
     NEW_JUMP_TARGET_LABEL(c, end);
@@ -6110,7 +6111,7 @@ codegen_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
 }
 
 static int
-codegen_match(struct compiler *c, stmt_ty s)
+codegen_match(compiler *c, stmt_ty s)
 {
     pattern_context pc;
     pc.fail_pop = NULL;
@@ -6124,7 +6125,7 @@ codegen_match(struct compiler *c, stmt_ty s)
 
 
 int
-_PyCodegen_AddReturnAtEnd(struct compiler *c, int addNone)
+_PyCodegen_AddReturnAtEnd(compiler *c, int addNone)
 {
     /* Make sure every instruction stream that falls off the end returns None.
      * This also ensures that no jump target offsets are out of bounds.
