@@ -204,7 +204,7 @@ _PyCompiler_MaybeAddStaticAttributeToClass(compiler *c, expr_ty e)
         struct compiler_unit *u = (struct compiler_unit *)PyCapsule_GetPointer(
                                                               capsule, CAPSULE_NAME);
         assert(u);
-        if (u->u_scope_type == COMPILER_SCOPE_CLASS) {
+        if (u->u_scope_type == _PY_COMPILER_SCOPE_CLASS) {
             assert(u->u_static_attributes);
             RETURN_IF_ERROR(PySet_Add(u->u_static_attributes, e->v.Attribute.attr));
             break;
@@ -231,7 +231,7 @@ compiler_set_qualname(compiler *c)
         capsule = PyList_GET_ITEM(c->c_stack, stack_size - 1);
         parent = (struct compiler_unit *)PyCapsule_GetPointer(capsule, CAPSULE_NAME);
         assert(parent);
-        if (parent->u_scope_type == COMPILER_SCOPE_ANNOTATIONS) {
+        if (parent->u_scope_type == _PY_COMPILER_SCOPE_ANNOTATIONS) {
             /* The parent is an annotation scope, so we need to
                look at the grandparent. */
             if (stack_size == 2) {
@@ -245,9 +245,9 @@ compiler_set_qualname(compiler *c)
             assert(parent);
         }
 
-        if (u->u_scope_type == COMPILER_SCOPE_FUNCTION
-            || u->u_scope_type == COMPILER_SCOPE_ASYNC_FUNCTION
-            || u->u_scope_type == COMPILER_SCOPE_CLASS) {
+        if (u->u_scope_type == _PY_COMPILER_SCOPE_FUNCTION
+            || u->u_scope_type == _PY_COMPILER_SCOPE_ASYNC_FUNCTION
+            || u->u_scope_type == _PY_COMPILER_SCOPE_CLASS) {
             assert(u->u_metadata.u_name);
             mangled = _Py_Mangle(parent->u_private, u->u_metadata.u_name);
             if (!mangled) {
@@ -263,9 +263,9 @@ compiler_set_qualname(compiler *c)
         }
 
         if (!force_global) {
-            if (parent->u_scope_type == COMPILER_SCOPE_FUNCTION
-                || parent->u_scope_type == COMPILER_SCOPE_ASYNC_FUNCTION
-                || parent->u_scope_type == COMPILER_SCOPE_LAMBDA)
+            if (parent->u_scope_type == _PY_COMPILER_SCOPE_FUNCTION
+                || parent->u_scope_type == _PY_COMPILER_SCOPE_ASYNC_FUNCTION
+                || parent->u_scope_type == _PY_COMPILER_SCOPE_LAMBDA)
             {
                 _Py_DECLARE_STR(dot_locals, ".<locals>");
                 base = PyUnicode_Concat(parent->u_metadata.u_qualname,
@@ -598,7 +598,7 @@ _PyCompiler_EnterScope(compiler *c, identifier name, int scope_type,
     if (u->u_ste->ste_needs_class_closure) {
         /* Cook up an implicit __class__ cell. */
         Py_ssize_t res;
-        assert(u->u_scope_type == COMPILER_SCOPE_CLASS);
+        assert(u->u_scope_type == _PY_COMPILER_SCOPE_CLASS);
         res = _PyCompile_DictAddObj(u->u_metadata.u_cellvars, &_Py_ID(__class__));
         if (res < 0) {
             compiler_unit_free(u);
@@ -608,7 +608,7 @@ _PyCompiler_EnterScope(compiler *c, identifier name, int scope_type,
     if (u->u_ste->ste_needs_classdict) {
         /* Cook up an implicit __classdict__ cell. */
         Py_ssize_t res;
-        assert(u->u_scope_type == COMPILER_SCOPE_CLASS);
+        assert(u->u_scope_type == _PY_COMPILER_SCOPE_CLASS);
         res = _PyCompile_DictAddObj(u->u_metadata.u_cellvars, &_Py_ID(__classdict__));
         if (res < 0) {
             compiler_unit_free(u);
@@ -644,7 +644,7 @@ _PyCompiler_EnterScope(compiler *c, identifier name, int scope_type,
     }
 
     u->u_deferred_annotations = NULL;
-    if (scope_type == COMPILER_SCOPE_CLASS) {
+    if (scope_type == _PY_COMPILER_SCOPE_CLASS) {
         u->u_static_attributes = PySet_New(0);
         if (!u->u_static_attributes) {
             compiler_unit_free(u);
@@ -678,7 +678,7 @@ _PyCompiler_EnterScope(compiler *c, identifier name, int scope_type,
     u->u_private = Py_XNewRef(private);
 
     c->u = u;
-    if (scope_type != COMPILER_SCOPE_MODULE) {
+    if (scope_type != _PY_COMPILER_SCOPE_MODULE) {
         RETURN_IF_ERROR(compiler_set_qualname(c));
     }
     return SUCCESS;
@@ -788,7 +788,7 @@ static int
 compiler_codegen(compiler *c, mod_ty mod)
 {
     RETURN_IF_ERROR(_PyCodegen_EnterAnonymousScope(c, mod));
-    assert(c->u->u_scope_type == COMPILER_SCOPE_MODULE);
+    assert(c->u->u_scope_type == _PY_COMPILER_SCOPE_MODULE);
     switch (mod->kind) {
     case Module_kind: {
         asdl_stmt_seq *stmts = mod->v.Module.body;
@@ -831,7 +831,7 @@ finally:
 int
 _PyCompiler_GetRefType(compiler *c, PyObject *name)
 {
-    if (c->u->u_scope_type == COMPILER_SCOPE_CLASS &&
+    if (c->u->u_scope_type == _PY_COMPILER_SCOPE_CLASS &&
         (_PyUnicode_EqualToASCIIString(name, "__class__") ||
          _PyUnicode_EqualToASCIIString(name, "__classdict__"))) {
         return CELL;

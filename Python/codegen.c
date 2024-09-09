@@ -635,7 +635,7 @@ codegen_enter_scope(compiler *c, identifier name, int scope_type,
     RETURN_IF_ERROR(
         _PyCompiler_EnterScope(c, name, scope_type, key, lineno, private, umd));
     location loc = LOCATION(lineno, lineno, 0, 0);
-    if (scope_type == COMPILER_SCOPE_MODULE) {
+    if (scope_type == _PY_COMPILER_SCOPE_MODULE) {
         loc.lineno = 0;
     }
     ADDOP_I(c, loc, RESUME, RESUME_AT_FUNC_START);
@@ -650,7 +650,7 @@ codegen_setup_annotations_scope(compiler *c, location loc,
         .u_posonlyargcount = 1,
     };
     RETURN_IF_ERROR(
-        codegen_enter_scope(c, name, COMPILER_SCOPE_ANNOTATIONS,
+        codegen_enter_scope(c, name, _PY_COMPILER_SCOPE_ANNOTATIONS,
                             key, loc.lineno, NULL, &umd));
 
     // if .format != 1: raise NotImplementedError
@@ -791,7 +791,7 @@ _PyCodegen_EnterAnonymousScope(compiler* c, mod_ty mod)
 {
     _Py_DECLARE_STR(anon_module, "<module>");
     RETURN_IF_ERROR(
-        codegen_enter_scope(c, &_Py_STR(anon_module), COMPILER_SCOPE_MODULE,
+        codegen_enter_scope(c, &_Py_STR(anon_module), _PY_COMPILER_SCOPE_MODULE,
                             mod, 1, NULL, NULL));
     return SUCCESS;
 }
@@ -1205,7 +1205,7 @@ codegen_function_body(compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags
         name = s->v.AsyncFunctionDef.name;
         body = s->v.AsyncFunctionDef.body;
 
-        scope_type = COMPILER_SCOPE_ASYNC_FUNCTION;
+        scope_type = _PY_COMPILER_SCOPE_ASYNC_FUNCTION;
     } else {
         assert(s->kind == FunctionDef_kind);
 
@@ -1213,7 +1213,7 @@ codegen_function_body(compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags
         name = s->v.FunctionDef.name;
         body = s->v.FunctionDef.body;
 
-        scope_type = COMPILER_SCOPE_FUNCTION;
+        scope_type = _PY_COMPILER_SCOPE_FUNCTION;
     }
 
     _PyCompile_CodeUnitMetadata umd = {
@@ -1335,7 +1335,7 @@ codegen_function(compiler *c, stmt_ty s, int is_async)
         _PyCompile_CodeUnitMetadata umd = {
             .u_argcount = num_typeparam_args,
         };
-        int ret = codegen_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
+        int ret = codegen_enter_scope(c, type_params_name, _PY_COMPILER_SCOPE_ANNOTATIONS,
                                       (void *)type_params, firstlineno, NULL, &umd);
         Py_DECREF(type_params_name);
         RETURN_IF_ERROR(ret);
@@ -1414,7 +1414,7 @@ codegen_class_body(compiler *c, stmt_ty s, int firstlineno)
 
     /* 1. compile the class body into a code object */
     RETURN_IF_ERROR(
-        codegen_enter_scope(c, s->v.ClassDef.name, COMPILER_SCOPE_CLASS,
+        codegen_enter_scope(c, s->v.ClassDef.name, _PY_COMPILER_SCOPE_CLASS,
                             (void *)s, firstlineno, s->v.ClassDef.name, NULL));
 
     location loc = LOCATION(firstlineno, firstlineno, 0, 0);
@@ -1523,7 +1523,7 @@ codegen_class(compiler *c, stmt_ty s)
         if (!type_params_name) {
             return ERROR;
         }
-        int ret = codegen_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
+        int ret = codegen_enter_scope(c, type_params_name, _PY_COMPILER_SCOPE_ANNOTATIONS,
                                       (void *)type_params, firstlineno, s->v.ClassDef.name, NULL);
         Py_DECREF(type_params_name);
         RETURN_IF_ERROR(ret);
@@ -1638,7 +1638,7 @@ codegen_typealias(compiler *c, stmt_ty s)
         if (!type_params_name) {
             return ERROR;
         }
-        int ret = codegen_enter_scope(c, type_params_name, COMPILER_SCOPE_ANNOTATIONS,
+        int ret = codegen_enter_scope(c, type_params_name, _PY_COMPILER_SCOPE_ANNOTATIONS,
                                       (void *)type_params, loc.lineno, NULL, NULL);
         Py_DECREF(type_params_name);
         RETURN_IF_ERROR(ret);
@@ -1901,7 +1901,7 @@ codegen_lambda(compiler *c, expr_ty e)
     };
     _Py_DECLARE_STR(anon_lambda, "<lambda>");
     RETURN_IF_ERROR(
-        codegen_enter_scope(c, &_Py_STR(anon_lambda), COMPILER_SCOPE_LAMBDA,
+        codegen_enter_scope(c, &_Py_STR(anon_lambda), _PY_COMPILER_SCOPE_LAMBDA,
                             (void *)e, e->lineno, NULL, &umd));
 
     /* Make None the first constant, so the lambda can't have a
@@ -4516,7 +4516,7 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
         _PyCompile_CodeUnitMetadata umd = {
             .u_argcount = 1,
         };
-        if (codegen_enter_scope(c, name, COMPILER_SCOPE_COMPREHENSION,
+        if (codegen_enter_scope(c, name, _PY_COMPILER_SCOPE_COMPREHENSION,
                                 (void *)e, e->lineno, NULL, &umd) < 0) {
             goto error;
         }
@@ -4525,8 +4525,8 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
 
     assert (!is_async_comprehension ||
             type == COMP_GENEXP ||
-            scope_type == COMPILER_SCOPE_ASYNC_FUNCTION ||
-            scope_type == COMPILER_SCOPE_COMPREHENSION ||
+            scope_type == _PY_COMPILER_SCOPE_ASYNC_FUNCTION ||
+            scope_type == _PY_COMPILER_SCOPE_COMPREHENSION ||
             is_top_level_await);
 
     if (type != COMP_GENEXP) {
@@ -4944,7 +4944,7 @@ codegen_visit_expr(compiler *c, expr_ty e)
         if (!_PyST_IsFunctionLike(SYMTABLE_ENTRY(c))) {
             return _PyCompiler_Error(c, loc, "'yield from' outside function");
         }
-        if (SCOPE_TYPE(c) == COMPILER_SCOPE_ASYNC_FUNCTION) {
+        if (SCOPE_TYPE(c) == _PY_COMPILER_SCOPE_ASYNC_FUNCTION) {
             return _PyCompiler_Error(c, loc, "'yield from' inside async function");
         }
         VISIT(c, expr, e->v.YieldFrom.value);
@@ -4954,8 +4954,8 @@ codegen_visit_expr(compiler *c, expr_ty e)
         break;
     case Await_kind:
         assert(IS_TOP_LEVEL_AWAIT(c) || (_PyST_IsFunctionLike(SYMTABLE_ENTRY(c)) && (
-            SCOPE_TYPE(c) == COMPILER_SCOPE_ASYNC_FUNCTION ||
-            SCOPE_TYPE(c) == COMPILER_SCOPE_COMPREHENSION
+            SCOPE_TYPE(c) == _PY_COMPILER_SCOPE_ASYNC_FUNCTION ||
+            SCOPE_TYPE(c) == _PY_COMPILER_SCOPE_COMPREHENSION
         )));
 
         VISIT(c, expr, e->v.Await.value);
@@ -5137,8 +5137,8 @@ codegen_check_annotation(compiler *c, stmt_ty s)
     }
 
     /* Annotations are only evaluated in a module or class. */
-    if (SCOPE_TYPE(c) == COMPILER_SCOPE_MODULE ||
-        SCOPE_TYPE(c) == COMPILER_SCOPE_CLASS) {
+    if (SCOPE_TYPE(c) == _PY_COMPILER_SCOPE_MODULE ||
+        SCOPE_TYPE(c) == _PY_COMPILER_SCOPE_CLASS) {
         return codegen_check_ann_expr(c, s->v.AnnAssign.annotation);
     }
     return SUCCESS;
@@ -5193,8 +5193,8 @@ codegen_annassign(compiler *c, stmt_ty s)
     case Name_kind:
         /* If we have a simple name in a module or class, store annotation. */
         if (s->v.AnnAssign.simple &&
-            (SCOPE_TYPE(c) == COMPILER_SCOPE_MODULE ||
-             SCOPE_TYPE(c) == COMPILER_SCOPE_CLASS)) {
+            (SCOPE_TYPE(c) == _PY_COMPILER_SCOPE_MODULE ||
+             SCOPE_TYPE(c) == _PY_COMPILER_SCOPE_CLASS)) {
             if (future_annotations) {
                 VISIT(c, annexpr, s->v.AnnAssign.annotation);
                 ADDOP_NAME(c, loc, LOAD_NAME, &_Py_ID(__annotations__), names);
