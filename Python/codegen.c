@@ -76,7 +76,6 @@ typedef struct _PyCompiler compiler;
 #define SCOPE_TYPE(C) _PyCompile_ScopeType(C)
 #define QUALNAME(C) _PyCompile_Qualname(C)
 #define METADATA(C) _PyCompile_Metadata(C)
-#define ARENA(C) _PyCompile_Arena(C)
 
 typedef _PyInstruction instruction;
 typedef _PyInstructionSequence instr_sequence;
@@ -209,6 +208,11 @@ static int codegen_call_simple_kw_helper(compiler *c,
                                          location loc,
                                          asdl_keyword_seq *keywords,
                                          Py_ssize_t nkwelts);
+static int codegen_call_helper_impl(compiler *c, location loc,
+                                    int n, /* Args already pushed */
+                                    asdl_expr_seq *args,
+                                    PyObject *injected_arg,
+                                    asdl_keyword_seq *keywords);
 static int codegen_call_helper(compiler *c, location loc,
                                int n, asdl_expr_seq *args,
                                asdl_keyword_seq *keywords);
@@ -1549,28 +1553,10 @@ codegen_class(compiler *c, stmt_ty s)
         ADDOP_I_IN_SCOPE(c, loc, CALL_INTRINSIC_1, INTRINSIC_SUBSCRIPT_GENERIC);
         RETURN_IF_ERROR_IN_SCOPE(c, codegen_nameop(c, loc, &_Py_STR(generic_base), Store));
 
-        Py_ssize_t original_len = asdl_seq_LEN(s->v.ClassDef.bases);
-        asdl_expr_seq *bases = _Py_asdl_expr_seq_new(
-            original_len + 1, ARENA(c));
-        if (bases == NULL) {
-            _PyCompile_ExitScope(c);
-            return ERROR;
-        }
-        for (Py_ssize_t i = 0; i < original_len; i++) {
-            asdl_seq_SET(bases, i, asdl_seq_GET(s->v.ClassDef.bases, i));
-        }
-        expr_ty name_node = _PyAST_Name(
-            &_Py_STR(generic_base), Load,
-            loc.lineno, loc.col_offset, loc.end_lineno, loc.end_col_offset, ARENA(c)
-        );
-        if (name_node == NULL) {
-            _PyCompile_ExitScope(c);
-            return ERROR;
-        }
-        asdl_seq_SET(bases, original_len, name_node);
-        RETURN_IF_ERROR_IN_SCOPE(c, codegen_call_helper(c, loc, 2,
-                                                        bases,
-                                                        s->v.ClassDef.keywords));
+        RETURN_IF_ERROR_IN_SCOPE(c, codegen_call_helper_impl(c, loc, 2,
+                                                             s->v.ClassDef.bases,
+                                                             &_Py_STR(generic_base),
+                                                             s->v.ClassDef.keywords));
 
         PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 0);
 
@@ -3973,13 +3959,13 @@ codegen_call_simple_kw_helper(compiler *c, location loc,
     return SUCCESS;
 }
 
-
 /* shared code between codegen_call and codegen_class */
 static int
-codegen_call_helper(compiler *c, location loc,
-                    int n, /* Args already pushed */
-                    asdl_expr_seq *args,
-                    asdl_keyword_seq *keywords)
+codegen_call_helper_impl(compiler *c, location loc,
+                         int n, /* Args already pushed */
+                         asdl_expr_seq *args,
+                         PyObject *injected_arg,
+                         asdl_keyword_seq *keywords)
 {
     Py_ssize_t i, nseen, nelts, nkwelts;
 
@@ -4009,6 +3995,10 @@ codegen_call_helper(compiler *c, location loc,
         expr_ty elt = asdl_seq_GET(args, i);
         assert(elt->kind != Starred_kind);
         VISIT(c, expr, elt);
+    }
+    if (injected_arg) {
+        RETURN_IF_ERROR(codegen_nameop(c, loc, injected_arg, Load));
+        nelts++;
     }
     if (nkwelts) {
         VISIT_SEQ(c, keyword, keywords);
@@ -4074,6 +4064,14 @@ ex_call:
     return SUCCESS;
 }
 
+static int
+codegen_call_helper(compiler *c, location loc,
+                    int n, /* Args already pushed */
+                    asdl_expr_seq *args,
+                    asdl_keyword_seq *keywords)
+{
+    return codegen_call_helper_impl(c, loc, n, args, NULL, keywords);
+}
 
 /* List and set comprehensions and generator expressions work by creating a
   nested function to perform the actual iteration. This means that the
