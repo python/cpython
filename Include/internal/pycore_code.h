@@ -634,6 +634,21 @@ PyAPI_DATA(const struct _PyCode8) _Py_InitCleanup;
 
 #ifdef Py_GIL_DISABLED
 
+typedef enum {
+    // No limit on the amount of memory consumed by thread-local bytecode.
+    // Terminal state.
+    _PY_TLBC_UNLIMITED = 0,
+
+    // The total amount of memory consumed by thread-local bytecode must be
+    // <= PyInterpreterState::tlbc_limit. State transitions to _PY_TLBC_DISABLED
+    // when the limit is reached.
+    _PY_TLBC_LIMITED = 1,
+
+    // New thread-local bytecode is disabled. Previously allocated copies
+    // may still be used. Terminal state.
+    _PY_TLBC_DISABLED = 2,
+} _Py_TLBC_State;
+
 extern void _PyCode_InitState(PyInterpreterState *interp);
 extern _Py_CODEUNIT *_PyCode_GetExecutableCodeSlow(PyCodeObject *co);
 
