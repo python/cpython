@@ -23970,7 +23970,7 @@ else
   # While Python doesn't currently have full support for these platforms
   # (see e.g., issue 1762561), we can at least make sure that float <-> string
   # conversions work.
-  # FLOAT_WORDS_BIGENDIAN doesnt actually detect this case, but if it's not big
+  # FLOAT_WORDS_BIGENDIAN doesn't actually detect this case, but if it's not big
   # or little, then it must be this?
 
 printf "%s\n" "#define DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754 1" >>confdefs.h
