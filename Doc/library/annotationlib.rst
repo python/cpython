@@ -67,6 +67,7 @@ on modules, classes, and functions.
 
       >>> type Alias = undefined
       >>> call_evaluate_function(Alias.evaluate_value, Format.VALUE)
+      Traceback (most recent call last):
       ...
       NameError: name 'undefined' is not defined
       >>> call_evaluate_function(Alias.evaluate_value, Format.FORWARDREF)

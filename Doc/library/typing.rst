@@ -2262,10 +2262,12 @@ without the dedicated syntax, as documented below.
 
          >>> type Alias = undefined
          >>> Alias.__value__
+         Traceback (most recent call last):
          ...
          NameError: name 'undefined' is not defined
          >>> from annotationlib import Format, call_evaluate_function
          >>> Alias.evaluate_value(Format.VALUE)
+         Traceback (most recent call last):
          ...
          NameError: name 'undefined' is not defined
          >>> call_evaluate_function(Alias.evaluate_value, Format.FORWARDREF)
