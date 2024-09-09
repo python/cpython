@@ -322,6 +322,8 @@ expr_ty _PyPegen_formatted_value(Parser *, expr_ty, Token *, ResultTokenWithMeta
                                  int, int, int, int, PyArena *);
 AugOperator *_PyPegen_augoperator(Parser*, operator_ty type);
 stmt_ty _PyPegen_function_def_decorators(Parser *, asdl_expr_seq *, stmt_ty);
+stmt_ty _PyPegen_class_def(expr_ty, arguments_ty, asdl_stmt_seq *,
+                           asdl_type_param_seq *, int, int, int, int, PyArena *);
 stmt_ty _PyPegen_class_def_decorators(Parser *, asdl_expr_seq *, stmt_ty);
 KeywordOrStarred *_PyPegen_keyword_or_starred(Parser *, void *, int);
 asdl_expr_seq *_PyPegen_seq_extract_starred_exprs(Parser *, asdl_seq *);
