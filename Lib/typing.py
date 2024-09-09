@@ -30,6 +30,7 @@ import operator
 import sys
 import types
 from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType, GenericAlias
+import inspect
 
 from _typing import (
     _idfunc,
@@ -1291,7 +1292,7 @@ class _BaseGenericAlias(_Final, _root=True):
             raise TypeError(f"Type {self._name} cannot be instantiated; "
                             f"use {self.__origin__.__name__}() instead")
         clas = self.__origin__
-        is_python_type = clas.__new__ is type.__new__
+        is_python_type = inspect.isfunction(clas.__new__)
 
         if is_python_type:
             # GH-123777: Some types try and access __orig_class__ in their __init__
