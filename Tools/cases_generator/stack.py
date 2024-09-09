@@ -420,6 +420,12 @@ class Storage:
             else:
                 undefined = out.name
 
+    def locals_cached(self) -> bool:
+        for out in self.outputs:
+            if out.defined:
+                return True
+        return False
+
     def flush(self, out: CWriter) -> None:
         self._push_defined_locals()
         self.stack.flush(out)

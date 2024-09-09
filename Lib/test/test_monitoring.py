@@ -2088,6 +2088,7 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
                 args_ = (self.codelike, offset) + tuple(args)
                 exc = OSError(42)
                 with self.assertRaises(type(exc)):
+                    print(event)
                     self.check_event_count(event, function, args_, expected,
                                            callback_raises=exc)
 

@@ -207,10 +207,8 @@ dummy_func(
         }
 
         op(_MONITOR_RESUME, (--)) {
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             int err = _Py_call_instrumentation(
                     tstate, oparg > 0, frame, this_instr);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
             ERROR_IF(err, error);
             if (frame->instr_ptr != this_instr) {
                 /* Instrumentation has jumped */
@@ -645,6 +643,7 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_BINARY_SUBSCR, (counter/1, container, sub -- container, sub)) {
+            assert(frame->stackpointer == NULL);
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
@@ -960,9 +959,7 @@ dummy_func(
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_RETURN,
                     frame, this_instr, PyStackRef_AsPyObjectBorrow(val));
-            if (err) {
-                ERROR_NO_POP();
-            }
+            ERROR_IF(err, error);
         }
 
         macro(INSTRUMENTED_RETURN_VALUE) =
@@ -1153,11 +1150,9 @@ dummy_func(
         }
 
         tier1 op(_YIELD_VALUE_EVENT, (val -- val)) {
-            SAVE_SP();
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_YIELD,
                     frame, this_instr, PyStackRef_AsPyObjectBorrow(val));
-            LOAD_SP();
             if (err) {
                 ERROR_NO_POP();
             }
@@ -1250,7 +1245,8 @@ dummy_func(
 
         inst(LOAD_BUILD_CLASS, ( -- bc)) {
             PyObject *bc_o;
-            ERROR_IF(PyMapping_GetOptionalItem(BUILTINS(), &_Py_ID(__build_class__), &bc_o) < 0, error);
+            int err = PyMapping_GetOptionalItem(BUILTINS(), &_Py_ID(__build_class__), &bc_o);
+            ERROR_IF(err < 0, error);
             if (bc_o == NULL) {
                 _PyErr_SetString(tstate, PyExc_NameError,
                                  "__build_class__ not found");
@@ -1463,10 +1459,12 @@ dummy_func(
                 else {
                     /* Slow-path if globals or builtins is not a dict */
                     /* namespace 1: globals */
-                    ERROR_IF(PyMapping_GetOptionalItem(GLOBALS(), name, &v_o) < 0, error);
+                    int err = PyMapping_GetOptionalItem(GLOBALS(), name, &v_o);
+                    ERROR_IF(err < 0, error);
                     if (v_o == NULL) {
                         /* namespace 2: builtins */
-                        ERROR_IF(PyMapping_GetOptionalItem(BUILTINS(), name, &v_o) < 0, error);
+                        int err = PyMapping_GetOptionalItem(BUILTINS(), name, &v_o);
+                        ERROR_IF(err < 0, error);
                         if (v_o == NULL) {
                             _PyEval_FormatExcCheckArg(
                                         tstate, PyExc_NameError,
@@ -1746,7 +1744,6 @@ dummy_func(
         }
 
         inst(SETUP_ANNOTATIONS, (--)) {
-            int err;
             PyObject *ann_dict;
             if (LOCALS() == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
@@ -1754,7 +1751,8 @@ dummy_func(
                 ERROR_IF(true, error);
             }
             /* check if __annotations__ in locals()... */
-            ERROR_IF(PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict) < 0, error);
+            int err = PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict);
+            ERROR_IF(err < 0, error);
             if (ann_dict == NULL) {
                 ann_dict = PyDict_New();
                 ERROR_IF(ann_dict == NULL, error);
@@ -4487,10 +4485,8 @@ dummy_func(
                 original_opcode = code->_co_monitoring->lines[(int)(this_instr - _PyCode_CODE(code))].original_opcode;
                 next_instr = this_instr;
             } else {
-                _PyFrame_SetStackPointer(frame, stack_pointer);
                 original_opcode = _Py_call_instrumentation_line(
                         tstate, frame, this_instr, prev_instr);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (original_opcode < 0) {
                     next_instr = this_instr+1;
                     goto error;

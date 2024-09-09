@@ -1051,12 +1051,10 @@
             _PyStackRef container;
             container = stack_pointer[-2];
             PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(container));
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             if (!PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            stack_pointer = _PyFrame_GetStackPointer(frame);
             PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
             PyObject *getitem = ht->_spec_cache.getitem;
             if (getitem == NULL) {
@@ -1499,8 +1497,9 @@
             _PyStackRef bc;
             PyObject *bc_o;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            if (PyMapping_GetOptionalItem(BUILTINS(), &_Py_ID(__build_class__), &bc_o) < 0) JUMP_TO_ERROR();
+            int err = PyMapping_GetOptionalItem(BUILTINS(), &_Py_ID(__build_class__), &bc_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (err < 0) JUMP_TO_ERROR();
             if (bc_o == NULL) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyErr_SetString(tstate, PyExc_NameError,
@@ -2206,7 +2205,6 @@
         }
 
         case _SETUP_ANNOTATIONS: {
-            int err;
             PyObject *ann_dict;
             if (LOCALS() == NULL) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -2217,8 +2215,9 @@
             }
             /* check if __annotations__ in locals()... */
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            if (PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict) < 0) JUMP_TO_ERROR();
+            int err = PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict);
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (err < 0) JUMP_TO_ERROR();
             if (ann_dict == NULL) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 ann_dict = PyDict_New();

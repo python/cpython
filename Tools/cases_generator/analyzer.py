@@ -571,6 +571,8 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyObject_GC_MAY_BE_TRACKED",
     "ADAPTIVE_COUNTER_TRIGGERS",
     "_PyInterpreterState_GET",
+    "PyType_HasFeature",
+    "_Py_ID",
 )
 
 def find_stmt_start(node: parser.InstDef, idx: int) -> lexer.Token:
@@ -602,6 +604,9 @@ def check_escaping_calls(instr: parser.InstDef, escapes: dict[lexer.Token, lexer
         if tkn.kind == "IF":
             next(tkn_iter)
             in_if = 1
+        if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF"):
+            next(tkn_iter)
+            in_if = 1
         elif tkn.kind == "LPAREN" and in_if:
             in_if += 1
         elif tkn.kind == "RPAREN":
@@ -622,7 +627,7 @@ def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, lexer.To
             break
         if next_tkn.kind != lexer.LPAREN:
             continue
-        if not tkn.text.startswith("Py") and not tkn.text.startswith("_Py"):
+        if not tkn.text.startswith("Py") and not tkn.text.startswith("_Py") and not tkn.text.startswith("monitor"):
             continue
         if tkn.text.endswith("Check"):
             continue

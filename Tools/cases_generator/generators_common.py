@@ -162,6 +162,7 @@ class Emitter:
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
+        self.emit(storage.as_comment())
         self.out.emit_at("if ", tkn)
         lparen = next(tkn_iter)
         self.emit(lparen)
@@ -172,11 +173,14 @@ class Emitter:
         next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
         self.out.emit(") ")
-        c_offset = storage.stack.peek_offset()
-        try:
-            offset = -int(c_offset)
-        except ValueError:
+        if storage.locals_cached():
             offset = -1
+        else:
+            c_offset = storage.stack.peek_offset()
+            try:
+                offset = -int(c_offset)
+            except ValueError:
+                offset = -1
         if offset > 0:
             self.out.emit(f"goto pop_{offset}_")
             self.out.emit(label)
