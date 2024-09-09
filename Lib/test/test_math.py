@@ -187,6 +187,9 @@ def result_check(expected, got, ulp_tol=5, abs_tol=0.0):
 
     # Check exactly equal (applies also to strings representing exceptions)
     if got == expected:
+        if not got and not expected:
+            if math.copysign(1, got) != math.copysign(1, expected):
+                return f"expected {expected}, got {got} (zero has wrong sign)"
         return None
 
     failure = "not equal"
@@ -2052,6 +2055,12 @@ class MathTests(unittest.TestCase):
             if osx_version is not None and osx_version < (10, 5):
                 if id in SKIP_ON_TIGER:
                     continue
+
+            # Skip some sqrt tests.  C99+ says for math.h's sqrt: If the
+            # argument is +∞ or ±0, it is returned, unmodified.  On another
+            # hand, for csqrt: If z is ±0+0i, the result is +0+0i.
+            if id in ['sqrt0002', 'sqrt0003', 'sqrt1001', 'sqrt1023']:
+                continue
 
             func = getattr(math, fn)
 
