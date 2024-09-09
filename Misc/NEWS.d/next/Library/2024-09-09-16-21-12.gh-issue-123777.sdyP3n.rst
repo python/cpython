@@ -1,0 +1,2 @@
+Allowed the ``__orig_class__`` attribute to be used in the ``__init__`` of
+pure-Python types.
