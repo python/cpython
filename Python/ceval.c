@@ -808,7 +808,15 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         }
         /* Because this avoids the RESUME,
          * we need to update instrumentation */
-        /* TODO(mpage) - Need to handle this */
+#ifdef Py_GIL_DISABLED
+        /* Load thread-local bytecode */
+        _Py_CODEUNIT *bytecode = _PyCode_GetExecutableCode(_PyFrame_GetCode(frame));
+        if (frame->bytecode != bytecode) {
+            int off = frame->instr_ptr - frame->bytecode;
+            frame->bytecode = bytecode;
+            frame->instr_ptr = frame->bytecode + off;
+        }
+#endif
         _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
         monitor_throw(tstate, frame, frame->instr_ptr);
         /* TO DO -- Monitor throw entry. */
