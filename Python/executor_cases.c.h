@@ -390,7 +390,7 @@
             }
             STAT_INC(TO_BOOL, hit);
             if (_PyLong_IsZero((PyLongObject *)value_o)) {
-                assert(_Py_IsImmortal(value_o));
+                assert(_Py_IsImmortalLoose(value_o));
                 res = PyStackRef_False;
             }
             else {
@@ -443,7 +443,7 @@
             }
             STAT_INC(TO_BOOL, hit);
             if (value_o == &_Py_STR(empty)) {
-                assert(_Py_IsImmortal(value_o));
+                assert(_Py_IsImmortalLoose(value_o));
                 res = PyStackRef_False;
             }
             else {
@@ -5305,8 +5305,6 @@
                     if (optimized <= 0) {
                         exit->temperature = restart_backoff_counter(temperature);
                         if (optimized < 0) {
-                            Py_DECREF(current_executor);
-                            tstate->previous_executor = Py_None;
                             GOTO_UNWIND();
                         }
                         tstate->previous_executor = (PyObject *)current_executor;
@@ -5437,8 +5435,6 @@
                 if (optimized <= 0) {
                     exit->temperature = restart_backoff_counter(exit->temperature);
                     if (optimized < 0) {
-                        Py_DECREF(current_executor);
-                        tstate->previous_executor = Py_None;
                         GOTO_UNWIND();
                     }
                     GOTO_TIER_ONE(target);

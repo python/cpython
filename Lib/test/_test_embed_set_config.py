@@ -137,7 +137,8 @@ class SetConfigTests(unittest.TestCase):
             'warnoptions',
             'module_search_paths',
         ):
-            value_tests.append((key, invalid_wstrlist))
+            if key != 'xoptions':
+                value_tests.append((key, invalid_wstrlist))
             type_tests.append((key, 123))
             type_tests.append((key, "abc"))
             type_tests.append((key, [123]))
@@ -160,14 +161,14 @@ class SetConfigTests(unittest.TestCase):
     def test_flags(self):
         bool_options = set(BOOL_OPTIONS)
         for sys_attr, key, value in (
-            ("debug", "parser_debug", 1),
-            ("inspect", "inspect", 2),
-            ("interactive", "interactive", 3),
-            ("optimize", "optimization_level", 4),
-            ("verbose", "verbose", 1),
-            ("bytes_warning", "bytes_warning", 10),
-            ("quiet", "quiet", 11),
-            ("isolated", "isolated", 12),
+            ("debug", "parser_debug", 2),
+            ("inspect", "inspect", 3),
+            ("interactive", "interactive", 4),
+            ("optimize", "optimization_level", 5),
+            ("verbose", "verbose", 6),
+            ("bytes_warning", "bytes_warning", 7),
+            ("quiet", "quiet", 8),
+            ("isolated", "isolated", 9),
         ):
             with self.subTest(sys=sys_attr, key=key, value=value):
                 self.set_config(**{key: value, 'parse_argv': 0})
@@ -228,9 +229,9 @@ class SetConfigTests(unittest.TestCase):
         self.check(warnoptions=[])
         self.check(warnoptions=["default", "ignore"])
 
-        self.set_config(xoptions=[])
+        self.set_config(xoptions={})
         self.assertEqual(sys._xoptions, {})
-        self.set_config(xoptions=["dev", "tracemalloc=5"])
+        self.set_config(xoptions={"dev": True, "tracemalloc": "5"})
         self.assertEqual(sys._xoptions, {"dev": True, "tracemalloc": "5"})
 
     def test_pathconfig(self):
