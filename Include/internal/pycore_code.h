@@ -369,7 +369,8 @@ extern void _Py_Specialize_Call(_PyStackRef callable, _Py_CODEUNIT *instr,
                                 int nargs);
 extern void _Py_Specialize_CallKw(_PyStackRef callable, _Py_CODEUNIT *instr,
                                   int nargs);
-extern void _Py_Specialize_BinaryOp(_PyStackRef lhs, _PyStackRef rhs, _Py_CODEUNIT *instr,
+extern void _Py_Specialize_BinaryOp(PyCodeObject *code, _PyStackRef lhs,
+                                    _PyStackRef rhs, _Py_CODEUNIT *instr,
                                     int oparg, _PyStackRef *locals);
 extern void _Py_Specialize_CompareOp(_PyStackRef lhs, _PyStackRef rhs,
                                      _Py_CODEUNIT *instr, int oparg);
@@ -649,6 +650,9 @@ _PyCode_GetExecutableCode(PyCodeObject *co)
     }
     return _PyCode_GetExecutableCodeSlow(co);
 }
+
+extern void _PyCode_LockTLBC(PyCodeObject *co);
+extern void _PyCode_UnlockTLBC(PyCodeObject *co);
 extern int _Py_ReserveSpecializedCodeIndex(PyInterpreterState *interp);
 extern void _Py_ClearSpecializedCodeIndex(_PyThreadStateImpl *tstate);
 #endif

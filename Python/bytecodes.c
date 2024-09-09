@@ -4505,7 +4505,8 @@ dummy_func(
             #if ENABLE_SPECIALIZED_BINARY_OP
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
-                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, LOCALS_ARRAY);
+                _Py_Specialize_BinaryOp(_PyFrame_GetCode(frame), lhs, rhs,
+                                        next_instr, oparg, LOCALS_ARRAY);
                 DISPATCH_SAME_OPARG();
             }
             OPCODE_DEFERRED_INC(BINARY_OP);

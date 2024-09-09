@@ -2861,4 +2861,30 @@ _PyCode_GetExecutableCodeSlow(PyCodeObject *co)
     return result;
 }
 
+static inline _PyMutBytecode *
+get_tlbc(PyCodeObject *co)
+{
+    _PyCodeArray *code = _Py_atomic_load_ptr_acquire(&co->co_specialized_code);
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *) PyThreadState_GET();
+    Py_ssize_t idx = tstate->specialized_code_index;
+    assert(idx >= 0 && idx < code->size);
+    return code->entries[idx];
+}
+
+void
+_PyCode_LockTLBC(PyCodeObject *co)
+{
+    _PyMutBytecode *tlbc = get_tlbc(co);
+    assert(tlbc != NULL);
+    PyMutex_LockFlags(&tlbc->mutex, _PY_LOCK_DETACH);
+}
+
+void
+_PyCode_UnlockTLBC(PyCodeObject *co)
+{
+    _PyMutBytecode *tlbc = get_tlbc(co);
+    assert(tlbc != NULL);
+    PyMutex_Unlock(&tlbc->mutex);
+}
+
 #endif
