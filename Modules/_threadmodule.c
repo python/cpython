@@ -314,8 +314,8 @@ thread_run(void *boot_raw)
     // gh-108987: If _thread.start_new_thread() is called before or while
     // Python is being finalized, thread_run() can called *after*.
     // _PyRuntimeState_SetFinalizing() is called. At this point, all Python
-    // threads must exit, except of the thread calling Py_Finalize() whch holds
-    // the GIL and must not exit.
+    // threads must exit, except of the thread calling Py_Finalize() which
+    // holds the GIL and must not exit.
     //
     // At this stage, tstate can be a dangling pointer (point to freed memory),
     // it's ok to call _PyThreadState_MustExit() with a dangling pointer.

@@ -2503,7 +2503,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search(r'12(?!)|3', '123')[0], '3')
 
     def test_character_set_any(self):
-        # The union of complementary character sets mathes any character
+        # The union of complementary character sets matches any character
         # and is equivalent to "(?s:.)".
         s = '1x\n'
         for p in r'[\s\S]', r'[\d\D]', r'[\w\W]', r'[\S\s]', r'\s|\S':

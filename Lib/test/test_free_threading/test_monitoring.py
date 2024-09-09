@@ -1,5 +1,5 @@
 """Tests monitoring, sys.settrace, and sys.setprofile in a multi-threaded
-environmenet to verify things are thread-safe in a free-threaded build"""
+environment to verify things are thread-safe in a free-threaded build"""
 
 import sys
 import time
