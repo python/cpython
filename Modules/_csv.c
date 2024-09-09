@@ -501,12 +501,17 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         DIALECT_GETATTR(quoting, "quoting");
         DIALECT_GETATTR(skipinitialspace, "skipinitialspace");
         DIALECT_GETATTR(strict, "strict");
+#undef DIALECT_GETATTR
     }
 
     /* check types and convert to C values */
-#define DIASET(meth, name, target, src, dflt) \
-    if (meth(name, target, src, dflt)) \
-        goto err
+#define DIASET(meth, name, target, src, dflt)   \
+    do {                                        \
+        if (meth(name, target, src, dflt)) {    \
+            goto err;                           \
+        }                                       \
+    } while (0)
+
     DIASET(_set_char, "delimiter", &self->delimiter, delimiter, ',');
     DIASET(_set_bool, "doublequote", &self->doublequote, doublequote, true);
     DIASET(_set_char_or_none, "escapechar", &self->escapechar, escapechar, NOT_SET);
@@ -515,6 +520,7 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     DIASET(_set_int, "quoting", &self->quoting, quoting, QUOTE_MINIMAL);
     DIASET(_set_bool, "skipinitialspace", &self->skipinitialspace, skipinitialspace, false);
     DIASET(_set_bool, "strict", &self->strict, strict, false);
+#undef DIASET
 
     /* validate options */
     if (dialect_check_quoting(self->quoting))
