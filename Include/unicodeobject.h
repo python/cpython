@@ -258,9 +258,7 @@ PyAPI_FUNC(PyObject *) PyUnicode_InternFromString(
 PyAPI_FUNC(int) PyUnicode_Export(
     PyObject *unicode,
     uint32_t requested_formats,
-    Py_buffer *view);
-PyAPI_FUNC(int) PyUnicode_GetBufferFormat(
-    const Py_buffer *view,
+    Py_buffer *view,
     uint32_t *format);
 PyAPI_FUNC(PyObject*) PyUnicode_Import(
     const void *data,

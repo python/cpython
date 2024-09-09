@@ -1849,11 +1849,8 @@ unicode_export(PyObject *self, PyObject *args)
     }
 
     Py_buffer view;
-    if (PyUnicode_Export(obj, requested_formats, &view) < 0) {
-        return NULL;
-    }
     uint32_t format;
-    if (PyUnicode_GetBufferFormat(&view, &format) < 0) {
+    if (PyUnicode_Export(obj, requested_formats, &view, &format) < 0) {
         return NULL;
     }
 

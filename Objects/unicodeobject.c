@@ -2333,7 +2333,7 @@ PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *pub_writer,
 
 
 static int
-unicode_export(PyObject *unicode, Py_buffer *view,
+unicode_export(PyObject *unicode, Py_buffer *view, uint32_t *pformat,
                Py_ssize_t len, const void *buf,
                int itemsize, const char *format, uint32_t internal_format)
 {
@@ -2344,12 +2344,14 @@ unicode_export(PyObject *unicode, Py_buffer *view,
     view->itemsize = itemsize;
     view->format = (char*)format;
     view->internal = (void*)(uintptr_t)internal_format;
+    *pformat = internal_format;
     return 0;
 }
 
 
 int
-PyUnicode_Export(PyObject *unicode, uint32_t requested_formats, Py_buffer *view)
+PyUnicode_Export(PyObject *unicode, uint32_t requested_formats,
+                 Py_buffer *view, uint32_t *format)
 {
 #if SIZEOF_INT == 4
 #  define BUFFER_UCS4 "I"
@@ -2369,7 +2371,7 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats, Py_buffer *view)
     if (PyUnicode_IS_ASCII(unicode)
         && (requested_formats & PyUnicode_FORMAT_ASCII))
     {
-        return unicode_export(unicode, view,
+        return unicode_export(unicode, view, format,
                               len, PyUnicode_1BYTE_DATA(unicode),
                               1, "B", PyUnicode_FORMAT_ASCII);
     }
@@ -2379,7 +2381,7 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats, Py_buffer *view)
     if (kind == PyUnicode_1BYTE_KIND
         && (requested_formats & PyUnicode_FORMAT_UCS1))
     {
-        return unicode_export(unicode, view,
+        return unicode_export(unicode, view, format,
                               len, PyUnicode_1BYTE_DATA(unicode),
                               1, "B", PyUnicode_FORMAT_UCS1);
     }
@@ -2388,7 +2390,7 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats, Py_buffer *view)
     if (kind == PyUnicode_2BYTE_KIND
         && (requested_formats & PyUnicode_FORMAT_UCS2))
     {
-        return unicode_export(unicode, view,
+        return unicode_export(unicode, view, format,
                               len, PyUnicode_2BYTE_DATA(unicode),
                               2, "H", PyUnicode_FORMAT_UCS2);
     }
@@ -2409,7 +2411,7 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats, Py_buffer *view)
                                  ucs2);
         ucs2[len] = 0;
 
-        return unicode_export(unicode, view,
+        return unicode_export(unicode, view, format,
                               len, ucs2,
                               2, "H", PyUnicode_FORMAT_UCS2);
     }
@@ -2418,7 +2420,7 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats, Py_buffer *view)
     if (kind == PyUnicode_4BYTE_KIND
         && (requested_formats & PyUnicode_FORMAT_UCS4))
     {
-        return unicode_export(unicode, view,
+        return unicode_export(unicode, view, format,
                               len, PyUnicode_4BYTE_DATA(unicode),
                               4, BUFFER_UCS4, PyUnicode_FORMAT_UCS4);
     }
@@ -2429,7 +2431,7 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats, Py_buffer *view)
         if (ucs4 == NULL) {
             return -1;
         }
-        return unicode_export(unicode, view,
+        return unicode_export(unicode, view, format,
                               len, ucs4,
                               4, BUFFER_UCS4, PyUnicode_FORMAT_UCS4);
     }
@@ -2441,7 +2443,7 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats, Py_buffer *view)
         if (utf8 == NULL) {
             return -1;
         }
-        return unicode_export(unicode, view,
+        return unicode_export(unicode, view, format,
                               nbytes, utf8,
                               1, "B", PyUnicode_FORMAT_UTF8);
     }
@@ -2451,33 +2453,6 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats, Py_buffer *view)
     return -1;
 
 #undef BUFFER_UCS4
-}
-
-
-int
-PyUnicode_GetBufferFormat(const Py_buffer *view, uint32_t *format)
-{
-    if (view->obj == NULL || !PyUnicode_Check(view->obj)) {
-        PyErr_SetString(PyExc_ValueError, "not a str export");
-        return -1;
-    }
-
-    uintptr_t internal_format = (uintptr_t)view->internal;
-    switch (internal_format)
-    {
-    case PyUnicode_FORMAT_ASCII:
-    case PyUnicode_FORMAT_UCS1:
-    case PyUnicode_FORMAT_UCS2:
-    case PyUnicode_FORMAT_UCS4:
-    case PyUnicode_FORMAT_UTF8:
-        break;
-    default:
-        PyErr_SetString(PyExc_ValueError, "invalid format");
-        return -1;
-    }
-
-    *format = (uint32_t)internal_format;
-    return 0;
 }
 
 

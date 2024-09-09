@@ -341,12 +341,12 @@ APIs:
    .. versionadded:: 3.3
 
 
-.. c:function:: int PyUnicode_Export(PyObject *unicode, uint32_t requested_formats, Py_buffer *view)
+.. c:function:: int PyUnicode_Export(PyObject *unicode, uint32_t requested_formats, Py_buffer *view, uint32_t *format)
 
    Export the contents of the *unicode* string in one of the requested format
    *requested_formats*.
 
-   * On success, fill *view*, and return ``0``.
+   * On success, fill *view* and set *\*format*, and return ``0``.
    * On error, set an exception and return ``-1``.
 
    The *view* buffer must be released by :c:func:`PyBuffer_Release`.
@@ -372,23 +372,9 @@ APIs:
 
    *requested_formats* can be a single format or a bitwise combination of the
    formats in the table above.
-   To determine the format that was selected for output, call
-   :c:func:`PyUnicode_GetBufferFormat`.
+   On success, *\*format* will be set to a single one of the requested flags.
 
    Note that future versions of Python may introduce additional formats.
-
-   .. versionadded:: 3.14
-
-
-.. c:function:: int PyUnicode_GetBufferFormat(const Py_buffer *view, uint32_t *format)
-
-   Get the format of the buffer *view*.
-
-   * On success, set *\*format* to the corresponding ``PyUnicode_FORMAT_*`` value
-     and return ``0``.
-   * On error, set an exception and return ``-1``.
-
-   *view* must be a buffer filled by :c:func:`PyUnicode_Export`.
 
    .. versionadded:: 3.14
 
