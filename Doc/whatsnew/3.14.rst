@@ -108,9 +108,7 @@ ast
   (Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
 
 * Add support for :func:`copy.replace` for AST nodes.
-
   (Contributed by Bénédikt Tran in :gh:`121141`.)
-
 
 ctypes
 ------
@@ -400,6 +398,10 @@ typing
 
 * Remove :class:`!typing.ByteString`. It had previously raised a
   :exc:`DeprecationWarning` since Python 3.12.
+
+* The ``.generic_base`` base class of generic classes is now added by
+  the parser rather than the compiler. This means that it is visible in
+  the ``AST``. (Contributed by Irit Katriel in :gh:`123881`.)
 
 urllib
 ------
