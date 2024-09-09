@@ -1,3 +1,0 @@
-The ``.generic_base`` base class of generic classes is now added by the
-parser rather than the compiler. This means that it is visible in the
-``AST``.
