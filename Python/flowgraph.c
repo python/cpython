@@ -86,8 +86,6 @@ struct _PyCfgBuilder {
 
 typedef struct _PyCfgBuilder cfg_builder;
 
-static const jump_target_label NO_LABEL = {-1};
-
 #define SAME_LABEL(L1, L2) ((L1).id == (L2).id)
 #define IS_LABEL(L) (!SAME_LABEL((L), (NO_LABEL)))
 

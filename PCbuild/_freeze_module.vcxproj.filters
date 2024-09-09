@@ -97,6 +97,9 @@
     <ClCompile Include="..\Python\perf_jit_trampoline.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\codegen.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\compile.c">
       <Filter>Source Files</Filter>
     </ClCompile>
