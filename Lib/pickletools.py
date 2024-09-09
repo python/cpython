@@ -2429,8 +2429,6 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
     + A memo entry isn't referenced before it's defined.
 
     + The markobject isn't stored in the memo.
-
-    + A memo entry isn't redefined.
     """
 
     # Most of the hair here is for sanity checks, but most of it is needed
@@ -2484,7 +2482,7 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
                     assert opcode.name == "POP"
                     numtopop = 0
             else:
-                errormsg = markmsg = "no MARK exists on stack"
+                errormsg = "no MARK exists on stack"
 
         # Check for correct memo usage.
         if opcode.name in ("PUT", "BINPUT", "LONG_BINPUT", "MEMOIZE"):
@@ -2494,9 +2492,7 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
             else:
                 assert arg is not None
                 memo_idx = arg
-            if memo_idx in memo:
-                errormsg = "memo key %r already defined" % arg
-            elif not stack:
+            if not stack:
                 errormsg = "stack is empty -- can't store into memo"
             elif stack[-1] is markobject:
                 errormsg = "can't store markobject in the memo"

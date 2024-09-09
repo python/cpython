@@ -91,6 +91,7 @@ def emit_stack_effect_function(
 def generate_stack_effect_functions(analysis: Analysis, out: CWriter) -> None:
     popped_data: list[tuple[str, str]] = []
     pushed_data: list[tuple[str, str]] = []
+
     def add(inst: Instruction | PseudoInstruction) -> None:
         stack = get_stack_effect(inst)
         popped = (-stack.base_offset).to_c()

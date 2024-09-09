@@ -124,10 +124,10 @@ class CoroutineTests(BaseTest):
 
         self.assertFalse(asyncio.iscoroutine(foo()))
 
-
     def test_iscoroutinefunction(self):
         async def foo(): pass
-        self.assertTrue(asyncio.iscoroutinefunction(foo))
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(asyncio.iscoroutinefunction(foo))
 
     def test_async_def_coroutines(self):
         async def bar():

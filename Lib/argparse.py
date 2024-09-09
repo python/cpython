@@ -447,15 +447,24 @@ class HelpFormatter(object):
             parts.append(part)
 
         # group mutually exclusive actions
+        inserted_separators_indices = set()
         for start, end in sorted(inserts, reverse=True):
             group = inserts[start, end]
             group_parts = [item for item in parts[start:end] if item is not None]
+            group_size = len(group_parts)
             if group.required:
-                open, close = "()" if len(group_parts) > 1 else ("", "")
+                open, close = "()" if group_size > 1 else ("", "")
             else:
                 open, close = "[]"
-            parts[start] = open + " | ".join(group_parts) + close
-            for i in range(start + 1, end):
+            group_parts[0] = open + group_parts[0]
+            group_parts[-1] = group_parts[-1] + close
+            for i, part in enumerate(group_parts[:-1], start=start):
+                # insert a separator if not already done in a nested group
+                if i not in inserted_separators_indices:
+                    parts[i] = part + ' |'
+                    inserted_separators_indices.add(i)
+            parts[start + group_size - 1] = group_parts[-1]
+            for i in range(start + group_size, end):
                 parts[i] = None
 
         # return the usage parts

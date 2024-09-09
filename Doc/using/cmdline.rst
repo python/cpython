@@ -24,7 +24,7 @@ Command line
 
 When invoking Python, you may specify any of these options::
 
-    python [-bBdEhiIOqsSuvVWx?] [-c command | -m module-name | script | - ] [args]
+    python [-bBdEhiIOPqRsSuvVWx?] [-c command | -m module-name | script | - ] [args]
 
 The most common use case is, of course, a simple invocation of a script::
 
@@ -622,9 +622,9 @@ Miscellaneous options
      .. versionadded:: 3.13
 
    * :samp:`-X gil={0,1}` forces the GIL to be disabled or enabled,
-     respectively. Only available in builds configured with
+     respectively. Setting to ``0`` is only available in builds configured with
      :option:`--disable-gil`. See also :envvar:`PYTHON_GIL` and
-     :ref:`free-threaded-cpython`.
+     :ref:`whatsnew313-free-threaded-cpython`.
 
      .. versionadded:: 3.13
 
@@ -1031,7 +1031,7 @@ conflict.
    'surrogatepass' are used.
 
    This may also be enabled at runtime with
-   :func:`sys._enablelegacywindowsfsencoding()`.
+   :func:`sys._enablelegacywindowsfsencoding`.
 
    .. availability:: Windows.
 
@@ -1221,12 +1221,11 @@ conflict.
 .. envvar:: PYTHON_GIL
 
    If this variable is set to ``1``, the global interpreter lock (GIL) will be
-   forced on. Setting it to ``0`` forces the GIL off.
+   forced on. Setting it to ``0`` forces the GIL off (needs Python configured with
+   the :option:`--disable-gil` build option).
 
    See also the :option:`-X gil <-X>` command-line option, which takes
-   precedence over this variable, and :ref:`free-threaded-cpython`.
-
-   Needs Python configured with the :option:`--disable-gil` build option.
+   precedence over this variable, and :ref:`whatsnew313-free-threaded-cpython`.
 
    .. versionadded:: 3.13
 
