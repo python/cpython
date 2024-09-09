@@ -746,22 +746,6 @@ _PyPegen_function_def_decorators(Parser *p, asdl_expr_seq *decorators, stmt_ty f
         function_def->end_lineno, function_def->end_col_offset, p->arena);
 }
 
-/* Construct a ClassDef */
-stmt_ty
-_PyPegen_class_def(expr_ty a, arguments_ty b, asdl_stmt_seq *c, asdl_type_param_seq *t,
-                   int lineno, int col_offset, int end_lineno, int end_col_offset,
-                   PyArena *arena)
-{
-    identifier name = a->v.Name.id;
-    asdl_expr_seq *bases = (b) ? ((expr_ty) b)->v.Call.args : NULL;
-    asdl_keyword_seq *keywords = (b) ? ((expr_ty) b)->v.Call.keywords : NULL;
-    asdl_stmt_seq *body = c;
-    asdl_expr_seq *decorator_list = NULL;
-    asdl_type_param_seq *type_params = t;
-    return _PyAST_ClassDef(name, bases, keywords, body, decorator_list, type_params,
-                           lineno, col_offset, end_lineno, end_col_offset, arena);
-}
-
 /* Construct a ClassDef equivalent to class_def, but with decorators */
 stmt_ty
 _PyPegen_class_def_decorators(Parser *p, asdl_expr_seq *decorators, stmt_ty class_def)

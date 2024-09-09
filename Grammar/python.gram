@@ -254,7 +254,10 @@ class_def[stmt_ty]:
 class_def_raw[stmt_ty]:
     | invalid_class_def_raw
     | 'class' a=NAME t=[type_params] b=['(' z=[arguments] ')' { z }] ':' c=block {
-        _PyPegen_class_def(a, b, c, t, EXTRA) }
+        _PyAST_ClassDef(a->v.Name.id,
+                     (b) ? ((expr_ty) b)->v.Call.args : NULL,
+                     (b) ? ((expr_ty) b)->v.Call.keywords : NULL,
+                     c, NULL, t, EXTRA) }
 
 # Function definitions
 # --------------------
