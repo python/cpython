@@ -254,7 +254,7 @@ client::
         # without passing it explicitly to this function.
 
         client_addr = client_addr_var.get()
-        return f'Good bye, client @ {client_addr}\n'.encode()
+        return f'Good bye, client @ {client_addr}\r\n'.encode()
 
     async def handle_request(reader, writer):
         addr = writer.transport.get_extra_info('socket').getpeername()
@@ -268,9 +268,10 @@ client::
             print(line)
             if not line.strip():
                 break
-            writer.write(line)
 
-        writer.write(render_goodbye())
+        writer.write(b'HTTP/1.1 200 OK\r\n')  # status line
+        writer.write(b'\r\n')  # headers
+        writer.write(render_goodbye())  # body
         writer.close()
 
     async def main():
@@ -282,5 +283,6 @@ client::
 
     asyncio.run(main())
 
-    # To test it you can use telnet:
+    # To test it you can use telnet or curl:
     #     telnet 127.0.0.1 8081
+    #     curl 127.0.0.1:8081
