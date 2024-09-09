@@ -1,2 +1,3 @@
-Improve the error message for unbalanced unpacking, showing the
-actual length whenever possible.
+When a :class:`list`, :class:`tuple` or :class:`dict`
+with too many elements is unpacked, show the actual
+length in the error message.
