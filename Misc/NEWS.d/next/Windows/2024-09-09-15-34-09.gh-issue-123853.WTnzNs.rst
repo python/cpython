@@ -1,0 +1,1 @@
+To change the Khmer language locale identifier from `kh_KH` to `km_KH`
