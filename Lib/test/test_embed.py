@@ -416,7 +416,6 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '20000101\n' * INIT_LOOPS)
 
-    @unittest.skip('inheritance across re-init is currently broken; see gh-117482')
     def test_static_types_inherited_slots(self):
         script = textwrap.dedent("""
             import test.support

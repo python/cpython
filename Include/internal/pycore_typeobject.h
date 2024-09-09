@@ -33,7 +33,6 @@ struct _types_runtime_state {
     struct {
         struct {
             PyTypeObject *type;
-            PyTypeObject def;
             int64_t interp_count;
         } types[_Py_MAX_MANAGED_STATIC_TYPES];
     } managed_static;
