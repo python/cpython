@@ -997,8 +997,6 @@ class _Unparser(NodeVisitor):
         with self.delimit_if("(", ")", condition = node.bases or node.keywords):
             comma = False
             for e in node.bases:
-                if isinstance(e, Name) and e.id == ".generic_base":
-                    continue
                 if comma:
                     self.write(", ")
                 else:

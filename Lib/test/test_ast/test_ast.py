@@ -3290,7 +3290,6 @@ class ASTOptimiziationTests(unittest.TestCase):
             optimized_target = self.wrap_statement(
                 ast.ClassDef(
                     name='foo',
-                    bases=[ast.Name(id='.generic_base', ctx=ast.Load())],
                     body=[ast.Pass()],
                     type_params=[type_param(name=name, default_value=ast.Constant(2))]
                 )
@@ -3298,7 +3297,6 @@ class ASTOptimiziationTests(unittest.TestCase):
             non_optimized_target = self.wrap_statement(
                 ast.ClassDef(
                     name='foo',
-                    bases=[ast.Name(id='.generic_base', ctx=ast.Load())],
                     body=[ast.Pass()],
                     type_params=[type_param(name=name, default_value=unoptimized_binop)]
                 )
