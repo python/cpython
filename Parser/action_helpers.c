@@ -758,6 +758,30 @@ _PyPegen_class_def(expr_ty a, arguments_ty b, asdl_stmt_seq *c, asdl_type_param_
     asdl_stmt_seq *body = c;
     asdl_expr_seq *decorator_list = NULL;
     asdl_type_param_seq *type_params = t;
+
+    int is_generic = asdl_seq_LEN(type_params) > 0;
+    if (is_generic) {
+        /* Add */
+        asdl_expr_seq *orig_bases = bases;
+        Py_ssize_t orig_len = asdl_seq_LEN(orig_bases);
+        bases = _Py_asdl_expr_seq_new(orig_len + 1, arena);
+        if (bases == NULL) {
+            return NULL;
+        }
+        for (Py_ssize_t i = 0; i < orig_len; i++) {
+            asdl_seq_SET(bases, i, asdl_seq_GET(orig_bases, i));
+        }
+        _Py_DECLARE_STR(generic_base, ".generic_base");
+        expr_ty name_node = _PyAST_Name(
+            &_Py_STR(generic_base), Load,
+            lineno, col_offset, end_lineno, end_col_offset, arena
+        );
+        if (name_node == NULL) {
+            return NULL;
+        }
+        asdl_seq_SET(bases, orig_len, name_node);
+    }
+
     return _PyAST_ClassDef(name, bases, keywords, body, decorator_list, type_params,
                            lineno, col_offset, end_lineno, end_col_offset, arena);
 }

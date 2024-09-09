@@ -1244,12 +1244,6 @@ _PyCompile_Metadata(compiler *c)
     return &c->u->u_metadata;
 }
 
-PyArena *
-_PyCompile_Arena(compiler *c)
-{
-    return c->c_arena;
-}
-
 #ifndef NDEBUG
 int
 _PyCompile_IsTopLevelAwait(compiler *c)
