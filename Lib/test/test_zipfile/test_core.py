@@ -1116,7 +1116,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         # Because this is hard to verify by parsing the data as a zip, the raw
         # bytes are checked to ensure that they line up with the zip spec.
         # The spec for this can be found at: https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT
-        # The relevent sections for this test are:
+        # The relevant sections for this test are:
         #  - 4.3.7 for local file header
         #  - 4.5.3 for zip64 extra field
 
@@ -1187,7 +1187,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         # in as a zip, this test looks at the raw bytes created to ensure that
         # the correct data has been generated.
         # The spec for this can be found at: https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT
-        # The relevent sections for this test are:
+        # The relevant sections for this test are:
         #  - 4.3.7 for local file header
         #  - 4.3.9 for the data descriptor
         #  - 4.5.3 for zip64 extra field
