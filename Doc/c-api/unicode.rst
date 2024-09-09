@@ -354,7 +354,7 @@ APIs:
 
    The buffer is read-only and must not be modified.
 
-   *unicode* and *view* must not be NULL.
+   *unicode*, *view* and *format* must not be NULL.
 
    Available formats:
 
