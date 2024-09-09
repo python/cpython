@@ -233,8 +233,7 @@ Buffer request types
 Buffers are usually obtained by sending a buffer request to an exporting
 object via :c:func:`PyObject_GetBuffer`. Since the complexity of the logical
 structure of the memory can vary drastically, the consumer uses the *flags*
-argument to specify the exact buffer type it can handle. For example, :c:expr:`PyBUF_SIMPLE | PyBUF_WRITABLE`
-can be used to request a simple writable buffer.
+argument to specify the exact buffer type it can handle.
 
 All :c:type:`Py_buffer` fields are unambiguously defined by the request
 type.
@@ -253,7 +252,8 @@ readonly, format
       Controls the :c:member:`~Py_buffer.readonly` field. If set, the exporter
       MUST provide a writable buffer or else report failure. Otherwise, the
       exporter MAY provide either a read-only or writable buffer, but the choice
-      MUST be consistent for all consumers.
+      MUST be consistent for all consumers. For example, :c:expr:`PyBUF_SIMPLE | PyBUF_WRITABLE`
+      can be used to request a simple writable buffer.
 
    .. c:macro:: PyBUF_FORMAT
 
