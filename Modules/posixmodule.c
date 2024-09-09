@@ -8678,14 +8678,8 @@ os_ptsname_impl(PyObject *module, int fd)
         ret = ptsname_r(fd, name, sizeof(name));
     }
     else {
-#if defined(HAVE_PTSNAME)
         // fallback to `ptsname` if `ptsname_r` is not available in runtime.
         return from_ptsname(fd);
-#else
-        // unknown error:
-        // both ptsname_r and ptsname are not available for some reason.
-        ret = -1;
-#endif /* HAVE_PTSNAME */
     }
     if (ret != 0) {
         errno = ret;
