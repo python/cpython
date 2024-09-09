@@ -992,12 +992,16 @@ class TestBasicOps(unittest.TestCase):
                 else:
                     return
 
-        def product2(*args, **kwds):
+        def product2(*iterables, repeat=1):
             'Pure python version used in docs'
-            pools = list(map(tuple, args)) * kwds.get('repeat', 1)
+            if repeat < 0:
+                raise ValueError('repeat argument cannot be negative')
+            pools = [tuple(pool) for pool in iterables] * repeat
+
             result = [[]]
             for pool in pools:
                 result = [x+[y] for x in result for y in pool]
+
             for prod in result:
                 yield tuple(prod)
 
