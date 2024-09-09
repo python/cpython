@@ -66,7 +66,12 @@ typedef struct {
 
 struct _PyCompiler;
 
-typedef enum { OP_FAST, OP_GLOBAL, OP_DEREF, OP_NAME } _PyCompiler_optype;
+typedef enum {
+    COMPILE_OP_FAST,
+    COMPILE_OP_GLOBAL,
+    COMPILE_OP_DEREF,
+    COMPILE_OP_NAME,
+} _PyCompile_optype;
 
 /* _PyCompile_FBlockInfo tracks the current frame block.
  *
@@ -76,19 +81,19 @@ typedef enum { OP_FAST, OP_GLOBAL, OP_DEREF, OP_NAME } _PyCompiler_optype;
  */
 
 enum _PyCompile_FBlockType {
-     COMPILER_FBLOCK_WHILE_LOOP,
-     COMPILER_FBLOCK_FOR_LOOP,
-     COMPILER_FBLOCK_TRY_EXCEPT,
-     COMPILER_FBLOCK_FINALLY_TRY,
-     COMPILER_FBLOCK_FINALLY_END,
-     COMPILER_FBLOCK_WITH,
-     COMPILER_FBLOCK_ASYNC_WITH,
-     COMPILER_FBLOCK_HANDLER_CLEANUP,
-     COMPILER_FBLOCK_POP_VALUE,
-     COMPILER_FBLOCK_EXCEPTION_HANDLER,
-     COMPILER_FBLOCK_EXCEPTION_GROUP_HANDLER,
-     COMPILER_FBLOCK_ASYNC_COMPREHENSION_GENERATOR,
-     COMPILER_FBLOCK_STOP_ITERATION,
+     COMPILE_FBLOCK_WHILE_LOOP,
+     COMPILE_FBLOCK_FOR_LOOP,
+     COMPILE_FBLOCK_TRY_EXCEPT,
+     COMPILE_FBLOCK_FINALLY_TRY,
+     COMPILE_FBLOCK_FINALLY_END,
+     COMPILE_FBLOCK_WITH,
+     COMPILE_FBLOCK_ASYNC_WITH,
+     COMPILE_FBLOCK_HANDLER_CLEANUP,
+     COMPILE_FBLOCK_POP_VALUE,
+     COMPILE_FBLOCK_EXCEPTION_HANDLER,
+     COMPILE_FBLOCK_EXCEPTION_GROUP_HANDLER,
+     COMPILE_FBLOCK_ASYNC_COMPREHENSION_GENERATOR,
+     COMPILE_FBLOCK_STOP_ITERATION,
 };
 
 typedef struct {
@@ -102,56 +107,56 @@ typedef struct {
 } _PyCompile_FBlockInfo;
 
 
-int _PyCompiler_PushFBlock(struct _PyCompiler *c, _Py_SourceLocation loc,
-                           enum _PyCompile_FBlockType t,
-                           _PyJumpTargetLabel block_label,
-                           _PyJumpTargetLabel exit, void *datum);
-void _PyCompiler_PopFBlock(struct _PyCompiler *c, enum _PyCompile_FBlockType t,
-                           _PyJumpTargetLabel block_label);
-_PyCompile_FBlockInfo *_PyCompiler_TopFBlock(struct _PyCompiler *c);
+int _PyCompile_PushFBlock(struct _PyCompiler *c, _Py_SourceLocation loc,
+                          enum _PyCompile_FBlockType t,
+                          _PyJumpTargetLabel block_label,
+                          _PyJumpTargetLabel exit, void *datum);
+void _PyCompile_PopFBlock(struct _PyCompiler *c, enum _PyCompile_FBlockType t,
+                          _PyJumpTargetLabel block_label);
+_PyCompile_FBlockInfo *_PyCompile_TopFBlock(struct _PyCompiler *c);
 
-int _PyCompiler_EnterScope(struct _PyCompiler *c, identifier name, int scope_type,
-                           void *key, int lineno, PyObject *private,
-                           _PyCompile_CodeUnitMetadata *umd);
-void _PyCompiler_ExitScope(struct _PyCompiler *c);
-Py_ssize_t _PyCompiler_AddConst(struct _PyCompiler *c, PyObject *o);
-_PyInstructionSequence *_PyCompiler_InstrSequence(struct _PyCompiler *c);
-int _PyCompiler_FutureFeatures(struct _PyCompiler *c);
-PyObject *_PyCompiler_DeferredAnnotations(struct _PyCompiler *c);
-PyObject *_PyCompiler_Mangle(struct _PyCompiler *c, PyObject *name);
-PyObject *_PyCompiler_MaybeMangle(struct _PyCompiler *c, PyObject *name);
-int _PyCompiler_MaybeAddStaticAttributeToClass(struct _PyCompiler *c, expr_ty e);
-int _PyCompiler_GetRefType(struct _PyCompiler *c, PyObject *name);
-int _PyCompiler_LookupCellvar(struct _PyCompiler *c, PyObject *name);
-int _PyCompiler_ResolveNameop(struct _PyCompiler *c, PyObject *mangled, int scope,
-                              _PyCompiler_optype *optype, Py_ssize_t *arg);
+int _PyCompile_EnterScope(struct _PyCompiler *c, identifier name, int scope_type,
+                          void *key, int lineno, PyObject *private,
+                          _PyCompile_CodeUnitMetadata *umd);
+void _PyCompile_ExitScope(struct _PyCompiler *c);
+Py_ssize_t _PyCompile_AddConst(struct _PyCompiler *c, PyObject *o);
+_PyInstructionSequence *_PyCompile_InstrSequence(struct _PyCompiler *c);
+int _PyCompile_FutureFeatures(struct _PyCompiler *c);
+PyObject *_PyCompile_DeferredAnnotations(struct _PyCompiler *c);
+PyObject *_PyCompile_Mangle(struct _PyCompiler *c, PyObject *name);
+PyObject *_PyCompile_MaybeMangle(struct _PyCompiler *c, PyObject *name);
+int _PyCompile_MaybeAddStaticAttributeToClass(struct _PyCompiler *c, expr_ty e);
+int _PyCompile_GetRefType(struct _PyCompiler *c, PyObject *name);
+int _PyCompile_LookupCellvar(struct _PyCompiler *c, PyObject *name);
+int _PyCompile_ResolveNameop(struct _PyCompiler *c, PyObject *mangled, int scope,
+                             _PyCompile_optype *optype, Py_ssize_t *arg);
 
-int _PyCompiler_IsInteractive(struct _PyCompiler *c);
-int _PyCompiler_IsNestedScope(struct _PyCompiler *c);
-int _PyCompiler_IsInInlinedComp(struct _PyCompiler *c);
-int _PyCompiler_ScopeType(struct _PyCompiler *c);
-int _PyCompiler_OptimizationLevel(struct _PyCompiler *c);
-PyArena *_PyCompiler_Arena(struct _PyCompiler *c);
-int _PyCompiler_LookupArg(struct _PyCompiler *c, PyCodeObject *co, PyObject *name);
-PyObject *_PyCompiler_Qualname(struct _PyCompiler *c);
-_PyCompile_CodeUnitMetadata *_PyCompiler_Metadata(struct _PyCompiler *c);
-PyObject *_PyCompiler_StaticAttributesAsTuple(struct _PyCompiler *c);
+int _PyCompile_IsInteractive(struct _PyCompiler *c);
+int _PyCompile_IsNestedScope(struct _PyCompiler *c);
+int _PyCompile_IsInInlinedComp(struct _PyCompiler *c);
+int _PyCompile_ScopeType(struct _PyCompiler *c);
+int _PyCompile_OptimizationLevel(struct _PyCompiler *c);
+PyArena *_PyCompile_Arena(struct _PyCompiler *c);
+int _PyCompile_LookupArg(struct _PyCompiler *c, PyCodeObject *co, PyObject *name);
+PyObject *_PyCompile_Qualname(struct _PyCompiler *c);
+_PyCompile_CodeUnitMetadata *_PyCompile_Metadata(struct _PyCompiler *c);
+PyObject *_PyCompile_StaticAttributesAsTuple(struct _PyCompiler *c);
 
 #ifndef NDEBUG
-int _PyCompiler_IsTopLevelAwait(struct _PyCompiler *c);
+int _PyCompile_IsTopLevelAwait(struct _PyCompiler *c);
 #endif
 
-struct symtable *_PyCompiler_Symtable(struct _PyCompiler *c);
-PySTEntryObject *_PyCompiler_SymtableEntry(struct _PyCompiler *c);
+struct symtable *_PyCompile_Symtable(struct _PyCompiler *c);
+PySTEntryObject *_PyCompile_SymtableEntry(struct _PyCompiler *c);
 
 enum {
-    _PY_COMPILER_SCOPE_MODULE,
-    _PY_COMPILER_SCOPE_CLASS,
-    _PY_COMPILER_SCOPE_FUNCTION,
-    _PY_COMPILER_SCOPE_ASYNC_FUNCTION,
-    _PY_COMPILER_SCOPE_LAMBDA,
-    _PY_COMPILER_SCOPE_COMPREHENSION,
-    _PY_COMPILER_SCOPE_ANNOTATIONS,
+    COMPILE_SCOPE_MODULE,
+    COMPILE_SCOPE_CLASS,
+    COMPILE_SCOPE_FUNCTION,
+    COMPILE_SCOPE_ASYNC_FUNCTION,
+    COMPILE_SCOPE_LAMBDA,
+    COMPILE_SCOPE_COMPREHENSION,
+    COMPILE_SCOPE_ANNOTATIONS,
 };
 
 
@@ -162,12 +167,12 @@ typedef struct {
     _PyJumpTargetLabel cleanup;
 } _PyCompile_InlinedComprehensionState;
 
-int _PyCompiler_TweakInlinedComprehensionScopes(struct _PyCompiler *c, _Py_SourceLocation loc,
-                                                PySTEntryObject *entry,
+int _PyCompile_TweakInlinedComprehensionScopes(struct _PyCompiler *c, _Py_SourceLocation loc,
+                                               PySTEntryObject *entry,
+                                               _PyCompile_InlinedComprehensionState *state);
+int _PyCompile_RevertInlinedComprehensionScopes(struct _PyCompiler *c, _Py_SourceLocation loc,
                                                 _PyCompile_InlinedComprehensionState *state);
-int _PyCompiler_RevertInlinedComprehensionScopes(struct _PyCompiler *c, _Py_SourceLocation loc,
-                                                 _PyCompile_InlinedComprehensionState *state);
-int _PyCompiler_AddDeferredAnnotaion(struct _PyCompiler *c, stmt_ty s);
+int _PyCompile_AddDeferredAnnotaion(struct _PyCompiler *c, stmt_ty s);
 
 int _PyCodegen_AddReturnAtEnd(struct _PyCompiler *c, int addNone);
 int _PyCodegen_EnterAnonymousScope(struct _PyCompiler* c, mod_ty mod);
@@ -187,8 +192,8 @@ int _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj);
 PyCodeObject *_PyCompile_OptimizeAndAssemble(struct _PyCompiler *c, int addNone);
 
 Py_ssize_t _PyCompile_DictAddObj(PyObject *dict, PyObject *o);
-int _PyCompiler_Error(struct _PyCompiler *c, _Py_SourceLocation loc, const char *format, ...);
-int _PyCompiler_Warn(struct _PyCompiler *c, _Py_SourceLocation loc, const char *format, ...);
+int _PyCompile_Error(struct _PyCompiler *c, _Py_SourceLocation loc, const char *format, ...);
+int _PyCompile_Warn(struct _PyCompiler *c, _Py_SourceLocation loc, const char *format, ...);
 
 // Export for '_opcode' extension module
 PyAPI_FUNC(PyObject*) _PyCompile_GetUnaryIntrinsicName(int index);
