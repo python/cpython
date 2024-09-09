@@ -160,13 +160,13 @@ typedef struct {
     PyObject *temp_symbols;
     PyObject *fast_hidden;
     _PyJumpTargetLabel cleanup;
-} _PyCompille_InlinedComprehensionState;
+} _PyCompile_InlinedComprehensionState;
 
 int _PyCompiler_TweakInlinedComprehensionScopes(struct _PyCompiler *c, _Py_SourceLocation loc,
                                                 PySTEntryObject *entry,
-                                                _PyCompille_InlinedComprehensionState *state);
+                                                _PyCompile_InlinedComprehensionState *state);
 int _PyCompiler_RevertInlinedComprehensionScopes(struct _PyCompiler *c, _Py_SourceLocation loc,
-                                                 _PyCompille_InlinedComprehensionState *state);
+                                                 _PyCompile_InlinedComprehensionState *state);
 int _PyCompiler_AddDeferredAnnotaion(struct _PyCompiler *c, stmt_ty s);
 
 int _PyCodegen_AddReturnAtEnd(struct _PyCompiler *c, int addNone);
@@ -182,7 +182,7 @@ int _PyCompile_EnsureArrayLargeEnough(
         int default_alloc,
         size_t item_size);
 
-int _PyCompiler_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj);
+int _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj);
 
 PyCodeObject *_PyCompile_OptimizeAndAssemble(struct _PyCompiler *c, int addNone);
 

@@ -969,7 +969,7 @@ _PyCompiler_ResolveNameop(compiler *c, PyObject *mangled, int scope,
 int
 _PyCompiler_TweakInlinedComprehensionScopes(compiler *c, location loc,
                                             PySTEntryObject *entry,
-                                            _PyCompille_InlinedComprehensionState *state)
+                                            _PyCompile_InlinedComprehensionState *state)
 {
     int in_class_block = (c->u->u_ste->ste_type == ClassBlock) && !c->u->u_in_inlined_comp;
     c->u->u_in_inlined_comp++;
@@ -1048,7 +1048,7 @@ _PyCompiler_TweakInlinedComprehensionScopes(compiler *c, location loc,
 
 int
 _PyCompiler_RevertInlinedComprehensionScopes(compiler *c, location loc,
-                                             _PyCompille_InlinedComprehensionState *state)
+                                             _PyCompile_InlinedComprehensionState *state)
 {
     c->u->u_in_inlined_comp--;
     if (state->temp_symbols) {
@@ -1261,7 +1261,7 @@ _PyCompiler_IsTopLevelAwait(compiler *c)
 
 // Merge *obj* with constant cache, without recursion.
 int
-_PyCompiler_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj)
+_PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj)
 {
     PyObject *key = const_cache_insert(const_cache, *obj, false);
     if (key == NULL) {

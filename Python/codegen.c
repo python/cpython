@@ -4335,7 +4335,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
 static int
 codegen_push_inlined_comprehension_locals(compiler *c, location loc,
                                           PySTEntryObject *comp,
-                                          _PyCompille_InlinedComprehensionState *state)
+                                          _PyCompile_InlinedComprehensionState *state)
 {
     int in_class_block = (SYMTABLE_ENTRY(c)->ste_type == ClassBlock) &&
                           !_PyCompiler_IsInInlinedComp(c);
@@ -4403,7 +4403,7 @@ codegen_push_inlined_comprehension_locals(compiler *c, location loc,
 static int
 push_inlined_comprehension_state(compiler *c, location loc,
                                  PySTEntryObject *comp,
-                                 _PyCompille_InlinedComprehensionState *state)
+                                 _PyCompile_InlinedComprehensionState *state)
 {
     RETURN_IF_ERROR(
         _PyCompiler_TweakInlinedComprehensionScopes(c, loc, comp, state));
@@ -4414,7 +4414,7 @@ push_inlined_comprehension_state(compiler *c, location loc,
 
 static int
 restore_inlined_comprehension_locals(compiler *c, location loc,
-                                     _PyCompille_InlinedComprehensionState *state)
+                                     _PyCompile_InlinedComprehensionState *state)
 {
     PyObject *k;
     // pop names we pushed to stack earlier
@@ -4436,7 +4436,7 @@ restore_inlined_comprehension_locals(compiler *c, location loc,
 
 static int
 codegen_pop_inlined_comprehension_locals(compiler *c, location loc,
-                                         _PyCompille_InlinedComprehensionState *state)
+                                         _PyCompile_InlinedComprehensionState *state)
 {
     if (state->pushed_locals) {
         ADDOP(c, NO_LOCATION, POP_BLOCK);
@@ -4461,7 +4461,7 @@ codegen_pop_inlined_comprehension_locals(compiler *c, location loc,
 
 static int
 pop_inlined_comprehension_state(compiler *c, location loc,
-                                _PyCompille_InlinedComprehensionState *state)
+                                _PyCompile_InlinedComprehensionState *state)
 {
     RETURN_IF_ERROR(codegen_pop_inlined_comprehension_locals(c, loc, state));
     RETURN_IF_ERROR(_PyCompiler_RevertInlinedComprehensionScopes(c, loc, state));
@@ -4487,7 +4487,7 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
                       expr_ty val)
 {
     PyCodeObject *co = NULL;
-    _PyCompille_InlinedComprehensionState inline_state = {NULL, NULL, NULL, NO_LABEL};
+    _PyCompile_InlinedComprehensionState inline_state = {NULL, NULL, NULL, NO_LABEL};
     comprehension_ty outermost;
 #ifndef NDEBUG
     int scope_type = SCOPE_TYPE(c);

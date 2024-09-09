@@ -435,13 +435,13 @@ assemble_emit(struct assembler *a, instr_sequence *instrs,
     RETURN_IF_ERROR(assemble_exception_table(a, instrs));
 
     RETURN_IF_ERROR(_PyBytes_Resize(&a->a_except_table, a->a_except_table_off));
-    RETURN_IF_ERROR(_PyCompiler_ConstCacheMergeOne(const_cache, &a->a_except_table));
+    RETURN_IF_ERROR(_PyCompile_ConstCacheMergeOne(const_cache, &a->a_except_table));
 
     RETURN_IF_ERROR(_PyBytes_Resize(&a->a_linetable, a->a_location_off));
-    RETURN_IF_ERROR(_PyCompiler_ConstCacheMergeOne(const_cache, &a->a_linetable));
+    RETURN_IF_ERROR(_PyCompile_ConstCacheMergeOne(const_cache, &a->a_linetable));
 
     RETURN_IF_ERROR(_PyBytes_Resize(&a->a_bytecode, a->a_offset * sizeof(_Py_CODEUNIT)));
-    RETURN_IF_ERROR(_PyCompiler_ConstCacheMergeOne(const_cache, &a->a_bytecode));
+    RETURN_IF_ERROR(_PyCompile_ConstCacheMergeOne(const_cache, &a->a_bytecode));
     return SUCCESS;
 }
 
@@ -553,7 +553,7 @@ makecode(_PyCompile_CodeUnitMetadata *umd, struct assembler *a, PyObject *const_
     if (!names) {
         goto error;
     }
-    if (_PyCompiler_ConstCacheMergeOne(const_cache, &names) < 0) {
+    if (_PyCompile_ConstCacheMergeOne(const_cache, &names) < 0) {
         goto error;
     }
 
@@ -561,7 +561,7 @@ makecode(_PyCompile_CodeUnitMetadata *umd, struct assembler *a, PyObject *const_
     if (consts == NULL) {
         goto error;
     }
-    if (_PyCompiler_ConstCacheMergeOne(const_cache, &consts) < 0) {
+    if (_PyCompile_ConstCacheMergeOne(const_cache, &consts) < 0) {
         goto error;
     }
 
@@ -615,7 +615,7 @@ makecode(_PyCompile_CodeUnitMetadata *umd, struct assembler *a, PyObject *const_
         goto error;
     }
 
-    if (_PyCompiler_ConstCacheMergeOne(const_cache, &localsplusnames) < 0) {
+    if (_PyCompile_ConstCacheMergeOne(const_cache, &localsplusnames) < 0) {
         goto error;
     }
     con.localsplusnames = localsplusnames;

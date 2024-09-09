@@ -1300,7 +1300,7 @@ get_const_value(int opcode, int oparg, PyObject *co_consts)
 static int
 add_const(PyObject *newconst, PyObject *consts, PyObject *const_cache)
 {
-    if (_PyCompiler_ConstCacheMergeOne(const_cache, &newconst) < 0) {
+    if (_PyCompile_ConstCacheMergeOne(const_cache, &newconst) < 0) {
         Py_DECREF(newconst);
         return -1;
     }
