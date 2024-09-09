@@ -1568,7 +1568,7 @@ windows_locale = {
     0x0411: "ja_JP", # Japanese
     0x044b: "kn_IN", # Kannada - India
     0x043f: "kk_KZ", # Kazakh
-    0x0453: "kh_KH", # Khmer - Cambodia
+    0x0453: "km_KH", # Khmer - Cambodia
     0x0486: "qut_GT",# K'iche - Guatemala
     0x0487: "rw_RW", # Kinyarwanda - Rwanda
     0x0457: "kok_IN",# Konkani
