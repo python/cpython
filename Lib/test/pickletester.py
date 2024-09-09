@@ -2192,7 +2192,7 @@ class AbstractPicklingErrorTests:
     @support.cpython_only
     def test_bad_ext_code(self):
         # This should never happen in normal circumstances, because the type
-        # and the value of the extesion code is checked in copyreg.add_extension().
+        # and the value of the extension code is checked in copyreg.add_extension().
         key = (__name__, 'MyList')
         def check(code, exc):
             assert key not in copyreg._extension_registry
