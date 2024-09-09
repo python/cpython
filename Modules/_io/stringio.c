@@ -51,24 +51,30 @@ typedef struct {
 
 static int _io_StringIO___init__(PyObject *self, PyObject *args, PyObject *kwargs);
 
-#define CHECK_INITIALIZED(self) \
-    if (self->ok <= 0) { \
-        PyErr_SetString(PyExc_ValueError, \
-            "I/O operation on uninitialized object"); \
-        return NULL; \
-    }
+#define CHECK_INITIALIZED(self)                             \
+    do {                                                    \
+        if (self->ok <= 0) {                                \
+            PyErr_SetString(PyExc_ValueError,               \
+                "I/O operation on uninitialized object");   \
+            return NULL;                                    \
+        }                                                   \
+    } while (0)
 
-#define CHECK_CLOSED(self) \
-    if (self->closed) { \
-        PyErr_SetString(PyExc_ValueError, \
-            "I/O operation on closed file"); \
-        return NULL; \
-    }
+#define CHECK_CLOSED(self)                          \
+    do {                                            \
+        if (self->closed) {                         \
+            PyErr_SetString(PyExc_ValueError,       \
+                "I/O operation on closed file");    \
+            return NULL;                            \
+        }                                           \
+    } while (0)
 
-#define ENSURE_REALIZED(self) \
-    if (realize(self) < 0) { \
-        return NULL; \
-    }
+#define ENSURE_REALIZED(self)       \
+    do {                            \
+        if (realize(self) < 0) {    \
+            return NULL;            \
+        }                           \
+    } while (0)
 
 
 /* Internal routine for changing the size, in terms of characters, of the
