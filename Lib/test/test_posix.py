@@ -411,8 +411,10 @@ class PosixTester(unittest.TestCase):
             # issue33655: Also ignore EINVAL on *BSD since ZFS is also
             # often used there.
             if inst.errno == errno.EINVAL and sys.platform.startswith(
-                ('sunos', 'freebsd', 'netbsd', 'openbsd', 'gnukfreebsd')):
+                ('sunos', 'freebsd', 'openbsd', 'gnukfreebsd')):
                 raise unittest.SkipTest("test may fail on ZFS filesystems")
+            elif inst.errno == errno.EOPNOTSUPP and sys.platform.startswith("netbsd"):
+                raise unittest.SkipTest("test may fail on FFS filesystems")
             else:
                 raise
         finally:
