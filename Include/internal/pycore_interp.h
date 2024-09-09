@@ -226,10 +226,10 @@ struct _is {
     PyMutex weakref_locks[NUM_WEAKREF_LIST_LOCKS];
     _PyIndexPool specialized_code_indices;
     // Number of bytes available for thread-local bytecode, counts down to zero
-    Py_ssize_t thread_local_bytecode_avail;
-    PyMutex thread_local_bytecode_avail_mutex;
+    Py_ssize_t tlbc_avail;
+    PyMutex tlbc_avail_mutex;
     // This is monotonic; once true it will remain true
-    bool new_thread_local_bytecode_disabled;
+    bool new_tlbc_disabled;
 #endif
 
     // Per-interpreter state for the obmalloc allocator.  For the main

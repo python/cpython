@@ -631,7 +631,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         CONFIG_COMPAT['run_presite'] = None
     if support.Py_GIL_DISABLED:
         CONFIG_COMPAT['enable_gil'] = -1
-        CONFIG_COMPAT['thread_local_bytecode_limit'] = GET_DEFAULT_CONFIG
+        CONFIG_COMPAT['tlbc_limit'] = GET_DEFAULT_CONFIG
     if MS_WINDOWS:
         CONFIG_COMPAT.update({
             'legacy_windows_stdio': False,

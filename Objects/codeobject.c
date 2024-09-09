@@ -537,7 +537,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     }
     co->_co_firsttraceable = entry_point;
 #ifdef Py_GIL_DISABLED
-    if (interp->new_thread_local_bytecode_disabled) {
+    if (interp->new_tlbc_disabled) {
         _PyCode_DisableSpecialization(_PyCode_CODE(co), Py_SIZE(co));
     }
     else {
@@ -2689,9 +2689,9 @@ _PyCode_Fini(PyInterpreterState *interp)
 void
 _PyCode_InitState(PyInterpreterState *interp)
 {
-    int limit = interp->config.thread_local_bytecode_limit;
-    interp->thread_local_bytecode_avail = limit;
-    interp->new_thread_local_bytecode_disabled = limit == 0;
+    int limit = interp->config.tlbc_limit;
+    interp->tlbc_avail = limit;
+    interp->new_tlbc_disabled = limit == 0;
 }
 
 static _PyCodeArray *
@@ -2765,15 +2765,15 @@ reserve_bytes_for_specialized_code(PyCodeObject *co)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     Py_ssize_t nbytes_reserved = -1;
     Py_ssize_t code_size = _PyCode_NBYTES(co);
-    PyMutex_LockFlags(&interp->thread_local_bytecode_avail_mutex, _Py_LOCK_DONT_DETACH);
-    if (interp->thread_local_bytecode_avail < 0) {
+    PyMutex_LockFlags(&interp->tlbc_avail_mutex, _Py_LOCK_DONT_DETACH);
+    if (interp->tlbc_avail < 0) {
         nbytes_reserved = code_size;
     }
-    else if (interp->thread_local_bytecode_avail >= code_size) {
-        interp->thread_local_bytecode_avail -= code_size;
+    else if (interp->tlbc_avail >= code_size) {
+        interp->tlbc_avail -= code_size;
         nbytes_reserved = code_size;
     }
-    PyMutex_Unlock(&interp->thread_local_bytecode_avail_mutex);
+    PyMutex_Unlock(&interp->tlbc_avail_mutex);
     return nbytes_reserved;
 }
 
@@ -2785,11 +2785,11 @@ release_bytes_for_specialized_code(Py_ssize_t nbytes)
         return;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyMutex_LockFlags(&interp->thread_local_bytecode_avail_mutex, _Py_LOCK_DONT_DETACH);
-    if (interp->thread_local_bytecode_avail >= 0) {
-        interp->thread_local_bytecode_avail += nbytes;
+    PyMutex_LockFlags(&interp->tlbc_avail_mutex, _Py_LOCK_DONT_DETACH);
+    if (interp->tlbc_avail >= 0) {
+        interp->tlbc_avail += nbytes;
     }
-    PyMutex_Unlock(&interp->thread_local_bytecode_avail_mutex);
+    PyMutex_Unlock(&interp->tlbc_avail_mutex);
 }
 
 static int
@@ -2804,10 +2804,10 @@ disable_specialization(PyObject *obj, void*)
 }
 
 static void
-disable_new_thread_local_bytecode(void)
+disable_new_tlbc(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->new_thread_local_bytecode_disabled) {
+    if (interp->new_tlbc_disabled) {
         return;
     }
     // Disable creation of new thread-local copies of bytecode. We disable
@@ -2818,7 +2818,7 @@ disable_new_thread_local_bytecode(void)
     // main copy), but any attempts to create new copies of bytecode will fail,
     // and the main, unspecializable copy will be used.
     _PyEval_StopTheWorld(interp);
-    interp->new_thread_local_bytecode_disabled = true;
+    interp->new_tlbc_disabled = true;
     _PyEval_StartTheWorld(interp);
     PyUnstable_GC_VisitObjects(disable_specialization, NULL);
     if (PyErr_WarnEx(PyExc_ResourceWarning, "Reached memory limit for thread-local bytecode", 1) < 0) {
@@ -2837,7 +2837,7 @@ get_executable_code_lock_held(PyCodeObject *co)
     }
     Py_ssize_t reserved = reserve_bytes_for_specialized_code(co);
     if (reserved == -1) {
-        disable_new_thread_local_bytecode();
+        disable_new_tlbc();
         return (_Py_CODEUNIT *) spec_code->entries[0]->bytecode;
     }
     _Py_CODEUNIT *result = create_specializable_code_lock_held(co, idx);
@@ -2851,7 +2851,7 @@ _Py_CODEUNIT *
 _PyCode_GetExecutableCodeSlow(PyCodeObject *co)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->new_thread_local_bytecode_disabled) {
+    if (interp->new_tlbc_disabled) {
         return (_Py_CODEUNIT *) co->co_specialized_code->entries[0]->bytecode;
     }
     _Py_CODEUNIT *result;

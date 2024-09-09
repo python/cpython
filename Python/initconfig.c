@@ -134,7 +134,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(dump_refs_file, WSTR_OPT, READ_ONLY, NO_SYS),
 #ifdef Py_GIL_DISABLED
     SPEC(enable_gil, INT, READ_ONLY, NO_SYS),
-    SPEC(thread_local_bytecode_limit, INT),
+    SPEC(tlbc_limit, INT, READ_ONLY, NO_SYS),
 #endif
     SPEC(faulthandler, BOOL, READ_ONLY, NO_SYS),
     SPEC(filesystem_encoding, WSTR, READ_ONLY, NO_SYS),
@@ -318,9 +318,9 @@ The following implementation-specific options are available:\n\
          memory blocks when the program finishes or after each statement in\n\
          the interactive interpreter; only works on debug builds\n"
 #ifdef Py_GIL_DISABLED
-"-X thread_local_bc_limit=N: limit the total size of thread-local bytecode,\n\
+"-X tlbc_limit=N: limit the total size of thread-local bytecode,\n\
          per-interpreter, to N bytes. A value < 0 means unlimited. A value of\n\
-         0 disables thread-local bytecode. Also PYTHON_THREAD_LOCAL_BC_LIMIT\n"
+         0 disables thread-local bytecode. Also PYTHON_TLBC_LIMIT\n"
 #endif
 "\
 -X tracemalloc[=N]: trace Python memory allocations; N sets a traceback limit\n \
@@ -408,8 +408,8 @@ static const char usage_envvars[] =
 "PYTHONSTATS     : turns on statistics gathering (-X pystats)\n"
 #endif
 #ifdef Py_GIL_DISABLED
-"PYTHON_THREAD_LOCAL_BC_LIMT: limit the total size of thread-local bytecode\n"
-"                  (-X thread-local-bc-limit)\n"
+"PYTHON_TLBC_LIMIT: limit the total size of thread-local bytecode\n"
+"                  (-X tlbc-limit)\n"
 #endif
 "PYTHONTRACEMALLOC: trace Python memory allocations (-X tracemalloc)\n"
 "PYTHONUNBUFFERED: disable stdout/stderr buffering (-u)\n"
@@ -991,7 +991,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
 #ifdef Py_GIL_DISABLED
     config->enable_gil = _PyConfig_GIL_DEFAULT;
     // 100 MiB
-    config->thread_local_bytecode_limit = 100 * (1 << 20);
+    config->tlbc_limit = 100 * (1 << 20);
 #endif
 }
 
@@ -1876,28 +1876,28 @@ error:
 }
 
 static PyStatus
-config_init_thread_local_bytecode_limit(PyConfig *config)
+config_init_tlbc_limit(PyConfig *config)
 {
 #ifdef Py_GIL_DISABLED
-    const char *env = config_get_env(config, "PYTHON_THREAD_LOCAL_BC_LIMIT");
+    const char *env = config_get_env(config, "PYTHON_TLBC_LIMIT");
     if (env) {
         int limit = -1;
         if (_Py_str_to_int(env, &limit) < 0) {
             return _PyStatus_ERR(
-                "PYTHON_THREAD_LOCAL_BC_LIMIT=N: N is missing or invalid");
+                "PYTHON_TLBC_LIMIT=N: N is missing or invalid");
         }
-        config->thread_local_bytecode_limit = limit;
+        config->tlbc_limit = limit;
     }
 
-    const wchar_t *xoption = config_get_xoption(config, L"thread_local_bc_limit");
+    const wchar_t *xoption = config_get_xoption(config, L"tlbc_limit");
     if (xoption) {
         int limit = -1;
         const wchar_t *sep = wcschr(xoption, L'=');
         if (!sep || (config_wstr_to_int(sep + 1, &limit) < 0)) {
             return _PyStatus_ERR(
-                "-X thread_local_bc_limit=n: n is missing or invalid");
+                "-X tlbc_limit=n: n is missing or invalid");
         }
-        config->thread_local_bytecode_limit = limit;
+        config->tlbc_limit = limit;
     }
     return _PyStatus_OK();
 #endif
@@ -2152,7 +2152,7 @@ config_read_complex_options(PyConfig *config)
     }
 #endif
 
-    status = config_init_thread_local_bytecode_limit(config);
+    status = config_init_tlbc_limit(config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
