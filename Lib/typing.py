@@ -474,6 +474,10 @@ def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=f
         _deprecation_warning_for_no_type_params_passed("typing._eval_type")
         type_params = ()
     if isinstance(t, ForwardRef):
+        # If the forward_ref has __forward_module__ set, evaluate() infers the globals
+        # from the module, and it will probably pick better than the globals we have here.
+        if t.__forward_module__ is not None:
+            globalns = None
         return evaluate_forward_ref(t, globals=globalns, locals=localns,
                                     type_params=type_params, owner=owner,
                                     _recursive_guard=recursive_guard, format=format)
@@ -1054,7 +1058,7 @@ def evaluate_forward_ref(
     evaluating the forward reference. This parameter must be provided (though
     it may be an empty tuple) if *owner* is not given and the forward reference
     does not already have an owner set. *format* specifies the format of the
-    annotation and is a member of the annoations.Format enum.
+    annotation and is a member of the annotationlib.Format enum.
 
     """
     if type_params is _sentinel:

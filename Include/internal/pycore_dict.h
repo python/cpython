@@ -83,7 +83,7 @@ typedef struct {
     PyObject *me_value; /* This field is only meaningful for combined tables */
 } PyDictUnicodeEntry;
 
-extern PyDictKeysObject *_PyDict_NewKeysForClass(void);
+extern PyDictKeysObject *_PyDict_NewKeysForClass(PyHeapTypeObject *);
 extern PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);
 
 /* Gets a version number unique to the current state of the keys of dict, if possible.

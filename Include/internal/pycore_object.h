@@ -14,9 +14,18 @@ extern "C" {
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_STORE_PTR_RELAXED
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_typeid.h"        // _PyType_IncrefSlow
 
 
 #define _Py_IMMORTAL_REFCNT_LOOSE ((_Py_IMMORTAL_REFCNT >> 1) + 1)
+
+// This value is added to `ob_ref_shared` for objects that use deferred
+// reference counting so that they are not immediately deallocated when the
+// non-deferred reference count drops to zero.
+//
+// The value is half the maximum shared refcount because the low two bits of
+// `ob_ref_shared` are used for flags.
+#define _Py_REF_DEFERRED (PY_SSIZE_T_MAX / 8)
 
 // gh-121528, gh-118997: Similar to _Py_IsImmortal() but be more loose when
 // comparing the reference count to stay compatible with C extensions built
@@ -150,6 +159,23 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 }
 #define _Py_RefcntAdd(op, n) _Py_RefcntAdd(_PyObject_CAST(op), n)
 
+// Checks if an object has a single, unique reference. If the caller holds a
+// unique reference, it may be able to safely modify the object in-place.
+static inline int
+_PyObject_IsUniquelyReferenced(PyObject *ob)
+{
+#if !defined(Py_GIL_DISABLED)
+    return Py_REFCNT(ob) == 1;
+#else
+    // NOTE: the entire ob_ref_shared field must be zero, including flags, to
+    // ensure that other threads cannot concurrently create new references to
+    // this object.
+    return (_Py_IsOwnedByCurrentThread(ob) &&
+            _Py_atomic_load_uint32_relaxed(&ob->ob_ref_local) == 1 &&
+            _Py_atomic_load_ssize_relaxed(&ob->ob_ref_shared) == 0);
+#endif
+}
+
 PyAPI_FUNC(void) _Py_SetImmortal(PyObject *op);
 PyAPI_FUNC(void) _Py_SetImmortalUntracked(PyObject *op);
 
@@ -280,6 +306,79 @@ extern PyStatus _PyObject_InitState(PyInterpreterState *interp);
 extern void _PyObject_FiniState(PyInterpreterState *interp);
 extern bool _PyRefchain_IsTraced(PyInterpreterState *interp, PyObject *obj);
 
+#ifndef Py_GIL_DISABLED
+#  define _Py_INCREF_TYPE Py_INCREF
+#  define _Py_DECREF_TYPE Py_DECREF
+#else
+static inline void
+_Py_INCREF_TYPE(PyTypeObject *type)
+{
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        assert(_Py_IsImmortalLoose(type));
+        return;
+    }
+
+    // gh-122974: GCC 11 warns about the access to PyHeapTypeObject fields when
+    // _Py_INCREF_TYPE() is called on a statically allocated type.  The
+    // _PyType_HasFeature check above ensures that the type is a heap type.
+#if defined(__GNUC__) && __GNUC__ >= 11
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
+
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    PyHeapTypeObject *ht = (PyHeapTypeObject *)type;
+
+    // Unsigned comparison so that `unique_id=-1`, which indicates that
+    // per-thread refcounting has been disabled on this type, is handled by
+    // the "else".
+    if ((size_t)ht->unique_id < (size_t)tstate->types.size) {
+#  ifdef Py_REF_DEBUG
+        _Py_INCREF_IncRefTotal();
+#  endif
+        _Py_INCREF_STAT_INC();
+        tstate->types.refcounts[ht->unique_id]++;
+    }
+    else {
+        // The slow path resizes the thread-local refcount array if necessary.
+        // It handles the unique_id=-1 case to keep the inlinable function smaller.
+        _PyType_IncrefSlow(ht);
+    }
+
+#if defined(__GNUC__) && __GNUC__ >= 11
+#  pragma GCC diagnostic pop
+#endif
+}
+
+static inline void
+_Py_DECREF_TYPE(PyTypeObject *type)
+{
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        assert(_Py_IsImmortalLoose(type));
+        return;
+    }
+
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    PyHeapTypeObject *ht = (PyHeapTypeObject *)type;
+
+    // Unsigned comparison so that `unique_id=-1`, which indicates that
+    // per-thread refcounting has been disabled on this type, is handled by
+    // the "else".
+    if ((size_t)ht->unique_id < (size_t)tstate->types.size) {
+#  ifdef Py_REF_DEBUG
+        _Py_DECREF_DecRefTotal();
+#  endif
+        _Py_DECREF_STAT_INC();
+        tstate->types.refcounts[ht->unique_id]--;
+    }
+    else {
+        // Directly decref the type if the type id is not assigned or if
+        // per-thread refcounting has been disabled on this type.
+        Py_DECREF(type);
+    }
+}
+#endif
+
 /* Inline functions trading binary compatibility for speed:
    _PyObject_Init() is the fast version of PyObject_Init(), and
    _PyObject_InitVar() is the fast version of PyObject_InitVar().
@@ -291,7 +390,7 @@ _PyObject_Init(PyObject *op, PyTypeObject *typeobj)
     assert(op != NULL);
     Py_SET_TYPE(op, typeobj);
     assert(_PyType_HasFeature(typeobj, Py_TPFLAGS_HEAPTYPE) || _Py_IsImmortalLoose(typeobj));
-    Py_INCREF(typeobj);
+    _Py_INCREF_TYPE(typeobj);
     _Py_NewReference(op);
 }
 
@@ -679,7 +778,7 @@ static inline int _PyType_SUPPORTS_WEAKREFS(PyTypeObject *type) {
 }
 
 extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
-extern PyObject *_PyType_NewManagedObject(PyTypeObject *type);
+PyAPI_FUNC(PyObject *) _PyType_NewManagedObject(PyTypeObject *type);
 
 extern PyTypeObject* _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
 extern PyObject* _PyType_GetDocFromInternalDoc(const char *, const char *);
@@ -721,10 +820,11 @@ _PyObject_GetManagedDict(PyObject *obj)
 static inline PyDictValues *
 _PyObject_InlineValues(PyObject *obj)
 {
+    PyTypeObject *tp = Py_TYPE(obj);
+    assert(tp->tp_basicsize > 0 && tp->tp_basicsize % sizeof(PyObject *) == 0);
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-    assert(Py_TYPE(obj)->tp_basicsize == sizeof(PyObject));
-    return (PyDictValues *)((char *)obj + sizeof(PyObject));
+    return (PyDictValues *)((char *)obj + tp->tp_basicsize);
 }
 
 extern PyObject ** _PyObject_ComputedDictPointer(PyObject *);

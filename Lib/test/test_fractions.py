@@ -96,7 +96,7 @@ def typed_approx_eq(a, b):
 
 class Symbolic:
     """Simple non-numeric class for testing mixed arithmetic.
-    It is not Integral, Rational, Real or Complex, and cannot be conveted
+    It is not Integral, Rational, Real or Complex, and cannot be converted
     to int, float or complex. but it supports some arithmetic operations.
     """
     def __init__(self, value):

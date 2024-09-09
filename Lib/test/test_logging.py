@@ -3749,16 +3749,16 @@ class ConfigDictTest(BaseTest):
             'adict': {
                 'd': 'e', 'f': 3 ,
                 'alpha numeric 1 with spaces' : 5,
-                'aplha numeric 1 %( - © ©ß¯' : 9,
+                'alpha numeric 1 %( - © ©ß¯' : 9,
                 'alpha numeric ] 1 with spaces' : 15,
-                'aplha ]] numeric 1 %( - © ©ß¯]' : 19,
-                ' aplha [ numeric 1 %( - © ©ß¯] ' : 11,
-                ' aplha ' : 32,
+                'alpha ]] numeric 1 %( - © ©ß¯]' : 19,
+                ' alpha [ numeric 1 %( - © ©ß¯] ' : 11,
+                ' alpha ' : 32,
                 '' : 10,
                 'nest4' : {
                     'd': 'e', 'f': 3 ,
                     'alpha numeric 1 with spaces' : 5,
-                    'aplha numeric 1 %( - © ©ß¯' : 9,
+                    'alpha numeric 1 %( - © ©ß¯' : 9,
                     '' : 10,
                     'somelist' :  ('g', ('h', 'i'), 'j'),
                     'somedict' : {
@@ -3780,14 +3780,14 @@ class ConfigDictTest(BaseTest):
         self.assertEqual(bc.convert('cfg://adict.d'), 'e')
         self.assertEqual(bc.convert('cfg://adict[f]'), 3)
         self.assertEqual(bc.convert('cfg://adict[alpha numeric 1 with spaces]'), 5)
-        self.assertEqual(bc.convert('cfg://adict[aplha numeric 1 %( - © ©ß¯]'), 9)
+        self.assertEqual(bc.convert('cfg://adict[alpha numeric 1 %( - © ©ß¯]'), 9)
         self.assertEqual(bc.convert('cfg://adict[]'), 10)
         self.assertEqual(bc.convert('cfg://adict.nest4.d'), 'e')
         self.assertEqual(bc.convert('cfg://adict.nest4[d]'), 'e')
         self.assertEqual(bc.convert('cfg://adict[nest4].d'), 'e')
         self.assertEqual(bc.convert('cfg://adict[nest4][f]'), 3)
         self.assertEqual(bc.convert('cfg://adict[nest4][alpha numeric 1 with spaces]'), 5)
-        self.assertEqual(bc.convert('cfg://adict[nest4][aplha numeric 1 %( - © ©ß¯]'), 9)
+        self.assertEqual(bc.convert('cfg://adict[nest4][alpha numeric 1 %( - © ©ß¯]'), 9)
         self.assertEqual(bc.convert('cfg://adict[nest4][]'), 10)
         self.assertEqual(bc.convert('cfg://adict[nest4][somelist][0]'), 'g')
         self.assertEqual(bc.convert('cfg://adict[nest4][somelist][1][0]'), 'h')
@@ -3807,8 +3807,8 @@ class ConfigDictTest(BaseTest):
         self.assertRaises(ValueError, bc.convert, 'cfg://!')
         self.assertRaises(KeyError, bc.convert, 'cfg://adict[2]')
         self.assertRaises(KeyError, bc.convert, 'cfg://adict[alpha numeric ] 1 with spaces]')
-        self.assertRaises(ValueError, bc.convert, 'cfg://adict[ aplha ]] numeric 1 %( - © ©ß¯] ]')
-        self.assertRaises(ValueError, bc.convert, 'cfg://adict[ aplha [ numeric 1 %( - © ©ß¯] ]')
+        self.assertRaises(ValueError, bc.convert, 'cfg://adict[ alpha ]] numeric 1 %( - © ©ß¯] ]')
+        self.assertRaises(ValueError, bc.convert, 'cfg://adict[ alpha [ numeric 1 %( - © ©ß¯] ]')
 
     def test_namedtuple(self):
         # see bpo-39142
@@ -4000,7 +4000,7 @@ class ConfigDictTest(BaseTest):
     @skip_if_tsan_fork
     @support.requires_subprocess()
     @unittest.skipUnless(support.Py_DEBUG, "requires a debug build for testing"
-                                           "assertions in multiprocessing")
+                                           " assertions in multiprocessing")
     def test_config_queue_handler_multiprocessing_context(self):
         # regression test for gh-121723
         if support.MS_WINDOWS:
@@ -6196,13 +6196,28 @@ class FileHandlerTest(BaseFileTest):
             self.assertEqual(fp.read().strip(), '1')
 
 class RotatingFileHandlerTest(BaseFileTest):
-    @unittest.skipIf(support.is_wasi, "WASI does not have /dev/null.")
     def test_should_not_rollover(self):
-        # If maxbytes is zero rollover never occurs
+        # If file is empty rollover never occurs
+        rh = logging.handlers.RotatingFileHandler(
+            self.fn, encoding="utf-8", maxBytes=1)
+        self.assertFalse(rh.shouldRollover(None))
+        rh.close()
+
+        # If maxBytes is zero rollover never occurs
         rh = logging.handlers.RotatingFileHandler(
                 self.fn, encoding="utf-8", maxBytes=0)
         self.assertFalse(rh.shouldRollover(None))
         rh.close()
+
+        with open(self.fn, 'wb') as f:
+            f.write(b'\n')
+        rh = logging.handlers.RotatingFileHandler(
+                self.fn, encoding="utf-8", maxBytes=0)
+        self.assertFalse(rh.shouldRollover(None))
+        rh.close()
+
+    @unittest.skipIf(support.is_wasi, "WASI does not have /dev/null.")
+    def test_should_not_rollover_non_file(self):
         # bpo-45401 - test with special file
         # We set maxBytes to 1 so that rollover would normally happen, except
         # for the check for regular files
@@ -6212,17 +6227,46 @@ class RotatingFileHandlerTest(BaseFileTest):
         rh.close()
 
     def test_should_rollover(self):
-        rh = logging.handlers.RotatingFileHandler(self.fn, encoding="utf-8", maxBytes=1)
+        with open(self.fn, 'wb') as f:
+            f.write(b'\n')
+        rh = logging.handlers.RotatingFileHandler(self.fn, encoding="utf-8", maxBytes=2)
         self.assertTrue(rh.shouldRollover(self.next_rec()))
         rh.close()
 
     def test_file_created(self):
         # checks that the file is created and assumes it was created
         # by us
+        os.unlink(self.fn)
         rh = logging.handlers.RotatingFileHandler(self.fn, encoding="utf-8")
         rh.emit(self.next_rec())
         self.assertLogFile(self.fn)
         rh.close()
+
+    def test_max_bytes(self, delay=False):
+        kwargs = {'delay': delay} if delay else {}
+        os.unlink(self.fn)
+        rh = logging.handlers.RotatingFileHandler(
+            self.fn, encoding="utf-8", backupCount=2, maxBytes=100, **kwargs)
+        self.assertIs(os.path.exists(self.fn), not delay)
+        small = logging.makeLogRecord({'msg': 'a'})
+        large = logging.makeLogRecord({'msg': 'b'*100})
+        self.assertFalse(rh.shouldRollover(small))
+        self.assertFalse(rh.shouldRollover(large))
+        rh.emit(small)
+        self.assertLogFile(self.fn)
+        self.assertFalse(os.path.exists(self.fn + ".1"))
+        self.assertFalse(rh.shouldRollover(small))
+        self.assertTrue(rh.shouldRollover(large))
+        rh.emit(large)
+        self.assertTrue(os.path.exists(self.fn))
+        self.assertLogFile(self.fn + ".1")
+        self.assertFalse(os.path.exists(self.fn + ".2"))
+        self.assertTrue(rh.shouldRollover(small))
+        self.assertTrue(rh.shouldRollover(large))
+        rh.close()
+
+    def test_max_bytes_delay(self):
+        self.test_max_bytes(delay=True)
 
     def test_rollover_filenames(self):
         def namer(name):
@@ -6232,10 +6276,14 @@ class RotatingFileHandlerTest(BaseFileTest):
         rh.namer = namer
         rh.emit(self.next_rec())
         self.assertLogFile(self.fn)
+        self.assertFalse(os.path.exists(namer(self.fn + ".1")))
         rh.emit(self.next_rec())
         self.assertLogFile(namer(self.fn + ".1"))
+        self.assertFalse(os.path.exists(namer(self.fn + ".2")))
         rh.emit(self.next_rec())
         self.assertLogFile(namer(self.fn + ".2"))
+        self.assertFalse(os.path.exists(namer(self.fn + ".3")))
+        rh.emit(self.next_rec())
         self.assertFalse(os.path.exists(namer(self.fn + ".3")))
         rh.close()
 

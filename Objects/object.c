@@ -1258,9 +1258,9 @@ PyObject_GetOptionalAttr(PyObject *v, PyObject *name, PyObject **result)
         return 0;
     }
     if (tp->tp_getattro == _Py_type_getattro) {
-        int supress_missing_attribute_exception = 0;
-        *result = _Py_type_getattro_impl((PyTypeObject*)v, name, &supress_missing_attribute_exception);
-        if (supress_missing_attribute_exception) {
+        int suppress_missing_attribute_exception = 0;
+        *result = _Py_type_getattro_impl((PyTypeObject*)v, name, &suppress_missing_attribute_exception);
+        if (suppress_missing_attribute_exception) {
             // return 0 without having to clear the exception
             return 0;
         }
@@ -2347,6 +2347,7 @@ static PyTypeObject* static_types[] = {
     &_PyWeakref_ProxyType,
     &_PyWeakref_RefType,
     &_PyTypeAlias_Type,
+    &_PyNoDefault_Type,
 
     // subclasses: _PyTypes_FiniTypes() deallocates them before their base
     // class
@@ -2477,15 +2478,7 @@ _PyObject_SetDeferredRefcount(PyObject *op)
     assert(_Py_IsOwnedByCurrentThread(op));
     assert(op->ob_ref_shared == 0);
     _PyObject_SET_GC_BITS(op, _PyGC_BITS_DEFERRED);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (_Py_atomic_load_int_relaxed(&interp->gc.immortalize) == 1) {
-        // gh-117696: immortalize objects instead of using deferred reference
-        // counting for now.
-        _Py_SetImmortal(op);
-        return;
-    }
-    op->ob_ref_local += 1;
-    op->ob_ref_shared = _Py_REF_QUEUED;
+    op->ob_ref_shared = _Py_REF_SHARED(_Py_REF_DEFERRED, 0);
 #endif
 }
 

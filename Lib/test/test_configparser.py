@@ -2161,6 +2161,19 @@ class SectionlessTestCase(unittest.TestCase):
         self.assertEqual('1', cfg2[configparser.UNNAMED_SECTION]['a'])
         self.assertEqual('2', cfg2[configparser.UNNAMED_SECTION]['b'])
 
+    def test_add_section(self):
+        cfg = configparser.ConfigParser(allow_unnamed_section=True)
+        cfg.add_section(configparser.UNNAMED_SECTION)
+        cfg.set(configparser.UNNAMED_SECTION, 'a', '1')
+        self.assertEqual('1', cfg[configparser.UNNAMED_SECTION]['a'])
+
+    def test_disabled_error(self):
+        with self.assertRaises(configparser.MissingSectionHeaderError):
+            configparser.ConfigParser().read_string("a = 1")
+
+        with self.assertRaises(configparser.UnnamedSectionDisabledError):
+            configparser.ConfigParser().add_section(configparser.UNNAMED_SECTION)
+
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
