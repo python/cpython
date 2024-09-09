@@ -40,6 +40,7 @@ The following modules have a command-line interface.
 * :mod:`runpy`
 * :ref:`site <site-commandline>`
 * :ref:`sqlite3 <sqlite3-cli>`
+* :ref:`symtable <symtable-cli>`
 * :ref:`sysconfig <sysconfig-cli>`
 * :mod:`tabnanny`
 * :ref:`tarfile <tarfile-commandline>`
