@@ -3767,42 +3767,46 @@ module_init(asyncio_state *state)
         goto fail;
     }
 
-#define WITH_MOD(NAME) \
-    Py_CLEAR(module); \
-    module = PyImport_ImportModule(NAME); \
-    if (module == NULL) { \
-        goto fail; \
-    }
+#define WITH_MOD(NAME)                          \
+    do {                                        \
+        Py_CLEAR(module);                       \
+        module = PyImport_ImportModule(NAME);   \
+        if (module == NULL) {                   \
+            goto fail;                          \
+        }                                       \
+    } while (0)
 
-#define GET_MOD_ATTR(VAR, NAME) \
-    VAR = PyObject_GetAttrString(module, NAME); \
-    if (VAR == NULL) { \
-        goto fail; \
-    }
+#define GET_MOD_ATTR(VAR, NAME)                     \
+    do {                                            \
+        VAR = PyObject_GetAttrString(module, NAME); \
+        if (VAR == NULL) {                          \
+            goto fail;                              \
+        }                                           \
+    } while (0)
 
-    WITH_MOD("asyncio.events")
-    GET_MOD_ATTR(state->asyncio_get_event_loop_policy, "get_event_loop_policy")
+    WITH_MOD("asyncio.events");
+    GET_MOD_ATTR(state->asyncio_get_event_loop_policy, "get_event_loop_policy");
 
-    WITH_MOD("asyncio.base_futures")
-    GET_MOD_ATTR(state->asyncio_future_repr_func, "_future_repr")
+    WITH_MOD("asyncio.base_futures");
+    GET_MOD_ATTR(state->asyncio_future_repr_func, "_future_repr");
 
-    WITH_MOD("asyncio.exceptions")
-    GET_MOD_ATTR(state->asyncio_InvalidStateError, "InvalidStateError")
-    GET_MOD_ATTR(state->asyncio_CancelledError, "CancelledError")
+    WITH_MOD("asyncio.exceptions");
+    GET_MOD_ATTR(state->asyncio_InvalidStateError, "InvalidStateError");
+    GET_MOD_ATTR(state->asyncio_CancelledError, "CancelledError");
 
-    WITH_MOD("asyncio.base_tasks")
-    GET_MOD_ATTR(state->asyncio_task_repr_func, "_task_repr")
-    GET_MOD_ATTR(state->asyncio_task_get_stack_func, "_task_get_stack")
-    GET_MOD_ATTR(state->asyncio_task_print_stack_func, "_task_print_stack")
+    WITH_MOD("asyncio.base_tasks");
+    GET_MOD_ATTR(state->asyncio_task_repr_func, "_task_repr");
+    GET_MOD_ATTR(state->asyncio_task_get_stack_func, "_task_get_stack");
+    GET_MOD_ATTR(state->asyncio_task_print_stack_func, "_task_print_stack");
 
-    WITH_MOD("asyncio.coroutines")
-    GET_MOD_ATTR(state->asyncio_iscoroutine_func, "iscoroutine")
+    WITH_MOD("asyncio.coroutines");
+    GET_MOD_ATTR(state->asyncio_iscoroutine_func, "iscoroutine");
 
-    WITH_MOD("traceback")
-    GET_MOD_ATTR(state->traceback_extract_stack, "extract_stack")
+    WITH_MOD("traceback");
+    GET_MOD_ATTR(state->traceback_extract_stack, "extract_stack");
 
     PyObject *weak_set;
-    WITH_MOD("weakref")
+    WITH_MOD("weakref");
     GET_MOD_ATTR(weak_set, "WeakSet");
     state->non_asyncio_tasks = PyObject_CallNoArgs(weak_set);
     Py_CLEAR(weak_set);
