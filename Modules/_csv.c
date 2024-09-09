@@ -731,7 +731,7 @@ parse_process_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
         }
         /* normal character - handle as START_FIELD */
         self->state = START_FIELD;
-        /* fallthru */
+        _Py_FALLTHROUGH;
     case START_FIELD:
         /* expecting field */
         self->unquoted_field = true;
@@ -749,7 +749,6 @@ parse_process_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
         }
         else if (c == dialect->escapechar) {
             /* possible escaped character */
-            self->unquoted_field = false;
             self->state = ESCAPED_CHAR;
         }
         else if (c == ' ' && dialect->skipinitialspace)
@@ -785,7 +784,7 @@ parse_process_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
     case AFTER_ESCAPED_CRNL:
         if (c == EOL)
             break;
-        /*fallthru*/
+        _Py_FALLTHROUGH;
 
     case IN_FIELD:
         /* in unquoted field */
@@ -1073,7 +1072,7 @@ csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
         return NULL;
     }
 
-    if (!PyArg_UnpackTuple(args, "", 1, 2, &iterator, &dialect)) {
+    if (!PyArg_UnpackTuple(args, "reader", 1, 2, &iterator, &dialect)) {
         Py_DECREF(self);
         return NULL;
     }
@@ -1520,7 +1519,7 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
 
     self->error_obj = Py_NewRef(module_state->error_obj);
 
-    if (!PyArg_UnpackTuple(args, "", 1, 2, &output_file, &dialect)) {
+    if (!PyArg_UnpackTuple(args, "writer", 1, 2, &output_file, &dialect)) {
         Py_DECREF(self);
         return NULL;
     }
@@ -1572,7 +1571,7 @@ csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
     _csvstate *module_state = get_csv_state(module);
     PyObject *dialect;
 
-    if (!PyArg_UnpackTuple(args, "", 1, 2, &name_obj, &dialect_obj))
+    if (!PyArg_UnpackTuple(args, "register_dialect", 1, 2, &name_obj, &dialect_obj))
         return NULL;
     if (!PyUnicode_Check(name_obj)) {
         PyErr_SetString(PyExc_TypeError,
@@ -1796,6 +1795,7 @@ csv_exec(PyObject *module) {
 static PyModuleDef_Slot csv_slots[] = {
     {Py_mod_exec, csv_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

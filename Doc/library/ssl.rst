@@ -1,5 +1,5 @@
-:mod:`ssl` --- TLS/SSL wrapper for socket objects
-=================================================
+:mod:`!ssl` --- TLS/SSL wrapper for socket objects
+==================================================
 
 .. module:: ssl
    :synopsis: TLS/SSL wrapper for socket objects
@@ -781,7 +781,7 @@ Constants
 
 .. data:: OP_SINGLE_DH_USE
 
-   Prevents re-use of the same DH key for distinct SSL sessions.  This
+   Prevents reuse of the same DH key for distinct SSL sessions.  This
    improves forward secrecy but requires more computational resources.
    This option only applies to server sockets.
 
@@ -789,7 +789,7 @@ Constants
 
 .. data:: OP_SINGLE_ECDH_USE
 
-   Prevents re-use of the same ECDH key for distinct SSL sessions.  This
+   Prevents reuse of the same ECDH key for distinct SSL sessions.  This
    improves forward secrecy but requires more computational resources.
    This option only applies to server sockets.
 
@@ -1049,25 +1049,25 @@ SSL Sockets
 
    SSL sockets provide the following methods of :ref:`socket-objects`:
 
-   - :meth:`~socket.socket.accept()`
-   - :meth:`~socket.socket.bind()`
-   - :meth:`~socket.socket.close()`
-   - :meth:`~socket.socket.connect()`
-   - :meth:`~socket.socket.detach()`
-   - :meth:`~socket.socket.fileno()`
-   - :meth:`~socket.socket.getpeername()`, :meth:`~socket.socket.getsockname()`
-   - :meth:`~socket.socket.getsockopt()`, :meth:`~socket.socket.setsockopt()`
-   - :meth:`~socket.socket.gettimeout()`, :meth:`~socket.socket.settimeout()`,
-     :meth:`~socket.socket.setblocking()`
-   - :meth:`~socket.socket.listen()`
-   - :meth:`~socket.socket.makefile()`
-   - :meth:`~socket.socket.recv()`, :meth:`~socket.socket.recv_into()`
+   - :meth:`~socket.socket.accept`
+   - :meth:`~socket.socket.bind`
+   - :meth:`~socket.socket.close`
+   - :meth:`~socket.socket.connect`
+   - :meth:`~socket.socket.detach`
+   - :meth:`~socket.socket.fileno`
+   - :meth:`~socket.socket.getpeername`, :meth:`~socket.socket.getsockname`
+   - :meth:`~socket.socket.getsockopt`, :meth:`~socket.socket.setsockopt`
+   - :meth:`~socket.socket.gettimeout`, :meth:`~socket.socket.settimeout`,
+     :meth:`~socket.socket.setblocking`
+   - :meth:`~socket.socket.listen`
+   - :meth:`~socket.socket.makefile`
+   - :meth:`~socket.socket.recv`, :meth:`~socket.socket.recv_into`
      (but passing a non-zero ``flags`` argument is not allowed)
-   - :meth:`~socket.socket.send()`, :meth:`~socket.socket.sendall()` (with
+   - :meth:`~socket.socket.send`, :meth:`~socket.socket.sendall` (with
      the same limitation)
-   - :meth:`~socket.socket.sendfile()` (but :mod:`os.sendfile` will be used
-     for plain-text sockets only, else :meth:`~socket.socket.send()` will be used)
-   - :meth:`~socket.socket.shutdown()`
+   - :meth:`~socket.socket.sendfile` (but :mod:`os.sendfile` will be used
+     for plain-text sockets only, else :meth:`~socket.socket.send` will be used)
+   - :meth:`~socket.socket.shutdown`
 
    However, since the SSL (and TLS) protocol has its own framing atop
    of TCP, the SSL sockets abstraction can, in certain respects, diverge from
@@ -1472,6 +1472,19 @@ to speed up repeated connections from the same clients.
       :data:`PROTOCOL_TLS`, :data:`PROTOCOL_TLS_CLIENT`, and
       :data:`PROTOCOL_TLS_SERVER` use TLS 1.2 as minimum TLS version.
 
+   .. note::
+
+      :class:`SSLContext` only supports limited mutation once it has been used
+      by a connection. Adding new certificates to the internal trust store is
+      allowed, but changing ciphers, verification settings, or mTLS
+      certificates may result in surprising behavior.
+
+   .. note::
+
+      :class:`SSLContext` is designed to be shared and used by multiple
+      connections.
+      Thus, it is thread-safe as long as it is not reconfigured after being
+      used by a connection.
 
 :class:`SSLContext` objects have the following methods and attributes:
 
@@ -1729,7 +1742,7 @@ to speed up repeated connections from the same clients.
    IDN-encoded internationalized domain name, the *server_name_callback*
    receives a decoded U-label (``"pythön.org"``).
 
-   If there is an decoding error on the server name, the TLS connection will
+   If there is a decoding error on the server name, the TLS connection will
    terminate with an :const:`ALERT_DESCRIPTION_INTERNAL_ERROR` fatal TLS
    alert message to the client.
 
@@ -1820,7 +1833,7 @@ to speed up repeated connections from the same clients.
    .. versionchanged:: 3.6
       *session* argument was added.
 
-    .. versionchanged:: 3.7
+   .. versionchanged:: 3.7
       The method returns an instance of :attr:`SSLContext.sslsocket_class`
       instead of hard-coded :class:`SSLSocket`.
 
@@ -2697,7 +2710,7 @@ Verifying certificates
 
 When calling the :class:`SSLContext` constructor directly,
 :const:`CERT_NONE` is the default.  Since it does not authenticate the other
-peer, it can be insecure, especially in client mode where most of time you
+peer, it can be insecure, especially in client mode where most of the time you
 would like to ensure the authenticity of the server you're talking to.
 Therefore, when in client mode, it is highly recommended to use
 :const:`CERT_REQUIRED`.  However, it is in itself not sufficient; you also

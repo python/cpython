@@ -193,15 +193,18 @@ class RotatingFileHandler(BaseRotatingHandler):
         Basically, see if the supplied record would cause the file to exceed
         the size limit we have.
         """
-        # See bpo-45401: Never rollover anything other than regular files
-        if os.path.exists(self.baseFilename) and not os.path.isfile(self.baseFilename):
-            return False
         if self.stream is None:                 # delay was set...
             self.stream = self._open()
         if self.maxBytes > 0:                   # are we rolling over?
+            pos = self.stream.tell()
+            if not pos:
+                # gh-116263: Never rollover an empty file
+                return False
             msg = "%s\n" % self.format(record)
-            self.stream.seek(0, 2)  #due to non-posix-compliant Windows feature
-            if self.stream.tell() + len(msg) >= self.maxBytes:
+            if pos + len(msg) >= self.maxBytes:
+                # See bpo-45401: Never rollover anything other than regular files
+                if os.path.exists(self.baseFilename) and not os.path.isfile(self.baseFilename):
+                    return False
                 return True
         return False
 
@@ -340,7 +343,10 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                         daysToWait = self.dayOfWeek - day
                     else:
                         daysToWait = 6 - day + self.dayOfWeek + 1
-                    result += daysToWait * (60 * 60 * 24)
+                    result += daysToWait * _MIDNIGHT
+                result += self.interval - _MIDNIGHT * 7
+            else:
+                result += self.interval - _MIDNIGHT
             if not self.utc:
                 dstNow = t[-1]
                 dstAtRollover = time.localtime(result)[-1]

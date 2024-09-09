@@ -1,8 +1,9 @@
-import _ctypes_test
 import ctypes
 import unittest
 from ctypes import (CDLL, Structure, CFUNCTYPE, sizeof, _CFuncPtr,
                     c_void_p, c_char_p, c_char, c_int, c_uint, c_long)
+from test.support import import_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
 from ._support import (_CData, PyCFuncPtrType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
                        Py_TPFLAGS_IMMUTABLETYPE)
 
@@ -28,6 +29,12 @@ class CFuncPtrTestCase(unittest.TestCase):
             with self.subTest(cls=cls):
                 self.assertTrue(_CFuncPtr.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
                 self.assertFalse(_CFuncPtr.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
+
+    def test_metaclass_details(self):
+        # Cannot call the metaclass __init__ more than once
+        CdeclCallback = CFUNCTYPE(c_int, c_int, c_int)
+        with self.assertRaisesRegex(SystemError, "already initialized"):
+            PyCFuncPtrType.__init__(CdeclCallback, 'ptr', (), {})
 
     def test_basic(self):
         X = WINFUNCTYPE(c_int, c_int, c_int)

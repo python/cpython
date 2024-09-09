@@ -119,9 +119,9 @@ may name multiple exceptions as a parenthesized tuple, for example::
    ... except (RuntimeError, TypeError, NameError):
    ...     pass
 
-A class in an :keyword:`except` clause is compatible with an exception if it is
-the same class or a base class thereof (but not the other way around --- an
-*except clause* listing a derived class is not compatible with a base class).
+A class in an :keyword:`except` clause matches exceptions which are instances of the
+class itself or one of its derived classes (but not the other way around --- an
+*except clause* listing a derived class does not match instances of its base classes).
 For example, the following code will print B, C, D in that order::
 
    class B(Exception):

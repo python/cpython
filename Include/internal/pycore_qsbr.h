@@ -140,7 +140,7 @@ _Py_qsbr_register(struct _PyThreadStateImpl *tstate,
 
 // Disassociates a PyThreadState from the QSBR state and frees the QSBR state.
 extern void
-_Py_qsbr_unregister(struct _PyThreadStateImpl *tstate);
+_Py_qsbr_unregister(PyThreadState *tstate);
 
 extern void
 _Py_qsbr_fini(PyInterpreterState *interp);

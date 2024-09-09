@@ -1,5 +1,5 @@
-:mod:`uuid` --- UUID objects according to :rfc:`4122`
-=====================================================
+:mod:`!uuid` --- UUID objects according to :rfc:`4122`
+======================================================
 
 .. module:: uuid
    :synopsis: UUID objects (universally unique identifiers) according to RFC 4122

@@ -15,7 +15,7 @@ from the HACL* project.
 .. section: Security
 
 Updated the OpenSSL version used in Windows and macOS binary release builds
-to 1.1.1t to address CVE-2023-0286, CVE-2022-4303, and CVE-2022-4303 per
+to 1.1.1t to address :cve:`2023-0286`, :cve:`2022-4303`, and :cve:`2022-4303` per
 `the OpenSSL 2023-02-07 security advisory
 <https://www.openssl.org/news/secadv/20230207.txt>`_.
 
@@ -453,7 +453,7 @@ E. Aasland.
 .. section: Library
 
 Change repr of :class:`collections.OrderedDict` to use regular dictionary
-formating instead of pairs of keys and values.
+formatting instead of pairs of keys and values.
 
 ..
 

@@ -257,13 +257,14 @@ void
 _PyErr_SetKeyError(PyObject *arg)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *tup = PyTuple_Pack(1, arg);
-    if (!tup) {
+    PyObject *exc = PyObject_CallOneArg(PyExc_KeyError, arg);
+    if (!exc) {
         /* caller will expect error to be set anyway */
         return;
     }
-    _PyErr_SetObject(tstate, PyExc_KeyError, tup);
-    Py_DECREF(tup);
+
+    _PyErr_SetObject(tstate, (PyObject*)Py_TYPE(exc), exc);
+    Py_DECREF(exc);
 }
 
 void
@@ -632,8 +633,8 @@ _PyErr_StackItemToExcInfoTuple(_PyErr_StackItem *err_info)
     PyObject *exc_type = get_exc_type(exc_value);
     PyObject *exc_traceback = get_exc_traceback(exc_value);
 
-    return Py_BuildValue(
-        "(OOO)",
+    return PyTuple_Pack(
+        3,
         exc_type ? exc_type : Py_None,
         exc_value ? exc_value : Py_None,
         exc_traceback ? exc_traceback : Py_None);

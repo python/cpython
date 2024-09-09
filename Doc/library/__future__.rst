@@ -1,5 +1,5 @@
-:mod:`__future__` --- Future statement definitions
-==================================================
+:mod:`!__future__` --- Future statement definitions
+===================================================
 
 .. module:: __future__
    :synopsis: Future statement definitions

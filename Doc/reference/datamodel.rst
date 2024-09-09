@@ -106,12 +106,16 @@ that mutable object is changed.
 Types affect almost all aspects of object behavior.  Even the importance of
 object identity is affected in some sense: for immutable types, operations that
 compute new values may actually return a reference to any existing object with
-the same type and value, while for mutable objects this is not allowed.  E.g.,
-after ``a = 1; b = 1``, ``a`` and ``b`` may or may not refer to the same object
-with the value one, depending on the implementation, but after ``c = []; d =
-[]``, ``c`` and ``d`` are guaranteed to refer to two different, unique, newly
-created empty lists. (Note that ``c = d = []`` assigns the same object to both
-``c`` and ``d``.)
+the same type and value, while for mutable objects this is not allowed.
+For example, after ``a = 1; b = 1``, *a* and *b* may or may not refer to
+the same object with the value one, depending on the implementation.
+This is because :class:`int` is an immutable type, so the reference to ``1``
+can be reused. This behaviour depends on the implementation used, so should
+not be relied upon, but is something to be aware of when making use of object
+identity tests.
+However, after ``c = []; d = []``, *c* and *d* are guaranteed to refer to two
+different, unique, newly created empty lists. (Note that ``e = f = []`` assigns
+the *same* object to both *e* and *f*.)
 
 
 .. _types:
@@ -170,9 +174,12 @@ See
 for more details.
 
 .. versionchanged:: 3.9
-   Evaluating :data:`NotImplemented` in a boolean context is deprecated. While
-   it currently evaluates as true, it will emit a :exc:`DeprecationWarning`.
-   It will raise a :exc:`TypeError` in a future version of Python.
+   Evaluating :data:`NotImplemented` in a boolean context was deprecated.
+
+.. versionchanged:: 3.14
+   Evaluating :data:`NotImplemented` in a boolean context now raises a :exc:`TypeError`.
+   It previously evaluated to :const:`True` and emitted a :exc:`DeprecationWarning`
+   since Python 3.9.
 
 
 Ellipsis
@@ -215,7 +222,7 @@ properties:
 
 * A sign is shown only when the number is negative.
 
-Python distinguishes between integers, floating point numbers, and complex
+Python distinguishes between integers, floating-point numbers, and complex
 numbers:
 
 
@@ -259,18 +266,18 @@ Booleans (:class:`bool`)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. index::
-   pair: object; floating point
-   pair: floating point; number
+   pair: object; floating-point
+   pair: floating-point; number
    pair: C; language
    pair: Java; language
 
-These represent machine-level double precision floating point numbers. You are
+These represent machine-level double precision floating-point numbers. You are
 at the mercy of the underlying machine architecture (and C or Java
 implementation) for the accepted range and handling of overflow. Python does not
-support single-precision floating point numbers; the savings in processor and
+support single-precision floating-point numbers; the savings in processor and
 memory usage that are usually the reason for using these are dwarfed by the
 overhead of using objects in Python, so there is no reason to complicate the
-language with two kinds of floating point numbers.
+language with two kinds of floating-point numbers.
 
 
 :class:`numbers.Complex` (:class:`complex`)
@@ -281,7 +288,7 @@ language with two kinds of floating point numbers.
    pair: complex; number
 
 These represent complex numbers as a pair of machine-level double precision
-floating point numbers.  The same caveats apply as for floating point numbers.
+floating-point numbers.  The same caveats apply as for floating-point numbers.
 The real and imaginary parts of a complex number ``z`` can be retrieved through
 the read-only attributes ``z.real`` and ``z.imag``.
 
@@ -299,14 +306,17 @@ Sequences
 These represent finite ordered sets indexed by non-negative numbers. The
 built-in function :func:`len` returns the number of items of a sequence. When
 the length of a sequence is *n*, the index set contains the numbers 0, 1,
-..., *n*-1.  Item *i* of sequence *a* is selected by ``a[i]``.
+..., *n*-1.  Item *i* of sequence *a* is selected by ``a[i]``. Some sequences,
+including built-in sequences, interpret negative subscripts by adding the
+sequence length. For example, ``a[-2]`` equals ``a[n-2]``, the second to last
+item of sequence a with length ``n``.
 
 .. index:: single: slicing
 
 Sequences also support slicing: ``a[i:j]`` selects all items with index *k* such
 that *i* ``<=`` *k* ``<`` *j*.  When used as an expression, a slice is a
-sequence of the same type.  This implies that the index set is renumbered so
-that it starts at 0.
+sequence of the same type. The comment above about negative indexes also applies
+to negative slice positions.
 
 Some sequences also support "extended slicing" with a third "step" parameter:
 ``a[i:j:k]`` selects all items of *a* with index *x* where ``x = i + n*k``, *n*
@@ -370,7 +380,7 @@ Bytes
 
    A bytes object is an immutable array.  The items are 8-bit bytes,
    represented by integers in the range 0 <= x < 256.  Bytes literals
-   (like ``b'abc'``) and the built-in :func:`bytes()` constructor
+   (like ``b'abc'``) and the built-in :func:`bytes` constructor
    can be used to create bytes objects.  Also, bytes objects can be
    decoded to strings via the :meth:`~bytes.decode` method.
 
@@ -489,7 +499,7 @@ in the same order they were added sequentially over the dictionary.
 Replacing an existing key does not change the order, however removing a key
 and re-inserting it will add it to the end instead of keeping its old place.
 
-Dictionaries are mutable; they can be created by the ``{...}`` notation (see
+Dictionaries are mutable; they can be created by the ``{}`` notation (see
 section :ref:`dict`).
 
 .. index::
@@ -724,14 +734,7 @@ When an instance method object is derived from a :class:`classmethod` object, th
 itself, so that calling either ``x.f(1)`` or ``C.f(1)`` is equivalent to
 calling ``f(C,1)`` where ``f`` is the underlying function.
 
-Note that the transformation from :ref:`function object <user-defined-funcs>`
-to instance method
-object happens each time the attribute is retrieved from the instance.  In
-some cases, a fruitful optimization is to assign the attribute to a local
-variable and call that local variable. Also notice that this
-transformation only happens for user-defined functions; other callable
-objects (and all non-callable objects) are retrieved without
-transformation.  It is also important to note that user-defined functions
+It is important to note that user-defined functions
 which are attributes of a class instance are not converted to bound
 methods; this *only* happens when the function is an attribute of the
 class.
@@ -929,11 +932,8 @@ name is not found there, the attribute search continues in the base classes.
 This search of the base classes uses the C3 method resolution order which
 behaves correctly even in the presence of 'diamond' inheritance structures
 where there are multiple inheritance paths leading back to a common ancestor.
-Additional details on the C3 MRO used by Python can be found in the
-documentation accompanying the 2.3 release at
-https://www.python.org/download/releases/2.3/mro/.
-
-.. XXX: Could we add that MRO doc as an appendix to the language ref?
+Additional details on the C3 MRO used by Python can be found at
+:ref:`python_2.3_mro`.
 
 .. index::
    pair: object; class
@@ -970,6 +970,8 @@ A class object can be called (see above) to yield a class instance (see below).
    single: __doc__ (class attribute)
    single: __annotations__ (class attribute)
    single: __type_params__ (class attribute)
+   single: __static_attributes__ (class attribute)
+   single: __firstlineno__ (class attribute)
 
 Special attributes:
 
@@ -999,6 +1001,13 @@ Special attributes:
    :attr:`__type_params__`
       A tuple containing the :ref:`type parameters <type-params>` of
       a :ref:`generic class <generic-classes>`.
+
+   :attr:`~class.__static_attributes__`
+      A tuple containing names of attributes of this class which are assigned
+      through ``self.X`` from any function in its body.
+
+   :attr:`__firstlineno__`
+      The line number of the first line of the class definition, including decorators.
 
 
 Class instances
@@ -1231,7 +1240,7 @@ Methods on code objects
 
    The iterator returns :class:`tuple`\s containing the ``(start_line, end_line,
    start_column, end_column)``. The *i-th* tuple corresponds to the
-   position of the source code that compiled to the *i-th* instruction.
+   position of the source code that compiled to the *i-th* code unit.
    Column information is 0-indexed utf-8 byte offsets on the given source
    line.
 
@@ -1335,8 +1344,13 @@ Special read-only attributes
        ``object.__getattr__`` with arguments ``obj`` and ``"f_code"``.
 
    * - .. attribute:: frame.f_locals
-     - The dictionary used by the frame to look up
-       :ref:`local variables <naming>`
+     - The mapping used by the frame to look up
+       :ref:`local variables <naming>`.
+       If the frame refers to an :term:`optimized scope`,
+       this may return a write-through proxy object.
+
+       .. versionchanged:: 3.13
+          Return a proxy for optimized scopes.
 
    * - .. attribute:: frame.f_globals
      - The dictionary used by the frame to look up
@@ -1650,6 +1664,8 @@ Basic customization
 
    It is not guaranteed that :meth:`__del__` methods are called for objects
    that still exist when the interpreter exits.
+   :class:`weakref.finalize` provides a straightforward way to register
+   a cleanup function to be called when an object is garbage collected.
 
    .. note::
 
@@ -3110,11 +3126,8 @@ left undefined.
    return the value of the object truncated to an :class:`~numbers.Integral`
    (typically an :class:`int`).
 
-   The built-in function :func:`int` falls back to :meth:`__trunc__` if neither
-   :meth:`__int__` nor :meth:`__index__` is defined.
-
-   .. versionchanged:: 3.11
-      The delegation of :func:`int` to :meth:`__trunc__` is deprecated.
+   .. versionchanged:: 3.14
+      :func:`int` no longer delegates to the :meth:`~object.__trunc__` method.
 
 
 .. _context-managers:

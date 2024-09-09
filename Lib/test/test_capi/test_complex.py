@@ -10,6 +10,7 @@ from test.support import import_helper
 
 
 _testcapi = import_helper.import_module('_testcapi')
+_testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 
 NULL = None
 INF = float("inf")
@@ -25,7 +26,7 @@ class BadComplex3:
 class CAPIComplexTest(unittest.TestCase):
     def test_check(self):
         # Test PyComplex_Check()
-        check = _testcapi.complex_check
+        check = _testlimitedcapi.complex_check
 
         self.assertTrue(check(1+2j))
         self.assertTrue(check(ComplexSubclass(1+2j)))
@@ -38,7 +39,7 @@ class CAPIComplexTest(unittest.TestCase):
 
     def test_checkexact(self):
         # PyComplex_CheckExact()
-        checkexact = _testcapi.complex_checkexact
+        checkexact = _testlimitedcapi.complex_checkexact
 
         self.assertTrue(checkexact(1+2j))
         self.assertFalse(checkexact(ComplexSubclass(1+2j)))
@@ -57,13 +58,13 @@ class CAPIComplexTest(unittest.TestCase):
 
     def test_fromdoubles(self):
         # Test PyComplex_FromDoubles()
-        fromdoubles = _testcapi.complex_fromdoubles
+        fromdoubles = _testlimitedcapi.complex_fromdoubles
 
         self.assertEqual(fromdoubles(1.0, 2.0), 1.0+2.0j)
 
     def test_realasdouble(self):
         # Test PyComplex_RealAsDouble()
-        realasdouble = _testcapi.complex_realasdouble
+        realasdouble = _testlimitedcapi.complex_realasdouble
 
         self.assertEqual(realasdouble(1+2j), 1.0)
         self.assertEqual(realasdouble(-1+0j), -1.0)
@@ -98,7 +99,7 @@ class CAPIComplexTest(unittest.TestCase):
 
     def test_imagasdouble(self):
         # Test PyComplex_ImagAsDouble()
-        imagasdouble = _testcapi.complex_imagasdouble
+        imagasdouble = _testlimitedcapi.complex_imagasdouble
 
         self.assertEqual(imagasdouble(1+2j), 2.0)
         self.assertEqual(imagasdouble(1-1j), -1.0)

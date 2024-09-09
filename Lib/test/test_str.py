@@ -1578,7 +1578,7 @@ class StrTest(string_tests.StringLikeTest,
         self.assertRaisesRegex(TypeError, '%u format: a real number is required, not complex', operator.mod, '%u', 3j)
         self.assertRaisesRegex(TypeError, '%i format: a real number is required, not complex', operator.mod, '%i', 2j)
         self.assertRaisesRegex(TypeError, '%d format: a real number is required, not complex', operator.mod, '%d', 1j)
-        self.assertRaisesRegex(TypeError, '%c requires int or char', operator.mod, '%c', pi)
+        self.assertRaisesRegex(TypeError, r'%c requires an int or a unicode character, not .*\.PseudoFloat', operator.mod, '%c', pi)
 
         class RaisingNumber:
             def __int__(self):
@@ -1735,8 +1735,6 @@ class StrTest(string_tests.StringLikeTest,
             ),
             'character buffers are decoded to unicode'
         )
-
-        self.assertRaises(TypeError, str, 42, 42, 42)
 
     def test_constructor_keyword_args(self):
         """Pass various keyword argument combinations to the constructor."""
@@ -2650,6 +2648,47 @@ class StrTest(string_tests.StringLikeTest,
         ''')
         proc = assert_python_failure('-X', 'dev', '-c', code)
         self.assertEqual(proc.rc, 10, proc)
+
+    def test_str_invalid_call(self):
+        # too many args
+        with self.assertRaisesRegex(TypeError, r"str expected at most 3 arguments, got 4"):
+            str("too", "many", "argu", "ments")
+        with self.assertRaisesRegex(TypeError, r"str expected at most 3 arguments, got 4"):
+            str(1, "", "", 1)
+
+        # no such kw arg
+        with self.assertRaisesRegex(TypeError, r"str\(\) got an unexpected keyword argument 'test'"):
+            str(test=1)
+
+        # 'encoding' must be str
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'encoding' must be str, not int"):
+            str(1, 1)
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'encoding' must be str, not int"):
+            str(1, encoding=1)
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'encoding' must be str, not bytes"):
+            str(b"x", b"ascii")
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'encoding' must be str, not bytes"):
+            str(b"x", encoding=b"ascii")
+
+        # 'errors' must be str
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'encoding' must be str, not int"):
+            str(1, 1, 1)
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'errors' must be str, not int"):
+            str(1, errors=1)
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'errors' must be str, not int"):
+            str(1, "", errors=1)
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'errors' must be str, not bytes"):
+            str(b"x", "ascii", b"strict")
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'errors' must be str, not bytes"):
+            str(b"x", "ascii", errors=b"strict")
+
+        # both positional and kwarg
+        with self.assertRaisesRegex(TypeError, r"argument for str\(\) given by name \('encoding'\) and position \(2\)"):
+            str(b"x", "utf-8", encoding="ascii")
+        with self.assertRaisesRegex(TypeError, r"str\(\) takes at most 3 arguments \(4 given\)"):
+            str(b"x", "utf-8", "ignore", encoding="ascii")
+        with self.assertRaisesRegex(TypeError, r"str\(\) takes at most 3 arguments \(4 given\)"):
+            str(b"x", "utf-8", "strict", errors="ignore")
 
 
 class StringModuleTest(unittest.TestCase):

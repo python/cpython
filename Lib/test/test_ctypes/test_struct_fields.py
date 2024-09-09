@@ -60,7 +60,6 @@ class StructFieldsTestCase(unittest.TestCase):
         self.assertRaises(TypeError, CField)
 
     def test_cfield_type_flags(self):
-        self.assertTrue(CField.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
         self.assertTrue(CField.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
 
     def test_cfield_inheritance_hierarchy(self):
@@ -69,7 +68,7 @@ class StructFieldsTestCase(unittest.TestCase):
     def test_gh99275(self):
         class BrokenStructure(Structure):
             def __init_subclass__(cls, **kwargs):
-                cls._fields_ = []  # This line will fail, `stgdict` is not ready
+                cls._fields_ = []  # This line will fail, `stginfo` is not ready
 
         with self.assertRaisesRegex(TypeError,
                                     'ctypes state is not initialized'):
