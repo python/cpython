@@ -210,7 +210,7 @@ dummy_func(
             _QUICKEN_RESUME +
             _CHECK_PERIODIC_IF_NOT_YIELD_FROM;
 
-        inst(RESUME_CHECK, (--)) {
+        op(_RESUME_CHECK, (--)) {
 #if defined(__EMSCRIPTEN__)
             DEOPT_IF(_Py_emscripten_signal_clock == 0);
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
@@ -220,6 +220,10 @@ dummy_func(
             assert((version & _PY_EVAL_EVENTS_MASK) == 0);
             DEOPT_IF(eval_breaker != version);
         }
+
+        macro(RESUME_CHECK) =
+            _LOAD_BYTECODE +
+            _RESUME_CHECK;
 
         op(_MONITOR_RESUME, (--)) {
             _PyFrame_SetStackPointer(frame, stack_pointer);
