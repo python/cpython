@@ -1,2 +1,2 @@
 I updated the :mod:`locale` module, Switching the cambodian
-language label from `kh_KH` to `km_KH`
+language label from ``kh_KH`` to ``km_KH``
