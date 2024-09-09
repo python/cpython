@@ -1974,7 +1974,7 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
         cmd = [
             sys.executable,
             "-I", "-X", "presite=test._test_embed_structseq",
-            "-c", "print('cmd')",
+            "-c", "print('unique-python-message')",
         ]
         proc = subprocess.run(
             cmd,
@@ -1985,7 +1985,7 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
         self.assertEqual(proc.returncode, 0)
         out = proc.stdout.strip()
         self.assertIn("Tests passed", out)
-        self.assertIn("cmd", out)
+        self.assertIn("unique-python-message", out)
 
 
 class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
