@@ -30,7 +30,6 @@ import operator
 import sys
 import types
 from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType, GenericAlias
-import inspect
 
 from _typing import (
     _idfunc,
@@ -1292,11 +1291,17 @@ class _BaseGenericAlias(_Final, _root=True):
             raise TypeError(f"Type {self._name} cannot be instantiated; "
                             f"use {self.__origin__.__name__}() instead")
         clas = self.__origin__
-        is_python_type = inspect.isfunction(clas.__new__)
+        safe_new = (clas.__new__ is object.__new__) or isinstance(clas.__new__, types.FunctionType)
 
-        if is_python_type:
+        if safe_new:
             # GH-123777: Some types try and access __orig_class__ in their __init__
-            result = clas.__new__(clas, *args, **kwargs)
+            try:
+                result = clas.__new__(clas, *args, **kwargs)
+            except Exception:
+                # Something about the type doesn't like calling __new__
+                # (For example, _GenericAlias)
+                safe_new = False
+                result = clas(*args, **kwargs)
         else:
             # This is a C type with a custom __new__
             #
@@ -1312,7 +1317,7 @@ class _BaseGenericAlias(_Final, _root=True):
         except Exception:
             pass
 
-        if is_python_type:
+        if safe_new:
             result.__init__(*args, **kwargs)
 
         return result

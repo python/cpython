@@ -5621,6 +5621,14 @@ class GenericTests(BaseTestCase):
                     with self.assertRaises(TypeError):
                         a[int]
 
+    def test_orig_class_init(self):
+        # See gh-123777
+        T = TypeVar("T")
+        class OrigClassInit(Generic[T]):
+            def __init__(self):
+                self.attr = self.__orig_class__
+        self.assertEqual(OrigClassInit[int]().attr, OrigClassInit[int])
+
 
 class ClassVarTests(BaseTestCase):
 
