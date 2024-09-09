@@ -456,7 +456,7 @@ extern void _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size);
 #ifdef Py_GIL_DISABLED
 extern void _PyCode_DisableSpecialization(_Py_CODEUNIT *instructions, Py_ssize_t size);
 static _PyCodeArray * _PyCodeArray_New(Py_ssize_t size);
-static void release_bytes_for_specialized_code(Py_ssize_t nbytes);
+static void release_bytes_for_tlbc(Py_ssize_t nbytes);
 #endif
 
 static int
@@ -523,12 +523,12 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     memcpy(_PyCode_CODE(co), PyBytes_AS_STRING(con->code),
            PyBytes_GET_SIZE(con->code));
 #ifdef Py_GIL_DISABLED
-    co->co_specialized_code = _PyCodeArray_New(INITIAL_SPECIALIZED_CODE_SIZE);
-    if (co->co_specialized_code == NULL) {
+    co->co_tlbc = _PyCodeArray_New(INITIAL_SPECIALIZED_CODE_SIZE);
+    if (co->co_tlbc == NULL) {
         return -1;
     }
-    co->co_specialized_code->entries[0] = (_PyMutBytecode *) &co->co_code_adaptive_mutex;
-    co->co_specialized_code->entries[0]->mutex = (PyMutex){0};
+    co->co_tlbc->entries[0] = (_PyMutBytecode *) &co->co_code_adaptive_mutex;
+    co->co_tlbc->entries[0]->mutex = (PyMutex){0};
 #endif
     int entry_point = 0;
     while (entry_point < Py_SIZE(co) &&
@@ -1907,15 +1907,15 @@ code_dealloc(PyCodeObject *co)
     // The first element always points to the mutable bytecode at the end of
     // the code object, which will be freed when the code object is freed.
     Py_ssize_t bytes_freed = 0;
-    for (Py_ssize_t i = 1; i < co->co_specialized_code->size; i++) {
-        _PyMutBytecode *entry = co->co_specialized_code->entries[i];
+    for (Py_ssize_t i = 1; i < co->co_tlbc->size; i++) {
+        _PyMutBytecode *entry = co->co_tlbc->entries[i];
         if (entry != NULL) {
             PyMem_Free(entry);
             bytes_freed += _PyCode_NBYTES(co);
         }
     }
-    release_bytes_for_specialized_code(bytes_freed);
-    PyMem_Free(co->co_specialized_code);
+    release_bytes_for_tlbc(bytes_freed);
+    PyMem_Free(co->co_tlbc);
 #endif
     PyObject_Free(co);
 }
@@ -2680,7 +2680,7 @@ _PyCode_Fini(PyInterpreterState *interp)
         _Py_hashtable_destroy(state->constants);
         state->constants = NULL;
     }
-    _PyIndexPool_Fini(&interp->specialized_code_indices);
+    _PyIndexPool_Fini(&interp->tlbc_indices);
 #endif
 }
 
@@ -2692,6 +2692,19 @@ _PyCode_InitState(PyInterpreterState *interp)
     int limit = interp->config.tlbc_limit;
     interp->tlbc_avail = limit;
     interp->new_tlbc_disabled = limit == 0;
+}
+
+int
+_Py_ReserveTLBCIndex(PyInterpreterState *interp)
+{
+    return _PyIndexPool_AllocIndex(&interp->tlbc_indices);
+}
+
+void
+_Py_ClearTLBCIndex(_PyThreadStateImpl *tstate)
+{
+    PyInterpreterState *interp = ((PyThreadState*) tstate)->interp;
+    _PyIndexPool_FreeIndex(&interp->tlbc_indices, tstate->tlbc_index);
 }
 
 static _PyCodeArray *
@@ -2730,23 +2743,23 @@ get_pow2_greater(Py_ssize_t initial, Py_ssize_t limit)
 }
 
 static _Py_CODEUNIT *
-create_specializable_code_lock_held(PyCodeObject *co, Py_ssize_t idx)
+create_tlbc_lock_held(PyCodeObject *co, Py_ssize_t idx)
 {
-    _PyCodeArray *spec_code = co->co_specialized_code;
-    if (idx >= spec_code->size) {
-        Py_ssize_t new_size = get_pow2_greater(spec_code->size, idx + 1);
+    _PyCodeArray *tlbc = co->co_tlbc;
+    if (idx >= tlbc->size) {
+        Py_ssize_t new_size = get_pow2_greater(tlbc->size, idx + 1);
         if (!new_size) {
             PyErr_NoMemory();
             return NULL;
         }
-        _PyCodeArray *new_spec_code = _PyCodeArray_New(new_size);
-        if (new_spec_code == NULL) {
+        _PyCodeArray *new_tlbc = _PyCodeArray_New(new_size);
+        if (new_tlbc == NULL) {
             return NULL;
         }
-        memcpy(new_spec_code->entries, spec_code->entries, spec_code->size * sizeof(void*));
-        _Py_atomic_store_ptr_release(&co->co_specialized_code, new_spec_code);
-        _PyMem_FreeDelayed(spec_code);
-        spec_code = new_spec_code;
+        memcpy(new_tlbc->entries, tlbc->entries, tlbc->size * sizeof(void*));
+        _Py_atomic_store_ptr_release(&co->co_tlbc, new_tlbc);
+        _PyMem_FreeDelayed(tlbc);
+        tlbc = new_tlbc;
     }
     _PyMutBytecode *bc = PyMem_Calloc(1, sizeof(_PyMutBytecode) + _PyCode_NBYTES(co));
     if (bc == NULL) {
@@ -2754,13 +2767,13 @@ create_specializable_code_lock_held(PyCodeObject *co, Py_ssize_t idx)
         return NULL;
     }
     copy_code(bc, co);
-    assert(spec_code->entries[idx] == NULL);
-    spec_code->entries[idx] = bc;
+    assert(tlbc->entries[idx] == NULL);
+    tlbc->entries[idx] = bc;
     return (_Py_CODEUNIT *) bc->bytecode;
 }
 
 static Py_ssize_t
-reserve_bytes_for_specialized_code(PyCodeObject *co)
+reserve_bytes_for_tlbc(PyCodeObject *co)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     Py_ssize_t nbytes_reserved = -1;
@@ -2778,7 +2791,7 @@ reserve_bytes_for_specialized_code(PyCodeObject *co)
 }
 
 static void
-release_bytes_for_specialized_code(Py_ssize_t nbytes)
+release_bytes_for_tlbc(Py_ssize_t nbytes)
 {
     assert(nbytes >= 0);
     if (nbytes == 0) {
@@ -2827,22 +2840,22 @@ disable_new_tlbc(void)
 }
 
 static _Py_CODEUNIT *
-get_executable_code_lock_held(PyCodeObject *co)
+get_tlbc_lock_held(PyCodeObject *co)
 {
-    _PyCodeArray *spec_code = co->co_specialized_code;
+    _PyCodeArray *tlbc = co->co_tlbc;
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *) PyThreadState_GET();
-    Py_ssize_t idx = tstate->specialized_code_index;
-    if (idx < spec_code->size && spec_code->entries[idx] != NULL) {
-        return (_Py_CODEUNIT *) spec_code->entries[idx]->bytecode;
+    Py_ssize_t idx = tstate->tlbc_index;
+    if (idx < tlbc->size && tlbc->entries[idx] != NULL) {
+        return (_Py_CODEUNIT *) tlbc->entries[idx]->bytecode;
     }
-    Py_ssize_t reserved = reserve_bytes_for_specialized_code(co);
+    Py_ssize_t reserved = reserve_bytes_for_tlbc(co);
     if (reserved == -1) {
         disable_new_tlbc();
-        return (_Py_CODEUNIT *) spec_code->entries[0]->bytecode;
+        return (_Py_CODEUNIT *) tlbc->entries[0]->bytecode;
     }
-    _Py_CODEUNIT *result = create_specializable_code_lock_held(co, idx);
+    _Py_CODEUNIT *result = create_tlbc_lock_held(co, idx);
     if (result == NULL) {
-        release_bytes_for_specialized_code(reserved);
+        release_bytes_for_tlbc(reserved);
     }
     return result;
 }
@@ -2852,11 +2865,11 @@ _PyCode_GetExecutableCodeSlow(PyCodeObject *co)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->new_tlbc_disabled) {
-        return (_Py_CODEUNIT *) co->co_specialized_code->entries[0]->bytecode;
+        return (_Py_CODEUNIT *) co->co_tlbc->entries[0]->bytecode;
     }
     _Py_CODEUNIT *result;
     Py_BEGIN_CRITICAL_SECTION(co);
-    result = get_executable_code_lock_held(co);
+    result = get_tlbc_lock_held(co);
     Py_END_CRITICAL_SECTION();
     return result;
 }
@@ -2864,9 +2877,9 @@ _PyCode_GetExecutableCodeSlow(PyCodeObject *co)
 static inline _PyMutBytecode *
 get_tlbc(PyCodeObject *co)
 {
-    _PyCodeArray *code = _Py_atomic_load_ptr_acquire(&co->co_specialized_code);
+    _PyCodeArray *code = _Py_atomic_load_ptr_acquire(&co->co_tlbc);
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *) PyThreadState_GET();
-    Py_ssize_t idx = tstate->specialized_code_index;
+    Py_ssize_t idx = tstate->tlbc_index;
     assert(idx >= 0 && idx < code->size);
     return code->entries[idx];
 }

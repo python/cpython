@@ -46,18 +46,18 @@
 
 #define UNLOCK_CODE()   Py_END_CRITICAL_SECTION()
 
-#define MODIFY_BYTECODE(code, func, args...)                                \
-    do {                                                                    \
-        PyCodeObject *co = (code);                                          \
-        for (Py_ssize_t i = 0; i < code->co_specialized_code->size; i++) {  \
-            _PyMutBytecode *mb = co->co_specialized_code->entries[i];       \
-            if (mb == NULL) {                                               \
-                continue;                                                   \
-            }                                                               \
-            PyMutex_LockFlags(&mb->mutex, _Py_LOCK_DONT_DETACH);            \
-            (func)((_Py_CODEUNIT *) mb->bytecode, args);                    \
-            PyMutex_Unlock(&mb->mutex);                                     \
-        }                                                                   \
+#define MODIFY_BYTECODE(code, func, args...)                       \
+    do {                                                           \
+        PyCodeObject *co = (code);                                 \
+        for (Py_ssize_t i = 0; i < code->co_tlbc->size; i++) {     \
+            _PyMutBytecode *mb = co->co_tlbc->entries[i];          \
+            if (mb == NULL) {                                      \
+                continue;                                          \
+            }                                                      \
+            PyMutex_LockFlags(&mb->mutex, _Py_LOCK_DONT_DETACH);   \
+            (func)((_Py_CODEUNIT *) mb->bytecode, args);           \
+            PyMutex_Unlock(&mb->mutex);                            \
+        }                                                          \
     } while (0)
 
 #else

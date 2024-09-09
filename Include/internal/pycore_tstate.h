@@ -42,8 +42,8 @@ typedef struct _PyThreadStateImpl {
         int is_finalized;
     } types;
 
-    // Index to use to retrieve specialized bytecode for this thread
-    Py_ssize_t specialized_code_index;
+    // Index to use to retrieve thread-local bytecode for this thread
+    Py_ssize_t tlbc_index;
 #endif
 
 #if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)

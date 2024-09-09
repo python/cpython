@@ -84,7 +84,7 @@ typedef struct {
 } _PyCodeArray;
 
 #define _PyCode_DEF_THREAD_LOCAL_BYTECODE() \
-    _PyCodeArray *co_specialized_code;      \
+    _PyCodeArray *co_tlbc;                  \
     PyMutex co_code_adaptive_mutex;
 #else
 #define _PyCode_DEF_THREAD_LOCAL_BYTECODE()

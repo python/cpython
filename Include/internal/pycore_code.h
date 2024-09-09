@@ -642,9 +642,9 @@ extern _Py_CODEUNIT *_PyCode_GetExecutableCodeSlow(PyCodeObject *co);
 static inline _Py_CODEUNIT *
 _PyCode_GetExecutableCode(PyCodeObject *co)
 {
-    _PyCodeArray *code = _Py_atomic_load_ptr_acquire(&co->co_specialized_code);
+    _PyCodeArray *code = _Py_atomic_load_ptr_acquire(&co->co_tlbc);
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *) PyThreadState_GET();
-    Py_ssize_t idx = tstate->specialized_code_index;
+    Py_ssize_t idx = tstate->tlbc_index;
     if (idx < code->size && code->entries[idx] != NULL) {
         return (_Py_CODEUNIT *) code->entries[idx]->bytecode;
     }
@@ -653,8 +653,8 @@ _PyCode_GetExecutableCode(PyCodeObject *co)
 
 extern void _PyCode_LockTLBC(PyCodeObject *co);
 extern void _PyCode_UnlockTLBC(PyCodeObject *co);
-extern int _Py_ReserveSpecializedCodeIndex(PyInterpreterState *interp);
-extern void _Py_ClearSpecializedCodeIndex(_PyThreadStateImpl *tstate);
+extern int _Py_ReserveTLBCIndex(PyInterpreterState *interp);
+extern void _Py_ClearTLBCIndex(_PyThreadStateImpl *tstate);
 #endif
 
 #ifdef __cplusplus
