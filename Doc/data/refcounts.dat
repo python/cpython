@@ -1132,6 +1132,10 @@ PyAIter_Check:PyObject*:o:0:
 PyIter_Next:PyObject*::+1:
 PyIter_Next:PyObject*:o:0:
 
+PyIter_NextItem:int:::
+PyIter_NextItem:PyObject*:iter:0:
+PyIter_NextItem:PyObject**:item:+1:
+
 PyIter_Send:int:::
 PyIter_Send:PyObject*:iter:0:
 PyIter_Send:PyObject*:arg:0:

@@ -31,15 +31,17 @@ def init_streams(android_log_write, stdout_prio, stderr_prio):
     logcat = Logcat(android_log_write)
 
     sys.stdout = TextLogStream(
-        stdout_prio, "python.stdout", errors=sys.stdout.errors)
+        stdout_prio, "python.stdout", sys.stdout.fileno(),
+        errors=sys.stdout.errors)
     sys.stderr = TextLogStream(
-        stderr_prio, "python.stderr", errors=sys.stderr.errors)
+        stderr_prio, "python.stderr", sys.stderr.fileno(),
+        errors=sys.stderr.errors)
 
 
 class TextLogStream(io.TextIOWrapper):
-    def __init__(self, prio, tag, **kwargs):
+    def __init__(self, prio, tag, fileno=None, **kwargs):
         kwargs.setdefault("encoding", "UTF-8")
-        super().__init__(BinaryLogStream(prio, tag), **kwargs)
+        super().__init__(BinaryLogStream(prio, tag, fileno), **kwargs)
         self._lock = RLock()
         self._pending_bytes = []
         self._pending_bytes_count = 0
@@ -98,9 +100,10 @@ class TextLogStream(io.TextIOWrapper):
 
 
 class BinaryLogStream(io.RawIOBase):
-    def __init__(self, prio, tag):
+    def __init__(self, prio, tag, fileno=None):
         self.prio = prio
         self.tag = tag
+        self._fileno = fileno
 
     def __repr__(self):
         return f"<BinaryLogStream {self.tag!r}>"
@@ -121,6 +124,12 @@ class BinaryLogStream(io.RawIOBase):
         if b:
             logcat.write(self.prio, self.tag, b)
         return len(b)
+
+    # This is needed by the test suite --timeout option, which uses faulthandler.
+    def fileno(self):
+        if self._fileno is None:
+            raise io.UnsupportedOperation("fileno")
+        return self._fileno
 
 
 # When a large volume of data is written to logcat at once, e.g. when a test

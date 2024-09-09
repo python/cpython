@@ -185,15 +185,8 @@ cmath_acos_impl(PyObject *module, Py_complex z)
     if (fabs(z.real) > CM_LARGE_DOUBLE || fabs(z.imag) > CM_LARGE_DOUBLE) {
         /* avoid unnecessary overflow for large arguments */
         r.real = atan2(fabs(z.imag), z.real);
-        /* split into cases to make sure that the branch cut has the
-           correct continuity on systems with unsigned zeros */
-        if (z.real < 0.) {
-            r.imag = -copysign(log(hypot(z.real/2., z.imag/2.)) +
-                               M_LN2*2., z.imag);
-        } else {
-            r.imag = copysign(log(hypot(z.real/2., z.imag/2.)) +
-                              M_LN2*2., -z.imag);
-        }
+        r.imag = -copysign(log(hypot(z.real/2., z.imag/2.)) +
+                           M_LN2*2., z.imag);
     } else {
         s1.real = 1.-z.real;
         s1.imag = -z.imag;
@@ -324,36 +317,6 @@ cmath_atan_impl(PyObject *module, Py_complex z)
     return r;
 }
 
-/* Windows screws up atan2 for inf and nan, and alpha Tru64 5.1 doesn't follow
-   C99 for atan2(0., 0.). */
-static double
-c_atan2(Py_complex z)
-{
-    if (isnan(z.real) || isnan(z.imag))
-        return Py_NAN;
-    if (isinf(z.imag)) {
-        if (isinf(z.real)) {
-            if (copysign(1., z.real) == 1.)
-                /* atan2(+-inf, +inf) == +-pi/4 */
-                return copysign(0.25*Py_MATH_PI, z.imag);
-            else
-                /* atan2(+-inf, -inf) == +-pi*3/4 */
-                return copysign(0.75*Py_MATH_PI, z.imag);
-        }
-        /* atan2(+-inf, x) == +-pi/2 for finite x */
-        return copysign(0.5*Py_MATH_PI, z.imag);
-    }
-    if (isinf(z.real) || z.imag == 0.) {
-        if (copysign(1., z.real) == 1.)
-            /* atan2(+-y, +inf) = atan2(+-0, +x) = +-0. */
-            return copysign(0., z.imag);
-        else
-            /* atan2(+-y, -inf) = atan2(+-0., -x) = +-pi. */
-            return copysign(Py_MATH_PI, z.imag);
-    }
-    return atan2(z.imag, z.real);
-}
-
 
 static Py_complex atanh_special_values[7][7];
 
@@ -386,11 +349,7 @@ cmath_atanh_impl(PyObject *module, Py_complex z)
         */
         h = hypot(z.real/2., z.imag/2.);  /* safe from overflow */
         r.real = z.real/4./h/h;
-        /* the two negations in the next line cancel each other out
-           except when working with unsigned zeros: they're there to
-           ensure that the branch cut has the correct continuity on
-           systems that don't support signed zeros */
-        r.imag = -copysign(Py_MATH_PI/2., -z.imag);
+        r.imag = copysign(Py_MATH_PI/2., z.imag);
         errno = 0;
     } else if (z.real == 1. && ay < CM_SQRT_DBL_MIN) {
         /* C99 standard says:  atanh(1+/-0.) should be inf +/- 0i */
@@ -966,7 +925,7 @@ cmath_phase_impl(PyObject *module, Py_complex z)
     double phi;
 
     errno = 0;
-    phi = c_atan2(z); /* should not cause any exception */
+    phi = atan2(z.imag, z.real); /* should not cause any exception */
     if (errno != 0)
         return math_error();
     else
@@ -991,7 +950,7 @@ cmath_polar_impl(PyObject *module, Py_complex z)
     double r, phi;
 
     errno = 0;
-    phi = c_atan2(z); /* should not cause any exception */
+    phi = atan2(z.imag, z.real); /* should not cause any exception */
     r = _Py_c_abs(z); /* sets errno to ERANGE on overflow */
     if (errno != 0)
         return math_error();

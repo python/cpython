@@ -1049,7 +1049,7 @@ del_cached_def(struct extensions_cache_value *value)
        However, this decref would be problematic if the module def were
        dynamically allocated, it were the last ref, and this function
        were called with an interpreter other than the def's owner. */
-    assert(value->def == NULL || _Py_IsImmortal(value->def));
+    assert(value->def == NULL || _Py_IsImmortalLoose(value->def));
 
     Py_XDECREF(value->def->m_base.m_copy);
     value->def->m_base.m_copy = NULL;
@@ -1174,7 +1174,7 @@ hashtable_key_from_2_strings(PyObject *str1, PyObject *str2, const char sep)
 static Py_uhash_t
 hashtable_hash_str(const void *key)
 {
-    return _Py_HashBytes(key, strlen((const char *)key));
+    return Py_HashBuffer(key, strlen((const char *)key));
 }
 
 static int
