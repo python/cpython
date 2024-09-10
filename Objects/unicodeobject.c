@@ -4973,57 +4973,31 @@ static Py_ssize_t
 ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
 {
     const char *p = start;
+    Py_UCS1 *q = dest;
+    const char *size_t_end  = end - (SIZEOF_SIZE_T - 1);
 
-#if SIZEOF_SIZE_T <= SIZEOF_VOID_P
-    if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)
-        && _Py_IS_ALIGNED(dest, ALIGNOF_SIZE_T))
-    {
-        /* Fast path, see in STRINGLIB(utf8_decode) for
-           an explanation. */
-        /* Help allocation */
-        const char *_p = p;
-        Py_UCS1 * q = dest;
-        while (_p + SIZEOF_SIZE_T <= end) {
-            size_t value = *(const size_t *) _p;
-            if (value & ASCII_CHAR_MASK)
-                break;
-            *((size_t *)q) = value;
-            _p += SIZEOF_SIZE_T;
-            q += SIZEOF_SIZE_T;
-        }
-        p = _p;
-        while (p < end) {
-            if ((unsigned char)*p & 0x80)
-                break;
-            *q++ = *p++;
-        }
-        return p - start;
-    }
-#endif
-    while (p < end) {
-        /* Fast path, see in STRINGLIB(utf8_decode) in stringlib/codecs.h
-           for an explanation. */
-        if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
-            /* Help allocation */
-            const char *_p = p;
-            while (_p + SIZEOF_SIZE_T <= end) {
-                size_t value = *(const size_t *) _p;
-                if (value & ASCII_CHAR_MASK)
-                    break;
-                _p += SIZEOF_SIZE_T;
-            }
-            p = _p;
-            if (_p == end)
-                break;
-        }
-        if ((unsigned char)*p & 0x80)
+    while (p < size_t_end) {
+        /* Loading and storing a size_t using memcpy leads to unaligned loads
+           for platforms that can handle it. */
+        const size_t *restrict _p = (const size_t *)p;
+        size_t *restrict _q = (size_t *)q;
+        size_t value;
+        memcpy(&value, _p, SIZEOF_SIZE_T);
+        if (value & ASCII_CHAR_MASK) {
             break;
-        ++p;
+        }
+        memcpy(_q, &value, SIZEOF_SIZE_T);
+        p += SIZEOF_SIZE_T;
+        q += SIZEOF_SIZE_T;
     }
-    memcpy(dest, start, p - start);
+    while (p < end) {
+        if ((unsigned char)*p & 0x80) {
+            break;
+        }
+        *q++ = *p++;
+    }
     return p - start;
 }
-
 
 static int
 unicode_decode_utf8_impl(_PyUnicodeWriter *writer,
