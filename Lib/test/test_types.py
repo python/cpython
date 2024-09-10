@@ -2410,9 +2410,6 @@ class SubinterpreterTests(unittest.TestCase):
         def collate_results(raw):
             results = {}
             for cls, attr, wrapper in raw:
-                # XXX This should not be necessary.
-                if cls == repr(bool) and attr in self.NUMERIC_METHODS:
-                    continue
                 key = cls, attr
                 assert key not in results, (results, key, wrapper)
                 results[key] = wrapper
@@ -2433,14 +2430,7 @@ class SubinterpreterTests(unittest.TestCase):
             cls, attr = key
             with self.subTest(cls=cls, slotattr=attr):
                 actual = interp_results.pop(key)
-                # XXX This should not be necessary.
-                if cls == "<class 'collections.OrderedDict'>" and attr == '__len__':
-                    continue
                 self.assertEqual(actual, expected)
-        # XXX This should not be necessary.
-        interp_results = {k: v for k, v in interp_results.items() if k[1] != '__hash__'}
-        # XXX This should not be necessary.
-        interp_results.pop(("<class 'collections.OrderedDict'>", '__getitem__'), None)
         self.maxDiff = None
         self.assertEqual(interp_results, {})
 
