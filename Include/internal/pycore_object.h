@@ -314,7 +314,7 @@ static inline void
 _Py_INCREF_TYPE(PyTypeObject *type)
 {
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-        assert(_Py_IsImmortal(type));
+        assert(_Py_IsImmortalLoose(type));
         return;
     }
 
@@ -354,7 +354,7 @@ static inline void
 _Py_DECREF_TYPE(PyTypeObject *type)
 {
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-        assert(_Py_IsImmortal(type));
+        assert(_Py_IsImmortalLoose(type));
         return;
     }
 
