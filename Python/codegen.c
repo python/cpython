@@ -3173,19 +3173,18 @@ codegen_boolop(compiler *c, expr_ty e)
 }
 
 static int
-starunpack_helper(compiler *c, location loc,
-                  asdl_expr_seq *elts, int pushed,
-                  int build, int add, int extend, int tuple)
+starunpack_helper_impl(compiler *c, location loc,
+                       asdl_expr_seq *elts, PyObject *injected_arg, int pushed,
+                       int build, int add, int extend, int tuple)
 {
     Py_ssize_t n = asdl_seq_LEN(elts);
-    if (n > 2 && are_all_items_const(elts, 0, n)) {
+    if (!injected_arg && n > 2 && are_all_items_const(elts, 0, n)) {
         PyObject *folded = PyTuple_New(n);
         if (folded == NULL) {
             return ERROR;
         }
-        PyObject *val;
         for (Py_ssize_t i = 0; i < n; i++) {
-            val = ((expr_ty)asdl_seq_GET(elts, i))->v.Constant.value;
+            PyObject *val = ((expr_ty)asdl_seq_GET(elts, i))->v.Constant.value;
             PyTuple_SET_ITEM(folded, i, Py_NewRef(val));
         }
         if (tuple && !pushed) {
@@ -3207,7 +3206,7 @@ starunpack_helper(compiler *c, location loc,
         return SUCCESS;
     }
 
-    int big = n+pushed > STACK_USE_GUIDELINE;
+    int big = n + pushed + (injected_arg ? 1 : 0) > STACK_USE_GUIDELINE;
     int seen_star = 0;
     for (Py_ssize_t i = 0; i < n; i++) {
         expr_ty elt = asdl_seq_GET(elts, i);
@@ -3220,6 +3219,10 @@ starunpack_helper(compiler *c, location loc,
         for (Py_ssize_t i = 0; i < n; i++) {
             expr_ty elt = asdl_seq_GET(elts, i);
             VISIT(c, expr, elt);
+        }
+        if (injected_arg) {
+            RETURN_IF_ERROR(codegen_nameop(c, loc, injected_arg, Load));
+            n++;
         }
         if (tuple) {
             ADDOP_I(c, loc, BUILD_TUPLE, n+pushed);
@@ -3251,10 +3254,23 @@ starunpack_helper(compiler *c, location loc,
         }
     }
     assert(sequence_built);
+    if (injected_arg) {
+        RETURN_IF_ERROR(codegen_nameop(c, loc, injected_arg, Load));
+        ADDOP_I(c, loc, add, 1);
+    }
     if (tuple) {
         ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_LIST_TO_TUPLE);
     }
     return SUCCESS;
+}
+
+static int
+starunpack_helper(compiler *c, location loc,
+                  asdl_expr_seq *elts, int pushed,
+                  int build, int add, int extend, int tuple)
+{
+    return starunpack_helper_impl(c, loc, elts, NULL, pushed,
+                                  build, add, extend, tuple);
 }
 
 static int
@@ -4014,12 +4030,12 @@ codegen_call_helper_impl(compiler *c, location loc,
 ex_call:
 
     /* Do positional arguments. */
-    if (n ==0 && nelts == 1 && ((expr_ty)asdl_seq_GET(args, 0))->kind == Starred_kind) {
+    if (n == 0 && nelts == 1 && ((expr_ty)asdl_seq_GET(args, 0))->kind == Starred_kind) {
         VISIT(c, expr, ((expr_ty)asdl_seq_GET(args, 0))->v.Starred.value);
     }
     else {
-        RETURN_IF_ERROR(starunpack_helper(c, loc, args, n, BUILD_LIST,
-                                          LIST_APPEND, LIST_EXTEND, 1));
+        RETURN_IF_ERROR(starunpack_helper_impl(c, loc, args, injected_arg, n,
+                                               BUILD_LIST, LIST_APPEND, LIST_EXTEND, 1));
     }
     /* Then keyword arguments */
     if (nkwelts) {
