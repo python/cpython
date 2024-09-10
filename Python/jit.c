@@ -396,7 +396,7 @@ void patch_aarch64_trampoline(unsigned char *location, int ordinal);
 #include "jit_stencils.h"
 
 typedef struct {
-    void *mem;
+    unsigned char *mem;
     SymbolMask mask;
     size_t size;
 } TrampolineState;
@@ -427,7 +427,7 @@ patch_aarch64_trampoline(unsigned char *location, int ordinal)
         index += _Py_popcount32(trampoline_state.mask[i]);
     }
 
-    uint32_t *p = trampoline_state.mem + index * TRAMPOLINE_SIZE;
+    uint32_t *p = (uint32_t*)(trampoline_state.mem + index * TRAMPOLINE_SIZE);
     assert((size_t)index * TRAMPOLINE_SIZE < trampoline_state.size);
 
     uintptr_t value = (uintptr_t)symbols_map[ordinal];
