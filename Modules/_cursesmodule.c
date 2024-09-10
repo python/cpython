@@ -237,6 +237,12 @@ static char *CURSES_SCREEN_ENCODING = NULL;
         CHECK_RET_CODE_OR_ERROR(rc);                                \
     } while (0)
 
+#define SET_MOD_DICT_INT_VALUE_OR_ERROR(NAME, VALUE)                    \
+    do {                                                                \
+        assert(PRIVATE_MOD_DICT != NULL);                               \
+        SET_DICT_INT_VALUE_OR_ERROR(PRIVATE_MOD_DICT, (NAME), (VALUE)); \
+    } while (0)
+
 /* Utility Functions */
 
 /*
@@ -3327,8 +3333,7 @@ _curses_initscr_impl(PyObject *module)
    where they're not defined until you've called initscr() */
 
     /* Here are some graphic symbols you can use */
-#define SetDictInt(NAME, VALUE)     \
-    SET_DICT_INT_VALUE_OR_ERROR(PRIVATE_MOD_DICT, NAME, VALUE)
+#define SetDictInt                  SET_MOD_DICT_INT_VALUE_OR_ERROR
 
     SetDictInt("ACS_ULCORNER",      (ACS_ULCORNER));
     SetDictInt("ACS_LLCORNER",      (ACS_LLCORNER));
@@ -4832,7 +4837,7 @@ PyInit__curses(void)
     CHECK_RET_CODE_OR_ERROR(rc);
 #endif /* NCURSES_VERSION */
 
-#define SetDictInt(NAME, VALUE)     SET_DICT_INT_VALUE_OR_ERROR(d, NAME, VALUE)
+#define SetDictInt                  SET_MOD_DICT_INT_VALUE_OR_ERROR
     SetDictInt("ERR", ERR);
     SetDictInt("OK", OK);
 
@@ -4972,6 +4977,7 @@ error:
     return NULL;
 }
 
+#undef SET_MOD_DICT_INT_VALUE_OR_ERROR
 #undef SET_DICT_INT_VALUE_OR_ERROR
 #undef CHECK_RET_FLAG_OR_ERROR
 #undef CHECK_RET_CODE_OR_ERROR
