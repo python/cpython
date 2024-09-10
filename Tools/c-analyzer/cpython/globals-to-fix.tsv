@@ -412,10 +412,10 @@ Modules/_tkinter.c	-	trbInCmd	-
 Include/datetime.h	-	PyDateTimeAPI	-
 Modules/_ctypes/cfield.c	_ctypes_get_fielddesc	initialized	-
 Modules/_ctypes/malloc_closure.c	-	_pagesize	-
-Modules/_cursesmodule.c	-	initialised	-
-Modules/_cursesmodule.c	-	initialised_setupterm	-
-Modules/_cursesmodule.c	-	initialisedcolors	-
-Modules/_cursesmodule.c	-	screen_encoding	-
+Modules/_cursesmodule.c	-	CURSES_SETUPTERM_CALLED	-
+Modules/_cursesmodule.c	-	CURSES_INITSCR_CALLED	-
+Modules/_cursesmodule.c	-	CURSES_INITIALISED_COLORS	-
+Modules/_cursesmodule.c	-	CURSES_SCREEN_ENCODING	-
 Modules/_elementtree.c	-	expat_capi	-
 Modules/readline.c	-	libedit_append_replace_history_offset	-
 Modules/readline.c	-	using_libedit_emulation	-
