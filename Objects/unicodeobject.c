@@ -2464,9 +2464,13 @@ unicode_releasebuffer(PyObject *unicode, Py_buffer *view)
     {
     case PyUnicode_FORMAT_ASCII:
     case PyUnicode_FORMAT_UCS1:
-    case PyUnicode_FORMAT_UCS2:
     case PyUnicode_FORMAT_UTF8:
         // nothing to release
+        break;
+    case PyUnicode_FORMAT_UCS2:
+        if (PyUnicode_KIND(unicode) != PyUnicode_2BYTE_KIND) {
+            PyMem_Free(view->buf);
+        }
         break;
     case PyUnicode_FORMAT_UCS4:
         if (PyUnicode_KIND(unicode) != PyUnicode_4BYTE_KIND) {
