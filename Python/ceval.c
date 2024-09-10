@@ -2763,7 +2763,7 @@ PyObject *
 _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
 {
     PyObject *x;
-    PyObject *fullmodname, *mod_name, *pkgpath, *mod_name_or_unknown, *errmsg;
+    PyObject *fullmodname, *mod_name, *origin, *mod_name_or_unknown, *errmsg;
 
     if (PyObject_GetOptionalAttr(v, name, &x) != 0) {
         return x;
@@ -2800,10 +2800,10 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
         mod_name_or_unknown = mod_name;
     }
 
-    pkgpath = NULL;
+    origin = NULL;
     if (PyModule_Check(v)) {
-        pkgpath = PyModule_GetFilenameObject(v);
-        if (pkgpath == NULL) {
+        origin = PyModule_GetFilenameObject(v);
+        if (origin == NULL) {
             if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
                 Py_DECREF(mod_name_or_unknown);
                 return NULL;
@@ -2812,8 +2812,8 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
             _PyErr_Clear(tstate);
         }
     }
-    if (pkgpath == NULL || !PyUnicode_Check(pkgpath)) {
-        Py_CLEAR(pkgpath);
+    if (origin == NULL || !PyUnicode_Check(origin)) {
+        Py_CLEAR(origin);
         errmsg = PyUnicode_FromFormat(
             "cannot import name %R from %R (unknown location)",
             name, mod_name_or_unknown
@@ -2828,7 +2828,7 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
         }
         if (rc < 0) {
             Py_DECREF(mod_name_or_unknown);
-            Py_DECREF(pkgpath);
+            Py_DECREF(origin);
             return NULL;
         }
         const char *fmt =
@@ -2837,14 +2837,14 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
             "(most likely due to a circular import) (%S)" :
             "cannot import name %R from %R (%S)";
 
-        errmsg = PyUnicode_FromFormat(fmt, name, mod_name_or_unknown, pkgpath);
+        errmsg = PyUnicode_FromFormat(fmt, name, mod_name_or_unknown, origin);
     }
     /* NULL checks for errmsg and mod_name done by PyErr_SetImportError. */
-    _PyErr_SetImportErrorWithNameFrom(errmsg, mod_name, pkgpath, name);
+    _PyErr_SetImportErrorWithNameFrom(errmsg, mod_name, origin, name);
 
     Py_XDECREF(errmsg);
     Py_DECREF(mod_name_or_unknown);
-    Py_XDECREF(pkgpath);
+    Py_XDECREF(origin);
     return NULL;
 }
 
