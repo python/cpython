@@ -59,7 +59,7 @@ Annotation semantics
 --------------------
 
 The way annotations are evaluated has changed over the history of Python 3,
-and currently still depends on a :ref:`future import <annotations-future-import>`.
+and currently still depends on a :ref:`future import <future>`.
 There have been execution models for annotations:
 
 * *Stock semantics* (default in Python 3.0 through 3.13; see :pep:`3107` and :pep:`526`):
