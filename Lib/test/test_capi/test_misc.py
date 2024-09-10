@@ -541,14 +541,19 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(new_type_refcnt, sys.getrefcount(A))
 
     def test_heaptype_with_dict(self):
-        inst = _testcapi.HeapCTypeWithDict()
-        inst.foo = 42
-        self.assertEqual(inst.foo, 42)
-        self.assertEqual(inst.dictobj, inst.__dict__)
-        self.assertEqual(inst.dictobj, {"foo": 42})
+        for cls in (
+            _testcapi.HeapCTypeWithDict,
+            _testlimitedcapi.HeapCTypeWithRelativeDict,
+        ):
+            with self.subTest(cls=cls):
+                inst = cls()
+                inst.foo = 42
+                self.assertEqual(inst.foo, 42)
+                self.assertEqual(inst.dictobj, inst.__dict__)
+                self.assertEqual(inst.dictobj, {"foo": 42})
 
-        inst = _testcapi.HeapCTypeWithDict()
-        self.assertEqual({}, inst.__dict__)
+                inst = cls()
+                self.assertEqual({}, inst.__dict__)
 
     def test_heaptype_with_managed_dict(self):
         inst = _testcapi.HeapCTypeWithManagedDict()
@@ -585,10 +590,15 @@ class CAPITest(unittest.TestCase):
         self.assertEqual({}, inst.__dict__)
 
     def test_heaptype_with_weakref(self):
-        inst = _testcapi.HeapCTypeWithWeakref()
-        ref = weakref.ref(inst)
-        self.assertEqual(ref(), inst)
-        self.assertEqual(inst.weakreflist, ref)
+        for cls in (
+            _testcapi.HeapCTypeWithWeakref,
+            _testlimitedcapi.HeapCTypeWithRelativeWeakref,
+        ):
+            with self.subTest(cls=cls):
+                inst = cls()
+                ref = weakref.ref(inst)
+                self.assertEqual(ref(), inst)
+                self.assertEqual(inst.weakreflist, ref)
 
     def test_heaptype_with_managed_weakref(self):
         inst = _testcapi.HeapCTypeWithManagedWeakref()
@@ -730,45 +740,56 @@ class CAPITest(unittest.TestCase):
         self.assertIsInstance(sub, metaclass)
 
     def test_multiple_inheritance_ctypes_with_weakref_or_dict(self):
+        for weakref_cls in (_testcapi.HeapCTypeWithWeakref,
+                            _testlimitedcapi.HeapCTypeWithRelativeWeakref):
+            for dict_cls in (_testcapi.HeapCTypeWithDict,
+                             _testlimitedcapi.HeapCTypeWithRelativeDict):
+                with self.subTest(weakref_cls=weakref_cls, dict_cls=dict_cls):
 
-        with self.assertRaises(TypeError):
-            class Both1(_testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithDict):
-                pass
-        with self.assertRaises(TypeError):
-            class Both2(_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithWeakref):
-                pass
+                    with self.assertRaises(TypeError):
+                        class Both1(weakref_cls, dict_cls):
+                            pass
+                    with self.assertRaises(TypeError):
+                        class Both2(dict_cls, weakref_cls):
+                            pass
 
     def test_multiple_inheritance_ctypes_with_weakref_or_dict_and_other_builtin(self):
+        for dict_cls in (_testcapi.HeapCTypeWithDict,
+                         _testlimitedcapi.HeapCTypeWithRelativeDict):
+            for weakref_cls in (_testcapi.HeapCTypeWithWeakref,
+                                _testlimitedcapi.HeapCTypeWithRelativeWeakref):
+                with self.subTest(dict_cls=dict_cls, weakref_cls=weakref_cls):
 
-        with self.assertRaises(TypeError):
-            class C1(_testcapi.HeapCTypeWithDict, list):
-                pass
+                    with self.assertRaises(TypeError):
+                        class C1(dict_cls, list):
+                            pass
 
-        with self.assertRaises(TypeError):
-            class C2(_testcapi.HeapCTypeWithWeakref, list):
-                pass
+                    with self.assertRaises(TypeError):
+                        class C2(weakref_cls, list):
+                            pass
 
-        class C3(_testcapi.HeapCTypeWithManagedDict, list):
-            pass
-        class C4(_testcapi.HeapCTypeWithManagedWeakref, list):
-            pass
+                    class C3(_testcapi.HeapCTypeWithManagedDict, list):
+                        pass
+                    class C4(_testcapi.HeapCTypeWithManagedWeakref, list):
+                        pass
 
-        inst = C3()
-        inst.append(0)
-        str(inst.__dict__)
+                    inst = C3()
+                    inst.append(0)
+                    str(inst.__dict__)
 
-        inst = C4()
-        inst.append(0)
-        str(inst.__weakref__)
+                    inst = C4()
+                    inst.append(0)
+                    str(inst.__weakref__)
 
-        for cls in (_testcapi.HeapCTypeWithManagedDict, _testcapi.HeapCTypeWithManagedWeakref):
-            for cls2 in (_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithWeakref):
-                class S(cls, cls2):
-                    pass
-            class B1(C3, cls):
-                pass
-            class B2(C4, cls):
-                pass
+                    for cls in (_testcapi.HeapCTypeWithManagedDict,
+                                _testcapi.HeapCTypeWithManagedWeakref):
+                        for cls2 in (dict_cls, weakref_cls):
+                            class S(cls, cls2):
+                                pass
+                        class B1(C3, cls):
+                            pass
+                        class B2(C4, cls):
+                            pass
 
     def test_pytype_fromspec_with_repeated_slots(self):
         for variant in range(2):
@@ -1271,6 +1292,53 @@ class TestHeapTypeRelative(unittest.TestCase):
         with self.assertRaisesRegex(
                 SystemError, r"PyMember_SetOne used with Py_RELATIVE_OFFSET"):
             instance.set_memb_relative(0)
+
+    def test_heaptype_relative_special_members_errors(self):
+        for member_name in "__vectorcalloffset__", "__dictoffset__", "__weaklistoffset__":
+            with self.subTest(member_name=member_name):
+                with self.assertRaisesRegex(
+                        SystemError,
+                        r"With Py_RELATIVE_OFFSET, basicsize must be negative."):
+                    _testlimitedcapi.make_heaptype_with_member(
+                        basicsize=sys.getsizeof(object()) + 100,
+                        add_relative_flag=True,
+                        member_name=member_name,
+                        member_offset=0,
+                        member_type=_testlimitedcapi.Py_T_PYSSIZET,
+                        member_flags=_testlimitedcapi.Py_READONLY,
+                        )
+                with self.assertRaisesRegex(
+                        SystemError,
+                        r"Member offset out of range \(0\.\.-basicsize\)"):
+                    _testlimitedcapi.make_heaptype_with_member(
+                        basicsize=-8,
+                        add_relative_flag=True,
+                        member_name=member_name,
+                        member_offset=-1,
+                        member_type=_testlimitedcapi.Py_T_PYSSIZET,
+                        member_flags=_testlimitedcapi.Py_READONLY,
+                        )
+                with self.assertRaisesRegex(
+                        SystemError,
+                        r"type of %s must be Py_T_PYSSIZET" % member_name):
+                    _testlimitedcapi.make_heaptype_with_member(
+                        basicsize=-100,
+                        add_relative_flag=True,
+                        member_name=member_name,
+                        member_offset=0,
+                        member_flags=_testlimitedcapi.Py_READONLY,
+                        )
+                with self.assertRaisesRegex(
+                        SystemError,
+                        r"flags for %s must be " % member_name):
+                    _testlimitedcapi.make_heaptype_with_member(
+                        basicsize=-100,
+                        add_relative_flag=True,
+                        member_name=member_name,
+                        member_offset=0,
+                        member_type=_testlimitedcapi.Py_T_PYSSIZET,
+                        member_flags=0,
+                        )
 
     def test_pyobject_getitemdata_error(self):
         """Test PyObject_GetItemData fails on unsupported types"""

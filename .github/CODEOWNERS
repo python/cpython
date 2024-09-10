@@ -276,3 +276,6 @@ Lib/test/test_interpreters/   @ericsnowcurrently
 # Config Parser
 Lib/configparser.py           @jaraco
 Lib/test/test_configparser.py @jaraco
+
+# Doc sections
+Doc/reference/                @willingc
