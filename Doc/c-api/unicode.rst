@@ -343,13 +343,14 @@ APIs:
 
 .. c:function:: int PyUnicode_Export(PyObject *unicode, uint32_t requested_formats, Py_buffer *view, uint32_t *format)
 
-   Export the contents of the *unicode* string in one of the requested format
-   *requested_formats*.
+   Export the contents of the *unicode* string in one of the *requested_formats*.
 
-   * On success, fill *view* and set *\*format*, and return ``0``.
-   * On error, set an exception and return ``-1``.
+   * On success, fill *view*, set *\*format*, and return ``0``.
+   * On error, set an exception, set *\*format* to 0, and return ``-1``.
+     *view* is left unchanged.
 
-   The *view* buffer must be released by :c:func:`PyBuffer_Release`.
+   After a successful call to :c:func:`PyUnicode_Export`,
+   the *view* buffer must be released by :c:func:`PyBuffer_Release`.
    The contents of the buffer are valid until they are released.
 
    The buffer is read-only and must not be modified.
@@ -369,6 +370,8 @@ APIs:
    .. c:macro:: PyUnicode_FORMAT_UCS4   ``0x08``  UCS-4 string (``Py_UCS4*``)
    .. c:macro:: PyUnicode_FORMAT_UTF8   ``0x10``  UTF-8 string (``char*``)
    ===================================  ========  ===========================
+   
+   UCS-2 and UCS-4 use the native byte order.
 
    *requested_formats* can be a single format or a bitwise combination of the
    formats in the table above.
