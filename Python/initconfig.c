@@ -1900,6 +1900,8 @@ config_init_tlbc_limit(PyConfig *config)
         config->tlbc_limit = limit;
     }
     return _PyStatus_OK();
+#else
+    return _PyStatus_OK();
 #endif
 }
 
