@@ -64,7 +64,7 @@
 
 #define LOCK_CODE(code)
 #define UNLOCK_CODE()
-#define MODIFY_BYTECODE(code, func, args...) (func)(_PyCode_CODE((code), __VA_ARGS__)
+#define MODIFY_BYTECODE(code, func, args...) (func)(_PyCode_CODE(code), args)
 
 #endif
 
