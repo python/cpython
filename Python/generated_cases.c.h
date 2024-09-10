@@ -4494,6 +4494,8 @@
                     this_instr = frame->instr_ptr;
                     next_instr = frame->instr_ptr + 1;
                 }
+                #else
+                (void)this_instr;
                 #endif
             }
             // _MAYBE_INSTRUMENT
@@ -6438,6 +6440,8 @@
                     this_instr = frame->instr_ptr;
                     next_instr = frame->instr_ptr + 1;
                 }
+                #else
+                (void)this_instr;
                 #endif
             }
             // _MAYBE_INSTRUMENT
@@ -6493,6 +6497,8 @@
                     this_instr = frame->instr_ptr;
                     next_instr = frame->instr_ptr + 1;
                 }
+                #else
+                (void)this_instr;
                 #endif
             }
             // _RESUME_CHECK

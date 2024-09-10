@@ -201,6 +201,8 @@ dummy_func(
                 next_instr = frame->instr_ptr + 1;
 
             }
+            #else
+            (void)this_instr;
             #endif
         }
 
