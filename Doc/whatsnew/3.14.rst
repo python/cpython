@@ -529,8 +529,8 @@ New Features
 
   (Contributed by Victor Stinner in :gh:`107954`.)
 
-* Add :c:func:`PyUnicode_Export`, :c:func:`PyUnicode_GetBufferFormat`,
-  and :c:func:`PyUnicode_Import` functions to export and import strings.
+* Add :c:func:`PyUnicode_Export` and :c:func:`PyUnicode_Import` functions
+  to export and import strings.
   (Contributed by Victor Stinner in :gh:`119609`.)
 
 

@@ -1,3 +1,2 @@
-Add :c:func:`PyUnicode_Export`, :c:func:`PyUnicode_GetBufferFormat`, and
-:c:func:`PyUnicode_Import` functions to export and import strings. Patch by
-Victor Stinner.
+Add :c:func:`PyUnicode_Export` and :c:func:`PyUnicode_Import` functions to
+export and import strings. Patch by Victor Stinner.
