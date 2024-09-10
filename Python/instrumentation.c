@@ -327,7 +327,8 @@ _PyInstruction_GetLength(PyCodeObject *code, int offset)
 {
     ASSERT_WORLD_STOPPED_OR_LOCKED(code);
 
-    int opcode = _PyCode_CODE(code)[offset].op.code;
+    int opcode =
+        FT_ATOMIC_LOAD_UINT8_RELAXED(_PyCode_CODE(code)[offset].op.code);
     assert(opcode != 0);
     assert(opcode != RESERVED);
     if (opcode == INSTRUMENTED_LINE) {
