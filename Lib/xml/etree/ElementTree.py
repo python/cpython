@@ -1203,8 +1203,8 @@ def parse(source, parser=None):
     import warnings
 
     if (hasattr(source, 'encoding') and
-    source.encoding == 'ISO-8859-1' and
-    source.mode == 'r'):    
+        source.encoding == 'ISO-8859-1' and
+        source.mode == 'r'):    
         warnings.warn(
             "For file objects containing XML data" 
             "with non-ASCII and non-UTF-8 encoding (e.g. ISO 8859-1), "
