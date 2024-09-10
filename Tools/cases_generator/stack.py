@@ -63,6 +63,11 @@ class Local:
         assert var.is_array() == prev.is_array()
         return Local(var, prev.cached, prev.in_memory, True)
 
+    @staticmethod
+    def memory(defn: StackItem) -> "Local":
+        array = defn.is_array()
+        return Local(defn, True, array, False)
+
     def copy(self) -> "Local":
         return Local(
             self.item,

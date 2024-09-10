@@ -154,24 +154,7 @@ class Emitter:
 
     exit_if = deopt_if
 
-    def error_if(
-        self,
-        tkn: Token,
-        tkn_iter: TokenIterator,
-        uop: Uop,
-        storage: Storage,
-        inst: Instruction | None,
-    ) -> bool:
-        self.out.emit_at("if ", tkn)
-        lparen = next(tkn_iter)
-        self.emit(lparen)
-        assert lparen.kind == "LPAREN"
-        first_tkn = tkn_iter.peek()
-        emit_to(self.out, tkn_iter, "COMMA")
-        label = next(tkn_iter).text
-        next(tkn_iter)  # RPAREN
-        next(tkn_iter)  # Semi colon
-        self.out.emit(") ")
+    def _flush_and_goto_error(self, storage: Storage, label: Token):
         if storage.locals_cached():
             offset = -1
         else:
@@ -190,11 +173,32 @@ class Emitter:
             self.out.emit(";\n")
         else:
             self.out.emit("{\n")
-            storage.copy().flush(self.out)
+            storage.flush(self.out)
             self.out.emit("goto ")
             self.out.emit(label)
             self.out.emit(";\n")
             self.out.emit("}\n")
+
+
+    def error_if(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        self.out.emit_at("if ", tkn)
+        lparen = next(tkn_iter)
+        self.emit(lparen)
+        assert lparen.kind == "LPAREN"
+        first_tkn = tkn_iter.peek()
+        emit_to(self.out, tkn_iter, "COMMA")
+        label = next(tkn_iter).text
+        next(tkn_iter)  # RPAREN
+        next(tkn_iter)  # Semi colon
+        self.out.emit(") ")
+        self._flush_and_goto_error(storage.copy(), label)
         return not always_true(first_tkn)
 
     def error_no_pop(
@@ -208,7 +212,11 @@ class Emitter:
         next(tkn_iter)  # LPAREN
         next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
-        self.out.emit_at("goto error;", tkn)
+        storage = storage.copy()
+        self.out.emit("\n")
+        for input in uop.stack.inputs:
+            storage.stack.push(Local.memory(input))
+        self._flush_and_goto_error(storage, tkn.replaceText("error"))
         return False
 
     def decref_inputs(

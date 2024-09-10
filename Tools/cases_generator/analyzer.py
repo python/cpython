@@ -499,6 +499,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyDictValues_AddToInsertionOrder",
     "Py_DECREF",
     "Py_XDECREF",
+    "Py_REFCNT",
     "_Py_DECREF_SPECIALIZED",
     "DECREF_INPUTS_AND_REUSE_FLOAT",
     "PyUnicode_Append",
@@ -573,6 +574,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyInterpreterState_GET",
     "PyType_HasFeature",
     "_Py_ID",
+    "_Py_DECREF_NO_DEALLOC",
 )
 
 def find_stmt_start(node: parser.InstDef, idx: int) -> lexer.Token:

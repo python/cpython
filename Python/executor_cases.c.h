@@ -781,16 +781,14 @@
              * only the locals reference, so PyUnicode_Append knows
              * that the string is safe to mutate.
              */
-            stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             assert(Py_REFCNT(left_o) >= 2);
             _Py_DECREF_NO_DEALLOC(left_o);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
             PyObject *temp = PyStackRef_AsPyObjectBorrow(*target_local);
             PyUnicode_Append(&temp, right_o);
             *target_local = PyStackRef_FromPyObjectSteal(temp);
             _Py_DECREF_SPECIALIZED(right_o, _PyUnicode_ExactDealloc);
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
             if (PyStackRef_IsNull(*target_local)) JUMP_TO_ERROR();
             #if TIER_ONE
             // The STORE_FAST is already done. This is done here in tier one,
@@ -3930,9 +3928,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             // The frame has stolen all the arguments from the stack,
             // so there is no need to clean them up.
-            if (new_frame == NULL) {
-                JUMP_TO_ERROR();
-            }
+            stack_pointer[0].bits = (uintptr_t)new_frame;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            if (new_frame == NULL) JUMP_TO_ERROR();
             stack_pointer += -2 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -4500,7 +4499,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (init_frame == NULL) {
                 _PyEval_FrameClearAndPop(tstate, shim);
-                JUMP_TO_ERROR();
+                stack_pointer[0].bits = (uintptr_t)init_frame;
+                stack_pointer += 1;
+                assert(WITHIN_STACK_BOUNDS());
+                if (true) JUMP_TO_ERROR();
             }
             frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
             /* Account for pushing the extra frame.
@@ -5174,9 +5176,10 @@
             PyStackRef_CLOSE(kwnames);
             // The frame has stolen all the arguments from the stack,
             // so there is no need to clean them up.
-            if (new_frame == NULL) {
-                JUMP_TO_ERROR();
-            }
+            stack_pointer[0].bits = (uintptr_t)new_frame;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            if (new_frame == NULL) JUMP_TO_ERROR();
             stack_pointer += -3 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             break;
