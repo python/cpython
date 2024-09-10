@@ -14,46 +14,51 @@
 
 --------------
 
-The :mod:`!annotationlib` module provides tools for introspecting :term:`annotations <annotation>`
-on modules, classes, and functions.
+The :mod:`!annotationlib` module provides tools for introspecting
+:term:`annotations <annotation>` on modules, classes, and functions.
 
 Annotations are :ref:`lazily evaluated <lazy-evaluation>` and often contain
-forward references to objects that are not yet defined when the annotation is created.
-This module provides a set of low-level tools that consumers of annotations can use to
-retrieve annotations in a reliable way, even in the presence of forward references and
-other edge cases.
+forward references to objects that are not yet defined when the annotation
+is created. This module provides a set of low-level tools that consumers
+of annotations can use to retrieve annotations in a reliable way, even
+in the presence of forward references and other edge cases.
 
-This module supports retrieving annotations in three main formats (see :class:`Format`), each
-of which works best for different use cases:
+This module supports retrieving annotations in three main formats
+(see :class:`Format`), each of which works best for different use cases:
 
-* :attr:`~Format.VALUE` evaluates the annotations and returns their value. This is
-  most straightforward to work with, but it may raise errors, for example if the annotations contain
-  references to undefined names.
-* :attr:`~Format.FORWARDREF` returns :class:`ForwardRef` objects for annotations that cannot be resolved,
-  allowing you to inspect the annotations without evaluating them. This is useful when you need to
+* :attr:`~Format.VALUE` evaluates the annotations and returns their value.
+  This is most straightforward to work with, but it may raise errors,
+  for example if the annotations contain references to undefined names.
+* :attr:`~Format.FORWARDREF` returns :class:`ForwardRef` objects
+  for annotations that cannot be resolved, allowing you to inspect the
+  annotations without evaluating them. This is useful when you need to
   work with annotations that may contain unresolved forward references.
-* :attr:`~Format.SOURCE` returns the annotations as a string, similar to how it would appear
-  in the source file. This is useful for documentation generators that want to display
-  annotations in a readable way.
+* :attr:`~Format.SOURCE` returns the annotations as a string, similar
+  to how it would appear in the source file. This is useful for documentation
+  generators that want to display annotations in a readable way.
 
-The :func:`get_annotations` function is the main entry point for retrieving annotations.
-Given a function, class, or module, it returns an annotations dictionary in the requested
-format. This module also provides functionality for working directly with the
-:term:`annotate function` that is used to evaluate annotations, such as
-:func:`get_annotate_function` and :func:`call_annotate_function`, as well as the
-:func:`call_evaluate_function` function for working with :term:`evaluate functions <evaluate function>`.
+The :func:`get_annotations` function is the main entry point for
+retrieving annotations. Given a function, class, or module, it returns
+an annotations dictionary in the requested format. This module also provides
+functionality for working directly with the :term:`annotate function`
+that is used to evaluate annotations, such as :func:`get_annotate_function`
+and :func:`call_annotate_function`, as well as the
+:func:`call_evaluate_function` function for working with
+:term:`evaluate functions <evaluate function>`.
 
 
 .. seealso::
 
    :pep:`649` proposed the current model for how annotations work in Python.
 
-   :pep:`749` expanded on various aspects of :pep:`649` and introduced the :mod:`!annotationlib` module.
+   :pep:`749` expanded on various aspects of :pep:`649` and introduced the
+   :mod:`!annotationlib` module.
 
-   :ref:`annotations-howto` provides best practices for working with annotations.
+   :ref:`annotations-howto` provides best practices for working with
+   annotations.
 
-   :pypi:`typing-extensions` provides a backport of :func:`get_annotations` that works on earlier
-   versions of Python.
+   :pypi:`typing-extensions` provides a backport of :func:`get_annotations`
+   that works on earlier versions of Python.
 
 Annotation semantics
 --------------------
@@ -62,12 +67,14 @@ The way annotations are evaluated has changed over the history of Python 3,
 and currently still depends on a :ref:`future import <future>`.
 There have been execution models for annotations:
 
-* *Stock semantics* (default in Python 3.0 through 3.13; see :pep:`3107` and :pep:`526`):
-  Annotations are evaluated eagerly, as they are encountered in the source code.
-* *Stringified annotations* (used with ``from __future__ import annotations`` in Python 3.7 and newer;
-  see :pep:`563`): Annotations are stored as strings only.
-* *Deferred evaluation* (default in Python 3.14 and newer; see :pep:`649` and :pep:`749`):
-  Annotations are evaluated lazily, only when they are accessed.
+* *Stock semantics* (default in Python 3.0 through 3.13; see :pep:`3107`
+  and :pep:`526`): Annotations are evaluated eagerly, as they are
+  encountered in the source code.
+* *Stringified annotations* (used with ``from __future__ import annotations``
+  in Python 3.7 and newer; see :pep:`563`): Annotations are stored as
+  strings only.
+* *Deferred evaluation* (default in Python 3.14 and newer; see :pep:`649` and
+  :pep:`749`): Annotations are evaluated lazily, only when they are accessed.
 
 As an example, consider the following program::
 
@@ -80,36 +87,41 @@ As an example, consider the following program::
 
 This will behave as follows:
 
-* Under stock semantics (Python 3.13 and earlier), it will throw a :exc:`NameError`
-  at the line where ``func``
-  is defined, because ``Cls`` is an undefined name at that point.
-* Under stringified annotations (if ``from __future__ import annotations`` is used),
-  it will print ``{'a': 'Cls', 'return': 'None'}``.
-* Under deferred evaluation (Python 3.14 and later), it will print ``{'a': <class 'Cls'>, 'return': None}``.
+* Under stock semantics (Python 3.13 and earlier), it will throw a
+  :exc:`NameError` at the line where ``func`` is defined,
+  because ``Cls`` is an undefined name at that point.
+* Under stringified annotations (if ``from __future__ import annotations``
+  is used), it will print ``{'a': 'Cls', 'return': 'None'}``.
+* Under deferred evaluation (Python 3.14 and later), it will print
+  ``{'a': <class 'Cls'>, 'return': None}``.
 
-Stock semantics were used when function annotations were first introduced in Python 3.0
-(by :pep:`3107`) because this was the simplest, most obvious way to implement annotations.
-The same execution model was used when variable annotations were introduced in Python 3.6
-(by :pep:`526`). However, stock semantics caused problems for users using annotations
-as type hints, which frequently need to refer to names that are not yet defined when the
-annotation is encountered. In addition, there were performance problems with executing annotations
-at module import time. Therefore, in Python 3.7, :pep:`563` introduced the ability to store
-annotations as strings using the ``from __future__ import annotations`` syntax. The plan
-at the time was to eventually make this behavior the default, but a problem appeared:
-stringified annotations are more difficult to process for those who introspect annotations at runtime.
-An alternative proposal, :pep:`649`, introduced the third execution model, deferred evaluation,
-and was implemented in Python 3.14. Stringified annotations are still used if
-``from __future__ import annotations`` is present, but this behavior will eventually be removed.
+Stock semantics were used when function annotations were first introduced
+in Python 3.0 (by :pep:`3107`) because this was the simplest, most obvious
+way to implement annotations. The same execution model was used when variable
+annotations were introduced in Python 3.6 (by :pep:`526`). However,
+stock semantics caused problems for users using annotations as type hints,
+which frequently need to refer to names that are not yet defined when the
+annotation is encountered. In addition, there were performance problems
+with executing annotations at module import time. Therefore, in Python 3.7,
+:pep:`563` introduced the ability to store annotations as strings using the
+``from __future__ import annotations`` syntax. The plan at the time was to
+eventually make this behavior the default, but a problem appeared:
+stringified annotations are more difficult to process for those who
+introspect annotations at runtime. An alternative proposal, :pep:`649`,
+introduced the third execution model, deferred evaluation, and was implemented
+in Python 3.14. Stringified annotations are still used if
+``from __future__ import annotations`` is present, but this behavior will
+eventually be removed.
 
 Classes
 -------
 
 .. class:: Format
 
-   An :class:`~enum.IntEnum` describing the formats in which annotations can be returned.
-   Members of the enum, or their equivalent integer values, can be passed to
-   :func:`get_annotations` and other functions in this module, as well as to
-   :attr:`~object.__annotate__` functions.
+   An :class:`~enum.IntEnum` describing the formats in which annotations
+   can be returned. Members of the enum, or their equivalent integer values,
+   can be passed to :func:`get_annotations` and other functions in this
+   module, as well as to :attr:`~object.__annotate__` functions.
 
    .. attribute:: VALUE
       :value: 1
@@ -119,16 +131,17 @@ Classes
    .. attribute:: FORWARDREF
       :value: 2
 
-      Values are real annotation values (as per :attr:`Format.VALUE` format) for defined values,
-      and :class:`ForwardRef` proxies for undefined values. Real objects may
-      contain references to, :class:`ForwardRef` proxy objects.
+      Values are real annotation values (as per :attr:`Format.VALUE` format)
+      for defined values, and :class:`ForwardRef` proxies for undefined
+      values. Real objects may contain references to, :class:`ForwardRef`
+      proxy objects.
 
    .. attribute:: SOURCE
       :value: 3
 
-      Values are the text string of the annotation as it appears in the source code,
-      up to modifications including, but not restricted to, whitespace normalizations
-      and constant values optimizations.
+      Values are the text string of the annotation as it appears in the
+      source code, up to modifications including, but not restricted to,
+      whitespace normalizations and constant values optimizations.
 
       The exact values of these strings may change in future versions of Python.
 
@@ -138,42 +151,46 @@ Classes
 
    A proxy object for forward references in annotations.
 
-   Instances of this class are returned when the :attr:`~Format.FORWARDREF` format is
-   used and annotations contain a name that cannot be resolved. This can happen
-   when a forward reference is used in an annotation, such as when a class is
-   referenced before it is defined.
+   Instances of this class are returned when the :attr:`~Format.FORWARDREF`
+   format is used and annotations contain a name that cannot be resolved.
+   This can happen when a forward reference is used in an annotation, such as
+   when a class is referenced before it is defined.
 
    .. attribute:: __forward_arg__
 
-      A string containing the code that was evaluated to produce the :class:`~ForwardRef`.
-      The string may not be exactly equivalent to the original source.
+      A string containing the code that was evaluated to produce the
+      :class:`~ForwardRef`. The string may not be exactly equivalent
+      to the original source.
 
    .. method:: evaluate(*, globals=None, locals=None, type_params=None, owner=None)
 
       Evaluate the forward reference, returning its value.
 
-      This may throw an exception, such as :exc:`NameError`, if the forward reference
-      refers to names that do not exist. The arguments to this method can be used to
-      provide bindings for names that would otherwise be undefined.
+      This may throw an exception, such as :exc:`NameError`, if the forward
+      reference refers to names that do not exist. The arguments to this
+      method can be used to provide bindings for names that would otherwise
+      be undefined.
 
-      :class:`~ForwardRef` instances returned by :func:`get_annotations` retain
-      references to information about the scope they originated from, so calling
-      this method with no further arguments may be sufficient to evaluate such objects.
-      :class:`~ForwardRef` instances created by other means may not have any information
-      about their scope, so passing arguments to this method may be necessary to
-      evaluate them successfully.
+      :class:`~ForwardRef` instances returned by :func:`get_annotations`
+      retain references to information about the scope they originated from,
+      so calling this method with no further arguments may be sufficient to
+      evaluate such objects. :class:`~ForwardRef` instances created by other
+      means may not have any information about their scope, so passing
+      arguments to this method may be necessary to evaluate them successfully.
 
-      *globals* and *locals* are passed to :func:`eval`, representing the global and
-      local namespaces in which the name is evaluated. *type_params*, if given, must be
-      a tuple of :ref:`type parameters <type-params>` that are in scope while the forward
-      reference is being evaluated. *owner* is the object that owns the annotation from
-      which the forward reference derives, usually a function, class, or module.
+      *globals* and *locals* are passed to :func:`eval`, representing
+      the global and local namespaces in which the name is evaluated.
+      *type_params*, if given, must be a tuple of
+      :ref:`type parameters <type-params>` that are in scope while the forward
+      reference is being evaluated. *owner* is the object that owns the
+      annotation from which the forward reference derives, usually a function,
+      class, or module.
 
       .. important::
 
-         Once a :class:`~ForwardRef` instance has been evaluated, it caches the evaluated
-         value, and future calls to :meth:`evaluate` will return the cached value, regardless
-         of the parameters passed in.
+         Once a :class:`~ForwardRef` instance has been evaluated, it caches
+         the evaluated value, and future calls to :meth:`evaluate` will return
+         the cached value, regardless of the parameters passed in.
 
    .. versionadded:: 3.14
 
@@ -191,39 +208,48 @@ Functions
    the compiler for functions, classes, and modules only support
    the :attr:`~Format.VALUE` format when called directly.
    To support other formats, this function calls the annotate function
-   in a special environment that allows it to produce annotations in the other formats.
-   This is a useful building block when implementing functionality
-   that needs to partially evaluate annotations while a class is being constructed.
+   in a special environment that allows it to produce annotations in the
+   other formats. This is a useful building block when implementing
+   functionality that needs to partially evaluate annotations while a class
+   is being constructed.
 
-   *owner* is the object that owns the annotation function, usually a function,
-   class, or module. If provided, it is used in the :attr:`~Format.FORWARDREF`
-   format to produce a :class:`ForwardRef` object that carries more information.
+   *owner* is the object that owns the annotation function, usually
+   a function, class, or module. If provided, it is used in the
+   :attr:`~Format.FORWARDREF` format to produce a :class:`ForwardRef`
+   object that carries more information.
 
    .. seealso::
 
-      :PEP:`PEP 649 <649#the-stringizer-and-the-fake-globals-environment>` contains
-      an explanation of the implementation technique used by this function.
+      :PEP:`PEP 649 <649#the-stringizer-and-the-fake-globals-environment>`
+      contains an explanation of the implementation technique used by this
+      function.
 
    .. versionadded:: 3.14
 
 .. function:: call_evaluate_function(evaluate, format, *, owner=None)
 
-   Call the :term:`evaluate function` *evaluate* with the given *format*, a member of the :class:`Format`
-   enum, and return the value produced by the function. This is similar to :func:`call_annotate_function`,
-   but the latter always returns a dictionary mapping strings to annotations, while this function returns
-   a single value.
+   Call the :term:`evaluate function` *evaluate* with the given *format*,
+   a member of the :class:`Format` enum, and return the value produced by
+   the function. This is similar to :func:`call_annotate_function`,
+   but the latter always returns a dictionary mapping strings to annotations,
+   while this function returns a single value.
 
-   This is intended for use with the evaluate functions generated for lazily evaluated elements
-   related to type aliases and type parameters:
+   This is intended for use with the evaluate functions generated for lazily
+   evaluated elements related to type aliases and type parameters:
 
    * :meth:`typing.TypeAliasType.evaluate_value`, the value of type aliases
    * :meth:`typing.TypeVar.evaluate_bound`, the bound of type variables
-   * :meth:`typing.TypeVar.evaluate_constraints`, the constraints of type variables
-   * :meth:`typing.TypeVar.evaluate_default`, the default value of type variables
-   * :meth:`typing.ParamSpec.evaluate_default`, the default value of parameter specifications
-   * :meth:`typing.TypeVarTuple.evaluate_default`, the default value of type variable tuples
+   * :meth:`typing.TypeVar.evaluate_constraints`, the constraints of
+     type variables
+   * :meth:`typing.TypeVar.evaluate_default`, the default value of
+     type variables
+   * :meth:`typing.ParamSpec.evaluate_default`, the default value of
+     parameter specifications
+   * :meth:`typing.TypeVarTuple.evaluate_default`, the default value of
+     type variable tuples
 
-   *owner* is the object that owns the evaluate function, such as the type alias or type variable object.
+   *owner* is the object that owns the evaluate function, such as the type
+   alias or type variable object.
 
    *format* can be used to control the format in which the value is returned:
 
@@ -243,12 +269,13 @@ Functions
 
 .. function:: get_annotate_function(obj)
 
-   Retrieve the :term:`annotate function` for *obj*. Return :const:`!None` if *obj* does not have an
-   annotate function.
+   Retrieve the :term:`annotate function` for *obj*. Return :const:`!None`
+   if *obj* does not have an annotate function.
 
-   This is usually equivalent to accessing the :attr:`~object.__annotate__` attribute of *obj*,
-   but direct access to the attribute may return the wrong object in certain situations involving
-   metaclasses. This function should be used instead of accessing the attribute directly.
+   This is usually equivalent to accessing the :attr:`~object.__annotate__`
+   attribute of *obj*, but direct access to the attribute may return the wrong
+   object in certain situations involving metaclasses. This function should be
+   used instead of accessing the attribute directly.
 
    .. versionadded:: 3.14
 
@@ -284,19 +311,20 @@ Functions
    * All accesses to object members and dict values are done
      using ``getattr()`` and ``dict.get()`` for safety.
 
-   *eval_str* controls whether or not values of type :class:`!str` are replaced
-   with the result of calling :func:`eval` on those values:
+   *eval_str* controls whether or not values of type :class:`!str` are
+   replaced with the result of calling :func:`eval` on those values:
 
-   * If eval_str is true, :func:`eval` is called on values of type :class:`!str`.
-     (Note that :func:`!get_annotations` doesn't catch exceptions; if :func:`eval()`
-     raises an exception, it will unwind the stack past the :func:`!get_annotations`
-     call.)
-   * If *eval_str* is false (the default), values of type :class:`!str` are unchanged.
+   * If eval_str is true, :func:`eval` is called on values of type
+     :class:`!str`. (Note that :func:`!get_annotations` doesn't catch
+     exceptions; if :func:`eval()` raises an exception, it will unwind
+     the stack past the :func:`!get_annotations` call.)
+   * If *eval_str* is false (the default), values of type :class:`!str` are
+     unchanged.
 
    *globals* and *locals* are passed in to :func:`eval`; see the documentation
    for :func:`eval` for more information. If *globals* or *locals*
-   is :const:`!None`, this function may replace that value with a context-specific
-   default, contingent on ``type(obj)``:
+   is :const:`!None`, this function may replace that value with a
+   context-specific default, contingent on ``type(obj)``:
 
    * If *obj* is a module, *globals* defaults to ``obj.__dict__``.
    * If *obj* is a class, *globals* defaults to
