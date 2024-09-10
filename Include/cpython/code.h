@@ -70,22 +70,16 @@ typedef struct {
 
 #ifdef Py_GIL_DISABLED
 
-typedef struct {
-    PyMutex mutex;
-    char bytecode[];
-} _PyMutBytecode;
-
 /* Each thread specializes a thread-local copy of the bytecode in free-threaded
  * builds. These copies are stored on the code object in a `_PyCodeArray`.
  */
 typedef struct {
     Py_ssize_t size;
-    _PyMutBytecode *entries[];
+    char *entries[];
 } _PyCodeArray;
 
 #define _PyCode_DEF_THREAD_LOCAL_BYTECODE() \
-    _PyCodeArray *co_tlbc;                  \
-    PyMutex co_code_adaptive_mutex;
+    _PyCodeArray *co_tlbc;
 #else
 #define _PyCode_DEF_THREAD_LOCAL_BYTECODE()
 #endif

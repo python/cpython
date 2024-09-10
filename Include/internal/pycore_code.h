@@ -369,8 +369,7 @@ extern void _Py_Specialize_Call(_PyStackRef callable, _Py_CODEUNIT *instr,
                                 int nargs);
 extern void _Py_Specialize_CallKw(_PyStackRef callable, _Py_CODEUNIT *instr,
                                   int nargs);
-extern void _Py_Specialize_BinaryOp(PyCodeObject *code, _PyStackRef lhs,
-                                    _PyStackRef rhs, _Py_CODEUNIT *instr,
+extern void _Py_Specialize_BinaryOp(_PyStackRef lhs, _PyStackRef rhs, _Py_CODEUNIT *instr,
                                     int oparg, _PyStackRef *locals);
 extern void _Py_Specialize_CompareOp(_PyStackRef lhs, _PyStackRef rhs,
                                      _Py_CODEUNIT *instr, int oparg);
@@ -660,7 +659,7 @@ _PyCode_GetTLBCFast(PyCodeObject *co)
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *) PyThreadState_GET();
     Py_ssize_t idx = tstate->tlbc_index;
     if (idx < code->size && code->entries[idx] != NULL) {
-        return (_Py_CODEUNIT *) code->entries[idx]->bytecode;
+        return (_Py_CODEUNIT *) code->entries[idx];
     }
     return NULL;
 }
@@ -689,8 +688,6 @@ _PyCode_GetExecutableCode(PyCodeObject *co)
     return _PyCode_CODE(co);
 }
 
-extern void _PyCode_LockTLBC(PyCodeObject *co);
-extern void _PyCode_UnlockTLBC(PyCodeObject *co);
 extern int _Py_ReserveTLBCIndex(PyInterpreterState *interp);
 extern void _Py_ClearTLBCIndex(_PyThreadStateImpl *tstate);
 #endif

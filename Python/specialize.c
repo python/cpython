@@ -25,22 +25,22 @@ extern const char *_PyUOpName(int index);
  */
 
 #ifdef Py_GIL_DISABLED
-#define SET_OPCODE(instr, opcode) _Py_atomic_store_uint8_relaxed(&(instr)->op.code, (opcode))
-#define LOCK_TLBC_RETURN_IF_INSTRUMENTED(code, instr)       \
-    do {                                                    \
-        _PyCode_LockTLBC(code);                             \
-        if ((instr)->op.code >= MIN_INSTRUMENTED_OPCODE) {  \
-            _PyCode_UnlockTLBC(code);                       \
-            return;                                         \
-        }                                                   \
-    } while (0)
-#define UNLOCK_TLBC(code) _PyCode_UnlockTLBC(code)
+#define SET_OPCODE_OR_RETURN(instr, opcode)                                 \
+    do {                                                                    \
+        uint8_t old_op = _Py_atomic_load_uint8_relaxed(&(instr)->op.code);  \
+        if (old_op >= MIN_INSTRUMENTED_OPCODE) {                            \
+            /* Lost race with instrumentation */                            \
+            return;                                                         \
+        }                                                                   \
+        if (!_Py_atomic_compare_exchange_uint8(&(instr)->op.code, &old_op, (opcode))) { \
+            /* Lost race with instrumentation */                            \
+            assert(old_op >= MIN_INSTRUMENTED_OPCODE);                      \
+            return;                                                         \
+        }                                                                   \
+     } while (0)
 #else
-#define SET_OPCODE(instr, opcode) (instr)->op.code = (opcode)
-#define LOCK_TLBC_RETURN_IF_INSTRUMENTED(code, instr) (void) (code)
-#define UNLOCK_TLBC(code) (void) (code)
+#define SET_OPCODE_OR_RETURN(instr, opcode) (instr)->op.code = (opcode)
 #endif
-
 
 #ifdef Py_STATS
 GCStats _py_gc_stats[NUM_GENERATIONS] = { 0 };
@@ -2255,15 +2255,15 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
 #endif   // Py_STATS
 
 void
-_Py_Specialize_BinaryOp(PyCodeObject *code, _PyStackRef lhs_st, _PyStackRef rhs_st,
-                        _Py_CODEUNIT *instr, int oparg, _PyStackRef *locals)
+_Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *instr,
+                        int oparg, _PyStackRef *locals)
 {
     PyObject *lhs = PyStackRef_AsPyObjectBorrow(lhs_st);
     PyObject *rhs = PyStackRef_AsPyObjectBorrow(rhs_st);
     assert(ENABLE_SPECIALIZED_BINARY_OP);
     assert(_PyOpcode_Caches[BINARY_OP] == INLINE_CACHE_ENTRIES_BINARY_OP);
-    LOCK_TLBC_RETURN_IF_INSTRUMENTED(code, instr);
     _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(instr + 1);
+    uint8_t specialized_op;
     switch (oparg) {
         case NB_ADD:
         case NB_INPLACE_ADD:
@@ -2274,18 +2274,18 @@ _Py_Specialize_BinaryOp(PyCodeObject *code, _PyStackRef lhs_st, _PyStackRef rhs_
                 _Py_CODEUNIT next = instr[INLINE_CACHE_ENTRIES_BINARY_OP + 1];
                 bool to_store = (next.op.code == STORE_FAST);
                 if (to_store && PyStackRef_AsPyObjectBorrow(locals[next.op.arg]) == lhs) {
-                    SET_OPCODE(instr, BINARY_OP_INPLACE_ADD_UNICODE);
+                    specialized_op = BINARY_OP_INPLACE_ADD_UNICODE;
                     goto success;
                 }
-                SET_OPCODE(instr, BINARY_OP_ADD_UNICODE);
+                specialized_op = BINARY_OP_ADD_UNICODE;
                 goto success;
             }
             if (PyLong_CheckExact(lhs)) {
-                SET_OPCODE(instr, BINARY_OP_ADD_INT);
+                specialized_op = BINARY_OP_ADD_INT;
                 goto success;
             }
             if (PyFloat_CheckExact(lhs)) {
-                SET_OPCODE(instr, BINARY_OP_ADD_FLOAT);
+                specialized_op = BINARY_OP_ADD_FLOAT;
                 goto success;
             }
             break;
@@ -2295,11 +2295,11 @@ _Py_Specialize_BinaryOp(PyCodeObject *code, _PyStackRef lhs_st, _PyStackRef rhs_
                 break;
             }
             if (PyLong_CheckExact(lhs)) {
-                SET_OPCODE(instr, BINARY_OP_MULTIPLY_INT);
+                specialized_op = BINARY_OP_MULTIPLY_INT;
                 goto success;
             }
             if (PyFloat_CheckExact(lhs)) {
-                SET_OPCODE(instr, BINARY_OP_MULTIPLY_FLOAT);
+                specialized_op = BINARY_OP_MULTIPLY_FLOAT;
                 goto success;
             }
             break;
@@ -2309,25 +2309,24 @@ _Py_Specialize_BinaryOp(PyCodeObject *code, _PyStackRef lhs_st, _PyStackRef rhs_
                 break;
             }
             if (PyLong_CheckExact(lhs)) {
-                SET_OPCODE(instr, BINARY_OP_SUBTRACT_INT);
+                specialized_op = BINARY_OP_SUBTRACT_INT;
                 goto success;
             }
             if (PyFloat_CheckExact(lhs)) {
-                SET_OPCODE(instr, BINARY_OP_SUBTRACT_FLOAT);
+                specialized_op = BINARY_OP_SUBTRACT_FLOAT;
                 goto success;
             }
             break;
     }
     SPECIALIZATION_FAIL(BINARY_OP, binary_op_fail_kind(oparg, lhs, rhs));
     STAT_INC(BINARY_OP, failure);
-    instr->op.code = BINARY_OP;
+    SET_OPCODE_OR_RETURN(instr, BINARY_OP);
     cache->counter = adaptive_counter_backoff(cache->counter);
-    UNLOCK_TLBC(code);
     return;
 success:
     STAT_INC(BINARY_OP, success);
+    SET_OPCODE_OR_RETURN(instr, specialized_op);
     cache->counter = adaptive_counter_cooldown();
-    UNLOCK_TLBC(code);
 }
 
 

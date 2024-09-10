@@ -527,8 +527,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     if (co->co_tlbc == NULL) {
         return -1;
     }
-    co->co_tlbc->entries[0] = (_PyMutBytecode *) &co->co_code_adaptive_mutex;
-    co->co_tlbc->entries[0]->mutex = (PyMutex){0};
+    co->co_tlbc->entries[0] = co->co_code_adaptive;
 #endif
     int entry_point = 0;
     while (entry_point < Py_SIZE(co) &&
@@ -1908,7 +1907,7 @@ code_dealloc(PyCodeObject *co)
     // the code object, which will be freed when the code object is freed.
     Py_ssize_t bytes_freed = 0;
     for (Py_ssize_t i = 1; i < co->co_tlbc->size; i++) {
-        _PyMutBytecode *entry = co->co_tlbc->entries[i];
+        char *entry = co->co_tlbc->entries[i];
         if (entry != NULL) {
             PyMem_Free(entry);
             bytes_freed += _PyCode_NBYTES(co);
@@ -2720,7 +2719,7 @@ _Py_ClearTLBCIndex(_PyThreadStateImpl *tstate)
 static _PyCodeArray *
 _PyCodeArray_New(Py_ssize_t size)
 {
-    _PyCodeArray *arr = PyMem_Calloc(1, sizeof(_PyCodeArray) + sizeof(_PyMutBytecode*) * size);
+    _PyCodeArray *arr = PyMem_Calloc(1, sizeof(_PyCodeArray) + sizeof(void*) * size);
     if (arr == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -2730,14 +2729,13 @@ _PyCodeArray_New(Py_ssize_t size)
 }
 
 static void
-copy_code(_PyMutBytecode *dst, PyCodeObject *co)
+copy_code(_Py_CODEUNIT *dst, PyCodeObject *co)
 {
     int code_len = Py_SIZE(co);
-    _Py_CODEUNIT *dst_bytecode = (_Py_CODEUNIT *) dst->bytecode;
     for (int i = 0; i < code_len; i += _PyInstruction_GetLength(co, i)) {
-        dst_bytecode[i] = _Py_GetBaseCodeUnit(co, i);
+        dst[i] = _Py_GetBaseCodeUnit(co, i);
     }
-    _PyCode_Quicken(dst_bytecode, code_len);
+    _PyCode_Quicken(dst, code_len);
 }
 
 static Py_ssize_t
@@ -2771,15 +2769,15 @@ create_tlbc_lock_held(PyCodeObject *co, Py_ssize_t idx)
         _PyMem_FreeDelayed(tlbc);
         tlbc = new_tlbc;
     }
-    _PyMutBytecode *bc = PyMem_Calloc(1, sizeof(_PyMutBytecode) + _PyCode_NBYTES(co));
+    char *bc = PyMem_Calloc(1, _PyCode_NBYTES(co));
     if (bc == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    copy_code(bc, co);
+    copy_code((_Py_CODEUNIT *) bc, co);
     assert(tlbc->entries[idx] == NULL);
     tlbc->entries[idx] = bc;
-    return (_Py_CODEUNIT *) bc->bytecode;
+    return (_Py_CODEUNIT *) bc;
 }
 
 static Py_ssize_t
@@ -2872,7 +2870,7 @@ get_tlbc_lock_held(PyCodeObject *co)
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *) PyThreadState_GET();
     Py_ssize_t idx = tstate->tlbc_index;
     if (idx < tlbc->size && tlbc->entries[idx] != NULL) {
-        return (_Py_CODEUNIT *) tlbc->entries[idx]->bytecode;
+        return (_Py_CODEUNIT *) tlbc->entries[idx];
     }
     Py_ssize_t reserved = reserve_bytes_for_tlbc(co);
     if (reserved == -1) {
@@ -2898,32 +2896,6 @@ _PyCode_GetTLBCSlow(PyCodeObject *co)
     result = get_tlbc_lock_held(co);
     Py_END_CRITICAL_SECTION();
     return result;
-}
-
-static inline _PyMutBytecode *
-get_tlbc(PyCodeObject *co)
-{
-    _PyCodeArray *code = _Py_atomic_load_ptr_acquire(&co->co_tlbc);
-    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *) PyThreadState_GET();
-    Py_ssize_t idx = tstate->tlbc_index;
-    assert(idx >= 0 && idx < code->size);
-    return code->entries[idx];
-}
-
-void
-_PyCode_LockTLBC(PyCodeObject *co)
-{
-    _PyMutBytecode *tlbc = get_tlbc(co);
-    assert(tlbc != NULL);
-    PyMutex_LockFlags(&tlbc->mutex, _PY_LOCK_DETACH);
-}
-
-void
-_PyCode_UnlockTLBC(PyCodeObject *co)
-{
-    _PyMutBytecode *tlbc = get_tlbc(co);
-    assert(tlbc != NULL);
-    PyMutex_Unlock(&tlbc->mutex);
 }
 
 #endif

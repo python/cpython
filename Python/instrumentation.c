@@ -50,13 +50,11 @@
     do {                                                           \
         PyCodeObject *co = (code);                                 \
         for (Py_ssize_t i = 0; i < code->co_tlbc->size; i++) {     \
-            _PyMutBytecode *mb = co->co_tlbc->entries[i];          \
-            if (mb == NULL) {                                      \
+            char *bc = co->co_tlbc->entries[i];                    \
+            if (bc == NULL) {                                      \
                 continue;                                          \
             }                                                      \
-            PyMutex_LockFlags(&mb->mutex, _Py_LOCK_DONT_DETACH);   \
-            (func)((_Py_CODEUNIT *) mb->bytecode, args);           \
-            PyMutex_Unlock(&mb->mutex);                            \
+            (func)((_Py_CODEUNIT *) bc, args);                     \
         }                                                          \
     } while (0)
 
