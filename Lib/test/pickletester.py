@@ -2326,7 +2326,7 @@ class AbstractPicklingErrorTests:
         for proto in protocols[5:]:
             with self.subTest(proto=proto):
                 pb = pickle.PickleBuffer(memoryview(b"foobar")[::2])
-                with self.assertRaises(pickle.PicklingError):
+                with self.assertRaises((pickle.PicklingError, BufferError)):
                     self.dumps(pb, proto)
 
     def test_buffer_callback_error(self):
