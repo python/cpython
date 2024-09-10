@@ -8642,11 +8642,12 @@ os_unlockpt_impl(PyObject *module, int fd)
 
 #if defined(HAVE_PTSNAME) || defined(HAVE_PTSNAME_R)
 static PyObject *
-from_ptsname(int fd)
+py_ptsname(int fd)
 {
+    // POSIX manpage: Upon failure, ptsname() shall return a null pointer
+    // and may set errno. Always initialize errno to avoid undefined behavior.
+    errno = 0;
     char *name = ptsname(fd);
-    /* POSIX manpage: Upon failure, ptsname() shall return a null pointer and may set errno.
-       *MAY* set errno? Hmm... */
     if (name == NULL) {
         return posix_error();
     }
@@ -8678,8 +8679,8 @@ os_ptsname_impl(PyObject *module, int fd)
         ret = ptsname_r(fd, name, sizeof(name));
     }
     else {
-        // fallback to `ptsname` if `ptsname_r` is not available in runtime.
-        return from_ptsname(fd);
+        // fallback to ptsname() if ptsname_r() is not available in runtime.
+        return py_ptsname(fd);
     }
     if (ret != 0) {
         errno = ret;
@@ -8688,7 +8689,7 @@ os_ptsname_impl(PyObject *module, int fd)
 
     return PyUnicode_DecodeFSDefault(name);
 #else
-    return from_ptsname(fd);
+    return py_ptsname(fd);
 #endif /* HAVE_PTSNAME_R */
 }
 #endif /* defined(HAVE_PTSNAME) || defined(HAVE_PTSNAME_R) */
