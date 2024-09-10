@@ -2339,6 +2339,7 @@ unicode_export(PyObject *unicode, Py_buffer *view, uint32_t *pformat,
 {
     if (PyBuffer_FillInfo(view, unicode, (void*)buf, len,
                           1, PyBUF_SIMPLE) < 0) {
+        *pformat = 0;
         return -1;
     }
     view->itemsize = itemsize;
@@ -2363,7 +2364,7 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats,
 
     if (!PyUnicode_Check(unicode)) {
         PyErr_Format(PyExc_TypeError, "must be str, not %T", unicode);
-        return -1;
+        goto error;
     }
     Py_ssize_t len = PyUnicode_GET_LENGTH(unicode);
 
@@ -2402,7 +2403,7 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats,
         Py_UCS2 *ucs2 = PyMem_Malloc((len + 1) * sizeof(Py_UCS2));
         if (!ucs2) {
             PyErr_NoMemory();
-            return -1;
+            goto error;
         }
 
         _PyUnicode_CONVERT_BYTES(Py_UCS1, Py_UCS2,
@@ -2429,7 +2430,7 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats,
     if (requested_formats & PyUnicode_FORMAT_UCS4) {
         Py_UCS4 *ucs4 = PyUnicode_AsUCS4Copy(unicode);
         if (ucs4 == NULL) {
-            return -1;
+            goto error;
         }
         return unicode_export(unicode, view, format,
                               len, ucs4,
@@ -2441,7 +2442,7 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats,
         Py_ssize_t nbytes;
         const char *utf8 = PyUnicode_AsUTF8AndSize(unicode, &nbytes);
         if (utf8 == NULL) {
-            return -1;
+            goto error;
         }
         return unicode_export(unicode, view, format,
                               nbytes, utf8,
@@ -2450,6 +2451,10 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats,
 
     PyErr_SetString(PyExc_ValueError,
                     "unable to find a matching export format");
+    goto error;
+
+error:
+    *format = 0;
     return -1;
 
 #undef BUFFER_UCS4

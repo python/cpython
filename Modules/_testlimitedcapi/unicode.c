@@ -1849,8 +1849,9 @@ unicode_export(PyObject *self, PyObject *args)
     }
 
     Py_buffer view;
-    uint32_t format;
+    uint32_t format = (uint32_t)UNINITIALIZED_INT;
     if (PyUnicode_Export(obj, requested_formats, &view, &format) < 0) {
+        assert(format == 0);
         return NULL;
     }
 
