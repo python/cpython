@@ -345,8 +345,12 @@ The following functions and structs are used to create
       The :c:member:`~PyTypeObject.tp_new` of the metaclass is *ignored*.
       which may result in incomplete initialization.
       Creating classes whose metaclass overrides
-      :c:member:`~PyTypeObject.tp_new` is deprecated and in Python 3.14+ it
-      will be no longer allowed.
+      :c:member:`~PyTypeObject.tp_new` is deprecated.
+
+   .. versionchanged:: 3.14
+
+      Creating classes whose metaclass overrides
+      :c:member:`~PyTypeObject.tp_new` is no longer allowed.
 
 .. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
@@ -362,8 +366,12 @@ The following functions and structs are used to create
       The :c:member:`~PyTypeObject.tp_new` of the metaclass is *ignored*.
       which may result in incomplete initialization.
       Creating classes whose metaclass overrides
-      :c:member:`~PyTypeObject.tp_new` is deprecated and in Python 3.14+ it
-      will be no longer allowed.
+      :c:member:`~PyTypeObject.tp_new` is deprecated.
+
+   .. versionchanged:: 3.14
+
+      Creating classes whose metaclass overrides
+      :c:member:`~PyTypeObject.tp_new` is no longer allowed.
 
 .. c:function:: PyObject* PyType_FromSpec(PyType_Spec *spec)
 
@@ -378,8 +386,12 @@ The following functions and structs are used to create
       The :c:member:`~PyTypeObject.tp_new` of the metaclass is *ignored*.
       which may result in incomplete initialization.
       Creating classes whose metaclass overrides
-      :c:member:`~PyTypeObject.tp_new` is deprecated and in Python 3.14+ it
-      will be no longer allowed.
+      :c:member:`~PyTypeObject.tp_new` is deprecated.
+
+   .. versionchanged:: 3.14
+
+      Creating classes whose metaclass overrides
+      :c:member:`~PyTypeObject.tp_new` is no longer allowed.
 
 .. raw:: html
 
