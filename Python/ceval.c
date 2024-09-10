@@ -2763,7 +2763,7 @@ PyObject *
 _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
 {
     PyObject *x;
-    PyObject *fullmodname, *pkgname, *pkgpath, *pkgname_or_unknown, *errmsg;
+    PyObject *fullmodname, *mod_name, *pkgpath, *mod_name_or_unknown, *errmsg;
 
     if (PyObject_GetOptionalAttr(v, name, &x) != 0) {
         return x;
@@ -2771,16 +2771,16 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     /* Issue #17636: in case this failed because of a circular relative
        import, try to fallback on reading the module directly from
        sys.modules. */
-    if (PyObject_GetOptionalAttr(v, &_Py_ID(__name__), &pkgname) < 0) {
+    if (PyObject_GetOptionalAttr(v, &_Py_ID(__name__), &mod_name) < 0) {
         return NULL;
     }
-    if (pkgname == NULL || !PyUnicode_Check(pkgname)) {
-        Py_CLEAR(pkgname);
+    if (mod_name == NULL || !PyUnicode_Check(mod_name)) {
+        Py_CLEAR(mod_name);
         goto error;
     }
-    fullmodname = PyUnicode_FromFormat("%U.%U", pkgname, name);
+    fullmodname = PyUnicode_FromFormat("%U.%U", mod_name, name);
     if (fullmodname == NULL) {
-        Py_DECREF(pkgname);
+        Py_DECREF(mod_name);
         return NULL;
     }
     x = PyImport_GetModule(fullmodname);
@@ -2788,16 +2788,16 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     if (x == NULL && !_PyErr_Occurred(tstate)) {
         goto error;
     }
-    Py_DECREF(pkgname);
+    Py_DECREF(mod_name);
     return x;
  error:
-    if (pkgname == NULL) {
-        pkgname_or_unknown = PyUnicode_FromString("<unknown module name>");
-        if (pkgname_or_unknown == NULL) {
+    if (mod_name == NULL) {
+        mod_name_or_unknown = PyUnicode_FromString("<unknown module name>");
+        if (mod_name_or_unknown == NULL) {
             return NULL;
         }
     } else {
-        pkgname_or_unknown = pkgname;
+        mod_name_or_unknown = mod_name;
     }
 
     pkgpath = NULL;
@@ -2805,7 +2805,7 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
         pkgpath = PyModule_GetFilenameObject(v);
         if (pkgpath == NULL) {
             if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
-                Py_DECREF(pkgname_or_unknown);
+                Py_DECREF(mod_name_or_unknown);
                 return NULL;
             }
             // module filename missing
@@ -2816,7 +2816,7 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
         Py_CLEAR(pkgpath);
         errmsg = PyUnicode_FromFormat(
             "cannot import name %R from %R (unknown location)",
-            name, pkgname_or_unknown
+            name, mod_name_or_unknown
         );
     }
     else {
@@ -2827,7 +2827,7 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
             Py_DECREF(spec);
         }
         if (rc < 0) {
-            Py_DECREF(pkgname_or_unknown);
+            Py_DECREF(mod_name_or_unknown);
             Py_DECREF(pkgpath);
             return NULL;
         }
@@ -2837,13 +2837,13 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
             "(most likely due to a circular import) (%S)" :
             "cannot import name %R from %R (%S)";
 
-        errmsg = PyUnicode_FromFormat(fmt, name, pkgname_or_unknown, pkgpath);
+        errmsg = PyUnicode_FromFormat(fmt, name, mod_name_or_unknown, pkgpath);
     }
-    /* NULL checks for errmsg and pkgname done by PyErr_SetImportError. */
-    _PyErr_SetImportErrorWithNameFrom(errmsg, pkgname, pkgpath, name);
+    /* NULL checks for errmsg and mod_name done by PyErr_SetImportError. */
+    _PyErr_SetImportErrorWithNameFrom(errmsg, mod_name, pkgpath, name);
 
     Py_XDECREF(errmsg);
-    Py_DECREF(pkgname_or_unknown);
+    Py_DECREF(mod_name_or_unknown);
     Py_XDECREF(pkgpath);
     return NULL;
 }
@@ -3202,5 +3202,3 @@ _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *na
     }
     return value;
 }
-
-
