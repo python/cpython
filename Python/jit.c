@@ -430,7 +430,7 @@ patch_aarch64_trampoline(unsigned char *location, int ordinal)
     uint32_t *p = (uint32_t*)(trampoline_state.mem + index * TRAMPOLINE_SIZE);
     assert((size_t)index * TRAMPOLINE_SIZE < trampoline_state.size);
 
-    uintptr_t value = (uintptr_t)symbols_map[ordinal];
+    uint64_t value = (uintptr_t)symbols_map[ordinal];
 
     /* Generate the trampoline
        0: 58000048      ldr     x8, 8
