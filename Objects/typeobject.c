@@ -5341,6 +5341,7 @@ static inline PyTypeObject *
 get_base_by_token_from_mro(PyTypeObject *type, void *token)
 {
     PyObject *mro = type->tp_mro;
+    assert(mro != NULL);
     assert(PyTuple_Check(mro));
     // mro_invoke() ensures that the type MRO cannot be empty.
     assert(PyTuple_GET_SIZE(mro) >= 1);
@@ -5360,23 +5361,16 @@ get_base_by_token_from_mro(PyTypeObject *type, void *token)
     return NULL;
 }
 
-static inline int
-_token_found(PyTypeObject **result, PyTypeObject *base)
-{
-    if (result != NULL) {
-       *result = (PyTypeObject *)Py_NewRef(base);
-    }
-    return 1;
-}
-
+// Goto jumps here can disturb PGO by MSVC
 int
 PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
 {
     if (result != NULL) {
+        // The clear should not be under cold branches (e.g. not found)
         *result = NULL;
     }
     if (token == NULL) {
-        // varargs avoids unnecessarily being inlined
+        // This avoids being inlined thanks to varargs
         PyErr_Format(PyExc_SystemError,
                      "PyType_GetBaseByToken called with token=NULL");
         return -1;
@@ -5387,27 +5381,29 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
         return -1;
     }
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-        // Static type MRO contains no heap type,
-        // which type_ready_mro() ensures.
+        // No static type has a heaptype superclass,
+        // which is ensured by type_ready_mro().
         return 0;
     }
-    if (((PyHeapTypeObject*)type)->ht_token == token) {
-        return _token_found(result, type);
-    }
-
     PyTypeObject *base;
-    if (type->tp_mro != NULL) {
-        base = get_base_by_token_from_mro(type, token);
+    if (((PyHeapTypeObject*)type)->ht_token == token) {
+        base = type;
     }
     else {
-        base = get_base_by_token_recursive(type, token);
+        if (type->tp_mro != NULL) {
+            base = get_base_by_token_from_mro(type, token);
+        }
+        else {
+            base = get_base_by_token_recursive(type, token);
+        }
+        if (base == NULL) {
+            return 0;
+        }
     }
-    if (base != NULL) {
-        return _token_found(result, base);
+    if (result != NULL) {
+       *result = (PyTypeObject *)Py_NewRef(base);
     }
-    // This section will be placed in a cold path due to the low score of PGO
-    // exercise, so `*result` is redundantly cleared first as a common case.
-    return 0;
+    return 1;
 }
 
 
