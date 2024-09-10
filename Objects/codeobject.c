@@ -2685,6 +2685,29 @@ _PyCode_Fini(PyInterpreterState *interp)
 
 #ifdef Py_GIL_DISABLED
 
+// Thread-local bytecode (TLBC)
+//
+// Each thread specializes a thread-local copy of the bytecode, created on the
+// first RESUME, in free-threaded builds. All copies of the bytecode for a code
+// object are stored in the `co_tlbc` array. Threads reserve a globally unique
+// index identifying its copy of the bytecode in all `co_tlbc` arrays at thread
+// creation and release the index at thread destruction. The first entry in
+// every `co_tlbc` array always points to the "main" copy of the bytecode that
+// is stored at the end of the code object. This ensures that no bytecode is
+// copied for programs that do not use threads.
+//
+// The total amount of memory consumed by thread-local bytecode can be limited
+// at runtime by setting either `-X tlbc_limit` or `PYTHON_TLBC_LIMIT`. When
+// the limit is reached, no new copies of thread-local bytecode can be created
+// and specialization is disabled for the "main" copy of the bytecode (the bytecode
+// at index 0 of the `co_tlbc` array). Threads can continue to specialize
+// existing thread-local copies of the bytecode (other than the "main" copy).
+// All other execution will use the unspecialized, "main" copy of the bytecode.
+//
+// Concurrent modifications to the bytecode made by the specializing interpreter
+// and instrumentation use atomics, with specialization taking care not to
+// overwrite an instruction that was instrumented concurrently.
+
 void
 _PyCode_InitState(PyInterpreterState *interp)
 {

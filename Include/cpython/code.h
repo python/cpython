@@ -71,7 +71,9 @@ typedef struct {
 #ifdef Py_GIL_DISABLED
 
 /* Each thread specializes a thread-local copy of the bytecode in free-threaded
- * builds. These copies are stored on the code object in a `_PyCodeArray`.
+ * builds. These copies are stored on the code object in a `_PyCodeArray`. The
+ * first entry in the array always points to the "main" copy of the bytecode
+ * that is stored at the end of the code object.
  */
 typedef struct {
     Py_ssize_t size;
