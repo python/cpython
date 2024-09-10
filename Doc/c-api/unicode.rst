@@ -370,7 +370,7 @@ APIs:
    .. c:macro:: PyUnicode_FORMAT_UCS4   ``0x08``  UCS-4 string (``Py_UCS4*``)
    .. c:macro:: PyUnicode_FORMAT_UTF8   ``0x10``  UTF-8 string (``char*``)
    ===================================  ========  ===========================
-   
+
    UCS-2 and UCS-4 use the native byte order.
 
    *requested_formats* can be a single format or a bitwise combination of the
