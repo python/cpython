@@ -83,7 +83,7 @@ range_from_array(PyTypeObject *type, PyObject *const *args, Py_ssize_t num_args)
     switch (num_args) {
         case 3:
             step = args[2];
-            /* fallthrough */
+            _Py_FALLTHROUGH;
         case 2:
             /* Convert borrowed refs to owned refs */
             start = PyNumber_Index(args[0]);
@@ -655,7 +655,7 @@ range_index(rangeobject *r, PyObject *ob)
     }
 
     /* object is not in the range */
-    PyErr_Format(PyExc_ValueError, "%R is not in range", ob);
+    PyErr_SetString(PyExc_ValueError, "range.index(x): x not in range");
     return NULL;
 }
 
@@ -899,7 +899,7 @@ PyTypeObject PyRangeIter_Type = {
         sizeof(_PyRangeIterObject),             /* tp_basicsize */
         0,                                      /* tp_itemsize */
         /* methods */
-        (destructor)PyObject_Del,               /* tp_dealloc */
+        (destructor)PyObject_Free,              /* tp_dealloc */
         0,                                      /* tp_vectorcall_offset */
         0,                                      /* tp_getattr */
         0,                                      /* tp_setattr */

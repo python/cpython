@@ -155,6 +155,8 @@ class zipimporter(_bootstrap_external._LoaderBasics):
             toc_entry = self._get_files()[key]
         except KeyError:
             raise OSError(0, '', key)
+        if toc_entry is None:
+            return b''
         return _get_data(self.archive, toc_entry)
 
 
@@ -521,7 +523,7 @@ def _read_directory(archive):
 
                             # N.b. Here be dragons: the ordering of these is different than
                             # the header fields, and it's really easy to get it wrong since
-                            # naturally-occuring zips that use all 3 are >4GB
+                            # naturally-occurring zips that use all 3 are >4GB
                             if file_size == MAX_UINT32:
                                 file_size = values.pop(0)
                             if data_size == MAX_UINT32:
@@ -554,6 +556,22 @@ def _read_directory(archive):
         finally:
             fp.seek(start_offset)
     _bootstrap._verbose_message('zipimport: found {} names in {!r}', count, archive)
+
+    # Add implicit directories.
+    count = 0
+    for name in list(files):
+        while True:
+            i = name.rstrip(path_sep).rfind(path_sep)
+            if i < 0:
+                break
+            name = name[:i + 1]
+            if name in files:
+                break
+            files[name] = None
+            count += 1
+    if count:
+        _bootstrap._verbose_message('zipimport: added {} implicit directories in {!r}',
+                                    count, archive)
     return files
 
 # During bootstrap, we may need to load the encodings
@@ -687,7 +705,7 @@ def _unmarshal_code(self, pathname, fullpath, fullname, data):
             source_bytes = _get_pyc_source(self, fullpath)
             if source_bytes is not None:
                 source_hash = _imp.source_hash(
-                    _bootstrap_external._RAW_MAGIC_NUMBER,
+                    _imp.pyc_magic_number_token,
                     source_bytes,
                 )
 

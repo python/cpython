@@ -6,7 +6,6 @@ import locale
 import re
 import string
 import sys
-import time
 import unittest
 import warnings
 from re import Scanner
@@ -14,7 +13,7 @@ from weakref import proxy
 
 # some platforms lack working multiprocessing
 try:
-    import _multiprocessing
+    import _multiprocessing  # noqa: F401
 except ImportError:
     multiprocessing = None
 else:
@@ -1116,47 +1115,76 @@ class ReTests(unittest.TestCase):
 
     def test_possible_set_operations(self):
         s = bytes(range(128)).decode()
-        with self.assertWarns(FutureWarning):
+        with self.assertWarnsRegex(FutureWarning, 'Possible set difference') as w:
             p = re.compile(r'[0-9--1]')
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(p.findall(s), list('-./0123456789'))
+        with self.assertWarnsRegex(FutureWarning, 'Possible set difference') as w:
+            self.assertEqual(re.findall(r'[0-9--2]', s), list('-./0123456789'))
+        self.assertEqual(w.filename, __file__)
+
         self.assertEqual(re.findall(r'[--1]', s), list('-./01'))
-        with self.assertWarns(FutureWarning):
+
+        with self.assertWarnsRegex(FutureWarning, 'Possible set difference') as w:
             p = re.compile(r'[%--1]')
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(p.findall(s), list("%&'()*+,-1"))
-        with self.assertWarns(FutureWarning):
+
+        with self.assertWarnsRegex(FutureWarning, 'Possible set difference ') as w:
             p = re.compile(r'[%--]')
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(p.findall(s), list("%&'()*+,-"))
 
-        with self.assertWarns(FutureWarning):
+        with self.assertWarnsRegex(FutureWarning, 'Possible set intersection ') as w:
             p = re.compile(r'[0-9&&1]')
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(p.findall(s), list('&0123456789'))
-        with self.assertWarns(FutureWarning):
+        with self.assertWarnsRegex(FutureWarning, 'Possible set intersection ') as w:
+            self.assertEqual(re.findall(r'[0-8&&1]', s), list('&012345678'))
+        self.assertEqual(w.filename, __file__)
+
+        with self.assertWarnsRegex(FutureWarning, 'Possible set intersection ') as w:
             p = re.compile(r'[\d&&1]')
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(p.findall(s), list('&0123456789'))
+
         self.assertEqual(re.findall(r'[&&1]', s), list('&1'))
 
-        with self.assertWarns(FutureWarning):
+        with self.assertWarnsRegex(FutureWarning, 'Possible set union ') as w:
             p = re.compile(r'[0-9||a]')
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(p.findall(s), list('0123456789a|'))
-        with self.assertWarns(FutureWarning):
+
+        with self.assertWarnsRegex(FutureWarning, 'Possible set union ') as w:
             p = re.compile(r'[\d||a]')
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(p.findall(s), list('0123456789a|'))
+
         self.assertEqual(re.findall(r'[||1]', s), list('1|'))
 
-        with self.assertWarns(FutureWarning):
+        with self.assertWarnsRegex(FutureWarning, 'Possible set symmetric difference ') as w:
             p = re.compile(r'[0-9~~1]')
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(p.findall(s), list('0123456789~'))
-        with self.assertWarns(FutureWarning):
+
+        with self.assertWarnsRegex(FutureWarning, 'Possible set symmetric difference ') as w:
             p = re.compile(r'[\d~~1]')
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(p.findall(s), list('0123456789~'))
+
         self.assertEqual(re.findall(r'[~~1]', s), list('1~'))
 
-        with self.assertWarns(FutureWarning):
+        with self.assertWarnsRegex(FutureWarning, 'Possible nested set ') as w:
             p = re.compile(r'[[0-9]|]')
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(p.findall(s), list('0123456789[]'))
+        with self.assertWarnsRegex(FutureWarning, 'Possible nested set ') as w:
+            self.assertEqual(re.findall(r'[[0-8]|]', s), list('012345678[]'))
+        self.assertEqual(w.filename, __file__)
 
-        with self.assertWarns(FutureWarning):
+        with self.assertWarnsRegex(FutureWarning, 'Possible nested set ') as w:
             p = re.compile(r'[[:digit:]|]')
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(p.findall(s), list(':[]dgit'))
 
     def test_search_coverage(self):
@@ -1229,7 +1257,7 @@ class ReTests(unittest.TestCase):
             newpat = pickle.loads(pickled)
             self.assertEqual(newpat, oldpat)
         # current pickle expects the _compile() reconstructor in re module
-        from re import _compile
+        from re import _compile  # noqa: F401
 
     def test_copying(self):
         import copy
@@ -2473,6 +2501,24 @@ class ReTests(unittest.TestCase):
 
     def test_fail(self):
         self.assertEqual(re.search(r'12(?!)|3', '123')[0], '3')
+
+    def test_character_set_any(self):
+        # The union of complementary character sets matches any character
+        # and is equivalent to "(?s:.)".
+        s = '1x\n'
+        for p in r'[\s\S]', r'[\d\D]', r'[\w\W]', r'[\S\s]', r'\s|\S':
+            with self.subTest(pattern=p):
+                self.assertEqual(re.findall(p, s), list(s))
+                self.assertEqual(re.fullmatch('(?:' + p + ')+', s).group(), s)
+
+    def test_character_set_none(self):
+        # Negation of the union of complementary character sets does not match
+        # any character.
+        s = '1x\n'
+        for p in r'[^\s\S]', r'[^\d\D]', r'[^\w\W]', r'[^\S\s]':
+            with self.subTest(pattern=p):
+                self.assertIsNone(re.search(p, s))
+                self.assertIsNone(re.search('(?s:.)' + p, s))
 
 
 def get_debug_out(pat):

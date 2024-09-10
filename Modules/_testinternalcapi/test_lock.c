@@ -36,9 +36,9 @@ test_lock_basic(PyObject *self, PyObject *obj)
 
     // uncontended lock and unlock
     PyMutex_Lock(&m);
-    assert(m.v == 1);
+    assert(m._bits == 1);
     PyMutex_Unlock(&m);
-    assert(m.v == 0);
+    assert(m._bits == 0);
 
     Py_RETURN_NONE;
 }
@@ -57,10 +57,10 @@ lock_thread(void *arg)
     _Py_atomic_store_int(&test_data->started, 1);
 
     PyMutex_Lock(m);
-    assert(m->v == 1);
+    assert(m->_bits == 1);
 
     PyMutex_Unlock(m);
-    assert(m->v == 0);
+    assert(m->_bits == 0);
 
     _PyEvent_Notify(&test_data->done);
 }
@@ -73,7 +73,7 @@ test_lock_two_threads(PyObject *self, PyObject *obj)
     memset(&test_data, 0, sizeof(test_data));
 
     PyMutex_Lock(&test_data.m);
-    assert(test_data.m.v == 1);
+    assert(test_data.m._bits == 1);
 
     PyThread_start_new_thread(lock_thread, &test_data);
 
@@ -82,17 +82,17 @@ test_lock_two_threads(PyObject *self, PyObject *obj)
     uint8_t v;
     do {
         pysleep(10);  // allow some time for the other thread to try to lock
-        v = _Py_atomic_load_uint8_relaxed(&test_data.m.v);
+        v = _Py_atomic_load_uint8_relaxed(&test_data.m._bits);
         assert(v == 1 || v == 3);
         iters++;
     } while (v != 3 && iters < 200);
 
     // both the "locked" and the "has parked" bits should be set
-    assert(test_data.m.v == 3);
+    assert(test_data.m._bits == 3);
 
     PyMutex_Unlock(&test_data.m);
     PyEvent_Wait(&test_data.done);
-    assert(test_data.m.v == 0);
+    assert(test_data.m._bits == 0);
 
     Py_RETURN_NONE;
 }

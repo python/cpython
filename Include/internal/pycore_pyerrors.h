@@ -161,11 +161,17 @@ extern PyObject* _Py_Offer_Suggestions(PyObject* exception);
 PyAPI_FUNC(Py_ssize_t) _Py_UTF8_Edit_Cost(PyObject *str_a, PyObject *str_b,
                                           Py_ssize_t max_cost);
 
-void _PyErr_FormatNote(const char *format, ...);
+// Export for '_json' shared extension
+PyAPI_FUNC(void) _PyErr_FormatNote(const char *format, ...);
 
 /* Context manipulation (PEP 3134) */
 
 Py_DEPRECATED(3.12) extern void _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
+
+// implementation detail for the codeop module.
+// Exported for test.test_peg_generator.test_c_parser
+PyAPI_DATA(PyTypeObject) _PyExc_IncompleteInputError;
+#define PyExc_IncompleteInputError ((PyObject *)(&_PyExc_IncompleteInputError))
 
 #ifdef __cplusplus
 }

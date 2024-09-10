@@ -207,7 +207,7 @@ class property(DynamicClassAttribute):
             # use previous enum.property
             return self.fget(instance)
         elif self._attr_type == 'attr':
-            # look up previous attibute
+            # look up previous attribute
             return getattr(self._cls_type, self.name)
         elif self._attr_type == 'desc':
             # use previous descriptor
@@ -442,7 +442,7 @@ class EnumDict(dict):
                         # accepts iterable as multiple arguments?
                         value = t(auto_valued)
                     except TypeError:
-                        # then pass them in singlely
+                        # then pass them in singly
                         value = t(*auto_valued)
             self._member_names[key] = None
             if non_auto_store:
