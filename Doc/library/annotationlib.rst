@@ -139,7 +139,7 @@ Classes
    A proxy object for forward references in annotations.
 
    Instances of this class are returned when the :attr:`~Format.FORWARDREF` format is
-   used and annotations contain a name that cannot be resolved.  This can happen
+   used and annotations contain a name that cannot be resolved. This can happen
    when a forward reference is used in an annotation, such as when a class is
    referenced before it is defined.
 
@@ -152,7 +152,7 @@ Classes
 
       Evaluate the forward reference, returning its value.
 
-      This may throw an exception such as :exc:`NameError` if the forward reference
+      This may throw an exception, such as :exc:`NameError`, if the forward reference
       refers to names that do not exist. The arguments to this method can be used to
       provide bindings for names that would otherwise be undefined.
 
@@ -263,23 +263,23 @@ Functions
    The *format* parameter controls the format in which annotations are returned,
    and must be a member of the :class:`Format` enum or its integer equivalent.
 
-   Returns a dict.  :func:`!get_annotations` returns a new dict every time
+   Returns a dict. :func:`!get_annotations` returns a new dict every time
    it's called; calling it twice on the same object will return two
    different but equivalent dicts.
 
    This function handles several details for you:
 
    * If *eval_str* is true, values of type :class:`!str` will
-     be un-stringized using :func:`eval`.  This is intended
+     be un-stringized using :func:`eval`. This is intended
      for use with stringized annotations
      (``from __future__ import annotations``). It is an error
      to set *eval_str* to true with formats other than :attr:`Format.VALUE`.
    * If *obj* doesn't have an annotations dict, returns an
-     empty dict.  (Functions and methods always have an
+     empty dict. (Functions and methods always have an
      annotations dict; classes, modules, and other types of
      callables may not.)
    * Ignores inherited annotations on classes, as well as annotations
-     on metaclasses.  If a class
+     on metaclasses. If a class
      doesn't have its own annotations dict, returns an empty dict.
    * All accesses to object members and dict values are done
      using ``getattr()`` and ``dict.get()`` for safety.
@@ -294,7 +294,7 @@ Functions
    * If *eval_str* is false (the default), values of type :class:`!str` are unchanged.
 
    *globals* and *locals* are passed in to :func:`eval`; see the documentation
-   for :func:`eval` for more information.  If *globals* or *locals*
+   for :func:`eval` for more information. If *globals* or *locals*
    is :const:`!None`, this function may replace that value with a context-specific
    default, contingent on ``type(obj)``:
 
@@ -309,7 +309,7 @@ Functions
      it is unwrapped until a non-wrapped function is found.
 
    Calling :func:`!get_annotations` is best practice for accessing the
-   annotations dict of any object.  See :ref:`annotations-howto` for
+   annotations dict of any object. See :ref:`annotations-howto` for
    more information on annotations best practices.
 
    .. doctest::
