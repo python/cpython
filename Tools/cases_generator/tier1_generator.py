@@ -71,16 +71,16 @@ def write_uop(
     stack: Stack,
     inst: Instruction,
     braces: bool,
-) -> int:
+) -> tuple[int, Stack]:
     # out.emit(stack.as_comment() + "\n")
     if isinstance(uop, Skip):
         entries = "entries" if uop.size > 1 else "entry"
         emitter.emit(f"/* Skip {uop.size} cache {entries} */\n")
-        return offset + uop.size
+        return (offset + uop.size), stack
     if isinstance(uop, Flush):
         emitter.emit(f"// flush\n")
         stack.flush(emitter.out)
-        return offset
+        return offset, stack
     try:
         locals: dict[str, Local] = {}
         emitter.out.start_line()
@@ -118,12 +118,12 @@ def write_uop(
                     emitter.emit(f"(void){cache.name};\n")
             offset += cache.size
 
-        emitter.emit_tokens(uop, storage, inst)
+        stack = emitter.emit_tokens(uop, storage, inst)
         if braces:
             emitter.out.start_line()
             emitter.emit("}\n")
         # emitter.emit(stack.as_comment() + "\n")
-        return offset
+        return offset, stack
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body[0])
 
@@ -185,7 +185,7 @@ def generate_tier1(
         for part in inst.parts:
             # Only emit braces if more than one uop
             insert_braces = len([p for p in inst.parts if isinstance(p, Uop)]) > 1
-            offset = write_uop(part, emitter, offset, stack, inst, insert_braces)
+            offset, stack = write_uop(part, emitter, offset, stack, inst, insert_braces)
         out.start_line()
         if not inst.parts[-1].properties.always_exits:
             stack.flush(out)

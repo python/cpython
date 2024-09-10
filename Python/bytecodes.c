@@ -1218,9 +1218,9 @@ dummy_func(
 
             int matches = PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration);
             if (matches) {
+                none = PyStackRef_None;
                 value = PyStackRef_FromPyObjectNew(((PyStopIterationObject *)exc_value)->value);
                 DECREF_INPUTS();
-                none = PyStackRef_None;
             }
             else {
                 _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
@@ -1231,16 +1231,18 @@ dummy_func(
 
         inst(LOAD_COMMON_CONSTANT, ( -- value)) {
             // Keep in sync with _common_constants in opcode.py
+            PyObject *val;
             switch(oparg) {
             case CONSTANT_ASSERTIONERROR:
-                value = PyStackRef_FromPyObjectImmortal(PyExc_AssertionError);
+                val = PyExc_AssertionError;
                 break;
             case CONSTANT_NOTIMPLEMENTEDERROR:
-                value = PyStackRef_FromPyObjectImmortal(PyExc_NotImplementedError);
+                val = PyExc_NotImplementedError;
                 break;
             default:
                 Py_FatalError("bad LOAD_COMMON_CONSTANT oparg");
             }
+            value = PyStackRef_FromPyObjectImmortal(val);
         }
 
         inst(LOAD_BUILD_CLASS, ( -- bc)) {

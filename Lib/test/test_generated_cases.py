@@ -249,7 +249,8 @@ class TestGeneratedCases(unittest.TestCase):
 
     def test_predictions(self):
         input = """
-        inst(OP1, (arg -- rest)) {
+        inst(OP1, (arg -- res)) {
+            res = Py_None;
         }
         inst(OP3, (arg -- res)) {
             DEOPT_IF(xxx);
@@ -263,7 +264,9 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
             PREDICTED(OP1);
-            stack_pointer[-1] = rest;
+            _PyStackRef res;
+            res = Py_None;
+            stack_pointer[-1] = res;
             DISPATCH();
         }
 
@@ -380,6 +383,35 @@ class TestGeneratedCases(unittest.TestCase):
     def test_error_if_pop(self):
         input = """
         inst(OP, (left, right -- res)) {
+            spam(left, right);
+            ERROR_IF(cond, label);
+            res = 0;
+        }
+    """
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef left;
+            _PyStackRef right;
+            _PyStackRef res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            spam(left, right);
+            if (cond) goto pop_2_label;
+            res = 0;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+    """
+        self.run_cases_test(input, output)
+
+    def test_error_if_pop_with_result(self):
+        input = """
+        inst(OP, (left, right -- res)) {
             res = spam(left, right);
             ERROR_IF(cond, label);
         }
@@ -395,7 +427,12 @@ class TestGeneratedCases(unittest.TestCase):
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             res = spam(left, right);
-            if (cond) goto pop_2_label;
+            if (cond) {
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                goto label;
+            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -609,6 +646,8 @@ class TestGeneratedCases(unittest.TestCase):
         input = """
         inst(OP, (unused, unused -- below, values[oparg*3], above)) {
             spam(values, oparg);
+            below = 0;
+            above = 0;
         }
     """
         output = """
@@ -616,9 +655,13 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
+            _PyStackRef below;
             _PyStackRef *values;
+            _PyStackRef above;
             values = &stack_pointer[-1];
             spam(values, oparg);
+            below = 0;
+            above = 0;
             stack_pointer[-2] = below;
             stack_pointer[-1 + oparg*3] = above;
             stack_pointer += oparg*3;
@@ -632,6 +675,7 @@ class TestGeneratedCases(unittest.TestCase):
         input = """
         inst(OP, (values[oparg] -- values[oparg], above)) {
             spam(values, oparg);
+            above = 0;
         }
     """
         output = """
@@ -640,8 +684,10 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 1;
             INSTRUCTION_STATS(OP);
             _PyStackRef *values;
+            _PyStackRef above;
             values = &stack_pointer[-oparg];
             spam(values, oparg);
+            above = 0;
             stack_pointer[0] = above;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -677,6 +723,8 @@ class TestGeneratedCases(unittest.TestCase):
         input = """
         inst(OP, (aa, input if ((oparg & 1) == 1), cc -- xx, output if (oparg & 2), zz)) {
             output = spam(oparg, aa, cc, input);
+            xx = 0;
+            zz = 0;
         }
     """
         output = """
@@ -687,11 +735,15 @@ class TestGeneratedCases(unittest.TestCase):
             _PyStackRef aa;
             _PyStackRef input = PyStackRef_NULL;
             _PyStackRef cc;
+            _PyStackRef xx;
             _PyStackRef output = PyStackRef_NULL;
+            _PyStackRef zz;
             cc = stack_pointer[-1];
             if ((oparg & 1) == 1) { input = stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0)]; }
             aa = stack_pointer[-2 - (((oparg & 1) == 1) ? 1 : 0)];
             output = spam(oparg, aa, cc, input);
+            xx = 0;
+            zz = 0;
             stack_pointer[-2 - (((oparg & 1) == 1) ? 1 : 0)] = xx;
             if (oparg & 2) stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0)] = output;
             stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0) + ((oparg & 2) ? 1 : 0)] = zz;
@@ -708,6 +760,7 @@ class TestGeneratedCases(unittest.TestCase):
             use(left, middle, right);
         }
         op(B, (-- deep, extra if (oparg), res)) {
+            deep = -1;
             res = 0;
             extra = 1;
         }
@@ -721,6 +774,7 @@ class TestGeneratedCases(unittest.TestCase):
             _PyStackRef left;
             _PyStackRef middle;
             _PyStackRef right;
+            _PyStackRef deep;
             _PyStackRef extra = PyStackRef_NULL;
             _PyStackRef res;
             // A
@@ -732,6 +786,7 @@ class TestGeneratedCases(unittest.TestCase):
             }
             // B
             {
+                deep = -1;
                 res = 0;
                 extra = 1;
             }
@@ -1251,14 +1306,14 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (arg1 -- out)) {
-            eggs();
+            out = eggs();
         }
         """
         output = """
         case OP: {
             _Py_UopsSymbol *arg1;
             _Py_UopsSymbol *out;
-            eggs();
+            out = eggs();
             stack_pointer[-1] = out;
             break;
         }
@@ -1284,6 +1339,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         pure op(OP2, (arg1 -- out)) {
+            out = NULL;
         }
         """
         output = """
@@ -1297,6 +1353,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         case OP2: {
             _Py_UopsSymbol *arg1;
             _Py_UopsSymbol *out;
+            out = NULL;
             stack_pointer[-1] = out;
             break;
         }

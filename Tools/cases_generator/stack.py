@@ -246,6 +246,7 @@ class Stack:
                     defn = f"{var.name} = &stack_pointer[{self.top_offset.to_c()}];\n"
                 else:
                     defn = f"{var.name} = stack_pointer[{self.top_offset.to_c()}];\n"
+                    popped.in_memory = True
             return defn, Local.redefinition(var, popped)
 
         self.base_offset.pop(var)
@@ -272,7 +273,6 @@ class Stack:
         self.top_offset.push(var.item)
         if var.item.used:
             self.defined.add(var.name)
-            var.defined = True
 
     def define_output_arrays(self, outputs: list[StackItem]) -> str:
         res = []
@@ -314,9 +314,8 @@ class Stack:
         var_offset = self.base_offset.copy()
         for var in self.variables:
             if (
+                var.defined and
                 not var.in_memory
-                and not var.item.peek
-                and not var.name in UNUSED
             ):
                 Stack._do_emit(out, var.item, var_offset, cast_type, extract_bits)
                 var.in_memory = True
@@ -335,7 +334,7 @@ class Stack:
 
     def as_comment(self) -> str:
         return (
-            f"/* Variables: {[v.name for v in self.variables]}. "
+            f"/* Variables: {", ".join([str(v) for v in self.variables])}. "
             f"Base offset: {self.base_offset.to_c()}. Top offset: {self.top_offset.to_c()} */"
         )
 
@@ -368,6 +367,16 @@ class Stack:
             self._adjust_stack_pointer(out, diff.to_c())
         except ValueError:
             raise StackError("Cannot align stacks: cannot adjust stack pointer")
+
+    def merge(self, other: "Stack") -> None:
+        if len(self.variables) != len(other.variables):
+            raise StackError("Cannot merge stacks: differing variables")
+        for self_var, other_var in zip(self.variables, other.variables):
+            if self_var.name != other_var.name:
+                raise StackError(f"Mismatched variables on stack: {self_var.name} and {other_var.name}")
+            self_var.defined = self_var.defined and other_var.defined
+            self_var.in_memory = self_var.in_memory and other_var.in_memory
+
 
 def get_stack_effect(inst: Instruction | PseudoInstruction) -> Stack:
     stack = Stack()
@@ -403,20 +412,14 @@ class Storage:
     spilled: int = 0
 
     def _push_defined_locals(self) -> None:
-        while self.outputs:
-            if not self.outputs[0].defined:
-                break
-            out = self.outputs.pop(0)
-            self.stack.push(out)
         undefined = ""
         for out in self.outputs:
-            if out.is_array():
-                continue
             if out.defined:
-                raise StackError(
+                if not out.in_memory:
+                    self.stack.push(out)
+                if undefined:
                     f"Locals not defined in stack order. "
-                    f"Expected  '{out.name}' is defined before '{undefined}'"
-                )
+                    f"Expected '{undefined}' to be defined before '{out.name}'"
             else:
                 undefined = out.name
 
@@ -472,6 +475,7 @@ class Storage:
             if var.name in names:
                 raise StackError(f"Duplicate name {var.name}")
             names.add(var.name)
+        names = set()
         for var in self.outputs:
             if var.name in names:
                 raise StackError(f"Duplicate name {var.name}")
@@ -492,14 +496,16 @@ class Storage:
         for var in other.outputs:
             if var.defined and not var.in_memory:
                 locally_defined_set.add(var.name)
-        while self.stack.variables and self.stack.variables[0].item.name in locally_defined_set:
-            code, var = self.stack.pop(self.stack.variables[0].item)
+        while self.stack.variables and self.stack.variables[-1].item.name in locally_defined_set:
+            code, var = self.stack.pop(self.stack.variables[-1].item)
             out.emit(code)
-            self.outputs.append(var)
-        while other.stack.variables and other.stack.variables[0].item.name in locally_defined_set:
-            code, var = other.stack.pop(other.stack.variables[0].item)
+            if var not in self.outputs:
+                self.outputs.append(var)
+        while other.stack.variables and other.stack.variables[-1].item.name in locally_defined_set:
+            code, var = other.stack.pop(other.stack.variables[-1].item)
             assert code == ""
-            other.outputs.append(var)
+            if var not in other.outputs:
+                other.outputs.append(var)
         s1, s2 = self.stack, other.stack
         l1, l2 = self.outputs, other.outputs
         if len(s1.variables) != len(s2.variables):
@@ -539,10 +545,11 @@ class Storage:
                 raise StackError(f"Mismatched local: {self_out.name} and {other_out.name}")
             if self_out.defined ^ other_out.defined:
                 raise StackError(f"Local {self_out.name} defined on only one path")
-            self_out.in_memory = other_out.in_memory = self_out.in_memory and other_out.in_memory
+            self_out.in_memory = self_out.in_memory and other_out.in_memory
             self_out.cached = other_out.cached = self_out.cached and other_out.cached
+        self.stack.merge(other.stack)
         self.sanity_check()
 
     def as_comment(self) -> str:
         stack_comment = self.stack.as_comment()
-        return stack_comment[:-2] + "\n    LOCALS: " + str(self.outputs) + " */"
+        return stack_comment[:-2] + "\n    LOCALS: " + ", ".join([str(out) for out in self.outputs]) + " */"

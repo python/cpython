@@ -77,17 +77,19 @@ def decref_inputs(
     out.emit_at("", tkn)
 
 
-def emit_default(out: CWriter, uop: Uop) -> None:
-    for i, var in enumerate(uop.stack.outputs):
-        if var.name != "unused" and not var.peek:
+def emit_default(out: CWriter, uop: Uop, storage: Storage) -> None:
+    for var in storage.outputs:
+        if var.name != "unused" and not var.item.peek:
             if var.is_array():
                 out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
                 out.emit(f"{var.name}[_i] = sym_new_not_null(ctx);\n")
                 out.emit("}\n")
             elif var.name == "null":
                 out.emit(f"{var.name} = sym_new_null(ctx);\n")
+                var.defined = True
             else:
                 out.emit(f"{var.name} = sym_new_not_null(ctx);\n")
+                var.defined = True
 
 
 class OptimizerEmitter(Emitter):
@@ -145,8 +147,7 @@ def write_uop(
             emitter = OptimizerEmitter(out)
             emitter.emit_tokens(override, storage, None)
         else:
-            emit_default(out, uop)
-
+            emit_default(out, uop, storage)
         for output in storage.outputs:
             stack.push(output)
         out.start_line()

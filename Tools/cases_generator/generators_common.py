@@ -162,7 +162,6 @@ class Emitter:
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
-        self.emit(storage.as_comment())
         self.out.emit_at("if ", tkn)
         lparen = next(tkn_iter)
         self.emit(lparen)
@@ -321,21 +320,29 @@ class Emitter:
                 maybe_if = tkn_iter.peek()
                 if maybe_if and maybe_if.kind == "IF":
                     self.emit(next(tkn_iter))
-                    else_reachable, rbrace, storage = self._emit_if(tkn_iter, uop, storage, inst)
+                    else_reachable, rbrace, else_storage = self._emit_if(tkn_iter, uop, storage, inst)
                 else:
-                    else_reachable, rbrace, storage = self._emit_block(tkn_iter, uop, storage, inst, True)
+                    else_reachable, rbrace, else_storage = self._emit_block(tkn_iter, uop, storage, inst, True)
                 if not reachable:
                     # Discard the if storage
                     reachable = else_reachable
+                    storage = else_storage
                 elif not else_reachable:
                     # Discard the else storage
                     storage = if_storage
+                    reachable = True
                 else:
-                    storage.merge(if_storage, self.out)
+                    if PRINT_STACKS:
+                        self.emit("/* Merge */\n")
+                    else_storage.merge(if_storage, self.out)
+                    storage = else_storage
                     self._print_storage(storage)
             else:
                 if reachable:
+                    if PRINT_STACKS:
+                        self.emit("/* Merge */\n")
                     if_storage.merge(storage, self.out)
+                    storage = if_storage
                     self._print_storage(storage)
                 else:
                     # Discard the if storage
@@ -407,14 +414,14 @@ class Emitter:
                         self.out.emit(tkn)
                 elif tkn.kind == "IF":
                     self.out.emit(tkn)
-                    if_reachable, rbrace, stack = self._emit_if(tkn_iter, uop, storage, inst)
+                    if_reachable, rbrace, storage = self._emit_if(tkn_iter, uop, storage, inst)
                     if reachable:
                         reachable = if_reachable
                     self.out.emit(rbrace)
                 else:
                     self.out.emit(tkn)
         except StackError as ex:
-            raise analysis_error(ex.args[0], tkn) from None
+            raise analysis_error(ex.args[0], tkn) # from None
         raise analysis_error("Expecting closing brace. Reached end of file", tkn)
 
 
@@ -426,10 +433,12 @@ class Emitter:
     ) -> None:
         tkn_iter = TokenIterator(uop.body)
         self.out.start_line()
-        self._emit_block(tkn_iter, uop, storage, inst, False)
+        _, _, storage = self._emit_block(tkn_iter, uop, storage, inst, False)
         for output in storage.outputs:
             storage.stack.push(output)
         storage.outputs = []
+        self._print_storage(storage)
+        return storage.stack
 
     def emit(self, txt: str | Token) -> None:
         self.out.emit(txt)
