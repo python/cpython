@@ -88,7 +88,6 @@ typedef struct _PyCompiler {
                                     including names tuple */
     struct compiler_unit *u;     /* compiler state for current block */
     PyObject *c_stack;           /* Python list holding compiler_unit ptrs */
-    PyArena *c_arena;            /* pointer to memory allocation arena */
 
     bool c_save_nested_seqs;     /* if true, construct recursive instruction sequences
                                   * (including instructions for nested code objects)
@@ -112,7 +111,6 @@ compiler_setup(compiler *c, mod_ty mod, PyObject *filename,
     }
 
     c->c_filename = Py_NewRef(filename);
-    c->c_arena = arena;
     if (!_PyFuture_FromAST(mod, filename, &c->c_future)) {
         return ERROR;
     }
@@ -1242,12 +1240,6 @@ _PyCompile_CodeUnitMetadata *
 _PyCompile_Metadata(compiler *c)
 {
     return &c->u->u_metadata;
-}
-
-PyArena *
-_PyCompile_Arena(compiler *c)
-{
-    return c->c_arena;
 }
 
 #ifndef NDEBUG
