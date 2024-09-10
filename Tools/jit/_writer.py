@@ -27,7 +27,7 @@ def _dump_footer(groups: dict[str, _stencils.StencilGroup]) -> typing.Iterator[s
         yield f"    [{opname}] = {group.as_c(opname)},"
     yield "};"
     yield ""
-    yield "static const void * const symbols_map[] = {"
+    yield f"static const void * const symbols_map[{max(len(_stencils.known_symbols), 1)}] = {{"
     for symbol, ordinal in _stencils.known_symbols.items():
         yield f"    [{ordinal}] = &{symbol},"
     yield "};"
