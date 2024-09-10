@@ -417,7 +417,6 @@ opcode_functions[] =  {
     {NULL, NULL, 0, NULL}
 };
 
-
 static int
 _opcode_exec(PyObject *m) {
 #define ADD(X)                                         \

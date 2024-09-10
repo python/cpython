@@ -2699,14 +2699,15 @@ _PyCode_Fini(PyInterpreterState *interp)
 // The total amount of memory consumed by thread-local bytecode can be limited
 // at runtime by setting either `-X tlbc_limit` or `PYTHON_TLBC_LIMIT`. When
 // the limit is reached, no new copies of thread-local bytecode can be created
-// and specialization is disabled for the "main" copy of the bytecode (the bytecode
-// at index 0 of the `co_tlbc` array). Threads can continue to specialize
-// existing thread-local copies of the bytecode (other than the "main" copy).
-// All other execution will use the unspecialized, "main" copy of the bytecode.
+// and specialization is disabled for the "main" copy of the bytecode (the
+// bytecode at index 0 of the `co_tlbc` array). Threads can continue to
+// specialize existing thread-local copies of the bytecode (other than the
+// "main" copy). All other execution will use the unspecialized, "main" copy of
+// the bytecode.
 //
-// Concurrent modifications to the bytecode made by the specializing interpreter
-// and instrumentation use atomics, with specialization taking care not to
-// overwrite an instruction that was instrumented concurrently.
+// Concurrent modifications to the bytecode made by the specializing
+// interpreter and instrumentation use atomics, with specialization taking care
+// not to overwrite an instruction that was instrumented concurrently.
 
 void
 _PyCode_InitState(PyInterpreterState *interp)
@@ -2735,14 +2736,15 @@ _Py_ReserveTLBCIndex(PyInterpreterState *interp)
 void
 _Py_ClearTLBCIndex(_PyThreadStateImpl *tstate)
 {
-    PyInterpreterState *interp = ((PyThreadState*) tstate)->interp;
+    PyInterpreterState *interp = ((PyThreadState *)tstate)->interp;
     _PyIndexPool_FreeIndex(&interp->tlbc_indices, tstate->tlbc_index);
 }
 
 static _PyCodeArray *
 _PyCodeArray_New(Py_ssize_t size)
 {
-    _PyCodeArray *arr = PyMem_Calloc(1, sizeof(_PyCodeArray) + sizeof(void*) * size);
+    _PyCodeArray *arr =
+        PyMem_Calloc(1, sizeof(_PyCodeArray) + sizeof(void *) * size);
     if (arr == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -2787,7 +2789,7 @@ create_tlbc_lock_held(PyCodeObject *co, Py_ssize_t idx)
         if (new_tlbc == NULL) {
             return NULL;
         }
-        memcpy(new_tlbc->entries, tlbc->entries, tlbc->size * sizeof(void*));
+        memcpy(new_tlbc->entries, tlbc->entries, tlbc->size * sizeof(void *));
         _Py_atomic_store_ptr_release(&co->co_tlbc, new_tlbc);
         _PyMem_FreeDelayed(tlbc);
         tlbc = new_tlbc;
@@ -2811,27 +2813,27 @@ reserve_bytes_for_tlbc(PyCodeObject *co)
     PyMutex_LockFlags(&interp->tlbc_avail_mutex, _Py_LOCK_DONT_DETACH);
     Py_ssize_t nbytes_reserved;
     switch (interp->tlbc_state) {
-    case _PY_TLBC_UNLIMITED: {
-        nbytes_reserved = code_size;
-        break;
-    }
-    case _PY_TLBC_LIMITED: {
-        if (interp->tlbc_avail >= code_size) {
+        case _PY_TLBC_UNLIMITED: {
             nbytes_reserved = code_size;
-            interp->tlbc_avail -= code_size;
+            break;
         }
-        else {
+        case _PY_TLBC_LIMITED: {
+            if (interp->tlbc_avail >= code_size) {
+                nbytes_reserved = code_size;
+                interp->tlbc_avail -= code_size;
+            }
+            else {
+                nbytes_reserved = -1;
+            }
+            break;
+        }
+        case _PY_TLBC_DISABLED: {
             nbytes_reserved = -1;
+            break;
         }
-        break;
-    }
-    case _PY_TLBC_DISABLED: {
-        nbytes_reserved = -1;
-        break;
-    }
-    default: {
-        Py_UNREACHABLE();
-    }
+        default: {
+            Py_UNREACHABLE();
+        }
     }
     PyMutex_Unlock(&interp->tlbc_avail_mutex);
     return nbytes_reserved;
@@ -2853,12 +2855,12 @@ release_bytes_for_tlbc(Py_ssize_t nbytes)
 }
 
 static int
-disable_specialization(PyObject *obj, void*)
+disable_specialization(PyObject *obj, void *)
 {
     if (!PyCode_Check(obj)) {
         return 1;
     }
-    PyCodeObject *co = (PyCodeObject *) obj;
+    PyCodeObject *co = (PyCodeObject *)obj;
     _PyCode_DisableSpecialization(_PyCode_CODE(co), Py_SIZE(co));
     return 1;
 }
@@ -2881,7 +2883,9 @@ disable_new_tlbc(void)
     interp->tlbc_state = _PY_TLBC_DISABLED;
     _PyEval_StartTheWorld(interp);
     PyUnstable_GC_VisitObjects(disable_specialization, NULL);
-    if (PyErr_WarnEx(PyExc_ResourceWarning, "Reached memory limit for thread-local bytecode", 1) < 0) {
+    if (PyErr_WarnEx(PyExc_ResourceWarning,
+                     "Reached memory limit for thread-local bytecode",
+                     1) < 0) {
         PyErr_WriteUnraisable(NULL);
     }
 }
@@ -2890,10 +2894,10 @@ static _Py_CODEUNIT *
 get_tlbc_lock_held(PyCodeObject *co)
 {
     _PyCodeArray *tlbc = co->co_tlbc;
-    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *) PyThreadState_GET();
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)PyThreadState_GET();
     Py_ssize_t idx = tstate->tlbc_index;
     if (idx < tlbc->size && tlbc->entries[idx] != NULL) {
-        return (_Py_CODEUNIT *) tlbc->entries[idx];
+        return (_Py_CODEUNIT *)tlbc->entries[idx];
     }
     Py_ssize_t reserved = reserve_bytes_for_tlbc(co);
     if (reserved == -1) {

@@ -315,9 +315,9 @@ GETITEM(PyObject *v, Py_ssize_t i) {
  * limit is reached and they all execute the main copy of the bytecode. This is
  * approximate, we do not need the RMW cycle to be atomic.
  */
-#define RECORD_BRANCH_TAKEN(bitset, flag)  \
-    FT_ATOMIC_STORE_UINT16_RELAXED(bitset,  \
-        (FT_ATOMIC_LOAD_UINT16_RELAXED(bitset) << 1) | (flag))
+#define RECORD_BRANCH_TAKEN(bitset, flag) \
+    FT_ATOMIC_STORE_UINT16_RELAXED(       \
+        bitset, (FT_ATOMIC_LOAD_UINT16_RELAXED(bitset) << 1) | (flag))
 #else
 #define RECORD_BRANCH_TAKEN(bitset, flag)
 #endif

@@ -46,16 +46,16 @@
 
 #define UNLOCK_CODE()   Py_END_CRITICAL_SECTION()
 
-#define MODIFY_BYTECODE(code, func, args...)                       \
-    do {                                                           \
-        PyCodeObject *co = (code);                                 \
-        for (Py_ssize_t i = 0; i < code->co_tlbc->size; i++) {     \
-            char *bc = co->co_tlbc->entries[i];                    \
-            if (bc == NULL) {                                      \
-                continue;                                          \
-            }                                                      \
-            (func)((_Py_CODEUNIT *) bc, args);                     \
-        }                                                          \
+#define MODIFY_BYTECODE(code, func, args...)                   \
+    do {                                                       \
+        PyCodeObject *co = (code);                             \
+        for (Py_ssize_t i = 0; i < code->co_tlbc->size; i++) { \
+            char *bc = co->co_tlbc->entries[i];                \
+            if (bc == NULL) {                                  \
+                continue;                                      \
+            }                                                  \
+            (func)((_Py_CODEUNIT *)bc, args);                  \
+        }                                                      \
     } while (0)
 
 #else
@@ -599,7 +599,8 @@ _Py_CODEUNIT
 _Py_GetBaseCodeUnit(PyCodeObject *code, int i)
 {
     _Py_CODEUNIT *src_instr = _PyCode_CODE(code) + i;
-    _Py_CODEUNIT inst = {.cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t *)src_instr)};
+    _Py_CODEUNIT inst = {
+        .cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t *)src_instr)};
     int opcode = inst.op.code;
     if (opcode < MIN_INSTRUMENTED_OPCODE) {
         inst.op.code = _PyOpcode_Deopt[opcode];
@@ -635,7 +636,8 @@ _Py_GetBaseCodeUnit(PyCodeObject *code, int i)
 }
 
 static void
-de_instrument(_Py_CODEUNIT *bytecode, _PyCoMonitoringData *monitoring, int i, int event)
+de_instrument(_Py_CODEUNIT *bytecode, _PyCoMonitoringData *monitoring, int i,
+              int event)
 {
     assert(event != PY_MONITORING_EVENT_INSTRUCTION);
     assert(event != PY_MONITORING_EVENT_LINE);
@@ -665,7 +667,8 @@ de_instrument(_Py_CODEUNIT *bytecode, _PyCoMonitoringData *monitoring, int i, in
 }
 
 static void
-de_instrument_line(_Py_CODEUNIT *bytecode, _PyCoMonitoringData *monitoring, int i)
+de_instrument_line(_Py_CODEUNIT *bytecode, _PyCoMonitoringData *monitoring,
+                   int i)
 {
     _Py_CODEUNIT *instr = &bytecode[i];
     int opcode = instr->op.code;
@@ -713,7 +716,6 @@ de_instrument_per_instruction(_Py_CODEUNIT *bytecode,
     assert(instr->op.code != INSTRUMENTED_INSTRUCTION);
 }
 
-
 static void
 instrument(_Py_CODEUNIT *bytecode, _PyCoMonitoringData *monitoring, int i)
 {
@@ -738,8 +740,9 @@ instrument(_Py_CODEUNIT *bytecode, _PyCoMonitoringData *monitoring, int i)
         assert(instrumented);
         FT_ATOMIC_STORE_UINT8_RELAXED(*opcode_ptr, instrumented);
         if (_PyOpcode_Caches[deopt]) {
-            FT_ATOMIC_STORE_UINT16_RELAXED(instr[1].counter.as_counter,
-                                           adaptive_counter_warmup().as_counter);
+            FT_ATOMIC_STORE_UINT16_RELAXED(
+                instr[1].counter.as_counter,
+                adaptive_counter_warmup().as_counter);
         }
     }
 }

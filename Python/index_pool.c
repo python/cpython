@@ -45,13 +45,13 @@ parent(Py_ssize_t i)
 static inline Py_ssize_t
 left_child(Py_ssize_t i)
 {
-    return 2*i + 1;
+    return 2 * i + 1;
 }
 
 static inline Py_ssize_t
 right_child(Py_ssize_t i)
 {
-    return 2*i + 2;
+    return 2 * i + 2;
 }
 
 static void

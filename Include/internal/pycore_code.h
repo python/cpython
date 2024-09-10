@@ -639,7 +639,8 @@ typedef enum {
     _PY_TLBC_UNLIMITED = 0,
 
     // The total amount of memory consumed by thread-local bytecode must be
-    // <= PyInterpreterState::tlbc_limit. State transitions to _PY_TLBC_DISABLED
+    // <= PyInterpreterState::tlbc_limit. State transitions to
+    // _PY_TLBC_DISABLED
     // when the limit is reached.
     _PY_TLBC_LIMITED = 1,
 

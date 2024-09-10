@@ -25,19 +25,20 @@ extern const char *_PyUOpName(int index);
  */
 
 #ifdef Py_GIL_DISABLED
-#define SET_OPCODE_OR_RETURN(instr, opcode)                                 \
-    do {                                                                    \
-        uint8_t old_op = _Py_atomic_load_uint8_relaxed(&(instr)->op.code);  \
-        if (old_op >= MIN_INSTRUMENTED_OPCODE) {                            \
-            /* Lost race with instrumentation */                            \
-            return;                                                         \
-        }                                                                   \
-        if (!_Py_atomic_compare_exchange_uint8(&(instr)->op.code, &old_op, (opcode))) { \
-            /* Lost race with instrumentation */                            \
-            assert(old_op >= MIN_INSTRUMENTED_OPCODE);                      \
-            return;                                                         \
-        }                                                                   \
-     } while (0)
+#define SET_OPCODE_OR_RETURN(instr, opcode)                                \
+    do {                                                                   \
+        uint8_t old_op = _Py_atomic_load_uint8_relaxed(&(instr)->op.code); \
+        if (old_op >= MIN_INSTRUMENTED_OPCODE) {                           \
+            /* Lost race with instrumentation */                           \
+            return;                                                        \
+        }                                                                  \
+        if (!_Py_atomic_compare_exchange_uint8(&(instr)->op.code, &old_op, \
+                                               (opcode))) {                \
+            /* Lost race with instrumentation */                           \
+            assert(old_op >= MIN_INSTRUMENTED_OPCODE);                     \
+            return;                                                        \
+        }                                                                  \
+    } while (0)
 #else
 #define SET_OPCODE_OR_RETURN(instr, opcode) (instr)->op.code = (opcode)
 #endif
@@ -488,11 +489,12 @@ void
 _PyCode_DisableSpecialization(_Py_CODEUNIT *instructions, Py_ssize_t size)
 {
     /* The last code unit cannot have a cache, so we don't need to check it */
-    for (Py_ssize_t i = 0; i < size-1; i++) {
+    for (Py_ssize_t i = 0; i < size - 1; i++) {
         int opcode = instructions[i].op.code;
         int caches = _PyOpcode_Caches[opcode];
         if (caches) {
-            instructions[i + 1].counter = initial_unreachable_backoff_counter();
+            instructions[i + 1].counter =
+                initial_unreachable_backoff_counter();
             i += caches;
         }
     }

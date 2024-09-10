@@ -810,7 +810,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
          * we need to update instrumentation */
 #ifdef Py_GIL_DISABLED
         /* Load thread-local bytecode */
-        _Py_CODEUNIT *bytecode = _PyCode_GetExecutableCode(_PyFrame_GetCode(frame));
+        _Py_CODEUNIT *bytecode =
+            _PyCode_GetExecutableCode(_PyFrame_GetCode(frame));
         if (frame->bytecode != bytecode) {
             int off = frame->instr_ptr - frame->bytecode;
             frame->bytecode = bytecode;

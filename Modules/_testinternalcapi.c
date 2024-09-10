@@ -1969,13 +1969,14 @@ static PyCodeObject *
 get_code(PyObject *obj)
 {
     if (PyCode_Check(obj)) {
-        return (PyCodeObject *) obj;
+        return (PyCodeObject *)obj;
     }
     else if (PyFunction_Check(obj)) {
-        return (PyCodeObject *) PyFunction_GetCode(obj);
+        return (PyCodeObject *)PyFunction_GetCode(obj);
     }
-    return (PyCodeObject *) PyErr_Format(PyExc_TypeError,
-        "expected function or code object, got %s", Py_TYPE(obj)->tp_name);
+    return (PyCodeObject *)PyErr_Format(
+        PyExc_TypeError, "expected function or code object, got %s",
+        Py_TYPE(obj)->tp_name);
 }
 
 static PyObject *
@@ -1989,7 +1990,7 @@ get_tlbc(PyObject *Py_UNUSED(module), PyObject *obj)
     if (bc == NULL) {
         Py_RETURN_NONE;
     }
-    return PyBytes_FromStringAndSize((const char *) bc, _PyCode_NBYTES(code));
+    return PyBytes_FromStringAndSize((const char *)bc, _PyCode_NBYTES(code));
 }
 
 static PyObject *
@@ -2089,7 +2090,6 @@ identify_type_slot_wrappers(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _PyType_GetSlotWrapperNames();
 }
-
 
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},

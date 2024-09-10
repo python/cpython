@@ -86,7 +86,9 @@ static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
     return (PyCodeObject *)f->f_executable;
 }
 
-static inline _Py_CODEUNIT *_PyFrame_GetBytecode(_PyInterpreterFrame *f) {
+static inline _Py_CODEUNIT *
+_PyFrame_GetBytecode(_PyInterpreterFrame *f)
+{
 #ifdef Py_GIL_DISABLED
     return f->bytecode;
 #else
@@ -228,7 +230,8 @@ _PyFrame_IsIncomplete(_PyInterpreterFrame *frame)
         return true;
     }
     return frame->owner != FRAME_OWNED_BY_GENERATOR &&
-        frame->instr_ptr < _PyFrame_GetBytecode(frame) + _PyFrame_GetCode(frame)->_co_firsttraceable;
+           frame->instr_ptr < _PyFrame_GetBytecode(frame) +
+                                  _PyFrame_GetCode(frame)->_co_firsttraceable;
 }
 
 static inline _PyInterpreterFrame *

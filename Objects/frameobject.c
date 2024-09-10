@@ -1865,9 +1865,9 @@ frame_init_get_vars(_PyInterpreterFrame *frame)
     // here:
     PyCodeObject *co = _PyFrame_GetCode(frame);
     int lasti = _PyInterpreterFrame_LASTI(frame);
-    if (!(lasti < 0 && _PyFrame_GetBytecode(frame)->op.code == COPY_FREE_VARS
-          && PyFunction_Check(frame->f_funcobj)))
-    {
+    if (!(lasti < 0 &&
+          _PyFrame_GetBytecode(frame)->op.code == COPY_FREE_VARS &&
+          PyFunction_Check(frame->f_funcobj))) {
         /* Free vars are initialized */
         return;
     }
