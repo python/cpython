@@ -323,12 +323,10 @@ class ShlexTest(unittest.TestCase):
         self.assertEqual(list(s), ref)
 
     def testQuote(self):
-        safeunquoted = string.ascii_letters + string.digits + '@%_-+=:,./'
         unicode_sample = '\xe9\xe0\xdf'  # e + acute accent, a + grave, sharp s
         unsafe = '"`$\\!' + unicode_sample
 
         self.assertEqual(shlex.quote(''), "''")
-        self.assertEqual(shlex.quote(safeunquoted), safeunquoted)
         self.assertEqual(shlex.quote('test file name'), "'test file name'")
         for u in unsafe:
             self.assertEqual(shlex.quote('test%sname' % u),
@@ -337,26 +335,11 @@ class ShlexTest(unittest.TestCase):
             self.assertEqual(shlex.quote("test%s'name'" % u),
                              "'test%s'\"'\"'name'\"'\"''" % u)
 
-    def testQuoteAlways(self):
-        strs = ['hello', 'to the', 'world', 'escape me', 'no-escape-needed']
-
-        # guarantee escaping all strings
-        expected = ["'hello'", "'to the'", "'world'", "'escape me'",
-                    "'no-escape-needed'"]
-        result = [shlex.quote(s, always=True) for s in strs]
-        self.assertEqual(expected, result)
-
-        # just escape when necessary
-        expected = ["hello", "'to the'", "world", "'escape me'",
-                    "no-escape-needed"]
-        result = [shlex.quote(s, always=False) for s in strs]
-        self.assertEqual(expected, result)
-
     def testJoin(self):
         for split_command, command in [
-            (['a ', 'b'], "'a ' b"),
-            (['a', ' b'], "a ' b'"),
-            (['a', ' ', 'b'], "a ' ' b"),
+            (['a ', 'b'], "'a ' 'b'"),
+            (['a', ' b'], "'a' ' b'"),
+            (['a', ' ', 'b'], "'a' ' ' 'b'"),
             (['"a', 'b"'], '\'"a\' \'b"\''),
         ]:
             with self.subTest(command=command):

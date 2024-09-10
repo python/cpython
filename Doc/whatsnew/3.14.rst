@@ -186,8 +186,7 @@ ___
 shlex
 -----
 
-* Add keyword-only argument of *always* to :func:`shlex.quote` for forcing
-  the escaping of the string passed to it.
+* :func:`shlex.quote` now always quotes its input instead of testing a regex
 
 sqlite3
 -------
