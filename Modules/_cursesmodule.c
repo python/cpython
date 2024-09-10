@@ -3309,14 +3309,12 @@ static PyObject *
 _curses_initscr_impl(PyObject *module)
 /*[clinic end generated code: output=619fb68443810b7b input=514f4bce1821f6b5]*/
 {
-    WINDOW *win;
-
     if (CURSES_INITSCR_CALLED) {
         wrefresh(stdscr);
         return (PyObject *)PyCursesWindow_New(stdscr, NULL);
     }
 
-    win = initscr();
+    WINDOW *win = initscr();
 
     if (win == NULL) {
         PyErr_SetString(PyCursesError, catchall_NULL);
