@@ -18,8 +18,6 @@
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
-// TODO(mpage) - Document how we keep everything in sync
-
 /* Uncomment this to dump debugging output when assertions fail */
 // #define INSTRUMENT_DEBUG 1
 
