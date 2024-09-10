@@ -2177,7 +2177,6 @@ New Features
 * Add C API functions for generating :pep:`669` monitoring events.
   (Contributed by Irit Katriel in :gh:`111997`).
 
-
 Build Changes
 =============
 
