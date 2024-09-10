@@ -29,11 +29,11 @@ class Str(str):
     pass
 
 
-PyUnicode_FORMAT_ASCII = 0x01
-PyUnicode_FORMAT_UCS1 = 0x02
-PyUnicode_FORMAT_UCS2 = 0x04
-PyUnicode_FORMAT_UCS4 = 0x08
-PyUnicode_FORMAT_UTF8 = 0x10
+PyUnicode_FORMAT_UCS1 = 0x01
+PyUnicode_FORMAT_UCS2 = 0x02
+PyUnicode_FORMAT_UCS4 = 0x04
+PyUnicode_FORMAT_UTF8 = 0x08
+PyUnicode_FORMAT_ASCII = 0x10
 # Invalid native format
 PyUnicode_FORMAT_INVALID = 0x20
 

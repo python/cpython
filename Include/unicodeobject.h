@@ -249,11 +249,11 @@ PyAPI_FUNC(PyObject *) PyUnicode_InternFromString(
     );
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
-#define PyUnicode_FORMAT_ASCII 0x01  // Py_UCS1* (ASCII string)
-#define PyUnicode_FORMAT_UCS1 0x02   // Py_UCS1*
-#define PyUnicode_FORMAT_UCS2 0x04   // Py_UCS2*
-#define PyUnicode_FORMAT_UCS4 0x08   // Py_UCS4*
-#define PyUnicode_FORMAT_UTF8 0x10   // char*
+#define PyUnicode_FORMAT_UCS1  0x01   // Py_UCS1*
+#define PyUnicode_FORMAT_UCS2  0x02   // Py_UCS2*
+#define PyUnicode_FORMAT_UCS4  0x04   // Py_UCS4*
+#define PyUnicode_FORMAT_UTF8  0x08   // char*
+#define PyUnicode_FORMAT_ASCII 0x10   // char* (ASCII string)
 
 PyAPI_FUNC(int) PyUnicode_Export(
     PyObject *unicode,
