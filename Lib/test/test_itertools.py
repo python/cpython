@@ -992,12 +992,16 @@ class TestBasicOps(unittest.TestCase):
                 else:
                     return
 
-        def product2(*args, **kwds):
+        def product2(*iterables, repeat=1):
             'Pure python version used in docs'
-            pools = list(map(tuple, args)) * kwds.get('repeat', 1)
+            if repeat < 0:
+                raise ValueError('repeat argument cannot be negative')
+            pools = [tuple(pool) for pool in iterables] * repeat
+
             result = [[]]
             for pool in pools:
                 result = [x+[y] for x in result for y in pool]
+
             for prod in result:
                 yield tuple(prod)
 
@@ -1754,6 +1758,8 @@ class TestPurePythonRoughEquivalents(unittest.TestCase):
         # Begin tee() recipe ###########################################
 
         def tee(iterable, n=2):
+            if n < 0:
+                raise ValueError('n must be >= 0')
             iterator = iter(iterable)
             shared_link = [None, None]
             return tuple(_tee(iterator, shared_link) for _ in range(n))
@@ -1829,11 +1835,9 @@ class TestPurePythonRoughEquivalents(unittest.TestCase):
         self.assertEqual(list(a), list(range(100,2000)))
         self.assertEqual(list(c), list(range(2,2000)))
 
-        # Tests not applicable to the tee() recipe
-        if False:
-            # test invalid values of n
-            self.assertRaises(TypeError, tee, 'abc', 'invalid')
-            self.assertRaises(ValueError, tee, [], -1)
+        # test invalid values of n
+        self.assertRaises(TypeError, tee, 'abc', 'invalid')
+        self.assertRaises(ValueError, tee, [], -1)
 
         for n in range(5):
             result = tee('abc', n)
