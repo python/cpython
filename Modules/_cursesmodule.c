@@ -170,43 +170,42 @@ class _curses.window "PyCursesWindowObject *" "&PyCursesWindow_Type"
 static PyObject *PyCursesError;
 
 /* Tells whether setupterm() has been called to initialise terminfo.  */
-static int initialised_setupterm = FALSE;
+static int CURSES_SETUPTERM_CALLED = FALSE;
 
 /* Tells whether initscr() has been called to initialise curses.  */
-static int initialised = FALSE;
+static int CURSES_INITSCR_CALLED = FALSE;
 
 /* Tells whether start_color() has been called to initialise color usage. */
-static int initialisedcolors = FALSE;
+static int CURSES_INITIALISED_COLORS = FALSE;
 
-static char *screen_encoding = NULL;
+static char *CURSES_SCREEN_ENCODING = NULL;
 
 /* Utility Macros */
-#define PyCursesSetupTermCalled                                         \
-    do {                                                                \
-        if (initialised_setupterm != TRUE) {                            \
-            PyErr_SetString(PyCursesError,                              \
-                            "must call (at least) setupterm() first");  \
-            return 0;                                                   \
-        }                                                               \
+
+/*
+ * Check that GLOBAL_FLAG is set, or advise to call FUNC_TO_CALL().
+ *
+ * This macro returns 0 on error so that it can be used both in a
+ * boolean context and in a function that returns a (PyObject *).
+ */
+#define CHECK_STATE_FLAG(FUNC_TO_CALL, GLOBAL_FLAG)                 \
+    do {                                                            \
+        if ((GLOBAL_FLAG) != TRUE) {                                \
+            assert(PyCursesError != NULL);                          \
+            PyErr_SetString(PyCursesError,                          \
+                            "must call " FUNC_TO_CALL "() first");  \
+            return 0;                                               \
+        }                                                           \
     } while (0)
 
-#define PyCursesInitialised                                 \
-    do {                                                    \
-        if (initialised != TRUE) {                          \
-            PyErr_SetString(PyCursesError,                  \
-                            "must call initscr() first");   \
-            return 0;                                       \
-        }                                                   \
-    } while (0)
+#define PyCursesSetupTermCalled \
+    CHECK_STATE_FLAG("setupterm", CURSES_SETUPTERM_CALLED)
 
-#define PyCursesInitialisedColor                                \
-    do {                                                        \
-        if (initialisedcolors != TRUE) {                        \
-            PyErr_SetString(PyCursesError,                      \
-                            "must call start_color() first");   \
-            return 0;                                           \
-        }                                                       \
-    } while (0)
+#define PyCursesInitialised \
+    CHECK_STATE_FLAG("initscr", CURSES_INITSCR_CALLED)
+
+#define PyCursesInitialisedColor \
+    CHECK_STATE_FLAG("start_color", CURSES_INITIALISED_COLORS)
 
 #define CHECK_NOT_NULL_OR_ERROR(VALUE)  \
     do {                                \
@@ -297,7 +296,7 @@ PyCurses_ConvertToChtype(PyCursesWindowObject *win, PyObject *obj, chtype *ch)
             if (win)
                 encoding = win->encoding;
             else
-                encoding = screen_encoding;
+                encoding = CURSES_SCREEN_ENCODING;
             bytes = PyUnicode_AsEncodedString(obj, encoding, NULL);
             if (bytes == NULL)
                 return 0;
@@ -3312,7 +3311,7 @@ _curses_initscr_impl(PyObject *module)
 {
     WINDOW *win;
 
-    if (initialised) {
+    if (CURSES_INITSCR_CALLED) {
         wrefresh(stdscr);
         return (PyObject *)PyCursesWindow_New(stdscr, NULL);
     }
@@ -3324,7 +3323,7 @@ _curses_initscr_impl(PyObject *module)
         return NULL;
     }
 
-    initialised = initialised_setupterm = TRUE;
+    CURSES_INITSCR_CALLED = CURSES_SETUPTERM_CALLED = TRUE;
 
 /* This was moved from initcurses() because it core dumped on SGI,
    where they're not defined until you've called initscr() */
@@ -3405,7 +3404,7 @@ _curses_initscr_impl(PyObject *module)
 
     PyCursesWindowObject *winobj = (PyCursesWindowObject *)PyCursesWindow_New(win, NULL);
     CHECK_NOT_NULL_OR_ERROR(winobj);
-    screen_encoding = winobj->encoding;
+    CURSES_SCREEN_ENCODING = winobj->encoding;
     return (PyObject *)winobj;
 
 error:
@@ -3450,7 +3449,7 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
         }
     }
 
-    if (!initialised_setupterm && setupterm((char *)term, fd, &err) == ERR) {
+    if (!CURSES_SETUPTERM_CALLED && setupterm((char *)term, fd, &err) == ERR) {
         const char* s = "setupterm: unknown error";
 
         if (err == 0) {
@@ -3463,7 +3462,7 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
         return NULL;
     }
 
-    initialised_setupterm = TRUE;
+    CURSES_SETUPTERM_CALLED = TRUE;
 
     Py_RETURN_NONE;
 }
@@ -4234,7 +4233,7 @@ _curses_start_color_impl(PyObject *module)
     PyCursesInitialised;
 
     if (start_color() != ERR) {
-        initialisedcolors = TRUE;
+        CURSES_INITIALISED_COLORS = TRUE;
         SET_DICT_INT_VALUE_OR_ERROR(PRIVATE_MOD_DICT, "COLORS", COLORS);
         SET_DICT_INT_VALUE_OR_ERROR(PRIVATE_MOD_DICT, "COLOR_PAIRS", COLOR_PAIRS);
         Py_RETURN_NONE;
