@@ -337,6 +337,22 @@ class TestSpecifics(unittest.TestCase):
         l = lambda: "foo"
         self.assertIsNone(l.__doc__)
 
+    def test_docstring(self):
+        def with_docstring():
+            "docstring"
+
+        self.assertEqual(with_docstring.__doc__, "docstring")
+
+        def with_fstring():
+            f"not docstring"
+
+        self.assertIsNone(with_fstring.__doc__)
+
+        def with_const_expression():
+            "also" + " not docstring"
+
+        self.assertIsNone(with_const_expression.__doc__)
+
     def test_encoding(self):
         code = b'# -*- coding: badencoding -*-\npass\n'
         self.assertRaises(SyntaxError, compile, code, 'tmp', 'exec')
