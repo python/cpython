@@ -1506,6 +1506,8 @@ class TestOptionLike(ParserTestCase):
         ('a -x 1', NS(x=1.0, y=None, z=['a'])),
         ('-x 1 a', NS(x=1.0, y=None, z=['a'])),
         ('-3 1 a', NS(x=None, y=1.0, z=['a'])),
+        ('-x-1_000.0 -3 1_000.0', NS(x=-1000.0, y=1000.0, z=[])),
+        ('-x-1_000 -3 1_000', NS(x=-1000, y=1000, z=[])),
     ]
 
 
