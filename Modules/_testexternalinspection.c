@@ -523,7 +523,7 @@ parse_frame_object(
     if (address_of_code_object == 0) {
         return 0;
     }
-    address_of_code_object &= ~1;
+    address_of_code_object &= ~Py_TAG_BITS;
     return parse_code_object(pid, result, offsets, (void *)address_of_code_object, previous_frame);
 }
 
