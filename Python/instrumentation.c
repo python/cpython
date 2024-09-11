@@ -44,7 +44,7 @@
 
 #define UNLOCK_CODE()   Py_END_CRITICAL_SECTION()
 
-#define MODIFY_BYTECODE(code, func, args...)                   \
+#define MODIFY_BYTECODE(code, func, ...)                       \
     do {                                                       \
         PyCodeObject *co = (code);                             \
         for (Py_ssize_t i = 0; i < code->co_tlbc->size; i++) { \
@@ -52,7 +52,7 @@
             if (bc == NULL) {                                  \
                 continue;                                      \
             }                                                  \
-            (func)((_Py_CODEUNIT *)bc, args);                  \
+            (func)((_Py_CODEUNIT *)bc, __VA_ARGS__);           \
         }                                                      \
     } while (0)
 
@@ -60,7 +60,8 @@
 
 #define LOCK_CODE(code)
 #define UNLOCK_CODE()
-#define MODIFY_BYTECODE(code, func, args...) (func)(_PyCode_CODE(code), args)
+#define MODIFY_BYTECODE(code, func, ...) \
+    (func)(_PyCode_CODE(code), __VA_ARGS__)
 
 #endif
 
