@@ -6482,36 +6482,30 @@
         }
 
         TARGET(RESUME_CHECK) {
-            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RESUME_CHECK);
             static_assert(0 == 0, "incorrect cache size");
-            // _LOAD_BYTECODE
-            {
-                #ifdef Py_GIL_DISABLED
-                _Py_CODEUNIT *bytecode = _PyCode_GetExecutableCode(_PyFrame_GetCode(frame));
-                if (frame->bytecode != bytecode) {
-                    int off = this_instr - frame->bytecode;
-                    frame->bytecode = bytecode;
-                    frame->instr_ptr = frame->bytecode + off;
-                    this_instr = frame->instr_ptr;
-                    next_instr = frame->instr_ptr + 1;
-                }
-                #else
-                (void)this_instr;
-                #endif
+            #if defined(__EMSCRIPTEN__)
+            DEOPT_IF(_Py_emscripten_signal_clock == 0, RESUME);
+            _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
+            #endif
+            uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
+            uintptr_t version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
+            assert((version & _PY_EVAL_EVENTS_MASK) == 0);
+            DEOPT_IF(eval_breaker != version, RESUME);
+            #ifdef Py_GIL_DISABLED
+            _Py_CODEUNIT *bytecode = _PyCode_GetExecutableCode(_PyFrame_GetCode(frame));
+            if (frame->bytecode != bytecode) {
+                /* Avoid using this_instr here so that _RESUME_CHECK can be included
+                   in traces.
+                 */
+                int off = frame->instr_ptr - frame->bytecode;
+                frame->bytecode = bytecode;
+                frame->instr_ptr = frame->bytecode + off;
+                next_instr = frame->instr_ptr + 1;
             }
-            // _RESUME_CHECK
-            {
-                #if defined(__EMSCRIPTEN__)
-                DEOPT_IF(_Py_emscripten_signal_clock == 0, RESUME);
-                _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
-                #endif
-                uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
-                uintptr_t version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
-                assert((version & _PY_EVAL_EVENTS_MASK) == 0);
-                DEOPT_IF(eval_breaker != version, RESUME);
-            }
+            #endif
             DISPATCH();
         }
 

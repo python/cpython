@@ -199,7 +199,6 @@ dummy_func(
                 frame->instr_ptr = frame->bytecode + off;
                 this_instr = frame->instr_ptr;
                 next_instr = frame->instr_ptr + 1;
-
             }
             #else
             (void)this_instr;
@@ -212,7 +211,7 @@ dummy_func(
             _QUICKEN_RESUME +
             _CHECK_PERIODIC_IF_NOT_YIELD_FROM;
 
-        op(_RESUME_CHECK, (--)) {
+        inst(RESUME_CHECK, (--)) {
 #if defined(__EMSCRIPTEN__)
             DEOPT_IF(_Py_emscripten_signal_clock == 0);
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
@@ -221,11 +220,19 @@ dummy_func(
             uintptr_t version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
             assert((version & _PY_EVAL_EVENTS_MASK) == 0);
             DEOPT_IF(eval_breaker != version);
+            #ifdef Py_GIL_DISABLED
+            _Py_CODEUNIT *bytecode = _PyCode_GetExecutableCode(_PyFrame_GetCode(frame));
+            if (frame->bytecode != bytecode) {
+                /* Avoid using this_instr here so that _RESUME_CHECK can be included
+                   in traces.
+                */
+                int off = frame->instr_ptr - frame->bytecode;
+                frame->bytecode = bytecode;
+                frame->instr_ptr = frame->bytecode + off;
+                next_instr = frame->instr_ptr + 1;
+            }
+            #endif
         }
-
-        macro(RESUME_CHECK) =
-            _LOAD_BYTECODE +
-            _RESUME_CHECK;
 
         op(_MONITOR_RESUME, (--)) {
             _PyFrame_SetStackPointer(frame, stack_pointer);
