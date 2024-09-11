@@ -315,7 +315,7 @@ Functions
 
    * If eval_str is true, :func:`eval` is called on values of type
      :class:`!str`. (Note that :func:`!get_annotations` doesn't catch
-     exceptions; if :func:`eval()` raises an exception, it will unwind
+     exceptions; if :func:`eval` raises an exception, it will unwind
      the stack past the :func:`!get_annotations` call.)
    * If *eval_str* is false (the default), values of type :class:`!str` are
      unchanged.
