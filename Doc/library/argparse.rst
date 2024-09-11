@@ -2235,7 +2235,7 @@ Exiting methods
 .. method:: ArgumentParser.exit(status=0, message=None)
 
    This method terminates the program, exiting with the specified *status*
-   and, if given, it prints a *message* before that. The user can override
+   and, if given, it prints a *message* to stderr before that. The user can override
    this method to handle these steps differently::
 
     class ErrorCatchingArgumentParser(argparse.ArgumentParser):
