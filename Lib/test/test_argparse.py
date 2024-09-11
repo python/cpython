@@ -6091,6 +6091,13 @@ class TestExitOnError(TestCase):
                                'the following arguments are required: bar, baz',
                                self.parser.parse_args, [])
 
+    def test_required_and_nargs(self):
+        self.parser.add_argument('bar')
+        self.parser.add_argument('baz', nargs='*')
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               'the following arguments are required: bar',
+                               self.parser.parse_args, [])
+
     def test_required_mutually_exclusive_args(self):
         group = self.parser.add_mutually_exclusive_group(required=True)
         group.add_argument('--bar')

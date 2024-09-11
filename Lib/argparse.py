@@ -2130,7 +2130,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         required_actions = []
         for action in self._actions:
             if action not in seen_actions:
-                if action.required:
+                if (action.required and
+                    action.default is None and
+                    action.nargs not in (ZERO_OR_MORE, OPTIONAL)):
                     required_actions.append(_get_action_name(action))
                 else:
                     # Convert action default now instead of doing it before
