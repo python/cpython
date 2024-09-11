@@ -3672,14 +3672,16 @@ class TestSlots(unittest.TestCase):
         _testcapi = import_helper.import_module('_testcapi')
 
         @dataclass(slots=True)
-        class A(_testcapi.HeapCTypeWithDict):
+        class HasDictOffset(_testcapi.HeapCTypeWithDict):
             __dict__: dict = {}
-        self.assertEqual(A.__slots__, ())
+        self.assertNotEqual(_testcapi.HeapCTypeWithDict.__dictoffset__, 0)
+        self.assertEqual(HasDictOffset.__slots__, ())
 
         @dataclass(slots=True)
-        class A(_testcapi.HeapCTypeWithWeakref):
+        class DoesNotHaveDictOffset(_testcapi.HeapCTypeWithWeakref):
             __dict__: dict = {}
-        self.assertEqual(A.__slots__, ('__dict__',))
+        self.assertEqual(_testcapi.HeapCTypeWithWeakref.__dictoffset__, 0)
+        self.assertEqual(DoesNotHaveDictOffset.__slots__, ('__dict__',))
 
     @support.cpython_only
     def test_slots_with_wrong_init_subclass(self):
