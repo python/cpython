@@ -366,8 +366,15 @@ This metadata finder search defaults to ``sys.path``, but varies slightly in how
 - ``importlib.metadata`` will incidentally honor :py:class:`pathlib.Path` objects on ``sys.path`` even though such values will be ignored for imports.
 
 
-Extending the search algorithm
-==============================
+Implementing Custom Providers
+=============================
+
+``importlib.metadata`` address two API surfaces, one for *consumers*
+and another for *providers*. Most users are consumers, consuming
+metadata provided by the packages. There are other use-cases, however,
+where users wish to expose metadata through some other mechanism,
+such as alongside a custom importer. Such a use case calls for a
+*custom provider*.
 
 Because `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_ metadata
 is not available through :data:`sys.path` searches, or
@@ -377,10 +384,8 @@ system :ref:`finders <finders-and-loaders>`.  To find a distribution package's m
 ``importlib.metadata`` queries the list of :term:`meta path finders <meta path finder>` on
 :data:`sys.meta_path`.
 
-By default ``importlib.metadata`` installs a finder for distribution packages
-found on the file system.
-This finder doesn't actually find any *distributions*,
-but it can find their metadata.
+The implementation has hooks integrated into the ``PathFinder``,
+serving metadata for distribution packages found on the file system.
 
 The abstract class :py:class:`importlib.abc.MetaPathFinder` defines the
 interface expected of finders by Python's import system.
@@ -391,16 +396,16 @@ interface expected of finders by Python's import system.
 method::
 
     @abc.abstractmethod
-    def find_distributions(context=DistributionFinder.Context()):
+    def find_distributions(context=DistributionFinder.Context()) -> Iterable[Distribution]:
         """Return an iterable of all Distribution instances capable of
         loading the metadata for packages for the indicated ``context``.
         """
 
 The ``DistributionFinder.Context`` object provides ``.path`` and ``.name``
 properties indicating the path to search and name to match and may
-supply other relevant context.
+supply other relevant context sought by the consumer.
 
-What this means in practice is that to support finding distribution package
+In practice, to support finding distribution package
 metadata in locations other than the file system, subclass
 ``Distribution`` and implement the abstract methods. Then from
 a custom finder, return instances of this derived ``Distribution`` in the
@@ -409,8 +414,7 @@ a custom finder, return instances of this derived ``Distribution`` in the
 Example
 -------
 
-Consider for example a custom finder that loads Python
-modules from a database::
+Imagine a custom finder that loads Python modules from a database::
 
     class DatabaseImporter(importlib.abc.MetaPathFinder):
         def __init__(self, db):
