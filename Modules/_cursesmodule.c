@@ -4792,7 +4792,7 @@ PyInit__curses(void)
         goto error;
     }
 #ifdef Py_GIL_DISABLED
-    CHECK_RET_CODE_OR_ERROR(PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED));
+    CHECK_RET_CODE(PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED));
 #endif
 
     /* Add some symbolic constants to the module */
