@@ -24,7 +24,6 @@ Include/internal/pycore_gc.h 1
 Include/internal/pycore_interp.h 1
 Include/internal/pycore_list.h 1
 Include/internal/pycore_long.h 3
-Include/internal/pycore_object.h 3
 Include/internal/pycore_object.h 4
 Include/internal/pycore_obmalloc.h 1
 Include/internal/pycore_pymath.h 1
