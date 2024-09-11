@@ -1,0 +1,1 @@
+HACL* Blake2 SIMD256 has been disabled for universal2 builds on macOS.

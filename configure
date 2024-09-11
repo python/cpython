@@ -30568,11 +30568,16 @@ printf "%s\n" "$ax_cv_check_cflags__Werror__mavx2" >&6; }
 if test "x$ax_cv_check_cflags__Werror__mavx2" = xyes
 then :
 
-  LIBHACL_SIMD256_FLAGS="-mavx2"
-  LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"
+  # macOS universal2 builds *support* the -mavx2 compiler flag because it's
+  # available on x86_64; but the HACL SIMD256 build then fails because the
+  # implementation requires symbols that aren't available on ARM64.
+  if test "$UNIVERSAL_ARCHS" != "universal2"; then
+    LIBHACL_SIMD256_FLAGS="-mavx2"
+    LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"
 
 printf "%s\n" "#define HACL_CAN_COMPILE_SIMD256 1" >>confdefs.h
 
+  fi
 
 else $as_nop
   :

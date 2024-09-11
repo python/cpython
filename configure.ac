@@ -7813,9 +7813,14 @@ AC_SUBST([LIBHACL_SIMD128_FLAGS])
 AC_SUBST([LIBHACL_SIMD128_OBJS])
 
 AX_CHECK_COMPILE_FLAG([-mavx2],[
-  [LIBHACL_SIMD256_FLAGS="-mavx2"]
-  [LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"]
-  AC_DEFINE([HACL_CAN_COMPILE_SIMD256], [1], [HACL* library can compile SIMD256 implementations])
+  # macOS universal2 builds *support* the -mavx2 compiler flag because it's
+  # available on x86_64; but the HACL SIMD256 build then fails because the
+  # implementation requires symbols that aren't available on ARM64.
+  if test "$UNIVERSAL_ARCHS" != "universal2"; then
+    [LIBHACL_SIMD256_FLAGS="-mavx2"]
+    [LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"]
+    AC_DEFINE([HACL_CAN_COMPILE_SIMD256], [1], [HACL* library can compile SIMD256 implementations])
+  fi
 ], [], [-Werror])
 
 AC_SUBST([LIBHACL_SIMD256_FLAGS])
