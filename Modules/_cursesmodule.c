@@ -236,22 +236,6 @@ static char *CURSES_SCREEN_ENCODING = NULL;
         CHECK_RET_CODE(rc);                                     \
     } while (0)
 
-/*
- * Add an integral constant to a module; on error, jump to the 'error' label.
- *
- * Parameters
- *
- *  PyObject *      MODULE  The module object to alter.
- *  const char *    NAME    The constant name.
- *  int or long     VALUE   The constant value.
- */
-#define MODULE_ADD_INT_CONSTANT(MODULE, NAME, VALUE)                \
-    do {                                                            \
-        long value = (long)(VALUE);                                 \
-        int rc = PyModule_AddIntConstant((MODULE), (NAME), value);  \
-        CHECK_RET_CODE(rc);                                         \
-    } while (0)
-
 /* Utility Functions */
 
 /*
@@ -4033,10 +4017,19 @@ update_lines_cols(PyObject *private_module)
     if (exposed_module == NULL) {
         return 0;
     }
+#define MODULE_ADD_INT_CONSTANT(MODULE, NAME, VALUE)                        \
+    do {                                                                    \
+        if (PyModule_AddIntConstant((MODULE), (NAME), (long)(VALUE)) < 0) { \
+            goto error;                                                     \
+        }                                                                   \
+    } while (0)
+
     MODULE_ADD_INT_CONSTANT(exposed_module, "LINES", LINES);
     MODULE_ADD_INT_CONSTANT(private_module, "LINES", LINES);
     MODULE_ADD_INT_CONSTANT(exposed_module, "COLS", COLS);
     MODULE_ADD_INT_CONSTANT(private_module, "COLS", COLS);
+#undef MODULE_ADD_INT_CONSTANT
+
     Py_DECREF(exposed_module);
     return 1;
 
