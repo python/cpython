@@ -999,7 +999,9 @@ except AttributeError as e:
 """)
             popen = script_helper.spawn_python("main.py", cwd=tmp)
             stdout, stderr = popen.communicate()
-            for line in stdout.splitlines():
+            lines = stdout.splitlines()
+            self.assertEqual(len(lines), 3)
+            for line in lines:
                 self.assertEqual(line, b"module 'fractions' has no attribute 'Fraction'")
 
             with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
@@ -1028,7 +1030,9 @@ except ImportError as e:
 """)
             popen = script_helper.spawn_python("main.py", cwd=tmp)
             stdout, stderr = popen.communicate()
-            for line in stdout.splitlines():
+            lines = stdout.splitlines()
+            self.assertEqual(len(lines), 3)
+            for line in lines:
                 self.assertRegex(line, rb"cannot import name 'Fraction' from 'fractions' \(.*\)")
 
             # Various issues with origin
@@ -1051,7 +1055,9 @@ except AttributeError as e:
 
             popen = script_helper.spawn_python("main.py", cwd=tmp)
             stdout, stderr = popen.communicate()
-            for line in stdout.splitlines():
+            lines = stdout.splitlines()
+            self.assertEqual(len(lines), 2)
+            for line in lines:
                 self.assertEqual(line, b"module 'fractions' has no attribute 'Fraction'")
 
             with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
@@ -1072,7 +1078,9 @@ except ImportError as e:
 """)
             popen = script_helper.spawn_python("main.py", cwd=tmp)
             stdout, stderr = popen.communicate()
-            for line in stdout.splitlines():
+            lines = stdout.splitlines()
+            self.assertEqual(len(lines), 2)
+            for line in lines:
                 self.assertRegex(line, rb"cannot import name 'Fraction' from 'fractions' \(.*\)")
 
     def test_script_shadowing_stdlib_sys_path_modification(self):
