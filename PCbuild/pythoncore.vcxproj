@@ -252,6 +252,7 @@
     <ClInclude Include="..\Include\internal\pycore_identifier.h" />
     <ClInclude Include="..\Include\internal\pycore_import.h" />
     <ClInclude Include="..\Include\internal\pycore_importdl.h" />
+    <ClInclude Include="..\Include\internal\pycore_index_pool.h" />
     <ClInclude Include="..\Include\internal\pycore_initconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_instruction_sequence.h" />
     <ClInclude Include="..\Include\internal\pycore_interp.h" />
@@ -611,6 +612,7 @@
     <ClCompile Include="..\Python\hashtable.c" />
     <ClCompile Include="..\Python\import.c" />
     <ClCompile Include="..\Python\importdl.c" />
+    <ClCompile Include="..\Python\index_pool.c" />
     <ClCompile Include="..\Python\initconfig.c" />
     <ClCompile Include="..\Python\interpconfig.c" />
     <ClCompile Include="..\Python\intrinsics.c" />

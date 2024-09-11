@@ -678,6 +678,9 @@
     <ClInclude Include="..\Include\internal\pycore_importdl.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_index_pool.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_initconfig.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -1371,6 +1374,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\importdl.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\index_pool.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\initconfig.c">
