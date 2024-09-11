@@ -529,9 +529,12 @@ class TimeTestCase(unittest.TestCase):
         start = time.thread_time()
         time.sleep(0.100)
         stop = time.thread_time()
-        # use 20 ms because thread_time() has usually a resolution of 15 ms
-        # on Windows
-        self.assertLess(stop - start, 0.020)
+        if sys.platform.startswith("netbsd"):
+            self.assertLess(stop - start, 0.3)
+        else:
+            # use 20 ms because thread_time() has usually a resolution of 15 ms
+            # on Windows
+            self.assertLess(stop - start, 0.020)
 
         info = time.get_clock_info('thread_time')
         self.assertTrue(info.monotonic)
