@@ -12,6 +12,7 @@ extern void _PyModule_Clear(PyObject *);
 extern void _PyModule_ClearDict(PyObject *);
 extern int _PyModuleSpec_IsInitializing(PyObject *);
 extern int _PyModuleSpec_GetFileOrigin(PyObject *, PyObject **);
+extern int _PyModule_IsPossiblyShadowing(PyObject *);
 
 extern int _PyModule_IsExtension(PyObject *obj);
 

@@ -855,8 +855,8 @@ _PyModuleSpec_GetFileOrigin(PyObject *spec, PyObject **p_origin)
     return 1;
 }
 
-static int
-_is_module_possibly_shadowing(PyObject *origin)
+int
+_PyModule_IsPossiblyShadowing(PyObject *origin)
 {
     // origin must be a unicode subtype
     // Returns 1 if the module at origin could be shadowing a module of the
@@ -985,7 +985,7 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
         goto done;
     }
 
-    int is_possibly_shadowing = _is_module_possibly_shadowing(origin);
+    int is_possibly_shadowing = _PyModule_IsPossiblyShadowing(origin);
     if (is_possibly_shadowing < 0) {
         goto done;
     }
@@ -1011,7 +1011,10 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     }
     else {
         int rc = _PyModuleSpec_IsInitializing(spec);
-        if (rc > 0) {
+        if (rc < 0) {
+            goto done;
+        }
+        else if (rc > 0) {
             if (is_possibly_shadowing) {
                 assert(origin);
                 // For third-party modules, only mention the possibility of
@@ -1037,7 +1040,8 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
                             mod_name, name);
             }
         }
-        else if (rc == 0) {
+        else {
+            assert(rc == 0);
             rc = _PyModuleSpec_IsUninitializedSubmodule(spec, name);
             if (rc > 0) {
                 PyErr_Format(PyExc_AttributeError,
