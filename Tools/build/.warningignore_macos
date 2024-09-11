@@ -18,9 +18,9 @@ Modules/_ctypes/_ctypes.c 37
 Modules/_ctypes/_ctypes_test_generated.c.h 141
 Modules/_ctypes/callbacks.c 6
 Modules/_ctypes/callproc.c 15
-Modules/_ctypes/cfield.c 56
+Modules/_ctypes/cfield.c 59
 Modules/_ctypes/malloc_closure.c 3
-Modules/_ctypes/stgdict.c 18
+Modules/_ctypes/stgdict.c 17
 Modules/_cursesmodule.c 24
 Modules/_datetimemodule.c 28
 Modules/_dbmmodule.c 8
@@ -191,7 +191,8 @@ Python/bootstrap_hash.c 4
 Python/ceval.c 8
 Python/ceval_gil.c 2
 Python/codecs.c 32
-Python/compile.c 8
+Python/codegen.c 6
+Python/compile.c 2
 Python/context.c 1
 Python/crossinterp.c 2
 Python/crossinterp_data_lookup.h 1
@@ -205,7 +206,7 @@ Python/gc.c 8
 Python/generated_cases.c.h 35
 Python/getargs.c 11
 Python/import.c 5
-Python/initconfig.c 3
+Python/initconfig.c 11
 Python/instrumentation.c 31
 Python/intrinsics.c 1
 Python/legacy_tracing.c 3
@@ -229,4 +230,3 @@ Python/sysmodule.c 2
 Python/thread_pthread.h 1
 Python/traceback.c 6
 Python/tracemalloc.c 6
-
