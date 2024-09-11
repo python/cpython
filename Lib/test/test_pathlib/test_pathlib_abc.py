@@ -1493,6 +1493,10 @@ class DummyPath(PathBase):
             stream = io.TextIOWrapper(stream, encoding=encoding, errors=errors, newline=newline)
         return stream
 
+    def touch(self):
+        with self.open('w'):
+            pass
+
     def iterdir(self):
         path = str(self.resolve())
         if path in self._files:
@@ -1524,6 +1528,9 @@ class DummyPath(PathBase):
         path = str(path_obj)
         name = path_obj.name
         parent = str(path_obj.parent)
+        for interim_path in self.parents:
+            if str(interim_path) in self._files and not missing_ok:
+                raise NotADirectoryError(errno.ENOTDIR, "Not a directory", path)
         if path in self._directories:
             raise IsADirectoryError(errno.EISDIR, "Is a directory", path)
         elif path in self._files:
@@ -1534,6 +1541,7 @@ class DummyPath(PathBase):
             del self._symlinks[path]
         elif not missing_ok:
             raise FileNotFoundError(errno.ENOENT, "File not found", path)
+
 
     def rmdir(self):
         path_obj = self.parent.resolve(strict=True) / self.name
