@@ -716,9 +716,8 @@ PyCursesWindow_New(WINDOW *win, const char *encoding)
 static void
 PyCursesWindow_Dealloc(PyCursesWindowObject *wo)
 {
-    if (wo->win != stdscr) {
-        // Silently ignore errors in delwin(3) (e.g., passing
-        // a NULL pointer results in delwin() returning ERR).
+    if (wo->win != stdscr && wo->win != NULL) {
+        // silently ignore errors in delwin(3)
         (void)delwin(wo->win);
     }
     if (wo->encoding != NULL) {
@@ -4986,6 +4985,7 @@ cursesmodule_exec(PyObject *module)
             *p2 = (char)0;
             PyObject *p_keycode = PyLong_FromLong((long)keycode);
             if (p_keycode == NULL) {
+                PyMem_Free(fn_key_name);
                 return -1;
             }
             int rc = PyDict_SetItemString(module_dict, fn_key_name, p_keycode);
@@ -5011,18 +5011,20 @@ PyInit__curses(void)
     // create the module
     PyObject *mod = PyModule_Create(&_cursesmodule);
     if (mod == NULL) {
-        return NULL;
+        goto error;
     }
 #ifdef Py_GIL_DISABLED
     if (PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED) < 0) {
-        Py_DECREF(mod);
-        return NULL;
+        goto error;
     }
 #endif
     // populate the module
     if (cursesmodule_exec(mod) < 0) {
-        Py_DECREF(mod);
-        return NULL;
+        goto error;
     }
     return mod;
+
+error:
+    Py_XDECREF(mod);
+    return NULL;
 }
