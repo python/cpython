@@ -159,7 +159,7 @@ C API improvements:
 * The :doc:`PyTime C API </c-api/time>` has been added,
   providing access to system clocks.
 * :c:type:`PyMutex` is a new lightweight mutex that occupies a single byte.
-* C-API support was added for generating :pep:`669` monitoring events.
+* :doc:`C-API support</c-api/monitoring>` was added for generating :pep:`669` monitoring events.
 
 New typing features:
 
