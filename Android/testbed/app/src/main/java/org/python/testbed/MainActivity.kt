@@ -2,7 +2,7 @@ package org.python.testbed
 
 import android.content.Context
 import android.os.*
-import android.system.Os
+import android.system.*
 import android.widget.TextView
 import androidx.appcompat.app.*
 import java.io.*
@@ -35,6 +35,7 @@ class PythonTestRunner(val context: Context) {
         val pythonHome = extractAssets()
         System.loadLibrary("main_activity")
         redirectStdioToLogcat()
+        setupSignals()
 
         // The main module is in src/main/python/main.py.
         return runPython(pythonHome.toString(), "main")
@@ -74,6 +75,88 @@ class PythonTestRunner(val context: Context) {
         }
     }
 
+    // Some tests use SIGUSR1, but Android blocks that by default in order to
+    // make it available to `sigwait` in the SignalCatcher thread
+    // (https://cs.android.com/android/platform/superproject/+/android14-qpr3-release:art/runtime/signal_catcher.cc).
+    // That thread is only needed for debugging the JVM, so disabling it should
+    // not weaken the tests.
+    //
+    // Simply unblocking SIGUSR1 is enough to fix simple tests, but in tests
+    // that involve multiple different signals in quick succession (e.g.
+    // test_stress_delivery_simultaneous), it's possible for SIGUSR1 to arrive
+    // while the main thread is running the C-level handler for a different
+    // signal, in which case the SIGUSR1 may be consumed by the SignalCatcher
+    // thread instead.
+    //
+    // Even if there are other threads with the signal unblocked, it looks like
+    // these don't have any priority over the `sigwait` – only the main thread
+    // is special-cased (see `complete_signal` and `do_sigtimedwait` in
+    // kernel/signal.c). So the only reliable solution is to stop the
+    // SignalCatcher.
+    private fun setupSignals() {
+        val tid = getSignalCatcherTid()
+        if (tid == 0) {
+            System.err.println(
+                "Failed to detect SignalCatcher - signal tests may be unreliable"
+            )
+        } else {
+            // Small delay to make sure the target thread is idle.
+            Thread.sleep(100);
+
+            // This is potentially dangerous, so it's worth always logging here
+            // in case it causes a deadlock or crash.
+            System.err.println("Killing SignalCatcher TID $tid")
+            killThread(tid);
+        }
+        unblockSignal(OsConstants.SIGUSR1)
+    }
+
+    // Determine the SignalCatcher's thread ID by sending a signal and waiting
+    // for it to write a log message.
+    private fun getSignalCatcherTid() : Int {
+        sendSignal(OsConstants.SIGUSR1)
+
+        val deadline = System.currentTimeMillis() + 1000
+        try {
+            while (System.currentTimeMillis() < deadline) {
+                ProcessBuilder(
+                    // --pid requires API level 24 or higher.
+                    "logcat", "-d", "--pid", Os.getpid().toString()
+                ).start().inputStream.reader().useLines {
+                    var tid = 0;
+                    for (line in it) {
+                        val fields = line.split("""\s+""".toRegex(), 6)
+                        if (fields.size != 6) {
+                            continue
+                        }
+                        if (fields[5].contains("reacting to signal")) {
+                            tid = fields[3].toInt()
+                        }
+
+                        // SIGUSR1 starts a Java garbage collection, so wait for
+                        // a second message indicating that has completed.
+                        if (
+                            tid != 0 && fields[3].toInt() == tid
+                            && fields[5].contains("GC freed")
+                        ) {
+                            return tid
+                        }
+                    }
+                }
+                Thread.sleep(100)
+            }
+        } catch (e: IOException) {
+            // This may happen on ARM64 emulators with API level < 23, where
+            // SELinux blocks apps from reading their own logs.
+            e.printStackTrace()
+        }
+        return 0;
+    }
+
+    // Native functions are implemented in main_activity.c.
     private external fun redirectStdioToLogcat()
+    private external fun sendSignal(sig: Int)
+    private external fun killThread(tid: Int)
+    private external fun unblockSignal(sig: Int)
     private external fun runPython(home: String, runModule: String) : Int
 }

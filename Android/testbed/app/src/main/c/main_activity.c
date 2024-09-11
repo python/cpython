@@ -3,7 +3,9 @@
 #include <jni.h>
 #include <pthread.h>
 #include <Python.h>
+#include <signal.h>
 #include <stdio.h>
+#include <sys/syscall.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -13,6 +15,13 @@ static void throw_runtime_exception(JNIEnv *env, const char *message) {
         env,
         (*env)->FindClass(env, "java/lang/RuntimeException"),
         message);
+}
+
+static void throw_errno(JNIEnv *env, char *error_prefix) {
+    char error_message[1024];
+    snprintf(error_message, sizeof(error_message),
+             "%s: %s", error_prefix, strerror(errno));
+    throw_runtime_exception(env, error_message);
 }
 
 
@@ -90,12 +99,77 @@ JNIEXPORT void JNICALL Java_org_python_testbed_PythonTestRunner_redirectStdioToL
     for (StreamInfo *si = STREAMS; si->file; si++) {
         char *error_prefix;
         if ((error_prefix = redirect_stream(si))) {
-            char error_message[1024];
-            snprintf(error_message, sizeof(error_message),
-                     "%s: %s", error_prefix, strerror(errno));
-            throw_runtime_exception(env, error_message);
+            throw_errno(env, error_prefix);
             return;
         }
+    }
+}
+
+
+// --- Signal handling ---------------------------------------------------------
+
+JNIEXPORT void JNICALL Java_org_python_testbed_PythonTestRunner_sendSignal(
+    JNIEnv *env, jobject obj, int sig
+) {
+    if (kill(getpid(), sig) != 0) {
+        throw_errno(env, "kill");
+        return;
+    }
+}
+
+// This signal handler calls the raw _exit system call, which terminates the
+// current thread.
+static void exit_handler(int sig) {
+    syscall(SYS_exit, 0);
+}
+
+// Android doesn't implement pthread_cancel, but we can achieve something
+// similar by forcing the thread to run a signal handler.
+JNIEXPORT void JNICALL Java_org_python_testbed_PythonTestRunner_killThread(
+    JNIEnv *env, jobject obj, int tid
+) {
+    int sig = SIGUSR2;
+    sighandler_t old_handler;
+    if ((old_handler = signal(sig, exit_handler)) == SIG_ERR) {
+        throw_errno(env, "signal (install)");
+        return;
+    }
+    if (tgkill(getpid(), tid, sig) != 0) {
+        throw_errno(env, "tgkill");
+        return;
+    }
+
+    // After a short delay, verify that the thread has exited.
+    usleep(100000);
+    if (tgkill(getpid(), tid, sig) == 0) {
+        fprintf(
+            stderr,
+            "SignalCatcher TID %d still exists - signal tests may be unreliable",
+            tid
+        );
+    }
+
+    if (signal(sig, old_handler) == SIG_ERR) {
+        throw_errno(env, "signal (uninstall)");
+        return;
+    }
+}
+
+JNIEXPORT void JNICALL Java_org_python_testbed_PythonTestRunner_unblockSignal(
+    JNIEnv *env, jobject obj, int sig
+) {
+    sigset_t sigset;
+    if (sigemptyset(&sigset) != 0) {
+        throw_errno(env, "sigemptyset");
+        return;
+    }
+    if (sigaddset(&sigset, sig) != 0) {
+        throw_errno(env, "sigaddset");
+        return;
+    }
+    if (sigprocmask(SIG_UNBLOCK, &sigset, NULL) != 0) {
+        throw_errno(env, "sigprocmask");
+        return;
     }
 }
 
