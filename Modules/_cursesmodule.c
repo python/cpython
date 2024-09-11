@@ -4765,39 +4765,28 @@ curses_destructor(PyObject *op)
     PyMem_Free(ptr);
 }
 
-PyMODINIT_FUNC
-PyInit__curses(void)
+static int
+cursesmodule_exec(PyObject *module)
 {
     /* Initialize object type */
     if (PyType_Ready(&PyCursesWindow_Type) < 0) {
-        return NULL;
+        return -1;
     }
-
-    /* Create the module and add the functions */
-    PyObject *mod = PyModule_Create(&_cursesmodule);
-    if (mod == NULL) {
-        return NULL;
+    if (PyModule_AddType(module, &PyCursesWindow_Type) < 0) {
+        return -1;
     }
-#ifdef Py_GIL_DISABLED
-    if (PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED) < 0) {
-        Py_DECREF(mod);
-        return NULL;
-    }
-#endif
 
     /* Add some symbolic constants to the module */
-    PyObject *module_dict = PyModule_GetDict(mod);
+    PyObject *module_dict = PyModule_GetDict(module);
     if (module_dict == NULL) {
-        Py_DECREF(mod);
-        return NULL;
+        return -1;
     }
     ModDict = module_dict; /* For PyCurses_InitScr to use later */
 
     void **PyCurses_API = PyMem_Calloc(PyCurses_API_pointers, sizeof(void *));
     if (PyCurses_API == NULL) {
         PyErr_NoMemory();
-        Py_DECREF(mod);
-        return NULL;
+        return -1;
     }
     /* Initialize the C API pointer array */
     PyCurses_API[0] = (void *)Py_NewRef(&PyCursesWindow_Type);
@@ -4811,47 +4800,40 @@ PyInit__curses(void)
     if (c_api_object == NULL) {
         Py_DECREF(PyCurses_API[0]);
         PyMem_Free(PyCurses_API);
-        Py_DECREF(mod);
-        return NULL;
+        return -1;
     }
     int rc = PyDict_SetItemString(module_dict, "_C_API", c_api_object);
     Py_DECREF(c_api_object);
     if (rc < 0) {
-        Py_DECREF(mod);
-        return NULL;
+        return -1;
     }
 
     /* For exception curses.error */
     PyCursesError = PyErr_NewException("_curses.error", NULL, NULL);
     if (PyCursesError == NULL) {
-        Py_DECREF(mod);
-        return NULL;
+        return -1;
     }
     rc = PyDict_SetItemString(module_dict, "error", PyCursesError);
     Py_DECREF(PyCursesError);
     if (rc < 0) {
-        Py_DECREF(mod);
-        return NULL;
+        return -1;
     }
 
     /* Make the version available */
     PyObject *curses_version = PyBytes_FromString(PyCursesVersion);
     if (curses_version == NULL) {
-        Py_DECREF(mod);
-        return NULL;
+        return -1;
     }
     rc = PyDict_SetItemString(module_dict, "version", curses_version);
     Py_DECREF(curses_version);
     if (rc < 0) {
-        Py_DECREF(mod);
-        return NULL;
+        return -1;
     }
     Py_INCREF(curses_version);
     rc = PyDict_SetItemString(module_dict, "__version__", curses_version);
     Py_CLEAR(curses_version);
     if (rc < 0) {
-        Py_DECREF(mod);
-        return NULL;
+        return -1;
     }
 
 #ifdef NCURSES_VERSION
@@ -4860,20 +4842,17 @@ PyInit__curses(void)
     version_type = _PyStructSequence_NewType(&ncurses_version_desc,
                                              Py_TPFLAGS_DISALLOW_INSTANTIATION);
     if (version_type == NULL) {
-        Py_DECREF(mod);
-        return NULL;
+        return -1;
     }
     PyObject *ncurses_version = make_ncurses_version(version_type);
     Py_DECREF(version_type);
     if (ncurses_version == NULL) {
-        Py_DECREF(mod);
-        return NULL;
+        return -1;
     }
     rc = PyDict_SetItemString(module_dict, "ncurses_version", ncurses_version);
     Py_CLEAR(ncurses_version);
     if (rc < 0) {
-        Py_DECREF(mod);
-        return NULL;
+        return -1;
     }
 #endif /* NCURSES_VERSION */
 
@@ -4881,14 +4860,12 @@ PyInit__curses(void)
     do {                                                            \
         PyObject *value = PyLong_FromLong((long)(VALUE));           \
         if (value == NULL) {                                        \
-            Py_DECREF(mod);                                         \
-            return NULL;                                            \
+            return -1;                                              \
         }                                                           \
         int rc = PyDict_SetItemString(module_dict, (NAME), value);  \
         Py_DECREF(value);                                           \
         if (rc < 0) {                                               \
-            Py_DECREF(mod);                                         \
-            return NULL;                                            \
+            return -1;                                              \
         }                                                           \
     } while (0)
 
@@ -4996,8 +4973,7 @@ PyInit__curses(void)
             char *fn_key_name = PyMem_Malloc(strlen(key_name) + 1);
             if (!fn_key_name) {
                 PyErr_NoMemory();
-                Py_DECREF(mod);
-                return NULL;
+                return -1;
             }
             const char *p1 = key_name;
             char *p2 = fn_key_name;
@@ -5011,15 +4987,13 @@ PyInit__curses(void)
             *p2 = (char)0;
             PyObject *p_keycode = PyLong_FromLong((long)keycode);
             if (p_keycode == NULL) {
-                Py_DECREF(mod);
-                return NULL;
+                return -1;
             }
             int rc = PyDict_SetItemString(module_dict, fn_key_name, p_keycode);
             Py_DECREF(p_keycode);
             PyMem_Free(fn_key_name);
             if (rc < 0) {
-                Py_DECREF(mod);
-                return NULL;
+                return -1;
             }
         }
         else {
@@ -5029,8 +5003,25 @@ PyInit__curses(void)
     SetDictInt("KEY_MIN", KEY_MIN);
     SetDictInt("KEY_MAX", KEY_MAX);
 #undef SetDictInt
+    return 0;
+}
 
-    if (PyModule_AddType(mod, &PyCursesWindow_Type) < 0) {
+PyMODINIT_FUNC
+PyInit__curses(void)
+{
+    // create the module
+    PyObject *mod = PyModule_Create(&_cursesmodule);
+    if (mod == NULL) {
+        return NULL;
+    }
+#ifdef Py_GIL_DISABLED
+    if (PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED) < 0) {
+        Py_DECREF(mod);
+        return NULL;
+    }
+#endif
+    // populate the module
+    if (cursesmodule_exec(mod) < 0) {
         Py_DECREF(mod);
         return NULL;
     }
