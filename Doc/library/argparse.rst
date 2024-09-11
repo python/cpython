@@ -2246,8 +2246,8 @@ Exiting methods
 
 .. method:: ArgumentParser.error(message)
 
-   This method prints a usage message including the *message* to the
-   standard error and terminates the program with a status code of 2.
+   This method prints a usage message including the *message* to stderr
+   and terminates the program with a status code of 2.
 
 
 Intermixed parsing
