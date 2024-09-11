@@ -2895,7 +2895,7 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     }
 
 done_with_errmsg:
-    /* NULL checks for errmsg and mod_name done by PyErr_SetImportError. */
+    /* NULL checks for errmsg, mod_name, origin done by PyErr_SetImportError. */
     _PyErr_SetImportErrorWithNameFrom(errmsg, mod_name, origin, name);
     Py_DECREF(errmsg);
 
