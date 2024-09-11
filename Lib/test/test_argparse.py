@@ -6091,7 +6091,7 @@ class TestExitOnError(TestCase):
                                'the following arguments are required: bar, baz',
                                self.parser.parse_args, [])
 
-    def test_required_and_nargs(self):
+    def test_required_and_optional(self):
         self.parser.add_argument('bar')
         self.parser.add_argument('baz', nargs='*')
         self.assertRaisesRegex(argparse.ArgumentError,
