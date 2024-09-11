@@ -3,8 +3,6 @@
 # Keep lines sorted lexicographically to help avoid merge conflicts.
 # Format example:
 # /path/to/file (number of warnings in file)
-/home/runner/work/cpython/cpython/multissl/openssl/3.0.13/include/openssl/evp.h 0
-/home/runner/work/cpython/cpython/multissl/openssl/3.0.13/include/openssl/ssl.h 0
 /home/runner/work/cpython/cpython/multissl/openssl/3.0.15/include/openssl/evp.h 2
 /home/runner/work/cpython/cpython/multissl/openssl/3.0.15/include/openssl/ssl.h 4
 /usr/include/tcl8.6/tclTomMathDecls.h 1
