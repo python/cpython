@@ -123,8 +123,10 @@ ast
   (Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
 
 * Add support for :func:`copy.replace` for AST nodes.
-
   (Contributed by Bénédikt Tran in :gh:`121141`.)
+
+* Docstrings are now removed from an optimized AST in optimization level 2.
+  (Contributed by Irit Katriel in :gh:`123958`.)
 
 
 ctypes

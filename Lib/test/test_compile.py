@@ -876,6 +876,10 @@ class TestSpecifics(unittest.TestCase):
             def with_docstring():
                 "docstring"
 
+            def two_strings():
+                "docstring"
+                "not docstring"
+
             def with_fstring():
                 f"not docstring"
 
@@ -891,8 +895,10 @@ class TestSpecifics(unittest.TestCase):
 
                 if opt < 2:
                     self.assertEqual(ns['with_docstring'].__doc__, "docstring")
+                    self.assertEqual(ns['two_strings'].__doc__, "docstring")
                 else:
                     self.assertIsNone(ns['with_docstring'].__doc__)
+                    self.assertIsNone(ns['two_strings'].__doc__)
                 self.assertIsNone(ns['with_fstring'].__doc__)
                 self.assertIsNone(ns['with_const_expression'].__doc__)
 
