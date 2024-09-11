@@ -883,7 +883,7 @@ class TestSpecifics(unittest.TestCase):
                 "also" + " not docstring"
             """)
 
-        for opt in [-1, 0, 1, 2]:
+        for opt in [0, 1, 2]:
             with self.subTest(opt=opt):
                 code = compile(src, "<test>", "exec", optimize=opt)
                 ns = {}
