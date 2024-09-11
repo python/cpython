@@ -3665,6 +3665,23 @@ class TestSlots(unittest.TestCase):
         A()
 
     @support.cpython_only
+    def test_dataclass_slot_dict_ctype(self):
+        # https://github.com/python/cpython/issues/123935
+        from test.support import import_helper
+        # Skips test if `_testcapi` is not present:
+        _testcapi = import_helper.import_module('_testcapi')
+
+        @dataclass(slots=True)
+        class A(_testcapi.HeapCTypeWithDict):
+            __dict__: dict = {}
+        self.assertEqual(A.__slots__, ())
+
+        @dataclass(slots=True)
+        class A(_testcapi.HeapCTypeWithWeakref):
+            __dict__: dict = {}
+        self.assertEqual(A.__slots__, ('__dict__',))
+
+    @support.cpython_only
     def test_slots_with_wrong_init_subclass(self):
         # TODO: This test is for a kinda-buggy behavior.
         # Ideally, it should be fixed and `__init_subclass__`
