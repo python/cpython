@@ -1316,7 +1316,7 @@ These can be used as types in annotations. They all support subscription using
          year: int
 
       def mutate_movie(m: Movie) -> None:
-         m["year"] = 1992  # allowed
+         m["year"] = 1999  # allowed
          m["title"] = "The Matrix"  # typechecker error
 
    There is no runtime checking for this property.
