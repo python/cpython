@@ -414,24 +414,24 @@ reported by :meth:`asyncio.Task.cancelling`.
    Improved handling of simultaneous internal and external cancellations
    and correct preservation of cancellation counts.
 
-Group Cancellation
-------------------
+Terminating a Task Group
+------------------------
 
-Cancelling an entire task group is not natively supported by the standard
-library but can be achieved by adding a task to the group that raises an
-exception and ignoring that exception:
+While terminating a task group is not natively supported by the standard
+library, termination can be achieved by adding an exception-raising task
+to the task group and ignoring the raised exception:
 
 .. code-block:: python
 
    import asyncio
    from asyncio import TaskGroup
 
-   class CancelTaskGroup(Exception):
-       """Exception raised to cancel a task group."""
+   class TerminateTaskGroup(Exception):
+       """Exception raised to terminate a task group."""
 
-   async def stop_task_group():
-       """A task that cancels the group it belongs to."""
-       raise CancelTaskGroup()
+   async def force_terminate_task_group():
+       """Used to force termination of a task group."""
+       raise TerminateTaskGroup()
 
    async def job(task_id, sleep_time):
        print(f'Task {task_id}: start')
@@ -441,13 +441,14 @@ exception and ignoring that exception:
    async def main():
        try:
            async with TaskGroup() as group:
-               # ... spawn some tasks ...
-               group.create_task(job(1, 1))
-               group.create_task(job(2, 2))
-               # create a task that cancels the group after 1.5 seconds
-               await asyncio.sleep(1.5)
-               group.create_task(stop_task_group())
-       except* CancelTaskGroup:
+               # spawn some tasks
+               group.create_task(job(1, 0.5))
+               group.create_task(job(2, 1.5))
+               # sleep for 1 second
+               await asyncio.sleep(1)
+               # add an exception-raising task to force the group to terminate
+               group.create_task(force_terminate_task_group())
+       except* TerminateTaskGroup:
            pass
 
    asyncio.run(main())
