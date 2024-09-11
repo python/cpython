@@ -5237,12 +5237,14 @@ WITH_SAVE_ENV([
           #include <crypt.h>
         #endif
         #include <unistd.h>
+        volatile void *func;
       ], [
         #ifdef HAVE_CRYPT_R
-          void *x = crypt_r;
+          func = crypt_r;
         #else
-          void *x = crypt;
+          func = crypt;
         #endif
+          return (func != NULL);
       ])
     ], [ac_cv_crypt_crypt=yes], [ac_cv_crypt_crypt=no])
   ])

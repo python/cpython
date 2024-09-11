@@ -22041,16 +22041,18 @@ else $as_nop
           #include <crypt.h>
         #endif
         #include <unistd.h>
+        volatile void *func;
 
 int
 main (void)
 {
 
         #ifdef HAVE_CRYPT_R
-          void *x = crypt_r;
+          func = crypt_r;
         #else
-          void *x = crypt;
+          func = crypt;
         #endif
+          return (func != NULL);
 
   ;
   return 0;
