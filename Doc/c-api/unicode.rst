@@ -364,11 +364,11 @@ APIs:
    ===================================  ========  ===========================
    Constant Identifier                  Value     Description
    ===================================  ========  ===========================
-   .. c:macro:: PyUnicode_FORMAT_ASCII  ``0x01``  ASCII string (``Py_UCS1*``)
-   .. c:macro:: PyUnicode_FORMAT_UCS1   ``0x02``  UCS-1 string (``Py_UCS1*``)
-   .. c:macro:: PyUnicode_FORMAT_UCS2   ``0x04``  UCS-2 string (``Py_UCS2*``)
-   .. c:macro:: PyUnicode_FORMAT_UCS4   ``0x08``  UCS-4 string (``Py_UCS4*``)
-   .. c:macro:: PyUnicode_FORMAT_UTF8   ``0x10``  UTF-8 string (``char*``)
+   .. c:macro:: PyUnicode_FORMAT_UCS1   ``0x01``  UCS-1 string (``Py_UCS1*``)
+   .. c:macro:: PyUnicode_FORMAT_UCS2   ``0x02``  UCS-2 string (``Py_UCS2*``)
+   .. c:macro:: PyUnicode_FORMAT_UCS4   ``0x04``  UCS-4 string (``Py_UCS4*``)
+   .. c:macro:: PyUnicode_FORMAT_UTF8   ``0x08``  UTF-8 string (``char*``)
+   .. c:macro:: PyUnicode_FORMAT_ASCII  ``0x10``  ASCII string (``Py_UCS1*``)
    ===================================  ========  ===========================
 
    UCS-2 and UCS-4 use the native byte order.
