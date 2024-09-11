@@ -241,7 +241,7 @@ itself be quoted.  In effect the annotation is quoted
 This prints ``{'a': "'str'"}``.  This shouldn't really be considered
 a "quirk"; it's mentioned here simply because it might be surprising.
 
-When you use a class with a custom metaclass and access ``__annotations__``
+If you use a class with a custom metaclass and access ``__annotations__``
 on the class, you may observe unexpected behavior; see
 :pep:`749 <749#pep749-metaclasses>` for some examples. You can avoid these
 quirks by using :func:`annotationlib.get_annotations` on Python 3.14+ or

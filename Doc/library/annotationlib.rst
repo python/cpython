@@ -19,8 +19,7 @@ The :mod:`!annotationlib` module provides tools for introspecting
 
 Annotations are :ref:`lazily evaluated <lazy-evaluation>` and often contain
 forward references to objects that are not yet defined when the annotation
-is created. This module provides a set of low-level tools that consumers
-of annotations can use to retrieve annotations in a reliable way, even
+is created. This module provides a set of low-level tools that can be used to retrieve annotations in a reliable way, even
 in the presence of forward references and other edge cases.
 
 This module supports retrieving annotations in three main formats
@@ -99,8 +98,8 @@ Stock semantics were used when function annotations were first introduced
 in Python 3.0 (by :pep:`3107`) because this was the simplest, most obvious
 way to implement annotations. The same execution model was used when variable
 annotations were introduced in Python 3.6 (by :pep:`526`). However,
-stock semantics caused problems for users using annotations as type hints,
-which frequently need to refer to names that are not yet defined when the
+stock semantics caused problems when using annotations as type hints,
+such as a need to refer to names that are not yet defined when the
 annotation is encountered. In addition, there were performance problems
 with executing annotations at module import time. Therefore, in Python 3.7,
 :pep:`563` introduced the ability to store annotations as strings using the
