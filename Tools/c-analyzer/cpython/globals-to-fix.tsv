@@ -391,9 +391,6 @@ Modules/xxmodule.c	-	ErrorObject	-
 ##-----------------------
 ## other
 
-## initialized once
-Modules/_cursesmodule.c	-	ModDict	-
-
 ## state
 Modules/_datetimemodule.c	-	_datetime_global_state	-
 Modules/_tkinter.c	-	tcl_lock	-
