@@ -3288,8 +3288,6 @@ _curses_initscr_impl(PyObject *module)
 
 /* This was moved from initcurses() because it core dumped on SGI,
    where they're not defined until you've called initscr() */
-
-    /* Here are some graphic symbols you can use */
 #define SetDictInt(NAME, VALUE)                                 \
     do {                                                        \
         PyObject *value = PyLong_FromLong((long)(VALUE));       \
@@ -3303,6 +3301,7 @@ _curses_initscr_impl(PyObject *module)
         }                                                       \
     } while (0)
 
+    /* Here are some graphic symbols you can use */
     SetDictInt("ACS_ULCORNER",      (ACS_ULCORNER));
     SetDictInt("ACS_LLCORNER",      (ACS_LLCORNER));
     SetDictInt("ACS_URCORNER",      (ACS_URCORNER));
