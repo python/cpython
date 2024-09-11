@@ -2855,7 +2855,7 @@ release_bytes_for_tlbc(Py_ssize_t nbytes)
 }
 
 static int
-disable_specialization(PyObject *obj, void *)
+disable_specialization(PyObject *obj, void *Py_UNUSED(arg))
 {
     if (!PyCode_Check(obj)) {
         return 1;
