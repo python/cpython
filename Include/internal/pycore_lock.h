@@ -13,6 +13,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_pythread.h" // for PyThread_ident_t
+
 //_Py_UNLOCKED is defined as 0 and _Py_LOCKED as 1 in Include/cpython/lock.h
 #define _Py_HAS_PARKED  2
 #define _Py_ONCE_INITIALIZED 4
@@ -154,7 +156,7 @@ _PyOnceFlag_CallOnce(_PyOnceFlag *flag, _Py_once_fn_t *fn, void *arg)
 // A recursive mutex. The mutex should zero-initialized.
 typedef struct {
     PyMutex mutex;
-    unsigned long long thread;  // i.e., PyThread_get_thread_ident_ex()
+    PyThread_ident_t thread;  // i.e., PyThread_get_thread_ident_ex()
     size_t level;
 } _PyRecursiveMutex;
 
