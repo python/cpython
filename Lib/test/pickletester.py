@@ -2323,12 +2323,10 @@ class AbstractPicklingErrorTests:
                     'PickleBuffer can only be pickled with protocol >= 5')
 
     def test_non_continuous_buffer(self):
-        if self.pickler is pickle._Pickler:
-            self.skipTest('CRASHES (see gh-122306)')
         for proto in protocols[5:]:
             with self.subTest(proto=proto):
                 pb = pickle.PickleBuffer(memoryview(b"foobar")[::2])
-                with self.assertRaises(pickle.PicklingError):
+                with self.assertRaises((pickle.PicklingError, BufferError)):
                     self.dumps(pb, proto)
 
     def test_buffer_callback_error(self):
