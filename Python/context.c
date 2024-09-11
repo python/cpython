@@ -271,7 +271,6 @@ _PyContext_Exit(PyObject **stack, PyContext *ctx)
     }
 
     if (*stack != (PyObject *)ctx) {
-        /* Can only happen if someone misuses the C API */
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot exit context: not the current context");
         return -1;
@@ -783,6 +782,84 @@ context_tp_contains(PyContext *self, PyObject *key)
 
 
 /*[clinic input]
+_contextvars.Context.__enter__
+
+Context manager enter.
+
+Automatically called by the 'with' statement.  Using the Context object as a
+context manager is an alternative to calling the Context.run() method.
+
+Example:
+
+    var = contextvars.ContextVar('var')
+    var.set('initial')
+
+    with contextvars.copy_context():
+        # Changes to context variables will be rolled back upon exiting the
+        # `with` statement.
+        var.set('updated')
+        print(var.get())  # 'updated'
+
+    # The context variable value has been rolled back.
+    print(var.get())  # 'initial'
+[clinic start generated code]*/
+
+static PyObject *
+_contextvars_Context___enter___impl(PyContext *self)
+/*[clinic end generated code: output=7374aea8983b777a input=fffe71e56ca17ee4]*/
+{
+    PyThreadState *ts = _PyThreadState_GET();
+    _PyInterpreterFrame *frame = ts->current_frame;
+    PyGenObject *gen = frame->owner == FRAME_OWNED_BY_GENERATOR
+        ? _PyGen_GetGeneratorFromFrame(frame) : NULL;
+    if (gen == NULL || gen->_ctx_chain.ctx != NULL) {
+        assert(gen == NULL || (contextchain_head((_PyThreadStateImpl *)ts)
+                               == &gen->_ctx_chain));
+        if (PyContext_Enter((PyObject *)self)) {
+            return NULL;
+        }
+    } else if (_PyGen_ResetContext(ts, gen, (PyObject *)self)) {
+        return NULL;
+    }
+    // The new ref added here is for the `with` statement's `as` binding.  It
+    // is decremented when the variable goes out of scope, which can be before
+    // or after `PyContext_Exit` is called.  (The binding can go out of scope
+    // immediately -- before the `with` suite even runs -- if there is no `as`
+    // clause.  Or it can go out of scope long after the `with` suite completes
+    // because `with` does not have its own scope.)  Because of this timing,
+    // two references are needed: the one added in the `PyContext_Enter` or
+    // `_PyGen_ResetContext` call and the one returned here.
+    return Py_NewRef(self);
+}
+
+
+/*[clinic input]
+_contextvars.Context.__exit__
+    exc_type: object
+    exc_val: object
+    exc_tb: object
+    /
+
+Context manager exit.
+
+Automatically called at the conclusion of a 'with' statement when the Context
+is used as a context manager.  See the Context.__enter__() method for more
+details.
+[clinic start generated code]*/
+
+static PyObject *
+_contextvars_Context___exit___impl(PyContext *self, PyObject *exc_type,
+                                   PyObject *exc_val, PyObject *exc_tb)
+/*[clinic end generated code: output=4608fa9151f968f1 input=aff87cd8f5c864b0]*/
+{
+    if (PyContext_Exit((PyObject *)self)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+/*[clinic input]
 _contextvars.Context.get
     key: object
     default: object = None
@@ -900,6 +977,8 @@ context_run(PyObject *self, PyObject *const *args,
 
 
 static PyMethodDef PyContext_methods[] = {
+    _CONTEXTVARS_CONTEXT___ENTER___METHODDEF
+    _CONTEXTVARS_CONTEXT___EXIT___METHODDEF
     _CONTEXTVARS_CONTEXT_GET_METHODDEF
     _CONTEXTVARS_CONTEXT_ITEMS_METHODDEF
     _CONTEXTVARS_CONTEXT_KEYS_METHODDEF

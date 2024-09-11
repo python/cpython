@@ -150,20 +150,24 @@ Manual Context Management
    considered to be *entered*.
 
    *Entering* a context, which can be done by calling its :meth:`~Context.run`
-   method, makes the context the current context by pushing it onto the top of
-   the current thread's context stack.
+   method or by using it as a :term:`context manager`, makes the context the
+   current context by pushing it onto the top of the current thread's context
+   stack.
 
    *Exiting* from the current context, which can be done by returning from the
-   callback passed to the :meth:`~Context.run` method, restores the current
-   context to what it was before the context was entered by popping the context
-   off the top of the context stack.
+   callback passed to :meth:`~Context.run` or by exiting the :keyword:`with`
+   statement suite, restores the current context to what it was before the
+   context was entered by popping the context off the top of the context stack.
 
    Since each thread has its own context stack, :class:`ContextVar` objects
    behave in a similar fashion to :func:`threading.local` when values are
    assigned in different threads.
 
-   Attempting to enter an already entered context, including contexts entered in
-   other threads, raises a :exc:`RuntimeError`.
+   Attempting to do either of the following raises a :exc:`RuntimeError`:
+
+   * Entering an already entered context, including contexts entered in
+     other threads.
+   * Exiting from a context that is not the current context.
 
    After exiting a context, it can later be re-entered (from any thread).
 
@@ -175,6 +179,50 @@ Manual Context Management
    context).
 
    Context implements the :class:`collections.abc.Mapping` interface.
+
+   .. versionadded:: 3.14
+      Added support for the :term:`context management protocol`.
+
+   When used as a :term:`context manager`, the value bound to the identifier
+   given in the :keyword:`with` statement's :keyword:`!as` clause (if present)
+   is the :class:`!Context` object itself.
+
+   Example:
+
+   .. testcode::
+
+      import contextvars
+
+      var = contextvars.ContextVar("var")
+      var.set("initial")
+      print(var.get())  # 'initial'
+
+      # Copy the current Context and enter the copy.
+      with contextvars.copy_context() as ctx:
+          var.set("updated")
+          print(var in ctx)  # 'True'
+          print(ctx[var])  # 'updated'
+          print(var.get())  # 'updated'
+
+      # Exited ctx, so the observed value of var has reverted.
+      print(var.get())  # 'initial'
+      # But the updated value is still recorded in ctx.
+      print(ctx[var])  # 'updated'
+
+      # Re-entering ctx restores the updated value of var.
+      with ctx:
+          print(var.get())  # 'updated'
+
+   .. testoutput::
+      :hide:
+
+      initial
+      True
+      updated
+      updated
+      initial
+      updated
+      updated
 
    .. method:: run(callable, *args, **kwargs)
 

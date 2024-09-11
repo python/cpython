@@ -1,8 +1,11 @@
+import asyncio
 import concurrent.futures
+import contextlib
 import contextvars
 import functools
 import gc
 import random
+import threading
 import time
 import unittest
 import weakref
@@ -369,6 +372,88 @@ class ContextTest(unittest.TestCase):
             tp.shutdown()
         self.assertEqual(results, list(range(10)))
 
+    @isolated_context
+    def test_context_manager(self):
+        cvar = contextvars.ContextVar('cvar', default='initial')
+        self.assertEqual(cvar.get(), 'initial')
+        with contextvars.copy_context():
+            self.assertEqual(cvar.get(), 'initial')
+            cvar.set('updated')
+            self.assertEqual(cvar.get(), 'updated')
+        self.assertEqual(cvar.get(), 'initial')
+
+    def test_context_manager_as_binding(self):
+        ctx = contextvars.copy_context()
+        with ctx as ctx_as_binding:
+            self.assertIs(ctx_as_binding, ctx)
+
+    @isolated_context
+    def test_context_manager_nested(self):
+        cvar = contextvars.ContextVar('cvar', default='default')
+        with contextvars.copy_context() as outer_ctx:
+            cvar.set('outer')
+            with contextvars.copy_context() as inner_ctx:
+                self.assertIsNot(outer_ctx, inner_ctx)
+                self.assertEqual(cvar.get(), 'outer')
+                cvar.set('inner')
+                self.assertEqual(outer_ctx[cvar], 'outer')
+                self.assertEqual(cvar.get(), 'inner')
+            self.assertEqual(cvar.get(), 'outer')
+        self.assertEqual(cvar.get(), 'default')
+
+    @isolated_context
+    def test_context_manager_enter_again_after_exit(self):
+        cvar = contextvars.ContextVar('cvar', default='initial')
+        self.assertEqual(cvar.get(), 'initial')
+        with contextvars.copy_context() as ctx:
+            cvar.set('updated')
+            self.assertEqual(cvar.get(), 'updated')
+        self.assertEqual(cvar.get(), 'initial')
+        with ctx:
+            self.assertEqual(cvar.get(), 'updated')
+        self.assertEqual(cvar.get(), 'initial')
+
+    @threading_helper.requires_working_threading()
+    def test_context_manager_rejects_exit_from_different_thread(self):
+        ctx = contextvars.copy_context()
+        thread = threading.Thread(target=ctx.__enter__)
+        thread.start()
+        thread.join()
+        with self.assertRaises(RuntimeError):
+            ctx.__exit__(None, None, None)
+
+    def test_context_manager_is_not_reentrant(self):
+        with self.subTest('context manager then context manager'):
+            with contextvars.copy_context() as ctx:
+                with self.assertRaises(RuntimeError):
+                    with ctx:
+                        pass
+        with self.subTest('context manager then run method'):
+            with contextvars.copy_context() as ctx:
+                with self.assertRaises(RuntimeError):
+                    ctx.run(lambda: None)
+        with self.subTest('run method then context manager'):
+            ctx = contextvars.copy_context()
+
+            def fn():
+                with self.assertRaises(RuntimeError):
+                    with ctx:
+                        pass
+
+            ctx.run(fn)
+
+    def test_context_manager_rejects_noncurrent_exit(self):
+        with contextvars.copy_context() as outer_ctx:
+            with contextvars.copy_context() as inner_ctx:
+                self.assertIsNot(outer_ctx, inner_ctx)
+                with self.assertRaises(RuntimeError):
+                    outer_ctx.__exit__(None, None, None)
+
+    def test_context_manager_rejects_nonentered_exit(self):
+        ctx = contextvars.copy_context()
+        with self.assertRaises(RuntimeError):
+            ctx.__exit__(None, None, None)
+
 
 class GeneratorContextTest(unittest.TestCase):
     def test_default_is_none(self):
@@ -640,6 +725,145 @@ class GeneratorContextTest(unittest.TestCase):
         for _ in range(5):
             self.assertEqual(gen_outer.send(ctx_outer), ('inner', 'outer'))
             self.assertEqual(cvar.get(), 'updated')
+
+
+class AsyncContextTest(unittest.IsolatedAsyncioTestCase):
+    async def test_asyncio_independent_contexts(self):
+        """Check that coroutines are run with independent contexts.
+
+        Changes to context variables outside a coroutine should not affect the
+        values seen inside the coroutine and vice-versa.  (This might be
+        implemented by manually setting the context before executing each step
+        of (send to) a coroutine, or by ensuring that the coroutine is an
+        independent coroutine before executing any steps.)
+        """
+        cvar = contextvars.ContextVar('cvar', default='A')
+        updated1 = asyncio.Event()
+        updated2 = asyncio.Event()
+
+        async def task1():
+            self.assertIs(cvar.get(), 'A')
+            await asyncio.sleep(0)
+            cvar.set('B')
+            await asyncio.sleep(0)
+            updated1.set()
+            await updated2.wait()
+            self.assertIs(cvar.get(), 'B')
+
+        async def task2():
+            await updated1.wait()
+            self.assertIs(cvar.get(), 'A')
+            await asyncio.sleep(0)
+            cvar.set('C')
+            await asyncio.sleep(0)
+            updated2.set()
+            await asyncio.sleep(0)
+            self.assertIs(cvar.get(), 'C')
+
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(task1())
+            tg.create_task(task2())
+
+        self.assertIs(cvar.get(), 'A')
+
+    async def test_asynccontextmanager_is_dependent_by_default(self):
+        """Async generator in asynccontextmanager is dependent by default.
+
+        Context switches during the yield of a generator wrapped with
+        contextlib.asynccontextmanager should be visible to the generator by
+        default (for backwards compatibility).
+        """
+        cvar = contextvars.ContextVar('cvar', default='A')
+
+        @contextlib.asynccontextmanager
+        async def makecm():
+            await asyncio.sleep(0)
+            self.assertEqual(cvar.get(), 'A')
+            await asyncio.sleep(0)
+            # Everything above runs during __aenter__.
+            yield cvar.get()
+            # Everything below runs during __aexit__.
+            await asyncio.sleep(0)
+            self.assertEqual(cvar.get(), 'C')
+            await asyncio.sleep(0)
+            cvar.set('D')
+            await asyncio.sleep(0)
+
+        cm = makecm()
+        val = await cm.__aenter__()
+        self.assertEqual(val, 'A')
+        self.assertEqual(cvar.get(), 'A')
+        cvar.set('B')
+
+        with contextvars.copy_context():
+            cvar.set('C')
+            await cm.__aexit__(None, None, None)
+            self.assertEqual(cvar.get(), 'D')
+        self.assertEqual(cvar.get(), 'B')
+
+    async def test_asynccontextmanager_independent(self):
+        cvar = contextvars.ContextVar('cvar', default='A')
+
+        @contextlib.asynccontextmanager
+        async def makecm():
+            # Context.__enter__ called from a generator makes the generator
+            # independent while the `with` statement suite runs.
+            # (Alternatively we could have set the generator's _context
+            # property.)
+            with contextvars.copy_context():
+                await asyncio.sleep(0)
+                self.assertEqual(cvar.get(), 'A')
+                await asyncio.sleep(0)
+                # Everything above runs during __aenter__.
+                yield cvar.get()
+                # Everything below runs during __aexit__.
+                await asyncio.sleep(0)
+                self.assertEqual(cvar.get(), 'A')
+                await asyncio.sleep(0)
+                cvar.set('D')
+                await asyncio.sleep(0)
+
+        cm = makecm()
+        val = await cm.__aenter__()
+        self.assertEqual(val, 'A')
+        self.assertEqual(cvar.get(), 'A')
+        cvar.set('B')
+        with contextvars.copy_context():
+            cvar.set('C')
+            await cm.__aexit__(None, None, None)
+            self.assertEqual(cvar.get(), 'C')
+        self.assertEqual(cvar.get(), 'B')
+
+    async def test_generator_switch_between_independent_dependent(self):
+        cvar = contextvars.ContextVar('cvar', default='default')
+        with contextvars.copy_context() as ctx1:
+            cvar.set('in ctx1')
+        with contextvars.copy_context() as ctx2:
+            cvar.set('in ctx2')
+        with contextvars.copy_context() as ctx3:
+            cvar.set('in ctx3')
+
+        async def makegen():
+            await asyncio.sleep(0)
+            yield cvar.get()
+            await asyncio.sleep(0)
+            yield cvar.get()
+            await asyncio.sleep(0)
+            with ctx2:
+                yield cvar.get()
+                await asyncio.sleep(0)
+                yield cvar.get()
+                await asyncio.sleep(0)
+            yield cvar.get()
+
+        gen = makegen()
+        self.assertEqual(await anext(gen), 'default')
+        with ctx1:
+            self.assertEqual(await anext(gen), 'in ctx1')
+            self.assertEqual(await anext(gen), 'in ctx2')
+            with ctx3:
+                self.assertEqual(await anext(gen), 'in ctx2')
+            self.assertEqual(await anext(gen), 'in ctx1')
 
 # HAMT Tests
 
