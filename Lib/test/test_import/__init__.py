@@ -863,7 +863,7 @@ class ImportTests(unittest.TestCase):
                     f.write(script)
 
                 expected_error = error + (
-                    rb" \(consider renaming '.*fractions.__init__.py' since it has the "
+                    rb" \(consider renaming '.*[\\/]fractions[\\/]+__init__.py' since it has the "
                     rb"same name as the standard library module named 'fractions' "
                     rb"and the import system gives it precedence\)"
                 )
