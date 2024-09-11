@@ -34,10 +34,15 @@ Accessing The Annotations Dict Of An Object In Python 3.10 And Newer
 
 Python 3.10 adds a new function to the standard library:
 :func:`inspect.get_annotations`.  In Python versions 3.10
-and newer, calling this function is the best practice for
+through 3.13, calling this function is the best practice for
 accessing the annotations dict of any object that supports
 annotations.  This function can also "un-stringize"
 stringized annotations for you.
+
+In Python 3.14, there is a new :mod:`annotationlib` module
+with functionality for working with annotations. This
+includes a :func:`annotationlib.get_annotations` function,
+which supersedes :func:`inspect.get_annotations`.
 
 If for some reason :func:`inspect.get_annotations` isn't
 viable for your use case, you may access the
@@ -184,7 +189,11 @@ Best Practices For ``__annotations__`` In Any Python Version
 * If you do assign directly to the ``__annotations__`` member
   of an object, you should always set it to a ``dict`` object.
 
-* If you directly access the ``__annotations__`` member
+* You should avoid accessing ``__annotations__`` directly on any object.
+  Instead, use :func:`annotationlib.get_annotations` (Python 3.14+)
+  or :func:`inspect.get_annotations` (Python 3.10+).
+
+* If you do directly access the ``__annotations__`` member
   of an object, you should ensure that it's a
   dictionary before attempting to examine its contents.
 
@@ -231,3 +240,11 @@ itself be quoted.  In effect the annotation is quoted
 
 This prints ``{'a': "'str'"}``.  This shouldn't really be considered
 a "quirk"; it's mentioned here simply because it might be surprising.
+
+If you use a class with a custom metaclass and access ``__annotations__``
+on the class, you may observe unexpected behavior; see
+:pep:`749 <749#pep749-metaclasses>` for some examples. You can avoid these
+quirks by using :func:`annotationlib.get_annotations` on Python 3.14+ or
+:func:`inspect.get_annotations` on Python 3.10+. On earlier versions of
+Python, you can avoid these bugs by accessing the annotations from the
+class's ``__dict__`` (e.g., ``cls.__dict__.get('__annotations__', None)``).

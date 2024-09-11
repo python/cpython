@@ -1825,6 +1825,16 @@ without the dedicated syntax, as documented below.
          the bound is evaluated only when the attribute is accessed, not when
          the type variable is created (see :ref:`lazy-evaluation`).
 
+   .. method:: evaluate_bound
+
+      An :term:`evaluate function` corresponding to the :attr:`~TypeVar.__bound__` attribute.
+      When called directly, this method supports only the :attr:`~annotationlib.Format.VALUE`
+      format, which is equivalent to accessing the :attr:`~TypeVar.__bound__` attribute directly,
+      but the method object can be passed to :func:`annotationlib.call_evaluate_function`
+      to evaluate the value in a different format.
+
+      .. versionadded:: 3.14
+
    .. attribute:: __constraints__
 
       A tuple containing the constraints of the type variable, if any.
@@ -1835,12 +1845,32 @@ without the dedicated syntax, as documented below.
          the constraints are evaluated only when the attribute is accessed, not when
          the type variable is created (see :ref:`lazy-evaluation`).
 
+   .. method:: evaluate_constraints
+
+      An :term:`evaluate function` corresponding to the :attr:`~TypeVar.__constraints__` attribute.
+      When called directly, this method supports only the :attr:`~annotationlib.Format.VALUE`
+      format, which is equivalent to accessing the :attr:`~TypeVar.__constraints__` attribute directly,
+      but the method object can be passed to :func:`annotationlib.call_evaluate_function`
+      to evaluate the value in a different format.
+
+      .. versionadded:: 3.14
+
    .. attribute:: __default__
 
       The default value of the type variable, or :data:`typing.NoDefault` if it
       has no default.
 
       .. versionadded:: 3.13
+
+   .. method:: evaluate_default
+
+      An :term:`evaluate function` corresponding to the :attr:`~TypeVar.__default__` attribute.
+      When called directly, this method supports only the :attr:`~annotationlib.Format.VALUE`
+      format, which is equivalent to accessing the :attr:`~TypeVar.__default__` attribute directly,
+      but the method object can be passed to :func:`annotationlib.call_evaluate_function`
+      to evaluate the value in a different format.
+
+      .. versionadded:: 3.14
 
    .. method:: has_default()
 
@@ -1980,6 +2010,16 @@ without the dedicated syntax, as documented below.
 
       .. versionadded:: 3.13
 
+   .. method:: evaluate_default
+
+      An :term:`evaluate function` corresponding to the :attr:`~TypeVarTuple.__default__` attribute.
+      When called directly, this method supports only the :attr:`~annotationlib.Format.VALUE`
+      format, which is equivalent to accessing the :attr:`~TypeVarTuple.__default__` attribute directly,
+      but the method object can be passed to :func:`annotationlib.call_evaluate_function`
+      to evaluate the value in a different format.
+
+      .. versionadded:: 3.14
+
    .. method:: has_default()
 
       Return whether or not the type variable tuple has a default value. This is equivalent
@@ -2075,6 +2115,16 @@ without the dedicated syntax, as documented below.
       has no default.
 
       .. versionadded:: 3.13
+
+   .. method:: evaluate_default
+
+      An :term:`evaluate function` corresponding to the :attr:`~ParamSpec.__default__` attribute.
+      When called directly, this method supports only the :attr:`~annotationlib.Format.VALUE`
+      format, which is equivalent to accessing the :attr:`~ParamSpec.__default__` attribute directly,
+      but the method object can be passed to :func:`annotationlib.call_evaluate_function`
+      to evaluate the value in a different format.
+
+      .. versionadded:: 3.14
 
    .. method:: has_default()
 
@@ -2199,6 +2249,32 @@ without the dedicated syntax, as documented below.
          Recursive
          >>> Recursive.__value__
          Mutually
+
+   .. method:: evaluate_value
+
+      An :term:`evaluate function` corresponding to the :attr:`__value__` attribute.
+      When called directly, this method supports only the :attr:`~annotationlib.Format.VALUE`
+      format, which is equivalent to accessing the :attr:`__value__` attribute directly,
+      but the method object can be passed to :func:`annotationlib.call_evaluate_function`
+      to evaluate the value in a different format:
+
+      .. doctest::
+
+         >>> type Alias = undefined
+         >>> Alias.__value__
+         Traceback (most recent call last):
+         ...
+         NameError: name 'undefined' is not defined
+         >>> from annotationlib import Format, call_evaluate_function
+         >>> Alias.evaluate_value(Format.VALUE)
+         Traceback (most recent call last):
+         ...
+         NameError: name 'undefined' is not defined
+         >>> call_evaluate_function(Alias.evaluate_value, Format.FORWARDREF)
+         ForwardRef('undefined')
+
+      .. versionadded:: 3.14
+
 
 Other special directives
 """"""""""""""""""""""""
@@ -3306,7 +3382,7 @@ Introspection helpers
    Class used for internal typing representation of string forward references.
 
    For example, ``List["SomeClass"]`` is implicitly transformed into
-   ``List[ForwardRef("SomeClass")]``.  ``ForwardRef`` should not be instantiated by
+   ``List[ForwardRef("SomeClass")]``.  :class:`!ForwardRef` should not be instantiated by
    a user, but may be used by introspection tools.
 
    .. note::
@@ -3315,6 +3391,39 @@ Introspection helpers
       will not automatically resolve to ``list[SomeClass]``.
 
    .. versionadded:: 3.7.4
+
+   .. versionchanged:: 3.14
+      This is now an alias for :class:`annotationlib.ForwardRef`.
+
+.. function:: evaluate_forward_ref(forward_ref, *, owner=None, globals=None, locals=None, type_params=None, format=annotationlib.Format.VALUE)
+
+   Evaluate an :class:`annotationlib.ForwardRef` as a :term:`type hint`.
+
+   This is similar to calling :meth:`annotationlib.ForwardRef.evaluate`,
+   but unlike that method, :func:`!evaluate_forward_ref` also:
+
+   * Recursively evaluates forward references nested within the type hint.
+   * Raises :exc:`TypeError` when it encounters certain objects that are
+     not valid type hints.
+   * Replaces type hints that evaluate to :const:`!None` with
+     :class:`types.NoneType`.
+   * Supports the :attr:`~annotationlib.Format.FORWARDREF` and
+     :attr:`~annotationlib.Format.SOURCE` formats.
+
+   *forward_ref* must be an instance of :class:`~annotationlib.ForwardRef`.
+   *owner*, if given, should be the object that holds the annotations that
+   the forward reference derived from, such as a module, class object, or function.
+   It is used to infer the namespaces to use for looking up names.
+   *globals* and *locals* can also be explicitly given to provide
+   the global and local namespaces.
+   *type_params* is a tuple of :ref:`type parameters <type-params>` that
+   are in scope when evaluating the forward reference.
+   This parameter must be provided (though it may be an empty tuple) if *owner*
+   is not given and the forward reference does not already have an owner set.
+   *format* specifies the format of the annotation and is a member of
+   the :class:`annotationlib.Format` enum.
+
+   .. versionadded:: 3.14
 
 .. data:: NoDefault
 

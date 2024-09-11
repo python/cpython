@@ -336,23 +336,21 @@ The difference from normal :ref:`assignment` is that only a single target is all
 The assignment target is considered "simple" if it consists of a single
 name that is not enclosed in parentheses.
 For simple assignment targets, if in class or module scope,
-the annotations are evaluated and stored in a special class or module
-attribute :attr:`__annotations__`
-that is a dictionary mapping from variable names (mangled if private) to
-evaluated annotations. This attribute is writable and is automatically
-created at the start of class or module body execution, if annotations
-are found statically.
+the annotations are gathered in a lazily evaluated
+:ref:`annotation scope <annotation-scopes>`. The annotations can be
+evaluated using the :attr:`~object.__annotations__` attribute of a
+class or module, or using the facilities in the :mod:`annotationlib`
+module.
 
 If the assignment target is not simple (an attribute, subscript node, or
-parenthesized name), the annotation is evaluated if
-in class or module scope, but not stored.
+parenthesized name), the annotation is never evaluated.
 
 If a name is annotated in a function scope, then this name is local for
 that scope. Annotations are never evaluated and stored in function scopes.
 
 If the right hand side is present, an annotated
-assignment performs the actual assignment before evaluating annotations
-(where applicable). If the right hand side is not present for an expression
+assignment performs the actual assignment as if there was no annotation
+present. If the right hand side is not present for an expression
 target, then the interpreter evaluates the target except for the last
 :meth:`~object.__setitem__` or :meth:`~object.__setattr__` call.
 
@@ -372,6 +370,10 @@ target, then the interpreter evaluates the target except for the last
    Now annotated assignments allow the same expressions in the right hand side as
    regular assignments. Previously, some expressions (like un-parenthesized
    tuple expressions) caused a syntax error.
+
+.. versionchanged:: 3.14
+   Annotations are now lazily evaluated in a separate :ref:`annotation scope <annotation-scopes>`.
+   If the assignment target is not simple, annotations are never evaluated.
 
 
 .. _assert:
@@ -975,8 +977,8 @@ block textually preceding that :keyword:`!global` statement.
 
 Names listed in a :keyword:`global` statement must not be defined as formal
 parameters, or as targets in :keyword:`with` statements or :keyword:`except` clauses, or in a :keyword:`for` target list, :keyword:`class`
-definition, function definition, :keyword:`import` statement, or variable
-annotation.
+definition, function definition, :keyword:`import` statement, or
+:term:`variable annotations <variable annotation>`.
 
 .. impl-detail::
 
