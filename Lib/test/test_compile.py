@@ -871,30 +871,6 @@ class TestSpecifics(unittest.TestCase):
             list(dis.get_instructions(unused_code_at_end))[-1].opname)
 
     @support.cpython_only
-    def test_docstring_omitted(self):
-        # See gh-115347
-        src = textwrap.dedent("""
-            def f():
-                "docstring1"
-                def h():
-                    "docstring2"
-                    return 42
-
-                class C:
-                    "docstring3"
-                    pass
-
-                return h
-        """)
-        for opt in [-1, 0, 1, 2]:
-            with self.subTest(opt=opt):
-                code = compile(src, "<test>", "exec", optimize=opt)
-                output = io.StringIO()
-                with contextlib.redirect_stdout(output):
-                    dis.dis(code)
-                self.assertNotIn('NOP' , output.getvalue())
-
-    @support.cpython_only
     def test_docstring(self):
         src = textwrap.dedent("""
             def with_docstring():
@@ -920,6 +896,29 @@ class TestSpecifics(unittest.TestCase):
                 self.assertIsNone(ns['with_fstring'].__doc__)
                 self.assertIsNone(ns['with_const_expression'].__doc__)
 
+    @support.cpython_only
+    def test_docstring_omitted(self):
+        # See gh-115347
+        src = textwrap.dedent("""
+            def f():
+                "docstring1"
+                def h():
+                    "docstring2"
+                    return 42
+
+                class C:
+                    "docstring3"
+                    pass
+
+                return h
+        """)
+        for opt in [-1, 0, 1, 2]:
+            with self.subTest(opt=opt):
+                code = compile(src, "<test>", "exec", optimize=opt)
+                output = io.StringIO()
+                with contextlib.redirect_stdout(output):
+                    dis.dis(code)
+                self.assertNotIn('NOP' , output.getvalue())
 
     def test_dont_merge_constants(self):
         # Issue #25843: compile() must not merge constants which are equal
