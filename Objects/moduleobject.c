@@ -824,15 +824,15 @@ _PyModuleSpec_IsUninitializedSubmodule(PyObject *spec, PyObject *name)
     return rc;
 }
 
-static int
-_get_file_origin_from_spec(PyObject *spec, PyObject **p_origin)
+int
+_PyModuleSpec_GetFileOrigin(PyObject *spec, PyObject **p_origin)
 {
     PyObject *has_location = NULL;
     int rc = PyObject_GetOptionalAttr(spec, &_Py_ID(has_location), &has_location);
     if (rc <= 0) {
         return rc;
     }
-    // If origin is not a location, or doesn't exist, or is not a str), we could consider falling
+    // If origin is not a location, or doesn't exist, or is not a str, we could consider falling
     // back to module.__file__. But the cases in which module.__file__ is not __spec__.origin
     // are cases in which we probably shouldn't be guessing.
     rc = PyObject_IsTrue(has_location);
@@ -981,7 +981,7 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     }
 
     PyObject *origin = NULL;
-    if (_get_file_origin_from_spec(spec, &origin) < 0) {
+    if (_PyModuleSpec_GetFileOrigin(spec, &origin) < 0) {
         goto done;
     }
 

@@ -2763,7 +2763,7 @@ PyObject *
 _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
 {
     PyObject *x;
-    PyObject *fullmodname, *mod_name, *origin, *mod_name_or_unknown, *errmsg;
+    PyObject *fullmodname, *mod_name, *origin, *mod_name_or_unknown, *errmsg, *spec;
 
     if (PyObject_GetOptionalAttr(v, name, &x) != 0) {
         return x;
@@ -2790,6 +2790,7 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     }
     Py_DECREF(mod_name);
     return x;
+
  error:
     if (mod_name == NULL) {
         mod_name_or_unknown = PyUnicode_FromString("<unknown module name>");
@@ -2799,52 +2800,55 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     } else {
         mod_name_or_unknown = mod_name;
     }
+    // mod_name is no longer an owned reference
+    assert(mod_name == NULL || mod_name == mod_name_or_unknown);
 
     origin = NULL;
-    if (PyModule_Check(v)) {
-        origin = PyModule_GetFilenameObject(v);
-        if (origin == NULL) {
-            if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
-                Py_DECREF(mod_name_or_unknown);
-                return NULL;
-            }
-            // module filename missing
-            _PyErr_Clear(tstate);
-        }
+    if (PyObject_GetOptionalAttr(v, &_Py_ID(__spec__), &spec) < 0) {
+        Py_DECREF(mod_name_or_unknown);
+        return NULL;
     }
-    if (origin == NULL || !PyUnicode_Check(origin)) {
-        Py_CLEAR(origin);
+    if (spec == NULL) {
         errmsg = PyUnicode_FromFormat(
             "cannot import name %R from %R (unknown location)",
             name, mod_name_or_unknown
         );
+        goto done_with_errmsg;
     }
-    else {
-        PyObject *spec;
-        int rc = PyObject_GetOptionalAttr(v, &_Py_ID(__spec__), &spec);
-        if (rc > 0) {
-            rc = _PyModuleSpec_IsInitializing(spec);
-            Py_DECREF(spec);
-        }
-        if (rc < 0) {
-            Py_DECREF(mod_name_or_unknown);
-            Py_DECREF(origin);
-            return NULL;
-        }
-        const char *fmt =
-            rc ?
-            "cannot import name %R from partially initialized module %R "
-            "(most likely due to a circular import) (%S)" :
-            "cannot import name %R from %R (%S)";
+    if (_PyModuleSpec_GetFileOrigin(spec, &origin) < 0) {
+        goto done;
+    }
+    if (origin == NULL) {
+        errmsg = PyUnicode_FromFormat(
+            "cannot import name %R from %R (unknown location)",
+            name, mod_name_or_unknown
+        );
+        goto done_with_errmsg;
+    }
 
-        errmsg = PyUnicode_FromFormat(fmt, name, mod_name_or_unknown, origin);
+    int rc = _PyModuleSpec_IsInitializing(spec);
+    if (rc < 0) {
+        Py_DECREF(mod_name_or_unknown);
+        Py_DECREF(origin);
+        return NULL;
     }
+    const char *fmt =
+        rc ?
+        "cannot import name %R from partially initialized module %R "
+        "(most likely due to a circular import) (%S)" :
+        "cannot import name %R from %R (%S)";
+
+    errmsg = PyUnicode_FromFormat(fmt, name, mod_name_or_unknown, origin);
+
+done_with_errmsg:
     /* NULL checks for errmsg and mod_name done by PyErr_SetImportError. */
     _PyErr_SetImportErrorWithNameFrom(errmsg, mod_name, origin, name);
+    Py_DECREF(errmsg);
 
-    Py_XDECREF(errmsg);
-    Py_DECREF(mod_name_or_unknown);
+done:
     Py_XDECREF(origin);
+    Py_XDECREF(spec);
+    Py_DECREF(mod_name_or_unknown);
     return NULL;
 }
 
