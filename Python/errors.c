@@ -1853,7 +1853,6 @@ PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
 /* Raises a SyntaxError and returns -1.
  * If something goes wrong, a different exception may be raised.
  */
-
 int
 _PyErr_RaiseSyntaxError(PyObject *msg, PyObject *filename, int lineno, int col_offset,
                         int end_lineno, int end_col_offset)
