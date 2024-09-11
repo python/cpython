@@ -181,12 +181,15 @@ merge_refcount(PyObject *op, Py_ssize_t extra)
 }
 
 static void
-frame_disable_deferred_refcounting(_PyInterpreterFrame *frame)
+frame_disable_deferred_refcounting(_PyInterpreterFrame *frame, int is_funcobj_valid)
 {
     // Convert locals, variables, and the executable object to strong
     // references from (possibly) deferred references.
     assert(frame->stackpointer != NULL);
     frame->f_executable = PyStackRef_AsStrongReference(frame->f_executable);
+    if (is_funcobj_valid) {
+        frame->f_funcobj = PyStackRef_AsStrongReference(frame->f_funcobj);
+    }
     for (_PyStackRef *ref = frame->localsplus; ref < frame->stackpointer; ref++) {
         if (!PyStackRef_IsNull(*ref) && PyStackRef_IsDeferred(*ref)) {
             *ref = PyStackRef_AsStrongReference(*ref);
@@ -218,10 +221,14 @@ disable_deferred_refcounting(PyObject *op)
     // use strong references, in case the generator or frame object is
     // resurrected by a finalizer.
     if (PyGen_CheckExact(op) || PyCoro_CheckExact(op) || PyAsyncGen_CheckExact(op)) {
-        frame_disable_deferred_refcounting(&((PyGenObject *)op)->gi_iframe);
+        // The `f_funcobj` field is invalid if the frame is a cleared generator
+        PyGenObject *gen = (PyGenObject *)op;
+        int is_funcobj_valid = gen->gi_frame_state != FRAME_CLEARED;
+
+        frame_disable_deferred_refcounting(&gen->gi_iframe, is_funcobj_valid);
     }
     else if (PyFrame_Check(op)) {
-        frame_disable_deferred_refcounting(((PyFrameObject *)op)->f_frame);
+        frame_disable_deferred_refcounting(((PyFrameObject *)op)->f_frame, 1);
     }
 }
 
@@ -981,9 +988,7 @@ _PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg)
     _PyStackRef *ref = _PyFrame_GetLocalsArray(frame);
     /* locals and stack */
     for (; ref < frame->stackpointer; ref++) {
-        if (_PyGC_VisitStackRef(ref, visit, arg) < 0) {
-            return -1;
-        }
+        _Py_VISIT_STACKREF(*ref);
     }
     return 0;
 }
