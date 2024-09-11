@@ -4823,11 +4823,10 @@ cursesmodule_exec(PyObject *module)
         return -1;
     }
     rc = PyDict_SetItemString(module_dict, "version", curses_version);
-    Py_DECREF(curses_version);
     if (rc < 0) {
+        Py_DECREF(curses_version);
         return -1;
     }
-    Py_INCREF(curses_version);
     rc = PyDict_SetItemString(module_dict, "__version__", curses_version);
     Py_CLEAR(curses_version);
     if (rc < 0) {
