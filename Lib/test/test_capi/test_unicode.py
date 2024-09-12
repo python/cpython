@@ -1766,28 +1766,29 @@ class CAPITest(unittest.TestCase):
 
         def check_ucs2(text, formats):
             self.assertEqual(unicode_export(text, formats),
-                             (text.encode(ucs2_enc),
+                             (text.encode(ucs2_enc, 'surrogatepass'),
                               PyUnicode_FORMAT_UCS2, 2, BUFFER_UCS2))
 
         def check_ucs4(text, formats):
             self.assertEqual(unicode_export(text, formats),
-                             (text.encode(ucs4_enc),
+                             (text.encode(ucs4_enc, 'surrogatepass'),
                               PyUnicode_FORMAT_UCS4, 4, BUFFER_UCS4))
 
         def check_utf8(text):
             self.assertEqual(unicode_export(text, PyUnicode_FORMAT_UTF8),
-                             (text.encode('utf8'),
+                             (text.encode('utf8', 'surrogatepass'),
                               PyUnicode_FORMAT_UTF8, 1, 'B'))
 
+        # export as native format
         check_ucs1("abc", formats)
         check_ucs1("latin1:\xe9", formats)
         check_ucs2('ucs2:\u20ac', formats)
         check_ucs4('ucs4:\U0010ffff', formats)
 
-        # export ASCII as UCS1
+        # convert ASCII to UCS1
         check_ucs1("abc", PyUnicode_FORMAT_UCS1)
 
-        # export ASCII and UCS1 to UCS2
+        # convert ASCII and UCS1 to UCS2
         check_ucs2("abc", PyUnicode_FORMAT_UCS2)
         check_ucs2("latin1:\xe9", PyUnicode_FORMAT_UCS2)
 
@@ -1797,11 +1798,16 @@ class CAPITest(unittest.TestCase):
         check_ucs4('ucs2:\u20ac', PyUnicode_FORMAT_UCS4)
         check_ucs4('ucs4:\U0010ffff', PyUnicode_FORMAT_UCS4)
 
-        # always export to UTF8
+        # always encode to UTF8
         check_utf8("abc")
         check_utf8("latin1:\xe9")
         check_utf8('ucs2:\u20ac')
         check_utf8('ucs4:\U0010ffff')
+
+        # surrogates
+        check_ucs2('\udc80', PyUnicode_FORMAT_UCS2)
+        check_ucs4('\udc80', PyUnicode_FORMAT_UCS4)
+        check_utf8('\udc80')
 
         # No supported format or invalid format
         for formats in (0, PyUnicode_FORMAT_INVALID):

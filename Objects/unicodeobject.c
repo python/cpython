@@ -2335,7 +2335,7 @@ PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *pub_writer,
 static int32_t
 unicode_export(PyObject *obj, Py_buffer *view,
                Py_ssize_t len, const void *buf,
-               int itemsize, const char *format, int32_t internal_format)
+               int itemsize, const char *format, int32_t export_format)
 {
     if (PyBuffer_FillInfo(view, obj, (void*)buf, len,
                           1, PyBUF_SIMPLE) < 0) {
@@ -2343,8 +2343,31 @@ unicode_export(PyObject *obj, Py_buffer *view,
     }
     view->itemsize = itemsize;
     view->format = (char*)format;
-    view->internal = (void*)(uintptr_t)internal_format;
-    return internal_format;
+    return export_format;
+}
+
+
+static int32_t
+unicode_export_bytes(PyObject *bytes, Py_buffer *view,
+                     int itemsize, const char *format, int32_t export_format)
+{
+    const void *buf = PyBytes_AS_STRING(bytes);
+    assert((PyBytes_GET_SIZE(bytes) % itemsize) == 0);
+    Py_ssize_t len = PyBytes_GET_SIZE(bytes) / itemsize;
+    assert(len >= 1);
+    len--;  // ignore the trailing NULL character
+
+    if (PyBuffer_FillInfo(view, bytes, (void*)buf, len,
+                          1, PyBUF_SIMPLE) < 0)
+    {
+        Py_DECREF(bytes);
+        return -1;
+    }
+    Py_DECREF(bytes);
+
+    view->itemsize = itemsize;
+    view->format = (char*)format;
+    return export_format;
 }
 
 
@@ -2410,11 +2433,8 @@ PyUnicode_Export(PyObject *unicode, int32_t requested_formats,
                                  ucs2);
         ucs2[len] = 0;
 
-        int32_t res = unicode_export(bytes, view,
-                                     len, ucs2,
-                                     2, "H", PyUnicode_FORMAT_UCS2);
-        Py_DECREF(bytes);
-        return res;
+        return unicode_export_bytes(bytes, view,
+                                    2, "H", PyUnicode_FORMAT_UCS2);
     }
 
     // Native UCS4
@@ -2438,25 +2458,44 @@ PyUnicode_Export(PyObject *unicode, int32_t requested_formats,
         if (bytes == NULL) {
             return -1;
         }
-        ucs4 = (Py_UCS4*)PyBytes_AS_STRING(bytes);
 
-        int32_t res = unicode_export(bytes, view,
-                                     len, ucs4,
-                                     4, BUFFER_UCS4, PyUnicode_FORMAT_UCS4);
-        Py_DECREF(bytes);
-        return res;
+        return unicode_export_bytes(bytes, view,
+                                    4, BUFFER_UCS4, PyUnicode_FORMAT_UCS4);
     }
 
     // Encode UCS1, UCS2 or UCS4 to UTF-8
     if (requested_formats & PyUnicode_FORMAT_UTF8) {
         Py_ssize_t nbytes;
         const char *utf8 = PyUnicode_AsUTF8AndSize(unicode, &nbytes);
-        if (utf8 == NULL) {
-            return -1;
+        if (utf8 != NULL) {
+            return unicode_export(unicode, view,
+                                  nbytes, utf8,
+                                  1, "B", PyUnicode_FORMAT_UTF8);
         }
-        return unicode_export(unicode, view,
-                              nbytes, utf8,
-                              1, "B", PyUnicode_FORMAT_UTF8);
+        if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
+            PyErr_Clear();
+            PyObject *bytes = _PyUnicode_AsUTF8String(unicode, "surrogatepass");
+            if (bytes == NULL) {
+                return -1;
+            }
+            len = PyBytes_GET_SIZE(bytes);
+
+            // Copy to add a NULL character
+            PyObject *bytes2 = PyBytes_FromStringAndSize(NULL, len + 1);
+            if (bytes2 == NULL) {
+                Py_DECREF(bytes);
+                return -1;
+            }
+
+            char *str = PyBytes_AS_STRING(bytes2);
+            memcpy(str, PyBytes_AS_STRING(bytes), len);
+            str[len] = '\0';
+            Py_DECREF(bytes);
+
+            return unicode_export_bytes(bytes2, view,
+                                        1, "B", PyUnicode_FORMAT_UTF8);
+        }
+        return -1;
     }
 
     PyErr_SetString(PyExc_ValueError,
