@@ -113,21 +113,10 @@ def write_uop(
     prototype = override if override else uop
     try:
         out.start_line()
-        peeks: list[Local] = []
-        for var in reversed(prototype.stack.inputs):
-            code, local = stack.pop(var, extract_bits=True)
-            if not skip_inputs:
-                out.emit(code)
-            if var.peek:
-                peeks.append(local)
-            if local.defined:
-                locals[local.name] = local
-        # Push back the peeks, so that they remain on the logical
-        # stack, but their values are cached.
-        while peeks:
-            stack.push(peeks.pop())
         out.emit(stack.define_output_arrays(prototype.stack.outputs))
-        storage = Storage.for_uop(stack, prototype, locals)
+        code_list, storage = Storage.for_uop(stack, prototype)
+        for code in code_list:
+            out.emit(code)
         if debug:
             args = []
             for var in prototype.stack.inputs:
@@ -148,8 +137,7 @@ def write_uop(
             emitter.emit_tokens(override, storage, None)
         else:
             emit_default(out, uop, storage)
-        for output in storage.outputs:
-            stack.push(output)
+        storage.push_outputs()
         out.start_line()
         stack.flush(out, cast_type="_Py_UopsSymbol *", extract_bits=True)
     except StackError as ex:

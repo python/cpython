@@ -86,22 +86,12 @@ def write_uop(
         emitter.out.start_line()
         if braces:
             emitter.out.emit(f"// {uop.name}\n")
-        peeks: list[Local] = []
-        for var in reversed(uop.stack.inputs):
-            code, local = stack.pop(var)
-            emitter.emit(code)
-            if var.peek:
-                peeks.append(local)
-            if local.defined:
-                locals[local.name] = local
-        # Push back the peeks, so that they remain on the logical
-        # stack, but their values are cached.
-        while peeks:
-            stack.push(peeks.pop())
-        if braces:
             emitter.emit("{\n")
+            emitter.emit(stack.as_comment())
+        code_list, storage = Storage.for_uop(stack, uop)
         emitter.emit(stack.define_output_arrays(uop.stack.outputs))
-        storage = Storage.for_uop(stack, uop, locals)
+        for code in code_list:
+            emitter.emit(code)
 
         for cache in uop.caches:
             if cache.name != "unused":

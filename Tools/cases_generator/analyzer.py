@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+import itertools
 import lexer
 import parser
 import re
@@ -327,11 +328,25 @@ def analyze_stack(
     ]
     # Mark variables with matching names at the base of the stack as "peek"
     modified = False
-    for input, output in zip(inputs, outputs):
-        if input.name == output.name and not modified:
-            input.peek = output.peek = True
+    input_names: dict[str, lexer.Token] = { i.name : i.first_token for i in op.inputs if i.name != "unused" }
+    input_names
+    for input, output in itertools.zip_longest(inputs, outputs):
+        if output is None:
+            pass
+        elif input is None:
+            if output.name in input_names:
+                raise analysis_error(
+                    f"Reuse of variable '{output.name}' at different stack location",
+                    input_names[output.name])
+        elif input.name == output.name:
+            if not modified:
+                input.peek = output.peek = True
         else:
             modified = True
+            if output.name in input_names:
+                raise analysis_error(
+                    f"Reuse of variable '{output.name}' at different stack location",
+                    input_names[output.name])
     if isinstance(op, parser.InstDef):
         output_names = [out.name for out in outputs]
         for input in inputs:

@@ -3928,10 +3928,9 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             // The frame has stolen all the arguments from the stack,
             // so there is no need to clean them up.
-            stack_pointer[0].bits = (uintptr_t)new_frame;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            if (new_frame == NULL) JUMP_TO_ERROR();
+            if (new_frame == NULL) {
+                JUMP_TO_ERROR();
+            }
             stack_pointer += -2 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -4499,10 +4498,7 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (init_frame == NULL) {
                 _PyEval_FrameClearAndPop(tstate, shim);
-                stack_pointer[0].bits = (uintptr_t)init_frame;
-                stack_pointer += 1;
-                assert(WITHIN_STACK_BOUNDS());
-                if (true) JUMP_TO_ERROR();
+                JUMP_TO_ERROR();
             }
             frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
             /* Account for pushing the extra frame.
@@ -5176,10 +5172,9 @@
             PyStackRef_CLOSE(kwnames);
             // The frame has stolen all the arguments from the stack,
             // so there is no need to clean them up.
-            stack_pointer[0].bits = (uintptr_t)new_frame;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            if (new_frame == NULL) JUMP_TO_ERROR();
+            if (new_frame == NULL) {
+                JUMP_TO_ERROR();
+            }
             stack_pointer += -3 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -5344,9 +5339,7 @@
             PyFunction_New(codeobj, GLOBALS());
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(codeobj_st);
-            if (func_obj == NULL) {
-                JUMP_TO_ERROR();
-            }
+            if (func_obj == NULL) JUMP_TO_ERROR();
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyFunction_SetVersion(
                                    func_obj, ((PyCodeObject *)codeobj)->co_version);
@@ -5385,9 +5378,7 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (gen == NULL) {
-                JUMP_TO_ERROR();
-            }
+            if (gen == NULL) JUMP_TO_ERROR();
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyInterpreterFrame *gen_frame = &gen->gi_iframe;

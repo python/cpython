@@ -230,7 +230,7 @@ class Stack:
             if popped.size != var.size:
                 raise StackError(
                     f"Size mismatch when popping '{popped.name}' from stack to assign to {var.name}. "
-                    f"Expected {var.size} got {popped.size}"
+                    f"Expected '{var.size}' got '{var_size(popped)}'"
                 )
             if var.name in UNUSED:
                 if popped.name not in UNUSED and popped.name in self.defined:
@@ -274,6 +274,7 @@ class Stack:
         return assign, Local(var, not var.is_array(), in_memory, True)
 
     def push(self, var: Local) -> None:
+        assert(var not in self.variables)
         self.variables.append(var)
         self.top_offset.push(var.item)
         if var.item.used:
@@ -338,8 +339,9 @@ class Stack:
         return self.top_offset.to_c()
 
     def as_comment(self) -> str:
+        variables = ", ".join([str(v) for v in self.variables])
         return (
-            f"/* Variables: {", ".join([str(v) for v in self.variables])}. "
+            f"/* Variables: {variables}. "
             f"Base offset: {self.base_offset.to_c()}. Top offset: {self.top_offset.to_c()} */"
         )
 
@@ -413,20 +415,37 @@ def get_stack_effect(inst: Instruction | PseudoInstruction) -> Stack:
 class Storage:
 
     stack: Stack
+    inputs: list[Local]
     outputs: list[Local]
+    peeks: list[Local]
     spilled: int = 0
 
     def _push_defined_locals(self) -> None:
+        defined_output = ""
+        for output in self.outputs:
+            if output.defined and not output.in_memory:
+                defined_output = output.name
+        if not defined_output:
+            return
+        while self.inputs:
+            tos = self.inputs.pop()
+            if tos.defined and not tos.is_array():
+                raise StackError(
+                    f"Input '{tos.name}' is not cleared "
+                    f"when output '{defined_output}' is defined"
+                )
+            self.stack.pop(tos.item)
         undefined = ""
         for out in self.outputs:
             if out.defined:
-                if not out.in_memory:
-                    self.stack.push(out)
                 if undefined:
                     f"Locals not defined in stack order. "
                     f"Expected '{undefined}' to be defined before '{out.name}'"
             else:
                 undefined = out.name
+        while self.outputs and (self.outputs[0].defined or self.outputs[0].is_array()) :
+            out = self.outputs.pop(0)
+            self.stack.push(out)
 
     def locals_cached(self) -> bool:
         for out in self.outputs:
@@ -458,25 +477,42 @@ class Storage:
             out.emit(f"/* Virtual reload {self.spilled} */\n")
 
     @staticmethod
-    def for_uop(stack: Stack, uop: Uop, locals: dict[str, Local]) -> "Storage":
-        outputs: list[Local] = []
-        for var in uop.stack.outputs:
-            if not var.peek:
-                if var.name in locals:
-                    local = locals[var.name]
-                elif var.name == "unused":
-                    local = Local.unused(var)
-                else:
-                    local = Local.undefined(var)
-                outputs.append(local)
-        return Storage(stack, outputs)
+    def for_uop(stack: Stack, uop: Uop) -> tuple[list[str], "Storage"]:
+        code_list: list[str] = []
+        inputs: list[Local] = []
+        peeks: list[Local] = []
+        for var in reversed(uop.stack.inputs):
+            code, local = stack.pop(var)
+            code_list.append(code)
+            if var.peek:
+                peeks.append(local)
+            else:
+                inputs.append(local)
+        inputs.reverse()
+        peeks.reverse()
+        code_list.append(stack.as_comment())
+        for var in peeks:
+            stack.push(var)
+        code_list.append(stack.as_comment())
+        for var in inputs:
+            stack.push(var)
+        code_list.append(stack.as_comment())
+        outputs = [ Local.undefined(var) for var in uop.stack.outputs if not var.peek ]
+        return code_list, Storage(stack, inputs, outputs, peeks)
+
+    @staticmethod
+    def copy_list(arg: list[Local]) -> list[Local]:
+        return [ l.copy() for l in arg ]
 
     def copy(self) -> "Storage":
-        return Storage(self.stack.copy(), [ l.copy() for l in self.outputs])
+        return Storage(
+            self.stack.copy(), self.copy_list(self.inputs),
+            self.copy_list(self.outputs), self.copy_list(self.peeks)
+        )
 
-    def sanity_check(self):
-        names: set[str] = set()
-        for var in self.stack.variables:
+    def sanity_check(self) -> None:
+        names = set()
+        for var in self.inputs:
             if var.name in names:
                 raise StackError(f"Duplicate name {var.name}")
             names.add(var.name)
@@ -485,8 +521,13 @@ class Storage:
             if var.name in names:
                 raise StackError(f"Duplicate name {var.name}")
             names.add(var.name)
+        names: set[str] = set()
+        for var in self.stack.variables:
+            if var.name in names:
+                raise StackError(f"Duplicate name {var.name}")
+            names.add(var.name)
 
-    def is_flushed(self):
+    def is_flushed(self) -> None:
         for var in self.outputs:
             if var.defined and not var.in_memory:
                 return False
@@ -494,67 +535,26 @@ class Storage:
 
     def merge(self, other: "Storage", out: CWriter) -> None:
         self.sanity_check()
-        locally_defined_set: set[str] = set()
-        for var in self.outputs:
-            if var.defined and not var.in_memory:
-                locally_defined_set.add(var.name)
-        for var in other.outputs:
-            if var.defined and not var.in_memory:
-                locally_defined_set.add(var.name)
-        while self.stack.variables and self.stack.variables[-1].item.name in locally_defined_set:
-            code, var = self.stack.pop(self.stack.variables[-1].item)
-            out.emit(code)
-            if var not in self.outputs:
-                self.outputs.append(var)
-        while other.stack.variables and other.stack.variables[-1].item.name in locally_defined_set:
-            code, var = other.stack.pop(other.stack.variables[-1].item)
-            assert code == ""
-            if var not in other.outputs:
-                other.outputs.append(var)
-        s1, s2 = self.stack, other.stack
-        l1, l2 = self.outputs, other.outputs
-        if len(s1.variables) != len(s2.variables):
-            # Make sure s2 is the larger stack.
-            if len(s1.variables) > len(s2.variables):
-                s1, s2 = s2, s1
-                l1, l2 = l2, l1
-            while len(s2.variables) > len(s1.variables):
-                top = s2.variables[-1]
-                if top.defined:
-                    code, var = s2.pop(top.item)
-                    assert code == "" and var == top
-                    l2.insert(0, top)
-                else:
-                    for l in l1:
-                        if l.name == top.name:
-                            break
-                    else:
-                        raise StackError(f"Missing local {top.name} when attempting to merge storage")
-                    if l.in_memory:
-                        s1.push(l)
-                        l1.remove(l)
-                    else:
-                        raise StackError(f"Local {top.name} is not in memory, so cannot be merged")
-        # Now merge locals:
-        self_live = [var for var in self.outputs if not var.item.peek and var.defined]
-        other_live = [var for var in other.outputs if not var.item.peek and var.defined]
-        self.stack.align(other.stack, out)
-        if len(self_live) != len(other_live):
-            if other.stack.is_flushed():
-                self.stack.flush(out)
-                return self
-            else:
-                raise StackError(f"Mismatched locals: {self_live} and {other_live}")
-        for self_out, other_out in zip(self_live, other_live):
-            if self_out.name != other_out.name:
-                raise StackError(f"Mismatched local: {self_out.name} and {other_out.name}")
-            if self_out.defined ^ other_out.defined:
-                raise StackError(f"Local {self_out.name} defined on only one path")
-            self_out.in_memory = self_out.in_memory and other_out.in_memory
-            self_out.cached = other_out.cached = self_out.cached and other_out.cached
+        if len(self.inputs) != len(other.inputs):
+            raise StackError(f"Inputs clearing is not consistent")
+        for var, other_var in zip(self.inputs, other.inputs):
+            if var.defined != other_var.defined:
+                raise StackError(f"'{var.name}' is cleared on some paths, but not all")
+        for var, other_var in zip(self.outputs, other.outputs):
+            if var.defined != other_var.defined:
+                raise StackError(f"'{var.name}' is set on some paths, but not all")
         self.stack.merge(other.stack)
         self.sanity_check()
 
+    def push_outputs(self):
+        self._push_defined_locals()
+        if self.outputs:
+            raise StackError(f"'{self.outputs[0].name}' is not defined")
+
     def as_comment(self) -> str:
         stack_comment = self.stack.as_comment()
-        return stack_comment[:-2] + "\n    LOCALS: " + ", ".join([str(out) for out in self.outputs]) + " */"
+        next_line = "\n               "
+        inputs = ", ".join([var.name for var in self.inputs])
+        outputs = ", ".join([var.name for var in self.outputs])
+        peeks = ", ".join([var.name for var in self.peeks])
+        return f"{stack_comment[:-2]}{next_line}inputs: {inputs}{next_line}outputs: {outputs}{next_line}peeks: {peeks} */"

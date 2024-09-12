@@ -14,7 +14,7 @@ from lexer import Token
 from stack import Stack, Local, Storage, StackError
 
 # Set this to true for voluminous output showing state of stack and locals
-PRINT_STACKS = False
+PRINT_STACKS = 1 #False
 
 class TokenIterator:
 
@@ -111,9 +111,13 @@ class Emitter:
             "ERROR_IF": self.error_if,
             "ERROR_NO_POP": self.error_no_pop,
             "DECREF_INPUTS": self.decref_inputs,
+            "KILL": self.kill,
+            "KILL_INPUTS": self.kill_inputs,
             "SYNC_SP": self.sync_sp,
             "SAVE_STACK": self.save_stack,
             "RELOAD_STACK": self.reload_stack,
+            "PyStackRef_CLOSE": self.stackref_close,
+            "PyStackRef_AsPyObjectSteal": self.stackref_steal,
             # "PyStackRef_FromPyObjectNew": self.py_stack_ref_from_py_object_new,
             "DISPATCH": self.dispatch
         }
@@ -154,32 +158,6 @@ class Emitter:
 
     exit_if = deopt_if
 
-    def _flush_and_goto_error(self, storage: Storage, label: Token):
-        if storage.locals_cached():
-            offset = -1
-        else:
-            c_offset = storage.stack.peek_offset()
-            try:
-                offset = -int(c_offset)
-            except ValueError:
-                offset = -1
-        if offset > 0:
-            self.out.emit(f"goto pop_{offset}_")
-            self.out.emit(label)
-            self.out.emit(";\n")
-        elif offset == 0:
-            self.out.emit("goto ")
-            self.out.emit(label)
-            self.out.emit(";\n")
-        else:
-            self.out.emit("{\n")
-            storage.flush(self.out)
-            self.out.emit("goto ")
-            self.out.emit(label)
-            self.out.emit(";\n")
-            self.out.emit("}\n")
-
-
     def error_if(
         self,
         tkn: Token,
@@ -198,7 +176,29 @@ class Emitter:
         next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
         self.out.emit(") ")
-        self._flush_and_goto_error(storage.copy(), label)
+        if storage.locals_cached():
+            offset = -1
+        else:
+            c_offset = storage.stack.peek_offset()
+            try:
+                offset = -int(c_offset)
+            except ValueError:
+                offset = -1
+        if offset > 0:
+            self.out.emit(f"goto pop_{offset}_")
+            self.out.emit(label)
+            self.out.emit(";\n")
+        elif offset == 0:
+            self.out.emit("goto ")
+            self.out.emit(label)
+            self.out.emit(";\n")
+        else:
+            self.out.emit("{\n")
+            storage.copy().flush(self.out)
+            self.out.emit("goto ")
+            self.out.emit(label)
+            self.out.emit(";\n")
+            self.out.emit("}\n")
         return not always_true(first_tkn)
 
     def error_no_pop(
@@ -212,11 +212,7 @@ class Emitter:
         next(tkn_iter)  # LPAREN
         next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
-        storage = storage.copy()
-        self.out.emit("\n")
-        for input in uop.stack.inputs:
-            storage.stack.push(Local.memory(input))
-        self._flush_and_goto_error(storage, tkn.replaceText("error"))
+        self.out.emit_at("goto error;", tkn)
         return False
 
     def decref_inputs(
@@ -245,7 +241,72 @@ class Emitter:
                     self.out.emit(f"PyStackRef_XCLOSE({var.name});\n")
             else:
                 self.out.emit(f"PyStackRef_CLOSE({var.name});\n")
+        for var in storage.inputs:
+            var.defined = False
         return True
+
+    def kill_inputs(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        next(tkn_iter)
+        next(tkn_iter)
+        next(tkn_iter)
+        for var in storage.inputs:
+            var.defined = False
+        return True
+
+    def kill(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        next(tkn_iter)
+        name_tkn = next(tkn_iter)
+        name = name_tkn.text
+        next(tkn_iter)
+        next(tkn_iter)
+        for var in storage.inputs:
+            if var.name == name:
+                var.defined = False
+                break
+        else:
+            raise analysis_error(f"'{name} is not an input-only variable", name_tkn)
+        return True
+
+    def stackref_close(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        tkn = next(tkn_iter)
+        assert (tkn.kind == "LPAREN")
+        self.out.emit(tkn)
+        name = next(tkn_iter)
+        self.out.emit(name)
+        rparen = next(tkn_iter)
+        self.out.emit(rparen)
+        if rparen.kind == "RPAREN":
+            if name.kind == "IDENTIFIER":
+                for var in storage.inputs:
+                    if var.name == name.text:
+                        var.defined = False
+        else:
+            rparen = emit_to(self.out, tkn_iter, "RPAREN")
+            self.emit(rparen)
+        return True
+
+    stackref_steal = stackref_close
 
     def sync_sp(
         self,
@@ -429,7 +490,7 @@ class Emitter:
                 else:
                     self.out.emit(tkn)
         except StackError as ex:
-            raise analysis_error(ex.args[0], tkn) # from None
+            raise analysis_error(ex.args[0], tkn) from None
         raise analysis_error("Expecting closing brace. Reached end of file", tkn)
 
 
@@ -443,8 +504,7 @@ class Emitter:
         self.out.start_line()
         _, _, storage = self._emit_block(tkn_iter, uop, storage, inst, False)
         for output in storage.outputs:
-            storage.stack.push(output)
-        storage.outputs = []
+            storage.push_outputs()
         self._print_storage(storage)
         return storage.stack
 
