@@ -89,7 +89,6 @@ import os as _os
 import re as _re
 import sys as _sys
 
-from itertools import chain
 from gettext import gettext as _, ngettext
 
 SUPPRESS = '==SUPPRESS=='
@@ -2235,11 +2234,21 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # return the list of arg string counts
         return result
 
-    def _extract_optional_arguments(self):
+    def _extract_choices_value(self):
         return [action.choices.values()
                 for action in self._subparsers._actions
                 if isinstance(action, _SubParsersAction)
-                if hasattr(action, 'choices')]
+                and hasattr(action, 'choices')]
+
+    def _extract_actions(self, choices_value):
+        return [action
+                for subvalue in choices_value
+                for action in subvalue._actions]
+    
+    def _extract_optional_arguments(self, actions):
+        return [option_string
+                for action in actions
+                for option_string in action.option_strings]
 
     def _parse_optional(self, arg_string):
         # if it's an empty string, it was meant to be a positional
@@ -2272,12 +2281,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # if the parameter string exists,
         # similar matching exception isn't thrown
         if hasattr(self._subparsers, '_actions'):
-            sub_dict_values = self._extract_optional_arguments()[0]
-            subparams = list(chain.from_iterable(
-                action.option_strings
-                for subvalue in sub_dict_values
-                for action in subvalue._actions
-            ))
+            choices_value = self._extract_choices_value()[0]
+            actions = self._extract_actions(choices_value)
+            subparams = self._extract_optional_arguments(actions)
             if arg_string in subparams:
                 return None
 
