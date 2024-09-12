@@ -145,7 +145,7 @@ fixtures = dict(
     data01={
         '__init__.py': '',
         'binary.file': bytes(range(4)),
-        'utf-16.file': 'Hello, UTF-16 world!\n'.encode('utf-16'),
+        'utf-16.file': '\ufeffHello, UTF-16 world!\n'.encode('utf-16-le'),
         'utf-8.file': 'Hello, UTF-8 world!\n'.encode('utf-8'),
         'subdirectory': {
             '__init__.py': '',
@@ -160,7 +160,7 @@ fixtures = dict(
     },
     namespacedata01={
         'binary.file': bytes(range(4)),
-        'utf-16.file': 'Hello, UTF-16 world!\n'.encode('utf-16'),
+        'utf-16.file': '\ufeffHello, UTF-16 world!\n'.encode('utf-16-le'),
         'utf-8.file': 'Hello, UTF-8 world!\n'.encode('utf-8'),
         'subdirectory': {
             'binary.file': bytes(range(12, 16)),
