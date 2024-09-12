@@ -341,7 +341,7 @@ APIs:
    .. versionadded:: 3.3
 
 
-.. c:function:: int PyUnicode_Export(PyObject *unicode, int32_t requested_formats, Py_buffer *view)
+.. c:function:: int32_t PyUnicode_Export(PyObject *unicode, int32_t requested_formats, Py_buffer *view)
 
    Export the contents of the *unicode* string in one of the *requested_formats*.
 
@@ -355,7 +355,7 @@ APIs:
 
    The buffer is read-only and must not be modified.
 
-   *unicode*, *view* and *format* must not be NULL.
+   *unicode* and *view* must not be NULL.
 
    Available formats:
 
