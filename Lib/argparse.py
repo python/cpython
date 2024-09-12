@@ -89,6 +89,7 @@ import os as _os
 import re as _re
 import sys as _sys
 
+from itertools import chain
 from gettext import gettext as _, ngettext
 
 SUPPRESS = '==SUPPRESS=='
@@ -2234,6 +2235,12 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # return the list of arg string counts
         return result
 
+    def _extract_optional_arguments(self):
+        return [action.choices.values()
+                for action in self._subparsers._actions
+                if isinstance(action, _SubParsersAction)
+                if hasattr(action, 'choices')]
+
     def _parse_optional(self, arg_string):
         # if it's an empty string, it was meant to be a positional
         if not arg_string:
@@ -2261,6 +2268,18 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # search through all possible prefixes of the option string
         # and all actions in the parser for possible interpretations
         option_tuples = self._get_option_tuples(arg_string)
+
+        # if the parameter string exists,
+        # similar matching exception isn't thrown
+        if hasattr(self._subparsers, '_actions'):
+            sub_dict_values = self._extract_optional_arguments()[0]
+            subparams = list(chain.from_iterable(
+                action.option_strings
+                for subvalue in sub_dict_values
+                for action in subvalue._actions
+            ))
+            if arg_string in subparams:
+                return None
 
         # if multiple actions match, the option string was ambiguous
         if len(option_tuples) > 1:

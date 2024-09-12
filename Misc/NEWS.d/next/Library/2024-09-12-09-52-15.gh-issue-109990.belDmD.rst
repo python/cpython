@@ -1,0 +1,2 @@
+Add checks for optional arguments to the :meth:`ArgumentParser._parse_optional`
+of the :class:`ArgumentParser` in the :mod:`argparser`.
