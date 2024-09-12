@@ -1894,6 +1894,30 @@ class CircularImportTests(unittest.TestCase):
             str(cm.exception),
         )
 
+    def test_singlephase_circular(self):
+        """Regression test for gh-123950
+
+        Import a single-phase-init module that imports itself
+        from the PyInit_* function (before it's added to sys.modules).
+        Manages its own cache (which is `static`, and so incompatible
+        with multiple interpreters or interpreter reset).
+        """
+        name = '_testsinglephase_circular'
+        filename = _testsinglephase.__file__
+        loader = importlib.machinery.ExtensionFileLoader(name, filename)
+        spec = importlib.util.spec_from_file_location(name, filename,
+                                                      loader=loader)
+        mod = importlib._bootstrap._load(spec)
+
+        self.assertIn(name, sys.modules)
+        self.assertIn(mod.helper_mod_name, sys.modules)
+
+        del sys.modules[mod.helper_mod_name]
+        del sys.modules[name]
+        self.assertIs(mod.clear_static_var(), mod)
+        _testinternalcapi.clear_extension('_testsinglephase_circular',
+                                          mod.__spec__.origin)
+
     def test_unwritable_module(self):
         self.addCleanup(unload, "test.test_import.data.unwritable")
         self.addCleanup(unload, "test.test_import.data.unwritable.x")
