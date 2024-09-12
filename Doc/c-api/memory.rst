@@ -102,12 +102,16 @@ All allocating functions belong to one of three different "domains" (see also
 strategies and are optimized for different purposes. The specific details on
 how every domain allocates memory or what internal functions each domain calls
 is considered an implementation detail, but for debugging purposes a simplified
-table can be found at :ref:`here <default-memory-allocators>`. There is no hard
-requirement to use the memory returned by the allocation functions belonging to
-a given domain for only the purposes hinted by that domain (although this is the
-recommended practice). For example, one could use the memory returned by
-:c:func:`PyMem_RawMalloc` for allocating Python objects or the memory returned
-by :c:func:`PyObject_Malloc` for allocating memory for buffers.
+table can be found at :ref:`here <default-memory-allocators>`. In the default build,
+there is no hard requirement to use the memory returned by the allocation functions
+belonging to a given domain for only the purposes hinted by that domain.
+(although this is the recommended practice). For example, one could use the memory
+returned by :c:func:`PyMem_RawMalloc` for allocating Python objects or the memory
+returned by :c:func:`PyObject_Malloc` for allocating memory for buffers.
+However, in the free-threaded build, Python objects must be allocated through :c:func:`PyObject_Malloc`.
+Non-Python objects must not be allocated this function, for example,
+it is currently acceptable to allocate buffers(non-Python objects) through :c:func:`PyObject_Malloc`;
+that will no longer be allowed and buffers should instead be allocated through :c:func:`PyMem_Malloc`, :c:func:`PyMem_RawMalloc`, or :c:func:`malloc`..
 
 The three allocation domains are:
 
