@@ -1595,6 +1595,3 @@ class UserString(_collections_abc.Sequence):
 
     def zfill(self, width):
         return self.__class__(self.data.zfill(width))
-
-    def __release_buffer__(self, view):
-        raise NotImplementedError

@@ -2333,11 +2333,11 @@ PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *pub_writer,
 
 
 static int
-unicode_export(PyObject *unicode, Py_buffer *view, uint32_t *pformat,
+unicode_export(PyObject *obj, Py_buffer *view, uint32_t *pformat,
                Py_ssize_t len, const void *buf,
                int itemsize, const char *format, uint32_t internal_format)
 {
-    if (PyBuffer_FillInfo(view, unicode, (void*)buf, len,
+    if (PyBuffer_FillInfo(view, obj, (void*)buf, len,
                           1, PyBUF_SIMPLE) < 0) {
         *pformat = 0;
         return -1;
@@ -2400,11 +2400,11 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats,
     if (kind == PyUnicode_1BYTE_KIND
         && requested_formats & PyUnicode_FORMAT_UCS2)
     {
-        Py_UCS2 *ucs2 = PyMem_Malloc((len + 1) * sizeof(Py_UCS2));
-        if (!ucs2) {
-            PyErr_NoMemory();
+        PyObject *bytes = PyBytes_FromStringAndSize(NULL, (len + 1) * 2);
+        if (!bytes) {
             goto error;
         }
+        Py_UCS2 *ucs2 = (Py_UCS2*)PyBytes_AS_STRING(bytes);
 
         _PyUnicode_CONVERT_BYTES(Py_UCS1, Py_UCS2,
                                  PyUnicode_1BYTE_DATA(unicode),
@@ -2412,9 +2412,11 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats,
                                  ucs2);
         ucs2[len] = 0;
 
-        return unicode_export(unicode, view, format,
-                              len, ucs2,
-                              2, "H", PyUnicode_FORMAT_UCS2);
+        int res = unicode_export(bytes, view, format,
+                                 len, ucs2,
+                                 2, "H", PyUnicode_FORMAT_UCS2);
+        Py_DECREF(bytes);
+        return res;
     }
 
     // Native UCS4
@@ -2432,9 +2434,19 @@ PyUnicode_Export(PyObject *unicode, uint32_t requested_formats,
         if (ucs4 == NULL) {
             goto error;
         }
-        return unicode_export(unicode, view, format,
-                              len, ucs4,
-                              4, BUFFER_UCS4, PyUnicode_FORMAT_UCS4);
+
+        PyObject *bytes = PyBytes_FromStringAndSize((char*)ucs4, (len + 1) * 4);
+        PyMem_Free(ucs4);
+        if (bytes == NULL) {
+            goto error;
+        }
+        ucs4 = (Py_UCS4*)PyBytes_AS_STRING(bytes);
+
+        int res = unicode_export(bytes, view, format,
+                                 len, ucs4,
+                                 4, BUFFER_UCS4, PyUnicode_FORMAT_UCS4);
+        Py_DECREF(bytes);
+        return res;
     }
 
     // Encode UCS1, UCS2 or UCS4 to UTF-8
@@ -2460,33 +2472,6 @@ error:
 #undef BUFFER_UCS4
 }
 
-
-static void
-unicode_releasebuffer(PyObject *unicode, Py_buffer *view)
-{
-    uintptr_t format = (uintptr_t)view->internal;
-    switch (format)
-    {
-    case PyUnicode_FORMAT_ASCII:
-    case PyUnicode_FORMAT_UCS1:
-    case PyUnicode_FORMAT_UTF8:
-        // nothing to release
-        break;
-    case PyUnicode_FORMAT_UCS2:
-        if (PyUnicode_KIND(unicode) != PyUnicode_2BYTE_KIND) {
-            PyMem_Free(view->buf);
-        }
-        break;
-    case PyUnicode_FORMAT_UCS4:
-        if (PyUnicode_KIND(unicode) != PyUnicode_4BYTE_KIND) {
-            PyMem_Free(view->buf);
-        }
-        break;
-    default:
-        // ignore silently an unknown format
-        break;
-    }
-}
 
 PyObject*
 PyUnicode_Import(const void *data, Py_ssize_t nbytes,
@@ -15447,10 +15432,6 @@ errors defaults to 'strict'.");
 
 static PyObject *unicode_iter(PyObject *seq);
 
-static PyBufferProcs unicode_as_buffer = {
-     .bf_releasebuffer = unicode_releasebuffer,
-};
-
 PyTypeObject PyUnicode_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "str",                        /* tp_name */
@@ -15471,7 +15452,7 @@ PyTypeObject PyUnicode_Type = {
     (reprfunc) unicode_str,       /* tp_str */
     PyObject_GenericGetAttr,      /* tp_getattro */
     0,                            /* tp_setattro */
-    &unicode_as_buffer,           /* tp_as_buffer */
+    0,                            /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
         Py_TPFLAGS_UNICODE_SUBCLASS |
         _Py_TPFLAGS_MATCH_SELF, /* tp_flags */
