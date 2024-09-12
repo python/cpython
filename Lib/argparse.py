@@ -2244,7 +2244,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         return [action
                 for subvalue in choices_value
                 for action in subvalue._actions]
-    
+
     def _extract_optional_arguments(self, actions):
         return [option_string
                 for action in actions
