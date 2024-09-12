@@ -41,6 +41,14 @@
 
 #include <stdbool.h>
 
+// SIMD256 can't be compiled on macOS ARM64; but when compiling a universal2
+// binary, autoconf will set HACL_CAN_COMPILE_SIMD256 because it *can* be
+// compiled on x86_64. If we're on macOS ARM64, disable the
+// HACL_CAN_COMPILE_SIMD256 preprocessor symbol.
+#if defined(__APPLE__) && defined(__arm64__)
+#  undef HACL_CAN_COMPILE_SIMD256
+#endif
+
 // ECX
 #define ECX_SSE3 (1 << 0)
 #define ECX_SSSE3 (1 << 9)
