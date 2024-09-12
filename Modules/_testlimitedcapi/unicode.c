@@ -1855,9 +1855,9 @@ unicode_export(PyObject *self, PyObject *args)
     }
 
     assert(view.format != NULL);
-    PyObject *res = Py_BuildValue("y#Iis",
+    PyObject *res = Py_BuildValue("y#iis",
                                   view.buf, view.len * view.itemsize,
-                                  (unsigned int)format,
+                                  (int)format,
                                   (int)view.itemsize, view.format);
     PyBuffer_Release(&view);
     return res;
@@ -1870,8 +1870,8 @@ unicode_import(PyObject *self, PyObject *args)
 {
     const void *data;
     Py_ssize_t nbytes;
-    unsigned int format;
-    if (!PyArg_ParseTuple(args, "y#I", &data, &nbytes, &format)) {
+    int format;
+    if (!PyArg_ParseTuple(args, "y#i", &data, &nbytes, &format)) {
         return NULL;
     }
     return PyUnicode_Import(data, nbytes, (int32_t)format);
