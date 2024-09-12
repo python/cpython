@@ -158,8 +158,11 @@ class PyObjectPtr(object):
 
     def __init__(self, gdbval, cast_to=None):
         # Clear the tagged pointer
-        gdbval = gdb.Value(int(gdbval) & (~USED_TAGS)).cast(gdbval.type)
-        if cast_to:
+        if gdbval.type.name == '_PyStackRef':
+            if cast_to is None:
+                cast_to = gdb.lookup_type('PyObject').pointer()
+            self._gdbval = gdb.Value(int(gdbval['bits']) & ~USED_TAGS).cast(cast_to)
+        elif cast_to:
             self._gdbval = gdbval.cast(cast_to)
         else:
             self._gdbval = gdbval
@@ -1052,7 +1055,7 @@ class PyFramePtr:
 
         obj_ptr_ptr = gdb.lookup_type("PyObject").pointer().pointer()
 
-        localsplus = self._gdbval["localsplus"].cast(obj_ptr_ptr)
+        localsplus = self._gdbval["localsplus"]
 
         for i in safe_range(self.co_nlocals):
             pyop_value = PyObjectPtr.from_pyobject_ptr(localsplus[i])
@@ -1581,7 +1584,10 @@ class PyObjectPtrPrinter:
             return stringify(proxyval)
 
 def pretty_printer_lookup(gdbval):
-    type = gdbval.type.unqualified()
+    type = gdbval.type.strip_typedefs().unqualified()
+    if type.code == gdb.TYPE_CODE_UNION and type.tag == '_PyStackRef':
+        return PyObjectPtrPrinter(gdbval)
+
     if type.code != gdb.TYPE_CODE_PTR:
         return None
 

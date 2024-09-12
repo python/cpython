@@ -227,6 +227,13 @@ PyStackRef_DUP(_PyStackRef stackref)
 #   define PyStackRef_DUP(stackref) PyStackRef_FromPyObjectSteal(Py_NewRef(PyStackRef_AsPyObjectBorrow(stackref)))
 #endif
 
+// Convert a possibly deferred reference to a strong reference.
+static inline _PyStackRef
+PyStackRef_AsStrongReference(_PyStackRef stackref)
+{
+    return PyStackRef_FromPyObjectSteal(PyStackRef_AsPyObjectSteal(stackref));
+}
+
 static inline void
 _PyObjectStack_FromStackRefStack(PyObject **dst, const _PyStackRef *src, size_t length)
 {
@@ -261,6 +268,11 @@ PyStackRef_ExceptionInstanceCheck(_PyStackRef stackref)
     return PyExceptionInstance_Check(PyStackRef_AsPyObjectBorrow(stackref));
 }
 
+static inline bool
+PyStackRef_CodeCheck(_PyStackRef stackref)
+{
+    return PyCode_Check(PyStackRef_AsPyObjectBorrow(stackref));
+}
 
 static inline bool
 PyStackRef_FunctionCheck(_PyStackRef stackref)

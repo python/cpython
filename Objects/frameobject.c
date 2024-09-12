@@ -1625,8 +1625,6 @@ frame_dealloc(PyFrameObject *f)
     }
 
     Py_TRASHCAN_BEGIN(f, frame_dealloc);
-    PyObject *co = NULL;
-
     /* GH-106092: If f->f_frame was on the stack and we reached the maximum
      * nesting depth for deallocations, the trashcan may have delayed this
      * deallocation until after f->f_frame is freed. Avoid dereferencing
@@ -1635,9 +1633,7 @@ frame_dealloc(PyFrameObject *f)
 
     /* Kill all local variables including specials, if we own them */
     if (f->f_frame == frame && frame->owner == FRAME_OWNED_BY_FRAME_OBJECT) {
-        /* Don't clear code object until the end */
-        co = frame->f_executable;
-        frame->f_executable = NULL;
+        PyStackRef_CLEAR(frame->f_executable);
         Py_CLEAR(frame->f_funcobj);
         Py_CLEAR(frame->f_locals);
         _PyStackRef *locals = _PyFrame_GetLocalsArray(frame);
@@ -1652,7 +1648,6 @@ frame_dealloc(PyFrameObject *f)
     Py_CLEAR(f->f_extra_locals);
     Py_CLEAR(f->f_locals_cache);
     PyObject_GC_Del(f);
-    Py_XDECREF(co);
     Py_TRASHCAN_END;
 }
 
