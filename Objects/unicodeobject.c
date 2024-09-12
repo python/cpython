@@ -2335,7 +2335,7 @@ PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *pub_writer,
 static int32_t
 unicode_export(PyObject *obj, Py_buffer *view,
                Py_ssize_t len, const void *buf,
-               int itemsize, const char *format, int32_t internal_format)
+               int itemsize, const char *format, int32_t export_format)
 {
     if (PyBuffer_FillInfo(view, obj, (void*)buf, len,
                           1, PyBUF_SIMPLE) < 0) {
@@ -2343,8 +2343,7 @@ unicode_export(PyObject *obj, Py_buffer *view,
     }
     view->itemsize = itemsize;
     view->format = (char*)format;
-    view->internal = (void*)(uintptr_t)internal_format;
-    return internal_format;
+    return export_format;
 }
 
 
@@ -2398,20 +2397,15 @@ PyUnicode_Export(PyObject *unicode, int32_t requested_formats,
     if (kind == PyUnicode_1BYTE_KIND
         && requested_formats & PyUnicode_FORMAT_UCS2)
     {
-        PyObject *bytes = PyBytes_FromStringAndSize(NULL, (len + 1) * 2);
+        const int byteorder = (PY_BIG_ENDIAN == 1) ? 1 : -1;
+        PyObject *bytes = _PyUnicode_EncodeUTF16(unicode, NULL, byteorder);
         if (!bytes) {
             return -1;
         }
-        Py_UCS2 *ucs2 = (Py_UCS2*)PyBytes_AS_STRING(bytes);
-
-        _PyUnicode_CONVERT_BYTES(Py_UCS1, Py_UCS2,
-                                 PyUnicode_1BYTE_DATA(unicode),
-                                 PyUnicode_1BYTE_DATA(unicode) + len,
-                                 ucs2);
-        ucs2[len] = 0;
+        void *data = PyBytes_AS_STRING(bytes);
 
         int32_t res = unicode_export(bytes, view,
-                                     len, ucs2,
+                                     len, data,
                                      2, "H", PyUnicode_FORMAT_UCS2);
         Py_DECREF(bytes);
         return res;
@@ -2428,20 +2422,14 @@ PyUnicode_Export(PyObject *unicode, int32_t requested_formats,
 
     // Convert ASCII, UCS1 or UCS2 to UCS4
     if (requested_formats & PyUnicode_FORMAT_UCS4) {
-        Py_UCS4 *ucs4 = PyUnicode_AsUCS4Copy(unicode);
-        if (ucs4 == NULL) {
+        const int byteorder = (PY_BIG_ENDIAN == 1) ? 1 : -1;
+        PyObject *bytes = _PyUnicode_EncodeUTF32(unicode, NULL, byteorder);
+        if (!bytes) {
             return -1;
         }
-
-        PyObject *bytes = PyBytes_FromStringAndSize((char*)ucs4, (len + 1) * 4);
-        PyMem_Free(ucs4);
-        if (bytes == NULL) {
-            return -1;
-        }
-        ucs4 = (Py_UCS4*)PyBytes_AS_STRING(bytes);
-
+        void *data = PyBytes_AS_STRING(bytes);
         int32_t res = unicode_export(bytes, view,
-                                     len, ucs4,
+                                     len, data,
                                      4, BUFFER_UCS4, PyUnicode_FORMAT_UCS4);
         Py_DECREF(bytes);
         return res;
