@@ -421,6 +421,10 @@ async def logcat_task(context, initial_devices):
                 # such messages, but other components might.
                 level, message = None, line
 
+            # Exclude high-volume messages which are rarely useful.
+            if context.verbose < 2 and "from python test_syslog" in message:
+                continue
+
             # Put high-level messages on stderr so they're highlighted in the
             # buildbot logs. This will include Python's own stderr.
             stream = (
@@ -573,8 +577,9 @@ def parse_args():
     test = subcommands.add_parser(
         "test", help="Run the test suite")
     test.add_argument(
-        "-v", "--verbose", action="store_true",
-        help="Show Gradle output, and non-Python logcat messages")
+        "-v", "--verbose", action="count", default=0,
+        help="Show Gradle output, and non-Python logcat messages. "
+        "Use twice to include high-volume messages which are rarely useful.")
     device_group = test.add_mutually_exclusive_group(required=True)
     device_group.add_argument(
         "--connected", metavar="SERIAL", help="Run on a connected device. "
