@@ -5341,7 +5341,7 @@
             PREDICTED(LOAD_GLOBAL);
             _Py_CODEUNIT *this_instr = next_instr - 5;
             (void)this_instr;
-            _PyStackRef res;
+            _PyStackRef *res;
             _PyStackRef null = PyStackRef_NULL;
             // _SPECIALIZE_LOAD_GLOBAL
             {
@@ -5363,13 +5363,12 @@
             /* Skip 1 cache entry */
             // _LOAD_GLOBAL
             {
+                res = &stack_pointer[0];
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-                _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, &stack_pointer[0]);
-                res = stack_pointer[0];
-                if (PyStackRef_IsNull(res)) goto error;
+                _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, res);
+                if (PyStackRef_IsNull(*res)) goto error;
                 null = PyStackRef_NULL;
             }
-            stack_pointer[0] = res;
             if (oparg & 1) stack_pointer[1] = null;
             stack_pointer += 1 + (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());

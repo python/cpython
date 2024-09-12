@@ -1505,10 +1505,11 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_LOAD_GLOBAL, ( -- res, null if (oparg & 1))) {
+        // res[1] because we need a pointer to res to pass it to _PyEval_LoadGlobalStackRef
+        op(_LOAD_GLOBAL, ( -- res[1], null if (oparg & 1))) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-            _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, &STACK_ENTRY(res));
-            ERROR_IF(PyStackRef_IsNull(res), error);
+            _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, res);
+            ERROR_IF(PyStackRef_IsNull(*res), error);
             null = PyStackRef_NULL;
         }
 
