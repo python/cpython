@@ -1,0 +1,1 @@
+Fix bug where a class that has a docstring, which is compiled in interactive mode, generates bytecode that contains a NOP with the line of the docstring.
