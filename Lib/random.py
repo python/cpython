@@ -1013,7 +1013,7 @@ def _parse_args(arg_list: list[str] | None):
         help="print a random integer between 1 and N inclusive")
     group.add_argument(
         "-f", "--float", type=float, metavar="N",
-        help="print a random floating-point number between 1 and N inclusive")
+        help="print a random floating-point number between 0 and N inclusive")
     group.add_argument(
         "--test", type=int, const=10_000, nargs="?",
         help=argparse.SUPPRESS)
@@ -1038,7 +1038,7 @@ def main(arg_list: list[str] | None = None) -> int | str:
         return randint(1, args.integer)
 
     if args.float is not None:
-        return uniform(1, args.float)
+        return uniform(0, args.float)
 
     if args.test:
         _test(args.test)
@@ -1055,7 +1055,7 @@ def main(arg_list: list[str] | None = None) -> int | str:
             try:
                 # Is it a float?
                 val = float(val)
-                return uniform(1, val)
+                return uniform(0, val)
             except ValueError:
                 # Split in case of space-separated string: "a b c"
                 return choice(val.split())
