@@ -1282,9 +1282,7 @@
                 STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
                 if (CONVERSION_FAILED(args_o)) {
                     PyStackRef_CLOSE(callable);
-                    for (int _i = 1; --_i >= 0;) {
-                        PyStackRef_CLOSE(self_or_null[_i]);
-                    }
+                    PyStackRef_CLOSE(self_or_null[0]);
                     for (int _i = oparg; --_i >= 0;) {
                         PyStackRef_CLOSE(args[_i]);
                     }
@@ -1359,9 +1357,7 @@
                 STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
                 if (CONVERSION_FAILED(args_o)) {
                     PyStackRef_CLOSE(callable);
-                    for (int _i = 1; --_i >= 0;) {
-                        PyStackRef_CLOSE(self_or_null[_i]);
-                    }
+                    PyStackRef_CLOSE(self_or_null[0]);
                     for (int _i = oparg; --_i >= 0;) {
                         PyStackRef_CLOSE(args[_i]);
                     }
@@ -1442,9 +1438,7 @@
                 STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
                 if (CONVERSION_FAILED(args_o)) {
                     PyStackRef_CLOSE(callable);
-                    for (int _i = 1; --_i >= 0;) {
-                        PyStackRef_CLOSE(self_or_null[_i]);
-                    }
+                    PyStackRef_CLOSE(self_or_null[0]);
                     for (int _i = oparg; --_i >= 0;) {
                         PyStackRef_CLOSE(args[_i]);
                     }
@@ -1827,9 +1821,7 @@
                 STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
                 if (CONVERSION_FAILED(args_o)) {
                     PyStackRef_CLOSE(callable);
-                    for (int _i = 1; --_i >= 0;) {
-                        PyStackRef_CLOSE(self_or_null[_i]);
-                    }
+                    PyStackRef_CLOSE(self_or_null[0]);
                     for (int _i = oparg; --_i >= 0;) {
                         PyStackRef_CLOSE(args[_i]);
                     }
@@ -2019,9 +2011,7 @@
                 STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
                 if (CONVERSION_FAILED(args_o)) {
                     PyStackRef_CLOSE(callable);
-                    for (int _i = 1; --_i >= 0;) {
-                        PyStackRef_CLOSE(self_or_null[_i]);
-                    }
+                    PyStackRef_CLOSE(self_or_null[0]);
                     for (int _i = oparg; --_i >= 0;) {
                         PyStackRef_CLOSE(args[_i]);
                     }
@@ -2269,9 +2259,7 @@
                 STACKREFS_TO_PYOBJECTS(args, nargs, args_o);
                 if (CONVERSION_FAILED(args_o)) {
                     PyStackRef_CLOSE(callable);
-                    for (int _i = 1; --_i >= 0;) {
-                        PyStackRef_CLOSE(self_or_null[_i]);
-                    }
+                    PyStackRef_CLOSE(self_or_null[0]);
                     for (int _i = oparg; --_i >= 0;) {
                         PyStackRef_CLOSE(args[_i]);
                     }
@@ -2352,9 +2340,7 @@
                 STACKREFS_TO_PYOBJECTS(args, nargs, args_o);
                 if (CONVERSION_FAILED(args_o)) {
                     PyStackRef_CLOSE(callable);
-                    for (int _i = 1; --_i >= 0;) {
-                        PyStackRef_CLOSE(self_or_null[_i]);
-                    }
+                    PyStackRef_CLOSE(self_or_null[0]);
                     for (int _i = oparg; --_i >= 0;) {
                         PyStackRef_CLOSE(args[_i]);
                     }
@@ -2573,9 +2559,7 @@
                 STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
                 if (CONVERSION_FAILED(args_o)) {
                     PyStackRef_CLOSE(callable);
-                    for (int _i = 1; --_i >= 0;) {
-                        PyStackRef_CLOSE(self_or_null[_i]);
-                    }
+                    PyStackRef_CLOSE(self_or_null[0]);
                     for (int _i = oparg; --_i >= 0;) {
                         PyStackRef_CLOSE(args[_i]);
                     }
