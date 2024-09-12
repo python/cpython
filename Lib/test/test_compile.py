@@ -904,19 +904,25 @@ class TestSpecifics(unittest.TestCase):
 
     @support.cpython_only
     def test_docstring_interactive_mode(self):
-        src = textwrap.dedent("""
-            def with_docstring():
+        srcs = [
+            """def with_docstring():
                 "docstring"
-        """)
+            """,
+            """class with_docstring:
+                "docstring"
+            """,
+        ]
+
         for opt in [0, 1, 2]:
-            with self.subTest(opt=opt):
-                code = compile(src, "<test>", "single", optimize=opt)
-                ns = {}
-                exec(code, ns)
-                if opt < 2:
-                    self.assertEqual(ns['with_docstring'].__doc__, "docstring")
-                else:
-                    self.assertIsNone(ns['with_docstring'].__doc__)
+            for src in srcs:
+                with self.subTest(opt=opt, src=src):
+                    code = compile(textwrap.dedent(src), "<test>", "single", optimize=opt)
+                    ns = {}
+                    exec(code, ns)
+                    if opt < 2:
+                        self.assertEqual(ns['with_docstring'].__doc__, "docstring")
+                    else:
+                        self.assertIsNone(ns['with_docstring'].__doc__)
 
     @support.cpython_only
     def test_docstring_omitted(self):
