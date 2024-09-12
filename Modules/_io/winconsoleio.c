@@ -1054,11 +1054,6 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, PyTypeObject *cls,
              */
             len = WideCharToMultiByte(CP_UTF8, 0, wbuf, n,
                 NULL, 0, NULL, NULL);
-            if (len) {
-                wlen = MultiByteToWideChar(CP_UTF8, 0, b->buf, len,
-                    NULL, 0);
-                assert(wlen == len);
-            }
         }
     } else
         res = 0;
