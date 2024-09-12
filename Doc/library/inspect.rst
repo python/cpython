@@ -1043,7 +1043,8 @@ function.
    .. attribute:: BoundArguments.kwargs
 
       A dict of keyword arguments values.  Dynamically computed from the
-      :attr:`arguments` attribute.
+      :attr:`arguments` attribute.  Arguments that can be passed positionally
+      are included in :attr:`args` instead.
 
    .. attribute:: BoundArguments.signature
 
