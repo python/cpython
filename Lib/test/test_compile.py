@@ -935,13 +935,13 @@ class TestSpecifics(unittest.TestCase):
                 return h
         """)
         for opt in [-1, 0, 1, 2]:
-            for mode in ["exec",  "single"]:
+            for mode in ["exec", "single"]:
                 with self.subTest(opt=opt, mode=mode):
                     code = compile(src, "<test>", mode, optimize=opt)
                     output = io.StringIO()
                     with contextlib.redirect_stdout(output):
                         dis.dis(code)
-                    self.assertNotIn('NOP' , output.getvalue())
+                    self.assertNotIn('NOP', output.getvalue())
 
     def test_dont_merge_constants(self):
         # Issue #25843: compile() must not merge constants which are equal
