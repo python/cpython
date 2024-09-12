@@ -1110,6 +1110,44 @@ class TestGeneratedCases(unittest.TestCase):
         """
         self.run_cases_test(input, output)
 
+    def test_scalar_array_inconsistency(self):
+
+        input = """
+        op(FIRST, ( -- a)) {
+            a = 1;
+        }
+
+        op(SECOND, (a[1] -- b)) {
+            b = 1;
+        }
+
+        macro(TEST) = FIRST + SECOND;
+        """
+
+        output = """
+        """
+        with self.assertRaises(SyntaxError):
+            self.run_cases_test(input, output)
+
+    def test_array_size_inconsistency(self):
+
+        input = """
+        op(FIRST, ( -- a[2])) {
+            a[0] = 1;
+        }
+
+        op(SECOND, (a[1] -- b)) {
+            b = 1;
+        }
+
+        macro(TEST) = FIRST + SECOND;
+        """
+
+        output = """
+        """
+        with self.assertRaises(SyntaxError):
+            self.run_cases_test(input, output)
+
 
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:

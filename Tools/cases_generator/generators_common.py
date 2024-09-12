@@ -165,9 +165,12 @@ class Emitter:
             if var.name == "unused" or var.name == "null" or var.peek:
                 continue
             if var.size:
-                self.out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-                self.out.emit(f"PyStackRef_CLOSE({var.name}[_i]);\n")
-                self.out.emit("}\n")
+                if var.size == "1":
+                    self.out.emit(f"PyStackRef_CLOSE({var.name}[0]);\n")
+                else:
+                    self.out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
+                    self.out.emit(f"PyStackRef_CLOSE({var.name}[_i]);\n")
+                    self.out.emit("}\n")
             elif var.condition:
                 if var.condition == "1":
                     self.out.emit(f"PyStackRef_CLOSE({var.name});\n")
