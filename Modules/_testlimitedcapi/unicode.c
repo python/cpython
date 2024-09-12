@@ -1854,6 +1854,30 @@ unicode_export(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    // Make sure that the exported string ends with a NUL character
+    char *data = view.buf;
+    Py_ssize_t nbytes = view.len * view.itemsize;
+    switch (format)
+    {
+    case PyUnicode_FORMAT_ASCII:
+    case PyUnicode_FORMAT_UCS1:
+        assert(data[nbytes] == 0);
+        break;
+    case PyUnicode_FORMAT_UCS2:
+        assert(data[nbytes] == 0);
+        assert(data[nbytes + 1] == 0);
+        break;
+    case PyUnicode_FORMAT_UCS4:
+        assert(data[nbytes] == 0);
+        assert(data[nbytes + 1] == 0);
+        assert(data[nbytes + 2] == 0);
+        assert(data[nbytes + 3] == 0);
+        break;
+    case PyUnicode_FORMAT_UTF8:
+        assert(data[nbytes] == 0);
+        break;
+    }
+
     assert(view.format != NULL);
     PyObject *res = Py_BuildValue("y#iis",
                                   view.buf, view.len * view.itemsize,
