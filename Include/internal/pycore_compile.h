@@ -141,10 +141,6 @@ PyObject *_PyCompile_Qualname(struct _PyCompiler *c);
 _PyCompile_CodeUnitMetadata *_PyCompile_Metadata(struct _PyCompiler *c);
 PyObject *_PyCompile_StaticAttributesAsTuple(struct _PyCompiler *c);
 
-#ifndef NDEBUG
-int _PyCompile_IsTopLevelAwait(struct _PyCompiler *c);
-#endif
-
 struct symtable *_PyCompile_Symtable(struct _PyCompiler *c);
 PySTEntryObject *_PyCompile_SymtableEntry(struct _PyCompiler *c);
 
