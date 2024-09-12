@@ -820,7 +820,6 @@ SYMBOL_NAMES = (
     "PyUnicode_FromString",
     "PyUnicode_FromStringAndSize",
     "PyUnicode_FromWideChar",
-    "PyUnicode_GetBufferFormat",
     "PyUnicode_GetDefaultEncoding",
     "PyUnicode_GetLength",
     "PyUnicode_GetSize",
