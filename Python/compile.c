@@ -1242,15 +1242,6 @@ _PyCompile_Metadata(compiler *c)
     return &c->u->u_metadata;
 }
 
-#ifndef NDEBUG
-int
-_PyCompile_IsTopLevelAwait(compiler *c)
-{
-    return c->c_flags.cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT &&
-           c->u->u_ste->ste_type == ModuleBlock;
-}
-#endif
-
 // Merge *obj* with constant cache, without recursion.
 int
 _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj)
