@@ -1868,7 +1868,7 @@ frame_init_get_vars(_PyInterpreterFrame *frame)
     }
 
     /* Free vars have not been initialized -- Do that */
-    PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+    PyFunctionObject *func = _PyFrame_GetFunction(frame);
     PyObject *closure = func->func_closure;
     int offset = PyUnstable_Code_GetFirstFree(co);
     for (int i = 0; i < co->co_nfreevars; ++i) {

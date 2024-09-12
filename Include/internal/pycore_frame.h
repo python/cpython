@@ -84,6 +84,12 @@ static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
     return (PyCodeObject *)executable;
 }
 
+static inline PyFunctionObject *_PyFrame_GetFunction(_PyInterpreterFrame *f) {
+    PyObject *func = PyStackRef_AsPyObjectBorrow(f->f_funcobj);
+    assert(PyFunction_Check(func));
+    return (PyFunctionObject *)func;
+}
+
 static inline _PyStackRef *_PyFrame_Stackbase(_PyInterpreterFrame *f) {
     return (f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus);
 }

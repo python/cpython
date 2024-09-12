@@ -682,7 +682,7 @@ static PyObject *
 record_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
 {
     if (PyStackRef_FunctionCheck(f->f_funcobj)) {
-        PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(f->f_funcobj);
+        PyFunctionObject *func = _PyFrame_GetFunction(f);
         PyObject *module = _get_current_module();
         assert(module != NULL);
         module_state *state = get_module_state(module);
