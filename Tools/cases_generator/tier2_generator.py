@@ -192,7 +192,7 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> None:
             stack.push(peeks.pop())
         emitter.emit(stack.define_output_arrays(uop.stack.outputs))
         code_list, storage = Storage.for_uop(stack, uop, locals)
-        of code in code_list:
+        for code in code_list:
             emitter.emit(code)
         for cache in uop.caches:
             if cache.name != "unused":

@@ -436,9 +436,18 @@ def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]
             )
 
         name = lhs[0].text
-        if not any(var.name == name for var in node.outputs):
+        match = False
+        for var in node.inputs:
+            if var.name == name:
+                match = True
+                break
+        for var in node.outputs:
+            if var.name == name:
+                match = True
+                break
+        if not match:
             raise analysis_error(
-                f"PyStackRef_FromPyObjectNew() must be assigned to an output, not '{name}'",
+                f"PyStackRef_FromPyObjectNew() must be assigned to an input or output, not '{name}'",
                 tkn,
             )
 

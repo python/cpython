@@ -4092,10 +4092,10 @@ dummy_func(
                 PyObject *self = ((PyMethodObject *)callable_o)->im_self;
                 args[0] = PyStackRef_FromPyObjectNew(self);
                 PyObject *method = ((PyMethodObject *)callable_o)->im_func;
-                args[-1] = PyStackRef_FromPyObjectNew(method);
-                PyStackRef_CLOSE(callable);
+                PyStackRef temp = callable;
+                callable = PyStackRef_FromPyObjectNew(method);
+                PyStackRef_CLOSE(temp);
                 callable_o = method;
-                callable = args[-1];
             }
             int positional_args = total_args - (int)PyTuple_GET_SIZE(kwnames_o);
             // Check if the call can be inlined or not
