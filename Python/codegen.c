@@ -758,10 +758,10 @@ _PyCodegen_Body(compiler *c, location loc, asdl_stmt_seq *stmts)
         return SUCCESS;
     }
     Py_ssize_t first_instr = 0;
-    if (!IS_INTERACTIVE(c)) {
-        PyObject *docstring = _PyAST_GetDocString(stmts);
-        if (docstring) {
-            first_instr = 1;
+    PyObject *docstring = _PyAST_GetDocString(stmts);
+    if (docstring) {
+        first_instr = 1;
+        if (!IS_INTERACTIVE(c)) {
             /* set docstring */
             assert(OPTIMIZATION_LEVEL(c) < 2);
             PyObject *cleandoc = _PyCompile_CleanDoc(docstring);

@@ -926,6 +926,24 @@ class TestSpecifics(unittest.TestCase):
                     dis.dis(code)
                 self.assertNotIn('NOP' , output.getvalue())
 
+    @support.cpython_only
+    def test_docstring_removed_no_NOP_interactive_mode(self):
+        # See gh-124022
+        src = textwrap.dedent("""
+            class C:
+                "docstring"
+                x = 42
+        """)
+        for opt in [-1, 0, 1, 2]:
+            with self.subTest(opt=opt):
+                code = compile(src, "<test>", "single", optimize=opt)
+                # make sure the bytecode doesn't have any instruction
+                # on line 3, where the docstring is, but we have
+                # instructions for the assignment in line 4.
+                lines = [line for (_, _, line) in code.co_consts[0].co_lines()]
+                self.assertNotIn(3, lines)
+                self.assertIn(4, lines)
+
     def test_dont_merge_constants(self):
         # Issue #25843: compile() must not merge constants which are equal
         # but have a different type.
