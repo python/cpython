@@ -1,1 +1,0 @@
-Fixed the failure of repeated runs of ``test.test_unittest`` caused by side effects in ``test_dotted_but_module_not_loaded``.

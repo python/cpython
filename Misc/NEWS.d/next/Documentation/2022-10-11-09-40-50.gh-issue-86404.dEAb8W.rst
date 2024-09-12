@@ -1,3 +1,0 @@
-Deprecated tools ``make suspicious`` and ``rstlint.py`` are now removed.
-They have been replaced by `spinx-lint
-<https://pypi.org/project/sphinx-lint/>`_.

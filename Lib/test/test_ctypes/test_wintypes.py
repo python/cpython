@@ -1,8 +1,10 @@
+# See <https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types>
+# for reference.
+#
+# Tests also work on POSIX
+
 import unittest
-
-# also work on POSIX
-
-from ctypes import *
+from ctypes import POINTER, cast, c_int16
 from ctypes import wintypes
 
 
@@ -37,6 +39,22 @@ class WinTypesTest(unittest.TestCase):
         self.assertIs(vb.value, True)
         vb.value = []
         self.assertIs(vb.value, False)
+
+    def assertIsSigned(self, ctype):
+        self.assertLess(ctype(-1).value, 0)
+
+    def assertIsUnsigned(self, ctype):
+        self.assertGreater(ctype(-1).value, 0)
+
+    def test_signedness(self):
+        for ctype in (wintypes.BYTE, wintypes.WORD, wintypes.DWORD,
+                     wintypes.BOOLEAN, wintypes.UINT, wintypes.ULONG):
+            with self.subTest(ctype=ctype):
+                self.assertIsUnsigned(ctype)
+
+        for ctype in (wintypes.BOOL, wintypes.INT, wintypes.LONG):
+            with self.subTest(ctype=ctype):
+                self.assertIsSigned(ctype)
 
 
 if __name__ == "__main__":

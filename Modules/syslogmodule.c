@@ -49,6 +49,11 @@ Revision history:
 
 /* syslog module */
 
+// clinic/syslogmodule.c.h uses internal pycore_modsupport.h API
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "osdefs.h"               // SEP
 
@@ -61,10 +66,16 @@ module syslog
 
 #include "clinic/syslogmodule.c.h"
 
-/*  only one instance, only one syslog, so globals should be ok  */
-static PyObject *S_ident_o = NULL;                      /*  identifier, held by openlog()  */
+/*  only one instance, only one syslog, so globals should be ok,
+ *  these fields are writable from the main interpreter only. */
+static PyObject *S_ident_o = NULL;  // identifier, held by openlog()
 static char S_log_open = 0;
 
+static inline int
+is_main_interpreter(void)
+{
+    return (PyInterpreterState_Get() == PyInterpreterState_Main());
+}
 
 static PyObject *
 syslog_get_argv(void)
@@ -121,6 +132,7 @@ syslog_get_argv(void)
 
 
 /*[clinic input]
+@critical_section
 syslog.openlog
 
     ident: unicode = NULL
@@ -133,8 +145,15 @@ Set logging options of subsequent syslog() calls.
 static PyObject *
 syslog_openlog_impl(PyObject *module, PyObject *ident, long logopt,
                     long facility)
-/*[clinic end generated code: output=5476c12829b6eb75 input=8a987a96a586eee7]*/
+/*[clinic end generated code: output=5476c12829b6eb75 input=ee700b8786f81c23]*/
 {
+    // Since the sys.openlog changes the process level state of syslog library,
+    // this operation is only allowed for the main interpreter.
+    if (!is_main_interpreter()) {
+        PyErr_SetString(PyExc_RuntimeError, "subinterpreter can't use syslog.openlog()");
+        return NULL;
+    }
+
     const char *ident_str = NULL;
 
     if (ident) {
@@ -171,6 +190,7 @@ syslog_openlog_impl(PyObject *module, PyObject *ident, long logopt,
 
 
 /*[clinic input]
+@critical_section
 syslog.syslog
 
     [
@@ -187,7 +207,7 @@ Send the string message to the system logger.
 static PyObject *
 syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
                    const char *message)
-/*[clinic end generated code: output=c3dbc73445a0e078 input=ac83d92b12ea3d4e]*/
+/*[clinic end generated code: output=c3dbc73445a0e078 input=6588ddb0b113af8e]*/
 {
     if (PySys_Audit("syslog.syslog", "is", priority, message) < 0) {
         return NULL;
@@ -195,6 +215,11 @@ syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
 
     /*  if log is not opened, open it now  */
     if (!S_log_open) {
+        if (!is_main_interpreter()) {
+            PyErr_SetString(PyExc_RuntimeError, "subinterpreter can't use syslog.syslog() "
+                                                "until the syslog is opened by the main interpreter");
+            return NULL;
+        }
         PyObject *openlog_ret = syslog_openlog_impl(module, NULL, 0, LOG_USER);
         if (openlog_ret == NULL) {
             return NULL;
@@ -205,8 +230,7 @@ syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
     /* Incref ident, because it can be decrefed if syslog.openlog() is
      * called when the GIL is released.
      */
-    PyObject *ident = S_ident_o;
-    Py_XINCREF(ident);
+    PyObject *ident = Py_XNewRef(S_ident_o);
 #ifdef __APPLE__
     // gh-98178: On macOS, libc syslog() is not thread-safe
     syslog(priority, "%s", message);
@@ -221,6 +245,7 @@ syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
 
 
 /*[clinic input]
+@critical_section
 syslog.closelog
 
 Reset the syslog module values and call the system library closelog().
@@ -228,8 +253,15 @@ Reset the syslog module values and call the system library closelog().
 
 static PyObject *
 syslog_closelog_impl(PyObject *module)
-/*[clinic end generated code: output=97890a80a24b1b84 input=fb77a54d447acf07]*/
+/*[clinic end generated code: output=97890a80a24b1b84 input=167f489868bd5a72]*/
 {
+    // Since the sys.closelog changes the process level state of syslog library,
+    // this operation is only allowed for the main interpreter.
+    if (!is_main_interpreter()) {
+        PyErr_SetString(PyExc_RuntimeError, "sunbinterpreter can't use syslog.closelog()");
+        return NULL;
+    }
+
     if (PySys_Audit("syslog.closelog", NULL) < 0) {
         return NULL;
     }
@@ -377,11 +409,37 @@ syslog_exec(PyObject *module)
     ADD_INT_MACRO(module, LOG_AUTHPRIV);
 #endif
 
+#ifdef LOG_FTP
+    ADD_INT_MACRO(module, LOG_FTP);
+#endif
+
+#ifdef LOG_NETINFO
+    ADD_INT_MACRO(module, LOG_NETINFO);
+#endif
+
+#ifdef LOG_REMOTEAUTH
+    ADD_INT_MACRO(module, LOG_REMOTEAUTH);
+#endif
+
+#ifdef LOG_INSTALL
+    ADD_INT_MACRO(module, LOG_INSTALL);
+#endif
+
+#ifdef LOG_RAS
+    ADD_INT_MACRO(module, LOG_RAS);
+#endif
+
+#ifdef LOG_LAUNCHD
+    ADD_INT_MACRO(module, LOG_LAUNCHD);
+#endif
+
     return 0;
 }
 
 static PyModuleDef_Slot syslog_slots[] = {
     {Py_mod_exec, syslog_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

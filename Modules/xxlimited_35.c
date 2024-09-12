@@ -5,7 +5,11 @@
  * See the xxlimited module for an extension module template.
  */
 
-#define Py_LIMITED_API 0x03050000
+// Test the limited C API version 3.5
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x03050000
+#endif
 
 #include "Python.h"
 
@@ -64,11 +68,9 @@ Xxo_demo(XxoObject *self, PyObject *args)
         return NULL;
     /* Test availability of fast type checks */
     if (o != NULL && PyUnicode_Check(o)) {
-        Py_INCREF(o);
-        return o;
+        return Py_NewRef(o);
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    return Py_NewRef(Py_None);
 }
 
 static PyMethodDef Xxo_methods[] = {
@@ -83,8 +85,7 @@ Xxo_getattro(XxoObject *self, PyObject *name)
     if (self->x_attr != NULL) {
         PyObject *v = PyDict_GetItemWithError(self->x_attr, name);
         if (v != NULL) {
-            Py_INCREF(v);
-            return v;
+            return Py_NewRef(v);
         }
         else if (PyErr_Occurred()) {
             return NULL;
@@ -176,8 +177,7 @@ xx_roj(PyObject *self, PyObject *args)
     long b;
     if (!PyArg_ParseTuple(args, "O#:roj", &a, &b))
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    return Py_NewRef(Py_None);
 }
 
 
@@ -297,6 +297,10 @@ xx_modexec(PyObject *m)
 
 static PyModuleDef_Slot xx_slots[] = {
     {Py_mod_exec, xx_modexec},
+#ifdef Py_GIL_DISABLED
+    // These definitions are in the limited API, but not until 3.13.
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
     {0, NULL}
 };
 

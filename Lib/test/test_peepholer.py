@@ -4,6 +4,7 @@ import sys
 import textwrap
 import unittest
 
+from test import support
 from test.support.bytecode_helper import BytecodeTestCase, CfgOptimizationTestCase
 
 
@@ -50,10 +51,6 @@ class TestTranforms(BytecodeTestCase):
             # unconditional jump to RETURN_VALUE
             if (instr.opname in ('JUMP_BACKWARD', 'JUMP_FORWARD') and
                 tgt.opname == 'RETURN_VALUE'):
-                self.fail(f'{instr.opname} at {instr.offset} '
-                          f'jumps to {tgt.opname} at {tgt.offset}')
-            # JUMP_IF_*_OR_POP jump to conditional jump
-            if '_OR_POP' in instr.opname and 'JUMP_IF_' in tgt.opname:
                 self.fail(f'{instr.opname} at {instr.offset} '
                           f'jumps to {tgt.opname} at {tgt.offset}')
 
@@ -117,7 +114,7 @@ class TestTranforms(BytecodeTestCase):
             return None
 
         self.assertNotInBytecode(f, 'LOAD_GLOBAL')
-        self.assertInBytecode(f, 'LOAD_CONST', None)
+        self.assertInBytecode(f, 'RETURN_CONST', None)
         self.check_lnotab(f)
 
     def test_while_one(self):
@@ -134,7 +131,7 @@ class TestTranforms(BytecodeTestCase):
 
     def test_pack_unpack(self):
         for line, elem in (
-            ('a, = a,', 'LOAD_CONST',),
+            ('a, = a,', 'RETURN_CONST',),
             ('a, b = a, b', 'SWAP',),
             ('a, b, c = a, b, c', 'SWAP',),
             ):
@@ -165,7 +162,7 @@ class TestTranforms(BytecodeTestCase):
         # One LOAD_CONST for the tuple, one for the None return value
         load_consts = [instr for instr in dis.get_instructions(code)
                               if instr.opname == 'LOAD_CONST']
-        self.assertEqual(len(load_consts), 2)
+        self.assertEqual(len(load_consts), 1)
         self.check_lnotab(code)
 
         # Bug 1053819:  Tuple of constants misidentified when presented with:
@@ -384,38 +381,36 @@ class TestTranforms(BytecodeTestCase):
 
     def test_elim_jump_to_uncond_jump3(self):
         # Intentionally use two-line expressions to test issue37213.
-        # JUMP_IF_FALSE_OR_POP to JUMP_IF_FALSE_OR_POP --> JUMP_IF_FALSE_OR_POP to non-jump
+        # POP_JUMP_IF_FALSE to POP_JUMP_IF_FALSE --> POP_JUMP_IF_FALSE to non-jump
         def f(a, b, c):
             return ((a and b)
                     and c)
         self.check_jump_targets(f)
         self.check_lnotab(f)
-        self.assertEqual(count_instr_recursively(f, 'JUMP_IF_FALSE_OR_POP'), 2)
-        # JUMP_IF_TRUE_OR_POP to JUMP_IF_TRUE_OR_POP --> JUMP_IF_TRUE_OR_POP to non-jump
+        self.assertEqual(count_instr_recursively(f, 'POP_JUMP_IF_FALSE'), 2)
+        # POP_JUMP_IF_TRUE to POP_JUMP_IF_TRUE --> POP_JUMP_IF_TRUE to non-jump
         def f(a, b, c):
             return ((a or b)
                     or c)
         self.check_jump_targets(f)
         self.check_lnotab(f)
-        self.assertEqual(count_instr_recursively(f, 'JUMP_IF_TRUE_OR_POP'), 2)
+        self.assertEqual(count_instr_recursively(f, 'POP_JUMP_IF_TRUE'), 2)
         # JUMP_IF_FALSE_OR_POP to JUMP_IF_TRUE_OR_POP --> POP_JUMP_IF_FALSE to non-jump
         def f(a, b, c):
             return ((a and b)
                     or c)
         self.check_jump_targets(f)
         self.check_lnotab(f)
-        self.assertNotInBytecode(f, 'JUMP_IF_FALSE_OR_POP')
-        self.assertInBytecode(f, 'JUMP_IF_TRUE_OR_POP')
-        self.assertInBytecode(f, 'POP_JUMP_IF_FALSE')
-        # JUMP_IF_TRUE_OR_POP to JUMP_IF_FALSE_OR_POP --> POP_JUMP_IF_TRUE to non-jump
+        self.assertEqual(count_instr_recursively(f, 'POP_JUMP_IF_FALSE'), 1)
+        self.assertEqual(count_instr_recursively(f, 'POP_JUMP_IF_TRUE'), 1)
+        # POP_JUMP_IF_TRUE to POP_JUMP_IF_FALSE --> POP_JUMP_IF_TRUE to non-jump
         def f(a, b, c):
             return ((a or b)
                     and c)
         self.check_jump_targets(f)
         self.check_lnotab(f)
-        self.assertNotInBytecode(f, 'JUMP_IF_TRUE_OR_POP')
-        self.assertInBytecode(f, 'JUMP_IF_FALSE_OR_POP')
-        self.assertInBytecode(f, 'POP_JUMP_IF_TRUE')
+        self.assertEqual(count_instr_recursively(f, 'POP_JUMP_IF_FALSE'), 1)
+        self.assertEqual(count_instr_recursively(f, 'POP_JUMP_IF_TRUE'), 1)
 
     def test_elim_jump_to_uncond_jump4(self):
         def f():
@@ -528,6 +523,7 @@ class TestTranforms(BytecodeTestCase):
             return (y for x in a for y in [f(x)])
         self.assertEqual(count_instr_recursively(genexpr, 'FOR_ITER'), 1)
 
+    @support.requires_resource('cpu')
     def test_format_combinations(self):
         flags = '-+ #0'
         testcases = [
@@ -692,7 +688,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         def f():
             x = 1
             y = x + x
-        self.assertInBytecode(f, 'LOAD_FAST')
+        self.assertInBytecode(f, 'LOAD_FAST_LOAD_FAST')
 
     def test_load_fast_unknown_simple(self):
         def f():
@@ -776,12 +772,86 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertInBytecode(f, 'LOAD_FAST_CHECK')
         self.assertNotInBytecode(f, 'LOAD_FAST')
 
-    def test_setting_lineno_adds_check(self):
+    def test_load_fast_too_many_locals(self):
+        # When there get to be too many locals to analyze completely,
+        # later locals are all converted to LOAD_FAST_CHECK, except
+        # when a store or prior load occurred in the same basicblock.
+        def f():
+            a00 = a01 = a02 = a03 = a04 = a05 = a06 = a07 = a08 = a09 = 1
+            a10 = a11 = a12 = a13 = a14 = a15 = a16 = a17 = a18 = a19 = 1
+            a20 = a21 = a22 = a23 = a24 = a25 = a26 = a27 = a28 = a29 = 1
+            a30 = a31 = a32 = a33 = a34 = a35 = a36 = a37 = a38 = a39 = 1
+            a40 = a41 = a42 = a43 = a44 = a45 = a46 = a47 = a48 = a49 = 1
+            a50 = a51 = a52 = a53 = a54 = a55 = a56 = a57 = a58 = a59 = 1
+            a60 = a61 = a62 = a63 = a64 = a65 = a66 = a67 = a68 = a69 = 1
+            a70 = a71 = a72 = a73 = a74 = a75 = a76 = a77 = a78 = a79 = 1
+            del a72, a73
+            print(a73)
+            print(a70, a71, a72, a73)
+            while True:
+                print(a00, a01, a62, a63)
+                print(a64, a65, a78, a79)
+
+        self.assertInBytecode(f, 'LOAD_FAST_LOAD_FAST', ("a00", "a01"))
+        self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', "a00")
+        self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', "a01")
+        for i in 62, 63:
+            # First 64 locals: analyze completely
+            self.assertInBytecode(f, 'LOAD_FAST', f"a{i:02}")
+            self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', f"a{i:02}")
+        for i in 64, 65, 78, 79:
+            # Locals >=64 not in the same basicblock
+            self.assertInBytecode(f, 'LOAD_FAST_CHECK', f"a{i:02}")
+            self.assertNotInBytecode(f, 'LOAD_FAST', f"a{i:02}")
+        for i in 70, 71:
+            # Locals >=64 in the same basicblock
+            self.assertInBytecode(f, 'LOAD_FAST', f"a{i:02}")
+            self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', f"a{i:02}")
+        # del statements should invalidate within basicblocks.
+        self.assertInBytecode(f, 'LOAD_FAST_CHECK', "a72")
+        self.assertNotInBytecode(f, 'LOAD_FAST', "a72")
+        # previous checked loads within a basicblock enable unchecked loads
+        self.assertInBytecode(f, 'LOAD_FAST_CHECK', "a73")
+        self.assertInBytecode(f, 'LOAD_FAST', "a73")
+
+    def test_setting_lineno_no_undefined(self):
         code = textwrap.dedent("""\
             def f():
-                x = 2
-                L = 3
-                L = 4
+                x = y = 2
+                if not x:
+                    return 4
+                for i in range(55):
+                    x + 6
+                L = 7
+                L = 8
+                L = 9
+                L = 10
+        """)
+        ns = {}
+        exec(code, ns)
+        f = ns['f']
+        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        co_code = f.__code__.co_code
+        def trace(frame, event, arg):
+            if event == 'line' and frame.f_lineno == 9:
+                frame.f_lineno = 3
+                sys.settrace(None)
+                return None
+            return trace
+        sys.settrace(trace)
+        result = f()
+        self.assertIsNone(result)
+        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        self.assertEqual(f.__code__.co_code, co_code)
+
+    def test_setting_lineno_one_undefined(self):
+        code = textwrap.dedent("""\
+            def f():
+                x = y = 2
+                if not x:
+                    return 4
                 for i in range(55):
                     x + 6
                 del x
@@ -793,15 +863,56 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         exec(code, ns)
         f = ns['f']
         self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        co_code = f.__code__.co_code
         def trace(frame, event, arg):
             if event == 'line' and frame.f_lineno == 9:
-                frame.f_lineno = 2
+                frame.f_lineno = 3
                 sys.settrace(None)
                 return None
             return trace
-        sys.settrace(trace)
-        f()
-        self.assertNotInBytecode(f, "LOAD_FAST")
+        e = r"assigning None to 1 unbound local"
+        with self.assertWarnsRegex(RuntimeWarning, e):
+            sys.settrace(trace)
+            result = f()
+        self.assertEqual(result, 4)
+        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        self.assertEqual(f.__code__.co_code, co_code)
+
+    def test_setting_lineno_two_undefined(self):
+        code = textwrap.dedent("""\
+            def f():
+                x = y = 2
+                if not x:
+                    return 4
+                for i in range(55):
+                    x + 6
+                del x, y
+                L = 8
+                L = 9
+                L = 10
+        """)
+        ns = {}
+        exec(code, ns)
+        f = ns['f']
+        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        co_code = f.__code__.co_code
+        def trace(frame, event, arg):
+            if event == 'line' and frame.f_lineno == 9:
+                frame.f_lineno = 3
+                sys.settrace(None)
+                return None
+            return trace
+        e = r"assigning None to 2 unbound locals"
+        with self.assertWarnsRegex(RuntimeWarning, e):
+            sys.settrace(trace)
+            result = f()
+        self.assertEqual(result, 4)
+        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        self.assertEqual(f.__code__.co_code, co_code)
 
     def make_function_with_no_checks(self):
         code = textwrap.dedent("""\
@@ -820,19 +931,6 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertInBytecode(f, "LOAD_FAST")
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
         return f
-
-    def test_deleting_local_adds_check(self):
-        f = self.make_function_with_no_checks()
-        def trace(frame, event, arg):
-            if event == 'line' and frame.f_lineno == 4:
-                del frame.f_locals["x"]
-                sys.settrace(None)
-                return None
-            return trace
-        sys.settrace(trace)
-        f()
-        self.assertNotInBytecode(f, "LOAD_FAST")
-        self.assertInBytecode(f, "LOAD_FAST_CHECK")
 
     def test_modifying_local_does_not_add_check(self):
         f = self.make_function_with_no_checks()
@@ -861,14 +959,21 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
 
 
-class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
+class DirectCfgOptimizerTests(CfgOptimizationTestCase):
 
     def cfg_optimization_test(self, insts, expected_insts,
-                              consts=None, expected_consts=None):
+                              consts=None, expected_consts=None,
+                              nlocals=0):
+
+        self.check_instructions(insts)
+        self.check_instructions(expected_insts)
+
         if expected_consts is None:
             expected_consts = consts
-        opt_insts, opt_consts = self.get_optimized(insts, consts)
-        self.compareInstructions(opt_insts, expected_insts)
+        seq = self.seq_from_insts(insts)
+        opt_insts, opt_consts = self.get_optimized(seq, consts, nlocals)
+        expected_insts = self.seq_from_insts(expected_insts).get_instructions()
+        self.assertInstructionsMatch(opt_insts, expected_insts)
         self.assertEqual(opt_consts, expected_consts)
 
     def test_conditional_jump_forward_non_const_condition(self):
@@ -876,17 +981,22 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
             ('LOAD_CONST', 2, 13),
+            ('RETURN_VALUE', None, 13),
             lbl,
             ('LOAD_CONST', 3, 14),
+            ('RETURN_VALUE', None, 14),
         ]
-        expected = [
-            ('LOAD_NAME', '1', 11),
+        expected_insts = [
+            ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
-            ('LOAD_CONST', '2', 13),
+            ('RETURN_CONST', 1, 13),
             lbl,
-            ('LOAD_CONST', '3', 14)
+            ('RETURN_CONST', 2, 14),
         ]
-        self.cfg_optimization_test(insts, expected, consts=list(range(5)))
+        self.cfg_optimization_test(insts,
+                                   expected_insts,
+                                   consts=[0, 1, 2, 3, 4],
+                                   expected_consts=[0, 2, 3])
 
     def test_conditional_jump_forward_const_condition(self):
         # The unreachable branch of the jump is removed, the jump
@@ -898,26 +1008,32 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_CONST', 2, 13),
             lbl,
             ('LOAD_CONST', 3, 14),
+            ('RETURN_VALUE', None, 14),
         ]
-        expected = [
+        expected_insts = [
             ('NOP', None, 11),
             ('NOP', None, 12),
-            ('LOAD_CONST', '3', 14)
+            ('RETURN_CONST', 1, 14),
         ]
-        self.cfg_optimization_test(insts, expected, consts=list(range(5)))
+        self.cfg_optimization_test(insts,
+                                   expected_insts,
+                                   consts=[0, 1, 2, 3, 4],
+                                   expected_consts=[0, 3])
 
     def test_conditional_jump_backward_non_const_condition(self):
         insts = [
             lbl1 := self.Label(),
             ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl1, 12),
-            ('LOAD_CONST', 2, 13),
+            ('LOAD_NAME', 2, 13),
+            ('RETURN_VALUE', None, 13),
         ]
         expected = [
             lbl := self.Label(),
-            ('LOAD_NAME', '1', 11),
+            ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl, 12),
-            ('LOAD_CONST', '2', 13)
+            ('LOAD_NAME', 2, 13),
+            ('RETURN_VALUE', None, 13),
         ]
         self.cfg_optimization_test(insts, expected, consts=list(range(5)))
 
@@ -925,17 +1041,141 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
         # The unreachable branch of the jump is removed
         insts = [
             lbl1 := self.Label(),
-            ('LOAD_CONST', 1, 11),
+            ('LOAD_CONST', 3, 11),
             ('POP_JUMP_IF_TRUE', lbl1, 12),
             ('LOAD_CONST', 2, 13),
+            ('RETURN_VALUE', None, 13),
         ]
-        expected = [
+        expected_insts = [
             lbl := self.Label(),
             ('NOP', None, 11),
-            ('JUMP', lbl, 12)
+            ('JUMP', lbl, 12),
         ]
-        self.cfg_optimization_test(insts, expected, consts=list(range(5)))
+        self.cfg_optimization_test(insts, expected_insts, consts=list(range(5)))
 
+    def test_except_handler_label(self):
+        insts = [
+            ('SETUP_FINALLY', handler := self.Label(), 10),
+            ('POP_BLOCK', None, -1),
+            ('RETURN_CONST', 1, 11),
+            handler,
+            ('RETURN_CONST', 2, 12),
+        ]
+        expected_insts = [
+            ('SETUP_FINALLY', handler := self.Label(), 10),
+            ('RETURN_CONST', 1, 11),
+            handler,
+            ('RETURN_CONST', 2, 12),
+        ]
+        self.cfg_optimization_test(insts, expected_insts, consts=list(range(5)))
+
+    def test_no_unsafe_static_swap(self):
+        # We can't change order of two stores to the same location
+        insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('LOAD_CONST', 2, 3),
+            ('SWAP', 3, 4),
+            ('STORE_FAST', 1, 4),
+            ('STORE_FAST', 1, 4),
+            ('POP_TOP', None, 4),
+            ('LOAD_CONST', 0, 5),
+            ('RETURN_VALUE', None, 5)
+        ]
+        expected_insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('NOP', None, 3),
+            ('STORE_FAST', 1, 4),
+            ('POP_TOP', None, 4),
+            ('RETURN_CONST', 0)
+        ]
+        self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
+
+    def test_dead_store_elimination_in_same_lineno(self):
+        insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('LOAD_CONST', 2, 3),
+            ('STORE_FAST', 1, 4),
+            ('STORE_FAST', 1, 4),
+            ('STORE_FAST', 1, 4),
+            ('LOAD_CONST', 0, 5),
+            ('RETURN_VALUE', None, 5)
+        ]
+        expected_insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('NOP', None, 3),
+            ('POP_TOP', None, 4),
+            ('STORE_FAST', 1, 4),
+            ('RETURN_CONST', 0, 5)
+        ]
+        self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
+
+    def test_no_dead_store_elimination_in_different_lineno(self):
+        insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('LOAD_CONST', 2, 3),
+            ('STORE_FAST', 1, 4),
+            ('STORE_FAST', 1, 5),
+            ('STORE_FAST', 1, 6),
+            ('LOAD_CONST', 0, 5),
+            ('RETURN_VALUE', None, 5)
+        ]
+        expected_insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('LOAD_CONST', 2, 3),
+            ('STORE_FAST', 1, 4),
+            ('STORE_FAST', 1, 5),
+            ('STORE_FAST', 1, 6),
+            ('RETURN_CONST', 0, 5)
+        ]
+        self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
+
+    def test_unconditional_jump_threading(self):
+
+        def get_insts(lno1, lno2, op1, op2):
+            return [
+                       lbl2 := self.Label(),
+                       ('LOAD_NAME', 0, 10),
+                       (op1, lbl1 := self.Label(), lno1),
+                       ('LOAD_NAME', 1, 20),
+                       lbl1,
+                       (op2, lbl2, lno2),
+                   ]
+
+
+        for op1 in ('JUMP', 'JUMP_NO_INTERRUPT'):
+            for op2 in ('JUMP', 'JUMP_NO_INTERRUPT'):
+                # different lines
+                lno1, lno2 = (4, 5)
+                with self.subTest(lno = (lno1, lno2), ops = (op1, op2)):
+                    insts = get_insts(lno1, lno2, op1, op2)
+                    op = 'JUMP' if 'JUMP' in (op1, op2) else 'JUMP_NO_INTERRUPT'
+                    expected_insts = [
+                        ('LOAD_NAME', 0, 10),
+                        ('NOP', None, 4),
+                        (op, 0, 5),
+                    ]
+                    self.cfg_optimization_test(insts, expected_insts, consts=list(range(5)))
+
+                # Threading
+                for lno1, lno2 in [(-1, -1), (-1, 5), (6, -1), (7, 7)]:
+                    with self.subTest(lno = (lno1, lno2), ops = (op1, op2)):
+                        insts = get_insts(lno1, lno2, op1, op2)
+                        lno = lno1 if lno1 != -1 else lno2
+                        if lno == -1:
+                            lno = 10  # Propagated from the line before
+
+                        op = 'JUMP' if 'JUMP' in (op1, op2) else 'JUMP_NO_INTERRUPT'
+                        expected_insts = [
+                            ('LOAD_NAME', 0, 10),
+                            (op, 0, lno),
+                        ]
+                        self.cfg_optimization_test(insts, expected_insts, consts=list(range(5)))
 
 if __name__ == "__main__":
     unittest.main()

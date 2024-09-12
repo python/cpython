@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(syslog_openlog__doc__,
 "openlog($module, /, ident=<unrepresentable>, logoption=0,\n"
@@ -69,9 +70,6 @@ syslog_openlog(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
             _PyArg_BadArgument("openlog", "argument 'ident'", "str", args[0]);
             goto exit;
         }
-        if (PyUnicode_READY(args[0]) == -1) {
-            goto exit;
-        }
         ident = args[0];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -91,7 +89,9 @@ syslog_openlog(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         goto exit;
     }
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(module);
     return_value = syslog_openlog_impl(module, ident, logopt, facility);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -132,7 +132,9 @@ syslog_syslog(PyObject *module, PyObject *args)
             PyErr_SetString(PyExc_TypeError, "syslog.syslog requires 1 to 2 arguments");
             goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(module);
     return_value = syslog_syslog_impl(module, group_left_1, priority, message);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -153,7 +155,13 @@ syslog_closelog_impl(PyObject *module);
 static PyObject *
 syslog_closelog(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    return syslog_closelog_impl(module);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(module);
+    return_value = syslog_closelog_impl(module);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(syslog_setlogmask__doc__,
@@ -254,4 +262,4 @@ syslog_LOG_UPTO(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3b1bdb16565b8fda input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8d25899bd31969d3 input=a9049054013a1b77]*/

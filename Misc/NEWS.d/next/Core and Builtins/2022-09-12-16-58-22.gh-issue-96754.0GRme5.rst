@@ -1,3 +1,0 @@
-Make sure that all frame objects created are created from valid interpreter
-frames. Prevents the possibility of invalid frames in backtraces and signal
-handlers.

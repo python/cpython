@@ -1,3 +1,0 @@
-Fix an issue where several frame objects could be backed by the same
-interpreter frame, possibly leading to corrupted memory and hard crashes of
-the interpreter.

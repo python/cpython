@@ -1,3 +1,0 @@
-Fix command line parsing: reject :option:`-X int_max_str_digits <-X>` option
-with no value (invalid) when the :envvar:`PYTHONINTMAXSTRDIGITS` environment
-variable is set to a valid limit. Patch by Victor Stinner.

@@ -1,5 +1,5 @@
-:mod:`zipfile` --- Work with ZIP archives
-=========================================
+:mod:`!zipfile` --- Work with ZIP archives
+==========================================
 
 .. module:: zipfile
    :synopsis: Read and write ZIP-format archive files.
@@ -7,7 +7,7 @@
 .. moduleauthor:: James C. Ahlstrom <jim@interet.com>
 .. sectionauthor:: James C. Ahlstrom <jim@interet.com>
 
-**Source code:** :source:`Lib/zipfile.py`
+**Source code:** :source:`Lib/zipfile/`
 
 --------------
 
@@ -55,8 +55,9 @@ The module defines the following items:
 .. class:: Path
    :noindex:
 
-   A pathlib-compatible wrapper for zip files. See section
-   :ref:`path-objects` for details.
+   Class that implements a subset of the interface provided by
+   :class:`pathlib.Path`, including the full
+   :class:`importlib.resources.abc.Traversable` interface.
 
    .. versionadded:: 3.8
 
@@ -77,6 +78,11 @@ The module defines the following items:
    *date_time* should be a tuple containing six fields which describe the time
    of the last modification to the file; the fields are described in section
    :ref:`zipinfo-objects`.
+
+   .. versionchanged:: 3.13
+      A public :attr:`!compress_level` attribute has been added to expose the
+      formerly protected :attr:`!_compresslevel`.  The older protected name
+      continues to work as a property for backwards compatibility.
 
 .. function:: is_zipfile(filename)
 
@@ -127,7 +133,7 @@ The module defines the following items:
       Documentation on the ZIP file format by Phil Katz, the creator of the format and
       algorithms used.
 
-   `Info-ZIP Home Page <http://www.info-zip.org/>`_
+   `Info-ZIP Home Page <https://infozip.sourceforge.net/>`_
       Information about the Info-ZIP project's ZIP archive programs and development
       libraries.
 
@@ -212,7 +218,7 @@ ZipFile Objects
       That flag takes precedence over *metadata_encoding*, which is
       a Python-specific extension.
 
-   .. versionadded:: 3.2
+   .. versionchanged:: 3.2
       Added the ability to use :class:`ZipFile` as a context manager.
 
    .. versionchanged:: 3.3
@@ -235,8 +241,8 @@ ZipFile Objects
    .. versionchanged:: 3.7
       Add the *compresslevel* parameter.
 
-   .. versionadded:: 3.8
-      The *strict_timestamps* keyword-only argument
+   .. versionchanged:: 3.8
+      The *strict_timestamps* keyword-only parameter.
 
    .. versionchanged:: 3.11
       Added support for specifying member name encoding for reading
@@ -273,7 +279,8 @@ ZipFile Objects
    Access a member of the archive as a binary file-like object.  *name*
    can be either the name of a file within the archive or a :class:`ZipInfo`
    object.  The *mode* parameter, if included, must be ``'r'`` (the default)
-   or ``'w'``.  *pwd* is the password used to decrypt encrypted ZIP files.
+   or ``'w'``.  *pwd* is the password used to decrypt encrypted ZIP files as a
+   :class:`bytes` object.
 
    :meth:`~ZipFile.open` is also a context manager and therefore supports the
    :keyword:`with` statement::
@@ -286,13 +293,17 @@ ZipFile Objects
    (``ZipExtFile``) is read-only and provides the following methods:
    :meth:`~io.BufferedIOBase.read`, :meth:`~io.IOBase.readline`,
    :meth:`~io.IOBase.readlines`, :meth:`~io.IOBase.seek`,
-   :meth:`~io.IOBase.tell`, :meth:`__iter__`, :meth:`~iterator.__next__`.
+   :meth:`~io.IOBase.tell`, :meth:`~container.__iter__`, :meth:`~iterator.__next__`.
    These objects can operate independently of the ZipFile.
 
    With ``mode='w'``, a writable file handle is returned, which supports the
    :meth:`~io.BufferedIOBase.write` method.  While a writable file handle is open,
    attempting to read or write other files in the ZIP file will raise a
    :exc:`ValueError`.
+
+   In both cases the file-like object has also attributes :attr:`!name`,
+   which is equivalent to the name of a file within the archive, and
+   :attr:`!mode`, which is ``'rb'`` or ``'wb'`` depending on the input mode.
 
    When writing a file, if the file size is not known in advance but may exceed
    2 GiB, pass ``force_zip64=True`` to ensure that the header format is
@@ -318,6 +329,12 @@ ZipFile Objects
       Calling :meth:`.open` on a closed ZipFile will raise a :exc:`ValueError`.
       Previously, a :exc:`RuntimeError` was raised.
 
+   .. versionchanged:: 3.13
+      Added attributes :attr:`!name` and :attr:`!mode` for the writeable
+      file-like object.
+      The value of the :attr:`!mode` attribute for the readable file-like
+      object was changed from ``'r'`` to ``'rb'``.
+
 
 .. method:: ZipFile.extract(member, path=None, pwd=None)
 
@@ -325,7 +342,7 @@ ZipFile Objects
    must be its full name or a :class:`ZipInfo` object.  Its file information is
    extracted as accurately as possible.  *path* specifies a different directory
    to extract to.  *member* can be a filename or a :class:`ZipInfo` object.
-   *pwd* is the password used for encrypted files.
+   *pwd* is the password used for encrypted files as a :class:`bytes` object.
 
    Returns the normalized path created (a directory or new file).
 
@@ -352,7 +369,7 @@ ZipFile Objects
    Extract all members from the archive to the current working directory.  *path*
    specifies a different directory to extract to.  *members* is optional and must
    be a subset of the list returned by :meth:`namelist`.  *pwd* is the password
-   used for encrypted files.
+   used for encrypted files as a :class:`bytes` object.
 
    .. warning::
 
@@ -377,16 +394,16 @@ ZipFile Objects
 
 .. method:: ZipFile.setpassword(pwd)
 
-   Set *pwd* as default password to extract encrypted files.
+   Set *pwd* (a :class:`bytes` object) as default password to extract encrypted files.
 
 
 .. method:: ZipFile.read(name, pwd=None)
 
    Return the bytes of the file *name* in the archive.  *name* is the name of the
    file in the archive, or a :class:`ZipInfo` object.  The archive must be open for
-   read or append. *pwd* is the password used for encrypted  files and, if specified,
-   it will override the default password set with :meth:`setpassword`.  Calling
-   :meth:`read` on a ZipFile that uses a compression method other than
+   read or append. *pwd* is the password used for encrypted files as a :class:`bytes`
+   object and, if specified, overrides the default password set with :meth:`setpassword`.
+   Calling :meth:`read` on a ZipFile that uses a compression method other than
    :const:`ZIP_STORED`, :const:`ZIP_DEFLATED`, :const:`ZIP_BZIP2` or
    :const:`ZIP_LZMA` will raise a :exc:`NotImplementedError`. An error will also
    be raised if the corresponding compression module is not available.
@@ -550,6 +567,12 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
       Added support for text and binary modes for open. Default
       mode is now text.
 
+   .. versionchanged:: 3.11.2
+      The ``encoding`` parameter can be supplied as a positional argument
+      without causing a :exc:`TypeError`. As it could in 3.9. Code needing to
+      be compatible with unpatched 3.10 and 3.11 versions must pass all
+      :class:`io.TextIOWrapper` arguments, ``encoding`` included, as keywords.
+
 .. method:: Path.iterdir()
 
    Enumerate the children of the current directory.
@@ -562,6 +585,15 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
 
    Return ``True`` if the current context references a file.
 
+.. method:: Path.is_symlink()
+
+   Return ``True`` if the current context references a symbolic link.
+
+   .. versionadded:: 3.12
+
+   .. versionchanged:: 3.13
+      Previously, ``is_symlink`` would unconditionally return ``False``.
+
 .. method:: Path.exists()
 
    Return ``True`` if the current context references a file or
@@ -569,7 +601,8 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
 
 .. data:: Path.suffix
 
-   The file extension of the final component.
+   The last dot-separated portion of the final component, if any.
+   This is commonly called the file extension.
 
    .. versionadded:: 3.11
       Added :data:`Path.suffix` property.
@@ -583,7 +616,7 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
 
 .. data:: Path.suffixes
 
-   A list of the path’s file extensions.
+   A list of the path’s suffixes, commonly called file extensions.
 
    .. versionadded:: 3.11
       Added :data:`Path.suffixes` property.
@@ -594,6 +627,12 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
    keyword arguments are passed through to
    :class:`io.TextIOWrapper` (except ``buffer``, which is
    implied by the context).
+
+   .. versionchanged:: 3.11.2
+      The ``encoding`` parameter can be supplied as a positional argument
+      without causing a :exc:`TypeError`. As it could in 3.9. Code needing to
+      be compatible with unpatched 3.10 and 3.11 versions must pass all
+      :class:`io.TextIOWrapper` arguments, ``encoding`` included, as keywords.
 
 .. method:: Path.read_bytes()
 
@@ -612,7 +651,7 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
       Prior to 3.10, ``joinpath`` was undocumented and accepted
       exactly one parameter.
 
-The `zipp <https://pypi.org/project/zipp>`_ project provides backports
+The :pypi:`zipp` project provides backports
 of the latest path object functionality to older Pythons. Use
 ``zipp.Path`` in place of ``zipfile.Path`` for early access to
 changes.
@@ -628,8 +667,8 @@ The :class:`PyZipFile` constructor takes the same parameters as the
 .. class:: PyZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=True, \
                      optimize=-1)
 
-   .. versionadded:: 3.2
-      The *optimize* parameter.
+   .. versionchanged:: 3.2
+      Added the *optimize* parameter.
 
    .. versionchanged:: 3.4
       ZIP64 extensions are enabled by default.
@@ -672,6 +711,7 @@ The :class:`PyZipFile` constructor takes the same parameters as the
           >>> def notests(s):
           ...     fn = os.path.basename(s)
           ...     return (not (fn == 'test' or fn.startswith('test_')))
+          ...
           >>> zf.writepy('myprog', filterfunc=notests)
 
       The :meth:`writepy` method makes archives with file names like
@@ -683,8 +723,8 @@ The :class:`PyZipFile` constructor takes the same parameters as the
          test/bogus/__init__.pyc      # Subpackage directory
          test/bogus/myfile.pyc        # Submodule test.bogus.myfile
 
-      .. versionadded:: 3.4
-         The *filterfunc* parameter.
+      .. versionchanged:: 3.4
+         Added the *filterfunc* parameter.
 
       .. versionchanged:: 3.6.2
          The *pathname* parameter accepts a :term:`path-like object`.
@@ -728,8 +768,8 @@ file:
    .. versionchanged:: 3.6.2
       The *filename* parameter accepts a :term:`path-like object`.
 
-   .. versionadded:: 3.8
-      The *strict_timestamps* keyword-only argument
+   .. versionchanged:: 3.8
+      Added the *strict_timestamps* keyword-only parameter.
 
 
 Instances have the following methods and attributes:
@@ -890,27 +930,27 @@ For a list of the files in a ZIP archive, use the :option:`-l` option:
 Command-line options
 ~~~~~~~~~~~~~~~~~~~~
 
-.. cmdoption:: -l <zipfile>
-               --list <zipfile>
+.. option:: -l <zipfile>
+            --list <zipfile>
 
    List files in a zipfile.
 
-.. cmdoption:: -c <zipfile> <source1> ... <sourceN>
-               --create <zipfile> <source1> ... <sourceN>
+.. option:: -c <zipfile> <source1> ... <sourceN>
+            --create <zipfile> <source1> ... <sourceN>
 
    Create zipfile from source files.
 
-.. cmdoption:: -e <zipfile> <output_dir>
-               --extract <zipfile> <output_dir>
+.. option:: -e <zipfile> <output_dir>
+            --extract <zipfile> <output_dir>
 
    Extract zipfile into target directory.
 
-.. cmdoption:: -t <zipfile>
-               --test <zipfile>
+.. option:: -t <zipfile>
+            --test <zipfile>
 
    Test whether the zipfile is valid or not.
 
-.. cmdoption:: --metadata-encoding <encoding>
+.. option:: --metadata-encoding <encoding>
 
    Specify encoding of member names for :option:`-l`, :option:`-e` and
    :option:`-t`.

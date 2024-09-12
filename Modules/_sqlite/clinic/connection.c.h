@@ -3,17 +3,29 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 static int
 pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
                               double timeout, int detect_types,
                               const char *isolation_level,
                               int check_same_thread, PyObject *factory,
-                              int cache_size, int uri);
+                              int cache_size, int uri,
+                              enum autocommit_mode autocommit);
+
+// Emit compiler warnings when we get to Python 3.15.
+#if PY_VERSION_HEX >= 0x030f00C0
+#  error "Update the clinic input of '_sqlite3.Connection.__init__'."
+#elif PY_VERSION_HEX >= 0x030f00A0
+#  ifdef _MSC_VER
+#    pragma message ("Update the clinic input of '_sqlite3.Connection.__init__'.")
+#  else
+#    warning "Update the clinic input of '_sqlite3.Connection.__init__'."
+#  endif
+#endif
 
 static int
 pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -21,14 +33,14 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
     int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 8
+    #define NUM_KEYWORDS 9
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(database), &_Py_ID(timeout), &_Py_ID(detect_types), &_Py_ID(isolation_level), &_Py_ID(check_same_thread), &_Py_ID(factory), &_Py_ID(cached_statements), &_Py_ID(uri), },
+        .ob_item = { &_Py_ID(database), &_Py_ID(timeout), &_Py_ID(detect_types), &_Py_ID(isolation_level), &_Py_ID(check_same_thread), &_Py_ID(factory), &_Py_ID(cached_statements), &_Py_ID(uri), &_Py_ID(autocommit), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -37,14 +49,14 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"database", "timeout", "detect_types", "isolation_level", "check_same_thread", "factory", "cached_statements", "uri", NULL};
+    static const char * const _keywords[] = {"database", "timeout", "detect_types", "isolation_level", "check_same_thread", "factory", "cached_statements", "uri", "autocommit", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "Connection",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[8];
+    PyObject *argsbuf[9];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
@@ -56,7 +68,19 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *factory = (PyObject*)clinic_state()->ConnectionType;
     int cache_size = 128;
     int uri = 0;
+    enum autocommit_mode autocommit = LEGACY_TRANSACTION_CONTROL;
 
+    if (nargs > 1 && nargs <= 8) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing more than 1 positional argument to _sqlite3.Connection()"
+                " is deprecated. Parameters 'timeout', 'detect_types', "
+                "'isolation_level', 'check_same_thread', 'factory', "
+                "'cached_statements' and 'uri' will become keyword-only "
+                "parameters in Python 3.15.", 1))
+        {
+            goto exit;
+        }
+    }
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 8, 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -81,7 +105,7 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
     if (fastargs[2]) {
-        detect_types = _PyLong_AsInt(fastargs[2]);
+        detect_types = PyLong_AsInt(fastargs[2]);
         if (detect_types == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -98,8 +122,8 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
     if (fastargs[4]) {
-        check_same_thread = _PyLong_AsInt(fastargs[4]);
-        if (check_same_thread == -1 && PyErr_Occurred()) {
+        check_same_thread = PyObject_IsTrue(fastargs[4]);
+        if (check_same_thread < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -113,7 +137,7 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
     if (fastargs[6]) {
-        cache_size = _PyLong_AsInt(fastargs[6]);
+        cache_size = PyLong_AsInt(fastargs[6]);
         if (cache_size == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -121,12 +145,24 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
             goto skip_optional_pos;
         }
     }
-    uri = PyObject_IsTrue(fastargs[7]);
-    if (uri < 0) {
-        goto exit;
+    if (fastargs[7]) {
+        uri = PyObject_IsTrue(fastargs[7]);
+        if (uri < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
     }
 skip_optional_pos:
-    return_value = pysqlite_connection_init_impl((pysqlite_Connection *)self, database, timeout, detect_types, isolation_level, check_same_thread, factory, cache_size, uri);
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (!autocommit_converter(fastargs[8], &autocommit)) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = pysqlite_connection_init_impl((pysqlite_Connection *)self, database, timeout, detect_types, isolation_level, check_same_thread, factory, cache_size, uri, autocommit);
 
 exit:
     return return_value;
@@ -214,7 +250,7 @@ PyDoc_STRVAR(blobopen__doc__,
 
 static PyObject *
 blobopen_impl(pysqlite_Connection *self, const char *table, const char *col,
-              int row, int readonly, const char *name);
+              sqlite3_int64 row, int readonly, const char *name);
 
 static PyObject *
 blobopen(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -249,7 +285,7 @@ blobopen(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyO
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     const char *table;
     const char *col;
-    int row;
+    sqlite3_int64 row;
     int readonly = 0;
     const char *name = "main";
 
@@ -283,16 +319,15 @@ blobopen(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyO
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    row = _PyLong_AsInt(args[2]);
-    if (row == -1 && PyErr_Occurred()) {
+    if (!sqlite3_int64_converter(args[2], &row)) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
     if (args[3]) {
-        readonly = _PyLong_AsInt(args[3]);
-        if (readonly == -1 && PyErr_Occurred()) {
+        readonly = PyObject_IsTrue(args[3]);
+        if (readonly < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -383,7 +418,12 @@ PyDoc_STRVAR(pysqlite_connection_create_function__doc__,
 "create_function($self, /, name, narg, func, *, deterministic=False)\n"
 "--\n"
 "\n"
-"Creates a new function.");
+"Creates a new function.\n"
+"\n"
+"Note: Passing keyword arguments \'name\', \'narg\' and \'func\' to\n"
+"_sqlite3.Connection.create_function() is deprecated. Parameters\n"
+"\'name\', \'narg\' and \'func\' will become positional-only in Python 3.15.\n"
+"");
 
 #define PYSQLITE_CONNECTION_CREATE_FUNCTION_METHODDEF    \
     {"create_function", _PyCFunction_CAST(pysqlite_connection_create_function), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_create_function__doc__},
@@ -393,6 +433,17 @@ pysqlite_connection_create_function_impl(pysqlite_Connection *self,
                                          PyTypeObject *cls, const char *name,
                                          int narg, PyObject *func,
                                          int deterministic);
+
+// Emit compiler warnings when we get to Python 3.15.
+#if PY_VERSION_HEX >= 0x030f00C0
+#  error "Update the clinic input of '_sqlite3.Connection.create_function'."
+#elif PY_VERSION_HEX >= 0x030f00A0
+#  ifdef _MSC_VER
+#    pragma message ("Update the clinic input of '_sqlite3.Connection.create_function'.")
+#  else
+#    warning "Update the clinic input of '_sqlite3.Connection.create_function'."
+#  endif
+#endif
 
 static PyObject *
 pysqlite_connection_create_function(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -434,6 +485,16 @@ pysqlite_connection_create_function(pysqlite_Connection *self, PyTypeObject *cls
     if (!args) {
         goto exit;
     }
+    if (nargs < 3) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing keyword arguments 'name', 'narg' and 'func' to "
+                "_sqlite3.Connection.create_function() is deprecated. Parameters "
+                "'name', 'narg' and 'func' will become positional-only in Python "
+                "3.15.", 1))
+        {
+            goto exit;
+        }
+    }
     if (!PyUnicode_Check(args[0])) {
         _PyArg_BadArgument("create_function", "argument 'name'", "str", args[0]);
         goto exit;
@@ -447,7 +508,7 @@ pysqlite_connection_create_function(pysqlite_Connection *self, PyTypeObject *cls
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    narg = _PyLong_AsInt(args[1]);
+    narg = PyLong_AsInt(args[1]);
     if (narg == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -530,7 +591,7 @@ create_window_function(pysqlite_Connection *self, PyTypeObject *cls, PyObject *c
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    num_params = _PyLong_AsInt(args[1]);
+    num_params = PyLong_AsInt(args[1]);
     if (num_params == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -547,7 +608,13 @@ PyDoc_STRVAR(pysqlite_connection_create_aggregate__doc__,
 "create_aggregate($self, /, name, n_arg, aggregate_class)\n"
 "--\n"
 "\n"
-"Creates a new aggregate.");
+"Creates a new aggregate.\n"
+"\n"
+"Note: Passing keyword arguments \'name\', \'n_arg\' and \'aggregate_class\'\n"
+"to _sqlite3.Connection.create_aggregate() is deprecated. Parameters\n"
+"\'name\', \'n_arg\' and \'aggregate_class\' will become positional-only in\n"
+"Python 3.15.\n"
+"");
 
 #define PYSQLITE_CONNECTION_CREATE_AGGREGATE_METHODDEF    \
     {"create_aggregate", _PyCFunction_CAST(pysqlite_connection_create_aggregate), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_create_aggregate__doc__},
@@ -557,6 +624,17 @@ pysqlite_connection_create_aggregate_impl(pysqlite_Connection *self,
                                           PyTypeObject *cls,
                                           const char *name, int n_arg,
                                           PyObject *aggregate_class);
+
+// Emit compiler warnings when we get to Python 3.15.
+#if PY_VERSION_HEX >= 0x030f00C0
+#  error "Update the clinic input of '_sqlite3.Connection.create_aggregate'."
+#elif PY_VERSION_HEX >= 0x030f00A0
+#  ifdef _MSC_VER
+#    pragma message ("Update the clinic input of '_sqlite3.Connection.create_aggregate'.")
+#  else
+#    warning "Update the clinic input of '_sqlite3.Connection.create_aggregate'."
+#  endif
+#endif
 
 static PyObject *
 pysqlite_connection_create_aggregate(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -596,6 +674,16 @@ pysqlite_connection_create_aggregate(pysqlite_Connection *self, PyTypeObject *cl
     if (!args) {
         goto exit;
     }
+    if (nargs < 3) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing keyword arguments 'name', 'n_arg' and 'aggregate_class' "
+                "to _sqlite3.Connection.create_aggregate() is deprecated. "
+                "Parameters 'name', 'n_arg' and 'aggregate_class' will become "
+                "positional-only in Python 3.15.", 1))
+        {
+            goto exit;
+        }
+    }
     if (!PyUnicode_Check(args[0])) {
         _PyArg_BadArgument("create_aggregate", "argument 'name'", "str", args[0]);
         goto exit;
@@ -609,7 +697,7 @@ pysqlite_connection_create_aggregate(pysqlite_Connection *self, PyTypeObject *cl
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    n_arg = _PyLong_AsInt(args[1]);
+    n_arg = PyLong_AsInt(args[1]);
     if (n_arg == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -624,7 +712,12 @@ PyDoc_STRVAR(pysqlite_connection_set_authorizer__doc__,
 "set_authorizer($self, /, authorizer_callback)\n"
 "--\n"
 "\n"
-"Sets authorizer callback.");
+"Set authorizer callback.\n"
+"\n"
+"Note: Passing keyword argument \'authorizer_callback\' to\n"
+"_sqlite3.Connection.set_authorizer() is deprecated. Parameter\n"
+"\'authorizer_callback\' will become positional-only in Python 3.15.\n"
+"");
 
 #define PYSQLITE_CONNECTION_SET_AUTHORIZER_METHODDEF    \
     {"set_authorizer", _PyCFunction_CAST(pysqlite_connection_set_authorizer), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_set_authorizer__doc__},
@@ -633,6 +726,17 @@ static PyObject *
 pysqlite_connection_set_authorizer_impl(pysqlite_Connection *self,
                                         PyTypeObject *cls,
                                         PyObject *callable);
+
+// Emit compiler warnings when we get to Python 3.15.
+#if PY_VERSION_HEX >= 0x030f00C0
+#  error "Update the clinic input of '_sqlite3.Connection.set_authorizer'."
+#elif PY_VERSION_HEX >= 0x030f00A0
+#  ifdef _MSC_VER
+#    pragma message ("Update the clinic input of '_sqlite3.Connection.set_authorizer'.")
+#  else
+#    warning "Update the clinic input of '_sqlite3.Connection.set_authorizer'."
+#  endif
+#endif
 
 static PyObject *
 pysqlite_connection_set_authorizer(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -670,6 +774,16 @@ pysqlite_connection_set_authorizer(pysqlite_Connection *self, PyTypeObject *cls,
     if (!args) {
         goto exit;
     }
+    if (nargs < 1) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing keyword argument 'authorizer_callback' to "
+                "_sqlite3.Connection.set_authorizer() is deprecated. Parameter "
+                "'authorizer_callback' will become positional-only in Python "
+                "3.15.", 1))
+        {
+            goto exit;
+        }
+    }
     callable = args[0];
     return_value = pysqlite_connection_set_authorizer_impl(self, cls, callable);
 
@@ -681,7 +795,22 @@ PyDoc_STRVAR(pysqlite_connection_set_progress_handler__doc__,
 "set_progress_handler($self, /, progress_handler, n)\n"
 "--\n"
 "\n"
-"Sets progress handler callback.");
+"Set progress handler callback.\n"
+"\n"
+"  progress_handler\n"
+"    A callable that takes no arguments.\n"
+"    If the callable returns non-zero, the current query is terminated,\n"
+"    and an exception is raised.\n"
+"  n\n"
+"    The number of SQLite virtual machine instructions that are\n"
+"    executed between invocations of \'progress_handler\'.\n"
+"\n"
+"If \'progress_handler\' is None or \'n\' is 0, the progress handler is disabled.\n"
+"\n"
+"Note: Passing keyword argument \'progress_handler\' to\n"
+"_sqlite3.Connection.set_progress_handler() is deprecated. Parameter\n"
+"\'progress_handler\' will become positional-only in Python 3.15.\n"
+"");
 
 #define PYSQLITE_CONNECTION_SET_PROGRESS_HANDLER_METHODDEF    \
     {"set_progress_handler", _PyCFunction_CAST(pysqlite_connection_set_progress_handler), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_set_progress_handler__doc__},
@@ -690,6 +819,17 @@ static PyObject *
 pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
                                               PyTypeObject *cls,
                                               PyObject *callable, int n);
+
+// Emit compiler warnings when we get to Python 3.15.
+#if PY_VERSION_HEX >= 0x030f00C0
+#  error "Update the clinic input of '_sqlite3.Connection.set_progress_handler'."
+#elif PY_VERSION_HEX >= 0x030f00A0
+#  ifdef _MSC_VER
+#    pragma message ("Update the clinic input of '_sqlite3.Connection.set_progress_handler'.")
+#  else
+#    warning "Update the clinic input of '_sqlite3.Connection.set_progress_handler'."
+#  endif
+#endif
 
 static PyObject *
 pysqlite_connection_set_progress_handler(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -704,7 +844,7 @@ pysqlite_connection_set_progress_handler(pysqlite_Connection *self, PyTypeObject
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(progress_handler), &_Py_ID(n), },
+        .ob_item = { &_Py_ID(progress_handler), _Py_LATIN1_CHR('n'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -728,8 +868,18 @@ pysqlite_connection_set_progress_handler(pysqlite_Connection *self, PyTypeObject
     if (!args) {
         goto exit;
     }
+    if (nargs < 1) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing keyword argument 'progress_handler' to "
+                "_sqlite3.Connection.set_progress_handler() is deprecated. "
+                "Parameter 'progress_handler' will become positional-only in "
+                "Python 3.15.", 1))
+        {
+            goto exit;
+        }
+    }
     callable = args[0];
-    n = _PyLong_AsInt(args[1]);
+    n = PyLong_AsInt(args[1]);
     if (n == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -743,7 +893,12 @@ PyDoc_STRVAR(pysqlite_connection_set_trace_callback__doc__,
 "set_trace_callback($self, /, trace_callback)\n"
 "--\n"
 "\n"
-"Sets a trace callback called for each SQL statement (passed as unicode).");
+"Set a trace callback called for each SQL statement (passed as unicode).\n"
+"\n"
+"Note: Passing keyword argument \'trace_callback\' to\n"
+"_sqlite3.Connection.set_trace_callback() is deprecated. Parameter\n"
+"\'trace_callback\' will become positional-only in Python 3.15.\n"
+"");
 
 #define PYSQLITE_CONNECTION_SET_TRACE_CALLBACK_METHODDEF    \
     {"set_trace_callback", _PyCFunction_CAST(pysqlite_connection_set_trace_callback), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_set_trace_callback__doc__},
@@ -752,6 +907,17 @@ static PyObject *
 pysqlite_connection_set_trace_callback_impl(pysqlite_Connection *self,
                                             PyTypeObject *cls,
                                             PyObject *callable);
+
+// Emit compiler warnings when we get to Python 3.15.
+#if PY_VERSION_HEX >= 0x030f00C0
+#  error "Update the clinic input of '_sqlite3.Connection.set_trace_callback'."
+#elif PY_VERSION_HEX >= 0x030f00A0
+#  ifdef _MSC_VER
+#    pragma message ("Update the clinic input of '_sqlite3.Connection.set_trace_callback'.")
+#  else
+#    warning "Update the clinic input of '_sqlite3.Connection.set_trace_callback'."
+#  endif
+#endif
 
 static PyObject *
 pysqlite_connection_set_trace_callback(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -789,6 +955,16 @@ pysqlite_connection_set_trace_callback(pysqlite_Connection *self, PyTypeObject *
     if (!args) {
         goto exit;
     }
+    if (nargs < 1) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing keyword argument 'trace_callback' to "
+                "_sqlite3.Connection.set_trace_callback() is deprecated. "
+                "Parameter 'trace_callback' will become positional-only in Python"
+                " 3.15.", 1))
+        {
+            goto exit;
+        }
+    }
     callable = args[0];
     return_value = pysqlite_connection_set_trace_callback_impl(self, cls, callable);
 
@@ -817,8 +993,8 @@ pysqlite_connection_enable_load_extension(pysqlite_Connection *self, PyObject *a
     PyObject *return_value = NULL;
     int onoff;
 
-    onoff = _PyLong_AsInt(arg);
-    if (onoff == -1 && PyErr_Occurred()) {
+    onoff = PyObject_IsTrue(arg);
+    if (onoff < 0) {
         goto exit;
     }
     return_value = pysqlite_connection_enable_load_extension_impl(self, onoff);
@@ -832,30 +1008,63 @@ exit:
 #if defined(PY_SQLITE_ENABLE_LOAD_EXTENSION)
 
 PyDoc_STRVAR(pysqlite_connection_load_extension__doc__,
-"load_extension($self, name, /)\n"
+"load_extension($self, name, /, *, entrypoint=None)\n"
 "--\n"
 "\n"
 "Load SQLite extension module.");
 
 #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF    \
-    {"load_extension", (PyCFunction)pysqlite_connection_load_extension, METH_O, pysqlite_connection_load_extension__doc__},
+    {"load_extension", _PyCFunction_CAST(pysqlite_connection_load_extension), METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_load_extension__doc__},
 
 static PyObject *
 pysqlite_connection_load_extension_impl(pysqlite_Connection *self,
-                                        const char *extension_name);
+                                        const char *extension_name,
+                                        const char *entrypoint);
 
 static PyObject *
-pysqlite_connection_load_extension(pysqlite_Connection *self, PyObject *arg)
+pysqlite_connection_load_extension(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    const char *extension_name;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("load_extension", "argument", "str", arg);
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(entrypoint), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "entrypoint", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "load_extension",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    const char *extension_name;
+    const char *entrypoint = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("load_extension", "argument 1", "str", args[0]);
         goto exit;
     }
     Py_ssize_t extension_name_length;
-    extension_name = PyUnicode_AsUTF8AndSize(arg, &extension_name_length);
+    extension_name = PyUnicode_AsUTF8AndSize(args[0], &extension_name_length);
     if (extension_name == NULL) {
         goto exit;
     }
@@ -863,7 +1072,29 @@ pysqlite_connection_load_extension(pysqlite_Connection *self, PyObject *arg)
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    return_value = pysqlite_connection_load_extension_impl(self, extension_name);
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[1] == Py_None) {
+        entrypoint = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t entrypoint_length;
+        entrypoint = PyUnicode_AsUTF8AndSize(args[1], &entrypoint_length);
+        if (entrypoint == NULL) {
+            goto exit;
+        }
+        if (strlen(entrypoint) != (size_t)entrypoint_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("load_extension", "argument 'entrypoint'", "str or None", args[1]);
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = pysqlite_connection_load_extension_impl(self, extension_name, entrypoint);
 
 exit:
     return return_value;
@@ -896,9 +1127,6 @@ pysqlite_connection_execute(pysqlite_Connection *self, PyObject *const *args, Py
     }
     if (!PyUnicode_Check(args[0])) {
         _PyArg_BadArgument("execute", "argument 1", "str", args[0]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[0]) == -1) {
         goto exit;
     }
     sql = args[0];
@@ -940,9 +1168,6 @@ pysqlite_connection_executemany(pysqlite_Connection *self, PyObject *const *args
         _PyArg_BadArgument("executemany", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     sql = args[0];
     parameters = args[1];
     return_value = pysqlite_connection_executemany_impl(self, sql, parameters);
@@ -979,21 +1204,67 @@ pysqlite_connection_interrupt(pysqlite_Connection *self, PyObject *Py_UNUSED(ign
 }
 
 PyDoc_STRVAR(pysqlite_connection_iterdump__doc__,
-"iterdump($self, /)\n"
+"iterdump($self, /, *, filter=None)\n"
 "--\n"
 "\n"
-"Returns iterator to the dump of the database in an SQL text format.");
+"Returns iterator to the dump of the database in an SQL text format.\n"
+"\n"
+"  filter\n"
+"    An optional LIKE pattern for database objects to dump");
 
 #define PYSQLITE_CONNECTION_ITERDUMP_METHODDEF    \
-    {"iterdump", (PyCFunction)pysqlite_connection_iterdump, METH_NOARGS, pysqlite_connection_iterdump__doc__},
+    {"iterdump", _PyCFunction_CAST(pysqlite_connection_iterdump), METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_iterdump__doc__},
 
 static PyObject *
-pysqlite_connection_iterdump_impl(pysqlite_Connection *self);
+pysqlite_connection_iterdump_impl(pysqlite_Connection *self,
+                                  PyObject *filter);
 
 static PyObject *
-pysqlite_connection_iterdump(pysqlite_Connection *self, PyObject *Py_UNUSED(ignored))
+pysqlite_connection_iterdump(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return pysqlite_connection_iterdump_impl(self);
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(filter), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"filter", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "iterdump",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *filter = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    filter = args[0];
+skip_optional_kwonly:
+    return_value = pysqlite_connection_iterdump_impl(self, filter);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(pysqlite_connection_backup__doc__,
@@ -1062,7 +1333,7 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *const *args, Py_
         goto skip_optional_kwonly;
     }
     if (args[1]) {
-        pages = _PyLong_AsInt(args[1]);
+        pages = PyLong_AsInt(args[1]);
         if (pages == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -1326,14 +1597,12 @@ deserialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, 
         if (ptr == NULL) {
             goto exit;
         }
-        PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, 0);
+        if (PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, PyBUF_SIMPLE) < 0) {
+            goto exit;
+        }
     }
     else { /* any bytes-like object */
         if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
-            goto exit;
-        }
-        if (!PyBuffer_IsContiguous(&data, 'C')) {
-            _PyArg_BadArgument("deserialize", "argument 1", "contiguous buffer", args[0]);
             goto exit;
         }
     }
@@ -1454,11 +1723,11 @@ setlimit(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("setlimit", nargs, 2, 2)) {
         goto exit;
     }
-    category = _PyLong_AsInt(args[0]);
+    category = PyLong_AsInt(args[0]);
     if (category == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    limit = _PyLong_AsInt(args[1]);
+    limit = PyLong_AsInt(args[1]);
     if (limit == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1489,11 +1758,90 @@ getlimit(pysqlite_Connection *self, PyObject *arg)
     PyObject *return_value = NULL;
     int category;
 
-    category = _PyLong_AsInt(arg);
+    category = PyLong_AsInt(arg);
     if (category == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = getlimit_impl(self, category);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(setconfig__doc__,
+"setconfig($self, op, enable=True, /)\n"
+"--\n"
+"\n"
+"Set a boolean connection configuration option.\n"
+"\n"
+"  op\n"
+"    The configuration verb; one of the sqlite3.SQLITE_DBCONFIG codes.");
+
+#define SETCONFIG_METHODDEF    \
+    {"setconfig", _PyCFunction_CAST(setconfig), METH_FASTCALL, setconfig__doc__},
+
+static PyObject *
+setconfig_impl(pysqlite_Connection *self, int op, int enable);
+
+static PyObject *
+setconfig(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int op;
+    int enable = 1;
+
+    if (!_PyArg_CheckPositional("setconfig", nargs, 1, 2)) {
+        goto exit;
+    }
+    op = PyLong_AsInt(args[0]);
+    if (op == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    enable = PyObject_IsTrue(args[1]);
+    if (enable < 0) {
+        goto exit;
+    }
+skip_optional:
+    return_value = setconfig_impl(self, op, enable);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(getconfig__doc__,
+"getconfig($self, op, /)\n"
+"--\n"
+"\n"
+"Query a boolean connection configuration option.\n"
+"\n"
+"  op\n"
+"    The configuration verb; one of the sqlite3.SQLITE_DBCONFIG codes.");
+
+#define GETCONFIG_METHODDEF    \
+    {"getconfig", (PyCFunction)getconfig, METH_O, getconfig__doc__},
+
+static int
+getconfig_impl(pysqlite_Connection *self, int op);
+
+static PyObject *
+getconfig(pysqlite_Connection *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int op;
+    int _return_value;
+
+    op = PyLong_AsInt(arg);
+    if (op == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    _return_value = getconfig_impl(self, op);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
 
 exit:
     return return_value;
@@ -1518,4 +1866,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=beef3eac690a1f88 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5d4d7e4abe17b164 input=a9049054013a1b77]*/

@@ -1,1 +1,0 @@
-Add running column offset to the tokenizer state to avoid calculating AST column information with pointer arithmetic.

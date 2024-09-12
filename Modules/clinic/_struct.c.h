@@ -3,12 +3,13 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
-
-PyDoc_STRVAR(Struct__doc__,
+PyDoc_STRVAR(Struct___init____doc__,
 "Struct(format)\n"
 "--\n"
 "\n"
@@ -19,13 +20,13 @@ PyDoc_STRVAR(Struct__doc__,
 "\n"
 "See help(struct) for more on format strings.");
 
-static PyObject *
-Struct_impl(PyTypeObject *type, PyObject *format);
+static int
+Struct___init___impl(PyStructObject *self, PyObject *format);
 
-static PyObject *
-Struct(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+static int
+Struct___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    PyObject *return_value = NULL;
+    int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     #define NUM_KEYWORDS 1
@@ -61,7 +62,7 @@ Struct(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     format = fastargs[0];
-    return_value = Struct_impl(type, format);
+    return_value = Struct___init___impl((PyStructObject *)self, format);
 
 exit:
     return return_value;
@@ -91,10 +92,6 @@ Struct_unpack(PyStructObject *self, PyObject *arg)
     Py_buffer buffer = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("unpack", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = Struct_unpack_impl(self, &buffer);
@@ -167,10 +164,6 @@ Struct_unpack_from(PyStructObject *self, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &buffer, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("unpack_from", "argument 'buffer'", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
@@ -299,10 +292,6 @@ unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (PyObject_GetBuffer(args[1], &buffer, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("unpack", "argument 2", "contiguous buffer", args[1]);
-        goto exit;
-    }
     return_value = unpack_impl(module, s_object, &buffer);
 
 exit:
@@ -378,10 +367,6 @@ unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (PyObject_GetBuffer(args[1], &buffer, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("unpack_from", "argument 'buffer'", "contiguous buffer", args[1]);
-        goto exit;
-    }
     if (!noptargs) {
         goto skip_optional_pos;
     }
@@ -451,4 +436,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=f3d6e06f80368998 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=67bd299e5d72fee0 input=a9049054013a1b77]*/

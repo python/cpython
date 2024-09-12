@@ -1,3 +1,7 @@
+# Contains code from https://github.com/MagicStack/uvloop/tree/v0.16.0
+# SPDX-License-Identifier: PSF-2.0 AND (MIT OR Apache-2.0)
+# SPDX-FileCopyrightText: Copyright (c) 2015-2021 MagicStack Inc.  http://magic.io
+
 import collections
 import enum
 import warnings
@@ -107,8 +111,11 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         protocol's connection_lost() method will (eventually) called
         with None as its argument.
         """
-        self._closed = True
-        self._ssl_protocol._start_shutdown()
+        if not self._closed:
+            self._closed = True
+            self._ssl_protocol._start_shutdown()
+        else:
+            self._ssl_protocol = None
 
     def __del__(self, _warnings=warnings):
         if not self._closed:
@@ -196,12 +203,6 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         """Return the current size of the read buffer."""
         return self._ssl_protocol._get_read_buffer_size()
 
-    def get_write_buffer_limits(self):
-        """Get the high and low watermarks for write flow control.
-        Return a tuple (low, high) where low and high are
-        positive number of bytes."""
-        return self._ssl_protocol._transport.get_write_buffer_limits()
-
     @property
     def _protocol_paused(self):
         # Required for sendfile fallback pause_writing/resume_writing logic
@@ -246,12 +247,12 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         The protocol's connection_lost() method will (eventually) be
         called with None as its argument.
         """
-        self._closed = True
-        self._ssl_protocol._abort()
+        self._force_close(None)
 
     def _force_close(self, exc):
         self._closed = True
-        self._ssl_protocol._abort(exc)
+        if self._ssl_protocol is not None:
+            self._ssl_protocol._abort(exc)
 
     def _test__append_write_backlog(self, data):
         # for test only
@@ -541,7 +542,7 @@ class SSLProtocol(protocols.BufferedProtocol):
         # start handshake timeout count down
         self._handshake_timeout_handle = \
             self._loop.call_later(self._ssl_handshake_timeout,
-                                  lambda: self._check_handshake_timeout())
+                                  self._check_handshake_timeout)
 
         self._do_handshake()
 
@@ -578,6 +579,7 @@ class SSLProtocol(protocols.BufferedProtocol):
 
             peercert = sslobj.getpeercert()
         except Exception as exc:
+            handshake_exc = None
             self._set_state(SSLProtocolState.UNWRAPPED)
             if isinstance(exc, ssl.CertificateError):
                 msg = 'SSL handshake failed on verifying the certificate'
@@ -616,12 +618,12 @@ class SSLProtocol(protocols.BufferedProtocol):
         if self._app_transport is not None:
             self._app_transport._closed = True
         if self._state == SSLProtocolState.DO_HANDSHAKE:
-            self._abort()
+            self._abort(None)
         else:
             self._set_state(SSLProtocolState.FLUSHING)
             self._shutdown_timeout_handle = self._loop.call_later(
                 self._ssl_shutdown_timeout,
-                lambda: self._check_shutdown_timeout()
+                self._check_shutdown_timeout
             )
             self._do_flush()
 
@@ -663,10 +665,10 @@ class SSLProtocol(protocols.BufferedProtocol):
         else:
             self._loop.call_soon(self._transport.close)
 
-    def _abort(self):
+    def _abort(self, exc):
         self._set_state(SSLProtocolState.UNWRAPPED)
         if self._transport is not None:
-            self._transport.abort()
+            self._transport._force_close(exc)
 
     # Outgoing flow
 
@@ -760,7 +762,7 @@ class SSLProtocol(protocols.BufferedProtocol):
                     else:
                         break
                 else:
-                    self._loop.call_soon(lambda: self._do_read())
+                    self._loop.call_soon(self._do_read)
         except SSLAgainErrors:
             pass
         if offset > 0:

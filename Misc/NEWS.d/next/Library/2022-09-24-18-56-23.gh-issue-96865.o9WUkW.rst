@@ -1,9 +1,0 @@
-fix Flag to use boundary CONFORM
-
-This restores previous Flag behavior of allowing flags with non-sequential values to be combined; e.g.
-
-    class Skip(Flag):
-        TWO = 2
-        EIGHT = 8
-
-    Skip.TWO | Skip.EIGHT -> <Skip.TWO|EIGHT: 10>

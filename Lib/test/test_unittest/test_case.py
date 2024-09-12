@@ -304,7 +304,8 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
             def test(self):
                 pass
 
-        Foo('test').run()
+        with self.assertWarns(RuntimeWarning):
+            Foo('test').run()
 
     def test_deprecation_of_return_val_from_test(self):
         # Issue 41322 - deprecate return of value that is not None from a test
@@ -324,18 +325,37 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test1', str(w.warning))
         self.assertEqual(w.filename, __file__)
+        self.assertIn("returned 'int'", str(w.warning))
 
         with self.assertWarns(DeprecationWarning) as w:
             Foo('test2').run()
         self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test2', str(w.warning))
         self.assertEqual(w.filename, __file__)
+        self.assertIn("returned 'generator'", str(w.warning))
 
         with self.assertWarns(DeprecationWarning) as w:
             Foo('test3').run()
         self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test3', str(w.warning))
         self.assertEqual(w.filename, __file__)
+        self.assertIn(f'returned {Nothing.__name__!r}', str(w.warning))
+
+    def test_deprecation_of_return_val_from_test_async_method(self):
+        class Foo(unittest.TestCase):
+            async def test1(self):
+                return 1
+
+        with self.assertWarns(DeprecationWarning) as w:
+            Foo('test1').run()
+        self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
+        self.assertIn('test1', str(w.warning))
+        self.assertEqual(w.filename, __file__)
+        self.assertIn("returned 'coroutine'", str(w.warning))
+        self.assertIn(
+            'Maybe you forgot to use IsolatedAsyncioTestCase as the base class?',
+            str(w.warning),
+        )
 
     def _check_call_order__subtests(self, result, events, expected_events):
         class Foo(Test.LoggingTestCase):
@@ -1131,6 +1151,8 @@ test case
             # need to remove the first line of the error message
             error = str(e).split('\n', 1)[1]
             self.assertEqual(sample_text_error, error)
+        else:
+            self.fail(f'{self.failureException} not raised')
 
     def testAssertEqualSingleLine(self):
         sample_text = "laden swallows fly slowly"
@@ -1147,6 +1169,74 @@ test case
             # need to remove the first line of the error message
             error = str(e).split('\n', 1)[1]
             self.assertEqual(sample_text_error, error)
+        else:
+            self.fail(f'{self.failureException} not raised')
+
+    def testAssertEqualwithEmptyString(self):
+        '''Verify when there is an empty string involved, the diff output
+         does not treat the empty string as a single empty line. It should
+         instead be handled as a non-line.
+        '''
+        sample_text = ''
+        revised_sample_text = 'unladen swallows fly quickly'
+        sample_text_error = '''\
++ unladen swallows fly quickly
+'''
+        try:
+            self.assertEqual(sample_text, revised_sample_text)
+        except self.failureException as e:
+            # need to remove the first line of the error message
+            error = str(e).split('\n', 1)[1]
+            self.assertEqual(sample_text_error, error)
+        else:
+            self.fail(f'{self.failureException} not raised')
+
+    def testAssertEqualMultipleLinesMissingNewlineTerminator(self):
+        '''Verifying format of diff output from assertEqual involving strings
+         with multiple lines, but missing the terminating newline on both.
+        '''
+        sample_text = 'laden swallows\nfly sloely'
+        revised_sample_text = 'laden swallows\nfly slowly'
+        sample_text_error = '''\
+  laden swallows
+- fly sloely
+?        ^
++ fly slowly
+?        ^
+'''
+        try:
+            self.assertEqual(sample_text, revised_sample_text)
+        except self.failureException as e:
+            # need to remove the first line of the error message
+            error = str(e).split('\n', 1)[1]
+            self.assertEqual(sample_text_error, error)
+        else:
+            self.fail(f'{self.failureException} not raised')
+
+    def testAssertEqualMultipleLinesMismatchedNewlinesTerminators(self):
+        '''Verifying format of diff output from assertEqual involving strings
+         with multiple lines and mismatched newlines. The output should
+         include a - on it's own line to indicate the newline difference
+         between the two strings
+        '''
+        sample_text = 'laden swallows\nfly sloely\n'
+        revised_sample_text = 'laden swallows\nfly slowly'
+        sample_text_error = '''\
+  laden swallows
+- fly sloely
+?        ^
++ fly slowly
+?        ^
+-\x20
+'''
+        try:
+            self.assertEqual(sample_text, revised_sample_text)
+        except self.failureException as e:
+            # need to remove the first line of the error message
+            error = str(e).split('\n', 1)[1]
+            self.assertEqual(sample_text_error, error)
+        else:
+            self.fail(f'{self.failureException} not raised')
 
     def testEqualityBytesWarning(self):
         if sys.flags.bytes_warning:

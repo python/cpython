@@ -2,11 +2,12 @@
 /* Method object implementation */
 
 #include "Python.h"
+#include "pycore_call.h"          // _Py_CheckFunctionResult()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "structmember.h"         // PyMemberDef
+
 
 /* undefine macro trampoline to PyCFunction_NewEx */
 #undef PyCFunction_New
@@ -88,8 +89,7 @@ PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *c
         if (om == NULL) {
             return NULL;
         }
-        Py_INCREF(cls);
-        om->mm_class = cls;
+        om->mm_class = (PyTypeObject*)Py_NewRef(cls);
         op = (PyCFunctionObject *)om;
     } else {
         if (cls) {
@@ -106,10 +106,8 @@ PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *c
 
     op->m_weakreflist = NULL;
     op->m_ml = ml;
-    Py_XINCREF(self);
-    op->m_self = self;
-    Py_XINCREF(module);
-    op->m_module = module;
+    op->m_self = Py_XNewRef(self);
+    op->m_module = Py_XNewRef(module);
     op->vectorcall = vectorcall;
     _PyObject_GC_TRACK(op);
     return (PyObject *)op;
@@ -194,7 +192,9 @@ static PyMethodDef meth_methods[] = {
 static PyObject *
 meth_get__text_signature__(PyCFunctionObject *m, void *closure)
 {
-    return _PyType_GetTextSignatureFromInternalDoc(m->m_ml->ml_name, m->m_ml->ml_doc);
+    return _PyType_GetTextSignatureFromInternalDoc(m->m_ml->ml_name,
+                                                   m->m_ml->ml_doc,
+                                                   m->m_ml->ml_flags);
 }
 
 static PyObject *
@@ -260,8 +260,7 @@ meth_get__self__(PyCFunctionObject *m, void *closure)
     self = PyCFunction_GET_SELF(m);
     if (self == NULL)
         self = Py_None;
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 static PyGetSetDef meth_getsets [] = {
@@ -276,7 +275,7 @@ static PyGetSetDef meth_getsets [] = {
 #define OFF(x) offsetof(PyCFunctionObject, x)
 
 static PyMemberDef meth_members[] = {
-    {"__module__",    T_OBJECT,     OFF(m_module), 0},
+    {"__module__",    _Py_T_OBJECT,     OFF(m_module), 0},
     {NULL}
 };
 
@@ -314,15 +313,14 @@ meth_richcompare(PyObject *self, PyObject *other, int op)
         res = eq ? Py_True : Py_False;
     else
         res = eq ? Py_False : Py_True;
-    Py_INCREF(res);
-    return res;
+    return Py_NewRef(res);
 }
 
 static Py_hash_t
 meth_hash(PyCFunctionObject *a)
 {
     Py_hash_t x, y;
-    x = _Py_HashPointer(a->m_self);
+    x = PyObject_GenericHash(a->m_self);
     y = _Py_HashPointer((void*)(a->m_ml->ml_meth));
     x ^= y;
     if (x == -1)
@@ -419,7 +417,7 @@ cfunction_vectorcall_FASTCALL(
         return NULL;
     }
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    _PyCFunctionFast meth = (_PyCFunctionFast)
+    PyCFunctionFast meth = (PyCFunctionFast)
                             cfunction_enter_call(tstate, func);
     if (meth == NULL) {
         return NULL;
@@ -435,7 +433,7 @@ cfunction_vectorcall_FASTCALL_KEYWORDS(
 {
     PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    _PyCFunctionFastWithKeywords meth = (_PyCFunctionFastWithKeywords)
+    PyCFunctionFastWithKeywords meth = (PyCFunctionFastWithKeywords)
                                         cfunction_enter_call(tstate, func);
     if (meth == NULL) {
         return NULL;
@@ -554,11 +552,3 @@ cfunction_call(PyObject *func, PyObject *args, PyObject *kwargs)
     }
     return _Py_CheckFunctionResult(tstate, func, result, NULL);
 }
-
-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-#include <emscripten.h>
-
-EM_JS(PyObject*, _PyCFunctionWithKeywords_TrampolineCall, (PyCFunctionWithKeywords func, PyObject *self, PyObject *args, PyObject *kw), {
-    return wasmTable.get(func)(self, args, kw);
-});
-#endif

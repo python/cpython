@@ -1,5 +1,5 @@
-:mod:`zoneinfo` --- IANA time zone support
-==========================================
+:mod:`!zoneinfo` --- IANA time zone support
+===========================================
 
 .. module:: zoneinfo
     :synopsis: IANA time zone support
@@ -9,13 +9,15 @@
 .. moduleauthor:: Paul Ganssle <paul@ganssle.io>
 .. sectionauthor:: Paul Ganssle <paul@ganssle.io>
 
+**Source code:** :source:`Lib/zoneinfo`
+
 --------------
 
 The :mod:`zoneinfo` module provides a concrete time zone implementation to
 support the IANA time zone database as originally specified in :pep:`615`. By
 default, :mod:`zoneinfo` uses the system's time zone data if available; if no
 system time zone data is available, the library will fall back to using the
-first-party `tzdata`_ package available on PyPI.
+first-party :pypi:`tzdata` package available on PyPI.
 
 .. seealso::
 
@@ -23,7 +25,7 @@ first-party `tzdata`_ package available on PyPI.
         Provides the :class:`~datetime.time` and :class:`~datetime.datetime`
         types with which the :class:`ZoneInfo` class is designed to be used.
 
-    Package `tzdata`_
+    Package :pypi:`tzdata`
         First-party package maintained by the CPython core developers to supply
         time zone data via PyPI.
 
@@ -91,7 +93,7 @@ Data sources
 
 The ``zoneinfo`` module does not directly provide time zone data, and instead
 pulls time zone information from the system time zone database or the
-first-party PyPI package `tzdata`_, if available. Some systems, including
+first-party PyPI package :pypi:`tzdata`, if available. Some systems, including
 notably Windows systems, do not have an IANA database available, and so for
 projects targeting cross-platform compatibility that require time zone data, it
 is recommended to declare a dependency on tzdata. If neither system data nor
@@ -239,7 +241,7 @@ The following class methods are also available:
     .. warning::
 
         Invoking this function may change the semantics of datetimes using
-        ``ZoneInfo`` in surprising ways; this modifies process-wide global state
+        ``ZoneInfo`` in surprising ways; this modifies module state
         and thus may have wide-ranging effects. Only use it if you know that you
         need to.
 
@@ -411,5 +413,3 @@ Exceptions and warnings
     be filtered out, such as a relative path.
 
 .. Links and references:
-
-.. _tzdata: https://pypi.org/project/tzdata/

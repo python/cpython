@@ -6,51 +6,48 @@
    Stuff shared by all thread_*.h files is collected here. */
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _PyEval_MakePendingCalls()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_structseq.h"     // _PyStructSequence_FiniType()
-
-#ifndef _POSIX_THREADS
-/* This means pthreads are not implemented in libc headers, hence the macro
-   not present in unistd.h. But they still can be implemented as an external
-   library (e.g. gnu pth in pthread emulation) */
-# ifdef HAVE_PTHREAD_H
-#  include <pthread.h> /* _POSIX_THREADS */
-# endif
-#endif
+#include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
+#include "pycore_pythread.h"      // _POSIX_THREADS
 
 #ifndef DONT_HAVE_STDIO_H
-#include <stdio.h>
+#  include <stdio.h>
 #endif
 
 #include <stdlib.h>
 
-#ifndef _POSIX_THREADS
 
-/* Check if we're running on HP-UX and _SC_THREADS is defined. If so, then
-   enough of the Posix threads package is implemented to support python
-   threads.
-
-   This is valid for HP-UX 11.23 running on an ia64 system. If needed, add
-   a check of __ia64 to verify that we're running on an ia64 system instead
-   of a pa-risc system.
-*/
-#ifdef __hpux
-#ifdef _SC_THREADS
-#define _POSIX_THREADS
+// Define PY_TIMEOUT_MAX constant.
+#ifdef _POSIX_THREADS
+   // PyThread_acquire_lock_timed() uses (us * 1000) to convert microseconds
+   // to nanoseconds.
+#  define PY_TIMEOUT_MAX_VALUE (LLONG_MAX / 1000)
+#elif defined (NT_THREADS)
+   // WaitForSingleObject() accepts timeout in milliseconds in the range
+   // [0; 0xFFFFFFFE] (DWORD type). INFINITE value (0xFFFFFFFF) means no
+   // timeout. 0xFFFFFFFE milliseconds is around 49.7 days.
+#  if 0xFFFFFFFELL < LLONG_MAX / 1000
+#    define PY_TIMEOUT_MAX_VALUE (0xFFFFFFFELL * 1000)
+#  else
+#    define PY_TIMEOUT_MAX_VALUE LLONG_MAX
+#  endif
+#else
+#  define PY_TIMEOUT_MAX_VALUE LLONG_MAX
 #endif
-#endif
+const long long PY_TIMEOUT_MAX = PY_TIMEOUT_MAX_VALUE;
 
-#endif /* _POSIX_THREADS */
-
-static int initialized;
 
 static void PyThread__init_thread(void); /* Forward */
+
+#define initialized _PyRuntime.threads.initialized
 
 void
 PyThread_init_thread(void)
 {
-    if (initialized)
+    if (initialized) {
         return;
+    }
     initialized = 1;
     PyThread__init_thread();
 }
@@ -58,7 +55,7 @@ PyThread_init_thread(void)
 #if defined(HAVE_PTHREAD_STUBS)
 #   define PYTHREAD_NAME "pthread-stubs"
 #   include "thread_pthread_stubs.h"
-#elif defined(_POSIX_THREADS)
+#elif defined(_USE_PTHREADS)  /* AKA _PTHREADS */
 #   if defined(__EMSCRIPTEN__) && !defined(__EMSCRIPTEN_PTHREADS__)
 #     define PYTHREAD_NAME "pthread-stubs"
 #   else
@@ -93,6 +90,89 @@ PyThread_set_stacksize(size_t size)
 #else
     return -2;
 #endif
+}
+
+
+int
+PyThread_ParseTimeoutArg(PyObject *arg, int blocking, PY_TIMEOUT_T *timeout_p)
+{
+    assert(_PyTime_FromSeconds(-1) == PyThread_UNSET_TIMEOUT);
+    if (arg == NULL || arg == Py_None) {
+        *timeout_p = blocking ? PyThread_UNSET_TIMEOUT : 0;
+        return 0;
+    }
+    if (!blocking) {
+        PyErr_SetString(PyExc_ValueError,
+                        "can't specify a timeout for a non-blocking call");
+        return -1;
+    }
+
+    PyTime_t timeout;
+    if (_PyTime_FromSecondsObject(&timeout, arg, _PyTime_ROUND_TIMEOUT) < 0) {
+        return -1;
+    }
+    if (timeout < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "timeout value must be a non-negative number");
+        return -1;
+    }
+
+    if (_PyTime_AsMicroseconds(timeout,
+                               _PyTime_ROUND_TIMEOUT) > PY_TIMEOUT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "timeout value is too large");
+        return -1;
+    }
+    *timeout_p = timeout;
+    return 0;
+}
+
+PyLockStatus
+PyThread_acquire_lock_timed_with_retries(PyThread_type_lock lock,
+                                         PY_TIMEOUT_T timeout)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyTime_t endtime = 0;
+    if (timeout > 0) {
+        endtime = _PyDeadline_Init(timeout);
+    }
+
+    PyLockStatus r;
+    do {
+        PyTime_t microseconds;
+        microseconds = _PyTime_AsMicroseconds(timeout, _PyTime_ROUND_CEILING);
+
+        /* first a simple non-blocking try without releasing the GIL */
+        r = PyThread_acquire_lock_timed(lock, 0, 0);
+        if (r == PY_LOCK_FAILURE && microseconds != 0) {
+            Py_BEGIN_ALLOW_THREADS
+            r = PyThread_acquire_lock_timed(lock, microseconds, 1);
+            Py_END_ALLOW_THREADS
+        }
+
+        if (r == PY_LOCK_INTR) {
+            /* Run signal handlers if we were interrupted.  Propagate
+             * exceptions from signal handlers, such as KeyboardInterrupt, by
+             * passing up PY_LOCK_INTR.  */
+            if (_PyEval_MakePendingCalls(tstate) < 0) {
+                return PY_LOCK_INTR;
+            }
+
+            /* If we're using a timeout, recompute the timeout after processing
+             * signals, since those can take time.  */
+            if (timeout > 0) {
+                timeout = _PyDeadline_Get(endtime);
+
+                /* Check for negative values, since those mean block forever.
+                 */
+                if (timeout < 0) {
+                    r = PY_LOCK_FAILURE;
+                }
+            }
+        }
+    } while (r == PY_LOCK_INTR);  /* Retry if we were interrupted. */
+
+    return r;
 }
 
 
@@ -161,10 +241,9 @@ PyThread_GetInfo(void)
     int len;
 #endif
 
-    if (ThreadInfoType.tp_name == 0) {
-        if (_PyStructSequence_InitBuiltin(&ThreadInfoType,
-                                          &threadinfo_desc) < 0)
-            return NULL;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyStructSequence_InitBuiltin(interp, &ThreadInfoType, &threadinfo_desc) < 0) {
+        return NULL;
     }
 
     threadinfo = PyStructSequence_New(&ThreadInfoType);
@@ -207,8 +286,7 @@ PyThread_GetInfo(void)
     if (value == NULL)
 #endif
     {
-        Py_INCREF(Py_None);
-        value = Py_None;
+        value = Py_NewRef(Py_None);
     }
     PyStructSequence_SET_ITEM(threadinfo, pos++, value);
     return threadinfo;
@@ -218,9 +296,5 @@ PyThread_GetInfo(void)
 void
 _PyThread_FiniType(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-
-    _PyStructSequence_FiniType(&ThreadInfoType);
+    _PyStructSequence_FiniBuiltin(interp, &ThreadInfoType);
 }

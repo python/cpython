@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_ast.h"           // expr_ty
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_runtime.h"       // _Py_ID()
 #include <float.h>                // DBL_MAX_10_EXP
 #include <stdbool.h>
@@ -9,11 +10,12 @@
  * See ast.unparse for a full unparser (written in Python)
  */
 
-_Py_DECLARE_STR(open_br, "{");
 _Py_DECLARE_STR(dbl_open_br, "{{");
-_Py_DECLARE_STR(close_br, "}");
 _Py_DECLARE_STR(dbl_close_br, "}}");
-static PyObject *_str_replace_inf;
+
+/* We would statically initialize this if doing so were simple enough. */
+#define _str_replace_inf(interp) \
+    _Py_INTERP_CACHED_OBJECT(interp, str_replace_inf)
 
 /* Forward declarations for recursion via helper functions. */
 static PyObject *
@@ -75,13 +77,14 @@ append_repr(_PyUnicodeWriter *writer, PyObject *obj)
         return -1;
     }
 
-    if ((PyFloat_CheckExact(obj) && Py_IS_INFINITY(PyFloat_AS_DOUBLE(obj))) ||
+    if ((PyFloat_CheckExact(obj) && isinf(PyFloat_AS_DOUBLE(obj))) ||
        PyComplex_CheckExact(obj))
     {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
         PyObject *new_repr = PyUnicode_Replace(
             repr,
             &_Py_ID(inf),
-            _str_replace_inf,
+            _str_replace_inf(interp),
             -1
         );
         Py_DECREF(repr);
@@ -575,11 +578,13 @@ escape_braces(PyObject *orig)
 {
     PyObject *temp;
     PyObject *result;
-    temp = PyUnicode_Replace(orig, &_Py_STR(open_br), &_Py_STR(dbl_open_br), -1);
+    temp = PyUnicode_Replace(orig, _Py_LATIN1_CHR('{'),
+                             &_Py_STR(dbl_open_br), -1);
     if (!temp) {
         return NULL;
     }
-    result = PyUnicode_Replace(temp, &_Py_STR(close_br), &_Py_STR(dbl_close_br), -1);
+    result = PyUnicode_Replace(temp, _Py_LATIN1_CHR('}'),
+                               &_Py_STR(dbl_close_br), -1);
     Py_DECREF(temp);
     return result;
 }
@@ -673,7 +678,7 @@ append_formattedvalue(_PyUnicodeWriter *writer, expr_ty e)
     if (!temp_fv_str) {
         return -1;
     }
-    if (PyUnicode_Find(temp_fv_str, &_Py_STR(open_br), 0, 1, 1) == 0) {
+    if (PyUnicode_Find(temp_fv_str, _Py_LATIN1_CHR('{'), 0, 1, 1) == 0) {
         /* Expression starts with a brace, split it with a space from the outer
            one. */
         outer_brace = "{ ";
@@ -916,9 +921,13 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
 static int
 maybe_init_static_strings(void)
 {
-    if (!_str_replace_inf &&
-        !(_str_replace_inf = PyUnicode_FromFormat("1e%d", 1 + DBL_MAX_10_EXP))) {
-        return -1;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_str_replace_inf(interp) == NULL) {
+        PyObject *tmp = PyUnicode_FromFormat("1e%d", 1 + DBL_MAX_10_EXP);
+        if (tmp == NULL) {
+            return -1;
+        }
+        _str_replace_inf(interp) = tmp;
     }
     return 0;
 }

@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_sre_getcodesize__doc__,
 "getcodesize($module, /)\n"
@@ -53,7 +54,7 @@ _sre_ascii_iscased(PyObject *module, PyObject *arg)
     int character;
     int _return_value;
 
-    character = _PyLong_AsInt(arg);
+    character = PyLong_AsInt(arg);
     if (character == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -85,7 +86,7 @@ _sre_unicode_iscased(PyObject *module, PyObject *arg)
     int character;
     int _return_value;
 
-    character = _PyLong_AsInt(arg);
+    character = PyLong_AsInt(arg);
     if (character == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -117,7 +118,7 @@ _sre_ascii_tolower(PyObject *module, PyObject *arg)
     int character;
     int _return_value;
 
-    character = _PyLong_AsInt(arg);
+    character = PyLong_AsInt(arg);
     if (character == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -149,7 +150,7 @@ _sre_unicode_tolower(PyObject *module, PyObject *arg)
     int character;
     int _return_value;
 
-    character = _PyLong_AsInt(arg);
+    character = PyLong_AsInt(arg);
     if (character == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1031,7 +1032,7 @@ _sre_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         goto exit;
     }
     pattern = args[0];
-    flags = _PyLong_AsInt(args[1]);
+    flags = PyLong_AsInt(args[1]);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1063,6 +1064,45 @@ _sre_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     }
     indexgroup = args[5];
     return_value = _sre_compile_impl(module, pattern, flags, code, groups, groupindex, indexgroup);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_sre_template__doc__,
+"template($module, pattern, template, /)\n"
+"--\n"
+"\n"
+"\n"
+"\n"
+"  template\n"
+"    A list containing interleaved literal strings (str or bytes) and group\n"
+"    indices (int), as returned by re._parser.parse_template():\n"
+"        [literal1, group1, ..., literalN, groupN]");
+
+#define _SRE_TEMPLATE_METHODDEF    \
+    {"template", _PyCFunction_CAST(_sre_template), METH_FASTCALL, _sre_template__doc__},
+
+static PyObject *
+_sre_template_impl(PyObject *module, PyObject *pattern, PyObject *template);
+
+static PyObject *
+_sre_template(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *pattern;
+    PyObject *template;
+
+    if (!_PyArg_CheckPositional("template", nargs, 2, 2)) {
+        goto exit;
+    }
+    pattern = args[0];
+    if (!PyList_Check(args[1])) {
+        _PyArg_BadArgument("template", "argument 2", "list", args[1]);
+        goto exit;
+    }
+    template = args[1];
+    return_value = _sre_template_impl(module, pattern, template);
 
 exit:
     return return_value;
@@ -1394,7 +1434,7 @@ _sre_SRE_Scanner_match_impl(ScannerObject *self, PyTypeObject *cls);
 static PyObject *
 _sre_SRE_Scanner_match(ScannerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "match() takes no arguments");
         return NULL;
     }
@@ -1415,10 +1455,10 @@ _sre_SRE_Scanner_search_impl(ScannerObject *self, PyTypeObject *cls);
 static PyObject *
 _sre_SRE_Scanner_search(ScannerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "search() takes no arguments");
         return NULL;
     }
     return _sre_SRE_Scanner_search_impl(self, cls);
 }
-/*[clinic end generated code: output=14ea86f85c130a7b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c3e711f0b2f43d66 input=a9049054013a1b77]*/

@@ -2,10 +2,11 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_VectorcallTstate()
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "structmember.h"         // PyMemberDef
+
 
 #include "clinic/classobject.c.h"
 
@@ -48,6 +49,7 @@ method_vectorcall(PyObject *method, PyObject *const *args,
     PyObject *self = PyMethod_GET_SELF(method);
     PyObject *func = PyMethod_GET_FUNCTION(method);
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    assert(nargs == 0 || args[nargs-1]);
 
     PyObject *result;
     if (nargsf & PY_VECTORCALL_ARGUMENTS_OFFSET) {
@@ -56,6 +58,7 @@ method_vectorcall(PyObject *method, PyObject *const *args,
         nargs += 1;
         PyObject *tmp = newargs[0];
         newargs[0] = self;
+        assert(newargs[nargs-1]);
         result = _PyObject_VectorcallTstate(tstate, func, newargs,
                                             nargs, kwnames);
         newargs[0] = tmp;
@@ -113,10 +116,8 @@ PyMethod_New(PyObject *func, PyObject *self)
         return NULL;
     }
     im->im_weakreflist = NULL;
-    Py_INCREF(func);
-    im->im_func = func;
-    Py_INCREF(self);
-    im->im_self = self;
+    im->im_func = Py_NewRef(func);
+    im->im_self = Py_NewRef(self);
     im->vectorcall = method_vectorcall;
     _PyObject_GC_TRACK(im);
     return (PyObject *)im;
@@ -152,9 +153,9 @@ static PyMethodDef method_methods[] = {
 #define MO_OFF(x) offsetof(PyMethodObject, x)
 
 static PyMemberDef method_memberlist[] = {
-    {"__func__", T_OBJECT, MO_OFF(im_func), READONLY,
+    {"__func__", _Py_T_OBJECT, MO_OFF(im_func), Py_READONLY,
      "the function (or other callable) implementing a method"},
-    {"__self__", T_OBJECT, MO_OFF(im_self), READONLY,
+    {"__self__", _Py_T_OBJECT, MO_OFF(im_self), Py_READONLY,
      "the instance to which a method is bound"},
     {NULL}      /* Sentinel */
 };
@@ -183,19 +184,21 @@ method_getattro(PyObject *obj, PyObject *name)
     PyObject *descr = NULL;
 
     {
-        if (tp->tp_dict == NULL) {
+        if (!_PyType_IsReady(tp)) {
             if (PyType_Ready(tp) < 0)
                 return NULL;
         }
-        descr = _PyType_Lookup(tp, name);
+        descr = _PyType_LookupRef(tp, name);
     }
 
     if (descr != NULL) {
         descrgetfunc f = TP_DESCR_GET(Py_TYPE(descr));
-        if (f != NULL)
-            return f(descr, obj, (PyObject *)Py_TYPE(obj));
+        if (f != NULL) {
+            PyObject *res = f(descr, obj, (PyObject *)Py_TYPE(obj));
+            Py_DECREF(descr);
+            return res;
+        }
         else {
-            Py_INCREF(descr);
             return descr;
         }
     }
@@ -267,8 +270,7 @@ method_richcompare(PyObject *self, PyObject *other, int op)
         res = eq ? Py_True : Py_False;
     else
         res = eq ? Py_False : Py_True;
-    Py_INCREF(res);
-    return res;
+    return Py_NewRef(res);
 }
 
 static PyObject *
@@ -279,16 +281,15 @@ method_repr(PyMethodObject *a)
     PyObject *funcname, *result;
     const char *defname = "?";
 
-    if (_PyObject_LookupAttr(func, &_Py_ID(__qualname__), &funcname) < 0 ||
+    if (PyObject_GetOptionalAttr(func, &_Py_ID(__qualname__), &funcname) < 0 ||
         (funcname == NULL &&
-         _PyObject_LookupAttr(func, &_Py_ID(__name__), &funcname) < 0))
+         PyObject_GetOptionalAttr(func, &_Py_ID(__name__), &funcname) < 0))
     {
         return NULL;
     }
 
     if (funcname != NULL && !PyUnicode_Check(funcname)) {
-        Py_DECREF(funcname);
-        funcname = NULL;
+        Py_SETREF(funcname, NULL);
     }
 
     /* XXX Shouldn't use repr()/%R here! */
@@ -303,7 +304,7 @@ static Py_hash_t
 method_hash(PyMethodObject *a)
 {
     Py_hash_t x, y;
-    x = _Py_HashPointer(a->im_self);
+    x = PyObject_GenericHash(a->im_self);
     y = PyObject_Hash(a->im_func);
     if (y == -1)
         return -1;
@@ -319,6 +320,13 @@ method_traverse(PyMethodObject *im, visitproc visit, void *arg)
     Py_VISIT(im->im_func);
     Py_VISIT(im->im_self);
     return 0;
+}
+
+static PyObject *
+method_descr_get(PyObject *meth, PyObject *obj, PyObject *cls)
+{
+    Py_INCREF(meth);
+    return meth;
 }
 
 PyTypeObject PyMethod_Type = {
@@ -341,6 +349,7 @@ PyTypeObject PyMethod_Type = {
     .tp_methods = method_methods,
     .tp_members = method_memberlist,
     .tp_getset = method_getset,
+    .tp_descr_get = method_descr_get,
     .tp_new = method_new,
 };
 
@@ -359,8 +368,7 @@ PyInstanceMethod_New(PyObject *func) {
     method = PyObject_GC_New(PyInstanceMethodObject,
                              &PyInstanceMethod_Type);
     if (method == NULL) return NULL;
-    Py_INCREF(func);
-    method->func = func;
+    method->func = Py_NewRef(func);
     _PyObject_GC_TRACK(method);
     return (PyObject *)method;
 }
@@ -378,7 +386,7 @@ PyInstanceMethod_Function(PyObject *im)
 #define IMO_OFF(x) offsetof(PyInstanceMethodObject, x)
 
 static PyMemberDef instancemethod_memberlist[] = {
-    {"__func__", T_OBJECT, IMO_OFF(func), READONLY,
+    {"__func__", _Py_T_OBJECT, IMO_OFF(func), Py_READONLY,
      "the function (or other callable) implementing a method"},
     {NULL}      /* Sentinel */
 };
@@ -401,18 +409,20 @@ instancemethod_getattro(PyObject *self, PyObject *name)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject *descr = NULL;
 
-    if (tp->tp_dict == NULL) {
+    if (!_PyType_IsReady(tp)) {
         if (PyType_Ready(tp) < 0)
             return NULL;
     }
-    descr = _PyType_Lookup(tp, name);
+    descr = _PyType_LookupRef(tp, name);
 
     if (descr != NULL) {
         descrgetfunc f = TP_DESCR_GET(Py_TYPE(descr));
-        if (f != NULL)
-            return f(descr, self, (PyObject *)Py_TYPE(self));
+        if (f != NULL) {
+            PyObject *res = f(descr, self, (PyObject *)Py_TYPE(self));
+            Py_DECREF(descr);
+            return res;
+        }
         else {
-            Py_INCREF(descr);
             return descr;
         }
     }
@@ -443,8 +453,7 @@ static PyObject *
 instancemethod_descr_get(PyObject *descr, PyObject *obj, PyObject *type) {
     PyObject *func = PyInstanceMethod_GET_FUNCTION(descr);
     if (obj == NULL) {
-        Py_INCREF(func);
-        return func;
+        return Py_NewRef(func);
     }
     else
         return PyMethod_New(func, obj);
@@ -472,8 +481,7 @@ instancemethod_richcompare(PyObject *self, PyObject *other, int op)
         res = eq ? Py_True : Py_False;
     else
         res = eq ? Py_False : Py_True;
-    Py_INCREF(res);
-    return res;
+    return Py_NewRef(res);
 }
 
 static PyObject *
@@ -488,12 +496,11 @@ instancemethod_repr(PyObject *self)
         return NULL;
     }
 
-    if (_PyObject_LookupAttr(func, &_Py_ID(__name__), &funcname) < 0) {
+    if (PyObject_GetOptionalAttr(func, &_Py_ID(__name__), &funcname) < 0) {
         return NULL;
     }
     if (funcname != NULL && !PyUnicode_Check(funcname)) {
-        Py_DECREF(funcname);
-        funcname = NULL;
+        Py_SETREF(funcname, NULL);
     }
 
     result = PyUnicode_FromFormat("<instancemethod %V at %p>",

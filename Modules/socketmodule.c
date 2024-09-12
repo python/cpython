@@ -105,13 +105,14 @@ Local naming conventions:
 # pragma weak inet_aton
 #endif
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_capsule.h"       // _PyCapsule_SetTraverse()
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
-#include "structmember.h"         // PyMemberDef
+#include "pycore_moduleobject.h"  // _PyModule_GetState
+#include "pycore_time.h"          // _PyTime_AsMilliseconds()
 
 #ifdef _Py_MEMORY_SANITIZER
-# include <sanitizer/msan_interface.h>
+#  include <sanitizer/msan_interface.h>
 #endif
 
 /* Socket object documentation */
@@ -247,6 +248,10 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #include <net/if.h>
 #endif
 
+#ifdef HAVE_NET_ETHERNET_H
+#include <net/ethernet.h>
+#endif
+
 /* Generic socket object definitions and includes */
 #define PySocket_BUILDING_SOCKET
 #include "socketmodule.h"
@@ -259,14 +264,14 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #ifdef HAVE_NETDB_H
 #  include <netdb.h>
 #endif
-# include <unistd.h>
+#include <unistd.h>               // close()
 
 /* Headers needed for inet_ntoa() and inet_addr() */
 #   include <arpa/inet.h>
 
 #  include <fcntl.h>
 
-#else
+#else /* MS_WINDOWS */
 
 /* MS_WINDOWS includes */
 # ifdef HAVE_FCNTL_H
@@ -277,7 +282,6 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 # include <Rpc.h>
 
 /* Macros based on the IPPROTO enum, see: https://bugs.python.org/issue29515 */
-#ifdef MS_WINDOWS
 #define IPPROTO_ICMP IPPROTO_ICMP
 #define IPPROTO_IGMP IPPROTO_IGMP
 #define IPPROTO_GGP IPPROTO_GGP
@@ -308,7 +312,6 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #define IPPROTO_PGM IPPROTO_PGM  // WinSock2 only
 #define IPPROTO_L2TP IPPROTO_L2TP  // WinSock2 only
 #define IPPROTO_SCTP IPPROTO_SCTP  // WinSock2 only
-#endif /* MS_WINDOWS */
 
 /* Provides the IsWindows7SP1OrGreater() function */
 #include <versionhelpers.h>
@@ -335,22 +338,27 @@ static FlagRuntimeInfo win_runtime_flags[] = {
 
 /*[clinic input]
 module _socket
-class _socket.socket "PySocketSockObject *" "&sock_type"
+class _socket.socket "PySocketSockObject *" "clinic_state()->sock_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=7a8313d9b7f51988]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=2db2489bd2219fd8]*/
 
 static int
 remove_unusable_flags(PyObject *m)
 {
     PyObject *dict;
     OSVERSIONINFOEX info;
-    DWORDLONG dwlConditionMask;
 
     dict = PyModule_GetDict(m);
     if (dict == NULL) {
         return -1;
     }
-
+#ifndef MS_WINDOWS_DESKTOP
+    info.dwOSVersionInfoSize = sizeof(info);
+    if (!GetVersionEx((OSVERSIONINFO*) &info)) {
+        PyErr_SetFromWindowsErr(0);
+        return -1;
+    }
+#else
     /* set to Windows 10, except BuildNumber. */
     memset(&info, 0, sizeof(info));
     info.dwOSVersionInfoSize = sizeof(info);
@@ -358,32 +366,37 @@ remove_unusable_flags(PyObject *m)
     info.dwMinorVersion = 0;
 
     /* set Condition Mask */
-    dwlConditionMask = 0;
+    DWORDLONG dwlConditionMask = 0;
     VER_SET_CONDITION(dwlConditionMask, VER_MAJORVERSION, VER_GREATER_EQUAL);
     VER_SET_CONDITION(dwlConditionMask, VER_MINORVERSION, VER_GREATER_EQUAL);
     VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+#endif
 
     for (int i=0; i<sizeof(win_runtime_flags)/sizeof(FlagRuntimeInfo); i++) {
+#ifdef MS_WINDOWS_DESKTOP
         info.dwBuildNumber = win_runtime_flags[i].build_number;
         /* greater than or equal to the specified version?
            Compatibility Mode will not cheat VerifyVersionInfo(...) */
-        if (VerifyVersionInfo(
-                &info,
-                VER_MAJORVERSION|VER_MINORVERSION|VER_BUILDNUMBER,
-                dwlConditionMask)) {
+        BOOL isSupported = VerifyVersionInfo(
+            &info,
+            VER_MAJORVERSION|VER_MINORVERSION|VER_BUILDNUMBER,
+            dwlConditionMask);
+#else
+        /* note in this case 'info' is the actual OS version, whereas above
+           it is the version to compare against. */
+        BOOL isSupported = info.dwMajorVersion > 10 ||
+            (info.dwMajorVersion == 10 && info.dwMinorVersion > 0) ||
+            (info.dwMajorVersion == 10 && info.dwMinorVersion == 0 &&
+            info.dwBuildNumber >= win_runtime_flags[i].build_number);
+#endif
+        if (isSupported) {
             break;
         }
         else {
-            PyObject *flag_name = PyUnicode_FromString(win_runtime_flags[i].flag_name);
-            if (flag_name == NULL) {
+            if (PyDict_PopString(dict, win_runtime_flags[i].flag_name,
+                                 NULL) < 0) {
                 return -1;
             }
-            PyObject *v = _PyDict_Pop(dict, flag_name, Py_None);
-            Py_DECREF(flag_name);
-            if (v == NULL) {
-                return -1;
-            }
-            Py_DECREF(v);
         }
     }
     return 0;
@@ -493,14 +506,14 @@ remove_unusable_flags(PyObject *m)
 #endif
 #endif
 
-#ifdef MS_WINDOWS
+#ifdef MS_WINDOWS_DESKTOP
 #define sockaddr_rc SOCKADDR_BTH_REDEF
 
 #define USE_BLUETOOTH 1
 #define AF_BLUETOOTH AF_BTH
 #define BTPROTO_RFCOMM BTHPROTO_RFCOMM
 #define _BT_RC_MEMB(sa, memb) ((sa)->memb)
-#endif
+#endif /* MS_WINDOWS_DESKTOP */
 
 /* Convert "sock_addr_t *" to "struct sockaddr *". */
 #define SAS2SA(x)       (&((x)->sa))
@@ -523,21 +536,58 @@ remove_unusable_flags(PyObject *m)
 #define INADDR_NONE (-1)
 #endif
 
+typedef struct _socket_state {
+    /* The sock_type variable contains pointers to various functions,
+       some of which call new_sockobject(), which uses sock_type, so
+       there has to be a circular reference. */
+    PyTypeObject *sock_type;
+
+    /* Global variable holding the exception type for errors detected
+       by this module (but not argument type or memory errors, etc.). */
+    PyObject *socket_herror;
+    PyObject *socket_gaierror;
+
+    /* Default timeout for new sockets */
+    PyTime_t defaulttimeout;
+
+#if defined(HAVE_ACCEPT) || defined(HAVE_ACCEPT4)
+#if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
+    /* accept4() is available on Linux 2.6.28+ and glibc 2.10 */
+    int accept4_works;
+#endif
+#endif
+
+#ifdef SOCK_CLOEXEC
+    /* socket() and socketpair() fail with EINVAL on Linux kernel older
+     * than 2.6.27 if SOCK_CLOEXEC flag is set in the socket type. */
+    int sock_cloexec_works;
+#endif
+} socket_state;
+
+static inline socket_state *
+get_module_state(PyObject *mod)
+{
+    void *state = _PyModule_GetState(mod);
+    assert(state != NULL);
+    return (socket_state *)state;
+}
+
+static struct PyModuleDef socketmodule;
+
+static inline socket_state *
+find_module_state_by_def(PyTypeObject *type)
+{
+    PyObject *mod = PyType_GetModuleByDef(type, &socketmodule);
+    assert(mod != NULL);
+    return get_module_state(mod);
+}
+
+#define clinic_state() (find_module_state_by_def(type))
 #include "clinic/socketmodule.c.h"
+#undef clinic_state
 
 /* XXX There's a problem here: *static* functions are not supposed to have
    a Py prefix (or use CapitalizedWords).  Later... */
-
-/* Global variable holding the exception type for errors detected
-   by this module (but not argument type or memory errors, etc.). */
-static PyObject *socket_herror;
-static PyObject *socket_gaierror;
-
-/* A forward reference to the socket type object.
-   The sock_type variable contains pointers to various functions,
-   some of which call new_sockobject(), which uses sock_type, so
-   there has to be a circular reference. */
-static PyTypeObject sock_type;
 
 #if defined(HAVE_POLL_H)
 #include <poll.h>
@@ -602,11 +652,6 @@ select_error(void)
 #  define SUPPRESS_DEPRECATED_CALL
 #endif
 
-#ifdef MS_WINDOWS
-/* Does WSASocket() support the WSA_FLAG_NO_HANDLE_INHERIT flag? */
-static int support_wsa_no_inherit = -1;
-#endif
-
 /* Convenience function to raise an error according to errno
    and return a NULL pointer from a function. */
 
@@ -628,7 +673,7 @@ set_error(void)
 
 #if defined(HAVE_GETHOSTBYNAME_R) || defined (HAVE_GETHOSTBYNAME) || defined (HAVE_GETHOSTBYADDR)
 static PyObject *
-set_herror(int h_error)
+set_herror(socket_state *state, int h_error)
 {
     PyObject *v;
 
@@ -638,7 +683,7 @@ set_herror(int h_error)
     v = Py_BuildValue("(is)", h_error, "host not found");
 #endif
     if (v != NULL) {
-        PyErr_SetObject(socket_herror, v);
+        PyErr_SetObject(state->socket_herror, v);
         Py_DECREF(v);
     }
 
@@ -649,7 +694,7 @@ set_herror(int h_error)
 
 #ifdef HAVE_GETADDRINFO
 static PyObject *
-set_gaierror(int error)
+set_gaierror(socket_state *state, int error)
 {
     PyObject *v;
 
@@ -665,7 +710,7 @@ set_gaierror(int error)
     v = Py_BuildValue("(is)", error, "getaddrinfo failed");
 #endif
     if (v != NULL) {
-        PyErr_SetObject(socket_gaierror, v);
+        PyErr_SetObject(state->socket_gaierror, v);
         Py_DECREF(v);
     }
 
@@ -728,13 +773,13 @@ internal_setblocking(PySocketSockObject *s, int block)
 }
 
 static int
-internal_select(PySocketSockObject *s, int writing, _PyTime_t interval,
+internal_select(PySocketSockObject *s, int writing, PyTime_t interval,
                 int connect)
 {
     int n;
 #ifdef HAVE_POLL
     struct pollfd pollfd;
-    _PyTime_t ms;
+    PyTime_t ms;
 #else
     fd_set fds, efds;
     struct timeval tv, *tvp;
@@ -844,10 +889,10 @@ sock_call_ex(PySocketSockObject *s,
              void *data,
              int connect,
              int *err,
-             _PyTime_t timeout)
+             PyTime_t timeout)
 {
     int has_timeout = (timeout > 0);
-    _PyTime_t deadline = 0;
+    PyTime_t deadline = 0;
     int deadline_initialized = 0;
     int res;
 
@@ -861,7 +906,7 @@ sock_call_ex(PySocketSockObject *s,
            runs asynchronously. */
         if (has_timeout || connect) {
             if (has_timeout) {
-                _PyTime_t interval;
+                PyTime_t interval;
 
                 if (deadline_initialized) {
                     /* recompute the timeout */
@@ -978,11 +1023,8 @@ sock_call(PySocketSockObject *s,
 
 /* Initialize a new socket object. */
 
-/* Default timeout for new sockets */
-static _PyTime_t defaulttimeout = _PYTIME_FROMSECONDS(-1);
-
 static int
-init_sockobject(PySocketSockObject *s,
+init_sockobject(socket_state *state, PySocketSockObject *s,
                 SOCKET_T fd, int family, int type, int proto)
 {
     s->sock_fd = fd;
@@ -1012,13 +1054,14 @@ init_sockobject(PySocketSockObject *s,
     else
 #endif
     {
-        s->sock_timeout = defaulttimeout;
-        if (defaulttimeout >= 0) {
+        s->sock_timeout = _Py_atomic_load_int64_relaxed(&state->defaulttimeout);
+        if (s->sock_timeout >= 0) {
             if (internal_setblocking(s, 0) == -1) {
                 return -1;
             }
         }
     }
+    s->state = state;
     return 0;
 }
 
@@ -1030,14 +1073,15 @@ init_sockobject(PySocketSockObject *s,
    in NEWOBJ()). */
 
 static PySocketSockObject *
-new_sockobject(SOCKET_T fd, int family, int type, int proto)
+new_sockobject(socket_state *state, SOCKET_T fd, int family, int type,
+               int proto)
 {
-    PySocketSockObject *s;
-    s = (PySocketSockObject *)
-        PyType_GenericNew(&sock_type, NULL, NULL);
-    if (s == NULL)
+    PyTypeObject *tp = state->sock_type;
+    PySocketSockObject *s = (PySocketSockObject *)tp->tp_alloc(tp, 0);
+    if (s == NULL) {
         return NULL;
-    if (init_sockobject(s, fd, family, type, proto) == -1) {
+    }
+    if (init_sockobject(state, s, fd, family, type, proto) == -1) {
         Py_DECREF(s);
         return NULL;
     }
@@ -1061,7 +1105,8 @@ static PyThread_type_lock netdb_lock;
    an error occurred; then an exception is raised. */
 
 static int
-setipaddr(const char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int af)
+setipaddr(socket_state *state, const char *name, struct sockaddr *addr_ret,
+          size_t addr_ret_size, int af)
 {
     struct addrinfo hints, *res;
     int error;
@@ -1081,7 +1126,8 @@ setipaddr(const char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int
            subsequent call to getaddrinfo() does not destroy the
            outcome of the first call. */
         if (error) {
-            set_gaierror(error);
+            res = NULL;  // no-op, remind us that it is invalid; gh-100795
+            set_gaierror(state, error);
             return -1;
         }
         switch (res->ai_family) {
@@ -1191,7 +1237,8 @@ setipaddr(const char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int
 #endif
     Py_END_ALLOW_THREADS
     if (error) {
-        set_gaierror(error);
+        res = NULL;  // no-op, remind us that it is invalid; gh-100795
+        set_gaierror(state, error);
         return -1;
     }
     if (res->ai_addrlen < addr_ret_size)
@@ -1286,8 +1333,6 @@ setbdaddr(const char *name, bdaddr_t *bdaddr)
 static PyObject *
 makebdaddr(bdaddr_t *bdaddr)
 {
-    char buf[(6 * 2) + 5 + 1];
-
 #ifdef MS_WINDOWS
     int i;
     unsigned int octets[6];
@@ -1296,16 +1341,14 @@ makebdaddr(bdaddr_t *bdaddr)
         octets[i] = ((*bdaddr) >> (8 * i)) & 0xFF;
     }
 
-    sprintf(buf, "%02X:%02X:%02X:%02X:%02X:%02X",
+    return PyUnicode_FromFormat("%02X:%02X:%02X:%02X:%02X:%02X",
         octets[5], octets[4], octets[3],
         octets[2], octets[1], octets[0]);
 #else
-    sprintf(buf, "%02X:%02X:%02X:%02X:%02X:%02X",
+    return PyUnicode_FromFormat("%02X:%02X:%02X:%02X:%02X:%02X",
         bdaddr->b[5], bdaddr->b[4], bdaddr->b[3],
         bdaddr->b[2], bdaddr->b[1], bdaddr->b[0]);
 #endif
-
-    return PyUnicode_FromString(buf);
 }
 #endif
 
@@ -1668,9 +1711,6 @@ idna_converter(PyObject *obj, struct maybe_idna *data)
         len = PyByteArray_Size(obj);
     }
     else if (PyUnicode_Check(obj)) {
-        if (PyUnicode_READY(obj) == -1) {
-            return 0;
-        }
         if (PyUnicode_IS_COMPACT_ASCII(obj)) {
             data->buf = PyUnicode_DATA(obj);
             len = PyUnicode_GET_LENGTH(obj);
@@ -1847,8 +1887,15 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 
 #ifdef AF_RDS
     case AF_RDS:
-        /* RDS sockets use sockaddr_in: fall-through */
+        /* RDS sockets use sockaddr_in */
+        _Py_FALLTHROUGH;
 #endif /* AF_RDS */
+
+#ifdef AF_DIVERT
+    case AF_DIVERT:
+        /* FreeBSD divert(4) sockets use sockaddr_in */
+        _Py_FALLTHROUGH;
+#endif /* AF_DIVERT */
 
     case AF_INET:
     {
@@ -1874,7 +1921,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             return 0;
         }
         struct sockaddr_in* addr = &addrbuf->in;
-        result = setipaddr(host.buf, (struct sockaddr *)addr,
+        result = setipaddr(s->state, host.buf, (struct sockaddr *)addr,
                            sizeof(*addr),  AF_INET);
         idna_cleanup(&host);
         if (result < 0)
@@ -1919,7 +1966,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             return 0;
         }
         struct sockaddr_in6* addr = &addrbuf->in6;
-        result = setipaddr(host.buf, (struct sockaddr *)addr,
+        result = setipaddr(s->state, host.buf, (struct sockaddr *)addr,
                            sizeof(*addr), AF_INET6);
         idna_cleanup(&host);
         if (result < 0)
@@ -2169,7 +2216,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         switch (s->sock_proto) {
 #ifdef CAN_RAW
         case CAN_RAW:
-        /* fall-through */
+            _Py_FALLTHROUGH;
 #endif
 #ifdef CAN_BCM
         case CAN_BCM:
@@ -2545,7 +2592,8 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
 
 #ifdef AF_RDS
     case AF_RDS:
-        /* RDS sockets use sockaddr_in: fall-through */
+        /* RDS sockets use sockaddr_in */
+       _Py_FALLTHROUGH;
 #endif /* AF_RDS */
 
     case AF_INET:
@@ -2798,10 +2846,6 @@ struct sock_accept {
 };
 
 #if defined(HAVE_ACCEPT) || defined(HAVE_ACCEPT4)
-#if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
-/* accept4() is available on Linux 2.6.28+ and glibc 2.10 */
-static int accept4_works = -1;
-#endif
 
 static int
 sock_accept_impl(PySocketSockObject *s, void *data)
@@ -2820,15 +2864,16 @@ sock_accept_impl(PySocketSockObject *s, void *data)
 #endif
 
 #if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
-    if (accept4_works != 0) {
+    socket_state *state = s->state;
+    if (state->accept4_works != 0) {
         ctx->result = accept4(s->sock_fd, addr, paddrlen,
                               SOCK_CLOEXEC);
-        if (ctx->result == INVALID_SOCKET && accept4_works == -1) {
+        if (ctx->result == INVALID_SOCKET && state->accept4_works == -1) {
             /* On Linux older than 2.6.28, accept4() fails with ENOSYS */
-            accept4_works = (errno != ENOSYS);
+            state->accept4_works = (errno != ENOSYS);
         }
     }
-    if (accept4_works == 0)
+    if (state->accept4_works == 0)
         ctx->result = accept(s->sock_fd, addr, paddrlen);
 #else
     ctx->result = accept(s->sock_fd, addr, paddrlen);
@@ -2868,15 +2913,21 @@ sock_accept(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
     newfd = ctx.result;
 
 #ifdef MS_WINDOWS
+#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
+#ifndef HANDLE_FLAG_INHERIT
+#define HANDLE_FLAG_INHERIT 0x00000001
+#endif
     if (!SetHandleInformation((HANDLE)newfd, HANDLE_FLAG_INHERIT, 0)) {
         PyErr_SetFromWindowsErr(0);
         SOCKETCLOSE(newfd);
         goto finally;
     }
+#endif
 #else
 
 #if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
-    if (!accept4_works)
+    socket_state *state = s->state;
+    if (!state->accept4_works)
 #endif
     {
         if (_Py_set_inheritable(newfd, 0, NULL) < 0) {
@@ -2924,8 +2975,8 @@ sock_setblocking(PySocketSockObject *s, PyObject *arg)
 {
     long block;
 
-    block = PyLong_AsLong(arg);
-    if (block == -1 && PyErr_Occurred())
+    block = PyObject_IsTrue(arg);
+    if (block < 0)
         return NULL;
 
     s->sock_timeout = _PyTime_FromSeconds(block ? -1 : 0);
@@ -2964,13 +3015,13 @@ Returns True if socket is in blocking mode, or False if it\n\
 is in non-blocking mode.");
 
 static int
-socket_parse_timeout(_PyTime_t *timeout, PyObject *timeout_obj)
+socket_parse_timeout(PyTime_t *timeout, PyObject *timeout_obj)
 {
 #ifdef MS_WINDOWS
     struct timeval tv;
 #endif
 #ifndef HAVE_POLL
-    _PyTime_t ms;
+    PyTime_t ms;
 #endif
     int overflow = 0;
 
@@ -3013,7 +3064,7 @@ socket_parse_timeout(_PyTime_t *timeout, PyObject *timeout_obj)
 static PyObject *
 sock_settimeout(PySocketSockObject *s, PyObject *arg)
 {
-    _PyTime_t timeout;
+    PyTime_t timeout;
 
     if (socket_parse_timeout(&timeout, arg) < 0)
         return NULL;
@@ -3065,7 +3116,7 @@ sock_gettimeout(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
         Py_RETURN_NONE;
     }
     else {
-        double seconds = _PyTime_AsSecondsDouble(s->sock_timeout);
+        double seconds = PyTime_AsSecondsDouble(s->sock_timeout);
         return PyFloat_FromDouble(seconds);
     }
 }
@@ -3115,6 +3166,17 @@ sock_setsockopt(PySocketSockObject *s, PyObject *args)
     /* setsockopt(level, opt, flag) */
     if (PyArg_ParseTuple(args, "iii:setsockopt",
                          &level, &optname, &flag)) {
+#ifdef MS_WINDOWS
+        if (optname == SIO_TCP_SET_ACK_FREQUENCY) {
+            int dummy;
+            res = WSAIoctl(s->sock_fd, SIO_TCP_SET_ACK_FREQUENCY, &flag,
+                           sizeof(flag), NULL, 0, &dummy, NULL, NULL);
+            if (res >= 0) {
+                s->quickack = flag;
+            }
+            goto done;
+        }
+#endif
         res = setsockopt(s->sock_fd, level, optname,
                          (char*)&flag, sizeof flag);
         goto done;
@@ -3201,6 +3263,11 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
             return PyLong_FromUnsignedLong(vflag);
         }
 #endif
+#ifdef MS_WINDOWS
+        if (optname == SIO_TCP_SET_ACK_FREQUENCY) {
+            return PyLong_FromLong(s->quickack);
+        }
+#endif
         flagsize = sizeof flag;
         res = getsockopt(s->sock_fd, level, optname,
                          (void *)&flag, &flagsize);
@@ -3280,8 +3347,19 @@ sockets the address is a tuple (ifname, proto [,pkttype [,hatype [,addr]]])");
    Set the file descriptor to -1 so operations tried subsequently
    will surely fail. */
 
+/*[clinic input]
+@critical_section
+_socket.socket.close
+    self as s: self(type="PySocketSockObject *")
+
+close()
+
+Close the socket.  It cannot be used after this call.
+[clinic start generated code]*/
+
 static PyObject *
-sock_close(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
+_socket_socket_close_impl(PySocketSockObject *s)
+/*[clinic end generated code: output=038b2418e07f6f6c input=9839a261e05bcb97]*/
 {
     SOCKET_T fd;
     int res;
@@ -3305,11 +3383,6 @@ sock_close(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
     }
     Py_RETURN_NONE;
 }
-
-PyDoc_STRVAR(sock_close_doc,
-"close()\n\
-\n\
-Close the socket.  It cannot be used after this call.");
 
 static PyObject *
 sock_detach(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
@@ -3348,6 +3421,18 @@ sock_connect_impl(PySocketSockObject *s, void* Py_UNUSED(data))
     return 1;
 }
 
+/* Common functionality for socket.connect and socket.connect_ex.
+ *
+ * If *raise* is set:
+ * - On success, return 0.
+ * - On any failure, return -1 with an exception set.
+ * If *raise* is zero:
+ * - On success, return 0.
+ * - On connect() failure, return errno (without an exception set)
+ * - On other error, return -1 with an exception set.
+ *
+ *   Note that -1 is a valid errno value on some systems.
+ */
 static int
 internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
                  int raise)
@@ -3432,8 +3517,10 @@ sock_connect(PySocketSockObject *s, PyObject *addro)
     }
 
     res = internal_connect(s, SAS2SA(&addrbuf), addrlen, 1);
-    if (res < 0)
+    if (res < 0) {
+        assert(PyErr_Occurred());
         return NULL;
+    }
 
     Py_RETURN_NONE;
 }
@@ -3463,8 +3550,9 @@ sock_connect_ex(PySocketSockObject *s, PyObject *addro)
     }
 
     res = internal_connect(s, SAS2SA(&addrbuf), addrlen, 0);
-    if (res < 0)
+    if (res == -1 && PyErr_Occurred()) {
         return NULL;
+    }
 
     return PyLong_FromLong((long) res);
 }
@@ -3518,7 +3606,8 @@ PyDoc_STRVAR(getsockname_doc,
 \n\
 Return the address of the local endpoint. The format depends on the\n\
 address family. For IPv4 sockets, the address info is a pair\n\
-(hostaddr, port).");
+(hostaddr, port). For IPv6 sockets, the address info is a 4-tuple\n\
+(hostaddr, port, flowinfo, scope_id).");
 #endif
 
 
@@ -4106,8 +4195,7 @@ makeval_recvmsg(ssize_t received, void *data)
 
     if (received < PyBytes_GET_SIZE(*buf))
         _PyBytes_Resize(buf, received);
-    Py_XINCREF(*buf);
-    return *buf;
+    return Py_XNewRef(*buf);
 }
 
 /* s.recvmsg(bufsize[, ancbufsize[, flags]]) method */
@@ -4335,8 +4423,8 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
     Py_buffer pbuf;
     struct sock_send ctx;
     int has_timeout = (s->sock_timeout > 0);
-    _PyTime_t timeout = s->sock_timeout;
-    _PyTime_t deadline = 0;
+    PyTime_t timeout = s->sock_timeout;
+    PyTime_t deadline = 0;
     int deadline_initialized = 0;
     PyObject *res = NULL;
 
@@ -4386,8 +4474,7 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
     } while (len > 0);
     PyBuffer_Release(&pbuf);
 
-    Py_INCREF(Py_None);
-    res = Py_None;
+    res = Py_NewRef(Py_None);
 
 done:
     PyBuffer_Release(&pbuf);
@@ -4826,17 +4913,17 @@ sock_sendmsg_afalg(PySocketSockObject *self, PyObject *args, PyObject *kwds)
 
     /* op is a required, keyword-only argument >= 0 */
     if (opobj != NULL) {
-        op = _PyLong_AsInt(opobj);
+        op = PyLong_AsInt(opobj);
     }
     if (op < 0) {
-        /* override exception from _PyLong_AsInt() */
+        /* override exception from PyLong_AsInt() */
         PyErr_SetString(PyExc_TypeError,
                         "Invalid or missing argument 'op'");
         goto finally;
     }
     /* assoclen is optional but must be >= 0 */
     if (assoclenobj != NULL) {
-        assoclen = _PyLong_AsInt(assoclenobj);
+        assoclen = PyLong_AsInt(assoclenobj);
         if (assoclen == -1 && PyErr_Occurred()) {
             goto finally;
         }
@@ -4954,7 +5041,7 @@ sock_shutdown(PySocketSockObject *s, PyObject *arg)
     int how;
     int res;
 
-    how = _PyLong_AsInt(arg);
+    how = PyLong_AsInt(arg);
     if (how == -1 && PyErr_Occurred())
         return NULL;
     Py_BEGIN_ALLOW_THREADS
@@ -5068,8 +5155,7 @@ static PyMethodDef sock_methods[] = {
     {"bind",              (PyCFunction)sock_bind, METH_O,
                       bind_doc},
 #endif
-    {"close",             (PyCFunction)sock_close, METH_NOARGS,
-                      sock_close_doc},
+    _SOCKET_SOCKET_CLOSE_METHODDEF
 #ifdef HAVE_CONNECT
     {"connect",           (PyCFunction)sock_connect, METH_O,
                       connect_doc},
@@ -5153,9 +5239,9 @@ static PyMethodDef sock_methods[] = {
 
 /* SockObject members */
 static PyMemberDef sock_memberlist[] = {
-       {"family", T_INT, offsetof(PySocketSockObject, sock_family), READONLY, "the socket family"},
-       {"type", T_INT, offsetof(PySocketSockObject, sock_type), READONLY, "the socket type"},
-       {"proto", T_INT, offsetof(PySocketSockObject, sock_proto), READONLY, "the socket protocol"},
+       {"family", Py_T_INT, offsetof(PySocketSockObject, sock_family), Py_READONLY, "the socket family"},
+       {"type", Py_T_INT, offsetof(PySocketSockObject, sock_type), Py_READONLY, "the socket type"},
+       {"proto", Py_T_INT, offsetof(PySocketSockObject, sock_proto), Py_READONLY, "the socket protocol"},
        {0},
 };
 
@@ -5171,10 +5257,9 @@ static void
 sock_finalize(PySocketSockObject *s)
 {
     SOCKET_T fd;
-    PyObject *error_type, *error_value, *error_traceback;
 
     /* Save the current exception, if any. */
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     if (s->sock_fd != INVALID_SOCKET) {
         if (PyErr_ResourceWarning((PyObject *)s, 1, "unclosed %R", s)) {
@@ -5198,16 +5283,26 @@ sock_finalize(PySocketSockObject *s)
     }
 
     /* Restore the saved exception. */
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
+}
+
+static int
+sock_traverse(PySocketSockObject *s, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(s));
+    return 0;
 }
 
 static void
 sock_dealloc(PySocketSockObject *s)
 {
-    if (PyObject_CallFinalizerFromDealloc((PyObject *)s) < 0)
+    if (PyObject_CallFinalizerFromDealloc((PyObject *)s) < 0) {
         return;
-
-    Py_TYPE(s)->tp_free((PyObject *)s);
+    }
+    PyTypeObject *tp = Py_TYPE(s);
+    PyObject_GC_UnTrack(s);
+    tp->tp_free((PyObject *)s);
+    Py_DECREF(tp);
 }
 
 
@@ -5252,18 +5347,15 @@ sock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         ((PySocketSockObject *)new)->sock_fd = INVALID_SOCKET;
         ((PySocketSockObject *)new)->sock_timeout = _PyTime_FromSeconds(-1);
         ((PySocketSockObject *)new)->errorhandler = &set_error;
+#ifdef MS_WINDOWS
+        ((PySocketSockObject *)new)->quickack = 0;
+#endif
     }
     return new;
 }
 
 
 /* Initialize a new socket object. */
-
-#ifdef SOCK_CLOEXEC
-/* socket() and socketpair() fail with EINVAL on Linux kernel older
- * than 2.6.27 if SOCK_CLOEXEC flag is set in the socket type. */
-static int sock_cloexec_works = -1;
-#endif
 
 /*ARGSUSED*/
 
@@ -5292,10 +5384,11 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
 {
 
     SOCKET_T fd = INVALID_SOCKET;
+    socket_state *state = find_module_state_by_def(Py_TYPE(self));
 
 #ifndef MS_WINDOWS
 #ifdef SOCK_CLOEXEC
-    int *atomic_flag_works = &sock_cloexec_works;
+    int *atomic_flag_works = &state->sock_cloexec_works;
 #else
     int *atomic_flag_works = NULL;
 #endif
@@ -5339,6 +5432,13 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
                 set_error();
                 return -1;
             }
+
+            if (!SetHandleInformation((HANDLE)fd, HANDLE_FLAG_INHERIT, 0)) {
+                PyErr_SetFromWindowsErr(0);
+                closesocket(fd);
+                return -1;
+            }
+
             family = info.iAddressFamily;
             type = info.iSocketType;
             proto = info.iProtocol;
@@ -5429,52 +5529,29 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
             proto = 0;
         }
 #ifdef MS_WINDOWS
-        /* Windows implementation */
-#ifndef WSA_FLAG_NO_HANDLE_INHERIT
-#define WSA_FLAG_NO_HANDLE_INHERIT 0x80
-#endif
-
         Py_BEGIN_ALLOW_THREADS
-        if (support_wsa_no_inherit) {
-            fd = WSASocketW(family, type, proto,
-                           NULL, 0,
-                           WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
-            if (fd == INVALID_SOCKET) {
-                /* Windows 7 or Windows 2008 R2 without SP1 or the hotfix */
-                support_wsa_no_inherit = 0;
-                fd = socket(family, type, proto);
-            }
-        }
-        else {
-            fd = socket(family, type, proto);
-        }
+        fd = WSASocketW(family, type, proto,
+                        NULL, 0,
+                        WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
         Py_END_ALLOW_THREADS
 
         if (fd == INVALID_SOCKET) {
             set_error();
             return -1;
         }
-
-        if (!support_wsa_no_inherit) {
-            if (!SetHandleInformation((HANDLE)fd, HANDLE_FLAG_INHERIT, 0)) {
-                closesocket(fd);
-                PyErr_SetFromWindowsErr(0);
-                return -1;
-            }
-        }
 #else
         /* UNIX */
         Py_BEGIN_ALLOW_THREADS
 #ifdef SOCK_CLOEXEC
-        if (sock_cloexec_works != 0) {
+        if (state->sock_cloexec_works != 0) {
             fd = socket(family, type | SOCK_CLOEXEC, proto);
-            if (sock_cloexec_works == -1) {
+            if (state->sock_cloexec_works == -1) {
                 if (fd >= 0) {
-                    sock_cloexec_works = 1;
+                    state->sock_cloexec_works = 1;
                 }
                 else if (errno == EINVAL) {
                     /* Linux older than 2.6.27 does not support SOCK_CLOEXEC */
-                    sock_cloexec_works = 0;
+                    state->sock_cloexec_works = 0;
                     fd = socket(family, type, proto);
                 }
             }
@@ -5497,7 +5574,7 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
         }
 #endif
     }
-    if (init_sockobject(self, fd, family, type, proto) == -1) {
+    if (init_sockobject(state, self, fd, family, type, proto) == -1) {
         SOCKETCLOSE(fd);
         return -1;
     }
@@ -5509,55 +5586,26 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
 
 /* Type object for socket objects. */
 
-static PyTypeObject sock_type = {
-    PyVarObject_HEAD_INIT(0, 0)         /* Must fill in type value later */
-    "_socket.socket",                           /* tp_name */
-    sizeof(PySocketSockObject),                 /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    (destructor)sock_dealloc,                   /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    (reprfunc)sock_repr,                        /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    PyObject_GenericGetAttr,                    /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
-    sock_doc,                                   /* tp_doc */
-    0,                                          /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    sock_methods,                               /* tp_methods */
-    sock_memberlist,                            /* tp_members */
-    sock_getsetlist,                            /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    sock_initobj,                               /* tp_init */
-    PyType_GenericAlloc,                        /* tp_alloc */
-    sock_new,                                   /* tp_new */
-    PyObject_Del,                               /* tp_free */
-    0,                                          /* tp_is_gc */
-    0,                                          /* tp_bases */
-    0,                                          /* tp_mro */
-    0,                                          /* tp_cache */
-    0,                                          /* tp_subclasses */
-    0,                                          /* tp_weaklist */
-    0,                                          /* tp_del */
-    0,                                          /* tp_version_tag */
-    (destructor)sock_finalize,                  /* tp_finalize */
+static PyType_Slot sock_slots[] = {
+    {Py_tp_dealloc, sock_dealloc},
+    {Py_tp_traverse, sock_traverse},
+    {Py_tp_repr, sock_repr},
+    {Py_tp_doc, (void *)sock_doc},
+    {Py_tp_methods, sock_methods},
+    {Py_tp_members, sock_memberlist},
+    {Py_tp_getset, sock_getsetlist},
+    {Py_tp_init, sock_initobj},
+    {Py_tp_new, sock_new},
+    {Py_tp_finalize, sock_finalize},
+    {0, NULL},
+};
+
+static PyType_Spec sock_spec = {
+    .name = "_socket.socket",
+    .basicsize = sizeof(PySocketSockObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = sock_slots,
 };
 
 
@@ -5601,8 +5649,9 @@ socket_gethostname(PyObject *self, PyObject *unused)
                            name,
                            &size))
     {
+        PyErr_SetFromWindowsErr(0);
         PyMem_Free(name);
-        return PyErr_SetFromWindowsErr(0);
+        return NULL;
     }
 
     result = PyUnicode_FromWideChar(name, size);
@@ -5639,8 +5688,9 @@ socket_sethostname(PyObject *self, PyObject *args)
     Py_buffer buf;
     int res, flag = 0;
 
-#ifdef _AIX
-/* issue #18259, not declared in any useful header file */
+#if defined(_AIX) || (defined(__sun) && defined(__SVR4) && Py_SUNOS_VERSION <= 510)
+/* issue #18259, sethostname is not declared in any useful header file on AIX
+ * the same is true for Solaris 10 */
 extern int sethostname(const char *, size_t);
 #endif
 
@@ -5685,8 +5735,12 @@ socket_gethostbyname(PyObject *self, PyObject *args)
     if (PySys_Audit("socket.gethostbyname", "O", args) < 0) {
         goto finally;
     }
-    if (setipaddr(name, (struct sockaddr *)&addrbuf,  sizeof(addrbuf), AF_INET) < 0)
+    socket_state *state = get_module_state(self);
+    int rc = setipaddr(state, name, (struct sockaddr *)&addrbuf,
+                       sizeof(addrbuf), AF_INET);
+    if (rc < 0) {
         goto finally;
+    }
     ret = make_ipv4_addr(&addrbuf);
 finally:
     PyMem_Free(name);
@@ -5717,7 +5771,8 @@ sock_decode_hostname(const char *name)
 /* Convenience function common to gethostbyname_ex and gethostbyaddr */
 
 static PyObject *
-gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
+gethost_common(socket_state *state, struct hostent *h, struct sockaddr *addr,
+               size_t alen, int af)
 {
     char **pch;
     PyObject *rtn_tuple = (PyObject *)NULL;
@@ -5728,7 +5783,7 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
 
     if (h == NULL) {
         /* Let's get real error message to return */
-        set_herror(h_errno);
+        set_herror(state, h_errno);
         return NULL;
     }
 
@@ -5763,9 +5818,15 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
 
     /* SF #1511317: h_aliases can be NULL */
     if (h->h_aliases) {
-        for (pch = h->h_aliases; *pch != NULL; pch++) {
+        for (pch = h->h_aliases; ; pch++) {
             int status;
-            tmp = PyUnicode_FromString(*pch);
+            char *host_alias;
+            // pch can be misaligned
+            memcpy(&host_alias, pch, sizeof(host_alias));
+            if (host_alias == NULL) {
+                break;
+            }
+            tmp = PyUnicode_FromString(host_alias);
             if (tmp == NULL)
                 goto err;
 
@@ -5777,8 +5838,14 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
         }
     }
 
-    for (pch = h->h_addr_list; *pch != NULL; pch++) {
+    for (pch = h->h_addr_list; ; pch++) {
         int status;
+        char *host_address;
+        // pch can be misaligned
+        memcpy(&host_address, pch, sizeof(host_address));
+        if (host_address == NULL) {
+            break;
+        }
 
         switch (af) {
 
@@ -5790,7 +5857,7 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
 #ifdef HAVE_SOCKADDR_SA_LEN
             sin.sin_len = sizeof(sin);
 #endif
-            memcpy(&sin.sin_addr, *pch, sizeof(sin.sin_addr));
+            memcpy(&sin.sin_addr, host_address, sizeof(sin.sin_addr));
             tmp = make_ipv4_addr(&sin);
 
             if (pch == h->h_addr_list && alen >= sizeof(sin))
@@ -5807,7 +5874,7 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
 #ifdef HAVE_SOCKADDR_SA_LEN
             sin6.sin6_len = sizeof(sin6);
 #endif
-            memcpy(&sin6.sin6_addr, *pch, sizeof(sin6.sin6_addr));
+            memcpy(&sin6.sin6_addr, host_address, sizeof(sin6.sin6_addr));
             tmp = make_ipv6_addr(&sin6);
 
             if (pch == h->h_addr_list && alen >= sizeof(sin6))
@@ -5875,8 +5942,10 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
     if (PySys_Audit("socket.gethostbyname", "O", args) < 0) {
         goto finally;
     }
-    if (setipaddr(name, SAS2SA(&addr), sizeof(addr), AF_INET) < 0)
+    socket_state *state = get_module_state(self);
+    if (setipaddr(state, name, SAS2SA(&addr), sizeof(addr), AF_INET) < 0) {
         goto finally;
+    }
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
 #if   defined(HAVE_GETHOSTBYNAME_R_6_ARG)
@@ -5902,7 +5971,7 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
        Therefore, we cast the sockaddr_storage into sockaddr to
        access sa_family. */
     sa = SAS2SA(&addr);
-    ret = gethost_common(h, SAS2SA(&addr), sizeof(addr),
+    ret = gethost_common(state, h, SAS2SA(&addr), sizeof(addr),
                          sa->sa_family);
 #ifdef USE_GETHOSTBYNAME_LOCK
     PyThread_release_lock(netdb_lock);
@@ -5958,8 +6027,10 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
         goto finally;
     }
     af = AF_UNSPEC;
-    if (setipaddr(ip_num, sa, sizeof(addr), af) < 0)
+    socket_state *state = get_module_state(self);
+    if (setipaddr(state, ip_num, sa, sizeof(addr), af) < 0) {
         goto finally;
+    }
     af = sa->sa_family;
     ap = NULL;
     /* al = 0; */
@@ -6000,7 +6071,7 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
     h = gethostbyaddr(ap, al, af);
 #endif /* HAVE_GETHOSTBYNAME_R */
     Py_END_ALLOW_THREADS
-    ret = gethost_common(h, SAS2SA(&addr), sizeof(addr), af);
+    ret = gethost_common(state, h, SAS2SA(&addr), sizeof(addr), af);
 #ifdef USE_GETHOSTBYNAME_LOCK
     PyThread_release_lock(netdb_lock);
 #endif
@@ -6163,8 +6234,9 @@ socket_dup(PyObject *self, PyObject *fdobj)
 #endif
 
     fd = PyLong_AsSocket_t(fdobj);
-    if (fd == (SOCKET_T)(-1) && PyErr_Occurred())
+    if (fd == (SOCKET_T)(-1) && PyErr_Occurred()) {
         return NULL;
+    }
 
 #ifdef MS_WINDOWS
     if (WSADuplicateSocketW(fd, GetCurrentProcessId(), &info))
@@ -6173,24 +6245,27 @@ socket_dup(PyObject *self, PyObject *fdobj)
     newfd = WSASocketW(FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO,
                       FROM_PROTOCOL_INFO,
                       &info, 0, WSA_FLAG_OVERLAPPED);
-    if (newfd == INVALID_SOCKET)
+    if (newfd == INVALID_SOCKET) {
         return set_error();
+    }
 
     if (!SetHandleInformation((HANDLE)newfd, HANDLE_FLAG_INHERIT, 0)) {
-        closesocket(newfd);
         PyErr_SetFromWindowsErr(0);
+        closesocket(newfd);
         return NULL;
     }
 #else
     /* On UNIX, dup can be used to duplicate the file descriptor of a socket */
     newfd = _Py_dup(fd);
-    if (newfd == INVALID_SOCKET)
+    if (newfd == INVALID_SOCKET) {
         return NULL;
+    }
 #endif
 
     newfdobj = PyLong_FromSocket_t(newfd);
-    if (newfdobj == NULL)
+    if (newfdobj == NULL) {
         SOCKETCLOSE(newfd);
+    }
     return newfdobj;
 }
 
@@ -6215,8 +6290,9 @@ socket_socketpair(PyObject *self, PyObject *args)
     SOCKET_T sv[2];
     int family, type = SOCK_STREAM, proto = 0;
     PyObject *res = NULL;
+    socket_state *state = get_module_state(self);
 #ifdef SOCK_CLOEXEC
-    int *atomic_flag_works = &sock_cloexec_works;
+    int *atomic_flag_works = &state->sock_cloexec_works;
 #else
     int *atomic_flag_works = NULL;
 #endif
@@ -6234,15 +6310,15 @@ socket_socketpair(PyObject *self, PyObject *args)
     /* Create a pair of socket fds */
     Py_BEGIN_ALLOW_THREADS
 #ifdef SOCK_CLOEXEC
-    if (sock_cloexec_works != 0) {
+    if (state->sock_cloexec_works != 0) {
         ret = socketpair(family, type | SOCK_CLOEXEC, proto, sv);
-        if (sock_cloexec_works == -1) {
+        if (state->sock_cloexec_works == -1) {
             if (ret >= 0) {
-                sock_cloexec_works = 1;
+                state->sock_cloexec_works = 1;
             }
             else if (errno == EINVAL) {
                 /* Linux older than 2.6.27 does not support SOCK_CLOEXEC */
-                sock_cloexec_works = 0;
+                state->sock_cloexec_works = 0;
                 ret = socketpair(family, type, proto, sv);
             }
         }
@@ -6262,10 +6338,10 @@ socket_socketpair(PyObject *self, PyObject *args)
     if (_Py_set_inheritable(sv[1], 0, atomic_flag_works) < 0)
         goto finally;
 
-    s0 = new_sockobject(sv[0], family, type, proto);
+    s0 = new_sockobject(state, sv[0], family, type, proto);
     if (s0 == NULL)
         goto finally;
-    s1 = new_sockobject(sv[1], family, type, proto);
+    s1 = new_sockobject(state, sv[1], family, type, proto);
     if (s1 == NULL)
         goto finally;
     res = PyTuple_Pack(2, s0, s1);
@@ -6293,14 +6369,18 @@ AF_UNIX if defined on the platform; otherwise, the default is AF_INET.");
 #endif /* HAVE_SOCKETPAIR */
 
 
-static PyObject *
-socket_ntohs(PyObject *self, PyObject *args)
-{
-    int x;
+/*[clinic input]
+_socket.socket.ntohs
+    x: int
+    /
 
-    if (!PyArg_ParseTuple(args, "i:ntohs", &x)) {
-        return NULL;
-    }
+Convert a 16-bit unsigned integer from network to host byte order.
+[clinic start generated code]*/
+
+static PyObject *
+_socket_socket_ntohs_impl(PySocketSockObject *self, int x)
+/*[clinic end generated code: output=a828a61a9fb205b2 input=9a79cb3a71652147]*/
+{
     if (x < 0) {
         PyErr_SetString(PyExc_OverflowError,
                         "ntohs: can't convert negative Python int to C "
@@ -6315,11 +6395,6 @@ socket_ntohs(PyObject *self, PyObject *args)
     }
     return PyLong_FromUnsignedLong(ntohs((unsigned short)x));
 }
-
-PyDoc_STRVAR(ntohs_doc,
-"ntohs(integer) -> integer\n\
-\n\
-Convert a 16-bit unsigned integer from network to host byte order.");
 
 
 static PyObject *
@@ -6356,14 +6431,18 @@ PyDoc_STRVAR(ntohl_doc,
 Convert a 32-bit integer from network to host byte order.");
 
 
-static PyObject *
-socket_htons(PyObject *self, PyObject *args)
-{
-    int x;
+/*[clinic input]
+_socket.socket.htons
+    x: int
+    /
 
-    if (!PyArg_ParseTuple(args, "i:htons", &x)) {
-        return NULL;
-    }
+Convert a 16-bit unsigned integer from host to network byte order.
+[clinic start generated code]*/
+
+static PyObject *
+_socket_socket_htons_impl(PySocketSockObject *self, int x)
+/*[clinic end generated code: output=d785ee692312da47 input=053252d8416f4337]*/
+{
     if (x < 0) {
         PyErr_SetString(PyExc_OverflowError,
                         "htons: can't convert negative Python int to C "
@@ -6378,11 +6457,6 @@ socket_htons(PyObject *self, PyObject *args)
     }
     return PyLong_FromUnsignedLong(htons((unsigned short)x));
 }
-
-PyDoc_STRVAR(htons_doc,
-"htons(integer) -> integer\n\
-\n\
-Convert a 16-bit unsigned integer from host to network byte order.");
 
 
 static PyObject *
@@ -6420,14 +6494,17 @@ Convert a 32-bit integer from host to network byte order.");
 
 /* socket.inet_aton() and socket.inet_ntoa() functions. */
 
-PyDoc_STRVAR(inet_aton_doc,
-"inet_aton(string) -> bytes giving packed 32-bit IP representation\n\
-\n\
-Convert an IP address in string format (123.45.67.89) to the 32-bit packed\n\
-binary format used in low-level network functions.");
+/*[clinic input]
+_socket.socket.inet_aton
+    ip_addr: str
+    /
 
-static PyObject*
-socket_inet_aton(PyObject *self, PyObject *args)
+Convert an IP address in string format (123.45.67.89) to the 32-bit packed binary format used in low-level network functions.
+[clinic start generated code]*/
+
+static PyObject *
+_socket_socket_inet_aton_impl(PySocketSockObject *self, const char *ip_addr)
+/*[clinic end generated code: output=5bfe11a255423d8c input=a120e20cb52b9488]*/
 {
 #ifdef HAVE_INET_ATON
     struct in_addr buf;
@@ -6440,11 +6517,6 @@ socket_inet_aton(PyObject *self, PyObject *args)
     /* Have to use inet_addr() instead */
     unsigned int packed_addr;
 #endif
-    const char *ip_addr;
-
-    if (!PyArg_ParseTuple(args, "s:inet_aton", &ip_addr))
-        return NULL;
-
 
 #ifdef HAVE_INET_ATON
 
@@ -6493,30 +6565,29 @@ socket_inet_aton(PyObject *self, PyObject *args)
 }
 
 #ifdef HAVE_INET_NTOA
-PyDoc_STRVAR(inet_ntoa_doc,
-"inet_ntoa(packed_ip) -> ip_address_string\n\
-\n\
-Convert an IP address from 32-bit packed binary format to string format");
+/*[clinic input]
+_socket.socket.inet_ntoa
+    packed_ip: Py_buffer
+    /
 
-static PyObject*
-socket_inet_ntoa(PyObject *self, PyObject *args)
+Convert an IP address from 32-bit packed binary format to string format.
+[clinic start generated code]*/
+
+static PyObject *
+_socket_socket_inet_ntoa_impl(PySocketSockObject *self, Py_buffer *packed_ip)
+/*[clinic end generated code: output=b671880a3f62461b input=95c2c4a1b2ee957c]*/
 {
-    Py_buffer packed_ip;
     struct in_addr packed_addr;
 
-    if (!PyArg_ParseTuple(args, "y*:inet_ntoa", &packed_ip)) {
-        return NULL;
-    }
-
-    if (packed_ip.len != sizeof(packed_addr)) {
+    if (packed_ip->len != sizeof(packed_addr)) {
         PyErr_SetString(PyExc_OSError,
             "packed IP wrong length for inet_ntoa");
-        PyBuffer_Release(&packed_ip);
+        PyBuffer_Release(packed_ip);
         return NULL;
     }
 
-    memcpy(&packed_addr, packed_ip.buf, packed_ip.len);
-    PyBuffer_Release(&packed_ip);
+    memcpy(&packed_addr, packed_ip->buf, packed_ip->len);
+    PyBuffer_Release(packed_ip);
 
     SUPPRESS_DEPRECATED_CALL
     return PyUnicode_FromString(inet_ntoa(packed_addr));
@@ -6622,11 +6693,12 @@ socket_inet_ntop(PyObject *self, PyObject *args)
 
     /* inet_ntop guarantee NUL-termination of resulting string. */
     retval = inet_ntop(af, packed_ip.buf, ip, sizeof(ip));
-    PyBuffer_Release(&packed_ip);
     if (!retval) {
         PyErr_SetFromErrno(PyExc_OSError);
+        PyBuffer_Release(&packed_ip);
         return NULL;
     } else {
+        PyBuffer_Release(&packed_ip);
         return PyUnicode_FromString(retval);
     }
 }
@@ -6646,7 +6718,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
     struct addrinfo *res0 = NULL;
     PyObject *hobj = NULL;
     PyObject *pobj = (PyObject *)NULL;
-    char pbuf[30];
+    PyObject *pstr = NULL;
     const char *hptr, *pptr;
     int family, socktype, protocol, flags;
     int error;
@@ -6676,11 +6748,13 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
         return NULL;
     }
     if (PyLong_CheckExact(pobj)) {
-        long value = PyLong_AsLong(pobj);
-        if (value == -1 && PyErr_Occurred())
+        pstr = PyObject_Str(pobj);
+        if (pstr == NULL)
             goto err;
-        PyOS_snprintf(pbuf, sizeof(pbuf), "%ld", value);
-        pptr = pbuf;
+        assert(PyUnicode_Check(pstr));
+        pptr = PyUnicode_AsUTF8(pstr);
+        if (pptr == NULL)
+            goto err;
     } else if (PyUnicode_Check(pobj)) {
         pptr = PyUnicode_AsUTF8(pobj);
         if (pptr == NULL)
@@ -6717,7 +6791,9 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
     error = getaddrinfo(hptr, pptr, &hints, &res0);
     Py_END_ALLOW_THREADS
     if (error) {
-        set_gaierror(error);
+        res0 = NULL;  // gh-100795
+        socket_state *state = get_module_state(self);
+        set_gaierror(state, error);
         goto err;
     }
 
@@ -6745,12 +6821,14 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
         Py_DECREF(single);
     }
     Py_XDECREF(idna);
+    Py_XDECREF(pstr);
     if (res0)
         freeaddrinfo(res0);
     return all;
  err:
     Py_XDECREF(all);
     Py_XDECREF(idna);
+    Py_XDECREF(pstr);
     if (res0)
         freeaddrinfo(res0);
     return (PyObject *)NULL;
@@ -6813,7 +6891,9 @@ socket_getnameinfo(PyObject *self, PyObject *args)
     error = getaddrinfo(hostp, pbuf, &hints, &res);
     Py_END_ALLOW_THREADS
     if (error) {
-        set_gaierror(error);
+        res = NULL;  // gh-100795
+        socket_state *state = get_module_state(self);
+        set_gaierror(state, error);
         goto fail;
     }
     if (res->ai_next) {
@@ -6842,10 +6922,13 @@ socket_getnameinfo(PyObject *self, PyObject *args)
         }
 #endif
     }
+    Py_BEGIN_ALLOW_THREADS
     error = getnameinfo(res->ai_addr, (socklen_t) res->ai_addrlen,
                     hbuf, sizeof(hbuf), pbuf, sizeof(pbuf), flags);
+    Py_END_ALLOW_THREADS
     if (error) {
-        set_gaierror(error);
+        socket_state *state = get_module_state(self);
+        set_gaierror(state, error);
         goto fail;
     }
 
@@ -6871,11 +6954,13 @@ Get host and port for a sockaddr.");
 static PyObject *
 socket_getdefaulttimeout(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    if (defaulttimeout < 0) {
+    socket_state *state = get_module_state(self);
+    PyTime_t timeout = _Py_atomic_load_int64_relaxed(&state->defaulttimeout);
+    if (timeout < 0) {
         Py_RETURN_NONE;
     }
     else {
-        double seconds = _PyTime_AsSecondsDouble(defaulttimeout);
+        double seconds = PyTime_AsSecondsDouble(timeout);
         return PyFloat_FromDouble(seconds);
     }
 }
@@ -6890,12 +6975,13 @@ When the socket module is first imported, the default is None.");
 static PyObject *
 socket_setdefaulttimeout(PyObject *self, PyObject *arg)
 {
-    _PyTime_t timeout;
+    PyTime_t timeout;
 
     if (socket_parse_timeout(&timeout, arg) < 0)
         return NULL;
 
-    defaulttimeout = timeout;
+    socket_state *state = get_module_state(self);
+    _Py_atomic_store_int64_relaxed(&state->defaulttimeout, timeout);
 
     Py_RETURN_NONE;
 }
@@ -6952,8 +7038,8 @@ socket_if_nameindex(PyObject *self, PyObject *arg)
 
     ni = if_nameindex();
     if (ni == NULL) {
-        Py_DECREF(list);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_DECREF(list);
         return NULL;
     }
 
@@ -6996,18 +7082,23 @@ PyDoc_STRVAR(if_nameindex_doc,
 \n\
 Returns a list of network interface information (index, name) tuples.");
 
+/*[clinic input]
+_socket.socket.if_nametoindex
+    oname: object(converter="PyUnicode_FSConverter")
+    /
+
+Returns the interface index corresponding to the interface name if_name.
+[clinic start generated code]*/
+
 static PyObject *
-socket_if_nametoindex(PyObject *self, PyObject *args)
+_socket_socket_if_nametoindex_impl(PySocketSockObject *self, PyObject *oname)
+/*[clinic end generated code: output=f7fc00511a309a8e input=662688054482cd46]*/
 {
-    PyObject *oname;
 #ifdef MS_WINDOWS
     NET_IFINDEX index;
 #else
     unsigned long index;
 #endif
-    if (!PyArg_ParseTuple(args, "O&:if_nametoindex",
-                          PyUnicode_FSConverter, &oname))
-        return NULL;
 
     index = if_nametoindex(PyBytes_AS_STRING(oname));
     Py_DECREF(oname);
@@ -7020,25 +7111,27 @@ socket_if_nametoindex(PyObject *self, PyObject *args)
     return PyLong_FromUnsignedLong(index);
 }
 
-PyDoc_STRVAR(if_nametoindex_doc,
-"if_nametoindex(if_name)\n\
-\n\
-Returns the interface index corresponding to the interface name if_name.");
 
 static PyObject *
 socket_if_indextoname(PyObject *self, PyObject *arg)
 {
-#ifdef MS_WINDOWS
-    NET_IFINDEX index;
-#else
-    unsigned long index;
-#endif
-    char name[IF_NAMESIZE + 1];
-
-    index = PyLong_AsUnsignedLong(arg);
-    if (index == (unsigned long) -1)
+    unsigned long index_long = PyLong_AsUnsignedLong(arg);
+    if (index_long == (unsigned long) -1 && PyErr_Occurred()) {
         return NULL;
+    }
 
+#ifdef MS_WINDOWS
+    NET_IFINDEX index = (NET_IFINDEX)index_long;
+#else
+    unsigned int index = (unsigned int)index_long;
+#endif
+
+    if ((unsigned long)index != index_long) {
+        PyErr_SetString(PyExc_OverflowError, "index is too large");
+        return NULL;
+    }
+
+    char name[IF_NAMESIZE + 1];
     if (if_indextoname(index, name) == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
@@ -7162,19 +7255,15 @@ static PyMethodDef socket_methods[] = {
     {"socketpair",              socket_socketpair,
      METH_VARARGS, socketpair_doc},
 #endif
-    {"ntohs",                   socket_ntohs,
-     METH_VARARGS, ntohs_doc},
+    _SOCKET_SOCKET_NTOHS_METHODDEF
     {"ntohl",                   socket_ntohl,
      METH_O, ntohl_doc},
-    {"htons",                   socket_htons,
-     METH_VARARGS, htons_doc},
+    _SOCKET_SOCKET_HTONS_METHODDEF
     {"htonl",                   socket_htonl,
      METH_O, htonl_doc},
-    {"inet_aton",               socket_inet_aton,
-     METH_VARARGS, inet_aton_doc},
+    _SOCKET_SOCKET_INET_ATON_METHODDEF
 #ifdef HAVE_INET_NTOA
-    {"inet_ntoa",               socket_inet_ntoa,
-     METH_VARARGS, inet_ntoa_doc},
+    _SOCKET_SOCKET_INET_NTOA_METHODDEF
 #endif
 #ifdef HAVE_INET_PTON
     {"inet_pton",               socket_inet_pton,
@@ -7197,8 +7286,7 @@ static PyMethodDef socket_methods[] = {
 #if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
     {"if_nameindex", socket_if_nameindex,
      METH_NOARGS, if_nameindex_doc},
-    {"if_nametoindex", socket_if_nametoindex,
-     METH_VARARGS, if_nametoindex_doc},
+    _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
     {"if_indextoname", socket_if_indextoname,
      METH_O, if_indextoname_doc},
 #endif
@@ -7264,24 +7352,43 @@ os_init(void)
 }
 #endif
 
-static void
-sock_free_api(PySocketModule_APIObject *capi)
+static int
+sock_capi_traverse(PyObject *capsule, visitproc visit, void *arg)
 {
-    Py_DECREF(capi->Sock_Type);
+    PySocketModule_APIObject *capi = PyCapsule_GetPointer(capsule, PySocket_CAPSULE_NAME);
+    assert(capi != NULL);
+    Py_VISIT(capi->Sock_Type);
+    return 0;
+}
+
+static int
+sock_capi_clear(PyObject *capsule)
+{
+    PySocketModule_APIObject *capi = PyCapsule_GetPointer(capsule, PySocket_CAPSULE_NAME);
+    assert(capi != NULL);
+    Py_CLEAR(capi->Sock_Type);
+    return 0;
+}
+
+static void
+sock_capi_free(PySocketModule_APIObject *capi)
+{
+    Py_XDECREF(capi->Sock_Type);  // sock_capi_free() can clear it
     Py_DECREF(capi->error);
     Py_DECREF(capi->timeout_error);
     PyMem_Free(capi);
 }
 
 static void
-sock_destroy_api(PyObject *capsule)
+sock_capi_destroy(PyObject *capsule)
 {
     void *capi = PyCapsule_GetPointer(capsule, PySocket_CAPSULE_NAME);
-    sock_free_api(capi);
+    assert(capi != NULL);
+    sock_capi_free(capi);
 }
 
 static PySocketModule_APIObject *
-sock_get_api(void)
+sock_get_api(socket_state *state)
 {
     PySocketModule_APIObject *capi = PyMem_Malloc(sizeof(PySocketModule_APIObject));
     if (capi == NULL) {
@@ -7289,7 +7396,7 @@ sock_get_api(void)
         return NULL;
     }
 
-    capi->Sock_Type = (PyTypeObject *)Py_NewRef(&sock_type);
+    capi->Sock_Type = (PyTypeObject *)Py_NewRef(state->sock_type);
     capi->error = Py_NewRef(PyExc_OSError);
     capi->timeout_error = Py_NewRef(PyExc_TimeoutError);
     return capi;
@@ -7311,1341 +7418,1482 @@ PyDoc_STRVAR(socket_doc,
 \n\
 See the socket module for documentation.");
 
-static struct PyModuleDef socketmodule = {
-    PyModuleDef_HEAD_INIT,
-    PySocket_MODULE_NAME,
-    socket_doc,
-    -1,
-    socket_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
-PyMODINIT_FUNC
-PyInit__socket(void)
+static int
+socket_exec(PyObject *m)
 {
-    PyObject *m, *has_ipv6;
-
-    if (!os_init())
-        return NULL;
-
-#ifdef MS_WINDOWS
-    if (support_wsa_no_inherit == -1) {
-        support_wsa_no_inherit = IsWindows7SP1OrGreater();
+    if (!os_init()) {
+        goto error;
     }
+
+    socket_state *state = get_module_state(m);
+    state->defaulttimeout = _PYTIME_FROMSECONDS(-1);
+
+#if defined(HAVE_ACCEPT) || defined(HAVE_ACCEPT4)
+#if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
+    state->accept4_works = -1;
+#endif
 #endif
 
-    Py_SET_TYPE(&sock_type, &PyType_Type);
-    m = PyModule_Create(&socketmodule);
-    if (m == NULL)
-        return NULL;
+#ifdef SOCK_CLOEXEC
+    state->sock_cloexec_works = -1;
+#endif
 
-    Py_INCREF(PyExc_OSError);
-    PyModule_AddObject(m, "error", PyExc_OSError);
-    socket_herror = PyErr_NewException("socket.herror",
-                                       PyExc_OSError, NULL);
-    if (socket_herror == NULL)
-        return NULL;
-    Py_INCREF(socket_herror);
-    PyModule_AddObject(m, "herror", socket_herror);
-    socket_gaierror = PyErr_NewException("socket.gaierror", PyExc_OSError,
-        NULL);
-    if (socket_gaierror == NULL)
-        return NULL;
-    Py_INCREF(socket_gaierror);
-    PyModule_AddObject(m, "gaierror", socket_gaierror);
-    PyModule_AddObjectRef(m, "timeout", PyExc_TimeoutError);
+#define ADD_EXC(MOD, NAME, VAR, BASE) do {                  \
+    VAR = PyErr_NewException("socket." NAME, BASE, NULL);   \
+    if (VAR == NULL) {                                      \
+        goto error;                                         \
+    }                                                       \
+    if (PyModule_AddObjectRef(MOD, NAME, VAR) < 0) {        \
+        goto error;                                         \
+    }                                                       \
+} while (0)
 
-    Py_INCREF((PyObject *)&sock_type);
-    if (PyModule_AddObject(m, "SocketType",
-                           (PyObject *)&sock_type) != 0)
-        return NULL;
-    Py_INCREF((PyObject *)&sock_type);
-    if (PyModule_AddObject(m, "socket",
-                           (PyObject *)&sock_type) != 0)
-        return NULL;
+    ADD_EXC(m, "herror", state->socket_herror, PyExc_OSError);
+    ADD_EXC(m, "gaierror", state->socket_gaierror, PyExc_OSError);
 
+#undef ADD_EXC
+
+    if (PyModule_AddObjectRef(m, "error", PyExc_OSError) < 0) {
+        goto error;
+    }
+    if (PyModule_AddObjectRef(m, "timeout", PyExc_TimeoutError) < 0) {
+        goto error;
+    }
+
+    PyObject *sock_type = PyType_FromMetaclass(NULL, m, &sock_spec, NULL);
+    if (sock_type == NULL) {
+        goto error;
+    }
+    state->sock_type = (PyTypeObject *)sock_type;
+    if (PyModule_AddObjectRef(m, "SocketType", sock_type) < 0) {
+        goto error;
+    }
+    if (PyModule_AddType(m, state->sock_type) < 0) {
+        goto error;
+    }
+
+    PyObject *has_ipv6;
 #ifdef ENABLE_IPV6
     has_ipv6 = Py_True;
 #else
     has_ipv6 = Py_False;
 #endif
-    Py_INCREF(has_ipv6);
-    PyModule_AddObject(m, "has_ipv6", has_ipv6);
+    if (PyModule_AddObjectRef(m, "has_ipv6", has_ipv6) < 0) {
+        goto error;
+    }
 
     /* Export C API */
-    PySocketModule_APIObject *capi = sock_get_api();
+    PySocketModule_APIObject *capi = sock_get_api(state);
     if (capi == NULL) {
-        Py_DECREF(m);
-        return NULL;
+        goto error;
     }
     PyObject *capsule = PyCapsule_New(capi,
                                       PySocket_CAPSULE_NAME,
-                                      sock_destroy_api);
+                                      sock_capi_destroy);
     if (capsule == NULL) {
-        sock_free_api(capi);
-        Py_DECREF(m);
-        return NULL;
+        sock_capi_free(capi);
+        goto error;
     }
-    if (PyModule_AddObject(m, PySocket_CAPI_NAME, capsule) < 0) {
-        Py_DECREF(capsule);
-        Py_DECREF(m);
-        return NULL;
+    if (_PyCapsule_SetTraverse(capsule,
+                               sock_capi_traverse, sock_capi_clear) < 0) {
+        sock_capi_free(capi);
+        goto error;
     }
+
+    if (PyModule_Add(m, PySocket_CAPI_NAME, capsule) < 0) {
+        goto error;
+    }
+
+#define ADD_INT_MACRO(MOD, INT) do {                    \
+    if (PyModule_AddIntConstant(MOD, #INT, INT) < 0) {  \
+        goto error;                                     \
+    }                                                   \
+} while (0)
+
+#define ADD_INT_CONST(MOD, NAME, INT) do {              \
+    if (PyModule_AddIntConstant(MOD, NAME, INT) < 0) {  \
+        goto error;                                     \
+    }                                                   \
+} while (0)
+
+#define ADD_STR_CONST(MOD, NAME, STR) do {                  \
+    if (PyModule_AddStringConstant(MOD, NAME, STR) < 0) {   \
+        goto error;                                         \
+    }                                                       \
+} while (0)
 
     /* Address families (we only support AF_INET and AF_UNIX) */
 #ifdef AF_UNSPEC
-    PyModule_AddIntMacro(m, AF_UNSPEC);
+    ADD_INT_MACRO(m, AF_UNSPEC);
 #endif
-    PyModule_AddIntMacro(m, AF_INET);
+    ADD_INT_MACRO(m, AF_INET);
 #if defined(AF_UNIX)
-    PyModule_AddIntMacro(m, AF_UNIX);
+    ADD_INT_MACRO(m, AF_UNIX);
 #endif /* AF_UNIX */
 #ifdef AF_AX25
     /* Amateur Radio AX.25 */
-    PyModule_AddIntMacro(m, AF_AX25);
+    ADD_INT_MACRO(m, AF_AX25);
 #endif
 #ifdef AF_IPX
-    PyModule_AddIntMacro(m, AF_IPX); /* Novell IPX */
+    ADD_INT_MACRO(m, AF_IPX); /* Novell IPX */
 #endif
 #ifdef AF_APPLETALK
     /* Appletalk DDP */
-    PyModule_AddIntMacro(m, AF_APPLETALK);
+    ADD_INT_MACRO(m, AF_APPLETALK);
 #endif
 #ifdef AF_NETROM
     /* Amateur radio NetROM */
-    PyModule_AddIntMacro(m, AF_NETROM);
+    ADD_INT_MACRO(m, AF_NETROM);
 #endif
 #ifdef AF_BRIDGE
     /* Multiprotocol bridge */
-    PyModule_AddIntMacro(m, AF_BRIDGE);
+    ADD_INT_MACRO(m, AF_BRIDGE);
 #endif
 #ifdef AF_ATMPVC
     /* ATM PVCs */
-    PyModule_AddIntMacro(m, AF_ATMPVC);
+    ADD_INT_MACRO(m, AF_ATMPVC);
 #endif
 #ifdef AF_AAL5
     /* Reserved for Werner's ATM */
-    PyModule_AddIntMacro(m, AF_AAL5);
+    ADD_INT_MACRO(m, AF_AAL5);
 #endif
 #ifdef HAVE_SOCKADDR_ALG
-    PyModule_AddIntMacro(m, AF_ALG); /* Linux crypto */
+    ADD_INT_MACRO(m, AF_ALG); /* Linux crypto */
 #endif
 #ifdef AF_X25
     /* Reserved for X.25 project */
-    PyModule_AddIntMacro(m, AF_X25);
+    ADD_INT_MACRO(m, AF_X25);
 #endif
 #ifdef AF_INET6
-    PyModule_AddIntMacro(m, AF_INET6); /* IP version 6 */
+    ADD_INT_MACRO(m, AF_INET6); /* IP version 6 */
 #endif
 #ifdef AF_ROSE
     /* Amateur Radio X.25 PLP */
-    PyModule_AddIntMacro(m, AF_ROSE);
+    ADD_INT_MACRO(m, AF_ROSE);
 #endif
 #ifdef AF_DECnet
     /* Reserved for DECnet project */
-    PyModule_AddIntMacro(m, AF_DECnet);
+    ADD_INT_MACRO(m, AF_DECnet);
 #endif
 #ifdef AF_NETBEUI
     /* Reserved for 802.2LLC project */
-    PyModule_AddIntMacro(m, AF_NETBEUI);
+    ADD_INT_MACRO(m, AF_NETBEUI);
 #endif
 #ifdef AF_SECURITY
     /* Security callback pseudo AF */
-    PyModule_AddIntMacro(m, AF_SECURITY);
+    ADD_INT_MACRO(m, AF_SECURITY);
 #endif
 #ifdef AF_KEY
     /* PF_KEY key management API */
-    PyModule_AddIntMacro(m, AF_KEY);
+    ADD_INT_MACRO(m, AF_KEY);
 #endif
 #ifdef AF_NETLINK
     /*  */
-    PyModule_AddIntMacro(m, AF_NETLINK);
-    PyModule_AddIntMacro(m, NETLINK_ROUTE);
+    ADD_INT_MACRO(m, AF_NETLINK);
+    ADD_INT_MACRO(m, NETLINK_ROUTE);
 #ifdef NETLINK_SKIP
-    PyModule_AddIntMacro(m, NETLINK_SKIP);
+    ADD_INT_MACRO(m, NETLINK_SKIP);
 #endif
 #ifdef NETLINK_W1
-    PyModule_AddIntMacro(m, NETLINK_W1);
+    ADD_INT_MACRO(m, NETLINK_W1);
 #endif
-    PyModule_AddIntMacro(m, NETLINK_USERSOCK);
-    PyModule_AddIntMacro(m, NETLINK_FIREWALL);
+    ADD_INT_MACRO(m, NETLINK_USERSOCK);
+    ADD_INT_MACRO(m, NETLINK_FIREWALL);
 #ifdef NETLINK_TCPDIAG
-    PyModule_AddIntMacro(m, NETLINK_TCPDIAG);
+    ADD_INT_MACRO(m, NETLINK_TCPDIAG);
 #endif
 #ifdef NETLINK_NFLOG
-    PyModule_AddIntMacro(m, NETLINK_NFLOG);
+    ADD_INT_MACRO(m, NETLINK_NFLOG);
 #endif
 #ifdef NETLINK_XFRM
-    PyModule_AddIntMacro(m, NETLINK_XFRM);
+    ADD_INT_MACRO(m, NETLINK_XFRM);
 #endif
 #ifdef NETLINK_ARPD
-    PyModule_AddIntMacro(m, NETLINK_ARPD);
+    ADD_INT_MACRO(m, NETLINK_ARPD);
 #endif
 #ifdef NETLINK_ROUTE6
-    PyModule_AddIntMacro(m, NETLINK_ROUTE6);
+    ADD_INT_MACRO(m, NETLINK_ROUTE6);
 #endif
-    PyModule_AddIntMacro(m, NETLINK_IP6_FW);
+    ADD_INT_MACRO(m, NETLINK_IP6_FW);
 #ifdef NETLINK_DNRTMSG
-    PyModule_AddIntMacro(m, NETLINK_DNRTMSG);
+    ADD_INT_MACRO(m, NETLINK_DNRTMSG);
 #endif
 #ifdef NETLINK_TAPBASE
-    PyModule_AddIntMacro(m, NETLINK_TAPBASE);
+    ADD_INT_MACRO(m, NETLINK_TAPBASE);
 #endif
 #ifdef NETLINK_CRYPTO
-    PyModule_AddIntMacro(m, NETLINK_CRYPTO);
+    ADD_INT_MACRO(m, NETLINK_CRYPTO);
 #endif
 #endif /* AF_NETLINK */
 
 #ifdef AF_QIPCRTR
     /* Qualcomm IPCROUTER */
-    PyModule_AddIntMacro(m, AF_QIPCRTR);
+    ADD_INT_MACRO(m, AF_QIPCRTR);
 #endif
 
 #ifdef AF_VSOCK
-    PyModule_AddIntConstant(m, "AF_VSOCK", AF_VSOCK);
-    PyModule_AddIntConstant(m, "SO_VM_SOCKETS_BUFFER_SIZE", 0);
-    PyModule_AddIntConstant(m, "SO_VM_SOCKETS_BUFFER_MIN_SIZE", 1);
-    PyModule_AddIntConstant(m, "SO_VM_SOCKETS_BUFFER_MAX_SIZE", 2);
-    PyModule_AddIntConstant(m, "VMADDR_CID_ANY", 0xffffffff);
-    PyModule_AddIntConstant(m, "VMADDR_PORT_ANY", 0xffffffff);
-    PyModule_AddIntConstant(m, "VMADDR_CID_HOST", 2);
-    PyModule_AddIntConstant(m, "VM_SOCKETS_INVALID_VERSION", 0xffffffff);
-    PyModule_AddIntConstant(m, "IOCTL_VM_SOCKETS_GET_LOCAL_CID",  _IO(7, 0xb9));
+    ADD_INT_CONST(m, "AF_VSOCK", AF_VSOCK);
+    ADD_INT_CONST(m, "SO_VM_SOCKETS_BUFFER_SIZE", 0);
+    ADD_INT_CONST(m, "SO_VM_SOCKETS_BUFFER_MIN_SIZE", 1);
+    ADD_INT_CONST(m, "SO_VM_SOCKETS_BUFFER_MAX_SIZE", 2);
+    ADD_INT_CONST(m, "VMADDR_CID_ANY", 0xffffffff);
+    ADD_INT_CONST(m, "VMADDR_PORT_ANY", 0xffffffff);
+    ADD_INT_CONST(m, "VMADDR_CID_LOCAL", 1);
+    ADD_INT_CONST(m, "VMADDR_CID_HOST", 2);
+    ADD_INT_CONST(m, "VM_SOCKETS_INVALID_VERSION", 0xffffffff);
+    ADD_INT_CONST(m, "IOCTL_VM_SOCKETS_GET_LOCAL_CID",  _IO(7, 0xb9));
 #endif
 
 #ifdef AF_ROUTE
     /* Alias to emulate 4.4BSD */
-    PyModule_AddIntMacro(m, AF_ROUTE);
+    ADD_INT_MACRO(m, AF_ROUTE);
 #endif
 #ifdef AF_LINK
-    PyModule_AddIntMacro(m, AF_LINK);
+    ADD_INT_MACRO(m, AF_LINK);
 #endif
 #ifdef AF_ASH
     /* Ash */
-    PyModule_AddIntMacro(m, AF_ASH);
+    ADD_INT_MACRO(m, AF_ASH);
 #endif
 #ifdef AF_ECONET
     /* Acorn Econet */
-    PyModule_AddIntMacro(m, AF_ECONET);
+    ADD_INT_MACRO(m, AF_ECONET);
 #endif
 #ifdef AF_ATMSVC
     /* ATM SVCs */
-    PyModule_AddIntMacro(m, AF_ATMSVC);
+    ADD_INT_MACRO(m, AF_ATMSVC);
 #endif
 #ifdef AF_SNA
     /* Linux SNA Project (nutters!) */
-    PyModule_AddIntMacro(m, AF_SNA);
+    ADD_INT_MACRO(m, AF_SNA);
 #endif
 #ifdef AF_IRDA
     /* IRDA sockets */
-    PyModule_AddIntMacro(m, AF_IRDA);
+    ADD_INT_MACRO(m, AF_IRDA);
 #endif
 #ifdef AF_PPPOX
     /* PPPoX sockets */
-    PyModule_AddIntMacro(m, AF_PPPOX);
+    ADD_INT_MACRO(m, AF_PPPOX);
 #endif
 #ifdef AF_WANPIPE
     /* Wanpipe API Sockets */
-    PyModule_AddIntMacro(m, AF_WANPIPE);
+    ADD_INT_MACRO(m, AF_WANPIPE);
 #endif
 #ifdef AF_LLC
     /* Linux LLC */
-    PyModule_AddIntMacro(m, AF_LLC);
+    ADD_INT_MACRO(m, AF_LLC);
 #endif
 #ifdef HAVE_AF_HYPERV
     /* Hyper-V sockets */
-    PyModule_AddIntMacro(m, AF_HYPERV);
+    ADD_INT_MACRO(m, AF_HYPERV);
 
     /* for proto */
-    PyModule_AddIntMacro(m, HV_PROTOCOL_RAW);
+    ADD_INT_MACRO(m, HV_PROTOCOL_RAW);
 
     /* for setsockopt() */
-    PyModule_AddIntMacro(m, HVSOCKET_CONNECT_TIMEOUT);
-    PyModule_AddIntMacro(m, HVSOCKET_CONNECT_TIMEOUT_MAX);
-    PyModule_AddIntMacro(m, HVSOCKET_CONNECTED_SUSPEND);
-    PyModule_AddIntMacro(m, HVSOCKET_ADDRESS_FLAG_PASSTHRU);
+    ADD_INT_MACRO(m, HVSOCKET_CONNECT_TIMEOUT);
+    ADD_INT_MACRO(m, HVSOCKET_CONNECT_TIMEOUT_MAX);
+    ADD_INT_MACRO(m, HVSOCKET_CONNECTED_SUSPEND);
+    ADD_INT_MACRO(m, HVSOCKET_ADDRESS_FLAG_PASSTHRU);
 
     /* for bind() or connect() */
-    PyModule_AddStringConstant(m, "HV_GUID_ZERO", "00000000-0000-0000-0000-000000000000");
-    PyModule_AddStringConstant(m, "HV_GUID_WILDCARD", "00000000-0000-0000-0000-000000000000");
-    PyModule_AddStringConstant(m, "HV_GUID_BROADCAST", "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF");
-    PyModule_AddStringConstant(m, "HV_GUID_CHILDREN", "90DB8B89-0D35-4F79-8CE9-49EA0AC8B7CD");
-    PyModule_AddStringConstant(m, "HV_GUID_LOOPBACK", "E0E16197-DD56-4A10-9195-5EE7A155A838");
-    PyModule_AddStringConstant(m, "HV_GUID_PARENT", "A42E7CDA-D03F-480C-9CC2-A4DE20ABB878");
+    ADD_STR_CONST(m, "HV_GUID_ZERO", "00000000-0000-0000-0000-000000000000");
+    ADD_STR_CONST(m, "HV_GUID_WILDCARD", "00000000-0000-0000-0000-000000000000");
+    ADD_STR_CONST(m, "HV_GUID_BROADCAST", "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF");
+    ADD_STR_CONST(m, "HV_GUID_CHILDREN", "90DB8B89-0D35-4F79-8CE9-49EA0AC8B7CD");
+    ADD_STR_CONST(m, "HV_GUID_LOOPBACK", "E0E16197-DD56-4A10-9195-5EE7A155A838");
+    ADD_STR_CONST(m, "HV_GUID_PARENT", "A42E7CDA-D03F-480C-9CC2-A4DE20ABB878");
 #endif /* HAVE_AF_HYPERV */
 
 #ifdef USE_BLUETOOTH
-    PyModule_AddIntMacro(m, AF_BLUETOOTH);
+    ADD_INT_MACRO(m, AF_BLUETOOTH);
 #ifdef BTPROTO_L2CAP
-    PyModule_AddIntMacro(m, BTPROTO_L2CAP);
+    ADD_INT_MACRO(m, BTPROTO_L2CAP);
 #endif /* BTPROTO_L2CAP */
 #ifdef BTPROTO_HCI
-    PyModule_AddIntMacro(m, BTPROTO_HCI);
-    PyModule_AddIntMacro(m, SOL_HCI);
+    ADD_INT_MACRO(m, BTPROTO_HCI);
+    ADD_INT_MACRO(m, SOL_HCI);
 #if !defined(__NetBSD__) && !defined(__DragonFly__)
-    PyModule_AddIntMacro(m, HCI_FILTER);
+    ADD_INT_MACRO(m, HCI_FILTER);
 #if !defined(__FreeBSD__)
-    PyModule_AddIntMacro(m, HCI_TIME_STAMP);
-    PyModule_AddIntMacro(m, HCI_DATA_DIR);
+    ADD_INT_MACRO(m, HCI_TIME_STAMP);
+    ADD_INT_MACRO(m, HCI_DATA_DIR);
 #endif /* !__FreeBSD__ */
 #endif /* !__NetBSD__ && !__DragonFly__ */
 #endif /* BTPROTO_HCI */
 #ifdef BTPROTO_RFCOMM
-    PyModule_AddIntMacro(m, BTPROTO_RFCOMM);
+    ADD_INT_MACRO(m, BTPROTO_RFCOMM);
 #endif /* BTPROTO_RFCOMM */
-    PyModule_AddStringConstant(m, "BDADDR_ANY", "00:00:00:00:00:00");
-    PyModule_AddStringConstant(m, "BDADDR_LOCAL", "00:00:00:FF:FF:FF");
+    ADD_STR_CONST(m, "BDADDR_ANY", "00:00:00:00:00:00");
+    ADD_STR_CONST(m, "BDADDR_LOCAL", "00:00:00:FF:FF:FF");
 #ifdef BTPROTO_SCO
-    PyModule_AddIntMacro(m, BTPROTO_SCO);
+    ADD_INT_MACRO(m, BTPROTO_SCO);
 #endif /* BTPROTO_SCO */
 #endif /* USE_BLUETOOTH */
 
 #ifdef AF_CAN
     /* Controller Area Network */
-    PyModule_AddIntMacro(m, AF_CAN);
+    ADD_INT_MACRO(m, AF_CAN);
 #endif
 #ifdef PF_CAN
     /* Controller Area Network */
-    PyModule_AddIntMacro(m, PF_CAN);
+    ADD_INT_MACRO(m, PF_CAN);
 #endif
 
 /* Reliable Datagram Sockets */
 #ifdef AF_RDS
-    PyModule_AddIntMacro(m, AF_RDS);
+    ADD_INT_MACRO(m, AF_RDS);
 #endif
 #ifdef PF_RDS
-    PyModule_AddIntMacro(m, PF_RDS);
+    ADD_INT_MACRO(m, PF_RDS);
 #endif
 
 /* Kernel event messages */
 #ifdef PF_SYSTEM
-    PyModule_AddIntMacro(m, PF_SYSTEM);
+    ADD_INT_MACRO(m, PF_SYSTEM);
 #endif
 #ifdef AF_SYSTEM
-    PyModule_AddIntMacro(m, AF_SYSTEM);
+    ADD_INT_MACRO(m, AF_SYSTEM);
+#endif
+
+/* FreeBSD divert(4) */
+#ifdef PF_DIVERT
+    ADD_INT_MACRO(m, PF_DIVERT);
+#endif
+#ifdef AF_DIVERT
+    ADD_INT_MACRO(m, AF_DIVERT);
 #endif
 
 #ifdef AF_PACKET
-    PyModule_AddIntMacro(m, AF_PACKET);
+    ADD_INT_MACRO(m, AF_PACKET);
 #endif
 #ifdef PF_PACKET
-    PyModule_AddIntMacro(m, PF_PACKET);
+    ADD_INT_MACRO(m, PF_PACKET);
 #endif
 #ifdef PACKET_HOST
-    PyModule_AddIntMacro(m, PACKET_HOST);
+    ADD_INT_MACRO(m, PACKET_HOST);
 #endif
 #ifdef PACKET_BROADCAST
-    PyModule_AddIntMacro(m, PACKET_BROADCAST);
+    ADD_INT_MACRO(m, PACKET_BROADCAST);
 #endif
 #ifdef PACKET_MULTICAST
-    PyModule_AddIntMacro(m, PACKET_MULTICAST);
+    ADD_INT_MACRO(m, PACKET_MULTICAST);
 #endif
 #ifdef PACKET_OTHERHOST
-    PyModule_AddIntMacro(m, PACKET_OTHERHOST);
+    ADD_INT_MACRO(m, PACKET_OTHERHOST);
 #endif
 #ifdef PACKET_OUTGOING
-    PyModule_AddIntMacro(m, PACKET_OUTGOING);
+    ADD_INT_MACRO(m, PACKET_OUTGOING);
 #endif
 #ifdef PACKET_LOOPBACK
-    PyModule_AddIntMacro(m, PACKET_LOOPBACK);
+    ADD_INT_MACRO(m, PACKET_LOOPBACK);
 #endif
 #ifdef PACKET_FASTROUTE
-    PyModule_AddIntMacro(m, PACKET_FASTROUTE);
+    ADD_INT_MACRO(m, PACKET_FASTROUTE);
 #endif
 
 #ifdef HAVE_LINUX_TIPC_H
-    PyModule_AddIntMacro(m, AF_TIPC);
+    ADD_INT_MACRO(m, AF_TIPC);
 
     /* for addresses */
-    PyModule_AddIntMacro(m, TIPC_ADDR_NAMESEQ);
-    PyModule_AddIntMacro(m, TIPC_ADDR_NAME);
-    PyModule_AddIntMacro(m, TIPC_ADDR_ID);
+    ADD_INT_MACRO(m, TIPC_ADDR_NAMESEQ);
+    ADD_INT_MACRO(m, TIPC_ADDR_NAME);
+    ADD_INT_MACRO(m, TIPC_ADDR_ID);
 
-    PyModule_AddIntMacro(m, TIPC_ZONE_SCOPE);
-    PyModule_AddIntMacro(m, TIPC_CLUSTER_SCOPE);
-    PyModule_AddIntMacro(m, TIPC_NODE_SCOPE);
+    ADD_INT_MACRO(m, TIPC_ZONE_SCOPE);
+    ADD_INT_MACRO(m, TIPC_CLUSTER_SCOPE);
+    ADD_INT_MACRO(m, TIPC_NODE_SCOPE);
 
     /* for setsockopt() */
-    PyModule_AddIntMacro(m, SOL_TIPC);
-    PyModule_AddIntMacro(m, TIPC_IMPORTANCE);
-    PyModule_AddIntMacro(m, TIPC_SRC_DROPPABLE);
-    PyModule_AddIntMacro(m, TIPC_DEST_DROPPABLE);
-    PyModule_AddIntMacro(m, TIPC_CONN_TIMEOUT);
+    ADD_INT_MACRO(m, SOL_TIPC);
+    ADD_INT_MACRO(m, TIPC_IMPORTANCE);
+    ADD_INT_MACRO(m, TIPC_SRC_DROPPABLE);
+    ADD_INT_MACRO(m, TIPC_DEST_DROPPABLE);
+    ADD_INT_MACRO(m, TIPC_CONN_TIMEOUT);
 
-    PyModule_AddIntMacro(m, TIPC_LOW_IMPORTANCE);
-    PyModule_AddIntMacro(m, TIPC_MEDIUM_IMPORTANCE);
-    PyModule_AddIntMacro(m, TIPC_HIGH_IMPORTANCE);
-    PyModule_AddIntMacro(m, TIPC_CRITICAL_IMPORTANCE);
+    ADD_INT_MACRO(m, TIPC_LOW_IMPORTANCE);
+    ADD_INT_MACRO(m, TIPC_MEDIUM_IMPORTANCE);
+    ADD_INT_MACRO(m, TIPC_HIGH_IMPORTANCE);
+    ADD_INT_MACRO(m, TIPC_CRITICAL_IMPORTANCE);
 
     /* for subscriptions */
-    PyModule_AddIntMacro(m, TIPC_SUB_PORTS);
-    PyModule_AddIntMacro(m, TIPC_SUB_SERVICE);
+    ADD_INT_MACRO(m, TIPC_SUB_PORTS);
+    ADD_INT_MACRO(m, TIPC_SUB_SERVICE);
 #ifdef TIPC_SUB_CANCEL
     /* doesn't seem to be available everywhere */
-    PyModule_AddIntMacro(m, TIPC_SUB_CANCEL);
+    ADD_INT_MACRO(m, TIPC_SUB_CANCEL);
 #endif
-    PyModule_AddIntMacro(m, TIPC_WAIT_FOREVER);
-    PyModule_AddIntMacro(m, TIPC_PUBLISHED);
-    PyModule_AddIntMacro(m, TIPC_WITHDRAWN);
-    PyModule_AddIntMacro(m, TIPC_SUBSCR_TIMEOUT);
-    PyModule_AddIntMacro(m, TIPC_CFG_SRV);
-    PyModule_AddIntMacro(m, TIPC_TOP_SRV);
+    ADD_INT_MACRO(m, TIPC_WAIT_FOREVER);
+    ADD_INT_MACRO(m, TIPC_PUBLISHED);
+    ADD_INT_MACRO(m, TIPC_WITHDRAWN);
+    ADD_INT_MACRO(m, TIPC_SUBSCR_TIMEOUT);
+    ADD_INT_MACRO(m, TIPC_CFG_SRV);
+    ADD_INT_MACRO(m, TIPC_TOP_SRV);
 #endif
 
 #ifdef HAVE_SOCKADDR_ALG
     /* Socket options */
-    PyModule_AddIntMacro(m, ALG_SET_KEY);
-    PyModule_AddIntMacro(m, ALG_SET_IV);
-    PyModule_AddIntMacro(m, ALG_SET_OP);
-    PyModule_AddIntMacro(m, ALG_SET_AEAD_ASSOCLEN);
-    PyModule_AddIntMacro(m, ALG_SET_AEAD_AUTHSIZE);
-    PyModule_AddIntMacro(m, ALG_SET_PUBKEY);
+    ADD_INT_MACRO(m, ALG_SET_KEY);
+    ADD_INT_MACRO(m, ALG_SET_IV);
+    ADD_INT_MACRO(m, ALG_SET_OP);
+    ADD_INT_MACRO(m, ALG_SET_AEAD_ASSOCLEN);
+    ADD_INT_MACRO(m, ALG_SET_AEAD_AUTHSIZE);
+    ADD_INT_MACRO(m, ALG_SET_PUBKEY);
 
     /* Operations */
-    PyModule_AddIntMacro(m, ALG_OP_DECRYPT);
-    PyModule_AddIntMacro(m, ALG_OP_ENCRYPT);
-    PyModule_AddIntMacro(m, ALG_OP_SIGN);
-    PyModule_AddIntMacro(m, ALG_OP_VERIFY);
+    ADD_INT_MACRO(m, ALG_OP_DECRYPT);
+    ADD_INT_MACRO(m, ALG_OP_ENCRYPT);
+    ADD_INT_MACRO(m, ALG_OP_SIGN);
+    ADD_INT_MACRO(m, ALG_OP_VERIFY);
+#endif
+
+/* IEEE 802.3 protocol numbers required for a standard TCP/IP network stack */
+#ifdef ETHERTYPE_ARP
+    ADD_INT_MACRO(m, ETHERTYPE_ARP);
+#endif
+#ifdef ETHERTYPE_IP
+    ADD_INT_MACRO(m, ETHERTYPE_IP);
+#endif
+#ifdef ETHERTYPE_IPV6
+    ADD_INT_MACRO(m, ETHERTYPE_IPV6);
+#endif
+#ifdef ETHERTYPE_VLAN
+    ADD_INT_MACRO(m, ETHERTYPE_VLAN);
+#endif
+
+/* Linux pseudo-protocol for sniffing every packet */
+#ifdef ETH_P_ALL
+    ADD_INT_MACRO(m, ETH_P_ALL);
 #endif
 
     /* Socket types */
-    PyModule_AddIntMacro(m, SOCK_STREAM);
-    PyModule_AddIntMacro(m, SOCK_DGRAM);
+    ADD_INT_MACRO(m, SOCK_STREAM);
+    ADD_INT_MACRO(m, SOCK_DGRAM);
 /* We have incomplete socket support. */
 #ifdef SOCK_RAW
     /* SOCK_RAW is marked as optional in the POSIX specification */
-    PyModule_AddIntMacro(m, SOCK_RAW);
+    ADD_INT_MACRO(m, SOCK_RAW);
 #endif
 #ifdef SOCK_SEQPACKET
-    PyModule_AddIntMacro(m, SOCK_SEQPACKET);
+    ADD_INT_MACRO(m, SOCK_SEQPACKET);
 #endif
 #if defined(SOCK_RDM)
-    PyModule_AddIntMacro(m, SOCK_RDM);
+    ADD_INT_MACRO(m, SOCK_RDM);
 #endif
 #ifdef SOCK_CLOEXEC
-    PyModule_AddIntMacro(m, SOCK_CLOEXEC);
+    ADD_INT_MACRO(m, SOCK_CLOEXEC);
 #endif
 #ifdef SOCK_NONBLOCK
-    PyModule_AddIntMacro(m, SOCK_NONBLOCK);
+    ADD_INT_MACRO(m, SOCK_NONBLOCK);
 #endif
 
 #ifdef  SO_DEBUG
-    PyModule_AddIntMacro(m, SO_DEBUG);
+    ADD_INT_MACRO(m, SO_DEBUG);
 #endif
 #ifdef  SO_ACCEPTCONN
-    PyModule_AddIntMacro(m, SO_ACCEPTCONN);
+    ADD_INT_MACRO(m, SO_ACCEPTCONN);
 #endif
 #ifdef  SO_REUSEADDR
-    PyModule_AddIntMacro(m, SO_REUSEADDR);
+    ADD_INT_MACRO(m, SO_REUSEADDR);
 #endif
 #ifdef SO_EXCLUSIVEADDRUSE
-    PyModule_AddIntMacro(m, SO_EXCLUSIVEADDRUSE);
+    ADD_INT_MACRO(m, SO_EXCLUSIVEADDRUSE);
 #endif
 #ifdef SO_INCOMING_CPU
-    PyModule_AddIntMacro(m, SO_INCOMING_CPU);
+    ADD_INT_MACRO(m, SO_INCOMING_CPU);
 #endif
 
 #ifdef  SO_KEEPALIVE
-    PyModule_AddIntMacro(m, SO_KEEPALIVE);
+    ADD_INT_MACRO(m, SO_KEEPALIVE);
 #endif
 #ifdef  SO_DONTROUTE
-    PyModule_AddIntMacro(m, SO_DONTROUTE);
+    ADD_INT_MACRO(m, SO_DONTROUTE);
 #endif
 #ifdef  SO_BROADCAST
-    PyModule_AddIntMacro(m, SO_BROADCAST);
+    ADD_INT_MACRO(m, SO_BROADCAST);
 #endif
 #ifdef  SO_USELOOPBACK
-    PyModule_AddIntMacro(m, SO_USELOOPBACK);
+    ADD_INT_MACRO(m, SO_USELOOPBACK);
 #endif
 #ifdef  SO_LINGER
-    PyModule_AddIntMacro(m, SO_LINGER);
+    ADD_INT_MACRO(m, SO_LINGER);
 #endif
 #ifdef  SO_OOBINLINE
-    PyModule_AddIntMacro(m, SO_OOBINLINE);
+    ADD_INT_MACRO(m, SO_OOBINLINE);
 #endif
 #ifndef __GNU__
 #ifdef  SO_REUSEPORT
-    PyModule_AddIntMacro(m, SO_REUSEPORT);
+    ADD_INT_MACRO(m, SO_REUSEPORT);
 #endif
 #endif
 #ifdef  SO_SNDBUF
-    PyModule_AddIntMacro(m, SO_SNDBUF);
+    ADD_INT_MACRO(m, SO_SNDBUF);
 #endif
 #ifdef  SO_RCVBUF
-    PyModule_AddIntMacro(m, SO_RCVBUF);
+    ADD_INT_MACRO(m, SO_RCVBUF);
 #endif
 #ifdef  SO_SNDLOWAT
-    PyModule_AddIntMacro(m, SO_SNDLOWAT);
+    ADD_INT_MACRO(m, SO_SNDLOWAT);
 #endif
 #ifdef  SO_RCVLOWAT
-    PyModule_AddIntMacro(m, SO_RCVLOWAT);
+    ADD_INT_MACRO(m, SO_RCVLOWAT);
 #endif
 #ifdef  SO_SNDTIMEO
-    PyModule_AddIntMacro(m, SO_SNDTIMEO);
+    ADD_INT_MACRO(m, SO_SNDTIMEO);
 #endif
 #ifdef  SO_RCVTIMEO
-    PyModule_AddIntMacro(m, SO_RCVTIMEO);
+    ADD_INT_MACRO(m, SO_RCVTIMEO);
 #endif
 #ifdef  SO_ERROR
-    PyModule_AddIntMacro(m, SO_ERROR);
+    ADD_INT_MACRO(m, SO_ERROR);
 #endif
 #ifdef  SO_TYPE
-    PyModule_AddIntMacro(m, SO_TYPE);
+    ADD_INT_MACRO(m, SO_TYPE);
 #endif
 #ifdef  SO_SETFIB
-    PyModule_AddIntMacro(m, SO_SETFIB);
+    ADD_INT_MACRO(m, SO_SETFIB);
 #endif
 #ifdef  SO_PASSCRED
-    PyModule_AddIntMacro(m, SO_PASSCRED);
+    ADD_INT_MACRO(m, SO_PASSCRED);
 #endif
 #ifdef  SO_PEERCRED
-    PyModule_AddIntMacro(m, SO_PEERCRED);
+    ADD_INT_MACRO(m, SO_PEERCRED);
 #endif
 #ifdef  LOCAL_PEERCRED
-    PyModule_AddIntMacro(m, LOCAL_PEERCRED);
+    ADD_INT_MACRO(m, LOCAL_PEERCRED);
 #endif
 #ifdef  SO_PASSSEC
-    PyModule_AddIntMacro(m, SO_PASSSEC);
+    ADD_INT_MACRO(m, SO_PASSSEC);
 #endif
 #ifdef  SO_PEERSEC
-    PyModule_AddIntMacro(m, SO_PEERSEC);
+    ADD_INT_MACRO(m, SO_PEERSEC);
 #endif
 #ifdef  SO_BINDTODEVICE
-    PyModule_AddIntMacro(m, SO_BINDTODEVICE);
+    ADD_INT_MACRO(m, SO_BINDTODEVICE);
+#endif
+#ifdef  SO_BINDTOIFINDEX
+    ADD_INT_MACRO(m, SO_BINDTOIFINDEX);
 #endif
 #ifdef  SO_PRIORITY
-    PyModule_AddIntMacro(m, SO_PRIORITY);
+    ADD_INT_MACRO(m, SO_PRIORITY);
 #endif
 #ifdef  SO_MARK
-    PyModule_AddIntMacro(m, SO_MARK);
+    ADD_INT_MACRO(m, SO_MARK);
 #endif
 #ifdef  SO_USER_COOKIE
-    PyModule_AddIntMacro(m, SO_USER_COOKIE);
+    ADD_INT_MACRO(m, SO_USER_COOKIE);
 #endif
 #ifdef  SO_RTABLE
-    PyModule_AddIntMacro(m, SO_RTABLE);
+    ADD_INT_MACRO(m, SO_RTABLE);
 #endif
 #ifdef SO_DOMAIN
-    PyModule_AddIntMacro(m, SO_DOMAIN);
+    ADD_INT_MACRO(m, SO_DOMAIN);
 #endif
 #ifdef SO_PROTOCOL
-    PyModule_AddIntMacro(m, SO_PROTOCOL);
+    ADD_INT_MACRO(m, SO_PROTOCOL);
 #endif
 #ifdef LOCAL_CREDS
-    PyModule_AddIntMacro(m, LOCAL_CREDS);
+    ADD_INT_MACRO(m, LOCAL_CREDS);
 #endif
 #ifdef LOCAL_CREDS_PERSISTENT
-    PyModule_AddIntMacro(m, LOCAL_CREDS_PERSISTENT);
+    ADD_INT_MACRO(m, LOCAL_CREDS_PERSISTENT);
 #endif
 
     /* Maximum number of connections for "listen" */
 #ifdef  SOMAXCONN
-    PyModule_AddIntMacro(m, SOMAXCONN);
+    ADD_INT_MACRO(m, SOMAXCONN);
 #else
-    PyModule_AddIntConstant(m, "SOMAXCONN", 5); /* Common value */
+    ADD_INT_CONST(m, "SOMAXCONN", 5); /* Common value */
 #endif
 
     /* Ancillary message types */
 #ifdef  SCM_RIGHTS
-    PyModule_AddIntMacro(m, SCM_RIGHTS);
+    ADD_INT_MACRO(m, SCM_RIGHTS);
 #endif
 #ifdef  SCM_CREDENTIALS
-    PyModule_AddIntMacro(m, SCM_CREDENTIALS);
+    ADD_INT_MACRO(m, SCM_CREDENTIALS);
 #endif
 #ifdef  SCM_CREDS
-    PyModule_AddIntMacro(m, SCM_CREDS);
+    ADD_INT_MACRO(m, SCM_CREDS);
 #endif
 #ifdef  SCM_CREDS2
-    PyModule_AddIntMacro(m, SCM_CREDS2);
+    ADD_INT_MACRO(m, SCM_CREDS2);
 #endif
 
     /* Flags for send, recv */
 #ifdef  MSG_OOB
-    PyModule_AddIntMacro(m, MSG_OOB);
+    ADD_INT_MACRO(m, MSG_OOB);
 #endif
 #ifdef  MSG_PEEK
-    PyModule_AddIntMacro(m, MSG_PEEK);
+    ADD_INT_MACRO(m, MSG_PEEK);
 #endif
 #ifdef  MSG_DONTROUTE
-    PyModule_AddIntMacro(m, MSG_DONTROUTE);
+    ADD_INT_MACRO(m, MSG_DONTROUTE);
 #endif
 #ifdef  MSG_DONTWAIT
-    PyModule_AddIntMacro(m, MSG_DONTWAIT);
+    ADD_INT_MACRO(m, MSG_DONTWAIT);
 #endif
 #ifdef  MSG_EOR
-    PyModule_AddIntMacro(m, MSG_EOR);
+    ADD_INT_MACRO(m, MSG_EOR);
 #endif
 #ifdef  MSG_TRUNC
     // workaround for https://github.com/WebAssembly/wasi-libc/issues/305
     #if defined(__wasi__) && !defined(__WASI_RIFLAGS_RECV_DATA_TRUNCATED)
     #  define __WASI_RIFLAGS_RECV_DATA_TRUNCATED 2
     #endif
-    PyModule_AddIntMacro(m, MSG_TRUNC);
+    ADD_INT_MACRO(m, MSG_TRUNC);
 #endif
 #ifdef  MSG_CTRUNC
-    PyModule_AddIntMacro(m, MSG_CTRUNC);
+    ADD_INT_MACRO(m, MSG_CTRUNC);
 #endif
 #ifdef  MSG_WAITALL
-    PyModule_AddIntMacro(m, MSG_WAITALL);
+    ADD_INT_MACRO(m, MSG_WAITALL);
 #endif
 #ifdef  MSG_BTAG
-    PyModule_AddIntMacro(m, MSG_BTAG);
+    ADD_INT_MACRO(m, MSG_BTAG);
 #endif
 #ifdef  MSG_ETAG
-    PyModule_AddIntMacro(m, MSG_ETAG);
+    ADD_INT_MACRO(m, MSG_ETAG);
 #endif
 #ifdef  MSG_NOSIGNAL
-    PyModule_AddIntMacro(m, MSG_NOSIGNAL);
+    ADD_INT_MACRO(m, MSG_NOSIGNAL);
 #endif
 #ifdef  MSG_NOTIFICATION
-    PyModule_AddIntMacro(m, MSG_NOTIFICATION);
+    ADD_INT_MACRO(m, MSG_NOTIFICATION);
 #endif
 #ifdef  MSG_CMSG_CLOEXEC
-    PyModule_AddIntMacro(m, MSG_CMSG_CLOEXEC);
+    ADD_INT_MACRO(m, MSG_CMSG_CLOEXEC);
 #endif
 #ifdef  MSG_ERRQUEUE
-    PyModule_AddIntMacro(m, MSG_ERRQUEUE);
+    ADD_INT_MACRO(m, MSG_ERRQUEUE);
 #endif
 #ifdef  MSG_CONFIRM
-    PyModule_AddIntMacro(m, MSG_CONFIRM);
+    ADD_INT_MACRO(m, MSG_CONFIRM);
 #endif
 #ifdef  MSG_MORE
-    PyModule_AddIntMacro(m, MSG_MORE);
+    ADD_INT_MACRO(m, MSG_MORE);
 #endif
 #ifdef  MSG_EOF
-    PyModule_AddIntMacro(m, MSG_EOF);
+    ADD_INT_MACRO(m, MSG_EOF);
 #endif
 #ifdef  MSG_BCAST
-    PyModule_AddIntMacro(m, MSG_BCAST);
+    ADD_INT_MACRO(m, MSG_BCAST);
 #endif
 #ifdef  MSG_MCAST
-    PyModule_AddIntMacro(m, MSG_MCAST);
+    ADD_INT_MACRO(m, MSG_MCAST);
 #endif
 #ifdef MSG_FASTOPEN
-    PyModule_AddIntMacro(m, MSG_FASTOPEN);
+    ADD_INT_MACRO(m, MSG_FASTOPEN);
 #endif
 
     /* Protocol level and numbers, usable for [gs]etsockopt */
 #ifdef  SOL_SOCKET
-    PyModule_AddIntMacro(m, SOL_SOCKET);
+    ADD_INT_MACRO(m, SOL_SOCKET);
 #endif
 #ifdef  SOL_IP
-    PyModule_AddIntMacro(m, SOL_IP);
+    ADD_INT_MACRO(m, SOL_IP);
 #else
-    PyModule_AddIntConstant(m, "SOL_IP", 0);
+    ADD_INT_CONST(m, "SOL_IP", 0);
 #endif
 #ifdef  SOL_IPX
-    PyModule_AddIntMacro(m, SOL_IPX);
+    ADD_INT_MACRO(m, SOL_IPX);
 #endif
 #ifdef  SOL_AX25
-    PyModule_AddIntMacro(m, SOL_AX25);
+    ADD_INT_MACRO(m, SOL_AX25);
 #endif
 #ifdef  SOL_ATALK
-    PyModule_AddIntMacro(m, SOL_ATALK);
+    ADD_INT_MACRO(m, SOL_ATALK);
 #endif
 #ifdef  SOL_NETROM
-    PyModule_AddIntMacro(m, SOL_NETROM);
+    ADD_INT_MACRO(m, SOL_NETROM);
 #endif
 #ifdef  SOL_ROSE
-    PyModule_AddIntMacro(m, SOL_ROSE);
+    ADD_INT_MACRO(m, SOL_ROSE);
 #endif
 #ifdef  SOL_TCP
-    PyModule_AddIntMacro(m, SOL_TCP);
+    ADD_INT_MACRO(m, SOL_TCP);
 #else
-    PyModule_AddIntConstant(m, "SOL_TCP", 6);
+    ADD_INT_CONST(m, "SOL_TCP", 6);
 #endif
 #ifdef  SOL_UDP
-    PyModule_AddIntMacro(m, SOL_UDP);
+    ADD_INT_MACRO(m, SOL_UDP);
 #else
-    PyModule_AddIntConstant(m, "SOL_UDP", 17);
+    ADD_INT_CONST(m, "SOL_UDP", 17);
 #endif
 #ifdef SOL_CAN_BASE
-    PyModule_AddIntMacro(m, SOL_CAN_BASE);
+    ADD_INT_MACRO(m, SOL_CAN_BASE);
 #endif
 #ifdef SOL_CAN_RAW
-    PyModule_AddIntMacro(m, SOL_CAN_RAW);
-    PyModule_AddIntMacro(m, CAN_RAW);
+    ADD_INT_MACRO(m, SOL_CAN_RAW);
+    ADD_INT_MACRO(m, CAN_RAW);
 #endif
 #if defined(HAVE_LINUX_CAN_H) || defined(HAVE_NETCAN_CAN_H)
-    PyModule_AddIntMacro(m, CAN_EFF_FLAG);
-    PyModule_AddIntMacro(m, CAN_RTR_FLAG);
-    PyModule_AddIntMacro(m, CAN_ERR_FLAG);
+    ADD_INT_MACRO(m, CAN_EFF_FLAG);
+    ADD_INT_MACRO(m, CAN_RTR_FLAG);
+    ADD_INT_MACRO(m, CAN_ERR_FLAG);
 
-    PyModule_AddIntMacro(m, CAN_SFF_MASK);
-    PyModule_AddIntMacro(m, CAN_EFF_MASK);
-    PyModule_AddIntMacro(m, CAN_ERR_MASK);
+    ADD_INT_MACRO(m, CAN_SFF_MASK);
+    ADD_INT_MACRO(m, CAN_EFF_MASK);
+    ADD_INT_MACRO(m, CAN_ERR_MASK);
 #ifdef CAN_ISOTP
-    PyModule_AddIntMacro(m, CAN_ISOTP);
+    ADD_INT_MACRO(m, CAN_ISOTP);
 #endif
 #ifdef CAN_J1939
-    PyModule_AddIntMacro(m, CAN_J1939);
+    ADD_INT_MACRO(m, CAN_J1939);
 #endif
 #endif
 #if defined(HAVE_LINUX_CAN_RAW_H) || defined(HAVE_NETCAN_CAN_H)
-    PyModule_AddIntMacro(m, CAN_RAW_FILTER);
+    ADD_INT_MACRO(m, CAN_RAW_FILTER);
 #ifdef CAN_RAW_ERR_FILTER
-    PyModule_AddIntMacro(m, CAN_RAW_ERR_FILTER);
+    ADD_INT_MACRO(m, CAN_RAW_ERR_FILTER);
 #endif
-    PyModule_AddIntMacro(m, CAN_RAW_LOOPBACK);
-    PyModule_AddIntMacro(m, CAN_RAW_RECV_OWN_MSGS);
+    ADD_INT_MACRO(m, CAN_RAW_LOOPBACK);
+    ADD_INT_MACRO(m, CAN_RAW_RECV_OWN_MSGS);
 #endif
 #ifdef HAVE_LINUX_CAN_RAW_FD_FRAMES
-    PyModule_AddIntMacro(m, CAN_RAW_FD_FRAMES);
+    ADD_INT_MACRO(m, CAN_RAW_FD_FRAMES);
 #endif
 #ifdef HAVE_LINUX_CAN_RAW_JOIN_FILTERS
-    PyModule_AddIntMacro(m, CAN_RAW_JOIN_FILTERS);
+    ADD_INT_MACRO(m, CAN_RAW_JOIN_FILTERS);
 #endif
 #ifdef HAVE_LINUX_CAN_BCM_H
-    PyModule_AddIntMacro(m, CAN_BCM);
+    ADD_INT_MACRO(m, CAN_BCM);
 
     /* BCM opcodes */
-    PyModule_AddIntConstant(m, "CAN_BCM_TX_SETUP", TX_SETUP);
-    PyModule_AddIntConstant(m, "CAN_BCM_TX_DELETE", TX_DELETE);
-    PyModule_AddIntConstant(m, "CAN_BCM_TX_READ", TX_READ);
-    PyModule_AddIntConstant(m, "CAN_BCM_TX_SEND", TX_SEND);
-    PyModule_AddIntConstant(m, "CAN_BCM_RX_SETUP", RX_SETUP);
-    PyModule_AddIntConstant(m, "CAN_BCM_RX_DELETE", RX_DELETE);
-    PyModule_AddIntConstant(m, "CAN_BCM_RX_READ", RX_READ);
-    PyModule_AddIntConstant(m, "CAN_BCM_TX_STATUS", TX_STATUS);
-    PyModule_AddIntConstant(m, "CAN_BCM_TX_EXPIRED", TX_EXPIRED);
-    PyModule_AddIntConstant(m, "CAN_BCM_RX_STATUS", RX_STATUS);
-    PyModule_AddIntConstant(m, "CAN_BCM_RX_TIMEOUT", RX_TIMEOUT);
-    PyModule_AddIntConstant(m, "CAN_BCM_RX_CHANGED", RX_CHANGED);
+    ADD_INT_CONST(m, "CAN_BCM_TX_SETUP", TX_SETUP);
+    ADD_INT_CONST(m, "CAN_BCM_TX_DELETE", TX_DELETE);
+    ADD_INT_CONST(m, "CAN_BCM_TX_READ", TX_READ);
+    ADD_INT_CONST(m, "CAN_BCM_TX_SEND", TX_SEND);
+    ADD_INT_CONST(m, "CAN_BCM_RX_SETUP", RX_SETUP);
+    ADD_INT_CONST(m, "CAN_BCM_RX_DELETE", RX_DELETE);
+    ADD_INT_CONST(m, "CAN_BCM_RX_READ", RX_READ);
+    ADD_INT_CONST(m, "CAN_BCM_TX_STATUS", TX_STATUS);
+    ADD_INT_CONST(m, "CAN_BCM_TX_EXPIRED", TX_EXPIRED);
+    ADD_INT_CONST(m, "CAN_BCM_RX_STATUS", RX_STATUS);
+    ADD_INT_CONST(m, "CAN_BCM_RX_TIMEOUT", RX_TIMEOUT);
+    ADD_INT_CONST(m, "CAN_BCM_RX_CHANGED", RX_CHANGED);
 
     /* BCM flags */
-    PyModule_AddIntConstant(m, "CAN_BCM_SETTIMER", SETTIMER);
-    PyModule_AddIntConstant(m, "CAN_BCM_STARTTIMER", STARTTIMER);
-    PyModule_AddIntConstant(m, "CAN_BCM_TX_COUNTEVT", TX_COUNTEVT);
-    PyModule_AddIntConstant(m, "CAN_BCM_TX_ANNOUNCE", TX_ANNOUNCE);
-    PyModule_AddIntConstant(m, "CAN_BCM_TX_CP_CAN_ID", TX_CP_CAN_ID);
-    PyModule_AddIntConstant(m, "CAN_BCM_RX_FILTER_ID", RX_FILTER_ID);
-    PyModule_AddIntConstant(m, "CAN_BCM_RX_CHECK_DLC", RX_CHECK_DLC);
-    PyModule_AddIntConstant(m, "CAN_BCM_RX_NO_AUTOTIMER", RX_NO_AUTOTIMER);
-    PyModule_AddIntConstant(m, "CAN_BCM_RX_ANNOUNCE_RESUME", RX_ANNOUNCE_RESUME);
-    PyModule_AddIntConstant(m, "CAN_BCM_TX_RESET_MULTI_IDX", TX_RESET_MULTI_IDX);
-    PyModule_AddIntConstant(m, "CAN_BCM_RX_RTR_FRAME", RX_RTR_FRAME);
+    ADD_INT_CONST(m, "CAN_BCM_SETTIMER", SETTIMER);
+    ADD_INT_CONST(m, "CAN_BCM_STARTTIMER", STARTTIMER);
+    ADD_INT_CONST(m, "CAN_BCM_TX_COUNTEVT", TX_COUNTEVT);
+    ADD_INT_CONST(m, "CAN_BCM_TX_ANNOUNCE", TX_ANNOUNCE);
+    ADD_INT_CONST(m, "CAN_BCM_TX_CP_CAN_ID", TX_CP_CAN_ID);
+    ADD_INT_CONST(m, "CAN_BCM_RX_FILTER_ID", RX_FILTER_ID);
+    ADD_INT_CONST(m, "CAN_BCM_RX_CHECK_DLC", RX_CHECK_DLC);
+    ADD_INT_CONST(m, "CAN_BCM_RX_NO_AUTOTIMER", RX_NO_AUTOTIMER);
+    ADD_INT_CONST(m, "CAN_BCM_RX_ANNOUNCE_RESUME", RX_ANNOUNCE_RESUME);
+    ADD_INT_CONST(m, "CAN_BCM_TX_RESET_MULTI_IDX", TX_RESET_MULTI_IDX);
+    ADD_INT_CONST(m, "CAN_BCM_RX_RTR_FRAME", RX_RTR_FRAME);
 #ifdef CAN_FD_FRAME
     /* CAN_FD_FRAME was only introduced in the 4.8.x kernel series */
-    PyModule_AddIntConstant(m, "CAN_BCM_CAN_FD_FRAME", CAN_FD_FRAME);
+    ADD_INT_CONST(m, "CAN_BCM_CAN_FD_FRAME", CAN_FD_FRAME);
 #endif
 #endif
 #ifdef HAVE_LINUX_CAN_J1939_H
-    PyModule_AddIntMacro(m, J1939_MAX_UNICAST_ADDR);
-    PyModule_AddIntMacro(m, J1939_IDLE_ADDR);
-    PyModule_AddIntMacro(m, J1939_NO_ADDR);
-    PyModule_AddIntMacro(m, J1939_NO_NAME);
-    PyModule_AddIntMacro(m, J1939_PGN_REQUEST);
-    PyModule_AddIntMacro(m, J1939_PGN_ADDRESS_CLAIMED);
-    PyModule_AddIntMacro(m, J1939_PGN_ADDRESS_COMMANDED);
-    PyModule_AddIntMacro(m, J1939_PGN_PDU1_MAX);
-    PyModule_AddIntMacro(m, J1939_PGN_MAX);
-    PyModule_AddIntMacro(m, J1939_NO_PGN);
+    ADD_INT_MACRO(m, J1939_MAX_UNICAST_ADDR);
+    ADD_INT_MACRO(m, J1939_IDLE_ADDR);
+    ADD_INT_MACRO(m, J1939_NO_ADDR);
+    ADD_INT_MACRO(m, J1939_NO_NAME);
+    ADD_INT_MACRO(m, J1939_PGN_REQUEST);
+    ADD_INT_MACRO(m, J1939_PGN_ADDRESS_CLAIMED);
+    ADD_INT_MACRO(m, J1939_PGN_ADDRESS_COMMANDED);
+    ADD_INT_MACRO(m, J1939_PGN_PDU1_MAX);
+    ADD_INT_MACRO(m, J1939_PGN_MAX);
+    ADD_INT_MACRO(m, J1939_NO_PGN);
 
     /* J1939 socket options */
-    PyModule_AddIntMacro(m, SO_J1939_FILTER);
-    PyModule_AddIntMacro(m, SO_J1939_PROMISC);
-    PyModule_AddIntMacro(m, SO_J1939_SEND_PRIO);
-    PyModule_AddIntMacro(m, SO_J1939_ERRQUEUE);
+    ADD_INT_MACRO(m, SO_J1939_FILTER);
+    ADD_INT_MACRO(m, SO_J1939_PROMISC);
+    ADD_INT_MACRO(m, SO_J1939_SEND_PRIO);
+    ADD_INT_MACRO(m, SO_J1939_ERRQUEUE);
 
-    PyModule_AddIntMacro(m, SCM_J1939_DEST_ADDR);
-    PyModule_AddIntMacro(m, SCM_J1939_DEST_NAME);
-    PyModule_AddIntMacro(m, SCM_J1939_PRIO);
-    PyModule_AddIntMacro(m, SCM_J1939_ERRQUEUE);
+    ADD_INT_MACRO(m, SCM_J1939_DEST_ADDR);
+    ADD_INT_MACRO(m, SCM_J1939_DEST_NAME);
+    ADD_INT_MACRO(m, SCM_J1939_PRIO);
+    ADD_INT_MACRO(m, SCM_J1939_ERRQUEUE);
 
-    PyModule_AddIntMacro(m, J1939_NLA_PAD);
-    PyModule_AddIntMacro(m, J1939_NLA_BYTES_ACKED);
+    ADD_INT_MACRO(m, J1939_NLA_PAD);
+    ADD_INT_MACRO(m, J1939_NLA_BYTES_ACKED);
 
-    PyModule_AddIntMacro(m, J1939_EE_INFO_NONE);
-    PyModule_AddIntMacro(m, J1939_EE_INFO_TX_ABORT);
+    ADD_INT_MACRO(m, J1939_EE_INFO_NONE);
+    ADD_INT_MACRO(m, J1939_EE_INFO_TX_ABORT);
 
-    PyModule_AddIntMacro(m, J1939_FILTER_MAX);
+    ADD_INT_MACRO(m, J1939_FILTER_MAX);
 #endif
 #ifdef SOL_RDS
-    PyModule_AddIntMacro(m, SOL_RDS);
+    ADD_INT_MACRO(m, SOL_RDS);
 #endif
 #ifdef HAVE_SOCKADDR_ALG
-    PyModule_AddIntMacro(m, SOL_ALG);
+    ADD_INT_MACRO(m, SOL_ALG);
 #endif
 #ifdef RDS_CANCEL_SENT_TO
-    PyModule_AddIntMacro(m, RDS_CANCEL_SENT_TO);
+    ADD_INT_MACRO(m, RDS_CANCEL_SENT_TO);
 #endif
 #ifdef RDS_GET_MR
-    PyModule_AddIntMacro(m, RDS_GET_MR);
+    ADD_INT_MACRO(m, RDS_GET_MR);
 #endif
 #ifdef RDS_FREE_MR
-    PyModule_AddIntMacro(m, RDS_FREE_MR);
+    ADD_INT_MACRO(m, RDS_FREE_MR);
 #endif
 #ifdef RDS_RECVERR
-    PyModule_AddIntMacro(m, RDS_RECVERR);
+    ADD_INT_MACRO(m, RDS_RECVERR);
 #endif
 #ifdef RDS_CONG_MONITOR
-    PyModule_AddIntMacro(m, RDS_CONG_MONITOR);
+    ADD_INT_MACRO(m, RDS_CONG_MONITOR);
 #endif
 #ifdef RDS_GET_MR_FOR_DEST
-    PyModule_AddIntMacro(m, RDS_GET_MR_FOR_DEST);
+    ADD_INT_MACRO(m, RDS_GET_MR_FOR_DEST);
 #endif
 #ifdef  IPPROTO_IP
-    PyModule_AddIntMacro(m, IPPROTO_IP);
+    ADD_INT_MACRO(m, IPPROTO_IP);
 #else
-    PyModule_AddIntConstant(m, "IPPROTO_IP", 0);
+    ADD_INT_CONST(m, "IPPROTO_IP", 0);
 #endif
 #ifdef  IPPROTO_HOPOPTS
-    PyModule_AddIntMacro(m, IPPROTO_HOPOPTS);
+    ADD_INT_MACRO(m, IPPROTO_HOPOPTS);
 #endif
 #ifdef  IPPROTO_ICMP
-    PyModule_AddIntMacro(m, IPPROTO_ICMP);
+    ADD_INT_MACRO(m, IPPROTO_ICMP);
 #else
-    PyModule_AddIntConstant(m, "IPPROTO_ICMP", 1);
+    ADD_INT_CONST(m, "IPPROTO_ICMP", 1);
 #endif
 #ifdef  IPPROTO_IGMP
-    PyModule_AddIntMacro(m, IPPROTO_IGMP);
+    ADD_INT_MACRO(m, IPPROTO_IGMP);
 #endif
 #ifdef  IPPROTO_GGP
-    PyModule_AddIntMacro(m, IPPROTO_GGP);
+    ADD_INT_MACRO(m, IPPROTO_GGP);
 #endif
 #ifdef  IPPROTO_IPV4
-    PyModule_AddIntMacro(m, IPPROTO_IPV4);
+    ADD_INT_MACRO(m, IPPROTO_IPV4);
 #endif
 #ifdef  IPPROTO_IPV6
-    PyModule_AddIntMacro(m, IPPROTO_IPV6);
+    ADD_INT_MACRO(m, IPPROTO_IPV6);
 #endif
 #ifdef  IPPROTO_IPIP
-    PyModule_AddIntMacro(m, IPPROTO_IPIP);
+    ADD_INT_MACRO(m, IPPROTO_IPIP);
 #endif
 #ifdef  IPPROTO_TCP
-    PyModule_AddIntMacro(m, IPPROTO_TCP);
+    ADD_INT_MACRO(m, IPPROTO_TCP);
 #else
-    PyModule_AddIntConstant(m, "IPPROTO_TCP", 6);
+    ADD_INT_CONST(m, "IPPROTO_TCP", 6);
 #endif
 #ifdef  IPPROTO_EGP
-    PyModule_AddIntMacro(m, IPPROTO_EGP);
+    ADD_INT_MACRO(m, IPPROTO_EGP);
 #endif
 #ifdef  IPPROTO_PUP
-    PyModule_AddIntMacro(m, IPPROTO_PUP);
+    ADD_INT_MACRO(m, IPPROTO_PUP);
 #endif
 #ifdef  IPPROTO_UDP
-    PyModule_AddIntMacro(m, IPPROTO_UDP);
+    ADD_INT_MACRO(m, IPPROTO_UDP);
 #else
-    PyModule_AddIntConstant(m, "IPPROTO_UDP", 17);
+    ADD_INT_CONST(m, "IPPROTO_UDP", 17);
 #endif
 #ifdef  IPPROTO_UDPLITE
-    PyModule_AddIntMacro(m, IPPROTO_UDPLITE);
+    ADD_INT_MACRO(m, IPPROTO_UDPLITE);
     #ifndef UDPLITE_SEND_CSCOV
         #define UDPLITE_SEND_CSCOV 10
     #endif
-    PyModule_AddIntMacro(m, UDPLITE_SEND_CSCOV);
+    ADD_INT_MACRO(m, UDPLITE_SEND_CSCOV);
     #ifndef UDPLITE_RECV_CSCOV
         #define UDPLITE_RECV_CSCOV 11
     #endif
-    PyModule_AddIntMacro(m, UDPLITE_RECV_CSCOV);
+    ADD_INT_MACRO(m, UDPLITE_RECV_CSCOV);
 #endif
 #ifdef  IPPROTO_IDP
-    PyModule_AddIntMacro(m, IPPROTO_IDP);
+    ADD_INT_MACRO(m, IPPROTO_IDP);
 #endif
 #ifdef  IPPROTO_HELLO
-    PyModule_AddIntMacro(m, IPPROTO_HELLO);
+    ADD_INT_MACRO(m, IPPROTO_HELLO);
 #endif
 #ifdef  IPPROTO_ND
-    PyModule_AddIntMacro(m, IPPROTO_ND);
+    ADD_INT_MACRO(m, IPPROTO_ND);
 #endif
 #ifdef  IPPROTO_TP
-    PyModule_AddIntMacro(m, IPPROTO_TP);
+    ADD_INT_MACRO(m, IPPROTO_TP);
 #endif
 #ifdef  IPPROTO_ROUTING
-    PyModule_AddIntMacro(m, IPPROTO_ROUTING);
+    ADD_INT_MACRO(m, IPPROTO_ROUTING);
 #endif
 #ifdef  IPPROTO_FRAGMENT
-    PyModule_AddIntMacro(m, IPPROTO_FRAGMENT);
+    ADD_INT_MACRO(m, IPPROTO_FRAGMENT);
 #endif
 #ifdef  IPPROTO_RSVP
-    PyModule_AddIntMacro(m, IPPROTO_RSVP);
+    ADD_INT_MACRO(m, IPPROTO_RSVP);
 #endif
 #ifdef  IPPROTO_GRE
-    PyModule_AddIntMacro(m, IPPROTO_GRE);
+    ADD_INT_MACRO(m, IPPROTO_GRE);
 #endif
 #ifdef  IPPROTO_ESP
-    PyModule_AddIntMacro(m, IPPROTO_ESP);
+    ADD_INT_MACRO(m, IPPROTO_ESP);
 #endif
 #ifdef  IPPROTO_AH
-    PyModule_AddIntMacro(m, IPPROTO_AH);
+    ADD_INT_MACRO(m, IPPROTO_AH);
 #endif
 #ifdef  IPPROTO_MOBILE
-    PyModule_AddIntMacro(m, IPPROTO_MOBILE);
+    ADD_INT_MACRO(m, IPPROTO_MOBILE);
 #endif
 #ifdef  IPPROTO_ICMPV6
-    PyModule_AddIntMacro(m, IPPROTO_ICMPV6);
+    ADD_INT_MACRO(m, IPPROTO_ICMPV6);
 #endif
 #ifdef  IPPROTO_NONE
-    PyModule_AddIntMacro(m, IPPROTO_NONE);
+    ADD_INT_MACRO(m, IPPROTO_NONE);
 #endif
 #ifdef  IPPROTO_DSTOPTS
-    PyModule_AddIntMacro(m, IPPROTO_DSTOPTS);
+    ADD_INT_MACRO(m, IPPROTO_DSTOPTS);
 #endif
 #ifdef  IPPROTO_XTP
-    PyModule_AddIntMacro(m, IPPROTO_XTP);
+    ADD_INT_MACRO(m, IPPROTO_XTP);
 #endif
 #ifdef  IPPROTO_EON
-    PyModule_AddIntMacro(m, IPPROTO_EON);
+    ADD_INT_MACRO(m, IPPROTO_EON);
 #endif
 #ifdef  IPPROTO_PIM
-    PyModule_AddIntMacro(m, IPPROTO_PIM);
+    ADD_INT_MACRO(m, IPPROTO_PIM);
 #endif
 #ifdef  IPPROTO_IPCOMP
-    PyModule_AddIntMacro(m, IPPROTO_IPCOMP);
+    ADD_INT_MACRO(m, IPPROTO_IPCOMP);
 #endif
 #ifdef  IPPROTO_VRRP
-    PyModule_AddIntMacro(m, IPPROTO_VRRP);
+    ADD_INT_MACRO(m, IPPROTO_VRRP);
 #endif
 #ifdef  IPPROTO_SCTP
-    PyModule_AddIntMacro(m, IPPROTO_SCTP);
+    ADD_INT_MACRO(m, IPPROTO_SCTP);
 #endif
 #ifdef  IPPROTO_BIP
-    PyModule_AddIntMacro(m, IPPROTO_BIP);
+    ADD_INT_MACRO(m, IPPROTO_BIP);
 #endif
 #ifdef  IPPROTO_MPTCP
-    PyModule_AddIntMacro(m, IPPROTO_MPTCP);
+    ADD_INT_MACRO(m, IPPROTO_MPTCP);
 #endif
 /**/
 #ifdef  IPPROTO_RAW
-    PyModule_AddIntMacro(m, IPPROTO_RAW);
+    ADD_INT_MACRO(m, IPPROTO_RAW);
 #else
-    PyModule_AddIntConstant(m, "IPPROTO_RAW", 255);
+    ADD_INT_CONST(m, "IPPROTO_RAW", 255);
 #endif
 #ifdef  IPPROTO_MAX
-    PyModule_AddIntMacro(m, IPPROTO_MAX);
+    ADD_INT_MACRO(m, IPPROTO_MAX);
 #endif
 
 #ifdef  MS_WINDOWS
-    PyModule_AddIntMacro(m, IPPROTO_ICLFXBM);
-    PyModule_AddIntMacro(m, IPPROTO_ST);
-    PyModule_AddIntMacro(m, IPPROTO_CBT);
-    PyModule_AddIntMacro(m, IPPROTO_IGP);
-    PyModule_AddIntMacro(m, IPPROTO_RDP);
-    PyModule_AddIntMacro(m, IPPROTO_PGM);
-    PyModule_AddIntMacro(m, IPPROTO_L2TP);
-    PyModule_AddIntMacro(m, IPPROTO_SCTP);
+    ADD_INT_MACRO(m, IPPROTO_ICLFXBM);
+    ADD_INT_MACRO(m, IPPROTO_ST);
+    ADD_INT_MACRO(m, IPPROTO_CBT);
+    ADD_INT_MACRO(m, IPPROTO_IGP);
+    ADD_INT_MACRO(m, IPPROTO_RDP);
+    ADD_INT_MACRO(m, IPPROTO_PGM);
+    ADD_INT_MACRO(m, IPPROTO_L2TP);
+    ADD_INT_MACRO(m, IPPROTO_SCTP);
 #endif
 
 #ifdef  SYSPROTO_CONTROL
-    PyModule_AddIntMacro(m, SYSPROTO_CONTROL);
+    ADD_INT_MACRO(m, SYSPROTO_CONTROL);
 #endif
 
     /* Some port configuration */
 #ifdef  IPPORT_RESERVED
-    PyModule_AddIntMacro(m, IPPORT_RESERVED);
+    ADD_INT_MACRO(m, IPPORT_RESERVED);
 #else
-    PyModule_AddIntConstant(m, "IPPORT_RESERVED", 1024);
+    ADD_INT_CONST(m, "IPPORT_RESERVED", 1024);
 #endif
 #ifdef  IPPORT_USERRESERVED
-    PyModule_AddIntMacro(m, IPPORT_USERRESERVED);
+    ADD_INT_MACRO(m, IPPORT_USERRESERVED);
 #else
-    PyModule_AddIntConstant(m, "IPPORT_USERRESERVED", 5000);
+    ADD_INT_CONST(m, "IPPORT_USERRESERVED", 5000);
 #endif
 
     /* Some reserved IP v.4 addresses */
 #ifdef  INADDR_ANY
-    PyModule_AddIntMacro(m, INADDR_ANY);
+    ADD_INT_MACRO(m, INADDR_ANY);
 #else
-    PyModule_AddIntConstant(m, "INADDR_ANY", 0x00000000);
+    ADD_INT_CONST(m, "INADDR_ANY", 0x00000000);
 #endif
 #ifdef  INADDR_BROADCAST
-    PyModule_AddIntMacro(m, INADDR_BROADCAST);
+    ADD_INT_MACRO(m, INADDR_BROADCAST);
 #else
-    PyModule_AddIntConstant(m, "INADDR_BROADCAST", 0xffffffff);
+    ADD_INT_CONST(m, "INADDR_BROADCAST", 0xffffffff);
 #endif
 #ifdef  INADDR_LOOPBACK
-    PyModule_AddIntMacro(m, INADDR_LOOPBACK);
+    ADD_INT_MACRO(m, INADDR_LOOPBACK);
 #else
-    PyModule_AddIntConstant(m, "INADDR_LOOPBACK", 0x7F000001);
+    ADD_INT_CONST(m, "INADDR_LOOPBACK", 0x7F000001);
 #endif
 #ifdef  INADDR_UNSPEC_GROUP
-    PyModule_AddIntMacro(m, INADDR_UNSPEC_GROUP);
+    ADD_INT_MACRO(m, INADDR_UNSPEC_GROUP);
 #else
-    PyModule_AddIntConstant(m, "INADDR_UNSPEC_GROUP", 0xe0000000);
+    ADD_INT_CONST(m, "INADDR_UNSPEC_GROUP", 0xe0000000);
 #endif
 #ifdef  INADDR_ALLHOSTS_GROUP
-    PyModule_AddIntConstant(m, "INADDR_ALLHOSTS_GROUP",
+    ADD_INT_CONST(m, "INADDR_ALLHOSTS_GROUP",
                             INADDR_ALLHOSTS_GROUP);
 #else
-    PyModule_AddIntConstant(m, "INADDR_ALLHOSTS_GROUP", 0xe0000001);
+    ADD_INT_CONST(m, "INADDR_ALLHOSTS_GROUP", 0xe0000001);
 #endif
 #ifdef  INADDR_MAX_LOCAL_GROUP
-    PyModule_AddIntMacro(m, INADDR_MAX_LOCAL_GROUP);
+    ADD_INT_MACRO(m, INADDR_MAX_LOCAL_GROUP);
 #else
-    PyModule_AddIntConstant(m, "INADDR_MAX_LOCAL_GROUP", 0xe00000ff);
+    ADD_INT_CONST(m, "INADDR_MAX_LOCAL_GROUP", 0xe00000ff);
 #endif
 #ifdef  INADDR_NONE
-    PyModule_AddIntMacro(m, INADDR_NONE);
+    ADD_INT_MACRO(m, INADDR_NONE);
 #else
-    PyModule_AddIntConstant(m, "INADDR_NONE", 0xffffffff);
+    ADD_INT_CONST(m, "INADDR_NONE", 0xffffffff);
 #endif
 
     /* IPv4 [gs]etsockopt options */
 #ifdef  IP_OPTIONS
-    PyModule_AddIntMacro(m, IP_OPTIONS);
+    ADD_INT_MACRO(m, IP_OPTIONS);
 #endif
 #ifdef  IP_HDRINCL
-    PyModule_AddIntMacro(m, IP_HDRINCL);
+    ADD_INT_MACRO(m, IP_HDRINCL);
 #endif
 #ifdef  IP_TOS
-    PyModule_AddIntMacro(m, IP_TOS);
+    ADD_INT_MACRO(m, IP_TOS);
 #endif
 #ifdef  IP_TTL
-    PyModule_AddIntMacro(m, IP_TTL);
+    ADD_INT_MACRO(m, IP_TTL);
+#endif
+#ifdef  IP_RECVERR
+    ADD_INT_MACRO(m, IP_RECVERR);
 #endif
 #ifdef  IP_RECVOPTS
-    PyModule_AddIntMacro(m, IP_RECVOPTS);
+    ADD_INT_MACRO(m, IP_RECVOPTS);
+#endif
+#ifdef  IP_RECVORIGDSTADDR
+    ADD_INT_MACRO(m, IP_RECVORIGDSTADDR);
 #endif
 #ifdef  IP_RECVRETOPTS
-    PyModule_AddIntMacro(m, IP_RECVRETOPTS);
+    ADD_INT_MACRO(m, IP_RECVRETOPTS);
 #endif
 #ifdef  IP_RECVTOS
-    PyModule_AddIntMacro(m, IP_RECVTOS);
+    ADD_INT_MACRO(m, IP_RECVTOS);
+#endif
+#ifdef  IP_RECVTTL
+    ADD_INT_MACRO(m, IP_RECVTTL);
 #endif
 #ifdef  IP_RECVDSTADDR
-    PyModule_AddIntMacro(m, IP_RECVDSTADDR);
+    ADD_INT_MACRO(m, IP_RECVDSTADDR);
 #endif
 #ifdef  IP_RETOPTS
-    PyModule_AddIntMacro(m, IP_RETOPTS);
+    ADD_INT_MACRO(m, IP_RETOPTS);
 #endif
 #ifdef  IP_MULTICAST_IF
-    PyModule_AddIntMacro(m, IP_MULTICAST_IF);
+    ADD_INT_MACRO(m, IP_MULTICAST_IF);
 #endif
 #ifdef  IP_MULTICAST_TTL
-    PyModule_AddIntMacro(m, IP_MULTICAST_TTL);
+    ADD_INT_MACRO(m, IP_MULTICAST_TTL);
 #endif
 #ifdef  IP_MULTICAST_LOOP
-    PyModule_AddIntMacro(m, IP_MULTICAST_LOOP);
+    ADD_INT_MACRO(m, IP_MULTICAST_LOOP);
 #endif
 #ifdef  IP_ADD_MEMBERSHIP
-    PyModule_AddIntMacro(m, IP_ADD_MEMBERSHIP);
+    ADD_INT_MACRO(m, IP_ADD_MEMBERSHIP);
 #endif
 #ifdef  IP_DROP_MEMBERSHIP
-    PyModule_AddIntMacro(m, IP_DROP_MEMBERSHIP);
+    ADD_INT_MACRO(m, IP_DROP_MEMBERSHIP);
 #endif
 #ifdef  IP_DEFAULT_MULTICAST_TTL
-    PyModule_AddIntMacro(m, IP_DEFAULT_MULTICAST_TTL);
+    ADD_INT_MACRO(m, IP_DEFAULT_MULTICAST_TTL);
 #endif
 #ifdef  IP_DEFAULT_MULTICAST_LOOP
-    PyModule_AddIntMacro(m, IP_DEFAULT_MULTICAST_LOOP);
+    ADD_INT_MACRO(m, IP_DEFAULT_MULTICAST_LOOP);
 #endif
 #ifdef  IP_MAX_MEMBERSHIPS
-    PyModule_AddIntMacro(m, IP_MAX_MEMBERSHIPS);
+    ADD_INT_MACRO(m, IP_MAX_MEMBERSHIPS);
 #endif
 #ifdef  IP_TRANSPARENT
-    PyModule_AddIntMacro(m, IP_TRANSPARENT);
+    ADD_INT_MACRO(m, IP_TRANSPARENT);
+#endif
+#ifdef  IP_PKTINFO
+    ADD_INT_MACRO(m, IP_PKTINFO);
 #endif
 #ifdef IP_BIND_ADDRESS_NO_PORT
-    PyModule_AddIntMacro(m, IP_BIND_ADDRESS_NO_PORT);
+    ADD_INT_MACRO(m, IP_BIND_ADDRESS_NO_PORT);
+#endif
+#ifdef IP_UNBLOCK_SOURCE
+    ADD_INT_MACRO(m, IP_UNBLOCK_SOURCE);
+#endif
+#ifdef IP_BLOCK_SOURCE
+    ADD_INT_MACRO(m, IP_BLOCK_SOURCE);
+#endif
+#ifdef IP_ADD_SOURCE_MEMBERSHIP
+    ADD_INT_MACRO(m, IP_ADD_SOURCE_MEMBERSHIP);
+#endif
+#ifdef IP_DROP_SOURCE_MEMBERSHIP
+    ADD_INT_MACRO(m, IP_DROP_SOURCE_MEMBERSHIP);
 #endif
 
     /* IPv6 [gs]etsockopt options, defined in RFC2553 */
 #ifdef  IPV6_JOIN_GROUP
-    PyModule_AddIntMacro(m, IPV6_JOIN_GROUP);
+    ADD_INT_MACRO(m, IPV6_JOIN_GROUP);
 #endif
 #ifdef  IPV6_LEAVE_GROUP
-    PyModule_AddIntMacro(m, IPV6_LEAVE_GROUP);
+    ADD_INT_MACRO(m, IPV6_LEAVE_GROUP);
 #endif
 #ifdef  IPV6_MULTICAST_HOPS
-    PyModule_AddIntMacro(m, IPV6_MULTICAST_HOPS);
+    ADD_INT_MACRO(m, IPV6_MULTICAST_HOPS);
 #endif
 #ifdef  IPV6_MULTICAST_IF
-    PyModule_AddIntMacro(m, IPV6_MULTICAST_IF);
+    ADD_INT_MACRO(m, IPV6_MULTICAST_IF);
 #endif
 #ifdef  IPV6_MULTICAST_LOOP
-    PyModule_AddIntMacro(m, IPV6_MULTICAST_LOOP);
+    ADD_INT_MACRO(m, IPV6_MULTICAST_LOOP);
 #endif
 #ifdef  IPV6_UNICAST_HOPS
-    PyModule_AddIntMacro(m, IPV6_UNICAST_HOPS);
+    ADD_INT_MACRO(m, IPV6_UNICAST_HOPS);
 #endif
     /* Additional IPV6 socket options, defined in RFC 3493 */
 #ifdef IPV6_V6ONLY
-    PyModule_AddIntMacro(m, IPV6_V6ONLY);
+    ADD_INT_MACRO(m, IPV6_V6ONLY);
 #endif
     /* Advanced IPV6 socket options, from RFC 3542 */
 #ifdef IPV6_CHECKSUM
-    PyModule_AddIntMacro(m, IPV6_CHECKSUM);
+    ADD_INT_MACRO(m, IPV6_CHECKSUM);
 #endif
 #ifdef IPV6_DONTFRAG
-    PyModule_AddIntMacro(m, IPV6_DONTFRAG);
+    ADD_INT_MACRO(m, IPV6_DONTFRAG);
 #endif
 #ifdef IPV6_DSTOPTS
-    PyModule_AddIntMacro(m, IPV6_DSTOPTS);
+    ADD_INT_MACRO(m, IPV6_DSTOPTS);
 #endif
 #ifdef IPV6_HOPLIMIT
-    PyModule_AddIntMacro(m, IPV6_HOPLIMIT);
+    ADD_INT_MACRO(m, IPV6_HOPLIMIT);
 #endif
 #ifdef IPV6_HOPOPTS
-    PyModule_AddIntMacro(m, IPV6_HOPOPTS);
+    ADD_INT_MACRO(m, IPV6_HOPOPTS);
 #endif
 #ifdef IPV6_NEXTHOP
-    PyModule_AddIntMacro(m, IPV6_NEXTHOP);
+    ADD_INT_MACRO(m, IPV6_NEXTHOP);
 #endif
 #ifdef IPV6_PATHMTU
-    PyModule_AddIntMacro(m, IPV6_PATHMTU);
+    ADD_INT_MACRO(m, IPV6_PATHMTU);
 #endif
 #ifdef IPV6_PKTINFO
-    PyModule_AddIntMacro(m, IPV6_PKTINFO);
+    ADD_INT_MACRO(m, IPV6_PKTINFO);
 #endif
 #ifdef IPV6_RECVDSTOPTS
-    PyModule_AddIntMacro(m, IPV6_RECVDSTOPTS);
+    ADD_INT_MACRO(m, IPV6_RECVDSTOPTS);
 #endif
 #ifdef IPV6_RECVHOPLIMIT
-    PyModule_AddIntMacro(m, IPV6_RECVHOPLIMIT);
+    ADD_INT_MACRO(m, IPV6_RECVHOPLIMIT);
 #endif
 #ifdef IPV6_RECVHOPOPTS
-    PyModule_AddIntMacro(m, IPV6_RECVHOPOPTS);
+    ADD_INT_MACRO(m, IPV6_RECVHOPOPTS);
 #endif
 #ifdef IPV6_RECVPKTINFO
-    PyModule_AddIntMacro(m, IPV6_RECVPKTINFO);
+    ADD_INT_MACRO(m, IPV6_RECVPKTINFO);
 #endif
 #ifdef IPV6_RECVRTHDR
-    PyModule_AddIntMacro(m, IPV6_RECVRTHDR);
+    ADD_INT_MACRO(m, IPV6_RECVRTHDR);
 #endif
 #ifdef IPV6_RECVTCLASS
-    PyModule_AddIntMacro(m, IPV6_RECVTCLASS);
+    ADD_INT_MACRO(m, IPV6_RECVTCLASS);
 #endif
 #ifdef IPV6_RTHDR
-    PyModule_AddIntMacro(m, IPV6_RTHDR);
+    ADD_INT_MACRO(m, IPV6_RTHDR);
 #endif
 #ifdef IPV6_RTHDRDSTOPTS
-    PyModule_AddIntMacro(m, IPV6_RTHDRDSTOPTS);
+    ADD_INT_MACRO(m, IPV6_RTHDRDSTOPTS);
 #endif
 #ifdef IPV6_RTHDR_TYPE_0
-    PyModule_AddIntMacro(m, IPV6_RTHDR_TYPE_0);
+    ADD_INT_MACRO(m, IPV6_RTHDR_TYPE_0);
 #endif
 #ifdef IPV6_RECVPATHMTU
-    PyModule_AddIntMacro(m, IPV6_RECVPATHMTU);
+    ADD_INT_MACRO(m, IPV6_RECVPATHMTU);
 #endif
 #ifdef IPV6_TCLASS
-    PyModule_AddIntMacro(m, IPV6_TCLASS);
+    ADD_INT_MACRO(m, IPV6_TCLASS);
 #endif
 #ifdef IPV6_USE_MIN_MTU
-    PyModule_AddIntMacro(m, IPV6_USE_MIN_MTU);
+    ADD_INT_MACRO(m, IPV6_USE_MIN_MTU);
 #endif
 
     /* TCP options */
 #ifdef  TCP_NODELAY
-    PyModule_AddIntMacro(m, TCP_NODELAY);
+    ADD_INT_MACRO(m, TCP_NODELAY);
 #endif
 #ifdef  TCP_MAXSEG
-    PyModule_AddIntMacro(m, TCP_MAXSEG);
+    ADD_INT_MACRO(m, TCP_MAXSEG);
 #endif
 #ifdef  TCP_CORK
-    PyModule_AddIntMacro(m, TCP_CORK);
+    ADD_INT_MACRO(m, TCP_CORK);
 #endif
 #ifdef  TCP_KEEPIDLE
-    PyModule_AddIntMacro(m, TCP_KEEPIDLE);
+    ADD_INT_MACRO(m, TCP_KEEPIDLE);
 #endif
     /* TCP_KEEPALIVE is OSX's TCP_KEEPIDLE equivalent */
 #if defined(__APPLE__) && defined(TCP_KEEPALIVE)
-    PyModule_AddIntMacro(m, TCP_KEEPALIVE);
+    ADD_INT_MACRO(m, TCP_KEEPALIVE);
 #endif
 #ifdef  TCP_KEEPINTVL
-    PyModule_AddIntMacro(m, TCP_KEEPINTVL);
+    ADD_INT_MACRO(m, TCP_KEEPINTVL);
 #endif
 #ifdef  TCP_KEEPCNT
-    PyModule_AddIntMacro(m, TCP_KEEPCNT);
+    ADD_INT_MACRO(m, TCP_KEEPCNT);
 #endif
 #ifdef  TCP_SYNCNT
-    PyModule_AddIntMacro(m, TCP_SYNCNT);
+    ADD_INT_MACRO(m, TCP_SYNCNT);
 #endif
 #ifdef  TCP_LINGER2
-    PyModule_AddIntMacro(m, TCP_LINGER2);
+    ADD_INT_MACRO(m, TCP_LINGER2);
 #endif
 #ifdef  TCP_DEFER_ACCEPT
-    PyModule_AddIntMacro(m, TCP_DEFER_ACCEPT);
+    ADD_INT_MACRO(m, TCP_DEFER_ACCEPT);
 #endif
 #ifdef  TCP_WINDOW_CLAMP
-    PyModule_AddIntMacro(m, TCP_WINDOW_CLAMP);
+    ADD_INT_MACRO(m, TCP_WINDOW_CLAMP);
 #endif
 #ifdef  TCP_INFO
-    PyModule_AddIntMacro(m, TCP_INFO);
+    ADD_INT_MACRO(m, TCP_INFO);
 #endif
 #ifdef  TCP_CONNECTION_INFO
-    PyModule_AddIntMacro(m, TCP_CONNECTION_INFO);
+    ADD_INT_MACRO(m, TCP_CONNECTION_INFO);
+#endif
+#ifdef  SIO_TCP_SET_ACK_FREQUENCY
+#define TCP_QUICKACK SIO_TCP_SET_ACK_FREQUENCY
 #endif
 #ifdef  TCP_QUICKACK
-    PyModule_AddIntMacro(m, TCP_QUICKACK);
-#endif
-#ifdef  TCP_FASTOPEN
-    PyModule_AddIntMacro(m, TCP_FASTOPEN);
+    ADD_INT_MACRO(m, TCP_QUICKACK);
 #endif
 #ifdef  TCP_CONGESTION
-    PyModule_AddIntMacro(m, TCP_CONGESTION);
+    ADD_INT_MACRO(m, TCP_CONGESTION);
+#endif
+#ifdef  TCP_MD5SIG
+    ADD_INT_MACRO(m, TCP_MD5SIG);
+#endif
+#ifdef  TCP_THIN_LINEAR_TIMEOUTS
+    ADD_INT_MACRO(m, TCP_THIN_LINEAR_TIMEOUTS);
+#endif
+#ifdef  TCP_THIN_DUPACK
+    ADD_INT_MACRO(m, TCP_THIN_DUPACK);
 #endif
 #ifdef  TCP_USER_TIMEOUT
-    PyModule_AddIntMacro(m, TCP_USER_TIMEOUT);
+    ADD_INT_MACRO(m, TCP_USER_TIMEOUT);
+#endif
+#ifdef  TCP_REPAIR
+    ADD_INT_MACRO(m, TCP_REPAIR);
+#endif
+#ifdef  TCP_REPAIR_QUEUE
+    ADD_INT_MACRO(m, TCP_REPAIR_QUEUE);
+#endif
+#ifdef  TCP_QUEUE_SEQ
+    ADD_INT_MACRO(m, TCP_QUEUE_SEQ);
+#endif
+#ifdef  TCP_REPAIR_OPTIONS
+    ADD_INT_MACRO(m, TCP_REPAIR_OPTIONS);
+#endif
+#ifdef  TCP_FASTOPEN
+    ADD_INT_MACRO(m, TCP_FASTOPEN);
+#endif
+#ifdef  TCP_TIMESTAMP
+    ADD_INT_MACRO(m, TCP_TIMESTAMP);
 #endif
 #ifdef  TCP_NOTSENT_LOWAT
-    PyModule_AddIntMacro(m, TCP_NOTSENT_LOWAT);
+    ADD_INT_MACRO(m, TCP_NOTSENT_LOWAT);
+#endif
+#ifdef  TCP_CC_INFO
+    ADD_INT_MACRO(m, TCP_CC_INFO);
+#endif
+#ifdef  TCP_SAVE_SYN
+    ADD_INT_MACRO(m, TCP_SAVE_SYN);
+#endif
+#ifdef  TCP_SAVED_SYN
+    ADD_INT_MACRO(m, TCP_SAVED_SYN);
+#endif
+#ifdef  TCP_REPAIR_WINDOW
+    ADD_INT_MACRO(m, TCP_REPAIR_WINDOW);
+#endif
+#ifdef  TCP_FASTOPEN_CONNECT
+    ADD_INT_MACRO(m, TCP_FASTOPEN_CONNECT);
+#endif
+#ifdef  TCP_ULP
+    ADD_INT_MACRO(m, TCP_ULP);
+#endif
+#ifdef  TCP_MD5SIG_EXT
+    ADD_INT_MACRO(m, TCP_MD5SIG_EXT);
+#endif
+#ifdef  TCP_FASTOPEN_KEY
+    ADD_INT_MACRO(m, TCP_FASTOPEN_KEY);
+#endif
+#ifdef  TCP_FASTOPEN_NO_COOKIE
+    ADD_INT_MACRO(m, TCP_FASTOPEN_NO_COOKIE);
+#endif
+#ifdef  TCP_ZEROCOPY_RECEIVE
+    ADD_INT_MACRO(m, TCP_ZEROCOPY_RECEIVE);
+#endif
+#ifdef  TCP_INQ
+    ADD_INT_MACRO(m, TCP_INQ);
+#endif
+#ifdef  TCP_TX_DELAY
+    ADD_INT_MACRO(m, TCP_TX_DELAY);
 #endif
 
     /* IPX options */
 #ifdef  IPX_TYPE
-    PyModule_AddIntMacro(m, IPX_TYPE);
+    ADD_INT_MACRO(m, IPX_TYPE);
 #endif
 
 /* Reliable Datagram Sockets */
 #ifdef RDS_CMSG_RDMA_ARGS
-    PyModule_AddIntMacro(m, RDS_CMSG_RDMA_ARGS);
+    ADD_INT_MACRO(m, RDS_CMSG_RDMA_ARGS);
 #endif
 #ifdef RDS_CMSG_RDMA_DEST
-    PyModule_AddIntMacro(m, RDS_CMSG_RDMA_DEST);
+    ADD_INT_MACRO(m, RDS_CMSG_RDMA_DEST);
 #endif
 #ifdef RDS_CMSG_RDMA_MAP
-    PyModule_AddIntMacro(m, RDS_CMSG_RDMA_MAP);
+    ADD_INT_MACRO(m, RDS_CMSG_RDMA_MAP);
 #endif
 #ifdef RDS_CMSG_RDMA_STATUS
-    PyModule_AddIntMacro(m, RDS_CMSG_RDMA_STATUS);
+    ADD_INT_MACRO(m, RDS_CMSG_RDMA_STATUS);
 #endif
 #ifdef RDS_CMSG_RDMA_UPDATE
-    PyModule_AddIntMacro(m, RDS_CMSG_RDMA_UPDATE);
+    ADD_INT_MACRO(m, RDS_CMSG_RDMA_UPDATE);
 #endif
 #ifdef RDS_RDMA_READWRITE
-    PyModule_AddIntMacro(m, RDS_RDMA_READWRITE);
+    ADD_INT_MACRO(m, RDS_RDMA_READWRITE);
 #endif
 #ifdef RDS_RDMA_FENCE
-    PyModule_AddIntMacro(m, RDS_RDMA_FENCE);
+    ADD_INT_MACRO(m, RDS_RDMA_FENCE);
 #endif
 #ifdef RDS_RDMA_INVALIDATE
-    PyModule_AddIntMacro(m, RDS_RDMA_INVALIDATE);
+    ADD_INT_MACRO(m, RDS_RDMA_INVALIDATE);
 #endif
 #ifdef RDS_RDMA_USE_ONCE
-    PyModule_AddIntMacro(m, RDS_RDMA_USE_ONCE);
+    ADD_INT_MACRO(m, RDS_RDMA_USE_ONCE);
 #endif
 #ifdef RDS_RDMA_DONTWAIT
-    PyModule_AddIntMacro(m, RDS_RDMA_DONTWAIT);
+    ADD_INT_MACRO(m, RDS_RDMA_DONTWAIT);
 #endif
 #ifdef RDS_RDMA_NOTIFY_ME
-    PyModule_AddIntMacro(m, RDS_RDMA_NOTIFY_ME);
+    ADD_INT_MACRO(m, RDS_RDMA_NOTIFY_ME);
 #endif
 #ifdef RDS_RDMA_SILENT
-    PyModule_AddIntMacro(m, RDS_RDMA_SILENT);
+    ADD_INT_MACRO(m, RDS_RDMA_SILENT);
 #endif
 
     /* get{addr,name}info parameters */
 #ifdef EAI_ADDRFAMILY
-    PyModule_AddIntMacro(m, EAI_ADDRFAMILY);
+    ADD_INT_MACRO(m, EAI_ADDRFAMILY);
 #endif
 #ifdef EAI_AGAIN
-    PyModule_AddIntMacro(m, EAI_AGAIN);
+    ADD_INT_MACRO(m, EAI_AGAIN);
 #endif
 #ifdef EAI_BADFLAGS
-    PyModule_AddIntMacro(m, EAI_BADFLAGS);
+    ADD_INT_MACRO(m, EAI_BADFLAGS);
 #endif
 #ifdef EAI_FAIL
-    PyModule_AddIntMacro(m, EAI_FAIL);
+    ADD_INT_MACRO(m, EAI_FAIL);
 #endif
 #ifdef EAI_FAMILY
-    PyModule_AddIntMacro(m, EAI_FAMILY);
+    ADD_INT_MACRO(m, EAI_FAMILY);
 #endif
 #ifdef EAI_MEMORY
-    PyModule_AddIntMacro(m, EAI_MEMORY);
+    ADD_INT_MACRO(m, EAI_MEMORY);
 #endif
 #ifdef EAI_NODATA
-    PyModule_AddIntMacro(m, EAI_NODATA);
+    ADD_INT_MACRO(m, EAI_NODATA);
 #endif
 #ifdef EAI_NONAME
-    PyModule_AddIntMacro(m, EAI_NONAME);
+    ADD_INT_MACRO(m, EAI_NONAME);
 #endif
 #ifdef EAI_OVERFLOW
-    PyModule_AddIntMacro(m, EAI_OVERFLOW);
+    ADD_INT_MACRO(m, EAI_OVERFLOW);
 #endif
 #ifdef EAI_SERVICE
-    PyModule_AddIntMacro(m, EAI_SERVICE);
+    ADD_INT_MACRO(m, EAI_SERVICE);
 #endif
 #ifdef EAI_SOCKTYPE
-    PyModule_AddIntMacro(m, EAI_SOCKTYPE);
+    ADD_INT_MACRO(m, EAI_SOCKTYPE);
 #endif
 #ifdef EAI_SYSTEM
-    PyModule_AddIntMacro(m, EAI_SYSTEM);
+    ADD_INT_MACRO(m, EAI_SYSTEM);
 #endif
 #ifdef EAI_BADHINTS
-    PyModule_AddIntMacro(m, EAI_BADHINTS);
+    ADD_INT_MACRO(m, EAI_BADHINTS);
 #endif
 #ifdef EAI_PROTOCOL
-    PyModule_AddIntMacro(m, EAI_PROTOCOL);
+    ADD_INT_MACRO(m, EAI_PROTOCOL);
 #endif
 #ifdef EAI_MAX
-    PyModule_AddIntMacro(m, EAI_MAX);
+    ADD_INT_MACRO(m, EAI_MAX);
 #endif
 #ifdef AI_PASSIVE
-    PyModule_AddIntMacro(m, AI_PASSIVE);
+    ADD_INT_MACRO(m, AI_PASSIVE);
 #endif
 #ifdef AI_CANONNAME
-    PyModule_AddIntMacro(m, AI_CANONNAME);
+    ADD_INT_MACRO(m, AI_CANONNAME);
 #endif
 #ifdef AI_NUMERICHOST
-    PyModule_AddIntMacro(m, AI_NUMERICHOST);
+    ADD_INT_MACRO(m, AI_NUMERICHOST);
 #endif
 #ifdef AI_NUMERICSERV
-    PyModule_AddIntMacro(m, AI_NUMERICSERV);
+    ADD_INT_MACRO(m, AI_NUMERICSERV);
 #endif
 #ifdef AI_MASK
-    PyModule_AddIntMacro(m, AI_MASK);
+    ADD_INT_MACRO(m, AI_MASK);
 #endif
 #ifdef AI_ALL
-    PyModule_AddIntMacro(m, AI_ALL);
+    ADD_INT_MACRO(m, AI_ALL);
 #endif
 #ifdef AI_V4MAPPED_CFG
-    PyModule_AddIntMacro(m, AI_V4MAPPED_CFG);
+    ADD_INT_MACRO(m, AI_V4MAPPED_CFG);
 #endif
 #ifdef AI_ADDRCONFIG
-    PyModule_AddIntMacro(m, AI_ADDRCONFIG);
+    ADD_INT_MACRO(m, AI_ADDRCONFIG);
 #endif
 #ifdef AI_V4MAPPED
-    PyModule_AddIntMacro(m, AI_V4MAPPED);
+    ADD_INT_MACRO(m, AI_V4MAPPED);
 #endif
 #ifdef AI_DEFAULT
-    PyModule_AddIntMacro(m, AI_DEFAULT);
+    ADD_INT_MACRO(m, AI_DEFAULT);
 #endif
 #ifdef NI_MAXHOST
-    PyModule_AddIntMacro(m, NI_MAXHOST);
+    ADD_INT_MACRO(m, NI_MAXHOST);
 #endif
 #ifdef NI_MAXSERV
-    PyModule_AddIntMacro(m, NI_MAXSERV);
+    ADD_INT_MACRO(m, NI_MAXSERV);
 #endif
 #ifdef NI_NOFQDN
-    PyModule_AddIntMacro(m, NI_NOFQDN);
+    ADD_INT_MACRO(m, NI_NOFQDN);
 #endif
 #ifdef NI_NUMERICHOST
-    PyModule_AddIntMacro(m, NI_NUMERICHOST);
+    ADD_INT_MACRO(m, NI_NUMERICHOST);
 #endif
 #ifdef NI_NAMEREQD
-    PyModule_AddIntMacro(m, NI_NAMEREQD);
+    ADD_INT_MACRO(m, NI_NAMEREQD);
 #endif
 #ifdef NI_NUMERICSERV
-    PyModule_AddIntMacro(m, NI_NUMERICSERV);
+    ADD_INT_MACRO(m, NI_NUMERICSERV);
 #endif
 #ifdef NI_DGRAM
-    PyModule_AddIntMacro(m, NI_DGRAM);
+    ADD_INT_MACRO(m, NI_DGRAM);
+#endif
+#ifdef NI_IDN
+    ADD_INT_MACRO(m, NI_IDN);
 #endif
 
     /* shutdown() parameters */
 #ifdef SHUT_RD
-    PyModule_AddIntMacro(m, SHUT_RD);
+    ADD_INT_MACRO(m, SHUT_RD);
 #elif defined(SD_RECEIVE)
-    PyModule_AddIntConstant(m, "SHUT_RD", SD_RECEIVE);
+    ADD_INT_CONST(m, "SHUT_RD", SD_RECEIVE);
 #else
-    PyModule_AddIntConstant(m, "SHUT_RD", 0);
+    ADD_INT_CONST(m, "SHUT_RD", 0);
 #endif
 #ifdef SHUT_WR
-    PyModule_AddIntMacro(m, SHUT_WR);
+    ADD_INT_MACRO(m, SHUT_WR);
 #elif defined(SD_SEND)
-    PyModule_AddIntConstant(m, "SHUT_WR", SD_SEND);
+    ADD_INT_CONST(m, "SHUT_WR", SD_SEND);
 #else
-    PyModule_AddIntConstant(m, "SHUT_WR", 1);
+    ADD_INT_CONST(m, "SHUT_WR", 1);
 #endif
 #ifdef SHUT_RDWR
-    PyModule_AddIntMacro(m, SHUT_RDWR);
+    ADD_INT_MACRO(m, SHUT_RDWR);
 #elif defined(SD_BOTH)
-    PyModule_AddIntConstant(m, "SHUT_RDWR", SD_BOTH);
+    ADD_INT_CONST(m, "SHUT_RDWR", SD_BOTH);
 #else
-    PyModule_AddIntConstant(m, "SHUT_RDWR", 2);
+    ADD_INT_CONST(m, "SHUT_RDWR", 2);
 #endif
 
 #ifdef SIO_RCVALL
@@ -8661,22 +8909,20 @@ PyInit__socket(void)
 #endif
         };
         int i;
-        for(i = 0; i<Py_ARRAY_LENGTH(codes); ++i) {
-            PyObject *tmp;
-            tmp = PyLong_FromUnsignedLong(codes[i]);
-            if (tmp == NULL)
-                return NULL;
-            PyModule_AddObject(m, names[i], tmp);
+        for (i = 0; i < Py_ARRAY_LENGTH(codes); ++i) {
+            if (PyModule_Add(m, names[i], PyLong_FromUnsignedLong(codes[i])) < 0) {
+                goto error;
+            }
         }
     }
-    PyModule_AddIntMacro(m, RCVALL_OFF);
-    PyModule_AddIntMacro(m, RCVALL_ON);
-    PyModule_AddIntMacro(m, RCVALL_SOCKETLEVELONLY);
+    ADD_INT_MACRO(m, RCVALL_OFF);
+    ADD_INT_MACRO(m, RCVALL_ON);
+    ADD_INT_MACRO(m, RCVALL_SOCKETLEVELONLY);
 #ifdef RCVALL_IPLEVEL
-    PyModule_AddIntMacro(m, RCVALL_IPLEVEL);
+    ADD_INT_MACRO(m, RCVALL_IPLEVEL);
 #endif
 #ifdef RCVALL_MAX
-    PyModule_AddIntMacro(m, RCVALL_MAX);
+    ADD_INT_MACRO(m, RCVALL_MAX);
 #endif
 #endif /* _MSTCPIP_ */
 
@@ -8688,10 +8934,67 @@ PyInit__socket(void)
 #ifdef MS_WINDOWS
     /* remove some flags on older version Windows during run-time */
     if (remove_unusable_flags(m) < 0) {
-        Py_DECREF(m);
-        return NULL;
+        goto error;
     }
 #endif
 
-    return m;
+#undef ADD_INT_MACRO
+#undef ADD_INT_CONST
+#undef ADD_STR_CONST
+
+    return 0;
+
+error:
+    return -1;
+}
+
+static struct PyModuleDef_Slot socket_slots[] = {
+    {Py_mod_exec, socket_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL},
+};
+
+static int
+socket_traverse(PyObject *mod, visitproc visit, void *arg)
+{
+    socket_state *state = get_module_state(mod);
+    Py_VISIT(state->sock_type);
+    Py_VISIT(state->socket_herror);
+    Py_VISIT(state->socket_gaierror);
+    return 0;
+}
+
+static int
+socket_clear(PyObject *mod)
+{
+    socket_state *state = get_module_state(mod);
+    Py_CLEAR(state->sock_type);
+    Py_CLEAR(state->socket_herror);
+    Py_CLEAR(state->socket_gaierror);
+    return 0;
+}
+
+static void
+socket_free(void *mod)
+{
+    (void)socket_clear((PyObject *)mod);
+}
+
+static struct PyModuleDef socketmodule = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = PySocket_MODULE_NAME,
+    .m_doc = socket_doc,
+    .m_size = sizeof(socket_state),
+    .m_methods = socket_methods,
+    .m_slots = socket_slots,
+    .m_traverse = socket_traverse,
+    .m_clear = socket_clear,
+    .m_free = socket_free,
+};
+
+PyMODINIT_FUNC
+PyInit__socket(void)
+{
+    return PyModuleDef_Init(&socketmodule);
 }
