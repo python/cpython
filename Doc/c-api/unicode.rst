@@ -341,12 +341,12 @@ APIs:
    .. versionadded:: 3.3
 
 
-.. c:function:: int PyUnicode_Export(PyObject *unicode, uint32_t requested_formats, Py_buffer *view, uint32_t *format)
+.. c:function:: int PyUnicode_Export(PyObject *unicode, int32_t requested_formats, Py_buffer *view)
 
    Export the contents of the *unicode* string in one of the *requested_formats*.
 
-   * On success, fill *view*, set *\*format*, and return ``0``.
-   * On error, set an exception, set *\*format* to 0, and return ``-1``.
+   * On success, fill *view*, and return a format (greater than ``0``).
+   * On error, set an exception, and return ``-1``.
      *view* is left unchanged.
 
    After a successful call to :c:func:`PyUnicode_Export`,
@@ -375,14 +375,15 @@ APIs:
 
    *requested_formats* can be a single format or a bitwise combination of the
    formats in the table above.
-   On success, *\*format* will be set to a single one of the requested flags.
+   On success, the returned format will be set to a single one of the requested
+   flags.
 
    Note that future versions of Python may introduce additional formats.
 
    .. versionadded:: 3.14
 
 
-.. c:function:: PyObject* PyUnicode_Import(const void *data, Py_ssize_t nbytes, uint32_t format)
+.. c:function:: PyObject* PyUnicode_Import(const void *data, Py_ssize_t nbytes, int32_t format)
 
    Create a Unicode string object from a buffer in a supported format.
 

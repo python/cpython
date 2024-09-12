@@ -255,15 +255,14 @@ PyAPI_FUNC(PyObject *) PyUnicode_InternFromString(
 #define PyUnicode_FORMAT_UTF8  0x08   // char*
 #define PyUnicode_FORMAT_ASCII 0x10   // char* (ASCII string)
 
-PyAPI_FUNC(int) PyUnicode_Export(
+PyAPI_FUNC(int32_t) PyUnicode_Export(
     PyObject *unicode,
-    uint32_t requested_formats,
-    Py_buffer *view,
-    uint32_t *format);
+    int32_t requested_formats,
+    Py_buffer *view);
 PyAPI_FUNC(PyObject*) PyUnicode_Import(
     const void *data,
     Py_ssize_t nbytes,
-    uint32_t format);
+    int32_t format);
 #endif
 
 /* --- wchar_t support for platforms which support it --------------------- */

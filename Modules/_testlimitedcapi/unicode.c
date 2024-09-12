@@ -1849,9 +1849,8 @@ unicode_export(PyObject *self, PyObject *args)
     }
 
     Py_buffer view;
-    uint32_t format = (uint32_t)UNINITIALIZED_INT;
-    if (PyUnicode_Export(obj, requested_formats, &view, &format) < 0) {
-        assert(format == 0);
+    int32_t format = PyUnicode_Export(obj, requested_formats, &view);
+    if (format < 0) {
         return NULL;
     }
 
@@ -1899,7 +1898,7 @@ unicode_import(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "y#I", &data, &nbytes, &format)) {
         return NULL;
     }
-    return PyUnicode_Import(data, nbytes, format);
+    return PyUnicode_Import(data, nbytes, (int32_t)format);
 }
 
 
