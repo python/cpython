@@ -425,7 +425,7 @@ async def logcat_task(context, initial_devices):
             # buildbot logs. This will include Python's own stderr.
             stream = (
                 sys.stderr
-                if level in ["E", "F"]  # ERROR and FATAL (aka ASSERT)
+                if level in ["W", "E", "F"]  # WARNING, ERROR, FATAL (aka ASSERT)
                 else sys.stdout
             )
 
