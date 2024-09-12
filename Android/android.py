@@ -259,8 +259,8 @@ def setup_testbed():
              f"{temp_dir}/{outer_jar}", "gradle-wrapper.jar"])
 
 
-# run_testbed will build the app automatically, but it hides the Gradle output
-# by default, so it's useful to have this as a separate command for the buildbot.
+# run_testbed will build the app automatically, but it's useful to have this as
+# a separate command to allow running the app outside of this script.
 def build_testbed(context):
     setup_sdk()
     setup_testbed()
@@ -376,6 +376,8 @@ async def find_pid(serial):
     shown_error = False
     while True:
         try:
+            # `pidof` requires API level 24 or higher. The level 23 emulator
+            # includes it, but it doesn't work (it returns all processes).
             pid = (await async_check_output(
                 adb, "-s", serial, "shell", "pidof", "-s", APP_ID
             )).strip()
@@ -407,6 +409,7 @@ async def logcat_task(context, initial_devices):
     serial = await wait_for(find_device(context, initial_devices), startup_timeout)
     pid = await wait_for(find_pid(serial), startup_timeout)
 
+    # `--pid` requires API level 24 or higher.
     args = [adb, "-s", serial, "logcat", "--pid", pid,  "--format", "tag"]
     hidden_output = []
     async with async_process(
