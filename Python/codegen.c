@@ -761,20 +761,18 @@ _PyCodegen_Body(compiler *c, location loc, asdl_stmt_seq *stmts)
     PyObject *docstring = _PyAST_GetDocString(stmts);
     if (docstring) {
         first_instr = 1;
-        if (!IS_INTERACTIVE(c)) {
-            /* set docstring */
-            assert(OPTIMIZATION_LEVEL(c) < 2);
-            PyObject *cleandoc = _PyCompile_CleanDoc(docstring);
-            if (cleandoc == NULL) {
-                return ERROR;
-            }
-            stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
-            assert(st->kind == Expr_kind);
-            location loc = LOC(st->v.Expr.value);
-            ADDOP_LOAD_CONST(c, loc, cleandoc);
-            Py_DECREF(cleandoc);
-            RETURN_IF_ERROR(codegen_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store));
+        /* set docstring */
+        assert(OPTIMIZATION_LEVEL(c) < 2);
+        PyObject *cleandoc = _PyCompile_CleanDoc(docstring);
+        if (cleandoc == NULL) {
+            return ERROR;
         }
+        stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
+        assert(st->kind == Expr_kind);
+        location loc = LOC(st->v.Expr.value);
+        ADDOP_LOAD_CONST(c, loc, cleandoc);
+        Py_DECREF(cleandoc);
+        RETURN_IF_ERROR(codegen_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store));
     }
     for (Py_ssize_t i = first_instr; i < asdl_seq_LEN(stmts); i++) {
         VISIT(c, stmt, (stmt_ty)asdl_seq_GET(stmts, i));
