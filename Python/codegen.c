@@ -1002,25 +1002,21 @@ codegen_annotations(compiler *c, location loc,
     PySTEntryObject *ste;
     RETURN_IF_ERROR(_PySymtable_LookupOptional(SYMTABLE(c), args, &ste));
     assert(ste != NULL);
-    bool annotations_used = ste->ste_annotations_used;
 
-    int err = annotations_used ?
-        codegen_setup_annotations_scope(c, loc, (void *)args, ste->ste_name) : SUCCESS;
-    Py_DECREF(ste);
-    RETURN_IF_ERROR(err);
-
-    if (codegen_annotations_in_scope(c, loc, args, returns, &annotations_len) < 0) {
-        if (annotations_used) {
-            _PyCompile_ExitScope(c);
-        }
-        return ERROR;
-    }
-
-    if (annotations_used) {
+    if (ste->ste_annotations_used) {
+        int err = codegen_setup_annotations_scope(c, loc, (void *)args, ste->ste_name);
+        Py_DECREF(ste);
+        RETURN_IF_ERROR(err);
+        RETURN_IF_ERROR_IN_SCOPE(
+            c, codegen_annotations_in_scope(c, loc, args, returns, &annotations_len)
+        );
         RETURN_IF_ERROR(
             codegen_leave_annotations_scope(c, loc, annotations_len)
         );
         return MAKE_FUNCTION_ANNOTATE;
+    }
+    else {
+        Py_DECREF(ste);
     }
 
     return 0;
