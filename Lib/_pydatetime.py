@@ -1,8 +1,4 @@
-"""Concrete date/time and related types.
-
-See http://www.iana.org/time-zones/repository/tz-link.html for
-time zone and DST data sources.
-"""
+"""Pure Python implementation of the datetime module."""
 
 __all__ = ("date", "datetime", "time", "timedelta", "timezone", "tzinfo",
            "MINYEAR", "MAXYEAR", "UTC")

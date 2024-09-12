@@ -866,6 +866,15 @@ def check_cflags_pgo():
     return any(option in cflags_nodist for option in pgo_options)
 
 
+def check_bolt_optimized():
+    # Always return false, if the platform is WASI,
+    # because BOLT optimization does not support WASM binary.
+    if is_wasi:
+        return False
+    config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
+    return '--enable-bolt' in config_args
+
+
 Py_GIL_DISABLED = bool(sysconfig.get_config_var('Py_GIL_DISABLED'))
 
 def requires_gil_enabled(msg="needs the GIL enabled"):
@@ -2850,14 +2859,17 @@ def get_signal_name(exitcode):
     return None
 
 class BrokenIter:
-    def __init__(self, init_raises=False, next_raises=False):
+    def __init__(self, init_raises=False, next_raises=False, iter_raises=False):
         if init_raises:
             1/0
         self.next_raises = next_raises
+        self.iter_raises = iter_raises
 
     def __next__(self):
         if self.next_raises:
             1/0
 
     def __iter__(self):
+        if self.iter_raises:
+            1/0
         return self

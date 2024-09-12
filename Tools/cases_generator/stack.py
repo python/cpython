@@ -214,6 +214,8 @@ class StackOffset:
 class StackError(Exception):
     pass
 
+def array_or_scalar(var: StackItem | Local) -> str:
+    return "array" if var.is_array() else "scalar"
 
 class Stack:
     def __init__(self) -> None:
@@ -227,10 +229,15 @@ class Stack:
         indirect = "&" if var.is_array() else ""
         if self.variables:
             popped = self.variables.pop()
+            if var.is_array() ^ popped.is_array():
+                raise StackError(
+                    f"Array mismatch when popping '{popped.name}' from stack to assign to '{var.name}'. "
+                    f"Expected {array_or_scalar(var)} got {array_or_scalar(popped)}"
+                )
             if popped.size != var.size:
                 raise StackError(
-                    f"Size mismatch when popping '{popped.name}' from stack to assign to {var.name}. "
-                    f"Expected '{var.size}' got '{var_size(popped)}'"
+                    f"Size mismatch when popping '{popped.name}' from stack to assign to '{var.name}'. "
+                    f"Expected {var_size(var)} got {var_size(popped.item)}"
                 )
             if var.name in UNUSED:
                 if popped.name not in UNUSED and popped.name in self.defined:
@@ -270,8 +277,7 @@ class Stack:
                 assign = f"if ({var.condition}) {{ {assign} }}\n"
         else:
             assign = f"{assign}\n"
-        in_memory = var.is_array() or var.peek
-        return assign, Local(var, not var.is_array(), in_memory, True)
+        return assign, Local.memory(var)
 
     def push(self, var: Local) -> None:
         assert(var not in self.variables)
@@ -420,6 +426,14 @@ class Storage:
     peeks: list[Local]
     spilled: int = 0
 
+    @staticmethod
+    def doesnt_need_defining(var: Local):
+        return (
+            var.defined or
+            var.is_array() or
+            var.name == "unused"
+        )
+
     def _push_defined_locals(self) -> None:
         defined_output = ""
         for output in self.outputs:
@@ -443,7 +457,7 @@ class Storage:
                     f"Expected '{undefined}' to be defined before '{out.name}'"
             else:
                 undefined = out.name
-        while self.outputs and (self.outputs[0].defined or self.outputs[0].is_array()) :
+        while self.outputs and self.doesnt_need_defining(self.outputs[0]):
             out = self.outputs.pop(0)
             self.stack.push(out)
 

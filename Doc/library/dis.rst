@@ -312,7 +312,8 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.14
       Added the *show_positions* parameter.
 
-.. function:: disassemble(code, lasti=-1, *, file=None, show_caches=False, adaptive=False)
+.. function:: disassemble(code, lasti=-1, *, file=None, show_caches=False,\
+                          adaptive=False, show_offsets=False, show_positions=False)
               disco(code, lasti=-1, *, file=None, show_caches=False, adaptive=False,\
                     show_offsets=False, show_positions=False)
 
@@ -1118,8 +1119,8 @@ iterations of the loop.
       if count == 0:
           value = ()
       else:
-          STACK = STACK[:-count]
           value = tuple(STACK[-count:])
+          STACK = STACK[:-count]
 
       STACK.append(value)
 

@@ -178,20 +178,8 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> None:
         elif uop.properties.const_oparg >= 0:
             emitter.emit(f"oparg = {uop.properties.const_oparg};\n")
             emitter.emit(f"assert(oparg == CURRENT_OPARG());\n")
-        peeks: list[Local] = []
-        for var in reversed(uop.stack.inputs):
-            code, local = stack.pop(var)
-            emitter.emit(code)
-            if var.peek:
-                peeks.append(local)
-            if local.defined:
-                locals[local.name] = local
-        # Push back the peeks, so that they remain on the logical
-        # stack, but their values are cached.
-        while peeks:
-            stack.push(peeks.pop())
         emitter.emit(stack.define_output_arrays(uop.stack.outputs))
-        code_list, storage = Storage.for_uop(stack, uop, locals)
+        code_list, storage = Storage.for_uop(stack, uop)
         for code in code_list:
             emitter.emit(code)
         for cache in uop.caches:

@@ -69,10 +69,30 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    on failure.
 
 
+.. c:function:: PyObject* PyLong_FromInt32(int32_t value)
+                PyObject* PyLong_FromInt64(int64_t value)
+
+   Return a new :c:type:`PyLongObject` object from a signed C
+   :c:expr:`int32_t` or :c:expr:`int64_t`, or ``NULL``
+   with an exception set on failure.
+
+   .. versionadded:: 3.14
+
+
 .. c:function:: PyObject* PyLong_FromUnsignedLongLong(unsigned long long v)
 
    Return a new :c:type:`PyLongObject` object from a C :c:expr:`unsigned long long`,
    or ``NULL`` on failure.
+
+
+.. c:function:: PyObject* PyLong_FromUInt32(uint32_t value)
+                PyObject* PyLong_FromUInt64(uint64_t value)
+
+   Return a new :c:type:`PyLongObject` object from an unsigned C
+   :c:expr:`uint32_t` or :c:expr:`uint64_t`, or ``NULL``
+   with an exception set on failure.
+
+   .. versionadded:: 3.14
 
 
 .. c:function:: PyObject* PyLong_FromDouble(double v)
@@ -335,6 +355,43 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    .. versionchanged:: 3.10
       This function will no longer use :meth:`~object.__int__`.
+
+
+.. c:function:: int PyLong_AsInt32(PyObject *obj, int32_t *value)
+                int PyLong_AsInt64(PyObject *obj, int64_t *value)
+
+   Set *\*value* to a signed C :c:expr:`int32_t` or :c:expr:`int64_t`
+   representation of *obj*.
+
+   If the *obj* value is out of range, raise an :exc:`OverflowError`.
+
+   Set *\*value* and return ``0`` on success.
+   Set an exception and return ``-1`` on error.
+
+   *value* must not be ``NULL``.
+
+   .. versionadded:: 3.14
+
+
+.. c:function:: int PyLong_AsUInt32(PyObject *obj, uint32_t *value)
+                int PyLong_AsUInt64(PyObject *obj, uint64_t *value)
+
+   Set *\*value* to an unsigned C :c:expr:`uint32_t` or :c:expr:`uint64_t`
+   representation of *obj*.
+
+   If *obj* is not an instance of :c:type:`PyLongObject`, first call its
+   :meth:`~object.__index__` method (if present) to convert it to a
+   :c:type:`PyLongObject`.
+
+   * If *obj* is negative, raise a :exc:`ValueError`.
+   * If the *obj* value is out of range, raise an :exc:`OverflowError`.
+
+   Set *\*value* and return ``0`` on success.
+   Set an exception and return ``-1`` on error.
+
+   *value* must not be ``NULL``.
+
+   .. versionadded:: 3.14
 
 
 .. c:function:: double PyLong_AsDouble(PyObject *pylong)
