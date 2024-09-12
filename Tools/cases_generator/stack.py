@@ -164,7 +164,7 @@ class StackOffset:
 class StackError(Exception):
     pass
 
-def array_or_scalar(var):
+def array_or_scalar(var: StackItem | Local) -> str:
     return "array" if var.is_array() else "scalar"
 
 class Stack:
@@ -187,7 +187,7 @@ class Stack:
             if popped.size != var.size:
                 raise StackError(
                     f"Size mismatch when popping '{popped.name}' from stack to assign to '{var.name}'. "
-                    f"Expected {var_size(var)} got {var_size(popped)}"
+                    f"Expected {var_size(var)} got {var_size(popped.item)}"
                 )
             if var.name in UNUSED:
                 if popped.name not in UNUSED and popped.name in self.defined:
