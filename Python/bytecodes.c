@@ -2558,7 +2558,7 @@ dummy_func(
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
             #ifdef _Py_TIER2
-            #if ENABLE_SPECIALIZATION
+            #if ENABLE_SPECIALIZATION && !Py_GIL_DISABLED
             _Py_BackoffCounter counter = this_instr[1].counter;
             if (backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD) {
                 _Py_CODEUNIT *start = this_instr;
