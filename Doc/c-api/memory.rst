@@ -111,7 +111,7 @@ returned by :c:func:`PyObject_Malloc` for allocating memory for buffers.
 However, in the free-threaded build, Python objects must be allocated through :c:func:`PyObject_Malloc`.
 Non-Python objects must not be allocated this function, for example, it is currently acceptable to
 allocate buffers(non-Python objects) through :c:func:`PyObject_Malloc`; that will no longer be allowed
-and buffers should instead be allocated through :c:func:`PyMem_Malloc`, :c:func:`PyMem_RawMalloc`, or :c:func:`malloc`..
+and buffers should instead be allocated through :c:func:`PyMem_Malloc`, :c:func:`PyMem_RawMalloc`, or :c:func:`malloc`.
 
 The three allocation domains are:
 
