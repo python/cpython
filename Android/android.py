@@ -591,6 +591,13 @@ def parse_args():
 
 def main():
     install_signal_handler()
+
+    # Under the buildbot, stdout is not a TTY, but we must still flush after
+    # every line to make sure our output appears in the correct order relative
+    # to the output of our subprocesses.
+    for stream in [sys.stdout, sys.stderr]:
+        stream.reconfigure(line_buffering=True)
+
     context = parse_args()
     dispatch = {"configure-build": configure_build_python,
                 "make-build": make_build_python,
