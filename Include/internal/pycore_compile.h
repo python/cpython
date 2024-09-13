@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include <stdbool.h>
+
 #include "pycore_ast.h"       // mod_ty
 #include "pycore_symtable.h"  // _Py_SourceLocation
 #include "pycore_instruction_sequence.h"
@@ -172,7 +174,8 @@ int _PyCompile_AddDeferredAnnotaion(struct _PyCompiler *c, stmt_ty s);
 int _PyCodegen_AddReturnAtEnd(struct _PyCompiler *c, int addNone);
 int _PyCodegen_EnterAnonymousScope(struct _PyCompiler* c, mod_ty mod);
 int _PyCodegen_Expression(struct _PyCompiler *c, expr_ty e);
-int _PyCodegen_Body(struct _PyCompiler *c, _Py_SourceLocation loc, asdl_stmt_seq *stmts);
+int _PyCodegen_Body(struct _PyCompiler *c, _Py_SourceLocation loc, asdl_stmt_seq *stmts,
+                    bool is_interactive);
 
 /* Utility for a number of growing arrays used in the compiler */
 int _PyCompile_EnsureArrayLargeEnough(
