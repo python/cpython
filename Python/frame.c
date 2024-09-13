@@ -14,15 +14,11 @@ _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
     Py_VISIT(frame->frame_obj);
     Py_VISIT(frame->f_locals);
     Py_VISIT(frame->f_funcobj);
-    Py_VISIT(_PyFrame_GetCode(frame));
-   /* locals */
-    _PyStackRef *locals = _PyFrame_GetLocalsArray(frame);
-    int i = 0;
-    /* locals and stack */
-    for (; i <frame->stacktop; i++) {
-        Py_VISIT(PyStackRef_AsPyObjectBorrow(locals[i]));
+    int err = _PyGC_VisitStackRef(&frame->f_executable, visit, arg);
+    if (err) {
+        return err;
     }
-    return 0;
+    return _PyGC_VisitFrameStack(frame, visit, arg);
 }
 
 PyFrameObject *
@@ -59,10 +55,11 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     assert(frame->owner != FRAME_OWNED_BY_CSTACK);
     assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
     assert(frame->owner != FRAME_CLEARED);
-    Py_ssize_t size = ((char*)&frame->localsplus[frame->stacktop]) - (char *)frame;
-    Py_INCREF(_PyFrame_GetCode(frame));
+    Py_ssize_t size = ((char*)frame->stackpointer) - (char *)frame;
     memcpy((_PyInterpreterFrame *)f->_f_frame_data, frame, size);
     frame = (_PyInterpreterFrame *)f->_f_frame_data;
+    frame->stackpointer = (_PyStackRef *)(((char *)frame) + size);
+    frame->f_executable = PyStackRef_DUP(frame->f_executable);
     f->f_frame = frame;
     frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
     if (_PyFrame_IsIncomplete(frame)) {
@@ -97,11 +94,13 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
 void
 _PyFrame_ClearLocals(_PyInterpreterFrame *frame)
 {
-    assert(frame->stacktop >= 0);
-    int stacktop = frame->stacktop;
-    frame->stacktop = 0;
-    for (int i = 0; i < stacktop; i++) {
-        PyStackRef_XCLOSE(frame->localsplus[i]);
+    assert(frame->stackpointer != NULL);
+    _PyStackRef *sp = frame->stackpointer;
+    _PyStackRef *locals = frame->localsplus;
+    frame->stackpointer = locals;
+    while (sp > locals) {
+        sp--;
+        PyStackRef_XCLOSE(*sp);
     }
     Py_CLEAR(frame->f_locals);
 }
@@ -135,9 +134,7 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
 PyObject *
 PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame)
 {
-    PyObject *code = frame->f_executable;
-    Py_INCREF(code);
-    return code;
+    return PyStackRef_AsPyObjectNew(frame->f_executable);
 }
 
 int
