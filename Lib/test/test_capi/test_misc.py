@@ -722,22 +722,16 @@ class CAPITest(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, msg):
             t = _testcapi.pytype_fromspec_meta(metaclass)
 
-    def test_heaptype_with_custom_metaclass_deprecation(self):
+    def test_heaptype_base_with_custom_metaclass(self):
         metaclass = _testcapi.HeapCTypeMetaclassCustomNew
 
-        # gh-103968: a metaclass with custom tp_new is deprecated, but still
-        # allowed for functions that existed in 3.11
-        # (PyType_FromSpecWithBases is used here).
         class Base(metaclass=metaclass):
             pass
 
         # Class creation from C
-        with warnings_helper.check_warnings(
-                ('.* _testcapi.Subclass .* custom tp_new.*in Python 3.14.*', DeprecationWarning),
-                ):
+        msg = "Metaclasses with custom tp_new are not supported."
+        with self.assertRaisesRegex(TypeError, msg):
             sub = _testcapi.make_type_with_base(Base)
-        self.assertTrue(issubclass(sub, Base))
-        self.assertIsInstance(sub, metaclass)
 
     def test_multiple_inheritance_ctypes_with_weakref_or_dict(self):
         for weakref_cls in (_testcapi.HeapCTypeWithWeakref,
