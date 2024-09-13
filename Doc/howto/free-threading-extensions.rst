@@ -184,6 +184,8 @@ to provide implementations of these functions for older Python versions.
 Memory Allocation APIs
 ======================
 
+.. _free-threaded-memory-allocation:
+
 Python's memory management C API provides functions in three different
 :ref:`allocation domains <allocator-domains>`: "raw", "mem", and "object".
 For thread-safety, the free-threaded build requires that only Python objects
