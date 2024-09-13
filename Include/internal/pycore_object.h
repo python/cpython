@@ -874,6 +874,15 @@ PyAPI_DATA(int) _Py_SwappedOp[];
 
 extern void _Py_GetConstant_Init(void);
 
+
+// Similar to Py_NewRef() but for immortal objects.
+// obj must be immortal.
+static inline PyObject* _Py_NewImmortalRef(PyObject *obj)
+{
+    assert(_Py_IsImmortalLoose(obj));
+    return obj;
+}
+
 #ifdef __cplusplus
 }
 #endif

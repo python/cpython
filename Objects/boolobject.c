@@ -20,7 +20,8 @@ bool_repr(PyObject *self)
 
 PyObject *PyBool_FromLong(long ok)
 {
-    return ok ? Py_True : Py_False;
+    PyObject *result = ok ? Py_True : Py_False;
+    return _Py_NewImmortalRef(result);
 }
 
 /* We define bool_new to always return either Py_True or Py_False */

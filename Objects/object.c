@@ -3025,7 +3025,7 @@ PyObject*
 Py_GetConstant(unsigned int constant_id)
 {
     if (constant_id < Py_ARRAY_LENGTH(constants)) {
-        return constants[constant_id];
+        return _Py_NewImmortalRef(constants[constant_id]);
     }
     else {
         PyErr_BadInternalCall();
