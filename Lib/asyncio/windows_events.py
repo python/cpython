@@ -556,10 +556,9 @@ class IocpProactor:
             try:
                 ov.getresult()
             except OSError as exc:
-                # Fix bug when accepting a socket connection and ERROR_NETNAME_DELETED
-                # occurs, leads this into a closing of the serving socket.
-                if hasattr(exc, 'winerror') and exc.winerror in (
-                                    _overlapped.ERROR_NETNAME_DELETED,
+                # If ERROR_NETNAME_DELETED or ERROR_OPERATION_ABORTED occur,
+                # do not close the serving socket.
+                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
                                     _overlapped.ERROR_OPERATION_ABORTED):
                     conn.close()
                     raise ConnectionResetError(*exc.args)
