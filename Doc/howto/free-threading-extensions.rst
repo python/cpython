@@ -181,10 +181,10 @@ Some of these functions were added in Python 3.13.  You can use the
 to provide implementations of these functions for older Python versions.
 
 
+.. _free-threaded-memory-allocation:
+
 Memory Allocation APIs
 ======================
-
-.. _free-threaded-memory-allocation:
 
 Python's memory management C API provides functions in three different
 :ref:`allocation domains <allocator-domains>`: "raw", "mem", and "object".
