@@ -742,6 +742,17 @@ _PyCodegen_Expression(compiler *c, expr_ty e)
     return SUCCESS;
 }
 
+static int
+codegen_interactive(compiler *c, location loc, asdl_stmt_seq *stmts)
+{
+    assert(asdl_seq_LEN(stmts) == 1);
+    stmt_ty s = (stmt_ty)asdl_seq_GET(stmts, 0);
+    VISIT(c, expr, s->v.Expr.value);
+    ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_PRINT);
+    ADDOP(c, NO_LOCATION, POP_TOP);
+    return SUCCESS;
+}
+
 /* Compile a sequence of statements, checking for a docstring
    and for annotations. */
 
@@ -775,9 +786,12 @@ _PyCodegen_Body(compiler *c, location loc, asdl_stmt_seq *stmts, bool is_interac
             Py_DECREF(cleandoc);
             RETURN_IF_ERROR(codegen_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store));
         }
+        for (Py_ssize_t i = first_instr; i < asdl_seq_LEN(stmts); i++) {
+            VISIT(c, stmt, (stmt_ty)asdl_seq_GET(stmts, i));
+        }
     }
-    for (Py_ssize_t i = first_instr; i < asdl_seq_LEN(stmts); i++) {
-        VISIT(c, stmt, (stmt_ty)asdl_seq_GET(stmts, i));
+    else {
+        RETURN_IF_ERROR(codegen_interactive(c, loc, stmts));
     }
     // If there are annotations and the future import is not on, we
     // collect the annotations in a separate pass and generate an
@@ -2823,13 +2837,6 @@ codegen_assert(compiler *c, stmt_ty s)
 static int
 codegen_stmt_expr(compiler *c, location loc, expr_ty value)
 {
-    if (IS_INTERACTIVE(c) && !IS_NESTED_SCOPE(c)) {
-        VISIT(c, expr, value);
-        ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_PRINT);
-        ADDOP(c, NO_LOCATION, POP_TOP);
-        return SUCCESS;
-    }
-
     if (value->kind == Constant_kind) {
         /* ignore constant statement */
         ADDOP(c, loc, NOP);
