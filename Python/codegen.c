@@ -746,7 +746,7 @@ _PyCodegen_Expression(compiler *c, expr_ty e)
    and for annotations. */
 
 int
-_PyCodegen_Body(compiler *c, location loc, asdl_stmt_seq *stmts)
+_PyCodegen_Body(compiler *c, location loc, asdl_stmt_seq *stmts, bool is_interactive)
 {
     /* If from __future__ import annotations is active,
      * every annotated class and module should have __annotations__.
@@ -758,21 +758,26 @@ _PyCodegen_Body(compiler *c, location loc, asdl_stmt_seq *stmts)
         return SUCCESS;
     }
     Py_ssize_t first_instr = 0;
-    PyObject *docstring = _PyAST_GetDocString(stmts);
-    if (docstring) {
-        first_instr = 1;
-        /* set docstring */
-        assert(OPTIMIZATION_LEVEL(c) < 2);
-        PyObject *cleandoc = _PyCompile_CleanDoc(docstring);
-        if (cleandoc == NULL) {
-            return ERROR;
+    // If this is a top-level interactive statement, we don't want to
+    // extract a docstring, because then writing a string literal in the REPL
+    // would get interpreted as a docstring.
+    if (!is_interactive) {
+        PyObject *docstring = _PyAST_GetDocString(stmts);
+        if (docstring) {
+            first_instr = 1;
+            /* set docstring */
+            assert(OPTIMIZATION_LEVEL(c) < 2);
+            PyObject *cleandoc = _PyCompile_CleanDoc(docstring);
+            if (cleandoc == NULL) {
+                return ERROR;
+            }
+            stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
+            assert(st->kind == Expr_kind);
+            location loc = LOC(st->v.Expr.value);
+            ADDOP_LOAD_CONST(c, loc, cleandoc);
+            Py_DECREF(cleandoc);
+            RETURN_IF_ERROR(codegen_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store));
         }
-        stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
-        assert(st->kind == Expr_kind);
-        location loc = LOC(st->v.Expr.value);
-        ADDOP_LOAD_CONST(c, loc, cleandoc);
-        Py_DECREF(cleandoc);
-        RETURN_IF_ERROR(codegen_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store));
     }
     for (Py_ssize_t i = first_instr; i < asdl_seq_LEN(stmts); i++) {
         VISIT(c, stmt, (stmt_ty)asdl_seq_GET(stmts, i));
@@ -1430,7 +1435,7 @@ codegen_class_body(compiler *c, stmt_ty s, int firstlineno)
         ADDOP_N_IN_SCOPE(c, loc, STORE_DEREF, &_Py_ID(__classdict__), cellvars);
     }
     /* compile the body proper */
-    RETURN_IF_ERROR_IN_SCOPE(c, _PyCodegen_Body(c, loc, s->v.ClassDef.body));
+    RETURN_IF_ERROR_IN_SCOPE(c, _PyCodegen_Body(c, loc, s->v.ClassDef.body, false));
     PyObject *static_attributes = _PyCompile_StaticAttributesAsTuple(c);
     if (static_attributes == NULL) {
         _PyCompile_ExitScope(c);
