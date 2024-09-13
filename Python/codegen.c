@@ -758,7 +758,7 @@ _PyCodegen_Body(compiler *c, location loc, asdl_stmt_seq *stmts, bool is_interac
         return SUCCESS;
     }
     Py_ssize_t first_instr = 0;
-    if (!is_interactive) {      /* A string literal typed on the REPL prompt is not a docstring */
+    if (!is_interactive) { /* A string literal on REPL prompt is not a docstring */
         PyObject *docstring = _PyAST_GetDocString(stmts);
         if (docstring) {
             first_instr = 1;
