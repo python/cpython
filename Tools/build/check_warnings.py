@@ -39,17 +39,21 @@ def extract_warnings_from_compiler_output(
         )
     compiled_regex = re.compile(regex_pattern)
     compiler_warnings = []
-    for line in compiler_output.splitlines():
+    for i, line in enumerate(compiler_output.splitlines(), start=1):
         if match := compiled_regex.match(line):
-            compiler_warnings.append(
-                {
-                    "file": match.group("file").removeprefix(path_prefix),
-                    "line": match.group("line"),
-                    "column": match.group("column"),
-                    "message": match.group("message"),
-                    "option": match.group("option").lstrip("[").rstrip("]"),
-                }
-            )
+            try:
+                compiler_warnings.append(
+                    {
+                        "file": match.group("file").removeprefix(path_prefix),
+                        "line": match.group("line"),
+                        "column": match.group("column"),
+                        "message": match.group("message"),
+                        "option": match.group("option").lstrip("[").rstrip("]"),
+                    }
+                )
+            except:
+                print(f"Error parsing compiler output. Unable to extract warning on line {i}:\n{line}")
+                sys.exit(1)
 
     return compiler_warnings
 
