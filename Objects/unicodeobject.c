@@ -2348,14 +2348,10 @@ unicode_export(PyObject *obj, Py_buffer *view,
 
 
 static int32_t
-unicode_export_bytes(PyObject *bytes, Py_buffer *view,
+unicode_export_bytes(PyObject *bytes, Py_buffer *view, Py_ssize_t len,
                      int itemsize, const char *format, int32_t export_format)
 {
     const void *buf = PyBytes_AS_STRING(bytes);
-    assert((PyBytes_GET_SIZE(bytes) % itemsize) == 0);
-    Py_ssize_t len = PyBytes_GET_SIZE(bytes) / itemsize;
-    assert(len >= 1);
-    len--;  // ignore the trailing NULL character
 
     if (PyBuffer_FillInfo(view, bytes, (void*)buf, len,
                           1, PyBUF_SIMPLE) < 0)
@@ -2433,7 +2429,7 @@ PyUnicode_Export(PyObject *unicode, int32_t requested_formats,
                                  ucs2);
         ucs2[len] = 0;
 
-        return unicode_export_bytes(bytes, view,
+        return unicode_export_bytes(bytes, view, len,
                                     2, "H", PyUnicode_FORMAT_UCS2);
     }
 
@@ -2459,7 +2455,7 @@ PyUnicode_Export(PyObject *unicode, int32_t requested_formats,
             return -1;
         }
 
-        return unicode_export_bytes(bytes, view,
+        return unicode_export_bytes(bytes, view, len,
                                     4, BUFFER_UCS4, PyUnicode_FORMAT_UCS4);
     }
 
@@ -2480,19 +2476,7 @@ PyUnicode_Export(PyObject *unicode, int32_t requested_formats,
             }
             len = PyBytes_GET_SIZE(bytes);
 
-            // Copy to add a NULL character
-            PyObject *bytes2 = PyBytes_FromStringAndSize(NULL, len + 1);
-            if (bytes2 == NULL) {
-                Py_DECREF(bytes);
-                return -1;
-            }
-
-            char *str = PyBytes_AS_STRING(bytes2);
-            memcpy(str, PyBytes_AS_STRING(bytes), len);
-            str[len] = '\0';
-            Py_DECREF(bytes);
-
-            return unicode_export_bytes(bytes2, view,
+            return unicode_export_bytes(bytes, view, PyBytes_GET_SIZE(bytes),
                                         1, "B", PyUnicode_FORMAT_UTF8);
         }
         return -1;
