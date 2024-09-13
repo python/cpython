@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       FORCE_COLOR: 1
-      OPENSSL_VER: 3.0.13
+      OPENSSL_VER: 3.0.15
       PYTHONSTRICTEXTENSIONBUILD: 1
       TERM: linux
     steps:

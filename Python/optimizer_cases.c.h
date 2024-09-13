@@ -1686,11 +1686,13 @@
 
         case _EXPAND_METHOD: {
             _Py_UopsLocalsPlusSlot method;
-            _Py_UopsLocalsPlusSlot self;
+            _Py_UopsLocalsPlusSlot *self;
+            self = &stack_pointer[-1 - oparg];
             method = sym_new_not_null(ctx);
-            self = sym_new_not_null(ctx);
+            for (int _i = 1; --_i >= 0;) {
+                self[_i] = sym_new_not_null(ctx);
+            }
             stack_pointer[-2 - oparg] = method;
-            stack_pointer[-1 - oparg] = self;
             break;
         }
 
@@ -2045,13 +2047,15 @@
 
         case _EXPAND_METHOD_KW: {
             _Py_UopsLocalsPlusSlot method;
-            _Py_UopsLocalsPlusSlot self;
+            _Py_UopsLocalsPlusSlot *self;
             _Py_UopsLocalsPlusSlot kwnames;
+            self = &stack_pointer[-2 - oparg];
             method = sym_new_not_null(ctx);
-            self = sym_new_not_null(ctx);
+            for (int _i = 1; --_i >= 0;) {
+                self[_i] = sym_new_not_null(ctx);
+            }
             kwnames = sym_new_not_null(ctx);
             stack_pointer[-3 - oparg] = method;
-            stack_pointer[-2 - oparg] = self;
             stack_pointer[-1] = kwnames;
             break;
         }

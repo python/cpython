@@ -215,7 +215,8 @@ Module contents
 
    - *weakref_slot*: If true (the default is ``False``), add a slot
      named "__weakref__", which is required to make an instance
-     weakref-able.  It is an error to specify ``weakref_slot=True``
+     :func:`weakref-able <weakref.ref>`.
+     It is an error to specify ``weakref_slot=True``
      without also specifying ``slots=True``.
 
     .. versionadded:: 3.11
