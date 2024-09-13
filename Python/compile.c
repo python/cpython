@@ -88,7 +88,6 @@ typedef struct _PyCompiler {
                                     including names tuple */
     struct compiler_unit *u;     /* compiler state for current block */
     PyObject *c_stack;           /* Python list holding compiler_unit ptrs */
-    PyArena *c_arena;            /* pointer to memory allocation arena */
 
     bool c_save_nested_seqs;     /* if true, construct recursive instruction sequences
                                   * (including instructions for nested code objects)
@@ -112,7 +111,6 @@ compiler_setup(compiler *c, mod_ty mod, PyObject *filename,
     }
 
     c->c_filename = Py_NewRef(filename);
-    c->c_arena = arena;
     if (!_PyFuture_FromAST(mod, filename, &c->c_future)) {
         return ERROR;
     }
@@ -792,13 +790,13 @@ compiler_codegen(compiler *c, mod_ty mod)
     switch (mod->kind) {
     case Module_kind: {
         asdl_stmt_seq *stmts = mod->v.Module.body;
-        RETURN_IF_ERROR(_PyCodegen_Body(c, start_location(stmts), stmts));
+        RETURN_IF_ERROR(_PyCodegen_Body(c, start_location(stmts), stmts, false));
         break;
     }
     case Interactive_kind: {
         c->c_interactive = 1;
         asdl_stmt_seq *stmts = mod->v.Interactive.body;
-        RETURN_IF_ERROR(_PyCodegen_Body(c, start_location(stmts), stmts));
+        RETURN_IF_ERROR(_PyCodegen_Body(c, start_location(stmts), stmts, true));
         break;
     }
     case Expression_kind: {
@@ -1243,21 +1241,6 @@ _PyCompile_Metadata(compiler *c)
 {
     return &c->u->u_metadata;
 }
-
-PyArena *
-_PyCompile_Arena(compiler *c)
-{
-    return c->c_arena;
-}
-
-#ifndef NDEBUG
-int
-_PyCompile_IsTopLevelAwait(compiler *c)
-{
-    return c->c_flags.cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT &&
-           c->u->u_ste->ste_type == ModuleBlock;
-}
-#endif
 
 // Merge *obj* with constant cache, without recursion.
 int

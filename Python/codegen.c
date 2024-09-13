@@ -65,7 +65,6 @@
 struct _PyCompiler;
 typedef struct _PyCompiler compiler;
 
-#define IS_TOP_LEVEL_AWAIT(C) _PyCompile_IsTopLevelAwait(C)
 #define INSTR_SEQUENCE(C) _PyCompile_InstrSequence(C)
 #define FUTURE_FEATURES(C) _PyCompile_FutureFeatures(C)
 #define SYMTABLE(C) _PyCompile_Symtable(C)
@@ -76,7 +75,6 @@ typedef struct _PyCompiler compiler;
 #define SCOPE_TYPE(C) _PyCompile_ScopeType(C)
 #define QUALNAME(C) _PyCompile_Qualname(C)
 #define METADATA(C) _PyCompile_Metadata(C)
-#define ARENA(C) _PyCompile_Arena(C)
 
 typedef _PyInstruction instruction;
 typedef _PyInstructionSequence instr_sequence;
@@ -209,6 +207,11 @@ static int codegen_call_simple_kw_helper(compiler *c,
                                          location loc,
                                          asdl_keyword_seq *keywords,
                                          Py_ssize_t nkwelts);
+static int codegen_call_helper_impl(compiler *c, location loc,
+                                    int n, /* Args already pushed */
+                                    asdl_expr_seq *args,
+                                    PyObject *injected_arg,
+                                    asdl_keyword_seq *keywords);
 static int codegen_call_helper(compiler *c, location loc,
                                int n, asdl_expr_seq *args,
                                asdl_keyword_seq *keywords);
@@ -743,7 +746,7 @@ _PyCodegen_Expression(compiler *c, expr_ty e)
    and for annotations. */
 
 int
-_PyCodegen_Body(compiler *c, location loc, asdl_stmt_seq *stmts)
+_PyCodegen_Body(compiler *c, location loc, asdl_stmt_seq *stmts, bool is_interactive)
 {
     /* If from __future__ import annotations is active,
      * every annotated class and module should have __annotations__.
@@ -755,23 +758,22 @@ _PyCodegen_Body(compiler *c, location loc, asdl_stmt_seq *stmts)
         return SUCCESS;
     }
     Py_ssize_t first_instr = 0;
-    if (!IS_INTERACTIVE(c)) {
+    if (!is_interactive) { /* A string literal on REPL prompt is not a docstring */
         PyObject *docstring = _PyAST_GetDocString(stmts);
         if (docstring) {
             first_instr = 1;
-            /* if not -OO mode, set docstring */
-            if (OPTIMIZATION_LEVEL(c) < 2) {
-                PyObject *cleandoc = _PyCompile_CleanDoc(docstring);
-                if (cleandoc == NULL) {
-                    return ERROR;
-                }
-                stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
-                assert(st->kind == Expr_kind);
-                location loc = LOC(st->v.Expr.value);
-                ADDOP_LOAD_CONST(c, loc, cleandoc);
-                Py_DECREF(cleandoc);
-                RETURN_IF_ERROR(codegen_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store));
+            /* set docstring */
+            assert(OPTIMIZATION_LEVEL(c) < 2);
+            PyObject *cleandoc = _PyCompile_CleanDoc(docstring);
+            if (cleandoc == NULL) {
+                return ERROR;
             }
+            stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
+            assert(st->kind == Expr_kind);
+            location loc = LOC(st->v.Expr.value);
+            ADDOP_LOAD_CONST(c, loc, cleandoc);
+            Py_DECREF(cleandoc);
+            RETURN_IF_ERROR(codegen_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store));
         }
     }
     for (Py_ssize_t i = first_instr; i < asdl_seq_LEN(stmts); i++) {
@@ -1000,25 +1002,21 @@ codegen_annotations(compiler *c, location loc,
     PySTEntryObject *ste;
     RETURN_IF_ERROR(_PySymtable_LookupOptional(SYMTABLE(c), args, &ste));
     assert(ste != NULL);
-    bool annotations_used = ste->ste_annotations_used;
 
-    int err = annotations_used ?
-        codegen_setup_annotations_scope(c, loc, (void *)args, ste->ste_name) : SUCCESS;
-    Py_DECREF(ste);
-    RETURN_IF_ERROR(err);
-
-    if (codegen_annotations_in_scope(c, loc, args, returns, &annotations_len) < 0) {
-        if (annotations_used) {
-            _PyCompile_ExitScope(c);
-        }
-        return ERROR;
-    }
-
-    if (annotations_used) {
+    if (ste->ste_annotations_used) {
+        int err = codegen_setup_annotations_scope(c, loc, (void *)args, ste->ste_name);
+        Py_DECREF(ste);
+        RETURN_IF_ERROR(err);
+        RETURN_IF_ERROR_IN_SCOPE(
+            c, codegen_annotations_in_scope(c, loc, args, returns, &annotations_len)
+        );
         RETURN_IF_ERROR(
             codegen_leave_annotations_scope(c, loc, annotations_len)
         );
         return MAKE_FUNCTION_ANNOTATE;
+    }
+    else {
+        Py_DECREF(ste);
     }
 
     return 0;
@@ -1226,18 +1224,13 @@ codegen_function_body(compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags
 
     Py_ssize_t first_instr = 0;
     PyObject *docstring = _PyAST_GetDocString(body);
+    assert(OPTIMIZATION_LEVEL(c) < 2 || docstring == NULL);
     if (docstring) {
         first_instr = 1;
-        /* if not -OO mode, add docstring */
-        if (OPTIMIZATION_LEVEL(c) < 2) {
-            docstring = _PyCompile_CleanDoc(docstring);
-            if (docstring == NULL) {
-                _PyCompile_ExitScope(c);
-                return ERROR;
-            }
-        }
-        else {
-            docstring = NULL;
+        docstring = _PyCompile_CleanDoc(docstring);
+        if (docstring == NULL) {
+            _PyCompile_ExitScope(c);
+            return ERROR;
         }
     }
     Py_ssize_t idx = _PyCompile_AddConst(c, docstring ? docstring : Py_None);
@@ -1439,7 +1432,7 @@ codegen_class_body(compiler *c, stmt_ty s, int firstlineno)
         ADDOP_N_IN_SCOPE(c, loc, STORE_DEREF, &_Py_ID(__classdict__), cellvars);
     }
     /* compile the body proper */
-    RETURN_IF_ERROR_IN_SCOPE(c, _PyCodegen_Body(c, loc, s->v.ClassDef.body));
+    RETURN_IF_ERROR_IN_SCOPE(c, _PyCodegen_Body(c, loc, s->v.ClassDef.body, false));
     PyObject *static_attributes = _PyCompile_StaticAttributesAsTuple(c);
     if (static_attributes == NULL) {
         _PyCompile_ExitScope(c);
@@ -1549,28 +1542,10 @@ codegen_class(compiler *c, stmt_ty s)
         ADDOP_I_IN_SCOPE(c, loc, CALL_INTRINSIC_1, INTRINSIC_SUBSCRIPT_GENERIC);
         RETURN_IF_ERROR_IN_SCOPE(c, codegen_nameop(c, loc, &_Py_STR(generic_base), Store));
 
-        Py_ssize_t original_len = asdl_seq_LEN(s->v.ClassDef.bases);
-        asdl_expr_seq *bases = _Py_asdl_expr_seq_new(
-            original_len + 1, ARENA(c));
-        if (bases == NULL) {
-            _PyCompile_ExitScope(c);
-            return ERROR;
-        }
-        for (Py_ssize_t i = 0; i < original_len; i++) {
-            asdl_seq_SET(bases, i, asdl_seq_GET(s->v.ClassDef.bases, i));
-        }
-        expr_ty name_node = _PyAST_Name(
-            &_Py_STR(generic_base), Load,
-            loc.lineno, loc.col_offset, loc.end_lineno, loc.end_col_offset, ARENA(c)
-        );
-        if (name_node == NULL) {
-            _PyCompile_ExitScope(c);
-            return ERROR;
-        }
-        asdl_seq_SET(bases, original_len, name_node);
-        RETURN_IF_ERROR_IN_SCOPE(c, codegen_call_helper(c, loc, 2,
-                                                        bases,
-                                                        s->v.ClassDef.keywords));
+        RETURN_IF_ERROR_IN_SCOPE(c, codegen_call_helper_impl(c, loc, 2,
+                                                             s->v.ClassDef.bases,
+                                                             &_Py_STR(generic_base),
+                                                             s->v.ClassDef.keywords));
 
         PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 0);
 
@@ -3187,19 +3162,18 @@ codegen_boolop(compiler *c, expr_ty e)
 }
 
 static int
-starunpack_helper(compiler *c, location loc,
-                  asdl_expr_seq *elts, int pushed,
-                  int build, int add, int extend, int tuple)
+starunpack_helper_impl(compiler *c, location loc,
+                       asdl_expr_seq *elts, PyObject *injected_arg, int pushed,
+                       int build, int add, int extend, int tuple)
 {
     Py_ssize_t n = asdl_seq_LEN(elts);
-    if (n > 2 && are_all_items_const(elts, 0, n)) {
+    if (!injected_arg && n > 2 && are_all_items_const(elts, 0, n)) {
         PyObject *folded = PyTuple_New(n);
         if (folded == NULL) {
             return ERROR;
         }
-        PyObject *val;
         for (Py_ssize_t i = 0; i < n; i++) {
-            val = ((expr_ty)asdl_seq_GET(elts, i))->v.Constant.value;
+            PyObject *val = ((expr_ty)asdl_seq_GET(elts, i))->v.Constant.value;
             PyTuple_SET_ITEM(folded, i, Py_NewRef(val));
         }
         if (tuple && !pushed) {
@@ -3221,7 +3195,7 @@ starunpack_helper(compiler *c, location loc,
         return SUCCESS;
     }
 
-    int big = n+pushed > STACK_USE_GUIDELINE;
+    int big = n + pushed + (injected_arg ? 1 : 0) > STACK_USE_GUIDELINE;
     int seen_star = 0;
     for (Py_ssize_t i = 0; i < n; i++) {
         expr_ty elt = asdl_seq_GET(elts, i);
@@ -3234,6 +3208,10 @@ starunpack_helper(compiler *c, location loc,
         for (Py_ssize_t i = 0; i < n; i++) {
             expr_ty elt = asdl_seq_GET(elts, i);
             VISIT(c, expr, elt);
+        }
+        if (injected_arg) {
+            RETURN_IF_ERROR(codegen_nameop(c, loc, injected_arg, Load));
+            n++;
         }
         if (tuple) {
             ADDOP_I(c, loc, BUILD_TUPLE, n+pushed);
@@ -3265,10 +3243,23 @@ starunpack_helper(compiler *c, location loc,
         }
     }
     assert(sequence_built);
+    if (injected_arg) {
+        RETURN_IF_ERROR(codegen_nameop(c, loc, injected_arg, Load));
+        ADDOP_I(c, loc, add, 1);
+    }
     if (tuple) {
         ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_LIST_TO_TUPLE);
     }
     return SUCCESS;
+}
+
+static int
+starunpack_helper(compiler *c, location loc,
+                  asdl_expr_seq *elts, int pushed,
+                  int build, int add, int extend, int tuple)
+{
+    return starunpack_helper_impl(c, loc, elts, NULL, pushed,
+                                  build, add, extend, tuple);
 }
 
 static int
@@ -3973,13 +3964,13 @@ codegen_call_simple_kw_helper(compiler *c, location loc,
     return SUCCESS;
 }
 
-
 /* shared code between codegen_call and codegen_class */
 static int
-codegen_call_helper(compiler *c, location loc,
-                    int n, /* Args already pushed */
-                    asdl_expr_seq *args,
-                    asdl_keyword_seq *keywords)
+codegen_call_helper_impl(compiler *c, location loc,
+                         int n, /* Args already pushed */
+                         asdl_expr_seq *args,
+                         PyObject *injected_arg,
+                         asdl_keyword_seq *keywords)
 {
     Py_ssize_t i, nseen, nelts, nkwelts;
 
@@ -4010,6 +4001,10 @@ codegen_call_helper(compiler *c, location loc,
         assert(elt->kind != Starred_kind);
         VISIT(c, expr, elt);
     }
+    if (injected_arg) {
+        RETURN_IF_ERROR(codegen_nameop(c, loc, injected_arg, Load));
+        nelts++;
+    }
     if (nkwelts) {
         VISIT_SEQ(c, keyword, keywords);
         RETURN_IF_ERROR(
@@ -4024,12 +4019,12 @@ codegen_call_helper(compiler *c, location loc,
 ex_call:
 
     /* Do positional arguments. */
-    if (n ==0 && nelts == 1 && ((expr_ty)asdl_seq_GET(args, 0))->kind == Starred_kind) {
+    if (n == 0 && nelts == 1 && ((expr_ty)asdl_seq_GET(args, 0))->kind == Starred_kind) {
         VISIT(c, expr, ((expr_ty)asdl_seq_GET(args, 0))->v.Starred.value);
     }
     else {
-        RETURN_IF_ERROR(starunpack_helper(c, loc, args, n, BUILD_LIST,
-                                          LIST_APPEND, LIST_EXTEND, 1));
+        RETURN_IF_ERROR(starunpack_helper_impl(c, loc, args, injected_arg, n,
+                                               BUILD_LIST, LIST_APPEND, LIST_EXTEND, 1));
     }
     /* Then keyword arguments */
     if (nkwelts) {
@@ -4074,6 +4069,14 @@ ex_call:
     return SUCCESS;
 }
 
+static int
+codegen_call_helper(compiler *c, location loc,
+                    int n, /* Args already pushed */
+                    asdl_expr_seq *args,
+                    asdl_keyword_seq *keywords)
+{
+    return codegen_call_helper_impl(c, loc, n, args, NULL, keywords);
+}
 
 /* List and set comprehensions and generator expressions work by creating a
   nested function to perform the actual iteration. This means that the
@@ -4489,10 +4492,6 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     PyCodeObject *co = NULL;
     _PyCompile_InlinedComprehensionState inline_state = {NULL, NULL, NULL, NO_LABEL};
     comprehension_ty outermost;
-#ifndef NDEBUG
-    int scope_type = SCOPE_TYPE(c);
-    int is_top_level_await = IS_TOP_LEVEL_AWAIT(c);
-#endif
     PySTEntryObject *entry = _PySymtable_Lookup(SYMTABLE(c), (void *)e);
     if (entry == NULL) {
         goto error;
@@ -4522,12 +4521,6 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
         }
     }
     Py_CLEAR(entry);
-
-    assert (!is_async_comprehension ||
-            type == COMP_GENEXP ||
-            scope_type == COMPILE_SCOPE_ASYNC_FUNCTION ||
-            scope_type == COMPILE_SCOPE_COMPREHENSION ||
-            is_top_level_await);
 
     if (type != COMP_GENEXP) {
         int op;
@@ -4953,11 +4946,6 @@ codegen_visit_expr(compiler *c, expr_ty e)
         ADD_YIELD_FROM(c, loc, 0);
         break;
     case Await_kind:
-        assert(IS_TOP_LEVEL_AWAIT(c) || (_PyST_IsFunctionLike(SYMTABLE_ENTRY(c)) && (
-            SCOPE_TYPE(c) == COMPILE_SCOPE_ASYNC_FUNCTION ||
-            SCOPE_TYPE(c) == COMPILE_SCOPE_COMPREHENSION
-        )));
-
         VISIT(c, expr, e->v.Await.value);
         ADDOP_I(c, loc, GET_AWAITABLE, 0);
         ADDOP_LOAD_CONST(c, loc, Py_None);
