@@ -3978,10 +3978,9 @@ _curses_qiflush_impl(PyObject *module, int flag)
     Py_RETURN_NONE;
 }
 
-/* Internal helper used for updating curses.LINES, curses.COLS, _curses.LINES
- * and _curses.COLS. */
 #if defined(HAVE_CURSES_RESIZETERM) || defined(HAVE_CURSES_RESIZE_TERM)
-/* Returns 1 on success and 0 on failure. */
+/* Internal helper used for updating curses.LINES, curses.COLS, _curses.LINES
+ * and _curses.COLS. Returns 1 on success and 0 on failure. */
 static int
 update_lines_cols(PyObject *private_module)
 {
