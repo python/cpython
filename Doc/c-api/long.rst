@@ -701,7 +701,7 @@ Export API
    subclass.
 
    :c:func:`PyLong_FreeDigitArray` must be called once done with using
-   *export*.
+   *array*.
 
 
 .. c:function:: void PyLong_FreeDigitArray(PyLong_DigitArray *array)
@@ -739,9 +739,6 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
    :c:func:`PyLongWriter_Finish` to get a Python :class:`int`. Digits must be
    in the range [``0``; ``PyLong_BASE - 1``]. Unused digits must be set to
    ``0``.
-
-   *layout* is the layout of *digits*: it must be equal to
-   :c:func:`PyLong_GetNativeLayout`.
 
 
 .. c:function:: PyObject* PyLongWriter_Finish(PyLongWriter *writer)
