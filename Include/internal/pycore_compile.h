@@ -136,15 +136,10 @@ int _PyCompile_IsNestedScope(struct _PyCompiler *c);
 int _PyCompile_IsInInlinedComp(struct _PyCompiler *c);
 int _PyCompile_ScopeType(struct _PyCompiler *c);
 int _PyCompile_OptimizationLevel(struct _PyCompiler *c);
-PyArena *_PyCompile_Arena(struct _PyCompiler *c);
 int _PyCompile_LookupArg(struct _PyCompiler *c, PyCodeObject *co, PyObject *name);
 PyObject *_PyCompile_Qualname(struct _PyCompiler *c);
 _PyCompile_CodeUnitMetadata *_PyCompile_Metadata(struct _PyCompiler *c);
 PyObject *_PyCompile_StaticAttributesAsTuple(struct _PyCompiler *c);
-
-#ifndef NDEBUG
-int _PyCompile_IsTopLevelAwait(struct _PyCompiler *c);
-#endif
 
 struct symtable *_PyCompile_Symtable(struct _PyCompiler *c);
 PySTEntryObject *_PyCompile_SymtableEntry(struct _PyCompiler *c);
