@@ -150,6 +150,7 @@ default_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         (r"\<right>", "right"),
         (r"\C-\<right>", "forward-word"),
         (r"\<delete>", "delete"),
+        (r"\x1b[3~", "delete"),
         (r"\<backspace>", "backspace"),
         (r"\M-\<backspace>", "backward-kill-word"),
         (r"\<end>", "end-of-line"),  # was 'end'
