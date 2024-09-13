@@ -182,10 +182,13 @@ static char *screen_encoding = NULL;
 
 /* Utility Macros */
 #define PyCursesSetupTermCalled                                         \
-    if (initialised_setupterm != TRUE) {                                \
-        PyErr_SetString(PyCursesError,                                  \
-                        "must call (at least) setupterm() first");      \
-        return 0; }
+    do {                                                                \
+        if (initialised_setupterm != TRUE) {                            \
+            PyErr_SetString(PyCursesError,                              \
+                            "must call (at least) setupterm() first");  \
+            return 0;                                                   \
+        }                                                               \
+    } while (0)
 
 #define PyCursesInitialised                             \
     if (initialised != TRUE) {                          \
