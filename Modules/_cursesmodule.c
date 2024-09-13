@@ -3255,8 +3255,6 @@ _curses_init_pair_impl(PyObject *module, int pair_number, int fg, int bg)
     Py_RETURN_NONE;
 }
 
-static PyObject *ModDict;
-
 /*[clinic input]
 _curses.initscr
 
@@ -3285,19 +3283,23 @@ _curses_initscr_impl(PyObject *module)
 
     initialised = initialised_setupterm = TRUE;
 
-/* This was moved from initcurses() because it core dumped on SGI,
-   where they're not defined until you've called initscr() */
-#define SetDictInt(NAME, VALUE)                                 \
-    do {                                                        \
-        PyObject *value = PyLong_FromLong((long)(VALUE));       \
-        if (value == NULL) {                                    \
-            return NULL;                                        \
-        }                                                       \
-        int rc = PyDict_SetItemString(ModDict, (NAME), value);  \
-        Py_DECREF(value);                                       \
-        if (rc < 0) {                                           \
-            return NULL;                                        \
-        }                                                       \
+    PyObject *module_dict = PyModule_GetDict(module); // borrowed
+    if (module_dict == NULL) {
+        return NULL;
+    }
+    /* This was moved from initcurses() because it core dumped on SGI,
+       where they're not defined until you've called initscr() */
+#define SetDictInt(NAME, VALUE)                                     \
+    do {                                                            \
+        PyObject *value = PyLong_FromLong((long)(VALUE));           \
+        if (value == NULL) {                                        \
+            return NULL;                                            \
+        }                                                           \
+        int rc = PyDict_SetItemString(module_dict, (NAME), value);  \
+        Py_DECREF(value);                                           \
+        if (rc < 0) {                                               \
+            return NULL;                                            \
+        }                                                           \
     } while (0)
 
     /* Here are some graphic symbols you can use */
@@ -3976,11 +3978,11 @@ _curses_qiflush_impl(PyObject *module, int flag)
     Py_RETURN_NONE;
 }
 
-/* Internal helper used for updating curses.LINES, curses.COLS, _curses.LINES
- * and _curses.COLS */
 #if defined(HAVE_CURSES_RESIZETERM) || defined(HAVE_CURSES_RESIZE_TERM)
+/* Internal helper used for updating curses.LINES, curses.COLS, _curses.LINES
+ * and _curses.COLS. Returns 1 on success and 0 on failure. */
 static int
-update_lines_cols(void)
+update_lines_cols(PyObject *private_module)
 {
     PyObject *exposed_module = NULL, *o = NULL;
 
@@ -3992,6 +3994,10 @@ update_lines_cols(void)
     if (exposed_module_dict == NULL) {
         goto error;
     }
+    PyObject *private_module_dict = PyModule_GetDict(private_module); // borrowed
+    if (private_module_dict == NULL) {
+        goto error;
+    }
 
     o = PyLong_FromLong(LINES);
     if (o == NULL) {
@@ -4000,7 +4006,7 @@ update_lines_cols(void)
     if (PyDict_SetItemString(exposed_module_dict, "LINES", o) < 0) {
         goto error;
     }
-    if (PyDict_SetItemString(ModDict, "LINES", o) < 0) {
+    if (PyDict_SetItemString(private_module_dict, "LINES", o) < 0) {
         goto error;
     }
     Py_DECREF(o);
@@ -4012,7 +4018,7 @@ update_lines_cols(void)
     if (PyDict_SetItemString(exposed_module_dict, "COLS", o) < 0) {
         goto error;
     }
-    if (PyDict_SetItemString(ModDict, "COLS", o) < 0) {
+    if (PyDict_SetItemString(private_module_dict, "COLS", o) < 0) {
         goto error;
     }
     Py_DECREF(o);
@@ -4034,7 +4040,7 @@ static PyObject *
 _curses_update_lines_cols_impl(PyObject *module)
 /*[clinic end generated code: output=423f2b1e63ed0f75 input=5f065ab7a28a5d90]*/
 {
-    if (!update_lines_cols()) {
+    if (!update_lines_cols(module)) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -4121,7 +4127,7 @@ _curses_resizeterm_impl(PyObject *module, int nlines, int ncols)
     result = PyCursesCheckERR(resizeterm(nlines, ncols), "resizeterm");
     if (!result)
         return NULL;
-    if (!update_lines_cols()) {
+    if (!update_lines_cols(module)) {
         Py_DECREF(result);
         return NULL;
     }
@@ -4160,7 +4166,7 @@ _curses_resize_term_impl(PyObject *module, int nlines, int ncols)
     result = PyCursesCheckERR(resize_term(nlines, ncols), "resize_term");
     if (!result)
         return NULL;
-    if (!update_lines_cols()) {
+    if (!update_lines_cols(module)) {
         Py_DECREF(result);
         return NULL;
     }
@@ -4232,17 +4238,21 @@ _curses_start_color_impl(PyObject *module)
 
     initialisedcolors = TRUE;
 
-#define DICT_ADD_INT_VALUE(NAME, VALUE)                         \
-    do {                                                        \
-        PyObject *value = PyLong_FromLong((long)(VALUE));       \
-        if (value == NULL) {                                    \
-            return NULL;                                        \
-        }                                                       \
-        int rc = PyDict_SetItemString(ModDict, (NAME), value);  \
-        Py_DECREF(value);                                       \
-        if (rc < 0) {                                           \
-            return NULL;                                        \
-        }                                                       \
+    PyObject *module_dict = PyModule_GetDict(module); // borrowed
+    if (module_dict == NULL) {
+        return NULL;
+    }
+#define DICT_ADD_INT_VALUE(NAME, VALUE)                             \
+    do {                                                            \
+        PyObject *value = PyLong_FromLong((long)(VALUE));           \
+        if (value == NULL) {                                        \
+            return NULL;                                            \
+        }                                                           \
+        int rc = PyDict_SetItemString(module_dict, (NAME), value);  \
+        Py_DECREF(value);                                           \
+        if (rc < 0) {                                               \
+            return NULL;                                            \
+        }                                                           \
     } while (0)
 
     DICT_ADD_INT_VALUE("COLORS", COLORS);
@@ -4779,7 +4789,6 @@ cursesmodule_exec(PyObject *module)
     if (module_dict == NULL) {
         return -1;
     }
-    ModDict = module_dict; /* For PyCurses_InitScr to use later */
 
     void **PyCurses_API = PyMem_Calloc(PyCurses_API_pointers, sizeof(void *));
     if (PyCurses_API == NULL) {
