@@ -314,15 +314,6 @@ managed_static_type_state_clear(PyInterpreterState *interp, PyTypeObject *self,
     }
 }
 
-static PyTypeObject *
-managed_static_type_get_def(PyTypeObject *self, int isbuiltin)
-{
-    size_t index = managed_static_type_index_get(self);
-    size_t full_index = isbuiltin
-        ? index
-        : index + _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES;
-    return &_PyRuntime.types.managed_static.types[full_index].def;
-}
 
 
 PyObject *
@@ -4678,10 +4669,10 @@ special_offset_from_member(
     return -1;
 }
 
-static PyObject *
-_PyType_FromMetaclass_impl(
+PyObject *
+PyType_FromMetaclass(
     PyTypeObject *metaclass, PyObject *module,
-    PyType_Spec *spec, PyObject *bases_in, int _allow_tp_new)
+    PyType_Spec *spec, PyObject *bases_in)
 {
     /* Invariant: A non-NULL value in one of these means this function holds
      * a strong reference or owns allocated memory.
@@ -4858,21 +4849,10 @@ _PyType_FromMetaclass_impl(
         goto finally;
     }
     if (metaclass->tp_new && metaclass->tp_new != PyType_Type.tp_new) {
-        if (_allow_tp_new) {
-            if (PyErr_WarnFormat(
-                    PyExc_DeprecationWarning, 1,
-                    "Type %s uses PyType_Spec with a metaclass that has custom "
-                    "tp_new. This is deprecated and will no longer be allowed in "
-                    "Python 3.14.", spec->name) < 0) {
-                goto finally;
-            }
-        }
-        else {
-            PyErr_SetString(
-                PyExc_TypeError,
-                "Metaclasses with custom tp_new are not supported.");
-            goto finally;
-        }
+        PyErr_SetString(
+            PyExc_TypeError,
+            "Metaclasses with custom tp_new are not supported.");
+        goto finally;
     }
 
     /* Calculate best base, and check that all bases are type objects */
@@ -5125,28 +5105,21 @@ _PyType_FromMetaclass_impl(
 }
 
 PyObject *
-PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
-                     PyType_Spec *spec, PyObject *bases_in)
-{
-    return _PyType_FromMetaclass_impl(metaclass, module, spec, bases_in, 0);
-}
-
-PyObject *
 PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 {
-    return _PyType_FromMetaclass_impl(NULL, module, spec, bases, 1);
+    return PyType_FromMetaclass(NULL, module, spec, bases);
 }
 
 PyObject *
 PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 {
-    return _PyType_FromMetaclass_impl(NULL, NULL, spec, bases, 1);
+    return PyType_FromMetaclass(NULL, NULL, spec, bases);
 }
 
 PyObject *
 PyType_FromSpec(PyType_Spec *spec)
 {
-    return _PyType_FromMetaclass_impl(NULL, NULL, spec, NULL, 1);
+    return PyType_FromMetaclass(NULL, NULL, spec, NULL);
 }
 
 PyObject *
@@ -6036,6 +6009,7 @@ fini_static_type(PyInterpreterState *interp, PyTypeObject *type,
 
     _PyStaticType_ClearWeakRefs(interp, type);
     managed_static_type_state_clear(interp, type, isbuiltin, final);
+    /* We leave _Py_TPFLAGS_STATIC_BUILTIN set on tp_flags. */
 }
 
 void
@@ -8049,7 +8023,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
     return 0;
 }
 
-static int add_operators(PyTypeObject *, PyTypeObject *);
+static int add_operators(PyTypeObject *type);
 static int add_tp_new_wrapper(PyTypeObject *type);
 
 #define COLLECTION_FLAGS (Py_TPFLAGS_SEQUENCE | Py_TPFLAGS_MAPPING)
@@ -8214,10 +8188,10 @@ type_dict_set_doc(PyTypeObject *type)
 
 
 static int
-type_ready_fill_dict(PyTypeObject *type, PyTypeObject *def)
+type_ready_fill_dict(PyTypeObject *type)
 {
     /* Add type-specific descriptors to tp_dict */
-    if (add_operators(type, def) < 0) {
+    if (add_operators(type) < 0) {
         return -1;
     }
     if (type_add_methods(type) < 0) {
@@ -8536,7 +8510,7 @@ type_ready_post_checks(PyTypeObject *type)
 
 
 static int
-type_ready(PyTypeObject *type, PyTypeObject *def, int initial)
+type_ready(PyTypeObject *type, int initial)
 {
     ASSERT_TYPE_LOCK_HELD();
 
@@ -8575,7 +8549,7 @@ type_ready(PyTypeObject *type, PyTypeObject *def, int initial)
     if (type_ready_set_new(type, initial) < 0) {
         goto error;
     }
-    if (type_ready_fill_dict(type, def) < 0) {
+    if (type_ready_fill_dict(type) < 0) {
         goto error;
     }
     if (initial) {
@@ -8632,7 +8606,7 @@ PyType_Ready(PyTypeObject *type)
     int res;
     BEGIN_TYPE_LOCK();
     if (!(type->tp_flags & Py_TPFLAGS_READY)) {
-        res = type_ready(type, NULL, 1);
+        res = type_ready(type, 1);
     } else {
         res = 0;
         assert(_PyType_CheckConsistency(type));
@@ -8668,20 +8642,14 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
 
     managed_static_type_state_init(interp, self, isbuiltin, initial);
 
-    PyTypeObject *def = managed_static_type_get_def(self, isbuiltin);
-    if (initial) {
-        memcpy(def, self, sizeof(PyTypeObject));
-    }
-
     int res;
     BEGIN_TYPE_LOCK();
-    res = type_ready(self, def, initial);
+    res = type_ready(self, initial);
     END_TYPE_LOCK();
     if (res < 0) {
         _PyStaticType_ClearWeakRefs(interp, self);
         managed_static_type_state_clear(interp, self, isbuiltin, initial);
     }
-
     return res;
 }
 
@@ -11292,6 +11260,26 @@ recurse_down_subclasses(PyTypeObject *type, PyObject *attr_name,
     return 0;
 }
 
+static int
+slot_inherited(PyTypeObject *type, pytype_slotdef *slotdef, void **slot)
+{
+    void **slot_base = slotptr(type->tp_base, slotdef->offset);
+    if (slot_base == NULL || *slot != *slot_base) {
+        return 0;
+    }
+
+    /* Some slots are inherited in pairs. */
+    if (slot == (void *)&type->tp_hash) {
+        return (type->tp_richcompare == type->tp_base->tp_richcompare);
+    }
+    else if (slot == (void *)&type->tp_richcompare) {
+        return (type->tp_hash == type->tp_base->tp_hash);
+    }
+
+    /* It must be inherited (see type_ready_inherit()). */
+    return 1;
+}
+
 /* This function is called by PyType_Ready() to populate the type's
    dictionary with method descriptors for function slots.  For each
    function slot (like tp_repr) that's defined in the type, one or more
@@ -11323,24 +11311,26 @@ recurse_down_subclasses(PyTypeObject *type, PyObject *attr_name,
    infinite recursion here.) */
 
 static int
-add_operators(PyTypeObject *type, PyTypeObject *def)
+add_operators(PyTypeObject *type)
 {
     PyObject *dict = lookup_tp_dict(type);
     pytype_slotdef *p;
     PyObject *descr;
     void **ptr;
 
-    assert(def == NULL || (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
-    if (def == NULL) {
-        def = type;
-    }
-
     for (p = slotdefs; p->name; p++) {
         if (p->wrapper == NULL)
             continue;
-        ptr = slotptr(def, p->offset);
+        ptr = slotptr(type, p->offset);
         if (!ptr || !*ptr)
             continue;
+        /* Also ignore when the type slot has been inherited. */
+        if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN
+            && type->tp_base != NULL
+            && slot_inherited(type, p, ptr))
+        {
+            continue;
+        }
         int r = PyDict_Contains(dict, p->name_strobj);
         if (r > 0)
             continue;
