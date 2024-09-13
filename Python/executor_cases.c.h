@@ -1661,15 +1661,14 @@
         }
 
         case _LOAD_GLOBAL: {
-            _PyStackRef res;
+            _PyStackRef *res;
             _PyStackRef null = PyStackRef_NULL;
             oparg = CURRENT_OPARG();
+            res = &stack_pointer[0];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-            PyObject *res_o = _PyEval_LoadGlobal(GLOBALS(), BUILTINS(), name);
-            if (res_o == NULL) JUMP_TO_ERROR();
+            _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, res);
+            if (PyStackRef_IsNull(*res)) JUMP_TO_ERROR();
             null = PyStackRef_NULL;
-            res = PyStackRef_FromPyObjectSteal(res_o);
-            stack_pointer[0] = res;
             if (oparg & 1) stack_pointer[1] = null;
             stack_pointer += 1 + (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
