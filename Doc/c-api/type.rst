@@ -507,8 +507,7 @@ The following functions and structs are used to create
       The following internal fields cannot be set at all when creating a heap
       type:
 
-      * Internal fields:
-        :c:member:`~PyTypeObject.tp_dict`,
+      * :c:member:`~PyTypeObject.tp_dict`,
         :c:member:`~PyTypeObject.tp_mro`,
         :c:member:`~PyTypeObject.tp_cache`,
         :c:member:`~PyTypeObject.tp_subclasses`, and
@@ -528,11 +527,11 @@ The following functions and structs are used to create
         :c:member:`~PyBufferProcs.bf_releasebuffer` are now available
         under the :ref:`limited API <limited-c-api>`.
 
-      .. versionchanged:: 3.14
+     .. versionchanged:: 3.14
 
-         The field :c:member:`~PyTypeObject.tp_vectorcall` can now set
-         using ``Py_tp_vectorcall``.  See the field's documentation
-         for details.
+        The field :c:member:`~PyTypeObject.tp_vectorcall` can now set
+        using ``Py_tp_vectorcall``.  See the field's documentation
+        for details.
 
    .. c:member:: void *pfunc
 
