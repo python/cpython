@@ -2234,21 +2234,17 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # return the list of arg string counts
         return result
 
-    def _extract_choices_value(self):
-        return [action.choices.values()
-                for action in self._subparsers._actions
-                if isinstance(action, _SubParsersAction)
-                and hasattr(action, 'choices')]
+    def _extract_optional_arguments(self):
+        optionals = []
 
-    def _extract_actions(self, choices_value):
-        return [action
-                for subvalue in choices_value
-                for action in subvalue._actions]
-
-    def _extract_optional_arguments(self, actions):
-        return [option_string
-                for action in actions
-                for option_string in action.option_strings]
+        for action in self._actions:
+            if not isinstance(action, _SubParsersAction):
+                continue
+            if hasattr(action, 'choices'):
+                for choices in action.choices.values():
+                    for action in choices._actions:
+                        optionals.extend(action.option_strings)
+        return optionals
 
     def _parse_optional(self, arg_string):
         # if it's an empty string, it was meant to be a positional
@@ -2280,12 +2276,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
         # if the parameter string exists,
         # similar matching exception isn't thrown
-        if hasattr(self._subparsers, '_actions'):
-            choices_value = self._extract_choices_value()[0]
-            actions = self._extract_actions(choices_value)
-            subparams = self._extract_optional_arguments(actions)
-            if arg_string in subparams:
-                return None
+        optionals = self._extract_optional_arguments()
+        if arg_string in optionals:
+            return None
 
         # if multiple actions match, the option string was ambiguous
         if len(option_tuples) > 1:
