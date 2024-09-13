@@ -208,6 +208,9 @@ unicode_decode_utf8_writer(_PyUnicodeWriter *writer,
 static inline int unicode_is_finalizing(void);
 static int unicode_is_singleton(PyObject *unicode);
 #endif
+static Py_UCS4*
+as_ucs4(PyObject *string, Py_UCS4 *target, Py_ssize_t targetsize,
+        int copy_null);
 
 
 // Return a reference to the immortal empty string singleton.
@@ -2444,16 +2447,13 @@ PyUnicode_Export(PyObject *unicode, int32_t requested_formats,
 
     // Convert ASCII, UCS1 or UCS2 to UCS4
     if (requested_formats & PyUnicode_FORMAT_UCS4) {
-        Py_UCS4 *ucs4 = PyUnicode_AsUCS4Copy(unicode);
-        if (ucs4 == NULL) {
-            return -1;
-        }
-
-        PyObject *bytes = PyBytes_FromStringAndSize((char*)ucs4, (len + 1) * 4);
-        PyMem_Free(ucs4);
+        PyObject *bytes = PyBytes_FromStringAndSize(NULL, (len + 1) * 4);
         if (bytes == NULL) {
             return -1;
         }
+        Py_UCS4 *ucs4 = (Py_UCS4*)PyBytes_AS_STRING(bytes);
+
+        (void)as_ucs4(unicode, ucs4, len + 1, 1);
 
         return unicode_export_bytes(bytes, view, len,
                                     4, BUFFER_UCS4, PyUnicode_FORMAT_UCS4);
@@ -2709,15 +2709,14 @@ static Py_UCS4*
 as_ucs4(PyObject *string, Py_UCS4 *target, Py_ssize_t targetsize,
         int copy_null)
 {
-    int kind;
-    const void *data;
-    Py_ssize_t len, targetlen;
-    kind = PyUnicode_KIND(string);
-    data = PyUnicode_DATA(string);
-    len = PyUnicode_GET_LENGTH(string);
-    targetlen = len;
-    if (copy_null)
+    int kind = PyUnicode_KIND(string);
+    const void *data = PyUnicode_DATA(string);
+    Py_ssize_t len = PyUnicode_GET_LENGTH(string);
+    Py_ssize_t targetlen = len;
+    if (copy_null) {
         targetlen++;
+    }
+
     if (!target) {
         target = PyMem_New(Py_UCS4, targetlen);
         if (!target) {
@@ -2729,11 +2728,13 @@ as_ucs4(PyObject *string, Py_UCS4 *target, Py_ssize_t targetsize,
         if (targetsize < targetlen) {
             PyErr_Format(PyExc_SystemError,
                          "string is longer than the buffer");
-            if (copy_null && 0 < targetsize)
+            if (copy_null && 0 < targetsize) {
                 target[0] = 0;
+            }
             return NULL;
         }
     }
+
     if (kind == PyUnicode_1BYTE_KIND) {
         const Py_UCS1 *start = (const Py_UCS1 *) data;
         _PyUnicode_CONVERT_BYTES(Py_UCS1, Py_UCS4, start, start + len, target);
@@ -2748,8 +2749,10 @@ as_ucs4(PyObject *string, Py_UCS4 *target, Py_ssize_t targetsize,
     else {
         Py_UNREACHABLE();
     }
-    if (copy_null)
+    if (copy_null) {
         target[len] = 0;
+    }
+
     return target;
 }
 
