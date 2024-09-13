@@ -130,7 +130,7 @@ The three allocation domains are:
   For example, buffers (non-Python objects) should be allocated using :c:func:`PyMem_Malloc`,
   :c:func:`PyMem_RawMalloc`, or :c:func:`malloc`, but not :c:func:`PyObject_Malloc`.
 
-  See :ref:`Memory Allocation APIs <free-threaded-memory-allocation>`:
+  See :ref:`Memory Allocation APIs <free-threaded-memory-allocation>`.
 
 
 .. _raw-memoryinterface:
