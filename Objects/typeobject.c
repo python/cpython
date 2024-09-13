@@ -5338,9 +5338,8 @@ get_base_by_token_recursive(PyTypeObject *type, void *token)
 }
 
 static inline PyTypeObject *
-get_base_by_token_from_mro(PyTypeObject *type, void *token)
+get_base_by_token_from_mro(PyObject *mro, void *token, PyTypeObject *type)
 {
-    PyObject *mro = type->tp_mro;
     assert(mro != NULL);
     assert(PyTuple_Check(mro));
     // mro_invoke() ensures that the type MRO cannot be empty.
@@ -5361,10 +5360,11 @@ get_base_by_token_from_mro(PyTypeObject *type, void *token)
     return NULL;
 }
 
-// Goto jumps here can disturb PGO by MSVC
 int
 PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
 {
+    // The rich usage of this API needs a well-balanced exercise. Also, MSVC
+    // prefers if-else statements and tiny functions on PGO here over gotos.
     if (result != NULL) {
         // The clear should not be under cold branches (e.g. not found)
         *result = NULL;
@@ -5383,27 +5383,30 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // No static type has a heaptype superclass,
         // which is ensured by type_ready_mro().
-        return 0;
     }
-    PyTypeObject *base;
-    if (((PyHeapTypeObject*)type)->ht_token == token) {
-        base = type;
+    else if (((PyHeapTypeObject*)type)->ht_token == token) {
+        if (result != NULL) {
+           *result = (PyTypeObject *)Py_NewRef(type);
+        }
+        return 1;
     }
     else {
-        if (type->tp_mro != NULL) {
-            base = get_base_by_token_from_mro(type, token);
+        PyTypeObject *base;
+        PyObject *mro = type->tp_mro;  // Bypass lookup_tp_mro() for now
+        if (mro != NULL) {
+             base = get_base_by_token_from_mro(mro, token, type);
         }
         else {
-            base = get_base_by_token_recursive(type, token);
+             base = get_base_by_token_recursive(type, token);
         }
-        if (base == NULL) {
-            return 0;
+        if (base != NULL) {
+            if (result != NULL) {
+               *result = (PyTypeObject *)Py_NewRef(base);
+            }
+            return 1;
         }
     }
-    if (result != NULL) {
-       *result = (PyTypeObject *)Py_NewRef(base);
-    }
-    return 1;
+    return 0;
 }
 
 
