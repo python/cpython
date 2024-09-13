@@ -815,7 +815,7 @@ class MathTests(unittest.TestCase):
         self.assertEqual(hypot(FloatLike(-1.), 0.75), 1.25)
         self.assertEqual(hypot(Decimal(12), Decimal(5)), 13)
         self.assertEqual(hypot(Fraction(12, 32), Fraction(5, 32)), Fraction(13, 32))
-        self.assertEqual(hypot(bool(1), bool(0), bool(1), bool(1)), math.sqrt(3))
+        self.assertEqual(hypot(True, False, True, True, True), 2.0)
 
         # Test corner cases
         self.assertEqual(hypot(0.0, 0.0), 0.0)     # Max input is zero
