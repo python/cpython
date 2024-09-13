@@ -790,13 +790,13 @@ compiler_codegen(compiler *c, mod_ty mod)
     switch (mod->kind) {
     case Module_kind: {
         asdl_stmt_seq *stmts = mod->v.Module.body;
-        RETURN_IF_ERROR(_PyCodegen_Body(c, start_location(stmts), stmts, false));
+        RETURN_IF_ERROR(_PyCodegen_Body(c, start_location(stmts), stmts));
         break;
     }
     case Interactive_kind: {
         c->c_interactive = 1;
         asdl_stmt_seq *stmts = mod->v.Interactive.body;
-        RETURN_IF_ERROR(_PyCodegen_Body(c, start_location(stmts), stmts, true));
+        RETURN_IF_ERROR(_PyCodegen_Body(c, start_location(stmts), stmts));
         break;
     }
     case Expression_kind: {
