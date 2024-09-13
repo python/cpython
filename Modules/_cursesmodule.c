@@ -2639,12 +2639,12 @@ PyTypeObject PyCursesWindow_Type = {
 
 #define NoArgNoReturnFunctionBody(X) \
 { \
-  PyCursesInitialised \
+  PyCursesInitialised; \
   return PyCursesCheckERR(X(), # X); }
 
 #define NoArgOrFlagNoReturnFunctionBody(X, flag) \
 { \
-    PyCursesInitialised \
+    PyCursesInitialised; \
     if (flag) \
         return PyCursesCheckERR(X(), # X); \
     else \
@@ -2653,23 +2653,23 @@ PyTypeObject PyCursesWindow_Type = {
 
 #define NoArgReturnIntFunctionBody(X) \
 { \
- PyCursesInitialised \
+ PyCursesInitialised; \
  return PyLong_FromLong((long) X()); }
 
 
 #define NoArgReturnStringFunctionBody(X) \
 { \
-  PyCursesInitialised \
+  PyCursesInitialised; \
   return PyBytes_FromString(X()); }
 
 #define NoArgTrueFalseFunctionBody(X) \
 { \
-  PyCursesInitialised \
+  PyCursesInitialised; \
   return PyBool_FromLong(X()); }
 
 #define NoArgNoReturnVoidFunctionBody(X) \
 { \
-  PyCursesInitialised \
+  PyCursesInitialised; \
   X(); \
   Py_RETURN_NONE; }
 
