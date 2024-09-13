@@ -1,0 +1,1 @@
+Enable compiler options that warn of potential security vulnerabilities.
