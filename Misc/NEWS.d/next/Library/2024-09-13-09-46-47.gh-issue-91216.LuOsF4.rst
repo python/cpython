@@ -1,0 +1,2 @@
+``importlib.metadata`` now raises a ``KeyError`` instead of returning
+``None`` when a key is missing from the metadata.
