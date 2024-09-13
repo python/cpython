@@ -59,6 +59,18 @@ SyntaxError: cannot assign to __debug__
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
 
+>>> def __debug__(): pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
+>>> async def __debug__(): pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
+>>> class __debug__: pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
 >>> del __debug__
 Traceback (most recent call last):
 SyntaxError: cannot delete __debug__
@@ -786,6 +798,9 @@ SyntaxError: cannot assign to __debug__
 >>> __debug__: int
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
+>>> x.__debug__: int
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
 >>> f(a=)
 Traceback (most recent call last):
 SyntaxError: expected argument value expression
@@ -1182,6 +1197,24 @@ Missing ':' before suites:
    Traceback (most recent call last):
    SyntaxError: expected ':'
 
+   >>> match x:
+   ...   case a, __debug__, b:
+   ...       pass
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
+
+   >>> match x:
+   ...   case a, b, *__debug__:
+   ...       pass
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
+
+   >>> match x:
+   ...   case Foo(a, __debug__=1, b=2):
+   ...       pass
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
+
    >>> if x = 3:
    ...    pass
    Traceback (most recent call last):
@@ -1275,6 +1308,15 @@ Custom error messages for try blocks that are not followed by except/finally
    Traceback (most recent call last):
    SyntaxError: expected 'except' or 'finally' block
 
+Custom error message for __debug__ as exception variable
+
+   >>> try:
+   ...    pass
+   ... except TypeError as __debug__:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
+
 Custom error message for try block mixing except and except*
 
    >>> try:
@@ -1316,6 +1358,36 @@ Custom error message for try block mixing except and except*
    ...    pass
    Traceback (most recent call last):
    SyntaxError: cannot have both 'except' and 'except*' on the same 'try'
+
+Better error message for using `except as` with not a name:
+
+   >>> try:
+   ...    pass
+   ... except TypeError as obj.attr:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot use except statement with attribute
+
+   >>> try:
+   ...    pass
+   ... except TypeError as obj[1]:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot use except statement with subscript
+
+   >>> try:
+   ...    pass
+   ... except* TypeError as (obj, name):
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot use except* statement with tuple
+
+   >>> try:
+   ...    pass
+   ... except* TypeError as 1:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot use except* statement with literal
 
 Ensure that early = are not matched by the parser as invalid comparisons
    >>> f(2, 4, x=34); 1 $ 2
@@ -1522,6 +1594,19 @@ Specialized indentation errors:
    Traceback (most recent call last):
    IndentationError: expected an indented block after class definition on line 1
 
+   >>> class C(__debug__=42): ...
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
+
+   >>> class Meta(type):
+   ...     def __new__(*args, **kwargs):
+   ...         pass
+
+   >>> class C(metaclass=Meta, __debug__=42):
+   ...     pass
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
+
    >>> match something:
    ... pass
    Traceback (most recent call last):
@@ -1708,6 +1793,26 @@ SyntaxError: Did you mean to use 'from ... import ...' instead?
 Traceback (most recent call last):
 SyntaxError: Did you mean to use 'from ... import ...' instead?
 
+>>> import __debug__
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
+>>> import a as __debug__
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
+>>> import a.b.c as __debug__
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
+>>> from a import __debug__
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
+>>> from a import b as __debug__
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
 # Check that we dont raise the "trailing comma" error if there is more
 # input to the left of the valid part that we parsed.
 
@@ -1827,7 +1932,31 @@ Corner-cases that used to crash:
     ...   case 42 as 1+2+4:
     ...     ...
     Traceback (most recent call last):
-    SyntaxError: invalid pattern target
+    SyntaxError: cannot use expression as pattern target
+
+    >>> match ...:
+    ...   case 42 as a.b:
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: cannot use attribute as pattern target
+
+    >>> match ...:
+    ...   case 42 as (a, b):
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: cannot use tuple as pattern target
+
+    >>> match ...:
+    ...   case 42 as (a + 1):
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: cannot use expression as pattern target
+
+    >>> match ...:
+    ...   case (32 as x) | (42 as a()):
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: cannot use function call as pattern target
 
     >>> match ...:
     ...   case Foo(z=1, y=2, x):
@@ -2185,6 +2314,14 @@ Invalid expressions in type scopes:
    Traceback (most recent call last):
       ...
    SyntaxError: yield expression cannot be used within a type alias
+
+   >>> type __debug__ = int
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
+
+   >>> class A[__debug__]: pass
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
 
    >>> class A[T]((x := 3)): ...
    Traceback (most recent call last):
@@ -2686,6 +2823,39 @@ while 1:
         source = "d{{{{{{{{{{{{{{{{{{{{{{{{{```{{{{{{{ef f():y"
         with self.assertRaises(SyntaxError):
             compile(source, "<string>", "exec")
+
+    def test_except_stmt_invalid_as_expr(self):
+        self._check_error(
+            textwrap.dedent(
+                """
+                try:
+                    pass
+                except ValueError as obj.attr:
+                    pass
+                """
+            ),
+            errtext="cannot use except statement with attribute",
+            lineno=4,
+            end_lineno=4,
+            offset=22,
+            end_offset=22 + len("obj.attr"),
+        )
+
+    def test_match_stmt_invalid_as_expr(self):
+        self._check_error(
+            textwrap.dedent(
+                """
+                match 1:
+                    case x as obj.attr:
+                        ...
+                """
+            ),
+            errtext="cannot use attribute as pattern target",
+            lineno=3,
+            end_lineno=3,
+            offset=15,
+            end_offset=15 + len("obj.attr"),
+        )
 
 
 def load_tests(loader, tests, pattern):

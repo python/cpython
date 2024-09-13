@@ -983,10 +983,10 @@ option (other options are available as well).
    Added the :class:`!PhotoImage` method :meth:`!copy_replace` to copy a region
    from one image to other image, possibly with pixel zooming and/or
    subsampling.
-   Add *from_coords* parameter to :class:`!PhotoImage` methods :meth:`!copy()`,
-   :meth:`!zoom()` and :meth:`!subsample()`.
+   Add *from_coords* parameter to :class:`!PhotoImage` methods :meth:`!copy`,
+   :meth:`!zoom` and :meth:`!subsample`.
    Add *zoom* and *subsample* parameters to :class:`!PhotoImage` method
-   :meth:`!copy()`.
+   :meth:`!copy`.
 
 The image object can then be used wherever an ``image`` option is supported by
 some widget (e.g. labels, buttons, menus). In these cases, Tk will not keep a

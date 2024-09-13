@@ -1,0 +1,3 @@
+Serializing objects with complex ``__qualname__`` (such as unbound methods
+and nested classes) by name no longer involves serializing parent objects by
+value in pickle protocols < 4.
