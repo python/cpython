@@ -3110,14 +3110,15 @@ _PyEval_GetANext(PyObject *aiter)
     return awaitable;
 }
 
-void
-_PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name, _PyStackRef *writeto)
+PyObject *
+_PyEval_LoadGlobal(PyObject *globals, PyObject *builtins, PyObject *name)
 {
+    PyObject *res;
     if (PyDict_CheckExact(globals) && PyDict_CheckExact(builtins)) {
-        _PyDict_LoadGlobalStackRef((PyDictObject *)globals,
+        res = _PyDict_LoadGlobal((PyDictObject *)globals,
                                     (PyDictObject *)builtins,
-                                    name, writeto);
-        if (PyStackRef_IsNull(*writeto) && !PyErr_Occurred()) {
+                                    name);
+        if (res == NULL && !PyErr_Occurred()) {
             /* _PyDict_LoadGlobal() returns NULL without raising
                 * an exception if the key doesn't exist */
             _PyEval_FormatExcCheckArg(PyThreadState_GET(), PyExc_NameError,
@@ -3127,16 +3128,13 @@ _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name
     else {
         /* Slow-path if globals or builtins is not a dict */
         /* namespace 1: globals */
-        PyObject *res;
         if (PyMapping_GetOptionalItem(globals, name, &res) < 0) {
-            *writeto = PyStackRef_NULL;
-            return;
+            return NULL;
         }
         if (res == NULL) {
             /* namespace 2: builtins */
             if (PyMapping_GetOptionalItem(builtins, name, &res) < 0) {
-                *writeto = PyStackRef_NULL;
-                return;
+                return NULL;
             }
             if (res == NULL) {
                 _PyEval_FormatExcCheckArg(
@@ -3144,8 +3142,8 @@ _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name
                             NAME_ERROR_MSG, name);
             }
         }
-        *writeto = PyStackRef_FromPyObjectSteal(res);
     }
+    return res;
 }
 
 PyObject *
