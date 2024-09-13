@@ -68,7 +68,7 @@ Modules/_testcapi/vectorcall.c 3
 Modules/_testcapi/watchers.c 3
 Modules/_testcapimodule.c 3
 Modules/_testclinic.c 14
-Modules/_testexternalinspection.c 7
+Modules/_testexternalinspection.c 8
 Modules/_testinternalcapi.c 8
 Modules/_testinternalcapi/pytime.c 8
 Modules/_testinternalcapi/test_critical_sections.c 1
