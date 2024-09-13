@@ -628,7 +628,7 @@ class NonCallableMock(Base):
     side_effect = property(__get_side_effect, __set_side_effect)
 
 
-    def reset_mock(self,  visited=None,*, return_value=False, side_effect=False):
+    def reset_mock(self, visited=None, *, return_value=False, side_effect=False):
         "Restore the mock object to its initial state."
         if visited is None:
             visited = []
@@ -648,9 +648,18 @@ class NonCallableMock(Base):
         if side_effect:
             self._mock_side_effect = None
 
-        for child in self._mock_children.values():
+        for key, child in self._mock_children.items():
             if isinstance(child, _SpecState) or child is _deleted:
                 continue
+            if (
+                return_value
+                and issubclass(type(child), MagicMock)
+                and _is_magic(key)
+            ):
+                # Don't reset return values for magic methods,
+                # otherwise `m.__str__` will start
+                # to return `MagicMock` instances, instead of `str` instances.
+                return_value = False
             child.reset_mock(visited, return_value=return_value, side_effect=side_effect)
 
         ret = self._mock_return_value

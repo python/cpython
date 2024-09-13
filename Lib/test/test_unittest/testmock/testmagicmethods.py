@@ -331,6 +331,26 @@ class TestMockingMagicMethods(unittest.TestCase):
         self.assertEqual(os.fspath(mock), expected_path)
         mock.__fspath__.assert_called_once()
 
+    def test_magic_mock_does_not_reset_magic_returns(self):
+        # https://github.com/python/cpython/issues/123934
+        for reset in (True, False):
+            with self.subTest(reset=reset):
+                mm = MagicMock()
+                self.assertIs(type(mm.__str__()), str)
+                mm.__str__.assert_called_once()
+
+                self.assertIs(type(mm.__hash__()), int)
+                mm.__hash__.assert_called_once()
+
+                for _ in range(3):
+                    # Repeat reset several times to be sure:
+                    mm.reset_mock(return_value=reset)
+
+                    self.assertIs(type(mm.__str__()), str)
+                    mm.__str__.assert_called_once()
+
+                    self.assertIs(type(mm.__hash__()), int)
+                    mm.__hash__.assert_called_once()
 
     def test_magic_methods_and_spec(self):
         class Iterable(object):
