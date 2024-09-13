@@ -2500,13 +2500,13 @@ AS_VAR_IF([with_strict_overflow], [yes],
 # Enable flags that warn and protect for potential security vulnerabilities.
 # These flags should be enabled by default for all builds.
 
-AC_MSG_CHECKING([for --disable-safety])
+AC_MSG_CHECKING([for --enable-safety])
 AC_ARG_ENABLE([safety],
-  [AS_HELP_STRING([--disable-safety], [disable usage of the security compiler options with no performance overhead])],
-  [AS_VAR_IF([enable_safety], [yes], [disable_safety=no], [disable_safety=yes])], [disable_safety=no])
-AC_MSG_RESULT([$disable_safety])
+  [AS_HELP_STRING([--enable-safety], [enable usage of the security compiler options with no performance overhead])],
+  [AS_VAR_IF([disable_safety], [yes], [enable_safety=no], [enable_safety=yes])], [enable_safety=no])
+AC_MSG_RESULT([$enable_safety])
 
-if test "$disable_safety" = "no"
+if test "$enable_safety" = "yes"
 then
   AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [CFLAGS_NODIST="$CFLAGS_NODIST -fstack-protector-strong"], [AC_MSG_WARN([-fstack-protector-strong not supported])], [-Werror])
   AX_CHECK_COMPILE_FLAG([-Wtrampolines], [CFLAGS_NODIST="$CFLAGS_NODIST -Wtrampolines"], [AC_MSG_WARN([-Wtrampolines not supported])], [-Werror])

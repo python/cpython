@@ -44,6 +44,7 @@ jobs:
           --config-cache \
           --with-pydebug \
           --enable-slower-safety \
+          --enable-safety \
           ${{ inputs.free-threading && '--disable-gil' || '' }} \
           --prefix=/opt/python-dev \
           --with-openssl="$(brew --prefix openssl@3.0)"

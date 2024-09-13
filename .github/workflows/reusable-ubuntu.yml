@@ -70,6 +70,7 @@ jobs:
         --config-cache
         --with-pydebug
         --enable-slower-safety
+        --enable-safety
         --with-openssl=$OPENSSL_DIR
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
     - name: Build CPython out-of-tree
