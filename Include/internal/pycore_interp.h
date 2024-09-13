@@ -259,8 +259,8 @@ struct _is {
     struct callable_cache callable_cache;
     _PyOptimizerObject *optimizer;
     _PyExecutorObject *executor_list_head;
-    // executors_created is limited to JIT_CLEANUP_THRESHOLD
-    size_t executors_created;
+    // new_executors is limited to JIT_CLEANUP_THRESHOLD
+    size_t new_executors;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;
 

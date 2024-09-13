@@ -5458,8 +5458,8 @@
             break;
         }
 
-        case _SET_EXECUTOR_RUN_STATE: {
-            current_executor->vm_data.was_run = 1;
+        case _MAKE_WARM: {
+            current_executor->vm_data.warm = true;
             break;
         }
 

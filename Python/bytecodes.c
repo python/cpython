@@ -4840,8 +4840,8 @@ dummy_func(
             assert(((_PyExecutorObject *)executor)->vm_data.valid);
         }
 
-        tier2 op(_SET_EXECUTOR_RUN_STATE, (--)) {
-            current_executor->vm_data.was_run = 1;
+        tier2 op(_MAKE_WARM, (--)) {
+            current_executor->vm_data.warm = true;
         }
 
         tier2 op(_FATAL_ERROR, (--)) {

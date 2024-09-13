@@ -183,8 +183,8 @@ _PyOptimizer_Optimize(
         return err;
     }
 
-    if (++interp->executors_created >= JIT_CLEANUP_THRESHOLD) {
-        interp->executors_created = 0;
+    if (++interp->new_executors >= JIT_CLEANUP_THRESHOLD) {
+        interp->new_executors = 0;
         _Py_Executors_InvalidateCold(interp);
     }
 
@@ -571,7 +571,7 @@ translate_bytecode_to_trace(
             code->co_firstlineno,
             2 * INSTR_IP(initial_instr, code));
     ADD_TO_TRACE(_START_EXECUTOR, 0, (uintptr_t)instr, INSTR_IP(instr, code));
-    ADD_TO_TRACE(_SET_EXECUTOR_RUN_STATE, 0, 0, 0);
+    ADD_TO_TRACE(_MAKE_WARM, 0, 0, 0);
     uint32_t target = 0;
 
     for (;;) {
@@ -1203,7 +1203,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     executor->jit_size = 0;
     // This is initialized to true so we can prevent the executor
     // from being immediately detected as cold and invalidated.
-    executor->vm_data.was_run = 1;
+    executor->vm_data.warm = true;
     if (_PyJIT_Compile(executor, executor->trace, length)) {
         Py_DECREF(executor);
         return NULL;
@@ -1685,11 +1685,11 @@ _Py_Executors_InvalidateCold(PyInterpreterState *interp)
         assert(exec->vm_data.valid);
         _PyExecutorObject *next = exec->vm_data.links.next;
 
-        if (!exec->vm_data.was_run && PyList_Append(invalidate, (PyObject *)exec) < 0) {
+        if (!exec->vm_data.warm && PyList_Append(invalidate, (PyObject *)exec) < 0) {
                 goto error;
         }
         else {
-            exec->vm_data.was_run = 0;
+            exec->vm_data.warm = false;
         }
 
         exec = next;

@@ -2375,7 +2375,7 @@
             break;
         }
 
-        case _SET_EXECUTOR_RUN_STATE: {
+        case _MAKE_WARM: {
             break;
         }
 
