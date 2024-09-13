@@ -19,7 +19,7 @@ such as its entry points
 or its top-level names (`Import Package <https://packaging.python.org/en/latest/glossary/#term-Import-Package>`_\s, modules, if any).
 Built in part on Python's import system, this library
 intends to replace similar functionality in the `entry point
-API`_ and `metadata API`_ of ``pkg_resources``.  Along with
+API`_ and `metadata API`_ of ``pkg_resources``. Along with
 :mod:`importlib.resources`,
 this package can eliminate the need to use the older and less efficient
 ``pkg_resources`` package.
@@ -46,7 +46,7 @@ and metadata defined by the `Core metadata specifications <https://packaging.pyt
 
 By default, distribution metadata can live on the file system
 or in zip archives on
-:data:`sys.path`.  Through an extension mechanism, the metadata can live almost
+:data:`sys.path`. Through an extension mechanism, the metadata can live almost
 anywhere.
 
 
@@ -68,7 +68,7 @@ Overview
 
 Let's say you wanted to get the version string for a
 `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_ you've installed
-using ``pip``.  We start by creating a virtual environment and installing
+using ``pip``. We start by creating a virtual environment and installing
 something into it:
 
 .. code-block:: shell-session
@@ -87,7 +87,7 @@ You can get the version string for ``wheel`` by running the following:
     '0.32.3'
 
 You can also get a collection of entry points selectable by properties of the EntryPoint (typically 'group' or 'name'), such as
-``console_scripts``, ``distutils.commands`` and others.  Each group contains a
+``console_scripts``, ``distutils.commands`` and others. Each group contains a
 collection of :ref:`EntryPoint <entry-points>` objects.
 
 You can get the :ref:`metadata for a distribution <metadata>`::
@@ -114,7 +114,7 @@ Entry points
 The ``entry_points()`` function returns a collection of entry points.
 Entry points are represented by ``EntryPoint`` instances;
 each ``EntryPoint`` has a ``.name``, ``.group``, and ``.value`` attributes and
-a ``.load()`` method to resolve the value.  There are also ``.module``,
+a ``.load()`` method to resolve the value. There are also ``.module``,
 ``.attr``, and ``.extras`` attributes for getting the components of the
 ``.value`` attribute.
 
@@ -167,7 +167,7 @@ Inspect the resolved entry point::
 
 The ``group`` and ``name`` are arbitrary values defined by the package author
 and usually a client will wish to resolve all entry points for a particular
-group.  Read `the setuptools docs
+group. Read `the setuptools docs
 <https://setuptools.pypa.io/en/latest/userguide/entry_point.html>`_
 for more information on entry points, their definition, and usage.
 
@@ -240,12 +240,12 @@ number, as a string::
 Distribution files
 ------------------
 
-You can also get the full set of files contained within a distribution.  The
+You can also get the full set of files contained within a distribution. The
 ``files()`` function takes a `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_ name
 and returns all of the
-files installed by this distribution.  Each file object returned is a
+files installed by this distribution. Each file object returned is a
 ``PackagePath``, a :class:`pathlib.PurePath` derived object with additional ``dist``,
-``size``, and ``hash`` properties as indicated by the metadata.  For example::
+``size``, and ``hash`` properties as indicated by the metadata. For example::
 
     >>> util = [p for p in files('wheel') if 'util.py' in str(p)][0]  # doctest: +SKIP
     >>> util  # doctest: +SKIP
@@ -321,9 +321,9 @@ Distributions
 =============
 
 While the above API is the most common and convenient usage, you can get all
-of that information from the ``Distribution`` class.  A ``Distribution`` is an
+of that information from the ``Distribution`` class. A ``Distribution`` is an
 abstract object that represents the metadata for
-a Python `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_.  You can
+a Python `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_. You can
 get the ``Distribution`` instance::
 
     >>> from importlib.metadata import distribution  # doctest: +SKIP
@@ -366,21 +366,26 @@ This metadata finder search defaults to ``sys.path``, but varies slightly in how
 - ``importlib.metadata`` will incidentally honor :py:class:`pathlib.Path` objects on ``sys.path`` even though such values will be ignored for imports.
 
 
-Extending the search algorithm
-==============================
+Implementing Custom Providers
+=============================
+
+``importlib.metadata`` address two API surfaces, one for *consumers*
+and another for *providers*. Most users are consumers, consuming
+metadata provided by the packages. There are other use-cases, however,
+where users wish to expose metadata through some other mechanism,
+such as alongside a custom importer. Such a use case calls for a
+*custom provider*.
 
 Because `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_ metadata
 is not available through :data:`sys.path` searches, or
 package loaders directly,
 the metadata for a distribution is found through import
-system :ref:`finders <finders-and-loaders>`.  To find a distribution package's metadata,
+system :ref:`finders <finders-and-loaders>`. To find a distribution package's metadata,
 ``importlib.metadata`` queries the list of :term:`meta path finders <meta path finder>` on
 :data:`sys.meta_path`.
 
-By default ``importlib.metadata`` installs a finder for distribution packages
-found on the file system.
-This finder doesn't actually find any *distributions*,
-but it can find their metadata.
+The implementation has hooks integrated into the ``PathFinder``,
+serving metadata for distribution packages found on the file system.
 
 The abstract class :py:class:`importlib.abc.MetaPathFinder` defines the
 interface expected of finders by Python's import system.
@@ -391,16 +396,16 @@ interface expected of finders by Python's import system.
 method::
 
     @abc.abstractmethod
-    def find_distributions(context=DistributionFinder.Context()):
+    def find_distributions(context=DistributionFinder.Context()) -> Iterable[Distribution]:
         """Return an iterable of all Distribution instances capable of
         loading the metadata for packages for the indicated ``context``.
         """
 
 The ``DistributionFinder.Context`` object provides ``.path`` and ``.name``
 properties indicating the path to search and name to match and may
-supply other relevant context.
+supply other relevant context sought by the consumer.
 
-What this means in practice is that to support finding distribution package
+In practice, to support finding distribution package
 metadata in locations other than the file system, subclass
 ``Distribution`` and implement the abstract methods. Then from
 a custom finder, return instances of this derived ``Distribution`` in the
@@ -409,8 +414,7 @@ a custom finder, return instances of this derived ``Distribution`` in the
 Example
 -------
 
-Consider for example a custom finder that loads Python
-modules from a database::
+Imagine a custom finder that loads Python modules from a database::
 
     class DatabaseImporter(importlib.abc.MetaPathFinder):
         def __init__(self, db):
