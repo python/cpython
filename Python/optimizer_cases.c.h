@@ -831,11 +831,13 @@
         }
 
         case _LOAD_GLOBAL: {
-            _Py_UopsSymbol *res;
+            _Py_UopsSymbol **res;
             _Py_UopsSymbol *null = NULL;
-            res = sym_new_not_null(ctx);
+            res = &stack_pointer[0];
+            for (int _i = 1; --_i >= 0;) {
+                res[_i] = sym_new_not_null(ctx);
+            }
             null = sym_new_null(ctx);
-            stack_pointer[0] = res;
             if (oparg & 1) stack_pointer[1] = null;
             stack_pointer += 1 + (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
@@ -1688,11 +1690,13 @@
 
         case _EXPAND_METHOD: {
             _Py_UopsSymbol *method;
-            _Py_UopsSymbol *self;
+            _Py_UopsSymbol **self;
+            self = &stack_pointer[-1 - oparg];
             method = sym_new_not_null(ctx);
-            self = sym_new_not_null(ctx);
+            for (int _i = 1; --_i >= 0;) {
+                self[_i] = sym_new_not_null(ctx);
+            }
             stack_pointer[-2 - oparg] = method;
-            stack_pointer[-1 - oparg] = self;
             break;
         }
 
@@ -2047,13 +2051,15 @@
 
         case _EXPAND_METHOD_KW: {
             _Py_UopsSymbol *method;
-            _Py_UopsSymbol *self;
+            _Py_UopsSymbol **self;
             _Py_UopsSymbol *kwnames;
+            self = &stack_pointer[-2 - oparg];
             method = sym_new_not_null(ctx);
-            self = sym_new_not_null(ctx);
+            for (int _i = 1; --_i >= 0;) {
+                self[_i] = sym_new_not_null(ctx);
+            }
             kwnames = sym_new_not_null(ctx);
             stack_pointer[-3 - oparg] = method;
-            stack_pointer[-2 - oparg] = self;
             stack_pointer[-1] = kwnames;
             break;
         }
