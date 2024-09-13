@@ -170,20 +170,20 @@ class _curses.window "PyCursesWindowObject *" "&PyCursesWindow_Type"
 static PyObject *PyCursesError;
 
 /* Tells whether setupterm() has been called to initialise terminfo.  */
-static int initialised_setupterm = FALSE;
+static int curses_setupterm_called = FALSE;
 
 /* Tells whether initscr() has been called to initialise curses.  */
-static int initialised = FALSE;
+static int curses_initscr_called = FALSE;
 
 /* Tells whether start_color() has been called to initialise color usage. */
-static int initialisedcolors = FALSE;
+static int curses_start_color_called = FALSE;
 
-static char *screen_encoding = NULL;
+static const char *curses_screen_encoding = NULL;
 
 /* Utility Macros */
 #define PyCursesSetupTermCalled                                         \
     do {                                                                \
-        if (initialised_setupterm != TRUE) {                            \
+        if (curses_setupterm_called != TRUE) {                          \
             PyErr_SetString(PyCursesError,                              \
                             "must call (at least) setupterm() first");  \
             return 0;                                                   \
@@ -192,7 +192,7 @@ static char *screen_encoding = NULL;
 
 #define PyCursesInitialised                                 \
     do {                                                    \
-        if (initialised != TRUE) {                          \
+        if (curses_initscr_called != TRUE) {                \
             PyErr_SetString(PyCursesError,                  \
                             "must call initscr() first");   \
             return 0;                                       \
@@ -201,7 +201,7 @@ static char *screen_encoding = NULL;
 
 #define PyCursesInitialisedColor                                \
     do {                                                        \
-        if (initialisedcolors != TRUE) {                        \
+        if (curses_start_color_called != TRUE) {                \
             PyErr_SetString(PyCursesError,                      \
                             "must call start_color() first");   \
             return 0;                                           \
@@ -267,7 +267,7 @@ PyCurses_ConvertToChtype(PyCursesWindowObject *win, PyObject *obj, chtype *ch)
             if (win)
                 encoding = win->encoding;
             else
-                encoding = screen_encoding;
+                encoding = curses_screen_encoding;
             bytes = PyUnicode_AsEncodedString(obj, encoding, NULL);
             if (bytes == NULL)
                 return 0;
@@ -3278,7 +3278,7 @@ _curses_initscr_impl(PyObject *module)
 {
     WINDOW *win;
 
-    if (initialised) {
+    if (curses_initscr_called) {
         wrefresh(stdscr);
         return (PyObject *)PyCursesWindow_New(stdscr, NULL);
     }
@@ -3290,7 +3290,7 @@ _curses_initscr_impl(PyObject *module)
         return NULL;
     }
 
-    initialised = initialised_setupterm = TRUE;
+    curses_initscr_called = curses_setupterm_called = TRUE;
 
     PyObject *module_dict = PyModule_GetDict(module); // borrowed
     if (module_dict == NULL) {
@@ -3386,7 +3386,7 @@ _curses_initscr_impl(PyObject *module)
     if (winobj == NULL) {
         return NULL;
     }
-    screen_encoding = winobj->encoding;
+    curses_screen_encoding = winobj->encoding;
     return (PyObject *)winobj;
 }
 
@@ -3428,7 +3428,7 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
         }
     }
 
-    if (!initialised_setupterm && setupterm((char *)term, fd, &err) == ERR) {
+    if (!curses_setupterm_called && setupterm((char *)term, fd, &err) == ERR) {
         const char* s = "setupterm: unknown error";
 
         if (err == 0) {
@@ -3441,7 +3441,7 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
         return NULL;
     }
 
-    initialised_setupterm = TRUE;
+    curses_setupterm_called = TRUE;
 
     Py_RETURN_NONE;
 }
@@ -4245,7 +4245,7 @@ _curses_start_color_impl(PyObject *module)
         return NULL;
     }
 
-    initialisedcolors = TRUE;
+    curses_start_color_called = TRUE;
 
     PyObject *module_dict = PyModule_GetDict(module); // borrowed
     if (module_dict == NULL) {
