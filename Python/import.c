@@ -1329,7 +1329,7 @@ _extensions_cache_set(PyObject *path, PyObject *name,
          * being imported recursively from its PyInit_* or Py_mod_* function.
          * (That function presumably handles returning a partially
          *  constructed module in such a case.)
-         * We can reuse the existing cache value; it is owned byt the cache.
+         * We can reuse the existing cache value; it is owned by the cache.
          * (Entries get removed from it in exceptional circumstances,
          *  after interpreter shutdown, and in runtime shutdown.)
          */

@@ -165,7 +165,7 @@ Here are the modules:
 
 * _testsinglephase_circular
    Regression test for gh-123880.
-   Does not have the common attirbutes & methods.
+   Does not have the common attributes & methods.
    See test_singlephase_circular test.test_import.SinglephaseInitTests.
 
 Module state:
