@@ -182,22 +182,31 @@ static char *screen_encoding = NULL;
 
 /* Utility Macros */
 #define PyCursesSetupTermCalled                                         \
-    if (initialised_setupterm != TRUE) {                                \
-        PyErr_SetString(PyCursesError,                                  \
-                        "must call (at least) setupterm() first");      \
-        return 0; }
+    do {                                                                \
+        if (initialised_setupterm != TRUE) {                            \
+            PyErr_SetString(PyCursesError,                              \
+                            "must call (at least) setupterm() first");  \
+            return 0;                                                   \
+        }                                                               \
+    } while (0)
 
-#define PyCursesInitialised                             \
-    if (initialised != TRUE) {                          \
-        PyErr_SetString(PyCursesError,                  \
-                        "must call initscr() first");   \
-        return 0; }
+#define PyCursesInitialised                                 \
+    do {                                                    \
+        if (initialised != TRUE) {                          \
+            PyErr_SetString(PyCursesError,                  \
+                            "must call initscr() first");   \
+            return 0;                                       \
+        }                                                   \
+    } while (0)
 
 #define PyCursesInitialisedColor                                \
-    if (initialisedcolors != TRUE) {                            \
-        PyErr_SetString(PyCursesError,                          \
-                        "must call start_color() first");       \
-        return 0; }
+    do {                                                        \
+        if (initialisedcolors != TRUE) {                        \
+            PyErr_SetString(PyCursesError,                      \
+                            "must call start_color() first");   \
+            return 0;                                           \
+        }                                                       \
+    } while (0)
 
 /* Utility Functions */
 
@@ -2633,12 +2642,12 @@ PyTypeObject PyCursesWindow_Type = {
 
 #define NoArgNoReturnFunctionBody(X) \
 { \
-  PyCursesInitialised \
+  PyCursesInitialised; \
   return PyCursesCheckERR(X(), # X); }
 
 #define NoArgOrFlagNoReturnFunctionBody(X, flag) \
 { \
-    PyCursesInitialised \
+    PyCursesInitialised; \
     if (flag) \
         return PyCursesCheckERR(X(), # X); \
     else \
@@ -2647,23 +2656,23 @@ PyTypeObject PyCursesWindow_Type = {
 
 #define NoArgReturnIntFunctionBody(X) \
 { \
- PyCursesInitialised \
+ PyCursesInitialised; \
  return PyLong_FromLong((long) X()); }
 
 
 #define NoArgReturnStringFunctionBody(X) \
 { \
-  PyCursesInitialised \
+  PyCursesInitialised; \
   return PyBytes_FromString(X()); }
 
 #define NoArgTrueFalseFunctionBody(X) \
 { \
-  PyCursesInitialised \
+  PyCursesInitialised; \
   return PyBool_FromLong(X()); }
 
 #define NoArgNoReturnVoidFunctionBody(X) \
 { \
-  PyCursesInitialised \
+  PyCursesInitialised; \
   X(); \
   Py_RETURN_NONE; }
 
