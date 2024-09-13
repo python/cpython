@@ -2715,16 +2715,18 @@ set_unicodefromstring(PyObject **attr, const char *value)
  * we clip it in [0, MAX(0, OBJLEN - 1)] but do not intepret it as
  * a relative offset.
  */
-#define UNICODE_ERROR_ADJUST_START(START, OBJLEN)   \
-    do {                                            \
-        assert(OBJLEN >= 0);                        \
-        if (START < 0) {                            \
-            START = 0;                              \
-        }                                           \
-        if (START >= OBJLEN) {                      \
-            START = OBJLEN == 0 ? 0 : OBJLEN - 1;   \
-        }                                           \
-    } while (0)
+static inline Py_ssize_t
+unicode_error_adjust_start(Py_ssize_t start, Py_ssize_t objlen)
+{
+    assert(objlen >= 0);
+    if (start < 0) {
+        start = 0;
+    }
+    if (start >= objlen) {
+        start = objlen == 0 ? 0 : objlen - 1;
+    }
+    return start;
+}
 
 /*
  * Adjust the (eclusive) 'end' value of a UnicodeError object.
@@ -2733,16 +2735,18 @@ set_unicodefromstring(PyObject **attr, const char *value)
  * we clip it in [MIN(1, OBJLEN), MAX(MIN(1, OBJLEN), OBJLEN)] but
  * do not intepret it as a relative offset.
  */
-#define UNICODE_ERROR_ADJUST_END(END, OBJLEN)   \
-    do {                                        \
-        assert(OBJLEN >= 0);                    \
-        if (END < 1) {                          \
-            END = 1;                            \
-        }                                       \
-        if (END > OBJLEN) {                     \
-            END = OBJLEN;                       \
-        }                                       \
-    } while (0)
+static inline Py_ssize_t
+unicode_error_adjust_end(Py_ssize_t end, Py_ssize_t objlen)
+{
+    assert(objlen >= 0);
+    if (end < 1) {
+        end = 1;
+    }
+    if (end > objlen) {
+        end = objlen;
+    }
+    return end;
+}
 
 static inline int
 unicode_error_is_single_bad_char(PyUnicodeErrorObject *exc)
@@ -2810,8 +2814,7 @@ PyUnicodeEncodeError_GetStart(PyObject *self, Py_ssize_t *start)
     }
     Py_ssize_t size = PyUnicode_GET_LENGTH(obj);
     Py_DECREF(obj);
-    *start = exc->start;
-    UNICODE_ERROR_ADJUST_START(*start, size);
+    *start = unicode_error_adjust_start(exc->start, size);
     return 0;
 }
 
@@ -2826,8 +2829,7 @@ PyUnicodeDecodeError_GetStart(PyObject *self, Py_ssize_t *start)
     }
     Py_ssize_t size = PyBytes_GET_SIZE(obj);
     Py_DECREF(obj);
-    *start = exc->start;
-    UNICODE_ERROR_ADJUST_START(*start, size);
+    *start = unicode_error_adjust_start(exc->start, size);
     return 0;
 }
 
@@ -2878,8 +2880,7 @@ PyUnicodeEncodeError_GetEnd(PyObject *self, Py_ssize_t *end)
     }
     Py_ssize_t size = PyUnicode_GET_LENGTH(obj);
     Py_DECREF(obj);
-    *end = exc->end;
-    UNICODE_ERROR_ADJUST_END(*end, size);
+    *end = unicode_error_adjust_end(exc->end, size);
     return 0;
 }
 
@@ -2894,8 +2895,7 @@ PyUnicodeDecodeError_GetEnd(PyObject *self, Py_ssize_t *end)
     }
     Py_ssize_t size = PyBytes_GET_SIZE(obj);
     Py_DECREF(obj);
-    *end = exc->end;
-    UNICODE_ERROR_ADJUST_END(*end, size);
+    *end = unicode_error_adjust_end(exc->end, size);
     return 0;
 }
 
