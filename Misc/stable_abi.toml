@@ -2526,7 +2526,7 @@
     added = '3.14'
 [function.PyLong_AsUInt64]
     added = '3.14'
-[const.PyUnicode_FORMAT_ASCII]
+[const.Py_tp_vectorcall]
     added = '3.14'
 [const.PyUnicode_FORMAT_UCS1]
     added = '3.14'
@@ -2535,6 +2535,8 @@
 [const.PyUnicode_FORMAT_UCS4]
     added = '3.14'
 [const.PyUnicode_FORMAT_UTF8]
+    added = '3.14'
+[const.PyUnicode_FORMAT_ASCII]
     added = '3.14'
 [function.PyUnicode_Export]
     added = '3.14'

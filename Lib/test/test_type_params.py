@@ -951,6 +951,7 @@ class TypeParamsComplexCallsTest(unittest.TestCase):
         T, = C.__type_params__
         self.assertEqual(T.__name__, "T")
         self.assertEqual(C.kwargs, {"a": 1, "b": 2, "c": 3})
+        self.assertEqual(C.__bases__, (Base, Generic))
 
         bases = (Base,)
         class C2[T](*bases, **kwargs):
@@ -959,6 +960,22 @@ class TypeParamsComplexCallsTest(unittest.TestCase):
         T, = C2.__type_params__
         self.assertEqual(T.__name__, "T")
         self.assertEqual(C2.kwargs, {"c": 3})
+        self.assertEqual(C2.__bases__, (Base, Generic))
+
+    def test_starargs_base(self):
+        class C1[T](*()): pass
+
+        T, = C1.__type_params__
+        self.assertEqual(T.__name__, "T")
+        self.assertEqual(C1.__bases__, (Generic,))
+
+        class Base: pass
+        bases = [Base]
+        class C2[T](*bases): pass
+
+        T, = C2.__type_params__
+        self.assertEqual(T.__name__, "T")
+        self.assertEqual(C2.__bases__, (Base, Generic))
 
 
 class TypeParamsTraditionalTypeVarsTest(unittest.TestCase):

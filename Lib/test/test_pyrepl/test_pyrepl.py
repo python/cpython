@@ -466,6 +466,24 @@ class TestPyReplAutoindent(TestCase):
         output = multiline_input(reader)
         self.assertEqual(output, output_code)
 
+    def test_auto_indent_with_multicomment(self):
+        # fmt: off
+        events = code_to_events(
+            "def f():  ## foo\n"
+                "pass\n\n"
+        )
+
+        output_code = (
+            "def f():  ## foo\n"
+            "    pass\n"
+            "    "
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
     def test_auto_indent_ignore_comments(self):
         # fmt: off
         events = code_to_events(
@@ -657,6 +675,45 @@ class TestPyReplOutput(TestCase):
         output = multiline_input(reader)
         self.assertEqual(output, "c\x1d")
         self.assertEqual(clean_screen(reader.screen), "c")
+
+    def test_history_search_backward(self):
+        # Test <page up> history search backward with "imp" input
+        events = itertools.chain(
+            code_to_events("import os\n"),
+            code_to_events("imp"),
+            [
+                Event(evt='key', data='page up', raw=bytearray(b'\x1b[5~')),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ],
+        )
+
+        # fill the history
+        reader = self.prepare_reader(events)
+        multiline_input(reader)
+
+        # search for "imp" in history
+        output = multiline_input(reader)
+        self.assertEqual(output, "import os")
+        self.assertEqual(clean_screen(reader.screen), "import os")
+
+    def test_history_search_backward_empty(self):
+        # Test <page up> history search backward with an empty input
+        events = itertools.chain(
+            code_to_events("import os\n"),
+            [
+                Event(evt='key', data='page up', raw=bytearray(b'\x1b[5~')),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ],
+        )
+
+        # fill the history
+        reader = self.prepare_reader(events)
+        multiline_input(reader)
+
+        # search backward in history
+        output = multiline_input(reader)
+        self.assertEqual(output, "import os")
+        self.assertEqual(clean_screen(reader.screen), "import os")
 
 
 class TestPyReplCompleter(TestCase):
@@ -1160,11 +1217,33 @@ class TestMain(TestCase):
         cmdline_args: list[str] | None = None,
         cwd: str | None = None,
     ) -> tuple[str, int]:
+        temp_dir = None
+        if cwd is None:
+            temp_dir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+            cwd = temp_dir.name
+        try:
+            return self._run_repl(
+                repl_input, env=env, cmdline_args=cmdline_args, cwd=cwd
+            )
+        finally:
+            if temp_dir is not None:
+                temp_dir.cleanup()
+
+    def _run_repl(
+        self,
+        repl_input: str | list[str],
+        *,
+        env: dict | None,
+        cmdline_args: list[str] | None,
+        cwd: str,
+    ) -> tuple[str, int]:
         assert pty
         master_fd, slave_fd = pty.openpty()
         cmd = [sys.executable, "-i", "-u"]
         if env is None:
             cmd.append("-I")
+        elif "PYTHON_HISTORY" not in env:
+            env["PYTHON_HISTORY"] = os.path.join(cwd, ".regrtest_history")
         if cmdline_args is not None:
             cmd.extend(cmdline_args)
         process = subprocess.Popen(
@@ -1203,3 +1282,26 @@ class TestMain(TestCase):
             process.kill()
             exit_code = process.wait()
         return "".join(output), exit_code
+
+    def test_readline_history_file(self):
+        # skip, if readline module is not available
+        readline = import_module('readline')
+        if readline.backend != "editline":
+            self.skipTest("GNU readline is not affected by this issue")
+
+        hfile = tempfile.NamedTemporaryFile()
+        self.addCleanup(unlink, hfile.name)
+        env = os.environ.copy()
+        env["PYTHON_HISTORY"] = hfile.name
+
+        env["PYTHON_BASIC_REPL"] = "1"
+        output, exit_code = self.run_repl("spam \nexit()\n", env=env)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("spam ", output)
+        self.assertNotEqual(pathlib.Path(hfile.name).stat().st_size, 0)
+        self.assertIn("spam\\040", pathlib.Path(hfile.name).read_text())
+
+        env.pop("PYTHON_BASIC_REPL", None)
+        output, exit_code = self.run_repl("exit\n", env=env)
+        self.assertEqual(exit_code, 0)
+        self.assertNotIn("\\040", pathlib.Path(hfile.name).read_text())

@@ -12,8 +12,12 @@ approachable user experience:
 
 ## Prerequisites
 
-Export the `ANDROID_HOME` environment variable to point at your Android SDK. If
-you don't already have the SDK, here's how to install it:
+First, make sure you have all the usual tools and libraries needed to build
+Python for your development machine.
+
+Second, you'll need an Android SDK. If you already have the SDK installed,
+export the `ANDROID_HOME` environment variable to point at its location.
+Otherwise, here's how to install it:
 
 * Download the "Command line tools" from <https://developer.android.com/studio>.
 * Create a directory `android-sdk/cmdline-tools`, and unzip the command line
@@ -36,11 +40,6 @@ Python can be built for Android on any POSIX platform supported by the Android
 development tools, which currently means Linux or macOS. This involves doing a
 cross-build where you use a "build" Python (for your development machine) to
 help produce a "host" Python for Android.
-
-First, make sure you have all the usual tools and libraries needed to build
-Python for your development machine. The only Android tool you need to install
-is the command line tools package above: the build script will download the
-rest.
 
 The easiest way to do a build is to use the `android.py` script. You can either
 have it perform the entire build process from start to finish in one step, or
@@ -80,12 +79,15 @@ call. For example, if you want a pydebug build that also caches the results from
 
 ## Testing
 
-The tests can be run on Linux, macOS, or Windows, although on Windows you'll
-have to build the `cross-build/HOST` subdirectory on one of the other platforms
-and copy it over.
+The test suite can be run on Linux, macOS, or Windows:
 
-The test suite can usually be run on a device with 2 GB of RAM, though for some
-configurations or test orders you may need to increase this. As of Android
+* On Linux, the emulator needs access to the KVM virtualization interface, and
+  a DISPLAY environment variable pointing at an X server.
+* On Windows, you won't be able to do the build on the same machine, so you'll
+  have to copy the `cross-build/HOST` directory from somewhere else.
+
+The test suite can usually be run on a device with 2 GB of RAM, but this is
+borderline, so you may need to increase it to 4 GB. As of Android
 Studio Koala, 2 GB is the default for all emulators, although the user interface
 may indicate otherwise. The effective setting is `hw.ramSize` in
 ~/.android/avd/*.avd/hardware-qemu.ini, whereas Android Studio displays the
