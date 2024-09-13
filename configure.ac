@@ -1777,7 +1777,7 @@ then
             [Define if you want to enable tracing references for debugging purpose])
 fi
 
-if test "$disable_gil" = "yes" -o "$with_trace_refs" = "yes";
+if test "$disable_gil" = "yes" -a "$with_trace_refs" = "yes";
 then
   AC_MSG_ERROR([--disable-gil cannot be used with --with-trace-refs])
 fi
