@@ -65,7 +65,6 @@
 struct _PyCompiler;
 typedef struct _PyCompiler compiler;
 
-#define IS_TOP_LEVEL_AWAIT(C) _PyCompile_IsTopLevelAwait(C)
 #define INSTR_SEQUENCE(C) _PyCompile_InstrSequence(C)
 #define FUTURE_FEATURES(C) _PyCompile_FutureFeatures(C)
 #define SYMTABLE(C) _PyCompile_Symtable(C)
@@ -1003,25 +1002,21 @@ codegen_annotations(compiler *c, location loc,
     PySTEntryObject *ste;
     RETURN_IF_ERROR(_PySymtable_LookupOptional(SYMTABLE(c), args, &ste));
     assert(ste != NULL);
-    bool annotations_used = ste->ste_annotations_used;
 
-    int err = annotations_used ?
-        codegen_setup_annotations_scope(c, loc, (void *)args, ste->ste_name) : SUCCESS;
-    Py_DECREF(ste);
-    RETURN_IF_ERROR(err);
-
-    if (codegen_annotations_in_scope(c, loc, args, returns, &annotations_len) < 0) {
-        if (annotations_used) {
-            _PyCompile_ExitScope(c);
-        }
-        return ERROR;
-    }
-
-    if (annotations_used) {
+    if (ste->ste_annotations_used) {
+        int err = codegen_setup_annotations_scope(c, loc, (void *)args, ste->ste_name);
+        Py_DECREF(ste);
+        RETURN_IF_ERROR(err);
+        RETURN_IF_ERROR_IN_SCOPE(
+            c, codegen_annotations_in_scope(c, loc, args, returns, &annotations_len)
+        );
         RETURN_IF_ERROR(
             codegen_leave_annotations_scope(c, loc, annotations_len)
         );
         return MAKE_FUNCTION_ANNOTATE;
+    }
+    else {
+        Py_DECREF(ste);
     }
 
     return 0;
@@ -4497,10 +4492,6 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     PyCodeObject *co = NULL;
     _PyCompile_InlinedComprehensionState inline_state = {NULL, NULL, NULL, NO_LABEL};
     comprehension_ty outermost;
-#ifndef NDEBUG
-    int scope_type = SCOPE_TYPE(c);
-    int is_top_level_await = IS_TOP_LEVEL_AWAIT(c);
-#endif
     PySTEntryObject *entry = _PySymtable_Lookup(SYMTABLE(c), (void *)e);
     if (entry == NULL) {
         goto error;
@@ -4530,12 +4521,6 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
         }
     }
     Py_CLEAR(entry);
-
-    assert (!is_async_comprehension ||
-            type == COMP_GENEXP ||
-            scope_type == COMPILE_SCOPE_ASYNC_FUNCTION ||
-            scope_type == COMPILE_SCOPE_COMPREHENSION ||
-            is_top_level_await);
 
     if (type != COMP_GENEXP) {
         int op;
@@ -4961,11 +4946,6 @@ codegen_visit_expr(compiler *c, expr_ty e)
         ADD_YIELD_FROM(c, loc, 0);
         break;
     case Await_kind:
-        assert(IS_TOP_LEVEL_AWAIT(c) || (_PyST_IsFunctionLike(SYMTABLE_ENTRY(c)) && (
-            SCOPE_TYPE(c) == COMPILE_SCOPE_ASYNC_FUNCTION ||
-            SCOPE_TYPE(c) == COMPILE_SCOPE_COMPREHENSION
-        )));
-
         VISIT(c, expr, e->v.Await.value);
         ADDOP_I(c, loc, GET_AWAITABLE, 0);
         ADDOP_LOAD_CONST(c, loc, Py_None);
