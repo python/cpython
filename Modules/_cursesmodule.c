@@ -200,10 +200,13 @@ static char *screen_encoding = NULL;
     } while (0)
 
 #define PyCursesInitialisedColor                                \
-    if (initialisedcolors != TRUE) {                            \
-        PyErr_SetString(PyCursesError,                          \
-                        "must call start_color() first");       \
-        return 0; }
+    do {                                                        \
+        if (initialisedcolors != TRUE) {                        \
+            PyErr_SetString(PyCursesError,                      \
+                            "must call start_color() first");   \
+            return 0;                                           \
+        }                                                       \
+    } while (0)
 
 /* Utility Functions */
 
