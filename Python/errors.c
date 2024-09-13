@@ -1850,28 +1850,27 @@ PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
     Py_XDECREF(fileobj);
 }
 
-/* Raises a SyntaxError and returns -1.
+/* Raises a SyntaxError.
  * If something goes wrong, a different exception may be raised.
  */
-int
+void
 _PyErr_RaiseSyntaxError(PyObject *msg, PyObject *filename, int lineno, int col_offset,
                         int end_lineno, int end_col_offset)
 {
-    PyObject *loc_obj = PyErr_ProgramTextObject(filename, lineno);
-    if (loc_obj == NULL) {
-        loc_obj = Py_None;
+    PyObject *text = PyErr_ProgramTextObject(filename, lineno);
+    if (text == NULL) {
+        text = Py_None;
     }
     PyObject *args = Py_BuildValue("O(OiiOii)", msg, filename,
-                                   lineno, col_offset + 1, loc_obj,
+                                   lineno, col_offset + 1, text,
                                    end_lineno, end_col_offset + 1);
     if (args == NULL) {
         goto exit;
     }
     PyErr_SetObject(PyExc_SyntaxError, args);
  exit:
-    Py_DECREF(loc_obj);
+    Py_DECREF(text);
     Py_XDECREF(args);
-    return -1;
 }
 
 /* Emits a SyntaxWarning and returns 0 on success.
@@ -1889,7 +1888,6 @@ _PyErr_EmitSyntaxWarning(PyObject *msg, PyObject *filename, int lineno, int col_
             /* Replace the SyntaxWarning exception with a SyntaxError
                to get a more accurate error report */
             PyErr_Clear();
-            assert(PyUnicode_AsUTF8(msg) != NULL);
             _PyErr_RaiseSyntaxError(msg, filename, lineno, col_offset,
                                     end_lineno, end_col_offset);
         }

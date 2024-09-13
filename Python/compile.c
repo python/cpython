@@ -1112,10 +1112,10 @@ _PyCompile_Error(compiler *c, location loc, const char *format, ...)
     if (msg == NULL) {
         return ERROR;
     }
-    int ret = _PyErr_RaiseSyntaxError(msg, c->c_filename, loc.lineno, loc.col_offset,
-                                      loc.end_lineno, loc.end_col_offset);
+    _PyErr_RaiseSyntaxError(msg, c->c_filename, loc.lineno, loc.col_offset,
+                            loc.end_lineno, loc.end_col_offset);
     Py_DECREF(msg);
-    return ret;
+    return ERROR;
 }
 
 /* Emits a SyntaxWarning and returns 0 on success.
