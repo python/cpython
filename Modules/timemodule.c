@@ -1513,7 +1513,7 @@ _PyTime_GetThreadTimeWithInfo(PyTime_t *tp, _Py_clock_info_t *info)
         info->monotonic = 1;
         info->adjustable = 0;
     #if defined(__NetBSD__)
-        info->resolution = 1e-8;
+        info->resolution = 1e-9;
     #else
         struct timespec res;
         if (clock_getres(clk_id, &res)) {
