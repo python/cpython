@@ -185,6 +185,21 @@ Type Objects
 
    .. versionadded:: 3.11
 
+.. c:function:: PyObject* PyType_GetFullyQualifiedName(PyTypeObject *type)
+
+   Return the type's fully qualified name. Equivalent to
+   ``f"{type.__module__}.{type.__qualname__}"``, or ``type.__qualname__`` if
+   ``type.__module__`` is not a string or is equal to ``"builtins"``.
+
+   .. versionadded:: 3.13
+
+.. c:function:: PyObject* PyType_GetModuleName(PyTypeObject *type)
+
+   Return the type's module name. Equivalent to getting the ``type.__module__``
+   attribute.
+
+   .. versionadded:: 3.13
+
 .. c:function:: void* PyType_GetSlot(PyTypeObject *type, int slot)
 
    Return the function pointer stored in the given slot. If the
@@ -330,8 +345,12 @@ The following functions and structs are used to create
       The :c:member:`~PyTypeObject.tp_new` of the metaclass is *ignored*.
       which may result in incomplete initialization.
       Creating classes whose metaclass overrides
-      :c:member:`~PyTypeObject.tp_new` is deprecated and in Python 3.14+ it
-      will be no longer allowed.
+      :c:member:`~PyTypeObject.tp_new` is deprecated.
+
+   .. versionchanged:: 3.14
+
+      Creating classes whose metaclass overrides
+      :c:member:`~PyTypeObject.tp_new` is no longer allowed.
 
 .. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
@@ -347,8 +366,12 @@ The following functions and structs are used to create
       The :c:member:`~PyTypeObject.tp_new` of the metaclass is *ignored*.
       which may result in incomplete initialization.
       Creating classes whose metaclass overrides
-      :c:member:`~PyTypeObject.tp_new` is deprecated and in Python 3.14+ it
-      will be no longer allowed.
+      :c:member:`~PyTypeObject.tp_new` is deprecated.
+
+   .. versionchanged:: 3.14
+
+      Creating classes whose metaclass overrides
+      :c:member:`~PyTypeObject.tp_new` is no longer allowed.
 
 .. c:function:: PyObject* PyType_FromSpec(PyType_Spec *spec)
 
@@ -363,8 +386,12 @@ The following functions and structs are used to create
       The :c:member:`~PyTypeObject.tp_new` of the metaclass is *ignored*.
       which may result in incomplete initialization.
       Creating classes whose metaclass overrides
-      :c:member:`~PyTypeObject.tp_new` is deprecated and in Python 3.14+ it
-      will be no longer allowed.
+      :c:member:`~PyTypeObject.tp_new` is deprecated.
+
+   .. versionchanged:: 3.14
+
+      Creating classes whose metaclass overrides
+      :c:member:`~PyTypeObject.tp_new` is no longer allowed.
 
 .. raw:: html
 
