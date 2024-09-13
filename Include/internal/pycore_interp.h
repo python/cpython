@@ -225,11 +225,6 @@ struct _is {
     struct _Py_type_id_pool type_ids;
     PyMutex weakref_locks[NUM_WEAKREF_LIST_LOCKS];
     _PyIndexPool tlbc_indices;
-    // Number of bytes available for thread-local bytecode, counts down to
-    // zero.
-    Py_ssize_t tlbc_avail;
-    PyMutex tlbc_avail_mutex;
-    _Py_TLBC_State tlbc_state;
 #endif
 
     // Per-interpreter state for the obmalloc allocator.  For the main

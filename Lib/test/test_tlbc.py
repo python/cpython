@@ -45,7 +45,7 @@ class TLBCTests(unittest.TestCase):
         assert "BINARY_OP_ADD_INT" in all_opnames(get_tlbc(f))
         assert "BINARY_OP_ADD_INT" not in all_opnames(q.get())
         """)
-        assert_python_ok("-X", "tlbc_limit=-1", "-c", code)
+        assert_python_ok("-X", "tlbc=1", "-c", code)
 
     @requires_specialization_of("BINARY_OP")
     def test_threads_specialize_independently(self):
@@ -82,7 +82,7 @@ class TLBCTests(unittest.TestCase):
         assert "BINARY_OP_ADD_INT" not in t_opnames
         assert "BINARY_OP_ADD_UNICODE" in t_opnames
         """)
-        assert_python_ok("-X", "tlbc_limit=-1", "-c", code)
+        assert_python_ok("-X", "tlbc=1", "-c", code)
 
     def test_reuse_tlbc_across_threads_different_lifetimes(self):
         code = textwrap.dedent("""
@@ -107,7 +107,7 @@ class TLBCTests(unittest.TestCase):
         assert tlbc_ids[0] == tlbc_ids[1]
         assert tlbc_ids[1] == tlbc_ids[2]
         """)
-        assert_python_ok("-X", "tlbc_limit=-1", "-c", code)
+        assert_python_ok("-X", "tlbc=1", "-c", code)
 
     def test_no_tlbc_if_tlbc_disabled(self):
         code = textwrap.dedent("""
@@ -138,7 +138,7 @@ class TLBCTests(unittest.TestCase):
         assert tlbcs[1] is None
         assert tlbcs[2] is None
         """)
-        assert_python_ok("-X", "tlbc_limit=0", "-c", code)
+        assert_python_ok("-X", "tlbc=0", "-c", code)
 
     def test_no_specialization_if_tlbc_disabled(self):
         code = textwrap.dedent("""
@@ -160,7 +160,7 @@ class TLBCTests(unittest.TestCase):
 
         assert "BINARY_OP_ADD_INT" not in all_opnames(f)
         """)
-        assert_python_ok("-X", "tlbc_limit=0", "-c", code)
+        assert_python_ok("-X", "tlbc=0", "-c", code)
 
     def test_generator_throw(self):
         code = textwrap.dedent("""
@@ -190,7 +190,7 @@ class TLBCTests(unittest.TestCase):
         main_id = gen.throw(ValueError)
         assert main_id != q.get()
         """)
-        assert_python_ok("-X", "tlbc_limit=-1", "-c", code)
+        assert_python_ok("-X", "tlbc=1", "-c", code)
 
 
 if __name__ == "__main__":

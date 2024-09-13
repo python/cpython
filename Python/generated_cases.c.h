@@ -4486,7 +4486,7 @@
             // _LOAD_BYTECODE
             {
                 #ifdef Py_GIL_DISABLED
-                _Py_CODEUNIT *bytecode = _PyCode_GetExecutableCode(_PyFrame_GetCode(frame));
+                _Py_CODEUNIT *bytecode = _PyEval_GetExecutableCode(_PyFrame_GetCode(frame));
                 if (frame->bytecode != bytecode) {
                     int off = this_instr - frame->bytecode;
                     frame->bytecode = bytecode;
@@ -6432,7 +6432,7 @@
             // _LOAD_BYTECODE
             {
                 #ifdef Py_GIL_DISABLED
-                _Py_CODEUNIT *bytecode = _PyCode_GetExecutableCode(_PyFrame_GetCode(frame));
+                _Py_CODEUNIT *bytecode = _PyEval_GetExecutableCode(_PyFrame_GetCode(frame));
                 if (frame->bytecode != bytecode) {
                     int off = this_instr - frame->bytecode;
                     frame->bytecode = bytecode;
@@ -6495,7 +6495,7 @@
             assert((version & _PY_EVAL_EVENTS_MASK) == 0);
             DEOPT_IF(eval_breaker != version, RESUME);
             #ifdef Py_GIL_DISABLED
-            _Py_CODEUNIT *bytecode = _PyCode_GetExecutableCode(_PyFrame_GetCode(frame));
+            _Py_CODEUNIT *bytecode = _PyEval_GetExecutableCode(_PyFrame_GetCode(frame));
             if (frame->bytecode != bytecode) {
                 /* Avoid using this_instr here so that _RESUME_CHECK can be included
                    in traces.

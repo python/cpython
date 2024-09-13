@@ -55,7 +55,7 @@
                 JUMP_TO_JUMP_TARGET();
             }
             #ifdef Py_GIL_DISABLED
-            _Py_CODEUNIT *bytecode = _PyCode_GetExecutableCode(_PyFrame_GetCode(frame));
+            _Py_CODEUNIT *bytecode = _PyEval_GetExecutableCode(_PyFrame_GetCode(frame));
             if (frame->bytecode != bytecode) {
                 /* Avoid using this_instr here so that _RESUME_CHECK can be included
                    in traces.

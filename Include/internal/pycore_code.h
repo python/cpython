@@ -633,24 +633,6 @@ PyAPI_DATA(const struct _PyCode8) _Py_InitCleanup;
 
 #ifdef Py_GIL_DISABLED
 
-typedef enum {
-    // No limit on the amount of memory consumed by thread-local bytecode.
-    // Terminal state.
-    _PY_TLBC_UNLIMITED = 0,
-
-    // The total amount of memory consumed by thread-local bytecode must be
-    // <= PyInterpreterState::tlbc_limit. State transitions to
-    // _PY_TLBC_DISABLED
-    // when the limit is reached.
-    _PY_TLBC_LIMITED = 1,
-
-    // New thread-local bytecode is disabled. Previously allocated copies
-    // may still be used. Terminal state.
-    _PY_TLBC_DISABLED = 2,
-} _Py_TLBC_State;
-
-extern void _PyCode_InitState(PyInterpreterState *interp);
-
 // Return a pointer to the thread-local bytecode for the current thread, if it
 // exists.
 static inline _Py_CODEUNIT *
@@ -665,31 +647,15 @@ _PyCode_GetTLBCFast(PyCodeObject *co)
     return NULL;
 }
 
-// Return a pointer to the thread-local bytecode for the current thread, creating
-// it if it doesn't exist.
-//
-// On error, NULL is returned, new thread-local bytecode is disabled, and
-// specialization is disabled for the "main" copy of the bytecode (the bytecode
-// embedded in the code object) for all code objects.
-extern _Py_CODEUNIT *_PyCode_GetTLBCSlow(PyCodeObject *co);
+// Return a pointer to the thread-local bytecode for the current thread,
+// creating it if necessary.
+extern _Py_CODEUNIT *_PyCode_GetTLBC(PyCodeObject *co);
 
-// Return the bytecode that should be executed by the current thread, creating
-// a copy if necessary.
-static inline _Py_CODEUNIT *
-_PyCode_GetExecutableCode(PyCodeObject *co)
-{
-    _Py_CODEUNIT *res = _PyCode_GetTLBCFast(co);
-    if (res != NULL) {
-        return res;
-    }
-    res = _PyCode_GetTLBCSlow(co);
-    if (res != NULL) {
-        return res;
-    }
-    return _PyCode_CODE(co);
-}
-
+// Reserve an index for the current thread into thread-local bytecode
+// arrays
 extern int _Py_ReserveTLBCIndex(PyInterpreterState *interp);
+
+// Release the current thread's index into thread-local bytecode arrays
 extern void _Py_ClearTLBCIndex(_PyThreadStateImpl *tstate);
 #endif
 

@@ -907,10 +907,6 @@ pycore_interp_init(PyThreadState *tstate)
         goto done;
     }
 
-#ifdef Py_GIL_DISABLED
-    _PyCode_InitState(interp);
-#endif
-
 done:
     /* sys.modules['sys'] contains a strong reference to the module */
     Py_XDECREF(sysmod);
