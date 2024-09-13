@@ -1167,8 +1167,9 @@ class Transport:
         #Discard any response data and raise exception
         if resp.getheader("content-length", ""):
             resp.read()
+        uname = f'{host.split(':')[0]}@{host.split('@')[1]}'
         raise ProtocolError(
-            host + handler,
+            uname + handler,
             resp.status, resp.reason,
             dict(resp.getheaders())
             )

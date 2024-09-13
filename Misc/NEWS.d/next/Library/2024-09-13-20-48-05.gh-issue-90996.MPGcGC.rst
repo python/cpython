@@ -1,0 +1,3 @@
+fixed security issue where passwords might get leaked because of
+``ProtocolError`` thrown by the :meth:`xmlrpc.client.Transport.single_request`
+in the :mod:`xmlrpc.client`
