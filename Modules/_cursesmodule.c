@@ -190,11 +190,14 @@ static char *screen_encoding = NULL;
         }                                                               \
     } while (0)
 
-#define PyCursesInitialised                             \
-    if (initialised != TRUE) {                          \
-        PyErr_SetString(PyCursesError,                  \
-                        "must call initscr() first");   \
-        return 0; }
+#define PyCursesInitialised                                 \
+    do {                                                    \
+        if (initialised != TRUE) {                          \
+            PyErr_SetString(PyCursesError,                  \
+                            "must call initscr() first");   \
+            return 0;                                       \
+        }                                                   \
+    } while (0)
 
 #define PyCursesInitialisedColor                                \
     if (initialisedcolors != TRUE) {                            \
