@@ -812,6 +812,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         /* Load thread-local bytecode */
         _Py_CODEUNIT *bytecode =
             _PyEval_GetExecutableCode(_PyFrame_GetCode(frame));
+        if (bytecode == NULL) {
+            goto error;
+        }
         if (frame->bytecode != bytecode) {
             int off = frame->instr_ptr - frame->bytecode;
             frame->bytecode = bytecode;
