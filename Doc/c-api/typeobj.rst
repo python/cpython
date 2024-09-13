@@ -2150,15 +2150,15 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       The :ref:`vectorcall protocol <vectorcall>` requires that the vectorcall
       function has the same behavior as the corresponding ``tp_call``.
       This means that ``type->tp_vectorcall`` must match the behavior of
-      :c:expr:`Py_TYPE(type)->tp_call`.
+      ``Py_TYPE(type)->tp_call``.
 
-      Specifically, if *type* that uses the default metaclass,
+      Specifically, if *type* uses the default metaclass,
       ``type->tp_vectorcall`` must behave the same as
       :c:expr:`PyType_Type->tp_call`, which:
 
-      - calls :c:expr:`type->tp_new`,
+      - calls ``type->tp_new``,
 
-      - if the result is a subclass of *type*, calls :c:expr:`type->tp_init`
+      - if the result is a subclass of *type*, calls ``type->tp_init``
         on the result of ``tp_new``, and
 
       - returns the result of ``tp_new``.
