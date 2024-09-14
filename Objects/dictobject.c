@@ -1554,7 +1554,7 @@ _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t h
         *value_addr = PyStackRef_NULL;
     }
     else {
-        *value_addr = PyStackRef_FromPyObjectSteal(Py_NewRef(val));
+        *value_addr = PyStackRef_FromPyObjectNew(val);
     }
     return ix;
 }
