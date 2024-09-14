@@ -83,6 +83,7 @@ typedef struct _PyCompiler {
     PyCompilerFlags c_flags;
 
     int c_optimize;              /* optimization level */
+    int c_interactive;           /* true if in interactive mode */
     PyObject *c_const_cache;     /* Python dict holding all constants,
                                     including names tuple */
     struct compiler_unit *u;     /* compiler state for current block */
@@ -793,6 +794,7 @@ compiler_codegen(compiler *c, mod_ty mod)
         break;
     }
     case Interactive_kind: {
+        c->c_interactive = 1;
         asdl_stmt_seq *stmts = mod->v.Interactive.body;
         RETURN_IF_ERROR(_PyCodegen_Body(c, start_location(stmts), stmts, true));
         break;
@@ -1199,6 +1201,20 @@ int
 _PyCompile_OptimizationLevel(compiler *c)
 {
     return c->c_optimize;
+}
+
+int
+_PyCompile_IsInteractive(compiler *c)
+{
+    return c->c_interactive;
+}
+
+int
+_PyCompile_IsNestedScope(compiler *c)
+{
+    assert(c->c_stack != NULL);
+    assert(PyList_CheckExact(c->c_stack));
+    return PyList_GET_SIZE(c->c_stack) > 0;
 }
 
 int
