@@ -3150,21 +3150,14 @@ void
 _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name, _PyStackRef *writeto)
 {
     if (PyDict_CheckExact(globals) && PyDict_CheckExact(builtins)) {
-        PyObject *res = _PyDict_LoadGlobal((PyDictObject *)globals,
+        _PyDict_LoadGlobalStackRef((PyDictObject *)globals,
                                     (PyDictObject *)builtins,
-                                    name);
-        if (res == NULL && !PyErr_Occurred()) {
+                                    name, writeto);
+        if (PyStackRef_IsNull(*writeto) && !PyErr_Occurred()) {
             /* _PyDict_LoadGlobal() returns NULL without raising
                 * an exception if the key doesn't exist */
             _PyEval_FormatExcCheckArg(PyThreadState_GET(), PyExc_NameError,
                                         NAME_ERROR_MSG, name);
-        }
-
-        if (res == NULL) {
-            *writeto = PyStackRef_NULL;
-        }
-        else {
-            *writeto = PyStackRef_FromPyObjectSteal(res);
         }
     }
     else {
