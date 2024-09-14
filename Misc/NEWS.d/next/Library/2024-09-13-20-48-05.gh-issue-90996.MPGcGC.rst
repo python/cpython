@@ -1,3 +1,3 @@
 Fixed a security issue where a ``ProtocolError`` raised by
-:meth:`Transport.send_request`` in the :mod:`xmlrpc.client`
+:meth:`xmlrpc.client.Transport.send_request`` in the :mod:`xmlrpc.client`
 could lead to password leaks.
