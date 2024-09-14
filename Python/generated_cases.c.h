@@ -5698,10 +5698,9 @@
             {
                 res = &stack_pointer[0];
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-                PyObject *res_o = _PyEval_LoadGlobal(GLOBALS(), BUILTINS(), name);
-                if (res_o == NULL) goto error;
+                _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, res);
+                if (PyStackRef_IsNull(*res)) goto error;
                 null = PyStackRef_NULL;
-                *res = PyStackRef_FromPyObjectSteal(res_o);
             }
             if (oparg & 1) stack_pointer[1] = null;
             stack_pointer += 1 + (oparg & 1);
