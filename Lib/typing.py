@@ -2352,11 +2352,6 @@ def assert_type(val, typ, /):
     return val
 
 
-_allowed_types = (types.FunctionType, types.BuiltinFunctionType,
-                  types.MethodType, types.ModuleType,
-                  WrapperDescriptorType, MethodWrapperType, MethodDescriptorType)
-
-
 def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
                    *, format=annotationlib.Format.VALUE):
     """Return type hints for an object.
