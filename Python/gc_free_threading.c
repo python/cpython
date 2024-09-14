@@ -181,7 +181,7 @@ merge_refcount(PyObject *op, Py_ssize_t extra)
 }
 
 static void
-frame_disable_deferred_refcounting(_PyInterpreterFrame *frame, int is_funcobj_valid)
+frame_disable_deferred_refcounting(_PyInterpreterFrame *frame)
 {
     // Convert locals, variables, and the executable object to strong
     // references from (possibly) deferred references.
@@ -232,14 +232,10 @@ disable_deferred_refcounting(PyObject *op)
     // use strong references, in case the generator or frame object is
     // resurrected by a finalizer.
     if (PyGen_CheckExact(op) || PyCoro_CheckExact(op) || PyAsyncGen_CheckExact(op)) {
-        // The `f_funcobj` field is invalid if the frame is a cleared generator
-        PyGenObject *gen = (PyGenObject *)op;
-        int is_funcobj_valid = gen->gi_frame_state != FRAME_CLEARED;
-
-        frame_disable_deferred_refcounting(&gen->gi_iframe, is_funcobj_valid);
+        frame_disable_deferred_refcounting(&((PyGenObject *)op)->gi_iframe);
     }
     else if (PyFrame_Check(op)) {
-        frame_disable_deferred_refcounting(((PyFrameObject *)op)->f_frame, 1);
+        frame_disable_deferred_refcounting(((PyFrameObject *)op)->f_frame);
     }
 }
 
