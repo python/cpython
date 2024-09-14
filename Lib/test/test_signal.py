@@ -124,6 +124,8 @@ class PosixTests(unittest.TestCase):
         self.assertEqual(0, argument.repr_count)
 
     def test_strsignal(self):
+        if sys.platform.startswith("netbsd"):
+            self.skipTest("strsignal is not supported on this platform")
         self.assertIn("Interrupt", signal.strsignal(signal.SIGINT))
         self.assertIn("Terminated", signal.strsignal(signal.SIGTERM))
         self.assertIn("Hangup", signal.strsignal(signal.SIGHUP))
