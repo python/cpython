@@ -3,6 +3,7 @@ __all__ = ('Runner', 'run')
 import contextvars
 import enum
 import functools
+import inspect
 import threading
 import signal
 from . import coroutines
@@ -100,10 +101,20 @@ class Runner:
 
         self._lazy_init()
 
+        if not coroutines.iscoroutine(coro):
+            if inspect.isawaitable(coro):
+                async def _wrap_awaitable(awaitable):
+                    return await awaitable
+
+                coro = _wrap_awaitable(coro)
+            else:
+                raise TypeError('An asyncio.Future, a coroutine or an '
+                                'awaitable is required')
+
         if context is None:
             context = self._context
 
-        task = tasks.ensure_future(coro, loop=self._loop, context=context)
+        task = self._loop.create_task(coro, context=context)
 
         if (threading.current_thread() is threading.main_thread()
             and signal.getsignal(signal.SIGINT) is signal.default_int_handler
