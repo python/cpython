@@ -29,7 +29,7 @@ import functools
 import operator
 import sys
 import types
-from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType, GenericAlias
+from types import GenericAlias
 
 from _typing import (
     _idfunc,
