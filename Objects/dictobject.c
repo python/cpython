@@ -2479,8 +2479,6 @@ _PyDict_LoadGlobalStackRef(PyDictObject *globals, PyDictObject *builtins, PyObje
     Py_ssize_t ix;
     Py_hash_t hash;
 
-    *res = PyStackRef_NULL;
-
     hash = _PyObject_HashFast(key);
     if (hash == -1) {
         *res = PyStackRef_NULL;

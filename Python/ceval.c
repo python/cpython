@@ -3110,42 +3110,6 @@ _PyEval_GetANext(PyObject *aiter)
     return awaitable;
 }
 
-PyObject *
-_PyEval_LoadGlobal(PyObject *globals, PyObject *builtins, PyObject *name)
-{
-    PyObject *res;
-    if (PyDict_CheckExact(globals) && PyDict_CheckExact(builtins)) {
-        res = _PyDict_LoadGlobal((PyDictObject *)globals,
-                                    (PyDictObject *)builtins,
-                                    name);
-        if (res == NULL && !PyErr_Occurred()) {
-            /* _PyDict_LoadGlobal() returns NULL without raising
-                * an exception if the key doesn't exist */
-            _PyEval_FormatExcCheckArg(PyThreadState_GET(), PyExc_NameError,
-                                        NAME_ERROR_MSG, name);
-        }
-    }
-    else {
-        /* Slow-path if globals or builtins is not a dict */
-        /* namespace 1: globals */
-        if (PyMapping_GetOptionalItem(globals, name, &res) < 0) {
-            return NULL;
-        }
-        if (res == NULL) {
-            /* namespace 2: builtins */
-            if (PyMapping_GetOptionalItem(builtins, name, &res) < 0) {
-                return NULL;
-            }
-            if (res == NULL) {
-                _PyEval_FormatExcCheckArg(
-                            PyThreadState_GET(), PyExc_NameError,
-                            NAME_ERROR_MSG, name);
-            }
-        }
-    }
-    return res;
-}
-
 void
 _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name, _PyStackRef *writeto)
 {
