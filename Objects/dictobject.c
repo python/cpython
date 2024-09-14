@@ -1550,7 +1550,12 @@ _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t h
 {
     PyObject *val;
     Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &val);
-	*value_addr = val == NULL ? PyStackRef_NULL : PyStackRef_FromPyObjectNew(val);
+    if (val == NULL) {
+        *value_addr = PyStackRef_NULL;
+    }
+    else {
+        *value_addr = PyStackRef_FromPyObjectSteal(Py_NewRef(val));
+    }
     return ix;
 }
 
@@ -2483,20 +2488,18 @@ _PyDict_LoadGlobalStackRef(PyDictObject *globals, PyDictObject *builtins, PyObje
     }
 
     /* namespace 1: globals */
-    PyObject *value;
-    ix = _Py_dict_lookup_threadsafe(globals, key, hash, &value);
+    ix = _Py_dict_lookup_threadsafe_stackref(globals, key, hash, res);
     if (ix == DKIX_ERROR) {
         *res = PyStackRef_NULL;
         return;
     }
-    if (ix != DKIX_EMPTY && value != NULL) {
-        *res = PyStackRef_FromPyObjectSteal(value);
+    if (ix != DKIX_EMPTY && !PyStackRef_IsNull(*res)) {
         return;
     }
 
     /* namespace 2: builtins */
     ix = _Py_dict_lookup_threadsafe_stackref(builtins, key, hash, res);
-    assert(ix >= 0 || value == NULL);
+    assert(ix >= 0 || PyStackRef_IsNull(*res));
 }
 
 /* Consumes references to key and value */
