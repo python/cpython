@@ -296,11 +296,11 @@ def skip_unless_working_chmod(test):
 
 @contextlib.contextmanager
 def save_mode(path, *, quiet=False):
-    """Context manager that restores the mode (permissions) of path on exit.
+    """Context manager that restores the mode (permissions) of *path* on exit.
 
     Arguments:
 
-      path: Path of the file to restore mode of.
+      path: Path of the file to restore the mode of.
 
       quiet: if False (the default), the context manager raises an exception
         on error.  Otherwise, it issues only a warning and keeps the current

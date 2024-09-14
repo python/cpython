@@ -164,7 +164,7 @@ class FinderTests:
             os_helper.save_cwd(),
             util.import_state(path=['']),
         ):
-            # chdir() & chmod() are done here (inside the with block) because
+            # chdir() & chmod() are done here (inside the 'with' block) because
             # the order of setup and teardown operations must be precise. See
             # https://github.com/python/cpython/pull/116131#discussion_r1739649390
             os.chdir(new_dir)
