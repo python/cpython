@@ -1550,12 +1550,7 @@ _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t h
 {
     PyObject *val;
     Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &val);
-    if (val == NULL) {
-        *value_addr = PyStackRef_NULL;
-    }
-    else {
-        *value_addr = PyStackRef_FromPyObjectNew(val);
-    }
+    *value_addr = val == NULL ? PyStackRef_NULL : PyStackRef_FromPyObjectNew(val);
     return ix;
 }
 
