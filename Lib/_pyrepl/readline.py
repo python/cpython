@@ -249,7 +249,7 @@ def _should_auto_indent(buffer: list[str], pos: int) -> bool:
     while pos > 0:
         pos -= 1
         if last_char is None:
-            if buffer[pos] not in " \t\n":  # ignore whitespaces
+            if buffer[pos] not in " \t\n#":  # ignore whitespaces and comments
                 last_char = buffer[pos]
         else:
             # even if we found a non-whitespace character before
@@ -365,8 +365,12 @@ class _ReadlineWrapper:
         except _error:
             assert raw_input is not None
             return raw_input(prompt)
-        reader.ps1 = str(prompt)
-        return reader.readline(startup_hook=self.startup_hook)
+        prompt_str = str(prompt)
+        reader.ps1 = prompt_str
+        sys.audit("builtins.input", prompt_str)
+        result = reader.readline(startup_hook=self.startup_hook)
+        sys.audit("builtins.input/result", result)
+        return result
 
     def multiline_input(self, more_lines: MoreLinesCallable, ps1: str, ps2: str) -> str:
         """Read an input on possibly multiple lines, asking for more
@@ -423,18 +427,22 @@ class _ReadlineWrapper:
         history = self.get_reader().history
 
         with open(os.path.expanduser(filename), 'rb') as f:
-            lines = [line.decode('utf-8', errors='replace') for line in f.read().split(b'\n')]
+            is_editline = f.readline().startswith(b"_HiStOrY_V2_")
+            if is_editline:
+                encoding = "unicode-escape"
+            else:
+                f.seek(0)
+                encoding = "utf-8"
+
+            lines = [line.decode(encoding, errors='replace') for line in f.read().split(b'\n')]
             buffer = []
             for line in lines:
-                # Ignore readline history file header
-                if line.startswith("_HiStOrY_V2_"):
-                    continue
                 if line.endswith("\r"):
                     buffer.append(line+'\n')
                 else:
                     line = self._histline(line)
                     if buffer:
-                        line = "".join(buffer).replace("\r", "") + line
+                        line = self._histline("".join(buffer).replace("\r", "") + line)
                         del buffer[:]
                     if line:
                         history.append(line)
