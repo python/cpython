@@ -161,13 +161,12 @@ class FinderTests:
         with (
             os_helper.temp_dir() as new_dir,
             os_helper.save_mode(new_dir),
-            os_helper.save_cwd(),
+            os_helper.change_cwd(new_dir),
             util.import_state(path=['']),
         ):
-            # chdir() & chmod() are done here (inside the 'with' block) because
-            # the order of setup and teardown operations must be precise. See
+            # chmod() is done here (inside the 'with' block) because the order
+            # of teardown operations cannot be the reverse of setup order. See
             # https://github.com/python/cpython/pull/116131#discussion_r1739649390
-            os.chdir(new_dir)
             try:
                 os.chmod(new_dir, 0o000)
             except OSError:

@@ -536,37 +536,8 @@ def temp_dir(path=None, quiet=False):
 
 
 @contextlib.contextmanager
-def save_cwd(*, quiet=False):
-    """Return a context manager that restores the current working directory on
-    exit.
-
-    Prefer change_cwd() if you can. For most use cases it is cleaner.
-
-    Arguments:
-
-      quiet: if False (the default), the context manager raises an exception
-        on error.  Otherwise, it issues only a warning and keeps the current
-        working directory the same.
-
-    """
-    saved_dir = os.getcwd()
-    try:
-        yield
-    finally:
-        try:
-            os.chdir(saved_dir)
-        except OSError as exc:
-            if not quiet:
-                raise
-            warnings.warn(f'tests may fail, unable to restore the current '
-                          f'working directory to {saved_dir!r}: {exc}',
-                          RuntimeWarning, stacklevel=3)
-
-
-@contextlib.contextmanager
 def change_cwd(path, quiet=False):
-    """Return a context manager that changes the current working directory on
-    entry, and restores it on exit.
+    """Return a context manager that changes the current working directory.
 
     Arguments:
 
