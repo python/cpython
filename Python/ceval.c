@@ -3149,39 +3149,46 @@ _PyEval_LoadGlobal(PyObject *globals, PyObject *builtins, PyObject *name)
 void
 _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name, _PyStackRef *writeto)
 {
-    if (PyDict_CheckExact(globals) && PyDict_CheckExact(builtins)) {
-        _PyDict_LoadGlobalStackRef((PyDictObject *)globals,
-                                    (PyDictObject *)builtins,
-                                    name, writeto);
-        if (PyStackRef_IsNull(*writeto) && !PyErr_Occurred()) {
-            /* _PyDict_LoadGlobal() returns NULL without raising
-                * an exception if the key doesn't exist */
-            _PyEval_FormatExcCheckArg(PyThreadState_GET(), PyExc_NameError,
-                                        NAME_ERROR_MSG, name);
-        }
+    PyObject *res = _PyEval_LoadGlobal(globals, builtins, name);
+    if (res == NULL) {
+        *writeto = PyStackRef_NULL;
     }
     else {
-        /* Slow-path if globals or builtins is not a dict */
-        /* namespace 1: globals */
-        PyObject *res;
-        if (PyMapping_GetOptionalItem(globals, name, &res) < 0) {
-            *writeto = PyStackRef_NULL;
-            return;
-        }
-        if (res == NULL) {
-            /* namespace 2: builtins */
-            if (PyMapping_GetOptionalItem(builtins, name, &res) < 0) {
-                *writeto = PyStackRef_NULL;
-                return;
-            }
-            if (res == NULL) {
-                _PyEval_FormatExcCheckArg(
-                            PyThreadState_GET(), PyExc_NameError,
-                            NAME_ERROR_MSG, name);
-            }
-        }
         *writeto = PyStackRef_FromPyObjectSteal(res);
     }
+    // if (PyDict_CheckExact(globals) && PyDict_CheckExact(builtins)) {
+    //     _PyDict_LoadGlobalStackRef((PyDictObject *)globals,
+    //                                 (PyDictObject *)builtins,
+    //                                 name, writeto);
+    //     if (PyStackRef_IsNull(*writeto) && !PyErr_Occurred()) {
+    //         /* _PyDict_LoadGlobal() returns NULL without raising
+    //             * an exception if the key doesn't exist */
+    //         _PyEval_FormatExcCheckArg(PyThreadState_GET(), PyExc_NameError,
+    //                                     NAME_ERROR_MSG, name);
+    //     }
+    // }
+    // else {
+    //     /* Slow-path if globals or builtins is not a dict */
+    //     /* namespace 1: globals */
+    //     PyObject *res;
+    //     if (PyMapping_GetOptionalItem(globals, name, &res) < 0) {
+    //         *writeto = PyStackRef_NULL;
+    //         return;
+    //     }
+    //     if (res == NULL) {
+    //         /* namespace 2: builtins */
+    //         if (PyMapping_GetOptionalItem(builtins, name, &res) < 0) {
+    //             *writeto = PyStackRef_NULL;
+    //             return;
+    //         }
+    //         if (res == NULL) {
+    //             _PyEval_FormatExcCheckArg(
+    //                         PyThreadState_GET(), PyExc_NameError,
+    //                         NAME_ERROR_MSG, name);
+    //         }
+    //     }
+    //     *writeto = PyStackRef_FromPyObjectSteal(res);
+    // }
 }
 
 PyObject *
