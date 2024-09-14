@@ -253,6 +253,11 @@ symtable
 
   (Contributed by Bénédikt Tran in :gh:`120029`.)
 
+unicodedata
+-----------
+
+* The Unicode database has been updated to Unicode 16.0.0.
+
 .. Add improved modules above alphabetically, not here at the end.
 
 Optimizations

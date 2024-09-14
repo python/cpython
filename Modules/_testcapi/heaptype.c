@@ -1008,6 +1008,89 @@ static PyType_Spec HeapCTypeSetattr_spec = {
     HeapCTypeSetattr_slots
 };
 
+/*
+ * The code below is for a test that uses PyType_FromSpec API to create a heap
+ * type that simultaneously exposes
+ *
+ * - A regular __new__ / __init__ constructor pair
+ * - A vector call handler in the type object
+ *
+ * A general requirement of vector call implementations is that they should
+ * behave identically (except being potentially faster). The example below
+ * deviates from this rule by initializing the instance with a different value.
+ * This is only done here only so that we can see which path was taken and is
+ * strongly discouraged in other cases.
+ */
+
+typedef struct {
+    PyObject_HEAD
+    long value;
+} HeapCTypeVectorcallObject;
+
+static PyObject *heapctype_vectorcall_vectorcall(PyObject *self,
+                                                 PyObject *const *args_in,
+                                                 size_t nargsf,
+                                                 PyObject *kwargs_in)
+{
+    if (kwargs_in || PyVectorcall_NARGS(nargsf)) {
+        return PyErr_Format(PyExc_IndexError, "HeapCTypeVectorcall() takes no arguments!");
+    }
+
+    HeapCTypeVectorcallObject *r =
+        PyObject_New(HeapCTypeVectorcallObject, (PyTypeObject *) self);
+
+    if (!r) {
+        return NULL;
+    }
+
+    r->value = 1;
+
+    return (PyObject *) r;
+}
+
+static PyObject *
+heapctype_vectorcall_new(PyTypeObject* type, PyObject* args, PyObject *kwargs)
+{
+    if (PyTuple_GET_SIZE(args) || kwargs) {
+        return PyErr_Format(PyExc_IndexError, "HeapCTypeVectorcall() takes no arguments!");
+    }
+
+    return (PyObject *) PyObject_New(HeapCTypeVectorcallObject, type);
+}
+
+static int
+heapctype_vectorcall_init(PyObject *self, PyObject *args, PyObject *kwargs) {
+    if (PyTuple_GET_SIZE(args) || kwargs) {
+        PyErr_Format(PyExc_IndexError, "HeapCTypeVectorcall() takes no arguments!");
+        return -1;
+    }
+
+    HeapCTypeVectorcallObject *o = (HeapCTypeVectorcallObject *) self;
+    o->value = 2;
+    return 0;
+}
+
+static struct PyMemberDef heapctype_vectorcall_members[] = {
+    {"value", Py_T_LONG, offsetof(HeapCTypeVectorcallObject, value), 0, NULL},
+    {NULL}
+};
+
+static PyType_Slot HeapCTypeVectorcall_slots[] = {
+    {Py_tp_new, heapctype_vectorcall_new},
+    {Py_tp_init, heapctype_vectorcall_init},
+    {Py_tp_vectorcall, heapctype_vectorcall_vectorcall},
+    {Py_tp_members, heapctype_vectorcall_members},
+    {0, 0},
+};
+
+static PyType_Spec HeapCTypeVectorcall_spec = {
+    "_testcapi.HeapCTypeVectorcall",
+    sizeof(HeapCTypeVectorcallObject),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    HeapCTypeVectorcall_slots
+};
+
 PyDoc_STRVAR(HeapCCollection_doc,
 "Tuple-like heap type that uses PyObject_GetItemData for items.");
 
@@ -1179,6 +1262,9 @@ _PyTestCapi_Init_Heaptype(PyObject *m) {
 
     PyObject *HeapCTypeSetattr = PyType_FromSpec(&HeapCTypeSetattr_spec);
     ADD("HeapCTypeSetattr", HeapCTypeSetattr);
+
+    PyObject *HeapCTypeVectorcall = PyType_FromSpec(&HeapCTypeVectorcall_spec);
+    ADD("HeapCTypeVectorcall", HeapCTypeVectorcall);
 
     PyObject *subclass_with_finalizer_bases = PyTuple_Pack(1, HeapCTypeSubclass);
     if (subclass_with_finalizer_bases == NULL) {
