@@ -2485,7 +2485,7 @@ _PyDict_LoadGlobalStackRef(PyDictObject *globals, PyDictObject *builtins, PyObje
     /* namespace 1: globals */
     ix = _Py_dict_lookup_threadsafe_stackref(globals, key, hash, res);
     if (ix == DKIX_ERROR) {
-        *res = PyStackRef_NULL;
+        return;
     }
     if (ix != DKIX_EMPTY && !PyStackRef_IsNull(*res)) {
         return;
