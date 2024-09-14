@@ -2483,17 +2483,21 @@ _PyDict_LoadGlobalStackRef(PyDictObject *globals, PyDictObject *builtins, PyObje
     }
 
     /* namespace 1: globals */
-    ix = _Py_dict_lookup_threadsafe_stackref(globals, key, hash, res);
+    PyObject *value;
+    ix = _Py_dict_lookup_threadsafe(globals, key, hash, &value);
     if (ix == DKIX_ERROR) {
+        *res = PyStackRef_NULL;
         return;
     }
-    if (ix != DKIX_EMPTY && !PyStackRef_IsNull(*res)) {
+    if (ix != DKIX_EMPTY && value != NULL) {
+        *res = PyStackRef_FromPyObjectSteal(value);
         return;
     }
 
     /* namespace 2: builtins */
-    ix = _Py_dict_lookup_threadsafe_stackref(builtins, key, hash, res);
-    assert(ix >= 0 || PyStackRef_IsNull(*res));
+    ix = _Py_dict_lookup_threadsafe(builtins, key, hash, &value);
+    assert(ix >= 0 || value == NULL);
+    *res = PyStackRef_FromPyObjectSteal(value);
 }
 
 /* Consumes references to key and value */
