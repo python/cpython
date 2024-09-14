@@ -2495,9 +2495,8 @@ _PyDict_LoadGlobalStackRef(PyDictObject *globals, PyDictObject *builtins, PyObje
     }
 
     /* namespace 2: builtins */
-    ix = _Py_dict_lookup_threadsafe(builtins, key, hash, &value);
+    ix = _Py_dict_lookup_threadsafe_stackref(builtins, key, hash, res);
     assert(ix >= 0 || value == NULL);
-    *res = PyStackRef_FromPyObjectSteal(value);
 }
 
 /* Consumes references to key and value */
