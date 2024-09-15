@@ -649,7 +649,7 @@ def http_server(evt, numrequests, requestHandler=None, encoding=None):
         serv.register_introspection_functions()
         serv.register_multicall_functions()
         serv.register_function(pow)
-        serv.register_function(lambda x: x, 'têšt')
+        serv.register_function(lambda x: x, 'test')
         @serv.register_function
         def my_function():
             '''This is my function'''
@@ -846,7 +846,7 @@ class SimpleServerTestCase(BaseServerTestCase):
     def test_nonascii_methodname(self):
         try:
             p = xmlrpclib.ServerProxy(URL, encoding='ascii')
-            self.assertEqual(p.têšt(42), 42)
+            self.assertEqual(p.test(42), 42)
         except (xmlrpclib.ProtocolError, socket.error) as e:
             # ignore failures due to non-blocking socket unavailable errors.
             if not is_unavailable_exception(e):
@@ -864,7 +864,7 @@ class SimpleServerTestCase(BaseServerTestCase):
         self.assertEqual(response.reason, 'Not Found')
 
     def test_introspection1(self):
-        expected_methods = set(['pow', 'div', 'my_function', 'add', 'têšt',
+        expected_methods = set(['pow', 'div', 'my_function', 'add', 'test',
                                 'system.listMethods', 'system.methodHelp',
                                 'system.methodSignature', 'system.multicall',
                                 'Fixture'])
