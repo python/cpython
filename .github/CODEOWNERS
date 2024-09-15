@@ -141,6 +141,7 @@ Lib/ast.py                    @isidentical
 **/*dataclasses*              @ericvsmith
 
 **/*idlelib*                  @terryjreedy
+/Doc/library/idle.rst         @terryjreedy
 
 **/*typing*                   @gvanrossum @JelleZijlstra @AlexWaygood
 

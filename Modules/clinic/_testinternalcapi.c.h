@@ -206,4 +206,64 @@ _testinternalcapi_assemble_code_object(PyObject *module, PyObject *const *args, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2965f1578b986218 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(gh_119213_getargs__doc__,
+"gh_119213_getargs($module, /, spam=None)\n"
+"--\n"
+"\n"
+"Test _PyArg_Parser.kwtuple");
+
+#define GH_119213_GETARGS_METHODDEF    \
+    {"gh_119213_getargs", _PyCFunction_CAST(gh_119213_getargs), METH_FASTCALL|METH_KEYWORDS, gh_119213_getargs__doc__},
+
+static PyObject *
+gh_119213_getargs_impl(PyObject *module, PyObject *spam);
+
+static PyObject *
+gh_119213_getargs(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(spam), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"spam", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "gh_119213_getargs",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *spam = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    spam = args[0];
+skip_optional_pos:
+    return_value = gh_119213_getargs_impl(module, spam);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=1fa5cb831dbb391f input=a9049054013a1b77]*/

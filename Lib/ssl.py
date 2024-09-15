@@ -513,18 +513,17 @@ class SSLContext(_SSLContext):
         self._set_alpn_protocols(protos)
 
     def _load_windows_store_certs(self, storename, purpose):
-        certs = bytearray()
         try:
             for cert, encoding, trust in enum_certificates(storename):
                 # CA certs are never PKCS#7 encoded
                 if encoding == "x509_asn":
                     if trust is True or purpose.oid in trust:
-                        certs.extend(cert)
+                        try:
+                            self.load_verify_locations(cadata=cert)
+                        except SSLError as exc:
+                            warnings.warn(f"Bad certificate in Windows certificate store: {exc!s}")
         except PermissionError:
             warnings.warn("unable to enumerate Windows certificate store")
-        if certs:
-            self.load_verify_locations(cadata=certs)
-        return certs
 
     def load_default_certs(self, purpose=Purpose.SERVER_AUTH):
         if not isinstance(purpose, _ASN1Object):

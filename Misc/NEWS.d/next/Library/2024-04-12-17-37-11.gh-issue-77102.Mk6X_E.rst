@@ -1,3 +1,0 @@
-:mod:`site` module now parses ``.pth`` file with UTF-8 first, and
-:term:`locale encoding` if ``UnicodeDecodeError`` happened. It supported
-only locale encoding before.

@@ -724,6 +724,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         return await self._proactor.sendto(sock, data, 0, address)
 
     async def sock_connect(self, sock, address):
+        if self._debug and sock.gettimeout() != 0:
+            raise ValueError("the socket must be non-blocking")
         return await self._proactor.connect(sock, address)
 
     async def sock_accept(self, sock):

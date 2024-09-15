@@ -278,7 +278,7 @@ get_size_t(_structmodulestate *state, PyObject *v, size_t *p)
 #define RANGE_ERROR(state, f, flag) return _range_error(state, f, flag)
 
 
-/* Floating point helpers */
+/* Floating-point helpers */
 
 static PyObject *
 unpack_halffloat(const char *p,  /* start of 2-byte string */

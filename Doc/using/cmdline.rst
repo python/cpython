@@ -24,7 +24,7 @@ Command line
 
 When invoking Python, you may specify any of these options::
 
-    python [-bBdEhiIOqsSuvVWx?] [-c command | -m module-name | script | - ] [args]
+    python [-bBdEhiIOPqRsSuvVWx?] [-c command | -m module-name | script | - ] [args]
 
 The most common use case is, of course, a simple invocation of a script::
 
@@ -440,6 +440,7 @@ Miscellaneous options
        -Wdefault  # Warn once per call location
        -Werror    # Convert to exceptions
        -Walways   # Warn every time
+       -Wall      # Same as -Walways
        -Wmodule   # Warn once per calling module
        -Wonce     # Warn once per Python process
        -Wignore   # Never warn
@@ -719,6 +720,11 @@ conflict.
    This variable can also be modified by Python code using :data:`os.environ`
    to force inspect mode on program termination.
 
+   .. audit-event:: cpython.run_stdin "" ""
+
+   .. versionchanged:: 3.12.5 (also 3.11.10, 3.10.15, 3.9.20, and 3.8.20)
+      Emits audit events.
+
 
 .. envvar:: PYTHONUNBUFFERED
 
@@ -842,6 +848,7 @@ conflict.
        PYTHONWARNINGS=default  # Warn once per call location
        PYTHONWARNINGS=error    # Convert to exceptions
        PYTHONWARNINGS=always   # Warn every time
+       PYTHONWARNINGS=all      # Same as PYTHONWARNINGS=always
        PYTHONWARNINGS=module   # Warn once per calling module
        PYTHONWARNINGS=once     # Warn once per Python process
        PYTHONWARNINGS=ignore   # Never warn
@@ -943,7 +950,7 @@ conflict.
    'surrogatepass' are used.
 
    This may also be enabled at runtime with
-   :func:`sys._enablelegacywindowsfsencoding()`.
+   :func:`sys._enablelegacywindowsfsencoding`.
 
    .. availability:: Windows.
 

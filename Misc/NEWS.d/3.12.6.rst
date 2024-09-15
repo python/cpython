@@ -1,0 +1,334 @@
+.. date: 2024-09-04-11-55-29
+.. gh-issue: 123418
+.. nonce: 8P4bmN
+.. release date: 2024-09-06
+.. section: macOS
+
+Updated macOS installer build to use OpenSSL 3.0.15.
+
+..
+
+.. date: 2024-09-04-09-59-18
+.. gh-issue: 123418
+.. nonce: QaMC12
+.. section: Windows
+
+Updated Windows build to use OpenSSL 3.0.15.
+
+..
+
+.. date: 2024-07-19-21-50-54
+.. gh-issue: 100256
+.. nonce: GDrKba
+.. section: Windows
+
+:mod:`mimetypes` no longer fails when it encounters an inaccessible registry
+key.
+
+..
+
+.. date: 2022-04-20-18-32-30
+.. gh-issue: 79846
+.. nonce: Vggv3f
+.. section: Windows
+
+Makes :code:`ssl.create_default_context()` ignore invalid certificates in
+the Windows certificate store
+
+..
+
+.. date: 2024-09-04-10-07-51
+.. gh-issue: 123418
+.. nonce: 1eIFZb
+.. section: Tools/Demos
+
+Update GitHub CI workflows to use OpenSSL 3.0.15 and multissltests to use
+3.0.15, 3.1.7, and 3.2.3.
+
+..
+
+.. date: 2024-05-04-22-56-41
+.. gh-issue: 101525
+.. nonce: LHK166
+.. section: Tests
+
+Skip ``test_gdb`` if the binary is relocated by BOLT. Patch by Donghee Na.
+
+..
+
+.. date: 2024-09-04-12-41-35
+.. gh-issue: 123678
+.. nonce: N41y9n
+.. section: Security
+
+Upgrade libexpat to 2.6.3
+
+..
+
+.. date: 2024-07-02-13-39-20
+.. gh-issue: 121285
+.. nonce: hrl-yI
+.. section: Security
+
+Remove backtracking from tarfile header parsing for ``hdrcharset``, PAX, and
+GNU sparse headers.
+
+..
+
+.. date: 2024-08-26-13-45-20
+.. gh-issue: 123270
+.. nonce: gXHvNJ
+.. section: Library
+
+Applied a more surgical fix for malformed payloads in :class:`zipfile.Path`
+causing infinite loops (gh-122905) without breaking contents using
+legitimate characters.
+
+..
+
+.. date: 2024-08-22-09-37-48
+.. gh-issue: 123213
+.. nonce: owmXnP
+.. section: Library
+
+:meth:`xml.etree.ElementTree.Element.extend` and
+:class:`~xml.etree.ElementTree.Element` assignment no longer hide the
+internal exception if an erronous generator is passed. Patch by Bar Harel.
+
+..
+
+.. date: 2024-08-20-18-02-27
+.. gh-issue: 85110
+.. nonce: 8_iDQy
+.. section: Library
+
+Preserve relative path in URL without netloc in
+:func:`urllib.parse.urlunsplit` and :func:`urllib.parse.urlunparse`.
+
+..
+
+.. date: 2024-08-16-19-13-21
+.. gh-issue: 123067
+.. nonce: Nx9O4R
+.. section: Library
+
+Fix quadratic complexity in parsing ``"``-quoted cookie values with
+backslashes by :mod:`http.cookies`.
+
+..
+
+.. date: 2024-08-11-14-23-07
+.. gh-issue: 122903
+.. nonce: xktZta
+.. section: Library
+
+``zipfile.Path.glob`` now correctly matches directories instead of silently
+omitting them.
+
+..
+
+.. date: 2024-08-11-14-08-04
+.. gh-issue: 122905
+.. nonce: 7tDsxA
+.. section: Library
+
+:class:`zipfile.Path` objects now sanitize names from the zipfile.
+
+..
+
+.. date: 2024-08-08-15-05-58
+.. gh-issue: 122695
+.. nonce: f7pwBv
+.. section: Library
+
+Fixed double-free when using :func:`gc.get_referents` with a freed
+:class:`asyncio.Future` iterator.
+
+..
+
+.. date: 2024-08-07-17-41-16
+.. gh-issue: 116263
+.. nonce: EcXir0
+.. section: Library
+
+:class:`logging.handlers.RotatingFileHandler` no longer rolls over empty log
+files.
+
+..
+
+.. date: 2024-08-04-14-07-18
+.. gh-issue: 118814
+.. nonce: uiyks1
+.. section: Library
+
+Fix the :class:`typing.TypeVar` constructor when name is passed by keyword.
+
+..
+
+.. date: 2024-07-31-20-43-21
+.. gh-issue: 122478
+.. nonce: sCU2Le
+.. section: Library
+
+Remove internal frames from tracebacks shown in
+:class:`code.InteractiveInterpreter` with non-default
+:func:`sys.excepthook`. Save correct tracebacks in
+:attr:`sys.last_traceback` and update ``__traceback__`` attribute of
+:attr:`sys.last_value` and :attr:`sys.last_exc`.
+
+..
+
+.. date: 2024-07-22-08-14-04
+.. gh-issue: 113785
+.. nonce: 6B_KNB
+.. section: Library
+
+:mod:`csv` now correctly parses numeric fields (when used with
+:const:`csv.QUOTE_NONNUMERIC`) which start with an escape character.
+
+..
+
+.. date: 2023-12-17-10-22-55
+.. gh-issue: 112182
+.. nonce: jLWGlr
+.. section: Library
+
+:meth:`!asyncio.futures.Future.set_exception` now transforms
+:exc:`StopIteration` into :exc:`RuntimeError` instead of hanging or other
+misbehavior. Patch contributed by Jamie Phan.
+
+..
+
+.. date: 2023-12-12-15-19-58
+.. gh-issue: 108172
+.. nonce: KyDPuG
+.. section: Library
+
+``webbrowser`` honors OS preferred browser on Linux when its desktop entry
+name contains the text of a known browser name.
+
+..
+
+.. date: 2023-10-20-15-28-08
+.. gh-issue: 102988
+.. nonce: dStNO7
+.. section: Library
+
+:func:`email.utils.getaddresses` and :func:`email.utils.parseaddr` now
+return ``('', '')`` 2-tuples in more situations where invalid email
+addresses are encountered instead of potentially inaccurate values. Add
+optional *strict* parameter to these two functions: use ``strict=False`` to
+get the old behavior, accept malformed inputs. ``getattr(email.utils,
+'supports_strict_parsing', False)`` can be use to check if the *strict*
+paramater is available. Patch by Thomas Dwyer and Victor Stinner to improve
+the CVE-2023-27043 fix.
+
+..
+
+.. date: 2023-08-04-18-43-21
+.. gh-issue: 99437
+.. nonce: Et8hu8
+.. section: Library
+
+:func:`runpy.run_path` now decodes path-like objects, making sure __file__
+and sys.argv[0] of the module being run are always strings.
+
+..
+
+.. date: 2024-06-16-21-42-45
+.. gh-issue: 120083
+.. nonce: nczuyv
+.. section: IDLE
+
+Add explicit black IDLE Hovertip foreground color needed for recent macOS.
+Fixes Sonoma showing unreadable white on pale yellow.  Patch by John
+Riggles.
+
+..
+
+.. date: 2024-08-26-00-58-26
+.. gh-issue: 123321
+.. nonce: ApxcnE
+.. section: Core and Builtins
+
+Prevent Parser/myreadline race condition from segfaulting on multi-threaded
+use. Patch by Bar Harel and Amit Wienner.
+
+..
+
+.. date: 2024-08-25-10-54-22
+.. gh-issue: 122982
+.. nonce: KLD91q
+.. section: Core and Builtins
+
+Extend the deprecation period for bool inversion (``~``) by two years.
+
+..
+
+.. date: 2024-08-23-13-08-27
+.. gh-issue: 123229
+.. nonce: aHm-dw
+.. section: Core and Builtins
+
+Fix valgrind warning by initializing the f-string buffers to 0 in the
+tokenizer. Patch by Pablo Galindo
+
+..
+
+.. date: 2024-08-20-12-29-52
+.. gh-issue: 123142
+.. nonce: 3PXiNb
+.. section: Core and Builtins
+
+Fix too-wide source location in exception tracebacks coming from broken
+iterables in comprehensions.
+
+..
+
+.. date: 2024-08-20-11-09-16
+.. gh-issue: 123048
+.. nonce: 2TISpv
+.. section: Core and Builtins
+
+Fix a bug where pattern matching code could emit a :opcode:`JUMP_FORWARD`
+with no source location.
+
+..
+
+.. date: 2024-08-17-17-26-25
+.. gh-issue: 123083
+.. nonce: 9xWLJ-
+.. section: Core and Builtins
+
+Fix a potential use-after-free in ``STORE_ATTR_WITH_HINT``.
+
+..
+
+.. date: 2024-08-01-19-13-58
+.. gh-issue: 122527
+.. nonce: eztso6
+.. section: Core and Builtins
+
+Fix a crash that occurred when a ``PyStructSequence`` was deallocated after
+its type's dictionary was cleared by the GC.  The type's
+:c:member:`~PyTypeObject.tp_basicsize` now accounts for non-sequence fields
+that aren't included in the :c:macro:`Py_SIZE` of the sequence.
+
+..
+
+.. date: 2024-06-05-18-29-18
+.. gh-issue: 93691
+.. nonce: 6OautB
+.. section: Core and Builtins
+
+Fix source locations of instructions generated for with statements.
+
+..
+
+.. date: 2024-08-24-19-09-31
+.. gh-issue: 123297
+.. nonce: fdtXoe
+.. section: Build
+
+Propagate the value of ``LDFLAGS`` to ``LDCXXSHARED`` in :mod:`sysconfig`.
+Patch by Pablo Galindo

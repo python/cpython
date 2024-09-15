@@ -307,7 +307,7 @@ PyDoc_STRVAR(_winapi_CreateNamedPipe__doc__,
     {"CreateNamedPipe", _PyCFunction_CAST(_winapi_CreateNamedPipe), METH_FASTCALL, _winapi_CreateNamedPipe__doc__},
 
 static HANDLE
-_winapi_CreateNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD open_mode,
+_winapi_CreateNamedPipe_impl(PyObject *module, LPCWSTR name, DWORD open_mode,
                              DWORD pipe_mode, DWORD max_instances,
                              DWORD out_buffer_size, DWORD in_buffer_size,
                              DWORD default_timeout,
@@ -317,7 +317,7 @@ static PyObject *
 _winapi_CreateNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    LPCTSTR name;
+    LPCWSTR name = NULL;
     DWORD open_mode;
     DWORD pipe_mode;
     DWORD max_instances;
@@ -327,8 +327,8 @@ _winapi_CreateNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t narg
     LPSECURITY_ATTRIBUTES security_attributes;
     HANDLE _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "skkkkkk" F_POINTER ":CreateNamedPipe",
-        &name, &open_mode, &pipe_mode, &max_instances, &out_buffer_size, &in_buffer_size, &default_timeout, &security_attributes)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&kkkkkk" F_POINTER ":CreateNamedPipe",
+        _PyUnicode_WideCharString_Converter, &name, &open_mode, &pipe_mode, &max_instances, &out_buffer_size, &in_buffer_size, &default_timeout, &security_attributes)) {
         goto exit;
     }
     _return_value = _winapi_CreateNamedPipe_impl(module, name, open_mode, pipe_mode, max_instances, out_buffer_size, in_buffer_size, default_timeout, security_attributes);
@@ -341,6 +341,9 @@ _winapi_CreateNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t narg
     return_value = HANDLE_TO_PYNUM(_return_value);
 
 exit:
+    /* Cleanup for name */
+    PyMem_Free((void *)name);
+
     return return_value;
 }
 
@@ -1235,22 +1238,25 @@ PyDoc_STRVAR(_winapi_WaitNamedPipe__doc__,
     {"WaitNamedPipe", _PyCFunction_CAST(_winapi_WaitNamedPipe), METH_FASTCALL, _winapi_WaitNamedPipe__doc__},
 
 static PyObject *
-_winapi_WaitNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD timeout);
+_winapi_WaitNamedPipe_impl(PyObject *module, LPCWSTR name, DWORD timeout);
 
 static PyObject *
 _winapi_WaitNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    LPCTSTR name;
+    LPCWSTR name = NULL;
     DWORD timeout;
 
-    if (!_PyArg_ParseStack(args, nargs, "sk:WaitNamedPipe",
-        &name, &timeout)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&k:WaitNamedPipe",
+        _PyUnicode_WideCharString_Converter, &name, &timeout)) {
         goto exit;
     }
     return_value = _winapi_WaitNamedPipe_impl(module, name, timeout);
 
 exit:
+    /* Cleanup for name */
+    PyMem_Free((void *)name);
+
     return return_value;
 }
 
@@ -1622,4 +1628,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=ba2d5ae3f23701b7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=91b39b70024fa232 input=a9049054013a1b77]*/

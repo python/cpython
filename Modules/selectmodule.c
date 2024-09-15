@@ -263,7 +263,7 @@ A file descriptor is either a socket or file object, or a small integer
 gotten from a fileno() method call on one of those.
 
 The optional 4th argument specifies a timeout in seconds; it may be
-a floating point number to specify fractions of seconds.  If it is absent
+a floating-point number to specify fractions of seconds.  If it is absent
 or None, the call will never time out.
 
 The return value is a tuple of three lists corresponding to the first three
@@ -278,7 +278,7 @@ descriptors can be used.
 static PyObject *
 select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
                    PyObject *xlist, PyObject *timeout_obj)
-/*[clinic end generated code: output=2b3cfa824f7ae4cf input=e467f5d68033de00]*/
+/*[clinic end generated code: output=2b3cfa824f7ae4cf input=1199d5e101abca4a]*/
 {
 #ifdef SELECT_USES_HEAP
     pylist *rfd2obj, *wfd2obj, *efd2obj;

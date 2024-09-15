@@ -2559,8 +2559,8 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                     b = PyLong_AsLongAndOverflow(item, &overflow);
                 }
                 if (overflow == 0 &&
-                    (i_result >= 0 ? (b <= LONG_MAX - i_result)
-                                   : (b >= LONG_MIN - i_result)))
+                    (i_result >= 0 ? (b <= PY_SSIZE_T_MAX - i_result)
+                                   : (b >= PY_SSIZE_T_MIN - i_result)))
                 {
                     i_result += b;
                     Py_DECREF(item);

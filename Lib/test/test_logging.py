@@ -60,6 +60,7 @@ import warnings
 import weakref
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from unittest.mock import patch
 from urllib.parse import urlparse, parse_qs
 from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
                           ThreadingTCPServer, StreamRequestHandler)
@@ -2381,6 +2382,26 @@ class CustomListener(logging.handlers.QueueListener):
 class CustomQueue(queue.Queue):
     pass
 
+class CustomQueueProtocol:
+    def __init__(self, maxsize=0):
+        self.queue = queue.Queue(maxsize)
+
+    def __getattr__(self, attribute):
+        queue = object.__getattribute__(self, 'queue')
+        return getattr(queue, attribute)
+
+class CustomQueueFakeProtocol(CustomQueueProtocol):
+    # An object implementing the Queue API (incorrect signatures).
+    # The object will be considered a valid queue class since we
+    # do not check the signatures (only callability of methods)
+    # but will NOT be usable in production since a TypeError will
+    # be raised due to a missing argument.
+    def empty(self, x):
+        pass
+
+class CustomQueueWrongProtocol(CustomQueueProtocol):
+    empty = None
+
 def queueMaker():
     return queue.Queue()
 
@@ -3866,19 +3887,18 @@ class ConfigDictTest(BaseTest):
                 self.addCleanup(os.remove, fn)
 
     @threading_helper.requires_working_threading()
+    @support.requires_subprocess()
     def test_config_queue_handler(self):
-        q = CustomQueue()
-        dq = {
-            '()': __name__ + '.CustomQueue',
-            'maxsize': 10
-        }
+        qs = [CustomQueue(), CustomQueueProtocol()]
+        dqs = [{'()': f'{__name__}.{cls}', 'maxsize': 10}
+               for cls in ['CustomQueue', 'CustomQueueProtocol']]
         dl = {
             '()': __name__ + '.listenerMaker',
             'arg1': None,
             'arg2': None,
             'respect_handler_level': True
         }
-        qvalues = (None, __name__ + '.queueMaker', __name__ + '.CustomQueue', dq, q)
+        qvalues = (None, __name__ + '.queueMaker', __name__ + '.CustomQueue', *dqs, *qs)
         lvalues = (None, __name__ + '.CustomListener', dl, CustomListener)
         for qspec, lspec in itertools.product(qvalues, lvalues):
             self.do_queuehandler_configuration(qspec, lspec)
@@ -3893,6 +3913,125 @@ class ConfigDictTest(BaseTest):
                 self.do_queuehandler_configuration(qspec, lspec)
             msg = str(ctx.exception)
             self.assertEqual(msg, "Unable to configure handler 'ah'")
+
+    @threading_helper.requires_working_threading()
+    @support.requires_subprocess()
+    @patch("multiprocessing.Manager")
+    def test_config_queue_handler_does_not_create_multiprocessing_manager(self, manager):
+        # gh-120868, gh-121723
+
+        from multiprocessing import Queue as MQ
+
+        q1 = {"()": "queue.Queue", "maxsize": -1}
+        q2 = MQ()
+        q3 = queue.Queue()
+        # CustomQueueFakeProtocol passes the checks but will not be usable
+        # since the signatures are incompatible. Checking the Queue API
+        # without testing the type of the actual queue is a trade-off
+        # between usability and the work we need to do in order to safely
+        # check that the queue object correctly implements the API.
+        q4 = CustomQueueFakeProtocol()
+
+        for qspec in (q1, q2, q3, q4):
+            self.apply_config(
+                {
+                    "version": 1,
+                    "handlers": {
+                        "queue_listener": {
+                            "class": "logging.handlers.QueueHandler",
+                            "queue": qspec,
+                        },
+                    },
+                }
+            )
+            manager.assert_not_called()
+
+    @patch("multiprocessing.Manager")
+    def test_config_queue_handler_invalid_config_does_not_create_multiprocessing_manager(self, manager):
+        # gh-120868, gh-121723
+
+        for qspec in [object(), CustomQueueWrongProtocol()]:
+            with self.assertRaises(ValueError):
+                self.apply_config(
+                    {
+                        "version": 1,
+                        "handlers": {
+                            "queue_listener": {
+                                "class": "logging.handlers.QueueHandler",
+                                "queue": qspec,
+                            },
+                        },
+                    }
+                )
+            manager.assert_not_called()
+
+    @skip_if_tsan_fork
+    @support.requires_subprocess()
+    @unittest.skipUnless(support.Py_DEBUG, "requires a debug build for testing"
+                                           "assertions in multiprocessing")
+    def test_config_queue_handler_multiprocessing_context(self):
+        # regression test for gh-121723
+        if support.MS_WINDOWS:
+            start_methods = ['spawn']
+        else:
+            start_methods = ['spawn', 'fork', 'forkserver']
+        for start_method in start_methods:
+            with self.subTest(start_method=start_method):
+                ctx = multiprocessing.get_context(start_method)
+                with ctx.Manager() as manager:
+                    q = manager.Queue()
+                    records = []
+                    # use 1 process and 1 task per child to put 1 record
+                    with ctx.Pool(1, initializer=self._mpinit_issue121723,
+                                  initargs=(q, "text"), maxtasksperchild=1):
+                        records.append(q.get(timeout=60))
+                    self.assertTrue(q.empty())
+                self.assertEqual(len(records), 1)
+
+    @staticmethod
+    def _mpinit_issue121723(qspec, message_to_log):
+        # static method for pickling support
+        logging.config.dictConfig({
+            'version': 1,
+            'disable_existing_loggers': True,
+            'handlers': {
+                'log_to_parent': {
+                    'class': 'logging.handlers.QueueHandler',
+                    'queue': qspec
+                }
+            },
+            'root': {'handlers': ['log_to_parent'], 'level': 'DEBUG'}
+        })
+        # log a message (this creates a record put in the queue)
+        logging.getLogger().info(message_to_log)
+
+    @support.requires_subprocess()
+    def test_multiprocessing_queues(self):
+        # See gh-119819
+
+        cd = copy.deepcopy(self.config_queue_handler)
+        from multiprocessing import Queue as MQ, Manager as MM
+        q1 = MQ()  # this can't be pickled
+        q2 = MM().Queue()  # a proxy queue for use when pickling is needed
+        q3 = MM().JoinableQueue()  # a joinable proxy queue
+        for qspec in (q1, q2, q3):
+            fn = make_temp_file('.log', 'test_logging-cmpqh-')
+            cd['handlers']['h1']['filename'] = fn
+            cd['handlers']['ah']['queue'] = qspec
+            qh = None
+            try:
+                self.apply_config(cd)
+                qh = logging.getHandlerByName('ah')
+                self.assertEqual(sorted(logging.getHandlerNames()), ['ah', 'h1'])
+                self.assertIsNotNone(qh.listener)
+                self.assertIs(qh.queue, qspec)
+                self.assertIs(qh.listener.queue, qspec)
+            finally:
+                h = logging.getHandlerByName('h1')
+                if h:
+                    self.addCleanup(closeFileHandler, h, fn)
+                else:
+                    self.addCleanup(os.remove, fn)
 
     def test_90195(self):
         # See gh-90195
@@ -3943,6 +4082,35 @@ class ConfigDictTest(BaseTest):
             },
         }
         logging.config.dictConfig(config)
+
+    # gh-118868: check if kwargs are passed to logging QueueHandler
+    def test_kwargs_passing(self):
+        class CustomQueueHandler(logging.handlers.QueueHandler):
+            def __init__(self, *args, **kwargs):
+                super().__init__(queue.Queue())
+                self.custom_kwargs = kwargs
+
+        custom_kwargs = {'foo': 'bar'}
+
+        config = {
+            'version': 1,
+            'handlers': {
+                'custom': {
+                    'class': CustomQueueHandler,
+                    **custom_kwargs
+                },
+            },
+            'root': {
+                'level': 'DEBUG',
+                'handlers': ['custom']
+            }
+        }
+
+        logging.config.dictConfig(config)
+
+        handler = logging.getHandlerByName('custom')
+        self.assertEqual(handler.custom_kwargs, custom_kwargs)
+
 
 class ManagerTest(BaseTest):
     def test_manager_loggerclass(self):
@@ -5897,13 +6065,28 @@ class FileHandlerTest(BaseFileTest):
             self.assertEqual(fp.read().strip(), '1')
 
 class RotatingFileHandlerTest(BaseFileTest):
-    @unittest.skipIf(support.is_wasi, "WASI does not have /dev/null.")
     def test_should_not_rollover(self):
-        # If maxbytes is zero rollover never occurs
+        # If file is empty rollover never occurs
+        rh = logging.handlers.RotatingFileHandler(
+            self.fn, encoding="utf-8", maxBytes=1)
+        self.assertFalse(rh.shouldRollover(None))
+        rh.close()
+
+        # If maxBytes is zero rollover never occurs
         rh = logging.handlers.RotatingFileHandler(
                 self.fn, encoding="utf-8", maxBytes=0)
         self.assertFalse(rh.shouldRollover(None))
         rh.close()
+
+        with open(self.fn, 'wb') as f:
+            f.write(b'\n')
+        rh = logging.handlers.RotatingFileHandler(
+                self.fn, encoding="utf-8", maxBytes=0)
+        self.assertFalse(rh.shouldRollover(None))
+        rh.close()
+
+    @unittest.skipIf(support.is_wasi, "WASI does not have /dev/null.")
+    def test_should_not_rollover_non_file(self):
         # bpo-45401 - test with special file
         # We set maxBytes to 1 so that rollover would normally happen, except
         # for the check for regular files
@@ -5913,17 +6096,46 @@ class RotatingFileHandlerTest(BaseFileTest):
         rh.close()
 
     def test_should_rollover(self):
-        rh = logging.handlers.RotatingFileHandler(self.fn, encoding="utf-8", maxBytes=1)
+        with open(self.fn, 'wb') as f:
+            f.write(b'\n')
+        rh = logging.handlers.RotatingFileHandler(self.fn, encoding="utf-8", maxBytes=2)
         self.assertTrue(rh.shouldRollover(self.next_rec()))
         rh.close()
 
     def test_file_created(self):
         # checks that the file is created and assumes it was created
         # by us
+        os.unlink(self.fn)
         rh = logging.handlers.RotatingFileHandler(self.fn, encoding="utf-8")
         rh.emit(self.next_rec())
         self.assertLogFile(self.fn)
         rh.close()
+
+    def test_max_bytes(self, delay=False):
+        kwargs = {'delay': delay} if delay else {}
+        os.unlink(self.fn)
+        rh = logging.handlers.RotatingFileHandler(
+            self.fn, encoding="utf-8", backupCount=2, maxBytes=100, **kwargs)
+        self.assertIs(os.path.exists(self.fn), not delay)
+        small = logging.makeLogRecord({'msg': 'a'})
+        large = logging.makeLogRecord({'msg': 'b'*100})
+        self.assertFalse(rh.shouldRollover(small))
+        self.assertFalse(rh.shouldRollover(large))
+        rh.emit(small)
+        self.assertLogFile(self.fn)
+        self.assertFalse(os.path.exists(self.fn + ".1"))
+        self.assertFalse(rh.shouldRollover(small))
+        self.assertTrue(rh.shouldRollover(large))
+        rh.emit(large)
+        self.assertTrue(os.path.exists(self.fn))
+        self.assertLogFile(self.fn + ".1")
+        self.assertFalse(os.path.exists(self.fn + ".2"))
+        self.assertTrue(rh.shouldRollover(small))
+        self.assertTrue(rh.shouldRollover(large))
+        rh.close()
+
+    def test_max_bytes_delay(self):
+        self.test_max_bytes(delay=True)
 
     def test_rollover_filenames(self):
         def namer(name):
@@ -5933,10 +6145,14 @@ class RotatingFileHandlerTest(BaseFileTest):
         rh.namer = namer
         rh.emit(self.next_rec())
         self.assertLogFile(self.fn)
+        self.assertFalse(os.path.exists(namer(self.fn + ".1")))
         rh.emit(self.next_rec())
         self.assertLogFile(namer(self.fn + ".1"))
+        self.assertFalse(os.path.exists(namer(self.fn + ".2")))
         rh.emit(self.next_rec())
         self.assertLogFile(namer(self.fn + ".2"))
+        self.assertFalse(os.path.exists(namer(self.fn + ".3")))
+        rh.emit(self.next_rec())
         self.assertFalse(os.path.exists(namer(self.fn + ".3")))
         rh.close()
 

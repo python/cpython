@@ -822,6 +822,14 @@ test_thread_state(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+gilstate_ensure_release(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyGILState_STATE state = PyGILState_Ensure();
+    PyGILState_Release(state);
+    Py_RETURN_NONE;
+}
+
 #ifndef MS_WINDOWS
 static PyThread_type_lock wait_done = NULL;
 
@@ -3267,6 +3275,7 @@ static PyMethodDef TestMethods[] = {
     {"test_get_type_qualname",    test_get_type_qualname,        METH_NOARGS},
     {"test_get_type_dict",        test_get_type_dict,            METH_NOARGS},
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
+    {"gilstate_ensure_release", gilstate_ensure_release,         METH_NOARGS},
 #ifndef MS_WINDOWS
     {"_spawn_pthread_waiter",   spawn_pthread_waiter,            METH_NOARGS},
     {"_end_spawned_pthread",    end_spawned_pthread,             METH_NOARGS},
