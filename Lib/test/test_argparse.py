@@ -1493,9 +1493,7 @@ class TestOptionLike(ParserTestCase):
     failures = ['-x', '-y2.5', '-xa', '-x -a',
                 '-x -3', '-x -3.5', '-3 -3.5',
                 '-x -2.5', '-x -2.5 a', '-3 -.5',
-                'a x -1', '-x -1 a', '-3 -1 a',
-                '-x -_.45 -3 1_000', '-x -1_000.0_45 -3 1_000',
-                '-x -1__000_000.0 -3 1_000_000',]
+                'a x -1', '-x -1 a', '-3 -1 a',]
     successes = [
         ('', NS(x=None, y=None, z=[])),
         ('-x 2.5', NS(x=2.5, y=None, z=[])),
@@ -1508,11 +1506,6 @@ class TestOptionLike(ParserTestCase):
         ('a -x 1', NS(x=1.0, y=None, z=['a'])),
         ('-x 1 a', NS(x=1.0, y=None, z=['a'])),
         ('-3 1 a', NS(x=None, y=1.0, z=['a'])),
-        ('-x-1_000.0 -3 1_000.0', NS(x=-1000.0, y=1000.0, z=[])),
-        ('-x-1_000 -3 1_000', NS(x=-1000, y=1000, z=[])),
-        ('-x-1_000_000.0 -3 1_000_000.0', NS(x=-1000000.0, y=1000000.0, z=[])),
-        ('-x-1_000_000_000.0 -3 1_000_000_000.0', NS(x=-1000000000.0, y=1000000000.0, z=[])),
-
     ]
 
 
@@ -5722,6 +5715,32 @@ class TestParseKnownArgs(TestCase):
         self.assertEqual(NS(foo=[], bar=[]), args)
         args = parser.parse_args(['--foo', 'a', 'b', '--', 'c', 'd'])
         self.assertEqual(NS(foo=['a', 'b'], bar=['c', 'd']), args)
+    
+    def test_negative_number_success(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--int', type=int)
+        parser.add_argument('--float', type=float)
+        
+        args = parser.parse_args(['--int', '-1000', '--float', '-1000.0'])
+        self.assertEqual(NS(int=-1000, float=-1000.0), args)
+
+        args = parser.parse_args(['--int', '-1_000', '--float', '-1_000.0'])
+        self.assertEqual(NS(int=-1000, float=-1000.0), args)
+
+        args = parser.parse_args(['--int', '-1_000_000', '--float', '-1_000_000.0'])
+        self.assertEqual(NS(int=-1000000, float=-1000000.0), args)
+
+    def test_negative_float_failure(self):
+        # Intermixed and remainder are incompatible
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        parser.add_argument('--float', type=float)
+
+        with self.assertRaises(ArgumentParserError) as cm:
+            parser.parse_args(['--float', '-_.45'])
+            parser.parse_args(['--float', '-1__000.0'])
+            parser.parse_args(['--float', '-1_000.0_0'])
+
+        self.assertRegex(str(cm.exception), r'error: argument --float: expected one argument')
 
 
 # ===========================
