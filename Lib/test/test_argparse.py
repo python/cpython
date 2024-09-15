@@ -5731,7 +5731,6 @@ class TestParseKnownArgs(TestCase):
         self.assertEqual(NS(int=-1000000, float=-1000000.0), args)
 
     def test_negative_float_failure(self):
-        # Intermixed and remainder are incompatible
         parser = ErrorRaisingArgumentParser(prog='PROG')
         parser.add_argument('--float', type=float)
 
