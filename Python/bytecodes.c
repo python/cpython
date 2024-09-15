@@ -1977,7 +1977,7 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_LOAD_ATTR, (owner -- attr: _PyStackRef *, self_or_null if (oparg & 1))) {
+        op(_LOAD_ATTR, (owner -- attr[1], self_or_null if (oparg & 1))) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
@@ -2004,7 +2004,8 @@ dummy_func(
             }
             else {
                 /* Classic, pushes one value. */
-                *attr = PyStackRef_FromPyObjectSteal(PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name));
+                PyObject *attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
+                *attr = attr_o == NULL ? PyStackRef_NULL : PyStackRef_FromPyObjectSteal(attr_o);
                 DECREF_INPUTS();
                 ERROR_IF(PyStackRef_IsNull(*attr), error);
             }

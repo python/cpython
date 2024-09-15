@@ -2204,6 +2204,7 @@
             _PyStackRef self_or_null = PyStackRef_NULL;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
+            attr = &stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
@@ -2230,11 +2231,11 @@
             }
             else {
                 /* Classic, pushes one value. */
-                *attr = PyStackRef_FromPyObjectSteal(PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name));
+                PyObject *attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
+                *attr = attr_o == NULL ? PyStackRef_NULL : PyStackRef_FromPyObjectSteal(attr_o);
                 PyStackRef_CLOSE(owner);
                 if (PyStackRef_IsNull(*attr)) JUMP_TO_ERROR();
             }
-            stack_pointer[-1].bits = (uintptr_t)attr;
             if (oparg & 1) stack_pointer[0] = self_or_null;
             stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
