@@ -5310,15 +5310,43 @@ get_base_by_token_recursive(PyTypeObject *type, void *token)
     return NULL;
 }
 
-static inline PyTypeObject *
-get_base_by_token_from_mro(PyObject *mro, void *token, int start)
+Py_NO_INLINE static PyTypeObject *
+get_base_by_token_from_bases(PyTypeObject *type, void *token)
 {
-    // NOTE: Not inlining this function might be better for the caller's size
-    // and response before entering MRO. The overhead to come here would be
-    // trivial for pure python subclasses?
-    assert(start == 0 || start == 1);
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        // No static type has a heaptype superclass,
+        // which is ensured by type_ready_mro().
+        return NULL;
+    }
+    if (((PyHeapTypeObject*)type)->ht_token == token) {
+        return type;
+    }
+    return get_base_by_token_recursive(type, token);
+}
+
+static inline PyTypeObject *
+get_base_by_token_from_mro(PyTypeObject *type, void *token)
+{
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        // No static type has a heaptype superclass,
+        // which is ensured by type_ready_mro().
+        return NULL;
+    }
+    if (((PyHeapTypeObject*)type)->ht_token == token) {
+        return type;
+    }
+    // Bypass lookup_tp_mro() as PyType_IsSubtype() does
+    PyObject *mro = type->tp_mro;
+    assert(mro != NULL);
+    assert(PyTuple_Check(mro));
+    // mro_invoke() ensures that the type MRO cannot be empty.
+    assert(PyTuple_GET_SIZE(mro) >= 1);
+    // Also, the first item in the MRO is the type itself, which
+    // we already checked above. We skip it in the loop.
+    assert(PyTuple_GET_ITEM(mro, 0) == (PyObject *)type);
+
     Py_ssize_t n = PyTuple_GET_SIZE(mro);
-    for (Py_ssize_t i = start; i < n; i++) {
+    for (Py_ssize_t i = 1; i < n; i++) {
         PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(mro, i));
         if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
             continue;
@@ -5330,62 +5358,36 @@ get_base_by_token_from_mro(PyObject *mro, void *token, int start)
     return NULL;
 }
 
-static inline int
-_token_found(PyTypeObject **result, PyTypeObject *base)
-{
-    if (result != NULL) {
-       *result = (PyTypeObject *)Py_NewRef(base);
-    }
-    return 1;
-}
-
 int
 PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
 {
-    // The rich usage of this API needs a well-balanced exercise. Also, MSVC
-    // prefers if-else statements and tiny functions on PGO here over gotos.
-    if (result != NULL) {
-        // The clear should not be under cold branches (e.g. not found)
-        *result = NULL;
-    }
+    // MSVC prefers no gotos here on PGO. This function can also be less
+    // optimized if the given type is copied to a local variable directly.
+    int ret = 0;
+    PyTypeObject *base = NULL;
     if (token == NULL) {
         // This avoids being inlined thanks to varargs
         PyErr_Format(PyExc_SystemError,
                      "PyType_GetBaseByToken called with token=NULL");
-        return -1;
+        ret = -1;
     }
-    if (!PyType_Check(type)) {
+    else if (!PyType_Check(type)) {
         PyErr_Format(PyExc_TypeError,
                      "expected a type, got a '%T' object", type);
-        return -1;
+        ret = -1;
     }
-    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-        // No static type has a heaptype superclass, which is ensured
-        // by type_ready_mro().
-    }
-    else if (((PyHeapTypeObject*)type)->ht_token == token) {
-        return _token_found(result, type);
+    else if (type->tp_mro != NULL) {
+        base = get_base_by_token_from_mro(type, token);
     }
     else {
-        PyTypeObject *base;
-        PyObject *mro = type->tp_mro;  // Bypass lookup_tp_mro() for now
-        if (mro != NULL) {
-            assert(PyTuple_Check(mro));
-            // mro_invoke() ensures that the type MRO cannot be empty.
-            assert(PyTuple_GET_SIZE(mro) >= 1);
-            // Also, the first item in the MRO is the type itself, which
-            // we already checked above. We skip it in the loop.
-            assert(PyTuple_GET_ITEM(mro, 0) == (PyObject *)type);
-            base = get_base_by_token_from_mro(mro, token, 1);
-        }
-        else {
-            base = get_base_by_token_recursive(type, token);
-        }
-        if (base != NULL) {
-            return _token_found(result, base);
-        }
+        base = get_base_by_token_from_bases(type, token);
     }
-    return 0;
+    // Finish in one place when profiling. Returning false is rare on the
+    // PGO tests, but it should not be run in a cold path in practice.
+    if (result != NULL) {
+        *result = (PyTypeObject *)Py_XNewRef(base);
+    }
+    return base != NULL ? 1 : ret;
 }
 
 
