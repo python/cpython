@@ -1,6 +1,7 @@
 /* interpreters module */
 /* low-level access to interpreter primitives */
 
+#include <stdbool.h>
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
@@ -490,12 +491,12 @@ _waiting_release(_waiting_t *waiting, int received)
     assert(!waiting->received);
 
     waiting->status = WAITING_RELEASING;
-    PyThread_release_lock(waiting->mutex);
     if (waiting->received != received) {
         assert(received == 1);
         waiting->received = received;
     }
     waiting->status = WAITING_RELEASED;
+    PyThread_release_lock(waiting->mutex);
 }
 
 static void
