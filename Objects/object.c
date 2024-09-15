@@ -1584,7 +1584,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
 int
 _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
 {
-
+#ifdef Py_GIL_DISABLED
     int meth_found = 0;
 
     assert(PyStackRef_IsNull(*method));
@@ -1676,6 +1676,12 @@ _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
 
     _PyObject_SetAttributeErrorContext(obj, name);
     return 0;
+#else
+    PyObject *res = NULL;
+    int err = _PyObject_GetMethod(obj, name, &res);
+    *method = res == NULL ? PyStackRef_NULL : PyStackRef_FromPyObjectSteal(res);
+    return err;
+#endif
 }
 
 /* Generic GetAttr functions - put these in your tp_[gs]etattro slot. */

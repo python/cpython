@@ -5618,8 +5618,7 @@ _PyType_LookupStackRef(PyTypeObject *type, PyObject *name, _PyStackRef *result)
         assert(type->tp_version_tag);
         OBJECT_STAT_INC_COND(type_cache_hits, !is_dunder_name(name));
         OBJECT_STAT_INC_COND(type_cache_dunder_hits, is_dunder_name(name));
-        Py_XINCREF(entry->value);
-        return entry->value;
+        *result = PyStackRef_FromPyObjectNew(entry->value);
     }
 #endif
     OBJECT_STAT_INC_COND(type_cache_misses, !is_dunder_name(name));
