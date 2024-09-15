@@ -509,16 +509,16 @@ reify_shadow_stack(_Py_UOpsContext *ctx)
         assert(slot.sym != NULL);
         // Need reifying.
         if (slot.is_virtual) {
-            if (slot.sym->const_val) {
-                DPRINTF(3, "reifying LOAD_CONST_INLINE\n");
-                WRITE_OP(&trace_dest[ctx->n_trace_dest], _Py_IsImmortal(slot.sym->const_val) ?
-                    _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE, 0, (uint64_t)slot.sym->const_val);
+            if (slot.sym->locals_idx >= 0) {
+                DPRINTF(3, "reifying LOAD_FAST %d\n", slot.sym->locals_idx);
+                WRITE_OP(&trace_dest[ctx->n_trace_dest], _LOAD_FAST, slot.sym->locals_idx, 0);
                 trace_dest[ctx->n_trace_dest].format = UOP_FORMAT_TARGET;
                 trace_dest[ctx->n_trace_dest].target = 100;
             }
-            else if (slot.sym->locals_idx >= 0) {
-                DPRINTF(3, "reifying LOAD_FAST %d\n", slot.sym->locals_idx);
-                WRITE_OP(&trace_dest[ctx->n_trace_dest], _LOAD_FAST, slot.sym->locals_idx, 0);
+            else if (slot.sym->const_val) {
+                DPRINTF(3, "reifying LOAD_CONST_INLINE\n");
+                WRITE_OP(&trace_dest[ctx->n_trace_dest], _Py_IsImmortal(slot.sym->const_val) ?
+                    _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE, 0, (uint64_t)slot.sym->const_val);
                 trace_dest[ctx->n_trace_dest].format = UOP_FORMAT_TARGET;
                 trace_dest[ctx->n_trace_dest].target = 100;
             }
