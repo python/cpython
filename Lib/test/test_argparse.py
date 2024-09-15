@@ -1493,7 +1493,7 @@ class TestOptionLike(ParserTestCase):
     failures = ['-x', '-y2.5', '-xa', '-x -a',
                 '-x -3', '-x -3.5', '-3 -3.5',
                 '-x -2.5', '-x -2.5 a', '-3 -.5',
-                'a x -1', '-x -1 a', '-3 -1 a',]
+                'a x -1', '-x -1 a', '-3 -1 a']
     successes = [
         ('', NS(x=None, y=None, z=[])),
         ('-x 2.5', NS(x=2.5, y=None, z=[])),
