@@ -5715,12 +5715,12 @@ class TestParseKnownArgs(TestCase):
         self.assertEqual(NS(foo=[], bar=[]), args)
         args = parser.parse_args(['--foo', 'a', 'b', '--', 'c', 'd'])
         self.assertEqual(NS(foo=['a', 'b'], bar=['c', 'd']), args)
-    
+
     def test_negative_number_success(self):
         parser = argparse.ArgumentParser()
         parser.add_argument('--int', type=int)
         parser.add_argument('--float', type=float)
-        
+
         args = parser.parse_args(['--int', '-1000', '--float', '-1000.0'])
         self.assertEqual(NS(int=-1000, float=-1000.0), args)
 
