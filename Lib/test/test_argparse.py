@@ -2093,6 +2093,25 @@ class TestActionExtend(ParserTestCase):
     ]
 
 
+class TestNegativeNumberAction(ParserTestCase):
+    """Test parsing negative numbers"""
+
+    argument_signatures = [
+        Sig('--int', type=int),
+        Sig('--float', type=float),
+    ]
+    failures = [
+        '--float -_.45',
+        '--int -1__000.0',
+    ]
+    successes = [
+        ('--int -1000 --float -1000.0', NS(int=-1000, float=-1000.0)),
+        ('--int -1_000 --float -1_000.0', NS(int=-1000, float=-1000.0)),
+        ('--int -1_000_000 --float -1_000_000.0', NS(int=-1000000, float=-1000000.0)),
+        ('--float -1_000.0', NS(int=None, float=-1000.0)),
+        ('--float -1_000_000.0_0', NS(int=None, float=-1000000.0)),
+    ]
+
 class TestInvalidAction(TestCase):
     """Test invalid user defined Action"""
 
@@ -5715,31 +5734,6 @@ class TestParseKnownArgs(TestCase):
         self.assertEqual(NS(foo=[], bar=[]), args)
         args = parser.parse_args(['--foo', 'a', 'b', '--', 'c', 'd'])
         self.assertEqual(NS(foo=['a', 'b'], bar=['c', 'd']), args)
-
-    def test_negative_number_success(self):
-        parser = argparse.ArgumentParser()
-        parser.add_argument('--int', type=int)
-        parser.add_argument('--float', type=float)
-
-        args = parser.parse_args(['--int', '-1000', '--float', '-1000.0'])
-        self.assertEqual(NS(int=-1000, float=-1000.0), args)
-
-        args = parser.parse_args(['--int', '-1_000', '--float', '-1_000.0'])
-        self.assertEqual(NS(int=-1000, float=-1000.0), args)
-
-        args = parser.parse_args(['--int', '-1_000_000', '--float', '-1_000_000.0'])
-        self.assertEqual(NS(int=-1000000, float=-1000000.0), args)
-
-    def test_negative_float_failure(self):
-        parser = ErrorRaisingArgumentParser(prog='PROG')
-        parser.add_argument('--float', type=float)
-
-        with self.assertRaises(ArgumentParserError) as cm:
-            parser.parse_args(['--float', '-_.45'])
-            parser.parse_args(['--float', '-1__000.0'])
-            parser.parse_args(['--float', '-1_000.0_0'])
-
-        self.assertRegex(str(cm.exception), r'error: argument --float: expected one argument')
 
 
 # ===========================
