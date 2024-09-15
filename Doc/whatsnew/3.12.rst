@@ -1330,7 +1330,7 @@ Deprecated
   (Contributed by Brett Cannon in :gh:`65961`.)
 
 * The bitwise inversion operator (``~``) on bool is deprecated. It will throw an
-  error in Python 3.14. Use ``not`` for logical negation of bools instead.
+  error in Python 3.16. Use ``not`` for logical negation of bools instead.
   In the rare case that you really need the bitwise inversion of the underlying
   ``int``, convert to int explicitly: ``~int(x)``. (Contributed by Tim Hoffmann
   in :gh:`103487`.)
@@ -1433,9 +1433,9 @@ hashlib
 -------
 
 * Remove the pure Python implementation of :mod:`hashlib`'s
-  :func:`hashlib.pbkdf2_hmac()`, deprecated in Python 3.10. Python 3.10 and
+  :func:`hashlib.pbkdf2_hmac`, deprecated in Python 3.10. Python 3.10 and
   newer requires OpenSSL 1.1.1 (:pep:`644`): this OpenSSL version provides
-  a C implementation of :func:`~hashlib.pbkdf2_hmac()` which is faster.
+  a C implementation of :func:`~hashlib.pbkdf2_hmac` which is faster.
   (Contributed by Victor Stinner in :gh:`94199`.)
 
 importlib
@@ -1444,7 +1444,7 @@ importlib
 * Many previously deprecated cleanups in :mod:`importlib` have now been
   completed:
 
-  * References to, and support for :meth:`!module_repr()` has been removed.
+  * References to, and support for :meth:`!module_repr` has been removed.
     (Contributed by Barry Warsaw in :gh:`97850`.)
 
   * ``importlib.util.set_package``, ``importlib.util.set_loader`` and
@@ -2277,3 +2277,20 @@ email
   If you need to turn this safety feature off,
   set :attr:`~email.policy.Policy.verify_generated_headers`.
   (Contributed by Bas Bloemsaat and Petr Viktorin in :gh:`121650`.)
+
+
+Notable changes in 3.12.6
+=========================
+
+email
+-----
+
+* :func:`email.utils.getaddresses` and :func:`email.utils.parseaddr` now return
+  ``('', '')`` 2-tuples in more situations where invalid email addresses are
+  encountered, instead of potentially inaccurate values.
+  An optional *strict* parameter was added to these two functions:
+  use ``strict=False`` to get the old behavior, accepting malformed inputs.
+  ``getattr(email.utils, 'supports_strict_parsing', False)`` can be used to
+  check if the *strict* paramater is available.
+  (Contributed by Thomas Dwyer and Victor Stinner for :gh:`102988` to improve
+  the CVE-2023-27043 fix.)

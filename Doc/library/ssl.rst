@@ -1021,25 +1021,25 @@ SSL Sockets
 
    SSL sockets provide the following methods of :ref:`socket-objects`:
 
-   - :meth:`~socket.socket.accept()`
-   - :meth:`~socket.socket.bind()`
-   - :meth:`~socket.socket.close()`
-   - :meth:`~socket.socket.connect()`
-   - :meth:`~socket.socket.detach()`
-   - :meth:`~socket.socket.fileno()`
-   - :meth:`~socket.socket.getpeername()`, :meth:`~socket.socket.getsockname()`
-   - :meth:`~socket.socket.getsockopt()`, :meth:`~socket.socket.setsockopt()`
-   - :meth:`~socket.socket.gettimeout()`, :meth:`~socket.socket.settimeout()`,
-     :meth:`~socket.socket.setblocking()`
-   - :meth:`~socket.socket.listen()`
-   - :meth:`~socket.socket.makefile()`
-   - :meth:`~socket.socket.recv()`, :meth:`~socket.socket.recv_into()`
+   - :meth:`~socket.socket.accept`
+   - :meth:`~socket.socket.bind`
+   - :meth:`~socket.socket.close`
+   - :meth:`~socket.socket.connect`
+   - :meth:`~socket.socket.detach`
+   - :meth:`~socket.socket.fileno`
+   - :meth:`~socket.socket.getpeername`, :meth:`~socket.socket.getsockname`
+   - :meth:`~socket.socket.getsockopt`, :meth:`~socket.socket.setsockopt`
+   - :meth:`~socket.socket.gettimeout`, :meth:`~socket.socket.settimeout`,
+     :meth:`~socket.socket.setblocking`
+   - :meth:`~socket.socket.listen`
+   - :meth:`~socket.socket.makefile`
+   - :meth:`~socket.socket.recv`, :meth:`~socket.socket.recv_into`
      (but passing a non-zero ``flags`` argument is not allowed)
-   - :meth:`~socket.socket.send()`, :meth:`~socket.socket.sendall()` (with
+   - :meth:`~socket.socket.send`, :meth:`~socket.socket.sendall` (with
      the same limitation)
-   - :meth:`~socket.socket.sendfile()` (but :mod:`os.sendfile` will be used
-     for plain-text sockets only, else :meth:`~socket.socket.send()` will be used)
-   - :meth:`~socket.socket.shutdown()`
+   - :meth:`~socket.socket.sendfile` (but :mod:`os.sendfile` will be used
+     for plain-text sockets only, else :meth:`~socket.socket.send` will be used)
+   - :meth:`~socket.socket.shutdown`
 
    However, since the SSL (and TLS) protocol has its own framing atop
    of TCP, the SSL sockets abstraction can, in certain respects, diverge from

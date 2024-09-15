@@ -2547,6 +2547,78 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(vararg_with_default2__doc__,
+"vararg_with_default2($module, /, a, *args, b=None, c=None)\n"
+"--\n"
+"\n");
+
+#define VARARG_WITH_DEFAULT2_METHODDEF    \
+    {"vararg_with_default2", _PyCFunction_CAST(vararg_with_default2), METH_FASTCALL|METH_KEYWORDS, vararg_with_default2__doc__},
+
+static PyObject *
+vararg_with_default2_impl(PyObject *module, PyObject *a, PyObject *args,
+                          PyObject *b, PyObject *c);
+
+static PyObject *
+vararg_with_default2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", "b", "c", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "vararg_with_default2",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = Py_MIN(nargs, 1) + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *a;
+    PyObject *__clinic_args = NULL;
+    PyObject *b = Py_None;
+    PyObject *c = Py_None;
+
+    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    a = args[0];
+    __clinic_args = args[1];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[2]) {
+        b = args[2];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    c = args[3];
+skip_optional_kwonly:
+    return_value = vararg_with_default2_impl(module, a, __clinic_args, b, c);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
 PyDoc_STRVAR(vararg_with_only_defaults__doc__,
 "vararg_with_only_defaults($module, /, *args, b=None)\n"
 "--\n"
@@ -3097,4 +3169,4 @@ _testclinic_TestClass_meth_method_no_params(PyObject *self, PyTypeObject *cls, P
     }
     return _testclinic_TestClass_meth_method_no_params_impl(self, cls);
 }
-/*[clinic end generated code: output=999de26ba394ab5d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d1fcf6ab8867f4ad input=a9049054013a1b77]*/

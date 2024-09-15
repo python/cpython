@@ -294,6 +294,7 @@ root_doc = 'contents'
 # Allow translation of index directives
 gettext_additional_targets = [
     'index',
+    'literal-block',
 ]
 
 # Options for HTML output

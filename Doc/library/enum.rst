@@ -560,6 +560,8 @@ Data Types
          >>> len(white)
          3
 
+      .. versionadded:: 3.11
+
    .. method:: __bool__(self):
 
       Returns *True* if any members in flag, *False* otherwise::

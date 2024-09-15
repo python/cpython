@@ -960,7 +960,7 @@ ConfigParser Objects
    When *converters* is given, it should be a dictionary where each key
    represents the name of a type converter and each value is a callable
    implementing the conversion from string to the desired datatype.  Every
-   converter gets its own corresponding :meth:`!get*()` method on the parser
+   converter gets its own corresponding :meth:`!get*` method on the parser
    object and section proxies.
 
    It is possible to read several configurations into a single
@@ -1000,7 +1000,7 @@ ConfigParser Objects
       The *converters* argument was added.
 
    .. versionchanged:: 3.7
-      The *defaults* argument is read with :meth:`read_dict()`,
+      The *defaults* argument is read with :meth:`read_dict`,
       providing consistent behavior across the parser: non-string
       keys and values are implicitly converted to strings.
 

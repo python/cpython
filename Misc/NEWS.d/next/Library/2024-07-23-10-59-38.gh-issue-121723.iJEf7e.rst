@@ -1,3 +1,0 @@
-Make :func:`logging.config.dictConfig` accept any object implementing the
-Queue public API. See the :ref:`queue configuration <configure-queue>`
-section for details. Patch by Bénédikt Tran.

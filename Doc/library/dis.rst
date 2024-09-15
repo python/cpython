@@ -1000,8 +1000,8 @@ iterations of the loop.
       if count == 0:
           value = ()
       else:
-          STACK = STACK[:-count]
           value = tuple(STACK[-count:])
+          STACK = STACK[:-count]
 
       STACK.append(value)
 
@@ -1132,7 +1132,10 @@ iterations of the loop.
 .. opcode:: COMPARE_OP (opname)
 
    Performs a Boolean operation.  The operation name can be found in
-   ``cmp_op[opname]``.
+   ``cmp_op[opname >> 4]``.
+
+   .. versionchanged:: 3.12
+     The cmp_op index is now stored in the four-highest bits of oparg instead of the four-lowest bits of oparg.
 
 
 .. opcode:: IS_OP (invert)
@@ -1459,7 +1462,7 @@ iterations of the loop.
 
       end = STACK.pop()
       start = STACK.pop()
-      STACK.append(slice(start, stop))
+      STACK.append(slice(start, end))
 
    if it is 3, implements::
 

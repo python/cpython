@@ -701,6 +701,8 @@ parse_process_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
         }
         else if (c == dialect->escapechar) {
             /* possible escaped character */
+            if (dialect->quoting == QUOTE_NONNUMERIC)
+                self->numeric_field = 1;
             self->state = ESCAPED_CHAR;
         }
         else if (c == ' ' && dialect->skipinitialspace)

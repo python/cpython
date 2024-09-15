@@ -96,6 +96,19 @@ def error_if(value: bool, error_message: str) -> None:
         sys.exit(1)
 
 
+def is_root_directory_git_index() -> bool:
+    """Checks if the root directory is a git index"""
+    try:
+        subprocess.check_call(
+            ["git", "-C", str(CPYTHON_ROOT_DIR), "rev-parse"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except subprocess.CalledProcessError:
+        return False
+    return True
+
+
 def filter_gitignored_paths(paths: list[str]) -> list[str]:
     """
     Filter out paths excluded by the gitignore file.
@@ -341,6 +354,11 @@ def create_externals_sbom() -> None:
 
 
 def main() -> None:
+    # Don't regenerate the SBOM if we're not a git repository.
+    if not is_root_directory_git_index():
+        print("Skipping SBOM generation due to not being a git repository")
+        return
+
     create_source_sbom()
     create_externals_sbom()
 

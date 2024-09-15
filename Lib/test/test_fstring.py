@@ -732,7 +732,7 @@ x = (
         self.assertEqual(
             f"""
 {
-40 # fourty
+40 # forty
 +  # plus
 2  # two
 }""",
@@ -741,7 +741,7 @@ x = (
         self.assertEqual(
             f"""
 {
-40 # fourty
+40 # forty
 +  # plus
 2  # two
 }""",
