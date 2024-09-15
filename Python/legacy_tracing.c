@@ -103,6 +103,19 @@ sys_profile_call_or_return(
         Py_DECREF(meth);
         return res;
     }
+    else if (Py_TYPE(callable) == &PyMethod_Type) {
+        // CALL instruction will grab the function from the method,
+        // so if the function is a C function, the return event will
+        // be emitted. However, CALL event happens before CALL
+        // instruction, so we need to handle this case here.
+        PyObject* func = PyMethod_GET_FUNCTION(callable);
+        if (func == NULL) {
+            return NULL;
+        }
+        if (PyCFunction_Check(func)) {
+            return call_profile_func(self, func);
+        }
+    }
     Py_RETURN_NONE;
 }
 

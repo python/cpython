@@ -11,7 +11,7 @@ Calculating averages
 Function            Description
 ==================  ==================================================
 mean                Arithmetic mean (average) of data.
-fmean               Fast, floating point arithmetic mean.
+fmean               Fast, floating-point arithmetic mean.
 geometric_mean      Geometric mean of data.
 harmonic_mean       Harmonic mean of data.
 median              Median (middle value) of data.

@@ -433,11 +433,11 @@ Glossary
       An object that tries to find the :term:`loader` for a module that is
       being imported.
 
-      Since Python 3.3, there are two types of finder: :term:`meta path finders
+      There are two types of finder: :term:`meta path finders
       <meta path finder>` for use with :data:`sys.meta_path`, and :term:`path
       entry finders <path entry finder>` for use with :data:`sys.path_hooks`.
 
-      See :pep:`302`, :pep:`420` and :pep:`451` for much more detail.
+      See :ref:`importsystem` and :mod:`importlib` for much more detail.
 
    floor division
       Mathematical division that rounds down to nearest integer.  The floor
@@ -590,6 +590,14 @@ Glossary
       An Integrated Development and Learning Environment for Python.
       :ref:`idle` is a basic editor and interpreter environment
       which ships with the standard distribution of Python.
+
+   immortal
+      *Immortal objects* are a CPython implementation detail introduced
+      in :pep:`683`.
+
+      If an object is immortal, its :term:`reference count` is never modified,
+      and therefore it is never deallocated while the interpreter is running.
+      For example, :const:`True` and :const:`None` are immortal in CPython.
 
    immutable
       An object with a fixed value.  Immutable objects include numbers, strings and

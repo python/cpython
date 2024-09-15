@@ -11,8 +11,6 @@ extern "C" {
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 
 
-#if _PY_SHORT_FLOAT_REPR == 1
-
 typedef uint32_t ULong;
 
 struct
@@ -22,15 +20,15 @@ Bigint {
     ULong x[1];
 };
 
-#ifdef Py_USING_MEMORY_DEBUGGER
+#if defined(Py_USING_MEMORY_DEBUGGER) || _PY_SHORT_FLOAT_REPR == 0
 
 struct _dtoa_state {
     int _not_used;
 };
-#define _dtoa_interp_state_INIT(INTERP) \
+#define _dtoa_state_INIT(INTERP) \
     {0}
 
-#else  // !Py_USING_MEMORY_DEBUGGER
+#else  // !Py_USING_MEMORY_DEBUGGER && _PY_SHORT_FLOAT_REPR != 0
 
 /* The size of the Bigint freelist */
 #define Bigint_Kmax 7
@@ -64,8 +62,6 @@ PyAPI_FUNC(double) _Py_dg_strtod(const char *str, char **ptr);
 PyAPI_FUNC(char *) _Py_dg_dtoa(double d, int mode, int ndigits,
                         int *decpt, int *sign, char **rve);
 PyAPI_FUNC(void) _Py_dg_freedtoa(char *s);
-
-#endif // _PY_SHORT_FLOAT_REPR == 1
 
 #ifdef __cplusplus
 }

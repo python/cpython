@@ -105,29 +105,21 @@ class InteractiveInterpreter:
         The output is written by self.write(), below.
 
         """
-        type, value, tb = sys.exc_info()
-        sys.last_exc = value
-        sys.last_type = type
-        sys.last_value = value
-        sys.last_traceback = tb
-        if filename and type is SyntaxError:
-            # Work hard to stuff the correct filename in the exception
-            try:
-                msg, (dummy_filename, lineno, offset, line) = value.args
-            except ValueError:
-                # Not the format we expect; leave it alone
-                pass
-            else:
-                # Stuff in the right filename
-                value = SyntaxError(msg, (filename, lineno, offset, line))
-                sys.last_exc = sys.last_value = value
-        if sys.excepthook is sys.__excepthook__:
-            lines = traceback.format_exception_only(type, value)
-            self.write(''.join(lines))
-        else:
-            # If someone has set sys.excepthook, we let that take precedence
-            # over self.write
-            sys.excepthook(type, value, tb)
+        try:
+            typ, value, tb = sys.exc_info()
+            if filename and typ is SyntaxError:
+                # Work hard to stuff the correct filename in the exception
+                try:
+                    msg, (dummy_filename, lineno, offset, line) = value.args
+                except ValueError:
+                    # Not the format we expect; leave it alone
+                    pass
+                else:
+                    # Stuff in the right filename
+                    value = SyntaxError(msg, (filename, lineno, offset, line))
+            self._showtraceback(typ, value, None)
+        finally:
+            typ = value = tb = None
 
     def showtraceback(self):
         """Display the exception that just occurred.
@@ -137,19 +129,34 @@ class InteractiveInterpreter:
         The output is written by self.write(), below.
 
         """
-        sys.last_type, sys.last_value, last_tb = ei = sys.exc_info()
-        sys.last_traceback = last_tb
-        sys.last_exc = ei[1]
         try:
-            lines = traceback.format_exception(ei[0], ei[1], last_tb.tb_next)
-            if sys.excepthook is sys.__excepthook__:
-                self.write(''.join(lines))
-            else:
-                # If someone has set sys.excepthook, we let that take precedence
-                # over self.write
-                sys.excepthook(ei[0], ei[1], last_tb)
+            typ, value, tb = sys.exc_info()
+            self._showtraceback(typ, value, tb.tb_next)
         finally:
-            last_tb = ei = None
+            typ = value = tb = None
+
+    def _showtraceback(self, typ, value, tb):
+        sys.last_type = typ
+        sys.last_traceback = tb
+        sys.last_exc = sys.last_value = value = value.with_traceback(tb)
+        if sys.excepthook is sys.__excepthook__:
+            lines = traceback.format_exception(typ, value, tb)
+            self.write(''.join(lines))
+        else:
+            # If someone has set sys.excepthook, we let that take precedence
+            # over self.write
+            try:
+                sys.excepthook(typ, value, tb)
+            except SystemExit:
+                raise
+            except BaseException as e:
+                e.__context__ = None
+                e = e.with_traceback(e.__traceback__.tb_next)
+                print('Error in sys.excepthook:', file=sys.stderr)
+                sys.__excepthook__(type(e), e, e.__traceback__)
+                print(file=sys.stderr)
+                print('Original exception was:', file=sys.stderr)
+                sys.__excepthook__(typ, value, tb)
 
     def write(self, data):
         """Write a string.

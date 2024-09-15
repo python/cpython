@@ -1317,6 +1317,29 @@ class TestCase(unittest.TestCase):
         c = C(10, 11, 50, 51)
         self.assertEqual(vars(c), {'x': 21, 'y': 101})
 
+    def test_init_var_name_shadowing(self):
+        # Because dataclasses rely exclusively on `__annotations__` for
+        # handling InitVar and `__annotations__` preserves shadowed definitions,
+        # you can actually shadow an InitVar with a method or property.
+        #
+        # This only works when there is no default value; `dataclasses` uses the
+        # actual name (which will be bound to the shadowing method) for default
+        # values.
+        @dataclass
+        class C:
+            shadowed: InitVar[int]
+            _shadowed: int = field(init=False)
+
+            def __post_init__(self, shadowed):
+                self._shadowed = shadowed * 2
+
+            @property
+            def shadowed(self):
+                return self._shadowed * 3
+
+        c = C(5)
+        self.assertEqual(c.shadowed, 30)
+
     def test_default_factory(self):
         # Test a factory that returns a new list.
         @dataclass
@@ -1524,6 +1547,24 @@ class TestCase(unittest.TestCase):
         self.assertTrue(is_dataclass(type(a)))
         self.assertTrue(is_dataclass(a))
 
+    def test_is_dataclass_inheritance(self):
+        @dataclass
+        class X:
+            y: int
+
+        class Z(X):
+            pass
+
+        self.assertTrue(is_dataclass(X), "X should be a dataclass")
+        self.assertTrue(
+            is_dataclass(Z),
+            "Z should be a dataclass because it inherits from X",
+        )
+        z_instance = Z(y=5)
+        self.assertTrue(
+            is_dataclass(z_instance),
+            "z_instance should be a dataclass because it is an instance of Z",
+        )
 
     def test_helper_fields_with_class_instance(self):
         # Check that we can call fields() on either a class or instance,
@@ -3518,6 +3559,57 @@ class TestSlots(unittest.TestCase):
         self.assertEqual(A.__slots__, ())
         self.assertEqual(A().__dict__, {})
         A()
+
+    @support.cpython_only
+    def test_dataclass_slot_dict_ctype(self):
+        # https://github.com/python/cpython/issues/123935
+        from test.support import import_helper
+        # Skips test if `_testcapi` is not present:
+        _testcapi = import_helper.import_module('_testcapi')
+
+        @dataclass(slots=True)
+        class HasDictOffset(_testcapi.HeapCTypeWithDict):
+            __dict__: dict = {}
+        self.assertNotEqual(_testcapi.HeapCTypeWithDict.__dictoffset__, 0)
+        self.assertEqual(HasDictOffset.__slots__, ())
+
+        @dataclass(slots=True)
+        class DoesNotHaveDictOffset(_testcapi.HeapCTypeWithWeakref):
+            __dict__: dict = {}
+        self.assertEqual(_testcapi.HeapCTypeWithWeakref.__dictoffset__, 0)
+        self.assertEqual(DoesNotHaveDictOffset.__slots__, ('__dict__',))
+
+    @support.cpython_only
+    def test_slots_with_wrong_init_subclass(self):
+        # TODO: This test is for a kinda-buggy behavior.
+        # Ideally, it should be fixed and `__init_subclass__`
+        # should be fully supported in the future versions.
+        # See https://github.com/python/cpython/issues/91126
+        class WrongSuper:
+            def __init_subclass__(cls, arg):
+                pass
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "missing 1 required positional argument: 'arg'",
+        ):
+            @dataclass(slots=True)
+            class WithWrongSuper(WrongSuper, arg=1):
+                pass
+
+        class CorrectSuper:
+            args = []
+            def __init_subclass__(cls, arg="default"):
+                cls.args.append(arg)
+
+        @dataclass(slots=True)
+        class WithCorrectSuper(CorrectSuper):
+            pass
+
+        # __init_subclass__ is called twice: once for `WithCorrectSuper`
+        # and once for `WithCorrectSuper__slots__` new class
+        # that we create internally.
+        self.assertEqual(CorrectSuper.args, ["default", "default"])
 
 
 class TestDescriptors(unittest.TestCase):

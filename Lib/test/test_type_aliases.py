@@ -1,4 +1,5 @@
 import pickle
+import textwrap
 import types
 import unittest
 from test.support import check_syntax_error, run_code
@@ -328,3 +329,22 @@ class TypeAliasPickleTest(unittest.TestCase):
                 with self.subTest(thing=thing, proto=proto):
                     with self.assertRaises(pickle.PickleError):
                         pickle.dumps(thing, protocol=proto)
+
+
+class TypeParamsExoticGlobalsTest(unittest.TestCase):
+    def test_exec_with_unusual_globals(self):
+        class customdict(dict):
+            def __missing__(self, key):
+                return key
+
+        code = compile("type Alias = undefined", "test", "exec")
+        ns = customdict()
+        exec(code, ns)
+        Alias = ns["Alias"]
+        self.assertEqual(Alias.__value__, "undefined")
+
+        code = compile("class A: type Alias = undefined", "test", "exec")
+        ns = customdict()
+        exec(code, ns)
+        Alias = ns["A"].Alias
+        self.assertEqual(Alias.__value__, "undefined")

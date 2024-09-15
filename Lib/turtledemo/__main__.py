@@ -92,13 +92,15 @@ from tkinter import *
 from idlelib.colorizer import ColorDelegator, color_config
 from idlelib.percolator import Percolator
 from idlelib.textview import view_text
+import turtle
 from turtledemo import __doc__ as about_turtledemo
 
-import turtle
+if sys.platform == 'win32':
+    from idlelib.util import fix_win_hidpi
+    fix_win_hidpi()
 
 demo_dir = os.path.dirname(os.path.abspath(__file__))
 darwin = sys.platform == 'darwin'
-
 STARTUP = 1
 READY = 2
 RUNNING = 3

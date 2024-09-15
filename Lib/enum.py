@@ -487,7 +487,7 @@ class _EnumDict(dict):
                         # accepts iterable as multiple arguments?
                         value = t(auto_valued)
                     except TypeError:
-                        # then pass them in singlely
+                        # then pass them in singly
                         value = t(*auto_valued)
             self._member_names[key] = None
             if non_auto_store:

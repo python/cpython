@@ -1132,6 +1132,8 @@ test case
             # need to remove the first line of the error message
             error = str(e).split('\n', 1)[1]
             self.assertEqual(sample_text_error, error)
+        else:
+            self.fail(f'{self.failureException} not raised')
 
     def testAssertEqualSingleLine(self):
         sample_text = "laden swallows fly slowly"
@@ -1148,6 +1150,8 @@ test case
             # need to remove the first line of the error message
             error = str(e).split('\n', 1)[1]
             self.assertEqual(sample_text_error, error)
+        else:
+            self.fail(f'{self.failureException} not raised')
 
     def testAssertEqualwithEmptyString(self):
         '''Verify when there is an empty string involved, the diff output
@@ -1165,6 +1169,8 @@ test case
             # need to remove the first line of the error message
             error = str(e).split('\n', 1)[1]
             self.assertEqual(sample_text_error, error)
+        else:
+            self.fail(f'{self.failureException} not raised')
 
     def testAssertEqualMultipleLinesMissingNewlineTerminator(self):
         '''Verifying format of diff output from assertEqual involving strings
@@ -1185,6 +1191,8 @@ test case
             # need to remove the first line of the error message
             error = str(e).split('\n', 1)[1]
             self.assertEqual(sample_text_error, error)
+        else:
+            self.fail(f'{self.failureException} not raised')
 
     def testAssertEqualMultipleLinesMismatchedNewlinesTerminators(self):
         '''Verifying format of diff output from assertEqual involving strings
@@ -1208,6 +1216,8 @@ test case
             # need to remove the first line of the error message
             error = str(e).split('\n', 1)[1]
             self.assertEqual(sample_text_error, error)
+        else:
+            self.fail(f'{self.failureException} not raised')
 
     def testEqualityBytesWarning(self):
         if sys.flags.bytes_warning:

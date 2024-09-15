@@ -496,7 +496,7 @@ regardless of *lineterminator* value.
 .. nonce: EXVMXw
 .. section: Library
 
-:func:`csv.writer()` now quotes empty fields if delimiter is a space and
+:func:`csv.writer` now quotes empty fields if delimiter is a space and
 skipinitialspace is true and raises exception if quoting is not possible.
 
 ..
@@ -580,7 +580,7 @@ for decorated functions.
 .. nonce: RzxNYT
 .. section: Library
 
-Fix several :func:`format()` bugs when using the C implementation of
+Fix several :func:`format` bugs when using the C implementation of
 :class:`~decimal.Decimal`: * memory leak in some rare cases when using the
 ``z`` format option (coerce negative 0) * incorrect output when applying the
 ``z`` format option to type ``F`` (fixed-point with capital ``NAN`` /
@@ -761,8 +761,8 @@ combination with unicode encoding.
 .. section: Library
 
 Fix :func:`io.BufferedReader.tell`, :func:`io.BufferedReader.seek`,
-:func:`_pyio.BufferedReader.tell`, :func:`io.BufferedRandom.tell`,
-:func:`io.BufferedRandom.seek` and :func:`_pyio.BufferedRandom.tell` being
+:func:`!_pyio.BufferedReader.tell`, :func:`io.BufferedRandom.tell`,
+:func:`io.BufferedRandom.seek` and :func:`!_pyio.BufferedRandom.tell` being
 able to return negative offsets.
 
 ..
@@ -802,7 +802,7 @@ Add missing call to localization function in :mod:`argparse`.
 .. nonce: Me7fJe
 .. section: Library
 
-Fix :meth:`multiprocessing.connection.Listener.accept()` to accept empty
+Fix :meth:`multiprocessing.connection.Listener.accept` to accept empty
 bytes as authkey. Not accepting empty bytes as key causes it to hang
 indefinitely.
 

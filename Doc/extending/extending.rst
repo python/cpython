@@ -857,7 +857,7 @@ It is important to call :c:func:`free` at the right time.  If a block's address
 is forgotten but :c:func:`free` is not called for it, the memory it occupies
 cannot be reused until the program terminates.  This is called a :dfn:`memory
 leak`.  On the other hand, if a program calls :c:func:`free` for a block and then
-continues to use the block, it creates a conflict with re-use of the block
+continues to use the block, it creates a conflict with reuse of the block
 through another :c:func:`malloc` call.  This is called :dfn:`using freed memory`.
 It has the same bad consequences as referencing uninitialized data --- core
 dumps, wrong results, mysterious crashes.

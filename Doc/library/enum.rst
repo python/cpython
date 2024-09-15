@@ -517,7 +517,7 @@ Data Types
 
    ``Flag`` is the same as :class:`Enum`, but its members support the bitwise
    operators ``&`` (*AND*), ``|`` (*OR*), ``^`` (*XOR*), and ``~`` (*INVERT*);
-   the results of those operators are members of the enumeration.
+   the results of those operations are (aliases of) members of the enumeration.
 
    .. method:: __contains__(self, value)
 
@@ -559,6 +559,8 @@ Data Types
          1
          >>> len(white)
          3
+
+      .. versionadded:: 3.11
 
    .. method:: __bool__(self):
 

@@ -212,7 +212,7 @@ class ArrayTestCase(unittest.TestCase):
         class EmptyStruct(Structure):
             _fields_ = []
 
-        obj = (EmptyStruct * 2)()  # bpo37188: Floating point exception
+        obj = (EmptyStruct * 2)()  # bpo37188: Floating-point exception
         self.assertEqual(sizeof(obj), 0)
 
     def test_empty_element_array(self):
@@ -220,7 +220,7 @@ class ArrayTestCase(unittest.TestCase):
             _type_ = c_int
             _length_ = 0
 
-        obj = (EmptyArray * 2)()  # bpo37188: Floating point exception
+        obj = (EmptyArray * 2)()  # bpo37188: Floating-point exception
         self.assertEqual(sizeof(obj), 0)
 
     def test_bpo36504_signed_int_overflow(self):

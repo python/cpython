@@ -856,6 +856,20 @@ object::
     3
     >>> p.assert_called_once_with()
 
+.. caution::
+
+    If an :exc:`AttributeError` is raised by :class:`PropertyMock`,
+    it will be interpreted as a missing descriptor and
+    :meth:`~object.__getattr__` will be called on the parent mock::
+
+        >>> m = MagicMock()
+        >>> no_attribute = PropertyMock(side_effect=AttributeError)
+        >>> type(m).my_property = no_attribute
+        >>> m.my_property
+        <MagicMock name='mock.my_property' id='140165240345424'>
+
+    See :meth:`~object.__getattr__` for details.
+
 
 .. class:: AsyncMock(spec=None, side_effect=None, return_value=DEFAULT, wraps=None, name=None, spec_set=None, unsafe=False, **kwargs)
 
@@ -2535,40 +2549,16 @@ called incorrectly.
 
 Before I explain how auto-speccing works, here's why it is needed.
 
-:class:`Mock` is a very powerful and flexible object, but it suffers from two flaws
-when used to mock out objects from a system under test. One of these flaws is
-specific to the :class:`Mock` api and the other is a more general problem with using
-mock objects.
+:class:`Mock` is a very powerful and flexible object, but it suffers from a flaw which
+is general to mocking. If you refactor some of your code, rename members and so on, any
+tests for code that is still using the *old api* but uses mocks instead of the real
+objects will still pass. This means your tests can all pass even though your code is
+broken.
 
-First the problem specific to :class:`Mock`. :class:`Mock` has two assert methods that are
-extremely handy: :meth:`~Mock.assert_called_with` and
-:meth:`~Mock.assert_called_once_with`.
+.. versionchanged:: 3.5
 
-    >>> mock = Mock(name='Thing', return_value=None)
-    >>> mock(1, 2, 3)
-    >>> mock.assert_called_once_with(1, 2, 3)
-    >>> mock(1, 2, 3)
-    >>> mock.assert_called_once_with(1, 2, 3)
-    Traceback (most recent call last):
-     ...
-    AssertionError: Expected 'mock' to be called once. Called 2 times.
-
-Because mocks auto-create attributes on demand, and allow you to call them
-with arbitrary arguments, if you misspell one of these assert methods then
-your assertion is gone:
-
-.. code-block:: pycon
-
-    >>> mock = Mock(name='Thing', return_value=None)
-    >>> mock(1, 2, 3)
-    >>> mock.assret_called_once_with(4, 5, 6)  # Intentional typo!
-
-Your tests can pass silently and incorrectly because of the typo.
-
-The second issue is more general to mocking. If you refactor some of your
-code, rename members and so on, any tests for code that is still using the
-*old api* but uses mocks instead of the real objects will still pass. This
-means your tests can all pass even though your code is broken.
+    Before 3.5, tests with a typo in the word assert would silently pass when they should
+    raise an error. You can still achieve this behavior by passing ``unsafe=True`` to Mock.
 
 Note that this is another reason why you need integration tests as well as
 unit tests. Testing everything in isolation is all fine and dandy, but if you

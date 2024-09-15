@@ -9,7 +9,7 @@
 --------------
 
 This module defines an object type which can compactly represent an array of
-basic values: characters, integers, floating point numbers.  Arrays are sequence
+basic values: characters, integers, floating-point numbers.  Arrays are sequence
 types and behave very much like lists, except that the type of objects stored in
 them is constrained.  The type is specified at object creation time by using a
 :dfn:`type code`, which is a single character.  The following type codes are
@@ -253,7 +253,7 @@ The string representation is guaranteed to be able to be converted back to an
 array with the same type and value using :func:`eval`, so long as the
 :class:`~array.array` class has been imported using ``from array import array``.
 Variables ``inf`` and ``nan`` must also be defined if it contains
-corresponding floating point values.
+corresponding floating-point values.
 Examples::
 
    array('l')

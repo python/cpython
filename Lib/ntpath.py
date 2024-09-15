@@ -521,7 +521,7 @@ def expandvars(path):
 # Previously, this function also truncated pathnames to 8+3 format,
 # but as this module is called "ntpath", that's obviously wrong!
 try:
-    from nt import _path_normpath
+    from nt import _path_normpath as normpath
 
 except ImportError:
     def normpath(path):
@@ -559,14 +559,6 @@ except ImportError:
         if not prefix and not comps:
             comps.append(curdir)
         return prefix + sep.join(comps)
-
-else:
-    def normpath(path):
-        """Normalize path, eliminating double slashes, etc."""
-        path = os.fspath(path)
-        if isinstance(path, bytes):
-            return os.fsencode(_path_normpath(os.fsdecode(path))) or b"."
-        return _path_normpath(path) or "."
 
 
 def _abspath_fallback(path):

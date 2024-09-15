@@ -503,11 +503,10 @@ must be expressed with escapes.
    single: r"; raw string literal
 
 Both string and bytes literals may optionally be prefixed with a letter ``'r'``
-or ``'R'``; such strings are called :dfn:`raw strings` and treat backslashes as
-literal characters.  As a result, in string literals, ``'\U'`` and ``'\u'``
-escapes in raw strings are not treated specially. Given that Python 2.x's raw
-unicode literals behave differently than Python 3.x's the ``'ur'`` syntax
-is not supported.
+or ``'R'``; such constructs are called :dfn:`raw string literals`
+and :dfn:`raw bytes literals` respectively and treat backslashes as
+literal characters.  As a result, in raw string literals, ``'\U'`` and ``'\u'``
+escapes are not treated specially.
 
 .. versionadded:: 3.3
    The ``'rb'`` prefix of raw bytes literals has been added as a synonym
@@ -879,10 +878,10 @@ Numeric literals
 ----------------
 
 .. index:: number, numeric literal, integer literal
-   floating point literal, hexadecimal literal
+   floating-point literal, hexadecimal literal
    octal literal, binary literal, decimal literal, imaginary literal, complex literal
 
-There are three types of numeric literals: integers, floating point numbers, and
+There are three types of numeric literals: integers, floating-point numbers, and
 imaginary numbers.  There are no complex literals (complex numbers can be formed
 by adding a real number and an imaginary number).
 
@@ -943,10 +942,10 @@ Some examples of integer literals::
    single: _ (underscore); in numeric literal
 .. _floating:
 
-Floating point literals
+Floating-point literals
 -----------------------
 
-Floating point literals are described by the following lexical definitions:
+Floating-point literals are described by the following lexical definitions:
 
 .. productionlist:: python-grammar
    floatnumber: `pointfloat` | `exponentfloat`
@@ -958,10 +957,10 @@ Floating point literals are described by the following lexical definitions:
 
 Note that the integer and exponent parts are always interpreted using radix 10.
 For example, ``077e010`` is legal, and denotes the same number as ``77e10``. The
-allowed range of floating point literals is implementation-dependent.  As in
+allowed range of floating-point literals is implementation-dependent.  As in
 integer literals, underscores are supported for digit grouping.
 
-Some examples of floating point literals::
+Some examples of floating-point literals::
 
    3.14    10.    .001    1e100    3.14e-10    0e0    3.14_15_93
 
@@ -982,9 +981,9 @@ Imaginary literals are described by the following lexical definitions:
    imagnumber: (`floatnumber` | `digitpart`) ("j" | "J")
 
 An imaginary literal yields a complex number with a real part of 0.0.  Complex
-numbers are represented as a pair of floating point numbers and have the same
+numbers are represented as a pair of floating-point numbers and have the same
 restrictions on their range.  To create a complex number with a nonzero real
-part, add a floating point number to it, e.g., ``(3+4j)``.  Some examples of
+part, add a floating-point number to it, e.g., ``(3+4j)``.  Some examples of
 imaginary literals::
 
    3.14j   10.j    10j     .001j   1e100j   3.14e-10j   3.14_15_93j
@@ -1019,9 +1018,9 @@ The following tokens serve as delimiters in the grammar:
 .. code-block:: none
 
    (       )       [       ]       {       }
-   ,       :       .       ;       @       =       ->
-   +=      -=      *=      /=      //=     %=      @=
-   &=      |=      ^=      >>=     <<=     **=
+   ,       :       !       .       ;       @       =
+   ->      +=      -=      *=      /=      //=     %=
+   @=      &=      |=      ^=      >>=     <<=     **=
 
 The period can also occur in floating-point and imaginary literals.  A sequence
 of three periods has a special meaning as an ellipsis literal. The second half
