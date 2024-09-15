@@ -845,11 +845,13 @@
         }
 
         case _LOAD_GLOBAL: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsLocalsPlusSlot *res;
             _Py_UopsLocalsPlusSlot null = (_Py_UopsLocalsPlusSlot){NULL, 0};
-            res = sym_new_not_null(ctx);
+            res = &stack_pointer[0];
+            for (int _i = 1; --_i >= 0;) {
+                res[_i] = sym_new_not_null(ctx);
+            }
             null = sym_new_null(ctx);
-            stack_pointer[0] = res;
             if (oparg & 1) stack_pointer[1] = null;
             stack_pointer += 1 + (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
