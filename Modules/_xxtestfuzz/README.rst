@@ -23,7 +23,7 @@ Add the test name on a new line in ``fuzz_tests.txt``.
 
 In ``fuzzer.c``, add a function to be run::
 
-    int $fuzz_test_name (const char* data, size_t size) {
+    static int $fuzz_test_name(const char* data, size_t size) {
         ...
         return 0;
     }
