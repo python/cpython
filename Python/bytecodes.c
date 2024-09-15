@@ -1469,8 +1469,8 @@ dummy_func(
                     && PyDict_CheckExact(BUILTINS()))
                 {
                     v_o = _PyDict_LoadGlobal((PyDictObject *)GLOBALS(),
-                                            (PyDictObject *)BUILTINS(),
-                                            name);
+                                             (PyDictObject *)BUILTINS(),
+                                             name);
                     if (v_o == NULL) {
                         if (!_PyErr_Occurred(tstate)) {
                             /* _PyDict_LoadGlobal() returns NULL without raising
@@ -1526,12 +1526,12 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_LOAD_GLOBAL, ( -- res, null if (oparg & 1))) {
+        // res[1] because we need a pointer to res to pass it to _PyEval_LoadGlobalStackRef
+        op(_LOAD_GLOBAL, ( -- res[1], null if (oparg & 1))) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-            PyObject *res_o = _PyEval_LoadGlobal(GLOBALS(), BUILTINS(), name);
-            ERROR_IF(res_o == NULL, error);
+            _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, res);
+            ERROR_IF(PyStackRef_IsNull(*res), error);
             null = PyStackRef_NULL;
-            res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
         macro(LOAD_GLOBAL) =
