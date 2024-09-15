@@ -33,6 +33,7 @@ Objects/frameobject.c         @markshannon
 Objects/call.c                @markshannon
 Python/ceval*.c               @markshannon
 Python/ceval*.h               @markshannon
+Python/codegen.c              @markshannon @iritkatriel
 Python/compile.c              @markshannon @iritkatriel
 Python/assemble.c             @markshannon @iritkatriel
 Python/flowgraph.c            @markshannon @iritkatriel
