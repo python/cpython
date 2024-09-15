@@ -323,9 +323,10 @@ class NamespaceSubpackageSameName(NamespacePackageTest):
 
     def test_namespace_subpackage_shares_name_with_directory(self):
         submodule_path = 'project4.foo'
-        msg = 'project4 must be imported before finding project4.foo.'
-        with self.assertRaisesRegex(ModuleNotFoundError, msg):
+        with self.assertRaises(ModuleNotFoundError) as cm:
             importlib.machinery.PathFinder.find_spec(submodule_path)
+
+        self.assertEqual(cm.exception.name, 'project4')
 
 
 class ReloadTests(NamespacePackageTest):
