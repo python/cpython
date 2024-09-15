@@ -6,7 +6,7 @@
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
     <!--
     Use the latest available version of Visual Studio to build. To override
-    this and build with an earlier version, pass "/p:PlatformToolset=v100"
+    this and build with an earlier version, pass "/p:PlatformToolset=v140"
     (for example) when building.
 
     We set BasePlatformToolset for ICC's benefit, it's otherwise ignored.
