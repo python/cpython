@@ -1459,7 +1459,7 @@ These can be used as types in annotations. They all support subscription using
         ('very', 'important', 'metadata')
 
    * At runtime, if you want to retrieve the original
-     type wrapped by ``Annotated``, use :attr:`!__origin__` attribute:
+     type wrapped by ``Annotated``, use the :attr:`!__origin__` attribute:
 
      .. doctest::
 
@@ -1472,7 +1472,8 @@ These can be used as types in annotations. They all support subscription using
 
      .. doctest::
 
-        >>> assert get_origin(Password) is Annotated
+        >>> get_origin(Password)
+        Annotated
 
    .. seealso::
 
