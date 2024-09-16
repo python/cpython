@@ -46,31 +46,9 @@ class _ctypes.CField "PyObject *" "PyObject"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=602817ea3ffc709c]*/
 
 static inline
-Py_ssize_t round_down(Py_ssize_t numToRound, Py_ssize_t multiple)
-{
-    assert(numToRound >= 0);
-    assert(multiple >= 0);
-    if (multiple == 0)
-        return numToRound;
-    return (numToRound / multiple) * multiple;
-}
-
-static inline
-Py_ssize_t round_up(Py_ssize_t numToRound, Py_ssize_t multiple)
-{
-    assert(numToRound >= 0);
-    assert(multiple >= 0);
-    if (multiple == 0)
-        return numToRound;
-    return ((numToRound + multiple - 1) / multiple) * multiple;
-}
-
-static inline
 Py_ssize_t NUM_BITS(Py_ssize_t bitsize);
 static inline
 Py_ssize_t LOW_BIT(Py_ssize_t offset);
-static inline
-Py_ssize_t BUILD_SIZE(Py_ssize_t bitsize, Py_ssize_t offset);
 
 
 /*[clinic input]
@@ -403,20 +381,6 @@ Py_ssize_t LOW_BIT(Py_ssize_t offset) {
 static inline
 Py_ssize_t NUM_BITS(Py_ssize_t bitsize) {
     return bitsize >> 16;
-}
-
-static inline
-Py_ssize_t BUILD_SIZE(Py_ssize_t bitsize, Py_ssize_t offset) {
-    assert(0 <= offset);
-    assert(offset <= 0xFFFF);
-    // We don't support zero length bitfields.
-    // And GET_BITFIELD uses NUM_BITS(size)==0,
-    // to figure out whether we are handling a bitfield.
-    assert(0 < bitsize);
-    Py_ssize_t result = (bitsize << 16) + offset;
-    assert(bitsize == NUM_BITS(result));
-    assert(offset == LOW_BIT(result));
-    return result;
 }
 
 /* Doesn't work if NUM_BITS(size) == 0, but it never happens in SET() call. */
