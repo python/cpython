@@ -71,25 +71,26 @@ The command, if run with ``-h``, will show the available options::
    Once an environment has been created, you may wish to activate it, e.g. by
    sourcing an activate script in its bin directory.
 
-.. versionchanged:: 3.13
 
-   ``--without-scm-ignore-files`` was added along with creating an ignore file
-   for Git by default.
+.. versionchanged:: 3.4
+   Installs pip by default, added the ``--without-pip``  and ``--copies``
+   options.
+
+.. versionchanged:: 3.4
+   In earlier versions, if the target directory already existed, an error was
+   raised, unless the ``--clear`` or ``--upgrade`` option was provided.
+
+.. versionchanged:: 3.9
+   Add ``--upgrade-deps`` option to upgrade pip + setuptools to the latest on PyPI.
 
 .. versionchanged:: 3.12
 
    ``setuptools`` is no longer a core venv dependency.
 
-.. versionchanged:: 3.9
-   Add ``--upgrade-deps`` option to upgrade pip + setuptools to the latest on PyPI
+.. versionchanged:: 3.13
 
-.. versionchanged:: 3.4
-   Installs pip by default, added the ``--without-pip``  and ``--copies``
-   options
-
-.. versionchanged:: 3.4
-   In earlier versions, if the target directory already existed, an error was
-   raised, unless the ``--clear`` or ``--upgrade`` option was provided.
+   ``--without-scm-ignore-files`` was added along with creating an ignore file
+   for Git by default.
 
 .. note::
    While symlinks are supported on Windows, they are not recommended. Of
