@@ -164,10 +164,10 @@ typedef struct PyLongLayout {
 PyAPI_FUNC(const PyLongLayout*) PyLong_GetNativeLayout(void);
 
 typedef struct PyLong_DigitArray {
-    PyObject *obj;
     int negative;
     Py_ssize_t ndigits;
     const void *digits;
+    Py_uintptr_t reserved;
 } PyLong_DigitArray;
 
 PyAPI_FUNC(int) PyLong_AsDigitArray(

@@ -673,10 +673,6 @@ Export API
 
    A Python :class:`int` object exported as an array of digits.
 
-   .. c:member:: PyObject *obj
-
-      Strong reference to the Python :class:`int` object.
-
    .. c:member:: int negative
 
       1 if the number is negative, 0 otherwise.
@@ -688,6 +684,10 @@ Export API
    .. c:member:: const void *digits
 
       Read-only array of unsigned digits.
+
+   .. c:member:: Py_uintptr_t reserved
+
+      Member used internally, must not be used for other purpose.
 
 
 .. c:function:: int PyLong_AsDigitArray(PyObject *obj, PyLong_DigitArray *array)

@@ -6799,13 +6799,13 @@ PyLong_AsDigitArray(PyObject *obj, PyLong_DigitArray *array)
     }
     PyLongObject *self = (PyLongObject*)obj;
 
-    array->obj = Py_NewRef(obj);
     array->negative = _PyLong_IsNegative(self);
     array->ndigits = _PyLong_DigitCount(self);
     if (array->ndigits == 0) {
         array->ndigits = 1;
     }
     array->digits = self->long_value.ob_digit;
+    array->reserved = (Py_uintptr_t)Py_NewRef(obj);
     return 0;
 }
 
@@ -6813,10 +6813,9 @@ PyLong_AsDigitArray(PyObject *obj, PyLong_DigitArray *array)
 void
 PyLong_FreeDigitArray(PyLong_DigitArray *array)
 {
-    Py_CLEAR(array->obj);
-    array->negative = 0;
-    array->ndigits = 0;
-    array->digits = NULL;
+    PyObject *obj = (PyObject*)array->reserved;
+    memset(array, 0, sizeof(*array));
+    Py_DECREF(obj);
 }
 
 

@@ -199,7 +199,13 @@ pylong_asdigitarray(PyObject *module, PyObject *obj)
     }
 
     PyObject *res = Py_BuildValue("(iN)", array.negative, digits);
+
     PyLong_FreeDigitArray(&array);
+    assert(array.negative == 0);
+    assert(array.ndigits == 0);
+    assert(array.digits == NULL);
+    assert(array.reserved == 0);
+
     return res;
 
 error:
