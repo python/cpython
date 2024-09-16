@@ -6814,7 +6814,7 @@ void
 PyLong_FreeDigitArray(PyLong_DigitArray *array)
 {
     PyObject *obj = (PyObject*)array->_reserved;
-    memset(array, 0, sizeof(*array));
+    array->_reserved = 0;
     Py_DECREF(obj);
 }
 
