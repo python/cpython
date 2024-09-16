@@ -1459,14 +1459,20 @@ These can be used as types in annotations. They all support subscription using
         ('very', 'important', 'metadata')
 
    * At runtime, if you want to retrive the original
-     type wrapped by ``Annotated``, use :func:`get_origin`::
+     type wrapped by ``Annotated``, use :attr:`!__origin__` attribute:
 
      .. doctest::
 
         >>> from typing import Annotated, get_origin
         >>> Password = Annotated[str, "secret"]
-        >>> get_origin(Password)
+        >>> Password.__origin__
         <class 'str'>
+
+     Note that using :func:`get_origin` will return ``Annotated`` itself:
+
+     .. doctest::
+
+        >>> assert get_origin(Password) is Annotated
 
    .. seealso::
 
@@ -3308,7 +3314,7 @@ Introspection helpers
       assert get_origin(str) is None
       assert get_origin(Dict[str, int]) is dict
       assert get_origin(Union[int, str]) is Union
-      assert get_origin(Annotated[str, "metadata"]) is str
+      assert get_origin(Annotated[str, "metadata"]) is Annotated
       P = ParamSpec('P')
       assert get_origin(P.args) is P
       assert get_origin(P.kwargs) is P
