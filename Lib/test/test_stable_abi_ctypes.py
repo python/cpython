@@ -898,6 +898,7 @@ SYMBOL_NAMES = (
     "Py_MakePendingCalls",
     "Py_NewInterpreter",
     "Py_NewRef",
+    "Py_REFCNT",
     "Py_ReprEnter",
     "Py_ReprLeave",
     "Py_SetPath",
