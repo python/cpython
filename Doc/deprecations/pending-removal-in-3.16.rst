@@ -3,7 +3,7 @@ Pending Removal in Python 3.16
 
 * :mod:`builtins`:
 
-  * Bitwise inversion on Boolean types, ``~True`` or ``~False``
+  * Bitwise inversion on boolean types, ``~True`` or ``~False``
     has been deprecated since Python 3.12,
     as it produces surprising and unintuitive results (``-2`` and ``-1``).
     Use ``not x`` instead for the logical negation of a Boolean.
@@ -28,7 +28,7 @@ Pending Removal in Python 3.16
 * :mod:`symtable`:
 
   * The :meth:`Class.get_methods <symtable.Class.get_methods>` method
-    has been deprecated since Python 3.13.
+    has been deprecated since Python 3.14.
 
 * :mod:`sys`:
 

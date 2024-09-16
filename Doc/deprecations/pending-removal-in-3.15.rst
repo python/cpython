@@ -14,7 +14,7 @@ Pending Removal in Python 3.15
     *Anything* is better than CGI to interface
     a web server with a request handler.
 
-  * The the :option:`!--cgi` flag to the :program:`python -m http.server`
+  * The :option:`!--cgi` flag to the :program:`python -m http.server`
     command-line interface has been deprecated since Python 3.13.
 
 * :class:`locale`:
@@ -55,7 +55,7 @@ Pending Removal in Python 3.15
     has been deprecated since Python 3.13.
     Use the class-based syntax or the functional syntax instead.
 
-  * The :func:`typing.no_type_check_decorator` decorator function,
+  * The :func:`typing.no_type_check_decorator` decorator function
     has been deprecated since Python 3.13.
     After eight years in the :mod:`typing` module,
     it has yet to be supported by any major type checker.
