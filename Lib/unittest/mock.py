@@ -648,18 +648,9 @@ class NonCallableMock(Base):
         if side_effect:
             self._mock_side_effect = None
 
-        for key, child in self._mock_children.items():
+        for child in self._mock_children.values():
             if isinstance(child, _SpecState) or child is _deleted:
                 continue
-            if (
-                return_value
-                and issubclass(type(child), MagicMock)
-                and _is_magic(key)
-            ):
-                # Don't reset return values for magic methods,
-                # otherwise `m.__str__` will start
-                # to return `MagicMock` instances, instead of `str` instances.
-                return_value = False
             child.reset_mock(visited, return_value=return_value, side_effect=side_effect)
 
         ret = self._mock_return_value
@@ -2229,6 +2220,17 @@ class MagicMock(MagicMixin, Mock):
         self._mock_add_spec(spec, spec_set)
         self._mock_set_magics()
 
+    def reset_mock(self, /, *args, return_value=False, **kwargs):
+        if (
+            return_value
+            and self._mock_name
+            and _is_magic(self._mock_name)
+        ):
+            # Don't reset return values for magic methods,
+            # otherwise `m.__str__` will start
+            # to return `MagicMock` instances, instead of `str` instances.
+            return_value = False
+        super().reset_mock(*args, return_value=return_value, **kwargs)
 
 
 class MagicProxy(Base):
