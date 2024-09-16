@@ -117,7 +117,7 @@ should be runnable without activating it.
 
 In order to achieve this, scripts installed into virtual environments have
 a "shebang" line which points to the environment's Python interpreter,
-i.e. :samp:`#!/{<path-to-venv>}/bin/python`.
+that is :samp:`#!/{<path-to-venv>}/bin/python`.
 This means that the script will run with that interpreter regardless of the
 value of :envvar:`PATH`. On Windows, "shebang" line processing is supported if
 you have the :ref:`launcher` installed. Thus, double-clicking an installed
