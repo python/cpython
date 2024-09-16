@@ -134,14 +134,16 @@ def write_uop(
                     out.emit(f"{type}{cache.name} = ({cast})this_instr->operand;\n")
         if override:
             emitter = OptimizerEmitter(out)
+            # No reference management needed.
+            for var in storage.inputs:
+                var.defined = False
             emitter.emit_tokens(override, storage, None)
         else:
             emit_default(out, uop, storage)
-        storage.push_outputs()
         out.start_line()
         stack.flush(out, cast_type="_Py_UopsSymbol *", extract_bits=True)
     except StackError as ex:
-        raise analysis_error(ex.args[0], prototype.body[0])
+        raise analysis_error(ex.args[0], prototype.body[0]) # from None
 
 
 SKIPS = ("_EXTENDED_ARG",)

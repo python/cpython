@@ -14,7 +14,7 @@ from lexer import Token
 from stack import Stack, Local, Storage, StackError
 
 # Set this to true for voluminous output showing state of stack and locals
-PRINT_STACKS = 1 #False
+PRINT_STACKS = False
 
 class TokenIterator:
 
@@ -275,13 +275,14 @@ class Emitter:
         name_tkn = next(tkn_iter)
         name = name_tkn.text
         next(tkn_iter)
-        next(tkn_iter)
+        self.out.emit("(void)")
+        self.out.emit(name_tkn)
         for var in storage.inputs:
             if var.name == name:
                 var.defined = False
                 break
         else:
-            raise analysis_error(f"'{name} is not an input-only variable", name_tkn)
+            raise analysis_error(f"'{name} is not a live input-only variable", name_tkn)
         return True
 
     def stackref_close(
@@ -292,6 +293,7 @@ class Emitter:
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
+        self.out.emit(tkn)
         tkn = next(tkn_iter)
         assert (tkn.kind == "LPAREN")
         self.out.emit(tkn)
@@ -322,7 +324,8 @@ class Emitter:
         next(tkn_iter)
         next(tkn_iter)
         next(tkn_iter)
-        storage.stack.flush(self.out)
+        storage.clear_inputs(" when syncing stack")
+        storage.flush(self.out)
         self._print_storage(storage)
         return True
 
@@ -420,7 +423,8 @@ class Emitter:
                     # Discard the if storage
                     reachable = True
         except StackError as ex:
-            raise analysis_error(ex.args[0], rbrace) from None
+            self._print_storage(if_storage)
+            raise analysis_error(ex.args[0], rbrace) # from None
         return reachable, rbrace, storage
 
     def _emit_block(
@@ -505,10 +509,13 @@ class Emitter:
     ) -> None:
         tkn_iter = TokenIterator(uop.body)
         self.out.start_line()
-        _, _, storage = self._emit_block(tkn_iter, uop, storage, inst, False)
-        for output in storage.outputs:
+        _, rbrace, storage = self._emit_block(tkn_iter, uop, storage, inst, False)
+        try:
             storage.push_outputs()
-        self._print_storage(storage)
+            self.emit("/* Pushed outputs */")
+            self._print_storage(storage)
+        except StackError as ex:
+            raise analysis_error(ex.args[0], rbrace)
         return storage.stack
 
     def emit(self, txt: str | Token) -> None:

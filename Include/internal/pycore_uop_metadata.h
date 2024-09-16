@@ -239,6 +239,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] = HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG,
     [_CALL_METHOD_DESCRIPTOR_NOARGS] = HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_CALL_METHOD_DESCRIPTOR_FAST] = HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG,
+    [_MAYBE_EXPAND_METHOD_KW] = HAS_ARG_FLAG,
     [_PY_FRAME_KW] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_CHECK_FUNCTION_VERSION_KW] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
     [_CHECK_METHOD_VERSION_KW] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
@@ -487,6 +488,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_MATCH_MAPPING] = "_MATCH_MAPPING",
     [_MATCH_SEQUENCE] = "_MATCH_SEQUENCE",
     [_MAYBE_EXPAND_METHOD] = "_MAYBE_EXPAND_METHOD",
+    [_MAYBE_EXPAND_METHOD_KW] = "_MAYBE_EXPAND_METHOD_KW",
     [_NOP] = "_NOP",
     [_POP_EXCEPT] = "_POP_EXCEPT",
     [_POP_TOP] = "_POP_TOP",
@@ -992,6 +994,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 2 + oparg;
         case _CALL_METHOD_DESCRIPTOR_FAST:
             return 2 + oparg;
+        case _MAYBE_EXPAND_METHOD_KW:
+            return 3 + oparg;
         case _PY_FRAME_KW:
             return 3 + oparg;
         case _CHECK_FUNCTION_VERSION_KW:

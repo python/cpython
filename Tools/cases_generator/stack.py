@@ -47,7 +47,7 @@ class Local:
     defined: bool
 
     def __repr__(self):
-        return f"Local('{self.item.name}', in_memory={self.in_memory}, defined={self.defined})"
+        return f"Local('{self.item.name}', mem={self.in_memory}, defined={self.defined}, array={self.is_array()})"
 
     @staticmethod
     def unused(defn: StackItem) -> "Local":
@@ -64,9 +64,8 @@ class Local:
         return Local(var, prev.cached, prev.in_memory, True)
 
     @staticmethod
-    def memory(defn: StackItem) -> "Local":
-        array = defn.is_array()
-        return Local(defn, True, array, False)
+    def from_memory(defn: StackItem) -> "Local":
+        return Local(defn, True, True, True)
 
     def copy(self) -> "Local":
         return Local(
@@ -242,7 +241,7 @@ class Stack:
             if var.name in UNUSED:
                 if popped.name not in UNUSED and popped.name in self.defined:
                     raise StackError(
-                        f"Value is declared unused, but is already cached by prior operation"
+                        f"Value is declared unused, but is already cached by prior operation as '{popped.name}'"
                     )
                 return "", popped
             if not var.used:
@@ -277,7 +276,7 @@ class Stack:
                 assign = f"if ({var.condition}) {{ {assign} }}\n"
         else:
             assign = f"{assign}\n"
-        return assign, Local.memory(var)
+        return assign, Local.from_memory(var)
 
     def push(self, var: Local) -> None:
         assert(var not in self.variables)
@@ -381,7 +380,7 @@ class Stack:
         except ValueError:
             raise StackError("Cannot align stacks: cannot adjust stack pointer")
 
-    def merge(self, other: "Stack") -> None:
+    def merge(self, other: "Stack", out: CWriter) -> None:
         if len(self.variables) != len(other.variables):
             raise StackError("Cannot merge stacks: differing variables")
         for self_var, other_var in zip(self.variables, other.variables):
@@ -389,6 +388,7 @@ class Stack:
                 raise StackError(f"Mismatched variables on stack: {self_var.name} and {other_var.name}")
             self_var.defined = self_var.defined and other_var.defined
             self_var.in_memory = self_var.in_memory and other_var.in_memory
+        self.align(other, out)
 
 
 def get_stack_effect(inst: Instruction | PseudoInstruction) -> Stack:
@@ -427,28 +427,53 @@ class Storage:
     spilled: int = 0
 
     @staticmethod
-    def doesnt_need_defining(var: Local):
+    def needs_defining(var: Local):
         return (
-            var.defined or
-            var.is_array() or
-            var.name == "unused"
+            not var.defined and
+            not var.is_array() and
+            var.name != "unused"
         )
 
-    def _push_defined_locals(self) -> None:
+    @staticmethod
+    def is_live(var: Local):
+        return (
+            var.defined and
+            not var.is_array() and
+            var.name != "unused"
+        )
+
+    def clear_inputs(self, reason:str) -> None:
+        while self.inputs:
+            tos = self.inputs.pop()
+            if self.is_live(tos):
+                raise StackError(
+                    f"Input '{tos.name}' is still live {reason}"
+                )
+            self.stack.pop(tos.item)
+
+    def clear_dead_inputs(self) -> None:
+        live = ""
+        while self.inputs:
+            tos = self.inputs[-1]
+            if self.is_live(tos):
+                live = tos.name
+                break
+            self.inputs.pop()
+            self.stack.pop(tos.item)
+        for var in self.inputs:
+            if not var.defined and not var.is_array() and var.name != "unused":
+                raise StackError(
+                    f"Input '{var.name}' is not live, but '{live}' is"
+                )
+
+    def _push_defined_outputs(self) -> None:
         defined_output = ""
         for output in self.outputs:
             if output.defined and not output.in_memory:
                 defined_output = output.name
         if not defined_output:
             return
-        while self.inputs:
-            tos = self.inputs.pop()
-            if tos.defined and not tos.is_array():
-                raise StackError(
-                    f"Input '{tos.name}' is not cleared "
-                    f"when output '{defined_output}' is defined"
-                )
-            self.stack.pop(tos.item)
+        self.clear_inputs(f"when output '{defined_output}' is defined")
         undefined = ""
         for out in self.outputs:
             if out.defined:
@@ -457,7 +482,7 @@ class Storage:
                     f"Expected '{undefined}' to be defined before '{out.name}'"
             else:
                 undefined = out.name
-        while self.outputs and self.doesnt_need_defining(self.outputs[0]):
+        while self.outputs and not self.needs_defining(self.outputs[0]):
             out = self.outputs.pop(0)
             self.stack.push(out)
 
@@ -468,7 +493,8 @@ class Storage:
         return False
 
     def flush(self, out: CWriter) -> None:
-        self._push_defined_locals()
+        self.clear_dead_inputs()
+        self._push_defined_outputs()
         self.stack.flush(out)
 
     def save(self, out: CWriter) -> None:
@@ -504,13 +530,10 @@ class Storage:
                 inputs.append(local)
         inputs.reverse()
         peeks.reverse()
-        code_list.append(stack.as_comment())
         for var in peeks:
             stack.push(var)
-        code_list.append(stack.as_comment())
         for var in inputs:
             stack.push(var)
-        code_list.append(stack.as_comment())
         outputs = [ Local.undefined(var) for var in uop.stack.outputs if not var.peek ]
         return code_list, Storage(stack, inputs, outputs, peeks)
 
@@ -519,8 +542,12 @@ class Storage:
         return [ l.copy() for l in arg ]
 
     def copy(self) -> "Storage":
+        new_stack = self.stack.copy()
+        variables = { var.name: var for var in new_stack.variables }
+        inputs = [ variables[var.name] for var in self.inputs]
+        assert [v.name for v in inputs] == [v.name for v in self.inputs], (inputs, self.inputs)
         return Storage(
-            self.stack.copy(), self.copy_list(self.inputs),
+            new_stack, inputs,
             self.copy_list(self.outputs), self.copy_list(self.peeks)
         )
 
@@ -550,25 +577,41 @@ class Storage:
     def merge(self, other: "Storage", out: CWriter) -> None:
         self.sanity_check()
         if len(self.inputs) != len(other.inputs):
-            raise StackError(f"Inputs clearing is not consistent")
+            self.clear_dead_inputs()
+            other.clear_dead_inputs()
+        if len(self.inputs) != len(other.inputs):
+            diff = self.inputs[-1] if len(self.inputs) > len(other.inputs) else other.inputs[-1]
+            raise StackError(f"Unmergeable inputs. Differing state of '{diff.name}'")
         for var, other_var in zip(self.inputs, other.inputs):
             if var.defined != other_var.defined:
                 raise StackError(f"'{var.name}' is cleared on some paths, but not all")
-        for var, other_var in zip(self.outputs, other.outputs):
-            if var.defined != other_var.defined:
-                raise StackError(f"'{var.name}' is set on some paths, but not all")
-        self.stack.merge(other.stack)
+        if len(self.outputs) != len(other.outputs):
+            self._push_defined_outputs()
+            other._push_defined_outputs()
+        if len(self.outputs) != len(other.outputs):
+            var = self.outputs[0] if len(self.outputs) > len(other.outputs) else other.outputs[0]
+            raise StackError(f"'{var.name}' is set on some paths, but not all")
+        self.stack.merge(other.stack, out)
         self.sanity_check()
 
     def push_outputs(self):
-        self._push_defined_locals()
+        if self.spilled:
+            raise StackError(f"Unbalanced stack spills")
+        self.clear_inputs("at the end of the micro-op")
+        if self.inputs:
+            raise StackError(f"Input variable '{self.inputs[-1].name}' is still live")
+        self._push_defined_outputs()
         if self.outputs:
-            raise StackError(f"'{self.outputs[0].name}' is not defined")
+            for out in self.outputs:
+                if self.needs_defining(out):
+                    raise StackError(f"Output variable '{self.outputs[0].name}' is not defined")
+                self.stack.push(out)
+            self.outputs = []
 
     def as_comment(self) -> str:
         stack_comment = self.stack.as_comment()
         next_line = "\n               "
-        inputs = ", ".join([var.name for var in self.inputs])
-        outputs = ", ".join([var.name for var in self.outputs])
+        inputs = ", ".join([str(var) for var in self.inputs])
+        outputs = ", ".join([str(var) for var in self.outputs])
         peeks = ", ".join([var.name for var in self.peeks])
         return f"{stack_comment[:-2]}{next_line}inputs: {inputs}{next_line}outputs: {outputs}{next_line}peeks: {peeks} */"

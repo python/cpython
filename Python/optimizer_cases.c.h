@@ -29,16 +29,13 @@
             // We guarantee this will error - just bail and don't optimize it.
             if (sym_is_null(value)) {
                 ctx->done = true;
-            }
-            stack_pointer[0] = value;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
+            }/* Pushed outputs */
             break;
         }
 
         case _LOAD_FAST: {
             _Py_UopsSymbol *value;
-            value = GETLOCAL(oparg);
+            value = GETLOCAL(oparg);/* Pushed outputs */
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -49,7 +46,7 @@
             _Py_UopsSymbol *value;
             value = GETLOCAL(oparg);
             _Py_UopsSymbol *temp = sym_new_null(ctx);
-            GETLOCAL(oparg) = temp;
+            GETLOCAL(oparg) = temp;/* Pushed outputs */
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -61,7 +58,7 @@
             PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
             int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
             REPLACE_OP(this_instr, opcode, 0, (uintptr_t)val);
-            value = sym_new_const(ctx, val);
+            value = sym_new_const(ctx, val);/* Pushed outputs */
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -71,21 +68,20 @@
         case _STORE_FAST: {
             _Py_UopsSymbol *value;
             value = stack_pointer[-1];
-            GETLOCAL(oparg) = value;
+            GETLOCAL(oparg) = value;/* Pushed outputs */
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _POP_TOP: {
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            value = stack_pointer[-1];
             break;
         }
 
         case _PUSH_NULL: {
             _Py_UopsSymbol *res;
-            res = sym_new_null(ctx);
+            res = sym_new_null(ctx);/* Pushed outputs */
             stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -93,25 +89,24 @@
         }
 
         case _END_SEND: {
-            _Py_UopsSymbol *value;
-            value = sym_new_not_null(ctx);
-            stack_pointer[-2] = value;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            _Py_UopsSymbol *val;
+            value = stack_pointer[-1];
+            receiver = stack_pointer[-2];
+            val = sym_new_not_null(ctx);
             break;
         }
 
         case _UNARY_NEGATIVE: {
             _Py_UopsSymbol *res;
+            value = stack_pointer[-1];
             res = sym_new_not_null(ctx);
-            stack_pointer[-1] = res;
             break;
         }
 
         case _UNARY_NOT: {
             _Py_UopsSymbol *res;
+            value = stack_pointer[-1];
             res = sym_new_not_null(ctx);
-            stack_pointer[-1] = res;
             break;
         }
 
@@ -122,8 +117,7 @@
             int opt = optimize_to_bool(this_instr, ctx, value, &res);
             if (!opt) {
                 res = sym_new_type(ctx, &PyBool_Type);
-            }
-            stack_pointer[-1] = res;
+            }/* Pushed outputs */
             break;
         }
 
@@ -135,8 +129,7 @@
             if (!opt) {
                 sym_set_type(value, &PyBool_Type);
                 res = value;
-            }
-            stack_pointer[-1] = res;
+            }/* Pushed outputs */
             break;
         }
 
@@ -148,8 +141,7 @@
             if (!opt) {
                 sym_set_type(value, &PyLong_Type);
                 res = sym_new_type(ctx, &PyBool_Type);
-            }
-            stack_pointer[-1] = res;
+            }/* Pushed outputs */
             break;
         }
 
@@ -161,8 +153,7 @@
             if (!opt) {
                 sym_set_type(value, &PyList_Type);
                 res = sym_new_type(ctx, &PyBool_Type);
-            }
-            stack_pointer[-1] = res;
+            }/* Pushed outputs */
             break;
         }
 
@@ -174,8 +165,7 @@
             if (!opt) {
                 sym_set_const(value, Py_None);
                 res = sym_new_const(ctx, Py_False);
-            }
-            stack_pointer[-1] = res;
+            }/* Pushed outputs */
             break;
         }
 
@@ -187,22 +177,21 @@
             if (!opt) {
                 res = sym_new_type(ctx, &PyBool_Type);
                 sym_set_type(value, &PyUnicode_Type);
-            }
-            stack_pointer[-1] = res;
+            }/* Pushed outputs */
             break;
         }
 
         case _REPLACE_WITH_TRUE: {
             _Py_UopsSymbol *res;
+            value = stack_pointer[-1];
             res = sym_new_not_null(ctx);
-            stack_pointer[-1] = res;
             break;
         }
 
         case _UNARY_INVERT: {
             _Py_UopsSymbol *res;
+            value = stack_pointer[-1];
             res = sym_new_not_null(ctx);
-            stack_pointer[-1] = res;
             break;
         }
 
@@ -225,15 +214,17 @@
                 }
             }
             sym_set_type(left, &PyLong_Type);
-            sym_set_type(right, &PyLong_Type);
+            sym_set_type(right, &PyLong_Type);/* Pushed outputs */
             break;
         }
 
         case _GUARD_NOS_INT: {
+            left = stack_pointer[-2];
             break;
         }
 
         case _GUARD_TOS_INT: {
+            value = stack_pointer[-1];
             break;
         }
 
@@ -260,7 +251,7 @@
             }
             else {
                 res = sym_new_type(ctx, &PyLong_Type);
-            }
+            }/* Pushed outputs */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -290,7 +281,7 @@
             }
             else {
                 res = sym_new_type(ctx, &PyLong_Type);
-            }
+            }/* Pushed outputs */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -320,7 +311,7 @@
             }
             else {
                 res = sym_new_type(ctx, &PyLong_Type);
-            }
+            }/* Pushed outputs */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -346,15 +337,17 @@
                 }
             }
             sym_set_type(left, &PyFloat_Type);
-            sym_set_type(right, &PyFloat_Type);
+            sym_set_type(right, &PyFloat_Type);/* Pushed outputs */
             break;
         }
 
         case _GUARD_NOS_FLOAT: {
+            left = stack_pointer[-2];
             break;
         }
 
         case _GUARD_TOS_FLOAT: {
+            value = stack_pointer[-1];
             break;
         }
 
@@ -382,7 +375,7 @@
             }
             else {
                 res = sym_new_type(ctx, &PyFloat_Type);
-            }
+            }/* Pushed outputs */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -413,7 +406,7 @@
             }
             else {
                 res = sym_new_type(ctx, &PyFloat_Type);
-            }
+            }/* Pushed outputs */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -444,7 +437,7 @@
             }
             else {
                 res = sym_new_type(ctx, &PyFloat_Type);
-            }
+            }/* Pushed outputs */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -461,7 +454,7 @@
                 REPLACE_OP(this_instr, _NOP, 0 ,0);
             }
             sym_set_type(left, &PyUnicode_Type);
-            sym_set_type(left, &PyUnicode_Type);
+            sym_set_type(left, &PyUnicode_Type);/* Pushed outputs */
             break;
         }
 
@@ -482,7 +475,7 @@
             }
             else {
                 res = sym_new_type(ctx, &PyUnicode_Type);
-            }
+            }/* Pushed outputs */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -490,72 +483,70 @@
         }
 
         case _BINARY_OP_INPLACE_ADD_UNICODE: {
-            stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
             break;
         }
 
         case _BINARY_SUBSCR: {
             _Py_UopsSymbol *res;
+            sub = stack_pointer[-1];
+            container = stack_pointer[-2];
             res = sym_new_not_null(ctx);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _BINARY_SLICE: {
             _Py_UopsSymbol *res;
+            stop = stack_pointer[-1];
+            start = stack_pointer[-2];
+            container = stack_pointer[-3];
             res = sym_new_not_null(ctx);
-            stack_pointer[-3] = res;
-            stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _STORE_SLICE: {
-            stack_pointer += -4;
-            assert(WITHIN_STACK_BOUNDS());
+            stop = stack_pointer[-1];
+            start = stack_pointer[-2];
+            container = stack_pointer[-3];
+            v = stack_pointer[-4];
             break;
         }
 
         case _BINARY_SUBSCR_LIST_INT: {
             _Py_UopsSymbol *res;
+            sub_st = stack_pointer[-1];
+            list_st = stack_pointer[-2];
             res = sym_new_not_null(ctx);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _BINARY_SUBSCR_STR_INT: {
             _Py_UopsSymbol *res;
+            sub_st = stack_pointer[-1];
+            str_st = stack_pointer[-2];
             res = sym_new_not_null(ctx);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _BINARY_SUBSCR_TUPLE_INT: {
             _Py_UopsSymbol *res;
+            sub_st = stack_pointer[-1];
+            tuple_st = stack_pointer[-2];
             res = sym_new_not_null(ctx);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _BINARY_SUBSCR_DICT: {
             _Py_UopsSymbol *res;
+            sub_st = stack_pointer[-1];
+            dict_st = stack_pointer[-2];
             res = sym_new_not_null(ctx);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _BINARY_SUBSCR_CHECK_FUNC: {
+            container = stack_pointer[-2];
             break;
         }
 
@@ -568,7 +559,7 @@
             (void)container;
             (void)sub;
             new_frame = NULL;
-            ctx->done = true;
+            ctx->done = true;/* Pushed outputs */
             stack_pointer[-2] = (_Py_UopsSymbol *)new_frame;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -576,54 +567,56 @@
         }
 
         case _LIST_APPEND: {
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            v = stack_pointer[-1];
+            list = stack_pointer[-2 - (oparg-1)];
             break;
         }
 
         case _SET_ADD: {
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            v = stack_pointer[-1];
+            set = stack_pointer[-2 - (oparg-1)];
             break;
         }
 
         case _STORE_SUBSCR: {
-            stack_pointer += -3;
-            assert(WITHIN_STACK_BOUNDS());
+            sub = stack_pointer[-1];
+            container = stack_pointer[-2];
+            v = stack_pointer[-3];
             break;
         }
 
         case _STORE_SUBSCR_LIST_INT: {
-            stack_pointer += -3;
-            assert(WITHIN_STACK_BOUNDS());
+            sub_st = stack_pointer[-1];
+            list_st = stack_pointer[-2];
+            value = stack_pointer[-3];
             break;
         }
 
         case _STORE_SUBSCR_DICT: {
-            stack_pointer += -3;
-            assert(WITHIN_STACK_BOUNDS());
+            sub = stack_pointer[-1];
+            dict_st = stack_pointer[-2];
+            value = stack_pointer[-3];
             break;
         }
 
         case _DELETE_SUBSCR: {
-            stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
+            sub = stack_pointer[-1];
+            container = stack_pointer[-2];
             break;
         }
 
         case _CALL_INTRINSIC_1: {
             _Py_UopsSymbol *res;
+            value = stack_pointer[-1];
             res = sym_new_not_null(ctx);
-            stack_pointer[-1] = res;
             break;
         }
 
         case _CALL_INTRINSIC_2: {
             _Py_UopsSymbol *res;
+            value1_st = stack_pointer[-1];
+            value2_st = stack_pointer[-2];
             res = sym_new_not_null(ctx);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -648,33 +641,28 @@
             if (co == NULL) {
                 // might be impossible, but bailing is still safe
                 ctx->done = true;
-            }
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
+            }/* Pushed outputs */
             break;
         }
 
         case _GET_AITER: {
             _Py_UopsSymbol *iter;
+            obj = stack_pointer[-1];
             iter = sym_new_not_null(ctx);
-            stack_pointer[-1] = iter;
             break;
         }
 
         case _GET_ANEXT: {
             _Py_UopsSymbol *awaitable;
+            aiter = stack_pointer[-1];
             awaitable = sym_new_not_null(ctx);
-            stack_pointer[0] = awaitable;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _GET_AWAITABLE: {
             _Py_UopsSymbol *iter;
+            iterable = stack_pointer[-1];
             iter = sym_new_not_null(ctx);
-            stack_pointer[-1] = iter;
             break;
         }
 
@@ -682,44 +670,36 @@
 
         case _SEND_GEN_FRAME: {
             // We are about to hit the end of the trace:
-            ctx->done = true;
+            ctx->done = true;/* Pushed outputs */
             break;
         }
 
         case _YIELD_VALUE: {
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
+            res = sym_new_unknown(ctx);/* Pushed outputs */
             stack_pointer[-1] = res;
             break;
         }
 
         case _POP_EXCEPT: {
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            exc_value = stack_pointer[-1];
             break;
         }
 
         case _LOAD_COMMON_CONSTANT: {
             _Py_UopsSymbol *value;
             value = sym_new_not_null(ctx);
-            stack_pointer[0] = value;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _LOAD_BUILD_CLASS: {
             _Py_UopsSymbol *bc;
             bc = sym_new_not_null(ctx);
-            stack_pointer[0] = bc;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _STORE_NAME: {
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            v = stack_pointer[-1];
             break;
         }
 
@@ -730,13 +710,13 @@
         case _UNPACK_SEQUENCE: {
             _Py_UopsSymbol *seq;
             _Py_UopsSymbol **values;
+            values = &stack_pointer[0];
             seq = stack_pointer[-1];
-            values = &stack_pointer[-1];
             /* This has to be done manually */
             (void)seq;
             for (int i = 0; i < oparg; i++) {
                 values[i] = sym_new_unknown(ctx);
-            }
+            }/* Pushed outputs */
             stack_pointer += -1 + oparg;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -745,68 +725,61 @@
         case _UNPACK_SEQUENCE_TWO_TUPLE: {
             _Py_UopsSymbol *val1;
             _Py_UopsSymbol *val0;
+            seq = stack_pointer[-1];
             val1 = sym_new_not_null(ctx);
             val0 = sym_new_not_null(ctx);
-            stack_pointer[-1] = val1;
-            stack_pointer[0] = val0;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _UNPACK_SEQUENCE_TUPLE: {
             _Py_UopsSymbol **values;
-            values = &stack_pointer[-1];
+            values = &stack_pointer[0];
+            seq = stack_pointer[-1];
             for (int _i = oparg; --_i >= 0;) {
                 values[_i] = sym_new_not_null(ctx);
             }
-            stack_pointer += -1 + oparg;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _UNPACK_SEQUENCE_LIST: {
             _Py_UopsSymbol **values;
-            values = &stack_pointer[-1];
+            values = &stack_pointer[0];
+            seq = stack_pointer[-1];
             for (int _i = oparg; --_i >= 0;) {
                 values[_i] = sym_new_not_null(ctx);
             }
-            stack_pointer += -1 + oparg;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _UNPACK_EX: {
             _Py_UopsSymbol *seq;
             _Py_UopsSymbol **values;
+            values = &stack_pointer[0];
             seq = stack_pointer[-1];
-            values = &stack_pointer[-1];
             /* This has to be done manually */
             (void)seq;
             int totalargs = (oparg & 0xFF) + (oparg >> 8) + 1;
             for (int i = 0; i < totalargs; i++) {
                 values[i] = sym_new_unknown(ctx);
-            }
+            }/* Pushed outputs */
             stack_pointer += (oparg & 0xFF) + (oparg >> 8);
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _STORE_ATTR: {
-            stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
+            owner = stack_pointer[-1];
+            v = stack_pointer[-2];
             break;
         }
 
         case _DELETE_ATTR: {
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            owner = stack_pointer[-1];
             break;
         }
 
         case _STORE_GLOBAL: {
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            v = stack_pointer[-1];
             break;
         }
 
@@ -817,9 +790,6 @@
         case _LOAD_LOCALS: {
             _Py_UopsSymbol *locals;
             locals = sym_new_not_null(ctx);
-            stack_pointer[0] = locals;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -828,9 +798,6 @@
         case _LOAD_NAME: {
             _Py_UopsSymbol *v;
             v = sym_new_not_null(ctx);
-            stack_pointer[0] = v;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -839,10 +806,6 @@
             _Py_UopsSymbol *null = NULL;
             res = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
-            stack_pointer[0] = res;
-            if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + (oparg & 1);
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -859,10 +822,6 @@
             _Py_UopsSymbol *null = NULL;
             res = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
-            stack_pointer[0] = res;
-            if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + (oparg & 1);
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -871,10 +830,6 @@
             _Py_UopsSymbol *null = NULL;
             res = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
-            stack_pointer[0] = res;
-            if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + (oparg & 1);
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -892,23 +847,19 @@
 
         case _LOAD_FROM_DICT_OR_DEREF: {
             _Py_UopsSymbol *value;
+            class_dict_st = stack_pointer[-1];
             value = sym_new_not_null(ctx);
-            stack_pointer[-1] = value;
             break;
         }
 
         case _LOAD_DEREF: {
             _Py_UopsSymbol *value;
             value = sym_new_not_null(ctx);
-            stack_pointer[0] = value;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _STORE_DEREF: {
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            v = stack_pointer[-1];
             break;
         }
 
@@ -918,58 +869,48 @@
 
         case _BUILD_STRING: {
             _Py_UopsSymbol *str;
+            pieces = &stack_pointer[-oparg];
             str = sym_new_not_null(ctx);
-            stack_pointer[-oparg] = str;
-            stack_pointer += 1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _BUILD_TUPLE: {
             _Py_UopsSymbol *tup;
+            values = &stack_pointer[-oparg];
             tup = sym_new_not_null(ctx);
-            stack_pointer[-oparg] = tup;
-            stack_pointer += 1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _BUILD_LIST: {
             _Py_UopsSymbol *list;
+            values = &stack_pointer[-oparg];
             list = sym_new_not_null(ctx);
-            stack_pointer[-oparg] = list;
-            stack_pointer += 1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _LIST_EXTEND: {
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            iterable_st = stack_pointer[-1];
+            list_st = stack_pointer[-2 - (oparg-1)];
             break;
         }
 
         case _SET_UPDATE: {
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            iterable = stack_pointer[-1];
+            set = stack_pointer[-2 - (oparg-1)];
             break;
         }
 
         case _BUILD_SET: {
             _Py_UopsSymbol *set;
+            values = &stack_pointer[-oparg];
             set = sym_new_not_null(ctx);
-            stack_pointer[-oparg] = set;
-            stack_pointer += 1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _BUILD_MAP: {
             _Py_UopsSymbol *map;
+            values = &stack_pointer[-oparg*2];
             map = sym_new_not_null(ctx);
-            stack_pointer[-oparg*2] = map;
-            stack_pointer += 1 - oparg*2;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -978,20 +919,22 @@
         }
 
         case _DICT_UPDATE: {
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            update = stack_pointer[-1];
+            dict = stack_pointer[-2 - (oparg - 1)];
             break;
         }
 
         case _DICT_MERGE: {
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            update = stack_pointer[-1];
+            dict = stack_pointer[-2 - (oparg - 1)];
+            callable = stack_pointer[-5 - (oparg - 1)];
             break;
         }
 
         case _MAP_ADD: {
-            stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
+            value = stack_pointer[-1];
+            key = stack_pointer[-2];
+            dict_st = stack_pointer[-3 - (oparg - 1)];
             break;
         }
 
@@ -999,22 +942,21 @@
 
         case _LOAD_SUPER_ATTR_ATTR: {
             _Py_UopsSymbol *attr_st;
+            self_st = stack_pointer[-1];
+            class_st = stack_pointer[-2];
+            global_super_st = stack_pointer[-3];
             attr_st = sym_new_not_null(ctx);
-            stack_pointer[-3] = attr_st;
-            stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _LOAD_SUPER_ATTR_METHOD: {
             _Py_UopsSymbol *attr;
             _Py_UopsSymbol *self_or_null;
+            self_st = stack_pointer[-1];
+            class_st = stack_pointer[-2];
+            global_super_st = stack_pointer[-3];
             attr = sym_new_not_null(ctx);
             self_or_null = sym_new_not_null(ctx);
-            stack_pointer[-3] = attr;
-            stack_pointer[-2] = self_or_null;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -1030,7 +972,7 @@
             }
             else {
                 self_or_null = NULL;
-            }
+            }/* Pushed outputs */
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = self_or_null;
             stack_pointer += (oparg & 1);
@@ -1060,11 +1002,12 @@
                         _Py_BloomFilter_Add(dependencies, type);
                     }
                 }
-            }
+            }/* Pushed outputs */
             break;
         }
 
         case _CHECK_MANAGED_OBJECT_HAS_VALUES: {
+            owner = stack_pointer[-1];
             break;
         }
 
@@ -1077,7 +1020,7 @@
             attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             (void)offset;
-            (void)owner;
+            (void)owner;/* Pushed outputs */
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
@@ -1102,7 +1045,7 @@
                         this_instr->opcode = _NOP;
                     }
                 }
-            }
+            }/* Pushed outputs */
             break;
         }
 
@@ -1130,15 +1073,12 @@
             if (attr == NULL) {
                 /* No conversion made. We don't know what `attr` is. */
                 attr = sym_new_not_null(ctx);
-            }
-            stack_pointer[-1] = attr;
-            if (oparg & 1) stack_pointer[0] = null;
-            stack_pointer += (oparg & 1);
-            assert(WITHIN_STACK_BOUNDS());
+            }/* Pushed outputs */
             break;
         }
 
         case _CHECK_ATTR_WITH_HINT: {
+            owner = stack_pointer[-1];
             break;
         }
 
@@ -1151,7 +1091,7 @@
             attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             (void)hint;
-            (void)owner;
+            (void)owner;/* Pushed outputs */
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
@@ -1168,7 +1108,7 @@
             attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             (void)index;
-            (void)owner;
+            (void)owner;/* Pushed outputs */
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
@@ -1177,6 +1117,7 @@
         }
 
         case _CHECK_ATTR_CLASS: {
+            owner = stack_pointer[-1];
             break;
         }
 
@@ -1189,7 +1130,7 @@
             attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             (void)descr;
-            (void)owner;
+            (void)owner;/* Pushed outputs */
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
@@ -1205,7 +1146,7 @@
             (void)fget;
             (void)owner;
             new_frame = NULL;
-            ctx->done = true;
+            ctx->done = true;/* Pushed outputs */
             stack_pointer[-1] = (_Py_UopsSymbol *)new_frame;
             break;
         }
@@ -1213,24 +1154,25 @@
         /* _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN is not a viable micro-op for tier 2 */
 
         case _GUARD_DORV_NO_DICT: {
+            owner = stack_pointer[-1];
             break;
         }
 
         case _STORE_ATTR_INSTANCE_VALUE: {
-            stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
+            owner = stack_pointer[-1];
+            value = stack_pointer[-2];
             break;
         }
 
         case _STORE_ATTR_WITH_HINT: {
-            stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
+            owner = stack_pointer[-1];
+            value = stack_pointer[-2];
             break;
         }
 
         case _STORE_ATTR_SLOT: {
-            stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
+            owner = stack_pointer[-1];
+            value = stack_pointer[-2];
             break;
         }
 
@@ -1247,7 +1189,7 @@
             }
             else {
                 res = _Py_uop_sym_new_not_null(ctx);
-            }
+            }/* Pushed outputs */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1262,7 +1204,7 @@
             left = stack_pointer[-2];
             (void)left;
             (void)right;
-            res = sym_new_type(ctx, &PyBool_Type);
+            res = sym_new_type(ctx, &PyBool_Type);/* Pushed outputs */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1277,7 +1219,7 @@
             left = stack_pointer[-2];
             (void)left;
             (void)right;
-            res = sym_new_type(ctx, &PyBool_Type);
+            res = sym_new_type(ctx, &PyBool_Type);/* Pushed outputs */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1292,7 +1234,7 @@
             left = stack_pointer[-2];
             (void)left;
             (void)right;
-            res = sym_new_type(ctx, &PyBool_Type);
+            res = sym_new_type(ctx, &PyBool_Type);/* Pushed outputs */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1307,7 +1249,7 @@
             left = stack_pointer[-2];
             (void)left;
             (void)right;
-            res = sym_new_type(ctx, &PyBool_Type);
+            res = sym_new_type(ctx, &PyBool_Type);/* Pushed outputs */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1322,7 +1264,7 @@
             left = stack_pointer[-2];
             (void)left;
             (void)right;
-            res = sym_new_type(ctx, &PyBool_Type);
+            res = sym_new_type(ctx, &PyBool_Type);/* Pushed outputs */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1331,54 +1273,50 @@
 
         case _CONTAINS_OP_SET: {
             _Py_UopsSymbol *b;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
             b = sym_new_not_null(ctx);
-            stack_pointer[-2] = b;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _CONTAINS_OP_DICT: {
             _Py_UopsSymbol *b;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
             b = sym_new_not_null(ctx);
-            stack_pointer[-2] = b;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _CHECK_EG_MATCH: {
             _Py_UopsSymbol *rest;
             _Py_UopsSymbol *match;
+            match_type_st = stack_pointer[-1];
+            exc_value_st = stack_pointer[-2];
             rest = sym_new_not_null(ctx);
             match = sym_new_not_null(ctx);
-            stack_pointer[-2] = rest;
-            stack_pointer[-1] = match;
             break;
         }
 
         case _CHECK_EXC_MATCH: {
             _Py_UopsSymbol *b;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
             b = sym_new_not_null(ctx);
-            stack_pointer[-1] = b;
             break;
         }
 
         case _IMPORT_NAME: {
             _Py_UopsSymbol *res;
+            fromlist = stack_pointer[-1];
+            level = stack_pointer[-2];
             res = sym_new_not_null(ctx);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _IMPORT_FROM: {
             _Py_UopsSymbol *res;
+            from = stack_pointer[-1];
             res = sym_new_not_null(ctx);
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -1388,67 +1326,60 @@
 
         case _IS_NONE: {
             _Py_UopsSymbol *b;
+            value = stack_pointer[-1];
             b = sym_new_not_null(ctx);
-            stack_pointer[-1] = b;
             break;
         }
 
         case _GET_LEN: {
             _Py_UopsSymbol *len;
+            obj = stack_pointer[-1];
             len = sym_new_not_null(ctx);
-            stack_pointer[0] = len;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _MATCH_CLASS: {
             _Py_UopsSymbol *attrs;
+            names = stack_pointer[-1];
+            type = stack_pointer[-2];
+            subject = stack_pointer[-3];
             attrs = sym_new_not_null(ctx);
-            stack_pointer[-3] = attrs;
-            stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _MATCH_MAPPING: {
             _Py_UopsSymbol *res;
+            subject = stack_pointer[-1];
             res = sym_new_not_null(ctx);
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _MATCH_SEQUENCE: {
             _Py_UopsSymbol *res;
+            subject = stack_pointer[-1];
             res = sym_new_not_null(ctx);
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _MATCH_KEYS: {
             _Py_UopsSymbol *values_or_none;
+            keys = stack_pointer[-1];
+            subject = stack_pointer[-2];
             values_or_none = sym_new_not_null(ctx);
-            stack_pointer[0] = values_or_none;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _GET_ITER: {
             _Py_UopsSymbol *iter;
+            iterable = stack_pointer[-1];
             iter = sym_new_not_null(ctx);
-            stack_pointer[-1] = iter;
             break;
         }
 
         case _GET_YIELD_FROM_ITER: {
             _Py_UopsSymbol *iter;
+            iterable = stack_pointer[-1];
             iter = sym_new_not_null(ctx);
-            stack_pointer[-1] = iter;
             break;
         }
 
@@ -1456,60 +1387,60 @@
 
         case _FOR_ITER_TIER_TWO: {
             _Py_UopsSymbol *next;
+            iter = stack_pointer[-1];
             next = sym_new_not_null(ctx);
-            stack_pointer[0] = next;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         /* _INSTRUMENTED_FOR_ITER is not a viable micro-op for tier 2 */
 
         case _ITER_CHECK_LIST: {
+            iter = stack_pointer[-1];
             break;
         }
 
         /* _ITER_JUMP_LIST is not a viable micro-op for tier 2 */
 
         case _GUARD_NOT_EXHAUSTED_LIST: {
+            iter = stack_pointer[-1];
             break;
         }
 
         case _ITER_NEXT_LIST: {
             _Py_UopsSymbol *next;
+            iter = stack_pointer[-1];
             next = sym_new_not_null(ctx);
-            stack_pointer[0] = next;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _ITER_CHECK_TUPLE: {
+            iter = stack_pointer[-1];
             break;
         }
 
         /* _ITER_JUMP_TUPLE is not a viable micro-op for tier 2 */
 
         case _GUARD_NOT_EXHAUSTED_TUPLE: {
+            iter = stack_pointer[-1];
             break;
         }
 
         case _ITER_NEXT_TUPLE: {
             _Py_UopsSymbol *next;
+            iter = stack_pointer[-1];
             next = sym_new_not_null(ctx);
-            stack_pointer[0] = next;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _ITER_CHECK_RANGE: {
+            iter = stack_pointer[-1];
             break;
         }
 
         /* _ITER_JUMP_RANGE is not a viable micro-op for tier 2 */
 
         case _GUARD_NOT_EXHAUSTED_RANGE: {
+            iter = stack_pointer[-1];
             break;
         }
 
@@ -1518,7 +1449,7 @@
             _Py_UopsSymbol *next;
             iter = stack_pointer[-1];
             next = sym_new_type(ctx, &PyLong_Type);
-            (void)iter;
+            (void)iter;/* Pushed outputs */
             stack_pointer[0] = next;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1527,7 +1458,7 @@
 
         case _FOR_ITER_GEN_FRAME: {
             /* We are about to hit the end of the trace */
-            ctx->done = true;
+            ctx->done = true;/* Pushed outputs */
             break;
         }
 
@@ -1538,7 +1469,7 @@
             owner = stack_pointer[-1];
             (void)owner;
             attr = sym_new_not_null(ctx);
-            self_or_null = sym_new_unknown(ctx);
+            self_or_null = sym_new_unknown(ctx);/* Pushed outputs */
             stack_pointer[-1] = attr;
             stack_pointer[0] = self_or_null;
             stack_pointer += 1;
@@ -1548,30 +1479,30 @@
 
         case _WITH_EXCEPT_START: {
             _Py_UopsSymbol *res;
+            val = stack_pointer[-1];
+            lasti = stack_pointer[-3];
+            exit_self = stack_pointer[-4];
+            exit_func = stack_pointer[-5];
             res = sym_new_not_null(ctx);
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _PUSH_EXC_INFO: {
             _Py_UopsSymbol *prev_exc;
             _Py_UopsSymbol *new_exc;
+            exc = stack_pointer[-1];
             prev_exc = sym_new_not_null(ctx);
             new_exc = sym_new_not_null(ctx);
-            stack_pointer[-1] = prev_exc;
-            stack_pointer[0] = new_exc;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT: {
+            owner = stack_pointer[-1];
             break;
         }
 
         case _GUARD_KEYS_VERSION: {
+            owner = stack_pointer[-1];
             break;
         }
 
@@ -1583,7 +1514,7 @@
             PyObject *descr = (PyObject *)this_instr->operand;
             (void)descr;
             attr = sym_new_not_null(ctx);
-            self = owner;
+            self = owner;/* Pushed outputs */
             stack_pointer[-1] = attr;
             stack_pointer[0] = self;
             stack_pointer += 1;
@@ -1599,7 +1530,7 @@
             PyObject *descr = (PyObject *)this_instr->operand;
             (void)descr;
             attr = sym_new_not_null(ctx);
-            self = owner;
+            self = owner;/* Pushed outputs */
             stack_pointer[-1] = attr;
             stack_pointer[0] = self;
             stack_pointer += 1;
@@ -1609,19 +1540,20 @@
 
         case _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES: {
             _Py_UopsSymbol *attr;
+            owner = stack_pointer[-1];
             attr = sym_new_not_null(ctx);
-            stack_pointer[-1] = attr;
             break;
         }
 
         case _LOAD_ATTR_NONDESCRIPTOR_NO_DICT: {
             _Py_UopsSymbol *attr;
+            owner = stack_pointer[-1];
             attr = sym_new_not_null(ctx);
-            stack_pointer[-1] = attr;
             break;
         }
 
         case _CHECK_ATTR_METHOD_LAZY_DICT: {
+            owner = stack_pointer[-1];
             break;
         }
 
@@ -1633,7 +1565,7 @@
             PyObject *descr = (PyObject *)this_instr->operand;
             (void)descr;
             attr = sym_new_not_null(ctx);
-            self = owner;
+            self = owner;/* Pushed outputs */
             stack_pointer[-1] = attr;
             stack_pointer[0] = self;
             stack_pointer += 1;
@@ -1647,15 +1579,15 @@
             _Py_UopsSymbol *callable;
             _Py_UopsSymbol *func;
             _Py_UopsSymbol *maybe_self;
+            args = &stack_pointer[2];
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            args = &stack_pointer[-oparg];
             (void)callable;
             (void)self_or_null;
             (void)args;
             func = sym_new_not_null(ctx);
-            maybe_self = sym_new_not_null(ctx);
+            maybe_self = sym_new_not_null(ctx);/* Pushed outputs */
             stack_pointer[-2 - oparg] = func;
             stack_pointer[-1 - oparg] = maybe_self;
             break;
@@ -1678,7 +1610,7 @@
             (void)self_or_null;
             (void)args;
             new_frame = NULL;
-            ctx->done = true;
+            ctx->done = true;/* Pushed outputs */
             stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)new_frame;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1686,35 +1618,40 @@
         }
 
         case _CHECK_FUNCTION_VERSION: {
+            callable = stack_pointer[-2 - oparg];
             break;
         }
 
         case _CHECK_METHOD_VERSION: {
+            null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             break;
         }
 
         case _EXPAND_METHOD: {
             _Py_UopsSymbol *method;
             _Py_UopsSymbol **self;
-            self = &stack_pointer[-1 - oparg];
+            self = &stack_pointer[1];
+            null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             method = sym_new_not_null(ctx);
             for (int _i = 1; --_i >= 0;) {
                 self[_i] = sym_new_not_null(ctx);
             }
-            stack_pointer[-2 - oparg] = method;
             break;
         }
 
         case _CHECK_IS_NOT_PY_CALLABLE: {
+            callable = stack_pointer[-2 - oparg];
             break;
         }
 
         case _CALL_NON_PY_GENERAL: {
             _Py_UopsSymbol *res;
+            args = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             res = sym_new_not_null(ctx);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -1724,7 +1661,7 @@
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             sym_set_null(null);
-            sym_set_type(callable, &PyMethod_Type);
+            sym_set_type(callable, &PyMethod_Type);/* Pushed outputs */
             break;
         }
 
@@ -1735,7 +1672,7 @@
             callable = stack_pointer[-2 - oparg];
             (void)callable;
             func = sym_new_not_null(ctx);
-            self = sym_new_not_null(ctx);
+            self = sym_new_not_null(ctx);/* Pushed outputs */
             stack_pointer[-2 - oparg] = func;
             stack_pointer[-1 - oparg] = self;
             break;
@@ -1746,7 +1683,7 @@
              * all executors, so no need to check dynamically */
             if (_PyInterpreterState_GET()->eval_frame == NULL) {
                 REPLACE_OP(this_instr, _NOP, 0 ,0);
-            }
+            }/* Pushed outputs */
             break;
         }
 
@@ -1756,13 +1693,13 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             sym_set_type(callable, &PyFunction_Type);
-            (void)self_or_null;
+            (void)self_or_null;/* Pushed outputs */
             break;
         }
 
         case _CHECK_STACK_SPACE: {
             assert(corresponding_check_stack == NULL);
-            corresponding_check_stack = this_instr;
+            corresponding_check_stack = this_instr;/* Pushed outputs */
             break;
         }
 
@@ -1774,8 +1711,7 @@
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            int argcount = oparg;
-            (void)callable;
+            int argcount = oparg;(void)callable ;
             PyCodeObject *co = NULL;
             assert((this_instr + 2)->opcode == _PUSH_FRAME);
             uint64_t push_operand = (this_instr + 2)->operand;
@@ -1807,15 +1743,13 @@
                 new_frame = frame_new(ctx, co, 0, args, argcount);
             } else {
                 new_frame = frame_new(ctx, co, 0, NULL, 0);
-            }
-            stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
+            }/* Pushed outputs */
             break;
         }
 
         case _PUSH_FRAME: {
             _Py_UOpsAbstractFrame *new_frame;
-            new_frame = (_Py_UOpsAbstractFrame *)stack_pointer[-1];
+            new_frame = (_Py_UOpsAbstractFrame *)stack_pointer[-1].bits;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             ctx->frame->stack_pointer = stack_pointer;
@@ -1845,34 +1779,34 @@
                 // delete all but the first valid _CHECK_STACK_SPACE
                 corresponding_check_stack->opcode = _NOP;
             }
-            corresponding_check_stack = NULL;
+            corresponding_check_stack = NULL;/* Pushed outputs */
             break;
         }
 
         case _CALL_TYPE_1: {
             _Py_UopsSymbol *res;
+            arg = stack_pointer[-1];
+            null = stack_pointer[-2];
+            callable = stack_pointer[-3];
             res = sym_new_not_null(ctx);
-            stack_pointer[-3] = res;
-            stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _CALL_STR_1: {
             _Py_UopsSymbol *res;
+            arg = stack_pointer[-1];
+            null = stack_pointer[-2];
+            callable = stack_pointer[-3];
             res = sym_new_not_null(ctx);
-            stack_pointer[-3] = res;
-            stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _CALL_TUPLE_1: {
             _Py_UopsSymbol *res;
+            arg = stack_pointer[-1];
+            null = stack_pointer[-2];
+            callable = stack_pointer[-3];
             res = sym_new_not_null(ctx);
-            stack_pointer[-3] = res;
-            stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -1882,17 +1816,17 @@
             _Py_UopsSymbol *callable;
             _Py_UopsSymbol *self;
             _Py_UopsSymbol *init;
+            args = &stack_pointer[2];
             args = &stack_pointer[-oparg];
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            args = &stack_pointer[-oparg];
             uint32_t type_version = (uint32_t)this_instr->operand;
             (void)type_version;
             (void)callable;
             (void)null;
             (void)args;
             self = sym_new_not_null(ctx);
-            init = sym_new_not_null(ctx);
+            init = sym_new_not_null(ctx);/* Pushed outputs */
             stack_pointer[-2 - oparg] = self;
             stack_pointer[-1 - oparg] = init;
             break;
@@ -1910,7 +1844,7 @@
             (void)init;
             (void)args;
             init_frame = NULL;
-            ctx->done = true;
+            ctx->done = true;/* Pushed outputs */
             stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)init_frame;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1918,108 +1852,129 @@
         }
 
         case _EXIT_INIT_CHECK: {
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            should_be_none = stack_pointer[-1];
             break;
         }
 
         case _CALL_BUILTIN_CLASS: {
             _Py_UopsSymbol *res;
+            args = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             res = sym_new_not_null(ctx);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _CALL_BUILTIN_O: {
             _Py_UopsSymbol *res;
+            args = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             res = sym_new_not_null(ctx);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _CALL_BUILTIN_FAST: {
             _Py_UopsSymbol *res;
+            args = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             res = sym_new_not_null(ctx);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _CALL_BUILTIN_FAST_WITH_KEYWORDS: {
             _Py_UopsSymbol *res;
+            args = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             res = sym_new_not_null(ctx);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _CALL_LEN: {
             _Py_UopsSymbol *res;
+            args = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             res = sym_new_not_null(ctx);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _CALL_ISINSTANCE: {
             _Py_UopsSymbol *res;
+            args = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             res = sym_new_not_null(ctx);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _CALL_LIST_APPEND: {
-            stack_pointer += -3;
-            assert(WITHIN_STACK_BOUNDS());
+            arg = stack_pointer[-1];
+            self = stack_pointer[-2];
+            callable = stack_pointer[-3];
             break;
         }
 
         case _CALL_METHOD_DESCRIPTOR_O: {
             _Py_UopsSymbol *res;
+            args = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             res = sym_new_not_null(ctx);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
             _Py_UopsSymbol *res;
+            args = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             res = sym_new_not_null(ctx);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _CALL_METHOD_DESCRIPTOR_NOARGS: {
             _Py_UopsSymbol *res;
+            args = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             res = sym_new_not_null(ctx);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _CALL_METHOD_DESCRIPTOR_FAST: {
             _Py_UopsSymbol *res;
+            args = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             res = sym_new_not_null(ctx);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         /* _INSTRUMENTED_CALL_KW is not a viable micro-op for tier 2 */
+
+        case _MAYBE_EXPAND_METHOD_KW: {
+            _Py_UopsSymbol *func;
+            _Py_UopsSymbol **maybe_self;
+            _Py_UopsSymbol **args;
+            _Py_UopsSymbol *kwnames_out;
+            maybe_self = &stack_pointer[1];
+            kwnames_in = stack_pointer[-1];
+            args = &stack_pointer[-1 - oparg];
+            self_or_null = &stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
+            func = sym_new_not_null(ctx);
+            for (int _i = 1; --_i >= 0;) {
+                maybe_self[_i] = sym_new_not_null(ctx);
+            }
+            for (int _i = oparg; --_i >= 0;) {
+                args[_i] = sym_new_not_null(ctx);
+            }
+            kwnames_out = sym_new_not_null(ctx);
+            break;
+        }
 
         /* _DO_CALL_KW is not a viable micro-op for tier 2 */
 
@@ -2038,7 +1993,7 @@
             (void)args;
             (void)kwnames;
             new_frame = NULL;
-            ctx->done = true;
+            ctx->done = true;/* Pushed outputs */
             stack_pointer[-3 - oparg] = (_Py_UopsSymbol *)new_frame;
             stack_pointer += -2 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -2046,38 +2001,41 @@
         }
 
         case _CHECK_FUNCTION_VERSION_KW: {
+            callable = stack_pointer[-3 - oparg];
             break;
         }
 
         case _CHECK_METHOD_VERSION_KW: {
+            null = &stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
             break;
         }
 
         case _EXPAND_METHOD_KW: {
             _Py_UopsSymbol *method;
             _Py_UopsSymbol **self;
-            _Py_UopsSymbol *kwnames;
-            self = &stack_pointer[-2 - oparg];
+            self = &stack_pointer[1];
+            null = &stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
             method = sym_new_not_null(ctx);
             for (int _i = 1; --_i >= 0;) {
                 self[_i] = sym_new_not_null(ctx);
             }
-            kwnames = sym_new_not_null(ctx);
-            stack_pointer[-3 - oparg] = method;
-            stack_pointer[-1] = kwnames;
             break;
         }
 
         case _CHECK_IS_NOT_PY_CALLABLE_KW: {
+            callable = stack_pointer[-3 - oparg];
             break;
         }
 
         case _CALL_KW_NON_PY: {
             _Py_UopsSymbol *res;
+            kwnames = stack_pointer[-1];
+            args = &stack_pointer[-1 - oparg];
+            self_or_null = &stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
             res = sym_new_not_null(ctx);
-            stack_pointer[-3 - oparg] = res;
-            stack_pointer += -2 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -2087,17 +2045,16 @@
 
         case _MAKE_FUNCTION: {
             _Py_UopsSymbol *func;
+            codeobj_st = stack_pointer[-1];
             func = sym_new_not_null(ctx);
-            stack_pointer[-1] = func;
             break;
         }
 
         case _SET_FUNCTION_ATTRIBUTE: {
-            _Py_UopsSymbol *func_st;
-            func_st = sym_new_not_null(ctx);
-            stack_pointer[-2] = func_st;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            _Py_UopsSymbol *func_out;
+            func_in = stack_pointer[-1];
+            attr_st = stack_pointer[-2];
+            func_out = sym_new_not_null(ctx);
             break;
         }
 
@@ -2118,42 +2075,38 @@
             if (co == NULL) {
                 // might be impossible, but bailing is still safe
                 ctx->done = true;
-            }
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
+            }/* Pushed outputs */
             break;
         }
 
         case _BUILD_SLICE: {
             _Py_UopsSymbol *slice;
+            if (oparg == 3) { step = stack_pointer[-((oparg == 3) ? 1 : 0)]; }
+            stop = stack_pointer[-1 - ((oparg == 3) ? 1 : 0)];
+            start = stack_pointer[-2 - ((oparg == 3) ? 1 : 0)];
             slice = sym_new_not_null(ctx);
-            stack_pointer[-2 - ((oparg == 3) ? 1 : 0)] = slice;
-            stack_pointer += -1 - ((oparg == 3) ? 1 : 0);
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _CONVERT_VALUE: {
             _Py_UopsSymbol *result;
+            value = stack_pointer[-1];
             result = sym_new_not_null(ctx);
-            stack_pointer[-1] = result;
             break;
         }
 
         case _FORMAT_SIMPLE: {
             _Py_UopsSymbol *res;
+            value = stack_pointer[-1];
             res = sym_new_not_null(ctx);
-            stack_pointer[-1] = res;
             break;
         }
 
         case _FORMAT_WITH_SPEC: {
             _Py_UopsSymbol *res;
+            fmt_spec = stack_pointer[-1];
+            value = stack_pointer[-2];
             res = sym_new_not_null(ctx);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -2162,7 +2115,7 @@
             _Py_UopsSymbol *top;
             bottom = stack_pointer[-1 - (oparg-1)];
             assert(oparg > 0);
-            top = bottom;
+            top = bottom;/* Pushed outputs */
             stack_pointer[0] = top;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -2192,7 +2145,7 @@
             }
             else {
                 res = sym_new_unknown(ctx);
-            }
+            }/* Pushed outputs */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -2200,12 +2153,16 @@
         }
 
         case _SWAP: {
-            _Py_UopsSymbol *top;
-            _Py_UopsSymbol *bottom;
-            top = stack_pointer[-1];
-            bottom = stack_pointer[-2 - (oparg-2)];
-            stack_pointer[-2 - (oparg-2)] = top;
-            stack_pointer[-1] = bottom;
+            _Py_UopsSymbol *top_in;
+            _Py_UopsSymbol *bottom_in;
+            _Py_UopsSymbol *top_out;
+            _Py_UopsSymbol *bottom_out;
+            top_in = stack_pointer[-1];
+            bottom_in = stack_pointer[-2 - (oparg-2)];
+            bottom_out = bottom_in;
+            top_out = top_in;/* Pushed outputs */
+            stack_pointer[-2 - (oparg-2)] = top_out;
+            stack_pointer[-1] = bottom_out;
             break;
         }
 
@@ -2232,9 +2189,7 @@
                 PyObject *value = sym_get_const(flag);
                 assert(value != NULL);
                 eliminate_pop_guard(this_instr, value != Py_True);
-            }
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            }/* Pushed outputs */
             break;
         }
 
@@ -2245,9 +2200,7 @@
                 PyObject *value = sym_get_const(flag);
                 assert(value != NULL);
                 eliminate_pop_guard(this_instr, value != Py_False);
-            }
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            }/* Pushed outputs */
             break;
         }
 
@@ -2262,9 +2215,7 @@
             else if (sym_has_type(flag)) {
                 assert(!sym_matches_type(flag, &_PyNone_Type));
                 eliminate_pop_guard(this_instr, true);
-            }
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            }/* Pushed outputs */
             break;
         }
 
@@ -2279,14 +2230,12 @@
             else if (sym_has_type(flag)) {
                 assert(!sym_matches_type(flag, &_PyNone_Type));
                 eliminate_pop_guard(this_instr, false);
-            }
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            }/* Pushed outputs */
             break;
         }
 
         case _JUMP_TO_TOP: {
-            ctx->done = true;
+            ctx->done = true;/* Pushed outputs */
             break;
         }
 
@@ -2299,7 +2248,7 @@
             (void)framesize;
             /* We should never see _CHECK_STACK_SPACE_OPERANDs.
              * They are only created at the end of this pass. */
-            Py_UNREACHABLE();
+            Py_UNREACHABLE();/* Pushed outputs */
             break;
         }
 
@@ -2310,7 +2259,7 @@
         case _EXIT_TRACE: {
             PyObject *exit_p = (PyObject *)this_instr->operand;
             (void)exit_p;
-            ctx->done = true;
+            ctx->done = true;/* Pushed outputs */
             break;
         }
 
@@ -2321,7 +2270,7 @@
         case _LOAD_CONST_INLINE: {
             _Py_UopsSymbol *value;
             PyObject *ptr = (PyObject *)this_instr->operand;
-            value = sym_new_const(ctx, ptr);
+            value = sym_new_const(ctx, ptr);/* Pushed outputs */
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -2331,7 +2280,7 @@
         case _LOAD_CONST_INLINE_BORROW: {
             _Py_UopsSymbol *value;
             PyObject *ptr = (PyObject *)this_instr->operand;
-            value = sym_new_const(ctx, ptr);
+            value = sym_new_const(ctx, ptr);/* Pushed outputs */
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -2340,8 +2289,8 @@
 
         case _POP_TOP_LOAD_CONST_INLINE_BORROW: {
             _Py_UopsSymbol *value;
+            pop = stack_pointer[-1];
             value = sym_new_not_null(ctx);
-            stack_pointer[-1] = value;
             break;
         }
 
@@ -2350,7 +2299,7 @@
             _Py_UopsSymbol *null;
             PyObject *ptr = (PyObject *)this_instr->operand;
             value = sym_new_const(ctx, ptr);
-            null = sym_new_null(ctx);
+            null = sym_new_null(ctx);/* Pushed outputs */
             stack_pointer[0] = value;
             stack_pointer[1] = null;
             stack_pointer += 2;
@@ -2363,7 +2312,7 @@
             _Py_UopsSymbol *null;
             PyObject *ptr = (PyObject *)this_instr->operand;
             value = sym_new_const(ctx, ptr);
-            null = sym_new_null(ctx);
+            null = sym_new_null(ctx);/* Pushed outputs */
             stack_pointer[0] = value;
             stack_pointer[1] = null;
             stack_pointer += 2;
@@ -2376,8 +2325,7 @@
         }
 
         case _INTERNAL_INCREMENT_OPT_COUNTER: {
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            opt = stack_pointer[-1];
             break;
         }
 
@@ -2402,8 +2350,6 @@
         }
 
         case _ERROR_POP_N: {
-            stack_pointer += -oparg;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 

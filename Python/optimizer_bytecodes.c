@@ -456,8 +456,10 @@ dummy_func(void) {
         top = bottom;
     }
 
-    op(_SWAP, (bottom, unused[oparg-2], top --
-        top, unused[oparg-2], bottom)) {
+    op(_SWAP, (bottom_in, unused[oparg-2], top_in --
+        top_out, unused[oparg-2], bottom_out)) {
+        bottom_out = bottom_in;
+        top_out = top_in;
     }
 
     op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr, null if (oparg & 1))) {
@@ -582,7 +584,7 @@ dummy_func(void) {
     op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
         int argcount = oparg;
 
-        (void)callable;
+        KILL(callable);
 
         PyCodeObject *co = NULL;
         assert((this_instr + 2)->opcode == _PUSH_FRAME);

@@ -87,8 +87,8 @@ def write_uop(
         if braces:
             emitter.out.emit(f"// {uop.name}\n")
             emitter.emit("{\n")
-            emitter.emit(stack.as_comment())
         code_list, storage = Storage.for_uop(stack, uop)
+        emitter._print_storage(storage)
         emitter.emit(stack.define_output_arrays(uop.stack.outputs))
         for code in code_list:
             emitter.emit(code)
@@ -177,8 +177,9 @@ def generate_tier1(
             insert_braces = len([p for p in inst.parts if isinstance(p, Uop)]) > 1
             offset, stack = write_uop(part, emitter, offset, stack, inst, insert_braces)
         out.start_line()
+
+        stack.flush(out)
         if not inst.parts[-1].properties.always_exits:
-            stack.flush(out)
             out.emit("DISPATCH();\n")
         out.start_line()
         out.emit("}")

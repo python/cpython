@@ -387,6 +387,7 @@ def find_assignment_target(node: parser.InstDef, idx: int) -> list[lexer.Token]:
 def find_stores_outputs(node: parser.InstDef) -> list[lexer.Token]:
     res: list[lexer.Token] = []
     outnames = [ out.name for out in node.outputs ]
+    innames = [ out.name for out in node.inputs ]
     for idx, tkn in enumerate(node.block.tokens):
         if tkn.kind == "AND":
             name = node.block.tokens[idx+1]
@@ -401,6 +402,8 @@ def find_stores_outputs(node: parser.InstDef) -> list[lexer.Token]:
         if len(lhs) != 1 or lhs[0].kind != "IDENTIFIER":
             continue
         name = lhs[0]
+        if name.text in innames:
+            raise analysis_error(f"Cannot assign to input variable '{name.text}'", name)
         if name.text in outnames:
             res.append(name)
     return res
@@ -599,6 +602,8 @@ NON_ESCAPING_FUNCTIONS = (
     "PyType_HasFeature",
     "_Py_ID",
     "_Py_DECREF_NO_DEALLOC",
+    "EMPTY",
+    "assert",
 )
 
 def find_stmt_start(node: parser.InstDef, idx: int) -> lexer.Token:
