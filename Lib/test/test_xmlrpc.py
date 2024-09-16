@@ -1338,6 +1338,21 @@ class FailingMessageClass(http.client.HTTPMessage):
             return 'I am broken'
         return super().get(key, failobj)
 
+class FailingThrowProtocol(unittest.TestCase):
+    def setUp(self):
+       self.url = 'https://user:password@test.com'
+
+    def test_throw_protocol_error(self):
+        try:
+            with xmlrpclib.ServerProxy(self.url) as p:
+                p.pow(6,8)
+        except (xmlrpclib.ProtocolError, OSError) as e:
+            if not is_unavailable_exception(e) and hasattr(e, "headers"):
+                uinfo = e.url.split('@')[0]
+                passwd = uinfo.split(':')[1]
+                self.assertTrue(passwd == 'xxx')
+        else:
+            self.fail('ProtocolError not raised')
 
 class FailingServerTestCase(unittest.TestCase):
     def setUp(self):
@@ -1382,7 +1397,7 @@ class FailingServerTestCase(unittest.TestCase):
     def test_fail_no_info(self):
         # use the broken message class
         xmlrpc.server.SimpleXMLRPCRequestHandler.MessageClass = FailingMessageClass
-
+        
         try:
             p = xmlrpclib.ServerProxy(URL)
             p.pow(6,8)
