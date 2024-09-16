@@ -790,13 +790,13 @@ compiler_codegen(compiler *c, mod_ty mod)
     switch (mod->kind) {
     case Module_kind: {
         asdl_stmt_seq *stmts = mod->v.Module.body;
-        RETURN_IF_ERROR(_PyCodegen_Body(c, start_location(stmts), stmts));
+        RETURN_IF_ERROR(_PyCodegen_Body(c, start_location(stmts), stmts, false));
         break;
     }
     case Interactive_kind: {
         c->c_interactive = 1;
         asdl_stmt_seq *stmts = mod->v.Interactive.body;
-        RETURN_IF_ERROR(_PyCodegen_Body(c, start_location(stmts), stmts));
+        RETURN_IF_ERROR(_PyCodegen_Body(c, start_location(stmts), stmts, true));
         break;
     }
     case Expression_kind: {
@@ -1241,15 +1241,6 @@ _PyCompile_Metadata(compiler *c)
 {
     return &c->u->u_metadata;
 }
-
-#ifndef NDEBUG
-int
-_PyCompile_IsTopLevelAwait(compiler *c)
-{
-    return c->c_flags.cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT &&
-           c->u->u_ste->ste_type == ModuleBlock;
-}
-#endif
 
 // Merge *obj* with constant cache, without recursion.
 int
