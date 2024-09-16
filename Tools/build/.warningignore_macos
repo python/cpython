@@ -18,7 +18,7 @@ Modules/_ctypes/_ctypes.c 37
 Modules/_ctypes/_ctypes_test_generated.c.h 141
 Modules/_ctypes/callbacks.c 6
 Modules/_ctypes/callproc.c 15
-Modules/_ctypes/cfield.c 59
+Modules/_ctypes/cfield.c 56
 Modules/_ctypes/malloc_closure.c 3
 Modules/_ctypes/stgdict.c 17
 Modules/_cursesmodule.c 24
