@@ -1397,8 +1397,6 @@ class FailingServerTestCase(unittest.TestCase):
     def test_fail_no_info(self):
         # use the broken message class
         xmlrpc.server.SimpleXMLRPCRequestHandler.MessageClass = FailingMessageClass
-
-        
         try:
             p = xmlrpclib.ServerProxy(URL)
             p.pow(6,8)
