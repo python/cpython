@@ -222,16 +222,6 @@ dist:
 	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-a4.tar.bz2
 	@echo "Build finished and archived!"
 
-	# archive the letter latex
-	@echo "Building LaTeX (US paper)..."
-	rm -rf build/latex
-	$(MAKE) latex PAPER=letter
-	-sed -i 's/: all-$$(FMT)/:/' build/latex/Makefile
-	(cd build/latex; $(MAKE) clean && $(MAKE) --jobs=$$((`nproc`+1)) --output-sync LATEXMKOPTS='-quiet' all-pdf && $(MAKE) FMT=pdf zip bz2)
-	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-letter.zip
-	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-letter.tar.bz2
-	@echo "Build finished and archived!"
-
 	# copy the epub build
 	@echo "Building EPUB..."
 	rm -rf build/epub
