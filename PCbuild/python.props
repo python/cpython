@@ -15,9 +15,6 @@
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VisualStudioVersion)' == '16.0'">v142</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and ('$(MSBuildToolsVersion)' == '15.0' or '$(VisualStudioVersion)' == '15.0')">v141</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath14)' != ''">v140</BasePlatformToolset>
-    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath12)' != ''">v120</BasePlatformToolset>
-    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath11)' != ''">v110</BasePlatformToolset>
-    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath10)' != ''">v100</BasePlatformToolset>
 
     <PlatformToolset Condition="'$(PlatformToolset)' == ''">$(BasePlatformToolset)</PlatformToolset>
     <ICCBuild>false</ICCBuild>
