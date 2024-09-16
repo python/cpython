@@ -70,7 +70,7 @@ typedef struct _PyCompiler compiler;
 #define SYMTABLE(C) _PyCompile_Symtable(C)
 #define SYMTABLE_ENTRY(C) _PyCompile_SymtableEntry(C)
 #define OPTIMIZATION_LEVEL(C) _PyCompile_OptimizationLevel(C)
-#define IS_INTERACTIVE(C) _PyCompile_IsInteractive(C)
+#define IS_INTERACTIVE(C) _PyCompile_IsInteractiveTopLevel(C)
 #define SCOPE_TYPE(C) _PyCompile_ScopeType(C)
 #define QUALNAME(C) _PyCompile_Qualname(C)
 #define METADATA(C) _PyCompile_Metadata(C)

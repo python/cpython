@@ -1204,7 +1204,7 @@ _PyCompile_OptimizationLevel(compiler *c)
 }
 
 int
-_PyCompile_IsInteractive(compiler *c)
+_PyCompile_IsInteractiveTopLevel(compiler *c)
 {
     assert(c->c_stack != NULL);
     assert(PyList_CheckExact(c->c_stack));
