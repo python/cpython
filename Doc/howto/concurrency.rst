@@ -138,6 +138,23 @@ Likewise, the high-level examples:
      - ...
      - ...
 
+To help further compare the models, there are side-by-side examples
+of each of those "apps":
+
+.. list-table::
+   :header-rows: 1
+   :class: borderless vert-aligned
+   :align: left
+
+   * - workload (app)
+     - side-by-side examples
+   * - `grep <Workload: grep_>`_
+     - `by concurrency models <concurrency-grep-side-by-side_>`_
+   * - `... <Workload 2: ..._>`_
+     - `by concurrency models <concurrency-example-2-side-by-side_>`_
+   * - `... <Workload 3: ..._>`_
+     - `by concurrency models <concurrency-example-3-side-by-side_>`_
+
 
 .. _concurrency-models:
 
@@ -1457,14 +1474,69 @@ you can also use :mod:`concurrent.futures`:
 
    </details>
 
+
 .. raw:: html
 
    <br/>
 
+
 Workload 2: ...
 ---------------
 
+.. TODO include full code
+
+TBD
+
+.. TODO finish
+
+Design and analysis
+^^^^^^^^^^^^^^^^^^^
+
+Design steps from `above <concurrency-design_>`_:
+
+1. concurrency fits?
+
+   TBD
+
+   .. TODO finish
+
+2. identify logical tasks
+
+   TBD
+
+   .. TODO finish
+
+3. select concurrent tasks
+
+   TBD
+
+   .. TODO finish
+
+4. concurrency-related characteristics
+
+   TBD
+
+   .. TODO finish
+
+5. pick best model
+
+   TBD
+
+   .. TODO finish
+
+Here are additional key constraints and considerations:
+
+* ...
+
+High-level code
+^^^^^^^^^^^^^^^
+
 # ...
+
+.. _concurrency-example-2-side-by-side:
+
+Side-by-side
+^^^^^^^^^^^^
 
 Here's the implementations for the different concurrency models,
 side-by-side for easy comparison:
@@ -1479,6 +1551,7 @@ side-by-side for easy comparison:
      - multiple interpreters
      - coroutines
      - multiple processes
+     - concurrent.futures
    * - .. raw:: html
 
           <details>
@@ -1554,14 +1627,84 @@ side-by-side for easy comparison:
 
           </details>
 
+     - .. raw:: html
+
+          <details>
+          <summary>(expand)</summary>
+
+       .. literalinclude:: ../includes/concurrency.py
+          :start-after: [start-w2-cf]
+          :end-before: [end-w2-cf]
+          :dedent:
+          :linenos:
+
+       .. raw:: html
+
+          </details>
+
+
 .. raw:: html
 
    <br/>
 
+
 Workload 3: ...
 ---------------
 
+.. TODO include full code
+
+TBD
+
+.. TODO finish
+
+Design and analysis
+^^^^^^^^^^^^^^^^^^^
+
+Design steps from `above <concurrency-design_>`_:
+
+1. concurrency fits?
+
+   TBD
+
+   .. TODO finish
+
+2. identify logical tasks
+
+   TBD
+
+   .. TODO finish
+
+3. select concurrent tasks
+
+   TBD
+
+   .. TODO finish
+
+4. concurrency-related characteristics
+
+   TBD
+
+   .. TODO finish
+
+5. pick best model
+
+   TBD
+
+   .. TODO finish
+
+Here are additional key constraints and considerations:
+
+* ...
+
+High-level code
+^^^^^^^^^^^^^^^
+
 # ...
+
+.. _concurrency-example-3-side-by-side:
+
+Side-by-side
+^^^^^^^^^^^^
 
 Here's the implementations for the different concurrency models,
 side-by-side for easy comparison:
@@ -1576,6 +1719,7 @@ side-by-side for easy comparison:
      - multiple interpreters
      - coroutines
      - multiple processes
+     - concurrent.futures
    * - .. raw:: html
 
           <details>
@@ -1644,6 +1788,21 @@ side-by-side for easy comparison:
        .. literalinclude:: ../includes/concurrency.py
           :start-after: [start-w3-multiprocessing]
           :end-before: [end-w3-multiprocessing]
+          :dedent:
+          :linenos:
+
+       .. raw:: html
+
+          </details>
+
+     - .. raw:: html
+
+          <details>
+          <summary>(expand)</summary>
+
+       .. literalinclude:: ../includes/concurrency.py
+          :start-after: [start-w3-cf]
+          :end-before: [end-w3-cf]
           :dedent:
           :linenos:
 
