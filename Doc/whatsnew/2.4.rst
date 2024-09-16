@@ -684,7 +684,7 @@ includes a quick-start tutorial and a reference.
       Written by Facundo Batista and implemented by Facundo Batista, Eric Price,
       Raymond Hettinger, Aahz, and Tim Peters.
 
-   `http://www.lahey.com/float.htm <https://web.archive.org/web/20230604072523/http://www.lahey.com/float.htm>`
+   `http://www.lahey.com/float.htm <https://web.archive.org/web/20230604072523/http://www.lahey.com/float.htm>`__
       The article uses Fortran code to illustrate many of the problems that
       floating-point inaccuracy can cause.
 
