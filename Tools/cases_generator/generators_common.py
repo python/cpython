@@ -176,14 +176,12 @@ class Emitter:
         next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
         self.out.emit(") ")
-        if storage.locals_cached():
+        storage.clear_inputs("at ERROR_IF")
+        c_offset = storage.stack.peek_offset()
+        try:
+            offset = -int(c_offset)
+        except ValueError:
             offset = -1
-        else:
-            c_offset = storage.stack.peek_offset()
-            try:
-                offset = -int(c_offset)
-            except ValueError:
-                offset = -1
         if offset > 0:
             self.out.emit(f"goto pop_{offset}_")
             self.out.emit(label)
@@ -299,16 +297,12 @@ class Emitter:
         self.out.emit(tkn)
         name = next(tkn_iter)
         self.out.emit(name)
-        rparen = next(tkn_iter)
-        self.out.emit(rparen)
-        if rparen.kind == "RPAREN":
-            if name.kind == "IDENTIFIER":
-                for var in storage.inputs:
-                    if var.name == name.text:
-                        var.defined = False
-        else:
-            rparen = emit_to(self.out, tkn_iter, "RPAREN")
-            self.emit(rparen)
+        if name.kind == "IDENTIFIER":
+            for var in storage.inputs:
+                if var.name == name.text:
+                    var.defined = False
+        rparen = emit_to(self.out, tkn_iter, "RPAREN")
+        self.emit(rparen)
         return True
 
     stackref_steal = stackref_close
@@ -512,7 +506,6 @@ class Emitter:
         _, rbrace, storage = self._emit_block(tkn_iter, uop, storage, inst, False)
         try:
             storage.push_outputs()
-            self.emit("/* Pushed outputs */")
             self._print_storage(storage)
         except StackError as ex:
             raise analysis_error(ex.args[0], rbrace)

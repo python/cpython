@@ -113,7 +113,6 @@ def write_uop(
     prototype = override if override else uop
     try:
         out.start_line()
-        out.emit(stack.define_output_arrays(prototype.stack.outputs))
         code_list, storage = Storage.for_uop(stack, prototype)
         for code in code_list:
             out.emit(code)

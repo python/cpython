@@ -49,6 +49,12 @@ class Local:
     def __repr__(self):
         return f"Local('{self.item.name}', mem={self.in_memory}, defined={self.defined}, array={self.is_array()})"
 
+    def compact_str(self) -> str:
+        mtag = "M" if self.in_memory else ""
+        dtag = "D" if self.defined else ""
+        atag = "A" if self.is_array() else ""
+        return f"'{self.item.name}'{mtag}{dtag}{atag}"
+
     @staticmethod
     def unused(defn: StackItem) -> "Local":
         return Local(defn, False, defn.is_array(), False)
@@ -285,18 +291,6 @@ class Stack:
         if var.item.used:
             self.defined.add(var.name)
 
-    def define_output_arrays(self, outputs: list[StackItem]) -> str:
-        res = []
-        top_offset = self.top_offset.copy()
-        for var in outputs:
-            if var.is_array() and var.used and not var.peek:
-                c_offset = top_offset.to_c()
-                top_offset.push(var)
-                res.append(f"{var.name} = &stack_pointer[{c_offset}];\n")
-            else:
-                top_offset.push(var)
-        return "\n".join(res)
-
     @staticmethod
     def _do_emit(
         out: CWriter,
@@ -344,10 +338,9 @@ class Stack:
         return self.top_offset.to_c()
 
     def as_comment(self) -> str:
-        variables = ", ".join([str(v) for v in self.variables])
+        variables = ", ".join([v.compact_str() for v in self.variables])
         return (
-            f"/* Variables: {variables}. "
-            f"Base offset: {self.base_offset.to_c()}. Top offset: {self.top_offset.to_c()} */"
+            f"/* Variables: {variables}. base: {self.base_offset.to_c()}. top: {self.top_offset.to_c()} */"
         )
 
     def copy(self) -> "Stack":
@@ -438,14 +431,19 @@ class Storage:
     def is_live(var: Local):
         return (
             var.defined and
-            not var.is_array() and
             var.name != "unused"
         )
+
+    def first_input_not_cleared(self) -> str:
+        for input in self.inputs:
+            if input.defined:
+                return input.name
+        return ""
 
     def clear_inputs(self, reason:str) -> None:
         while self.inputs:
             tos = self.inputs.pop()
-            if self.is_live(tos):
+            if self.is_live(tos) and not tos.is_array():
                 raise StackError(
                     f"Input '{tos.name}' is still live {reason}"
                 )
@@ -532,6 +530,14 @@ class Storage:
         peeks.reverse()
         for var in peeks:
             stack.push(var)
+        top_offset = stack.top_offset.copy()
+        for var in uop.stack.outputs:
+            if var.is_array() and var.used and not var.peek:
+                c_offset = top_offset.to_c()
+                top_offset.push(var)
+                code_list.append(f"{var.name} = &stack_pointer[{c_offset}];\n")
+            else:
+                top_offset.push(var)
         for var in inputs:
             stack.push(var)
         outputs = [ Local.undefined(var) for var in uop.stack.outputs if not var.peek ]
@@ -611,7 +617,7 @@ class Storage:
     def as_comment(self) -> str:
         stack_comment = self.stack.as_comment()
         next_line = "\n               "
-        inputs = ", ".join([str(var) for var in self.inputs])
-        outputs = ", ".join([str(var) for var in self.outputs])
+        inputs = ", ".join([var.compact_str() for var in self.inputs])
+        outputs = ", ".join([var.compact_str() for var in self.outputs])
         peeks = ", ".join([var.name for var in self.peeks])
         return f"{stack_comment[:-2]}{next_line}inputs: {inputs}{next_line}outputs: {outputs}{next_line}peeks: {peeks} */"

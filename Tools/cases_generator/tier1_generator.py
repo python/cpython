@@ -89,7 +89,6 @@ def write_uop(
             emitter.emit("{\n")
         code_list, storage = Storage.for_uop(stack, uop)
         emitter._print_storage(storage)
-        emitter.emit(stack.define_output_arrays(uop.stack.outputs))
         for code in code_list:
             emitter.emit(code)
 

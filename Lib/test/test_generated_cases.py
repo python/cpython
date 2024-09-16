@@ -1028,16 +1028,16 @@ class TestGeneratedCases(unittest.TestCase):
             _PyStackRef w;
             _PyStackRef y;
             // FIRST
-            w = stack_pointer[-1];
             {
+                w = stack_pointer[-1];
                 use(w);
             }
             // SECOND
             {
             }
             // THIRD
-            y = w;
             {
+                y = w;
                 use(y);
             }
             DISPATCH();
@@ -1071,13 +1071,13 @@ class TestGeneratedCases(unittest.TestCase):
             {
             }
             // SECOND
-            x = stack_pointer[-1];
             {
+                x = stack_pointer[-1];
                 use(x);
             }
             // THIRD
-            y = x;
             {
+                y = x;
                 use(y);
             }
             DISPATCH();
@@ -1131,7 +1131,9 @@ class TestGeneratedCases(unittest.TestCase):
         input = """
         op(FIRST, (x, y -- a, b)) {
             a = x;
+            KILL(x);
             b = y;
+            KILL(y);
         }
 
         op(SECOND, (a, b -- a, b)) {
@@ -1262,6 +1264,19 @@ class TestGeneratedCases(unittest.TestCase):
         """
         with self.assertRaises(SyntaxError):
             self.run_cases_test(input, output)
+
+    def test_save_reload(self):
+
+        input = """
+        inst(BALANCED, ( -- )) {
+            SAVE_STACK();
+            RELOAD_STACK();
+        }
+        """
+
+        output = """
+        """
+        self.run_cases_test(input, output)
 
 
 class TestGeneratedAbstractCases(unittest.TestCase):

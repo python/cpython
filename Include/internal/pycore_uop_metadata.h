@@ -246,6 +246,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_EXPAND_METHOD_KW] = HAS_ARG_FLAG,
     [_CHECK_IS_NOT_PY_CALLABLE_KW] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
     [_CALL_KW_NON_PY] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_MAKE_CALLARGS_A_TUPLE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_MAKE_FUNCTION] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_SET_FUNCTION_ATTRIBUTE] = HAS_ARG_FLAG,
     [_RETURN_GENERATOR] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -480,6 +481,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_LOAD_SPECIAL] = "_LOAD_SPECIAL",
     [_LOAD_SUPER_ATTR_ATTR] = "_LOAD_SUPER_ATTR_ATTR",
     [_LOAD_SUPER_ATTR_METHOD] = "_LOAD_SUPER_ATTR_METHOD",
+    [_MAKE_CALLARGS_A_TUPLE] = "_MAKE_CALLARGS_A_TUPLE",
     [_MAKE_CELL] = "_MAKE_CELL",
     [_MAKE_FUNCTION] = "_MAKE_FUNCTION",
     [_MAP_ADD] = "_MAP_ADD",
@@ -1008,6 +1010,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 3 + oparg;
         case _CALL_KW_NON_PY:
             return 3 + oparg;
+        case _MAKE_CALLARGS_A_TUPLE:
+            return 3 + (oparg & 1);
         case _MAKE_FUNCTION:
             return 1;
         case _SET_FUNCTION_ATTRIBUTE:
