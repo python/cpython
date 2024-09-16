@@ -361,19 +361,19 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(is_version_overflowed__doc__,
-"is_version_overflowed($module, /, dict)\n"
+PyDoc_STRVAR(is_dict_version_overflowed__doc__,
+"is_dict_version_overflowed($module, /, dict)\n"
 "--\n"
 "\n");
 
-#define IS_VERSION_OVERFLOWED_METHODDEF    \
-    {"is_version_overflowed", _PyCFunction_CAST(is_version_overflowed), METH_FASTCALL|METH_KEYWORDS, is_version_overflowed__doc__},
+#define IS_DICT_VERSION_OVERFLOWED_METHODDEF    \
+    {"is_dict_version_overflowed", _PyCFunction_CAST(is_dict_version_overflowed), METH_FASTCALL|METH_KEYWORDS, is_dict_version_overflowed__doc__},
 
 static PyObject *
-is_version_overflowed_impl(PyObject *module, PyDictObject *dict);
+is_dict_version_overflowed_impl(PyObject *module, PyDictObject *dict);
 
 static PyObject *
-is_version_overflowed(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+is_dict_version_overflowed(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -397,7 +397,7 @@ is_version_overflowed(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     static const char * const _keywords[] = {"dict", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "is_version_overflowed",
+        .fname = "is_dict_version_overflowed",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -409,13 +409,13 @@ is_version_overflowed(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
         goto exit;
     }
     if (!PyDict_Check(args[0])) {
-        _PyArg_BadArgument("is_version_overflowed", "argument 'dict'", "dict", args[0]);
+        _PyArg_BadArgument("is_dict_version_overflowed", "argument 'dict'", "dict", args[0]);
         goto exit;
     }
     dict = (PyDictObject *)args[0];
-    return_value = is_version_overflowed_impl(module, dict);
+    return_value = is_dict_version_overflowed_impl(module, dict);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=db48c5653d91253c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=72c1ccc6a2d4dd3b input=a9049054013a1b77]*/

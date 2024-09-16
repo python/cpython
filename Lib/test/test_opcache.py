@@ -534,7 +534,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
             if check_items:
                 for item in items:
                     # Checking for overflow
-                    if _testinternalcapi.is_version_overflowed(item.__globals__):
+                    if _testinternalcapi.is_dict_version_overflowed(item.__globals__):
                         return unittest.skip("Version number is overflowed; no rerun is possible")
                     item.__code__ = item.__code__.replace()
             else:

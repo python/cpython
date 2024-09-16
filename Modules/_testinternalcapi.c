@@ -2035,15 +2035,15 @@ gh_119213_getargs_impl(PyObject *module, PyObject *spam)
 }
 
 /*[clinic input]
-is_version_overflowed
+is_dict_version_overflowed
 
     dict: object(type="PyDictObject *", subclass_of="&PyDict_Type")
 
 [clinic start generated code]*/
 
 static PyObject *
-is_version_overflowed_impl(PyObject *module, PyDictObject *dict)
-/*[clinic end generated code: output=e7d20960c423d073 input=a68a26cde1cc7a9e]*/
+is_dict_version_overflowed_impl(PyObject *module, PyDictObject *dict)
+/*[clinic end generated code: output=85daaa03aef739fd input=a0a9e8265cd6ae23]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(interp, dict->ma_keys);
@@ -2163,7 +2163,7 @@ static PyMethodDef module_functions[] = {
     GH_119213_GETARGS_METHODDEF
     {"get_static_builtin_types", get_static_builtin_types, METH_NOARGS},
     {"identify_type_slot_wrappers", identify_type_slot_wrappers, METH_NOARGS},
-    IS_VERSION_OVERFLOWED_METHODDEF
+    IS_DICT_VERSION_OVERFLOWED_METHODDEF
     {NULL, NULL} /* sentinel */
 };
 
