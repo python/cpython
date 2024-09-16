@@ -387,16 +387,16 @@ There is also a module-level convenience function:
     .. versionadded:: 3.3
 
     .. versionchanged:: 3.4
-       Added the ``with_pip`` parameter
+       Added the *with_pip* parameter
 
     .. versionchanged:: 3.6
-       Added the ``prompt`` parameter
+       Added the *prompt* parameter
 
     .. versionchanged:: 3.9
-       Added the ``upgrade_deps`` parameter
+       Added the *upgrade_deps* parameter
 
     .. versionchanged:: 3.13
-       Added the ``scm_ignore_files`` parameter
+       Added the *scm_ignore_files* parameter
 
 An example of extending ``EnvBuilder``
 --------------------------------------
