@@ -12,7 +12,11 @@ filename = _testsinglephase.__file__
 loader = importlib.machinery.ExtensionFileLoader(name, filename)
 spec = importlib.util.spec_from_file_location(name, filename, loader=loader)
 mod = importlib._bootstrap._load(spec)
+loader.exec_module(module)
+sys.modules[modname] = module
 ```
+
+(The last two lines are just for completeness.)
 
 Here are the modules:
 
