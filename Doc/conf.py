@@ -556,6 +556,8 @@ linkcheck_allowed_redirects = {
     r'https://www.sqlite.org': 'https://www.sqlite.org/index.html',
     r'https://mitpress.mit.edu/sicp$': 'https://mitpress.mit.edu/9780262510875/structure-and-interpretation-of-computer-programs/',
     r'https://www.python.org/psf/': 'https://www.python.org/psf-landing/',
+    # pypi.org project name normalization (upper to lowercase, underscore to hyphen)
+    r'https://pypi.org/project/[A-Za-z\d_\-\.]+/': r'https://pypi.org/project/[a-z\d\-\.]+/',
 }
 
 linkcheck_anchors_ignore = [
