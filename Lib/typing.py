@@ -29,7 +29,7 @@ import functools
 import operator
 import sys
 import types
-from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType, GenericAlias
+from types import GenericAlias
 
 from _typing import (
     _idfunc,
@@ -2350,11 +2350,6 @@ def assert_type(val, typ, /):
             assert_type(name, int)  # type checker error
     """
     return val
-
-
-_allowed_types = (types.FunctionType, types.BuiltinFunctionType,
-                  types.MethodType, types.ModuleType,
-                  WrapperDescriptorType, MethodWrapperType, MethodDescriptorType)
 
 
 def get_type_hints(obj, globalns=None, localns=None, include_extras=False,

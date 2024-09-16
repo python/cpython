@@ -1,7 +1,4 @@
-"""Test date/time type.
-
-See https://www.zope.dev/Members/fdrake/DateTimeWiki/TestCases
-"""
+"""Test the datetime module."""
 import bisect
 import copy
 import decimal
