@@ -44,7 +44,7 @@ A virtual environment is (amongst other things):
 * Not checked into source control systems such as Git.
 
 * Considered as disposable -- it should be simple to delete and recreate it from
-  scratch. You don't place any project code in the environment
+  scratch. You don't place any project code in the environment.
 
 * Not considered as movable or copyable -- you just recreate the same
   environment in the target location.

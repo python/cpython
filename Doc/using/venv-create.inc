@@ -1,10 +1,10 @@
-Creation of :ref:`virtual environments <venv-def>` is done by executing the
-command ``venv``::
+:ref:`Virtual environments <venv-def>` are created by executing the ``venv``
+command::
 
     python -m venv /path/to/new/virtual/environment
 
-Running this command creates the target directory (creating any parent
-directories that don't exist already) and places a ``pyvenv.cfg`` file in it
+This creates the target directory (creating any parent
+directories that don't already exist) and places a ``pyvenv.cfg`` file in it
 with a ``home`` key pointing to the Python installation from which the command
 was run (a common name for the target directory is ``.venv``).  It also creates
 a ``bin`` (or ``Scripts`` on Windows) subdirectory containing a copy/symlink
