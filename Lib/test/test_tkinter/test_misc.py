@@ -92,8 +92,7 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(f.tk_busy_configure('cursor')[4], 'heart')
 
         f.tk_busy_forget()
-        print('>>>>>2', messages['no_busy'])
-        with self.assertRaisesRegex(TclError, messaages["no_busy"]):
+        with self.assertRaisesRegex(TclError, messages["no_busy"]):
             f.tk_busy_cget('cursor')
 
     def test_tk_setPalette(self):
