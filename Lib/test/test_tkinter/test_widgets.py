@@ -7,7 +7,7 @@ from test.support import requires
 from test.test_tkinter.support import (requires_tk, tk_version,
                                   get_tk_patchlevel, widget_eq,
                                   AbstractDefaultRootTest)
-if tk_version < (9,0):
+if tk_version < (9, 0):
     from test.test_tkinter.support import messages_v1 as messages, is_pixel_str
 else:
     from test.test_tkinter.support import messages_v2 as messages, is_pixel_str
@@ -26,13 +26,12 @@ EXPECTED_SCREEN_DISTANCE_OR_EMPTY_ERRMSG = '(bad|expected) screen distance (or "
 def float_round(x):
     return float(round(x))
 
-
 class AbstractToplevelTest(AbstractWidgetTest, PixelSizeTests):
-    _no_round = {'padx', 'pady'} if tk_version < (9,0) else {
+    _no_round = {'padx', 'pady'} if tk_version < (9, 0) else {
         'borderwidth', 'height', 'highlightthickness', 'padx', 'pady',
         'width'}
     _clipped = {
-        'highlightthickness'} if tk_version < (9,0) else {
+        'highlightthickness'} if tk_version < (9, 0) else {
         'borderwidth', 'height', 'highlightthickness', 'padx', 'pady',
         'width'}
 
@@ -121,7 +120,7 @@ class FrameTest(AbstractToplevelTest, unittest.TestCase):
         'highlightbackground', 'highlightcolor', 'highlightthickness',
         'padx', 'pady', 'relief', 'takefocus', 'tile', 'visual', 'width',
     )
-    _no_round = {'padx', 'pady'} if tk_version < (9,0) else {
+    _no_round = {'padx', 'pady'} if tk_version < (9, 0) else {
         'borderwidth', 'height', 'highlightthickness', 'padx', 'pady',
         'width'}
 
@@ -139,7 +138,7 @@ class LabelFrameTest(AbstractToplevelTest, unittest.TestCase):
         'labelanchor', 'labelwidget', 'padx', 'pady', 'relief',
         'takefocus', 'text', 'visual', 'width',
     )
-    _no_round = {'padx', 'pady'} if tk_version < (9,0) else {
+    _no_round = {'padx', 'pady'} if tk_version < (9, 0) else {
         'borderwidth', 'height', 'highlightthickness', 'padx', 'pady',
         'width'}
 
@@ -162,7 +161,7 @@ class LabelFrameTest(AbstractToplevelTest, unittest.TestCase):
 # Label, Button, Checkbutton, Radiobutton, MenuButton
 class AbstractLabelTest(AbstractWidgetTest, IntegerSizeTests):
     _rounds_pixels = False
-    _clipped = set() if tk_version < (9,0) else {
+    _clipped = {} if tk_version < (9, 0) else {
         'borderwidth', 'insertborderwidth', 'highlightthickness',
         'padx', 'pady'}
 
@@ -293,9 +292,9 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
         'takefocus', 'text', 'textvariable',
         'underline', 'width', 'wraplength',
     )
-    _rounds_pixels = tk_version < (9,0)
+    _rounds_pixels = tk_version < (9, 0)
     _clipped = {'highlightthickness', 'padx', 'pady'
-        } if tk_version < (9,0) else { 'insertborderwidth',
+        } if tk_version < (9, 0) else { 'insertborderwidth',
         'highlightthickness', 'padx', 'pady'}
 
     def create(self, **kwargs):
@@ -346,8 +345,8 @@ class OptionMenuTest(MenubuttonTest, unittest.TestCase):
 
 @add_configure_tests(IntegerSizeTests, StandardOptionsTests)
 class EntryTest(AbstractWidgetTest, unittest.TestCase):
-    _rounds_pixels = (tk_version < (9,0))
-    _clipped = {'highlightthickness'} if tk_version < (9,0) else {
+    _rounds_pixels = (tk_version < (9, 0))
+    _clipped = {'highlightthickness'} if tk_version < (9, 0) else {
         'highlightthickness', 'borderwidth', 'insertborderwidth',
         'selectborderwidth'}
 
@@ -601,7 +600,7 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
         'tabs', 'tabstyle', 'takefocus', 'undo', 'width', 'wrap',
         'xscrollcommand', 'yscrollcommand',
     )
-    _rounds_pixels = (tk_version < (9,0))
+    _rounds_pixels = (tk_version < (9, 0))
     _no_round = {'selectborderwidth'}
     _clipped = {'highlightthickness'}
 
@@ -996,9 +995,9 @@ class ListboxTest(AbstractWidgetTest, unittest.TestCase):
         'selectmode', 'setgrid', 'state',
         'takefocus', 'width', 'xscrollcommand', 'yscrollcommand',
     )
-    _rounds_pixels = (tk_version < (9,0))
+    _rounds_pixels = (tk_version < (9, 0))
     _clipped = {'highlightthickness'
-        } if tk_version < (9,0) else { 'borderwidth',
+        } if tk_version < (9, 0) else { 'borderwidth',
         'highlightthickness', 'selectborderwidth'}
 
     def create(self, **kwargs):
@@ -1137,7 +1136,7 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
         'resolution', 'showvalue', 'sliderlength', 'sliderrelief', 'state',
         'takefocus', 'tickinterval', 'to', 'troughcolor', 'variable', 'width',
     )
-    _rounds_pixels = (tk_version < (9,0))
+    _rounds_pixels = (tk_version < (9, 0))
     _clipped = {'highlightthickness'}
     default_orient = 'vertical'
 
@@ -1208,7 +1207,7 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
         'takefocus', 'troughcolor', 'width',
     )
     _rounds_pixels = True
-    _clipped = {'highlightthickness'} if tk_version < (9,0) else{
+    _clipped = {'highlightthickness'} if tk_version < (9, 0) else{
         'borderwidth', 'highlightthickness'}
     _stringify = True
     default_orient = 'vertical'
@@ -1261,7 +1260,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
     _rounds_pixels = True
     _no_round = {'handlesize', 'height', 'proxyborderwidth',
                      'sashwidth', 'selectborderwidth', 'width'
-                } if tk_version < (9,0) else {'borderwidth',
+                } if tk_version < (9, 0) else {'borderwidth',
                     'handlepad', 'handlesize',
                     'height', 'proxyborderwidth', 'sashpad',
                     'sashwidth', 'selectborderwidth', 'width'}
@@ -1394,13 +1393,13 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_paneconfigure_padx(self):
         p, b, c = self.create2()
-        self.check_paneconfigure(p, b, 'padx', 1.3, 1 if tk_version < (9,0) else 1.3)
+        self.check_paneconfigure(p, b, 'padx', 1.3, 1 if tk_version < (9, 0) else 1.3)
         self.check_paneconfigure_bad(p, b, 'padx',
                 EXPECTED_SCREEN_DISTANCE_ERRMSG.format('badValue'))
 
     def test_paneconfigure_pady(self):
         p, b, c = self.create2()
-        self.check_paneconfigure(p, b, 'pady', 1.3, 1 if tk_version < (9,0) else 1.3)
+        self.check_paneconfigure(p, b, 'pady', 1.3, 1 if tk_version < (9, 0) else 1.3)
         self.check_paneconfigure_bad(p, b, 'pady',
                 EXPECTED_SCREEN_DISTANCE_ERRMSG.format('badValue'))
 
@@ -1436,7 +1435,7 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
         'tearoff', 'tearoffcommand', 'title', 'type',
     )
     _rounds_pixels = False
-    _clipped = set()
+    _clipped = {}
 
     def create(self, **kwargs):
         return tkinter.Menu(self.root, **kwargs)
@@ -1514,9 +1513,9 @@ class MessageTest(AbstractWidgetTest, unittest.TestCase):
         'justify', 'padx', 'pady', 'relief',
         'takefocus', 'text', 'textvariable', 'width',
     )
-    _rounds_pixels = (tk_version < (9,0))
+    _rounds_pixels = (tk_version < (9, 0))
     _no_round = {'padx', 'pady'}
-    _clipped = {'highlightthickness'} if tk_version < (9,0) else {
+    _clipped = {'highlightthickness'} if tk_version < (9, 0) else {
         'borderwidth', 'highlightthickness', 'padx', 'pady'}
 
     def create(self, **kwargs):
@@ -1529,13 +1528,13 @@ class MessageTest(AbstractWidgetTest, unittest.TestCase):
     def test_configure_padx(self):
         widget = self.create()
         self.checkPixelsParam(widget, 'padx', 3, 4.4, 5.6, '12m')#,
-        expected = -2 if tk_version < (9,0) else self._default_pixels
+        expected = -2 if tk_version < (9, 0) else self._default_pixels
         self.checkParam(widget, 'padx', -2, expected=expected)
 
     def test_configure_pady(self):
         widget = self.create()
         self.checkPixelsParam(widget, 'pady', 3, 4.4, 5.6, '12m')#,
-        expected = -2 if tk_version < (9,0) else self._default_pixels
+        expected = -2 if tk_version < (9, 0) else self._default_pixels
         self.checkParam(widget, 'pady', -2, expected=expected)
 
     def test_configure_width(self):

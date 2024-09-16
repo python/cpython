@@ -146,19 +146,6 @@ class AbstractWidgetTest(AbstractTkTest):
             errmsg = 'bad' + errmsg2
         self.checkInvalidParam(widget, name, 'spam', errmsg=errmsg)
 
-    def XcheckPixelsParam(self, widget, name, *values, conv=None, **kwargs):
-        # Some widget options can be specified as distances which are
-        # independent from the screen resolution.  These distances are
-        # given as a string consisting of a number followed by a single
-        # character representing the unit - c for cm, m for mm, p for point
-        # or i for inch. Tk can convert such a value to pixels using the
-        # current resolution and scaling, but the cget command *should* return the
-        # string value.  Some widgets don't follow this convention (yet)
-        # and instead return a number.  An option which violates the
-        # convention should be listed in the _converts attribute of the
-        # widget test object.
-        pass
-
     def checkPixelsParam(self, widget, name, *values, conv=None, **kwargs):
         if not self._rounds_pixels or name in self._no_round:
             conv = False
