@@ -2526,3 +2526,5 @@
     added = '3.14'
 [function.PyLong_AsUInt64]
     added = '3.14'
+[const.Py_tp_vectorcall]
+    added = '3.14'

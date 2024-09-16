@@ -427,12 +427,16 @@ class _ReadlineWrapper:
         history = self.get_reader().history
 
         with open(os.path.expanduser(filename), 'rb') as f:
-            lines = [line.decode('utf-8', errors='replace') for line in f.read().split(b'\n')]
+            is_editline = f.readline().startswith(b"_HiStOrY_V2_")
+            if is_editline:
+                encoding = "unicode-escape"
+            else:
+                f.seek(0)
+                encoding = "utf-8"
+
+            lines = [line.decode(encoding, errors='replace') for line in f.read().split(b'\n')]
             buffer = []
             for line in lines:
-                # Ignore readline history file header
-                if line.startswith("_HiStOrY_V2_"):
-                    continue
                 if line.endswith("\r"):
                     buffer.append(line+'\n')
                 else:
