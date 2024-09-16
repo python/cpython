@@ -1,1 +1,1 @@
-Fix a bug where argparse would remove -- in cases where it delineates positional arguments
+Fix a bug where :mod:`argparse` would remove "--" in cases where it delineates positional arguments in nargs.
