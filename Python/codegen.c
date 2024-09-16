@@ -2792,20 +2792,7 @@ codegen_from_import(compiler *c, stmt_ty s)
 static int
 codegen_assert(compiler *c, stmt_ty s)
 {
-    /* Always emit a warning if the test is a non-zero length tuple */
-    if ((s->v.Assert.test->kind == Tuple_kind &&
-        asdl_seq_LEN(s->v.Assert.test->v.Tuple.elts) > 0) ||
-        (s->v.Assert.test->kind == Constant_kind &&
-         PyTuple_Check(s->v.Assert.test->v.Constant.value) &&
-         PyTuple_Size(s->v.Assert.test->v.Constant.value) > 0))
-    {
-        RETURN_IF_ERROR(
-            _PyCompile_Warn(c, LOC(s), "assertion is always true, "
-                                       "perhaps remove parentheses?"));
-    }
-    if (OPTIMIZATION_LEVEL(c)) {
-        return SUCCESS;
-    }
+    assert(!OPTIMIZATION_LEVEL(c));
     NEW_JUMP_TARGET_LABEL(c, end);
     RETURN_IF_ERROR(codegen_jump_if(c, LOC(s), s->v.Assert.test, end, 1));
     ADDOP_I(c, LOC(s), LOAD_COMMON_CONSTANT, CONSTANT_ASSERTIONERROR);

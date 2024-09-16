@@ -37,7 +37,8 @@ extern int _PyAST_Optimize(
     struct _mod *,
     struct _arena *arena,
     int optimize,
-    int ff_features);
+    int ff_features,
+    PyObject *filename);
 
 
 typedef struct {

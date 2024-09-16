@@ -10,6 +10,7 @@
 typedef struct {
     int optimize;
     int ff_features;
+    PyObject *filename;
 
     int recursion_depth;            /* current recursion depth */
     int recursion_limit;            /* recursion limit */
@@ -49,6 +50,12 @@ make_const(expr_ty node, PyObject *val, PyArena *arena)
     node->v.Constant.kind = NULL;
     node->v.Constant.value = val;
     return 1;
+}
+
+static void
+make_pass(stmt_ty node)
+{
+    node->kind = Pass_kind;
 }
 
 #define COPY_NODE(TO, FROM) (memcpy((TO), (FROM), sizeof(struct _expr)))
@@ -1005,6 +1012,29 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case Assert_kind:
         CALL(astfold_expr, expr_ty, node_->v.Assert.test);
         CALL_OPT(astfold_expr, expr_ty, node_->v.Assert.msg);
+        /* Always emit a warning if the test is a non-zero length tuple */
+        if ((node_->v.Assert.test->kind == Tuple_kind &&
+            asdl_seq_LEN(node_->v.Assert.test->v.Tuple.elts) > 0) ||
+            (node_->v.Assert.test->kind == Constant_kind &&
+             PyTuple_Check(node_->v.Assert.test->v.Constant.value) &&
+             PyTuple_Size(node_->v.Assert.test->v.Constant.value) > 0))
+        {
+            PyObject *msg = PyUnicode_FromString("assertion is always true, "
+                                                 "perhaps remove parentheses?");
+            if (msg == NULL) {
+                return 0;
+            }
+            int ret = _PyErr_EmitSyntaxWarning(msg, state->filename,
+                                               node_->lineno, node_->col_offset + 1,
+                                               node_->end_lineno, node_->end_col_offset + 1);
+            Py_DECREF(msg);
+            if (ret < 0) {
+                return 0;
+            }
+        }
+        if (state->optimize) {
+            make_pass(node_);
+        }
         break;
     case Expr_kind:
         CALL(astfold_expr, expr_ty, node_->v.Expr.value);
@@ -1125,7 +1155,7 @@ astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
 #undef CALL_SEQ
 
 int
-_PyAST_Optimize(mod_ty mod, PyArena *arena, int optimize, int ff_features)
+_PyAST_Optimize(mod_ty mod, PyArena *arena, int optimize, int ff_features, PyObject *filename)
 {
     PyThreadState *tstate;
     int starting_recursion_depth;
@@ -1133,6 +1163,7 @@ _PyAST_Optimize(mod_ty mod, PyArena *arena, int optimize, int ff_features)
     _PyASTOptimizeState state;
     state.optimize = optimize;
     state.ff_features = ff_features;
+    state.filename = filename;
 
     /* Setup recursion depth check counters */
     tstate = _PyThreadState_GET();

@@ -443,12 +443,6 @@ class BuiltinTest(unittest.TestCase):
             '''a = [x async for x in (x async for x in arange(5))][1]''',
             '''a, = [1 for x in {x async for x in arange(1)}]''',
             '''a = [await asyncio.sleep(0, x) async for x in arange(2)][1]''',
-            # gh-121637: Make sure we correctly handle the case where the
-            # async code is optimized away
-            '''assert not await asyncio.sleep(0); a = 1''',
-            '''assert [x async for x in arange(1)]; a = 1''',
-            '''assert {x async for x in arange(1)}; a = 1''',
-            '''assert {x: x async for x in arange(1)}; a = 1''',
             '''
             if (a := 1) and __debug__:
                 async with asyncio.Lock() as l:
@@ -490,6 +484,29 @@ class BuiltinTest(unittest.TestCase):
                     self.assertEqual(globals_['a'], 1)
         finally:
             asyncio.set_event_loop_policy(policy)
+
+    def test_top_level_async_in_assert_compiles(self):
+        # gh-121637: do the right thing when async code is optimized away
+        modes = ('single', 'exec')
+        optimizations = (0, 1, 2)
+        code_samples = [
+            '''assert not await asyncio.sleep(0)''',
+            '''assert [x async for x in arange(1)]''',
+            '''assert {x async for x in arange(1)}''',
+            '''assert {x: x async for x in arange(1)}''',
+        ]
+        for mode, code_sample, optimize in product(modes, code_samples, optimizations):
+            with self.subTest(mode=mode, code_sample=code_sample, optimize=optimize):
+                source = dedent(code_sample)
+                if (optimize):
+                    co = compile(source, '?', mode, optimize=optimize)
+                    co_expected = compile('pass',  '?', mode, optimize=optimize)
+                    self.assertEqual(list(co.co_lines()), list(co_expected.co_lines()))
+                else:
+                    with self.assertRaises(SyntaxError,
+                                           msg=f"source={source} mode={mode}"):
+                        compile(source, '?', mode, optimize=optimize)
+
 
     def test_compile_top_level_await_invalid_cases(self):
          # helper function just to check we can run top=level async-for
