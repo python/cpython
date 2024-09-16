@@ -2474,7 +2474,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             if action.nargs == ZERO_OR_MORE and action.type is None:
                 # if nargs='*' starts with '--', then we should treat any
                 # subsequent arguments as positional arguments and we should not
-                # strip out the first '--'
+                # strip out the first '--' unless it violates a specified type
                 if arg_strings and arg_strings[0] == '--':
                     arg_strings = arg_strings[1:]   
             else:
