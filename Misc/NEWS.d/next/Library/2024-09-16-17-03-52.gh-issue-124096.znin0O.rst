@@ -1,0 +1,3 @@
+Turn on virtual terminal mode in REPL Windows console to emit sequences that
+bracketed-paste modes require. If the terminal may not support paste modes,
+provides a flag to help callers turn off related features.
