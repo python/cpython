@@ -6791,31 +6791,43 @@ const PyLongLayout* PyLong_GetNativeLayout(void)
 
 
 int
-PyLong_AsDigitArray(PyObject *obj, PyLong_DigitArray *array)
+PyLong_Export(PyObject *obj, PyLongExport *export_long)
 {
     if (!PyLong_Check(obj)) {
         PyErr_Format(PyExc_TypeError, "expect int, got %T", obj);
         return -1;
     }
-    PyLongObject *self = (PyLongObject*)obj;
-
-    array->negative = _PyLong_IsNegative(self);
-    array->ndigits = _PyLong_DigitCount(self);
-    if (array->ndigits == 0) {
-        array->ndigits = 1;
+    int64_t value;
+    if (PyLong_AsInt64(obj, &value) >= 0) {
+        export_long->value = value;
+        export_long->negative = 0;
+        export_long->ndigits = 0;
+        export_long->digits = 0;
+        export_long->_reserved = 0;
     }
-    array->digits = self->long_value.ob_digit;
-    array->_reserved = (Py_uintptr_t)Py_NewRef(obj);
+    else {
+        PyErr_Clear();
+
+        PyLongObject *self = (PyLongObject*)obj;
+        export_long->value = 0;
+        export_long->negative = _PyLong_IsNegative(self);
+        export_long->ndigits = _PyLong_DigitCount(self);
+        if (export_long->ndigits == 0) {
+            export_long->ndigits = 1;
+        }
+        export_long->digits = self->long_value.ob_digit;
+        export_long->_reserved = (Py_uintptr_t)Py_NewRef(obj);
+    }
     return 0;
 }
 
 
 void
-PyLong_FreeDigitArray(PyLong_DigitArray *array)
+PyLong_FreeExport(PyLongExport *export_long)
 {
-    PyObject *obj = (PyObject*)array->_reserved;
-    array->_reserved = 0;
-    Py_DECREF(obj);
+    PyObject *obj = (PyObject*)export_long->_reserved;
+    export_long->_reserved = 0;
+    Py_XDECREF(obj);
 }
 
 

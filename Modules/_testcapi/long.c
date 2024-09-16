@@ -174,19 +174,24 @@ error:
 
 
 static PyObject *
-pylong_asdigitarray(PyObject *module, PyObject *obj)
+pylong_export(PyObject *module, PyObject *obj)
 {
-    PyLong_DigitArray array;
-    if (PyLong_AsDigitArray(obj, &array) < 0) {
+    PyLongExport export_long;
+    if (PyLong_Export(obj, &export_long) < 0) {
         return NULL;
     }
 
+    if (export_long.digits == NULL) {
+        return PyLong_FromInt64(export_long.value);
+        // PyLong_FreeExport() is not needed in this case
+    }
+
     assert(PyLong_GetNativeLayout()->digit_size == sizeof(Py_digit));
-    const Py_digit *array_digits = array.digits;
+    const Py_digit *export_long_digits = export_long.digits;
 
     PyObject *digits = PyList_New(0);
-    for (Py_ssize_t i=0; i < array.ndigits; i++) {
-        PyObject *digit = PyLong_FromUnsignedLong(array_digits[i]);
+    for (Py_ssize_t i=0; i < export_long.ndigits; i++) {
+        PyObject *digit = PyLong_FromUnsignedLong(export_long_digits[i]);
         if (digit == NULL) {
             goto error;
         }
@@ -198,16 +203,16 @@ pylong_asdigitarray(PyObject *module, PyObject *obj)
         Py_DECREF(digit);
     }
 
-    PyObject *res = Py_BuildValue("(iN)", array.negative, digits);
+    PyObject *res = Py_BuildValue("(iN)", export_long.negative, digits);
 
-    PyLong_FreeDigitArray(&array);
-    assert(array._reserved == 0);
+    PyLong_FreeExport(&export_long);
+    assert(export_long._reserved == 0);
 
     return res;
 
 error:
     Py_DECREF(digits);
-    PyLong_FreeDigitArray(&array);
+    PyLong_FreeExport(&export_long);
     return NULL;
 }
 
@@ -280,7 +285,7 @@ static PyMethodDef test_methods[] = {
     {"pylong_fromnativebytes",      pylong_fromnativebytes,     METH_VARARGS},
     {"pylong_getsign",              pylong_getsign,             METH_O},
     {"pylong_aspid",                pylong_aspid,               METH_O},
-    {"pylong_asdigitarray",         pylong_asdigitarray,        METH_O},
+    {"pylong_export",               pylong_export,              METH_O},
     {"pylongwriter_create",         pylongwriter_create,        METH_VARARGS},
     {"get_pylong_layout",           get_pylong_layout,          METH_NOARGS},
     {NULL},

@@ -10,6 +10,7 @@ _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 
 NULL = None
 
+
 class IntSubclass(int):
     pass
 
@@ -686,19 +687,23 @@ class LongTests(unittest.TestCase):
         layout = _testcapi.get_pylong_layout()
         base = 2 ** layout['bits_per_digit']
 
-        pylong_asdigitarray = _testcapi.pylong_asdigitarray
-        self.assertEqual(pylong_asdigitarray(0), (0, [0]))
-        self.assertEqual(pylong_asdigitarray(123), (0, [123]))
-        self.assertEqual(pylong_asdigitarray(-123), (1, [123]))
-        self.assertEqual(pylong_asdigitarray(base**2 * 3 + base * 2 + 1),
-                         (0, [1, 2, 3]))
+        pylong_export = _testcapi.pylong_export
 
-        with self.assertRaises(TypeError):
-            pylong_asdigitarray(1.0)
-        with self.assertRaises(TypeError):
-            pylong_asdigitarray(0+1j)
-        with self.assertRaises(TypeError):
-            pylong_asdigitarray("abc")
+        # value fits into int64_t
+        self.assertEqual(pylong_export(0), 0)
+        self.assertEqual(pylong_export(123), 123)
+        self.assertEqual(pylong_export(-123), -123)
+
+        # use an array, doesn't fit into int64_t
+        self.assertEqual(pylong_export(base**10 * 2 + 1),
+                         (0, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2]))
+        self.assertEqual(pylong_export(-(base**10 * 2 + 1)),
+                         (1, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2]))
+
+        for value in (1.0, 0+1j, "abc"):
+            with self.subTest(value=value):
+                with self.assertRaises(TypeError):
+                    pylong_export(value)
 
     def test_longwriter_create(self):
         # Test PyLong_Import()
@@ -726,13 +731,28 @@ class LongTests(unittest.TestCase):
             self.assertIs(pylongwriter_create(bool(num < 0), [abs(num), 0]),
                           num)
 
+        def to_digits(num):
+            digits = []
+            while True:
+                num, digit = divmod(num, base)
+                digits.append(digit)
+                if not num:
+                    break
+            return digits
+
         # round trip: Python int -> export -> Python int
-        pylong_asdigitarray = _testcapi.pylong_asdigitarray
+        pylong_export = _testcapi.pylong_export
         numbers = [*range(0, 10), 12345, 0xdeadbeef, 2**100, 2**100-1]
         numbers.extend(-num for num in list(numbers))
         for num in numbers:
             with self.subTest(num=num):
-                negative, digits = pylong_asdigitarray(num)
+                data = pylong_export(num)
+                if isinstance(data, tuple):
+                    negative, digits = data
+                else:
+                    value = data
+                    negative = int(value < 0)
+                    digits = to_digits(abs(value))
                 self.assertEqual(pylongwriter_create(negative, digits), num,
                                  (negative, digits))
 

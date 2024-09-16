@@ -686,7 +686,7 @@ Export API
       Read-only array of unsigned digits.
 
 
-.. c:function:: int PyLong_AsDigitArray(PyObject *obj, PyLong_DigitArray *array)
+.. c:function:: int PyLong_Export(PyObject *obj, PyLong_DigitArray *array)
 
    Export a Python :class:`int` object as an array of digits.
 
@@ -696,13 +696,13 @@ Export API
    This function always succeeds if *obj* is a Python :class:`int` object or a
    subclass.
 
-   :c:func:`PyLong_FreeDigitArray` must be called once done with using
+   :c:func:`PyLong_FreeExport` must be called once done with using
    *array*.
 
 
-.. c:function:: void PyLong_FreeDigitArray(PyLong_DigitArray *array)
+.. c:function:: void PyLong_FreeExport(PyLong_DigitArray *array)
 
-   Release the export *array* created by :c:func:`PyLong_AsDigitArray`.
+   Release the export *array* created by :c:func:`PyLong_Export`.
 
 
 PyLongWriter API

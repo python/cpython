@@ -163,19 +163,20 @@ typedef struct PyLongLayout {
 
 PyAPI_FUNC(const PyLongLayout*) PyLong_GetNativeLayout(void);
 
-typedef struct PyLong_DigitArray {
-    int negative;
+typedef struct PyLongExport {
+    int64_t value;
+    uint8_t negative;
     Py_ssize_t ndigits;
     const void *digits;
     // Member used internally, must not be used for other purpose.
     Py_uintptr_t _reserved;
-} PyLong_DigitArray;
+} PyLongExport;
 
-PyAPI_FUNC(int) PyLong_AsDigitArray(
+PyAPI_FUNC(int) PyLong_Export(
     PyObject *obj,
-    PyLong_DigitArray *array);
-PyAPI_FUNC(void) PyLong_FreeDigitArray(
-    PyLong_DigitArray *array);
+    PyLongExport *export_long);
+PyAPI_FUNC(void) PyLong_FreeExport(
+    PyLongExport *export_long);
 
 
 /* --- PyLongWriter API --------------------------------------------------- */
