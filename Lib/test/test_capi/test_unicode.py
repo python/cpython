@@ -1746,13 +1746,8 @@ class CAPITest(unittest.TestCase):
                    | PyUnicode_FORMAT_UCS2
                    | PyUnicode_FORMAT_UCS4)
         BUFFER_UCS1 = 'B'
-        BUFFER_UCS2 = 'H'
-        if struct.calcsize('I') == 4:
-            BUFFER_UCS4 = 'I'
-        elif struct.calcsize('L') == 4:
-            BUFFER_UCS4 = 'L'
-        else:
-            self.fail("unable to get BUFFER_UCS4 ")
+        BUFFER_UCS2 = '=H'
+        BUFFER_UCS4 = '=I'
 
         def check_ucs1(text, formats):
             if formats == PyUnicode_FORMAT_UCS1:

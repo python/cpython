@@ -2374,14 +2374,6 @@ int32_t
 PyUnicode_Export(PyObject *unicode, int32_t requested_formats,
                  Py_buffer *view)
 {
-#if SIZEOF_INT == 4
-#  define BUFFER_UCS4 "I"
-#elif SIZEOF_LONG == 4
-#  define BUFFER_UCS4 "L"
-#else
-#  error "unable to find BUFFER_UCS4"
-#endif
-
     if (!PyUnicode_Check(unicode)) {
         PyErr_Format(PyExc_TypeError, "must be str, not %T", unicode);
         return -1;
@@ -2413,7 +2405,7 @@ PyUnicode_Export(PyObject *unicode, int32_t requested_formats,
     {
         return unicode_export(unicode, view,
                               len, PyUnicode_2BYTE_DATA(unicode),
-                              2, "H", PyUnicode_FORMAT_UCS2);
+                              2, "=H", PyUnicode_FORMAT_UCS2);
     }
 
     // Convert ASCII or UCS1 to UCS2
@@ -2433,7 +2425,7 @@ PyUnicode_Export(PyObject *unicode, int32_t requested_formats,
         ucs2[len] = 0;
 
         return unicode_export_bytes(bytes, view, len,
-                                    2, "H", PyUnicode_FORMAT_UCS2);
+                                    2, "=H", PyUnicode_FORMAT_UCS2);
     }
 
     // Native UCS4
@@ -2442,7 +2434,7 @@ PyUnicode_Export(PyObject *unicode, int32_t requested_formats,
     {
         return unicode_export(unicode, view,
                               len, PyUnicode_4BYTE_DATA(unicode),
-                              4, BUFFER_UCS4, PyUnicode_FORMAT_UCS4);
+                              4, "=I", PyUnicode_FORMAT_UCS4);
     }
 
     // Convert ASCII, UCS1 or UCS2 to UCS4
@@ -2456,7 +2448,7 @@ PyUnicode_Export(PyObject *unicode, int32_t requested_formats,
         (void)as_ucs4(unicode, ucs4, len + 1, 1);
 
         return unicode_export_bytes(bytes, view, len,
-                                    4, BUFFER_UCS4, PyUnicode_FORMAT_UCS4);
+                                    4, "=I", PyUnicode_FORMAT_UCS4);
     }
 
     // Encode UCS1, UCS2 or UCS4 to UTF-8
@@ -2485,8 +2477,6 @@ PyUnicode_Export(PyObject *unicode, int32_t requested_formats,
     PyErr_SetString(PyExc_ValueError,
                     "unable to find a matching export format");
     return -1;
-
-#undef BUFFER_UCS4
 }
 
 
