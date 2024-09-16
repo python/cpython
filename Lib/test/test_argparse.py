@@ -5723,8 +5723,6 @@ class TestParseKnownArgs(TestCase):
         args = parser2.parse_args(['foo', '--', '--bar', '--', 'com'])
         self.assertEqual(NS(foo='foo', bar=['--bar', '--', 'com']), args)
 
-
-
 # ===========================
 # parse_intermixed_args tests
 # ===========================
