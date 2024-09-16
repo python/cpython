@@ -371,7 +371,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
     .. method:: create_git_ignore_file(context)
 
        Creates a ``.gitignore`` file within the virtual environment that causes
-       the entire directory to be ignored by the ``git`` source control manager.
+       the entire directory to be ignored by the Git source control manager.
 
        .. versionadded:: 3.13
 
