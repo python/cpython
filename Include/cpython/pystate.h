@@ -200,6 +200,9 @@ struct _ts {
        The PyThreadObject must hold the only reference to this value.
     */
     PyObject *threading_local_sentinel;
+
+    /* Set when the thread is about to exit */
+    struct _PyEventRc *thread_is_exiting;
 };
 
 #ifdef Py_DEBUG

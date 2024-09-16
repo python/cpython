@@ -1458,8 +1458,8 @@ free_threadstate(_PyThreadStateImpl *tstate)
   */
 
 static void
-init_threadstate(_PyThreadStateImpl *_tstate,
-                 PyInterpreterState *interp, uint64_t id, int whence)
+init_threadstate(_PyThreadStateImpl *_tstate, PyInterpreterState *interp,
+                 uint64_t id, int whence, _PyEventRc *exiting_event)
 {
     PyThreadState *tstate = (PyThreadState *)_tstate;
     if (tstate->_status.initialized) {
@@ -1467,6 +1467,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     }
 
     assert(interp != NULL);
+    tstate->thread_is_exiting = exiting_event;
     tstate->interp = interp;
     tstate->eval_breaker =
         _Py_atomic_load_uintptr_relaxed(&interp->ceval.instrumentation_version);
@@ -1530,8 +1531,19 @@ add_threadstate(PyInterpreterState *interp, PyThreadState *tstate,
     interp->threads.head = tstate;
 }
 
+static _PyEventRc *
+ensure_event(_PyEventRc *exiting_event)
+{
+    if (exiting_event != NULL) {
+        _PyEventRc_Incref(exiting_event);
+        return exiting_event;
+    }
+    return _PyEventRc_New();
+}
+
 static PyThreadState *
-new_threadstate(PyInterpreterState *interp, int whence)
+new_threadstate(PyInterpreterState *interp, int whence,
+                _PyEventRc *exiting_event)
 {
     _PyThreadStateImpl *tstate;
     _PyRuntimeState *runtime = interp->runtime;
@@ -1544,10 +1556,18 @@ new_threadstate(PyInterpreterState *interp, int whence)
     if (new_tstate == NULL) {
         return NULL;
     }
+
+    exiting_event = ensure_event(exiting_event);
+    if (exiting_event == NULL) {
+        PyMem_RawFree(new_tstate);
+        return NULL;
+    }
+
 #ifdef Py_GIL_DISABLED
     Py_ssize_t qsbr_idx = _Py_qsbr_reserve(interp);
     if (qsbr_idx < 0) {
         PyMem_RawFree(new_tstate);
+        _PyEventRc_Decref(exiting_event);
         return NULL;
     }
 #endif
@@ -1578,7 +1598,7 @@ new_threadstate(PyInterpreterState *interp, int whence)
                sizeof(*tstate));
     }
 
-    init_threadstate(tstate, interp, id, whence);
+    init_threadstate(tstate, interp, id, whence, exiting_event);
     add_threadstate(interp, (PyThreadState *)tstate, old_head);
 
     HEAD_UNLOCK(runtime);
@@ -1606,7 +1626,7 @@ PyThreadState_New(PyInterpreterState *interp)
 PyThreadState *
 _PyThreadState_NewBound(PyInterpreterState *interp, int whence)
 {
-    PyThreadState *tstate = new_threadstate(interp, whence);
+    PyThreadState *tstate = new_threadstate(interp, whence, NULL);
     if (tstate) {
         bind_tstate(tstate);
         // This makes sure there's a gilstate tstate bound
@@ -1622,7 +1642,14 @@ _PyThreadState_NewBound(PyInterpreterState *interp, int whence)
 PyThreadState *
 _PyThreadState_New(PyInterpreterState *interp, int whence)
 {
-    return new_threadstate(interp, whence);
+    return new_threadstate(interp, whence, NULL);
+}
+
+PyThreadState *
+_PyThreadState_NewWithEvent(PyInterpreterState *interp, int whence,
+                            _PyEventRc *exiting_event)
+{
+    return new_threadstate(interp, whence, exiting_event);
 }
 
 // We keep this for stable ABI compabibility.
@@ -1731,6 +1758,13 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->async_gen_finalizer);
 
     Py_CLEAR(tstate->context);
+
+    if (tstate->thread_is_exiting != NULL) {
+        _PyEventRc *erc = tstate->thread_is_exiting;
+        tstate->thread_is_exiting = NULL;
+        _PyEvent_Notify(&erc->event);
+        _PyEventRc_Decref(erc);
+    }
 
 #ifdef Py_GIL_DISABLED
     // Each thread should clear own freelists in free-threading builds.
@@ -2760,7 +2794,7 @@ PyGILState_Ensure(void)
         /* Create a new Python thread state for this thread */
         // XXX Use PyInterpreterState_EnsureThreadState()?
         tcur = new_threadstate(runtime->gilstate.autoInterpreterState,
-                               _PyThreadState_WHENCE_GILSTATE);
+                               _PyThreadState_WHENCE_GILSTATE, NULL);
         if (tcur == NULL) {
             Py_FatalError("Couldn't create thread-state for new thread");
         }

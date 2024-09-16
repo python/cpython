@@ -1171,6 +1171,39 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(out.strip(), b"OK")
         self.assertIn(b"can't create new thread at interpreter shutdown", err)
 
+    @unittest.skipIf(support.Py_GIL_DISABLED, "gh-124149: daemon threads don't force exit")
+    def test_join_force_terminated_daemon_thread_in_finalization(self):
+        # gh-123940: Py_Finalize() forces all daemon threads to exit
+        # immediately (without unwinding the stack) upon acquiring the
+        # GIL. Finalizers that run after this must be able to join the daemon
+        # threads that were forced to exit.
+        code = textwrap.dedent("""
+            import threading
+
+
+            def loop():
+                while True:
+                    pass
+
+
+            class Cycle:
+                def __init__(self):
+                    self.self_ref = self
+                    self.thr = threading.Thread(target=loop, daemon=True)
+                    self.thr.start()
+
+                def __del__(self):
+                    self.thr.join()
+
+            # Cycle holds a reference to itself, which ensures it is cleaned
+            # up during the GC that runs after daemon threads have been
+            # forced to exit during finalization.
+            Cycle()
+        """)
+        rc, out, err = assert_python_ok("-c", code)
+        self.assertEqual(err, b"")
+
+
 class ThreadJoinOnShutdown(BaseTestCase):
 
     def _run_and_join(self, script):

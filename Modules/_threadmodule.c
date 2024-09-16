@@ -96,7 +96,7 @@ typedef struct {
     // thread is about to exit. This is used to avoid false positives when
     // detecting self-join attempts. See the comment in `ThreadHandle_join()`
     // for a more detailed explanation.
-    PyEvent thread_is_exiting;
+    _PyEventRc *thread_is_exiting;
 
     // Serializes calls to `join` and `set_done`.
     _PyOnceFlag once;
@@ -174,6 +174,12 @@ remove_from_shutdown_handles(ThreadHandle *handle)
 static ThreadHandle *
 ThreadHandle_new(void)
 {
+    _PyEventRc *exiting = _PyEventRc_New();
+    if (exiting == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
     ThreadHandle *self =
         (ThreadHandle *)PyMem_RawCalloc(1, sizeof(ThreadHandle));
     if (self == NULL) {
@@ -183,7 +189,7 @@ ThreadHandle_new(void)
     self->ident = 0;
     self->os_handle = 0;
     self->has_os_handle = 0;
-    self->thread_is_exiting = (PyEvent){0};
+    self->thread_is_exiting = exiting;
     self->mutex = (PyMutex){_Py_UNLOCKED};
     self->once = (_PyOnceFlag){0};
     self->state = THREAD_HANDLE_NOT_STARTED;
@@ -225,6 +231,8 @@ ThreadHandle_decref(ThreadHandle *self)
     if (_Py_atomic_add_ssize(&self->refcount, -1) > 1) {
         return;
     }
+
+    _PyEventRc_Decref(self->thread_is_exiting);
 
     // Remove ourself from the global list of handles
     HEAD_LOCK(&_PyRuntime);
@@ -268,7 +276,7 @@ _PyThread_AfterFork(struct _pythread_runtime_state *state)
         handle->state = THREAD_HANDLE_DONE;
         handle->once = (_PyOnceFlag){_Py_ONCE_INITIALIZED};
         handle->mutex = (PyMutex){_Py_UNLOCKED};
-        _PyEvent_Notify(&handle->thread_is_exiting);
+        _PyEvent_Notify(&handle->thread_is_exiting->event);
         llist_remove(node);
         remove_from_shutdown_handles(handle);
     }
@@ -357,8 +365,6 @@ thread_run(void *boot_raw)
 exit:
     // Don't need to wait for this thread anymore
     remove_from_shutdown_handles(handle);
-
-    _PyEvent_Notify(&handle->thread_is_exiting);
     ThreadHandle_decref(handle);
 
     // bpo-44434: Don't call explicitly PyThread_exit_thread(). On Linux with
@@ -371,7 +377,7 @@ static int
 force_done(ThreadHandle *handle)
 {
     assert(get_thread_handle_state(handle) == THREAD_HANDLE_STARTING);
-    _PyEvent_Notify(&handle->thread_is_exiting);
+    _PyEvent_Notify(&handle->thread_is_exiting->event);
     set_thread_handle_state(handle, THREAD_HANDLE_DONE);
     return 0;
 }
@@ -402,7 +408,8 @@ ThreadHandle_start(ThreadHandle *self, PyObject *func, PyObject *args,
         goto start_failed;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    boot->tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_THREADING);
+    boot->tstate = _PyThreadState_NewWithEvent(
+        interp, _PyThreadState_WHENCE_THREADING, self->thread_is_exiting);
     if (boot->tstate == NULL) {
         PyMem_RawFree(boot);
         if (!PyErr_Occurred()) {
@@ -492,7 +499,7 @@ ThreadHandle_join(ThreadHandle *self, PyTime_t timeout_ns)
     // To work around this, we set `thread_is_exiting` immediately before
     // `thread_run` returns.  We can be sure that we are not attempting to join
     // ourselves if the handle's thread is about to exit.
-    if (!_PyEvent_IsSet(&self->thread_is_exiting) &&
+    if (!_PyEvent_IsSet(&self->thread_is_exiting->event) &&
         ThreadHandle_ident(self) == PyThread_get_thread_ident_ex()) {
         // PyThread_join_thread() would deadlock or error out.
         PyErr_SetString(ThreadError, "Cannot join current thread");
@@ -502,7 +509,8 @@ ThreadHandle_join(ThreadHandle *self, PyTime_t timeout_ns)
     // Wait until the deadline for the thread to exit.
     PyTime_t deadline = timeout_ns != -1 ? _PyDeadline_Init(timeout_ns) : 0;
     int detach = 1;
-    while (!PyEvent_WaitTimed(&self->thread_is_exiting, timeout_ns, detach)) {
+    while (!PyEvent_WaitTimed(&self->thread_is_exiting->event, timeout_ns,
+                              detach)) {
         if (deadline) {
             // _PyDeadline_Get will return a negative value if the deadline has
             // been exceeded.
@@ -537,7 +545,7 @@ set_done(ThreadHandle *handle)
         PyErr_SetString(ThreadError, "failed detaching handle");
         return -1;
     }
-    _PyEvent_Notify(&handle->thread_is_exiting);
+    _PyEvent_Notify(&handle->thread_is_exiting->event);
     set_thread_handle_state(handle, THREAD_HANDLE_DONE);
     return 0;
 }
@@ -649,7 +657,7 @@ static PyObject *
 PyThreadHandleObject_is_done(PyThreadHandleObject *self,
                              PyObject *Py_UNUSED(ignored))
 {
-    if (_PyEvent_IsSet(&self->handle->thread_is_exiting)) {
+    if (_PyEvent_IsSet(&self->handle->thread_is_exiting->event)) {
         Py_RETURN_TRUE;
     }
     else {

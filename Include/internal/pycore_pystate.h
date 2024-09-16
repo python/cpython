@@ -223,6 +223,9 @@ extern void _PyThreadState_Bind(PyThreadState *tstate);
 PyAPI_FUNC(PyThreadState *) _PyThreadState_NewBound(
     PyInterpreterState *interp,
     int whence);
+extern PyThreadState *
+_PyThreadState_NewWithEvent(PyInterpreterState *interp, int whence,
+                            _PyEventRc *exiting_event);
 extern PyThreadState * _PyThreadState_RemoveExcept(PyThreadState *tstate);
 extern void _PyThreadState_DeleteList(PyThreadState *list);
 extern void _PyThreadState_ClearMimallocHeaps(PyThreadState *tstate);

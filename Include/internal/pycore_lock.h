@@ -93,6 +93,16 @@ PyAPI_FUNC(void) PyEvent_Wait(PyEvent *evt);
 PyAPI_FUNC(int)
 PyEvent_WaitTimed(PyEvent *evt, PyTime_t timeout_ns, int detach);
 
+// A one-time event notification with reference counting
+typedef struct _PyEventRc {
+    PyEvent event;
+    Py_ssize_t refcount;
+} _PyEventRc;
+
+extern _PyEventRc *_PyEventRc_New(void);
+extern void _PyEventRc_Incref(_PyEventRc *erc);
+extern void _PyEventRc_Decref(_PyEventRc *erc);
+
 // _PyRawMutex implements a word-sized mutex that that does not depend on the
 // parking lot API, and therefore can be used in the parking lot
 // implementation.
