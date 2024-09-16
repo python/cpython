@@ -37,7 +37,7 @@ A virtual environment is (amongst other things):
   are by default isolated from software in other virtual environments and Python
   interpreters and libraries installed in the operating system.
 
-* Contained in a directory, conventionally either named ``venv`` or ``.venv`` in
+* Contained in a directory, conventionally either named ``.venv`` or ``venv`` in
   the project directory, or under a container directory for lots of virtual
   environments, such as ``~/.virtualenvs``.
 
