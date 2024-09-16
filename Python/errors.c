@@ -1862,8 +1862,8 @@ _PyErr_RaiseSyntaxError(PyObject *msg, PyObject *filename, int lineno, int col_o
         text = Py_NewRef(Py_None);
     }
     PyObject *args = Py_BuildValue("O(OiiOii)", msg, filename,
-                                   lineno, col_offset + 1, text,
-                                   end_lineno, end_col_offset + 1);
+                                   lineno, col_offset, text,
+                                   end_lineno, end_col_offset);
     if (args == NULL) {
         goto exit;
     }
