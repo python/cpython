@@ -2476,7 +2476,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 # subsequent arguments as positional arguments and we should not
                 # strip out the first '--' unless it violates a specified type
                 if arg_strings and arg_strings[0] == '--':
-                    arg_strings = arg_strings[1:]   
+                    arg_strings = arg_strings[1:]
             else:
                 try:
                     arg_strings.remove('--')
