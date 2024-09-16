@@ -128,6 +128,8 @@ ast
 * Docstrings are now removed from an optimized AST in optimization level 2.
   (Contributed by Irit Katriel in :gh:`123958`.)
 
+* Assertions are now removed from an optimized AST in optimization level > 0.
+  (Contributed by Irit Katriel in :gh:`123958`.)
 
 ctypes
 ------

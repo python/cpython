@@ -1,0 +1,1 @@
+Assertions are now removed from an optimized AST in optimization level > 0.y
