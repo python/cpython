@@ -1458,7 +1458,7 @@ These can be used as types in annotations. They all support subscription using
         >>> X.__metadata__
         ('very', 'important', 'metadata')
 
-   * At runtime, if you want to retrive the original
+   * At runtime, if you want to retrieve the original
      type wrapped by ``Annotated``, use :attr:`!__origin__` attribute:
 
      .. doctest::
