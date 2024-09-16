@@ -273,8 +273,7 @@ class Emitter:
         name_tkn = next(tkn_iter)
         name = name_tkn.text
         next(tkn_iter)
-        self.out.emit("(void)")
-        self.out.emit(name_tkn)
+        next(tkn_iter)
         for var in storage.inputs:
             if var.name == name:
                 var.defined = False

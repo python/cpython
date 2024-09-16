@@ -506,6 +506,8 @@ class Storage:
         self.spilled += 1
 
     def reload(self, out: CWriter) -> None:
+        if self.spilled == 0:
+            raise StackError("Cannot reload stack as it hasn't been saved")
         assert self.spilled > 0
         self.spilled -= 1
         if self.spilled == 0:
