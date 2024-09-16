@@ -5715,6 +5715,16 @@ class TestParseKnownArgs(TestCase):
         self.assertEqual(NS(foo=[], bar=[]), args)
         args = parser.parse_args(['--foo', 'a', 'b', '--', 'c', 'd'])
         self.assertEqual(NS(foo=['a', 'b'], bar=['c', 'd']), args)
+        args = parser.parse_args(['--', '--foo', 'a', '--', 'b'])
+        self.assertEqual(NS(foo=None, bar=['--foo', 'a', '--', 'b']), args)
+
+        parser2 = argparse.ArgumentParser()
+        parser2.add_argument('foo')
+        parser2.add_argument('bar', nargs='*')
+
+        args = parser2.parse_args(['foo', '--', '--bar', '--', 'com'])
+        self.assertEqual(NS(foo='foo', bar=['--bar', '--', 'com']), args)
+
 
 
 # ===========================

@@ -2061,7 +2061,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
         # function to convert arg_strings into positional actions
         def consume_positionals(start_index):
-            # match as many Positionals as possible
+            # match as many positionals as possible
             match_partial = self._match_arguments_partial
             selected_pattern = arg_strings_pattern[start_index:]
             arg_counts = match_partial(positionals, selected_pattern)
@@ -2470,12 +2470,18 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # Value conversion methods
     # ========================
     def _get_values(self, action, arg_strings):
-        # for everything but PARSER, REMAINDER args, strip out first '--'
         if not action.option_strings and action.nargs not in [PARSER, REMAINDER]:
-            try:
-                arg_strings.remove('--')
-            except ValueError:
-                pass
+            if action.nargs == ZERO_OR_MORE and action.type is None:
+                # if nargs='*' starts with '--', then we should treat any
+                # subsequent arguments as positional arguments and we should not
+                # strip out the first '--'
+                if arg_strings and arg_strings[0] == '--':
+                    arg_strings = arg_strings[1:]   
+            else:
+                try:
+                    arg_strings.remove('--')
+                except ValueError:
+                    pass
 
         # optional argument produces a default when not present
         if not arg_strings and action.nargs == OPTIONAL:
