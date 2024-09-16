@@ -1120,26 +1120,191 @@ Also see:
 Workload: grep
 --------------
 
-This a basic Python implementation of the linux ``grep`` tool.
-From a concurrency standpoint, each file is processed in its own
-logical thread.
-
-Here's the non-concurrent app code that all the implementations share:
+.. _example-grep-full-code:
 
 .. raw:: html
 
    <details>
-   <summary>(expand)</summary>
+   <summary>(expand for full example code)</summary>
 
-.. literalinclude:: ../includes/concurrency.py
-   :start-after: [start-grep-common]
-   :end-before: [end-grep-common]
+.. literalinclude:: ../includes/concurrency/grep.py
    :dedent:
    :linenos:
 
 .. raw:: html
 
    </details>
+
+This a basic Python implementation of the linux ``grep`` tool.
+We read from one or more files and report about lines that match
+(or don't match) the given regular expression.
+
+This represents a workload involving a mix of moderate IO and CPU work.
+
+Design and analysis
+^^^^^^^^^^^^^^^^^^^
+
+Design steps from `above <concurrency-design_>`_:
+
+1. concurrency fits?
+
+   Yes!  There is potentially a bunch of work happening at the same time,
+   and we want results as fast as possible.
+
+2. identify logical tasks
+
+   At a high level, the application works like this:
+
+   1. handle args (including compile regex)
+   2. if recursive, walk tree to find filenames
+   3. for each file, yield each match
+   4. print each match
+   5. exit with 0 if matched and 1 otherwise
+
+   At step 3 we do the following for each file:
+
+   a. open the file
+   b. iterate over the lines
+   c. apply the regex to each line
+   d. yield each match
+   e. close the file
+
+3. select concurrent tasks
+
+   Concurrent work happens at step 3.  Sub-steps a, b, and e are
+   IO-intensive.  Sub-step c is CPU-intensive.  The simplest approach
+   would be one concurrent worker per file.  Relative to a strictly
+   sequential approach, there's extra complexity here in managing the
+   workers, fanning out the work to them, and merging the results back
+   into a single iterator.
+
+   If we were worried about any particularly large file or sufficiently
+   large regular expression, we could take things further.  That would
+   involve splitting up step 3 even further by breaking the file into
+   chunks that are divided up among multiple workers.  However, doing
+   so would introduce extra complexity that might not pay for itself.
+
+4. concurrency-related characteristics
+
+   TBD
+
+   .. TODO finish
+
+5. pick best model
+
+   TBD
+
+   .. TODO finish
+
+Here are additional key constraints and considerations:
+
+* there's usually a limit to how many files can be open concurrently,
+  so we'll have to be careful not to process too many at once
+* the order of the yielded/printed matches must match the order of the
+  requested files and the order of each files lines
+
+High-level code
+^^^^^^^^^^^^^^^
+
+With the initial design and analysis done, let's move on to code.
+We'll start with the high-level code corresponding to the application's
+five top-level tasks we identified earlier.
+
+Most of the high-level code has nothing to do with concurrency.
+The parts that do are handled entirely by ``_do_search()`` (highlighted),
+which we'll look at in a moment.
+
+.. raw:: html
+
+   <details>
+   <summary>(expand)</summary>
+
+.. literalinclude:: ../includes/concurrency/grep.py
+   :start-after: [app]
+   :dedent:
+   :linenos:
+   :emphasize-lines: 21
+
+.. raw:: html
+
+   </details>
+
+The rest of ``grep()`` isn't all that interesting
+relative to concurrency.  You can look at the implementation
+of the various helpers `above <example-grep-full-code_>`_.
+
+One notable point is that the actual files are not opened until
+we need to iterate over the lines.  For the most part, this is so we
+can avoid dealing with passing an open file to a concurrency worker.
+Instead we pass the filename, which is much simpler.
+
+Concurrent Code
+^^^^^^^^^^^^^^^
+
+Now lets look at how concurrency fits in.  We'll start by looking
+at ``_do_search()``.
+
+.. literalinclude:: ../includes/concurrency/grep.py
+   :start-after: [start-do-search]
+   :end-before: [end-do-search]
+   :dedent:
+   :linenos:
+
+One thing to keep in mind is that it returns an iterable of
+``Match`` objects.  Concurrency may be happening as long as that
+iterable hasn't been exhausted.  It is probably happening the entire
+time we loop over the matches in ``render_matches()``.  We must
+factor that into our concurrent implementations.
+
+With that in mind, lets look at the different concurrent implementations.
+
+We'll actually start with a non-concurrent, sequential one:
+
+.. literalinclude:: ../includes/concurrency/grep.py
+   :start-after: [start-impl-sequential]
+   :end-before: [end-impl-sequential]
+   :dedent:
+   :linenos:
+
+``search_lines()`` is the sequential-search helper used by all the
+implementations:
+
+.. literalinclude:: ../includes/concurrency/grep.py
+   :start-after: [start-search-lines]
+   :end-before: [end-search-lines]
+   :dedent:
+   :linenos:
+
+Each yielded ``Match`` object is a namedtuple of
+(filename, line, match text).  For inverted matches, ``match.match``
+is not set.  For file-only matches, only ``match.filename`` is set.
+
+Now let's look at the implementations for the various concurrency
+models.  We'll start with the simplest: threads.
+
+.. literalinclude:: ../includes/concurrency/grep.py
+   :start-after: [start-impl-threads]
+   :end-before: [end-impl-threads]
+   :dedent:
+   :linenos:
+
+We can use that as a baseline for the other implementations.
+
+Common pattern
+^^^^^^^^^^^^^^
+
+TBD
+
+.. TODO finish
+
+Here are some things we don't do but would be worth doing:
+
+* stop iteration when requested (or for ``ctrl-C``)
+
+.. _concurrency-grep-side-by-side:
+
+Side-by-side
+^^^^^^^^^^^^
 
 Here's the implementations for the different concurrency models,
 side-by-side for easy comparison:
@@ -1154,14 +1319,15 @@ side-by-side for easy comparison:
      - multiple interpreters
      - coroutines
      - multiple processes
+     - concurrent.futures
    * - .. raw:: html
 
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency.py
-          :start-after: [start-grep-sequential]
-          :end-before: [end-grep-sequential]
+       .. literalinclude:: ../includes/concurrency/grep.py
+          :start-after: [start-sequential]
+          :end-before: [end-sequential]
           :dedent:
           :linenos:
 
@@ -1174,9 +1340,9 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency.py
-          :start-after: [start-grep-threads]
-          :end-before: [end-grep-threads]
+       .. literalinclude:: ../includes/concurrency/grep.py
+          :start-after: [start-threads]
+          :end-before: [end-threads]
           :dedent:
           :linenos:
 
@@ -1189,9 +1355,9 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency.py
-          :start-after: [start-grep-subinterpreters]
-          :end-before: [end-grep-subinterpreters]
+       .. literalinclude:: ../includes/concurrency/grep.py
+          :start-after: [start-subinterpreters]
+          :end-before: [end-subinterpreters]
           :dedent:
           :linenos:
 
@@ -1204,9 +1370,9 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency.py
-          :start-after: [start-grep-async]
-          :end-before: [end-grep-async]
+       .. literalinclude:: ../includes/concurrency/grep.py
+          :start-after: [start-async]
+          :end-before: [end-async]
           :dedent:
           :linenos:
 
@@ -1219,15 +1385,58 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency.py
-          :start-after: [start-grep-multiprocessing]
-          :end-before: [end-grep-multiprocessing]
+       .. literalinclude:: ../includes/concurrency/grep.py
+          :start-after: [start-multiprocessing]
+          :end-before: [end-multiprocessing]
           :dedent:
           :linenos:
 
        .. raw:: html
 
           </details>
+
+     - .. raw:: html
+
+          <details>
+          <summary>(expand)</summary>
+
+       .. literalinclude:: ../includes/concurrency/grep.py
+          :start-after: [start-cf]
+          :end-before: [end-cf]
+          :dedent:
+          :linenos:
+
+       .. raw:: html
+
+          </details>
+
+Model-specific details
+^^^^^^^^^^^^^^^^^^^^^^
+
+Here are some implementation-specific details we had to deal with.
+
+threads:
+
+* ...
+
+interpreters:
+
+* ...
+
+multiprocessing:
+
+* ...
+
+asyncio:
+
+* ...
+
+concurrent.futures:
+
+* ...
+
+concurrent.futures
+^^^^^^^^^^^^^^^^^^
 
 For threads, multiprocessing, and
 `multiple interpreters * <python-stdlib-interpreters_>`_,
@@ -1238,9 +1447,9 @@ you can also use :mod:`concurrent.futures`:
    <details>
    <summary>(expand)</summary>
 
-.. literalinclude:: ../includes/concurrency.py
-   :start-after: [start-grep-cf-threads]
-   :end-before: [end-grep-cf-threads]
+.. literalinclude:: ../includes/concurrency/grep.py
+   :start-after: [start-cf-threads]
+   :end-before: [end-cf-threads]
    :dedent:
    :linenos:
 
