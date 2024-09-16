@@ -345,8 +345,8 @@ creation according to their needs, the :class:`EnvBuilder` class.
     .. method:: install_scripts(context, path)
 
         *path* is the path to a directory that should contain subdirectories
-        "common", "posix", "nt", each containing scripts destined for the bin
-        directory in the environment.  The contents of "common" and the
+        ``common``, ``posix``, ``nt``, each containing scripts destined for the
+        bin directory in the environment.  The contents of ``common`` and the
         directory corresponding to :data:`os.name` are copied after some text
         replacement of placeholders:
 
