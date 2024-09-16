@@ -1458,6 +1458,16 @@ These can be used as types in annotations. They all support subscription using
         >>> X.__metadata__
         ('very', 'important', 'metadata')
 
+   * At runtime, if you want to retrive the original
+     type wrapped by ``Annotated``, use :func:`get_origin`::
+
+     .. doctest::
+
+        >>> from typing import Annotated, get_origin
+        >>> Password = Annotated[str, "secret"]
+        >>> get_origin(Password)
+        <class 'str'>
+
    .. seealso::
 
       :pep:`593` - Flexible function and variable annotations
