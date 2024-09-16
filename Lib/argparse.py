@@ -2061,7 +2061,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
         # function to convert arg_strings into positional actions
         def consume_positionals(start_index):
-            # match as many positionals as possible
+            # match as many Positionals as possible
             match_partial = self._match_arguments_partial
             selected_pattern = arg_strings_pattern[start_index:]
             arg_counts = match_partial(positionals, selected_pattern)
