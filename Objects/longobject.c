@@ -6805,7 +6805,7 @@ PyLong_AsDigitArray(PyObject *obj, PyLong_DigitArray *array)
         array->ndigits = 1;
     }
     array->digits = self->long_value.ob_digit;
-    array->reserved = (Py_uintptr_t)Py_NewRef(obj);
+    array->_reserved = (Py_uintptr_t)Py_NewRef(obj);
     return 0;
 }
 
@@ -6813,7 +6813,7 @@ PyLong_AsDigitArray(PyObject *obj, PyLong_DigitArray *array)
 void
 PyLong_FreeDigitArray(PyLong_DigitArray *array)
 {
-    PyObject *obj = (PyObject*)array->reserved;
+    PyObject *obj = (PyObject*)array->_reserved;
     memset(array, 0, sizeof(*array));
     Py_DECREF(obj);
 }

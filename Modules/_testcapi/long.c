@@ -204,7 +204,7 @@ pylong_asdigitarray(PyObject *module, PyObject *obj)
     assert(array.negative == 0);
     assert(array.ndigits == 0);
     assert(array.digits == NULL);
-    assert(array.reserved == 0);
+    assert(array._reserved == 0);
 
     return res;
 

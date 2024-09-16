@@ -685,10 +685,6 @@ Export API
 
       Read-only array of unsigned digits.
 
-   .. c:member:: Py_uintptr_t reserved
-
-      Member used internally, must not be used for other purpose.
-
 
 .. c:function:: int PyLong_AsDigitArray(PyObject *obj, PyLong_DigitArray *array)
 

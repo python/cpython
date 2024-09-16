@@ -167,7 +167,8 @@ typedef struct PyLong_DigitArray {
     int negative;
     Py_ssize_t ndigits;
     const void *digits;
-    Py_uintptr_t reserved;
+    // Member used internally, must not be used for other purpose.
+    Py_uintptr_t _reserved;
 } PyLong_DigitArray;
 
 PyAPI_FUNC(int) PyLong_AsDigitArray(
