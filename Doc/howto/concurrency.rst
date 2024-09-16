@@ -1,3 +1,5 @@
+:tocdepth: 3
+
 .. _concurrency-howto:
 
 *****************
@@ -402,6 +404,9 @@ Critical caveats
 Here are some important details to consider, specific to individual
 concurrency models in Python.
 
+.. contents::
+   :local:
+
 .. _concurrency-races:
 
 Data races and non-deterministic scheduling (free-threading)
@@ -651,7 +656,7 @@ more easily recover from a crash in any one process.  Recovering
 from a crash when using free-threading, multiple interpreters, or
 coroutines isn't nearly so easy.
 
-high-level APIs
+High-level APIs
 ---------------
 
 Also note that Python's stdlib provides various higher-level APIs
@@ -718,8 +723,11 @@ might outweigh that benefit.
 Thus, when you're thinking of solving a problem using concurrency,
 it's crucial that you understand the problem well.
 
+Getting started
+---------------
+
 How can concurrency help?
--------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 TBD
 
@@ -748,7 +756,7 @@ TBD
    * improved scalability
 
 How can concurrency hurt?
--------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 TBD
 
@@ -762,10 +770,13 @@ TBD
    (meaning something changes unexpectedly in one place due to unknown
    changes somewhere else).
 
+Analyze your problem
+--------------------
+
 .. _concurrency-identify-tasks:
 
 Identifying the logical tasks in your program
----------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 TBD
 
@@ -792,7 +803,7 @@ TBD
 .. _concurrency-characteristics:
 
 The concurrency characteristics of your program
------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 TBD
 
@@ -891,10 +902,20 @@ TBD
    * scaling
    * handle asynchronous events
 
+Other considerations
+^^^^^^^^^^^^^^^^^^^^
+
+TBD
+
+.. TODO finish
+
+   * are there libraries that can take care of the concurrency parts?
+   * ...
+
 .. _concurrency-pick-a-model:
 
-Picking a concurrency model
----------------------------
+Pick a concurrency model
+------------------------
 
 TBD
 
@@ -970,16 +991,6 @@ TBD
         - * not necessarily a good fit for small-scale applications
           * often requires configuration
 
-Other considerations
---------------------
-
-TBD
-
-.. TODO finish
-
-   * are there libraries that can take care of the concurrency parts?
-   * ...
-
 
 .. _concurrency-primitives:
 
@@ -1012,6 +1023,27 @@ TBD
    Aside from code running at the same time, concurrency typically
    also involves some amount of resources shared between the concurrent
    tasks.  That may include memory, files, and sockets.
+
+Group A
+-------
+
+primitive 1
+^^^^^^^^^^^
+
+TBD
+
+.. TODO finish
+
+Group B
+-------
+
+primitive 1
+^^^^^^^^^^^
+
+TBD
+
+.. TODO finish
+
 
 .. _concurrency-workload-examples:
 
