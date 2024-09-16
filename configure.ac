@@ -1777,6 +1777,10 @@ then
             [Define if you want to enable tracing references for debugging purpose])
 fi
 
+if test "$disable_gil" = "yes" -a "$with_trace_refs" = "yes";
+then
+  AC_MSG_ERROR([--disable-gil cannot be used with --with-trace-refs])
+fi
 
 # Check for --enable-pystats
 AC_MSG_CHECKING([for --enable-pystats])
@@ -2500,16 +2504,21 @@ AS_VAR_IF([with_strict_overflow], [yes],
 # Enable flags that warn and protect for potential security vulnerabilities.
 # These flags should be enabled by default for all builds.
 
-AC_MSG_CHECKING([for --disable-safety])
+AC_MSG_CHECKING([for --enable-safety])
 AC_ARG_ENABLE([safety],
-  [AS_HELP_STRING([--disable-safety], [disable usage of the security compiler options with no performance overhead])],
-  [AS_VAR_IF([enable_safety], [yes], [disable_safety=no], [disable_safety=yes])], [disable_safety=no])
-AC_MSG_RESULT([$disable_safety])
+  [AS_HELP_STRING([--enable-safety], [enable usage of the security compiler options with no performance overhead])],
+  [AS_VAR_IF([disable_safety], [yes], [enable_safety=no], [enable_safety=yes])], [enable_safety=no])
+AC_MSG_RESULT([$enable_safety])
 
-if test "$disable_safety" = "no"
+if test "$enable_safety" = "yes"
 then
   AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [CFLAGS_NODIST="$CFLAGS_NODIST -fstack-protector-strong"], [AC_MSG_WARN([-fstack-protector-strong not supported])], [-Werror])
   AX_CHECK_COMPILE_FLAG([-Wtrampolines], [CFLAGS_NODIST="$CFLAGS_NODIST -Wtrampolines"], [AC_MSG_WARN([-Wtrampolines not supported])], [-Werror])
+  AX_CHECK_COMPILE_FLAG([-Wconversion], [CFLAGS_NODIST="$CFLAGS_NODIST -Wconversion"], [AC_MSG_WARN([-Wconversion not supported])], [-Werror])
+  AX_CHECK_COMPILE_FLAG([-Wimplicit-fallthrough], [CFLAGS_NODIST="$CFLAGS_NODIST -Wimplicit-fallthrough"], [AC_MSG_WARN([-Wimplicit-fallthrough not supported])], [-Werror])
+  AX_CHECK_COMPILE_FLAG([-Werror=format-security], [CFLAGS_NODIST="$CFLAGS_NODIST -Werror=format-security"], [AC_MSG_WARN([-Werror=format-security not supported])], [-Werror])
+  AX_CHECK_COMPILE_FLAG([-Wbidi-chars=any], [CFLAGS_NODIST="$CFLAGS_NODIST -Wbidi-chars=any"], [AC_MSG_WARN([-Wbidi-chars=any not supported])], [-Werror])
+  AX_CHECK_COMPILE_FLAG([-Wall], [CFLAGS_NODIST="$CFLAGS_NODIST -Wall"], [AC_MSG_WARN([-Wall not supported])], [-Werror])
 fi
 
 AC_MSG_CHECKING([for --enable-slower-safety])
