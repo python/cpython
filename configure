@@ -1829,7 +1829,7 @@ Optional Features:
                           (default is no)
   --enable-bolt           enable usage of the llvm-bolt post-link optimizer
                           (default is no)
-  --disable-safety        disable usage of the security compiler options with
+  --enable-safety         enable usage of the security compiler options with
                           no performance overhead
   --enable-slower-safety  enable usage of the security compiler options with
                           performance overhead
@@ -9671,25 +9671,25 @@ fi
 # Enable flags that warn and protect for potential security vulnerabilities.
 # These flags should be enabled by default for all builds.
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --disable-safety" >&5
-printf %s "checking for --disable-safety... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-safety" >&5
+printf %s "checking for --enable-safety... " >&6; }
 # Check whether --enable-safety was given.
 if test ${enable_safety+y}
 then :
-  enableval=$enable_safety; if test "x$enable_safety" = xyes
+  enableval=$enable_safety; if test "x$disable_safety" = xyes
 then :
-  disable_safety=no
+  enable_safety=no
 else $as_nop
-  disable_safety=yes
+  enable_safety=yes
 fi
 else $as_nop
-  disable_safety=no
+  enable_safety=no
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $disable_safety" >&5
-printf "%s\n" "$disable_safety" >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_safety" >&5
+printf "%s\n" "$enable_safety" >&6; }
 
-if test "$disable_safety" = "no"
+if test "$enable_safety" = "yes"
 then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fstack-protector-strong" >&5
 printf %s "checking whether C compiler accepts -fstack-protector-strong... " >&6; }
@@ -9767,6 +9767,201 @@ then :
 else $as_nop
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -Wtrampolines not supported" >&5
 printf "%s\n" "$as_me: WARNING: -Wtrampolines not supported" >&2;}
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wconversion" >&5
+printf %s "checking whether C compiler accepts -Wconversion... " >&6; }
+if test ${ax_cv_check_cflags__Werror__Wconversion+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -Wconversion"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__Wconversion=yes
+else $as_nop
+  ax_cv_check_cflags__Werror__Wconversion=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__Wconversion" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__Wconversion" >&6; }
+if test "x$ax_cv_check_cflags__Werror__Wconversion" = xyes
+then :
+  CFLAGS_NODIST="$CFLAGS_NODIST -Wconversion"
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -Wconversion not supported" >&5
+printf "%s\n" "$as_me: WARNING: -Wconversion not supported" >&2;}
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wimplicit-fallthrough" >&5
+printf %s "checking whether C compiler accepts -Wimplicit-fallthrough... " >&6; }
+if test ${ax_cv_check_cflags__Werror__Wimplicit_fallthrough+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -Wimplicit-fallthrough"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__Wimplicit_fallthrough=yes
+else $as_nop
+  ax_cv_check_cflags__Werror__Wimplicit_fallthrough=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__Wimplicit_fallthrough" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__Wimplicit_fallthrough" >&6; }
+if test "x$ax_cv_check_cflags__Werror__Wimplicit_fallthrough" = xyes
+then :
+  CFLAGS_NODIST="$CFLAGS_NODIST -Wimplicit-fallthrough"
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -Wimplicit-fallthrough not supported" >&5
+printf "%s\n" "$as_me: WARNING: -Wimplicit-fallthrough not supported" >&2;}
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Werror=format-security" >&5
+printf %s "checking whether C compiler accepts -Werror=format-security... " >&6; }
+if test ${ax_cv_check_cflags__Werror__Werror_format_security+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -Werror=format-security"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__Werror_format_security=yes
+else $as_nop
+  ax_cv_check_cflags__Werror__Werror_format_security=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__Werror_format_security" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__Werror_format_security" >&6; }
+if test "x$ax_cv_check_cflags__Werror__Werror_format_security" = xyes
+then :
+  CFLAGS_NODIST="$CFLAGS_NODIST -Werror=format-security"
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -Werror=format-security not supported" >&5
+printf "%s\n" "$as_me: WARNING: -Werror=format-security not supported" >&2;}
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wbidi-chars=any" >&5
+printf %s "checking whether C compiler accepts -Wbidi-chars=any... " >&6; }
+if test ${ax_cv_check_cflags__Werror__Wbidi_chars_any+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -Wbidi-chars=any"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__Wbidi_chars_any=yes
+else $as_nop
+  ax_cv_check_cflags__Werror__Wbidi_chars_any=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__Wbidi_chars_any" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__Wbidi_chars_any" >&6; }
+if test "x$ax_cv_check_cflags__Werror__Wbidi_chars_any" = xyes
+then :
+  CFLAGS_NODIST="$CFLAGS_NODIST -Wbidi-chars=any"
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -Wbidi-chars=any not supported" >&5
+printf "%s\n" "$as_me: WARNING: -Wbidi-chars=any not supported" >&2;}
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wall" >&5
+printf %s "checking whether C compiler accepts -Wall... " >&6; }
+if test ${ax_cv_check_cflags__Werror__Wall+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -Wall"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__Wall=yes
+else $as_nop
+  ax_cv_check_cflags__Werror__Wall=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__Wall" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__Wall" >&6; }
+if test "x$ax_cv_check_cflags__Werror__Wall" = xyes
+then :
+  CFLAGS_NODIST="$CFLAGS_NODIST -Wall"
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -Wall not supported" >&5
+printf "%s\n" "$as_me: WARNING: -Wall not supported" >&2;}
 fi
 
 fi
