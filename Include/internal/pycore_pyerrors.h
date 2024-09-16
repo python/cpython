@@ -120,6 +120,11 @@ extern void _PyErr_SetNone(PyThreadState *tstate, PyObject *exception);
 
 extern PyObject* _PyErr_NoMemory(PyThreadState *tstate);
 
+extern int _PyErr_EmitSyntaxWarning(PyObject *msg, PyObject *filename, int lineno, int col_offset,
+                                    int end_lineno, int end_col_offset);
+extern void _PyErr_RaiseSyntaxError(PyObject *msg, PyObject *filename, int lineno, int col_offset,
+                                    int end_lineno, int end_col_offset);
+
 PyAPI_FUNC(void) _PyErr_SetString(
     PyThreadState *tstate,
     PyObject *exception,
