@@ -1112,27 +1112,15 @@ _PyCompile_Error(compiler *c, location loc, const char *format, ...)
     if (msg == NULL) {
         return ERROR;
     }
-    PyObject *loc_obj = PyErr_ProgramTextObject(c->c_filename, loc.lineno);
-    if (loc_obj == NULL) {
-        loc_obj = Py_None;
-    }
-    PyObject *args = Py_BuildValue("O(OiiOii)", msg, c->c_filename,
-                                   loc.lineno, loc.col_offset + 1, loc_obj,
-                                   loc.end_lineno, loc.end_col_offset + 1);
+    _PyErr_RaiseSyntaxError(msg, c->c_filename, loc.lineno, loc.col_offset + 1,
+                            loc.end_lineno, loc.end_col_offset + 1);
     Py_DECREF(msg);
-    if (args == NULL) {
-        goto exit;
-    }
-    PyErr_SetObject(PyExc_SyntaxError, args);
- exit:
-    Py_DECREF(loc_obj);
-    Py_XDECREF(args);
     return ERROR;
 }
 
-/* Emits a SyntaxWarning and returns 1 on success.
+/* Emits a SyntaxWarning and returns 0 on success.
    If a SyntaxWarning raised as error, replaces it with a SyntaxError
-   and returns 0.
+   and returns -1.
 */
 int
 _PyCompile_Warn(compiler *c, location loc, const char *format, ...)
@@ -1144,21 +1132,10 @@ _PyCompile_Warn(compiler *c, location loc, const char *format, ...)
     if (msg == NULL) {
         return ERROR;
     }
-    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg, c->c_filename,
-                                 loc.lineno, NULL, NULL) < 0)
-    {
-        if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
-            /* Replace the SyntaxWarning exception with a SyntaxError
-               to get a more accurate error report */
-            PyErr_Clear();
-            assert(PyUnicode_AsUTF8(msg) != NULL);
-            _PyCompile_Error(c, loc, PyUnicode_AsUTF8(msg));
-        }
-        Py_DECREF(msg);
-        return ERROR;
-    }
+    int ret = _PyErr_EmitSyntaxWarning(msg, c->c_filename, loc.lineno, loc.col_offset + 1,
+                                       loc.end_lineno, loc.end_col_offset + 1);
     Py_DECREF(msg);
-    return SUCCESS;
+    return ret;
 }
 
 PyObject *

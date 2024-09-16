@@ -33,8 +33,6 @@ extern int _PyCompile_AstOptimize(
     int optimize,
     struct _arena *arena);
 
-struct _Py_SourceLocation;
-
 extern int _PyAST_Optimize(
     struct _mod *,
     struct _arena *arena,
