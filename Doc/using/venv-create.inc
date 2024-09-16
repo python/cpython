@@ -36,7 +36,7 @@ The command, if run with ``-h``, will show the available options::
 
    usage: venv [-h] [--system-site-packages] [--symlinks | --copies] [--clear]
                [--upgrade] [--without-pip] [--prompt PROMPT] [--upgrade-deps]
-               [--without-scm-ignore-file]
+               [--without-scm-ignore-files]
                ENV_DIR [ENV_DIR ...]
 
    Creates virtual Python environments in one or more target directories.
@@ -64,18 +64,17 @@ The command, if run with ``-h``, will show the available options::
                            environment.
    --upgrade-deps        Upgrade core dependencies (pip) to the latest
                            version in PyPI
-   --without-scm-ignore-file
-                           Skips adding the default SCM ignore file to the
-                           environment directory (the default is a .gitignore
-                           file).
+   --without-scm-ignore-files
+                         Skips adding SCM ignore files to the environment
+                         directory (Git is supported by default).
 
    Once an environment has been created, you may wish to activate it, e.g. by
    sourcing an activate script in its bin directory.
 
 .. versionchanged:: 3.13
 
-   ``--without-scm-ignore-file`` was added along with creating an ignore file
-   for ``git`` by default.
+   ``--without-scm-ignore-files`` was added along with creating an ignore file
+   for Git by default.
 
 .. versionchanged:: 3.12
 
