@@ -20,8 +20,8 @@ re-used.
    The use of ``venv`` is now recommended for creating virtual environments.
 
 .. deprecated-removed:: 3.6 3.8
-   ``pyvenv`` was the recommended tool for creating virtual environments for
-   Python 3.3 and 3.4.
+   :program:`pyvenv` was the recommended tool for creating virtual environments
+   for Python 3.3 and 3.4.
 
 .. highlight:: none
 
