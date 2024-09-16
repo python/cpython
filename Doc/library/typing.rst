@@ -3308,6 +3308,7 @@ Introspection helpers
       assert get_origin(str) is None
       assert get_origin(Dict[str, int]) is dict
       assert get_origin(Union[int, str]) is Union
+      assert get_origin(Annotated[str, "metadata"]) is str
       P = ParamSpec('P')
       assert get_origin(P.args) is P
       assert get_origin(P.kwargs) is P
