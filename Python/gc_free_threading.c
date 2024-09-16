@@ -186,7 +186,20 @@ frame_disable_deferred_refcounting(_PyInterpreterFrame *frame)
     // Convert locals, variables, and the executable object to strong
     // references from (possibly) deferred references.
     assert(frame->stackpointer != NULL);
+    assert(frame->owner == FRAME_OWNED_BY_FRAME_OBJECT ||
+           frame->owner == FRAME_OWNED_BY_GENERATOR);
+
     frame->f_executable = PyStackRef_AsStrongReference(frame->f_executable);
+
+    if (frame->owner == FRAME_OWNED_BY_GENERATOR) {
+        PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
+        if (gen->gi_frame_state == FRAME_CLEARED) {
+            // gh-124068: if the generator is cleared, then most fields other
+            // than f_executable are not valid.
+            return;
+        }
+    }
+
     for (_PyStackRef *ref = frame->localsplus; ref < frame->stackpointer; ref++) {
         if (!PyStackRef_IsNull(*ref) && PyStackRef_IsDeferred(*ref)) {
             *ref = PyStackRef_AsStrongReference(*ref);
