@@ -41,11 +41,11 @@ Pending Removal in Python 3.15
 
 * :mod:`threading`:
 
-  * Passing any arguments to :func:`threading.RLock` is now deprecated.
-    C version allows any numbers of args and kwargs,
-    but they are just ignored. Python version does not allow any arguments.
-    All arguments will be removed from :func:`threading.RLock` in Python 3.15.
-    (Contributed by Nikita Sobolev in :gh:`102029`.)
+  * :func:`~threading.RLock` will take no arguments in Python 3.15.
+    Passing any arguments has been deprecated since Python 3.14,
+    as the  Python version does not permit any arguments,
+    but the C version allows any number of positional or keyword arguments,
+    ignoring every argument.
 
 * :mod:`typing`:
 
