@@ -12,7 +12,7 @@ from typing import NamedTuple
 
 
 class IgnoreRule(NamedTuple):
-    name: str
+    file_path: str
     count: int
     ignore_all: bool = False
     is_directory: bool = False
@@ -130,9 +130,9 @@ def is_file_ignored(
     """
     for ignore_rule in ignore_rules:
         if ignore_rule.is_directory:
-            if file_path.startswith(ignore_rule.name):
+            if file_path.startswith(ignore_rule.file_path):
                 return ignore_rule
-        elif file_path == ignore_rule.name:
+        elif file_path == ignore_rule.file_path:
             return ignore_rule
     return None
 
@@ -190,15 +190,15 @@ def get_unexpected_improvements(
     """
     unexpected_improvements = []
     for rule in ignore_rules:
-        if not rule.ignore_all and rule.name not in files_with_warnings.keys():
-            if rule.name not in files_with_warnings.keys():
-                unexpected_improvements.append((rule.name, rule.count, 0))
-            elif len(files_with_warnings[rule.name]) < rule.count:
+        if not rule.ignore_all and rule.file_path not in files_with_warnings.keys():
+            if rule.file_path not in files_with_warnings.keys():
+                unexpected_improvements.append((rule.file_path, rule.count, 0))
+            elif len(files_with_warnings[rule.file_path]) < rule.count:
                 unexpected_improvements.append(
                     (
-                        rule.name,
+                        rule.file_path,
                         rule.count,
-                        len(files_with_warnings[rule.name]),
+                        len(files_with_warnings[rule.file_path]),
                     )
                 )
 
