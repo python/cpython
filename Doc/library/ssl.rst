@@ -1566,7 +1566,7 @@ to speed up repeated connections from the same clients.
    The *capath* string, if present, is
    the path to a directory containing several CA certificates in PEM format,
    following an `OpenSSL specific layout
-   <https://www.openssl.org/docs/manmaster/man3/SSL_CTX_load_verify_locations.html>`_.
+   <https://docs.openssl.org/master/man3/SSL_CTX_load_verify_locations/>`_.
 
    The *cadata* object, if present, is either an ASCII string of one or more
    PEM-encoded certificates or a :term:`bytes-like object` of DER-encoded
@@ -1641,7 +1641,7 @@ to speed up repeated connections from the same clients.
 
    Set the available ciphers for sockets created with this context.
    It should be a string in the `OpenSSL cipher list format
-   <https://www.openssl.org/docs/manmaster/man1/ciphers.html>`_.
+   <https://docs.openssl.org/master/man1/ciphers/>`_.
    If no cipher can be selected (because compile-time options or other
    configuration forbids use of all the specified ciphers), an
    :class:`SSLError` will be raised.
@@ -1874,7 +1874,7 @@ to speed up repeated connections from the same clients.
 .. method:: SSLContext.session_stats()
 
    Get statistics about the SSL sessions created or managed by this context.
-   A dictionary is returned which maps the names of each `piece of information <https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_sess_number.html>`_ to their
+   A dictionary is returned which maps the names of each `piece of information <https://docs.openssl.org/1.1.1/man3/SSL_CTX_sess_number/>`_ to their
    numeric values.  For example, here is the total number of hits and misses
    in the session cache since the context was created::
 
@@ -2017,7 +2017,7 @@ to speed up repeated connections from the same clients.
 .. attribute:: SSLContext.security_level
 
    An integer representing the `security level
-   <https://www.openssl.org/docs/manmaster/man3/SSL_CTX_get_security_level.html>`_
+   <https://docs.openssl.org/master/man3/SSL_CTX_get_security_level/>`_
    for the context. This attribute is read-only.
 
    .. versionadded:: 3.10
