@@ -2126,7 +2126,7 @@ Parser defaults
    Note that defaults can be set at both the parser level using :meth:`set_defaults`
    and at the argument level using :meth:`add_argument`. If both are provided for the
    same argument, the order of setting these defaults determines which one takes
-   precedence. The last default set for an argument is the one that is used:
+   precedence. The last default set for an argument is the one that is used::
 
      >>> parser = argparse.ArgumentParser()
      >>> parser.add_argument('--foo', default='bar')
