@@ -12,6 +12,7 @@ annotated by François Pinard, and converted to C by Raymond Hettinger.
 
 #include "Python.h"
 #include "pycore_list.h"          // _PyList_ITEMS()
+#include "pycore_bitutils.h"      // _Py_bit_length(), _Py_bit_length64()
 
 #include "clinic/_heapqmodule.c.h"
 
@@ -279,16 +280,15 @@ _heapq_heappushpop_impl(PyObject *module, PyObject *heap, PyObject *item)
     return returnitem;
 }
 
-static Py_ssize_t
+static inline Py_ssize_t
 keep_top_bit(Py_ssize_t n)
 {
-    int i = 0;
-
-    while (n > 1) {
-        n >>= 1;
-        i++;
-    }
-    return n << i;
+    Py_BUILD_ASSERT(sizeof(Py_ssize_t) <= sizeof(uint64_t));
+#if defined(SIZEOF_SIZE_T) && SIZEOF_SIZE_T <= 4
+    return (Py_ssize_t)1 << (_Py_bit_length((unsigned long)n) - 1);
+#else
+    return (Py_ssize_t)1 << (_Py_bit_length64((uint64_t)n) - 1);
+#endif
 }
 
 /* Cache friendly version of heapify()
