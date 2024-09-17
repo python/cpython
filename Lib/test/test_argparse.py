@@ -2093,7 +2093,7 @@ class TestActionExtend(ParserTestCase):
     ]
 
 
-class TestNegativeNumberAction(ParserTestCase):
+class TestNegativeNumber(ParserTestCase):
     """Test parsing negative numbers"""
 
     argument_signatures = [
