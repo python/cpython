@@ -120,6 +120,7 @@ Modules/cjkcodecs/_codecs_kr.c 7
 Modules/cjkcodecs/alg_jisx0201.h 2
 Modules/cjkcodecs/cjkcodecs.h 1
 Modules/cjkcodecs/multibytecodec.c 12
+Modules/cmathmodule.c 1
 Modules/expat/pyexpatns.h 3
 Modules/expat/siphash.h 1
 Modules/expat/xmlparse.c 43
