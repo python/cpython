@@ -180,6 +180,43 @@ _Py_bit_length(unsigned long x)
 }
 
 
+static inline int
+_Py_bit_length64(uint64_t x)
+{
+#if (defined(__clang__) || defined(__GNUC__))
+    if (x != 0) {
+        // __builtin_clzll() is available since GCC 3.4.
+        // Undefined behavior for x == 0.
+        return (int)sizeof(uint64_t) * 8 - __builtin_clzll(x);
+    }
+    else {
+        return 0;
+    }
+#elif defined(_MSC_VER) && defined(_WIN64)
+    // _BitScanReverse64() is documented to search 64 bits.
+    unsigned long msb;
+    if (_BitScanReverse64(&msb, x)) {
+        return (int)msb + 1;
+    }
+    else {
+        return 0;
+    }
+#else
+    const int BIT_LENGTH_TABLE[32] = {
+        0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
+        5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
+    };
+    int msb = 0;
+    while (x >= 32) {
+        msb += 6;
+        x >>= 6;
+    }
+    msb += BIT_LENGTH_TABLE[x];
+    return msb;
+#endif
+}
+
+
 #ifdef __cplusplus
 }
 #endif
