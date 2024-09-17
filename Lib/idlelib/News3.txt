@@ -1,12 +1,6 @@
-What's New in IDLE 3.14.0
-(since 3.14.0)
-Released on 2025-10-01
-=========================
-
-
 What's New in IDLE 3.13.0
 (since 3.12.0)
-Released on 2024-10-01
+Released on 2024-10-xx
 =========================
 
 
