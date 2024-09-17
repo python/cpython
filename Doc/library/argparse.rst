@@ -2123,7 +2123,10 @@ Parser defaults
      >>> parser.parse_args(['736'])
      Namespace(bar=42, baz='badger', foo=736)
 
-   Note that parser-level defaults always override argument-level defaults::
+   Note that defaults can be set at both the parser level using :meth:`set_defaults` 
+   and at the argument level using :meth:`add_argument`. If both are provided for the
+   same attribute, the order of setting these defaults determines which one takes 
+   precedence. The last default set for an attribute is the one that is used:
 
      >>> parser = argparse.ArgumentParser()
      >>> parser.add_argument('--foo', default='bar')
