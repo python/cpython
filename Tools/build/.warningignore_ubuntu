@@ -199,7 +199,6 @@ Parser/action_helpers.c 3
 Parser/lexer/buffer.c 1
 Parser/lexer/lexer.c 14
 Parser/parser.c 116
-Parser/pegen.c 8
 Parser/string_parser.c 7
 Parser/tokenizer/file_tokenizer.c 9
 Parser/tokenizer/helpers.c 7
