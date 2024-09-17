@@ -20,8 +20,6 @@ Include/internal/pycore_backoff.h 3
 Include/internal/pycore_blocks_output_buffer.h 1
 Include/internal/pycore_dict.h 2
 Include/internal/pycore_interp.h 1
-Include/internal/pycore_long.h 3
-Include/internal/pycore_object.h 4
 Include/internal/pycore_obmalloc.h 1
 Include/internal/pycore_pymath.h 1
 Include/internal/pycore_runtime_init.h 1
@@ -96,7 +94,7 @@ Modules/_testcapi/watchers.c 3
 Modules/_testcapimodule.c 1
 Modules/_testclinic.c 14
 Modules/_testclinic.c 14
-Modules/_testexternalinspection.c 7
+Modules/_testexternalinspection.c 6
 Modules/_testinternalcapi.c 10
 Modules/_testinternalcapi/test_critical_sections.c 1
 Modules/_testinternalcapi/test_lock.c 4
@@ -224,9 +222,7 @@ Python/fileutils.c 11
 Python/flowgraph.c 7
 Python/formatter_unicode.c 6
 Python/frame.c 3
-Python/gc.c 9
-Python/gc.c 9
-Python/generated_cases.c.h 27
+Python/gc.c 8
 Python/generated_cases.c.h 27
 Python/getargs.c 7
 Python/hashtable.c 1

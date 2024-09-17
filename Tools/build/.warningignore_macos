@@ -6,8 +6,6 @@
 Include/internal/mimalloc/mimalloc/internal.h 4
 Include/internal/pycore_backoff.h 1
 Include/internal/pycore_dict.h 2
-Include/internal/pycore_long.h 2
-Include/internal/pycore_object.h 4
 Modules/_asynciomodule.c 3
 Modules/_bisectmodule.c 2
 Modules/_bz2module.c 5
@@ -67,7 +65,7 @@ Modules/_testcapi/vectorcall.c 3
 Modules/_testcapi/watchers.c 3
 Modules/_testcapimodule.c 3
 Modules/_testclinic.c 14
-Modules/_testexternalinspection.c 8
+Modules/_testexternalinspection.c 7
 Modules/_testinternalcapi.c 8
 Modules/_testinternalcapi/pytime.c 8
 Modules/_testinternalcapi/test_critical_sections.c 1
@@ -201,7 +199,7 @@ Python/fileutils.c 7
 Python/flowgraph.c 8
 Python/formatter_unicode.c 7
 Python/frame.c 4
-Python/gc.c 8
+Python/gc.c 7
 Python/generated_cases.c.h 35
 Python/getargs.c 11
 Python/import.c 5

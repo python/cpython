@@ -140,9 +140,9 @@ static inline void _PyObject_GC_SET_SHARED_INLINE(PyObject *op) {
 
 /* Bit flags for _gc_prev */
 /* Bit 0 is set when tp_finalize is called */
-#define _PyGC_PREV_MASK_FINALIZED  1
+#define _PyGC_PREV_MASK_FINALIZED  ((uintptr_t)1)
 /* Bit 1 is set when the object is in generation which is GCed currently. */
-#define _PyGC_PREV_MASK_COLLECTING 2
+#define _PyGC_PREV_MASK_COLLECTING ((uintptr_t)2)
 
 /* Bit 0 in _gc_next is the old space bit.
  * It is set as follows:
@@ -227,7 +227,7 @@ static inline void _PyGC_CLEAR_FINALIZED(PyObject *op) {
     _PyObject_CLEAR_GC_BITS(op, _PyGC_BITS_FINALIZED);
 #else
     PyGC_Head *gc = _Py_AS_GC(op);
-    gc->_gc_prev &= ~(uintptr_t)_PyGC_PREV_MASK_FINALIZED;
+    gc->_gc_prev &= ~_PyGC_PREV_MASK_FINALIZED;
 #endif
 }
 
