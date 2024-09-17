@@ -1485,7 +1485,7 @@ _PyTime_GetThreadTimeWithInfo(PyTime_t *tp, _Py_clock_info_t *info)
 
 #elif defined(HAVE_CLOCK_GETTIME) && \
       defined(CLOCK_PROCESS_CPUTIME_ID) && \
-      !defined(__EMSCRIPTEN__) && !defined(__wasi__)
+      !defined(__EMSCRIPTEN__) && !defined(__wasi__) && !defined(__NetBSD__)
 #define HAVE_THREAD_TIME
 
 #if defined(__APPLE__) && _Py__has_attribute(availability)
