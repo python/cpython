@@ -405,7 +405,7 @@ class ImportTests(unittest.TestCase):
 
     def test_double_const(self):
         # Importing double_const checks that float constants
-        # serialiazed by marshal as PYC files don't lose precision
+        # serialized by marshal as PYC files don't lose precision
         # (SF bug 422177).
         from test.test_import.data import double_const
         unload('test.test_import.data.double_const')
@@ -2926,7 +2926,7 @@ class SinglephaseInitTests(unittest.TestCase):
         #  * alive in 1 interpreter (main)
         #  * module def still in _PyRuntime.imports.extensions
         #  * mod init func ran again
-        #  * m_copy is NULL (claered when the interpreter was destroyed)
+        #  * m_copy is NULL (cleared when the interpreter was destroyed)
         #    (was from main interpreter)
         #  * module's global state was updated, not reset
 
@@ -3061,7 +3061,7 @@ class SinglephaseInitTests(unittest.TestCase):
         #  * alive in 0 interpreters
         #  * module def in _PyRuntime.imports.extensions
         #  * mod init func ran for the first time (since reset, at least)
-        #  * m_copy is NULL (claered when the interpreter was destroyed)
+        #  * m_copy is NULL (cleared when the interpreter was destroyed)
         #  * module's global state was initialized, not reset
 
         # Use a subinterpreter that sticks around.
@@ -3111,6 +3111,17 @@ class CAPITests(unittest.TestCase):
 
         mod = _testcapi.check_pyimport_addmodule(name)
         self.assertIs(mod, sys.modules[name])
+
+
+@cpython_only
+class TestMagicNumber(unittest.TestCase):
+    def test_magic_number_endianness(self):
+        magic_number_bytes = _imp.pyc_magic_number_token.to_bytes(4, 'little')
+        self.assertEqual(magic_number_bytes[2:], b'\r\n')
+        # Starting with Python 3.11, Python 3.n starts with magic number 2900+50n.
+        magic_number = int.from_bytes(magic_number_bytes[:2], 'little')
+        start = 2900 + sys.version_info.minor * 50
+        self.assertIn(magic_number, range(start, start + 50))
 
 
 if __name__ == '__main__':

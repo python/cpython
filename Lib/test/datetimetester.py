@@ -1,7 +1,4 @@
-"""Test date/time type.
-
-See https://www.zope.dev/Members/fdrake/DateTimeWiki/TestCases
-"""
+"""Test the datetime module."""
 import bisect
 import copy
 import decimal
@@ -1710,13 +1707,22 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             (1000, 0),
             (1970, 0),
         )
-        for year, offset in dataset:
-            for specifier in 'YG':
+        specifiers = 'YG'
+        if _time.strftime('%F', (1900, 1, 1, 0, 0, 0, 0, 1, 0)) == '1900-01-01':
+            specifiers += 'FC'
+        for year, g_offset in dataset:
+            for specifier in specifiers:
                 with self.subTest(year=year, specifier=specifier):
                     d = self.theclass(year, 1, 1)
                     if specifier == 'G':
-                        year += offset
-                    self.assertEqual(d.strftime(f"%{specifier}"), f"{year:04d}")
+                        year += g_offset
+                    if specifier == 'C':
+                        expected = f"{year // 100:02d}"
+                    else:
+                        expected = f"{year:04d}"
+                        if specifier == 'F':
+                            expected += f"-01-01"
+                    self.assertEqual(d.strftime(f"%{specifier}"), expected)
 
     def test_replace(self):
         cls = self.theclass
@@ -3367,8 +3373,8 @@ class TestDateTime(TestDate):
             '2009-04-19T12:',               # Ends with time separator
             '2009-04-19T12:30:',            # Ends with time separator
             '2009-04-19T12:30:45.',         # Ends with time separator
-            '2009-04-19T12:30:45.123456+',  # Ends with timzone separator
-            '2009-04-19T12:30:45.123456-',  # Ends with timzone separator
+            '2009-04-19T12:30:45.123456+',  # Ends with timezone separator
+            '2009-04-19T12:30:45.123456-',  # Ends with timezone separator
             '2009-04-19T12:30:45.123456-05:00a',    # Extra text
             '2009-04-19T12:30:45.123-05:00a',       # Extra text
             '2009-04-19T12:30:45-05:00a',           # Extra text
@@ -6884,13 +6890,28 @@ class ExtensionModuleTests(unittest.TestCase):
             import sys
             for i in range(5):
                 import _datetime
-                _datetime.date.max > _datetime.date.min
-                _datetime.time.max > _datetime.time.min
-                _datetime.datetime.max > _datetime.datetime.min
-                _datetime.timedelta.max > _datetime.timedelta.min
-                isinstance(_datetime.timezone.min, _datetime.tzinfo)
-                isinstance(_datetime.timezone.utc, _datetime.tzinfo)
-                isinstance(_datetime.timezone.max, _datetime.tzinfo)
+                assert _datetime.date.max > _datetime.date.min
+                assert _datetime.time.max > _datetime.time.min
+                assert _datetime.datetime.max > _datetime.datetime.min
+                assert _datetime.timedelta.max > _datetime.timedelta.min
+                assert _datetime.date.__dict__["min"] is _datetime.date.min
+                assert _datetime.date.__dict__["max"] is _datetime.date.max
+                assert _datetime.date.__dict__["resolution"] is _datetime.date.resolution
+                assert _datetime.time.__dict__["min"] is _datetime.time.min
+                assert _datetime.time.__dict__["max"] is _datetime.time.max
+                assert _datetime.time.__dict__["resolution"] is _datetime.time.resolution
+                assert _datetime.datetime.__dict__["min"] is _datetime.datetime.min
+                assert _datetime.datetime.__dict__["max"] is _datetime.datetime.max
+                assert _datetime.datetime.__dict__["resolution"] is _datetime.datetime.resolution
+                assert _datetime.timedelta.__dict__["min"] is _datetime.timedelta.min
+                assert _datetime.timedelta.__dict__["max"] is _datetime.timedelta.max
+                assert _datetime.timedelta.__dict__["resolution"] is _datetime.timedelta.resolution
+                assert _datetime.timezone.__dict__["min"] is _datetime.timezone.min
+                assert _datetime.timezone.__dict__["max"] is _datetime.timezone.max
+                assert _datetime.timezone.__dict__["utc"] is _datetime.timezone.utc
+                assert isinstance(_datetime.timezone.min, _datetime.tzinfo)
+                assert isinstance(_datetime.timezone.max, _datetime.tzinfo)
+                assert isinstance(_datetime.timezone.utc, _datetime.tzinfo)
                 del sys.modules['_datetime']
             """)
         script_helper.assert_python_ok('-c', script)
