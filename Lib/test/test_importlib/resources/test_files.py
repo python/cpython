@@ -134,6 +134,9 @@ class ImplicitContextFiles:
     def _compile_importlib(self):
         """
         Make a compiled-only copy of the importlib resources package.
+
+        Currently only code is copied, as importlib resources doesn't itself
+        have any resources.
         """
         bin_site = self.fixtures.enter_context(os_helper.temp_dir())
         c_resources = pathlib.Path(bin_site, 'c_resources')
