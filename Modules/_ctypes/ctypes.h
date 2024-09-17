@@ -489,28 +489,6 @@ PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result)
     return _stginfo_from_type(state, Py_TYPE(obj), result);
 }
 
-static inline void
-exercise_get_base_by_token(PyTypeObject *PyCType_Type)
-{
-    // CType_Type_traverse() almost alone trains PyType_GetBaseByToken() when
-    // running PGO tests (130,000 calls, whereas PyType_GetModuleByDef() has
-    // been trained with 2,700,000 calls), which is invoked by gc.collect().
-    // Its way of finding a superclass is currently biased, so the following
-    // should be complemented. Expects little perf impact on this module.
-    PyTypeObject *result;
-
-    // Find the type itself by token
-    if (PyType_GetBaseByToken(PyCType_Type, &pyctype_type_spec, &result) == 1) {
-        Py_DECREF(result);
-    }
-    assert(result == PyCType_Type);
-
-    // Reject a static type
-    if (PyType_GetBaseByToken(&PyBaseObject_Type, &PyBaseObject_Type, &result)) {
-        assert(0);
-    }
-}
-
 /* A variant of PyStgInfo_FromType that doesn't need the state,
  * so it can be called from finalization functions when the module
  * state is torn down.
@@ -526,7 +504,6 @@ _PyStgInfo_FromType_NoState(PyObject *type)
         PyErr_Format(PyExc_TypeError, "expected a ctypes type, got '%N'", type);
         return NULL;
     }
-    exercise_get_base_by_token(PyCType_Type);
 
     StgInfo *info = PyObject_GetTypeData(type, PyCType_Type);
     Py_DECREF(PyCType_Type);
