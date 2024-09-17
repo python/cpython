@@ -94,7 +94,7 @@ Modules/cjkcodecs/multibytecodec.c 2
 Modules/clinic/_testclinic.c.h 1
 Modules/clinic/arraymodule.c.h 1
 Modules/clinic/unicodedata.c.h 10
-Modules/cmathmodule.c 2
+Modules/cmathmodule.c 1
 Modules/expat/siphash.h 8
 Modules/expat/xmlparse.c 45
 Modules/expat/xmltok.c 17
