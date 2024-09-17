@@ -5365,7 +5365,7 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
 #define RETURN_RESULT(BASE, RET) \
     do { \
         if (result != NULL) { \
-           *result = (PyTypeObject *)(BASE); \
+            *result = (PyTypeObject *)(BASE); \
         } \
         return (RET); \
     } while (0)
