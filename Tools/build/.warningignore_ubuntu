@@ -19,10 +19,7 @@ Include/internal/pycore_asdl.h 1
 Include/internal/pycore_backoff.h 3
 Include/internal/pycore_blocks_output_buffer.h 1
 Include/internal/pycore_dict.h 2
-Include/internal/pycore_gc.h 1
-Include/internal/pycore_gc.h 1
 Include/internal/pycore_interp.h 1
-Include/internal/pycore_list.h 1
 Include/internal/pycore_long.h 3
 Include/internal/pycore_object.h 4
 Include/internal/pycore_obmalloc.h 1
@@ -233,7 +230,6 @@ Python/generated_cases.c.h 27
 Python/generated_cases.c.h 27
 Python/getargs.c 7
 Python/hashtable.c 1
-Python/import.c 6
 Python/import.c 7
 Python/initconfig.c 11
 Python/instrumentation.c 43

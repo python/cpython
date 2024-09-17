@@ -227,7 +227,7 @@ static inline void _PyGC_CLEAR_FINALIZED(PyObject *op) {
     _PyObject_CLEAR_GC_BITS(op, _PyGC_BITS_FINALIZED);
 #else
     PyGC_Head *gc = _Py_AS_GC(op);
-    gc->_gc_prev &= ~_PyGC_PREV_MASK_FINALIZED;
+    gc->_gc_prev &= ~(uintptr_t)_PyGC_PREV_MASK_FINALIZED;
 #endif
 }
 
