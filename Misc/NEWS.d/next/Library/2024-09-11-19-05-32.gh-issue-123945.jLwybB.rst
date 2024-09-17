@@ -1,0 +1,1 @@
+Fix a bug where :mod:`argparse` doesn't recognize negative numbers with underscores
