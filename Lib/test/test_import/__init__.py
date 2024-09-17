@@ -1912,6 +1912,7 @@ class CircularImportTests(unittest.TestCase):
             str(cm.exception),
         )
 
+    @requires_singlephase_init
     def test_singlephase_circular(self):
         """Regression test for gh-123950
 
