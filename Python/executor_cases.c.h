@@ -5450,6 +5450,13 @@
 
         case _MAKE_WARM: {
             current_executor->vm_data.warm = true;
+            if (++tstate->_status.run_counter > 100) {
+                uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_JIT_INVALIDATE_COLD_BIT) {
+                    int err = _Py_HandlePending(tstate);
+                    if (err != 0) JUMP_TO_ERROR();
+                }
+            }
             break;
         }
 

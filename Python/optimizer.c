@@ -183,11 +183,6 @@ _PyOptimizer_Optimize(
         return err;
     }
 
-    if (++interp->new_executors >= JIT_CLEANUP_THRESHOLD) {
-        interp->new_executors = 0;
-        _Py_Executors_InvalidateCold(interp);
-    }
-
     assert(*executor_ptr != NULL);
     if (progress_needed) {
         int index = get_index_for_executor(code, start);
@@ -1703,7 +1698,7 @@ _Py_Executors_InvalidateCold(PyInterpreterState *interp)
 error:
     PyErr_Clear();
     Py_XDECREF(invalidate);
-    // If we're truly out of memory, wiping out everything is a fine fallback:
+    // If we're truly out of memory, wiping out everything is a fine fallback
     _Py_Executors_InvalidateAll(interp, 0);
 }
 

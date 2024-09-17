@@ -133,11 +133,6 @@ PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyInterpreterState *interp);
 
 #endif
 
-// When new executors are created, we check to see if the number of
-// executors created meets or exceeds the JIT_CLEANUP_THRESHOLD. If it
-// does, we invalidate cold executors.
-#define JIT_CLEANUP_THRESHOLD 10
-
 // This is the length of the trace we project initially.
 #define UOP_MAX_TRACE_LENGTH 800
 
