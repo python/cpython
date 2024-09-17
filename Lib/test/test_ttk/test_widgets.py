@@ -1004,11 +1004,17 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_height(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'height', 100, -100, 0)
+        if tk_version < (9,0):
+            self.checkIntegerParam(widget, 'height', 402, -402, 0)
+        else:
+            self.checkPixelsParam(widget, 'height', 402, -402, 0)
 
     def test_configure_width(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'width', 402, -402, 0)
+        if tk_version < (9,0):
+            self.checkIntegerParam(widget, 'width', 402, -402, 0)
+        else:
+            self.checkPixelsParam(widget, 'width', 402, -402, 0)
 
     def test_tab_identifiers(self):
         self.nb.forget(0)
@@ -1174,7 +1180,10 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
 
         self.nb.select(0)
 
-        focus_identify_as = 'focus' if sys.platform != 'darwin' else ''
+        if sys.platform == 'darwin':
+            focus_identify_as = ''
+        else:
+            focus_identify_as = 'focus' if tk_version < (9,0) else 'padding' 
         self.assertEqual(self.nb.identify(5, 5), focus_identify_as)
         simulate_mouse_click(self.nb, 5, 5)
         self.nb.focus_force()
