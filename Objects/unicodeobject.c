@@ -5393,7 +5393,7 @@ _Py_DecodeUTF8_surrogateescape(const char *arg, Py_ssize_t arglen,
 }
 
 
-/* UTF-8 encoder using the surrogateescape error handler .
+/* UTF-8 encoder.
 
    On success, return 0 and write the newly allocated character string (use
    PyMem_Free() to free the memory) into *str.
@@ -11688,7 +11688,7 @@ unicode_hash(PyObject *self)
     if (hash != -1) {
         return hash;
     }
-    x = _Py_HashBytes(PyUnicode_DATA(self),
+    x = Py_HashBuffer(PyUnicode_DATA(self),
                       PyUnicode_GET_LENGTH(self) * PyUnicode_KIND(self));
 
     FT_ATOMIC_STORE_SSIZE_RELAXED(_PyUnicode_HASH(self), x);
@@ -15906,7 +15906,7 @@ encode_wstr_utf8(wchar_t *wstr, char **str, const char *name)
     int res;
     res = _Py_EncodeUTF8Ex(wstr, str, NULL, NULL, 1, _Py_ERROR_STRICT);
     if (res == -2) {
-        PyErr_Format(PyExc_RuntimeWarning, "cannot decode %s", name);
+        PyErr_Format(PyExc_RuntimeWarning, "cannot encode %s", name);
         return -1;
     }
     if (res < 0) {

@@ -418,9 +418,9 @@ if test -z "$CPP"; then
 fi
 if test -z "$CXX"; then
 	case "$host" in
-		aarch64-apple-ios*-simulator) CXX=arm64-apple-ios-simulator-clang ;;
-		aarch64-apple-ios*)           CXX=arm64-apple-ios-clang ;;
-		x86_64-apple-ios*-simulator)  CXX=x86_64-apple-ios-simulator-clang ;;
+		aarch64-apple-ios*-simulator) CXX=arm64-apple-ios-simulator-clang++ ;;
+		aarch64-apple-ios*)           CXX=arm64-apple-ios-clang++ ;;
+		x86_64-apple-ios*-simulator)  CXX=x86_64-apple-ios-simulator-clang++ ;;
 		*)
 	esac
 fi
@@ -758,7 +758,7 @@ if test "$cross_compiling" = yes; then
 
 		# IPHONEOS_DEPLOYMENT_TARGET is the minimum supported iOS version
 		AC_MSG_CHECKING([iOS deployment target])
-		IPHONEOS_DEPLOYMENT_TARGET=${_host_os:3}
+		IPHONEOS_DEPLOYMENT_TARGET=$(echo ${_host_os} | cut -c4-)
 		IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET:=13.0}
 		AC_MSG_RESULT([$IPHONEOS_DEPLOYMENT_TARGET])
 
@@ -1650,7 +1650,7 @@ then
       AS_VAR_IF([host_cpu], [wasm64], [AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-memory64"])])
     ],
     dnl TODO: support other WASI runtimes
-    dnl wasmtime starts the proces with "/" as CWD. For OOT builds add the
+    dnl wasmtime starts the process with "/" as CWD. For OOT builds add the
     dnl directory containing _sysconfigdata to PYTHONPATH.
     [WASI/*], [HOSTRUNNER='wasmtime run --wasm max-wasm-stack=16777216 --wasi preview2 --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/'],
     [HOSTRUNNER='']
@@ -1777,6 +1777,10 @@ then
             [Define if you want to enable tracing references for debugging purpose])
 fi
 
+if test "$disable_gil" = "yes" -a "$with_trace_refs" = "yes";
+then
+  AC_MSG_ERROR([--disable-gil cannot be used with --with-trace-refs])
+fi
 
 # Check for --enable-pystats
 AC_MSG_CHECKING([for --enable-pystats])
@@ -2514,19 +2518,24 @@ AS_VAR_IF([with_strict_overflow], [yes],
 # Enable flags that warn and protect for potential security vulnerabilities.
 # These flags should be enabled by default for all builds.
 
-AC_MSG_CHECKING([for --disable-safety])
+AC_MSG_CHECKING([for --enable-safety])
 AC_ARG_ENABLE([safety],
-  [AS_HELP_STRING([--disable-safety], [disable usage of the security compiler options with no performance overhead])],
-  [AS_VAR_IF([enable_safety], [yes], [disable_safety=no], [disable_safety=yes])], [disable_safety=no])
-AC_MSG_RESULT([$disable_safety])
+  [AS_HELP_STRING([--enable-safety], [enable usage of the security compiler options with no performance overhead])],
+  [AS_VAR_IF([disable_safety], [yes], [enable_safety=no], [enable_safety=yes])], [enable_safety=no])
+AC_MSG_RESULT([$enable_safety])
 
-if test "$disable_safety" = "no"
+if test "$enable_safety" = "yes"
 then
   PY_CHECK_CC_CFLAG([enable], [stack-protector-strong], [if we can add -fstack-protector-strong])
   AS_VAR_IF([ac_cv_enable_stack_protector_strong_flag], [yes],
             [CFLAGS_NODIST="$CFLAGS_NODIST -fstack-protector-strong"], AC_MSG_WARN([-fstack-protector-strong not supported]))
 
   AX_CHECK_COMPILE_FLAG([-Wtrampolines], [CFLAGS_NODIST="$CFLAGS_NODIST -Wtrampolines"], [AC_MSG_WARN([-Wtrampolines not supported])], [-Werror])
+  AX_CHECK_COMPILE_FLAG([-Wconversion], [CFLAGS_NODIST="$CFLAGS_NODIST -Wconversion"], [AC_MSG_WARN([-Wconversion not supported])], [-Werror])
+  AX_CHECK_COMPILE_FLAG([-Wimplicit-fallthrough], [CFLAGS_NODIST="$CFLAGS_NODIST -Wimplicit-fallthrough"], [AC_MSG_WARN([-Wimplicit-fallthrough not supported])], [-Werror])
+  AX_CHECK_COMPILE_FLAG([-Werror=format-security], [CFLAGS_NODIST="$CFLAGS_NODIST -Werror=format-security"], [AC_MSG_WARN([-Werror=format-security not supported])], [-Werror])
+  AX_CHECK_COMPILE_FLAG([-Wbidi-chars=any], [CFLAGS_NODIST="$CFLAGS_NODIST -Wbidi-chars=any"], [AC_MSG_WARN([-Wbidi-chars=any not supported])], [-Werror])
+  AX_CHECK_COMPILE_FLAG([-Wall], [CFLAGS_NODIST="$CFLAGS_NODIST -Wall"], [AC_MSG_WARN([-Wall not supported])], [-Werror])
 fi
 
 AC_MSG_CHECKING([for --enable-slower-safety])
@@ -3557,7 +3566,7 @@ then
 		LDCXXSHARED='$(CXX) -Wl,-G,-Bexport';;
 	WASI*)
 		AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
-			dnl not iplemented yet
+			dnl not implemented yet
 		]);;
 	CYGWIN*)
 		LDSHARED="gcc -shared -Wl,--enable-auto-image-base"
@@ -3730,7 +3739,7 @@ esac
 AC_MSG_RESULT([$SHLIBS])
 
 dnl perf trampoline is Linux specific and requires an arch-specific
-dnl trampoline in asssembly.
+dnl trampoline in assembly.
 AC_MSG_CHECKING([perf trampoline])
 AS_CASE([$PLATFORM_TRIPLET],
   [x86_64-linux-gnu], [perf_trampoline=yes],
@@ -5942,7 +5951,7 @@ else
   # While Python doesn't currently have full support for these platforms
   # (see e.g., issue 1762561), we can at least make sure that float <-> string
   # conversions work.
-  # FLOAT_WORDS_BIGENDIAN doesnt actually detect this case, but if it's not big
+  # FLOAT_WORDS_BIGENDIAN doesn't actually detect this case, but if it's not big
   # or little, then it must be this?
   AC_DEFINE([DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754], [1],
   [Define if C doubles are 64-bit IEEE 754 binary format, stored
@@ -7822,8 +7831,21 @@ AC_SUBST([LIBHACL_CFLAGS])
 dnl This can be extended here to detect e.g. Power8, which HACL* should also support.
 AX_CHECK_COMPILE_FLAG([-msse -msse2 -msse3 -msse4.1 -msse4.2],[
   [LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"]
-  [LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"]
+
   AC_DEFINE([HACL_CAN_COMPILE_SIMD128], [1], [HACL* library can compile SIMD128 implementations])
+
+  # macOS universal2 builds *support* the -msse etc flags because they're
+  # available on x86_64. However, performance of the HACL SIMD128 implementation
+  # isn't great, so it's disabled on ARM64.
+  AC_MSG_CHECKING([for HACL* SIMD128 implementation])
+  if test "$UNIVERSAL_ARCHS" == "universal2"; then
+    [LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.o"]
+    AC_MSG_RESULT([universal2])
+  else
+    [LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"]
+    AC_MSG_RESULT([standard])
+  fi
+
 ], [], [-Werror])
 
 AC_SUBST([LIBHACL_SIMD128_FLAGS])
@@ -7831,8 +7853,20 @@ AC_SUBST([LIBHACL_SIMD128_OBJS])
 
 AX_CHECK_COMPILE_FLAG([-mavx2],[
   [LIBHACL_SIMD256_FLAGS="-mavx2"]
-  [LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"]
   AC_DEFINE([HACL_CAN_COMPILE_SIMD256], [1], [HACL* library can compile SIMD256 implementations])
+
+  # macOS universal2 builds *support* the -mavx2 compiler flag because it's
+  # available on x86_64; but the HACL SIMD256 build then fails because the
+  # implementation requires symbols that aren't available on ARM64. Use a
+  # wrapped implementation if we're building for universal2.
+  AC_MSG_CHECKING([for HACL* SIMD256 implementation])
+  if test "$UNIVERSAL_ARCHS" == "universal2"; then
+    [LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o"]
+    AC_MSG_RESULT([universal2])
+  else
+    [LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"]
+    AC_MSG_RESULT([standard])
+  fi
 ], [], [-Werror])
 
 AC_SUBST([LIBHACL_SIMD256_FLAGS])
