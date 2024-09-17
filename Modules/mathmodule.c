@@ -2343,6 +2343,15 @@ math_fmod_impl(PyObject *module, double x, double y)
         return PyFloat_FromDouble(x);
     errno = 0;
     r = fmod(x, y);
+#ifdef _MSC_VER
+    /* Windows (e.g. Windows 10 with MSC v.1916) loose sign
+       for zero result.  But C99+ says: "if y is nonzero, the result
+       has the same sign as x".
+     */
+    if (r == 0.0 && y != 0.0) {
+        r = copysign(r, x);
+    }
+#endif
     if (Py_IS_NAN(r)) {
         if (!Py_IS_NAN(x) && !Py_IS_NAN(y))
             errno = EDOM;
