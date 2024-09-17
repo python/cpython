@@ -142,19 +142,9 @@ class ImplicitContextFiles:
         c_resources = pathlib.Path(bin_site, 'c_resources')
         sources = pathlib.Path(resources.__file__).parent
 
-        for dirpath, dirnames, filenames in os.walk(sources):
-            try:
-                dirnames.remove('__pycache__')
-            except ValueError:
-                pass
-            source_dir_path = pathlib.Path(dirpath)
-            dir_relpath = pathlib.Path(source_dir_path).relative_to(sources)
-            c_dir_path = c_resources.joinpath(dir_relpath)
-            for filename in filenames:
-                if filename.endswith('.py'):
-                    source_path = source_dir_path / filename
-                    cfile = c_dir_path.joinpath(filename).with_suffix('.pyc')
-                    py_compile.compile(source_path, cfile)
+        for source_path in sources.glob('**/*.py'):
+            c_path = c_resources.joinpath(source_path.relative_to(sources)).with_suffix('.pyc')
+            py_compile.compile(source_path, c_path)
         self.fixtures.enter_context(import_helper.DirsOnSysPath(bin_site))
 
     def test_implicit_files_with_compiled_importlib(self):
