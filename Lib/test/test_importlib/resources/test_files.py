@@ -152,7 +152,6 @@ class ImplicitContextFiles:
                     source_path = source_dir_path / filename
                     cfile = c_dir_path.joinpath(filename).with_suffix('.pyc')
                     py_compile.compile(source_path, cfile)
-                    print(source_path, cfile)
         self.fixtures.enter_context(import_helper.DirsOnSysPath(bin_site))
 
     def test_implicit_files_with_compiled_importlib(self):
