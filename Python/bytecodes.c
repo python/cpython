@@ -4370,7 +4370,7 @@ dummy_func(
                 KILL(callargs);
             }
             else {
-                int err = check_args_iterable(tstate, PyStackRef_AsPyObjectBorrow(func), callargs_o);
+                int err = _Py_Check_ArgsIterable(tstate, PyStackRef_AsPyObjectBorrow(func), callargs_o);
                 if (err < 0) {
                     ERROR_NO_POP();
                 }

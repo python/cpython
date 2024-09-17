@@ -30,34 +30,18 @@
             if (sym_is_null(value)) {
                 ctx->done = true;
             }
-            /* Variables: 'value'D. base: 0. top: 1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'value'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
         case _LOAD_FAST: {
             _Py_UopsSymbol *value;
             value = GETLOCAL(oparg);
-            /* Variables: 'value'D. base: 0. top: 1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'value'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -66,17 +50,9 @@
             value = GETLOCAL(oparg);
             _Py_UopsSymbol *temp = sym_new_null(ctx);
             GETLOCAL(oparg) = temp;
-            /* Variables: 'value'D. base: 0. top: 1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'value'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -86,17 +62,9 @@
             int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
             REPLACE_OP(this_instr, opcode, 0, (uintptr_t)val);
             value = sym_new_const(ctx, val);
-            /* Variables: 'value'D. base: 0. top: 1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'value'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -104,16 +72,8 @@
             _Py_UopsSymbol *value;
             value = stack_pointer[-1];
             GETLOCAL(oparg) = value;
-            /* Variables: . base: -1. top: -1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: . base: 0. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -126,17 +86,9 @@
         case _PUSH_NULL: {
             _Py_UopsSymbol *res;
             res = sym_new_null(ctx);
-            /* Variables: 'res'D. base: 0. top: 1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'res'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -171,15 +123,7 @@
             if (!opt) {
                 res = sym_new_type(ctx, &PyBool_Type);
             }
-            /* Variables: 'res'D. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-1] = res;
-            /* Variables: 'res'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -192,15 +136,7 @@
                 sym_set_type(value, &PyBool_Type);
                 res = value;
             }
-            /* Variables: 'res'D. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-1] = res;
-            /* Variables: 'res'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -213,15 +149,7 @@
                 sym_set_type(value, &PyLong_Type);
                 res = sym_new_type(ctx, &PyBool_Type);
             }
-            /* Variables: 'res'D. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-1] = res;
-            /* Variables: 'res'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -234,15 +162,7 @@
                 sym_set_type(value, &PyList_Type);
                 res = sym_new_type(ctx, &PyBool_Type);
             }
-            /* Variables: 'res'D. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-1] = res;
-            /* Variables: 'res'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -255,15 +175,7 @@
                 sym_set_const(value, Py_None);
                 res = sym_new_const(ctx, Py_False);
             }
-            /* Variables: 'res'D. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-1] = res;
-            /* Variables: 'res'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -276,15 +188,7 @@
                 res = sym_new_type(ctx, &PyBool_Type);
                 sym_set_type(value, &PyUnicode_Type);
             }
-            /* Variables: 'res'D. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-1] = res;
-            /* Variables: 'res'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -322,14 +226,6 @@
             }
             sym_set_type(left, &PyLong_Type);
             sym_set_type(right, &PyLong_Type);
-            /* Variables: 'left'MD, 'right'MD. base: -2. top: 0 
-               inputs: 
-               outputs: 
-               peeks: left, right */
-            /* Variables: 'left'MD, 'right'MD. base: -2. top: 0 
-               inputs: 
-               outputs: 
-               peeks: left, right */
             break;
         }
 
@@ -365,17 +261,9 @@
             else {
                 res = sym_new_type(ctx, &PyLong_Type);
             }
-            /* Variables: 'res'D. base: -2. top: -1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'res'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -403,17 +291,9 @@
             else {
                 res = sym_new_type(ctx, &PyLong_Type);
             }
-            /* Variables: 'res'D. base: -2. top: -1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'res'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -441,17 +321,9 @@
             else {
                 res = sym_new_type(ctx, &PyLong_Type);
             }
-            /* Variables: 'res'D. base: -2. top: -1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'res'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -475,14 +347,6 @@
             }
             sym_set_type(left, &PyFloat_Type);
             sym_set_type(right, &PyFloat_Type);
-            /* Variables: 'left'MD, 'right'MD. base: -2. top: 0 
-               inputs: 
-               outputs: 
-               peeks: left, right */
-            /* Variables: 'left'MD, 'right'MD. base: -2. top: 0 
-               inputs: 
-               outputs: 
-               peeks: left, right */
             break;
         }
 
@@ -522,17 +386,9 @@
                 res = sym_new_type(ctx, &PyFloat_Type);stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
             }
-            /* Variables: 'res'D. base: 0. top: 1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'res'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -564,17 +420,9 @@
                 res = sym_new_type(ctx, &PyFloat_Type);stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
             }
-            /* Variables: 'res'D. base: 0. top: 1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'res'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -606,17 +454,9 @@
                 res = sym_new_type(ctx, &PyFloat_Type);stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
             }
-            /* Variables: 'res'D. base: 0. top: 1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'res'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -631,14 +471,6 @@
             }
             sym_set_type(left, &PyUnicode_Type);
             sym_set_type(left, &PyUnicode_Type);
-            /* Variables: 'left'MD, 'right'MD. base: -2. top: 0 
-               inputs: 
-               outputs: 
-               peeks: left, right */
-            /* Variables: 'left'MD, 'right'MD. base: -2. top: 0 
-               inputs: 
-               outputs: 
-               peeks: left, right */
             break;
         }
 
@@ -660,17 +492,9 @@
             else {
                 res = sym_new_type(ctx, &PyUnicode_Type);
             }
-            /* Variables: 'res'D. base: -2. top: -1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'res'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -754,17 +578,9 @@
             (void)sub;
             new_frame = NULL;
             ctx->done = true;
-            /* Variables: 'new_frame'D. base: -2. top: -1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-2] = (_Py_UopsSymbol *)new_frame;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'new_frame'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -842,17 +658,9 @@
                 ctx->done = true;
             }
             res = retval;
-            /* Variables: 'res'D. base: 0. top: 1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'res'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -884,29 +692,13 @@
         case _SEND_GEN_FRAME: {
             // We are about to hit the end of the trace:
             ctx->done = true;
-            /* Variables: . base: 0. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
-            /* Variables: . base: 0. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
         case _YIELD_VALUE: {
             _Py_UopsSymbol *res;
             res = sym_new_unknown(ctx);
-            /* Variables: 'res'D. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-1] = res;
-            /* Variables: 'res'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -954,16 +746,8 @@
             for (int i = 0; i < oparg; i++) {
                 values[i] = sym_new_unknown(ctx);
             }
-            /* Variables: 'values'MA. base: -1. top: -1 + oparg 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer += -1 + oparg;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'values'MA. base: -oparg. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -1012,16 +796,8 @@
             for (int i = 0; i < totalargs; i++) {
                 values[i] = sym_new_unknown(ctx);
             }
-            /* Variables: 'values'MA, 'unused', 'unused'MA. base: -1. top: (oparg & 0xFF) + (oparg >> 8) 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer += (oparg & 0xFF) + (oparg >> 8);
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'values'MA, 'unused', 'unused'MA. base: -1 - (oparg & 0xFF) - (oparg >> 8). top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -1264,18 +1040,10 @@
             else {
                 self_or_null = NULL;
             }
-            /* Variables: 'attr'D, 'self_or_null'D. base: -1. top: (oparg & 1) 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = self_or_null;
             stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'attr'MD, 'self_or_null'MD. base: -1 - (oparg & 1). top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -1302,14 +1070,6 @@
                     }
                 }
             }
-            /* Variables: 'owner'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks: owner */
-            /* Variables: 'owner'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks: owner */
             break;
         }
 
@@ -1327,18 +1087,10 @@
             null = sym_new_null(ctx);
             (void)offset;
             (void)owner;
-            /* Variables: 'attr'D, 'null'D. base: -1. top: (oparg & 1) 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'attr'MD, 'null'MD. base: -1 - (oparg & 1). top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -1360,14 +1112,6 @@
                     }
                 }
             }
-            /* Variables: 'owner'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks: owner */
-            /* Variables: 'owner'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks: owner */
             break;
         }
 
@@ -1396,18 +1140,10 @@
                 /* No conversion made. We don't know what `attr` is. */
                 attr = sym_new_not_null(ctx);
             }
-            /* Variables: 'attr'D, 'null'D. base: -1. top: (oparg & 1) 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'attr'MD, 'null'MD. base: -1 - (oparg & 1). top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -1425,18 +1161,10 @@
             null = sym_new_null(ctx);
             (void)hint;
             (void)owner;
-            /* Variables: 'attr'D, 'null'D. base: -1. top: (oparg & 1) 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'attr'MD, 'null'MD. base: -1 - (oparg & 1). top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -1450,18 +1178,10 @@
             null = sym_new_null(ctx);
             (void)index;
             (void)owner;
-            /* Variables: 'attr'D, 'null'D. base: -1. top: (oparg & 1) 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'attr'MD, 'null'MD. base: -1 - (oparg & 1). top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -1479,18 +1199,10 @@
             null = sym_new_null(ctx);
             (void)descr;
             (void)owner;
-            /* Variables: 'attr'D, 'null'D. base: -1. top: (oparg & 1) 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'attr'MD, 'null'MD. base: -1 - (oparg & 1). top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -1503,15 +1215,7 @@
             (void)owner;
             new_frame = NULL;
             ctx->done = true;
-            /* Variables: 'new_frame'D. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-1] = (_Py_UopsSymbol *)new_frame;
-            /* Variables: 'new_frame'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -1556,17 +1260,9 @@
                 res = _Py_uop_sym_new_not_null(ctx);stack_pointer += 2;
                 assert(WITHIN_STACK_BOUNDS());
             }
-            /* Variables: 'res'D. base: -2. top: -1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'res'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -1579,17 +1275,9 @@
             (void)left;
             (void)right;
             res = sym_new_type(ctx, &PyBool_Type);
-            /* Variables: 'res'D. base: -2. top: -1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'res'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -1602,17 +1290,9 @@
             (void)left;
             (void)right;
             res = sym_new_type(ctx, &PyBool_Type);
-            /* Variables: 'res'D. base: -2. top: -1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'res'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -1625,17 +1305,9 @@
             (void)left;
             (void)right;
             res = sym_new_type(ctx, &PyBool_Type);
-            /* Variables: 'res'D. base: -2. top: -1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'res'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -1648,17 +1320,9 @@
             (void)left;
             (void)right;
             res = sym_new_type(ctx, &PyBool_Type);
-            /* Variables: 'res'D. base: -2. top: -1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'res'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -1671,17 +1335,9 @@
             (void)left;
             (void)right;
             res = sym_new_type(ctx, &PyBool_Type);
-            /* Variables: 'res'D. base: -2. top: -1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'res'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -1875,31 +1531,15 @@
             iter = stack_pointer[-1];
             next = sym_new_type(ctx, &PyLong_Type);
             (void)iter;
-            /* Variables: 'iter'MD, 'next'D. base: -1. top: 1 
-               inputs: 
-               outputs: 
-               peeks: iter */
             stack_pointer[0] = next;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'iter'MD, 'next'MD. base: -2. top: 0 
-               inputs: 
-               outputs: 
-               peeks: iter */
             break;
         }
 
         case _FOR_ITER_GEN_FRAME: {
             /* We are about to hit the end of the trace */
             ctx->done = true;
-            /* Variables: . base: 0. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
-            /* Variables: . base: 0. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -1911,18 +1551,10 @@
             (void)owner;
             attr = sym_new_not_null(ctx);
             self_or_null = sym_new_unknown(ctx);
-            /* Variables: 'attr'D, 'self_or_null'D. base: -1. top: 1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-1] = attr;
             stack_pointer[0] = self_or_null;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'attr'MD, 'self_or_null'MD. base: -2. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -1964,18 +1596,10 @@
             (void)descr;
             attr = sym_new_not_null(ctx);
             self = owner;
-            /* Variables: 'attr'D, 'self'D. base: -1. top: 1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-1] = attr;
             stack_pointer[0] = self;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'attr'MD, 'self'MD. base: -2. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -1988,18 +1612,10 @@
             (void)descr;
             attr = sym_new_not_null(ctx);
             self = owner;
-            /* Variables: 'attr'D, 'self'D. base: -1. top: 1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-1] = attr;
             stack_pointer[0] = self;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'attr'MD, 'self'MD. base: -2. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -2030,18 +1646,10 @@
             (void)descr;
             attr = sym_new_not_null(ctx);
             self = owner;
-            /* Variables: 'attr'D, 'self'D. base: -1. top: 1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-1] = attr;
             stack_pointer[0] = self;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'attr'MD, 'self'MD. base: -2. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -2060,16 +1668,8 @@
             (void)args;
             func = sym_new_not_null(ctx);
             maybe_self = sym_new_not_null(ctx);
-            /* Variables: 'func'D, 'maybe_self'D, 'args'MA. base: -2 - oparg. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-2 - oparg] = func;
             stack_pointer[-1 - oparg] = maybe_self;
-            /* Variables: 'func'MD, 'maybe_self'MD, 'args'MA. base: -2 - oparg. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -2091,17 +1691,9 @@
             (void)args;
             new_frame = NULL;
             ctx->done = true;
-            /* Variables: 'new_frame'D. base: -2 - oparg. top: -1 - oparg 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)new_frame;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'new_frame'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -2147,14 +1739,6 @@
             callable = stack_pointer[-2 - oparg];
             sym_set_null(null);
             sym_set_type(callable, &PyMethod_Type);
-            /* Variables: 'callable'MD, 'null'MD, 'unused'MA. base: -2 - oparg. top: 0 
-               inputs: 
-               outputs: 
-               peeks: callable, null, unused */
-            /* Variables: 'callable'MD, 'null'MD, 'unused'MA. base: -2 - oparg. top: 0 
-               inputs: 
-               outputs: 
-               peeks: callable, null, unused */
             break;
         }
 
@@ -2166,16 +1750,8 @@
             (void)callable;
             func = sym_new_not_null(ctx);
             self = sym_new_not_null(ctx);
-            /* Variables: 'func'D, 'self'D, 'unused'MA. base: -2 - oparg. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-2 - oparg] = func;
             stack_pointer[-1 - oparg] = self;
-            /* Variables: 'func'MD, 'self'MD, 'unused'MA. base: -2 - oparg. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -2185,14 +1761,6 @@
             if (_PyInterpreterState_GET()->eval_frame == NULL) {
                 REPLACE_OP(this_instr, _NOP, 0 ,0);
             }
-            /* Variables: . base: 0. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
-            /* Variables: . base: 0. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -2203,28 +1771,12 @@
             callable = stack_pointer[-2 - oparg];
             sym_set_type(callable, &PyFunction_Type);
             (void)self_or_null;
-            /* Variables: 'callable'MD, 'self_or_null'MD, 'unused'MA. base: -2 - oparg. top: 0 
-               inputs: 
-               outputs: 
-               peeks: callable, self_or_null, unused */
-            /* Variables: 'callable'MD, 'self_or_null'MD, 'unused'MA. base: -2 - oparg. top: 0 
-               inputs: 
-               outputs: 
-               peeks: callable, self_or_null, unused */
             break;
         }
 
         case _CHECK_STACK_SPACE: {
             assert(corresponding_check_stack == NULL);
             corresponding_check_stack = this_instr;
-            /* Variables: . base: 0. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
-            /* Variables: . base: 0. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -2270,17 +1822,9 @@
             } else {
                 new_frame = frame_new(ctx, co, 0, NULL, 0);
             }
-            /* Variables: 'new_frame'D. base: -2 - oparg. top: -1 - oparg 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)new_frame;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'new_frame'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -2317,14 +1861,6 @@
                 corresponding_check_stack->opcode = _NOP;
             }
             corresponding_check_stack = NULL;
-            /* Variables: 'unused'. base: 0. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
-            /* Variables: 'unused'. base: 0. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -2372,16 +1908,8 @@
             (void)args;
             self = sym_new_not_null(ctx);
             init = sym_new_not_null(ctx);
-            /* Variables: 'self'D, 'init'D, 'args'MA. base: -2 - oparg. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-2 - oparg] = self;
             stack_pointer[-1 - oparg] = init;
-            /* Variables: 'self'MD, 'init'MD, 'args'MA. base: -2 - oparg. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -2398,17 +1926,9 @@
             (void)args;
             init_frame = NULL;
             ctx->done = true;
-            /* Variables: 'init_frame'D. base: -2 - oparg. top: -1 - oparg 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)init_frame;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'init_frame'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -2556,17 +2076,9 @@
             (void)kwnames;
             new_frame = NULL;
             ctx->done = true;
-            /* Variables: 'new_frame'D. base: -3 - oparg. top: -2 - oparg 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-3 - oparg] = (_Py_UopsSymbol *)new_frame;
             stack_pointer += -2 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'new_frame'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -2653,17 +2165,9 @@
                 // might be impossible, but bailing is still safe
                 ctx->done = true;
             }
-            /* Variables: 'res'D. base: 0. top: 1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'res'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -2705,17 +2209,9 @@
             bottom = stack_pointer[-1 - (oparg-1)];
             assert(oparg > 0);
             top = bottom;
-            /* Variables: 'bottom'MD, 'unused'MA, 'top'D. base: -1 - (oparg-1). top: 1 
-               inputs: 
-               outputs: 
-               peeks: bottom, unused */
             stack_pointer[0] = top;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'bottom'MD, 'unused'MA, 'top'MD. base: -2 - (oparg-1). top: 0 
-               inputs: 
-               outputs: 
-               peeks: bottom, unused */
             break;
         }
 
@@ -2743,17 +2239,9 @@
             else {
                 res = sym_new_unknown(ctx);
             }
-            /* Variables: 'res'D. base: -2. top: -1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'res'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -2766,16 +2254,8 @@
             bottom_in = stack_pointer[-2 - (oparg-2)];
             bottom_out = bottom_in;
             top_out = top_in;
-            /* Variables: 'top_out'D, 'unused'MA, 'bottom_out'D. base: -2 - (oparg-2). top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[-2 - (oparg-2)] = top_out;
             stack_pointer[-1] = bottom_out;
-            /* Variables: 'top_out'MD, 'unused'MA, 'bottom_out'MD. base: -2 - (oparg-2). top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -2803,16 +2283,8 @@
                 assert(value != NULL);
                 eliminate_pop_guard(this_instr, value != Py_True);
             }
-            /* Variables: . base: -1. top: -1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: . base: 0. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -2824,16 +2296,8 @@
                 assert(value != NULL);
                 eliminate_pop_guard(this_instr, value != Py_False);
             }
-            /* Variables: . base: -1. top: -1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: . base: 0. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -2849,16 +2313,8 @@
                 assert(!sym_matches_type(flag, &_PyNone_Type));
                 eliminate_pop_guard(this_instr, true);
             }
-            /* Variables: . base: -1. top: -1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: . base: 0. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -2874,29 +2330,13 @@
                 assert(!sym_matches_type(flag, &_PyNone_Type));
                 eliminate_pop_guard(this_instr, false);
             }
-            /* Variables: . base: -1. top: -1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: . base: 0. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
         case _JUMP_TO_TOP: {
             ctx->done = true;
-            /* Variables: . base: 0. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
-            /* Variables: . base: 0. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -2910,14 +2350,6 @@
             /* We should never see _CHECK_STACK_SPACE_OPERANDs.
              * They are only created at the end of this pass. */
             Py_UNREACHABLE();
-            /* Variables: . base: 0. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
-            /* Variables: . base: 0. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -2929,14 +2361,6 @@
             PyObject *exit_p = (PyObject *)this_instr->operand;
             (void)exit_p;
             ctx->done = true;
-            /* Variables: . base: 0. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
-            /* Variables: . base: 0. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -2948,17 +2372,9 @@
             _Py_UopsSymbol *value;
             PyObject *ptr = (PyObject *)this_instr->operand;
             value = sym_new_const(ctx, ptr);
-            /* Variables: 'value'D. base: 0. top: 1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'value'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -2966,17 +2382,9 @@
             _Py_UopsSymbol *value;
             PyObject *ptr = (PyObject *)this_instr->operand;
             value = sym_new_const(ctx, ptr);
-            /* Variables: 'value'D. base: 0. top: 1 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'value'MD. base: -1. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -2993,18 +2401,10 @@
             PyObject *ptr = (PyObject *)this_instr->operand;
             value = sym_new_const(ctx, ptr);
             null = sym_new_null(ctx);
-            /* Variables: 'value'D, 'null'D. base: 0. top: 2 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[0] = value;
             stack_pointer[1] = null;
             stack_pointer += 2;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'value'MD, 'null'MD. base: -2. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 
@@ -3014,18 +2414,10 @@
             PyObject *ptr = (PyObject *)this_instr->operand;
             value = sym_new_const(ctx, ptr);
             null = sym_new_null(ctx);
-            /* Variables: 'value'D, 'null'D. base: 0. top: 2 
-               inputs: 
-               outputs: 
-               peeks:  */
             stack_pointer[0] = value;
             stack_pointer[1] = null;
             stack_pointer += 2;
             assert(WITHIN_STACK_BOUNDS());
-            /* Variables: 'value'MD, 'null'MD. base: -2. top: 0 
-               inputs: 
-               outputs: 
-               peeks:  */
             break;
         }
 

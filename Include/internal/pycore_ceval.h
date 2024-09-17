@@ -275,6 +275,8 @@ PyAPI_FUNC(PyObject *) _PyEval_GetANext(PyObject *aiter);
 PyAPI_FUNC(PyObject *) _PyEval_LoadGlobal(PyObject *globals, PyObject *builtins, PyObject *name);
 PyAPI_FUNC(PyObject *) _PyEval_GetAwaitable(PyObject *iterable, int oparg);
 PyAPI_FUNC(PyObject *) _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *name);
+PyAPI_FUNC(int)
+_Py_Check_ArgsIterable(PyThreadState *tstate, PyObject *func, PyObject *args);
 
 /* Bits that can be set in PyThreadState.eval_breaker */
 #define _PY_GIL_DROP_REQUEST_BIT (1U << 0)

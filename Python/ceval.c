@@ -2923,8 +2923,8 @@ _PyEval_CheckExceptStarTypeValid(PyThreadState *tstate, PyObject* right)
     return 0;
 }
 
-static int
-check_args_iterable(PyThreadState *tstate, PyObject *func, PyObject *args)
+int
+_Py_Check_ArgsIterable(PyThreadState *tstate, PyObject *func, PyObject *args)
 {
     if (Py_TYPE(args)->tp_iter == NULL && !PySequence_Check(args)) {
         /* check_args_iterable() may be called with a live exception:

@@ -1643,7 +1643,9 @@
                     tuple = callargs;
                 }
                 else {
-                    int err = check_args_iterable(tstate, PyStackRef_AsPyObjectBorrow(func), callargs_o);
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    int err = _Py_Check_ArgsIterable(tstate, PyStackRef_AsPyObjectBorrow(func), callargs_o);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (err < 0) {
                         goto error;
                     }
