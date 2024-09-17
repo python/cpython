@@ -634,14 +634,14 @@ Export API
 
    .. c:member:: int8_t digits_order
 
-      Word endian:
+      Digits order:
 
-      - ``1`` for most significant word first (big endian)
-      - ``-1`` for least significant first (little endian)
+      - ``1`` for most significant digit first
+      - ``-1`` for least significant digit first
 
    .. c:member:: int8_t endian
 
-      Array endian:
+      Digit endianness:
 
       - ``1`` for most significant byte first (big endian)
       - ``-1`` for least significant first (little endian)
@@ -668,15 +668,18 @@ Export API
 
    .. c:member:: int64_t value
 
-      Integer value if :c:member:`digits` is ``NULL``.
+      The native integer value of the exported :class:`int` object.
+      Only valid if :c:member:`digits` is ``NULL``.
 
    .. c:member:: uint8_t negative
 
       1 if the number is negative, 0 otherwise.
+      Only valid if :c:member:`digits` is not ``NULL``.
 
    .. c:member:: Py_ssize_t ndigits
 
       Number of digits in :c:member:`digits` array.
+      Only valid if :c:member:`digits` is not ``NULL``.
 
    .. c:member:: const void *digits
 
