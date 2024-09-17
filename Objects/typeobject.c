@@ -5377,7 +5377,8 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
     } while (0)
 
     if (result == NULL) {
-        // It is best for this PGO performance to isolate the layout check
+        // If we check the `result` only here, the subsequent branches
+        // will become trivial to optimize.
         return check_base_by_token(type, token);
     }
     if (token == NULL || !PyType_Check(type)) {
