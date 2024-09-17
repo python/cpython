@@ -3,7 +3,7 @@
 race:get_allocator_unlocked
 race:set_allocator_unlocked
 
-
+# Triggered by test_threading.ThreadTests.test_join_force_terminated_daemon_thread_in_finalization
 # https://gist.github.com/mpage/ff1c7094bc8237d98387678d5f52058f
 race_top:_PyThreadState_MustExit
 
