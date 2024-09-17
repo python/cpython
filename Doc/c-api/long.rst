@@ -693,7 +693,7 @@ Export API
    This function always succeeds if *obj* is a Python :class:`int` object or a
    subclass.
 
-   If *export_long.digits* is not ``NULL, :c:func:`PyLong_FreeExport` must be
+   If *export_long.digits* is not ``NULL``, :c:func:`PyLong_FreeExport` must be
    called when the export is no longer needed.
 
 
