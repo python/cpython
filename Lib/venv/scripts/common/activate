@@ -45,8 +45,17 @@ case "$(uname)" in
         export VIRTUAL_ENV
         ;;
     *)
-        # use the path as-is
-        export VIRTUAL_ENV=__VENV_DIR__
+        case "$(uname -r)" in
+            *Microsoft*|*WSL*)
+                # convert path to /mnt/d/path/to/venv on WSL
+                VIRTUAL_ENV=$(wslpath __VENV_DIR__)
+                export VIRTUAL_ENV
+                ;;
+            *)
+                # use the path as-is
+                export VIRTUAL_ENV=__VENV_DIR__
+                ;;
+        esac
         ;;
 esac
 
