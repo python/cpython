@@ -17,33 +17,40 @@ class IgnoreRule(NamedTuple):
     ignore_all: bool = False
     is_directory: bool = False
 
+
 def parse_warning_ignore_file(file_path: str) -> set[IgnoreRule]:
     """
     Parses the warning ignore file and returns a set of IgnoreRules
     """
     files_with_expected_warnings = set()
-    with Path(file_path).open(encoding="UTF-8") as ignore_files:
+    with Path(file_path).open(encoding="UTF-8") as ignore_rules_file:
         files_with_expected_warnings = set()
-        for i, line in enumerate(ignore_files):
+        for i, line in enumerate(ignore_rules_file):
             line = line.strip()
             if line and not line.startswith("#"):
                 line_parts = line.split()
                 if len(line_parts) >= 2:
                     file_name = line_parts[0]
                     count = line_parts[1]
-                    ignore_all = count == '*'
+                    ignore_all = count == "*"
+                    is_directory = file_name.endswith("/")
 
-                    is_directory = file_name.endswith('/')
-
-                    if is_directory and count != '*':
-                        print(f"Error parsing ignore file: {file_path} at line: {i}")
-                        print(f"Directory {file_name} must have count set to *")
+                    # Directories must have a wildcard count
+                    if is_directory and count != "*":
+                        print(
+                            f"Error parsing ignore file: {file_path} at line: {i}"
+                        )
+                        print(
+                            f"Directory {file_name} must have count set to *"
+                        )
                         sys.exit(1)
                     if ignore_all:
                         count = 0
-                    
+
                     files_with_expected_warnings.add(
-                        IgnoreRule(file_name, int(count), ignore_all, is_directory)
+                        IgnoreRule(
+                            file_name, int(count), ignore_all, is_directory
+                        )
                     )
 
     return files_with_expected_warnings
@@ -81,11 +88,15 @@ def extract_warnings_from_compiler_output(
                         "line": match.group("line"),
                         "column": match.group("column"),
                         "message": match.group("message"),
-                        "option": match.group("option").lstrip("[").rstrip("]"),
+                        "option": match.group("option")
+                        .lstrip("[")
+                        .rstrip("]"),
                     }
                 )
             except:
-                print(f"Error parsing compiler output. Unable to extract warning on line {i}:\n{line}")
+                print(
+                    f"Error parsing compiler output. Unable to extract warning on line {i}:\n{line}"
+                )
                 sys.exit(1)
 
     return compiler_warnings
@@ -111,16 +122,18 @@ def get_warnings_by_file(warnings: list[dict]) -> dict[str, list[dict]]:
     return warnings_by_file
 
 
-def is_file_ignored(file_path: str, ignore_files: set[IgnoreRule]) -> IgnoreRule | None:
+def is_file_ignored(
+    file_path: str, ignore_rules: set[IgnoreRule]
+) -> IgnoreRule | None:
     """
-    Returns the IgnoreRule object for the file if it is in the ignore list
+    Returns the IgnoreRule object for the file path if there is a related rule for it
     """
-    for ignore_file in ignore_files:
-        if ignore_file.is_directory:
-            if file_path.startswith(ignore_file.name):
-                return ignore_file
-        elif file_path == ignore_file.name:
-            return ignore_file
+    for ignore_rule in ignore_rules:
+        if ignore_rule.is_directory:
+            if file_path.startswith(ignore_rule.name):
+                return ignore_rule
+        elif file_path == ignore_rule.name:
+            return ignore_rule
     return None
 
 
@@ -143,7 +156,10 @@ def get_unexpected_warnings(
                 continue
 
             if len(files_with_warnings[file]) > ignore_rule.count:
-                unexpected_warnings[file] = (files_with_warnings[file], ignore_rule.count)
+                unexpected_warnings[file] = (
+                    files_with_warnings[file],
+                    ignore_rule.count,
+                )
             continue
         elif ignore_rule is None:
             # If the file is not in the ignore list, then it is unexpected
@@ -176,10 +192,15 @@ def get_unexpected_improvements(
     for rule in ignore_rules:
         if not rule.ignore_all and rule.name not in files_with_warnings.keys():
             if rule.name not in files_with_warnings.keys():
-                import pdb; pdb.set_trace()
                 unexpected_improvements.append((rule.name, rule.count, 0))
             elif len(files_with_warnings[rule.name]) < rule.count:
-                unexpected_improvements.append((rule.name, rule.count, len(files_with_warnings[rule.name])))
+                unexpected_improvements.append(
+                    (
+                        rule.name,
+                        rule.count,
+                        len(files_with_warnings[rule.name]),
+                    )
+                )
 
     if unexpected_improvements:
         print("Unexpected improvements:")
@@ -262,9 +283,7 @@ def main(argv: list[str] | None = None) -> int:
                 f" {args.warning_ignore_file_path}"
             )
             return 1
-        ignore_rules = parse_warning_ignore_file(
-            args.warning_ignore_file_path
-        )
+        ignore_rules = parse_warning_ignore_file(args.warning_ignore_file_path)
 
     with Path(args.compiler_output_file_path).open(encoding="UTF-8") as f:
         compiler_output_file_contents = f.read()
@@ -272,27 +291,23 @@ def main(argv: list[str] | None = None) -> int:
     warnings = extract_warnings_from_compiler_output(
         compiler_output_file_contents,
         args.compiler_output_type,
-        args.path_prefix
+        args.path_prefix,
     )
 
     files_with_warnings = get_warnings_by_file(warnings)
 
-    status = get_unexpected_warnings(
-        ignore_rules, files_with_warnings
-    )
+    status = get_unexpected_warnings(ignore_rules, files_with_warnings)
     if args.fail_on_regression:
         exit_code |= status
 
-    status = get_unexpected_improvements(
-        ignore_rules, files_with_warnings
-    )
+    status = get_unexpected_improvements(ignore_rules, files_with_warnings)
     if args.fail_on_improvement:
         exit_code |= status
 
     print(
         "For information about this tool and its configuration"
         " visit https://devguide.python.org/development-tools/warnings/"
-        )
+    )
 
     return exit_code
 
