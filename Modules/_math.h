@@ -39,5 +39,3 @@ _Py_fmod(double x, double y)
 
     return r;
 }
-
-#define m_fmod _Py_fmod
