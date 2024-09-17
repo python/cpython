@@ -23,19 +23,3 @@ _Py_log1p(double x)
 }
 
 #define m_log1p _Py_log1p
-
-static double
-_Py_fmod(double x, double y)
-{
-    /* Some platforms (e.g. Windows 10 with MSC v.1916) loose sign
-       for zero result.  But C99+ says: "if y is nonzero, the result
-       has the same sign as x".
-     */
-    double r = fmod(x, y);
-
-    if (r == 0.0 && y != 0.0) {
-        r = copysign(r, x);
-    }
-
-    return r;
-}
