@@ -98,7 +98,7 @@ typedef union _PyStackRef {
 static inline PyObject *
 PyStackRef_AsPyObjectBorrow(_PyStackRef stackref)
 {
-    PyObject *cleared = ((PyObject *)((stackref).bits & (~Py_TAG_BITS)));
+    PyObject *cleared = ((PyObject *)((stackref).bits & (~(uintptr_t)Py_TAG_BITS)));
     return cleared;
 }
 #else
@@ -133,7 +133,7 @@ _PyStackRef_FromPyObjectSteal(PyObject *obj)
 {
     // Make sure we don't take an already tagged value.
     assert(((uintptr_t)obj & Py_TAG_BITS) == 0);
-    int tag = (obj == NULL || _Py_IsImmortal(obj)) ? (Py_TAG_DEFERRED) : Py_TAG_PTR;
+    unsigned int tag = (obj == NULL || _Py_IsImmortal(obj)) ? (Py_TAG_DEFERRED) : Py_TAG_PTR;
     return ((_PyStackRef){.bits = ((uintptr_t)(obj)) | tag});
 }
 #   define PyStackRef_FromPyObjectSteal(obj) _PyStackRef_FromPyObjectSteal(_PyObject_CAST(obj))

@@ -26,7 +26,7 @@ _PyPegen_byte_offset_to_character_offset_line(PyObject *line, Py_ssize_t col_off
 
     Py_ssize_t len = 0;
     while (col_offset < end_col_offset) {
-        Py_UCS4 ch = data[col_offset];
+        Py_UCS4 ch = (unsigned char)data[col_offset];
         if (ch < 0x80) {
             col_offset += 1;
         } else if ((ch & 0xe0) == 0xc0) {
