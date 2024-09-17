@@ -50,14 +50,6 @@ dummy_func(void) {
 
 // BEGIN BYTECODES //
 
-    override op(_LOAD_FAST_CHECK, (-- value)) {
-        value = GETLOCAL(oparg);
-        // We guarantee this will error - just bail and don't optimize it.
-        if (sym_is_null(value)) {
-            ctx->done = true;
-        }
-    }
-
     override op(_LOAD_FAST, (-- value)) {
         value = GETLOCAL(oparg);
         sym_set_locals_idx(value, oparg);
@@ -70,10 +62,21 @@ dummy_func(void) {
         GETLOCAL(oparg) = sym_new_null(ctx);
     }
 
-
     override op(_LOAD_CONST, (-- value)) {
         // Should've all been converted by specializer.
         Py_UNREACHABLE();
+    }
+
+    override op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
+        value = sym_new_const(ctx, ptr);
+        SET_STATIC_INST();
+        value.is_virtual = true;
+    }
+
+    override op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
+        value = sym_new_const(ctx, ptr);
+        SET_STATIC_INST();
+        value.is_virtual = true;
     }
 
     override op(_STORE_FAST, (value --)) {
@@ -83,6 +86,7 @@ dummy_func(void) {
         }
         else {
             reify_shadow_stack(ctx);
+            value.is_virtual = false;
         }
         GETLOCAL(oparg) = value;
     }

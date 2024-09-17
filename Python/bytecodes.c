@@ -4747,11 +4747,11 @@ dummy_func(
             DEOPT_IF(!current_executor->vm_data.valid);
         }
 
-        tier2 pure op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
+        tier2 _static op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
             value = PyStackRef_FromPyObjectNew(ptr);
         }
 
-        tier2 pure op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
+        tier2 _static op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
             value = PyStackRef_FromPyObjectImmortal(ptr);
         }
 

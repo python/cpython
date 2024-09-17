@@ -78,6 +78,7 @@
             }
             else {
                 reify_shadow_stack(ctx);
+                value.is_virtual = false;
             }
             GETLOCAL(oparg) = value;
             stack_pointer += -1;
@@ -2327,6 +2328,8 @@
             _Py_UopsLocalsPlusSlot value;
             PyObject *ptr = (PyObject *)this_instr->operand;
             value = sym_new_const(ctx, ptr);
+            SET_STATIC_INST();
+            value.is_virtual = true;
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -2337,6 +2340,8 @@
             _Py_UopsLocalsPlusSlot value;
             PyObject *ptr = (PyObject *)this_instr->operand;
             value = sym_new_const(ctx, ptr);
+            SET_STATIC_INST();
+            value.is_virtual = true;
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());

@@ -509,21 +509,22 @@ reify_shadow_stack(_Py_UOpsContext *ctx)
         assert(slot.sym != NULL);
         // Need reifying.
         if (slot.is_virtual) {
+            sp->is_virtual = false;
             if (slot.sym->locals_idx >= 0) {
-                DPRINTF(3, "reifying LOAD_FAST %d\n", slot.sym->locals_idx);
+                DPRINTF(3, "reifying %d LOAD_FAST %d\n", (int)(sp - ctx->frame->stack), slot.sym->locals_idx);
                 WRITE_OP(&trace_dest[ctx->n_trace_dest], _LOAD_FAST, slot.sym->locals_idx, 0);
                 trace_dest[ctx->n_trace_dest].format = UOP_FORMAT_TARGET;
-                trace_dest[ctx->n_trace_dest].target = 100;
+                trace_dest[ctx->n_trace_dest].target = 0;
             }
             else if (slot.sym->const_val) {
-                DPRINTF(3, "reifying LOAD_CONST_INLINE\n");
+                DPRINTF(3, "reifying %d LOAD_CONST_INLINE %p\n", (int)(sp - ctx->frame->stack), slot.sym->const_val);
                 WRITE_OP(&trace_dest[ctx->n_trace_dest], _Py_IsImmortal(slot.sym->const_val) ?
                     _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE, 0, (uint64_t)slot.sym->const_val);
                 trace_dest[ctx->n_trace_dest].format = UOP_FORMAT_TARGET;
-                trace_dest[ctx->n_trace_dest].target = 100;
+                trace_dest[ctx->n_trace_dest].target = 0;
             }
             else if (sym_is_null(slot)) {
-                DPRINTF(3, "reifying PUSH_NULL\n");
+                DPRINTF(3, "reifying %d PUSH_NULL\n", (int)(sp - ctx->frame->stack));
                 WRITE_OP(&trace_dest[ctx->n_trace_dest], _PUSH_NULL, 0, 0);
             }
             else {
@@ -537,7 +538,6 @@ reify_shadow_stack(_Py_UOpsContext *ctx)
                 ctx->done = true;
                 return;
             }
-            sp->is_virtual = false;
         }
     }
 }
