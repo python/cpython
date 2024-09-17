@@ -235,10 +235,144 @@ class Options(types.SimpleNamespace):
         return argv
 
 
-class FilesSearch:
+#######################################
+# basic search implementations
 
-    def __call__(self, filenames, regex, opts):
-        ...
+# [start-impl-sequential]
+def search_sequential(filenames, regex, opts):
+    for filename in filenames:
+        # iter_lines() opens the file too.
+        lines = iter_lines(filename)
+        yield from search_lines(lines, regex, opts, filename)
+# [end-impl-sequential]
+
+
+# [start-impl-threads]
+def search_threads(filenames, regex, opts):
+    MAX_FILES = 10
+    MAX_MATCHES = 100
+
+    matches_by_file = queue.Queue()
+
+    def do_background():
+        # Make sure we don't have too many threads at once,
+        # i.e. too many files open at once.
+        counter = threading.Semaphore(MAX_FILES)
+
+        def task(filename, matches):
+            lines = iter_lines(filename)
+            for match in search_lines(lines, regex, opts, filename):
+                matches.put(match)  # blocking
+            matches.put(None)  # blocking
+            # Let a new thread start.
+            counter.release()
+
+        for filename in filenames:
+            # Prepare for the file.
+            matches = queue.Queue(MAX_MATCHES)
+            matches_by_file.put((filename, matches))
+
+            # Start a thread to process the file.
+            t = threading.Thread(target=task, args=(filename, matches))
+            counter.acquire()
+            t.start()
+        matches_by_file.put(None)
+
+    background = threading.Thread(target=do_background)
+    background.start()
+
+    # Yield the results as they are received, in order.
+    next_matches = matches_by_file.get()  # blocking
+    while next_matches is not None:
+        filename, matches = next_matches
+        match = matches.get()  # blocking
+        while match is not None:
+            yield match
+            match = matches.get()  # blocking
+        next_matches = matches_by_file.get()  # blocking
+
+    background.join()
+# [end-impl-threads]
+
+
+# [start-impl-cf-threads]
+def search_cf_threads(filenames, regex, opts):
+    MAX_FILES = 10
+    MAX_MATCHES = 100
+
+    matches_by_file = queue.Queue()
+
+    def do_background():
+        def task(filename, matches):
+            lines = iter_lines(filename)
+            for match in search_lines(lines, regex, opts, filename):
+                matches.put(match)  # blocking
+            matches.put(None)  # blocking
+
+        with concurrent.futures.ThreadPoolExecutor(MAX_FILES) as workers:
+            for filename in filenames:
+                # Prepare for the file.
+                matches = queue.Queue(MAX_MATCHES)
+                matches_by_file.put((filename, matches))
+
+                # Start a thread to process the file.
+                workers.submit(task, filename, matches)
+            matches_by_file.put(None)
+
+    background = threading.Thread(target=do_background)
+    background.start()
+
+    # Yield the results as they are received, in order.
+    next_matches = matches_by_file.get()  # blocking
+    while next_matches is not None:
+        filename, matches = next_matches
+        match = matches.get()  # blocking
+        while match is not None:
+            yield match
+            match = matches.get()  # blocking
+        next_matches = matches_by_file.get()  # blocking
+
+    background.join()
+# [end-impl-cf-threads]
+
+
+# [start-impl-interpreters]
+def search_interpreters(filenames, regex, opts):
+    raise NotImplementedError
+# [end-impl-interpreters]
+
+
+# [start-impl-cf-interpreters]
+def search_cf_interpreters(filenames, regex, opts):
+    raise NotImplementedError
+# [end-impl-cf-interpreters]
+
+
+# [start-impl-asyncio]
+def search_asyncio(filenames, regex, opts):
+    raise NotImplementedError
+# [end-impl-asyncio]
+
+
+# [start-impl-multiprocessing]
+def search_multiprocessing(filenames, regex, opts):
+    raise NotImplementedError
+# [end-impl-multiprocessing]
+
+
+# [start-impl-cf-multiprocessing]
+def search_cf_multiprocessing(filenames, regex, opts):
+    raise NotImplementedError
+# [end-impl-cf-multiprocessing]
+
+
+#######################################
+# common implementation code
+
+#class FilesSearch:
+#
+#    def __call__(self, filenames, regex, opts):
+#        ...
 
 
 class Search:
@@ -251,11 +385,36 @@ class Search:
 #    def _start
 
 
-class Results:
-    ...
+#class Results:
+#    ...
 
 
 
+
+
+class Grep:
+
+    def __init__(self, regex, opts):
+        if isinstance(regex, str):
+            regex = re.compile(regex)
+        self.regex = regex
+        self.opts = opts
+
+    def search(self, *sources):
+        sources = Source.resolve_all(sources, self.opts)
+        sources = self._resize_sources(sources)
+        return self._search_sources(sources)
+
+    def _resize_sources(self, sources):
+        # Some subclasses may want to split sources up.
+        yield from sources
+
+    def _search_sources(self, sources):
+        # This is re-implemented by each concurrency model subclass.
+        # 1. split the problem into chunks (in self._resize_sources())
+        # 2. fan out the chunks
+        # 3. merge the results, in correct order
+        return Search.from_sources(sources, self.regex, self.opts)
 
 
 class Search:
@@ -399,91 +558,6 @@ class ConcurrentSearch(Search):
         raise NotImplementedError
 
 
-class Grep:
-
-    def __init__(self, regex, opts):
-        if isinstance(regex, str):
-            regex = re.compile(regex)
-        self.regex = regex
-        self.opts = opts
-
-    def search(self, *sources):
-        sources = Source.resolve_all(sources, self.opts)
-        sources = self._resize_sources(sources)
-        return self._search_sources(sources)
-
-    def _resize_sources(self, sources):
-        # Some subclasses may want to split sources up.
-        yield from sources
-
-    def _search_sources(self, sources):
-        # This is re-implemented by each concurrency model subclass.
-        # 1. split the problem into chunks (in self._resize_sources())
-        # 2. fan out the chunks
-        # 3. merge the results, in correct order
-        return Search.from_sources(sources, self.regex, self.opts)
-
-
-#######################################
-# basic search implementations
-
-# [start-impl-sequential]
-def search_sequential(filenames, regex, opts):
-    for filename in filenames:
-        # iter_lines() opens the file too.
-        lines = iter_lines(filename)
-        yield from search_lines(lines, regex, opts, filename)
-# [end-impl-sequential]
-
-
-# [start-impl-threads]
-def search_threads(filenames, regex, opts):
-    MAX_FILES = 10
-    MAX_MATCHES = 100
-
-    matches_by_file = queue.Queue()
-
-    def do_background():
-        # Make sure we don't have too many threads at once,
-        # i.e. too many files open at once.
-        counter = threading.Semaphore(MAX_FILES)
-
-        def task(filename, matches):
-            lines = iter_lines(filename)
-            for match in search_lines(lines, regex, opts, filename):
-                matches.put(match)  # blocking
-            matches.put(None)  # blocking
-            # Let a new thread start.
-            counter.release()
-
-        for filename in filenames:
-            # Prepare for the file.
-            matches = queue.Queue(MAX_MATCHES)
-            matches_by_file.put((filename, matches))
-
-            # Start a thread to process the file.
-            t = threading.Thread(target=task, args=(filename, matches))
-            counter.acquire()
-            t.start()
-        matches_by_file.put(None)
-
-    background = threading.Thread(target=do_background)
-    background.start()
-
-    # Yield the results as they are received, in order.
-    next_matches = matches_by_file.get()  # blocking
-    while next_matches is not None:
-        filename, matches = next_matches
-        match = matches.get()  # blocking
-        while match is not None:
-            yield match
-            match = matches.get()  # blocking
-        next_matches = matches_by_file.get()  # blocking
-
-    background.join()
-# [end-impl-threads]
-
-
 
 
 class ConcurrentImpl:
@@ -492,6 +566,8 @@ class ConcurrentImpl:
 
 
 
+#######################################
+# implementations
 
 #--------------------------------------
 # [start-sequential]
@@ -1302,7 +1378,8 @@ IMPLEMENTATIONS = {
     'multiprocessing-common': GrepWithMultiprocessing,
 }
 CF_IMPLEMENTATIONS = {
-    'threads': GrepWithCFThreads,
+#    'threads': GrepWithCFThreads,
+    'threads': search_cf_threads,
     'interpreters': GrepWithCFInterpreters,
     'multiprocessing': GrepWithCFMultiprocessing,
 }
