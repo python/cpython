@@ -2056,12 +2056,6 @@ class MathTests(unittest.TestCase):
                 if id in SKIP_ON_TIGER:
                     continue
 
-            # Skip some sqrt tests.  C99+ says for math.h's sqrt: If the
-            # argument is +∞ or ±0, it is returned, unmodified.  On another
-            # hand, for csqrt: If z is ±0+0i, the result is +0+0i.
-            if id in ['sqrt0002', 'sqrt0003', 'sqrt1001', 'sqrt1023']:
-                continue
-
             func = getattr(math, fn)
 
             if 'invalid' in flags or 'divide-by-zero' in flags:
@@ -2075,6 +2069,13 @@ class MathTests(unittest.TestCase):
                 result = 'ValueError'
             except OverflowError:
                 result = 'OverflowError'
+
+            # C99+ says for math.h's sqrt: If the argument is +∞ or ±0, it is
+            # returned, unmodified.  On another hand, for csqrt: If z is ±0+0i,
+            # the result is +0+0i.  Lets correct zero sign of er to follow
+            # first convention.
+            if id in ['sqrt0002', 'sqrt0003', 'sqrt1001', 'sqrt1023']:
+                er = math.copysign(er, ar)
 
             # Default tolerances
             ulp_tol, abs_tol = 5, 0.0
