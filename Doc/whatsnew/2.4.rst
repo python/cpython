@@ -757,7 +757,7 @@ API that perform ASCII-only conversions, ignoring the locale setting:
   :c:expr:`double` to an ASCII string.
 
 The code for these functions came from the GLib library
-(https://developer-old.gnome.org/glib/2.26/), whose developers kindly
+(`https://developer-old.gnome.org/glib/2.26/ <http://web.archive.org/web/20210306104320/https://developer.gnome.org/glib/2.26/>`__), whose developers kindly
 relicensed the relevant functions and donated them to the Python Software
 Foundation.  The :mod:`locale` module  can now change the numeric locale,
 letting extensions such as GTK+  produce the correct results.
