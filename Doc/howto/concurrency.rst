@@ -1269,7 +1269,7 @@ at ``_do_search()``.
 
 One thing to keep in mind is that it returns an iterable of
 ``Match`` objects.  Concurrency may be happening as long as that
-iterable hasn't been exhausted.  It is probably happening the entire
+iterable hasn't been exhausted.  It is happening more or less the entire
 time we loop over the matches in ``render_matches()``.  We must
 factor that into our concurrent implementations.
 
@@ -1293,8 +1293,9 @@ implementations:
    :linenos:
 
 Each yielded ``Match`` object is a namedtuple of
-(filename, line, match text).  For inverted matches, ``match.match``
-is not set.  For file-only matches, only ``match.filename`` is set.
+(filename, full line text, match text).
+For inverted matches, ``match.match`` is not set.
+For file-only matches, only ``match.filename`` is set.
 
 Now let's look at the implementations for the various concurrency
 models.  We'll start with the simplest: threads.
