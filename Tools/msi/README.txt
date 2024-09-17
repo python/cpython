@@ -9,7 +9,7 @@ script:
 For an official release, the installer should be built with the
 Tools/msi/buildrelease.bat script and environment variables:
 
-    set PYTHON=<path to Python 3.8 or later>
+    set PYTHON=<path to Python 3.10 or later>
     set SPHINXBUILD=<path to sphinx-build.exe>
     set PATH=<path to Git (git.exe)>;%PATH%
 
@@ -66,13 +66,7 @@ Tools\msi\get_externals.bat. (Note that this is in addition to the
 similarly named file in PCbuild.)
 
 One of the dependencies used in builds is WiX, a toolset that lets developers
-create installers for Windows Installer, the Windows installation engine. WiX
-has a dependency on the Microsoft .NET Framework 4.8 Advanced Services (which
-may not be configured on recent versions of Windows, such as Windows 10 or
-later). If you are building on these recent versions, use the Control Panel
-(Programs | Programs and Features | Turn Windows Features on or off) and
-ensure that the entry "Microsoft .NET Framework 4.8 Advanced Services" is
-enabled.
+create installers for Windows Installer, the Windows installation engine.
 
 Additionally, make sure "MSVC v14x - VS 20xx C++ ARM64 build tools" are
 selected under "Desktop Development with C++" in "Visual Studio installer",

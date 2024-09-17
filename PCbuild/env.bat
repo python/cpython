@@ -4,8 +4,8 @@ rem command window. However, most builds of Python will ignore the version
 rem of the tools on PATH and use PlatformToolset instead. Ideally, both sets of
 rem tools should be the same version to avoid potential conflicts.
 rem
-rem To build Python with an earlier toolset, pass "/p:PlatformToolset=v140" (or
-rem 'v142', 'v141') to the build script.
+rem To build Python with an earlier toolset, pass "/p:PlatformToolset=v141" (or
+rem 'v142', 'v143') to the build script.
 
 echo Build environments: x86, amd64, x86_amd64
 echo.
@@ -23,5 +23,4 @@ exit /B 0
 if not defined VSTOOLS set VSTOOLS=%VS143COMNTOOLS%
 if not defined VSTOOLS set VSTOOLS=%VS142COMNTOOLS%
 if not defined VSTOOLS set VSTOOLS=%VS141COMNTOOLS%
-if not defined VSTOOLS set VSTOOLS=%VS140COMNTOOLS%
 call "%VSTOOLS%..\..\VC\vcvarsall.bat" %_ARGS%
