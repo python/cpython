@@ -36,6 +36,8 @@ def declare_variable(
 ) -> None:
     if var.name not in required:
         return
+    if not var.used:
+        return
     required.remove(var.name)
     type, null = type_and_null(var)
     space = " " if type[-1].isalnum() else ""
@@ -76,7 +78,6 @@ class Tier2Emitter(Emitter):
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
-        storage.flush(self.out)
         self.out.emit_at("if ", tkn)
         lparen = next(tkn_iter)
         self.emit(lparen)
@@ -168,7 +169,7 @@ class Tier2Emitter(Emitter):
         return True
 
 
-def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> None:
+def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
     locals: dict[str, Local] = {}
     try:
         emitter.out.start_line()
@@ -189,10 +190,10 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> None:
                     type = f"uint{cache.size*16}_t "
                     cast = f"uint{cache.size*16}_t"
                 emitter.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND();\n")
-        emitter.emit_tokens(uop, storage, None)
+        storage = emitter.emit_tokens(uop, storage, None)
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body[0]) from None
-
+    return storage.stack
 
 SKIPS = ("_EXTENDED_ARG",)
 
@@ -229,7 +230,7 @@ def generate_tier2(
         out.emit(f"case {uop.name}: {{\n")
         declare_variables(uop, out)
         stack = Stack()
-        write_uop(uop, emitter, stack)
+        stack = write_uop(uop, emitter, stack)
         out.start_line()
         if not uop.properties.always_exits:
             stack.flush(out)

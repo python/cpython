@@ -499,16 +499,17 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
-    ) -> None:
+    ) -> Storage:
         tkn_iter = TokenIterator(uop.body)
         self.out.start_line()
         _, rbrace, storage = self._emit_block(tkn_iter, uop, storage, inst, False)
         try:
+            self._print_storage(storage)
             storage.push_outputs()
             self._print_storage(storage)
         except StackError as ex:
             raise analysis_error(ex.args[0], rbrace)
-        return storage.stack
+        return storage
 
     def emit(self, txt: str | Token) -> None:
         self.out.emit(txt)

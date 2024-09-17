@@ -1402,22 +1402,23 @@ class TestGeneratedAbstractCases(unittest.TestCase):
     def test_overridden_abstract_args(self):
         input = """
         pure op(OP, (arg1 -- out)) {
-            spam();
+            out = spam(arg1);
         }
         op(OP2, (arg1 -- out)) {
-            eggs();
+            out = eggs(arg1);
         }
         """
         input2 = """
         op(OP, (arg1 -- out)) {
-            out = eggs();
+            out = eggs(arg1);
         }
         """
         output = """
         case OP: {
             _Py_UopsSymbol *arg1;
             _Py_UopsSymbol *out;
-            out = eggs();
+            arg1 = stack_pointer[-1];
+            out = eggs(arg1);
             stack_pointer[-1] = out;
             break;
         }
@@ -1425,6 +1426,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         case OP2: {
             _Py_UopsSymbol *out;
             out = sym_new_not_null(ctx);
+            stack_pointer[-1] = out;
             break;
         }
        """
@@ -1433,7 +1435,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
     def test_no_overridden_case(self):
         input = """
         pure op(OP, (arg1 -- out)) {
-            spam();
+            out = spam(arg1);
         }
 
         pure op(OP2, (arg1 -- out)) {
@@ -1449,11 +1451,11 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         case OP: {
             _Py_UopsSymbol *out;
             out = sym_new_not_null(ctx);
+            stack_pointer[-1] = out;
             break;
         }
 
         case OP2: {
-            _Py_UopsSymbol *arg1;
             _Py_UopsSymbol *out;
             out = NULL;
             stack_pointer[-1] = out;

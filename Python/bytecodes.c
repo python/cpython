@@ -4730,12 +4730,14 @@ dummy_func(
         op (_GUARD_IS_TRUE_POP, (flag -- )) {
             int is_true = PyStackRef_Is(flag, PyStackRef_True);
             KILL(flag);
+            SYNC_SP();
             EXIT_IF(!is_true);
         }
 
         op (_GUARD_IS_FALSE_POP, (flag -- )) {
             int is_false = PyStackRef_Is(flag, PyStackRef_False);
             KILL(flag);
+            SYNC_SP();
             EXIT_IF(!is_false);
         }
 
@@ -4743,6 +4745,7 @@ dummy_func(
             int is_none = PyStackRef_Is(val, PyStackRef_None);
             if (!is_none) {
                 PyStackRef_CLOSE(val);
+                SYNC_SP();
                 EXIT_IF(1);
             }
             KILL(val);
@@ -4750,8 +4753,9 @@ dummy_func(
 
         op (_GUARD_IS_NOT_NONE_POP, (val -- )) {
             int is_none = PyStackRef_Is(val, PyStackRef_None);
-            EXIT_IF(is_none);
             PyStackRef_CLOSE(val);
+            SYNC_SP();
+            EXIT_IF(is_none);
         }
 
         op(_JUMP_TO_TOP, (--)) {

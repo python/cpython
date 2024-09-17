@@ -1040,6 +1040,7 @@ tier2_dispatch:
         uopcode = next_uop->opcode;
 #ifdef Py_DEBUG
         if (lltrace >= 3) {
+            dump_stack(frame, stack_pointer);
             if (next_uop->opcode == _START_EXECUTOR) {
                 printf("%4d uop: ", 0);
             }
@@ -1047,8 +1048,7 @@ tier2_dispatch:
                 printf("%4d uop: ", (int)(next_uop - current_executor->trace));
             }
             _PyUOpPrint(next_uop);
-            printf(" stack_level=%d\n",
-                (int)(stack_pointer - _PyFrame_Stackbase(frame)));
+            printf("\n");
         }
 #endif
         next_uop++;

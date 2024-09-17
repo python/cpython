@@ -46,7 +46,7 @@ def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
     variables = {"unused"}
     if not skip_inputs:
         for var in reversed(uop.stack.inputs):
-            if var.name not in variables:
+            if var.name not in variables and var.used:
                 variables.add(var.name)
                 if var.condition:
                     out.emit(f"{type_name(var)}{var.name} = NULL;\n")
@@ -77,25 +77,36 @@ def decref_inputs(
     out.emit_at("", tkn)
 
 
-def emit_default(out: CWriter, uop: Uop, storage: Storage) -> None:
-    for var in storage.outputs:
-        if var.name != "unused" and not var.item.peek:
+def emit_default(out: CWriter, uop: Uop, stack: Stack) -> None:
+    top_offset = stack.top_offset.copy()
+    for var in uop.stack.inputs:
+        stack.pop(var)
+    for var in uop.stack.outputs:
+        if var.is_array() and not var.peek and not var.name == "unused":
+            c_offset = top_offset.to_c()
+            top_offset.push(var)
+            out.emit(f"{var.name} = &stack_pointer[{c_offset}];\n")
+        else:
+            top_offset.push(var)
+    for var in uop.stack.outputs:
+        local = Local.undefined(var)
+        stack.push(local)
+        if var.name != "unused" and not var.peek:
+            local.defined = True
             if var.is_array():
                 out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
                 out.emit(f"{var.name}[_i] = sym_new_not_null(ctx);\n")
                 out.emit("}\n")
             elif var.name == "null":
                 out.emit(f"{var.name} = sym_new_null(ctx);\n")
-                var.defined = True
             else:
                 out.emit(f"{var.name} = sym_new_not_null(ctx);\n")
-                var.defined = True
 
 
 class OptimizerEmitter(Emitter):
 
     def emit_save(self, storage: Storage):
-        pass
+        storage.flush(self.out)
 
     def emit_reload(self, storage: Storage):
         pass
@@ -113,9 +124,10 @@ def write_uop(
     prototype = override if override else uop
     try:
         out.start_line()
-        code_list, storage = Storage.for_uop(stack, prototype)
-        for code in code_list:
-            out.emit(code)
+        if override:
+            code_list, storage = Storage.for_uop(stack, prototype, extract_bits=False)
+            for code in code_list:
+                out.emit(code)
         if debug:
             args = []
             for var in prototype.stack.inputs:
@@ -133,14 +145,16 @@ def write_uop(
                     out.emit(f"{type}{cache.name} = ({cast})this_instr->operand;\n")
         if override:
             emitter = OptimizerEmitter(out)
-            # No reference management needed.
+            # No reference management of inputs needed.
             for var in storage.inputs:
                 var.defined = False
-            emitter.emit_tokens(override, storage, None)
+            storage = emitter.emit_tokens(override, storage, None)
+            out.start_line()
+            storage.flush(out, cast_type="_Py_UopsSymbol *", extract_bits=False)
         else:
-            emit_default(out, uop, storage)
-        out.start_line()
-        stack.flush(out, cast_type="_Py_UopsSymbol *", extract_bits=True)
+            emit_default(out, uop, stack)
+            out.start_line()
+            stack.flush(out, cast_type="_Py_UopsSymbol *", extract_bits=False)
     except StackError as ex:
         raise analysis_error(ex.args[0], prototype.body[0]) # from None
 

@@ -107,12 +107,12 @@ def write_uop(
                     emitter.emit(f"(void){cache.name};\n")
             offset += cache.size
 
-        stack = emitter.emit_tokens(uop, storage, inst)
+        storage = emitter.emit_tokens(uop, storage, inst)
         if braces:
             emitter.out.start_line()
             emitter.emit("}\n")
         # emitter.emit(stack.as_comment() + "\n")
-        return offset, stack
+        return offset, storage.stack
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body[0])
 

@@ -583,8 +583,7 @@ dummy_func(void) {
 
     op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
         int argcount = oparg;
-
-        KILL(callable);
+        (void)callable;
 
         PyCodeObject *co = NULL;
         assert((this_instr + 2)->opcode == _PUSH_FRAME);
@@ -667,11 +666,10 @@ dummy_func(void) {
     }
 
     op(_RETURN_VALUE, (retval -- res)) {
-        SYNC_SP();
+        SAVE_STACK();
         ctx->frame->stack_pointer = stack_pointer;
         frame_pop(ctx);
         stack_pointer = ctx->frame->stack_pointer;
-        res = retval;
 
         /* Stack space handling */
         assert(corresponding_check_stack == NULL);
@@ -686,6 +684,8 @@ dummy_func(void) {
             // might be impossible, but bailing is still safe
             ctx->done = true;
         }
+        RELOAD_STACK();
+        res = retval;
     }
 
     op(_RETURN_GENERATOR, ( -- res)) {
