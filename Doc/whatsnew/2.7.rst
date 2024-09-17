@@ -2680,13 +2680,11 @@ automatic ``PATH`` modifications to have ``pip`` available from the command
 line by default, otherwise it can still be accessed through the Python
 launcher for Windows as ``py -m pip``.
 
-As `discussed in the PEP`__, platform packagers may choose not to install
+As :pep:`discussed in the PEP <0477#disabling-ensurepip-by-downstream-distributors>`,
+platform packagers may choose not to install
 these commands by default, as long as, when invoked, they provide clear and
 simple directions on how to install them on that platform (usually using
 the system package manager).
-
-__ https://peps.python.org/pep-0477/#disabling-ensurepip-by-downstream-distributors
-
 
 Documentation Changes
 ~~~~~~~~~~~~~~~~~~~~~

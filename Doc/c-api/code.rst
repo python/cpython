@@ -96,8 +96,8 @@ bound into a function.
     Return the line number of the instruction that occurs on or before ``byte_offset`` and ends after it.
     If you just need the line number of a frame, use :c:func:`PyFrame_GetLineNumber` instead.
 
-    For efficiently iterating over the line numbers in a code object, use `the API described in PEP 626
-    <https://peps.python.org/pep-0626/#out-of-process-debuggers-and-profilers>`_.
+    For efficiently iterating over the line numbers in a code object, use :pep:`the API described in PEP 626
+    <0626#out-of-process-debuggers-and-profilers>`.
 
 .. c:function:: int PyCode_Addr2Location(PyObject *co, int byte_offset, int *start_line, int *start_column, int *end_line, int *end_column)
 

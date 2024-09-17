@@ -311,8 +311,8 @@ releases.
 The latest stable releases can always be found on the `Python download page
 <https://www.python.org/downloads/>`_.  There are two production-ready versions
 of Python: 2.x and 3.x. The recommended version is 3.x, which is supported by
-most widely used libraries.  Although 2.x is still widely used, `it is not
-maintained anymore <https://peps.python.org/pep-0373/>`_.
+most widely used libraries.  Although 2.x is still widely used, :pep:`it is not
+maintained anymore <0373>`.
 
 How many people are using Python?
 ---------------------------------
