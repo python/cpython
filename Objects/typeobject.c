@@ -5340,26 +5340,27 @@ get_base_by_token_from_mro(PyTypeObject *type, void *token)
 
 static int
 check_base_by_token(PyTypeObject *type, void *token) {
+    // Tell the C to keep this code individual by reducing the common parts
+    // with PyType_GetBaseByToken() for better performance (e.g. use if-else).
     if (token == NULL) {
         // This avoids being inlined thanks to varargs
         PyErr_Format(PyExc_SystemError,
                      "PyType_GetBaseByToken called with token=NULL");
         return -1;
     }
-    if (!PyType_Check(type)) {
+    else if (!PyType_Check(type)) {
         PyErr_Format(PyExc_TypeError,
                      "expected a type, got a '%T' object", type);
         return -1;
     }
-
-    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+    else if (!PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        // Check with a public function not used by PyType_GetBaseByToken()
         return 0;
     }
-    if (((PyHeapTypeObject*)type)->ht_token == token) {
+    else if (((PyHeapTypeObject*)type)->ht_token == token) {
         return 1;
     }
-
-    if (type->tp_mro != NULL) {
+    else if (type->tp_mro != NULL) {
         // This will not be inlined
         return get_base_by_token_from_mro(type, token) ? 1 : 0;
     }
