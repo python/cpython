@@ -140,7 +140,7 @@ dummy_func(
     switch (opcode) {
 
 // BEGIN BYTECODES //
-        pure inst(NOP, (--)) {
+        _static inst(NOP, (--)) {
         }
 
         family(RESUME, 0) = {
@@ -239,7 +239,7 @@ dummy_func(
             value = PyStackRef_DUP(value_s);
         }
 
-        replicate(8) pure inst(LOAD_FAST, (-- value)) {
+        replicate(8) _static inst(LOAD_FAST, (-- value)) {
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
         }
@@ -261,7 +261,7 @@ dummy_func(
             value = PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
         }
 
-        replicate(8) pure inst(STORE_FAST, (value --)) {
+        replicate(8) _static inst(STORE_FAST, (value --)) {
             SETLOCAL(oparg, value);
         }
 
@@ -283,11 +283,11 @@ dummy_func(
             SETLOCAL(oparg2, value2);
         }
 
-        pure inst(POP_TOP, (value --)) {
+        _static inst(POP_TOP, (value --)) {
             DECREF_INPUTS();
         }
 
-        inst(PUSH_NULL, (-- res)) {
+        pure inst(PUSH_NULL, (-- res)) {
             res = PyStackRef_NULL;
         }
 
@@ -305,7 +305,7 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        inst(END_SEND, (receiver, value -- value)) {
+        pure inst(END_SEND, (receiver, value -- value)) {
             (void)receiver;
             PyStackRef_CLOSE(receiver);
         }
@@ -328,7 +328,7 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
-        inst(UNARY_NOT, (value -- res)) {
+        pure inst(UNARY_NOT, (value -- res)) {
             assert(PyStackRef_BoolCheck(value));
             res = PyStackRef_Is(value, PyStackRef_False)
                 ? PyStackRef_True : PyStackRef_False;
@@ -458,7 +458,7 @@ dummy_func(
             EXIT_IF(!PyLong_CheckExact(value_o));
         }
 
-        op(_BINARY_OP_MULTIPLY_INT, (left, right -- res)) {
+        pure op(_BINARY_OP_MULTIPLY_INT, (left, right -- res)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
 
@@ -470,7 +470,7 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
-        op(_BINARY_OP_ADD_INT, (left, right -- res)) {
+        pure op(_BINARY_OP_ADD_INT, (left, right -- res)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
 
@@ -482,7 +482,7 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
-        op(_BINARY_OP_SUBTRACT_INT, (left, right -- res)) {
+        pure op(_BINARY_OP_SUBTRACT_INT, (left, right -- res)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
 
@@ -518,7 +518,7 @@ dummy_func(
             EXIT_IF(!PyFloat_CheckExact(value_o));
         }
 
-        op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
+        pure op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
 
@@ -531,7 +531,7 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
-        op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
+        pure op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
 
@@ -544,7 +544,7 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
-        op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
+        pure op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
 
@@ -572,7 +572,7 @@ dummy_func(
             EXIT_IF(!PyUnicode_CheckExact(right_o));
         }
 
-        op(_BINARY_OP_ADD_UNICODE, (left, right -- res)) {
+        pure op(_BINARY_OP_ADD_UNICODE, (left, right -- res)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
 
@@ -3474,7 +3474,7 @@ dummy_func(
             DEOPT_IF(tstate->py_recursion_remaining <= 1);
         }
 
-        replicate(5) op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null[1], args[oparg] -- new_frame: _PyInterpreterFrame*)) {
+        replicate(5) pure op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null[1], args[oparg] -- new_frame: _PyInterpreterFrame*)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             int has_self = !PyStackRef_IsNull(self_or_null[0]);
             STAT_INC(CALL, hit);
@@ -4475,7 +4475,7 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
-        inst(COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
+        pure inst(COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
             assert(oparg > 0);
             top = PyStackRef_DUP(bottom);
         }
@@ -4507,7 +4507,7 @@ dummy_func(
 
         macro(BINARY_OP) = _SPECIALIZE_BINARY_OP + _BINARY_OP;
 
-        inst(SWAP, (bottom, unused[oparg-2], top --
+        pure inst(SWAP, (bottom, unused[oparg-2], top --
                     top, unused[oparg-2], bottom)) {
             assert(oparg >= 2);
         }
@@ -4747,25 +4747,25 @@ dummy_func(
             DEOPT_IF(!current_executor->vm_data.valid);
         }
 
-        tier2 op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
+        tier2 pure op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
             value = PyStackRef_FromPyObjectNew(ptr);
         }
 
-        tier2 op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
+        tier2 pure op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
             value = PyStackRef_FromPyObjectImmortal(ptr);
         }
 
-        tier2 op (_POP_TOP_LOAD_CONST_INLINE_BORROW, (ptr/4, pop -- value)) {
+        tier2 pure op (_POP_TOP_LOAD_CONST_INLINE_BORROW, (ptr/4, pop -- value)) {
             PyStackRef_CLOSE(pop);
             value = PyStackRef_FromPyObjectImmortal(ptr);
         }
 
-        tier2 op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
+        tier2 pure op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
             value = PyStackRef_FromPyObjectNew(ptr);
             null = PyStackRef_NULL;
         }
 
-        tier2 op(_LOAD_CONST_INLINE_BORROW_WITH_NULL, (ptr/4 -- value, null)) {
+        tier2 pure op(_LOAD_CONST_INLINE_BORROW_WITH_NULL, (ptr/4 -- value, null)) {
             value = PyStackRef_FromPyObjectImmortal(ptr);
             null = PyStackRef_NULL;
         }

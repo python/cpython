@@ -265,6 +265,8 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_PURE_FLAG")
     if p.oparg_and_1:
         flags.append("HAS_OPARG_AND_1_FLAG")
+    if p.static:
+        flags.append("HAS_STATIC_FLAG")
     if flags:
         return " | ".join(flags)
     else:

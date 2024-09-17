@@ -589,7 +589,7 @@ partial_evaluate_uops(
         // are static.
         // If so, whether it can be eliminated is up to whether it has an implementation.
         bool instr_is_truly_static = false;
-        if (!(_PyUop_Flags[opcode] & HAS_PURE_FLAG)) {
+        if (!(_PyUop_Flags[opcode] & HAS_STATIC_FLAG)) {
             reify_shadow_stack(ctx);
         }
 
@@ -623,7 +623,7 @@ partial_evaluate_uops(
         }
         else {
             // Inst is static. Nothing written :)!
-            assert((_PyUop_Flags[opcode] & HAS_PURE_FLAG));
+            assert((_PyUop_Flags[opcode] & HAS_STATIC_FLAG));
 #ifdef Py_DEBUG
             if (get_lltrace() >= 3) {
                 printf("%4d pe -STATIC-\n", (int) (this_instr - trace));
