@@ -218,7 +218,7 @@ The :mod:`functools` module defines the following functions:
    cache.  See :ref:`faq-cache-method-calls`
 
    An `LRU (least recently used) cache
-   <https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)>`_
+   <https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_Recently_Used_(LRU)>`_
    works best when the most recent calls are the best predictors of upcoming
    calls (for example, the most popular articles on a news server tend to
    change each day).  The cache's size limit assures that the cache does not
