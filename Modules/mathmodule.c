@@ -2347,7 +2347,7 @@ math_fmod_impl(PyObject *module, double x, double y)
     if (isinf(y) && isfinite(x))
         return PyFloat_FromDouble(x);
     errno = 0;
-    r = fmod(x, y);
+    r = m_fmod(x, y);
     if (isnan(r)) {
         if (!isnan(x) && !isnan(y))
             errno = EDOM;
