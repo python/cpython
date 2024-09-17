@@ -233,7 +233,6 @@ Python/generated_cases.c.h 27
 Python/generated_cases.c.h 27
 Python/getargs.c 7
 Python/hashtable.c 1
-Python/import.c 6
 Python/import.c 7
 Python/initconfig.c 11
 Python/instrumentation.c 43
