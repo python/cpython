@@ -498,9 +498,9 @@ class BuiltinTest(unittest.TestCase):
         for mode, code_sample, optimize in product(modes, code_samples, optimizations):
             with self.subTest(mode=mode, code_sample=code_sample, optimize=optimize):
                 source = dedent(code_sample)
-                if (optimize):
+                if optimize:
                     co = compile(source, '?', mode, optimize=optimize)
-                    co_expected = compile('pass',  '?', mode, optimize=optimize)
+                    co_expected = compile('pass', '?', mode, optimize=optimize)
                     self.assertEqual(list(co.co_lines()), list(co_expected.co_lines()))
                 else:
                     with self.assertRaises(SyntaxError,
