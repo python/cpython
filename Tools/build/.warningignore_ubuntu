@@ -19,10 +19,7 @@ Include/internal/pycore_asdl.h 1
 Include/internal/pycore_backoff.h 3
 Include/internal/pycore_blocks_output_buffer.h 1
 Include/internal/pycore_dict.h 2
-Include/internal/pycore_gc.h 1
-Include/internal/pycore_gc.h 1
 Include/internal/pycore_interp.h 1
-Include/internal/pycore_list.h 1
 Include/internal/pycore_long.h 3
 Include/internal/pycore_object.h 4
 Include/internal/pycore_obmalloc.h 1
@@ -204,7 +201,6 @@ Parser/action_helpers.c 3
 Parser/lexer/buffer.c 1
 Parser/lexer/lexer.c 14
 Parser/parser.c 116
-Parser/pegen.c 8
 Parser/string_parser.c 7
 Parser/tokenizer/file_tokenizer.c 9
 Parser/tokenizer/helpers.c 7

@@ -6,7 +6,6 @@
 Include/internal/mimalloc/mimalloc/internal.h 4
 Include/internal/pycore_backoff.h 1
 Include/internal/pycore_dict.h 2
-Include/internal/pycore_gc.h 1
 Include/internal/pycore_long.h 2
 Include/internal/pycore_object.h 4
 Modules/_asynciomodule.c 3
@@ -176,7 +175,6 @@ Parser/action_helpers.c 4
 Parser/lexer/buffer.c 1
 Parser/lexer/lexer.c 12
 Parser/parser.c 116
-Parser/pegen.c 7
 Parser/string_parser.c 7
 Parser/tokenizer/file_tokenizer.c 8
 Parser/tokenizer/helpers.c 7
