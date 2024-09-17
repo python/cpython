@@ -1,0 +1,2 @@
+Add workaround for broken :c:func:`!fmod()` implementations (e.g. on
+Windows), that loose zero sign.  Patch by Sergey B Kirpichev.
