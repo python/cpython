@@ -1913,6 +1913,7 @@ class CircularImportTests(unittest.TestCase):
         )
 
     @requires_singlephase_init
+    @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
     def test_singlephase_circular(self):
         """Regression test for gh-123950
 
