@@ -56,8 +56,8 @@ typedef union _PyStackRef {
 
 #define Py_TAG_DEFERRED (1)
 
-#define Py_TAG_PTR      (0)
-#define Py_TAG_BITS     (1)
+#define Py_TAG_PTR      ((uintptr_t)0)
+#define Py_TAG_BITS     ((uintptr_t)1)
 
 #ifdef Py_GIL_DISABLED
     static const _PyStackRef PyStackRef_NULL = { .bits = 0 | Py_TAG_DEFERRED};
@@ -98,7 +98,7 @@ typedef union _PyStackRef {
 static inline PyObject *
 PyStackRef_AsPyObjectBorrow(_PyStackRef stackref)
 {
-    PyObject *cleared = ((PyObject *)((stackref).bits & (~(uintptr_t)Py_TAG_BITS)));
+    PyObject *cleared = ((PyObject *)((stackref).bits & (~Py_TAG_BITS)));
     return cleared;
 }
 #else
