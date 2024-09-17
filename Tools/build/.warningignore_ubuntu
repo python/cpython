@@ -20,8 +20,6 @@ Include/internal/pycore_backoff.h 3
 Include/internal/pycore_blocks_output_buffer.h 1
 Include/internal/pycore_dict.h 2
 Include/internal/pycore_interp.h 1
-Include/internal/pycore_long.h 3
-Include/internal/pycore_object.h 4
 Include/internal/pycore_obmalloc.h 1
 Include/internal/pycore_pymath.h 1
 Include/internal/pycore_runtime_init.h 1
