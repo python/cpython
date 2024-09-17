@@ -58,10 +58,8 @@ typedef long stwodigits; /* signed variant of twodigits */
 #else
 #error "PYLONG_BITS_IN_DIGIT should be 15 or 30"
 #endif
-#define PyLong_BASE     ((Py_digit)1 << PyLong_SHIFT)
-#define PyLong_MASK     ((Py_digit)(PyLong_BASE - 1))
-
-typedef digit Py_digit;
+#define PyLong_BASE     ((digit)1 << PyLong_SHIFT)
+#define PyLong_MASK     ((digit)(PyLong_BASE - 1))
 
 /* Long integer representation.
 

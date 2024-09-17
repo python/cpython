@@ -615,21 +615,6 @@ Export API
 
 .. versionadded:: 3.14
 
-.. c:type:: Py_digit
-
-   A single unsigned digit in the range [``0``; ``PyLong_BASE - 1``].
-
-   It is usually used in an *array of digits*, such as the
-   :c:member:`PyLong_DigitArray.digits` array.
-
-   Its size depend on the :c:macro:`!PYLONG_BITS_IN_DIGIT` macro:
-   see the ``configure`` :option:`--enable-big-digits` option.
-
-   See :c:member:`PyLongLayout.bits_per_digit` for the number of bits per
-   digit and :c:member:`PyLongLayout.digit_size` for the size of a digit (in
-   bytes).
-
-
 .. c:struct:: PyLongLayout
 
    Layout of an array of digits, used by Python :class:`int` object.
@@ -669,11 +654,23 @@ Export API
    See the :c:struct:`PyLongLayout` structure.
 
 
-.. c:struct:: PyLong_DigitArray
+.. c:struct:: PyLongExport
 
-   A Python :class:`int` object exported as an array of digits.
+   Export of a Python :class:`int` object.
 
-   .. c:member:: int negative
+   There are two cases:
+
+   * If :c:member:`digits` is ``NULL``, only use the :c:member:`value` member.
+     Calling :c:func:`PyLong_FreeExport` is optional in this case.
+   * If :c:member:`digits` is not ``NULL``, use :c:member:`negative`,
+     :c:member:`ndigits` and :c:member:`digits` members.
+     Calling :c:func:`PyLong_FreeExport` is mandatory in this case.
+
+   .. c:member:: int64_t value
+
+      Integer value if :c:member:`digits` is ``NULL``.
+
+   .. c:member:: uint8_t negative
 
       1 if the number is negative, 0 otherwise.
 
@@ -683,26 +680,26 @@ Export API
 
    .. c:member:: const void *digits
 
-      Read-only array of unsigned digits.
+      Read-only array of unsigned digits. Can be ``NULL``.
 
 
-.. c:function:: int PyLong_Export(PyObject *obj, PyLong_DigitArray *array)
+.. c:function:: int PyLong_Export(PyObject *obj, PyLongExport *export_long)
 
-   Export a Python :class:`int` object as an array of digits.
+   Export a Python :class:`int` object.
 
-   On success, set *\*array* and return 0.
+   On success, set *\*export_long* and return 0.
    On error, set an exception and return -1.
 
    This function always succeeds if *obj* is a Python :class:`int` object or a
    subclass.
 
-   :c:func:`PyLong_FreeExport` must be called once done with using
-   *array*.
+   If *export_long.digits* is not ``NULL, :c:func:`PyLong_FreeExport` must be
+   called when the export is no longer needed.
 
 
-.. c:function:: void PyLong_FreeExport(PyLong_DigitArray *array)
+.. c:function:: void PyLong_FreeExport(PyLongExport *export_long)
 
-   Release the export *array* created by :c:func:`PyLong_Export`.
+   Release the export *export_long* created by :c:func:`PyLong_Export`.
 
 
 PyLongWriter API
@@ -748,21 +745,3 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
 .. c:function:: void PyLongWriter_Discard(PyLongWriter *writer)
 
    Discard the internal object and destroy the writer instance.
-
-
-Example creating an integer from an array of digits::
-
-    PyObject *
-    long_import(int negative, Py_ssize_t ndigits, Py_digit *digits)
-    {
-        void *writer_digits;
-        PyLongWriter *writer = PyLongWriter_Create(negative, ndigits,
-                                                   &writer_digits);
-        if (writer == NULL) {
-            return NULL;
-        }
-
-        assert(layout.digit_size == sizeof(Py_digit));
-        memcpy(writer_digits, digits, ndigits * sizeof(Py_digit));
-        return PyLongWriter_Finish(writer);
-    }

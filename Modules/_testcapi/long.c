@@ -186,21 +186,21 @@ pylong_export(PyObject *module, PyObject *obj)
         // PyLong_FreeExport() is not needed in this case
     }
 
-    assert(PyLong_GetNativeLayout()->digit_size == sizeof(Py_digit));
-    const Py_digit *export_long_digits = export_long.digits;
+    assert(PyLong_GetNativeLayout()->digit_size == sizeof(digit));
+    const digit *export_long_digits = export_long.digits;
 
     PyObject *digits = PyList_New(0);
     for (Py_ssize_t i=0; i < export_long.ndigits; i++) {
-        PyObject *digit = PyLong_FromUnsignedLong(export_long_digits[i]);
-        if (digit == NULL) {
+        PyObject *item = PyLong_FromUnsignedLong(export_long_digits[i]);
+        if (item == NULL) {
             goto error;
         }
 
-        if (PyList_Append(digits, digit) < 0) {
-            Py_DECREF(digit);
+        if (PyList_Append(digits, item) < 0) {
+            Py_DECREF(item);
             goto error;
         }
-        Py_DECREF(digit);
+        Py_DECREF(item);
     }
 
     PyObject *res = Py_BuildValue("(iN)", export_long.negative, digits);
@@ -230,7 +230,7 @@ pylongwriter_create(PyObject *module, PyObject *args)
     }
     Py_ssize_t ndigits = PyList_GET_SIZE(list);
 
-    Py_digit *digits = PyMem_Malloc(ndigits * sizeof(Py_digit));
+    digit *digits = PyMem_Malloc(ndigits * sizeof(digit));
     if (digits == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -239,16 +239,16 @@ pylongwriter_create(PyObject *module, PyObject *args)
     for (Py_ssize_t i=0; i < ndigits; i++) {
         PyObject *item = PyList_GET_ITEM(list, i);
 
-        long digit = PyLong_AsLong(item);
-        if (digit == -1 && PyErr_Occurred()) {
+        long num = PyLong_AsLong(item);
+        if (num == -1 && PyErr_Occurred()) {
             goto error;
         }
 
-        if (digit < 0 || digit >= PyLong_BASE) {
-            PyErr_SetString(PyExc_ValueError, "digit doesn't fit into Py_digit");
+        if (num < 0 || num >= PyLong_BASE) {
+            PyErr_SetString(PyExc_ValueError, "digit doesn't fit into digit");
             goto error;
         }
-        digits[i] = (Py_digit)digit;
+        digits[i] = (digit)num;
     }
 
     void *writer_digits;
@@ -257,8 +257,8 @@ pylongwriter_create(PyObject *module, PyObject *args)
     if (writer == NULL) {
         goto error;
     }
-    assert(PyLong_GetNativeLayout()->digit_size == sizeof(Py_digit));
-    memcpy(writer_digits, digits, ndigits * sizeof(Py_digit));
+    assert(PyLong_GetNativeLayout()->digit_size == sizeof(digit));
+    memcpy(writer_digits, digits, ndigits * sizeof(digit));
     PyObject *res = PyLongWriter_Finish(writer);
     PyMem_Free(digits);
 
