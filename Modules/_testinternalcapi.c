@@ -227,6 +227,47 @@ test_bit_length(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+static int
+check_bit_length64(uint64_t x, int expected)
+{
+    // Use volatile to prevent the compiler to optimize out the whole test
+    volatile uint64_t u = x;
+    int len = _Py_bit_length64(u);
+    if (len != expected) {
+        PyErr_Format(PyExc_AssertionError,
+                     "_Py_bit_length(%lu) returns %i, expected %i",
+                     x, len, expected);
+        return -1;
+    }
+    return 0;
+}
+
+
+static PyObject*
+test_bit_length64(PyObject *self, PyObject *Py_UNUSED(args))
+{
+#define CHECK(X, RESULT) \
+    do { \
+        if (check_bit_length64(X, RESULT) < 0) { \
+            return NULL; \
+        } \
+    } while (0)
+
+    CHECK(0, 0);
+    CHECK(1, 1);
+    CHECK(0x1000, 13);
+    CHECK(0x1234, 13);
+    CHECK(0x54321, 19);
+    CHECK(0x7FFFFFFF, 31);
+    CHECK(0xFFFFFFFF, 32);
+    CHECK(0x7FFFFFFFFFFFFFFFULL, 63);
+    CHECK(0xFFFFFFFFFFFFFFFFULL, 64);
+    Py_RETURN_NONE;
+
+#undef CHECK
+}
+
+
 #define TO_PTR(ch) ((void*)(uintptr_t)ch)
 #define FROM_PTR(ptr) ((uintptr_t)ptr)
 #define VALUE(key) (1 + ((int)(key) - 'a'))
@@ -2056,6 +2097,7 @@ static PyMethodDef module_functions[] = {
     {"test_bswap", test_bswap, METH_NOARGS},
     {"test_popcount", test_popcount, METH_NOARGS},
     {"test_bit_length", test_bit_length, METH_NOARGS},
+    {"test_bit_length64", test_bit_length64, METH_NOARGS},
     {"test_hashtable", test_hashtable, METH_NOARGS},
     {"get_config", test_get_config, METH_NOARGS},
     {"set_config", test_set_config, METH_O},
