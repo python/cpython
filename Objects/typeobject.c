@@ -5291,6 +5291,7 @@ _PyType_GetModuleByDef2(PyTypeObject *left, PyTypeObject *right,
 static PyTypeObject *
 get_base_by_token_recursive(PyTypeObject *type, void *token)
 {
+    assert(PyType_GetSlot(type, Py_tp_token) != token);
     PyObject *bases = lookup_tp_bases(type);
     assert(bases != NULL);
     Py_ssize_t n = PyTuple_GET_SIZE(bases);
@@ -5370,26 +5371,25 @@ check_base_by_token(PyTypeObject *type, void *token) {
 int
 PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
 {
-#define RETURN_RESULT(BASE, RET) \
-    do { \
-        *result = (PyTypeObject *)(BASE); \
-        return (RET); \
-    } while (0)
-
     if (result == NULL) {
-        // If we check the `result` only here, the subsequent branches
-        // will become trivial to optimize.
+        // If the `result` is checked only once here, the subsequent
+        // branches will become trivial to optimize.
         return check_base_by_token(type, token);
     }
     if (token == NULL || !PyType_Check(type)) {
-        RETURN_RESULT(NULL, check_base_by_token(type, token));
+        *result = NULL;
+        return check_base_by_token(type, token);
     }
 
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-        RETURN_RESULT(NULL, 0);
+        // No static type has a heaptype superclass,
+        // which is ensured by type_ready_mro().
+        *result = NULL;
+        return 0;
     }
     if (((PyHeapTypeObject*)type)->ht_token == token) {
-        RETURN_RESULT(Py_NewRef(type), 1);
+        *result = (PyTypeObject *)Py_NewRef(type);
+        return 1;
     }
 
     PyTypeObject *base;
@@ -5401,12 +5401,13 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
         base = get_base_by_token_recursive(type, token);
     }
     if (base != NULL) {
-        RETURN_RESULT(Py_NewRef(base), 1);
+        *result = (PyTypeObject *)Py_NewRef(base);
+        return 1;
     }
     else {
-        RETURN_RESULT(NULL, 0);
+        *result = NULL;
+        return 0;
     }
-#undef RETURN_RESULT
 }
 
 
