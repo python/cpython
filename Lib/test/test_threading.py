@@ -1194,6 +1194,7 @@ class ThreadTests(BaseTestCase):
 
                 def __del__(self):
                     self.thr.join()
+                    print('__del__ called')
 
             # Cycle holds a reference to itself, which ensures it is cleaned
             # up during the GC that runs after daemon threads have been
@@ -1202,6 +1203,7 @@ class ThreadTests(BaseTestCase):
         """)
         rc, out, err = assert_python_ok("-c", code)
         self.assertEqual(err, b"")
+        self.assertIn(b"__del__ called", out)
 
 
 class ThreadJoinOnShutdown(BaseTestCase):
