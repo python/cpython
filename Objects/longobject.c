@@ -6797,8 +6797,15 @@ PyLong_Export(PyObject *obj, PyLongExport *export_long)
         PyErr_Format(PyExc_TypeError, "expect int, got %T", obj);
         return -1;
     }
+
     int64_t value;
-    if (PyLong_AsInt64(obj, &value) >= 0) {
+    int flags = Py_ASNATIVEBYTES_NATIVE_ENDIAN;
+    Py_ssize_t bytes = PyLong_AsNativeBytes(obj, &value, sizeof(value), flags);
+    if (bytes < 0) {
+        return -1;
+    }
+
+    if ((size_t)bytes <= sizeof(value)) {
         export_long->value = value;
         export_long->negative = 0;
         export_long->ndigits = 0;
@@ -6806,8 +6813,6 @@ PyLong_Export(PyObject *obj, PyLongExport *export_long)
         export_long->_reserved = 0;
     }
     else {
-        PyErr_Clear();
-
         PyLongObject *self = (PyLongObject*)obj;
         export_long->value = 0;
         export_long->negative = _PyLong_IsNegative(self);
