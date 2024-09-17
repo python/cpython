@@ -5372,7 +5372,6 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
 
     // MSVC prefers no gotos here on PGO. This function can also be less
     // optimized if the given type is copied to a local variable directly.
-    PyTypeObject *base = NULL;
     if (token == NULL) {
         // This avoids being inlined thanks to varargs
         PyErr_Format(PyExc_SystemError,
@@ -5385,6 +5384,7 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
         RETURN_RESULT(NULL, -1);
     }
 
+    PyTypeObject *base;
     if (type->tp_mro != NULL) {
         base = get_base_by_token_from_mro(type, token);
     }
