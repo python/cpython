@@ -201,8 +201,6 @@ def generate_tier1(
         out.start_line()
         if not inst.parts[-1].properties.always_exits:
             stack.flush(out)
-            if inst.parts[-1].properties.ends_with_eval_breaker:
-                out.emit("CHECK_EVAL_BREAKER();\n")
             out.emit("DISPATCH();\n")
         out.start_line()
         out.emit("}")

@@ -88,6 +88,20 @@ class TestSimpleInteract(unittest.TestCase):
         self.assertFalse(result)
         self.assertIn('SyntaxError', f.getvalue())
 
+    @force_not_colorized
+    def test_runsource_show_syntax_error_location(self):
+        console = InteractiveColoredConsole()
+        source = "def f(x, x): ..."
+        f = io.StringIO()
+        with contextlib.redirect_stderr(f):
+            result = console.runsource(source)
+        self.assertFalse(result)
+        r = """
+    def f(x, x): ...
+             ^
+SyntaxError: duplicate argument 'x' in function definition"""
+        self.assertIn(r, f.getvalue())
+
     def test_runsource_shows_syntax_error_for_failed_compilation(self):
         console = InteractiveColoredConsole()
         source = "print('Hello, world!'"

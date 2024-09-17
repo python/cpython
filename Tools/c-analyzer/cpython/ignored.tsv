@@ -90,6 +90,7 @@ Python/initconfig.c	-	_Py_StandardStreamErrors	-
 
 # Internal constant list
 Python/initconfig.c	-	PYCONFIG_SPEC	-
+Python/initconfig.c	-	PYPRECONFIG_SPEC	-
 
 
 ##-----------------------
@@ -346,7 +347,6 @@ Python/ceval.c	-	_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS	-
 Python/codecs.c	-	Py_hexdigits	-
 Python/codecs.c	-	ucnhash_capi	-
 Python/codecs.c	_PyCodec_InitRegistry	methods	-
-Python/compile.c	-	NO_LABEL	-
 Python/compile.c	-	NO_LOCATION	-
 Python/dynload_shlib.c	-	_PyImport_DynLoadFiletab	-
 Python/dynload_stub.c	-	_PyImport_DynLoadFiletab	-
@@ -742,3 +742,7 @@ Modules/clinic/md5module.c.h	_md5_md5	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrgid	_keywords	-
 Modules/clinic/grpmodule.c.h	grp_getgrnam	_keywords	-
 Objects/object.c	-	constants	static PyObject*[]
+
+
+## False positives
+Python/specialize.c	-	_Py_InitCleanup	-

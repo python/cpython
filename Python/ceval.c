@@ -52,13 +52,27 @@
 #  error "ceval.c must be build with Py_BUILD_CORE define for best performance"
 #endif
 
-#if !defined(Py_DEBUG) && !defined(Py_TRACE_REFS) && !defined(Py_GIL_DISABLED)
+#if !defined(Py_DEBUG) && !defined(Py_TRACE_REFS)
 // GH-89279: The MSVC compiler does not inline these static inline functions
 // in PGO build in _PyEval_EvalFrameDefault(), because this function is over
 // the limit of PGO, and that limit cannot be configured.
 // Define them as macros to make sure that they are always inlined by the
 // preprocessor.
-// TODO: implement Py_DECREF macro for Py_GIL_DISABLED
+
+#undef Py_IS_TYPE
+#define Py_IS_TYPE(ob, type) \
+    (_PyObject_CAST(ob)->ob_type == (type))
+
+#undef Py_XDECREF
+#define Py_XDECREF(arg) \
+    do { \
+        PyObject *xop = _PyObject_CAST(arg); \
+        if (xop != NULL) { \
+            Py_DECREF(xop); \
+        } \
+    } while (0)
+
+#ifndef Py_GIL_DISABLED
 
 #undef Py_DECREF
 #define Py_DECREF(arg) \
@@ -74,19 +88,6 @@
         } \
     } while (0)
 
-#undef Py_XDECREF
-#define Py_XDECREF(arg) \
-    do { \
-        PyObject *xop = _PyObject_CAST(arg); \
-        if (xop != NULL) { \
-            Py_DECREF(xop); \
-        } \
-    } while (0)
-
-#undef Py_IS_TYPE
-#define Py_IS_TYPE(ob, type) \
-    (_PyObject_CAST(ob)->ob_type == (type))
-
 #undef _Py_DECREF_SPECIALIZED
 #define _Py_DECREF_SPECIALIZED(arg, dealloc) \
     do { \
@@ -100,6 +101,34 @@
             d(op); \
         } \
     } while (0)
+
+#else // Py_GIL_DISABLED
+
+#undef Py_DECREF
+#define Py_DECREF(arg) \
+    do { \
+        PyObject *op = _PyObject_CAST(arg); \
+        uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local); \
+        if (local == _Py_IMMORTAL_REFCNT_LOCAL) { \
+            break; \
+        } \
+        _Py_DECREF_STAT_INC(); \
+        if (_Py_IsOwnedByCurrentThread(op)) { \
+            local--; \
+            _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, local); \
+            if (local == 0) { \
+                _Py_MergeZeroLocalRefcount(op); \
+            } \
+        } \
+        else { \
+            _Py_DecRefShared(op); \
+        } \
+    } while (0)
+
+#undef _Py_DECREF_SPECIALIZED
+#define _Py_DECREF_SPECIALIZED(arg, dealloc) Py_DECREF(arg)
+
+#endif
 #endif
 
 
@@ -165,7 +194,7 @@ static void
 lltrace_resume_frame(_PyInterpreterFrame *frame)
 {
     PyObject *fobj = frame->f_funcobj;
-    if (!PyCode_Check(frame->f_executable) ||
+    if (!PyStackRef_CodeCheck(frame->f_executable) ||
         fobj == NULL ||
         !PyFunction_Check(fobj)
     ) {
@@ -246,7 +275,7 @@ static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg
 static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
 static  _PyInterpreterFrame *
 _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
-    PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs);
+    PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs, _PyInterpreterFrame *previous);
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
@@ -671,8 +700,6 @@ static const _Py_CODEUNIT _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
     { .op.code = RESUME, .op.arg = RESUME_OPARG_DEPTH1_MASK | RESUME_AT_FUNC_START }
 };
 
-extern const struct _PyCode_DEF(8) _Py_InitCleanup;
-
 #ifdef Py_DEBUG
 extern void _PyUOpPrint(const _PyUOpInstruction *uop);
 #endif
@@ -757,7 +784,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry_frame.f_globals = (PyObject*)0xaaa3;
     entry_frame.f_builtins = (PyObject*)0xaaa4;
 #endif
-    entry_frame.f_executable = Py_None;
+    entry_frame.f_executable = PyStackRef_None;
     entry_frame.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
     entry_frame.stackpointer = entry_frame.localsplus;
     entry_frame.owner = FRAME_OWNED_BY_CSTACK;
@@ -1654,7 +1681,7 @@ clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     tstate->c_recursion_remaining--;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     _PyFrame_ClearExceptCode(frame);
-    Py_DECREF(frame->f_executable);
+    PyStackRef_CLEAR(frame->f_executable);
     tstate->c_recursion_remaining++;
     _PyThreadState_PopFrame(tstate, frame);
 }
@@ -1691,7 +1718,7 @@ _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
 _PyInterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, _PyStackRef const* args,
-                        size_t argcount, PyObject *kwnames)
+                        size_t argcount, PyObject *kwnames, _PyInterpreterFrame *previous)
 {
     PyCodeObject * code = (PyCodeObject *)func->func_code;
     CALL_STAT_INC(frames_pushed);
@@ -1699,7 +1726,7 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
     if (frame == NULL) {
         goto fail;
     }
-    _PyFrame_Initialize(frame, func, locals, code, 0);
+    _PyFrame_Initialize(frame, func, locals, code, 0, previous);
     if (initialize_locals(tstate, func, frame->localsplus, args, argcount, kwnames)) {
         assert(frame->owner == FRAME_OWNED_BY_THREAD);
         clear_thread_frame(tstate, frame);
@@ -1726,7 +1753,7 @@ fail:
 static _PyInterpreterFrame *
 _PyEvalFramePushAndInit_UnTagged(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, PyObject *const* args,
-                        size_t argcount, PyObject *kwnames)
+                        size_t argcount, PyObject *kwnames, _PyInterpreterFrame *previous)
 {
 #if defined(Py_GIL_DISABLED)
     size_t kw_count = kwnames == NULL ? 0 : PyTuple_GET_SIZE(kwnames);
@@ -1742,11 +1769,11 @@ _PyEvalFramePushAndInit_UnTagged(PyThreadState *tstate, PyFunctionObject *func,
     for (size_t i = 0; i < kw_count; i++) {
         tagged_args_buffer[argcount + i] = PyStackRef_FromPyObjectSteal(args[argcount + i]);
     }
-    _PyInterpreterFrame *res = _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)tagged_args_buffer, argcount, kwnames);
+    _PyInterpreterFrame *res = _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)tagged_args_buffer, argcount, kwnames, previous);
     PyMem_Free(tagged_args_buffer);
     return res;
 #else
-    return _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)args, argcount, kwnames);
+    return _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)args, argcount, kwnames, previous);
 #endif
 }
 
@@ -1755,7 +1782,7 @@ _PyEvalFramePushAndInit_UnTagged(PyThreadState *tstate, PyFunctionObject *func,
 */
 static _PyInterpreterFrame *
 _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
-    PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs)
+    PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs, _PyInterpreterFrame *previous)
 {
     bool has_dict = (kwargs != NULL && PyDict_GET_SIZE(kwargs) > 0);
     PyObject *kwnames = NULL;
@@ -1776,7 +1803,7 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
     }
     _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_UnTagged(
         tstate, (PyFunctionObject *)func, locals,
-        newargs, nargs, kwnames
+        newargs, nargs, kwnames, previous
     );
     if (has_dict) {
         _PyStack_UnpackDict_FreeNoDecRef(newargs, kwnames);
@@ -1813,7 +1840,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
         }
     }
     _PyInterpreterFrame *frame = _PyEvalFramePushAndInit_UnTagged(
-        tstate, func, locals, args, argcount, kwnames);
+        tstate, func, locals, args, argcount, kwnames, NULL);
     if (frame == NULL) {
         return NULL;
     }
@@ -2121,6 +2148,17 @@ _PyEval_UnpackIterableStackRef(PyThreadState *tstate, _PyStackRef v_stackref,
             return 1;
         }
         Py_DECREF(w);
+
+        if (PyList_CheckExact(v) || PyTuple_CheckExact(v)
+              || PyDict_CheckExact(v)) {
+            ll = PyDict_CheckExact(v) ? PyDict_Size(v) : Py_SIZE(v);
+            if (ll > argcnt) {
+                _PyErr_Format(tstate, PyExc_ValueError,
+                              "too many values to unpack (expected %d, got %zd)",
+                              argcnt, ll);
+                goto Error;
+            }
+        }
         _PyErr_Format(tstate, PyExc_ValueError,
                       "too many values to unpack (expected %d)",
                       argcnt);
@@ -3072,15 +3110,14 @@ _PyEval_GetANext(PyObject *aiter)
     return awaitable;
 }
 
-PyObject *
-_PyEval_LoadGlobal(PyObject *globals, PyObject *builtins, PyObject *name)
+void
+_PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name, _PyStackRef *writeto)
 {
-    PyObject *res;
     if (PyDict_CheckExact(globals) && PyDict_CheckExact(builtins)) {
-        res = _PyDict_LoadGlobal((PyDictObject *)globals,
+        _PyDict_LoadGlobalStackRef((PyDictObject *)globals,
                                     (PyDictObject *)builtins,
-                                    name);
-        if (res == NULL && !PyErr_Occurred()) {
+                                    name, writeto);
+        if (PyStackRef_IsNull(*writeto) && !PyErr_Occurred()) {
             /* _PyDict_LoadGlobal() returns NULL without raising
                 * an exception if the key doesn't exist */
             _PyEval_FormatExcCheckArg(PyThreadState_GET(), PyExc_NameError,
@@ -3090,13 +3127,16 @@ _PyEval_LoadGlobal(PyObject *globals, PyObject *builtins, PyObject *name)
     else {
         /* Slow-path if globals or builtins is not a dict */
         /* namespace 1: globals */
+        PyObject *res;
         if (PyMapping_GetOptionalItem(globals, name, &res) < 0) {
-            return NULL;
+            *writeto = PyStackRef_NULL;
+            return;
         }
         if (res == NULL) {
             /* namespace 2: builtins */
             if (PyMapping_GetOptionalItem(builtins, name, &res) < 0) {
-                return NULL;
+                *writeto = PyStackRef_NULL;
+                return;
             }
             if (res == NULL) {
                 _PyEval_FormatExcCheckArg(
@@ -3104,8 +3144,8 @@ _PyEval_LoadGlobal(PyObject *globals, PyObject *builtins, PyObject *name)
                             NAME_ERROR_MSG, name);
             }
         }
+        *writeto = PyStackRef_FromPyObjectSteal(res);
     }
-    return res;
 }
 
 PyObject *

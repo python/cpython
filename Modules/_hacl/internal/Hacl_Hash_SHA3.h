@@ -37,6 +37,12 @@ extern "C" {
 
 #include "../Hacl_Hash_SHA3.h"
 
+extern const uint32_t Hacl_Hash_SHA3_keccak_rotc[24U];
+
+extern const uint32_t Hacl_Hash_SHA3_keccak_piln[24U];
+
+extern const uint64_t Hacl_Hash_SHA3_keccak_rndc[24U];
+
 void
 Hacl_Hash_SHA3_update_multi_sha3(
   Spec_Hash_Definitions_hash_alg a,
@@ -52,10 +58,6 @@ Hacl_Hash_SHA3_update_last_sha3(
   uint8_t *input,
   uint32_t input_len
 );
-
-void Hacl_Hash_SHA3_state_permute(uint64_t *s);
-
-void Hacl_Hash_SHA3_loadState(uint32_t rateInBytes, uint8_t *input, uint64_t *s);
 
 #if defined(__cplusplus)
 }

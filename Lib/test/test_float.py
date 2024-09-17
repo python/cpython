@@ -8,6 +8,7 @@ import time
 import unittest
 
 from test import support
+from test.support.testcase import FloatsAreIdenticalMixin
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 from math import isinf, isnan, copysign, ldexp
@@ -862,7 +863,7 @@ class ReprTestCase(unittest.TestCase):
             self.assertEqual(repr(float(negs)), str(float(negs)))
 
 @support.requires_IEEE_754
-class RoundTestCase(unittest.TestCase):
+class RoundTestCase(unittest.TestCase, FloatsAreIdenticalMixin):
 
     def test_inf_nan(self):
         self.assertRaises(OverflowError, round, INF)
@@ -892,10 +893,10 @@ class RoundTestCase(unittest.TestCase):
 
     def test_small_n(self):
         for n in [-308, -309, -400, 1-2**31, -2**31, -2**31-1, -2**100]:
-            self.assertEqual(round(123.456, n), 0.0)
-            self.assertEqual(round(-123.456, n), -0.0)
-            self.assertEqual(round(1e300, n), 0.0)
-            self.assertEqual(round(1e-320, n), 0.0)
+            self.assertFloatsAreIdentical(round(123.456, n), 0.0)
+            self.assertFloatsAreIdentical(round(-123.456, n), -0.0)
+            self.assertFloatsAreIdentical(round(1e300, n), 0.0)
+            self.assertFloatsAreIdentical(round(1e-320, n), 0.0)
 
     def test_overflow(self):
         self.assertRaises(OverflowError, round, 1.6e308, -308)
@@ -1093,21 +1094,14 @@ class InfNanTest(unittest.TestCase):
 
 fromHex = float.fromhex
 toHex = float.hex
-class HexFloatTestCase(unittest.TestCase):
+class HexFloatTestCase(FloatsAreIdenticalMixin, unittest.TestCase):
     MAX = fromHex('0x.fffffffffffff8p+1024')  # max normal
     MIN = fromHex('0x1p-1022')                # min normal
     TINY = fromHex('0x0.0000000000001p-1022') # min subnormal
     EPS = fromHex('0x0.0000000000001p0') # diff between 1.0 and next float up
 
     def identical(self, x, y):
-        # check that floats x and y are identical, or that both
-        # are NaNs
-        if isnan(x) or isnan(y):
-            if isnan(x) == isnan(y):
-                return
-        elif x == y and (x != 0.0 or copysign(1.0, x) == copysign(1.0, y)):
-            return
-        self.fail('%r not identical to %r' % (x, y))
+        self.assertFloatsAreIdentical(x, y)
 
     def test_ends(self):
         self.identical(self.MIN, ldexp(1.0, -1022))
