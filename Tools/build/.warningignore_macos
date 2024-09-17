@@ -6,7 +6,6 @@
 Include/internal/mimalloc/mimalloc/internal.h 4
 Include/internal/pycore_backoff.h 1
 Include/internal/pycore_dict.h 2
-Include/internal/pycore_gc.h 1
 Include/internal/pycore_long.h 2
 Include/internal/pycore_object.h 4
 Modules/_asynciomodule.c 3
