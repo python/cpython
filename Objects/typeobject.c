@@ -5361,22 +5361,31 @@ get_base_by_token_from_mro(PyTypeObject *type, void *token)
 int
 PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
 {
+// Use a macro for lazy evaluation
+#define RETURN_RESULT(BASE, RET) \
+    do { \
+        if (result != NULL) { \
+           *result = (PyTypeObject *)(BASE); \
+        } \
+        return (RET); \
+    } while (0)
+
     // MSVC prefers no gotos here on PGO. This function can also be less
     // optimized if the given type is copied to a local variable directly.
-    int ret = 0;
     PyTypeObject *base = NULL;
     if (token == NULL) {
         // This avoids being inlined thanks to varargs
         PyErr_Format(PyExc_SystemError,
                      "PyType_GetBaseByToken called with token=NULL");
-        ret = -1;
+        RETURN_RESULT(NULL, -1);
     }
-    else if (!PyType_Check(type)) {
+    if (!PyType_Check(type)) {
         PyErr_Format(PyExc_TypeError,
                      "expected a type, got a '%T' object", type);
-        ret = -1;
+        RETURN_RESULT(NULL, -1);
     }
-    else if (type->tp_mro != NULL) {
+
+    if (type->tp_mro != NULL) {
         base = get_base_by_token_from_mro(type, token);
     }
     else {
@@ -5384,10 +5393,8 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
     }
     // Finish in one place when profiling. Returning false is rare on the
     // PGO tests, but it should not be run in a cold path in practice.
-    if (result != NULL) {
-        *result = (PyTypeObject *)Py_XNewRef(base);
-    }
-    return base != NULL ? 1 : ret;
+    RETURN_RESULT(Py_XNewRef(base), base ? 1 : 0);
+#undef RETURN_RESULT
 }
 
 
