@@ -553,6 +553,10 @@ linkcheck_allowed_redirects = {
     # Language redirects
     r'https://toml.io': 'https://toml.io/en/',
     r'https://www.redhat.com': 'https://www.redhat.com/en',
+    # pypi.org project name normalization (upper to lowercase, underscore to hyphen)
+    r'https://pypi.org/project/[A-Za-z\d_\-\.]+/': r'https://pypi.org/project/[a-z\d\-\.]+/',
+    # Discourse title name expansion (text changes when title is edited)
+    r'https://discuss\.python\.org/t/\d+': r'https://discuss\.python\.org/t/.*/\d+',
     # Other redirects
     r'https://www.boost.org/libs/.+': r'https://www.boost.org/doc/libs/\d_\d+_\d/.+',
     r'https://support.microsoft.com/en-us/help/\d+': 'https://support.microsoft.com/en-us/topic/.+',

@@ -1644,6 +1644,10 @@ builtins
   the :attr:`!__wrapped__` attribute that was added in Python 3.10.
   (Contributed by Raymond Hettinger in :gh:`89519`.)
 
+* Raise a :exc:`RuntimeError` when calling :meth:`frame.clear`
+  on a suspended frame (as has always been the case for an executing frame).
+  (Contributed by Irit Katriel in :gh:`79932`.)
+
 
 configparser
 ------------
@@ -1784,151 +1788,199 @@ webbrowser
 New Deprecations
 ================
 
-* :mod:`array`: :mod:`array`'s ``'u'`` format code, deprecated in docs since Python 3.3,
-  emits :exc:`DeprecationWarning` since 3.13
-  and will be removed in Python 3.16.
-  Use the ``'w'`` format code instead.
-  (Contributed by Hugo van Kemenade in :gh:`80480`.)
+* :ref:`User-defined functions <user-defined-funcs>`:
 
-* :mod:`ctypes`: Deprecate undocumented :func:`!ctypes.SetPointerType`
-  function. :term:`Soft-deprecate <soft deprecated>` the :func:`ctypes.ARRAY`
-  function in favor of multiplication.
-  (Contributed by Victor Stinner in :gh:`105733`.)
+  * Deprecate assignment to a function's :attr:`~function.__code__` attribute,
+    where the new code object's type does not match the function's type.
+    The different types are:
+    plain function, generator, async generator, and coroutine.
+    (Contributed by Irit Katriel in :gh:`81137`.)
 
-* :mod:`decimal`: Deprecate non-standard format specifier "N" for
-  :class:`decimal.Decimal`.
-  It was not documented and only supported in the C implementation.
-  (Contributed by Serhiy Storchaka in :gh:`89902`.)
+* :mod:`array`:
 
-* :mod:`dis`: The ``dis.HAVE_ARGUMENT`` separator is deprecated. Check
-  membership in :data:`~dis.hasarg` instead.
-  (Contributed by Irit Katriel in :gh:`109319`.)
+  * Deprecate the ``'u'`` format code (:c:type:`wchar_t`) at runtime.
+    This format code has been deprecated in documentation since Python 3.3,
+    and will be removed in Python 3.16.
+    Use the ``'w'`` format code (:c:type:`Py_UCS4`)
+    for Unicode characters instead.
+    (Contributed by Hugo van Kemenade in :gh:`80480`.)
 
-* :ref:`frame-objects`:
-  Calling :meth:`frame.clear` on a suspended frame raises :exc:`RuntimeError`
-  (as has always been the case for an executing frame).
-  (Contributed by Irit Katriel in :gh:`79932`.)
+* :mod:`ctypes`:
 
-* :mod:`getopt` and :mod:`optparse` modules: They are now
-  :term:`soft deprecated`: the :mod:`argparse` module should be used for new projects.
-  Previously, the :mod:`optparse` module was already deprecated, its removal
-  was not scheduled, and no warnings was emitted: so there is no change in
-  practice.
-  (Contributed by Victor Stinner in :gh:`106535`.)
+  * Deprecate the undocumented :func:`!SetPointerType` function,
+    to be removed in Python 3.15.
+    (Contributed by Victor Stinner in :gh:`105733`.)
 
-* :mod:`gettext`: Emit deprecation warning for non-integer numbers in
-  :mod:`gettext` functions and methods that consider plural forms even if the
-  translation was not found.
-  (Contributed by Serhiy Storchaka in :gh:`88434`.)
+  * :term:`Soft-deprecate <soft deprecated>` the :func:`~ctypes.ARRAY`
+    function in favour of ``type * length`` multiplication.
+    (Contributed by Victor Stinner in :gh:`105733`.)
 
-* :mod:`glob`: The undocumented :func:`!glob.glob0` and :func:`!glob.glob1`
-  functions are deprecated. Use :func:`glob.glob` and pass a directory to its
-  *root_dir* argument instead.
-  (Contributed by Barney Gale in :gh:`117337`.)
+* :mod:`decimal`:
 
-* :mod:`http.server`: :class:`http.server.CGIHTTPRequestHandler` now emits a
-  :exc:`DeprecationWarning` as it will be removed in 3.15.  Process-based CGI
-  HTTP servers have been out of favor for a very long time.  This code was
-  outdated, unmaintained, and rarely used.  It has a high potential for both
-  security and functionality bugs.  This includes removal of the ``--cgi``
-  flag to the ``python -m http.server`` command line in 3.15.
+  * Deprecate the non-standard and undocumented :class:`~decimal.Decimal`
+    format specifier ``'N'``,
+    which is only supported in the :mod:`!decimal` module's C implementation.
+    (Contributed by Serhiy Storchaka in :gh:`89902`.)
 
-* :mod:`mimetypes`: Passing file path instead of URL in :func:`~mimetypes.guess_type` is
-  :term:`soft deprecated`. Use :func:`~mimetypes.guess_file_type` instead.
-  (Contributed by Serhiy Storchaka in :gh:`66543`.)
+* :mod:`dis`:
 
-* :mod:`re`: Passing optional arguments *maxsplit*, *count* and *flags* in module-level
-  functions :func:`re.split`, :func:`re.sub` and :func:`re.subn` as positional
-  arguments is now deprecated. In future Python versions these parameters will be
-  :ref:`keyword-only <keyword-only_parameter>`.
-  (Contributed by Serhiy Storchaka in :gh:`56166`.)
+  * Deprecate the :attr:`!HAVE_ARGUMENT` separator.
+    Check membership in :data:`~dis.hasarg` instead.
+    (Contributed by Irit Katriel in :gh:`109319`.)
+
+* :mod:`getopt` and :mod:`optparse`:
+
+  * Both modules are now :term:`soft deprecated`,
+    with :mod:`argparse` preferred for new projects.
+    This is a new soft-deprecation for the :mod:`!getopt` module,
+    whereas the :mod:`!optparse` module was already *de facto* soft deprecated.
+    (Contributed by Victor Stinner in :gh:`106535`.)
+
+* :mod:`gettext`:
+
+  * Deprecate non-integer numbers as arguments to functions and methods
+    that consider plural forms in the :mod:`!gettext` module,
+    even if no translation was found.
+    (Contributed by Serhiy Storchaka in :gh:`88434`.)
+
+* :mod:`glob`:
+
+  * Deprecate the undocumented :func:`!glob0` and :func:`!glob1` functions.
+    Use :func:`~glob.glob` and pass a :term:`path-like object` specifying
+    the root directory to the *root_dir* parameter instead.
+    (Contributed by Barney Gale in :gh:`117337`.)
+
+* :mod:`http.server`:
+
+  * Deprecate :class:`~http.server.CGIHTTPRequestHandler`,
+    to be removed in Python 3.15.
+    Process-based CGI HTTP servers have been out of favor for a very long time.
+    This code was outdated, unmaintained, and rarely used.
+    It has a high potential for both security and functionality bugs.
+    (Contributed by Gregory P. Smith in :gh:`109096`.)
+
+  * Deprecate the :option:`!--cgi` flag to
+    the :program:`python -m http.server` command-line interface,
+    to be removed in Python 3.15.
+    (Contributed by Gregory P. Smith in :gh:`109096`.)
+
+* :mod:`mimetypes`:
+
+  * :term:`Soft-deprecate <soft deprecated>` file path arguments
+    to :func:`~mimetypes.guess_type`,
+    use :func:`~mimetypes.guess_file_type` instead.
+    (Contributed by Serhiy Storchaka in :gh:`66543`.)
+
+* :mod:`re`:
+
+  * Deprecate passing the optional *maxsplit*, *count*, or *flags* arguments
+    as positional arguments to the module-level
+    :func:`~re.split`, :func:`~re.sub`, and :func:`~re.subn` functions.
+    These parameters will become :ref:`keyword-only <keyword-only_parameter>`
+    in a future version of Python.
+    (Contributed by Serhiy Storchaka in :gh:`56166`.)
 
 * :mod:`pathlib`:
-  :meth:`pathlib.PurePath.is_reserved` is deprecated and scheduled for
-  removal in Python 3.15. Use :func:`os.path.isreserved` to detect reserved
-  paths on Windows.
+
+  * Deprecate :meth:`.PurePath.is_reserved`,
+    to be removed in Python 3.15.
+    Use :func:`os.path.isreserved` to detect reserved paths on Windows.
+    (Contributed by Barney Gale in :gh:`88569`.)
 
 * :mod:`platform`:
-  :func:`~platform.java_ver` is deprecated and will be removed in 3.15.
-  It was largely untested, had a confusing API,
-  and was only useful for Jython support.
-  (Contributed by Nikita Sobolev in :gh:`116349`.)
 
-* :mod:`pydoc`: Deprecate undocumented :func:`!pydoc.ispackage` function.
-  (Contributed by Zackery Spytz in :gh:`64020`.)
+  * Deprecate :func:`~platform.java_ver`,
+    to be removed in Python 3.15.
+    This function is only useful for Jython support, has a confusing API,
+    and is largely untested.
+    (Contributed by Nikita Sobolev in :gh:`116349`.)
 
-* :mod:`sqlite3`: Passing more than one positional argument to
-  :func:`sqlite3.connect` and the :class:`sqlite3.Connection` constructor is
-  deprecated. The remaining parameters will become keyword-only in Python 3.15.
+* :mod:`pydoc`:
 
-  Deprecate passing name, number of arguments, and the callable as keyword
-  arguments for the following :class:`sqlite3.Connection` APIs:
+  * Deprecate the undocumented :func:`!ispackage` function.
+    (Contributed by Zackery Spytz in :gh:`64020`.)
 
-  * :meth:`~sqlite3.Connection.create_function`
-  * :meth:`~sqlite3.Connection.create_aggregate`
+* :mod:`sqlite3`:
 
-  Deprecate passing the callback callable by keyword for the following
-  :class:`sqlite3.Connection` APIs:
+  * Deprecate passing more than one positional argument to
+    the :func:`~sqlite3.connect` function
+    and the :class:`~sqlite3.Connection` constructor.
+    The remaining parameters will become keyword-only in Python 3.15.
+    (Contributed by Erlend E. Aasland in :gh:`107948`.)
 
-  * :meth:`~sqlite3.Connection.set_authorizer`
-  * :meth:`~sqlite3.Connection.set_progress_handler`
-  * :meth:`~sqlite3.Connection.set_trace_callback`
+  * Deprecate passing name, number of arguments, and the callable as keyword
+    arguments for :meth:`.Connection.create_function`
+    and :meth:`.Connection.create_aggregate`
+    These parameters will become positional-only in Python 3.15.
+    (Contributed by Erlend E. Aasland in :gh:`108278`.)
 
-  The affected parameters will become positional-only in Python 3.15.
+  * Deprecate passing the callback callable by keyword for the
+    :meth:`~sqlite3.Connection.set_authorizer`,
+    :meth:`~sqlite3.Connection.set_progress_handler`, and
+    :meth:`~sqlite3.Connection.set_trace_callback`
+    :class:`~sqlite3.Connection` methods.
+    The callback callables will become positional-only in Python 3.15.
+    (Contributed by Erlend E. Aasland in :gh:`108278`.)
 
-  (Contributed by Erlend E. Aasland in :gh:`107948` and :gh:`108278`.)
+* :mod:`sys`:
 
-* :mod:`sys`: The :func:`sys._enablelegacywindowsfsencoding` function is deprecated.
-  Replace it with the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable.
-  (Contributed by Inada Naoki in :gh:`73427`.)
+  * Deprecate the :func:`~sys._enablelegacywindowsfsencoding` function,
+    to be removed in Python 3.16.
+    Use the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable instead.
+    (Contributed by Inada Naoki in :gh:`73427`.)
 
 * :mod:`tarfile`:
-  The undocumented and unused ``tarfile`` attribute of :class:`tarfile.TarFile`
-  is deprecated and scheduled for removal in Python 3.16.
 
-* :mod:`traceback`: The field *exc_type* of :class:`traceback.TracebackException`
-  is deprecated. Use *exc_type_str* instead.
+  * Deprecate the undocumented and unused :attr:`!TarFile.tarfile` attribute,
+    to be removed in Python 3.16.
+    (Contributed in :gh:`115256`.)
+
+* :mod:`traceback`:
+
+  * Deprecate the :attr:`.TracebackException.exc_type` attribute.
+    Use :attr:`.TracebackException.exc_type_str` instead.
+    (Contributed by Irit Katriel in :gh:`112332`.)
 
 * :mod:`typing`:
 
-  * Creating a :class:`typing.NamedTuple` class using keyword arguments to denote
-    the fields (``NT = NamedTuple("NT", x=int, y=int)``) is deprecated, and will
-    be disallowed in Python 3.15. Use the class-based syntax or the functional
-    syntax instead. (Contributed by Alex Waygood in :gh:`105566`.)
+  * Deprecate the undocumented keyword argument syntax for creating
+    :class:`~typing.NamedTuple` classes
+    (e.g. ``Point = NamedTuple("Point", x=int, y=int)``),
+    to be removed in Python 3.15.
+    Use the class-based syntax or the functional syntax instead.
+    (Contributed by Alex Waygood in :gh:`105566`.)
 
-  * When using the functional syntax to create a :class:`typing.NamedTuple`
-    class or a :class:`typing.TypedDict` class, failing to pass a value to the
-    'fields' parameter (``NT = NamedTuple("NT")`` or ``TD = TypedDict("TD")``) is
-    deprecated. Passing ``None`` to the 'fields' parameter
-    (``NT = NamedTuple("NT", None)`` or ``TD = TypedDict("TD", None)``) is also
-    deprecated. Both will be disallowed in Python 3.15. To create a NamedTuple
-    class with zero fields, use ``class NT(NamedTuple): pass`` or
-    ``NT = NamedTuple("NT", [])``. To create a TypedDict class with zero fields, use
-    ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
+  * Deprecate omitting the *fields* parameter when creating
+    a :class:`~typing.NamedTuple` or :class:`typing.TypedDict` class,
+    and deprecate passing ``None`` to the *fields* parameter of both types.
+    Python 3.15 will require a valid sequence for the *fields* parameter.
+    To create a NamedTuple class with zero fields,
+    use ``class NT(NamedTuple): pass`` or ``NT = NamedTuple("NT", ())``.
+    To create a TypedDict class with zero fields,
+    use ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
     (Contributed by Alex Waygood in :gh:`105566` and :gh:`105570`.)
 
-  * :func:`typing.no_type_check_decorator` is deprecated, and scheduled for
-    removal in Python 3.15. After eight years in the :mod:`typing` module, it
-    has yet to be supported by any major type checkers.
+  * Deprecate the :func:`typing.no_type_check_decorator` decorator function,
+    to be removed in in Python 3.15.
+    After eight years in the :mod:`typing` module,
+    it has yet to be supported by any major type checker.
     (Contributed by Alex Waygood in :gh:`106309`.)
 
-  * :data:`typing.AnyStr` is deprecated. In Python 3.16, it will be removed from
-    ``typing.__all__``, and a :exc:`DeprecationWarning` will be emitted when it
-    is imported or accessed. It will be removed entirely in Python 3.18. Use
-    the new :ref:`type parameter syntax <type-params>` instead.
+  * Deprecate :data:`typing.AnyStr`.
+    In Python 3.16, it will be removed from ``typing.__all__``,
+    and a :exc:`DeprecationWarning` will be emitted at runtime
+    when it is imported or accessed.
+    It will be removed entirely in Python 3.18.
+    Use the new :ref:`type parameter syntax <type-params>` instead.
     (Contributed by Michael The in :gh:`107116`.)
 
-* :ref:`user-defined-funcs`:
-  Assignment to a function's :attr:`~function.__code__` attribute where the new code
-  object's type does not match the function's type is deprecated. The
-  different types are: plain function, generator, async generator and
-  coroutine.
-  (Contributed by Irit Katriel in :gh:`81137`.)
+* :mod:`wave`:
 
-* :mod:`wave`: Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()``
-  methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
-  They will be removed in Python 3.15.
-  (Contributed by Victor Stinner in :gh:`105096`.)
+  * Deprecate the :meth:`~wave.Wave_read.getmark`, :meth:`!setmark`,
+    and :meth:`~wave.Wave_read.getmarkers` methods of
+    the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes,
+    to be removed in Python 3.15.
+    (Contributed by Victor Stinner in :gh:`105096`.)
 
 .. Add deprecations above alphabetically, not here at the end.
 
@@ -1943,10 +1995,10 @@ New Deprecations
 CPython Bytecode Changes
 ========================
 
-* The oparg of ``YIELD_VALUE`` is now ``1`` if the yield is part of a
-  yield-from or await, and ``0`` otherwise. The oparg of ``RESUME`` was
-  changed to add a bit indicating whether the except-depth is 1, which
-  is needed to optimize closing of generators.
+* The oparg of :opcode:`YIELD_VALUE` is now
+  ``1`` if the yield is part of a yield-from or await, and ``0`` otherwise.
+  The oparg of :opcode:`RESUME` was changed to add a bit indicating
+  if the except-depth is 1, which is needed to optimize closing of generators.
   (Contributed by Irit Katriel in :gh:`111354`.)
 
 
