@@ -1,9 +1,9 @@
 """distutils._msvccompiler
 
 Contains MSVCCompiler, an implementation of the abstract CCompiler class
-for Microsoft Visual Studio 2015.
+for Microsoft Visual Studio 2017 and later.
 
-The module is compatible with VS 2015 and later. You can find legacy support
+The module is compatible with VS 2017 and later. You can find legacy support
 for older versions in distutils.msvc9compiler and distutils.msvccompiler.
 """
 
@@ -22,34 +22,6 @@ from distutils.ccompiler import CCompiler
 from distutils import log
 
 from itertools import count
-
-def _find_vc2015():
-    try:
-        key = winreg.OpenKeyEx(
-            winreg.HKEY_LOCAL_MACHINE,
-            r"Software\Microsoft\VisualStudio\SxS\VC7",
-            access=winreg.KEY_READ | winreg.KEY_WOW64_32KEY
-        )
-    except OSError:
-        log.debug("Visual C++ is not registered")
-        return None, None
-
-    best_version = 0
-    best_dir = None
-    with key:
-        for i in count():
-            try:
-                v, vc_dir, vt = winreg.EnumValue(key, i)
-            except OSError:
-                break
-            if v and vt == winreg.REG_SZ and os.path.isdir(vc_dir):
-                try:
-                    version = int(float(v))
-                except (ValueError, TypeError):
-                    continue
-                if version >= 14 and version > best_version:
-                    best_version, best_dir = version, vc_dir
-    return best_version, best_dir
 
 def _find_vc2017():
     """Returns "15, path" based on the result of invoking vswhere.exe
@@ -93,9 +65,6 @@ PLAT_SPEC_TO_RUNTIME = {
 def _find_vcvarsall(plat_spec):
     # bpo-38597: Removed vcruntime return value
     _, best_dir = _find_vc2017()
-
-    if not best_dir:
-        best_version, best_dir = _find_vc2015()
 
     if not best_dir:
         log.debug("No suitable Visual C++ version found")

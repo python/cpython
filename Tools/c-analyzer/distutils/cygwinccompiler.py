@@ -61,23 +61,42 @@ def get_msvcr():
     msc_pos = sys.version.find('MSC v.')
     if msc_pos != -1:
         msc_ver = sys.version[msc_pos+6:msc_pos+10]
-        if msc_ver == '1300':
-            # MSVC 7.0
-            return ['msvcr70']
-        elif msc_ver == '1310':
-            # MSVC 7.1
-            return ['msvcr71']
-        elif msc_ver == '1400':
-            # VS2005 / MSVC 8.0
-            return ['msvcr80']
-        elif msc_ver == '1500':
-            # VS2008 / MSVC 9.0
-            return ['msvcr90']
-        elif msc_ver == '1600':
-            # VS2010 / MSVC 10.0
-            return ['msvcr100']
-        else:
-            raise ValueError("Unknown MS Compiler version %s " % msc_ver)
+        match msc_ver:
+            case '1300':
+                # MSVC 7.0
+                return ['msvcr70']
+            case '1310':
+                # MSVC 7.1
+                return ['msvcr71']
+            case '1400':
+                # VS2005 / MSVC 8.0
+                return ['msvcr80']
+            case '1500':
+                # VS2008 / MSVC 9.0
+                return ['msvcr90']
+            case '1600':
+                # VS2010 / MSVC 10.0
+                return ['msvcr100']
+            case '1700':
+                # VS2012 / MSVC 11.0
+                return ['msvcr110']
+            case '1800':
+                # VS2013 / MSVC 12.0
+                return ['msvcr120']
+            case '1900':
+                # VS2015 / MSVC 14.0
+                return ['msvcr140']
+            case '1910':
+                # VS2017 / MSVC 14.1
+                return ['msvcr141']
+            case '1920':
+                # VS2019 / MSVC 14.2
+                return ['msvcr142']
+            case '1930':
+                # VS2022 / MSVC 14.3
+                return ['msvcr143']
+            case _:
+                raise ValueError(f"Unknown MS Compiler version {msc_ver}")
 
 
 class CygwinCCompiler(UnixCCompiler):
