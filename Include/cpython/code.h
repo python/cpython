@@ -77,7 +77,7 @@ typedef struct {
  */
 typedef struct {
     Py_ssize_t size;
-    char *entries[];
+    char *entries[1];
 } _PyCodeArray;
 
 #define _PyCode_DEF_THREAD_LOCAL_BYTECODE() \

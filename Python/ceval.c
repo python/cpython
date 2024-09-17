@@ -816,7 +816,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
             goto error;
         }
         if (frame->bytecode != bytecode) {
-            int off = frame->instr_ptr - frame->bytecode;
+            ptrdiff_t off = frame->instr_ptr - frame->bytecode;
             frame->bytecode = bytecode;
             frame->instr_ptr = frame->bytecode + off;
         }

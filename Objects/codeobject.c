@@ -2700,7 +2700,7 @@ _PyCode_Fini(PyInterpreterState *interp)
 // interpreter and instrumentation use atomics, with specialization taking care
 // not to overwrite an instruction that was instrumented concurrently.
 
-int
+Py_ssize_t
 _Py_ReserveTLBCIndex(PyInterpreterState *interp)
 {
     return _PyIndexPool_AllocIndex(&interp->tlbc_indices);
@@ -2716,8 +2716,8 @@ _Py_ClearTLBCIndex(_PyThreadStateImpl *tstate)
 static _PyCodeArray *
 _PyCodeArray_New(Py_ssize_t size)
 {
-    _PyCodeArray *arr =
-        PyMem_Calloc(1, sizeof(_PyCodeArray) + sizeof(void *) * size);
+    _PyCodeArray *arr = PyMem_Calloc(
+        1, offsetof(_PyCodeArray, entries) + sizeof(void *) * size);
     if (arr == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -2729,8 +2729,9 @@ _PyCodeArray_New(Py_ssize_t size)
 static void
 copy_code(_Py_CODEUNIT *dst, PyCodeObject *co)
 {
-    int code_len = Py_SIZE(co);
-    for (int i = 0; i < code_len; i += _PyInstruction_GetLength(co, i)) {
+    Py_ssize_t code_len = Py_SIZE(co);
+    for (Py_ssize_t i = 0; i < code_len;
+         i += _PyInstruction_GetLength(co, i)) {
         dst[i] = _Py_GetBaseCodeUnit(co, i);
     }
     _PyCode_Quicken(dst, code_len);

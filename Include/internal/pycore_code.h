@@ -653,7 +653,9 @@ extern _Py_CODEUNIT *_PyCode_GetTLBC(PyCodeObject *co);
 
 // Reserve an index for the current thread into thread-local bytecode
 // arrays
-extern int _Py_ReserveTLBCIndex(PyInterpreterState *interp);
+//
+// Returns the reserved index or -1 on error.
+extern Py_ssize_t _Py_ReserveTLBCIndex(PyInterpreterState *interp);
 
 // Release the current thread's index into thread-local bytecode arrays
 extern void _Py_ClearTLBCIndex(_PyThreadStateImpl *tstate);
