@@ -100,7 +100,7 @@ JNIEXPORT void JNICALL Java_org_python_testbed_PythonTestRunner_redirectStdioToL
 }
 
 
-// --- Python intialization ----------------------------------------------------
+// --- Python initialization ---------------------------------------------------
 
 static PyStatus set_config_string(
     JNIEnv *env, PyConfig *config, wchar_t **config_str, jstring value

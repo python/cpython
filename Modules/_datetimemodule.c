@@ -1,6 +1,4 @@
-/*  C implementation for the date/time type documented at
- *  https://www.zope.dev/Members/fdrake/DateTimeWiki/FrontPage
- */
+/*  C implementation of the datetime module */
 
 /* bpo-35081: Defining this prevents including the C API capsule;
  * internal versions of the  Py*_Check macros which do not require
@@ -7418,7 +7416,7 @@ module_free(void *mod)
 static PyModuleDef datetimemodule = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_datetime",
-    .m_doc = "Fast implementation of the datetime type.",
+    .m_doc = "Fast implementation of the datetime module.",
     .m_size = sizeof(datetime_state),
     .m_methods = module_methods,
     .m_slots = module_slots,
