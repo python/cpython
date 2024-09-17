@@ -4511,7 +4511,7 @@ written in Python, such as a mail server's external command delivery program.
       already more likely to experience deadlocks running such code.
 
       See `this discussion on fork being incompatible with threads
-      <https://discuss.python.org/t/concerns-regarding-deprecation-of-fork-with-alive-threads/33555>`_
+      <https://discuss.python.org/t/33555>`_
       for technical details of why we're surfacing this longstanding
       platform compatibility problem to developers.
 
