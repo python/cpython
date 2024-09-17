@@ -9,6 +9,10 @@
 race:get_allocator_unlocked
 race:set_allocator_unlocked
 
+# https://gist.github.com/mpage/ff1c7094bc8237d98387678d5f52058f
+race_top:_PyThreadState_MustExit
+
+
 ## Free-threaded suppressions
 
 
