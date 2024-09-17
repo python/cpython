@@ -49,13 +49,6 @@
      (Note: this mechanism is enabled with FORCE_SWITCHING above)
 */
 
-// GH-89279: Force inlining by using a macro.
-#if defined(_MSC_VER) && SIZEOF_INT == 4
-#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) (assert(sizeof((ATOMIC_VAL)->_value) == 4), *((volatile int*)&((ATOMIC_VAL)->_value)))
-#else
-#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) _Py_atomic_load_relaxed(ATOMIC_VAL)
-#endif
-
 // Atomically copy the bits indicated by mask between two values.
 static inline void
 copy_eval_breaker_bits(uintptr_t *from, uintptr_t *to, uintptr_t mask)
@@ -901,6 +894,18 @@ unsignal_pending_calls(PyThreadState *tstate, PyInterpreterState *interp)
 #endif
 }
 
+static void
+clear_pending_handling_thread(struct _pending_calls *pending)
+{
+#ifdef Py_GIL_DISABLED
+    PyMutex_Lock(&pending->mutex);
+    pending->handling_thread = NULL;
+    PyMutex_Unlock(&pending->mutex);
+#else
+    pending->handling_thread = NULL;
+#endif
+}
+
 static int
 make_pending_calls(PyThreadState *tstate)
 {
@@ -933,7 +938,7 @@ make_pending_calls(PyThreadState *tstate)
 
     int32_t npending;
     if (_make_pending_calls(pending, &npending) != 0) {
-        pending->handling_thread = NULL;
+        clear_pending_handling_thread(pending);
         /* There might not be more calls to make, but we play it safe. */
         signal_pending_calls(tstate, interp);
         return -1;
@@ -945,7 +950,7 @@ make_pending_calls(PyThreadState *tstate)
 
     if (_Py_IsMainThread() && _Py_IsMainInterpreter(interp)) {
         if (_make_pending_calls(pending_main, &npending) != 0) {
-            pending->handling_thread = NULL;
+            clear_pending_handling_thread(pending);
             /* There might not be more calls to make, but we play it safe. */
             signal_pending_calls(tstate, interp);
             return -1;
@@ -956,7 +961,7 @@ make_pending_calls(PyThreadState *tstate)
         }
     }
 
-    pending->handling_thread = NULL;
+    clear_pending_handling_thread(pending);
     return 0;
 }
 

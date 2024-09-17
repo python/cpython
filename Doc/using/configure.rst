@@ -299,7 +299,7 @@ General Options
    Defines the ``Py_GIL_DISABLED`` macro and adds ``"t"`` to
    :data:`sys.abiflags`.
 
-   See :ref:`free-threaded-cpython` for more detail.
+   See :ref:`whatsnew313-free-threaded-cpython` for more detail.
 
    .. versionadded:: 3.13
 
@@ -907,6 +907,38 @@ Security Options
       The settings ``python`` and *STRING* also set TLS 1.2 as minimum
       protocol version.
 
+.. option:: --disable-safety
+
+   Disable compiler options that are `recommended by OpenSSF`_ for security reasons with no performance overhead.
+   If this option is not enabled, CPython will be built based on safety compiler options with no slow down.
+   When this option is enabled, CPython will not be built with the compiler options listed below.
+
+   The following compiler options are disabled with :option:`!--disable-safety`:
+
+   * `-fstack-protector-strong`_: Enable run-time checks for stack-based buffer overflows.
+   * `-Wtrampolines`_: Enable warnings about trampolines that require executable stacks.
+
+   .. _recommended by OpenSSF: https://github.com/ossf/wg-best-practices-os-developers/blob/main/docs/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.md
+   .. _-fstack-protector-strong: https://github.com/ossf/wg-best-practices-os-developers/blob/main/docs/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.md#enable-run-time-checks-for-stack-based-buffer-overflows
+   .. _-Wtrampolines: https://github.com/ossf/wg-best-practices-os-developers/blob/main/docs/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.md#enable-warning-about-trampolines-that-require-executable-stacks
+
+   .. versionadded:: 3.14
+
+.. option:: --enable-slower-safety
+
+   Enable compiler options that are `recommended by OpenSSF`_ for security reasons which require overhead.
+   If this option is not enabled, CPython will not be built based on safety compiler options which performance impact.
+   When this option is enabled, CPython will be built with the compiler options listed below.
+
+   The following compiler options are enabled with :option:`!--enable-slower-safety`:
+
+   * `-D_FORTIFY_SOURCE=3`_: Fortify sources with compile- and run-time checks for unsafe libc usage and buffer overflows.
+
+   .. _-D_FORTIFY_SOURCE=3: https://github.com/ossf/wg-best-practices-os-developers/blob/main/docs/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.md#fortify-sources-for-unsafe-libc-usage-and-buffer-overflows
+
+   .. versionadded:: 3.14
+
+
 macOS Options
 -------------
 
@@ -944,6 +976,17 @@ See :source:`Mac/README.rst`.
 
    Specify the name for the python framework on macOS only valid when
    :option:`--enable-framework` is set (default: ``Python``).
+
+.. option:: --with-app-store-compliance
+.. option:: --with-app-store-compliance=PATCH-FILE
+
+   The Python standard library contains strings that are known to trigger
+   automated inspection tool errors when submitted for distribution by
+   the macOS and iOS App Stores. If enabled, this option will apply the list of
+   patches that are known to correct app store compliance. A custom patch
+   file can also be specified. This option is disabled by default.
+
+   .. versionadded:: 3.13
 
 iOS Options
 -----------
@@ -1090,7 +1133,7 @@ Remove built files.
 make distclean
 ^^^^^^^^^^^^^^
 
-In addition to the the work done by ``make clean``, remove files
+In addition to the work done by ``make clean``, remove files
 created by the configure script.  ``configure`` will have to be run
 before building again. [#]_
 

@@ -41,7 +41,7 @@ def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
     # path may be used by Py_GetPath() to build the default module search
     # path.
     stdin_fname = os.path.join(os.path.dirname(sys.executable), "<stdin>")
-    cmd_line = [stdin_fname, '-E', '-i']
+    cmd_line = [stdin_fname, '-I', '-i']
     cmd_line.extend(args)
 
     # Set TERM=vt100, for the rationale see the comments in spawn_python() of
@@ -187,6 +187,19 @@ class TestInteractiveInterpreter(unittest.TestCase):
         ]
         self.assertEqual(traceback_lines, expected_lines)
 
+    def test_runsource_show_syntax_error_location(self):
+        user_input = dedent("""def f(x, x): ...
+                            """)
+        p = spawn_repl()
+        p.stdin.write(user_input)
+        output = kill_python(p)
+        expected_lines = [
+            '    def f(x, x): ...',
+            '             ^',
+            "SyntaxError: duplicate argument 'x' in function definition"
+        ]
+        self.assertEqual(output.splitlines()[4:-1], expected_lines)
+
     def test_interactive_source_is_in_linecache(self):
         user_input = dedent("""
         def foo(x):
@@ -215,6 +228,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
                 f.write("exit(0)" + os.linesep)
 
             env = os.environ.copy()
+            env["PYTHON_HISTORY"] = os.path.join(tmpdir, ".asyncio_history")
             env["PYTHONSTARTUP"] = script
             subprocess.check_call(
                 [sys.executable, "-m", "asyncio"],
@@ -227,7 +241,8 @@ class TestInteractiveInterpreter(unittest.TestCase):
     @unittest.skipUnless(pty, "requires pty")
     def test_asyncio_repl_is_ok(self):
         m, s = pty.openpty()
-        cmd = [sys.executable, "-m", "asyncio"]
+        cmd = [sys.executable, "-I", "-m", "asyncio"]
+        env = os.environ.copy()
         proc = subprocess.Popen(
             cmd,
             stdin=s,
@@ -235,7 +250,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
             stderr=s,
             text=True,
             close_fds=True,
-            env=os.environ,
+            env=env,
         )
         os.close(s)
         os.write(m, b"await asyncio.sleep(0)\n")
@@ -256,7 +271,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
             proc.kill()
             exit_code = proc.wait()
 
-        self.assertEqual(exit_code, 0)
+        self.assertEqual(exit_code, 0, "".join(output))
 
 class TestInteractiveModeSyntaxErrors(unittest.TestCase):
 

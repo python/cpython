@@ -614,7 +614,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             # We should print the stack entry if and only if the user input
             # is expected, and we should print it right before the user input.
             # We achieve this by appending _pdbcmd_print_frame_status to the
-            # command queue. If cmdqueue is not exausted, the user input is
+            # command queue. If cmdqueue is not exhausted, the user input is
             # not expected and we will not print the stack entry.
             self.cmdqueue.append('_pdbcmd_print_frame_status')
             self._cmdloop()
