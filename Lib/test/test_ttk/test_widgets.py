@@ -8,7 +8,11 @@ from test.test_ttk_textonly import MockTclObj
 from test.test_tkinter.support import (
     AbstractTkTest, requires_tk, tk_version, get_tk_patchlevel,
     simulate_mouse_click, AbstractDefaultRootTest)
-from test.test_tkinter.widget_tests import (add_standard_options,
+if tk_version < (9,0):
+    from test.test_tkinter.support import messages_v1 as messages
+else:
+    from test.test_tkinter.support import messages_v2 as messages
+from test.test_tkinter.widget_tests import (add_configure_tests,
     AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests)
 
 requires('gui')
@@ -125,10 +129,11 @@ class WidgetTest(AbstractTkTest, unittest.TestCase):
 
 
 class AbstractToplevelTest(AbstractWidgetTest, PixelSizeTests):
-    _conv_pixels = False
+    _rounds_pixels = False
+    _clipped = {}
 
 
-@add_standard_options(StandardTtkOptionsTests)
+@add_configure_tests(StandardTtkOptionsTests)
 class FrameTest(AbstractToplevelTest, unittest.TestCase):
     OPTIONS = (
         'borderwidth', 'class', 'cursor', 'height',
@@ -140,7 +145,7 @@ class FrameTest(AbstractToplevelTest, unittest.TestCase):
         return ttk.Frame(self.root, **kwargs)
 
 
-@add_standard_options(StandardTtkOptionsTests)
+@add_configure_tests(StandardTtkOptionsTests)
 class LabelFrameTest(AbstractToplevelTest, unittest.TestCase):
     OPTIONS = (
         'borderwidth', 'class', 'cursor', 'height',
@@ -168,6 +173,8 @@ class LabelFrameTest(AbstractToplevelTest, unittest.TestCase):
 
 class AbstractLabelTest(AbstractWidgetTest):
     _allow_empty_justify = True
+    _rounds_pixels = False
+    _clipped = {}
 
     def checkImageParam(self, widget, name):
         image = tkinter.PhotoImage(master=self.root, name='image1')
@@ -180,7 +187,7 @@ class AbstractLabelTest(AbstractWidgetTest):
         self.checkParam(widget, name, 'image1 active image2',
                         expected=('image1', 'active', 'image2'))
         self.checkInvalidParam(widget, name, 'spam',
-                errmsg='image "spam" doesn\'t exist')
+                errmsg=messages['no_image'].format('spam'))
 
     def test_configure_compound(self):
         values = ('none', 'text', 'image', 'center', 'top', 'bottom', 'left', 'right')
@@ -196,7 +203,7 @@ class AbstractLabelTest(AbstractWidgetTest):
         self.checkParams(widget, 'width', 402, -402, 0)
 
 
-@add_standard_options(StandardTtkOptionsTests)
+@add_configure_tests(StandardTtkOptionsTests)
 class LabelTest(AbstractLabelTest, unittest.TestCase):
     OPTIONS = (
         'anchor', 'background', 'borderwidth',
@@ -214,7 +221,7 @@ class LabelTest(AbstractLabelTest, unittest.TestCase):
     test_configure_justify = StandardOptionsTests.test_configure_justify
 
 
-@add_standard_options(StandardTtkOptionsTests)
+@add_configure_tests(StandardTtkOptionsTests)
 class ButtonTest(AbstractLabelTest, unittest.TestCase):
     OPTIONS = (
         'class', 'command', 'compound', 'cursor', 'default',
@@ -239,7 +246,7 @@ class ButtonTest(AbstractLabelTest, unittest.TestCase):
         self.assertTrue(success)
 
 
-@add_standard_options(StandardTtkOptionsTests)
+@add_configure_tests(StandardTtkOptionsTests)
 class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
     OPTIONS = (
         'class', 'command', 'compound', 'cursor',
@@ -326,7 +333,7 @@ class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
         self.assertEqual(len(set(variables)), len(buttons), variables)
 
 
-@add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)
+@add_configure_tests(IntegerSizeTests, StandardTtkOptionsTests)
 class EntryTest(AbstractWidgetTest, unittest.TestCase):
     OPTIONS = (
         'background', 'class', 'cursor',
@@ -336,6 +343,8 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         'show', 'state', 'style', 'takefocus', 'textvariable',
         'validate', 'validatecommand', 'width', 'xscrollcommand',
     )
+    _rounds_pixels = False
+    _clipped = {}
     IDENTIFY_AS = 'Entry.field' if sys.platform == 'darwin' else 'textarea'
 
     def setUp(self):
@@ -370,8 +379,10 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         self.assertRaises(tkinter.TclError, self.entry.bbox, None)
 
     def test_identify(self):
+        if tk_version >= (9, 0) and sys.platform == 'darwin':
+            self.skipTest('test hangs due to Tk 9.0 bug 8b49e9cfa6')
         self.entry.pack()
-        self.entry.update()
+        self.root.update()
 
         # bpo-27313: macOS Cocoa widget differs from X, allow either
         self.assertEqual(self.entry.identify(5, 5), self.IDENTIFY_AS)
@@ -450,7 +461,7 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.entry.state(), ())
 
 
-@add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)
+@add_configure_tests(IntegerSizeTests, StandardTtkOptionsTests)
 class ComboboxTest(EntryTest, unittest.TestCase):
     OPTIONS = (
         'background', 'class', 'cursor', 'exportselection',
@@ -461,7 +472,7 @@ class ComboboxTest(EntryTest, unittest.TestCase):
         'validate', 'validatecommand', 'values',
         'width', 'xscrollcommand',
     )
-    IDENTIFY_AS = 'Combobox.button' if sys.platform == 'darwin' else 'textarea'
+    IDENTIFY_AS = 'textarea'
 
     def setUp(self):
         super().setUp()
@@ -479,11 +490,12 @@ class ComboboxTest(EntryTest, unittest.TestCase):
         x, y = width - 5, 5
         if sys.platform != 'darwin':  # there's no down arrow on macOS
             self.assertRegex(self.combo.identify(x, y), r'.*downarrow\Z')
-        self.combo.event_generate('<ButtonPress-1>', x=x, y=y)
+        self.combo.event_generate('<Button-1>', x=x, y=y)
         self.combo.event_generate('<ButtonRelease-1>', x=x, y=y)
-        self.combo.update_idletasks()
 
     def test_virtual_event(self):
+        if tk_version >= (9, 0) and sys.platform == 'darwin':
+            self.skipTest('test hangs due to Tk 9.0 bug 8b49e9cfa6')
         success = []
 
         self.combo['values'] = [1]
@@ -501,6 +513,8 @@ class ComboboxTest(EntryTest, unittest.TestCase):
         self.assertTrue(success)
 
     def test_configure_postcommand(self):
+        if tk_version >= (9, 0) and sys.platform == 'darwin':
+            self.skipTest('test hangs due to Tk 9.0 bug 8b49e9cfa6')
         success = []
 
         self.combo['postcommand'] = lambda: success.append(True)
@@ -576,12 +590,14 @@ class ComboboxTest(EntryTest, unittest.TestCase):
         combo2.destroy()
 
 
-@add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)
+@add_configure_tests(IntegerSizeTests, StandardTtkOptionsTests)
 class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
     OPTIONS = (
         'class', 'cursor', 'height',
         'orient', 'style', 'takefocus', 'width',
     )
+    _rounds_pixels = False
+    _clipped = {}
 
     def setUp(self):
         super().setUp()
@@ -712,7 +728,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         self.assertIsInstance(self.paned.sashpos(0), int)
 
 
-@add_standard_options(StandardTtkOptionsTests)
+@add_configure_tests(StandardTtkOptionsTests)
 class RadiobuttonTest(AbstractLabelTest, unittest.TestCase):
     OPTIONS = (
         'class', 'command', 'compound', 'cursor',
@@ -791,13 +807,14 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
         menu.destroy()
 
 
-@add_standard_options(StandardTtkOptionsTests)
+@add_configure_tests(StandardTtkOptionsTests)
 class ScaleTest(AbstractWidgetTest, unittest.TestCase):
     OPTIONS = (
         'class', 'command', 'cursor', 'from', 'length',
         'orient', 'state', 'style', 'takefocus', 'to', 'value', 'variable',
     )
-    _conv_pixels = False
+    _rounds_pixels = False
+    _clipped = {}
     default_orient = 'horizontal'
 
     def setUp(self):
@@ -899,7 +916,7 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
         self.assertRaises(tkinter.TclError, self.scale.set, None)
 
 
-@add_standard_options(StandardTtkOptionsTests)
+@add_configure_tests(StandardTtkOptionsTests)
 class ProgressbarTest(AbstractWidgetTest, unittest.TestCase):
     OPTIONS = (
         'anchor', 'class', 'cursor', 'font', 'foreground', 'justify',
@@ -907,7 +924,8 @@ class ProgressbarTest(AbstractWidgetTest, unittest.TestCase):
         'mode', 'maximum', 'phase', 'text', 'wraplength',
         'style', 'takefocus', 'value', 'variable',
     )
-    _conv_pixels = False
+    _rounds_pixels = False
+    _clipped = {}
     _allow_empty_justify = True
     default_orient = 'horizontal'
 
@@ -952,25 +970,26 @@ class ProgressbarTest(AbstractWidgetTest, unittest.TestCase):
 
 @unittest.skipIf(sys.platform == 'darwin',
                  'ttk.Scrollbar is special on MacOSX')
-@add_standard_options(StandardTtkOptionsTests)
+@add_configure_tests(StandardTtkOptionsTests)
 class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
     OPTIONS = (
         'class', 'command', 'cursor', 'orient', 'style', 'takefocus',
     )
+    _rounds_pixels = False
+    _clipped = {}
     default_orient = 'vertical'
 
     def create(self, **kwargs):
         return ttk.Scrollbar(self.root, **kwargs)
 
-
-@add_standard_options(PixelSizeTests if tk_version >= (8, 7) else IntegerSizeTests,
+@add_configure_tests(PixelSizeTests if tk_version >= (8, 7) else IntegerSizeTests,
                       StandardTtkOptionsTests)
 class NotebookTest(AbstractWidgetTest, unittest.TestCase):
     OPTIONS = (
         'class', 'cursor', 'height', 'padding', 'style', 'takefocus', 'width',
     )
-    if tk_version >= (8, 7):
-        _conv_pixels = False
+    _rounds_pixels = (tk_version < (9,0))
+    _clipped = {}
 
     def setUp(self):
         super().setUp()
@@ -982,6 +1001,14 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
 
     def create(self, **kwargs):
         return ttk.Notebook(self.root, **kwargs)
+
+    def test_configure_height(self):
+        widget = self.create()
+        self.checkPixelsParam(widget, 'height', 100, -100, 0)
+
+    def test_configure_width(self):
+        widget = self.create()
+        self.checkPixelsParam(widget, 'width', 402, -402, 0)
 
     def test_tab_identifiers(self):
         self.nb.forget(0)
@@ -1180,7 +1207,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.nb.select(), str(self.child2))
 
 
-@add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)
+@add_configure_tests(IntegerSizeTests, StandardTtkOptionsTests)
 class SpinboxTest(EntryTest, unittest.TestCase):
     OPTIONS = (
         'background', 'class', 'command', 'cursor', 'exportselection',
@@ -1357,7 +1384,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         spin2.destroy()
 
 
-@add_standard_options(StandardTtkOptionsTests)
+@add_configure_tests(StandardTtkOptionsTests)
 class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
     OPTIONS = (
         'class', 'columns', 'cursor', 'displaycolumns',
@@ -1365,6 +1392,8 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         'style', 'takefocus', 'titlecolumns', 'titleitems',
         'xscrollcommand', 'yscrollcommand',
     )
+    _rounds_pixels = False
+    _clipped = {}
 
     def setUp(self):
         super().setUp()
@@ -1923,24 +1952,28 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.tv.tag_has('tag3'), ())
 
 
-@add_standard_options(StandardTtkOptionsTests)
+@add_configure_tests(StandardTtkOptionsTests)
 class SeparatorTest(AbstractWidgetTest, unittest.TestCase):
     OPTIONS = (
         'class', 'cursor', 'orient', 'style', 'takefocus',
         # 'state'?
     )
+    _rounds_pixels = False
+    _clipped = {}
     default_orient = 'horizontal'
 
     def create(self, **kwargs):
         return ttk.Separator(self.root, **kwargs)
 
 
-@add_standard_options(StandardTtkOptionsTests)
+@add_configure_tests(StandardTtkOptionsTests)
 class SizegripTest(AbstractWidgetTest, unittest.TestCase):
     OPTIONS = (
         'class', 'cursor', 'style', 'takefocus',
         # 'state'?
     )
+    _rounds_pixels = False
+    _clipped = {}
 
     def create(self, **kwargs):
         return ttk.Sizegrip(self.root, **kwargs)

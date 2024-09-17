@@ -1,5 +1,18 @@
 import functools
+import re
 import tkinter
+
+messages_v1 = {
+    'no_busy': 'can\'t find busy window.*',
+    'no_font': 'font "{}" doesn\'t exist',
+    'no_image': 'image "{}" doesn\'t exist',
+    }
+
+messages_v2 = {
+    'no_busy': 'cannot find busy window',
+    'no_font': 'font "{}" does not exist',
+    'no_image': 'image "{}" does not exist',
+    }
 
 class AbstractTkTest:
 
@@ -111,6 +124,10 @@ units = {
 
 def pixels_conv(value):
     return float(value[:-1]) * units[value[-1:]]
+
+pix_re = re.compile(r'[0-9]*\.?[0-9]*[cimp]{1}')
+def is_pixel_str(x):
+    return pix_re.fullmatch(x) != None
 
 def tcl_obj_eq(actual, expected):
     if actual == expected:
