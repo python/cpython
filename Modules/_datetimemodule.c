@@ -1,6 +1,4 @@
-/*  C implementation for the date/time type documented at
- *  https://www.zope.dev/Members/fdrake/DateTimeWiki/FrontPage
- */
+/*  C implementation of the datetime module */
 
 /* bpo-35081: Defining this prevents including the C API capsule;
  * internal versions of the  Py*_Check macros which do not require
@@ -1853,7 +1851,12 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 
 #ifdef Py_NORMALIZE_CENTURY
     /* Buffer of maximum size of formatted year permitted by long. */
-    char buf[SIZEOF_LONG*5/2+2];
+    char buf[SIZEOF_LONG * 5 / 2 + 2
+#ifdef Py_STRFTIME_C99_SUPPORT
+    /* Need 6 more to accommodate dashes, 2-digit month and day for %F. */
+             + 6
+#endif
+    ];
 #endif
 
     assert(object && format && timetuple);
@@ -1950,11 +1953,18 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             ntoappend = PyBytes_GET_SIZE(freplacement);
         }
 #ifdef Py_NORMALIZE_CENTURY
-        else if (ch == 'Y' || ch == 'G') {
+        else if (ch == 'Y' || ch == 'G'
+#ifdef Py_STRFTIME_C99_SUPPORT
+                 || ch == 'F' || ch == 'C'
+#endif
+        ) {
             /* 0-pad year with century as necessary */
-            PyObject *item = PyTuple_GET_ITEM(timetuple, 0);
+            PyObject *item = PySequence_GetItem(timetuple, 0);
+            if (item == NULL) {
+                goto Done;
+            }
             long year_long = PyLong_AsLong(item);
-
+            Py_DECREF(item);
             if (year_long == -1 && PyErr_Occurred()) {
                 goto Done;
             }
@@ -1980,8 +1990,16 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                     goto Done;
                 }
             }
-
-            ntoappend = PyOS_snprintf(buf, sizeof(buf), "%04ld", year_long);
+            ntoappend = PyOS_snprintf(buf, sizeof(buf),
+#ifdef Py_STRFTIME_C99_SUPPORT
+                                      ch == 'F' ? "%04ld-%%m-%%d" :
+#endif
+                                      "%04ld", year_long);
+#ifdef Py_STRFTIME_C99_SUPPORT
+            if (ch == 'C') {
+                ntoappend -= 2;
+            }
+#endif
             ptoappend = buf;
         }
 #endif
@@ -3822,7 +3840,7 @@ datetime_date_replace_impl(PyDateTime_Date *self, int year, int month,
 static Py_hash_t
 generic_hash(unsigned char *data, int len)
 {
-    return _Py_HashBytes(data, len);
+    return Py_HashBuffer(data, len);
 }
 
 
@@ -7398,7 +7416,7 @@ module_free(void *mod)
 static PyModuleDef datetimemodule = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_datetime",
-    .m_doc = "Fast implementation of the datetime type.",
+    .m_doc = "Fast implementation of the datetime module.",
     .m_size = sizeof(datetime_state),
     .m_methods = module_methods,
     .m_slots = module_slots,

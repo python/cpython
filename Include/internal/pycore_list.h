@@ -45,7 +45,7 @@ _Py_memory_repeat(char* dest, Py_ssize_t len_dest, Py_ssize_t len_src)
     Py_ssize_t copied = len_src;
     while (copied < len_dest) {
         Py_ssize_t bytes_to_copy = Py_MIN(copied, len_dest - copied);
-        memcpy(dest + copied, dest, bytes_to_copy);
+        memcpy(dest + copied, dest, (size_t)bytes_to_copy);
         copied += bytes_to_copy;
     }
 }
@@ -56,7 +56,10 @@ typedef struct {
     PyListObject *it_seq; /* Set to NULL when iterator is exhausted */
 } _PyListIterObject;
 
-PyAPI_FUNC(PyObject *)_PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n);
+union _PyStackRef;
+
+PyAPI_FUNC(PyObject *)_PyList_FromStackRefSteal(const union _PyStackRef *src, Py_ssize_t n);
+
 
 #ifdef __cplusplus
 }

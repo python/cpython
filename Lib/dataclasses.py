@@ -656,7 +656,7 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
     if kw_only_fields:
         # Add the keyword-only args.  Because the * can only be added if
         # there's at least one keyword-only arg, there needs to be a test here
-        # (instead of just concatenting the lists together).
+        # (instead of just concatenating the lists together).
         _init_params += ['*']
         _init_params += [_init_param(f) for f in kw_only_fields]
     func_builder.add_fn('__init__',
@@ -1208,7 +1208,7 @@ def _get_slots(cls):
             slots = []
             if getattr(cls, '__weakrefoffset__', -1) != 0:
                 slots.append('__weakref__')
-            if getattr(cls, '__dictrefoffset__', -1) != 0:
+            if getattr(cls, '__dictoffset__', -1) != 0:
                 slots.append('__dict__')
             yield from slots
         case str(slot):

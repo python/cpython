@@ -22,7 +22,7 @@ _PyPegen_interactive_exit(Parser *p)
 Py_ssize_t
 _PyPegen_byte_offset_to_character_offset_line(PyObject *line, Py_ssize_t col_offset, Py_ssize_t end_col_offset)
 {
-    const char *data = PyUnicode_AsUTF8(line);
+    const unsigned char *data = (const unsigned char*)PyUnicode_AsUTF8(line);
 
     Py_ssize_t len = 0;
     while (col_offset < end_col_offset) {
@@ -47,7 +47,7 @@ _PyPegen_byte_offset_to_character_offset_line(PyObject *line, Py_ssize_t col_off
 Py_ssize_t
 _PyPegen_byte_offset_to_character_offset_raw(const char* str, Py_ssize_t col_offset)
 {
-    Py_ssize_t len = strlen(str);
+    Py_ssize_t len = (Py_ssize_t)strlen(str);
     if (col_offset > len + 1) {
         col_offset = len + 1;
     }
@@ -158,7 +158,7 @@ growable_comment_array_deallocate(growable_comment_array *arr) {
 static int
 _get_keyword_or_name_type(Parser *p, struct token *new_token)
 {
-    int name_len = new_token->end_col_offset - new_token->col_offset;
+    Py_ssize_t name_len = new_token->end_col_offset - new_token->col_offset;
     assert(name_len > 0);
 
     if (name_len >= p->n_keyword_lists ||
@@ -167,7 +167,7 @@ _get_keyword_or_name_type(Parser *p, struct token *new_token)
         return NAME;
     }
     for (KeywordToken *k = p->keywords[name_len]; k != NULL && k->type != -1; k++) {
-        if (strncmp(k->str, new_token->start, name_len) == 0) {
+        if (strncmp(k->str, new_token->start, (size_t)name_len) == 0) {
             return k->type;
         }
     }
@@ -218,7 +218,7 @@ initialize_token(Parser *p, Token *parser_token, struct token *new_token, int to
 static int
 _resize_tokens_array(Parser *p) {
     int newsize = p->size * 2;
-    Token **new_tokens = PyMem_Realloc(p->tokens, newsize * sizeof(Token *));
+    Token **new_tokens = PyMem_Realloc(p->tokens, (size_t)newsize * sizeof(Token *));
     if (new_tokens == NULL) {
         PyErr_NoMemory();
         return -1;
@@ -247,12 +247,12 @@ _PyPegen_fill_token(Parser *p)
     // Record and skip '# type: ignore' comments
     while (type == TYPE_IGNORE) {
         Py_ssize_t len = new_token.end_col_offset - new_token.col_offset;
-        char *tag = PyMem_Malloc(len + 1);
+        char *tag = PyMem_Malloc((size_t)len + 1);
         if (tag == NULL) {
             PyErr_NoMemory();
             goto error;
         }
-        strncpy(tag, new_token.start, len);
+        strncpy(tag, new_token.start, (size_t)len);
         tag[len] = '\0';
         // Ownership of tag passes to the growable array
         if (!growable_comment_array_add(&p->type_ignore_comments, p->tok->lineno, tag)) {
@@ -296,12 +296,22 @@ error:
 #define NSTATISTICS _PYPEGEN_NSTATISTICS
 #define memo_statistics _PyRuntime.parser.memo_statistics
 
+#ifdef Py_GIL_DISABLED
+#define MUTEX_LOCK() PyMutex_Lock(&_PyRuntime.parser.mutex)
+#define MUTEX_UNLOCK() PyMutex_Unlock(&_PyRuntime.parser.mutex)
+#else
+#define MUTEX_LOCK()
+#define MUTEX_UNLOCK()
+#endif
+
 void
 _PyPegen_clear_memo_statistics(void)
 {
+    MUTEX_LOCK();
     for (int i = 0; i < NSTATISTICS; i++) {
         memo_statistics[i] = 0;
     }
+    MUTEX_UNLOCK();
 }
 
 PyObject *
@@ -311,18 +321,23 @@ _PyPegen_get_memo_statistics(void)
     if (ret == NULL) {
         return NULL;
     }
+
+    MUTEX_LOCK();
     for (int i = 0; i < NSTATISTICS; i++) {
         PyObject *value = PyLong_FromLong(memo_statistics[i]);
         if (value == NULL) {
+            MUTEX_UNLOCK();
             Py_DECREF(ret);
             return NULL;
         }
         // PyList_SetItem borrows a reference to value.
         if (PyList_SetItem(ret, i, value) < 0) {
+            MUTEX_UNLOCK();
             Py_DECREF(ret);
             return NULL;
         }
     }
+    MUTEX_UNLOCK();
     return ret;
 }
 #endif
@@ -348,7 +363,9 @@ _PyPegen_is_memoized(Parser *p, int type, void *pres)
                 if (count <= 0) {
                     count = 1;
                 }
+                MUTEX_LOCK();
                 memo_statistics[type] += count;
+                MUTEX_UNLOCK();
             }
 #endif
             p->mark = m->mark;
@@ -488,7 +505,7 @@ _PyPegen_get_last_nonnwhitespace_token(Parser *p)
 PyObject *
 _PyPegen_new_identifier(Parser *p, const char *n)
 {
-    PyObject *id = PyUnicode_DecodeUTF8(n, strlen(n), NULL);
+    PyObject *id = PyUnicode_DecodeUTF8(n, (Py_ssize_t)strlen(n), NULL);
     if (!id) {
         goto error;
     }
@@ -584,7 +601,7 @@ expr_ty _PyPegen_soft_keyword_token(Parser *p) {
     Py_ssize_t size;
     PyBytes_AsStringAndSize(t->bytes, &the_token, &size);
     for (char **keyword = p->soft_keywords; *keyword != NULL; keyword++) {
-        if (strncmp(*keyword, the_token, size) == 0) {
+        if (strncmp(*keyword, the_token, (size_t)size) == 0) {
             return _PyPegen_name_from_token(p, t);
         }
     }
