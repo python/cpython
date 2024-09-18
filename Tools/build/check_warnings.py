@@ -128,12 +128,12 @@ def is_file_ignored(
     """
     Returns the IgnoreRule object for the file path if there is a related rule for it
     """
-    for ignore_rule in ignore_rules:
-        if ignore_rule.is_directory:
-            if file_path.startswith(ignore_rule.file_path):
-                return ignore_rule
-        elif file_path == ignore_rule.file_path:
-            return ignore_rule
+    for rule in ignore_rules:
+        if rule.is_directory:
+            if file_path.startswith(rule.file_path):
+                return rule
+        elif file_path == rule.file_path:
+            return rule
     return None
 
 
