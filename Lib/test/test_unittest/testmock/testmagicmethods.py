@@ -363,6 +363,14 @@ class TestMockingMagicMethods(unittest.TestCase):
         self.assertEqual(list(iter(mm)), [])
         self.assertIsInstance(mm.custom(), MagicMock)
 
+    def test_magic_mock_resets_manual_mocks_empty_iter(self):
+        mm = MagicMock()
+        mm.__iter__.return_value = []
+        self.assertEqual(list(iter(mm)), [])
+
+        mm.reset_mock(return_value=True)
+        self.assertEqual(list(iter(mm)), [])
+
     def test_magic_methods_and_spec(self):
         class Iterable(object):
             def __iter__(self): pass
