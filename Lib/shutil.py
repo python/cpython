@@ -110,7 +110,7 @@ def _fastcopy_fcopyfile(fsrc, fdst, flags):
 def _fastcopy_sendfile(fsrc, fdst):
     """Copy data from one regular mmap-like fd to another by using
     high-performance sendfile(2) syscall.
-    This should work on Linux >= 2.6.33 and Solaris only.
+    This should work on Linux >= 2.6.33, Android and Solaris.
     """
     # Note: copyfileobj() is left alone in order to not introduce any
     # unexpected breakage. Possible risks by using zero-copy calls
@@ -265,7 +265,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
                             return dst
                         except _GiveupOnFastCopy:
                             pass
-                    # Linux / Solaris
+                    # Linux / Android / Solaris
                     elif _USE_CP_SENDFILE:
                         try:
                             _fastcopy_sendfile(fsrc, fdst)
