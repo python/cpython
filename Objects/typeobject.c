@@ -5342,7 +5342,6 @@ static int
 check_base_by_token(PyTypeObject *type, void *token) {
     // Chain the branches, which will be optimized exclusive here
     if (token == NULL) {
-        // This avoids being inlined thanks to varargs
         PyErr_Format(PyExc_SystemError,
                      "PyType_GetBaseByToken called with token=NULL");
         return -1;
