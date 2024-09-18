@@ -2471,9 +2471,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # ========================
     def _get_values(self, action, arg_strings):
         if not action.option_strings and action.nargs not in [PARSER, REMAINDER]:
-            is_multiple_args = (action.nargs in [ZERO_OR_MORE, ONE_OR_MORE] or
-                                 (isinstance(action.nargs, int) and action.nargs > 1))
-            if is_multiple_args and action.type is None:
+            if ((action.nargs in [ZERO_OR_MORE, ONE_OR_MORE] or
+                (isinstance(action.nargs, int) and action.nargs > 1)) and
+                action.type is None):
                 if arg_strings and arg_strings[0] == '--':
                     arg_strings = arg_strings[1:]
             else:
