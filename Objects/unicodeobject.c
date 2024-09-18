@@ -2694,11 +2694,6 @@ unicode_fromformat_write_wcstr(_PyUnicodeWriter *writer, const wchar_t *str,
 #define F_SIZE 3
 #define F_PTRDIFF 4
 #define F_INTMAX 5
-static const char * const formats[] = {"%d", "%ld", "%lld", "%zd", "%td", "%jd"};
-static const char * const formats_o[] = {"%o", "%lo", "%llo", "%zo", "%to", "%jo"};
-static const char * const formats_u[] = {"%u", "%lu", "%llu", "%zu", "%tu", "%ju"};
-static const char * const formats_x[] = {"%x", "%lx", "%llx", "%zx", "%tx", "%jx"};
-static const char * const formats_X[] = {"%X", "%lX", "%llX", "%zX", "%tX", "%jX"};
 
 static const char*
 unicode_fromformat_arg(_PyUnicodeWriter *writer,
@@ -2840,46 +2835,101 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
     case 'd': case 'i':
     case 'o': case 'u': case 'x': case 'X':
     {
-        /* used by sprintf */
-        char buffer[MAX_INTMAX_CHARS];
-        const char *fmt = NULL;
-        switch (*f) {
-            case 'o': fmt = formats_o[sizemod]; break;
-            case 'u': fmt = formats_u[sizemod]; break;
-            case 'x': fmt = formats_x[sizemod]; break;
-            case 'X': fmt = formats_X[sizemod]; break;
-            default: fmt = formats[sizemod]; break;
-        }
-        int issigned = (*f == 'd' || *f == 'i');
+        char buffer[MAX_INTMAX_CHARS];  // used by sprintf
         switch (sizemod) {
+/*[python input]
+            # Use generated code so that the `sprintf` format strings
+            # are compile-time literals, which avoids a warning and possibly
+            # allows optimizations.
+if 1:
+            indent = ' ' * 11
+            cases = [
+                ('F_LONG', 'l', 'long', 'unsigned long'),
+                ('F_LONGLONG', 'll', 'long long', 'unsigned long long'),
+                ('F_SIZE', 'z', 'Py_ssize_t', 'size_t'),
+                ('F_PTRDIFF', 't', 'ptrdiff_t', 'ptrdiff_t'),
+                ('F_INTMAX', 'j', 'intmax_t', 'uintmax_t'),
+                (None, '', 'int', 'unsigned int'),
+            ]
+            for (size, sizechar, stype, utype) in cases:
+                if size is None:
+                    print(indent, f'default:')
+                else:
+                    print(indent, f'case {size}:')
+                print(indent, f'    switch (*f) {{')
+                for c in 'ouxX':
+                    # signed
+                    print(
+                        indent,
+                        f"        case '{c}':",
+                        f'len = sprintf(buffer, "%{sizechar}{c}",',
+                            f'va_arg(*vargs, {utype}));',
+                        'break;')
+                # unsigned
+                print(
+                    indent,
+                    f"        default: ",
+                    f'len = sprintf(buffer, "%{sizechar}d",',
+                        f'va_arg(*vargs, {stype}));',
+                    'break;')
+                print(indent, f'    }}')
+                print(indent, f'    break;')
+[python start generated code]*/
             case F_LONG:
-                len = issigned ?
-                    sprintf(buffer, fmt, va_arg(*vargs, long)) :
-                    sprintf(buffer, fmt, va_arg(*vargs, unsigned long));
+                switch (*f) {
+                    case 'o': len = sprintf(buffer, "%lo", va_arg(*vargs, unsigned long)); break;
+                    case 'u': len = sprintf(buffer, "%lu", va_arg(*vargs, unsigned long)); break;
+                    case 'x': len = sprintf(buffer, "%lx", va_arg(*vargs, unsigned long)); break;
+                    case 'X': len = sprintf(buffer, "%lX", va_arg(*vargs, unsigned long)); break;
+                    default:  len = sprintf(buffer, "%ld", va_arg(*vargs, long)); break;
+                }
                 break;
             case F_LONGLONG:
-                len = issigned ?
-                    sprintf(buffer, fmt, va_arg(*vargs, long long)) :
-                    sprintf(buffer, fmt, va_arg(*vargs, unsigned long long));
+                switch (*f) {
+                    case 'o': len = sprintf(buffer, "%llo", va_arg(*vargs, unsigned long long)); break;
+                    case 'u': len = sprintf(buffer, "%llu", va_arg(*vargs, unsigned long long)); break;
+                    case 'x': len = sprintf(buffer, "%llx", va_arg(*vargs, unsigned long long)); break;
+                    case 'X': len = sprintf(buffer, "%llX", va_arg(*vargs, unsigned long long)); break;
+                    default:  len = sprintf(buffer, "%lld", va_arg(*vargs, long long)); break;
+                }
                 break;
             case F_SIZE:
-                len = issigned ?
-                    sprintf(buffer, fmt, va_arg(*vargs, Py_ssize_t)) :
-                    sprintf(buffer, fmt, va_arg(*vargs, size_t));
+                switch (*f) {
+                    case 'o': len = sprintf(buffer, "%zo", va_arg(*vargs, size_t)); break;
+                    case 'u': len = sprintf(buffer, "%zu", va_arg(*vargs, size_t)); break;
+                    case 'x': len = sprintf(buffer, "%zx", va_arg(*vargs, size_t)); break;
+                    case 'X': len = sprintf(buffer, "%zX", va_arg(*vargs, size_t)); break;
+                    default:  len = sprintf(buffer, "%zd", va_arg(*vargs, Py_ssize_t)); break;
+                }
                 break;
             case F_PTRDIFF:
-                len = sprintf(buffer, fmt, va_arg(*vargs, ptrdiff_t));
+                switch (*f) {
+                    case 'o': len = sprintf(buffer, "%to", va_arg(*vargs, ptrdiff_t)); break;
+                    case 'u': len = sprintf(buffer, "%tu", va_arg(*vargs, ptrdiff_t)); break;
+                    case 'x': len = sprintf(buffer, "%tx", va_arg(*vargs, ptrdiff_t)); break;
+                    case 'X': len = sprintf(buffer, "%tX", va_arg(*vargs, ptrdiff_t)); break;
+                    default:  len = sprintf(buffer, "%td", va_arg(*vargs, ptrdiff_t)); break;
+                }
                 break;
             case F_INTMAX:
-                len = issigned ?
-                    sprintf(buffer, fmt, va_arg(*vargs, intmax_t)) :
-                    sprintf(buffer, fmt, va_arg(*vargs, uintmax_t));
+                switch (*f) {
+                    case 'o': len = sprintf(buffer, "%jo", va_arg(*vargs, uintmax_t)); break;
+                    case 'u': len = sprintf(buffer, "%ju", va_arg(*vargs, uintmax_t)); break;
+                    case 'x': len = sprintf(buffer, "%jx", va_arg(*vargs, uintmax_t)); break;
+                    case 'X': len = sprintf(buffer, "%jX", va_arg(*vargs, uintmax_t)); break;
+                    default:  len = sprintf(buffer, "%jd", va_arg(*vargs, intmax_t)); break;
+                }
                 break;
             default:
-                len = issigned ?
-                    sprintf(buffer, fmt, va_arg(*vargs, int)) :
-                    sprintf(buffer, fmt, va_arg(*vargs, unsigned int));
+                switch (*f) {
+                    case 'o': len = sprintf(buffer, "%o", va_arg(*vargs, unsigned int)); break;
+                    case 'u': len = sprintf(buffer, "%u", va_arg(*vargs, unsigned int)); break;
+                    case 'x': len = sprintf(buffer, "%x", va_arg(*vargs, unsigned int)); break;
+                    case 'X': len = sprintf(buffer, "%X", va_arg(*vargs, unsigned int)); break;
+                    default:  len = sprintf(buffer, "%d", va_arg(*vargs, int)); break;
+                }
                 break;
+/*[python end generated code: output=e37b56d7b69e78f3 input=b77dfc89939506ed]*/
         }
         assert(len >= 0);
 
