@@ -516,8 +516,8 @@ class BasicTest(BaseTest):
             mock_symlink.side_effect = OSError()
             builder = venv.EnvBuilder(clear=True, symlinks=True)
             _, err = self.run_with_capture(builder.create, env_dir)
-            filepath_regex = r"'.+\/[^\/]+'"
-            self.assertRegex(err, rf"Unable to symlink {filepath_regex} to {filepath_regex}",)
+            filepath_regex = r"'[A-Z]:\\\\(?:[^\\\\]+\\\\)*[^\\\\]+'"
+            self.assertRegex(err, rf"Unable to symlink {filepath_regex} to {filepath_regex}")
 
     @requireVenvCreate
     def test_multiprocessing(self):
