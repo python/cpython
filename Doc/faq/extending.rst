@@ -50,7 +50,7 @@ to learn Python's C API.
 If you need to interface to some C or C++ library for which no Python extension
 currently exists, you can try wrapping the library's data types and functions
 with a tool such as `SWIG <https://www.swig.org>`_.  `SIP
-<https://riverbankcomputing.com/software/sip/intro>`__, `CXX
+<https://github.com/Python-SIP/sip>`__, `CXX
 <https://cxx.sourceforge.net/>`_ `Boost
 <https://www.boost.org/libs/python/doc/index.html>`_, or `Weave
 <https://github.com/scipy/weave>`_ are also

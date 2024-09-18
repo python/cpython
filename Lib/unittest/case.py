@@ -332,6 +332,23 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
             self._raiseFailure("{} not triggered".format(exc_name))
 
 
+class _AssertNotWarnsContext(_AssertWarnsContext):
+
+    def __exit__(self, exc_type, exc_value, tb):
+        self.warnings_manager.__exit__(exc_type, exc_value, tb)
+        if exc_type is not None:
+            # let unexpected exceptions pass through
+            return
+        try:
+            exc_name = self.expected.__name__
+        except AttributeError:
+            exc_name = str(self.expected)
+        for m in self.warnings:
+            w = m.message
+            if isinstance(w, self.expected):
+                self._raiseFailure(f"{exc_name} triggered")
+
+
 class _OrderedChainMap(collections.ChainMap):
     def __iter__(self):
         seen = set()
@@ -586,9 +603,18 @@ class TestCase(object):
         self.setUp()
 
     def _callTestMethod(self, method):
-        if method() is not None:
-            warnings.warn(f'It is deprecated to return a value that is not None from a '
-                          f'test case ({method})', DeprecationWarning, stacklevel=3)
+        result = method()
+        if result is not None:
+            import inspect
+            msg = (
+                f'It is deprecated to return a value that is not None '
+                f'from a test case ({method} returned {type(result).__name__!r})'
+            )
+            if inspect.iscoroutine(result):
+                msg += (
+                    '. Maybe you forgot to use IsolatedAsyncioTestCase as the base class?'
+                )
+            warnings.warn(msg, DeprecationWarning, stacklevel=3)
 
     def _callTearDown(self):
         self.tearDown()
@@ -606,6 +632,7 @@ class TestCase(object):
         else:
             stopTestRun = None
 
+        result.startTest(self)
         try:
             testMethod = getattr(self, self._testMethodName)
             if (getattr(self.__class__, "__unittest_skip__", False) or
@@ -615,9 +642,6 @@ class TestCase(object):
                             or getattr(testMethod, '__unittest_skip_why__', ''))
                 _addSkip(result, self, skip_why)
                 return result
-
-            # Increase the number of tests only if it hasn't been skipped
-            result.startTest(self)
 
             expecting_failure = (
                 getattr(self, "__unittest_expecting_failure__", False) or
@@ -812,6 +836,11 @@ class TestCase(object):
         """
         context = _AssertWarnsContext(expected_warning, self)
         return context.handle('assertWarns', args, kwargs)
+
+    def _assertNotWarns(self, expected_warning, *args, **kwargs):
+        """The opposite of assertWarns. Private due to low demand."""
+        context = _AssertNotWarnsContext(expected_warning, self)
+        return context.handle('_assertNotWarns', args, kwargs)
 
     def assertLogs(self, logger=None, level=None):
         """Fail unless a log message of level *level* or higher is emitted

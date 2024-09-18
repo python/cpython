@@ -185,6 +185,20 @@ class TestCause(unittest.TestCase):
         else:
             self.fail("No exception raised")
 
+    def test_class_cause_nonexception_result(self):
+        class ConstructsNone(BaseException):
+            @classmethod
+            def __new__(*args, **kwargs):
+                return None
+        try:
+            raise IndexError from ConstructsNone
+        except TypeError as e:
+            self.assertIn("should have returned an instance of BaseException", str(e))
+        except IndexError:
+            self.fail("Wrong kind of exception raised")
+        else:
+            self.fail("No exception raised")
+
     def test_instance_cause(self):
         cause = KeyError()
         try:

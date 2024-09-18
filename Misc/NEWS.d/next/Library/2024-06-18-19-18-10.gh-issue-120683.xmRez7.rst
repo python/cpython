@@ -1,0 +1,4 @@
+Fix an error in :class:`logging.LogRecord`, when the integer part of the
+timestamp is rounded up, while the millisecond calculation truncates,
+causing the log timestamp to be wrong by up to 999 ms (affected roughly 1 in
+8 million timestamps).

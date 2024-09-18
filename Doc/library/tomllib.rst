@@ -1,5 +1,5 @@
-:mod:`tomllib` --- Parse TOML files
-===================================
+:mod:`!tomllib` --- Parse TOML files
+====================================
 
 .. module:: tomllib
    :synopsis: Parse TOML files.
@@ -13,20 +13,20 @@
 
 --------------
 
-This module provides an interface for parsing TOML (Tom's Obvious Minimal
+This module provides an interface for parsing TOML 1.0.0 (Tom's Obvious Minimal
 Language, `https://toml.io <https://toml.io/en/>`_). This module does not
 support writing TOML.
 
 .. seealso::
 
-    The `Tomli-W package <https://pypi.org/project/tomli-w/>`__
+    The :pypi:`Tomli-W package <tomli-w>`
     is a TOML writer that can be used in conjunction with this module,
     providing a write API familiar to users of the standard library
     :mod:`marshal` and :mod:`pickle` modules.
 
 .. seealso::
 
-    The `TOML Kit package <https://pypi.org/project/tomlkit/>`__
+    The :pypi:`TOML Kit package <tomlkit>`
     is a style-preserving TOML library with both read and write capability.
     It is a recommended replacement for this module for editing already
     existing TOML files.
@@ -95,7 +95,7 @@ Conversion Table
 +------------------+--------------------------------------------------------------------------------------+
 | TOML             | Python                                                                               |
 +==================+======================================================================================+
-| table            | dict                                                                                 |
+| TOML document    | dict                                                                                 |
 +------------------+--------------------------------------------------------------------------------------+
 | string           | str                                                                                  |
 +------------------+--------------------------------------------------------------------------------------+
@@ -114,4 +114,10 @@ Conversion Table
 | local time       | datetime.time                                                                        |
 +------------------+--------------------------------------------------------------------------------------+
 | array            | list                                                                                 |
++------------------+--------------------------------------------------------------------------------------+
+| table            | dict                                                                                 |
++------------------+--------------------------------------------------------------------------------------+
+| inline table     | dict                                                                                 |
++------------------+--------------------------------------------------------------------------------------+
+| array of tables  | list of dicts                                                                        |
 +------------------+--------------------------------------------------------------------------------------+

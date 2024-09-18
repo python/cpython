@@ -121,11 +121,11 @@ _PyErr_GetTopmostException(PyThreadState *tstate)
     _PyErr_StackItem *exc_info = tstate->exc_info;
     assert(exc_info);
 
-    while ((exc_info->exc_value == NULL || exc_info->exc_value == Py_None) &&
-           exc_info->previous_item != NULL)
+    while (exc_info->exc_value == NULL && exc_info->previous_item != NULL)
     {
         exc_info = exc_info->previous_item;
     }
+    assert(!Py_IsNone(exc_info->exc_value));
     return exc_info;
 }
 
@@ -257,13 +257,14 @@ void
 _PyErr_SetKeyError(PyObject *arg)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *tup = PyTuple_Pack(1, arg);
-    if (!tup) {
+    PyObject *exc = PyObject_CallOneArg(PyExc_KeyError, arg);
+    if (!exc) {
         /* caller will expect error to be set anyway */
         return;
     }
-    _PyErr_SetObject(tstate, PyExc_KeyError, tup);
-    Py_DECREF(tup);
+
+    _PyErr_SetObject(tstate, (PyObject*)Py_TYPE(exc), exc);
+    Py_DECREF(exc);
 }
 
 void
@@ -592,7 +593,7 @@ PyErr_GetHandledException(void)
 void
 _PyErr_SetHandledException(PyThreadState *tstate, PyObject *exc)
 {
-    Py_XSETREF(tstate->exc_info->exc_value, Py_XNewRef(exc));
+    Py_XSETREF(tstate->exc_info->exc_value, Py_XNewRef(exc == Py_None ? NULL : exc));
 }
 
 void
@@ -632,8 +633,8 @@ _PyErr_StackItemToExcInfoTuple(_PyErr_StackItem *err_info)
     PyObject *exc_type = get_exc_type(exc_value);
     PyObject *exc_traceback = get_exc_traceback(exc_value);
 
-    return Py_BuildValue(
-        "(OOO)",
+    return PyTuple_Pack(
+        3,
         exc_type ? exc_type : Py_None,
         exc_value ? exc_value : Py_None,
         exc_traceback ? exc_traceback : Py_None);
@@ -1847,6 +1848,52 @@ PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
     }
     PyErr_SyntaxLocationObject(fileobj, lineno, col_offset);
     Py_XDECREF(fileobj);
+}
+
+/* Raises a SyntaxError.
+ * If something goes wrong, a different exception may be raised.
+ */
+void
+_PyErr_RaiseSyntaxError(PyObject *msg, PyObject *filename, int lineno, int col_offset,
+                        int end_lineno, int end_col_offset)
+{
+    PyObject *text = PyErr_ProgramTextObject(filename, lineno);
+    if (text == NULL) {
+        text = Py_NewRef(Py_None);
+    }
+    PyObject *args = Py_BuildValue("O(OiiOii)", msg, filename,
+                                   lineno, col_offset, text,
+                                   end_lineno, end_col_offset);
+    if (args == NULL) {
+        goto exit;
+    }
+    PyErr_SetObject(PyExc_SyntaxError, args);
+ exit:
+    Py_DECREF(text);
+    Py_XDECREF(args);
+}
+
+/* Emits a SyntaxWarning and returns 0 on success.
+   If a SyntaxWarning is raised as error, replaces it with a SyntaxError
+   and returns -1.
+*/
+int
+_PyErr_EmitSyntaxWarning(PyObject *msg, PyObject *filename, int lineno, int col_offset,
+                         int end_lineno, int end_col_offset)
+{
+    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg, filename,
+                                 lineno, NULL, NULL) < 0)
+    {
+        if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
+            /* Replace the SyntaxWarning exception with a SyntaxError
+               to get a more accurate error report */
+            PyErr_Clear();
+            _PyErr_RaiseSyntaxError(msg, filename, lineno, col_offset,
+                                    end_lineno, end_col_offset);
+        }
+        return -1;
+    }
+    return 0;
 }
 
 /* Attempt to load the line of text that the exception refers to.  If it

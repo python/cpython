@@ -1,8 +1,10 @@
 # Test the module type
+import importlib.machinery
 import unittest
 import weakref
 from test.support import gc_collect
 from test.support import import_helper
+from test.support import suppress_immortalization
 from test.support.script_helper import assert_python_ok
 
 import sys
@@ -29,7 +31,7 @@ class ModuleTests(unittest.TestCase):
             self.fail("__name__ = %s" % repr(s))
         except AttributeError:
             pass
-        self.assertEqual(foo.__doc__, ModuleType.__doc__)
+        self.assertEqual(foo.__doc__, ModuleType.__doc__ or '')
 
     def test_uninitialized_missing_getattr(self):
         # Issue 8297
@@ -102,6 +104,7 @@ class ModuleTests(unittest.TestCase):
         gc_collect()
         self.assertEqual(f().__dict__["bar"], 4)
 
+    @suppress_immortalization()
     def test_clear_dict_in_ref_cycle(self):
         destroyed = []
         m = ModuleType("foo")
@@ -117,6 +120,7 @@ a = A(destroyed)"""
         gc_collect()
         self.assertEqual(destroyed, [1])
 
+    @suppress_immortalization()
     def test_weakref(self):
         m = ModuleType("foo")
         wr = weakref.ref(m)
@@ -264,6 +268,35 @@ a = A(destroyed)"""
         self.assertEqual(r[-len(ends_with):], ends_with,
                          '{!r} does not end with {!r}'.format(r, ends_with))
 
+    def test_module_repr_with_namespace_package(self):
+        m = ModuleType('foo')
+        loader = importlib.machinery.NamespaceLoader('foo', ['bar'], 'baz')
+        spec = importlib.machinery.ModuleSpec('foo', loader)
+        m.__loader__ = loader
+        m.__spec__ = spec
+        self.assertEqual(repr(m), "<module 'foo' (namespace) from ['bar']>")
+
+    def test_module_repr_with_namespace_package_and_custom_loader(self):
+        m = ModuleType('foo')
+        loader = BareLoader()
+        spec = importlib.machinery.ModuleSpec('foo', loader)
+        m.__loader__ = loader
+        m.__spec__ = spec
+        expected_repr_pattern = r"<module 'foo' \(<.*\.BareLoader object at .+>\)>"
+        self.assertRegex(repr(m), expected_repr_pattern)
+        self.assertNotIn('from', repr(m))
+
+    def test_module_repr_with_fake_namespace_package(self):
+        m = ModuleType('foo')
+        loader = BareLoader()
+        loader._path = ['spam']
+        spec = importlib.machinery.ModuleSpec('foo', loader)
+        m.__loader__ = loader
+        m.__spec__ = spec
+        expected_repr_pattern = r"<module 'foo' \(<.*\.BareLoader object at .+>\)>"
+        self.assertRegex(repr(m), expected_repr_pattern)
+        self.assertNotIn('from', repr(m))
+
     def test_module_finalization_at_shutdown(self):
         # Module globals and builtins should still be available during shutdown
         rc, out, err = assert_python_ok("-c", "from test.test_module import final_a")
@@ -327,6 +360,8 @@ a = A(destroyed)"""
         ann_module4 = import_helper.import_fresh_module(
             'test.typinganndata.ann_module4',
         )
+        self.assertFalse("__annotations__" in ann_module4.__dict__)
+        self.assertEqual(ann_module4.__annotations__, {"a": int, "b": str})
         self.assertTrue("__annotations__" in ann_module4.__dict__)
         del ann_module4.__annotations__
         self.assertFalse("__annotations__" in ann_module4.__dict__)
