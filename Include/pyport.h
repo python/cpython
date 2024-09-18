@@ -288,12 +288,16 @@ extern "C" {
 #define _Py_COMP_DIAG_PUSH _Pragma("clang diagnostic push")
 #define _Py_COMP_DIAG_IGNORE_DEPR_DECLS \
     _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"")
+#define _Py_COMP_DIAG_IGNORE_FORMAT_NONLITERAL \
+    _Pragma("clang diagnostic ignored \"-Wformat-nonliteral\"")
 #define _Py_COMP_DIAG_POP _Pragma("clang diagnostic pop")
 #elif defined(__GNUC__) \
     && ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 6))
 #define _Py_COMP_DIAG_PUSH _Pragma("GCC diagnostic push")
 #define _Py_COMP_DIAG_IGNORE_DEPR_DECLS \
     _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+#define _Py_COMP_DIAG_IGNORE_FORMAT_NONLITERAL \
+    _Pragma("GCC diagnostic ignored \"-Wformat-nonliteral\"")
 #define _Py_COMP_DIAG_POP _Pragma("GCC diagnostic pop")
 #elif defined(_MSC_VER)
 #define _Py_COMP_DIAG_PUSH __pragma(warning(push))
@@ -302,6 +306,7 @@ extern "C" {
 #else
 #define _Py_COMP_DIAG_PUSH
 #define _Py_COMP_DIAG_IGNORE_DEPR_DECLS
+#define _Py_COMP_DIAG_IGNORE_FORMAT_NONLITERAL
 #define _Py_COMP_DIAG_POP
 #endif
 
