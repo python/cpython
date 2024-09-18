@@ -14068,6 +14068,12 @@ done
 
 fi
 
+if test "$ac_sys_system" = "NetBSD"; then
+  have_uuid=missing
+  printf "%s\n" "#define HAVE_UUID_H 0" >>confdefs.h
+
+fi
+
 if test "x$have_uuid" = xmissing
 then :
   have_uuid=no

@@ -3802,6 +3802,11 @@ AS_VAR_IF([have_uuid], [missing], [
   ])
 ])
 
+if test "$ac_sys_system" = "NetBSD"; then
+  have_uuid=missing
+  AC_DEFINE([HAVE_UUID_H], [0])
+fi
+
 AS_VAR_IF([have_uuid], [missing], [have_uuid=no])
 
 # 'Real Time' functions on Solaris
