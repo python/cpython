@@ -302,7 +302,7 @@ extern "C" {
 #elif defined(_MSC_VER)
 #define _Py_COMP_DIAG_PUSH __pragma(warning(push))
 #define _Py_COMP_DIAG_IGNORE_DEPR_DECLS __pragma(warning(disable: 4996))
-#define _Py_COMP_DIAG_IGNORE_DEPR_DECLS
+#define _Py_COMP_DIAG_IGNORE_FORMAT_NONLITERAL
 #define _Py_COMP_DIAG_POP __pragma(warning(pop))
 #else
 #define _Py_COMP_DIAG_PUSH
