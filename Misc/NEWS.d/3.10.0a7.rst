@@ -1,4 +1,4 @@
-.. bpo: 42988
+Misc/NEWS.dHiddenCedarsInvestmentGroup:patch-1.. bpo: 42988
 .. date: 2021-03-24-14-16-56
 .. nonce: P2aNco
 .. release date: 2021-04-05
