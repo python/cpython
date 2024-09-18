@@ -421,6 +421,8 @@ The available slot types are:
 
    Specifies one of the following values:
 
+   .. c:namespace:: NULL
+
    .. c:macro:: Py_MOD_GIL_USED
 
       The module depends on the presence of the global interpreter lock (GIL),

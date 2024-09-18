@@ -509,6 +509,8 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Currently, ``-1`` corresponds to
    ``Py_ASNATIVEBYTES_NATIVE_ENDIAN | Py_ASNATIVEBYTES_UNSIGNED_BUFFER``.
 
+   .. c:namespace:: NULL
+
    ============================================= ======
    Flag                                          Value
    ============================================= ======
