@@ -1551,13 +1551,15 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
         annotations[name] = tp
 
     def annotate_method(format):
-        if format != 1:
-            raise NotImplementedError
-        from typing import Any
-        return {
+        from typing import Any, _convert_to_source
+        ann_dict = {
             ann: Any if t is any_marker else t
             for ann, t in annotations.items()
         }
+        if format == 1 or format == 2:
+            return ann_dict
+        else:
+            return _convert_to_source(ann_dict)
 
     # Update 'ns' with the user-supplied namespace plus our calculated values.
     def exec_body_callback(ns):

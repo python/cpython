@@ -4159,16 +4159,34 @@ class TestMakeDataclass(unittest.TestCase):
         C = make_dataclass('Point', ['x', 'y', 'z'])
         c = C(1, 2, 3)
         self.assertEqual(vars(c), {'x': 1, 'y': 2, 'z': 3})
-        self.assertEqual(C.__annotations__, {'x': 'typing.Any',
-                                             'y': 'typing.Any',
-                                             'z': 'typing.Any'})
+        self.assertEqual(C.__annotations__, {'x': typing.Any,
+                                             'y': typing.Any,
+                                             'z': typing.Any})
 
         C = make_dataclass('Point', ['x', ('y', int), 'z'])
         c = C(1, 2, 3)
         self.assertEqual(vars(c), {'x': 1, 'y': 2, 'z': 3})
-        self.assertEqual(C.__annotations__, {'x': 'typing.Any',
+        self.assertEqual(C.__annotations__, {'x': typing.Any,
                                              'y': int,
-                                             'z': 'typing.Any'})
+                                             'z': typing.Any})
+
+    def test_no_types_get_annotations(self):
+        from annotationlib import Format, get_annotations
+
+        C = make_dataclass('C', ['x', ('y', int), 'z'])
+
+        self.assertEqual(
+            get_annotations(C, format=Format.VALUE),
+            {'x': typing.Any, 'y': int, 'z': typing.Any},
+        )
+        self.assertEqual(
+            get_annotations(C, format=Format.FORWARDREF),
+            {'x': typing.Any, 'y': int, 'z': typing.Any},
+        )
+        self.assertEqual(
+            get_annotations(C, format=Format.SOURCE),
+            {'x': 'typing.Any', 'y': 'int', 'z': 'typing.Any'},
+        )
 
     def test_module_attr(self):
         self.assertEqual(ByMakeDataClass.__module__, __name__)
