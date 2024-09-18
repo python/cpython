@@ -33,7 +33,11 @@ typedef struct {
 
     // Linked list of handles to all non-daemon threads created by the
     // threading module. We wait for these to finish at shutdown.
-    struct llist_node shutdown_handles;
+    struct llist_node non_daemon_handles;
+
+    // Linked list of handles to daemon threads created by the threading
+    // module. We set the events in these handles as done at shutdown.
+    struct llist_node daemon_handles;
 } thread_module_state;
 
 static inline thread_module_state*
@@ -78,7 +82,8 @@ typedef enum {
 typedef struct {
     struct llist_node node;  // linked list node (see _pythread_runtime_state)
 
-    // linked list node (see thread_module_state)
+    // belongs to either `non_daemon_handles` or `daemon_handles` (see
+    // thread_module_state)
     struct llist_node shutdown_node;
 
     // The `ident`, `os_handle`, `has_os_handle`, and `state` fields are
@@ -143,10 +148,11 @@ ThreadHandle_get_os_handle(ThreadHandle *handle, PyThread_handle_t *os_handle)
 }
 
 static void
-add_to_shutdown_handles(thread_module_state *state, ThreadHandle *handle)
+add_to_shutdown_handles(struct llist_node *shutdown_handles,
+                        ThreadHandle *handle)
 {
     HEAD_LOCK(&_PyRuntime);
-    llist_insert_tail(&state->shutdown_handles, &handle->shutdown_node);
+    llist_insert_tail(shutdown_handles, &handle->shutdown_node);
     HEAD_UNLOCK(&_PyRuntime);
 }
 
@@ -155,7 +161,10 @@ clear_shutdown_handles(thread_module_state *state)
 {
     HEAD_LOCK(&_PyRuntime);
     struct llist_node *node;
-    llist_for_each_safe(node, &state->shutdown_handles) {
+    llist_for_each_safe(node, &state->daemon_handles) {
+        llist_remove(node);
+    }
+    llist_for_each_safe(node, &state->non_daemon_handles) {
         llist_remove(node);
     }
     HEAD_UNLOCK(&_PyRuntime);
@@ -378,7 +387,7 @@ force_done(ThreadHandle *handle)
 
 static int
 ThreadHandle_start(ThreadHandle *self, PyObject *func, PyObject *args,
-                   PyObject *kwargs)
+                   PyObject *kwargs, struct llist_node *shutdown_handles)
 {
     // Mark the handle as starting to prevent any other threads from doing so
     PyMutex_Lock(&self->mutex);
@@ -389,6 +398,11 @@ ThreadHandle_start(ThreadHandle *self, PyObject *func, PyObject *args,
     }
     self->state = THREAD_HANDLE_STARTING;
     PyMutex_Unlock(&self->mutex);
+
+    // Add the handle before starting the thread to avoid adding a handle
+    // to a thread that has already finished (i.e. if the thread finishes
+    // before the call to `ThreadHandle_start()` below returns).
+    add_to_shutdown_handles(shutdown_handles, self);
 
     // Do all the heavy lifting outside of the mutex. All other operations on
     // the handle should fail since the handle is in the starting state.
@@ -441,6 +455,7 @@ ThreadHandle_start(ThreadHandle *self, PyObject *func, PyObject *args,
     return 0;
 
 start_failed:
+    remove_from_shutdown_handles(self);
     _PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)force_done, self);
     return -1;
 }
@@ -1872,17 +1887,12 @@ do_start_new_thread(thread_module_state *state, PyObject *func, PyObject *args,
         return -1;
     }
 
-    if (!daemon) {
-        // Add the handle before starting the thread to avoid adding a handle
-        // to a thread that has already finished (i.e. if the thread finishes
-        // before the call to `ThreadHandle_start()` below returns).
-        add_to_shutdown_handles(state, handle);
+    struct llist_node *shutdown_handles = &state->non_daemon_handles;
+    if (daemon) {
+        shutdown_handles = &state->daemon_handles;
     }
 
-    if (ThreadHandle_start(handle, func, args, kwargs) < 0) {
-        if (!daemon) {
-            remove_from_shutdown_handles(handle);
-        }
+    if (ThreadHandle_start(handle, func, args, kwargs, shutdown_handles) < 0) {
         return -1;
     }
 
@@ -2372,7 +2382,7 @@ thread_shutdown(PyObject *self, PyObject *args)
         // Find a thread that's not yet finished.
         HEAD_LOCK(&_PyRuntime);
         struct llist_node *node;
-        llist_for_each_safe(node, &state->shutdown_handles) {
+        llist_for_each_safe(node, &state->non_daemon_handles) {
             ThreadHandle *cur = llist_data(node, ThreadHandle, shutdown_node);
             if (cur->ident != ident) {
                 ThreadHandle_incref(cur);
@@ -2406,6 +2416,39 @@ PyDoc_STRVAR(shutdown_doc,
 --\n\
 \n\
 Wait for all non-daemon threads (other than the calling thread) to stop.");
+
+static PyObject *
+thread__daemon_threads_exited(PyObject *self, PyObject *args)
+{
+    thread_module_state *state = get_thread_state(self);
+
+    for (;;) {
+        HEAD_LOCK(&_PyRuntime);
+        if (llist_empty(&state->daemon_handles)) {
+            HEAD_UNLOCK(&_PyRuntime);
+            break;
+        }
+        struct llist_node *node = state->daemon_handles.next;
+        ThreadHandle *handle = llist_data(node, ThreadHandle, shutdown_node);
+        ThreadHandle_incref(handle);
+        llist_remove(node);
+        HEAD_UNLOCK(&_PyRuntime);
+        // gh-123940: Mark daemon threads as done so that they can be joined
+        // from finalizers.
+        if (ThreadHandle_set_done(handle) < 0) {
+            PyErr_WriteUnraisable(NULL);
+        }
+        ThreadHandle_decref(handle);
+    }
+
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(_daemon_threads_exited_doc,
+"_daemon_threads_exited($module, /)\n\
+--\n\
+\n\
+Mark that daemon threads have exited.");
 
 static PyObject *
 thread__make_thread_handle(PyObject *module, PyObject *identobj)
@@ -2486,6 +2529,8 @@ static PyMethodDef thread_methods[] = {
      METH_NOARGS, thread__is_main_interpreter_doc},
     {"_shutdown",               thread_shutdown,
      METH_NOARGS, shutdown_doc},
+    {"_daemon_threads_exited", thread__daemon_threads_exited,
+     METH_NOARGS, _daemon_threads_exited_doc},
     {"_make_thread_handle", thread__make_thread_handle,
      METH_O, thread__make_thread_handle_doc},
     {"_get_main_thread_ident", thread__get_main_thread_ident,
@@ -2579,7 +2624,8 @@ thread_module_exec(PyObject *module)
         return -1;
     }
 
-    llist_init(&state->shutdown_handles);
+    llist_init(&state->daemon_handles);
+    llist_init(&state->non_daemon_handles);
 
     return 0;
 }

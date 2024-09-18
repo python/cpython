@@ -1171,7 +1171,6 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(out.strip(), b"OK")
         self.assertIn(b"can't create new thread at interpreter shutdown", err)
 
-    @unittest.skipIf(support.Py_GIL_DISABLED, "gh-124149: daemon threads don't force exit")
     def test_join_force_terminated_daemon_thread_in_finalization(self):
         # gh-123940: Py_Finalize() forces all daemon threads to exit
         # immediately (without unwinding the stack) upon acquiring the

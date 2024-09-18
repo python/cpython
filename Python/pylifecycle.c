@@ -74,7 +74,8 @@ static PyStatus init_sys_streams(PyThreadState *tstate);
 #ifdef __ANDROID__
 static PyStatus init_android_streams(PyThreadState *tstate);
 #endif
-static void wait_for_thread_shutdown(PyThreadState *tstate);
+static PyObject *wait_for_thread_shutdown(PyThreadState *tstate);
+static void daemon_threads_exited(PyObject *threading_module);
 static void finalize_subinterpreters(void);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 
@@ -1985,7 +1986,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
     tstate->interp->finalizing = 1;
 
     // Wrap up existing "threading"-module-created, non-daemon threads.
-    wait_for_thread_shutdown(tstate);
+    PyObject *threading_module = wait_for_thread_shutdown(tstate);
 
     // Make any remaining pending calls.
     _Py_FinishPendingCalls(tstate);
@@ -2040,6 +2041,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
        before we call destructors. */
     PyThreadState *list = _PyThreadState_RemoveExcept(tstate);
     _PyEval_StartTheWorldAll(runtime);
+    daemon_threads_exited(threading_module);
     _PyThreadState_DeleteList(list);
 
     /* At this point no Python code should be running at all.
@@ -2388,7 +2390,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     interp->finalizing = 1;
 
     // Wrap up existing "threading"-module-created, non-daemon threads.
-    wait_for_thread_shutdown(tstate);
+    PyObject *threading_module = wait_for_thread_shutdown(tstate);
 
     // Make any remaining pending calls.
     _Py_FinishPendingCalls(tstate);
@@ -2403,6 +2405,7 @@ Py_EndInterpreter(PyThreadState *tstate)
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
     _PyInterpreterState_SetFinalizing(interp, tstate);
 
+    daemon_threads_exited(threading_module);
     // XXX Call something like _PyImport_Disable() here?
 
     _PyImport_FiniExternal(tstate->interp);
@@ -3328,7 +3331,7 @@ Py_ExitStatusException(PyStatus status)
    the threading module was imported in the first place.
    The shutdown routine will wait until all non-daemon
    "threading" threads have completed. */
-static void
+static PyObject *
 wait_for_thread_shutdown(PyThreadState *tstate)
 {
     PyObject *result;
@@ -3338,7 +3341,7 @@ wait_for_thread_shutdown(PyThreadState *tstate)
             PyErr_FormatUnraisable("Exception ignored on threading shutdown");
         }
         /* else: threading not imported */
-        return;
+        return NULL;
     }
     result = PyObject_CallMethodNoArgs(threading, &_Py_ID(_shutdown));
     if (result == NULL) {
@@ -3347,7 +3350,23 @@ wait_for_thread_shutdown(PyThreadState *tstate)
     else {
         Py_DECREF(result);
     }
-    Py_DECREF(threading);
+    return threading;
+}
+
+static void
+daemon_threads_exited(PyObject *threading_module)
+{
+    if (threading_module == NULL) {
+        return;
+    }
+    PyObject *result = PyObject_CallMethodNoArgs(
+        threading_module, &_Py_ID(_daemon_threads_exited));
+    if (result == NULL) {
+        PyErr_FormatUnraisable(
+            "Exception ignored while marking daemon threads exited");
+    }
+    Py_XDECREF(result);
+    Py_DECREF(threading_module);
 }
 
 int Py_AtExit(void (*func)(void))
