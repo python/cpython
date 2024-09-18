@@ -230,7 +230,7 @@ pylongwriter_create(PyObject *module, PyObject *args)
     }
     Py_ssize_t ndigits = PyList_GET_SIZE(list);
 
-    digit *digits = PyMem_Malloc(ndigits * sizeof(digit));
+    digit *digits = PyMem_Malloc((size_t)ndigits * sizeof(digit));
     if (digits == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -258,7 +258,7 @@ pylongwriter_create(PyObject *module, PyObject *args)
         goto error;
     }
     assert(PyLong_GetNativeLayout()->digit_size == sizeof(digit));
-    memcpy(writer_digits, digits, ndigits * sizeof(digit));
+    memcpy(writer_digits, digits, (size_t)ndigits * sizeof(digit));
     PyObject *res = PyLongWriter_Finish(writer);
     PyMem_Free(digits);
 
