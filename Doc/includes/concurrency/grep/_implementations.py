@@ -1150,35 +1150,66 @@ class GrepWithCFMultiprocessingAlt(CFGrep):
 # registered implementations
 
 IMPLEMENTATIONS = {
-    'sequential': search_sequential,
-    'threads': search_threads,
-    'threads-common': GrepWithThreads,
-    'interpreters': GrepWithInterpreters,
-    'interpreters-common': GrepWithInterpreters,
-    'asyncio': GrepWithAsyncio,
-    'multiprocessing': GrepWithMultiprocessing,
-    'multiprocessing-common': GrepWithMultiprocessing,
+    'sequential': {
+        'basic': search_sequential,
+    },
+    'threads': {
+        'basic': search_threads_basic,
+        'class': GrepWithThreads,
+    },
+    'interpreters': {
+        'basic': search_interpreters_basic,
+        'class': GrepWithInterpreters,
+    },
+    'asyncio': {
+        'basic': search_asyncio_basic,
+        'class': GrepWithAsyncio,
+    },
+    'multiprocessing': {
+        'basic': search_multiprocessing_basic,
+        'class': GrepWithMultiprocessing,
+    },
 }
 CF_IMPLEMENTATIONS = {
-#    'threads': GrepWithCFThreads,
-    'threads': search_cf_threads,
-    'interpreters': GrepWithCFInterpreters,
-    'multiprocessing': GrepWithCFMultiprocessing,
-}
-CF_IMPLEMENTATIONS_ALT = {
-    'threads': GrepWithCFThreadsAlt,
-    'interpreters': GrepWithCFInterpretersAlt,
-    'multiprocessing': GrepWithCFMultiprocessingAlt,
+    'threads': {
+        'basic': search_cf_threads_basic,
+        'class': GrepWithCFThreads,
+        'alt': GrepWithCFThreadsAlt,
+    },
+    'interpreters': {
+        'basic': search_cf_interpreters_basic,
+        'class': GrepWithCFInterpreters,
+        'alt': GrepWithCFInterpretersAlt,
+    },
+    'multiprocessing': {
+        'basic': search_cf_multiprocessing_basic,
+        'class': GrepWithCFMultiprocessing,
+        'alt': GrepWithCFMultiprocessingAlt,
+    },
 }
 
 
-def impl_from_name(impl, cf=False):
-    if cf == 'alt':
-        return CF_IMPLEMENTATIONS_ALT[impl]
-    elif cf:
-        return CF_IMPLEMENTATIONS[impl]
+def impl_from_name(name, kind=None, cf=False):
+    if cf is False or cf is None:
+        registry = IMPLEMENTATIONS
     else:
-        return IMPLEMENTATIONS[impl]
+        if cf is not True:
+            kind = cf
+        registry = CF_IMPLEMENTATIONS
+    if not kind:
+        name, _, kind = name.partition(':')
+    elif ':' in name:
+        raise ValueError(f'got kind arg and kind in name {name!r}')
+    try:
+        impls = registry[name]
+    except KeyError:
+        if cf and name in IMPLEMENTATIONS:
+            raise ValueError(f'impl {name!r} not supported by concurrent.futures')
+        raise ValueError(f'unsupported impl name {name!r}')
+    try:
+        return impls[kind or 'basic']
+    except KeyError:
+        raise ValueError(f'unsupported impl kind {kind!r} for name {name!r}')
 
 
 class ImplWrapper:
@@ -1194,10 +1225,11 @@ class ImplWrapper:
         return self._impl(filenames, regex, opts)
 
 
-def resolve_impl(impl, cf=None):
+def resolve_impl(impl, kind=None, cf=None):
     if isinstance(impl, str):
-        impl = impl_from_name(impl, cf)
+        impl = impl_from_name(impl, kind, cf)
     else:
+        assert not kind, kind
         assert not cf, cf
         if impl is None:
             impl = search_sequential
@@ -1217,10 +1249,10 @@ def resolve_impl(impl, cf=None):
 
 
 # [start-do-search]
-def resolve_search(impl, cf=False):
+def resolve_search(impl, kind=None, cf=None):
     # "impl" is a callable that performs a search for
     # a set of files.  That might be a function or not.
-    impl = resolve_impl(impl, cf)
+    impl = resolve_impl(impl, kind, cf)
     assert hasattr(type(impl), '__enter__'), impl
 
     @contextlib.contextmanager

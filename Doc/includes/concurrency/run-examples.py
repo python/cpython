@@ -45,7 +45,7 @@ class WorkloadExamples(Examples):
 class GrepExamples(WorkloadExamples):
 
     @staticmethod
-    def app(kind, cf=False):
+    def app(name, kind='basic', cf=False):
         import shlex
         from grep import Options, resolve_impl, grep
         from grep.__main__ import render_matches
@@ -61,11 +61,11 @@ class GrepExamples(WorkloadExamples):
             #quiet = True,
             #hideerrors = True,
         )
-        opts = Options(recursive=True, filesonly='match')
-        impl = resolve_impl(kind, cf)
+        #opts = Options(recursive=True, filesonly='match')
+        impl = resolve_impl(name, kind, cf)
         pat = 'help'
-        filenames = '.'
-        #filenames = ['make.bat', 'Makefile']
+        #filenames = '.'
+        filenames = ['make.bat', 'Makefile']
         print(f'# grep {opts} {shlex.quote(pat)} {shlex.join(filenames)}')
         print()
         matches = grep(pat, opts, *filenames, impl=impl)
@@ -81,28 +81,56 @@ class GrepExamples(WorkloadExamples):
         GrepExamples.app('threads')
 
     @example
+    def run_using_threads_class():
+        GrepExamples.app('threads', 'class')
+
+    @example
     def run_using_cf_threads():
         GrepExamples.app('threads', cf=True)
+
+    @example
+    def run_using_cf_threads_class():
+        GrepExamples.app('threads', 'class', cf=True)
 
     @example
     def run_using_subinterpreters():
         GrepExamples.app('interpreters')
 
     @example
+    def run_using_subinterpreters_class():
+        GrepExamples.app('interpreters', 'class')
+
+    @example
     def run_using_cf_subinterpreters():
         GrepExamples.app('interpreters', cf=True)
+
+    @example
+    def run_using_cf_subinterpreters_class():
+        GrepExamples.app('interpreters', 'class', cf=True)
 
     @example
     def run_using_async():
         GrepExamples.app('asyncio')
 
     @example
+    def run_using_async_class():
+        GrepExamples.app('asyncio', 'class')
+
+    @example
     def run_using_multiprocessing():
         GrepExamples.app('multiprocessing')
 
     @example
+    def run_using_multiprocessing_class():
+        GrepExamples.app('multiprocessing', 'class')
+
+    @example
     def run_using_cf_multiprocessing():
         GrepExamples.app('multiprocessing', cf=True)
+
+    @example
+    def run_using_cf_multiprocessing_class():
+        GrepExamples.app('multiprocessing', 'class', cf=True)
 
 
 #######################################

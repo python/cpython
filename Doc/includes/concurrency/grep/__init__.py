@@ -20,9 +20,9 @@ def grep(regex, opts, *filenames, impl=None):
 # [end-high-level]
 
 
-def resolve_impl(impl, cf=None):
+def resolve_impl(impl, kind=None, cf=None):
     from ._implementations import resolve_impl
-    return resolve_impl(impl, cf)
+    return resolve_impl(impl, kind, cf)
 
 
 # [start-search-lines]

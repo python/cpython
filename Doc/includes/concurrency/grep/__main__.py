@@ -2,9 +2,7 @@ import argparse
 import sys
 
 from . import Options, grep
-from ._implementations import (
-    IMPLEMENTATIONS, CF_IMPLEMENTATIONS, resolve_impl,
-)
+from ._implementations import IMPLEMENTATIONS, impl_from_name, resolve_impl
 
 
 def parse_args(argv=sys.argv[1:], prog=sys.argv[0]):
@@ -20,7 +18,7 @@ def parse_args(argv=sys.argv[1:], prog=sys.argv[0]):
 
     concurrencyopts = parser.add_argument_group(title='concurrency')
     concurrencyopts.add_argument('--concurrency', dest='impl',
-                                 choices=tuple(IMPLEMENTATIONS))
+                                 metavar=f'{{{",".join(sorted(IMPLEMENTATIONS))}}}')
     parser.set_defaults(impl='sequential')
     concurrencyopts.add_argument('--cf', '--concurrent-futures', dest='cf',
                                  action='store_const', const=True)
@@ -45,12 +43,12 @@ def parse_args(argv=sys.argv[1:], prog=sys.argv[0]):
     files = ns.pop('files')
     assert not ns, ns
 
-    if impl not in IMPLEMENTATIONS:
-        raise NotImplementedError(impl)
-    if cf and impl not in CF_IMPLEMENTATIONS:
-        parser.error(f'{impl} does not support --cf')
+    try:
+        impl = impl_from_name(impl, cf=cf)
+    except ValueError as exc:
+        parser.error(str(exc))
 
-    return impl, cf, opts, pat, files
+    return impl, opts, pat, files
 
 
 def render_matches(matches, opts):
@@ -118,8 +116,8 @@ def render_matches(matches, opts):
                 yield f'{filename}: {line}'
 
 
-def main(opts, pat, filenames, impl='sequential', cf=False):
-    impl = resolve_impl(impl, cf)
+def main(opts, pat, filenames, impl='sequential', kind=None, cf=None):
+    impl = resolve_impl(impl, kind, cf)
 
     # needed for step 5:
     matched = False
@@ -144,6 +142,6 @@ def main(opts, pat, filenames, impl='sequential', cf=False):
 
 
 if __name__ == '__main__':
-    impl, cf, opts, pat, files = parse_args()
-    rc = main(opts, pat, files, impl, cf)
+    impl, opts, pat, files = parse_args(prog='grep')
+    rc = main(opts, pat, files, impl)
     sys.exit(rc)
