@@ -6798,14 +6798,18 @@ PyLong_Export(PyObject *obj, PyLongExport *export_long)
         return -1;
     }
 
-    int64_t value;
-    int flags = Py_ASNATIVEBYTES_NATIVE_ENDIAN;
-    Py_ssize_t bytes = PyLong_AsNativeBytes(obj, &value, sizeof(value), flags);
-    if (bytes < 0) {
-        return -1;
-    }
+    int overflow;
+#if SIZEOF_LONG == 8
+    long value = PyLong_AsLongAndOverflow(obj, &overflow);
+#elif SIZEOF_LONG_LONG == 8
+    long long value = PyLong_AsLongLongAndOverflow(obj, &overflow);
+#else
+#   error "unable to convert a long to int64_t"
+#endif
+    // the function cannot fail since obj is a PyLongObject
+    assert(!(value == -1 && PyErr_Occurred()));
 
-    if ((size_t)bytes <= sizeof(value)) {
+    if (!overflow) {
         export_long->value = value;
         export_long->negative = 0;
         export_long->ndigits = 0;
