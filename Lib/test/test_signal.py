@@ -1325,15 +1325,18 @@ class StressTest(unittest.TestCase):
         def handler(signum, frame):
             sigs.append(signum)
 
-        self.setsig(signal.SIGUSR1, handler)
+        # On Android, SIGUSR1 is unreliable when used in close proximity to
+        # another signal – see Android/testbed/app/src/main/python/main.py.
+        # So we use a different signal.
+        self.setsig(signal.SIGUSR2, handler)
         self.setsig(signal.SIGALRM, handler)  # for ITIMER_REAL
 
         expected_sigs = 0
         while expected_sigs < N:
             # Hopefully the SIGALRM will be received somewhere during
-            # initial processing of SIGUSR1.
+            # initial processing of SIGUSR2.
             signal.setitimer(signal.ITIMER_REAL, 1e-6 + random.random() * 1e-5)
-            os.kill(os.getpid(), signal.SIGUSR1)
+            os.kill(os.getpid(), signal.SIGUSR2)
 
             expected_sigs += 2
             # Wait for handlers to run to avoid signal coalescing
@@ -1345,6 +1348,7 @@ class StressTest(unittest.TestCase):
         # Python handler
         self.assertEqual(len(sigs), N, "Some signals were lost")
 
+    @support.requires_gil_enabled("gh-121065: test is flaky on free-threaded build")
     @unittest.skipIf(is_apple, "crashes due to system bug (FB13453490)")
     @unittest.skipUnless(hasattr(signal, "SIGUSR1"),
                          "test needs SIGUSR1")

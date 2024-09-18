@@ -1,3 +1,5 @@
+.. _enum-howto:
+
 ==========
 Enum HOWTO
 ==========
@@ -7,7 +9,7 @@ Enum HOWTO
 .. currentmodule:: enum
 
 An :class:`Enum` is a set of symbolic names bound to unique values.  They are
-similar to global variables, but they offer a more useful :func:`repr()`,
+similar to global variables, but they offer a more useful :func:`repr`,
 grouping, type-safety, and a few other features.
 
 They are most useful when you have a variable that can take one of a limited
@@ -165,7 +167,7 @@ And a function to display the chores for a given day::
     answer SO questions
 
 In cases where the actual values of the members do not matter, you can save
-yourself some work and use :func:`auto()` for the values::
+yourself some work and use :func:`auto` for the values::
 
     >>> from enum import auto
     >>> class Weekday(Flag):
@@ -1149,6 +1151,14 @@ the following are true:
 
     >>> (Color.RED | Color.GREEN).name
     'RED|GREEN'
+
+    >>> class Perm(IntFlag):
+    ...     R = 4
+    ...     W = 2
+    ...     X = 1
+    ...
+    >>> (Perm.R & Perm.W).name is None  # effectively Perm(0)
+    True
 
 - multi-bit flags, aka aliases, can be returned from operations::
 

@@ -137,6 +137,7 @@ static PyObject *intern_one_constant(PyObject *op);
 static int
 intern_strings(PyObject *tuple)
 {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     Py_ssize_t i;
 
     for (i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
@@ -146,7 +147,7 @@ intern_strings(PyObject *tuple)
                             "non-string found in code slot");
             return -1;
         }
-        PyUnicode_InternInPlace(&_PyTuple_ITEMS(tuple)[i]);
+        _PyUnicode_InternImmortal(interp, &_PyTuple_ITEMS(tuple)[i]);
     }
     return 0;
 }
@@ -157,12 +158,13 @@ intern_strings(PyObject *tuple)
 static int
 intern_constants(PyObject *tuple, int *modified)
 {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     for (Py_ssize_t i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
         if (PyUnicode_CheckExact(v)) {
             if (should_intern_string(v)) {
                 PyObject *w = v;
-                PyUnicode_InternInPlace(&v);
+                _PyUnicode_InternMortal(interp, &v);
                 if (w != v) {
                     PyTuple_SET_ITEM(tuple, i, v);
                     if (modified) {
@@ -234,7 +236,7 @@ intern_constants(PyObject *tuple, int *modified)
             Py_DECREF(tmp);
         }
 
-        // Intern non-string consants in the free-threaded build, but only if
+        // Intern non-string constants in the free-threaded build, but only if
         // we are also immortalizing objects that use deferred reference
         // counting.
         PyThreadState *tstate = PyThreadState_GET();
@@ -458,12 +460,13 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
         con->stacksize = 1;
     }
 
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     co->co_filename = Py_NewRef(con->filename);
     co->co_name = Py_NewRef(con->name);
     co->co_qualname = Py_NewRef(con->qualname);
-    PyUnicode_InternInPlace(&co->co_filename);
-    PyUnicode_InternInPlace(&co->co_name);
-    PyUnicode_InternInPlace(&co->co_qualname);
+    _PyUnicode_InternMortal(interp, &co->co_filename);
+    _PyUnicode_InternMortal(interp, &co->co_name);
+    _PyUnicode_InternMortal(interp, &co->co_qualname);
     co->co_flags = con->flags;
 
     co->co_firstlineno = con->firstlineno;
@@ -489,7 +492,6 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_framesize = nlocalsplus + con->stacksize + FRAME_SPECIALS_SIZE;
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
 #ifdef Py_GIL_DISABLED
     PyMutex_Lock(&interp->func_state.mutex);
 #endif
@@ -571,7 +573,7 @@ get_line_delta(const uint8_t *ptr)
 static PyObject *
 remove_column_info(PyObject *locations)
 {
-    int offset = 0;
+    Py_ssize_t offset = 0;
     const uint8_t *data = (const uint8_t *)PyBytes_AS_STRING(locations);
     PyObject *res = PyBytes_FromStringAndSize(NULL, 32);
     if (res == NULL) {
@@ -1350,7 +1352,7 @@ PyTypeObject _PyLineIterator = {
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
     0,                                  /* tp_new */
-    PyObject_Del,                       /* tp_free */
+    PyObject_Free,                      /* tp_free */
 };
 
 static lineiterator *
@@ -1441,7 +1443,7 @@ PyTypeObject _PyPositionsIterator = {
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
     0,                                  /* tp_new */
-    PyObject_Del,                       /* tp_free */
+    PyObject_Free,                      /* tp_free */
 };
 
 static PyObject*
@@ -1628,15 +1630,10 @@ deopt_code(PyCodeObject *code, _Py_CODEUNIT *instructions)
 {
     Py_ssize_t len = Py_SIZE(code);
     for (int i = 0; i < len; i++) {
-        int opcode = _Py_GetBaseOpcode(code, i);
-        if (opcode == ENTER_EXECUTOR) {
-            _PyExecutorObject *exec = code->co_executors->executors[instructions[i].op.arg];
-            opcode = _PyOpcode_Deopt[exec->vm_data.opcode];
-            instructions[i].op.arg = exec->vm_data.oparg;
-        }
-        assert(opcode != ENTER_EXECUTOR);
-        int caches = _PyOpcode_Caches[opcode];
-        instructions[i].op.code = opcode;
+        _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(code, i);
+        assert(inst.op.code < MIN_SPECIALIZED_OPCODE);
+        int caches = _PyOpcode_Caches[inst.op.code];
+        instructions[i] = inst;
         for (int j = 1; j <= caches; j++) {
             instructions[i+j].cache = 0;
         }
@@ -1938,33 +1935,12 @@ code_richcompare(PyObject *self, PyObject *other, int op)
         goto unequal;
     }
     for (int i = 0; i < Py_SIZE(co); i++) {
-        _Py_CODEUNIT co_instr = _PyCode_CODE(co)[i];
-        _Py_CODEUNIT cp_instr = _PyCode_CODE(cp)[i];
-        uint8_t co_code = _Py_GetBaseOpcode(co, i);
-        uint8_t co_arg = co_instr.op.arg;
-        uint8_t cp_code = _Py_GetBaseOpcode(cp, i);
-        uint8_t cp_arg = cp_instr.op.arg;
-
-        if (co_code == ENTER_EXECUTOR) {
-            const int exec_index = co_arg;
-            _PyExecutorObject *exec = co->co_executors->executors[exec_index];
-            co_code = _PyOpcode_Deopt[exec->vm_data.opcode];
-            co_arg = exec->vm_data.oparg;
-        }
-        assert(co_code != ENTER_EXECUTOR);
-
-        if (cp_code == ENTER_EXECUTOR) {
-            const int exec_index = cp_arg;
-            _PyExecutorObject *exec = cp->co_executors->executors[exec_index];
-            cp_code = _PyOpcode_Deopt[exec->vm_data.opcode];
-            cp_arg = exec->vm_data.oparg;
-        }
-        assert(cp_code != ENTER_EXECUTOR);
-
-        if (co_code != cp_code || co_arg != cp_arg) {
+        _Py_CODEUNIT co_instr = _Py_GetBaseCodeUnit(co, i);
+        _Py_CODEUNIT cp_instr = _Py_GetBaseCodeUnit(cp, i);
+        if (co_instr.cache != cp_instr.cache) {
             goto unequal;
         }
-        i += _PyOpcode_Caches[co_code];
+        i += _PyOpcode_Caches[co_instr.op.code];
     }
 
     /* compare constants */
@@ -2043,22 +2019,10 @@ code_hash(PyCodeObject *co)
     SCRAMBLE_IN(co->co_firstlineno);
     SCRAMBLE_IN(Py_SIZE(co));
     for (int i = 0; i < Py_SIZE(co); i++) {
-        _Py_CODEUNIT co_instr = _PyCode_CODE(co)[i];
-        uint8_t co_code = co_instr.op.code;
-        uint8_t co_arg = co_instr.op.arg;
-        if (co_code == ENTER_EXECUTOR) {
-            _PyExecutorObject *exec = co->co_executors->executors[co_arg];
-            assert(exec != NULL);
-            assert(exec->vm_data.opcode != ENTER_EXECUTOR);
-            co_code = _PyOpcode_Deopt[exec->vm_data.opcode];
-            co_arg = exec->vm_data.oparg;
-        }
-        else {
-            co_code = _Py_GetBaseOpcode(co, i);
-        }
-        SCRAMBLE_IN(co_code);
-        SCRAMBLE_IN(co_arg);
-        i += _PyOpcode_Caches[co_code];
+        _Py_CODEUNIT co_instr = _Py_GetBaseCodeUnit(co, i);
+        SCRAMBLE_IN(co_instr.op.code);
+        SCRAMBLE_IN(co_instr.op.arg);
+        i += _PyOpcode_Caches[co_instr.op.code];
     }
     if ((Py_hash_t)uhash == -1) {
         return -2;
@@ -2597,12 +2561,12 @@ hash_const(const void *key)
     if (PySlice_Check(op)) {
         PySliceObject *s = (PySliceObject *)op;
         PyObject *data[3] = { s->start, s->stop, s->step };
-        return _Py_HashBytes(&data, sizeof(data));
+        return Py_HashBuffer(&data, sizeof(data));
     }
     else if (PyTuple_CheckExact(op)) {
         Py_ssize_t size = PyTuple_GET_SIZE(op);
         PyObject **data = _PyTuple_ITEMS(op);
-        return _Py_HashBytes(data, sizeof(PyObject *) * size);
+        return Py_HashBuffer(data, sizeof(PyObject *) * size);
     }
     Py_hash_t h = PyObject_Hash(op);
     if (h == -1) {

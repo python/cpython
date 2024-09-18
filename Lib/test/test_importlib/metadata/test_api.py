@@ -29,6 +29,7 @@ class APITests(
     fixtures.EggInfoPkg,
     fixtures.EggInfoPkgPipInstalledNoToplevel,
     fixtures.EggInfoPkgPipInstalledNoModules,
+    fixtures.EggInfoPkgPipInstalledExternalDataFiles,
     fixtures.EggInfoPkgSourcesFallback,
     fixtures.DistInfoPkg,
     fixtures.DistInfoPkgWithDot,
@@ -109,7 +110,7 @@ class APITests(
         Entry points should only be exposed for the first package
         on sys.path with a given name (even when normalized).
         """
-        alt_site_dir = self.fixtures.enter_context(fixtures.tempdir())
+        alt_site_dir = self.fixtures.enter_context(fixtures.tmp_path())
         self.fixtures.enter_context(self.add_sys_path(alt_site_dir))
         alt_pkg = {
             "DistInfo_pkg-1.1.0.dist-info": {

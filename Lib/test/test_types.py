@@ -1,6 +1,10 @@
 # Python test set -- part 6, built-in types
 
-from test.support import run_with_locale, cpython_only, MISSING_C_DOCSTRINGS
+from test.support import (
+    run_with_locale, is_apple_mobile, cpython_only, no_rerun,
+    iter_builtin_types, iter_slot_wrappers,
+    MISSING_C_DOCSTRINGS,
+)
 import collections.abc
 from collections import namedtuple, UserDict
 import copy
@@ -10,6 +14,7 @@ import inspect
 import pickle
 import locale
 import sys
+import textwrap
 import types
 import unittest.mock
 import weakref
@@ -2343,6 +2348,91 @@ class FunctionTests(unittest.TestCase):
             types.FunctionType(
                 ex.__code__, {}, "func", None, None, 3,
             )
+
+
+class SubinterpreterTests(unittest.TestCase):
+
+    NUMERIC_METHODS = {
+        '__abs__',
+        '__add__',
+        '__bool__',
+        '__divmod__',
+        '__float__',
+        '__floordiv__',
+        '__index__',
+        '__int__',
+        '__lshift__',
+        '__mod__',
+        '__mul__',
+        '__neg__',
+        '__pos__',
+        '__pow__',
+        '__radd__',
+        '__rdivmod__',
+        '__rfloordiv__',
+        '__rlshift__',
+        '__rmod__',
+        '__rmul__',
+        '__rpow__',
+        '__rrshift__',
+        '__rshift__',
+        '__rsub__',
+        '__rtruediv__',
+        '__sub__',
+        '__truediv__',
+    }
+
+    @classmethod
+    def setUpClass(cls):
+        global interpreters
+        try:
+            from test.support import interpreters
+        except ModuleNotFoundError:
+            raise unittest.SkipTest('subinterpreters required')
+        import test.support.interpreters.channels
+
+    @cpython_only
+    @no_rerun('channels (and queues) might have a refleak; see gh-122199')
+    def test_static_types_inherited_slots(self):
+        rch, sch = interpreters.channels.create()
+
+        script = textwrap.dedent("""
+            import test.support
+            results = []
+            for cls in test.support.iter_builtin_types():
+                for attr, _ in test.support.iter_slot_wrappers(cls):
+                    wrapper = getattr(cls, attr)
+                    res = (cls, attr, wrapper)
+                    results.append(res)
+            results = tuple((repr(c), a, repr(w)) for c, a, w in results)
+            sch.send_nowait(results)
+            """)
+        def collate_results(raw):
+            results = {}
+            for cls, attr, wrapper in raw:
+                key = cls, attr
+                assert key not in results, (results, key, wrapper)
+                results[key] = wrapper
+            return results
+
+        exec(script)
+        raw = rch.recv_nowait()
+        main_results = collate_results(raw)
+
+        interp = interpreters.create()
+        interp.exec('from test.support import interpreters')
+        interp.prepare_main(sch=sch)
+        interp.exec(script)
+        raw = rch.recv_nowait()
+        interp_results = collate_results(raw)
+
+        for key, expected in main_results.items():
+            cls, attr = key
+            with self.subTest(cls=cls, slotattr=attr):
+                actual = interp_results.pop(key)
+                self.assertEqual(actual, expected)
+        self.maxDiff = None
+        self.assertEqual(interp_results, {})
 
 
 if __name__ == '__main__':

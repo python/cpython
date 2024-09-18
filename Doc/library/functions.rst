@@ -57,7 +57,7 @@ are always available.  They are listed here in alphabetical order.
 .. function:: abs(x)
 
    Return the absolute value of a number.  The argument may be an
-   integer, a floating point number, or an object implementing
+   integer, a floating-point number, or an object implementing
    :meth:`~object.__abs__`.
    If the argument is a complex number, its magnitude is returned.
 
@@ -161,7 +161,7 @@ are always available.  They are listed here in alphabetical order.
    This function drops you into the debugger at the call site.  Specifically,
    it calls :func:`sys.breakpointhook`, passing ``args`` and ``kws`` straight
    through.  By default, ``sys.breakpointhook()`` calls
-   :func:`pdb.set_trace()` expecting no arguments.  In this case, it is
+   :func:`pdb.set_trace` expecting no arguments.  In this case, it is
    purely a convenience function so you don't have to explicitly import
    :mod:`pdb` or type as much code to enter the debugger.  However,
    :func:`sys.breakpointhook` can be set to some other function and
@@ -438,6 +438,8 @@ are always available.  They are listed here in alphabetical order.
    If one of arguments is a real number, only its real component is used in
    the above expressions.
 
+   See also :meth:`complex.from_number` which only accepts a single numeric argument.
+
    If all arguments are omitted, returns ``0j``.
 
    The complex type is described in :ref:`typesnumeric`.
@@ -542,7 +544,7 @@ are always available.  They are listed here in alphabetical order.
    Take two (non-complex) numbers as arguments and return a pair of numbers
    consisting of their quotient and remainder when using integer division.  With
    mixed operand types, the rules for binary arithmetic operators apply.  For
-   integers, the result is the same as ``(a // b, a % b)``. For floating point
+   integers, the result is the same as ``(a // b, a % b)``. For floating-point
    numbers the result is ``(q, a % b)``, where *q* is usually ``math.floor(a /
    b)`` but may be 1 less than that.  In any case ``q * b + a % b`` is very
    close to *a*, if ``a % b`` is non-zero it has the same sign as *b*, and ``0
@@ -738,7 +740,7 @@ are always available.  They are listed here in alphabetical order.
       single: NaN
       single: Infinity
 
-   Return a floating point number constructed from a number or a string.
+   Return a floating-point number constructed from a number or a string.
 
    Examples:
 
@@ -779,14 +781,16 @@ are always available.  They are listed here in alphabetical order.
    Case is not significant, so, for example, "inf", "Inf", "INFINITY", and
    "iNfINity" are all acceptable spellings for positive infinity.
 
-   Otherwise, if the argument is an integer or a floating point number, a
-   floating point number with the same value (within Python's floating point
+   Otherwise, if the argument is an integer or a floating-point number, a
+   floating-point number with the same value (within Python's floating-point
    precision) is returned.  If the argument is outside the range of a Python
    float, an :exc:`OverflowError` will be raised.
 
    For a general Python object ``x``, ``float(x)`` delegates to
    ``x.__float__()``.  If :meth:`~object.__float__` is not defined then it falls back
    to :meth:`~object.__index__`.
+
+   See also :meth:`float.from_number` which only accepts a numeric argument.
 
    If no argument is given, ``0.0`` is returned.
 
@@ -1006,7 +1010,7 @@ are always available.  They are listed here in alphabetical order.
    If the argument defines :meth:`~object.__int__`,
    ``int(x)`` returns ``x.__int__()``.  If the argument defines
    :meth:`~object.__index__`, it returns ``x.__index__()``.
-   For floating point numbers, this truncates towards zero.
+   For floating-point numbers, this truncates towards zero.
 
    If the argument is not a number or if *base* is given, then it must be a string,
    :class:`bytes`, or :class:`bytearray` instance representing an integer
@@ -1332,7 +1336,7 @@ are always available.  They are listed here in alphabetical order.
    (which on *some* Unix systems, means that *all* writes append to the end of
    the file regardless of the current seek position).  In text mode, if
    *encoding* is not specified the encoding used is platform-dependent:
-   :func:`locale.getencoding()` is called to get the current locale encoding.
+   :func:`locale.getencoding` is called to get the current locale encoding.
    (For reading and writing raw bytes use binary mode and leave
    *encoding* unspecified.)  The available modes are:
 
@@ -1505,7 +1509,7 @@ are always available.  They are listed here in alphabetical order.
    (where :func:`open` is declared), :mod:`os`, :mod:`os.path`, :mod:`tempfile`,
    and :mod:`shutil`.
 
-   .. audit-event:: open file,mode,flags open
+   .. audit-event:: open path,mode,flags open
 
    The ``mode`` and ``flags`` arguments may have been modified or inferred from
    the original call.
@@ -1561,7 +1565,9 @@ are always available.  They are listed here in alphabetical order.
    returns ``100``, but ``pow(10, -2)`` returns ``0.01``.  For a negative base of
    type :class:`int` or :class:`float` and a non-integral exponent, a complex
    result is delivered.  For example, ``pow(-9, 0.5)`` returns a value close
-   to ``3j``.
+   to ``3j``. Whereas, for a negative base of type :class:`int` or :class:`float`
+   with an integral exponent, a float result is delivered. For example,
+   ``pow(-9, 2.0)`` returns ``81.0``.
 
    For :class:`int` operands *base* and *exp*, if *mod* is present, *mod* must
    also be of integer type and *mod* must be nonzero. If *mod* is present and
@@ -1693,6 +1699,13 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.5
       The docstrings of property objects are now writeable.
+
+   .. attribute:: __name__
+
+      Attribute holding the name of the property. The name of the property
+      can be changed at runtime.
+
+      .. versionadded:: 3.13
 
 
 .. _func-range:
@@ -1922,7 +1935,7 @@ are always available.  They are listed here in alphabetical order.
 
    For some use cases, there are good alternatives to :func:`sum`.
    The preferred, fast way to concatenate a sequence of strings is by calling
-   ``''.join(sequence)``.  To add floating point values with extended precision,
+   ``''.join(sequence)``.  To add floating-point values with extended precision,
    see :func:`math.fsum`\.  To concatenate a series of iterables, consider using
    :func:`itertools.chain`.
 
@@ -1931,6 +1944,10 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.12 Summation of floats switched to an algorithm
       that gives higher accuracy and better commutativity on most builds.
+
+   .. versionchanged:: 3.14
+      Added specialization for summation of complexes,
+      using same algorithm as for summation of floats.
 
 
 .. class:: super()
@@ -1948,10 +1965,10 @@ are always available.  They are listed here in alphabetical order.
    ``D -> B -> C -> A -> object`` and the value of *type* is ``B``,
    then :func:`super` searches ``C -> A -> object``.
 
-   The :attr:`~class.__mro__` attribute of the *object_or_type* lists the method
-   resolution search order used by both :func:`getattr` and :func:`super`.  The
-   attribute is dynamic and can change whenever the inheritance hierarchy is
-   updated.
+   The :attr:`~class.__mro__` attribute of the class corresponding to
+   *object_or_type* lists the method resolution search order used by both
+   :func:`getattr` and :func:`super`.  The attribute is dynamic and can change
+   whenever the inheritance hierarchy is updated.
 
    If the second argument is omitted, the super object returned is unbound.  If
    the second argument is an object, ``isinstance(obj, type)`` must be true.  If

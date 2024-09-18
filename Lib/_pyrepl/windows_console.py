@@ -20,15 +20,12 @@
 from __future__ import annotations
 
 import io
-from multiprocessing import Value
 import os
 import sys
 import time
 import msvcrt
 
-from abc import ABC, abstractmethod
 from collections import deque
-from dataclasses import dataclass, field
 import ctypes
 from ctypes.wintypes import (
     _COORD,
@@ -66,6 +63,7 @@ TYPE_CHECKING = False
 if TYPE_CHECKING:
     from typing import IO
 
+# Virtual-Key Codes: https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 VK_MAP: dict[int, str] = {
     0x23: "end",  # VK_END
     0x24: "home",  # VK_HOME
@@ -90,10 +88,10 @@ VK_MAP: dict[int, str] = {
     0x7D: "f14",  # VK_F14
     0x7E: "f15",  # VK_F15
     0x7F: "f16",  # VK_F16
-    0x79: "f17",  # VK_F17
-    0x80: "f18",  # VK_F18
-    0x81: "f19",  # VK_F19
-    0x82: "f20",  # VK_F20
+    0x80: "f17",  # VK_F17
+    0x81: "f18",  # VK_F18
+    0x82: "f19",  # VK_F19
+    0x83: "f20",  # VK_F20
 }
 
 # Console escape codes: https://learn.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences
@@ -234,7 +232,7 @@ class WindowsConsole(Console):
 
         # reuse the oldline as much as possible, but stop as soon as we
         # encounter an ESCAPE, because it might be the start of an escape
-        # sequene
+        # sequence
         while (
             x_coord < minlen
             and oldline[x_pos] == newline[x_pos]
@@ -256,7 +254,7 @@ class WindowsConsole(Console):
         else:
             self.__posxy = wlen(newline), y
 
-            if "\x1b" in newline or y != self.__posxy[1]:
+            if "\x1b" in newline or y != self.__posxy[1] or '\x1a' in newline:
                 # ANSI escape characters are present, so we can't assume
                 # anything about the position of the cursor.  Moving the cursor
                 # to the left margin should work to get to a known position.
@@ -294,6 +292,9 @@ class WindowsConsole(Console):
         self.__write("\x1b[?12l")
 
     def __write(self, text: str) -> None:
+        if "\x1a" in text:
+            text = ''.join(["^Z" if x == '\x1a' else x for x in text])
+
         if self.out is not None:
             self.out.write(text.encode(self.encoding, "replace"))
             self.out.flush()
@@ -478,7 +479,7 @@ class WindowsConsole(Console):
         while True:
             if msvcrt.kbhit(): # type: ignore[attr-defined]
                 return True
-            if timeout and time.time() - start_time > timeout:
+            if timeout and time.time() - start_time > timeout / 1000:
                 return False
             time.sleep(0.01)
 

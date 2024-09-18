@@ -889,11 +889,15 @@ Statements
 .. class:: AnnAssign(target, annotation, value, simple)
 
    An assignment with a type annotation. ``target`` is a single node and can
-   be a :class:`Name`, a :class:`Attribute` or a :class:`Subscript`.
+   be a :class:`Name`, an :class:`Attribute` or a :class:`Subscript`.
    ``annotation`` is the annotation, such as a :class:`Constant` or :class:`Name`
-   node. ``value`` is a single optional node. ``simple`` is a boolean integer
-   set to True for a :class:`Name` node in ``target`` that do not appear in
-   between parenthesis and are hence pure names and not expressions.
+   node. ``value`` is a single optional node.
+
+   ``simple`` is always either 0 (indicating a "complex" target) or 1
+   (indicating a "simple" target). A "simple" target consists solely of a
+   :class:`Name` node that does not appear between parentheses; all other
+   targets are considered complex. Only simple targets appear in
+   the :attr:`__annotations__` dictionary of modules and classes.
 
    .. doctest::
 
@@ -1977,7 +1981,7 @@ Function and class definitions
            YieldFrom(value)
 
    A ``yield`` or ``yield from`` expression. Because these are expressions, they
-   must be wrapped in a :class:`Expr` node if the value sent back is not used.
+   must be wrapped in an :class:`Expr` node if the value sent back is not used.
 
    .. doctest::
 
@@ -2029,8 +2033,7 @@ Function and class definitions
    * ``name`` is a raw string for the class name
    * ``bases`` is a list of nodes for explicitly specified base classes.
    * ``keywords`` is a list of :class:`.keyword` nodes, principally for 'metaclass'.
-     Other keywords will be passed to the metaclass, as per `PEP-3115
-     <https://peps.python.org/pep-3115/>`_.
+     Other keywords will be passed to the metaclass, as per :pep:`3115`.
    * ``body`` is a list of nodes representing the code within the class
      definition.
    * ``decorator_list`` is a list of nodes, as in :class:`FunctionDef`.
@@ -2130,7 +2133,7 @@ and classes for traversing abstract syntax trees:
    If ``type_comments=True`` is given, the parser is modified to check
    and return type comments as specified by :pep:`484` and :pep:`526`.
    This is equivalent to adding :data:`ast.PyCF_TYPE_COMMENTS` to the
-   flags passed to :func:`compile()`.  This will report syntax errors
+   flags passed to :func:`compile`.  This will report syntax errors
    for misplaced type comments.  Without this flag, type comments will
    be ignored, and the ``type_comment`` field on selected AST nodes
    will always be ``None``.  In addition, the locations of ``# type:

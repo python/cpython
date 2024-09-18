@@ -67,14 +67,18 @@ handler located at label `L1`.
 Handling Exceptions
 -------------------
 
-At runtime, when an exception occurs, the interpreter looks up
-the offset of the current instruction in the exception table. If
-it finds a handler, control flow transfers to it. Otherwise, the
+At runtime, when an exception occurs, the interpreter calls
+``get_exception_handler()`` in
+[Python/ceval.c](https://github.com/python/cpython/blob/main/Python/ceval.c)
+to look up the offset of the current instruction in the exception
+table. If it finds a handler, control flow transfers to it. Otherwise, the
 exception bubbles up to the caller, and the caller's frame is
 checked for a handler covering the `CALL` instruction. This
 repeats until a handler is found or the topmost frame is reached.
 If no handler is found, the program terminates. During unwinding,
-the traceback is constructed as each frame is added to it.
+the traceback is constructed as each frame is added to it by
+``PyTraceBack_Here()``, which is in
+[Python/traceback.c](https://github.com/python/cpython/blob/main/Python/traceback.c).
 
 Along with the location of an exception handler, each entry of the
 exception table also contains the stack depth of the `try` instruction
@@ -169,33 +173,12 @@ which is then encoded as:
 
 for a total of five bytes.
 
+The code to construct the exception table is in ``assemble_exception_table()``
+in [Python/assemble.c](https://github.com/python/cpython/blob/main/Python/assemble.c).
 
-Script to parse the exception table
------------------------------------
-
-```
-def parse_varint(iterator):
-    b = next(iterator)
-    val = b & 63
-    while b&64:
-        val <<= 6
-        b = next(iterator)
-        val |= b&63
-    return val
-```
-```
-def parse_exception_table(code):
-    iterator = iter(code.co_exceptiontable)
-    try:
-        while True:
-            start = parse_varint(iterator)*2
-            length = parse_varint(iterator)*2
-            end = start + length - 2 # Present as inclusive, not exclusive
-            target = parse_varint(iterator)*2
-            dl = parse_varint(iterator)
-            depth = dl >> 1
-            lasti = bool(dl&1)
-            yield start, end, target, depth, lasti
-    except StopIteration:
-        return
-```
+The interpreter's function to lookup the table by instruction offset is
+``get_exception_handler()`` in
+[Python/ceval.c](https://github.com/python/cpython/blob/main/Python/ceval.c).
+The Python function ``_parse_exception_table()`` in
+[Lib/dis.py](https://github.com/python/cpython/blob/main/Lib/dis.py)
+returns the exception table content as a list of namedtuple instances.

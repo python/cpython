@@ -650,7 +650,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    (doesn't have the :c:macro:`Py_TPFLAGS_BASETYPE` flag bit set), it is
    permissible to call the object deallocator directly instead of via
    :c:member:`~PyTypeObject.tp_free`.  The object deallocator should be the one used to allocate the
-   instance; this is normally :c:func:`PyObject_Del` if the instance was allocated
+   instance; this is normally :c:func:`PyObject_Free` if the instance was allocated
    using :c:macro:`PyObject_New` or :c:macro:`PyObject_NewVar`, or
    :c:func:`PyObject_GC_Del` if the instance was allocated using
    :c:macro:`PyObject_GC_New` or :c:macro:`PyObject_GC_NewVar`.
@@ -1328,8 +1328,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       To indicate that a class has changed call :c:func:`PyType_Modified`
 
       .. warning::
-         This flag is present in header files, but is an internal feature and should
-         not be used. It will be removed in a future version of CPython
+         This flag is present in header files, but is not be used.
+         It will be removed in a future version of CPython
 
 
 .. c:member:: const char* PyTypeObject.tp_doc
@@ -1592,7 +1592,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    weak references to the type object itself.
 
    It is an error to set both the :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` bit and
-   :c:member:`~PyTypeObject.tp_weaklist`.
+   :c:member:`~PyTypeObject.tp_weaklistoffset`.
 
    **Inheritance:**
 
@@ -1604,7 +1604,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    **Default:**
 
    If the :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` bit is set in the
-   :c:member:`~PyTypeObject.tp_dict` field, then
+   :c:member:`~PyTypeObject.tp_flags` field, then
    :c:member:`~PyTypeObject.tp_weaklistoffset` will be set to a negative value,
    to indicate that it is unsafe to use this field.
 
@@ -1954,7 +1954,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    match :c:func:`PyType_GenericAlloc` and the value of the
    :c:macro:`Py_TPFLAGS_HAVE_GC` flag bit.
 
-   For static subtypes, :c:data:`PyBaseObject_Type` uses :c:func:`PyObject_Del`.
+   For static subtypes, :c:data:`PyBaseObject_Type` uses :c:func:`PyObject_Free`.
 
 
 .. c:member:: inquiry PyTypeObject.tp_is_gc
@@ -2137,11 +2137,40 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: vectorcallfunc PyTypeObject.tp_vectorcall
 
-   Vectorcall function to use for calls of this type object.
-   In other words, it is used to implement
-   :ref:`vectorcall <vectorcall>` for ``type.__call__``.
-   If ``tp_vectorcall`` is ``NULL``, the default call implementation
-   using :meth:`~object.__new__` and :meth:`~object.__init__` is used.
+   A :ref:`vectorcall function <vectorcall>` to use for calls of this type
+   object (rather than instances).
+   In other words, ``tp_vectorcall`` can be used to optimize ``type.__call__``,
+   which typically returns a new instance of *type*.
+
+   As with any vectorcall function, if ``tp_vectorcall`` is ``NULL``,
+   the *tp_call* protocol (``Py_TYPE(type)->tp_call``) is used instead.
+
+   .. note::
+
+      The :ref:`vectorcall protocol <vectorcall>` requires that the vectorcall
+      function has the same behavior as the corresponding ``tp_call``.
+      This means that ``type->tp_vectorcall`` must match the behavior of
+      ``Py_TYPE(type)->tp_call``.
+
+      Specifically, if *type* uses the default metaclass,
+      ``type->tp_vectorcall`` must behave the same as
+      :c:expr:`PyType_Type->tp_call`, which:
+
+      - calls ``type->tp_new``,
+
+      - if the result is a subclass of *type*, calls ``type->tp_init``
+        on the result of ``tp_new``, and
+
+      - returns the result of ``tp_new``.
+
+      Typically, ``tp_vectorcall`` is overridden to optimize this process
+      for specific :c:member:`~PyTypeObject.tp_new` and
+      :c:member:`~PyTypeObject.tp_init`.
+      When doing this for user-subclassable types, note that both can be
+      overridden (using :py:func:`~object.__new__` and
+      :py:func:`~object.__init__`, respectively).
+
+
 
    **Inheritance:**
 
