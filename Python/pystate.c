@@ -665,6 +665,8 @@ init_interpreter(PyInterpreterState *interp,
         /* Fix the self-referential, statically initialized fields. */
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
     }
+    llist_init(&interp->threads.daemon_handles);
+    llist_init(&interp->threads.non_daemon_handles);
 
     interp->_initialized = 1;
     return _PyStatus_OK();
@@ -811,7 +813,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         // XXX Eliminate the need to do this.
         tstate->_status.cleared = 0;
     }
-
+    _PyThread_ClearThreadHandles(interp);
 #ifdef _Py_TIER2
     _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
     assert(old != NULL);

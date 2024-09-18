@@ -42,7 +42,6 @@ _ThreadHandle = _thread._ThreadHandle
 get_ident = _thread.get_ident
 _get_main_thread_ident = _thread._get_main_thread_ident
 _is_main_interpreter = _thread._is_main_interpreter
-_daemon_threads_exited = _thread._daemon_threads_exited
 try:
     get_native_id = _thread.get_native_id
     _HAVE_THREAD_NATIVE_ID = True

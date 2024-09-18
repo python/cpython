@@ -30,14 +30,6 @@ typedef struct {
     PyTypeObject *local_type;
     PyTypeObject *local_dummy_type;
     PyTypeObject *thread_handle_type;
-
-    // Linked list of handles to all non-daemon threads created by the
-    // threading module. We wait for these to finish at shutdown.
-    struct llist_node non_daemon_handles;
-
-    // Linked list of handles to daemon threads created by the threading
-    // module. We set the events in these handles as done at shutdown.
-    struct llist_node daemon_handles;
 } thread_module_state;
 
 static inline thread_module_state*
@@ -82,8 +74,8 @@ typedef enum {
 typedef struct {
     struct llist_node node;  // linked list node (see _pythread_runtime_state)
 
-    // belongs to either `non_daemon_handles` or `daemon_handles` (see
-    // thread_module_state)
+    // belongs to either `non_daemon_handles` or `daemon_handles` on
+    // PyInterpreterState
     struct llist_node shutdown_node;
 
     // The `ident`, `os_handle`, `has_os_handle`, and `state` fields are
@@ -156,15 +148,18 @@ add_to_shutdown_handles(struct llist_node *shutdown_handles,
     HEAD_UNLOCK(&_PyRuntime);
 }
 
-static void
-clear_shutdown_handles(thread_module_state *state)
+// Remove any remaining handles (e.g. if shutdown exited early due to
+// interrupt) so that attempts to unlink the handle after our module state
+// is destroyed do not crash.
+void
+_PyThread_ClearThreadHandles(PyInterpreterState *interp)
 {
     HEAD_LOCK(&_PyRuntime);
     struct llist_node *node;
-    llist_for_each_safe(node, &state->daemon_handles) {
+    llist_for_each_safe(node, &interp->threads.daemon_handles) {
         llist_remove(node);
     }
-    llist_for_each_safe(node, &state->non_daemon_handles) {
+    llist_for_each_safe(node, &interp->threads.non_daemon_handles) {
         llist_remove(node);
     }
     HEAD_UNLOCK(&_PyRuntime);
@@ -1872,8 +1867,8 @@ Return True if daemon threads are allowed in the current interpreter,\n\
 and False otherwise.\n");
 
 static int
-do_start_new_thread(thread_module_state *state, PyObject *func, PyObject *args,
-                    PyObject *kwargs, ThreadHandle *handle, int daemon)
+do_start_new_thread(PyObject *func, PyObject *args, PyObject *kwargs,
+                    ThreadHandle *handle, int daemon)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_THREADS)) {
@@ -1887,9 +1882,9 @@ do_start_new_thread(thread_module_state *state, PyObject *func, PyObject *args,
         return -1;
     }
 
-    struct llist_node *shutdown_handles = &state->non_daemon_handles;
+    struct llist_node *shutdown_handles = &interp->threads.non_daemon_handles;
     if (daemon) {
-        shutdown_handles = &state->daemon_handles;
+        shutdown_handles = &interp->threads.daemon_handles;
     }
 
     if (ThreadHandle_start(handle, func, args, kwargs, shutdown_handles) < 0) {
@@ -1903,7 +1898,6 @@ static PyObject *
 thread_PyThread_start_new_thread(PyObject *module, PyObject *fargs)
 {
     PyObject *func, *args, *kwargs = NULL;
-    thread_module_state *state = get_thread_state(module);
 
     if (!PyArg_UnpackTuple(fargs, "start_new_thread", 2, 3,
                            &func, &args, &kwargs))
@@ -1934,8 +1928,7 @@ thread_PyThread_start_new_thread(PyObject *module, PyObject *fargs)
         return NULL;
     }
 
-    int st =
-        do_start_new_thread(state, func, args, kwargs, handle, /*daemon=*/1);
+    int st = do_start_new_thread(func, args, kwargs, handle, /*daemon=*/1);
     if (st < 0) {
         ThreadHandle_decref(handle);
         return NULL;
@@ -2012,8 +2005,9 @@ thread_PyThread_start_joinable_thread(PyObject *module, PyObject *fargs,
     if (args == NULL) {
         return NULL;
     }
-    int st = do_start_new_thread(state, func, args,
-                                 /*kwargs=*/ NULL, ((PyThreadHandleObject*)hobj)->handle, daemon);
+    int st = do_start_new_thread(
+        func, args,
+        /*kwargs=*/NULL, ((PyThreadHandleObject *)hobj)->handle, daemon);
     Py_DECREF(args);
     if (st < 0) {
         Py_DECREF(hobj);
@@ -2374,7 +2368,7 @@ static PyObject *
 thread_shutdown(PyObject *self, PyObject *args)
 {
     PyThread_ident_t ident = PyThread_get_thread_ident_ex();
-    thread_module_state *state = get_thread_state(self);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     for (;;) {
         ThreadHandle *handle = NULL;
@@ -2382,7 +2376,7 @@ thread_shutdown(PyObject *self, PyObject *args)
         // Find a thread that's not yet finished.
         HEAD_LOCK(&_PyRuntime);
         struct llist_node *node;
-        llist_for_each_safe(node, &state->non_daemon_handles) {
+        llist_for_each_safe(node, &interp->threads.non_daemon_handles) {
             ThreadHandle *cur = llist_data(node, ThreadHandle, shutdown_node);
             if (cur->ident != ident) {
                 ThreadHandle_incref(cur);
@@ -2417,18 +2411,19 @@ PyDoc_STRVAR(shutdown_doc,
 \n\
 Wait for all non-daemon threads (other than the calling thread) to stop.");
 
-static PyObject *
-thread__daemon_threads_exited(PyObject *self, PyObject *args)
+/* gh-123940: Mark remaining daemon threads as exited so that they may
+ * be joined from finalizers.
+ */
+void
+_PyThread_DaemonThreadsForceKilled(PyInterpreterState *interp)
 {
-    thread_module_state *state = get_thread_state(self);
-
     for (;;) {
         HEAD_LOCK(&_PyRuntime);
-        if (llist_empty(&state->daemon_handles)) {
+        if (llist_empty(&interp->threads.daemon_handles)) {
             HEAD_UNLOCK(&_PyRuntime);
             break;
         }
-        struct llist_node *node = state->daemon_handles.next;
+        struct llist_node *node = interp->threads.daemon_handles.next;
         ThreadHandle *handle = llist_data(node, ThreadHandle, shutdown_node);
         ThreadHandle_incref(handle);
         llist_remove(node);
@@ -2438,15 +2433,7 @@ thread__daemon_threads_exited(PyObject *self, PyObject *args)
         _PyEvent_Notify(&handle->thread_is_exiting);
         ThreadHandle_decref(handle);
     }
-
-    Py_RETURN_NONE;
 }
-
-PyDoc_STRVAR(_daemon_threads_exited_doc,
-"_daemon_threads_exited($module, /)\n\
---\n\
-\n\
-Mark that daemon threads have exited.");
 
 static PyObject *
 thread__make_thread_handle(PyObject *module, PyObject *identobj)
@@ -2527,8 +2514,6 @@ static PyMethodDef thread_methods[] = {
      METH_NOARGS, thread__is_main_interpreter_doc},
     {"_shutdown",               thread_shutdown,
      METH_NOARGS, shutdown_doc},
-    {"_daemon_threads_exited", thread__daemon_threads_exited,
-     METH_NOARGS, _daemon_threads_exited_doc},
     {"_make_thread_handle", thread__make_thread_handle,
      METH_O, thread__make_thread_handle_doc},
     {"_get_main_thread_ident", thread__get_main_thread_ident,
@@ -2622,9 +2607,6 @@ thread_module_exec(PyObject *module)
         return -1;
     }
 
-    llist_init(&state->daemon_handles);
-    llist_init(&state->non_daemon_handles);
-
     return 0;
 }
 
@@ -2650,10 +2632,6 @@ thread_module_clear(PyObject *module)
     Py_CLEAR(state->local_type);
     Py_CLEAR(state->local_dummy_type);
     Py_CLEAR(state->thread_handle_type);
-    // Remove any remaining handles (e.g. if shutdown exited early due to
-    // interrupt) so that attempts to unlink the handle after our module state
-    // is destroyed do not crash.
-    clear_shutdown_handles(state);
     return 0;
 }
 

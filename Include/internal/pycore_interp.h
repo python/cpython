@@ -139,6 +139,12 @@ struct _is {
            or the size specified by the THREAD_STACK_SIZE macro. */
         /* Used in Python/thread.c. */
         size_t stacksize;
+
+        /* Linked lists of ThreadHandles for threads created by
+           the threading module.
+        */
+        struct llist_node non_daemon_handles;
+        struct llist_node daemon_handles;
     } threads;
 
     /* Reference to the _PyRuntime global variable. This field exists

@@ -95,6 +95,8 @@ extern int _PyThread_at_fork_reinit(PyThread_type_lock *lock);
 extern void _PyThread_AfterFork(struct _pythread_runtime_state *state);
 #endif  /* HAVE_FORK */
 
+extern void _PyThread_DaemonThreadsForceKilled(PyInterpreterState *interp);
+extern void _PyThread_ClearThreadHandles(PyInterpreterState *interp);
 
 // unset: -1 seconds, in nanoseconds
 #define PyThread_UNSET_TIMEOUT ((PyTime_t)(-1 * 1000 * 1000 * 1000))

@@ -75,7 +75,6 @@ static PyStatus init_sys_streams(PyThreadState *tstate);
 static PyStatus init_android_streams(PyThreadState *tstate);
 #endif
 static void wait_for_thread_shutdown(PyThreadState *tstate);
-static void daemon_threads_exited(PyThreadState *tstate);
 static void finalize_subinterpreters(void);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 
@@ -2041,7 +2040,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
        before we call destructors. */
     PyThreadState *list = _PyThreadState_RemoveExcept(tstate);
     _PyEval_StartTheWorldAll(runtime);
-    daemon_threads_exited(tstate);
+    _PyThread_DaemonThreadsForceKilled(tstate->interp);
     _PyThreadState_DeleteList(list);
 
     /* At this point no Python code should be running at all.
@@ -2405,7 +2404,6 @@ Py_EndInterpreter(PyThreadState *tstate)
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
     _PyInterpreterState_SetFinalizing(interp, tstate);
 
-    daemon_threads_exited(tstate);
     // XXX Call something like _PyImport_Disable() here?
 
     _PyImport_FiniExternal(tstate->interp);
@@ -3350,31 +3348,6 @@ wait_for_thread_shutdown(PyThreadState *tstate)
     else {
         Py_DECREF(result);
     }
-    Py_DECREF(threading);
-}
-
-/* gh-123940: Mark remaining daemon threads as exited so that they may
- * be joined from finalizers.
- */
-static void
-daemon_threads_exited(PyThreadState *tstate)
-{
-    PyObject *threading = PyImport_GetModule(&_Py_ID(threading));
-    if (threading == NULL) {
-        if (_PyErr_Occurred(tstate)) {
-            PyErr_FormatUnraisable(
-                "Exception ignored while marking daemon threads exited");
-        }
-        /* else: threading not imported */
-        return;
-    }
-    PyObject *result =
-        PyObject_CallMethodNoArgs(threading, &_Py_ID(_daemon_threads_exited));
-    if (result == NULL) {
-        PyErr_FormatUnraisable(
-            "Exception ignored while marking daemon threads exited");
-    }
-    Py_XDECREF(result);
     Py_DECREF(threading);
 }
 
