@@ -79,6 +79,8 @@ pointers.  This is consistent throughout the API.
    If *num* is null and *exp* is not a positive real number,
    this method returns zero and sets :c:data:`errno` to :c:macro:`!EDOM`.
 
+   Set :c:data:`errno` to :c:macro:`!ERANGE` on overflows.
+
 
 Complex Numbers as Python Objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
