@@ -5704,9 +5704,29 @@ wstring_at(const wchar_t *ptr, int size)
     return PyUnicode_FromWideChar(ptr, ssize);
 }
 
+/*[clinic input]
+_ctypes.memoryview_at
+
+    obj: object
+    /
+    size: Py_ssize_t
+    readonly: bool = False
+
+Return a memoryview representing the memory at addr.
+[clinic start generated code]*/
+
 static PyObject *
-memoryview_at(char *ptr, Py_ssize_t size, int readonly)
+_ctypes_memoryview_at_impl(PyObject *module, PyObject *obj, Py_ssize_t size,
+                           int readonly)
+/*[clinic end generated code: output=c89fdda64bd9901d input=c960c5a2b3ccb9fb]*/
 {
+    ctypes_state *st = get_module_state(module);
+    if (!CDataObject_Check(st, obj)) {
+        PyErr_SetString(PyExc_TypeError, "invalid type");
+        return NULL;
+    }
+    void *ptr = ((CDataObject *)obj)->b_ptr;
+
     if (PySys_Audit("ctypes.memoryview_at", "nni", (Py_ssize_t)ptr, size,
                     readonly) < 0) {
         return NULL;
@@ -5843,7 +5863,6 @@ _ctypes_add_objects(PyObject *mod)
     MOD_ADD("_string_at_addr", PyLong_FromVoidPtr(string_at));
     MOD_ADD("_cast_addr", PyLong_FromVoidPtr(cast));
     MOD_ADD("_wstring_at_addr", PyLong_FromVoidPtr(wstring_at));
-    MOD_ADD("_memoryview_at_addr", PyLong_FromVoidPtr(memoryview_at));
 
 /* If RTLD_LOCAL is not defined (Windows!), set it to zero. */
 #if !HAVE_DECL_RTLD_LOCAL
@@ -5864,6 +5883,12 @@ _ctypes_add_objects(PyObject *mod)
 #undef MOD_ADD
 }
 
+// Most ctypes methods are defined in callproc.c.
+// Here is the rest.
+static PyMethodDef module_methods[] = {
+    _CTYPES_MEMORYVIEW_AT_METHODDEF
+    {NULL,      NULL}        /* Sentinel */
+};
 
 static int
 _ctypes_mod_exec(PyObject *mod)
@@ -5891,6 +5916,10 @@ _ctypes_mod_exec(PyObject *mod)
     if (_ctypes_add_objects(mod) < 0) {
         return -1;
     }
+    if (PyModule_AddFunctions(mod, module_methods) < 0) {
+        return -1;
+    }
+
     return 0;
 }
 

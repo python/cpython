@@ -12,6 +12,7 @@ from _ctypes import __version__ as _ctypes_version
 from _ctypes import RTLD_LOCAL, RTLD_GLOBAL
 from _ctypes import ArgumentError
 from _ctypes import SIZEOF_TIME_T
+from _ctypes import memoryview_at
 
 from struct import calcsize as _calcsize
 
@@ -558,15 +559,6 @@ else:
 
         Return the wide-character string at void *ptr."""
         return _wstring_at(ptr, size)
-
-from _ctypes import _memoryview_at_addr
-
-_memoryview_at = PYFUNCTYPE(py_object, c_void_p, c_ssize_t, c_int)(_memoryview_at_addr)
-def memoryview_at(ptr, size, readonly=False):
-    """memoryview_at(addr, size[, readonly]) -> memoryview
-
-    Return a memoryview representing the memory at addr."""
-    return _memoryview_at(ptr, size, bool(readonly))
 
 if _os.name == "nt": # COM stuff
     def DllGetClassObject(rclsid, riid, ppv):
