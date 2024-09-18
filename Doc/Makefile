@@ -152,7 +152,7 @@ htmlview: html
 	$(PYTHON) -c "import os, webbrowser; webbrowser.open('file://' + os.path.realpath('build/html/index.html'))"
 
 .PHONY: htmllive
-htmllive: SPHINXBUILD = $(VENVDIR)/bin/sphinx-autobuild
+htmllive: SPHINXBUILD = PATH=$(VENVDIR)/bin:$$PATH sphinx-autobuild
 htmllive: SPHINXOPTS = --re-ignore="/venv/" --open-browser --delay 0
 htmllive: _ensure-sphinx-autobuild html
 
