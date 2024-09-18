@@ -1718,7 +1718,7 @@ class SizeofTest(unittest.TestCase):
                   '3P'                  # PyMappingMethods
                   '10P'                 # PySequenceMethods
                   '2P'                  # PyBufferProcs
-                  '6P'
+                  '7P'
                   '1PIP'                # Specializer cache
                   + typeid              # heap type id (free-threaded only)
                   )

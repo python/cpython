@@ -391,6 +391,10 @@ PyAPI_FUNC(PyObject *) PyType_FromMetaclass(PyTypeObject*, PyObject*, PyType_Spe
 PyAPI_FUNC(void *) PyObject_GetTypeData(PyObject *obj, PyTypeObject *cls);
 PyAPI_FUNC(Py_ssize_t) PyType_GetTypeDataSize(PyTypeObject *cls);
 #endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030E0000
+PyAPI_FUNC(int) PyType_GetBaseByToken(PyTypeObject *, void *, PyTypeObject **);
+#define Py_TP_USE_SPEC NULL
+#endif
 
 /* Generic type check */
 PyAPI_FUNC(int) PyType_IsSubtype(PyTypeObject *, PyTypeObject *);

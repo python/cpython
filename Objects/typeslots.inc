@@ -81,3 +81,4 @@
 {-1, offsetof(PyTypeObject, tp_finalize)},
 {offsetof(PyAsyncMethods, am_send), offsetof(PyTypeObject, tp_as_async)},
 {-1, offsetof(PyTypeObject, tp_vectorcall)},
+{-1, offsetof(PyHeapTypeObject, ht_token)},
