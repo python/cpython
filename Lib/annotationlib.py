@@ -575,7 +575,11 @@ def get_annotate_function(obj):
     Returns the __annotate__ function or None.
     """
     if isinstance(obj, type):
-        return _BASE_GET_ANNOTATE(obj)
+        try:
+            return _BASE_GET_ANNOTATE(obj)
+        except AttributeError:
+            # AttributeError is raised for static types.
+            return None
     return getattr(obj, "__annotate__", None)
 
 

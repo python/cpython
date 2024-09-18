@@ -928,6 +928,27 @@ class MetaclassTests(unittest.TestCase):
                             self.assertIs(annotate_func, None)
 
 
+class TestGetAnnotateFunction(unittest.TestCase):
+    def test_static_class(self):
+        self.assertIsNone(get_annotate_function(object))
+        self.assertIsNone(get_annotate_function(int))
+
+    def test_unannotated_class(self):
+        class C:
+            pass
+
+        self.assertIsNone(get_annotate_function(C))
+
+        D = type("D", (), {})
+        self.assertIsNone(get_annotate_function(D))
+
+    def test_annotated_class(self):
+        class C:
+            a: int
+
+        self.assertEqual(get_annotate_function(C)(Format.VALUE), {"a": int})
+
+
 class TestAnnotationLib(unittest.TestCase):
     def test__all__(self):
         support.check__all__(self, annotationlib)

@@ -7043,6 +7043,25 @@ class GetTypeHintTests(BaseTestCase):
         self.assertEqual(get_type_hints(g), {'x': collections.abc.Callable[..., int]})
         self.assertEqual(get_type_hints(h), {'x': collections.abc.Callable[P, int]})
 
+    def test_get_type_hints_format(self):
+        class C:
+            x: undefined
+
+        with self.assertRaises(NameError):
+            get_type_hints(C)
+
+        with self.assertRaises(NameError):
+            get_type_hints(C, format=annotationlib.Format.VALUE)
+
+        annos = get_type_hints(C, format=annotationlib.Format.FORWARDREF)
+        self.assertIsInstance(annos, dict)
+        self.assertEqual(list(annos), ['x'])
+        self.assertIsInstance(annos['x'], annotationlib.ForwardRef)
+        self.assertEqual(annos['x'].__arg__, 'undefined')
+
+        self.assertEqual(get_type_hints(C, format=annotationlib.Format.SOURCE),
+                         {'x': 'undefined'})
+
 
 class GetUtilitiesTestCase(TestCase):
     def test_get_origin(self):
