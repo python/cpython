@@ -2471,10 +2471,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # ========================
     def _get_values(self, action, arg_strings):
         if not action.option_strings and action.nargs not in [PARSER, REMAINDER]:
-            if action.nargs == ZERO_OR_MORE and action.type is None:
-                # if nargs='*' starts with '--', then we should treat any
-                # subsequent arguments as positional arguments and we should not
-                # strip out the first '--' unless it violates the specified nargs type
+            if action.nargs in [ZERO_OR_MORE, ONE_OR_MORE] and action.type is None:
                 if arg_strings and arg_strings[0] == '--':
                     arg_strings = arg_strings[1:]
             else:
