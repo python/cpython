@@ -149,19 +149,19 @@ def get_unexpected_warnings(
     unexpected_warnings = {}
     for file in files_with_warnings.keys():
 
-        ignore_rule = is_file_ignored(file, ignore_rules)
+        rule = is_file_ignored(file, ignore_rules)
 
-        if ignore_rule:
-            if ignore_rule.ignore_all:
+        if rule:
+            if rule.ignore_all:
                 continue
 
-            if len(files_with_warnings[file]) > ignore_rule.count:
+            if len(files_with_warnings[file]) > rule.count:
                 unexpected_warnings[file] = (
                     files_with_warnings[file],
-                    ignore_rule.count,
+                    rule.count,
                 )
             continue
-        elif ignore_rule is None:
+        elif rule is None:
             # If the file is not in the ignore list, then it is unexpected
             unexpected_warnings[file] = (files_with_warnings[file], 0)
 
