@@ -9,6 +9,8 @@ import sys
 
 
 IMPLS_DIR = os.path.join(os.path.dirname(__file__), 'concurrency')
+if IMPLS_DIR not in sys.path:
+    sys.path.insert(0, IMPLS_DIR)
 
 
 class example(staticmethod):
@@ -44,10 +46,9 @@ class GrepExamples(WorkloadExamples):
 
     @staticmethod
     def app(kind, cf=False):
-        if IMPLS_DIR not in sys.path:
-            sys.path.insert(0, IMPLS_DIR)
-            sys.modules.pop('grep', None)
-        from grep import Options, _resolve_impl, grep
+        import shlex
+        from grep import Options, resolve_impl, grep
+        from grep.__main__ import render_matches
         opts = Options(
             #recursive=True,
             #ignorecase = True,
@@ -60,14 +61,16 @@ class GrepExamples(WorkloadExamples):
             #quiet = True,
             #hideerrors = True,
         )
-        #grep_main('help', opts, 'make.bat', 'Makefile', Grep=Grep)
         opts = Options(recursive=True, filesonly='match')
-        impl = _resolve_impl(kind, cf)
-        print('#' * 40)
-        print(f'# {opts}')
-        print('#' * 40)
+        impl = resolve_impl(kind, cf)
+        pat = 'help'
+        filenames = '.'
+        #filenames = ['make.bat', 'Makefile']
+        print(f'# grep {opts} {shlex.quote(pat)} {shlex.join(filenames)}')
         print()
-        grep('help', opts, '.', impl)
+        matches = grep(pat, opts, *filenames, impl=impl)
+        for line in render_matches(matches, opts):
+            print(line)
 
     @example
     def run_sequentially():

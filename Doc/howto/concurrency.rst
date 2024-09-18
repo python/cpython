@@ -1144,8 +1144,20 @@ Workload: grep
    <details>
    <summary>(expand for full example code)</summary>
 
-.. literalinclude:: ../includes/concurrency/grep.py
-   :dedent:
+.. literalinclude:: ../includes/concurrency/grep/__init__.py
+   :caption:
+   :linenos:
+
+.. literalinclude:: ../includes/concurrency/grep/__main__.py
+   :caption:
+   :linenos:
+
+.. literalinclude:: ../includes/concurrency/grep/_utils.py
+   :caption:
+   :linenos:
+
+.. literalinclude:: ../includes/concurrency/grep/_implementations.py
+   :caption:
    :linenos:
 
 .. raw:: html
@@ -1228,27 +1240,52 @@ We'll start with the high-level code corresponding to the application's
 five top-level tasks we identified earlier.
 
 Most of the high-level code has nothing to do with concurrency.
-The parts that do are handled entirely by ``_do_search()`` (highlighted),
+The parts that do are handled entirely by ``do_search()`` (highlighted),
 which we'll look at in a moment.
+
+.. literalinclude:: ../includes/concurrency/grep/__init__.py
+   :start-after: [start-high-level]
+   :end-before: [end-high-level]
+   :linenos:
+   :emphasize-lines: 3,10
+
+Here's the script that wraps that code and does steps 4 and 5:
 
 .. raw:: html
 
    <details>
    <summary>(expand)</summary>
 
-.. literalinclude:: ../includes/concurrency/grep.py
-   :start-after: [app]
-   :dedent:
+.. literalinclude:: ../includes/concurrency/grep/__main__.py
    :linenos:
-   :emphasize-lines: 21
 
 .. raw:: html
 
    </details>
 
-The rest of ``grep()`` isn't all that interesting
-relative to concurrency.  You can look at the implementation
-of the various helpers `above <example-grep-full-code_>`_.
+The high-level example code uses a helper named ``do_search()``
+to figure out the concurrency implementation to use, runs that
+implementation, and cleans up after it.  Mostly it's a wrapper around
+the desired search implementation.
+
+.. raw:: html
+
+   <details>
+   <summary>(expand)</summary>
+
+.. literalinclude:: ../includes/concurrency/grep/_implementations.py
+   :start-after: [start-do-search]
+   :end-before: [end-do-search]
+   :linenos:
+
+.. raw:: html
+
+   </details>
+
+As noted earlier, ``grep()`` itself isn't all that interesting
+relative to concurrency.  The same goes for ``do_search()``.
+You can look at the implementation of the various helpers
+`above <example-grep-full-code_>`_.
 
 One notable point is that the actual files are not opened until
 we need to iterate over the lines.  For the most part, this is so we
@@ -1258,38 +1295,30 @@ Instead we pass the filename, which is much simpler.
 Concurrent Code
 ^^^^^^^^^^^^^^^
 
-Now lets look at how concurrency fits in.  We'll start by looking
-at ``_do_search()``.
+Now lets look at how concurrency actually fits in.  ``do_search()``
+wraps the selected implementation.  The implementation, in turn,
+is a callable that returns an iterator of ``Match`` objects.
 
-.. literalinclude:: ../includes/concurrency/grep.py
-   :start-after: [start-do-search]
-   :end-before: [end-do-search]
-   :dedent:
-   :linenos:
-
-One thing to keep in mind is that it returns an iterable of
-``Match`` objects.  Concurrency may be happening as long as that
-iterable hasn't been exhausted.  It is happening more or less the entire
-time we loop over the matches in ``render_matches()``.  We must
-factor that into our concurrent implementations.
+Concurrency may be happening as long as that iterable hasn't been
+exhausted.  That means it is happening more or less the entire time
+we loop over the matches in ``render_matches()`` (in the script code
+above).  We must factor that into our concurrent implementations.
 
 With that in mind, lets look at the different concurrent implementations.
 
 We'll actually start with a non-concurrent, sequential one:
 
-.. literalinclude:: ../includes/concurrency/grep.py
+.. literalinclude:: ../includes/concurrency/grep/_implementations.py
    :start-after: [start-impl-sequential]
    :end-before: [end-impl-sequential]
-   :dedent:
    :linenos:
 
 ``search_lines()`` is the sequential-search helper used by all the
 implementations:
 
-.. literalinclude:: ../includes/concurrency/grep.py
+.. literalinclude:: ../includes/concurrency/grep/__init__.py
    :start-after: [start-search-lines]
    :end-before: [end-search-lines]
-   :dedent:
    :linenos:
 
 Each yielded ``Match`` object is a namedtuple of
@@ -1300,10 +1329,9 @@ For file-only matches, only ``match.filename`` is set.
 Now let's look at the implementations for the various concurrency
 models.  We'll start with the simplest: threads.
 
-.. literalinclude:: ../includes/concurrency/grep.py
+.. literalinclude:: ../includes/concurrency/grep/_implementations.py
    :start-after: [start-impl-threads]
    :end-before: [end-impl-threads]
-   :dedent:
    :linenos:
 
 We can use that as a baseline for the other implementations.
@@ -1343,7 +1371,7 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency/grep.py
+       .. literalinclude:: ../includes/concurrency/grep/_implementations.py
           :start-after: [start-sequential]
           :end-before: [end-sequential]
           :dedent:
@@ -1358,7 +1386,7 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency/grep.py
+       .. literalinclude:: ../includes/concurrency/grep/_implementations.py
           :start-after: [start-threads]
           :end-before: [end-threads]
           :dedent:
@@ -1373,7 +1401,7 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency/grep.py
+       .. literalinclude:: ../includes/concurrency/grep/_implementations.py
           :start-after: [start-subinterpreters]
           :end-before: [end-subinterpreters]
           :dedent:
@@ -1388,7 +1416,7 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency/grep.py
+       .. literalinclude:: ../includes/concurrency/grep/_implementations.py
           :start-after: [start-async]
           :end-before: [end-async]
           :dedent:
@@ -1403,7 +1431,7 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency/grep.py
+       .. literalinclude:: ../includes/concurrency/grep/_implementations.py
           :start-after: [start-multiprocessing]
           :end-before: [end-multiprocessing]
           :dedent:
@@ -1418,7 +1446,7 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency/grep.py
+       .. literalinclude:: ../includes/concurrency/grep/_implementations.py
           :start-after: [start-cf]
           :end-before: [end-cf]
           :dedent:
@@ -1465,7 +1493,7 @@ you can also use :mod:`concurrent.futures`:
    <details>
    <summary>(expand)</summary>
 
-.. literalinclude:: ../includes/concurrency/grep.py
+.. literalinclude:: ../includes/concurrency/grep/_implementations.py
    :start-after: [start-cf-threads]
    :end-before: [end-cf-threads]
    :dedent:
@@ -1558,7 +1586,7 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency.py
+       .. literalinclude:: ../includes/concurrency/run-examples.py
           :start-after: [start-w2-sequential]
           :end-before: [end-w2-sequential]
           :dedent:
@@ -1573,7 +1601,7 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency.py
+       .. literalinclude:: ../includes/concurrency/run-examples.py
           :start-after: [start-w2-threads]
           :end-before: [end-w2-threads]
           :dedent:
@@ -1588,7 +1616,7 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency.py
+       .. literalinclude:: ../includes/concurrency/run-examples.py
           :start-after: [start-w2-subinterpreters]
           :end-before: [end-w2-subinterpreters]
           :dedent:
@@ -1603,7 +1631,7 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency.py
+       .. literalinclude:: ../includes/concurrency/run-examples.py
           :start-after: [start-w2-async]
           :end-before: [end-w2-async]
           :dedent:
@@ -1618,7 +1646,7 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency.py
+       .. literalinclude:: ../includes/concurrency/run-examples.py
           :start-after: [start-w2-multiprocessing]
           :end-before: [end-w2-multiprocessing]
           :dedent:
@@ -1633,7 +1661,7 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency.py
+       .. literalinclude:: ../includes/concurrency/run-examples.py
           :start-after: [start-w2-cf]
           :end-before: [end-w2-cf]
           :dedent:
@@ -1726,7 +1754,7 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency.py
+       .. literalinclude:: ../includes/concurrency/run-examples.py
           :start-after: [start-w3-sequential]
           :end-before: [end-w3-sequential]
           :dedent:
@@ -1741,7 +1769,7 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency.py
+       .. literalinclude:: ../includes/concurrency/run-examples.py
           :start-after: [start-w3-threads]
           :end-before: [end-w3-threads]
           :dedent:
@@ -1756,7 +1784,7 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency.py
+       .. literalinclude:: ../includes/concurrency/run-examples.py
           :start-after: [start-w3-subinterpreters]
           :end-before: [end-w3-subinterpreters]
           :dedent:
@@ -1771,7 +1799,7 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency.py
+       .. literalinclude:: ../includes/concurrency/run-examples.py
           :start-after: [start-w3-async]
           :end-before: [end-w3-async]
           :dedent:
@@ -1786,7 +1814,7 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency.py
+       .. literalinclude:: ../includes/concurrency/run-examples.py
           :start-after: [start-w3-multiprocessing]
           :end-before: [end-w3-multiprocessing]
           :dedent:
@@ -1801,7 +1829,7 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency.py
+       .. literalinclude:: ../includes/concurrency/run-examples.py
           :start-after: [start-w3-cf]
           :end-before: [end-w3-cf]
           :dedent:

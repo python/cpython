@@ -1,10 +1,5 @@
-from collections import namedtuple
 import contextlib
-import os
-import os.path
 import re
-import sys
-import types
 
 # For concurrency:
 import asyncio
@@ -15,224 +10,8 @@ import multiprocessing
 import queue
 import threading
 
-
-class Match(namedtuple('Match', 'filename line match')):
-
-    @classmethod
-    def from_re_match(cls, m, line, filename):
-        if line.endswith(os.linesep):
-            line = line[:-len(os.linesep)]
-        return cls(filename, line, m.group(0))
-
-    @classmethod
-    def from_inverted_match(cls, line, filename):
-        if line.endswith(os.linesep):
-            line = line[:-len(os.linesep)]
-        return cls(filename, line, None)
-
-    def __new__(cls, filename, line=None, match=None):
-        return super().__new__(cls, filename or '???', line, match)
-
-
-# [start-search-lines]
-def search_lines(lines, regex, opts, filename):
-    try:
-        if opts.filesonly == 'invert':
-            for line in lines:
-                m = regex.search(line)
-                if m:
-                    break
-            else:
-                yield Match(filename)
-        elif opts.filesonly:
-            for line in lines:
-                m = regex.search(line)
-                if m:
-                    yield Match(filename)
-                    break
-        elif opts.invertmatch:
-            for line in lines:
-                m = regex.search(line)
-                if m:
-                    continue
-                yield Match.from_inverted_match(line, filename)
-        else:
-            for line in lines:
-                m = regex.search(line)
-                if not m:
-                    continue
-                yield Match.from_re_match(m, line, filename)
-    except UnicodeDecodeError:
-        # It must be a binary file.
-        return
-# [end-search-lines]
-
-
-def render_matches(matches, opts):
-    matches = iter(matches)
-
-    # Handle the first match.
-    blank = False
-    for filename, line, match in matches:
-        if opts.quiet:
-            blank = True
-        elif opts.filesonly:
-            yield filename
-        elif opts.showonlymatch:
-            if opts.invertmatch:
-                blank = True
-            elif opts.showfilename is False:
-                yield match
-            elif opts.showfilename:
-                yield f'{filename}: {match}'
-            else:
-                try:
-                    second = next(matches)
-                except StopIteration:
-                    yield match
-                else:
-                    yield f'{filename}: {match}'
-                    filename, _, match = second
-                    yield f'{filename}: {match}'
-        else:
-            if opts.showfilename is False:
-                yield line
-            elif opts.showfilename:
-                yield f'{filename}: {line}'
-            else:
-                try:
-                    second = next(matches)
-                except StopIteration:
-                    yield line
-                else:
-                    yield f'{filename}: {line}'
-                    filename, line, _ = second
-                    yield f'{filename}: {line}'
-        break
-
-    if blank:
-        return
-
-    # Handle the remaining matches.
-    if opts.filesonly:
-        for filename, _, _ in matches:
-            yield filename
-    elif opts.showonlymatch:
-        if opts.showfilename is False:
-            for filename, _, match in matches:
-                yield match
-        else:
-            for filename, _, match in matches:
-                yield f'{filename}: {match}'
-    else:
-        if opts.showfilename is False:
-            for filename, line, _ in matches:
-                yield line
-        else:
-            for filename, line, _ in matches:
-                yield f'{filename}: {line}'
-
-
-#######################################
-# files
-
-def resolve_filenames(filenames, opts):
-    for filename in filenames:
-        assert isinstance(filename, str), repr(filename)
-        if filename == '-':
-            yield '-'
-        elif not opts.recursive:
-            assert not os.path.isdir(filename)
-            yield filename
-        elif not os.path.isdir(filename):
-            yield filename
-        else:
-            for d, _, files in os.walk(filename):
-                for base in files:
-                    yield os.path.join(d, base)
-
-
-def iter_lines(filename):
-    if filename == '-':
-        yield from sys.stdin
-    else:
-        with open(filename) as infile:
-            yield from infile
-
-
-#######################################
-# options
-
-class Options(types.SimpleNamespace):
-
-    CLI_BY_ATTR = {
-        # file selection
-        'recursive': [('-r', '--recursive', True)],
-        # matching control
-        'ignorecase': [('-i', '--ignore-case', True)],
-        'invertmatch': [('-v', '--invert-match', True)],
-        # output control
-        'showfilename': [('-H', '--with-filename', True),
-                          ('-h', '--no-filename', False)],
-        'filesonly': [('-L', '--files-without-match', 'invert'),
-                      ('-l', '--files-with-matches', 'match')],
-        'showonlymatch': [('-o', '--only-matching', True)],
-        'quiet': [('-q', '--quiet', '--silent', True)],
-        'hideerrors': [('-s', '--no-messages', True)],
-    }
-
-    @classmethod
-    def add_cli(cls, parser, dest='grepopts'):
-        assert dest
-
-        import argparse
-        class GrepOptsAction(argparse.Action):
-            DEST = dest
-            def __init__(self,
-                         option_strings,
-                         dest,
-                         default=cls(),
-                         nargs=0,
-                         **kwargs):
-                kwargs['default'] = default
-                assert nargs == 0, nargs
-                kwargs['nargs'] = nargs
-                super().__init__(option_strings, self.DEST, **kwargs)
-                self.grepoptsattr = dest
-            def __call__(self, parser, namespace, values, option_string=None):
-                setattr(self.default, self.grepoptsattr, self.const)
-
-        for attr, opts in cls.CLI_BY_ATTR.items():
-            for opt in opts:
-                parser.add_argument(*opt[:-1], dest=attr,
-                                    action=GrepOptsAction, const=opt[-1])
-
-    def __init__(self, *,
-                 recursive=False,
-                 ignorecase=False,
-                 invertmatch=False,
-                 showfilename=None,
-                 filesonly=None,
-                 showonlymatch=False,
-                 quiet=False,
-                 hideerrors=False,
-                 ):
-        self.__dict__.update(locals())
-        del self.self
-
-    def __str__(self):
-        import shlex
-        return shlex.join(self.as_argv())
-
-    def as_argv(self, *, short=True):
-        argv = []
-        for attr, opts in self.CLI_BY_ATTR.items():
-            value = getattr(self, attr)
-            for opt in opts:
-                if value == opt[-1]:
-                    argv.append(opt[0] if short else opt[1])
-                    break
-        return argv
+from . import search_lines, Match
+from ._utils import iter_lines
 
 
 #######################################
@@ -1367,6 +1146,9 @@ class GrepWithCFMultiprocessingAlt(CFGrep):
 # [end-cf]
 
 
+#######################################
+# registered implementations
+
 IMPLEMENTATIONS = {
     'sequential': search_sequential,
     'threads': search_threads,
@@ -1390,7 +1172,7 @@ CF_IMPLEMENTATIONS_ALT = {
 }
 
 
-def _resolve_impl(impl, cf):
+def impl_from_name(impl, cf=False):
     if cf == 'alt':
         return CF_IMPLEMENTATIONS_ALT[impl]
     elif cf:
@@ -1399,142 +1181,69 @@ def _resolve_impl(impl, cf):
         return IMPLEMENTATIONS[impl]
 
 
-def resolve_concurrency(concurrency, cf=None):
-    if concurrency is None:
-        impl = _impl_sequential
-    elif isinstance(concurrency, str):
-        impl = _resolve_impl(concurrency, cf)
+class ImplWrapper:
+    def __init__(self, impl):
+        assert not hasattr(type(impl), '__enter__'), impl
+        assert callable(impl), impl
+        self._impl = impl
+    def __enter__(self):
+        return self._impl
+    def __exit__(self, *args):
+        pass
+    def __call__(self, filenames, regex, opts):
+        return self._impl(filenames, regex, opts)
+
+
+def resolve_impl(impl, cf=None):
+    if isinstance(impl, str):
+        impl = impl_from_name(impl, cf)
     else:
-        assert cf is None, cf
-        impl = concurrency
+        assert not cf, cf
+        if impl is None:
+            impl = search_sequential
 
     if isinstance(impl, ConcurrentImpl):
-        return contextlib.nullcontext(impl)
+        return ImplWrapper(impl)
     elif isinstance(impl, type):
         if not issubclass(impl, ConcurrentImpl):
             raise TypeError(impl)
         return impl()
     elif callable(impl):
+        if not hasattr(type(impl), '__enter__'):
+            impl = ImplWrapper(impl)
         return impl
     else:
         raise TypeError(impl)
 
 
-#######################################
-
 # [start-do-search]
-@contextlib.contextmanager
-def _do_search(filenames, regex, opts, concurrency):
+def resolve_search(impl, cf=False):
     # "impl" is a callable that performs a search for
     # a set of files.  That might be a function or not.
-    impl = resolve_concurrency(concurrency)
+    impl = resolve_impl(impl, cf)
+    assert hasattr(type(impl), '__enter__'), impl
 
-    # If not a function, tt may involve resources that
-    # need to be cleaned up when we're done, in which
-    # case it can be used as a context manager.
-    if not hasattr(type(impl), '__enter__'):
-        impl = contextlib.nullcontext(impl)
-    with impl as search:
+    @contextlib.contextmanager
+    def do_search(filenames, regex, opts):
+        # If not a function, tt may involve resources that
+        # need to be cleaned up when we're done, in which
+        # case it can be used as a context manager.
+        with impl as search:
 
-        # "maches" is an iteraterable of Match objects.
-        # Concurrency can only happen here.
-        matches = search(filenames, regex, opts)
+            # "maches" is an iteraterable of Match objects.
+            # Concurrency can only happen here.
+            matches = search(filenames, regex, opts)
 
-        # Just like with "impl" this search operation may
-        # involve resources that need to be cleaned up
-        # once we're done searching.  Thus the returned
-        # object might also be a context manager.
-        cm = matches
-        if not hasattr(type(cm), '__enter__'):
-            cm = contextlib.nullcontext(matches)
-        with cm as matches:
+            # Just like with "impl" this search operation may
+            # involve resources that need to be cleaned up
+            # once we're done searching.  Thus the returned
+            # object might also be a context manager.
+            cm = matches
+            if not hasattr(type(cm), '__enter__'):
+                cm = contextlib.nullcontext(matches)
+            with cm as matches:
 
-            # This is what _do_search() actually "returns".
-            yield matches
+                # This is what do_search() actually "returns".
+                yield matches
+    return do_search
 # [end-do-search]
-
-
-#######################################
-# [app]
-
-def grep(regex, opts, filenames, concurrency=None):
-    # step 1:
-    if isinstance(regex, str):
-        regex = re.compile(regex)
-    # step 2:
-    filenames = resolve_filenames(filenames, opts)
-
-    # needed for step 5:
-    matched = False
-    def iter_matches(matches):
-        nonlocal matched
-        matches = iter(matches)
-        for match in matches:
-            matched = True
-            yield match
-            break
-        yield from matches
-
-    # step 3:
-    with _do_search(filenames, regex, opts, concurrency) as matches:
-        matches = iter_matches(matches)
-        # step 4:
-        for line in render_matches(matches, opts):
-            print(line)
-
-    # step 5:
-    return 0 if matched else 1
-
-
-def parse_args(argv=sys.argv[1:], prog=sys.argv[0]):
-    import argparse
-    parser = argparse.ArgumentParser(
-        prog=prog,
-        usage=('[--help] [--concurrency MODEL] [--cf] [-rivHhLloqs] '
-               '[-e] REGEX FILE [FILE ...]'),
-        add_help=False,
-    )
-
-    parser.add_argument('--help', action='help', default=argparse.SUPPRESS,
-                        help='show this help message and exit')
-
-    concurrencyopts = parser.add_argument_group(title='concurrency')
-    concurrencyopts.add_argument('--concurrency', dest='impl',
-                                 choices=tuple(IMPLEMENTATIONS))
-    parser.set_defaults(impl='sequential')
-    concurrencyopts.add_argument('--cf', '--concurrent-futures', dest='cf',
-                                 action='store_const', const=True)
-    concurrencyopts.add_argument('--cf-alt', dest='cf',
-                                 action='store_const', const='alt')
-
-    grepopts = parser.add_argument_group(title='grep')
-    Options.add_cli(grepopts, 'opts')
-
-    regexopts = grepopts.add_mutually_exclusive_group(required=True)
-    regexopts.add_argument('-e', '--regexp', dest='regex', metavar='REGEX')
-    regexopts.add_argument('regex', nargs='?', metavar='REGEX')
-    grepopts.add_argument('files', nargs='+', metavar='FILE')
-
-    args = parser.parse_args()
-    ns = vars(args)
-
-    impl = ns.pop('impl')
-    cf = ns.pop('cf')
-    opts = ns.pop('opts')
-    pat = ns.pop('regex')
-    files = ns.pop('files')
-    assert not ns, ns
-
-    if impl not in IMPLEMENTATIONS:
-        raise NotImplementedError(impl)
-    if cf and impl not in CF_IMPLEMENTATIONS:
-        parser.error(f'{impl} does not support --cf')
-
-    return impl, cf, opts, pat, files
-
-
-if __name__ == '__main__':
-    impl, cf, opts, pat, files = parse_args()
-    impl = _resolve_impl(impl, cf)
-    rc = grep(pat, opts, files, impl)
-    sys.exit(rc)
