@@ -3330,7 +3330,12 @@ Py_ExitStatusException(PyStatus status)
 /* Wait until threading._shutdown completes, provided
    the threading module was imported in the first place.
    The shutdown routine will wait until all non-daemon
-   "threading" threads have completed. */
+   "threading" threads have completed.
+
+   Returns a reference to the threading module. `daemon_threads_exited` should
+   be called with this reference after the interpreter has been marked
+   finalizing.
+*/
 static PyObject *
 wait_for_thread_shutdown(PyThreadState *tstate)
 {
@@ -3353,6 +3358,7 @@ wait_for_thread_shutdown(PyThreadState *tstate)
     return threading;
 }
 
+/* Steals a reference to threading_module */
 static void
 daemon_threads_exited(PyObject *threading_module)
 {
