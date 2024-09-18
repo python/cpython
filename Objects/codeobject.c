@@ -2729,7 +2729,7 @@ _PyCodeArray_New(Py_ssize_t size)
 static void
 copy_code(_Py_CODEUNIT *dst, PyCodeObject *co)
 {
-    Py_ssize_t code_len = Py_SIZE(co);
+    int code_len = (int) Py_SIZE(co);
     for (Py_ssize_t i = 0; i < code_len;
          i += _PyInstruction_GetLength(co, i)) {
         dst[i] = _Py_GetBaseCodeUnit(co, i);
