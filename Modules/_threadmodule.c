@@ -2435,9 +2435,7 @@ thread__daemon_threads_exited(PyObject *self, PyObject *args)
         HEAD_UNLOCK(&_PyRuntime);
         // gh-123940: Mark daemon threads as done so that they can be joined
         // from finalizers.
-        if (ThreadHandle_set_done(handle) < 0) {
-            PyErr_WriteUnraisable(NULL);
-        }
+        _PyEvent_Notify(&handle->thread_is_exiting);
         ThreadHandle_decref(handle);
     }
 
