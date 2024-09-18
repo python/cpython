@@ -185,8 +185,9 @@ def get_unexpected_improvements(
     files_with_warnings: set[IgnoreRule],
 ) -> int:
     """
-    Returns failure status if there are no warnings in the list of warnings
-    for a file that is in the list of files with expected warnings
+    Returns failure status if the number of warnings for a file is greater
+    than the expected number of warnings for that file based on the ignore
+    rules
     """
     unexpected_improvements = []
     for rule in ignore_rules:
