@@ -5340,8 +5340,7 @@ get_base_by_token_from_mro(PyTypeObject *type, void *token)
 
 static int
 check_base_by_token(PyTypeObject *type, void *token) {
-    // Tell the C to keep this code individual by reducing the common parts
-    // with PyType_GetBaseByToken() for better performance (e.g. use if-else).
+    // Chain the branches, which will be optimized exclusive here
     if (token == NULL) {
         // This avoids being inlined thanks to varargs
         PyErr_Format(PyExc_SystemError,
@@ -5353,8 +5352,7 @@ check_base_by_token(PyTypeObject *type, void *token) {
                      "expected a type, got a '%T' object", type);
         return -1;
     }
-    else if (!PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-        // Check with a public function not used by PyType_GetBaseByToken()
+    else if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         return 0;
     }
     else if (((PyHeapTypeObject*)type)->ht_token == token) {
@@ -5382,25 +5380,26 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
         return check_base_by_token(type, token);
     }
 
+    // Chain the branches, which will be optimized exclusive here
+    PyTypeObject *base;
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // No static type has a heaptype superclass,
         // which is ensured by type_ready_mro().
         *result = NULL;
         return 0;
     }
-    if (((PyHeapTypeObject*)type)->ht_token == token) {
+    else if (((PyHeapTypeObject*)type)->ht_token == token) {
         *result = (PyTypeObject *)Py_NewRef(type);
         return 1;
     }
-
-    PyTypeObject *base;
-    if (type->tp_mro != NULL) {
+    else if (type->tp_mro != NULL) {
         // Expect this to be inlined
         base = get_base_by_token_from_mro(type, token);
     }
     else {
         base = get_base_by_token_recursive(type, token);
     }
+
     if (base != NULL) {
         *result = (PyTypeObject *)Py_NewRef(base);
         return 1;
