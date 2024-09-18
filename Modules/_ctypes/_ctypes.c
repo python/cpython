@@ -500,7 +500,7 @@ CType_Type_dealloc(PyObject *self)
 {
     StgInfo *info = _PyStgInfo_FromType_NoState(self);
     if (!info) {
-        PyErr_WriteUnraisable(self);
+        PyErr_WriteUnraisable(NULL);  // NULL avoids segfault here
     }
     if (info) {
         PyMem_Free(info->ffi_type_pointer.elements);
@@ -560,6 +560,7 @@ static PyMethodDef ctype_methods[] = {
 };
 
 static PyType_Slot ctype_type_slots[] = {
+    {Py_tp_token, Py_TP_USE_SPEC},
     {Py_tp_traverse, CType_Type_traverse},
     {Py_tp_clear, CType_Type_clear},
     {Py_tp_dealloc, CType_Type_dealloc},
@@ -569,7 +570,7 @@ static PyType_Slot ctype_type_slots[] = {
     {0, NULL},
 };
 
-static PyType_Spec pyctype_type_spec = {
+PyType_Spec pyctype_type_spec = {
     .name = "_ctypes.CType_Type",
     .basicsize = -(Py_ssize_t)sizeof(StgInfo),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
