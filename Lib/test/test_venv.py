@@ -504,6 +504,21 @@ class BasicTest(BaseTest):
         )
         self.assertEqual(out.strip(), '0')
 
+    @unittest.skipUnless(os.name == 'nt' and can_symlink(),
+                         'symlinks on Windows')
+    def test_failed_symlink(self):
+        """
+        Test handling of failed symlinks on Windows.
+        """
+        rmtree(self.env_dir)
+        env_dir = os.path.join(os.path.realpath(self.env_dir), 'venv')
+        with patch('os.symlink') as mock_symlink:
+            mock_symlink.side_effect = OSError()
+            builder = venv.EnvBuilder(clear=True, symlinks=True)
+            _, err = self.run_with_capture(builder.create, env_dir)
+            filepath_regex = r"'[A-Z]:\\\\(?:[^\\\\]+\\\\)*[^\\\\]+'"
+            self.assertRegex(err, rf"Unable to symlink {filepath_regex} to {filepath_regex}")
+
     @requireVenvCreate
     def test_multiprocessing(self):
         """
