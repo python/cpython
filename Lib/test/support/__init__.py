@@ -17,6 +17,7 @@ import time
 import types
 import unittest
 import warnings
+from pathlib import Path
 
 
 __all__ = [
@@ -61,6 +62,7 @@ __all__ = [
     "without_optimizer",
     "force_not_colorized",
     "BrokenIter",
+    "in_systemd_nspawn",
     ]
 
 
@@ -2873,3 +2875,11 @@ class BrokenIter:
         if self.iter_raises:
             1/0
         return self
+
+
+def in_systemd_nspawn() -> bool:
+    try:
+        return (Path("/run/systemd/container").read_bytes().rstrip() ==
+                b"systemd-nspawn")
+    except FileNotFoundError:
+        return False

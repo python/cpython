@@ -1,0 +1,2 @@
+Skip tests failing with ``--suppress-sync=true`` when running inside
+systemd-nspawn container.
