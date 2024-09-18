@@ -2033,8 +2033,7 @@ Function and class definitions
    * ``name`` is a raw string for the class name
    * ``bases`` is a list of nodes for explicitly specified base classes.
    * ``keywords`` is a list of :class:`.keyword` nodes, principally for 'metaclass'.
-     Other keywords will be passed to the metaclass, as per `PEP-3115
-     <https://peps.python.org/pep-3115/>`_.
+     Other keywords will be passed to the metaclass, as per :pep:`3115`.
    * ``body`` is a list of nodes representing the code within the class
      definition.
    * ``decorator_list`` is a list of nodes, as in :class:`FunctionDef`.
