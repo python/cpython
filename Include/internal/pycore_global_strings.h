@@ -234,7 +234,6 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(_blksize)
         STRUCT_FOR_ID(_bootstrap)
         STRUCT_FOR_ID(_check_retval_)
-        STRUCT_FOR_ID(_daemon_threads_exited)
         STRUCT_FOR_ID(_dealloc_warn)
         STRUCT_FOR_ID(_feature_version)
         STRUCT_FOR_ID(_field_types)
