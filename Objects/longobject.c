@@ -6798,14 +6798,15 @@ PyLong_Export(PyObject *obj, PyLongExport *export_long)
         return -1;
     }
 
+    // Fast-path: try to convert to a int64_t
     int overflow;
 #if SIZEOF_LONG == 8
     long value = PyLong_AsLongAndOverflow(obj, &overflow);
-#elif SIZEOF_LONG_LONG == 8
-    long long value = PyLong_AsLongLongAndOverflow(obj, &overflow);
 #else
-#   error "unable to convert a long to int64_t"
+    // Windows has 32-bit long, so use 64-bit long long instead
+    long long value = PyLong_AsLongLongAndOverflow(obj, &overflow);
 #endif
+    Py_BUILD_ASSERT(sizeof(value) == sizeof(int64_t));
     // the function cannot fail since obj is a PyLongObject
     assert(!(value == -1 && PyErr_Occurred()));
 
