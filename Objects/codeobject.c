@@ -2730,8 +2730,7 @@ static void
 copy_code(_Py_CODEUNIT *dst, PyCodeObject *co)
 {
     int code_len = (int) Py_SIZE(co);
-    for (Py_ssize_t i = 0; i < code_len;
-         i += _PyInstruction_GetLength(co, i)) {
+    for (int i = 0; i < code_len; i += _PyInstruction_GetLength(co, i)) {
         dst[i] = _Py_GetBaseCodeUnit(co, i);
     }
     _PyCode_Quicken(dst, code_len);
