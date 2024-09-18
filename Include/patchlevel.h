@@ -5,7 +5,7 @@
    configure.ac must also be changed.
 
    There is also (independent) API version information in modsupport.h.
-*/
+*/Include/patchlevel.h
 
 /* Values for PY_RELEASE_LEVEL */
 #define PY_RELEASE_LEVEL_ALPHA  0xA
