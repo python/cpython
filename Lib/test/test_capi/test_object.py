@@ -1,7 +1,9 @@
 import enum
 import unittest
+from test import support
 from test.support import import_helper
 from test.support import os_helper
+from threading import Thread
 
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 _testcapi = import_helper.import_module('_testcapi')
@@ -130,6 +132,23 @@ class ClearWeakRefsNoCallbacksTest(unittest.TestCase):
             ref = weakref.ref(obj)
         _testcapi.pyobject_clear_weakrefs_no_callbacks(obj)
 
+class EnableDeferredRefcountingTest(unittest.TestCase):
+    """Test PyUnstable_Object_EnableDeferredRefcount"""
+    def test_enable_deferred_refcount(self):
+        if support.Py_GIL_DISABLED:
+            with self.assertRaises(TypeError):
+                _testcapi.pyobject_enable_deferred_refcount("not tracked")
+
+        if support.Py_GIL_DISABLED:
+            def foo(obj):
+                with self.assertRaises(ValueError):
+                    _testcapi.pyobject_enable_deferred_refcount(obj)
+
+            thread = Thread(target=foo, args=([],))
+            thread.start()
+            thread.join()
+
+        self.assertEqual(_testcapi.pyobject_enable_deferred_refcount([]), int(support.Py_GIL_DISABLED))
 
 if __name__ == "__main__":
     unittest.main()
