@@ -2505,8 +2505,10 @@ PyUnstable_Object_EnableDeferredRefcount(PyObject *op)
 
     _PyObject_SET_GC_BITS(op, _PyGC_BITS_DEFERRED);
     op->ob_ref_shared = _Py_REF_SHARED(_Py_REF_DEFERRED, 0);
-#endif
+    return 1;
+#else
     return 0;
+#endif
 }
 
 void
