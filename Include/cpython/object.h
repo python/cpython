@@ -532,4 +532,4 @@ PyAPI_FUNC(PyRefTracer) PyRefTracer_GetTracer(void**);
  * If this is called on a build with the GIL enabled, this
  * function does nothing.
  */
-PyAPI_FUNC(int) PyUnstable_Object_SetDeferredRefcount(PyObject *);
+PyAPI_FUNC(int) PyUnstable_Object_EnableDeferredRefcount(PyObject *);

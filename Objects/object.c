@@ -2483,7 +2483,7 @@ _PyObject_SetDeferredRefcount(PyObject *op)
 }
 
 int
-PyUnstable_Object_SetDeferredRefcount(PyObject *op)
+PyUnstable_Object_EnableDeferredRefcount(PyObject *op)
 {
 #ifdef Py_GIL_DISABLED
     if (!PyType_IS_GC(Py_TYPE(op))) {

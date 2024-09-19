@@ -576,7 +576,7 @@ Object Protocol
 
    .. versionadded:: 3.13
 
-.. c:function:: int PyUnstable_Object_SetDeferredRefcount(PyObject *obj)
+.. c:function:: int PyUnstable_Object_EnableDeferredRefcount(PyObject *obj)
 
    Enable `deferred reference counting <https://peps.python.org/pep-0703/#deferred-reference-counting>`_ on *obj*,
    if supported by the runtime.  In the :term:`free-threaded <free threading>` build,
