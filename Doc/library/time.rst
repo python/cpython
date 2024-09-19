@@ -327,7 +327,7 @@ Functions
 
    .. impl-detail::
 
-      On CPython, use the same clock than :func:`time.monotonic()` and is a
+      On CPython, use the same clock than :func:`time.monotonic` and is a
       monotonic clock, i.e. a clock that cannot go backwards.
 
    Use :func:`perf_counter_ns` to avoid the precision loss caused by the
@@ -339,7 +339,7 @@ Functions
       On Windows, the function is now system-wide.
 
    .. versionchanged:: 3.13
-      Use the same clock than :func:`time.monotonic()`.
+      Use the same clock than :func:`time.monotonic`.
 
 
 .. function:: perf_counter_ns() -> int
