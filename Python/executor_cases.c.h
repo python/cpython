@@ -5450,7 +5450,7 @@
 
         case _MAKE_WARM: {
             current_executor->vm_data.warm = true;
-            if (++tstate->interp->run_counter > 100) {
+            if (++tstate->interp->run_counter > 1000000) {
                 _Py_set_eval_breaker_bit(tstate, _PY_EVAL_JIT_INVALIDATE_COLD_BIT);
                 tstate->interp->run_counter = 0;
             }
