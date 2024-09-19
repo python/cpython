@@ -2488,7 +2488,7 @@ PyUnstable_Object_EnableDeferredRefcount(PyObject *op)
 #ifdef Py_GIL_DISABLED
     if (!PyType_IS_GC(Py_TYPE(op))) {
         PyErr_SetString(PyExc_TypeError,
-                     "object is not tracked by the garbage collector");
+                        "object is not tracked by the garbage collector");
         return -1;
     }
 
