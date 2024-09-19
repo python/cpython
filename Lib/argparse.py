@@ -2620,6 +2620,10 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # Exiting methods
     # ===============
     def exit(self, status=0, message=None):
+        """exit(status=0, message=None)
+
+        Exit the program, optionally printing an exit message.
+        """
         if message:
             self._print_message(message, _sys.stderr)
         _sys.exit(status)
