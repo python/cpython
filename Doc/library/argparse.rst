@@ -25,7 +25,7 @@ will figure out how to parse those out of :data:`sys.argv`.  The :mod:`argparse`
 module also automatically generates help and usage messages.  The module
 will also issue errors when users give the program invalid arguments.
 
-Quick Links for :class:`ArgumentParser`
+Quick Links for ArgumentParser
 ---------------------------------------
 ========================= =========================================================================================================== ==================================================================================
 Name                      Description                                                                                                 Values
