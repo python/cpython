@@ -999,7 +999,8 @@ class date:
     def fromtimestamp(cls, t):
         "Construct a date from a POSIX timestamp (like time.time())."
         if t is None:
-            raise TypeError("'NoneType' object cannot be interpreted as an integer")
+            raise TypeError("'NoneType' object cannot be interpreted "
+                            "as an integer or a float")
         y, m, d, hh, mm, ss, weekday, jday, dst = _time.localtime(t)
         return cls(y, m, d)
 
