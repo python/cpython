@@ -1601,10 +1601,6 @@ _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
         return 0;
     }
 
-    // Directly set it to that if a GC cycle happens, the descriptor doesn't get
-    // evaporated.
-    // This is why we no longer need a strong reference for this if it's
-    // deferred.
     _PyType_LookupStackRef(tp, name, method);
     _PyStackRef descr_st = *method;
     descrgetfunc f = NULL;
@@ -1614,7 +1610,13 @@ _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
         } else {
             f = PyStackRef_TYPE(descr_st)->tp_descr_get;
             if (f != NULL && PyDescr_IsData(PyStackRef_AsPyObjectBorrow(descr_st))) {
-                *method = PyStackRef_FromPyObjectSteal(f(PyStackRef_AsPyObjectBorrow(descr_st), obj, (PyObject *)Py_TYPE(obj)));
+                PyObject *call_res_o = f(PyStackRef_AsPyObjectBorrow(descr_st), obj, (PyObject *)Py_TYPE(obj));
+                if (call_res_o != NULL) {
+                    *method = PyStackRef_FromPyObjectSteal(call_res_o);
+                }
+                else {
+                    *method = PyStackRef_NULL;
+                }
                 PyStackRef_CLOSE(descr_st);
                 return 0;
             }
@@ -1659,7 +1661,13 @@ _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
     }
 
     if (f != NULL) {
-        *method = PyStackRef_FromPyObjectSteal(f(PyStackRef_AsPyObjectBorrow(descr_st), obj, (PyObject *)Py_TYPE(obj)));
+        PyObject *call_res_o = f(PyStackRef_AsPyObjectBorrow(descr_st), obj, (PyObject *)Py_TYPE(obj));
+        if (call_res_o != NULL) {
+            *method = PyStackRef_FromPyObjectSteal(call_res_o);
+        }
+        else {
+            *method = PyStackRef_NULL;
+        }
         PyStackRef_CLOSE(descr_st);
         return 0;
     }
@@ -1679,7 +1687,12 @@ _PyObject_GetMethodStackRef(PyObject *obj, PyObject *name, _PyStackRef *method)
 #else
     PyObject *res = NULL;
     int err = _PyObject_GetMethod(obj, name, &res);
-    *method = res == NULL ? PyStackRef_NULL : PyStackRef_FromPyObjectSteal(res);
+    if (res == NULL) {
+        *method = PyStackRef_NULL;
+    }
+    else {
+        *method = PyStackRef_FromPyObjectSteal(res);
+    }
     return err;
 #endif
 }

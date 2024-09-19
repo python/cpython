@@ -149,7 +149,8 @@ PyStackRef_FromPyObjectNew(PyObject *obj)
 {
     // Make sure we don't take an already tagged value.
     assert(((uintptr_t)obj & Py_TAG_BITS) == 0);
-    if (obj == NULL || _Py_IsImmortal(obj) || _PyObject_HasDeferredRefcount(obj)) {
+    assert(obj != NULL);
+    if (_Py_IsImmortal(obj) || _PyObject_HasDeferredRefcount(obj)) {
         return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_DEFERRED };
     }
     else {

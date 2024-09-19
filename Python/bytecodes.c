@@ -2005,7 +2005,12 @@ dummy_func(
             else {
                 /* Classic, pushes one value. */
                 PyObject *attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
-                *attr = attr_o == NULL ? PyStackRef_NULL : PyStackRef_FromPyObjectSteal(attr_o);
+                if (attr_o == NULL) {
+                    *attr = PyStackRef_NULL;
+                }
+                else {
+                    *attr = PyStackRef_FromPyObjectSteal(attr_o);
+                }
                 DECREF_INPUTS();
                 ERROR_IF(PyStackRef_IsNull(*attr), error);
             }

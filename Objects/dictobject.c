@@ -2327,13 +2327,7 @@ _PyDict_GetItemRef_KnownHash(PyDictObject *op, PyObject *key, Py_hash_t hash, Py
 int
 _PyDict_GetItem_KnownHash_StackRef(PyDictObject *op, PyObject *key, Py_hash_t hash, _PyStackRef *result)
 {
-#ifdef Py_GIL_DISABLED
     Py_ssize_t ix = _Py_dict_lookup_threadsafe_stackref(op, key, hash, result);
-#else
-    PyObject *value;
-    Py_ssize_t ix = _Py_dict_lookup(op, key, hash, &value);
-    *result = PyStackRef_FromPyObjectSteal(value);
-#endif
     assert(ix >= 0 || PyStackRef_IsNull(*result));
     if (ix == DKIX_ERROR) {
         *result = PyStackRef_NULL;
@@ -7112,7 +7106,12 @@ _PyObject_TryGetInstanceAttributeStackRef(PyObject *obj, PyObject *name, _PyStac
 
 #ifdef Py_GIL_DISABLED
     PyObject *value = _Py_atomic_load_ptr_acquire(&values->values[ix]);
-    *attr = PyStackRef_FromPyObjectNew(value);
+    if (value == NULL) {
+        *attr = PyStackRef_NULL;
+    }
+    else {
+        *attr = PyStackRef_FromPyObjectNew(value);
+    }
     if (value == _Py_atomic_load_ptr_acquire(&values->values[ix])) {
         return true;
     }
@@ -7129,7 +7128,12 @@ _PyObject_TryGetInstanceAttributeStackRef(PyObject *obj, PyObject *name, _PyStac
             // Still no dict, we can read from the values
             assert(values->valid);
             value = values->values[ix];
-            *attr = PyStackRef_FromPyObjectNew(value);
+            if (value != NULL) {
+                *attr = PyStackRef_FromPyObjectNew(value);
+            }
+            else {
+                *attr = PyStackRef_NULL;
+            }
             success = true;
         }
 
@@ -7161,7 +7165,12 @@ _PyObject_TryGetInstanceAttributeStackRef(PyObject *obj, PyObject *name, _PyStac
     return success;
 #else
     PyObject *value = values->values[ix];
-    *attr = PyStackRef_FromPyObjectNew(value);
+    if (value != NULL) {
+        *attr = PyStackRef_FromPyObjectNew(value);
+    }
+    else {
+        *attr = PyStackRef_NULL;
+    }
     return true;
 #endif
 }

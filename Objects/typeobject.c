@@ -5600,7 +5600,12 @@ _PyType_LookupStackRef(PyTypeObject *type, PyObject *name, _PyStackRef *result)
             OBJECT_STAT_INC_COND(type_cache_hits, !is_dunder_name(name));
             OBJECT_STAT_INC_COND(type_cache_dunder_hits, is_dunder_name(name));
             PyObject *value = _Py_atomic_load_ptr_relaxed(&entry->value);
-            *result = PyStackRef_FromPyObjectNew(value);
+            if (value == NULL) {
+                *result = PyStackRef_NULL;
+            }
+            else {
+                *result = PyStackRef_FromPyObjectNew(value);
+            }
             // If the sequence is still valid then we're done
             if (_PySeqLock_EndRead(&entry->sequence, sequence)) {
                 return;
