@@ -182,6 +182,17 @@
             break;
         }
 
+        case _LOAD_FAST_DEFERRED: {
+            _PyStackRef value;
+            oparg = CURRENT_OPARG();
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
+            value = PyStackRef_DUP(GETLOCAL(oparg));
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _LOAD_FAST_AND_CLEAR: {
             _PyStackRef value;
             oparg = CURRENT_OPARG();

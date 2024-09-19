@@ -1994,6 +1994,7 @@ scan_block_for_locals(basicblock *b, basicblock ***sp)
                 unsafe_mask &= ~bit;
                 break;
             case LOAD_FAST:
+            case LOAD_FAST_DEFERRED:
                 if (unsafe_mask & bit) {
                     instr->i_opcode = LOAD_FAST_CHECK;
                 }

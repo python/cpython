@@ -33,6 +33,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_FAST_6] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
     [_LOAD_FAST_7] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
     [_LOAD_FAST] = HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_PURE_FLAG,
+    [_LOAD_FAST_DEFERRED] = HAS_ARG_FLAG | HAS_LOCAL_FLAG,
     [_LOAD_FAST_AND_CLEAR] = HAS_ARG_FLAG | HAS_LOCAL_FLAG,
     [_LOAD_FAST_LOAD_FAST] = HAS_ARG_FLAG | HAS_LOCAL_FLAG,
     [_LOAD_CONST] = HAS_ARG_FLAG | HAS_CONST_FLAG | HAS_PURE_FLAG,
@@ -469,6 +470,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_LOAD_FAST_7] = "_LOAD_FAST_7",
     [_LOAD_FAST_AND_CLEAR] = "_LOAD_FAST_AND_CLEAR",
     [_LOAD_FAST_CHECK] = "_LOAD_FAST_CHECK",
+    [_LOAD_FAST_DEFERRED] = "_LOAD_FAST_DEFERRED",
     [_LOAD_FAST_LOAD_FAST] = "_LOAD_FAST_LOAD_FAST",
     [_LOAD_FROM_DICT_OR_DEREF] = "_LOAD_FROM_DICT_OR_DEREF",
     [_LOAD_GLOBAL] = "_LOAD_GLOBAL",
@@ -579,6 +581,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _LOAD_FAST_7:
             return 0;
         case _LOAD_FAST:
+            return 0;
+        case _LOAD_FAST_DEFERRED:
             return 0;
         case _LOAD_FAST_AND_CLEAR:
             return 0;

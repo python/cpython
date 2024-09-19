@@ -5567,6 +5567,19 @@
             DISPATCH();
         }
 
+        TARGET(LOAD_FAST_DEFERRED) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(LOAD_FAST_DEFERRED);
+            _PyStackRef value;
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
+            value = PyStackRef_DUP(GETLOCAL(oparg));
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+
         TARGET(LOAD_FAST_LOAD_FAST) {
             frame->instr_ptr = next_instr;
             next_instr += 1;

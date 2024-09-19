@@ -259,6 +259,8 @@ Known values:
     Python 3.14a1 3605 (Move ENTER_EXECUTOR to opcode 255)
     Python 3.14a1 3606 (Specialize CALL_KW)
 
+    Python 3.14a1 3607 (LOAD_FAST_DEFERRED)
+
     Python 3.15 will start with 3650
 
     Please don't copy-paste the same pre-release tag for new entries above!!!
@@ -270,7 +272,7 @@ PC/launcher.c must also be updated.
 
 */
 
-#define PYC_MAGIC_NUMBER 3606
+#define PYC_MAGIC_NUMBER 3607
 /* This is equivalent to converting PYC_MAGIC_NUMBER to 2 bytes
    (little-endian) and then appending b'\r\n'. */
 #define PYC_MAGIC_NUMBER_TOKEN \
