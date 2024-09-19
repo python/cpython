@@ -71,7 +71,7 @@ the extracted data in a :class:`argparse.Namespace` object::
 
    args = parser.parse_args()
    print(args.filename, args.count, args.verbose)
-   
+
 
 Quick Links for add_argument()
 ------------------------------
