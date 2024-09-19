@@ -2120,7 +2120,7 @@ class AssertionErrorTests(unittest.TestCase):
             ),
         ]
         for source, expected in cases:
-            with self.subTest(source):
+            with self.subTest(source=source):
                 result = run_script(source)
                 self.assertEqual(result[-3:], expected)
 
@@ -2151,7 +2151,7 @@ class AssertionErrorTests(unittest.TestCase):
             ),
         ]
         for source, expected in cases:
-            with self.subTest(source):
+            with self.subTest(source=source):
                 result = run_script(source)
                 self.assertEqual(result[-len(expected):], expected)
 
