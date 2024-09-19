@@ -90,10 +90,9 @@ struct _ts {
         unsigned int finalizing:1;
         unsigned int cleared:1;
         unsigned int finalized:1;
-        unsigned int run_counter:1;
 
         /* padding to align to 4 bytes */
-        unsigned int :22;
+        unsigned int :23;
     } _status;
 #ifdef Py_BUILD_CORE
 #  define _PyThreadState_WHENCE_NOTSET -1
