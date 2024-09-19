@@ -1,1 +1,1 @@
-Fix a bug where lengthy subparser argument help is incorrectly indented.
+Fix a bug in mod:`argparse` where lengthy subparser argument help is incorrectly indented.
