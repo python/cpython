@@ -1916,12 +1916,14 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # which has an 'O' if there is an option at an index,
         # an 'A' if there is an argument, or a '-' if there is a '--'
         option_string_indices = {}
+        double_dash_index = len(arg_strings)
         arg_string_pattern_parts = []
         arg_strings_iter = iter(arg_strings)
         for i, arg_string in enumerate(arg_strings_iter):
 
             # all args after -- are non-options
             if arg_string == '--':
+                double_dash_index = i
                 arg_string_pattern_parts.append('-')
                 for arg_string in arg_strings_iter:
                     arg_string_pattern_parts.append('A')
@@ -2070,6 +2072,12 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             # and add the Positional and its args to the list
             for action, arg_count in zip(positionals, arg_counts):
                 args = arg_strings[start_index: start_index + arg_count]
+                # Strip out the first '--' if it is not in PARSER or REMAINDER arg.
+                if (arg_count
+                    and start_index <= double_dash_index < start_index + arg_count
+                    and action.nargs not in [PARSER, REMAINDER]):
+                    assert args.index('--') == double_dash_index - start_index
+                    args.remove('--')
                 start_index += arg_count
                 if args and action.deprecated and action.dest not in warned:
                     self._warning(_("argument '%(argument_name)s' is deprecated") %
@@ -2470,13 +2478,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # Value conversion methods
     # ========================
     def _get_values(self, action, arg_strings):
-        # for everything but PARSER, REMAINDER args, strip out first '--'
-        if not action.option_strings and action.nargs not in [PARSER, REMAINDER]:
-            try:
-                arg_strings.remove('--')
-            except ValueError:
-                pass
-
         # optional argument produces a default when not present
         if not arg_strings and action.nargs == OPTIONAL:
             if action.option_strings:
