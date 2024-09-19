@@ -379,8 +379,10 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         self.assertRaises(tkinter.TclError, self.entry.bbox, None)
 
     def test_identify(self):
-        if tk_version >= (9, 0) and sys.platform == 'darwin':
-            self.skipTest('test hangs due to Tk 9.0 bug 8b49e9cfa6')
+        if (tk_version >= (9, 0) and sys.platform == 'darwin'
+                and isinstance(self.entry, ttk.Combobox)):
+            self.skipTest('Test does not work on macOS Tk 9.')
+            # https://core.tcl-lang.org/tk/tktview/8b49e9cfa6
         self.entry.pack()
         self.root.update()
 
@@ -494,8 +496,10 @@ class ComboboxTest(EntryTest, unittest.TestCase):
         self.combo.event_generate('<ButtonRelease-1>', x=x, y=y)
 
     def test_virtual_event(self):
-        if tk_version >= (9, 0) and sys.platform == 'darwin':
-            self.skipTest('test hangs due to Tk 9.0 bug 8b49e9cfa6')
+        if (tk_version >= (9, 0) and sys.platform == 'darwin'
+                and isinstance(self.entry, ttk.Combobox)):
+            self.skipTest('Test does not work on macOS Tk 9.')
+            # https://core.tcl-lang.org/tk/tktview/8b49e9cfa6
         success = []
 
         self.combo['values'] = [1]
@@ -513,8 +517,10 @@ class ComboboxTest(EntryTest, unittest.TestCase):
         self.assertTrue(success)
 
     def test_configure_postcommand(self):
-        if tk_version >= (9, 0) and sys.platform == 'darwin':
-            self.skipTest('test hangs due to Tk 9.0 bug 8b49e9cfa6')
+        if (tk_version >= (9, 0) and sys.platform == 'darwin'
+                and isinstance(self.entry, ttk.Combobox)):
+            self.skipTest('Test does not work on macOS Tk 9.')
+            # https://core.tcl-lang.org/tk/tktview/8b49e9cfa6
         success = []
 
         self.combo['postcommand'] = lambda: success.append(True)

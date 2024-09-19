@@ -27,13 +27,16 @@ def float_round(x):
     return float(round(x))
 
 class AbstractToplevelTest(AbstractWidgetTest, PixelSizeTests):
-    _no_round = {'padx', 'pady'} if tk_version < (9, 0) else {
-        'borderwidth', 'height', 'highlightthickness', 'padx', 'pady',
-        'width'}
-    _clipped = {
-        'highlightthickness'} if tk_version < (9, 0) else {
-        'borderwidth', 'height', 'highlightthickness', 'padx', 'pady',
-        'width'}
+    if tk_version < (9, 0):
+        _no_round = {'padx', 'pady'}
+    else:
+        _no_round = {'borderwidth', 'height', 'highlightthickness', 'padx',
+                     'pady', 'width'}
+    if tk_version < (9, 0):
+        _clipped = {'highlightthickness'}
+    else:
+        _clipped = {'borderwidth', 'height', 'highlightthickness', 'padx',
+                    'pady', 'width'}
 
     def test_configure_class(self):
         widget = self.create()
@@ -120,9 +123,11 @@ class FrameTest(AbstractToplevelTest, unittest.TestCase):
         'highlightbackground', 'highlightcolor', 'highlightthickness',
         'padx', 'pady', 'relief', 'takefocus', 'tile', 'visual', 'width',
     )
-    _no_round = {'padx', 'pady'} if tk_version < (9, 0) else {
-        'borderwidth', 'height', 'highlightthickness', 'padx', 'pady',
-        'width'}
+    if tk_version < (9, 0):
+        _no_round = {'padx', 'pady'}
+    else:
+        _no_round = {'borderwidth', 'height', 'highlightthickness', 'padx',
+                     'pady', 'width'}
 
     def create(self, **kwargs):
         return tkinter.Frame(self.root, **kwargs)
@@ -138,9 +143,11 @@ class LabelFrameTest(AbstractToplevelTest, unittest.TestCase):
         'labelanchor', 'labelwidget', 'padx', 'pady', 'relief',
         'takefocus', 'text', 'visual', 'width',
     )
-    _no_round = {'padx', 'pady'} if tk_version < (9, 0) else {
-        'borderwidth', 'height', 'highlightthickness', 'padx', 'pady',
-        'width'}
+    if tk_version < (9, 0):
+        _no_round = {'padx', 'pady'}
+    else:
+        _no_round = {'borderwidth', 'height', 'highlightthickness', 'padx',
+                     'pady', 'width'}
 
     def create(self, **kwargs):
         return tkinter.LabelFrame(self.root, **kwargs)
@@ -161,9 +168,11 @@ class LabelFrameTest(AbstractToplevelTest, unittest.TestCase):
 # Label, Button, Checkbutton, Radiobutton, MenuButton
 class AbstractLabelTest(AbstractWidgetTest, IntegerSizeTests):
     _rounds_pixels = False
-    _clipped = {} if tk_version < (9, 0) else {
-        'borderwidth', 'insertborderwidth', 'highlightthickness',
-        'padx', 'pady'}
+    if tk_version < (9, 0):
+        _clipped = {}
+    else:
+        _clipped = {'borderwidth', 'insertborderwidth', 'highlightthickness',
+                    'padx', 'pady'}
 
 @add_configure_tests(StandardOptionsTests)
 class LabelTest(AbstractLabelTest, unittest.TestCase):
@@ -292,10 +301,11 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
         'takefocus', 'text', 'textvariable',
         'underline', 'width', 'wraplength',
     )
-    _rounds_pixels = tk_version < (9, 0)
-    _clipped = {'highlightthickness', 'padx', 'pady'
-        } if tk_version < (9, 0) else { 'insertborderwidth',
-        'highlightthickness', 'padx', 'pady'}
+    _rounds_pixels = (tk_version < (9, 0))
+    if tk_version < (9, 0):
+        _clipped = {'highlightthickness', 'padx', 'pady'}
+    else:
+        _clipped ={ 'insertborderwidth', 'highlightthickness', 'padx', 'pady'}
 
     def create(self, **kwargs):
         return tkinter.Menubutton(self.root, **kwargs)
@@ -346,9 +356,11 @@ class OptionMenuTest(MenubuttonTest, unittest.TestCase):
 @add_configure_tests(IntegerSizeTests, StandardOptionsTests)
 class EntryTest(AbstractWidgetTest, unittest.TestCase):
     _rounds_pixels = (tk_version < (9, 0))
-    _clipped = {'highlightthickness'} if tk_version < (9, 0) else {
-        'highlightthickness', 'borderwidth', 'insertborderwidth',
-        'selectborderwidth'}
+    if tk_version < (9, 0):
+        _clipped = {'highlightthickness'}
+    else:
+        _clipped = {'highlightthickness', 'borderwidth', 'insertborderwidth',
+                    'selectborderwidth'}
 
     OPTIONS = (
         'background', 'borderwidth', 'cursor',
@@ -1000,9 +1012,10 @@ class ListboxTest(AbstractWidgetTest, unittest.TestCase):
         'takefocus', 'width', 'xscrollcommand', 'yscrollcommand',
     )
     _rounds_pixels = (tk_version < (9, 0))
-    _clipped = {'highlightthickness'
-        } if tk_version < (9, 0) else { 'borderwidth',
-        'highlightthickness', 'selectborderwidth'}
+    if tk_version < (9, 0):
+        _clipped = {'highlightthickness'}
+    else:
+        _clipped = { 'borderwidth', 'highlightthickness', 'selectborderwidth'}
 
     def create(self, **kwargs):
         return tkinter.Listbox(self.root, **kwargs)
@@ -1213,8 +1226,10 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
     _rounds_pixels = True
     _no_round = {'borderwidth', 'elementborderwidth', 'highlightthickness',
                  'width'}
-    _clipped = {'highlightthickness'} if tk_version < (9, 0) else{
-        'borderwidth', 'highlightthickness', 'width'}
+    if tk_version < (9, 0):
+        _clipped = {'highlightthickness'}
+    else:
+        _clipped = {'borderwidth', 'highlightthickness', 'width'}
     _stringify = True
     default_orient = 'vertical'
 
@@ -1264,12 +1279,13 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         'showhandle', 'width',
     )
     _rounds_pixels = True
-    _no_round = {'handlesize', 'height', 'proxyborderwidth',
-                     'sashwidth', 'selectborderwidth', 'width'
-                } if tk_version < (9, 0) else {'borderwidth',
-                    'handlepad', 'handlesize',
-                    'height', 'proxyborderwidth', 'sashpad',
-                    'sashwidth', 'selectborderwidth', 'width'}
+    if tk_version < (9, 0):
+        _no_round = {'handlesize', 'height', 'proxyborderwidth', 'sashwidth',
+                     'selectborderwidth', 'width'}
+    else:
+        _no_round = {'borderwidth', 'handlepad', 'handlesize', 'height',
+                     'proxyborderwidth', 'sashpad', 'sashwidth',
+                     'selectborderwidth', 'width'}
     _clipped = {}
     default_orient = 'horizontal'
 
@@ -1521,8 +1537,10 @@ class MessageTest(AbstractWidgetTest, unittest.TestCase):
     )
     _rounds_pixels = (tk_version < (9, 0))
     _no_round = {'padx', 'pady'}
-    _clipped = {'highlightthickness'} if tk_version < (9, 0) else {
-        'borderwidth', 'highlightthickness', 'padx', 'pady'}
+    if tk_version < (9, 0):
+        _clipped = {'highlightthickness'}
+    else:
+        _clipped = {'borderwidth', 'highlightthickness', 'padx', 'pady'}
 
     def create(self, **kwargs):
         return tkinter.Message(self.root, **kwargs)
