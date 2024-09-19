@@ -4959,10 +4959,7 @@ class TestHelpMetavarTypeFormatter(HelpTestCase):
 
 
 class TestHelpUsageLongSubparserCommand(TestCase):
-    """Test that long command in subparser is displayed correctly in help
-
-    The test was added for https://bugs.python.org/issue42875
-    """
+    """Test that subparser commands are formatted correctly in help"""
 
     def setUp(self):
         super().setUp()
