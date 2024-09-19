@@ -1,1 +1,2 @@
-Resolved SSL session memory leak in :mod:`ssl`.
+Resolve a memory leak introduced in CPython 3.10's :mod:`ssl` when the
+:attr:`ssl.SSLSocket.session` property was accessed.
