@@ -1,0 +1,2 @@
+Solaris now uses :func:`os.sendfile` fast-copy syscall for more efficient
+:mod:`shutil` file copy related functions.

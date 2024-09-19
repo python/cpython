@@ -517,7 +517,7 @@ the use of userspace buffers in Python as in "``outfd.write(infd.read())``".
 
 On macOS `fcopyfile`_ is used to copy the file content (not metadata).
 
-On Linux :func:`os.sendfile` is used.
+On Linux and Solaris :func:`os.sendfile` is used.
 
 On Windows :func:`shutil.copyfile` uses a bigger default buffer size (1 MiB
 instead of 64 KiB) and a :func:`memoryview`-based variant of
@@ -528,6 +528,9 @@ file then shutil will silently fallback on using less efficient
 :func:`copyfileobj` function internally.
 
 .. versionchanged:: 3.8
+
+.. versionchanged:: 3.14
+    Solaris now uses :func:`os.sendfile`.
 
 .. _shutil-copytree-example:
 
