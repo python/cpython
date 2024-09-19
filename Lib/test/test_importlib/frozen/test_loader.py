@@ -3,9 +3,7 @@ from test.test_importlib import abc, util
 machinery = util.import_importlib('importlib.machinery')
 
 from test.support import captured_stdout, import_helper, STDLIB_DIR
-import _imp
 import contextlib
-import marshal
 import os.path
 import types
 import unittest
@@ -123,88 +121,6 @@ class ExecModuleTests(abc.LoaderTests):
 (Frozen_ExecModuleTests,
  Source_ExecModuleTests
  ) = util.test_both(ExecModuleTests, machinery=machinery)
-
-
-class LoaderTests(abc.LoaderTests):
-
-    def load_module(self, name):
-        with fresh(name, oldapi=True):
-            module = self.machinery.FrozenImporter.load_module(name)
-        with captured_stdout() as stdout:
-            module.main()
-        return module, stdout
-
-    def test_module(self):
-        module, stdout = self.load_module('__hello__')
-        filename = resolve_stdlib_file('__hello__')
-        check = {'__name__': '__hello__',
-                '__package__': '',
-                '__loader__': self.machinery.FrozenImporter,
-                '__file__': filename,
-                }
-        for attr, value in check.items():
-            self.assertEqual(getattr(module, attr, None), value)
-        self.assertEqual(stdout.getvalue(), 'Hello world!\n')
-
-    def test_package(self):
-        module, stdout = self.load_module('__phello__')
-        filename = resolve_stdlib_file('__phello__', ispkg=True)
-        pkgdir = os.path.dirname(filename)
-        check = {'__name__': '__phello__',
-                 '__package__': '__phello__',
-                 '__path__': [pkgdir],
-                 '__loader__': self.machinery.FrozenImporter,
-                 '__file__': filename,
-                 }
-        for attr, value in check.items():
-            attr_value = getattr(module, attr, None)
-            self.assertEqual(attr_value, value,
-                             "for __phello__.%s, %r != %r" %
-                             (attr, attr_value, value))
-        self.assertEqual(stdout.getvalue(), 'Hello world!\n')
-
-    def test_lacking_parent(self):
-        with util.uncache('__phello__'):
-            module, stdout = self.load_module('__phello__.spam')
-        filename = resolve_stdlib_file('__phello__.spam')
-        check = {'__name__': '__phello__.spam',
-                '__package__': '__phello__',
-                '__loader__': self.machinery.FrozenImporter,
-                '__file__': filename,
-                }
-        for attr, value in check.items():
-            attr_value = getattr(module, attr)
-            self.assertEqual(attr_value, value,
-                             "for __phello__.spam.%s, %r != %r" %
-                             (attr, attr_value, value))
-        self.assertEqual(stdout.getvalue(), 'Hello world!\n')
-
-    def test_module_reuse(self):
-        with fresh('__hello__', oldapi=True):
-            module1 = self.machinery.FrozenImporter.load_module('__hello__')
-            module2 = self.machinery.FrozenImporter.load_module('__hello__')
-        with captured_stdout() as stdout:
-            module1.main()
-            module2.main()
-        self.assertIs(module1, module2)
-        self.assertEqual(stdout.getvalue(),
-                         'Hello world!\nHello world!\n')
-
-    # No way to trigger an error in a frozen module.
-    test_state_after_failure = None
-
-    def test_unloadable(self):
-        with import_helper.frozen_modules():
-            with deprecated():
-                assert self.machinery.FrozenImporter.find_module('_not_real') is None
-            with self.assertRaises(ImportError) as cm:
-                self.load_module('_not_real')
-            self.assertEqual(cm.exception.name, '_not_real')
-
-
-(Frozen_LoaderTests,
- Source_LoaderTests
- ) = util.test_both(LoaderTests, machinery=machinery)
 
 
 class InspectLoaderTests:

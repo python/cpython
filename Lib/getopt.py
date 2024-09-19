@@ -2,8 +2,8 @@
 
 This module helps scripts to parse the command line arguments in
 sys.argv.  It supports the same conventions as the Unix getopt()
-function (including the special meanings of arguments of the form `-'
-and `--').  Long options similar to those supported by GNU software
+function (including the special meanings of arguments of the form '-'
+and '--').  Long options similar to those supported by GNU software
 may be used as well via an optional third argument.  This module
 provides two functions and an exception:
 
@@ -105,7 +105,7 @@ def gnu_getopt(args, shortopts, longopts = []):
     processing options as soon as a non-option argument is
     encountered.
 
-    If the first character of the option string is `+', or if the
+    If the first character of the option string is '+', or if the
     environment variable POSIXLY_CORRECT is set, then option
     processing stops as soon as a non-option argument is encountered.
 

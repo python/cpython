@@ -73,6 +73,13 @@ building on a recent Windows version, use the Control Panel (Programs | Programs
 and Features | Turn Windows Features on or off) and ensure that the entry
 ".NET Framework 3.5 (includes .NET 2.0 and 3.0)" is enabled.
 
+For Python 3.11.x and above, enable "Microsoft .NET Framework 4.8 Advanced Services"
+instead of "Microsoft .NET Framework Version 3.5" available for Windows 10 and above.
+Also make sure "MSVC v143 - VS 2022 C++ ARM64 build tools" are selected under
+"Desktop Development with C++" in "Visual Studio installer" even if you are not
+building on ARM64 along with other x64 related v143 build tools. This is because for
+3.11.x and above we have upgraded to Wix-3.14.
+
 For testing, the installer should be built with the Tools/msi/build.bat
 script:
 

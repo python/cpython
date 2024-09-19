@@ -585,7 +585,7 @@ non-existing elements are considered to be infinite.  The interesting\n\
 property of a heap is that a[0] is always its smallest element.\n"
 "\n\
 The strange invariant above is meant to be an efficient memory\n\
-representation for a tournament.  The numbers below are `k', not a[k]:\n\
+representation for a tournament.  The numbers below are 'k', not a[k]:\n\
 \n\
                                    0\n\
 \n\
@@ -598,7 +598,7 @@ representation for a tournament.  The numbers below are `k', not a[k]:\n\
     15 16   17 18   19 20   21 22   23 24   25 26   27 28   29 30\n\
 \n\
 \n\
-In the tree above, each cell `k' is topping `2*k+1' and `2*k+2'.  In\n\
+In the tree above, each cell 'k' is topping '2*k+1' and '2*k+2'.  In\n\
 a usual binary tournament we see in sports, each cell is the winner\n\
 over the two cells it tops, and we can trace the winner down the tree\n\
 to see all opponents s/he had.  However, in many computer applications\n\
@@ -653,7 +653,7 @@ vanishes, you switch heaps and start a new run.  Clever and quite\n\
 effective!\n\
 \n\
 In a word, heaps are useful memory structures to know.  I use them in\n\
-a few applications, and I think it is good to keep a `heap' module\n\
+a few applications, and I think it is good to keep a 'heap' module\n\
 around. :-)\n"
 "\n\
 --------------------\n\
@@ -672,9 +672,7 @@ From all times, sorting has always been a Great Art! :-)\n");
 static int
 heapq_exec(PyObject *m)
 {
-    PyObject *about = PyUnicode_FromString(__about__);
-    if (PyModule_AddObject(m, "__about__", about) < 0) {
-        Py_DECREF(about);
+    if (PyModule_Add(m, "__about__", PyUnicode_FromString(__about__)) < 0) {
         return -1;
     }
     return 0;
@@ -682,6 +680,8 @@ heapq_exec(PyObject *m)
 
 static struct PyModuleDef_Slot heapq_slots[] = {
     {Py_mod_exec, heapq_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

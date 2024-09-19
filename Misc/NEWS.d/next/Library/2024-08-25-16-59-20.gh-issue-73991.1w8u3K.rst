@@ -1,0 +1,2 @@
+Add :meth:`pathlib.Path.copy_into` and :meth:`~pathlib.Path.move_into`,
+which copy and move files and directories into *existing* directories.

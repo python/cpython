@@ -10,7 +10,7 @@ import unittest
 import weakref
 from collections.abc import MutableMapping
 from test import mapping_tests, support
-from test.support import import_helper
+from test.support import import_helper, suppress_immortalization
 
 
 py_coll = import_helper.import_fresh_module('collections',
@@ -121,6 +121,17 @@ class OrderedDictTests:
 
         self.OrderedDict(Spam())
         self.assertEqual(calls, ['keys'])
+
+    def test_overridden_init(self):
+        # Sync-up pure Python OD class with C class where
+        # a consistent internal state is created in __new__
+        # rather than __init__.
+        OrderedDict = self.OrderedDict
+        class ODNI(OrderedDict):
+            def __init__(*args, **kwargs):
+                pass
+        od = ODNI()
+        od['a'] = 1  # This used to fail because __init__ was bypassed
 
     def test_fromkeys(self):
         OrderedDict = self.OrderedDict
@@ -362,7 +373,7 @@ class OrderedDictTests:
         OrderedDict = self.OrderedDict
         od = OrderedDict([('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)])
         self.assertEqual(repr(od),
-            "OrderedDict([('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)])")
+            "OrderedDict({'c': 1, 'b': 2, 'a': 3, 'd': 4, 'e': 5, 'f': 6})")
         self.assertEqual(eval(repr(od)), od)
         self.assertEqual(repr(OrderedDict()), "OrderedDict()")
 
@@ -372,7 +383,7 @@ class OrderedDictTests:
         od = OrderedDict.fromkeys('abc')
         od['x'] = od
         self.assertEqual(repr(od),
-            "OrderedDict([('a', None), ('b', None), ('c', None), ('x', ...)])")
+            "OrderedDict({'a': None, 'b': None, 'c': None, 'x': ...})")
 
     def test_repr_recursive_values(self):
         OrderedDict = self.OrderedDict
@@ -656,6 +667,7 @@ class OrderedDictTests:
         dict.update(od, [('spam', 1)])
         self.assertNotIn('NULL', repr(od))
 
+    @suppress_immortalization()
     def test_reference_loop(self):
         # Issue 25935
         OrderedDict = self.OrderedDict
