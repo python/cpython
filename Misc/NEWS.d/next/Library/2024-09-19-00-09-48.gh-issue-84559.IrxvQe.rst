@@ -1,0 +1,1 @@
+The default :mod:`multiprocessing` start method on Linux and other POSIX systems has been changed away from often unsafe``"fork"`` to ``"forkserver"`` (when the platform support sending file handles over pipes) or ``"spawn"``. Mac and Windows are unchanged as they already default to ``"spawn"``.
