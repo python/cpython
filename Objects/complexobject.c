@@ -21,9 +21,9 @@ class complex "PyComplexObject *" "&PyComplex_Type"
 
 #include "clinic/complexobject.c.h"
 
-/* elementary operations on complex numbers */
-
 static Py_complex c_1 = {1., 0.};
+
+/* elementary operations on complex numbers */
 
 Py_complex
 _Py_c_sum(Py_complex a, Py_complex b)
@@ -143,6 +143,64 @@ _Py_c_quot(Py_complex a, Py_complex b)
 
     return r;
 }
+Py_complex
+_Py_dc_quot(double a, Py_complex b)
+{
+    /* Divide a real number by a complex number.
+     * Same as _Py_c_quot(), but without imaginary part.
+     */
+     Py_complex r;      /* the result */
+     const double abs_breal = b.real < 0 ? -b.real : b.real;
+     const double abs_bimag = b.imag < 0 ? -b.imag : b.imag;
+
+    if (abs_breal >= abs_bimag) {
+        /* divide tops and bottom by b.real */
+        if (abs_breal == 0.0) {
+            errno = EDOM;
+            r.real = r.imag = 0.0;
+        }
+        else {
+            const double ratio = b.imag / b.real;
+            const double denom = b.real + b.imag * ratio;
+            r.real = a / denom;
+            r.imag = (- a * ratio) / denom;
+        }
+    }
+    else if (abs_bimag >= abs_breal) {
+        /* divide tops and bottom by b.imag */
+        const double ratio = b.real / b.imag;
+        const double denom = b.real * ratio + b.imag;
+        assert(b.imag != 0.0);
+        r.real = (a * ratio) / denom;
+        r.imag = (-a) / denom;
+    }
+    else {
+        /* At least one of b.real or b.imag is a NaN */
+        r.real = r.imag = Py_NAN;
+    }
+
+    /* Recover infinities and zeros that computed as nan+nanj.  See e.g.
+       the C11, Annex G.5.2, routine _Cdivd(). */
+    if (isnan(r.real) && isnan(r.imag)) {
+        if (isinf(a)
+            && isfinite(b.real) && isfinite(b.imag))
+        {
+            const double x = copysign(isinf(a) ? 1.0 : 0.0, a);
+            r.real = Py_INFINITY * (x*b.real);
+            r.imag = Py_INFINITY * (- x*b.imag);
+        }
+        else if ((isinf(abs_breal) || isinf(abs_bimag))
+                 && isfinite(a))
+        {
+            const double x = copysign(isinf(b.real) ? 1.0 : 0.0, b.real);
+            const double y = copysign(isinf(b.imag) ? 1.0 : 0.0, b.imag);
+            r.real = 0.0 * (a*x);
+            r.imag = 0.0 * (-a*y);
+        }
+    }
+
+    return r;
+}
 #ifdef _M_ARM64
 #pragma optimize("", on)
 #endif
@@ -174,7 +232,11 @@ _Py_c_pow(Py_complex a, Py_complex b)
         r.real = len*cos(phase);
         r.imag = len*sin(phase);
 
-        _Py_ADJUST_ERANGE2(r.real, r.imag);
+        if (isfinite(a.real) && isfinite(a.imag)
+            && isfinite(b.real) && isfinite(b.imag))
+        {
+            _Py_ADJUST_ERANGE2(r.real, r.imag);
+        }
     }
     return r;
 }
@@ -182,15 +244,19 @@ _Py_c_pow(Py_complex a, Py_complex b)
 static Py_complex
 c_powu(Py_complex x, long n)
 {
-    Py_complex r, p;
-    long mask = 1;
-    r = c_1;
-    p = x;
-    while (mask > 0 && n >= mask) {
-        if (n & mask)
-            r = _Py_c_prod(r,p);
-        mask <<= 1;
-        p = _Py_c_prod(p,p);
+    assert(n > 0);
+    while ((n & 1) == 0) {
+        x = _Py_c_prod(x, x);
+        n >>= 1;
+    }
+    Py_complex r = x;
+    n >>= 1;
+    while (n) {
+        x = _Py_c_prod(x, x);
+        if (n & 1) {
+            r = _Py_c_prod(r, x);
+        }
+        n >>= 1;
     }
     return r;
 }
@@ -199,10 +265,11 @@ static Py_complex
 c_powi(Py_complex x, long n)
 {
     if (n > 0)
-        return c_powu(x,n);
+        return c_powu(x, n);
+    else if (n < 0)
+        return _Py_dc_quot(1.0, c_powu(x, -n));
     else
-        return _Py_c_quot(c_1, c_powu(x,-n));
-
+        return c_1;
 }
 
 double
@@ -569,7 +636,9 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
     // a faster and more accurate algorithm.
     if (b.imag == 0.0 && b.real == floor(b.real) && fabs(b.real) <= 100.0) {
         p = c_powi(a, (long)b.real);
-        _Py_ADJUST_ERANGE2(p.real, p.imag);
+        if (isfinite(a.real) && isfinite(a.imag)) {
+            _Py_ADJUST_ERANGE2(p.real, p.imag);
+        }
     }
     else {
         p = _Py_c_pow(a, b);
