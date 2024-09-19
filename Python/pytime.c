@@ -387,6 +387,11 @@ pytime_object_to_denominator(PyObject *obj, time_t *sec, long *numerator,
         *sec = _PyLong_AsTime_t(obj);
         *numerator = 0;
         if (*sec == (time_t)-1 && PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+                PyErr_Format(PyExc_TypeError,
+                             "argument must be int or float, not %.200s",
+                             Py_TYPE(obj)->tp_name);
+            }
             return -1;
         }
         return 0;
