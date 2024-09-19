@@ -600,7 +600,5 @@ Object Protocol
    If any of the above conditions are not met, this function returns a negative value
    and sets an exception.
 
-   This function is a no-op on builds with the :term:`GIL` enabled.
-
    .. versionadded:: 3.14
 
