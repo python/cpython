@@ -388,22 +388,19 @@ def impl_from_name(name, kind=None, cf=False):
         raise ValueError(f'unsupported impl kind {kind!r} for name {name!r}')
 
 
-class ImplWrapper:
-    def __init__(self, impl):
-        assert not hasattr(type(impl), '__enter__'), impl
-        assert callable(impl), impl
-        self._impl = impl
-    def __enter__(self):
-        return self._impl
-    def __exit__(self, *args):
-        pass
-    def __call__(self, filenames, regex, opts):
-        return self._impl(filenames, regex, opts)
-
-
 def resolve_impl(impl, kind=None, cf=None):
+    """Return a callable that performs a search for a set of files.
+
+    The callable's signature is (filenames, regex, opts).  It returns
+    an iterable of matches.
+
+    If the given "impl" is a string then it gets looked up.
+    otherwise it is validated and mostly returned as-is.
+    """
+    name = None
     if isinstance(impl, str):
-        impl = impl_from_name(impl, kind, cf)
+        name = impl
+        impl = impl_from_name(name, kind, cf)
     else:
         assert not kind, kind
         assert not cf, cf
@@ -411,41 +408,9 @@ def resolve_impl(impl, kind=None, cf=None):
             impl = search_sequential
 
     if callable(impl):
-        if not hasattr(type(impl), '__enter__'):
-            impl = ImplWrapper(impl)
+        if isinstance(impl, type):
+            if not hasattr(impl, '__iter__'):
+                raise NotImplementedError((impl, name))
         return impl
     else:
         raise TypeError(impl)
-
-
-# [start-do-search]
-def resolve_search(impl, kind=None, cf=None):
-    # "impl" is a callable that performs a search for
-    # a set of files.  That might be a function or not.
-    impl = resolve_impl(impl, kind, cf)
-    assert hasattr(type(impl), '__enter__'), impl
-
-    @contextlib.contextmanager
-    def do_search(filenames, regex, opts):
-        # If not a function, tt may involve resources that
-        # need to be cleaned up when we're done, in which
-        # case it can be used as a context manager.
-        with impl as search:
-
-            # "maches" is an iteraterable of Match objects.
-            # Concurrency can only happen here.
-            matches = search(filenames, regex, opts)
-
-            # Just like with "impl" this search operation may
-            # involve resources that need to be cleaned up
-            # once we're done searching.  Thus the returned
-            # object might also be a context manager.
-            cm = matches
-            if not hasattr(type(cm), '__enter__'):
-                cm = contextlib.nullcontext(matches)
-            with cm as matches:
-
-                # This is what do_search() actually "returns".
-                yield matches
-    return do_search
-# [end-do-search]

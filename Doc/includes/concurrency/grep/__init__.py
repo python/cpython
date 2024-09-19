@@ -7,16 +7,15 @@ from . import _utils
 
 # [start-high-level]
 def grep(regex, opts, *filenames, impl=None):
-    from ._implementations import resolve_search
-    do_search = resolve_search(impl)
+    from ._implementations import resolve_impl
+    do_search = resolve_impl(impl)
 
     # step 1:
     regex = _utils.resolve_regex(regex, opts)
     # step 2:
     filenames = _utils.resolve_filenames(filenames, opts)
     # step 3:
-    with do_search(filenames, regex, opts) as matches:
-        yield from matches
+    yield from do_search(filenames, regex, opts)
 # [end-high-level]
 
 
