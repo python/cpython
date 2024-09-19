@@ -2,12 +2,16 @@
 
 import itertools
 import typing
+import math
 
 import _stencils
 
 
-def _dump_footer(groups: dict[str, _stencils.StencilGroup]) -> typing.Iterator[str]:
-    yield f"typedef uint32_t SymbolMask[{_stencils.SYMBOL_MASK_SIZE}];"
+def _dump_footer(
+    groups: dict[str, _stencils.StencilGroup], symbols: dict[str | None, int]
+) -> typing.Iterator[str]:
+    symbol_mask_size = math.ceil(len(symbols) / 32)
+    yield f"typedef uint32_t SymbolMask[{symbol_mask_size}];"
     yield ""
     yield "typedef struct {"
     yield "    void (*emit)("
@@ -27,8 +31,8 @@ def _dump_footer(groups: dict[str, _stencils.StencilGroup]) -> typing.Iterator[s
         yield f"    [{opname}] = {group.as_c(opname)},"
     yield "};"
     yield ""
-    yield f"static const void * const symbols_map[{max(len(_stencils.known_symbols), 1)}] = {{"
-    for symbol, ordinal in _stencils.known_symbols.items():
+    yield f"static const void * const symbols_map[{max(len(symbols), 1)}] = {{"
+    for symbol, ordinal in symbols.items():
         yield f"    [{ordinal}] = &{symbol},"
     yield "};"
 
@@ -66,8 +70,10 @@ def _dump_stencil(opname: str, group: _stencils.StencilGroup) -> typing.Iterator
     yield ""
 
 
-def dump(groups: dict[str, _stencils.StencilGroup]) -> typing.Iterator[str]:
+def dump(
+    groups: dict[str, _stencils.StencilGroup], symbols: dict[str | None, int]
+) -> typing.Iterator[str]:
     """Yield a JIT compiler line-by-line as a C header file."""
     for opname, group in sorted(groups.items()):
         yield from _dump_stencil(opname, group)
-    yield from _dump_footer(groups)
+    yield from _dump_footer(groups, symbols)

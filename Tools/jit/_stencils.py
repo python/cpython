@@ -6,11 +6,6 @@ import typing
 
 import _schema
 
-# Number of 32-bit words needed to store the bit mask of external symbols
-SYMBOL_MASK_SIZE: int = 4
-
-known_symbols: dict[str | None, int] = {}
-
 
 @enum.unique
 class HoleValue(enum.Enum):
@@ -252,9 +247,14 @@ class StencilGroup:
         default_factory=dict, init=False
     )
     _got: dict[str, int] = dataclasses.field(default_factory=dict, init=False)
-    trampolines: set[int] = dataclasses.field(default_factory=set, init=False)
+    _trampolines: set[int] = dataclasses.field(default_factory=set, init=False)
 
-    def process_relocations(self, *, alignment: int = 1) -> None:
+    def process_relocations(
+        self,
+        known_symbols: dict[str | None, int],
+        *,
+        alignment: int = 1,
+    ) -> None:
         """Fix up all GOT and internal relocations for this stencil group."""
         for hole in self.code.holes.copy():
             if (
@@ -268,7 +268,7 @@ class StencilGroup:
                 else:
                     ordinal = len(known_symbols)
                     known_symbols[hole.symbol] = ordinal
-                self.trampolines.add(ordinal)
+                self._trampolines.add(ordinal)
                 hole.addend = ordinal
                 hole.symbol = None
         self.code.remove_jump(alignment=alignment)
@@ -328,18 +328,17 @@ class StencilGroup:
     def _get_trampoline_mask(self) -> str:
         bitmask: int = 0
         trampoline_mask: list[str] = []
-        for ordinal in self.trampolines:
+        for ordinal in self._trampolines:
             bitmask |= 1 << ordinal
-        if bitmask:
-            trampoline_mask = [
-                f"0x{(bitmask >> i*32) & ((1 << 32) - 1):x}"
-                for i in range(0, SYMBOL_MASK_SIZE)
-            ]
-        return ", ".join(trampoline_mask)
+        while bitmask:
+            word = bitmask & ((1 << 32) - 1)
+            trampoline_mask.append(f"{word:#04x}")
+            bitmask >>= 32
+        return "{" + ", ".join(trampoline_mask) + "}"
 
     def as_c(self, opname: str) -> str:
         """Dump this hole as a StencilGroup initializer."""
-        return f"{{emit_{opname}, {len(self.code.body)}, {len(self.data.body)}, {{{self._get_trampoline_mask()}}}}}"
+        return f"{{emit_{opname}, {len(self.code.body)}, {len(self.data.body)}, {self._get_trampoline_mask()}}}"
 
 
 def symbol_to_value(symbol: str) -> tuple[HoleValue, str | None]:
