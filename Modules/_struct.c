@@ -1674,8 +1674,9 @@ s_unpack_internal(PyStructObject *soself, const char *startfrom,
                     n = 0;
                 } else {
                     n = *(unsigned char*)res;
-                    if (n >= code->size)
+                    if (n >= code->size) {
                         n = code->size - 1;
+                    }
                 }
                 v = PyBytes_FromStringAndSize(res + 1, n);
             } else {
