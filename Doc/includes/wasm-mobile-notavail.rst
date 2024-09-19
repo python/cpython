@@ -2,6 +2,5 @@
 
 .. availability:: not WASI, not Android, not iOS.
 
-   This module does not work or is not available on WebAssembly or mobile
-   platforms. For more information, see :ref:`wasm-availability` and
-   :ref:`mobile-availability`.
+   This module is not supported on :ref:`WebAssembly platforms
+   <wasm-availability>` or :ref:`mobile platforms <mobile-availability>`.

@@ -28,15 +28,14 @@ Adding Python to an Android app
 -------------------------------
 
 These instructions are only needed if you're planning to compile Python for
-Android yourself. Most users should *not* need to do this. If you're looking to
-use Python on Android, one of the following tools will provide a much more
-approachable user experience:
+Android yourself. Most users should *not* need to do this. Instead, use one of
+the following tools, which will provide a much easier experience:
 
 * `Briefcase <https://briefcase.readthedocs.io>`__, from the BeeWare project
 * `Buildozer <https://buildozer.readthedocs.io>`__, from the Kivy project
 * `Chaquopy <https://chaquo.com/chaquopy>`__
 
-If you're sure you want to do all this manually, read on. You can use the
+If you're sure you want to do all of this manually, read on. You can use the
 :source:`testbed app <Android/testbed>` as a guide; each step below contains a
 link to the relevant file.
 
@@ -44,21 +43,21 @@ link to the relevant file.
 
 * Add code to your :source:`build.gradle <Android/testbed/app/build.gradle.kts>`
   file to copy the following items into your project. All except your own Python
-  code can be copied from ``cross-build/HOST/prefix/lib``.
+  code can be copied from ``cross-build/HOST/prefix/lib``:
 
   * In your JNI libs:
+
     * ``libpython*.*.so``
     * ``lib*_python.so`` (external libraries such as OpenSSL)
+
   * In your assets:
+
     * ``python*.*`` (the Python standard library)
     * ``python*.*/site-packages`` (your own Python code)
 
 * Add code to your app to :source:`extract the assets to the filesystem
-  <Android/testbed/app/src/main/java/org/main/python/testbed/MainActivity.kt>`.
+  <Android/testbed/app/src/main/java/org/python/testbed/MainActivity.kt>`.
 
 * Add code to your app to :source:`start Python in embedded mode
   <Android/testbed/app/src/main/c/main_activity.c>`. This will need to be C code
   called via JNI.
-
-
-

@@ -127,13 +127,12 @@ Mobile platforms
 
 Android and iOS are, in most respects, POSIX operating systems. File I/O, socket handling,
 and threading all behave as they would on any POSIX operating system. However,
-there are several major differences.
+there are several major differences:
 
 * Mobile platforms can only use Python in "embedded" mode. There is no Python
   REPL, and no ability to use separate executables such as :program:`python` or
   :program:`pip`. To add Python code to your mobile app, you must use
-  the :ref:`Python embedding API <embedding>` to add a Python interpreter to an
-  app created with the platform's own build tools. For more details, see
+  the :ref:`Python embedding API <embedding>`. For more details, see
   :ref:`using-android` and :ref:`using-ios`.
 
 * Subprocesses:
@@ -172,5 +171,5 @@ there are several major differences.
     keyboard, this is a software feature, not something that is attached to
     ``stdin``.
 
-    As a result, Python libraries that involve console manipulation (such as
+    As a result, Python modules that involve console manipulation (such as
     :mod:`curses` and :mod:`readline`) are not available on mobile platforms.
