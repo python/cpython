@@ -2844,14 +2844,12 @@ PySSL_get_session(PySSLSocket *self, void *closure) {
     PySSLSession *pysess;
     SSL_SESSION *session;
 
-    /* duplicate session as workaround for session bug in OpenSSL 1.1.0,
-     * https://github.com/openssl/openssl/issues/1550 */
-    session = SSL_get0_session(self->ssl);  /* borrowed reference */
+    /* See discussion on https://github.com/python/cpython/pull/123249 and
+     * older discussion on https://github.com/openssl/openssl/issues/1550.
+     * CPython is NOT doing the right thing here. */
+    session = SSL_get1_session(self->ssl);
     if (session == NULL) {
         Py_RETURN_NONE;
-    }
-    if ((session = _ssl_session_dup(session)) == NULL) {
-        return NULL;
     }
     pysess = PyObject_GC_New(PySSLSession, self->ctx->state->PySSLSession_Type);
     if (pysess == NULL) {
