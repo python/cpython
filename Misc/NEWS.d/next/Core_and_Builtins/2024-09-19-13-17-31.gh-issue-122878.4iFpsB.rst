@@ -1,1 +1,1 @@
-Use the `pager` binary on Debian and derivatives, to display REPL `help()`.
+Use the ``pager`` binary on Debian and derivatives, to display REPL ``help()``.
