@@ -2499,12 +2499,9 @@ PyUnstable_Object_EnableDeferredRefcount(PyObject *op)
         return -1;
     }
 
-    if (op->ob_ref_shared != 0)
-    {
-        PyErr_SetString(PyExc_ValueError,
-                        "object is already in use by another thread");
-        return -1;
-    }
+    if (_PyObject_HasDeferredRefcount(op))
+        // Nothing to do
+        return 0;
 
     _PyObject_SET_GC_BITS(op, _PyGC_BITS_DEFERRED);
     op->ob_ref_shared = _Py_REF_SHARED(_Py_REF_DEFERRED, 0);
