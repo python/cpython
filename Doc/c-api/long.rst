@@ -624,7 +624,7 @@ Export API
    Use :c:func:`PyLong_GetNativeLayout` to get the native layout of Python
    :class:`int` objects.
 
-   See also :attr:`sys.int_info` which exposes similar information to Python.
+   See also :data:`sys.int_info` which exposes similar information to Python.
 
    .. c:member:: uint8_t bits_per_digit
 
