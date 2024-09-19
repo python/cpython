@@ -133,3 +133,8 @@ Every time you run `android.py test`, changes in pure-Python files in the
 repository's `Lib` directory will be picked up immediately. Changes in C files,
 and architecture-specific files such as sysconfigdata, will not take effect
 until you re-run `android.py make-host` or `build`.
+
+
+## Using in your own app
+
+See Doc/using/android.rst.
