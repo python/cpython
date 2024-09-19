@@ -5811,9 +5811,8 @@ class TestIntermixedArgs(TestCase):
         parser = ErrorRaisingArgumentParser(prog='PROG')
         parser.add_argument('--foo', nargs="*")
         parser.add_argument('foo')
-        with captured_stderr() as stderr:
+        with self.assertWarns(UserWarning):
             parser.parse_intermixed_args(['hello', '--foo'])
-            self.assertIn("UserWarning", stderr.getvalue())
 
 class TestIntermixedMessageContentError(TestCase):
     # case where Intermixed gives different error message
