@@ -2526,7 +2526,8 @@ class TextIOWrapper(TextIOBase):
 
             chunk = self.buffer.read()
             if chunk is None:
-                raise BlockingIOError
+                raise BlockingIOError("Unexpected None encountered. This may be due to non-blocking I/O or an issue "
+                                      "with the underlying I/O implementation.")
 
             # Read everything.
             result = (self._get_decoded_chars() +
