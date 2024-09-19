@@ -719,6 +719,7 @@ SYMBOL_NAMES = (
     "PyType_FromSpecWithBases",
     "PyType_GenericAlloc",
     "PyType_GenericNew",
+    "PyType_GetBaseByToken",
     "PyType_GetFlags",
     "PyType_GetFullyQualifiedName",
     "PyType_GetModule",
