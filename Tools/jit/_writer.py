@@ -10,7 +10,7 @@ import _stencils
 def _dump_footer(
     groups: dict[str, _stencils.StencilGroup], symbols: dict[str | None, int]
 ) -> typing.Iterator[str]:
-    symbol_mask_size = math.ceil(len(symbols) / 32)
+    symbol_mask_size = max(math.ceil(len(symbols) / 32), 1)
     yield f"typedef uint32_t SymbolMask[{symbol_mask_size}];"
     yield ""
     yield "typedef struct {"
