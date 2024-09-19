@@ -3749,16 +3749,16 @@ class ConfigDictTest(BaseTest):
             'adict': {
                 'd': 'e', 'f': 3 ,
                 'alpha numeric 1 with spaces' : 5,
-                'aplha numeric 1 %( - © ©ß¯' : 9,
+                'alpha numeric 1 %( - © ©ß¯' : 9,
                 'alpha numeric ] 1 with spaces' : 15,
-                'aplha ]] numeric 1 %( - © ©ß¯]' : 19,
-                ' aplha [ numeric 1 %( - © ©ß¯] ' : 11,
-                ' aplha ' : 32,
+                'alpha ]] numeric 1 %( - © ©ß¯]' : 19,
+                ' alpha [ numeric 1 %( - © ©ß¯] ' : 11,
+                ' alpha ' : 32,
                 '' : 10,
                 'nest4' : {
                     'd': 'e', 'f': 3 ,
                     'alpha numeric 1 with spaces' : 5,
-                    'aplha numeric 1 %( - © ©ß¯' : 9,
+                    'alpha numeric 1 %( - © ©ß¯' : 9,
                     '' : 10,
                     'somelist' :  ('g', ('h', 'i'), 'j'),
                     'somedict' : {
@@ -3780,14 +3780,14 @@ class ConfigDictTest(BaseTest):
         self.assertEqual(bc.convert('cfg://adict.d'), 'e')
         self.assertEqual(bc.convert('cfg://adict[f]'), 3)
         self.assertEqual(bc.convert('cfg://adict[alpha numeric 1 with spaces]'), 5)
-        self.assertEqual(bc.convert('cfg://adict[aplha numeric 1 %( - © ©ß¯]'), 9)
+        self.assertEqual(bc.convert('cfg://adict[alpha numeric 1 %( - © ©ß¯]'), 9)
         self.assertEqual(bc.convert('cfg://adict[]'), 10)
         self.assertEqual(bc.convert('cfg://adict.nest4.d'), 'e')
         self.assertEqual(bc.convert('cfg://adict.nest4[d]'), 'e')
         self.assertEqual(bc.convert('cfg://adict[nest4].d'), 'e')
         self.assertEqual(bc.convert('cfg://adict[nest4][f]'), 3)
         self.assertEqual(bc.convert('cfg://adict[nest4][alpha numeric 1 with spaces]'), 5)
-        self.assertEqual(bc.convert('cfg://adict[nest4][aplha numeric 1 %( - © ©ß¯]'), 9)
+        self.assertEqual(bc.convert('cfg://adict[nest4][alpha numeric 1 %( - © ©ß¯]'), 9)
         self.assertEqual(bc.convert('cfg://adict[nest4][]'), 10)
         self.assertEqual(bc.convert('cfg://adict[nest4][somelist][0]'), 'g')
         self.assertEqual(bc.convert('cfg://adict[nest4][somelist][1][0]'), 'h')
@@ -3807,8 +3807,8 @@ class ConfigDictTest(BaseTest):
         self.assertRaises(ValueError, bc.convert, 'cfg://!')
         self.assertRaises(KeyError, bc.convert, 'cfg://adict[2]')
         self.assertRaises(KeyError, bc.convert, 'cfg://adict[alpha numeric ] 1 with spaces]')
-        self.assertRaises(ValueError, bc.convert, 'cfg://adict[ aplha ]] numeric 1 %( - © ©ß¯] ]')
-        self.assertRaises(ValueError, bc.convert, 'cfg://adict[ aplha [ numeric 1 %( - © ©ß¯] ]')
+        self.assertRaises(ValueError, bc.convert, 'cfg://adict[ alpha ]] numeric 1 %( - © ©ß¯] ]')
+        self.assertRaises(ValueError, bc.convert, 'cfg://adict[ alpha [ numeric 1 %( - © ©ß¯] ]')
 
     def test_namedtuple(self):
         # see bpo-39142

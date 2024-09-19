@@ -3,7 +3,6 @@ import ntpath
 import operator
 import os
 import posixpath
-import shutil
 import sys
 from glob import _StringGlobber
 from itertools import chain
@@ -273,8 +272,7 @@ class PurePath(PurePathBase):
             elif len(drv_parts) == 6:
                 # e.g. //?/unc/server/share
                 root = sep
-        parsed = [sys.intern(str(x)) for x in rel.split(sep) if x and x != '.']
-        return drv, root, parsed
+        return drv, root, [x for x in rel.split(sep) if x and x != '.']
 
     @property
     def _raw_path(self):
@@ -824,34 +822,10 @@ class Path(PathBase, PurePath):
         """
         os.rmdir(self)
 
-    def delete(self, ignore_errors=False, on_error=None):
-        """
-        Delete this file or directory (including all sub-directories).
-
-        If *ignore_errors* is true, exceptions raised from scanning the
-        filesystem and removing files and directories are ignored. Otherwise,
-        if *on_error* is set, it will be called to handle the error. If
-        neither *ignore_errors* nor *on_error* are set, exceptions are
-        propagated to the caller.
-        """
-        if self.is_dir(follow_symlinks=False):
-            onexc = None
-            if on_error:
-                def onexc(func, filename, err):
-                    err.filename = filename
-                    on_error(err)
-            shutil.rmtree(str(self), ignore_errors, onexc=onexc)
-        else:
-            try:
-                self.unlink()
-            except OSError as err:
-                if not ignore_errors:
-                    if on_error:
-                        on_error(err)
-                    else:
-                        raise
-
-    delete.avoids_symlink_attacks = shutil.rmtree.avoids_symlink_attacks
+    def _rmtree(self):
+        # Lazy import to improve module import time
+        import shutil
+        shutil.rmtree(self)
 
     def rename(self, target):
         """

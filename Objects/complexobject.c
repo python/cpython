@@ -171,6 +171,8 @@ _Py_c_pow(Py_complex a, Py_complex b)
         }
         r.real = len*cos(phase);
         r.imag = len*sin(phase);
+
+        _Py_ADJUST_ERANGE2(r.real, r.imag);
     }
     return r;
 }
@@ -536,7 +538,6 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
     }
     errno = 0;
     p = _Py_c_pow(a, b);
-    _Py_ADJUST_ERANGE2(p.real, p.imag);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ZeroDivisionError,
                         "zero to a negative or complex power");

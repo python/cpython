@@ -133,7 +133,7 @@ Managing the Monitoring State
 Monitoring states can be managed with the help of monitoring scopes. A scope
 would typically correspond to a python function.
 
-.. :c:function:: int PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version, const uint8_t *event_types, Py_ssize_t length)
+.. c:function:: int PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version, const uint8_t *event_types, Py_ssize_t length)
 
    Enter a monitored scope. ``event_types`` is an array of the event IDs for
    events that may be fired from the scope. For example, the ID of a ``PY_START``
@@ -158,7 +158,35 @@ would typically correspond to a python function.
    execution is paused, such as when emulating a generator, the scope needs to
    be exited and re-entered.
 
+   The macros for *event_types* are:
 
-.. :c:function:: int PyMonitoring_ExitScope(void)
+   .. c:namespace:: NULL
+
+   .. The table is here to make the docs searchable, and to allow automatic
+      links to the identifiers.
+
+   ================================================== =====================================
+   Macro                                              Event
+   ================================================== =====================================
+   .. c:macro:: PY_MONITORING_EVENT_BRANCH            :monitoring-event:`BRANCH`
+   .. c:macro:: PY_MONITORING_EVENT_CALL              :monitoring-event:`CALL`
+   .. c:macro:: PY_MONITORING_EVENT_C_RAISE           :monitoring-event:`C_RAISE`
+   .. c:macro:: PY_MONITORING_EVENT_C_RETURN          :monitoring-event:`C_RETURN`
+   .. c:macro:: PY_MONITORING_EVENT_EXCEPTION_HANDLED :monitoring-event:`EXCEPTION_HANDLED`
+   .. c:macro:: PY_MONITORING_EVENT_INSTRUCTION       :monitoring-event:`INSTRUCTION`
+   .. c:macro:: PY_MONITORING_EVENT_JUMP              :monitoring-event:`JUMP`
+   .. c:macro:: PY_MONITORING_EVENT_LINE              :monitoring-event:`LINE`
+   .. c:macro:: PY_MONITORING_EVENT_PY_RESUME         :monitoring-event:`PY_RESUME`
+   .. c:macro:: PY_MONITORING_EVENT_PY_RETURN         :monitoring-event:`PY_RETURN`
+   .. c:macro:: PY_MONITORING_EVENT_PY_START          :monitoring-event:`PY_START`
+   .. c:macro:: PY_MONITORING_EVENT_PY_THROW          :monitoring-event:`PY_THROW`
+   .. c:macro:: PY_MONITORING_EVENT_PY_UNWIND         :monitoring-event:`PY_UNWIND`
+   .. c:macro:: PY_MONITORING_EVENT_PY_YIELD          :monitoring-event:`PY_YIELD`
+   .. c:macro:: PY_MONITORING_EVENT_RAISE             :monitoring-event:`RAISE`
+   .. c:macro:: PY_MONITORING_EVENT_RERAISE           :monitoring-event:`RERAISE`
+   .. c:macro:: PY_MONITORING_EVENT_STOP_ITERATION    :monitoring-event:`STOP_ITERATION`
+   ================================================== =====================================
+
+.. c:function:: int PyMonitoring_ExitScope(void)
 
    Exit the last scope that was entered with ``PyMonitoring_EnterScope``.

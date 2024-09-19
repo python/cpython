@@ -5497,7 +5497,7 @@ os__path_isjunction_impl(PyObject *module, path_t *path)
 /*[clinic input]
 os._path_splitroot_ex
 
-    path: path_t(make_wide=True, nonstrict=True)
+    p as path: path_t(make_wide=True, nonstrict=True)
 
 Split a pathname into drive, root and tail.
 
@@ -5506,7 +5506,7 @@ The tail contains anything after the root.
 
 static PyObject *
 os__path_splitroot_ex_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=4b0072b6cdf4b611 input=6eb76e9173412c92]*/
+/*[clinic end generated code: output=4b0072b6cdf4b611 input=4556b615c7cc13f2]*/
 {
     Py_ssize_t drvsize, rootsize;
     PyObject *drv = NULL, *root = NULL, *tail = NULL, *result = NULL;
@@ -9025,7 +9025,7 @@ os_getgrouplist_impl(PyObject *module, const char *user, gid_t basegid)
 
     /*
      * NGROUPS_MAX is defined by POSIX.1 as the maximum
-     * number of supplimental groups a users can belong to.
+     * number of supplemental groups a users can belong to.
      * We have to increment it by one because
      * getgrouplist() returns both the supplemental groups
      * and the primary group, i.e. all of the groups the
