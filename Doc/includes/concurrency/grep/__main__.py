@@ -22,8 +22,6 @@ def parse_args(argv=sys.argv[1:], prog=sys.argv[0]):
     parser.set_defaults(impl='sequential')
     concurrencyopts.add_argument('--cf', '--concurrent-futures', dest='cf',
                                  action='store_const', const=True)
-    concurrencyopts.add_argument('--cf-alt', dest='cf',
-                                 action='store_const', const='alt')
 
     grepopts = parser.add_argument_group(title='grep')
     Options.add_cli(grepopts, 'opts')

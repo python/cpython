@@ -1,5 +1,7 @@
 :tocdepth: 3
 
+.. XXX reference vs. tutorial?
+
 .. _concurrency-howto:
 
 *****************
@@ -1330,8 +1332,8 @@ Now let's look at the implementations for the various concurrency
 models.  We'll start with the simplest: threads.
 
 .. literalinclude:: ../includes/concurrency/grep/_implementations.py
-   :start-after: [start-impl-threads]
-   :end-before: [end-impl-threads]
+   :start-after: [start-impl-threads-basic]
+   :end-before: [end-impl-threads-basic]
    :linenos:
 
 We can use that as a baseline for the other implementations.
@@ -1372,8 +1374,8 @@ side-by-side for easy comparison:
           <summary>(expand)</summary>
 
        .. literalinclude:: ../includes/concurrency/grep/_implementations.py
-          :start-after: [start-sequential]
-          :end-before: [end-sequential]
+          :start-after: [start-impl-sequential]
+          :end-before: [end-impl-sequential]
           :dedent:
           :linenos:
 
@@ -1387,8 +1389,8 @@ side-by-side for easy comparison:
           <summary>(expand)</summary>
 
        .. literalinclude:: ../includes/concurrency/grep/_implementations.py
-          :start-after: [start-threads]
-          :end-before: [end-threads]
+          :start-after: [start-impl-threads-basic]
+          :end-before: [end-impl-threads-basic]
           :dedent:
           :linenos:
 
@@ -1402,8 +1404,8 @@ side-by-side for easy comparison:
           <summary>(expand)</summary>
 
        .. literalinclude:: ../includes/concurrency/grep/_implementations.py
-          :start-after: [start-subinterpreters]
-          :end-before: [end-subinterpreters]
+          :start-after: [start-impl-interpreters-basic]
+          :end-before: [end-impl-interpreters-basic]
           :dedent:
           :linenos:
 
@@ -1417,8 +1419,8 @@ side-by-side for easy comparison:
           <summary>(expand)</summary>
 
        .. literalinclude:: ../includes/concurrency/grep/_implementations.py
-          :start-after: [start-async]
-          :end-before: [end-async]
+          :start-after: [start-impl-asyncio-basic]
+          :end-before: [end-impl-asyncio-basic]
           :dedent:
           :linenos:
 
@@ -1432,8 +1434,8 @@ side-by-side for easy comparison:
           <summary>(expand)</summary>
 
        .. literalinclude:: ../includes/concurrency/grep/_implementations.py
-          :start-after: [start-multiprocessing]
-          :end-before: [end-multiprocessing]
+          :start-after: [start-impl-multiprocessing-basic]
+          :end-before: [end-impl-multiprocessing-basic]
           :dedent:
           :linenos:
 
@@ -1447,8 +1449,8 @@ side-by-side for easy comparison:
           <summary>(expand)</summary>
 
        .. literalinclude:: ../includes/concurrency/grep/_implementations.py
-          :start-after: [start-cf]
-          :end-before: [end-cf]
+          :start-after: [start-impl-cf-threads-basic]
+          :end-before: [end-impl-cf-threads-basic]
           :dedent:
           :linenos:
 
@@ -1494,8 +1496,8 @@ you can also use :mod:`concurrent.futures`:
    <summary>(expand)</summary>
 
 .. literalinclude:: ../includes/concurrency/grep/_implementations.py
-   :start-after: [start-cf-threads]
-   :end-before: [end-cf-threads]
+   :start-after: [start-impl-cf-threads-basic]
+   :end-before: [end-impl-cf-threads-basic]
    :dedent:
    :linenos:
 
