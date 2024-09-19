@@ -35,7 +35,7 @@ usage_                    The string describing the program usage
 description_              A brief description of what the program does. Displayed between the usage_ and argument help
 epilog_                   Additional description of the program after the argument help
 parents_                  A list of :class:`ArgumentParser` objects whose arguments should also be included
-formatter_class_          A class for customizing the help output                                                                     :class:`~argparse.HelpFormatter`
+formatter_class_          A class for customizing the help output                                                                     :class:`argparse.HelpFormatter`
 prefix_chars_             The set of characters that prefix optional arguments                                                        Defaults to ``'-'``
 fromfile_prefix_chars_    The set of characters that prefix files from which additional arguments should be read                      Defaults to ``None`` (meaning arguments will never be treated as file references)
 argument_default_         The global default value for arguments
