@@ -741,7 +741,11 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
         'xscrollcommand', 'xscrollincrement',
         'yscrollcommand', 'yscrollincrement', 'width',
     )
-    _clipped = {'highlightthickness'}
+    _rounds_pixels = True
+    _no_round = {'borderwidth', 'height', 'highlightthickness', 'width',
+                 'xscrollincrement', 'yscrollincrement'}
+    _clipped = {'borderwidth', 'height', 'highlightthickness',
+                'width', 'xscrollincrement', 'yscrollincrement'}
     _stringify = True
 
     def create(self, **kwargs):
@@ -1207,8 +1211,10 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
         'takefocus', 'troughcolor', 'width',
     )
     _rounds_pixels = True
+    _no_round = {'borderwidth', 'elementborderwidth', 'highlightthickness',
+                 'width'}
     _clipped = {'highlightthickness'} if tk_version < (9, 0) else{
-        'borderwidth', 'highlightthickness'}
+        'borderwidth', 'highlightthickness', 'width'}
     _stringify = True
     default_orient = 'vertical'
 

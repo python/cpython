@@ -1182,6 +1182,8 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
 
         if sys.platform == 'darwin':
             focus_identify_as = ''
+        elif sys.platform == 'win32':
+            focus_identify_as = 'focus'
         else:
             focus_identify_as = 'focus' if tk_version < (9,0) else 'padding'
         self.assertEqual(self.nb.identify(5, 5), focus_identify_as)
