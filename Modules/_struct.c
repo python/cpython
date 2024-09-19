@@ -1672,7 +1672,8 @@ s_unpack_internal(PyStructObject *soself, const char *startfrom,
                 Py_ssize_t n;
                 if (code->size == 0) {
                     n = 0;
-                } else {
+                }
+                else {
                     n = *(unsigned char*)res;
                     if (n >= code->size) {
                         n = code->size - 1;
@@ -1990,7 +1991,8 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
                 }
                 if (code->size == 0) {
                     n = 0;
-                } else if (n > (code->size - 1)) {
+                }
+                else if (n > (code->size - 1)) {
                     n = code->size - 1;
                 }
                 if (n > 0)
