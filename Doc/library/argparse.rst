@@ -43,7 +43,7 @@ allow_abbrev_             Allows long options to be abbreviated if the abbreviat
 conflict_handler_         The strategy for resolving conflicting optionals
 add_help_                 Add a ``-h/--help`` option to the parser                                                                    ``True`` or ``False`` (default: ``True``)
 exit_on_error_            Determines whether or not to exit with error info when an error occurs                                      ``True`` or ``False`` (default: ``True``)
-========================= =============================================================================================================
+========================= =========================================================================================================== ==================================================================================
 
 Core Functionality
 ------------------
