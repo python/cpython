@@ -1375,7 +1375,7 @@ XMLParser Objects
 
    .. versionchanged:: 3.8
       Parameters are now :ref:`keyword-only <keyword-only_parameter>`.
-      The *html* argument no longer supported.
+      The *html* argument is no longer supported.
 
 
    .. method:: close()
