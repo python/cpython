@@ -43,6 +43,40 @@ module _contextvars
 /////////////////////////// Context API
 
 
+// Returns the head of the context chain, which holds the "active" context
+// stack.  Always succeeds.
+static _PyContextChain *
+contextchain_head(_PyThreadStateImpl *tsi)
+{
+    assert(tsi != NULL);
+    // Lazy initialization.
+    if (tsi->_ctx_chain.prev == NULL) {
+        assert(tsi->_ctx_chain.ctx == NULL);
+        tsi->_ctx_chain.prev = &tsi->_ctx_chain;
+    }
+    return tsi->_ctx_chain.prev;
+}
+
+// Inserts prev before next in the context chain.  Always succeeds.
+static inline void
+contextchain_link(_PyContextChain *prev, _PyContextChain *next)
+{
+    assert(next->prev != NULL);
+    assert(prev->prev == NULL);
+    prev->prev = next->prev;
+    next->prev = prev;
+}
+
+// Removes prev from the context chain.  Always succeeds.
+static inline void
+contextchain_unlink(_PyContextChain *prev, _PyContextChain *next)
+{
+    assert(next->prev == prev);
+    assert(prev->prev != NULL);
+    next->prev = prev->prev;
+    prev->prev = NULL;
+}
+
 static PyContext *
 context_new_empty(void);
 
@@ -184,19 +218,21 @@ PyContext_ClearWatcher(int watcher_id)
 
 
 static inline void
-context_switched(PyThreadState *ts)
+context_switched(_PyThreadStateImpl *tsi)
 {
-    ts->context_ver++;
-    // ts->context is used instead of context_get() because if ts->context is
-    // NULL, context_get() will either call context_switched -- causing a
-    // double notification -- or throw.
-    notify_context_watchers(ts, Py_CONTEXT_SWITCHED, ts->context);
+    tsi->base.context_ver++;
+    // contextchain_head(tsi)->ctx is used instead of context_get() because if
+    // tsi->_ctx_chain.ctx is NULL, context_get() will either call
+    // context_switched -- causing a double notification -- or throw.
+    notify_context_watchers(
+        &tsi->base, Py_CONTEXT_SWITCHED, contextchain_head(tsi)->ctx);
 }
 
 
 static int
-_PyContext_Enter(PyThreadState *ts, PyContext *ctx)
+_PyContext_Enter(PyObject **stack, PyContext *ctx)
 {
+    assert(stack != NULL);
     if (ctx->ctx_entered) {
         PyErr_Format(PyExc_RuntimeError,
                      "cannot enter context: %R is already entered", ctx);
@@ -204,9 +240,8 @@ _PyContext_Enter(PyThreadState *ts, PyContext *ctx)
     }
 
     ctx->ctx_entered = 1;
-    ctx->ctx_prev = ts->context;  /* steal */
-    ts->context = Py_NewRef(ctx);
-    context_switched(ts);
+    ctx->ctx_prev = *stack;  /* steal */
+    *stack = Py_NewRef(ctx);
     return 0;
 }
 
@@ -214,46 +249,185 @@ _PyContext_Enter(PyThreadState *ts, PyContext *ctx)
 int
 PyContext_Enter(PyObject *octx)
 {
-    PyThreadState *ts = _PyThreadState_GET();
-    assert(ts != NULL);
+    _PyThreadStateImpl *tsi = (_PyThreadStateImpl *)_PyThreadState_GET();
+    assert(tsi != NULL);
     ENSURE_Context(octx, -1)
-    return _PyContext_Enter(ts, (PyContext *)octx);
+    if (_PyContext_Enter(&contextchain_head(tsi)->ctx, (PyContext *)octx)) {
+        return -1;
+    }
+    context_switched(tsi);
+    return 0;
 }
 
 
 static int
-_PyContext_Exit(PyThreadState *ts, PyContext *ctx)
+_PyContext_Exit(PyObject **stack, PyContext *ctx)
 {
+    assert(stack != NULL);
     if (!ctx->ctx_entered) {
         PyErr_Format(PyExc_RuntimeError,
                      "cannot exit context: %R has not been entered", ctx);
         return -1;
     }
 
-    if (ts->context != (PyObject *)ctx) {
+    if (*stack != (PyObject *)ctx) {
         /* Can only happen if someone misuses the C API */
         PyErr_SetString(PyExc_RuntimeError,
-                        "cannot exit context: thread state references "
-                        "a different context object");
+                        "cannot exit context: not the current context");
         return -1;
     }
 
-    Py_SETREF(ts->context, ctx->ctx_prev);  /* steal */
+    Py_SETREF(*stack, ctx->ctx_prev);  /* steal */
     ctx->ctx_prev = NULL;
     ctx->ctx_entered = 0;
-    context_switched(ts);
     return 0;
 }
 
 int
 PyContext_Exit(PyObject *octx)
 {
-    PyThreadState *ts = _PyThreadState_GET();
-    assert(ts != NULL);
+    _PyThreadStateImpl *tsi = (_PyThreadStateImpl *)_PyThreadState_GET();
+    assert(tsi != NULL);
     ENSURE_Context(octx, -1)
-    return _PyContext_Exit(ts, (PyContext *)octx);
+    _PyContextChain *active = contextchain_head(tsi);
+    if (_PyContext_Exit(&active->ctx, (PyContext *)octx)) {
+        return -1;
+    }
+    if (active->ctx == NULL && active != &tsi->_ctx_chain) {
+        contextchain_unlink(active, &tsi->_ctx_chain);
+    }
+    context_switched(tsi);
+    return 0;
 }
 
+static _PyContextChain *
+gen_find_next_contextchain(_PyThreadStateImpl *tsi, PyGenObject *self)
+{
+    assert(self->gi_frame_state == FRAME_EXECUTING);
+    assert(tsi != NULL);
+    _PyContextChain *nlink = &tsi->_ctx_chain;
+    _PyInterpreterFrame *frame = _PyThreadState_GetFrame((PyThreadState *)tsi);
+    while (frame != NULL) {
+        if (frame->owner == FRAME_OWNED_BY_GENERATOR) {
+            PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
+            if (gen == self) {
+                break;
+            }
+            if (gen->_ctx_chain.ctx != NULL) {
+                assert(nlink->prev == &gen->_ctx_chain);
+                nlink = &gen->_ctx_chain;
+                assert(nlink->prev != NULL);
+            }
+        }
+        frame = _PyFrame_GetFirstComplete(frame->previous);
+    }
+    if (frame == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "coroutine is running but not in the current thread");
+        return NULL;
+    }
+    return nlink;
+}
+
+int
+_PyGen_ResetContext(PyThreadState *ts, PyGenObject *self, PyObject *ctx)
+{
+    _PyThreadStateImpl *tsi = (_PyThreadStateImpl *)ts;
+    if (ctx == Py_None) {
+        ctx = NULL;
+    }
+    if (ctx != NULL && !PyContext_CheckExact(ctx)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "a coroutine's base context must be a context.Context "
+                        "object or None");
+        return -1;
+    }
+    PyObject *old_stack = self->_ctx_chain.ctx;
+    assert(old_stack == NULL || PyContext_CheckExact(old_stack));
+    if (old_stack != NULL && ((PyContext *)old_stack)->ctx_prev != NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "cannot reset a coroutine's base context until the "
+                        "coroutine has exited all of its non-base contexts");
+        return -1;
+    }
+    if (ctx == old_stack) {
+        return 0;
+    }
+    assert(self->_ctx_chain.ctx != NULL || self->_ctx_chain.prev == NULL);
+    assert(self->_ctx_chain.prev == NULL ||
+           (self->gi_frame_state == FRAME_EXECUTING &&
+            self->_ctx_chain.ctx != NULL));
+    assert(self->gi_frame_state != FRAME_EXECUTING ||
+           self->_ctx_chain.prev != NULL || self->_ctx_chain.ctx == NULL);
+    // contextchain_head(tsi)->ctx is used instead of context_get() because
+    // context_get can throw, and we don't need tsi->_ctx_chain.ctx to be
+    // initialized if currently NULL.
+    PyObject *old_ctx = contextchain_head(tsi)->ctx;
+    // Enter the new context (and activate/deactivate the context stack if
+    // necessary) before exiting the old context in case there is a problem
+    // entering the new context.  (Exiting the old should always succeed.)
+    PyObject *new_stack = NULL;
+    if (ctx != NULL && _PyContext_Enter(&new_stack, (PyContext *)ctx)) {
+        return -1;
+    }
+    assert(new_stack == ctx);
+    if (self->gi_frame_state == FRAME_EXECUTING &&
+        (old_stack == NULL) != (new_stack == NULL)) {
+        _PyContextChain *nlink = gen_find_next_contextchain(tsi, self);
+        if (nlink == NULL) {
+            if (new_stack != NULL
+                && _PyContext_Exit(&new_stack, (PyContext *)new_stack)) {
+                Py_UNREACHABLE();
+            }
+            assert(new_stack == NULL);
+            return -1;
+        }
+        if (new_stack != NULL) {
+            contextchain_link(&self->_ctx_chain, nlink);
+        } else {
+            contextchain_unlink(&self->_ctx_chain, nlink);
+        }
+    }
+    if (old_stack != NULL && _PyContext_Exit(&old_stack,
+                                             (PyContext *)old_stack)) {
+        Py_UNREACHABLE();
+    }
+    assert(old_stack == NULL);
+    self->_ctx_chain.ctx = new_stack;
+    // contextchain_head(tsi)->ctx is used instead of context_get() because
+    // context_get can throw, and we don't need tsi->_ctx_chain.ctx to be
+    // initialized if currently NULL.
+    if (contextchain_head(tsi)->ctx != old_ctx) {
+        context_switched(tsi);
+    }
+    return 0;
+}
+
+void
+_PyGen_ActivateContext(PyThreadState *ts, PyGenObject *self)
+{
+    _PyThreadStateImpl *tsi = (_PyThreadStateImpl *)ts;
+    assert(self->_ctx_chain.prev == NULL);
+    if (self->_ctx_chain.ctx == NULL) {
+        return;
+    }
+    contextchain_link(&self->_ctx_chain, &tsi->_ctx_chain);
+    context_switched(tsi);
+}
+
+void
+_PyGen_DeactivateContext(PyThreadState *ts, PyGenObject *self)
+{
+    _PyThreadStateImpl *tsi = (_PyThreadStateImpl *)ts;
+    if (tsi->_ctx_chain.prev != &self->_ctx_chain) {
+        assert(self->_ctx_chain.ctx == NULL);
+        assert(self->_ctx_chain.prev == NULL);
+        return;
+    }
+    assert(self->_ctx_chain.ctx != NULL);
+    contextchain_unlink(&self->_ctx_chain, &tsi->_ctx_chain);
+    context_switched(tsi);
+}
 
 PyObject *
 PyContextVar_New(const char *name, PyObject *def)
@@ -275,8 +449,13 @@ PyContextVar_Get(PyObject *ovar, PyObject *def, PyObject **val)
     PyContextVar *var = (PyContextVar *)ovar;
 
     PyThreadState *ts = _PyThreadState_GET();
+    _PyThreadStateImpl *tsi = (_PyThreadStateImpl *)ts;
     assert(ts != NULL);
-    if (ts->context == NULL) {
+    // contextchain_head(tsi)->ctx is used instead of context_get() because
+    // context_get can throw, and we don't need tsi->_ctx_chain.ctx to be
+    // initialized if currently NULL.
+    PyContext *ctx = (PyContext *)contextchain_head(tsi)->ctx;
+    if (ctx == NULL) {
         goto not_found;
     }
 
@@ -290,8 +469,8 @@ PyContextVar_Get(PyObject *ovar, PyObject *def, PyObject **val)
     }
 #endif
 
-    assert(PyContext_CheckExact(ts->context));
-    PyHamtObject *vars = ((PyContext *)ts->context)->ctx_vars;
+    assert(PyContext_CheckExact(ctx));
+    PyHamtObject *vars = ctx->ctx_vars;
 
     PyObject *found = NULL;
     int res = _PyHamt_Find(vars, (PyObject*)var, &found);
@@ -474,20 +653,25 @@ context_new_from_vars(PyHamtObject *vars)
 static inline PyContext *
 context_get(void)
 {
-    PyThreadState *ts = _PyThreadState_GET();
-    assert(ts != NULL);
-    if (ts->context == NULL) {
+    _PyThreadStateImpl *tsi = (_PyThreadStateImpl *)_PyThreadState_GET();
+    assert(tsi != NULL);
+    _PyContextChain *active = contextchain_head(tsi);
+    if (active->ctx == NULL) {
+        assert(active == &tsi->_ctx_chain);
         PyContext *ctx = context_new_empty();
-        if (ctx != NULL && _PyContext_Enter(ts, ctx)) {
+        if (ctx != NULL && _PyContext_Enter(&active->ctx, ctx)) {
             Py_UNREACHABLE();
         }
-        assert(ts->context == (PyObject *)ctx);
+        assert(active->ctx == (PyObject *)ctx);
+        if (ctx != NULL) {
+            context_switched(tsi);
+        }
         Py_CLEAR(ctx);  // _PyContext_Enter created its own ref.
     }
     // The current context may be NULL if the above context_new_empty() call
     // failed.
-    assert(ts->context == NULL || PyContext_CheckExact(ts->context));
-    return (PyContext *)ts->context;
+    assert(active->ctx == NULL || PyContext_CheckExact(active->ctx));
+    return (PyContext *)active->ctx;
 }
 
 static int

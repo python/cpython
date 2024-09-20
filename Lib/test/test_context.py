@@ -370,6 +370,277 @@ class ContextTest(unittest.TestCase):
         self.assertEqual(results, list(range(10)))
 
 
+class GeneratorContextTest(unittest.TestCase):
+    def test_default_is_none(self):
+        def makegen():
+            yield 1
+
+        gen = makegen()
+        self.assertIsNone(gen._context)
+
+    def test_none_is_dependent(self):
+        """Test behavior when the generator's context is set to None.
+
+        The generator should use the thread's context whenever it starts or
+        resumes execution.  This means that the current context as observed by
+        the generator can change arbitrarily during a yield.  This is the
+        behavior of older versions of Python, so for backwards compatibility it
+        should remain the default behavior.
+        """
+        cvar = contextvars.ContextVar('cvar', default='initial')
+
+        def makegen():
+            while True:
+                yield cvar.get()
+
+        gen = makegen()
+        self.assertEqual(next(gen), 'initial')
+        cvar.set('updated outer')
+        self.assertEqual(next(gen), 'updated outer')
+
+        def cb():
+            cvar.set('updated inner')
+            return next(gen)
+
+        self.assertEqual(contextvars.copy_context().run(cb), 'updated inner')
+        self.assertEqual(next(gen), 'updated outer')
+
+    def test_dependent_to_dependent(self):
+        """Test resetting an already-dependent generator's context to None."""
+        def makegen():
+            yield 1
+
+        gen = makegen()
+        gen._context = None
+        self.assertIsNone(gen._context)
+
+    def test_dependent_to_independent(self):
+        """Test upgrading a dependent generator to independent."""
+        cvar = contextvars.ContextVar('cvar', default='initial')
+
+        def makegen():
+            while True:
+                yield cvar.get()
+
+        gen = makegen()
+        ctx = contextvars.copy_context()
+        ctx.run(lambda: cvar.set('independent'))
+        gen._context = ctx
+        self.assertIs(gen._context, ctx)
+        with self.assertRaisesRegex(RuntimeError, 'already entered'):
+            ctx.run(lambda: None)
+        self.assertEqual(next(gen), 'independent')
+
+        def cb():
+            cvar.set('new context')
+            return next(gen)
+
+        self.assertEqual(contextvars.copy_context().run(cb), 'independent')
+        self.assertEqual(next(gen), 'independent')
+
+    def test_independent_to_dependent(self):
+        """Test downgrading an independent generator to dependent."""
+        cvar = contextvars.ContextVar('cvar', default='initial')
+
+        def makegen():
+            while True:
+                yield cvar.get()
+
+        gen = makegen()
+        ctx = contextvars.copy_context()
+        ctx.run(lambda: cvar.set('independent'))
+        gen._context = ctx
+        gen._context = None
+        ctx.run(lambda: cvar.set('independent not entered anymore'))
+
+        def cb():
+            cvar.set('dependent')
+            return next(gen)
+
+        self.assertEqual(contextvars.copy_context().run(cb), 'dependent')
+        self.assertEqual(next(gen), 'initial')
+
+    def test_independent_to_independent_same(self):
+        """Test resetting an independent generator's ctx to the same ctx."""
+        cvar = contextvars.ContextVar('cvar', default='initial')
+
+        def makegen():
+            while True:
+                yield cvar.get()
+
+        gen = makegen()
+        ctx = contextvars.copy_context()
+        ctx.run(lambda: cvar.set('independent'))
+        gen._context = ctx
+        gen._context = ctx
+        self.assertIs(gen._context, ctx)
+        with self.assertRaisesRegex(RuntimeError, 'already entered'):
+            ctx.run(lambda: None)
+        self.assertEqual(next(gen), 'independent')
+        self.assertEqual(contextvars.copy_context().run(lambda: next(gen)),
+                         'independent')
+
+    def test_independent_to_independent_different(self):
+        """Test resetting an independent generator's ctx to a different ctx."""
+        cvar = contextvars.ContextVar('cvar', default='initial')
+
+        def makegen():
+            while True:
+                yield cvar.get()
+
+        gen = makegen()
+
+        ctx1 = contextvars.copy_context()
+        ctx1.run(lambda: cvar.set('independent1'))
+        gen._context = ctx1
+        self.assertIs(gen._context, ctx1)
+        self.assertEqual(next(gen), 'independent1')
+        with self.assertRaisesRegex(RuntimeError, 'already entered'):
+            ctx1.run(lambda: None)
+
+        ctx2 = contextvars.copy_context()
+        ctx2.run(lambda: cvar.set('independent2'))
+        gen._context = ctx2
+        self.assertIs(gen._context, ctx2)
+        self.assertEqual(next(gen), 'independent2')
+        with self.assertRaisesRegex(RuntimeError, 'already entered'):
+            ctx2.run(lambda: None)
+
+        ctx1.run(lambda: None)  # Check that ctx1 is no longer entered.
+
+    def test_entering_updates__context(self):
+        """Entering another ctx from an indep generator updates _context."""
+        ctx1 = contextvars.copy_context()
+        ctx2 = contextvars.copy_context()
+
+        def makegen():
+            gen = yield
+            yield gen._context
+            yield ctx2.run(lambda: gen._context)
+
+        gen = makegen()
+        gen._context = ctx1
+        gen.send(None)
+        self.assertIs(gen.send(gen), ctx1)
+        self.assertIs(gen.send(None), ctx2)
+        self.assertIs(gen._context, ctx1)
+
+    def test_reset_while_another_entered_is_error(self):
+        """Resetting indep gen's ctx while ctx stack non-empty is an error."""
+        cvar = contextvars.ContextVar('cvar', default='initial')
+        ctx1_outer = contextvars.copy_context()
+        ctx1_outer.run(lambda: cvar.set('independent1 outer'))
+        ctx2 = contextvars.copy_context()
+        ctx2.run(lambda: cvar.set('independent2'))
+
+        def makegen():
+            gen = yield cvar.get()
+            ctx1_inner = ctx1_outer.copy()
+            ctx1_inner.run(lambda: cvar.set('independent1 inner'))
+
+            def cb():
+                self.assertIs(gen._context, ctx1_inner)
+                with self.assertRaisesRegex(RuntimeError, 'cannot reset'):
+                    gen._context = ctx2
+                ctx2.run(lambda: None)  # Check that ctx2 is still not entered.
+                return cvar.get()
+
+            yield ctx1_inner.run(cb)
+
+        gen = makegen()
+        gen._context = ctx1_outer
+        self.assertIs(gen._context, ctx1_outer)
+        with self.assertRaisesRegex(RuntimeError, 'already entered'):
+            ctx1_outer.run(lambda: None)
+        self.assertEqual(next(gen), 'independent1 outer')
+        self.assertEqual(gen.send(gen), 'independent1 inner')
+        self.assertIs(gen._context, ctx1_outer)
+
+    def test_generator_calls_generator(self):
+        """Stresses deep shadowing/unshadowing of context stacks."""
+        cvar = contextvars.ContextVar('cvar', default='initial')
+        ctx_inner = contextvars.copy_context()
+        ctx_inner.run(lambda: cvar.set('inner'))
+        ctx_outer = contextvars.copy_context()
+        ctx_outer.run(lambda: cvar.set('outer'))
+
+        def makegen_inner():
+            while True:
+                yield cvar.get()
+
+        gen_inner = makegen_inner()
+        gen_inner._context = ctx_inner
+
+        def makegen_outer():
+            while True:
+                yield cvar.get(), next(gen_inner)
+
+        gen_outer = makegen_outer()
+        gen_outer._context = ctx_outer
+
+        for _ in range(5):
+            self.assertEqual(cvar.get(), 'initial')
+            self.assertEqual(next(gen_inner), 'inner')
+            self.assertEqual(next(gen_outer), ('outer', 'inner'))
+
+    def test_dependent_to_independent_from_called_generator(self):
+        """Upgrade generator when it is not the top indep gen in the call chain.
+
+        Upgrading a running generator from dependent to independent usually
+        causes its context stack to immediately become the visible context stack
+        by shadowing the previously visible context stack.  However, if the
+        upgraded generator is not the topmost independent generator in the call
+        chain (the upgraded generator is running another independent generator),
+        its context stack should not become visible.  Only when all generators
+        in the call chain above it have returned/yielded/thrown should its
+        context stack finally become visible.
+
+        Summary:
+          * thread runs dependent gen_outer which runs independent gen_inner:
+              - gen_inner's context stack shadows thread's context stack
+          * thread runs dependent gen_outer which runs independent gen_inner
+            which upgrades gen_outer to independent:
+              - gen_inner's context stack shadows gen_outer's context stack
+                which shadows thread's context stack
+
+        """
+        cvar = contextvars.ContextVar('cvar', default='initial')
+        ctx_inner = contextvars.copy_context()
+        ctx_inner.run(lambda: cvar.set('inner'))
+        ctx_outer = contextvars.copy_context()
+        ctx_outer.run(lambda: cvar.set('outer'))
+
+        def makegen_inner():
+            gen_outer = yield
+            while True:
+                gen_outer._context = yield cvar.get()
+
+        gen_inner = makegen_inner()
+        gen_inner._context = ctx_inner
+
+        def makegen_outer():
+            ctx = None
+            while True:
+                # Send the context to the inner generator before reading the
+                # context variable's value from this outer generator so that the
+                # inner generator can reset this outer generator's context
+                # before the read.
+                ctx = yield gen_inner.send(ctx), cvar.get()
+
+        gen_outer = makegen_outer()
+        gen_outer._context = None  # Intentionally dependent.
+        gen_inner.send(None)
+        self.assertEqual(gen_inner.send(gen_outer), 'inner')
+
+        for _ in range(5):
+            self.assertEqual(gen_outer.send(None), ('inner', 'initial'))
+        cvar.set('updated')
+        for _ in range(5):
+            self.assertEqual(gen_outer.send(None), ('inner', 'updated'))
+        for _ in range(5):
+            self.assertEqual(gen_outer.send(ctx_outer), ('inner', 'outer'))
+            self.assertEqual(cvar.get(), 'updated')
+
 # HAMT Tests
 
 

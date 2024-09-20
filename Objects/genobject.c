@@ -58,6 +58,7 @@ gen_traverse(PyObject *self, visitproc visit, void *arg)
     PyGenObject *gen = _PyGen_CAST(self);
     Py_VISIT(gen->gi_name);
     Py_VISIT(gen->gi_qualname);
+    Py_VISIT(gen->_ctx_chain.ctx);
     if (gen->gi_frame_state != FRAME_CLEARED) {
         _PyInterpreterFrame *frame = &gen->gi_iframe;
         assert(frame->frame_obj == NULL ||
@@ -129,6 +130,14 @@ _PyGen_Finalize(PyObject *self)
             Py_DECREF(res);
         }
     }
+    if (_PyGen_ResetContext(_PyThreadState_GET(), gen, NULL)) {
+        // This can happen if the contextvars API is misused (the coroutine or a
+        // function it called entered a context but did not exit the context
+        // before the coroutine concluded).  The coroutine's base context, and
+        // the entered contexts on top of it, will remain marked as entered but
+        // will otherwise behave normally.
+        PyErr_WriteUnraisable(self);
+    }
 
     /* Restore the saved exception. */
     PyErr_SetRaisedException(exc);
@@ -170,6 +179,7 @@ gen_dealloc(PyObject *self)
     PyStackRef_CLEAR(gen->gi_iframe.f_executable);
     Py_CLEAR(gen->gi_name);
     Py_CLEAR(gen->gi_qualname);
+    Py_CLEAR(gen->_ctx_chain.ctx);
 
     PyObject_GC_Del(gen);
 }
@@ -242,7 +252,9 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
 
     gen->gi_frame_state = FRAME_EXECUTING;
     EVAL_CALL_STAT_INC(EVAL_CALL_GENERATOR);
+    _PyGen_ActivateContext(tstate, gen);
     PyObject *result = _PyEval_EvalFrame(tstate, frame, exc);
+    _PyGen_DeactivateContext(tstate, gen);
     assert(tstate->exc_info == prev_exc_info);
     assert(gen->gi_exc_state.previous_item == NULL);
     assert(gen->gi_frame_state != FRAME_EXECUTING);
@@ -734,6 +746,22 @@ gen_set_qualname(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
+gen_get_context(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyObject *ctx = _PyGen_CAST(self)->_ctx_chain.ctx;
+    if (ctx == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(ctx);
+}
+
+static int
+gen_set_context(PyObject *self, PyObject *ctx, void *Py_UNUSED(ignored))
+{
+    return _PyGen_ResetContext(_PyThreadState_GET(), _PyGen_CAST(self), ctx);
+}
+
+static PyObject *
 gen_getyieldfrom(PyObject *gen, void *Py_UNUSED(ignored))
 {
     PyObject *yf = _PyGen_yf(_PyGen_CAST(gen));
@@ -801,6 +829,10 @@ static PyGetSetDef gen_getsetlist[] = {
      PyDoc_STR("name of the generator")},
     {"__qualname__", gen_get_qualname, gen_set_qualname,
      PyDoc_STR("qualified name of the generator")},
+    {"_context", gen_get_context, gen_set_context,
+     PyDoc_STR("the generator's observed \"current context\", or None if the "
+               "generator uses the thread's context (which can change during a "
+               "yield) as its current context")},
     {"gi_yieldfrom", gen_getyieldfrom, NULL,
      PyDoc_STR("object being iterated by yield from, or None")},
     {"gi_running", gen_getrunning, NULL, NULL},
@@ -914,6 +946,7 @@ make_gen(PyTypeObject *type, PyFunctionObject *func)
     gen->gi_name = Py_NewRef(func->func_name);
     assert(func->func_qualname != NULL);
     gen->gi_qualname = Py_NewRef(func->func_qualname);
+    gen->_ctx_chain = (_PyContextChain){0};
     _PyObject_GC_TRACK(gen);
     return (PyObject *)gen;
 }
@@ -1001,6 +1034,7 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
         gen->gi_qualname = Py_NewRef(qualname);
     else
         gen->gi_qualname = Py_NewRef(_PyGen_GetCode(gen)->co_qualname);
+    gen->_ctx_chain = (_PyContextChain){0};
     _PyObject_GC_TRACK(gen);
     return (PyObject *)gen;
 }
@@ -1157,6 +1191,10 @@ static PyGetSetDef coro_getsetlist[] = {
      PyDoc_STR("name of the coroutine")},
     {"__qualname__", gen_get_qualname, gen_set_qualname,
      PyDoc_STR("qualified name of the coroutine")},
+    {"_context", gen_get_context, gen_set_context,
+     PyDoc_STR("the coroutine's observed \"current context\", or None if the "
+               "coroutine uses the thread's context (which can change during "
+               "an await) as its current context")},
     {"cr_await", coro_get_cr_await, NULL,
      PyDoc_STR("object being awaited on, or None")},
     {"cr_running", cr_getrunning, NULL, NULL},
@@ -1588,6 +1626,10 @@ static PyGetSetDef async_gen_getsetlist[] = {
      PyDoc_STR("name of the async generator")},
     {"__qualname__", gen_get_qualname, gen_set_qualname,
      PyDoc_STR("qualified name of the async generator")},
+    {"_context", gen_get_context, gen_set_context,
+     PyDoc_STR("the generator's observed \"current context\", or None if the "
+               "generator uses the thread's context (which can change during a "
+               "yield) as its current context")},
     {"ag_await", coro_get_cr_await, NULL,
      PyDoc_STR("object being awaited on, or None")},
      {"ag_frame", ag_getframe, NULL, NULL},

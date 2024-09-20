@@ -5,6 +5,8 @@
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "cpython/context.h"
+#include "cpython/genobject.h"    // PyGenObject
 #include "pycore_hamt.h"          // PyHamtObject
 
 #define CONTEXT_MAX_WATCHERS 8
@@ -29,6 +31,46 @@ struct _pycontextobject {
     PyObject *ctx_weakreflist;
     int ctx_entered;
 };
+
+// Resets a coroutine's independent context stack to ctx.  If ctx is NULL or
+// Py_None, the coroutine will be a dependent coroutine (its context stack will
+// be empty) upon successful return.  Otherwise, the coroutine will be an
+// independent coroutine upon successful return, with ctx as the sole item on
+// its context stack.
+//
+// The coroutine's existing stack must be empty (NULL) or contain only a single
+// entry (from a previous call to this function).  If the coroutine is
+// currently executing, this function must be called from the coroutine's
+// thread.
+//
+// Unless ctx already equals the coroutine's existing context stack, the
+// context on the existing stack (if one exists) is immediately exited and ctx
+// (if non-NULL) is immediately entered.
+int _PyGen_ResetContext(PyThreadState *ts, PyGenObject *self, PyObject *ctx);
+
+// Makes the given coroutine's context stack the active context stack for the
+// thread, shadowing (temporarily deactivating) the thread's previously active
+// context stack.  The context stack remains active until deactivated with a
+// call to _PyGen_DeactivateContext, as long as it is not shadowed by another
+// activated context stack.
+//
+// Each activated context stack must eventually be deactivated by calling
+// _PyGen_DeactivateContext.  The same context stack cannot be activated again
+// until deactivated.
+//
+// If the coroutine's context stack is empty this function has no effect.
+void _PyGen_ActivateContext(PyThreadState *ts, PyGenObject *self);
+
+// Deactivates the given coroutine's context stack, un-shadowing (reactivating)
+// the thread's previously active context stack.  Does not affect any contexts
+// in the coroutine's context stack (they remain entered).
+//
+// Must not be called if a different context stack is currently shadowing the
+// coroutine's context stack.
+//
+// If the coroutine's context stack is not the active context stack this
+// function has no effect.
+void _PyGen_DeactivateContext(PyThreadState *ts, PyGenObject *self);
 
 
 struct _pycontextvarobject {

@@ -9,6 +9,7 @@
 #include "pycore_function.h"  // FUNC_MAX_WATCHERS
 #include "pycore_code.h"  // CODE_MAX_WATCHERS
 #include "pycore_context.h" // CONTEXT_MAX_WATCHERS
+#include "pycore_tstate.h"  // _PyThreadStateImpl::_ctx_chain
 
 /*[clinic input]
 module _testcapi
@@ -708,16 +709,30 @@ clear_context_watcher(PyObject *self, PyObject *watcher_id)
 static PyObject *
 clear_context_stack(PyObject *self, PyObject *args)
 {
-    PyThreadState *tstate = PyThreadState_Get();
-    if (tstate->context == NULL) {
+    // Ensure that _ctx_chain is initialized.
+    PyObject *ctx = PyContext_CopyCurrent();
+    if (ctx == NULL) {
+        return NULL;
+    }
+    Py_CLEAR(ctx);
+
+    _PyThreadStateImpl *tsi = (_PyThreadStateImpl *)PyThreadState_Get();
+    if (tsi->_ctx_chain.prev != &tsi->_ctx_chain) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "must not be called from a coroutine or generator");
+    }
+    if (tsi->_ctx_chain.prev->ctx == NULL) {
         Py_RETURN_NONE;
     }
-    if (((PyContext *)tstate->context)->ctx_prev != NULL) {
+    if (((PyContext *)tsi->_ctx_chain.ctx)->ctx_prev != NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                         "must first exit all non-base contexts");
         return NULL;
     }
-    Py_CLEAR(tstate->context);
+    if (PyContext_Exit(tsi->_ctx_chain.prev->ctx)) {
+        return NULL;
+    }
+    assert(tsi->_ctx_chain.prev->ctx == NULL);
     Py_RETURN_NONE;
 }
 
