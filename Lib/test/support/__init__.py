@@ -2876,7 +2876,6 @@ class BrokenIter:
         return self
 
 
-
 def in_systemd_nspawn_sync_suppressed() -> bool:
     """
     Test whether the test suite is runing in systemd-nspawn
@@ -2896,10 +2895,9 @@ def in_systemd_nspawn_sync_suppressed() -> bool:
     except FileNotFoundError:
         return False
 
-    import errno
-
     # If systemd-nspawn is used, O_SYNC flag will immediately
     # trigger EINVAL.  Otherwise, ENOENT will be given instead.
+    import errno
     try:
         with os.open(__file__, os.O_RDONLY | os.O_SYNC):
             pass
