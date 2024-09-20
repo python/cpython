@@ -2367,7 +2367,7 @@ exit:
 #endif /* defined(MS_WINDOWS) */
 
 PyDoc_STRVAR(os__path_splitroot_ex__doc__,
-"_path_splitroot_ex($module, /, path)\n"
+"_path_splitroot_ex($module, /, p)\n"
 "--\n"
 "\n"
 "Split a pathname into drive, root and tail.\n"
@@ -2393,7 +2393,7 @@ os__path_splitroot_ex(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), },
+        .ob_item = { _Py_LATIN1_CHR('p'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2402,7 +2402,7 @@ os__path_splitroot_ex(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"path", NULL};
+    static const char * const _keywords[] = {"p", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "_path_splitroot_ex",
@@ -12837,4 +12837,4 @@ os__create_environ(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=2fafa0d2814948f8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a736ad3f7205176e input=a9049054013a1b77]*/
