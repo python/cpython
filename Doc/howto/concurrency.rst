@@ -1265,28 +1265,9 @@ Here's the script that wraps that code and does steps 4 and 5:
 
    </details>
 
-The high-level example code uses a helper named ``do_search()``
-to figure out the concurrency implementation to use, runs that
-implementation, and cleans up after it.  Mostly it's a wrapper around
-the desired search implementation.
-
-.. raw:: html
-
-   <details>
-   <summary>(expand)</summary>
-
-.. literalinclude:: ../includes/concurrency/grep/_implementations.py
-   :start-after: [start-do-search]
-   :end-before: [end-do-search]
-   :linenos:
-
-.. raw:: html
-
-   </details>
-
 As noted earlier, ``grep()`` itself isn't all that interesting
-relative to concurrency.  The same goes for ``do_search()``.
-You can look at the implementation of the various helpers
+relative to concurrency.  Mostly it makes use of several basic helpers.
+You can look at the implementation of the helpers
 `above <example-grep-full-code_>`_.
 
 One notable point is that the actual files are not opened until
