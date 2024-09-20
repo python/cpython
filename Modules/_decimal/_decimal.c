@@ -4660,7 +4660,7 @@ dec_richcompare(PyObject *v, PyObject *w, int op)
     uint32_t status = 0;
     int a_issnan, b_issnan;
     int r;
-    decimal_state *state = get_module_state_by_def(Py_TYPE(v));
+    decimal_state *state = find_state_left_or_right(v, w);
 
 #ifdef Py_DEBUG
     assert(PyDec_Check(state, v));
