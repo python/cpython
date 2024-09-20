@@ -2890,12 +2890,11 @@ def in_systemd_nspawn() -> bool:
 
 def in_systemd_nspawn_sync_suppressed() -> bool:
     """
-    Test whether the test suite is runing in systemd-nspawn with ``--suppress-sync=true``
+    Test whether the test suite is runing in systemd-nspawn
+    with ``--suppress-sync=true``.
 
-    Return True if the test suite is being run inside a systemd-nspawn
-    container and ``--suppress-sync=true`` option is detected to be used,
-    False otherwise.  This can be used to skip tests that rely
-    on ``fsync()`` calls and similar not being intercepted.
+    This can be used to skip tests that rely on ``fsync()`` calls
+    and similar not being intercepted.
     """
 
     if hasattr(os, "O_SYNC") and in_systemd_nspawn():
@@ -2904,7 +2903,7 @@ def in_systemd_nspawn_sync_suppressed() -> bool:
         # If systemd-nspawn is used, O_SYNC flag will immediately trigger
         # EINVAL.  Otherwise, ENOENT will be given instead.
         try:
-            with os.open("", os.O_RDONLY | os.O_SYNC):
+            with os.open(__file__, os.O_RDONLY | os.O_SYNC):
                 pass
         except OSError as err:
             if err.errno == errno.EINVAL:
