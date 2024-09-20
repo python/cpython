@@ -754,11 +754,14 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
         'yscrollcommand', 'yscrollincrement', 'width',
     )
     _rounds_pixels = True
-    if tk_version >= (9, 0):
+    if tk_version < (9, 0):
+        _noround = {}
+        _clipped = {}
+    else:
         _no_round = {'borderwidth', 'height', 'highlightthickness', 'width',
+                     'xscrollincrement', 'yscrollincrement'}
+        _clipped = {'borderwidth', 'height', 'highlightthickness', 'width',
                     'xscrollincrement', 'yscrollincrement'}
-    _clipped = {'borderwidth', 'height', 'highlightthickness',
-                'width', 'xscrollincrement', 'yscrollincrement'}
     _stringify = True
 
     def create(self, **kwargs):
