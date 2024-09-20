@@ -2124,9 +2124,8 @@ Parser defaults
      Namespace(bar=42, baz='badger', foo=736)
 
    Note that defaults can be set at both the parser level using :meth:`set_defaults`
-   and at the argument level using :meth:`add_argument`. If both are provided for the
-   same argument, the order of setting these defaults determines which one takes
-   precedence. The last default set for an argument is the one that is used::
+   and at the argument level using :meth:`add_argument`. If both are called for the
+   same argument, the last default set for an argument is used::
 
      >>> parser = argparse.ArgumentParser()
      >>> parser.add_argument('--foo', default='bar')
