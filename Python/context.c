@@ -202,9 +202,8 @@ _PyContext_Enter(PyThreadState *ts, PyContext *ctx)
         return -1;
     }
 
-    ctx->ctx_prev = ts->context;  /* borrow */
     ctx->ctx_entered = 1;
-
+    ctx->ctx_prev = ts->context;  /* steal */
     ts->context = Py_NewRef(ctx);
     context_switched(ts);
     return 0;
@@ -238,8 +237,7 @@ _PyContext_Exit(PyThreadState *ts, PyContext *ctx)
         return -1;
     }
 
-    Py_SETREF(ts->context, ctx->ctx_prev);
-
+    Py_SETREF(ts->context, ctx->ctx_prev);  /* steal */
     ctx->ctx_prev = NULL;
     ctx->ctx_entered = 0;
     context_switched(ts);
