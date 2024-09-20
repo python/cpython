@@ -2364,7 +2364,6 @@ defdict_or(PyObject* left, PyObject* right)
     if (mod == NULL) {
         PyErr_Clear();
         tp = Py_TYPE(right);
-        
         mod = defdict_or(tp, &_collectionsmodule);
     }
     assert(mod != NULL);
