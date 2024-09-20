@@ -5,6 +5,7 @@
 from dataclasses import *
 
 import abc
+import annotationlib
 import io
 import pickle
 import inspect
@@ -23,6 +24,7 @@ import typing       # Needed for the string "typing.ClassVar[int]" to work as an
 import dataclasses  # Needed for the string "dataclasses.InitVar[int]" to work as an annotation.
 
 from test import support
+from test.support import import_helper
 
 # Just any custom exception we can catch.
 class CustomError(Exception): pass
@@ -3667,7 +3669,6 @@ class TestSlots(unittest.TestCase):
     @support.cpython_only
     def test_dataclass_slot_dict_ctype(self):
         # https://github.com/python/cpython/issues/123935
-        from test.support import import_helper
         # Skips test if `_testcapi` is not present:
         _testcapi = import_helper.import_module('_testcapi')
 
@@ -4171,22 +4172,38 @@ class TestMakeDataclass(unittest.TestCase):
                                              'z': typing.Any})
 
     def test_no_types_get_annotations(self):
-        from annotationlib import Format, get_annotations
-
         C = make_dataclass('C', ['x', ('y', int), 'z'])
 
         self.assertEqual(
-            get_annotations(C, format=Format.VALUE),
+            annotationlib.get_annotations(C, format=annotationlib.Format.VALUE),
             {'x': typing.Any, 'y': int, 'z': typing.Any},
         )
         self.assertEqual(
-            get_annotations(C, format=Format.FORWARDREF),
+            annotationlib.get_annotations(
+                C, format=annotationlib.Format.FORWARDREF),
             {'x': typing.Any, 'y': int, 'z': typing.Any},
         )
         self.assertEqual(
-            get_annotations(C, format=Format.SOURCE),
+            annotationlib.get_annotations(
+                C, format=annotationlib.Format.SOURCE),
             {'x': 'typing.Any', 'y': 'int', 'z': 'typing.Any'},
         )
+
+    def test_no_types_no_typing_import(self):
+        import sys
+
+        C = make_dataclass('C', ['x', ('y', int)])
+
+        with import_helper.CleanImport('typing'):
+            self.assertEqual(
+                annotationlib.get_annotations(
+                    C, format=annotationlib.Format.FORWARDREF),
+                {
+                    'x': annotationlib.ForwardRef('Any', module='typing'),
+                    'y': int,
+                },
+            )
+            self.assertNotIn('typing', sys.modules)
 
     def test_module_attr(self):
         self.assertEqual(ByMakeDataClass.__module__, __name__)

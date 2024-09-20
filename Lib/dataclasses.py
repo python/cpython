@@ -1551,15 +1551,22 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
         annotations[name] = tp
 
     def annotate_method(format):
+        typing = sys.modules.get("typing")
+        if typing is None and format == annotationlib.Format.FORWARDREF:
+            typing_any = annotationlib.ForwardRef("Any", module="typing")
+            return {
+                ann: typing_any if t is any_marker else t
+                for ann, t in annotations.items()
+            }
+
         from typing import Any, _convert_to_source
         ann_dict = {
             ann: Any if t is any_marker else t
             for ann, t in annotations.items()
         }
-        if format == 1 or format == 2:
-            return ann_dict
-        else:
+        if format == annotationlib.Format.SOURCE:
             return _convert_to_source(ann_dict)
+        return ann_dict
 
     # Update 'ns' with the user-supplied namespace plus our calculated values.
     def exec_body_callback(ns):
