@@ -205,10 +205,10 @@ print_object_stats(FILE *out, ObjectStats *stats)
     fprintf(out, "Object allocations over 4 kbytes: %" PRIu64 "\n", stats->allocations_big);
     fprintf(out, "Object frees: %" PRIu64 "\n", stats->frees);
     fprintf(out, "Object inline values: %" PRIu64 "\n", stats->inline_values);
-    fprintf(out, "Object interpreter (mortal) increfs: %" PRIu64 "\n", stats->interpreter_increfs);
-    fprintf(out, "Object interpreter (mortal) decrefs: %" PRIu64 "\n", stats->interpreter_decrefs);
-    fprintf(out, "Object (mortal) increfs: %" PRIu64 "\n", stats->increfs);
-    fprintf(out, "Object (mortal) decrefs: %" PRIu64 "\n", stats->decrefs);
+    fprintf(out, "Object interpreter mortal increfs: %" PRIu64 "\n", stats->interpreter_increfs);
+    fprintf(out, "Object interpreter mortal decrefs: %" PRIu64 "\n", stats->interpreter_decrefs);
+    fprintf(out, "Object mortal increfs: %" PRIu64 "\n", stats->increfs);
+    fprintf(out, "Object mortal decrefs: %" PRIu64 "\n", stats->decrefs);
     fprintf(out, "Object interpreter immortal increfs: %" PRIu64 "\n", stats->interpreter_immortal_increfs);
     fprintf(out, "Object interpreter immortal decrefs: %" PRIu64 "\n", stats->interpreter_immortal_decrefs);
     fprintf(out, "Object immortal increfs: %" PRIu64 "\n", stats->immortal_increfs);
