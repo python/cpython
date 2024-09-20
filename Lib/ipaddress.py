@@ -2375,6 +2375,8 @@ class _IPv6Constants:
         IPv6Network('2001:db8::/32'),
         # IANA says N/A, let's consider it not globally reachable to be safe
         IPv6Network('2002::/16'),
+        # RFC 9637: https://www.rfc-editor.org/rfc/rfc9637.html#section-6-2.2
+        IPv6Network('3fff::/20'),
         IPv6Network('fc00::/7'),
         IPv6Network('fe80::/10'),
         ]
