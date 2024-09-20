@@ -61,7 +61,7 @@ __all__ = [
     "without_optimizer",
     "force_not_colorized",
     "BrokenIter",
-    "in_systemd_nspawn", "in_systemd_nspawn_sync_suppressed",
+    "in_systemd_nspawn_sync_suppressed",
     ]
 
 
@@ -2876,17 +2876,6 @@ class BrokenIter:
         return self
 
 
-def in_systemd_nspawn() -> bool:
-    """
-    Test whether the test suite is running inside of systemd-nspawn container
-    """
-
-    try:
-        with open("/run/systemd/container", "rb") as fp:
-            return fp.read().rstrip() == b"systemd-nspawn"
-    except FileNotFoundError:
-        return False
-
 
 def in_systemd_nspawn_sync_suppressed() -> bool:
     """
@@ -2897,16 +2886,25 @@ def in_systemd_nspawn_sync_suppressed() -> bool:
     and similar not being intercepted.
     """
 
-    if hasattr(os, "O_SYNC") and in_systemd_nspawn():
-        import errno
+    if not hasattr(os, "O_SYNC"):
+        return False
 
-        # If systemd-nspawn is used, O_SYNC flag will immediately trigger
-        # EINVAL.  Otherwise, ENOENT will be given instead.
-        try:
-            with os.open(__file__, os.O_RDONLY | os.O_SYNC):
-                pass
-        except OSError as err:
-            if err.errno == errno.EINVAL:
-                return True
+    try:
+        with open("/run/systemd/container", "rb") as fp:
+            if fp.read().rstrip() != b"systemd-nspawn":
+                return False
+    except FileNotFoundError:
+        return False
+
+    import errno
+
+    # If systemd-nspawn is used, O_SYNC flag will immediately
+    # trigger EINVAL.  Otherwise, ENOENT will be given instead.
+    try:
+        with os.open(__file__, os.O_RDONLY | os.O_SYNC):
+            pass
+    except OSError as err:
+        if err.errno == errno.EINVAL:
+            return True
 
     return False
