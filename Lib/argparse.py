@@ -1916,14 +1916,12 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # which has an 'O' if there is an option at an index,
         # an 'A' if there is an argument, or a '-' if there is a '--'
         option_string_indices = {}
-        double_dash_index = len(arg_strings)
         arg_string_pattern_parts = []
         arg_strings_iter = iter(arg_strings)
         for i, arg_string in enumerate(arg_strings_iter):
 
             # all args after -- are non-options
             if arg_string == '--':
-                double_dash_index = i
                 arg_string_pattern_parts.append('-')
                 for arg_string in arg_strings_iter:
                     arg_string_pattern_parts.append('A')
@@ -2073,10 +2071,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             for action, arg_count in zip(positionals, arg_counts):
                 args = arg_strings[start_index: start_index + arg_count]
                 # Strip out the first '--' if it is not in PARSER or REMAINDER arg.
-                if (arg_count
-                    and start_index <= double_dash_index < start_index + arg_count
-                    and action.nargs not in [PARSER, REMAINDER]):
-                    assert args.index('--') == double_dash_index - start_index
+                if (action.nargs not in [PARSER, REMAINDER]
+                    and arg_strings_pattern.find('-', start_index,
+                                                 start_index + arg_count) >= 0):
                     args.remove('--')
                 start_index += arg_count
                 if args and action.deprecated and action.dest not in warned:
