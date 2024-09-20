@@ -2526,3 +2526,11 @@
     added = '3.14'
 [function.PyLong_AsUInt64]
     added = '3.14'
+[const.Py_tp_vectorcall]
+    added = '3.14'
+[function.PyType_GetBaseByToken]
+    added = '3.14'
+[const.Py_tp_token]
+    added = '3.14'
+[const.Py_TP_USE_SPEC]
+    added = '3.14'
