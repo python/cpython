@@ -754,8 +754,9 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
         'yscrollcommand', 'yscrollincrement', 'width',
     )
     _rounds_pixels = True
-    _no_round = {'borderwidth', 'height', 'highlightthickness', 'width',
-                 'xscrollincrement', 'yscrollincrement'}
+    if tk_version >= (9, 0):
+        _no_round = {'borderwidth', 'height', 'highlightthickness', 'width',
+                    'xscrollincrement', 'yscrollincrement'}
     _clipped = {'borderwidth', 'height', 'highlightthickness',
                 'width', 'xscrollincrement', 'yscrollincrement'}
     _stringify = True
@@ -1224,8 +1225,9 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
         'takefocus', 'troughcolor', 'width',
     )
     _rounds_pixels = True
-    _no_round = {'borderwidth', 'elementborderwidth', 'highlightthickness',
-                 'width'}
+    if tk_version >= (9, 0):
+        _no_round = {'borderwidth', 'elementborderwidth', 'highlightthickness',
+                     'width'}
     if tk_version < (9, 0):
         _clipped = {'highlightthickness'}
     else:
