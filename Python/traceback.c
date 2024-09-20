@@ -980,9 +980,6 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
             /* Trampoline frame */
             frame = frame->previous;
         }
-        if (frame == NULL) {
-            break;
-        }
         /* Can't have more than one shim frame in a row */
         assert(frame->owner != FRAME_OWNED_BY_CSTACK);
         depth++;
