@@ -325,7 +325,8 @@ init_global_interned_strings(PyInterpreterState *interp)
         return _PyStatus_ERR("failed to create global interned dict");
     }
 
-    /* Intern statically allocated string identifiers and deepfreeze strings.
+    /* Intern statically allocated string identifiers, deepfreeze strings,
+        * and one-byte latin-1 strings.
         * This must be done before any module initialization so that statically
         * allocated string identifiers are used instead of heap allocated strings.
         * Deepfreeze uses the interned identifiers if present to save space
@@ -333,14 +334,11 @@ init_global_interned_strings(PyInterpreterState *interp)
     */
     _PyUnicode_InitStaticStrings(interp);
 
-#ifdef Py_GIL_DISABLED
-// In the free-threaded build, intern the 1-byte strings as well
     for (int i = 0; i < 256; i++) {
         PyObject *s = LATIN1(i);
         _PyUnicode_InternStatic(interp, &s);
         assert(s == LATIN1(i));
     }
-#endif
 #ifdef Py_DEBUG
     assert(_PyUnicode_CheckConsistency(&_Py_STR(empty), 1));
 
@@ -5395,7 +5393,7 @@ _Py_DecodeUTF8_surrogateescape(const char *arg, Py_ssize_t arglen,
 }
 
 
-/* UTF-8 encoder using the surrogateescape error handler .
+/* UTF-8 encoder.
 
    On success, return 0 and write the newly allocated character string (use
    PyMem_Free() to free the memory) into *str.
@@ -8210,8 +8208,12 @@ charmap_decode_mapping(const char *s,
         if (key == NULL)
             goto onError;
 
-        item = PyObject_GetItem(mapping, key);
+        int rc = PyMapping_GetOptionalItem(mapping, key, &item);
         Py_DECREF(key);
+        if (rc == 0) {
+            /* No mapping found means: mapping is undefined. */
+            goto Undefined;
+        }
         if (item == NULL) {
             if (PyErr_ExceptionMatches(PyExc_LookupError)) {
                 /* No mapping found means: mapping is undefined. */
@@ -8225,7 +8227,7 @@ charmap_decode_mapping(const char *s,
         if (item == Py_None)
             goto Undefined;
         if (PyLong_Check(item)) {
-            long value = PyLong_AS_LONG(item);
+            long value = PyLong_AsLong(item);
             if (value == 0xFFFE)
                 goto Undefined;
             if (value < 0 || value > MAX_UNICODE) {
@@ -8509,19 +8511,25 @@ encoding_map_lookup(Py_UCS4 c, PyObject *mapping)
     return i;
 }
 
-/* Lookup the character ch in the mapping. If the character
-   can't be found, Py_None is returned (or NULL, if another
-   error occurred). */
+/* Lookup the character in the mapping.
+   On success, return PyLong, PyBytes or None (if the character can't be found).
+   If the result is PyLong, put its value in replace.
+   On error, return NULL.
+   */
 static PyObject *
-charmapencode_lookup(Py_UCS4 c, PyObject *mapping)
+charmapencode_lookup(Py_UCS4 c, PyObject *mapping, unsigned char *replace)
 {
     PyObject *w = PyLong_FromLong((long)c);
     PyObject *x;
 
     if (w == NULL)
         return NULL;
-    x = PyObject_GetItem(mapping, w);
+    int rc = PyMapping_GetOptionalItem(mapping, w, &x);
     Py_DECREF(w);
+    if (rc == 0) {
+        /* No mapping found means: mapping is undefined. */
+        Py_RETURN_NONE;
+    }
     if (x == NULL) {
         if (PyErr_ExceptionMatches(PyExc_LookupError)) {
             /* No mapping found means: mapping is undefined. */
@@ -8533,13 +8541,14 @@ charmapencode_lookup(Py_UCS4 c, PyObject *mapping)
     else if (x == Py_None)
         return x;
     else if (PyLong_Check(x)) {
-        long value = PyLong_AS_LONG(x);
+        long value = PyLong_AsLong(x);
         if (value < 0 || value > 255) {
             PyErr_SetString(PyExc_TypeError,
                             "character mapping must be in range(256)");
             Py_DECREF(x);
             return NULL;
         }
+        *replace = (unsigned char)value;
         return x;
     }
     else if (PyBytes_Check(x))
@@ -8580,6 +8589,7 @@ charmapencode_output(Py_UCS4 c, PyObject *mapping,
                      PyObject **outobj, Py_ssize_t *outpos)
 {
     PyObject *rep;
+    unsigned char replace;
     char *outstart;
     Py_ssize_t outsize = PyBytes_GET_SIZE(*outobj);
 
@@ -8596,7 +8606,7 @@ charmapencode_output(Py_UCS4 c, PyObject *mapping,
         return enc_SUCCESS;
     }
 
-    rep = charmapencode_lookup(c, mapping);
+    rep = charmapencode_lookup(c, mapping, &replace);
     if (rep==NULL)
         return enc_EXCEPTION;
     else if (rep==Py_None) {
@@ -8611,7 +8621,7 @@ charmapencode_output(Py_UCS4 c, PyObject *mapping,
                     return enc_EXCEPTION;
                 }
             outstart = PyBytes_AS_STRING(*outobj);
-            outstart[(*outpos)++] = (char)PyLong_AS_LONG(rep);
+            outstart[(*outpos)++] = (char)replace;
         }
         else {
             const char *repchars = PyBytes_AS_STRING(rep);
@@ -8660,6 +8670,7 @@ charmap_encoding_error(
     /* find all unencodable characters */
     while (collendpos < size) {
         PyObject *rep;
+        unsigned char replace;
         if (Py_IS_TYPE(mapping, &EncodingMapType)) {
             ch = PyUnicode_READ_CHAR(unicode, collendpos);
             val = encoding_map_lookup(ch, mapping);
@@ -8670,7 +8681,7 @@ charmap_encoding_error(
         }
 
         ch = PyUnicode_READ_CHAR(unicode, collendpos);
-        rep = charmapencode_lookup(ch, mapping);
+        rep = charmapencode_lookup(ch, mapping, &replace);
         if (rep==NULL)
             return -1;
         else if (rep!=Py_None) {
@@ -8935,17 +8946,24 @@ unicode_translate_call_errorhandler(const char *errors,
 
 /* Lookup the character ch in the mapping and put the result in result,
    which must be decrefed by the caller.
+   The result can be PyLong, PyUnicode, None or NULL.
+   If the result is PyLong, put its value in replace.
    Return 0 on success, -1 on error */
 static int
-charmaptranslate_lookup(Py_UCS4 c, PyObject *mapping, PyObject **result)
+charmaptranslate_lookup(Py_UCS4 c, PyObject *mapping, PyObject **result, Py_UCS4 *replace)
 {
     PyObject *w = PyLong_FromLong((long)c);
     PyObject *x;
 
     if (w == NULL)
         return -1;
-    x = PyObject_GetItem(mapping, w);
+    int rc = PyMapping_GetOptionalItem(mapping, w, &x);
     Py_DECREF(w);
+    if (rc == 0) {
+        /* No mapping found means: use 1:1 mapping. */
+        *result = NULL;
+        return 0;
+    }
     if (x == NULL) {
         if (PyErr_ExceptionMatches(PyExc_LookupError)) {
             /* No mapping found means: use 1:1 mapping. */
@@ -8960,7 +8978,7 @@ charmaptranslate_lookup(Py_UCS4 c, PyObject *mapping, PyObject **result)
         return 0;
     }
     else if (PyLong_Check(x)) {
-        long value = PyLong_AS_LONG(x);
+        long value = PyLong_AsLong(x);
         if (value < 0 || value > MAX_UNICODE) {
             PyErr_Format(PyExc_ValueError,
                          "character mapping must be in range(0x%x)",
@@ -8969,6 +8987,7 @@ charmaptranslate_lookup(Py_UCS4 c, PyObject *mapping, PyObject **result)
             return -1;
         }
         *result = x;
+        *replace = (Py_UCS4)value;
         return 0;
     }
     else if (PyUnicode_Check(x)) {
@@ -8992,8 +9011,9 @@ charmaptranslate_output(Py_UCS4 ch, PyObject *mapping,
                         _PyUnicodeWriter *writer)
 {
     PyObject *item;
+    Py_UCS4 replace;
 
-    if (charmaptranslate_lookup(ch, mapping, &item))
+    if (charmaptranslate_lookup(ch, mapping, &item, &replace))
         return -1;
 
     if (item == NULL) {
@@ -9010,10 +9030,7 @@ charmaptranslate_output(Py_UCS4 ch, PyObject *mapping,
     }
 
     if (PyLong_Check(item)) {
-        long ch = (Py_UCS4)PyLong_AS_LONG(item);
-        /* PyLong_AS_LONG() cannot fail, charmaptranslate_lookup() already
-           used it */
-        if (_PyUnicodeWriter_WriteCharInline(writer, ch) < 0) {
+        if (_PyUnicodeWriter_WriteCharInline(writer, replace) < 0) {
             Py_DECREF(item);
             return -1;
         }
@@ -9040,9 +9057,10 @@ unicode_fast_translate_lookup(PyObject *mapping, Py_UCS1 ch,
                               Py_UCS1 *translate)
 {
     PyObject *item = NULL;
+    Py_UCS4 replace;
     int ret = 0;
 
-    if (charmaptranslate_lookup(ch, mapping, &item)) {
+    if (charmaptranslate_lookup(ch, mapping, &item, &replace)) {
         return -1;
     }
 
@@ -9056,10 +9074,7 @@ unicode_fast_translate_lookup(PyObject *mapping, Py_UCS1 ch,
         return 1;
     }
     else if (PyLong_Check(item)) {
-        long replace = PyLong_AS_LONG(item);
-        /* PyLong_AS_LONG() cannot fail, charmaptranslate_lookup() already
-           used it */
-        if (127 < replace) {
+        if (replace > 127) {
             /* invalid character or character outside ASCII:
                skip the fast translate */
             goto exit;
@@ -9067,8 +9082,6 @@ unicode_fast_translate_lookup(PyObject *mapping, Py_UCS1 ch,
         translate[ch] = (Py_UCS1)replace;
     }
     else if (PyUnicode_Check(item)) {
-        Py_UCS4 replace;
-
         if (PyUnicode_GET_LENGTH(item) != 1)
             goto exit;
 
@@ -9221,8 +9234,9 @@ _PyUnicode_TranslateCharmap(PyObject *input,
         /* find all untranslatable characters */
         while (collend < size) {
             PyObject *x;
+            Py_UCS4 replace;
             ch = PyUnicode_READ(kind, data, collend);
-            if (charmaptranslate_lookup(ch, mapping, &x))
+            if (charmaptranslate_lookup(ch, mapping, &x, &replace))
                 goto onError;
             Py_XDECREF(x);
             if (x != Py_None)
@@ -11674,7 +11688,7 @@ unicode_hash(PyObject *self)
     if (hash != -1) {
         return hash;
     }
-    x = _Py_HashBytes(PyUnicode_DATA(self),
+    x = Py_HashBuffer(PyUnicode_DATA(self),
                       PyUnicode_GET_LENGTH(self) * PyUnicode_KIND(self));
 
     FT_ATOMIC_STORE_SSIZE_RELAXED(_PyUnicode_HASH(self), x);
@@ -15123,7 +15137,16 @@ unicode_vectorcall(PyObject *type, PyObject *const *args,
         return PyObject_Str(object);
     }
     const char *encoding = arg_as_utf8(args[1], "encoding");
-    const char *errors = (nargs == 3) ? arg_as_utf8(args[2], "errors") : NULL;
+    if (encoding == NULL) {
+        return NULL;
+    }
+    const char *errors = NULL;
+    if (nargs == 3) {
+        errors = arg_as_utf8(args[2], "errors");
+        if (errors == NULL) {
+            return NULL;
+        }
+    }
     return PyUnicode_FromEncodedObject(object, encoding, errors);
 }
 
@@ -15267,7 +15290,7 @@ PyTypeObject PyUnicode_Type = {
     0,                            /* tp_init */
     0,                            /* tp_alloc */
     unicode_new,                  /* tp_new */
-    PyObject_Del,                 /* tp_free */
+    PyObject_Free,                /* tp_free */
     .tp_vectorcall = unicode_vectorcall,
 };
 
@@ -15355,26 +15378,14 @@ intern_static(PyInterpreterState *interp, PyObject *s /* stolen */)
     assert(s != NULL);
     assert(_PyUnicode_CHECK(s));
     assert(_PyUnicode_STATE(s).statically_allocated);
-
-    switch (PyUnicode_CHECK_INTERNED(s)) {
-        case SSTATE_NOT_INTERNED:
-            break;
-        case SSTATE_INTERNED_IMMORTAL_STATIC:
-            return s;
-        default:
-            Py_FatalError("_PyUnicode_InternStatic called on wrong string");
-    }
+    assert(!PyUnicode_CHECK_INTERNED(s));
 
 #ifdef Py_DEBUG
     /* We must not add process-global interned string if there's already a
      * per-interpreter interned_dict, which might contain duplicates.
-     * Except "short string" singletons: those are special-cased. */
+     */
     PyObject *interned = get_interned_dict(interp);
-    assert(interned == NULL || unicode_is_singleton(s));
-#ifdef Py_GIL_DISABLED
-    // In the free-threaded build, don't allow even the short strings.
     assert(interned == NULL);
-#endif
 #endif
 
     /* Look in the global cache first. */
@@ -15446,11 +15457,6 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
         return s;
     }
 
-    /* Handle statically allocated strings. */
-    if (_PyUnicode_STATE(s).statically_allocated) {
-        return intern_static(interp, s);
-    }
-
     /* Is it already interned? */
     switch (PyUnicode_CHECK_INTERNED(s)) {
         case SSTATE_NOT_INTERNED:
@@ -15467,6 +15473,9 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
             return s;
     }
 
+    /* Statically allocated strings must be already interned. */
+    assert(!_PyUnicode_STATE(s).statically_allocated);
+
 #if Py_GIL_DISABLED
     /* In the free-threaded build, all interned strings are immortal */
     immortalize = 1;
@@ -15477,13 +15486,11 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
         immortalize = 1;
     }
 
-    /* if it's a short string, get the singleton -- and intern it */
+    /* if it's a short string, get the singleton */
     if (PyUnicode_GET_LENGTH(s) == 1 &&
                 PyUnicode_KIND(s) == PyUnicode_1BYTE_KIND) {
         PyObject *r = LATIN1(*(unsigned char*)PyUnicode_DATA(s));
-        if (!PyUnicode_CHECK_INTERNED(r)) {
-            r = intern_static(interp, r);
-        }
+        assert(PyUnicode_CHECK_INTERNED(r));
         Py_DECREF(s);
         return r;
     }
@@ -15632,19 +15639,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
         int shared = 0;
         switch (PyUnicode_CHECK_INTERNED(s)) {
         case SSTATE_INTERNED_IMMORTAL:
-            /* Make immortal interned strings mortal again.
-             *
-             * Currently, the runtime is not able to guarantee that it can exit
-             * without allocations that carry over to a future initialization
-             * of Python within the same process. i.e:
-             *   ./python -X showrefcount -c 'import itertools'
-             *   [237 refs, 237 blocks]
-             *
-             * This should remain disabled (`Py_DEBUG` only) until there is a
-             * strict guarantee that no memory will be left after
-             * `Py_Finalize`.
-             */
-#ifdef Py_DEBUG
+            /* Make immortal interned strings mortal again. */
             // Skip the Immortal Instance check and restore
             // the two references (key and value) ignored
             // by PyUnicode_InternInPlace().
@@ -15657,7 +15652,6 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
 #ifdef INTERNED_STATS
             total_length += PyUnicode_GET_LENGTH(s);
 #endif
-#endif // Py_DEBUG
             break;
         case SSTATE_INTERNED_IMMORTAL_STATIC:
             /* It is shared between interpreters, so we should unmark it
@@ -15912,7 +15906,7 @@ encode_wstr_utf8(wchar_t *wstr, char **str, const char *name)
     int res;
     res = _Py_EncodeUTF8Ex(wstr, str, NULL, NULL, 1, _Py_ERROR_STRICT);
     if (res == -2) {
-        PyErr_Format(PyExc_RuntimeWarning, "cannot decode %s", name);
+        PyErr_Format(PyExc_RuntimeWarning, "cannot encode %s", name);
         return -1;
     }
     if (res < 0) {

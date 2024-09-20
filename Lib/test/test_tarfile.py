@@ -722,6 +722,24 @@ class MiscReadTestBase(CommonReadTest):
             tar.close()
             os_helper.rmtree(DIR)
 
+    @staticmethod
+    def test_extractall_default_filter():
+        # Test that the default filter is now "data", and the other filter types are not used.
+        DIR = pathlib.Path(TEMPDIR) / "extractall_default_filter"
+        with (
+            os_helper.temp_dir(DIR),
+            tarfile.open(tarname, encoding="iso8859-1") as tar,
+            unittest.mock.patch("tarfile.data_filter", wraps=tarfile.data_filter) as mock_data_filter,
+            unittest.mock.patch("tarfile.tar_filter", wraps=tarfile.tar_filter) as mock_tar_filter,
+            unittest.mock.patch("tarfile.fully_trusted_filter", wraps=tarfile.fully_trusted_filter) as mock_ft_filter
+        ):
+            directories = [t for t in tar if t.isdir()]
+            tar.extractall(DIR, directories)
+
+            mock_data_filter.assert_called()
+            mock_ft_filter.assert_not_called()
+            mock_tar_filter.assert_not_called()
+
     @os_helper.skip_unless_working_chmod
     def test_extract_directory(self):
         dirtype = "ustar/dirtype"
@@ -737,31 +755,6 @@ class MiscReadTestBase(CommonReadTest):
                     self.assertEqual(os.stat(extracted).st_mode & 0o777, 0o755)
         finally:
             os_helper.rmtree(DIR)
-
-    def test_deprecation_if_no_filter_passed_to_extractall(self):
-        DIR = pathlib.Path(TEMPDIR) / "extractall"
-        with (
-            os_helper.temp_dir(DIR),
-            tarfile.open(tarname, encoding="iso8859-1") as tar
-        ):
-            directories = [t for t in tar if t.isdir()]
-            with self.assertWarnsRegex(DeprecationWarning, "Use the filter argument") as cm:
-                tar.extractall(DIR, directories)
-            # check that the stacklevel of the deprecation warning is correct:
-            self.assertEqual(cm.filename, __file__)
-
-    def test_deprecation_if_no_filter_passed_to_extract(self):
-        dirtype = "ustar/dirtype"
-        DIR = pathlib.Path(TEMPDIR) / "extractall"
-        with (
-            os_helper.temp_dir(DIR),
-            tarfile.open(tarname, encoding="iso8859-1") as tar
-        ):
-            tarinfo = tar.getmember(dirtype)
-            with self.assertWarnsRegex(DeprecationWarning, "Use the filter argument") as cm:
-                tar.extract(tarinfo, path=DIR)
-            # check that the stacklevel of the deprecation warning is correct:
-            self.assertEqual(cm.filename, __file__)
 
     def test_extractall_pathlike_dir(self):
         DIR = os.path.join(TEMPDIR, "extractall")
@@ -1267,6 +1260,48 @@ class PaxReadTest(LongnameTest, ReadTest, unittest.TestCase):
             self.assertEqual(float(tarinfo.pax_headers["ctime"]), 1041808783.0)
         finally:
             tar.close()
+
+    def test_pax_header_bad_formats(self):
+        # The fields from the pax header have priority over the
+        # TarInfo.
+        pax_header_replacements = (
+            b" foo=bar\n",
+            b"0 \n",
+            b"1 \n",
+            b"2 \n",
+            b"3 =\n",
+            b"4 =a\n",
+            b"1000000 foo=bar\n",
+            b"0 foo=bar\n",
+            b"-12 foo=bar\n",
+            b"000000000000000000000000036 foo=bar\n",
+        )
+        pax_headers = {"foo": "bar"}
+
+        for replacement in pax_header_replacements:
+            with self.subTest(header=replacement):
+                tar = tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT,
+                                   encoding="iso8859-1")
+                try:
+                    t = tarfile.TarInfo()
+                    t.name = "pax"  # non-ASCII
+                    t.uid = 1
+                    t.pax_headers = pax_headers
+                    tar.addfile(t)
+                finally:
+                    tar.close()
+
+                with open(tmpname, "rb") as f:
+                    data = f.read()
+                    self.assertIn(b"11 foo=bar\n", data)
+                    data = data.replace(b"11 foo=bar\n", replacement)
+
+                with open(tmpname, "wb") as f:
+                    f.truncate()
+                    f.write(data)
+
+                with self.assertRaisesRegex(tarfile.ReadError, r"method tar: ReadError\('invalid header'\)"):
+                    tarfile.open(tmpname, encoding="iso8859-1")
 
 
 class WriteTestBase(TarTest):
@@ -4010,15 +4045,6 @@ class TestExtractionFilters(unittest.TestCase):
                     continue
                 self.assertIs(filtered.name, tarinfo.name)
                 self.assertIs(filtered.type, tarinfo.type)
-
-    def test_default_filter_warns(self):
-        """Ensure the default filter warns"""
-        with ArchiveMaker() as arc:
-            arc.add('foo')
-        with warnings_helper.check_warnings(
-                ('Python 3.14', DeprecationWarning)):
-            with self.check_context(arc.open(), None):
-                self.expect_file('foo')
 
     def test_change_default_filter_on_instance(self):
         tar = tarfile.TarFile(tarname, 'r')
