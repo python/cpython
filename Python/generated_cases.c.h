@@ -1066,7 +1066,7 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
                     tstate, (PyCodeObject *)&_Py_InitCleanup, 1, frame);
-                assert(_PyCode_CODE((PyCodeObject *)shim->f_executable)[0].op.code == EXIT_INIT_CHECK);
+                assert(_PyCode_CODE(_PyFrame_GetCode(shim))[0].op.code == EXIT_INIT_CHECK);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 /* Push self onto stack of shim */
                 shim->localsplus[0] = PyStackRef_DUP(self[0]);
@@ -6098,7 +6098,7 @@
             PREDICTED(LOAD_GLOBAL);
             _Py_CODEUNIT *this_instr = next_instr - 5;
             (void)this_instr;
-            _PyStackRef res;
+            _PyStackRef *res;
             _PyStackRef null = PyStackRef_NULL;
             // _SPECIALIZE_LOAD_GLOBAL
             {
@@ -6122,15 +6122,14 @@
             /* Skip 1 cache entry */
             // _LOAD_GLOBAL
             {
+                res = &stack_pointer[0];
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyObject *res_o = _PyEval_LoadGlobal(GLOBALS(), BUILTINS(), name);
+                _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, res);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (res_o == NULL) goto error;
+                if (PyStackRef_IsNull(*res)) goto error;
                 null = PyStackRef_NULL;
-                res = PyStackRef_FromPyObjectSteal(res_o);
             }
-            stack_pointer[0] = res;
             if (oparg & 1) stack_pointer[1] = null;
             stack_pointer += 1 + (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());

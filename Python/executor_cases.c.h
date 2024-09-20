@@ -1761,17 +1761,16 @@
         }
 
         case _LOAD_GLOBAL: {
-            _PyStackRef res;
+            _PyStackRef *res;
             _PyStackRef null = PyStackRef_NULL;
             oparg = CURRENT_OPARG();
+            res = &stack_pointer[0];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *res_o = _PyEval_LoadGlobal(GLOBALS(), BUILTINS(), name);
+            _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, res);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (res_o == NULL) JUMP_TO_ERROR();
+            if (PyStackRef_IsNull(*res)) JUMP_TO_ERROR();
             null = PyStackRef_NULL;
-            res = PyStackRef_FromPyObjectSteal(res_o);
-            stack_pointer[0] = res;
             if (oparg & 1) stack_pointer[1] = null;
             stack_pointer += 1 + (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
@@ -4389,7 +4388,7 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
                 tstate, (PyCodeObject *)&_Py_InitCleanup, 1, frame);
-            assert(_PyCode_CODE((PyCodeObject *)shim->f_executable)[0].op.code == EXIT_INIT_CHECK);
+            assert(_PyCode_CODE(_PyFrame_GetCode(shim))[0].op.code == EXIT_INIT_CHECK);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             /* Push self onto stack of shim */
             shim->localsplus[0] = PyStackRef_DUP(self[0]);
@@ -5745,7 +5744,7 @@
             #endif
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
-                PyCodeObject *code = (PyCodeObject *)frame->f_executable;
+                PyCodeObject *code = _PyFrame_GetCode(frame);
                 executor = code->co_executors->executors[target->op.arg];
                 Py_INCREF(executor);
             }

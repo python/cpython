@@ -1491,8 +1491,8 @@ dummy_func(
                     && PyDict_CheckExact(BUILTINS()))
                 {
                     v_o = _PyDict_LoadGlobal((PyDictObject *)GLOBALS(),
-                                            (PyDictObject *)BUILTINS(),
-                                            name);
+                                             (PyDictObject *)BUILTINS(),
+                                             name);
                     if (v_o == NULL) {
                         if (!_PyErr_Occurred(tstate)) {
                             /* _PyDict_LoadGlobal() returns NULL without raising
@@ -1549,12 +1549,12 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_LOAD_GLOBAL, ( -- res, null if (oparg & 1))) {
+        // res[1] because we need a pointer to res to pass it to _PyEval_LoadGlobalStackRef
+        op(_LOAD_GLOBAL, ( -- res[1], null if (oparg & 1))) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-            PyObject *res_o = _PyEval_LoadGlobal(GLOBALS(), BUILTINS(), name);
-            ERROR_IF(res_o == NULL, error);
+            _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, res);
+            ERROR_IF(PyStackRef_IsNull(*res), error);
             null = PyStackRef_NULL;
-            res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
         macro(LOAD_GLOBAL) =
@@ -3666,7 +3666,7 @@ dummy_func(
         op(_CREATE_INIT_FRAME, (init[1], self[1], args[oparg] -- init_frame: _PyInterpreterFrame *)) {
             _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
                 tstate, (PyCodeObject *)&_Py_InitCleanup, 1, frame);
-            assert(_PyCode_CODE((PyCodeObject *)shim->f_executable)[0].op.code == EXIT_INIT_CHECK);
+            assert(_PyCode_CODE(_PyFrame_GetCode(shim))[0].op.code == EXIT_INIT_CHECK);
             /* Push self onto stack of shim */
             shim->localsplus[0] = PyStackRef_DUP(self[0]);
             PyFunctionObject *init_func = (PyFunctionObject *)PyStackRef_AsPyObjectSteal(init[0]);
@@ -4887,7 +4887,7 @@ dummy_func(
         #endif
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
-                PyCodeObject *code = (PyCodeObject *)frame->f_executable;
+                PyCodeObject *code = _PyFrame_GetCode(frame);
                 executor = code->co_executors->executors[target->op.arg];
                 Py_INCREF(executor);
             }
