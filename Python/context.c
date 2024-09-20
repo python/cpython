@@ -187,8 +187,9 @@ static inline void
 context_switched(PyThreadState *ts)
 {
     ts->context_ver++;
-    // ts->context is used instead of context_get() because context_get() might
-    // throw if ts->context is NULL.
+    // ts->context is used instead of context_get() because if ts->context is
+    // NULL, context_get() will either call context_switched -- causing a
+    // double notification -- or throw.
     notify_context_watchers(ts, Py_CONTEXT_SWITCHED, ts->context);
 }
 
@@ -475,15 +476,18 @@ context_get(void)
 {
     PyThreadState *ts = _PyThreadState_GET();
     assert(ts != NULL);
-    PyContext *current_ctx = (PyContext *)ts->context;
-    if (current_ctx == NULL) {
-        current_ctx = context_new_empty();
-        if (current_ctx == NULL) {
-            return NULL;
+    if (ts->context == NULL) {
+        PyContext *ctx = context_new_empty();
+        if (ctx != NULL && _PyContext_Enter(ts, ctx)) {
+            Py_UNREACHABLE();
         }
-        ts->context = (PyObject *)current_ctx;
+        assert(ts->context == (PyObject *)ctx);
+        Py_CLEAR(ctx);  // _PyContext_Enter created its own ref.
     }
-    return current_ctx;
+    // The current context may be NULL if the above context_new_empty() call
+    // failed.
+    assert(ts->context == NULL || PyContext_CheckExact(ts->context));
+    return (PyContext *)ts->context;
 }
 
 static int
