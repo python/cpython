@@ -7,10 +7,7 @@ from test.support import requires
 from test.test_tkinter.support import (requires_tk, tk_version,
                                   get_tk_patchlevel, widget_eq,
                                   AbstractDefaultRootTest)
-if tk_version < (9, 0):
-    from test.test_tkinter.support import messages_v1 as messages, is_pixel_str
-else:
-    from test.test_tkinter.support import messages_v2 as messages, is_pixel_str
+
 from test.test_tkinter.widget_tests import (
     add_configure_tests,
     AbstractWidgetTest,
@@ -323,7 +320,10 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
         widget = self.create()
         image = tkinter.PhotoImage(master=self.root, name='image1')
         self.checkParam(widget, 'image', image, conv=str)
-        errmsg = messages['no_image'].format('spam')
+        if tk_version < (9, 0):
+            errmsg = 'image "spam" doesn\'t exist'
+        else:
+            errmsg = 'image "spam" does not exist'
         with self.assertRaises(tkinter.TclError) as cm:
             widget['image'] = 'spam'
         if errmsg is not None:

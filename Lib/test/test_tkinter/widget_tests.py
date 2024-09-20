@@ -4,10 +4,6 @@ import re
 import tkinter
 from test.test_tkinter.support import (AbstractTkTest, requires_tk, tk_version,
                                   pixels_conv, tcl_obj_eq)
-if tk_version < (9,0):
-    from test.test_tkinter.support import is_pixel_str, messages_v1 as messages
-else:
-    from test.test_tkinter.support import is_pixel_str, messages_v2 as messages
 import test.support
 
 _sentinel = object()
@@ -179,8 +175,12 @@ class AbstractWidgetTest(AbstractTkTest):
     def checkImageParam(self, widget, name):
         image = tkinter.PhotoImage(master=self.root, name='image1')
         self.checkParam(widget, name, image, conv=str)
+        if tk_version < (9, 0):
+            errmsg = 'image "spam" doesn\'t exist'
+        else:
+            errmsg = 'image "spam" does not exist'
         self.checkInvalidParam(widget, name, 'spam',
-                errmsg=messages['no_image'].format('spam'))
+                               errmsg=errmsg)
         widget[name] = ''
 
     def checkVariableParam(self, widget, name, var):
@@ -356,8 +356,11 @@ class StandardOptionsTests(PixelOptionsTests):
                         '-Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*')
         is_ttk = widget.__class__.__module__ == 'tkinter.ttk'
         if not is_ttk:
-            self.checkInvalidParam(widget, 'font', '',
-                                   errmsg=messages['no_font'].format(''))
+            if tk_version < (9,0):
+                errmsg = 'font "" doesn\'t exist'
+            else:
+                errmsg = 'font "" does not exist'
+            self.checkInvalidParam(widget, 'font', '', errmsg=errmsg)
 
     def test_configure_foreground(self):
         widget = self.create()

@@ -8,10 +8,6 @@ from test.test_ttk_textonly import MockTclObj
 from test.test_tkinter.support import (
     AbstractTkTest, requires_tk, tk_version, get_tk_patchlevel,
     simulate_mouse_click, AbstractDefaultRootTest)
-if tk_version < (9,0):
-    from test.test_tkinter.support import messages_v1 as messages
-else:
-    from test.test_tkinter.support import messages_v2 as messages
 from test.test_tkinter.widget_tests import (add_configure_tests,
     AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests)
 
@@ -186,8 +182,11 @@ class AbstractLabelTest(AbstractWidgetTest):
                         expected=('image1', 'active', 'image2'))
         self.checkParam(widget, name, 'image1 active image2',
                         expected=('image1', 'active', 'image2'))
-        self.checkInvalidParam(widget, name, 'spam',
-                errmsg=messages['no_image'].format('spam'))
+        if tk_version < (9, 0):
+            errmsg = 'image "spam" doesn\'t exist'
+        else:
+            errmsg = 'image "spam" does not exist'
+        self.checkInvalidParam(widget, name, 'spam', errmsg=errmsg)
 
     def test_configure_compound(self):
         values = ('none', 'text', 'image', 'center', 'top', 'bottom', 'left', 'right')
