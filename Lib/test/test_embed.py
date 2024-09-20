@@ -416,7 +416,6 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '20000101\n' * INIT_LOOPS)
 
-    @unittest.skip('inheritance across re-init is currently broken; see gh-117482')
     def test_static_types_inherited_slots(self):
         script = textwrap.dedent("""
             import test.support
@@ -1766,7 +1765,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'use_hash_seed': True,
         }
         config_dev_mode(preconfig, config)
-        config['faulthandler'] = 0
         self.check_all_configs("test_initconfig_api", config, preconfig,
                                api=API_ISOLATED)
 
@@ -1775,6 +1773,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_initconfig_exit(self):
         self.run_embedded_interpreter("test_initconfig_exit")
+
+    def test_initconfig_module(self):
+        self.run_embedded_interpreter("test_initconfig_module")
 
     def test_get_argc_argv(self):
         self.run_embedded_interpreter("test_get_argc_argv")
@@ -1970,7 +1971,11 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
     @unittest.skipUnless(support.Py_DEBUG,
                          '-X presite requires a Python debug build')
     def test_presite(self):
-        cmd = [sys.executable, "-I", "-X", "presite=test.reperf", "-c", "print('cmd')"]
+        cmd = [
+            sys.executable,
+            "-I", "-X", "presite=test._test_embed_structseq",
+            "-c", "print('unique-python-message')",
+        ]
         proc = subprocess.run(
             cmd,
             stdout=subprocess.PIPE,
@@ -1979,9 +1984,8 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
         )
         self.assertEqual(proc.returncode, 0)
         out = proc.stdout.strip()
-        self.assertIn("10 times sub", out)
-        self.assertIn("CPU seconds", out)
-        self.assertIn("cmd", out)
+        self.assertIn("Tests passed", out)
+        self.assertIn("unique-python-message", out)
 
 
 class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
