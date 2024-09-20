@@ -1,0 +1,3 @@
+Detect whether the test suite is running inside a systemd-nspawn container
+with ``--suppress-sync=true`` option, and skip the ``test_os``
+and ``test_mmap`` tests that are failing in this scenario.
