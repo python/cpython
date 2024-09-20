@@ -111,6 +111,24 @@ def require_frozen(module, *, skip=True):
 def require_pure_python(module, *, skip=False):
     _require_loader(module, SourceFileLoader, skip)
 
+def create_extension_loader(modname, filename):
+    # Apple extensions must be distributed as frameworks. This requires
+    # a specialist loader.
+    if is_apple_mobile:
+        return AppleFrameworkLoader(modname, filename)
+    else:
+        return ExtensionFileLoader(modname, filename)
+
+def import_extension_from_file(modname, filename, *, put_in_sys_modules=True):
+    loader = create_extension_loader(modname, filename)
+    spec = importlib.util.spec_from_loader(modname, loader)
+    module = importlib.util.module_from_spec(spec)
+    loader.exec_module(module)
+    if put_in_sys_modules:
+        sys.modules[modname] = module
+    return module
+
+
 def remove_files(name):
     for f in (name + ".py",
               name + ".pyc",
@@ -1894,6 +1912,37 @@ class CircularImportTests(unittest.TestCase):
             str(cm.exception),
         )
 
+    @requires_singlephase_init
+    @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
+    def test_singlephase_circular(self):
+        """Regression test for gh-123950
+
+        Import a single-phase-init module that imports itself
+        from the PyInit_* function (before it's added to sys.modules).
+        Manages its own cache (which is `static`, and so incompatible
+        with multiple interpreters or interpreter reset).
+        """
+        name = '_testsinglephase_circular'
+        helper_name = 'test.test_import.data.circular_imports.singlephase'
+        with uncache(name, helper_name):
+            filename = _testsinglephase.__file__
+            # We don't put the module in sys.modules: that the *inner*
+            # import should do that.
+            mod = import_extension_from_file(name, filename,
+                                             put_in_sys_modules=False)
+
+            self.assertEqual(mod.helper_mod_name, helper_name)
+            self.assertIn(name, sys.modules)
+            self.assertIn(helper_name, sys.modules)
+
+            self.assertIn(name, sys.modules)
+            self.assertIn(helper_name, sys.modules)
+        self.assertNotIn(name, sys.modules)
+        self.assertNotIn(helper_name, sys.modules)
+        self.assertIs(mod.clear_static_var(), mod)
+        _testinternalcapi.clear_extension('_testsinglephase_circular',
+                                          mod.__spec__.origin)
+
     def test_unwritable_module(self):
         self.addCleanup(unload, "test.test_import.data.unwritable")
         self.addCleanup(unload, "test.test_import.data.unwritable.x")
@@ -1932,14 +1981,6 @@ class SubinterpImportTests(unittest.TestCase):
         if hasattr(os, 'set_blocking'):
             os.set_blocking(r, False)
         return (r, w)
-
-    def create_extension_loader(self, modname, filename):
-        # Apple extensions must be distributed as frameworks. This requires
-        # a specialist loader.
-        if is_apple_mobile:
-            return AppleFrameworkLoader(modname, filename)
-        else:
-            return ExtensionFileLoader(modname, filename)
 
     def import_script(self, name, fd, filename=None, check_override=None):
         override_text = ''
@@ -2157,11 +2198,7 @@ class SubinterpImportTests(unittest.TestCase):
     def test_multi_init_extension_non_isolated_compat(self):
         modname = '_test_non_isolated'
         filename = _testmultiphase.__file__
-        loader = self.create_extension_loader(modname, filename)
-        spec = importlib.util.spec_from_loader(modname, loader)
-        module = importlib.util.module_from_spec(spec)
-        loader.exec_module(module)
-        sys.modules[modname] = module
+        module = import_extension_from_file(modname, filename)
 
         require_extension(module)
         with self.subTest(f'{modname}: isolated'):
@@ -2176,11 +2213,7 @@ class SubinterpImportTests(unittest.TestCase):
     def test_multi_init_extension_per_interpreter_gil_compat(self):
         modname = '_test_shared_gil_only'
         filename = _testmultiphase.__file__
-        loader = self.create_extension_loader(modname, filename)
-        spec = importlib.util.spec_from_loader(modname, loader)
-        module = importlib.util.module_from_spec(spec)
-        loader.exec_module(module)
-        sys.modules[modname] = module
+        module = import_extension_from_file(modname, filename)
 
         require_extension(module)
         with self.subTest(f'{modname}: isolated, strict'):

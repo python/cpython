@@ -590,6 +590,7 @@ Modules/_testmultiphase.c	-	slots_nonmodule_with_exec_slots	-
 Modules/_testmultiphase.c	-	testexport_methods	-
 Modules/_testmultiphase.c	-	uninitialized_def	-
 Modules/_testsinglephase.c	-	global_state	-
+Modules/_testsinglephase.c	-	static_module_circular	-
 Modules/_xxtestfuzz/_xxtestfuzz.c	-	_fuzzmodule	-
 Modules/_xxtestfuzz/_xxtestfuzz.c	-	module_methods	-
 Modules/_xxtestfuzz/fuzzer.c	-	RE_FLAG_DEBUG	-
