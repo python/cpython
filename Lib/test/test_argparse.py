@@ -2093,6 +2093,26 @@ class TestActionExtend(ParserTestCase):
     ]
 
 
+class TestNegativeNumber(ParserTestCase):
+    """Test parsing negative numbers"""
+
+    argument_signatures = [
+        Sig('--int', type=int),
+        Sig('--float', type=float),
+    ]
+    failures = [
+        '--float -_.45',
+        '--float -1__000.0',
+        '--int -1__000',
+    ]
+    successes = [
+        ('--int -1000 --float -1000.0', NS(int=-1000, float=-1000.0)),
+        ('--int -1_000 --float -1_000.0', NS(int=-1000, float=-1000.0)),
+        ('--int -1_000_000 --float -1_000_000.0', NS(int=-1000000, float=-1000000.0)),
+        ('--float -1_000.0', NS(int=None, float=-1000.0)),
+        ('--float -1_000_000.0_0', NS(int=None, float=-1000000.0)),
+    ]
+
 class TestInvalidAction(TestCase):
     """Test invalid user defined Action"""
 
@@ -5791,9 +5811,8 @@ class TestIntermixedArgs(TestCase):
         parser = ErrorRaisingArgumentParser(prog='PROG')
         parser.add_argument('--foo', nargs="*")
         parser.add_argument('foo')
-        with captured_stderr() as stderr:
+        with self.assertWarns(UserWarning):
             parser.parse_intermixed_args(['hello', '--foo'])
-            self.assertIn("UserWarning", stderr.getvalue())
 
 class TestIntermixedMessageContentError(TestCase):
     # case where Intermixed gives different error message
