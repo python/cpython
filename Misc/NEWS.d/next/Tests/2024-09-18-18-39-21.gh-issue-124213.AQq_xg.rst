@@ -1,2 +1,3 @@
-Skip tests failing with ``--suppress-sync=true`` when running inside
-systemd-nspawn container.
+Skip ``test_os`` and ``test_mmap`` tests that are failing
+with ``--suppress-sync=true`` when running inside a systemd-nspawn
+container.

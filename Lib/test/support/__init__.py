@@ -17,7 +17,6 @@ import time
 import types
 import unittest
 import warnings
-from pathlib import Path
 
 
 __all__ = [
@@ -2878,8 +2877,18 @@ class BrokenIter:
 
 
 def in_systemd_nspawn() -> bool:
+    """
+    Test whether the test suite is running inside of systemd-nspawn container
+
+    Return True if the test suite is being run inside a systemd-nspawn
+    container, False otherwise.  This can be used to skip tests that are
+    known to be reliable inside this kind of virtualization, for example
+    tests that are relying on fsync() not being stubbed out
+    (as ``systemd-nspawn --suppress-sync=true` does).
+    """
+
     try:
-        return (Path("/run/systemd/container").read_bytes().rstrip() ==
-                b"systemd-nspawn")
+        with open("/run/systemd/container", "rb") as fp:
+            return fp.read().rstrip() == b"systemd-nspawn"
     except FileNotFoundError:
         return False
