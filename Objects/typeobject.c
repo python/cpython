@@ -5297,7 +5297,7 @@ get_base_by_token_recursive(PyTypeObject *type, void *token)
     Py_ssize_t n = PyTuple_GET_SIZE(bases);
     for (Py_ssize_t i = 0; i < n; i++) {
         PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(bases, i));
-        if (!PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
+        if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
             continue;
         }
         if (((PyHeapTypeObject*)base)->ht_token == token) {
@@ -5328,7 +5328,7 @@ get_base_by_token_from_mro(PyTypeObject *type, void *token)
     Py_ssize_t n = PyTuple_GET_SIZE(mro);
     for (Py_ssize_t i = 1; i < n; i++) {
         PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(mro, i));
-        if (!PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
+        if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
             continue;
         }
         if (((PyHeapTypeObject*)base)->ht_token == token) {
