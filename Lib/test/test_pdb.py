@@ -901,6 +901,28 @@ def test_pdb_where_command():
     (Pdb) continue
     """
 
+def test_pdb_restart_command():
+    """Test restart command
+
+    >>> def test_function():
+    ...     from pdb import Pdb, PdbInvokeOrigin;
+    ...     Pdb(nosigint=True, readrc=False, invoke_origin=PdbInvokeOrigin.InlineBreakpoint).set_trace()
+    ...     x = 1
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'restart',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_restart_command[0]>(3)test_function()
+    -> Pdb(nosigint=True, readrc=False, invoke_origin=PdbInvokeOrigin.InlineBreakpoint).set_trace()
+    (Pdb) restart
+    *** run/restart command is not allowed with inline breakpoints.
+    Use the command line interface if you want to restart your program
+    e.g. "python -m pdb myscript.py"
+    (Pdb) continue
+    """
+
 
 # skip this test if sys.flags.no_site = True;
 # exit() isn't defined unless there's a site module.

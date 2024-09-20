@@ -192,7 +192,7 @@ The ``run*`` functions and :func:`set_trace` are aliases for instantiating the
 access further features, you have to do this yourself:
 
 .. class:: Pdb(completekey='tab', stdin=None, stdout=None, skip=None, \
-               nosigint=False, readrc=True)
+               nosigint=False, readrc=True, invoke_origin=PdbInvokeOrigin.Unknown)
 
    :class:`Pdb` is the debugger class.
 
@@ -211,6 +211,10 @@ access further features, you have to do this yourself:
    The *readrc* argument defaults to true and controls whether Pdb will load
    .pdbrc files from the filesystem.
 
+   The *invoke_origin* argument is used to determine the origin of the debugger.
+   It should be a value from the :class:`PdbInvokeOrigin` enumeration. The value
+   is used to determine whether certain commands are available or not.
+
    Example call to enable tracing with *skip*::
 
       import pdb; pdb.Pdb(skip=['django.*']).set_trace()
@@ -227,12 +231,34 @@ access further features, you have to do this yourself:
    .. versionchanged:: 3.6
       The *readrc* argument.
 
+   .. versionadded:: 3.14
+      Added the *invoke_origin* argument.
+
    .. method:: run(statement, globals=None, locals=None)
                runeval(expression, globals=None, locals=None)
                runcall(function, *args, **kwds)
                set_trace()
 
       See the documentation for the functions explained above.
+
+
+.. class:: PdbInvokeOrigin
+
+   An enumeration of the possible origins of the debugger invocation.
+
+   .. attribute:: Unknown
+
+      The origin of the debugger invocation is unknown.
+
+   .. attribute:: CommandLine
+
+      The origin of the debugger invocation is from the command line.
+      (e.g. ``python -m pdb script.py``)
+
+   .. attribute:: InlineBreakpoint
+
+      The origin of the debugger invocation is from an inline breakpoint.
+      (e.g. ``breakpoint()`` or ``import pdb; pdb.set_trace()``)
 
 
 .. _debugger-commands:
@@ -668,6 +694,10 @@ can be overridden by the local file.
    with :mod:`shlex` and the result is used as the new :data:`sys.argv`.
    History, breakpoints, actions and debugger options are preserved.
    :pdbcmd:`restart` is an alias for :pdbcmd:`run`.
+
+   .. versionchanged:: 3.14
+      :pdbcmd:`run` and :pdbcmd:`restart` commands are not allowed when the
+      debugger is invoked from an inline breakpoint.
 
 .. pdbcommand:: q(uit)
 
