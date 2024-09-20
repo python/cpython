@@ -756,7 +756,7 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
     _rounds_pixels = True
     if tk_version < (9, 0):
         _noround = {}
-        _clipped = {}
+        _clipped = {'highlightthickness'}
     else:
         _no_round = {'borderwidth', 'height', 'highlightthickness', 'width',
                      'xscrollincrement', 'yscrollincrement'}
