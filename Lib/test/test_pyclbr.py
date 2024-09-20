@@ -234,7 +234,7 @@ class PyclbrTest(TestCase):
         cm(
             'pdb',
             # pyclbr does not handle elegantly `typing` or properties or enum
-            ignore=('Union', '_ModuleTarget', '_ScriptTarget', '_ZipTarget', 'PdbInvokeType'),
+            ignore=('Union', '_ModuleTarget', '_ScriptTarget', '_ZipTarget', 'PdbInvokeOrigin'),
         )
         cm('pydoc', ignore=('input', 'output',)) # properties
 
