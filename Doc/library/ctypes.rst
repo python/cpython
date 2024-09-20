@@ -51,7 +51,7 @@ function call fails.
 
 
 Here are some examples for Windows. Note that ``msvcrt`` is the MS standard C
-library containing most standard C functions, and uses the cdecl calling
+library containing most standard C functions, and uses the ``cdecl`` calling
 convention::
 
    >>> from ctypes import *
@@ -2687,6 +2687,15 @@ Arrays and pointers
 
    Array subclass constructors accept positional arguments, used to
    initialize the elements in order.
+
+.. function:: ARRAY(type, length)
+
+   Create an array.
+   Equivalent to ``type * length``, where *type* is a
+   :mod:`ctypes` data type and *length* an integer.
+
+   This function is :term:`soft deprecated` in favor of multiplication.
+   There are no plans to remove it.
 
 
 .. class:: _Pointer
