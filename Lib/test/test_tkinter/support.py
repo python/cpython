@@ -2,18 +2,6 @@ import functools
 import re
 import tkinter
 
-messages_v1 = {
-    'no_busy': 'can\'t find busy window.*',
-    'no_font': 'font "{}" doesn\'t exist',
-    'no_image': 'image "{}" doesn\'t exist',
-    }
-
-messages_v2 = {
-    'no_busy': 'cannot find busy window',
-    'no_font': 'font "{}" does not exist',
-    'no_image': 'image "{}" does not exist',
-    }
-
 class AbstractTkTest:
 
     @classmethod
