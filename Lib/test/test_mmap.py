@@ -840,7 +840,7 @@ class MmapTests(unittest.TestCase):
         mm.write(b'python')
         result = mm.flush()
         self.assertIsNone(result)
-        if (sys.platform.startswith(('linux', 'android')) 
+        if (sys.platform.startswith(('linux', 'android'))
             and not in_systemd_nspawn_sync_suppressed()):
             # 'offset' must be a multiple of mmap.PAGESIZE on Linux.
             # See bpo-34754 for details.
