@@ -194,18 +194,15 @@ context_switched(PyThreadState *ts)
 
 
 static int
-_PyContext_Enter(PyThreadState *ts, PyObject *octx)
+_PyContext_Enter(PyThreadState *ts, PyContext *ctx)
 {
-    ENSURE_Context(octx, -1)
-    PyContext *ctx = (PyContext *)octx;
-
     if (ctx->ctx_entered) {
         _PyErr_Format(ts, PyExc_RuntimeError,
                       "cannot enter context: %R is already entered", ctx);
         return -1;
     }
 
-    ctx->ctx_prev = (PyContext *)ts->context;  /* borrow */
+    ctx->ctx_prev = ts->context;  /* borrow */
     ctx->ctx_entered = 1;
 
     ts->context = Py_NewRef(ctx);
@@ -219,16 +216,14 @@ PyContext_Enter(PyObject *octx)
 {
     PyThreadState *ts = _PyThreadState_GET();
     assert(ts != NULL);
-    return _PyContext_Enter(ts, octx);
+    ENSURE_Context(octx, -1)
+    return _PyContext_Enter(ts, (PyContext *)octx);
 }
 
 
 static int
-_PyContext_Exit(PyThreadState *ts, PyObject *octx)
+_PyContext_Exit(PyThreadState *ts, PyContext *ctx)
 {
-    ENSURE_Context(octx, -1)
-    PyContext *ctx = (PyContext *)octx;
-
     if (!ctx->ctx_entered) {
         PyErr_Format(PyExc_RuntimeError,
                      "cannot exit context: %R has not been entered", ctx);
@@ -243,7 +238,7 @@ _PyContext_Exit(PyThreadState *ts, PyObject *octx)
         return -1;
     }
 
-    Py_SETREF(ts->context, (PyObject *)ctx->ctx_prev);
+    Py_SETREF(ts->context, ctx->ctx_prev);
 
     ctx->ctx_prev = NULL;
     ctx->ctx_entered = 0;
@@ -256,7 +251,8 @@ PyContext_Exit(PyObject *octx)
 {
     PyThreadState *ts = _PyThreadState_GET();
     assert(ts != NULL);
-    return _PyContext_Exit(ts, octx);
+    ENSURE_Context(octx, -1)
+    return _PyContext_Exit(ts, (PyContext *)octx);
 }
 
 
@@ -715,14 +711,14 @@ context_run(PyContext *self, PyObject *const *args,
         return NULL;
     }
 
-    if (_PyContext_Enter(ts, (PyObject *)self)) {
+    if (_PyContext_Enter(ts, self)) {
         return NULL;
     }
 
     PyObject *call_result = _PyObject_VectorcallTstate(
         ts, args[0], args + 1, nargs - 1, kwnames);
 
-    if (_PyContext_Exit(ts, (PyObject *)self)) {
+    if (_PyContext_Exit(ts, self)) {
         Py_XDECREF(call_result);
         return NULL;
     }

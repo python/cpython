@@ -24,7 +24,7 @@ typedef struct {
 
 struct _pycontextobject {
     PyObject_HEAD
-    PyContext *ctx_prev;
+    PyObject *ctx_prev;
     PyHamtObject *ctx_vars;
     PyObject *ctx_weakreflist;
     int ctx_entered;
