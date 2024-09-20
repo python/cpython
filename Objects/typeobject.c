@@ -5297,7 +5297,7 @@ get_base_by_token_recursive(PyTypeObject *type, void *token)
     Py_ssize_t n = PyTuple_GET_SIZE(bases);
     for (Py_ssize_t i = 0; i < n; i++) {
         PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(bases, i));
-        if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
+        if (!PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
             continue;
         }
         if (((PyHeapTypeObject*)base)->ht_token == token) {
@@ -5328,7 +5328,7 @@ get_base_by_token_from_mro(PyTypeObject *type, void *token)
     Py_ssize_t n = PyTuple_GET_SIZE(mro);
     for (Py_ssize_t i = 1; i < n; i++) {
         PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(mro, i));
-        if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
+        if (!PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
             continue;
         }
         if (((PyHeapTypeObject*)base)->ht_token == token) {
@@ -5340,24 +5340,25 @@ get_base_by_token_from_mro(PyTypeObject *type, void *token)
 
 static int
 check_base_by_token(PyTypeObject *type, void *token) {
-    // Chain the branches, which will be optimized exclusive here
     if (token == NULL) {
         PyErr_Format(PyExc_SystemError,
                      "PyType_GetBaseByToken called with token=NULL");
         return -1;
     }
-    else if (!PyType_Check(type)) {
+    if (!PyType_Check(type)) {
         PyErr_Format(PyExc_TypeError,
                      "expected a type, got a '%T' object", type);
         return -1;
     }
-    else if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+    // Ensure the flag is checked by a function, not directly. PyType_Check()
+    // above also uses PyType_HasFeature() instead of the internal duplicate.
+    if (!PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         return 0;
     }
-    else if (((PyHeapTypeObject*)type)->ht_token == token) {
+    if (((PyHeapTypeObject*)type)->ht_token == token) {
         return 1;
     }
-    else if (type->tp_mro != NULL) {
+    if (type->tp_mro != NULL) {
         // This will not be inlined
         return get_base_by_token_from_mro(type, token) ? 1 : 0;
     }
@@ -5374,14 +5375,15 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
         // branches will become trivial to optimize.
         return check_base_by_token(type, token);
     }
+    PyTypeObject *base;
+    // Chain the branches below (not above), which will avoid being less
+    // pgoptimized by MSVC together with check_base_by_token() and other
+    // functions, unless they have if-else statements with similar conds.
     if (token == NULL || !PyType_Check(type)) {
         *result = NULL;
         return check_base_by_token(type, token);
     }
-
-    // Chain the branches, which will be optimized exclusive here
-    PyTypeObject *base;
-    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+    else if (!PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // No static type has a heaptype superclass,
         // which is ensured by type_ready_mro().
         *result = NULL;
