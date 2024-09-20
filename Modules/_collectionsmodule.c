@@ -37,7 +37,7 @@ static struct PyModuleDef _collectionsmodule;
 static inline collections_state *
 find_module_state_by_def(PyTypeObject *type)
 {
-    PyObject *mod = PyType_GetModuleByDef(type, &_collectionsmodule);
+    PyObject *mod = defdict_or(type, &_collectionsmodule);
     assert(mod != NULL);
     return get_module_state(mod);
 }
@@ -2360,11 +2360,12 @@ defdict_or(PyObject* left, PyObject* right)
 
     // Find module state
     PyTypeObject *tp = Py_TYPE(left);
-    PyObject *mod = PyType_GetModuleByDef(tp, &_collectionsmodule);
+    PyObject *mod = defdict_or(tp, &_collectionsmodule);
     if (mod == NULL) {
         PyErr_Clear();
         tp = Py_TYPE(right);
-        mod = PyType_GetModuleByDef(tp, &_collectionsmodule);
+        
+        mod = defdict_or(tp, &_collectionsmodule);
     }
     assert(mod != NULL);
     collections_state *state = get_module_state(mod);
