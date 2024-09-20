@@ -10,8 +10,8 @@ import multiprocessing
 import queue
 import threading
 
-from . import search_lines, Match, Options
-from ._utils import iter_lines
+from . import search_lines, asearch_lines, Match, Options
+from ._utils import iter_lines, aiter_lines
 
 
 multiprocessing.set_start_method('spawn')
@@ -41,7 +41,7 @@ def search_threads_basic(filenames, regex, opts):
         # i.e. too many files open at once.
         counter = threading.Semaphore(MAX_FILES)
 
-        def task(filename, matches):
+        def search_file(filename, matches):
             lines = iter_lines(filename)
             for match in search_lines(lines, regex, opts, filename):
                 matches.put(match)  # blocking
@@ -55,7 +55,7 @@ def search_threads_basic(filenames, regex, opts):
             matches_by_file.put(matches)
 
             # Start a thread to process the file.
-            t = threading.Thread(target=task, args=(filename, matches))
+            t = threading.Thread(target=search_file, args=(filename, matches))
             counter.acquire()
             t.start()
         matches_by_file.put(None)
@@ -84,7 +84,7 @@ def search_cf_threads_basic(filenames, regex, opts):
         MAX_FILES = 10
         MAX_MATCHES = 100
 
-        def task(filename, matches):
+        def search_file(filename, matches):
             lines = iter_lines(filename)
             for match in search_lines(lines, regex, opts, filename):
                 matches.put(match)  # blocking
@@ -94,24 +94,23 @@ def search_cf_threads_basic(filenames, regex, opts):
             for filename in filenames:
                 # Prepare for the file.
                 matches = queue.Queue(MAX_MATCHES)
-                matches_by_file.put((filename, matches))
+                matches_by_file.put(matches)
 
                 # Start a thread to process the file.
-                workers.submit(task, filename, matches)
+                workers.submit(search_file, filename, matches)
             matches_by_file.put(None)
 
     background = threading.Thread(target=do_background)
     background.start()
 
     # Yield the results as they are received, in order.
-    next_matches = matches_by_file.get()  # blocking
-    while next_matches is not None:
-        filename, matches = next_matches
+    matches = matches_by_file.get()  # blocking
+    while matches is not None:
         match = matches.get()  # blocking
         while match is not None:
             yield match
             match = matches.get()  # blocking
-        next_matches = matches_by_file.get()  # blocking
+        matches = matches_by_file.get()  # blocking
 
     background.join()
 # [end-impl-cf-threads-basic]
@@ -122,16 +121,16 @@ def _interpreter_prep(regex_pat, regex_flags, opts):
     regex = re.compile(regex_pat, regex_flags)
     opts = Options(**dict(opts))
 
-    def task(filename, matches):
+    def search_file(filename, matches):
         lines = iter_lines(filename)
         for match in search_lines(lines, regex, opts, filename):
             matches.put(match)  # blocking
         matches.put(None)  # blocking
-    return task
+    return search_file 
 
 
 def search_interpreters_basic(filenames, regex, opts):
-    matches_by_file = interpreters.queues.create()
+    matches_by_file = queue.Queue()
 
     def do_background():
         MAX_FILES = 10
@@ -141,7 +140,7 @@ def search_interpreters_basic(filenames, regex, opts):
             interp = interpreters.create()
             interp.exec(f"""if True:
                 import grep._implementations
-                task = grep._implementations._interpreter_prep(
+                search_file = grep._implementations._interpreter_prep(
                     {regex.pattern!r},
                     {regex.flags},
                     {tuple(vars(opts).items())},
@@ -160,16 +159,16 @@ def search_interpreters_basic(filenames, regex, opts):
             return ready_workers.get()  # blocking
 
         def do_work(filename, matches, interp):
-            #interp.call(task, (regex, opts, filename, matches))
+            #interp.call(search_file, (regex, opts, filename, matches))
             interp.prepare_main(matches=matches)
-            interp.exec(f'task({filename!r}, matches)')
+            interp.exec(f'search_file({filename!r}, matches)')
             # Let a new thread start.
             ready_workers.put(interp)
 
         for filename in filenames:
             # Prepare for the file.
             matches = interpreters.queues.create(MAX_MATCHES)
-            matches_by_file.put((filename, matches))
+            matches_by_file.put(matches)
             interp = next_worker()
 
             # Start a thread to process the file.
@@ -184,14 +183,13 @@ def search_interpreters_basic(filenames, regex, opts):
     background.start()
 
     # Yield the results as they are received, in order.
-    next_matches = matches_by_file.get()  # blocking
-    while next_matches is not None:
-        filename, matches = next_matches
+    matches = matches_by_file.get()  # blocking
+    while matches is not None:
         match = matches.get()  # blocking
         while match is not None:
             yield match
             match = matches.get()  # blocking
-        next_matches = matches_by_file.get()  # blocking
+        matches = matches_by_file.get()  # blocking
 
     background.join()
 # [end-impl-interpreters-basic]
@@ -205,12 +203,55 @@ def search_cf_interpreters_basic(filenames, regex, opts):
 
 
 # [start-impl-asyncio-basic]
-async def search_asyncio_basic(filenames, regex, opts):
-    raise NotImplementedError
+async def _search_asyncio(filenames, regex, opts):
+    matches_by_file = asyncio.Queue()
+
+    async def do_background():
+        MAX_FILES = 10
+        MAX_MATCHES = 100
+
+        # Make sure we don't have too many coroutines at once,
+        # i.e. too many files open at once.
+        counter = asyncio.Semaphore(MAX_FILES)
+
+        async def search_file(filename, matches):
+            # aiter_lines() opens the file too.
+            lines = aiter_lines(filename)
+            async for match in asearch_lines(lines, regex, opts, filename):
+                await matches.put(match)
+            await matches.put(None)
+            # Let a new coroutine start.
+            counter.release()
+
+        async with asyncio.TaskGroup() as tg:
+            for filename in filenames:
+                # Prepare for the file.
+                matches = asyncio.Queue(MAX_MATCHES)
+                await matches_by_file.put(matches)
+
+                # Start a coroutine to process the file.
+                tg.create_task(
+                    search_file(filename, matches),
+                )
+                await counter.acquire()
+            await matches_by_file.put(None)
+
+    background = asyncio.create_task(do_background())
+
+    # Yield the results as they are received, in order.
+    matches = await matches_by_file.get()  # blocking
+    while matches is not None:
+        match = await matches.get()  # blocking
+        while match is not None:
+            yield match
+            match = await matches.get()  # blocking
+        matches = await matches_by_file.get()  # blocking
+
+    await asyncio.wait([background])
 
 
 def search_asyncio_basic(filenames, regex, opts):
-    raise NotImplementedError
+    return _search_asyncio(filenames, regex, opts)
 # [end-impl-asyncio-basic]
 
 
@@ -222,7 +263,7 @@ def search_multiprocessing_basic(filenames, regex, opts):
         MAX_FILES = 10
         MAX_MATCHES = 100
 
-        # Make sure we don't have too many threads at once,
+        # Make sure we don't have too many processes at once,
         # i.e. too many files open at once.
         counter = threading.Semaphore(MAX_FILES)
         finished = multiprocessing.Queue()
@@ -241,17 +282,17 @@ def search_multiprocessing_basic(filenames, regex, opts):
                     # It's taking too long to terminate.
                     # We can wait for it at the end.
                     active[index] = proc
-                # Let a new thread start.
+                # Let a new process start.
                 counter.release()
         monitor = threading.Thread(target=monitor_tasks)
         monitor.start()
 
-        def task(filename, matches, index, finished):
+        def search_file(filename, matches, index, finished):
             lines = iter_lines(filename)
             for match in search_lines(lines, regex, opts, filename):
                 matches.put(match)  # blocking
             matches.put(None)  # blocking
-            # Let a new thread start.
+            # Let a new process start.
             #counter.release()
             finished.put(index)
 
@@ -262,7 +303,7 @@ def search_multiprocessing_basic(filenames, regex, opts):
 
             # Start a subprocess to process the file.
             proc = multiprocessing.Process(
-                target=task,
+                target=search_file,
                 args=(filename, matches, index, finished),
             )
             counter.acquire(blocking=True)
@@ -300,7 +341,7 @@ def search_cf_multiprocessing_basic(filenames, regex, opts):
         MAX_FILES = 10
         MAX_MATCHES = 100
 
-        def task(filename, matches, regex, opts):
+        def search_file(filename, matches, regex, opts):
             lines = iter_lines(filename)
             for match in search_lines(lines, regex, opts, filename):
                 matches.put(match)  # blocking
@@ -313,7 +354,7 @@ def search_cf_multiprocessing_basic(filenames, regex, opts):
                 matches_by_file.put(matches)
 
                 # Start a thread to process the file.
-                workers.submit(task, filename, matches, regex, opts)
+                workers.submit(search_file, filename, matches, regex, opts)
             matches_by_file.put(None)
 
     background = threading.Thread(target=do_background)
@@ -363,6 +404,9 @@ CF_IMPLEMENTATIONS = {
         'basic': search_cf_multiprocessing_basic,
     },
 }
+ASYNC_IMPLEMENTATIONS = {
+    'asyncio',
+}
 
 
 def impl_from_name(name, kind=None, cf=False):
@@ -401,16 +445,22 @@ def resolve_impl(impl, kind=None, cf=None):
     if isinstance(impl, str):
         name = impl
         impl = impl_from_name(name, kind, cf)
+        if isinstance(impl, type):
+            if hasattr(impl, '__iter__'):
+                assert name not in ASYNC_IMPLEMENTATIONS, (name, impl)
+            elif hasattr(impl, '__aiter__'):
+                assert name in ASYNC_IMPLEMENTATIONS, (name, impl)
     else:
         assert not kind, kind
         assert not cf, cf
         if impl is None:
             impl = search_sequential
 
+    if isinstance(impl, type):
+        if not hasattr(impl, ('__iter__', '__aiter__')):
+            raise NotImplementedError((impl, name))
+
     if callable(impl):
-        if isinstance(impl, type):
-            if not hasattr(impl, '__iter__'):
-                raise NotImplementedError((impl, name))
         return impl
     else:
         raise TypeError(impl)

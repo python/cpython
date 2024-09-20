@@ -69,8 +69,17 @@ class GrepExamples(WorkloadExamples):
         print(f'# grep {opts} {shlex.quote(pat)} {shlex.join(filenames)}')
         print()
         matches = grep(pat, opts, *filenames, impl=impl)
-        for line in render_matches(matches, opts):
-            print(line)
+        if name == 'asyncio':
+            assert hasattr(type(matches), '__aiter__'), (name,)
+            async def search():
+                async for line in render_matches(matches, opts):
+                    print(line)
+            import asyncio
+            asyncio.run(search())
+        else:
+            assert not hasattr(type(matches), '__aiter__'), (name,)
+            for line in render_matches(matches, opts):
+                print(line)
 
     @example
     def run_sequentially():
@@ -81,56 +90,28 @@ class GrepExamples(WorkloadExamples):
         GrepExamples.app('threads')
 
     @example
-    def run_using_threads_class():
-        GrepExamples.app('threads', 'class')
-
-    @example
     def run_using_cf_threads():
         GrepExamples.app('threads', cf=True)
-
-    @example
-    def run_using_cf_threads_class():
-        GrepExamples.app('threads', 'class', cf=True)
 
     @example
     def run_using_subinterpreters():
         GrepExamples.app('interpreters')
 
     @example
-    def run_using_subinterpreters_class():
-        GrepExamples.app('interpreters', 'class')
-
-    @example
     def run_using_cf_subinterpreters():
         GrepExamples.app('interpreters', cf=True)
-
-    @example
-    def run_using_cf_subinterpreters_class():
-        GrepExamples.app('interpreters', 'class', cf=True)
 
     @example
     def run_using_async():
         GrepExamples.app('asyncio')
 
     @example
-    def run_using_async_class():
-        GrepExamples.app('asyncio', 'class')
-
-    @example
     def run_using_multiprocessing():
         GrepExamples.app('multiprocessing')
 
     @example
-    def run_using_multiprocessing_class():
-        GrepExamples.app('multiprocessing', 'class')
-
-    @example
     def run_using_cf_multiprocessing():
         GrepExamples.app('multiprocessing', cf=True)
-
-    @example
-    def run_using_cf_multiprocessing_class():
-        GrepExamples.app('multiprocessing', 'class', cf=True)
 
 
 #######################################

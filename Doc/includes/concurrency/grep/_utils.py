@@ -31,3 +31,25 @@ def iter_lines(filename):
     else:
         with open(filename) as infile:
             yield from infile
+
+
+async def aiter_lines(filename):
+    if filename == '-':
+        infile = sys.stdin
+        line = await read_line_async(infile)
+        while line:
+            yield line
+            line = await read_line_async(infile)
+    else:
+        # XXX Open using async?
+        with open(filename) as infile:
+            line = await read_line_async(infile)
+            while line:
+                yield line
+                line = await read_line_async(infile)
+
+
+async def read_line_async(infile):
+    # XXX Do this async!
+    # maybe make use of asyncio.to_thread() or loop.run_in_executor()?
+    return infile.readline()

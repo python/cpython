@@ -15,7 +15,7 @@ def grep(regex, opts, *filenames, impl=None):
     # step 2:
     filenames = _utils.resolve_filenames(filenames, opts)
     # step 3:
-    yield from do_search(filenames, regex, opts)
+    return do_search(filenames, regex, opts)
 # [end-high-level]
 
 
@@ -56,6 +56,38 @@ def search_lines(lines, regex, opts, filename):
         # It must be a binary file.
         return
 # [end-search-lines]
+
+
+async def asearch_lines(lines, regex, opts, filename):
+    try:
+        if opts.filesonly == 'invert':
+            async for line in lines:
+                m = regex.search(line)
+                if m:
+                    break
+            else:
+                yield Match(filename)
+        elif opts.filesonly:
+            async for line in lines:
+                m = regex.search(line)
+                if m:
+                    yield Match(filename)
+                    break
+        elif opts.invertmatch:
+            async for line in lines:
+                m = regex.search(line)
+                if m:
+                    continue
+                yield Match.from_inverted_match(line, filename)
+        else:
+            async for line in lines:
+                m = regex.search(line)
+                if not m:
+                    continue
+                yield Match.from_re_match(m, line, filename)
+    except UnicodeDecodeError:
+        # It must be a binary file.
+        return
 
 
 class Match(namedtuple('Match', 'filename line match')):

@@ -49,7 +49,7 @@ def parse_args(argv=sys.argv[1:], prog=sys.argv[0]):
     return impl, opts, pat, files
 
 
-def render_matches(matches, opts):
+def _render_matches(matches, opts):
     matches = iter(matches)
 
     # Handle the first match.
@@ -114,29 +114,129 @@ def render_matches(matches, opts):
                 yield f'{filename}: {line}'
 
 
+async def _arender_matches(matches, opts):
+    matches = type(matches).__aiter__(matches)
+
+    # Handle the first match.
+    blank = False
+    async for filename, line, match in matches:
+        if opts.quiet:
+            blank = True
+        elif opts.filesonly:
+            yield filename
+        elif opts.showonlymatch:
+            if opts.invertmatch:
+                blank = True
+            elif opts.showfilename is False:
+                yield match
+            elif opts.showfilename:
+                yield f'{filename}: {match}'
+            else:
+                try:
+                    second = await type(matches).__anext__(matches)
+                except StopAsyncIteration:
+                    yield match
+                else:
+                    yield f'{filename}: {match}'
+                    filename, _, match = second
+                    yield f'{filename}: {match}'
+        else:
+            if opts.showfilename is False:
+                yield line
+            elif opts.showfilename:
+                yield f'{filename}: {line}'
+            else:
+                try:
+                    second = await type(matches).__anext__(matches)
+                except StopAsyncIteration:
+                    yield line
+                else:
+                    yield f'{filename}: {line}'
+                    filename, line, _ = second
+                    yield f'{filename}: {line}'
+        break
+
+    if blank:
+        return
+
+    # Handle the remaining matches.
+    if opts.filesonly:
+        async for filename, _, _ in matches:
+            yield filename
+    elif opts.showonlymatch:
+        if opts.showfilename is False:
+            async for filename, _, match in matches:
+                yield match
+        else:
+            async for filename, _, match in matches:
+                yield f'{filename}: {match}'
+    else:
+        if opts.showfilename is False:
+            async for filename, line, _ in matches:
+                yield line
+        else:
+            async for filename, line, _ in matches:
+                yield f'{filename}: {line}'
+
+
+def render_matches(matches, opts):
+    if hasattr(type(matches), '__aiter__'):
+        return _arender_matches(matches, opts)
+    else:
+        return _render_matches(matches, opts)
+
+
+class MatchIterator:
+    def __init__(self):
+        self._matched = None
+    def iter(self, matches):
+        for match in matches:
+            self._matched = True
+            yield match
+            break
+        else:
+            if self._matched is None:
+                self._matched = False
+        for match in matches:
+            yield match
+    async def aiter(self, matches):
+        async for match in matches:
+            self._matched = True
+            yield match
+            break
+        else:
+            if self._matched is None:
+                self._matched = False
+        async for match in matches:
+            yield match
+    @property
+    def matched(self):
+        return self._matched
+
+
 def main(opts, pat, filenames, impl='sequential', kind=None, cf=None):
     impl = resolve_impl(impl, kind, cf)
 
-    # needed for step 5:
-    matched = False
-    def iter_matches(matches):
-        nonlocal matched
-        matches = iter(matches)
-        for match in matches:
-            matched = True
-            yield match
-            break
-        yield from matches
-
     # steps 1-3:
     matches = grep(pat, opts, *filenames, impl=impl)
-    # step 4:
-    matches = iter_matches(matches)
-    for line in render_matches(matches, opts):
-        print(line)
+
+    results = MatchIterator()
+    if hasattr(type(matches), '__aiter__'):
+        import asyncio
+        # step 4:
+        async def search():
+            it = results.aiter(matches)
+            async for line in _arender_matches(it, opts):
+                print(line)
+        asyncio.run(search())
+    else:
+        # step 4:
+        it = results.iter(matches)
+        for line in _render_matches(it, opts):
+            print(line)
 
     # step 5:
-    return 0 if matched else 1
+    return 0 if results.matched else 1
 
 
 if __name__ == '__main__':
