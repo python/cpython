@@ -61,7 +61,7 @@ __all__ = [
     "without_optimizer",
     "force_not_colorized",
     "BrokenIter",
-    "in_systemd_nspawn",
+    "in_systemd_nspawn", "in_systemd_nspawn_sync_suppressed",
     ]
 
 
@@ -2879,12 +2879,6 @@ class BrokenIter:
 def in_systemd_nspawn() -> bool:
     """
     Test whether the test suite is running inside of systemd-nspawn container
-
-    Return True if the test suite is being run inside a systemd-nspawn
-    container, False otherwise.  This can be used to skip tests that are
-    known to be reliable inside this kind of virtualization, for example
-    tests that are relying on fsync() not being stubbed out
-    (as ``systemd-nspawn --suppress-sync=true` does).
     """
 
     try:
@@ -2892,3 +2886,28 @@ def in_systemd_nspawn() -> bool:
             return fp.read().rstrip() == b"systemd-nspawn"
     except FileNotFoundError:
         return False
+
+
+def in_systemd_nspawn_sync_suppressed() -> bool:
+    """
+    Test whether the test suite is runing in systemd-nspawn with ``--suppress-sync=true``
+
+    Return True if the test suite is being run inside a systemd-nspawn
+    container and ``--suppress-sync=true`` option is detected to be used,
+    False otherwise.  This can be used to skip tests that rely
+    on ``fsync()`` calls and similar not being intercepted.
+    """
+
+    if hasattr(os, "O_SYNC") and in_systemd_nspawn():
+        import errno
+
+        # If systemd-nspawn is used, O_SYNC flag will immediately trigger
+        # EINVAL.  Otherwise, ENOENT will be given instead.
+        try:
+            with os.open("", os.O_RDONLY | os.O_SYNC):
+                pass
+        except OSError as err:
+            if err.errno == errno.EINVAL:
+                return True
+
+    return False

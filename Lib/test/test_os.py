@@ -2355,7 +2355,7 @@ class TestInvalidFD(unittest.TestCase):
     singles_fildes = {"fchdir"}
     # systemd-nspawn --suppress-sync=true does not verify fd passed
     # fdatasync() and fsync(), and always returns success
-    if not support.in_systemd_nspawn():
+    if not support.in_systemd_nspawn_sync_suppressed():
         singles += ["fdatasync", "fsync"]
         singles_fildes |= {"fdatasync", "fsync"}
     #singles.append("close")
