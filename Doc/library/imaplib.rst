@@ -374,8 +374,8 @@ An :class:`IMAP4` instance has the following methods:
 
    .. warning::
 
-      Windows :class:`IMAP4_stream` connections have no way to accurately
-      respect the *dur* or *interval* arguments, since Windows ``select()``
+      Windows' :class:`IMAP4_stream` connections have no way to accurately
+      respect the *dur* or *interval* arguments, since Windows' ``select()``
       only works on sockets.
 
       If the server regularly sends status messages during ``IDLE``, they will
