@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(complex_conjugate__doc__,
 "conjugate($self, /)\n"
@@ -65,9 +65,6 @@ complex___format__(PyComplexObject *self, PyObject *arg)
         _PyArg_BadArgument("__format__", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     format_spec = arg;
     return_value = complex___format___impl(self, format_spec);
 
@@ -97,9 +94,12 @@ PyDoc_STRVAR(complex_new__doc__,
 "complex(real=0, imag=0)\n"
 "--\n"
 "\n"
-"Create a complex number from a real part and an optional imaginary part.\n"
+"Create a complex number from a string or numbers.\n"
 "\n"
-"This is equivalent to (real + imag*1j) where imag defaults to 0.");
+"If a string is given, parse it as a complex number.\n"
+"If a single number is given, convert it to a complex number.\n"
+"If the \'real\' or \'imag\' arguments are given, create a complex number\n"
+"with the specified real and imaginary components.");
 
 static PyObject *
 complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i);
@@ -160,4 +160,13 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=52e85a1e258425d6 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(complex_from_number__doc__,
+"from_number($type, number, /)\n"
+"--\n"
+"\n"
+"Convert number to a complex floating-point number.");
+
+#define COMPLEX_FROM_NUMBER_METHODDEF    \
+    {"from_number", (PyCFunction)complex_from_number, METH_O|METH_CLASS, complex_from_number__doc__},
+/*[clinic end generated code: output=188438cc9ae167f7 input=a9049054013a1b77]*/

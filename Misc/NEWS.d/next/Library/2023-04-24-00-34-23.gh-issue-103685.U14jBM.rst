@@ -1,1 +1,0 @@
-Prepare :meth:`tkinter.Menu.index` for Tk 8.7 so that it does not raise ``TclError: expected integer but got ""`` when it should return ``None``.
