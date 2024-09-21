@@ -1533,9 +1533,8 @@ class _ActionsContainer(object):
 
         # mark positional arguments as required if at least one is
         # always required
-        if kwargs.get('nargs') not in [OPTIONAL, ZERO_OR_MORE]:
-            kwargs['required'] = True
-        if kwargs.get('nargs') == ZERO_OR_MORE and 'default' not in kwargs:
+        nargs = kwargs.get('nargs')
+        if nargs not in [OPTIONAL, ZERO_OR_MORE, REMAINDER, SUPPRESS, 0]:
             kwargs['required'] = True
 
         # return the keyword arguments with no option strings
@@ -1950,9 +1949,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             argument_values = self._get_values(action, argument_strings)
 
             # error if this argument is not allowed with other previously
-            # seen arguments, assuming that actions that use the default
-            # value don't really count as "present"
-            if argument_values is not action.default:
+            # seen arguments
+            if action.option_strings or argument_strings:
                 seen_non_default_actions.add(action)
                 for conflict_action in action_conflicts.get(action, []):
                     if conflict_action in seen_non_default_actions:
