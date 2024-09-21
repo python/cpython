@@ -1472,17 +1472,17 @@ class _Idler:
             return bool(readables)
 
     def _pop(self, timeout, default=('', None)):
-        # Get the next response, or a default value on timeout
-        #
-        # :param timeout:   Time limit (in seconds) to wait for response
-        # :type timeout:    int|float|None
-        # :param default:   Value to return on timeout
-        #
-        # Note: This method ignores 'dur' in favor of the timeout argument.
-        #
-        # Note: Windows IMAP4_stream connections will ignore the timeout
-        # argument and block until the next response arrives, because
-        # Windows select() only works on sockets.
+        """Get the next response, or a default value on timeout
+
+        :param timeout:   Time limit (in seconds) to wait for response
+        :type timeout:    int|float|None
+        :param default:   Value to return on timeout
+
+        Note: This method ignores 'dur' in favor of the timeout argument.
+
+        Note: Windows IMAP4_stream connections will ignore the timeout
+        argument and block until the next response arrives, because
+        Windows select() only works on sockets."""
 
         imap = self._imap
         if imap.state != 'IDLING':
