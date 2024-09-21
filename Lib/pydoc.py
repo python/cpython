@@ -686,9 +686,7 @@ class HTMLDoc(Doc):
                                 r'RFC[- ]?(\d+)|'
                                 r'PEP[- ]?(\d+)|'
                                 r'(self\.)?(\w+))')
-        while True:
-            match = pattern.search(text, here)
-            if not match: break
+        while match := pattern.search(text, here):
             start, end = match.span()
             results.append(escape(text[here:start]))
 
@@ -1997,7 +1995,10 @@ class Helper:
     _GoInteractive = object()
     def __call__(self, request=_GoInteractive):
         if request is not self._GoInteractive:
-            self.help(request)
+            try:
+                self.help(request)
+            except ImportError as e:
+                self.output.write(f'{e}\n')
         else:
             self.intro()
             self.interact()

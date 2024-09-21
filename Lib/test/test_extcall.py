@@ -382,6 +382,27 @@ Test a kwargs mapping with duplicated keys.
       ...
     TypeError: test.test_extcall.g() got multiple values for keyword argument 'x'
 
+Call with dict subtype:
+
+    >>> class MyDict(dict):
+    ...     pass
+
+    >>> def s1(**kwargs):
+    ...     return kwargs
+    >>> def s2(*args, **kwargs):
+    ...     return (args, kwargs)
+    >>> def s3(*, n, **kwargs):
+    ...     return (n, kwargs)
+
+    >>> md = MyDict({'a': 1, 'b': 2})
+    >>> assert s1(**md) == {'a': 1, 'b': 2}
+    >>> assert s2(*(1, 2), **md) == ((1, 2), {'a': 1, 'b': 2})
+    >>> assert s3(**MyDict({'n': 1, 'b': 2})) == (1, {'b': 2})
+    >>> s3(**md)
+    Traceback (most recent call last):
+      ...
+    TypeError: s3() missing 1 required keyword-only argument: 'n'
+
 Another helper function
 
     >>> def f2(*a, **b):

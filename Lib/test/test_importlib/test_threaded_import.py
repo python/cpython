@@ -15,7 +15,7 @@ import threading
 import unittest
 from unittest import mock
 from test.support import verbose
-from test.support.import_helper import forget
+from test.support.import_helper import forget, mock_register_at_fork
 from test.support.os_helper import (TESTFN, unlink, rmtree)
 from test.support import script_helper, threading_helper
 
@@ -40,12 +40,6 @@ def task(N, done, done_tasks, errors):
         finished = len(done_tasks) == N
         if finished:
             done.set()
-
-def mock_register_at_fork(func):
-    # bpo-30599: Mock os.register_at_fork() when importing the random module,
-    # since this function doesn't allow to unregister callbacks and would leak
-    # memory.
-    return mock.patch('os.register_at_fork', create=True)(func)
 
 # Create a circular import structure: A -> C -> B -> D -> A
 # NOTE: `time` is already loaded and therefore doesn't threaten to deadlock.

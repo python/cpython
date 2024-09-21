@@ -36,7 +36,9 @@ def send_signals():
     os.kill(process_pid, signal.SIGUSR2)
     signalled_all.release()
 
+
 @threading_helper.requires_working_threading()
+@unittest.skipUnless(hasattr(signal, "alarm"), "test requires signal.alarm")
 class ThreadSignals(unittest.TestCase):
 
     def test_signals(self):

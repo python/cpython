@@ -4,16 +4,16 @@ about: Submit a proposal for a new CPython feature or enhancement
 labels: "type-feature"
 ---
 
-**Feature or enhancement**
+# Feature or enhancement
 
 (A clear and concise description of your proposal.)
 
-**Pitch**
+# Pitch
 
 (Explain why this feature or enhancement should be implemented and how it would be used.
  Add examples, if applicable.)
 
-**Previous discussion**
+# Previous discussion
 
 <!--
   New features to Python should first be discussed elsewhere before creating issues on GitHub,

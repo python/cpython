@@ -752,18 +752,25 @@ class TestCopyTree(BaseTest, unittest.TestCase):
 
     @os_helper.skip_unless_symlink
     def test_copytree_dangling_symlinks(self):
-        # a dangling symlink raises an error at the end
         src_dir = self.mkdtemp()
+        valid_file = os.path.join(src_dir, 'test.txt')
+        write_file(valid_file, 'abc')
+        dir_a = os.path.join(src_dir, 'dir_a')
+        os.mkdir(dir_a)
+        for d in src_dir, dir_a:
+            os.symlink('IDONTEXIST', os.path.join(d, 'broken'))
+            os.symlink(valid_file, os.path.join(d, 'valid'))
+
+        # A dangling symlink should raise an error.
         dst_dir = os.path.join(self.mkdtemp(), 'destination')
-        os.symlink('IDONTEXIST', os.path.join(src_dir, 'test.txt'))
-        os.mkdir(os.path.join(src_dir, 'test_dir'))
-        write_file((src_dir, 'test_dir', 'test.txt'), '456')
         self.assertRaises(Error, shutil.copytree, src_dir, dst_dir)
 
-        # a dangling symlink is ignored with the proper flag
+        # Dangling symlinks should be ignored with the proper flag.
         dst_dir = os.path.join(self.mkdtemp(), 'destination2')
         shutil.copytree(src_dir, dst_dir, ignore_dangling_symlinks=True)
-        self.assertNotIn('test.txt', os.listdir(dst_dir))
+        for root, dirs, files in os.walk(dst_dir):
+            self.assertNotIn('broken', files)
+            self.assertIn('valid', files)
 
         # a dangling symlink is copied if symlinks=True
         dst_dir = os.path.join(self.mkdtemp(), 'destination3')
@@ -1568,25 +1575,62 @@ class TestArchives(BaseTest, unittest.TestCase):
         finally:
             archive.close()
 
+    def test_make_archive_cwd_default(self):
+        current_dir = os.getcwd()
+        def archiver(base_name, base_dir, **kw):
+            self.assertNotIn('root_dir', kw)
+            self.assertEqual(base_name, 'basename')
+            self.assertEqual(os.getcwd(), current_dir)
+            raise RuntimeError()
+
+        register_archive_format('xxx', archiver, [], 'xxx file')
+        try:
+            with no_chdir:
+                with self.assertRaises(RuntimeError):
+                    make_archive('basename', 'xxx')
+            self.assertEqual(os.getcwd(), current_dir)
+        finally:
+            unregister_archive_format('xxx')
+
     def test_make_archive_cwd(self):
         current_dir = os.getcwd()
         root_dir = self.mkdtemp()
-        def _breaks(*args, **kw):
+        def archiver(base_name, base_dir, **kw):
+            self.assertNotIn('root_dir', kw)
+            self.assertEqual(base_name, os.path.join(current_dir, 'basename'))
+            self.assertEqual(os.getcwd(), root_dir)
             raise RuntimeError()
         dirs = []
         def _chdir(path):
             dirs.append(path)
             orig_chdir(path)
 
-        register_archive_format('xxx', _breaks, [], 'xxx file')
+        register_archive_format('xxx', archiver, [], 'xxx file')
         try:
             with support.swap_attr(os, 'chdir', _chdir) as orig_chdir:
-                try:
-                    make_archive('xxx', 'xxx', root_dir=root_dir)
-                except Exception:
-                    pass
+                with self.assertRaises(RuntimeError):
+                    make_archive('basename', 'xxx', root_dir=root_dir)
             self.assertEqual(os.getcwd(), current_dir)
             self.assertEqual(dirs, [root_dir, current_dir])
+        finally:
+            unregister_archive_format('xxx')
+
+    def test_make_archive_cwd_supports_root_dir(self):
+        current_dir = os.getcwd()
+        root_dir = self.mkdtemp()
+        def archiver(base_name, base_dir, **kw):
+            self.assertEqual(base_name, 'basename')
+            self.assertEqual(kw['root_dir'], root_dir)
+            self.assertEqual(os.getcwd(), current_dir)
+            raise RuntimeError()
+        archiver.supports_root_dir = True
+
+        register_archive_format('xxx', archiver, [], 'xxx file')
+        try:
+            with no_chdir:
+                with self.assertRaises(RuntimeError):
+                    make_archive('basename', 'xxx', root_dir=root_dir)
+            self.assertEqual(os.getcwd(), current_dir)
         finally:
             unregister_archive_format('xxx')
 

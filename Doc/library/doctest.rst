@@ -351,6 +351,7 @@ The fine print:
 
      >>> def f(x):
      ...     r'''Backslashes in a raw docstring: m\n'''
+     ...
      >>> print(f.__doc__)
      Backslashes in a raw docstring: m\n
 
@@ -360,6 +361,7 @@ The fine print:
 
      >>> def f(x):
      ...     '''Backslashes in a raw docstring: m\\n'''
+     ...
      >>> print(f.__doc__)
      Backslashes in a raw docstring: m\n
 
@@ -696,10 +698,10 @@ special Python comments following an example's source code:
 
 .. productionlist:: doctest
    directive: "#" "doctest:" `directive_options`
-   directive_options: `directive_option` ("," `directive_option`)\*
+   directive_options: `directive_option` ("," `directive_option`)*
    directive_option: `on_or_off` `directive_option_name`
-   on_or_off: "+" \| "-"
-   directive_option_name: "DONT_ACCEPT_BLANKLINE" \| "NORMALIZE_WHITESPACE" \| ...
+   on_or_off: "+" | "-"
+   directive_option_name: "DONT_ACCEPT_BLANKLINE" | "NORMALIZE_WHITESPACE" | ...
 
 Whitespace is not allowed between the ``+`` or ``-`` and the directive option
 name.  The directive option name can be any of the option flag names explained
@@ -1055,7 +1057,7 @@ from text files and modules with doctests:
    from a text file using :func:`DocFileSuite`.
 
 
-.. function:: DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None, setUp=None, tearDown=None, checker=None)
+.. function:: DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None, setUp=None, tearDown=None, optionflags=0, checker=None)
 
    Convert doctest tests for a module to a :class:`unittest.TestSuite`.
 
