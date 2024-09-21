@@ -90,7 +90,8 @@ class EnvBuilder:
         if self.upgrade_deps:
             self.upgrade_dependencies(context)
 
-    def clear_directory(self, path):
+    @staticmethod
+    def clear_directory(path):
         for fn in os.listdir(path):
             fn = os.path.join(path, fn)
             if os.path.islink(fn) or os.path.isfile(fn):
@@ -98,7 +99,8 @@ class EnvBuilder:
             elif os.path.isdir(fn):
                 shutil.rmtree(fn)
 
-    def _venv_path(self, env_dir, name):
+    @staticmethod
+    def _venv_path(env_dir, name):
         vars = {
             'base': env_dir,
             'platbase': env_dir,
@@ -275,7 +277,8 @@ class EnvBuilder:
         if force_copy:
             shutil.copyfile(src, dst)
 
-    def create_git_ignore_file(self, context):
+    @staticmethod
+    def create_git_ignore_file(context):
         """
         Create a .gitignore file in the environment directory.
 
@@ -425,7 +428,8 @@ class EnvBuilder:
                         shutil.copyfile(src, dst)
                         break
 
-    def _call_new_python(self, context, *py_args, **kwargs):
+    @staticmethod
+    def _call_new_python(context, *py_args, **kwargs):
         """Executes the newly created Python using safe-ish options"""
         # gh-98251: We do not want to just use '-I' because that masks
         # legitimate user preferences (such as not writing bytecode). All we
@@ -470,7 +474,8 @@ class EnvBuilder:
         """
         pass
 
-    def replace_variables(self, text, context):
+    @staticmethod
+    def replace_variables(text, context):
         """
         Replace variable placeholders in script text with context-specific
         variables.
