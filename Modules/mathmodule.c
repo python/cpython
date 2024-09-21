@@ -924,6 +924,7 @@ static PyObject *
 math_1(PyObject *arg, double (*func) (double), int can_overflow,
        const char *err_msg)
 {
+    PyObject *a;
     double x, r;
     x = PyFloat_AsDouble(arg);
     if (x == -1.0 && PyErr_Occurred())
@@ -947,7 +948,7 @@ math_1(PyObject *arg, double (*func) (double), int can_overflow,
     return PyFloat_FromDouble(r);
 
 domain_err:
-    PyObject* a = PyFloat_FromDouble(x);
+    a = PyFloat_FromDouble(x);
 
     if (a) {
         PyErr_Format(PyExc_ValueError,
