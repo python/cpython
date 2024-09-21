@@ -365,7 +365,7 @@ An :class:`IMAP4` instance has the following methods:
 
       The ``IDLE`` context's maximum duration (the *dur* argument to
       :meth:`IMAP4.idle`) is respected when waiting for the first response
-      in a burst.  Therefore, an expired idle context will cause this generator
+      in a burst.  Therefore, an expired ``IDLE`` context will cause this generator
       to return immediately without producing anything.  Callers should
       consider this if using it in a loop.
 
