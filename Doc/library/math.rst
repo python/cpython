@@ -22,8 +22,8 @@ instead of a complex result allows earlier detection of the unexpected complex
 number used as a parameter, so that the programmer can determine how and why it
 was generated in the first place.
 
-The following functions are provided by this module.  Except when explicitly
-noted otherwise, all return values are floats.
+The following functions are provided by this module.  Return values for module
+functions are either floats, or determined from acceptable types of arguments.
 
 
 Number-theoretic and representation functions
