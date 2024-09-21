@@ -810,6 +810,7 @@ def _get_code_object(obj):
         obj = obj.__func__
     if isfunction(obj):
         obj = unwrap(obj)
+    if isfunction(obj):
         obj = obj.__code__
     if istraceback(obj):
         obj = obj.tb_frame
