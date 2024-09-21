@@ -312,12 +312,13 @@ non-empty format specification typically modifies the result.
 The general form of a *standard format specifier* is:
 
 .. productionlist:: format-spec
-   format_spec: [[`fill`]`align`][`sign`]["z"]["#"]["0"][`width`][`grouping_option`]["." `precision`][`type`]
+   format_spec: [[`fill`]`align`][`sign`]["z"]["#"]["0"][`width`][`grouping_option`]["." `precision` [`fraction_grouping`]][`type`]
    fill: <any character>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
    width: `~python-grammar:digit`+
    grouping_option: "_" | ","
+   fraction_grouping: "_"
    precision: `~python-grammar:digit`+
    type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "n" | "o" | "s" | "x" | "X" | "%"
 
@@ -447,6 +448,13 @@ types ``'g'`` or ``'G'``.  For string presentation types the field
 indicates the maximum field size - in other words, how many characters will be
 used from the field content.  The *precision* is not allowed for integer
 presentation types.
+
+The ``'_'`` option after *precision* means the use of an underscore for a
+thousands separator of the fractional part for floating-point presentation
+types.
+
+.. versionchanged:: 3.14
+   Support underscore as a thousands separator for the fractional part.
 
 Finally, the *type* determines how the data should be presented.
 
