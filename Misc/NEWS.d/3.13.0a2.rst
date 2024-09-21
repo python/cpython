@@ -632,8 +632,8 @@ Add extra argument validation for ``alias`` command in :mod:`pdb`
 .. nonce: FWqZIU
 .. section: Library
 
-:mod:`time`: Make :func:`time.clock_gettime()` and
-:func:`time.clock_gettime_ns()` functions up to 2x faster by faster calling
+:mod:`time`: Make :func:`time.clock_gettime` and
+:func:`time.clock_gettime_ns` functions up to 2x faster by faster calling
 convention. Patch by Victor Stinner.
 
 ..
@@ -674,7 +674,7 @@ Unix socket when the server is closed.
 .. nonce: Bc8LvA
 .. section: Library
 
-Added :func:`io.text_encoding()`, :data:`io.DEFAULT_BUFFER_SIZE`, and
+Added :func:`io.text_encoding`, :data:`io.DEFAULT_BUFFER_SIZE`, and
 :class:`io.IncrementalNewlineDecoder` to ``io.__all__``.
 
 ..
@@ -736,7 +736,7 @@ which allows to format :exc:`ExceptionGroup` instances.
 .. nonce: 5ePgFl
 .. section: Library
 
-Another attempt at fixing :func:`asyncio.Server.wait_closed()`. It now
+Another attempt at fixing :func:`asyncio.Server.wait_closed`. It now
 blocks until both conditions are true: the server is closed, *and* there are
 no more active connections. (This means that in some cases where in 3.12.0
 this function would *incorrectly* have returned immediately, it will now
@@ -880,7 +880,7 @@ Make :mod:`pdb` enter post-mortem mode even for :exc:`SyntaxError`
 .. nonce: _M-cQC
 .. section: Library
 
-Set ``f_trace_lines = True`` on all frames upon :func:`pdb.set_trace()`
+Set ``f_trace_lines = True`` on all frames upon :func:`pdb.set_trace`
 
 ..
 

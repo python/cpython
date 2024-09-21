@@ -741,6 +741,26 @@ class TestUpdateWrapper(unittest.TestCase):
         self.assertEqual(wrapper.__annotations__, {})
         self.assertEqual(wrapper.__type_params__, ())
 
+    def test_update_wrapper_annotations(self):
+        def inner(x: int): pass
+        def wrapper(*args): pass
+
+        functools.update_wrapper(wrapper, inner)
+        self.assertEqual(wrapper.__annotations__, {'x': int})
+        self.assertIs(wrapper.__annotate__, inner.__annotate__)
+
+        def with_forward_ref(x: undefined): pass
+        def wrapper(*args): pass
+
+        functools.update_wrapper(wrapper, with_forward_ref)
+
+        self.assertIs(wrapper.__annotate__, with_forward_ref.__annotate__)
+        with self.assertRaises(NameError):
+            wrapper.__annotations__
+
+        undefined = str
+        self.assertEqual(wrapper.__annotations__, {'x': undefined})
+
 
 class TestWraps(TestUpdateWrapper):
 
@@ -3059,6 +3079,27 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(f(""), "default")
         self.assertEqual(f(b""), "default")
 
+    def test_forward_reference(self):
+        @functools.singledispatch
+        def f(arg, arg2=None):
+            return "default"
+
+        @f.register
+        def _(arg: str, arg2: undefined = None):
+            return "forward reference"
+
+        self.assertEqual(f(1), "default")
+        self.assertEqual(f(""), "forward reference")
+
+    def test_unresolved_forward_reference(self):
+        @functools.singledispatch
+        def f(arg):
+            return "default"
+
+        with self.assertRaisesRegex(TypeError, "is an unresolved forward reference"):
+            @f.register
+            def _(arg: undefined):
+                return "forward reference"
 
 class CachedCostItem:
     _cost = 1

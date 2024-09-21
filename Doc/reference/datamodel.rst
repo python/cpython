@@ -106,12 +106,16 @@ that mutable object is changed.
 Types affect almost all aspects of object behavior.  Even the importance of
 object identity is affected in some sense: for immutable types, operations that
 compute new values may actually return a reference to any existing object with
-the same type and value, while for mutable objects this is not allowed.  E.g.,
-after ``a = 1; b = 1``, ``a`` and ``b`` may or may not refer to the same object
-with the value one, depending on the implementation, but after ``c = []; d =
-[]``, ``c`` and ``d`` are guaranteed to refer to two different, unique, newly
-created empty lists. (Note that ``c = d = []`` assigns the same object to both
-``c`` and ``d``.)
+the same type and value, while for mutable objects this is not allowed.
+For example, after ``a = 1; b = 1``, *a* and *b* may or may not refer to
+the same object with the value one, depending on the implementation.
+This is because :class:`int` is an immutable type, so the reference to ``1``
+can be reused. This behaviour depends on the implementation used, so should
+not be relied upon, but is something to be aware of when making use of object
+identity tests.
+However, after ``c = []; d = []``, *c* and *d* are guaranteed to refer to two
+different, unique, newly created empty lists. (Note that ``e = f = []`` assigns
+the *same* object to both *e* and *f*.)
 
 
 .. _types:
@@ -376,7 +380,7 @@ Bytes
 
    A bytes object is an immutable array.  The items are 8-bit bytes,
    represented by integers in the range 0 <= x < 256.  Bytes literals
-   (like ``b'abc'``) and the built-in :func:`bytes()` constructor
+   (like ``b'abc'``) and the built-in :func:`bytes` constructor
    can be used to create bytes objects.  Also, bytes objects can be
    decoded to strings via the :meth:`~bytes.decode` method.
 
@@ -495,7 +499,7 @@ in the same order they were added sequentially over the dictionary.
 Replacing an existing key does not change the order, however removing a key
 and re-inserting it will add it to the end instead of keeping its old place.
 
-Dictionaries are mutable; they can be created by the ``{...}`` notation (see
+Dictionaries are mutable; they can be created by the ``{}`` notation (see
 section :ref:`dict`).
 
 .. index::
@@ -577,6 +581,7 @@ Special writable attributes
    single: __defaults__ (function attribute)
    single: __code__ (function attribute)
    single: __annotations__ (function attribute)
+   single: __annotate__ (function attribute)
    single: __kwdefaults__ (function attribute)
    single: __type_params__ (function attribute)
 
@@ -624,7 +629,17 @@ Most of these attributes check the type of the assigned value:
        :term:`parameters <parameter>`.
        The keys of the dictionary are the parameter names,
        and ``'return'`` for the return annotation, if provided.
-       See also: :ref:`annotations-howto`.
+       See also: :attr:`object.__annotations__`.
+
+       .. versionchanged:: 3.14
+          Annotations are now :ref:`lazily evaluated <lazy-evaluation>`.
+          See :pep:`649`.
+
+   * - .. attribute:: function.__annotate__
+     - The :term:`annotate function` for this function, or ``None``
+       if the function has no annotations. See :attr:`object.__annotate__`.
+
+       .. versionadded:: 3.14
 
    * - .. attribute:: function.__kwdefaults__
      - A :class:`dictionary <dict>` containing defaults for keyword-only
@@ -730,14 +745,7 @@ When an instance method object is derived from a :class:`classmethod` object, th
 itself, so that calling either ``x.f(1)`` or ``C.f(1)`` is equivalent to
 calling ``f(C,1)`` where ``f`` is the underlying function.
 
-Note that the transformation from :ref:`function object <user-defined-funcs>`
-to instance method
-object happens each time the attribute is retrieved from the instance.  In
-some cases, a fruitful optimization is to assign the attribute to a local
-variable and call that local variable. Also notice that this
-transformation only happens for user-defined functions; other callable
-objects (and all non-callable objects) are retrieved without
-transformation.  It is also important to note that user-defined functions
+It is important to note that user-defined functions
 which are attributes of a class instance are not converted to bound
 methods; this *only* happens when the function is an attribute of the
 class.
@@ -884,6 +892,7 @@ Attribute assignment updates the module's namespace dictionary, e.g.,
    single: __doc__ (module attribute)
    single: __file__ (module attribute)
    single: __annotations__ (module attribute)
+   single: __annotate__ (module attribute)
    pair: module; namespace
 
 Predefined (writable) attributes:
@@ -904,11 +913,21 @@ Predefined (writable) attributes:
       loaded dynamically from a shared library, it's the pathname of the shared
       library file.
 
-   :attr:`__annotations__`
+   :attr:`~object.__annotations__`
       A dictionary containing
       :term:`variable annotations <variable annotation>` collected during
       module body execution.  For best practices on working
-      with :attr:`__annotations__`, please see :ref:`annotations-howto`.
+      with :attr:`!__annotations__`, see :mod:`annotationlib`.
+
+      .. versionchanged:: 3.14
+         Annotations are now :ref:`lazily evaluated <lazy-evaluation>`.
+         See :pep:`649`.
+
+   :attr:`~object.__annotate__`
+      The :term:`annotate function` for this module, or ``None``
+      if the module has no annotations. See :attr:`object.__annotate__`.
+
+      .. versionadded:: 3.14
 
 .. index:: single: __dict__ (module attribute)
 
@@ -972,6 +991,7 @@ A class object can be called (see above) to yield a class instance (see below).
    single: __bases__ (class attribute)
    single: __doc__ (class attribute)
    single: __annotations__ (class attribute)
+   single: __annotate__ (class attribute)
    single: __type_params__ (class attribute)
    single: __static_attributes__ (class attribute)
    single: __firstlineno__ (class attribute)
@@ -994,19 +1014,43 @@ Special attributes:
    :attr:`__doc__`
       The class's documentation string, or ``None`` if undefined.
 
-   :attr:`__annotations__`
+   :attr:`~object.__annotations__`
       A dictionary containing
       :term:`variable annotations <variable annotation>`
       collected during class body execution.  For best practices on
-      working with :attr:`__annotations__`, please see
-      :ref:`annotations-howto`.
+      working with :attr:`~object.__annotations__`, please see
+      :mod:`annotationlib`.
+
+      .. warning::
+
+         Accessing the :attr:`~object.__annotations__` attribute of a class
+         object directly may yield incorrect results in the presence of
+         metaclasses. Use :func:`annotationlib.get_annotations` to
+         retrieve class annotations safely.
+
+      .. versionchanged:: 3.14
+         Annotations are now :ref:`lazily evaluated <lazy-evaluation>`.
+         See :pep:`649`.
+
+   :attr:`~object.__annotate__`
+      The :term:`annotate function` for this class, or ``None``
+      if the class has no annotations. See :attr:`object.__annotate__`.
+
+      .. warning::
+
+         Accessing the :attr:`~object.__annotate__` attribute of a class
+         object directly may yield incorrect results in the presence of
+         metaclasses. Use :func:`annotationlib.get_annotate_function` to
+         retrieve the annotate function safely.
+
+      .. versionadded:: 3.14
 
    :attr:`__type_params__`
       A tuple containing the :ref:`type parameters <type-params>` of
       a :ref:`generic class <generic-classes>`.
 
    :attr:`~class.__static_attributes__`
-      A tuple containing names of attributes of this class which are accessed
+      A tuple containing names of attributes of this class which are assigned
       through ``self.X`` from any function in its body.
 
    :attr:`__firstlineno__`
@@ -3255,6 +3299,51 @@ implement the protocol in Python.
 
    :class:`collections.abc.Buffer`
       ABC for buffer types.
+
+Annotations
+-----------
+
+Functions, classes, and modules may contain :term:`annotations <annotation>`,
+which are a way to associate information (usually :term:`type hints <type hint>`)
+with a symbol.
+
+.. attribute:: object.__annotations__
+
+   This attribute contains the annotations for an object. It is
+   :ref:`lazily evaluated <lazy-evaluation>`, so accessing the attribute may
+   execute arbitrary code and raise exceptions. If evaluation is successful, the
+   attribute is set to a dictionary mapping from variable names to annotations.
+
+   .. versionchanged:: 3.14
+      Annotations are now lazily evaluated.
+
+.. method:: object.__annotate__(format)
+
+   An :term:`annotate function`.
+   Returns a new dictionary object mapping attribute/parameter names to their annotation values.
+
+   Takes a format parameter specifying the format in which annotations values should be provided.
+   It must be a member of the :class:`annotationlib.Format` enum, or an integer with
+   a value corresponding to a member of the enum.
+
+   If an annotate function doesn't support the requested format, it must raise
+   :exc:`NotImplementedError`. Annotate functions must always support
+   :attr:`~annotationlib.Format.VALUE` format; they must not raise
+   :exc:`NotImplementedError()` when called with this format.
+
+   When called with  :attr:`~annotationlib.Format.VALUE` format, an annotate function may raise
+   :exc:`NameError`; it must not raise :exc:`!NameError` when called requesting any other format.
+
+   If an object does not have any annotations, :attr:`~object.__annotate__` should preferably be set
+   to ``None`` (it can’t be deleted), rather than set to a function that returns an empty dict.
+
+   .. versionadded:: 3.14
+
+.. seealso::
+
+   :pep:`649` --- Deferred evaluation of annotation using descriptors
+      Introduces lazy evaluation of annotations and the ``__annotate__`` function.
+
 
 .. _special-lookup:
 

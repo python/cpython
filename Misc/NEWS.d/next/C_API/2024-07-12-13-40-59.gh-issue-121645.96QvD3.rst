@@ -1,0 +1,2 @@
+Add :c:func:`PyBytes_Join(sep, iterable) <PyBytes_Join>` function, similar to
+``sep.join(iterable)`` in Python. Patch by Victor Stinner.

@@ -2093,6 +2093,26 @@ class TestActionExtend(ParserTestCase):
     ]
 
 
+class TestNegativeNumber(ParserTestCase):
+    """Test parsing negative numbers"""
+
+    argument_signatures = [
+        Sig('--int', type=int),
+        Sig('--float', type=float),
+    ]
+    failures = [
+        '--float -_.45',
+        '--float -1__000.0',
+        '--int -1__000',
+    ]
+    successes = [
+        ('--int -1000 --float -1000.0', NS(int=-1000, float=-1000.0)),
+        ('--int -1_000 --float -1_000.0', NS(int=-1000, float=-1000.0)),
+        ('--int -1_000_000 --float -1_000_000.0', NS(int=-1000000, float=-1000000.0)),
+        ('--float -1_000.0', NS(int=None, float=-1000.0)),
+        ('--float -1_000_000.0_0', NS(int=None, float=-1000000.0)),
+    ]
+
 class TestInvalidAction(TestCase):
     """Test invalid user defined Action"""
 
@@ -2959,12 +2979,12 @@ class TestMutuallyExclusiveLong(MEMixin, TestCase):
     ]
 
     usage_when_not_required = '''\
-    usage: PROG [-h] [--abcde ABCDE] [--fghij FGHIJ]
-                [--klmno KLMNO | --pqrst PQRST]
+    usage: PROG [-h] [--abcde ABCDE] [--fghij FGHIJ] [--klmno KLMNO |
+                --pqrst PQRST]
     '''
     usage_when_required = '''\
-    usage: PROG [-h] [--abcde ABCDE] [--fghij FGHIJ]
-                (--klmno KLMNO | --pqrst PQRST)
+    usage: PROG [-h] [--abcde ABCDE] [--fghij FGHIJ] (--klmno KLMNO |
+                --pqrst PQRST)
     '''
     help = '''\
 
@@ -4347,6 +4367,24 @@ class TestHelpUsageNoWhitespaceCrash(TestCase):
         ''')
         self.assertEqual(parser.format_usage(), usage)
 
+    def test_long_mutex_groups_wrap(self):
+        parser = argparse.ArgumentParser(prog='PROG')
+        g = parser.add_mutually_exclusive_group()
+        g.add_argument('--op1', metavar='MET', nargs='?')
+        g.add_argument('--op2', metavar=('MET1', 'MET2'), nargs='*')
+        g.add_argument('--op3', nargs='*')
+        g.add_argument('--op4', metavar=('MET1', 'MET2'), nargs='+')
+        g.add_argument('--op5', nargs='+')
+        g.add_argument('--op6', nargs=3)
+        g.add_argument('--op7', metavar=('MET1', 'MET2', 'MET3'), nargs=3)
+
+        usage = textwrap.dedent('''\
+        usage: PROG [-h] [--op1 [MET] | --op2 [MET1 [MET2 ...]] | --op3 [OP3 ...] |
+                    --op4 MET1 [MET2 ...] | --op5 OP5 [OP5 ...] | --op6 OP6 OP6 OP6 |
+                    --op7 MET1 MET2 MET3]
+        ''')
+        self.assertEqual(parser.format_usage(), usage)
+
 
 class TestHelpVariableExpansion(HelpTestCase):
     """Test that variables are expanded properly in help messages"""
@@ -5682,8 +5720,34 @@ class TestParseKnownArgs(TestCase):
         args = parser.parse_args([])
         self.assertEqual(NS(x=[]), args)
 
-    def test_double_dash(self):
-        parser = argparse.ArgumentParser()
+
+class TestDoubleDash(TestCase):
+    def test_single_argument_option(self):
+        parser = argparse.ArgumentParser(exit_on_error=False)
+        parser.add_argument('-f', '--foo')
+        parser.add_argument('bar', nargs='*')
+
+        args = parser.parse_args(['--foo=--'])
+        self.assertEqual(NS(foo='--', bar=[]), args)
+        self.assertRaisesRegex(argparse.ArgumentError,
+            'argument -f/--foo: expected one argument',
+            parser.parse_args, ['--foo', '--'])
+        args = parser.parse_args(['-f--'])
+        self.assertEqual(NS(foo='--', bar=[]), args)
+        self.assertRaisesRegex(argparse.ArgumentError,
+            'argument -f/--foo: expected one argument',
+            parser.parse_args, ['-f', '--'])
+        args = parser.parse_args(['--foo', 'a', '--', 'b', 'c'])
+        self.assertEqual(NS(foo='a', bar=['b', 'c']), args)
+        args = parser.parse_args(['a', 'b', '--foo', 'c'])
+        self.assertEqual(NS(foo='c', bar=['a', 'b']), args)
+        args = parser.parse_args(['a', '--', 'b', '--foo', 'c'])
+        self.assertEqual(NS(foo=None, bar=['a', 'b', '--foo', 'c']), args)
+        args = parser.parse_args(['a', '--', 'b', '--', 'c', '--foo', 'd'])
+        self.assertEqual(NS(foo=None, bar=['a', 'b', '--', 'c', '--foo', 'd']), args)
+
+    def test_multiple_argument_option(self):
+        parser = argparse.ArgumentParser(exit_on_error=False)
         parser.add_argument('-f', '--foo', nargs='*')
         parser.add_argument('bar', nargs='*')
 
@@ -5697,6 +5761,77 @@ class TestParseKnownArgs(TestCase):
         self.assertEqual(NS(foo=[], bar=[]), args)
         args = parser.parse_args(['--foo', 'a', 'b', '--', 'c', 'd'])
         self.assertEqual(NS(foo=['a', 'b'], bar=['c', 'd']), args)
+        args = parser.parse_args(['a', 'b', '--foo', 'c', 'd'])
+        self.assertEqual(NS(foo=['c', 'd'], bar=['a', 'b']), args)
+        args = parser.parse_args(['a', '--', 'b', '--foo', 'c', 'd'])
+        self.assertEqual(NS(foo=None, bar=['a', 'b', '--foo', 'c', 'd']), args)
+        args, argv = parser.parse_known_args(['a', 'b', '--foo', 'c', '--', 'd'])
+        self.assertEqual(NS(foo=['c'], bar=['a', 'b']), args)
+        self.assertEqual(argv, ['--', 'd'])
+
+    def test_multiple_double_dashes(self):
+        parser = argparse.ArgumentParser(exit_on_error=False)
+        parser.add_argument('foo')
+        parser.add_argument('bar', nargs='*')
+
+        args = parser.parse_args(['--', 'a', 'b', 'c'])
+        self.assertEqual(NS(foo='a', bar=['b', 'c']), args)
+        args = parser.parse_args(['a', '--', 'b', 'c'])
+        self.assertEqual(NS(foo='a', bar=['b', 'c']), args)
+        args = parser.parse_args(['a', 'b', '--', 'c'])
+        self.assertEqual(NS(foo='a', bar=['b', 'c']), args)
+        args = parser.parse_args(['a', '--', 'b', '--', 'c'])
+        self.assertEqual(NS(foo='a', bar=['b', '--', 'c']), args)
+        args = parser.parse_args(['--', '--', 'a', '--', 'b', 'c'])
+        self.assertEqual(NS(foo='--', bar=['a', '--', 'b', 'c']), args)
+
+    def test_remainder(self):
+        parser = argparse.ArgumentParser(exit_on_error=False)
+        parser.add_argument('foo')
+        parser.add_argument('bar', nargs='...')
+
+        args = parser.parse_args(['--', 'a', 'b', 'c'])
+        self.assertEqual(NS(foo='a', bar=['b', 'c']), args)
+        args = parser.parse_args(['a', '--', 'b', 'c'])
+        self.assertEqual(NS(foo='a', bar=['b', 'c']), args)
+        args = parser.parse_args(['a', 'b', '--', 'c'])
+        self.assertEqual(NS(foo='a', bar=['b', '--', 'c']), args)
+        args = parser.parse_args(['a', '--', 'b', '--', 'c'])
+        self.assertEqual(NS(foo='a', bar=['b', '--', 'c']), args)
+
+        parser = argparse.ArgumentParser(exit_on_error=False)
+        parser.add_argument('--foo')
+        parser.add_argument('bar', nargs='...')
+        args = parser.parse_args(['--foo', 'a', '--', 'b', '--', 'c'])
+        self.assertEqual(NS(foo='a', bar=['--', 'b', '--', 'c']), args)
+
+    def test_subparser(self):
+        parser = argparse.ArgumentParser(exit_on_error=False)
+        parser.add_argument('foo')
+        subparsers = parser.add_subparsers()
+        parser1 = subparsers.add_parser('run')
+        parser1.add_argument('-f')
+        parser1.add_argument('bar', nargs='*')
+
+        args = parser.parse_args(['x', 'run', 'a', 'b', '-f', 'c'])
+        self.assertEqual(NS(foo='x', f='c', bar=['a', 'b']), args)
+        args = parser.parse_args(['x', 'run', 'a', 'b', '--', '-f', 'c'])
+        self.assertEqual(NS(foo='x', f=None, bar=['a', 'b', '-f', 'c']), args)
+        args = parser.parse_args(['x', 'run', 'a', '--', 'b', '-f', 'c'])
+        self.assertEqual(NS(foo='x', f=None, bar=['a', 'b', '-f', 'c']), args)
+        args = parser.parse_args(['x', 'run', '--', 'a', 'b', '-f', 'c'])
+        self.assertEqual(NS(foo='x', f=None, bar=['a', 'b', '-f', 'c']), args)
+        args = parser.parse_args(['x', '--', 'run', 'a', 'b', '-f', 'c'])
+        self.assertEqual(NS(foo='x', f='c', bar=['a', 'b']), args)
+        args = parser.parse_args(['--', 'x', 'run', 'a', 'b', '-f', 'c'])
+        self.assertEqual(NS(foo='x', f='c', bar=['a', 'b']), args)
+        args = parser.parse_args(['x', 'run', '--', 'a', '--', 'b'])
+        self.assertEqual(NS(foo='x', f=None, bar=['a', '--', 'b']), args)
+        args = parser.parse_args(['x', '--', 'run', '--', 'a', '--', 'b'])
+        self.assertEqual(NS(foo='x', f=None, bar=['a', '--', 'b']), args)
+        self.assertRaisesRegex(argparse.ArgumentError,
+            "invalid choice: '--'",
+            parser.parse_args, ['--', 'x', '--', 'run', 'a', 'b'])
 
 
 # ===========================
@@ -5773,9 +5908,8 @@ class TestIntermixedArgs(TestCase):
         parser = ErrorRaisingArgumentParser(prog='PROG')
         parser.add_argument('--foo', nargs="*")
         parser.add_argument('foo')
-        with captured_stderr() as stderr:
+        with self.assertWarns(UserWarning):
             parser.parse_intermixed_args(['hello', '--foo'])
-            self.assertIn("UserWarning", stderr.getvalue())
 
 class TestIntermixedMessageContentError(TestCase):
     # case where Intermixed gives different error message
