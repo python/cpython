@@ -42,6 +42,8 @@ Running an asyncio Program
    This function should be used as a main entry point for asyncio programs,
    and should ideally only be called once. It is recommended to use
    *loop_factory* to configure the event loop instead of policies.
+   Passing :class:`asyncio.EventLoop` allows running asyncio without the
+   policy system.
 
    The executor is given a timeout duration of 5 minutes to shutdown.
    If the executor hasn't finished within that duration, a warning is
@@ -89,7 +91,7 @@ Runner context manager
    current one. By default :func:`asyncio.new_event_loop` is used and set as
    current event loop with :func:`asyncio.set_event_loop` if *loop_factory* is ``None``.
 
-   Basically, :func:`asyncio.run()` example can be rewritten with the runner usage::
+   Basically, :func:`asyncio.run` example can be rewritten with the runner usage::
 
         async def main():
             await asyncio.sleep(1)

@@ -32,7 +32,7 @@ except NameError:
 if os.path.isdir(_icondir):
     ICONDIR = _icondir
 elif not os.path.isdir(ICONDIR):
-    raise RuntimeError("can't find icon directory (%r)" % (ICONDIR,))
+    raise RuntimeError(f"can't find icon directory ({ICONDIR!r})")
 
 def listicons(icondir=ICONDIR):
     """Utility to display the available icons."""
@@ -285,8 +285,9 @@ class TreeNode:
         self.label.bind("<1>", self.select_or_edit)
         self.label.bind("<Double-1>", self.flip)
         self.label.bind("<MouseWheel>", lambda e: wheel_event(e, self.canvas))
-        self.label.bind("<Button-4>", lambda e: wheel_event(e, self.canvas))
-        self.label.bind("<Button-5>", lambda e: wheel_event(e, self.canvas))
+        if self.label._windowingsystem == 'x11':
+            self.label.bind("<Button-4>", lambda e: wheel_event(e, self.canvas))
+            self.label.bind("<Button-5>", lambda e: wheel_event(e, self.canvas))
         self.text_id = id
 
     def select_or_edit(self, event=None):
@@ -460,8 +461,9 @@ class ScrolledCanvas:
         self.canvas.bind("<Key-Up>", self.unit_up)
         self.canvas.bind("<Key-Down>", self.unit_down)
         self.canvas.bind("<MouseWheel>", wheel_event)
-        self.canvas.bind("<Button-4>", wheel_event)
-        self.canvas.bind("<Button-5>", wheel_event)
+        if self.canvas._windowingsystem == 'x11':
+            self.canvas.bind("<Button-4>", wheel_event)
+            self.canvas.bind("<Button-5>", wheel_event)
         #if isinstance(master, Toplevel) or isinstance(master, Tk):
         self.canvas.bind("<Alt-Key-2>", self.zoom_height)
         self.canvas.focus_set()
@@ -491,6 +493,7 @@ def _tree_widget(parent):  # htest #
     item = FileTreeItem(ICONDIR)
     node = TreeNode(sc.canvas, None, item)
     node.expand()
+
 
 if __name__ == '__main__':
     from unittest import main

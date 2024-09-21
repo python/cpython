@@ -43,11 +43,14 @@ import tarfile
 log = logging.getLogger("multissl")
 
 OPENSSL_OLD_VERSIONS = [
+    "1.1.1w",
 ]
 
 OPENSSL_RECENT_VERSIONS = [
-    "1.1.1t",
-    "3.0.8"
+    "3.0.15",
+    "3.1.7",
+    "3.2.3",
+    "3.3.2",
 ]
 
 LIBRESSL_OLD_VERSIONS = [
@@ -150,7 +153,10 @@ class AbstractBuilder(object):
     build_template = None
     depend_target = None
     install_target = 'install'
-    jobs = os.cpu_count()
+    if hasattr(os, 'process_cpu_count'):
+        jobs = os.process_cpu_count()
+    else:
+        jobs = os.cpu_count()
 
     module_files = (
         os.path.join(PYTHONROOT, "Modules/_ssl.c"),
@@ -392,6 +398,7 @@ class AbstractBuilder(object):
 class BuildOpenSSL(AbstractBuilder):
     library = "OpenSSL"
     url_templates = (
+        "https://github.com/openssl/openssl/releases/download/openssl-{v}/openssl-{v}.tar.gz",
         "https://www.openssl.org/source/openssl-{v}.tar.gz",
         "https://www.openssl.org/source/old/{s}/openssl-{v}.tar.gz"
     )
@@ -433,6 +440,7 @@ class BuildOpenSSL(AbstractBuilder):
             # OpenSSL 3.0.0 -> /old/3.0/
             parsed = parsed[:2]
         return ".".join(str(i) for i in parsed)
+
 
 class BuildLibreSSL(AbstractBuilder):
     library = "LibreSSL"

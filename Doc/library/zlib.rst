@@ -1,5 +1,5 @@
-:mod:`zlib` --- Compression compatible with :program:`gzip`
-===========================================================
+:mod:`!zlib` --- Compression compatible with :program:`gzip`
+============================================================
 
 .. module:: zlib
    :synopsis: Low-level interface to compression and decompression routines

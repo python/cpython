@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 #ifndef Py_BUILD_CORE
-#  error "Py_BUILD_CORE must be defined to include this header"
+#  error "this header requires Py_BUILD_CORE define"
 #endif
 
 #ifdef MS_WINDOWS
@@ -25,8 +25,8 @@ typedef struct _FILE_STAT_BASIC_INFORMATION {
     ULONG DeviceType;
     ULONG DeviceCharacteristics;
     ULONG Reserved;
-    FILE_ID_128 FileId128;
     LARGE_INTEGER VolumeSerialNumber;
+    FILE_ID_128 FileId128;
 } FILE_STAT_BASIC_INFORMATION;
 
 typedef enum _FILE_INFO_BY_NAME_CLASS {
@@ -73,6 +73,24 @@ static inline BOOL _Py_GetFileInformationByName(
         return FALSE;
     }
     return GetFileInformationByName(FileName, FileInformationClass, FileInfoBuffer, FileInfoBufferSize);
+}
+
+static inline BOOL _Py_GetFileInformationByName_ErrorIsTrustworthy(int error)
+{
+    switch(error) {
+        case ERROR_FILE_NOT_FOUND:
+        case ERROR_PATH_NOT_FOUND:
+        case ERROR_NOT_READY:
+        case ERROR_BAD_NET_NAME:
+        case ERROR_BAD_NETPATH:
+        case ERROR_BAD_PATHNAME:
+        case ERROR_INVALID_NAME:
+        case ERROR_FILENAME_EXCED_RANGE:
+            return TRUE;
+        case ERROR_NOT_SUPPORTED:
+            return FALSE;
+    }
+    return FALSE;
 }
 
 #endif
