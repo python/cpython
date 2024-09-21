@@ -320,7 +320,7 @@ An :class:`IMAP4` instance has the following methods:
    The *dur* argument sets a maximum duration (in seconds) to keep idling,
    after which iteration will stop.  It defaults to ``None``, meaning no time
    limit.  Callers wishing to avoid inactivity timeouts on servers that impose
-   them should keep this <= 29 minutes.
+   them should keep this at most 29 minutes.
    See the :ref:`warning below <windows-pipe-timeout-warning>` if using
    :class:`IMAP4_stream` on Windows.
 
