@@ -3288,6 +3288,41 @@ class TestMutuallyExclusiveNested(MEMixin, TestCase):
     test_successes_when_required = None
 
 
+class TestMutuallyExclusiveOptionalOptional(MEMixin, TestCase):
+    def get_parser(self, required=None):
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        group = parser.add_mutually_exclusive_group(required=required)
+        group.add_argument('--foo')
+        group.add_argument('--bar', nargs='?')
+        return parser
+
+    failures = [
+        '--foo X --bar Y',
+        '--foo X --bar',
+    ]
+    successes = [
+        ('--foo X', NS(foo='X', bar=None)),
+        ('--bar X', NS(foo=None, bar='X')),
+        ('--bar', NS(foo=None, bar=None)),
+    ]
+    successes_when_not_required = [
+        ('', NS(foo=None, bar=None)),
+    ]
+    usage_when_required = '''\
+        usage: PROG [-h] (--foo FOO | --bar [BAR])
+        '''
+    usage_when_not_required = '''\
+        usage: PROG [-h] [--foo FOO | --bar [BAR]]
+        '''
+    help = '''\
+
+        options:
+          -h, --help   show this help message and exit
+          --foo FOO
+          --bar [BAR]
+        '''
+
+
 class TestMutuallyExclusiveOptionalWithDefault(MEMixin, TestCase):
     def get_parser(self, required=None):
         parser = ErrorRaisingArgumentParser(prog='PROG')
@@ -3321,6 +3356,7 @@ class TestMutuallyExclusiveOptionalWithDefault(MEMixin, TestCase):
           --foo FOO
           --bar BAR
         '''
+
 
 class TestMutuallyExclusivePositionalWithDefault(MEMixin, TestCase):
     def get_parser(self, required=None):
