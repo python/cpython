@@ -406,6 +406,15 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(e3.__cause__)
         self.assertIs(e2.__context__, e3)
 
+    async def test_timeouterror_is_unique(self):
+        # See GH-124308
+        with self.assertRaises(asyncio.TimeoutError) as err:
+            async with asyncio.timeout(0.01):
+                pass
+
+        # See BPO-42413
+        self.assertIsTrue(issubclass(err, TimeoutError))
+
 
 if __name__ == '__main__':
     unittest.main()
