@@ -4980,7 +4980,7 @@ class TestHelpUsageLongSubparserCommand(TestCase):
                                                help="add something",
                                                parents=[parent_parser])
         cmd_parser.add_subparsers(title="action", dest="action_command")
-        cmd_subparsers.add_parser("remove", 
+        cmd_subparsers.add_parser("remove",
                                   help="remove something",
                                   parents=[parent_parser])
 
