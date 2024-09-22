@@ -11,13 +11,8 @@ class CancelledError(BaseException):
     """The Future or Task was cancelled."""
 
 
-# GH-124308, BPO-32413: Originally, asyncio.TimeoutError was it's
-# own unique exception. This was a bit of a gotcha because catching TimeoutError
-# didn't catch asyncio.TimeoutError. So, it was turned into an alias
-# of TimeoutError directly. Unfortunately, this made it effectively
-# impossible to differentiate between asyncio.TimeoutError or a TimeoutError
-# raised by a third party, so this is now a unique exception again (that inherits
-# from TimeoutError to address the first problem).
+# GH-124308, BPO-32413: Catching TimeoutError should catch asyncio.TimeoutError, but
+# not vice versa.
 class TimeoutError(TimeoutError):
     """Operation timed out."""
 
