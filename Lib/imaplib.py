@@ -1429,7 +1429,7 @@ class _Idler:
             if __debug__ and imap.debug >= 4:
                 prompt = imap.continuation_response
                 imap._mesg(f'idle continuation prompt: {prompt}')
-        except:
+        except BaseException:
             imap._idle_capture = False
             raise
 
