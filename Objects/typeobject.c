@@ -5323,33 +5323,6 @@ get_base_by_token_recursive(PyTypeObject *type, void *token)
     return NULL;
 }
 
-static int
-check_base_by_token(PyTypeObject *type, void *token) {
-    if (token == NULL) {
-        PyErr_Format(PyExc_SystemError,
-                     "PyType_GetBaseByToken called with token=NULL");
-        return -1;
-    }
-    if (!PyType_Check(type)) {
-        PyErr_Format(PyExc_TypeError,
-                     "expected a type, got a '%T' object", type);
-        return -1;
-    }
-    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-        return 0;
-    }
-    if (((PyHeapTypeObject*)type)->ht_token == token) {
-        return 1;
-    }
-    if (type->tp_mro != NULL) {
-        // This will not be inlined
-        return get_base_by_token_from_mro(type, token) ? 1 : 0;
-    }
-    else {
-        return get_base_by_token_recursive(type, token)  ? 1 : 0;
-    }
-}
-
 int
 PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
 {
@@ -5418,6 +5391,33 @@ get_base_by_token_from_mro(PyTypeObject *type, void *token)
         }
     }
     return NULL;
+}
+
+static int
+check_base_by_token(PyTypeObject *type, void *token) {
+    if (token == NULL) {
+        PyErr_Format(PyExc_SystemError,
+                     "PyType_GetBaseByToken called with token=NULL");
+        return -1;
+    }
+    if (!PyType_Check(type)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expected a type, got a '%T' object", type);
+        return -1;
+    }
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        return 0;
+    }
+    if (((PyHeapTypeObject*)type)->ht_token == token) {
+        return 1;
+    }
+    if (type->tp_mro != NULL) {
+        // This will not be inlined
+        return get_base_by_token_from_mro(type, token) ? 1 : 0;
+    }
+    else {
+        return get_base_by_token_recursive(type, token)  ? 1 : 0;
+    }
 }
 
 
