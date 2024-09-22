@@ -198,12 +198,11 @@ class FutureTests(BaseTestCase):
         self.assertEqual(SUCCESSFUL_FUTURE.result(timeout=0), 42)
 
         # BPO-42413: Catching TimeoutError should catch futures.TimeoutError
-        with self.assertRaises(TimeoutError) as err:
-            self.assertRaises(futures.TimeoutError,
-                              PENDING_FUTURE.result, timeout=0)
+        with self.assertRaises(TimeoutError):
+            raise futures.TimeoutError
 
         with self.assertRaises(TimeoutError):
-            # GH-124308: Catching futures.TimeoutError should not allow TimeoutError
+            # GH-124308: Catching futures.TimeoutError should not catch TimeoutError
             with suppress(futures.TimeoutError):
                 raise TimeoutError
 
