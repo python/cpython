@@ -1416,8 +1416,13 @@ class _Idler:
             imap._idle_capture = True
 
             self._tag = imap._command('IDLE')
-            # Process responses until the server requests continuation
-            while resp := imap._get_response():  # Returns None on continuation
+            # As with any command, the server is allowed to send us unrelated,
+            # untagged responses before acting on IDLE.  These lines will be
+            # returned by _get_response().  When the server is ready, it will
+            # send an IDLE continuation request, indicated by _get_response()
+            # returning None.  We therefore process responses in a loop until
+            # this occurs.
+            while resp := imap._get_response():
                 if imap.tagged_commands[self._tag]:
                     raise imap.abort(f'unexpected status response: {resp}')
 
