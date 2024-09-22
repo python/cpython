@@ -2505,11 +2505,9 @@ class MathTests(unittest.TestCase):
 
     def test_exception_messages(self):
         x = -1.1
-
         with self.assertRaises(ValueError,
                                msg=f"expected a nonnegative input, got {x}"):
             math.sqrt(x)
-
         with self.assertRaises(ValueError,
                                msg=f"expected a positive input, got {x}"):
             math.log(x)
@@ -2518,31 +2516,26 @@ class MathTests(unittest.TestCase):
             math.log(123, x)
         with self.assertRaises(ValueError,
                                msg=f"expected a positive input, got {x}"):
+            math.log(x, 123)
+        with self.assertRaises(ValueError,
+                               msg=f"expected a positive input, got {x}"):
             math.log2(x)
         with self.assertRaises(ValueError,
                                msg=f"expected a positive input, got {x}"):
             math.log2(x)
-
-        x = decimal.Decimal(x)
-
+        x = decimal.Decimal('-1.1')
         with self.assertRaises(ValueError,
                                msg=f"expected a positive input, got {x!r}"):
             math.log(x)
-
         x = fractions.Fraction(1, 10**400)
-
         with self.assertRaises(ValueError,
                                msg=f"expected a positive input, got {float(x)!r}"):
             math.log(x)
-
-        x = -2**1000
-
+        x = -123
         with self.assertRaises(ValueError,
                                msg=f"expected a positive input"):
             math.log(x)
-
         x = 1.0
-
         with self.assertRaises(ValueError,
                                msg=f"expected a number between -1 and 1, got {x}"):
             math.atanh(x)
