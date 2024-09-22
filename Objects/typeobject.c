@@ -5323,33 +5323,6 @@ get_base_by_token_recursive(PyTypeObject *type, void *token)
     return NULL;
 }
 
-static inline PyTypeObject *
-get_base_by_token_from_mro(PyTypeObject *type, void *token)
-{
-    // Bypass lookup_tp_mro() as PyType_IsSubtype() does
-    PyObject *mro = type->tp_mro;
-    assert(mro != NULL);
-    assert(PyTuple_Check(mro));
-    // mro_invoke() ensures that the type MRO cannot be empty.
-    assert(PyTuple_GET_SIZE(mro) >= 1);
-    // Also, the first item in the MRO is the type itself, which is supposed
-    // to be already checked by the caller. We skip it in the loop.
-    assert(PyTuple_GET_ITEM(mro, 0) == (PyObject *)type);
-    assert(PyType_GetSlot(type, Py_tp_token) != token);
-
-    Py_ssize_t n = PyTuple_GET_SIZE(mro);
-    for (Py_ssize_t i = 1; i < n; i++) {
-        PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(mro, i));
-        if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
-            continue;
-        }
-        if (((PyHeapTypeObject*)base)->ht_token == token) {
-            return base;
-        }
-    }
-    return NULL;
-}
-
 static int
 check_base_by_token(PyTypeObject *type, void *token) {
     if (token == NULL) {
@@ -5418,6 +5391,33 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
         *result = NULL;
         return 0;
     }
+}
+
+static inline PyTypeObject *
+get_base_by_token_from_mro(PyTypeObject *type, void *token)
+{
+    // Bypass lookup_tp_mro() as PyType_IsSubtype() does
+    PyObject *mro = type->tp_mro;
+    assert(mro != NULL);
+    assert(PyTuple_Check(mro));
+    // mro_invoke() ensures that the type MRO cannot be empty.
+    assert(PyTuple_GET_SIZE(mro) >= 1);
+    // Also, the first item in the MRO is the type itself, which is supposed
+    // to be already checked by the caller. We skip it in the loop.
+    assert(PyTuple_GET_ITEM(mro, 0) == (PyObject *)type);
+    assert(PyType_GetSlot(type, Py_tp_token) != token);
+
+    Py_ssize_t n = PyTuple_GET_SIZE(mro);
+    for (Py_ssize_t i = 1; i < n; i++) {
+        PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(mro, i));
+        if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
+            continue;
+        }
+        if (((PyHeapTypeObject*)base)->ht_token == token) {
+            return base;
+        }
+    }
+    return NULL;
 }
 
 
