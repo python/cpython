@@ -4961,31 +4961,38 @@ class TestHelpMetavarTypeFormatter(HelpTestCase):
 class TestHelpUsageLongSubparserCommand(TestCase):
     """Test that subparser commands are formatted correctly in help"""
 
-    def setUp(self):
-        super().setUp()
-        self.main_program = os.path.basename(sys.argv[0])
-
     def test_parent_help(self):
+        def custom_formatter(prog):
+            return argparse.RawTextHelpFormatter(prog, max_help_position=50)
+
         parent_parser = argparse.ArgumentParser(
-            add_help=False, formatter_class=lambda prog: argparse.RawTextHelpFormatter(prog, max_help_position=50))
-
+                prog='PROG',
+                add_help=False, 
+                formatter_class=lambda prog: custom_formatter(prog)
+        )
         main_parser = argparse.ArgumentParser(
-            formatter_class=lambda prog: argparse.RawTextHelpFormatter(prog, max_help_position=50))
-        cmd_subparsers = main_parser.add_subparsers(title="commands", metavar='CMD', help='command to use')
-
-        cmd_parser = cmd_subparsers.add_parser("add", help="add something", parents=[parent_parser])
+            formatter_class=lambda prog: custom_formatter(prog))
+        
+        cmd_subparsers = main_parser.add_subparsers(title="commands", 
+                                                    metavar='CMD', 
+                                                    help='command to use')
+        cmd_parser = cmd_subparsers.add_parser("add", 
+                                               help="add something", 
+                                               parents=[parent_parser])
         cmd_parser.add_subparsers(title="action", dest="action_command")
-
-        cmd_parser2 = cmd_subparsers.add_parser("remove", help="remove something", parents=[parent_parser])
+        cmd_parser2 = cmd_subparsers.add_parser("remove", 
+                                                help="remove something",
+                                                parents=[parent_parser])
+        
         cmd_parser2.add_subparsers(title="action", dest="action_command")
 
-        cmd_subparsers.add_parser("a-very-long-command", help="command that does something", parents=[parent_parser])
+        cmd_subparsers.add_parser("a-very-long-command", 
+                                  help="command that does something",
+                                  parents=[parent_parser])
 
         parser_help = main_parser.format_help()
-
-        progname = self.main_program
         self.assertEqual(parser_help, textwrap.dedent('''\
-            usage: {}{}[-h] CMD ...
+            usage: __main__.py [-h] CMD ...
 
             options:
               -h, --help             show this help message and exit
@@ -4995,7 +5002,7 @@ class TestHelpUsageLongSubparserCommand(TestCase):
                 add                  add something
                 remove               remove something
                 a-very-long-command  command that does something
-        '''.format(progname, ' ' if progname else '')))
+        '''))
 
 
 # =====================================
