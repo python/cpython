@@ -5,6 +5,7 @@ import time
 
 import asyncio
 
+from contextlib import suppress
 from test.test_asyncio.utils import await_without_task
 
 
@@ -407,13 +408,15 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
         self.assertIs(e2.__context__, e3)
 
     async def test_timeouterror_is_unique(self):
-        # See GH-124308
-        with self.assertRaises(asyncio.TimeoutError) as err:
+        # BPO-42413: Catching TimeoutError should include asyncio.TimeoutError
+        with self.assertRaises(TimeoutError):
             async with asyncio.timeout(0.01):
-                pass
+                await asyncio.sleep(1)
 
-        # See BPO-42413
-        self.assertIsTrue(issubclass(err, TimeoutError))
+        with self.assertRaises(TimeoutError):
+            # GH-124308: Catching asyncio.TimeoutError should not include TimeoutError
+            with suppress(asyncio.TimeoutError):
+                raise TimeoutError
 
 
 if __name__ == '__main__':
