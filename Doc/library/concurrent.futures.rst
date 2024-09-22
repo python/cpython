@@ -549,7 +549,7 @@ Exception classes
 
       This class was made an alias of :exc:`TimeoutError`.
 
-    .. versionchanged:: 3.14
+   .. versionchanged:: 3.14
 
       This class was made a unique subclass of :exc:`TimeoutError`.
 
