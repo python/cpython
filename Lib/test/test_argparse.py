@@ -4992,7 +4992,7 @@ class TestHelpUsageLongSubparserCommand(TestCase):
 
         parser_help = main_parser.format_help()
         self.assertEqual(parser_help, textwrap.dedent('''\
-            usage: __main__.py [-h] CMD ...
+            usage: {}{}[-h] CMD ...
 
             options:
               -h, --help             show this help message and exit
@@ -5002,7 +5002,7 @@ class TestHelpUsageLongSubparserCommand(TestCase):
                 add                  add something
                 remove               remove something
                 a-very-long-command  command that does something
-        '''))
+        ''').format(main_parser.prog or '', ' '))
 
 
 # =====================================
