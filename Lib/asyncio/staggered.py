@@ -116,7 +116,7 @@ async def staggered_race(coro_fns, delay, *, loop=None):
                 if i != this_index:
                     t.cancel()
 
-    first_task = loop.create_task(run_one_coro(None))
+    first_task = loop.create_task(run_one_coro(locks.Event()))
     running_tasks.append(first_task)
     try:
         # Wait for a growing list of tasks to all finish: poor man's version of
