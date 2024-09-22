@@ -325,7 +325,7 @@ An :class:`IMAP4` instance has the following methods:
    :class:`IMAP4_stream` on Windows.
 
    Response tuples produced by the iterator almost exactly match those
-   returned by other imaplib methods.  The difference is that the tuple's
+   returned by other methods in this module.  The difference is that the tuple's
    second member is a single response datum, rather than a list of data.
    Therefore, in a mailbox where calling ``M.response('EXISTS')`` would
    return ``('EXISTS', [b'1'])``, the idle iterator would produce
