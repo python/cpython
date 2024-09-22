@@ -486,7 +486,7 @@ async def wait_for(fut, timeout):
         try:
             return fut.result()
         except exceptions.CancelledError as exc:
-            raise TimeoutError from exc
+            raise exceptions.TimeoutError from exc
 
     async with timeouts.timeout(timeout):
         return await fut

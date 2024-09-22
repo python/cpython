@@ -42,7 +42,7 @@ class CancelledError(Error):
     """The Future was cancelled."""
     pass
 
-# Intentional, see GH-124308
+# See GH-124308
 class TimeoutError(TimeoutError):
     pass
 
