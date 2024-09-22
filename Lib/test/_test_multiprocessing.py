@@ -25,6 +25,7 @@ import operator
 import pickle
 import weakref
 import warnings
+import contextlib
 import test.support
 import test.support.script_helper
 from test import support
@@ -2612,7 +2613,7 @@ class _TestPool(BaseTestCase):
 
             # GH-124308: Catching multiprocessing.TimeoutError should not catch TimeoutError
             with self.assertRaises(TimeoutError):
-                with suppress(multiprocessing.TimeoutError):
+                with contextlib.suppress(multiprocessing.TimeoutError):
                     raise TimeoutError
         finally:
             if event is not None:
