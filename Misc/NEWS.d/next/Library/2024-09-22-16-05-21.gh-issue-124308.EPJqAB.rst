@@ -1,0 +1,2 @@
+Prevent :exc:`TimeoutError` from being caught when catching
+:exc:`asyncio.TimeoutError` or :exc:`concurrent.futures.TimeoutError`.
