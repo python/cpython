@@ -924,7 +924,7 @@ static PyObject *
 math_1(PyObject *arg, double (*func) (double), int can_overflow,
        const char *err_msg)
 {
-    PyObject *a;
+    char *buf;
     double x, r;
     x = PyFloat_AsDouble(arg);
     if (x == -1.0 && PyErr_Occurred())
@@ -948,12 +948,12 @@ math_1(PyObject *arg, double (*func) (double), int can_overflow,
     return PyFloat_FromDouble(r);
 
 domain_err:
-    a = PyFloat_FromDouble(x);
+    buf = PyOS_double_to_string(x, 'r', 0, Py_DTSF_ADD_DOT_0, NULL);
 
-    if (a) {
+    if (buf) {
         PyErr_Format(PyExc_ValueError,
-                     err_msg ? err_msg : "math domain error", a);
-        Py_DECREF(a);
+                     err_msg ? err_msg : "math domain error", buf);
+        PyMem_Free(buf);
     }
     return NULL;
 }
@@ -1087,7 +1087,7 @@ FUNC2(atan2, atan2,
 FUNC1D(atanh, atanh, 0,
       "atanh($module, x, /)\n--\n\n"
       "Return the inverse hyperbolic tangent of x.",
-      "expected a number between -1 and 1, got %R")
+      "expected a number between -1 and 1, got %s")
 FUNC1(cbrt, cbrt, 0,
       "cbrt($module, x, /)\n--\n\n"
       "Return the cube root of x.")
@@ -1223,7 +1223,7 @@ FUNC1(sinh, sinh, 1,
 FUNC1D(sqrt, sqrt, 0,
       "sqrt($module, x, /)\n--\n\n"
       "Return the square root of x.",
-      "expected a nonnegative input, got %R")
+      "expected a nonnegative input, got %s")
 FUNC1(tan, tan, 0,
       "tan($module, x, /)\n--\n\n"
       "Return the tangent of x (measured in radians).")
@@ -2196,7 +2196,7 @@ math_modf_impl(PyObject *module, double x)
    in that int is larger than PY_SSIZE_T_MAX. */
 
 static PyObject*
-loghelper(PyObject* arg, double (*func)(double), const char *err_msg)
+loghelper(PyObject* arg, double (*func)(double))
 {
     /* If it is int, do it ourselves. */
     if (PyLong_Check(arg)) {
@@ -2205,7 +2205,8 @@ loghelper(PyObject* arg, double (*func)(double), const char *err_msg)
 
         /* Negative or zero inputs give a ValueError. */
         if (!_PyLong_IsPositive((PyLongObject *)arg)) {
-            PyErr_Format(PyExc_ValueError, err_msg, arg);
+            PyErr_SetString(PyExc_ValueError,
+                            "expected a positive input");
             return NULL;
         }
 
@@ -2229,7 +2230,7 @@ loghelper(PyObject* arg, double (*func)(double), const char *err_msg)
     }
 
     /* Else let libm handle it by itself. */
-    return math_1(arg, func, 0, err_msg);
+    return math_1(arg, func, 0, "expected a positive input, got %s");
 }
 
 
@@ -2244,11 +2245,11 @@ math_log(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("log", nargs, 1, 2))
         return NULL;
 
-    num = loghelper(args[0], m_log, "expected a positive input, got %R");
+    num = loghelper(args[0], m_log);
     if (num == NULL || nargs == 1)
         return num;
 
-    den = loghelper(args[1], m_log, "expected a positive input, got %R");
+    den = loghelper(args[1], m_log);
     if (den == NULL) {
         Py_DECREF(num);
         return NULL;
@@ -2278,7 +2279,7 @@ static PyObject *
 math_log2(PyObject *module, PyObject *x)
 /*[clinic end generated code: output=5425899a4d5d6acb input=08321262bae4f39b]*/
 {
-    return loghelper(x, m_log2, "expected a positive input, got %R");
+    return loghelper(x, m_log2);
 }
 
 
@@ -2295,7 +2296,7 @@ static PyObject *
 math_log10(PyObject *module, PyObject *x)
 /*[clinic end generated code: output=be72a64617df9c6f input=b2469d02c6469e53]*/
 {
-    return loghelper(x, m_log10, "expected a positive input, got %R");
+    return loghelper(x, m_log10);
 }
 
 

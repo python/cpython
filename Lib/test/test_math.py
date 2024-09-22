@@ -2535,6 +2535,12 @@ class MathTests(unittest.TestCase):
                                msg=f"expected a positive input, got {float(x)!r}"):
             math.log(x)
 
+        x = -2**1000
+
+        with self.assertRaises(ValueError,
+                               msg=f"expected a positive input"):
+            math.log(x)
+
         x = 1.0
 
         with self.assertRaises(ValueError,
