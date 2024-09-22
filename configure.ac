@@ -3802,6 +3802,8 @@ AS_VAR_IF([have_uuid], [missing], [
   ])
 ])
 
+# gh-124228: While the libuuid library is available on NetBSD, it supports only UUID version 4.
+# This restriction inhibits the proper generation of time-based UUIDs.
 if test "$ac_sys_system" = "NetBSD"; then
   have_uuid=missing
   AC_DEFINE([HAVE_UUID_H], [0])
