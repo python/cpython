@@ -1407,8 +1407,7 @@ class _Idler:
         assert not (imap._idle_responses or imap._idle_capture)
 
         if __debug__ and imap.debug >= 4:
-            imap._mesg('idle start'
-                       + ('' if self._dur is None else f' dur={self._dur}'))
+            imap._mesg(f'idle start duration={self._dur}')
 
         try:
             # Start capturing untagged responses before sending IDLE,
