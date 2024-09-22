@@ -4967,26 +4967,26 @@ class TestHelpUsageLongSubparserCommand(TestCase):
 
         parent_parser = argparse.ArgumentParser(
                 prog='PROG',
-                add_help=False, 
+                add_help=False,
                 formatter_class=lambda prog: custom_formatter(prog)
         )
         main_parser = argparse.ArgumentParser(
             formatter_class=lambda prog: custom_formatter(prog))
-        
-        cmd_subparsers = main_parser.add_subparsers(title="commands", 
-                                                    metavar='CMD', 
+
+        cmd_subparsers = main_parser.add_subparsers(title="commands",
+                                                    metavar='CMD',
                                                     help='command to use')
-        cmd_parser = cmd_subparsers.add_parser("add", 
-                                               help="add something", 
+        cmd_parser = cmd_subparsers.add_parser("add",
+                                               help="add something",
                                                parents=[parent_parser])
         cmd_parser.add_subparsers(title="action", dest="action_command")
-        cmd_parser2 = cmd_subparsers.add_parser("remove", 
+        cmd_parser2 = cmd_subparsers.add_parser("remove",
                                                 help="remove something",
                                                 parents=[parent_parser])
-        
+
         cmd_parser2.add_subparsers(title="action", dest="action_command")
 
-        cmd_subparsers.add_parser("a-very-long-command", 
+        cmd_subparsers.add_parser("a-very-long-command",
                                   help="command that does something",
                                   parents=[parent_parser])
 
