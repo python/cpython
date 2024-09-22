@@ -551,7 +551,7 @@ Exception classes
 
     .. versionchanged:: 3.14
 
-      This class was made unique, but subclasses :exc:`TimeoutError`.
+      This class was made a unique subclass of :exc:`TimeoutError`.
 
 
 .. exception:: BrokenExecutor
