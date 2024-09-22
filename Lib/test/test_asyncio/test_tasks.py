@@ -3502,7 +3502,7 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
         when a timeout is raised."""
         callback = lambda: self.target(timeout=0)
         future = self.loop.run_in_executor(None, callback)
-        with self.assertRaises(asyncio.TimeoutError):
+        with self.assertRaises(TimeoutError):
             self.loop.run_until_complete(future)
         test_utils.run_briefly(self.loop)
         # Check that there's no pending task (add has been cancelled)
