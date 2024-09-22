@@ -5288,6 +5288,18 @@ _PyType_GetModuleByDef2(PyTypeObject *left, PyTypeObject *right,
 }
 
 
+// PyType_GetBaseByToken() family are better to be placed from most to least
+// frequent in the src and obj files (the decls in random order) for PGO on
+// MSVC. They'll be optimized not for speed if a cold sub function precedes,
+// in which case the unrelated functions above can be slower if there are
+// common conds such as `if (!_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE))`.
+static int
+check_base_by_token(PyTypeObject *, void *);
+static inline PyTypeObject *
+get_base_by_token_from_mro(PyTypeObject *, void *);
+static PyTypeObject *
+get_base_by_token_recursive(PyTypeObject *, void *);
+
 static PyTypeObject *
 get_base_by_token_recursive(PyTypeObject *type, void *token)
 {
