@@ -334,7 +334,7 @@ An :class:`IMAP4` instance has the following methods:
    Example::
 
       with M.idle(dur=29 * 60) as idler:
-          for type, datum in idler:
+          for typ, datum in idler:
               print(typ, datum)
 
       ('EXISTS', b'1')
