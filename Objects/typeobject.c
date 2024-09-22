@@ -5340,24 +5340,23 @@ get_base_by_token_from_mro(PyTypeObject *type, void *token)
 
 static int
 check_base_by_token(PyTypeObject *type, void *token) {
-    // Chain the branches, which will be optimized exclusive here
     if (token == NULL) {
         PyErr_Format(PyExc_SystemError,
                      "PyType_GetBaseByToken called with token=NULL");
         return -1;
     }
-    else if (!PyType_Check(type)) {
+    if (!PyType_Check(type)) {
         PyErr_Format(PyExc_TypeError,
                      "expected a type, got a '%T' object", type);
         return -1;
     }
-    else if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         return 0;
     }
-    else if (((PyHeapTypeObject*)type)->ht_token == token) {
+    if (((PyHeapTypeObject*)type)->ht_token == token) {
         return 1;
     }
-    else if (type->tp_mro != NULL) {
+    if (type->tp_mro != NULL) {
         // This will not be inlined
         return get_base_by_token_from_mro(type, token) ? 1 : 0;
     }
@@ -5379,19 +5378,19 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
         return check_base_by_token(type, token);
     }
 
-    // Chain the branches, which will be optimized exclusive here
-    PyTypeObject *base;
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // No static type has a heaptype superclass,
         // which is ensured by type_ready_mro().
         *result = NULL;
         return 0;
     }
-    else if (((PyHeapTypeObject*)type)->ht_token == token) {
+    if (((PyHeapTypeObject*)type)->ht_token == token) {
         *result = (PyTypeObject *)Py_NewRef(type);
         return 1;
     }
-    else if (type->tp_mro != NULL) {
+
+    PyTypeObject *base;
+    if (type->tp_mro != NULL) {
         // Expect this to be inlined
         base = get_base_by_token_from_mro(type, token);
     }
