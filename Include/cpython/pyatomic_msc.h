@@ -956,25 +956,25 @@ _Py_atomic_store_char_relaxed(char *obj, char value)
 static inline void
 _Py_atomic_store_uchar_relaxed(unsigned char *obj, unsigned char value)
 {
-    *(volatile unsigned char*)obj = value;
+    *(volatile unsigned char *)obj = value;
 }
 
 static inline void
 _Py_atomic_store_short_relaxed(short *obj, short value)
 {
-    *(volatile short*)obj = value;
+    *(volatile short *)obj = value;
 }
 
 static inline void
 _Py_atomic_store_ushort_relaxed(unsigned short *obj, unsigned short value)
 {
-    *(volatile unsigned short*)obj = value;
+    *(volatile unsigned short *)obj = value;
 }
 
 static inline void
 _Py_atomic_store_uint_release(unsigned int *obj, unsigned int value)
 {
-    *(volatile unsigned int*)obj = value;
+    *(volatile unsigned int *)obj = value;
 }
 
 static inline void
@@ -998,7 +998,7 @@ _Py_atomic_store_double_relaxed(double *obj, double value)
 static inline void
 _Py_atomic_store_llong_relaxed(long long *obj, long long value)
 {
-    *(volatile long long*)obj = value;
+    *(volatile long long *)obj = value;
 }
 
 
