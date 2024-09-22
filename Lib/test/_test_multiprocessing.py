@@ -2605,6 +2605,15 @@ class _TestPool(BaseTestCase):
             get = TimingWrapper(res.get)
             self.assertRaises(multiprocessing.TimeoutError, get, timeout=TIMEOUT2)
             self.assertTimingAlmostEqual(get.elapsed, TIMEOUT2)
+
+            # BPO-42413: Catching TimeoutError should catch multiprocessing.TimeoutError
+            with self.assertRaises(TimeoutError):
+                raise multiprocessing.TimeoutError
+
+            # GH-124308: Catching multiprocessing.TimeoutError should not catch TimeoutError
+            with self.assertRaises(TimeoutError):
+                with suppress(multiprocessing.TimeoutError):
+                    raise TimeoutError
         finally:
             if event is not None:
                 event.set()

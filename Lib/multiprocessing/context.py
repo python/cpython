@@ -17,7 +17,7 @@ class ProcessError(Exception):
 class BufferTooShort(ProcessError):
     pass
 
-class TimeoutError(ProcessError):
+class TimeoutError(ProcessError, TimeoutError):
     pass
 
 class AuthenticationError(ProcessError):
