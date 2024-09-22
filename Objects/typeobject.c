@@ -5300,29 +5300,6 @@ get_base_by_token_from_mro(PyTypeObject *, void *);
 static PyTypeObject *
 get_base_by_token_recursive(PyTypeObject *, void *);
 
-static PyTypeObject *
-get_base_by_token_recursive(PyTypeObject *type, void *token)
-{
-    assert(PyType_GetSlot(type, Py_tp_token) != token);
-    PyObject *bases = lookup_tp_bases(type);
-    assert(bases != NULL);
-    Py_ssize_t n = PyTuple_GET_SIZE(bases);
-    for (Py_ssize_t i = 0; i < n; i++) {
-        PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(bases, i));
-        if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
-            continue;
-        }
-        if (((PyHeapTypeObject*)base)->ht_token == token) {
-            return base;
-        }
-        base = get_base_by_token_recursive(base, token);
-        if (base != NULL) {
-            return base;
-        }
-    }
-    return NULL;
-}
-
 int
 PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
 {
@@ -5355,7 +5332,6 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
     else {
         base = get_base_by_token_recursive(type, token);
     }
-
     if (base != NULL) {
         *result = (PyTypeObject *)Py_NewRef(base);
         return 1;
@@ -5418,6 +5394,29 @@ check_base_by_token(PyTypeObject *type, void *token) {
     else {
         return get_base_by_token_recursive(type, token)  ? 1 : 0;
     }
+}
+
+static PyTypeObject *
+get_base_by_token_recursive(PyTypeObject *type, void *token)
+{
+    assert(PyType_GetSlot(type, Py_tp_token) != token);
+    PyObject *bases = lookup_tp_bases(type);
+    assert(bases != NULL);
+    Py_ssize_t n = PyTuple_GET_SIZE(bases);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(bases, i));
+        if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
+            continue;
+        }
+        if (((PyHeapTypeObject*)base)->ht_token == token) {
+            return base;
+        }
+        base = get_base_by_token_recursive(base, token);
+        if (base != NULL) {
+            return base;
+        }
+    }
+    return NULL;
 }
 
 
