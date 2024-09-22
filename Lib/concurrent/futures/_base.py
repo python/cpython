@@ -42,7 +42,9 @@ class CancelledError(Error):
     """The Future was cancelled."""
     pass
 
-TimeoutError = TimeoutError  # make local alias for the standard exception
+# Intentional, see GH-124308
+class TimeoutError(TimeoutError):
+    pass
 
 class InvalidStateError(Error):
     """The operation is not allowed in this state."""

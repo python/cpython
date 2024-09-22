@@ -542,12 +542,16 @@ Exception classes
 
 .. exception:: TimeoutError
 
-   A deprecated alias of :exc:`TimeoutError`,
+   A near-alias of :exc:`TimeoutError`,
    raised when a future operation exceeds the given timeout.
 
    .. versionchanged:: 3.11
 
       This class was made an alias of :exc:`TimeoutError`.
+
+    .. versionchanged:: 3.14
+
+      This class was made unique, but subclasses :exc:`TimeoutError`.
 
 
 .. exception:: BrokenExecutor

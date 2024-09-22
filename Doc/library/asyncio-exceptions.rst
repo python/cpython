@@ -13,12 +13,46 @@ Exceptions
 
 .. exception:: TimeoutError
 
-   A deprecated alias of :exc:`TimeoutError`,
+   A near-alias of :exc:`TimeoutError`,
    raised when the operation has exceeded the given deadline.
 
    .. versionchanged:: 3.11
 
       This class was made an alias of :exc:`TimeoutError`.
+
+    .. versionchanged:: 3.14
+
+      This class was made unique, but subclasses :exc:`TimeoutError`.
+
+
+.. exception:: CancelledError
+
+   The operation has been cancelled.
+
+   This exception can be caught to perform custom operations
+   when asyncio Tasks are cancelled.  In almost all situations the
+   exception must be re-raised.
+
+   .. versionchanged:: 3.8
+
+      :exc:`CancelledError` is now a subclass of :class:`BaseException` rather than :class:`Exception`.
+
+
+.. exception:: InvalidStateError
+
+   Invalid internal state of :class:`Task` or :class:`Future`.
+
+   Can be raised in situations like setting a result value for a
+   *Future* object that already has a result value set.
+
+
+.. exception:: SendfileNotAvailableError
+
+   The "sendfile" syscall is not available for the given
+   socket or file type.
+
+   A subclass of :exc:`RuntimeError`.
+
 
 
 .. exception:: CancelledError
