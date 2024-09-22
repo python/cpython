@@ -4,6 +4,7 @@ import unittest
 from concurrent import futures
 from concurrent.futures._base import (
     PENDING, RUNNING, CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED, Future)
+from contextlib import suppress
 
 from test import support
 
@@ -195,6 +196,16 @@ class FutureTests(BaseTestCase):
                           CANCELLED_AND_NOTIFIED_FUTURE.result, timeout=0)
         self.assertRaises(OSError, EXCEPTION_FUTURE.result, timeout=0)
         self.assertEqual(SUCCESSFUL_FUTURE.result(timeout=0), 42)
+
+        # BPO-42413: Catching TimeoutError should catch futures.TimeoutError
+        with self.assertRaises(TimeoutError) as err:
+            self.assertRaises(futures.TimeoutError,
+                              PENDING_FUTURE.result, timeout=0)
+
+        with self.assertRaises(TimeoutError):
+            # GH-124308: Catching futures.TimeoutError should not allow TimeoutError
+            with suppress(futures.TimeoutError):
+                raise TimeoutError
 
     def test_result_with_success(self):
         # TODO(brian@sweetapp.com): This test is timing dependent.
