@@ -1,6 +1,7 @@
 """Tests for the annotations module."""
 
 import annotationlib
+import collections
 import functools
 import itertools
 import pickle
@@ -278,11 +279,12 @@ class TestForwardRefClass(unittest.TestCase):
         )
 
     def test_fwdref_with_module(self):
-        self.assertIs(ForwardRef("Format", module=annotationlib).evaluate(), Format)
+        self.assertIs(ForwardRef("Format", module="annotationlib").evaluate(), Format)
+        self.assertIs(ForwardRef("Counter", module="collections").evaluate(), collections.Counter)
 
         with self.assertRaises(NameError):
             # If globals are passed explicitly, we don't look at the module dict
-            ForwardRef("Format", module=annotationlib).evaluate(globals={})
+            ForwardRef("Format", module="annotationlib").evaluate(globals={})
 
     def test_fwdref_value_is_cached(self):
         fr = ForwardRef("hello")
