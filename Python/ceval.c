@@ -194,7 +194,7 @@ static void
 lltrace_resume_frame(_PyInterpreterFrame *frame)
 {
     PyObject *fobj = frame->f_funcobj;
-    if (!PyCode_Check(frame->f_executable) ||
+    if (!PyStackRef_CodeCheck(frame->f_executable) ||
         fobj == NULL ||
         !PyFunction_Check(fobj)
     ) {
@@ -784,7 +784,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry_frame.f_globals = (PyObject*)0xaaa3;
     entry_frame.f_builtins = (PyObject*)0xaaa4;
 #endif
-    entry_frame.f_executable = Py_None;
+    entry_frame.f_executable = PyStackRef_None;
     entry_frame.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
     entry_frame.stackpointer = entry_frame.localsplus;
     entry_frame.owner = FRAME_OWNED_BY_CSTACK;
@@ -1681,7 +1681,7 @@ clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     tstate->c_recursion_remaining--;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     _PyFrame_ClearExceptCode(frame);
-    Py_DECREF(frame->f_executable);
+    PyStackRef_CLEAR(frame->f_executable);
     tstate->c_recursion_remaining++;
     _PyThreadState_PopFrame(tstate, frame);
 }
@@ -3110,15 +3110,14 @@ _PyEval_GetANext(PyObject *aiter)
     return awaitable;
 }
 
-PyObject *
-_PyEval_LoadGlobal(PyObject *globals, PyObject *builtins, PyObject *name)
+void
+_PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name, _PyStackRef *writeto)
 {
-    PyObject *res;
     if (PyDict_CheckExact(globals) && PyDict_CheckExact(builtins)) {
-        res = _PyDict_LoadGlobal((PyDictObject *)globals,
+        _PyDict_LoadGlobalStackRef((PyDictObject *)globals,
                                     (PyDictObject *)builtins,
-                                    name);
-        if (res == NULL && !PyErr_Occurred()) {
+                                    name, writeto);
+        if (PyStackRef_IsNull(*writeto) && !PyErr_Occurred()) {
             /* _PyDict_LoadGlobal() returns NULL without raising
                 * an exception if the key doesn't exist */
             _PyEval_FormatExcCheckArg(PyThreadState_GET(), PyExc_NameError,
@@ -3128,13 +3127,16 @@ _PyEval_LoadGlobal(PyObject *globals, PyObject *builtins, PyObject *name)
     else {
         /* Slow-path if globals or builtins is not a dict */
         /* namespace 1: globals */
+        PyObject *res;
         if (PyMapping_GetOptionalItem(globals, name, &res) < 0) {
-            return NULL;
+            *writeto = PyStackRef_NULL;
+            return;
         }
         if (res == NULL) {
             /* namespace 2: builtins */
             if (PyMapping_GetOptionalItem(builtins, name, &res) < 0) {
-                return NULL;
+                *writeto = PyStackRef_NULL;
+                return;
             }
             if (res == NULL) {
                 _PyEval_FormatExcCheckArg(
@@ -3142,8 +3144,8 @@ _PyEval_LoadGlobal(PyObject *globals, PyObject *builtins, PyObject *name)
                             NAME_ERROR_MSG, name);
             }
         }
+        *writeto = PyStackRef_FromPyObjectSteal(res);
     }
-    return res;
 }
 
 PyObject *

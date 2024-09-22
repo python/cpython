@@ -123,8 +123,10 @@ ast
   (Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
 
 * Add support for :func:`copy.replace` for AST nodes.
-
   (Contributed by Bénédikt Tran in :gh:`121141`.)
+
+* Docstrings are now removed from an optimized AST in optimization level 2.
+  (Contributed by Irit Katriel in :gh:`123958`.)
 
 
 ctypes
@@ -250,6 +252,11 @@ symtable
   * :meth:`~symtable.Symbol.is_comp_cell`
 
   (Contributed by Bénédikt Tran in :gh:`120029`.)
+
+unicodedata
+-----------
+
+* The Unicode database has been updated to Unicode 16.0.0.
 
 .. Add improved modules above alphabetically, not here at the end.
 
@@ -546,6 +553,11 @@ New Features
   * :c:func:`Py_InitializeFromInitConfig`
 
   (Contributed by Victor Stinner in :gh:`107954`.)
+
+* Add :c:func:`PyType_GetBaseByToken` and :c:data:`Py_tp_token` slot for easier
+  superclass identification, which attempts to resolve the `type checking issue
+  <https://peps.python.org/pep-0630/#type-checking>`__ mentioned in :pep:`630`
+  (:gh:`124153`).
 
 
 Porting to Python 3.14
