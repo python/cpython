@@ -42,7 +42,8 @@ class CancelledError(Error):
     """The Future was cancelled."""
     pass
 
-# See GH-124308
+# GH-124308, BPO-42413: Catching TimeoutError should catch futures.TimeoutError, but
+# not vice versa.
 class TimeoutError(TimeoutError):
     pass
 
