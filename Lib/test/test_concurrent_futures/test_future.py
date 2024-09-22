@@ -8,7 +8,7 @@ from contextlib import suppress
 
 from test import support
 
-from .util import (
+from test.test_concurrent_futures.util import (
     PENDING_FUTURE, RUNNING_FUTURE, CANCELLED_FUTURE,
     CANCELLED_AND_NOTIFIED_FUTURE, EXCEPTION_FUTURE, SUCCESSFUL_FUTURE,
     BaseTestCase, create_future, setup_module)
