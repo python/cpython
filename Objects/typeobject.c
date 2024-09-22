@@ -5241,7 +5241,7 @@ PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
     Py_ssize_t n = PyTuple_GET_SIZE(mro);
     for (Py_ssize_t i = 1; i < n; i++) {
         PyObject *super = PyTuple_GET_ITEM(mro, i);
-        if(!_PyType_HasFeature((PyTypeObject *)super, Py_TPFLAGS_HEAPTYPE)) {
+        if (!_PyType_HasFeature((PyTypeObject *)super, Py_TPFLAGS_HEAPTYPE)) {
             // Static types in the MRO need to be skipped
             continue;
         }
