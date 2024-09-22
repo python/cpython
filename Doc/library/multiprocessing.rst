@@ -726,6 +726,10 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
    Raised by methods with a timeout when the timeout expires.
 
+    .. versionchanged:: 3.14
+
+        This class now subclasses :exc:`TimeoutError`
+
 Pipes and Queues
 ^^^^^^^^^^^^^^^^
 
