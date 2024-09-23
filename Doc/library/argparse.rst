@@ -1439,34 +1439,6 @@ behavior::
    >>> parser.parse_args('--foo XXX'.split())
    Namespace(bar='XXX')
 
-
-.. _deprecated:
-
-deprecated
-^^^^^^^^^^
-
-During a project's lifetime, some arguments may need to be removed from the
-command line. Before removing them, you should inform
-your users that the arguments are deprecated and will be removed.
-The ``deprecated`` keyword argument of
-:meth:`~ArgumentParser.add_argument`, which defaults to ``False``,
-specifies if the argument is deprecated and will be removed
-in the future.
-For arguments, if ``deprecated`` is ``True``, then a warning will be
-printed to :data:`sys.stderr` when the argument is used::
-
-   >>> import argparse
-   >>> parser = argparse.ArgumentParser(prog='snake.py')
-   >>> parser.add_argument('--legs', default=0, type=int, deprecated=True)
-   >>> parser.parse_args([])
-   Namespace(legs=0)
-   >>> parser.parse_args(['--legs', '4'])  # doctest: +SKIP
-   snake.py: warning: option '--legs' is deprecated
-   Namespace(legs=4)
-
-.. versionadded:: 3.13
-
-
 Action classes
 ^^^^^^^^^^^^^^
 
