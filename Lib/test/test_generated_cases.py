@@ -140,7 +140,7 @@ class TestGeneratedCases(unittest.TestCase):
         input = """
         inst(OP, (value --)) {
             spam(value);
-            KILL(value);
+            DEAD(value);
         }
     """
         output = """
@@ -183,7 +183,7 @@ class TestGeneratedCases(unittest.TestCase):
         input = """
         inst(OP, (value -- res)) {
             res = spam(value);
-            KILL(value);
+            DEAD(value);
         }
     """
         output = """
@@ -205,7 +205,7 @@ class TestGeneratedCases(unittest.TestCase):
         input = """
         inst(OP, (left, right -- res)) {
             res = spam(left, right);
-            KILL_INPUTS();
+            INPUTS_DEAD();
 
         }
     """
@@ -232,7 +232,7 @@ class TestGeneratedCases(unittest.TestCase):
         input = """
         inst(OP, (left, right -- left, result)) {
             result = spam(left, right);
-            KILL_INPUTS();
+            INPUTS_DEAD();
         }
     """
         output = """
@@ -385,7 +385,7 @@ class TestGeneratedCases(unittest.TestCase):
         input = """
         inst(OP, (left, right -- res)) {
             spam(left, right);
-            KILL_INPUTS();
+            INPUTS_DEAD();
             ERROR_IF(cond, label);
             res = 0;
         }
@@ -415,7 +415,7 @@ class TestGeneratedCases(unittest.TestCase):
         input = """
         inst(OP, (left, right -- res)) {
             res = spam(left, right);
-            KILL_INPUTS();
+            INPUTS_DEAD();
             ERROR_IF(cond, label);
         }
     """
@@ -484,12 +484,12 @@ class TestGeneratedCases(unittest.TestCase):
         }
         op(OP2, (extra/2, arg2, left, right -- res)) {
             res = op2(arg2, left, right);
-            KILL_INPUTS();
+            INPUTS_DEAD();
         }
         macro(OP) = OP1 + cache/2 + OP2;
         inst(OP3, (unused/5, arg2, left, right -- res)) {
             res = op3(arg2, left, right);
-            KILL_INPUTS();
+            INPUTS_DEAD();
         }
         family(OP, INLINE_CACHE_ENTRIES_OP) = { OP3 };
     """
@@ -723,7 +723,7 @@ class TestGeneratedCases(unittest.TestCase):
         input = """
         inst(OP, (aa, input if ((oparg & 1) == 1), cc -- xx, output if (oparg & 2), zz)) {
             output = spam(oparg, aa, cc, input);
-            KILL_INPUTS();
+            INPUTS_DEAD();
             xx = 0;
             zz = 0;
         }
@@ -759,13 +759,13 @@ class TestGeneratedCases(unittest.TestCase):
         input = """
         op(A, (left, middle, right --)) {
             use(left, middle, right);
-            KILL_INPUTS();
+            INPUTS_DEAD();
         }
         op(B, (-- deep, extra if (oparg), res)) {
             deep = -1;
             res = 0;
             extra = 1;
-            KILL_INPUTS();
+            INPUTS_DEAD();
         }
         macro(M) = A + B;
     """
@@ -957,7 +957,7 @@ class TestGeneratedCases(unittest.TestCase):
         input = """
         inst(OP, (arg: _PyStackRef * -- out)) {
             out = *arg;
-            KILL(arg);
+            DEAD(arg);
         }
         """
         output = """
@@ -1098,7 +1098,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         op(SECOND, (a, b -- )) {
             use(a, b);
-            KILL_INPUTS();
+            INPUTS_DEAD();
         }
 
         macro(TEST) = FIRST + flush + SECOND;
@@ -1136,16 +1136,16 @@ class TestGeneratedCases(unittest.TestCase):
         input = """
         op(FIRST, (x, y -- a, b)) {
             a = x;
-            KILL(x);
+            DEAD(x);
             b = y;
-            KILL(y);
+            DEAD(y);
         }
 
         op(SECOND, (a, b -- a, b)) {
         }
 
         op(THIRD, (j, k --)) {
-            KILL_INPUTS(); // Mark j and k as used
+            INPUTS_DEAD(); // Mark j and k as used
             ERROR_IF(cond, error);
         }
 
