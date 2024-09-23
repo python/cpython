@@ -235,13 +235,10 @@ static void
 float_dealloc(PyObject *op)
 {
     assert(PyFloat_Check(op));
-    if (PyFloat_CheckExact(op)) {
+    if (PyFloat_CheckExact(op))
         _PyFloat_ExactDealloc(op);
-    }
     else
-    {
         Py_TYPE(op)->tp_free(op);
-    }
 }
 
 double
