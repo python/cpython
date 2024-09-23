@@ -227,6 +227,7 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
     uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
     uint32_t new_local = local + 1;
     if (new_local == 0) {
+        _Py_INCREF_IMMORTAL_STAT_INC();
         // local is equal to _Py_IMMORTAL_REFCNT: do nothing
         return;
     }
@@ -241,6 +242,7 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
     PY_UINT32_T cur_refcnt = op->ob_refcnt_split[PY_BIG_ENDIAN];
     PY_UINT32_T new_refcnt = cur_refcnt + 1;
     if (new_refcnt == 0) {
+        _Py_INCREF_IMMORTAL_STAT_INC();
         // cur_refcnt is equal to _Py_IMMORTAL_REFCNT: the object is immortal,
         // do nothing
         return;
@@ -249,6 +251,7 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 #else
     // Explicitly check immortality against the immortal value
     if (_Py_IsImmortal(op)) {
+        _Py_INCREF_IMMORTAL_STAT_INC();
         return;
     }
     op->ob_refcnt++;
@@ -295,6 +298,7 @@ static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 {
     uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
     if (local == _Py_IMMORTAL_REFCNT_LOCAL) {
+        _Py_DECREF_IMMORTAL_STAT_INC();
         return;
     }
     _Py_DECREF_STAT_INC();
@@ -320,6 +324,7 @@ static inline void Py_DECREF(PyObject *op)
 {
     uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
     if (local == _Py_IMMORTAL_REFCNT_LOCAL) {
+        _Py_DECREF_IMMORTAL_STAT_INC();
         return;
     }
     _Py_DECREF_STAT_INC();
@@ -343,6 +348,7 @@ static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
         _Py_NegativeRefcount(filename, lineno, op);
     }
     if (_Py_IsImmortal(op)) {
+        _Py_DECREF_IMMORTAL_STAT_INC();
         return;
     }
     _Py_DECREF_STAT_INC();
@@ -359,6 +365,7 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.
     if (_Py_IsImmortal(op)) {
+        _Py_DECREF_IMMORTAL_STAT_INC();
         return;
     }
     _Py_DECREF_STAT_INC();
