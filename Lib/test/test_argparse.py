@@ -2111,6 +2111,8 @@ class TestNegativeNumber(ParserTestCase):
         ('--int -1_000_000 --float -1_000_000.0', NS(int=-1000000, float=-1000000.0)),
         ('--float -1_000.0', NS(int=None, float=-1000.0)),
         ('--float -1_000_000.0_0', NS(int=None, float=-1000000.0)),
+        ('--float -.5', NS(int=None, float=-0.5)),
+        ('--float -.5_000', NS(int=None, float=-0.5)),
     ]
 
 class TestInvalidAction(TestCase):
@@ -4956,6 +4958,46 @@ class TestHelpMetavarTypeFormatter(HelpTestCase):
           -c SOME FLOAT
         '''
     version = ''
+
+
+class TestHelpUsageLongSubparserCommand(TestCase):
+    """Test that subparser commands are formatted correctly in help"""
+    maxDiff = None
+
+    def test_parent_help(self):
+        def custom_formatter(prog):
+            return argparse.RawTextHelpFormatter(prog, max_help_position=50)
+
+        parent_parser = argparse.ArgumentParser(
+                prog='PROG',
+                formatter_class=custom_formatter
+        )
+
+        cmd_subparsers = parent_parser.add_subparsers(title="commands",
+                                                      metavar='CMD',
+                                                      help='command to use')
+        cmd_subparsers.add_parser("add",
+                                  help="add something")
+
+        cmd_subparsers.add_parser("remove",
+                                  help="remove something")
+
+        cmd_subparsers.add_parser("a-very-long-command",
+                                  help="command that does something")
+
+        parser_help = parent_parser.format_help()
+        self.assertEqual(parser_help, textwrap.dedent('''\
+            usage: PROG [-h] CMD ...
+
+            options:
+              -h, --help             show this help message and exit
+
+            commands:
+              CMD                    command to use
+                add                  add something
+                remove               remove something
+                a-very-long-command  command that does something
+        '''))
 
 
 # =====================================
