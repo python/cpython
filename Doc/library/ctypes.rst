@@ -2561,12 +2561,12 @@ fields, or any other data types containing pointer type fields.
                          ]
 
       The :attr:`!_fields_` class variable can only be set once.
-      Later assignments will raise an AttributeError.
+      Later assignments will raise an :exc:`AttributeError`.
 
       Additionally, the :attr:`!_fields_` class variable must be defined before
       the structure or union type is first used: an instance or subclass is
       created, :func:`sizeof` is called on it, and so on.
-      Later assignments to :attr:`!_fields_` will raise an AttributeError.
+      Later assignments to :attr:`!_fields_` will raise an :exc:`AttributeError`.
       If :attr:`!_fields_` has not been set before such use,
       the structure or union will have no own fields, as if :attr:`!_fields_`
       was empty.
