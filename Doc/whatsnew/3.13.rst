@@ -2006,7 +2006,6 @@ CPython Bytecode Changes
 C API Changes
 =============
 
-
 New Features
 ------------
 
@@ -2085,7 +2084,7 @@ New Features
   (Contributed by Stefan Behnel and Victor Stinner in :gh:`111262`.)
 
 * Add the :c:func:`PyErr_FormatUnraisable` function
-  as a replacement for  :c:func:`PyErr_WriteUnraisable`,#
+  as an extension to :c:func:`PyErr_WriteUnraisable`
   that allows customizing the warning message.
   (Contributed by Serhiy Storchaka in :gh:`108082`.)
 
@@ -2097,6 +2096,8 @@ New Features
   * :c:func:`PyEval_GetFrameGlobals` replaces :c:func:`PyEval_GetGlobals`
   * :c:func:`PyEval_GetFrameLocals` replaces :c:func:`PyEval_GetLocals`
 
+  (Contributed by Mark Shannon and Tian Gao in :gh:`74929`.)
+
 * Add the :c:func:`Py_GetConstant` and :c:func:`Py_GetConstantBorrowed`
   functions to get :term:`strong <strong reference>`
   or :term:`borrowed <borrowed reference>` references to constants.
@@ -2104,7 +2105,7 @@ New Features
   to the constant zero.
   (Contributed by Victor  Stinner in :gh:`115754`.)
 
-* Add the :c:func:`Py_HashPointer` function to hash a pointer.
+* Add the :c:func:`Py_HashPointer` function to hash a raw pointer.
   (Contributed by Victor Stinner in :gh:`111545`.)
 
 * Add the :c:func:`PyImport_AddModuleRef` function
@@ -2120,15 +2121,15 @@ New Features
 * Add the :c:func:`PyList_GetItemRef` function
   as a replacement for :c:func:`PyList_GetItem`
   that returns a :term:`strong reference` instead of a :term:`borrowed reference`.
+  (Contributed by Sam Gross in :gh:`114329`.)
 
 * Add the :c:func:`PyList_Extend` and :c:func:`PyList_Clear` functions,
-  mirroring the Python :meth:`!list.extend`  and :meth:`!list.clear` methods.
+  mirroring the Python :meth:`!list.extend` and :meth:`!list.clear` methods.
   (Contributed by Victor Stinner in :gh:`111138`.)
 
-* Add the :c:func:`PyLong_AsInt` function
-  as an alternative to :c:func:`PyLong_AsLong`,
-  that stores the result in a C :c:expr:`int` instead of a C :c:expr:`long`.
-  Previously, this was a private function :c:func:`!_PyLong_AsInt`.
+* Add the :c:func:`PyLong_AsInt` function.
+  It behaves similarly to :c:func:`PyLong_AsLong`,
+  but stores the result in a C :c:expr:`int` instead of a C :c:expr:`long`.
   (Contributed by Victor Stinner in :gh:`108014`.)
 
 * Add the :c:func:`PyLong_AsNativeBytes`, :c:func:`PyLong_FromNativeBytes`,
@@ -2147,9 +2148,9 @@ New Features
   if a missing key should not be treated as a failure.
   (Contributed by Serhiy Storchaka in :gh:`106307`.)
 
-* Add :c:func:`PyModule_Add` function,
-  which is similar to :c:func:`PyModule_AddObjectRef`
-  and :c:func:`PyModule_AddObject`, but always steals a reference to the value.
+* Add :c:func:`PyModule_Add` function, which is similar to
+  :c:func:`PyModule_AddObjectRef` and :c:func:`PyModule_AddObject`,
+  but always steals a reference to the value.
   (Contributed by Serhiy Storchaka in :gh:`86493`.)
 
 * Add the :c:func:`PyObject_GenericHash` function
@@ -2189,21 +2190,12 @@ New Features
   as an alternative to :c:func:`PyThreadState_Get()`
   that doesn't kill the process with a fatal error if it is ``NULL``.
   The caller is responsible for checking if the result is ``NULL``.
-  Previously, this was a private function,
-  :c:func:`!_PyThreadState_UncheckedGet`.
   (Contributed by Victor Stinner in :gh:`108867`.)
 
 * Add the :c:func:`PyType_GetFullyQualifiedName` function
   to get the type's fully qualified name.
-  This is equivalent to:
-
-  .. code-block:: python
-
-     if isinstance(type.__module__, str) and type.__module__ != 'builtins':
-         return f'{type.__module__}.{type.__qualname__}'
-     else:
-         return type.__qualname__
-
+  The module name is prepended if ``type.__module__`` is a string
+  and is not equal to either ``'builtins'`` or ``'__main__'``.
   (Contributed by Victor Stinner in :gh:`111696`.)
 
 * Add the :c:func:`PyType_GetModuleName` function
@@ -2247,10 +2239,10 @@ Changed C APIs
   now has type :c:expr:`char * const *` in C
   and :c:expr:`const char * const *` in C++,
   instead of :c:expr:`char **`.
-  This makes these functions compatible with arguments
+  In C++, this makes these functions compatible with arguments
   of type :c:expr:`const char * const *`, :c:expr:`const char **`,
-  or :c:expr:`char * const *` in C++ and :c:expr:`char * const *` in C
-  without an explicit type cast.
+  or :c:expr:`char * const *` without an explicit type cast.
+  In C, the functions only support arguments of type :c:expr:`char * const *`.
   This can be overridden with the :c:macro:`PY_CXX_CONST` macro.
   (Contributed by Serhiy Storchaka in :gh:`65210`.)
 
@@ -2268,8 +2260,6 @@ Changed C APIs
 
   See :pep:`737` for more information.
   (Contributed by Victor Stinner in :gh:`111696`.)
-
-.. TODO: other changes
 
 * You no longer have to define the ``PY_SSIZE_T_CLEAN`` macro before
   including :file:`Python.h` when using ``#`` formats in
