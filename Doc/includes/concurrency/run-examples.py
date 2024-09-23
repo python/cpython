@@ -4,13 +4,17 @@ The examples take advantage of the literalinclude directive's
 :start-after: and :end-before: options.
 """
 
+from collections import namedtuple
 import os.path
+import re
+import shlex
+import subprocess
 import sys
 
 
-IMPLS_DIR = os.path.join(os.path.dirname(__file__), 'concurrency')
-if IMPLS_DIR not in sys.path:
-    sys.path.insert(0, IMPLS_DIR)
+IMPLS_DIR = os.path.dirname(__file__)
+#if IMPLS_DIR not in sys.path:
+#    sys.path.insert(0, IMPLS_DIR)
 
 
 class example(staticmethod):
@@ -348,47 +352,323 @@ class Workload3(WorkloadExamples):
 # [end-w3-cf]
 
 
+ALL = object()
+
+
+def registry_resolve(registry, name, kind=None):
+    orig = name
+    if name is None:
+        name = ''
+    while True:
+        try:
+            return name, registry[name]
+        except KeyError:
+            # Try aliases.
+            try:
+                name = registry[f'|{name}|']
+            except KeyError:
+                raise ValueError(f'unsupported {kind or "???"} registry key {name!r}')
+
+
+def registry_resolve_all(registry, name=ALL, kind=None):
+    if name is ALL or name is registry:
+        for pair in registry.items():
+            name, _ = pair
+            if name.startswith('|'):
+                continue
+            yield pair
+    else:
+        yield registry_resolve(registry, name, kind)
+
+
+def registry_render(registry, kind=None, indent='', vfmt=None, parent=None):
+    kind = f'{kind} - ' if kind else ''
+    entries = {}
+    aliases_by_target = {}
+    default = None
+    for name, value in registry.items():
+        if name == '||':
+            default, _ = registry_resolve(registry, value)
+        elif name.startswith('|'):
+            target, _ = registry_resolve(registry, value)
+            try:
+                aliases = aliases_by_target[target]
+            except KeyError:
+                aliases = aliases_by_target[target] = []
+            aliases.append(name.strip('|'))
+        else:
+            entries[name] = value
+    for name, spec in entries.items():
+        label = f'{parent}.{name}' if parent else name
+        line = f'{indent}* {kind}{label}'
+        if vfmt:
+            specstr = vfmt(spec, name) if callable(vfmt) else vfmt.format(spec)
+            line = f'{line:30} => {specstr}'
+        if name == default:
+            line = f'{line:60} (default)'
+        aliases = aliases_by_target.get(name)
+        if aliases:
+            line = f'{line:70} (aliases: {", ".join(aliases)})'
+        yield line, name, spec
+
+
+EXAMPLES = {
+    'grep': {
+        'IMPLS': {
+            '||': 'sequential',
+            'sequential': {
+                '||': 'basic',
+                'basic': '<>',
+            },
+            'threads': {
+                '||': 'basic',
+                'basic': '<>',
+                'cf': '<>',
+            },
+            'interpreters': {
+                '||': 'basic',
+                'basic': '<>',
+                #'cf': '<>',
+            },
+            '|async|': 'asyncio',
+            'asyncio': {
+                '||': 'basic',
+                'basic': '<>',
+            },
+            'multiprocessing': {
+                '||': 'basic',
+                'basic': '<>',
+                #'cf': '<>',
+            },
+        },
+        'OPTS': {
+            '||': 'min',
+            '|min|': 'min.all',
+            'min.all': "-r '.. index::' .",
+            'min.mixed': 'help Makefile make.bat requirements.txt',
+        },
+    },
+}
+
+
+class Selection(namedtuple('Selection', 'app model impl')):
+
+    _opts = None
+    _cmd = None
+    _executable = None
+    _subargv = None
+    _subargvstr = None
+    _defaultimpl = None
+
+    REGEX = re.compile(rf"""
+        ^
+        ( \* | \w+ )  # <app>
+        (?:
+            \.
+            ( \* | \w+ )  # <model>
+            (?:
+                \.
+                ( \* | \w+ )  # <impl>
+             )?
+         )?
+        (?:
+            :
+            ( \S+ (?: \s+ \S+ )? )  # <opts>
+         )?
+        \s*
+        $
+        """, re.VERBOSE)
+
+    @classmethod
+    def parse(cls, text):
+        m = cls.REGEX.match(text)
+        if not m:
+            raise ValueError(f'unsupported selection {text!r}')
+        app, model, impl, opts = m.groups()
+
+        if app == '*':
+            app = ALL
+        if model == '*':
+            model = ALL
+        if impl == '*':
+            impl = ALL
+        if opts == '*':
+            opts = ALL
+        self = cls(app, model, impl, opts)
+        return self
+
+    @classmethod
+    def _from_resolved(cls, app, model, impl, opts, cmd, argv,
+                       defaultimpl=False,
+                       ):
+        self = cls.__new__(cls, app, model, impl, opts)
+        if cmd == '<>':
+            cmd = f'{app}-{model}' if defaultimpl else f'{app}-{model}-{impl}'
+            executable = os.path.join(IMPLS_DIR, cmd + '.py')
+        else:
+            executable = cmd
+        self._cmd = cmd
+        self._executable = executable
+        if isinstance(argv, str):
+            self._subargvstr = argv
+        else:
+            self._subargv = tuple(argv)
+        self._defaultimpl = defaultimpl
+        return self
+
+    def __new__(cls, app, model, impl, opts=None):
+        self = super().__new__(cls, app, model or None, impl or None)
+        self._opts = opts or None
+        return self
+
+    @property
+    def opts(self):
+        return self._opts
+
+    @property
+    def cmd(self):
+        for bad in (ALL, None):
+            if bad in self or self._opts is bad:
+                raise RuntimeError('not resolved')
+        return self._cmd
+
+    @property
+    def executable(self):
+        for bad in (ALL, None):
+            if bad in self or self._opts is bad:
+                raise RuntimeError('not resolved')
+        return self._executable
+
+    @property
+    def subargv(self):
+        for bad in (ALL, None):
+            if bad in self or self._opts is bad:
+                raise RuntimeError('not resolved')
+        if self._subargv is None:
+            self._subargv = tuple(shlex.split(self._subargvstr))
+        return self._subargv
+
+    @property
+    def argv(self):
+        for bad in (ALL, None):
+            if bad in self or self._opts is bad:
+                raise RuntimeError('not resolved')
+        argv = [self._executable]
+        if self._executable.endswith('.py'):
+            argv.insert(0, sys.executable)
+        if self._subargv is None:
+            self._subargv = shlex.split(self._subargvstr)
+        argv.extend(self._subargv)
+        return argv
+
+    def resolve(self, argv=None):
+        cls = type(self)
+        if self._cmd and self._cmd is not ALL:
+            assert self._argv is not ALL
+            if argv is None:
+                resolved = self
+            else:
+                default = self._defaultimpl
+                resolved = cls._from_resolved(
+                            *self, self._opts, self._cmd, argv, default)
+            yield resolved
+        else:
+            assert self.app is not None
+            requested = argv
+            resolve = registry_resolve_all
+            for app, app_spec in resolve(EXAMPLES, self.app, 'app'):
+                models = app_spec['IMPLS']
+                all_opts = app_spec['OPTS']
+                for model, impls in resolve(models, self.model, 'model'):
+                    default, _ = registry_resolve(impls, '')
+                    for impl, cmd in resolve(impls, self.impl, 'impl'):
+                        if requested:
+                            argvs = [('???', requested)]
+                        else:
+                            argvs = resolve(all_opts, self._opts, 'opts')
+                        isdefault = (impl == default)
+                        for opts, argv in argvs:
+                            yield cls._from_resolved(
+                                app, model, impl, opts, cmd, argv, isdefault)
+
+
 #######################################
 # A script to run the examples
 #######################################
 
-if __name__ == '__main__':
-    # Run (all) the examples.
-    argv = sys.argv[1:]
-    if argv:
-        classname, _, funcname = argv[0].rpartition('.')
-        requested = (classname, funcname)
-    else:
-        requested = None
+USAGE = 'run-examples [-h|--help] [SELECTION ..] [-- ..]'
+HELP = """
+SELECTION is one of the following:
 
-    div1 = '#' * 40
-    div2 = '#' + '-' * 39
-    last = None
-    for func, cls in example.registry:
-        if requested:
-            classname, funcname = requested
-            if classname:
-                if cls.__name__ != classname:
-                    continue
-                if func.__name__ != funcname:
-                    continue
-            else:
-                if func.__name__ != funcname:
-                    if cls.__name__ != funcname:
-                        continue
+  APP
+  APP.MODEL
+  APP.MODEL.IMPL
+  APP:OPTS
+  APP.MODEL:OPTS
+  APP.MODEL.IMPL:OPTS
+
+where each field is a known name or the wildcard (*).
+"""[:-1]
+
+if __name__ == '__main__':
+    argv = sys.argv[1:]
+    remainder = None
+    if '--' in argv:
+        index = argv.index('--')
+        remainder = argv[index+1:]
+        argv = argv[:index]
+    if '-h' in argv or '--help' in argv:
+        print(USAGE)
+        print(HELP)
         print()
-        if cls is not last:
-            last = cls
-            print(div1)
-            print(f'# {cls.__name__}')
-            print(div1)
+        print('Supported selection field values:')
+        print()
+        indent = ' ' * 2
+        def render(reg, kind, depth=0, vfmt=None, parent=None):
+            for l, _, s in registry_render(
+                    reg, kind, indent*depth, vfmt, parent):
+                yield l, s
+        for line, app, app_spec in registry_render(EXAMPLES, 'app'):
+            print(line)
+            app_impls = app_spec['IMPLS']
+            print(f'{indent}* concurrency models:')
+            for line, _ in render(app_impls, None, 2):
+                print(line.format(''))
+            print(f'{indent}* implementations:')
+            for model, impls in registry_resolve_all(app_impls, kind='model'):
+                default, _ = registry_resolve(impls, '')
+                def vfmt_impl(cmd, impl, app=app, model=model):
+                    opts, argv = '???', ()
+                    sel = Selection._from_resolved(
+                            app, model, impl, opts, cmd, argv, impl==default)
+                    if sel.cmd != sel.executable:
+                        return os.path.basename(sel.executable)
+                    else:
+                        return sel.executable
+                for line, cmd in render(impls, None, 2, vfmt_impl, model):
+                    print(line)
+            print(f'{indent}* argv options:')
+            for line, _ in render(app_spec['OPTS'], None, 2, f'{app} {{}}'):
+                print(line)
+        sys.exit(0)
+
+    if not argv:
+        argv = ['*.*.*:*']
+
+    div = '#' * 40
+    for text in argv:
+        sel = Selection.parse(text)
+        for sel in sel.resolve(remainder or None):
             print()
-        print(div2)
-        print(f'# {func.__name__}')
-        print(div2)
-        print()
-        try:
-            func()
-        except Exception:
-            import traceback
-            traceback.print_exc()
+            print(div)
+            print('# app:    ', sel.app)
+            print('# model:  ', sel.model)
+            print('# impl:   ', sel.impl)
+            print('# opts:   ', sel.opts)
+            print('# script: ', sel.executable)
+            print('# argv:   ', sel.app, shlex.join(sel.subargv))
+            print(div)
+            print()
+            proc = subprocess.run(sel.argv)
+            print()
+            print('# returncode:', proc.returncode)
