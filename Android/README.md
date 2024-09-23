@@ -133,4 +133,4 @@ until you re-run `android.py make-host` or `build`.
 
 ## Using in your own app
 
-See Doc/using/android.rst.
+See `Doc/using/android.rst`.
