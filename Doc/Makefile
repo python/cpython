@@ -182,8 +182,8 @@ venv:
 		echo "The venv has been created in the $(VENVDIR) directory"; \
 	fi
 
-.PHONY: dist-nohtml
-dist-nohtml: dist-text dist-pdf dist-epub dist-texinfo
+.PHONY: dist-no-html
+dist-no-html: dist-text dist-pdf dist-epub dist-texinfo
 
 .PHONY: dist
 dist:
