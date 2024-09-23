@@ -3,7 +3,7 @@
   What's New In Python 3.13
 ****************************
 
-:Editor: Thomas Wouters
+:Editors: Adam Turner and Thomas Wouters
 
 .. Rules for maintenance:
 
@@ -52,12 +52,6 @@ For full details, see the :ref:`changelog <changelog>`.
 .. seealso::
 
    :pep:`719` -- Python 3.13 Release Schedule
-
-.. note::
-
-   Prerelease users should be aware that this document is currently in draft
-   form. It will be updated substantially as Python 3.13 moves towards release,
-   so it's worth checking back even after reading earlier versions.
 
 
 Summary -- Release Highlights
@@ -142,7 +136,7 @@ Significant improvements in the standard library:
 * The :mod:`copy` module now has a :func:`copy.replace` function,
   with support for many builtin types and any class defining
   the :func:`~object.__replace__` method.
-* The :mod:`dbm.sqlite3` module is now the default :mod:`dbm` backend.
+* The new :mod:`dbm.sqlite3` module is now the default :mod:`dbm` backend.
 * The :mod:`os` module has a :ref:`suite of new functions <os-timerfd>`
   for working with Linux's timer notification file descriptors.
 * The :mod:`random` module now has a :ref:`command-line interface <random-cli>`.
@@ -167,7 +161,7 @@ New typing features:
 * :pep:`696`: Type parameters (:data:`typing.TypeVar`, :data:`typing.ParamSpec`,
   and :data:`typing.TypeVarTuple`) now support defaults.
 * :pep:`702`: The new :func:`warnings.deprecated` decorator adds support
-  for marking deprecations in the type system.
+  for marking deprecations in the type system and at runtime.
 * :pep:`705`: :data:`typing.ReadOnly` can be used to mark an item of a
   :class:`typing.TypedDict` as read-only for type checkers.
 * :pep:`742`: :data:`typing.TypeIs` provides more intuitive
@@ -177,14 +171,14 @@ Platform support:
 
 * :pep:`730`: Apple's iOS is now an :ref:`officially supported platform
   <whatsnew313-platform-support>`, at :pep:`tier 3 <11#tier-3>`.
-  Official Android support (:pep:`738`) is in the works as well.
+  Official Android support (:pep:`738`) is also in the works.
 * ``wasm32-wasi`` is now supported as a :pep:`tier 2 <11#tier-2>` platform.
 * ``wasm32-emscripten`` is no longer an officially supported platform.
 
 Important removals:
 
 * :ref:`PEP 594 <whatsnew313-pep594>`: The remaining 19 "dead batteries"
-  have been removed from the standard library:
+  (legacy stdlib modules) have been removed from the standard library:
   :mod:`!aifc`, :mod:`!audioop`, :mod:`!cgi`, :mod:`!cgitb`, :mod:`!chunk`,
   :mod:`!crypt`, :mod:`!imghdr`, :mod:`!mailcap`, :mod:`!msilib`, :mod:`!nis`,
   :mod:`!nntplib`, :mod:`!ossaudiodev`, :mod:`!pipes`, :mod:`!sndhdr`,
@@ -192,8 +186,8 @@ Important removals:
 * Remove the :program:`2to3` tool and :mod:`!lib2to3` module
   (deprecated in Python 3.11).
 * Remove the :mod:`!tkinter.tix` module (deprecated in Python 3.6).
-* Remove :func:`!locale.resetlocale`.
-* Remove :mod:`!typing.io` and :mod:`!typing.re`.
+* Remove the :func:`!locale.resetlocale` function.
+* Remove the :mod:`!typing.io` and :mod:`!typing.re` namespaces.
 * Remove chained :class:`classmethod` descriptors.
 
 Release schedule changes:
@@ -338,7 +332,7 @@ designed with threading in mind will run faster on multi-core hardware.
 expect some bugs and a substantial single-threaded performance hit.
 Free-threaded builds of CPython support optionally running with the GIL
 enabled at runtime using the environment variable :envvar:`PYTHON_GIL` or
-the command-line option :option:`-X gil`.
+the command-line option :option:`-X gil=1`.
 
 To check if the current interpreter supports free-threading, :option:`python -VV <-V>`
 and :attr:`sys.version` contain "experimental free-threading build".
@@ -439,14 +433,14 @@ Defined mutation semantics for :py:func:`locals`
 Historically, the expected result of mutating the return value of
 :func:`locals` has been left to individual Python implementations to define.
 Starting from Python 3.13, :pep:`667` standardises
-the historical behaviour of CPython for most code execution scopes,
+the historical behavior of CPython for most code execution scopes,
 but changes :term:`optimized scopes <optimized scope>`
 (functions, generators, coroutines, comprehensions, and generator expressions)
 to explicitly return independent snapshots of the currently assigned local
 variables, including locally referenced nonlocal variables captured in closures.
 
 This change to the semantics of :func:`locals` in optimized scopes also
-affects the default behaviour of code execution functions that implicitly
+affects the default behavior of code execution functions that implicitly
 target :func:`!locals` if no explicit namespace is provided
 (such as :func:`exec` and :func:`eval`).
 In previous versions, whether or not changes could be accessed by calling
@@ -610,6 +604,9 @@ Other Language Changes
   the value of the *optimize* argument.
   (Contributed by Irit Katriel in :gh:`108113`).
 
+* Add a :attr:`~property.__name__` attribute on :class:`property` objects.
+  (Contributed by Eugene Toder in :gh:`101860`.)
+
 * Add :exc:`PythonFinalizationError`, a new exception derived from
   :exc:`RuntimeError` and used to signal when operations are blocked
   during :term:`finalization <interpreter shutdown>`.
@@ -635,9 +632,6 @@ Other Language Changes
   for compressed and archived file-like objects in
   the :mod:`bz2`, :mod:`lzma`, :mod:`tarfile`, and :mod:`zipfile` modules.
   (Contributed by Serhiy Storchaka in :gh:`115961`.)
-
-* Add a :attr:`~property.__name__` attribute on :class:`property` objects.
-  (Contributed by Eugene Toder in :gh:`101860`.)
 
 
 New Modules
@@ -678,7 +672,7 @@ ast
 
 * The constructors of node types in the :mod:`ast` module are now
   stricter in the arguments they accept,
-  with more intuitive behaviour when arguments are omitted.
+  with more intuitive behavior when arguments are omitted.
 
   If an optional field on an AST node is not included as an argument when
   constructing an instance, the field will now be set to ``None``. Similarly,
@@ -889,7 +883,7 @@ email
   return ``('', '')`` pairs in more situations where invalid email addresses
   are encountered instead of potentially inaccurate values.
   The two functions have a new optional *strict* parameter (default ``True``).
-  To get the old behaviour (accepting malformed input), use ``strict=False``.
+  To get the old behavior (accepting malformed input), use ``strict=False``.
   ``getattr(email.utils, 'supports_strict_parsing', False)`` can be used
   to check if the *strict* parameter is available.
   (Contributed by Thomas Dwyer and Victor Stinner for :gh:`102988` to improve
@@ -2055,7 +2049,7 @@ New Features
   (Contributed by Victor Stinner and Petr Viktorin in :gh:`110850`.)
 
 * Add the :c:func:`PyDict_ContainsString` function
-  with the same behaviour as :c:func:`PyDict_Contains`,
+  with the same behavior as :c:func:`PyDict_Contains`,
   but *key* is specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
   rather than a :c:expr:`PyObject*`.
   (Contributed by Victor Stinner in :gh:`108314`.)
@@ -2585,7 +2579,7 @@ Changes in the Python API
 
   * Calling :func:`locals` in an :term:`optimized scope` now produces an
     independent snapshot on each call, and hence no longer implicitly updates
-    previously returned references. Obtaining the legacy CPython behaviour now
+    previously returned references. Obtaining the legacy CPython behavior now
     requires explicit calls to update the initially returned dictionary with the
     results of subsequent calls to :func:`!locals`. Code execution functions that
     implicitly target :func:`!locals` (such as ``exec`` and ``eval``) must be
