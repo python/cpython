@@ -1046,7 +1046,7 @@ class SysModuleTest(unittest.TestCase):
             self.assertIn(b"free PyDictObjects", err)
             if with_pymalloc:
                 self.assertIn(b'Small block threshold', err)
-            if not with_freelists and not with_pymalloc:
+            if not with_pymalloc:
                 self.assertFalse(err)
 
         # The function has no parameter
