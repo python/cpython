@@ -502,6 +502,8 @@ are not tier 3 supported platforms, but will have best-effort support.
 (PEP written and implementation contributed by Malcolm Smith in
 :gh:`116622`.)
 
+ .. seealso:: :pep:`730`, :pep:`738`
+ 
 
 .. _whatsnew313-incremental-gc:
 

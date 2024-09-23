@@ -14,7 +14,7 @@ On Android, there is no concept of installing as a system resource. The only uni
 of software distribution is an "app". There is also no console where you could
 run a :program:`python` executable, or interact with a Python REPL.
 
-As a result, the only way you can use Python on Android is in embedded mode - that
+As a result, the only way you can use Python on Android is in embedded mode --- that
 is, by writing a native Android application, and embedding a Python interpreter
 using ``libpython``, and invoking Python code using the :ref:`Python embedding
 API <embedding>`. The full Python interpreter, the standard library, and all
