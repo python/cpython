@@ -154,7 +154,7 @@ Important deprecations, removals or restrictions:
   reducing the size of every :class:`str` object by at least 8 bytes.
 
 * :pep:`632`: Remove the :mod:`!distutils` package.
-  See `the migration guide <https://peps.python.org/pep-0632/#migration-advice>`_
+  See :pep:`the migration guide <0632#migration-advice>`
   for advice replacing the APIs it provided.
   The third-party `Setuptools <https://setuptools.pypa.io/en/latest/deprecated/distutils-legacy.html>`__
   package continues to provide :mod:`!distutils`,
