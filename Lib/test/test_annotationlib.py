@@ -299,6 +299,24 @@ class TestForwardRefClass(unittest.TestCase):
         self.assertIs(fr.evaluate(globals={"hello": str}), str)
         self.assertIs(fr.evaluate(), str)
 
+    def test_fwdref_with_owner(self):
+        self.assertEqual(
+            ForwardRef("Counter[int]", owner=collections).evaluate(),
+            collections.Counter[int],
+        )
+
+    def test_name_lookup_without_eval(self):
+        # test the codepath where we look up simple names directly in the
+        # namespaces without going through eval()
+        self.assertIs(ForwardRef("int").evaluate(), int)
+        self.assertIs(ForwardRef("int").evaluate(locals={"int": str}), str)
+        self.assertIs(ForwardRef("int").evaluate(locals={"int": float}, globals={"int": str}), float)
+        self.assertIs(ForwardRef("int").evaluate(globals={"int": str}), str)
+
+        with self.assertRaises(NameError):
+            ForwardRef("doesntexist").evaluate()
+
+
 
 class TestGetAnnotations(unittest.TestCase):
     def test_builtin_type(self):
