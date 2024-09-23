@@ -2837,26 +2837,26 @@ class TestMutuallyExclusiveGroupErrors(TestCase):
         self.assertEqual(parser.format_help(), textwrap.dedent(expected))
 
     def test_optional_order(self):
-        parser = ErrorRaisingArgumentParser(prog="PROG")
+        parser = ErrorRaisingArgumentParser(prog='PROG')
         group = parser.add_mutually_exclusive_group(required=True)
-        group.add_argument("-", dest="FOO")
-        group.add_argument("bar", nargs="?")
+        group.add_argument('--foo')
+        group.add_argument('bar', nargs='?')
         expected = '''\
-            usage: PROG [-h] (- FOO | bar)
+            usage: PROG [-h] (--foo FOO | bar)
 
             positional arguments:
               bar
 
             options:
               -h, --help  show this help message and exit
-              - FOO
+              --foo FOO
               '''
         self.assertEqual(parser.format_help(), textwrap.dedent(expected))
 
-        parser = ErrorRaisingArgumentParser(prog="PROG")
+        parser = ErrorRaisingArgumentParser(prog='PROG')
         group = parser.add_mutually_exclusive_group(required=True)
-        group.add_argument("bar", nargs="?")
-        group.add_argument("-", dest="FOO")
+        group.add_argument('bar', nargs='?')
+        group.add_argument('--foo')
         self.assertEqual(parser.format_help(), textwrap.dedent(expected))
 
     def test_empty_group(self):
