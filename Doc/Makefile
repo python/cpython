@@ -182,13 +182,26 @@ venv:
 		echo "The venv has been created in the $(VENVDIR) directory"; \
 	fi
 
+.PHONY: dist-no-html
+dist-no-html: dist-text dist-pdf dist-epub dist-texinfo
+
 .PHONY: dist
 dist:
 	rm -rf dist
 	mkdir -p dist
+	$(MAKE) dist-html
+	$(MAKE) dist-text
+	$(MAKE) dist-pdf
+	$(MAKE) dist-epub
+	$(MAKE) dist-texinfo
 
+.PHONY: dist-html
+dist-html:
 	# archive the HTML
 	@echo "Building HTML..."
+	mkdir -p dist
+	rm -rf build/html
+	find dist -name 'python-$(DISTVERSION)-docs-html*' -exec rm -rf {} \;
 	$(MAKE) html
 	cp -pPR build/html dist/python-$(DISTVERSION)-docs-html
 	tar -C dist -cf dist/python-$(DISTVERSION)-docs-html.tar python-$(DISTVERSION)-docs-html
@@ -198,8 +211,13 @@ dist:
 	rm dist/python-$(DISTVERSION)-docs-html.tar
 	@echo "Build finished and archived!"
 
+.PHONY: dist-text
+dist-text:
 	# archive the text build
 	@echo "Building text..."
+	mkdir -p dist
+	rm -rf build/text
+	find dist -name 'python-$(DISTVERSION)-docs-text*' -exec rm -rf {} \;
 	$(MAKE) text
 	cp -pPR build/text dist/python-$(DISTVERSION)-docs-text
 	tar -C dist -cf dist/python-$(DISTVERSION)-docs-text.tar python-$(DISTVERSION)-docs-text
@@ -209,9 +227,13 @@ dist:
 	rm dist/python-$(DISTVERSION)-docs-text.tar
 	@echo "Build finished and archived!"
 
+.PHONY: dist-pdf
+dist-pdf:
 	# archive the A4 latex
 	@echo "Building LaTeX (A4 paper)..."
+	mkdir -p dist
 	rm -rf build/latex
+	find dist -name 'python-$(DISTVERSION)-docs-pdf*' -exec rm -rf {} \;
 	$(MAKE) latex PAPER=a4
 	# remove zip & bz2 dependency on all-pdf,
 	# as otherwise the full latexmk process is run twice.
@@ -222,16 +244,24 @@ dist:
 	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-a4.tar.bz2
 	@echo "Build finished and archived!"
 
+.PHONY: dist-epub
+dist-epub:
 	# copy the epub build
 	@echo "Building EPUB..."
+	mkdir -p dist
 	rm -rf build/epub
+	rm -f dist/python-$(DISTVERSION)-docs.epub
 	$(MAKE) epub
 	cp -pPR build/epub/Python.epub dist/python-$(DISTVERSION)-docs.epub
 	@echo "Build finished and archived!"
 
+.PHONY: dist-texinfo
+dist-texinfo:
 	# archive the texinfo build
 	@echo "Building Texinfo..."
+	mkdir -p dist
 	rm -rf build/texinfo
+	find dist -name 'python-$(DISTVERSION)-docs-texinfo*' -exec rm -rf {} \;
 	$(MAKE) texinfo
 	$(MAKE) info --directory=build/texinfo
 	cp -pPR build/texinfo dist/python-$(DISTVERSION)-docs-texinfo
