@@ -317,7 +317,6 @@ class TestForwardRefClass(unittest.TestCase):
             ForwardRef("doesntexist").evaluate()
 
 
-
 class TestGetAnnotations(unittest.TestCase):
     def test_builtin_type(self):
         self.assertEqual(annotationlib.get_annotations(int), {})
