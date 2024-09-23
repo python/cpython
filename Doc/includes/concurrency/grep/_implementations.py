@@ -155,7 +155,7 @@ def search_interpreters_basic(filenames, regex, opts):
             if len(workers) < MAX_FILES:
                 interp = new_interpreter()
                 workers.append(interp)
-            ready_workers.put(interp)
+                ready_workers.put(interp)
             return ready_workers.get()  # blocking
 
         def do_work(filename, matches, interp):
