@@ -1,0 +1,2 @@
+Modernize the :func:`!asyncio.staggered.staggered_task` function to now
+support :attr:`asyncio.eager_task_factory` and use :class:`asyncio.TaskGroup` internally.
