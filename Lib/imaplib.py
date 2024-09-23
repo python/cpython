@@ -1703,7 +1703,7 @@ class IMAP4_stream(IMAP4):
         self.sock = None
         self.file = None
         self.process = subprocess.Popen(self.command,
-            bufsize=0,
+            bufsize=0,  # Unbuffered stdin/stdout, for select() compatibility
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             shell=True, close_fds=True)
         self.writefile = self.process.stdin
