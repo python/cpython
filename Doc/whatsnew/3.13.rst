@@ -520,7 +520,7 @@ old generation, instead of collecting one or more generations.
 
 The behavior of :func:`!gc.collect` changes slightly:
 
-* ``gc.collect(1)``: Performs an increment of GC,
+* ``gc.collect(1)``: Performs an increment of garbage collection,
   rather than collecting generation 1.
 * Other calls to :func:`!gc.collect` are unchanged.
 
@@ -2250,6 +2250,19 @@ Changed C APIs
   non-ASCII keyword parameter names.
   (Contributed by Serhiy Storchaka in :gh:`110815`.)
 
+* The :c:func:`!PyCode_GetFirstFree` function is now unstable API
+  and is now named :c:func:`PyUnstable_Code_GetFirstFree`.
+  (Contributed by Bogdan Romanyuk in :gh:`115781`.)
+
+* The :c:func:`PyDict_GetItem`, :c:func:`PyDict_GetItemString`,
+  :c:func:`PyMapping_HasKey`, :c:func:`PyMapping_HasKeyString`,
+  :c:func:`PyObject_HasAttr`, :c:func:`PyObject_HasAttrString`,
+  and :c:func:`PySys_GetObject` functions,
+  each of which clears all errors which occurred when calling them
+  now reports these errors using :func:`sys.unraisablehook`.
+  You may replace them with other functions as recommended in the documentation.
+  (Contributed by Serhiy Storchaka in :gh:`106672`.)
+
 * Add support for the ``%T``, ``%#T``, ``%N`` and ``%#N`` formats
   to :c:func:`PyUnicode_FromFormat`:
 
@@ -2555,63 +2568,75 @@ that may require changes to your code.
 Changes in the Python API
 -------------------------
 
-* An :exc:`OSError` is now raised by :func:`getpass.getuser` for any failure to
-  retrieve a username, instead of :exc:`ImportError` on non-Unix platforms or
-  :exc:`KeyError` on Unix platforms where the password database is empty.
+.. _pep667-porting-notes-py:
 
-* The :mod:`threading` module now expects the :mod:`!_thread` module to have
-  an ``_is_main_interpreter`` attribute.  It is a function with no
-  arguments that returns ``True`` if the current interpreter is the
-  main interpreter.
+* :ref:`PEP 667 <whatsnew313-locals-semantics>` introduces several changes
+  to the semantics of :func:`locals` and :attr:`f_locals <frame.f_locals>`:
 
-  Any library or application that provides a custom ``_thread`` module
-  must provide :func:`!_is_main_interpreter`, just like the module's
-  other "private" attributes.
-  (See :gh:`112826`.)
+  * Calling :func:`locals` in an :term:`optimized scope` now produces an
+    independent snapshot on each call, and hence no longer implicitly updates
+    previously returned references. Obtaining the legacy CPython behaviour now
+    requires explicit calls to update the initially returned dictionary with the
+    results of subsequent calls to :func:`!locals`. Code execution functions that
+    implicitly target :func:`!locals` (such as ``exec`` and ``eval``) must be
+    passed an explicit namespace to access their results in an optimized scope.
+    (Changed as part of :pep:`667`.)
 
-* :class:`mailbox.Maildir` now ignores files with a leading dot.
-  (Contributed by Zackery Spytz in :gh:`65559`.)
+  * Calling :func:`locals` from a comprehension at module or class scope
+    (including via ``exec`` or ``eval``) once more behaves as if the comprehension
+    were running as an independent nested function (i.e. the local variables from
+    the containing scope are not included). In Python 3.12, this had changed
+    to include the local variables from the containing scope when implementing
+    :pep:`709`. (Changed as part of :pep:`667`.)
 
-* :meth:`pathlib.Path.glob` and :meth:`~pathlib.Path.rglob` now return both
-  files and directories if a pattern that ends with "``**``" is given, rather
-  than directories only. Users may add a trailing slash to match only
-  directories.
+  * Accessing :attr:`FrameType.f_locals <frame.f_locals>` in an
+    :term:`optimized scope` now returns a write-through proxy rather than a
+    snapshot that gets updated at ill-specified times. If a snapshot is desired,
+    it must be created explicitly with ``dict`` or the proxy's ``.copy()`` method.
+    (Changed as part of :pep:`667`.)
 
-* The value of the :attr:`!mode` attribute of :class:`gzip.GzipFile` was
-  changed from integer (``1`` or ``2``) to string (``'rb'`` or ``'wb'``).
-  The value of the :attr:`!mode` attribute of the readable file-like object
-  returned by :meth:`zipfile.ZipFile.open` was changed from ``'r'`` to ``'rb'``.
-  (Contributed by Serhiy Storchaka in :gh:`115961`.)
-
-* :class:`functools.partial` now emits a :exc:`FutureWarning` when it is
-  used as a method.
-  Its behavior will be changed in future Python versions.
+* :class:`functools.partial` now emits a :exc:`FutureWarning`
+  when used as a method.
+  The behavior will change in future Python versions.
   Wrap it in :func:`staticmethod` if you want to preserve the old behavior.
   (Contributed by Serhiy Storchaka in :gh:`121027`.)
 
-.. _pep667-porting-notes-py:
+* The :ref:`garbage collector is now incremental <whatsnew313-incremental-gc>`,
+  which means that the behavior of :func:`gc.collect` changes slightly:
 
-* Calling :func:`locals` in an :term:`optimized scope` now produces an
-  independent snapshot on each call, and hence no longer implicitly updates
-  previously returned references. Obtaining the legacy CPython behaviour now
-  requires explicit calls to update the initially returned dictionary with the
-  results of subsequent calls to :func:`!locals`. Code execution functions that
-  implicitly target :func:`!locals` (such as ``exec`` and ``eval``) must be
-  passed an explicit namespace to access their results in an optimized scope.
-  (Changed as part of :pep:`667`.)
+  * ``gc.collect(1)``: Performs an increment of garbage collection,
+    rather than collecting generation 1.
+  * Other calls to :func:`!gc.collect` are unchanged.
 
-* Calling :func:`locals` from a comprehension at module or class scope
-  (including via ``exec`` or ``eval``) once more behaves as if the comprehension
-  were running as an independent nested function (i.e. the local variables from
-  the containing scope are not included). In Python 3.12, this had changed
-  to include the local variables from the containing scope when implementing
-  :pep:`709`. (Changed as part of :pep:`667`.)
+* An :exc:`OSError` is now raised by :func:`getpass.getuser`
+  for any failure to retrieve a username,
+  instead of :exc:`ImportError` on non-Unix platforms
+  or :exc:`KeyError` on Unix platforms where the password database is empty.
 
-* Accessing :attr:`FrameType.f_locals <frame.f_locals>` in an
-  :term:`optimized scope` now returns a write-through proxy rather than a
-  snapshot that gets updated at ill-specified times. If a snapshot is desired,
-  it must be created explicitly with ``dict`` or the proxy's ``.copy()`` method.
-  (Changed as part of :pep:`667`.)
+* The value of the :attr:`!mode` attribute of :class:`gzip.GzipFile`
+  is now a string (``'rb'`` or ``'wb'``) instead of an integer (``1`` or ``2``).
+  The value of the :attr:`!mode` attribute of the readable file-like object
+  returned by :meth:`zipfile.ZipFile.open` is now ``'rb'`` instead of ``'r'``.
+  (Contributed by Serhiy Storchaka in :gh:`115961`.)
+
+* :class:`mailbox.Maildir` now ignores files with a leading dot (``.``).
+  (Contributed by Zackery Spytz in :gh:`65559`.)
+
+* :meth:`pathlib.Path.glob` and :meth:`~pathlib.Path.rglob` now return both
+  files and directories if a pattern that ends with "``**``" is given,
+  rather than directories only.
+  Add a trailing slash to keep the previous behavior and only match directories.
+
+* The :mod:`threading` module now expects the :mod:`!_thread` module
+  to have an :func:`!_is_main_interpreter` function.
+  This function takes no arguments and returns ``True``
+  if the current interpreter is the main interpreter.
+
+  Any library or application that provides a custom :mod:`!_thread` module
+  must provide :func:`!_is_main_interpreter`,
+  just like the module's other "private" attributes.
+  (:gh:`112826`.)
+
 
 Changes in the C API
 --------------------
@@ -2673,45 +2698,39 @@ Changes in the C API
   added in Python 3.8 and the old macros were deprecated in Python 3.11.
   (Contributed by Irit Katriel in :gh:`105111`.)
 
-* Functions :c:func:`PyDict_GetItem`, :c:func:`PyDict_GetItemString`,
-  :c:func:`PyMapping_HasKey`, :c:func:`PyMapping_HasKeyString`,
-  :c:func:`PyObject_HasAttr`, :c:func:`PyObject_HasAttrString`, and
-  :c:func:`PySys_GetObject`, which clear all errors which occurred when calling
-  them, now report them using :func:`sys.unraisablehook`.
-  You may replace them with other functions as
-  recommended in the documentation.
-  (Contributed by Serhiy Storchaka in :gh:`106672`.)
-
-* :c:func:`!PyCode_GetFirstFree` is an unstable API now and has been renamed
-  to :c:func:`PyUnstable_Code_GetFirstFree`.
-  (Contributed by Bogdan Romanyuk in :gh:`115781`.)
-
 .. _pep667-porting-notes-c:
 
-* The effects of mutating the dictionary returned from :c:func:`PyEval_GetLocals` in an
-  :term:`optimized scope` have changed. New dict entries added this way will now *only* be
-  visible to subsequent :c:func:`PyEval_GetLocals` calls in that frame, as
-  :c:func:`PyFrame_GetLocals`, :func:`locals`, and
-  :attr:`FrameType.f_locals <frame.f_locals>` no longer access the same underlying cached
-  dictionary. Changes made to entries for actual variable names and names added via the
-  write-through proxy interfaces will be overwritten on subsequent calls to
-  :c:func:`PyEval_GetLocals` in that frame. The recommended code update depends on how the
-  function was being used, so refer to the deprecation notice on the function for details.
-  (Changed as part of :pep:`667`.)
+* :ref:`PEP 667 <whatsnew313-locals-semantics>` introduces several changes
+  to frame-related functions:
 
-* Calling :c:func:`PyFrame_GetLocals` in an :term:`optimized scope` now returns a
-  write-through proxy rather than a snapshot that gets updated at ill-specified times.
-  If a snapshot is desired, it must be created explicitly (e.g. with :c:func:`PyDict_Copy`)
-  or by calling the new :c:func:`PyEval_GetFrameLocals` API. (Changed as part of :pep:`667`.)
+  * The effects of mutating the dictionary returned from
+    :c:func:`PyEval_GetLocals` in an :term:`optimized scope` have changed.
+    New dict entries added this way will now *only* be visible to
+    subsequent :c:func:`PyEval_GetLocals` calls in that frame,
+    as :c:func:`PyFrame_GetLocals`, :func:`locals`,
+    and :attr:`FrameType.f_locals <frame.f_locals>` no longer access
+    the same underlying cached dictionary.
+    Changes made to entries for actual variable names and names added via
+    the write-through proxy interfaces will be overwritten on subsequent calls
+    to :c:func:`PyEval_GetLocals` in that frame.
+    The recommended code update depends on how the function was being used,
+    so refer to the deprecation notice on the function for details.
 
-* :c:func:`!PyFrame_FastToLocals` and :c:func:`!PyFrame_FastToLocalsWithError`
-  no longer have any effect. Calling these functions has been redundant since
-  Python 3.11, when :c:func:`PyFrame_GetLocals` was first introduced.
-  (Changed as part of :pep:`667`.)
+  * Calling :c:func:`PyFrame_GetLocals` in an :term:`optimized scope`
+    now returns a write-through proxy rather than a snapshot
+    that gets updated at ill-specified times.
+    If a snapshot is desired, it must be created explicitly
+    (e.g. with :c:func:`PyDict_Copy`),
+    or by calling the new :c:func:`PyEval_GetFrameLocals` API.
 
-* :c:func:`!PyFrame_LocalsToFast` no longer has any effect. Calling this function
-  is redundant now that :c:func:`PyFrame_GetLocals` returns a write-through proxy
-  for :term:`optimized scopes <optimized scope>`. (Changed as part of :pep:`667`.)
+  * :c:func:`!PyFrame_FastToLocals` and :c:func:`!PyFrame_FastToLocalsWithError`
+    no longer have any effect.
+    Calling these functions has been redundant since Python 3.11,
+    when :c:func:`PyFrame_GetLocals` was first introduced.
+
+  * :c:func:`!PyFrame_LocalsToFast` no longer has any effect.
+    Calling this function is redundant now that :c:func:`PyFrame_GetLocals`
+    returns a write-through proxy for :term:`optimized scopes <optimized scope>`.
 
 Regression Test Changes
 =======================
