@@ -14068,6 +14068,14 @@ done
 
 fi
 
+# gh-124228: While the libuuid library is available on NetBSD, it supports only UUID version 4.
+# This restriction inhibits the proper generation of time-based UUIDs.
+if test "$ac_sys_system" = "NetBSD"; then
+  have_uuid=missing
+  printf "%s\n" "#define HAVE_UUID_H 0" >>confdefs.h
+
+fi
+
 if test "x$have_uuid" = xmissing
 then :
   have_uuid=no
