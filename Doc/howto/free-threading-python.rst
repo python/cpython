@@ -89,8 +89,8 @@ The immortalization of these objects happens the first time a thread is started
 after the main thread.
 
 Additionally, numeric and string literals in the code as well as strings
-returned by :func:`sys.intern` are also interned.  This behavior is expected to
-remain in the 3.14 free-threaded build.
+returned by :func:`sys.intern` are also immortalized.  This behavior is
+expected to remain in the 3.14 free-threaded build.
 
 
 Frame Objects
