@@ -390,6 +390,9 @@ The following functions and structs are used to create
    On success, return ``0``.
    On error, set an exception and return ``-1``.
 
+   The type must not be used before it's made immutable. For example, type
+   instances must not be created before the type is made immutable.
+
    .. versionadded:: 3.14
 
 .. raw:: html
