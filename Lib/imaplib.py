@@ -649,7 +649,7 @@ class IMAP4:
 
 
     def idle(self, dur=None):
-        """Return an iterable context manager implementing the IDLE command
+        """Return an Idler: an iterable context manager for the IDLE command
 
         :param dur:     Maximum duration (in seconds) to keep idling,
                         or None for no time limit.
@@ -681,8 +681,13 @@ class IMAP4:
         Assuming that's typical of IMAP servers, subtracting it from the 29
         minutes needed to avoid server inactivity timeouts would make 27
         minutes a sensible value for 'dur' in this situation.
+
+        Note: The Idler class name and structure are internal interfaces,
+        subject to change.  Calling code can rely on its context management,
+        iteration, and public method to remain stable, but should not
+        subclass, instantiate, or otherwise directly reference the class.
         """
-        return _Idler(self, dur)
+        return Idler(self, dur)
 
 
     def list(self, directory='""', pattern='*'):
@@ -1384,13 +1389,24 @@ class IMAP4:
                 n -= 1
 
 
-class _Idler:
-    # Iterable context manager: start IDLE & produce untagged responses
-    #
-    # This iterator produces (type, datum) tuples.  They slightly differ
-    # from the tuples returned by IMAP4.response():  The second item in the
-    # tuple is a single datum, rather than a list of them, because only one
-    # untagged response is produced at a time.
+class Idler:
+    """Iterable context manager: start IDLE & produce untagged responses
+
+    An object of this type is returned by the IMAP4.idle() method.
+    It sends the IDLE command when activated by the 'with' statement, produces
+    IMAP untagged responses via the iterator protocol, and sends DONE upon
+    context exit.
+
+    Iteration produces (type, datum) tuples.  They slightly differ
+    from the tuples returned by IMAP4.response():  The second item in the
+    tuple is a single datum, rather than a list of them, because only one
+    untagged response is produced at a time.
+
+    Note: The name and structure of this class are internal interfaces,
+    subject to change.  Calling code can rely on its context management,
+    iteration, and public method to remain stable, but should not
+    subclass, instantiate, or otherwise directly reference the class.
+    """
 
     def __init__(self, imap, dur=None):
         if 'IDLE' not in imap.capabilities:

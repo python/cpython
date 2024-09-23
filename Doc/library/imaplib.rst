@@ -310,8 +310,8 @@ An :class:`IMAP4` instance has the following methods:
 
 .. method:: IMAP4.idle(dur=None)
 
-   Return an iterable context manager implementing the ``IDLE`` command
-   as defined in :rfc:`2177`.
+   Return an ``Idler``: an iterable context manager implementing the ``IDLE``
+   command as defined in :rfc:`2177`.
 
    The context manager sends the ``IDLE`` command when activated by the
    :keyword:`with` statement, produces IMAP untagged responses via the
@@ -346,7 +346,7 @@ An :class:`IMAP4` instance has the following methods:
    batch processing aid is provided by the context's ``burst()``
    :term:`generator`:
 
-   .. method:: idler.burst(interval=0.1)
+   .. method:: Idler.burst(interval=0.1)
 
       Yield a burst of responses no more than *interval* seconds apart.
 
@@ -390,6 +390,13 @@ An :class:`IMAP4` instance has the following methods:
       responses and block indefinitely for each one.  It is therefore advised
       not to use ``burst()`` with an :class:`IMAP4_stream` connection on
       Windows.
+
+   .. note::
+
+      Note: The ``Idler`` class name and structure are internal interfaces,
+      subject to change.  Calling code can rely on its context management,
+      iteration, and public method to remain stable, but should not
+      subclass, instantiate, or otherwise directly reference the class.
 
 
 .. method:: IMAP4.list([directory[, pattern]])
