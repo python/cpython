@@ -313,6 +313,7 @@ class TestOptionalsSingleDash(ParserTestCase):
         ('', NS(x=None)),
         ('-x a', NS(x='a')),
         ('-xa', NS(x='a')),
+        ('-x=a', NS(x='=a')),
         ('-x -1', NS(x='-1')),
         ('-x-1', NS(x='-1')),
     ]
@@ -334,6 +335,7 @@ class TestOptionalsSingleDashCombined(ParserTestCase):
         ('-za', NS(x=False, yyy=None, z='a')),
         ('-z a', NS(x=False, yyy=None, z='a')),
         ('-xza', NS(x=True, yyy=None, z='a')),
+        ('-xz=a', NS(x=True, yyy=None, z='=a')),
         ('-xz a', NS(x=True, yyy=None, z='a')),
         ('-x -za', NS(x=True, yyy=None, z='a')),
         ('-x -z a', NS(x=True, yyy=None, z='a')),
@@ -348,10 +350,12 @@ class TestOptionalsSingleDashLong(ParserTestCase):
     """Test an Optional with a multi-character single-dash option string"""
 
     argument_signatures = [Sig('-foo')]
-    failures = ['-foo', 'a', '--foo', '-foo --foo', '-foo -y', '-fooa']
+    failures = ['-foo', 'a', '--foo', '-foo --foo', '-foo -y', '-fooa',
+                '-foa', '-fa', '-fo=a', '-f=a']
     successes = [
         ('', NS(foo=None)),
         ('-foo a', NS(foo='a')),
+        ('-foo=a', NS(foo='a')),
         ('-foo -1', NS(foo='-1')),
         ('-fo a', NS(foo='a')),
         ('-f a', NS(foo='a')),
@@ -2263,19 +2267,22 @@ class TestAddSubparsers(TestCase):
                          (NS(known=1, new=0), ['-u']))
         self.assertEqual(parser.parse_known_args(['-ku']),
                          (NS(known=1, new=0), ['-u']))
-        self.assertArgumentParserError(parser.parse_known_args, ['-k=u'])
+        self.assertEqual(parser.parse_known_args(['-k=u']),
+                         (NS(known=1, new=0), ['-=u']))
         self.assertEqual(parser.parse_known_args(['-uk']),
                          (NS(known=0, new=0), ['-uk']))
         self.assertEqual(parser.parse_known_args(['-u=k']),
                          (NS(known=0, new=0), ['-u=k']))
         self.assertEqual(parser.parse_known_args(['-kunknown']),
                          (NS(known=1, new=0), ['-unknown']))
-        self.assertArgumentParserError(parser.parse_known_args, ['-k=unknown'])
+        self.assertEqual(parser.parse_known_args(['-k=unknown']),
+                         (NS(known=1, new=0), ['-=unknown']))
         self.assertEqual(parser.parse_known_args(['-ku=nknown']),
                          (NS(known=1, new=0), ['-u=nknown']))
         self.assertEqual(parser.parse_known_args(['-knew']),
                          (NS(known=1, new=1), ['-ew']))
-        self.assertArgumentParserError(parser.parse_known_args, ['-kn=ew'])
+        self.assertEqual(parser.parse_known_args(['-kn=ew']),
+                         (NS(known=1, new=1), ['-=ew']))
         self.assertArgumentParserError(parser.parse_known_args, ['-k-new'])
         self.assertArgumentParserError(parser.parse_known_args, ['-kn-ew'])
         self.assertEqual(parser.parse_known_args(['-kne-w']),
