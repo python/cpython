@@ -398,11 +398,7 @@ class HelpFormatter(object):
                 raise ValueError(f'empty group {group}')
 
             try:
-                start = _sys.maxsize
-                for item in group._group_actions:
-                    index = actions.index(item)
-                    if index < start:
-                        start = index
+                start = min(actions.index(item) for item in group._group_actions)
             except ValueError:
                 continue
             else:
