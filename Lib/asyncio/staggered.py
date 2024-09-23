@@ -6,8 +6,8 @@ import contextlib
 
 from . import events
 from . import exceptions as exceptions_mod
-from . import locks
 from . import tasks
+from . import taskgroups
 
 
 async def staggered_race(coro_fns, delay, *, loop=None):
@@ -63,76 +63,46 @@ async def staggered_race(coro_fns, delay, *, loop=None):
     """
     # TODO: when we have aiter() and anext(), allow async iterables in coro_fns.
     loop = loop or events.get_running_loop()
-    enum_coro_fns = enumerate(coro_fns)
     winner_result = None
     winner_index = None
     exceptions = []
-    running_tasks = []
 
-    async def run_one_coro(previous_failed) -> None:
-        # Wait for the previous task to finish, or for delay seconds
-        if previous_failed is not None:
-            with contextlib.suppress(exceptions_mod.TimeoutError):
-                # Use asyncio.wait_for() instead of asyncio.wait() here, so
-                # that if we get cancelled at this point, Event.wait() is also
-                # cancelled, otherwise there will be a "Task destroyed but it is
-                # pending" later.
-                await tasks.wait_for(previous_failed.wait(), delay)
-        # Get the next coroutine to run
-        try:
-            this_index, coro_fn = next(enum_coro_fns)
-        except StopIteration:
-            return
-        # Start task that will run the next coroutine
-        this_failed = locks.Event()
-        next_task = loop.create_task(run_one_coro(this_failed))
-        running_tasks.append(next_task)
-        assert len(running_tasks) == this_index + 2
-        # Prepare place to put this coroutine's exceptions if not won
-        exceptions.append(None)
-        assert len(exceptions) == this_index + 1
+    def future_callback(index, future, task_group):
+        assert future.done()
 
         try:
-            result = await coro_fn()
-        except (SystemExit, KeyboardInterrupt):
-            raise
-        except BaseException as e:
-            exceptions[this_index] = e
-            this_failed.set()  # Kickstart the next coroutine
+            error = future.exception()
+        except exceptions_mod.CancelledError as cancelled_error:
+            exceptions[index] = cancelled_error
         else:
-            # Store winner's results
-            nonlocal winner_index, winner_result
-            assert winner_index is None
-            winner_index = this_index
-            winner_result = result
-            # Cancel all other tasks. We take care to not cancel the current
-            # task as well. If we do so, then since there is no `await` after
-            # here and CancelledError are usually thrown at one, we will
-            # encounter a curious corner case where the current task will end
-            # up as done() == True, cancelled() == False, exception() ==
-            # asyncio.CancelledError. This behavior is specified in
-            # https://bugs.python.org/issue30048
-            for i, t in enumerate(running_tasks):
-                if i != this_index:
-                    t.cancel()
+            exceptions[index] = error
+            task_group._errors.remove(error)
 
-    first_task = loop.create_task(run_one_coro(None))
-    running_tasks.append(first_task)
-    try:
-        # Wait for a growing list of tasks to all finish: poor man's version of
-        # curio's TaskGroup or trio's nursery
-        done_count = 0
-        while done_count != len(running_tasks):
-            done, _ = await tasks.wait(running_tasks)
-            done_count = len(done)
-            # If run_one_coro raises an unhandled exception, it's probably a
-            # programming error, and I want to see it.
-            if __debug__:
-                for d in done:
-                    if d.done() and not d.cancelled() and d.exception():
-                        raise d.exception()
-        return winner_result, winner_index, exceptions
-    finally:
-        # Make sure no tasks are left running if we leave this function
-        for t in running_tasks:
-            t.cancel()
+        nonlocal winner_result, winner_index
+        if (winner_result is None) and (not task_group._aborting):
+            # If this is in an eager task factory, it's possible
+            # for multiple tasks to get here. In that case, we want
+            # only the first one to win and the rest to no-op before
+            # cancellation.
+            winner_result = future.result()
+            winner_index = index
+            task_group._abort()
+
+    async with taskgroups.TaskGroup() as task_group:
+        for index, coro in enumerate(coro_fns):
+            if task_group._aborting:
+                break
+
+            def wrapper(idx):
+                return lambda future: future_callback(idx, future, task_group)
+
+            exceptions.append(None)
+            task = task_group.create_task(coro())
+            task.add_done_callback(wrapper(index))
+
+            if delay is not None:
+                await tasks.sleep(delay)
+            else:
+                await task
+
+    return winner_result, winner_index, exceptions

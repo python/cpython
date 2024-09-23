@@ -95,3 +95,7 @@ class StaggeredTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(excs), 2)
         self.assertIsInstance(excs[0], ValueError)
         self.assertIsInstance(excs[1], ValueError)
+
+
+if __name__ == "__main__":
+    unittest.main()

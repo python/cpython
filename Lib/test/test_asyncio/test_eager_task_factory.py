@@ -213,6 +213,26 @@ class EagerTaskFactoryLoopTests:
 
         self.run_coro(run())
 
+    def test_staggered_race_with_eager_tasks(self):
+        # See GH-124309
+        async def coro(amount):
+            await asyncio.sleep(amount)
+            return amount
+
+        async def run():
+            winner, index, excs = await asyncio.staggered.staggered_race(
+                [
+                    lambda: coro(1),
+                    lambda: coro(0),
+                    lambda: coro(2)
+                ],
+                delay=None
+            )
+            self.assertEqual(winner, 0)
+            self.assertEqual(index, 1)
+
+        self.run_coro(run())
+
 
 class PyEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase):
     Task = tasks._PyTask
