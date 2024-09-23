@@ -1509,19 +1509,15 @@ _PyTime_GetThreadTimeWithInfo(PyTime_t *tp, _Py_clock_info_t *info)
         return -1;
     }
     if (info) {
+        struct timespec res;
         info->implementation = function;
         info->monotonic = 1;
         info->adjustable = 0;
-    #if defined(__NetBSD__)
-        info->resolution = 1e-9;
-    #else
-        struct timespec res;
         if (clock_getres(clk_id, &res)) {
             PyErr_SetFromErrno(PyExc_OSError);
             return -1;
         }
         info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
-    #endif
     }
 
     if (_PyTime_FromTimespec(tp, &ts) < 0) {

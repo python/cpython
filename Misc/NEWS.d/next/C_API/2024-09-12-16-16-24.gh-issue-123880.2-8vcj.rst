@@ -1,0 +1,2 @@
+Fixed a bug that prevented circular imports of extension modules that use
+single-phase initialization.
