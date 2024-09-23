@@ -2,11 +2,8 @@
 
 These instructions are only needed if you're planning to compile Python for
 Android yourself. Most users should *not* need to do this. Instead, use one of
-the following tools, which will provide a much easier experience:
-
-* [Briefcase](https://briefcase.readthedocs.io), from the BeeWare project
-* [Buildozer](https://buildozer.readthedocs.io), from the Kivy project
-* [Chaquopy](https://chaquo.com/chaquopy/)
+the tools listed in Doc/using/android.rst, which will provide a much easier
+experience.
 
 
 ## Prerequisites

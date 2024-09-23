@@ -34,6 +34,8 @@ the following tools, which will provide a much easier experience:
 * `Briefcase <https://briefcase.readthedocs.io>`__, from the BeeWare project
 * `Buildozer <https://buildozer.readthedocs.io>`__, from the Kivy project
 * `Chaquopy <https://chaquo.com/chaquopy>`__
+* `pyqtdeploy <https://www.riverbankcomputing.com/static/Docs/pyqtdeploy/>`__
+* `Termux <https://termux.dev/en/>`__
 
 If you're sure you want to do all of this manually, read on. You can use the
 :source:`testbed app <Android/testbed>` as a guide; each step below contains a
