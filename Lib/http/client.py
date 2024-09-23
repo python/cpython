@@ -1180,7 +1180,11 @@ class HTTPConnection:
         url = url or '/'
         self._validate_path(url)
 
-        request = '%s %s %s' % (method, url, self._http_vsn_str)
+        if self._http_vsn_str:
+            request = f'{method} {url} {self._http_vsn_str}'
+        else:
+            # For HTTP 0.9 support
+            request = f'{method} {url}'
 
         self._output(self._encode_request(request))
 
