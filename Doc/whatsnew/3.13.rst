@@ -171,7 +171,8 @@ Platform support:
 
 * :pep:`730`: Apple's iOS is now an :ref:`officially supported platform
   <whatsnew313-platform-support>`, at :pep:`tier 3 <11#tier-3>`.
-  Official Android support (:pep:`738`) is also in the works.
+* :pep:`738`: Android is now an :ref:`officially supported platform
+  <whatsnew313-platform-support>`, at :pep:`tier 3 <11#tier-3>`.
 * ``wasm32-wasi`` is now supported as a :pep:`tier 2 <11#tier-2>` platform.
 * ``wasm32-emscripten`` is no longer an officially supported platform.
 
@@ -489,8 +490,10 @@ is not a tier 3 supported platform, but will have best-effort support.
 (PEP written and implementation contributed by Russell Keith-Magee in
 :gh:`114099`.)
 
-:pep:`738`: Android support is being actively worked on,
-but the platform is not yet officially supported.
+:pep:`738`: Android is now a :pep:`11` supported platform, with the
+``aarch64-linux-android`` and ``x86_64-linux-android`` targets at tier 3.
+The 32-bit targets ``arm-linux-androideabi`` and ``i686-linux-android``
+are not tier 3 supported platforms, but will have best-effort support.
 (PEP written and implementation contributed by Malcolm Smith in
 :gh:`116622`.)
 
@@ -2516,6 +2519,11 @@ Build Changes
   now :pep:`11` tier 3 platforms.
   (:ref:`PEP 730 <whatsnew313-platform-support>` written
   and implementation contributed by Russell Keith-Magee in :gh:`114099`.)
+
+* ``aarch64-linux-android`` and ``x86_64-linux-android`` are both
+  now :pep:`11` tier 3 platforms.
+  (:ref:`PEP 738 <whatsnew313-platform-support>` written
+  and implementation contributed by Malcolm Smith in :gh:`116622`.)
 
 * ``wasm32-wasi`` is now a :pep:`11` tier 2 platform.
   (Contributed by Brett Cannon in :gh:`115192`.)

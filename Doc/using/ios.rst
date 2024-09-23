@@ -63,7 +63,7 @@ Standard library availability
 -----------------------------
 
 The Python standard library has some notable omissions and restrictions on
-iOS. See the :ref:`API availability guide for iOS <iOS-availability>` for
+iOS. See the :ref:`API availability guide for iOS <mobile-availability>` for
 details.
 
 Binary extension modules

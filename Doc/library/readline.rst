@@ -24,7 +24,7 @@ in the GNU Readline manual for information about the format and
 allowable constructs of that file, and the capabilities of the
 Readline library in general.
 
-.. include:: ../includes/wasm-ios-notavail.rst
+.. include:: ../includes/wasm-mobile-notavail.rst
 
 .. note::
 
