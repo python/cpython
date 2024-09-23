@@ -2522,14 +2522,14 @@ class MathTests(unittest.TestCase):
             math.log2(x)
         with self.assertRaises(ValueError,
                                msg=f"expected a positive input, got {x}"):
-            math.log2(x)
+            math.log10(x)
         x = decimal.Decimal('-1.1')
         with self.assertRaises(ValueError,
                                msg=f"expected a positive input, got {x!r}"):
             math.log(x)
         x = fractions.Fraction(1, 10**400)
         with self.assertRaises(ValueError,
-                               msg=f"expected a positive input, got {float(x)!r}"):
+                               msg=f"expected a positive input, got {float(x)}"):
             math.log(x)
         x = -123
         with self.assertRaises(ValueError,
