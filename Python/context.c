@@ -102,11 +102,10 @@ PyContext_CopyCurrent(void)
 static const char *
 context_event_name(PyContextEvent event) {
     switch (event) {
-        #define CASE(op)                   \
-        case Py_CONTEXT_EVENT_##op:         \
-            return "Py_CONTEXT_EVENT_" #op;
-        Py_FOREACH_CONTEXT_EVENT(CASE)
-        #undef CASE
+        case Py_CONTEXT_EVENT_ENTER:
+            return "Py_CONTEXT_EVENT_ENTER";
+        case Py_CONTEXT_EVENT_EXIT:
+            return "Py_CONTEXT_EVENT_EXIT";
     }
     Py_UNREACHABLE();
 }
