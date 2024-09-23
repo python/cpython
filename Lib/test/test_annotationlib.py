@@ -280,7 +280,13 @@ class TestForwardRefClass(unittest.TestCase):
 
     def test_fwdref_with_module(self):
         self.assertIs(ForwardRef("Format", module="annotationlib").evaluate(), Format)
-        self.assertIs(ForwardRef("Counter", module="collections").evaluate(), collections.Counter)
+        self.assertIs(
+            ForwardRef("Counter", module="collections").evaluate(), collections.Counter
+        )
+        self.assertEqual(
+            ForwardRef("Counter[int]", module="collections").evaluate(),
+            collections.Counter[int],
+        )
 
         with self.assertRaises(NameError):
             # If globals are passed explicitly, we don't look at the module dict
