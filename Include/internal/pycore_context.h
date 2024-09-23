@@ -52,7 +52,7 @@ struct _pycontexttokenobject {
     int tok_used;
 };
 
-#define PY_FOREACH_CONTEXT_EVENT(V) \
+#define Py_FOREACH_CONTEXT_EVENT(V) \
    V(ENTER)                      \
    V(EXIT)
 

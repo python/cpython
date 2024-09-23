@@ -105,7 +105,7 @@ context_event_name(PyContextEvent event) {
         #define CASE(op)                   \
         case Py_CONTEXT_EVENT_##op:         \
             return "Py_CONTEXT_EVENT_" #op;
-        P_FOREACH_CONTEXT_EVENT(CASE)
+        Py_FOREACH_CONTEXT_EVENT(CASE)
         #undef CASE
     }
     Py_UNREACHABLE();
