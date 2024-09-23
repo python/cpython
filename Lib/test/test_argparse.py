@@ -4967,30 +4967,24 @@ class TestHelpUsageLongSubparserCommand(TestCase):
 
         parent_parser = argparse.ArgumentParser(
                 prog='PROG',
-                add_help=False,
                 formatter_class=custom_formatter
         )
-        main_parser = argparse.ArgumentParser(
-            formatter_class=custom_formatter)
 
-        cmd_subparsers = main_parser.add_subparsers(title="commands",
-                                                    metavar='CMD',
-                                                    help='command to use')
-        cmd_parser = cmd_subparsers.add_parser("add",
-                                               help="add something",
-                                               parents=[parent_parser])
-        cmd_parser.add_subparsers(title="action", dest="action_command")
+        cmd_subparsers = parent_parser.add_subparsers(title="commands",
+                                                      metavar='CMD',
+                                                      help='command to use')
+        cmd_subparsers.add_parser("add",
+                                  help="add something")
+
         cmd_subparsers.add_parser("remove",
-                                  help="remove something",
-                                  parents=[parent_parser])
+                                  help="remove something")
 
         cmd_subparsers.add_parser("a-very-long-command",
-                                  help="command that does something",
-                                  parents=[parent_parser])
+                                  help="command that does something")
 
-        parser_help = main_parser.format_help()
-        self.assertEqual(parser_help, textwrap.dedent(f'''\
-            usage: {main_parser.prog or ' '} [-h] CMD ...
+        parser_help = parent_parser.format_help()
+        self.assertEqual(parser_help, textwrap.dedent('''\
+            usage: PROG [-h] CMD ...
 
             options:
               -h, --help             show this help message and exit
