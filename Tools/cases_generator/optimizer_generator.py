@@ -146,7 +146,7 @@ def write_uop(
         if override:
             emitter = OptimizerEmitter(out)
             # No reference management of inputs needed.
-            for var in storage.inputs:
+            for var in storage.inputs:  # type: ignore[possibly-undefined]
                 var.defined = False
             storage = emitter.emit_tokens(override, storage, None)
             out.start_line()
