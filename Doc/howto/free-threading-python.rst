@@ -1,7 +1,7 @@
 .. _freethreading-python-howto:
 
 *********************************
-Python Support for Free Threading
+Python support for free threading
 *********************************
 
 Starting with the 3.13 release, CPython has experimental support for running
@@ -14,7 +14,7 @@ information on how to write C extensions that support the free-threaded build.
 Installation
 ============
 
-Starting with Python 3.13.0b2, the offical macOS and Windows installers
+Starting with Python 3.13, the official macOS and Windows installers
 optionally support installing free-threaded Python binaries.  The installers
 are available at https://www.python.org/downloads/.
 
@@ -26,7 +26,7 @@ are available at https://www.python.org/downloads/.
    Python.
 
 
-Identifying Free-Threaded Python
+Identifying free-threaded Python
 ================================
 
 The free-threaded build of CPython can optionally run with the global
@@ -43,7 +43,7 @@ is set to ``1``, then the build supports free threading.  This is the recommende
 mechanism for decisions related to the build configuration.
 
 
-Thread Safety
+Thread safety
 =============
 
 The free-threaded build of CPython aims to provide similar thread-safety
@@ -63,7 +63,7 @@ behavior.
 
 
 
-Known Limitations
+Known limitations
 =================
 
 This section describes known limitations of the free-threaded CPython build.
@@ -74,7 +74,7 @@ Immortalization
 The free-threaded build of the 3.13 release makes some objects :term:`immortal`
 in order to avoid reference count contention that would prevent efficient
 multi-threaded scaling.  This means that these objects are never deallocated.
-This expected to be addressed in the upcoming 3.14 release with
+This is expected to be addressed in Python 3.14 with
 `deferred reference counting <https://peps.python.org/pep-0703/#deferred-reference-counting>`_.
 
 The objects that are immortalized are:
@@ -93,7 +93,7 @@ returned by :func:`sys.intern` are also immortalized.  This behavior is
 expected to remain in the 3.14 free-threaded build.
 
 
-Frame Objects
+Frame objects
 -------------
 
 It is not safe to access :ref:`frame <frame-objects>` objects from other
@@ -108,12 +108,12 @@ safe and threads may see duplicate or missing elements when iterating or crash
 the interpreter.
 
 
-Single-Threaded Performance
+Single-threaded performance
 ---------------------------
 
 The free-threaded build has additional overhead when executing Python code
 compared to the default GIL-enabled build.  In 3.13, this overhead is about
 40% on the `pyperformance <https://pyperformance.readthedocs.io/>`_ suite.
-Programs that spend most of the their time in C extensions or I/O will see
-less of an impact.  This overhead is expected to be reduced in the upcoming
-3.14 release.
+Programs that spend most of their time in C extensions or I/O will see
+less of an impact.  This overhead is expected to be reduced in the Python
+3.14.
