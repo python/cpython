@@ -341,7 +341,7 @@ APIs:
    .. versionadded:: 3.3
 
 
-.. c:function:: int32_t PyUnicode_Export(PyObject *unicode, int32_t requested_formats, Py_buffer *view)
+.. c:function:: int32_t PyUnicode_Export(PyObject *unicode, int32_t requested_formats, uint32_t flags, Py_buffer *view)
 
    Export the contents of the *unicode* string in one of the *requested_formats*.
 
@@ -379,6 +379,26 @@ APIs:
    flags.
 
    Note that future versions of Python may introduce additional formats.
+
+   By default, if the :c:macro:`PyUnicode_EXPORT_COPY` flag is not set in
+   *flags*, no memory is copied and no conversion is done.
+
+   If the :c:macro:`PyUnicode_EXPORT_COPY` flag is set in *flags*, the function
+   can copy memory to provide the requested format and convert from a format
+   to another.
+
+   The :c:macro:`PyUnicode_EXPORT_COPY` flag is needed to export to
+   :c:macro:`PyUnicode_FORMAT_UTF8` a string containing surrogate characters.
+
+   Available flags:
+
+   .. c:namespace:: NULL
+
+   ==================================  ========  ===================
+   Flag                                Value     Description
+   ==================================  ========  ===================
+   .. c:macro:: PyUnicode_EXPORT_COPY  ``0x01``  Allow memory copies
+   ==================================  ========  ===================
 
    .. versionadded:: 3.14
 

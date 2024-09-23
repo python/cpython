@@ -2372,7 +2372,7 @@ unicode_export_bytes(PyObject *bytes, Py_buffer *view, Py_ssize_t len,
 
 int32_t
 PyUnicode_Export(PyObject *unicode, int32_t requested_formats,
-                 Py_buffer *view)
+                 uint32_t flags, Py_buffer *view)
 {
     if (!PyUnicode_Check(unicode)) {
         PyErr_Format(PyExc_TypeError, "must be str, not %T", unicode);
@@ -2408,8 +2408,9 @@ PyUnicode_Export(PyObject *unicode, int32_t requested_formats,
                               2, "=H", PyUnicode_FORMAT_UCS2);
     }
 
-    // Convert ASCII or UCS1 to UCS2
-    if (kind == PyUnicode_1BYTE_KIND
+    // Convert ASCII or UCS1 to UCS2 (need PyUnicode_EXPORT_COPY)
+    if (flags & PyUnicode_EXPORT_COPY
+        && kind == PyUnicode_1BYTE_KIND
         && requested_formats & PyUnicode_FORMAT_UCS2)
     {
         PyObject *bytes = PyBytes_FromStringAndSize(NULL, (len + 1) * 2);
@@ -2437,8 +2438,10 @@ PyUnicode_Export(PyObject *unicode, int32_t requested_formats,
                               4, "=I", PyUnicode_FORMAT_UCS4);
     }
 
-    // Convert ASCII, UCS1 or UCS2 to UCS4
-    if (requested_formats & PyUnicode_FORMAT_UCS4) {
+    // Convert ASCII, UCS1 or UCS2 to UCS4 (need PyUnicode_EXPORT_COPY)
+    if (flags & PyUnicode_EXPORT_COPY
+        && requested_formats & PyUnicode_FORMAT_UCS4)
+    {
         PyObject *bytes = PyBytes_FromStringAndSize(NULL, (len + 1) * 4);
         if (bytes == NULL) {
             return -1;
@@ -2460,7 +2463,9 @@ PyUnicode_Export(PyObject *unicode, int32_t requested_formats,
                                   nbytes, utf8,
                                   1, "B", PyUnicode_FORMAT_UTF8);
         }
-        if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
+        if (flags & PyUnicode_EXPORT_COPY
+            && PyErr_ExceptionMatches(PyExc_UnicodeEncodeError))
+        {
             PyErr_Clear();
             PyObject *bytes = _PyUnicode_AsUTF8String(unicode, "surrogatepass");
             if (bytes == NULL) {

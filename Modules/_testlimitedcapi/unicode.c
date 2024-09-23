@@ -1843,13 +1843,13 @@ static PyObject*
 unicode_export(PyObject *self, PyObject *args)
 {
     PyObject *obj;
-    unsigned int requested_formats;
-    if (!PyArg_ParseTuple(args, "OI", &obj, &requested_formats)) {
+    unsigned int requested_formats, flags;
+    if (!PyArg_ParseTuple(args, "OII", &obj, &requested_formats, &flags)) {
         return NULL;
     }
 
     Py_buffer view;
-    int32_t format = PyUnicode_Export(obj, requested_formats, &view);
+    int32_t format = PyUnicode_Export(obj, requested_formats, flags, &view);
     if (format < 0) {
         return NULL;
     }

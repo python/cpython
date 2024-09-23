@@ -37,6 +37,9 @@ PyUnicode_FORMAT_ASCII = 0x10
 # Invalid native format
 PyUnicode_FORMAT_INVALID = 0x20
 
+PyUnicode_EXPORT_COPY = 0x01
+
+
 class CAPITest(unittest.TestCase):
 
     @support.cpython_only
@@ -1749,30 +1752,35 @@ class CAPITest(unittest.TestCase):
         BUFFER_UCS2 = '=H'
         BUFFER_UCS4 = '=I'
 
-        def check_ucs1(text, formats):
+        def check_ucs1(text, formats, flags=0):
             if formats == PyUnicode_FORMAT_UCS1:
                 export_format = PyUnicode_FORMAT_UCS1
             elif text.isascii():
                 export_format = PyUnicode_FORMAT_ASCII
             else:
                 export_format = PyUnicode_FORMAT_UCS1
-            self.assertEqual(unicode_export(text, formats),
+            self.assertEqual(unicode_export(text, formats, flags),
                              (text.encode('latin1'), export_format, 1, BUFFER_UCS1))
 
-        def check_ucs2(text, formats):
-            self.assertEqual(unicode_export(text, formats),
+        def check_ucs2(text, formats, flags=0):
+            self.assertEqual(unicode_export(text, formats, flags),
                              (text.encode(ucs2_enc, 'surrogatepass'),
                               PyUnicode_FORMAT_UCS2, 2, BUFFER_UCS2))
 
-        def check_ucs4(text, formats):
-            self.assertEqual(unicode_export(text, formats),
+        def check_ucs4(text, formats, flags=0):
+            self.assertEqual(unicode_export(text, formats, flags),
                              (text.encode(ucs4_enc, 'surrogatepass'),
                               PyUnicode_FORMAT_UCS4, 4, BUFFER_UCS4))
 
-        def check_utf8(text):
-            self.assertEqual(unicode_export(text, PyUnicode_FORMAT_UTF8),
+        def check_utf8(text, flags=0):
+            self.assertEqual(unicode_export(text, PyUnicode_FORMAT_UTF8, flags),
                              (text.encode('utf8', 'surrogatepass'),
                               PyUnicode_FORMAT_UTF8, 1, 'B'))
+
+        def check_no_matching_format(text, formats, flags=0):
+            err_msg = "unable to find a matching export format"
+            with self.assertRaisesRegex(ValueError, err_msg):
+                unicode_export('abc', formats, flags)
 
         # export as native format
         check_ucs1("abc", formats)
@@ -1783,15 +1791,19 @@ class CAPITest(unittest.TestCase):
         # convert ASCII to UCS1
         check_ucs1("abc", PyUnicode_FORMAT_UCS1)
 
-        # convert ASCII and UCS1 to UCS2
-        check_ucs2("abc", PyUnicode_FORMAT_UCS2)
-        check_ucs2("latin1:\xe9", PyUnicode_FORMAT_UCS2)
+        # convert to UCS2 (need PyUnicode_EXPORT_COPY)
+        check_no_matching_format("abc", PyUnicode_FORMAT_UCS2)
+        check_no_matching_format("latin1:\xe9", PyUnicode_FORMAT_UCS2)
+        check_ucs2("abc", PyUnicode_FORMAT_UCS2, PyUnicode_EXPORT_COPY)
+        check_ucs2("latin1:\xe9", PyUnicode_FORMAT_UCS2, PyUnicode_EXPORT_COPY)
 
-        # always export to UCS4
-        check_ucs4("abc", PyUnicode_FORMAT_UCS4)
-        check_ucs4("latin1:\xe9", PyUnicode_FORMAT_UCS4)
-        check_ucs4('ucs2:\u20ac', PyUnicode_FORMAT_UCS4)
-        check_ucs4('ucs4:\U0010ffff', PyUnicode_FORMAT_UCS4)
+        # convert to UCS4 (need PyUnicode_EXPORT_COPY)
+        check_no_matching_format("abc", PyUnicode_FORMAT_UCS4)
+        check_no_matching_format("latin1:\xe9", PyUnicode_FORMAT_UCS4)
+        check_no_matching_format('ucs2:\u20ac', PyUnicode_FORMAT_UCS4)
+        check_ucs4("abc", PyUnicode_FORMAT_UCS4, PyUnicode_EXPORT_COPY)
+        check_ucs4("latin1:\xe9", PyUnicode_FORMAT_UCS4, PyUnicode_EXPORT_COPY)
+        check_ucs4('ucs2:\u20ac', PyUnicode_FORMAT_UCS4, PyUnicode_EXPORT_COPY)
 
         # always encode to UTF8
         check_utf8("abc")
@@ -1801,15 +1813,13 @@ class CAPITest(unittest.TestCase):
 
         # surrogates
         check_ucs2('\udc80', PyUnicode_FORMAT_UCS2)
-        check_ucs4('\udc80', PyUnicode_FORMAT_UCS4)
-        check_utf8('\udc80')
+        check_ucs4('\udc80', PyUnicode_FORMAT_UCS4, PyUnicode_EXPORT_COPY)
+        check_utf8('\udc80', PyUnicode_EXPORT_COPY)
 
         # No supported format or invalid format
         for formats in (0, PyUnicode_FORMAT_INVALID):
-            err_msg = "unable to find a matching export format"
             with self.subTest(formats=formats):
-                with self.assertRaisesRegex(ValueError, err_msg):
-                    unicode_export('abc', formats)
+                check_no_matching_format('abc', formats)
 
     def test_unicode_import(self):
         # Test PyUnicode_Import()
@@ -1866,6 +1876,39 @@ class CAPITest(unittest.TestCase):
             unicode_import(ucs4[:-2], PyUnicode_FORMAT_UCS4)
         with self.assertRaises(ValueError):
             unicode_import(ucs4[:-3], PyUnicode_FORMAT_UCS4)
+
+    def test_unicode_export_import_roundtrip(self):
+        unicode_export = _testlimitedcapi.unicode_export
+        unicode_import = _testlimitedcapi.unicode_import
+
+        ASCII = PyUnicode_FORMAT_ASCII
+        UCS1 = PyUnicode_FORMAT_UCS1
+        UCS2 = PyUnicode_FORMAT_UCS2
+        UCS4 = PyUnicode_FORMAT_UCS4
+        UTF8 = PyUnicode_FORMAT_UTF8
+        ALL = (ASCII | UCS1 | UCS2 | UCS4 | UTF8)
+
+        def roundtrip(string, formats):
+            export = unicode_export(string, formats, PyUnicode_EXPORT_COPY)
+            buf, buf_fmt, item_size, view_fmt = export
+            self.assertEqual(unicode_import(buf, buf_fmt), string)
+
+        for string, allowed_formats in (
+            ('', {ASCII, UCS1, UCS2, UCS4, UTF8}),
+            ('ascii', {ASCII, UCS1, UCS2, UCS4, UTF8}),
+            ('latin1:\xe9', {UCS1, UCS2, UCS4, UTF8}),
+            ('ucs2:\u20ac', {UCS2, UCS4, UTF8}),
+            ('ucs4:\U0001f638', {UCS4, UTF8}),
+        ):
+            for formats in ASCII, UCS1, UCS2, UCS4, UTF8:
+                with self.subTest(string=string, formats=formats):
+                    if formats not in allowed_formats:
+                        with self.assertRaises(ValueError):
+                            unicode_export(string, formats, PyUnicode_EXPORT_COPY)
+                    else:
+                        roundtrip(string, formats)
+
+            roundtrip(string, ALL)
 
 
 class PyUnicodeWriterTest(unittest.TestCase):
@@ -2048,38 +2091,6 @@ class PyUnicodeWriterFormatTest(unittest.TestCase):
         self.writer_format(writer, b"%s.", b"World")
 
         self.assertEqual(writer.finish(), 'Hello World.')
-
-    def test_unicode_export_import_roundtrip(self):
-        unicode_export = _testlimitedcapi.unicode_export
-        unicode_import = _testlimitedcapi.unicode_import
-
-        ASCII = PyUnicode_FORMAT_ASCII
-        UCS1 = PyUnicode_FORMAT_UCS1
-        UCS2 = PyUnicode_FORMAT_UCS2
-        UCS4 = PyUnicode_FORMAT_UCS4
-        UTF8 = PyUnicode_FORMAT_UTF8
-        ALL = (ASCII | UCS1 | UCS2 | UCS4 | UTF8)
-
-        def roundtrip(string, formats):
-            buf, buf_fmt, item_size, view_fmt = unicode_export(string, formats)
-            self.assertEqual(unicode_import(buf, buf_fmt), string)
-
-        for string, allowed_formats in (
-            ('', {ASCII, UCS1, UCS2, UCS4, UTF8}),
-            ('ascii', {ASCII, UCS1, UCS2, UCS4, UTF8}),
-            ('latin1:\xe9', {UCS1, UCS2, UCS4, UTF8}),
-            ('ucs2:\u20ac', {UCS2, UCS4, UTF8}),
-            ('ucs4:\U0001f638', {UCS4, UTF8}),
-        ):
-            for formats in ASCII, UCS1, UCS2, UCS4, UTF8:
-                with self.subTest(string=string, formats=formats):
-                    if formats not in allowed_formats:
-                        with self.assertRaises(ValueError):
-                            unicode_export(string, formats)
-                    else:
-                        roundtrip(string, formats)
-
-            roundtrip(string, ALL)
 
 
 if __name__ == '__main__':
