@@ -213,6 +213,7 @@ static struct { LPCWSTR regName; LPCWSTR variableName; } OPTIONAL_FEATURES[] = {
     { L"Shortcuts", L"Shortcuts" },
     // Include_launcher and AssociateFiles are handled separately and so do
     // not need to be included in this list.
+    { L"freethreaded", L"Include_freethreaded" },
     { nullptr, nullptr }
 };
 
