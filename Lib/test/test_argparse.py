@@ -2111,6 +2111,8 @@ class TestNegativeNumber(ParserTestCase):
         ('--int -1_000_000 --float -1_000_000.0', NS(int=-1000000, float=-1000000.0)),
         ('--float -1_000.0', NS(int=None, float=-1000.0)),
         ('--float -1_000_000.0_0', NS(int=None, float=-1000000.0)),
+        ('--float -.5', NS(int=None, float=-0.5)),
+        ('--float -.5_000', NS(int=None, float=-0.5)),
     ]
 
 class TestInvalidAction(TestCase):
