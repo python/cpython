@@ -2506,7 +2506,7 @@ Build Changes
 
 * ``arm64-apple-ios`` and ``arm64-apple-ios-simulator`` are both
   now :pep:`11` tier 3 platforms.
-  (:ref:`PEP 739 <whatsnew313-platform-support>` written
+  (:ref:`PEP 730 <whatsnew313-platform-support>` written
   and implementation contributed by Russell Keith-Magee in :gh:`114099`.)
 
 * ``wasm32-wasi`` is now a :pep:`11` tier 2 platform.
