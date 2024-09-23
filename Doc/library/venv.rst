@@ -71,7 +71,7 @@ module:
 This creates the target directory (and any parent
 directories that don't already exist) and places a ``pyvenv.cfg`` file in it
 with a ``home`` key pointing to the Python installation from which the command
-was run (a common name for the target directory is ``.venv``).  It also creates
+was run.  It also creates
 a ``bin`` (or ``Scripts`` on Windows) subdirectory containing a copy/symlink
 of the Python binary/binaries (as appropriate for the platform or arguments
 used at environment creation time). It also creates an (initially empty)
@@ -88,14 +88,11 @@ re-used.
 
 .. highlight:: none
 
-On Windows, invoke the ``venv`` command as follows::
+On Windows, invoke the ``venv`` command as follows:
 
-    c:\>Python35\python -m venv c:\path\to\myenv
+.. code-block:: ps1con
 
-Alternatively, if you configured the ``PATH`` and ``PATHEXT`` variables for
-your :ref:`Python installation <using-on-windows>`::
-
-    c:\>python -m venv c:\path\to\myenv
+   PS> python -m venv C:\path\to\new\virtual\environment
 
 The command, if run with ``-h``, will show the available options::
 
