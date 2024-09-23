@@ -638,18 +638,21 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.8
 
 
-.. function:: update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
+.. function:: update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES, *, delegated=WRAPPER_DELEGATIONS)
 
    Update a *wrapper* function to look like the *wrapped* function. The optional
-   arguments are tuples to specify which attributes of the original function are
-   assigned directly to the matching attributes on the wrapper function and which
+   arguments are tuples to specify how particular attributes are handled.
+
+   The attributes in *assigned* are assigned directly to the matching attributes
+   on the wrapper function. The default value is the module-level constant
+   ``WRAPPER_ASSIGNMENTS``, which contains ``__module__``, ``__name__``, ``__qualname__``,
+   ``__type_params__``, and ``__doc__``. For names in *updated*,
    attributes of the wrapper function are updated with the corresponding attributes
-   from the original function. The default values for these arguments are the
-   module level constants ``WRAPPER_ASSIGNMENTS`` (which assigns to the wrapper
-   function's ``__module__``, ``__name__``, ``__qualname__``, ``__annotations__``,
-   ``__type_params__``, and ``__doc__``, the documentation string)
-   and ``WRAPPER_UPDATES`` (which
-   updates the wrapper function's ``__dict__``, i.e. the instance dictionary).
+   from the original function. It defaults to ``WRAPPER_UPDATES``, which contains
+   ``__dict__``, i.e. the instance dictionary. An attribute-specific delegation
+   mechanism is used for attributes in *delegated*. The default value,
+   ``WRAPPER_DELEGATIONS``, contains only ``__annotate__``, for which a wrapper
+   :term:`annotate function` is generated. Other attributes cannot be added to *delegated*.
 
    To allow access to the original function for introspection and other purposes
    (e.g. bypassing a caching decorator such as :func:`lru_cache`), this function
@@ -681,12 +684,16 @@ The :mod:`functools` module defines the following functions:
    .. versionchanged:: 3.12
       The ``__type_params__`` attribute is now copied by default.
 
+   .. versionchanged:: 3.14
+      The ``__annotations__`` attribute is no longer copied by default. Instead,
+      the ``__annotate__`` attribute is delegated. See :pep:`749`.
 
-.. decorator:: wraps(wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
+
+.. decorator:: wraps(wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES, *, delegated=WRAPPER_DELEGATIONS)
 
    This is a convenience function for invoking :func:`update_wrapper` as a
    function decorator when defining a wrapper function.  It is equivalent to
-   ``partial(update_wrapper, wrapped=wrapped, assigned=assigned, updated=updated)``.
+   ``partial(update_wrapper, wrapped=wrapped, assigned=assigned, updated=updated, delegated=delegated)``.
    For example::
 
       >>> from functools import wraps

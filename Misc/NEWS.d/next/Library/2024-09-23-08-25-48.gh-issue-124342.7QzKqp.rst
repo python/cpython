@@ -1,0 +1,2 @@
+Add custom support for wrapping ``__annotate__`` functions to
+:func:`functools.update_wrapper` and :func:`functools.wraps`.

@@ -1,4 +1,5 @@
 import abc
+import annotationlib
 import builtins
 import collections
 import collections.abc
@@ -747,19 +748,38 @@ class TestUpdateWrapper(unittest.TestCase):
 
         functools.update_wrapper(wrapper, inner)
         self.assertEqual(wrapper.__annotations__, {'x': int})
-        self.assertIs(wrapper.__annotate__, inner.__annotate__)
+        self.check_annotate_matches(wrapper, inner)
 
         def with_forward_ref(x: undefined): pass
         def wrapper(*args): pass
 
         functools.update_wrapper(wrapper, with_forward_ref)
 
-        self.assertIs(wrapper.__annotate__, with_forward_ref.__annotate__)
+        # VALUE raises NameError
+        self.check_annotate_matches(wrapper, with_forward_ref, skip=(annotationlib.Format.VALUE,))
         with self.assertRaises(NameError):
             wrapper.__annotations__
 
         undefined = str
         self.assertEqual(wrapper.__annotations__, {'x': undefined})
+
+    def test_update_wrapper_with_modified_annotations(self):
+        def inner(x: int): pass
+        def wrapper(*args): pass
+
+        inner.__annotations__["x"] = str
+        functools.update_wrapper(wrapper, inner)
+        self.assertEqual(wrapper.__annotations__, {'x': str})
+        self.check_annotate_matches(wrapper, inner)
+
+    def check_annotate_matches(self, wrapper, wrapped, skip=()):
+        for format in annotationlib.Format:
+            if format in skip:
+                continue
+            with self.subTest(format=format):
+                wrapper_annos = annotationlib.get_annotations(wrapper, format=format)
+                wrapped_annos = annotationlib.get_annotations(wrapped, format=format)
+                self.assertEqual(wrapper_annos, wrapped_annos)
 
 
 class TestWraps(TestUpdateWrapper):

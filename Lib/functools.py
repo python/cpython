@@ -32,12 +32,15 @@ GenericAlias = type(list[int])
 # wrapper functions that can handle naive introspection
 
 WRAPPER_ASSIGNMENTS = ('__module__', '__name__', '__qualname__', '__doc__',
-                       '__annotate__', '__type_params__')
+                       '__type_params__')
 WRAPPER_UPDATES = ('__dict__',)
+WRAPPER_DELEGATIONS = ('__annotate__',)
 def update_wrapper(wrapper,
                    wrapped,
                    assigned = WRAPPER_ASSIGNMENTS,
-                   updated = WRAPPER_UPDATES):
+                   updated = WRAPPER_UPDATES,
+                   *,
+                   delegated = WRAPPER_DELEGATIONS):
     """Update a wrapper function to look like the wrapped function
 
        wrapper is the function to be updated
@@ -48,6 +51,11 @@ def update_wrapper(wrapper,
        updated is a tuple naming the attributes of the wrapper that
        are updated with the corresponding attribute from the wrapped
        function (defaults to functools.WRAPPER_UPDATES)
+       delegated is a tuple naming attributes of the wrapper for which
+       resolution should be delegated to the wrapped object using custom
+       logic (defaults to functools.WRAPPER_DELEGATIONS). Only the
+       __annotate__ attribute is supported; any other attribute will raise
+       an error.
     """
     for attr in assigned:
         try:
@@ -58,6 +66,14 @@ def update_wrapper(wrapper,
             setattr(wrapper, attr, value)
     for attr in updated:
         getattr(wrapper, attr).update(getattr(wrapped, attr, {}))
+    for attr in delegated:
+        if attr == "__annotate__":
+            def __annotate__(format):
+                func = _get_get_annotations()
+                return func(wrapped, format=format)
+            wrapper.__annotate__ = __annotate__
+        else:
+            raise ValueError(f"Unsupported delegated attribute {attr!r}")
     # Issue #17482: set __wrapped__ last so we don't inadvertently copy it
     # from the wrapped function when updating __dict__
     wrapper.__wrapped__ = wrapped
@@ -66,7 +82,9 @@ def update_wrapper(wrapper,
 
 def wraps(wrapped,
           assigned = WRAPPER_ASSIGNMENTS,
-          updated = WRAPPER_UPDATES):
+          updated = WRAPPER_UPDATES,
+          *,
+          delegated = WRAPPER_DELEGATIONS):
     """Decorator factory to apply update_wrapper() to a wrapper function
 
        Returns a decorator that invokes update_wrapper() with the decorated
@@ -76,7 +94,7 @@ def wraps(wrapped,
        update_wrapper().
     """
     return partial(update_wrapper, wrapped=wrapped,
-                   assigned=assigned, updated=updated)
+                   assigned=assigned, updated=updated, delegated=delegated)
 
 
 ################################################################################
@@ -1048,3 +1066,13 @@ class cached_property:
         return val
 
     __class_getitem__ = classmethod(GenericAlias)
+
+
+################################################################################
+### internal helpers
+################################################################################
+
+@cache
+def _get_get_annotations():
+    from annotationlib import get_annotations
+    return get_annotations
