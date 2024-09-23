@@ -53,7 +53,7 @@ __getitem__() method which implements the sequence behavior.  The
 sequence must be accessed in strictly sequential order; sequence
 access and readline() cannot be mixed.
 
-Optional in-place filtering: if the keyword argument inplace=1 is
+Optional in-place filtering: if the keyword argument inplace=True is
 passed to input() or to the FileInput constructor, the file is moved
 to a backup file and standard output is directed to the input file.
 This makes it possible to write a filter that rewrites its input file
@@ -335,18 +335,21 @@ class FileInput:
                     pass
                 # The next few lines may raise OSError
                 os.rename(self._filename, self._backupfilename)
-                self._file = open(self._backupfilename, self._mode, encoding=encoding)
+                self._file = open(self._backupfilename, self._mode,
+                                  encoding=encoding, errors=self._errors)
                 try:
                     perm = os.fstat(self._file.fileno()).st_mode
                 except OSError:
-                    self._output = open(self._filename, self._write_mode, encoding=encoding)
+                    self._output = open(self._filename, self._write_mode,
+                                        encoding=encoding, errors=self._errors)
                 else:
                     mode = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
                     if hasattr(os, 'O_BINARY'):
                         mode |= os.O_BINARY
 
                     fd = os.open(self._filename, mode, perm)
-                    self._output = os.fdopen(fd, self._write_mode, encoding=encoding)
+                    self._output = os.fdopen(fd, self._write_mode,
+                                             encoding=encoding, errors=self._errors)
                     try:
                         os.chmod(self._filename, perm)
                     except OSError:
@@ -396,7 +399,7 @@ class FileInput:
 
 
 def hook_compressed(filename, mode, *, encoding=None, errors=None):
-    if encoding is None:  # EncodingWarning is emitted in FileInput() already.
+    if encoding is None and "b" not in mode:  # EncodingWarning is emitted in FileInput() already.
         encoding = "locale"
     ext = os.path.splitext(filename)[1]
     if ext == '.gz':

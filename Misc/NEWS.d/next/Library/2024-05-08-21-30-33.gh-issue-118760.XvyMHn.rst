@@ -1,0 +1,1 @@
+Restore the default value of ``tkiter.wantobjects`` to ``1``.

@@ -1,2 +1,0 @@
-Added the :c:data:`Py_Version` constant which bears the same value as
-:c:macro:`PY_VERSION_HEX`. Patch by Gabriele N. Tornetta.
