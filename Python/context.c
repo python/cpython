@@ -191,7 +191,7 @@ _PyContext_Enter(PyThreadState *ts, PyObject *octx)
     ts->context = Py_NewRef(ctx);
     ts->context_ver++;
 
-    notify_context_watchers(PY_CONTEXT_EVENT_ENTER, ctx);
+    notify_context_watchers(Py_CONTEXT_EVENT_ENTER, ctx);
     return 0;
 }
 
