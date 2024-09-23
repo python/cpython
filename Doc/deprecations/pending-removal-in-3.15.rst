@@ -17,6 +17,9 @@ Pending Removal in Python 3.15
   * The :option:`!--cgi` flag to the :program:`python -m http.server`
     command-line interface has been deprecated since Python 3.13.
 
+* :mod:`importlib`: ``__package__`` and ``__cached__`` will cease to be set or
+  taken into consideration by the import system (:gh:`97879`).
+
 * :class:`locale`:
 
   * The :func:`~locale.getdefaultlocale` function

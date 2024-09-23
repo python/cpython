@@ -47,9 +47,6 @@ Pending Removal in Python 3.14
 * :mod:`email`: Deprecated the *isdst* parameter in :func:`email.utils.localtime`.
   (Contributed by Alan Williams in :gh:`72346`.)
 
-* :mod:`importlib`: ``__package__`` and ``__cached__`` will cease to be set or
-  taken into consideration by the import system (:gh:`97879`).
-
 * :mod:`importlib.abc` deprecated classes:
 
   * :class:`!importlib.abc.ResourceReader`
