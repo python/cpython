@@ -1131,7 +1131,7 @@ Glossary
       :class:`tuple`, and :class:`bytes`. Note that :class:`dict` also
       supports :meth:`~object.__getitem__` and :meth:`!__len__`, but is considered a
       mapping rather than a sequence because the lookups use arbitrary
-      :term:`immutable` keys rather than integers.
+      :term:`hashable` keys rather than integers.
 
       The :class:`collections.abc.Sequence` abstract base class
       defines a much richer interface that goes beyond just
