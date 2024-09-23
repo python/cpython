@@ -127,9 +127,9 @@ def get_warnings_by_file(warnings: list[dict]) -> dict[str, list[dict]]:
 def is_file_ignored(
     file_path: str, ignore_rules: set[IgnoreRule]
 ) -> IgnoreRule | None:
-    """
-    Returns the IgnoreRule object for the file path
-    if there is a related rule for it
+    """Return the IgnoreRule object for the file path.
+
+    Return ``None`` if there is no related rule for that path.
     """
     for rule in ignore_rules:
         if rule.is_directory:
