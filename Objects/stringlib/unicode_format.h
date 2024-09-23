@@ -462,8 +462,17 @@ get_field_object(SubString *input, PyObject *args, PyObject *kwargs,
             tmp = getattr(obj, &name);
         else
             /* getitem lookup "[]" */
-            if (index == -1)
+            if (index == -1) {
+                if (PySequence_Check(obj)) {
+                    PyObject *str = SubString_new_object(&name);
+                    /* TypeError is for backward compatibility */
+                    PyErr_Format(PyExc_TypeError,
+                         "Sequence index must consist of digits, \"%S\" is not allowed",
+                         str);
+                    goto error;
+                }
                 tmp = getitem_str(obj, &name);
+            }
             else
                 if (PySequence_Check(obj))
                     tmp = getitem_sequence(obj, index);
