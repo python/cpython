@@ -46,7 +46,7 @@ Py_LOCAL_INLINE(Py_ssize_t) _PyBytesWriter_GetSize(_PyBytesWriter *writer,
 static inline PyObject* bytes_get_empty(void)
 {
     PyObject *empty = &EMPTY->ob_base.ob_base;
-    assert(_Py_IsImmortal(empty));
+    assert(_Py_IsImmortalLoose(empty));
     return empty;
 }
 
@@ -119,7 +119,7 @@ PyBytes_FromStringAndSize(const char *str, Py_ssize_t size)
     }
     if (size == 1 && str != NULL) {
         op = CHARACTER(*str & 255);
-        assert(_Py_IsImmortal(op));
+        assert(_Py_IsImmortalLoose(op));
         return (PyObject *)op;
     }
     if (size == 0) {
@@ -155,7 +155,7 @@ PyBytes_FromString(const char *str)
     }
     else if (size == 1) {
         op = CHARACTER(*str & 255);
-        assert(_Py_IsImmortal(op));
+        assert(_Py_IsImmortalLoose(op));
         return (PyObject *)op;
     }
 
@@ -1598,7 +1598,7 @@ _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     if (a->ob_shash == -1) {
         /* Can't fail */
-        a->ob_shash = _Py_HashBytes(a->ob_sval, Py_SIZE(a));
+        a->ob_shash = Py_HashBuffer(a->ob_sval, Py_SIZE(a));
     }
     return a->ob_shash;
 _Py_COMP_DIAG_POP
@@ -1867,11 +1867,19 @@ bytes_join(PyBytesObject *self, PyObject *iterable_of_bytes)
 }
 
 PyObject *
-_PyBytes_Join(PyObject *sep, PyObject *x)
+PyBytes_Join(PyObject *sep, PyObject *iterable)
 {
-    assert(sep != NULL && PyBytes_Check(sep));
-    assert(x != NULL);
-    return bytes_join((PyBytesObject*)sep, x);
+    if (sep == NULL) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    if (!PyBytes_Check(sep)) {
+        PyErr_Format(PyExc_TypeError,
+                     "sep: expected bytes, got %T", sep);
+        return NULL;
+    }
+
+    return stringlib_bytes_join(sep, iterable);
 }
 
 /*[clinic input]

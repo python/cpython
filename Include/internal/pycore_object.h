@@ -159,6 +159,23 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 }
 #define _Py_RefcntAdd(op, n) _Py_RefcntAdd(_PyObject_CAST(op), n)
 
+// Checks if an object has a single, unique reference. If the caller holds a
+// unique reference, it may be able to safely modify the object in-place.
+static inline int
+_PyObject_IsUniquelyReferenced(PyObject *ob)
+{
+#if !defined(Py_GIL_DISABLED)
+    return Py_REFCNT(ob) == 1;
+#else
+    // NOTE: the entire ob_ref_shared field must be zero, including flags, to
+    // ensure that other threads cannot concurrently create new references to
+    // this object.
+    return (_Py_IsOwnedByCurrentThread(ob) &&
+            _Py_atomic_load_uint32_relaxed(&ob->ob_ref_local) == 1 &&
+            _Py_atomic_load_ssize_relaxed(&ob->ob_ref_shared) == 0);
+#endif
+}
+
 PyAPI_FUNC(void) _Py_SetImmortal(PyObject *op);
 PyAPI_FUNC(void) _Py_SetImmortalUntracked(PyObject *op);
 
@@ -297,7 +314,7 @@ static inline void
 _Py_INCREF_TYPE(PyTypeObject *type)
 {
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-        assert(_Py_IsImmortal(type));
+        assert(_Py_IsImmortalLoose(type));
         return;
     }
 
@@ -337,7 +354,7 @@ static inline void
 _Py_DECREF_TYPE(PyTypeObject *type)
 {
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-        assert(_Py_IsImmortal(type));
+        assert(_Py_IsImmortalLoose(type));
         return;
     }
 
@@ -425,7 +442,7 @@ static inline void _PyObject_GC_TRACK(
     _PyGCHead_SET_NEXT(last, gc);
     _PyGCHead_SET_PREV(gc, last);
     /* Young objects will be moved into the visited space during GC, so set the bit here */
-    gc->_gc_next = ((uintptr_t)generation0) | interp->gc.visited_space;
+    gc->_gc_next = ((uintptr_t)generation0) | (uintptr_t)interp->gc.visited_space;
     generation0->_gc_prev = (uintptr_t)gc;
 #endif
 }
@@ -741,9 +758,9 @@ _PyType_PreHeaderSize(PyTypeObject *tp)
 {
     return (
 #ifndef Py_GIL_DISABLED
-        _PyType_IS_GC(tp) * sizeof(PyGC_Head) +
+        (size_t)_PyType_IS_GC(tp) * sizeof(PyGC_Head) +
 #endif
-        _PyType_HasFeature(tp, Py_TPFLAGS_PREHEADER) * 2 * sizeof(PyObject *)
+        (size_t)_PyType_HasFeature(tp, Py_TPFLAGS_PREHEADER) * 2 * sizeof(PyObject *)
     );
 }
 
@@ -804,7 +821,7 @@ static inline PyDictValues *
 _PyObject_InlineValues(PyObject *obj)
 {
     PyTypeObject *tp = Py_TYPE(obj);
-    assert(tp->tp_basicsize > 0 && tp->tp_basicsize % sizeof(PyObject *) == 0);
+    assert(tp->tp_basicsize > 0 && (size_t)tp->tp_basicsize % sizeof(PyObject *) == 0);
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
     return (PyDictValues *)((char *)obj + tp->tp_basicsize);

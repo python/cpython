@@ -432,7 +432,7 @@ _SHAKE_digest(SHA3object *self, unsigned long digestlen, int hex)
     }
 
     /* Get the raw (binary) digest value. The HACL functions errors out if:
-     * - the algorith is not shake -- not the case here
+     * - the algorithm is not shake -- not the case here
      * - the output length is zero -- we follow the existing behavior and return
      *   an empty digest, without raising an error */
     if (digestlen > 0) {

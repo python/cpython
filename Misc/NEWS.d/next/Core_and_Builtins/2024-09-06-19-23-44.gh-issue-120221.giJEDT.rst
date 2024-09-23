@@ -1,0 +1,2 @@
+asyncio REPL is now again properly recognizing KeyboardInterrupts. Display
+of exceptions raised in secondary threads is fixed.

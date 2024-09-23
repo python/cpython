@@ -3664,6 +3664,57 @@ class TestSlots(unittest.TestCase):
         self.assertEqual(A().__dict__, {})
         A()
 
+    @support.cpython_only
+    def test_dataclass_slot_dict_ctype(self):
+        # https://github.com/python/cpython/issues/123935
+        from test.support import import_helper
+        # Skips test if `_testcapi` is not present:
+        _testcapi = import_helper.import_module('_testcapi')
+
+        @dataclass(slots=True)
+        class HasDictOffset(_testcapi.HeapCTypeWithDict):
+            __dict__: dict = {}
+        self.assertNotEqual(_testcapi.HeapCTypeWithDict.__dictoffset__, 0)
+        self.assertEqual(HasDictOffset.__slots__, ())
+
+        @dataclass(slots=True)
+        class DoesNotHaveDictOffset(_testcapi.HeapCTypeWithWeakref):
+            __dict__: dict = {}
+        self.assertEqual(_testcapi.HeapCTypeWithWeakref.__dictoffset__, 0)
+        self.assertEqual(DoesNotHaveDictOffset.__slots__, ('__dict__',))
+
+    @support.cpython_only
+    def test_slots_with_wrong_init_subclass(self):
+        # TODO: This test is for a kinda-buggy behavior.
+        # Ideally, it should be fixed and `__init_subclass__`
+        # should be fully supported in the future versions.
+        # See https://github.com/python/cpython/issues/91126
+        class WrongSuper:
+            def __init_subclass__(cls, arg):
+                pass
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "missing 1 required positional argument: 'arg'",
+        ):
+            @dataclass(slots=True)
+            class WithWrongSuper(WrongSuper, arg=1):
+                pass
+
+        class CorrectSuper:
+            args = []
+            def __init_subclass__(cls, arg="default"):
+                cls.args.append(arg)
+
+        @dataclass(slots=True)
+        class WithCorrectSuper(CorrectSuper):
+            pass
+
+        # __init_subclass__ is called twice: once for `WithCorrectSuper`
+        # and once for `WithCorrectSuper__slots__` new class
+        # that we create internally.
+        self.assertEqual(CorrectSuper.args, ["default", "default"])
+
 
 class TestDescriptors(unittest.TestCase):
     def test_set_name(self):
