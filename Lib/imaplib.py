@@ -1627,7 +1627,6 @@ class Idler:
             status, [msg] = imap._command_complete('IDLE', self._tag)
             if __debug__ and imap.debug >= 4:
                 imap._mesg(f'idle status: {status} {msg!r}')
-
         except OSError:
             if not exc_type:
                 raise
