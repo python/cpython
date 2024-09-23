@@ -52,6 +52,9 @@ struct _pycontexttokenobject {
     int tok_used;
 };
 
+#define PY_FOREACH_CONTEXT_EVENT(V) \
+   V(ENTER)                      \
+   V(EXIT)
 
 // _testinternalcapi.hamt() used by tests.
 // Export for '_testcapi' shared extension
