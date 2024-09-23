@@ -167,13 +167,7 @@ type.
 
    .. c:member:: const char *name
 
-      Pointer to a NUL-terminated string containing the fully qualified name of the
-      type.  For types that are accessible as module globals, the string should be
-      the full module name, followed by a dot, followed by the type name.  If the
-      module is a submodule of a package, the full package name is part of the full
-      module name.  For example, a type named :class:`!T` defined in module :mod:`!M`
-      in subpackage :mod:`!Q` in package :mod:`!P` should have the name ``"P.Q.M.T"``.
-      The name must include at least one dot.
+      Fully qualified name of the type; null-terminated UTF-8 encoded.
 
    .. c:member:: const char *doc
 
