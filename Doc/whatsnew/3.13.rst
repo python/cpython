@@ -2083,6 +2083,26 @@ New Features
   and :exc:`KeyError` is not raised for missing keys.
   (Contributed by Stefan Behnel and Victor Stinner in :gh:`111262`.)
 
+* Add the :c:func:`PyMapping_GetOptionalItem`
+  and :c:func:`PyMapping_GetOptionalItemString` functions
+  as alternatives to :c:func:`PyObject_GetItem`
+  and :c:func:`PyMapping_GetItemString` respectively.
+  The new functions do not raise :exc:`KeyError`
+  if the requested key is missing from the mapping.
+  These variants are more convenient and faster
+  if a missing key should not be treated as a failure.
+  (Contributed by Serhiy Storchaka in :gh:`106307`.)
+
+* Add the :c:func:`PyObject_GetOptionalAttr`
+  and :c:func:`PyObject_GetOptionalAttrString` functions
+  as alternatives to  :c:func:`PyObject_GetAttr`
+  and :c:func:`PyObject_GetAttrString` respectively.
+  The new functions do not raise :exc:`AttributeError`
+  if the requested attribute is not found on the object.
+  These variants are more convenient and faster
+  if the missing attribute should not be treated as a failure.
+  (Contributed by Serhiy Storchaka in :gh:`106521`.)
+
 * Add the :c:func:`PyErr_FormatUnraisable` function
   as an extension to :c:func:`PyErr_WriteUnraisable`
   that allows customizing the warning message.
@@ -2104,9 +2124,6 @@ New Features
   For example, ``Py_GetConstant(Py_CONSTANT_ZERO)`` returns a strong reference
   to the constant zero.
   (Contributed by Victor  Stinner in :gh:`115754`.)
-
-* Add the :c:func:`Py_HashPointer` function to hash a raw pointer.
-  (Contributed by Victor Stinner in :gh:`111545`.)
 
 * Add the :c:func:`PyImport_AddModuleRef` function
   as a replacement for :c:func:`PyImport_AddModule`
@@ -2138,16 +2155,6 @@ New Features
   and Python :class:`int` objects.
   (Contributed by Steve Dower in :gh:`111140`.)
 
-* Add the :c:func:`PyMapping_GetOptionalItem`
-  and :c:func:`PyMapping_GetOptionalItemString` functions
-  as alternatives to :c:func:`PyObject_GetItem`
-  and :c:func:`PyMapping_GetItemString` respectively.
-  The new functions do not raise :exc:`KeyError`
-  if the requested key is missing from the mapping.
-  These variants are more convenient and faster
-  if a missing key should not be treated as a failure.
-  (Contributed by Serhiy Storchaka in :gh:`106307`.)
-
 * Add :c:func:`PyModule_Add` function, which is similar to
   :c:func:`PyModule_AddObjectRef` and :c:func:`PyModule_AddObject`,
   but always steals a reference to the value.
@@ -2157,15 +2164,8 @@ New Features
   that implements the default hashing function of a Python object.
   (Contributed by Serhiy Storchaka in :gh:`113024`.)
 
-* Add the :c:func:`PyObject_GetOptionalAttr`
-  and :c:func:`PyObject_GetOptionalAttrString` functions
-  as alternatives to  :c:func:`PyObject_GetAttr`
-  and :c:func:`PyObject_GetAttrString` respectively.
-  The new functions do not raise :exc:`AttributeError`
-  if the requested attribute is not found on the object.
-  These variants are more convenient and faster
-  if the missing attribute should not be treated as a failure.
-  (Contributed by Serhiy Storchaka in :gh:`106521`.)
+* Add the :c:func:`Py_HashPointer` function to hash a raw pointer.
+  (Contributed by Victor Stinner in :gh:`111545`.)
 
 * Add the :c:func:`PyObject_VisitManagedDict` and
   :c:func:`PyObject_ClearManagedDict` functions.
