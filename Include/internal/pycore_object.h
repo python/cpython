@@ -732,12 +732,15 @@ _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(PyObject *op)
     return (PyWeakReference **)((char *)op + offset);
 }
 
+// Fast inlined version of PyType_IS_GC()
+#define _PyType_IS_GC(t) _PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
+
 // Fast inlined version of PyObject_IS_GC()
 static inline int
 _PyObject_IS_GC(PyObject *obj)
 {
     PyTypeObject *type = Py_TYPE(obj);
-    return (PyType_IS_GC(type)
+    return (_PyType_IS_GC(type)
             && (type->tp_is_gc == NULL || type->tp_is_gc(obj)));
 }
 
@@ -754,9 +757,6 @@ _PyObject_HashFast(PyObject *op)
     }
     return PyObject_Hash(op);
 }
-
-// Fast inlined version of PyType_IS_GC()
-#define _PyType_IS_GC(t) _PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
 
 static inline size_t
 _PyType_PreHeaderSize(PyTypeObject *tp)
