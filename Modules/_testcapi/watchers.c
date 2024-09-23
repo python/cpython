@@ -631,10 +631,10 @@ static int num_context_object_exit_events[NUM_CONTEXT_WATCHERS] = {0, 0};
 
 static int
 handle_context_watcher_event(int which_watcher, PyContextEvent event, PyContext *ctx) {
-    if (event == PY_CONTEXT_EVENT_ENTER) {
+    if (event == Py_CONTEXT_EVENT_ENTER) {
         num_context_object_enter_events[which_watcher]++;
     }
-    else if (event == PY_CONTEXT_EVENT_EXIT)  {
+    else if (event == Py_CONTEXT_EVENT_EXIT)  {
         num_context_object_exit_events[which_watcher]++;
     }
     else {

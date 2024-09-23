@@ -103,9 +103,9 @@ static const char *
 context_event_name(PyContextEvent event) {
     switch (event) {
         #define CASE(op)                   \
-        case PY_CONTEXT_EVENT_##op:         \
-            return "PY_CONTEXT_EVENT_" #op;
-        Py_FOREACH_CONTEXT_EVENT(CASE)
+        case Py_CONTEXT_EVENT_##op:         \
+            return "Py_CONTEXT_EVENT_" #op;
+        P_FOREACH_CONTEXT_EVENT(CASE)
         #undef CASE
     }
     Py_UNREACHABLE();
@@ -225,7 +225,7 @@ _PyContext_Exit(PyThreadState *ts, PyObject *octx)
         return -1;
     }
 
-    notify_context_watchers(PY_CONTEXT_EVENT_EXIT, ctx);
+    notify_context_watchers(Py_CONTEXT_EVENT_EXIT, ctx);
     Py_SETREF(ts->context, (PyObject *)ctx->ctx_prev);
     ts->context_ver++;
 

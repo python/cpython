@@ -122,8 +122,8 @@ Context object management functions:
 .. c:type:: PyContextEvent
 
    Enumeration of possible context object watcher events:
-   - ``PY_CONTEXT_EVENT_ENTER``
-   - ``PY_CONTEXT_EVENT_EXIT``
+   - ``Py_CONTEXT_EVENT_ENTER``
+   - ``Py_CONTEXT_EVENT_EXIT``
 
    .. versionadded:: 3.14
 

@@ -28,7 +28,7 @@ PyAPI_FUNC(int) PyContext_Enter(PyObject *);
 PyAPI_FUNC(int) PyContext_Exit(PyObject *);
 
 typedef enum {
-   #define Py_DEF_EVENT(op) PY_CONTEXT_EVENT_##op,
+   #define Py_DEF_EVENT(op) Py_CONTEXT_EVENT_##op,
    PY_FOREACH_CONTEXT_EVENT(Py_DEF_EVENT)
    #undef Py_DEF_EVENT
 } PyContextEvent;

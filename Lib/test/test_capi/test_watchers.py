@@ -626,7 +626,7 @@ class TestContextObjectWatchers(unittest.TestCase):
                 self.assertEqual(
                     cm.unraisable.err_msg,
                     "Exception ignored in "
-                    f"PY_CONTEXT_EVENT_EXIT watcher callback for {ctx!r}"
+                    f"Py_CONTEXT_EVENT_EXIT watcher callback for {ctx!r}"
                 )
                 self.assertEqual(str(cm.unraisable.exc_value), "boom!")
 
