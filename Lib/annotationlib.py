@@ -48,12 +48,12 @@ class ForwardRef:
     """Wrapper that holds a forward reference.
 
     Constructor arguments:
-    - arg: a string representing the code to be evaluated.
-    - module: the module where the forward reference was created. Must be a string,
-      not a module object.
-    - owner: The owning object (module, class, or function).
-    - is_argument: Does nothing, retained for compatibility.
-    - is_class: True if the forward reference was created in class scope.
+    * arg: a string representing the code to be evaluated.
+    * module: the module where the forward reference was created.
+      Must be a string, not a module object.
+    * owner: The owning object (module, class, or function).
+    * is_argument: Does nothing, retained for compatibility.
+    * is_class: True if the forward reference was created in class scope.
 
     """
 
