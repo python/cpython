@@ -90,7 +90,7 @@ after the main thread.
 
 Additionally, numeric and string literals in the code as well as strings
 returned by :func:`sys.intern` are also interned.  This behavior is expected to
-remainin the 3.14 free-threaded build.
+remain in the 3.14 free-threaded build.
 
 
 Frame Objects
