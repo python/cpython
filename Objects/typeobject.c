@@ -5303,6 +5303,7 @@ get_base_by_token_recursive(PyTypeObject *, void *);
 int
 PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
 {
+    // Goto jumps here can disturb the PGO collection on MSVC
     if (result == NULL) {
         // If the `result` is checked only once here, the subsequent
         // branches will become trivial to optimize.
