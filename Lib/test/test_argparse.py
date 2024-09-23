@@ -2115,7 +2115,6 @@ class TestNegativeNumber(ParserTestCase):
         ('--float -.5_000', NS(int=None, float=-0.5)),
     ]
 
-
 # ================
 # Subparsers tests
 # ================
