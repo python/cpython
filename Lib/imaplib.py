@@ -667,8 +667,7 @@ class IMAP4:
         Example:
 
         with imap.idle(dur=29*60) as idler:
-            for response in idler:
-                typ, datum = response
+            for typ, datum in idler:
                 print(typ, datum)
 
         Responses produced by the iterator are not added to the internal
