@@ -1335,8 +1335,8 @@ Here are some things we don't do but would be worth doing:
 Side-by-side
 ^^^^^^^^^^^^
 
-Here's the implementations for the different concurrency models,
-side-by-side for easy comparison:
+Here are the implementations for the different concurrency models,
+side-by-side for easy comparison (main differences highlighted):
 
 .. list-table::
    :header-rows: 1
@@ -1354,11 +1354,9 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency/grep/_implementations.py
-          :start-after: [start-impl-sequential]
-          :end-before: [end-impl-sequential]
-          :dedent:
+       .. literalinclude:: ../includes/concurrency/grep-sequential.py
           :linenos:
+          :emphasize-lines: 7-11
 
        .. raw:: html
 
@@ -1369,11 +1367,9 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency/grep/_implementations.py
-          :start-after: [start-impl-threads-basic]
-          :end-before: [end-impl-threads-basic]
-          :dedent:
+       .. literalinclude:: ../includes/concurrency/grep-threads.py
           :linenos:
+          :emphasize-lines: 6-52
 
        .. raw:: html
 
@@ -1384,11 +1380,9 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency/grep/_implementations.py
-          :start-after: [start-impl-interpreters-basic]
-          :end-before: [end-impl-interpreters-basic]
-          :dedent:
+       .. literalinclude:: ../includes/concurrency/grep-interpreters.py
           :linenos:
+          :emphasize-lines: 6-82
 
        .. raw:: html
 
@@ -1399,11 +1393,9 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency/grep/_implementations.py
-          :start-after: [start-impl-asyncio-basic]
-          :end-before: [end-impl-asyncio-basic]
-          :dedent:
+       .. literalinclude:: ../includes/concurrency/grep-asyncio.py
           :linenos:
+          :emphasize-lines: 6-53
 
        .. raw:: html
 
@@ -1414,11 +1406,9 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency/grep/_implementations.py
-          :start-after: [start-impl-multiprocessing-basic]
-          :end-before: [end-impl-multiprocessing-basic]
-          :dedent:
+       .. literalinclude:: ../includes/concurrency/grep-multiprocessing.py
           :linenos:
+          :emphasize-lines: 6-83
 
        .. raw:: html
 
@@ -1429,11 +1419,9 @@ side-by-side for easy comparison:
           <details>
           <summary>(expand)</summary>
 
-       .. literalinclude:: ../includes/concurrency/grep/_implementations.py
-          :start-after: [start-impl-cf-threads-basic]
-          :end-before: [end-impl-cf-threads-basic]
-          :dedent:
+       .. literalinclude:: ../includes/concurrency/grep-threads-cf.py
           :linenos:
+          :emphasize-lines: 6-46
 
        .. raw:: html
 
