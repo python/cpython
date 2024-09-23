@@ -37,7 +37,7 @@ A virtual environment is (amongst other things):
   are by default isolated from software in other virtual environments and Python
   interpreters and libraries installed in the operating system.
 
-* Contained in a directory, conventionally either named ``.venv`` or ``venv`` in
+* Contained in a directory, conventionally named ``.venv`` or ``venv`` in
   the project directory, or under a container directory for lots of virtual
   environments, such as ``~/.virtualenvs``.
 
@@ -117,7 +117,7 @@ should be runnable without activating it.
 
 In order to achieve this, scripts installed into virtual environments have
 a "shebang" line which points to the environment's Python interpreter,
-that is :samp:`#!/{<path-to-venv>}/bin/python`.
+:samp:`#!/{<path-to-venv>}/bin/python`.
 This means that the script will run with that interpreter regardless of the
 value of :envvar:`PATH`. On Windows, "shebang" line processing is supported if
 you have the :ref:`launcher` installed. Thus, double-clicking an installed
@@ -345,8 +345,8 @@ creation according to their needs, the :class:`EnvBuilder` class.
     .. method:: install_scripts(context, path)
 
         *path* is the path to a directory that should contain subdirectories
-        ``common``, ``posix``, ``nt``, each containing scripts destined for the
-        bin directory in the environment.  The contents of ``common`` and the
+        ``common``, ``posix``, ``nt``; each containing scripts destined for the
+        ``bin`` directory in the environment.  The contents of ``common`` and the
         directory corresponding to :data:`os.name` are copied after some text
         replacement of placeholders:
 

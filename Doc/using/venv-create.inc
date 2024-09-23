@@ -1,11 +1,11 @@
 :ref:`Virtual environments <venv-def>` are created by executing the ``venv``
-command:
+module:
 
-.. code-block:: bash
+.. code-block:: shell
 
     python -m venv /path/to/new/virtual/environment
 
-This creates the target directory (creating any parent
+This creates the target directory (and any parent
 directories that don't already exist) and places a ``pyvenv.cfg`` file in it
 with a ``home`` key pointing to the Python installation from which the command
 was run (a common name for the target directory is ``.venv``).  It also creates
@@ -21,7 +21,7 @@ re-used.
 
 .. deprecated-removed:: 3.6 3.8
    :program:`pyvenv` was the recommended tool for creating virtual environments
-   for Python 3.3 and 3.4.
+   for Python 3.3 and 3.4, and replaced in 3.5 by executing ``venv`` directly.
 
 .. highlight:: none
 
