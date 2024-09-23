@@ -2571,6 +2571,16 @@ dummy_func(
             JUMP_BACKWARD_NO_INTERRUPT,
         };
 
+        pseudo(JUMP_IF_FALSE, (cond -- cond)) = {
+            JUMP_FORWARD,
+            JUMP_BACKWARD,
+        };
+
+        pseudo(JUMP_IF_TRUE, (cond -- cond)) = {
+            JUMP_FORWARD,
+            JUMP_BACKWARD,
+        };
+
         tier1 inst(ENTER_EXECUTOR, (--)) {
             #ifdef _Py_TIER2
             PyCodeObject *code = _PyFrame_GetCode(frame);
