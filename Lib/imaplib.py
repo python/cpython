@@ -1508,6 +1508,7 @@ class Idler:
             raise imap.error('_pop() only works during IDLE')
 
         if imap._idle_responses:
+            # Response is ready to return to the user
             resp = imap._idle_responses.pop(0)
             if __debug__ and imap.debug >= 4:
                 imap._mesg(f'idle _pop({timeout}) de-queued {resp[0]}')
