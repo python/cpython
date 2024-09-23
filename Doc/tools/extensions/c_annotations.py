@@ -124,10 +124,7 @@ def add_annotations(app: Sphinx, doctree: nodes.document) -> None:
             continue
         if not par[0].get("ids", None):
             continue
-        name = par[0]["ids"][0]
-        if name.startswith("c."):
-            name = name[2:]
-
+        name = par[0]["ids"][0].removeprefix("c.")
         objtype = par["objtype"]
 
         # Stable ABI annotation.
