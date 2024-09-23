@@ -105,10 +105,10 @@ def emit_default(out: CWriter, uop: Uop, stack: Stack) -> None:
 
 class OptimizerEmitter(Emitter):
 
-    def emit_save(self, storage: Storage):
+    def emit_save(self, storage: Storage) -> None:
         storage.flush(self.out)
 
-    def emit_reload(self, storage: Storage):
+    def emit_reload(self, storage: Storage) -> None:
         pass
 
 
@@ -130,9 +130,9 @@ def write_uop(
                 out.emit(code)
         if debug:
             args = []
-            for var in prototype.stack.inputs:
-                if not var.peek or override:
-                    args.append(var.name)
+            for input in prototype.stack.inputs:
+                if not input.peek or override:
+                    args.append(input.name)
             out.emit(f'DEBUG_PRINTF({", ".join(args)});\n')
         if override:
             for cache in uop.caches:

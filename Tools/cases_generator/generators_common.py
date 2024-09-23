@@ -242,8 +242,8 @@ class Emitter:
                     self.out.emit(f"PyStackRef_XCLOSE({var.name});\n")
             else:
                 self.out.emit(f"PyStackRef_CLOSE({var.name});\n")
-        for var in storage.inputs:
-            var.defined = False
+        for input in storage.inputs:
+            input.defined = False
         return True
 
     def kill_inputs(
@@ -322,7 +322,7 @@ class Emitter:
         self._print_storage(storage)
         return True
 
-    def emit_save(self, storage: Storage):
+    def emit_save(self, storage: Storage) -> None:
         storage.save(self.out)
         self._print_storage(storage)
 
@@ -340,7 +340,7 @@ class Emitter:
         self.emit_save(storage)
         return True
 
-    def emit_reload(self, storage: Storage):
+    def emit_reload(self, storage: Storage) -> None:
         storage.reload(self.out)
         self._print_storage(storage)
 
@@ -358,7 +358,7 @@ class Emitter:
         self.emit_reload(storage)
         return True
 
-    def _print_storage(self, storage: Storage):
+    def _print_storage(self, storage: Storage) -> None:
         if PRINT_STACKS:
             self.out.start_line()
             self.emit(storage.as_comment())

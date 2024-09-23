@@ -46,7 +46,7 @@ class Local:
     in_memory: bool
     defined: bool
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Local('{self.item.name}', mem={self.in_memory}, defined={self.defined}, array={self.is_array()})"
 
     def compact_str(self) -> str:
@@ -206,7 +206,7 @@ class StackOffset:
         self.popped = []
         self.pushed = []
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         self.simplify()
         return bool(self.popped) or bool(self.pushed)
 
@@ -307,7 +307,7 @@ class Stack:
             out.emit(f"if ({var.condition}) ")
         out.emit(f"stack_pointer[{base_offset.to_c()}]{bits} = {cast}{var.name};\n")
 
-    def _adjust_stack_pointer(self, out: CWriter, number: str):
+    def _adjust_stack_pointer(self, out: CWriter, number: str) -> None:
         if number != "0":
             out.emit(f"stack_pointer += {number};\n")
             out.emit("assert(WITHIN_STACK_BOUNDS());\n")
@@ -331,7 +331,7 @@ class Stack:
         self.top_offset.clear()
         out.start_line()
 
-    def is_flushed(self):
+    def is_flushed(self) -> bool:
         return not self.variables and not self.base_offset and not self.top_offset
 
     def peek_offset(self) -> str:
@@ -420,7 +420,7 @@ class Storage:
     spilled: int = 0
 
     @staticmethod
-    def needs_defining(var: Local):
+    def needs_defining(var: Local) -> bool:
         return (
             not var.defined and
             not var.is_array() and
@@ -428,7 +428,7 @@ class Storage:
         )
 
     @staticmethod
-    def is_live(var: Local):
+    def is_live(var: Local) -> bool:
         return (
             var.defined and
             var.name != "unused"
@@ -521,25 +521,25 @@ class Storage:
         code_list: list[str] = []
         inputs: list[Local] = []
         peeks: list[Local] = []
-        for var in reversed(uop.stack.inputs):
-            code, local = stack.pop(var, extract_bits)
+        for input in reversed(uop.stack.inputs):
+            code, local = stack.pop(input, extract_bits)
             code_list.append(code)
-            if var.peek:
+            if input.peek:
                 peeks.append(local)
             else:
                 inputs.append(local)
         inputs.reverse()
         peeks.reverse()
-        for var in peeks:
-            stack.push(var)
+        for peek in peeks:
+            stack.push(peek)
         top_offset = stack.top_offset.copy()
-        for var in uop.stack.outputs:
-            if var.is_array() and var.used and not var.peek:
+        for ouput in uop.stack.outputs:
+            if ouput.is_array() and ouput.used and not ouput.peek:
                 c_offset = top_offset.to_c()
-                top_offset.push(var)
-                code_list.append(f"{var.name} = &stack_pointer[{c_offset}];\n")
+                top_offset.push(ouput)
+                code_list.append(f"{ouput.name} = &stack_pointer[{c_offset}];\n")
             else:
-                top_offset.push(var)
+                top_offset.push(ouput)
         for var in inputs:
             stack.push(var)
         outputs = [ Local.undefined(var) for var in uop.stack.outputs if not var.peek ]
@@ -560,7 +560,7 @@ class Storage:
         )
 
     def sanity_check(self) -> None:
-        names = set()
+        names: set[str] = set()
         for var in self.inputs:
             if var.name in names:
                 raise StackError(f"Duplicate name {var.name}")
@@ -570,13 +570,13 @@ class Storage:
             if var.name in names:
                 raise StackError(f"Duplicate name {var.name}")
             names.add(var.name)
-        names: set[str] = set()
+        names = set()
         for var in self.stack.variables:
             if var.name in names:
                 raise StackError(f"Duplicate name {var.name}")
             names.add(var.name)
 
-    def is_flushed(self) -> None:
+    def is_flushed(self) -> bool:
         for var in self.outputs:
             if var.defined and not var.in_memory:
                 return False
@@ -602,7 +602,7 @@ class Storage:
         self.stack.merge(other.stack, out)
         self.sanity_check()
 
-    def push_outputs(self):
+    def push_outputs(self) -> None:
         if self.spilled:
             raise StackError(f"Unbalanced stack spills")
         self.clear_inputs("at the end of the micro-op")

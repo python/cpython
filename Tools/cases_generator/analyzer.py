@@ -67,7 +67,7 @@ class Properties:
         return bool(self.escaping_calls)
 
 SKIP_PROPERTIES = Properties(
-    escaping_calls=[],
+    escaping_calls={},
     error_with_pop=False,
     error_without_pop=False,
     deopts=False,
@@ -627,7 +627,7 @@ def find_stmt_end(node: parser.InstDef, idx: int) -> lexer.Token:
         if tkn.kind == "SEMI":
             return node.block.tokens[idx+1]
 
-def check_escaping_calls(instr: parser.InstDef, escapes: dict[lexer.Token, lexer.Token]) -> None:
+def check_escaping_calls(instr: parser.InstDef, escapes: dict[lexer.Token, tuple[lexer.Token, lexer.Token]]) -> None:
     calls = {escapes[t][0] for t in escapes}
     in_if = 0
     tkn_iter = iter(instr.block.tokens)
@@ -646,8 +646,8 @@ def check_escaping_calls(instr: parser.InstDef, escapes: dict[lexer.Token, lexer
         elif tkn in calls and in_if:
             raise analysis_error(f"Escaping call '{tkn.text} in condition", tkn)
 
-def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, lexer.Token]:
-    result: dict[lexer.Token, lexer.Token] = {}
+def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, tuple[lexer.Token, lexer.Token]]:
+    result: dict[lexer.Token, tuple[lexer.Token, lexer.Token]] = {}
     tokens = instr.block.tokens
     for idx, tkn in enumerate(tokens):
         if tkn.kind != lexer.IDENTIFIER:
