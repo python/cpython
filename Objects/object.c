@@ -816,7 +816,6 @@ PyObject_Bytes(PyObject *v)
     return PyBytes_FromObject(v);
 }
 
-#ifdef WITH_FREELISTS
 static void
 clear_freelist(struct _Py_freelist *freelist, int is_finalization,
                freefunc dofree)
@@ -841,12 +840,9 @@ free_object(void *obj)
     Py_DECREF(tp);
 }
 
-#endif
-
 void
 _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
 {
-#ifdef WITH_FREELISTS
     // In the free-threaded build, freelists are per-PyThreadState and cleared in PyThreadState_Clear()
     // In the default build, freelists are per-interpreter and cleared in finalize_interp_types()
     clear_freelist(&freelists->floats, is_finalization, free_object);
@@ -866,7 +862,6 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
         // stacks during GC, so emptying the free-list is counterproductive.
         clear_freelist(&freelists->object_stack_chunks, 1, PyMem_RawFree);
     }
-#endif
 }
 
 /*
