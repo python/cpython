@@ -213,25 +213,49 @@ class EagerTaskFactoryLoopTests:
 
         self.run_coro(run())
 
+    # See GH-124309 for both of these
     def test_staggered_race_with_eager_tasks(self):
-        # See GH-124309
-        async def coro(amount):
-            await asyncio.sleep(amount)
-            return amount
+        async def fail():
+            await asyncio.sleep(0)  # Dummy coroutine
+            raise ValueError("no good")
 
         async def run():
             winner, index, excs = await asyncio.staggered.staggered_race(
                 [
-                    lambda: coro(1),
-                    lambda: coro(0),
-                    lambda: coro(2)
+                    lambda: asyncio.sleep(2),
+                    lambda: asyncio.sleep(1),
+                    lambda: fail()
+                ],
+                delay=0.25
+            )
+            self.assertIsNone(winner)
+            self.assertEqual(index, 1)
+            self.assertIsNone(excs[index])
+            self.assertIsInstance(excs[0], asyncio.CancelledError)
+            self.assertIsInstance(excs[2], ValueError)
+
+        self.run_coro(run())
+
+    def test_staggered_race_with_eager_tasks_no_delay(self):
+        async def fail():
+            raise ValueError("no good")
+
+        async def run():
+            winner, index, excs = await asyncio.staggered.staggered_race(
+                [
+                    lambda: asyncio.sleep(1),
+                    lambda: asyncio.sleep(0),
+                    lambda: fail()
                 ],
                 delay=None
             )
-            self.assertEqual(winner, 0)
+            self.assertIsNone(winner)
             self.assertEqual(index, 1)
+            self.assertIsNone(excs[index])
+            self.assertIsInstance(excs[2], ValueError)
 
         self.run_coro(run())
+
 
 
 class PyEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase):
