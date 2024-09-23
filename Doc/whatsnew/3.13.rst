@@ -2520,6 +2520,11 @@ Build Changes
   (:ref:`PEP 730 <whatsnew313-platform-support>` written
   and implementation contributed by Russell Keith-Magee in :gh:`114099`.)
 
+* ``aarch64-linux-android`` and ``x86_64-linux-android`` are both
+  now :pep:`11` tier 3 platforms.
+  (:ref:`PEP 738 <whatsnew313-platform-support>` written
+  and implementation contributed by Malcolm Smith in :gh:`116622`.)
+
 * ``wasm32-wasi`` is now a :pep:`11` tier 2 platform.
   (Contributed by Brett Cannon in :gh:`115192`.)
 
