@@ -658,7 +658,7 @@ listed below.
    instead of ``__cached__``.
 
    .. deprecated-removed:: 3.13 3.15
-      ``__package__`` will cease to be set or taken into consideration
+      ``__cached{__`` will cease to be set or taken into consideration
       by the import system or standard library.
 
 .. _package-path-rules:
