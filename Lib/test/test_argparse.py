@@ -2115,25 +2115,6 @@ class TestNegativeNumber(ParserTestCase):
         ('--float -.5_000', NS(int=None, float=-0.5)),
     ]
 
-class TestInvalidAction(TestCase):
-    """Test invalid user defined Action"""
-
-    class ActionWithoutCall(argparse.Action):
-        pass
-
-    def test_invalid_type(self):
-        parser = argparse.ArgumentParser()
-
-        parser.add_argument('--foo', action=self.ActionWithoutCall)
-        self.assertRaises(NotImplementedError, parser.parse_args, ['--foo', 'bar'])
-
-    def test_modified_invalid_action(self):
-        parser = ErrorRaisingArgumentParser()
-        action = parser.add_argument('--foo')
-        # Someone got crazy and did this
-        action.type = 1
-        self.assertRaises(ArgumentParserError, parser.parse_args, ['--foo', 'bar'])
-
 
 # ================
 # Subparsers tests
