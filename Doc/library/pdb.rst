@@ -423,17 +423,25 @@ can be overridden by the local file.
 
    Specifying any command resuming execution
    (currently :pdbcmd:`continue`, :pdbcmd:`step`, :pdbcmd:`next`,
-   :pdbcmd:`return`, :pdbcmd:`jump`, :pdbcmd:`quit` and their abbreviations)
+   :pdbcmd:`return`, :pdbcmd:`until`, :pdbcmd:`jump`, :pdbcmd:`quit` and their abbreviations)
    terminates the command list (as if
    that command was immediately followed by end). This is because any time you
    resume execution (even with a simple next or step), you may encounter another
    breakpoint—which could have its own command list, leading to ambiguities about
    which list to execute.
 
-   If you use the ``silent`` command in the command list, the usual message about
-   stopping at a breakpoint is not printed.  This may be desirable for breakpoints
-   that are to print a specific message and then continue.  If none of the other
-   commands print anything, you see no sign that the breakpoint was reached.
+   If you have a command that resumes execution in the command list, the normal
+   frame information before you interact with pdb is not displayed.  If none of
+   the other commands print anything, you see no sign that the breakpoint was
+   reached.
+
+   If you don't have a command that resumes execution in the command list, you
+   can also use the ``silent`` command anywhere in the command list to suppress
+   the frame information.
+
+   .. versionchanged:: 3.14
+      Frame information will not be displayed if a command that resumes execution
+      is present in the command list.
 
 .. pdbcommand:: s(tep)
 
