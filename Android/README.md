@@ -2,7 +2,7 @@
 
 These instructions are only needed if you're planning to compile Python for
 Android yourself. Most users should *not* need to do this. Instead, use one of
-the tools listed in Doc/using/android.rst, which will provide a much easier
+the tools listed in `Doc/using/android.rst`, which will provide a much easier
 experience.
 
 
@@ -85,7 +85,7 @@ The test suite can be run on Linux, macOS, or Windows:
 The test suite can usually be run on a device with 2 GB of RAM, but this is
 borderline, so you may need to increase it to 4 GB. As of Android
 Studio Koala, 2 GB is the default for all emulators, although the user interface
-may indicate otherwise. Locate the emulator's directory under ~/.android/avd,
+may indicate otherwise. Locate the emulator's directory under `~/.android/avd`,
 and find `hw.ramSize` in both config.ini and hardware-qemu.ini. Either set these
 manually to the same value, or use the Android Studio Device Manager, which will
 update both files.

@@ -121,6 +121,7 @@ DOM APIs as well as limited networking capabilities with JavaScript's
 .. _PyScript: https://pyscript.net/
 
 .. _mobile-availability:
+.. _iOS-availability:
 
 Mobile platforms
 ----------------
@@ -138,9 +139,9 @@ there are several major differences:
 * Subprocesses:
 
   * On Android, creating subprocesses is possible but `officially unsupported
-    <https://issuetracker.google.com/issues/128554619#comment4>`__. In
-    particular, Android does not support any part of the System V IPC API, so
-    :mod:`multiprocessing` is not available.
+    <https://issuetracker.google.com/issues/128554619#comment4>`__.
+    In particular, Android does not support any part of the System V IPC API,
+    so :mod:`multiprocessing` is not available.
 
   * An iOS app cannot use any form of subprocessing, multiprocessing, or
     inter-process communication. If an iOS app attempts to create a subprocess,

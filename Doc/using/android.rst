@@ -15,7 +15,7 @@ of software distribution is an "app". There is also no console where you could
 run a :program:`python` executable, or interact with a Python REPL.
 
 As a result, the only way you can use Python on Android is in embedded mode --- that
-is, by writing a native Android application, and embedding a Python interpreter
+is, by writing a native Android application, embedding a Python interpreter
 using ``libpython``, and invoking Python code using the :ref:`Python embedding
 API <embedding>`. The full Python interpreter, the standard library, and all
 your Python code is then packaged into your app for its own private use.
@@ -47,7 +47,7 @@ link to the relevant file.
   file to copy the following items into your project. All except your own Python
   code can be copied from ``cross-build/HOST/prefix/lib``:
 
-  * In your JNI libs:
+  * In your JNI libraries:
 
     * ``libpython*.*.so``
     * ``lib*_python.so`` (external libraries such as OpenSSL)
