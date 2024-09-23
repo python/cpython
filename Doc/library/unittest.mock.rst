@@ -738,7 +738,7 @@ the *new_callable* argument to :func:`patch`.
     .. attribute:: __class__
 
         Normally the :attr:`!__class__` attribute of an object will return its type.
-        For a mock object with a :attr:`spec`, :attr:`!__class__` returns the spec class
+        For a mock object with a :attr:`!spec`, :attr:`!__class__` returns the spec class
         instead. This allows mock objects to pass :func:`isinstance` tests for the
         object they are replacing / masquerading as:
 
@@ -760,8 +760,8 @@ the *new_callable* argument to :func:`patch`.
     meaning of :class:`Mock`, with the exception of *return_value* and *side_effect*
     which have no meaning on a non-callable mock.
 
-Mock objects that use a class or an instance as a :attr:`spec` or
-:attr:`spec_set` are able to pass :func:`isinstance` tests:
+Mock objects that use a class or an instance as a :attr:`!spec` or
+:attr:`!spec_set` are able to pass :func:`isinstance` tests:
 
     >>> mock = Mock(spec=SomeClass)
     >>> isinstance(mock, SomeClass)
@@ -1286,7 +1286,7 @@ objects of any type.
 
 You may want a mock object to return ``False`` to a :func:`hasattr` call, or raise an
 :exc:`AttributeError` when an attribute is fetched. You can do this by providing
-an object as a :attr:`spec` for a mock, but that isn't always convenient.
+an object as a :attr:`!spec` for a mock, but that isn't always convenient.
 
 You "block" attributes by deleting them. Once deleted, accessing an attribute
 will raise an :exc:`AttributeError`.
@@ -2590,7 +2590,7 @@ And for reading files::
 Autospeccing
 ~~~~~~~~~~~~
 
-Autospeccing is based on the existing :attr:`spec` feature of mock. It limits the
+Autospeccing is based on the existing :attr:`!spec` feature of mock. It limits the
 api of mocks to the api of an original object (the spec), but it is recursive
 (implemented lazily) so that attributes of mocks only have the same api as
 the attributes of the spec. In addition mocked functions / methods have the
@@ -2616,7 +2616,7 @@ don't test how your units are "wired together" there is still lots of room
 for bugs that tests might have caught.
 
 :mod:`unittest.mock` already provides a feature to help with this, called speccing. If you
-use a class or instance as the :attr:`spec` for a mock then you can only access
+use a class or instance as the :attr:`!spec` for a mock then you can only access
 attributes on the mock that exist on the real class:
 
     >>> from urllib import request
