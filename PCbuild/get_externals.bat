@@ -45,7 +45,7 @@ if "%ORG%"=="" (set ORG=python)
 call "%PCBUILD%\find_python.bat" "%PYTHON%"
 
 if NOT DEFINED PYTHON (
-    where /Q git || echo Python 3.6 could not be found or installed, and git.exe is not on your PATH && exit /B 1
+    where /Q git || echo Python 3.10 or later could not be found or installed, and git.exe is not on your PATH && exit /B 1
 )
 
 echo.Fetching external libraries...
