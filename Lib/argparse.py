@@ -1360,7 +1360,7 @@ class _ActionsContainer(object):
         self._defaults = {}
 
         # determines whether an "option" looks like a negative number
-        self._negative_number_matcher = _re.compile(r'^-\d[\d_]*(\.\d[\d_]*)?$')
+        self._negative_number_matcher = _re.compile(r'^-(?:\d+(?:_\d+)*(?:\.\d+(?:_\d+)*)?|\.\d+(?:_\d+)*)$')
 
         # whether or not there are any optionals that look like negative
         # numbers -- uses a list so it can be shared and edited
