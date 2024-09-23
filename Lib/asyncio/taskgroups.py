@@ -199,7 +199,8 @@ class TaskGroup:
             if not t.done():
                 t.cancel()
 
-    def _on_task_done(self, task):
+    def _on_task_done_without_propagation(self, task):
+        # For staggered_race()
         self._tasks.discard(task)
 
         if self._on_completed_fut is not None and not self._tasks:
@@ -209,7 +210,10 @@ class TaskGroup:
         if task.cancelled():
             return
 
-        exc = task.exception()
+        return task.exception()
+
+    def _on_task_done(self, task):
+        exc = self._on_task_done_without_propagation(task)
         if exc is None:
             return
 

@@ -243,16 +243,17 @@ class EagerTaskFactoryLoopTests:
         async def run():
             winner, index, excs = await asyncio.staggered.staggered_race(
                 [
+                    lambda: fail(),
                     lambda: asyncio.sleep(1),
                     lambda: asyncio.sleep(0),
-                    lambda: fail()
                 ],
                 delay=None
             )
             self.assertIsNone(winner)
             self.assertEqual(index, 1)
             self.assertIsNone(excs[index])
-            self.assertIsInstance(excs[2], ValueError)
+            self.assertIsInstance(excs[0], ValueError)
+            self.assertEqual(len(excs), 2)
 
         self.run_coro(run())
 

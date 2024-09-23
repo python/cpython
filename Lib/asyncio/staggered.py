@@ -72,20 +72,26 @@ async def staggered_race(coro_fns, delay, *, loop=None):
 
         try:
             error = future.exception()
-        except exceptions_mod.CancelledError as cancelled_error:
-            exceptions[index] = cancelled_error
-        else:
             exceptions[index] = error
-            task_group._errors.remove(error)
+        except exceptions_mod.CancelledError as cancelled_error:
+            # If another task finishes first and cancels this task, it
+            # is propagated here.
+            exceptions[index] = cancelled_error
+            return
+        else:
+            if error is not None:
+                return
 
         nonlocal winner_result, winner_index
-        if (winner_result is None) and (not task_group._aborting):
-            # If this is in an eager task factory, it's possible
-            # for multiple tasks to get here. In that case, we want
-            # only the first one to win and the rest to no-op before
-            # cancellation.
+        # If this is in an eager task factory, it's possible
+        # for multiple tasks to get here. In that case, we want
+        # only the first one to win and the rest to no-op before
+        # cancellation.
+        if winner_result is None and not task_group._aborting:
             winner_result = future.result()
             winner_index = index
+
+            # Cancel all other tasks, we win!
             task_group._abort()
 
     async with taskgroups.TaskGroup() as task_group:
@@ -93,16 +99,29 @@ async def staggered_race(coro_fns, delay, *, loop=None):
             if task_group._aborting:
                 break
 
+            exceptions.append(None)
+            task = loop.create_task(coro())
+
+            # We don't want the task group to propagate the error. Instead,
+            # we want to put it in our special exceptions list, so we manually
+            # create the task.
+            task.add_done_callback(task_group._on_task_done_without_propagation)
+            task_group._tasks.add(task)
+
+            # We need this extra wrapper here to stop the closure from having
+            # an incorrect index.
             def wrapper(idx):
                 return lambda future: future_callback(idx, future, task_group)
 
-            exceptions.append(None)
-            task = task_group.create_task(coro())
             task.add_done_callback(wrapper(index))
 
             if delay is not None:
-                await tasks.sleep(delay)
+                await tasks.sleep(delay or 0)
             else:
-                await task
+                # We don't care about exceptions here, the callback will
+                # deal with it.
+                with contextlib.suppress(BaseException):
+                    # If there's no delay, we just wait until completion.
+                    await task
 
     return winner_result, winner_index, exceptions
