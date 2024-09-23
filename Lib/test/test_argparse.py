@@ -4962,6 +4962,7 @@ class TestHelpMetavarTypeFormatter(HelpTestCase):
 
 class TestHelpUsageLongSubparserCommand(TestCase):
     """Test that subparser commands are formatted correctly in help"""
+    maxDiff = None
 
     def test_parent_help(self):
         def custom_formatter(prog):
