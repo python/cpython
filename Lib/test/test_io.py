@@ -639,11 +639,9 @@ class IOTest(unittest.TestCase):
 
     def test_with_open(self):
         for bufsize in (0, 100):
-            f = None
             with self.open(os_helper.TESTFN, "wb", bufsize) as f:
                 f.write(b"xxx")
             self.assertEqual(f.closed, True)
-            f = None
             try:
                 with self.open(os_helper.TESTFN, "wb", bufsize) as f:
                     1/0
