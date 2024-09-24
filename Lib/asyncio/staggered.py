@@ -12,7 +12,8 @@ from . import taskgroups
 class _Done(Exception):
     pass
 
-async def staggered_race(coro_fns, delay, *, loop=None):
+
+async def staggered_race(coro_fns, delay):
     """Run coroutines with staggered start times and take the first to finish.
 
     This method takes an iterable of coroutine functions. The first one is
@@ -43,8 +44,6 @@ async def staggered_race(coro_fns, delay, *, loop=None):
 
         delay: amount of time, in seconds, between starting coroutines. If
             ``None``, the coroutines will run sequentially.
-
-        loop: the event loop to use.
 
     Returns:
         tuple *(winner_result, winner_index, exceptions)* where
