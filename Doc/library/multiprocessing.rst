@@ -168,7 +168,7 @@ to start a process.  These *start methods* are
 
    On POSIX platforms the default start method was changed from *fork* to
    *forkserver* to retain the performance but avoid common multithreaded
-   process incompatibilities. See :issue:`84559`.
+   process incompatibilities. See :gh:`84559`.
 
 
 On POSIX using the *spawn* or *forkserver* start methods will also
