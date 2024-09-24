@@ -4,7 +4,7 @@ import re
 import sys
 
 import test.support.interpreters as interpreters
-import test.support.interpreters.queues
+import test.support.interpreters.queues as interp_queues
 import types
 import queue
 import threading
@@ -16,6 +16,7 @@ def search(filenames, regex, opts):
     def do_background():
         MAX_FILES = 10
         MAX_MATCHES = 100
+        new_queue = interpreters.queues.create
 
         def new_interpreter():
             interp = interpreters.create()
@@ -47,15 +48,15 @@ def search(filenames, regex, opts):
             return ready_workers.get()  # blocking
 
         def do_work(filename, matches, interp):
-            #interp.call(search_file, (regex, opts, filename, matches))
             interp.prepare_main(matches=matches)
-            interp.exec(f'search_file({filename!r}, matches)')
+            interp.exec(
+                    f'search_file({filename!r}, matches)')
             # Let a new thread start.
             ready_work.put(interp)
 
         for filename in filenames:
             # Prepare for the file.
-            matches = interpreters.queues.create(MAX_MATCHES)
+            matches = interp_queues.create(MAX_MATCHES)
             matches_by_file.put(matches)
             interp = next_worker()
 
@@ -88,7 +89,8 @@ def prep_interpreter(regex_pat, regex_flags, opts):
 
     def search_file(filename, matches):
         lines = iter_lines(filename)
-        for match in search_lines(lines, regex, opts, filename):
+        for match in search_lines(
+                            lines, regex, opts, filename):
             matches.put(match)  # blocking
         matches.put(None)  # blocking
     return search_file
@@ -148,23 +150,28 @@ def resolve_filenames(filenames, recursive=False):
 if __name__ == '__main__':
     # Parse the args.
     import argparse
-    parser = argparse.ArgumentParser(prog='grep')
+    ap = argparse.ArgumentParser(prog='grep')
 
-    parser.add_argument('-r', '--recursive', action='store_true')
-    parser.add_argument('-L', '--files-without-match', dest='filesonly',
-                        action='store_const', const='invert')
-    parser.add_argument('-l', '--files-with-matches', dest='filesonly',
-                        action='store_const', const='match')
-    parser.add_argument('-q', '--quiet', action='store_true')
-    parser.set_defaults(invert=False)
+    ap.add_argument('-r', '--recursive',
+                    action='store_true')
+    ap.add_argument('-L', '--files-without-match',
+                    dest='filesonly',
+                    action='store_const', const='invert')
+    ap.add_argument('-l', '--files-with-matches',
+                    dest='filesonly',
+                    action='store_const', const='match')
+    ap.add_argument('-q', '--quiet', action='store_true')
+    ap.set_defaults(invert=False)
 
-    regexopts = parser.add_mutually_exclusive_group(required=True)
-    regexopts.add_argument('-e', '--regexp', dest='regex', metavar='REGEX')
-    regexopts.add_argument('regex', nargs='?', metavar='REGEX')
+    reopts = ap.add_mutually_exclusive_group(required=True)
+    reopts.add_argument('-e', '--regexp', dest='regex',
+                        metavar='REGEX')
+    reopts.add_argument('regex', nargs='?',
+                        metavar='REGEX')
 
-    parser.add_argument('files', nargs='+', metavar='FILE')
+    ap.add_argument('files', nargs='+', metavar='FILE')
 
-    opts = parser.parse_args()
+    opts = ap.parse_args()
     ns = vars(opts)
 
     regex = ns.pop('regex')

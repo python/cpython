@@ -15,7 +15,7 @@ def search(filenames, regex, opts):
         MAX_FILES = 10
         MAX_MATCHES = 100
 
-        # Make sure we don't have too many processes at once,
+        # Make sure we don't have too many procs at once,
         # i.e. too many files open at once.
         counter = threading.Semaphore(MAX_FILES)
         finished = multiprocessing.Queue()
@@ -47,7 +47,8 @@ def search(filenames, regex, opts):
             # Start a subprocess to process the file.
             proc = multiprocessing.Process(
                 target=search_file,
-                args=(filename, matches, regex, opts, index, finished),
+                args=(filename, matches, regex, opts,
+                      index, finished),
             )
             counter.acquire(blocking=True)
             active[index] = proc
@@ -74,7 +75,8 @@ def search(filenames, regex, opts):
     background.join()
 
 
-def search_file(filename, matches, regex, opts, index, finished):
+def search_file(filename, matches, regex, opts,
+                index, finished):
     lines = iter_lines(filename)
     for match in search_lines(lines, regex, opts, filename):
         matches.put(match)  # blocking
@@ -139,23 +141,28 @@ if __name__ == '__main__':
 
     # Parse the args.
     import argparse
-    parser = argparse.ArgumentParser(prog='grep')
+    ap = argparse.ArgumentParser(prog='grep')
 
-    parser.add_argument('-r', '--recursive', action='store_true')
-    parser.add_argument('-L', '--files-without-match', dest='filesonly',
-                        action='store_const', const='invert')
-    parser.add_argument('-l', '--files-with-matches', dest='filesonly',
-                        action='store_const', const='match')
-    parser.add_argument('-q', '--quiet', action='store_true')
-    parser.set_defaults(invert=False)
+    ap.add_argument('-r', '--recursive',
+                    action='store_true')
+    ap.add_argument('-L', '--files-without-match',
+                    dest='filesonly',
+                    action='store_const', const='invert')
+    ap.add_argument('-l', '--files-with-matches',
+                    dest='filesonly',
+                    action='store_const', const='match')
+    ap.add_argument('-q', '--quiet', action='store_true')
+    ap.set_defaults(invert=False)
 
-    regexopts = parser.add_mutually_exclusive_group(required=True)
-    regexopts.add_argument('-e', '--regexp', dest='regex', metavar='REGEX')
-    regexopts.add_argument('regex', nargs='?', metavar='REGEX')
+    reopts = ap.add_mutually_exclusive_group(required=True)
+    reopts.add_argument('-e', '--regexp', dest='regex',
+                        metavar='REGEX')
+    reopts.add_argument('regex', nargs='?',
+                        metavar='REGEX')
 
-    parser.add_argument('files', nargs='+', metavar='FILE')
+    ap.add_argument('files', nargs='+', metavar='FILE')
 
-    opts = parser.parse_args()
+    opts = ap.parse_args()
     ns = vars(opts)
 
     regex = ns.pop('regex')

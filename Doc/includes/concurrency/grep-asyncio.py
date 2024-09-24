@@ -13,14 +13,15 @@ async def search(filenames, regex, opts):
         MAX_FILES = 10
         MAX_MATCHES = 100
 
-        # Make sure we don't have too many coroutines at once,
+        # Make sure we don't have too many coros at once,
         # i.e. too many files open at once.
         counter = asyncio.Semaphore(MAX_FILES)
 
         async def search_file(filename, matches):
             # aiter_lines() opens the file too.
             lines = iter_lines(filename)
-            async for match in search_lines(lines, regex, opts, filename):
+            async for m in search_lines(
+                            lines, regex, opts, filename):
                 await matches.put(match)
             await matches.put(None)
             # Let a new coroutine start.
@@ -71,7 +72,8 @@ async def iter_lines(filename):
 
 async def read_line_async(infile):
     # XXX Do this async!
-    # maybe make use of asyncio.to_thread() or loop.run_in_executor()?
+    # maybe make use of asyncio.to_thread()
+    # or loop.run_in_executor()?
     return infile.readline()
 
 
@@ -121,23 +123,28 @@ def resolve_filenames(filenames, recursive=False):
 if __name__ == '__main__':
     # Parse the args.
     import argparse
-    parser = argparse.ArgumentParser(prog='grep')
+    ap = argparse.ArgumentParser(prog='grep')
 
-    parser.add_argument('-r', '--recursive', action='store_true')
-    parser.add_argument('-L', '--files-without-match', dest='filesonly',
-                        action='store_const', const='invert')
-    parser.add_argument('-l', '--files-with-matches', dest='filesonly',
-                        action='store_const', const='match')
-    parser.add_argument('-q', '--quiet', action='store_true')
-    parser.set_defaults(invert=False)
+    ap.add_argument('-r', '--recursive',
+                    action='store_true')
+    ap.add_argument('-L', '--files-without-match',
+                    dest='filesonly',
+                    action='store_const', const='invert')
+    ap.add_argument('-l', '--files-with-matches',
+                    dest='filesonly',
+                    action='store_const', const='match')
+    ap.add_argument('-q', '--quiet', action='store_true')
+    ap.set_defaults(invert=False)
 
-    regexopts = parser.add_mutually_exclusive_group(required=True)
-    regexopts.add_argument('-e', '--regexp', dest='regex', metavar='REGEX')
-    regexopts.add_argument('regex', nargs='?', metavar='REGEX')
+    reopts = ap.add_mutually_exclusive_group(required=True)
+    reopts.add_argument('-e', '--regexp', dest='regex',
+                        metavar='REGEX')
+    reopts.add_argument('regex', nargs='?',
+                        metavar='REGEX')
 
-    parser.add_argument('files', nargs='+', metavar='FILE')
+    ap.add_argument('files', nargs='+', metavar='FILE')
 
-    opts = parser.parse_args()
+    opts = ap.parse_args()
     ns = vars(opts)
 
     regex = ns.pop('regex')

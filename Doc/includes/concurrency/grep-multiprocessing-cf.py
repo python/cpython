@@ -4,7 +4,7 @@ import re
 import sys
 
 from concurrent.futures import ProcessPoolExecutor
-import multiprocessing
+import multiprocessing 
 import queue
 import threading
 
@@ -23,7 +23,8 @@ def search(filenames, regex, opts):
                 matches_by_file.put(matches)
 
                 # Start a thread to process the file.
-                workers.submit(search_file, filename, matches)
+                workers.submit(
+                            search_file, filename, matches)
             matches_by_file.put(None)
 
     background = threading.Thread(target=do_background)
@@ -104,23 +105,28 @@ if __name__ == '__main__':
 
     # Parse the args.
     import argparse
-    parser = argparse.ArgumentParser(prog='grep')
+    ap = argparse.ArgumentParser(prog='grep')
 
-    parser.add_argument('-r', '--recursive', action='store_true')
-    parser.add_argument('-L', '--files-without-match', dest='filesonly',
-                        action='store_const', const='invert')
-    parser.add_argument('-l', '--files-with-matches', dest='filesonly',
-                        action='store_const', const='match')
-    parser.add_argument('-q', '--quiet', action='store_true')
-    parser.set_defaults(invert=False)
+    ap.add_argument('-r', '--recursive',
+                    action='store_true')
+    ap.add_argument('-L', '--files-without-match',
+                    dest='filesonly',
+                    action='store_const', const='invert')
+    ap.add_argument('-l', '--files-with-matches',
+                    dest='filesonly',
+                    action='store_const', const='match')
+    ap.add_argument('-q', '--quiet', action='store_true')
+    ap.set_defaults(invert=False)
 
-    regexopts = parser.add_mutually_exclusive_group(required=True)
-    regexopts.add_argument('-e', '--regexp', dest='regex', metavar='REGEX')
-    regexopts.add_argument('regex', nargs='?', metavar='REGEX')
+    reopts = ap.add_mutually_exclusive_group(required=True)
+    reopts.add_argument('-e', '--regexp', dest='regex',
+                        metavar='REGEX')
+    reopts.add_argument('regex', nargs='?',
+                        metavar='REGEX')
 
-    parser.add_argument('files', nargs='+', metavar='FILE')
+    ap.add_argument('files', nargs='+', metavar='FILE')
 
-    opts = parser.parse_args()
+    opts = ap.parse_args()
     ns = vars(opts)
 
     regex = ns.pop('regex')
