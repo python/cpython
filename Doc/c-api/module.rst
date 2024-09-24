@@ -342,7 +342,8 @@ The available slot types are:
    The *value* pointer of this slot must point to a function of the signature:
 
    .. c:function:: PyObject* create_module(PyObject *spec, PyModuleDef *def)
-      :noindex:
+      :no-index-entry:
+      :no-contents-entry:
 
    The function receives a :py:class:`~importlib.machinery.ModuleSpec`
    instance, as defined in :PEP:`451`, and the module definition.
@@ -377,7 +378,8 @@ The available slot types are:
    The signature of the function is:
 
    .. c:function:: int exec_module(PyObject* module)
-      :noindex:
+      :no-index-entry:
+      :no-contents-entry:
 
    If multiple ``Py_mod_exec`` slots are specified, they are processed in the
    order they appear in the *m_slots* array.
@@ -419,6 +421,8 @@ The available slot types are:
 
    Specifies one of the following values:
 
+   .. c:namespace:: NULL
+
    .. c:macro:: Py_MOD_GIL_USED
 
       The module depends on the presence of the global interpreter lock (GIL),
@@ -431,7 +435,7 @@ The available slot types are:
    This slot is ignored by Python builds not configured with
    :option:`--disable-gil`.  Otherwise, it determines whether or not importing
    this module will cause the GIL to be automatically enabled. See
-   :ref:`free-threaded-cpython` for more detail.
+   :ref:`whatsnew313-free-threaded-cpython` for more detail.
 
    Multiple ``Py_mod_gil`` slots may not be specified in one module definition.
 

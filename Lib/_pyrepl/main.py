@@ -39,6 +39,8 @@ def interactive_console(mainmodule=None, quiet=False, pythonstartup=False):
     # sys._baserepl() above does this internally, we do it here
     startup_path = os.getenv("PYTHONSTARTUP")
     if pythonstartup and startup_path:
+        sys.audit("cpython.run_startup", startup_path)
+
         import tokenize
         with tokenize.open(startup_path) as f:
             startup_code = compile(f.read(), startup_path, "exec")
