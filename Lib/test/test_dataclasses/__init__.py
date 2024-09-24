@@ -4966,6 +4966,9 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
         A().foo()
 
     def test_remembered_class(self):
+        # Apply the dataclass decorator manually (not when the class
+        # is created), so that we can keep a reference to the
+        # undecorated class.
         class A:
             def cls(self):
                 return __class__
@@ -4983,7 +4986,7 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
 
         # The underlying class is "broken" by changing its __class__
         # in A.foo() to B.  This normally isn't a problem, because no
-        # one will be keeping a reference to the underlying class.
+        # one will be keeping a reference to the underlying class A.
         self.assertIs(A().cls(), B)
 
 if __name__ == '__main__':
