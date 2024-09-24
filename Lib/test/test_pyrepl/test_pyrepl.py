@@ -8,6 +8,7 @@ import select
 import subprocess
 import sys
 import tempfile
+import termios
 from unittest import TestCase, skipUnless
 from unittest.mock import patch
 from test.support import force_not_colorized
@@ -1246,6 +1247,12 @@ class TestMain(TestCase):
             env["PYTHON_HISTORY"] = os.path.join(cwd, ".regrtest_history")
         if cmdline_args is not None:
             cmd.extend(cmdline_args)
+
+        term_attr = termios.tcgetattr(slave_fd)
+        term_attr[6][termios.VREPRINT] = 0  # pass through CTRL-R
+        term_attr[6][termios.VINTR] = 0  # pass through CTRL-C
+        termios.tcsetattr(slave_fd, termios.TCSANOW, term_attr)
+
         process = subprocess.Popen(
             cmd,
             stdin=slave_fd,
@@ -1305,3 +1312,7 @@ class TestMain(TestCase):
         output, exit_code = self.run_repl("exit\n", env=env)
         self.assertEqual(exit_code, 0)
         self.assertNotIn("\\040", pathlib.Path(hfile.name).read_text())
+
+    def test_keyboard_interrupt_after_isearch(self):
+        output, exit_code = self.run_repl(["\x12", "\x03", "exit"])
+        self.assertEqual(exit_code, 0)
