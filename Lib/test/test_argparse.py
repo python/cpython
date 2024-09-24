@@ -6355,28 +6355,28 @@ class TestExitOnError(TestCase):
         self.parser.add_argument('bar')
         self.parser.add_argument('baz')
         self.assertRaisesRegex(argparse.ArgumentError,
-                               'the following arguments are required: bar, baz',
+                               'the following arguments are required: bar, baz$',
                                self.parser.parse_args, [])
 
     def test_required_args_optional(self):
         self.parser.add_argument('bar')
         self.parser.add_argument('baz', nargs='?')
         self.assertRaisesRegex(argparse.ArgumentError,
-                               'the following arguments are required: bar',
+                               'the following arguments are required: bar$',
                                self.parser.parse_args, [])
 
     def test_required_args_zero_or_more(self):
         self.parser.add_argument('bar')
         self.parser.add_argument('baz', nargs='*')
         self.assertRaisesRegex(argparse.ArgumentError,
-                               'the following arguments are required: bar',
+                               'the following arguments are required: bar$',
                                self.parser.parse_args, [])
 
     def test_required_args_remainder(self):
         self.parser.add_argument('bar')
         self.parser.add_argument('baz', nargs='...')
         self.assertRaisesRegex(argparse.ArgumentError,
-                               'the following arguments are required: bar',
+                               'the following arguments are required: bar$',
                                self.parser.parse_args, [])
 
     def test_required_mutually_exclusive_args(self):
