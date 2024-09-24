@@ -1,5 +1,5 @@
-:mod:`gc` --- Garbage Collector interface
-=========================================
+:mod:`!gc` --- Garbage Collector interface
+==========================================
 
 .. module:: gc
    :synopsis: Interface to the cycle-detecting garbage collector.
@@ -40,15 +40,28 @@ The :mod:`gc` module provides the following functions:
 
 .. function:: collect(generation=2)
 
-   With no arguments, run a full collection.  The optional argument *generation*
+   Perform a collection.  The optional argument *generation*
    may be an integer specifying which generation to collect (from 0 to 2).  A
-   :exc:`ValueError` is raised if the generation number  is invalid. The number of
-   unreachable objects found is returned.
+   :exc:`ValueError` is raised if the generation number is invalid. The sum of
+   collected objects and uncollectable objects is returned.
+
+   Calling ``gc.collect(0)`` will perform a GC collection on the young generation.
+
+   Calling ``gc.collect(1)`` will perform a GC collection on the young generation
+   and an increment of the old generation.
+
+   Calling ``gc.collect(2)`` or ``gc.collect()`` performs a full collection
 
    The free lists maintained for a number of built-in types are cleared
    whenever a full collection or collection of the highest generation (2)
    is run.  Not all items in some free lists may be freed due to the
    particular implementation, in particular :class:`float`.
+
+   The effect of calling ``gc.collect()`` while the interpreter is already
+   performing a collection is undefined.
+
+   .. versionchanged:: 3.13
+      ``generation=1`` performs an increment of collection.
 
 
 .. function:: set_debug(flags)
@@ -65,12 +78,19 @@ The :mod:`gc` module provides the following functions:
 
 .. function:: get_objects(generation=None)
 
+
    Returns a list of all objects tracked by the collector, excluding the list
-   returned. If *generation* is not None, return only the objects tracked by
-   the collector that are in that generation.
+   returned. If *generation* is not ``None``, return only the objects as follows:
+
+   * 0: All objects in the young generation
+   * 1: No objects, as there is no generation 1 (as of Python 3.13)
+   * 2: All objects in the old generation
 
    .. versionchanged:: 3.8
       New *generation* parameter.
+
+   .. versionchanged:: 3.13
+      Generation 1 is removed
 
    .. audit-event:: gc.get_objects generation gc.get_objects
 
@@ -93,24 +113,32 @@ The :mod:`gc` module provides the following functions:
    .. versionadded:: 3.4
 
 
-.. function:: set_threshold(threshold0[, threshold1[, threshold2]])
+.. function:: set_threshold(threshold0, [threshold1, [threshold2]])
 
    Set the garbage collection thresholds (the collection frequency). Setting
    *threshold0* to zero disables collection.
 
-   The GC classifies objects into three generations depending on how many
-   collection sweeps they have survived.  New objects are placed in the youngest
-   generation (generation ``0``).  If an object survives a collection it is moved
-   into the next older generation.  Since generation ``2`` is the oldest
-   generation, objects in that generation remain there after a collection.  In
-   order to decide when to run, the collector keeps track of the number object
+   The GC classifies objects into two generations depending on whether they have
+   survived a collection. New objects are placed in the young generation. If an
+   object survives a collection it is moved into the old generation.
+
+   In order to decide when to run, the collector keeps track of the number of object
    allocations and deallocations since the last collection.  When the number of
    allocations minus the number of deallocations exceeds *threshold0*, collection
-   starts.  Initially only generation ``0`` is examined.  If generation ``0`` has
-   been examined more than *threshold1* times since generation ``1`` has been
-   examined, then generation ``1`` is examined as well.
-   With the third generation, things are a bit more complicated,
-   see `Collecting the oldest generation <https://devguide.python.org/garbage_collector/#collecting-the-oldest-generation>`_ for more information.
+   starts. For each collection, all the objects in the young generation and some
+   fraction of the old generation is collected.
+
+   The fraction of the old generation that is collected is **inversely** proportional
+   to *threshold1*. The larger *threshold1* is, the slower objects in the old generation
+   are collected.
+   For the default value of 10, 1% of the old generation is scanned during each collection.
+
+   *threshold2* is ignored.
+
+   See `Garbage collector design <https://devguide.python.org/garbage_collector>`_ for more information.
+
+   .. versionchanged:: 3.13
+      *threshold2* is ignored
 
 
 .. function:: get_count()
@@ -206,12 +234,17 @@ The :mod:`gc` module provides the following functions:
 
 .. function:: freeze()
 
-   Freeze all the objects tracked by gc - move them to a permanent generation
-   and ignore all the future collections. This can be used before a POSIX
-   fork() call to make the gc copy-on-write friendly or to speed up collection.
-   Also collection before a POSIX fork() call may free pages for future
-   allocation which can cause copy-on-write too so it's advised to disable gc
-   in parent process and freeze before fork and enable gc in child process.
+   Freeze all the objects tracked by the garbage collector; move them to a
+   permanent generation and ignore them in all the future collections.
+
+   If a process will ``fork()`` without ``exec()``, avoiding unnecessary
+   copy-on-write in child processes will maximize memory sharing and reduce
+   overall memory usage. This requires both avoiding creation of freed "holes"
+   in memory pages in the parent process and ensuring that GC collections in
+   child processes won't touch the ``gc_refs`` counter of long-lived objects
+   originating in the parent process. To accomplish both, call ``gc.disable()``
+   early in the parent process, ``gc.freeze()`` right before ``fork()``, and
+   ``gc.enable()`` early in child processes.
 
    .. versionadded:: 3.7
 
@@ -251,8 +284,8 @@ values but should not rebind them):
       are printed.
 
    .. versionchanged:: 3.4
-      Following :pep:`442`, objects with a :meth:`__del__` method don't end
-      up in :attr:`gc.garbage` anymore.
+      Following :pep:`442`, objects with a :meth:`~object.__del__` method don't end
+      up in :data:`gc.garbage` anymore.
 
 .. data:: callbacks
 

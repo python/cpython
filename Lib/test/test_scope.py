@@ -2,6 +2,7 @@ import unittest
 import weakref
 
 from test.support import check_syntax_error, cpython_only
+from test.support import gc_collect
 
 
 class ScopeTests(unittest.TestCase):
@@ -473,6 +474,7 @@ class ScopeTests(unittest.TestCase):
         for i in range(100):
             f1()
 
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(Foo.count, 0)
 
     def testClassAndGlobal(self):
@@ -805,8 +807,33 @@ class ScopeTests(unittest.TestCase):
         tester.dig()
         ref = weakref.ref(tester)
         del tester
+        gc_collect()  # For PyPy or other GCs.
         self.assertIsNone(ref())
 
+    def test_multiple_nesting(self):
+        # Regression test for https://github.com/python/cpython/issues/121863
+        class MultiplyNested:
+            def f1(self):
+                __arg = 1
+                class D:
+                    def g(self, __arg):
+                        return __arg
+                return D().g(_MultiplyNested__arg=2)
+
+            def f2(self):
+                __arg = 1
+                class D:
+                    def g(self, __arg):
+                        return __arg
+                return D().g
+
+        inst = MultiplyNested()
+        with self.assertRaises(TypeError):
+            inst.f1()
+
+        closure = inst.f2()
+        with self.assertRaises(TypeError):
+            closure(_MultiplyNested__arg=2)
 
 if __name__ == '__main__':
     unittest.main()

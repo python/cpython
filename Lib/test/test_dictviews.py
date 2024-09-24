@@ -1,8 +1,8 @@
 import collections.abc
 import copy
 import pickle
-import sys
 import unittest
+from test.support import get_c_recursion_limit
 
 class DictSetTest(unittest.TestCase):
 
@@ -170,6 +170,10 @@ class DictSetTest(unittest.TestCase):
                          {('a', 1), ('b', 2)})
         self.assertEqual(d1.items() & set(d2.items()), {('b', 2)})
         self.assertEqual(d1.items() & set(d3.items()), set())
+        self.assertEqual(d1.items() & (("a", 1), ("b", 2)),
+                         {('a', 1), ('b', 2)})
+        self.assertEqual(d1.items() & (("a", 2), ("b", 2)), {('b', 2)})
+        self.assertEqual(d1.items() & (("d", 4), ("e", 5)), set())
 
         self.assertEqual(d1.items() | d1.items(),
                          {('a', 1), ('b', 2)})
@@ -183,11 +187,22 @@ class DictSetTest(unittest.TestCase):
                          {('a', 1), ('a', 2), ('b', 2)})
         self.assertEqual(d1.items() | set(d3.items()),
                          {('a', 1), ('b', 2), ('d', 4), ('e', 5)})
+        self.assertEqual(d1.items() | (('a', 1), ('b', 2)),
+                         {('a', 1), ('b', 2)})
+        self.assertEqual(d1.items() | (('a', 2), ('b', 2)),
+                         {('a', 1), ('a', 2), ('b', 2)})
+        self.assertEqual(d1.items() | (('d', 4), ('e', 5)),
+                         {('a', 1), ('b', 2), ('d', 4), ('e', 5)})
 
         self.assertEqual(d1.items() ^ d1.items(), set())
         self.assertEqual(d1.items() ^ d2.items(),
                          {('a', 1), ('a', 2)})
         self.assertEqual(d1.items() ^ d3.items(),
+                         {('a', 1), ('b', 2), ('d', 4), ('e', 5)})
+        self.assertEqual(d1.items() ^ (('a', 1), ('b', 2)), set())
+        self.assertEqual(d1.items() ^ (("a", 2), ("b", 2)),
+                         {('a', 1), ('a', 2)})
+        self.assertEqual(d1.items() ^ (("d", 4), ("e", 5)),
                          {('a', 1), ('b', 2), ('d', 4), ('e', 5)})
 
         self.assertEqual(d1.items() - d1.items(), set())
@@ -196,6 +211,9 @@ class DictSetTest(unittest.TestCase):
         self.assertEqual(d1.items() - set(d1.items()), set())
         self.assertEqual(d1.items() - set(d2.items()), {('a', 1)})
         self.assertEqual(d1.items() - set(d3.items()), {('a', 1), ('b', 2)})
+        self.assertEqual(d1.items() - (('a', 1), ('b', 2)), set())
+        self.assertEqual(d1.items() - (("a", 2), ("b", 2)), {('a', 1)})
+        self.assertEqual(d1.items() - (("d", 4), ("e", 5)), {('a', 1), ('b', 2)})
 
         self.assertFalse(d1.items().isdisjoint(d1.items()))
         self.assertFalse(d1.items().isdisjoint(d2.items()))
@@ -261,7 +279,7 @@ class DictSetTest(unittest.TestCase):
 
     def test_deeply_nested_repr(self):
         d = {}
-        for i in range(sys.getrecursionlimit() + 100):
+        for i in range(get_c_recursion_limit()//2 + 100):
             d = {42: d.values()}
         self.assertRaises(RecursionError, repr, d)
 
@@ -320,6 +338,9 @@ class DictSetTest(unittest.TestCase):
         self.assertIsInstance(d.values(), collections.abc.ValuesView)
         self.assertIsInstance(d.values(), collections.abc.MappingView)
         self.assertIsInstance(d.values(), collections.abc.Sized)
+        self.assertIsInstance(d.values(), collections.abc.Collection)
+        self.assertIsInstance(d.values(), collections.abc.Iterable)
+        self.assertIsInstance(d.values(), collections.abc.Container)
 
         self.assertIsInstance(d.items(), collections.abc.ItemsView)
         self.assertIsInstance(d.items(), collections.abc.MappingView)

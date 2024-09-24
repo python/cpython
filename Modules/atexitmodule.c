@@ -7,6 +7,7 @@
  */
 
 #include "Python.h"
+#include "pycore_atexit.h"        // export _Py_AtExit()
 #include "pycore_initconfig.h"    // _PyStatus_NO_MEMORY
 #include "pycore_interp.h"        // PyInterpreterState.atexit
 #include "pycore_pystate.h"       // _PyInterpreterState_GET
@@ -22,10 +23,36 @@ get_atexit_state(void)
 }
 
 
+int
+PyUnstable_AtExit(PyInterpreterState *interp,
+                  atexit_datacallbackfunc func, void *data)
+{
+    assert(interp == _PyInterpreterState_GET());
+    atexit_callback *callback = PyMem_Malloc(sizeof(atexit_callback));
+    if (callback == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    callback->func = func;
+    callback->data = data;
+    callback->next = NULL;
+
+    struct atexit_state *state = &interp->atexit;
+    if (state->ll_callbacks == NULL) {
+        state->ll_callbacks = callback;
+        state->last_ll_callback = callback;
+    }
+    else {
+        state->last_ll_callback->next = callback;
+    }
+    return 0;
+}
+
+
 static void
 atexit_delete_cb(struct atexit_state *state, int i)
 {
-    atexit_callback *cb = state->callbacks[i];
+    atexit_py_callback *cb = state->callbacks[i];
     state->callbacks[i] = NULL;
 
     Py_DECREF(cb->func);
@@ -39,7 +66,7 @@ atexit_delete_cb(struct atexit_state *state, int i)
 static void
 atexit_cleanup(struct atexit_state *state)
 {
-    atexit_callback *cb;
+    atexit_py_callback *cb;
     for (int i = 0; i < state->ncallbacks; i++) {
         cb = state->callbacks[i];
         if (cb == NULL)
@@ -60,7 +87,7 @@ _PyAtExit_Init(PyInterpreterState *interp)
 
     state->callback_len = 32;
     state->ncallbacks = 0;
-    state->callbacks = PyMem_New(atexit_callback*, state->callback_len);
+    state->callbacks = PyMem_New(atexit_py_callback*, state->callback_len);
     if (state->callbacks == NULL) {
         return _PyStatus_NO_MEMORY();
     }
@@ -75,6 +102,18 @@ _PyAtExit_Fini(PyInterpreterState *interp)
     atexit_cleanup(state);
     PyMem_Free(state->callbacks);
     state->callbacks = NULL;
+
+    atexit_callback *next = state->ll_callbacks;
+    state->ll_callbacks = NULL;
+    while (next != NULL) {
+        atexit_callback *callback = next;
+        next = callback->next;
+        atexit_datacallbackfunc exitfunc = callback->func;
+        void *data = callback->data;
+        // It was allocated in _PyAtExit_AddCallback().
+        PyMem_Free(callback);
+        exitfunc(data);
+    }
 }
 
 
@@ -88,18 +127,22 @@ atexit_callfuncs(struct atexit_state *state)
     }
 
     for (int i = state->ncallbacks - 1; i >= 0; i--) {
-        atexit_callback *cb = state->callbacks[i];
+        atexit_py_callback *cb = state->callbacks[i];
         if (cb == NULL) {
             continue;
         }
 
+        // bpo-46025: Increment the refcount of cb->func as the call itself may unregister it
+        PyObject* the_func = Py_NewRef(cb->func);
         PyObject *res = PyObject_Call(cb->func, cb->args, cb->kwargs);
         if (res == NULL) {
-            _PyErr_WriteUnraisableMsg("in atexit callback", cb->func);
+            PyErr_FormatUnraisable(
+                "Exception ignored in atexit callback %R", the_func);
         }
         else {
             Py_DECREF(res);
         }
+        Py_DECREF(the_func);
     }
 
     atexit_cleanup(state);
@@ -121,7 +164,8 @@ _PyAtExit_Call(PyInterpreterState *interp)
 
 
 PyDoc_STRVAR(atexit_register__doc__,
-"register(func, *args, **kwargs) -> func\n\
+"register($module, func, /, *args, **kwargs)\n\
+--\n\
 \n\
 Register a function to be executed upon normal program termination\n\
 \n\
@@ -149,17 +193,17 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
 
     struct atexit_state *state = get_atexit_state();
     if (state->ncallbacks >= state->callback_len) {
-        atexit_callback **r;
+        atexit_py_callback **r;
         state->callback_len += 16;
-        size_t size = sizeof(atexit_callback*) * (size_t)state->callback_len;
-        r = (atexit_callback**)PyMem_Realloc(state->callbacks, size);
+        size_t size = sizeof(atexit_py_callback*) * (size_t)state->callback_len;
+        r = (atexit_py_callback**)PyMem_Realloc(state->callbacks, size);
         if (r == NULL) {
             return PyErr_NoMemory();
         }
         state->callbacks = r;
     }
 
-    atexit_callback *callback = PyMem_Malloc(sizeof(atexit_callback));
+    atexit_py_callback *callback = PyMem_Malloc(sizeof(atexit_py_callback));
     if (callback == NULL) {
         return PyErr_NoMemory();
     }
@@ -178,11 +222,12 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
 }
 
 PyDoc_STRVAR(atexit_run_exitfuncs__doc__,
-"_run_exitfuncs() -> None\n\
+"_run_exitfuncs($module, /)\n\
+--\n\
 \n\
 Run all registered exit functions.\n\
 \n\
-If a callaback raises an exception, it is logged with sys.unraisablehook.");
+If a callback raises an exception, it is logged with sys.unraisablehook.");
 
 static PyObject *
 atexit_run_exitfuncs(PyObject *module, PyObject *unused)
@@ -193,7 +238,8 @@ atexit_run_exitfuncs(PyObject *module, PyObject *unused)
 }
 
 PyDoc_STRVAR(atexit_clear__doc__,
-"_clear() -> None\n\
+"_clear($module, /)\n\
+--\n\
 \n\
 Clear the list of previously registered exit functions.");
 
@@ -205,7 +251,8 @@ atexit_clear(PyObject *module, PyObject *unused)
 }
 
 PyDoc_STRVAR(atexit_ncallbacks__doc__,
-"_ncallbacks() -> int\n\
+"_ncallbacks($module, /)\n\
+--\n\
 \n\
 Return the number of registered exit functions.");
 
@@ -217,7 +264,8 @@ atexit_ncallbacks(PyObject *module, PyObject *unused)
 }
 
 PyDoc_STRVAR(atexit_unregister__doc__,
-"unregister(func) -> None\n\
+"unregister($module, func, /)\n\
+--\n\
 \n\
 Unregister an exit function which was previously registered using\n\
 atexit.register\n\
@@ -230,7 +278,7 @@ atexit_unregister(PyObject *module, PyObject *func)
     struct atexit_state *state = get_atexit_state();
     for (int i = 0; i < state->ncallbacks; i++)
     {
-        atexit_callback *cb = state->callbacks[i];
+        atexit_py_callback *cb = state->callbacks[i];
         if (cb == NULL) {
             continue;
         }
@@ -248,7 +296,7 @@ atexit_unregister(PyObject *module, PyObject *func)
 
 
 static PyMethodDef atexit_methods[] = {
-    {"register", (PyCFunction)(void(*)(void)) atexit_register, METH_VARARGS|METH_KEYWORDS,
+    {"register", _PyCFunction_CAST(atexit_register), METH_VARARGS|METH_KEYWORDS,
         atexit_register__doc__},
     {"_clear", (PyCFunction) atexit_clear, METH_NOARGS,
         atexit_clear__doc__},
@@ -272,12 +320,19 @@ upon normal program termination.\n\
 Two public functions, register and unregister, are defined.\n\
 ");
 
+static PyModuleDef_Slot atexitmodule_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL}
+};
+
 static struct PyModuleDef atexitmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "atexit",
     .m_doc = atexit__doc__,
     .m_size = 0,
     .m_methods = atexit_methods,
+    .m_slots = atexitmodule_slots,
 };
 
 PyMODINIT_FUNC

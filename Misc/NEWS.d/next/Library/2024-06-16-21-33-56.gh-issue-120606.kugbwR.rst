@@ -1,0 +1,1 @@
+Allow users to use EOF to exit ``commands`` definition in :mod:`pdb`

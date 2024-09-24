@@ -8,31 +8,11 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#ifdef HAVE_SIGNAL_H
-#include <signal.h>
-#endif
-
 #include "pycore_runtime.h"       // _PyRuntimeState
-
-#ifndef NSIG
-# if defined(_NSIG)
-#  define NSIG _NSIG            /* For BSD/SysV */
-# elif defined(_SIGMAX)
-#  define NSIG (_SIGMAX + 1)    /* For QNX */
-# elif defined(SIGMAX)
-#  define NSIG (SIGMAX + 1)     /* For djgpp */
-# else
-#  define NSIG 64               /* Use a reasonable default value */
-# endif
-#endif
 
 /* Forward declarations */
 struct _PyArgv;
 struct pyruntimestate;
-
-/* True if the main interpreter thread exited due to an unhandled
- * KeyboardInterrupt exception, suggesting the user pressed ^C. */
-PyAPI_DATA(int) _Py_UnhandledKeyboardInterrupt;
 
 extern int _Py_SetFileSystemEncoding(
     const char *encoding,
@@ -43,21 +23,12 @@ extern PyStatus _PyUnicode_InitEncodings(PyThreadState *tstate);
 extern int _PyUnicode_EnableLegacyWindowsFSEncoding(void);
 #endif
 
-PyAPI_FUNC(void) _Py_ClearStandardStreamEncoding(void);
-
-PyAPI_FUNC(int) _Py_IsLocaleCoercionTarget(const char *ctype_loc);
+extern int _Py_IsLocaleCoercionTarget(const char *ctype_loc);
 
 /* Various one-time initializers */
 
-extern PyStatus _PyUnicode_Init(PyInterpreterState *interp);
-extern PyStatus _PyUnicode_InitTypes(void);
-extern PyStatus _PyBytes_Init(PyInterpreterState *interp);
-extern int _PyStructSequence_Init(void);
-extern int _PyLong_Init(PyInterpreterState *interp);
-extern int _PyLong_InitTypes(void);
-extern PyStatus _PyTuple_Init(PyInterpreterState *interp);
+extern void _Py_InitVersion(void);
 extern PyStatus _PyFaulthandler_Init(int enable);
-extern int _PyTraceMalloc_Init(int enable);
 extern PyObject * _PyBuiltin_Init(PyInterpreterState *interp);
 extern PyStatus _PySys_Create(
     PyThreadState *tstate,
@@ -65,75 +36,99 @@ extern PyStatus _PySys_Create(
 extern PyStatus _PySys_ReadPreinitWarnOptions(PyWideStringList *options);
 extern PyStatus _PySys_ReadPreinitXOptions(PyConfig *config);
 extern int _PySys_UpdateConfig(PyThreadState *tstate);
-extern PyStatus _PyExc_Init(PyInterpreterState *interp);
-extern PyStatus _PyErr_InitTypes(void);
-extern PyStatus _PyBuiltins_AddExceptions(PyObject * bltinmod);
-extern void _PyFloat_Init(void);
-extern int _PyFloat_InitTypes(void);
+extern void _PySys_FiniTypes(PyInterpreterState *interp);
+extern int _PyBuiltins_AddExceptions(PyObject * bltinmod);
 extern PyStatus _Py_HashRandomization_Init(const PyConfig *);
 
-extern PyStatus _PyTypes_Init(void);
-extern PyStatus _PyTypes_InitSlotDefs(void);
-extern PyStatus _PyImportZip_Init(PyThreadState *tstate);
 extern PyStatus _PyGC_Init(PyInterpreterState *interp);
 extern PyStatus _PyAtExit_Init(PyInterpreterState *interp);
 
-
 /* Various internal finalizers */
-
-extern void _PyFrame_Fini(PyInterpreterState *interp);
-extern void _PyDict_Fini(PyInterpreterState *interp);
-extern void _PyTuple_Fini(PyInterpreterState *interp);
-extern void _PyList_Fini(PyInterpreterState *interp);
-extern void _PyBytes_Fini(PyInterpreterState *interp);
-extern void _PyFloat_Fini(PyInterpreterState *interp);
-extern void _PySlice_Fini(PyInterpreterState *interp);
-extern void _PyAsyncGen_Fini(PyInterpreterState *interp);
 
 extern int _PySignal_Init(int install_signal_handlers);
 extern void _PySignal_Fini(void);
 
-extern void _PyExc_Fini(PyInterpreterState *interp);
-extern void _PyImport_Fini(void);
-extern void _PyImport_Fini2(void);
 extern void _PyGC_Fini(PyInterpreterState *interp);
-extern void _PyType_Fini(PyInterpreterState *interp);
 extern void _Py_HashRandomization_Fini(void);
-extern void _PyUnicode_Fini(PyInterpreterState *interp);
-extern void _PyUnicode_ClearInterned(PyInterpreterState *interp);
-extern void _PyLong_Fini(PyInterpreterState *interp);
 extern void _PyFaulthandler_Fini(void);
 extern void _PyHash_Fini(void);
 extern void _PyTraceMalloc_Fini(void);
 extern void _PyWarnings_Fini(PyInterpreterState *interp);
 extern void _PyAST_Fini(PyInterpreterState *interp);
 extern void _PyAtExit_Fini(PyInterpreterState *interp);
+extern void _PyThread_FiniType(PyInterpreterState *interp);
+extern void _PyArg_Fini(void);
+extern void _Py_FinalizeAllocatedBlocks(_PyRuntimeState *);
 
-extern PyStatus _PyGILState_Init(_PyRuntimeState *runtime);
-extern PyStatus _PyGILState_SetTstate(PyThreadState *tstate);
+extern PyStatus _PyGILState_Init(PyInterpreterState *interp);
+extern void _PyGILState_SetTstate(PyThreadState *tstate);
 extern void _PyGILState_Fini(PyInterpreterState *interp);
 
-PyAPI_FUNC(void) _PyGC_DumpShutdownStats(PyInterpreterState *interp);
+extern void _PyGC_DumpShutdownStats(PyInterpreterState *interp);
 
-PyAPI_FUNC(PyStatus) _Py_PreInitializeFromPyArgv(
+extern PyStatus _Py_PreInitializeFromPyArgv(
     const PyPreConfig *src_config,
     const struct _PyArgv *args);
-PyAPI_FUNC(PyStatus) _Py_PreInitializeFromConfig(
+extern PyStatus _Py_PreInitializeFromConfig(
     const PyConfig *config,
     const struct _PyArgv *args);
 
+extern wchar_t * _Py_GetStdlibDir(void);
 
-PyAPI_FUNC(int) _Py_HandleSystemExit(int *exitcode_p);
+extern int _Py_HandleSystemExit(int *exitcode_p);
 
-PyAPI_FUNC(PyObject*) _PyErr_WriteUnraisableDefaultHook(PyObject *unraisable);
+extern PyObject* _PyErr_WriteUnraisableDefaultHook(PyObject *unraisable);
 
-PyAPI_FUNC(void) _PyErr_Print(PyThreadState *tstate);
-PyAPI_FUNC(void) _PyErr_Display(PyObject *file, PyObject *exception,
+extern void _PyErr_Print(PyThreadState *tstate);
+extern void _PyErr_Display(PyObject *file, PyObject *exception,
                                 PyObject *value, PyObject *tb);
+extern void _PyErr_DisplayException(PyObject *file, PyObject *exc);
 
-PyAPI_FUNC(void) _PyThreadState_DeleteCurrent(PyThreadState *tstate);
+extern void _PyThreadState_DeleteCurrent(PyThreadState *tstate);
 
 extern void _PyAtExit_Call(PyInterpreterState *interp);
+
+extern int _Py_IsCoreInitialized(void);
+
+extern int _Py_FdIsInteractive(FILE *fp, PyObject *filename);
+
+extern const char* _Py_gitidentifier(void);
+extern const char* _Py_gitversion(void);
+
+// Export for '_asyncio' shared extension
+PyAPI_FUNC(int) _Py_IsInterpreterFinalizing(PyInterpreterState *interp);
+
+/* Random */
+extern int _PyOS_URandom(void *buffer, Py_ssize_t size);
+
+// Export for '_random' shared extension
+PyAPI_FUNC(int) _PyOS_URandomNonblock(void *buffer, Py_ssize_t size);
+
+/* Legacy locale support */
+extern int _Py_CoerceLegacyLocale(int warn);
+extern int _Py_LegacyLocaleDetected(int warn);
+
+// Export for 'readline' shared extension
+PyAPI_FUNC(char*) _Py_SetLocaleFromEnv(int category);
+
+// Export for special main.c string compiling with source tracebacks
+int _PyRun_SimpleStringFlagsWithName(const char *command, const char* name, PyCompilerFlags *flags);
+
+
+/* interpreter config */
+
+// Export for _testinternalcapi shared extension
+PyAPI_FUNC(int) _PyInterpreterConfig_InitFromState(
+    PyInterpreterConfig *,
+    PyInterpreterState *);
+PyAPI_FUNC(PyObject *) _PyInterpreterConfig_AsDict(PyInterpreterConfig *);
+PyAPI_FUNC(int) _PyInterpreterConfig_InitFromDict(
+    PyInterpreterConfig *,
+    PyObject *);
+PyAPI_FUNC(int) _PyInterpreterConfig_UpdateFromDict(
+    PyInterpreterConfig *,
+    PyObject *);
+
 
 #ifdef __cplusplus
 }
