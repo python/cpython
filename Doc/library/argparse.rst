@@ -745,6 +745,26 @@ If the user would like to catch errors manually, the feature can be enabled by s
 
 .. versionadded:: 3.9
 
+suggest_on_error
+^^^^^^^^^^^^^^^^
+
+By default, when a user passes an invalid argument choice or subparser name,
+:class:`ArgumentParser` will exit with error info and list the permissible
+argument choices (if specified) or subparser names as part of the error message.
+
+If the user would like to enable suggestions for mistyped argument choices and
+subparser names, the feature can be enabled by setting ``suggest_on_error`` to
+``True``::
+
+   >>> parser = argparse.ArgumentParser(description='Process some integers.', suggest_on_error=True)
+   >>> parser.add_argument('--action', choices=['sum', 'max'])
+   >>> parser.add_argument('integers', metavar='N', type=int, nargs='+',
+   ...                     help='an integer for the accumulator')
+   >>> parser.parse_args(['--action', 'sumn', 1, 2, 3])
+tester.py: error: argument --action: invalid choice: 'sumn', maybe you meant 'sum'? (choose from 'sum', 'max')
+
+.. versionadded:: 3.14
+
 
 The add_argument() method
 -------------------------
