@@ -106,7 +106,9 @@ after the main thread is running.  The following objects are immortalized:
 * :term:`module` objects and their dictionaries
 * :ref:`classes <classes>` (type objects)
 
-
+Because immortal objects are never deallocated, applications that create many
+objects of these types may see increased memory usage.  This is expected to be
+addressed in the 3.14 release.
 
 Additionally, numeric and string literals in the code as well as strings
 returned by :func:`sys.intern` are also immortalized.  This behavior is
