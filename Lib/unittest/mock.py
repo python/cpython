@@ -2754,7 +2754,19 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         raise InvalidSpecError(f'Cannot autospec a Mock object. '
                                f'[object={spec!r}]')
     is_async_func = _is_async_func(spec)
-    _kwargs = {'spec': spec}
+
+    placeholder = object()
+    entries = [(entry, placeholder) for entry in dir(spec)]
+    # Not using `is_dataclass` to avoid an import of dataclasses module
+    # for types that don't need that.
+    if is_type and instance and hasattr(spec, '__dataclass_fields__'):
+        from dataclasses import fields
+        dataclass_fields = fields(spec)
+        entries.extend((f.name, f.type) for f in dataclass_fields)
+        _kwargs = {'spec': [f.name for f in dataclass_fields]}
+    else:
+        _kwargs = {'spec': spec}
+
     if spec_set:
         _kwargs = {'spec_set': spec}
     elif spec is None:
@@ -2811,7 +2823,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
                                             _name='()', _parent=mock,
                                             wraps=wrapped)
 
-    for entry in dir(spec):
+    for entry, original in entries:
         if _is_magic(entry):
             # MagicMock already does the useful magic methods for us
             continue
@@ -2825,10 +2837,11 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         # AttributeError on being fetched?
         # we could be resilient against it, or catch and propagate the
         # exception when the attribute is fetched from the mock
-        try:
-            original = getattr(spec, entry)
-        except AttributeError:
-            continue
+        if original is placeholder:
+            try:
+                original = getattr(spec, entry)
+            except AttributeError:
+                continue
 
         child_kwargs = {'spec': original}
         # Wrap child attributes also.

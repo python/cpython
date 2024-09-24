@@ -1034,6 +1034,75 @@ class SpecSignatureTest(unittest.TestCase):
         self.assertEqual(mock.mock_calls, [])
         self.assertEqual(rv.mock_calls, [])
 
+    def test_dataclass(self):
+        from dataclasses import dataclass, field, InitVar
+        from typing import ClassVar
+
+        @dataclass
+        class WithPostInit:
+            a: int = field(init=False)
+            b: int = field(init=False)
+            def __post_init__(self):
+                self.a = 1
+                self.b = 2
+
+        for mock in [
+            create_autospec(WithPostInit, instance=True),
+            create_autospec(WithPostInit()),
+        ]:
+            with self.subTest(mock=mock):
+                self.assertIsInstance(mock.a, int)
+                self.assertIsInstance(mock.b, int)
+
+        # Classes do not have these fields:
+        mock = create_autospec(WithPostInit)
+        msg = "Mock object has no attribute"
+        with self.assertRaisesRegex(AttributeError, msg):
+            mock.a
+        with self.assertRaisesRegex(AttributeError, msg):
+            mock.b
+
+        @dataclass
+        class WithDefault:
+            a: int
+            b: int = 0
+
+        for mock in [
+            create_autospec(WithDefault, instance=True),
+            create_autospec(WithDefault(1)),
+        ]:
+            with self.subTest(mock=mock):
+                self.assertIsInstance(mock.a, int)
+                self.assertIsInstance(mock.b, int)
+
+        @dataclass
+        class WithMethod:
+            a: int
+            def b(self) -> int:
+                return 1
+
+        for mock in [
+            create_autospec(WithMethod, instance=True),
+            create_autospec(WithMethod(1)),
+        ]:
+            with self.subTest(mock=mock):
+                self.assertIsInstance(mock.a, int)
+                mock.b.assert_not_called()
+
+        @dataclass
+        class WithNonFields:
+            a: ClassVar[int]
+            b: InitVar[int]
+
+        for mock in [
+            create_autospec(WithNonFields, instance=True),
+            create_autospec(WithNonFields(1)),
+        ]:
+            with self.subTest(mock=mock):
+                with self.assertRaisesRegex(AttributeError, msg):
+                    mock.a
+                with self.assertRaisesRegex(AttributeError, msg):
+                    mock.b
 
 class TestCallList(unittest.TestCase):
 
