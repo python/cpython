@@ -235,15 +235,10 @@ static void
 float_dealloc(PyObject *op)
 {
     assert(PyFloat_Check(op));
-#ifdef WITH_FREELISTS
-    if (PyFloat_CheckExact(op)) {
+    if (PyFloat_CheckExact(op))
         _PyFloat_ExactDealloc(op);
-    }
     else
-#endif
-    {
         Py_TYPE(op)->tp_free(op);
-    }
 }
 
 double
@@ -1975,12 +1970,10 @@ _PyFloat_FiniType(PyInterpreterState *interp)
 void
 _PyFloat_DebugMallocStats(FILE *out)
 {
-#ifdef WITH_FREELISTS
     _PyDebugAllocatorStats(out,
                            "free PyFloatObject",
                            _Py_FREELIST_SIZE(floats),
                            sizeof(PyFloatObject));
-#endif
 }
 
 

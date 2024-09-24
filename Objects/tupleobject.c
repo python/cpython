@@ -1146,7 +1146,6 @@ maybe_freelist_push(PyTupleObject *op)
 void
 _PyTuple_DebugMallocStats(FILE *out)
 {
-#ifdef WITH_FREELISTS
     for (int i = 0; i < PyTuple_MAXSAVESIZE; i++) {
         int len = i + 1;
         char buf[128];
@@ -1155,5 +1154,4 @@ _PyTuple_DebugMallocStats(FILE *out)
         _PyDebugAllocatorStats(out, buf, _Py_FREELIST_SIZE(tuples[i]),
                                _PyObject_VAR_SIZE(&PyTuple_Type, len));
     }
-#endif
 }
