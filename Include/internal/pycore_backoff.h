@@ -32,7 +32,7 @@ typedef struct {
    and a 4-bit 'backoff' field. When resetting the counter, the
    backoff field is incremented (until it reaches a limit) and the
    value is set to a bit mask representing the value 2**backoff - 1.
-   The maximum backoff is 12 (the number of value value_and_backoff).
+   The maximum backoff is 12 (the number of bits in the value).
 
    There is an exceptional value which must not be updated, 0xFFFF.
 */
