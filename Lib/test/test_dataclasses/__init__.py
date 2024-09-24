@@ -4884,6 +4884,7 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
             def _get_foo(slf):
                 self.assertIs(__class__, type(slf))
                 self.assertIs(__class__, slf.__class__)
+                return __class__
 
             def _set_foo(slf, value):
                 self.assertIs(__class__, type(slf))
@@ -4981,11 +4982,11 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
         B = dataclass(slots=True)(A)
         self.assertIs(B().cls(), B)
 
-        # This is probably undesirable behavior, but is a function of
-        # how modifying __class__ in the closure works.  I'm not sure
-        # this should be tested or not: I don't really want to
-        # guarantee this behavior, but I don't want to lose the point
-        # that this is how it works.
+        # This is undesirable behavior, but is a function of how
+        # modifying __class__ in the closure works.  I'm not sure this
+        # should be tested or not: I don't really want to guarantee
+        # this behavior, but I don't want to lose the point that this
+        # is how it works.
 
         # The underlying class is "broken" by changing its __class__
         # in A.foo() to B.  This normally isn't a problem, because no

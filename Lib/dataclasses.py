@@ -1222,21 +1222,24 @@ def _get_slots(cls):
 
 
 def _update_func_cell_for__class__(f, oldcls, newcls):
+    # Returns True if we update a cell, else False.
     if f is None:
         # f will be None in the case of a property where not all of
         # fget, fset, and fdel are used.  Nothing to do in that case.
-        return
+        return False
     try:
         idx = f.__code__.co_freevars.index("__class__")
     except ValueError:
         # This function doesn't reference __class__, so nothing to do.
-        return
+        return False
     # Fix the cell to point to the new class, if it's already pointing
     # at the old class.  I'm not convinced that the "is oldcls" test
     # is needed, but other than performance can't hurt.
     closure = f.__closure__[idx]
     if closure.cell_contents is oldcls:
         closure.cell_contents = newcls
+        return True
+    return False
 
 
 def _add_slots(cls, is_frozen, weakref_slot):
@@ -1295,17 +1298,21 @@ def _add_slots(cls, is_frozen, weakref_slot):
     # Fix up any closures which reference __class__.  This is used to
     # fix zero argument super so that it points to the correct class
     # (the newly created one, which we're returning) and not the
-    # original class.
+    # original class.  We can break out of this loop as soon as we
+    # make an update, since all closures for a class will share a
+    # given cell.
     for member in newcls.__dict__.values():
         # If this is a wrapped function, unwrap it.
         member = inspect.unwrap(member)
 
         if isinstance(member, types.FunctionType):
-            _update_func_cell_for__class__(member, cls, newcls)
+            if _update_func_cell_for__class__(member, cls, newcls):
+                break
         elif isinstance(member, property):
-            _update_func_cell_for__class__(member.fget, cls, newcls)
-            _update_func_cell_for__class__(member.fset, cls, newcls)
-            _update_func_cell_for__class__(member.fdel, cls, newcls)
+            if (_update_func_cell_for__class__(member.fget, cls, newcls)
+                or _update_func_cell_for__class__(member.fset, cls, newcls)
+                or _update_func_cell_for__class__(member.fdel, cls, newcls)):
+                break
 
     return newcls
 
