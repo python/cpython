@@ -192,7 +192,7 @@ The ``run*`` functions and :func:`set_trace` are aliases for instantiating the
 access further features, you have to do this yourself:
 
 .. class:: Pdb(completekey='tab', stdin=None, stdout=None, skip=None, \
-               nosigint=False, readrc=True, invoke_origin=PdbInvokeOrigin.Unknown)
+               nosigint=False, readrc=True, mode=None)
 
    :class:`Pdb` is the debugger class.
 
@@ -211,9 +211,9 @@ access further features, you have to do this yourself:
    The *readrc* argument defaults to true and controls whether Pdb will load
    .pdbrc files from the filesystem.
 
-   The *invoke_origin* argument is used to determine the origin of the debugger.
-   It should be a value from the :class:`PdbInvokeOrigin` enumeration. The value
-   is used to determine whether certain commands are available or not.
+   The *mode* argument is used to indicate the origin of the debugger.
+   It should be either ``None``, ``'inline'`` or ``'cli'``. It impacts
+   the workings of some debugger commands.
 
    Example call to enable tracing with *skip*::
 
@@ -232,7 +232,7 @@ access further features, you have to do this yourself:
       The *readrc* argument.
 
    .. versionadded:: 3.14
-      Added the *invoke_origin* argument.
+      Added the *mode* argument.
 
    .. method:: run(statement, globals=None, locals=None)
                runeval(expression, globals=None, locals=None)
@@ -240,25 +240,6 @@ access further features, you have to do this yourself:
                set_trace()
 
       See the documentation for the functions explained above.
-
-
-.. class:: PdbInvokeOrigin
-
-   An enumeration of the possible origins of the debugger invocation.
-
-   .. attribute:: Unknown
-
-      The origin of the debugger invocation is unknown.
-
-   .. attribute:: CommandLine
-
-      The origin of the debugger invocation is from the command line.
-      (e.g. ``python -m pdb script.py``)
-
-   .. attribute:: InlineBreakpoint
-
-      The origin of the debugger invocation is from an inline breakpoint.
-      (e.g. ``breakpoint()`` or ``import pdb; pdb.set_trace()``)
 
 
 .. _debugger-commands:

@@ -905,8 +905,7 @@ def test_pdb_restart_command():
     """Test restart command
 
     >>> def test_function():
-    ...     from pdb import Pdb, PdbInvokeOrigin;
-    ...     Pdb(nosigint=True, readrc=False, invoke_origin=PdbInvokeOrigin.InlineBreakpoint).set_trace()
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False, mode='inline').set_trace()
     ...     x = 1
 
     >>> with PdbTestInput([  # doctest: +ELLIPSIS
@@ -914,8 +913,8 @@ def test_pdb_restart_command():
     ...     'continue',
     ... ]):
     ...    test_function()
-    > <doctest test.test_pdb.test_pdb_restart_command[0]>(3)test_function()
-    -> Pdb(nosigint=True, readrc=False, invoke_origin=PdbInvokeOrigin.InlineBreakpoint).set_trace()
+    > <doctest test.test_pdb.test_pdb_restart_command[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False, mode='inline').set_trace()
     (Pdb) restart
     *** run/restart command is not allowed with inline breakpoints.
     Use the command line interface if you want to restart your program
