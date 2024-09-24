@@ -4885,15 +4885,15 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
                 return slf.__class__
 
             def _set_foo(slf, value):
-                self.assertEqual(__class__, type(slf))
+                self.assertIs(__class__, type(slf))
 
             def _del_foo(slf):
-                self.assertEqual(__class__, type(slf))
+                self.assertIs(__class__, type(slf))
 
             foo = property(_get_foo, _set_foo, _del_foo)
 
         a = A()
-        self.assertEqual(a.foo, A)
+        self.assertIs(a.foo, A)
         a.foo = 4
         del a.foo
 
@@ -4906,14 +4906,14 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
 
             @foo.setter
             def foo(slf, value):
-                self.assertEqual(__class__, type(slf))
+                self.assertIs(__class__, type(slf))
 
             @foo.deleter
             def foo(slf):
-                self.assertEqual(__class__, type(slf))
+                self.assertIs(__class__, type(slf))
 
         a = A()
-        self.assertEqual(a.foo, A)
+        self.assertIs(a.foo, A)
         a.foo = 4
         del a.foo
 
@@ -4926,7 +4926,7 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
                 return __class__
 
         a = A()
-        self.assertEqual(a.foo, A)
+        self.assertIs(a.foo, A)
 
     def test_slots_dunder_class_property_setter(self):
         @dataclass(slots=True)
@@ -4934,7 +4934,7 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
             foo = property()
             @foo.setter
             def foo(slf, val):
-                self.assertEqual(__class__, type(slf))
+                self.assertIs(__class__, type(slf))
 
         a = A()
         a.foo = 4
@@ -4945,7 +4945,7 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
             foo = property()
             @foo.deleter
             def foo(slf):
-                self.assertEqual(__class__, type(slf))
+                self.assertIs(__class__, type(slf))
 
         a = A()
         del a.foo
@@ -4964,6 +4964,27 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
                 super()
 
         A().foo()
+
+    def test_remembered_class(self):
+        class A:
+            def cls(self):
+                return __class__
+
+        self.assertIs(A().cls(), A)
+
+        B = dataclass(slots=True)(A)
+        self.assertIs(B().cls(), B)
+
+        # This is probably undesirable behavior, but is a function of
+        # how modifying __class__ in the closure works.  I'm not sure
+        # this should be tested or not: I don't really want to
+        # guarantee this behavior, but I don't want to lose the point
+        # that this is how it works.
+
+        # The underlying class is "broken" by changing its __class__
+        # in A.foo() to B.  This normally isn't a problem, because no
+        # one will be keeping a reference to the underlying class.
+        self.assertIs(A().cls(), B)
 
 if __name__ == '__main__':
     unittest.main()
