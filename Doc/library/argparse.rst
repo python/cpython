@@ -189,7 +189,7 @@ ArgumentParser objects
                           formatter_class=argparse.HelpFormatter, \
                           prefix_chars='-', fromfile_prefix_chars=None, \
                           argument_default=None, conflict_handler='error', \
-                          add_help=True, allow_abbrev=True, exit_on_error=True,\
+                          add_help=True, allow_abbrev=True, exit_on_error=True, \
                           suggest_on_error=False)
 
    Create a new :class:`ArgumentParser` object. All parameters should be passed
