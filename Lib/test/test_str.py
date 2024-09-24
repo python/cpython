@@ -1389,8 +1389,9 @@ class StrTest(string_tests.StringLikeTest,
         self.assertRaises(TypeError, "{}".format, n)
 
         # String index for sequences
-        self.assertRaises(TypeError, "{[s]}".format, "abc")
-        self.assertRaises(TypeError, "{[-1]}".format, "abc")
+        index_msg = 'Index must be a sequence of digits'
+        self.assertRaisesRegex(TypeError, index_msg, "{[s]}".format, "abc")
+        self.assertRaisesRegex(TypeError, index_msg, "{[-1]}".format, "abc")
 
     def test_format_map(self):
         self.assertEqual(''.format_map({}), '')
