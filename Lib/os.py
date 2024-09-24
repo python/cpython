@@ -64,6 +64,10 @@ if 'posix' in _names:
         from posix import _have_functions
     except ImportError:
         pass
+    try:
+        from posix import _create_environ
+    except ImportError:
+        pass
 
     import posix
     __all__.extend(_get_exports_list(posix))
@@ -86,6 +90,10 @@ elif 'nt' in _names:
 
     try:
         from nt import _have_functions
+    except ImportError:
+        pass
+    try:
+        from nt import _create_environ
     except ImportError:
         pass
 
@@ -131,6 +139,7 @@ if _exists("_have_functions"):
     _set = set()
     _add("HAVE_FCHDIR",     "chdir")
     _add("HAVE_FCHMOD",     "chmod")
+    _add("MS_WINDOWS",      "chmod")
     _add("HAVE_FCHOWN",     "chown")
     _add("HAVE_FDOPENDIR",  "listdir")
     _add("HAVE_FDOPENDIR",  "scandir")
@@ -171,6 +180,7 @@ if _exists("_have_functions"):
     _add("HAVE_FSTATAT",    "stat")
     _add("HAVE_LCHFLAGS",   "chflags")
     _add("HAVE_LCHMOD",     "chmod")
+    _add("MS_WINDOWS",      "chmod")
     if _exists("lchown"): # mac os x10.3
         _add("HAVE_LCHOWN", "chown")
     _add("HAVE_LINKAT",     "link")
@@ -279,6 +289,10 @@ def renames(old, new):
 
 __all__.extend(["makedirs", "removedirs", "renames"])
 
+# Private sentinel that makes walk() classify all symlinks and junctions as
+# regular files.
+_walk_symlinks_as_files = object()
+
 def walk(top, topdown=True, onerror=None, followlinks=False):
     """Directory tree generator.
 
@@ -340,89 +354,82 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
 
     """
     sys.audit("os.walk", top, topdown, onerror, followlinks)
-    return _walk(fspath(top), topdown, onerror, followlinks)
 
-def _walk(top, topdown, onerror, followlinks):
-    dirs = []
-    nondirs = []
-    walk_dirs = []
+    stack = [fspath(top)]
+    islink, join = path.islink, path.join
+    while stack:
+        top = stack.pop()
+        if isinstance(top, tuple):
+            yield top
+            continue
 
-    # We may not have read permission for top, in which case we can't
-    # get a list of the files the directory contains.  os.walk
-    # always suppressed the exception then, rather than blow up for a
-    # minor reason when (say) a thousand readable directories are still
-    # left to visit.  That logic is copied here.
-    try:
-        # Note that scandir is global in this module due
-        # to earlier import-*.
-        scandir_it = scandir(top)
-    except OSError as error:
-        if onerror is not None:
-            onerror(error)
-        return
+        dirs = []
+        nondirs = []
+        walk_dirs = []
 
-    with scandir_it:
-        while True:
-            try:
-                try:
-                    entry = next(scandir_it)
-                except StopIteration:
-                    break
-            except OSError as error:
-                if onerror is not None:
-                    onerror(error)
-                return
-
-            try:
-                is_dir = entry.is_dir()
-            except OSError:
-                # If is_dir() raises an OSError, consider that the entry is not
-                # a directory, same behaviour than os.path.isdir().
-                is_dir = False
-
-            if is_dir:
-                dirs.append(entry.name)
-            else:
-                nondirs.append(entry.name)
-
-            if not topdown and is_dir:
-                # Bottom-up: recurse into sub-directory, but exclude symlinks to
-                # directories if followlinks is False
-                if followlinks:
-                    walk_into = True
-                else:
+        # We may not have read permission for top, in which case we can't
+        # get a list of the files the directory contains.
+        # We suppress the exception here, rather than blow up for a
+        # minor reason when (say) a thousand readable directories are still
+        # left to visit.
+        try:
+            with scandir(top) as entries:
+                for entry in entries:
                     try:
-                        is_symlink = entry.is_symlink()
+                        if followlinks is _walk_symlinks_as_files:
+                            is_dir = entry.is_dir(follow_symlinks=False) and not entry.is_junction()
+                        else:
+                            is_dir = entry.is_dir()
                     except OSError:
-                        # If is_symlink() raises an OSError, consider that the
-                        # entry is not a symbolic link, same behaviour than
-                        # os.path.islink().
-                        is_symlink = False
-                    walk_into = not is_symlink
+                        # If is_dir() raises an OSError, consider the entry not to
+                        # be a directory, same behaviour as os.path.isdir().
+                        is_dir = False
 
-                if walk_into:
-                    walk_dirs.append(entry.path)
+                    if is_dir:
+                        dirs.append(entry.name)
+                    else:
+                        nondirs.append(entry.name)
 
-    # Yield before recursion if going top down
-    if topdown:
-        yield top, dirs, nondirs
+                    if not topdown and is_dir:
+                        # Bottom-up: traverse into sub-directory, but exclude
+                        # symlinks to directories if followlinks is False
+                        if followlinks:
+                            walk_into = True
+                        else:
+                            try:
+                                is_symlink = entry.is_symlink()
+                            except OSError:
+                                # If is_symlink() raises an OSError, consider the
+                                # entry not to be a symbolic link, same behaviour
+                                # as os.path.islink().
+                                is_symlink = False
+                            walk_into = not is_symlink
 
-        # Recurse into sub-directories
-        islink, join = path.islink, path.join
-        for dirname in dirs:
-            new_path = join(top, dirname)
-            # Issue #23605: os.path.islink() is used instead of caching
-            # entry.is_symlink() result during the loop on os.scandir() because
-            # the caller can replace the directory entry during the "yield"
-            # above.
-            if followlinks or not islink(new_path):
-                yield from _walk(new_path, topdown, onerror, followlinks)
-    else:
-        # Recurse into sub-directories
-        for new_path in walk_dirs:
-            yield from _walk(new_path, topdown, onerror, followlinks)
-        # Yield after recursion if going bottom up
-        yield top, dirs, nondirs
+                        if walk_into:
+                            walk_dirs.append(entry.path)
+        except OSError as error:
+            if onerror is not None:
+                onerror(error)
+            continue
+
+        if topdown:
+            # Yield before sub-directory traversal if going top down
+            yield top, dirs, nondirs
+            # Traverse into sub-directories
+            for dirname in reversed(dirs):
+                new_path = join(top, dirname)
+                # bpo-23605: os.path.islink() is used instead of caching
+                # entry.is_symlink() result during the loop on os.scandir() because
+                # the caller can replace the directory entry during the "yield"
+                # above.
+                if followlinks or not islink(new_path):
+                    stack.append(new_path)
+        else:
+            # Yield after sub-directory traversal if going bottom up
+            stack.append((top, dirs, nondirs))
+            # Traverse into sub-directories
+            for new_path in reversed(walk_dirs):
+                stack.append(new_path)
 
 __all__.append("walk")
 
@@ -463,23 +470,58 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         """
         sys.audit("os.fwalk", top, topdown, onerror, follow_symlinks, dir_fd)
         top = fspath(top)
-        # Note: To guard against symlink races, we use the standard
-        # lstat()/open()/fstat() trick.
-        if not follow_symlinks:
-            orig_st = stat(top, follow_symlinks=False, dir_fd=dir_fd)
-        topfd = open(top, O_RDONLY, dir_fd=dir_fd)
+        stack = [(_fwalk_walk, (True, dir_fd, top, top, None))]
+        isbytes = isinstance(top, bytes)
         try:
-            if (follow_symlinks or (st.S_ISDIR(orig_st.st_mode) and
-                                    path.samestat(orig_st, stat(topfd)))):
-                yield from _fwalk(topfd, top, isinstance(top, bytes),
-                                  topdown, onerror, follow_symlinks)
+            while stack:
+                yield from _fwalk(stack, isbytes, topdown, onerror, follow_symlinks)
         finally:
-            close(topfd)
+            # Close any file descriptors still on the stack.
+            while stack:
+                action, value = stack.pop()
+                if action == _fwalk_close:
+                    close(value)
 
-    def _fwalk(topfd, toppath, isbytes, topdown, onerror, follow_symlinks):
+    # Each item in the _fwalk() stack is a pair (action, args).
+    _fwalk_walk = 0  # args: (isroot, dirfd, toppath, topname, entry)
+    _fwalk_yield = 1  # args: (toppath, dirnames, filenames, topfd)
+    _fwalk_close = 2  # args: dirfd
+
+    def _fwalk(stack, isbytes, topdown, onerror, follow_symlinks):
         # Note: This uses O(depth of the directory tree) file descriptors: if
         # necessary, it can be adapted to only require O(1) FDs, see issue
         # #13734.
+
+        action, value = stack.pop()
+        if action == _fwalk_close:
+            close(value)
+            return
+        elif action == _fwalk_yield:
+            yield value
+            return
+        assert action == _fwalk_walk
+        isroot, dirfd, toppath, topname, entry = value
+        try:
+            if not follow_symlinks:
+                # Note: To guard against symlink races, we use the standard
+                # lstat()/open()/fstat() trick.
+                if entry is None:
+                    orig_st = stat(topname, follow_symlinks=False, dir_fd=dirfd)
+                else:
+                    orig_st = entry.stat(follow_symlinks=False)
+            topfd = open(topname, O_RDONLY | O_NONBLOCK, dir_fd=dirfd)
+        except OSError as err:
+            if isroot:
+                raise
+            if onerror is not None:
+                onerror(err)
+            return
+        stack.append((_fwalk_close, topfd))
+        if not follow_symlinks:
+            if isroot and not st.S_ISDIR(orig_st.st_mode):
+                return
+            if not path.samestat(orig_st, stat(topfd)):
+                return
 
         scandir_it = scandir(topfd)
         dirs = []
@@ -506,31 +548,18 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
 
         if topdown:
             yield toppath, dirs, nondirs, topfd
+        else:
+            stack.append((_fwalk_yield, (toppath, dirs, nondirs, topfd)))
 
-        for name in dirs if entries is None else zip(dirs, entries):
-            try:
-                if not follow_symlinks:
-                    if topdown:
-                        orig_st = stat(name, dir_fd=topfd, follow_symlinks=False)
-                    else:
-                        assert entries is not None
-                        name, entry = name
-                        orig_st = entry.stat(follow_symlinks=False)
-                dirfd = open(name, O_RDONLY, dir_fd=topfd)
-            except OSError as err:
-                if onerror is not None:
-                    onerror(err)
-                continue
-            try:
-                if follow_symlinks or path.samestat(orig_st, stat(dirfd)):
-                    dirpath = path.join(toppath, name)
-                    yield from _fwalk(dirfd, dirpath, isbytes,
-                                      topdown, onerror, follow_symlinks)
-            finally:
-                close(dirfd)
-
-        if not topdown:
-            yield toppath, dirs, nondirs, topfd
+        toppath = path.join(toppath, toppath[:0])  # Add trailing slash.
+        if entries is None:
+            stack.extend(
+                (_fwalk_walk, (False, topfd, toppath + name, name, None))
+                for name in dirs[::-1])
+        else:
+            stack.extend(
+                (_fwalk_walk, (False, topfd, toppath + name, name, entry))
+                for name, entry in zip(dirs[::-1], entries[::-1]))
 
     __all__.append("fwalk")
 
@@ -736,7 +765,18 @@ class _Environ(MutableMapping):
         new.update(self)
         return new
 
-def _createenviron():
+    if _exists("_create_environ"):
+        def refresh(self):
+            data = _create_environ()
+            if name == 'nt':
+                data = {self.encodekey(key): value
+                        for key, value in data.items()}
+
+            # modify in-place to keep os.environb in sync
+            self._data.clear()
+            self._data.update(data)
+
+def _create_environ_mapping():
     if name == 'nt':
         # Where Env Var Names Must Be UPPERCASE
         def check_str(value):
@@ -766,8 +806,8 @@ def _createenviron():
         encode, decode)
 
 # unicode environ
-environ = _createenviron()
-del _createenviron
+environ = _create_environ_mapping()
+del _create_environ_mapping
 
 
 def getenv(key, default=None):
@@ -1055,6 +1095,12 @@ def _fspath(path):
         else:
             raise TypeError("expected str, bytes or os.PathLike object, "
                             "not " + path_type.__name__)
+    except TypeError:
+        if path_type.__fspath__ is None:
+            raise TypeError("expected str, bytes or os.PathLike object, "
+                            "not " + path_type.__name__) from None
+        else:
+            raise
     if isinstance(path_repr, (str, bytes)):
         return path_repr
     else:
@@ -1072,6 +1118,8 @@ if not _exists('fspath'):
 class PathLike(abc.ABC):
 
     """Abstract base class for implementing the file system path protocol."""
+
+    __slots__ = ()
 
     @abc.abstractmethod
     def __fspath__(self):
@@ -1122,3 +1170,17 @@ if name == 'nt':
             cookie,
             nt._remove_dll_directory
         )
+
+
+if _exists('sched_getaffinity') and sys._get_cpu_count_config() < 0:
+    def process_cpu_count():
+        """
+        Get the number of CPUs of the current process.
+
+        Return the number of logical CPUs usable by the calling thread of the
+        current process. Return None if indeterminable.
+        """
+        return len(sched_getaffinity(0))
+else:
+    # Just an alias to cpu_count() (same docstring)
+    process_cpu_count = cpu_count

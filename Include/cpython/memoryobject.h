@@ -2,8 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-PyAPI_DATA(PyTypeObject) _PyManagedBuffer_Type;
-
 /* The structs are declared here so that macros can work, but they shouldn't
    be considered public. Don't access their fields directly, use the macros
    and functions instead! */
@@ -24,6 +22,7 @@ typedef struct {
 #define _Py_MEMORYVIEW_FORTRAN     0x004  /* Fortran contiguous layout */
 #define _Py_MEMORYVIEW_SCALAR      0x008  /* scalar: ndim = 0 */
 #define _Py_MEMORYVIEW_PIL         0x010  /* PIL-style layout */
+#define _Py_MEMORYVIEW_RESTRICTED  0x020  /* Disallow new references to the memoryview's buffer */
 
 typedef struct {
     PyObject_VAR_HEAD
@@ -36,7 +35,16 @@ typedef struct {
     Py_ssize_t ob_array[1];       /* shape, strides, suboffsets */
 } PyMemoryViewObject;
 
+#define _PyMemoryView_CAST(op) _Py_CAST(PyMemoryViewObject*, op)
+
 /* Get a pointer to the memoryview's private copy of the exporter's buffer. */
-#define PyMemoryView_GET_BUFFER(op) (&((PyMemoryViewObject *)(op))->view)
+static inline Py_buffer* PyMemoryView_GET_BUFFER(PyObject *op) {
+    return (&_PyMemoryView_CAST(op)->view);
+}
+#define PyMemoryView_GET_BUFFER(op) PyMemoryView_GET_BUFFER(_PyObject_CAST(op))
+
 /* Get a pointer to the exporting object (this may be NULL!). */
-#define PyMemoryView_GET_BASE(op) (((PyMemoryViewObject *)(op))->view.obj)
+static inline PyObject* PyMemoryView_GET_BASE(PyObject *op) {
+    return _PyMemoryView_CAST(op)->view.obj;
+}
+#define PyMemoryView_GET_BASE(op) PyMemoryView_GET_BASE(_PyObject_CAST(op))

@@ -37,8 +37,9 @@ class MockGetPathTests(unittest.TestCase):
             module_search_paths_set=1,
             module_search_paths=[
                 r"C:\Python\python98.zip",
-                r"C:\Python\Lib",
                 r"C:\Python\DLLs",
+                r"C:\Python\Lib",
+                r"C:\Python",
             ],
         )
         actual = getpath(ns, expected)
@@ -63,8 +64,8 @@ class MockGetPathTests(unittest.TestCase):
             module_search_paths_set=1,
             module_search_paths=[
                 r"C:\CPython\PCbuild\amd64\python98.zip",
-                r"C:\CPython\Lib",
                 r"C:\CPython\PCbuild\amd64",
+                r"C:\CPython\Lib",
             ],
         )
         actual = getpath(ns, expected)
@@ -133,8 +134,9 @@ class MockGetPathTests(unittest.TestCase):
                 r"C:\Python\python98.zip",
                 "path1-dir",
                 # should not contain not-subdirs
-                r"C:\Python\Lib",
                 r"C:\Python\DLLs",
+                r"C:\Python\Lib",
+                r"C:\Python",
             ],
         )
         actual = getpath(ns, expected)
@@ -147,8 +149,9 @@ class MockGetPathTests(unittest.TestCase):
             module_search_paths_set=1,
             module_search_paths=[
                 r"C:\Python\python98.zip",
-                r"C:\Python\Lib",
                 r"C:\Python\DLLs",
+                r"C:\Python\Lib",
+                r"C:\Python",
             ],
         )
         actual = getpath(ns, expected)
@@ -173,8 +176,9 @@ class MockGetPathTests(unittest.TestCase):
             module_search_paths_set=1,
             module_search_paths=[
                 r"C:\Python\python98.zip",
-                r"C:\Python\Lib",
                 r"C:\Python\DLLs",
+                r"C:\Python\Lib",
+                r"C:\Python",
             ],
         )
         actual = getpath(ns, expected)
@@ -201,8 +205,8 @@ class MockGetPathTests(unittest.TestCase):
             module_search_paths_set=1,
             module_search_paths=[
                 r"C:\CPython\PCbuild\amd64\python98.zip",
-                r"C:\CPython\Lib",
                 r"C:\CPython\PCbuild\amd64",
+                r"C:\CPython\Lib",
             ],
         )
         actual = getpath(ns, expected)
@@ -231,8 +235,8 @@ class MockGetPathTests(unittest.TestCase):
             module_search_paths_set=1,
             module_search_paths=[
                 r"C:\Out\python98.zip",
-                r"C:\CPython\Lib",
                 r"C:\Out",
+                r"C:\CPython\Lib",
             ],
         )
         actual = getpath(ns, expected)
@@ -254,8 +258,8 @@ class MockGetPathTests(unittest.TestCase):
             module_search_paths_set=1,
             module_search_paths=[
                 r"C:\Python\python98.zip",
-                r"C:\Python\Lib",
                 r"C:\Python",
+                r"C:\Python\Lib",
             ],
         )
         actual = getpath(ns, expected)
@@ -553,7 +557,7 @@ class MockGetPathTests(unittest.TestCase):
         ns.add_known_dir("/Library/Frameworks/Python.framework/Versions/9.8/lib/python9.8/lib-dynload")
         ns.add_known_file("/Library/Frameworks/Python.framework/Versions/9.8/lib/python9.8/os.py")
 
-        # This is definitely not the stdlib (see discusion in bpo-46890)
+        # This is definitely not the stdlib (see discussion in bpo-46890)
         #ns.add_known_file("/Library/Frameworks/lib/python98.zip")
 
         expected = dict(
@@ -601,7 +605,7 @@ class MockGetPathTests(unittest.TestCase):
         ns.add_known_dir("/Library/Frameworks/DebugPython.framework/Versions/9.8/lib/python9.8/lib-dynload")
         ns.add_known_xfile("/Library/Frameworks/DebugPython.framework/Versions/9.8/lib/python9.8/os.py")
 
-        # This is definitely not the stdlib (see discusion in bpo-46890)
+        # This is definitely not the stdlib (see discussion in bpo-46890)
         #ns.add_known_xfile("/Library/lib/python98.zip")
         expected = dict(
             executable="/Library/Frameworks/DebugPython.framework/Versions/9.8/bin/python9.8",
@@ -814,6 +818,20 @@ class MockGetPathTests(unittest.TestCase):
         actual = getpath(ns, expected)
         self.assertEqual(expected, actual)
 
+    def test_explicitly_set_stdlib_dir(self):
+        """Test the explicitly set stdlib_dir in the config is respected."""
+        ns = MockPosixNamespace(
+            PREFIX="/usr",
+            argv0="python",
+            ENV_PATH="/usr/bin",
+        )
+        ns["config"]["stdlib_dir"] = "/custom_stdlib_dir"
+        expected = dict(
+            stdlib_dir="/custom_stdlib_dir",
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
 
 # ******************************************************************************
 
@@ -826,6 +844,7 @@ DEFAULT_NAMESPACE = dict(
     PYDEBUGEXT="",
     VERSION_MAJOR=9,    # fixed version number for ease
     VERSION_MINOR=8,    # of testing
+    ABI_THREAD="",
     PYWINVER=None,
     EXE_SUFFIX=None,
 

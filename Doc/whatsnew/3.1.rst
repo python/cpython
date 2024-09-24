@@ -80,6 +80,28 @@ Support was also added for third-party tools like `PyYAML <https://pyyaml.org/>`
       PEP written by Armin Ronacher and Raymond Hettinger.  Implementation
       written by Raymond Hettinger.
 
+Since an ordered dictionary remembers its insertion order, it can be used
+in conjunction with sorting to make a sorted dictionary::
+
+    >>> # regular unsorted dictionary
+    >>> d = {'banana': 3, 'apple':4, 'pear': 1, 'orange': 2}
+
+    >>> # dictionary sorted by key
+    >>> OrderedDict(sorted(d.items(), key=lambda t: t[0]))
+    OrderedDict([('apple', 4), ('banana', 3), ('orange', 2), ('pear', 1)])
+
+    >>> # dictionary sorted by value
+    >>> OrderedDict(sorted(d.items(), key=lambda t: t[1]))
+    OrderedDict([('pear', 1), ('orange', 2), ('banana', 3), ('apple', 4)])
+
+    >>> # dictionary sorted by length of the key string
+    >>> OrderedDict(sorted(d.items(), key=lambda t: len(t[0])))
+    OrderedDict([('pear', 1), ('apple', 4), ('orange', 2), ('banana', 3)])
+
+The new sorted dictionaries maintain their sort order when entries
+are deleted.  But when new keys are added, the keys are appended
+to the end and the sort is not maintained.
+
 
 PEP 378: Format Specifier for Thousands Separator
 =================================================
@@ -152,7 +174,7 @@ Some smaller changes made to the core Python language are:
 
   (Contributed by Eric Smith; :issue:`5237`.)
 
-* The :func:`string.maketrans` function is deprecated and is replaced by new
+* The :func:`!string.maketrans` function is deprecated and is replaced by new
   static methods, :meth:`bytes.maketrans` and :meth:`bytearray.maketrans`.
   This change solves the confusion around which types were supported by the
   :mod:`string` module. Now, :class:`str`, :class:`bytes`, and
@@ -169,7 +191,7 @@ Some smaller changes made to the core Python language are:
     ...         if '<critical>' in line:
     ...             outfile.write(line)
 
-  With the new syntax, the :func:`contextlib.nested` function is no longer
+  With the new syntax, the :func:`!contextlib.nested` function is no longer
   needed and is now deprecated.
 
   (Contributed by Georg Brandl and Mattias Brändström;
@@ -183,9 +205,9 @@ Some smaller changes made to the core Python language are:
 
   (Contributed by Mark Dickinson; :issue:`4707`.)
 
-* Python now uses David Gay's algorithm for finding the shortest floating
-  point representation that doesn't change its value.  This should help
-  mitigate some of the confusion surrounding binary floating point
+* Python now uses David Gay's algorithm for finding the shortest floating-point
+  representation that doesn't change its value.  This should help
+  mitigate some of the confusion surrounding binary floating-point
   numbers.
 
   The significance is easily seen with a number like ``1.1`` which does not
@@ -193,7 +215,7 @@ Some smaller changes made to the core Python language are:
   equivalent, an expression like ``float('1.1')`` evaluates to the nearest
   representable value which is ``0x1.199999999999ap+0`` in hex or
   ``1.100000000000000088817841970012523233890533447265625`` in decimal. That
-  nearest value was and still is used in subsequent floating point
+  nearest value was and still is used in subsequent floating-point
   calculations.
 
   What is new is how the number gets displayed.  Formerly, Python used a
@@ -202,7 +224,7 @@ Some smaller changes made to the core Python language are:
   using 17 digits was that it relied on IEEE-754 guarantees to assure that
   ``eval(repr(1.1))`` would round-trip exactly to its original value.  The
   disadvantage is that many people found the output to be confusing (mistaking
-  intrinsic limitations of binary floating point representation as being a
+  intrinsic limitations of binary floating-point representation as being a
   problem with Python itself).
 
   The new algorithm for ``repr(1.1)`` is smarter and returns ``'1.1'``.
@@ -214,8 +236,8 @@ Some smaller changes made to the core Python language are:
   it does not change the underlying values.  So, it is still the case that
   ``1.1 + 2.2 != 3.3`` even though the representations may suggest otherwise.
 
-  The new algorithm depends on certain features in the underlying floating
-  point implementation.  If the required features are not found, the old
+  The new algorithm depends on certain features in the underlying floating-point
+  implementation.  If the required features are not found, the old
   algorithm will continue to be used.  Also, the text pickle protocols
   assure cross-platform portability by using the old algorithm.
 
@@ -359,25 +381,29 @@ New, Improved, and Deprecated Modules
               x / 0
 
   In addition, several new assertion methods were added including
-  :func:`assertSetEqual`, :func:`assertDictEqual`,
-  :func:`assertDictContainsSubset`, :func:`assertListEqual`,
-  :func:`assertTupleEqual`, :func:`assertSequenceEqual`,
-  :func:`assertRaisesRegexp`, :func:`assertIsNone`,
-  and :func:`assertIsNotNone`.
+  :meth:`~unittest.TestCase.assertSetEqual`,
+  :meth:`~unittest.TestCase.assertDictEqual`,
+  :meth:`!assertDictContainsSubset`,
+  :meth:`~unittest.TestCase.assertListEqual`,
+  :meth:`~unittest.TestCase.assertTupleEqual`,
+  :meth:`~unittest.TestCase.assertSequenceEqual`,
+  :meth:`assertRaisesRegexp() <unittest.TestCase.assertRaisesRegex>`,
+  :meth:`~unittest.TestCase.assertIsNone`,
+  and :meth:`~unittest.TestCase.assertIsNotNone`.
 
   (Contributed by Benjamin Peterson and Antoine Pitrou.)
 
-* The :mod:`io` module has three new constants for the :meth:`seek`
-  method :data:`SEEK_SET`, :data:`SEEK_CUR`, and :data:`SEEK_END`.
+* The :mod:`io` module has three new constants for the :meth:`~io.IOBase.seek`
+  method: :data:`~os.SEEK_SET`, :data:`~os.SEEK_CUR`, and :data:`~os.SEEK_END`.
 
-* The :attr:`sys.version_info` tuple is now a named tuple::
+* The :data:`sys.version_info` tuple is now a named tuple::
 
     >>> sys.version_info
     sys.version_info(major=3, minor=1, micro=0, releaselevel='alpha', serial=2)
 
   (Contributed by Ross Light; :issue:`4285`.)
 
-* The :mod:`nntplib` and :mod:`imaplib` modules now support IPv6.
+* The :mod:`!nntplib` and :mod:`imaplib` modules now support IPv6.
 
   (Contributed by Derek Morr; :issue:`1655` and :issue:`1664`.)
 
@@ -486,7 +512,7 @@ Changes to Python's build process and to the C API include:
 
   Apart from the performance improvements this change should be invisible to
   end users, with one exception: for testing and debugging purposes there's a
-  new :attr:`sys.int_info` that provides information about the
+  new :data:`sys.int_info` that provides information about the
   internal format, giving the number of bits per digit and the size in bytes
   of the C type used to store each digit::
 
@@ -501,16 +527,16 @@ Changes to Python's build process and to the C API include:
 
   (Contributed by Mark Dickinson and Lisandro Dalcrin; :issue:`5175`.)
 
-* Deprecated :c:func:`PyNumber_Int`.  Use :c:func:`PyNumber_Long` instead.
+* Deprecated :c:func:`!PyNumber_Int`.  Use :c:func:`PyNumber_Long` instead.
 
   (Contributed by Mark Dickinson; :issue:`4910`.)
 
 * Added a new :c:func:`PyOS_string_to_double` function to replace the
-  deprecated functions :c:func:`PyOS_ascii_strtod` and :c:func:`PyOS_ascii_atof`.
+  deprecated functions :c:func:`!PyOS_ascii_strtod` and :c:func:`!PyOS_ascii_atof`.
 
   (Contributed by Mark Dickinson; :issue:`5914`.)
 
-* Added :c:type:`PyCapsule` as a replacement for the :c:type:`PyCObject` API.
+* Added :c:type:`PyCapsule` as a replacement for the :c:type:`!PyCObject` API.
   The principal difference is that the new type has a well defined interface
   for passing typing safety information and a less complicated signature
   for calling a destructor.  The old type had a problematic API and is now
@@ -524,7 +550,7 @@ Porting to Python 3.1
 This section lists previously described changes and other bugfixes
 that may require changes to your code:
 
-* The new floating point string representations can break existing doctests.
+* The new floating-point string representations can break existing doctests.
   For example::
 
     def e():

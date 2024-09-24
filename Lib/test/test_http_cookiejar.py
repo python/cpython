@@ -9,7 +9,6 @@ from test.support import warnings_helper
 import time
 import unittest
 import urllib.request
-import pathlib
 
 from http.cookiejar import (time2isoz, http2time, iso2time, time2netscape,
      parse_ns_headers, join_header_words, split_header_words, Cookie,
@@ -337,9 +336,9 @@ class FileCookieJarTests(unittest.TestCase):
         self.assertEqual(c.filename, filename)
 
     def test_constructor_with_path_like(self):
-        filename = pathlib.Path(os_helper.TESTFN)
-        c = LWPCookieJar(filename)
-        self.assertEqual(c.filename, os.fspath(filename))
+        filename = os_helper.TESTFN
+        c = LWPCookieJar(os_helper.FakePath(filename))
+        self.assertEqual(c.filename, filename)
 
     def test_constructor_with_none(self):
         c = LWPCookieJar(None)
@@ -396,6 +395,32 @@ class FileCookieJarTests(unittest.TestCase):
             self.assertEqual(stat.S_IMODE(st.st_mode), 0o600)
         finally:
             os_helper.unlink(filename)
+
+    @unittest.skipIf(mswindows, "windows file permissions are incompatible with file modes")
+    @os_helper.skip_unless_working_chmod
+    def test_cookie_files_are_truncated(self):
+        filename = os_helper.TESTFN
+        for cookiejar_class in (LWPCookieJar, MozillaCookieJar):
+            c = cookiejar_class(filename)
+
+            req = urllib.request.Request("http://www.acme.com/")
+            headers = ["Set-Cookie: pll_lang=en; Max-Age=31536000; path=/"]
+            res = FakeResponse(headers, "http://www.acme.com/")
+            c.extract_cookies(res, req)
+            self.assertEqual(len(c), 1)
+
+            try:
+                # Save the first version with contents:
+                c.save()
+                # Now, clear cookies and re-save:
+                c.clear()
+                c.save()
+                # Check that file was truncated:
+                c.load()
+            finally:
+                os_helper.unlink(filename)
+
+            self.assertEqual(len(c), 0)
 
     def test_bad_magic(self):
         # OSErrors (eg. file doesn't exist) are allowed to propagate

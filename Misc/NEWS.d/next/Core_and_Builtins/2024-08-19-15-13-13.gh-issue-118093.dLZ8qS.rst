@@ -1,0 +1,3 @@
+Break up ``CALL_ALLOC_AND_ENTER_INIT`` into micro-ops and relax
+requirement for exact args, in order to increase the amount of code
+supported by tier 2.
