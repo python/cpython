@@ -2889,7 +2889,6 @@ class TestMutuallyExclusiveGroupErrors(TestCase):
               '''
         self.assertEqual(cmd_foo.format_help(), textwrap.dedent(expected))
 
-
     def test_empty_group(self):
         # See issue 26952
         parser = argparse.ArgumentParser()
