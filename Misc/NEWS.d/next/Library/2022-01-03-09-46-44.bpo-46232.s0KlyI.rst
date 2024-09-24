@@ -1,2 +1,0 @@
-The :mod:`ssl` module now handles certificates with bit strings in DN
-correctly.

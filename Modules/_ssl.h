@@ -25,10 +25,16 @@ typedef struct {
     PyObject *PySSLEOFErrorObject;
     /* Error mappings */
     PyObject *err_codes_to_names;
-    PyObject *err_names_to_codes;
     PyObject *lib_codes_to_names;
     /* socket type from module CAPI */
     PyTypeObject *Sock_Type;
+    /* Interned strings */
+    PyObject *str_library;
+    PyObject *str_reason;
+    PyObject *str_verify_code;
+    PyObject *str_verify_message;
+    /* keylog lock */
+    PyThread_type_lock keylog_lock;
 } _sslmodulestate;
 
 static struct PyModuleDef _sslmodule_def;

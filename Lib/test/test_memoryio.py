@@ -6,10 +6,12 @@ BytesIO -- for bytes
 import unittest
 from test import support
 
+import gc
 import io
 import _pyio as pyio
 import pickle
 import sys
+import weakref
 
 class IntLike:
     def __init__(self, num):
@@ -463,6 +465,39 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         memio.close()
         self.assertRaises(ValueError, memio.getbuffer)
 
+    def test_getbuffer_empty(self):
+        memio = self.ioclass()
+        buf = memio.getbuffer()
+        self.assertEqual(bytes(buf), b"")
+        # Trying to change the size of the BytesIO while a buffer is exported
+        # raises a BufferError.
+        self.assertRaises(BufferError, memio.write, b'x')
+        buf2 = memio.getbuffer()
+        self.assertRaises(BufferError, memio.write, b'x')
+        buf.release()
+        self.assertRaises(BufferError, memio.write, b'x')
+        buf2.release()
+        memio.write(b'x')
+
+    def test_getbuffer_gc_collect(self):
+        memio = self.ioclass(b"1234567890")
+        buf = memio.getbuffer()
+        memiowr = weakref.ref(memio)
+        bufwr = weakref.ref(buf)
+        # Create a reference loop.
+        a = [buf]
+        a.append(a)
+        # The Python implementation emits an unraisable exception.
+        with support.catch_unraisable_exception():
+            del memio
+        del buf
+        del a
+        # The C implementation emits an unraisable exception.
+        with support.catch_unraisable_exception():
+            gc.collect()
+        self.assertIsNone(memiowr())
+        self.assertIsNone(bufwr())
+
     def test_read1(self):
         buf = self.buftype("1234567890")
         self.assertEqual(self.ioclass(buf).read1(), buf)
@@ -766,7 +801,7 @@ class CBytesIOTest(PyBytesIOTest):
 
     def _test_cow_mutation(self, mutation):
         # Common code for all BytesIO copy-on-write mutation tests.
-        imm = b' ' * 1024
+        imm = (' ' * 1024).encode("ascii")
         old_rc = sys.getrefcount(imm)
         memio = self.ioclass(imm)
         self.assertEqual(sys.getrefcount(imm), old_rc + 1)

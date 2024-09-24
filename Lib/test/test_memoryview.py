@@ -13,8 +13,13 @@ import array
 import io
 import copy
 import pickle
+import struct
 
 from test.support import import_helper
+
+
+class MyObject:
+    pass
 
 
 class AbstractMemoryTests:
@@ -226,8 +231,6 @@ class AbstractMemoryTests:
                 def __init__(self, base):
                     self.m = memoryview(base)
             class MySource(tp):
-                pass
-            class MyObject:
                 pass
 
             # Create a reference cycle through a memoryview object.
@@ -527,6 +530,14 @@ class OtherTest(unittest.TestCase):
                 m[2:] = memoryview(p6).cast(format)[2:]
                 self.assertEqual(d.value, 0.6)
 
+    def test_half_float(self):
+        half_data = struct.pack('eee', 0.0, -1.5, 1.5)
+        float_data = struct.pack('fff', 0.0, -1.5, 1.5)
+        half_view = memoryview(half_data).cast('e')
+        float_view = memoryview(float_data).cast('f')
+        self.assertEqual(half_view.nbytes * 2, float_view.nbytes)
+        self.assertListEqual(half_view.tolist(), float_view.tolist())
+
     def test_memoryview_hex(self):
         # Issue #9951: memoryview.hex() segfaults with non-contiguous buffers.
         x = b'0' * 200000
@@ -544,6 +555,128 @@ class OtherTest(unittest.TestCase):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.assertRaises(TypeError):
                 pickle.dumps(m, proto)
+
+    def test_use_released_memory(self):
+        # gh-92888: Previously it was possible to use a memoryview even after
+        # backing buffer is freed in certain cases. This tests that those
+        # cases raise an exception.
+        size = 128
+        def release():
+            m.release()
+            nonlocal ba
+            ba = bytearray(size)
+        class MyIndex:
+            def __index__(self):
+                release()
+                return 4
+        class MyFloat:
+            def __float__(self):
+                release()
+                return 4.25
+        class MyBool:
+            def __bool__(self):
+                release()
+                return True
+
+        ba = None
+        m = memoryview(bytearray(b'\xff'*size))
+        with self.assertRaises(ValueError):
+            m[MyIndex()]
+
+        ba = None
+        m = memoryview(bytearray(b'\xff'*size))
+        self.assertEqual(list(m[:MyIndex()]), [255] * 4)
+
+        ba = None
+        m = memoryview(bytearray(b'\xff'*size))
+        self.assertEqual(list(m[MyIndex():8]), [255] * 4)
+
+        ba = None
+        m = memoryview(bytearray(b'\xff'*size)).cast('B', (64, 2))
+        with self.assertRaisesRegex(ValueError, "operation forbidden"):
+            m[MyIndex(), 0]
+
+        ba = None
+        m = memoryview(bytearray(b'\xff'*size)).cast('B', (2, 64))
+        with self.assertRaisesRegex(ValueError, "operation forbidden"):
+            m[0, MyIndex()]
+
+        ba = None
+        m = memoryview(bytearray(b'\xff'*size))
+        with self.assertRaisesRegex(ValueError, "operation forbidden"):
+            m[MyIndex()] = 42
+        self.assertEqual(ba[:8], b'\0'*8)
+
+        ba = None
+        m = memoryview(bytearray(b'\xff'*size))
+        with self.assertRaisesRegex(ValueError, "operation forbidden"):
+            m[:MyIndex()] = b'spam'
+        self.assertEqual(ba[:8], b'\0'*8)
+
+        ba = None
+        m = memoryview(bytearray(b'\xff'*size))
+        with self.assertRaisesRegex(ValueError, "operation forbidden"):
+            m[MyIndex():8] = b'spam'
+        self.assertEqual(ba[:8], b'\0'*8)
+
+        ba = None
+        m = memoryview(bytearray(b'\xff'*size)).cast('B', (64, 2))
+        with self.assertRaisesRegex(ValueError, "operation forbidden"):
+            m[MyIndex(), 0] = 42
+        self.assertEqual(ba[8:16], b'\0'*8)
+        ba = None
+        m = memoryview(bytearray(b'\xff'*size)).cast('B', (2, 64))
+        with self.assertRaisesRegex(ValueError, "operation forbidden"):
+            m[0, MyIndex()] = 42
+        self.assertEqual(ba[:8], b'\0'*8)
+
+        ba = None
+        m = memoryview(bytearray(b'\xff'*size))
+        with self.assertRaisesRegex(ValueError, "operation forbidden"):
+            m[0] = MyIndex()
+        self.assertEqual(ba[:8], b'\0'*8)
+
+        for fmt in 'bhilqnBHILQN':
+            with self.subTest(fmt=fmt):
+                ba = None
+                m = memoryview(bytearray(b'\xff'*size)).cast(fmt)
+                with self.assertRaisesRegex(ValueError, "operation forbidden"):
+                    m[0] = MyIndex()
+                self.assertEqual(ba[:8], b'\0'*8)
+
+        for fmt in 'fd':
+            with self.subTest(fmt=fmt):
+                ba = None
+                m = memoryview(bytearray(b'\xff'*size)).cast(fmt)
+                with self.assertRaisesRegex(ValueError, "operation forbidden"):
+                    m[0] = MyFloat()
+                self.assertEqual(ba[:8], b'\0'*8)
+
+        ba = None
+        m = memoryview(bytearray(b'\xff'*size)).cast('?')
+        with self.assertRaisesRegex(ValueError, "operation forbidden"):
+            m[0] = MyBool()
+        self.assertEqual(ba[:8], b'\0'*8)
+
+    def test_buffer_reference_loop(self):
+        m = memoryview(b'abc').__buffer__(0)
+        o = MyObject()
+        o.m = m
+        o.o = o
+        wr = weakref.ref(o)
+        del m, o
+        gc.collect()
+        self.assertIsNone(wr())
+
+    def test_picklebuffer_reference_loop(self):
+        pb = pickle.PickleBuffer(memoryview(b'abc'))
+        o = MyObject()
+        o.pb = pb
+        o.o = o
+        wr = weakref.ref(o)
+        del pb, o
+        gc.collect()
+        self.assertIsNone(wr())
 
 
 if __name__ == "__main__":

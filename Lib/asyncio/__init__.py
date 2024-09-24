@@ -18,6 +18,7 @@ from .streams import *
 from .subprocess import *
 from .tasks import *
 from .taskgroups import *
+from .timeouts import *
 from .threads import *
 from .transports import *
 
@@ -33,7 +34,9 @@ __all__ = (base_events.__all__ +
            streams.__all__ +
            subprocess.__all__ +
            tasks.__all__ +
+           taskgroups.__all__ +
            threads.__all__ +
+           timeouts.__all__ +
            transports.__all__)
 
 if sys.platform == 'win32':  # pragma: no cover

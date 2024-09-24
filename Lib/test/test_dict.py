@@ -8,7 +8,7 @@ import sys
 import unittest
 import weakref
 from test import support
-from test.support import import_helper
+from test.support import import_helper, get_c_recursion_limit
 
 
 class DictTest(unittest.TestCase):
@@ -596,7 +596,7 @@ class DictTest(unittest.TestCase):
 
     def test_repr_deep(self):
         d = {}
-        for i in range(sys.getrecursionlimit() + 100):
+        for i in range(get_c_recursion_limit() + 1):
             d = {1: d}
         self.assertRaises(RecursionError, repr, d)
 
@@ -1077,6 +1077,38 @@ class DictTest(unittest.TestCase):
         self.assertEqual(list(a), ['x', 'y'])
         self.assertEqual(list(b), ['x', 'y', 'z'])
 
+    @support.cpython_only
+    def test_splittable_update(self):
+        """dict.update(other) must preserve order in other."""
+        class C:
+            def __init__(self, order):
+                if order:
+                    self.a, self.b, self.c = 1, 2, 3
+                else:
+                    self.c, self.b, self.a = 1, 2, 3
+        o = C(True)
+        o = C(False)  # o.__dict__ has reversed order.
+        self.assertEqual(list(o.__dict__), ["c", "b", "a"])
+
+        d = {}
+        d.update(o.__dict__)
+        self.assertEqual(list(d), ["c", "b", "a"])
+
+    @support.cpython_only
+    def test_splittable_to_generic_combinedtable(self):
+        """split table must be correctly resized and converted to generic combined table"""
+        class C:
+            pass
+
+        a = C()
+        a.x = 1
+        d = a.__dict__
+        before_resize = sys.getsizeof(d)
+        d[2] = 2 # split table is resized to a generic combined table
+
+        self.assertGreater(sys.getsizeof(d), before_resize)
+        self.assertEqual(list(d), ['x', 2])
+
     def test_iterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             data = {1:"a", 2:"b", 3:"c"}
@@ -1438,11 +1470,29 @@ class DictTest(unittest.TestCase):
         self.assertTrue(gc.is_tracked(next(it)))
 
     @support.cpython_only
-    def test_dict_items_result_gc(self):
+    def test_dict_items_result_gc_reversed(self):
         # Same as test_dict_items_result_gc above, but reversed.
         it = reversed({None: []}.items())
         gc.collect()
         self.assertTrue(gc.is_tracked(next(it)))
+
+    def test_store_evilattr(self):
+        class EvilAttr:
+            def __init__(self, d):
+                self.d = d
+
+            def __del__(self):
+                if 'attr' in self.d:
+                    del self.d['attr']
+                gc.collect()
+
+        class Obj:
+            pass
+
+        obj = Obj()
+        obj.__dict__ = {}
+        for _ in range(10):
+            obj.attr = EvilAttr(obj.__dict__)
 
     def test_str_nonstr(self):
         # cpython uses a different lookup function if the dict only contains
@@ -1550,8 +1600,8 @@ class CAPITest(unittest.TestCase):
     # Test _PyDict_GetItem_KnownHash()
     @support.cpython_only
     def test_getitem_knownhash(self):
-        _testcapi = import_helper.import_module('_testcapi')
-        dict_getitem_knownhash = _testcapi.dict_getitem_knownhash
+        _testinternalcapi = import_helper.import_module('_testinternalcapi')
+        dict_getitem_knownhash = _testinternalcapi.dict_getitem_knownhash
 
         d = {'x': 1, 'y': 2, 'z': 3}
         self.assertEqual(dict_getitem_knownhash(d, 'x', hash('x')), 1)

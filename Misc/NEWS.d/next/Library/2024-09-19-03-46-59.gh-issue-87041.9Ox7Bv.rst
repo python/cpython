@@ -1,0 +1,1 @@
+Fix a bug in :mod:`argparse` where lengthy subparser argument help is incorrectly indented.
