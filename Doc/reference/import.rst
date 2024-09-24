@@ -281,7 +281,7 @@ When the named module is not found in :data:`sys.modules`, Python next
 searches :data:`sys.meta_path`, which contains a list of meta path finder
 objects.  These finders are queried in order to see if they know how to handle
 the named module.  Meta path finders must implement a method called
-:meth:`~importlib.abc.MetaPathFinder.find_spec()` which takes three arguments:
+:meth:`~importlib.abc.MetaPathFinder.find_spec` which takes three arguments:
 a name, an import path, and (optionally) a target module.  The meta path
 finder can use any strategy it wants to determine whether it can handle
 the named module or not.
@@ -292,7 +292,7 @@ spec object.  If it cannot handle the named module, it returns ``None``.  If
 a spec, then a :exc:`ModuleNotFoundError` is raised.  Any other exceptions
 raised are simply propagated up, aborting the import process.
 
-The :meth:`~importlib.abc.MetaPathFinder.find_spec()` method of meta path
+The :meth:`~importlib.abc.MetaPathFinder.find_spec` method of meta path
 finders is called with two or three arguments.  The first is the fully
 qualified name of the module being imported, for example ``foo.bar.baz``.
 The second argument is the path entries to use for the module search.  For
@@ -327,14 +327,15 @@ modules, and one that knows how to import modules from an :term:`import path`
    finders replaced :meth:`!find_module`, which
    is now deprecated.  While it will continue to work without change, the
    import machinery will try it only if the finder does not implement
-   ``find_spec()``.
+   :meth:`~importlib.abc.MetaPathFinder.find_spec`.
 
 .. versionchanged:: 3.10
    Use of :meth:`!find_module` by the import system
    now raises :exc:`ImportWarning`.
 
 .. versionchanged:: 3.12
-   ``find_module()`` has been removed.  Use :meth:`find_spec` instead.
+   :meth:`!find_module` has been removed.
+   Use :meth:`~importlib.abc.MetaPathFinder.find_spec` instead.
 
 
 Loading
@@ -595,6 +596,10 @@ listed below.
       Raise :exc:`DeprecationWarning` instead of :exc:`ImportWarning`
       when falling back to ``__package__``.
 
+   .. deprecated-removed:: 3.13 3.15
+      ``__package__`` will cease to be set or taken into consideration
+      by the import system or standard library.
+
 
 .. attribute:: __spec__
 
@@ -651,6 +656,10 @@ listed below.
 
    It is **strongly** recommended that you rely on :attr:`__spec__`
    instead of ``__cached__``.
+
+   .. deprecated-removed:: 3.13 3.15
+      ``__cached__`` will cease to be set or taken into consideration
+      by the import system or standard library.
 
 .. _package-path-rules:
 
@@ -812,7 +821,7 @@ attributes on package objects are also used.  These provide additional ways
 that the import machinery can be customized.
 
 :data:`sys.path` contains a list of strings providing search locations for
-modules and packages.  It is initialized from the :data:`PYTHONPATH`
+modules and packages.  It is initialized from the :envvar:`PYTHONPATH`
 environment variable and various other installation- and
 implementation-specific defaults.  Entries in :data:`sys.path` can name
 directories on the file system, zip files, and potentially other "locations"
