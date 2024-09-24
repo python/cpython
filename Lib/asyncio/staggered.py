@@ -79,7 +79,7 @@ async def staggered_race(coro_fns, delay, *, loop=None):
         else:
             # Store winner's results
             nonlocal winner_index, winner_result
-            # There could be more than one winner
+            assert winner_index is None
             winner_index = this_index
             winner_result = result
             raise _Done
