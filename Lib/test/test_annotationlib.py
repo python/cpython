@@ -292,6 +292,18 @@ class TestForwardRefClass(unittest.TestCase):
             # If globals are passed explicitly, we don't look at the module dict
             ForwardRef("Format", module="annotationlib").evaluate(globals={})
 
+    def test_fwdref_to_builtin(self):
+        self.assertIs(ForwardRef("int").evaluate(), int)
+        self.assertIs(ForwardRef("int", module="collections").evaluate(), int)
+        self.assertIs(ForwardRef("int", owner=str).evaluate(), int)
+
+        # builtins are still searched with explicit globals
+        self.assertIs(ForwardRef("int").evaluate(globals={}), int)
+
+        # explicit values in globals have precedence
+        obj = object()
+        self.assertIs(ForwardRef("int").evaluate(globals={"int": obj}), obj)
+
     def test_fwdref_value_is_cached(self):
         fr = ForwardRef("hello")
         with self.assertRaises(NameError):
@@ -951,6 +963,27 @@ class MetaclassTests(unittest.TestCase):
                             )
                         else:
                             self.assertIs(annotate_func, None)
+
+
+class TestGetAnnotateFunction(unittest.TestCase):
+    def test_static_class(self):
+        self.assertIsNone(get_annotate_function(object))
+        self.assertIsNone(get_annotate_function(int))
+
+    def test_unannotated_class(self):
+        class C:
+            pass
+
+        self.assertIsNone(get_annotate_function(C))
+
+        D = type("D", (), {})
+        self.assertIsNone(get_annotate_function(D))
+
+    def test_annotated_class(self):
+        class C:
+            a: int
+
+        self.assertEqual(get_annotate_function(C)(Format.VALUE), {"a": int})
 
 
 class TestAnnotationLib(unittest.TestCase):

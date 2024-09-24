@@ -33,8 +33,6 @@ extern int _PyCompile_AstOptimize(
     int optimize,
     struct _arena *arena);
 
-struct _Py_SourceLocation;
-
 extern int _PyAST_Optimize(
     struct _mod *,
     struct _arena *arena,
@@ -133,8 +131,7 @@ int _PyCompile_LookupCellvar(struct _PyCompiler *c, PyObject *name);
 int _PyCompile_ResolveNameop(struct _PyCompiler *c, PyObject *mangled, int scope,
                              _PyCompile_optype *optype, Py_ssize_t *arg);
 
-int _PyCompile_IsInteractive(struct _PyCompiler *c);
-int _PyCompile_IsNestedScope(struct _PyCompiler *c);
+int _PyCompile_IsInteractiveTopLevel(struct _PyCompiler *c);
 int _PyCompile_IsInInlinedComp(struct _PyCompiler *c);
 int _PyCompile_ScopeType(struct _PyCompiler *c);
 int _PyCompile_OptimizationLevel(struct _PyCompiler *c);
