@@ -77,21 +77,29 @@ check by comparing the reference count field to the immortality reference count.
 #endif  // Py_GIL_DISABLED
 
 
-static inline Py_ssize_t Py_REFCNT(PyObject *ob) {
-#if !defined(Py_GIL_DISABLED)
-    return ob->ob_refcnt;
+// Py_REFCNT() implementation for the stable ABI
+PyAPI_FUNC(Py_ssize_t) Py_REFCNT(PyObject *ob);
+
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030e0000
+    // Stable ABI implements Py_REFCNT() as a function call
+    // on limited C API version 3.14 and newer.
 #else
-    uint32_t local = _Py_atomic_load_uint32_relaxed(&ob->ob_ref_local);
-    if (local == _Py_IMMORTAL_REFCNT_LOCAL) {
-        return _Py_IMMORTAL_REFCNT;
+    static inline Py_ssize_t _Py_REFCNT(PyObject *ob) {
+    #if !defined(Py_GIL_DISABLED)
+        return ob->ob_refcnt;
+    #else
+        uint32_t local = _Py_atomic_load_uint32_relaxed(&ob->ob_ref_local);
+        if (local == _Py_IMMORTAL_REFCNT_LOCAL) {
+            return _Py_IMMORTAL_REFCNT;
+        }
+        Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&ob->ob_ref_shared);
+        return _Py_STATIC_CAST(Py_ssize_t, local) +
+               Py_ARITHMETIC_RIGHT_SHIFT(Py_ssize_t, shared, _Py_REF_SHARED_SHIFT);
+    #endif
     }
-    Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&ob->ob_ref_shared);
-    return _Py_STATIC_CAST(Py_ssize_t, local) +
-           Py_ARITHMETIC_RIGHT_SHIFT(Py_ssize_t, shared, _Py_REF_SHARED_SHIFT);
-#endif
-}
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define Py_REFCNT(ob) Py_REFCNT(_PyObject_CAST(ob))
+    #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+    #  define Py_REFCNT(ob) _Py_REFCNT(_PyObject_CAST(ob))
+    #endif
 #endif
 
 

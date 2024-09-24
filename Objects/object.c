@@ -3039,7 +3039,17 @@ Py_GetConstantBorrowed(unsigned int constant_id)
 
 // Py_TYPE() implementation for the stable ABI
 #undef Py_TYPE
-PyTypeObject* Py_TYPE(PyObject *ob)
+PyTypeObject*
+Py_TYPE(PyObject *ob)
 {
     return _Py_TYPE(ob);
+}
+
+
+// Py_REFCNT() implementation for the stable ABI
+#undef Py_REFCNT
+Py_ssize_t
+Py_REFCNT(PyObject *ob)
+{
+    return _Py_REFCNT(ob);
 }
