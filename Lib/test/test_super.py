@@ -4,6 +4,7 @@ import textwrap
 import threading
 import unittest
 from unittest.mock import patch
+from test import support
 from test.support import import_helper, threading_helper
 
 
@@ -513,6 +514,11 @@ class TestSuper(unittest.TestCase):
         This should be the case anyways as our test suite sets
         an audit hook.
         """
+
+        if support.Py_GIL_DISABLED:
+            # gh-124402: On a Free Threaded build, the test takes a few minutes
+            support.requires('cpu')
+
         class Foo:
             pass
 
