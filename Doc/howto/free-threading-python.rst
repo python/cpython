@@ -61,7 +61,7 @@ at runtime using the environment variable :envvar:`PYTHON_GIL` or
 the command-line option :option:`-X gil`.
 
 The GIL may also automatically be enabled when importing a C-API extension
-module that is not explicitly marked as supporting free threading.  See 
+module that is not explicitly marked as supporting free threading.  See
 :c:macro:`Py_MOD_GIL_NOT_USED` for more details.
 
 
