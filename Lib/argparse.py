@@ -2570,8 +2570,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
             if self.suggest_on_error:
                 try:
-                    import difflib as _difflib
-                    closest_choice = _difflib.get_close_matches(value, action.choices, 1)
+                    import difflib
+                    closest_choice = difflib.get_close_matches(value, action.choices, 1)
                     if closest_choice:
                         closest_choice = closest_choice[0]
                         args['closest'] = closest_choice
