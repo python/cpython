@@ -1420,7 +1420,7 @@ These can be used as types in annotations. They all support subscription using
      .. doctest::
 
         >>> get_origin(Password)
-        typing.Annotated
+        <class 'typing.Annotated'>
 
    .. seealso::
 
