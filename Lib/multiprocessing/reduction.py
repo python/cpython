@@ -155,6 +155,10 @@ else:
         if not msg and not ancdata:
             raise EOFError
         try:
+            # We send/recv an Ack byte after the fds to work around an old
+            # macOS bug; it isn't clear if this is still required but it
+            # makes unit testing fd sending easier.
+            # See: https://github.com/python/cpython/issues/58874
             sock.send(b'A')  # Acknowledge
             if len(ancdata) != 1:
                 raise RuntimeError('received %d items of ancdata' %
