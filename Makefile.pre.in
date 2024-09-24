@@ -1696,7 +1696,7 @@ check-abidump: all
 
 .PHONY: regen-limited-abi
 regen-limited-abi: all
-	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/stable_abi.py --generate-all $(srcdir)/Misc/stable_abi.toml
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/stable_abi.py --generate-all
 
 ############################################################################
 # Regenerate Unicode Data
@@ -2416,6 +2416,7 @@ LIBSUBDIRS=	asyncio \
 TESTSUBDIRS=	idlelib/idle_test \
 		test \
 		test/test_ast \
+		test/test_ast/data \
 		test/archivetestdata \
 		test/audiodata \
 		test/certdata \
@@ -3142,7 +3143,7 @@ patchcheck: all
 
 .PHONY: check-limited-abi
 check-limited-abi: all
-	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/stable_abi.py --all $(srcdir)/Misc/stable_abi.toml
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/stable_abi.py --all
 
 .PHONY: update-config
 update-config:

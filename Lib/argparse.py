@@ -261,13 +261,12 @@ class HelpFormatter(object):
 
             # find all invocations
             get_invocation = self._format_action_invocation
-            invocations = [get_invocation(action)]
+            invocation_lengths = [len(get_invocation(action)) + self._current_indent]
             for subaction in self._iter_indented_subactions(action):
-                invocations.append(get_invocation(subaction))
+                invocation_lengths.append(len(get_invocation(subaction)) + self._current_indent)
 
             # update the maximum item length
-            invocation_length = max(map(len, invocations))
-            action_length = invocation_length + self._current_indent
+            action_length = max(invocation_lengths)
             self._action_max_length = max(self._action_max_length,
                                           action_length)
 
@@ -396,12 +395,12 @@ class HelpFormatter(object):
                 continue
 
             try:
-                start = actions.index(group._group_actions[0])
+                start = min(actions.index(item) for item in group._group_actions)
             except ValueError:
                 continue
             else:
                 end = start + len(group._group_actions)
-                if actions[start:end] == group._group_actions:
+                if set(actions[start:end]) == set(group._group_actions):
                     group_actions.update(group._group_actions)
                     inserts[start, end] = group
 
@@ -1360,7 +1359,7 @@ class _ActionsContainer(object):
         self._defaults = {}
 
         # determines whether an "option" looks like a negative number
-        self._negative_number_matcher = _re.compile(r'^-\d+$|^-\d*\.\d+$')
+        self._negative_number_matcher = _re.compile(r'^-(?:\d+(?:_\d+)*(?:\.\d+(?:_\d+)*)?|\.\d+(?:_\d+)*)$')
 
         # whether or not there are any optionals that look like negative
         # numbers -- uses a list so it can be shared and edited
@@ -1533,9 +1532,8 @@ class _ActionsContainer(object):
 
         # mark positional arguments as required if at least one is
         # always required
-        if kwargs.get('nargs') not in [OPTIONAL, ZERO_OR_MORE]:
-            kwargs['required'] = True
-        if kwargs.get('nargs') == ZERO_OR_MORE and 'default' not in kwargs:
+        nargs = kwargs.get('nargs')
+        if nargs not in [OPTIONAL, ZERO_OR_MORE, REMAINDER, SUPPRESS, 0]:
             kwargs['required'] = True
 
         # return the keyword arguments with no option strings
@@ -1950,9 +1948,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             argument_values = self._get_values(action, argument_strings)
 
             # error if this argument is not allowed with other previously
-            # seen arguments, assuming that actions that use the default
-            # value don't really count as "present"
-            if argument_values is not action.default:
+            # seen arguments
+            if action.option_strings or argument_strings:
                 seen_non_default_actions.add(action)
                 for conflict_action in action_conflicts.get(action, []):
                     if conflict_action in seen_non_default_actions:
@@ -2070,6 +2067,15 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             # and add the Positional and its args to the list
             for action, arg_count in zip(positionals, arg_counts):
                 args = arg_strings[start_index: start_index + arg_count]
+                # Strip out the first '--' if it is not in REMAINDER arg.
+                if action.nargs == PARSER:
+                    if arg_strings_pattern[start_index] == '-':
+                        assert args[0] == '--'
+                        args.remove('--')
+                elif action.nargs != REMAINDER:
+                    if (arg_strings_pattern.find('-', start_index,
+                                                 start_index + arg_count) >= 0):
+                        args.remove('--')
                 start_index += arg_count
                 if args and action.deprecated and action.dest not in warned:
                     self._warning(_("argument '%(argument_name)s' is deprecated") %
@@ -2221,18 +2227,19 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     def _match_arguments_partial(self, actions, arg_strings_pattern):
         # progressively shorten the actions list by slicing off the
         # final actions until we find a match
-        result = []
         for i in range(len(actions), 0, -1):
             actions_slice = actions[:i]
             pattern = ''.join([self._get_nargs_pattern(action)
                                for action in actions_slice])
             match = _re.match(pattern, arg_strings_pattern)
             if match is not None:
-                result.extend([len(string) for string in match.groups()])
-                break
-
-        # return the list of arg string counts
-        return result
+                result = [len(string) for string in match.groups()]
+                if (match.end() < len(arg_strings_pattern)
+                    and arg_strings_pattern[match.end()] == 'O'):
+                    while result and not result[-1]:
+                        del result[-1]
+                return result
+        return []
 
     def _parse_optional(self, arg_string):
         # if it's an empty string, it was meant to be a positional
@@ -2470,13 +2477,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # Value conversion methods
     # ========================
     def _get_values(self, action, arg_strings):
-        # for everything but PARSER, REMAINDER args, strip out first '--'
-        if not action.option_strings and action.nargs not in [PARSER, REMAINDER]:
-            try:
-                arg_strings.remove('--')
-            except ValueError:
-                pass
-
         # optional argument produces a default when not present
         if not arg_strings and action.nargs == OPTIONAL:
             if action.option_strings:
