@@ -650,9 +650,10 @@ New Features
 Porting to Python 3.14
 ----------------------
 
-* In the limited C API 3.14 and newer, :c:func:`Py_TYPE` is now implemented as
-  an opaque function call to hide implementation details.
-  (Contributed by Victor Stinner in :gh:`120600`.)
+* In the limited C API 3.14 and newer, :c:func:`Py_TYPE` and
+  :c:func:`Py_REFCNT` are now implemented as an opaque function call to hide
+  implementation details.
+  (Contributed by Victor Stinner in :gh:`120600` and :gh:`124127`.)
 
 
 Deprecated
