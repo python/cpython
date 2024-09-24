@@ -140,6 +140,9 @@ The free-threaded build has additional overhead when executing Python code
 compared to the default GIL-enabled build.  In 3.13, this overhead is about
 40% on the `pyperformance <https://pyperformance.readthedocs.io/>`_ suite.
 Programs that spend most of their time in C extensions or I/O will see
-less of an impact.  This overhead is expected to be reduced in Python
-3.14.   We are aiming for an overhead of 10% or less on the pyperformance
-suite compared to the default GIL-enabled build.
+less of an impact.  The largest impact is because the specializing adaptive
+interpreter (:pep:`659`) is disabled in the free-threaded build.  We expect
+to re-enable it in a thread-safe way in the 3.14 release.  This overhead is
+expected to be reduced in upcoming Python release.   We are aiming for an
+overhead of 10% or less on the pyperformance suite compared to the default
+GIL-enabled build.
