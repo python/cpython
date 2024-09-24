@@ -1427,12 +1427,11 @@ symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
     int result = symtable_enter_existing_block(st, ste);
     Py_DECREF(ste);
     if (block == AnnotationBlock || block == TypeVariableBlock || block == TypeAliasBlock) {
-        _Py_DECLARE_STR(format, ".format");
         // We need to insert code that reads this "parameter" to the function.
-        if (!symtable_add_def(st, &_Py_STR(format), DEF_PARAM, loc)) {
+        if (!symtable_add_def(st, &_Py_ID(__format__), DEF_PARAM, loc)) {
             return 0;
         }
-        if (!symtable_add_def(st, &_Py_STR(format), USE, loc)) {
+        if (!symtable_add_def(st, &_Py_ID(__format__), USE, loc)) {
             return 0;
         }
     }
