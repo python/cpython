@@ -87,47 +87,54 @@ earlier Python versions), the :attr:`~annotationlib.Format.FORWARDREF` format
 (which replaces undefined names with special markers), and the
 :attr:`~annotationlib.Format.SOURCE` format (which returns annotations as strings).
 
-This example shows how these formats behave::
+This example shows how these formats behave:
 
-   from annotationlib import get_annotations, Format
+.. doctest::
 
-   def func(arg: Undefined):
-       pass
-
-   print(get_annotations(func, format=Format.VALUE))  # raises NameError
-   print(get_annotations(func, format=Format.FORWARDREF))  # {'arg': ForwardRef('Undefined')}
-   print(get_annotations(func, format=Format.SOURCE))  # {'arg': 'Undefined'}
+   >>> from annotationlib import get_annotations, Format
+   >>> def func(arg: Undefined):
+   ...     pass
+   >>> get_annotations(func, format=Format.VALUE)
+   Traceback (most recent call last):
+     ...
+   NameError: name 'Undefined' is not defined
+   >>> get_annotations(func, format=Format.FORWARDREF)
+   {'arg': ForwardRef('Undefined')}
+   >>> get_annotations(func, format=Format.SOURCE)
+   {'arg': 'Undefined'}
 
 Implications if you write annotations in your code
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you write annotations in your code (for example, for use with a static type
+If you define annotations in your code (for example, for use with a static type
 checker), then this change probably does not affect you: you can keep
-writing annotations the same way you did in previous versions of Python.
+writing annotations the same way you did with previous versions of Python.
 
 You will likely be able to remove quoted strings in annotations, which are frequently
 used for forward references. Similarly, if you use ``from __future__ import annotations``
 to avoid having to write strings in annotations, you may well be able to
-remove it. However, if you rely on third-party libraries that read annotations,
-those libraries may need changes to support unquoted annotations.
+remove that import. However, if you rely on third-party libraries that read annotations,
+those libraries may need changes to support unquoted annotations before they
+work as expected.
 
-Implications if you read ``__annotations__``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Implications for readers of ``__annotations__``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If your code reads the ``__annotations__`` attribute on objects, you may want
 to make changes in order to support code that relies on deferred evaluation of
-annotations. For example, you may want to use the :func:`annotationlib.get_annotations`
+annotations. For example, you may want to use :func:`annotationlib.get_annotations`
 with the :attr:`~annotationlib.Format.FORWARDREF` format, as the :mod:`dataclasses`
 module now does.
 
 Related changes
 ^^^^^^^^^^^^^^^
 
-The changes in Python 3.14 are designed to minimize changes to code that contains
+The changes in Python 3.14 are designed to rework how ``__annotations__``
+works at runtime while minimizing breakage to code that contains
 annotations in source code and to code that reads ``__annotations__``. However,
-there are many changes to the supporting code, and if you rely on undocumented
-details of the annotation behavior or on private functions in the standard library,
-your code may not work in Python 3.14. To safeguard your code against future changes,
+if you rely on undocumented details of the annotation behavior or on private
+functions in the standard library, there are many ways in which your code may
+not work in Python 3.14. To safeguard your code against future changes,
 use only the documented functionality of the :mod:`annotationlib` module.
 
 ``from __future__ import annotations``
@@ -137,9 +144,9 @@ In Python 3.7, :pep:`563` introduced the ``from __future__ import annotations``
 directive, which turns all annotations into strings. This directive is now
 considered deprecated and it is expected to be removed in a future version of Python.
 However, this removal will not happen until after Python 3.13, the last version of
-Python without deferred evaluation of annotations, loses support.
+Python without deferred evaluation of annotations, reaches its end of life.
 In Python 3.14, the behavior of code using ``from __future__ import annotations``
-does not change.
+is unchanged.
 
 
 Improved Error Messages
