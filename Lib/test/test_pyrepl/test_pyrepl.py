@@ -8,7 +8,6 @@ import select
 import subprocess
 import sys
 import tempfile
-import termios
 from unittest import TestCase, skipUnless
 from unittest.mock import patch
 from test.support import force_not_colorized
@@ -1248,10 +1247,15 @@ class TestMain(TestCase):
         if cmdline_args is not None:
             cmd.extend(cmdline_args)
 
-        term_attr = termios.tcgetattr(slave_fd)
-        term_attr[6][termios.VREPRINT] = 0  # pass through CTRL-R
-        term_attr[6][termios.VINTR] = 0  # pass through CTRL-C
-        termios.tcsetattr(slave_fd, termios.TCSANOW, term_attr)
+        try:
+            import termios
+        except ModuleNotFoundError:
+            pass
+        else:
+            term_attr = termios.tcgetattr(slave_fd)
+            term_attr[6][termios.VREPRINT] = 0  # pass through CTRL-R
+            term_attr[6][termios.VINTR] = 0  # pass through CTRL-C
+            termios.tcsetattr(slave_fd, termios.TCSANOW, term_attr)
 
         process = subprocess.Popen(
             cmd,
