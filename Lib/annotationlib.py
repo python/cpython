@@ -296,9 +296,10 @@ class _Stringifier:
             return ast.Constant(value=other)
 
     def __get_ast(self):
-        if isinstance(self.__ast_node__, str):
-            return ast.Name(id=self.__ast_node__)
-        return self.__ast_node__
+        node = self.__ast_node__
+        if isinstance(node, str):
+            return ast.Name(id=node)
+        return node
 
     def __make_new(self, node):
         return _Stringifier(
