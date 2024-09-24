@@ -1,0 +1,1 @@
+``until`` in ``commands`` executes correctly now in :mod:`pdb`. Breakpoint commands will not print the frame information if there's a command that resumes execution in the command list.
