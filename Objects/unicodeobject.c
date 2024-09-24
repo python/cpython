@@ -2859,17 +2859,16 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
                 case 'x': len = SPRINT(SIZE_SPEC, "x", UNSIGNED_TYPE); break; \
                 case 'X': len = SPRINT(SIZE_SPEC, "X", UNSIGNED_TYPE); break; \
                 default:  len = SPRINT(SIZE_SPEC, "d", SIGNED_TYPE); break;   \
-            }                                                                 \
-            break;
+            }
 
         // Outer switch to handle all the sizes/types
         switch (sizemod) {
-            case F_LONG:     DO_SPRINTS("l", long, unsigned long)
-            case F_LONGLONG: DO_SPRINTS("ll", long long, unsigned long long)
-            case F_SIZE:     DO_SPRINTS("z", Py_ssize_t, size_t)
-            case F_PTRDIFF:  DO_SPRINTS("t", ptrdiff_t, ptrdiff_t)
-            case F_INTMAX:   DO_SPRINTS("j", intmax_t, uintmax_t)
-            default:         DO_SPRINTS("", int, unsigned int)
+            case F_LONG:     DO_SPRINTS("l", long, unsigned long); break;
+            case F_LONGLONG: DO_SPRINTS("ll", long long, unsigned long long); break;
+            case F_SIZE:     DO_SPRINTS("z", Py_ssize_t, size_t); break;
+            case F_PTRDIFF:  DO_SPRINTS("t", ptrdiff_t, ptrdiff_t); break;
+            case F_INTMAX:   DO_SPRINTS("j", intmax_t, uintmax_t); break;
+            default:         DO_SPRINTS("", int, unsigned int); break;
         }
         #undef SPRINT
         #undef DO_SPRINTS
