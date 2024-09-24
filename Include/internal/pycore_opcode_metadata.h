@@ -1958,7 +1958,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
         ;
 struct pseudo_targets {
     uint8_t as_sequence;
-    uint8_t targets[5];
+    uint8_t targets[4];
 };
 extern const struct pseudo_targets _PyOpcode_PseudoTargets[10];
 #ifdef NEED_OPCODE_METADATA

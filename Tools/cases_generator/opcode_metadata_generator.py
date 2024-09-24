@@ -306,7 +306,7 @@ def generate_pseudo_targets(analysis: Analysis, out: CWriter) -> None:
     max_targets = max(len(pseudo.targets) for pseudo in analysis.pseudos.values())
     out.emit("struct pseudo_targets {\n")
     out.emit(f"uint8_t as_sequence;\n")
-    out.emit(f"uint8_t targets[{1 + max_targets + 1}];\n")
+    out.emit(f"uint8_t targets[{max_targets + 1}];\n")
     out.emit("};\n")
     out.emit(
         f"extern const struct pseudo_targets _PyOpcode_PseudoTargets[{table_size}];\n"
