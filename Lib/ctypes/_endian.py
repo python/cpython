@@ -9,12 +9,13 @@ def _other_endian(typ):
     attributes which contain the types, for more complicated types
     arrays and structures are supported.
     """
-    # check _OTHER_ENDIAN attribute (present if typ is primitive type)
-    if hasattr(typ, _OTHER_ENDIAN):
-        return getattr(typ, _OTHER_ENDIAN)
+    global _OTHER_ENDIAN
     # if typ is array
     if isinstance(typ, _array_type):
         return _other_endian(typ._type_) * typ._length_
+    # check _OTHER_ENDIAN attribute (present if typ is primitive type)
+    if hasattr(typ, _OTHER_ENDIAN):
+        return getattr(typ, _OTHER_ENDIAN)
     # if typ is structure or union
     if issubclass(typ, (Structure, Union)):
         return typ
@@ -22,14 +23,8 @@ def _other_endian(typ):
 
 class _swapped_meta:
     def __setattr__(self, attrname, value):
-        if attrname == "_fields_":
-            fields = []
-            for desc in value:
-                name = desc[0]
-                typ = desc[1]
-                rest = desc[2:]
-                fields.append((name, _other_endian(typ)) + rest)
-            value = fields
+        if attrname == "_fields_":           
+            value = [(desc[0], _other_endian(desc[1])) + desc[2:] for desc in value]
         super().__setattr__(attrname, value)
 class _swapped_struct_meta(_swapped_meta, type(Structure)): pass
 class _swapped_union_meta(_swapped_meta, type(Union)): pass
