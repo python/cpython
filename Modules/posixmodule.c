@@ -4228,7 +4228,7 @@ Return the maximum number of files a process can have open.
 static PyObject *
 os_getdtablesize_impl(PyObject *module)
 {
-    PyObject *size;
+    int size;
 
     size = getdtablesize();
     return PyLong_FromLong(size);
