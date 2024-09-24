@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import Thread
 from unittest import TestCase
 
+from test import support
 from test.support import threading_helper
 
 
@@ -96,6 +97,7 @@ class TestType(TestCase):
 
         self.run_one(writer_func, reader_func)
 
+    @support.requires_resource('cpu')
     def test___class___modification(self):
         class Foo:
             pass
