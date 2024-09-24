@@ -115,7 +115,9 @@ context_event_name(PyContextEvent event) {
 static void notify_context_watchers(PyContextEvent event, PyContext *ctx)
 {
     assert(Py_REFCNT(ctx) > 0);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyThreadState *ts = _PyThreadState_GET();
+    assert(ts != NULL);
+    PyInterpreterState *interp = ts->interp;
     assert(interp->_initialized);
     uint8_t bits = interp->active_context_watchers;
     int i = 0;
