@@ -271,7 +271,7 @@ class AnnotateTests(unittest.TestCase):
         def f(x: int): pass
         anno = f.__annotate__
         self.assertIsInstance(anno, types.FunctionType)
-        self.assertEqual(f.__name__, "__annotate__")
+        self.assertEqual(anno.__name__, "__annotate__")
 
         expected_sig = inspect.Signature(
             [inspect.Parameter("__format__", inspect.Parameter.POSITIONAL_ONLY)]
