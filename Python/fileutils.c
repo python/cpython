@@ -213,6 +213,9 @@ check_force_ascii(void)
     if (loc == NULL) {
         goto error;
     }
+#if defined(__NetBSD__)
+    return 1;
+#endif
     if (strcmp(loc, "C") != 0 && strcmp(loc, "POSIX") != 0) {
         /* the LC_CTYPE locale is different than C and POSIX */
         return 0;
