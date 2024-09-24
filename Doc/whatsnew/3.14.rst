@@ -70,6 +70,91 @@ Summary -- Release highlights
 New Features
 ============
 
+.. _whatsnew-314-pep649:
+
+PEP 649: Deferred Evaluation of Annotations
+-------------------------------------------
+
+The :term:`annotations <annotation>` on functions, classes, and modules are no
+longer evaluated eagerly. Instead, annotations are stored in special-purpose
+:term:`annotate functions <annotate function>` and evaluated only when
+necessary. This is specified in :pep:`649` and :pep:`749`.
+
+This change is designed to make annotations in Python more performant and more
+usable in most circumstances. The runtime cost for defining annotations is
+minimized, but it remains possible to introspect annotations at runtime.
+It is usually no longer necessary to enclose annotations in strings if they
+contain forward references.
+
+The new :mod:`annotationlib` module provides tools for inspecting deferred
+annotations. Annotations may be evaluated in the :attr:`~annotationlib.Format.VALUE`
+format (which evaluates annotations to runtime values, similar to the behavior in
+earlier Python versions), the :attr:`~annotationlib.Format.FORWARDREF` format
+(which replaces undefined names with special markers), and the
+:attr:`~annotationlib.Format.SOURCE` format (which returns annotations as strings).
+
+This example shows how these formats behave:
+
+.. doctest::
+
+   >>> from annotationlib import get_annotations, Format
+   >>> def func(arg: Undefined):
+   ...     pass
+   >>> get_annotations(func, format=Format.VALUE)
+   Traceback (most recent call last):
+     ...
+   NameError: name 'Undefined' is not defined
+   >>> get_annotations(func, format=Format.FORWARDREF)
+   {'arg': ForwardRef('Undefined')}
+   >>> get_annotations(func, format=Format.SOURCE)
+   {'arg': 'Undefined'}
+
+Implications for annotated code
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you define annotations in your code (for example, for use with a static type
+checker), then this change probably does not affect you: you can keep
+writing annotations the same way you did with previous versions of Python.
+
+You will likely be able to remove quoted strings in annotations, which are frequently
+used for forward references. Similarly, if you use ``from __future__ import annotations``
+to avoid having to write strings in annotations, you may well be able to
+remove that import. However, if you rely on third-party libraries that read annotations,
+those libraries may need changes to support unquoted annotations before they
+work as expected.
+
+Implications for readers of ``__annotations__``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If your code reads the ``__annotations__`` attribute on objects, you may want
+to make changes in order to support code that relies on deferred evaluation of
+annotations. For example, you may want to use :func:`annotationlib.get_annotations`
+with the :attr:`~annotationlib.Format.FORWARDREF` format, as the :mod:`dataclasses`
+module now does.
+
+Related changes
+^^^^^^^^^^^^^^^
+
+The changes in Python 3.14 are designed to rework how ``__annotations__``
+works at runtime while minimizing breakage to code that contains
+annotations in source code and to code that reads ``__annotations__``. However,
+if you rely on undocumented details of the annotation behavior or on private
+functions in the standard library, there are many ways in which your code may
+not work in Python 3.14. To safeguard your code against future changes,
+use only the documented functionality of the :mod:`annotationlib` module.
+
+``from __future__ import annotations``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In Python 3.7, :pep:`563` introduced the ``from __future__ import annotations``
+directive, which turns all annotations into strings. This directive is now
+considered deprecated and it is expected to be removed in a future version of Python.
+However, this removal will not happen until after Python 3.13, the last version of
+Python without deferred evaluation of annotations, reaches its end of life.
+In Python 3.14, the behavior of code using ``from __future__ import annotations``
+is unchanged.
+
+
 Improved Error Messages
 -----------------------
 
@@ -109,7 +194,9 @@ Other Language Changes
 New Modules
 ===========
 
-* None yet.
+* :mod:`annotationlib`: For introspecting :term:`annotations <annotation>`.
+  See :pep:`749` for more details.
+  (Contributed by Jelle Zijlstra in :gh:`119180`.)
 
 
 Improved Modules
