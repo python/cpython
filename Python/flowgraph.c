@@ -1777,6 +1777,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                         // cannot point to itself.
                         assert(inst->i_target != inst->i_target->b_next);
                         inst->i_target = inst->i_target->b_next;
+                        i--;
                         continue;
                 }
                 break;
@@ -1791,6 +1792,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                         // cannot point to itself.
                         assert(inst->i_target != inst->i_target->b_next);
                         inst->i_target = inst->i_target->b_next;
+                        i--;
                         continue;
                 }
                 break;
@@ -2411,17 +2413,18 @@ convert_pseudo_conditional_jumps(cfg_builder *g)
                 assert(i == b->b_iused - 1);
                 instr->i_opcode = instr->i_opcode == JUMP_IF_FALSE ?
                                           POP_JUMP_IF_FALSE : POP_JUMP_IF_TRUE;
+                location loc = instr->i_loc;
                 cfg_instr copy = {
                             .i_opcode = COPY,
                             .i_oparg = 1,
-                            .i_loc = instr->i_loc,
+                            .i_loc = loc,
                             .i_target = NULL,
                 };
                 RETURN_IF_ERROR(basicblock_insert_instruction(b, i++, &copy));
                 cfg_instr to_bool = {
                             .i_opcode = TO_BOOL,
                             .i_oparg = 0,
-                            .i_loc = instr->i_loc,
+                            .i_loc = loc,
                             .i_target = NULL,
                 };
                 RETURN_IF_ERROR(basicblock_insert_instruction(b, i++, &to_bool));
