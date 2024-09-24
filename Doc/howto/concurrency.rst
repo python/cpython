@@ -496,12 +496,11 @@ short turns, so none have to wait too long, but it still prevents
 any actual parallelism of CPU-bound code.
 
 That said, the Python runtime (and extension modules) can release the
-:term:`!GIL` when the thread is going to be doing something unrelated
-to Python, particularly something slow or long,
-like a blocking IO operation.
+:term:`!GIL` when the thread is doing slow or long-running work
+unrelated to Python, like a blocking IO operation.
 
 There is also an ongoing effort to eliminate the :term:`!GIL`:
-:pep:`630`.  Any attempt to remove the :term:`!GIL` necessarily involves
+:pep:`703`.  Any attempt to remove the :term:`!GIL` necessarily involves
 some slowdown to single-threaded performance and extra maintenance
 burden to the Python project and extension module maintainers.
 However, there is sufficient interest in unlocking full multi-core
@@ -549,7 +548,7 @@ Using multiple interpreters is fairly straight-forward:
 3. call :func:`exec`, but targeting the new interpreter
 4. switch back
 
-Note that no threads were involved.  That's because running in an
+Note that no threads were involved; running in an
 interpreter happens relative to the current thread.  New threads
 aren't implicitly involved.
 
@@ -574,9 +573,9 @@ Python 3.13+ on PyPI: :pypi:`interpreters-pep-734`.
 Improving performance for multiple interpreters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The long effort to improve on Python's implementation of multiple
-interpreters focused on isolation and stability.  There was very little
-done to improve performance.  This has the most impact on:
+The long-running effort to improve on Python's implementation of multiple
+interpreters focused on isolation and stability; very little done
+to improve performance.  This has the most impact on:
 
 * how much memory each interpreter uses
   (i.e. how many can run at the same time)
@@ -586,7 +585,7 @@ It also impacts how efficiently data/objects can be passed between
 interpreters, and how effectively objects can be shared.
 
 As the work on isolation wraps up, improvements will shift to focus
-on performance and memory usage.  Thus the overhead associated with
+on performance and memory usage.  Thus, the overhead of
 using multiple interpreters will drastically decrease over time.
 
 Shared resources
@@ -595,7 +594,7 @@ Shared resources
 Aside from memory, all physical threads in a process share the
 following resources:
 
-* commandline arguments ("argv")
+* command line arguments ("argv")
 * env vars
 * current working directory
 * signals, IPC, etc.
@@ -612,8 +611,8 @@ TBD
 
    The other potential problem with using threads is that the conceptual
    model has no inherent synchronization, so it can be hard to follow
-   what is going on in the program at any given moment.  That is
-   especially challenging for testing and debugging.
+   what is going on in the program at any given moment.  That
+   would especially impact your efforts at testing and debugging.
 
    * "callback hell"
    * "where was this thread/coroutine started?"
@@ -643,7 +642,7 @@ explicitly yielding control at the appropriate moments.
 
 Normal functions do not follow this pattern, so they cannot take
 advantage of that cooperative scheduling to avoid blocking
-the program.  Thus coroutines and non-coroutines don't mix well.
+the program.  Thus, coroutines and non-coroutines don't mix well.
 While there are tools for wrapping normal functions to act like
 coroutines, they are often converted into coroutines instead.
 At that point, if any non-async code relies on the function then
@@ -827,7 +826,7 @@ TBD
    "thread" of execution.
 
    Sometimes it makes sense to break up that sequence into smaller pieces,
-   where some of them can run independently of others.  Thus the program
+   where some of them can run independently of others.  Thus, the program
    then involves multiple logical threads.  This is also called
    "multitasking" and each logical thread a "task".
 
@@ -958,13 +957,14 @@ TBD
 
    As mentioned earlier, each concurrency model has its own set of tradeoffs.
    Free-threading probably has the most notoriety and the most examples,
-   but is also has the most pitfalls (see `Critical caveats`_ above).
+   but it also has the most pitfalls (see `Critical caveats`_ above).
    Isolated threads have few of those pitfalls but are less familiar
    and at least a little less efficient.
-   Multiprocessing and distributed are likewise isolated, but less
-   efficient, which can have a larger negative impact at smaller scales.
+   Multiprocessing and distributed computing are likewise isolated,
+   but less efficient, which can have a larger negative impact
+   at smaller scales.
    Async can be straightforward, but may cascade throughout a code base
-   and doesn't necessarily give you parallelism.
+   and doesn't provide parallelism.
 
    free-threading:
 
@@ -1045,7 +1045,7 @@ TBD
    Dealing with data races is often managed using locks (AKA mutexes),
    at a low level, and thread-safe types and APIs at a high level.
    Depending on the programming language, the complexity is sometimes
-   mitigated somewhat by the compiler and runtime.  There are even
+   mitigated by the compiler and runtime.  There are even
    libraries and frameworks that help abstract away the complexity
    to an extent.  On top of that, there are tools that can help identify
    potential races via static analysis.  Unfortunately, none of these aids
@@ -1099,9 +1099,9 @@ TBD
 Python Concurrency Workload Examples
 ====================================
 
-Below we have a series of examples of how to implement the most
+Below, we have a series of examples of how to implement the most
 common Python workloads that take advantage of concurrency.
-For each workload you will find an implementation for each of the
+For each workload, you will find an implementation for each of the
 concurrency models.
 
 The implementations are meant to accurately demonstrate how best
@@ -1163,7 +1163,7 @@ Also see:
 
 .. note::
 
-   Each example is implemented as a basic commandline tool, but can be
+   Each example is implemented as a basic command line tool, but can be
    easily adapted to run as a web service.
 
 Workload: grep
