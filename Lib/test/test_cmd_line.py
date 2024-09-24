@@ -880,19 +880,29 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(proc.stdout.rstrip(), 'True')
         self.assertEqual(proc.returncode, 0, proc)
 
-    @unittest.skipUnless(support.Py_GIL_DISABLED,
-                         "PYTHON_GIL and -X gil only supported in Py_GIL_DISABLED builds")
     def test_python_gil(self):
         cases = [
             # (env, opt, expected, msg)
-            (None, None, 'None', "no options set"),
-            ('0', None, '0', "PYTHON_GIL=0"),
             ('1', None, '1', "PYTHON_GIL=1"),
-            ('1', '0', '0', "-X gil=0 overrides PYTHON_GIL=1"),
-            (None, '0', '0', "-X gil=0"),
             (None, '1', '1', "-X gil=1"),
         ]
 
+        if support.Py_GIL_DISABLED:
+            cases.extend(
+                [
+                    (None, None, 'None', "no options set"),
+                    ('0', None, '0', "PYTHON_GIL=0"),
+                    ('1', '0', '0', "-X gil=0 overrides PYTHON_GIL=1"),
+                    (None, '0', '0', "-X gil=0"),
+                ]
+            )
+        else:
+            cases.extend(
+                [
+                    (None, None, '1', '-X gil=0 (unsupported by this build)'),
+                    ('1', None, '1', 'PYTHON_GIL=0 (unsupported by this build)'),
+                ]
+            )
         code = "import sys; print(sys.flags.gil)"
         environ = dict(os.environ)
 
@@ -969,7 +979,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertIn(expected.encode(), out)
 
     def test_python_basic_repl(self):
-        # Currently this only tests that the env var is set
+        # Currently this only tests that the env var is set. See test_pyrepl.test_python_basic_repl.
         code = "import os; print('PYTHON_BASIC_REPL' in os.environ)"
         expected = "True"
         rc, out, err = assert_python_ok('-c', code, PYTHON_BASIC_REPL='1')

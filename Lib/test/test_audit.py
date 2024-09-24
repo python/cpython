@@ -140,6 +140,7 @@ class AuditTest(unittest.TestCase):
         )
 
 
+    @support.requires_resource('network')
     def test_http(self):
         import_helper.import_module("http.client")
         returncode, events, stderr = self.run_python("test_http_client")
