@@ -533,7 +533,7 @@ translate_bytecode_to_trace(
 {
     bool first = true;
     PyCodeObject *code = _PyFrame_GetCode(frame);
-    PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
+    PyFunctionObject *func = _PyFrame_GetFunction(frame);
     assert(PyFunction_Check(func));
     PyCodeObject *initial_code = code;
     _Py_BloomFilter_Add(dependencies, initial_code);
