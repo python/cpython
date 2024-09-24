@@ -457,6 +457,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 #endif
     }
 
+    PyMem_Free(self->stat_atopen);
     self->stat_atopen = PyMem_New(struct _Py_stat_struct, 1);
     if (self->stat_atopen == NULL) {
         PyErr_NoMemory();
