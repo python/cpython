@@ -7,6 +7,7 @@ import unittest
 import weakref
 
 from sys import monitoring
+from test import support
 from test.support import threading_helper
 from threading import Thread, _PyRLock
 from unittest import TestCase
@@ -43,6 +44,7 @@ class InstrumentationMultiThreadedMixin:
         """Runs once after the test is done"""
         pass
 
+    @support.requires_resource('cpu')
     def test_instrumentation(self):
         # Setup a bunch of functions which will need instrumentation...
         funcs = []
@@ -218,6 +220,7 @@ class MonitoringMisc(MonitoringTestMixin, TestCase):
         for ref in self.refs:
             self.assertEqual(ref(), None)
 
+    @support.requires_resource('cpu')
     def test_set_local_trace_opcodes(self):
         def trace(frame, event, arg):
             frame.f_trace_opcodes = True

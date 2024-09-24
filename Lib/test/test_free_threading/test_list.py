@@ -3,6 +3,7 @@ import unittest
 from threading import Thread
 from unittest import TestCase
 
+from test import support
 from test.support import threading_helper
 
 
@@ -13,6 +14,7 @@ class C:
 
 @threading_helper.requires_working_threading()
 class TestList(TestCase):
+    @support.requires_resource('cpu')
     def test_racing_iter_append(self):
 
         l = []
@@ -42,6 +44,7 @@ class TestList(TestCase):
         for reader in readers:
             reader.join()
 
+    @support.requires_resource('cpu')
     def test_racing_iter_extend(self):
         iters = [
             lambda x: [x],
