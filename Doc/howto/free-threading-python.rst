@@ -115,5 +115,5 @@ The free-threaded build has additional overhead when executing Python code
 compared to the default GIL-enabled build.  In 3.13, this overhead is about
 40% on the `pyperformance <https://pyperformance.readthedocs.io/>`_ suite.
 Programs that spend most of their time in C extensions or I/O will see
-less of an impact.  This overhead is expected to be reduced in the Python
+less of an impact.  This overhead is expected to be reduced in Python
 3.14.
