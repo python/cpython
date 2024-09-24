@@ -1,6 +1,7 @@
 """Tests for the annotations module."""
 
 import annotationlib
+import builtins
 import collections
 import functools
 import itertools
@@ -324,6 +325,8 @@ class TestForwardRefClass(unittest.TestCase):
         self.assertIs(ForwardRef("int").evaluate(locals={"int": str}), str)
         self.assertIs(ForwardRef("int").evaluate(locals={"int": float}, globals={"int": str}), float)
         self.assertIs(ForwardRef("int").evaluate(globals={"int": str}), str)
+        with support.swap_attr(builtins, "int", dict):
+            self.assertIs(ForwardRef("int").evaluate(), dict)
 
         with self.assertRaises(NameError):
             ForwardRef("doesntexist").evaluate()
