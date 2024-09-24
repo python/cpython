@@ -13,6 +13,7 @@ import functools
 import pathlib
 import subprocess
 import random
+import re
 import string
 import contextlib
 import io
@@ -1909,7 +1910,7 @@ class TestArchives(BaseTest, unittest.TestCase):
                 subprocess.check_output(zip_cmd, stderr=subprocess.STDOUT)
             except subprocess.CalledProcessError as exc:
                 details = exc.output.decode(errors="replace")
-                if 'unrecognized option: t' in details:
+                if re.search(r'(unrecognized|invalid) option(:| --) t', details):
                     self.skipTest("unzip doesn't support -t")
                 msg = "{}\n\n**Unzip Output**\n{}"
                 self.fail(msg.format(exc, details))
