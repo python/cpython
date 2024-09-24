@@ -117,7 +117,7 @@ class MiscTests(unittest.TestCase):
     def test_getdtablesize(self):
         size = os.getdtablesize()
         self.assertIsInstance(size, int)
-        self.assertGreaterEqual(size, 0)
+        self.assertGreaterEqual(size, 1)
 
     def test_getcwd_long_path(self):
         # bpo-37412: On Linux, PATH_MAX is usually around 4096 bytes. On
