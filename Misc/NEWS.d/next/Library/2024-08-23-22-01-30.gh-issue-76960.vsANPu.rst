@@ -1,0 +1,5 @@
+Fix :func:`urllib.parse.urljoin` and :func:`urllib.parse.urldefrag` for URIs
+containing empty components. For example, :func:`!urljoin` with relative
+reference "?" now sets empty query and removes fragment.
+Preserve empty components (authority, params, query, fragment) in :func:`!urljoin`.
+Preserve empty components (authority, params, query) in :func:`!urldefrag`.

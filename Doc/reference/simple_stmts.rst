@@ -214,7 +214,7 @@ Assignment of an object to a single target is recursively defined as follows.
   object.  This can either replace an existing key/value pair with the same key
   value, or insert a new key/value pair (if no key with the same value existed).
 
-  For user-defined objects, the :meth:`__setitem__` method is called with
+  For user-defined objects, the :meth:`~object.__setitem__` method is called with
   appropriate arguments.
 
   .. index:: pair: slicing; assignment
@@ -293,7 +293,7 @@ statements, cannot be an unpacking) and the expression list, performs the binary
 operation specific to the type of assignment on the two operands, and assigns
 the result to the original target.  The target is only evaluated once.
 
-An augmented assignment expression like ``x += 1`` can be rewritten as ``x = x +
+An augmented assignment statement like ``x += 1`` can be rewritten as ``x = x +
 1`` to achieve a similar, but not exactly equal effect. In the augmented
 version, ``x`` is only evaluated once. Also, when possible, the actual operation
 is performed *in-place*, meaning that rather than creating a new object and
@@ -333,25 +333,26 @@ statement, of a variable or attribute annotation and an optional assignment stat
 
 The difference from normal :ref:`assignment` is that only a single target is allowed.
 
-For simple names as assignment targets, if in class or module scope,
-the annotations are evaluated and stored in a special class or module
-attribute :attr:`__annotations__`
-that is a dictionary mapping from variable names (mangled if private) to
-evaluated annotations. This attribute is writable and is automatically
-created at the start of class or module body execution, if annotations
-are found statically.
+The assignment target is considered "simple" if it consists of a single
+name that is not enclosed in parentheses.
+For simple assignment targets, if in class or module scope,
+the annotations are gathered in a lazily evaluated
+:ref:`annotation scope <annotation-scopes>`. The annotations can be
+evaluated using the :attr:`~object.__annotations__` attribute of a
+class or module, or using the facilities in the :mod:`annotationlib`
+module.
 
-For expressions as assignment targets, the annotations are evaluated if
-in class or module scope, but not stored.
+If the assignment target is not simple (an attribute, subscript node, or
+parenthesized name), the annotation is never evaluated.
 
 If a name is annotated in a function scope, then this name is local for
 that scope. Annotations are never evaluated and stored in function scopes.
 
 If the right hand side is present, an annotated
-assignment performs the actual assignment before evaluating annotations
-(where applicable). If the right hand side is not present for an expression
+assignment performs the actual assignment as if there was no annotation
+present. If the right hand side is not present for an expression
 target, then the interpreter evaluates the target except for the last
-:meth:`__setitem__` or :meth:`__setattr__` call.
+:meth:`~object.__setitem__` or :meth:`~object.__setattr__` call.
 
 .. seealso::
 
@@ -369,6 +370,10 @@ target, then the interpreter evaluates the target except for the last
    Now annotated assignments allow the same expressions in the right hand side as
    regular assignments. Previously, some expressions (like un-parenthesized
    tuple expressions) caused a syntax error.
+
+.. versionchanged:: 3.14
+   Annotations are now lazily evaluated in a separate :ref:`annotation scope <annotation-scopes>`.
+   If the assignment target is not simple, annotations are never evaluated.
 
 
 .. _assert:
@@ -578,7 +583,7 @@ The :dfn:`type` of the exception is the exception instance's class, the
 .. index:: pair: object; traceback
 
 A traceback object is normally created automatically when an exception is raised
-and attached to it as the :attr:`__traceback__` attribute, which is writable.
+and attached to it as the :attr:`~BaseException.__traceback__` attribute.
 You can create an exception and set your own traceback in one step using the
 :meth:`~BaseException.with_traceback` exception method (which returns the
 same exception instance, with its traceback set to its argument), like so::
@@ -592,11 +597,13 @@ same exception instance, with its traceback set to its argument), like so::
 The ``from`` clause is used for exception chaining: if given, the second
 *expression* must be another exception class or instance. If the second
 expression is an exception instance, it will be attached to the raised
-exception as the :attr:`__cause__` attribute (which is writable). If the
+exception as the :attr:`~BaseException.__cause__` attribute (which is writable). If the
 expression is an exception class, the class will be instantiated and the
 resulting exception instance will be attached to the raised exception as the
-:attr:`__cause__` attribute. If the raised exception is not handled, both
-exceptions will be printed::
+:attr:`!__cause__` attribute. If the raised exception is not handled, both
+exceptions will be printed:
+
+.. code-block:: pycon
 
    >>> try:
    ...     print(1 / 0)
@@ -605,19 +612,24 @@ exceptions will be printed::
    ...
    Traceback (most recent call last):
      File "<stdin>", line 2, in <module>
+       print(1 / 0)
+             ~~^~~
    ZeroDivisionError: division by zero
 
    The above exception was the direct cause of the following exception:
 
    Traceback (most recent call last):
      File "<stdin>", line 4, in <module>
+       raise RuntimeError("Something bad happened") from exc
    RuntimeError: Something bad happened
 
 A similar mechanism works implicitly if a new exception is raised when
 an exception is already being handled.  An exception may be handled
 when an :keyword:`except` or :keyword:`finally` clause, or a
 :keyword:`with` statement, is used.  The previous exception is then
-attached as the new exception's :attr:`__context__` attribute::
+attached as the new exception's :attr:`~BaseException.__context__` attribute:
+
+.. code-block:: pycon
 
    >>> try:
    ...     print(1 / 0)
@@ -626,16 +638,21 @@ attached as the new exception's :attr:`__context__` attribute::
    ...
    Traceback (most recent call last):
      File "<stdin>", line 2, in <module>
+       print(1 / 0)
+             ~~^~~
    ZeroDivisionError: division by zero
 
    During handling of the above exception, another exception occurred:
 
    Traceback (most recent call last):
      File "<stdin>", line 4, in <module>
+       raise RuntimeError("Something bad happened")
    RuntimeError: Something bad happened
 
 Exception chaining can be explicitly suppressed by specifying :const:`None` in
-the ``from`` clause::
+the ``from`` clause:
+
+.. doctest::
 
    >>> try:
    ...     print(1 / 0)
@@ -652,9 +669,8 @@ and information about handling exceptions is in section :ref:`try`.
 .. versionchanged:: 3.3
     :const:`None` is now permitted as ``Y`` in ``raise X from Y``.
 
-.. versionadded:: 3.3
-    The ``__suppress_context__`` attribute to suppress automatic display of the
-    exception context.
+    Added the :attr:`~BaseException.__suppress_context__` attribute to suppress
+    automatic display of the exception context.
 
 .. versionchanged:: 3.11
     If the traceback of the active exception is modified in an :keyword:`except`
@@ -920,7 +936,7 @@ That is not a future statement; it's an ordinary import statement with no
 special semantics or syntax restrictions.
 
 Code compiled by calls to the built-in functions :func:`exec` and :func:`compile`
-that occur in a module :mod:`M` containing a future statement will, by default,
+that occur in a module :mod:`!M` containing a future statement will, by default,
 use the new syntax or semantics associated with the future statement.  This can
 be controlled by optional arguments to :func:`compile` --- see the documentation
 of that function for details.
@@ -961,8 +977,8 @@ block textually preceding that :keyword:`!global` statement.
 
 Names listed in a :keyword:`global` statement must not be defined as formal
 parameters, or as targets in :keyword:`with` statements or :keyword:`except` clauses, or in a :keyword:`for` target list, :keyword:`class`
-definition, function definition, :keyword:`import` statement, or variable
-annotation.
+definition, function definition, :keyword:`import` statement, or
+:term:`variable annotations <variable annotation>`.
 
 .. impl-detail::
 
@@ -995,24 +1011,28 @@ The :keyword:`!nonlocal` statement
 .. productionlist:: python-grammar
    nonlocal_stmt: "nonlocal" `identifier` ("," `identifier`)*
 
-The :keyword:`nonlocal` statement causes the listed identifiers to refer to
-previously bound variables in the nearest enclosing scope excluding globals.
-This is important because the default behavior for binding is to search the
-local namespace first.  The statement allows encapsulated code to rebind
-variables outside of the local scope besides the global (module) scope.
+When the definition of a function or class is nested (enclosed) within
+the definitions of other functions, its nonlocal scopes are the local
+scopes of the enclosing functions. The :keyword:`nonlocal` statement
+causes the listed identifiers to refer to names previously bound in
+nonlocal scopes. It allows encapsulated code to rebind such nonlocal
+identifiers.  If a name is bound in more than one nonlocal scope, the
+nearest binding is used. If a name is not bound in any nonlocal scope,
+or if there is no nonlocal scope, a :exc:`SyntaxError` is raised.
 
-Names listed in a :keyword:`nonlocal` statement, unlike those listed in a
-:keyword:`global` statement, must refer to pre-existing bindings in an
-enclosing scope (the scope in which a new binding should be created cannot
-be determined unambiguously).
-
-Names listed in a :keyword:`nonlocal` statement must not collide with
-pre-existing bindings in the local scope.
+The nonlocal statement applies to the entire scope of a function or
+class body. A :exc:`SyntaxError` is raised if a variable is used or
+assigned to prior to its nonlocal declaration in the scope.
 
 .. seealso::
 
    :pep:`3104` - Access to Names in Outer Scopes
       The specification for the :keyword:`nonlocal` statement.
+
+**Programmer's note:** :keyword:`nonlocal` is a directive to the parser
+and applies only to code parsed along with it.  See the note for the
+:keyword:`global` statement.
+
 
 .. _type:
 

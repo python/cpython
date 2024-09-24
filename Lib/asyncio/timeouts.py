@@ -49,8 +49,9 @@ class Timeout:
 
     def reschedule(self, when: Optional[float]) -> None:
         """Reschedule the timeout."""
-        assert self._state is not _State.CREATED
         if self._state is not _State.ENTERED:
+            if self._state is _State.CREATED:
+                raise RuntimeError("Timeout has not been entered")
             raise RuntimeError(
                 f"Cannot change state of {self._state.value} Timeout",
             )
@@ -82,11 +83,14 @@ class Timeout:
         return f"<Timeout [{self._state.value}]{info_str}>"
 
     async def __aenter__(self) -> "Timeout":
-        self._state = _State.ENTERED
-        self._task = tasks.current_task()
-        self._cancelling = self._task.cancelling()
-        if self._task is None:
+        if self._state is not _State.CREATED:
+            raise RuntimeError("Timeout has already been entered")
+        task = tasks.current_task()
+        if task is None:
             raise RuntimeError("Timeout should be used inside a task")
+        self._state = _State.ENTERED
+        self._task = task
+        self._cancelling = self._task.cancelling()
         self.reschedule(self._when)
         return self
 
@@ -105,10 +109,16 @@ class Timeout:
         if self._state is _State.EXPIRING:
             self._state = _State.EXPIRED
 
-            if self._task.uncancel() <= self._cancelling and exc_type is exceptions.CancelledError:
+            if self._task.uncancel() <= self._cancelling and exc_type is not None:
                 # Since there are no new cancel requests, we're
                 # handling this.
-                raise TimeoutError from exc_val
+                if issubclass(exc_type, exceptions.CancelledError):
+                    raise TimeoutError from exc_val
+                elif exc_val is not None:
+                    self._insert_timeout_error(exc_val)
+                    if isinstance(exc_val, ExceptionGroup):
+                        for exc in exc_val.exceptions:
+                            self._insert_timeout_error(exc)
         elif self._state is _State.ENTERED:
             self._state = _State.EXITED
 
@@ -120,6 +130,16 @@ class Timeout:
         self._state = _State.EXPIRING
         # drop the reference early
         self._timeout_handler = None
+
+    @staticmethod
+    def _insert_timeout_error(exc_val: BaseException) -> None:
+        while exc_val.__context__ is not None:
+            if isinstance(exc_val.__context__, exceptions.CancelledError):
+                te = TimeoutError()
+                te.__context__ = te.__cause__ = exc_val.__context__
+                exc_val.__context__ = te
+                break
+            exc_val = exc_val.__context__
 
 
 def timeout(delay: Optional[float]) -> Timeout:

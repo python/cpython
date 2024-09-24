@@ -1,3 +1,4 @@
+// Module support interface
 
 #ifndef Py_MODSUPPORT_H
 #define Py_MODSUPPORT_H
@@ -5,17 +6,13 @@
 extern "C" {
 #endif
 
-/* Module support interface */
-
-#include <stdarg.h>               // va_list
-
 PyAPI_FUNC(int) PyArg_Parse(PyObject *, const char *, ...);
 PyAPI_FUNC(int) PyArg_ParseTuple(PyObject *, const char *, ...);
 PyAPI_FUNC(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
-                                            const char *, char **, ...);
+                                            const char *, PY_CXX_CONST char * const *, ...);
 PyAPI_FUNC(int) PyArg_VaParse(PyObject *, const char *, va_list);
 PyAPI_FUNC(int) PyArg_VaParseTupleAndKeywords(PyObject *, PyObject *,
-                                              const char *, char **, va_list);
+                                              const char *, PY_CXX_CONST char * const *, va_list);
 
 PyAPI_FUNC(int) PyArg_ValidateKeywordArguments(PyObject *);
 PyAPI_FUNC(int) PyArg_UnpackTuple(PyObject *, const char *, Py_ssize_t, Py_ssize_t, ...);
@@ -110,14 +107,6 @@ PyAPI_FUNC(int) PyModule_ExecDef(PyObject *module, PyModuleDef *def);
    must be performed in a strictly backwards-compatible manner. */
 #define PYTHON_ABI_VERSION 3
 #define PYTHON_ABI_STRING "3"
-
-#ifdef Py_TRACE_REFS
- /* When we are tracing reference counts, rename module creation functions so
-    modules compiled with incompatible settings will generate a
-    link-time error. */
- #define PyModule_Create2 PyModule_Create2TraceRefs
- #define PyModule_FromDefAndSpec2 PyModule_FromDefAndSpec2TraceRefs
-#endif
 
 PyAPI_FUNC(PyObject *) PyModule_Create2(PyModuleDef*, int apiver);
 

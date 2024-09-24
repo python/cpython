@@ -1,0 +1,5 @@
+Convert the Python evaluation stack to use internal stack references. The
+purpose is to support tagged pointers. In :pep:`703`, this will
+allow for its form of deferred reference counting. For both
+the default and free-threaded builds, this sets up the infrastructure
+for unboxed integers in the future.

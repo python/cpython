@@ -187,26 +187,26 @@ Implementing functions and methods
                                         PyObject *kwargs);
 
 
-.. c:type:: _PyCFunctionFast
+.. c:type:: PyCFunctionFast
 
    Type of the functions used to implement Python callables in C
    with signature :c:macro:`METH_FASTCALL`.
    The function signature is::
 
-      PyObject *_PyCFunctionFast(PyObject *self,
-                                 PyObject *const *args,
-                                 Py_ssize_t nargs);
+      PyObject *PyCFunctionFast(PyObject *self,
+                                PyObject *const *args,
+                                Py_ssize_t nargs);
 
-.. c:type:: _PyCFunctionFastWithKeywords
+.. c:type:: PyCFunctionFastWithKeywords
 
    Type of the functions used to implement Python callables in C
    with signature :ref:`METH_FASTCALL | METH_KEYWORDS <METH_FASTCALL-METH_KEYWORDS>`.
    The function signature is::
 
-      PyObject *_PyCFunctionFastWithKeywords(PyObject *self,
-                                             PyObject *const *args,
-                                             Py_ssize_t nargs,
-                                             PyObject *kwnames);
+      PyObject *PyCFunctionFastWithKeywords(PyObject *self,
+                                            PyObject *const *args,
+                                            Py_ssize_t nargs,
+                                            PyObject *kwnames);
 
 .. c:type:: PyCMethod
 
@@ -290,7 +290,7 @@ There are these calling conventions:
 .. c:macro:: METH_FASTCALL
 
    Fast calling convention supporting only positional arguments.
-   The methods have the type :c:type:`_PyCFunctionFast`.
+   The methods have the type :c:type:`PyCFunctionFast`.
    The first parameter is *self*, the second parameter is a C array
    of :c:expr:`PyObject*` values indicating the arguments and the third
    parameter is the number of arguments (the length of the array).
@@ -306,7 +306,7 @@ There are these calling conventions:
 
 :c:expr:`METH_FASTCALL | METH_KEYWORDS`
    Extension of :c:macro:`METH_FASTCALL` supporting also keyword arguments,
-   with methods of type :c:type:`_PyCFunctionFastWithKeywords`.
+   with methods of type :c:type:`PyCFunctionFastWithKeywords`.
    Keyword arguments are passed the same way as in the
    :ref:`vectorcall protocol <vectorcall>`:
    there is an additional fourth :c:expr:`PyObject*` parameter
@@ -399,6 +399,40 @@ definition with the same method name.
    slot.  This is helpful because calls to PyCFunctions are optimized more
    than wrapper object calls.
 
+.. c:function:: PyObject * PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *cls)
+
+   Turn *ml* into a Python :term:`callable` object.
+   The caller must ensure that *ml* outlives the :term:`callable`.
+   Typically, *ml* is defined as a static variable.
+
+   The *self* parameter will be passed as the *self* argument
+   to the C function in ``ml->ml_meth`` when invoked.
+   *self* can be ``NULL``.
+
+   The :term:`callable` object's ``__module__`` attribute
+   can be set from the given *module* argument.
+   *module* should be a Python string,
+   which will be used as name of the module the function is defined in.
+   If unavailable, it can be set to :const:`None` or ``NULL``.
+
+   .. seealso:: :attr:`function.__module__`
+
+   The *cls* parameter will be passed as the *defining_class*
+   argument to the C function.
+   Must be set if :c:macro:`METH_METHOD` is set on ``ml->ml_flags``.
+
+   .. versionadded:: 3.9
+
+
+.. c:function:: PyObject * PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
+
+   Equivalent to ``PyCMethod_New(ml, self, module, NULL)``.
+
+
+.. c:function:: PyObject * PyCFunction_New(PyMethodDef *ml, PyObject *self)
+
+   Equivalent to ``PyCMethod_New(ml, self, NULL, NULL)``.
+
 
 Accessing attributes of extension types
 ---------------------------------------
@@ -406,7 +440,11 @@ Accessing attributes of extension types
 .. c:type:: PyMemberDef
 
    Structure which describes an attribute of a type which corresponds to a C
-   struct member.  Its fields are, in order:
+   struct member.
+   When defining a class, put a NULL-terminated array of these
+   structures in the :c:member:`~PyTypeObject.tp_members` slot.
+
+   Its fields are, in order:
 
    .. c:member:: const char* name
 
@@ -415,14 +453,14 @@ Accessing attributes of extension types
 
          The string should be static, no copy is made of it.
 
-   .. c:member:: Py_ssize_t offset
-
-      The offset in bytes that the member is located on the type’s object struct.
-
    .. c:member:: int type
 
       The type of the member in the C struct.
       See :ref:`PyMemberDef-types` for the possible values.
+
+   .. c:member:: Py_ssize_t offset
+
+      The offset in bytes that the member is located on the type’s object struct.
 
    .. c:member:: int flags
 
@@ -447,7 +485,8 @@ Accessing attributes of extension types
    ``PyMemberDef`` may contain a definition for the special member
    ``"__vectorcalloffset__"``, corresponding to
    :c:member:`~PyTypeObject.tp_vectorcall_offset` in type objects.
-   These must be defined with ``Py_T_PYSSIZET`` and ``Py_READONLY``, for example::
+   This member must be defined with ``Py_T_PYSSIZET``, and either
+   ``Py_READONLY`` or ``Py_READONLY | Py_RELATIVE_OFFSET``. For example::
 
       static PyMemberDef spam_type_members[] = {
           {"__vectorcalloffset__", Py_T_PYSSIZET,
@@ -467,6 +506,12 @@ Accessing attributes of extension types
 
       ``PyMemberDef`` is always available.
       Previously, it required including ``"structmember.h"``.
+
+   .. versionchanged:: 3.14
+
+      :c:macro:`Py_RELATIVE_OFFSET` is now allowed for
+      ``"__vectorcalloffset__"``, ``"__dictoffset__"`` and
+      ``"__weaklistoffset__"``.
 
 .. c:function:: PyObject* PyMember_GetOne(const char *obj_addr, struct PyMemberDef *m)
 
@@ -513,19 +558,19 @@ The following flags can be used with :c:member:`PyMemberDef.flags`:
    from ``PyObject``.
 
    Can only be used as part of :c:member:`Py_tp_members <PyTypeObject.tp_members>`
-   :c:type:`slot <PyTypeSlot>` when creating a class using negative
+   :c:type:`slot <PyType_Slot>` when creating a class using negative
    :c:member:`~PyType_Spec.basicsize`.
    It is mandatory in that case.
 
-   This flag is only used in :c:type:`PyTypeSlot`.
+   This flag is only used in :c:type:`PyType_Slot`.
    When setting :c:member:`~PyTypeObject.tp_members` during
    class creation, Python clears it and sets
    :c:member:`PyMemberDef.offset` to the offset from the ``PyObject`` struct.
 
 .. index::
-   single: READ_RESTRICTED
-   single: WRITE_RESTRICTED
-   single: RESTRICTED
+   single: READ_RESTRICTED (C macro)
+   single: WRITE_RESTRICTED (C macro)
+   single: RESTRICTED (C macro)
 
 .. versionchanged:: 3.10
 
@@ -536,7 +581,7 @@ The following flags can be used with :c:member:`PyMemberDef.flags`:
    :c:macro:`Py_AUDIT_READ`; :c:macro:`!WRITE_RESTRICTED` does nothing.
 
 .. index::
-   single: READONLY
+   single: READONLY (C macro)
 
 .. versionchanged:: 3.12
 
@@ -588,7 +633,7 @@ Macro name                       C type                        Python type
 
    (*): Zero-terminated, UTF8-encoded C string.
    With :c:macro:`!Py_T_STRING` the C representation is a pointer;
-   with :c:macro:`!Py_T_STRING_INLINE` the string is stored directly
+   with :c:macro:`!Py_T_STRING_INPLACE` the string is stored directly
    in the structure.
 
    (**): String of length 1. Only ASCII is accepted.
@@ -599,24 +644,24 @@ Macro name                       C type                        Python type
    Reading a ``NULL`` pointer raises :py:exc:`AttributeError`.
 
 .. index::
-   single: T_BYTE
-   single: T_SHORT
-   single: T_INT
-   single: T_LONG
-   single: T_LONGLONG
-   single: T_UBYTE
-   single: T_USHORT
-   single: T_UINT
-   single: T_ULONG
-   single: T_ULONGULONG
-   single: T_PYSSIZET
-   single: T_FLOAT
-   single: T_DOUBLE
-   single: T_BOOL
-   single: T_CHAR
-   single: T_STRING
-   single: T_STRING_INPLACE
-   single: T_OBJECT_EX
+   single: T_BYTE (C macro)
+   single: T_SHORT (C macro)
+   single: T_INT (C macro)
+   single: T_LONG (C macro)
+   single: T_LONGLONG (C macro)
+   single: T_UBYTE (C macro)
+   single: T_USHORT (C macro)
+   single: T_UINT (C macro)
+   single: T_ULONG (C macro)
+   single: T_ULONGULONG (C macro)
+   single: T_PYSSIZET (C macro)
+   single: T_FLOAT (C macro)
+   single: T_DOUBLE (C macro)
+   single: T_BOOL (C macro)
+   single: T_CHAR (C macro)
+   single: T_STRING (C macro)
+   single: T_STRING_INPLACE (C macro)
+   single: T_OBJECT_EX (C macro)
    single: structmember.h
 
 .. versionadded:: 3.12
@@ -655,7 +700,8 @@ Defining Getters and Setters
 
    .. c:member:: setter set
 
-      Optional C function to set or delete the attribute, if omitted the attribute is readonly.
+      Optional C function to set or delete the attribute.
+      If ``NULL``, the attribute is read-only.
 
    .. c:member:: const char* doc
 
@@ -663,20 +709,20 @@ Defining Getters and Setters
 
    .. c:member:: void* closure
 
-      Optional function pointer, providing additional data for getter and setter.
+      Optional user data pointer, providing additional data for getter and setter.
+
+.. c:type:: PyObject *(*getter)(PyObject *, void *)
 
    The ``get`` function takes one :c:expr:`PyObject*` parameter (the
-   instance) and a function pointer (the associated ``closure``)::
-
-      typedef PyObject *(*getter)(PyObject *, void *);
+   instance) and a user data pointer (the associated ``closure``):
 
    It should return a new reference on success or ``NULL`` with a set exception
    on failure.
 
-   ``set`` functions take two :c:expr:`PyObject*` parameters (the instance and
-   the value to be set) and a function pointer (the associated ``closure``)::
+.. c:type:: int (*setter)(PyObject *, PyObject *, void *)
 
-      typedef int (*setter)(PyObject *, PyObject *, void *);
+   ``set`` functions take two :c:expr:`PyObject*` parameters (the instance and
+   the value to be set) and a user data pointer (the associated ``closure``):
 
    In case the attribute should be deleted the second parameter is ``NULL``.
    Should return ``0`` on success or ``-1`` with a set exception on failure.

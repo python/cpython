@@ -1,3 +1,0 @@
-Added ``__slots__`` to :class:`contextlib.AbstractContextManager` and :class:`contextlib.AbstractAsyncContextManager`
-so that child classes can use ``__slots__``.
-

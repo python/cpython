@@ -4,11 +4,13 @@
 #include "Python.h"
 #include "pycore_frame.h"
 #include "pycore_function.h"
-#include "pycore_runtime.h"
 #include "pycore_global_objects.h"
-#include "pycore_intrinsics.h"
-#include "pycore_pyerrors.h"
-#include "pycore_typevarobject.h"
+#include "pycore_compile.h"       // _PyCompile_GetUnaryIntrinsicName, etc
+#include "pycore_intrinsics.h"    // INTRINSIC_PRINT
+#include "pycore_pyerrors.h"      // _PyErr_SetString()
+#include "pycore_runtime.h"       // _Py_ID()
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_typevarobject.h" // _Py_make_typevar()
 
 
 /******** Unary functions ********/
@@ -120,19 +122,16 @@ import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
 static PyObject *
 import_star(PyThreadState* tstate, PyObject *from)
 {
-    _PyInterpreterFrame *frame = tstate->cframe->current_frame;
-    if (_PyFrame_FastToLocalsWithError(frame) < 0) {
-        return NULL;
-    }
+    _PyInterpreterFrame *frame = tstate->current_frame;
 
-    PyObject *locals = frame->f_locals;
+    PyObject *locals = _PyFrame_GetLocals(frame);
     if (locals == NULL) {
         _PyErr_SetString(tstate, PyExc_SystemError,
                             "no locals found during 'import *'");
         return NULL;
     }
     int err = import_all_from(tstate, locals, from);
-    _PyFrame_LocalsToFast(frame, 0);
+    Py_DECREF(locals);
     if (err < 0) {
         return NULL;
     }
@@ -142,7 +141,7 @@ import_star(PyThreadState* tstate, PyObject *from)
 static PyObject *
 stopiteration_error(PyThreadState* tstate, PyObject *exc)
 {
-    _PyInterpreterFrame *frame = tstate->cframe->current_frame;
+    _PyInterpreterFrame *frame = tstate->current_frame;
     assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
     assert(PyExceptionInstance_Check(exc));
     const char *msg = NULL;
@@ -263,12 +262,13 @@ _PyIntrinsics_BinaryFunctions[] = {
     INTRINSIC_FUNC_ENTRY(INTRINSIC_TYPEVAR_WITH_BOUND, make_typevar_with_bound)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_TYPEVAR_WITH_CONSTRAINTS, make_typevar_with_constraints)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_SET_FUNCTION_TYPE_PARAMS, _Py_set_function_type_params)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_SET_TYPEPARAM_DEFAULT, _Py_set_typeparam_default)
 };
 
 #undef INTRINSIC_FUNC_ENTRY
 
 PyObject*
-_PyUnstable_GetUnaryIntrinsicName(int index)
+_PyCompile_GetUnaryIntrinsicName(int index)
 {
     if (index < 0 || index > MAX_INTRINSIC_1) {
         return NULL;
@@ -277,7 +277,7 @@ _PyUnstable_GetUnaryIntrinsicName(int index)
 }
 
 PyObject*
-_PyUnstable_GetBinaryIntrinsicName(int index)
+_PyCompile_GetBinaryIntrinsicName(int index)
 {
     if (index < 0 || index > MAX_INTRINSIC_2) {
         return NULL;

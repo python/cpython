@@ -473,7 +473,7 @@ test_bool_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    c = _PyLong_AsInt(args[2]);
+    c = PyLong_AsInt(args[2]);
     if (c == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -486,7 +486,7 @@ exit:
 
 static PyObject *
 test_bool_converter_impl(PyObject *module, int a, int b, int c)
-/*[clinic end generated code: output=27f0e653a70b9be3 input=939854fa9f248c60]*/
+/*[clinic end generated code: output=3190e46490de0644 input=939854fa9f248c60]*/
 
 
 /*[clinic input]
@@ -550,10 +550,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[0]) && PyBytes_GET_SIZE(args[0]) == 1) {
+    if (PyBytes_Check(args[0])) {
+        if (PyBytes_GET_SIZE(args[0]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 1 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[0]));
+            goto exit;
+        }
         a = PyBytes_AS_STRING(args[0])[0];
     }
-    else if (PyByteArray_Check(args[0]) && PyByteArray_GET_SIZE(args[0]) == 1) {
+    else if (PyByteArray_Check(args[0])) {
+        if (PyByteArray_GET_SIZE(args[0]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 1 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[0]));
+            goto exit;
+        }
         a = PyByteArray_AS_STRING(args[0])[0];
     }
     else {
@@ -563,10 +577,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[1]) && PyBytes_GET_SIZE(args[1]) == 1) {
+    if (PyBytes_Check(args[1])) {
+        if (PyBytes_GET_SIZE(args[1]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 2 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[1]));
+            goto exit;
+        }
         b = PyBytes_AS_STRING(args[1])[0];
     }
-    else if (PyByteArray_Check(args[1]) && PyByteArray_GET_SIZE(args[1]) == 1) {
+    else if (PyByteArray_Check(args[1])) {
+        if (PyByteArray_GET_SIZE(args[1]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 2 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[1]));
+            goto exit;
+        }
         b = PyByteArray_AS_STRING(args[1])[0];
     }
     else {
@@ -576,10 +604,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[2]) && PyBytes_GET_SIZE(args[2]) == 1) {
+    if (PyBytes_Check(args[2])) {
+        if (PyBytes_GET_SIZE(args[2]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 3 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[2]));
+            goto exit;
+        }
         c = PyBytes_AS_STRING(args[2])[0];
     }
-    else if (PyByteArray_Check(args[2]) && PyByteArray_GET_SIZE(args[2]) == 1) {
+    else if (PyByteArray_Check(args[2])) {
+        if (PyByteArray_GET_SIZE(args[2]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 3 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[2]));
+            goto exit;
+        }
         c = PyByteArray_AS_STRING(args[2])[0];
     }
     else {
@@ -589,10 +631,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 4) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[3]) && PyBytes_GET_SIZE(args[3]) == 1) {
+    if (PyBytes_Check(args[3])) {
+        if (PyBytes_GET_SIZE(args[3]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 4 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[3]));
+            goto exit;
+        }
         d = PyBytes_AS_STRING(args[3])[0];
     }
-    else if (PyByteArray_Check(args[3]) && PyByteArray_GET_SIZE(args[3]) == 1) {
+    else if (PyByteArray_Check(args[3])) {
+        if (PyByteArray_GET_SIZE(args[3]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 4 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[3]));
+            goto exit;
+        }
         d = PyByteArray_AS_STRING(args[3])[0];
     }
     else {
@@ -602,10 +658,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 5) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[4]) && PyBytes_GET_SIZE(args[4]) == 1) {
+    if (PyBytes_Check(args[4])) {
+        if (PyBytes_GET_SIZE(args[4]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 5 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[4]));
+            goto exit;
+        }
         e = PyBytes_AS_STRING(args[4])[0];
     }
-    else if (PyByteArray_Check(args[4]) && PyByteArray_GET_SIZE(args[4]) == 1) {
+    else if (PyByteArray_Check(args[4])) {
+        if (PyByteArray_GET_SIZE(args[4]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 5 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[4]));
+            goto exit;
+        }
         e = PyByteArray_AS_STRING(args[4])[0];
     }
     else {
@@ -615,10 +685,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 6) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[5]) && PyBytes_GET_SIZE(args[5]) == 1) {
+    if (PyBytes_Check(args[5])) {
+        if (PyBytes_GET_SIZE(args[5]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 6 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[5]));
+            goto exit;
+        }
         f = PyBytes_AS_STRING(args[5])[0];
     }
-    else if (PyByteArray_Check(args[5]) && PyByteArray_GET_SIZE(args[5]) == 1) {
+    else if (PyByteArray_Check(args[5])) {
+        if (PyByteArray_GET_SIZE(args[5]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 6 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[5]));
+            goto exit;
+        }
         f = PyByteArray_AS_STRING(args[5])[0];
     }
     else {
@@ -628,10 +712,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 7) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[6]) && PyBytes_GET_SIZE(args[6]) == 1) {
+    if (PyBytes_Check(args[6])) {
+        if (PyBytes_GET_SIZE(args[6]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 7 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[6]));
+            goto exit;
+        }
         g = PyBytes_AS_STRING(args[6])[0];
     }
-    else if (PyByteArray_Check(args[6]) && PyByteArray_GET_SIZE(args[6]) == 1) {
+    else if (PyByteArray_Check(args[6])) {
+        if (PyByteArray_GET_SIZE(args[6]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 7 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[6]));
+            goto exit;
+        }
         g = PyByteArray_AS_STRING(args[6])[0];
     }
     else {
@@ -641,10 +739,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 8) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[7]) && PyBytes_GET_SIZE(args[7]) == 1) {
+    if (PyBytes_Check(args[7])) {
+        if (PyBytes_GET_SIZE(args[7]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 8 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[7]));
+            goto exit;
+        }
         h = PyBytes_AS_STRING(args[7])[0];
     }
-    else if (PyByteArray_Check(args[7]) && PyByteArray_GET_SIZE(args[7]) == 1) {
+    else if (PyByteArray_Check(args[7])) {
+        if (PyByteArray_GET_SIZE(args[7]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 8 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[7]));
+            goto exit;
+        }
         h = PyByteArray_AS_STRING(args[7])[0];
     }
     else {
@@ -654,10 +766,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 9) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[8]) && PyBytes_GET_SIZE(args[8]) == 1) {
+    if (PyBytes_Check(args[8])) {
+        if (PyBytes_GET_SIZE(args[8]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 9 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[8]));
+            goto exit;
+        }
         i = PyBytes_AS_STRING(args[8])[0];
     }
-    else if (PyByteArray_Check(args[8]) && PyByteArray_GET_SIZE(args[8]) == 1) {
+    else if (PyByteArray_Check(args[8])) {
+        if (PyByteArray_GET_SIZE(args[8]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 9 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[8]));
+            goto exit;
+        }
         i = PyByteArray_AS_STRING(args[8])[0];
     }
     else {
@@ -667,10 +793,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 10) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[9]) && PyBytes_GET_SIZE(args[9]) == 1) {
+    if (PyBytes_Check(args[9])) {
+        if (PyBytes_GET_SIZE(args[9]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 10 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[9]));
+            goto exit;
+        }
         j = PyBytes_AS_STRING(args[9])[0];
     }
-    else if (PyByteArray_Check(args[9]) && PyByteArray_GET_SIZE(args[9]) == 1) {
+    else if (PyByteArray_Check(args[9])) {
+        if (PyByteArray_GET_SIZE(args[9]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 10 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[9]));
+            goto exit;
+        }
         j = PyByteArray_AS_STRING(args[9])[0];
     }
     else {
@@ -680,10 +820,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 11) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[10]) && PyBytes_GET_SIZE(args[10]) == 1) {
+    if (PyBytes_Check(args[10])) {
+        if (PyBytes_GET_SIZE(args[10]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 11 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[10]));
+            goto exit;
+        }
         k = PyBytes_AS_STRING(args[10])[0];
     }
-    else if (PyByteArray_Check(args[10]) && PyByteArray_GET_SIZE(args[10]) == 1) {
+    else if (PyByteArray_Check(args[10])) {
+        if (PyByteArray_GET_SIZE(args[10]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 11 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[10]));
+            goto exit;
+        }
         k = PyByteArray_AS_STRING(args[10])[0];
     }
     else {
@@ -693,10 +847,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 12) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[11]) && PyBytes_GET_SIZE(args[11]) == 1) {
+    if (PyBytes_Check(args[11])) {
+        if (PyBytes_GET_SIZE(args[11]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 12 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[11]));
+            goto exit;
+        }
         l = PyBytes_AS_STRING(args[11])[0];
     }
-    else if (PyByteArray_Check(args[11]) && PyByteArray_GET_SIZE(args[11]) == 1) {
+    else if (PyByteArray_Check(args[11])) {
+        if (PyByteArray_GET_SIZE(args[11]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 12 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[11]));
+            goto exit;
+        }
         l = PyByteArray_AS_STRING(args[11])[0];
     }
     else {
@@ -706,10 +874,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 13) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[12]) && PyBytes_GET_SIZE(args[12]) == 1) {
+    if (PyBytes_Check(args[12])) {
+        if (PyBytes_GET_SIZE(args[12]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 13 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[12]));
+            goto exit;
+        }
         m = PyBytes_AS_STRING(args[12])[0];
     }
-    else if (PyByteArray_Check(args[12]) && PyByteArray_GET_SIZE(args[12]) == 1) {
+    else if (PyByteArray_Check(args[12])) {
+        if (PyByteArray_GET_SIZE(args[12]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 13 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[12]));
+            goto exit;
+        }
         m = PyByteArray_AS_STRING(args[12])[0];
     }
     else {
@@ -719,10 +901,24 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 14) {
         goto skip_optional;
     }
-    if (PyBytes_Check(args[13]) && PyBytes_GET_SIZE(args[13]) == 1) {
+    if (PyBytes_Check(args[13])) {
+        if (PyBytes_GET_SIZE(args[13]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 14 must be a byte string of length 1, "
+                "not a bytes object of length %zd",
+                PyBytes_GET_SIZE(args[13]));
+            goto exit;
+        }
         n = PyBytes_AS_STRING(args[13])[0];
     }
-    else if (PyByteArray_Check(args[13]) && PyByteArray_GET_SIZE(args[13]) == 1) {
+    else if (PyByteArray_Check(args[13])) {
+        if (PyByteArray_GET_SIZE(args[13]) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                "test_char_converter(): argument 14 must be a byte string of length 1, "
+                "not a bytearray object of length %zd",
+                PyByteArray_GET_SIZE(args[13]));
+            goto exit;
+        }
         n = PyByteArray_AS_STRING(args[13])[0];
     }
     else {
@@ -740,7 +936,7 @@ static PyObject *
 test_char_converter_impl(PyObject *module, char a, char b, char c, char d,
                          char e, char f, char g, char h, char i, char j,
                          char k, char l, char m, char n)
-/*[clinic end generated code: output=98589f02422fe6b1 input=e42330417a44feac]*/
+/*[clinic end generated code: output=ff11e203248582df input=e42330417a44feac]*/
 
 
 /*[clinic input]
@@ -1009,14 +1205,14 @@ test_int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    a = _PyLong_AsInt(args[0]);
+    a = PyLong_AsInt(args[0]);
     if (a == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (nargs < 2) {
         goto skip_optional;
     }
-    b = _PyLong_AsInt(args[1]);
+    b = PyLong_AsInt(args[1]);
     if (b == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1028,14 +1224,17 @@ test_int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(args[2]) != 1) {
-        _PyArg_BadArgument("test_int_converter", "argument 3", "a unicode character", args[2]);
+        PyErr_Format(PyExc_TypeError,
+            "test_int_converter(): argument 3 must be a unicode character, "
+            "not a string of length %zd",
+            PyUnicode_GET_LENGTH(args[2]));
         goto exit;
     }
     c = PyUnicode_READ_CHAR(args[2], 0);
     if (nargs < 4) {
         goto skip_optional;
     }
-    d = _PyLong_AsInt(args[3]);
+    d = PyLong_AsInt(args[3]);
     if (d == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1048,7 +1247,7 @@ exit:
 
 static PyObject *
 test_int_converter_impl(PyObject *module, int a, int b, int c, myenum d)
-/*[clinic end generated code: output=375eedba5ca9a5b3 input=d20541fc1ca0553e]*/
+/*[clinic end generated code: output=fbcfb7554688663d input=d20541fc1ca0553e]*/
 
 
 /*[clinic input]
@@ -1980,7 +2179,7 @@ test_keywords(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), },
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2014,7 +2213,7 @@ exit:
 
 static PyObject *
 test_keywords_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=73d46a9ae3320f96 input=0d3484844749c05b]*/
+/*[clinic end generated code: output=13ba007e1c842a37 input=0d3484844749c05b]*/
 
 
 /*[clinic input]
@@ -2050,7 +2249,7 @@ test_keywords_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), },
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2084,7 +2283,7 @@ exit:
 
 static PyObject *
 test_keywords_kwonly_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=c9f02a41f425897d input=384adc78bfa0bff7]*/
+/*[clinic end generated code: output=789799a6d2d6eb4d input=384adc78bfa0bff7]*/
 
 
 /*[clinic input]
@@ -2121,7 +2320,7 @@ test_keywords_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), },
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2168,7 +2367,7 @@ exit:
 static PyObject *
 test_keywords_opt_impl(PyObject *module, PyObject *a, PyObject *b,
                        PyObject *c)
-/*[clinic end generated code: output=b35d4e66f7283e46 input=eda7964f784f4607]*/
+/*[clinic end generated code: output=42430dd8ea5afde6 input=eda7964f784f4607]*/
 
 
 /*[clinic input]
@@ -2207,7 +2406,7 @@ test_keywords_opt_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t nar
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), },
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2265,7 +2464,7 @@ exit:
 static PyObject *
 test_keywords_opt_kwonly_impl(PyObject *module, PyObject *a, PyObject *b,
                               PyObject *c, PyObject *d)
-/*[clinic end generated code: output=ede7e6e65106bf2b input=209387a4815e5082]*/
+/*[clinic end generated code: output=f312c35c380d2bf9 input=209387a4815e5082]*/
 
 
 /*[clinic input]
@@ -2303,7 +2502,7 @@ test_keywords_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t nar
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), },
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2350,7 +2549,7 @@ exit:
 static PyObject *
 test_keywords_kwonly_opt_impl(PyObject *module, PyObject *a, PyObject *b,
                               PyObject *c)
-/*[clinic end generated code: output=36d4df939a4c3eef input=18393cc64fa000f4]*/
+/*[clinic end generated code: output=3937da2a8233ebe0 input=18393cc64fa000f4]*/
 
 
 /*[clinic input]
@@ -2386,7 +2585,7 @@ test_posonly_keywords(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(b), },
+        .ob_item = { _Py_LATIN1_CHR('b'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2420,7 +2619,7 @@ exit:
 
 static PyObject *
 test_posonly_keywords_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=4835f4b6cf386c28 input=1767b0ebdf06060e]*/
+/*[clinic end generated code: output=6b4f6dd5f4db3877 input=1767b0ebdf06060e]*/
 
 
 /*[clinic input]
@@ -2457,7 +2656,7 @@ test_posonly_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(c), },
+        .ob_item = { _Py_LATIN1_CHR('c'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2491,7 +2690,7 @@ exit:
 
 static PyObject *
 test_posonly_kwonly_impl(PyObject *module, PyObject *a, PyObject *c)
-/*[clinic end generated code: output=2570ea156a8d3cb5 input=9042f2818f664839]*/
+/*[clinic end generated code: output=8bef2a8198e70b26 input=9042f2818f664839]*/
 
 
 /*[clinic input]
@@ -2530,7 +2729,7 @@ test_posonly_keywords_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(b), &_Py_ID(c), },
+        .ob_item = { _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2567,7 +2766,7 @@ exit:
 static PyObject *
 test_posonly_keywords_kwonly_impl(PyObject *module, PyObject *a, PyObject *b,
                                   PyObject *c)
-/*[clinic end generated code: output=aaa0e6b5ce02900d input=29546ebdca492fea]*/
+/*[clinic end generated code: output=a44b8ae8300955e1 input=29546ebdca492fea]*/
 
 
 /*[clinic input]
@@ -2606,7 +2805,7 @@ test_posonly_keywords_opt(PyObject *module, PyObject *const *args, Py_ssize_t na
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), },
+        .ob_item = { _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2655,7 +2854,7 @@ exit:
 static PyObject *
 test_posonly_keywords_opt_impl(PyObject *module, PyObject *a, PyObject *b,
                                PyObject *c, PyObject *d)
-/*[clinic end generated code: output=1d9f2d8420d0a85f input=cdf5a9625e554e9b]*/
+/*[clinic end generated code: output=cae6647c9e8e0238 input=cdf5a9625e554e9b]*/
 
 
 /*[clinic input]
@@ -2693,7 +2892,7 @@ test_posonly_keywords_opt2(PyObject *module, PyObject *const *args, Py_ssize_t n
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(b), &_Py_ID(c), },
+        .ob_item = { _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2740,7 +2939,7 @@ exit:
 static PyObject *
 test_posonly_keywords_opt2_impl(PyObject *module, PyObject *a, PyObject *b,
                                 PyObject *c)
-/*[clinic end generated code: output=a83caa0505b296cf input=1581299d21d16f14]*/
+/*[clinic end generated code: output=6526fd08aafa2149 input=1581299d21d16f14]*/
 
 
 /*[clinic input]
@@ -2779,7 +2978,7 @@ test_posonly_opt_keywords_opt(PyObject *module, PyObject *const *args, Py_ssize_
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(c), &_Py_ID(d), },
+        .ob_item = { _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2833,7 +3032,7 @@ exit:
 static PyObject *
 test_posonly_opt_keywords_opt_impl(PyObject *module, PyObject *a,
                                    PyObject *b, PyObject *c, PyObject *d)
-/*[clinic end generated code: output=0b24fba3dc04d26b input=408798ec3d42949f]*/
+/*[clinic end generated code: output=b8d01e98443738c2 input=408798ec3d42949f]*/
 
 
 /*[clinic input]
@@ -2873,7 +3072,7 @@ test_posonly_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t narg
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), },
+        .ob_item = { _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2922,7 +3121,7 @@ exit:
 static PyObject *
 test_posonly_kwonly_opt_impl(PyObject *module, PyObject *a, PyObject *b,
                              PyObject *c, PyObject *d)
-/*[clinic end generated code: output=592b217bca2f7bcc input=8d8e5643bbbc2309]*/
+/*[clinic end generated code: output=81d71c288f13d4dc input=8d8e5643bbbc2309]*/
 
 
 /*[clinic input]
@@ -2961,7 +3160,7 @@ test_posonly_kwonly_opt2(PyObject *module, PyObject *const *args, Py_ssize_t nar
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(b), &_Py_ID(c), },
+        .ob_item = { _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -3008,7 +3207,7 @@ exit:
 static PyObject *
 test_posonly_kwonly_opt2_impl(PyObject *module, PyObject *a, PyObject *b,
                               PyObject *c)
-/*[clinic end generated code: output=b8b00420826bc11f input=f7e5eed94f75fff0]*/
+/*[clinic end generated code: output=a717d2a1a3310289 input=f7e5eed94f75fff0]*/
 
 
 /*[clinic input]
@@ -3048,7 +3247,7 @@ test_posonly_opt_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t 
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(c), &_Py_ID(d), },
+        .ob_item = { _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -3102,7 +3301,7 @@ exit:
 static PyObject *
 test_posonly_opt_kwonly_opt_impl(PyObject *module, PyObject *a, PyObject *b,
                                  PyObject *c, PyObject *d)
-/*[clinic end generated code: output=3b9ee879ebee285a input=1e557dc979d120fd]*/
+/*[clinic end generated code: output=0f50b4b8d45cf2de input=1e557dc979d120fd]*/
 
 
 /*[clinic input]
@@ -3144,7 +3343,7 @@ test_posonly_keywords_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssi
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), &_Py_ID(e), },
+        .ob_item = { _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), _Py_LATIN1_CHR('e'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -3196,7 +3395,7 @@ static PyObject *
 test_posonly_keywords_kwonly_opt_impl(PyObject *module, PyObject *a,
                                       PyObject *b, PyObject *c, PyObject *d,
                                       PyObject *e)
-/*[clinic end generated code: output=d380f84f81cc0e45 input=c3884a4f956fdc89]*/
+/*[clinic end generated code: output=8dac8d2a4e6105fa input=c3884a4f956fdc89]*/
 
 
 /*[clinic input]
@@ -3236,7 +3435,7 @@ test_posonly_keywords_kwonly_opt2(PyObject *module, PyObject *const *args, Py_ss
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), },
+        .ob_item = { _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -3285,7 +3484,7 @@ exit:
 static PyObject *
 test_posonly_keywords_kwonly_opt2_impl(PyObject *module, PyObject *a,
                                        PyObject *b, PyObject *c, PyObject *d)
-/*[clinic end generated code: output=ee629e962cb06992 input=68d01d7c0f6dafb0]*/
+/*[clinic end generated code: output=5a96d521e6414f5d input=68d01d7c0f6dafb0]*/
 
 
 /*[clinic input]
@@ -3328,7 +3527,7 @@ test_posonly_keywords_opt_kwonly_opt(PyObject *module, PyObject *const *args, Py
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), &_Py_ID(e), },
+        .ob_item = { _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), _Py_LATIN1_CHR('e'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -3389,7 +3588,7 @@ static PyObject *
 test_posonly_keywords_opt_kwonly_opt_impl(PyObject *module, PyObject *a,
                                           PyObject *b, PyObject *c,
                                           PyObject *d, PyObject *e)
-/*[clinic end generated code: output=a2721babb42ecfd1 input=d0883d45876f186c]*/
+/*[clinic end generated code: output=d5a474dcd5dc3e9f input=d0883d45876f186c]*/
 
 
 /*[clinic input]
@@ -3432,7 +3631,7 @@ test_posonly_keywords_opt2_kwonly_opt(PyObject *module, PyObject *const *args, P
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), &_Py_ID(e), },
+        .ob_item = { _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), _Py_LATIN1_CHR('e'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -3498,7 +3697,7 @@ static PyObject *
 test_posonly_keywords_opt2_kwonly_opt_impl(PyObject *module, PyObject *a,
                                            PyObject *b, PyObject *c,
                                            PyObject *d, PyObject *e)
-/*[clinic end generated code: output=0626203eedb6e7e8 input=c95e2e1ec93035ad]*/
+/*[clinic end generated code: output=ac239c5ee8a74408 input=c95e2e1ec93035ad]*/
 
 
 /*[clinic input]
@@ -3543,7 +3742,7 @@ test_posonly_opt_keywords_opt_kwonly_opt(PyObject *module, PyObject *const *args
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(c), &_Py_ID(d), &_Py_ID(e), &_Py_ID(f), },
+        .ob_item = { _Py_LATIN1_CHR('c'), _Py_LATIN1_CHR('d'), _Py_LATIN1_CHR('e'), _Py_LATIN1_CHR('f'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -3617,7 +3816,7 @@ test_posonly_opt_keywords_opt_kwonly_opt_impl(PyObject *module, PyObject *a,
                                               PyObject *b, PyObject *c,
                                               PyObject *d, PyObject *e,
                                               PyObject *f)
-/*[clinic end generated code: output=07d8acc04558a5a0 input=9914857713c5bbf8]*/
+/*[clinic end generated code: output=638bbd0005639342 input=9914857713c5bbf8]*/
 
 /*[clinic input]
 test_keyword_only_parameter
@@ -3935,8 +4134,8 @@ test_vararg_and_posonly
 
 
     a: object
-    *args: object
     /
+    *args: object
 
 [clinic start generated code]*/
 
@@ -3978,7 +4177,7 @@ exit:
 
 static PyObject *
 test_vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=79b75dc07decc8d6 input=08dc2bf7afbf1613]*/
+/*[clinic end generated code: output=79b75dc07decc8d6 input=9cfa748bbff09877]*/
 
 /*[clinic input]
 test_vararg
@@ -4013,7 +4212,7 @@ test_vararg(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), },
+        .ob_item = { _Py_LATIN1_CHR('a'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -4048,7 +4247,7 @@ exit:
 
 static PyObject *
 test_vararg_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=880365c61ae205d7 input=81d33815ad1bae6e]*/
+/*[clinic end generated code: output=1411e464f358a7ba input=81d33815ad1bae6e]*/
 
 /*[clinic input]
 test_vararg_with_default
@@ -4085,7 +4284,7 @@ test_vararg_with_default(PyObject *module, PyObject *const *args, Py_ssize_t nar
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), },
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -4131,7 +4330,7 @@ exit:
 static PyObject *
 test_vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
                               int b)
-/*[clinic end generated code: output=291e9a5a09831128 input=6e110b54acd9b22d]*/
+/*[clinic end generated code: output=f09d4b917063ca41 input=6e110b54acd9b22d]*/
 
 /*[clinic input]
 test_vararg_with_only_defaults
@@ -4168,7 +4367,7 @@ test_vararg_with_only_defaults(PyObject *module, PyObject *const *args, Py_ssize
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(b), &_Py_ID(c), },
+        .ob_item = { _Py_LATIN1_CHR('b'), _Py_LATIN1_CHR('c'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -4219,7 +4418,7 @@ exit:
 static PyObject *
 test_vararg_with_only_defaults_impl(PyObject *module, PyObject *args, int b,
                                     PyObject *c)
-/*[clinic end generated code: output=dd21b28f0db26a4b input=fa56a709a035666e]*/
+/*[clinic end generated code: output=cc6590b8805d5433 input=fa56a709a035666e]*/
 
 /*[clinic input]
 test_paramname_module
@@ -4486,7 +4685,7 @@ Test_cls_with_param(TestObj *self, PyTypeObject *cls, PyObject *const *args, Py_
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), },
+        .ob_item = { _Py_LATIN1_CHR('a'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -4509,7 +4708,7 @@ Test_cls_with_param(TestObj *self, PyTypeObject *cls, PyObject *const *args, Py_
     if (!args) {
         goto exit;
     }
-    a = _PyLong_AsInt(args[0]);
+    a = PyLong_AsInt(args[0]);
     if (a == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -4521,7 +4720,7 @@ exit:
 
 static PyObject *
 Test_cls_with_param_impl(TestObj *self, PyTypeObject *cls, int a)
-/*[clinic end generated code: output=00218e7f583e6c81 input=af158077bd237ef9]*/
+/*[clinic end generated code: output=a3a968137b0f320a input=af158077bd237ef9]*/
 
 
 /*[clinic input]
@@ -4625,7 +4824,7 @@ Test_cls_no_params_impl(TestObj *self, PyTypeObject *cls);
 static PyObject *
 Test_cls_no_params(TestObj *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "cls_no_params() takes no arguments");
         return NULL;
     }
@@ -4634,7 +4833,7 @@ Test_cls_no_params(TestObj *self, PyTypeObject *cls, PyObject *const *args, Py_s
 
 static PyObject *
 Test_cls_no_params_impl(TestObj *self, PyTypeObject *cls)
-/*[clinic end generated code: output=cc8845f22cff3dcb input=e7e2e4e344e96a11]*/
+/*[clinic end generated code: output=4d68b4652c144af3 input=e7e2e4e344e96a11]*/
 
 
 /*[clinic input]
@@ -4703,7 +4902,7 @@ Test_an_metho_arg_named_arg(TestObj *self, PyObject *arg_)
     PyObject *return_value = NULL;
     int arg;
 
-    arg = _PyLong_AsInt(arg_);
+    arg = PyLong_AsInt(arg_);
     if (arg == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -4715,13 +4914,13 @@ exit:
 
 static PyObject *
 Test_an_metho_arg_named_arg_impl(TestObj *self, int arg)
-/*[clinic end generated code: output=7d590626642194ae input=2a53a57cf5624f95]*/
+/*[clinic end generated code: output=9f04de4a62287e28 input=2a53a57cf5624f95]*/
 
 
 /*[clinic input]
 Test.__init__
     *args: object
-    /
+
 Varargs init method. For example, nargs is translated to PyTuple_GET_SIZE.
 [clinic start generated code]*/
 
@@ -4759,14 +4958,14 @@ exit:
 
 static int
 Test___init___impl(TestObj *self, PyObject *args)
-/*[clinic end generated code: output=0ed1009fe0dcf98d input=96c3ddc0cd38fc0c]*/
+/*[clinic end generated code: output=0ed1009fe0dcf98d input=2a8bd0033c9ac772]*/
 
 
 /*[clinic input]
 @classmethod
 Test.__new__
     *args: object
-    /
+
 Varargs new method. For example, nargs is translated to PyTuple_GET_SIZE.
 [clinic start generated code]*/
 
@@ -4803,7 +5002,7 @@ exit:
 
 static PyObject *
 Test_impl(PyTypeObject *type, PyObject *args)
-/*[clinic end generated code: output=8b219f6633e2a2e9 input=26a672e2e9750120]*/
+/*[clinic end generated code: output=8b219f6633e2a2e9 input=70ad829df3dd9b84]*/
 
 
 /*[clinic input]
@@ -4834,7 +5033,7 @@ Test___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), },
+        .ob_item = { _Py_LATIN1_CHR('a'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -4868,7 +5067,7 @@ exit:
 
 static int
 Test___init___impl(TestObj *self, PyObject *a)
-/*[clinic end generated code: output=0b9ca79638ab3ecb input=a8f9222a6ab35c59]*/
+/*[clinic end generated code: output=0e1239b9bc247bc1 input=a8f9222a6ab35c59]*/
 
 
 /*[clinic input]
@@ -4951,6 +5150,69 @@ static PyObject *
 Test_meth_coexist_impl(TestObj *self)
 /*[clinic end generated code: output=808a293d0cd27439 input=2a1d75b5e6fec6dd]*/
 
+/*[clinic input]
+@getter
+Test.property
+[clinic start generated code]*/
+
+#if defined(Test_property_HAS_DOCSTR)
+#  define Test_property_DOCSTR Test_property__doc__
+#else
+#  define Test_property_DOCSTR NULL
+#endif
+#if defined(TEST_PROPERTY_GETSETDEF)
+#  undef TEST_PROPERTY_GETSETDEF
+#  define TEST_PROPERTY_GETSETDEF {"property", (getter)Test_property_get, (setter)Test_property_set, Test_property_DOCSTR},
+#else
+#  define TEST_PROPERTY_GETSETDEF {"property", (getter)Test_property_get, NULL, Test_property_DOCSTR},
+#endif
+
+static PyObject *
+Test_property_get_impl(TestObj *self);
+
+static PyObject *
+Test_property_get(TestObj *self, void *Py_UNUSED(context))
+{
+    return Test_property_get_impl(self);
+}
+
+static PyObject *
+Test_property_get_impl(TestObj *self)
+/*[clinic end generated code: output=27b519719d992e03 input=2d92b3449fbc7d2b]*/
+
+/*[clinic input]
+@setter
+Test.property
+[clinic start generated code]*/
+
+#if defined(TEST_PROPERTY_HAS_DOCSTR)
+#  define Test_property_DOCSTR Test_property__doc__
+#else
+#  define Test_property_DOCSTR NULL
+#endif
+#if defined(TEST_PROPERTY_GETSETDEF)
+#  undef TEST_PROPERTY_GETSETDEF
+#  define TEST_PROPERTY_GETSETDEF {"property", (getter)Test_property_get, (setter)Test_property_set, Test_property_DOCSTR},
+#else
+#  define TEST_PROPERTY_GETSETDEF {"property", NULL, (setter)Test_property_set, NULL},
+#endif
+
+static int
+Test_property_set_impl(TestObj *self, PyObject *value);
+
+static int
+Test_property_set(TestObj *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    return_value = Test_property_set_impl(self, value);
+
+    return return_value;
+}
+
+static int
+Test_property_set_impl(TestObj *self, PyObject *value)
+/*[clinic end generated code: output=d51023f17c4ac3a1 input=3bc3f46a23c83a88]*/
 
 /*[clinic input]
 output push
@@ -5039,7 +5301,7 @@ mangled_c_keyword_identifier(PyObject *module, PyObject *const *args, Py_ssize_t
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(i), },
+        .ob_item = { _Py_LATIN1_CHR('i'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -5062,7 +5324,7 @@ mangled_c_keyword_identifier(PyObject *module, PyObject *const *args, Py_ssize_t
     if (!args) {
         goto exit;
     }
-    int_value = _PyLong_AsInt(args[0]);
+    int_value = PyLong_AsInt(args[0]);
     if (int_value == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -5074,7 +5336,7 @@ exit:
 
 static PyObject *
 mangled_c_keyword_identifier_impl(PyObject *module, int int_value)
-/*[clinic end generated code: output=c049d7d79be26cda input=060876448ab567a2]*/
+/*[clinic end generated code: output=01a8088b57632916 input=060876448ab567a2]*/
 
 
 /*[clinic input]
@@ -5269,52 +5531,6 @@ Test__pyarg_parsestackandkeywords_impl(TestObj *self, PyTypeObject *cls,
 
 
 /*[clinic input]
-Test.__init__ -> long
-Test overriding the __init__ return converter
-[clinic start generated code]*/
-
-PyDoc_STRVAR(Test___init____doc__,
-"Test()\n"
-"--\n"
-"\n"
-"Test overriding the __init__ return converter");
-
-static long
-Test___init___impl(TestObj *self);
-
-static int
-Test___init__(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    int return_value = -1;
-    PyTypeObject *base_tp = TestType;
-    long _return_value;
-
-    if ((Py_IS_TYPE(self, base_tp) ||
-         Py_TYPE(self)->tp_new == base_tp->tp_new) &&
-        !_PyArg_NoPositional("Test", args)) {
-        goto exit;
-    }
-    if ((Py_IS_TYPE(self, base_tp) ||
-         Py_TYPE(self)->tp_new == base_tp->tp_new) &&
-        !_PyArg_NoKeywords("Test", kwargs)) {
-        goto exit;
-    }
-    _return_value = Test___init___impl((TestObj *)self);
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromLong(_return_value);
-
-exit:
-    return return_value;
-}
-
-static long
-Test___init___impl(TestObj *self)
-/*[clinic end generated code: output=daf6ee12c4e443fb input=311af0dc7f17e8e9]*/
-
-
-/*[clinic input]
 fn_with_default_binop_expr
     arg: object(c_default='CONST_A + CONST_B') = a+b
 [clinic start generated code]*/
@@ -5432,7 +5648,7 @@ docstr_fallback_to_converter_default(PyObject *module, PyObject *const *args, Py
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), },
+        .ob_item = { _Py_LATIN1_CHR('a'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -5466,1165 +5682,249 @@ exit:
 
 static PyObject *
 docstr_fallback_to_converter_default_impl(PyObject *module, str a)
-/*[clinic end generated code: output=ae24a9c6f60ee8a6 input=0cbe6a4d24bc2274]*/
+/*[clinic end generated code: output=3fff7b702f0065cb input=0cbe6a4d24bc2274]*/
 
 
 /*[clinic input]
-test_deprecate_positional_pos1_len1_optional
-    a: object
-    * [from 3.14]
-    b: object = None
+@critical_section
+test_critical_section
 [clinic start generated code]*/
 
-PyDoc_STRVAR(test_deprecate_positional_pos1_len1_optional__doc__,
-"test_deprecate_positional_pos1_len1_optional($module, /, a, b=None)\n"
+PyDoc_STRVAR(test_critical_section__doc__,
+"test_critical_section($module, /)\n"
 "--\n"
-"\n"
-"Note: Passing 2 positional arguments to\n"
-"test_deprecate_positional_pos1_len1_optional() is deprecated.\n"
-"Parameter \'b\' will become a keyword-only parameter in Python 3.14.\n"
-"");
+"\n");
 
-#define TEST_DEPRECATE_POSITIONAL_POS1_LEN1_OPTIONAL_METHODDEF    \
-    {"test_deprecate_positional_pos1_len1_optional", _PyCFunction_CAST(test_deprecate_positional_pos1_len1_optional), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_pos1_len1_optional__doc__},
+#define TEST_CRITICAL_SECTION_METHODDEF    \
+    {"test_critical_section", (PyCFunction)test_critical_section, METH_NOARGS, test_critical_section__doc__},
 
 static PyObject *
-test_deprecate_positional_pos1_len1_optional_impl(PyObject *module,
-                                                  PyObject *a, PyObject *b);
+test_critical_section_impl(PyObject *module);
 
 static PyObject *
-test_deprecate_positional_pos1_len1_optional(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+test_critical_section(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+    Py_BEGIN_CRITICAL_SECTION(module);
+    return_value = test_critical_section_impl(module);
+    Py_END_CRITICAL_SECTION();
 
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
+    return return_value;
+}
 
-    static const char * const _keywords[] = {"a", "b", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "test_deprecate_positional_pos1_len1_optional",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+static PyObject *
+test_critical_section_impl(PyObject *module)
+/*[clinic end generated code: output=9d5a87bb28aa3f0c input=8c58956d6ff00f80]*/
+
+
+/*[clinic input]
+@critical_section
+test_critical_section_meth_o
+    a: object(subclass_of="&PyUnicode_Type")
+    /
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_critical_section_meth_o__doc__,
+"test_critical_section_meth_o($module, a, /)\n"
+"--\n"
+"\n");
+
+#define TEST_CRITICAL_SECTION_METH_O_METHODDEF    \
+    {"test_critical_section_meth_o", (PyCFunction)test_critical_section_meth_o, METH_O, test_critical_section_meth_o__doc__},
+
+static PyObject *
+test_critical_section_meth_o_impl(PyObject *module, PyObject *a);
+
+static PyObject *
+test_critical_section_meth_o(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
     PyObject *a;
-    PyObject *b = Py_None;
 
-    // Emit compiler warnings when we get to Python 3.14.
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error \
-            "In clinic.test.c, update parameter(s) 'b' in the clinic input of" \
-            " 'test_deprecate_positional_pos1_len1_optional' to be " \
-            "keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ( \
-            "In clinic.test.c, update parameter(s) 'b' in the clinic input of" \
-            " 'test_deprecate_positional_pos1_len1_optional' to be " \
-            "keyword-only.")
-    #  else
-    #    warning \
-            "In clinic.test.c, update parameter(s) 'b' in the clinic input of" \
-            " 'test_deprecate_positional_pos1_len1_optional' to be " \
-            "keyword-only."
-    #  endif
-    #endif
-    if (nargs == 2) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                "Passing 2 positional arguments to "
-                "test_deprecate_positional_pos1_len1_optional() is deprecated. "
-                "Parameter 'b' will become a keyword-only parameter in Python "
-                "3.14.", 1))
-        {
-                goto exit;
-        }
-    }
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
-    if (!args) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("test_critical_section_meth_o", "argument", "str", arg);
         goto exit;
     }
-    a = args[0];
-    if (!noptargs) {
-        goto skip_optional_pos;
-    }
-    b = args[1];
-skip_optional_pos:
-    return_value = test_deprecate_positional_pos1_len1_optional_impl(module, a, b);
+    a = arg;
+    Py_BEGIN_CRITICAL_SECTION(module);
+    return_value = test_critical_section_meth_o_impl(module, a);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
 }
 
 static PyObject *
-test_deprecate_positional_pos1_len1_optional_impl(PyObject *module,
-                                                  PyObject *a, PyObject *b)
-/*[clinic end generated code: output=144cbf1adc574dd9 input=89099f3dacd757da]*/
-
+test_critical_section_meth_o_impl(PyObject *module, PyObject *a)
+/*[clinic end generated code: output=7a9d7420802d1202 input=376533f51eceb6c3]*/
 
 /*[clinic input]
-test_deprecate_positional_pos1_len1
-    a: object
-    * [from 3.14]
-    b: object
+@critical_section a
+test_critical_section_object
+    a: object(subclass_of="&PyUnicode_Type")
+    /
+test_critical_section_object
 [clinic start generated code]*/
 
-PyDoc_STRVAR(test_deprecate_positional_pos1_len1__doc__,
-"test_deprecate_positional_pos1_len1($module, /, a, b)\n"
+PyDoc_STRVAR(test_critical_section_object__doc__,
+"test_critical_section_object($module, a, /)\n"
 "--\n"
 "\n"
-"Note: Passing 2 positional arguments to\n"
-"test_deprecate_positional_pos1_len1() is deprecated. Parameter \'b\'\n"
-"will become a keyword-only parameter in Python 3.14.\n"
-"");
+"test_critical_section_object");
 
-#define TEST_DEPRECATE_POSITIONAL_POS1_LEN1_METHODDEF    \
-    {"test_deprecate_positional_pos1_len1", _PyCFunction_CAST(test_deprecate_positional_pos1_len1), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_pos1_len1__doc__},
+#define TEST_CRITICAL_SECTION_OBJECT_METHODDEF    \
+    {"test_critical_section_object", (PyCFunction)test_critical_section_object, METH_O, test_critical_section_object__doc__},
 
 static PyObject *
-test_deprecate_positional_pos1_len1_impl(PyObject *module, PyObject *a,
-                                         PyObject *b);
+test_critical_section_object_impl(PyObject *module, PyObject *a);
 
 static PyObject *
-test_deprecate_positional_pos1_len1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+test_critical_section_object(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    PyObject *a;
 
-    #define NUM_KEYWORDS 2
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("test_critical_section_object", "argument", "str", arg);
+        goto exit;
+    }
+    a = arg;
+    Py_BEGIN_CRITICAL_SECTION(a);
+    return_value = test_critical_section_object_impl(module, a);
+    Py_END_CRITICAL_SECTION();
 
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
+exit:
+    return return_value;
+}
 
-    static const char * const _keywords[] = {"a", "b", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "test_deprecate_positional_pos1_len1",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
+static PyObject *
+test_critical_section_object_impl(PyObject *module, PyObject *a)
+/*[clinic end generated code: output=ec06df92232b0fb5 input=6f67f91b523c875f]*/
+
+PyDoc_STRVAR(test_critical_section_object__doc__,
+"test_critical_section_object($module, a, /)\n"
+"--\n"
+"\n"
+"test_critical_section_object");
+
+#define TEST_CRITICAL_SECTION_OBJECT_METHODDEF    \
+    {"test_critical_section_object", (PyCFunction)test_critical_section_object, METH_O, test_critical_section_object__doc__},
+
+static PyObject *
+test_critical_section_object_impl(PyObject *module, PyObject *a);
+
+static PyObject *
+test_critical_section_object(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("test_critical_section_object", "argument", "str", arg);
+        goto exit;
+    }
+    a = arg;
+    Py_BEGIN_CRITICAL_SECTION(a);
+    return_value = test_critical_section_object_impl(module, a);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+/*[clinic input]
+@critical_section a b
+test_critical_section_object2
+    a: object(subclass_of="&PyUnicode_Type")
+    b: object(subclass_of="&PyUnicode_Type")
+    /
+test_critical_section_object2
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_critical_section_object2__doc__,
+"test_critical_section_object2($module, a, b, /)\n"
+"--\n"
+"\n"
+"test_critical_section_object2");
+
+#define TEST_CRITICAL_SECTION_OBJECT2_METHODDEF    \
+    {"test_critical_section_object2", _PyCFunction_CAST(test_critical_section_object2), METH_FASTCALL, test_critical_section_object2__doc__},
+
+static PyObject *
+test_critical_section_object2_impl(PyObject *module, PyObject *a,
+                                   PyObject *b);
+
+static PyObject *
+test_critical_section_object2(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
     PyObject *a;
     PyObject *b;
 
-    // Emit compiler warnings when we get to Python 3.14.
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error \
-            "In clinic.test.c, update parameter(s) 'b' in the clinic input of" \
-            " 'test_deprecate_positional_pos1_len1' to be keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ( \
-            "In clinic.test.c, update parameter(s) 'b' in the clinic input of" \
-            " 'test_deprecate_positional_pos1_len1' to be keyword-only.")
-    #  else
-    #    warning \
-            "In clinic.test.c, update parameter(s) 'b' in the clinic input of" \
-            " 'test_deprecate_positional_pos1_len1' to be keyword-only."
-    #  endif
-    #endif
-    if (nargs == 2) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                "Passing 2 positional arguments to "
-                "test_deprecate_positional_pos1_len1() is deprecated. Parameter "
-                "'b' will become a keyword-only parameter in Python 3.14.", 1))
-        {
-                goto exit;
-        }
+    if (!_PyArg_CheckPositional("test_critical_section_object2", nargs, 2, 2)) {
+        goto exit;
     }
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
-    if (!args) {
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("test_critical_section_object2", "argument 1", "str", args[0]);
         goto exit;
     }
     a = args[0];
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("test_critical_section_object2", "argument 2", "str", args[1]);
+        goto exit;
+    }
     b = args[1];
-    return_value = test_deprecate_positional_pos1_len1_impl(module, a, b);
+    Py_BEGIN_CRITICAL_SECTION2(a, b);
+    return_value = test_critical_section_object2_impl(module, a, b);
+    Py_END_CRITICAL_SECTION2();
 
 exit:
     return return_value;
 }
 
 static PyObject *
-test_deprecate_positional_pos1_len1_impl(PyObject *module, PyObject *a,
-                                         PyObject *b)
-/*[clinic end generated code: output=994bd57c1c634709 input=1702bbab1e9b3b99]*/
+test_critical_section_object2_impl(PyObject *module, PyObject *a,
+                                   PyObject *b)
+/*[clinic end generated code: output=d73a1657c18df17a input=638824e41419a466]*/
 
-
-/*[clinic input]
-test_deprecate_positional_pos1_len2_with_kwd
-    a: object
-    * [from 3.14]
-    b: object
-    c: object
-    *
-    d: object
-[clinic start generated code]*/
-
-PyDoc_STRVAR(test_deprecate_positional_pos1_len2_with_kwd__doc__,
-"test_deprecate_positional_pos1_len2_with_kwd($module, /, a, b, c, *, d)\n"
+PyDoc_STRVAR(test_critical_section_object2__doc__,
+"test_critical_section_object2($module, a, b, /)\n"
 "--\n"
 "\n"
-"Note: Passing more than 1 positional argument to\n"
-"test_deprecate_positional_pos1_len2_with_kwd() is deprecated.\n"
-"Parameters \'b\' and \'c\' will become keyword-only parameters in Python\n"
-"3.14.\n"
-"");
+"test_critical_section_object2");
 
-#define TEST_DEPRECATE_POSITIONAL_POS1_LEN2_WITH_KWD_METHODDEF    \
-    {"test_deprecate_positional_pos1_len2_with_kwd", _PyCFunction_CAST(test_deprecate_positional_pos1_len2_with_kwd), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_pos1_len2_with_kwd__doc__},
+#define TEST_CRITICAL_SECTION_OBJECT2_METHODDEF    \
+    {"test_critical_section_object2", _PyCFunction_CAST(test_critical_section_object2), METH_FASTCALL, test_critical_section_object2__doc__},
 
 static PyObject *
-test_deprecate_positional_pos1_len2_with_kwd_impl(PyObject *module,
-                                                  PyObject *a, PyObject *b,
-                                                  PyObject *c, PyObject *d);
+test_critical_section_object2_impl(PyObject *module, PyObject *a,
+                                   PyObject *b);
 
 static PyObject *
-test_deprecate_positional_pos1_len2_with_kwd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+test_critical_section_object2(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 4
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"a", "b", "c", "d", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "test_deprecate_positional_pos1_len2_with_kwd",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[4];
-    PyObject *a;
-    PyObject *b;
-    PyObject *c;
-    PyObject *d;
-
-    // Emit compiler warnings when we get to Python 3.14.
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error \
-            "In clinic.test.c, update parameter(s) 'b' and 'c' in the clinic " \
-            "input of 'test_deprecate_positional_pos1_len2_with_kwd' to be " \
-            "keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ( \
-            "In clinic.test.c, update parameter(s) 'b' and 'c' in the clinic " \
-            "input of 'test_deprecate_positional_pos1_len2_with_kwd' to be " \
-            "keyword-only.")
-    #  else
-    #    warning \
-            "In clinic.test.c, update parameter(s) 'b' and 'c' in the clinic " \
-            "input of 'test_deprecate_positional_pos1_len2_with_kwd' to be " \
-            "keyword-only."
-    #  endif
-    #endif
-    if (nargs > 1 && nargs <= 3) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                "Passing more than 1 positional argument to "
-                "test_deprecate_positional_pos1_len2_with_kwd() is deprecated. "
-                "Parameters 'b' and 'c' will become keyword-only parameters in "
-                "Python 3.14.", 1))
-        {
-                goto exit;
-        }
-    }
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 1, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    a = args[0];
-    b = args[1];
-    c = args[2];
-    d = args[3];
-    return_value = test_deprecate_positional_pos1_len2_with_kwd_impl(module, a, b, c, d);
-
-exit:
-    return return_value;
-}
-
-static PyObject *
-test_deprecate_positional_pos1_len2_with_kwd_impl(PyObject *module,
-                                                  PyObject *a, PyObject *b,
-                                                  PyObject *c, PyObject *d)
-/*[clinic end generated code: output=146c60ecbcdbf4b8 input=28cdb885f6c34eab]*/
-
-
-/*[clinic input]
-test_deprecate_positional_pos0_len1
-    * [from 3.14]
-    a: object
-[clinic start generated code]*/
-
-PyDoc_STRVAR(test_deprecate_positional_pos0_len1__doc__,
-"test_deprecate_positional_pos0_len1($module, /, a)\n"
-"--\n"
-"\n"
-"Note: Passing positional arguments to\n"
-"test_deprecate_positional_pos0_len1() is deprecated. Parameter \'a\'\n"
-"will become a keyword-only parameter in Python 3.14.\n"
-"");
-
-#define TEST_DEPRECATE_POSITIONAL_POS0_LEN1_METHODDEF    \
-    {"test_deprecate_positional_pos0_len1", _PyCFunction_CAST(test_deprecate_positional_pos0_len1), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_pos0_len1__doc__},
-
-static PyObject *
-test_deprecate_positional_pos0_len1_impl(PyObject *module, PyObject *a);
-
-static PyObject *
-test_deprecate_positional_pos0_len1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"a", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "test_deprecate_positional_pos0_len1",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    PyObject *a;
-
-    // Emit compiler warnings when we get to Python 3.14.
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error \
-            "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
-            " 'test_deprecate_positional_pos0_len1' to be keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ( \
-            "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
-            " 'test_deprecate_positional_pos0_len1' to be keyword-only.")
-    #  else
-    #    warning \
-            "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
-            " 'test_deprecate_positional_pos0_len1' to be keyword-only."
-    #  endif
-    #endif
-    if (nargs == 1) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                "Passing positional arguments to "
-                "test_deprecate_positional_pos0_len1() is deprecated. Parameter "
-                "'a' will become a keyword-only parameter in Python 3.14.", 1))
-        {
-                goto exit;
-        }
-    }
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    a = args[0];
-    return_value = test_deprecate_positional_pos0_len1_impl(module, a);
-
-exit:
-    return return_value;
-}
-
-static PyObject *
-test_deprecate_positional_pos0_len1_impl(PyObject *module, PyObject *a)
-/*[clinic end generated code: output=dce99971a2494f9f input=678206db25c0652c]*/
-
-
-/*[clinic input]
-test_deprecate_positional_pos0_len2
-    * [from 3.14]
-    a: object
-    b: object
-[clinic start generated code]*/
-
-PyDoc_STRVAR(test_deprecate_positional_pos0_len2__doc__,
-"test_deprecate_positional_pos0_len2($module, /, a, b)\n"
-"--\n"
-"\n"
-"Note: Passing positional arguments to\n"
-"test_deprecate_positional_pos0_len2() is deprecated. Parameters \'a\'\n"
-"and \'b\' will become keyword-only parameters in Python 3.14.\n"
-"");
-
-#define TEST_DEPRECATE_POSITIONAL_POS0_LEN2_METHODDEF    \
-    {"test_deprecate_positional_pos0_len2", _PyCFunction_CAST(test_deprecate_positional_pos0_len2), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_pos0_len2__doc__},
-
-static PyObject *
-test_deprecate_positional_pos0_len2_impl(PyObject *module, PyObject *a,
-                                         PyObject *b);
-
-static PyObject *
-test_deprecate_positional_pos0_len2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 2
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"a", "b", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "test_deprecate_positional_pos0_len2",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *a;
     PyObject *b;
 
-    // Emit compiler warnings when we get to Python 3.14.
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error \
-            "In clinic.test.c, update parameter(s) 'a' and 'b' in the clinic " \
-            "input of 'test_deprecate_positional_pos0_len2' to be " \
-            "keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ( \
-            "In clinic.test.c, update parameter(s) 'a' and 'b' in the clinic " \
-            "input of 'test_deprecate_positional_pos0_len2' to be " \
-            "keyword-only.")
-    #  else
-    #    warning \
-            "In clinic.test.c, update parameter(s) 'a' and 'b' in the clinic " \
-            "input of 'test_deprecate_positional_pos0_len2' to be " \
-            "keyword-only."
-    #  endif
-    #endif
-    if (nargs > 0 && nargs <= 2) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                "Passing positional arguments to "
-                "test_deprecate_positional_pos0_len2() is deprecated. Parameters "
-                "'a' and 'b' will become keyword-only parameters in Python 3.14.", 1))
-        {
-                goto exit;
-        }
+    if (!_PyArg_CheckPositional("test_critical_section_object2", nargs, 2, 2)) {
+        goto exit;
     }
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
-    if (!args) {
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("test_critical_section_object2", "argument 1", "str", args[0]);
         goto exit;
     }
     a = args[0];
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("test_critical_section_object2", "argument 2", "str", args[1]);
+        goto exit;
+    }
     b = args[1];
-    return_value = test_deprecate_positional_pos0_len2_impl(module, a, b);
+    Py_BEGIN_CRITICAL_SECTION2(a, b);
+    return_value = test_critical_section_object2_impl(module, a, b);
+    Py_END_CRITICAL_SECTION2();
 
 exit:
     return return_value;
 }
-
-static PyObject *
-test_deprecate_positional_pos0_len2_impl(PyObject *module, PyObject *a,
-                                         PyObject *b)
-/*[clinic end generated code: output=06999692e0c8dac4 input=fae0d0b1d480c939]*/
-
-
-/*[clinic input]
-test_deprecate_positional_pos0_len3_with_kwdonly
-    * [from 3.14]
-    a: object
-    b: object
-    c: object
-    *
-    e: object
-[clinic start generated code]*/
-
-PyDoc_STRVAR(test_deprecate_positional_pos0_len3_with_kwdonly__doc__,
-"test_deprecate_positional_pos0_len3_with_kwdonly($module, /, a, b, c,\n"
-"                                                 *, e)\n"
-"--\n"
-"\n"
-"Note: Passing positional arguments to\n"
-"test_deprecate_positional_pos0_len3_with_kwdonly() is deprecated.\n"
-"Parameters \'a\', \'b\' and \'c\' will become keyword-only parameters in\n"
-"Python 3.14.\n"
-"");
-
-#define TEST_DEPRECATE_POSITIONAL_POS0_LEN3_WITH_KWDONLY_METHODDEF    \
-    {"test_deprecate_positional_pos0_len3_with_kwdonly", _PyCFunction_CAST(test_deprecate_positional_pos0_len3_with_kwdonly), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_pos0_len3_with_kwdonly__doc__},
-
-static PyObject *
-test_deprecate_positional_pos0_len3_with_kwdonly_impl(PyObject *module,
-                                                      PyObject *a,
-                                                      PyObject *b,
-                                                      PyObject *c,
-                                                      PyObject *e);
-
-static PyObject *
-test_deprecate_positional_pos0_len3_with_kwdonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 4
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), &_Py_ID(e), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"a", "b", "c", "e", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "test_deprecate_positional_pos0_len3_with_kwdonly",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[4];
-    PyObject *a;
-    PyObject *b;
-    PyObject *c;
-    PyObject *e;
-
-    // Emit compiler warnings when we get to Python 3.14.
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error \
-            "In clinic.test.c, update parameter(s) 'a', 'b' and 'c' in the " \
-            "clinic input of " \
-            "'test_deprecate_positional_pos0_len3_with_kwdonly' to be " \
-            "keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ( \
-            "In clinic.test.c, update parameter(s) 'a', 'b' and 'c' in the " \
-            "clinic input of " \
-            "'test_deprecate_positional_pos0_len3_with_kwdonly' to be " \
-            "keyword-only.")
-    #  else
-    #    warning \
-            "In clinic.test.c, update parameter(s) 'a', 'b' and 'c' in the " \
-            "clinic input of " \
-            "'test_deprecate_positional_pos0_len3_with_kwdonly' to be " \
-            "keyword-only."
-    #  endif
-    #endif
-    if (nargs > 0 && nargs <= 3) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                "Passing positional arguments to "
-                "test_deprecate_positional_pos0_len3_with_kwdonly() is "
-                "deprecated. Parameters 'a', 'b' and 'c' will become keyword-only"
-                " parameters in Python 3.14.", 1))
-        {
-                goto exit;
-        }
-    }
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 1, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    a = args[0];
-    b = args[1];
-    c = args[2];
-    e = args[3];
-    return_value = test_deprecate_positional_pos0_len3_with_kwdonly_impl(module, a, b, c, e);
-
-exit:
-    return return_value;
-}
-
-static PyObject *
-test_deprecate_positional_pos0_len3_with_kwdonly_impl(PyObject *module,
-                                                      PyObject *a,
-                                                      PyObject *b,
-                                                      PyObject *c,
-                                                      PyObject *e)
-/*[clinic end generated code: output=a553e33101dc42b2 input=1b0121770c0c52e0]*/
-
-
-/*[clinic input]
-test_deprecate_positional_pos2_len1
-    a: object
-    b: object
-    * [from 3.14]
-    c: object
-[clinic start generated code]*/
-
-PyDoc_STRVAR(test_deprecate_positional_pos2_len1__doc__,
-"test_deprecate_positional_pos2_len1($module, /, a, b, c)\n"
-"--\n"
-"\n"
-"Note: Passing 3 positional arguments to\n"
-"test_deprecate_positional_pos2_len1() is deprecated. Parameter \'c\'\n"
-"will become a keyword-only parameter in Python 3.14.\n"
-"");
-
-#define TEST_DEPRECATE_POSITIONAL_POS2_LEN1_METHODDEF    \
-    {"test_deprecate_positional_pos2_len1", _PyCFunction_CAST(test_deprecate_positional_pos2_len1), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_pos2_len1__doc__},
-
-static PyObject *
-test_deprecate_positional_pos2_len1_impl(PyObject *module, PyObject *a,
-                                         PyObject *b, PyObject *c);
-
-static PyObject *
-test_deprecate_positional_pos2_len1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 3
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"a", "b", "c", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "test_deprecate_positional_pos2_len1",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[3];
-    PyObject *a;
-    PyObject *b;
-    PyObject *c;
-
-    // Emit compiler warnings when we get to Python 3.14.
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error \
-            "In clinic.test.c, update parameter(s) 'c' in the clinic input of" \
-            " 'test_deprecate_positional_pos2_len1' to be keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ( \
-            "In clinic.test.c, update parameter(s) 'c' in the clinic input of" \
-            " 'test_deprecate_positional_pos2_len1' to be keyword-only.")
-    #  else
-    #    warning \
-            "In clinic.test.c, update parameter(s) 'c' in the clinic input of" \
-            " 'test_deprecate_positional_pos2_len1' to be keyword-only."
-    #  endif
-    #endif
-    if (nargs == 3) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                "Passing 3 positional arguments to "
-                "test_deprecate_positional_pos2_len1() is deprecated. Parameter "
-                "'c' will become a keyword-only parameter in Python 3.14.", 1))
-        {
-                goto exit;
-        }
-    }
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    a = args[0];
-    b = args[1];
-    c = args[2];
-    return_value = test_deprecate_positional_pos2_len1_impl(module, a, b, c);
-
-exit:
-    return return_value;
-}
-
-static PyObject *
-test_deprecate_positional_pos2_len1_impl(PyObject *module, PyObject *a,
-                                         PyObject *b, PyObject *c)
-/*[clinic end generated code: output=f96454a4970b443c input=e1d129689e69ec7c]*/
-
-
-/*[clinic input]
-test_deprecate_positional_pos2_len2
-    a: object
-    b: object
-    * [from 3.14]
-    c: object
-    d: object
-[clinic start generated code]*/
-
-PyDoc_STRVAR(test_deprecate_positional_pos2_len2__doc__,
-"test_deprecate_positional_pos2_len2($module, /, a, b, c, d)\n"
-"--\n"
-"\n"
-"Note: Passing more than 2 positional arguments to\n"
-"test_deprecate_positional_pos2_len2() is deprecated. Parameters \'c\'\n"
-"and \'d\' will become keyword-only parameters in Python 3.14.\n"
-"");
-
-#define TEST_DEPRECATE_POSITIONAL_POS2_LEN2_METHODDEF    \
-    {"test_deprecate_positional_pos2_len2", _PyCFunction_CAST(test_deprecate_positional_pos2_len2), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_pos2_len2__doc__},
-
-static PyObject *
-test_deprecate_positional_pos2_len2_impl(PyObject *module, PyObject *a,
-                                         PyObject *b, PyObject *c,
-                                         PyObject *d);
-
-static PyObject *
-test_deprecate_positional_pos2_len2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 4
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"a", "b", "c", "d", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "test_deprecate_positional_pos2_len2",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[4];
-    PyObject *a;
-    PyObject *b;
-    PyObject *c;
-    PyObject *d;
-
-    // Emit compiler warnings when we get to Python 3.14.
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error \
-            "In clinic.test.c, update parameter(s) 'c' and 'd' in the clinic " \
-            "input of 'test_deprecate_positional_pos2_len2' to be " \
-            "keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ( \
-            "In clinic.test.c, update parameter(s) 'c' and 'd' in the clinic " \
-            "input of 'test_deprecate_positional_pos2_len2' to be " \
-            "keyword-only.")
-    #  else
-    #    warning \
-            "In clinic.test.c, update parameter(s) 'c' and 'd' in the clinic " \
-            "input of 'test_deprecate_positional_pos2_len2' to be " \
-            "keyword-only."
-    #  endif
-    #endif
-    if (nargs > 2 && nargs <= 4) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                "Passing more than 2 positional arguments to "
-                "test_deprecate_positional_pos2_len2() is deprecated. Parameters "
-                "'c' and 'd' will become keyword-only parameters in Python 3.14.", 1))
-        {
-                goto exit;
-        }
-    }
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 4, 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    a = args[0];
-    b = args[1];
-    c = args[2];
-    d = args[3];
-    return_value = test_deprecate_positional_pos2_len2_impl(module, a, b, c, d);
-
-exit:
-    return return_value;
-}
-
-static PyObject *
-test_deprecate_positional_pos2_len2_impl(PyObject *module, PyObject *a,
-                                         PyObject *b, PyObject *c,
-                                         PyObject *d)
-/*[clinic end generated code: output=5e648e887da0a804 input=0d53533463a12792]*/
-
-
-/*[clinic input]
-test_deprecate_positional_pos2_len3_with_kwdonly
-    a: object
-    b: object
-    * [from 3.14]
-    c: object
-    d: object
-    *
-    e: object
-[clinic start generated code]*/
-
-PyDoc_STRVAR(test_deprecate_positional_pos2_len3_with_kwdonly__doc__,
-"test_deprecate_positional_pos2_len3_with_kwdonly($module, /, a, b, c,\n"
-"                                                 d, *, e)\n"
-"--\n"
-"\n"
-"Note: Passing more than 2 positional arguments to\n"
-"test_deprecate_positional_pos2_len3_with_kwdonly() is deprecated.\n"
-"Parameters \'c\' and \'d\' will become keyword-only parameters in Python\n"
-"3.14.\n"
-"");
-
-#define TEST_DEPRECATE_POSITIONAL_POS2_LEN3_WITH_KWDONLY_METHODDEF    \
-    {"test_deprecate_positional_pos2_len3_with_kwdonly", _PyCFunction_CAST(test_deprecate_positional_pos2_len3_with_kwdonly), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_pos2_len3_with_kwdonly__doc__},
-
-static PyObject *
-test_deprecate_positional_pos2_len3_with_kwdonly_impl(PyObject *module,
-                                                      PyObject *a,
-                                                      PyObject *b,
-                                                      PyObject *c,
-                                                      PyObject *d,
-                                                      PyObject *e);
-
-static PyObject *
-test_deprecate_positional_pos2_len3_with_kwdonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 5
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), &_Py_ID(e), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"a", "b", "c", "d", "e", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "test_deprecate_positional_pos2_len3_with_kwdonly",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[5];
-    PyObject *a;
-    PyObject *b;
-    PyObject *c;
-    PyObject *d;
-    PyObject *e;
-
-    // Emit compiler warnings when we get to Python 3.14.
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error \
-            "In clinic.test.c, update parameter(s) 'c' and 'd' in the clinic " \
-            "input of 'test_deprecate_positional_pos2_len3_with_kwdonly' to " \
-            "be keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ( \
-            "In clinic.test.c, update parameter(s) 'c' and 'd' in the clinic " \
-            "input of 'test_deprecate_positional_pos2_len3_with_kwdonly' to " \
-            "be keyword-only.")
-    #  else
-    #    warning \
-            "In clinic.test.c, update parameter(s) 'c' and 'd' in the clinic " \
-            "input of 'test_deprecate_positional_pos2_len3_with_kwdonly' to " \
-            "be keyword-only."
-    #  endif
-    #endif
-    if (nargs > 2 && nargs <= 4) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                "Passing more than 2 positional arguments to "
-                "test_deprecate_positional_pos2_len3_with_kwdonly() is "
-                "deprecated. Parameters 'c' and 'd' will become keyword-only "
-                "parameters in Python 3.14.", 1))
-        {
-                goto exit;
-        }
-    }
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 4, 1, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    a = args[0];
-    b = args[1];
-    c = args[2];
-    d = args[3];
-    e = args[4];
-    return_value = test_deprecate_positional_pos2_len3_with_kwdonly_impl(module, a, b, c, d, e);
-
-exit:
-    return return_value;
-}
-
-static PyObject *
-test_deprecate_positional_pos2_len3_with_kwdonly_impl(PyObject *module,
-                                                      PyObject *a,
-                                                      PyObject *b,
-                                                      PyObject *c,
-                                                      PyObject *d,
-                                                      PyObject *e)
-/*[clinic end generated code: output=383d56b03f7c2dcb input=154fd450448d8935]*/
-
-
-/*[clinic input]
-@classmethod
-Test.__new__
-    * [from 3.14]
-    a: object
-The deprecation message should use the class name instead of __new__.
-[clinic start generated code]*/
-
-PyDoc_STRVAR(Test__doc__,
-"Test(a)\n"
-"--\n"
-"\n"
-"The deprecation message should use the class name instead of __new__.\n"
-"\n"
-"Note: Passing positional arguments to Test() is deprecated. Parameter\n"
-"\'a\' will become a keyword-only parameter in Python 3.14.\n"
-"");
-
-static PyObject *
-Test_impl(PyTypeObject *type, PyObject *a);
-
-static PyObject *
-Test(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"a", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "Test",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    PyObject *a;
-
-    // Emit compiler warnings when we get to Python 3.14.
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error \
-            "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
-            " 'Test.__new__' to be keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ( \
-            "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
-            " 'Test.__new__' to be keyword-only.")
-    #  else
-    #    warning \
-            "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
-            " 'Test.__new__' to be keyword-only."
-    #  endif
-    #endif
-    if (nargs == 1) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                "Passing positional arguments to Test() is deprecated. Parameter "
-                "'a' will become a keyword-only parameter in Python 3.14.", 1))
-        {
-                goto exit;
-        }
-    }
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
-    if (!fastargs) {
-        goto exit;
-    }
-    a = fastargs[0];
-    return_value = Test_impl(type, a);
-
-exit:
-    return return_value;
-}
-
-static PyObject *
-Test_impl(PyTypeObject *type, PyObject *a)
-/*[clinic end generated code: output=d15a69ea37ec6502 input=f133dc077aef49ec]*/
-
-
-/*[clinic input]
-m.T.__init__
-    * [from 3.14]
-    a: object
-The deprecation message should use the class name instead of __init__.
-[clinic start generated code]*/
-
-PyDoc_STRVAR(m_T___init____doc__,
-"T(a)\n"
-"--\n"
-"\n"
-"The deprecation message should use the class name instead of __init__.\n"
-"\n"
-"Note: Passing positional arguments to m.T() is deprecated. Parameter\n"
-"\'a\' will become a keyword-only parameter in Python 3.14.\n"
-"");
-
-static int
-m_T___init___impl(TestObj *self, PyObject *a);
-
-static int
-m_T___init__(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    int return_value = -1;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"a", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "T",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    PyObject *a;
-
-    // Emit compiler warnings when we get to Python 3.14.
-    #if PY_VERSION_HEX >= 0x030e00C0
-    #  error \
-            "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
-            " 'm.T.__init__' to be keyword-only."
-    #elif PY_VERSION_HEX >= 0x030e00A0
-    #  ifdef _MSC_VER
-    #    pragma message ( \
-            "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
-            " 'm.T.__init__' to be keyword-only.")
-    #  else
-    #    warning \
-            "In clinic.test.c, update parameter(s) 'a' in the clinic input of" \
-            " 'm.T.__init__' to be keyword-only."
-    #  endif
-    #endif
-    if (nargs == 1) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                "Passing positional arguments to m.T() is deprecated. Parameter "
-                "'a' will become a keyword-only parameter in Python 3.14.", 1))
-        {
-                goto exit;
-        }
-    }
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
-    if (!fastargs) {
-        goto exit;
-    }
-    a = fastargs[0];
-    return_value = m_T___init___impl((TestObj *)self, a);
-
-exit:
-    return return_value;
-}
-
-static int
-m_T___init___impl(TestObj *self, PyObject *a)
-/*[clinic end generated code: output=ef43c425816a549f input=f71b51dbe19fa657]*/
