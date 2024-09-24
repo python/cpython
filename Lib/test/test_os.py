@@ -113,7 +113,7 @@ class MiscTests(unittest.TestCase):
         cwd = os.getcwd()
         self.assertIsInstance(cwd, str)
 
-    @unittest.skipUnless(hasattr(os, 'getdtablesize'), 'need os.getdtablesize()')  
+    @unittest.skipUnless(hasattr(os, 'getdtablesize'), 'need os.getdtablesize()')
     def test_getdtablesize(self):
         size = os.getdtablesize()
         self.assertIsInstance(size, int)
