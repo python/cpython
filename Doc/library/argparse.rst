@@ -249,11 +249,12 @@ The following sections describe how each of these are used.
 prog
 ^^^^
 
-By default, :class:`ArgumentParser` objects use ``sys.argv[0]`` to determine
+By default, :class:`ArgumentParser` objects use the base name
+(see :func:`os.path.basename`) of ``sys.argv[0]`` to determine
 how to display the name of the program in help messages.  This default is almost
-always desirable because it will make the help messages match how the program was
-invoked on the command line.  For example, consider a file named
-``myprogram.py`` with the following code::
+always desirable because it will make the help messages match the name that was
+used to invoke the program on the command line.  For example, consider a file
+named ``myprogram.py`` with the following code::
 
    import argparse
    parser = argparse.ArgumentParser()
@@ -1458,7 +1459,7 @@ The ``deprecated`` keyword argument of
 specifies if the argument is deprecated and will be removed
 in the future.
 For arguments, if ``deprecated`` is ``True``, then a warning will be
-printed to standard error when the argument is used::
+printed to :data:`sys.stderr` when the argument is used::
 
    >>> import argparse
    >>> parser = argparse.ArgumentParser(prog='snake.py')
@@ -2238,8 +2239,8 @@ Exiting methods
 .. method:: ArgumentParser.exit(status=0, message=None)
 
    This method terminates the program, exiting with the specified *status*
-   and, if given, it prints a *message* before that. The user can override
-   this method to handle these steps differently::
+   and, if given, it prints a *message* to :data:`sys.stderr` before that.
+   The user can override this method to handle these steps differently::
 
     class ErrorCatchingArgumentParser(argparse.ArgumentParser):
         def exit(self, status=0, message=None):
@@ -2249,8 +2250,8 @@ Exiting methods
 
 .. method:: ArgumentParser.error(message)
 
-   This method prints a usage message including the *message* to the
-   standard error and terminates the program with a status code of 2.
+   This method prints a usage message, including the *message*, to
+   :data:`sys.stderr` and terminates the program with a status code of 2.
 
 
 Intermixed parsing

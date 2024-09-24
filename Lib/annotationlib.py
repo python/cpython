@@ -45,7 +45,17 @@ _SLOTS = (
 
 
 class ForwardRef:
-    """Wrapper that holds a forward reference."""
+    """Wrapper that holds a forward reference.
+
+    Constructor arguments:
+    * arg: a string representing the code to be evaluated.
+    * module: the module where the forward reference was created.
+      Must be a string, not a module object.
+    * owner: The owning object (module, class, or function).
+    * is_argument: Does nothing, retained for compatibility.
+    * is_class: True if the forward reference was created in class scope.
+
+    """
 
     __slots__ = _SLOTS
 
@@ -57,8 +67,6 @@ class ForwardRef:
         owner=None,
         is_argument=True,
         is_class=False,
-        _globals=None,
-        _cell=None,
     ):
         if not isinstance(arg, str):
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
@@ -71,8 +79,8 @@ class ForwardRef:
         self.__forward_module__ = module
         self.__code__ = None
         self.__ast_node__ = None
-        self.__globals__ = _globals
-        self.__cell__ = _cell
+        self.__globals__ = None
+        self.__cell__ = None
         self.__owner__ = owner
 
     def __init_subclass__(cls, /, *args, **kwds):
@@ -115,6 +123,10 @@ class ForwardRef:
             elif callable(owner):
                 globals = getattr(owner, "__globals__", None)
 
+        # If we pass None to eval() below, the globals of this module are used.
+        if globals is None:
+            globals = {}
+
         if locals is None:
             locals = {}
             if isinstance(owner, type):
@@ -134,14 +146,8 @@ class ForwardRef:
         # but should in turn be overridden by names in the class scope
         # (which here are called `globalns`!)
         if type_params is not None:
-            if globals is None:
-                globals = {}
-            else:
-                globals = dict(globals)
-            if locals is None:
-                locals = {}
-            else:
-                locals = dict(locals)
+            globals = dict(globals)
+            locals = dict(locals)
             for param in type_params:
                 param_name = param.__name__
                 if not self.__forward_is_class__ or param_name not in globals:
