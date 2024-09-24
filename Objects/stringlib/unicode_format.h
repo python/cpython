@@ -464,11 +464,14 @@ get_field_object(SubString *input, PyObject *args, PyObject *kwargs,
             /* getitem lookup "[]" */
             if (index == -1) {
                 if (PySequence_Check(obj)) {
+                    /* string index can't be passed to sequence */
                     PyObject *str = SubString_new_object(&name);
-                    /* TypeError is for backward compatibility */
-                    PyErr_Format(PyExc_TypeError,
-                         "Sequence index must consist of digits, \"%S\" is not allowed",
-                         str);
+                    if (str != NULL)
+                        PyErr_Format(PyExc_TypeError,
+                             "Index must be a sequence of digits, string %R "
+                             "is not allowed",
+                             str);
+                    Py_XDECREF(str);
                     goto error;
                 }
                 tmp = getitem_str(obj, &name);
