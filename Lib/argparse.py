@@ -1715,8 +1715,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         - allow_abbrev -- Allow long options to be abbreviated unambiguously
         - exit_on_error -- Determines whether or not ArgumentParser exits with
             error info when an error occurs
-        - suggest_on_error - Enables argument choice and subparser name
-            suggestions on user typo
+        - suggest_on_error - Enables suggestions for mistyped argument choices
+            and subparser names. (default: ``False``)
     """
 
     def __init__(self,

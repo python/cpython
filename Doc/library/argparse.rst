@@ -189,7 +189,8 @@ ArgumentParser objects
                           formatter_class=argparse.HelpFormatter, \
                           prefix_chars='-', fromfile_prefix_chars=None, \
                           argument_default=None, conflict_handler='error', \
-                          add_help=True, allow_abbrev=True, exit_on_error=True)
+                          add_help=True, allow_abbrev=True, exit_on_error=True,\
+                          suggest_on_error=False)
 
    Create a new :class:`ArgumentParser` object. All parameters should be passed
    as keyword arguments. Each parameter has its own more detailed description
@@ -230,6 +231,10 @@ ArgumentParser objects
 
    * exit_on_error_ - Determines whether or not ArgumentParser exits with
      error info when an error occurs. (default: ``True``)
+   
+   * suggest_on_error_ - Enables suggestions for mistyped argument choices
+      and subparser names. (default: ``False``)
+
 
    .. versionchanged:: 3.5
       *allow_abbrev* parameter was added.
