@@ -69,8 +69,14 @@ def update_wrapper(wrapper,
     for attr in delegated:
         if attr == "__annotate__":
             def __annotate__(format):
-                func = _get_get_annotations()
-                return func(wrapped, format=format)
+                if format == 1:  # VALUE
+                    return getattr(wrapped, "__annotations__", {})
+                get_annotate_function = _get_get_annotate_function()
+                call_annotate_function = _get_call_annotate_function()
+                annotate_function = get_annotate_function(wrapped)
+                if annotate_function is None:
+                    return {}
+                return call_annotate_function(annotate_function, format=format)
             wrapper.__annotate__ = __annotate__
         else:
             raise ValueError(f"Unsupported delegated attribute {attr!r}")
@@ -1076,3 +1082,15 @@ class cached_property:
 def _get_get_annotations():
     from annotationlib import get_annotations
     return get_annotations
+
+
+@cache
+def _get_get_annotate_function():
+    from annotationlib import get_annotate_function
+    return get_annotate_function
+
+
+@cache
+def _get_call_annotate_function():
+    from annotationlib import call_annotate_function
+    return call_annotate_function
