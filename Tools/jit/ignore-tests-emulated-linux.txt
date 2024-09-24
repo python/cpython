@@ -1,4 +1,7 @@
 test_multiprocessing_fork
+test.datetimetester.TestDate_Fast
+test.datetimetester.TestDateTimeTZ_Fast
+test.datetimetester.TestSubclassDateTime_Fast
 test.test_asyncio.test_unix_events.TestFork.test_fork_asyncio_run
 test.test_asyncio.test_unix_events.TestFork.test_fork_asyncio_subprocess
 test.test_asyncio.test_unix_events.TestFork.test_fork_signal_handling
