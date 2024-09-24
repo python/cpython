@@ -395,12 +395,12 @@ class HelpFormatter(object):
                 continue
 
             try:
-                start = actions.index(group._group_actions[0])
+                start = min(actions.index(item) for item in group._group_actions)
             except ValueError:
                 continue
             else:
                 end = start + len(group._group_actions)
-                if actions[start:end] == group._group_actions:
+                if set(actions[start:end]) == set(group._group_actions):
                     group_actions.update(group._group_actions)
                     inserts[start, end] = group
 
