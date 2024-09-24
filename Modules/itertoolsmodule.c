@@ -1053,28 +1053,18 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
         return NULL;
     }
 
-    if (PyObject_GetOptionalAttr(it, &_Py_ID(__copy__), &copyfunc) < 0) {
-        Py_DECREF(it);
+    itertools_state *state = get_module_state(module);
+    copyable = tee_fromiterable(state, it);
+    Py_DECREF(it);
+    if (copyable == NULL) {
         Py_DECREF(result);
         return NULL;
     }
-    if (copyfunc != NULL && 0) {
-        copyable = it;
-    }
-    else {
-        itertools_state *state = get_module_state(module);
-        copyable = tee_fromiterable(state, it);
-        Py_DECREF(it);
-        if (copyable == NULL) {
-            Py_DECREF(result);
-            return NULL;
-        }
-        copyfunc = PyObject_GetAttr(copyable, &_Py_ID(__copy__));
-        if (copyfunc == NULL) {
-            Py_DECREF(copyable);
-            Py_DECREF(result);
-            return NULL;
-        }
+    copyfunc = PyObject_GetAttr(copyable, &_Py_ID(__copy__));
+    if (copyfunc == NULL) {
+        Py_DECREF(copyable);
+        Py_DECREF(result);
+        return NULL;
     }
 
     PyTuple_SET_ITEM(result, 0, copyable);
