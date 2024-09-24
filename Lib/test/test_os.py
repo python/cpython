@@ -123,6 +123,7 @@ class MiscTests(unittest.TestCase):
             else:
                 self.fail('No NotImplementedError is thrown')
         else:
+            size = os.getdtablesize()
             self.assertIsInstance(size, int)
 
     def test_getcwd_long_path(self):
