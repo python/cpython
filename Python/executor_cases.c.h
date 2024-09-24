@@ -1824,12 +1824,11 @@
             _PyStackRef value;
             oparg = CURRENT_OPARG();
             PyCellObject *cell = (PyCellObject *)PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
-            PyObject *value_o = PyCell_GetRef(cell);
-            if (value_o == NULL) {
+            _PyCell_GetStackRef(cell, &value);
+            if (PyStackRef_IsNull(value)) {
                 _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
                 if (true) JUMP_TO_ERROR();
             }
-            value = PyStackRef_FromPyObjectSteal(value_o);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());

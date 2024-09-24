@@ -2,6 +2,7 @@
 #define Py_INTERNAL_CELL_H
 
 #include "pycore_critical_section.h"
+#include "pycore_object.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,6 +41,31 @@ PyCell_GetRef(PyCellObject *cell)
     res = Py_XNewRef(cell->ob_ref);
     Py_END_CRITICAL_SECTION();
     return res;
+}
+
+static inline void
+_PyCell_GetStackRef(PyCellObject *cell, _PyStackRef *value_addr)
+{
+    PyObject *value;
+#ifdef Py_GIL_DISABLED
+    value = _Py_atomic_load_ptr(&cell->ob_ref);
+    if (value != NULL) {
+        if (_Py_IsImmortal(value) || _PyObject_HasDeferredRefcount(value)) {
+            *value_addr = (_PyStackRef){ .bits = (uintptr_t)value | Py_TAG_DEFERRED };
+            return;
+        }
+        if (_Py_TryIncrefCompare(&cell->ob_ref, value)) {
+            *value_addr = _PyStackRef_FromPyObjectSteal(value);
+            return;
+        }
+    }
+#endif
+    value = PyCell_GetRef(cell);
+    if (value == NULL) {
+        *value_addr = PyStackRef_NULL;
+        return;
+    }
+    *value_addr = PyStackRef_FromPyObjectSteal(value);
 }
 
 #ifdef __cplusplus
