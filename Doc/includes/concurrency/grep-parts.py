@@ -124,7 +124,6 @@ def resolve_filenames(filenames, recursive=False):
 # [start-impl-sequential]
 def search_sequential(filenames, regex, opts):
     for filename in filenames:
-        # iter_lines() opens the file too.
         lines = iter_lines(filename)
         yield from search_lines(lines, regex, opts, filename)
 # [end-impl-sequential]
@@ -487,7 +486,7 @@ if __name__ == '__main__':
         # step 4
 
         if hasattr(type(matches), '__aiter__'):
-            async def search_and_show(matches=matches):
+            async def iter_and_show(matches=matches):
                 matches = type(matches).__aiter__(matches)
 
                 # Handle the first match.

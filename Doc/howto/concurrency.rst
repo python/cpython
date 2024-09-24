@@ -19,9 +19,9 @@ Python supports the following concurrency models directly:
 * **isolated threads**, *AKA CSP/actor model* (stdlib\*, C-API)
 * **coroutines**, *AKA async/await* (language, stdlib, C-API)
 * **multi-processing** (stdlib)
-* **distributed**, *e.g. SMP* (stdlib)
+* **distributed**, *e.g. SMP* (stdlib (limited))
 
-In this document, we'll look at how to take advantage of this
+In this document, we'll look at how to take advantage of Python's
 concurrency support.  The overall focus is on the following:
 
 * `understanding the supported concurrency models <concurrency-models_>`_
@@ -56,6 +56,8 @@ concurrency support.  The overall focus is on the following:
 
 Quick reference
 ===============
+
+**Terminology**
 
 We'll be using the following terms and ideas throughout:
 
@@ -96,7 +98,9 @@ parallelism (multi-core)
        }
    </style>
 
-For convenience, here are the concurrency primitives we'll cover later:
+For convenience, here is a summary of what we'll cover later.
+
+**Concurrency Primitives**
 
 .. list-table::
    :header-rows: 1
@@ -110,7 +114,7 @@ For convenience, here are the concurrency primitives we'll cover later:
      - ...
      - ...
 
-Likewise, the high-level examples:
+**High-level App Examples**
 
 .. list-table::
    :header-rows: 1
@@ -140,8 +144,7 @@ Likewise, the high-level examples:
      - ...
      - ...
 
-To help further compare the models, there are side-by-side examples
-of each of those "apps":
+Each has side-by-side implementations for the different models:
 
 .. list-table::
    :header-rows: 1
@@ -157,6 +160,12 @@ of each of those "apps":
    * - `... <Workload 3: ..._>`_
      - `by concurrency models <concurrency-example-3-side-by-side_>`_
 
+
+.. raw:: html
+
+   <br/>
+
+----
 
 .. _concurrency-models:
 
@@ -176,13 +185,13 @@ Python supports directly:
      - description
    * - free threading
      - :mod:`threading`
-     - using multiple physical threads in the same process,
-       with no isolation between them
+     - | using multiple physical threads in the same process,
+       | with no isolation between them
    * - | isolated threads
        | (multiple interpreters)
      - `interpreters <python-stdlib-interpreters_>`_
-     - threads, often physical, with strict isolation
-       between them (e.g. CSP and actor model)
+     - | threads, often physical, with strict isolation between them
+       | (e.g. CSP and actor model)
    * - coroutines (async/await)
      - :mod:`asyncio`
      - switching between logical threads is explicitly controlled by each
@@ -190,7 +199,8 @@ Python supports directly:
      - :mod:`multiprocessing`
      - using multiple isolated processes
    * - distributed
-     - `multiprocessing <multiprocessing-distributed_>`_
+     - | `multiprocessing <multiprocessing-distributed_>`_
+       | (limited)
      - multiprocessing across multiple computers
 
 There are tradeoffs to each, whether in performance or complexity.
@@ -713,6 +723,12 @@ that support these concurrency models in various contexts:
      -
 
 
+.. raw:: html
+
+   <br/>
+
+----
+
 .. _concurrency-design:
 
 Designing A Program For Concurrency
@@ -1011,6 +1027,12 @@ TBD
           * often requires configuration
 
 
+.. raw:: html
+
+   <br/>
+
+----
+
 .. _concurrency-primitives:
 
 Python Concurrency Primitives
@@ -1063,6 +1085,14 @@ TBD
 
 .. TODO finish
 
+
+.. raw:: html
+
+   <br/>
+
+----
+
+.. XXX Move this section to a separate doc?
 
 .. _concurrency-workload-examples:
 
@@ -1218,7 +1248,7 @@ We'll start with the high-level code corresponding to the application's
 five top-level tasks we identified earlier.
 
 Most of the high-level code has nothing to do with concurrency.
-The parts that do, however marginally, are highlighted.
+The part that does, ``search()``, is highlighted.
 
 .. raw:: html
 
@@ -1228,8 +1258,9 @@ The parts that do, however marginally, are highlighted.
 .. literalinclude:: ../includes/concurrency/grep-parts.py
    :start-after: [start-high-level]
    :end-before: [end-high-level]
+   :dedent:
    :linenos:
-   :emphasize-lines: 7,13,16,22,35,38,42,44,47,53,66,69
+   :emphasize-lines: 7
 
 .. raw:: html
 
@@ -1237,6 +1268,24 @@ The parts that do, however marginally, are highlighted.
 
 The ``search()`` function that gets called returns an iterator
 (or async iterator) that yields the matches, which get printed.
+Here's the high-level code again, but with highlighting on each line
+that uses the iterator.
+
+.. raw:: html
+
+   <details>
+   <summary>(expand)</summary>
+
+.. literalinclude:: ../includes/concurrency/grep-parts.py
+   :start-after: [start-high-level]
+   :end-before: [end-high-level]
+   :dedent:
+   :linenos:
+   :emphasize-lines: 13,16,22,35,38,42,44,47,53,66,69
+
+.. raw:: html
+
+   </details>
 
 Here's the search function for a non-concurrent implementation:
 
@@ -1246,8 +1295,10 @@ Here's the search function for a non-concurrent implementation:
    :linenos:
 
 ``iter_lines()`` is a straight-forward helper that opens the file
-and yields each line.  ``search_lines()`` is a sequential-search
-helper used by all the example implementations here:
+and yields each line.
+
+``search_lines()`` is a sequential-search helper used by all the
+example implementations here:
 
 .. literalinclude:: ../includes/concurrency/grep-parts.py
    :start-after: [start-search-lines]
@@ -1266,27 +1317,45 @@ the same for all the concurrency models.
    :end-before: [end-impl-threads]
    :linenos:
 
-The ``search()`` function still yields all the matches in the right
-order.  Concurrency may be happening as long as that iterator hasn't
-been exhausted.  That means it is happening more or less the entire time
-we loop over the matches to print them in ``main()`` (in the high-level
-code above).
+We loop over the filenames and start a thread for each one.  Each one
+sends the matches it finds back using a queue.
+
+We want to start yielding matches as soon as possible, so we also use
+a background thread to run the code that loops over the filenames.
+
+We use a queue of queues (``matches_by_file``) to make sure
+we get results back in the right order, regardless of when the worker
+threads provide them.
+
+The operating system will only let us have so many files open at once,
+so we limit how many workers are running.  (``MAX_FILES``)
+
+If the workers find matches substantially faster than we can use them
+then we may end up using more memory than we need to.  To avoid any
+backlog, we limit how many matches can be queued up for any given file.
+(``MAX_MATCHES``)
 
 One notable point is that the actual files are not opened until
 we need to iterate over the lines.  For the most part, this is so we
 can avoid dealing with passing an open file to a concurrency worker.
 Instead we pass the filename, which is much simpler.
 
-Common pattern
-^^^^^^^^^^^^^^
-
-TBD
+Finally, we have to manage the workers manually.  If we used
+`concurrent.futures`_, it would take care of that for us.
 
 .. TODO finish
 
-Here are some things we don't do but would be worth doing:
+Here are some things we don't do but *might* be worth doing:
 
 * stop iteration when requested (or for ``ctrl-C``)
+* split up each file between multiple workers
+* ...
+
+Recall that the ``search()`` function returns an iterator that yields
+all the matches.  Concurrency may be happening as long as that iterator
+hasn't been exhausted.  That means it is happening more or less the
+entire time we loop over the matches to print them in ``main()``
+(in the high-level code above).
 
 .. _concurrency-grep-side-by-side:
 
@@ -1403,10 +1472,6 @@ multiprocessing:
 * ...
 
 asyncio:
-
-* ...
-
-concurrent.futures:
 
 * ...
 
