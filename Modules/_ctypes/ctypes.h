@@ -108,6 +108,7 @@ get_module_state_by_def(PyTypeObject *cls)
 }
 
 
+extern PyType_Spec pyctype_type_spec;
 extern PyType_Spec carg_spec;
 extern PyType_Spec cfield_spec;
 extern PyType_Spec cthunk_spec;
@@ -490,16 +491,23 @@ PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result)
 
 /* A variant of PyStgInfo_FromType that doesn't need the state,
  * so it can be called from finalization functions when the module
- * state is torn down. Does no checks; cannot fail.
- * This inlines the current implementation PyObject_GetTypeData,
- * so it might break in the future.
+ * state is torn down.
  */
 static inline StgInfo *
 _PyStgInfo_FromType_NoState(PyObject *type)
 {
-    size_t type_basicsize =_Py_SIZE_ROUND_UP(PyType_Type.tp_basicsize,
-                                             ALIGNOF_MAX_ALIGN_T);
-    return (StgInfo *)((char *)type + type_basicsize);
+    PyTypeObject *PyCType_Type;
+    if (PyType_GetBaseByToken(Py_TYPE(type), &pyctype_type_spec, &PyCType_Type) < 0) {
+        return NULL;
+    }
+    if (PyCType_Type == NULL) {
+        PyErr_Format(PyExc_TypeError, "expected a ctypes type, got '%N'", type);
+        return NULL;
+    }
+
+    StgInfo *info = PyObject_GetTypeData(type, PyCType_Type);
+    Py_DECREF(PyCType_Type);
+    return info;
 }
 
 // Initialize StgInfo on a newly created type
