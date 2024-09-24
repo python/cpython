@@ -2229,6 +2229,13 @@ features:
 
    Return a string representing the current working directory.
 
+.. function:: getdtablesize()
+
+   Return the maximum number of files a process can have open.
+
+   .. warning::
+
+      This function currently only supports unix-like system.
 
 .. function:: getcwdb()
 
