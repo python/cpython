@@ -84,7 +84,6 @@ __all__ = [
     'ZERO_OR_MORE',
 ]
 
-import difflib as _difflib
 import os as _os
 import re as _re
 import sys as _sys
@@ -1716,6 +1715,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         - allow_abbrev -- Allow long options to be abbreviated unambiguously
         - exit_on_error -- Determines whether or not ArgumentParser exits with
             error info when an error occurs
+        - suggest_on_error - Enables argument choice and subparser name
+            suggestions on user typo
     """
 
     def __init__(self,
@@ -1731,7 +1732,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                  conflict_handler='error',
                  add_help=True,
                  allow_abbrev=True,
-                 exit_on_error=True):
+                 exit_on_error=True,
+                 suggest_on_error=False):
 
         superinit = super(ArgumentParser, self).__init__
         superinit(description=description,
@@ -1751,6 +1753,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self.add_help = add_help
         self.allow_abbrev = allow_abbrev
         self.exit_on_error = exit_on_error
+        self.suggest_on_error = suggest_on_error
 
         add_group = self.add_argument_group
         self._positionals = add_group(_('positional arguments'))
@@ -2559,22 +2562,23 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
         # converted value must be one of the choices (if specified)
         if action.choices is not None and value not in action.choices:
-            try:
-                closest_choice = _difflib.get_close_matches(value, action.choices, 1)
-            except TypeError:
-                closest_choice = []
-
             args = {
                 'value': value,
                 'choices': ', '.join(map(repr, action.choices)),
             }
-            if closest_choice:
-                closest_choice = closest_choice[0]
-                args['closest'] = closest_choice
-                msg = _('invalid choice: %(value)r, maybe you meant %(closest)r? '
-                        '(choose from %(choices)s)')
-            else:
-                msg = _('invalid choice: %(value)r (choose from %(choices)s)')
+            msg = _('invalid choice: %(value)r (choose from %(choices)s)')
+
+            if self.suggest_on_error:
+                try:
+                    import difflib as _difflib
+                    closest_choice = _difflib.get_close_matches(value, action.choices, 1)
+                    if closest_choice:
+                        closest_choice = closest_choice[0]
+                        args['closest'] = closest_choice
+                        msg = _('invalid choice: %(value)r, maybe you meant %(closest)r? '
+                                '(choose from %(choices)s)')
+                except TypeError:
+                    closest_choice = []
 
             raise ArgumentError(action, msg % args)
 

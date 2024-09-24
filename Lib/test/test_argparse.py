@@ -2172,6 +2172,53 @@ class TestNegativeNumber(ParserTestCase):
         ('--float -.5_000', NS(int=None, float=-0.5)),
     ]
 
+class TestArgumentAndSubparserSuggestions(TestCase):
+    """Test error handling and suggestion when a user makes a typo"""
+
+    def test_wrong_argument_error_with_suggestions(self):
+        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser.add_argument('foo', choices=['bar', 'baz'])
+        with self.assertRaises(ArgumentParserError) as excinfo:
+            parser.parse_args(('bazz',))
+        self.assertIn(
+            "maybe you meant 'baz'? (choose from 'bar', 'baz')",
+            excinfo.exception.stderr,
+        )
+
+    def test_wrong_argument_error_no_suggestions(self):
+        parser = ErrorRaisingArgumentParser(suggest_on_error=False)
+        parser.add_argument('foo', choices=['bar', 'baz'])
+        with self.assertRaises(ArgumentParserError) as excinfo:
+            parser.parse_args(('bazz',))
+        self.assertIn(
+            "invalid choice: 'bazz' (choose from 'bar', 'baz')",
+            excinfo.exception.stderr,
+        )
+
+    def test_wrong_argument_subparsers_with_suggestions(self):
+        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        subparsers = parser.add_subparsers(required=True)
+        subparsers.add_parser('foo')
+        subparsers.add_parser('bar')
+        with self.assertRaises(ArgumentParserError) as excinfo:
+            parser.parse_args(('baz',))
+        self.assertIn(
+            "maybe you meant 'bar'? (choose from 'foo', 'bar')",
+            excinfo.exception.stderr,
+        )
+
+    def test_wrong_argument_subparsers_no_suggestions(self):
+        parser = ErrorRaisingArgumentParser(suggest_on_error=False)
+        subparsers = parser.add_subparsers(required=True)
+        subparsers.add_parser('foo')
+        subparsers.add_parser('bar')
+        with self.assertRaises(ArgumentParserError) as excinfo:
+            parser.parse_args(('baz',))
+        self.assertIn(
+            "invalid choice: 'baz' (choose from 'foo', 'bar')",
+            excinfo.exception.stderr,
+        )
+
 class TestInvalidAction(TestCase):
     """Test invalid user defined Action"""
 
@@ -2388,18 +2435,6 @@ class TestAddSubparsers(TestCase):
         self.assertRegex(
             excinfo.exception.stderr,
             'error: the following arguments are required: {foo,bar}\n$'
-        )
-
-    def test_wrong_argument_subparsers_no_destination_error(self):
-        parser = ErrorRaisingArgumentParser()
-        subparsers = parser.add_subparsers(required=True)
-        subparsers.add_parser('foo')
-        subparsers.add_parser('bar')
-        with self.assertRaises(ArgumentParserError) as excinfo:
-            parser.parse_args(('baz',))
-        self.assertIn(
-            "error: argument {foo,bar}: invalid choice: 'baz', maybe you meant 'bar'? (choose from 'foo', 'bar')",
-            excinfo.exception.stderr,
         )
 
     def test_optional_subparsers(self):
@@ -2726,7 +2761,7 @@ class TestParentParsers(TestCase):
         parser = ErrorRaisingArgumentParser(parents=[self.ab_mutex_parent])
         self._test_mutex_ab(parser.parse_args)
 
-    def test_single_granparent_mutex(self):
+    def test_single_grandparent_mutex(self):
         parents = [self.ab_mutex_parent]
         parser = ErrorRaisingArgumentParser(add_help=False, parents=parents)
         parser = ErrorRaisingArgumentParser(parents=[parser])
