@@ -1496,8 +1496,8 @@ you can also use :mod:`concurrent.futures`:
 
    </details>
 
-For processes`, use :class:`ProcessPoolExecutor`.
-For interpreters, use :class:`InterpreterPoolExecutor`.
+For processes`, use :class:`concurrent.futures.ProcessPoolExecutor`.
+For interpreters, use :class:`!InterpreterPoolExecutor`.
 In both cases you must use the proper queue type and there
 are a few other minor differences.
 
