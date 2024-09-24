@@ -1229,7 +1229,7 @@ The parts that do, however marginally, are highlighted.
    :start-after: [start-high-level]
    :end-before: [end-high-level]
    :linenos:
-   :emphasize-lines: 6,12,15,21,34,37,41,43,46,52,65,68
+   :emphasize-lines: 7,13,16,22,35,38,42,44,47,53,66,69
 
 .. raw:: html
 
