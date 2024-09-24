@@ -690,11 +690,8 @@ def _frozen_get_del_attr(cls, fields, func_builder):
 
 
 def _is_classvar(a_type, typing):
-    # This test uses a typing internal class, but it's the best way to
-    # test if this is a ClassVar.
     return (a_type is typing.ClassVar
-            or (type(a_type) is typing._GenericAlias
-                and a_type.__origin__ is typing.ClassVar))
+            or (typing.get_origin(a_type) is typing.ClassVar))
 
 
 def _is_initvar(a_type, dataclasses):
