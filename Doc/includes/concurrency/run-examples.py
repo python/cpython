@@ -419,26 +419,32 @@ EXAMPLES = {
             'sequential': {
                 '||': 'basic',
                 'basic': '<>',
+                'parts': ['grep-parts.py', '--impl', 'sequential'],
             },
             'threads': {
                 '||': 'basic',
                 'basic': '<>',
                 'cf': '<>',
+                'parts': ['grep-parts.py', '--impl', 'threads'],
+                'parts-cf': ['grep-parts.py', '--impl', 'threads-cf'],
             },
             'interpreters': {
                 '||': 'basic',
                 'basic': '<>',
                 #'cf': '<>',
+                'parts': ['grep-parts.py', '--impl', 'interpreters'],
             },
             '|async|': 'asyncio',
             'asyncio': {
                 '||': 'basic',
                 'basic': '<>',
+                'parts': ['grep-parts.py', '--impl', 'asyncio'],
             },
             'multiprocessing': {
                 '||': 'basic',
                 'basic': '<>',
                 #'cf': '<>',
+                'parts': ['grep-parts.py', '--impl', 'multiprocessing'],
             },
         },
         'OPTS': {
@@ -456,6 +462,7 @@ class Selection(namedtuple('Selection', 'app model impl')):
     _opts = None
     _cmd = None
     _executable = None
+    _executable_argv = None
     _subargv = None
     _subargvstr = None
     _defaultimpl = None
@@ -502,13 +509,22 @@ class Selection(namedtuple('Selection', 'app model impl')):
                        defaultimpl=False,
                        ):
         self = cls.__new__(cls, app, model, impl, opts)
+        executable_argv = None
         if cmd == '<>':
             cmd = f'{app}-{model}' if defaultimpl else f'{app}-{model}-{impl}'
-            executable = os.path.join(IMPLS_DIR, cmd + '.py')
-        else:
+            executable = cmd + '.py'
+        elif isinstance(cmd, str):
             executable = cmd
+        else:
+            cmd = tuple(cmd)
+            executable, *executable_argv = cmd
+        if os.path.basename(executable) == executable:
+            executable = os.path.join(IMPLS_DIR, executable)
+            if not os.path.exists(executable):
+                executable = os.path.basename(executable)
         self._cmd = cmd
         self._executable = executable
+        self._executable_argv = executable_argv
         if isinstance(argv, str):
             self._subargvstr = argv
         else:
@@ -540,6 +556,10 @@ class Selection(namedtuple('Selection', 'app model impl')):
         return self._executable
 
     @property
+    def executable_argv(self):
+        return self._executable_argv
+
+    @property
     def subargv(self):
         for bad in (ALL, None):
             if bad in self or self._opts is bad:
@@ -556,6 +576,8 @@ class Selection(namedtuple('Selection', 'app model impl')):
         argv = [self._executable]
         if self._executable.endswith('.py'):
             argv.insert(0, sys.executable)
+        if self._executable_argv:
+            argv.extend(self._executable_argv)
         if self._subargv is None:
             self._subargv = shlex.split(self._subargvstr)
         argv.extend(self._subargv)
@@ -665,7 +687,7 @@ if __name__ == '__main__':
             print('# model:  ', sel.model)
             print('# impl:   ', sel.impl)
             print('# opts:   ', sel.opts)
-            print('# script: ', sel.executable)
+            print('# script: ', sel.executable, *sel.executable_argv)
             print('# argv:   ', sel.app, shlex.join(sel.subargv))
             print(div)
             print()

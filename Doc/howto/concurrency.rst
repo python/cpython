@@ -1139,38 +1139,14 @@ Also see:
 Workload: grep
 --------------
 
-.. _example-grep-full-code:
-
-.. raw:: html
-
-   <details>
-   <summary>(expand for full example code)</summary>
-
-.. literalinclude:: ../includes/concurrency/grep/__init__.py
-   :caption:
-   :linenos:
-
-.. literalinclude:: ../includes/concurrency/grep/__main__.py
-   :caption:
-   :linenos:
-
-.. literalinclude:: ../includes/concurrency/grep/_utils.py
-   :caption:
-   :linenos:
-
-.. literalinclude:: ../includes/concurrency/grep/_implementations.py
-   :caption:
-   :linenos:
-
-.. raw:: html
-
-   </details>
-
-This a basic Python implementation of the linux ``grep`` tool.
+This is a basic Python implementation of the linux ``grep`` tool.
 We read from one or more files and report about lines that match
 (or don't match) the given regular expression.
 
 This represents a workload involving a mix of moderate IO and CPU work.
+
+For full example code see the `side-by-side implementations
+<concurrency-grep-side-by-side_>`_ below.
 
 Design and analysis
 ^^^^^^^^^^^^^^^^^^^
@@ -1242,82 +1218,64 @@ We'll start with the high-level code corresponding to the application's
 five top-level tasks we identified earlier.
 
 Most of the high-level code has nothing to do with concurrency.
-The parts that do are handled entirely by ``do_search()`` (highlighted),
-which we'll look at in a moment.
-
-.. literalinclude:: ../includes/concurrency/grep/__init__.py
-   :start-after: [start-high-level]
-   :end-before: [end-high-level]
-   :linenos:
-   :emphasize-lines: 3,10
-
-Here's the script that wraps that code and does steps 4 and 5:
+The parts that do, however marginally, are highlighted.
 
 .. raw:: html
 
    <details>
    <summary>(expand)</summary>
 
-.. literalinclude:: ../includes/concurrency/grep/__main__.py
+.. literalinclude:: ../includes/concurrency/grep-parts.py
+   :start-after: [start-high-level]
+   :end-before: [end-high-level]
    :linenos:
+   :emphasize-lines: 6,12,15,21,34,37,41,43,46,52,65,68
 
 .. raw:: html
 
    </details>
 
-As noted earlier, ``grep()`` itself isn't all that interesting
-relative to concurrency.  Mostly it makes use of several basic helpers.
-You can look at the implementation of the helpers
-`above <example-grep-full-code_>`_.
+The ``search()`` function that gets called returns an iterator
+(or async iterator) that yields the matches, which get printed.
+
+Here's the search function for a non-concurrent implementation:
+
+.. literalinclude:: ../includes/concurrency/grep-parts.py
+   :start-after: [start-impl-sequential]
+   :end-before: [end-impl-sequential]
+   :linenos:
+
+``iter_lines()`` is a straight-forward helper that opens the file
+and yields each line.  ``search_lines()`` is a sequential-search
+helper used by all the example implementations here:
+
+.. literalinclude:: ../includes/concurrency/grep-parts.py
+   :start-after: [start-search-lines]
+   :end-before: [end-search-lines]
+   :linenos:
+
+Concurrent Code
+^^^^^^^^^^^^^^^
+
+Now lets look at how concurrency actually fits in.  We'll start
+with an example using threads.  However, the pattern is essentially
+the same for all the concurrency models.
+
+.. literalinclude:: ../includes/concurrency/grep-parts.py
+   :start-after: [start-impl-threads]
+   :end-before: [end-impl-threads]
+   :linenos:
+
+The ``search()`` function still yields all the matches in the right
+order.  Concurrency may be happening as long as that iterator hasn't
+been exhausted.  That means it is happening more or less the entire time
+we loop over the matches to print them in ``main()`` (in the high-level
+code above).
 
 One notable point is that the actual files are not opened until
 we need to iterate over the lines.  For the most part, this is so we
 can avoid dealing with passing an open file to a concurrency worker.
 Instead we pass the filename, which is much simpler.
-
-Concurrent Code
-^^^^^^^^^^^^^^^
-
-Now lets look at how concurrency actually fits in.  ``do_search()``
-wraps the selected implementation.  The implementation, in turn,
-is a callable that returns an iterator of ``Match`` objects.
-
-Concurrency may be happening as long as that iterable hasn't been
-exhausted.  That means it is happening more or less the entire time
-we loop over the matches in ``render_matches()`` (in the script code
-above).  We must factor that into our concurrent implementations.
-
-With that in mind, lets look at the different concurrent implementations.
-
-We'll actually start with a non-concurrent, sequential one:
-
-.. literalinclude:: ../includes/concurrency/grep/_implementations.py
-   :start-after: [start-impl-sequential]
-   :end-before: [end-impl-sequential]
-   :linenos:
-
-``search_lines()`` is the sequential-search helper used by all the
-implementations:
-
-.. literalinclude:: ../includes/concurrency/grep/__init__.py
-   :start-after: [start-search-lines]
-   :end-before: [end-search-lines]
-   :linenos:
-
-Each yielded ``Match`` object is a namedtuple of
-(filename, full line text, match text).
-For inverted matches, ``match.match`` is not set.
-For file-only matches, only ``match.filename`` is set.
-
-Now let's look at the implementations for the various concurrency
-models.  We'll start with the simplest: threads.
-
-.. literalinclude:: ../includes/concurrency/grep/_implementations.py
-   :start-after: [start-impl-threads-basic]
-   :end-before: [end-impl-threads-basic]
-   :linenos:
-
-We can use that as a baseline for the other implementations.
 
 Common pattern
 ^^^^^^^^^^^^^^
@@ -1464,15 +1422,19 @@ you can also use :mod:`concurrent.futures`:
    <details>
    <summary>(expand)</summary>
 
-.. literalinclude:: ../includes/concurrency/grep/_implementations.py
-   :start-after: [start-impl-cf-threads-basic]
-   :end-before: [end-impl-cf-threads-basic]
-   :dedent:
+.. literalinclude:: ../includes/concurrency/grep-parts.py
+   :start-after: [start-impl-cf-threads]
+   :end-before: [end-impl-cf-threads]
    :linenos:
 
 .. raw:: html
 
    </details>
+
+For processes`, use :class:`ProcessPoolExecutor`.
+For interpreters, use :class:`InterpreterPoolExecutor`.
+In both cases you must use the proper queue type and there
+are a few other minor differences.
 
 
 .. raw:: html
