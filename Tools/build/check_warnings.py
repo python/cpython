@@ -4,9 +4,9 @@ exist only in files that are expected to have warnings.
 """
 
 import argparse
-from collections import defaultdict
 import re
 import sys
+from collections import defaultdict
 from pathlib import Path
 from typing import NamedTuple
 
@@ -38,7 +38,8 @@ def parse_warning_ignore_file(file_path: str) -> set[IgnoreRule]:
                     # Directories must have a wildcard count
                     if is_directory and count != "*":
                         print(
-                            f"Error parsing ignore file: {file_path} at line: {i}"
+                            f"Error parsing ignore file: {file_path} "
+                            f"at line: {i}"
                         )
                         print(
                             f"Directory {file_name} must have count set to *"
@@ -93,9 +94,10 @@ def extract_warnings_from_compiler_output(
                         .rstrip("]"),
                     }
                 )
-            except:
+            except AttributeError:
                 print(
-                    f"Error parsing compiler output. Unable to extract warning on line {i}:\n{line}"
+                    f"Error parsing compiler output. "
+                    f"Unable to extract warning on line {i}:\n{line}"
                 )
                 sys.exit(1)
 
@@ -125,8 +127,9 @@ def get_warnings_by_file(warnings: list[dict]) -> dict[str, list[dict]]:
 def is_file_ignored(
     file_path: str, ignore_rules: set[IgnoreRule]
 ) -> IgnoreRule | None:
-    """
-    Returns the IgnoreRule object for the file path if there is a related rule for it
+    """Return the IgnoreRule object for the file path.
+
+    Return ``None`` if there is no related rule for that path.
     """
     for rule in ignore_rules:
         if rule.is_directory:
@@ -191,7 +194,10 @@ def get_unexpected_improvements(
     """
     unexpected_improvements = []
     for rule in ignore_rules:
-        if not rule.ignore_all and rule.file_path not in files_with_warnings.keys():
+        if (
+            not rule.ignore_all
+            and rule.file_path not in files_with_warnings.keys()
+        ):
             if rule.file_path not in files_with_warnings.keys():
                 unexpected_improvements.append((rule.file_path, rule.count, 0))
             elif len(files_with_warnings[rule.file_path]) < rule.count:
