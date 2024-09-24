@@ -196,7 +196,7 @@ lltrace_instruction(_PyInterpreterFrame *frame,
 static void
 lltrace_resume_frame(_PyInterpreterFrame *frame)
 {
-    PyObject *fobj = frame->f_funcobj;
+    PyObject *fobj = PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
     if (!PyStackRef_CodeCheck(frame->f_executable) ||
         fobj == NULL ||
         !PyFunction_Check(fobj)
@@ -277,7 +277,7 @@ static void monitor_throw(PyThreadState *tstate,
 static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg);
 static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
 static  _PyInterpreterFrame *
-_PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
+_PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
     PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs, _PyInterpreterFrame *previous);
 
 #ifdef HAVE_ERRNO_H
@@ -781,7 +781,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 
 #ifdef Py_DEBUG
     /* Set these to invalid but identifiable values for debugging. */
-    entry_frame.f_funcobj = (PyObject*)0xaaa0;
+    entry_frame.f_funcobj = (_PyStackRef){.bits = 0xaaa0};
     entry_frame.f_locals = (PyObject*)0xaaa1;
     entry_frame.frame_obj = (PyFrameObject*)0xaaa2;
     entry_frame.f_globals = (PyObject*)0xaaa3;
@@ -1719,18 +1719,19 @@ _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
 
 /* Consumes references to func, locals and all the args */
 _PyInterpreterFrame *
-_PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
+_PyEvalFramePushAndInit(PyThreadState *tstate, _PyStackRef func,
                         PyObject *locals, _PyStackRef const* args,
                         size_t argcount, PyObject *kwnames, _PyInterpreterFrame *previous)
 {
-    PyCodeObject * code = (PyCodeObject *)func->func_code;
+    PyFunctionObject *func_obj = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(func);
+    PyCodeObject * code = (PyCodeObject *)func_obj->func_code;
     CALL_STAT_INC(frames_pushed);
     _PyInterpreterFrame *frame = _PyThreadState_PushFrame(tstate, code->co_framesize);
     if (frame == NULL) {
         goto fail;
     }
     _PyFrame_Initialize(frame, func, locals, code, 0, previous);
-    if (initialize_locals(tstate, func, frame->localsplus, args, argcount, kwnames)) {
+    if (initialize_locals(tstate, func_obj, frame->localsplus, args, argcount, kwnames)) {
         assert(frame->owner == FRAME_OWNED_BY_THREAD);
         clear_thread_frame(tstate, frame);
         return NULL;
@@ -1738,7 +1739,7 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
     return frame;
 fail:
     /* Consume the references */
-    Py_DECREF(func);
+    PyStackRef_CLOSE(func);
     Py_XDECREF(locals);
     for (size_t i = 0; i < argcount; i++) {
         PyStackRef_CLOSE(args[i]);
@@ -1754,7 +1755,7 @@ fail:
 }
 
 static _PyInterpreterFrame *
-_PyEvalFramePushAndInit_UnTagged(PyThreadState *tstate, PyFunctionObject *func,
+_PyEvalFramePushAndInit_UnTagged(PyThreadState *tstate, _PyStackRef func,
                         PyObject *locals, PyObject *const* args,
                         size_t argcount, PyObject *kwnames, _PyInterpreterFrame *previous)
 {
@@ -1784,7 +1785,7 @@ _PyEvalFramePushAndInit_UnTagged(PyThreadState *tstate, PyFunctionObject *func,
    Steals references to func, callargs and kwargs.
 */
 static _PyInterpreterFrame *
-_PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
+_PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
     PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs, _PyInterpreterFrame *previous)
 {
     bool has_dict = (kwargs != NULL && PyDict_GET_SIZE(kwargs) > 0);
@@ -1793,7 +1794,7 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
     if (has_dict) {
         newargs = _PyStack_UnpackDict(tstate, _PyTuple_ITEMS(callargs), nargs, kwargs, &kwnames);
         if (newargs == NULL) {
-            Py_DECREF(func);
+            PyStackRef_CLOSE(func);
             goto error;
         }
     }
@@ -1805,7 +1806,7 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
         }
     }
     _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_UnTagged(
-        tstate, (PyFunctionObject *)func, locals,
+        tstate, func, locals,
         newargs, nargs, kwnames, previous
     );
     if (has_dict) {
@@ -1831,7 +1832,6 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
 {
     /* _PyEvalFramePushAndInit consumes the references
      * to func, locals and all its arguments */
-    Py_INCREF(func);
     Py_XINCREF(locals);
     for (size_t i = 0; i < argcount; i++) {
         Py_INCREF(args[i]);
@@ -1843,7 +1843,8 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
         }
     }
     _PyInterpreterFrame *frame = _PyEvalFramePushAndInit_UnTagged(
-        tstate, func, locals, args, argcount, kwnames, NULL);
+        tstate, PyStackRef_FromPyObjectNew(func), locals,
+        args, argcount, kwnames, NULL);
     if (frame == NULL) {
         return NULL;
     }
