@@ -211,9 +211,12 @@ access further features, you have to do this yourself:
    The *readrc* argument defaults to true and controls whether Pdb will load
    .pdbrc files from the filesystem.
 
-   The *mode* argument is used to indicate the origin of the debugger.
-   It should be either ``None``, ``'inline'`` or ``'cli'``. It impacts
-   the workings of some debugger commands.
+   The *mode* argument specifies how the debugger was invoked.
+   It impacts the workings of some debugger commands.
+   Valid values are ``'inline'`` (when called from the breakpoint() builtin),
+   ``'cli'`` (when called from a command line invocation)
+   or ``None`` (for backwards compatible behaviour, as before the *mode*
+   argument was added).
 
    Example call to enable tracing with *skip*::
 
