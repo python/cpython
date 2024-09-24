@@ -1,13 +1,9 @@
 # Python for Android
 
 These instructions are only needed if you're planning to compile Python for
-Android yourself. Most users should *not* need to do this. If you're looking to
-use Python on Android, one of the following tools will provide a much more
-approachable user experience:
-
-* [Briefcase](https://briefcase.readthedocs.io), from the BeeWare project
-* [Buildozer](https://buildozer.readthedocs.io), from the Kivy project
-* [Chaquopy](https://chaquo.com/chaquopy/)
+Android yourself. Most users should *not* need to do this. Instead, use one of
+the tools listed in `Doc/using/android.rst`, which will provide a much easier
+experience.
 
 
 ## Prerequisites
@@ -87,10 +83,10 @@ and copy it over.
 The test suite can usually be run on a device with 2 GB of RAM, though for some
 configurations or test orders you may need to increase this. As of Android
 Studio Koala, 2 GB is the default for all emulators, although the user interface
-may indicate otherwise. The effective setting is `hw.ramSize` in
-~/.android/avd/*.avd/hardware-qemu.ini, whereas Android Studio displays the
-value from config.ini. Changing the value in Android Studio will update both of
-these files.
+may indicate otherwise. Locate the emulator's directory under `~/.android/avd`,
+and find `hw.ramSize` in both config.ini and hardware-qemu.ini. Either set these
+manually to the same value, or use the Android Studio Device Manager, which will
+update both files.
 
 Before running the test suite, follow the instructions in the previous section
 to build the architecture you want to test. Then run the test script in one of
@@ -131,3 +127,8 @@ Every time you run `android.py test`, changes in pure-Python files in the
 repository's `Lib` directory will be picked up immediately. Changes in C files,
 and architecture-specific files such as sysconfigdata, will not take effect
 until you re-run `android.py make-host` or `build`.
+
+
+## Using in your own app
+
+See `Doc/using/android.rst`.
