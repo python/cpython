@@ -32,12 +32,12 @@ Name                      Description                                           
 ========================= =========================================================================================================== ==================================================================================
 prog_                     The name of the program                                                                                     Defaults to ``os.path.basename(sys.argv[0])``
 usage_                    The string describing the program usage
-description_              A brief description of what the program does. Displayed between the usage_ and argument help
+description_              A brief description of what the program does
 epilog_                   Additional description of the program after the argument help
 parents_                  A list of :class:`ArgumentParser` objects whose arguments should also be included
 formatter_class_          A class for customizing the help output                                                                     ``argparse.HelpFormatter``
 prefix_chars_             The set of characters that prefix optional arguments                                                        Defaults to ``'-'``
-fromfile_prefix_chars_    The set of characters that prefix files from which additional arguments should be read                      Defaults to ``None`` (meaning arguments will never be treated as file references)
+fromfile_prefix_chars_    The set of characters that prefix files to read additional arguments from                                   Defaults to ``None`` (meaning arguments will never be treated as file references)
 argument_default_         The global default value for arguments
 allow_abbrev_             Allows long options to be abbreviated if the abbreviation is unambiguous                                    ``True`` or ``False`` (default: ``True``)
 conflict_handler_         The strategy for resolving conflicting optionals
