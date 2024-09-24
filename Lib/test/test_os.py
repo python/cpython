@@ -113,18 +113,11 @@ class MiscTests(unittest.TestCase):
         cwd = os.getcwd()
         self.assertIsInstance(cwd, str)
 
+    @unittest.skipUnless(hasattr(os, 'getdtablesize'), 'need os.getdtablesize()')  
     def test_getdtablesize(self):
-        curr_system = platform.system()
-        if curr_system == 'Windows':
-            try:
-                size = os.getdtablesize()
-            except NotImplementedError as e:
-                self.assertIsInstance(e, NotImplementedError)
-            else:
-                self.fail('No NotImplementedError is thrown')
-        else:
-            size = os.getdtablesize()
-            self.assertIsInstance(size, int)
+        size = os.getdtablesize()
+        self.assertIsInstance(size, int)
+        self.assertGreaterEqual(size, 0)
 
     def test_getcwd_long_path(self):
         # bpo-37412: On Linux, PATH_MAX is usually around 4096 bytes. On
