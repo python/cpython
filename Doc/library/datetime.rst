@@ -560,7 +560,7 @@ Other constructors, all class methods:
    time tuple.  See also :ref:`strftime-strptime-behavior` and
    :meth:`date.fromisoformat`.
 
-   .. note
+   .. note::
 
       If *format* specifies a day of month without a year a
       :exc:`DeprecationWarning` is emitted.  This is to avoid a quadrennial
