@@ -4218,6 +4218,33 @@ os_getcwdb_impl(PyObject *module)
     return posix_getcwd(1);
 }
 
+/*[clinic input]
+os.getdtablesize
+
+Return the maximum number of files a process can have open.
+[clinic start generated code]*/
+
+static PyObject *
+os_getdtablesize_impl(PyObject *module)
+{
+    PyObject *max_fptable_size;
+    int size;
+
+#ifdef MS_WINDOWS
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "this function is not supported on windows");
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+#else   /* !Unix-like */
+    size = getdtablesize();
+#endif   /* !MS_WINDOWS */
+    max_fptable_size = PyLong_FromLong(size);
+    if (max_fptable_size == NULL)
+        return NULL;
+
+    return max_fptable_size;
+}
 
 #if ((!defined(HAVE_LINK)) && defined(MS_WINDOWS))
 #define HAVE_LINK 1
@@ -16843,6 +16870,7 @@ static PyMethodDef posix_methods[] = {
     OS_CTERMID_METHODDEF
     OS_GETCWD_METHODDEF
     OS_GETCWDB_METHODDEF
+    OS_GETDTABLESIZE_METHODDEF
     OS_LINK_METHODDEF
     OS_LISTDIR_METHODDEF
     OS_LISTDRIVES_METHODDEF

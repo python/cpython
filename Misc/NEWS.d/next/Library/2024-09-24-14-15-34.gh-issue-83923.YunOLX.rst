@@ -1,0 +1,2 @@
+Added :func:`getdtablesize` to :mod:`os` (supported only on unix-like
+systems)

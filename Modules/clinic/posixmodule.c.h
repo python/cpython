@@ -1419,6 +1419,24 @@ os_getcwdb(PyObject *module, PyObject *Py_UNUSED(ignored))
     return os_getcwdb_impl(module);
 }
 
+PyDoc_STRVAR(os_getdtablesize__doc__,
+"getdtablesize($module, /)\n"
+"--\n"
+"\n"
+"Return the maximum number of files a process can have open.");
+
+#define OS_GETDTABLESIZE_METHODDEF      \
+    {"getdtablesize", (PyCFunction)os_getdtablesize, METH_NOARGS, os_getdtablesize__doc__},
+
+static PyObject *
+os_getdtablesize_impl(PyObject *module);
+
+static PyObject *
+os_getdtablesize(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return os_getdtablesize_impl(module);
+}
+
 #if defined(HAVE_LINK)
 
 PyDoc_STRVAR(os_link__doc__,
