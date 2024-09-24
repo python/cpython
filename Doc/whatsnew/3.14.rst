@@ -103,8 +103,8 @@ This example shows how these formats behave:
    >>> get_annotations(func, format=Format.SOURCE)
    {'arg': 'Undefined'}
 
-Implications if you write annotations in your code
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Implications for annotated code
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you define annotations in your code (for example, for use with a static type
 checker), then this change probably does not affect you: you can keep
