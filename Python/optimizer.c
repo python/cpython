@@ -182,7 +182,6 @@ _PyOptimizer_Optimize(
     if (err <= 0) {
         return err;
     }
-
     assert(*executor_ptr != NULL);
     if (progress_needed) {
         int index = get_index_for_executor(code, start);

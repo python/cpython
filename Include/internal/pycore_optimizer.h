@@ -29,9 +29,9 @@ typedef struct {
 typedef struct {
     uint8_t opcode;
     uint8_t oparg;
-    uint16_t valid:1;
-    uint16_t linked:1;
-    uint16_t chain_depth:6;  // Must be big enough for MAX_CHAIN_DEPTH - 1.
+    uint8_t valid:1;
+    uint8_t linked:1;
+    uint8_t chain_depth:6;  // Must be big enough for MAX_CHAIN_DEPTH - 1.
     bool warm;
     int index;           // Index of ENTER_EXECUTOR (if code isn't NULL, below).
     _PyBloomFilter bloom;
@@ -132,6 +132,10 @@ PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyInterpreterState *interp);
 #  define _Py_Executors_InvalidateCold(A) ((void)0)
 
 #endif
+
+// Used as the threshold to trigger executor invalidation when
+// trace_run_counter is greater than this value.
+#define JIT_CLEANUP_THRESHOLD 100000
 
 // This is the length of the trace we project initially.
 #define UOP_MAX_TRACE_LENGTH 800

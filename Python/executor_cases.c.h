@@ -5450,9 +5450,9 @@
 
         case _MAKE_WARM: {
             current_executor->vm_data.warm = true;
-            if (++tstate->interp->run_counter > 100000) {
+            if (++tstate->interp->trace_run_counter > JIT_CLEANUP_THRESHOLD) {
                 _Py_set_eval_breaker_bit(tstate, _PY_EVAL_JIT_INVALIDATE_COLD_BIT);
-                tstate->interp->run_counter = 0;
+                tstate->interp->trace_run_counter = 0;
             }
             break;
         }
