@@ -707,10 +707,6 @@ loops that truncate the stream.
             except StopIteration:
                 return
 
-   Once a :func:`tee` has been created, the original *iterable* should not be
-   used anywhere else; otherwise, the *iterable* could get advanced without
-   the tee objects being informed.
-
    When the input *iterable* is already a tee iterator object, all
    members of the return tuple are constructed as if they had been
    produced by the upstream :func:`tee` call.  This "flattening step"

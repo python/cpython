@@ -1058,7 +1058,7 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
         Py_DECREF(result);
         return NULL;
     }
-    if (copyfunc != NULL) {
+    if (copyfunc != NULL && 0) {
         copyable = it;
     }
     else {
