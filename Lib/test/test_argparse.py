@@ -280,16 +280,18 @@ class ParserTesterMetaclass(type):
                 parser = self._get_parser(tester)
                 for args_str in tester.failures:
                     args = args_str.split()
-                    with tester.assertRaises(ArgumentParserError, msg=args):
-                        parser.parse_args(args)
+                    with tester.subTest(args=args):
+                        with tester.assertRaises(ArgumentParserError, msg=args):
+                            parser.parse_args(args)
 
             def test_successes(self, tester):
                 parser = self._get_parser(tester)
                 for args, expected_ns in tester.successes:
                     if isinstance(args, str):
                         args = args.split()
-                    result_ns = self._parse_args(parser, args)
-                    tester.assertEqual(expected_ns, result_ns)
+                    with tester.subTest(args=args):
+                        result_ns = self._parse_args(parser, args)
+                        tester.assertEqual(expected_ns, result_ns)
 
         # add tests for each combination of an optionals adding method
         # and an arg parsing method
@@ -1089,57 +1091,87 @@ class TestPositionalsNargs2None(ParserTestCase):
 class TestPositionalsNargsNoneZeroOrMore(ParserTestCase):
     """Test a Positional with no nargs followed by one with unlimited"""
 
-    argument_signatures = [Sig('foo'), Sig('bar', nargs='*')]
-    failures = ['', '--foo']
+    argument_signatures = [Sig('-x'), Sig('foo'), Sig('bar', nargs='*')]
+    failures = ['', '--foo', 'a b -x X c']
     successes = [
-        ('a', NS(foo='a', bar=[])),
-        ('a b', NS(foo='a', bar=['b'])),
-        ('a b c', NS(foo='a', bar=['b', 'c'])),
+        ('a', NS(x=None, foo='a', bar=[])),
+        ('a b', NS(x=None, foo='a', bar=['b'])),
+        ('a b c', NS(x=None, foo='a', bar=['b', 'c'])),
+        ('-x X a', NS(x='X', foo='a', bar=[])),
+        ('a -x X', NS(x='X', foo='a', bar=[])),
+        ('-x X a b', NS(x='X', foo='a', bar=['b'])),
+        ('a -x X b', NS(x='X', foo='a', bar=['b'])),
+        ('a b -x X', NS(x='X', foo='a', bar=['b'])),
+        ('-x X a b c', NS(x='X', foo='a', bar=['b', 'c'])),
+        ('a -x X b c', NS(x='X', foo='a', bar=['b', 'c'])),
+        ('a b c -x X', NS(x='X', foo='a', bar=['b', 'c'])),
     ]
 
 
 class TestPositionalsNargsNoneOneOrMore(ParserTestCase):
     """Test a Positional with no nargs followed by one with one or more"""
 
-    argument_signatures = [Sig('foo'), Sig('bar', nargs='+')]
-    failures = ['', '--foo', 'a']
+    argument_signatures = [Sig('-x'), Sig('foo'), Sig('bar', nargs='+')]
+    failures = ['', '--foo', 'a', 'a b -x X c']
     successes = [
-        ('a b', NS(foo='a', bar=['b'])),
-        ('a b c', NS(foo='a', bar=['b', 'c'])),
+        ('a b', NS(x=None, foo='a', bar=['b'])),
+        ('a b c', NS(x=None, foo='a', bar=['b', 'c'])),
+        ('-x X a b', NS(x='X', foo='a', bar=['b'])),
+        ('a -x X b', NS(x='X', foo='a', bar=['b'])),
+        ('a b -x X', NS(x='X', foo='a', bar=['b'])),
+        ('-x X a b c', NS(x='X', foo='a', bar=['b', 'c'])),
+        ('a -x X b c', NS(x='X', foo='a', bar=['b', 'c'])),
+        ('a b c -x X', NS(x='X', foo='a', bar=['b', 'c'])),
     ]
 
 
 class TestPositionalsNargsNoneOptional(ParserTestCase):
     """Test a Positional with no nargs followed by one with an Optional"""
 
-    argument_signatures = [Sig('foo'), Sig('bar', nargs='?')]
+    argument_signatures = [Sig('-x'), Sig('foo'), Sig('bar', nargs='?')]
     failures = ['', '--foo', 'a b c']
     successes = [
-        ('a', NS(foo='a', bar=None)),
-        ('a b', NS(foo='a', bar='b')),
+        ('a', NS(x=None, foo='a', bar=None)),
+        ('a b', NS(x=None, foo='a', bar='b')),
+        ('-x X a', NS(x='X', foo='a', bar=None)),
+        ('a -x X', NS(x='X', foo='a', bar=None)),
+        ('-x X a b', NS(x='X', foo='a', bar='b')),
+        ('a -x X b', NS(x='X', foo='a', bar='b')),
+        ('a b -x X', NS(x='X', foo='a', bar='b')),
     ]
 
 
 class TestPositionalsNargsZeroOrMoreNone(ParserTestCase):
     """Test a Positional with unlimited nargs followed by one with none"""
 
-    argument_signatures = [Sig('foo', nargs='*'), Sig('bar')]
-    failures = ['', '--foo']
+    argument_signatures = [Sig('-x'), Sig('foo', nargs='*'), Sig('bar')]
+    failures = ['', '--foo', 'a -x X b', 'a -x X b c', 'a b -x X c']
     successes = [
-        ('a', NS(foo=[], bar='a')),
-        ('a b', NS(foo=['a'], bar='b')),
-        ('a b c', NS(foo=['a', 'b'], bar='c')),
+        ('a', NS(x=None, foo=[], bar='a')),
+        ('a b', NS(x=None, foo=['a'], bar='b')),
+        ('a b c', NS(x=None, foo=['a', 'b'], bar='c')),
+        ('-x X a', NS(x='X', foo=[], bar='a')),
+        ('a -x X', NS(x='X', foo=[], bar='a')),
+        ('-x X a b', NS(x='X', foo=['a'], bar='b')),
+        ('a b -x X', NS(x='X', foo=['a'], bar='b')),
+        ('-x X a b c', NS(x='X', foo=['a', 'b'], bar='c')),
+        ('a b c -x X', NS(x='X', foo=['a', 'b'], bar='c')),
     ]
 
 
 class TestPositionalsNargsOneOrMoreNone(ParserTestCase):
     """Test a Positional with one or more nargs followed by one with none"""
 
-    argument_signatures = [Sig('foo', nargs='+'), Sig('bar')]
-    failures = ['', '--foo', 'a']
+    argument_signatures = [Sig('-x'), Sig('foo', nargs='+'), Sig('bar')]
+    failures = ['', '--foo', 'a', 'a -x X b c', 'a b -x X c']
     successes = [
-        ('a b', NS(foo=['a'], bar='b')),
-        ('a b c', NS(foo=['a', 'b'], bar='c')),
+        ('a b', NS(x=None, foo=['a'], bar='b')),
+        ('a b c', NS(x=None, foo=['a', 'b'], bar='c')),
+        ('-x X a b', NS(x='X', foo=['a'], bar='b')),
+        ('a -x X b', NS(x='X', foo=['a'], bar='b')),
+        ('a b -x X', NS(x='X', foo=['a'], bar='b')),
+        ('-x X a b c', NS(x='X', foo=['a', 'b'], bar='c')),
+        ('a b c -x X', NS(x='X', foo=['a', 'b'], bar='c')),
     ]
 
 
@@ -1224,14 +1256,21 @@ class TestPositionalsNargsNoneZeroOrMore1(ParserTestCase):
     """Test three Positionals: no nargs, unlimited nargs and 1 nargs"""
 
     argument_signatures = [
+        Sig('-x'),
         Sig('foo'),
         Sig('bar', nargs='*'),
         Sig('baz', nargs=1),
     ]
-    failures = ['', '--foo', 'a']
+    failures = ['', '--foo', 'a', 'a b -x X c']
     successes = [
-        ('a b', NS(foo='a', bar=[], baz=['b'])),
-        ('a b c', NS(foo='a', bar=['b'], baz=['c'])),
+        ('a b', NS(x=None, foo='a', bar=[], baz=['b'])),
+        ('a b c', NS(x=None, foo='a', bar=['b'], baz=['c'])),
+        ('-x X a b', NS(x='X', foo='a', bar=[], baz=['b'])),
+        ('a -x X b', NS(x='X', foo='a', bar=[], baz=['b'])),
+        ('a b -x X', NS(x='X', foo='a', bar=[], baz=['b'])),
+        ('-x X a b c', NS(x='X', foo='a', bar=['b'], baz=['c'])),
+        ('a -x X b c', NS(x='X', foo='a', bar=['b'], baz=['c'])),
+        ('a b c -x X', NS(x='X', foo='a', bar=['b'], baz=['c'])),
     ]
 
 
@@ -1239,14 +1278,22 @@ class TestPositionalsNargsNoneOneOrMore1(ParserTestCase):
     """Test three Positionals: no nargs, one or more nargs and 1 nargs"""
 
     argument_signatures = [
+        Sig('-x'),
         Sig('foo'),
         Sig('bar', nargs='+'),
         Sig('baz', nargs=1),
     ]
-    failures = ['', '--foo', 'a', 'b']
+    failures = ['', '--foo', 'a', 'b', 'a b -x X c d', 'a b c -x X d']
     successes = [
-        ('a b c', NS(foo='a', bar=['b'], baz=['c'])),
-        ('a b c d', NS(foo='a', bar=['b', 'c'], baz=['d'])),
+        ('a b c', NS(x=None, foo='a', bar=['b'], baz=['c'])),
+        ('a b c d', NS(x=None, foo='a', bar=['b', 'c'], baz=['d'])),
+        ('-x X a b c', NS(x='X', foo='a', bar=['b'], baz=['c'])),
+        ('a -x X b c', NS(x='X', foo='a', bar=['b'], baz=['c'])),
+        ('a b -x X c', NS(x='X', foo='a', bar=['b'], baz=['c'])),
+        ('a b c -x X', NS(x='X', foo='a', bar=['b'], baz=['c'])),
+        ('-x X a b c d', NS(x='X', foo='a', bar=['b', 'c'], baz=['d'])),
+        ('a -x X b c d', NS(x='X', foo='a', bar=['b', 'c'], baz=['d'])),
+        ('a b c d -x X', NS(x='X', foo='a', bar=['b', 'c'], baz=['d'])),
     ]
 
 
@@ -1254,14 +1301,21 @@ class TestPositionalsNargsNoneOptional1(ParserTestCase):
     """Test three Positionals: no nargs, optional narg and 1 nargs"""
 
     argument_signatures = [
+        Sig('-x'),
         Sig('foo'),
         Sig('bar', nargs='?', default=0.625),
         Sig('baz', nargs=1),
     ]
-    failures = ['', '--foo', 'a']
+    failures = ['', '--foo', 'a', 'a b -x X c']
     successes = [
-        ('a b', NS(foo='a', bar=0.625, baz=['b'])),
-        ('a b c', NS(foo='a', bar='b', baz=['c'])),
+        ('a b', NS(x=None, foo='a', bar=0.625, baz=['b'])),
+        ('a b c', NS(x=None, foo='a', bar='b', baz=['c'])),
+        ('-x X a b', NS(x='X', foo='a', bar=0.625, baz=['b'])),
+        ('a -x X b', NS(x='X', foo='a', bar=0.625, baz=['b'])),
+        ('a b -x X', NS(x='X', foo='a', bar=0.625, baz=['b'])),
+        ('-x X a b c', NS(x='X', foo='a', bar='b', baz=['c'])),
+        ('a -x X b c', NS(x='X', foo='a', bar='b', baz=['c'])),
+        ('a b c -x X', NS(x='X', foo='a', bar='b', baz=['c'])),
     ]
 
 
@@ -1477,6 +1531,9 @@ class TestNargsRemainder(ParserTestCase):
     successes = [
         ('X', NS(x='X', y=[], z=None)),
         ('-z Z X', NS(x='X', y=[], z='Z')),
+        ('-z Z X A B', NS(x='X', y=['A', 'B'], z='Z')),
+        ('X -z Z A B', NS(x='X', y=['-z', 'Z', 'A', 'B'], z=None)),
+        ('X A -z Z B', NS(x='X', y=['A', '-z', 'Z', 'B'], z=None)),
         ('X A B -z Z', NS(x='X', y=['A', 'B', '-z', 'Z'], z=None)),
         ('X Y --foo', NS(x='X', y=['Y', '--foo'], z=None)),
     ]
@@ -6018,8 +6075,8 @@ class TestIntermixedArgs(TestCase):
 
         args, extras = parser.parse_known_args(argv)
         # cannot parse the '1,2,3'
-        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[]), args)
-        self.assertEqual(["1", "2", "3"], extras)
+        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1]), args)
+        self.assertEqual(["2", "3"], extras)
 
         argv = 'cmd --foo x 1 --error 2 --bar y 3'.split()
         args, extras = parser.parse_known_intermixed_args(argv)
