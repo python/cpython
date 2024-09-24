@@ -1391,6 +1391,7 @@ class PyShell(OutputWindow):
 
         self.shell_sidebar.update_sidebar()
         self.text.mark_set("insert", "end-1c")
+        self.mark_new_stmt()
         self.set_line_and_column()
         self.io.reset_undo()
 

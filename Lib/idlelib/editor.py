@@ -447,6 +447,10 @@ class EditorWindow:
         self.status_bar.set_label('column', 'Col: %s' % column)
         self.status_bar.set_label('line', 'Ln: %s' % line)
 
+    def mark_new_stmt(self):
+        self.text.mark_set('stmt-start', INSERT)
+        self.text.mark_gravity('stmt-start', LEFT)
+
 
     """ Menu definitions and functions.
     * self.menubar - the always visible horizontal menu bar.
