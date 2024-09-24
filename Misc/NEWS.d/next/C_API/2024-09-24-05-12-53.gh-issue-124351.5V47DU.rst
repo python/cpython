@@ -1,0 +1,2 @@
+Improved Clarity and Correctness: The global variable _OTHER_ENDIAN is now explicitly defined for enhanced clarity and correctness in endian handling.
+Optimized Code Structure: List comprehension has been implemented in the __setattr__ method to streamline the processing of value, reducing unnecessary complexity and improving readability.
