@@ -5149,7 +5149,7 @@ AC_CHECK_FUNCS([ \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
   gai_strerror getegid geteuid getgid getgrent getgrgid getgrgid_r \
   getgrnam_r getgrouplist gethostname getitimer getloadavg getlogin \
-  getpeername getpgid getpid getppid getpriority _getpty \
+  getpeername getpgid getpid getppid getpriority _getpty getdtablesize \
   getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid getspent \
   getspnam getuid getwd grantpt if_nameindex initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
