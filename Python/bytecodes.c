@@ -1811,12 +1811,11 @@ dummy_func(
 
         inst(LOAD_DEREF, ( -- value)) {
             PyCellObject *cell = (PyCellObject *)PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
-            PyObject *value_o = PyCell_GetRef(cell);
-            if (value_o == NULL) {
+            value = _PyCell_GetStackRef(cell);
+            if (PyStackRef_IsNull(value)) {
                 _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
                 ERROR_IF(true, error);
             }
-            value = PyStackRef_FromPyObjectSteal(value_o);
         }
 
         inst(STORE_DEREF, (v --)) {
