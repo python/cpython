@@ -5,8 +5,8 @@
 .. original section: Library
 .. section: Security
 
-Update expat copy from 2.1.1 to 2.2.0 to get fixes of CVE-2016-0718 and
-CVE-2016-4472. See https://sourceforge.net/p/expat/bugs/537/ for more
+Update expat copy from 2.1.1 to 2.2.0 to get fixes of :cve:`2016-0718` and
+:cve:`2016-4472`. See https://sourceforge.net/p/expat/bugs/537/ for more
 information.
 
 ..
@@ -77,7 +77,7 @@ delivered to the innermost frame.
 .. section: Core and Builtins
 
 sys.getsizeof() on a code object now returns the sizes which includes the
-code struct and sizes of objects which it references. Patch by Dong-hee Na.
+code struct and sizes of objects which it references. Patch by Donghee Na.
 
 ..
 
@@ -163,7 +163,7 @@ no longer ignored.  Patch by Mircea Cosbuc.
 .. nonce: I2mDTz
 .. section: Library
 
-Functional API of enum allows to create empty enums. Patched by Dong-hee Na
+Functional API of enum allows to create empty enums. Patched by Donghee Na
 
 ..
 
@@ -202,7 +202,7 @@ not keep objects alive longer than expected.
 .. section: Library
 
 inspect.signature() now supports callables with variable-argument parameters
-wrapped with partialmethod. Patch by Dong-hee Na.
+wrapped with partialmethod. Patch by Donghee Na.
 
 ..
 

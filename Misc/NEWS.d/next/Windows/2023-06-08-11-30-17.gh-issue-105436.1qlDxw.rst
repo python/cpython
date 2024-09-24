@@ -1,2 +1,0 @@
-Ensure that an empty environment block is terminated by two null characters,
-as is required by Windows.

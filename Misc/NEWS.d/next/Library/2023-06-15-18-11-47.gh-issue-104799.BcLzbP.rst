@@ -1,3 +1,0 @@
-Enable :func:`ast.unparse` to unparse function and class definitions created
-without the new ``type_params`` field from :pep:`695`. Patch by Jelle
-Zijlstra.

@@ -1,0 +1,70 @@
+on:
+  workflow_call:
+    inputs:
+      config_hash:
+        required: true
+        type: string
+      free-threading:
+        required: false
+        type: boolean
+        default: false
+      os:
+        description: OS to run the job
+        required: true
+        type: string
+
+jobs:
+  build_macos:
+    name: build and test (${{ inputs.os }})
+    timeout-minutes: 60
+    env:
+      HOMEBREW_NO_ANALYTICS: 1
+      HOMEBREW_NO_AUTO_UPDATE: 1
+      HOMEBREW_NO_INSTALL_CLEANUP: 1
+      HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
+      PYTHONSTRICTEXTENSIONBUILD: 1
+      TERM: linux
+    runs-on: ${{ inputs.os }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Runner image version
+      run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
+    - name: Restore config.cache
+      uses: actions/cache@v4
+      with:
+        path: config.cache
+        key: ${{ github.job }}-${{ inputs.os }}-${{ env.IMAGE_VERSION }}-${{ inputs.config_hash }}
+    - name: Install Homebrew dependencies
+      run: brew install pkg-config openssl@3.0 xz gdbm tcl-tk make
+    - name: Configure CPython
+      run: |
+        GDBM_CFLAGS="-I$(brew --prefix gdbm)/include" \
+        GDBM_LIBS="-L$(brew --prefix gdbm)/lib -lgdbm" \
+        ./configure \
+          --config-cache \
+          --with-pydebug \
+          --enable-slower-safety \
+          --enable-safety \
+          ${{ inputs.free-threading && '--disable-gil' || '' }} \
+          --prefix=/opt/python-dev \
+          --with-openssl="$(brew --prefix openssl@3.0)"
+    - name: Build CPython
+      if : ${{ inputs.free-threading || inputs.os != 'macos-13' }}
+      run: gmake -j8
+    - name: Build CPython for compiler warning check
+      if : ${{ !inputs.free-threading && inputs.os == 'macos-13' }}
+      run: set -o pipefail; gmake -j8 --output-sync 2>&1 | tee compiler_output_macos.txt
+    - name: Display build info
+      run: make pythoninfo
+    - name: Check compiler warnings
+      if : ${{ !inputs.free-threading && inputs.os == 'macos-13' }}
+      run: >-
+        python3 Tools/build/check_warnings.py
+        --compiler-output-file-path=compiler_output_macos.txt
+        --warning-ignore-file-path=Tools/build/.warningignore_macos
+        --compiler-output-type=clang
+        --fail-on-regression
+        --fail-on-improvement
+        --path-prefix="./"
+    - name: Tests
+      run: make test

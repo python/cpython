@@ -1,3 +1,0 @@
-Remove remaining two-codeunit superinstructions. All remaining
-superinstructions only take a single codeunit, simplifying instrumentation
-and quickening.

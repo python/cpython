@@ -1,5 +1,5 @@
-:mod:`fnmatch` --- Unix filename pattern matching
-=================================================
+:mod:`!fnmatch` --- Unix filename pattern matching
+==================================================
 
 .. module:: fnmatch
    :synopsis: Unix shell style filename pattern matching.
@@ -50,10 +50,10 @@ Also note that :func:`functools.lru_cache` with the *maxsize* of 32768 is used t
 cache the compiled regex patterns in the following functions: :func:`fnmatch`,
 :func:`fnmatchcase`, :func:`.filter`.
 
-.. function:: fnmatch(filename, pattern)
+.. function:: fnmatch(name, pat)
 
-   Test whether the *filename* string matches the *pattern* string, returning
-   :const:`True` or :const:`False`.  Both parameters are case-normalized
+   Test whether the filename string *name* matches the pattern string *pat*,
+   returning ``True`` or ``False``.  Both parameters are case-normalized
    using :func:`os.path.normcase`. :func:`fnmatchcase` can be used to perform a
    case-sensitive comparison, regardless of whether that's standard for the
    operating system.
@@ -69,22 +69,24 @@ cache the compiled regex patterns in the following functions: :func:`fnmatch`,
               print(file)
 
 
-.. function:: fnmatchcase(filename, pattern)
+.. function:: fnmatchcase(name, pat)
 
-   Test whether *filename* matches *pattern*, returning :const:`True` or
-   :const:`False`; the comparison is case-sensitive and does not apply
-   :func:`os.path.normcase`.
-
-
-.. function:: filter(names, pattern)
-
-   Construct a list from those elements of the iterable *names* that match *pattern*. It is the same as
-   ``[n for n in names if fnmatch(n, pattern)]``, but implemented more efficiently.
+   Test whether the filename string *name* matches the pattern string *pat*,
+   returning ``True`` or ``False``;
+   the comparison is case-sensitive and does not apply :func:`os.path.normcase`.
 
 
-.. function:: translate(pattern)
+.. function:: filter(names, pat)
 
-   Return the shell-style *pattern* converted to a regular expression for
+   Construct a list from those elements of the :term:`iterable` *names*
+   that match pattern *pat*.
+   It is the same as ``[n for n in names if fnmatch(n, pat)]``,
+   but implemented more efficiently.
+
+
+.. function:: translate(pat)
+
+   Return the shell-style pattern *pat* converted to a regular expression for
    using with :func:`re.match`.
 
    Example:
