@@ -1,0 +1,2 @@
+More informative error message in :func:`str.format` when passing negative
+integer or string index to sequence.
