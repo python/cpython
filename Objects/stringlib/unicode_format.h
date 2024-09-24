@@ -466,11 +466,12 @@ get_field_object(SubString *input, PyObject *args, PyObject *kwargs,
                 if (PySequence_Check(obj)) {
                     /* string index can't be passed to sequence */
                     PyObject *str = SubString_new_object(&name);
-                    if (str != NULL)
+                    if (str) {
                         PyErr_Format(PyExc_TypeError,
                              "Index must be a sequence of digits, string %R "
                              "is not allowed",
                              str);
+                    }
                     Py_XDECREF(str);
                     goto error;
                 }
