@@ -233,8 +233,8 @@ class PyclbrTest(TestCase):
             cm('sre_parse', ignore=('dump', 'groups', 'pos')) # from sre_constants import *; property
         cm(
             'pdb',
-            # pyclbr does not handle elegantly `typing` or properties or enum
-            ignore=('Union', '_ModuleTarget', '_ScriptTarget', '_ZipTarget', 'PdbInvokeOrigin'),
+            # pyclbr does not handle elegantly `typing` or properties
+            ignore=('Union', '_ModuleTarget', '_ScriptTarget', '_ZipTarget'),
         )
         cm('pydoc', ignore=('input', 'output',)) # properties
 
