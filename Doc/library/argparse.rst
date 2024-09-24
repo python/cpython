@@ -231,7 +231,7 @@ ArgumentParser objects
 
    * exit_on_error_ - Determines whether or not ArgumentParser exits with
      error info when an error occurs. (default: ``True``)
-   
+
    * suggest_on_error_ - Enables suggestions for mistyped argument choices
       and subparser names. (default: ``False``)
 

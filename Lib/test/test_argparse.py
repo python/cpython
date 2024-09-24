@@ -2218,7 +2218,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
             "invalid choice: 'baz' (choose from 'foo', 'bar')",
             excinfo.exception.stderr,
         )
-    
+
     def test_wrong_argument_no_suggestion_implicit(self):
         parser = ErrorRaisingArgumentParser()
         parser.add_argument('foo', choices=['bar', 'baz'])
