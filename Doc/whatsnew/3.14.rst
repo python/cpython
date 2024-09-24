@@ -80,6 +80,12 @@ longer evaluated eagerly. Instead, annotations are stored in special-purpose
 :term:`annotate functions <annotate function>` and evaluated only when
 necessary. This is specified in :pep:`649` and :pep:`749`.
 
+This change is designed to make annotations in Python more performant and more
+usable in most circumstances. The runtime cost for defining annotations is
+minimized, but it remains possible to introspect annotations at runtime.
+It is usually no longer necessary to enclose annotations in strings if they
+contain forward references.
+
 The new :mod:`annotationlib` module provides tools for inspecting deferred
 annotations. Annotations may be evaluated in the :attr:`~annotationlib.Format.VALUE`
 format (which evaluates annotations to runtime values, similar to the behavior in
