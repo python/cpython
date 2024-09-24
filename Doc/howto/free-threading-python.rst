@@ -1,14 +1,19 @@
 .. _freethreading-python-howto:
 
-*********************************
-Python support for free threading
-*********************************
+**********************************************
+Python experimental support for free threading
+**********************************************
 
 Starting with the 3.13 release, CPython has experimental support for running
-with the :term:`global interpreter lock` (GIL) disabled in a configuration
+with the :term:`global interpreter lock` (GIL) disabled in a build of Python
 called :term:`free threading`.  This document describes the implications of
 free threading for Python code.  See :ref:`freethreading-extensions-howto` for
 information on how to write C extensions that support the free-threaded build.
+
+.. seealso::
+
+   :pep:`703` – Making the Global Interpreter Lock Optional in CPython for an
+   overall description of free-threaded Python.
 
 
 Installation
@@ -31,7 +36,7 @@ Identifying free-threaded Python
 
 The free-threaded build of CPython can optionally run with the global
 interpreter lock enabled, such as when :envvar:`PYTHON_GIL` is set to ``1``,
-or when importing an extension module that requires the GIL.
+or automatically when importing an extension module that requires the GIL.
 
 The :func:`sys._is_gil_enabled` function will return ``False`` if the global
 interpreter lock is currently disabled.  This is the recommended mechanism for
@@ -97,8 +102,11 @@ Frame objects
 -------------
 
 It is not safe to access :ref:`frame <frame-objects>` objects from other
-threads.  This means that :func:`sys._current_frames` is generally not safe to
-use in a free-threaded build.
+threads and doing so may cause your program to crash .  This means that
+:func:`sys._current_frames` is generally not safe to use in a free-threaded
+build.  Functions like :func:`inspect.currentframe` and :func:`sys._getframe`
+are generally safe as long as the resulting frame object is not passed to
+another thread.
 
 Iterators
 ---------
@@ -116,4 +124,5 @@ compared to the default GIL-enabled build.  In 3.13, this overhead is about
 40% on the `pyperformance <https://pyperformance.readthedocs.io/>`_ suite.
 Programs that spend most of their time in C extensions or I/O will see
 less of an impact.  This overhead is expected to be reduced in Python
-3.14.
+3.14.   We are aiming for an overhead of 10% or less on the pyperformance
+suite compared to the default GIL-enabled build.
