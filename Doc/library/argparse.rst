@@ -233,7 +233,7 @@ ArgumentParser objects
      error info when an error occurs. (default: ``True``)
 
    * suggest_on_error_ - Enables suggestions for mistyped argument choices
-      and subparser names. (default: ``False``)
+     and subparser names. (default: ``False``)
 
 
    .. versionchanged:: 3.5
