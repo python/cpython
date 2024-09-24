@@ -439,7 +439,7 @@ class Parser(PLexer):
                                         )
         return None
 
-    def members(self, allow_sequence=False) -> list[str] | None:
+    def members(self, allow_sequence : bool=False) -> list[str] | None:
         here = self.getpos()
         if tkn := self.expect(lx.IDENTIFIER):
             members = [tkn.text]
