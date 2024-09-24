@@ -471,6 +471,9 @@
 /* Define this if you have flockfile(), getc_unlocked(), and funlockfile() */
 #undef HAVE_GETC_UNLOCKED
 
+/* Define to 1 if you have the `getdtablesize' function. */
+#undef HAVE_GETDTABLESIZE
+
 /* Define to 1 if you have the `getegid' function. */
 #undef HAVE_GETEGID
 
