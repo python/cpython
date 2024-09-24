@@ -4,9 +4,8 @@
 Python experimental support for free threading
 **********************************************
 
-Starting with the 3.13 release, CPython has experimental support for running
-with the :term:`global interpreter lock` (GIL) disabled in a build of Python
-called :term:`free threading`.  This document describes the implications of
+Starting with the 3.13 release, CPython has experimental support for a build of Python
+called :term:`free threading` where the :term:`global interpreter lock` (GIL) is disabled.  This document describes the implications of
 free threading for Python code.  See :ref:`freethreading-extensions-howto` for
 information on how to write C extensions that support the free-threaded build.
 
@@ -52,12 +51,12 @@ Thread safety
 =============
 
 The free-threaded build of CPython aims to provide similar thread-safety
-behavior at the Python level to the GIL-enabled build.  Built-in
+behavior at the Python level to the default GIL-enabled build.  Built-in
 types like :class:`dict`, :class:`list`, and :class:`set` use internal locks
 to protect against concurrent modifications in ways that behave similarly to
 the GIL.  However, Python has not historically guaranteed specific behavior for
 concurrent modifications to these built-in types, so this should be treated
-as a description of the current implementation, not a guarantee of future
+as a description of the current implementation, not a guarantee of current or future
 behavior.
 
 .. note::
@@ -82,7 +81,8 @@ multi-threaded scaling.  This means that these objects are never deallocated.
 This is expected to be addressed in Python 3.14 with
 `deferred reference counting <https://peps.python.org/pep-0703/#deferred-reference-counting>`_.
 
-The objects that are immortalized are:
+An object will be made immortal when a new thread is started for the first time after the main thread is running.
+The following objects are immortalized:
 
 * :ref:`function <user-defined-funcs>` objects declared at the module level
 * :ref:`method <instance-methods>` descriptors
