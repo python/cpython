@@ -214,6 +214,7 @@ static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 {
     if (_Py_IsImmortal(op)) {
+        _Py_DECREF_IMMORTAL_STAT_INC();
         return;
     }
     _Py_DECREF_STAT_INC();
@@ -235,6 +236,7 @@ static inline void
 _Py_DECREF_NO_DEALLOC(PyObject *op)
 {
     if (_Py_IsImmortal(op)) {
+        _Py_DECREF_IMMORTAL_STAT_INC();
         return;
     }
     _Py_DECREF_STAT_INC();
@@ -315,6 +317,7 @@ _Py_INCREF_TYPE(PyTypeObject *type)
 {
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         assert(_Py_IsImmortalLoose(type));
+        _Py_INCREF_IMMORTAL_STAT_INC();
         return;
     }
 
@@ -355,6 +358,7 @@ _Py_DECREF_TYPE(PyTypeObject *type)
 {
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         assert(_Py_IsImmortalLoose(type));
+        _Py_DECREF_IMMORTAL_STAT_INC();
         return;
     }
 
@@ -511,6 +515,7 @@ _Py_TryIncrefFast(PyObject *op) {
     local += 1;
     if (local == 0) {
         // immortal
+        _Py_INCREF_IMMORTAL_STAT_INC();
         return 1;
     }
     if (_Py_IsOwnedByCurrentThread(op)) {
@@ -727,12 +732,15 @@ _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(PyObject *op)
     return (PyWeakReference **)((char *)op + offset);
 }
 
+// Fast inlined version of PyType_IS_GC()
+#define _PyType_IS_GC(t) _PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
+
 // Fast inlined version of PyObject_IS_GC()
 static inline int
 _PyObject_IS_GC(PyObject *obj)
 {
     PyTypeObject *type = Py_TYPE(obj);
-    return (PyType_IS_GC(type)
+    return (_PyType_IS_GC(type)
             && (type->tp_is_gc == NULL || type->tp_is_gc(obj)));
 }
 
@@ -749,9 +757,6 @@ _PyObject_HashFast(PyObject *op)
     }
     return PyObject_Hash(op);
 }
-
-// Fast inlined version of PyType_IS_GC()
-#define _PyType_IS_GC(t) _PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
 
 static inline size_t
 _PyType_PreHeaderSize(PyTypeObject *tp)
