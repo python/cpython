@@ -4218,6 +4218,7 @@ os_getcwdb_impl(PyObject *module)
     return posix_getcwd(1);
 }
 
+
 /*[clinic input]
 os.getdtablesize
 
