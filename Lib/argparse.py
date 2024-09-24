@@ -2068,11 +2068,15 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             # and add the Positional and its args to the list
             for action, arg_count in zip(positionals, arg_counts):
                 args = arg_strings[start_index: start_index + arg_count]
-                # Strip out the first '--' if it is not in PARSER or REMAINDER arg.
-                if (action.nargs not in [PARSER, REMAINDER]
-                    and arg_strings_pattern.find('-', start_index,
+                # Strip out the first '--' if it is not in REMAINDER arg.
+                if action.nargs == PARSER:
+                    if arg_strings_pattern[start_index] == '-':
+                        assert args[0] == '--'
+                        args.remove('--')
+                elif action.nargs != REMAINDER:
+                    if (arg_strings_pattern.find('-', start_index,
                                                  start_index + arg_count) >= 0):
-                    args.remove('--')
+                        args.remove('--')
                 start_index += arg_count
                 if args and action.deprecated and action.dest not in warned:
                     self._warning(_("argument '%(argument_name)s' is deprecated") %
