@@ -2218,6 +2218,16 @@ class TestArgumentAndSubparserSuggestions(TestCase):
             "invalid choice: 'baz' (choose from 'foo', 'bar')",
             excinfo.exception.stderr,
         )
+    
+    def test_wrong_argument_no_suggestion_implicit(self):
+        parser = ErrorRaisingArgumentParser()
+        parser.add_argument('foo', choices=['bar', 'baz'])
+        with self.assertRaises(ArgumentParserError) as excinfo:
+            parser.parse_args(('bazz',))
+        self.assertIn(
+            "invalid choice: 'bazz' (choose from 'bar', 'baz')",
+            excinfo.exception.stderr,
+        )
 
 class TestInvalidAction(TestCase):
     """Test invalid user defined Action"""
