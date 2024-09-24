@@ -2945,10 +2945,13 @@ def _make_eager_annotate(types):
     checked_types = {key: _type_check(val, f"field {key} annotation must be a type")
                      for key, val in types.items()}
     def annotate(format):
-        if format in (annotationlib.Format.VALUE, annotationlib.Format.FORWARDREF):
-            return checked_types
-        else:
-            return _convert_to_source(types)
+        match format:
+            case annotationlib.Format.VALUE | annotationlib.Format.FORWARDREF:
+                return checked_types
+            case annotationlib.Format.SOURCE:
+                return _convert_to_source(types)
+            case _:
+                raise NotImplementedError(format)
     return annotate
 
 
@@ -3242,8 +3245,10 @@ class _TypedDictMeta(type):
                     }
             elif format == annotationlib.Format.SOURCE:
                 own = _convert_to_source(own_annotations)
-            else:
+            elif format in (annotationlib.Format.FORWARDREF, annotationlib.Format.VALUE):
                 own = own_checked_annotations
+            else:
+                raise NotImplementedError(format)
             annos.update(own)
             return annos
 

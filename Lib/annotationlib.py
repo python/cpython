@@ -20,6 +20,7 @@ class Format(enum.IntEnum):
     VALUE = 1
     FORWARDREF = 2
     SOURCE = 3
+    VALUE_WITH_FAKE_GLOBALS = 4
 
 
 _Union = None
@@ -459,6 +460,8 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
     on the generated ForwardRef objects.
 
     """
+    if format == Format.VALUE_WITH_FAKE_GLOBALS:
+        raise ValueError("The VALUE_WITH_FAKE_GLOBALS format is for internal use only")
     try:
         return annotate(format)
     except NotImplementedError:
@@ -492,7 +495,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             argdefs=annotate.__defaults__,
             kwdefaults=annotate.__kwdefaults__,
         )
-        annos = func(Format.VALUE)
+        annos = func(Format.VALUE_WITH_FAKE_GLOBALS)
         if _is_evaluate:
             return annos if isinstance(annos, str) else repr(annos)
         return {
@@ -552,7 +555,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             argdefs=annotate.__defaults__,
             kwdefaults=annotate.__kwdefaults__,
         )
-        result = func(Format.VALUE)
+        result = func(Format.VALUE_WITH_FAKE_GLOBALS)
         for obj in globals.stringifiers:
             obj.__class__ = ForwardRef
         return result

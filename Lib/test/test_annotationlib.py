@@ -382,6 +382,18 @@ class TestGetAnnotations(unittest.TestCase):
             annotationlib.get_annotations(f1, format=0)
 
         with self.assertRaises(ValueError):
+            annotationlib.get_annotations(f1, format=42)
+
+        with self.assertRaisesRegex(
+            ValueError,
+            r"The VALUE_WITH_FAKE_GLOBALS format is for internal use only",
+        ):
+            annotationlib.get_annotations(f1, format=Format.VALUE_WITH_FAKE_GLOBALS)
+
+        with self.assertRaisesRegex(
+            ValueError,
+            r"The VALUE_WITH_FAKE_GLOBALS format is for internal use only",
+        ):
             annotationlib.get_annotations(f1, format=4)
 
     def test_custom_object_with_annotations(self):
@@ -840,7 +852,7 @@ class TestGetAnnotations(unittest.TestCase):
 class TestCallEvaluateFunction(unittest.TestCase):
     def test_evaluation(self):
         def evaluate(format, exc=NotImplementedError):
-            if format != 1:
+            if format != 1 and format != 4:
                 raise exc
             return undefined
 
