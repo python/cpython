@@ -2473,6 +2473,24 @@ class ReTests(unittest.TestCase):
     def test_fail(self):
         self.assertEqual(re.search(r'12(?!)|3', '123')[0], '3')
 
+    def test_character_set_any(self):
+        # The union of complementary character sets mathes any character
+        # and is equivalent to "(?s:.)".
+        s = '1x\n'
+        for p in r'[\s\S]', r'[\d\D]', r'[\w\W]', r'[\S\s]', r'\s|\S':
+            with self.subTest(pattern=p):
+                self.assertEqual(re.findall(p, s), list(s))
+                self.assertEqual(re.fullmatch('(?:' + p + ')+', s).group(), s)
+
+    def test_character_set_none(self):
+        # Negation of the union of complementary character sets does not match
+        # any character.
+        s = '1x\n'
+        for p in r'[^\s\S]', r'[^\d\D]', r'[^\w\W]', r'[^\S\s]':
+            with self.subTest(pattern=p):
+                self.assertIsNone(re.search(p, s))
+                self.assertIsNone(re.search('(?s:.)' + p, s))
+
 
 def get_debug_out(pat):
     with captured_stdout() as out:

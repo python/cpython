@@ -295,16 +295,6 @@ Improve :exc:`SyntaxError` message for empty type param brackets.
 
 ..
 
-.. date: 2024-04-19-08-50-48
-.. gh-issue: 102511
-.. nonce: qDEB66
-.. section: Core and Builtins
-
-Fix :func:`os.path.normpath` for UNC paths on Windows.
-Speed up :func:`os.path.splitroot` with a native implementation.
-
-..
-
 .. date: 2024-04-18-03-49-41
 .. gh-issue: 117958
 .. nonce: -EsfUs
@@ -447,33 +437,6 @@ Give ``_PyInstructionSequence`` a Python interface and use it in tests.
 
 Statically allocated objects are, by definition, immortal so must be marked
 as such regardless of whether they are in extension modules or not.
-
-..
-
-.. date: 2024-04-08-19-30-38
-.. gh-issue: 117641
-.. nonce: oaBGSJ
-.. section: Core and Builtins
-
-Speedup :func:`os.path.commonpath` on Unix.
-
-..
-
-.. date: 2024-04-08-14-33-38
-.. gh-issue: 117636
-.. nonce: exnRKd
-.. section: Core and Builtins
-
-Speedup :func:`os.path.join`.
-
-..
-
-.. date: 2024-04-07-18-42-09
-.. gh-issue: 117607
-.. nonce: C978BD
-.. section: Core and Builtins
-
-Speedup :func:`os.path.relpath`.
 
 ..
 
@@ -836,6 +799,16 @@ big or offset too far.
 
 ..
 
+.. date: 2024-04-19-08-50-48
+.. gh-issue: 102511
+.. nonce: qDEB66
+.. section: Library
+
+Fix :func:`os.path.normpath` for UNC paths on Windows.
+Speed up :func:`os.path.splitroot` with a native implementation.
+
+..
+
 .. date: 2024-04-18-00-35-11
 .. gh-issue: 117535
 .. nonce: 0m6SIM
@@ -1005,6 +978,15 @@ dataclasses.
 
 ..
 
+.. date: 2024-04-08-19-30-38
+.. gh-issue: 117641
+.. nonce: oaBGSJ
+.. section: Library
+
+Speedup :func:`os.path.commonpath` on Unix.
+
+..
+
 .. date: 2024-04-08-19-12-26
 .. gh-issue: 117663
 .. nonce: CPfc_p
@@ -1012,6 +994,15 @@ dataclasses.
 
 Fix ``_simple_enum`` to detect aliases when multiple arguments are present
 but only one is the member value.
+
+..
+
+.. date: 2024-04-08-14-33-38
+.. gh-issue: 117636
+.. nonce: exnRKd
+.. section: Library
+
+Speedup :func:`os.path.join`.
 
 ..
 
@@ -1035,6 +1026,15 @@ include the names from RFC9110. This RFC includes some HTTP statuses
 previously only used for WEBDAV and assigns more generic names to them.
 
 The old constants are preserved for backwards compatibility.
+
+..
+
+.. date: 2024-04-07-18-42-09
+.. gh-issue: 117607
+.. nonce: C978BD
+.. section: Library
+
+Speedup :func:`os.path.relpath`.
 
 ..
 

@@ -214,7 +214,7 @@ _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame);
 
 /* Gets the PyFrameObject for this frame, lazily
  * creating it if necessary.
- * Returns a borrowed referennce */
+ * Returns a borrowed reference */
 static inline PyFrameObject *
 _PyFrame_GetFrameObject(_PyInterpreterFrame *frame)
 {
@@ -305,14 +305,6 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->return_offset = 0;
     return frame;
-}
-
-static inline
-PyGenObject *_PyFrame_GetGenerator(_PyInterpreterFrame *frame)
-{
-    assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
-    size_t offset_in_gen = offsetof(PyGenObject, gi_iframe);
-    return (PyGenObject *)(((char *)frame) - offset_in_gen);
 }
 
 PyAPI_FUNC(_PyInterpreterFrame *)

@@ -206,6 +206,8 @@ CH_UNICODE = {
     CATEGORY_NOT_LINEBREAK: CATEGORY_UNI_NOT_LINEBREAK
 }
 
+CH_NEGATE = dict(zip(CHCODES[::2] + CHCODES[1::2], CHCODES[1::2] + CHCODES[::2]))
+
 # flags
 SRE_FLAG_IGNORECASE = 2 # case insensitive
 SRE_FLAG_LOCALE = 4 # honour system locale

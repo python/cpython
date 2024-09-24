@@ -52,6 +52,7 @@ General:
 Advanced development:
 
 * :ref:`curses-howto`
+* :ref:`freethreading-extensions-howto`
 * :ref:`isolating-extensions-howto`
 * :ref:`python_2.3_mro`
 * :ref:`socket-howto`

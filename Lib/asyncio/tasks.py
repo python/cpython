@@ -1097,14 +1097,14 @@ _py_unregister_eager_task = _unregister_eager_task
 _py_enter_task = _enter_task
 _py_leave_task = _leave_task
 _py_swap_current_task = _swap_current_task
-
+_py_all_tasks = all_tasks
 
 try:
     from _asyncio import (_register_task, _register_eager_task,
                           _unregister_task, _unregister_eager_task,
                           _enter_task, _leave_task, _swap_current_task,
                           _scheduled_tasks, _eager_tasks, _current_tasks,
-                          current_task)
+                          current_task, all_tasks)
 except ImportError:
     pass
 else:
@@ -1116,3 +1116,4 @@ else:
     _c_enter_task = _enter_task
     _c_leave_task = _leave_task
     _c_swap_current_task = _swap_current_task
+    _c_all_tasks = all_tasks

@@ -1,0 +1,1 @@
+Add :meth:`pathlib.Path.copytree`, which recursively copies a directory.

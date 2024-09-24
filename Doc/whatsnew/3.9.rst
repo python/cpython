@@ -352,7 +352,7 @@ that schedules a shutdown for the default executor that waits on the
 :func:`asyncio.run` has been updated to use the new :term:`coroutine`.
 (Contributed by Kyle Stanley in :issue:`34037`.)
 
-Added :class:`asyncio.PidfdChildWatcher`, a Linux-specific child watcher
+Added :class:`!asyncio.PidfdChildWatcher`, a Linux-specific child watcher
 implementation that polls process file descriptors. (:issue:`38692`)
 
 Added a new :term:`coroutine` :func:`asyncio.to_thread`. It is mainly used for
