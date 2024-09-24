@@ -1234,8 +1234,8 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[266] = {
     [YIELD_VALUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ESCAPES_FLAG },
     [_DO_CALL_FUNCTION_EX] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [JUMP] = { true, -1, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [JUMP_IF_FALSE] = { true, -1, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [JUMP_IF_TRUE] = { true, -1, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
+    [JUMP_IF_FALSE] = { true, -1, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
+    [JUMP_IF_TRUE] = { true, -1, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [JUMP_NO_INTERRUPT] = { true, -1, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [LOAD_CLOSURE] = { true, -1, HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_PURE_FLAG },
     [POP_BLOCK] = { true, -1, HAS_PURE_FLAG },
@@ -1957,21 +1957,22 @@ const uint8_t _PyOpcode_Deopt[256] = {
     case 235: \
         ;
 struct pseudo_targets {
-    uint8_t targets[3];
+    uint8_t as_sequence;
+    uint8_t targets[5];
 };
 extern const struct pseudo_targets _PyOpcode_PseudoTargets[10];
 #ifdef NEED_OPCODE_METADATA
 const struct pseudo_targets _PyOpcode_PseudoTargets[10] = {
-    [LOAD_CLOSURE-256] = { { LOAD_FAST, 0, 0 } },
-    [STORE_FAST_MAYBE_NULL-256] = { { STORE_FAST, 0, 0 } },
-    [JUMP-256] = { { JUMP_FORWARD, JUMP_BACKWARD, 0 } },
-    [JUMP_NO_INTERRUPT-256] = { { JUMP_FORWARD, JUMP_BACKWARD_NO_INTERRUPT, 0 } },
-    [JUMP_IF_FALSE-256] = { { JUMP_FORWARD, JUMP_BACKWARD, 0 } },
-    [JUMP_IF_TRUE-256] = { { JUMP_FORWARD, JUMP_BACKWARD, 0 } },
-    [SETUP_FINALLY-256] = { { NOP, 0, 0 } },
-    [SETUP_CLEANUP-256] = { { NOP, 0, 0 } },
-    [SETUP_WITH-256] = { { NOP, 0, 0 } },
-    [POP_BLOCK-256] = { { NOP, 0, 0 } },
+    [LOAD_CLOSURE-256] = { 0, { LOAD_FAST, 0, 0, 0 } },
+    [STORE_FAST_MAYBE_NULL-256] = { 0, { STORE_FAST, 0, 0, 0 } },
+    [JUMP-256] = { 0, { JUMP_FORWARD, JUMP_BACKWARD, 0, 0 } },
+    [JUMP_NO_INTERRUPT-256] = { 0, { JUMP_FORWARD, JUMP_BACKWARD_NO_INTERRUPT, 0, 0 } },
+    [JUMP_IF_FALSE-256] = { 1, { COPY, TO_BOOL, POP_JUMP_IF_FALSE, 0 } },
+    [JUMP_IF_TRUE-256] = { 1, { COPY, TO_BOOL, POP_JUMP_IF_TRUE, 0 } },
+    [SETUP_FINALLY-256] = { 0, { NOP, 0, 0, 0 } },
+    [SETUP_CLEANUP-256] = { 0, { NOP, 0, 0, 0 } },
+    [SETUP_WITH-256] = { 0, { NOP, 0, 0, 0 } },
+    [POP_BLOCK-256] = { 0, { NOP, 0, 0, 0 } },
 };
 
 #endif // NEED_OPCODE_METADATA

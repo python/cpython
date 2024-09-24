@@ -2571,15 +2571,13 @@ dummy_func(
             JUMP_BACKWARD_NO_INTERRUPT,
         };
 
-        pseudo(JUMP_IF_FALSE, (cond -- cond)) = {
-            JUMP_FORWARD,
-            JUMP_BACKWARD,
-        };
+        pseudo(JUMP_IF_FALSE, (cond -- cond)) = [
+            COPY, TO_BOOL, POP_JUMP_IF_FALSE,
+        ];
 
-        pseudo(JUMP_IF_TRUE, (cond -- cond)) = {
-            JUMP_FORWARD,
-            JUMP_BACKWARD,
-        };
+        pseudo(JUMP_IF_TRUE, (cond -- cond)) = [
+            COPY, TO_BOOL, POP_JUMP_IF_TRUE,
+        ];
 
         tier1 inst(ENTER_EXECUTOR, (--)) {
             #ifdef _Py_TIER2
