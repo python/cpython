@@ -2234,7 +2234,7 @@ features:
    Return the maximum number of files a process can have open.
 
    .. versionadded:: 3.14
-      
+
    .. availability:: Unix.
 
 .. function:: getcwdb()
