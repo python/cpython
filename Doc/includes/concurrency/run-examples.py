@@ -557,6 +557,8 @@ class Selection(namedtuple('Selection', 'app model impl')):
 
     @property
     def executable_argv(self):
+        if self._executable_argv is None:
+            return ()
         return self._executable_argv
 
     @property

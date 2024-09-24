@@ -233,7 +233,6 @@ def search_using_interpreters(filenames, regex, opts):
                 prep_interpreter = ns['prep_interpreter']
                 del ns, text
 
-                import grep._implementations
                 search_file = prep_interpreter(
                     {regex.pattern!r},
                     {regex.flags},

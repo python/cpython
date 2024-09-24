@@ -28,7 +28,6 @@ def search(filenames, regex, opts):
                 prep_interpreter = ns['prep_interpreter']
                 del ns, text
 
-                import grep._implementations
                 search_file = prep_interpreter(
                     {regex.pattern!r},
                     {regex.flags},
@@ -52,7 +51,7 @@ def search(filenames, regex, opts):
             interp.exec(
                     f'search_file({filename!r}, matches)')
             # Let a new thread start.
-            ready_work.put(interp)
+            ready_workers.put(interp)
 
         for filename in filenames:
             # Prepare for the file.
