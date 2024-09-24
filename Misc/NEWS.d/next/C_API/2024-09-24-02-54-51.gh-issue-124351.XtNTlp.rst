@@ -1,0 +1,6 @@
+Fix potential side effect from the global variable `_OTHER_ENDIAN` in the
+`_other_endian` function by ensuring it is not declared at the module level.
+Reduce redundant type checks within the `_other_endian` recursion to enhance
+performance during frequent calls. Optimize the `setattr` method in
+`_swapped_meta` to prevent unnecessary list creation, reducing overhead when
+no modifications are required.
