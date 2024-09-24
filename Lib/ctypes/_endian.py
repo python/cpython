@@ -4,9 +4,9 @@ from ctypes import Array, Structure, Union
 _array_type = type(Array)
 
 def _other_endian(typ):
-    """Return the type with the 'other' byte order.  Simple types like
+    """Return the type with the 'other' byte order. Simple types like
     c_int and so on already have __ctype_be__ and __ctype_le__
-    attributes which contain the types, for more complicated types
+    attributes which contain the types; for more complicated types,
     arrays and structures are supported.
     """
     # check _OTHER_ENDIAN attribute (present if typ is primitive type)
@@ -18,19 +18,14 @@ def _other_endian(typ):
     # if typ is structure or union
     if issubclass(typ, (Structure, Union)):
         return typ
-    raise TypeError("This type does not support other endian: %s" % typ)
+    raise TypeError(f"This type does not support other endian: {typ}")
 
 class _swapped_meta:
     def __setattr__(self, attrname, value):
         if attrname == "_fields_":
-            fields = []
-            for desc in value:
-                name = desc[0]
-                typ = desc[1]
-                rest = desc[2:]
-                fields.append((name, _other_endian(typ)) + rest)
-            value = fields
+            value = [(desc[0], _other_endian(desc[1]), *desc[2:]) for desc in value]
         super().__setattr__(attrname, value)
+
 class _swapped_struct_meta(_swapped_meta, type(Structure)): pass
 class _swapped_union_meta(_swapped_meta, type(Union)): pass
 
@@ -42,7 +37,6 @@ class _swapped_union_meta(_swapped_meta, type(Union)): pass
 
 if sys.byteorder == "little":
     _OTHER_ENDIAN = "__ctype_be__"
-
     LittleEndianStructure = Structure
 
     class BigEndianStructure(Structure, metaclass=_swapped_struct_meta):
@@ -59,7 +53,6 @@ if sys.byteorder == "little":
 
 elif sys.byteorder == "big":
     _OTHER_ENDIAN = "__ctype_le__"
-
     BigEndianStructure = Structure
 
     class LittleEndianStructure(Structure, metaclass=_swapped_struct_meta):
