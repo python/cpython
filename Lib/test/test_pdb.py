@@ -901,6 +901,17 @@ def test_pdb_where_command():
     (Pdb) continue
     """
 
+def test_pdb_commands_with_set_trace():
+    """Test that commands can be passed to Pdb.set_trace()
+
+    >>> def test_function():
+    ...     x = 1
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace(commands=['p x', 'c'])
+
+    >>> test_function()
+    1
+    """
+
 
 # skip this test if sys.flags.no_site = True;
 # exit() isn't defined unless there's a site module.
