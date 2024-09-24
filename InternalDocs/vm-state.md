@@ -5,22 +5,12 @@
 - **Tier 1** is the classic Python bytecode interpreter.
   This includes the specializing adaptive interpreter described in [PEP 659](https://peps.python.org/pep-0659/) and introduced in Python 3.11.
 - **Tier 2**, also known as the micro-instruction ("uop") interpreter, is a new interpreter with a different instruction format.
-  It will be introduced in Python 3.13, and also forms the basis for a JIT using copy-and-patch technology that is likely to be introduced at the same time (but, unlike the Tier 2 interpreter, hasn't landed in the main branch yet).
+  It introduced in Python 3.13, and also forms the basis for a JIT using copy-and-patch technology. See [Tier 2](tier2_engine.md) for more information.
 
 # Frame state
 
 Almost all interpreter state is nominally stored in the frame structure.
-A pointer to the current frame is held in `frame`. It contains:
-
-- **local variables** (a.k.a. "fast locals")
-- **evaluation stack** (tacked onto the end of the locals)
-- **stack top** (an integer giving the top of the evaluation stack)
-- **instruction pointer**
-- **code object**, which holds things like the array of instructions, lists of constants and names referenced by certain instructions, the exception handling table, and the table that translates instruction offsets to line numbers
-- **return offset**, only relevant during calls, telling the interpreter where to return
-
-There are some other fields in the frame structure of less importance; notably frames are linked together in a singly-linked list via the `previous` pointer, pointing from callee to caller.
-The frame also holds a pointer to the current function, globals, builtins, and the locals converted to dict (used to support the `locals()` built-in).
+A pointer to the current frame is held in `frame`, for more information about what `frame` contains see [Frames](frames.md):
 
 ## Fast locals and evaluation stack
 
