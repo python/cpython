@@ -6,6 +6,7 @@ import sys
 
 from test.test_ttk_textonly import MockTclObj
 from test.test_tkinter.support import (
+    
     AbstractTkTest, requires_tk, tk_version, get_tk_patchlevel,
     simulate_mouse_click, AbstractDefaultRootTest)
 from test.test_tkinter.widget_tests import (add_configure_tests,

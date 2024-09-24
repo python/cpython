@@ -12,7 +12,8 @@ from test.test_tkinter.widget_tests import (
     add_configure_tests,
     AbstractWidgetTest,
     StandardOptionsTests,
-    IntegerSizeTests, PixelSizeTests)
+    IntegerSizeTests,
+    PixelSizeTests)
 
 requires('gui')
 

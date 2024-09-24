@@ -356,10 +356,7 @@ class StandardOptionsTests(PixelOptionsTests):
                         '-Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*')
         is_ttk = widget.__class__.__module__ == 'tkinter.ttk'
         if not is_ttk:
-            if tk_version < (9,0):
-                errmsg = 'font "" doesn\'t exist'
-            else:
-                errmsg = 'font "" does not exist'
+            errmsg = 'font "" does ?n[o\']t exist'
             self.checkInvalidParam(widget, 'font', '', errmsg=errmsg)
 
     def test_configure_foreground(self):
