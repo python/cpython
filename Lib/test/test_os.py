@@ -113,6 +113,18 @@ class MiscTests(unittest.TestCase):
         cwd = os.getcwd()
         self.assertIsInstance(cwd, str)
 
+    def test_getdtablesize(self):
+        curr_system = platform.system()
+        if curr_system == 'Windows':
+            try:
+                size = os.getdtablesize()
+            except NotImplementedError as e:
+                self.assertIsInstance(e, NotImplementedError)
+            else:
+                self.fail('No NotImplementedError is thrown')
+        else:
+            self.assertIsInstance(size, int)
+
     def test_getcwd_long_path(self):
         # bpo-37412: On Linux, PATH_MAX is usually around 4096 bytes. On
         # Windows, MAX_PATH is defined as 260 characters, but Windows supports
