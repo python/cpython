@@ -1123,6 +1123,9 @@ is used when no command-line argument was present::
    >>> parser.parse_args([])
    Namespace(foo=42)
 
+For required_ arguments, the ``default`` value is ignored. For example, this
+applies to positional arguments with nargs_ values other than ``?`` or ``*``,
+or optional arguments marked as ``required=True``.
 
 Providing ``default=argparse.SUPPRESS`` causes no attribute to be added if the
 command-line argument was not present::
