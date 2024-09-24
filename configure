@@ -1116,7 +1116,6 @@ enable_ipv6
 with_doc_strings
 with_mimalloc
 with_pymalloc
-with_freelists
 with_c_locale_coercion
 with_valgrind
 with_dtrace
@@ -1918,7 +1917,6 @@ Optional Packages:
   --with-mimalloc         build with mimalloc memory allocator (default is yes
                           if C11 stdatomic.h is available.)
   --with-pymalloc         enable specialized mallocs (default is yes)
-  --with-freelists        enable object freelists (default is yes)
   --with-c-locale-coercion
                           enable C locale coercion to a UTF-8 based locale
                           (default is yes)
@@ -17978,31 +17976,6 @@ printf "%s\n" "#define WITH_PYMALLOC 1" >>confdefs.h
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_pymalloc" >&5
 printf "%s\n" "$with_pymalloc" >&6; }
-
-# Check whether objects such as float, tuple and dict are using
-# freelists to optimization memory allocation.
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-freelists" >&5
-printf %s "checking for --with-freelists... " >&6; }
-
-# Check whether --with-freelists was given.
-if test ${with_freelists+y}
-then :
-  withval=$with_freelists;
-fi
-
-
-if test -z "$with_freelists"
-then
-    with_freelists="yes"
-fi
-if test "$with_freelists" != "no"
-then
-
-printf "%s\n" "#define WITH_FREELISTS 1" >>confdefs.h
-
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_freelists" >&5
-printf "%s\n" "$with_freelists" >&6; }
 
 # Check for --with-c-locale-coercion
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-c-locale-coercion" >&5
