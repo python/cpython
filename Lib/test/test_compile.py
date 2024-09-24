@@ -2608,6 +2608,7 @@ class TestStackSizeStability(unittest.TestCase):
             """
         self.check_stack_size(snippet, async_=True)
 
+@support.cpython_only
 @unittest.skipIf(_testinternalcapi is None, 'need _testinternalcapi module')
 class TestInstructionSequence(unittest.TestCase):
     def compare_instructions(self, seq, expected):
