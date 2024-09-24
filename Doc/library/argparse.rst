@@ -761,7 +761,7 @@ subparser names, the feature can be enabled by setting ``suggest_on_error`` to
    >>> parser.add_argument('integers', metavar='N', type=int, nargs='+',
    ...                     help='an integer for the accumulator')
    >>> parser.parse_args(['--action', 'sumn', 1, 2, 3])
-tester.py: error: argument --action: invalid choice: 'sumn', maybe you meant 'sum'? (choose from 'sum', 'max')
+   tester.py: error: argument --action: invalid choice: 'sumn', maybe you meant 'sum'? (choose from 'sum', 'max')
 
 .. versionadded:: 3.14
 
