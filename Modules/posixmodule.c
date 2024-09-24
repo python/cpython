@@ -4218,7 +4218,7 @@ os_getcwdb_impl(PyObject *module)
     return posix_getcwd(1);
 }
 
-
+#ifndef MS_WINDOWS
 /*[clinic input]
 os.getdtablesize
 
@@ -4228,24 +4228,12 @@ Return the maximum number of files a process can have open.
 static PyObject *
 os_getdtablesize_impl(PyObject *module)
 {
-    PyObject *max_fptable_size;
-    int size;
+    PyObject *size;
 
-#ifdef MS_WINDOWS
-    PyErr_SetString(PyExc_NotImplementedError,
-                    "this function is not supported on windows");
-    if (PyErr_Occurred()) {
-        return NULL;
-    }
-#else   /* !Unix-like */
     size = getdtablesize();
-#endif   /* !MS_WINDOWS */
-    max_fptable_size = PyLong_FromLong(size);
-    if (max_fptable_size == NULL)
-        return NULL;
-
-    return max_fptable_size;
+    return PyLong_FromLong(size);
 }
+#endif  /* !MS_WINDOWS */
 
 #if ((!defined(HAVE_LINK)) && defined(MS_WINDOWS))
 #define HAVE_LINK 1
