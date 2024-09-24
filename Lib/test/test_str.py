@@ -1388,6 +1388,10 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual("{!s}".format(n), 'N(data)')
         self.assertRaises(TypeError, "{}".format, n)
 
+        # String index for sequences
+        self.assertRaises(TypeError, "{[s]}".format, "abc")
+        self.assertRaises(TypeError, "{[-1]}".format, "abc")
+
     def test_format_map(self):
         self.assertEqual(''.format_map({}), '')
         self.assertEqual('a'.format_map({}), 'a')
