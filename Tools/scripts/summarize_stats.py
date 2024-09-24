@@ -398,12 +398,18 @@ class Stats:
         total_allocations = self._data.get("Object allocations", 0) + self._data.get(
             "Object allocations from freelist", 0
         )
-        total_increfs = self._data.get(
-            "Object interpreter increfs", 0
-        ) + self._data.get("Object increfs", 0)
-        total_decrefs = self._data.get(
-            "Object interpreter decrefs", 0
-        ) + self._data.get("Object decrefs", 0)
+        total_increfs = (
+            self._data.get("Object interpreter mortal increfs", 0) +
+            self._data.get("Object mortal increfs", 0) +
+            self._data.get("Object interpreter immortal increfs", 0) +
+            self._data.get("Object immortal increfs", 0)
+        )
+        total_decrefs = (
+            self._data.get("Object interpreter mortal decrefs", 0) +
+            self._data.get("Object mortal decrefs", 0) +
+            self._data.get("Object interpreter immortal decrefs", 0) +
+            self._data.get("Object immortal decrefs", 0)
+        )
 
         result = {}
         for key, value in self._data.items():
