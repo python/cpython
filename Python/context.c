@@ -106,6 +106,8 @@ context_event_name(PyContextEvent event) {
             return "Py_CONTEXT_EVENT_ENTER";
         case Py_CONTEXT_EVENT_EXIT:
             return "Py_CONTEXT_EVENT_EXIT";
+        default:
+            return "?";
     }
     Py_UNREACHABLE();
 }
