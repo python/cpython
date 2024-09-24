@@ -4878,17 +4878,20 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
 
         A().foo()
 
-    def test_zero_argument_super_with_old_property(self):
+    def test_dunder_class_with_old_property(self):
         @dataclass(slots=True)
         class A:
             def _get_foo(slf):
-                return slf.__class__
+                self.assertIs(__class__, type(slf))
+                self.assertIs(__class__, slf.__class__)
 
             def _set_foo(slf, value):
                 self.assertIs(__class__, type(slf))
+                self.assertIs(__class__, slf.__class__)
 
             def _del_foo(slf):
                 self.assertIs(__class__, type(slf))
+                self.assertIs(__class__, slf.__class__)
 
             foo = property(_get_foo, _set_foo, _del_foo)
 
@@ -4897,7 +4900,7 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
         a.foo = 4
         del a.foo
 
-    def test_zero_argument_super_with_new_property(self):
+    def test_dunder_class_with_new_property(self):
         @dataclass(slots=True)
         class A:
             @property
