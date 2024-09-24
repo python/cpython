@@ -1,0 +1,2 @@
+Modify dataclasses to support zero-argument super() when `slots=True` is
+specified.
