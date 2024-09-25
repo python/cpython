@@ -54,7 +54,7 @@ def check() -> str:
         term = ""
         if term := os.environ.get("TERM"):
             term = f"TERM={term}"
-        return (str(e) or repr(e) or "unknown error") + "; {term}" if term else ""
+        return (str(e) or repr(e) or "unknown error") + f"; {term}" if term else ""
     return ""
 
 
