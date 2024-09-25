@@ -151,7 +151,7 @@ constevaluator_clear(PyObject *self)
 }
 
 static PyObject *
-constevaluator_repr(PyObject *self, PyObject *repr)
+constevaluator_repr(PyObject *self)
 {
     PyObject *value = ((constevaluatorobject *)self)->value;
     return PyUnicode_FromFormat("<constevaluator %R>", value);
