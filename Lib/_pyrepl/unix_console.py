@@ -711,6 +711,8 @@ class UnixConsole(Console):
             self.__write_code(fmt, *args)
 
     def __move_y_cuu1_cud1(self, y):
+        assert self._cud1 is not None
+        assert self._cuu1 is not None
         dy = y - self.posxy[1]
         if dy > 0:
             self.__write_code(dy * self._cud1)
@@ -729,6 +731,8 @@ class UnixConsole(Console):
             self.__write_code(self._hpa, x)
 
     def __move_x_cub1_cuf1(self, x: int) -> None:
+        assert self._cuf1 is not None
+        assert self._cub1 is not None
         dx = x - self.posxy[0]
         if dx > 0:
             self.__write_code(self._cuf1 * dx)
