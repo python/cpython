@@ -165,6 +165,10 @@ jobs:
     name: Free-Threaded (Debug)
     needs: interpreter
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        llvm:
+          - 19
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
