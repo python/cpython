@@ -1,0 +1,2 @@
+Fix a crash in FrameLocalsProxy constructor: check the number of arguments.
+Patch by Victor Stinner.
