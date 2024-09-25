@@ -474,6 +474,17 @@ class BaseTest(unittest.TestCase):
         iter_x = iter(t)
         del iter_x
 
+    def test_paramspec_specialization(self):
+        # gh-124445
+        T = TypeVar("T")
+        type X[**P] = Callable[P, int]
+        generic = X[[T]]
+        self.assertEqual(generic.__args__, ([T],))
+        self.assertEqual(generic.__parameters__, (T,))
+        specialized = generic[str]
+        self.assertEqual(specialized.__args__, ([str],))
+        self.assertEqual(specialized.__parameters__, ())
+
 
 class TypeIterationTests(unittest.TestCase):
     _UNITERABLE_TYPES = (list, tuple)
