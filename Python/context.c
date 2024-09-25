@@ -198,8 +198,8 @@ static int
 _PyContext_Enter(PyThreadState *ts, PyContext *ctx)
 {
     if (ctx->ctx_entered) {
-        _PyErr_Format(ts, PyExc_RuntimeError,
-                      "cannot enter context: %R is already entered", ctx);
+        PyErr_Format(PyExc_RuntimeError,
+                     "cannot enter context: %R is already entered", ctx);
         return -1;
     }
 
@@ -702,25 +702,23 @@ _contextvars_Context_copy_impl(PyContext *self)
 
 
 static PyObject *
-context_run(PyContext *self, PyObject *const *args,
+context_run(PyObject *self, PyObject *const *args,
             Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyThreadState *ts = _PyThreadState_GET();
-
     if (nargs < 1) {
-        _PyErr_SetString(ts, PyExc_TypeError,
-                         "run() missing 1 required positional argument");
+        PyErr_SetString(PyExc_TypeError,
+                        "run() missing 1 required positional argument");
         return NULL;
     }
 
-    if (_PyContext_Enter(ts, self)) {
+    if (PyContext_Enter(self)) {
         return NULL;
     }
 
-    PyObject *call_result = _PyObject_VectorcallTstate(
-        ts, args[0], args + 1, nargs - 1, kwnames);
+    PyObject *call_result =
+        PyObject_Vectorcall(args[0], args + 1, nargs - 1, kwnames);
 
-    if (_PyContext_Exit(ts, self)) {
+    if (PyContext_Exit(self)) {
         Py_XDECREF(call_result);
         return NULL;
     }
