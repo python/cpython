@@ -1,6 +1,7 @@
 """Tests for the annotations module."""
 
 import annotationlib
+import builtins
 import collections
 import functools
 import itertools
@@ -280,7 +281,14 @@ class TestForwardRefClass(unittest.TestCase):
 
     def test_fwdref_with_module(self):
         self.assertIs(ForwardRef("Format", module="annotationlib").evaluate(), Format)
-        self.assertIs(ForwardRef("Counter", module="collections").evaluate(), collections.Counter)
+        self.assertIs(
+            ForwardRef("Counter", module="collections").evaluate(),
+            collections.Counter
+        )
+        self.assertEqual(
+            ForwardRef("Counter[int]", module="collections").evaluate(),
+            collections.Counter[int],
+        )
 
         with self.assertRaises(NameError):
             # If globals are passed explicitly, we don't look at the module dict
@@ -304,6 +312,33 @@ class TestForwardRefClass(unittest.TestCase):
             fr.evaluate()
         self.assertIs(fr.evaluate(globals={"hello": str}), str)
         self.assertIs(fr.evaluate(), str)
+
+    def test_fwdref_with_owner(self):
+        self.assertEqual(
+            ForwardRef("Counter[int]", owner=collections).evaluate(),
+            collections.Counter[int],
+        )
+
+    def test_name_lookup_without_eval(self):
+        # test the codepath where we look up simple names directly in the
+        # namespaces without going through eval()
+        self.assertIs(ForwardRef("int").evaluate(), int)
+        self.assertIs(ForwardRef("int").evaluate(locals={"int": str}), str)
+        self.assertIs(ForwardRef("int").evaluate(locals={"int": float}, globals={"int": str}), float)
+        self.assertIs(ForwardRef("int").evaluate(globals={"int": str}), str)
+        with support.swap_attr(builtins, "int", dict):
+            self.assertIs(ForwardRef("int").evaluate(), dict)
+
+        with self.assertRaises(NameError):
+            ForwardRef("doesntexist").evaluate()
+
+    def test_fwdref_invalid_syntax(self):
+        fr = ForwardRef("if")
+        with self.assertRaises(SyntaxError):
+            fr.evaluate()
+        fr = ForwardRef("1+")
+        with self.assertRaises(SyntaxError):
+            fr.evaluate()
 
 
 class TestGetAnnotations(unittest.TestCase):
