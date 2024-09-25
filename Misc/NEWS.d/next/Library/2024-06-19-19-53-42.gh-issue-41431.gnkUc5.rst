@@ -1,0 +1,2 @@
+Add :meth:`datetime.time.strptime` and :meth:`datetime.date.strptime`.
+Contributed by Wannes Boeykens.
