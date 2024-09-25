@@ -25,6 +25,25 @@ will figure out how to parse those out of :data:`sys.argv`.  The :mod:`argparse`
 module also automatically generates help and usage messages.  The module
 will also issue errors when users give the program invalid arguments.
 
+Quick Links for ArgumentParser
+---------------------------------------
+========================= =========================================================================================================== ==================================================================================
+Name                      Description                                                                                                 Values
+========================= =========================================================================================================== ==================================================================================
+prog_                     The name of the program                                                                                     Defaults to ``os.path.basename(sys.argv[0])``
+usage_                    The string describing the program usage
+description_              A brief description of what the program does
+epilog_                   Additional description of the program after the argument help
+parents_                  A list of :class:`ArgumentParser` objects whose arguments should also be included
+formatter_class_          A class for customizing the help output                                                                     ``argparse.HelpFormatter``
+prefix_chars_             The set of characters that prefix optional arguments                                                        Defaults to ``'-'``
+fromfile_prefix_chars_    The set of characters that prefix files to read additional arguments from                                   Defaults to ``None`` (meaning arguments will never be treated as file references)
+argument_default_         The global default value for arguments
+allow_abbrev_             Allows long options to be abbreviated if the abbreviation is unambiguous                                    ``True`` or ``False`` (default: ``True``)
+conflict_handler_         The strategy for resolving conflicting optionals
+add_help_                 Add a ``-h/--help`` option to the parser                                                                    ``True`` or ``False`` (default: ``True``)
+exit_on_error_            Determines whether or not to exit with error info when an error occurs                                      ``True`` or ``False`` (default: ``True``)
+========================= =========================================================================================================== ==================================================================================
 
 Core Functionality
 ------------------
