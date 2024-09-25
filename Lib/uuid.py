@@ -1,9 +1,8 @@
-r"""UUID objects (universally unique identifiers) according to RFC 4122.
+r"""UUID objects (universally unique identifiers) according to RFC 4122/9562.
 
 This module provides immutable UUID objects (class UUID) and the functions
 uuid1(), uuid3(), uuid4(), uuid5(), and uuid8() for generating version 1, 3,
-4, 5, and 8 UUIDs as specified in RFC 4122 (superseeded by RFC 9562 but still
-referred to as RFC 4122 for compatibility purposes).
+4, 5, and 8 UUIDs as specified in RFC 4122/9562.
 
 If all you want is a unique ID, you should probably call uuid1() or uuid4().
 Note that uuid1() may compromise privacy since it creates a UUID containing
@@ -125,7 +124,7 @@ class UUID:
 
         int         the UUID as a 128-bit integer
 
-        urn         the UUID as a URN as specified in RFC 4122
+        urn         the UUID as a URN as specified in RFC 4122/9562
 
         variant     the UUID variant (one of the constants RESERVED_NCS,
                     RFC_4122, RESERVED_MICROSOFT, or RESERVED_FUTURE)
@@ -217,7 +216,7 @@ class UUID:
         if version is not None:
             if not 1 <= version <= 8:
                 raise ValueError('illegal version number')
-            # Set the variant to RFC 4122.
+            # Set the variant to RFC 4122/9562.
             int &= ~(0xc000 << 48)
             int |= 0x8000 << 48
             # Set the version number.
@@ -356,7 +355,7 @@ class UUID:
 
     @property
     def version(self):
-        # The version bits are only meaningful for RFC 4122 UUIDs.
+        # The version bits are only meaningful for RFC 4122/9562 UUIDs.
         if self.variant == RFC_4122:
             return int((self.int >> 76) & 0xf)
 
