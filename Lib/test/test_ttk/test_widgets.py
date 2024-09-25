@@ -994,6 +994,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         'class', 'cursor', 'height', 'padding', 'style', 'takefocus', 'width',
     )
     _rounds_pixels = (tk_version < (9,0))
+    _converts_pixels = False
     _clipped = {}
 
     def setUp(self):
@@ -1009,17 +1010,11 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_height(self):
         widget = self.create()
-        if tk_version < (9,0):
-            self.checkIntegerParam(widget, 'height', 402, -402, 0)
-        else:
-            self.checkPixelsParam(widget, 'height', 402, -402, 0)
+        self.checkPixelsParam(widget, 'height', '10c', 402, -402, 0)
 
     def test_configure_width(self):
         widget = self.create()
-        if tk_version < (9,0):
-            self.checkIntegerParam(widget, 'width', 402, -402, 0)
-        else:
-            self.checkPixelsParam(widget, 'width', 402, -402, 0)
+        self.checkPixelsParam(widget, 'width', '10c', 402, -402, 0)
 
     def test_tab_identifiers(self):
         self.nb.forget(0)
@@ -1445,8 +1440,10 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_height(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'height', 100, -100, 0, '3c', conv=False)
-        self.checkPixelsParam(widget, 'height', 101.2, 102.6, conv=False)
+        self.checkPixelsParam(widget, 'height', 100, -100, 0, '3c',
+                                  conv=False)
+        self.checkPixelsParam(widget, 'height', 101.2, 102.6, '3c',
+                                  conv=False)
 
     def test_configure_selectmode(self):
         widget = self.create()

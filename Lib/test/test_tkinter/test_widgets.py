@@ -1556,13 +1556,13 @@ class MessageTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_padx(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'padx', 3, 4.4, 5.6, '12m')#,
+        self.checkPixelsParam(widget, 'padx', 3, 4.4, 5.6, '12m')
         expected = -2 if tk_version < (9, 0) else self._default_pixels
         self.checkParam(widget, 'padx', -2, expected=expected)
 
     def test_configure_pady(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'pady', 3, 4.4, 5.6, '12m')#,
+        self.checkPixelsParam(widget, 'pady', 3, 4.4, 5.6, '12m')
         expected = -2 if tk_version < (9, 0) else self._default_pixels
         self.checkParam(widget, 'pady', -2, expected=expected)
 

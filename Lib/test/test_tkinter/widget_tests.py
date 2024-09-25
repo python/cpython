@@ -145,12 +145,14 @@ class AbstractWidgetTest(AbstractTkTest):
     def checkPixelsParam(self, widget, name, *values, conv=None, **kwargs):
         if not self._rounds_pixels or name in self._no_round:
             conv = False
-        else:
+        elif conv != str:
             conv = round
         for value in values:
             expected = _sentinel
             conv1 = conv
             if isinstance(value, str):
+                if not getattr(self, '_converts_pixels', True):
+                    conv1 = str
                 if conv1 and conv1 is not str:
                     expected = pixels_conv(value) * self.scaling
                     conv1 = round
