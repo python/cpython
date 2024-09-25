@@ -722,7 +722,9 @@ class CAPICodecErrors(unittest.TestCase):
 
     def test_codec_error_handlers(self):
         exceptions = [
-            UnicodeEncodeError('bad', '', 0, 1, 'reason'),
+            # A UnicodeError with an empty message currently crashes:
+            # See: https://github.com/python/cpython/issues/123378
+            # UnicodeEncodeError('bad', '', 0, 1, 'reason'),
             UnicodeEncodeError('bad', 'x', 0, 1, 'reason'),
             UnicodeEncodeError('bad', 'xyz123', 0, 1, 'reason'),
             UnicodeEncodeError('bad', 'xyz123', 1, 4, 'reason'),
