@@ -180,6 +180,7 @@ tuple_extend(PyObject **dst, Py_ssize_t dstindex,
 PyObject *
 _Py_make_parameters(PyObject *args)
 {
+    assert (PyTuple_Check(args) || PyList_Check(args));
     Py_ssize_t nargs = PySequence_Length(args);
     Py_ssize_t len = nargs;
     PyObject *parameters = PyTuple_New(len);
@@ -187,22 +188,10 @@ _Py_make_parameters(PyObject *args)
         return NULL;
     Py_ssize_t iparam = 0;
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
-        PyObject *t = PySequence_GetItem(args, iarg);
+        PyObject *t = PyTuple_Check(args) ?
+            PyTuple_GET_ITEM(args, iarg) : PyList_GET_ITEM(args, iarg);
         // We don't want __parameters__ descriptor of a bare Python class.
         if (PyType_Check(t)) {
-            continue;
-        }
-        // Recursively call _Py_make_parameters for lists/tuples and
-        // add the results to the current parameters.
-        if (PyTuple_Check(t) || PyList_Check(t)) {
-            PyObject *subargs = _Py_make_parameters(t);
-            if (subargs == NULL) {
-                Py_DECREF(parameters);
-                return NULL;
-            }
-            iparam += tuple_extend(&parameters, iparam, &PyTuple_GET_ITEM(subargs, 0),
-                                   PyTuple_GET_SIZE(subargs));
-            Py_DECREF(subargs);
             continue;
         }
         int rc = PyObject_HasAttrWithError(t, &_Py_ID(__typing_subst__));
@@ -219,6 +208,15 @@ _Py_make_parameters(PyObject *args)
                                      &subparams) < 0) {
                 Py_DECREF(parameters);
                 return NULL;
+            }
+            if (!subparams && (PyTuple_Check(t) || PyList_Check(t))) {
+                // Recursively call _Py_make_parameters for lists/tuples and
+                // add the results to the current parameters.
+                subparams = _Py_make_parameters(t);
+                if (subparams == NULL) {
+                    Py_DECREF(parameters);
+                    return NULL;
+                }
             }
             if (subparams && PyTuple_Check(subparams)) {
                 Py_ssize_t len2 = PyTuple_GET_SIZE(subparams);
@@ -431,6 +429,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
         t = dict[T, list[S]]; t[str, int] -> newargs = [str, list[int]]
         t = list[[T]];        t[str]      -> newargs = [[str]]
      */
+    assert (PyTuple_Check(args) || PyList_Check(args));
     Py_ssize_t nargs = PySequence_Length(args);
     PyObject *newargs = PyTuple_New(nargs);
     if (newargs == NULL) {
@@ -438,7 +437,8 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
         return NULL;
     }
     for (Py_ssize_t iarg = 0, jarg = 0; iarg < nargs; iarg++) {
-        PyObject *arg = PySequence_GetItem(args, iarg);
+        PyObject *arg = PyTuple_Check(args) ?
+            PyTuple_GET_ITEM(args, iarg) : PyList_GET_ITEM(args, iarg);
         if (PyType_Check(arg)) {
             PyTuple_SET_ITEM(newargs, jarg, Py_NewRef(arg));
             jarg++;
@@ -460,7 +460,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
                 return NULL;
             }
             Py_SETREF(subargs, subargs_list);
-            PyTuple_SET_ITEM(newargs, jarg, Py_NewRef(subargs));
+            PyTuple_SET_ITEM(newargs, jarg, subargs);
             jarg++;
             continue;
         }
