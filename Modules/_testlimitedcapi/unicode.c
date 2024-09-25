@@ -1837,6 +1837,23 @@ test_string_from_format(PyObject *self, PyObject *Py_UNUSED(ignored))
 #undef CHECK_FORMAT_0
 }
 
+
+/* Test PyUnicode_Equal() */
+static PyObject *
+unicode_equal(PyObject *module, PyObject *args)
+{
+    PyObject *str1, *str2;
+    if (!PyArg_ParseTuple(args, "OO", &str1, &str2)) {
+        return NULL;
+    }
+
+    NULLABLE(str1);
+    NULLABLE(str2);
+    RETURN_INT(PyUnicode_Equal(str1, str2));
+}
+
+
+
 static PyMethodDef TestMethods[] = {
     {"codec_incrementalencoder", codec_incrementalencoder,       METH_VARARGS},
     {"codec_incrementaldecoder", codec_incrementaldecoder,       METH_VARARGS},
@@ -1924,6 +1941,7 @@ static PyMethodDef TestMethods[] = {
     {"unicode_format",           unicode_format,                 METH_VARARGS},
     {"unicode_contains",         unicode_contains,               METH_VARARGS},
     {"unicode_isidentifier",     unicode_isidentifier,           METH_O},
+    {"unicode_equal",            unicode_equal,                  METH_VARARGS},
     {NULL},
 };
 
