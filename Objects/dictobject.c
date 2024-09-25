@@ -1701,7 +1701,7 @@ insert_combined_dict(PyInterpreterState *interp, PyDictObject *mp,
     }
 
     _PyDict_NotifyEvent(interp, PyDict_EVENT_ADDED, mp, key, value);
-    mp->ma_keys->dk_version = 0;
+    FT_ATOMIC_STORE_UINT32_RELAXED(mp->ma_keys->dk_version, 0);
 
     Py_ssize_t hashpos = find_empty_slot(mp->ma_keys, hash);
     dictkeys_set_index(mp->ma_keys, hashpos, mp->ma_keys->dk_nentries);
@@ -2679,7 +2679,7 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
         ASSERT_CONSISTENT(mp);
     }
     else {
-        mp->ma_keys->dk_version = 0;
+        FT_ATOMIC_STORE_UINT32_RELAXED(mp->ma_keys->dk_version, 0);
         dictkeys_set_index(mp->ma_keys, hashpos, DKIX_DUMMY);
         if (DK_IS_UNICODE(mp->ma_keys)) {
             PyDictUnicodeEntry *ep = &DK_UNICODE_ENTRIES(mp->ma_keys)[ix];
@@ -4498,7 +4498,7 @@ dict_popitem_impl(PyDictObject *self)
             return NULL;
         }
     }
-    self->ma_keys->dk_version = 0;
+    FT_ATOMIC_STORE_UINT32_RELAXED(self->ma_keys->dk_version, 0);
 
     /* Pop last item */
     PyObject *key, *value;
@@ -7390,17 +7390,30 @@ _PyDictKeys_DecRef(PyDictKeysObject *keys)
     dictkeys_decref(interp, keys, false);
 }
 
+// In free-threaded builds the caller must ensure that the keys object is not
+// being mutated concurrently by another thread.
 uint32_t _PyDictKeys_GetVersionForCurrentState(PyInterpreterState *interp,
                                                PyDictKeysObject *dictkeys)
 {
-    if (dictkeys->dk_version != 0) {
-        return dictkeys->dk_version;
+    uint32_t dk_version = FT_ATOMIC_LOAD_UINT32_RELAXED(dictkeys->dk_version);
+    if (dk_version != 0) {
+        return dk_version;
     }
+#ifdef Py_GIL_DISABLED
+    uint32_t v;
+    do {
+        v = _Py_atomic_load_uint32_relaxed(&interp->dict_state.next_keys_version);
+        if (v == 0) {
+            return 0;
+        }
+    } while(!_Py_atomic_compare_exchange_uint32(&interp->dict_state.next_keys_version, &v, v + 1));
+#else
     if (interp->dict_state.next_keys_version == 0) {
         return 0;
     }
     uint32_t v = interp->dict_state.next_keys_version++;
-    dictkeys->dk_version = v;
+#endif
+    FT_ATOMIC_STORE_UINT32_RELAXED(dictkeys->dk_version, v);
     return v;
 }
 

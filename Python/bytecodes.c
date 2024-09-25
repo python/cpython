@@ -1569,7 +1569,7 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_LOAD_GLOBAL, (counter/1 -- )) {
-            #if ENABLE_SPECIALIZATION
+            #if ENABLE_SPECIALIZATION_FT
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
                 next_instr = this_instr;
@@ -1578,7 +1578,7 @@ dummy_func(
             }
             OPCODE_DEFERRED_INC(LOAD_GLOBAL);
             ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            #endif  /* ENABLE_SPECIALIZATION */
+            #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
         // res[1] because we need a pointer to res to pass it to _PyEval_LoadGlobalStackRef
@@ -1599,16 +1599,18 @@ dummy_func(
         op(_GUARD_GLOBALS_VERSION, (version/1 --)) {
             PyDictObject *dict = (PyDictObject *)GLOBALS();
             DEOPT_IF(!PyDict_CheckExact(dict));
-            DEOPT_IF(dict->ma_keys->dk_version != version);
-            assert(DK_IS_UNICODE(dict->ma_keys));
+            PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_keys);
+            DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != version);
+            assert(DK_IS_UNICODE(keys));
         }
 
         op(_GUARD_GLOBALS_VERSION_PUSH_KEYS, (version / 1 -- globals_keys: PyDictKeysObject *))
         {
             PyDictObject *dict = (PyDictObject *)GLOBALS();
             DEOPT_IF(!PyDict_CheckExact(dict));
-            DEOPT_IF(dict->ma_keys->dk_version != version);
-            globals_keys = dict->ma_keys;
+            PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_keys);
+            DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != version);
+            globals_keys = keys;
             assert(DK_IS_UNICODE(globals_keys));
         }
 
@@ -1616,18 +1618,25 @@ dummy_func(
         {
             PyDictObject *dict = (PyDictObject *)BUILTINS();
             DEOPT_IF(!PyDict_CheckExact(dict));
-            DEOPT_IF(dict->ma_keys->dk_version != version);
-            builtins_keys = dict->ma_keys;
+            PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_keys);
+            DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != version);
+            builtins_keys = keys;
             assert(DK_IS_UNICODE(builtins_keys));
         }
 
         op(_LOAD_GLOBAL_MODULE_FROM_KEYS, (index/1, globals_keys: PyDictKeysObject* -- res, null if (oparg & 1))) {
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(globals_keys);
-            PyObject *res_o = entries[index].me_value;
+            PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
             DEAD(globals_keys);
             SYNC_SP();
             DEOPT_IF(res_o == NULL);
+            #if Py_GIL_DISABLED
+            int increfed;
+            increfed = _Py_TryIncrefCompare(&entries[index].me_value, res_o);
+            DEOPT_IF(!increfed);
+            #else
             Py_INCREF(res_o);
+            #endif
             STAT_INC(LOAD_GLOBAL, hit);
             null = PyStackRef_NULL;
             res = PyStackRef_FromPyObjectSteal(res_o);
@@ -1635,11 +1644,17 @@ dummy_func(
 
         op(_LOAD_GLOBAL_BUILTINS_FROM_KEYS, (index/1, builtins_keys: PyDictKeysObject* -- res, null if (oparg & 1))) {
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(builtins_keys);
-            PyObject *res_o = entries[index].me_value;
+            PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
             DEAD(builtins_keys);
             SYNC_SP();
             DEOPT_IF(res_o == NULL);
+            #if Py_GIL_DISABLED
+            int increfed;
+            increfed = _Py_TryIncrefCompare(&entries[index].me_value, res_o);
+            DEOPT_IF(!increfed);
+            #else
             Py_INCREF(res_o);
+            #endif
             STAT_INC(LOAD_GLOBAL, hit);
             null = PyStackRef_NULL;
             res = PyStackRef_FromPyObjectSteal(res_o);

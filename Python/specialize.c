@@ -1521,103 +1521,102 @@ PyObject *descr, DescriptorClassification kind, bool is_method)
 }
 
 void
-_Py_Specialize_LoadGlobal(
+specialize_load_global_lock_held(
     PyObject *globals, PyObject *builtins,
     _Py_CODEUNIT *instr, PyObject *name)
 {
-    assert(ENABLE_SPECIALIZATION);
+    assert(ENABLE_SPECIALIZATION_FT);
     assert(_PyOpcode_Caches[LOAD_GLOBAL] == INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
     /* Use inline cache */
     _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)(instr + 1);
     assert(PyUnicode_CheckExact(name));
     if (!PyDict_CheckExact(globals)) {
-        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_LOAD_GLOBAL_NON_DICT);
-        goto fail;
+        unspecialize(instr, SPEC_FAIL_LOAD_GLOBAL_NON_DICT);
+        return;
     }
     PyDictKeysObject * globals_keys = ((PyDictObject *)globals)->ma_keys;
     if (!DK_IS_UNICODE(globals_keys)) {
-        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_LOAD_GLOBAL_NON_STRING_OR_SPLIT);
-        goto fail;
+        unspecialize(instr, SPEC_FAIL_LOAD_GLOBAL_NON_STRING_OR_SPLIT);
+        return;
     }
     Py_ssize_t index = _PyDictKeys_StringLookup(globals_keys, name);
     if (index == DKIX_ERROR) {
-        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_EXPECTED_ERROR);
-        goto fail;
+        unspecialize(instr, SPEC_FAIL_EXPECTED_ERROR);
+        return;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (index != DKIX_EMPTY) {
         if (index != (uint16_t)index) {
-            SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_RANGE);
-            goto fail;
+            unspecialize(instr, SPEC_FAIL_OUT_OF_RANGE);
+            return;
         }
         uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(
                 interp, globals_keys);
         if (keys_version == 0) {
-            SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_VERSIONS);
-            goto fail;
+            unspecialize(instr, SPEC_FAIL_OUT_OF_VERSIONS);
+            return;
         }
         if (keys_version != (uint16_t)keys_version) {
-            SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_RANGE);
-            goto fail;
+            unspecialize(instr, SPEC_FAIL_OUT_OF_RANGE);
+            return;
         }
         cache->index = (uint16_t)index;
         cache->module_keys_version = (uint16_t)keys_version;
-        instr->op.code = LOAD_GLOBAL_MODULE;
-        goto success;
+        specialize(instr, LOAD_GLOBAL_MODULE);
+        return;
     }
     if (!PyDict_CheckExact(builtins)) {
-        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_LOAD_GLOBAL_NON_DICT);
-        goto fail;
+        unspecialize(instr, SPEC_FAIL_LOAD_GLOBAL_NON_DICT);
+        return;
     }
     PyDictKeysObject * builtin_keys = ((PyDictObject *)builtins)->ma_keys;
     if (!DK_IS_UNICODE(builtin_keys)) {
-        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_LOAD_GLOBAL_NON_STRING_OR_SPLIT);
-        goto fail;
+        unspecialize(instr, SPEC_FAIL_LOAD_GLOBAL_NON_STRING_OR_SPLIT);
+        return;
     }
     index = _PyDictKeys_StringLookup(builtin_keys, name);
     if (index == DKIX_ERROR) {
-        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_EXPECTED_ERROR);
-        goto fail;
+        unspecialize(instr, SPEC_FAIL_EXPECTED_ERROR);
+        return;
     }
     if (index != (uint16_t)index) {
-        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_RANGE);
-        goto fail;
+        unspecialize(instr, SPEC_FAIL_OUT_OF_RANGE);
+        return;
     }
     uint32_t globals_version = _PyDictKeys_GetVersionForCurrentState(
             interp, globals_keys);
     if (globals_version == 0) {
-        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_VERSIONS);
-        goto fail;
+        unspecialize(instr, SPEC_FAIL_OUT_OF_VERSIONS);
+        return;
     }
     if (globals_version != (uint16_t)globals_version) {
-        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_RANGE);
-        goto fail;
+        unspecialize(instr, SPEC_FAIL_OUT_OF_RANGE);
+        return;
     }
     uint32_t builtins_version = _PyDictKeys_GetVersionForCurrentState(
             interp, builtin_keys);
     if (builtins_version == 0) {
-        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_VERSIONS);
-        goto fail;
+        unspecialize(instr, SPEC_FAIL_OUT_OF_VERSIONS);
+        return;
     }
     if (builtins_version > UINT16_MAX) {
-        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_RANGE);
-        goto fail;
+        unspecialize(instr, SPEC_FAIL_OUT_OF_RANGE);
+        return;
     }
     cache->index = (uint16_t)index;
     cache->module_keys_version = (uint16_t)globals_version;
     cache->builtin_keys_version = (uint16_t)builtins_version;
-    instr->op.code = LOAD_GLOBAL_BUILTIN;
-    goto success;
-fail:
-    STAT_INC(LOAD_GLOBAL, failure);
-    assert(!PyErr_Occurred());
-    instr->op.code = LOAD_GLOBAL;
-    cache->counter = adaptive_counter_backoff(cache->counter);
-    return;
-success:
-    STAT_INC(LOAD_GLOBAL, success);
-    assert(!PyErr_Occurred());
-    cache->counter = adaptive_counter_cooldown();
+    specialize(instr, LOAD_GLOBAL_BUILTIN);
+}
+
+void
+_Py_Specialize_LoadGlobal(
+    PyObject *globals, PyObject *builtins,
+    _Py_CODEUNIT *instr, PyObject *name)
+{
+    Py_BEGIN_CRITICAL_SECTION2(globals, builtins);
+    specialize_load_global_lock_held(globals, builtins, instr, name);
+    Py_END_CRITICAL_SECTION2();
 }
 
 #ifdef Py_STATS

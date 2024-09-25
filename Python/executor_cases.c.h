@@ -1870,11 +1870,12 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (dict->ma_keys->dk_version != version) {
+            PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_keys);
+            if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != version) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            assert(DK_IS_UNICODE(dict->ma_keys));
+            assert(DK_IS_UNICODE(keys));
             break;
         }
 
@@ -1886,11 +1887,12 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (dict->ma_keys->dk_version != version) {
+            PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_keys);
+            if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != version) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            globals_keys = dict->ma_keys;
+            globals_keys = keys;
             assert(DK_IS_UNICODE(globals_keys));
             stack_pointer[0].bits = (uintptr_t)globals_keys;
             stack_pointer += 1;
@@ -1906,11 +1908,12 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (dict->ma_keys->dk_version != version) {
+            PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_keys);
+            if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != version) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            builtins_keys = dict->ma_keys;
+            builtins_keys = keys;
             assert(DK_IS_UNICODE(builtins_keys));
             stack_pointer[0].bits = (uintptr_t)builtins_keys;
             stack_pointer += 1;
@@ -1926,14 +1929,25 @@
             globals_keys = (PyDictKeysObject *)stack_pointer[-1].bits;
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(globals_keys);
-            PyObject *res_o = entries[index].me_value;
+            PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             if (res_o == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            #if Py_GIL_DISABLED
+            int increfed;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            increfed = _Py_TryIncrefCompare(&entries[index].me_value, res_o);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (!increfed) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            #else
             Py_INCREF(res_o);
+            #endif
             STAT_INC(LOAD_GLOBAL, hit);
             null = PyStackRef_NULL;
             res = PyStackRef_FromPyObjectSteal(res_o);
@@ -1952,14 +1966,25 @@
             builtins_keys = (PyDictKeysObject *)stack_pointer[-1].bits;
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(builtins_keys);
-            PyObject *res_o = entries[index].me_value;
+            PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             if (res_o == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            #if Py_GIL_DISABLED
+            int increfed;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            increfed = _Py_TryIncrefCompare(&entries[index].me_value, res_o);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (!increfed) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            #else
             Py_INCREF(res_o);
+            #endif
             STAT_INC(LOAD_GLOBAL, hit);
             null = PyStackRef_NULL;
             res = PyStackRef_FromPyObjectSteal(res_o);
