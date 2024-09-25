@@ -151,8 +151,10 @@ The command, if run with ``-h``, will show the available options::
 
 .. versionchanged:: 3.13
 
-   ``--without-scm-ignore-files`` was added along with creating an ignore file
-   for Git by default.
+   Added the ``--without-scm-ignore-files`` option.
+   
+.. versionchanged:: 3.13
+   ``venv`` now creates a :file:`.gitignore` file for Git by default.
 
 .. note::
    While symlinks are supported on Windows, they are not recommended. Of
