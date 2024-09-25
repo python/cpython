@@ -322,6 +322,12 @@ The special characters are:
    special sequence, described below.  To match the literals ``'('`` or ``')'``,
    use ``\(`` or ``\)``, or enclose them inside a character class: ``[(]``, ``[)]``.
 
+
+.. _re_extension_notation
+
+Extension notation
+^^^^^^^^^^^^^^^^^^
+
 .. index:: single: (?; in regular expressions
 
 ``(?...)``
