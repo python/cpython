@@ -1957,7 +1957,8 @@ typealias_reduce_impl(typealiasobject *self)
 static PyObject *
 typealias_subscript(PyObject *self, PyObject *args)
 {
-    if (((typealiasobject *)self)->type_params == NULL) {
+    typealiasobject *ta = ((typealiasobject *)self);
+    if (ta->type_params == NULL || PyTuple_GET_SIZE(ta->type_params) == 0) {
         PyErr_SetString(PyExc_TypeError,
                         "Only generic type aliases are subscriptable");
         return NULL;
