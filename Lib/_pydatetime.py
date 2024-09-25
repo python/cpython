@@ -1,8 +1,4 @@
-"""Concrete date/time and related types.
-
-See http://www.iana.org/time-zones/repository/tz-link.html for
-time zone and DST data sources.
-"""
+"""Pure Python implementation of the datetime module."""
 
 __all__ = ("date", "datetime", "time", "timedelta", "timezone", "tzinfo",
            "MINYEAR", "MAXYEAR", "UTC")
@@ -204,6 +200,28 @@ def _format_offset(off, sep=':'):
                 s += '.%06d' % ss.microseconds
     return s
 
+_normalize_century = None
+def _need_normalize_century():
+    global _normalize_century
+    if _normalize_century is None:
+        try:
+            _normalize_century = (
+                _time.strftime("%Y", (99, 1, 1, 0, 0, 0, 0, 1, 0)) != "0099")
+        except ValueError:
+            _normalize_century = True
+    return _normalize_century
+
+_supports_c99 = None
+def _can_support_c99():
+    global _supports_c99
+    if _supports_c99 is None:
+        try:
+            _supports_c99 = (
+                _time.strftime("%F", (1900, 1, 1, 0, 0, 0, 0, 1, 0)) == "1900-01-01")
+        except ValueError:
+            _supports_c99 = False
+    return _supports_c99
+
 # Correctly substitute for %z and %Z escapes in strftime formats.
 def _wrap_strftime(object, format, timetuple):
     # Don't call utcoffset() or tzname() unless actually needed.
@@ -261,6 +279,20 @@ def _wrap_strftime(object, format, timetuple):
                                 # strftime is going to have at this: escape %
                                 Zreplace = s.replace('%', '%%')
                     newformat.append(Zreplace)
+                # Note that datetime(1000, 1, 1).strftime('%G') == '1000' so
+                # year 1000 for %G can go on the fast path.
+                elif ((ch in 'YG' or ch in 'FC' and _can_support_c99()) and
+                        object.year < 1000 and _need_normalize_century()):
+                    if ch == 'G':
+                        year = int(_time.strftime("%G", timetuple))
+                    else:
+                        year = object.year
+                    if ch == 'C':
+                        push('{:02}'.format(year // 100))
+                    else:
+                        push('{:04}'.format(year))
+                        if ch == 'F':
+                            push('-{:02}-{:02}'.format(*timetuple[1:3]))
                 else:
                     push('%')
                     push(ch)
@@ -966,6 +998,8 @@ class date:
     @classmethod
     def fromtimestamp(cls, t):
         "Construct a date from a POSIX timestamp (like time.time())."
+        if t is None:
+            raise TypeError("'NoneType' object cannot be interpreted as an integer")
         y, m, d, hh, mm, ss, weekday, jday, dst = _time.localtime(t)
         return cls(y, m, d)
 

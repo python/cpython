@@ -1025,7 +1025,7 @@ class HTTPConnection:
                 response.close()
 
     def send(self, data):
-        """Send `data' to the server.
+        """Send 'data' to the server.
         ``data`` can be a string object, a bytes object, an array object, a
         file-like object that supports a .read() method, or an iterable object.
         """
@@ -1137,10 +1137,10 @@ class HTTPConnection:
                    skip_accept_encoding=False):
         """Send a request to the server.
 
-        `method' specifies an HTTP request method, e.g. 'GET'.
-        `url' specifies the object being requested, e.g. '/index.html'.
-        `skip_host' if True does not add automatically a 'Host:' header
-        `skip_accept_encoding' if True does not add automatically an
+        'method' specifies an HTTP request method, e.g. 'GET'.
+        'url' specifies the object being requested, e.g. '/index.html'.
+        'skip_host' if True does not add automatically a 'Host:' header
+        'skip_accept_encoding' if True does not add automatically an
            'Accept-Encoding:' header
         """
 

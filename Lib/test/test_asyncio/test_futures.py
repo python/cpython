@@ -5,6 +5,7 @@ import gc
 import re
 import sys
 import threading
+import traceback
 import unittest
 from unittest import mock
 from types import GenericAlias
@@ -415,6 +416,24 @@ class BaseFutureTests:
         newf_cancelled = self._new_future(loop=self.loop)
         _copy_future_state(f_cancelled, newf_cancelled)
         self.assertTrue(newf_cancelled.cancelled())
+
+        try:
+            raise concurrent.futures.InvalidStateError
+        except BaseException as e:
+            f_exc = e
+
+        f_conexc = self._new_future(loop=self.loop)
+        f_conexc.set_exception(f_exc)
+
+        newf_conexc = self._new_future(loop=self.loop)
+        _copy_future_state(f_conexc, newf_conexc)
+        self.assertTrue(newf_conexc.done())
+        try:
+            newf_conexc.result()
+        except BaseException as e:
+            newf_exc = e # assertRaises context manager drops the traceback
+        newf_tb = ''.join(traceback.format_tb(newf_exc.__traceback__))
+        self.assertEqual(newf_tb.count('raise concurrent.futures.InvalidStateError'), 1)
 
     def test_iter(self):
         fut = self._new_future(loop=self.loop)

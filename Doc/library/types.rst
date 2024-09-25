@@ -1,5 +1,5 @@
-:mod:`types` --- Dynamic type creation and names for built-in types
-===================================================================
+:mod:`!types` --- Dynamic type creation and names for built-in types
+====================================================================
 
 .. module:: types
    :synopsis: Names for built-in types.
@@ -91,8 +91,8 @@ Dynamic Type Creation
 
     For classes that have an ``__orig_bases__`` attribute, this
     function returns the value of ``cls.__orig_bases__``.
-    For classes without the ``__orig_bases__`` attribute, ``cls.__bases__`` is
-    returned.
+    For classes without the ``__orig_bases__`` attribute,
+    :attr:`cls.__bases__ <type.__bases__>` is returned.
 
     Examples::
 
@@ -392,7 +392,7 @@ Standard names are defined for the following types:
 
    In addition, when a class is defined with a :attr:`~object.__slots__` attribute, then for
    each slot, an instance of :class:`!MemberDescriptorType` will be added as an attribute
-   on the class. This allows the slot to appear in the class's :attr:`~object.__dict__`.
+   on the class. This allows the slot to appear in the class's :attr:`~type.__dict__`.
 
    .. impl-detail::
 
@@ -481,14 +481,25 @@ Additional Utility Classes and Functions
    A simple :class:`object` subclass that provides attribute access to its
    namespace, as well as a meaningful repr.
 
-   Unlike :class:`object`, with ``SimpleNamespace`` you can add and remove
-   attributes.  If a ``SimpleNamespace`` object is initialized with keyword
-   arguments, those are directly added to the underlying namespace.
+   Unlike :class:`object`, with :class:`!SimpleNamespace` you can add and remove
+   attributes.
+
+   :py:class:`SimpleNamespace` objects may be initialized
+   in the same way as :class:`dict`: either with keyword arguments,
+   with a single positional argument, or with both.
+   When initialized with keyword arguments,
+   those are directly added to the underlying namespace.
+   Alternatively, when initialized with a positional argument,
+   the underlying namespace will be updated with key-value pairs
+   from that argument (either a mapping object or
+   an :term:`iterable` object producing key-value pairs).
+   All such keys must be strings.
 
    The type is roughly equivalent to the following code::
 
        class SimpleNamespace:
-           def __init__(self, /, **kwargs):
+           def __init__(self, mapping_or_iterable=(), /, **kwargs):
+               self.__dict__.update(mapping_or_iterable)
                self.__dict__.update(kwargs)
 
            def __repr__(self):
@@ -511,6 +522,9 @@ Additional Utility Classes and Functions
    .. versionchanged:: 3.9
       Attribute order in the repr changed from alphabetical to insertion (like
       ``dict``).
+
+   .. versionchanged:: 3.13
+      Added support for an optional positional argument.
 
 .. function:: DynamicClassAttribute(fget=None, fset=None, fdel=None, doc=None)
 

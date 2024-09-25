@@ -14,11 +14,13 @@ def wmi_exec_query(query):
     # gh-112278: WMI maybe slow response when first call.
     try:
         return _wmi.exec_query(query)
+    except BrokenPipeError:
+        pass
     except WindowsError as e:
         if e.winerror != 258:
             raise
-        time.sleep(LOOPBACK_TIMEOUT)
-        return _wmi.exec_query(query)
+    time.sleep(LOOPBACK_TIMEOUT)
+    return _wmi.exec_query(query)
 
 
 class WmiTests(unittest.TestCase):

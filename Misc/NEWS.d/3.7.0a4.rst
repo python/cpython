@@ -434,7 +434,7 @@ loop.getaddrinfo, loop.getnameinfo.
 .. nonce: ideco
 .. section: Library
 
-:func:`urllib.parse.urlsplit()` does not convert zone-id (scope) to lower
+:func:`urllib.parse.urlsplit` does not convert zone-id (scope) to lower
 case for scoped IPv6 addresses in hostnames now.
 
 ..
@@ -463,7 +463,7 @@ Fix ``stop_serving`` in asyncio proactor loop kill all listening servers
 .. nonce: CUbsb2
 .. section: Library
 
-:func:`re.sub()` now replaces empty matches adjacent to a previous non-empty
+:func:`re.sub` now replaces empty matches adjacent to a previous non-empty
 match.
 
 ..
@@ -595,7 +595,7 @@ Add asyncio.get_running_loop() function.
 .. section: Library
 
 All class and static methods of builtin types now are correctly classified
-by inspect.classify_class_attrs() and grouped in pydoc ouput. Added
+by inspect.classify_class_attrs() and grouped in pydoc output. Added
 types.ClassMethodDescriptorType for unbound class methods of builtin types.
 
 ..

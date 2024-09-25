@@ -2,6 +2,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_runtime.h"       // _Py_ID()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 
 #include "clinic/_operator.c.h"
@@ -727,6 +728,34 @@ _operator_is_not_impl(PyObject *module, PyObject *a, PyObject *b)
     return Py_NewRef(result);
 }
 
+/*[clinic input]
+_operator.is_none = _operator.neg
+
+Same as a is None.
+[clinic start generated code]*/
+
+static PyObject *
+_operator_is_none(PyObject *module, PyObject *a)
+/*[clinic end generated code: output=07159cc102261dec input=0448b38af7b8533d]*/
+{
+    PyObject *result = Py_IsNone(a) ? Py_True : Py_False;
+    return Py_NewRef(result);
+}
+
+/*[clinic input]
+_operator.is_not_none = _operator.neg
+
+Same as a is not None.
+[clinic start generated code]*/
+
+static PyObject *
+_operator_is_not_none(PyObject *module, PyObject *a)
+/*[clinic end generated code: output=b0168a51451d9140 input=7587f38ebac51688]*/
+{
+    PyObject *result = Py_IsNone(a) ? Py_False : Py_True;
+    return Py_NewRef(result);
+}
+
 /* compare_digest **********************************************************/
 
 /*
@@ -915,6 +944,8 @@ static struct PyMethodDef operator_methods[] = {
     _OPERATOR_COUNTOF_METHODDEF
     _OPERATOR_IS__METHODDEF
     _OPERATOR_IS_NOT_METHODDEF
+    _OPERATOR_IS_NONE_METHODDEF
+    _OPERATOR_IS_NOT_NONE_METHODDEF
     _OPERATOR_INDEX_METHODDEF
     _OPERATOR_ADD_METHODDEF
     _OPERATOR_SUB_METHODDEF
@@ -964,6 +995,18 @@ static struct PyMethodDef operator_methods[] = {
     _OPERATOR_CALL_METHODDEF
     {NULL,              NULL}           /* sentinel */
 
+};
+
+
+static PyObject *
+text_signature(PyObject *self, void *Py_UNUSED(ignored))
+{
+    return PyUnicode_FromString("(obj, /)");
+}
+
+static PyGetSetDef common_getset[] = {
+    {"__text_signature__", text_signature, (setter)NULL},
+    {NULL}
 };
 
 /* itemgetter object **********************************************************/
@@ -1171,6 +1214,7 @@ static PyType_Slot itemgetter_type_slots[] = {
     {Py_tp_clear, itemgetter_clear},
     {Py_tp_methods, itemgetter_methods},
     {Py_tp_members, itemgetter_members},
+    {Py_tp_getset, common_getset},
     {Py_tp_new, itemgetter_new},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_repr, itemgetter_repr},
@@ -1223,6 +1267,7 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
 
     /* prepare attr while checking args */
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     for (idx = 0; idx < nattrs; ++idx) {
         PyObject *item = PyTuple_GET_ITEM(args, idx);
         int dot_count;
@@ -1246,7 +1291,7 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
         if (dot_count == 0) {
             Py_INCREF(item);
-            PyUnicode_InternInPlace(&item);
+            _PyUnicode_InternMortal(interp, &item);
             PyTuple_SET_ITEM(attr, idx, item);
         } else { /* make it a tuple of non-dotted attrnames */
             PyObject *attr_chain = PyTuple_New(dot_count + 1);
@@ -1272,7 +1317,7 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                     Py_DECREF(attr);
                     return NULL;
                 }
-                PyUnicode_InternInPlace(&attr_chain_item);
+                _PyUnicode_InternMortal(interp, &attr_chain_item);
                 PyTuple_SET_ITEM(attr_chain, attr_chain_idx, attr_chain_item);
                 ++attr_chain_idx;
                 unibuff_till = unibuff_from = unibuff_till + 1;
@@ -1286,7 +1331,7 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 Py_DECREF(attr);
                 return NULL;
             }
-            PyUnicode_InternInPlace(&attr_chain_item);
+            _PyUnicode_InternMortal(interp, &attr_chain_item);
             PyTuple_SET_ITEM(attr_chain, attr_chain_idx, attr_chain_item);
 
             PyTuple_SET_ITEM(attr, idx, attr_chain);
@@ -1528,6 +1573,7 @@ static PyType_Slot attrgetter_type_slots[] = {
     {Py_tp_clear, attrgetter_clear},
     {Py_tp_methods, attrgetter_methods},
     {Py_tp_members, attrgetter_members},
+    {Py_tp_getset, common_getset},
     {Py_tp_new, attrgetter_new},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_repr, attrgetter_repr},
@@ -1648,7 +1694,8 @@ methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     Py_INCREF(name);
-    PyUnicode_InternInPlace(&name);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyUnicode_InternMortal(interp, &name);
     mc->name = name;
 
     mc->xargs = Py_XNewRef(args); // allows us to use borrowed references
@@ -1863,6 +1910,7 @@ static PyType_Slot methodcaller_type_slots[] = {
     {Py_tp_clear, methodcaller_clear},
     {Py_tp_methods, methodcaller_methods},
     {Py_tp_members, methodcaller_members},
+    {Py_tp_getset, common_getset},
     {Py_tp_new, methodcaller_new},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_repr, methodcaller_repr},
@@ -1913,6 +1961,7 @@ operator_exec(PyObject *module)
 static struct PyModuleDef_Slot operator_slots[] = {
     {Py_mod_exec, operator_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

@@ -1293,7 +1293,7 @@ deque_index_impl(dequeobject *deque, PyObject *v, Py_ssize_t start,
             index = 0;
         }
     }
-    PyErr_Format(PyExc_ValueError, "%R is not in deque", v);
+    PyErr_SetString(PyExc_ValueError, "deque.index(x): x not in deque");
     return NULL;
 }
 
@@ -1462,7 +1462,7 @@ deque_remove_impl(dequeobject *deque, PyObject *value)
         }
     }
     if (i == n) {
-        PyErr_Format(PyExc_ValueError, "%R is not in deque", value);
+        PyErr_SetString(PyExc_ValueError, "deque.remove(x): x not in deque");
         return NULL;
     }
     rv = deque_del_item(deque, i);
@@ -2511,9 +2511,9 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
     /* Only take the fast path when get() and __setitem__()
      * have not been overridden.
      */
-    mapping_get = _PyType_Lookup(Py_TYPE(mapping), &_Py_ID(get));
+    mapping_get = _PyType_LookupRef(Py_TYPE(mapping), &_Py_ID(get));
     dict_get = _PyType_Lookup(&PyDict_Type, &_Py_ID(get));
-    mapping_setitem = _PyType_Lookup(Py_TYPE(mapping), &_Py_ID(__setitem__));
+    mapping_setitem = _PyType_LookupRef(Py_TYPE(mapping), &_Py_ID(__setitem__));
     dict_setitem = _PyType_Lookup(&PyDict_Type, &_Py_ID(__setitem__));
 
     if (mapping_get != NULL && mapping_get == dict_get &&
@@ -2537,12 +2537,9 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
             if (key == NULL)
                 break;
 
-            if (!PyUnicode_CheckExact(key) ||
-                (hash = _PyASCIIObject_CAST(key)->hash) == -1)
-            {
-                hash = PyObject_Hash(key);
-                if (hash == -1)
-                    goto done;
+            hash = _PyObject_HashFast(key);
+            if (hash == -1) {
+                goto done;
             }
 
             oldval = _PyDict_GetItem_KnownHash(mapping, key, hash);
@@ -2575,7 +2572,11 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
             oldval = PyObject_CallFunctionObjArgs(bound_get, key, zero, NULL);
             if (oldval == NULL)
                 break;
-            newval = PyNumber_Add(oldval, one);
+            if (oldval == zero) {
+                newval = Py_NewRef(one);
+            } else {
+                newval = PyNumber_Add(oldval, one);
+            }
             Py_DECREF(oldval);
             if (newval == NULL)
                 break;
@@ -2587,6 +2588,8 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
     }
 
 done:
+    Py_XDECREF(mapping_get);
+    Py_XDECREF(mapping_setitem);
     Py_DECREF(it);
     Py_XDECREF(key);
     Py_XDECREF(newval);
@@ -2817,6 +2820,7 @@ collections_exec(PyObject *module) {
 static struct PyModuleDef_Slot collections_slots[] = {
     {Py_mod_exec, collections_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

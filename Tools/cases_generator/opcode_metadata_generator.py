@@ -4,14 +4,12 @@ Writes the metadata to pycore_opcode_metadata.h by default.
 """
 
 import argparse
-import os.path
-import sys
 
 from analyzer import (
     Analysis,
     Instruction,
+    PseudoInstruction,
     analyze_files,
-    Skip,
     Uop,
 )
 from generators_common import (
@@ -19,7 +17,6 @@ from generators_common import (
     ROOT,
     write_header,
     cflags,
-    StackOffset,
 )
 from cwriter import CWriter
 from typing import TextIO
@@ -50,8 +47,11 @@ FLAGS = [
     "DEOPT",
     "ERROR",
     "ESCAPES",
+    "EXIT",
     "PURE",
     "PASSTHROUGH",
+    "OPARG_AND_1",
+    "ERROR_NO_POP",
 ]
 
 
@@ -91,12 +91,19 @@ def emit_stack_effect_function(
 def generate_stack_effect_functions(analysis: Analysis, out: CWriter) -> None:
     popped_data: list[tuple[str, str]] = []
     pushed_data: list[tuple[str, str]] = []
-    for inst in analysis.instructions.values():
+
+    def add(inst: Instruction | PseudoInstruction) -> None:
         stack = get_stack_effect(inst)
         popped = (-stack.base_offset).to_c()
         pushed = (stack.top_offset - stack.base_offset).to_c()
         popped_data.append((inst.name, popped))
         pushed_data.append((inst.name, pushed))
+
+    for inst in analysis.instructions.values():
+        add(inst)
+    for pseudo in analysis.pseudos.values():
+        add(pseudo)
+
     emit_stack_effect_function(out, "popped", sorted(popped_data))
     emit_stack_effect_function(out, "pushed", sorted(pushed_data))
 
@@ -145,7 +152,6 @@ def generate_deopt_table(analysis: Analysis, out: CWriter) -> None:
         if inst.family is not None:
             deopt = inst.family.name
         deopts.append((inst.name, deopt))
-    deopts.append(("INSTRUMENTED_LINE", "INSTRUMENTED_LINE"))
     for name, deopt in sorted(deopts):
         out.emit(f"[{name}] = {deopt},\n")
     out.emit("};\n\n")
@@ -173,7 +179,6 @@ def generate_name_table(analysis: Analysis, out: CWriter) -> None:
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit(f"const char *_PyOpcode_OpName[{table_size}] = {{\n")
     names = list(analysis.instructions) + list(analysis.pseudos)
-    names.append("INSTRUMENTED_LINE")
     for name in sorted(names):
         out.emit(f'[{name}] = "{name}",\n')
     out.emit("};\n")
@@ -282,7 +287,7 @@ def is_viable_expansion(inst: Instruction) -> bool:
                 continue
             if "replaced" in part.annotations:
                 continue
-            if part.properties.tier_one_only or not part.is_viable():
+            if part.properties.tier == 1 or not part.is_viable():
                 return False
     return True
 
@@ -300,6 +305,7 @@ def generate_pseudo_targets(analysis: Analysis, out: CWriter) -> None:
     table_size = len(analysis.pseudos)
     max_targets = max(len(pseudo.targets) for pseudo in analysis.pseudos.values())
     out.emit("struct pseudo_targets {\n")
+    out.emit(f"uint8_t as_sequence;\n")
     out.emit(f"uint8_t targets[{max_targets + 1}];\n")
     out.emit("};\n")
     out.emit(
@@ -310,10 +316,11 @@ def generate_pseudo_targets(analysis: Analysis, out: CWriter) -> None:
         f"const struct pseudo_targets _PyOpcode_PseudoTargets[{table_size}] = {{\n"
     )
     for pseudo in analysis.pseudos.values():
+        as_sequence = "1" if pseudo.as_sequence else "0"
         targets = ["0"] * (max_targets + 1)
         for i, target in enumerate(pseudo.targets):
             targets[i] = target.name
-        out.emit(f"[{pseudo.name}-256] = {{ {{ {', '.join(targets)} }} }},\n")
+        out.emit(f"[{pseudo.name}-256] = {{ {as_sequence}, {{ {', '.join(targets)} }} }},\n")
     out.emit("};\n\n")
     out.emit("#endif // NEED_OPCODE_METADATA\n")
     out.emit("static inline bool\n")
