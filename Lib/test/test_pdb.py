@@ -916,7 +916,7 @@ def test_pdb_restart_command():
     > <doctest test.test_pdb.test_pdb_restart_command[0]>(2)test_function()
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False, mode='inline').set_trace()
     (Pdb) restart
-    *** run/restart command is disabled in inline breakpoints.
+    *** run/restart command is disabled when pdb is running in inline mode.
     Use the command line interface to enable restarting your program
     e.g. "python -m pdb myscript.py"
     (Pdb) continue
