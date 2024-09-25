@@ -180,16 +180,29 @@ tuple_extend(PyObject **dst, Py_ssize_t dstindex,
 PyObject *
 _Py_make_parameters(PyObject *args)
 {
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t nargs = PySequence_Length(args);
     Py_ssize_t len = nargs;
     PyObject *parameters = PyTuple_New(len);
     if (parameters == NULL)
         return NULL;
     Py_ssize_t iparam = 0;
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
-        PyObject *t = PyTuple_GET_ITEM(args, iarg);
+        PyObject *t = PySequence_GetItem(args, iarg);
         // We don't want __parameters__ descriptor of a bare Python class.
         if (PyType_Check(t)) {
+            continue;
+        }
+        // Recursively call _Py_make_parameters for lists/tuples and
+        // add the results to the current parameters.
+        if (PyTuple_Check(t) || PyList_Check(t)) {
+            PyObject *subargs = _Py_make_parameters(t);
+            if (subargs == NULL) {
+                Py_DECREF(parameters);
+                return NULL;
+            }
+            iparam += tuple_extend(&parameters, iparam, &PyTuple_GET_ITEM(subargs, 0),
+                                   PyTuple_GET_SIZE(subargs));
+            Py_DECREF(subargs);
             continue;
         }
         int rc = PyObject_HasAttrWithError(t, &_Py_ID(__typing_subst__));
@@ -416,21 +429,34 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
         t = list[T];          t[int]      -> newargs = [int]
         t = dict[str, T];     t[int]      -> newargs = [str, int]
         t = dict[T, list[S]]; t[str, int] -> newargs = [str, list[int]]
+        t = list[[T]];        t[str]      -> newargs = [[str]]
      */
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t nargs = PySequence_Length(args);
     PyObject *newargs = PyTuple_New(nargs);
     if (newargs == NULL) {
         Py_DECREF(item);
         return NULL;
     }
     for (Py_ssize_t iarg = 0, jarg = 0; iarg < nargs; iarg++) {
-        PyObject *arg = PyTuple_GET_ITEM(args, iarg);
+        PyObject *arg = PySequence_GetItem(args, iarg);
         if (PyType_Check(arg)) {
             PyTuple_SET_ITEM(newargs, jarg, Py_NewRef(arg));
             jarg++;
             continue;
         }
-
+        // Recursively substitute params in lists/tuples.
+        if (PyTuple_Check(arg) || PyList_Check(arg)) {
+            PyObject *subargs = _Py_subs_parameters(self, arg, parameters, item);
+            if (subargs == NULL) {
+                Py_DECREF(newargs);
+                Py_DECREF(item);
+                return NULL;
+            }
+            Py_SETREF(subargs, PySequence_List(subargs));
+            PyTuple_SET_ITEM(newargs, jarg, Py_NewRef(subargs));
+            jarg++;
+            continue;
+        }
         int unpack = _is_unpacked_typevartuple(arg);
         if (unpack < 0) {
             Py_DECREF(newargs);
