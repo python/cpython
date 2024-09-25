@@ -1481,6 +1481,20 @@ class TestUopsOptimization(unittest.TestCase):
 
         fn(A())
 
+    def test_py_dealloc_escapes(self):
+
+        class SneakyDel:
+            def __del__(self):
+                frame = sys._getframe(1)
+                if frame.f_locals["i"] == 999:
+                    frame.f_locals["i"] = None
+
+        for i in range(1000):
+            sneaky_del = SneakyDel()
+            i + i  # Remove guards for i.
+            sneaky_del = None  # Change i.
+            i + i  # BOOM!
+
 
 if __name__ == "__main__":
     unittest.main()
