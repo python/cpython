@@ -1423,7 +1423,9 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    This function returns ``-1`` upon failure, so one should call
    :c:func:`PyErr_Occurred` to check for errors.
 
-   See also :c:func:`PyUnicode_Equal`.
+   .. seealso::
+
+      The :c:func:`PyUnicode_Equal` function.
 
 
 .. c:function:: int PyUnicode_Equal(PyObject *a, PyObject *b)
@@ -1433,11 +1435,13 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    * Return ``1`` if *a* is equal to *b*.
    * Return ``0`` if *a* is not equal to *b*.
    * Set a :exc:`TypeError` exception and return ``-1`` if *a* or *b* is not a
-     Python :class:`str` object.
+     :class:`str` object.
 
-   The function always succeed if *a* and *b* are Python :class:`str` objects.
+   The function always succeeds if *a* and *b* are :class:`str` objects.
 
-   See also :c:func:`PyUnicode_Compare`.
+   .. seealso::
+
+      The :c:func:`PyUnicode_Compare` function.
 
    .. versionadded:: 3.14
 

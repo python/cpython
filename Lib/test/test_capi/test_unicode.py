@@ -1919,6 +1919,12 @@ class PyUnicodeWriterFormatTest(unittest.TestCase):
         self.assertFalse(unicode_equal("\u20ac", "\u20ad"))
         self.assertFalse(unicode_equal("\U0010ffff", "\U0010fffe"))
 
+        # str subclass
+        self.assertTrue(unicode_equal("abc", Str("abc")))
+        self.assertTrue(unicode_equal(Str("abc"), "abc"))
+        self.assertFalse(unicode_equal("abc", Str("abcd")))
+        self.assertFalse(unicode_equal(Str("abc"), "abcd"))
+
         # invalid type
         for invalid_type in (b'bytes', 123, ("tuple",)):
             with self.subTest(invalid_type=invalid_type):
