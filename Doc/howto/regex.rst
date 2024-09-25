@@ -558,7 +558,7 @@ name such as :const:`IGNORECASE` and a short, one-letter form such as
 
 To specify them in the pattern, you can write them as an embedded
 modifier at the start of the pattern that uses the short one-letter
-form: `(?i)` for a single flag or `(?mxi)` to enable multiple flags.
+form: ``(?i)`` for a single flag or ``(?mxi)`` to enable multiple flags.
 (If you're familiar with Perl's pattern modifiers, the one-letter
 forms use the same letters; the short form of :const:`re.VERBOSE` is
 :const:`re.X` because Perl calls these "extended regular expressions",
@@ -737,7 +737,7 @@ boundary; the position isn't changed by the ``\b`` at all.
 
 Zero-width assertions can't be repeated, because if they match once at
 a given location, they could be matched an infinite number of times,
-so it's meaningless to repeat them. A pattern such as `^*` will raise
+so it's meaningless to repeat them. A pattern such as ``^*`` will raise
 an exception when you try to compile it.
 
 ``^``
@@ -1142,7 +1142,7 @@ whitespace or by a fixed string.  As you'd expect, there's a module-level
    parentheses are used in the RE, then their contents will also be returned as
    part of the resulting list.  If *maxsplit* is nonzero, at most *maxsplit* splits
    are performed.  The *flags* argument is optional and may contain flag values such as
-   `re.MULTILINE` or `re.VERBOSE`.
+   ``re.MULTILINE`` or ``re.VERBOSE``.
 
 You can limit the number of splits made, by passing a value for *maxsplit*.
 When *maxsplit* is nonzero, at most *maxsplit* splits will be made, and the
@@ -1196,7 +1196,7 @@ which can be either a string or a function, and the string to be processed.
    The optional argument *count* is the maximum number of pattern occurrences to be
    replaced; *count* must be a non-negative integer.  The default value of 0 means
    to replace all occurrences.  The *flags* argument is also optional and may contain
-   flag values such as `re.MULTILINE` or `re.VERBOSE`.
+   flag values such as ``re.MULTILINE`` or ``re.VERBOSE``.
 
 Here's a simple example of using the :meth:`~re.Pattern.sub` method.  It replaces colour
 names with the word ``colour``::
