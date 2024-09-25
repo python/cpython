@@ -1,4 +1,0 @@
-Fix issue where :func:`ast.parse` would incorrectly flag conditional context
-managers (such as ``with (x() if y else z()): ...``) as invalid syntax if
-``feature_version=(3, 8)`` was passed. This reverts changes to the
-grammar made as part of gh-94949.

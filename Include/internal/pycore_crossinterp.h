@@ -217,6 +217,11 @@ typedef struct _excinfo {
     const char *errdisplay;
 } _PyXI_excinfo;
 
+PyAPI_FUNC(int) _PyXI_InitExcInfo(_PyXI_excinfo *info, PyObject *exc);
+PyAPI_FUNC(PyObject *) _PyXI_FormatExcInfo(_PyXI_excinfo *info);
+PyAPI_FUNC(PyObject *) _PyXI_ExcInfoAsObject(_PyXI_excinfo *info);
+PyAPI_FUNC(void) _PyXI_ClearExcInfo(_PyXI_excinfo *info);
+
 
 typedef enum error_code {
     _PyXI_ERR_NO_ERROR = 0,
@@ -311,6 +316,22 @@ PyAPI_FUNC(void) _PyXI_Exit(_PyXI_session *session);
 
 PyAPI_FUNC(PyObject *) _PyXI_ApplyCapturedException(_PyXI_session *session);
 PyAPI_FUNC(int) _PyXI_HasCapturedException(_PyXI_session *session);
+
+
+/*************/
+/* other API */
+/*************/
+
+// Export for _testinternalcapi shared extension
+PyAPI_FUNC(PyInterpreterState *) _PyXI_NewInterpreter(
+    PyInterpreterConfig *config,
+    long *maybe_whence,
+    PyThreadState **p_tstate,
+    PyThreadState **p_save_tstate);
+PyAPI_FUNC(void) _PyXI_EndInterpreter(
+    PyInterpreterState *interp,
+    PyThreadState *tstate,
+    PyThreadState **p_save_tstate);
 
 
 #ifdef __cplusplus

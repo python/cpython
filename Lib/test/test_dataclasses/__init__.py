@@ -17,7 +17,7 @@ from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol, DefaultDict
 from typing import get_type_hints
 from collections import deque, OrderedDict, namedtuple, defaultdict
-from functools import total_ordering
+from functools import total_ordering, wraps
 
 import typing       # Needed for the string "typing.ClassVar[int]" to work as an annotation.
 import dataclasses  # Needed for the string "dataclasses.InitVar[int]" to work as an annotation.
@@ -1317,6 +1317,29 @@ class TestCase(unittest.TestCase):
         c = C(10, 11, 50, 51)
         self.assertEqual(vars(c), {'x': 21, 'y': 101})
 
+    def test_init_var_name_shadowing(self):
+        # Because dataclasses rely exclusively on `__annotations__` for
+        # handling InitVar and `__annotations__` preserves shadowed definitions,
+        # you can actually shadow an InitVar with a method or property.
+        #
+        # This only works when there is no default value; `dataclasses` uses the
+        # actual name (which will be bound to the shadowing method) for default
+        # values.
+        @dataclass
+        class C:
+            shadowed: InitVar[int]
+            _shadowed: int = field(init=False)
+
+            def __post_init__(self, shadowed):
+                self._shadowed = shadowed * 2
+
+            @property
+            def shadowed(self):
+                return self._shadowed * 3
+
+        c = C(5)
+        self.assertEqual(c.shadowed, 30)
+
     def test_default_factory(self):
         # Test a factory that returns a new list.
         @dataclass
@@ -1524,6 +1547,24 @@ class TestCase(unittest.TestCase):
         self.assertTrue(is_dataclass(type(a)))
         self.assertTrue(is_dataclass(a))
 
+    def test_is_dataclass_inheritance(self):
+        @dataclass
+        class X:
+            y: int
+
+        class Z(X):
+            pass
+
+        self.assertTrue(is_dataclass(X), "X should be a dataclass")
+        self.assertTrue(
+            is_dataclass(Z),
+            "Z should be a dataclass because it inherits from X",
+        )
+        z_instance = Z(y=5)
+        self.assertTrue(
+            is_dataclass(z_instance),
+            "z_instance should be a dataclass because it is an instance of Z",
+        )
 
     def test_helper_fields_with_class_instance(self):
         # Check that we can call fields() on either a class or instance,
@@ -2471,6 +2512,15 @@ class TestRepr(unittest.TestCase):
 
 
 class TestEq(unittest.TestCase):
+    def test_recursive_eq(self):
+        # Test a class with recursive child
+        @dataclass
+        class C:
+            recursive: object = ...
+        c = C()
+        c.recursive = c
+        self.assertEqual(c, c)
+
     def test_no_eq(self):
         # Test a class with no __eq__ and eq=False.
         @dataclass(eq=False)
@@ -3496,6 +3546,174 @@ class TestSlots(unittest.TestCase):
         a = A(1)
         a_ref = weakref.ref(a)
         self.assertIs(a.__weakref__, a_ref)
+
+
+    def test_dataclass_derived_weakref_slot(self):
+        class A:
+            pass
+
+        @dataclass(slots=True, weakref_slot=True)
+        class B(A):
+            pass
+
+        self.assertEqual(B.__slots__, ())
+        B()
+
+    def test_dataclass_derived_generic(self):
+        T = typing.TypeVar('T')
+
+        @dataclass(slots=True, weakref_slot=True)
+        class A(typing.Generic[T]):
+            pass
+        self.assertEqual(A.__slots__, ('__weakref__',))
+        self.assertTrue(A.__weakref__)
+        A()
+
+        @dataclass(slots=True, weakref_slot=True)
+        class B[T2]:
+            pass
+        self.assertEqual(B.__slots__, ('__weakref__',))
+        self.assertTrue(B.__weakref__)
+        B()
+
+    def test_dataclass_derived_generic_from_base(self):
+        T = typing.TypeVar('T')
+
+        class RawBase: ...
+
+        @dataclass(slots=True, weakref_slot=True)
+        class C1(typing.Generic[T], RawBase):
+            pass
+        self.assertEqual(C1.__slots__, ())
+        self.assertTrue(C1.__weakref__)
+        C1()
+        @dataclass(slots=True, weakref_slot=True)
+        class C2(RawBase, typing.Generic[T]):
+            pass
+        self.assertEqual(C2.__slots__, ())
+        self.assertTrue(C2.__weakref__)
+        C2()
+
+        @dataclass(slots=True, weakref_slot=True)
+        class D[T2](RawBase):
+            pass
+        self.assertEqual(D.__slots__, ())
+        self.assertTrue(D.__weakref__)
+        D()
+
+    def test_dataclass_derived_generic_from_slotted_base(self):
+        T = typing.TypeVar('T')
+
+        class WithSlots:
+            __slots__ = ('a', 'b')
+
+        @dataclass(slots=True, weakref_slot=True)
+        class E1(WithSlots, Generic[T]):
+            pass
+        self.assertEqual(E1.__slots__, ('__weakref__',))
+        self.assertTrue(E1.__weakref__)
+        E1()
+        @dataclass(slots=True, weakref_slot=True)
+        class E2(Generic[T], WithSlots):
+            pass
+        self.assertEqual(E2.__slots__, ('__weakref__',))
+        self.assertTrue(E2.__weakref__)
+        E2()
+
+        @dataclass(slots=True, weakref_slot=True)
+        class F[T2](WithSlots):
+            pass
+        self.assertEqual(F.__slots__, ('__weakref__',))
+        self.assertTrue(F.__weakref__)
+        F()
+
+    def test_dataclass_derived_generic_from_slotted_base(self):
+        T = typing.TypeVar('T')
+
+        class WithWeakrefSlot:
+            __slots__ = ('__weakref__',)
+
+        @dataclass(slots=True, weakref_slot=True)
+        class G1(WithWeakrefSlot, Generic[T]):
+            pass
+        self.assertEqual(G1.__slots__, ())
+        self.assertTrue(G1.__weakref__)
+        G1()
+        @dataclass(slots=True, weakref_slot=True)
+        class G2(Generic[T], WithWeakrefSlot):
+            pass
+        self.assertEqual(G2.__slots__, ())
+        self.assertTrue(G2.__weakref__)
+        G2()
+
+        @dataclass(slots=True, weakref_slot=True)
+        class H[T2](WithWeakrefSlot):
+            pass
+        self.assertEqual(H.__slots__, ())
+        self.assertTrue(H.__weakref__)
+        H()
+
+    def test_dataclass_slot_dict(self):
+        class WithDictSlot:
+            __slots__ = ('__dict__',)
+
+        @dataclass(slots=True)
+        class A(WithDictSlot): ...
+
+        self.assertEqual(A.__slots__, ())
+        self.assertEqual(A().__dict__, {})
+        A()
+
+    @support.cpython_only
+    def test_dataclass_slot_dict_ctype(self):
+        # https://github.com/python/cpython/issues/123935
+        from test.support import import_helper
+        # Skips test if `_testcapi` is not present:
+        _testcapi = import_helper.import_module('_testcapi')
+
+        @dataclass(slots=True)
+        class HasDictOffset(_testcapi.HeapCTypeWithDict):
+            __dict__: dict = {}
+        self.assertNotEqual(_testcapi.HeapCTypeWithDict.__dictoffset__, 0)
+        self.assertEqual(HasDictOffset.__slots__, ())
+
+        @dataclass(slots=True)
+        class DoesNotHaveDictOffset(_testcapi.HeapCTypeWithWeakref):
+            __dict__: dict = {}
+        self.assertEqual(_testcapi.HeapCTypeWithWeakref.__dictoffset__, 0)
+        self.assertEqual(DoesNotHaveDictOffset.__slots__, ('__dict__',))
+
+    @support.cpython_only
+    def test_slots_with_wrong_init_subclass(self):
+        # TODO: This test is for a kinda-buggy behavior.
+        # Ideally, it should be fixed and `__init_subclass__`
+        # should be fully supported in the future versions.
+        # See https://github.com/python/cpython/issues/91126
+        class WrongSuper:
+            def __init_subclass__(cls, arg):
+                pass
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "missing 1 required positional argument: 'arg'",
+        ):
+            @dataclass(slots=True)
+            class WithWrongSuper(WrongSuper, arg=1):
+                pass
+
+        class CorrectSuper:
+            args = []
+            def __init_subclass__(cls, arg="default"):
+                cls.args.append(arg)
+
+        @dataclass(slots=True)
+        class WithCorrectSuper(CorrectSuper):
+            pass
+
+        # __init_subclass__ is called twice: once for `WithCorrectSuper`
+        # and once for `WithCorrectSuper__slots__` new class
+        # that we create internally.
+        self.assertEqual(CorrectSuper.args, ["default", "default"])
 
 
 class TestDescriptors(unittest.TestCase):
@@ -4640,6 +4858,140 @@ class TestKeywordArgs(unittest.TestCase):
         self.assertTrue(fields(B)[0].kw_only)
         self.assertFalse(fields(B)[1].kw_only)
 
+    def test_deferred_annotations(self):
+        @dataclass
+        class A:
+            x: undefined
+            y: ClassVar[undefined]
+
+        fs = fields(A)
+        self.assertEqual(len(fs), 1)
+        self.assertEqual(fs[0].name, 'x')
+
+
+class TestZeroArgumentSuperWithSlots(unittest.TestCase):
+    def test_zero_argument_super(self):
+        @dataclass(slots=True)
+        class A:
+            def foo(self):
+                super()
+
+        A().foo()
+
+    def test_dunder_class_with_old_property(self):
+        @dataclass(slots=True)
+        class A:
+            def _get_foo(slf):
+                self.assertIs(__class__, type(slf))
+                self.assertIs(__class__, slf.__class__)
+                return __class__
+
+            def _set_foo(slf, value):
+                self.assertIs(__class__, type(slf))
+                self.assertIs(__class__, slf.__class__)
+
+            def _del_foo(slf):
+                self.assertIs(__class__, type(slf))
+                self.assertIs(__class__, slf.__class__)
+
+            foo = property(_get_foo, _set_foo, _del_foo)
+
+        a = A()
+        self.assertIs(a.foo, A)
+        a.foo = 4
+        del a.foo
+
+    def test_dunder_class_with_new_property(self):
+        @dataclass(slots=True)
+        class A:
+            @property
+            def foo(slf):
+                return slf.__class__
+
+            @foo.setter
+            def foo(slf, value):
+                self.assertIs(__class__, type(slf))
+
+            @foo.deleter
+            def foo(slf):
+                self.assertIs(__class__, type(slf))
+
+        a = A()
+        self.assertIs(a.foo, A)
+        a.foo = 4
+        del a.foo
+
+    # Test the parts of a property individually.
+    def test_slots_dunder_class_property_getter(self):
+        @dataclass(slots=True)
+        class A:
+            @property
+            def foo(slf):
+                return __class__
+
+        a = A()
+        self.assertIs(a.foo, A)
+
+    def test_slots_dunder_class_property_setter(self):
+        @dataclass(slots=True)
+        class A:
+            foo = property()
+            @foo.setter
+            def foo(slf, val):
+                self.assertIs(__class__, type(slf))
+
+        a = A()
+        a.foo = 4
+
+    def test_slots_dunder_class_property_deleter(self):
+        @dataclass(slots=True)
+        class A:
+            foo = property()
+            @foo.deleter
+            def foo(slf):
+                self.assertIs(__class__, type(slf))
+
+        a = A()
+        del a.foo
+
+    def test_wrapped(self):
+        def mydecorator(f):
+            @wraps(f)
+            def wrapper(*args, **kwargs):
+                return f(*args, **kwargs)
+            return wrapper
+
+        @dataclass(slots=True)
+        class A:
+            @mydecorator
+            def foo(self):
+                super()
+
+        A().foo()
+
+    def test_remembered_class(self):
+        # Apply the dataclass decorator manually (not when the class
+        # is created), so that we can keep a reference to the
+        # undecorated class.
+        class A:
+            def cls(self):
+                return __class__
+
+        self.assertIs(A().cls(), A)
+
+        B = dataclass(slots=True)(A)
+        self.assertIs(B().cls(), B)
+
+        # This is undesirable behavior, but is a function of how
+        # modifying __class__ in the closure works.  I'm not sure this
+        # should be tested or not: I don't really want to guarantee
+        # this behavior, but I don't want to lose the point that this
+        # is how it works.
+
+        # The underlying class is "broken" by changing its __class__
+        # in A.foo() to B.  This normally isn't a problem, because no
+        # one will be keeping a reference to the underlying class A.
+        self.assertIs(A().cls(), B)
 
 if __name__ == '__main__':
     unittest.main()

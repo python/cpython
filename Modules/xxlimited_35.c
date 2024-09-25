@@ -5,10 +5,10 @@
  * See the xxlimited module for an extension module template.
  */
 
+// Test the limited C API version 3.5
 #include "pyconfig.h"   // Py_GIL_DISABLED
-
 #ifndef Py_GIL_DISABLED
-#define Py_LIMITED_API 0x03050000
+#  define Py_LIMITED_API 0x03050000
 #endif
 
 #include "Python.h"
@@ -297,6 +297,10 @@ xx_modexec(PyObject *m)
 
 static PyModuleDef_Slot xx_slots[] = {
     {Py_mod_exec, xx_modexec},
+#ifdef Py_GIL_DISABLED
+    // These definitions are in the limited API, but not until 3.13.
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
     {0, NULL}
 };
 

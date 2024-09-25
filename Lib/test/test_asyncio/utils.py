@@ -301,12 +301,17 @@ def run_udp_echo_server(*, host='127.0.0.1', port=0):
     family, type, proto, _, sockaddr = addr_info[0]
     sock = socket.socket(family, type, proto)
     sock.bind((host, port))
+    sockname = sock.getsockname()
     thread = threading.Thread(target=lambda: echo_datagrams(sock))
     thread.start()
     try:
-        yield sock.getsockname()
+        yield sockname
     finally:
-        sock.sendto(b'STOP', sock.getsockname())
+        # gh-122187: use a separate socket to send the stop message to avoid
+        # TSan reported race on the same socket.
+        sock2 = socket.socket(family, type, proto)
+        sock2.sendto(b'STOP', sockname)
+        sock2.close()
         thread.join()
 
 
@@ -546,25 +551,6 @@ class TestCase(unittest.TestCase):
             else:
                 loop._default_executor.shutdown(wait=True)
         loop.close()
-
-        policy = support.maybe_get_event_loop_policy()
-        if policy is not None:
-            try:
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', DeprecationWarning)
-                    watcher = policy.get_child_watcher()
-            except NotImplementedError:
-                # watcher is not implemented by EventLoopPolicy, e.g. Windows
-                pass
-            else:
-                if isinstance(watcher, asyncio.ThreadedChildWatcher):
-                    # Wait for subprocess to finish, but not forever
-                    for thread in list(watcher._threads.values()):
-                        thread.join(timeout=support.SHORT_TIMEOUT)
-                        if thread.is_alive():
-                            raise RuntimeError(f"thread {thread} still alive: "
-                                               "subprocess still running")
-
 
     def set_event_loop(self, loop, *, cleanup=True):
         if loop is None:

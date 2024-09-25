@@ -1,5 +1,5 @@
-:mod:`email.contentmanager`: Managing MIME Content
---------------------------------------------------
+:mod:`!email.contentmanager`: Managing MIME Content
+---------------------------------------------------
 
 .. module:: email.contentmanager
    :synopsis: Storing and Retrieving Content from MIME Parts
