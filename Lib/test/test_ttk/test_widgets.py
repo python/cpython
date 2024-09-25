@@ -987,8 +987,8 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
     def create(self, **kwargs):
         return ttk.Scrollbar(self.root, **kwargs)
 
-@add_configure_tests(PixelSizeTests if tk_version >= (8, 7) else IntegerSizeTests,
-                      StandardTtkOptionsTests)
+
+@add_configure_tests(StandardTtkOptionsTests)
 class NotebookTest(AbstractWidgetTest, unittest.TestCase):
     OPTIONS = (
         'class', 'cursor', 'height', 'padding', 'style', 'takefocus', 'width',
