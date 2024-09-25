@@ -2485,7 +2485,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 value = action.default
             if isinstance(value, str):
                 value = self._get_value(action, value)
-                self._check_value(action, value)
 
         # when nargs='*' on a positional, if there were no command-line
         # args, use the default if it is anything other than None
@@ -2493,11 +2492,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
               not action.option_strings):
             if action.default is not None:
                 value = action.default
-                self._check_value(action, value)
             else:
-                # since arg_strings is always [] at this point
-                # there is no need to use self._check_value(action, value)
-                value = arg_strings
+                value = []
 
         # single argument or optional argument produces a single value
         elif len(arg_strings) == 1 and action.nargs in [None, OPTIONAL]:
