@@ -4,7 +4,7 @@ import tkinter
 from tkinter import TclError
 import enum
 from test import support
-from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest, requires_tk, tk_version
+from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest, requires_tk
 
 support.requires('gui')
 
