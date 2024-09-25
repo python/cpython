@@ -1563,7 +1563,7 @@ Copying, moving and deleting
    This argument has no effect when copying files on Windows (where
    metadata is always preserved).
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 
 .. method:: Path.copy_into(target_dir, *, follow_symlinks=True, \
@@ -1574,7 +1574,7 @@ Copying, moving and deleting
    :meth:`Path.copy`. Returns a new :class:`!Path` instance pointing to the
    copy.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 
 .. method:: Path.rename(target)
