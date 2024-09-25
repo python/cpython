@@ -527,7 +527,8 @@ Module-Level Functions
 
 You don't have to create a pattern object and call its methods; the
 :mod:`re` module also provides top-level functions called :func:`~re.match`,
-:func:`~re.search`, :func:`~re.fullmatch`, :func:`~re.findall`, :func:`~re.sub`, and so forth.  These functions
+:func:`~re.search`, :func:`~re.fullmatch`, :func:`~re.findall`,
+:func:`~re.sub`, and so forth.  These functions
 take the same arguments as the corresponding pattern method with
 the RE string added as the first argument, and still return either ``None`` or a
 :ref:`match object <match-objects>` instance. ::
