@@ -1045,7 +1045,8 @@ Special attributes
 
           Accessing the :attr:`!__annotations__` attribute of a class
           object directly may yield incorrect results in the presence of
-          metaclasses. Use :func:`annotationlib.get_annotations` to
+          metaclasses. In addition, the attribute may not exist for
+          some classes. Use :func:`annotationlib.get_annotations` to
           retrieve class annotations safely.
 
        .. versionchanged:: 3.14
