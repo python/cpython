@@ -111,6 +111,7 @@ class Text:
         There are just a few Text-only options that affect text behavior.
         '''
         self.data = ['', '\n']
+        self.marks = {}
 
     def index(self, index):
         "Return string version of index decoded according to current text."
@@ -144,6 +145,8 @@ class Text:
             return lastline, len(self.data[lastline]) - 1
         elif index == 'end':
             return self._endex(endflag)
+        elif '.' not in index:
+            return self._decode(self.marks['stmt-start'])
 
         line, char = index.split('.')
         line = int(line)
@@ -271,7 +274,7 @@ class Text:
 
     def mark_set(self, name, index):
         "Set mark *name* before the character at index."
-        pass
+        self.marks[name] = index
 
     def mark_unset(self, *markNames):
         "Delete all marks in markNames."
