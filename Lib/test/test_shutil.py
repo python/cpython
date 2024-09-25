@@ -1911,7 +1911,10 @@ class TestArchives(BaseTest, unittest.TestCase):
                 subprocess.check_output(zip_cmd, stderr=subprocess.STDOUT)
             except subprocess.CalledProcessError as exc:
                 details = exc.output.decode(errors="replace")
-                if 'unrecognized option: t' in details:
+                if any(message in details for message in [
+                    'unrecognized option: t',  # BusyBox
+                    'invalid option -- t',  # Android
+                ]):
                     self.skipTest("unzip doesn't support -t")
                 msg = "{}\n\n**Unzip Output**\n{}"
                 self.fail(msg.format(exc, details))
