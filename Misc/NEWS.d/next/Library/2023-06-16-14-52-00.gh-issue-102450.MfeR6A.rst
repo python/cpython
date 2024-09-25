@@ -1,0 +1,2 @@
+Add missing ISO-8601 24:00 alternative to midnight of next day to :meth:`datetime.datetime.fromisoformat` and :meth:`datetime.time.fromisoformat`.
+Patch by Izan "TizzySaurus" Robinson (tizzysaurus@gmail.com)
