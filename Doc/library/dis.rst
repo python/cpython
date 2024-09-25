@@ -1872,6 +1872,12 @@ but are replaced by real opcodes or removed before bytecode is generated.
    Undirected relative jump instructions which are replaced by their
    directed (forward/backward) counterparts by the assembler.
 
+.. opcode:: JUMP_IF_TRUE
+.. opcode:: JUMP_IF_FALSE
+
+   Conditional jumps which do not impact the stack. Replaced by the sequence
+   ``COPY 1``, ``TO_BOOL``, ``POP_JUMP_IF_TRUE/FALSE``.
+
 .. opcode:: LOAD_CLOSURE (i)
 
    Pushes a reference to the cell contained in slot ``i`` of the "fast locals"
