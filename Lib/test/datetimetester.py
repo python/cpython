@@ -1107,25 +1107,45 @@ class TestDateOnly(unittest.TestCase):
         self.assertEqual(dt2, dt - days)
 
     def test_strptime(self):
-        string = '2004-12-01'
-        format = '%Y-%m-%d'
-        expected = _strptime._strptime_datetime_date(date, string, format)
-        got = date.strptime(string, format)
-        self.assertEqual(expected, got)
-        self.assertIs(type(expected), date)
-        self.assertIs(type(got), date)
-
-        # bpo-34482: Check that surrogates are handled properly.
         inputs = [
-            ('2004-12\ud80001', '%Y-%m\ud800%d'),
-            ('2004\ud80012-01', '%Y\ud800%m-%d'),
+            # Basic valid cases
+            (date(1998, 2, 3), '1998-02-03', '%Y-%m-%d'),
+            (date(2004, 12, 2), '2004-12-02', '%Y-%m-%d'),
+
+            # Edge cases: Leap year
+            (date(2020, 2, 29), '2020-02-29', '%Y-%m-%d'),  # Valid leap year date
+
+            # bpo-34482: Handle surrogate pairs
+            (date(2004, 12, 2), '2004-12\ud80002', '%Y-%m\ud800%d'),
+            (date(2004, 12, 2), '2004\ud80012-02', '%Y\ud800%m-%d'),
+
+            # Month/day variations
+            (date(2004, 2, 1), '2004-02', '%Y-%m'),  # No day provided
+            (date(2004, 2, 1), '02-2004', '%m-%Y'),  # Month and year swapped
+
+            # Different day-month-year formats
+            (date(2004, 12, 2), '01/12/2004', '%d/%m/%Y'),  # Day/Month/Year
+            (date(2004, 12, 2), '12/01/2004', '%m/%d/%Y'),  # Month/Day/Year
+
+            # Different separators
+            (date(2023, 9, 24), '24.09.2023', '%d.%m.%Y'),  # Dots as separators
+            (date(2023, 9, 24), '24-09-2023', '%d-%m-%Y'),  # Dashes
+            (date(2023, 9, 24), '2023/09/24', '%Y/%m/%d'),  # Slashes
+
+            # Handling years with fewer digits
+            (date(127, 2, 3), '0127-02-03', '%Y-%m-%d'),
+            (date(99, 2, 3), '0099-02-03', '%Y-%m-%d'),
+            (date(5, 2, 3), '0005-02-03', '%Y-%m-%d'),
+
+            # Variations on ISO 8601 format
+            (date(2023, 9, 24), '2023-W39-1', '%G-W%V-%u'),  # ISO week date (Week 39, Monday)
+            (date(2023, 9, 24), '2023-267', '%Y-%j'),  # Year and day of the year (Julian)
         ]
-        for string, format in inputs:
+        for expected, string, format in inputs:
             with self.subTest(string=string, format=format):
-                expected = _strptime._strptime_datetime_date(date, string,
-                                                             format)
                 got = date.strptime(string, format)
                 self.assertEqual(expected, got)
+                self.assertIs(type(got), date)
 
     def test_strptime_single_digit(self):
         # bpo-34903: Check that single digit dates are allowed.
@@ -3801,27 +3821,18 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
                     self.assertEqual(derived, expected)
 
     def test_strptime(self):
-        string = '13:02:47.197'
-        format = '%H:%M:%S.%f'
-        expected = _strptime._strptime_datetime_time(self.theclass, string,
-                                                     format)
-        got = self.theclass.strptime(string, format)
-        self.assertEqual(expected, got)
-        self.assertIs(type(expected), self.theclass)
-        self.assertIs(type(got), self.theclass)
-
         # bpo-34482: Check that surrogates are handled properly.
         inputs = [
-            ('13:02\ud80047.197', '%H:%M\ud800%S.%f'),
-            ('13\ud80002:47.197', '%H\ud800%M:%S.%f'),
+            (self.theclass(13, 2, 47, 197000), '13:02:47.197', '%H:%M:%S.%f'),
+            (self.theclass(13, 2, 47, 197000), '13:02\ud80047.197', '%H:%M\ud800%S.%f'),
+            (self.theclass(13, 2, 47, 197000), '13\ud80002:47.197', '%H\ud800%M:%S.%f'),
         ]
-        for string, format in inputs:
+        for expected, string, format in inputs:
             with self.subTest(string=string, format=format):
-                expected = _strptime._strptime_datetime_time(self.theclass,
-                                                             string, format)
-                got = self.theclass.strptime(string, format)
                 self.assertEqual(expected, got)
+                self.assertIs(type(got), self.theclass)
 
+    def test_strptime_tz(self):
         strptime = self.theclass.strptime
         self.assertEqual(strptime("+0002", "%z").utcoffset(), 2 * MINUTE)
         self.assertEqual(strptime("-0002", "%z").utcoffset(), -2 * MINUTE)
@@ -3840,9 +3851,11 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
                 seconds = tzseconds
             hours, minutes = divmod(seconds//60, 60)
             tstr = "{}{:02d}{:02d} {}".format(sign, hours, minutes, tzname)
-            t = strptime(tstr, "%z %Z")
-            self.assertEqual(t.utcoffset(), timedelta(seconds=tzseconds))
-            self.assertEqual(t.tzname(), tzname)
+            with self.subTest(tstr=tstr):
+                t = strptime(tstr, "%z %Z")
+                self.assertEqual(t.utcoffset(), timedelta(seconds=tzseconds))
+                self.assertEqual(t.tzname(), tzname)
+                self.assertIs(type(t), self.theclass)
 
         # Can produce inconsistent time
         tstr, fmt = "+1234 UTC", "%z %Z"
@@ -3855,9 +3868,10 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         # Produce naive time if no %z is provided
         self.assertEqual(strptime("UTC", "%Z").tzinfo, None)
 
-        with self.assertRaises(ValueError): strptime("-2400", "%z")
-        with self.assertRaises(ValueError): strptime("-000", "%z")
-        with self.assertRaises(ValueError): strptime("z", "%z")
+    def test_strptime_errors(self):
+        for tzstr in ("-2400", "-000", "z"):
+            with self.assertRaises(ValueError):
+                self.theclass.strptime(tzstr, "%z")
 
     def test_strptime_single_digit(self):
         # bpo-34903: Check that single digit times are allowed.
