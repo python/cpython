@@ -664,28 +664,38 @@ def get_annotations(
     if eval_str and format != Format.VALUE:
         raise ValueError("eval_str=True is only supported with format=Format.VALUE")
 
-    # For VALUE format, we look at __annotations__ directly.
-    if format != Format.VALUE:
-        annotate = get_annotate_function(obj)
-        if annotate is not None:
-            ann = call_annotate_function(annotate, format, owner=obj)
-            if not isinstance(ann, dict):
-                raise ValueError(f"{obj!r}.__annotate__ returned a non-dict")
-            return dict(ann)
+    match format:
+        case Format.VALUE:
+            # For VALUE, we only look at __annotations__
+            ann = _get_dunder_annotations(obj)
+        case Format.FORWARDREF:
+            # For FORWARDREF, we use __annotations__ if it exists
+            try:
+                ann = _get_dunder_annotations(obj)
+            except NameError:
+                pass
+            else:
+                return dict(ann)
 
-    if isinstance(obj, type):
-        try:
-            ann = _BASE_GET_ANNOTATIONS(obj)
-        except AttributeError:
-            # For static types, the descriptor raises AttributeError.
-            return {}
-    else:
-        ann = getattr(obj, "__annotations__", None)
-        if ann is None:
-            return {}
+            # But if __annotations__ threw a NameError, we try calling __annotate__
+            ann = _get_and_call_annotate(obj, format)
+            if ann is not None:
+                return ann
 
-    if not isinstance(ann, dict):
-        raise ValueError(f"{obj!r}.__annotations__ is neither a dict nor None")
+            # If that didn't work either, we have a very weird object: evaluating
+            # __annotations__ threw NameError and there is no __annotate__. In that case,
+            # we fall back to trying __annotations__ again.
+            return dict(_get_dunder_annotations(obj))
+        case Format.SOURCE:
+            # For SOURCE, we try to call __annotate__
+            ann = _get_and_call_annotate(obj, format)
+            if ann is not None:
+                return ann
+            # But if we didn't get it, we use __annotations__ instead.
+            ann = _get_dunder_annotations(obj)
+            return ann
+        case _:
+            raise ValueError(f"Unsupported format {format!r}")
 
     if not ann:
         return {}
@@ -750,3 +760,30 @@ def get_annotations(
         for key, value in ann.items()
     }
     return return_value
+
+
+def _get_and_call_annotate(obj, format):
+    annotate = get_annotate_function(obj)
+    if annotate is not None:
+        ann = call_annotate_function(annotate, format, owner=obj)
+        if not isinstance(ann, dict):
+            raise ValueError(f"{obj!r}.__annotate__ returned a non-dict")
+        return dict(ann)
+    return None
+
+
+def _get_dunder_annotations(obj):
+    if isinstance(obj, type):
+        try:
+            ann = _BASE_GET_ANNOTATIONS(obj)
+        except AttributeError:
+            # For static types, the descriptor raises AttributeError.
+            return {}
+    else:
+        ann = getattr(obj, "__annotations__", None)
+        if ann is None:
+            return {}
+
+    if not isinstance(ann, dict):
+        raise ValueError(f"{obj!r}.__annotations__ is neither a dict nor None")
+    return dict(ann)
