@@ -19,7 +19,7 @@ PyCell_SwapTakeRef(PyCellObject *cell, PyObject *value)
 {
     PyObject *old_value;
     Py_BEGIN_CRITICAL_SECTION(cell);
-    FT_ATOMIC_STORE_PTR_RELEASE(old_value, cell->ob_ref);
+    old_value = cell->ob_ref;
     FT_ATOMIC_STORE_PTR_RELEASE(cell->ob_ref, value);
     Py_END_CRITICAL_SECTION();
     return old_value;
