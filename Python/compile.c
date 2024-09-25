@@ -915,7 +915,10 @@ _PyCompile_StaticAttributesAsTuple(compiler *c)
     if (static_attributes_unsorted == NULL) {
         return NULL;
     }
-    PyList_Sort(static_attributes_unsorted);
+    if (PyList_Sort(static_attributes_unsorted) != 0) {
+        Py_DECREF(static_attributes_unsorted);
+        return NULL;
+    }
     PyObject *static_attributes = PySequence_Tuple(static_attributes_unsorted);
     Py_DECREF(static_attributes_unsorted);
     return static_attributes;
