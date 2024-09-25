@@ -1,5 +1,5 @@
-:mod:`runpy` --- Locating and executing Python modules
-======================================================
+:mod:`!runpy` --- Locating and executing Python modules
+=======================================================
 
 .. module:: runpy
    :synopsis: Locate and run Python modules without importing them first.

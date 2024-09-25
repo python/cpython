@@ -1,5 +1,5 @@
-:mod:`xmlrpc.client` --- XML-RPC client access
-==============================================
+:mod:`!xmlrpc.client` --- XML-RPC client access
+===============================================
 
 .. module:: xmlrpc.client
    :synopsis: XML-RPC client access.
@@ -165,7 +165,7 @@ between conformable Python objects and XML on the wire.
       A good description of XML-RPC operation and client software in several languages.
       Contains pretty much everything an XML-RPC client developer needs to know.
 
-   `XML-RPC Introspection <https://xmlrpc-c.sourceforge.net/introspection.html>`_
+   `XML-RPC Introspection <https://xmlrpc-c.sourceforge.io/introspection.html>`_
       Describes the XML-RPC protocol extension for introspection.
 
    `XML-RPC Specification <http://xmlrpc.scripting.com/spec.html>`_

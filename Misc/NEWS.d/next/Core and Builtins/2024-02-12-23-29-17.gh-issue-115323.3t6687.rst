@@ -1,2 +1,0 @@
-Make error message more meaningful for when :meth:`bytearray.extend` is
-called with a :class:`str` object.

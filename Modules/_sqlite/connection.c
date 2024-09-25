@@ -38,7 +38,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
-#include "pycore_weakref.h"       // _PyWeakref_IS_DEAD()
+#include "pycore_weakref.h"
 
 #include <stdbool.h>
 
@@ -1065,7 +1065,7 @@ static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self)
 
     for (Py_ssize_t i = 0; i < PyList_Size(self->cursors); i++) {
         PyObject* weakref = PyList_GetItem(self->cursors, i);
-        if (_PyWeakref_IS_DEAD(weakref)) {
+        if (_PyWeakref_IsDead(weakref)) {
             continue;
         }
         if (PyList_Append(new_list, weakref) != 0) {
@@ -2561,6 +2561,12 @@ set_autocommit(pysqlite_Connection *self, PyObject *val, void *Py_UNUSED(ctx))
     return 0;
 }
 
+static PyObject *
+get_sig(PyObject *self, void *Py_UNUSED(ctx))
+{
+    return PyUnicode_FromString("(sql, /)");
+}
+
 
 static const char connection_doc[] =
 PyDoc_STR("SQLite database connection object.");
@@ -2570,6 +2576,7 @@ static PyGetSetDef connection_getset[] = {
     {"total_changes",  (getter)pysqlite_connection_get_total_changes, (setter)0},
     {"in_transaction",  (getter)pysqlite_connection_get_in_transaction, (setter)0},
     {"autocommit",  (getter)get_autocommit, (setter)set_autocommit},
+    {"__text_signature__", get_sig, (setter)0},
     {NULL}
 };
 

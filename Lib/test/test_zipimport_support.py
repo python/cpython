@@ -31,7 +31,7 @@ verbose = test.support.verbose
 # Retrieve some helpers from other test cases
 from test.test_doctest import (test_doctest,
                                sample_doctest, sample_doctest_no_doctests,
-                               sample_doctest_no_docstrings)
+                               sample_doctest_no_docstrings, sample_doctest_skip)
 
 
 def _run_object_doctest(obj, module):
@@ -110,7 +110,7 @@ class ZipSupportTests(unittest.TestCase):
         # The sample doctest files rewritten to include in the zipped version.
         sample_sources = {}
         for mod in [sample_doctest, sample_doctest_no_doctests,
-                    sample_doctest_no_docstrings]:
+                    sample_doctest_no_docstrings, sample_doctest_skip]:
             src = inspect.getsource(mod)
             src = src.replace("test.test_doctest.test_doctest", "test_zipped_doctest")
             # Rewrite the module name so that, for example,
