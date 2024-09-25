@@ -1,0 +1,2 @@
+Fix bug where ``bool(a)`` can be invoked more than once during the
+evaluation of a compound boolean expression.
