@@ -68,16 +68,15 @@ module:
 
     python -m venv /path/to/new/virtual/environment
 
-This creates the target directory (and any parent
-directories that don't already exist) and places a ``pyvenv.cfg`` file in it
-with a ``home`` key pointing to the Python installation from which the command
-was run.  It also creates
-a ``bin`` (or ``Scripts`` on Windows) subdirectory containing a copy/symlink
-of the Python binary/binaries (as appropriate for the platform or arguments
-used at environment creation time). It also creates an (initially empty)
-``lib/pythonX.Y/site-packages`` subdirectory (on Windows, this is
-``Lib\site-packages``). If an existing directory is specified, it will be
-re-used.
+This creates the target directory (including parent directories as needed)
+and places a :file:`pyvenv.cfg` file in it with a ``home`` key
+pointing to the Python installation from which the command was run.
+It also creates a :file:`bin` (or :file:`Scripts` on Windows) subdirectory
+containing a copy or symlink of the Python executable
+(as appropriate for the platform or arguments used at environment creation time).
+It also creates a :file:`lib/pythonX.Y/site-packages` subdirectory
+(on Windows, this is :file:`Lib\site-packages`).
+If an existing directory is specified, it will be re-used.
 
 .. versionchanged:: 3.5
    The use of ``venv`` is now recommended for creating virtual environments.
@@ -152,7 +151,6 @@ The command, if run with ``-h``, will show the available options::
 .. versionchanged:: 3.13
 
    Added the ``--without-scm-ignore-files`` option.
-   
 .. versionchanged:: 3.13
    ``venv`` now creates a :file:`.gitignore` file for Git by default.
 
@@ -174,7 +172,7 @@ The command, if run with ``-h``, will show the available options::
    <https://go.microsoft.com/fwlink/?LinkID=135170>`_
    for more information.
 
-The created ``pyvenv.cfg`` file also includes the
+The created :file:`pyvenv.cfg` file also includes the
 ``include-system-site-packages`` key, set to ``true`` if ``venv`` is
 run with the ``--system-site-packages`` option, ``false`` otherwise.
 
