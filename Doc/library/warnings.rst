@@ -597,6 +597,9 @@ Available Context Managers
     passed to :func:`simplefilter` as if it were called immediately on
     entering the context.
 
+    See :ref:`warning-filter` for the meaning of the *category* and *lineno*
+    parameters.
+
     .. note::
 
         The :class:`catch_warnings` manager works by replacing and
