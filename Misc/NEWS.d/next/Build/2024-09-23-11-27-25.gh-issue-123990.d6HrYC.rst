@@ -1,0 +1,1 @@
+Remove ``WITH_FREELISTS`` macro and ``--without-freelists`` build configuration

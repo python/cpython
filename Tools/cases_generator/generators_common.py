@@ -118,7 +118,6 @@ class Emitter:
             "RELOAD_STACK": self.reload_stack,
             "PyStackRef_CLOSE": self.stackref_close,
             "PyStackRef_AsPyObjectSteal": self.stackref_steal,
-            # "PyStackRef_FromPyObjectNew": self.py_stack_ref_from_py_object_new,
             "DISPATCH": self.dispatch
         }
         self.out = out

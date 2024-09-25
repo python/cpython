@@ -524,7 +524,6 @@
                 assert(code->co_argcount == 2);
                 DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), BINARY_SUBSCR);
                 STAT_INC(BINARY_SUBSCR, hit);
-                Py_INCREF(getitem);
             }
             // _BINARY_SUBSCR_INIT_CALL
             {
@@ -532,7 +531,7 @@
                 PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(container));
                 PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
                 PyObject *getitem = ht->_spec_cache.getitem;
-                new_frame = _PyFrame_PushUnchecked(tstate, (PyFunctionObject *)getitem, 2, frame);
+                new_frame = _PyFrame_PushUnchecked(tstate, PyStackRef_FromPyObjectNew(getitem), 2, frame);
                 new_frame->localsplus[0] = container;
                 new_frame->localsplus[1] = sub;
                 frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
@@ -919,7 +918,7 @@
                     PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
-                        tstate, (PyFunctionObject *)PyStackRef_AsPyObjectSteal(callable[0]), locals,
+                        tstate, callable[0], locals,
                         args, total_args, NULL, frame
                     );
                     stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -1070,10 +1069,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 /* Push self onto stack of shim */
                 shim->localsplus[0] = PyStackRef_DUP(self[0]);
-                PyFunctionObject *init_func = (PyFunctionObject *)PyStackRef_AsPyObjectSteal(init[0]);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 init_frame = _PyEvalFramePushAndInit(
-                    tstate, init_func, NULL, args-1, oparg+1, NULL, shim);
+                    tstate, init[0], NULL, args-1, oparg+1, NULL, shim);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 stack_pointer[-2 - oparg].bits = (uintptr_t)init_frame;
                 stack_pointer += -1 - oparg;
@@ -1174,11 +1172,9 @@
             // _INIT_CALL_PY_EXACT_ARGS
             {
                 args = &stack_pointer[-oparg];
-                PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
                 int has_self = !PyStackRef_IsNull(self_or_null[0]);
                 STAT_INC(CALL, hit);
-                PyFunctionObject *func = (PyFunctionObject *)callable_o;
-                new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self, frame);
+                new_frame = _PyFrame_PushUnchecked(tstate, callable[0], oparg + has_self, frame);
                 _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
                 new_frame->localsplus[0] = self_or_null[0];
                 for (int i = 0; i < oparg; i++) {
@@ -1274,7 +1270,7 @@
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyInterpreterFrame *temp = _PyEvalFramePushAndInit(
-                    tstate, (PyFunctionObject *)PyStackRef_AsPyObjectSteal(callable[0]), locals,
+                    tstate, callable[0], locals,
                     args, total_args, NULL, frame
                 );
                 stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -1724,8 +1720,8 @@
                         stack_pointer[-1 - (oparg & 1)] = callargs_st;
                         if (oparg & 1) stack_pointer[-(oparg & 1)] = kwargs_st;
                         _PyFrame_SetStackPointer(frame, stack_pointer);
-                        _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_Ex(tstate,
-                            (PyFunctionObject *)PyStackRef_AsPyObjectSteal(func_st), locals,
+                        _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_Ex(
+                            tstate, func_st, locals,
                             nargs, callargs, kwargs, frame);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         // Need to sync the stack since we exit with DISPATCH_INLINED.
@@ -1938,7 +1934,7 @@
                     stack_pointer[-1] = kwnames;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
-                        tstate, (PyFunctionObject *)PyStackRef_AsPyObjectSteal(callable[0]), locals,
+                        tstate, callable[0], locals,
                         args, positional_args, kwnames_o, frame
                     );
                     stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -2084,7 +2080,7 @@
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 new_frame = _PyEvalFramePushAndInit(
-                    tstate, (PyFunctionObject *)PyStackRef_AsPyObjectSteal(callable[0]), locals,
+                    tstate, callable[0], locals,
                     args, positional_args, kwnames_o, frame
                 );
                 stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -2262,7 +2258,7 @@
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 new_frame = _PyEvalFramePushAndInit(
-                    tstate, (PyFunctionObject *)PyStackRef_AsPyObjectSteal(callable[0]), locals,
+                    tstate, callable[0], locals,
                     args, positional_args, kwnames_o, frame
                 );
                 stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -2832,11 +2828,9 @@
             // _INIT_CALL_PY_EXACT_ARGS
             {
                 args = &stack_pointer[-oparg];
-                PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
                 int has_self = !PyStackRef_IsNull(self_or_null[0]);
                 STAT_INC(CALL, hit);
-                PyFunctionObject *func = (PyFunctionObject *)callable_o;
-                new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self, frame);
+                new_frame = _PyFrame_PushUnchecked(tstate, callable[0], oparg + has_self, frame);
                 _PyStackRef *first_non_self_local = new_frame->localsplus + has_self;
                 new_frame->localsplus[0] = self_or_null[0];
                 for (int i = 0; i < oparg; i++) {
@@ -2911,7 +2905,7 @@
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyInterpreterFrame *temp = _PyEvalFramePushAndInit(
-                    tstate, (PyFunctionObject *)PyStackRef_AsPyObjectSteal(callable[0]), locals,
+                    tstate, callable[0], locals,
                     args, total_args, NULL, frame
                 );
                 stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -3514,8 +3508,9 @@
             INSTRUCTION_STATS(COPY_FREE_VARS);
             /* Copy closure variables to free variables */
             PyCodeObject *co = _PyFrame_GetCode(frame);
-            assert(PyFunction_Check(frame->f_funcobj));
-            PyObject *closure = ((PyFunctionObject *)frame->f_funcobj)->func_closure;
+            assert(PyStackRef_FunctionCheck(frame->f_funcobj));
+            PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            PyObject *closure = func->func_closure;
             assert(oparg == co->co_nfreevars);
             int offset = co->co_nlocalsplus - oparg;
             for (int i = 0; i < oparg; ++i) {
@@ -4419,7 +4414,7 @@
                     PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
-                        tstate, (PyFunctionObject *)PyStackRef_AsPyObjectSteal(callable[0]), locals,
+                        tstate, callable[0], locals,
                         args, total_args, NULL, frame
                     );
                     stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -5388,8 +5383,8 @@
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
-            Py_INCREF(f);
-            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f, 2, frame);
+            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(
+                tstate, PyStackRef_FromPyObjectNew(f), 2, frame);
             // Manipulate stack directly because we exit with DISPATCH_INLINED().
             STACK_SHRINK(1);
             new_frame->localsplus[0] = owner;
@@ -5719,8 +5714,7 @@
                 DEOPT_IF(code->co_argcount != 1, LOAD_ATTR);
                 DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), LOAD_ATTR);
                 STAT_INC(LOAD_ATTR, hit);
-                Py_INCREF(fget);
-                new_frame = _PyFrame_PushUnchecked(tstate, f, 1, frame);
+                new_frame = _PyFrame_PushUnchecked(tstate, PyStackRef_FromPyObjectNew(fget), 1, frame);
                 new_frame->localsplus[0] = owner;
             }
             // _SAVE_RETURN_OFFSET
@@ -7004,8 +6998,8 @@
             next_instr += 1;
             INSTRUCTION_STATS(RETURN_GENERATOR);
             _PyStackRef res;
-            assert(PyFunction_Check(frame->f_funcobj));
-            PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
+            assert(PyStackRef_FunctionCheck(frame->f_funcobj));
+            PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
             stack_pointer = _PyFrame_GetStackPointer(frame);
