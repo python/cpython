@@ -963,8 +963,7 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
         return ttk.Scrollbar(self.root, **kwargs)
 
 
-@add_standard_options(PixelSizeTests if tk_version >= (8, 7) else IntegerSizeTests,
-                      StandardTtkOptionsTests)
+@add_standard_options(StandardTtkOptionsTests)
 class NotebookTest(AbstractWidgetTest, unittest.TestCase):
     OPTIONS = (
         'class', 'cursor', 'height', 'padding', 'style', 'takefocus', 'width',
@@ -982,6 +981,20 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
 
     def create(self, **kwargs):
         return ttk.Notebook(self.root, **kwargs)
+
+    def test_configure_height(self):
+        widget = self.create()
+        if get_tk_patchlevel(self.root) < (8, 6, 15):
+            self.checkIntegerParam(widget, 'height', 402, -402, 0)
+        else:
+            self.checkPixelsParam(widget, 'height', '10c', 402, -402, 0, conv=False)
+
+    def test_configure_width(self):
+        widget = self.create()
+        if get_tk_patchlevel(self.root) < (8, 6, 15):
+            self.checkIntegerParam(widget, 'width', 402, -402, 0)
+        else:
+            self.checkPixelsParam(widget, 'width', '10c', 402, -402, 0, conv=False)
 
     def test_tab_identifiers(self):
         self.nb.forget(0)
