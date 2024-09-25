@@ -188,13 +188,6 @@ Module contents
      is raised.
 
     .. warning::
-        Calling no-arg :func:`super` in dataclasses using ``slots=True``
-        will result in the following exception being raised:
-        ``TypeError: super(type, obj): obj must be an instance or subtype of type``.
-        The two-arg :func:`super` is a valid workaround.
-        See :gh:`90562` for full details.
-
-    .. warning::
        Passing parameters to a base class :meth:`~object.__init_subclass__`
        when using ``slots=True`` will result in a :exc:`TypeError`.
        Either use ``__init_subclass__`` with no parameters

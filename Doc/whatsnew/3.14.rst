@@ -318,6 +318,9 @@ pdb
   :pdbcmd:`commands` are preserved across hard-coded breakpoints.
   (Contributed by Tian Gao in :gh:`121450`.)
 
+* Added a new argument ``mode`` to :class:`pdb.Pdb`. Disabled ``restart``
+  command when :mod:`pdb` is in ``inline`` mode.
+  (Contributed by Tian Gao in :gh:`123757`.)
 
 pickle
 ------
@@ -650,9 +653,10 @@ New Features
 Porting to Python 3.14
 ----------------------
 
-* In the limited C API 3.14 and newer, :c:func:`Py_TYPE` is now implemented as
-  an opaque function call to hide implementation details.
-  (Contributed by Victor Stinner in :gh:`120600`.)
+* In the limited C API 3.14 and newer, :c:func:`Py_TYPE` and
+  :c:func:`Py_REFCNT` are now implemented as an opaque function call to hide
+  implementation details.
+  (Contributed by Victor Stinner in :gh:`120600` and :gh:`124127`.)
 
 
 Deprecated
