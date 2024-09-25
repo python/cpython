@@ -11012,14 +11012,18 @@ _PyUnicode_Equal(PyObject *str1, PyObject *str2)
 int
 PyUnicode_Equal(PyObject *str1, PyObject *str2)
 {
-    if (PyUnicode_Check(str1) && PyUnicode_Check(str2)) {
-        return _PyUnicode_Equal(str1, str2);
+    if (!PyUnicode_Check(str1)) {
+        PyErr_Format(PyExc_TypeError,
+                     "first argument must be str, not %T", str1);
+        return -1;
+    }
+    if (!PyUnicode_Check(str2)) {
+        PyErr_Format(PyExc_TypeError,
+                     "second argument must be str, not %T", str2);
+        return -1;
     }
 
-    PyErr_Format(PyExc_TypeError,
-                 "Can't compare %T and %T",
-                 str1, str2);
-    return -1;
+    return _PyUnicode_Equal(str1, str2);
 }
 
 
