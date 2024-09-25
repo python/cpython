@@ -228,7 +228,7 @@ def write_cert_reference(path):
     refdata = pprint.pformat(_ssl._test_decode_cert(path))
     print(refdata)
     with open(path + '.reference', 'w') as f:
-        f.write(refdata)
+        print(refdata, file=f)
 
 
 if __name__ == '__main__':
