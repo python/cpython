@@ -74,7 +74,7 @@ REPL_COMMANDS = {
     "exit": _sitebuiltins.Quitter('exit', ''),
     "quit": _sitebuiltins.Quitter('quit' ,''),
     "copyright": _sitebuiltins._Printer('copyright', sys.copyright),
-    "help": "help",
+    "help": _sitebuiltins._Helper(),
     "clear": _clear_screen,
     "\x1a": _sitebuiltins.Quitter('\x1a', ''),
 }
