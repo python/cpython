@@ -15,6 +15,7 @@ import unittest
 import argparse
 import warnings
 
+from enum import StrEnum
 from test.support import os_helper, captured_stderr
 from unittest import mock
 
@@ -951,6 +952,35 @@ class TestDisallowLongAbbreviationAllowsShortGroupingPrefix(ParserTestCase):
         ('+ccrcc', NS(r='cc', c=2)),
     ]
 
+
+class TestStrEnumChoices(TestCase):
+    class Color(StrEnum):
+        RED = "red"
+        GREEN = "green"
+        BLUE = "blue"
+
+    def test_metavar_formatter_with_strenum(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--color', choices=self.Color)
+        args = parser.parse_args(['--color', 'red'])
+        self.assertEqual(args.color, self.Color.RED)
+
+    def test_expand_help_with_strenum(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--color', choices=self.Color, help='Choose a color')
+        help_output = parser.format_help()
+        self.assertIn('[--color {red,green,blue}]', help_output)
+        self.assertIn('  --color {red,green,blue}', help_output)
+
+    def test_check_value_with_strenum(self):
+        parser = argparse.ArgumentParser(exit_on_error=False)
+        parser.add_argument('--color', choices=self.Color)
+        self.assertRaisesRegex(
+            argparse.ArgumentError,
+            r"invalid choice: yellow \(choose from red, green, blue\)",
+            parser.parse_args,
+            ['--color', 'yellow'],
+        )
 
 # ================
 # Positional tests
@@ -2399,7 +2429,7 @@ class TestAddSubparsers(TestCase):
             parser.parse_args(('baz',))
         self.assertRegex(
             excinfo.exception.stderr,
-            r"error: argument {foo,bar}: invalid choice: 'baz' \(choose from 'foo', 'bar'\)\n$"
+            r"error: argument {foo,bar}: invalid choice: baz \(choose from foo, bar\)\n$"
         )
 
     def test_optional_subparsers(self):
@@ -6061,7 +6091,7 @@ class TestDoubleDash(TestCase):
         args = parser.parse_args(['x', '--', 'run', '--', 'a', '--', 'b'])
         self.assertEqual(NS(foo='x', f=None, bar=['a', '--', 'b']), args)
         self.assertRaisesRegex(argparse.ArgumentError,
-            "invalid choice: '--'",
+            "invalid choice: --",
             parser.parse_args, ['--', 'x', '--', 'run', 'a', 'b'])
 
     def test_subparser_after_multiple_argument_option(self):
@@ -6075,7 +6105,7 @@ class TestDoubleDash(TestCase):
         args = parser.parse_args(['--foo', 'x', 'y', '--', 'run', 'a', 'b', '-f', 'c'])
         self.assertEqual(NS(foo=['x', 'y'], f='c', bar=['a', 'b']), args)
         self.assertRaisesRegex(argparse.ArgumentError,
-            "invalid choice: '--'",
+            "invalid choice: --",
             parser.parse_args, ['--foo', 'x', '--', '--', 'run', 'a', 'b'])
 
 
