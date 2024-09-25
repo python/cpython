@@ -332,6 +332,14 @@ class TestForwardRefClass(unittest.TestCase):
         with self.assertRaises(NameError):
             ForwardRef("doesntexist").evaluate()
 
+    def test_fwdref_invalid_syntax(self):
+        fr = ForwardRef("if")
+        with self.assertRaises(SyntaxError):
+            fr.evaluate()
+        fr = ForwardRef("1+")
+        with self.assertRaises(SyntaxError):
+            fr.evaluate()
+
 
 class TestGetAnnotations(unittest.TestCase):
     def test_builtin_type(self):

@@ -4,6 +4,7 @@ import ast
 import builtins
 import enum
 import functools
+import keyword
 import sys
 import types
 
@@ -156,10 +157,10 @@ class ForwardRef:
                     locals.pop(param_name, None)
 
         arg = self.__forward_arg__
-        if arg.isidentifier():
+        if arg.isidentifier() and not keyword.iskeyword(arg):
             if arg in locals:
                 value = locals[arg]
-            elif globals is not None and arg in globals:
+            elif arg in globals:
                 value = globals[arg]
             elif hasattr(builtins, arg):
                 return getattr(builtins, arg)
