@@ -1011,11 +1011,17 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_height(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'height', '10c', 402, -402, 0)
+        if tk_version < (8, 15):
+            self.checkIntegerParam(widget, 'height', 402, -402, 0)
+        else:
+            self.checkPixelsParam(widget, 'height', '10c', 402, -402, 0)
 
     def test_configure_width(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'width', '10c', 402, -402, 0)
+        if tk_version < (8, 15):
+            self.checkIntegerParam(widget, 'width', 402, -402, 0)
+        else:
+            self.checkPixelsParam(widget, 'width', '10c', 402, -402, 0)
 
     def test_tab_identifiers(self):
         self.nb.forget(0)
