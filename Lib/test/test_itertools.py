@@ -1758,23 +1758,38 @@ class TestPurePythonRoughEquivalents(unittest.TestCase):
 
         # Begin tee() recipe ###########################################
 
+        class _tee:
+
+            def __init__(self, iterable):
+                it = iter(iterable)
+                if isinstance(it, _tee):
+                    self.iterator = it.iterator
+                    self.link = it.link
+                else:
+                    self.iterator = it
+                    self.link = [None, None]
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                link = self.link
+                if link[1] is None:
+                    link[0] = next(self.iterator)
+                    link[1] = [None, None]
+                value, self.link = link
+                return value
+
         def tee(iterable, n=2):
             if n < 0:
-                raise ValueError('n must be >= 0')
-            iterator = iter(iterable)
-            shared_link = [None, None]
-            return tuple(_tee(iterator, shared_link) for _ in range(n))
-
-        def _tee(iterator, link):
-            try:
-                while True:
-                    if link[1] is None:
-                        link[0] = next(iterator)
-                        link[1] = [None, None]
-                    value, link = link
-                    yield value
-            except StopIteration:
-                return
+                raise ValueError
+            if n == 0:
+                return ()
+            first = _tee(iterable)
+            result = [first]
+            for _ in range(n - 1):
+                result.append(_tee(first))
+            return tuple(result)
 
         # End tee() recipe #############################################
 
@@ -1820,12 +1835,10 @@ class TestPurePythonRoughEquivalents(unittest.TestCase):
         self.assertRaises(TypeError, tee, [1,2], 'x')
         self.assertRaises(TypeError, tee, [1,2], 3, 'x')
 
-        # Tests not applicable to the tee() recipe
-        if False:
-            # tee object should be instantiable
-            a, b = tee('abc')
-            c = type(a)('def')
-            self.assertEqual(list(c), list('def'))
+        # tee object should be instantiable
+        a, b = tee('abc')
+        c = type(a)('def')
+        self.assertEqual(list(c), list('def'))
 
         # test long-lagged and multi-way split
         a, b, c = tee(range(2000), 3)
@@ -1846,21 +1859,19 @@ class TestPurePythonRoughEquivalents(unittest.TestCase):
             self.assertEqual(len(result), n)
             self.assertEqual([list(x) for x in result], [list('abc')]*n)
 
+        # tee objects are independent (see bug gh-123884)
+        a, b = tee('abc')
+        c, d = tee(a)
+        e, f = tee(c)
+        self.assertTrue(len({a, b, c, d, e, f}) == 6)
 
-        # Tests not applicable to the tee() recipe
-        if False:
-            # tee pass-through to copyable iterator
-            a, b = tee('abc')
-            c, d = tee(a)
-            self.assertTrue(a is c)
-
-            # test tee_new
-            t1, t2 = tee('abc')
-            tnew = type(t1)
-            self.assertRaises(TypeError, tnew)
-            self.assertRaises(TypeError, tnew, 10)
-            t3 = tnew(t1)
-            self.assertTrue(list(t1) == list(t2) == list(t3) == list('abc'))
+        # test tee_new
+        t1, t2 = tee('abc')
+        tnew = type(t1)
+        self.assertRaises(TypeError, tnew)
+        self.assertRaises(TypeError, tnew, 10)
+        t3 = tnew(t1)
+        self.assertTrue(list(t1) == list(t2) == list(t3) == list('abc'))
 
         # test that tee objects are weak referencable
         a, b = tee(range(10))
