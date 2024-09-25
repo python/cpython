@@ -12,7 +12,8 @@
 
 This module provides immutable :class:`UUID` objects (the :class:`UUID` class)
 and the functions :func:`uuid1`, :func:`uuid3`, :func:`uuid4`, :func:`uuid5` for
-generating version 1, 3, 4, 5, and 8 UUIDs as specified in :rfc:`9562`.
+generating version 1, 3, 4, 5, and 8 UUIDs as specified in :rfc:`9562` (which
+superseeds :rfc:`4122`).
 
 If all you want is a unique ID, you should probably call :func:`uuid1` or
 :func:`uuid4`.  Note that :func:`uuid1` may compromise privacy since it creates
@@ -172,7 +173,7 @@ The :mod:`uuid` module defines the following functions:
    runs, it may launch a separate program, which could be quite slow.  If all
    attempts to obtain the hardware address fail, we choose a random 48-bit
    number with the multicast bit (least significant bit of the first octet)
-   set to 1 as recommended in :rfc:`9562`.  "Hardware address" means the MAC
+   set to 1 as recommended in :rfc:`4122`.  "Hardware address" means the MAC
    address of a network interface.  On a machine with multiple network
    interfaces, universally administered MAC addresses (i.e. where the second
    least significant bit of the first octet is *unset*) will be preferred over
@@ -223,7 +224,14 @@ The :mod:`uuid` module defines the following functions:
 
 .. function:: uuid8(a=None, b=None, c=None)
 
-   TODO
+   Generate a pseudo-random UUID according to
+   :rfc:`RFC 9562, §5.8 <9562#section-5.8>`.
+
+   When specified, the parameters *a*, *b* and *c* are expected to be
+   positive integers of 48, 12 and 62 bits respectively. If they exceed
+   their expected bit count, only their least significant bits are kept;
+   non-specified arguments are substituted for a pseudo-random integer of
+   appropriate size.
 
    .. versionadded:: 3.14
 
@@ -299,7 +307,7 @@ The :mod:`uuid` module can be executed as a script from the command line.
 
 .. code-block:: sh
 
-   python -m uuid [-h] [-u {uuid1,uuid3,uuid4,uuid5}] [-n NAMESPACE] [-N NAME]
+   python -m uuid [-h] [-u {uuid1,uuid3,uuid4,uuid5,uuid8}] [-n NAMESPACE] [-N NAME]
 
 The following options are accepted:
 
