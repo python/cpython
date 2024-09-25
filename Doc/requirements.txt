@@ -7,8 +7,6 @@
 # won't suddenly cause build failures. Updating the version is fine as long
 # as no warnings are raised by doing so.
 
---no-binary :all:
-
 sphinx~=8.0.0
 
 blurb
