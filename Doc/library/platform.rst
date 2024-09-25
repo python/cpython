@@ -1,5 +1,5 @@
-:mod:`platform` ---  Access to underlying platform's identifying data
-=====================================================================
+:mod:`!platform` ---  Access to underlying platform's identifying data
+======================================================================
 
 .. module:: platform
    :synopsis: Retrieves as much platform identifying data as possible.
@@ -148,6 +148,9 @@ Cross Platform
    Returns the system/OS name, such as ``'Linux'``, ``'Darwin'``, ``'Java'``,
    ``'Windows'``. An empty string is returned if the value cannot be determined.
 
+   On iOS and Android, this returns the user-facing OS name (i.e, ``'iOS``,
+   ``'iPadOS'`` or ``'Android'``). To obtain the kernel name (``'Darwin'`` or
+   ``'Linux'``), use :func:`os.uname`.
 
 .. function:: system_alias(system, release, version)
 
@@ -161,6 +164,8 @@ Cross Platform
    Returns the system's release version, e.g. ``'#3 on degas'``. An empty string is
    returned if the value cannot be determined.
 
+   On iOS and Android, this is the user-facing OS version. To obtain the
+   Darwin or Linux kernel version, use :func:`os.uname`.
 
 .. function:: uname()
 
@@ -196,6 +201,10 @@ Java Platform
    ``(os_name, os_version, os_arch)``. Values which cannot be determined are set to
    the defaults given as parameters (which all default to ``''``).
 
+   .. deprecated-removed:: 3.13 3.15
+      It was largely untested, had a confusing API,
+      and was only useful for Jython support.
+
 
 Windows Platform
 ----------------
@@ -210,8 +219,8 @@ Windows Platform
    default to an empty string).
 
    As a hint: *ptype* is ``'Uniprocessor Free'`` on single processor NT machines
-   and ``'Multiprocessor Free'`` on multi processor machines. The *'Free'* refers
-   to the OS version being free of debugging code. It could also state *'Checked'*
+   and ``'Multiprocessor Free'`` on multi processor machines. The ``'Free'`` refers
+   to the OS version being free of debugging code. It could also state ``'Checked'``
    which means the OS version uses debugging code, i.e. code that checks arguments,
    ranges, etc.
 
@@ -234,7 +243,6 @@ Windows Platform
 macOS Platform
 --------------
 
-
 .. function:: mac_ver(release='', versioninfo=('','',''), machine='')
 
    Get macOS version information and return it as tuple ``(release, versioninfo,
@@ -243,6 +251,24 @@ macOS Platform
 
    Entries which cannot be determined are set to ``''``.  All tuple entries are
    strings.
+
+iOS Platform
+------------
+
+.. function:: ios_ver(system='', release='', model='', is_simulator=False)
+
+   Get iOS version information and return it as a
+   :func:`~collections.namedtuple` with the following attributes:
+
+   * ``system`` is the OS name; either ``'iOS'`` or ``'iPadOS'``.
+   * ``release`` is the iOS version number as a string (e.g., ``'17.2'``).
+   * ``model`` is the device model identifier; this will be a string like
+     ``'iPhone13,2'`` for a physical device, or ``'iPhone'`` on a simulator.
+   * ``is_simulator`` is a boolean describing if the app is running on a
+     simulator or a physical device.
+
+   Entries which cannot be determined are set to the defaults given as
+   parameters.
 
 
 Unix Platforms
@@ -297,3 +323,39 @@ Linux Platforms
           return ids
 
    .. versionadded:: 3.10
+
+
+Android Platform
+----------------
+
+.. function:: android_ver(release="", api_level=0, manufacturer="", \
+                          model="", device="", is_emulator=False)
+
+   Get Android device information. Returns a :func:`~collections.namedtuple`
+   with the following attributes. Values which cannot be determined are set to
+   the defaults given as parameters.
+
+   * ``release`` - Android version, as a string (e.g. ``"14"``).
+
+   * ``api_level`` - API level of the running device, as an integer (e.g. ``34``
+     for Android 14). To get the API level which Python was built against, see
+     :func:`sys.getandroidapilevel`.
+
+   * ``manufacturer`` - `Manufacturer name
+     <https://developer.android.com/reference/android/os/Build#MANUFACTURER>`__.
+
+   * ``model`` - `Model name
+     <https://developer.android.com/reference/android/os/Build#MODEL>`__ –
+     typically the marketing name or model number.
+
+   * ``device`` - `Device name
+     <https://developer.android.com/reference/android/os/Build#DEVICE>`__ –
+     typically the model number or a codename.
+
+   * ``is_emulator`` - ``True`` if the device is an emulator; ``False`` if it's
+     a physical device.
+
+   Google maintains a `list of known model and device names
+   <https://storage.googleapis.com/play_public/supported_devices.html>`__.
+
+   .. versionadded:: 3.13

@@ -6,9 +6,6 @@
    Measurements with standard library modules suggest the average
    allocation is about 20 bytes and that most compiles use a single
    block.
-
-   TODO(jhylton): Think about a realloc API, maybe just for the last
-   allocation?
 */
 
 #define DEFAULT_BLOCK_SIZE 8192
@@ -108,7 +105,6 @@ block_alloc(block *b, size_t size)
         /* If we need to allocate more memory than will fit in
            the default block, allocate a one-off block that is
            exactly the right size. */
-        /* TODO(jhylton): Think about space waste at end of block */
         block *newbl = block_new(
                         size < DEFAULT_BLOCK_SIZE ?
                         DEFAULT_BLOCK_SIZE : size);

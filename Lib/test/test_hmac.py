@@ -479,6 +479,14 @@ class SanityTestCase(unittest.TestCase):
             self.fail("Exception raised during normal usage of HMAC class.")
 
 
+class UpdateTestCase(unittest.TestCase):
+    @hashlib_helper.requires_hashdigest('sha256')
+    def test_with_str_update(self):
+        with self.assertRaises(TypeError):
+            h = hmac.new(b"key", digestmod='sha256')
+            h.update("invalid update")
+
+
 class CopyTestCase(unittest.TestCase):
 
     @hashlib_helper.requires_hashdigest('sha256')

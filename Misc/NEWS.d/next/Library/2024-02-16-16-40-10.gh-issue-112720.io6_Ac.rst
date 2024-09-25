@@ -1,2 +1,0 @@
-Refactor :class:`dis.ArgResolver` to make it possible to subclass and change
-the way jump args are interpreted.

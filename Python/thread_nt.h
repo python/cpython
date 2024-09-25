@@ -77,17 +77,18 @@ EnterNonRecursiveMutex(PNRMUTEX mutex, DWORD milliseconds)
         }
     } else if (milliseconds != 0) {
         /* wait at least until the deadline */
-        PyTime_t nanoseconds = (PyTime_t)milliseconds * (1000 * 1000);
-        PyTime_t deadline = _PyTime_Add(_PyTime_PerfCounterUnchecked(), nanoseconds);
+        PyTime_t timeout = (PyTime_t)milliseconds * (1000 * 1000);
+        PyTime_t deadline = _PyDeadline_Init(timeout);
         while (mutex->locked) {
-            PyTime_t microseconds = _PyTime_AsMicroseconds(nanoseconds,
-                                                            _PyTime_ROUND_TIMEOUT);
+            PyTime_t microseconds = _PyTime_AsMicroseconds(timeout,
+                                                           _PyTime_ROUND_TIMEOUT);
             if (PyCOND_TIMEDWAIT(&mutex->cv, &mutex->cs, microseconds) < 0) {
                 result = WAIT_FAILED;
                 break;
             }
-            nanoseconds = deadline - _PyTime_PerfCounterUnchecked();
-            if (nanoseconds <= 0) {
+
+            timeout = _PyDeadline_Get(deadline);
+            if (timeout <= 0) {
                 break;
             }
         }
@@ -513,5 +514,10 @@ void *
 PyThread_tss_get(Py_tss_t *key)
 {
     assert(key != NULL);
-    return TlsGetValue(key->_key);
+    int err = GetLastError();
+    void *r = TlsGetValue(key->_key);
+    if (r || !GetLastError()) {
+        SetLastError(err);
+    }
+    return r;
 }

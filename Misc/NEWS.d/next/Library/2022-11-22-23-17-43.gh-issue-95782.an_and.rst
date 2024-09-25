@@ -1,4 +1,0 @@
-Fix :func:`io.BufferedReader.tell`, :func:`io.BufferedReader.seek`,
-:func:`_pyio.BufferedReader.tell`, :func:`io.BufferedRandom.tell`,
-:func:`io.BufferedRandom.seek` and :func:`_pyio.BufferedRandom.tell`
-being able to return negative offsets.

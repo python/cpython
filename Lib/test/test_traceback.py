@@ -21,13 +21,14 @@ from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support.import_helper import forget
+from test.support import force_not_colorized
 
 import json
 import textwrap
 import traceback
-import contextlib
 from functools import partial
 from pathlib import Path
+import _colorize
 
 MODULE_PREFIX = f'{__name__}.' if __name__ == '__main__' else ''
 
@@ -45,12 +46,12 @@ class TracebackCases(unittest.TestCase):
     # formatting of SyntaxErrors works based on changes for 2.1.
     def setUp(self):
         super().setUp()
-        self.colorize = traceback._COLORIZE
-        traceback._COLORIZE = False
+        self.colorize = _colorize.COLORIZE
+        _colorize.COLORIZE = False
 
     def tearDown(self):
         super().tearDown()
-        traceback._COLORIZE = self.colorize
+        _colorize.COLORIZE = self.colorize
 
     def get_exception_format(self, func, exc):
         try:
@@ -124,6 +125,7 @@ class TracebackCases(unittest.TestCase):
         self.assertEqual(len(err), 3)
         self.assertEqual(err[1].strip(), "bad syntax")
 
+    @force_not_colorized
     def test_no_caret_with_no_debug_ranges_flag(self):
         # Make sure that if `-X no_debug_ranges` is used, there are no carets
         # in the traceback.
@@ -375,6 +377,7 @@ class TracebackCases(unittest.TestCase):
         ])
 
     @requires_subprocess()
+    @force_not_colorized
     def test_encoded_file(self):
         # Test that tracebacks are correctly printed for encoded source files:
         # - correct line number (Issue2384)
@@ -497,7 +500,7 @@ class TracebackCases(unittest.TestCase):
             traceback.format_exception(e.__class__, e)
         with self.assertRaisesRegex(ValueError, 'Both or neither'):
             traceback.format_exception(e.__class__, tb=e.__traceback__)
-        with self.assertRaisesRegex(TypeError, 'positional-only'):
+        with self.assertRaisesRegex(TypeError, 'required positional argument'):
             traceback.format_exception(exc=e)
 
     def test_format_exception_only_exc(self):
@@ -536,11 +539,11 @@ class TracebackCases(unittest.TestCase):
         self.assertEqual(
             str(inspect.signature(traceback.format_exception)),
             ('(exc, /, value=<implicit>, tb=<implicit>, limit=None, '
-             'chain=True)'))
+             'chain=True, **kwargs)'))
 
         self.assertEqual(
             str(inspect.signature(traceback.format_exception_only)),
-            '(exc, /, value=<implicit>, *, show_group=False)')
+            '(exc, /, value=<implicit>, *, show_group=False, **kwargs)')
 
 
 class PurePythonExceptionFormattingMixin:
@@ -619,6 +622,7 @@ class TracebackErrorLocationCaretTestBase:
         def f_with_type():
             def foo(a: THIS_DOES_NOT_EXIST ) -> int:
                 return 0
+            foo.__annotations__
 
         lineno_f = f_with_type.__code__.co_firstlineno
         expected_f = (
@@ -626,7 +630,9 @@ class TracebackErrorLocationCaretTestBase:
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
             '    ~~~~~~~~^^\n'
-            f'  File "{__file__}", line {lineno_f+1}, in f_with_type\n'
+            f'  File "{__file__}", line {lineno_f+3}, in f_with_type\n'
+            '    foo.__annotations__\n'
+            f'  File "{__file__}", line {lineno_f+1}, in __annotate__\n'
             '    def foo(a: THIS_DOES_NOT_EXIST ) -> int:\n'
             '               ^^^^^^^^^^^^^^^^^^^\n'
         )
@@ -685,10 +691,38 @@ class TracebackErrorLocationCaretTestBase:
             '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+2}, in f_with_multiline\n'
             '    return compile(code, "?", "exec")\n'
-            '           ~~~~~~~^^^^^^^^^^^^^^^^^^^\n'
             '  File "?", line 7\n'
             '    foo(a, z\n'
             '           ^'
+            )
+
+        result_lines = self.get_exception(f_with_multiline)
+        self.assertEqual(result_lines, expected_f.splitlines())
+
+        # Check custom error messages covering multiple lines
+        code = textwrap.dedent("""
+        dummy_call(
+            "dummy value"
+            foo="bar",
+        )
+        """)
+
+        def f_with_multiline():
+            # Need to defer the compilation until in self.get_exception(..)
+            return compile(code, "?", "exec")
+
+        lineno_f = f_with_multiline.__code__.co_firstlineno
+
+        expected_f = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f_with_multiline\n'
+            '    return compile(code, "?", "exec")\n'
+            '  File "?", line 3\n'
+            '    "dummy value"\n'
+            '    ^^^^^^^^^^^^^'
             )
 
         result_lines = self.get_exception(f_with_multiline)
@@ -775,8 +809,8 @@ class TracebackErrorLocationCaretTestBase:
     def test_caret_for_binary_operators_with_spaces_and_parenthesis(self):
         def f_with_binary_operator():
             a = 1
-            b = ""
-            return ( a   )   +b
+            b = c = ""
+            return ( a   )   +b + c
 
         lineno_f = f_with_binary_operator.__code__.co_firstlineno
         expected_error = (
@@ -785,7 +819,7 @@ class TracebackErrorLocationCaretTestBase:
             '    callable()\n'
             '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+3}, in f_with_binary_operator\n'
-            '    return ( a   )   +b\n'
+            '    return ( a   )   +b + c\n'
             '           ~~~~~~~~~~^~\n'
         )
         result_lines = self.get_exception(f_with_binary_operator)
@@ -973,7 +1007,7 @@ class TracebackErrorLocationCaretTestBase:
                 def f2(b):
                     raise RuntimeError("fail")
                 return f2
-            return f1("x")("y")
+            return f1("x")("y")("z")
 
         lineno_f = f_with_call.__code__.co_firstlineno
         expected_error = (
@@ -982,7 +1016,7 @@ class TracebackErrorLocationCaretTestBase:
             '    callable()\n'
             '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+5}, in f_with_call\n'
-            '    return f1("x")("y")\n'
+            '    return f1("x")("y")("z")\n'
             '           ~~~~~~~^^^^^\n'
             f'  File "{__file__}", line {lineno_f+3}, in f2\n'
             '    raise RuntimeError("fail")\n'
@@ -1497,6 +1531,184 @@ class TracebackErrorLocationCaretTestBase:
             '    raise MemoryError()']
         self.assertEqual(actual, expected)
 
+    def test_anchors_for_simple_return_statements_are_elided(self):
+        def g():
+            1/0
+
+        def f():
+            return g()
+
+        result_lines = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            "    callable()",
+            "    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            "    return g()",
+            f"  File \"{__file__}\", line {g.__code__.co_firstlineno + 1}, in g",
+            "    1/0",
+            "    ~^~"
+        ]
+        self.assertEqual(result_lines, expected)
+
+        def g():
+            1/0
+
+        def f():
+            return g() + 1
+
+        result_lines = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            "    callable()",
+            "    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            "    return g() + 1",
+            "           ~^^",
+            f"  File \"{__file__}\", line {g.__code__.co_firstlineno + 1}, in g",
+            "    1/0",
+            "    ~^~"
+        ]
+        self.assertEqual(result_lines, expected)
+
+        def g(*args):
+            1/0
+
+        def f():
+            return g(1,
+                     2, 4,
+                     5)
+
+        result_lines = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            "    callable()",
+            "    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            "    return g(1,",
+            "             2, 4,",
+            "             5)",
+            f"  File \"{__file__}\", line {g.__code__.co_firstlineno + 1}, in g",
+            "    1/0",
+            "    ~^~"
+        ]
+        self.assertEqual(result_lines, expected)
+
+        def g(*args):
+            1/0
+
+        def f():
+            return g(1,
+                     2, 4,
+                     5) + 1
+
+        result_lines = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            "    callable()",
+            "    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            "    return g(1,",
+            "           ~^^^",
+            "             2, 4,",
+            "             ^^^^^",
+            "             5) + 1",
+            "             ^^",
+            f"  File \"{__file__}\", line {g.__code__.co_firstlineno + 1}, in g",
+            "    1/0",
+            "    ~^~"
+        ]
+        self.assertEqual(result_lines, expected)
+
+    def test_anchors_for_simple_assign_statements_are_elided(self):
+        def g():
+            1/0
+
+        def f():
+            x = g()
+
+        result_lines = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            "    callable()",
+            "    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            "    x = g()",
+            f"  File \"{__file__}\", line {g.__code__.co_firstlineno + 1}, in g",
+            "    1/0",
+            "    ~^~"
+        ]
+        self.assertEqual(result_lines, expected)
+
+        def g(*args):
+            1/0
+
+        def f():
+            x = g(1,
+                  2, 3,
+                  4)
+
+        result_lines = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            "    callable()",
+            "    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            "    x = g(1,",
+            "          2, 3,",
+            "          4)",
+            f"  File \"{__file__}\", line {g.__code__.co_firstlineno + 1}, in g",
+            "    1/0",
+            "    ~^~"
+        ]
+        self.assertEqual(result_lines, expected)
+
+        def g():
+            1/0
+
+        def f():
+            x = y = g()
+
+        result_lines = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            "    callable()",
+            "    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            "    x = y = g()",
+            "            ~^^",
+            f"  File \"{__file__}\", line {g.__code__.co_firstlineno + 1}, in g",
+            "    1/0",
+            "    ~^~"
+        ]
+        self.assertEqual(result_lines, expected)
+
+        def g(*args):
+            1/0
+
+        def f():
+            x = y = g(1,
+                      2, 3,
+                      4)
+
+        result_lines = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            "    callable()",
+            "    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            "    x = y = g(1,",
+            "            ~^^^",
+            "              2, 3,",
+            "              ^^^^^",
+            "              4)",
+            "              ^^",
+            f"  File \"{__file__}\", line {g.__code__.co_firstlineno + 1}, in g",
+            "    1/0",
+            "    ~^~"
+        ]
+        self.assertEqual(result_lines, expected)
+
 
 @requires_debug_ranges()
 class PurePythonTracebackErrorCaretTests(
@@ -1691,7 +1903,7 @@ class TracebackFormatMixin:
         # Check a known (limited) number of recursive invocations
         def g(count=10):
             if count:
-                return g(count-1)
+                return g(count-1) + 1
             raise ValueError
 
         with captured_output("stderr") as stderr_g:
@@ -1705,13 +1917,13 @@ class TracebackFormatMixin:
         lineno_g = g.__code__.co_firstlineno
         result_g = (
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
+            '    return g(count-1) + 1\n'
             '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
+            '    return g(count-1) + 1\n'
             '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
+            '    return g(count-1) + 1\n'
             '           ~^^^^^^^^^\n'
             '  [Previous line repeated 7 more times]\n'
             f'  File "{__file__}", line {lineno_g+3}, in g\n'
@@ -1750,13 +1962,10 @@ class TracebackFormatMixin:
             '    ~^^\n'
             f'  File "{__file__}", line {lineno_h+2}, in h\n'
             '    return h(count-1)\n'
-            '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_h+2}, in h\n'
             '    return h(count-1)\n'
-            '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_h+2}, in h\n'
             '    return h(count-1)\n'
-            '           ~^^^^^^^^^\n'
             '  [Previous line repeated 7 more times]\n'
             f'  File "{__file__}", line {lineno_h+3}, in h\n'
             '    g()\n'
@@ -1776,13 +1985,13 @@ class TracebackFormatMixin:
                 self.fail("no error raised")
         result_g = (
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
+            '    return g(count-1) + 1\n'
             '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
+            '    return g(count-1) + 1\n'
             '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
+            '    return g(count-1) + 1\n'
             '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+3}, in g\n'
             '    raise ValueError\n'
@@ -1790,7 +1999,7 @@ class TracebackFormatMixin:
         )
         tb_line = (
             'Traceback (most recent call last):\n'
-            f'  File "{__file__}", line {lineno_g+80}, in _check_recursive_traceback_display\n'
+            f'  File "{__file__}", line {lineno_g+77}, in _check_recursive_traceback_display\n'
             '    g(traceback._RECURSIVE_CUTOFF)\n'
             '    ~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
         )
@@ -1808,13 +2017,13 @@ class TracebackFormatMixin:
                 self.fail("no error raised")
         result_g = (
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
+            '    return g(count-1) + 1\n'
             '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
+            '    return g(count-1) + 1\n'
             '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
+            '    return g(count-1) + 1\n'
             '           ~^^^^^^^^^\n'
             '  [Previous line repeated 1 more time]\n'
             f'  File "{__file__}", line {lineno_g+3}, in g\n'
@@ -1823,7 +2032,7 @@ class TracebackFormatMixin:
         )
         tb_line = (
             'Traceback (most recent call last):\n'
-            f'  File "{__file__}", line {lineno_g+112}, in _check_recursive_traceback_display\n'
+            f'  File "{__file__}", line {lineno_g+109}, in _check_recursive_traceback_display\n'
             '    g(traceback._RECURSIVE_CUTOFF + 1)\n'
             '    ~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
         )
@@ -2132,19 +2341,22 @@ class BaseExceptionReportingTests:
     def test_syntax_error_various_offsets(self):
         for offset in range(-5, 10):
             for add in [0, 2]:
-                text = " "*add + "text%d" % offset
+                text = " " * add + "text%d" % offset
                 expected = ['  File "file.py", line 1']
                 if offset < 1:
                     expected.append("    %s" % text.lstrip())
                 elif offset <= 6:
                     expected.append("    %s" % text.lstrip())
-                    expected.append("    %s^" % (" "*(offset-1)))
+                    # Set the caret length to match the length of the text minus the offset.
+                    caret_length = max(1, len(text.lstrip()) - offset + 1)
+                    expected.append("    %s%s" % (" " * (offset - 1), "^" * caret_length))
                 else:
+                    caret_length = max(1, len(text.lstrip()) - 4)
                     expected.append("    %s" % text.lstrip())
-                    expected.append("    %s^" % (" "*5))
+                    expected.append("    %s%s" % (" " * 5, "^" * caret_length))
                 expected.append("SyntaxError: msg")
                 expected.append("")
-                err = self.get_report(SyntaxError("msg", ("file.py", 1, offset+add, text)))
+                err = self.get_report(SyntaxError("msg", ("file.py", 1, offset + add, text)))
                 exp = "\n".join(expected)
                 self.assertEqual(exp, err)
 
@@ -3095,6 +3307,41 @@ class TestStack(unittest.TestCase):
             f'  File "{__file__}", line {lno}, in f\n    1/0\n'
         )
 
+    def test_summary_should_show_carets(self):
+        # See: https://github.com/python/cpython/issues/122353
+
+        # statement to execute and to get a ZeroDivisionError for a traceback
+        statement = "abcdef = 1 / 0 and 2.0"
+        colno = statement.index('1 / 0')
+        end_colno = colno + len('1 / 0')
+
+        # Actual line to use when rendering the traceback
+        # and whose AST will be extracted (it will be empty).
+        cached_line = '# this line will be used during rendering'
+        self.addCleanup(unlink, TESTFN)
+        with open(TESTFN, "w") as file:
+            file.write(cached_line)
+        linecache.updatecache(TESTFN, {})
+
+        try:
+            exec(compile(statement, TESTFN, "exec"))
+        except ZeroDivisionError as exc:
+            # This is the simplest way to create a StackSummary
+            # whose FrameSummary items have their column offsets.
+            s = traceback.TracebackException.from_exception(exc).stack
+            self.assertIsInstance(s, traceback.StackSummary)
+            with unittest.mock.patch.object(s, '_should_show_carets',
+                                            wraps=s._should_show_carets) as ff:
+                self.assertEqual(len(s), 2)
+                self.assertListEqual(
+                    s.format_frame_summary(s[1]).splitlines(),
+                    [
+                        f'  File "{TESTFN}", line 1, in <module>',
+                        f'    {cached_line}'
+                     ]
+                )
+                ff.assert_called_with(colno, end_colno, [cached_line], None)
+
 class Unrepresentable:
     def __repr__(self) -> str:
         raise Exception("Unrepresentable")
@@ -3705,6 +3952,27 @@ class SuggestionFormattingTestBase:
             actual = self.get_suggestion(cls(), 'bluch')
             self.assertIn(suggestion, actual)
 
+    def test_getattr_suggestions_underscored(self):
+        class A:
+            bluch = None
+
+        self.assertIn("'bluch'", self.get_suggestion(A(), 'blach'))
+        self.assertIn("'bluch'", self.get_suggestion(A(), '_luch'))
+        self.assertIn("'bluch'", self.get_suggestion(A(), '_bluch'))
+
+        class B:
+            _bluch = None
+            def method(self, name):
+                getattr(self, name)
+
+        self.assertIn("'_bluch'", self.get_suggestion(B(), '_blach'))
+        self.assertIn("'_bluch'", self.get_suggestion(B(), '_luch'))
+        self.assertNotIn("'_bluch'", self.get_suggestion(B(), 'bluch'))
+
+        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_blach')))
+        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_luch')))
+        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, 'bluch')))
+
     def test_getattr_suggestions_do_not_trigger_for_long_attributes(self):
         class A:
             blech = None
@@ -3896,6 +4164,17 @@ class SuggestionFormattingTestBase:
         ]:
             actual = self.get_import_from_suggestion(code, 'bluch')
             self.assertIn(suggestion, actual)
+
+    def test_import_from_suggestions_underscored(self):
+        code = "bluch = None"
+        self.assertIn("'bluch'", self.get_import_from_suggestion(code, 'blach'))
+        self.assertIn("'bluch'", self.get_import_from_suggestion(code, '_luch'))
+        self.assertIn("'bluch'", self.get_import_from_suggestion(code, '_bluch'))
+
+        code = "_bluch = None"
+        self.assertIn("'_bluch'", self.get_import_from_suggestion(code, '_blach'))
+        self.assertIn("'_bluch'", self.get_import_from_suggestion(code, '_luch'))
+        self.assertNotIn("'_bluch'", self.get_import_from_suggestion(code, 'bluch'))
 
     def test_import_from_suggestions_do_not_trigger_for_long_attributes(self):
         code = "blech = None"
@@ -4277,11 +4556,14 @@ class TestColorizedTraceback(unittest.TestCase):
             x = {'a':{'b': None}}
             y = x['a']['b']['c']
 
-        def baz(*args):
-            return foo(1,2,3,4)
+        def baz2(*args):
+            return (lambda *args: foo(*args))(1,2,3,4)
+
+        def baz1(*args):
+            return baz2(1,2,3,4)
 
         def bar():
-            return baz(1,
+            return baz1(1,
                     2,3
                     ,4)
         try:
@@ -4291,14 +4573,14 @@ class TestColorizedTraceback(unittest.TestCase):
                 e, capture_locals=True
             )
         lines = "".join(exc.format(colorize=True))
-        red = traceback._ANSIColors.RED
-        boldr = traceback._ANSIColors.BOLD_RED
-        reset = traceback._ANSIColors.RESET
+        red = _colorize.ANSIColors.RED
+        boldr = _colorize.ANSIColors.BOLD_RED
+        reset = _colorize.ANSIColors.RESET
         self.assertIn("y = " + red + "x['a']['b']" + reset + boldr + "['c']" + reset, lines)
-        self.assertIn("return " + red + "foo" + reset + boldr + "(1,2,3,4)" + reset, lines)
-        self.assertIn("return " + red + "baz" + reset + boldr + "(1," + reset, lines)
-        self.assertIn(boldr + "2,3" + reset, lines)
-        self.assertIn(boldr + ",4)" + reset, lines)
+        self.assertIn("return " + red + "(lambda *args: foo(*args))" + reset + boldr + "(1,2,3,4)" + reset, lines)
+        self.assertIn("return (lambda *args: " + red + "foo" + reset + boldr + "(*args)" + reset + ")(1,2,3,4)", lines)
+        self.assertIn("return baz2(1,2,3,4)", lines)
+        self.assertIn("return baz1(1,\n            2,3\n            ,4)", lines)
         self.assertIn(red + "bar" + reset + boldr + "()" + reset, lines)
 
     def test_colorized_syntax_error(self):
@@ -4309,11 +4591,11 @@ class TestColorizedTraceback(unittest.TestCase):
                 e, capture_locals=True
             )
         actual = "".join(exc.format(colorize=True))
-        red = traceback._ANSIColors.RED
-        magenta = traceback._ANSIColors.MAGENTA
-        boldm = traceback._ANSIColors.BOLD_MAGENTA
-        boldr = traceback._ANSIColors.BOLD_RED
-        reset = traceback._ANSIColors.RESET
+        red = _colorize.ANSIColors.RED
+        magenta = _colorize.ANSIColors.MAGENTA
+        boldm = _colorize.ANSIColors.BOLD_MAGENTA
+        boldr = _colorize.ANSIColors.BOLD_RED
+        reset = _colorize.ANSIColors.RESET
         expected = "".join([
         f'  File {magenta}"<string>"{reset}, line {magenta}1{reset}\n',
         f'    a {boldr}${reset} b\n',
@@ -4332,15 +4614,15 @@ class TestColorizedTraceback(unittest.TestCase):
             self.fail("No exception thrown.")
         except Exception as e:
             with captured_output("stderr") as tbstderr:
-                with unittest.mock.patch('traceback._can_colorize', return_value=True):
+                with unittest.mock.patch('_colorize.can_colorize', return_value=True):
                     exception_print(e)
             actual = tbstderr.getvalue().splitlines()
 
-        red = traceback._ANSIColors.RED
-        boldr = traceback._ANSIColors.BOLD_RED
-        magenta = traceback._ANSIColors.MAGENTA
-        boldm = traceback._ANSIColors.BOLD_MAGENTA
-        reset = traceback._ANSIColors.RESET
+        red = _colorize.ANSIColors.RED
+        boldr = _colorize.ANSIColors.BOLD_RED
+        magenta = _colorize.ANSIColors.MAGENTA
+        boldm = _colorize.ANSIColors.BOLD_MAGENTA
+        reset = _colorize.ANSIColors.RESET
         lno_foo = foo.__code__.co_firstlineno
         expected = ['Traceback (most recent call last):',
             f'  File {magenta}"{__file__}"{reset}, '
@@ -4354,32 +4636,6 @@ class TestColorizedTraceback(unittest.TestCase):
             f'{boldm}ZeroDivisionError{reset}: {magenta}division by zero{reset}']
         self.assertEqual(actual, expected)
 
-    def test_colorized_detection_checks_for_environment_variables(self):
-        if sys.platform == "win32":
-            virtual_patching = unittest.mock.patch("nt._supports_virtual_terminal", return_value=True)
-        else:
-            virtual_patching = contextlib.nullcontext()
-        with virtual_patching:
-            with unittest.mock.patch("os.isatty") as isatty_mock:
-                isatty_mock.return_value = True
-                with unittest.mock.patch("os.environ", {'TERM': 'dumb'}):
-                    self.assertEqual(traceback._can_colorize(), False)
-                with unittest.mock.patch("os.environ", {'PYTHON_COLORS': '1'}):
-                    self.assertEqual(traceback._can_colorize(), True)
-                with unittest.mock.patch("os.environ", {'PYTHON_COLORS': '0'}):
-                    self.assertEqual(traceback._can_colorize(), False)
-                with unittest.mock.patch("os.environ", {'NO_COLOR': '1'}):
-                    self.assertEqual(traceback._can_colorize(), False)
-                with unittest.mock.patch("os.environ", {'NO_COLOR': '1', "PYTHON_COLORS": '1'}):
-                    self.assertEqual(traceback._can_colorize(), True)
-                with unittest.mock.patch("os.environ", {'FORCE_COLOR': '1'}):
-                    self.assertEqual(traceback._can_colorize(), True)
-                with unittest.mock.patch("os.environ", {'FORCE_COLOR': '1', 'NO_COLOR': '1'}):
-                    self.assertEqual(traceback._can_colorize(), False)
-                with unittest.mock.patch("os.environ", {'FORCE_COLOR': '1', "PYTHON_COLORS": '0'}):
-                    self.assertEqual(traceback._can_colorize(), False)
-                isatty_mock.return_value = False
-                self.assertEqual(traceback._can_colorize(), False)
 
 if __name__ == "__main__":
     unittest.main()
