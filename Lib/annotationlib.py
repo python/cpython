@@ -18,9 +18,9 @@ __all__ = [
 
 class Format(enum.IntEnum):
     VALUE = 1
-    FORWARDREF = 2
-    SOURCE = 3
-    VALUE_WITH_FAKE_GLOBALS = 4
+    VALUE_WITH_FAKE_GLOBALS = 2
+    FORWARDREF = 3
+    SOURCE = 4
 
 
 _Union = None

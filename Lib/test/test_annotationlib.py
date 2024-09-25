@@ -29,11 +29,14 @@ class TestFormat(unittest.TestCase):
         self.assertEqual(annotationlib.Format.VALUE.value, 1)
         self.assertEqual(annotationlib.Format.VALUE, 1)
 
-        self.assertEqual(annotationlib.Format.FORWARDREF.value, 2)
-        self.assertEqual(annotationlib.Format.FORWARDREF, 2)
+        self.assertEqual(annotationlib.Format.VALUE_WITH_FAKE_GLOBALS.value, 2)
+        self.assertEqual(annotationlib.Format.VALUE_WITH_FAKE_GLOBALS, 2)
 
-        self.assertEqual(annotationlib.Format.SOURCE.value, 3)
-        self.assertEqual(annotationlib.Format.SOURCE, 3)
+        self.assertEqual(annotationlib.Format.FORWARDREF.value, 3)
+        self.assertEqual(annotationlib.Format.FORWARDREF, 3)
+
+        self.assertEqual(annotationlib.Format.SOURCE.value, 4)
+        self.assertEqual(annotationlib.Format.SOURCE, 4)
 
 
 class TestForwardRefFormat(unittest.TestCase):
@@ -370,16 +373,13 @@ class TestGetAnnotations(unittest.TestCase):
             annotationlib.get_annotations(f2, format=annotationlib.Format.FORWARDREF),
             {"a": fwd},
         )
-        self.assertEqual(annotationlib.get_annotations(f2, format=2), {"a": fwd})
+        self.assertEqual(annotationlib.get_annotations(f2, format=3), {"a": fwd})
 
         self.assertEqual(
             annotationlib.get_annotations(f1, format=annotationlib.Format.SOURCE),
             {"a": "int"},
         )
-        self.assertEqual(annotationlib.get_annotations(f1, format=3), {"a": "int"})
-
-        with self.assertRaises(ValueError):
-            annotationlib.get_annotations(f1, format=0)
+        self.assertEqual(annotationlib.get_annotations(f1, format=4), {"a": "int"})
 
         with self.assertRaises(ValueError):
             annotationlib.get_annotations(f1, format=42)
@@ -394,7 +394,7 @@ class TestGetAnnotations(unittest.TestCase):
             ValueError,
             r"The VALUE_WITH_FAKE_GLOBALS format is for internal use only",
         ):
-            annotationlib.get_annotations(f1, format=4)
+            annotationlib.get_annotations(f1, format=2)
 
     def test_custom_object_with_annotations(self):
         class C:
@@ -852,7 +852,7 @@ class TestGetAnnotations(unittest.TestCase):
 class TestCallEvaluateFunction(unittest.TestCase):
     def test_evaluation(self):
         def evaluate(format, exc=NotImplementedError):
-            if format != 1 and format != 4:
+            if format > 2:
                 raise exc
             return undefined
 
