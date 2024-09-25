@@ -244,6 +244,10 @@ _ATOMIC_TYPES = frozenset({
     property,
 })
 
+# Any marker is used in `make_dataclass` to mark unannotated fields as `Any`
+# without importing `typing` module.
+_ANY_MARKER = object()
+
 
 class InitVar:
     __slots__ = ('type', )
@@ -1527,11 +1531,10 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
     seen = set()
     annotations = {}
     defaults = {}
-    any_marker = object()
     for item in fields:
         if isinstance(item, str):
             name = item
-            tp = any_marker
+            tp = _ANY_MARKER
         elif len(item) == 2:
             name, tp, = item
         elif len(item) == 3:
@@ -1555,13 +1558,13 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
         if typing is None and format == annotationlib.Format.FORWARDREF:
             typing_any = annotationlib.ForwardRef("Any", module="typing")
             return {
-                ann: typing_any if t is any_marker else t
+                ann: typing_any if t is _ANY_MARKER else t
                 for ann, t in annotations.items()
             }
 
         from typing import Any, _convert_to_source
         ann_dict = {
-            ann: Any if t is any_marker else t
+            ann: Any if t is _ANY_MARKER else t
             for ann, t in annotations.items()
         }
         if format == annotationlib.Format.SOURCE:
