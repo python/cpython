@@ -202,7 +202,7 @@ iteration of the loop::
 
 In a :keyword:`!for` or :keyword:`!while` loop the :keyword:`!break` statement
 may be paired with an :keyword:`!else` clause.  If the loop finishes without
-executing the break, the else clause executes.
+executing the :keyword:`!break`, the :keyword:`!else` clause executes.
 
 In a :keyword:`for` loop, the :keyword:`!else` clause is executed
 after the loop finishes its final iteration, that is, if no break occurred.
