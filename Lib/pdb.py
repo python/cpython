@@ -314,7 +314,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
                  nosigint=False, readrc=True, mode=None):
-        bdb.Bdb.__init__(self, skip=skip)
+        bdb.Bdb.__init__(self, skip=skip, backend='monitoring')
         cmd.Cmd.__init__(self, completekey, stdin, stdout)
         sys.audit("pdb.Pdb")
         if stdout:
