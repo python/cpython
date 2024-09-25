@@ -646,10 +646,11 @@ The :mod:`functools` module defines the following functions:
    attributes of the wrapper function are updated with the corresponding attributes
    from the original function. The default values for these arguments are the
    module level constants ``WRAPPER_ASSIGNMENTS`` (which assigns to the wrapper
-   function's ``__module__``, ``__name__``, ``__qualname__``, ``__annotations__``,
-   ``__type_params__``, and ``__doc__``, the documentation string)
-   and ``WRAPPER_UPDATES`` (which
-   updates the wrapper function's ``__dict__``, i.e. the instance dictionary).
+   function's :attr:`~function.__module__`, :attr:`~function.__name__`,
+   :attr:`~function.__qualname__`, :attr:`~function.__annotations__`,
+   :attr:`~function.__type_params__`, and :attr:`~function.__doc__`, the
+   documentation string) and ``WRAPPER_UPDATES`` (which updates the wrapper
+   function's :attr:`~function.__dict__`, i.e. the instance dictionary).
 
    To allow access to the original function for introspection and other purposes
    (e.g. bypassing a caching decorator such as :func:`lru_cache`), this function
@@ -670,7 +671,7 @@ The :mod:`functools` module defines the following functions:
 
    .. versionchanged:: 3.2
       The ``__wrapped__`` attribute is now automatically added.
-      The ``__annotations__`` attribute is now copied by default.
+      The :attr:`~function.__annotations__` attribute is now copied by default.
       Missing attributes no longer trigger an :exc:`AttributeError`.
 
    .. versionchanged:: 3.4
@@ -679,7 +680,7 @@ The :mod:`functools` module defines the following functions:
       (see :issue:`17482`)
 
    .. versionchanged:: 3.12
-      The ``__type_params__`` attribute is now copied by default.
+      The :attr:`~function.__type_params__` attribute is now copied by default.
 
 
 .. decorator:: wraps(wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
@@ -741,9 +742,10 @@ have three read-only attributes:
    The keyword arguments that will be supplied when the :class:`partial` object is
    called.
 
-:class:`partial` objects are like :class:`function` objects in that they are
-callable, weak referenceable, and can have attributes.  There are some important
-differences.  For instance, the :attr:`~definition.__name__` and :attr:`__doc__` attributes
+:class:`partial` objects are like :ref:`function objects <user-defined-funcs>`
+in that they are callable, weak referenceable, and can have attributes.
+There are some important differences.  For instance, the
+:attr:`~function.__name__` and :attr:`function.__doc__` attributes
 are not created automatically.  Also, :class:`partial` objects defined in
 classes behave like static methods and do not transform into bound methods
 during instance attribute look-up.
