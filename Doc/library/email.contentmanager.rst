@@ -58,11 +58,11 @@
       * the type itself (``typ``)
       * the type's fully qualified name (``typ.__module__ + '.' +
         typ.__qualname__``).
-      * the type's :attr:`qualname <class.__qualname__>` (``typ.__qualname__``)
-      * the type's :attr:`name <class.__name__>` (``typ.__name__``).
+      * the type's :attr:`qualname <type.__qualname__>` (``typ.__qualname__``)
+      * the type's :attr:`name <type.__name__>` (``typ.__name__``).
 
       If none of the above match, repeat all of the checks above for each of
-      the types in the :term:`MRO` (:attr:`typ.__mro__ <class.__mro__>`).
+      the types in the :term:`MRO` (:attr:`typ.__mro__ <type.__mro__>`).
       Finally, if no other key
       yields a handler, check for a handler for the key ``None``.  If there is
       no handler for ``None``, raise a :exc:`KeyError` for the fully

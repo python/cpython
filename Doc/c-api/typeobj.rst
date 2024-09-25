@@ -567,12 +567,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    For :ref:`statically allocated type objects <static-types>`,
    the *tp_name* field should contain a dot.
-   Everything before the last dot is made accessible as the :attr:`~class.__module__`
+   Everything before the last dot is made accessible as the :attr:`~type.__module__`
    attribute, and everything after the last dot is made accessible as the
-   :attr:`~class.__name__` attribute.
+   :attr:`~type.__name__` attribute.
 
    If no dot is present, the entire :c:member:`~PyTypeObject.tp_name` field is made accessible as the
-   :attr:`~class.__name__` attribute, and the :attr:`~class.__module__` attribute is undefined
+   :attr:`~type.__name__` attribute, and the :attr:`~class.__module__` attribute is undefined
    (unless explicitly set in the dictionary, as explained above).  This means your
    type will be impossible to pickle.  Additionally, it will not be listed in
    module documentations created with pydoc.
@@ -1335,7 +1335,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 .. c:member:: const char* PyTypeObject.tp_doc
 
    An optional pointer to a NUL-terminated C string giving the docstring for this
-   type object.  This is exposed as the :attr:`~class.__doc__` attribute on the
+   type object.  This is exposed as the :attr:`~type.__doc__` attribute on the
    type and instances of the type.
 
    **Inheritance:**
@@ -2036,7 +2036,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    A collection of subclasses.  Internal use only.  May be an invalid pointer.
 
    To get a list of subclasses, call the Python method
-   :py:meth:`~class.__subclasses__`.
+   :py:meth:`~type.__subclasses__`.
 
    .. versionchanged:: 3.12
 

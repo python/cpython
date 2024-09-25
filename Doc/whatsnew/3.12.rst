@@ -2006,7 +2006,7 @@ Porting to Python 3.12
   internal-only field directly.
 
   To get a list of subclasses, call the Python method
-  :py:meth:`~class.__subclasses__` (using :c:func:`PyObject_CallMethod`,
+  :py:meth:`~type.__subclasses__` (using :c:func:`PyObject_CallMethod`,
   for example).
 
 * Add support of more formatting options (left aligning, octals, uppercase

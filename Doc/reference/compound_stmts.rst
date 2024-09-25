@@ -1416,7 +1416,7 @@ dictionary.  The class name is bound to this class object in the original local
 namespace.
 
 The order in which attributes are defined in the class body is preserved
-in the new class's :attr:`~class.__dict__`.  Note that this is reliable only right
+in the new class's :attr:`~type.__dict__`.  Note that this is reliable only right
 after the class is created and only for classes that were defined using
 the definition syntax.
 
@@ -1448,7 +1448,7 @@ A list of :ref:`type parameters <type-params>` may be given in square brackets
 immediately after the class's name.
 This indicates to static type checkers that the class is generic. At runtime,
 the type parameters can be retrieved from the class's
-:attr:`~class.__type_params__` attribute. See :ref:`generic-classes` for more.
+:attr:`~type.__type_params__` attribute. See :ref:`generic-classes` for more.
 
 .. versionchanged:: 3.12
    Type parameter lists are new in Python 3.12.
@@ -1924,5 +1924,5 @@ all annotations are instead stored as strings::
    therefore the function's :term:`docstring`.
 
 .. [#] A string literal appearing as the first statement in the class body is
-   transformed into the namespace's :attr:`~class.__doc__` item and therefore
+   transformed into the namespace's :attr:`~type.__doc__` item and therefore
    the class's :term:`docstring`.

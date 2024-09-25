@@ -1965,11 +1965,11 @@ are always available.  They are listed here in alphabetical order.
    to be searched.  The search starts from the class right after the
    *type*.
 
-   For example, if :attr:`~class.__mro__` of *object_or_type* is
+   For example, if :attr:`~type.__mro__` of *object_or_type* is
    ``D -> B -> C -> A -> object`` and the value of *type* is ``B``,
    then :func:`super` searches ``C -> A -> object``.
 
-   The :attr:`~class.__mro__` attribute of the class corresponding to
+   The :attr:`~type.__mro__` attribute of the class corresponding to
    *object_or_type* lists the method resolution search order used by both
    :func:`getattr` and :func:`super`.  The attribute is dynamic and can change
    whenever the inheritance hierarchy is updated.
@@ -2055,20 +2055,22 @@ are always available.  They are listed here in alphabetical order.
 
    With three arguments, return a new type object.  This is essentially a
    dynamic form of the :keyword:`class` statement. The *name* string is
-   the class name and becomes the :attr:`~class.__name__` attribute.
+   the class name and becomes the :attr:`~type.__name__` attribute.
    The *bases* tuple contains the base classes and becomes the
-   :attr:`~class.__bases__` attribute; if empty, :class:`object`, the
+   :attr:`~type.__bases__` attribute; if empty, :class:`object`, the
    ultimate base of all classes, is added.  The *dict* dictionary contains
    attribute and method definitions for the class body; it may be copied
-   or wrapped before becoming the :attr:`~class.__dict__` attribute.
-   The following two statements create identical :class:`type` objects:
+   or wrapped before becoming the :attr:`~type.__dict__` attribute.
+   The following two statements create identical :class:`!type` objects:
 
       >>> class X:
       ...     a = 1
       ...
       >>> X = type('X', (), dict(a=1))
 
-   See also :ref:`bltin-type-objects`.
+   See also:
+   * :ref:`Documentation on attributes and methods on classes <class-attrs-and-methods>`.
+   * :ref:`bltin-type-objects`
 
    Keyword arguments provided to the three argument form are passed to the
    appropriate metaclass machinery (usually :meth:`~object.__init_subclass__`)
@@ -2078,7 +2080,7 @@ are always available.  They are listed here in alphabetical order.
    See also :ref:`class-customization`.
 
    .. versionchanged:: 3.6
-      Subclasses of :class:`type` which don't override ``type.__new__`` may no
+      Subclasses of :class:`!type` which don't override ``type.__new__`` may no
       longer use the one-argument form to get the type of an object.
 
 .. function:: vars()

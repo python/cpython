@@ -941,6 +941,8 @@ namespace as a dictionary object.
    or keep the module around while using its dictionary directly.
 
 
+.. _class-attrs-and-methods:
+
 Custom classes
 --------------
 
@@ -1004,32 +1006,32 @@ Special attributes
    * - Attribute
      - Meaning
 
-   * - .. attribute:: class.__name__
+   * - .. attribute:: type.__name__
      - The class's name.
        See also: :attr:`__name__ attributes <definition.__name__>`.
 
-   * - .. attribute:: class.__qualname__
+   * - .. attribute:: type.__qualname__
      - The class's :term:`qualified name`.
        See also: :attr:`__qualname__ attributes <definition.__qualname__>`.
 
-   * - .. attribute:: class.__module__
+   * - .. attribute:: type.__module__
      - The name of the module in which the class was defined.
 
-   * - .. attribute:: class.__dict__
+   * - .. attribute:: type.__dict__
      - A :class:`mapping proxy <types.MappingProxyType>`
        providing a read-only view of the class's namespace.
        See also: :attr:`__dict__ attributes <object.__dict__>`.
 
-   * - .. attribute:: class.__bases__
+   * - .. attribute:: type.__bases__
      - A :class:`tuple` containing the class's bases.
        In most cases, for a class defined as ``class X(A, B, C)``,
        ``X.__bases__`` will be exactly equal to ``(A, B, C)``.
 
-   * - .. attribute:: class.__doc__
+   * - .. attribute:: type.__doc__
      - The class's documentation string, or ``None`` if undefined.
        Not inherited by subclasses.
 
-   * - .. attribute:: class.__annotations__
+   * - .. attribute:: type.__annotations__
      - A dictionary containing
        :term:`variable annotations <variable annotation>`
        collected during class body execution. See also:
@@ -1049,7 +1051,7 @@ Special attributes
           Annotations are now :ref:`lazily evaluated <lazy-evaluation>`.
           See :pep:`649`.
 
-   * - .. method:: class.__annotate__
+   * - .. method:: type.__annotate__
      - The :term:`annotate function` for this class, or ``None``
        if the class has no annotations.
        See also: :attr:`__annotate__ attributes <object.__annotate__>`.
@@ -1063,24 +1065,24 @@ Special attributes
 
        .. versionadded:: 3.14
 
-   * - .. attribute:: class.__type_params__
+   * - .. attribute:: type.__type_params__
      - A :class:`tuple` containing the :ref:`type parameters <type-params>` of
        a :ref:`generic class <generic-classes>`.
 
        .. versionadded:: 3.12
 
-   * - .. attribute:: class.__static_attributes__
+   * - .. attribute:: type.__static_attributes__
      - A :class:`tuple` containing names of attributes of this class which are
        assigned through ``self.X`` from any function in its body.
 
        .. versionadded:: 3.13
 
-   * - .. attribute:: class.__firstlineno__
+   * - .. attribute:: type.__firstlineno__
      - The line number of the first line of the class definition, including decorators.
 
        .. versionadded:: 3.13
 
-   * - .. attribute:: class.__mro__
+   * - .. attribute:: type.__mro__
      - The :class:`tuple` of classes that are considered when looking for
        base classes during method resolution.
 
@@ -1091,13 +1093,13 @@ Special methods
 In addition to the special attributes described above, all Python classes also
 have the following two methods available:
 
-.. method:: class.mro
+.. method:: type.mro
 
    This method can be overridden by a metaclass to customize the method
    resolution order for its instances.  It is called at class instantiation,
-   and its result is stored in :attr:`~class.__mro__`.
+   and its result is stored in :attr:`~type.__mro__`.
 
-.. method:: class.__subclasses__
+.. method:: type.__subclasses__
 
    Each class keeps a list of weak references to its immediate subclasses. This
    method returns a list of all those references still alive. The list is in
@@ -2595,7 +2597,7 @@ Preparing the class namespace
 
 Once the appropriate metaclass has been identified, then the class namespace
 is prepared. If the metaclass has a ``__prepare__`` attribute, it is called
-as ``namespace = metaclass.__prepare__(name, bases, **kwds)`` (where the
+as ``namespace = metatype.__prepare__(name, bases, **kwds)`` (where the
 additional keyword arguments, if any, come from the class definition). The
 ``__prepare__`` method should be implemented as a
 :func:`classmethod <classmethod>`. The
@@ -2678,7 +2680,7 @@ in the local namespace as the defined class.
 When a new class is created by ``type.__new__``, the object provided as the
 namespace parameter is copied to a new ordered mapping and the original
 object is discarded. The new copy is wrapped in a read-only proxy, which
-becomes the :attr:`~class.__dict__` attribute of the class object.
+becomes the :attr:`~type.__dict__` attribute of the class object.
 
 .. seealso::
 
@@ -2706,14 +2708,14 @@ order to allow the addition of Abstract Base Classes (ABCs) as "virtual base
 classes" to any class or type (including built-in types), including other
 ABCs.
 
-.. method:: class.__instancecheck__(self, instance)
+.. method:: type.__instancecheck__(self, instance)
 
    Return true if *instance* should be considered a (direct or indirect)
    instance of *class*. If defined, called to implement ``isinstance(instance,
    class)``.
 
 
-.. method:: class.__subclasscheck__(self, subclass)
+.. method:: type.__subclasscheck__(self, subclass)
 
    Return true if *subclass* should be considered a (direct or indirect)
    subclass of *class*.  If defined, called to implement ``issubclass(subclass,
@@ -2729,8 +2731,8 @@ case the instance is itself a class.
 
    :pep:`3119` - Introducing Abstract Base Classes
       Includes the specification for customizing :func:`isinstance` and
-      :func:`issubclass` behavior through :meth:`~class.__instancecheck__` and
-      :meth:`~class.__subclasscheck__`, with motivation for this functionality
+      :func:`issubclass` behavior through :meth:`~type.__instancecheck__` and
+      :meth:`~type.__subclasscheck__`, with motivation for this functionality
       in the context of adding Abstract Base Classes (see the :mod:`abc`
       module) to the language.
 

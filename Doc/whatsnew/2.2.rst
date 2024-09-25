@@ -173,12 +173,12 @@ attributes of their own:
 
 * :attr:`~definition.__doc__` is the attribute's docstring.
 
-* :meth:`~object.__get__` is a method that retrieves the attribute value from
+* ``__get__(object)`` is a method that retrieves the attribute value from
   *object*.
 
-* :meth:`~object.__set__` sets the attribute on *object* to *value*.
+* ``__set__(object, value)`` sets the attribute on *object* to *value*.
 
-* :meth:`~object.__delete__` deletes the *value*  attribute of *object*.
+* ``__delete__(object, value)`` deletes the *value*  attribute of *object*.
 
 For example, when you write ``obj.x``, the steps that Python actually performs
 are::
