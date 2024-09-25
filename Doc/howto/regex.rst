@@ -468,8 +468,8 @@ The :meth:`~re.Pattern.fullmatch` method checks if the RE matches the entire
 string exactly::
 
    >>> p = re.compile('[a-z]+')
-   >>> p.search(' words ')
-   <re.Match object; span=(1, 6), match='words'>
+   >>> p.search(' textual ')
+   <re.Match object; span=(1, 8), match='textual'>
    >>> p.fullmatch(' textual ')  # Fails to match and returns None
    >>> p.fullmatch('textual')
    <re.Match object; span=(0, 7), match='textual'>
