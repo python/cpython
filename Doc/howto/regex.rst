@@ -4,6 +4,14 @@
   Regular Expression HOWTO
 ****************************
 
+.. missing items: re.DEBUG
+
+.. New in 3.11: possessive quantifiers (*+, ++, ?+), {m,n}+, (?>...): atomic match
+
+.. New in 3.12: maxsplit, count, and flags will become keyword-only; examples should be updated
+
+.. (?aiLmsux-aiLmsux: ... ): modifier spans restricting pattern changes
+
 :Author: A.M. Kuchling <amk@amk.ca>
 
 .. TODO:
@@ -755,6 +763,8 @@ an exception when you try to compile it.
 
    To match a literal ``'^'``, use ``\^``.
 
+.. clarification: only matches any location in re.MULTILINE mode
+
 ``$``
    Matches at the end of a line, which is defined as either the end of the string,
    or any location followed by a newline character.     ::
@@ -997,6 +1007,8 @@ Additionally, you can retrieve named groups as a dictionary with
    >>> m = re.match(r'(?P<first>\w+) (?P<last>\w+)', 'Jane Doe')
    >>> m.groupdict()
    {'first': 'Jane', 'last': 'Doe'}
+
+.. describe .groupindex attribute here
 
 Named groups are handy because they let you use easily remembered names, instead
 of having to remember numbers.  Here's an example RE from the :mod:`imaplib`
@@ -1439,3 +1451,6 @@ and doesn't contain any Python material at all, so it won't be useful as a
 reference for programming in Python.  (The first edition covered Python's
 now-removed :mod:`!regex` module, which won't help you much.)  Consider checking
 it out from your library.
+
+.. look for more references (regex builders; modern books)
+.. re-examples in the LibRef
