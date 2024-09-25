@@ -322,6 +322,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                         self._loop.call_soon(
                             self.__step, new_exc, context=self._context)
                     else:
+                        _add_to_awaited_by(result, self)
                         result._asyncio_future_blocking = False
                         result.add_done_callback(
                             self.__wakeup, context=self._context)
@@ -356,6 +357,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self = None  # Needed to break cycles when an exception occurs.
 
     def __wakeup(self, future):
+        _discard_from_awaited_by(future, self)
         try:
             future.result()
         except BaseException as exc:
@@ -502,6 +504,7 @@ async def _wait(fs, timeout, return_when, loop):
     if timeout is not None:
         timeout_handle = loop.call_later(timeout, _release_waiter, waiter)
     counter = len(fs)
+    cur_task = current_task()
 
     def _on_completion(f):
         nonlocal counter
@@ -514,9 +517,11 @@ async def _wait(fs, timeout, return_when, loop):
                 timeout_handle.cancel()
             if not waiter.done():
                 waiter.set_result(None)
+        _discard_from_awaited_by(f, cur_task)
 
     for f in fs:
         f.add_done_callback(_on_completion)
+        _add_to_awaited_by(f, cur_task)
 
     try:
         await waiter
@@ -802,9 +807,12 @@ def gather(*coros_or_futures, return_exceptions=False):
         outer.set_result([])
         return outer
 
-    def _done_callback(fut):
+    def _done_callback(fut, cur_task):
         nonlocal nfinished
         nfinished += 1
+
+        if cur_task is not None:
+            _discard_from_awaited_by(fut, cur_task)
 
         if outer is None or outer.done():
             if not fut.cancelled():
@@ -864,6 +872,7 @@ def gather(*coros_or_futures, return_exceptions=False):
     done_futs = []
     loop = None
     outer = None  # bpo-46672
+    cur_task = current_task()
     for arg in coros_or_futures:
         if arg not in arg_to_fut:
             fut = ensure_future(arg, loop=loop)
@@ -875,13 +884,14 @@ def gather(*coros_or_futures, return_exceptions=False):
                 # can't control it, disable the "destroy pending task"
                 # warning.
                 fut._log_destroy_pending = False
-
+            if cur_task is not None:
+                _add_to_awaited_by(fut, cur_task)
             nfuts += 1
             arg_to_fut[arg] = fut
             if fut.done():
                 done_futs.append(fut)
             else:
-                fut.add_done_callback(_done_callback)
+                fut.add_done_callback(lambda fut: _done_callback(fut, cur_task))
 
         else:
             # There's a duplicate Future object in coros_or_futures.
@@ -940,7 +950,14 @@ def shield(arg):
     loop = futures._get_loop(inner)
     outer = loop.create_future()
 
-    def _inner_done_callback(inner):
+    cur_task = current_task()
+    if cur_task is not None:
+        _add_to_awaited_by(inner, cur_task)
+
+    def _inner_done_callback(inner, cur_task=cur_task):
+        if cur_task is not None:
+            _discard_from_awaited_by(inner, cur_task)
+
         if outer.cancelled():
             if not inner.cancelled():
                 # Mark inner's result as retrieved.
@@ -1072,6 +1089,18 @@ def _unregister_task(task):
 def _unregister_eager_task(task):
     """Unregister a task which finished its first eager step."""
     _eager_tasks.discard(task)
+
+
+def _add_to_awaited_by(fut, waiter):
+    if hasattr(fut, '_awaited_by'):
+        if fut._awaited_by is None:
+            fut._awaited_by = set()
+        fut._awaited_by.add(waiter)
+
+
+def _discard_from_awaited_by(fut, waiter):
+    if awaited_by := getattr(fut, '_awaited_by', None):
+        awaited_by.discard(waiter)
 
 
 _py_current_task = current_task

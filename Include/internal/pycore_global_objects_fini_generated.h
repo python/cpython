@@ -741,6 +741,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_argtypes_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_as_parameter_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_asyncio_future_blocking));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_awaited_by));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_blksize));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_bootstrap));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_check_retval_));
