@@ -1460,6 +1460,6 @@ class TestEvaluateFunctions(unittest.TestCase):
         ConstEvaluator = type(T.evaluate_bound)
 
         with self.assertRaisesRegex(TypeError, r"cannot create '_typing\._ConstEvaluator' instances"):
-            ConstEvaluator()
+            ConstEvaluator()  # This used to segfault.
         with self.assertRaisesRegex(TypeError, r"cannot set 'attribute' attribute of immutable type '_typing\._ConstEvaluator'"):
             ConstEvaluator.attribute = 1
