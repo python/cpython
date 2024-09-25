@@ -26,14 +26,10 @@ CPYTHON = TOOLS.parent
 PYTHON_EXECUTOR_CASES_C_H = CPYTHON / "Python" / "executor_cases.c.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
 
-ASYNCIO_RUNNER=asyncio.Runner()
-
-
 _S = typing.TypeVar("_S", _schema.COFFSection, _schema.ELFSection, _schema.MachOSection)
 _R = typing.TypeVar(
     "_R", _schema.COFFRelocation, _schema.ELFRelocation, _schema.MachORelocation
 )
-
 
 @dataclasses.dataclass
 class _Target(typing.Generic[_S, _R]):
@@ -209,7 +205,7 @@ class _Target(typing.Generic[_S, _R]):
         return {task.get_name(): task.result() for task in tasks}
 
     def build(
-        self, out: pathlib.Path, *, comment: str = "", force: bool = False
+        self, out: pathlib.Path, *, comment: str = "", force: bool = False, stencils_h: str = "jit_stencils.h"
     ) -> None:
         """Build jit_stencils.h in the given directory."""
         if not self.stable:
@@ -218,7 +214,7 @@ class _Target(typing.Generic[_S, _R]):
             outline = "=" * len(warning)
             print("\n".join(["", outline, warning, request, outline, ""]))
         digest = f"// {self._compute_digest(out)}\n"
-        jit_stencils = out / "jit_stencils.h"
+        jit_stencils = out / stencils_h
         if (
             not force
             and jit_stencils.exists()
