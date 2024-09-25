@@ -61,8 +61,14 @@ at runtime using the environment variable :envvar:`PYTHON_GIL` or
 the command-line option :option:`-X gil`.
 
 The GIL may also automatically be enabled when importing a C-API extension
-module that is not explicitly marked as supporting free threading.  See
-:c:macro:`Py_MOD_GIL_NOT_USED` for more details.
+module that is not explicitly marked as supporting free threading.  A warning
+will be printed in this case.
+
+In addition to individual package documentation, the following websites track
+the status of popular packages support for free threading:
+
+* https://py-free-threading.github.io/tracking/
+* https://hugovk.github.io/free-threaded-wheels/
 
 
 Thread safety
