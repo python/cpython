@@ -31,9 +31,9 @@ if __name__ == "__main__":
         args.target.build(pathlib.Path.cwd(), comment=comment)
 
     else:
-        # Multiple triples specified, assume this is a macOS multiarchitecture build
+        # Multiple triples specified, assume this is a macOS multi-architecture build
         # - Generate multiple stencil headers
-        # - Generate a helper header that include sthe stencils for the current
+        # - Generate a helper header that includes the stencils for the current
         #   architecture.
         for target in args.target:
             target.debug = args.debug
@@ -43,8 +43,7 @@ if __name__ == "__main__":
 
         with open("jit_stencils.h", "w") as fp:
             for idx, target in enumerate(args.target):
-                cpu, _, _ = target.triple.partition("-")
-                fp.write(f"#{'if' if idx == 0 else 'elif'} defined(__{cpu}__)\n")
+                fp.write(f"#{'if' if idx == 0 else 'elif'} defined(__{target.condition}__)\n")
                 fp.write(f'#   include "jit_stencils-{target.triple}.h"\n')
 
             fp.write("#else\n")

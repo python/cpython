@@ -518,24 +518,31 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
     # ghccc currently crashes Clang when combined with musttail on aarch64. :(
     target: _COFF | _ELF | _MachO
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
-        target = _MachO(host, alignment=8, prefix="_")
+        condition = "defined(__aarch64__)" and "defined(__APPLE__)"
+        target = _MachO(host, condition, alignment=8, prefix="_")
     elif re.fullmatch(r"aarch64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll"]
-        target = _COFF(host, alignment=8, args=args)
+        condition = "defined(_M_ARM64)"
+        target = _COFF(host, condition, alignment=8, args=args)
     elif re.fullmatch(r"aarch64-.*-linux-gnu", host):
         args = ["-fpic"]
-        target = _ELF(host, alignment=8, args=args)
+        condition = "defined(__aarch64__)" and "defined(__linux__)"
+        target = _ELF(host, condition, alignment=8, args=args)
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
         args = ["-DPy_NO_ENABLE_SHARED"]
-        target = _COFF(host, args=args, ghccc=True, prefix="_")
+        condition = "defined(_M_IX86)"
+        target = _COFF(host, condition, args=args, ghccc=True, prefix="_")
     elif re.fullmatch(r"x86_64-apple-darwin.*", host):
-        target = _MachO(host, ghccc=True, prefix="_")
+        condition = "defined(__x86_64__)" and "defined(__APPLE__)"
+        target = _MachO(host, condition, ghccc=True, prefix="_")
     elif re.fullmatch(r"x86_64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll"]
-        target = _COFF(host, args=args, ghccc=True)
+        condition = "defined(_M_X64)"
+        target = _COFF(host, condition, args=args, ghccc=True)
     elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
         args = ["-fpic"]
-        target = _ELF(host, args=args, ghccc=True)
+        condition = "defined(__x86_64__)" and "defined(__linux__)"
+        target = _ELF(host, condition, args=args, ghccc=True)
     else:
         raise ValueError(host)
     return target
