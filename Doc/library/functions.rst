@@ -2069,6 +2069,7 @@ are always available.  They are listed here in alphabetical order.
       >>> X = type('X', (), dict(a=1))
 
    See also:
+
    * :ref:`Documentation on attributes and methods on classes <class-attrs-and-methods>`.
    * :ref:`bltin-type-objects`
 

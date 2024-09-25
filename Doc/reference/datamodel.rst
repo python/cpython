@@ -1040,7 +1040,7 @@ Special attributes
        For best practices on working with :attr:`~object.__annotations__`,
        please see :mod:`annotationlib`.
 
-       .. warning::
+       .. caution::
 
           Accessing the :attr:`!__annotations__` attribute of a class
           object directly may yield incorrect results in the presence of
@@ -1056,7 +1056,7 @@ Special attributes
        if the class has no annotations.
        See also: :attr:`__annotate__ attributes <object.__annotate__>`.
 
-       .. warning::
+       .. caution::
 
           Accessing the :attr:`!__annotate__` attribute of a class
           object directly may yield incorrect results in the presence of
