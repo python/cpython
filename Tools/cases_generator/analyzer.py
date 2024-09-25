@@ -533,6 +533,7 @@ ESCAPING_FUNCTIONS = (
     "import_name",
     "import_from",
     "DECREF_INPUTS",
+    "SETLOCAL",
 )
 
 
