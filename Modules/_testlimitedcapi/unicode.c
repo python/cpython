@@ -1,7 +1,7 @@
 #include "pyconfig.h"   // Py_GIL_DISABLED
 #ifndef Py_GIL_DISABLED
-   // Need limited C API 3.13 to test PyUnicode_EqualToUTF8()
-#  define Py_LIMITED_API 0x030d0000
+   // Need limited C API 3.14 to test PyUnicode_Equal()
+#  define Py_LIMITED_API 0x030e0000
 #endif
 
 #include "parts.h"
