@@ -28,6 +28,7 @@ from __future__ import annotations
 import _sitebuiltins
 import linecache
 import functools
+import os
 import sys
 import code
 
@@ -50,7 +51,6 @@ def check() -> str:
     try:
         _get_reader()
     except _error as e:
-        import os  # temporary debugging measure to understand the Address sanitizer environment failure
         if term := os.environ.get("TERM", ""):
             term = f"; TERM={term}"
         return str(str(e) or repr(e) or "unknown error") + term

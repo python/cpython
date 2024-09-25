@@ -1054,6 +1054,7 @@ class TestPasteEvent(TestCase):
         output = multiline_input(reader)
         self.assertEqual(output, input_code)
 
+
 @skipUnless(pty, "requires pty")
 class TestDumbTerminal(ReplTestCase):
     def test_dumb_terminal_exits_cleanly(self):
@@ -1065,8 +1066,9 @@ class TestDumbTerminal(ReplTestCase):
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
+
 @skipUnless(pty, "requires pty")
-@skipIf(os.environ.get("TERM") == "dumb", "can't use pyrepl in dumb terminal")
+@skipIf((os.environ.get("TERM") or "dumb") == "dumb", "can't use pyrepl in dumb terminal")
 class TestMain(ReplTestCase):
     def setUp(self):
         # Cleanup from PYTHON* variables to isolate from local
