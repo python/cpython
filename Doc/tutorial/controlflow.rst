@@ -237,9 +237,10 @@ which searches for prime numbers::
 the ``for`` loop, **not** the ``if`` statement.)
 
 One way to think of the else clause is to imagine it paired with the ``if``
-inside the loop. If you conceptually unroll the loop, you have an if/if/if/else
-structure.  The ``if`` is inside the loop, executing a ``break``, and the
-``else`` is the else clause outside the loop.
+inside the loop.  As the loop executes, it will run a sequence like
+if/if/if/else. The ``if`` is inside the loop, encountered a number of times. If
+the condition is ever true, a ``break`` will happen. If the condition is never
+true, the ``else`` clause outside the loop will execute.
 
 When used with a loop, the ``else`` clause has more in common with the ``else``
 clause of a :keyword:`try` statement than it does with that of ``if``
