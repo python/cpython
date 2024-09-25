@@ -6,7 +6,6 @@ import sys
 
 from test.test_ttk_textonly import MockTclObj
 from test.test_tkinter.support import (
-
     AbstractTkTest, requires_tk, tk_version, get_tk_patchlevel,
     simulate_mouse_click, AbstractDefaultRootTest)
 from test.test_tkinter.widget_tests import (add_configure_tests,
@@ -1011,14 +1010,14 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_height(self):
         widget = self.create()
-        if tk_version < (8, 15):
+        if get_tk_patchlevel(self.root) < (8, 6, 15):
             self.checkIntegerParam(widget, 'height', 402, -402, 0)
         else:
             self.checkPixelsParam(widget, 'height', '10c', 402, -402, 0)
 
     def test_configure_width(self):
         widget = self.create()
-        if tk_version < (8, 15):
+        if get_tk_patchlevel(self.root) < (8, 6, 15):
             self.checkIntegerParam(widget, 'width', 402, -402, 0)
         else:
             self.checkPixelsParam(widget, 'width', '10c', 402, -402, 0)
