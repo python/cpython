@@ -845,6 +845,7 @@ this case, the special read-only attribute :attr:`!__self__` is set to the objec
 denoted by *alist*. (The attribute has the same semantics as it does with
 :attr:`other instance methods <method.__self__>`.)
 
+.. _classes:
 
 Classes
 ^^^^^^^
