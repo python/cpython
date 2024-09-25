@@ -318,6 +318,9 @@ pdb
   :pdbcmd:`commands` are preserved across hard-coded breakpoints.
   (Contributed by Tian Gao in :gh:`121450`.)
 
+* Added a new argument ``mode`` to :class:`pdb.Pdb`. Disabled ``restart``
+  command when :mod:`pdb` is in ``inline`` mode.
+  (Contributed by Tian Gao in :gh:`123757`.)
 
 pickle
 ------

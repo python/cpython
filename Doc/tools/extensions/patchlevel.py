@@ -74,4 +74,4 @@ def get_version_info():
 
 
 if __name__ == "__main__":
-    print(format_version_info(get_header_version_info())[1])
+    print(format_version_info(get_header_version_info())[0])
