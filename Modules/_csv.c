@@ -1072,7 +1072,7 @@ csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
         return NULL;
     }
 
-    if (!PyArg_UnpackTuple(args, "", 1, 2, &iterator, &dialect)) {
+    if (!PyArg_UnpackTuple(args, "reader", 1, 2, &iterator, &dialect)) {
         Py_DECREF(self);
         return NULL;
     }
@@ -1519,7 +1519,7 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
 
     self->error_obj = Py_NewRef(module_state->error_obj);
 
-    if (!PyArg_UnpackTuple(args, "", 1, 2, &output_file, &dialect)) {
+    if (!PyArg_UnpackTuple(args, "writer", 1, 2, &output_file, &dialect)) {
         Py_DECREF(self);
         return NULL;
     }
@@ -1571,7 +1571,7 @@ csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
     _csvstate *module_state = get_csv_state(module);
     PyObject *dialect;
 
-    if (!PyArg_UnpackTuple(args, "", 1, 2, &name_obj, &dialect_obj))
+    if (!PyArg_UnpackTuple(args, "register_dialect", 1, 2, &name_obj, &dialect_obj))
         return NULL;
     if (!PyUnicode_Check(name_obj)) {
         PyErr_SetString(PyExc_TypeError,

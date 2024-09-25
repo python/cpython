@@ -406,14 +406,12 @@ unicode_get_hash(PyObject *o)
 void
 _PyDict_DebugMallocStats(FILE *out)
 {
-#ifdef WITH_FREELISTS
     _PyDebugAllocatorStats(out, "free PyDictObject",
                            _Py_FREELIST_SIZE(dicts),
                            sizeof(PyDictObject));
     _PyDebugAllocatorStats(out, "free PyDictKeysObject",
                            _Py_FREELIST_SIZE(dictkeys),
                            sizeof(PyDictKeysObject));
-#endif
 }
 
 #define DK_MASK(dk) (DK_SIZE(dk)-1)
@@ -1496,6 +1494,45 @@ read_failed:
     return ix;
 }
 
+Py_ssize_t
+_Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t hash, _PyStackRef *value_addr)
+{
+    PyDictKeysObject *dk = _Py_atomic_load_ptr(&mp->ma_keys);
+    if (dk->dk_kind == DICT_KEYS_UNICODE && PyUnicode_CheckExact(key)) {
+        Py_ssize_t ix = unicodekeys_lookup_unicode_threadsafe(dk, key, hash);
+        if (ix == DKIX_EMPTY) {
+            *value_addr = PyStackRef_NULL;
+            return ix;
+        }
+        else if (ix >= 0) {
+            PyObject **addr_of_value = &DK_UNICODE_ENTRIES(dk)[ix].me_value;
+            PyObject *value = _Py_atomic_load_ptr(addr_of_value);
+            if (value == NULL) {
+                *value_addr = PyStackRef_NULL;
+                return DKIX_EMPTY;
+            }
+            if (_Py_IsImmortal(value) || _PyObject_HasDeferredRefcount(value)) {
+                *value_addr =  (_PyStackRef){ .bits = (uintptr_t)value | Py_TAG_DEFERRED };
+                return ix;
+            }
+            if (_Py_TryIncrefCompare(addr_of_value, value)) {
+                *value_addr = PyStackRef_FromPyObjectSteal(value);
+                return ix;
+            }
+        }
+    }
+
+    PyObject *obj;
+    Py_ssize_t ix = _Py_dict_lookup_threadsafe(mp, key, hash, &obj);
+    if (ix >= 0 && obj != NULL) {
+        *value_addr = PyStackRef_FromPyObjectSteal(obj);
+    }
+    else {
+        *value_addr = PyStackRef_NULL;
+    }
+    return ix;
+}
+
 #else   // Py_GIL_DISABLED
 
 Py_ssize_t
@@ -1503,6 +1540,20 @@ _Py_dict_lookup_threadsafe(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyOb
 {
     Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, value_addr);
     Py_XNewRef(*value_addr);
+    return ix;
+}
+
+Py_ssize_t
+_Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t hash, _PyStackRef *value_addr)
+{
+    PyObject *val;
+    Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &val);
+    if (val == NULL) {
+        *value_addr = PyStackRef_NULL;
+    }
+    else {
+        *value_addr = PyStackRef_FromPyObjectNew(val);
+    }
     return ix;
 }
 
@@ -2418,6 +2469,32 @@ _PyDict_LoadGlobal(PyDictObject *globals, PyDictObject *builtins, PyObject *key)
     ix = _Py_dict_lookup_threadsafe(builtins, key, hash, &value);
     assert(ix >= 0 || value == NULL);
     return value;
+}
+
+void
+_PyDict_LoadGlobalStackRef(PyDictObject *globals, PyDictObject *builtins, PyObject *key, _PyStackRef *res)
+{
+    Py_ssize_t ix;
+    Py_hash_t hash;
+
+    hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        *res = PyStackRef_NULL;
+        return;
+    }
+
+    /* namespace 1: globals */
+    ix = _Py_dict_lookup_threadsafe_stackref(globals, key, hash, res);
+    if (ix == DKIX_ERROR) {
+        return;
+    }
+    if (ix != DKIX_EMPTY && !PyStackRef_IsNull(*res)) {
+        return;
+    }
+
+    /* namespace 2: builtins */
+    ix = _Py_dict_lookup_threadsafe_stackref(builtins, key, hash, res);
+    assert(ix >= 0 || PyStackRef_IsNull(*res));
 }
 
 /* Consumes references to key and value */
@@ -6559,9 +6636,10 @@ dictvalues_reversed(PyObject *self, PyObject *Py_UNUSED(ignored))
 /* Returns NULL if cannot allocate a new PyDictKeysObject,
    but does not set an error */
 PyDictKeysObject *
-_PyDict_NewKeysForClass(void)
+_PyDict_NewKeysForClass(PyHeapTypeObject *cls)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
+
     PyDictKeysObject *keys = new_keys_object(
             interp, NEXT_LOG2_SHARED_KEYS_MAX_SIZE, 1);
     if (keys == NULL) {
@@ -6572,6 +6650,20 @@ _PyDict_NewKeysForClass(void)
         /* Set to max size+1 as it will shrink by one before each new object */
         keys->dk_usable = SHARED_KEYS_MAX_SIZE;
         keys->dk_kind = DICT_KEYS_SPLIT;
+    }
+    if (cls->ht_type.tp_dict) {
+        PyObject *attrs = PyDict_GetItem(cls->ht_type.tp_dict, &_Py_ID(__static_attributes__));
+        if (attrs != NULL && PyTuple_Check(attrs)) {
+            for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(attrs); i++) {
+                PyObject *key = PyTuple_GET_ITEM(attrs, i);
+                Py_hash_t hash;
+                if (PyUnicode_CheckExact(key) && (hash = unicode_get_hash(key)) != -1) {
+                    if (insert_split_key(keys, key, hash) == DKIX_EMPTY) {
+                        break;
+                    }
+                }
+            }
+        }
     }
     return keys;
 }

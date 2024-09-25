@@ -2137,11 +2137,40 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: vectorcallfunc PyTypeObject.tp_vectorcall
 
-   Vectorcall function to use for calls of this type object.
-   In other words, it is used to implement
-   :ref:`vectorcall <vectorcall>` for ``type.__call__``.
-   If ``tp_vectorcall`` is ``NULL``, the default call implementation
-   using :meth:`~object.__new__` and :meth:`~object.__init__` is used.
+   A :ref:`vectorcall function <vectorcall>` to use for calls of this type
+   object (rather than instances).
+   In other words, ``tp_vectorcall`` can be used to optimize ``type.__call__``,
+   which typically returns a new instance of *type*.
+
+   As with any vectorcall function, if ``tp_vectorcall`` is ``NULL``,
+   the *tp_call* protocol (``Py_TYPE(type)->tp_call``) is used instead.
+
+   .. note::
+
+      The :ref:`vectorcall protocol <vectorcall>` requires that the vectorcall
+      function has the same behavior as the corresponding ``tp_call``.
+      This means that ``type->tp_vectorcall`` must match the behavior of
+      ``Py_TYPE(type)->tp_call``.
+
+      Specifically, if *type* uses the default metaclass,
+      ``type->tp_vectorcall`` must behave the same as
+      :c:expr:`PyType_Type->tp_call`, which:
+
+      - calls ``type->tp_new``,
+
+      - if the result is a subclass of *type*, calls ``type->tp_init``
+        on the result of ``tp_new``, and
+
+      - returns the result of ``tp_new``.
+
+      Typically, ``tp_vectorcall`` is overridden to optimize this process
+      for specific :c:member:`~PyTypeObject.tp_new` and
+      :c:member:`~PyTypeObject.tp_init`.
+      When doing this for user-subclassable types, note that both can be
+      overridden (using :py:func:`~object.__new__` and
+      :py:func:`~object.__init__`, respectively).
+
+
 
    **Inheritance:**
 
