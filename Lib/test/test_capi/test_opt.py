@@ -1486,14 +1486,18 @@ class TestUopsOptimization(unittest.TestCase):
         class SneakyDel:
             def __del__(self):
                 frame = sys._getframe(1)
-                if frame.f_locals["i"] == 999:
+                if frame.f_locals["i"] == 99:
                     frame.f_locals["i"] = None
 
-        for i in range(1000):
-            sneaky_del = SneakyDel()
-            i + i  # Remove guards for i.
-            sneaky_del = None  # Change i.
-            i + i  # BOOM!
+        def testfunc(n):
+            for i in range(n):
+                sneaky_del = SneakyDel()
+                i + i  # Remove guards for i.
+                sneaky_del = None  # Change i.
+                i + i  # BOOM!
+
+        with self.assertRaises(TypeError):
+            self._run_with_optimizer(testfunc, 100)
 
 
 if __name__ == "__main__":
