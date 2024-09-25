@@ -595,7 +595,6 @@ Most of these attributes check the type of the assigned value:
 
    * - .. attribute:: function.__doc__
      - The function's documentation string, or ``None`` if unavailable.
-       Not inherited by subclasses.
 
    * - .. attribute:: function.__name__
      - The function's name.
@@ -942,6 +941,8 @@ namespace as a dictionary object.
    or keep the module around while using its dictionary directly.
 
 
+.. _class-attrs-and-methods:
+
 Custom classes
 --------------
 
@@ -984,6 +985,9 @@ of a base class.
 
 A class object can be called (see above) to yield a class instance (see below).
 
+Special attributes
+^^^^^^^^^^^^^^^^^^
+
 .. index::
    single: __name__ (class attribute)
    single: __module__ (class attribute)
@@ -996,66 +1000,115 @@ A class object can be called (see above) to yield a class instance (see below).
    single: __static_attributes__ (class attribute)
    single: __firstlineno__ (class attribute)
 
-Special attributes:
+.. list-table::
+   :header-rows: 1
 
-   :attr:`~definition.__name__`
-      The class name.
+   * - Attribute
+     - Meaning
 
-   :attr:`__module__`
-      The name of the module in which the class was defined.
+   * - .. attribute:: type.__name__
+     - The class's name.
+       See also: :attr:`__name__ attributes <definition.__name__>`.
 
-   :attr:`~object.__dict__`
-      The dictionary containing the class's namespace.
+   * - .. attribute:: type.__qualname__
+     - The class's :term:`qualified name`.
+       See also: :attr:`__qualname__ attributes <definition.__qualname__>`.
 
-   :attr:`~class.__bases__`
-      A tuple containing the base classes, in the order of
-      their occurrence in the base class list.
+   * - .. attribute:: type.__module__
+     - The name of the module in which the class was defined.
 
-   :attr:`__doc__`
-      The class's documentation string, or ``None`` if undefined.
+   * - .. attribute:: type.__dict__
+     - A :class:`mapping proxy <types.MappingProxyType>`
+       providing a read-only view of the class's namespace.
+       See also: :attr:`__dict__ attributes <object.__dict__>`.
 
-   :attr:`~object.__annotations__`
-      A dictionary containing
-      :term:`variable annotations <variable annotation>`
-      collected during class body execution.  For best practices on
-      working with :attr:`~object.__annotations__`, please see
-      :mod:`annotationlib`.
+   * - .. attribute:: type.__bases__
+     - A :class:`tuple` containing the class's bases.
+       In most cases, for a class defined as ``class X(A, B, C)``,
+       ``X.__bases__`` will be exactly equal to ``(A, B, C)``.
 
-      .. warning::
+   * - .. attribute:: type.__doc__
+     - The class's documentation string, or ``None`` if undefined.
+       Not inherited by subclasses.
 
-         Accessing the :attr:`~object.__annotations__` attribute of a class
-         object directly may yield incorrect results in the presence of
-         metaclasses. Use :func:`annotationlib.get_annotations` to
-         retrieve class annotations safely.
+   * - .. attribute:: type.__annotations__
+     - A dictionary containing
+       :term:`variable annotations <variable annotation>`
+       collected during class body execution. See also:
+       :attr:`__annotations__ attributes <object.__annotations__>`.
 
-      .. versionchanged:: 3.14
-         Annotations are now :ref:`lazily evaluated <lazy-evaluation>`.
-         See :pep:`649`.
+       For best practices on working with :attr:`~object.__annotations__`,
+       please see :mod:`annotationlib`.
 
-   :attr:`~object.__annotate__`
-      The :term:`annotate function` for this class, or ``None``
-      if the class has no annotations. See :attr:`object.__annotate__`.
+       .. caution::
 
-      .. warning::
+          Accessing the :attr:`!__annotations__` attribute of a class
+          object directly may yield incorrect results in the presence of
+          metaclasses. Use :func:`annotationlib.get_annotations` to
+          retrieve class annotations safely.
 
-         Accessing the :attr:`~object.__annotate__` attribute of a class
-         object directly may yield incorrect results in the presence of
-         metaclasses. Use :func:`annotationlib.get_annotate_function` to
-         retrieve the annotate function safely.
+       .. versionchanged:: 3.14
+          Annotations are now :ref:`lazily evaluated <lazy-evaluation>`.
+          See :pep:`649`.
 
-      .. versionadded:: 3.14
+   * - .. method:: type.__annotate__
+     - The :term:`annotate function` for this class, or ``None``
+       if the class has no annotations.
+       See also: :attr:`__annotate__ attributes <object.__annotate__>`.
 
-   :attr:`__type_params__`
-      A tuple containing the :ref:`type parameters <type-params>` of
-      a :ref:`generic class <generic-classes>`.
+       .. caution::
 
-   :attr:`~class.__static_attributes__`
-      A tuple containing names of attributes of this class which are assigned
-      through ``self.X`` from any function in its body.
+          Accessing the :attr:`!__annotate__` attribute of a class
+          object directly may yield incorrect results in the presence of
+          metaclasses. Use :func:`annotationlib.get_annotate_function` to
+          retrieve the annotate function safely.
 
-   :attr:`__firstlineno__`
-      The line number of the first line of the class definition, including decorators.
+       .. versionadded:: 3.14
 
+   * - .. attribute:: type.__type_params__
+     - A :class:`tuple` containing the :ref:`type parameters <type-params>` of
+       a :ref:`generic class <generic-classes>`.
+
+       .. versionadded:: 3.12
+
+   * - .. attribute:: type.__static_attributes__
+     - A :class:`tuple` containing names of attributes of this class which are
+       assigned through ``self.X`` from any function in its body.
+
+       .. versionadded:: 3.13
+
+   * - .. attribute:: type.__firstlineno__
+     - The line number of the first line of the class definition, including decorators.
+
+       .. versionadded:: 3.13
+
+   * - .. attribute:: type.__mro__
+     - The :class:`tuple` of classes that are considered when looking for
+       base classes during method resolution.
+
+
+Special methods
+^^^^^^^^^^^^^^^
+
+In addition to the special attributes described above, all Python classes also
+have the following two methods available:
+
+.. method:: type.mro
+
+   This method can be overridden by a metaclass to customize the method
+   resolution order for its instances.  It is called at class instantiation,
+   and its result is stored in :attr:`~type.__mro__`.
+
+.. method:: type.__subclasses__
+
+   Each class keeps a list of weak references to its immediate subclasses. This
+   method returns a list of all those references still alive. The list is in
+   definition order. Example:
+
+   .. doctest::
+
+      >>> int.__subclasses__()
+      [<class 'bool'>, <enum 'IntEnum'>, <flag 'IntFlag'>, <class 're._constants._NamedIntConstant'>, <class 're._ZeroSentinel'>]
 
 Class instances
 ---------------
@@ -1095,12 +1148,22 @@ dictionary directly.
 Class instances can pretend to be numbers, sequences, or mappings if they have
 methods with certain special names.  See section :ref:`specialnames`.
 
+Special attributes
+^^^^^^^^^^^^^^^^^^
+
 .. index::
    single: __dict__ (instance attribute)
    single: __class__ (instance attribute)
 
-Special attributes: :attr:`~object.__dict__` is the attribute dictionary;
-:attr:`~instance.__class__` is the instance's class.
+.. attribute:: object.__class__
+
+   The class to which a class instance belongs.
+
+.. attribute:: object.__dict__
+
+   A dictionary or other mapping object used to store an object's (writable)
+   attributes. Not all instances have a :attr:`!__dict__` attribute; see the
+   section on :ref:`slots` for more details.
 
 
 I/O objects (also known as file objects)
@@ -2330,9 +2393,9 @@ Notes on using *__slots__*:
 
 * The action of a *__slots__* declaration is not limited to the class
   where it is defined.  *__slots__* declared in parents are available in
-  child classes. However, child subclasses will get a :attr:`~object.__dict__` and
-  *__weakref__* unless they also define *__slots__* (which should only
-  contain names of any *additional* slots).
+  child classes. However, instances of a child subclass will get a
+  :attr:`~object.__dict__` and *__weakref__* unless the subclass also defines
+  *__slots__* (which should only contain names of any *additional* slots).
 
 * If a class defines a slot also defined in a base class, the instance variable
   defined by the base class slot is inaccessible (except by retrieving its
@@ -2351,7 +2414,7 @@ Notes on using *__slots__*:
   to provide per-attribute docstrings that will be recognised by
   :func:`inspect.getdoc` and displayed in the output of :func:`help`.
 
-* :attr:`~instance.__class__` assignment works only if both classes have the
+* :attr:`~object.__class__` assignment works only if both classes have the
   same *__slots__*.
 
 * :ref:`Multiple inheritance <tut-multiple>` with multiple slotted parent
@@ -2617,7 +2680,7 @@ in the local namespace as the defined class.
 When a new class is created by ``type.__new__``, the object provided as the
 namespace parameter is copied to a new ordered mapping and the original
 object is discarded. The new copy is wrapped in a read-only proxy, which
-becomes the :attr:`~object.__dict__` attribute of the class object.
+becomes the :attr:`~type.__dict__` attribute of the class object.
 
 .. seealso::
 
@@ -2645,14 +2708,14 @@ order to allow the addition of Abstract Base Classes (ABCs) as "virtual base
 classes" to any class or type (including built-in types), including other
 ABCs.
 
-.. method:: class.__instancecheck__(self, instance)
+.. method:: type.__instancecheck__(self, instance)
 
    Return true if *instance* should be considered a (direct or indirect)
    instance of *class*. If defined, called to implement ``isinstance(instance,
    class)``.
 
 
-.. method:: class.__subclasscheck__(self, subclass)
+.. method:: type.__subclasscheck__(self, subclass)
 
    Return true if *subclass* should be considered a (direct or indirect)
    subclass of *class*.  If defined, called to implement ``issubclass(subclass,
@@ -2668,8 +2731,8 @@ case the instance is itself a class.
 
    :pep:`3119` - Introducing Abstract Base Classes
       Includes the specification for customizing :func:`isinstance` and
-      :func:`issubclass` behavior through :meth:`~class.__instancecheck__` and
-      :meth:`~class.__subclasscheck__`, with motivation for this functionality
+      :func:`issubclass` behavior through :meth:`~type.__instancecheck__` and
+      :meth:`~type.__subclasscheck__`, with motivation for this functionality
       in the context of adding Abstract Base Classes (see the :mod:`abc`
       module) to the language.
 

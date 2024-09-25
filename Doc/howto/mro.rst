@@ -335,7 +335,7 @@ E is more specialized than C, even if it is in a higher level.
 
 A lazy programmer can obtain the MRO directly from Python 2.2, since in
 this case it coincides with the Python 2.3 linearization.  It is enough
-to invoke the .mro() method of class A:
+to invoke the :meth:`~type.mro` method of class A:
 
   >>> A.mro()  # doctest: +NORMALIZE_WHITESPACE
   [<class 'A'>, <class 'B'>, <class 'E'>,

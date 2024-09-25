@@ -239,7 +239,7 @@ the *new_callable* argument to :func:`patch`.
       Accessing any attribute not in this list will raise an :exc:`AttributeError`.
 
       If *spec* is an object (rather than a list of strings) then
-      :attr:`~instance.__class__` returns the class of the spec object. This
+      :attr:`~object.__class__` returns the class of the spec object. This
       allows mocks to pass :func:`isinstance` tests.
 
     * *spec_set*: A stricter variant of *spec*. If used, attempting to *set*

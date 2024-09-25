@@ -637,7 +637,8 @@ pydoc
 -----
 
 The documentation string is now shown not only for class, function,
-method etc, but for any object that has its own ``__doc__`` attribute.
+method etc, but for any object that has its own :attr:`~definition.__doc__`
+attribute.
 (Contributed by Serhiy Storchaka in :issue:`40257`.)
 
 random

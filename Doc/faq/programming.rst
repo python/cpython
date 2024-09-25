@@ -1614,7 +1614,7 @@ method too, and it must do so carefully.  The basic implementation of
        ...
 
 Most :meth:`!__setattr__` implementations must modify
-:meth:`self.__dict__ <object.__dict__>` to store
+:attr:`self.__dict__ <object.__dict__>` to store
 local state for self without causing an infinite recursion.
 
 
