@@ -188,6 +188,9 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
       Exactly equivalent to the preferred ``PyLong_AsLong``. In particular,
       it can fail with :exc:`OverflowError` or another exception.
 
+      .. deprecated:: 3.14
+         The function is soft deprecated.      
+
 .. c:function:: int PyLong_AsInt(PyObject *obj)
 
    Similar to :c:func:`PyLong_AsLong`, but store the result in a C
