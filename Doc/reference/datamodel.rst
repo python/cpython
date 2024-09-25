@@ -2597,7 +2597,7 @@ Preparing the class namespace
 
 Once the appropriate metaclass has been identified, then the class namespace
 is prepared. If the metaclass has a ``__prepare__`` attribute, it is called
-as ``namespace = metatype.__prepare__(name, bases, **kwds)`` (where the
+as ``namespace = metaclass.__prepare__(name, bases, **kwds)`` (where the
 additional keyword arguments, if any, come from the class definition). The
 ``__prepare__`` method should be implemented as a
 :func:`classmethod <classmethod>`. The

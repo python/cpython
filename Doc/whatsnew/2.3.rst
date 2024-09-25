@@ -1113,7 +1113,7 @@ Here are all of the changes that Python 2.3 makes to the core Python language.
      <type '_socket.socket'>
 
 * One of the noted incompatibilities between old- and new-style classes has been
-  removed: you can now assign to the :attr:`~type.__name__` and :attr:`~class.__bases__`
+  removed: you can now assign to the :attr:`~type.__name__` and :attr:`~type.__bases__`
   attributes of new-style classes.  There are some restrictions on what can be
   assigned to :attr:`!__bases__` along the lines of those relating to assigning to
   an instance's :attr:`~object.__class__` attribute.

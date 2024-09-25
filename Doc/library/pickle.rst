@@ -953,7 +953,7 @@ a given class::
    unpickled_class = pickle.loads(f.getvalue())
 
    assert isinstance(unpickled_class, type)
-   assert unpickled_type.__name__ == "MyClass"
+   assert unpickled_class.__name__ == "MyClass"
    assert unpickled_class.my_attribute == 1
 
 

@@ -572,7 +572,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    :attr:`~type.__name__` attribute.
 
    If no dot is present, the entire :c:member:`~PyTypeObject.tp_name` field is made accessible as the
-   :attr:`~type.__name__` attribute, and the :attr:`~class.__module__` attribute is undefined
+   :attr:`~type.__name__` attribute, and the :attr:`~type.__module__` attribute is undefined
    (unless explicitly set in the dictionary, as explained above).  This means your
    type will be impossible to pickle.  Additionally, it will not be listed in
    module documentations created with pydoc.
