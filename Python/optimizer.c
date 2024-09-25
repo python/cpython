@@ -1680,7 +1680,7 @@ _Py_Executors_InvalidateCold(PyInterpreterState *interp)
         _PyExecutorObject *next = exec->vm_data.links.next;
 
         if (!exec->vm_data.warm && PyList_Append(invalidate, (PyObject *)exec) < 0) {
-                goto error;
+            goto error;
         }
         else {
             exec->vm_data.warm = false;
