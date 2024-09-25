@@ -1,0 +1,1 @@
+Added a new argument ``mode`` to :class:`pdb.Pdb`. Only allow :mod:`pdb` from command line to use ``restart`` command.
