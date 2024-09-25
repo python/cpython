@@ -773,11 +773,11 @@ def value_to_source(value):
 
     """
     if isinstance(value, type):
-        if value.__module__ == 'builtins':
+        if value.__module__ == "builtins":
             return value.__qualname__
-        return f'{value.__module__}.{value.__qualname__}'
+        return f"{value.__module__}.{value.__qualname__}"
     if value is ...:
-        return '...'
+        return "..."
     if isinstance(value, (types.FunctionType, types.BuiltinFunctionType)):
         return value.__name__
     return repr(value)
@@ -785,7 +785,10 @@ def value_to_source(value):
 
 def annotations_to_source(annotations):
     """Convert an annotation dict containing values to approximately the SOURCE format."""
-    return {n: t if isinstance(t, str) else value_to_source(t) for n, t in annotations.items()}
+    return {
+        n: t if isinstance(t, str) else value_to_source(t)
+        for n, t in annotations.items()
+    }
 
 
 def _get_and_call_annotate(obj, format):

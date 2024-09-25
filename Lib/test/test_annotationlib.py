@@ -7,7 +7,14 @@ import functools
 import itertools
 import pickle
 import unittest
-from annotationlib import Format, ForwardRef, get_annotations, get_annotate_function, annotations_to_source, value_to_source
+from annotationlib import (
+    Format,
+    ForwardRef,
+    get_annotations,
+    get_annotate_function,
+    annotations_to_source,
+    value_to_source,
+)
 from typing import Unpack
 
 from test import support
@@ -329,7 +336,10 @@ class TestForwardRefClass(unittest.TestCase):
         # namespaces without going through eval()
         self.assertIs(ForwardRef("int").evaluate(), int)
         self.assertIs(ForwardRef("int").evaluate(locals={"int": str}), str)
-        self.assertIs(ForwardRef("int").evaluate(locals={"int": float}, globals={"int": str}), float)
+        self.assertIs(
+            ForwardRef("int").evaluate(locals={"int": float}, globals={"int": str}),
+            float,
+        )
         self.assertIs(ForwardRef("int").evaluate(globals={"int": str}), str)
         with support.swap_attr(builtins, "int", dict):
             self.assertIs(ForwardRef("int").evaluate(), dict)
@@ -1100,11 +1110,11 @@ class TestToSource(unittest.TestCase):
         self.assertEqual(annotations_to_source({}), {})
         self.assertEqual(annotations_to_source({"x": int}), {"x": "int"})
         self.assertEqual(annotations_to_source({"x": "int"}), {"x": "int"})
-        self.assertEqual(annotations_to_source({"x": int, "y": str}), {"x": "int", "y": "str"})
+        self.assertEqual(
+            annotations_to_source({"x": int, "y": str}), {"x": "int", "y": "str"}
+        )
 
 
 class TestAnnotationLib(unittest.TestCase):
     def test__all__(self):
         support.check__all__(self, annotationlib)
-
-
