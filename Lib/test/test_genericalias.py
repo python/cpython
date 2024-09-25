@@ -477,12 +477,35 @@ class BaseTest(unittest.TestCase):
     def test_paramspec_specialization(self):
         # gh-124445
         T = TypeVar("T")
+        U = TypeVar("U")
         type X[**P] = Callable[P, int]
+
         generic = X[[T]]
         self.assertEqual(generic.__args__, ([T],))
         self.assertEqual(generic.__parameters__, (T,))
         specialized = generic[str]
         self.assertEqual(specialized.__args__, ([str],))
+        self.assertEqual(specialized.__parameters__, ())
+
+        generic = X[(T,)]
+        self.assertEqual(generic.__args__, (T,))
+        self.assertEqual(generic.__parameters__, (T,))
+        specialized = generic[str]
+        self.assertEqual(specialized.__args__, (str,))
+        self.assertEqual(specialized.__parameters__, ())
+
+        generic = X[[T, U]]
+        self.assertEqual(generic.__args__, ([T, U],))
+        self.assertEqual(generic.__parameters__, (T, U))
+        specialized = generic[str, int]
+        self.assertEqual(specialized.__args__, ([str, int],))
+        self.assertEqual(specialized.__parameters__, ())
+
+        generic = X[(T, U)]
+        self.assertEqual(generic.__args__, (T, U))
+        self.assertEqual(generic.__parameters__, (T, U))
+        specialized = generic[str, int]
+        self.assertEqual(specialized.__args__, (str, int))
         self.assertEqual(specialized.__parameters__, ())
 
 
