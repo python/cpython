@@ -200,6 +200,7 @@ frame_disable_deferred_refcounting(_PyInterpreterFrame *frame)
         }
     }
 
+    frame->f_funcobj = PyStackRef_AsStrongReference(frame->f_funcobj);
     for (_PyStackRef *ref = frame->localsplus; ref < frame->stackpointer; ref++) {
         if (!PyStackRef_IsNull(*ref) && PyStackRef_IsDeferred(*ref)) {
             *ref = PyStackRef_AsStrongReference(*ref);
@@ -994,9 +995,7 @@ _PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg)
     _PyStackRef *ref = _PyFrame_GetLocalsArray(frame);
     /* locals and stack */
     for (; ref < frame->stackpointer; ref++) {
-        if (_PyGC_VisitStackRef(ref, visit, arg) < 0) {
-            return -1;
-        }
+        _Py_VISIT_STACKREF(*ref);
     }
     return 0;
 }
