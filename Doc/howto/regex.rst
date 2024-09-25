@@ -989,7 +989,7 @@ The syntax for a named group is one of the Python-specific extensions:
 ``(?P<name>...)``. Named groups behave exactly like capturing groups, and
 additionally associate *name* with the group so that *name* can be used to
 refer to the group in other contexts. Names should look like a Python
-identifier andonly contain letters, digits and underscores. The :ref:`match
+identifier and only contain letters, digits and underscores. The :ref:`match
 object <match-objects>` methods that deal with capturing groups all accept
 either integers that refer to the group by number or strings that contain the
 desired group's name. Named groups are still given numbers, so you can
