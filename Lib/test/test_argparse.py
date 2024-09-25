@@ -6036,6 +6036,20 @@ class TestDoubleDash(TestCase):
         args = parser.parse_args(['--foo', 'a', '--', 'b', '--', 'c'])
         self.assertEqual(NS(foo='a', bar=['--', 'b', '--', 'c']), args)
 
+    def test_optional_remainder(self):
+        parser = argparse.ArgumentParser(exit_on_error=False)
+        parser.add_argument('--foo', nargs='...')
+        parser.add_argument('bar', nargs='*')
+
+        args = parser.parse_args(['--', '--foo', 'a', 'b'])
+        self.assertEqual(NS(foo=None, bar=['--foo', 'a', 'b']), args)
+        args = parser.parse_args(['--foo', '--', 'a', 'b'])
+        self.assertEqual(NS(foo=['--', 'a', 'b'], bar=[]), args)
+        args = parser.parse_args(['--foo', 'a', '--', 'b'])
+        self.assertEqual(NS(foo=['a', '--', 'b'], bar=[]), args)
+        args = parser.parse_args(['--foo', 'a', 'b', '--'])
+        self.assertEqual(NS(foo=['a', 'b', '--'], bar=[]), args)
+
     def test_subparser(self):
         parser = argparse.ArgumentParser(exit_on_error=False)
         parser.add_argument('foo')
