@@ -503,9 +503,6 @@ Two pattern methods return all of the matches for a pattern.
 
 The ``r`` prefix, making the literal a raw string literal, is needed in this
 example because ``\d`` is not an escape sequence recognized in Python string literals.
-Such unrecognized sequences now produce a
-:exc:`SyntaxWarning` and will eventually become a :exc:`SyntaxError`.  See
-:ref:`the-backslash-plague`.
 
 :meth:`~re.Pattern.findall` has to create the entire list before it can be returned as the
 result.  The :meth:`~re.Pattern.finditer` method returns a sequence of
