@@ -681,13 +681,13 @@ set_eval_frame_default(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject *
 record_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
 {
-    if (PyFunction_Check(f->f_funcobj)) {
+    if (PyStackRef_FunctionCheck(f->f_funcobj)) {
+        PyFunctionObject *func = _PyFrame_GetFunction(f);
         PyObject *module = _get_current_module();
         assert(module != NULL);
         module_state *state = get_module_state(module);
         Py_DECREF(module);
-        int res = PyList_Append(state->record_list,
-                                ((PyFunctionObject *)f->f_funcobj)->func_name);
+        int res = PyList_Append(state->record_list, func->func_name);
         if (res < 0) {
             return NULL;
         }
@@ -1853,7 +1853,7 @@ _testinternalcapi_test_long_numbits_impl(PyObject *module)
 {
     struct triple {
         long input;
-        size_t nbits;
+        uint64_t nbits;
         int sign;
     } testcases[] = {{0, 0, 0},
                      {1L, 1, 1},
@@ -1873,7 +1873,7 @@ _testinternalcapi_test_long_numbits_impl(PyObject *module)
     size_t i;
 
     for (i = 0; i < Py_ARRAY_LENGTH(testcases); ++i) {
-        size_t nbits;
+        uint64_t nbits;
         int sign;
         PyObject *plong;
 

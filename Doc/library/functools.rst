@@ -34,7 +34,7 @@ The :mod:`functools` module defines the following functions:
    Returns the same as ``lru_cache(maxsize=None)``, creating a thin
    wrapper around a dictionary lookup for the function arguments.  Because it
    never needs to evict old values, this is smaller and faster than
-   :func:`lru_cache()` with a size limit.
+   :func:`lru_cache` with a size limit.
 
    For example::
 
@@ -218,7 +218,7 @@ The :mod:`functools` module defines the following functions:
    cache.  See :ref:`faq-cache-method-calls`
 
    An `LRU (least recently used) cache
-   <https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)>`_
+   <https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_Recently_Used_(LRU)>`_
    works best when the most recent calls are the best predictors of upcoming
    calls (for example, the most popular articles on a news server tend to
    change each day).  The cache's size limit assures that the cache does not

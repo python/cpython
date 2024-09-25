@@ -1116,7 +1116,6 @@ enable_ipv6
 with_doc_strings
 with_mimalloc
 with_pymalloc
-with_freelists
 with_c_locale_coercion
 with_valgrind
 with_dtrace
@@ -1829,7 +1828,7 @@ Optional Features:
                           (default is no)
   --enable-bolt           enable usage of the llvm-bolt post-link optimizer
                           (default is no)
-  --disable-safety        disable usage of the security compiler options with
+  --enable-safety         enable usage of the security compiler options with
                           no performance overhead
   --enable-slower-safety  enable usage of the security compiler options with
                           performance overhead
@@ -1918,7 +1917,6 @@ Optional Packages:
   --with-mimalloc         build with mimalloc memory allocator (default is yes
                           if C11 stdatomic.h is available.)
   --with-pymalloc         enable specialized mallocs (default is yes)
-  --with-freelists        enable object freelists (default is yes)
   --with-c-locale-coercion
                           enable C locale coercion to a UTF-8 based locale
                           (default is yes)
@@ -4146,9 +4144,9 @@ if test -z "$CPP"; then
 fi
 if test -z "$CXX"; then
 	case "$host" in
-		aarch64-apple-ios*-simulator) CXX=arm64-apple-ios-simulator-clang ;;
-		aarch64-apple-ios*)           CXX=arm64-apple-ios-clang ;;
-		x86_64-apple-ios*-simulator)  CXX=x86_64-apple-ios-simulator-clang ;;
+		aarch64-apple-ios*-simulator) CXX=arm64-apple-ios-simulator-clang++ ;;
+		aarch64-apple-ios*)           CXX=arm64-apple-ios-clang++ ;;
+		x86_64-apple-ios*-simulator)  CXX=x86_64-apple-ios-simulator-clang++ ;;
 		*)
 	esac
 fi
@@ -4509,7 +4507,7 @@ if test "$cross_compiling" = yes; then
 		# IPHONEOS_DEPLOYMENT_TARGET is the minimum supported iOS version
 		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking iOS deployment target" >&5
 printf %s "checking iOS deployment target... " >&6; }
-		IPHONEOS_DEPLOYMENT_TARGET=${_host_os:3}
+		IPHONEOS_DEPLOYMENT_TARGET=$(echo ${_host_os} | cut -c4-)
 		IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET:=13.0}
 		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $IPHONEOS_DEPLOYMENT_TARGET" >&5
 printf "%s\n" "$IPHONEOS_DEPLOYMENT_TARGET" >&6; }
@@ -8234,6 +8232,10 @@ printf "%s\n" "#define Py_TRACE_REFS 1" >>confdefs.h
 
 fi
 
+if test "$disable_gil" = "yes" -a "$with_trace_refs" = "yes";
+then
+  as_fn_error $? "--disable-gil cannot be used with --with-trace-refs" "$LINENO" 5
+fi
 
 # Check for --enable-pystats
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-pystats" >&5
@@ -9671,25 +9673,25 @@ fi
 # Enable flags that warn and protect for potential security vulnerabilities.
 # These flags should be enabled by default for all builds.
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --disable-safety" >&5
-printf %s "checking for --disable-safety... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-safety" >&5
+printf %s "checking for --enable-safety... " >&6; }
 # Check whether --enable-safety was given.
 if test ${enable_safety+y}
 then :
-  enableval=$enable_safety; if test "x$enable_safety" = xyes
+  enableval=$enable_safety; if test "x$disable_safety" = xyes
 then :
-  disable_safety=no
+  enable_safety=no
 else $as_nop
-  disable_safety=yes
+  enable_safety=yes
 fi
 else $as_nop
-  disable_safety=no
+  enable_safety=no
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $disable_safety" >&5
-printf "%s\n" "$disable_safety" >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_safety" >&5
+printf "%s\n" "$enable_safety" >&6; }
 
-if test "$disable_safety" = "no"
+if test "$enable_safety" = "yes"
 then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fstack-protector-strong" >&5
 printf %s "checking whether C compiler accepts -fstack-protector-strong... " >&6; }
@@ -9767,6 +9769,162 @@ then :
 else $as_nop
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -Wtrampolines not supported" >&5
 printf "%s\n" "$as_me: WARNING: -Wtrampolines not supported" >&2;}
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wimplicit-fallthrough" >&5
+printf %s "checking whether C compiler accepts -Wimplicit-fallthrough... " >&6; }
+if test ${ax_cv_check_cflags__Werror__Wimplicit_fallthrough+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -Wimplicit-fallthrough"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__Wimplicit_fallthrough=yes
+else $as_nop
+  ax_cv_check_cflags__Werror__Wimplicit_fallthrough=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__Wimplicit_fallthrough" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__Wimplicit_fallthrough" >&6; }
+if test "x$ax_cv_check_cflags__Werror__Wimplicit_fallthrough" = xyes
+then :
+  CFLAGS_NODIST="$CFLAGS_NODIST -Wimplicit-fallthrough"
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -Wimplicit-fallthrough not supported" >&5
+printf "%s\n" "$as_me: WARNING: -Wimplicit-fallthrough not supported" >&2;}
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Werror=format-security" >&5
+printf %s "checking whether C compiler accepts -Werror=format-security... " >&6; }
+if test ${ax_cv_check_cflags__Werror__Werror_format_security+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -Werror=format-security"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__Werror_format_security=yes
+else $as_nop
+  ax_cv_check_cflags__Werror__Werror_format_security=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__Werror_format_security" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__Werror_format_security" >&6; }
+if test "x$ax_cv_check_cflags__Werror__Werror_format_security" = xyes
+then :
+  CFLAGS_NODIST="$CFLAGS_NODIST -Werror=format-security"
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -Werror=format-security not supported" >&5
+printf "%s\n" "$as_me: WARNING: -Werror=format-security not supported" >&2;}
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wbidi-chars=any" >&5
+printf %s "checking whether C compiler accepts -Wbidi-chars=any... " >&6; }
+if test ${ax_cv_check_cflags__Werror__Wbidi_chars_any+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -Wbidi-chars=any"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__Wbidi_chars_any=yes
+else $as_nop
+  ax_cv_check_cflags__Werror__Wbidi_chars_any=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__Wbidi_chars_any" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__Wbidi_chars_any" >&6; }
+if test "x$ax_cv_check_cflags__Werror__Wbidi_chars_any" = xyes
+then :
+  CFLAGS_NODIST="$CFLAGS_NODIST -Wbidi-chars=any"
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -Wbidi-chars=any not supported" >&5
+printf "%s\n" "$as_me: WARNING: -Wbidi-chars=any not supported" >&2;}
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wall" >&5
+printf %s "checking whether C compiler accepts -Wall... " >&6; }
+if test ${ax_cv_check_cflags__Werror__Wall+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -Wall"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__Wall=yes
+else $as_nop
+  ax_cv_check_cflags__Werror__Wall=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__Wall" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__Wall" >&6; }
+if test "x$ax_cv_check_cflags__Werror__Wall" = xyes
+then :
+  CFLAGS_NODIST="$CFLAGS_NODIST -Wall"
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -Wall not supported" >&5
+printf "%s\n" "$as_me: WARNING: -Wall not supported" >&2;}
 fi
 
 fi
@@ -13908,6 +14066,14 @@ done
 
 fi
 
+# gh-124228: While the libuuid library is available on NetBSD, it supports only UUID version 4.
+# This restriction inhibits the proper generation of time-based UUIDs.
+if test "$ac_sys_system" = "NetBSD"; then
+  have_uuid=missing
+  printf "%s\n" "#define HAVE_UUID_H 0" >>confdefs.h
+
+fi
+
 if test "x$have_uuid" = xmissing
 then :
   have_uuid=no
@@ -17810,31 +17976,6 @@ printf "%s\n" "#define WITH_PYMALLOC 1" >>confdefs.h
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_pymalloc" >&5
 printf "%s\n" "$with_pymalloc" >&6; }
-
-# Check whether objects such as float, tuple and dict are using
-# freelists to optimization memory allocation.
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-freelists" >&5
-printf %s "checking for --with-freelists... " >&6; }
-
-# Check whether --with-freelists was given.
-if test ${with_freelists+y}
-then :
-  withval=$with_freelists;
-fi
-
-
-if test -z "$with_freelists"
-then
-    with_freelists="yes"
-fi
-if test "$with_freelists" != "no"
-then
-
-printf "%s\n" "#define WITH_FREELISTS 1" >>confdefs.h
-
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_freelists" >&5
-printf "%s\n" "$with_freelists" >&6; }
 
 # Check for --with-c-locale-coercion
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-c-locale-coercion" >&5
@@ -23970,7 +24111,7 @@ else
   # While Python doesn't currently have full support for these platforms
   # (see e.g., issue 1762561), we can at least make sure that float <-> string
   # conversions work.
-  # FLOAT_WORDS_BIGENDIAN doesnt actually detect this case, but if it's not big
+  # FLOAT_WORDS_BIGENDIAN doesn't actually detect this case, but if it's not big
   # or little, then it must be this?
 
 printf "%s\n" "#define DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754 1" >>confdefs.h
@@ -26193,6 +26334,58 @@ if test "$ac_cv_normalize_century" = yes
 then
 
 printf "%s\n" "#define Py_NORMALIZE_CENTURY 1" >>confdefs.h
+
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C99-specific strftime specifiers are supported" >&5
+printf %s "checking whether C99-specific strftime specifiers are supported... " >&6; }
+if test ${ac_cv_strftime_c99_support+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+if test "$cross_compiling" = yes
+then :
+  ac_cv_strftime_c99_support=no
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <time.h>
+#include <string.h>
+
+int main(void)
+{
+  char full_date[11];
+  struct tm date = {
+    .tm_year = 0,
+    .tm_mon = 0,
+    .tm_mday = 1
+  };
+  if (strftime(full_date, sizeof(full_date), "%F", &date) && !strcmp(full_date, "1900-01-01")) {
+    return 0;
+  }
+  return 1;
+}
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"
+then :
+  ac_cv_strftime_c99_support=yes
+else $as_nop
+  ac_cv_strftime_c99_support=no
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_strftime_c99_support" >&5
+printf "%s\n" "$ac_cv_strftime_c99_support" >&6; }
+if test "$ac_cv_strftime_c99_support" = yes
+then
+
+printf "%s\n" "#define Py_STRFTIME_C99_SUPPORT 1" >>confdefs.h
 
 fi
 
@@ -30434,7 +30627,10 @@ case "$ac_sys_system" in
 esac
 
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msse -msse2 -msse3 -msse4.1 -msse4.2" >&5
+# The SIMD files use aligned_alloc, which is not available on older versions of
+# Android.
+if test "$ac_sys_system" != "Linux-android" || test "$ANDROID_API_LEVEL" -ge 28; then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msse -msse2 -msse3 -msse4.1 -msse4.2" >&5
 printf %s "checking whether C compiler accepts -msse -msse2 -msse3 -msse4.1 -msse4.2... " >&6; }
 if test ${ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2+y}
 then :
@@ -30468,21 +30664,44 @@ printf "%s\n" "$ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2
 if test "x$ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2" = xyes
 then :
 
-  LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"
-  LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"
+    LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"
+
 
 printf "%s\n" "#define HACL_CAN_COMPILE_SIMD128 1" >>confdefs.h
+
+
+    # macOS universal2 builds *support* the -msse etc flags because they're
+    # available on x86_64. However, performance of the HACL SIMD128 implementation
+    # isn't great, so it's disabled on ARM64.
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for HACL* SIMD128 implementation" >&5
+printf %s "checking for HACL* SIMD128 implementation... " >&6; }
+    if test "$UNIVERSAL_ARCHS" == "universal2"; then
+      LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.o"
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: universal2" >&5
+printf "%s\n" "universal2" >&6; }
+    else
+      LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: standard" >&5
+printf "%s\n" "standard" >&6; }
+    fi
 
 
 else $as_nop
   :
 fi
 
+fi
 
 
 
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx2" >&5
+# The SIMD files use aligned_alloc, which is not available on older versions of
+# Android.
+#
+# Although AVX support is not guaranteed on Android
+# (https://developer.android.com/ndk/guides/abis#86-64), this is safe because we do a
+# runtime CPUID check.
+if test "$ac_sys_system" != "Linux-android" || test "$ANDROID_API_LEVEL" -ge 28; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx2" >&5
 printf %s "checking whether C compiler accepts -mavx2... " >&6; }
 if test ${ax_cv_check_cflags__Werror__mavx2+y}
 then :
@@ -30516,17 +30735,32 @@ printf "%s\n" "$ax_cv_check_cflags__Werror__mavx2" >&6; }
 if test "x$ax_cv_check_cflags__Werror__mavx2" = xyes
 then :
 
-  LIBHACL_SIMD256_FLAGS="-mavx2"
-  LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"
+    LIBHACL_SIMD256_FLAGS="-mavx2"
 
 printf "%s\n" "#define HACL_CAN_COMPILE_SIMD256 1" >>confdefs.h
 
+
+    # macOS universal2 builds *support* the -mavx2 compiler flag because it's
+    # available on x86_64; but the HACL SIMD256 build then fails because the
+    # implementation requires symbols that aren't available on ARM64. Use a
+    # wrapped implementation if we're building for universal2.
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for HACL* SIMD256 implementation" >&5
+printf %s "checking for HACL* SIMD256 implementation... " >&6; }
+    if test "$UNIVERSAL_ARCHS" == "universal2"; then
+      LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o"
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: universal2" >&5
+printf "%s\n" "universal2" >&6; }
+    else
+      LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: standard" >&5
+printf "%s\n" "standard" >&6; }
+    fi
 
 else $as_nop
   :
 fi
 
-
+fi
 
 
 
