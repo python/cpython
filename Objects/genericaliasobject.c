@@ -452,7 +452,14 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
                 Py_DECREF(item);
                 return NULL;
             }
-            Py_SETREF(subargs, PySequence_List(subargs));
+            PyObject *subargs_list = PySequence_List(subargs);
+            Py_DECREF(subargs);
+            if (subargs_list == NULL) {
+                Py_DECREF(newargs);
+                Py_DECREF(item);
+                return NULL;
+            }
+            Py_SETREF(subargs, subargs_list);
             PyTuple_SET_ITEM(newargs, jarg, Py_NewRef(subargs));
             jarg++;
             continue;
