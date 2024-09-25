@@ -391,7 +391,7 @@ Object Protocol
    is an instance of *cls* if its class is a subclass of *cls*.
 
    An instance *inst* can override what is considered its class by having a
-   :attr:`~instance.__class__` attribute.
+   :attr:`~object.__class__` attribute.
 
    An object *cls* can override if it is considered a class, and what its base
    classes are, by having a :attr:`~class.__bases__` attribute (which must be a tuple

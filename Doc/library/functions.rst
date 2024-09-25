@@ -2048,7 +2048,7 @@ are always available.  They are listed here in alphabetical order.
 
    With one argument, return the type of an *object*.  The return value is a
    type object and generally the same object as returned by
-   :attr:`object.__class__ <instance.__class__>`.
+   :attr:`object.__class__`.
 
    The :func:`isinstance` built-in function is recommended for testing the type
    of an object, because it takes subclasses into account.
