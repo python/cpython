@@ -1,6 +1,7 @@
 """Tests for the annotations module."""
 
 import annotationlib
+import builtins
 import collections
 import functools
 import itertools
@@ -283,7 +284,14 @@ class TestForwardRefClass(unittest.TestCase):
 
     def test_fwdref_with_module(self):
         self.assertIs(ForwardRef("Format", module="annotationlib").evaluate(), Format)
-        self.assertIs(ForwardRef("Counter", module="collections").evaluate(), collections.Counter)
+        self.assertIs(
+            ForwardRef("Counter", module="collections").evaluate(),
+            collections.Counter
+        )
+        self.assertEqual(
+            ForwardRef("Counter[int]", module="collections").evaluate(),
+            collections.Counter[int],
+        )
 
         with self.assertRaises(NameError):
             # If globals are passed explicitly, we don't look at the module dict
@@ -307,6 +315,33 @@ class TestForwardRefClass(unittest.TestCase):
             fr.evaluate()
         self.assertIs(fr.evaluate(globals={"hello": str}), str)
         self.assertIs(fr.evaluate(), str)
+
+    def test_fwdref_with_owner(self):
+        self.assertEqual(
+            ForwardRef("Counter[int]", owner=collections).evaluate(),
+            collections.Counter[int],
+        )
+
+    def test_name_lookup_without_eval(self):
+        # test the codepath where we look up simple names directly in the
+        # namespaces without going through eval()
+        self.assertIs(ForwardRef("int").evaluate(), int)
+        self.assertIs(ForwardRef("int").evaluate(locals={"int": str}), str)
+        self.assertIs(ForwardRef("int").evaluate(locals={"int": float}, globals={"int": str}), float)
+        self.assertIs(ForwardRef("int").evaluate(globals={"int": str}), str)
+        with support.swap_attr(builtins, "int", dict):
+            self.assertIs(ForwardRef("int").evaluate(), dict)
+
+        with self.assertRaises(NameError):
+            ForwardRef("doesntexist").evaluate()
+
+    def test_fwdref_invalid_syntax(self):
+        fr = ForwardRef("if")
+        with self.assertRaises(SyntaxError):
+            fr.evaluate()
+        fr = ForwardRef("1+")
+        with self.assertRaises(SyntaxError):
+            fr.evaluate()
 
 
 class TestGetAnnotations(unittest.TestCase):
@@ -717,17 +752,97 @@ class TestGetAnnotations(unittest.TestCase):
 
         self.assertEqual(annotationlib.get_annotations(f), {"x": int})
         self.assertEqual(
-            annotationlib.get_annotations(f, format=annotationlib.Format.FORWARDREF),
+            annotationlib.get_annotations(f, format=Format.FORWARDREF),
             {"x": int},
         )
 
         f.__annotations__["x"] = str
         # The modification is reflected in VALUE (the default)
         self.assertEqual(annotationlib.get_annotations(f), {"x": str})
-        # ... but not in FORWARDREF, which uses __annotate__
+        # ... and also in FORWARDREF, which tries __annotations__ if available
         self.assertEqual(
-            annotationlib.get_annotations(f, format=annotationlib.Format.FORWARDREF),
-            {"x": int},
+            annotationlib.get_annotations(f, format=Format.FORWARDREF),
+            {"x": str},
+        )
+        # ... but not in SOURCE which always uses __annotate__
+        self.assertEqual(
+            annotationlib.get_annotations(f, format=Format.SOURCE),
+            {"x": "int"},
+        )
+
+    def test_non_dict_annotations(self):
+        class WeirdAnnotations:
+            @property
+            def __annotations__(self):
+                return "not a dict"
+
+        wa = WeirdAnnotations()
+        for format in Format:
+            with (
+                self.subTest(format=format),
+                self.assertRaisesRegex(
+                    ValueError, r".*__annotations__ is neither a dict nor None"
+                ),
+            ):
+                annotationlib.get_annotations(wa, format=format)
+
+    def test_annotations_on_custom_object(self):
+        class HasAnnotations:
+            @property
+            def __annotations__(self):
+                return {"x": int}
+
+        ha = HasAnnotations()
+        self.assertEqual(
+            annotationlib.get_annotations(ha, format=Format.VALUE), {"x": int}
+        )
+        self.assertEqual(
+            annotationlib.get_annotations(ha, format=Format.FORWARDREF), {"x": int}
+        )
+
+        # TODO(gh-124412): This should return {'x': 'int'} instead.
+        self.assertEqual(
+            annotationlib.get_annotations(ha, format=Format.SOURCE), {"x": int}
+        )
+
+    def test_raising_annotations_on_custom_object(self):
+        class HasRaisingAnnotations:
+            @property
+            def __annotations__(self):
+                return {"x": undefined}
+
+        hra = HasRaisingAnnotations()
+
+        with self.assertRaises(NameError):
+            annotationlib.get_annotations(hra, format=Format.VALUE)
+
+        with self.assertRaises(NameError):
+            annotationlib.get_annotations(hra, format=Format.FORWARDREF)
+
+        undefined = float
+        self.assertEqual(
+            annotationlib.get_annotations(hra, format=Format.VALUE), {"x": float}
+        )
+
+    def test_forwardref_prefers_annotations(self):
+        class HasBoth:
+            @property
+            def __annotations__(self):
+                return {"x": int}
+
+            @property
+            def __annotate__(self):
+                return lambda format: {"x": str}
+
+        hb = HasBoth()
+        self.assertEqual(
+            annotationlib.get_annotations(hb, format=Format.VALUE), {"x": int}
+        )
+        self.assertEqual(
+            annotationlib.get_annotations(hb, format=Format.FORWARDREF), {"x": int}
+        )
+        self.assertEqual(
+            annotationlib.get_annotations(hb, format=Format.SOURCE), {"x": str}
         )
 
     def test_pep695_generic_class_with_future_annotations(self):
