@@ -406,14 +406,12 @@ unicode_get_hash(PyObject *o)
 void
 _PyDict_DebugMallocStats(FILE *out)
 {
-#ifdef WITH_FREELISTS
     _PyDebugAllocatorStats(out, "free PyDictObject",
                            _Py_FREELIST_SIZE(dicts),
                            sizeof(PyDictObject));
     _PyDebugAllocatorStats(out, "free PyDictKeysObject",
                            _Py_FREELIST_SIZE(dictkeys),
                            sizeof(PyDictKeysObject));
-#endif
 }
 
 #define DK_MASK(dk) (DK_SIZE(dk)-1)
@@ -1550,7 +1548,12 @@ _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t h
 {
     PyObject *val;
     Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &val);
-	*value_addr = val == NULL ? PyStackRef_NULL : PyStackRef_FromPyObjectNew(val);
+    if (val == NULL) {
+        *value_addr = PyStackRef_NULL;
+    }
+    else {
+        *value_addr = PyStackRef_FromPyObjectNew(val);
+    }
     return ix;
 }
 
@@ -2483,7 +2486,7 @@ _PyDict_LoadGlobalStackRef(PyDictObject *globals, PyDictObject *builtins, PyObje
     /* namespace 1: globals */
     ix = _Py_dict_lookup_threadsafe_stackref(globals, key, hash, res);
     if (ix == DKIX_ERROR) {
-        *res = PyStackRef_NULL;
+        return;
     }
     if (ix != DKIX_EMPTY && !PyStackRef_IsNull(*res)) {
         return;

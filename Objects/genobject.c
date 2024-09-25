@@ -58,10 +58,7 @@ gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
     else {
         // We still need to visit the code object when the frame is cleared to
         // ensure that it's kept alive if the reference is deferred.
-        int err = _PyGC_VisitStackRef(&gen->gi_iframe.f_executable, visit, arg);
-        if (err) {
-            return err;
-        }
+        _Py_VISIT_STACKREF(gen->gi_iframe.f_executable);
     }
     /* No need to visit cr_origin, because it's just tuples/str/int, so can't
        participate in a reference cycle. */

@@ -17,7 +17,7 @@ from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol, DefaultDict
 from typing import get_type_hints
 from collections import deque, OrderedDict, namedtuple, defaultdict
-from functools import total_ordering
+from functools import total_ordering, wraps
 
 import typing       # Needed for the string "typing.ClassVar[int]" to work as an annotation.
 import dataclasses  # Needed for the string "dataclasses.InitVar[int]" to work as an annotation.
@@ -4868,6 +4868,130 @@ class TestKeywordArgs(unittest.TestCase):
         self.assertEqual(len(fs), 1)
         self.assertEqual(fs[0].name, 'x')
 
+
+class TestZeroArgumentSuperWithSlots(unittest.TestCase):
+    def test_zero_argument_super(self):
+        @dataclass(slots=True)
+        class A:
+            def foo(self):
+                super()
+
+        A().foo()
+
+    def test_dunder_class_with_old_property(self):
+        @dataclass(slots=True)
+        class A:
+            def _get_foo(slf):
+                self.assertIs(__class__, type(slf))
+                self.assertIs(__class__, slf.__class__)
+                return __class__
+
+            def _set_foo(slf, value):
+                self.assertIs(__class__, type(slf))
+                self.assertIs(__class__, slf.__class__)
+
+            def _del_foo(slf):
+                self.assertIs(__class__, type(slf))
+                self.assertIs(__class__, slf.__class__)
+
+            foo = property(_get_foo, _set_foo, _del_foo)
+
+        a = A()
+        self.assertIs(a.foo, A)
+        a.foo = 4
+        del a.foo
+
+    def test_dunder_class_with_new_property(self):
+        @dataclass(slots=True)
+        class A:
+            @property
+            def foo(slf):
+                return slf.__class__
+
+            @foo.setter
+            def foo(slf, value):
+                self.assertIs(__class__, type(slf))
+
+            @foo.deleter
+            def foo(slf):
+                self.assertIs(__class__, type(slf))
+
+        a = A()
+        self.assertIs(a.foo, A)
+        a.foo = 4
+        del a.foo
+
+    # Test the parts of a property individually.
+    def test_slots_dunder_class_property_getter(self):
+        @dataclass(slots=True)
+        class A:
+            @property
+            def foo(slf):
+                return __class__
+
+        a = A()
+        self.assertIs(a.foo, A)
+
+    def test_slots_dunder_class_property_setter(self):
+        @dataclass(slots=True)
+        class A:
+            foo = property()
+            @foo.setter
+            def foo(slf, val):
+                self.assertIs(__class__, type(slf))
+
+        a = A()
+        a.foo = 4
+
+    def test_slots_dunder_class_property_deleter(self):
+        @dataclass(slots=True)
+        class A:
+            foo = property()
+            @foo.deleter
+            def foo(slf):
+                self.assertIs(__class__, type(slf))
+
+        a = A()
+        del a.foo
+
+    def test_wrapped(self):
+        def mydecorator(f):
+            @wraps(f)
+            def wrapper(*args, **kwargs):
+                return f(*args, **kwargs)
+            return wrapper
+
+        @dataclass(slots=True)
+        class A:
+            @mydecorator
+            def foo(self):
+                super()
+
+        A().foo()
+
+    def test_remembered_class(self):
+        # Apply the dataclass decorator manually (not when the class
+        # is created), so that we can keep a reference to the
+        # undecorated class.
+        class A:
+            def cls(self):
+                return __class__
+
+        self.assertIs(A().cls(), A)
+
+        B = dataclass(slots=True)(A)
+        self.assertIs(B().cls(), B)
+
+        # This is undesirable behavior, but is a function of how
+        # modifying __class__ in the closure works.  I'm not sure this
+        # should be tested or not: I don't really want to guarantee
+        # this behavior, but I don't want to lose the point that this
+        # is how it works.
+
+        # The underlying class is "broken" by changing its __class__
+        # in A.foo() to B.  This normally isn't a problem, because no
+        # one will be keeping a reference to the underlying class A.
+        self.assertIs(A().cls(), B)
 
 if __name__ == '__main__':
     unittest.main()

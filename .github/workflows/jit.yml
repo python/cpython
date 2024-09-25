@@ -110,8 +110,7 @@ jobs:
       - name: Native Windows
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
         run: |
-          choco upgrade llvm -y
-          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}
+          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
           ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '--pgo' }} -p ${{ matrix.architecture }}
           ./PCbuild/rt.bat ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
@@ -119,8 +118,7 @@ jobs:
       - name: Emulated Windows
         if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
         run: |
-          choco upgrade llvm -y
-          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}
+          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
           ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
 
       - name: Native macOS
@@ -159,7 +157,7 @@ jobs:
           CC="${{ matrix.compiler == 'clang' && 'clang --target=$HOST' || '$HOST-gcc' }}" \
             CPP="$CC --preprocess" \
             HOSTRUNNER=qemu-${{ matrix.architecture }} \
-            ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }} --build=x86_64-linux-gnu --host="$HOST" --with-build-python=../build/bin/python3 --with-pkg-config=no ac_cv_buggy_getaddrinfo=no ac_cv_file__dev_ptc=no ac_cv_file__dev_ptmx=yes
+            ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--with-lto' }} --build=x86_64-linux-gnu --host="$HOST" --with-build-python=../build/bin/python3 --with-pkg-config=no ac_cv_buggy_getaddrinfo=no ac_cv_file__dev_ptc=no ac_cv_file__dev_ptmx=yes
           make all --jobs 4
           ./python -m test --ignorefile=Tools/jit/ignore-tests-emulated-linux.txt --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 

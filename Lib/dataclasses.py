@@ -690,11 +690,8 @@ def _frozen_get_del_attr(cls, fields, func_builder):
 
 
 def _is_classvar(a_type, typing):
-    # This test uses a typing internal class, but it's the best way to
-    # test if this is a ClassVar.
     return (a_type is typing.ClassVar
-            or (type(a_type) is typing._GenericAlias
-                and a_type.__origin__ is typing.ClassVar))
+            or (typing.get_origin(a_type) is typing.ClassVar))
 
 
 def _is_initvar(a_type, dataclasses):
@@ -1221,9 +1218,31 @@ def _get_slots(cls):
             raise TypeError(f"Slots of '{cls.__name__}' cannot be determined")
 
 
+def _update_func_cell_for__class__(f, oldcls, newcls):
+    # Returns True if we update a cell, else False.
+    if f is None:
+        # f will be None in the case of a property where not all of
+        # fget, fset, and fdel are used.  Nothing to do in that case.
+        return False
+    try:
+        idx = f.__code__.co_freevars.index("__class__")
+    except ValueError:
+        # This function doesn't reference __class__, so nothing to do.
+        return False
+    # Fix the cell to point to the new class, if it's already pointing
+    # at the old class.  I'm not convinced that the "is oldcls" test
+    # is needed, but other than performance can't hurt.
+    closure = f.__closure__[idx]
+    if closure.cell_contents is oldcls:
+        closure.cell_contents = newcls
+        return True
+    return False
+
+
 def _add_slots(cls, is_frozen, weakref_slot):
-    # Need to create a new class, since we can't set __slots__
-    #  after a class has been created.
+    # Need to create a new class, since we can't set __slots__ after a
+    # class has been created, and the @dataclass decorator is called
+    # after the class is created.
 
     # Make sure __slots__ isn't already set.
     if '__slots__' in cls.__dict__:
@@ -1262,18 +1281,37 @@ def _add_slots(cls, is_frozen, weakref_slot):
 
     # And finally create the class.
     qualname = getattr(cls, '__qualname__', None)
-    cls = type(cls)(cls.__name__, cls.__bases__, cls_dict)
+    newcls = type(cls)(cls.__name__, cls.__bases__, cls_dict)
     if qualname is not None:
-        cls.__qualname__ = qualname
+        newcls.__qualname__ = qualname
 
     if is_frozen:
         # Need this for pickling frozen classes with slots.
         if '__getstate__' not in cls_dict:
-            cls.__getstate__ = _dataclass_getstate
+            newcls.__getstate__ = _dataclass_getstate
         if '__setstate__' not in cls_dict:
-            cls.__setstate__ = _dataclass_setstate
+            newcls.__setstate__ = _dataclass_setstate
 
-    return cls
+    # Fix up any closures which reference __class__.  This is used to
+    # fix zero argument super so that it points to the correct class
+    # (the newly created one, which we're returning) and not the
+    # original class.  We can break out of this loop as soon as we
+    # make an update, since all closures for a class will share a
+    # given cell.
+    for member in newcls.__dict__.values():
+        # If this is a wrapped function, unwrap it.
+        member = inspect.unwrap(member)
+
+        if isinstance(member, types.FunctionType):
+            if _update_func_cell_for__class__(member, cls, newcls):
+                break
+        elif isinstance(member, property):
+            if (_update_func_cell_for__class__(member.fget, cls, newcls)
+                or _update_func_cell_for__class__(member.fset, cls, newcls)
+                or _update_func_cell_for__class__(member.fdel, cls, newcls)):
+                break
+
+    return newcls
 
 
 def dataclass(cls=None, /, *, init=True, repr=True, eq=True, order=False,
