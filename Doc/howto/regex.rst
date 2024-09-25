@@ -989,14 +989,14 @@ The syntax for a named group is one of the Python-specific extensions:
 ``(?P<name>...)``. Named groups behave exactly like capturing groups, and
 additionally associate *name* with the group so that *name* can be used to
 refer to the group in other contexts. Names should look like a Python
-identifier andonly contain letters, digits and underscores. The :ref:`match
+identifier and only contain letters, digits and underscores. The :ref:`match
 object <match-objects>` methods that deal with capturing groups all accept
 either integers that refer to the group by number or strings that contain the
 desired group's name. Named groups are still given numbers, so you can
 retrieve information about a group in two ways::
 
    >>> p = re.compile(r'(?P<word>\b\w+\b)')
-   >>> m = p.search( '((( Lots of punctuation )))' )
+   >>> m = p.search('((( Lots of punctuation )))')
    >>> m.group('word')
    'Lots'
    >>> m.group(1)
@@ -1022,8 +1022,8 @@ module::
            r' (?P<zonen>[-+])(?P<zoneh>[0-9][0-9])(?P<zonem>[0-9][0-9])'
            r'"')
 
-It's much easier to write ``m.group('zonem')``, instead of having
-to remember to retrieve group 9.
+It's much easier to write ``m.group('zonem')`` instead of having
+to count groups so as to verify we must retrieve group 9.
 
 The syntax for backreferences in an expression such as ``(...)\1`` refers to the
 number of the group.  There's naturally a variant that uses the group name
