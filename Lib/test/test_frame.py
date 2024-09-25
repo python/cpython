@@ -494,6 +494,23 @@ class TestFrameLocals(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     proxy[obj] = 0
 
+    def test_constructor(self):
+        FrameLocalsProxy = type([sys._getframe().f_locals
+                                 for x in range(1)][0])
+        self.assertEqual(FrameLocalsProxy.__name__, 'FrameLocalsProxy')
+
+        def make_frame():
+            x = 1
+            y = 2
+            return sys._getframe()
+
+        proxy = FrameLocalsProxy(make_frame())
+        self.assertEqual(proxy, {'x': 1, 'y': 2})
+
+        # constructor expects 1 argument (frame)
+        with self.assertRaises(TypeError):
+            FrameLocalsProxy()
+
 
 class FrameLocalsProxyMappingTests(mapping_tests.TestHashMappingProtocol):
     """Test that FrameLocalsProxy behaves like a Mapping (with exceptions)"""
