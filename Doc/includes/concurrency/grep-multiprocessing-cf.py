@@ -4,7 +4,7 @@ import re
 import sys
 
 from concurrent.futures import ProcessPoolExecutor
-import multiprocessing 
+import multiprocessing
 import queue
 import threading
 
