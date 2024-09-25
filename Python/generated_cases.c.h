@@ -5500,14 +5500,14 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_DEREF);
-            _PyStackRef value;
+            _PyStackRef *value;
+            value = &stack_pointer[0];
             PyCellObject *cell = (PyCellObject *)PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
-            _PyCell_GetStackRef(cell, &value);
-            if (PyStackRef_IsNull(value)) {
+            _PyCell_GetStackRef(cell, value);
+            if (PyStackRef_IsNull(*value)) {
                 _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
                 if (true) goto error;
             }
-            stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
