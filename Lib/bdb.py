@@ -3,6 +3,7 @@
 import fnmatch
 import sys
 import os
+import weakref
 from inspect import CO_GENERATOR, CO_COROUTINE, CO_ASYNC_GENERATOR
 
 __all__ = ["BdbQuit", "Bdb", "Breakpoint"]
@@ -36,6 +37,7 @@ class Bdb:
         self.frame_returning = None
         self.trace_opcodes = False
         self.enterframe = None
+        self.code_lineno = weakref.WeakKeyDictionary()
 
         self._load_breaks()
 
@@ -155,6 +157,9 @@ class Bdb:
         if self.stop_here(frame) or frame == self.returnframe:
             # Ignore return events in generator except when stepping.
             if self.stopframe and frame.f_code.co_flags & GENERATOR_AND_COROUTINE_FLAGS:
+                # It's possible to trigger a StopIteration exception in
+                # the caller so we must set the trace function in the caller
+                self._set_caller_tracefunc(frame)
                 return self.trace_dispatch
             try:
                 self.frame_returning = frame
@@ -275,7 +280,25 @@ class Bdb:
     def break_anywhere(self, frame):
         """Return True if there is any breakpoint for frame's filename.
         """
-        return self.canonic(frame.f_code.co_filename) in self.breaks
+        filename = self.canonic(frame.f_code.co_filename)
+        if filename not in self.breaks:
+            return False
+        for lineno in self.breaks[filename]:
+            if self.lineno_in_frame(lineno, frame):
+                return True
+        return False
+
+    def lineno_in_frame(self, lineno, frame):
+        """Return True if the line number is in the frame's code object.
+        """
+        code = frame.f_code
+        if lineno < code.co_firstlineno:
+            return False
+        if code not in self.code_lineno:
+            self.code_lineno[code] = set()
+            for _, _, lineno in code.co_lines():
+                self.code_lineno[code].add(lineno)
+        return lineno in self.code_lineno[frame.f_code]
 
     # Derived classes should override the user_* methods
     # to gain control.
@@ -360,7 +383,7 @@ class Bdb:
     def set_return(self, frame):
         """Stop when returning from the given frame."""
         if frame.f_code.co_flags & GENERATOR_AND_COROUTINE_FLAGS:
-            self._set_stopinfo(frame, None, -1)
+            self._set_stopinfo(frame, frame, -1)
         else:
             self._set_stopinfo(frame.f_back, frame)
 
