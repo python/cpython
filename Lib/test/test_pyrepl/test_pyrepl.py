@@ -8,7 +8,7 @@ import select
 import subprocess
 import sys
 import tempfile
-from unittest import TestCase, skipUnless
+from unittest import TestCase, skipUnless, skipIf
 from unittest.mock import patch
 from test.support import force_not_colorized
 from test.support import SHORT_TIMEOUT
@@ -34,6 +34,94 @@ try:
     import pty
 except ImportError:
     pty = None
+
+
+class ReplTestCase(TestCase):
+    def run_repl(
+        self,
+        repl_input: str | list[str],
+        env: dict | None = None,
+        *,
+        cmdline_args: list[str] | None = None,
+        cwd: str | None = None,
+    ) -> tuple[str, int]:
+        temp_dir = None
+        if cwd is None:
+            temp_dir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+            cwd = temp_dir.name
+        try:
+            return self._run_repl(
+                repl_input, env=env, cmdline_args=cmdline_args, cwd=cwd
+            )
+        finally:
+            if temp_dir is not None:
+                temp_dir.cleanup()
+
+    def _run_repl(
+        self,
+        repl_input: str | list[str],
+        *,
+        env: dict | None,
+        cmdline_args: list[str] | None,
+        cwd: str,
+    ) -> tuple[str, int]:
+        assert pty
+        master_fd, slave_fd = pty.openpty()
+        cmd = [sys.executable, "-i", "-u"]
+        if env is None:
+            cmd.append("-I")
+        elif "PYTHON_HISTORY" not in env:
+            env["PYTHON_HISTORY"] = os.path.join(cwd, ".regrtest_history")
+        if cmdline_args is not None:
+            cmd.extend(cmdline_args)
+
+        try:
+            import termios
+        except ModuleNotFoundError:
+            pass
+        else:
+            term_attr = termios.tcgetattr(slave_fd)
+            term_attr[6][termios.VREPRINT] = 0  # pass through CTRL-R
+            term_attr[6][termios.VINTR] = 0  # pass through CTRL-C
+            termios.tcsetattr(slave_fd, termios.TCSANOW, term_attr)
+
+        process = subprocess.Popen(
+            cmd,
+            stdin=slave_fd,
+            stdout=slave_fd,
+            stderr=slave_fd,
+            cwd=cwd,
+            text=True,
+            close_fds=True,
+            env=env if env else os.environ,
+        )
+        os.close(slave_fd)
+        if isinstance(repl_input, list):
+            repl_input = "\n".join(repl_input) + "\n"
+        os.write(master_fd, repl_input.encode("utf-8"))
+
+        output = []
+        while select.select([master_fd], [], [], SHORT_TIMEOUT)[0]:
+            try:
+                data = os.read(master_fd, 1024).decode("utf-8")
+                if not data:
+                    break
+            except OSError:
+                break
+            output.append(data)
+        else:
+            os.close(master_fd)
+            process.kill()
+            self.fail(f"Timeout while waiting for output, got: {''.join(output)}")
+
+        os.close(master_fd)
+        try:
+            exit_code = process.wait(timeout=SHORT_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            exit_code = process.wait()
+        return "".join(output), exit_code
+
 
 class TestCursorPosition(TestCase):
     def prepare_reader(self, events):
@@ -966,9 +1054,20 @@ class TestPasteEvent(TestCase):
         output = multiline_input(reader)
         self.assertEqual(output, input_code)
 
+@skipUnless(pty, "requires pty")
+class TestDumbTerminal(ReplTestCase):
+    def test_dumb_terminal_exits_cleanly(self):
+        env = os.environ.copy()
+        env.update({"TERM": "dumb"})
+        output, exit_code = self.run_repl("exit()\n", env=env)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("warning: can't use pyrepl", output)
+        self.assertNotIn("Exception", output)
+        self.assertNotIn("Traceback", output)
 
 @skipUnless(pty, "requires pty")
-class TestMain(TestCase):
+@skipIf(os.environ.get("TERM") == "dumb", "can't use pyrepl in dumb terminal")
+class TestMain(ReplTestCase):
     def setUp(self):
         # Cleanup from PYTHON* variables to isolate from local
         # user settings, see #121359.  Such variables should be
@@ -1077,15 +1176,6 @@ class TestMain(TestCase):
             "__file__": re.compile(r"^'.*calx.py'$"),
         }
         self._run_repl_globals_test(expectations, as_module=True)
-
-    def test_dumb_terminal_exits_cleanly(self):
-        env = os.environ.copy()
-        env.update({"TERM": "dumb"})
-        output, exit_code = self.run_repl("exit()\n", env=env)
-        self.assertEqual(exit_code, 0)
-        self.assertIn("warning: can't use pyrepl", output)
-        self.assertNotIn("Exception", output)
-        self.assertNotIn("Traceback", output)
 
     @force_not_colorized
     def test_python_basic_repl(self):
@@ -1208,91 +1298,6 @@ class TestMain(TestCase):
                         self.assertIn("in x2", output)
                         self.assertIn("in x3", output)
                         self.assertIn("in <module>", output)
-
-    def run_repl(
-        self,
-        repl_input: str | list[str],
-        env: dict | None = None,
-        *,
-        cmdline_args: list[str] | None = None,
-        cwd: str | None = None,
-    ) -> tuple[str, int]:
-        temp_dir = None
-        if cwd is None:
-            temp_dir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
-            cwd = temp_dir.name
-        try:
-            return self._run_repl(
-                repl_input, env=env, cmdline_args=cmdline_args, cwd=cwd
-            )
-        finally:
-            if temp_dir is not None:
-                temp_dir.cleanup()
-
-    def _run_repl(
-        self,
-        repl_input: str | list[str],
-        *,
-        env: dict | None,
-        cmdline_args: list[str] | None,
-        cwd: str,
-    ) -> tuple[str, int]:
-        assert pty
-        master_fd, slave_fd = pty.openpty()
-        cmd = [sys.executable, "-i", "-u"]
-        if env is None:
-            cmd.append("-I")
-        elif "PYTHON_HISTORY" not in env:
-            env["PYTHON_HISTORY"] = os.path.join(cwd, ".regrtest_history")
-        if cmdline_args is not None:
-            cmd.extend(cmdline_args)
-
-        try:
-            import termios
-        except ModuleNotFoundError:
-            pass
-        else:
-            term_attr = termios.tcgetattr(slave_fd)
-            term_attr[6][termios.VREPRINT] = 0  # pass through CTRL-R
-            term_attr[6][termios.VINTR] = 0  # pass through CTRL-C
-            termios.tcsetattr(slave_fd, termios.TCSANOW, term_attr)
-
-        process = subprocess.Popen(
-            cmd,
-            stdin=slave_fd,
-            stdout=slave_fd,
-            stderr=slave_fd,
-            cwd=cwd,
-            text=True,
-            close_fds=True,
-            env=env if env else os.environ,
-        )
-        os.close(slave_fd)
-        if isinstance(repl_input, list):
-            repl_input = "\n".join(repl_input) + "\n"
-        os.write(master_fd, repl_input.encode("utf-8"))
-
-        output = []
-        while select.select([master_fd], [], [], SHORT_TIMEOUT)[0]:
-            try:
-                data = os.read(master_fd, 1024).decode("utf-8")
-                if not data:
-                    break
-            except OSError:
-                break
-            output.append(data)
-        else:
-            os.close(master_fd)
-            process.kill()
-            self.fail(f"Timeout while waiting for output, got: {''.join(output)}")
-
-        os.close(master_fd)
-        try:
-            exit_code = process.wait(timeout=SHORT_TIMEOUT)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            exit_code = process.wait()
-        return "".join(output), exit_code
 
     def test_readline_history_file(self):
         # skip, if readline module is not available
