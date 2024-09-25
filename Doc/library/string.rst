@@ -577,9 +577,9 @@ The available presentation types for :class:`float` and
    | None    | For :class:`float` this is like the ``'g'`` type, except |
    |         | that when fixed-point notation is used to format the     |
    |         | result, it always includes at least one digit past the   |
-   |         | decimal point, thus switch to the scientific notation    |
-   |         | happens when ``exp >= p - 1``.  If precision is not      |
-   |         | specified, the precision used is as large as needed to   |
+   |         | decimal point, and switches to the scientific notation   |
+   |         | when ``exp >= p - 1``.  When the precision is not        |
+   |         | specified, the latter will be as large as needed to      |
    |         | represent the given value faithfully.                    |
    |         |                                                          |
    |         | For :class:`~decimal.Decimal`, this is the same as       |
