@@ -512,6 +512,8 @@ class TestFrameLocals(unittest.TestCase):
             FrameLocalsProxy()     # no arguments
         with self.assertRaises(TypeError):
             FrameLocalsProxy(123)  # wrong type
+        with self.assertRaises(TypeError):
+            FrameLocalsProxy(frame=sys._getframe())  # no keyword arguments
 
 
 class FrameLocalsProxyMappingTests(mapping_tests.TestHashMappingProtocol):

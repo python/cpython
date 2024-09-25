@@ -324,6 +324,12 @@ framelocalsproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     PyFrameObject *frame = (PyFrameObject*)item;
 
+    if (kwds != NULL && PyDict_Size(kwds) != 0) {
+        PyErr_SetString(PyExc_TypeError,
+                        "FrameLocalsProxy takes no keyword arguments");
+        return 0;
+    }
+
     PyFrameLocalsProxyObject *self = (PyFrameLocalsProxyObject *)type->tp_alloc(type, 0);
     if (self == NULL) {
         return NULL;
