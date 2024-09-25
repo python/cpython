@@ -1041,7 +1041,7 @@ have the following two methods available:
    .. doctest::
 
       >>> int.__subclasses__()
-      [<class 'bool'>, <enum 'IntEnum'>, <flag 'IntFlag'>, <class 're._constants._NamedIntConstant'>, <class 're._ZeroSentinel'>]
+      [<class 'bool'>, <enum 'IntEnum'>, <flag 'IntFlag'>, <class 're._constants._NamedIntConstant'>]
 
 Class instances
 ---------------
