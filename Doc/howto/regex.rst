@@ -902,11 +902,11 @@ raw string when incorporating backreferences in a RE.)
 
 For example, the following RE detects doubled words in a string. ::
 
-   >>> p = re.compile(r'\b(\w+)\b\s+\1\b')
+   >>> p = re.compile(r'\b(\w+)\s+\1\b')
    >>> p.search('Paris in the the spring').group()
    'the the'
 
-The first part of the pattern, ``\b(\w+)\b``, will match an entire word and
+The first part of the pattern, ``\b(\w+)``, will match an entire word and
 capture the word as group 1. The pattern then matches some whitespace with
 ``\s+`` and checks for the word again with ``\1\b``. The second \b is
 necessary to ensure that the backreference is matching an entire word;
