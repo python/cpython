@@ -193,6 +193,11 @@ or on combining URL components into a URL string.
       Characters that affect netloc parsing under NFKC normalization will
       now raise :exc:`ValueError`.
 
+   .. versionchanged:: 3.14
+      Values for ``url`` and ``scheme`` other than strings or bytes raise
+      :exc:`TypeError` if true or :exc:`DeprecationWarning` if false (to be
+      changed to :exc:`TypeError` in future versions of Python).
+
 
 .. function:: parse_qs(qs, keep_blank_values=False, strict_parsing=False, encoding='utf-8', errors='replace', max_num_fields=None, separator='&')
 
@@ -282,6 +287,11 @@ or on combining URL components into a URL string.
       query parameter separator. This has been changed to allow only a single
       separator key, with ``&`` as the default separator.
 
+   .. versionchanged:: 3.14
+      Values for ``qs`` and ``separator`` other than strings or bytes raise
+      :exc:`TypeError` if true or :exc:`DeprecationWarning` if false (to be
+      changed to :exc:`TypeError` in future versions of Python).
+
 
 .. function:: urlunparse(parts)
 
@@ -290,6 +300,11 @@ or on combining URL components into a URL string.
    different, but equivalent URL, if the URL that was parsed originally had
    unnecessary delimiters (for example, a ``?`` with an empty query; the RFC
    states that these are equivalent).
+
+   .. versionchanged:: 3.14
+      Items in ``parts`` other than strings or bytes raise
+      :exc:`TypeError` if true or :exc:`DeprecationWarning` if false (to be
+      changed to :exc:`TypeError` in future versions of Python).
 
 
 .. function:: urlsplit(urlstring, scheme='', allow_fragments=True)
@@ -364,6 +379,11 @@ or on combining URL components into a URL string.
    .. versionchanged:: 3.12
       Leading WHATWG C0 control and space characters are stripped from the URL.
 
+   .. versionchanged:: 3.14
+      Values for the url argument and ``scheme`` other than strings or bytes raise
+      :exc:`TypeError` if true or :exc:`DeprecationWarning` if false (to be
+      changed to :exc:`TypeError` in future versions of Python).
+
 .. _WHATWG spec: https://url.spec.whatwg.org/#concept-basic-url-parser
 
 .. function:: urlunsplit(parts)
@@ -373,6 +393,11 @@ or on combining URL components into a URL string.
    iterable. This may result in a slightly different, but equivalent URL, if the
    URL that was parsed originally had unnecessary delimiters (for example, a ?
    with an empty query; the RFC states that these are equivalent).
+
+   .. versionchanged:: 3.14
+      Items in ``parts`` other than strings or bytes raise
+      :exc:`TypeError` if true or :exc:`DeprecationWarning` if false (to be
+      changed to :exc:`TypeError` in future versions of Python).
 
 
 .. function:: urljoin(base, url, allow_fragments=True)
@@ -408,6 +433,11 @@ or on combining URL components into a URL string.
 
       Behavior updated to match the semantics defined in :rfc:`3986`.
 
+   .. versionchanged:: 3.14
+      Values for ``base`` and ``url`` other than strings or bytes raise
+      :exc:`TypeError` if true or :exc:`DeprecationWarning` if false (to be
+      changed to :exc:`TypeError` in future versions of Python).
+
 
 .. function:: urldefrag(url)
 
@@ -432,6 +462,11 @@ or on combining URL components into a URL string.
 
    .. versionchanged:: 3.2
       Result is a structured object rather than a simple 2-tuple.
+
+   .. versionchanged:: 3.14
+      Values other than strings or bytes raise
+      :exc:`TypeError` if true or :exc:`DeprecationWarning` if false (to be
+      changed to :exc:`TypeError` in future versions of Python).
 
 .. function:: unwrap(url)
 
