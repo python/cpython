@@ -377,7 +377,9 @@ Functions
 
    This is meant as a helper for user-provided
    annotate functions that support the :attr:`~Format.SOURCE` format but
-   do not have access to the code creating the annotations.
+   do not have access to the code creating the annotations. It can also
+   be used to provide a user-friendly string representation for other
+   objects that contain values that are commonly encountered in annotations.
 
    .. versionadded:: 3.14
 
