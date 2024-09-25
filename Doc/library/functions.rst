@@ -283,9 +283,11 @@ are always available.  They are listed here in alphabetical order.
       :func:`property`.
 
    .. versionchanged:: 3.10
-      Class methods now inherit the method attributes (``__module__``,
-      ``__name__``, ``__qualname__``, ``__doc__`` and ``__annotations__``) and
-      have a new ``__wrapped__`` attribute.
+      Class methods now inherit the method attributes
+      (:attr:`~function.__module__`, :attr:`~function.__name__`,
+      :attr:`~function.__qualname__`, :attr:`~function.__doc__` and
+      :attr:`~function.__annotations__`) and have a new ``__wrapped__``
+      attribute.
 
    .. deprecated-removed:: 3.11 3.13
       Class methods can no longer wrap other :term:`descriptors <descriptor>` such as
@@ -1286,8 +1288,9 @@ are always available.  They are listed here in alphabetical order.
 
    .. note::
 
-      :class:`object` does *not* have a :attr:`~object.__dict__`, so you can't
-      assign arbitrary attributes to an instance of the :class:`object` class.
+      :class:`object` instances do *not* have :attr:`~object.__dict__`
+      attributes, so you can't assign arbitrary attributes to an instance of
+      :class:`object`.
 
 
 .. function:: oct(x)
@@ -1907,10 +1910,11 @@ are always available.  They are listed here in alphabetical order.
    For more information on static methods, see :ref:`types`.
 
    .. versionchanged:: 3.10
-      Static methods now inherit the method attributes (``__module__``,
-      ``__name__``, ``__qualname__``, ``__doc__`` and ``__annotations__``),
-      have a new ``__wrapped__`` attribute, and are now callable as regular
-      functions.
+      Static methods now inherit the method attributes
+      (:attr:`~function.__module__`, :attr:`~function.__name__`,
+      :attr:`~function.__qualname__`, :attr:`~function.__doc__` and
+      :attr:`~function.__annotations__`), have a new ``__wrapped__`` attribute,
+      and are now callable as regular functions.
 
 
 .. index::
@@ -2049,15 +2053,14 @@ are always available.  They are listed here in alphabetical order.
    The :func:`isinstance` built-in function is recommended for testing the type
    of an object, because it takes subclasses into account.
 
-
    With three arguments, return a new type object.  This is essentially a
    dynamic form of the :keyword:`class` statement. The *name* string is
-   the class name and becomes the :attr:`~definition.__name__` attribute.
+   the class name and becomes the :attr:`~class.__name__` attribute.
    The *bases* tuple contains the base classes and becomes the
    :attr:`~class.__bases__` attribute; if empty, :class:`object`, the
    ultimate base of all classes, is added.  The *dict* dictionary contains
    attribute and method definitions for the class body; it may be copied
-   or wrapped before becoming the :attr:`~object.__dict__` attribute.
+   or wrapped before becoming the :attr:`~class.__dict__` attribute.
    The following two statements create identical :class:`type` objects:
 
       >>> class X:
@@ -2082,11 +2085,11 @@ are always available.  They are listed here in alphabetical order.
               vars(object)
 
    Return the :attr:`~object.__dict__` attribute for a module, class, instance,
-   or any other object with a :attr:`~object.__dict__` attribute.
+   or any other object with a :attr:`!__dict__` attribute.
 
    Objects such as modules and instances have an updateable :attr:`~object.__dict__`
    attribute; however, other objects may have write restrictions on their
-   :attr:`~object.__dict__` attributes (for example, classes use a
+   :attr:`!__dict__` attributes (for example, classes use a
    :class:`types.MappingProxyType` to prevent direct dictionary updates).
 
    Without an argument, :func:`vars` acts like :func:`locals`.

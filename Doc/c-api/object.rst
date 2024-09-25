@@ -370,7 +370,7 @@ Object Protocol
    If *cls* has a :meth:`~class.__subclasscheck__` method, it will be called to
    determine the subclass status as described in :pep:`3119`.  Otherwise,
    *derived* is a subclass of *cls* if it is a direct or indirect subclass,
-   i.e. contained in ``cls.__mro__``.
+   i.e. contained in :attr:`cls.__mro__ <class.__mro__>`.
 
    Normally only class objects, i.e. instances of :class:`type` or a derived
    class, are considered classes.  However, objects can override this by having

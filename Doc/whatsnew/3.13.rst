@@ -123,7 +123,8 @@ Python data model improvements:
 
 * :attr:`~class.__static_attributes__` stores the names of attributes accessed
   through ``self.X`` in any function in a class body.
-* :attr:`!__firstlineno__` records the first line number of a class definition.
+* :attr:`~class.__firstlineno__` records the first line number of a class
+  definition.
 
 Significant improvements in the standard library:
 
@@ -2191,13 +2192,13 @@ New Features
 
 * Add the :c:func:`PyType_GetFullyQualifiedName` function
   to get the type's fully qualified name.
-  The module name is prepended if ``type.__module__`` is a string
-  and is not equal to either ``'builtins'`` or ``'__main__'``.
+  The module name is prepended if :attr:`type.__module__ <class.__module__>` is
+  a string and is not equal to either ``'builtins'`` or ``'__main__'``.
   (Contributed by Victor Stinner in :gh:`111696`.)
 
 * Add the :c:func:`PyType_GetModuleName` function
-  to get the type's module name.
-  This is equivalent to getting the ``type.__module__`` attribute.
+  to get the type's module name. This is equivalent to getting the
+  :attr:`type.__module__ <class.__module__>` attribute.
   (Contributed by Eric Snow and Victor Stinner in :gh:`111696`.)
 
 * Add the :c:func:`PyUnicode_EqualToUTF8AndSize`
