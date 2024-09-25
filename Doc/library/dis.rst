@@ -959,7 +959,7 @@ iterations of the loop.
    list of constants supported by this instruction.  Used by the :keyword:`assert`
    statement to load :exc:`AssertionError`.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 
 .. opcode:: LOAD_BUILD_CLASS
@@ -1826,7 +1826,7 @@ iterations of the loop.
    If ``type(STACK[-1]).__xxx__`` is not a method, leave
    ``STACK[-1].__xxx__; NULL`` on the stack.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 
 **Pseudo-instructions**
