@@ -50,7 +50,11 @@ def check() -> str:
     try:
         _get_reader()
     except _error as e:
-        return str(e) or repr(e) or "unknown error"
+        import os  # temporary debugging measure to understand the Address sanitizer environment failure
+        term = ""
+        if term := os.environ.get("TERM"):
+            term = f"TERM={term}"
+        return (str(e) or repr(e) or "unknown error") + "; {term}" if term else ""
     return ""
 
 
