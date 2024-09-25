@@ -1887,7 +1887,7 @@ New Features
 
   The :c:macro:`Py_TPFLAGS_MANAGED_DICT` and :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF`
   flags have been added. This allows extensions classes to support object
-  ``__dict__`` and weakrefs with less bookkeeping,
+  :attr:`~object.__dict__` and weakrefs with less bookkeeping,
   using less memory and with faster access.
 
 * API for performing calls using
@@ -2006,7 +2006,7 @@ Porting to Python 3.12
   internal-only field directly.
 
   To get a list of subclasses, call the Python method
-  :py:meth:`~class.__subclasses__` (using :c:func:`PyObject_CallMethod`,
+  :py:meth:`~type.__subclasses__` (using :c:func:`PyObject_CallMethod`,
   for example).
 
 * Add support of more formatting options (left aligning, octals, uppercase
@@ -2025,7 +2025,7 @@ Porting to Python 3.12
   :c:func:`PyUnicode_FromFormatV`.
   (Contributed by Philip Georgi in :gh:`95504`.)
 
-* Extension classes wanting to add a ``__dict__`` or weak reference slot
+* Extension classes wanting to add a :attr:`~object.__dict__` or weak reference slot
   should use :c:macro:`Py_TPFLAGS_MANAGED_DICT` and
   :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` instead of ``tp_dictoffset`` and
   ``tp_weaklistoffset``, respectively.
