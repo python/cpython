@@ -689,6 +689,17 @@ loops that truncate the stream.
 
    Roughly equivalent to::
 
+        def tee(iterable, n=2):
+            if n < 0:
+                raise ValueError
+            if n == 0:
+                return ()
+            iterator = _tee(iterable)
+            result = [iterator]
+            for _ in range(n - 1):
+                result.append(_tee(iterator))
+            return tuple(result)
+
         class _tee:
 
             def __init__(self, iterable):
@@ -710,17 +721,6 @@ loops that truncate the stream.
                     link[1] = [None, None]
                 value, self.link = link
                 return value
-
-        def tee(iterable, n=2):
-            if n < 0:
-                raise ValueError
-            if n == 0:
-                return ()
-            first = _tee(iterable)
-            result = [first]
-            for _ in range(n - 1):
-                result.append(_tee(first))
-            return tuple(result)
 
    When the input *iterable* is already a tee iterator object, all
    members of the return tuple are constructed as if they had been

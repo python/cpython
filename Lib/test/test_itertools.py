@@ -1758,6 +1758,17 @@ class TestPurePythonRoughEquivalents(unittest.TestCase):
 
         # Begin tee() recipe ###########################################
 
+        def tee(iterable, n=2):
+            if n < 0:
+                raise ValueError
+            if n == 0:
+                return ()
+            iterator = _tee(iterable)
+            result = [iterator]
+            for _ in range(n - 1):
+                result.append(_tee(iterator))
+            return tuple(result)
+
         class _tee:
 
             def __init__(self, iterable):
@@ -1779,17 +1790,6 @@ class TestPurePythonRoughEquivalents(unittest.TestCase):
                     link[1] = [None, None]
                 value, self.link = link
                 return value
-
-        def tee(iterable, n=2):
-            if n < 0:
-                raise ValueError
-            if n == 0:
-                return ()
-            first = _tee(iterable)
-            result = [first]
-            for _ in range(n - 1):
-                result.append(_tee(first))
-            return tuple(result)
 
         # End tee() recipe #############################################
 
