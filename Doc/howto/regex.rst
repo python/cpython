@@ -489,7 +489,7 @@ Python 3.8 added assignment expressions that shorten the above pattern
 by a line::
 
    p = re.compile( ... )
-   if (m := p.match( 'string goes here' )):
+   if (m := p.match('string goes here')):
        print('Match found: ', m.group())
    else:
        print('No match')
