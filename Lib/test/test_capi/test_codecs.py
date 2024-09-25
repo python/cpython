@@ -1,6 +1,7 @@
 import codecs
 import contextlib
 import io
+import re
 import sys
 import unittest
 import unittest.mock as mock
@@ -10,6 +11,7 @@ from test.support import import_helper
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 
 NULL = None
+BAD_ARGUMENT = re.escape('bad argument type for built-in operation')
 
 
 class CAPIUnicodeTest(unittest.TestCase):
@@ -635,7 +637,8 @@ class CAPICodecs(unittest.TestCase):
         self.assertEqual(encode('[é]', 'ascii', 'ignore'), b'[]')
 
         self.assertRaises(TypeError, encode, NULL, 'ascii', 'strict')
-        # CRASHES encode('a', NULL, 'strict')
+        with self.assertRaisesRegex(TypeError, BAD_ARGUMENT):
+            encode('a', NULL, 'strict')
 
     def test_codec_decode(self):
         decode = _testcapi.codec_decode
@@ -650,46 +653,90 @@ class CAPICodecs(unittest.TestCase):
         self.assertRaises(UnicodeDecodeError, decode, b, 'ascii', NULL)
         self.assertEqual(decode(b, 'ascii', 'replace'), 'a' + '\ufffd'*9)
 
-        # _codecs.decode only reports unknown errors policy when they are
-        # used (it has a fast path for empty bytes); this is different from
-        # PyUnicode_Decode which checks that both the encoding and the errors
-        # policy are recognized.
+        # _codecs.decode() only reports unknown errors policy when they are
+        # used; this is different from PyUnicode_Decode() which checks that
+        # both the encoding and the errors policy are recognized before even
+        # attempting to call the decoder.
         self.assertEqual(decode(b'', 'utf-8', 'unknown-errors-policy'), '')
+        self.assertEqual(decode(b'a', 'utf-8', 'unknown-errors-policy'), 'a')
 
         self.assertRaises(TypeError, decode, NULL, 'ascii', 'strict')
-        # CRASHES decode(b, NULL, 'strict')
+        with self.assertRaisesRegex(TypeError, BAD_ARGUMENT):
+            decode(b, NULL, 'strict')
 
     def test_codec_encoder(self):
+        codec_encoder = _testcapi.codec_encoder
+
         with self.use_custom_encoder():
-            encoder = _testcapi.codec_encoder(self.encoding_name)
+            encoder = codec_encoder(self.encoding_name)
             self.assertIs(encoder, self.codec_info.encode)
 
+            with self.assertRaisesRegex(TypeError, BAD_ARGUMENT):
+                codec_encoder(NULL)
+
     def test_codec_decoder(self):
+        codec_decoder = _testcapi.codec_decoder
+
         with self.use_custom_encoder():
-            decoder = _testcapi.codec_decoder(self.encoding_name)
+            decoder = codec_decoder(self.encoding_name)
             self.assertIs(decoder, self.codec_info.decode)
 
+            with self.assertRaisesRegex(TypeError, BAD_ARGUMENT):
+                codec_decoder(NULL)
+
     def test_codec_incremental_encoder(self):
+        codec_incremental_encoder = _testcapi.codec_incremental_encoder
+
         with self.use_custom_encoder():
-            encoder = _testcapi.codec_incremental_encoder(self.encoding_name, 'strict')
-            self.assertIsInstance(encoder, self.codec_info.incrementalencoder)
+            encoding = self.encoding_name
+
+            for policy in ['strict', NULL]:
+                with self.subTest(policy=policy):
+                    encoder = codec_incremental_encoder(encoding, policy)
+                    self.assertIsInstance(encoder, self.codec_info.incrementalencoder)
+
+            with self.assertRaisesRegex(TypeError, BAD_ARGUMENT):
+                codec_incremental_encoder(NULL, 'strict')
 
     def test_codec_incremental_decoder(self):
+        codec_incremental_decoder = _testcapi.codec_incremental_decoder
+
         with self.use_custom_encoder():
-            decoder = _testcapi.codec_incremental_decoder(self.encoding_name, 'strict')
-            self.assertIsInstance(decoder, self.codec_info.incrementaldecoder)
+            encoding = self.encoding_name
+
+            for policy in ['strict', NULL]:
+                with self.subTest(policy=policy):
+                    decoder = codec_incremental_decoder(encoding, policy)
+                    self.assertIsInstance(decoder, self.codec_info.incrementaldecoder)
+
+            with self.assertRaisesRegex(TypeError, BAD_ARGUMENT):
+                codec_incremental_decoder(NULL, 'strict')
 
     def test_codec_stream_reader(self):
+        codec_stream_reader = _testcapi.codec_stream_reader
+
         with self.use_custom_encoder():
             encoding, stream = self.encoding_name, io.StringIO()
-            reader = _testcapi.codec_stream_reader(encoding, stream, 'strict')
-            self.assertIsInstance(reader, self.codec_info.streamreader)
+            for policy in ['strict', NULL]:
+                with self.subTest(policy=policy):
+                    writer = codec_stream_reader(encoding, stream, policy)
+                    self.assertIsInstance(writer, self.codec_info.streamreader)
+
+            with self.assertRaisesRegex(TypeError, BAD_ARGUMENT):
+                codec_stream_reader(NULL, stream, 'strict')
 
     def test_codec_stream_writer(self):
+        codec_stream_writer = _testcapi.codec_stream_writer
+
         with self.use_custom_encoder():
             encoding, stream = self.encoding_name, io.StringIO()
-            writer = _testcapi.codec_stream_writer(encoding, stream, 'strict')
-            self.assertIsInstance(writer, self.codec_info.streamwriter)
+            for policy in ['strict', NULL]:
+                with self.subTest(policy=policy):
+                    writer = codec_stream_writer(encoding, stream, policy)
+                    self.assertIsInstance(writer, self.codec_info.streamwriter)
+
+            with self.assertRaisesRegex(TypeError, BAD_ARGUMENT):
+                codec_stream_writer(NULL, stream, 'strict')
 
 
 class CAPICodecErrors(unittest.TestCase):

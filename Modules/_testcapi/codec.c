@@ -1,5 +1,13 @@
 #include "parts.h"
 
+/*
+ * The Codecs C API assume that 'encoding' is not NULL, lest
+ * it uses PyErr_BadArgument() to set a TypeError exception.
+ *
+ * In this file, we allow to call the functions using None
+ * as NULL to explicitly check this behaviour.
+ */
+
 // === Codecs registration and un-registration ================================
 
 static PyObject *
@@ -23,8 +31,8 @@ codec_unregister(PyObject *Py_UNUSED(module), PyObject *search_function)
 static PyObject *
 codec_known_encoding(PyObject *Py_UNUSED(module), PyObject *args)
 {
-    const char *encoding;   // should not be NULL
-    if (!PyArg_ParseTuple(args, "s", &encoding)) {
+    const char *encoding;   // should not be NULL (see top-file comment)
+    if (!PyArg_ParseTuple(args, "z", &encoding)) {
         return NULL;
     }
     return PyCodec_KnownEncoding(encoding) ? Py_True : Py_False;
@@ -36,9 +44,9 @@ static PyObject *
 codec_encode(PyObject *Py_UNUSED(module), PyObject *args)
 {
     PyObject *input;
-    const char *encoding;   // should not be NULL
+    const char *encoding;   // should not be NULL (see top-file comment)
     const char *errors;     // can be NULL
-    if (!PyArg_ParseTuple(args, "O|sz", &input, &encoding, &errors)) {
+    if (!PyArg_ParseTuple(args, "O|zz", &input, &encoding, &errors)) {
         return NULL;
     }
     return PyCodec_Encode(input, encoding, errors);
@@ -48,9 +56,9 @@ static PyObject *
 codec_decode(PyObject *Py_UNUSED(module), PyObject *args)
 {
     PyObject *input;
-    const char *encoding;   // should not be NULL
+    const char *encoding;   // should not be NULL (see top-file comment)
     const char *errors;     // can be NULL
-    if (!PyArg_ParseTuple(args, "O|sz", &input, &encoding, &errors)) {
+    if (!PyArg_ParseTuple(args, "O|zz", &input, &encoding, &errors)) {
         return NULL;
     }
     return PyCodec_Decode(input, encoding, errors);
@@ -59,8 +67,8 @@ codec_decode(PyObject *Py_UNUSED(module), PyObject *args)
 static PyObject *
 codec_encoder(PyObject *Py_UNUSED(module), PyObject *args)
 {
-    const char *encoding;  // should not be NULL
-    if (!PyArg_ParseTuple(args, "s", &encoding)) {
+    const char *encoding;   // should not be NULL (see top-file comment)
+    if (!PyArg_ParseTuple(args, "z", &encoding)) {
         return NULL;
     }
     return PyCodec_Encoder(encoding);
@@ -69,8 +77,8 @@ codec_encoder(PyObject *Py_UNUSED(module), PyObject *args)
 static PyObject *
 codec_decoder(PyObject *Py_UNUSED(module), PyObject *args)
 {
-    const char *encoding;  // should not be NULL
-    if (!PyArg_ParseTuple(args, "s", &encoding)) {
+    const char *encoding;   // should not be NULL (see top-file comment)
+    if (!PyArg_ParseTuple(args, "z", &encoding)) {
         return NULL;
     }
     return PyCodec_Decoder(encoding);
@@ -79,9 +87,9 @@ codec_decoder(PyObject *Py_UNUSED(module), PyObject *args)
 static PyObject *
 codec_incremental_encoder(PyObject *Py_UNUSED(module), PyObject *args)
 {
-    const char *encoding;   // should not be NULL
-    const char *errors;     // should not be NULL
-    if (!PyArg_ParseTuple(args, "ss", &encoding, &errors)) {
+    const char *encoding;   // should not be NULL (see top-file comment)
+    const char *errors;     // can be NULL
+    if (!PyArg_ParseTuple(args, "zz", &encoding, &errors)) {
         return NULL;
     }
     return PyCodec_IncrementalEncoder(encoding, errors);
@@ -90,9 +98,9 @@ codec_incremental_encoder(PyObject *Py_UNUSED(module), PyObject *args)
 static PyObject *
 codec_incremental_decoder(PyObject *Py_UNUSED(module), PyObject *args)
 {
-    const char *encoding;   // should not be NULL
-    const char *errors;     // should not be NULL
-    if (!PyArg_ParseTuple(args, "ss", &encoding, &errors)) {
+    const char *encoding;   // should not be NULL (see top-file comment)
+    const char *errors;     // can be NULL
+    if (!PyArg_ParseTuple(args, "zz", &encoding, &errors)) {
         return NULL;
     }
     return PyCodec_IncrementalDecoder(encoding, errors);
@@ -101,10 +109,10 @@ codec_incremental_decoder(PyObject *Py_UNUSED(module), PyObject *args)
 static PyObject *
 codec_stream_reader(PyObject *Py_UNUSED(module), PyObject *args)
 {
-    const char *encoding;  // should not be NULL
+    const char *encoding;   // should not be NULL (see top-file comment)
     PyObject *stream;
-    const char *errors;    // should not be NULL
-    if (!PyArg_ParseTuple(args, "sOs", &encoding, &stream, &errors)) {
+    const char *errors;     // can be NULL
+    if (!PyArg_ParseTuple(args, "zOz", &encoding, &stream, &errors)) {
         return NULL;
     }
     return PyCodec_StreamReader(encoding, stream, errors);
@@ -113,10 +121,10 @@ codec_stream_reader(PyObject *Py_UNUSED(module), PyObject *args)
 static PyObject *
 codec_stream_writer(PyObject *Py_UNUSED(module), PyObject *args)
 {
-    const char *encoding;  // should not be NULL
+    const char *encoding;   // should not be NULL (see top-file comment)
     PyObject *stream;
-    const char *errors;    // should not be NULL
-    if (!PyArg_ParseTuple(args, "sOs", &encoding, &stream, &errors)) {
+    const char *errors;     // can be NULL
+    if (!PyArg_ParseTuple(args, "zOz", &encoding, &stream, &errors)) {
         return NULL;
     }
     return PyCodec_StreamWriter(encoding, stream, errors);
@@ -127,7 +135,7 @@ codec_stream_writer(PyObject *Py_UNUSED(module), PyObject *args)
 static PyObject *
 codec_register_error(PyObject *Py_UNUSED(module), PyObject *args)
 {
-    const char *encoding;  // should not be NULL
+    const char *encoding;   // must not be NULL
     PyObject *error;
     if (!PyArg_ParseTuple(args, "sO", &encoding, &error)) {
         return NULL;
