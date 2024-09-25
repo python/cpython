@@ -592,14 +592,21 @@ class CAPICodecs(unittest.TestCase):
 
     def test_codec_register(self):
         search_function, encoding = self.search_function, self.encoding_name
+        # register the search function using the C API
         self.assertIsNone(_testcapi.codec_register(search_function))
         self.assertIs(self.codecs.lookup(encoding), search_function(encoding))
         self.assertEqual(self.codecs.encode('123', encoding=encoding), '321')
+        # unregister the search function using the regular API
+        self.codecs.unregister(search_function)
+        self.assertRaises(LookupError, self.codecs.lookup, encoding)
 
     def test_codec_unregister(self):
         search_function, encoding = self.search_function, self.encoding_name
         self.assertRaises(LookupError, self.codecs.lookup, encoding)
+        # register the search function using the regular API
         self.codecs.register(search_function)
+        self.assertIsNotNone(self.codecs.lookup(encoding))
+        # unregister the search function using the C API
         self.assertIsNone(_testcapi.codec_unregister(search_function))
         self.assertRaises(LookupError, self.codecs.lookup, encoding)
 
@@ -625,16 +632,16 @@ class CAPICodecs(unittest.TestCase):
         encode = _testcapi.codec_encode
         self.assertEqual(encode('a', 'utf-8', NULL), b'a')
         self.assertEqual(encode('a', 'utf-8', 'strict'), b'a')
-        self.assertEqual(encode('é', 'ascii', 'ignore'), b'')
-        # todo: add more cases
+        self.assertEqual(encode('[é]', 'ascii', 'ignore'), b'[]')
+
         self.assertRaises(TypeError, encode, NULL, 'ascii', 'strict')
         # CRASHES encode('a', NULL, 'strict')
 
     def test_codec_decode(self):
         decode = _testcapi.codec_decode
 
-        b = b'a\xc2\xa1\xe4\xbd\xa0\xf0\x9f\x98\x80'
         s = 'a\xa1\u4f60\U0001f600'
+        b = s.encode()
 
         self.assertEqual(decode(b, 'utf-8', 'strict'), s)
         self.assertEqual(decode(b, 'utf-8', NULL), s)
@@ -642,7 +649,6 @@ class CAPICodecs(unittest.TestCase):
         self.assertRaises(UnicodeDecodeError, decode, b, 'ascii', 'strict')
         self.assertRaises(UnicodeDecodeError, decode, b, 'ascii', NULL)
         self.assertEqual(decode(b, 'ascii', 'replace'), 'a' + '\ufffd'*9)
-        # todo: add more cases
 
         # _codecs.decode only reports unknown errors policy when they are
         # used (it has a fast path for empty bytes); this is different from
@@ -684,6 +690,7 @@ class CAPICodecs(unittest.TestCase):
             encoding, stream = self.encoding_name, io.StringIO()
             writer = _testcapi.codec_stream_writer(encoding, stream, 'strict')
             self.assertIsInstance(writer, self.codec_info.streamwriter)
+
 
 class CAPICodecErrors(unittest.TestCase):
 

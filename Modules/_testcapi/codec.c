@@ -24,10 +24,9 @@ static PyObject *
 codec_known_encoding(PyObject *Py_UNUSED(module), PyObject *args)
 {
     const char *encoding;   // should not be NULL
-    if (!PyArg_ParseTuple(args, "z", &encoding)) {
+    if (!PyArg_ParseTuple(args, "s", &encoding)) {
         return NULL;
     }
-    assert(encoding != NULL);
     return PyCodec_KnownEncoding(encoding) ? Py_True : Py_False;
 }
 
@@ -39,10 +38,9 @@ codec_encode(PyObject *Py_UNUSED(module), PyObject *args)
     PyObject *input;
     const char *encoding;   // should not be NULL
     const char *errors;     // can be NULL
-    if (!PyArg_ParseTuple(args, "O|zz", &input, &encoding, &errors)) {
+    if (!PyArg_ParseTuple(args, "O|sz", &input, &encoding, &errors)) {
         return NULL;
     }
-    assert(encoding != NULL);
     return PyCodec_Encode(input, encoding, errors);
 }
 
@@ -52,10 +50,9 @@ codec_decode(PyObject *Py_UNUSED(module), PyObject *args)
     PyObject *input;
     const char *encoding;   // should not be NULL
     const char *errors;     // can be NULL
-    if (!PyArg_ParseTuple(args, "O|zz", &input, &encoding, &errors)) {
+    if (!PyArg_ParseTuple(args, "O|sz", &input, &encoding, &errors)) {
         return NULL;
     }
-    assert(encoding != NULL);
     return PyCodec_Decode(input, encoding, errors);
 }
 
@@ -63,10 +60,9 @@ static PyObject *
 codec_encoder(PyObject *Py_UNUSED(module), PyObject *args)
 {
     const char *encoding;  // should not be NULL
-    if (!PyArg_ParseTuple(args, "z", &encoding)) {
+    if (!PyArg_ParseTuple(args, "s", &encoding)) {
         return NULL;
     }
-    assert(encoding != NULL);
     return PyCodec_Encoder(encoding);
 }
 
@@ -74,10 +70,9 @@ static PyObject *
 codec_decoder(PyObject *Py_UNUSED(module), PyObject *args)
 {
     const char *encoding;  // should not be NULL
-    if (!PyArg_ParseTuple(args, "z", &encoding)) {
+    if (!PyArg_ParseTuple(args, "s", &encoding)) {
         return NULL;
     }
-    assert(encoding != NULL);
     return PyCodec_Decoder(encoding);
 }
 
@@ -86,11 +81,9 @@ codec_incremental_encoder(PyObject *Py_UNUSED(module), PyObject *args)
 {
     const char *encoding;   // should not be NULL
     const char *errors;     // should not be NULL
-    if (!PyArg_ParseTuple(args, "zz", &encoding, &errors)) {
+    if (!PyArg_ParseTuple(args, "ss", &encoding, &errors)) {
         return NULL;
     }
-    assert(encoding != NULL);
-    assert(errors != NULL);
     return PyCodec_IncrementalEncoder(encoding, errors);
 }
 
@@ -99,11 +92,9 @@ codec_incremental_decoder(PyObject *Py_UNUSED(module), PyObject *args)
 {
     const char *encoding;   // should not be NULL
     const char *errors;     // should not be NULL
-    if (!PyArg_ParseTuple(args, "zz", &encoding, &errors)) {
+    if (!PyArg_ParseTuple(args, "ss", &encoding, &errors)) {
         return NULL;
     }
-    assert(encoding != NULL);
-    assert(errors != NULL);
     return PyCodec_IncrementalDecoder(encoding, errors);
 }
 
@@ -113,11 +104,9 @@ codec_stream_reader(PyObject *Py_UNUSED(module), PyObject *args)
     const char *encoding;  // should not be NULL
     PyObject *stream;
     const char *errors;    // should not be NULL
-    if (!PyArg_ParseTuple(args, "zOz", &encoding, &stream, &errors)) {
+    if (!PyArg_ParseTuple(args, "sOs", &encoding, &stream, &errors)) {
         return NULL;
     }
-    assert(encoding != NULL);
-    assert(errors != NULL);
     return PyCodec_StreamReader(encoding, stream, errors);
 }
 
@@ -127,11 +116,9 @@ codec_stream_writer(PyObject *Py_UNUSED(module), PyObject *args)
     const char *encoding;  // should not be NULL
     PyObject *stream;
     const char *errors;    // should not be NULL
-    if (!PyArg_ParseTuple(args, "zOz", &encoding, &stream, &errors)) {
+    if (!PyArg_ParseTuple(args, "sOs", &encoding, &stream, &errors)) {
         return NULL;
     }
-    assert(encoding != NULL);
-    assert(errors != NULL);
     return PyCodec_StreamWriter(encoding, stream, errors);
 }
 
@@ -142,10 +129,9 @@ codec_register_error(PyObject *Py_UNUSED(module), PyObject *args)
 {
     const char *encoding;  // should not be NULL
     PyObject *error;
-    if (!PyArg_ParseTuple(args, "zO", &encoding, &error)) {
+    if (!PyArg_ParseTuple(args, "sO", &encoding, &error)) {
         return NULL;
     }
-    assert(encoding != NULL);
     if (PyCodec_RegisterError(encoding, error) < 0) {
         return NULL;
     }
