@@ -1124,8 +1124,8 @@ class TestDateOnly(unittest.TestCase):
             (date(2004, 2, 1), '02-2004', '%m-%Y'),  # Month and year swapped
 
             # Different day-month-year formats
-            (date(2004, 12, 2), '01/12/2004', '%d/%m/%Y'),  # Day/Month/Year
-            (date(2004, 12, 2), '12/01/2004', '%m/%d/%Y'),  # Month/Day/Year
+            (date(2004, 12, 2), '02/12/2004', '%d/%m/%Y'),  # Day/Month/Year
+            (date(2004, 12, 2), '12/02/2004', '%m/%d/%Y'),  # Month/Day/Year
 
             # Different separators
             (date(2023, 9, 24), '24.09.2023', '%d.%m.%Y'),  # Dots as separators
@@ -1138,8 +1138,8 @@ class TestDateOnly(unittest.TestCase):
             (date(5, 2, 3), '0005-02-03', '%Y-%m-%d'),
 
             # Variations on ISO 8601 format
-            (date(2023, 9, 24), '2023-W39-1', '%G-W%V-%u'),  # ISO week date (Week 39, Monday)
-            (date(2023, 9, 24), '2023-267', '%Y-%j'),  # Year and day of the year (Julian)
+            (date(2023, 9, 25), '2023-W39-1', '%G-W%V-%u'),  # ISO week date (Week 39, Monday)
+            (date(2023, 9, 25), '2023-268', '%Y-%j'),  # Year and day of the year (Julian)
         ]
         for expected, string, format in inputs:
             with self.subTest(string=string, format=format):
@@ -3829,6 +3829,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         ]
         for expected, string, format in inputs:
             with self.subTest(string=string, format=format):
+                got = self.theclass.strptime(string, format)
                 self.assertEqual(expected, got)
                 self.assertIs(type(got), self.theclass)
 
