@@ -722,10 +722,12 @@ def uuid5(namespace, name):
 
 def uuid8(a=None, b=None, c=None):
     """Generate a UUID from three custom blocks.
-    'a' is the first 48-bit chunk of the UUID (octets 0-5);
-    'b' is the mid 12-bit chunk (octets 6-7);
-    'c' is the last 62-bit chunk (octets 8-15).
-    When a value is not specified, a random value is generated.
+
+    * 'a' is the first 48-bit chunk of the UUID (octets 0-5);
+    * 'b' is the mid 12-bit chunk (octets 6-7);
+    * 'c' is the last 62-bit chunk (octets 8-15).
+
+    When a value is not specified, a pseudo-random value is generated.
     """
     if a is None:
         import random
@@ -736,10 +738,9 @@ def uuid8(a=None, b=None, c=None):
     if c is None:
         import random
         c = random.getrandbits(62)
-
-    int_uuid_8 = (a & 0xffffffffffff) << 80
+    int_uuid_8 = (a & 0xffff_ffff_ffff) << 80
     int_uuid_8 |= (b & 0xfff) << 64
-    int_uuid_8 |= c & 0x3fffffffffffffff
+    int_uuid_8 |= c & 0x3fff_ffff_ffff_ffff
     return UUID(int=int_uuid_8, version=8)
 
 def main():
