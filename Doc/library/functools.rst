@@ -346,21 +346,21 @@ The :mod:`functools` module defines the following functions:
    Roughly equivalent to::
 
       def partial(func, /, *args, **keywords):
-          def newfunc(*fargs, **fkeywords):
-              newkeywords = {**keywords, **fkeywords}
-              return func(*args, *fargs, **newkeywords)
+          def newfunc(*more_args, **more_keywords):
+              return func(*args, *more_args, **keywords, **more_keywords)
           newfunc.func = func
           newfunc.args = args
           newfunc.keywords = keywords
           return newfunc
 
-   The :func:`partial` is used for partial function application which "freezes"
+   The :func:`partial` function is used for partial function application which "freezes"
    some portion of a function's arguments and/or keywords resulting in a new object
    with a simplified signature.  For example, :func:`partial` can be used to create
    a callable that behaves like the :func:`int` function where the *base* argument
-   defaults to two:
+   defaults to ``2``:
 
-      >>> from functools import partial
+   .. doctest::
+
       >>> basetwo = partial(int, base=2)
       >>> basetwo.__doc__ = 'Convert base 2 string to an int.'
       >>> basetwo('10010')
@@ -372,7 +372,8 @@ The :mod:`functools` module defines the following functions:
 
    If :data:`!Placeholder` sentinels are present, all of them must be filled at call time:
 
-      >>> from functools import partial, Placeholder
+   .. doctest::
+
       >>> say_to_world = partial(print, Placeholder, Placeholder, "world!")
       >>> say_to_world('Hello', 'dear')
       Hello dear world!
@@ -385,6 +386,8 @@ The :mod:`functools` module defines the following functions:
    of the input :func:`partial` objects with new positional arguments.
    A place for positional argument can be retained by inserting new
    :data:`!Placeholder` sentinel to the place held by previous :data:`!Placeholder`:
+
+   .. doctest::
 
       >>> from functools import partial, Placeholder as _
       >>> remove = partial(str.replace, _, _, '')
@@ -789,6 +792,4 @@ have three read-only attributes:
 :class:`partial` objects are like :class:`function` objects in that they are
 callable, weak referenceable, and can have attributes.  There are some important
 differences.  For instance, the :attr:`~definition.__name__` and :attr:`__doc__` attributes
-are not created automatically.  Also, :class:`partial` objects defined in
-classes behave like static methods and do not transform into bound methods
-during instance attribute look-up.
+are not created automatically.
