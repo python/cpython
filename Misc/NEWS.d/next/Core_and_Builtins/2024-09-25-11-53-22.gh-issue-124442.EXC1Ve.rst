@@ -1,0 +1,2 @@
+Make the :func:`compile` builtin function deterministic by sorting
+:attr:`~class.__static_attributes__` before writing to bytecode.

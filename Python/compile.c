@@ -911,7 +911,14 @@ PyObject *
 _PyCompile_StaticAttributesAsTuple(compiler *c)
 {
     assert(c->u->u_static_attributes);
-    return PySequence_Tuple(c->u->u_static_attributes);
+    PyObject *static_attributes_unsorted = PySequence_List(c->u->u_static_attributes);
+    if (static_attributes_unsorted == NULL) {
+        return NULL;
+    }
+    PyList_Sort(static_attributes_unsorted);
+    PyObject *static_attributes = PySequence_Tuple(static_attributes_unsorted);
+    Py_DECREF(static_attributes_unsorted);
+    return static_attributes;
 }
 
 int
