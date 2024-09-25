@@ -4997,6 +4997,14 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
         goto invalid_string_error;
     }
 
+    if (hour == 24) {
+        if (minute == 0 && second == 0 && microsecond == 0) {
+            hour = 0;
+        } else {
+            goto invalid_iso_midnight;
+        }
+    }
+
     PyObject *tzinfo = tzinfo_from_isoformat_results(rv, tzoffset,
                                                      tzimicrosecond);
 
@@ -5014,6 +5022,10 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
 
     Py_DECREF(tzinfo);
     return t;
+
+invalid_iso_midnight:
+    PyErr_SetString(PyExc_ValueError, "minute, second, and microsecond must be 0 when hour is 24");
+    return NULL;
 
 invalid_string_error:
     PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %R", tstr);
@@ -5861,12 +5873,36 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
         goto error;
     }
 
+    if ((hour == 24) && (month <= 12))  {
+        int d_in_month = days_in_month(year, month);
+        if (day <= d_in_month) {
+            if (minute == 0 && second == 0 && microsecond == 0) {
+                // Calculate midnight of the next day
+                hour = 0;
+                day += 1;
+                if (day > d_in_month) {
+                    day = 1;
+                    month += 1;
+                    if (month > 12) {
+                        month = 1;
+                        year += 1;
+                    }
+                }
+            } else {
+                goto invalid_iso_midnight;
+            }
+        }
+    }
     PyObject *dt = new_datetime_subclass_ex(year, month, day, hour, minute,
                                             second, microsecond, tzinfo, cls);
 
     Py_DECREF(tzinfo);
     Py_DECREF(dtstr_clean);
     return dt;
+
+invalid_iso_midnight:
+    PyErr_SetString(PyExc_ValueError, "minute, second, and microsecond must be 0 when hour is 24");
+    return NULL;
 
 invalid_string_error:
     PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %R", dtstr);
