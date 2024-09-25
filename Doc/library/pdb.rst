@@ -219,8 +219,8 @@ access further features, you have to do this yourself:
 
    The *mode* argument specifies how the debugger was invoked.
    It impacts the workings of some debugger commands.
-   Valid values are ``'inline'`` (when called from the breakpoint() builtin),
-   ``'cli'`` (when called from a command line invocation)
+   Valid values are ``'inline'`` (used by the breakpoint() builtin),
+   ``'cli'`` (used by the command line invocation)
    or ``None`` (for backwards compatible behaviour, as before the *mode*
    argument was added).
 
@@ -686,8 +686,8 @@ can be overridden by the local file.
    :pdbcmd:`restart` is an alias for :pdbcmd:`run`.
 
    .. versionchanged:: 3.14
-      :pdbcmd:`run` and :pdbcmd:`restart` commands are not allowed when the
-      debugger is invoked from an inline breakpoint.
+      :pdbcmd:`run` and :pdbcmd:`restart` commands are disabled when the
+      debugger is invoked in ``'inline'`` mode.
 
 .. pdbcommand:: q(uit)
 

@@ -1613,7 +1613,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         are preserved.  "restart" is an alias for "run".
         """
         if self.mode == 'inline':
-            self.error('run/restart command is disabled in inline breakpoints.\n'
+            self.error('run/restart command is disabled when pdb is running in inline mode.\n'
                        'Use the command line interface to enable restarting your program\n'
                        'e.g. "python -m pdb myscript.py"')
             return
