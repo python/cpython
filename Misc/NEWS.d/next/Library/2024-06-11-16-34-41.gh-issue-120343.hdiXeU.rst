@@ -1,0 +1,1 @@
+Fix column offset reporting for tokens that come after multiline f-strings in the :mod:`tokenize` module.

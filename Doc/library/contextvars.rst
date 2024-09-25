@@ -1,5 +1,5 @@
-:mod:`contextvars` --- Context Variables
-========================================
+:mod:`!contextvars` --- Context Variables
+=========================================
 
 .. module:: contextvars
    :synopsis: Context Variables
@@ -15,7 +15,7 @@ function and the :class:`~contextvars.Context` class should be used to
 manage the current context in asynchronous frameworks.
 
 Context managers that have state should use Context Variables
-instead of :func:`threading.local()` to prevent their state from
+instead of :func:`threading.local` to prevent their state from
 bleeding to other code unexpectedly, when used in concurrent code.
 
 See also :pep:`567` for additional details.
@@ -26,7 +26,7 @@ See also :pep:`567` for additional details.
 Context Variables
 -----------------
 
-.. class:: ContextVar(name, [\*, default])
+.. class:: ContextVar(name, [*, default])
 
    This class is used to declare a new Context Variable, e.g.::
 
@@ -94,7 +94,7 @@ Context Variables
           # var.get() would raise a LookupError.
 
 
-.. class:: contextvars.Token
+.. class:: Token
 
    *Token* objects are returned by the :meth:`ContextVar.set` method.
    They can be passed to the :meth:`ContextVar.reset` method to revert
@@ -110,7 +110,7 @@ Context Variables
 
       A read-only property.  Set to the value the variable had before
       the :meth:`ContextVar.set` method call that created the token.
-      It points to :attr:`Token.MISSING` is the variable was not set
+      It points to :attr:`Token.MISSING` if the variable was not set
       before the call.
 
    .. attribute:: Token.MISSING
@@ -131,7 +131,7 @@ Manual Context Management
       ctx: Context = copy_context()
       print(list(ctx.items()))
 
-   The function has an O(1) complexity, i.e. works equally fast for
+   The function has an *O*\ (1) complexity, i.e. works equally fast for
    contexts with a few context variables and for contexts that have
    a lot of them.
 
@@ -144,9 +144,14 @@ Manual Context Management
    To get a copy of the current context use the
    :func:`~contextvars.copy_context` function.
 
+   Every thread will have a different top-level :class:`~contextvars.Context`
+   object. This means that a :class:`ContextVar` object behaves in a similar
+   fashion to :func:`threading.local` when values are assigned in different
+   threads.
+
    Context implements the :class:`collections.abc.Mapping` interface.
 
-   .. method:: run(callable, \*args, \*\*kwargs)
+   .. method:: run(callable, *args, **kwargs)
 
       Execute ``callable(*args, **kwargs)`` code in the context object
       the *run* method is called on.  Return the result of the execution
@@ -249,7 +254,7 @@ client::
         # without passing it explicitly to this function.
 
         client_addr = client_addr_var.get()
-        return f'Good bye, client @ {client_addr}\n'.encode()
+        return f'Good bye, client @ {client_addr}\r\n'.encode()
 
     async def handle_request(reader, writer):
         addr = writer.transport.get_extra_info('socket').getpeername()
@@ -263,9 +268,10 @@ client::
             print(line)
             if not line.strip():
                 break
-            writer.write(line)
 
-        writer.write(render_goodbye())
+        writer.write(b'HTTP/1.1 200 OK\r\n')  # status line
+        writer.write(b'\r\n')  # headers
+        writer.write(render_goodbye())  # body
         writer.close()
 
     async def main():
@@ -277,5 +283,6 @@ client::
 
     asyncio.run(main())
 
-    # To test it you can use telnet:
+    # To test it you can use telnet or curl:
     #     telnet 127.0.0.1 8081
+    #     curl 127.0.0.1:8081

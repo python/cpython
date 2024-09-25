@@ -1,0 +1,1 @@
+Add :func:`operator.is_none` and :func:`operator.is_not_none` functions.

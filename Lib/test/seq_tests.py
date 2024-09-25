@@ -145,6 +145,9 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(self.type2test(LyingTuple((2,))), self.type2test((1,)))
         self.assertEqual(self.type2test(LyingList([2])), self.type2test([1]))
 
+        with self.assertRaises(TypeError):
+            self.type2test(unsupported_arg=[])
+
     def test_truth(self):
         self.assertFalse(self.type2test())
         self.assertTrue(self.type2test([42]))
@@ -423,6 +426,7 @@ class CommonTest(unittest.TestCase):
             self.assertEqual(lst2, lst)
             self.assertNotEqual(id(lst2), id(lst))
 
+    @support.suppress_immortalization()
     def test_free_after_iterating(self):
         support.check_free_after_iterating(self, iter, self.type2test)
         support.check_free_after_iterating(self, reversed, self.type2test)
