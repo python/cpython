@@ -181,7 +181,7 @@ class Bdb:
     is determined by the __name__ in the frame globals.
     """
 
-    def __init__(self, skip=None, backend='monitoring'):
+    def __init__(self, skip=None, backend='settrace'):
         self.skip = set(skip) if skip else None
         self.breaks = {}
         self.fncache = {}
