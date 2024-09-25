@@ -151,7 +151,7 @@ constevaluator_clear(PyObject *self)
 }
 
 static PyObject *
-constevaluator_repr(PyObject *self, PyObject *repr)
+constevaluator_repr(PyObject *self)
 {
     PyObject *value = ((constevaluatorobject *)self)->value;
     return PyUnicode_FromFormat("<constevaluator %R>", value);
@@ -242,7 +242,8 @@ static PyType_Slot constevaluator_slots[] = {
 PyType_Spec constevaluator_spec = {
     .name = "_typing._ConstEvaluator",
     .basicsize = sizeof(constevaluatorobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .slots = constevaluator_slots,
 };
 
