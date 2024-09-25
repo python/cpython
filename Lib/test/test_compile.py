@@ -871,6 +871,60 @@ class TestSpecifics(unittest.TestCase):
             list(dis.get_instructions(unused_code_at_end))[-1].opname)
 
     @support.cpython_only
+    def test_docstring(self):
+        src = textwrap.dedent("""
+            def with_docstring():
+                "docstring"
+
+            def two_strings():
+                "docstring"
+                "not docstring"
+
+            def with_fstring():
+                f"not docstring"
+
+            def with_const_expression():
+                "also" + " not docstring"
+            """)
+
+        for opt in [0, 1, 2]:
+            with self.subTest(opt=opt):
+                code = compile(src, "<test>", "exec", optimize=opt)
+                ns = {}
+                exec(code, ns)
+
+                if opt < 2:
+                    self.assertEqual(ns['with_docstring'].__doc__, "docstring")
+                    self.assertEqual(ns['two_strings'].__doc__, "docstring")
+                else:
+                    self.assertIsNone(ns['with_docstring'].__doc__)
+                    self.assertIsNone(ns['two_strings'].__doc__)
+                self.assertIsNone(ns['with_fstring'].__doc__)
+                self.assertIsNone(ns['with_const_expression'].__doc__)
+
+    @support.cpython_only
+    def test_docstring_interactive_mode(self):
+        srcs = [
+            """def with_docstring():
+                "docstring"
+            """,
+            """class with_docstring:
+                "docstring"
+            """,
+        ]
+
+        for opt in [0, 1, 2]:
+            for src in srcs:
+                with self.subTest(opt=opt, src=src):
+                    code = compile(textwrap.dedent(src), "<test>", "single", optimize=opt)
+                    ns = {}
+                    exec(code, ns)
+                    if opt < 2:
+                        self.assertEqual(ns['with_docstring'].__doc__, "docstring")
+                    else:
+                        self.assertIsNone(ns['with_docstring'].__doc__)
+
+    @support.cpython_only
     def test_docstring_omitted(self):
         # See gh-115347
         src = textwrap.dedent("""
@@ -887,12 +941,13 @@ class TestSpecifics(unittest.TestCase):
                 return h
         """)
         for opt in [-1, 0, 1, 2]:
-            with self.subTest(opt=opt):
-                code = compile(src, "<test>", "exec", optimize=opt)
-                output = io.StringIO()
-                with contextlib.redirect_stdout(output):
-                    dis.dis(code)
-                self.assertNotIn('NOP' , output.getvalue())
+            for mode in ["exec", "single"]:
+                with self.subTest(opt=opt, mode=mode):
+                    code = compile(src, "<test>", mode, optimize=opt)
+                    output = io.StringIO()
+                    with contextlib.redirect_stdout(output):
+                        dis.dis(code)
+                    self.assertNotIn('NOP', output.getvalue())
 
     def test_dont_merge_constants(self):
         # Issue #25843: compile() must not merge constants which are equal
@@ -1172,7 +1227,7 @@ class TestSpecifics(unittest.TestCase):
                     x
                     in
                     y)
-        genexp_lines = [0, 2, 0]
+        genexp_lines = [0, 4, 2, 0, 4]
 
         genexp_code = return_genexp.__code__.co_consts[1]
         code_lines = self.get_code_lines(genexp_code)
@@ -1627,7 +1682,7 @@ class TestSourcePositions(unittest.TestCase):
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
             line=1, end_line=2, column=1, end_column=8, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_CONST',
-            line=1, end_line=6, column=0, end_column=32, occurrence=1)
+            line=4, end_line=4, column=7, end_column=14, occurrence=1)
 
     def test_multiline_async_generator_expression(self):
         snippet = textwrap.dedent("""\

@@ -6,6 +6,7 @@ import doctest
 import unittest
 import weakref
 import inspect
+import textwrap
 import types
 
 from test import support
@@ -111,6 +112,27 @@ class FinalizationTest(unittest.TestCase):
             with self.assertRaises(StopIteration) as cm:
                 gen.send(2)
             self.assertEqual(cm.exception.value, 2)
+
+    def test_generator_resurrect(self):
+        # Test that a resurrected generator still has a valid gi_code
+        resurrected = []
+
+        # Resurrect a generator in a finalizer
+        exec(textwrap.dedent("""
+            def gen():
+                try:
+                    yield
+                except:
+                    resurrected.append(g)
+
+            g = gen()
+            next(g)
+        """), {"resurrected": resurrected})
+
+        support.gc_collect()
+
+        self.assertEqual(len(resurrected), 1)
+        self.assertIsInstance(resurrected[0].gi_code, types.CodeType)
 
 
 class GeneratorTest(unittest.TestCase):

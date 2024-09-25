@@ -1,0 +1,3 @@
+Fix error handling in :py:class:`~socket.socket` method
+:py:func:`~socket.socket.connect_ex` on platforms where
+:c:data:`errno` can be negative.

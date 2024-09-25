@@ -20,7 +20,7 @@ except ImportError:
     _winapi = None
 
 
-def get_copy_blocksize(infd):
+def _get_copy_blocksize(infd):
     """Determine blocksize for fastcopying on Linux.
     Hopefully the whole file will be copied in a single call.
     The copying itself should be performed in a loop 'till EOF is
@@ -40,7 +40,7 @@ def get_copy_blocksize(infd):
 
 
 if fcntl and hasattr(fcntl, 'FICLONE'):
-    def clonefd(source_fd, target_fd):
+    def _ficlone(source_fd, target_fd):
         """
         Perform a lightweight copy of two files, where the data blocks are
         copied only when modified. This is known as Copy on Write (CoW),
@@ -48,18 +48,22 @@ if fcntl and hasattr(fcntl, 'FICLONE'):
         """
         fcntl.ioctl(target_fd, fcntl.FICLONE, source_fd)
 else:
-    clonefd = None
+    _ficlone = None
 
 
 if posix and hasattr(posix, '_fcopyfile'):
-    def copyfd(source_fd, target_fd):
+    def _fcopyfile(source_fd, target_fd):
         """
         Copy a regular file content using high-performance fcopyfile(3)
         syscall (macOS).
         """
         posix._fcopyfile(source_fd, target_fd, posix._COPYFILE_DATA)
-elif hasattr(os, 'copy_file_range'):
-    def copyfd(source_fd, target_fd):
+else:
+    _fcopyfile = None
+
+
+if hasattr(os, 'copy_file_range'):
+    def _copy_file_range(source_fd, target_fd):
         """
         Copy data from one regular mmap-like fd to another by using a
         high-performance copy_file_range(2) syscall that gives filesystems
@@ -67,7 +71,7 @@ elif hasattr(os, 'copy_file_range'):
         copy.
         This should work on Linux >= 4.5 only.
         """
-        blocksize = get_copy_blocksize(source_fd)
+        blocksize = _get_copy_blocksize(source_fd)
         offset = 0
         while True:
             sent = os.copy_file_range(source_fd, target_fd, blocksize,
@@ -75,13 +79,17 @@ elif hasattr(os, 'copy_file_range'):
             if sent == 0:
                 break  # EOF
             offset += sent
-elif hasattr(os, 'sendfile'):
-    def copyfd(source_fd, target_fd):
+else:
+    _copy_file_range = None
+
+
+if hasattr(os, 'sendfile'):
+    def _sendfile(source_fd, target_fd):
         """Copy data from one regular mmap-like fd to another by using
         high-performance sendfile(2) syscall.
         This should work on Linux >= 2.6.33 only.
         """
-        blocksize = get_copy_blocksize(source_fd)
+        blocksize = _get_copy_blocksize(source_fd)
         offset = 0
         while True:
             sent = os.sendfile(target_fd, source_fd, offset, blocksize)
@@ -89,7 +97,7 @@ elif hasattr(os, 'sendfile'):
                 break  # EOF
             offset += sent
 else:
-    copyfd = None
+    _sendfile = None
 
 
 if _winapi and hasattr(_winapi, 'CopyFile2'):
@@ -114,18 +122,36 @@ def copyfileobj(source_f, target_f):
     else:
         try:
             # Use OS copy-on-write where available.
-            if clonefd:
+            if _ficlone:
                 try:
-                    clonefd(source_fd, target_fd)
+                    _ficlone(source_fd, target_fd)
                     return
                 except OSError as err:
                     if err.errno not in (EBADF, EOPNOTSUPP, ETXTBSY, EXDEV):
                         raise err
 
             # Use OS copy where available.
-            if copyfd:
-                copyfd(source_fd, target_fd)
-                return
+            if _fcopyfile:
+                try:
+                    _fcopyfile(source_fd, target_fd)
+                    return
+                except OSError as err:
+                    if err.errno not in (EINVAL, ENOTSUP):
+                        raise err
+            if _copy_file_range:
+                try:
+                    _copy_file_range(source_fd, target_fd)
+                    return
+                except OSError as err:
+                    if err.errno not in (ETXTBSY, EXDEV):
+                        raise err
+            if _sendfile:
+                try:
+                    _sendfile(source_fd, target_fd)
+                    return
+                except OSError as err:
+                    if err.errno != ENOTSOCK:
+                        raise err
         except OSError as err:
             # Produce more useful error messages.
             err.filename = source_f.name
