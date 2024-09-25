@@ -1006,17 +1006,18 @@ Special attributes
    * - .. attribute:: type.__annotations__
      - A dictionary containing
        :term:`variable annotations <variable annotation>`
-       collected during class body execution. See also:
-       :attr:`__annotations__ attributes <object.__annotations__>`.
-
-       For best practices on working with :attr:`~object.__annotations__`,
-       please see :ref:`annotations-howto`.
+       collected during class body execution. For best practices on working
+       with :attr:`!__annotations__`, please see :ref:`annotations-howto`.
 
    * - .. attribute:: type.__type_params__
      - A :class:`tuple` containing the :ref:`type parameters <type-params>` of
        a :ref:`generic class <generic-classes>`.
 
        .. versionadded:: 3.12
+
+   * - .. attribute:: type.__mro__
+     - The :class:`tuple` of classes that are considered when looking for
+       base classes during method resolution.
 
 
 Special methods
