@@ -414,7 +414,7 @@ callback.
 .. section: Library
 
 Fix memory leak in asyncio.Queue, when the queue has limited size and it is
-full, the cancelation of queue.put() can cause a memory leak. Patch by: José
+full, the cancellation of queue.put() can cause a memory leak. Patch by: José
 Melero.
 
 ..
@@ -601,7 +601,7 @@ Add socket.getblocking() method.
 Add :mod:`importlib.resources` and :class:`importlib.abc.ResourceReader` as
 the unified API for reading resources contained within packages.  Loaders
 wishing to support resource reading must implement the
-:meth:`get_resource_reader()` method.  File-based and zipimport-based
+:meth:`get_resource_reader` method.  File-based and zipimport-based
 loaders both implement these APIs.  :class:`importlib.abc.ResourceLoader` is
 deprecated in favor of these new APIs.
 

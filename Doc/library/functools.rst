@@ -34,7 +34,7 @@ The :mod:`functools` module defines the following functions:
    Returns the same as ``lru_cache(maxsize=None)``, creating a thin
    wrapper around a dictionary lookup for the function arguments.  Because it
    never needs to evict old values, this is smaller and faster than
-   :func:`lru_cache()` with a size limit.
+   :func:`lru_cache` with a size limit.
 
    For example::
 
@@ -218,7 +218,7 @@ The :mod:`functools` module defines the following functions:
    cache.  See :ref:`faq-cache-method-calls`
 
    An `LRU (least recently used) cache
-   <https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)>`_
+   <https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_Recently_Used_(LRU)>`_
    works best when the most recent calls are the best predictors of upcoming
    calls (for example, the most popular articles on a news server tend to
    change each day).  The cache's size limit assures that the cache does not
@@ -694,10 +694,11 @@ The :mod:`functools` module defines the following functions:
    attributes of the wrapper function are updated with the corresponding attributes
    from the original function. The default values for these arguments are the
    module level constants ``WRAPPER_ASSIGNMENTS`` (which assigns to the wrapper
-   function's ``__module__``, ``__name__``, ``__qualname__``, ``__annotations__``,
-   ``__type_params__``, and ``__doc__``, the documentation string)
-   and ``WRAPPER_UPDATES`` (which
-   updates the wrapper function's ``__dict__``, i.e. the instance dictionary).
+   function's :attr:`~function.__module__`, :attr:`~function.__name__`,
+   :attr:`~function.__qualname__`, :attr:`~function.__annotations__`,
+   :attr:`~function.__type_params__`, and :attr:`~function.__doc__`, the
+   documentation string) and ``WRAPPER_UPDATES`` (which updates the wrapper
+   function's :attr:`~function.__dict__`, i.e. the instance dictionary).
 
    To allow access to the original function for introspection and other purposes
    (e.g. bypassing a caching decorator such as :func:`lru_cache`), this function
@@ -718,7 +719,7 @@ The :mod:`functools` module defines the following functions:
 
    .. versionchanged:: 3.2
       The ``__wrapped__`` attribute is now automatically added.
-      The ``__annotations__`` attribute is now copied by default.
+      The :attr:`~function.__annotations__` attribute is now copied by default.
       Missing attributes no longer trigger an :exc:`AttributeError`.
 
    .. versionchanged:: 3.4
@@ -727,7 +728,7 @@ The :mod:`functools` module defines the following functions:
       (see :issue:`17482`)
 
    .. versionchanged:: 3.12
-      The ``__type_params__`` attribute is now copied by default.
+      The :attr:`~function.__type_params__` attribute is now copied by default.
 
 
 .. decorator:: wraps(wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)

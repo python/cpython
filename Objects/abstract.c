@@ -1000,20 +1000,6 @@ binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
     PyObject *result = BINARY_OP1(v, w, op_slot, op_name);
     if (result == Py_NotImplemented) {
         Py_DECREF(result);
-
-        if (op_slot == NB_SLOT(nb_rshift) &&
-            PyCFunction_CheckExact(v) &&
-            strcmp(((PyCFunctionObject *)v)->m_ml->ml_name, "print") == 0)
-        {
-            PyErr_Format(PyExc_TypeError,
-                "unsupported operand type(s) for %.100s: "
-                "'%.100s' and '%.100s'. Did you mean \"print(<message>, "
-                "file=<output_stream>)\"?",
-                op_name,
-                Py_TYPE(v)->tp_name,
-                Py_TYPE(w)->tp_name);
-            return NULL;
-        }
         return binop_type_error(v, w, op_name);
     }
     return result;

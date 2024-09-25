@@ -3378,26 +3378,44 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.keyword_only_parameter(1)
         self.assertEqual(ac_tester.keyword_only_parameter(a=1), (1,))
 
-    def test_posonly_vararg(self):
-        with self.assertRaises(TypeError):
-            ac_tester.posonly_vararg()
-        self.assertEqual(ac_tester.posonly_vararg(1, 2), (1, 2, ()))
-        self.assertEqual(ac_tester.posonly_vararg(1, b=2), (1, 2, ()))
-        self.assertEqual(ac_tester.posonly_vararg(1, 2, 3, 4), (1, 2, (3, 4)))
-        with self.assertRaises(TypeError):
-            ac_tester.posonly_vararg(b=4)
-        with self.assertRaises(TypeError):
-            ac_tester.posonly_vararg(1, 2, 3, b=4)
+    def test_varpos(self):
+        # fn(*args)
+        fn = ac_tester.varpos
+        self.assertEqual(fn(), ())
+        self.assertEqual(fn(1, 2), (1, 2))
 
-    def test_vararg(self):
-        with self.assertRaises(TypeError):
-            ac_tester.vararg()
-        with self.assertRaises(TypeError):
-            ac_tester.vararg(1, b=2)
-        self.assertEqual(ac_tester.vararg(1, 2, 3, 4), (1, (2, 3, 4)))
+    def test_posonly_varpos(self):
+        # fn(a, b, /, *args)
+        fn = ac_tester.posonly_varpos
+        self.assertRaises(TypeError, fn)
+        self.assertRaises(TypeError, fn, 1)
+        self.assertRaises(TypeError, fn, 1, b=2)
+        self.assertEqual(fn(1, 2), (1, 2, ()))
+        self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
 
-    def test_vararg_with_default(self):
-        fn = ac_tester.vararg_with_default
+    def test_posonly_poskw_varpos(self):
+        # fn(a, /, b, *args)
+        fn = ac_tester.posonly_poskw_varpos
+        self.assertRaises(TypeError, fn)
+        self.assertEqual(fn(1, 2), (1, 2, ()))
+        self.assertEqual(fn(1, b=2), (1, 2, ()))
+        self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
+        self.assertRaises(TypeError, fn, b=4)
+        self.assertRaises(TypeError, fn, 1, 2, 3, b=4)
+
+    def test_poskw_varpos(self):
+        # fn(a, *args)
+        fn = ac_tester.poskw_varpos
+        self.assertRaises(TypeError, fn)
+        self.assertRaises(TypeError, fn, 1, b=2)
+        self.assertEqual(fn(a=1), (1, ()))
+        self.assertRaises(TypeError, fn, 1, a=2)
+        self.assertEqual(fn(1), (1, ()))
+        self.assertEqual(fn(1, 2, 3, 4), (1, (2, 3, 4)))
+
+    def test_poskw_varpos_kwonly_opt(self):
+        # fn(a, *args, b=False)
+        fn = ac_tester.poskw_varpos_kwonly_opt
         self.assertRaises(TypeError, fn)
         self.assertRaises(TypeError, fn, 1, a=2)
         self.assertEqual(fn(1, b=2), (1, (), True))
@@ -3406,35 +3424,38 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(fn(a=1), (1, (), False))
         self.assertEqual(fn(a=1, b=2), (1, (), True))
 
-    def test_vararg_with_default2(self):
-        fn = ac_tester.vararg_with_default2
+    def test_poskw_varpos_kwonly_opt2(self):
+        # fn(a, *args, b=False, c=False)
+        fn = ac_tester.poskw_varpos_kwonly_opt2
         self.assertRaises(TypeError, fn)
         self.assertRaises(TypeError, fn, 1, a=2)
-        self.assertEqual(fn(1, b=2), (1, (), 2, None))
+        self.assertEqual(fn(1, b=2), (1, (), 2, False))
         self.assertEqual(fn(1, b=2, c=3), (1, (), 2, 3))
-        self.assertEqual(fn(1, 2, 3), (1, (2, 3), None, None))
-        self.assertEqual(fn(1, 2, 3, b=4), (1, (2, 3), 4, None))
+        self.assertEqual(fn(1, 2, 3), (1, (2, 3), False, False))
+        self.assertEqual(fn(1, 2, 3, b=4), (1, (2, 3), 4, False))
         self.assertEqual(fn(1, 2, 3, b=4, c=5), (1, (2, 3), 4, 5))
-        self.assertEqual(fn(a=1), (1, (), None, None))
-        self.assertEqual(fn(a=1, b=2), (1, (), 2, None))
+        self.assertEqual(fn(a=1), (1, (), False, False))
+        self.assertEqual(fn(a=1, b=2), (1, (), 2, False))
         self.assertEqual(fn(a=1, b=2, c=3), (1, (), 2, 3))
 
-    def test_vararg_with_only_defaults(self):
-        self.assertEqual(ac_tester.vararg_with_only_defaults(), ((), None))
-        self.assertEqual(ac_tester.vararg_with_only_defaults(b=2), ((), 2))
-        self.assertEqual(ac_tester.vararg_with_only_defaults(1, b=2), ((1, ), 2))
-        self.assertEqual(ac_tester.vararg_with_only_defaults(1, 2, 3, 4), ((1, 2, 3, 4), None))
-        self.assertEqual(ac_tester.vararg_with_only_defaults(1, 2, 3, 4, b=5), ((1, 2, 3, 4), 5))
+    def test_varpos_kwonly_opt(self):
+        # fn(*args, b=False)
+        fn = ac_tester.varpos_kwonly_opt
+        self.assertEqual(fn(), ((), False))
+        self.assertEqual(fn(b=2), ((), 2))
+        self.assertEqual(fn(1, b=2), ((1, ), 2))
+        self.assertEqual(fn(1, 2, 3, 4), ((1, 2, 3, 4), False))
+        self.assertEqual(fn(1, 2, 3, 4, b=5), ((1, 2, 3, 4), 5))
 
-    def test_vararg_kwonly_req_opt(self):
-        fn = ac_tester.vararg_kwonly_req_opt
+    def test_varpos_kwonly_req_opt(self):
+        fn = ac_tester.varpos_kwonly_req_opt
         self.assertRaises(TypeError, fn)
-        self.assertEqual(fn(a=1), ((), 1, None, None))
-        self.assertEqual(fn(a=1, b=2), ((), 1, 2, None))
+        self.assertEqual(fn(a=1), ((), 1, False, False))
+        self.assertEqual(fn(a=1, b=2), ((), 1, 2, False))
         self.assertEqual(fn(a=1, b=2, c=3), ((), 1, 2, 3))
         self.assertRaises(TypeError, fn, 1)
-        self.assertEqual(fn(1, a=2), ((1,), 2, None, None))
-        self.assertEqual(fn(1, a=2, b=3), ((1,), 2, 3, None))
+        self.assertEqual(fn(1, a=2), ((1,), 2, False, False))
+        self.assertEqual(fn(1, a=2, b=3), ((1,), 2, 3, False))
         self.assertEqual(fn(1, a=2, b=3, c=4), ((1,), 2, 3, 4))
 
     def test_gh_32092_oob(self):
@@ -3459,35 +3480,19 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.gh_99240_double_free('a', '\0b')
 
     def test_null_or_tuple_for_varargs(self):
+        # fn(name, *constraints, covariant=False)
+        fn = ac_tester.null_or_tuple_for_varargs
         # All of these should not crash:
-        valid_args_for_test = [
-            (('a',), {},
-             ('a', (), False)),
-            (('a', 1, 2, 3), {'covariant': True},
-             ('a', (1, 2, 3), True)),
-            ((), {'name': 'a'},
-             ('a', (), False)),
-            ((), {'name': 'a', 'covariant': True},
-             ('a', (), True)),
-            ((), {'covariant': True, 'name': 'a'},
-             ('a', (), True)),
-        ]
-        for args, kwargs, expected in valid_args_for_test:
-            with self.subTest(args=args, kwargs=kwargs):
-                self.assertEqual(
-                    ac_tester.null_or_tuple_for_varargs(*args, **kwargs),
-                    expected,
-                )
+        self.assertEqual(fn('a'), ('a', (), False))
+        self.assertEqual(fn('a', 1, 2, 3, covariant=True), ('a', (1, 2, 3), True))
+        self.assertEqual(fn(name='a'), ('a', (), False))
+        self.assertEqual(fn(name='a', covariant=True), ('a', (), True))
+        self.assertEqual(fn(covariant=True, name='a'), ('a', (), True))
 
-    def test_null_or_tuple_for_varargs_error(self):
-        with self.assertRaises(TypeError):
-            ac_tester.null_or_tuple_for_varargs(covariant=True)
-        with self.assertRaises(TypeError):
-            ac_tester.null_or_tuple_for_varargs(1, name='a')
-        with self.assertRaises(TypeError):
-            ac_tester.null_or_tuple_for_varargs(1, 2, 3, name='a', covariant=True)
-        with self.assertRaises(TypeError):
-            ac_tester.null_or_tuple_for_varargs(1, 2, 3, covariant=True, name='a')
+        self.assertRaises(TypeError, fn, covariant=True)
+        self.assertRaises(TypeError, fn, 1, name='a')
+        self.assertRaises(TypeError, fn, 1, 2, 3, name='a', covariant=True)
+        self.assertRaises(TypeError, fn, 1, 2, 3, covariant=True, name='a')
 
     def test_cloned_func_exception_message(self):
         incorrect_arg = -1  # f1() and f2() accept a single str
@@ -3545,6 +3550,34 @@ class ClinicFunctionalTest(unittest.TestCase):
             obj.get_defining_class_arg()
         with self.assertRaises(TypeError):
             obj.get_defining_class_arg("arg1", "arg2")
+
+    def test_defclass_varpos(self):
+        # fn(*args)
+        cls = ac_tester.TestClass
+        obj = cls()
+        fn = obj.defclass_varpos
+        self.assertEqual(fn(), (cls, ()))
+        self.assertEqual(fn(1, 2), (cls, (1, 2)))
+        fn = cls.defclass_varpos
+        self.assertRaises(TypeError, fn)
+        self.assertEqual(fn(obj), (cls, ()))
+        self.assertEqual(fn(obj, 1, 2), (cls, (1, 2)))
+
+    def test_defclass_posonly_varpos(self):
+        # fn(a, b, /, *args)
+        cls = ac_tester.TestClass
+        obj = cls()
+        fn = obj.defclass_posonly_varpos
+        self.assertRaises(TypeError, fn)
+        self.assertRaises(TypeError, fn, 1)
+        self.assertEqual(fn(1, 2), (cls, 1, 2, ()))
+        self.assertEqual(fn(1, 2, 3, 4), (cls, 1, 2, (3, 4)))
+        fn = cls.defclass_posonly_varpos
+        self.assertRaises(TypeError, fn)
+        self.assertRaises(TypeError, fn, obj)
+        self.assertRaises(TypeError, fn, obj, 1)
+        self.assertEqual(fn(obj, 1, 2), (cls, 1, 2, ()))
+        self.assertEqual(fn(obj, 1, 2, 3, 4), (cls, 1, 2, (3, 4)))
 
     def test_depr_star_new(self):
         cls = ac_tester.DeprStarNew

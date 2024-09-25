@@ -29,7 +29,7 @@ import functools
 import operator
 import sys
 import types
-from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType, GenericAlias
+from types import GenericAlias
 
 from _typing import (
     _idfunc,
@@ -474,6 +474,10 @@ def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=f
         _deprecation_warning_for_no_type_params_passed("typing._eval_type")
         type_params = ()
     if isinstance(t, ForwardRef):
+        # If the forward_ref has __forward_module__ set, evaluate() infers the globals
+        # from the module, and it will probably pick better than the globals we have here.
+        if t.__forward_module__ is not None:
+            globalns = None
         return evaluate_forward_ref(t, globals=globalns, locals=localns,
                                     type_params=type_params, owner=owner,
                                     _recursive_guard=recursive_guard, format=format)
@@ -2346,11 +2350,6 @@ def assert_type(val, typ, /):
             assert_type(name, int)  # type checker error
     """
     return val
-
-
-_allowed_types = (types.FunctionType, types.BuiltinFunctionType,
-                  types.MethodType, types.ModuleType,
-                  WrapperDescriptorType, MethodWrapperType, MethodDescriptorType)
 
 
 def get_type_hints(obj, globalns=None, localns=None, include_extras=False,

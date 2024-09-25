@@ -821,7 +821,7 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertSourceEqual(mod.eggs.__code__, 12, 18)
 
     def test_getsource_on_generated_class(self):
-        A = type('A', (), {})
+        A = type('A', (unittest.TestCase,), {})
         self.assertEqual(inspect.getsourcefile(A), __file__)
         self.assertEqual(inspect.getfile(A), __file__)
         self.assertIs(inspect.getmodule(A), sys.modules[__name__])
@@ -928,6 +928,24 @@ class TestOneliners(GetSourceBase):
         # Test inspect.getsource with a lambda function defined
         # as argument to another function.
         self.assertSourceEqual(mod2.anonymous, 55, 55)
+
+    def test_enum(self):
+        self.assertSourceEqual(mod2.enum322, 322, 323)
+        self.assertSourceEqual(mod2.enum326, 326, 327)
+        self.assertSourceEqual(mod2.flag330, 330, 331)
+        self.assertSourceEqual(mod2.flag334, 334, 335)
+        self.assertRaises(OSError, inspect.getsource, mod2.simple_enum338)
+        self.assertRaises(OSError, inspect.getsource, mod2.simple_enum339)
+        self.assertRaises(OSError, inspect.getsource, mod2.simple_flag340)
+        self.assertRaises(OSError, inspect.getsource, mod2.simple_flag341)
+
+    def test_namedtuple(self):
+        self.assertSourceEqual(mod2.nt346, 346, 348)
+        self.assertRaises(OSError, inspect.getsource, mod2.nt351)
+
+    def test_typeddict(self):
+        self.assertSourceEqual(mod2.td354, 354, 356)
+        self.assertRaises(OSError, inspect.getsource, mod2.td359)
 
 class TestBlockComments(GetSourceBase):
     fodderModule = mod
@@ -1549,6 +1567,56 @@ class TestClassesAndFunctions(unittest.TestCase):
         b = B()
         self.assertIn(('f', b.f), inspect.getmembers(b))
         self.assertIn(('f', b.f), inspect.getmembers(b, inspect.ismethod))
+
+    def test_getmembers_custom_dir(self):
+        class CorrectDir:
+            def __init__(self, attr):
+                self.attr = attr
+            def method(self):
+                return self.attr + 1
+            def __dir__(self):
+                return ['attr', 'method']
+
+        cd = CorrectDir(5)
+        self.assertEqual(inspect.getmembers(cd), [
+            ('attr', 5),
+            ('method', cd.method),
+        ])
+        self.assertEqual(inspect.getmembers(cd, inspect.ismethod), [
+            ('method', cd.method),
+        ])
+
+    def test_getmembers_custom_broken_dir(self):
+        # inspect.getmembers calls `dir()` on the passed object inside.
+        # if `__dir__` mentions some non-existent attribute,
+        # we still need to return others correctly.
+        class BrokenDir:
+            existing = 1
+            def method(self):
+                return self.existing + 1
+            def __dir__(self):
+                return ['method', 'missing', 'existing']
+
+        bd = BrokenDir()
+        self.assertEqual(inspect.getmembers(bd), [
+            ('existing', 1),
+            ('method', bd.method),
+        ])
+        self.assertEqual(inspect.getmembers(bd, inspect.ismethod), [
+            ('method', bd.method),
+        ])
+
+    def test_getmembers_custom_duplicated_dir(self):
+        # Duplicates in `__dir__` must not fail and return just one result.
+        class DuplicatedDir:
+            attr = 1
+            def __dir__(self):
+                return ['attr', 'attr']
+
+        dd = DuplicatedDir()
+        self.assertEqual(inspect.getmembers(dd), [
+            ('attr', 1),
+        ])
 
     def test_getmembers_VirtualAttribute(self):
         class M(type):
