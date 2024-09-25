@@ -31,7 +31,7 @@ class HyperParser:
 
         parser = pyparse.Parser(editwin.indentwidth, editwin.tabwidth)
 
-        startatindex = text.index('stmt-start')
+        startatindex = text.index('iomark')
 
         def index2line(index):
             return int(float(index))

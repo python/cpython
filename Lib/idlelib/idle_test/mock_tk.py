@@ -146,7 +146,7 @@ class Text:
         elif index == 'end':
             return self._endex(endflag)
         elif '.' not in index:
-            return self._decode(self.marks['stmt-start'])
+            return self._decode(self.marks[index], endflag)
 
         line, char = index.split('.')
         line = int(line)
