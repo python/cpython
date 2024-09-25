@@ -197,6 +197,27 @@ Classes
 Functions
 ---------
 
+.. function:: annotations_to_source(annotations)
+
+   Convert an annotations dict containing runtime values to a
+   dict containing only strings. If the values are not already strings,
+   they are converted using :func:`value_to_source`.
+   This is meant as a helper for user-provided
+   annotate functions that support the :attr:`~Format.SOURCE` format but
+   do not have access to the code creating the annotations.
+
+   For example, this is used to implement the :attr:`~Format.SOURCE` for
+   :class:`typing.TypedDict` classes created through the functional syntax:
+
+   .. doctest::
+
+       >>> from typing import TypedDict
+       >>> Movie = TypedDict("movie", {"name": str, "year": int})
+       >>> get_annotations(Movie, format=Format.SOURCE)
+       {'name': 'str', 'year': 'int'}
+
+   .. versionadded:: 3.14
+
 .. function:: call_annotate_function(annotate, format, *, owner=None)
 
    Call the :term:`annotate function` *annotate* with the given *format*,
@@ -347,3 +368,16 @@ Functions
       {'a': <class 'int'>, 'b': <class 'str'>, 'return': <class 'float'>}
 
    .. versionadded:: 3.14
+
+.. function:: value_to_source(value)
+
+   Convert an arbitrary Python value to a format suitable for use by the
+   :attr:`~Format.SOURCE` format. This calls :func:`repr` for most
+   objects, but has special handling for some objects, such as type objects.
+
+   This is meant as a helper for user-provided
+   annotate functions that support the :attr:`~Format.SOURCE` format but
+   do not have access to the code creating the annotations.
+
+   .. versionadded:: 3.14
+
