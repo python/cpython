@@ -316,14 +316,18 @@ framelocalsproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                      PyTuple_GET_SIZE(args));
         return NULL;
     }
+    PyObject *item = PyTuple_GET_ITEM(args, 0);
+
+    if (!PyFrame_Check(item)) {
+        PyErr_Format(PyExc_TypeError, "expect frame, not %T", item);
+        return NULL;
+    }
+    PyFrameObject *frame = (PyFrameObject*)item;
 
     PyFrameLocalsProxyObject *self = (PyFrameLocalsProxyObject *)type->tp_alloc(type, 0);
     if (self == NULL) {
         return NULL;
     }
-
-    PyFrameObject *frame = (PyFrameObject*)PyTuple_GET_ITEM(args, 0);
-    assert(PyFrame_Check(frame));
 
     ((PyFrameLocalsProxyObject*)self)->frame = (PyFrameObject*)Py_NewRef(frame);
 

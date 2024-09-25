@@ -507,9 +507,11 @@ class TestFrameLocals(unittest.TestCase):
         proxy = FrameLocalsProxy(make_frame())
         self.assertEqual(proxy, {'x': 1, 'y': 2})
 
-        # constructor expects 1 argument (frame)
+        # constructor expects 1 frame argument
         with self.assertRaises(TypeError):
-            FrameLocalsProxy()
+            FrameLocalsProxy()     # no arguments
+        with self.assertRaises(TypeError):
+            FrameLocalsProxy(123)  # wrong type
 
 
 class FrameLocalsProxyMappingTests(mapping_tests.TestHashMappingProtocol):
