@@ -93,7 +93,6 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(__classdictcell__)
         STRUCT_FOR_ID(__complex__)
         STRUCT_FOR_ID(__contains__)
-        STRUCT_FOR_ID(__copy__)
         STRUCT_FOR_ID(__ctypes_from_outparam__)
         STRUCT_FOR_ID(__del__)
         STRUCT_FOR_ID(__delattr__)
