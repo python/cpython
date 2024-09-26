@@ -22,6 +22,13 @@ extern "C" {
     PyObject *prefix##_qualname;                                            \
     _PyErr_StackItem prefix##_exc_state;                                    \
     PyObject *prefix##_origin_or_finalizer;                                 \
+    /* A *borrowed* reference to a task that drives the coroutine.          \
+       The field is meant to be used by profilers and debuggers only.       \
+       The main invariant is that a task can't get GC'ed while              \
+       the coroutine it drives is alive and vice versa.                     \
+       Profilers can use this field to reconstruct the full async           \
+       call stack of program. */                                            \
+    PyObject *prefix##_task;                                                \
     char prefix##_hooks_inited;                                             \
     char prefix##_closed;                                                   \
     char prefix##_running_async;                                            \

@@ -239,6 +239,27 @@ static PyObject *
 task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *result);
 
 
+static void
+clear_task_coro(TaskObj *task)
+{
+    if (task->task_coro != NULL &&PyCoro_CheckExact(task->task_coro)) {
+        _PyCoro_SetTask(task->task_coro, (PyObject *)task);
+    }
+    Py_CLEAR(task->task_coro);
+}
+
+
+static void
+set_task_coro(TaskObj *task, PyObject *coro)
+{
+    if (PyCoro_CheckExact(coro)) {
+        _PyCoro_SetTask(coro, (PyObject *)task);
+    }
+    Py_INCREF(coro);
+    Py_XSETREF(task->task_coro, coro);
+}
+
+
 static int
 _is_coroutine(asyncio_state *state, PyObject *coro)
 {
@@ -2235,8 +2256,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     self->task_must_cancel = 0;
     self->task_log_destroy_pending = 1;
     self->task_num_cancels_requested = 0;
-    Py_INCREF(coro);
-    Py_XSETREF(self->task_coro, coro);
+    set_task_coro(self, coro);
 
     if (name == Py_None) {
         // optimization: defer task name formatting
@@ -2284,8 +2304,8 @@ static int
 TaskObj_clear(TaskObj *task)
 {
     (void)FutureObj_clear((FutureObj*) task);
+    clear_task_coro(task);
     Py_CLEAR(task->task_context);
-    Py_CLEAR(task->task_coro);
     Py_CLEAR(task->task_name);
     Py_CLEAR(task->task_fut_waiter);
     return 0;
@@ -3321,7 +3341,7 @@ task_eager_start(asyncio_state *state, TaskObj *task)
         register_task(state, task);
     } else {
         // This seems to really help performance on pyperformance benchmarks
-        Py_CLEAR(task->task_coro);
+        clear_task_coro(task);
     }
 
     return retval;
