@@ -1298,6 +1298,9 @@
     <ClCompile Include="..\Python\codecs.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\codegen.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\compile.c">
       <Filter>Python</Filter>
     </ClCompile>

@@ -474,7 +474,7 @@ loops that truncate the stream.
    If *start* is zero or ``None``, iteration starts at zero.  Otherwise,
    elements from the iterable are skipped until *start* is reached.
 
-   If *stop* is ``None``, iteration continues until the iterator is
+   If *stop* is ``None``, iteration continues until the iterable is
    exhausted, if at all.  Otherwise, it stops at the specified position.
 
    If *step* is ``None``, the step defaults to one.  Elements are returned
@@ -502,6 +502,10 @@ loops that truncate the stream.
               if i == next_i:
                   yield element
                   next_i += step
+
+   If the input is an iterator, then fully consuming the *islice*
+   advances the input iterator by ``max(start, stop)`` steps regardless
+   of the *step* value.
 
 
 .. function:: pairwise(iterable)
@@ -601,6 +605,8 @@ loops that truncate the stream.
            # product('ABCD', 'xy') → Ax Ay Bx By Cx Cy Dx Dy
            # product(range(2), repeat=3) → 000 001 010 011 100 101 110 111
 
+           if repeat < 0:
+               raise ValueError('repeat argument cannot be negative')
            pools = [tuple(pool) for pool in iterables] * repeat
 
            result = [[]]
@@ -684,24 +690,43 @@ loops that truncate the stream.
    Roughly equivalent to::
 
         def tee(iterable, n=2):
-            iterator = iter(iterable)
-            shared_link = [None, None]
-            return tuple(_tee(iterator, shared_link) for _ in range(n))
+            if n < 0:
+                raise ValueError
+            if n == 0:
+                return ()
+            iterator = _tee(iterable)
+            result = [iterator]
+            for _ in range(n - 1):
+                result.append(_tee(iterator))
+            return tuple(result)
 
-        def _tee(iterator, link):
-            try:
-                while True:
-                    if link[1] is None:
-                        link[0] = next(iterator)
-                        link[1] = [None, None]
-                    value, link = link
-                    yield value
-            except StopIteration:
-                return
+        class _tee:
 
-   Once a :func:`tee` has been created, the original *iterable* should not be
-   used anywhere else; otherwise, the *iterable* could get advanced without
-   the tee objects being informed.
+            def __init__(self, iterable):
+                it = iter(iterable)
+                if isinstance(it, _tee):
+                    self.iterator = it.iterator
+                    self.link = it.link
+                else:
+                    self.iterator = it
+                    self.link = [None, None]
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                link = self.link
+                if link[1] is None:
+                    link[0] = next(self.iterator)
+                    link[1] = [None, None]
+                value, self.link = link
+                return value
+
+   When the input *iterable* is already a tee iterator object, all
+   members of the return tuple are constructed as if they had been
+   produced by the upstream :func:`tee` call.  This "flattening step"
+   allows nested :func:`tee` calls to share the same underlying data
+   chain and to have a single update step rather than a chain of calls.
 
    ``tee`` iterators are not threadsafe. A :exc:`RuntimeError` may be
    raised when simultaneously using iterators returned by the same :func:`tee`
