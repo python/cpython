@@ -20,6 +20,7 @@ from pyspecific import SOURCE_URI
 # ---------------------
 
 extensions = [
+    'archive_downloads',
     'audit_events',
     'c_annotations',
     'glossary_search',
@@ -69,10 +70,11 @@ copyright = f"2001-{time.strftime('%Y')}, Python Software Foundation"
 version, release = importlib.import_module('patchlevel').get_version_info()
 
 rst_epilog = f"""
+.. |archives_version| replace:: {version if 'daily' in tags else release}
 .. |python_version_literal| replace:: ``Python {version}``
 .. |python_x_dot_y_literal| replace:: ``python{version}``
 .. |usr_local_bin_python_x_dot_y_literal| replace:: ``/usr/local/bin/python{version}``
-"""
+"""  # noqa: F821
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -360,10 +362,7 @@ html_context = {
 }
 
 # This 'Last updated on:' timestamp is inserted at the bottom of every page.
-html_time = int(os.environ.get('SOURCE_DATE_EPOCH', time.time()))
-html_last_updated_fmt = time.strftime(
-    '%b %d, %Y (%H:%M UTC)', time.gmtime(html_time)
-)
+html_last_updated_fmt = '%b %d, %Y (%H:%M UTC)'
 
 # Path to find HTML templates.
 templates_path = ['tools/templates']
@@ -378,7 +377,6 @@ html_sidebars = {
 
 # Additional templates that should be rendered to pages.
 html_additional_pages = {
-    'download': 'download.html',
     'index': 'indexcontent.html',
 }
 

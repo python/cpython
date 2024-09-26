@@ -306,12 +306,12 @@ serve:
 # for development releases: always build
 .PHONY: autobuild-dev
 autobuild-dev:
-	$(MAKE) dist SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1'
+	$(MAKE) dist SPHINXOPTS='$(SPHINXOPTS) -Ea -t=daily'
 
 # for quick rebuilds (HTML only)
 .PHONY: autobuild-dev-html
 autobuild-dev-html:
-	$(MAKE) html SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1'
+	$(MAKE) html SPHINXOPTS='$(SPHINXOPTS) -Ea -t=daily'
 
 # for stable releases: only build if not in pre-release stage (alpha, beta)
 # release candidate downloads are okay, since the stable tree can be in that stage
