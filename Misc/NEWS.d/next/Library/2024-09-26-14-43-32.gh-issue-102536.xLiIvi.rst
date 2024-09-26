@@ -1,1 +1,1 @@
-Add ``_architecture`` field to :data:`sys.implementation`
+Add ``_architecture`` field to :data:`sys.implementation`.
