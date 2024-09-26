@@ -1011,6 +1011,14 @@ Special attributes
        collected during class body execution. For best practices on working
        with :attr:`!__annotations__`, please see :ref:`annotations-howto`.
 
+       .. caution::
+
+          Accessing the :attr:`!__annotations__` attribute of a class
+          object directly may yield incorrect results in the presence of
+          metaclasses. In addition, the attribute may not exist for
+          some classes. Use :func:`inspect.get_annotations` to
+          retrieve class annotations safely.
+
    * - .. attribute:: type.__type_params__
      - A :class:`tuple` containing the :ref:`type parameters <type-params>` of
        a :ref:`generic class <generic-classes>`.
