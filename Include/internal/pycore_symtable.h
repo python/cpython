@@ -106,9 +106,6 @@ typedef struct _symtable_entry {
     const char *ste_scope_info;
 
     int ste_nested;      /* true if block is nested */
-    unsigned ste_free : 1;        /* true if block has free variables */
-    unsigned ste_child_free : 1;  /* true if a child block has free vars,
-                                     including free refs to globals */
     unsigned ste_generator : 1;   /* true if namespace is a generator */
     unsigned ste_coroutine : 1;   /* true if namespace is a coroutine */
     unsigned ste_annotations_used : 1;  /* true if there are any annotations in this scope */
@@ -174,6 +171,7 @@ extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 */
 #define SCOPE_OFFSET 12
 #define SCOPE_MASK (DEF_GLOBAL | DEF_LOCAL | DEF_PARAM | DEF_NONLOCAL)
+#define SYMBOL_TO_SCOPE(S) (((S) >> SCOPE_OFFSET) & SCOPE_MASK)
 
 #define LOCAL 1
 #define GLOBAL_EXPLICIT 2
