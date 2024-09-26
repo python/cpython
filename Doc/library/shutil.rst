@@ -439,8 +439,10 @@ Directory and files operations
    *mode* is a permission mask passed to :func:`os.access`, by default
    determining if the file exists and is executable.
 
-   When no *path* is specified, the results of :func:`os.environ` are used,
-   returning either the "PATH" value or a fallback of :data:`os.defpath`.
+   *path* is a "``PATH`` string" specifying the directories to look in,
+   delimited by :data:`os.pathsep`. When no *path* is specified, the
+   :envvar:`PATH` environment variable is read from :data:`os.environ`,
+   falling back to :data:`os.defpath` if it is not set.
 
    On Windows, the current directory is prepended to the *path* if *mode* does
    not include ``os.X_OK``. When the *mode* does include ``os.X_OK``, the
@@ -449,9 +451,9 @@ Directory and files operations
    consulting the current working directory for executables: set the environment
    variable ``NoDefaultCurrentDirectoryInExePath``.
 
-   Also on Windows, the ``PATHEXT`` variable is used to resolve commands
-   that may not already include an extension. For example, if you call
-   ``shutil.which("python")``, :func:`which` will search ``PATHEXT``
+   Also on Windows, the :envvar:`PATHEXT` environment variable is used to
+   resolve commands that may not already include an extension. For example,
+   if you call ``shutil.which("python")``, :func:`which` will search ``PATHEXT``
    to know that it should look for ``python.exe`` within the *path*
    directories. For example, on Windows::
 
