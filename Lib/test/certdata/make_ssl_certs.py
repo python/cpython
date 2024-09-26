@@ -265,6 +265,8 @@ if __name__ == '__main__':
     with open('keycert3.pem', 'w') as f:
         f.write(key)
         f.write(cert)
+    with open('cert3.pem', 'w') as f:
+        f.write(cert)
 
     cert, key = make_cert_key(cmdlineargs, 'fakehostname', sign=True)
     with open('keycert4.pem', 'w') as f:
