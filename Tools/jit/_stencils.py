@@ -134,8 +134,12 @@ class Hole:
 
     def fold(self, other: typing.Self, body: bytes) -> typing.Self | None:
         """Combine two holes into a single hole, if possible."""
-        instruction_a = int.from_bytes(body[self.offset : self.offset + 4], byteorder=sys.byteorder)
-        instruction_b = int.from_bytes(body[other.offset : other.offset + 4], byteorder=sys.byteorder)
+        instruction_a = int.from_bytes(
+            body[self.offset : self.offset + 4], byteorder=sys.byteorder
+        )
+        instruction_b = int.from_bytes(
+            body[other.offset : other.offset + 4], byteorder=sys.byteorder
+        )
         reg_a = instruction_a & 0b11111
         reg_b1 = instruction_b & 0b11111
         reg_b2 = (instruction_b >> 5) & 0b11111
