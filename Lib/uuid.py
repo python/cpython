@@ -657,6 +657,7 @@ def getnode():
 
 
 _last_timestamp = None
+_last_clock_req = None
 
 def uuid1(node=None, clock_seq=None):
     """Generate a UUID from a host ID, sequence number, and the current time.
@@ -674,15 +675,21 @@ def uuid1(node=None, clock_seq=None):
             is_safe = SafeUUID.unknown
         return UUID(bytes=uuid_time, is_safe=is_safe)
 
-    global _last_timestamp
+    global _last_timestamp, _last_clock_req
     import time
     nanoseconds = time.time_ns()
     # 0x01b21dd213814000 is the number of 100-ns intervals between the
     # UUID epoch 1582-10-15 00:00:00 and the Unix epoch 1970-01-01 00:00:00.
     timestamp = nanoseconds // 100 + 0x01b21dd213814000
     if _last_timestamp is not None and timestamp <= _last_timestamp:
-        timestamp = _last_timestamp + 1
+        if _last_clock_req is not None:
+            clock_seq += 1
+        else:
+            import random
+            clock_seq = random.getrandbits(14) # instead of stable storage
+        timestamp = _last_timestamp + 1 #HELLO
     _last_timestamp = timestamp
+    _last_clock_req = clock_seq
     if clock_seq is None:
         import random
         clock_seq = random.getrandbits(14) # instead of stable storage

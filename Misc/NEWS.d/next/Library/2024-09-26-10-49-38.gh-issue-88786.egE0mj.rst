@@ -1,0 +1,1 @@
+Update :func:`uuid.uuid1` in :mod:`uuid` to meet RFC4122
