@@ -14,6 +14,7 @@ resemble pathlib's PurePath and Path respectively.
 import functools
 import operator
 import posixpath
+from errno import EINVAL, EXDEV
 from glob import _GlobberBase, _no_recurse_symlinks
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from pathlib._os import copyfileobj
@@ -564,14 +565,38 @@ class PathBase(PurePathBase):
         return (st.st_ino == other_st.st_ino and
                 st.st_dev == other_st.st_dev)
 
-    def _samefile_safe(self, other_path):
+    def _ensure_different_file(self, other_path):
         """
-        Like samefile(), but returns False rather than raising OSError.
+        Raise OSError(EINVAL) if both paths refer to the same file.
         """
         try:
-            return self.samefile(other_path)
+            if not self.samefile(other_path):
+                return
         except (OSError, ValueError):
-            return False
+            return
+        err = OSError(EINVAL, "Source and target are the same file")
+        err.filename = str(self)
+        err.filename2 = str(other_path)
+        raise err
+
+    def _ensure_distinct_path(self, other_path):
+        """
+        Raise OSError(EINVAL) if the other path is within this path.
+        """
+        # Note: there is no straightforward, foolproof algorithm to determine
+        # if one directory is within another (a particularly perverse example
+        # would be a single network share mounted in one location via NFS, and
+        # in another location via CIFS), so we simply checks whether the
+        # other path is lexically equal to, or within, this path.
+        if self == other_path:
+            err = OSError(EINVAL, "Source and target are the same path")
+        elif self in other_path.parents:
+            err = OSError(EINVAL, "Source path is a parent of target path")
+        else:
+            return
+        err.filename = str(self)
+        err.filename2 = str(other_path)
+        raise err
 
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
@@ -585,7 +610,7 @@ class PathBase(PurePathBase):
         """
         Open the file in bytes mode, read it, and close the file.
         """
-        with self.open(mode='rb') as f:
+        with self.open(mode='rb', buffering=0) as f:
             return f.read()
 
     def read_text(self, encoding=None, errors=None, newline=None):
@@ -826,8 +851,7 @@ class PathBase(PurePathBase):
         """
         Copy the contents of this file to the given target.
         """
-        if self._samefile_safe(target):
-            raise OSError(f"{self!r} and {target!r} are the same file")
+        self._ensure_different_file(target)
         with self.open('rb') as source_f:
             try:
                 with target.open('wb') as target_f:
@@ -841,37 +865,48 @@ class PathBase(PurePathBase):
                     raise
 
     def copy(self, target, *, follow_symlinks=True, dirs_exist_ok=False,
-             preserve_metadata=False, ignore=None, on_error=None):
+             preserve_metadata=False):
         """
         Recursively copy this file or directory tree to the given destination.
         """
         if not isinstance(target, PathBase):
             target = self.with_segments(target)
+        self._ensure_distinct_path(target)
         stack = [(self, target)]
         while stack:
             src, dst = stack.pop()
-            try:
-                if not follow_symlinks and src.is_symlink():
-                    dst._symlink_to_target_of(src)
-                    if preserve_metadata:
-                        src._copy_metadata(dst, follow_symlinks=False)
-                elif src.is_dir():
-                    children = src.iterdir()
-                    dst.mkdir(exist_ok=dirs_exist_ok)
-                    for child in children:
-                        if not (ignore and ignore(child)):
-                            stack.append((child, dst.joinpath(child.name)))
-                    if preserve_metadata:
-                        src._copy_metadata(dst)
-                else:
-                    src._copy_file(dst)
-                    if preserve_metadata:
-                        src._copy_metadata(dst)
-            except OSError as err:
-                if on_error is None:
-                    raise
-                on_error(err)
+            if not follow_symlinks and src.is_symlink():
+                dst._symlink_to_target_of(src)
+                if preserve_metadata:
+                    src._copy_metadata(dst, follow_symlinks=False)
+            elif src.is_dir():
+                children = src.iterdir()
+                dst.mkdir(exist_ok=dirs_exist_ok)
+                stack.extend((child, dst.joinpath(child.name))
+                             for child in children)
+                if preserve_metadata:
+                    src._copy_metadata(dst)
+            else:
+                src._copy_file(dst)
+                if preserve_metadata:
+                    src._copy_metadata(dst)
         return target
+
+    def copy_into(self, target_dir, *, follow_symlinks=True,
+                  dirs_exist_ok=False, preserve_metadata=False):
+        """
+        Copy this file or directory tree into the given existing directory.
+        """
+        name = self.name
+        if not name:
+            raise ValueError(f"{self!r} has an empty name")
+        elif isinstance(target_dir, PathBase):
+            target = target_dir / name
+        else:
+            target = self.with_segments(target_dir, name)
+        return self.copy(target, follow_symlinks=follow_symlinks,
+                         dirs_exist_ok=dirs_exist_ok,
+                         preserve_metadata=preserve_metadata)
 
     def rename(self, target):
         """
@@ -896,6 +931,38 @@ class PathBase(PurePathBase):
         Returns the new Path instance pointing to the target path.
         """
         raise UnsupportedOperation(self._unsupported_msg('replace()'))
+
+    def move(self, target):
+        """
+        Recursively move this file or directory tree to the given destination.
+        """
+        self._ensure_different_file(target)
+        try:
+            return self.replace(target)
+        except UnsupportedOperation:
+            pass
+        except TypeError:
+            if not isinstance(target, PathBase):
+                raise
+        except OSError as err:
+            if err.errno != EXDEV:
+                raise
+        target = self.copy(target, follow_symlinks=False, preserve_metadata=True)
+        self._delete()
+        return target
+
+    def move_into(self, target_dir):
+        """
+        Move this file or directory tree into the given existing directory.
+        """
+        name = self.name
+        if not name:
+            raise ValueError(f"{self!r} has an empty name")
+        elif isinstance(target_dir, PathBase):
+            target = target_dir / name
+        else:
+            target = self.with_segments(target_dir, name)
+        return self.move(target)
 
     def chmod(self, mode, *, follow_symlinks=True):
         """
@@ -923,47 +990,29 @@ class PathBase(PurePathBase):
         """
         raise UnsupportedOperation(self._unsupported_msg('rmdir()'))
 
-    def delete(self, ignore_errors=False, on_error=None):
+    def _delete(self):
         """
         Delete this file or directory (including all sub-directories).
-
-        If *ignore_errors* is true, exceptions raised from scanning the
-        filesystem and removing files and directories are ignored. Otherwise,
-        if *on_error* is set, it will be called to handle the error. If
-        neither *ignore_errors* nor *on_error* are set, exceptions are
-        propagated to the caller.
         """
-        if ignore_errors:
-            def on_error(err):
-                pass
-        elif on_error is None:
-            def on_error(err):
-                raise err
-        if self.is_dir(follow_symlinks=False):
-            results = self.walk(
-                on_error=on_error,
-                top_down=False,  # So we rmdir() empty directories.
-                follow_symlinks=False)
-            for dirpath, dirnames, filenames in results:
-                for name in filenames:
-                    try:
-                        dirpath.joinpath(name).unlink()
-                    except OSError as err:
-                        on_error(err)
-                for name in dirnames:
-                    try:
-                        dirpath.joinpath(name).rmdir()
-                    except OSError as err:
-                        on_error(err)
-            delete_self = self.rmdir
+        if self.is_symlink() or self.is_junction():
+            self.unlink()
+        elif self.is_dir():
+            self._rmtree()
         else:
-            delete_self = self.unlink
-        try:
-            delete_self()
-        except OSError as err:
-            err.filename = str(self)
-            on_error(err)
-    delete.avoids_symlink_attacks = False
+            self.unlink()
+
+    def _rmtree(self):
+        def on_error(err):
+            raise err
+        results = self.walk(
+            on_error=on_error,
+            top_down=False,  # So we rmdir() empty directories.
+            follow_symlinks=False)
+        for dirpath, _, filenames in results:
+            for filename in filenames:
+                filepath = dirpath / filename
+                filepath.unlink()
+            dirpath.rmdir()
 
     def owner(self, *, follow_symlinks=True):
         """

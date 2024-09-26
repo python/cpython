@@ -1701,6 +1701,9 @@
 /* Define if you want to enable internal statistics gathering. */
 #undef Py_STATS
 
+/* Define if C99-specific strftime specifiers are supported. */
+#undef Py_STRFTIME_C99_SUPPORT
+
 /* The version of SunOS/Solaris as reported by `uname -r' without the dot. */
 #undef Py_SUNOS_VERSION
 
@@ -1897,9 +1900,6 @@
 
 /* Define to build the readline module against libedit. */
 #undef WITH_EDITLINE
-
-/* Define if you want to compile in object freelists optimization */
-#undef WITH_FREELISTS
 
 /* Define to 1 if libintl is needed for locale functions. */
 #undef WITH_LIBINTL

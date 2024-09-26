@@ -815,6 +815,8 @@ static int clear_singlephase_extension(PyInterpreterState *interp,
 
 // Currently, this is only used for testing.
 // (See _testinternalcapi.clear_extension().)
+// If adding another use, be careful about modules that import themselves
+// recursively (see gh-123880).
 int
 _PyImport_ClearExtension(PyObject *name, PyObject *filename)
 {
@@ -1049,7 +1051,7 @@ del_cached_def(struct extensions_cache_value *value)
        However, this decref would be problematic if the module def were
        dynamically allocated, it were the last ref, and this function
        were called with an interpreter other than the def's owner. */
-    assert(value->def == NULL || _Py_IsImmortal(value->def));
+    assert(value->def == NULL || _Py_IsImmortalLoose(value->def));
 
     Py_XDECREF(value->def->m_base.m_copy);
     value->def->m_base.m_copy = NULL;
@@ -1174,7 +1176,7 @@ hashtable_key_from_2_strings(PyObject *str1, PyObject *str2, const char sep)
 static Py_uhash_t
 hashtable_hash_str(const void *key)
 {
-    return _Py_HashBytes(key, strlen((const char *)key));
+    return Py_HashBuffer(key, strlen((const char *)key));
 }
 
 static int
@@ -1322,12 +1324,16 @@ _extensions_cache_set(PyObject *path, PyObject *name,
     value = entry == NULL
         ? NULL
         : (struct extensions_cache_value *)entry->value;
-    /* We should never be updating an existing cache value. */
-    assert(value == NULL);
     if (value != NULL) {
-        PyErr_Format(PyExc_SystemError,
-                     "extension module %R is already cached", name);
-        goto finally;
+        /* gh-123880: If there's an existing cache value, it means a module is
+         * being imported recursively from its PyInit_* or Py_mod_* function.
+         * (That function presumably handles returning a partially
+         *  constructed module in such a case.)
+         * We can reuse the existing cache value; it is owned by the cache.
+         * (Entries get removed from it in exceptional circumstances,
+         *  after interpreter shutdown, and in runtime shutdown.)
+         */
+        goto finally_oldvalue;
     }
     newvalue = alloc_extensions_cache_value();
     if (newvalue == NULL) {
@@ -1392,6 +1398,7 @@ finally:
         cleanup_old_cached_def(&olddefbase);
     }
 
+finally_oldvalue:
     extensions_lock_release();
     if (key != NULL) {
         hashtable_destroy_str(key);
@@ -2045,7 +2052,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
                 singlephase.m_init = p0;
             }
             cached = update_global_state_for_extension(
-                    tstate, info->path, info->name, def, &singlephase);
+                    main_tstate, info->path, info->name, def, &singlephase);
             if (cached == NULL) {
                 assert(PyErr_Occurred());
                 goto main_finally;
@@ -2128,6 +2135,7 @@ error:
 }
 
 
+// Used in _PyImport_ClearExtension; see notes there.
 static int
 clear_singlephase_extension(PyInterpreterState *interp,
                             PyObject *name, PyObject *path)

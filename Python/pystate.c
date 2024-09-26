@@ -906,6 +906,11 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         interp->code_watchers[i] = NULL;
     }
     interp->active_code_watchers = 0;
+
+    for (int i=0; i < CONTEXT_MAX_WATCHERS; i++) {
+        interp->context_watchers[i] = NULL;
+    }
+    interp->active_context_watchers = 0;
     // XXX Once we have one allocator per interpreter (i.e.
     // per-interpreter GC) we must ensure that all of the interpreter's
     // objects have been cleaned up at the point.
@@ -2802,16 +2807,11 @@ PyGILState_Release(PyGILState_STATE oldstate)
     }
 
     /* We must hold the GIL and have our thread state current */
-    /* XXX - remove the check - the assert should be fine,
-       but while this is very new (April 2003), the extra check
-       by release-only users can't hurt.
-    */
     if (!holds_gil(tstate)) {
         _Py_FatalErrorFormat(__func__,
                              "thread state %p must be current when releasing",
                              tstate);
     }
-    assert(holds_gil(tstate));
     --tstate->gilstate_counter;
     assert(tstate->gilstate_counter >= 0); /* illegal counter value */
 

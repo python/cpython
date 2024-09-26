@@ -3221,9 +3221,9 @@ Stinner.
 .. section: Library
 
 :mod:`hashlib`: Remove the pure Python implementation of
-:func:`hashlib.pbkdf2_hmac()`, deprecated in Python 3.10. Python 3.10 and
+:func:`hashlib.pbkdf2_hmac`, deprecated in Python 3.10. Python 3.10 and
 newer requires OpenSSL 1.1.1 (:pep:`644`): this OpenSSL version provides a C
-implementation of :func:`~hashlib.pbkdf2_hmac()` which is faster. Patch by
+implementation of :func:`~hashlib.pbkdf2_hmac` which is faster. Patch by
 Victor Stinner.
 
 ..
