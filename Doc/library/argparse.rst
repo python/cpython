@@ -754,7 +754,7 @@ argument choices (if specified) or subparser names as part of the error message.
 
 If the user would like to enable suggestions for mistyped argument choices and
 subparser names, the feature can be enabled by setting ``suggest_on_error`` to
-``True``. Note that this only applies for arguments when the choices specified 
+``True``. Note that this only applies for arguments when the choices specified
 are strings::
 
    >>> parser = argparse.ArgumentParser(description='Process some integers.', suggest_on_error=True)

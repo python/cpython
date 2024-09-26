@@ -2567,7 +2567,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
             all_strings = all(isinstance(choice, str) for choice in action.choices)
 
-            if self.suggest_on_error and isinstance(value, str) and all_strings:  
+            if self.suggest_on_error and isinstance(value, str) and all_strings:
                 import difflib
                 suggestions = difflib.get_close_matches(value, action.choices, 1)
                 if suggestions:
