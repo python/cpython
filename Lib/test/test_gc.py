@@ -1050,7 +1050,7 @@ class GCTests(unittest.TestCase):
 
     @cpython_only
     def test_get_referents_on_capsule(self):
-        # See GH-124538
+        # gh-124538: Calling gc.get_referents() on an untracked capsule must not crash.
         import _datetime
         import _socket
         untracked_capsule = _datetime.datetime_CAPI
