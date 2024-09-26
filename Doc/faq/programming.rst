@@ -1613,7 +1613,7 @@ method too, and it must do so carefully.  The basic implementation of
            self.__dict__[name] = value
        ...
 
-Many :meth:`!__setattr__` implementations call :meth:`object.__setattr__` to set
+Many :meth:`~object.__setattr__` implementations call :meth:`!object.__setattr__` to set
 an attribute on self without causing infinite recursion::
 
    class X:
@@ -1621,7 +1621,8 @@ an attribute on self without causing infinite recursion::
            # Custom logic here...
            object.__setattr__(self, name, value)
 
-Alternatively, it is possible to modify :attr:`self.__dict__ <object.__dict__>` directly.
+Alternatively, it is possible to set attributes by inserting
+entries into :attr:`self.__dict__ <object.__dict__>` directly.
 
 
 How do I call a method defined in a base class from a derived class that extends it?
