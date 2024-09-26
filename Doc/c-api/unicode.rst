@@ -990,6 +990,8 @@ These are the UTF-8 codec APIs:
    object.  Error handling is "strict".  Return ``NULL`` if an exception was
    raised by the codec.
 
+   The function fails if the string contains surrogate characters.
+
 
 .. c:function:: const char* PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *size)
 
@@ -1001,6 +1003,8 @@ These are the UTF-8 codec APIs:
 
    On error, set an exception, set *size* to ``-1`` (if it's not NULL) and
    return ``NULL``.
+
+   The function fails if the string contains surrogate characters.
 
    This caches the UTF-8 representation of the string in the Unicode object, and
    subsequent calls will return a pointer to the same buffer.  The caller is not
