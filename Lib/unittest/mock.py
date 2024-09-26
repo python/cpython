@@ -2757,8 +2757,6 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
     is_async_func = _is_async_func(spec)
 
     entries = [(entry, _missing) for entry in dir(spec)]
-    # Not using `is_dataclass` to avoid an import of dataclasses module
-    # for types that don't need that.
     if is_type and instance and is_dataclass(spec):
         dataclass_fields = fields(spec)
         entries.extend((f.name, f.type) for f in dataclass_fields)
