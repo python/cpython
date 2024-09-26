@@ -389,7 +389,8 @@ Initializing and finalizing the interpreter
 
 .. c:function:: PyStatus Py_InitializeFromConfig(const PyConfig *config)
 
-   Initialize Python from *config* configuration.
+   Initialize Python from *config* configuration, as described in
+   :ref:`init-from-config`.
 
    See the :ref:`init-config` section for details on pre-initializing the
    interpreter, populating the runtime configuration structure, and querying
