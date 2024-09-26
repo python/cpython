@@ -279,9 +279,7 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate, int final_release)
 
    The function saves errno at entry and restores its value at exit.
 
-   tstate must be non-NULL.
-
-   Returns 1 if the GIL was acquired, or 0 if not. */
+   tstate must be non-NULL. */
 static void
 take_gil(PyThreadState *tstate)
 {
@@ -294,11 +292,17 @@ take_gil(PyThreadState *tstate)
 
     if (_PyThreadState_MustExit(tstate)) {
         /* bpo-39877: If Py_Finalize() has been called and tstate is not the
-           thread which called Py_Finalize(), exit immediately the thread.
+           thread which called Py_Finalize(), this thread cannot continue.
 
            This code path can be reached by a daemon thread after Py_Finalize()
            completes. In this case, tstate is a dangling pointer: points to
-           PyThreadState freed memory. */
+           PyThreadState freed memory.
+
+	   This used to call a *thread_exit API, but that was not safe as it
+	   lacks stack unwinding and local variable destruction important to
+	   C++. gh-87135: The best that can be done is to hang the thread as
+	   the public APIs calling this have no error reporting mechanism (!).
+	 */
         PyThread_hang_thread();
     }
 
