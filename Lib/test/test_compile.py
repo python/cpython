@@ -1527,6 +1527,45 @@ class TestSpecifics(unittest.TestCase):
                     pass
             [[]]
 
+class TestBooleanExpression(unittest.TestCase):
+    class Value:
+        def __init__(self):
+            self.called = 0
+
+        def __bool__(self):
+            self.called += 1
+            return self.value
+
+    class Yes(Value):
+        value = True
+
+    class No(Value):
+        value = False
+
+    def test_short_circuit_and(self):
+        v = [self.Yes(), self.No(), self.Yes()]
+        res = v[0] and v[1] and v[0]
+        self.assertIs(res, v[1])
+        self.assertEqual([e.called for e in v], [1, 1, 0])
+
+    def test_short_circuit_or(self):
+        v = [self.No(), self.Yes(), self.No()]
+        res = v[0] or v[1] or v[0]
+        self.assertIs(res, v[1])
+        self.assertEqual([e.called for e in v], [1, 1, 0])
+
+    def test_compound(self):
+        # See gh-124285
+        v = [self.No(), self.Yes(), self.Yes(), self.Yes()]
+        res = v[0] and v[1] or v[2] or v[3]
+        self.assertIs(res, v[2])
+        self.assertEqual([e.called for e in v], [1, 0, 1, 0])
+
+        v = [self.No(), self.No(), self.Yes(), self.Yes(), self.No()]
+        res = v[0] or v[1] and v[2] or v[3] or v[4]
+        self.assertIs(res, v[3])
+        self.assertEqual([e.called for e in v], [1, 1, 0, 1, 0])
+
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
     # Ensure that compiled code snippets have correct line and column numbers

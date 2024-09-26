@@ -874,8 +874,8 @@ they add the ability to access fields by name instead of position index.
     ``(1, 2)``, then ``x`` will be a required argument, ``y`` will default to
     ``1``, and ``z`` will default to ``2``.
 
-    If *module* is defined, the ``__module__`` attribute of the named tuple is
-    set to that value.
+    If *module* is defined, the :attr:`~type.__module__` attribute of the
+    named tuple is set to that value.
 
     Named tuple instances do not have per-instance dictionaries, so they are
     lightweight and require no more memory than regular tuples.

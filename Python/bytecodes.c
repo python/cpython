@@ -2570,6 +2570,14 @@ dummy_func(
             JUMP_BACKWARD_NO_INTERRUPT,
         };
 
+        pseudo(JUMP_IF_FALSE, (cond -- cond)) = [
+            COPY, TO_BOOL, POP_JUMP_IF_FALSE,
+        ];
+
+        pseudo(JUMP_IF_TRUE, (cond -- cond)) = [
+            COPY, TO_BOOL, POP_JUMP_IF_TRUE,
+        ];
+
         tier1 inst(ENTER_EXECUTOR, (--)) {
             #ifdef _Py_TIER2
             PyCodeObject *code = _PyFrame_GetCode(frame);
@@ -3920,7 +3928,7 @@ dummy_func(
             PyCFunctionFastWithKeywords cfunc =
                 (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
 
-            STACKREFS_TO_PYOBJECTS(args, nargs, args_o);
+            STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
             if (CONVERSION_FAILED(args_o)) {
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
@@ -4001,7 +4009,7 @@ dummy_func(
                 (PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args - 1;
 
-            STACKREFS_TO_PYOBJECTS(args, nargs, args_o);
+            STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
             if (CONVERSION_FAILED(args_o)) {
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
