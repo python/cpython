@@ -627,23 +627,6 @@ future_get_awaited_by(FutureObj *fut)
     return set;
 }
 
-static int
-future_set_awaited_by(FutureObj *fut, PyObject *set)
-{
-    /* Implementation of a Python setter. */
-    if (set == Py_None) {
-        Py_CLEAR(fut->fut_awaited_by);
-        return 0;
-    }
-    if (!PySet_Check(set)) {
-        PyErr_SetString(PyExc_ValueError, "_awaited_by expects a set");
-        return -1;
-    }
-    Py_XSETREF(fut->fut_awaited_by, set);
-    Py_INCREF(set);
-    return 0;
-}
-
 static PyObject *
 future_set_result(asyncio_state *state, FutureObj *fut, PyObject *res)
 {
@@ -1633,8 +1616,7 @@ static PyMethodDef FutureType_methods[] = {
                           NULL, NULL},                                        \
     {"_cancel_message", (getter)FutureObj_get_cancel_message,                 \
                         (setter)FutureObj_set_cancel_message, NULL},          \
-    {"_asyncio_awaited_by", (getter)future_get_awaited_by,                    \
-                            (setter)future_set_awaited_by, NULL},
+    {"_asyncio_awaited_by", (getter)future_get_awaited_by, NULL, NULL},
 
 static PyGetSetDef FutureType_getsetlist[] = {
     FUTURE_COMMON_GETSETLIST
