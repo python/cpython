@@ -145,7 +145,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
         return 1;
     }
     PyObject *globals = frame->f_globals;
-    PyFunctionObject *function = (PyFunctionObject *)frame->f_funcobj;
+    PyFunctionObject *function = _PyFrame_GetFunction(frame);
     assert(PyFunction_Check(function));
     assert(function->func_builtins == builtins);
     assert(function->func_globals == globals);

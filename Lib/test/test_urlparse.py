@@ -349,7 +349,7 @@ class UrlParseTestCase(unittest.TestCase):
                     split = (scheme,) + split
                     self.checkRoundtrips(url, parsed, split)
 
-    def checkJoin(self, base, relurl, expected):
+    def checkJoin(self, base, relurl, expected, *, relroundtrip=True):
         with self.subTest(base=base, relurl=relurl):
             self.assertEqual(urllib.parse.urljoin(base, relurl), expected)
             baseb = base.encode('ascii')
@@ -357,10 +357,11 @@ class UrlParseTestCase(unittest.TestCase):
             expectedb = expected.encode('ascii')
             self.assertEqual(urllib.parse.urljoin(baseb, relurlb), expectedb)
 
-            relurl = urllib.parse.urlunsplit(urllib.parse.urlsplit(relurl))
-            self.assertEqual(urllib.parse.urljoin(base, relurl), expected)
-            relurlb = urllib.parse.urlunsplit(urllib.parse.urlsplit(relurlb))
-            self.assertEqual(urllib.parse.urljoin(baseb, relurlb), expectedb)
+            if relroundtrip:
+                relurl = urllib.parse.urlunsplit(urllib.parse.urlsplit(relurl))
+                self.assertEqual(urllib.parse.urljoin(base, relurl), expected)
+                relurlb = urllib.parse.urlunsplit(urllib.parse.urlsplit(relurlb))
+                self.assertEqual(urllib.parse.urljoin(baseb, relurlb), expectedb)
 
     def test_unparse_parse(self):
         str_cases = ['Python', './Python','x-newscheme://foo.com/stuff','x://y','x:/y','x:/','/',]
@@ -526,8 +527,6 @@ class UrlParseTestCase(unittest.TestCase):
 
     def test_urljoins(self):
         self.checkJoin(SIMPLE_BASE, 'g:h','g:h')
-        self.checkJoin(SIMPLE_BASE, 'http:g','http://a/b/c/g')
-        self.checkJoin(SIMPLE_BASE, 'http:','http://a/b/c/d')
         self.checkJoin(SIMPLE_BASE, 'g','http://a/b/c/g')
         self.checkJoin(SIMPLE_BASE, './g','http://a/b/c/g')
         self.checkJoin(SIMPLE_BASE, 'g/','http://a/b/c/g/')
@@ -548,8 +547,6 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin(SIMPLE_BASE, 'g/./h','http://a/b/c/g/h')
         self.checkJoin(SIMPLE_BASE, 'g/../h','http://a/b/c/h')
         self.checkJoin(SIMPLE_BASE, 'http:g','http://a/b/c/g')
-        self.checkJoin(SIMPLE_BASE, 'http:','http://a/b/c/d')
-        self.checkJoin(SIMPLE_BASE, 'http:?y','http://a/b/c/d?y')
         self.checkJoin(SIMPLE_BASE, 'http:g?y','http://a/b/c/g?y')
         self.checkJoin(SIMPLE_BASE, 'http:g?y/./x','http://a/b/c/g?y/./x')
         self.checkJoin('http:///', '..','http:///')
@@ -578,6 +575,53 @@ class UrlParseTestCase(unittest.TestCase):
 
         # issue 23703: don't duplicate filename
         self.checkJoin('a', 'b', 'b')
+
+        # Test with empty (but defined) components.
+        self.checkJoin(RFC1808_BASE, '', 'http://a/b/c/d;p?q#f')
+        self.checkJoin(RFC1808_BASE, '#', 'http://a/b/c/d;p?q#', relroundtrip=False)
+        self.checkJoin(RFC1808_BASE, '#z', 'http://a/b/c/d;p?q#z')
+        self.checkJoin(RFC1808_BASE, '?', 'http://a/b/c/d;p?', relroundtrip=False)
+        self.checkJoin(RFC1808_BASE, '?#z', 'http://a/b/c/d;p?#z', relroundtrip=False)
+        self.checkJoin(RFC1808_BASE, '?y', 'http://a/b/c/d;p?y')
+        self.checkJoin(RFC1808_BASE, ';', 'http://a/b/c/;')
+        self.checkJoin(RFC1808_BASE, ';?y', 'http://a/b/c/;?y')
+        self.checkJoin(RFC1808_BASE, ';#z', 'http://a/b/c/;#z')
+        self.checkJoin(RFC1808_BASE, ';x', 'http://a/b/c/;x')
+        self.checkJoin(RFC1808_BASE, '/w', 'http://a/w')
+        self.checkJoin(RFC1808_BASE, '//', 'http://a/b/c/d;p?q#f')
+        self.checkJoin(RFC1808_BASE, '//#z', 'http://a/b/c/d;p?q#z')
+        self.checkJoin(RFC1808_BASE, '//?y', 'http://a/b/c/d;p?y')
+        self.checkJoin(RFC1808_BASE, '//;x', 'http://;x')
+        self.checkJoin(RFC1808_BASE, '///w', 'http://a/w')
+        self.checkJoin(RFC1808_BASE, '//v', 'http://v')
+        # For backward compatibility with RFC1630, the scheme name is allowed
+        # to be present in a relative reference if it is the same as the base
+        # URI scheme.
+        self.checkJoin(RFC1808_BASE, 'http:', 'http://a/b/c/d;p?q#f')
+        self.checkJoin(RFC1808_BASE, 'http:#', 'http://a/b/c/d;p?q#', relroundtrip=False)
+        self.checkJoin(RFC1808_BASE, 'http:#z', 'http://a/b/c/d;p?q#z')
+        self.checkJoin(RFC1808_BASE, 'http:?', 'http://a/b/c/d;p?', relroundtrip=False)
+        self.checkJoin(RFC1808_BASE, 'http:?#z', 'http://a/b/c/d;p?#z', relroundtrip=False)
+        self.checkJoin(RFC1808_BASE, 'http:?y', 'http://a/b/c/d;p?y')
+        self.checkJoin(RFC1808_BASE, 'http:;', 'http://a/b/c/;')
+        self.checkJoin(RFC1808_BASE, 'http:;?y', 'http://a/b/c/;?y')
+        self.checkJoin(RFC1808_BASE, 'http:;#z', 'http://a/b/c/;#z')
+        self.checkJoin(RFC1808_BASE, 'http:;x', 'http://a/b/c/;x')
+        self.checkJoin(RFC1808_BASE, 'http:/w', 'http://a/w')
+        self.checkJoin(RFC1808_BASE, 'http://', 'http://a/b/c/d;p?q#f')
+        self.checkJoin(RFC1808_BASE, 'http://#z', 'http://a/b/c/d;p?q#z')
+        self.checkJoin(RFC1808_BASE, 'http://?y', 'http://a/b/c/d;p?y')
+        self.checkJoin(RFC1808_BASE, 'http://;x', 'http://;x')
+        self.checkJoin(RFC1808_BASE, 'http:///w', 'http://a/w')
+        self.checkJoin(RFC1808_BASE, 'http://v', 'http://v')
+        # Different scheme is not ignored.
+        self.checkJoin(RFC1808_BASE, 'https:', 'https:', relroundtrip=False)
+        self.checkJoin(RFC1808_BASE, 'https:#', 'https:#', relroundtrip=False)
+        self.checkJoin(RFC1808_BASE, 'https:#z', 'https:#z', relroundtrip=False)
+        self.checkJoin(RFC1808_BASE, 'https:?', 'https:?', relroundtrip=False)
+        self.checkJoin(RFC1808_BASE, 'https:?y', 'https:?y', relroundtrip=False)
+        self.checkJoin(RFC1808_BASE, 'https:;', 'https:;')
+        self.checkJoin(RFC1808_BASE, 'https:;x', 'https:;x')
 
     def test_RFC2732(self):
         str_cases = [
@@ -641,16 +685,31 @@ class UrlParseTestCase(unittest.TestCase):
             ('http://python.org/p?q', 'http://python.org/p?q', ''),
             (RFC1808_BASE, 'http://a/b/c/d;p?q', 'f'),
             (RFC2396_BASE, 'http://a/b/c/d;p?q', ''),
+            ('http://a/b/c;p?q#f', 'http://a/b/c;p?q', 'f'),
+            ('http://a/b/c;p?q#', 'http://a/b/c;p?q', ''),
+            ('http://a/b/c;p?q', 'http://a/b/c;p?q', ''),
+            ('http://a/b/c;p?#f', 'http://a/b/c;p?', 'f'),
+            ('http://a/b/c;p#f', 'http://a/b/c;p', 'f'),
+            ('http://a/b/c;?q#f', 'http://a/b/c;?q', 'f'),
+            ('http://a/b/c?q#f', 'http://a/b/c?q', 'f'),
+            ('http:///b/c;p?q#f', 'http:///b/c;p?q', 'f'),
+            ('http:b/c;p?q#f', 'http:b/c;p?q', 'f'),
+            ('http:;?q#f', 'http:;?q', 'f'),
+            ('http:?q#f', 'http:?q', 'f'),
+            ('//a/b/c;p?q#f', '//a/b/c;p?q', 'f'),
+            ('://a/b/c;p?q#f', '://a/b/c;p?q', 'f'),
         ]
         def _encode(t):
             return type(t)(x.encode('ascii') for x in t)
         bytes_cases = [_encode(x) for x in str_cases]
         for url, defrag, frag in str_cases + bytes_cases:
-            result = urllib.parse.urldefrag(url)
-            self.assertEqual(result.geturl(), url)
-            self.assertEqual(result, (defrag, frag))
-            self.assertEqual(result.url, defrag)
-            self.assertEqual(result.fragment, frag)
+            with self.subTest(url):
+                result = urllib.parse.urldefrag(url)
+                hash = '#' if isinstance(url, str) else b'#'
+                self.assertEqual(result.geturl(), url.rstrip(hash))
+                self.assertEqual(result, (defrag, frag))
+                self.assertEqual(result.url, defrag)
+                self.assertEqual(result.fragment, frag)
 
     def test_urlsplit_scoped_IPv6(self):
         p = urllib.parse.urlsplit('http://[FE80::822a:a8ff:fe49:470c%tESt]:1234')
