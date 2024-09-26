@@ -1033,8 +1033,9 @@ class SysModuleTest(unittest.TestCase):
                          sys.implementation.name.lower())
 
         if hasattr(os, 'uname'):
+            import platform
             self.assertTrue(hasattr(sys.implementation, '_architecture'))
-            self.assertEqual(sys.implementation._architecture, os.uname)
+            self.assertEqual(sys.implementation._architecture, platform.machine())
 
     @test.support.cpython_only
     def test_debugmallocstats(self):
