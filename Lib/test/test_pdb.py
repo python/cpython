@@ -901,6 +901,38 @@ def test_pdb_where_command():
     (Pdb) continue
     """
 
+def test_pdb_restart_command():
+    """Test restart command
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False, mode='inline').set_trace()
+    ...     x = 1
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'restart',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_restart_command[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False, mode='inline').set_trace()
+    (Pdb) restart
+    *** run/restart command is disabled when pdb is running in inline mode.
+    Use the command line interface to enable restarting your program
+    e.g. "python -m pdb myscript.py"
+    (Pdb) continue
+    """
+
+def test_pdb_commands_with_set_trace():
+    """Test that commands can be passed to Pdb.set_trace()
+
+    >>> def test_function():
+    ...     x = 1
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace(commands=['p x', 'c'])
+
+    >>> test_function()
+    1
+    """
+
 
 # skip this test if sys.flags.no_site = True;
 # exit() isn't defined unless there's a site module.
@@ -1263,7 +1295,7 @@ def test_post_mortem_context_of_the_cause():
 def test_post_mortem_from_none():
     """Test post mortem traceback debugging of chained exception
 
-    In particular that cause from None (which sets __supress_context__ to True)
+    In particular that cause from None (which sets __suppress_context__ to True)
     does not show context.
 
 
@@ -2448,6 +2480,49 @@ def test_pdb_show_attribute_and_item():
     (Pdb) c
     """
 
+# doctest will modify pdb.set_trace during the test, so we need to backup
+# the original function to use it in the test
+original_pdb_settrace = pdb.set_trace
+
+def test_pdb_with_inline_breakpoint():
+    """Hard-coded breakpoint() calls should invoke the same debugger instance
+
+    >>> def test_function():
+    ...     x = 1
+    ...     import pdb; pdb.Pdb().set_trace()
+    ...     original_pdb_settrace()
+    ...     x = 2
+
+    >>> with PdbTestInput(['display x',
+    ...                    'n',
+    ...                    'n',
+    ...                    'n',
+    ...                    'n',
+    ...                    'undisplay',
+    ...                    'c']):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_with_inline_breakpoint[0]>(3)test_function()
+    -> import pdb; pdb.Pdb().set_trace()
+    (Pdb) display x
+    display x: 1
+    (Pdb) n
+    > <doctest test.test_pdb.test_pdb_with_inline_breakpoint[0]>(4)test_function()
+    -> original_pdb_settrace()
+    (Pdb) n
+    > <doctest test.test_pdb.test_pdb_with_inline_breakpoint[0]>(4)test_function()
+    -> original_pdb_settrace()
+    (Pdb) n
+    > <doctest test.test_pdb.test_pdb_with_inline_breakpoint[0]>(5)test_function()
+    -> x = 2
+    (Pdb) n
+    --Return--
+    > <doctest test.test_pdb.test_pdb_with_inline_breakpoint[0]>(5)test_function()->None
+    -> x = 2
+    display x: 2  [old: 1]
+    (Pdb) undisplay
+    (Pdb) c
+    """
+
 def test_pdb_issue_20766():
     """Test for reference leaks when the SIGINT handler is set.
 
@@ -3346,7 +3421,12 @@ def bœr():
         header = 'Nobody expects... blah, blah, blah'
         with ExitStack() as resources:
             resources.enter_context(patch('sys.stdout', stdout))
+            # patch pdb.Pdb.set_trace() to avoid entering the debugger
             resources.enter_context(patch.object(pdb.Pdb, 'set_trace'))
+            # We need to manually clear pdb.Pdb._last_pdb_instance so a
+            # new instance with stdout redirected could be created when
+            # pdb.set_trace() is called.
+            pdb.Pdb._last_pdb_instance = None
             pdb.set_trace(header=header)
         self.assertEqual(stdout.getvalue(), header + '\n')
 
@@ -3469,10 +3549,12 @@ def bœr():
             print("hello")
         """
 
+        # the time.sleep is needed for low-resolution filesystems like HFS+
         commands = """
             filename = $_frame.f_code.co_filename
             f = open(filename, "w")
             f.write("print('goodbye')")
+            import time; time.sleep(1)
             f.close()
             ll
         """
@@ -3482,10 +3564,12 @@ def bœr():
         self.assertIn("was edited", stdout)
 
     def test_file_modified_after_execution_with_multiple_instances(self):
+        # the time.sleep is needed for low-resolution filesystems like HFS+
         script = """
             import pdb; pdb.Pdb().set_trace()
             with open(__file__, "w") as f:
                 f.write("print('goodbye')\\n" * 5)
+                import time; time.sleep(1)
             import pdb; pdb.Pdb().set_trace()
         """
 
@@ -3544,6 +3628,23 @@ def bœr():
         # The file was edited, but restart should clear the state and consider
         # the file as up to date
         self.assertNotIn("WARNING:", stdout)
+
+    def test_post_mortem_restart(self):
+        script = """
+            def foo():
+                raise ValueError("foo")
+            foo()
+        """
+
+        commands = """
+            continue
+            restart
+            continue
+            quit
+        """
+
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertIn("Restarting", stdout)
 
     def test_relative_imports(self):
         self.module_name = 't_main'

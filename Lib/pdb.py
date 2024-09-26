@@ -306,8 +306,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     _file_mtime_table = {}
 
+    _last_pdb_instance = None
+
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
-                 nosigint=False, readrc=True):
+                 nosigint=False, readrc=True, mode=None):
         bdb.Bdb.__init__(self, skip=skip)
         cmd.Cmd.__init__(self, completekey, stdin, stdout)
         sys.audit("pdb.Pdb")
@@ -319,6 +321,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.mainpyfile = ''
         self._wait_for_mainpyfile = False
         self.tb_lineno = {}
+        self.mode = mode
         # Try to load readline if it exists
         try:
             import readline
@@ -358,6 +361,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         self._chained_exceptions = tuple()
         self._chained_exception_index = 0
+
+    def set_trace(self, frame=None, *, commands=None):
+        Pdb._last_pdb_instance = self
+        if frame is None:
+            frame = sys._getframe().f_back
+
+        if commands is not None:
+            self.rcLines.extend(commands)
+
+        super().set_trace(frame)
 
     def sigint_handler(self, signum, frame):
         if self.allow_kbdint:
@@ -606,7 +619,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             # We should print the stack entry if and only if the user input
             # is expected, and we should print it right before the user input.
             # We achieve this by appending _pdbcmd_print_frame_status to the
-            # command queue. If cmdqueue is not exausted, the user input is
+            # command queue. If cmdqueue is not exhausted, the user input is
             # not expected and we will not print the stack entry.
             self.cmdqueue.append('_pdbcmd_print_frame_status')
             self._cmdloop()
@@ -1599,6 +1612,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         sys.argv.  History, breakpoints, actions and debugger options
         are preserved.  "restart" is an alias for "run".
         """
+        if self.mode == 'inline':
+            self.error('run/restart command is disabled when pdb is running in inline mode.\n'
+                       'Use the command line interface to enable restarting your program\n'
+                       'e.g. "python -m pdb myscript.py"')
+            return
         if arg:
             import shlex
             argv0 = sys.argv[0:1]
@@ -2342,18 +2360,22 @@ def runcall(*args, **kwds):
     """
     return Pdb().runcall(*args, **kwds)
 
-def set_trace(*, header=None):
+def set_trace(*, header=None, commands=None):
     """Enter the debugger at the calling stack frame.
 
     This is useful to hard-code a breakpoint at a given point in a
     program, even if the code is not otherwise being debugged (e.g. when
     an assertion fails). If given, *header* is printed to the console
-    just before debugging begins.
+    just before debugging begins. *commands* is an optional list of
+    pdb commands to run when the debugger starts.
     """
-    pdb = Pdb()
+    if Pdb._last_pdb_instance is not None:
+        pdb = Pdb._last_pdb_instance
+    else:
+        pdb = Pdb(mode='inline')
     if header is not None:
         pdb.message(header)
-    pdb.set_trace(sys._getframe().f_back)
+    pdb.set_trace(sys._getframe().f_back, commands=commands)
 
 # Post-Mortem interface
 
@@ -2465,7 +2487,7 @@ def main():
     # modified by the script being debugged. It's a bad idea when it was
     # changed by the user from the command line. There is a "restart" command
     # which allows explicit specification of command line arguments.
-    pdb = Pdb()
+    pdb = Pdb(mode='cli')
     pdb.rcLines.extend(opts.commands)
     while True:
         try:
@@ -2481,9 +2503,12 @@ def main():
             traceback.print_exception(e, colorize=_colorize.can_colorize())
             print("Uncaught exception. Entering post mortem debugging")
             print("Running 'cont' or 'step' will restart the program")
-            pdb.interaction(None, e)
-            print(f"Post mortem debugger finished. The {target} will "
-                  "be restarted")
+            try:
+                pdb.interaction(None, e)
+            except Restart:
+                print("Restarting", target, "with arguments:")
+                print("\t" + " ".join(sys.argv[1:]))
+                continue
         if pdb._user_requested_quit:
             break
         print("The program finished and will be restarted")

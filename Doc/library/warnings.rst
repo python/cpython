@@ -145,6 +145,8 @@ the disposition of the match.  Each entry is a tuple of the form (*action*,
   +---------------+----------------------------------------------+
   | ``"always"``  | always print matching warnings               |
   +---------------+----------------------------------------------+
+  | ``"all"``     | alias to "always"                            |
+  +---------------+----------------------------------------------+
   | ``"module"``  | print the first occurrence of matching       |
   |               | warnings for each module where the warning   |
   |               | is issued (regardless of line number)        |
@@ -594,6 +596,9 @@ Available Context Managers
     If the *action* argument is not ``None``, the remaining arguments are
     passed to :func:`simplefilter` as if it were called immediately on
     entering the context.
+
+    See :ref:`warning-filter` for the meaning of the *category* and *lineno*
+    parameters.
 
     .. note::
 

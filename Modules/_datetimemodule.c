@@ -1,6 +1,4 @@
-/*  C implementation for the date/time type documented at
- *  https://www.zope.dev/Members/fdrake/DateTimeWiki/FrontPage
- */
+/*  C implementation of the datetime module */
 
 /* bpo-35081: Defining this prevents including the C API capsule;
  * internal versions of the  Py*_Check macros which do not require
@@ -1851,12 +1849,27 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     const char *ptoappend;      /* ptr to string to append to output buffer */
     Py_ssize_t ntoappend;       /* # of bytes to append to output buffer */
 
+#ifdef Py_NORMALIZE_CENTURY
+    /* Buffer of maximum size of formatted year permitted by long. */
+    char buf[SIZEOF_LONG * 5 / 2 + 2
+#ifdef Py_STRFTIME_C99_SUPPORT
+    /* Need 6 more to accommodate dashes, 2-digit month and day for %F. */
+             + 6
+#endif
+    ];
+#endif
+
     assert(object && format && timetuple);
     assert(PyUnicode_Check(format));
     /* Convert the input format to a C string and size */
     pin = PyUnicode_AsUTF8AndSize(format, &flen);
     if (!pin)
         return NULL;
+
+    PyObject *strftime = _PyImport_GetModuleAttrString("time", "strftime");
+    if (strftime == NULL) {
+        goto Done;
+    }
 
     /* Scan the input format, looking for %z/%Z/%f escapes, building
      * a new format.  Since computing the replacements for those codes
@@ -1939,8 +1952,62 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             ptoappend = PyBytes_AS_STRING(freplacement);
             ntoappend = PyBytes_GET_SIZE(freplacement);
         }
+#ifdef Py_NORMALIZE_CENTURY
+        else if (ch == 'Y' || ch == 'G'
+#ifdef Py_STRFTIME_C99_SUPPORT
+                 || ch == 'F' || ch == 'C'
+#endif
+        ) {
+            /* 0-pad year with century as necessary */
+            PyObject *item = PySequence_GetItem(timetuple, 0);
+            if (item == NULL) {
+                goto Done;
+            }
+            long year_long = PyLong_AsLong(item);
+            Py_DECREF(item);
+            if (year_long == -1 && PyErr_Occurred()) {
+                goto Done;
+            }
+            /* Note that datetime(1000, 1, 1).strftime('%G') == '1000' so year
+               1000 for %G can go on the fast path. */
+            if (year_long >= 1000) {
+                goto PassThrough;
+            }
+            if (ch == 'G') {
+                PyObject *year_str = PyObject_CallFunction(strftime, "sO",
+                                                           "%G", timetuple);
+                if (year_str == NULL) {
+                    goto Done;
+                }
+                PyObject *year = PyNumber_Long(year_str);
+                Py_DECREF(year_str);
+                if (year == NULL) {
+                    goto Done;
+                }
+                year_long = PyLong_AsLong(year);
+                Py_DECREF(year);
+                if (year_long == -1 && PyErr_Occurred()) {
+                    goto Done;
+                }
+            }
+            ntoappend = PyOS_snprintf(buf, sizeof(buf),
+#ifdef Py_STRFTIME_C99_SUPPORT
+                                      ch == 'F' ? "%04ld-%%m-%%d" :
+#endif
+                                      "%04ld", year_long);
+#ifdef Py_STRFTIME_C99_SUPPORT
+            if (ch == 'C') {
+                ntoappend -= 2;
+            }
+#endif
+            ptoappend = buf;
+        }
+#endif
         else {
             /* percent followed by something else */
+#ifdef Py_NORMALIZE_CENTURY
+ PassThrough:
+#endif
             ptoappend = pin - 2;
             ntoappend = 2;
         }
@@ -1972,17 +2039,13 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         goto Done;
     {
         PyObject *format;
-        PyObject *strftime = _PyImport_GetModuleAttrString("time", "strftime");
 
-        if (strftime == NULL)
-            goto Done;
         format = PyUnicode_FromString(PyBytes_AS_STRING(newfmt));
         if (format != NULL) {
             result = PyObject_CallFunctionObjArgs(strftime,
                                                    format, timetuple, NULL);
             Py_DECREF(format);
         }
-        Py_DECREF(strftime);
     }
  Done:
     Py_XDECREF(freplacement);
@@ -1990,6 +2053,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     Py_XDECREF(colonzreplacement);
     Py_XDECREF(Zreplacement);
     Py_XDECREF(newfmt);
+    Py_XDECREF(strftime);
     return result;
 }
 
@@ -3381,6 +3445,27 @@ date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
     return new_date_subclass_ex(year, month, day, cls);
 }
 
+/* Return new date from _strptime.strptime_datetime_date(). */
+static PyObject *
+date_strptime(PyObject *cls, PyObject *args)
+{
+    PyObject *string, *format, *result;
+
+    if (!PyArg_ParseTuple(args, "UU:strptime", &string, &format)) {
+        return NULL;
+    }
+
+    PyObject *module = PyImport_Import(&_Py_ID(_strptime));
+    if (module == NULL) {
+        return NULL;
+    }
+    result = PyObject_CallMethodObjArgs(module,
+                                        &_Py_ID(_strptime_datetime_date), cls,
+                                        string, format, NULL);
+    Py_DECREF(module);
+    return result;
+}
+
 
 /*
  * Date arithmetic.
@@ -3776,7 +3861,7 @@ datetime_date_replace_impl(PyDateTime_Date *self, int year, int month,
 static Py_hash_t
 generic_hash(unsigned char *data, int len)
 {
-    return _Py_HashBytes(data, len);
+    return Py_HashBuffer(data, len);
 }
 
 
@@ -3845,6 +3930,11 @@ static PyMethodDef date_methods[] = {
       PyDoc_STR("int, int, int -> Construct a date from the ISO year, week "
                 "number and weekday.\n\n"
                 "This is the inverse of the date.isocalendar() function")},
+
+    {"strptime", (PyCFunction)date_strptime,
+     METH_VARARGS | METH_CLASS,
+     PyDoc_STR("string, format -> new date parsed from a string "
+               "(like time.strptime()).")},
 
     {"today",         (PyCFunction)date_today,   METH_NOARGS | METH_CLASS,
      PyDoc_STR("Current date or datetime:  same as "
@@ -4580,6 +4670,27 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     return self;
 }
 
+/* Return new time from _strptime.strptime_datetime_time(). */
+static PyObject *
+time_strptime(PyObject *cls, PyObject *args)
+{
+    PyObject *string, *format, *result;
+
+    if (!PyArg_ParseTuple(args, "UU:strptime", &string, &format)) {
+        return NULL;
+    }
+
+    PyObject *module = PyImport_Import(&_Py_ID(_strptime));
+    if (module == NULL) {
+        return NULL;
+    }
+    result = PyObject_CallMethodObjArgs(module,
+                                        &_Py_ID(_strptime_datetime_time), cls,
+                                        string, format, NULL);
+    Py_DECREF(module);
+    return result;
+}
+
 /*
  * Destructor.
  */
@@ -4933,6 +5044,14 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
         goto invalid_string_error;
     }
 
+    if (hour == 24) {
+        if (minute == 0 && second == 0 && microsecond == 0) {
+            hour = 0;
+        } else {
+            goto invalid_iso_midnight;
+        }
+    }
+
     PyObject *tzinfo = tzinfo_from_isoformat_results(rv, tzoffset,
                                                      tzimicrosecond);
 
@@ -4950,6 +5069,10 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
 
     Py_DECREF(tzinfo);
     return t;
+
+invalid_iso_midnight:
+    PyErr_SetString(PyExc_ValueError, "minute, second, and microsecond must be 0 when hour is 24");
+    return NULL;
 
 invalid_string_error:
     PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %R", tstr);
@@ -5002,6 +5125,15 @@ time_reduce(PyDateTime_Time *self, PyObject *arg)
 }
 
 static PyMethodDef time_methods[] = {
+
+    /* Class method: */
+
+    {"strptime", (PyCFunction)time_strptime,
+     METH_VARARGS | METH_CLASS,
+     PyDoc_STR("string, format -> new time parsed from a string "
+               "(like time.strptime()).")},
+
+    /* Instance methods: */
 
     {"isoformat",   _PyCFunction_CAST(time_isoformat),        METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return string in ISO 8601 format, [HH[:MM[:SS[.mmm[uuu]]]]]"
@@ -5510,7 +5642,7 @@ datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
     return result;
 }
 
-/* Return new datetime from _strptime.strptime_datetime(). */
+/* Return new datetime from _strptime.strptime_datetime_datetime(). */
 static PyObject *
 datetime_strptime(PyObject *cls, PyObject *args)
 {
@@ -5523,7 +5655,8 @@ datetime_strptime(PyObject *cls, PyObject *args)
     if (module == NULL) {
         return NULL;
     }
-    result = PyObject_CallMethodObjArgs(module, &_Py_ID(_strptime_datetime),
+    result = PyObject_CallMethodObjArgs(module,
+                                        &_Py_ID(_strptime_datetime_datetime),
                                         cls, string, format, NULL);
     Py_DECREF(module);
     return result;
@@ -5797,12 +5930,38 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
         goto error;
     }
 
+    if ((hour == 24) && (month <= 12))  {
+        int d_in_month = days_in_month(year, month);
+        if (day <= d_in_month) {
+            if (minute == 0 && second == 0 && microsecond == 0) {
+                // Calculate midnight of the next day
+                hour = 0;
+                day += 1;
+                if (day > d_in_month) {
+                    day = 1;
+                    month += 1;
+                    if (month > 12) {
+                        month = 1;
+                        year += 1;
+                    }
+                }
+            } else {
+                goto invalid_iso_midnight;
+            }
+        }
+    }
     PyObject *dt = new_datetime_subclass_ex(year, month, day, hour, minute,
                                             second, microsecond, tzinfo, cls);
 
     Py_DECREF(tzinfo);
     Py_DECREF(dtstr_clean);
     return dt;
+
+invalid_iso_midnight:
+    PyErr_SetString(PyExc_ValueError, "minute, second, and microsecond must be 0 when hour is 24");
+    Py_DECREF(tzinfo);
+    Py_DECREF(dtstr_clean);
+    return NULL;
 
 invalid_string_error:
     PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %R", dtstr);
@@ -7210,49 +7369,51 @@ _datetime_exec(PyObject *module)
         Py_DECREF(value);                               \
     } while(0)
 
-    /* timedelta values */
-    PyObject *d = _PyType_GetDict(&PyDateTime_DeltaType);
-    DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
-    DATETIME_ADD_MACRO(d, "min", new_delta(-MAX_DELTA_DAYS, 0, 0, 0));
-    DATETIME_ADD_MACRO(d, "max",
-                       new_delta(MAX_DELTA_DAYS, 24*3600-1, 1000000-1, 0));
+    if (!reloading) {
+        /* timedelta values */
+        PyObject *d = _PyType_GetDict(&PyDateTime_DeltaType);
+        DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
+        DATETIME_ADD_MACRO(d, "min", new_delta(-MAX_DELTA_DAYS, 0, 0, 0));
+        DATETIME_ADD_MACRO(d, "max",
+                           new_delta(MAX_DELTA_DAYS, 24*3600-1, 1000000-1, 0));
 
-    /* date values */
-    d = _PyType_GetDict(&PyDateTime_DateType);
-    DATETIME_ADD_MACRO(d, "min", new_date(1, 1, 1));
-    DATETIME_ADD_MACRO(d, "max", new_date(MAXYEAR, 12, 31));
-    DATETIME_ADD_MACRO(d, "resolution", new_delta(1, 0, 0, 0));
+        /* date values */
+        d = _PyType_GetDict(&PyDateTime_DateType);
+        DATETIME_ADD_MACRO(d, "min", new_date(1, 1, 1));
+        DATETIME_ADD_MACRO(d, "max", new_date(MAXYEAR, 12, 31));
+        DATETIME_ADD_MACRO(d, "resolution", new_delta(1, 0, 0, 0));
 
-    /* time values */
-    d = _PyType_GetDict(&PyDateTime_TimeType);
-    DATETIME_ADD_MACRO(d, "min", new_time(0, 0, 0, 0, Py_None, 0));
-    DATETIME_ADD_MACRO(d, "max", new_time(23, 59, 59, 999999, Py_None, 0));
-    DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
+        /* time values */
+        d = _PyType_GetDict(&PyDateTime_TimeType);
+        DATETIME_ADD_MACRO(d, "min", new_time(0, 0, 0, 0, Py_None, 0));
+        DATETIME_ADD_MACRO(d, "max", new_time(23, 59, 59, 999999, Py_None, 0));
+        DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
 
-    /* datetime values */
-    d = _PyType_GetDict(&PyDateTime_DateTimeType);
-    DATETIME_ADD_MACRO(d, "min",
-                       new_datetime(1, 1, 1, 0, 0, 0, 0, Py_None, 0));
-    DATETIME_ADD_MACRO(d, "max", new_datetime(MAXYEAR, 12, 31, 23, 59, 59,
-                                              999999, Py_None, 0));
-    DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
+        /* datetime values */
+        d = _PyType_GetDict(&PyDateTime_DateTimeType);
+        DATETIME_ADD_MACRO(d, "min",
+                           new_datetime(1, 1, 1, 0, 0, 0, 0, Py_None, 0));
+        DATETIME_ADD_MACRO(d, "max", new_datetime(MAXYEAR, 12, 31, 23, 59, 59,
+                                                  999999, Py_None, 0));
+        DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
 
-    /* timezone values */
-    d = _PyType_GetDict(&PyDateTime_TimeZoneType);
-    if (PyDict_SetItemString(d, "utc", (PyObject *)&utc_timezone) < 0) {
-        goto error;
+        /* timezone values */
+        d = _PyType_GetDict(&PyDateTime_TimeZoneType);
+        if (PyDict_SetItemString(d, "utc", (PyObject *)&utc_timezone) < 0) {
+            goto error;
+        }
+
+        /* bpo-37642: These attributes are rounded to the nearest minute for backwards
+        * compatibility, even though the constructor will accept a wider range of
+        * values. This may change in the future.*/
+
+        /* -23:59 */
+        DATETIME_ADD_MACRO(d, "min", create_timezone_from_delta(-1, 60, 0, 1));
+
+        /* +23:59 */
+        DATETIME_ADD_MACRO(
+                d, "max", create_timezone_from_delta(0, (23 * 60 + 59) * 60, 0, 0));
     }
-
-    /* bpo-37642: These attributes are rounded to the nearest minute for backwards
-     * compatibility, even though the constructor will accept a wider range of
-     * values. This may change in the future.*/
-
-    /* -23:59 */
-    DATETIME_ADD_MACRO(d, "min", create_timezone_from_delta(-1, 60, 0, 1));
-
-    /* +23:59 */
-    DATETIME_ADD_MACRO(
-            d, "max", create_timezone_from_delta(0, (23 * 60 + 59) * 60, 0, 0));
 
 #undef DATETIME_ADD_MACRO
 
@@ -7295,12 +7456,6 @@ _datetime_exec(PyObject *module)
      */
     static_assert(DI100Y == 25 * DI4Y - 1, "DI100Y");
     assert(DI100Y == days_before_year(100+1));
-
-    if (reloading) {
-        for (size_t i = 0; i < Py_ARRAY_LENGTH(capi_types); i++) {
-            PyType_Modified(capi_types[i]);
-        }
-    }
 
     if (set_current_module(interp, module) < 0) {
         goto error;
@@ -7356,7 +7511,7 @@ module_free(void *mod)
 static PyModuleDef datetimemodule = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_datetime",
-    .m_doc = "Fast implementation of the datetime type.",
+    .m_doc = "Fast implementation of the datetime module.",
     .m_size = sizeof(datetime_state),
     .m_methods = module_methods,
     .m_slots = module_slots,
