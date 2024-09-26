@@ -102,8 +102,8 @@ _HOLE_EXPRS = {
     HoleValue.OPERAND_HI: "(instruction->operand >> 32)",
     HoleValue.OPERAND_LO: "(instruction->operand & UINT32_MAX)",
     HoleValue.TARGET: "instruction->target",
-    HoleValue.JUMP_TARGET: "instruction_starts[instruction->jump_target]",
-    HoleValue.ERROR_TARGET: "instruction_starts[instruction->error_target]",
+    HoleValue.JUMP_TARGET: "state->instruction_starts[instruction->jump_target]",
+    HoleValue.ERROR_TARGET: "state->instruction_starts[instruction->error_target]",
     HoleValue.ZERO: "",
 }
 
@@ -124,6 +124,7 @@ class Hole:
     symbol: str | None
     # ...plus this addend:
     addend: int
+    need_state: bool = False
     func: str = dataclasses.field(init=False)
     # Convenience method:
     replace = dataclasses.replace
@@ -160,6 +161,8 @@ class Hole:
             if value:
                 value += " + "
             value += f"{_signed(self.addend):#x}"
+        if self.need_state:
+            return f"{self.func}({location}, {value}, state);"
         return f"{self.func}({location}, {value});"
 
 
@@ -263,6 +266,7 @@ class StencilGroup:
                 and hole.value is HoleValue.ZERO
             ):
                 hole.func = "patch_aarch64_trampoline"
+                hole.need_state = True
                 if hole.symbol in known_symbols:
                     ordinal = known_symbols[hole.symbol]
                 else:

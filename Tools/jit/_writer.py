@@ -11,12 +11,12 @@ def _dump_footer(
     groups: dict[str, _stencils.StencilGroup], symbols: dict[str | None, int]
 ) -> typing.Iterator[str]:
     symbol_mask_size = max(math.ceil(len(symbols) / 32), 1)
-    yield f"typedef uint32_t SymbolMask[{symbol_mask_size}];"
+    yield f"static_assert(SYMBOL_MASK_WORDS >= {symbol_mask_size}, \"SYMBOL_MASK_WORDS too small\");"
     yield ""
     yield "typedef struct {"
     yield "    void (*emit)("
     yield "        unsigned char *code, unsigned char *data, _PyExecutorObject *executor,"
-    yield "        const _PyUOpInstruction *instruction, uintptr_t instruction_starts[]);"
+    yield "        const _PyUOpInstruction *instruction, CompileState *state);"
     yield "    size_t code_size;"
     yield "    size_t data_size;"
     yield "    SymbolMask trampoline_mask;"
@@ -41,7 +41,7 @@ def _dump_stencil(opname: str, group: _stencils.StencilGroup) -> typing.Iterator
     yield "void"
     yield f"emit_{opname}("
     yield "    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,"
-    yield "    const _PyUOpInstruction *instruction, uintptr_t instruction_starts[])"
+    yield "    const _PyUOpInstruction *instruction, CompileState *state)"
     yield "{"
     for part, stencil in [("code", group.code), ("data", group.data)]:
         for line in stencil.disassembly:
