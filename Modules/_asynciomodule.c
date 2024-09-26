@@ -75,8 +75,19 @@ typedef struct {
 #define Future_CheckExact(state, obj) Py_IS_TYPE(obj, state->FutureType)
 #define Task_CheckExact(state, obj) Py_IS_TYPE(obj, state->TaskType)
 
-#define Future_Check(state, obj) PyObject_TypeCheck(obj, state->FutureType)
-#define Task_Check(state, obj) PyObject_TypeCheck(obj, state->TaskType)
+#define Future_Check(state, obj)                        \
+    (Future_CheckExact(state, obj)                      \
+     || PyObject_TypeCheck(obj, state->FutureType))
+
+#define Task_Check(state, obj)                          \
+    (Task_CheckExact(state, obj)                        \
+     || PyObject_TypeCheck(obj, state->TaskType))
+
+#define TaskOrFuture_Check(state, obj)                  \
+    (Task_CheckExact(state, obj)                        \
+     || Future_CheckExact(state, obj)                   \
+     || PyObject_TypeCheck(obj, state->FutureType)      \
+     || PyObject_TypeCheck(obj, state->TaskType))
 
 #ifdef Py_GIL_DISABLED
 #   define ASYNCIO_STATE_LOCK(state) Py_BEGIN_CRITICAL_SECTION_MUT(&state->mutex)
@@ -521,19 +532,28 @@ future_init(FutureObj *fut, PyObject *loop)
 }
 
 static int
-future_awaited_by_add(FutureObj *fut, PyObject *thing)
+future_awaited_by_add(asyncio_state *state, PyObject *fut, PyObject *thing)
 {
-    /* Most futures/task are only awaited by one entity, so we want
-       to avoid always creating a set for `fut_awaited_by`.
-    */
-    if (fut->fut_awaited_by == NULL) {
-        Py_INCREF(thing);
-        fut->fut_awaited_by = thing;
+    if (!TaskOrFuture_Check(state, fut) || !TaskOrFuture_Check(state, thing)) {
+        // We only want to support native asyncio Futures.
+        // For further insight see the comment in the Python
+        // implementation of "future_add_to_awaited_by()".
         return 0;
     }
 
-    if (PySet_Check(fut->fut_awaited_by)) {
-        return PySet_Add(fut->fut_awaited_by, thing);
+    FutureObj *_fut = (FutureObj *)fut;
+
+    /* Most futures/task are only awaited by one entity, so we want
+       to avoid always creating a set for `fut_awaited_by`.
+    */
+    if (_fut->fut_awaited_by == NULL) {
+        Py_INCREF(thing);
+        _fut->fut_awaited_by = thing;
+        return 0;
+    }
+
+    if (PySet_Check(_fut->fut_awaited_by)) {
+        return PySet_Add(_fut->fut_awaited_by, thing);
     }
 
     PyObject *set = PySet_New(NULL);
@@ -544,29 +564,38 @@ future_awaited_by_add(FutureObj *fut, PyObject *thing)
         Py_DECREF(set);
         return -1;
     }
-    if (PySet_Add(set, fut->fut_awaited_by)) {
+    if (PySet_Add(set, _fut->fut_awaited_by)) {
         Py_DECREF(set);
         return -1;
     }
-    Py_SETREF(fut->fut_awaited_by, set);
+    Py_SETREF(_fut->fut_awaited_by, set);
     return 0;
 }
 
 static int
-future_awaited_by_discard(FutureObj *fut, PyObject *thing)
+future_awaited_by_discard(asyncio_state *state, PyObject *fut, PyObject *thing)
 {
+    if (!TaskOrFuture_Check(state, fut) || !TaskOrFuture_Check(state, thing)) {
+        // We only want to support native asyncio Futures.
+        // For further insight see the comment in the Python
+        // implementation of "future_add_to_awaited_by()".
+        return 0;
+    }
+
+    FutureObj *_fut = (FutureObj *)fut;
+
     /* Following the semantics of 'set.discard()' here in not
        raising an error if `thing` isn't in the `awaited_by` "set".
     */
-    if (fut->fut_awaited_by == NULL) {
+    if (_fut->fut_awaited_by == NULL) {
         return 0;
     }
-    if (fut->fut_awaited_by == thing) {
-        Py_CLEAR(fut->fut_awaited_by);
+    if (_fut->fut_awaited_by == thing) {
+        Py_CLEAR(_fut->fut_awaited_by);
         return 0;
     }
-    if (PySet_Check(fut->fut_awaited_by)) {
-        int err = PySet_Discard(fut->fut_awaited_by, thing);
+    if (PySet_Check(_fut->fut_awaited_by)) {
+        int err = PySet_Discard(_fut->fut_awaited_by, thing);
         if (err < 0 && PyErr_Occurred()) {
             return -1;
         } else {
@@ -574,101 +603,6 @@ future_awaited_by_discard(FutureObj *fut, PyObject *thing)
         }
     }
     return 0;
-}
-
-static int
-awaited_by_add(asyncio_state *state, PyObject *maybe_fut, PyObject *thing)
-{
-    if (Future_CheckExact(state, maybe_fut)
-        || Task_CheckExact(state, maybe_fut)
-    ) {
-        return future_awaited_by_add((FutureObj *)maybe_fut, thing);
-    }
-
-    PyObject *awaited_by;
-    int err = PyObject_GetOptionalAttr(
-        maybe_fut, &_Py_ID(_awaited_by), &awaited_by);
-    if (err < 0) {
-        return err;
-    }
-
-    if (err == 1) {
-        if (PySet_Check(awaited_by)) {
-            if (PySet_Add(awaited_by, thing)) {
-                Py_DECREF(awaited_by);
-                return -1;
-            } else {
-                Py_DECREF(awaited_by);
-                return 0;
-            }
-        } else if (awaited_by == Py_None) {
-            Py_DECREF(awaited_by);
-            goto new_set;
-        } else {
-            Py_DECREF(awaited_by);
-            PyErr_SetString(PyExc_RuntimeError,
-                            "_awaited_by is not a set or None");
-            return -1;
-        }
-    }
-
-    assert(err == 0);
-    assert(awaited_by == NULL);
-
-new_set:
-    awaited_by = PySet_New(NULL);
-    if (awaited_by == NULL) {
-        return -1;
-    }
-    if (PySet_Add(awaited_by, thing)) {
-        Py_DECREF(awaited_by);
-        return -1;
-    }
-
-    err = PyObject_SetAttr(maybe_fut, &_Py_ID(_awaited_by), awaited_by);
-    Py_DECREF(awaited_by);
-    return err;
-}
-
-static int
-awaited_by_discard(asyncio_state *state, PyObject *maybe_fut, PyObject *thing)
-{
-    if (Future_CheckExact(state, maybe_fut)
-        || Task_CheckExact(state, maybe_fut)
-    ) {
-        return future_awaited_by_discard((FutureObj *)maybe_fut, thing);
-    }
-
-    PyObject *awaited_by;
-    int err = PyObject_GetOptionalAttr(
-        maybe_fut, &_Py_ID(_awaited_by), &awaited_by);
-    if (err < 0) {
-        return err;
-    }
-
-    if (err == 0) {
-        return 0;
-    }
-
-    assert(err == 1);
-
-    if (PySet_Check(awaited_by)) {
-        err = PySet_Discard(awaited_by, thing);
-        Py_DECREF(awaited_by);
-        if (err < 0 && PyErr_Occurred()) {
-            return -1;
-        } else {
-            return 0;
-        }
-    } else if (awaited_by == Py_None) {
-        Py_DECREF(awaited_by);
-        return 0;
-    } else {
-        Py_DECREF(awaited_by);
-        PyErr_SetString(PyExc_RuntimeError,
-                        "_awaited_by is not a set or None");
-        return -1;
-    }
 }
 
 static PyObject *
@@ -679,26 +613,10 @@ future_get_awaited_by(FutureObj *fut)
         Py_RETURN_NONE;
     }
     if (PySet_Check(fut->fut_awaited_by)) {
-        Py_INCREF(fut->fut_awaited_by);
-        return fut->fut_awaited_by;
+        return PyFrozenSet_New(fut->fut_awaited_by);
     }
 
-    /* We don't want to "leak" our optimization that we don't always create
-       a set to the pure-Python land. Accessing `_awaited_by` from Python
-       can mean two things:
-
-       (a) asyncio TaskGroup or gather or a similar primitive uses it
-           to ensure correct call stack. In this case, the TaskGroup
-           will attempt to mutate the set.
-
-       (b) an async call stack is being rendered and needs to infer
-           what tasks are awaiting on this task or future. In this case
-           we don't want to micro-optimize things.
-
-       The bottom line: it's easier to make a set, use it and return it.
-    */
-
-    PyObject *set = PySet_New(NULL);
+    PyObject *set = PyFrozenSet_New(NULL);
     if (set == NULL) {
         return NULL;
     }
@@ -706,10 +624,6 @@ future_get_awaited_by(FutureObj *fut)
         Py_DECREF(set);
         return NULL;
     }
-
-    Py_SETREF(fut->fut_awaited_by, set);
-
-    Py_INCREF(set);
     return set;
 }
 
@@ -1719,8 +1633,8 @@ static PyMethodDef FutureType_methods[] = {
                           NULL, NULL},                                        \
     {"_cancel_message", (getter)FutureObj_get_cancel_message,                 \
                         (setter)FutureObj_set_cancel_message, NULL},          \
-    {"_awaited_by", (getter)future_get_awaited_by,                            \
-                    (setter)future_set_awaited_by, NULL},
+    {"_asyncio_awaited_by", (getter)future_get_awaited_by,                    \
+                            (setter)future_set_awaited_by, NULL},
 
 static PyGetSetDef FutureType_getsetlist[] = {
     FUTURE_COMMON_GETSETLIST
@@ -3155,7 +3069,7 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
             goto yield_insteadof_yf;
         }
 
-        if (awaited_by_add(state, result, (PyObject *)task)) {
+        if (future_awaited_by_add(state, result, (PyObject *)task)) {
             goto fail;
         }
 
@@ -3237,7 +3151,7 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
             goto yield_insteadof_yf;
         }
 
-        if (awaited_by_add(state, result, (PyObject *)task)) {
+        if (future_awaited_by_add(state, result, (PyObject *)task)) {
             goto fail;
         }
 
@@ -3439,7 +3353,7 @@ task_wakeup(TaskObj *task, PyObject *o)
 
     asyncio_state *state = get_asyncio_state_by_def((PyObject *)task);
 
-    if (awaited_by_discard(state, o, (PyObject *)task)) {
+    if (future_awaited_by_discard(state, o, (PyObject *)task)) {
         return NULL;
     }
 
@@ -3903,6 +3817,50 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     return tasks;
 }
 
+/*[clinic input]
+_asyncio.future_add_to_awaited_by
+
+    fut: object
+    waiter: object
+
+Record that `fut` is awaited on by `waiter`.
+
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_future_add_to_awaited_by_impl(PyObject *module, PyObject *fut,
+                                       PyObject *waiter)
+/*[clinic end generated code: output=0ab9a1a63389e4df input=29259cdbafe9e7bf]*/
+{
+    asyncio_state *state = get_asyncio_state(module);
+    if (future_awaited_by_add(state, fut, waiter)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_asyncio.future_discard_from_awaited_by
+
+    fut: object
+    waiter: object
+
+Record that `fut` is no longer awaited on by `waiter`.
+
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_future_discard_from_awaited_by_impl(PyObject *module, PyObject *fut,
+                                             PyObject *waiter)
+/*[clinic end generated code: output=a03b0b4323b779de input=5d67a3edc79b6094]*/
+{
+    asyncio_state *state = get_asyncio_state(module);
+    if (future_awaited_by_discard(state, fut, waiter)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 static int
 module_traverse(PyObject *mod, visitproc visit, void *arg)
 {
@@ -4072,6 +4030,8 @@ static PyMethodDef asyncio_methods[] = {
     _ASYNCIO__LEAVE_TASK_METHODDEF
     _ASYNCIO__SWAP_CURRENT_TASK_METHODDEF
     _ASYNCIO_ALL_TASKS_METHODDEF
+    _ASYNCIO_FUTURE_ADD_TO_AWAITED_BY_METHODDEF
+    _ASYNCIO_FUTURE_DISCARD_FROM_AWAITED_BY_METHODDEF
     {NULL, NULL}
 };
 

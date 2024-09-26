@@ -1,8 +1,6 @@
 import asyncio
 import unittest
 
-import pprint
-
 
 # To prevent a warning "test altered the execution environment"
 def tearDownModule():

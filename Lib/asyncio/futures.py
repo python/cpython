@@ -2,6 +2,7 @@
 
 __all__ = (
     'Future', 'wrap_future', 'isfuture',
+    'future_add_to_awaited_by', 'future_discard_from_awaited_by',
 )
 
 import concurrent.futures
@@ -67,6 +68,9 @@ class Future:
     #   `await Future()` or`yield from Future()` (correct) vs.
     #   `yield Future()` (incorrect).
     _asyncio_future_blocking = False
+
+    # Used by the capture_call_stack() API.
+    _asyncio_awaited_by = None
 
     __log_traceback = False
 
@@ -419,6 +423,46 @@ def wrap_future(future, *, loop=None):
     return new_future
 
 
+def future_add_to_awaited_by(fut, waiter):
+    """Record that `fut` is awaited on by `waiter`."""
+    # For the sake of keeping the implementation minimal and assuming
+    # that 99.9% of asyncio users use the built-in Futures and Tasks
+    # (or their subclasses), we only support native Future objects
+    # and their subclasses.
+    #
+    # Longer version: tracking requires storing the caller-callee
+    # dependency somewhere. One obvious choice is to store that
+    # information right in the future itself in a dedicated attribute.
+    # This means that we'd have to require all duck-type compatible
+    # futures to implement a specific attribute used by asyncio for
+    # the book keeping. Another solution would be to store that in
+    # a global dictionary. The downside here is that that would create
+    # strong references and any scenario where the "add" call isn't
+    # followed by a "discard" call would lead to a memory leak.
+    # Using WeakDict would resolve that issue, but would complicate
+    # the C code (_asynciomodule.c). The bottom line here is that
+    # it's not clear that all this work would be worth the effort.
+    #
+    # Note that there's an accelerated version of this function
+    # shadowing this implementation later in this file.
+    if isinstance(fut, _PyFuture) and isinstance(waiter, _PyFuture):
+        if fut._asyncio_awaited_by is None:
+            fut._asyncio_awaited_by = set()
+        fut._asyncio_awaited_by.add(waiter)
+
+
+def future_discard_from_awaited_by(fut, waiter):
+    """Record that `fut` is no longer awaited on by `waiter`."""
+    # See the comment in "future_add_to_awaited_by()" body for
+    # details on implemntation.
+    #
+    # Note that there's an accelerated version of this function
+    # shadowing this implementation later in this file.
+    if isinstance(fut, _PyFuture) and isinstance(waiter, _PyFuture):
+        if fut._asyncio_awaited_by is not None:
+            fut._asyncio_awaited_by.discard(waiter)
+
+
 try:
     import _asyncio
 except ImportError:
@@ -426,3 +470,9 @@ except ImportError:
 else:
     # _CFuture is needed for tests.
     Future = _CFuture = _asyncio.Future
+
+try:
+    from _asyncio import future_add_to_awaited_by, \
+                         future_discard_from_awaited_by
+except ImportError:
+    pass

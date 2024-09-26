@@ -1,10 +1,9 @@
 """Introspection utils for tasks call stacks."""
 
-import dataclasses
 import sys
 import types
+import typing
 
-from . import base_futures
 from . import futures
 from . import tasks
 
@@ -22,25 +21,23 @@ __all__ = (
 # Going with pretty verbose names as we'd like to export them to the
 # top level asyncio namespace, and want to avoid future name clashes.
 
-@dataclasses.dataclass(slots=True)
-class FrameCallStackEntry:
+
+class FrameCallStackEntry(typing.NamedTuple):
     frame: types.FrameType
 
 
-@dataclasses.dataclass(slots=True)
-class CoroutineCallStackEntry:
+class CoroutineCallStackEntry(typing.NamedTuple):
     coroutine: types.CoroutineType
 
 
-@dataclasses.dataclass(slots=True)
-class FutureCallStack:
+class FutureCallStack(typing.NamedTuple):
     future: futures.Future
     call_stack: list[FrameCallStackEntry | CoroutineCallStackEntry]
     awaited_by: list[FutureCallStack]
 
 
 def _build_stack_for_future(future: any) -> FutureCallStack:
-    if not base_futures.isfuture(future):
+    if not isinstance(future, futures.Future):
         raise TypeError(
             f"{future!r} object does not appear to be compatible "
             f"with asyncio.Future"
@@ -68,7 +65,7 @@ def _build_stack_for_future(future: any) -> FutureCallStack:
         else:
             break
 
-    if fut_waiters := getattr(future, '_awaited_by', None):
+    if fut_waiters := getattr(future, '_asyncio_awaited_by', None):
         for parent in fut_waiters:
             awaited_by.append(_build_stack_for_future(parent))
 
@@ -92,6 +89,12 @@ def capture_call_stack(*, future: any = None) -> FutureCallStack | None:
         # just return.
         return None
 
+    if not isinstance(future, futures.Future):
+        raise TypeError(
+            f"{future!r} object does not appear to be compatible "
+            f"with asyncio.Future"
+        )
+
     call_stack: list[FrameCallStackEntry | CoroutineCallStackEntry] = []
 
     f = sys._getframe(1)
@@ -113,8 +116,8 @@ def capture_call_stack(*, future: any = None) -> FutureCallStack | None:
         del f
 
     awaited_by = []
-    if getattr(future, '_awaited_by', None):
-        for parent in future._awaited_by:
+    if fut_waiters := getattr(future, '_asyncio_awaited_by', None):
+        for parent in fut_waiters:
             awaited_by.append(_build_stack_for_future(parent))
 
     return FutureCallStack(future, call_stack, awaited_by)
