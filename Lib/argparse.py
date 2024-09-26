@@ -2565,7 +2565,10 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             }
             msg = _('invalid choice: %(value)r (choose from %(choices)s)')
 
-            if self.suggest_on_error and isinstance(value, str):  
+            #check that choices is a list of strings
+            all_strings = all(isinstance(choice, str) for choice in action.choices)
+
+            if self.suggest_on_error and isinstance(value, str) and all_strings:  
                 import difflib
                 suggestions = difflib.get_close_matches(value, action.choices, 1)
                 if suggestions:
