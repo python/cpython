@@ -429,15 +429,31 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
         return ret;
     }
     else {
+        PyObject *tot_kw = NULL;
+        PyObject *tot_kwnames = NULL;
         PyObject *key, *val;
-        tot_nkwds = PyDict_GET_SIZE(pto->kw) + nkwds;
-        for (Py_ssize_t i = 0; i < nkwds; i++) {
-            key = PyTuple_GET_ITEM(kwnames, i);
-            if (PyDict_Contains(pto->kw, key)) {
-                tot_nkwds--;
-            }
+        int has_nkwds = 0;
+
+        if (!nkwds) {
+            tot_kw = pto->kw;
+            tot_nkwds = pto_nkwds;
+            tot_nargskw = tot_nargs + tot_nkwds;
         }
-        tot_nargskw = tot_nargs + tot_nkwds;
+        else {
+            has_nkwds = 1;
+            tot_kw = PyDict_Copy(pto->kw);
+            for (Py_ssize_t i=0; i < nkwds; i++) {
+                key = PyTuple_GET_ITEM(kwnames, i);
+                val = args[nargs + i];
+                if (PyDict_SetItem(tot_kw, key, val)) {
+                    Py_DECREF(tot_kw);
+                    return NULL;
+                }
+            }
+
+            tot_nkwds = PyDict_GET_SIZE(tot_kw);
+            tot_nargskw = tot_nargs + tot_nkwds;
+        }
 
         /* Allocate Stack */
         PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
@@ -477,46 +493,18 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
         }
 
         /* Copy Keywords to new stack */
-        PyObject *tot_kwnames = PyTuple_New(tot_nkwds);
-        if (tot_kwnames == NULL) {
-            return NULL;
+        tot_kwnames = PyTuple_New(tot_nkwds);
+        Py_ssize_t pos = 0, i = 0;
+        while (PyDict_Next(tot_kw, &pos, &key, &val)) {
+            PyTuple_SET_ITEM(tot_kwnames, i, key);
+            Py_INCREF(key);
+            stack[tot_nargs + i] = val;
+            i += 1;
         }
-        if (nkwds) {
-            /* Merge keywords with pto->kw */
-            PyObject *tot_kw = PyDict_Copy(pto->kw);
-            if (tot_kw == NULL) {
-                Py_DECREF(tot_kwnames);
-                return NULL;
-            }
-            for (Py_ssize_t i=0; i < nkwds; i++) {
-                key = PyTuple_GET_ITEM(kwnames, i);
-                val = args[nargs + i];
-                if (PyDict_SetItem(tot_kw, key, val)) {
-                    Py_DECREF(tot_kwnames);
-                    Py_DECREF(tot_kw);
-                    return NULL;
-                }
-            }
-
-            Py_ssize_t pos = 0, i = 0;
-            while (PyDict_Next(tot_kw, &pos, &key, &val)) {
-                PyTuple_SET_ITEM(tot_kwnames, i, key);
-                Py_INCREF(key);
-                stack[tot_nargs + i] = val;
-                i += 1;
-            }
+        if (has_nkwds) {
             Py_DECREF(tot_kw);
         }
-        else {
-            /* Call with pto->kw only */
-            Py_ssize_t pos = 0, i = 0;
-            while (PyDict_Next(pto->kw, &pos, &key, &val)) {
-                PyTuple_SET_ITEM(tot_kwnames, i, key);
-                Py_INCREF(key);
-                stack[tot_nargs + i] = val;
-                i += 1;
-            }
-        }
+
         ret = _PyObject_VectorcallTstate(tstate, pto->fn, stack, tot_nargs, tot_kwnames);
         Py_DECREF(tot_kwnames);
 
