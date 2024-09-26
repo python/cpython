@@ -91,7 +91,7 @@ annotations. Annotations may be evaluated in the :attr:`~annotationlib.Format.VA
 format (which evaluates annotations to runtime values, similar to the behavior in
 earlier Python versions), the :attr:`~annotationlib.Format.FORWARDREF` format
 (which replaces undefined names with special markers), and the
-:attr:`~annotationlib.Format.SOURCE` format (which returns annotations as strings).
+:attr:`~annotationlib.Format.STRING` format (which returns annotations as strings).
 
 This example shows how these formats behave:
 
@@ -106,7 +106,7 @@ This example shows how these formats behave:
    NameError: name 'Undefined' is not defined
    >>> get_annotations(func, format=Format.FORWARDREF)
    {'arg': ForwardRef('Undefined')}
-   >>> get_annotations(func, format=Format.SOURCE)
+   >>> get_annotations(func, format=Format.STRING)
    {'arg': 'Undefined'}
 
 Implications for annotated code
