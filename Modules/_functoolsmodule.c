@@ -26,7 +26,7 @@ typedef struct _functools_state {
     /* this object is used delimit args and keywords in the cache keys */
     PyObject *kwd_mark;
     PyTypeObject *placeholder_type;
-    PyObject *placeholder;
+    PyObject *placeholder;  // strong reference (singleton)
     PyTypeObject *partial_type;
     PyTypeObject *keyobject_type;
     PyTypeObject *lru_list_elem_type;
@@ -76,13 +76,12 @@ static PyMethodDef placeholder_methods[] = {
 };
 
 static void
-placeholder_dealloc(PyObject* placeholder)
+placeholder_dealloc(PyObject* self)
 {
-    /* This should never get called, but we also don't want to SEGV if
-     * we accidentally decref Placeholder out of existence. Instead,
-     * since Placeholder is an immortal object, re-set the reference count.
-     */
-    _Py_SetImmortal(placeholder);
+    PyObject_GC_UnTrack(self);
+    PyTypeObject *tp = Py_TYPE(self);
+    tp->tp_free((PyObject*)self);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -93,10 +92,26 @@ placeholder_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         return NULL;
     }
     _functools_state *state = get_functools_state_by_type(type);
-    if (state->placeholder == NULL) {
-        state->placeholder = PyType_GenericNew(type, NULL, NULL);
+    if (state->placeholder != NULL) {
+        return Py_NewRef(state->placeholder);
     }
-    return state->placeholder;
+
+    PyObject *placeholder = PyType_GenericNew(type, NULL, NULL);
+    if (placeholder == NULL) {
+        return NULL;
+    }
+
+    if (state->placeholder == NULL) {
+        state->placeholder = Py_NewRef(placeholder);
+    }
+    return placeholder;
+}
+
+static int
+placeholder_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
 }
 
 static PyType_Slot placeholder_type_slots[] = {
@@ -105,13 +120,14 @@ static PyType_Slot placeholder_type_slots[] = {
     {Py_tp_doc, (void *)placeholder_doc},
     {Py_tp_methods, placeholder_methods},
     {Py_tp_new, placeholder_new},
+    {Py_tp_traverse, placeholder_traverse},
     {0, 0}
 };
 
 static PyType_Spec placeholder_type_spec = {
     .name = "functools._PlaceholderType",
     .basicsize = sizeof(placeholderobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC,
     .slots = placeholder_type_slots
 };
 
@@ -1717,13 +1733,17 @@ _functools_exec(PyObject *module)
     if (PyModule_AddType(module, state->placeholder_type) < 0) {
         return -1;
     }
-    state->placeholder = PyObject_CallNoArgs((PyObject *)state->placeholder_type);
-    if (state->placeholder == NULL) {
+
+    PyObject *placeholder = PyObject_CallNoArgs((PyObject *)state->placeholder_type);
+    if (placeholder == NULL) {
         return -1;
     }
-    if (PyModule_AddObject(module, "Placeholder", state->placeholder) < 0) {
+    if (PyModule_AddObjectRef(module, "Placeholder", placeholder) < 0) {
+        Py_DECREF(placeholder);
         return -1;
     }
+    Py_DECREF(placeholder);
+
     state->partial_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
         &partial_type_spec, NULL);
     if (state->partial_type == NULL) {
@@ -1769,6 +1789,7 @@ _functools_traverse(PyObject *module, visitproc visit, void *arg)
     _functools_state *state = get_functools_state(module);
     Py_VISIT(state->kwd_mark);
     Py_VISIT(state->placeholder_type);
+    Py_VISIT(state->placeholder);
     Py_VISIT(state->partial_type);
     Py_VISIT(state->keyobject_type);
     Py_VISIT(state->lru_list_elem_type);
@@ -1781,6 +1802,7 @@ _functools_clear(PyObject *module)
     _functools_state *state = get_functools_state(module);
     Py_CLEAR(state->kwd_mark);
     Py_CLEAR(state->placeholder_type);
+    Py_CLEAR(state->placeholder);
     Py_CLEAR(state->partial_type);
     Py_CLEAR(state->keyobject_type);
     Py_CLEAR(state->lru_list_elem_type);
