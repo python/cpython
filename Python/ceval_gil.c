@@ -386,7 +386,7 @@ take_gil(PyThreadState *tstate)
 
     if (_PyThreadState_MustExit(tstate)) {
         /* bpo-36475: If Py_Finalize() has been called and tstate is not
-           the thread which called Py_Finalize(), bpo-42969: hang the
+           the thread which called Py_Finalize(), gh-87135: hang the
            thread.
 
            This code path can be reached by a daemon thread which was waiting

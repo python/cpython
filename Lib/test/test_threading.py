@@ -1173,7 +1173,7 @@ class ThreadTests(BaseTestCase):
 
     @cpython_only
     def test_finalize_daemon_thread_hang(self):
-        # bpo-42969: tests that daemon threads hang during finalization
+        # gh-87135: tests that daemon threads hang during finalization
         script = textwrap.dedent('''
             import os
             import sys
