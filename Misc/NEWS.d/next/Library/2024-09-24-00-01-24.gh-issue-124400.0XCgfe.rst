@@ -1,1 +1,1 @@
-``until`` in ``commands`` executes correctly now in :mod:`pdb`. Breakpoint commands will not print the frame information if there's a command that resumes execution in the command list.
+Fixed :mod:`pdb` bug where ``until`` has no effect when it appears in a ``commands`` sequence. Also avoid printing the frame information at a breakpoint if it has a command list containing a command that resumes execution.
