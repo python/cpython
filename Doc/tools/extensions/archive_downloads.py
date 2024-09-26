@@ -27,6 +27,7 @@ from sphinx.util.docutils import SphinxRole
 if TYPE_CHECKING:
     from docutils.nodes import Node, system_message
     from sphinx.application import Sphinx
+    from sphinx.util.typing import ExtensionMetadata
 
 
 class DownloadArchiveRole(SphinxRole):
@@ -51,6 +52,11 @@ def download_only_html(app: Sphinx) -> None:
         app.config.exclude_patterns.append("download.rst")
 
 
-def setup(app):
+def setup(app: Sphinx) -> ExtensionMetadata:
     app.add_role("download-archive", DownloadArchiveRole())
     app.connect("builder-inited", download_only_html)
+    return {
+        "version": "1.0",
+        "parallel_read_safe": True,
+        "parallel_write_safe": True,
+    }
