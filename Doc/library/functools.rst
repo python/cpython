@@ -328,6 +328,14 @@ The :mod:`functools` module defines the following functions:
       Returning ``NotImplemented`` from the underlying comparison function for
       unrecognised types is now supported.
 
+.. data:: Placeholder
+
+   A singleton object used as a sentinel to reserve a place
+   for positional arguments when calling :func:`partial`
+   and :func:`partialmethod`.
+
+   .. versionadded:: 3.14
+
 .. function:: partial(func, /, *args, **keywords)
 
    Return a new :ref:`partial object<partial-objects>` which when called
@@ -338,26 +346,67 @@ The :mod:`functools` module defines the following functions:
    Roughly equivalent to::
 
       def partial(func, /, *args, **keywords):
-          def newfunc(*fargs, **fkeywords):
-              newkeywords = {**keywords, **fkeywords}
-              return func(*args, *fargs, **newkeywords)
+          def newfunc(*more_args, **more_keywords):
+              keywords_union = {**keywords, **more_keywords}
+              return func(*args, *more_args, **keywords_union)
           newfunc.func = func
           newfunc.args = args
           newfunc.keywords = keywords
           return newfunc
 
-   The :func:`partial` is used for partial function application which "freezes"
+   The :func:`partial` function is used for partial function application which "freezes"
    some portion of a function's arguments and/or keywords resulting in a new object
    with a simplified signature.  For example, :func:`partial` can be used to create
    a callable that behaves like the :func:`int` function where the *base* argument
-   defaults to two:
+   defaults to ``2``:
 
-      >>> from functools import partial
+   .. doctest::
+
       >>> basetwo = partial(int, base=2)
       >>> basetwo.__doc__ = 'Convert base 2 string to an int.'
       >>> basetwo('10010')
       18
 
+   If :data:`Placeholder` sentinels are present in *args*, they will be filled first
+   when :func:`partial` is called. This allows custom selection of positional arguments
+   to be pre-filled when constructing a :ref:`partial object <partial-objects>`.
+
+   If :data:`!Placeholder` sentinels are present, all of them must be filled at call time:
+
+   .. doctest::
+
+      >>> say_to_world = partial(print, Placeholder, Placeholder, "world!")
+      >>> say_to_world('Hello', 'dear')
+      Hello dear world!
+
+   Calling ``say_to_world('Hello')`` would raise a :exc:`TypeError`, because
+   only one positional argument is provided, while there are two placeholders
+   in :ref:`partial object <partial-objects>`.
+
+   Successive :func:`partial` applications fill :data:`!Placeholder` sentinels
+   of the input :func:`partial` objects with new positional arguments.
+   A place for positional argument can be retained by inserting new
+   :data:`!Placeholder` sentinel to the place held by previous :data:`!Placeholder`:
+
+   .. doctest::
+
+      >>> from functools import partial, Placeholder as _
+      >>> remove = partial(str.replace, _, _, '')
+      >>> message = 'Hello, dear dear world!'
+      >>> remove(message, ' dear')
+      'Hello, world!'
+      >>> remove_dear = partial(remove, _, ' dear')
+      >>> remove_dear(message)
+      'Hello, world!'
+      >>> remove_first_dear = partial(remove_dear, _, 1)
+      >>> remove_first_dear(message)
+      'Hello, dear world!'
+
+   Note, :data:`!Placeholder` has no special treatment when used for keyword
+   argument of :data:`!Placeholder`.
+
+   .. versionchanged:: 3.14
+      Added support for :data:`Placeholder` in positional arguments.
 
 .. class:: partialmethod(func, /, *args, **keywords)
 
@@ -742,10 +791,7 @@ have three read-only attributes:
    The keyword arguments that will be supplied when the :class:`partial` object is
    called.
 
-:class:`partial` objects are like :ref:`function objects <user-defined-funcs>`
-in that they are callable, weak referenceable, and can have attributes.
-There are some important differences.  For instance, the
-:attr:`~function.__name__` and :attr:`function.__doc__` attributes
-are not created automatically.  Also, :class:`partial` objects defined in
-classes behave like static methods and do not transform into bound methods
-during instance attribute look-up.
+:class:`partial` objects are like :class:`function` objects in that they are
+callable, weak referenceable, and can have attributes.  There are some important
+differences.  For instance, the :attr:`~definition.__name__` and :attr:`__doc__` attributes
+are not created automatically.
