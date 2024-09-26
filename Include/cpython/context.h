@@ -33,8 +33,7 @@ typedef enum {
 } PyContextEvent;
 
 /*
- * A Callback to signal non-python contexts impls when a context
- * object undergoes a PyContext_Enter or PyContext_Exit
+ * Callback to be invoked when a context object is entered or exited.
  *
  * The callback is invoked with the event and a reference to
  * the context after its entered and before its exited.
