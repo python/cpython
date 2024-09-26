@@ -310,7 +310,7 @@ An :class:`IMAP4` instance has the following methods:
 
 .. method:: IMAP4.idle(dur=None)
 
-   Return an ``Idler``: an iterable context manager implementing the ``IDLE``
+   Return an :class:`!Idler`: an iterable context manager implementing the ``IDLE``
    command as defined in :rfc:`2177`.
 
    The context manager sends the ``IDLE`` command when activated by the
@@ -393,7 +393,7 @@ An :class:`IMAP4` instance has the following methods:
 
    .. note::
 
-      Note: The ``Idler`` class name and structure are internal interfaces,
+      Note: The :class:`!Idler` class name and structure are internal interfaces,
       subject to change.  Calling code can rely on its context management,
       iteration, and public method to remain stable, but should not
       subclass, instantiate, or otherwise directly reference the class.
