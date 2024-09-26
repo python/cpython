@@ -1351,7 +1351,7 @@ the :option:`-X` command line option.
    The ``show_alloc_count`` field has been removed.
 
 
-.._init-from-config:
+.. _init-from-config:
 
 Initialization with PyConfig
 ----------------------------
