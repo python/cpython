@@ -11,7 +11,7 @@ from . import taskgroups
 class _Done(Exception):
     pass
 
-async def staggered_race(coro_fns, delay, *, loop=None):
+async def staggered_race(coro_fns, delay):
     """Run coroutines with staggered start times and take the first to finish.
 
     This method takes an iterable of coroutine functions. The first one is
@@ -64,15 +64,6 @@ async def staggered_race(coro_fns, delay, *, loop=None):
     winner_result = None
     winner_index = None
     exceptions = []
-
-    if loop is not None:
-        import warnings
-        warnings._deprecated(
-            'loop',
-            'the {name!r} parameter is deprecated and slated for removal in '
-            'Python {remove}; it is ignored since 3.14',
-            remove=(3, 16),
-        )
 
     async def run_one_coro(this_index, coro_fn, this_failed):
         try:

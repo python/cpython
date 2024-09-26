@@ -213,10 +213,11 @@ class EagerTaskFactoryLoopTests:
 
         self.run_coro(run())
 
-    # See GH-124309 for both of these
     def test_staggered_race_with_eager_tasks(self):
+        # See https://github.com/python/cpython/issues/124309
+
         async def fail():
-            await asyncio.sleep(0)  # Dummy coroutine
+            await asyncio.sleep(0)
             raise ValueError("no good")
 
         async def run():
@@ -237,6 +238,7 @@ class EagerTaskFactoryLoopTests:
         self.run_coro(run())
 
     def test_staggered_race_with_eager_tasks_no_delay(self):
+        # See https://github.com/python/cpython/issues/124309
         async def fail():
             raise ValueError("no good")
 
