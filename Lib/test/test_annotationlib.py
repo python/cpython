@@ -54,9 +54,7 @@ class TestForwardRefFormat(unittest.TestCase):
         def inner(arg: x):
             pass
 
-        anno = annotationlib.get_annotations(
-            inner, format=Format.FORWARDREF
-        )
+        anno = annotationlib.get_annotations(inner, format=Format.FORWARDREF)
         fwdref = anno["arg"]
         self.assertIsInstance(fwdref, annotationlib.ForwardRef)
         self.assertEqual(fwdref.__forward_arg__, "x")
@@ -66,9 +64,7 @@ class TestForwardRefFormat(unittest.TestCase):
         x = 1
         self.assertEqual(fwdref.evaluate(), x)
 
-        anno = annotationlib.get_annotations(
-            inner, format=Format.FORWARDREF
-        )
+        anno = annotationlib.get_annotations(inner, format=Format.FORWARDREF)
         self.assertEqual(anno["arg"], x)
 
     def test_function(self):
@@ -276,7 +272,7 @@ class TestForwardRefClass(unittest.TestCase):
         with self.assertRaises(NameError):
             ForwardRef("T").evaluate(owner=int)
 
-        T, = Gen.__type_params__
+        (T,) = Gen.__type_params__
         self.assertIs(ForwardRef("T").evaluate(type_params=Gen.__type_params__), T)
         self.assertIs(ForwardRef("T").evaluate(owner=Gen), T)
 
@@ -294,8 +290,7 @@ class TestForwardRefClass(unittest.TestCase):
     def test_fwdref_with_module(self):
         self.assertIs(ForwardRef("Format", module="annotationlib").evaluate(), Format)
         self.assertIs(
-            ForwardRef("Counter", module="collections").evaluate(),
-            collections.Counter
+            ForwardRef("Counter", module="collections").evaluate(), collections.Counter
         )
         self.assertEqual(
             ForwardRef("Counter[int]", module="collections").evaluate(),
@@ -392,9 +387,7 @@ class TestGetAnnotations(unittest.TestCase):
         )
         self.assertEqual(annotationlib.get_annotations(NoDict), {"b": str})
         self.assertEqual(
-            annotationlib.get_annotations(
-                NoDict, format=Format.FORWARDREF
-            ),
+            annotationlib.get_annotations(NoDict, format=Format.FORWARDREF),
             {"b": str},
         )
         self.assertEqual(
@@ -446,12 +439,8 @@ class TestGetAnnotations(unittest.TestCase):
             pass
 
         with self.assertRaises(ValueError):
-            annotationlib.get_annotations(
-                foo, format=Format.FORWARDREF, eval_str=True
-            )
-            annotationlib.get_annotations(
-                foo, format=Format.STRING, eval_str=True
-            )
+            annotationlib.get_annotations(foo, format=Format.FORWARDREF, eval_str=True)
+            annotationlib.get_annotations(foo, format=Format.STRING, eval_str=True)
 
     def test_stock_annotations(self):
         def foo(a: int, b: str):
@@ -567,39 +556,27 @@ class TestGetAnnotations(unittest.TestCase):
             {"a": "int", "b": "str"},
         )
         self.assertEqual(
-            annotationlib.get_annotations(
-                isa.MyClass, format=Format.STRING
-            ),
+            annotationlib.get_annotations(isa.MyClass, format=Format.STRING),
             {"a": "int", "b": "str"},
         )
         self.assertEqual(
-            annotationlib.get_annotations(
-                isa.function, format=Format.STRING
-            ),
+            annotationlib.get_annotations(isa.function, format=Format.STRING),
             {"a": "int", "b": "str", "return": "MyClass"},
         )
         self.assertEqual(
-            annotationlib.get_annotations(
-                isa.function2, format=Format.STRING
-            ),
+            annotationlib.get_annotations(isa.function2, format=Format.STRING),
             {"a": "int", "b": "str", "c": "MyClass", "return": "MyClass"},
         )
         self.assertEqual(
-            annotationlib.get_annotations(
-                isa.function3, format=Format.STRING
-            ),
+            annotationlib.get_annotations(isa.function3, format=Format.STRING),
             {"a": "int", "b": "str", "c": "MyClass"},
         )
         self.assertEqual(
-            annotationlib.get_annotations(
-                annotationlib, format=Format.STRING
-            ),
+            annotationlib.get_annotations(annotationlib, format=Format.STRING),
             {},
         )
         self.assertEqual(
-            annotationlib.get_annotations(
-                isa.UnannotatedClass, format=Format.STRING
-            ),
+            annotationlib.get_annotations(isa.UnannotatedClass, format=Format.STRING),
             {},
         )
         self.assertEqual(
@@ -620,9 +597,7 @@ class TestGetAnnotations(unittest.TestCase):
             {"a": int, "b": str, "return": isa.MyClass},
         )
         self.assertEqual(
-            annotationlib.get_annotations(
-                wrapped, format=Format.FORWARDREF
-            ),
+            annotationlib.get_annotations(wrapped, format=Format.FORWARDREF),
             {"a": int, "b": str, "return": isa.MyClass},
         )
         self.assertEqual(
@@ -976,9 +951,7 @@ class TestCallEvaluateFunction(unittest.TestCase):
         with self.assertRaises(NameError):
             annotationlib.call_evaluate_function(evaluate, Format.VALUE)
         self.assertEqual(
-            annotationlib.call_evaluate_function(
-                evaluate, Format.FORWARDREF
-            ),
+            annotationlib.call_evaluate_function(evaluate, Format.FORWARDREF),
             annotationlib.ForwardRef("undefined"),
         )
         self.assertEqual(

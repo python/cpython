@@ -291,9 +291,21 @@ class _Stringifier:
             return other.__ast_node__
         elif isinstance(other, slice):
             return ast.Slice(
-                lower=self.__convert_to_ast(other.start) if other.start is not None else None,
-                upper=self.__convert_to_ast(other.stop) if other.stop is not None else None,
-                step=self.__convert_to_ast(other.step) if other.step is not None else None,
+                lower=(
+                    self.__convert_to_ast(other.start)
+                    if other.start is not None
+                    else None
+                ),
+                upper=(
+                    self.__convert_to_ast(other.stop)
+                    if other.stop is not None
+                    else None
+                ),
+                step=(
+                    self.__convert_to_ast(other.step)
+                    if other.step is not None
+                    else None
+                ),
             )
         else:
             return ast.Constant(value=other)
