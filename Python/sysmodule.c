@@ -3358,6 +3358,12 @@ make_impl_info(PyObject *version_info)
     if (res < 0)
         goto error;
 
+    value = PyUnicode_FromString(Py_GetPlatform());
+    res = PyDict_SetItemString(impl_info, "_architecture", value);
+    Py_DECREF(value);
+    if (res < 0)
+        goto error;
+
 #ifdef MULTIARCH
     value = PyUnicode_FromString(MULTIARCH);
     if (value == NULL)
