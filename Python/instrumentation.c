@@ -1663,12 +1663,13 @@ update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
     // If the local monitors are out of date, clear them up
     _Py_LocalMonitors *local_monitors = &code->_co_monitoring->local_monitors;
     for (int i = 0; i < PY_MONITORING_TOOL_IDS; i++) {
-        if (local_monitors->tool_versions[i] != interp->monitoring_tool_versions[i]) {
+        if (code->_co_monitoring->tool_versions[i] != interp->monitoring_tool_versions[i]) {
             for (int j = 0; j < _PY_MONITORING_LOCAL_EVENTS; j++) {
                 local_monitors->tools[j] &= ~(1 << i);
             }
         }
     }
+
     _Py_LocalMonitors all_events = local_union(
         interp->monitors,
         code->_co_monitoring->local_monitors);
@@ -2013,6 +2014,8 @@ _PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEvent
         goto done;
     }
 
+    code->_co_monitoring->tool_versions[tool_id] = interp->monitoring_tool_versions[tool_id];
+
     _Py_LocalMonitors *local = &code->_co_monitoring->local_monitors;
     uint32_t existing_events = get_local_events(local, tool_id);
     if (existing_events == events) {
@@ -2020,7 +2023,6 @@ _PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEvent
         goto done;
     }
     set_local_events(local, tool_id, events);
-    local->tool_versions[tool_id] = interp->monitoring_tool_versions[tool_id];
 
     res = force_instrument_lock_held(code, interp);
 
@@ -2071,8 +2073,9 @@ int _PyMonitoring_ClearToolId(int tool_id)
     }
     interp->monitoring_tool_versions[tool_id] = version;
     set_global_version(_PyThreadState_GET(), version);
+    int res = instrument_all_executing_code_objects(interp);
     _PyEval_StartTheWorld(interp);
-    return 0;
+    return res;
 }
 
 /*[clinic input]

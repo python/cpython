@@ -20,7 +20,6 @@ extern "C" {
 /* Tables of which tools are active for each monitored event. */
 typedef struct _Py_LocalMonitors {
     uint8_t tools[_PY_MONITORING_LOCAL_EVENTS];
-    uintptr_t tool_versions[_PY_MONITORING_TOOL_IDS];
 } _Py_LocalMonitors;
 
 typedef struct _Py_GlobalMonitors {
@@ -60,6 +59,8 @@ typedef struct {
     _Py_LocalMonitors active_monitors;
     /* The tools that are to be notified for events for the matching code unit */
     uint8_t *tools;
+    /* The version of tools when they instrument the code */
+    uintptr_t tool_versions[_PY_MONITORING_TOOL_IDS];
     /* Information to support line events */
     _PyCoLineInstrumentationData *lines;
     /* The tools that are to be notified for line events for the matching code unit */
