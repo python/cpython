@@ -5959,6 +5959,8 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
 
 invalid_iso_midnight:
     PyErr_SetString(PyExc_ValueError, "minute, second, and microsecond must be 0 when hour is 24");
+    Py_DECREF(tzinfo);
+    Py_DECREF(dtstr_clean);
     return NULL;
 
 invalid_string_error:
