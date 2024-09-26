@@ -1660,6 +1660,15 @@ update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
     if (allocate_instrumentation_data(code)) {
         return -1;
     }
+    // If the local monitors are out of date, clear them up
+    _Py_LocalMonitors *local_monitors = &code->_co_monitoring->local_monitors;
+    for (int i = 0; i < PY_MONITORING_TOOL_IDS; i++) {
+        if (local_monitors->tool_versions[i] != interp->monitoring_tool_versions[i]) {
+            for (int j = 0; j < _PY_MONITORING_LOCAL_EVENTS; j++) {
+                local_monitors->tools[j] &= ~(1 << i);
+            }
+        }
+    }
     _Py_LocalMonitors all_events = local_union(
         interp->monitors,
         code->_co_monitoring->local_monitors);
@@ -2011,6 +2020,7 @@ _PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEvent
         goto done;
     }
     set_local_events(local, tool_id, events);
+    local->tool_versions[tool_id] = interp->monitoring_tool_versions[tool_id];
 
     res = force_instrument_lock_held(code, interp);
 
@@ -2033,6 +2043,35 @@ _PyMonitoring_GetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEvent
     }
     _Py_LocalMonitors *local = &code->_co_monitoring->local_monitors;
     *events = get_local_events(local, tool_id);
+    return 0;
+}
+
+int _PyMonitoring_ClearToolId(int tool_id)
+{
+    assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+
+    for (int i = 0; i < _PY_MONITORING_EVENTS; i++) {
+        PyObject *func = _PyMonitoring_RegisterCallback(tool_id, i, NULL);
+        if (func != NULL) {
+            Py_DECREF(func);
+        }
+    }
+
+    if (_PyMonitoring_SetEvents(tool_id, 0) < 0) {
+        return -1;
+    }
+
+    _PyEval_StopTheWorld(interp);
+    uint32_t version = global_version(interp) + MONITORING_VERSION_INCREMENT;
+    if (version == 0) {
+        PyErr_Format(PyExc_OverflowError, "events set too many times");
+        _PyEval_StartTheWorld(interp);
+        return -1;
+    }
+    interp->monitoring_tool_versions[tool_id] = version;
+    set_global_version(_PyThreadState_GET(), version);
+    _PyEval_StartTheWorld(interp);
     return 0;
 }
 
@@ -2084,6 +2123,33 @@ monitoring_use_tool_id_impl(PyObject *module, int tool_id, PyObject *name)
 }
 
 /*[clinic input]
+monitoring.clear_tool_id
+
+    tool_id: int
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+monitoring_clear_tool_id_impl(PyObject *module, int tool_id)
+/*[clinic end generated code: output=04defc23470b1be7 input=af643d6648a66163]*/
+{
+    if (check_valid_tool(tool_id))  {
+        return NULL;
+    }
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+
+    if (interp->monitoring_tool_names[tool_id] != NULL) {
+        if (_PyMonitoring_ClearToolId(tool_id) < 0) {
+            return NULL;
+        }
+    }
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
 monitoring.free_tool_id
 
     tool_id: int
@@ -2099,6 +2165,13 @@ monitoring_free_tool_id_impl(PyObject *module, int tool_id)
         return NULL;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
+
+    if (interp->monitoring_tool_names[tool_id] != NULL) {
+        if (_PyMonitoring_ClearToolId(tool_id) < 0) {
+            return NULL;
+        }
+    }
+
     Py_CLEAR(interp->monitoring_tool_names[tool_id]);
     Py_RETURN_NONE;
 }
@@ -2376,6 +2449,7 @@ monitoring__all_events_impl(PyObject *module)
 
 static PyMethodDef methods[] = {
     MONITORING_USE_TOOL_ID_METHODDEF
+    MONITORING_CLEAR_TOOL_ID_METHODDEF
     MONITORING_FREE_TOOL_ID_METHODDEF
     MONITORING_GET_TOOL_METHODDEF
     MONITORING_REGISTER_CALLBACK_METHODDEF

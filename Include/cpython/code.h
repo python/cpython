@@ -8,6 +8,8 @@
 extern "C" {
 #endif
 
+/* Total tool ids available */
+#define  _PY_MONITORING_TOOL_IDS 8
 /* Count of all local monitoring events */
 #define  _PY_MONITORING_LOCAL_EVENTS 10
 /* Count of all "real" monitoring events (not derived from other events) */
@@ -18,6 +20,7 @@ extern "C" {
 /* Tables of which tools are active for each monitored event. */
 typedef struct _Py_LocalMonitors {
     uint8_t tools[_PY_MONITORING_LOCAL_EVENTS];
+    uintptr_t tool_versions[_PY_MONITORING_TOOL_IDS];
 } _Py_LocalMonitors;
 
 typedef struct _Py_GlobalMonitors {
