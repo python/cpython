@@ -33,7 +33,7 @@ PyCell_SetTakeRef(PyCellObject *cell, PyObject *value)
 }
 
 // Gets the cell contents. Returns a new reference.
-static inline PyObject *
+static PyObject *
 PyCell_GetRef(PyCellObject *cell)
 {
     PyObject *res;
@@ -43,7 +43,7 @@ PyCell_GetRef(PyCellObject *cell)
     return res;
 }
 
-static inline void
+static void
 _PyCell_GetStackRef(PyCellObject *cell, _PyStackRef *value_addr)
 {
     PyObject *value;
