@@ -116,7 +116,8 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
     op->func_builtins = Py_NewRef(constr->fc_builtins);
     op->func_name = Py_NewRef(constr->fc_name);
     op->func_qualname = Py_NewRef(constr->fc_qualname);
-    op->func_code = Py_NewRef(constr->fc_code);
+    _Py_INCREF_CODE((PyCodeObject *)constr->fc_code);
+    op->func_code = constr->fc_code;
     op->func_defaults = Py_XNewRef(constr->fc_defaults);
     op->func_kwdefaults = Py_XNewRef(constr->fc_kwdefaults);
     op->func_closure = Py_XNewRef(constr->fc_closure);
@@ -146,7 +147,8 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
 
     PyThreadState *tstate = _PyThreadState_GET();
 
-    PyCodeObject *code_obj = (PyCodeObject *)Py_NewRef(code);
+    PyCodeObject *code_obj = (PyCodeObject *)code;
+    _Py_INCREF_CODE(code_obj);
 
     assert(code_obj->co_name != NULL);
     PyObject *name = Py_NewRef(code_obj->co_name);
@@ -1094,7 +1096,7 @@ func_dealloc(PyObject *self)
     }
     (void)func_clear((PyObject*)op);
     // These aren't cleared by func_clear().
-    Py_DECREF(op->func_code);
+    _Py_DECREF_CODE((PyCodeObject *)op->func_code);
     Py_DECREF(op->func_name);
     Py_DECREF(op->func_qualname);
     PyObject_GC_Del(op);

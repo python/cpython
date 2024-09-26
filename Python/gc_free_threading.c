@@ -15,7 +15,7 @@
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
 #include "pydtrace.h"
-#include "pycore_uniqueid.h"      // _PyType_MergeThreadLocalRefcounts
+#include "pycore_uniqueid.h"      // _PyObject_MergeThreadLocalRefcounts()
 
 #ifdef Py_GIL_DISABLED
 
@@ -215,15 +215,10 @@ disable_deferred_refcounting(PyObject *op)
         op->ob_gc_bits &= ~_PyGC_BITS_DEFERRED;
         op->ob_ref_shared -= _Py_REF_SHARED(_Py_REF_DEFERRED, 0);
         merge_refcount(op, 0);
-    }
 
-    // Heap types also use per-thread refcounting -- disable it here.
-    if (PyType_Check(op)) {
-        if (PyType_HasFeature((PyTypeObject *)op, Py_TPFLAGS_HEAPTYPE)) {
-            PyHeapTypeObject *ht = (PyHeapTypeObject *)op;
-            _PyObject_ReleaseUniqueId(ht->unique_id);
-            ht->unique_id = -1;
-        }
+        // Heap types and code objects also use per-thread refcounting, which
+        // should also be disabled when we turn off deferred refcounting.
+        _PyObject_DisablePerThreadRefcounting(op);
     }
 
     // Generators and frame objects may contain deferred references to other

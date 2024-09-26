@@ -14,6 +14,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_uniqueid.h"      // _PyObject_AssignUniqueId()
 #include "clinic/codeobject.c.h"
 
 static const char *
@@ -676,7 +677,7 @@ _PyCode_New(struct _PyCodeConstructor *con)
     }
     init_code(co, con);
 #ifdef Py_GIL_DISABLED
-    _PyObject_SetDeferredRefcount((PyObject *)co);
+    co->_co_unique_id = _PyObject_AssignUniqueId((PyObject *)co);
     _PyObject_GC_TRACK(co);
 #endif
     Py_XDECREF(replacement_locations);
@@ -1864,6 +1865,9 @@ code_dealloc(PyCodeObject *co)
     Py_XDECREF(co->co_qualname);
     Py_XDECREF(co->co_linetable);
     Py_XDECREF(co->co_exceptiontable);
+#ifdef Py_GIL_DISABLED
+    assert(co->_co_unique_id == -1);
+#endif
     if (co->_co_cached != NULL) {
         Py_XDECREF(co->_co_cached->_co_code);
         Py_XDECREF(co->_co_cached->_co_cellvars);
