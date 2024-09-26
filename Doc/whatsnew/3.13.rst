@@ -121,9 +121,10 @@ Interpreter improvements:
 
 Python data model improvements:
 
-* :attr:`~class.__static_attributes__` stores the names of attributes accessed
+* :attr:`~type.__static_attributes__` stores the names of attributes accessed
   through ``self.X`` in any function in a class body.
-* :attr:`!__firstlineno__` records the first line number of a class definition.
+* :attr:`~type.__firstlineno__` records the first line number of a class
+  definition.
 
 Significant improvements in the standard library:
 
@@ -171,7 +172,8 @@ Platform support:
 
 * :pep:`730`: Apple's iOS is now an :ref:`officially supported platform
   <whatsnew313-platform-support>`, at :pep:`tier 3 <11#tier-3>`.
-  Official Android support (:pep:`738`) is also in the works.
+* :pep:`738`: Android is now an :ref:`officially supported platform
+  <whatsnew313-platform-support>`, at :pep:`tier 3 <11#tier-3>`.
 * ``wasm32-wasi`` is now supported as a :pep:`tier 2 <11#tier-2>` platform.
 * ``wasm32-emscripten`` is no longer an officially supported platform.
 
@@ -489,8 +491,10 @@ is not a tier 3 supported platform, but will have best-effort support.
 (PEP written and implementation contributed by Russell Keith-Magee in
 :gh:`114099`.)
 
-:pep:`738`: Android support is being actively worked on,
-but the platform is not yet officially supported.
+:pep:`738`: Android is now a :pep:`11` supported platform, with the
+``aarch64-linux-android`` and ``x86_64-linux-android`` targets at tier 3.
+The 32-bit targets ``arm-linux-androideabi`` and ``i686-linux-android``
+are not tier 3 supported platforms, but will have best-effort support.
 (PEP written and implementation contributed by Malcolm Smith in
 :gh:`116622`.)
 
@@ -585,7 +589,7 @@ Other Language Changes
   (Contributed by Levi Sabah, Zackery Spytz and Hugo van Kemenade
   in :gh:`73965`.)
 
-* Classes have a new :attr:`~class.__static_attributes__` attribute.
+* Classes have a new :attr:`~type.__static_attributes__` attribute.
   This is populated by the compiler with a tuple of the class's attribute names
   which are assigned through ``self.<name>`` from any function in its body.
   (Contributed by Irit Katriel in :gh:`115775`.)
@@ -2188,13 +2192,13 @@ New Features
 
 * Add the :c:func:`PyType_GetFullyQualifiedName` function
   to get the type's fully qualified name.
-  The module name is prepended if ``type.__module__`` is a string
-  and is not equal to either ``'builtins'`` or ``'__main__'``.
+  The module name is prepended if :attr:`type.__module__` is
+  a string and is not equal to either ``'builtins'`` or ``'__main__'``.
   (Contributed by Victor Stinner in :gh:`111696`.)
 
 * Add the :c:func:`PyType_GetModuleName` function
-  to get the type's module name.
-  This is equivalent to getting the ``type.__module__`` attribute.
+  to get the type's module name. This is equivalent to getting the
+  :attr:`type.__module__` attribute.
   (Contributed by Eric Snow and Victor Stinner in :gh:`111696`.)
 
 * Add the :c:func:`PyUnicode_EqualToUTF8AndSize`
@@ -2516,6 +2520,11 @@ Build Changes
   now :pep:`11` tier 3 platforms.
   (:ref:`PEP 730 <whatsnew313-platform-support>` written
   and implementation contributed by Russell Keith-Magee in :gh:`114099`.)
+
+* ``aarch64-linux-android`` and ``x86_64-linux-android`` are both
+  now :pep:`11` tier 3 platforms.
+  (:ref:`PEP 738 <whatsnew313-platform-support>` written
+  and implementation contributed by Malcolm Smith in :gh:`116622`.)
 
 * ``wasm32-wasi`` is now a :pep:`11` tier 2 platform.
   (Contributed by Brett Cannon in :gh:`115192`.)

@@ -2508,6 +2508,8 @@
 
 [function.Py_TYPE]
     added = '3.14'
+[function.Py_REFCNT]
+    added = '3.14'
 [function.PyIter_NextItem]
     added = '3.14'
 [function.PyLong_FromInt32]

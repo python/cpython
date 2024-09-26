@@ -248,6 +248,7 @@ class PseudoInstruction:
     name: str
     stack: StackEffect
     targets: list[Instruction]
+    as_sequence: bool
     flags: list[str]
     opcode: int = -1
 
@@ -365,12 +366,24 @@ def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]
             offset += 1
         return []
 
+    def in_frame_push(idx: int) -> bool:
+        for tkn in reversed(node.block.tokens[: idx - 1]):
+            if tkn.kind == "SEMI" or tkn.kind == "LBRACE" or tkn.kind == "RBRACE":
+                return False
+            if tkn.kind == "IDENTIFIER" and tkn.text == "_PyFrame_PushUnchecked":
+                return True
+        return False
+
     refs: dict[lexer.Token, str | None] = {}
     for idx, tkn in enumerate(node.block.tokens):
         if tkn.kind != "IDENTIFIER" or tkn.text != "PyStackRef_FromPyObjectNew":
             continue
 
         if idx == 0 or node.block.tokens[idx - 1].kind != "EQUALS":
+            if in_frame_push(idx):
+                # PyStackRef_FromPyObjectNew() is called in _PyFrame_PushUnchecked()
+                refs[tkn] = None
+                continue
             raise analysis_error("Expected '=' before PyStackRef_FromPyObjectNew", tkn)
 
         lhs = find_assignment_target(idx)
@@ -840,6 +853,7 @@ def add_pseudo(
         pseudo.name,
         analyze_stack(pseudo),
         [instructions[target] for target in pseudo.targets],
+        pseudo.as_sequence,
         pseudo.flags,
     )
 
