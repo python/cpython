@@ -464,8 +464,8 @@ class WindowsConsole(Console):
 
     def forgetinput(self) -> None:
         """Forget all pending, but not yet processed input."""
-        while self._read_input() is not None:
-            pass
+        if not FlushConsoleInputBuffer(InHandle):
+            raise WinError(GetLastError())
 
     def getpending(self) -> Event:
         """Return the characters that have been typed but not yet
@@ -590,6 +590,10 @@ if sys.platform == "win32":
     ReadConsoleInput.argtypes = [HANDLE, POINTER(INPUT_RECORD), DWORD, POINTER(DWORD)]
     ReadConsoleInput.restype = BOOL
 
+    FlushConsoleInputBuffer = _KERNEL32.FlushConsoleInputBuffer
+    FlushConsoleInputBuffer.argtypes = [HANDLE]
+    FlushConsoleInputBuffer.restype = BOOL
+
     OutHandle = GetStdHandle(STD_OUTPUT_HANDLE)
     InHandle = GetStdHandle(STD_INPUT_HANDLE)
 else:
@@ -602,5 +606,6 @@ else:
     ScrollConsoleScreenBuffer = _win_only
     SetConsoleMode = _win_only
     ReadConsoleInput = _win_only
+    FlushConsoleInputBuffer = _win_only
     OutHandle = 0
     InHandle = 0
