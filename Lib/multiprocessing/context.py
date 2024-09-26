@@ -261,8 +261,8 @@ class DefaultContext(BaseContext):
         """Returns a list of the supported start methods, default first."""
         default = self._default_context.get_start_method()
         start_method_names = [default]
-        start_method_names += (
-                name for name in _concrete_contexts if name != default
+        start_method_names.extend(
+            name for name in _concrete_contexts if name != default
         )
         return start_method_names
 
@@ -319,18 +319,15 @@ if sys.platform != 'win32':
         'spawn': SpawnContext(),
         'forkserver': ForkServerContext(),
     }
-    if sys.platform == 'darwin':
-        # bpo-33725: running arbitrary code after fork() is no longer reliable
-        # on macOS since macOS 10.14 (Mojave). Use spawn by default instead.
-        _default_context = DefaultContext(_concrete_contexts['spawn'])
+    # bpo-33725: running arbitrary code after fork() is no longer reliable
+    # on macOS since macOS 10.14 (Mojave). Use spawn by default instead.
+    # gh-84559: We changed everyones default to a thread safeish one in 3.14.
+    if reduction.HAVE_SEND_HANDLE and sys.platform != 'darwin':
+        _default_context = DefaultContext(_concrete_contexts['forkserver'])
     else:
-        # gh-84559: We changed the default to a thread safe one in 3.14.
-        if reduction.HAVE_SEND_HANDLE:
-            _default_context = DefaultContext(_concrete_contexts['forkserver'])
-        else:
-            _default_context = DefaultContext(_concrete_contexts['spawn'])
+        _default_context = DefaultContext(_concrete_contexts['spawn'])
 
-else:
+else:  # Windows
 
     class SpawnProcess(process.BaseProcess):
         _start_method = 'spawn'
