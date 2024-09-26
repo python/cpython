@@ -7,7 +7,14 @@ import functools
 import itertools
 import pickle
 import unittest
-from annotationlib import Format, ForwardRef, get_annotations, get_annotate_function
+from annotationlib import (
+    Format,
+    ForwardRef,
+    get_annotations,
+    get_annotate_function,
+    annotations_to_source,
+    value_to_source,
+)
 from typing import Unpack
 
 from test import support
@@ -23,6 +30,11 @@ def times_three(fn):
         return fn(a * 3, b * 3)
 
     return wrapper
+
+
+class MyClass:
+    def __repr__(self):
+        return "my repr"
 
 
 class TestFormat(unittest.TestCase):
@@ -324,7 +336,10 @@ class TestForwardRefClass(unittest.TestCase):
         # namespaces without going through eval()
         self.assertIs(ForwardRef("int").evaluate(), int)
         self.assertIs(ForwardRef("int").evaluate(locals={"int": str}), str)
-        self.assertIs(ForwardRef("int").evaluate(locals={"int": float}, globals={"int": str}), float)
+        self.assertIs(
+            ForwardRef("int").evaluate(locals={"int": float}, globals={"int": str}),
+            float,
+        )
         self.assertIs(ForwardRef("int").evaluate(globals={"int": str}), str)
         with support.swap_attr(builtins, "int", dict):
             self.assertIs(ForwardRef("int").evaluate(), dict)
@@ -788,9 +803,8 @@ class TestGetAnnotations(unittest.TestCase):
             annotationlib.get_annotations(ha, format=Format.FORWARDREF), {"x": int}
         )
 
-        # TODO(gh-124412): This should return {'x': 'int'} instead.
         self.assertEqual(
-            annotationlib.get_annotations(ha, format=Format.SOURCE), {"x": int}
+            annotationlib.get_annotations(ha, format=Format.SOURCE), {"x": "int"}
         )
 
     def test_raising_annotations_on_custom_object(self):
@@ -1076,6 +1090,29 @@ class TestGetAnnotateFunction(unittest.TestCase):
             a: int
 
         self.assertEqual(get_annotate_function(C)(Format.VALUE), {"a": int})
+
+
+class TestToSource(unittest.TestCase):
+    def test_value_to_source(self):
+        self.assertEqual(value_to_source(int), "int")
+        self.assertEqual(value_to_source(MyClass), "test.test_annotationlib.MyClass")
+        self.assertEqual(value_to_source(len), "len")
+        self.assertEqual(value_to_source(value_to_source), "value_to_source")
+        self.assertEqual(value_to_source(times_three), "times_three")
+        self.assertEqual(value_to_source(...), "...")
+        self.assertEqual(value_to_source(None), "None")
+        self.assertEqual(value_to_source(1), "1")
+        self.assertEqual(value_to_source("1"), "'1'")
+        self.assertEqual(value_to_source(Format.VALUE), repr(Format.VALUE))
+        self.assertEqual(value_to_source(MyClass()), "my repr")
+
+    def test_annotations_to_source(self):
+        self.assertEqual(annotations_to_source({}), {})
+        self.assertEqual(annotations_to_source({"x": int}), {"x": "int"})
+        self.assertEqual(annotations_to_source({"x": "int"}), {"x": "int"})
+        self.assertEqual(
+            annotations_to_source({"x": int, "y": str}), {"x": "int", "y": "str"}
+        )
 
 
 class TestAnnotationLib(unittest.TestCase):
