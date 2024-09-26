@@ -530,20 +530,27 @@ Initializing and finalizing the interpreter
    (:c:member:`PyConfig.run_filename`) or the module
    (:c:member:`PyConfig.run_module`) specified on the command line or in the
    configuration. If none of these values are set, runs the interactive Python
-   prompt.
+   prompt (REPL) using the ``__main__`` module's global namespace.
 
-   The return value will be ``0`` if the interpreter exits normally (i.e.,
-   without an exception), or ``1`` if the interpreter exits due to an exception.
+   If :c:member:`PyConfig.inspect` is not set (the default), the return value
+   will be ``0`` if the interpreter exits normally (that is, without raising
+   an exception), or ``1`` if the interpreter exits due to an exception. If an
+   otherwise unhandled :exc:`SystemExit` is raised, the function will immediately
+   exit the process instead of returning ``1``.
 
-   Note that if an otherwise unhandled :exc:`SystemExit` is raised, this
-   function will not return ``1``, but exit the process, as long as
-   :c:member:`PyConfig.inspect` is not set. If :c:member:`PyConfig.inspect` is
-   set, execution will drop into the interactive Python prompt, at which point
-   a second otherwise unhandled :exc:`SystemExit` will still exit the process,
-   while any other means of exiting will set the return value as described above.
+   If :c:member:`PyConfig.inspect` is set (such as when the :option:`-i` option
+   is used), rather than returning when the interpreter exits, execution will
+   instead resume in an interactive Python prompt (REPL) using the ``__main__``
+   module's global namespace. If the interpreter exited with an exception, it
+   is immediately raised in the REPL session. The function return value is
+   then determined by the way the *REPL session* terminates: returning ``0``
+   if the session terminates without raising an unhandled exception, exiting
+   immediately for an unhandled :exc:`SystemExit`, and returning ``1`` for
+   any other unhandled exception.
 
-   Finally, finalizes Python and returns an exit status that can be passed to
-   the ``exit()`` function.
+   This function always finalizes the Python interpreter regardless of whether
+   it returns a value or immediately exits the process due to an an unhandled
+   :exc:`SystemExit` exception.
 
    See :ref:`Python Configuration <init-python-config>` for an example of a
    customized Python that always runs in isolated mode using

@@ -1829,26 +1829,6 @@ return ``-1`` on error:
     }
 
 
-Py_RunMain()
-============
-
-.. c:function:: int Py_RunMain(void)
-
-   Execute the command (:c:member:`PyConfig.run_command`), the script
-   (:c:member:`PyConfig.run_filename`) or the module
-   (:c:member:`PyConfig.run_module`) specified on the command line or in the
-   configuration.
-
-   By default and when if :option:`-i` option is used, run the REPL.
-
-   Finally, finalizes Python and returns an exit status that can be passed to
-   the ``exit()`` function.
-
-See :ref:`Python Configuration <init-python-config>` for an example of
-customized Python always running in isolated mode using
-:c:func:`Py_RunMain`.
-
-
 Runtime Python configuration API
 ================================
 
