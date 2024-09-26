@@ -13,7 +13,7 @@ It's easy to install all of the required tools:
 
 ### Linux
 
-Install LLVM 18 on Ubuntu/Debian:
+Install LLVM 19 on Ubuntu/Debian:
 
 ```sh
 wget https://apt.llvm.org/llvm.sh
@@ -24,7 +24,7 @@ sudo ./llvm.sh 19
 Install LLVM 19 on Fedora Linux 40 or newer:
 
 ```sh
-sudo dnf install 'clang(major) = 18' 'llvm(major) = 18'
+sudo dnf install 'clang(major) = 19' 'llvm(major) = 19'
 ```
 
 ### macOS
