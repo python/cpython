@@ -2211,11 +2211,13 @@ def skip_if_broken_multiprocessing_synchronize():
             # a file in /dev/shm/ directory.
             import multiprocessing
             synchronize.Lock(ctx=multiprocessing.get_context('fork'))
-            # The explicit fork mp context is required as relying on the
-            # default breaks TestResourceTracker.test_resource_tracker_reused
-            # when the default start method is not fork as synchronize creates
-            # a new multiprocessing.resource_tracker process at module import
-            # time via the above call in that scenario. This enables gh-84559.
+            # The explicit fork mp context is required in order for
+            # TestResourceTracker.test_resource_tracker_reused to work.
+            # synchronize creates a new multiprocessing.resource_tracker
+            # process at module import time via the above call in that
+            # scenario. Awkward. This enables gh-84559. No code involved
+            # should have threads at that point so fork() should be safe.
+
         except OSError as exc:
             raise unittest.SkipTest(f"broken multiprocessing SemLock: {exc!r}")
 
