@@ -72,7 +72,7 @@ def loads(s: str, /, *, parse_float: ParseFloat = float) -> dict[str, Any]:  # n
     # The spec allows converting "\r\n" to "\n", even in string
     # literals. Let's do so to simplify parsing.
     try:
-        src = __s.replace("\r\n", "\n")
+        src = s.replace("\r\n", "\n")
     except (AttributeError, TypeError):
         raise TypeError(
             f"Expected str object, not '{type(__s).__qualname__}'"
