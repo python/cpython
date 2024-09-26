@@ -72,6 +72,10 @@ Running an asyncio Program
 
       Added *loop_factory* parameter.
 
+   .. versionchanged:: 3.14
+
+      *coro* can be any awaitable object.
+
 
 Runner context manager
 ======================
@@ -120,6 +124,10 @@ Runner context manager
 
       This function cannot be called when another asyncio event loop is
       running in the same thread.
+
+      .. versionchanged:: 3.14
+
+         *coro* can be any awaitable object.
 
    .. method:: close()
 
