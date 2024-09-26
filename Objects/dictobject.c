@@ -1488,7 +1488,7 @@ read_failed:
     *value_addr = value;
     if (value != NULL) {
         assert(ix >= 0);
-        Py_INCREF(value);
+        _Py_NewRefWithLock(value);
     }
     Py_END_CRITICAL_SECTION();
     return ix;
