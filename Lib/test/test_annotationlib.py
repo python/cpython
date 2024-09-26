@@ -12,8 +12,8 @@ from annotationlib import (
     ForwardRef,
     get_annotations,
     get_annotate_function,
-    annotations_to_source,
-    value_to_source,
+    annotations_to_string,
+    value_to_string,
 )
 from typing import Unpack
 
@@ -39,14 +39,14 @@ class MyClass:
 
 class TestFormat(unittest.TestCase):
     def test_enum(self):
-        self.assertEqual(annotationlib.Format.VALUE.value, 1)
-        self.assertEqual(annotationlib.Format.VALUE, 1)
+        self.assertEqual(Format.VALUE.value, 1)
+        self.assertEqual(Format.VALUE, 1)
 
-        self.assertEqual(annotationlib.Format.FORWARDREF.value, 2)
-        self.assertEqual(annotationlib.Format.FORWARDREF, 2)
+        self.assertEqual(Format.FORWARDREF.value, 2)
+        self.assertEqual(Format.FORWARDREF, 2)
 
-        self.assertEqual(annotationlib.Format.SOURCE.value, 3)
-        self.assertEqual(annotationlib.Format.SOURCE, 3)
+        self.assertEqual(Format.STRING.value, 3)
+        self.assertEqual(Format.STRING, 3)
 
 
 class TestForwardRefFormat(unittest.TestCase):
@@ -55,7 +55,7 @@ class TestForwardRefFormat(unittest.TestCase):
             pass
 
         anno = annotationlib.get_annotations(
-            inner, format=annotationlib.Format.FORWARDREF
+            inner, format=Format.FORWARDREF
         )
         fwdref = anno["arg"]
         self.assertIsInstance(fwdref, annotationlib.ForwardRef)
@@ -67,7 +67,7 @@ class TestForwardRefFormat(unittest.TestCase):
         self.assertEqual(fwdref.evaluate(), x)
 
         anno = annotationlib.get_annotations(
-            inner, format=annotationlib.Format.FORWARDREF
+            inner, format=Format.FORWARDREF
         )
         self.assertEqual(anno["arg"], x)
 
@@ -75,7 +75,7 @@ class TestForwardRefFormat(unittest.TestCase):
         def f(x: int, y: doesntexist):
             pass
 
-        anno = annotationlib.get_annotations(f, format=annotationlib.Format.FORWARDREF)
+        anno = annotationlib.get_annotations(f, format=Format.FORWARDREF)
         self.assertIs(anno["x"], int)
         fwdref = anno["y"]
         self.assertIsInstance(fwdref, annotationlib.ForwardRef)
@@ -92,14 +92,14 @@ class TestSourceFormat(unittest.TestCase):
         def inner(arg: x):
             pass
 
-        anno = annotationlib.get_annotations(inner, format=annotationlib.Format.SOURCE)
+        anno = annotationlib.get_annotations(inner, format=Format.STRING)
         self.assertEqual(anno, {"arg": "x"})
 
     def test_function(self):
         def f(x: int, y: doesntexist):
             pass
 
-        anno = annotationlib.get_annotations(f, format=annotationlib.Format.SOURCE)
+        anno = annotationlib.get_annotations(f, format=Format.STRING)
         self.assertEqual(anno, {"x": "int", "y": "doesntexist"})
 
     def test_expressions(self):
@@ -133,7 +133,7 @@ class TestSourceFormat(unittest.TestCase):
         ):
             pass
 
-        anno = annotationlib.get_annotations(f, format=annotationlib.Format.SOURCE)
+        anno = annotationlib.get_annotations(f, format=Format.STRING)
         self.assertEqual(
             anno,
             {
@@ -184,7 +184,7 @@ class TestSourceFormat(unittest.TestCase):
         ):
             pass
 
-        anno = annotationlib.get_annotations(f, format=annotationlib.Format.SOURCE)
+        anno = annotationlib.get_annotations(f, format=Format.STRING)
         self.assertEqual(
             anno,
             {
@@ -218,7 +218,7 @@ class TestSourceFormat(unittest.TestCase):
         ):
             pass
 
-        anno = annotationlib.get_annotations(f, format=annotationlib.Format.SOURCE)
+        anno = annotationlib.get_annotations(f, format=Format.STRING)
         self.assertEqual(
             anno,
             {
@@ -241,13 +241,13 @@ class TestSourceFormat(unittest.TestCase):
             pass
 
         with self.assertRaisesRegex(TypeError, format_msg):
-            annotationlib.get_annotations(f, format=annotationlib.Format.SOURCE)
+            annotationlib.get_annotations(f, format=Format.STRING)
 
         def f(fstring_format: f"{a:02d}"):
             pass
 
         with self.assertRaisesRegex(TypeError, format_msg):
-            annotationlib.get_annotations(f, format=annotationlib.Format.SOURCE)
+            annotationlib.get_annotations(f, format=Format.STRING)
 
 
 class TestForwardRefClass(unittest.TestCase):
@@ -383,22 +383,22 @@ class TestGetAnnotations(unittest.TestCase):
 
         self.assertEqual(annotationlib.get_annotations(C1), {"a": int})
         self.assertEqual(
-            annotationlib.get_annotations(C1, format=annotationlib.Format.FORWARDREF),
+            annotationlib.get_annotations(C1, format=Format.FORWARDREF),
             {"a": int},
         )
         self.assertEqual(
-            annotationlib.get_annotations(C1, format=annotationlib.Format.SOURCE),
+            annotationlib.get_annotations(C1, format=Format.STRING),
             {"a": "int"},
         )
         self.assertEqual(annotationlib.get_annotations(NoDict), {"b": str})
         self.assertEqual(
             annotationlib.get_annotations(
-                NoDict, format=annotationlib.Format.FORWARDREF
+                NoDict, format=Format.FORWARDREF
             ),
             {"b": str},
         )
         self.assertEqual(
-            annotationlib.get_annotations(NoDict, format=annotationlib.Format.SOURCE),
+            annotationlib.get_annotations(NoDict, format=Format.STRING),
             {"b": "str"},
         )
 
@@ -410,20 +410,20 @@ class TestGetAnnotations(unittest.TestCase):
             pass
 
         self.assertEqual(
-            annotationlib.get_annotations(f1, format=annotationlib.Format.VALUE),
+            annotationlib.get_annotations(f1, format=Format.VALUE),
             {"a": int},
         )
         self.assertEqual(annotationlib.get_annotations(f1, format=1), {"a": int})
 
         fwd = annotationlib.ForwardRef("undefined")
         self.assertEqual(
-            annotationlib.get_annotations(f2, format=annotationlib.Format.FORWARDREF),
+            annotationlib.get_annotations(f2, format=Format.FORWARDREF),
             {"a": fwd},
         )
         self.assertEqual(annotationlib.get_annotations(f2, format=2), {"a": fwd})
 
         self.assertEqual(
-            annotationlib.get_annotations(f1, format=annotationlib.Format.SOURCE),
+            annotationlib.get_annotations(f1, format=Format.STRING),
             {"a": "int"},
         )
         self.assertEqual(annotationlib.get_annotations(f1, format=3), {"a": "int"})
@@ -447,29 +447,29 @@ class TestGetAnnotations(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             annotationlib.get_annotations(
-                foo, format=annotationlib.Format.FORWARDREF, eval_str=True
+                foo, format=Format.FORWARDREF, eval_str=True
             )
             annotationlib.get_annotations(
-                foo, format=annotationlib.Format.SOURCE, eval_str=True
+                foo, format=Format.STRING, eval_str=True
             )
 
     def test_stock_annotations(self):
         def foo(a: int, b: str):
             pass
 
-        for format in (annotationlib.Format.VALUE, annotationlib.Format.FORWARDREF):
+        for format in (Format.VALUE, Format.FORWARDREF):
             with self.subTest(format=format):
                 self.assertEqual(
                     annotationlib.get_annotations(foo, format=format),
                     {"a": int, "b": str},
                 )
         self.assertEqual(
-            annotationlib.get_annotations(foo, format=annotationlib.Format.SOURCE),
+            annotationlib.get_annotations(foo, format=Format.STRING),
             {"a": "int", "b": "str"},
         )
 
         foo.__annotations__ = {"a": "foo", "b": "str"}
-        for format in annotationlib.Format:
+        for format in Format:
             with self.subTest(format=format):
                 self.assertEqual(
                     annotationlib.get_annotations(foo, format=format),
@@ -491,10 +491,10 @@ class TestGetAnnotations(unittest.TestCase):
         for kwargs in [
             {},
             {"eval_str": False},
-            {"format": annotationlib.Format.VALUE},
-            {"format": annotationlib.Format.FORWARDREF},
-            {"format": annotationlib.Format.VALUE, "eval_str": False},
-            {"format": annotationlib.Format.FORWARDREF, "eval_str": False},
+            {"format": Format.VALUE},
+            {"format": Format.FORWARDREF},
+            {"format": Format.VALUE, "eval_str": False},
+            {"format": Format.FORWARDREF, "eval_str": False},
         ]:
             with self.subTest(**kwargs):
                 self.assertEqual(
@@ -529,7 +529,7 @@ class TestGetAnnotations(unittest.TestCase):
 
         for kwargs in [
             {"eval_str": True},
-            {"format": annotationlib.Format.VALUE, "eval_str": True},
+            {"format": Format.VALUE, "eval_str": True},
         ]:
             with self.subTest(**kwargs):
                 self.assertEqual(
@@ -563,48 +563,48 @@ class TestGetAnnotations(unittest.TestCase):
                 )
 
         self.assertEqual(
-            annotationlib.get_annotations(isa, format=annotationlib.Format.SOURCE),
+            annotationlib.get_annotations(isa, format=Format.STRING),
             {"a": "int", "b": "str"},
         )
         self.assertEqual(
             annotationlib.get_annotations(
-                isa.MyClass, format=annotationlib.Format.SOURCE
+                isa.MyClass, format=Format.STRING
             ),
             {"a": "int", "b": "str"},
         )
         self.assertEqual(
             annotationlib.get_annotations(
-                isa.function, format=annotationlib.Format.SOURCE
+                isa.function, format=Format.STRING
             ),
             {"a": "int", "b": "str", "return": "MyClass"},
         )
         self.assertEqual(
             annotationlib.get_annotations(
-                isa.function2, format=annotationlib.Format.SOURCE
+                isa.function2, format=Format.STRING
             ),
             {"a": "int", "b": "str", "c": "MyClass", "return": "MyClass"},
         )
         self.assertEqual(
             annotationlib.get_annotations(
-                isa.function3, format=annotationlib.Format.SOURCE
+                isa.function3, format=Format.STRING
             ),
             {"a": "int", "b": "str", "c": "MyClass"},
         )
         self.assertEqual(
             annotationlib.get_annotations(
-                annotationlib, format=annotationlib.Format.SOURCE
+                annotationlib, format=Format.STRING
             ),
             {},
         )
         self.assertEqual(
             annotationlib.get_annotations(
-                isa.UnannotatedClass, format=annotationlib.Format.SOURCE
+                isa.UnannotatedClass, format=Format.STRING
             ),
             {},
         )
         self.assertEqual(
             annotationlib.get_annotations(
-                isa.unannotated_function, format=annotationlib.Format.SOURCE
+                isa.unannotated_function, format=Format.STRING
             ),
             {},
         )
@@ -621,12 +621,12 @@ class TestGetAnnotations(unittest.TestCase):
         )
         self.assertEqual(
             annotationlib.get_annotations(
-                wrapped, format=annotationlib.Format.FORWARDREF
+                wrapped, format=Format.FORWARDREF
             ),
             {"a": int, "b": str, "return": isa.MyClass},
         )
         self.assertEqual(
-            annotationlib.get_annotations(wrapped, format=annotationlib.Format.SOURCE),
+            annotationlib.get_annotations(wrapped, format=Format.STRING),
             {"a": "int", "b": "str", "return": "MyClass"},
         )
         self.assertEqual(
@@ -643,12 +643,12 @@ class TestGetAnnotations(unittest.TestCase):
         for kwargs in [
             {},
             {"eval_str": False},
-            {"format": annotationlib.Format.VALUE},
-            {"format": annotationlib.Format.FORWARDREF},
-            {"format": annotationlib.Format.SOURCE},
-            {"format": annotationlib.Format.VALUE, "eval_str": False},
-            {"format": annotationlib.Format.FORWARDREF, "eval_str": False},
-            {"format": annotationlib.Format.SOURCE, "eval_str": False},
+            {"format": Format.VALUE},
+            {"format": Format.FORWARDREF},
+            {"format": Format.STRING},
+            {"format": Format.VALUE, "eval_str": False},
+            {"format": Format.FORWARDREF, "eval_str": False},
+            {"format": Format.STRING, "eval_str": False},
         ]:
             with self.subTest(**kwargs):
                 self.assertEqual(
@@ -681,7 +681,7 @@ class TestGetAnnotations(unittest.TestCase):
 
         for kwargs in [
             {"eval_str": True},
-            {"format": annotationlib.Format.VALUE, "eval_str": True},
+            {"format": Format.VALUE, "eval_str": True},
         ]:
             with self.subTest(**kwargs):
                 self.assertEqual(
@@ -767,9 +767,9 @@ class TestGetAnnotations(unittest.TestCase):
             annotationlib.get_annotations(f, format=Format.FORWARDREF),
             {"x": str},
         )
-        # ... but not in SOURCE which always uses __annotate__
+        # ... but not in STRING which always uses __annotate__
         self.assertEqual(
-            annotationlib.get_annotations(f, format=Format.SOURCE),
+            annotationlib.get_annotations(f, format=Format.STRING),
             {"x": "int"},
         )
 
@@ -804,7 +804,7 @@ class TestGetAnnotations(unittest.TestCase):
         )
 
         self.assertEqual(
-            annotationlib.get_annotations(ha, format=Format.SOURCE), {"x": "int"}
+            annotationlib.get_annotations(ha, format=Format.STRING), {"x": "int"}
         )
 
     def test_raising_annotations_on_custom_object(self):
@@ -844,7 +844,7 @@ class TestGetAnnotations(unittest.TestCase):
             annotationlib.get_annotations(hb, format=Format.FORWARDREF), {"x": int}
         )
         self.assertEqual(
-            annotationlib.get_annotations(hb, format=Format.SOURCE), {"x": str}
+            annotationlib.get_annotations(hb, format=Format.STRING), {"x": str}
         )
 
     def test_pep695_generic_class_with_future_annotations(self):
@@ -974,15 +974,15 @@ class TestCallEvaluateFunction(unittest.TestCase):
             return undefined
 
         with self.assertRaises(NameError):
-            annotationlib.call_evaluate_function(evaluate, annotationlib.Format.VALUE)
+            annotationlib.call_evaluate_function(evaluate, Format.VALUE)
         self.assertEqual(
             annotationlib.call_evaluate_function(
-                evaluate, annotationlib.Format.FORWARDREF
+                evaluate, Format.FORWARDREF
             ),
             annotationlib.ForwardRef("undefined"),
         )
         self.assertEqual(
-            annotationlib.call_evaluate_function(evaluate, annotationlib.Format.SOURCE),
+            annotationlib.call_evaluate_function(evaluate, Format.STRING),
             "undefined",
         )
 
@@ -1093,25 +1093,25 @@ class TestGetAnnotateFunction(unittest.TestCase):
 
 
 class TestToSource(unittest.TestCase):
-    def test_value_to_source(self):
-        self.assertEqual(value_to_source(int), "int")
-        self.assertEqual(value_to_source(MyClass), "test.test_annotationlib.MyClass")
-        self.assertEqual(value_to_source(len), "len")
-        self.assertEqual(value_to_source(value_to_source), "value_to_source")
-        self.assertEqual(value_to_source(times_three), "times_three")
-        self.assertEqual(value_to_source(...), "...")
-        self.assertEqual(value_to_source(None), "None")
-        self.assertEqual(value_to_source(1), "1")
-        self.assertEqual(value_to_source("1"), "'1'")
-        self.assertEqual(value_to_source(Format.VALUE), repr(Format.VALUE))
-        self.assertEqual(value_to_source(MyClass()), "my repr")
+    def test_value_to_string(self):
+        self.assertEqual(value_to_string(int), "int")
+        self.assertEqual(value_to_string(MyClass), "test.test_annotationlib.MyClass")
+        self.assertEqual(value_to_string(len), "len")
+        self.assertEqual(value_to_string(value_to_string), "value_to_string")
+        self.assertEqual(value_to_string(times_three), "times_three")
+        self.assertEqual(value_to_string(...), "...")
+        self.assertEqual(value_to_string(None), "None")
+        self.assertEqual(value_to_string(1), "1")
+        self.assertEqual(value_to_string("1"), "'1'")
+        self.assertEqual(value_to_string(Format.VALUE), repr(Format.VALUE))
+        self.assertEqual(value_to_string(MyClass()), "my repr")
 
-    def test_annotations_to_source(self):
-        self.assertEqual(annotations_to_source({}), {})
-        self.assertEqual(annotations_to_source({"x": int}), {"x": "int"})
-        self.assertEqual(annotations_to_source({"x": "int"}), {"x": "int"})
+    def test_annotations_to_string(self):
+        self.assertEqual(annotations_to_string({}), {})
+        self.assertEqual(annotations_to_string({"x": int}), {"x": "int"})
+        self.assertEqual(annotations_to_string({"x": "int"}), {"x": "int"})
         self.assertEqual(
-            annotations_to_source({"x": int, "y": str}), {"x": "int", "y": "str"}
+            annotations_to_string({"x": int, "y": str}), {"x": "int", "y": "str"}
         )
 
 
