@@ -2228,6 +2228,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
             "invalid choice: 'bazz' (choose from 'bar', 'baz')",
             excinfo.exception.stderr,
         )
+    
 
 class TestInvalidAction(TestCase):
     """Test invalid user defined Action"""
