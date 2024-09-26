@@ -859,7 +859,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return True  # end of cmd list
         cmdlist = self.commands[self.commands_bnum]
         if cmd == 'silent':
-            cmdlist.append('_pdbcmd_silent_frame_status')
+            cmdlist.append('_pdbcmd_silence_frame_status')
             return False  # continue to handle other cmd def in the cmd list
         if arg:
             cmdlist.append(cmd+' '+arg)
@@ -984,7 +984,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.print_stack_trace(0)
         self._show_display()
 
-    def _pdbcmd_silent_frame_status(self, arg):
+    def _pdbcmd_silence_frame_status(self, arg):
         if self.cmdqueue and self.cmdqueue[-1] == '_pdbcmd_print_frame_status':
             self.cmdqueue.pop()
 
