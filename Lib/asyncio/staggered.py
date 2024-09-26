@@ -70,7 +70,7 @@ async def staggered_race(coro_fns, delay, *, loop=None):
         warnings._deprecated(
             'loop',
             'the {name!r} parameter is deprecated and slated for removal in '
-            'Python {remove}; it does nothing since 3.14',
+            'Python {remove}; it is ignored since 3.14',
             remove=(3, 16),
         )
 
