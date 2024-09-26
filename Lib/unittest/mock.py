@@ -34,6 +34,7 @@ import builtins
 import pkgutil
 from inspect import iscoroutinefunction
 import threading
+from dataclasses import fields, is_dataclass
 from types import CodeType, ModuleType, MethodType
 from unittest.util import safe_repr
 from functools import wraps, partial
@@ -2755,12 +2756,10 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
                                f'[object={spec!r}]')
     is_async_func = _is_async_func(spec)
 
-    placeholder = object()
-    entries = [(entry, placeholder) for entry in dir(spec)]
+    entries = [(entry, _missing) for entry in dir(spec)]
     # Not using `is_dataclass` to avoid an import of dataclasses module
     # for types that don't need that.
-    if is_type and instance and hasattr(spec, '__dataclass_fields__'):
-        from dataclasses import fields
+    if is_type and instance and is_dataclass(spec):
         dataclass_fields = fields(spec)
         entries.extend((f.name, f.type) for f in dataclass_fields)
         _kwargs = {'spec': [f.name for f in dataclass_fields]}
@@ -2837,7 +2836,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         # AttributeError on being fetched?
         # we could be resilient against it, or catch and propagate the
         # exception when the attribute is fetched from the mock
-        if original is placeholder:
+        if original is _missing:
             try:
                 original = getattr(spec, entry)
             except AttributeError:

@@ -8,8 +8,10 @@ from unittest.mock import (
     Mock, ANY, _CallList, patch, PropertyMock, _callable
 )
 
+from dataclasses import dataclass, field, InitVar
 from datetime import datetime
 from functools import partial
+from typing import ClassVar
 
 class SomeClass(object):
     def one(self, a, b): pass
@@ -1034,10 +1036,7 @@ class SpecSignatureTest(unittest.TestCase):
         self.assertEqual(mock.mock_calls, [])
         self.assertEqual(rv.mock_calls, [])
 
-    def test_dataclass(self):
-        from dataclasses import dataclass, field, InitVar
-        from typing import ClassVar
-
+    def test_dataclass_post_init(self):
         @dataclass
         class WithPostInit:
             a: int = field(init=False)
@@ -1062,6 +1061,7 @@ class SpecSignatureTest(unittest.TestCase):
         with self.assertRaisesRegex(AttributeError, msg):
             mock.b
 
+    def test_dataclass_default(self):
         @dataclass
         class WithDefault:
             a: int
@@ -1075,6 +1075,7 @@ class SpecSignatureTest(unittest.TestCase):
                 self.assertIsInstance(mock.a, int)
                 self.assertIsInstance(mock.b, int)
 
+    def test_dataclass_with_method(self):
         @dataclass
         class WithMethod:
             a: int
@@ -1089,6 +1090,7 @@ class SpecSignatureTest(unittest.TestCase):
                 self.assertIsInstance(mock.a, int)
                 mock.b.assert_not_called()
 
+    def test_dataclass_with_non_fields(self):
         @dataclass
         class WithNonFields:
             a: ClassVar[int]
