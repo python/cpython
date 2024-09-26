@@ -2565,16 +2565,15 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             }
             msg = _('invalid choice: %(value)r (choose from %(choices)s)')
 
-            all_strings = all(isinstance(choice, str) for choice in action.choices)
-
-            if self.suggest_on_error and isinstance(value, str) and all_strings:
-                import difflib
-                suggestions = difflib.get_close_matches(value, action.choices, 1)
-                if suggestions:
-                    suggestions = suggestions[0]
-                    args['closest'] = suggestions
-                    msg = _('invalid choice: %(value)r, maybe you meant %(closest)r? '
-                            '(choose from %(choices)s)')
+            if self.suggest_on_error and isinstance(value, str):
+                if all(isinstance(choice, str) for choice in action.choices):
+                    import difflib
+                    suggestions = difflib.get_close_matches(value, action.choices, 1)
+                    if suggestions:
+                        suggestions = suggestions[0]
+                        args['closest'] = suggestions
+                        msg = _('invalid choice: %(value)r, maybe you meant %(closest)r? '
+                                '(choose from %(choices)s)')
 
             raise ArgumentError(action, msg % args)
 
