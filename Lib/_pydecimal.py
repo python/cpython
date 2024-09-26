@@ -13,104 +13,7 @@
 # bug) and will be backported.  At this point the spec is stabilizing
 # and the updates are becoming fewer, smaller, and less significant.
 
-"""
-This is an implementation of decimal floating point arithmetic based on
-the General Decimal Arithmetic Specification:
-
-    http://speleotrove.com/decimal/decarith.html
-
-and IEEE standard 854-1987:
-
-    http://en.wikipedia.org/wiki/IEEE_854-1987
-
-Decimal floating point has finite precision with arbitrarily large bounds.
-
-The purpose of this module is to support arithmetic using familiar
-"schoolhouse" rules and to avoid some of the tricky representation
-issues associated with binary floating point.  The package is especially
-useful for financial applications or for contexts where users have
-expectations that are at odds with binary floating point (for instance,
-in binary floating point, 1.00 % 0.1 gives 0.09999999999999995 instead
-of 0.0; Decimal('1.00') % Decimal('0.1') returns the expected
-Decimal('0.00')).
-
-Here are some examples of using the decimal module:
-
->>> from decimal import *
->>> setcontext(ExtendedContext)
->>> Decimal(0)
-Decimal('0')
->>> Decimal('1')
-Decimal('1')
->>> Decimal('-.0123')
-Decimal('-0.0123')
->>> Decimal(123456)
-Decimal('123456')
->>> Decimal('123.45e12345678')
-Decimal('1.2345E+12345680')
->>> Decimal('1.33') + Decimal('1.27')
-Decimal('2.60')
->>> Decimal('12.34') + Decimal('3.87') - Decimal('18.41')
-Decimal('-2.20')
->>> dig = Decimal(1)
->>> print(dig / Decimal(3))
-0.333333333
->>> getcontext().prec = 18
->>> print(dig / Decimal(3))
-0.333333333333333333
->>> print(dig.sqrt())
-1
->>> print(Decimal(3).sqrt())
-1.73205080756887729
->>> print(Decimal(3) ** 123)
-4.85192780976896427E+58
->>> inf = Decimal(1) / Decimal(0)
->>> print(inf)
-Infinity
->>> neginf = Decimal(-1) / Decimal(0)
->>> print(neginf)
--Infinity
->>> print(neginf + inf)
-NaN
->>> print(neginf * inf)
--Infinity
->>> print(dig / 0)
-Infinity
->>> getcontext().traps[DivisionByZero] = 1
->>> print(dig / 0)
-Traceback (most recent call last):
-  ...
-  ...
-  ...
-decimal.DivisionByZero: x / 0
->>> c = Context()
->>> c.traps[InvalidOperation] = 0
->>> print(c.flags[InvalidOperation])
-0
->>> c.divide(Decimal(0), Decimal(0))
-Decimal('NaN')
->>> c.traps[InvalidOperation] = 1
->>> print(c.flags[InvalidOperation])
-1
->>> c.flags[InvalidOperation] = 0
->>> print(c.flags[InvalidOperation])
-0
->>> print(c.divide(Decimal(0), Decimal(0)))
-Traceback (most recent call last):
-  ...
-  ...
-  ...
-decimal.InvalidOperation: 0 / 0
->>> print(c.flags[InvalidOperation])
-1
->>> c.flags[InvalidOperation] = 0
->>> c.traps[InvalidOperation] = 0
->>> print(c.divide(Decimal(0), Decimal(0)))
-NaN
->>> print(c.flags[InvalidOperation])
-1
->>>
-"""
+"""Python decimal arithmetic module"""
 
 __all__ = [
     # Two major classes
@@ -159,7 +62,7 @@ import sys
 
 try:
     from collections import namedtuple as _namedtuple
-    DecimalTuple = _namedtuple('DecimalTuple', 'sign digits exponent')
+    DecimalTuple = _namedtuple('DecimalTuple', 'sign digits exponent', module='decimal')
 except ImportError:
     DecimalTuple = lambda *args: args
 
@@ -441,6 +344,10 @@ import contextvars
 
 _current_context_var = contextvars.ContextVar('decimal_context')
 
+_context_attributes = frozenset(
+    ['prec', 'Emin', 'Emax', 'capitals', 'clamp', 'rounding', 'flags', 'traps']
+)
+
 def getcontext():
     """Returns this thread's context.
 
@@ -464,7 +371,7 @@ def setcontext(context):
 
 del contextvars        # Don't contaminate the namespace
 
-def localcontext(ctx=None):
+def localcontext(ctx=None, **kwargs):
     """Return a context manager for a copy of the supplied context
 
     Uses a copy of the current context if no context is specified
@@ -500,8 +407,14 @@ def localcontext(ctx=None):
     >>> print(getcontext().prec)
     28
     """
-    if ctx is None: ctx = getcontext()
-    return _ContextManager(ctx)
+    if ctx is None:
+        ctx = getcontext()
+    ctx_manager = _ContextManager(ctx)
+    for key, value in kwargs.items():
+        if key not in _context_attributes:
+            raise TypeError(f"'{key}' is an invalid keyword argument for this function")
+        setattr(ctx_manager.new_context, key, value)
+    return ctx_manager
 
 
 ##### Decimal class #######################################################
@@ -511,7 +424,7 @@ def localcontext(ctx=None):
 # numbers.py for more detail.
 
 class Decimal(object):
-    """Floating point class for decimal arithmetic."""
+    """Floating-point class for decimal arithmetic."""
 
     __slots__ = ('_exp','_int','_sign', '_is_special')
     # Generally, the value of the Decimal instance is given by
@@ -951,7 +864,7 @@ class Decimal(object):
             if self.is_snan():
                 raise TypeError('Cannot hash a signaling NaN value.')
             elif self.is_nan():
-                return _PyHASH_NAN
+                return object.__hash__(self)
             else:
                 if self._sign:
                     return -_PyHASH_INF
@@ -2218,10 +2131,16 @@ class Decimal(object):
             else:
                 return None
 
-            if xc >= 10**p:
+            # An exact power of 10 is representable, but can convert to a
+            # string of any length. But an exact power of 10 shouldn't be
+            # possible at this point.
+            assert xc > 1, self
+            assert xc % 10 != 0, self
+            strxc = str(xc)
+            if len(strxc) > p:
                 return None
             xe = -e-xe
-            return _dec_from_triple(0, str(xc), xe)
+            return _dec_from_triple(0, strxc, xe)
 
         # now y is positive; find m and n such that y = m/n
         if ye >= 0:
@@ -2230,7 +2149,7 @@ class Decimal(object):
             if xe != 0 and len(str(abs(yc*xe))) <= -ye:
                 return None
             xc_bits = _nbits(xc)
-            if xc != 1 and len(str(abs(yc)*xc_bits)) <= -ye:
+            if len(str(abs(yc)*xc_bits)) <= -ye:
                 return None
             m, n = yc, 10**(-ye)
             while m % 2 == n % 2 == 0:
@@ -2243,7 +2162,7 @@ class Decimal(object):
         # compute nth root of xc*10**xe
         if n > 1:
             # if 1 < xc < 2**n then xc isn't an nth power
-            if xc != 1 and xc_bits <= n:
+            if xc_bits <= n:
                 return None
 
             xe, rem = divmod(xe, n)
@@ -2271,13 +2190,18 @@ class Decimal(object):
             return None
         xc = xc**m
         xe *= m
-        if xc > 10**p:
+        # An exact power of 10 is representable, but can convert to a string
+        # of any length. But an exact power of 10 shouldn't be possible at
+        # this point.
+        assert xc > 1, self
+        assert xc % 10 != 0, self
+        str_xc = str(xc)
+        if len(str_xc) > p:
             return None
 
         # by this point the result *is* exactly representable
         # adjust the exponent to get as close as possible to the ideal
         # exponent, if necessary
-        str_xc = str(xc)
         if other._isinteger() and other._sign == 0:
             ideal_exponent = self._exp*int(other)
             zeros = min(xe-ideal_exponent, p-len(str_xc))
@@ -3795,6 +3719,10 @@ class Decimal(object):
         # represented in fixed point; rescale them to 0e0.
         if not self and self._exp > 0 and spec['type'] in 'fF%':
             self = self._rescale(0, rounding)
+        if not self and spec['no_neg_0'] and self._sign:
+            adjusted_sign = 0
+        else:
+            adjusted_sign = self._sign
 
         # figure out placement of the decimal point
         leftdigits = self._exp + len(self._int)
@@ -3825,7 +3753,7 @@ class Decimal(object):
 
         # done with the decimal-specific stuff;  hand over the rest
         # of the formatting to the _format_number function
-        return _format_number(self._sign, intpart, fracpart, exp, spec)
+        return _format_number(adjusted_sign, intpart, fracpart, exp, spec)
 
 def _dec_from_triple(sign, coefficient, exponent, special=False):
     """Create a decimal instance directly, without any validation,
@@ -6143,7 +6071,7 @@ _exact_half = re.compile('50*$').match
 #
 # A format specifier for Decimal looks like:
 #
-#   [[fill]align][sign][#][0][minimumwidth][,][.precision][type]
+#   [[fill]align][sign][z][#][0][minimumwidth][,][.precision][type]
 
 _parse_format_specifier_regex = re.compile(r"""\A
 (?:
@@ -6151,6 +6079,7 @@ _parse_format_specifier_regex = re.compile(r"""\A
    (?P<align>[<>=^])
 )?
 (?P<sign>[-+ ])?
+(?P<no_neg_0>z)?
 (?P<alt>\#)?
 (?P<zeropad>0)?
 (?P<minimumwidth>(?!0)\d+)?

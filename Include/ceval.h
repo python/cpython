@@ -1,3 +1,5 @@
+/* Interface to random parts in ceval.c */
+
 #ifndef Py_CEVAL_H
 #define Py_CEVAL_H
 #ifdef __cplusplus
@@ -5,33 +7,24 @@ extern "C" {
 #endif
 
 
-/* Interface to random parts in ceval.c */
+PyAPI_FUNC(PyObject *) PyEval_EvalCode(PyObject *, PyObject *, PyObject *);
 
-/* PyEval_CallObjectWithKeywords(), PyEval_CallObject(), PyEval_CallFunction
- * and PyEval_CallMethod are deprecated. Since they are officially part of the
- * stable ABI (PEP 384), they must be kept for backward compatibility.
- * PyObject_Call(), PyObject_CallFunction() and PyObject_CallMethod() are
- * recommended to call a callable object.
- */
-
-Py_DEPRECATED(3.9) PyAPI_FUNC(PyObject *) PyEval_CallObjectWithKeywords(
-    PyObject *callable,
-    PyObject *args,
-    PyObject *kwargs);
-
-/* Deprecated since PyEval_CallObjectWithKeywords is deprecated */
-#define PyEval_CallObject(callable, arg) \
-    PyEval_CallObjectWithKeywords(callable, arg, (PyObject *)NULL)
-
-Py_DEPRECATED(3.9) PyAPI_FUNC(PyObject *) PyEval_CallFunction(
-    PyObject *callable, const char *format, ...);
-Py_DEPRECATED(3.9) PyAPI_FUNC(PyObject *) PyEval_CallMethod(
-    PyObject *obj, const char *name, const char *format, ...);
+PyAPI_FUNC(PyObject *) PyEval_EvalCodeEx(PyObject *co,
+                                         PyObject *globals,
+                                         PyObject *locals,
+                                         PyObject *const *args, int argc,
+                                         PyObject *const *kwds, int kwdc,
+                                         PyObject *const *defs, int defc,
+                                         PyObject *kwdefs, PyObject *closure);
 
 PyAPI_FUNC(PyObject *) PyEval_GetBuiltins(void);
 PyAPI_FUNC(PyObject *) PyEval_GetGlobals(void);
 PyAPI_FUNC(PyObject *) PyEval_GetLocals(void);
 PyAPI_FUNC(PyFrameObject *) PyEval_GetFrame(void);
+
+PyAPI_FUNC(PyObject *) PyEval_GetFrameBuiltins(void);
+PyAPI_FUNC(PyObject *) PyEval_GetFrameGlobals(void);
+PyAPI_FUNC(PyObject *) PyEval_GetFrameLocals(void);
 
 PyAPI_FUNC(int) Py_AddPendingCall(int (*func)(void *), void *arg);
 PyAPI_FUNC(int) Py_MakePendingCalls(void);
@@ -49,7 +42,7 @@ PyAPI_FUNC(int) Py_MakePendingCalls(void);
      level exceeds "current recursion limit + 50". By construction, this
      protection can only be triggered when the "overflowed" flag is set. It
      means the cleanup code has itself gone into an infinite loop, or the
-     RecursionError has been mistakingly ignored. When this protection is
+     RecursionError has been mistakenly ignored. When this protection is
      triggered, the interpreter aborts with a Fatal Error.
 
    In addition, the "overflowed" flag is automatically reset when the
@@ -66,14 +59,6 @@ PyAPI_FUNC(int) Py_GetRecursionLimit(void);
 
 PyAPI_FUNC(int) Py_EnterRecursiveCall(const char *where);
 PyAPI_FUNC(void) Py_LeaveRecursiveCall(void);
-
-#define Py_ALLOW_RECURSION \
-  do { unsigned char _old = PyThreadState_GET()->recursion_critical;\
-    PyThreadState_GET()->recursion_critical = 1;
-
-#define Py_END_ALLOW_RECURSION \
-    PyThreadState_GET()->recursion_critical = _old; \
-  } while(0);
 
 PyAPI_FUNC(const char *) PyEval_GetFuncName(PyObject *);
 PyAPI_FUNC(const char *) PyEval_GetFuncDesc(PyObject *);
@@ -126,10 +111,8 @@ PyAPI_FUNC(PyObject *) PyEval_EvalFrameEx(PyFrameObject *f, int exc);
 PyAPI_FUNC(PyThreadState *) PyEval_SaveThread(void);
 PyAPI_FUNC(void) PyEval_RestoreThread(PyThreadState *);
 
-Py_DEPRECATED(3.9) PyAPI_FUNC(int) PyEval_ThreadsInitialized(void);
 Py_DEPRECATED(3.9) PyAPI_FUNC(void) PyEval_InitThreads(void);
-Py_DEPRECATED(3.2) PyAPI_FUNC(void) PyEval_AcquireLock(void);
-/* Py_DEPRECATED(3.2) */ PyAPI_FUNC(void) PyEval_ReleaseLock(void);
+
 PyAPI_FUNC(void) PyEval_AcquireThread(PyThreadState *tstate);
 PyAPI_FUNC(void) PyEval_ReleaseThread(PyThreadState *tstate);
 
@@ -150,9 +133,16 @@ PyAPI_FUNC(void) PyEval_ReleaseThread(PyThreadState *tstate);
 #define FVS_MASK      0x4
 #define FVS_HAVE_SPEC 0x4
 
+/* Special methods used by LOAD_SPECIAL */
+#define SPECIAL___ENTER__   0
+#define SPECIAL___EXIT__    1
+#define SPECIAL___AENTER__  2
+#define SPECIAL___AEXIT__   3
+#define SPECIAL_MAX   3
+
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_CEVAL_H
-#  include  "cpython/ceval.h"
+#  include "cpython/ceval.h"
 #  undef Py_CPYTHON_CEVAL_H
 #endif
 

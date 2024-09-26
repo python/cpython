@@ -35,7 +35,7 @@
 
   A number of SysV or ncurses functions don't have wrappers yet; if you
   need a given function, add it and send a patch.  See
-  http://www.python.org/dev/patches/ for instructions on how to submit
+  https://www.python.org/dev/patches/ for instructions on how to submit
   patches to Python.
 
   Here's a list of currently unsupported functions:
@@ -100,10 +100,13 @@ static const char PyCursesVersion[] = "2.2";
 
 /* Includes */
 
-#define PY_SSIZE_T_CLEAN
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
-
+#include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_structseq.h"     // _PyStructSequence_NewType()
 
 #ifdef __hpux
 #define STRICT_SYSV_CURSES
@@ -125,7 +128,7 @@ static const char PyCursesVersion[] = "2.2";
 #include <langinfo.h>
 #endif
 
-#if !defined(HAVE_NCURSES_H) && (defined(sgi) || defined(__sun) || defined(SCO5))
+#if !defined(NCURSES_VERSION) && (defined(sgi) || defined(__sun) || defined(SCO5))
 #define STRICT_SYSV_CURSES       /* Don't use ncurses extensions */
 typedef chtype attr_t;           /* No attr_t type is available */
 #endif
@@ -133,6 +136,28 @@ typedef chtype attr_t;           /* No attr_t type is available */
 #if defined(_AIX)
 #define STRICT_SYSV_CURSES
 #endif
+
+#if NCURSES_EXT_FUNCS+0 >= 20170401 && NCURSES_EXT_COLORS+0 >= 20170401
+#define _NCURSES_EXTENDED_COLOR_FUNCS   1
+#else
+#define _NCURSES_EXTENDED_COLOR_FUNCS   0
+#endif
+
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+#define _CURSES_COLOR_VAL_TYPE          int
+#define _CURSES_COLOR_NUM_TYPE          int
+#define _CURSES_INIT_COLOR_FUNC         init_extended_color
+#define _CURSES_INIT_PAIR_FUNC          init_extended_pair
+#define _COLOR_CONTENT_FUNC             extended_color_content
+#define _CURSES_PAIR_CONTENT_FUNC       extended_pair_content
+#else
+#define _CURSES_COLOR_VAL_TYPE          short
+#define _CURSES_COLOR_NUM_TYPE          short
+#define _CURSES_INIT_COLOR_FUNC         init_color
+#define _CURSES_INIT_PAIR_FUNC          init_pair
+#define _COLOR_CONTENT_FUNC             color_content
+#define _CURSES_PAIR_CONTENT_FUNC       pair_content
+#endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
 
 /*[clinic input]
 module _curses
@@ -145,48 +170,45 @@ class _curses.window "PyCursesWindowObject *" "&PyCursesWindow_Type"
 static PyObject *PyCursesError;
 
 /* Tells whether setupterm() has been called to initialise terminfo.  */
-static int initialised_setupterm = FALSE;
+static int curses_setupterm_called = FALSE;
 
 /* Tells whether initscr() has been called to initialise curses.  */
-static int initialised = FALSE;
+static int curses_initscr_called = FALSE;
 
 /* Tells whether start_color() has been called to initialise color usage. */
-static int initialisedcolors = FALSE;
+static int curses_start_color_called = FALSE;
 
-static char *screen_encoding = NULL;
+static const char *curses_screen_encoding = NULL;
 
 /* Utility Macros */
 #define PyCursesSetupTermCalled                                         \
-    if (initialised_setupterm != TRUE) {                                \
-        PyErr_SetString(PyCursesError,                                  \
-                        "must call (at least) setupterm() first");      \
-        return 0; }
+    do {                                                                \
+        if (curses_setupterm_called != TRUE) {                          \
+            PyErr_SetString(PyCursesError,                              \
+                            "must call (at least) setupterm() first");  \
+            return 0;                                                   \
+        }                                                               \
+    } while (0)
 
-#define PyCursesInitialised                             \
-    if (initialised != TRUE) {                          \
-        PyErr_SetString(PyCursesError,                  \
-                        "must call initscr() first");   \
-        return 0; }
+#define PyCursesInitialised                                 \
+    do {                                                    \
+        if (curses_initscr_called != TRUE) {                \
+            PyErr_SetString(PyCursesError,                  \
+                            "must call initscr() first");   \
+            return 0;                                       \
+        }                                                   \
+    } while (0)
 
 #define PyCursesInitialisedColor                                \
-    if (initialisedcolors != TRUE) {                            \
-        PyErr_SetString(PyCursesError,                          \
-                        "must call start_color() first");       \
-        return 0; }
+    do {                                                        \
+        if (curses_start_color_called != TRUE) {                \
+            PyErr_SetString(PyCursesError,                      \
+                            "must call start_color() first");   \
+            return 0;                                           \
+        }                                                       \
+    } while (0)
 
 /* Utility Functions */
-
-static inline int
-color_pair_to_attr(short color_number)
-{
-    return ((int)color_number << 8);
-}
-
-static inline short
-attr_to_color_pair(int attr)
-{
-    return (short)((attr & A_COLOR) >> 8);
-}
 
 /*
  * Check the return code from a curses function and return None
@@ -220,13 +242,20 @@ static int
 PyCurses_ConvertToChtype(PyCursesWindowObject *win, PyObject *obj, chtype *ch)
 {
     long value;
-    if(PyBytes_Check(obj) && PyBytes_Size(obj) == 1) {
+    if (PyBytes_Check(obj)) {
+        if (PyBytes_GET_SIZE(obj) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                         "expect int or bytes or str of length 1, "
+                         "got a bytes of length %zd",
+                         PyBytes_GET_SIZE(obj));
+            return 0;
+        }
         value = (unsigned char)PyBytes_AsString(obj)[0];
     }
     else if (PyUnicode_Check(obj)) {
-        if (PyUnicode_GetLength(obj) != 1) {
+        if (PyUnicode_GET_LENGTH(obj) != 1) {
             PyErr_Format(PyExc_TypeError,
-                         "expect bytes or str of length 1, or int, "
+                         "expect int or bytes or str of length 1, "
                          "got a str of length %zi",
                          PyUnicode_GET_LENGTH(obj));
             return 0;
@@ -238,7 +267,7 @@ PyCurses_ConvertToChtype(PyCursesWindowObject *win, PyObject *obj, chtype *ch)
             if (win)
                 encoding = win->encoding;
             else
-                encoding = screen_encoding;
+                encoding = curses_screen_encoding;
             bytes = PyUnicode_AsEncodedString(obj, encoding, NULL);
             if (bytes == NULL)
                 return 0;
@@ -259,7 +288,7 @@ PyCurses_ConvertToChtype(PyCursesWindowObject *win, PyObject *obj, chtype *ch)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "expect bytes or str of length 1, or int, got %s",
+                     "expect int or bytes or str of length 1, got %s",
                      Py_TYPE(obj)->tp_name);
         return 0;
     }
@@ -302,7 +331,7 @@ PyCurses_ConvertToCchar_t(PyCursesWindowObject *win, PyObject *obj,
 #ifdef HAVE_NCURSESW
         if (PyUnicode_AsWideChar(obj, buffer, 2) != 1) {
             PyErr_Format(PyExc_TypeError,
-                         "expect bytes or str of length 1, or int, "
+                         "expect int or bytes or str of length 1, "
                          "got a str of length %zi",
                          PyUnicode_GET_LENGTH(obj));
             return 0;
@@ -313,7 +342,14 @@ PyCurses_ConvertToCchar_t(PyCursesWindowObject *win, PyObject *obj,
         return PyCurses_ConvertToChtype(win, obj, ch);
 #endif
     }
-    else if(PyBytes_Check(obj) && PyBytes_Size(obj) == 1) {
+    else if (PyBytes_Check(obj)) {
+        if (PyBytes_GET_SIZE(obj) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                         "expect int or bytes or str of length 1, "
+                         "got a bytes of length %zd",
+                         PyBytes_GET_SIZE(obj));
+            return 0;
+        }
         value = (unsigned char)PyBytes_AsString(obj)[0];
     }
     else if (PyLong_CheckExact(obj)) {
@@ -327,7 +363,7 @@ PyCurses_ConvertToCchar_t(PyCursesWindowObject *win, PyObject *obj,
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "expect bytes or str of length 1, or int, got %s",
+                     "expect int or bytes or str of length 1, got %s",
                      Py_TYPE(obj)->tp_name);
         return 0;
     }
@@ -367,16 +403,17 @@ PyCurses_ConvertToString(PyCursesWindowObject *win, PyObject *obj,
             return 0;
         /* check for embedded null bytes */
         if (PyBytes_AsStringAndSize(*bytes, &str, NULL) < 0) {
+            Py_CLEAR(*bytes);
             return 0;
         }
         return 1;
 #endif
     }
     else if (PyBytes_Check(obj)) {
-        Py_INCREF(obj);
-        *bytes = obj;
+        *bytes = Py_NewRef(obj);
         /* check for embedded null bytes */
         if (PyBytes_AsStringAndSize(*bytes, &str, NULL) < 0) {
+            Py_DECREF(obj);
             return 0;
         }
         return 1;
@@ -386,6 +423,132 @@ PyCurses_ConvertToString(PyCursesWindowObject *win, PyObject *obj,
                  Py_TYPE(obj)->tp_name);
     return 0;
 }
+
+static int
+color_allow_default_converter(PyObject *arg, void *ptr)
+{
+    long color_number;
+    int overflow;
+
+    color_number = PyLong_AsLongAndOverflow(arg, &overflow);
+    if (color_number == -1 && PyErr_Occurred())
+        return 0;
+
+    if (overflow > 0 || color_number >= COLORS) {
+        PyErr_Format(PyExc_ValueError,
+                     "Color number is greater than COLORS-1 (%d).",
+                     COLORS - 1);
+        return 0;
+    }
+    else if (overflow < 0 || color_number < 0) {
+        color_number = -1;
+    }
+
+    *(int *)ptr = (int)color_number;
+    return 1;
+}
+
+static int
+color_converter(PyObject *arg, void *ptr)
+{
+    if (!color_allow_default_converter(arg, ptr)) {
+        return 0;
+    }
+    if (*(int *)ptr < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Color number is less than 0.");
+        return 0;
+    }
+    return 1;
+}
+
+/*[python input]
+class color_converter(CConverter):
+    type = 'int'
+    converter = 'color_converter'
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=4260d2b6e66b3709]*/
+
+/*[python input]
+class color_allow_default_converter(CConverter):
+    type = 'int'
+    converter = 'color_allow_default_converter'
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=975602bc058a872d]*/
+
+static int
+pair_converter(PyObject *arg, void *ptr)
+{
+    long pair_number;
+    int overflow;
+
+    pair_number = PyLong_AsLongAndOverflow(arg, &overflow);
+    if (pair_number == -1 && PyErr_Occurred())
+        return 0;
+
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+    if (overflow > 0 || pair_number > INT_MAX) {
+        PyErr_Format(PyExc_ValueError,
+                     "Color pair is greater than maximum (%d).",
+                     INT_MAX);
+        return 0;
+    }
+#else
+    if (overflow > 0 || pair_number >= COLOR_PAIRS) {
+        PyErr_Format(PyExc_ValueError,
+                     "Color pair is greater than COLOR_PAIRS-1 (%d).",
+                     COLOR_PAIRS - 1);
+        return 0;
+    }
+#endif
+    else if (overflow < 0 || pair_number < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Color pair is less than 0.");
+        return 0;
+    }
+
+    *(int *)ptr = (int)pair_number;
+    return 1;
+}
+
+/*[python input]
+class pair_converter(CConverter):
+    type = 'int'
+    converter = 'pair_converter'
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=1a918ae6a1b32af7]*/
+
+static int
+component_converter(PyObject *arg, void *ptr)
+{
+    long component;
+    int overflow;
+
+    component = PyLong_AsLongAndOverflow(arg, &overflow);
+    if (component == -1 && PyErr_Occurred())
+        return 0;
+
+    if (overflow > 0 || component > 1000) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Color component is greater than 1000");
+        return 0;
+    }
+    else if (overflow < 0 || component < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Color component is less than 0");
+        return 0;
+    }
+
+    *(short *)ptr = (short)component;
+    return 1;
+}
+
+/*[python input]
+class component_converter(CConverter):
+    type = 'short'
+    converter = 'component_converter'
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=38e9be01d33927fb]*/
 
 /* Function versions of the 3 functions for testing whether curses has been
    initialised or not. */
@@ -562,10 +725,14 @@ PyCursesWindow_New(WINDOW *win, const char *encoding)
 static void
 PyCursesWindow_Dealloc(PyCursesWindowObject *wo)
 {
-    if (wo->win != stdscr) delwin(wo->win);
-    if (wo->encoding != NULL)
+    if (wo->win != stdscr && wo->win != NULL) {
+        // silently ignore errors in delwin(3)
+        (void)delwin(wo->win);
+    }
+    if (wo->encoding != NULL) {
         PyMem_Free(wo->encoding);
-    PyObject_DEL(wo);
+    }
+    PyObject_Free(wo);
 }
 
 /* Addch, Addstr, Addnstr */
@@ -618,7 +785,7 @@ _curses_window_addch_impl(PyCursesWindowObject *self, int group_left_1,
     if (type == 2) {
         funcname = "add_wch";
         wstr[1] = L'\0';
-        setcchar(&wcval, wstr, attr, attr_to_color_pair(attr), NULL);
+        setcchar(&wcval, wstr, attr, PAIR_NUMBER(attr), NULL);
         if (coordinates_group)
             rtn = mvwadd_wch(self->win,y,x, &wcval);
         else {
@@ -691,8 +858,9 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
 #else
     strtype = PyCurses_ConvertToString(self, str, &bytesobj, NULL);
 #endif
-    if (strtype == 0)
+    if (strtype == 0) {
         return NULL;
+    }
     if (use_attr) {
         attr_old = getattrs(self->win);
         (void)wattrset(self->win,attr);
@@ -971,9 +1139,9 @@ _curses_window_border_impl(PyCursesWindowObject *self, PyObject *ls,
 _curses.window.box
 
     [
-    verch: object(c_default="_PyLong_Zero") = 0
+    verch: object(c_default="_PyLong_GetZero()") = 0
         Left and right side.
-    horch: object(c_default="_PyLong_Zero") = 0
+    horch: object(c_default="_PyLong_GetZero()") = 0
         Top and bottom side.
     ]
     /
@@ -987,7 +1155,7 @@ horch.  The default corner characters are always used by this function.
 static PyObject *
 _curses_window_box_impl(PyCursesWindowObject *self, int group_right_1,
                         PyObject *verch, PyObject *horch)
-/*[clinic end generated code: output=f3fcb038bb287192 input=465a121741c1efdf]*/
+/*[clinic end generated code: output=f3fcb038bb287192 input=f00435f9c8c98f60]*/
 {
     chtype ch1 = 0, ch2 = 0;
     if (group_right_1) {
@@ -1015,8 +1183,10 @@ int py_mvwdelch(WINDOW *w, int y, int x)
 #endif
 
 #if defined(HAVE_CURSES_IS_PAD)
+// is_pad() is defined, either as a macro or as a function
 #define py_is_pad(win)      is_pad(win)
 #elif defined(WINDOW_HAS_FLAGS)
+// is_pad() is not defined, but we can inspect WINDOW structure members
 #define py_is_pad(win)      ((win) ? ((win)->_flags & _ISPAD) != 0 : FALSE)
 #endif
 
@@ -1087,8 +1257,8 @@ PyCursesWindow_ChgAt(PyCursesWindowObject *self, PyObject *args)
         return NULL;
     }
 
-    color = (short)((attr >> 8) & 0xff);
-    attr = attr - (color << 8);
+    color = (short) PAIR_NUMBER(attr);
+    attr = attr & A_ATTRIBUTES;
 
     if (use_xy) {
         rtn = mvwchgat(self->win,y,x,num,attr,color,NULL);
@@ -1204,7 +1374,7 @@ _curses_window_echochar_impl(PyCursesWindowObject *self, PyObject *ch,
 
 #ifdef NCURSES_MOUSE_VERSION
 /*[clinic input]
-_curses.window.enclose -> long
+_curses.window.enclose
 
     y: int
         Y-coordinate.
@@ -1215,11 +1385,11 @@ _curses.window.enclose -> long
 Return True if the screen-relative coordinates are enclosed by the window.
 [clinic start generated code]*/
 
-static long
+static PyObject *
 _curses_window_enclose_impl(PyCursesWindowObject *self, int y, int x)
-/*[clinic end generated code: output=5251c961cbe3df63 input=dfe1d9d4d05d8642]*/
+/*[clinic end generated code: output=8679beef50502648 input=4fd3355d723f7bc9]*/
 {
-    return wenclose(self->win, y, x);
+    return PyBool_FromLong(wenclose(self->win, y, x));
 }
 #endif
 
@@ -2032,12 +2202,11 @@ _curses_window_putwin(PyCursesWindowObject *self, PyObject *file)
     while (1) {
         char buf[BUFSIZ];
         Py_ssize_t n = fread(buf, 1, BUFSIZ, fp);
-        _Py_IDENTIFIER(write);
 
         if (n <= 0)
             break;
         Py_DECREF(res);
-        res = _PyObject_CallMethodId(file, &PyId_write, "y#", buf, n);
+        res = PyObject_CallMethod(file, "write", "y#", buf, n);
         if (res == NULL)
             break;
     }
@@ -2229,7 +2398,7 @@ _curses.window.touchline
     start: int
     count: int
     [
-    changed: bool(accept={int}) = True
+    changed: bool = True
     ]
     /
 
@@ -2242,7 +2411,7 @@ as having been changed (changed=True) or unchanged (changed=False).
 static PyObject *
 _curses_window_touchline_impl(PyCursesWindowObject *self, int start,
                               int count, int group_right_1, int changed)
-/*[clinic end generated code: output=65d05b3f7438c61d input=918ad1cbdadf93ea]*/
+/*[clinic end generated code: output=65d05b3f7438c61d input=a98aa4f79b6be845]*/
 {
     if (!group_right_1) {
         return PyCursesCheckERR(touchline(self->win, start, count), "touchline");
@@ -2473,12 +2642,12 @@ PyTypeObject PyCursesWindow_Type = {
 
 #define NoArgNoReturnFunctionBody(X) \
 { \
-  PyCursesInitialised \
+  PyCursesInitialised; \
   return PyCursesCheckERR(X(), # X); }
 
 #define NoArgOrFlagNoReturnFunctionBody(X, flag) \
 { \
-    PyCursesInitialised \
+    PyCursesInitialised; \
     if (flag) \
         return PyCursesCheckERR(X(), # X); \
     else \
@@ -2487,23 +2656,23 @@ PyTypeObject PyCursesWindow_Type = {
 
 #define NoArgReturnIntFunctionBody(X) \
 { \
- PyCursesInitialised \
+ PyCursesInitialised; \
  return PyLong_FromLong((long) X()); }
 
 
 #define NoArgReturnStringFunctionBody(X) \
 { \
-  PyCursesInitialised \
+  PyCursesInitialised; \
   return PyBytes_FromString(X()); }
 
 #define NoArgTrueFalseFunctionBody(X) \
 { \
-  PyCursesInitialised \
+  PyCursesInitialised; \
   return PyBool_FromLong(X()); }
 
 #define NoArgNoReturnVoidFunctionBody(X) \
 { \
-  PyCursesInitialised \
+  PyCursesInitialised; \
   X(); \
   Py_RETURN_NONE; }
 
@@ -2564,7 +2733,7 @@ NoArgTrueFalseFunctionBody(can_change_color)
 /*[clinic input]
 _curses.cbreak
 
-    flag: bool(accept={int}) = True
+    flag: bool = True
         If false, the effect is the same as calling nocbreak().
     /
 
@@ -2579,14 +2748,14 @@ Calling first raw() then cbreak() leaves the terminal in cbreak mode.
 
 static PyObject *
 _curses_cbreak_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=9f9dee9664769751 input=150be619eb1f1458]*/
+/*[clinic end generated code: output=9f9dee9664769751 input=c7d0bddda93016c1]*/
 NoArgOrFlagNoReturnFunctionBody(cbreak, flag)
 
 /*[clinic input]
 _curses.color_content
 
-    color_number: short
-        The number of the color (0 - COLORS).
+    color_number: color
+        The number of the color (0 - (COLORS-1)).
     /
 
 Return the red, green, and blue (RGB) components of the specified color.
@@ -2596,28 +2765,28 @@ which will be between 0 (no component) and 1000 (maximum amount of component).
 [clinic start generated code]*/
 
 static PyObject *
-_curses_color_content_impl(PyObject *module, short color_number)
-/*[clinic end generated code: output=cb15cf3120d4bfc1 input=5555abb1c11e11b7]*/
+_curses_color_content_impl(PyObject *module, int color_number)
+/*[clinic end generated code: output=17b466df7054e0de input=03b5ed0472662aea]*/
 {
-    short r,g,b;
+    _CURSES_COLOR_VAL_TYPE r,g,b;
 
     PyCursesInitialised;
     PyCursesInitialisedColor;
 
-    if (color_content(color_number, &r, &g, &b) != ERR)
-        return Py_BuildValue("(iii)", r, g, b);
-    else {
-        PyErr_SetString(PyCursesError,
-                        "Argument 1 was out of range. Check value of COLORS.");
+    if (_COLOR_CONTENT_FUNC(color_number, &r, &g, &b) == ERR) {
+        PyErr_Format(PyCursesError, "%s() returned ERR",
+                        Py_STRINGIFY(_COLOR_CONTENT_FUNC));
         return NULL;
     }
+
+    return Py_BuildValue("(iii)", r, g, b);
 }
 
 /*[clinic input]
 _curses.color_pair
 
-    color_number: short
-        The number of the color (0 - COLORS).
+    pair_number: int
+        The number of the color pair.
     /
 
 Return the attribute value for displaying text in the specified color.
@@ -2627,13 +2796,13 @@ other A_* attributes.  pair_number() is the counterpart to this function.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_color_pair_impl(PyObject *module, short color_number)
-/*[clinic end generated code: output=6a84cb6b29ecaf9a input=a9d3eb6f50e4dc12]*/
+_curses_color_pair_impl(PyObject *module, int pair_number)
+/*[clinic end generated code: output=60718abb10ce9feb input=6034e9146f343802]*/
 {
     PyCursesInitialised;
     PyCursesInitialisedColor;
 
-    return  PyLong_FromLong(color_pair_to_attr(color_number));
+    return  PyLong_FromLong(COLOR_PAIR(pair_number));
 }
 
 /*[clinic input]
@@ -2728,7 +2897,7 @@ NoArgNoReturnFunctionBody(doupdate)
 /*[clinic input]
 _curses.echo
 
-    flag: bool(accept={int}) = True
+    flag: bool = True
         If false, the effect is the same as calling noecho().
     /
 
@@ -2739,7 +2908,7 @@ In echo mode, each character input is echoed to the screen as it is entered.
 
 static PyObject *
 _curses_echo_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=03acb2ddfa6c8729 input=2e9e891d637eac5d]*/
+/*[clinic end generated code: output=03acb2ddfa6c8729 input=86cd4d5bb1d569c0]*/
 NoArgOrFlagNoReturnFunctionBody(echo, flag)
 
 /*[clinic input]
@@ -2906,7 +3075,6 @@ _curses_getwin(PyObject *module, PyObject *file)
     PyObject *data;
     size_t datalen;
     WINDOW *win;
-    _Py_IDENTIFIER(read);
     PyObject *res = NULL;
 
     PyCursesInitialised;
@@ -2918,7 +3086,7 @@ _curses_getwin(PyObject *module, PyObject *file)
     if (_Py_set_inheritable(fileno(fp), 0, NULL) < 0)
         goto error;
 
-    data = _PyObject_CallMethodIdNoArgs(file, &PyId_read);
+    data = PyObject_CallMethod(file, "read", NULL);
     if (data == NULL)
         goto error;
     if (!PyBytes_Check(data)) {
@@ -2930,8 +3098,8 @@ _curses_getwin(PyObject *module, PyObject *file)
     }
     datalen = PyBytes_GET_SIZE(data);
     if (fwrite(PyBytes_AS_STRING(data), 1, datalen, fp) != datalen) {
-        Py_DECREF(data);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_DECREF(data);
         goto error;
     }
     Py_DECREF(data);
@@ -3027,13 +3195,13 @@ _curses_has_key_impl(PyObject *module, int key)
 /*[clinic input]
 _curses.init_color
 
-    color_number: short
-        The number of the color to be changed (0 - COLORS).
-    r: short
+    color_number: color
+        The number of the color to be changed (0 - (COLORS-1)).
+    r: component
         Red component (0 - 1000).
-    g: short
+    g: component
         Green component (0 - 1000).
-    b: short
+    b: component
         Blue component (0 - 1000).
     /
 
@@ -3041,29 +3209,30 @@ Change the definition of a color.
 
 When init_color() is used, all occurrences of that color on the screen
 immediately change to the new definition.  This function is a no-op on
-most terminals; it is active only if can_change_color() returns 1.
+most terminals; it is active only if can_change_color() returns true.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_init_color_impl(PyObject *module, short color_number, short r,
-                        short g, short b)
-/*[clinic end generated code: output=280236f5efe9776a input=f3a05bd38f619175]*/
+_curses_init_color_impl(PyObject *module, int color_number, short r, short g,
+                        short b)
+/*[clinic end generated code: output=d7ed71b2d818cdf2 input=ae2b8bea0f152c80]*/
 {
     PyCursesInitialised;
     PyCursesInitialisedColor;
 
-    return PyCursesCheckERR(init_color(color_number, r, g, b), "init_color");
+    return PyCursesCheckERR(_CURSES_INIT_COLOR_FUNC(color_number, r, g, b),
+                            Py_STRINGIFY(_CURSES_INIT_COLOR_FUNC));
 }
 
 /*[clinic input]
 _curses.init_pair
 
-    pair_number: short
+    pair_number: pair
         The number of the color-pair to be changed (1 - (COLOR_PAIRS-1)).
-    fg: short
-        Foreground color number (0 - COLORS).
-    bg: short
-        Background color number (0 - COLORS).
+    fg: color_allow_default
+        Foreground color number (-1 - (COLORS-1)).
+    bg: color_allow_default
+        Background color number (-1 - (COLORS-1)).
     /
 
 Change the definition of a color-pair.
@@ -3073,17 +3242,27 @@ all occurrences of that color-pair are changed to the new definition.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_init_pair_impl(PyObject *module, short pair_number, short fg,
-                       short bg)
-/*[clinic end generated code: output=9c2ce39c22f376b6 input=c9f0b11b17a2ac6d]*/
+_curses_init_pair_impl(PyObject *module, int pair_number, int fg, int bg)
+/*[clinic end generated code: output=a0bba03d2bbc3ee6 input=54b421b44c12c389]*/
 {
     PyCursesInitialised;
     PyCursesInitialisedColor;
 
-    return PyCursesCheckERR(init_pair(pair_number, fg, bg), "init_pair");
-}
+    if (_CURSES_INIT_PAIR_FUNC(pair_number, fg, bg) == ERR) {
+        if (pair_number >= COLOR_PAIRS) {
+            PyErr_Format(PyExc_ValueError,
+                         "Color pair is greater than COLOR_PAIRS-1 (%d).",
+                         COLOR_PAIRS - 1);
+        }
+        else {
+            PyErr_Format(PyCursesError, "%s() returned ERR",
+                         Py_STRINGIFY(_CURSES_INIT_PAIR_FUNC));
+        }
+        return NULL;
+    }
 
-static PyObject *ModDict;
+    Py_RETURN_NONE;
+}
 
 /*[clinic input]
 _curses.initscr
@@ -3098,9 +3277,8 @@ _curses_initscr_impl(PyObject *module)
 /*[clinic end generated code: output=619fb68443810b7b input=514f4bce1821f6b5]*/
 {
     WINDOW *win;
-    PyCursesWindowObject *winobj;
 
-    if (initialised) {
+    if (curses_initscr_called) {
         wrefresh(stdscr);
         return (PyObject *)PyCursesWindow_New(stdscr, NULL);
     }
@@ -3112,16 +3290,25 @@ _curses_initscr_impl(PyObject *module)
         return NULL;
     }
 
-    initialised = initialised_setupterm = TRUE;
+    curses_initscr_called = curses_setupterm_called = TRUE;
 
-/* This was moved from initcurses() because it core dumped on SGI,
-   where they're not defined until you've called initscr() */
-#define SetDictInt(string,ch)                                           \
-    do {                                                                \
-        PyObject *o = PyLong_FromLong((long) (ch));                     \
-        if (o && PyDict_SetItemString(ModDict, string, o) == 0)     {   \
-            Py_DECREF(o);                                               \
-        }                                                               \
+    PyObject *module_dict = PyModule_GetDict(module); // borrowed
+    if (module_dict == NULL) {
+        return NULL;
+    }
+    /* This was moved from initcurses() because it core dumped on SGI,
+       where they're not defined until you've called initscr() */
+#define SetDictInt(NAME, VALUE)                                     \
+    do {                                                            \
+        PyObject *value = PyLong_FromLong((long)(VALUE));           \
+        if (value == NULL) {                                        \
+            return NULL;                                            \
+        }                                                           \
+        int rc = PyDict_SetItemString(module_dict, (NAME), value);  \
+        Py_DECREF(value);                                           \
+        if (rc < 0) {                                               \
+            return NULL;                                            \
+        }                                                           \
     } while (0)
 
     /* Here are some graphic symbols you can use */
@@ -3193,9 +3380,13 @@ _curses_initscr_impl(PyObject *module)
 
     SetDictInt("LINES", LINES);
     SetDictInt("COLS", COLS);
+#undef SetDictInt
 
-    winobj = (PyCursesWindowObject *)PyCursesWindow_New(win, NULL);
-    screen_encoding = winobj->encoding;
+    PyCursesWindowObject *winobj = (PyCursesWindowObject *)PyCursesWindow_New(win, NULL);
+    if (winobj == NULL) {
+        return NULL;
+    }
+    curses_screen_encoding = winobj->encoding;
     return (PyObject *)winobj;
 }
 
@@ -3237,7 +3428,7 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
         }
     }
 
-    if (!initialised_setupterm && setupterm((char *)term, fd, &err) == ERR) {
+    if (!curses_setupterm_called && setupterm((char *)term, fd, &err) == ERR) {
         const char* s = "setupterm: unknown error";
 
         if (err == 0) {
@@ -3250,7 +3441,7 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
         return NULL;
     }
 
-    initialised_setupterm = TRUE;
+    curses_setupterm_called = TRUE;
 
     Py_RETURN_NONE;
 }
@@ -3342,14 +3533,14 @@ _curses_set_tabsize_impl(PyObject *module, int size)
 /*[clinic input]
 _curses.intrflush
 
-    flag: bool(accept={int})
+    flag: bool
     /
 
 [clinic start generated code]*/
 
 static PyObject *
 _curses_intrflush_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=c1986df35e999a0f input=fcba57bb28dfd795]*/
+/*[clinic end generated code: output=c1986df35e999a0f input=c65fe2ef973fe40a]*/
 {
     PyCursesInitialised;
 
@@ -3451,7 +3642,7 @@ NoArgReturnStringFunctionBody(longname)
 /*[clinic input]
 _curses.meta
 
-    yes: bool(accept={int})
+    yes: bool
     /
 
 Enable/disable meta keys.
@@ -3462,7 +3653,7 @@ allow only 7-bit characters.
 
 static PyObject *
 _curses_meta_impl(PyObject *module, int yes)
-/*[clinic end generated code: output=22f5abda46a605d8 input=af9892e3a74f35db]*/
+/*[clinic end generated code: output=22f5abda46a605d8 input=cfe7da79f51d0e30]*/
 {
     PyCursesInitialised;
 
@@ -3521,7 +3712,7 @@ _curses_mousemask_impl(PyObject *module, unsigned long newmask)
 #endif
 
 /*[clinic input]
-_curses.napms
+_curses.napms -> int
 
     ms: int
         Duration in milliseconds.
@@ -3530,13 +3721,13 @@ _curses.napms
 Sleep for specified time.
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _curses_napms_impl(PyObject *module, int ms)
-/*[clinic end generated code: output=a40a1da2e39ea438 input=20cd3af2b6900f56]*/
+/*[clinic end generated code: output=5f292a6a724491bd input=c6d6e01f2f1df9f7]*/
 {
     PyCursesInitialised;
 
-    return Py_BuildValue("i", napms(ms));
+    return napms(ms);
 }
 
 
@@ -3612,7 +3803,7 @@ _curses_newwin_impl(PyObject *module, int nlines, int ncols,
 /*[clinic input]
 _curses.nl
 
-    flag: bool(accept={int}) = True
+    flag: bool = True
         If false, the effect is the same as calling nonl().
     /
 
@@ -3624,7 +3815,7 @@ newline into return and line-feed on output.  Newline mode is initially on.
 
 static PyObject *
 _curses_nl_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=b39cc0ffc9015003 input=cf36a63f7b86e28a]*/
+/*[clinic end generated code: output=b39cc0ffc9015003 input=18e3e9c6e8cfcf6f]*/
 NoArgOrFlagNoReturnFunctionBody(nl, flag)
 
 /*[clinic input]
@@ -3697,25 +3888,32 @@ NoArgNoReturnFunctionBody(noraw)
 /*[clinic input]
 _curses.pair_content
 
-    pair_number: short
-        The number of the color pair (1 - (COLOR_PAIRS-1)).
+    pair_number: pair
+        The number of the color pair (0 - (COLOR_PAIRS-1)).
     /
 
 Return a tuple (fg, bg) containing the colors for the requested color pair.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_pair_content_impl(PyObject *module, short pair_number)
-/*[clinic end generated code: output=5a72aa1a28bbacf3 input=f4d7fec5643b976b]*/
+_curses_pair_content_impl(PyObject *module, int pair_number)
+/*[clinic end generated code: output=4a726dd0e6885f3f input=03970f840fc7b739]*/
 {
-    short f, b;
+    _CURSES_COLOR_NUM_TYPE f, b;
 
     PyCursesInitialised;
     PyCursesInitialisedColor;
 
-    if (pair_content(pair_number, &f, &b)==ERR) {
-        PyErr_SetString(PyCursesError,
-                        "Argument 1 was out of range. (1..COLOR_PAIRS-1)");
+    if (_CURSES_PAIR_CONTENT_FUNC(pair_number, &f, &b) == ERR) {
+        if (pair_number >= COLOR_PAIRS) {
+            PyErr_Format(PyExc_ValueError,
+                         "Color pair is greater than COLOR_PAIRS-1 (%d).",
+                         COLOR_PAIRS - 1);
+        }
+        else {
+            PyErr_Format(PyCursesError, "%s() returned ERR",
+                         Py_STRINGIFY(_CURSES_PAIR_CONTENT_FUNC));
+        }
         return NULL;
     }
 
@@ -3740,7 +3938,7 @@ _curses_pair_number_impl(PyObject *module, int attr)
     PyCursesInitialised;
     PyCursesInitialisedColor;
 
-    return PyLong_FromLong(attr_to_color_pair(attr));
+    return PyLong_FromLong(PAIR_NUMBER(attr));
 }
 
 /*[clinic input]
@@ -3764,7 +3962,7 @@ _curses_putp_impl(PyObject *module, const char *string)
 /*[clinic input]
 _curses.qiflush
 
-    flag: bool(accept={int}) = True
+    flag: bool = True
         If false, the effect is the same as calling noqiflush().
     /
 
@@ -3776,7 +3974,7 @@ will be flushed when the INTR, QUIT and SUSP characters are read.
 
 static PyObject *
 _curses_qiflush_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=9167e862f760ea30 input=e9e4a389946a0dbc]*/
+/*[clinic end generated code: output=9167e862f760ea30 input=6ec8b3e2b717ec40]*/
 {
     PyCursesInitialised;
 
@@ -3789,55 +3987,57 @@ _curses_qiflush_impl(PyObject *module, int flag)
     Py_RETURN_NONE;
 }
 
-/* Internal helper used for updating curses.LINES, curses.COLS, _curses.LINES
- * and _curses.COLS */
 #if defined(HAVE_CURSES_RESIZETERM) || defined(HAVE_CURSES_RESIZE_TERM)
+/* Internal helper used for updating curses.LINES, curses.COLS, _curses.LINES
+ * and _curses.COLS. Returns 1 on success and 0 on failure. */
 static int
-update_lines_cols(void)
+update_lines_cols(PyObject *private_module)
 {
-    PyObject *o;
-    PyObject *m = PyImport_ImportModuleNoBlock("curses");
-    _Py_IDENTIFIER(LINES);
-    _Py_IDENTIFIER(COLS);
+    PyObject *exposed_module = NULL, *o = NULL;
 
-    if (!m)
-        return 0;
+    exposed_module = PyImport_ImportModule("curses");
+    if (exposed_module == NULL) {
+        goto error;
+    }
+    PyObject *exposed_module_dict = PyModule_GetDict(exposed_module); // borrowed
+    if (exposed_module_dict == NULL) {
+        goto error;
+    }
+    PyObject *private_module_dict = PyModule_GetDict(private_module); // borrowed
+    if (private_module_dict == NULL) {
+        goto error;
+    }
 
     o = PyLong_FromLong(LINES);
-    if (!o) {
-        Py_DECREF(m);
-        return 0;
+    if (o == NULL) {
+        goto error;
     }
-    if (_PyObject_SetAttrId(m, &PyId_LINES, o)) {
-        Py_DECREF(m);
-        Py_DECREF(o);
-        return 0;
+    if (PyDict_SetItemString(exposed_module_dict, "LINES", o) < 0) {
+        goto error;
     }
-    /* PyId_LINES.object will be initialized here. */
-    if (PyDict_SetItem(ModDict, _PyUnicode_FromId(&PyId_LINES), o)) {
-        Py_DECREF(m);
-        Py_DECREF(o);
-        return 0;
+    if (PyDict_SetItemString(private_module_dict, "LINES", o) < 0) {
+        goto error;
     }
     Py_DECREF(o);
+
     o = PyLong_FromLong(COLS);
-    if (!o) {
-        Py_DECREF(m);
-        return 0;
+    if (o == NULL) {
+        goto error;
     }
-    if (_PyObject_SetAttrId(m, &PyId_COLS, o)) {
-        Py_DECREF(m);
-        Py_DECREF(o);
-        return 0;
+    if (PyDict_SetItemString(exposed_module_dict, "COLS", o) < 0) {
+        goto error;
     }
-    if (PyDict_SetItem(ModDict, _PyUnicode_FromId(&PyId_COLS), o)) {
-        Py_DECREF(m);
-        Py_DECREF(o);
-        return 0;
+    if (PyDict_SetItemString(private_module_dict, "COLS", o) < 0) {
+        goto error;
     }
     Py_DECREF(o);
-    Py_DECREF(m);
+    Py_DECREF(exposed_module);
     return 1;
+
+error:
+    Py_XDECREF(o);
+    Py_DECREF(exposed_module);
+    return 0;
 }
 
 /*[clinic input]
@@ -3849,7 +4049,7 @@ static PyObject *
 _curses_update_lines_cols_impl(PyObject *module)
 /*[clinic end generated code: output=423f2b1e63ed0f75 input=5f065ab7a28a5d90]*/
 {
-    if (!update_lines_cols()) {
+    if (!update_lines_cols(module)) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -3860,7 +4060,7 @@ _curses_update_lines_cols_impl(PyObject *module)
 /*[clinic input]
 _curses.raw
 
-    flag: bool(accept={int}) = True
+    flag: bool = True
         If false, the effect is the same as calling noraw().
     /
 
@@ -3873,7 +4073,7 @@ curses input functions one by one.
 
 static PyObject *
 _curses_raw_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=a750e4b342be015b input=e36d8db27832b848]*/
+/*[clinic end generated code: output=a750e4b342be015b input=4b447701389fb4df]*/
 NoArgOrFlagNoReturnFunctionBody(raw, flag)
 
 /*[clinic input]
@@ -3936,7 +4136,7 @@ _curses_resizeterm_impl(PyObject *module, int nlines, int ncols)
     result = PyCursesCheckERR(resizeterm(nlines, ncols), "resizeterm");
     if (!result)
         return NULL;
-    if (!update_lines_cols()) {
+    if (!update_lines_cols(module)) {
         Py_DECREF(result);
         return NULL;
     }
@@ -3975,7 +4175,7 @@ _curses_resize_term_impl(PyObject *module, int nlines, int ncols)
     result = PyCursesCheckERR(resize_term(nlines, ncols), "resize_term");
     if (!result)
         return NULL;
-    if (!update_lines_cols()) {
+    if (!update_lines_cols(module)) {
         Py_DECREF(result);
         return NULL;
     }
@@ -4038,35 +4238,37 @@ static PyObject *
 _curses_start_color_impl(PyObject *module)
 /*[clinic end generated code: output=8b772b41d8090ede input=0ca0ecb2b77e1a12]*/
 {
-    int code;
-    PyObject *c, *cp;
-
     PyCursesInitialised;
 
-    code = start_color();
-    if (code != ERR) {
-        initialisedcolors = TRUE;
-        c = PyLong_FromLong((long) COLORS);
-        if (c == NULL)
-            return NULL;
-        if (PyDict_SetItemString(ModDict, "COLORS", c) < 0) {
-            Py_DECREF(c);
-            return NULL;
-        }
-        Py_DECREF(c);
-        cp = PyLong_FromLong((long) COLOR_PAIRS);
-        if (cp == NULL)
-            return NULL;
-        if (PyDict_SetItemString(ModDict, "COLOR_PAIRS", cp) < 0) {
-            Py_DECREF(cp);
-            return NULL;
-        }
-        Py_DECREF(cp);
-        Py_RETURN_NONE;
-    } else {
+    if (start_color() == ERR) {
         PyErr_SetString(PyCursesError, "start_color() returned ERR");
         return NULL;
     }
+
+    curses_start_color_called = TRUE;
+
+    PyObject *module_dict = PyModule_GetDict(module); // borrowed
+    if (module_dict == NULL) {
+        return NULL;
+    }
+#define DICT_ADD_INT_VALUE(NAME, VALUE)                             \
+    do {                                                            \
+        PyObject *value = PyLong_FromLong((long)(VALUE));           \
+        if (value == NULL) {                                        \
+            return NULL;                                            \
+        }                                                           \
+        int rc = PyDict_SetItemString(module_dict, (NAME), value);  \
+        Py_DECREF(value);                                           \
+        if (rc < 0) {                                               \
+            return NULL;                                            \
+        }                                                           \
+    } while (0)
+
+    DICT_ADD_INT_VALUE("COLORS", COLORS);
+    DICT_ADD_INT_VALUE("COLOR_PAIRS", COLOR_PAIRS);
+#undef DICT_ADD_INT_VALUE
+
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -4285,7 +4487,7 @@ PyCurses_ConvertToWchar_t(PyObject *obj,
         wchar_t buffer[2];
         if (PyUnicode_AsWideChar(obj, buffer, 2) != 1) {
             PyErr_Format(PyExc_TypeError,
-                         "expect str of length 1 or int, "
+                         "expect int or str of length 1, "
                          "got a str of length %zi",
                          PyUnicode_GET_LENGTH(obj));
             return 0;
@@ -4312,7 +4514,7 @@ PyCurses_ConvertToWchar_t(PyObject *obj,
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "expect str of length 1 or int, got %s",
+                     "expect int or str of length 1, got %s",
                      Py_TYPE(obj)->tp_name);
         return 0;
     }
@@ -4345,7 +4547,7 @@ _curses_unget_wch(PyObject *module, PyObject *ch)
 /*[clinic input]
 _curses.use_env
 
-    flag: bool(accept={int})
+    flag: bool
     /
 
 Use environment variables LINES and COLUMNS.
@@ -4362,7 +4564,7 @@ not set).
 
 static PyObject *
 _curses_use_env_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=b2c445e435c0b164 input=1778eb1e9151ea37]*/
+/*[clinic end generated code: output=b2c445e435c0b164 input=06ac30948f2d78e4]*/
 {
     use_env(flag);
     Py_RETURN_NONE;
@@ -4406,8 +4608,6 @@ PyDoc_STRVAR(ncurses_version__doc__,
 \n\
 Ncurses version information as a named tuple.");
 
-static PyTypeObject NcursesVersionType;
-
 static PyStructSequence_Field ncurses_version_fields[] = {
     {"major", "Major release number"},
     {"minor", "Minor release number"},
@@ -4423,33 +4623,54 @@ static PyStructSequence_Desc ncurses_version_desc = {
 };
 
 static PyObject *
-make_ncurses_version(void)
+make_ncurses_version(PyTypeObject *type)
 {
-    PyObject *ncurses_version;
-    int pos = 0;
-
-    ncurses_version = PyStructSequence_New(&NcursesVersionType);
+    PyObject *ncurses_version = PyStructSequence_New(type);
     if (ncurses_version == NULL) {
         return NULL;
     }
-
-#define SetIntItem(flag) \
-    PyStructSequence_SET_ITEM(ncurses_version, pos++, PyLong_FromLong(flag)); \
-    if (PyErr_Occurred()) { \
-        Py_CLEAR(ncurses_version); \
-        return NULL; \
+    const char *str = curses_version();
+    unsigned long major = 0, minor = 0, patch = 0;
+    if (!str || sscanf(str, "%*[^0-9]%lu.%lu.%lu", &major, &minor, &patch) < 3) {
+        // Fallback to header version, which cannot be that wrong
+        major = NCURSES_VERSION_MAJOR;
+        minor = NCURSES_VERSION_MINOR;
+        patch = NCURSES_VERSION_PATCH;
     }
+#define SET_VERSION_COMPONENT(INDEX, VALUE)                     \
+    do {                                                        \
+        PyObject *o = PyLong_FromLong(VALUE);                   \
+        if (o == NULL) {                                        \
+            Py_DECREF(ncurses_version);                         \
+            return NULL;                                        \
+        }                                                       \
+        PyStructSequence_SET_ITEM(ncurses_version, INDEX, o);   \
+    } while (0)
 
-    SetIntItem(NCURSES_VERSION_MAJOR)
-    SetIntItem(NCURSES_VERSION_MINOR)
-    SetIntItem(NCURSES_VERSION_PATCH)
-#undef SetIntItem
-
+    SET_VERSION_COMPONENT(0, major);
+    SET_VERSION_COMPONENT(1, minor);
+    SET_VERSION_COMPONENT(2, patch);
+#undef SET_VERSION_COMPONENT
     return ncurses_version;
 }
 
 #endif /* NCURSES_VERSION */
 
+/*[clinic input]
+_curses.has_extended_color_support
+
+Return True if the module supports extended colors; otherwise, return False.
+
+Extended color support allows more than 256 color-pairs for terminals
+that support more than 16 colors (e.g. xterm-256color).
+[clinic start generated code]*/
+
+static PyObject *
+_curses_has_extended_color_support_impl(PyObject *module)
+/*[clinic end generated code: output=68f1be2b57d92e22 input=4b905f046e35ee9f]*/
+{
+    return PyBool_FromLong(_NCURSES_EXTENDED_COLOR_FUNCS);
+}
 
 /* List of functions defined in the module */
 
@@ -4476,6 +4697,7 @@ static PyMethodDef PyCurses_methods[] = {
     _CURSES_GETSYX_METHODDEF
     _CURSES_GETWIN_METHODDEF
     _CURSES_HAS_COLORS_METHODDEF
+    _CURSES_HAS_EXTENDED_COLOR_SUPPORT_METHODDEF
     _CURSES_HAS_IC_METHODDEF
     _CURSES_HAS_IL_METHODDEF
     _CURSES_HAS_KEY_METHODDEF
@@ -4552,71 +4774,115 @@ static struct PyModuleDef _cursesmodule = {
     NULL
 };
 
-PyMODINIT_FUNC
-PyInit__curses(void)
+static void
+curses_destructor(PyObject *op)
 {
-    PyObject *m, *d, *v, *c_api_object;
-    static void *PyCurses_API[PyCurses_API_pointers];
+    void *ptr = PyCapsule_GetPointer(op, PyCurses_CAPSULE_NAME);
+    Py_DECREF(*(void **)ptr);
+    PyMem_Free(ptr);
+}
 
+static int
+cursesmodule_exec(PyObject *module)
+{
     /* Initialize object type */
-    if (PyType_Ready(&PyCursesWindow_Type) < 0)
-        return NULL;
+    if (PyType_Ready(&PyCursesWindow_Type) < 0) {
+        return -1;
+    }
+    if (PyModule_AddType(module, &PyCursesWindow_Type) < 0) {
+        return -1;
+    }
 
+    /* Add some symbolic constants to the module */
+    PyObject *module_dict = PyModule_GetDict(module);
+    if (module_dict == NULL) {
+        return -1;
+    }
+
+    void **PyCurses_API = PyMem_Calloc(PyCurses_API_pointers, sizeof(void *));
+    if (PyCurses_API == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
     /* Initialize the C API pointer array */
-    PyCurses_API[0] = (void *)&PyCursesWindow_Type;
+    PyCurses_API[0] = (void *)Py_NewRef(&PyCursesWindow_Type);
     PyCurses_API[1] = (void *)func_PyCursesSetupTermCalled;
     PyCurses_API[2] = (void *)func_PyCursesInitialised;
     PyCurses_API[3] = (void *)func_PyCursesInitialisedColor;
 
-    /* Create the module and add the functions */
-    m = PyModule_Create(&_cursesmodule);
-    if (m == NULL)
-        return NULL;
-
-    /* Add some symbolic constants to the module */
-    d = PyModule_GetDict(m);
-    if (d == NULL)
-        return NULL;
-    ModDict = d; /* For PyCurses_InitScr to use later */
-
     /* Add a capsule for the C API */
-    c_api_object = PyCapsule_New(PyCurses_API, PyCurses_CAPSULE_NAME, NULL);
-    PyDict_SetItemString(d, "_C_API", c_api_object);
+    PyObject *c_api_object = PyCapsule_New(PyCurses_API, PyCurses_CAPSULE_NAME,
+                                           curses_destructor);
+    if (c_api_object == NULL) {
+        Py_DECREF(PyCurses_API[0]);
+        PyMem_Free(PyCurses_API);
+        return -1;
+    }
+    int rc = PyDict_SetItemString(module_dict, "_C_API", c_api_object);
     Py_DECREF(c_api_object);
+    if (rc < 0) {
+        return -1;
+    }
 
     /* For exception curses.error */
     PyCursesError = PyErr_NewException("_curses.error", NULL, NULL);
-    PyDict_SetItemString(d, "error", PyCursesError);
+    if (PyCursesError == NULL) {
+        return -1;
+    }
+    rc = PyDict_SetItemString(module_dict, "error", PyCursesError);
+    Py_DECREF(PyCursesError);
+    if (rc < 0) {
+        return -1;
+    }
 
     /* Make the version available */
-    v = PyBytes_FromString(PyCursesVersion);
-    PyDict_SetItemString(d, "version", v);
-    PyDict_SetItemString(d, "__version__", v);
-    Py_DECREF(v);
+    PyObject *curses_version = PyBytes_FromString(PyCursesVersion);
+    if (curses_version == NULL) {
+        return -1;
+    }
+    rc = PyDict_SetItemString(module_dict, "version", curses_version);
+    if (rc < 0) {
+        Py_DECREF(curses_version);
+        return -1;
+    }
+    rc = PyDict_SetItemString(module_dict, "__version__", curses_version);
+    Py_CLEAR(curses_version);
+    if (rc < 0) {
+        return -1;
+    }
 
 #ifdef NCURSES_VERSION
     /* ncurses_version */
-    if (NcursesVersionType.tp_name == NULL) {
-        if (PyStructSequence_InitType2(&NcursesVersionType,
-                                       &ncurses_version_desc) < 0)
-            return NULL;
+    PyTypeObject *version_type;
+    version_type = _PyStructSequence_NewType(&ncurses_version_desc,
+                                             Py_TPFLAGS_DISALLOW_INSTANTIATION);
+    if (version_type == NULL) {
+        return -1;
     }
-    v = make_ncurses_version();
-    if (v == NULL) {
-        return NULL;
+    PyObject *ncurses_version = make_ncurses_version(version_type);
+    Py_DECREF(version_type);
+    if (ncurses_version == NULL) {
+        return -1;
     }
-    PyDict_SetItemString(d, "ncurses_version", v);
-    Py_DECREF(v);
-
-    /* prevent user from creating new instances */
-    NcursesVersionType.tp_init = NULL;
-    NcursesVersionType.tp_new = NULL;
-    if (PyDict_DelItemString(NcursesVersionType.tp_dict, "__new__") < 0 &&
-        PyErr_ExceptionMatches(PyExc_KeyError))
-    {
-        PyErr_Clear();
+    rc = PyDict_SetItemString(module_dict, "ncurses_version", ncurses_version);
+    Py_CLEAR(ncurses_version);
+    if (rc < 0) {
+        return -1;
     }
 #endif /* NCURSES_VERSION */
+
+#define SetDictInt(NAME, VALUE)                                     \
+    do {                                                            \
+        PyObject *value = PyLong_FromLong((long)(VALUE));           \
+        if (value == NULL) {                                        \
+            return -1;                                              \
+        }                                                           \
+        int rc = PyDict_SetItemString(module_dict, (NAME), value);  \
+        Py_DECREF(value);                                           \
+        if (rc < 0) {                                               \
+            return -1;                                              \
+        }                                                           \
+    } while (0)
 
     SetDictInt("ERR", ERR);
     SetDictInt("OK", OK);
@@ -4697,6 +4963,14 @@ PyInit__curses(void)
     SetDictInt("BUTTON4_DOUBLE_CLICKED",   BUTTON4_DOUBLE_CLICKED);
     SetDictInt("BUTTON4_TRIPLE_CLICKED",   BUTTON4_TRIPLE_CLICKED);
 
+#if NCURSES_MOUSE_VERSION > 1
+    SetDictInt("BUTTON5_PRESSED",          BUTTON5_PRESSED);
+    SetDictInt("BUTTON5_RELEASED",         BUTTON5_RELEASED);
+    SetDictInt("BUTTON5_CLICKED",          BUTTON5_CLICKED);
+    SetDictInt("BUTTON5_DOUBLE_CLICKED",   BUTTON5_DOUBLE_CLICKED);
+    SetDictInt("BUTTON5_TRIPLE_CLICKED",   BUTTON5_TRIPLE_CLICKED);
+#endif
+
     SetDictInt("BUTTON_SHIFT",             BUTTON_SHIFT);
     SetDictInt("BUTTON_CTRL",              BUTTON_CTRL);
     SetDictInt("BUTTON_ALT",               BUTTON_ALT);
@@ -4705,43 +4979,69 @@ PyInit__curses(void)
     SetDictInt("REPORT_MOUSE_POSITION",    REPORT_MOUSE_POSITION);
 #endif
     /* Now set everything up for KEY_ variables */
-    {
-        int key;
-        char *key_n;
-        char *key_n2;
-        for (key=KEY_MIN;key < KEY_MAX; key++) {
-            key_n = (char *)keyname(key);
-            if (key_n == NULL || strcmp(key_n,"UNKNOWN KEY")==0)
-                continue;
-            if (strncmp(key_n,"KEY_F(",6)==0) {
-                char *p1, *p2;
-                key_n2 = PyMem_Malloc(strlen(key_n)+1);
-                if (!key_n2) {
-                    PyErr_NoMemory();
-                    break;
-                }
-                p1 = key_n;
-                p2 = key_n2;
-                while (*p1) {
-                    if (*p1 != '(' && *p1 != ')') {
-                        *p2 = *p1;
-                        p2++;
-                    }
-                    p1++;
-                }
-                *p2 = (char)0;
-            } else
-                key_n2 = key_n;
-            SetDictInt(key_n2,key);
-            if (key_n2 != key_n)
-                PyMem_Free(key_n2);
+    for (int keycode = KEY_MIN; keycode < KEY_MAX; keycode++) {
+        const char *key_name = keyname(keycode);
+        if (key_name == NULL || strcmp(key_name, "UNKNOWN KEY") == 0) {
+            continue;
         }
-        SetDictInt("KEY_MIN", KEY_MIN);
-        SetDictInt("KEY_MAX", KEY_MAX);
+        if (strncmp(key_name, "KEY_F(", 6) == 0) {
+            char *fn_key_name = PyMem_Malloc(strlen(key_name) + 1);
+            if (!fn_key_name) {
+                PyErr_NoMemory();
+                return -1;
+            }
+            const char *p1 = key_name;
+            char *p2 = fn_key_name;
+            while (*p1) {
+                if (*p1 != '(' && *p1 != ')') {
+                    *p2 = *p1;
+                    p2++;
+                }
+                p1++;
+            }
+            *p2 = (char)0;
+            PyObject *p_keycode = PyLong_FromLong((long)keycode);
+            if (p_keycode == NULL) {
+                PyMem_Free(fn_key_name);
+                return -1;
+            }
+            int rc = PyDict_SetItemString(module_dict, fn_key_name, p_keycode);
+            Py_DECREF(p_keycode);
+            PyMem_Free(fn_key_name);
+            if (rc < 0) {
+                return -1;
+            }
+        }
+        else {
+            SetDictInt(key_name, keycode);
+        }
     }
+    SetDictInt("KEY_MIN", KEY_MIN);
+    SetDictInt("KEY_MAX", KEY_MAX);
+#undef SetDictInt
+    return 0;
+}
 
-    if (PyModule_AddType(m, &PyCursesWindow_Type) < 0) {
-        return NULL;
+PyMODINIT_FUNC
+PyInit__curses(void)
+{
+    // create the module
+    PyObject *mod = PyModule_Create(&_cursesmodule);
+    if (mod == NULL) {
+        goto error;
     }
-    return m;
+#ifdef Py_GIL_DISABLED
+    if (PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED) < 0) {
+        goto error;
+    }
+#endif
+    // populate the module
+    if (cursesmodule_exec(mod) < 0) {
+        goto error;
+    }
+    return mod;
+
+error:
+    Py_XDECREF(mod);
+    return NULL;
 }

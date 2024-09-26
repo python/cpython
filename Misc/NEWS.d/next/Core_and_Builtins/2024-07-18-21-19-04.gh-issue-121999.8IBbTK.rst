@@ -1,0 +1,2 @@
+The default extraction filter for the :mod:`tarfile` module is now
+set to :func:`'data' <tarfile.data_filter>`.

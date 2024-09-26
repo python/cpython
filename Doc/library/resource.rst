@@ -1,5 +1,5 @@
-:mod:`resource` --- Resource usage information
-==============================================
+:mod:`!resource` --- Resource usage information
+===============================================
 
 .. module:: resource
    :platform: Unix
@@ -12,6 +12,8 @@
 
 This module provides basic mechanisms for measuring and controlling system
 resources utilized by a program.
+
+.. availability:: Unix, not WASI.
 
 Symbolic constants are used to specify particular system resources and to
 request usage information about either the current process or its children.
@@ -99,7 +101,7 @@ this module for those platforms.
 
    .. audit-event:: resource.prlimit pid,resource,limits resource.prlimit
 
-   .. availability:: Linux 2.6.36 or later with glibc 2.13 or later.
+   .. availability:: Linux >= 2.6.36 with glibc >= 2.13.
 
    .. versionadded:: 3.4
 
@@ -175,6 +177,8 @@ platform.
 
    The largest area of mapped memory which the process may occupy.
 
+   .. availability:: FreeBSD >= 11.
+
 
 .. data:: RLIMIT_AS
 
@@ -185,7 +189,7 @@ platform.
 
    The number of bytes that can be allocated for POSIX message queues.
 
-   .. availability:: Linux 2.6.8 or later.
+   .. availability:: Linux >= 2.6.8.
 
    .. versionadded:: 3.4
 
@@ -194,7 +198,7 @@ platform.
 
    The ceiling for the process's nice level (calculated as 20 - rlim_cur).
 
-   .. availability:: Linux 2.6.12 or later.
+   .. availability:: Linux >= 2.6.12.
 
    .. versionadded:: 3.4
 
@@ -203,7 +207,7 @@ platform.
 
    The ceiling of the real-time priority.
 
-   .. availability:: Linux 2.6.12 or later.
+   .. availability:: Linux >= 2.6.12.
 
    .. versionadded:: 3.4
 
@@ -213,7 +217,7 @@ platform.
    The time limit (in microseconds) on CPU time that a process can spend
    under real-time scheduling without making a blocking syscall.
 
-   .. availability:: Linux 2.6.25 or later.
+   .. availability:: Linux >= 2.6.25.
 
    .. versionadded:: 3.4
 
@@ -222,7 +226,7 @@ platform.
 
    The number of signals which the process may queue.
 
-   .. availability:: Linux 2.6.8 or later.
+   .. availability:: Linux >= 2.6.8.
 
    .. versionadded:: 3.4
 
@@ -232,7 +236,7 @@ platform.
    This limits the amount of network memory, and hence the amount of mbufs,
    that this user may hold at any time.
 
-   .. availability:: FreeBSD 9 or later.
+   .. availability:: FreeBSD.
 
    .. versionadded:: 3.4
 
@@ -241,9 +245,11 @@ platform.
    The maximum size (in bytes) of the swap space that may be reserved or
    used by all of this user id's processes.
    This limit is enforced only if bit 1 of the vm.overcommit sysctl is set.
-   Please see :manpage:`tuning(7)` for a complete description of this sysctl.
+   Please see
+   `tuning(7) <https://man.freebsd.org/cgi/man.cgi?query=tuning&sektion=7>`__
+   for a complete description of this sysctl.
 
-   .. availability:: FreeBSD 9 or later.
+   .. availability:: FreeBSD.
 
    .. versionadded:: 3.4
 
@@ -251,9 +257,17 @@ platform.
 
    The maximum number of pseudo-terminals created by this user id.
 
-   .. availability:: FreeBSD 9 or later.
+   .. availability:: FreeBSD.
 
    .. versionadded:: 3.4
+
+.. data:: RLIMIT_KQUEUES
+
+   The maximum number of kqueues this user id is allowed to create.
+
+   .. availability:: FreeBSD >= 11.
+
+   .. versionadded:: 3.10
 
 Resource Usage
 --------------
@@ -265,7 +279,7 @@ These functions are used to retrieve resource usage information:
 
    This function returns an object that describes the resources consumed by either
    the current process or its children, as specified by the *who* parameter.  The
-   *who* parameter should be specified using one of the :const:`RUSAGE_\*`
+   *who* parameter should be specified using one of the :const:`!RUSAGE_\*`
    constants described below.
 
    A simple example::
@@ -291,7 +305,7 @@ These functions are used to retrieve resource usage information:
    elements.
 
    The fields :attr:`ru_utime` and :attr:`ru_stime` of the return value are
-   floating point values representing the amount of time spent executing in user
+   floating-point values representing the amount of time spent executing in user
    mode and the amount of time spent executing in system mode, respectively. The
    remaining values are integers. Consult the :manpage:`getrusage(2)` man page for
    detailed information about these values. A brief summary is presented here:
@@ -341,7 +355,7 @@ These functions are used to retrieve resource usage information:
    Returns the number of bytes in a system page. (This need not be the same as the
    hardware page size.)
 
-The following :const:`RUSAGE_\*` symbols are passed to the :func:`getrusage`
+The following :const:`!RUSAGE_\*` symbols are passed to the :func:`getrusage`
 function to specify which processes information should be provided for.
 
 
