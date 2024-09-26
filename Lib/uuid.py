@@ -682,11 +682,13 @@ def uuid1(node=None, clock_seq=None):
     # UUID epoch 1582-10-15 00:00:00 and the Unix epoch 1970-01-01 00:00:00.
     timestamp = nanoseconds // 100 + 0x01b21dd213814000
     if _last_timestamp is not None and timestamp <= _last_timestamp:
+        # if there is a previous clock sequence, then increment
+        # otherwise, the clock sequence will be regenerated
         if _last_clock_req is not None:
             clock_seq += 1
         else:
             import random
-            clock_seq = random.getrandbits(14) # instead of stable storage
+            clock_seq = random.getrandbits(14) # regen
     _last_timestamp = timestamp
     _last_clock_req = clock_seq
     if clock_seq is None:
