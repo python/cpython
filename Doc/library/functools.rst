@@ -793,7 +793,7 @@ have three read-only attributes:
    The keyword arguments that will be supplied when the :class:`partial` object is
    called.
 
-:class:`partial` objects are like :class:`function` objects in that they are
+:class:`partial` objects are like :ref:`function objects <user-defined-funcs>` in that they are
 callable, weak referenceable, and can have attributes.  There are some important
-differences.  For instance, the :attr:`~definition.__name__` and :attr:`__doc__` attributes
+differences.  For instance, the :attr:`~definition.__name__` and :attr:`~definition.__doc__` attributes
 are not created automatically.
