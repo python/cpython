@@ -750,6 +750,18 @@ class ListComprehensionTest(unittest.TestCase):
                 self.assertEqual(f.line[f.colno - indent : f.end_colno - indent],
                                  expected)
 
+    def test_freevar_through_scope_containing_comprehension(self):
+        code = """
+            x = 1
+            def f():
+                [x for x in [1]]
+                def g():
+                    return x
+                return g()
+            y = f()
+        """
+        self._check_in_scopes(code, {"x": 1, "y": 1}, scopes=["module", "function"])
+
 __test__ = {'doctests' : doctests}
 
 def load_tests(loader, tests, pattern):
