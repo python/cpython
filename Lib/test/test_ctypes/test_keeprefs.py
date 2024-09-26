@@ -1,5 +1,3 @@
-import gc
-import sys
 import unittest
 from ctypes import (Structure, POINTER, pointer,  _pointer_type_cache,
                     c_char_p, c_int)
@@ -101,37 +99,6 @@ class PointerTestCase(unittest.TestCase):
         self.assertEqual(x._objects, {'1': i})
 
 
-class DeletePointerTestCase(unittest.TestCase):
-    @unittest.skip('test disabled')
-    def test_X(self):
-        class X(Structure):
-            _fields_ = [("p", POINTER(c_char_p))]
-        x = X()
-        i = c_char_p("abc def")
-        print("2?", sys.getrefcount(i))
-        x.p = pointer(i)
-        print("3?", sys.getrefcount(i))
-        for i in range(320):
-            c_int(99)
-            x.p[0]
-        print(x.p[0])
-##        del x
-##        print "2?", sys.getrefcount(i)
-##        del i
-        gc.collect()
-        for i in range(320):
-            c_int(99)
-            x.p[0]
-        print(x.p[0])
-        print(x.p.contents)
-##        print x._objects
-
-        x.p[0] = "spam spam"
-##        print x.p[0]
-        print("+" * 42)
-        print(x._objects)
-
-
 class PointerToStructure(unittest.TestCase):
     def test(self):
         class POINT(Structure):
@@ -144,9 +111,6 @@ class PointerToStructure(unittest.TestCase):
 
         r.a = pointer(p1)
         r.b = pointer(p1)
-##        from pprint import pprint as pp
-##        pp(p1._objects)
-##        pp(r._objects)
 
         r.a[0].x = 42
         r.a[0].y = 99

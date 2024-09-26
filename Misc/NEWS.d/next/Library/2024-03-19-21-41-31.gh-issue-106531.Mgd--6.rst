@@ -1,0 +1,6 @@
+In :mod:`importlib.resources`, sync with `importlib_resources 6.3.2
+<https://importlib-resources.readthedocs.io/en/latest/history.html#v6-3-2>`_,
+including: ``MultiplexedPath`` now expects ``Traversable`` paths,
+deprecating string arguments to ``MultiplexedPath``; Enabled support for
+resources in namespace packages in zip files; Fixed ``NotADirectoryError``
+when calling files on a subdirectory of a namespace package.

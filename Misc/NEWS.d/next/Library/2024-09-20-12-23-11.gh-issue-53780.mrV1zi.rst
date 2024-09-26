@@ -1,0 +1,1 @@
+:mod:`argparse` now ignores the first ``"--"`` (double dash) between an option and command.

@@ -1,2 +1,0 @@
-Don't include artificil newlines in the ``line`` attribute of tokens in the
-APIs of the :mod:`tokenize` module. Patch by Pablo Galindo

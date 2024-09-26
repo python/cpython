@@ -1,0 +1,2 @@
+Fix truncation of strings with embedded null characters in some internal
+operations in :mod:`tkinter`.

@@ -27,6 +27,37 @@ PyAPI_FUNC(PyObject *) PyContext_CopyCurrent(void);
 PyAPI_FUNC(int) PyContext_Enter(PyObject *);
 PyAPI_FUNC(int) PyContext_Exit(PyObject *);
 
+typedef enum {
+   Py_CONTEXT_EVENT_ENTER,
+   Py_CONTEXT_EVENT_EXIT,
+} PyContextEvent;
+
+/*
+ * Callback to be invoked when a context object is entered or exited.
+ *
+ * The callback is invoked with the event and a reference to
+ * the context after its entered and before its exited.
+ *
+ * if the callback returns with an exception set, it must return -1. Otherwise
+ * it should return 0
+ */
+typedef int (*PyContext_WatchCallback)(PyContextEvent, PyContext *);
+
+/*
+ * Register a per-interpreter callback that will be invoked for context object
+ * enter/exit events.
+ *
+ * Returns a handle that may be passed to PyContext_ClearWatcher on success,
+ * or -1 and sets and error if no more handles are available.
+ */
+PyAPI_FUNC(int) PyContext_AddWatcher(PyContext_WatchCallback callback);
+
+/*
+ * Clear the watcher associated with the watcher_id handle.
+ *
+ * Returns 0 on success or -1 if no watcher exists for the provided id.
+ */
+PyAPI_FUNC(int) PyContext_ClearWatcher(int watcher_id);
 
 /* Create a new context variable.
 
@@ -65,10 +96,6 @@ PyAPI_FUNC(PyObject *) PyContextVar_Set(PyObject *var, PyObject *value);
    Returns 0 on success, -1 on error.
 */
 PyAPI_FUNC(int) PyContextVar_Reset(PyObject *var, PyObject *token);
-
-
-/* This method is exposed only for CPython tests. Don not use it. */
-PyAPI_FUNC(PyObject *) _PyContext_NewHamtForTests(void);
 
 
 #ifdef __cplusplus

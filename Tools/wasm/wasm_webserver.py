@@ -21,21 +21,21 @@ class MyHTTPRequestHandler(server.SimpleHTTPRequestHandler):
         }
     )
 
-    def end_headers(self):
+    def end_headers(self) -> None:
         self.send_my_headers()
         super().end_headers()
 
-    def send_my_headers(self):
+    def send_my_headers(self) -> None:
         self.send_header("Cross-Origin-Opener-Policy", "same-origin")
         self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
 
 
-def main():
+def main() -> None:
     args = parser.parse_args()
     if not args.bind:
         args.bind = None
 
-    server.test(
+    server.test(  # type: ignore[attr-defined]
         HandlerClass=MyHTTPRequestHandler,
         protocol="HTTP/1.1",
         port=args.port,

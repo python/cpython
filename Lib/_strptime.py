@@ -10,6 +10,7 @@ FUNCTIONS:
     strptime -- Calculates the time struct represented by the passed-in string
 
 """
+import os
 import time
 import locale
 import calendar
@@ -250,12 +251,30 @@ class TimeRE(dict):
         format = regex_chars.sub(r"\\\1", format)
         whitespace_replacement = re_compile(r'\s+')
         format = whitespace_replacement.sub(r'\\s+', format)
+        year_in_format = False
+        day_of_month_in_format = False
         while '%' in format:
             directive_index = format.index('%')+1
+            format_char = format[directive_index]
             processed_format = "%s%s%s" % (processed_format,
                                            format[:directive_index-1],
-                                           self[format[directive_index]])
+                                           self[format_char])
             format = format[directive_index+1:]
+            match format_char:
+                case 'Y' | 'y' | 'G':
+                    year_in_format = True
+                case 'd':
+                    day_of_month_in_format = True
+        if day_of_month_in_format and not year_in_format:
+            import warnings
+            warnings.warn("""\
+Parsing dates involving a day of month without a year specified is ambiguous
+and fails to parse leap day. The default behavior will change in Python 3.15
+to either always raise an exception or to use a different default year (TBD).
+To avoid trouble, add a specific year to the input & format.
+See https://github.com/python/cpython/issues/70647.""",
+                          DeprecationWarning,
+                          skip_file_prefixes=(os.path.dirname(__file__),))
         return "%s%s" % (processed_format, format)
 
     def compile(self, format):
@@ -342,8 +361,6 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     tz = -1
     gmtoff = None
     gmtoff_fraction = 0
-    # Default to -1 to signify that values not known; not critical to have,
-    # though
     iso_week = week_of_year = None
     week_of_year_start = None
     # weekday and julian defaulted to None so as to signal need to calculate
@@ -470,17 +487,17 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
 
     # Deal with the cases where ambiguities arise
     # don't assume default values for ISO week/year
-    if year is None and iso_year is not None:
-        if iso_week is None or weekday is None:
-            raise ValueError("ISO year directive '%G' must be used with "
-                             "the ISO week directive '%V' and a weekday "
-                             "directive ('%A', '%a', '%w', or '%u').")
+    if iso_year is not None:
         if julian is not None:
             raise ValueError("Day of the year directive '%j' is not "
                              "compatible with ISO year directive '%G'. "
                              "Use '%Y' instead.")
-    elif week_of_year is None and iso_week is not None:
-        if weekday is None:
+        elif iso_week is None or weekday is None:
+            raise ValueError("ISO year directive '%G' must be used with "
+                             "the ISO week directive '%V' and a weekday "
+                             "directive ('%A', '%a', '%w', or '%u').")
+    elif iso_week is not None:
+        if year is None or weekday is None:
             raise ValueError("ISO week directive '%V' must be used with "
                              "the ISO year directive '%G' and a weekday "
                              "directive ('%A', '%a', '%w', or '%u').")
@@ -490,11 +507,12 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                              "instead.")
 
     leap_year_fix = False
-    if year is None and month == 2 and day == 29:
-        year = 1904  # 1904 is first leap year of 20th century
-        leap_year_fix = True
-    elif year is None:
-        year = 1900
+    if year is None:
+        if month == 2 and day == 29:
+            year = 1904  # 1904 is first leap year of 20th century
+            leap_year_fix = True
+        else:
+            year = 1900
 
     # If we know the week of the year and what day of that week, we can figure
     # out the Julian day of the year.
@@ -549,18 +567,40 @@ def _strptime_time(data_string, format="%a %b %d %H:%M:%S %Y"):
     tt = _strptime(data_string, format)[0]
     return time.struct_time(tt[:time._STRUCT_TM_ITEMS])
 
-def _strptime_datetime(cls, data_string, format="%a %b %d %H:%M:%S %Y"):
-    """Return a class cls instance based on the input string and the
+def _strptime_datetime_date(cls, data_string, format="%a %b %d %Y"):
+    """Return a date instance based on the input string and the
+    format string."""
+    tt, _, _ = _strptime(data_string, format)
+    args = tt[:3]
+    return cls(*args)
+
+def _parse_tz(tzname, gmtoff, gmtoff_fraction):
+    tzdelta = datetime_timedelta(seconds=gmtoff, microseconds=gmtoff_fraction)
+    if tzname:
+        return datetime_timezone(tzdelta, tzname)
+    else:
+        return datetime_timezone(tzdelta)
+
+def _strptime_datetime_time(cls, data_string, format="%H:%M:%S"):
+    """Return a time instance based on the input string and the
+    format string."""
+    tt, fraction, gmtoff_fraction = _strptime(data_string, format)
+    tzname, gmtoff = tt[-2:]
+    args = tt[3:6] + (fraction,)
+    if gmtoff is None:
+        return cls(*args)
+    else:
+        tz = _parse_tz(tzname, gmtoff, gmtoff_fraction)
+        return cls(*args, tz)
+
+def _strptime_datetime_datetime(cls, data_string, format="%a %b %d %H:%M:%S %Y"):
+    """Return a datetime instance based on the input string and the
     format string."""
     tt, fraction, gmtoff_fraction = _strptime(data_string, format)
     tzname, gmtoff = tt[-2:]
     args = tt[:6] + (fraction,)
-    if gmtoff is not None:
-        tzdelta = datetime_timedelta(seconds=gmtoff, microseconds=gmtoff_fraction)
-        if tzname:
-            tz = datetime_timezone(tzdelta, tzname)
-        else:
-            tz = datetime_timezone(tzdelta)
-        args += (tz,)
-
-    return cls(*args)
+    if gmtoff is None:
+        return cls(*args)
+    else:
+        tz = _parse_tz(tzname, gmtoff, gmtoff_fraction)
+        return cls(*args, tz)

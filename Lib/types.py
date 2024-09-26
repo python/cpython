@@ -1,6 +1,7 @@
 """
 Define names for built-in types that aren't directly accessible as a builtin.
 """
+
 import sys
 
 # Iterators in Python aren't a matter of type but of protocol.  A large
@@ -165,14 +166,11 @@ def get_original_bases(cls, /):
         assert get_original_bases(int) == (object,)
     """
     try:
-        return cls.__orig_bases__
+        return cls.__dict__.get("__orig_bases__", cls.__bases__)
     except AttributeError:
-        try:
-            return cls.__bases__
-        except AttributeError:
-            raise TypeError(
-                f'Expected an instance of type, not {type(cls).__name__!r}'
-            ) from None
+        raise TypeError(
+            f"Expected an instance of type, not {type(cls).__name__!r}"
+        ) from None
 
 
 class DynamicClassAttribute:
@@ -333,4 +331,11 @@ EllipsisType = type(Ellipsis)
 NoneType = type(None)
 NotImplementedType = type(NotImplemented)
 
+def __getattr__(name):
+    if name == 'CapsuleType':
+        import _socket
+        return type(_socket.CAPI)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 __all__ = [n for n in globals() if n[:1] != '_']
+__all__ += ['CapsuleType']
