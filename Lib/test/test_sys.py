@@ -1019,7 +1019,6 @@ class SysModuleTest(unittest.TestCase):
         self.assertTrue(hasattr(sys.implementation, 'version'))
         self.assertTrue(hasattr(sys.implementation, 'hexversion'))
         self.assertTrue(hasattr(sys.implementation, 'cache_tag'))
-        self.assertTrue(hasattr(sys.implementation, '_architecture'))
 
         version = sys.implementation.version
         self.assertEqual(version[:2], (version.major, version.minor))
@@ -1033,7 +1032,9 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(sys.implementation.name,
                          sys.implementation.name.lower())
 
-        self.assertEqual(sys.implementation._architecture, sys.platform)
+        if hasattr(os, 'uname'):
+            self.assertTrue(hasattr(sys.implementation, '_architecture'))
+            self.assertEqual(sys.implementation._architecture, os.uname)
 
     @test.support.cpython_only
     def test_debugmallocstats(self):
