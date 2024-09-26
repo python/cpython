@@ -43,6 +43,10 @@ Data members:
 #  include <unistd.h>             // getpid()
 #endif
 
+#ifdef HAVE_SYS_UTSNAME_H
+#  include <sys/utsname.h>
+#endif /* HAVE_SYS_UTSNAME_H */
+
 #ifdef MS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
@@ -3322,6 +3326,9 @@ static PyObject *
 make_impl_info(PyObject *version_info)
 {
     int res;
+#ifndef MS_WINDOWS
+    struct utsname u;
+#endif /* !MS_WINDOWS */
     PyObject *impl_info, *value, *ns;
 
     impl_info = PyDict_New();
@@ -3358,13 +3365,18 @@ make_impl_info(PyObject *version_info)
     if (res < 0)
         goto error;
 
-    value = PyUnicode_FromString(Py_GetPlatform());
+#ifndef MS_WINDOWS
+    res = uname(&u);
+    if (res < 0)
+        goto error;
+    value = PyUnicode_FromString(u.machine);
     if (value == NULL)
         goto error;
     res = PyDict_SetItemString(impl_info, "_architecture", value);
     Py_DECREF(value);
     if (res < 0)
         goto error;
+#endif /* !MS_WINDOWS */
 
 #ifdef MULTIARCH
     value = PyUnicode_FromString(MULTIARCH);
