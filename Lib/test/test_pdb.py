@@ -901,6 +901,27 @@ def test_pdb_where_command():
     (Pdb) continue
     """
 
+def test_pdb_restart_command():
+    """Test restart command
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False, mode='inline').set_trace()
+    ...     x = 1
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'restart',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_restart_command[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False, mode='inline').set_trace()
+    (Pdb) restart
+    *** run/restart command is disabled when pdb is running in inline mode.
+    Use the command line interface to enable restarting your program
+    e.g. "python -m pdb myscript.py"
+    (Pdb) continue
+    """
+
 def test_pdb_commands_with_set_trace():
     """Test that commands can be passed to Pdb.set_trace()
 
