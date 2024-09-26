@@ -323,7 +323,7 @@ The special characters are:
    use ``\(`` or ``\)``, or enclose them inside a character class: ``[(]``, ``[)]``.
 
 
-.. _re_extension_notation
+.. _re_extension_notation:
 
 Extension notation
 ^^^^^^^^^^^^^^^^^^
