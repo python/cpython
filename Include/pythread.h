@@ -35,7 +35,7 @@ PyAPI_FUNC(unsigned long) PyThread_start_new_thread(void (*)(void *), void *);
  * In either case there is a risk of invalid references remaining to data on the
  * thread stack.
  */
-Py_DEPRECATED(3.12) PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void);
+Py_DEPRECATED(3.14) PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void);
 
 PyAPI_FUNC(unsigned long) PyThread_get_thread_ident(void);
 
