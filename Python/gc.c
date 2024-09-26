@@ -182,6 +182,7 @@ _PyGC_Init(PyInterpreterState *interp)
         return _PyStatus_NO_MEMORY();
     }
     gcstate->heap_size = 0;
+    gcstate->prior_heap_size = 0;
 
     return _PyStatus_OK();
 }
@@ -1278,19 +1279,16 @@ gc_list_set_space(PyGC_Head *list, int space)
  * the incremental collector must progress through the old
  * space faster than objects are added to the old space.
  *
- * Each young or incremental collection adds a number of
- * objects, S (for survivors) to the old space, and
- * incremental collectors scan I objects from the old space.
- * I > S must be true. We also want I > S * N to be where
- * N > 1. Higher values of N mean that the old space is
- * scanned more rapidly.
- * The default incremental threshold of 10 translates to
- * N == 1.4 (1 + 4/threshold)
+ * To do this we maintain a prior heap size, so the
+ * change in heap size can easily be computed.
+ *
+ * Each increment scans twice the delta (if increasing)
+ * plus half the size of the young generation.
  */
 
-/* Divide by 10, so that the default incremental threshold of 10
- * scans objects at 1% of the heap size */
-#define SCAN_RATE_DIVISOR 10
+/* Multiply by 5, so that the default incremental threshold of 10
+ * scans objects at half the rate as the young generation */
+#define SCAN_RATE_MULTIPLIER 20
 
 static void
 add_stats(GCState *gcstate, int gen, struct gc_collection_stats *stats)
@@ -1344,7 +1342,6 @@ gc_collect_young(PyThreadState *tstate,
     if (scale_factor < 1) {
         scale_factor = 1;
     }
-    gcstate->work_to_do += gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
     add_stats(gcstate, 0, stats);
 }
 
@@ -1446,9 +1443,6 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     if (scale_factor < 1) {
         scale_factor = 1;
     }
-    gc_list_merge(&gcstate->young.head, &increment);
-    gcstate->young.count = 0;
-    gc_list_validate_space(&increment, gcstate->visited_space);
     Py_ssize_t increment_size = 0;
     while (increment_size < gcstate->work_to_do) {
         if (gc_list_is_empty(not_visited)) {
@@ -1467,7 +1461,12 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     gc_list_validate_space(&survivors, gcstate->visited_space);
     gc_list_merge(&survivors, visited);
     assert(gc_list_is_empty(&increment));
-    gcstate->work_to_do += gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
+    Py_ssize_t delta = gcstate->heap_size - gcstate->prior_heap_size;
+    delta += gcstate->young.threshold * SCAN_RATE_MULTIPLIER / scale_factor;
+    if (delta > 0) {
+        gcstate->work_to_do += delta;
+    }
+    gcstate->prior_heap_size = gcstate->heap_size;
     gcstate->work_to_do -= increment_size;
 
     validate_old(gcstate);
@@ -1856,6 +1855,7 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
             gc_collect_young(tstate, &stats);
             break;
         case 1:
+            gc_collect_young(tstate, &stats);
             gc_collect_increment(tstate, &stats);
             break;
         case 2:

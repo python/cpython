@@ -2048,6 +2048,11 @@ identify_type_slot_wrappers(PyObject *self, PyObject *Py_UNUSED(ignored))
     return _PyType_GetSlotWrapperNames();
 }
 
+static PyObject *
+get_heap_size(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyLong_FromSsize_t(PyInterpreterState_Get()->gc.heap_size);
+}
 
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
@@ -2145,6 +2150,7 @@ static PyMethodDef module_functions[] = {
     GH_119213_GETARGS_METHODDEF
     {"get_static_builtin_types", get_static_builtin_types, METH_NOARGS},
     {"identify_type_slot_wrappers", identify_type_slot_wrappers, METH_NOARGS},
+    {"get_heap_size", get_heap_size,  METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 

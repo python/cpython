@@ -22,6 +22,7 @@ try:
     import _testcapi
     from _testcapi import with_tp_del
     from _testcapi import ContainerNoGC
+    import _testinternalcapi
 except ImportError:
     _testcapi = None
     def with_tp_del(cls):
@@ -1101,32 +1102,19 @@ class IncrementalGCTests(unittest.TestCase):
             return head
 
         head = make_ll(1000)
-        count = 1000
-
-        # There will be some objects we aren't counting,
-        # e.g. the gc stats dicts. This test checks
-        # that the counts don't grow, so we try to
-        # correct for the uncounted objects
-        # This is just an estimate.
-        CORRECTION = 20
 
         enabled = gc.isenabled()
         gc.enable()
         olds = []
+        gc.collect()
+        baseline_live = _testinternalcapi.get_heap_size()
         for i in range(20_000):
             newhead = make_ll(20)
-            count += 20
             newhead.surprise = head
             olds.append(newhead)
             if len(olds) == 20:
-                stats = gc.get_stats()
-                young = stats[0]
-                incremental = stats[1]
-                old = stats[2]
-                collected = young['collected'] + incremental['collected'] + old['collected']
-                count += CORRECTION
-                live = count - collected
-                self.assertLess(live, 25000)
+                live = _testinternalcapi.get_heap_size()
+                self.assertLess(live-baseline_live, 25000)
                 del olds[:]
         if not enabled:
             gc.disable()

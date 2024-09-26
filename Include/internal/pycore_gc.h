@@ -351,6 +351,7 @@ struct _gc_runtime_state {
         <0: suppressed; don't immortalize objects */
     int immortalize;
 #endif
+    Py_ssize_t prior_heap_size;
 };
 
 #ifdef Py_GIL_DISABLED
