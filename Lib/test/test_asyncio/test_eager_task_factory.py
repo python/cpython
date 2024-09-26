@@ -223,13 +223,13 @@ class EagerTaskFactoryLoopTests:
         async def run():
             winner, index, excs = await asyncio.staggered.staggered_race(
                 [
-                    lambda: asyncio.sleep(2),
-                    lambda: asyncio.sleep(1),
+                    lambda: asyncio.sleep(2, result="sleep2"),
+                    lambda: asyncio.sleep(1, result="sleep1"),
                     lambda: fail()
                 ],
                 delay=0.25
             )
-            self.assertIsNone(winner)
+            self.assertEqual(winner, 'sleep1')
             self.assertEqual(index, 1)
             self.assertIsNone(excs[index])
             self.assertIsInstance(excs[0], asyncio.CancelledError)
@@ -246,12 +246,12 @@ class EagerTaskFactoryLoopTests:
             winner, index, excs = await asyncio.staggered.staggered_race(
                 [
                     lambda: fail(),
-                    lambda: asyncio.sleep(1),
-                    lambda: asyncio.sleep(0),
+                    lambda: asyncio.sleep(1, result="sleep1"),
+                    lambda: asyncio.sleep(0, result="sleep0"),
                 ],
                 delay=None
             )
-            self.assertIsNone(winner)
+            self.assertEqual(winner, 'sleep1')
             self.assertEqual(index, 1)
             self.assertIsNone(excs[index])
             self.assertIsInstance(excs[0], ValueError)
