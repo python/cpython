@@ -211,7 +211,7 @@ class TypeAliasConstructorTest(unittest.TestCase):
         self.assertEqual(TA.__value__, list[T])
         self.assertEqual(TA.__type_params__, (T,))
         self.assertEqual(TA.__module__, __name__)
-        self.assertIs(TA[int].__class__, types.GenericAlias)
+        self.assertIs(type(TA[int]), types.GenericAlias)
 
     def test_not_generic(self):
         TA = TypeAliasType("TA", list[int], type_params=())
