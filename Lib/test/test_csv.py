@@ -454,6 +454,10 @@ class Test_Csv(unittest.TestCase):
                           quoting=csv.QUOTE_STRINGS)
         self._read_test(['1,@,3,@,5'], [['1', ',3,', '5']], quotechar='@')
         self._read_test(['1,\0,3,\0,5'], [['1', ',3,', '5']], quotechar='\0')
+        self._read_test(['1\\.5,\\.5,.5'], [[1.5, 0.5, 0.5]],
+                        quoting=csv.QUOTE_NONNUMERIC, escapechar='\\')
+        self._read_test(['1\\.5,\\.5,"\\.5"'], [[1.5, 0.5, ".5"]],
+                        quoting=csv.QUOTE_STRINGS, escapechar='\\')
 
     def test_read_skipinitialspace(self):
         self._read_test(['no space, space,  spaces,\ttab'],

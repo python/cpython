@@ -901,6 +901,38 @@ def test_pdb_where_command():
     (Pdb) continue
     """
 
+def test_pdb_restart_command():
+    """Test restart command
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False, mode='inline').set_trace()
+    ...     x = 1
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'restart',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_restart_command[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False, mode='inline').set_trace()
+    (Pdb) restart
+    *** run/restart command is disabled when pdb is running in inline mode.
+    Use the command line interface to enable restarting your program
+    e.g. "python -m pdb myscript.py"
+    (Pdb) continue
+    """
+
+def test_pdb_commands_with_set_trace():
+    """Test that commands can be passed to Pdb.set_trace()
+
+    >>> def test_function():
+    ...     x = 1
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace(commands=['p x', 'c'])
+
+    >>> test_function()
+    1
+    """
+
 
 # skip this test if sys.flags.no_site = True;
 # exit() isn't defined unless there's a site module.
@@ -1263,7 +1295,7 @@ def test_post_mortem_context_of_the_cause():
 def test_post_mortem_from_none():
     """Test post mortem traceback debugging of chained exception
 
-    In particular that cause from None (which sets __supress_context__ to True)
+    In particular that cause from None (which sets __suppress_context__ to True)
     does not show context.
 
 
@@ -3517,10 +3549,12 @@ def bœr():
             print("hello")
         """
 
+        # the time.sleep is needed for low-resolution filesystems like HFS+
         commands = """
             filename = $_frame.f_code.co_filename
             f = open(filename, "w")
             f.write("print('goodbye')")
+            import time; time.sleep(1)
             f.close()
             ll
         """
@@ -3530,10 +3564,12 @@ def bœr():
         self.assertIn("was edited", stdout)
 
     def test_file_modified_after_execution_with_multiple_instances(self):
+        # the time.sleep is needed for low-resolution filesystems like HFS+
         script = """
             import pdb; pdb.Pdb().set_trace()
             with open(__file__, "w") as f:
                 f.write("print('goodbye')\\n" * 5)
+                import time; time.sleep(1)
             import pdb; pdb.Pdb().set_trace()
         """
 

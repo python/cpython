@@ -58,7 +58,7 @@ from .types import Callback, Completer, KeySpec, CommandName
 TYPE_CHECKING = False
 
 if TYPE_CHECKING:
-    from typing import Any
+    from typing import Any, Mapping
 
 
 MoreLinesCallable = Callable[[str], bool]
@@ -249,7 +249,7 @@ def _should_auto_indent(buffer: list[str], pos: int) -> bool:
     while pos > 0:
         pos -= 1
         if last_char is None:
-            if buffer[pos] not in " \t\n":  # ignore whitespaces
+            if buffer[pos] not in " \t\n#":  # ignore whitespaces and comments
                 last_char = buffer[pos]
         else:
             # even if we found a non-whitespace character before
@@ -342,10 +342,10 @@ class backspace_dedent(commands.Command):
 class _ReadlineWrapper:
     f_in: int = -1
     f_out: int = -1
-    reader: ReadlineAlikeReader | None = None
+    reader: ReadlineAlikeReader | None = field(default=None, repr=False)
     saved_history_length: int = -1
     startup_hook: Callback | None = None
-    config: ReadlineConfig = field(default_factory=ReadlineConfig)
+    config: ReadlineConfig = field(default_factory=ReadlineConfig, repr=False)
 
     def __post_init__(self) -> None:
         if self.f_in == -1:
@@ -365,8 +365,12 @@ class _ReadlineWrapper:
         except _error:
             assert raw_input is not None
             return raw_input(prompt)
-        reader.ps1 = str(prompt)
-        return reader.readline(startup_hook=self.startup_hook)
+        prompt_str = str(prompt)
+        reader.ps1 = prompt_str
+        sys.audit("builtins.input", prompt_str)
+        result = reader.readline(startup_hook=self.startup_hook)
+        sys.audit("builtins.input/result", result)
+        return result
 
     def multiline_input(self, more_lines: MoreLinesCallable, ps1: str, ps2: str) -> str:
         """Read an input on possibly multiple lines, asking for more
@@ -423,18 +427,22 @@ class _ReadlineWrapper:
         history = self.get_reader().history
 
         with open(os.path.expanduser(filename), 'rb') as f:
-            lines = [line.decode('utf-8', errors='replace') for line in f.read().split(b'\n')]
+            is_editline = f.readline().startswith(b"_HiStOrY_V2_")
+            if is_editline:
+                encoding = "unicode-escape"
+            else:
+                f.seek(0)
+                encoding = "utf-8"
+
+            lines = [line.decode(encoding, errors='replace') for line in f.read().split(b'\n')]
             buffer = []
             for line in lines:
-                # Ignore readline history file header
-                if line.startswith("_HiStOrY_V2_"):
-                    continue
                 if line.endswith("\r"):
                     buffer.append(line+'\n')
                 else:
                     line = self._histline(line)
                     if buffer:
-                        line = "".join(buffer).replace("\r", "") + line
+                        line = self._histline("".join(buffer).replace("\r", "") + line)
                         del buffer[:]
                     if line:
                         history.append(line)
@@ -479,15 +487,14 @@ class _ReadlineWrapper:
     def set_startup_hook(self, function: Callback | None = None) -> None:
         self.startup_hook = function
 
-    def get_line_buffer(self) -> bytes:
-        buf_str = self.get_reader().get_unicode()
-        return buf_str.encode(ENCODING)
+    def get_line_buffer(self) -> str:
+        return self.get_reader().get_unicode()
 
     def _get_idxs(self) -> tuple[int, int]:
         start = cursor = self.get_reader().pos
         buf = self.get_line_buffer()
         for i in range(cursor - 1, -1, -1):
-            if str(buf[i]) in self.get_completer_delims():
+            if buf[i] in self.get_completer_delims():
                 break
             start = i
         return start, cursor
@@ -559,7 +566,7 @@ for _name, _ret in [
 # ____________________________________________________________
 
 
-def _setup(namespace: dict[str, Any]) -> None:
+def _setup(namespace: Mapping[str, Any]) -> None:
     global raw_input
     if raw_input is not None:
         return  # don't run _setup twice
@@ -575,7 +582,9 @@ def _setup(namespace: dict[str, Any]) -> None:
     _wrapper.f_in = f_in
     _wrapper.f_out = f_out
 
-    # set up namespace in rlcompleter
+    # set up namespace in rlcompleter, which requires it to be a bona fide dict
+    if not isinstance(namespace, dict):
+        namespace = dict(namespace)
     _wrapper.config.readline_completer = RLCompleter(namespace).complete
 
     # this is not really what readline.c does.  Better than nothing I guess

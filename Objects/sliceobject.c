@@ -15,6 +15,7 @@ this type and there is exactly one in existence.
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
@@ -108,20 +109,6 @@ PyObject _Py_EllipsisObject = _PyObject_HEAD_INIT(&PyEllipsis_Type);
 
 /* Slice object implementation */
 
-void _PySlice_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization)
-{
-    if (!is_finalization) {
-        return;
-    }
-#ifdef WITH_FREELISTS
-    PySliceObject *obj = freelists->slices.slice_cache;
-    if (obj != NULL) {
-        freelists->slices.slice_cache = NULL;
-        PyObject_GC_Del(obj);
-    }
-#endif
-}
-
 /* start, stop, and step are python objects with None indicating no
    index is present.
 */
@@ -130,17 +117,8 @@ static PySliceObject *
 _PyBuildSlice_Consume2(PyObject *start, PyObject *stop, PyObject *step)
 {
     assert(start != NULL && stop != NULL && step != NULL);
-    PySliceObject *obj;
-#ifdef WITH_FREELISTS
-    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
-    if (freelists->slices.slice_cache != NULL) {
-        obj = freelists->slices.slice_cache;
-        freelists->slices.slice_cache = NULL;
-        _Py_NewReference((PyObject *)obj);
-    }
-    else
-#endif
-    {
+    PySliceObject *obj = _Py_FREELIST_POP(PySliceObject, slices);
+    if (obj == NULL) {
         obj = PyObject_GC_New(PySliceObject, &PySlice_Type);
         if (obj == NULL) {
             goto error;
@@ -369,16 +347,7 @@ slice_dealloc(PySliceObject *r)
     Py_DECREF(r->step);
     Py_DECREF(r->start);
     Py_DECREF(r->stop);
-#ifdef WITH_FREELISTS
-    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
-    if (freelists->slices.slice_cache == NULL) {
-        freelists->slices.slice_cache = r;
-    }
-    else
-#endif
-    {
-        PyObject_GC_Del(r);
-    }
+    _Py_FREELIST_FREE(slices, r, PyObject_GC_Del);
 }
 
 static PyObject *
