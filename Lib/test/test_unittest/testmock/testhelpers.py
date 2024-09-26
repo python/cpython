@@ -1096,6 +1096,7 @@ class SpecSignatureTest(unittest.TestCase):
             a: ClassVar[int]
             b: InitVar[int]
 
+        msg = "Mock object has no attribute"
         for mock in [
             create_autospec(WithNonFields, instance=True),
             create_autospec(WithNonFields(1)),
