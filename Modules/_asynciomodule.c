@@ -46,7 +46,11 @@ typedef enum {
        so that these and bitfields from TaskObj are contiguous.
     */                                                                      \
     unsigned prefix##_log_tb: 1;                                            \
-    unsigned prefix##_blocking: 1;
+    unsigned prefix##_blocking: 1;                                          \
+    /* Used by profilers to make traversing the stack from an external      \
+       process faster. */                                                   \
+    unsigned prefix##_is_task: 1;                                           \
+    unsigned prefix##_awaited_by_is_set: 1;
 
 typedef struct {
     FutureObj_HEAD(fut)
@@ -513,6 +517,8 @@ future_init(FutureObj *fut, PyObject *loop)
     fut->fut_state = STATE_PENDING;
     fut->fut_log_tb = 0;
     fut->fut_blocking = 0;
+    fut->fut_awaited_by_is_set = 0;
+    fut->fut_is_task = 0;
 
     if (loop == Py_None) {
         asyncio_state *state = get_asyncio_state_by_def((PyObject *)fut);
@@ -568,12 +574,14 @@ future_awaited_by_add(asyncio_state *state, PyObject *fut, PyObject *thing)
        to avoid always creating a set for `fut_awaited_by`.
     */
     if (_fut->fut_awaited_by == NULL) {
+        assert(!_fut->fut_awaited_by_is_set);
         Py_INCREF(thing);
         _fut->fut_awaited_by = thing;
         return 0;
     }
 
-    if (PySet_Check(_fut->fut_awaited_by)) {
+    if (_fut->fut_awaited_by_is_set) {
+        assert(PySet_Check(_fut->fut_awaited_by));
         return PySet_Add(_fut->fut_awaited_by, thing);
     }
 
@@ -590,6 +598,7 @@ future_awaited_by_add(asyncio_state *state, PyObject *fut, PyObject *thing)
         return -1;
     }
     Py_SETREF(_fut->fut_awaited_by, set);
+    _fut->fut_awaited_by_is_set = 1;
     return 0;
 }
 
@@ -615,7 +624,8 @@ future_awaited_by_discard(asyncio_state *state, PyObject *fut, PyObject *thing)
         Py_CLEAR(_fut->fut_awaited_by);
         return 0;
     }
-    if (PySet_Check(_fut->fut_awaited_by)) {
+    if (_fut->fut_awaited_by_is_set) {
+        assert(PySet_Check(_fut->fut_awaited_by));
         int err = PySet_Discard(_fut->fut_awaited_by, thing);
         if (err < 0 && PyErr_Occurred()) {
             return -1;
@@ -633,7 +643,9 @@ future_get_awaited_by(FutureObj *fut)
     if (fut->fut_awaited_by == NULL) {
         Py_RETURN_NONE;
     }
-    if (PySet_Check(fut->fut_awaited_by)) {
+    if (fut->fut_awaited_by_is_set) {
+        /* Already a set, just wrap it into a frozen set and return. */
+        assert(PySet_Check(fut->fut_awaited_by));
         return PyFrozenSet_New(fut->fut_awaited_by);
     }
 
@@ -935,6 +947,7 @@ FutureObj_clear(FutureObj *fut)
     Py_CLEAR(fut->fut_cancel_msg);
     Py_CLEAR(fut->fut_cancelled_exc);
     Py_CLEAR(fut->fut_awaited_by);
+    fut->fut_awaited_by_is_set = 0;
     PyObject_ClearManagedDict((PyObject *)fut);
     return 0;
 }
@@ -2229,6 +2242,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     if (future_init((FutureObj*)self, loop)) {
         return -1;
     }
+    self->task_is_task = 1;
 
     asyncio_state *state = get_asyncio_state_by_def((PyObject *)self);
     int is_coro = is_coroutine(state, coro);
