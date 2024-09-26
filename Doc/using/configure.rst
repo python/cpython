@@ -183,12 +183,6 @@ General Options
 
    See :envvar:`PYTHONCOERCECLOCALE` and the :pep:`538`.
 
-.. option:: --without-freelists
-
-   Disable all freelists except the empty tuple singleton.
-
-   .. versionadded:: 3.11
-
 .. option:: --with-platlibdir=DIRNAME
 
    Python library directory name (default is ``lib``).

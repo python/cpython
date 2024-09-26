@@ -159,12 +159,15 @@ slightly different way:
    is entered.
 
 
-.. function:: set_trace(*, header=None)
+.. function:: set_trace(*, header=None, commands=None)
 
    Enter the debugger at the calling stack frame.  This is useful to hard-code
    a breakpoint at a given point in a program, even if the code is not
    otherwise being debugged (e.g. when an assertion fails).  If given,
    *header* is printed to the console just before debugging begins.
+   The *commands* argument, if given, is a list of commands to execute
+   when the debugger starts.
+
 
    .. versionchanged:: 3.7
       The keyword-only argument *header*.
@@ -172,6 +175,9 @@ slightly different way:
    .. versionchanged:: 3.13
       :func:`set_trace` will enter the debugger immediately, rather than
       on the next line of code to be executed.
+
+   .. versionadded:: 3.14
+      The *commands* argument.
 
 .. function:: post_mortem(traceback=None)
 
@@ -192,7 +198,7 @@ The ``run*`` functions and :func:`set_trace` are aliases for instantiating the
 access further features, you have to do this yourself:
 
 .. class:: Pdb(completekey='tab', stdin=None, stdout=None, skip=None, \
-               nosigint=False, readrc=True)
+               nosigint=False, readrc=True, mode=None)
 
    :class:`Pdb` is the debugger class.
 
@@ -211,6 +217,13 @@ access further features, you have to do this yourself:
    The *readrc* argument defaults to true and controls whether Pdb will load
    .pdbrc files from the filesystem.
 
+   The *mode* argument specifies how the debugger was invoked.
+   It impacts the workings of some debugger commands.
+   Valid values are ``'inline'`` (used by the breakpoint() builtin),
+   ``'cli'`` (used by the command line invocation)
+   or ``None`` (for backwards compatible behaviour, as before the *mode*
+   argument was added).
+
    Example call to enable tracing with *skip*::
 
       import pdb; pdb.Pdb(skip=['django.*']).set_trace()
@@ -226,6 +239,9 @@ access further features, you have to do this yourself:
 
    .. versionchanged:: 3.6
       The *readrc* argument.
+
+   .. versionadded:: 3.14
+      Added the *mode* argument.
 
    .. method:: run(statement, globals=None, locals=None)
                runeval(expression, globals=None, locals=None)
@@ -668,6 +684,10 @@ can be overridden by the local file.
    with :mod:`shlex` and the result is used as the new :data:`sys.argv`.
    History, breakpoints, actions and debugger options are preserved.
    :pdbcmd:`restart` is an alias for :pdbcmd:`run`.
+
+   .. versionchanged:: 3.14
+      :pdbcmd:`run` and :pdbcmd:`restart` commands are disabled when the
+      debugger is invoked in ``'inline'`` mode.
 
 .. pdbcommand:: q(uit)
 
