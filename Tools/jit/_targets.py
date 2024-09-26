@@ -139,6 +139,7 @@ class _Target(typing.Generic[_S, _R]):
             "-fno-plt",
             # Don't call stack-smashing canaries that we can't find or patch:
             "-fno-stack-protector",
+            "-mno-outline-atomics",
             "-std=c11",
             *self.args,
         ]
