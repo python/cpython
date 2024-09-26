@@ -24,7 +24,7 @@ Running an asyncio Program
 
 .. function:: run(coro, *, debug=None, loop_factory=None)
 
-   Execute code in an asyncio event loop and return the result.
+   Execute *coro* in an asyncio event loop and return the result.
 
    The argument can be any awaitable object.
 
@@ -110,7 +110,7 @@ Runner context manager
 
    .. method:: run(coro, *, context=None)
 
-      Execute code in the embedded event loop.
+      Execute *coro* in the embedded event loop.
 
       The argument can be any awaitable object.
 
