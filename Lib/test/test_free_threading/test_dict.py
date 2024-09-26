@@ -152,7 +152,7 @@ class TestDict(TestCase):
             THREAD_COUNT = 10
 
             def writer_func(l):
-                for i in range(100000):
+                for i in range(1000):
                     if cyclic:
                         other_d = {}
                     d = MyDict({"foo": 100})

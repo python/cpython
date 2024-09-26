@@ -1096,7 +1096,7 @@ static void
 free_work_item(uintptr_t ptr, delayed_dealloc_cb cb, void *state)
 {
     if (ptr & 0x01) {
-        PyObject *obj = (PyObject*)(char *)(ptr - 1);
+        PyObject *obj = (PyObject *)(ptr - 1);
 #ifdef Py_GIL_DISABLED
         if (cb == NULL) {
             assert(!_PyInterpreterState_GET()->stoptheworld.world_stopped);
