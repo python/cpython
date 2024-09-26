@@ -10121,7 +10121,10 @@ os_wait_impl(PyObject *module)
 }
 #endif /* HAVE_WAIT */
 
-#if defined(__linux__) && defined(__NR_pidfd_open)
+
+// This system call always crashes on older Android versions.
+#if defined(__linux__) && defined(__NR_pidfd_open) && \
+    !(defined(__ANDROID__) && __ANDROID_API__ < 31)
 /*[clinic input]
 os.pidfd_open
   pid: pid_t

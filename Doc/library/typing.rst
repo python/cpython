@@ -3269,7 +3269,8 @@ Introspection helpers
      empty dictionary is returned.
    * If *obj* is a class ``C``, the function returns a dictionary that merges
      annotations from ``C``'s base classes with those on ``C`` directly. This
-     is done by traversing ``C.__mro__`` and iteratively combining
+     is done by traversing :attr:`C.__mro__ <type.__mro__>` and iteratively
+     combining
      ``__annotations__`` dictionaries. Annotations on classes appearing
      earlier in the :term:`method resolution order` always take precedence over
      annotations on classes appearing later in the method resolution order.

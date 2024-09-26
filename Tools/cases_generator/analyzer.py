@@ -248,6 +248,7 @@ class PseudoInstruction:
     name: str
     stack: StackEffect
     targets: list[Instruction]
+    as_sequence: bool
     flags: list[str]
     opcode: int = -1
 
@@ -852,6 +853,7 @@ def add_pseudo(
         pseudo.name,
         analyze_stack(pseudo),
         [instructions[target] for target in pseudo.targets],
+        pseudo.as_sequence,
         pseudo.flags,
     )
 
