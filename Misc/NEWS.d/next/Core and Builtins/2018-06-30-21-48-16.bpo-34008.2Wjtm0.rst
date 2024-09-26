@@ -1,8 +1,0 @@
-Make it explicit that we expect ``Py_Main`` to typically be called instead
-of ``Py_Initialize`` rather than after it (since ``Py_Main`` makes its own
-call to ``Py_Initialize``). However, also document that calling both is
-supported, but it's version dependent as to exactly which settings
-will be applied correctly in that case.
-
-Also add Py_IsInitialized to the list of APIs that are safe to call before
-the interpreter is initialized, and update the embedding tests to cover it.
