@@ -46,7 +46,6 @@ Data members:
 #ifdef HAVE_SYS_UTSNAME_H
 #  include <sys/utsname.h>
 #endif /* HAVE_SYS_UTSNAME_H */
-
 #ifdef MS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
@@ -3326,7 +3325,7 @@ static PyObject *
 make_impl_info(PyObject *version_info)
 {
     int res;
-#ifndef MS_WINDOWS
+#if !defined(MS_WINDOWS) && defined(HAVE_SYS_UTSNAME_H)
     struct utsname u;
 #endif /* !MS_WINDOWS */
     PyObject *impl_info, *value, *ns;
@@ -3365,7 +3364,7 @@ make_impl_info(PyObject *version_info)
     if (res < 0)
         goto error;
 
-#ifndef MS_WINDOWS
+#if !defined(MS_WINDOWS) && defined(HAVE_SYS_UTSNAME_H)
     res = uname(&u);
     if (res < 0)
         goto error;
