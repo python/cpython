@@ -870,9 +870,12 @@ def gather(*coros_or_futures, return_exceptions=False):
     nfuts = 0
     nfinished = 0
     done_futs = []
-    loop = None
     outer = None  # bpo-46672
-    cur_task = current_task()
+    loop = events._get_running_loop()
+    if loop is not None:
+        cur_task = current_task(loop)
+    else:
+        cur_task = None
     for arg in coros_or_futures:
         if arg not in arg_to_fut:
             fut = ensure_future(arg, loop=loop)
@@ -906,7 +909,7 @@ def gather(*coros_or_futures, return_exceptions=False):
     # this will effectively complete the gather eagerly, with the last
     # callback setting the result (or exception) on outer before returning it
     for fut in done_futs:
-        _done_callback(fut)
+        _done_callback(fut, cur_task)
     return outer
 
 
@@ -950,8 +953,10 @@ def shield(arg):
     loop = futures._get_loop(inner)
     outer = loop.create_future()
 
-    if (cur_task := current_task()) is not None:
+    if loop is not None and (cur_task := current_task(loop)) is not None:
         futures.future_add_to_awaited_by(inner, cur_task)
+    else:
+        cur_task = None
 
     def _inner_done_callback(inner, cur_task=cur_task):
         if cur_task is not None:
