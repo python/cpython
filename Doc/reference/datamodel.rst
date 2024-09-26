@@ -1112,7 +1112,7 @@ have the following two methods available:
       >>> class A: pass
       >>> class B(A): pass
       >>> A.__subclasses__()
-      [<class '__main__.B'>]
+      [<class 'B'>]
 
 Class instances
 ---------------
