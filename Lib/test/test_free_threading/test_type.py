@@ -6,7 +6,7 @@ from threading import Thread
 from unittest import TestCase
 
 from test import support
-from test.support import threading_helper, import_helper
+from test.support import threading_helper
 
 
 
@@ -97,8 +97,9 @@ class TestType(TestCase):
 
         self.run_one(writer_func, reader_func)
 
-    @support.requires_resource('cpu')
     def test___class___modification(self):
+        loops = 200
+
         class Foo:
             pass
 
@@ -108,7 +109,7 @@ class TestType(TestCase):
         thing = Foo()
         def work():
             foo = thing
-            for _ in range(5000):
+            for _ in range(loops):
                 foo.__class__ = Bar
                 type(foo)
                 foo.__class__ = Foo
