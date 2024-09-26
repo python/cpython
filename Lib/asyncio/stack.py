@@ -74,7 +74,34 @@ def _build_stack_for_future(future: any) -> FutureCallStack:
 
 
 def capture_call_stack(*, future: any = None) -> FutureCallStack | None:
-    """Capture async call stack for the current task or the provided Future."""
+    """Capture async call stack for the current task or the provided Future.
+
+    The stack is represented with three data structures:
+
+    * FutureCallStack(future, call_stack, awaited_by)
+
+      Where 'future' is a reference to an asyncio.Future or asyncio.Task
+      (or their subclasses.)
+
+      'call_stack' is a list of FrameCallStackEntry and CoroutineCallStackEntry
+      objects (more on them below.)
+
+      'awaited_by' is a list of FutureCallStack objects.
+
+    * FrameCallStackEntry(frame)
+
+      Where 'frame' is a frame object of a regular Python function
+      in the call stack.
+
+    * CoroutineCallStackEntry(coroutine)
+
+      Where 'coroutine' is a coroutine object of an awaiting coroutine
+      or asyncronous generator.
+
+    Receives an optional keyword-only "future" argument. If not passed,
+    the current task will be used. If there's no current task, the function
+    returns None.
+    """
 
     if future is not None:
         if future is not tasks.current_task():
