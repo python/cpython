@@ -687,7 +687,6 @@ def uuid1(node=None, clock_seq=None):
         else:
             import random
             clock_seq = random.getrandbits(14) # instead of stable storage
-        timestamp = _last_timestamp + 1
     _last_timestamp = timestamp
     _last_clock_req = clock_seq
     if clock_seq is None:
