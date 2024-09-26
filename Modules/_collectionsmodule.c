@@ -2179,6 +2179,8 @@ typedef struct {
     PyObject *default_factory;
 } defdictobject;
 
+static PyType_Spec defdict_spec;
+
 PyDoc_STRVAR(defdict_missing_doc,
 "__missing__(key) # Called by __getitem__ for missing key; pseudo-code:\n\
   if self.default_factory is None: raise KeyError((key,))\n\
@@ -2358,23 +2360,16 @@ defdict_or(PyObject* left, PyObject* right)
 {
     PyObject *self, *other;
 
-    // Find module state
-    PyTypeObject *tp = Py_TYPE(left);
-    PyObject *mod = PyType_GetModuleByDef(tp, &_collectionsmodule);
-    if (mod == NULL) {
-        PyErr_Clear();
-        tp = Py_TYPE(right);
-        mod = PyType_GetModuleByDef(tp, &_collectionsmodule);
+    int ret = PyType_GetBaseByToken(Py_TYPE(left), &defdict_spec, NULL);
+    if (ret < 0) {
+        return NULL;
     }
-    assert(mod != NULL);
-    collections_state *state = get_module_state(mod);
-
-    if (PyObject_TypeCheck(left, state->defdict_type)) {
+    if (ret) {
         self = left;
         other = right;
     }
     else {
-        assert(PyObject_TypeCheck(right, state->defdict_type));
+        assert(PyType_GetBaseByToken(Py_TYPE(right), &defdict_spec, NULL) == 1);
         self = right;
         other = left;
     }
@@ -2454,6 +2449,7 @@ passed to the dict constructor, including keyword arguments.\n\
 #define DEFERRED_ADDRESS(ADDR) 0
 
 static PyType_Slot defdict_slots[] = {
+    {Py_tp_token, Py_TP_USE_SPEC},
     {Py_tp_dealloc, defdict_dealloc},
     {Py_tp_repr, defdict_repr},
     {Py_nb_or, defdict_or},
