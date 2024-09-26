@@ -255,6 +255,15 @@ Added support for converting any objects that have the
 (Contributed by Serhiy Storchaka in :gh:`82017`.)
 
 
+functools
+---------
+
+* Added support to :func:`functools.partial` and
+  :func:`functools.partialmethod` for :data:`functools.Placeholder` sentinels
+  to reserve a place for positional arguments.
+  (Contributed by Dominykas Grigonis in :gh:`119127`.)
+
+
 http
 ----
 
@@ -284,6 +293,12 @@ operator
   to ``obj is not None``.
   (Contributed by Raymond Hettinger and Nico Mexis in :gh:`115808`.)
 
+
+datetime
+--------
+
+Add :meth:`datetime.time.strptime` and :meth:`datetime.date.strptime`.
+(Contributed by Wannes Boeykens in :gh:`41431`.)
 
 os
 --

@@ -242,21 +242,10 @@ def _type_repr(obj):
     typically enough to uniquely identify a type.  For everything
     else, we fall back on repr(obj).
     """
-    # When changing this function, don't forget about
-    # `_collections_abc._type_repr`, which does the same thing
-    # and must be consistent with this one.
-    if isinstance(obj, type):
-        if obj.__module__ == 'builtins':
-            return obj.__qualname__
-        return f'{obj.__module__}.{obj.__qualname__}'
-    if obj is ...:
-        return '...'
-    if isinstance(obj, types.FunctionType):
-        return obj.__name__
     if isinstance(obj, tuple):
         # Special case for `repr` of types with `ParamSpec`:
         return '[' + ', '.join(_type_repr(t) for t in obj) + ']'
-    return repr(obj)
+    return annotationlib.value_to_source(obj)
 
 
 def _collect_type_parameters(args, *, enforce_default_ordering: bool = True):
@@ -2948,12 +2937,8 @@ def _make_eager_annotate(types):
         if format in (annotationlib.Format.VALUE, annotationlib.Format.FORWARDREF):
             return checked_types
         else:
-            return _convert_to_source(types)
+            return annotationlib.annotations_to_source(types)
     return annotate
-
-
-def _convert_to_source(types):
-    return {n: t if isinstance(t, str) else _type_repr(t) for n, t in types.items()}
 
 
 # attributes prohibited to set in NamedTuple class syntax
@@ -3241,7 +3226,7 @@ class _TypedDictMeta(type):
                         for n, tp in own.items()
                     }
             elif format == annotationlib.Format.SOURCE:
-                own = _convert_to_source(own_annotations)
+                own = annotationlib.annotations_to_source(own_annotations)
             else:
                 own = own_checked_annotations
             annos.update(own)
