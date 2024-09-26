@@ -32,7 +32,7 @@ _have_code = (types.MethodType, types.FunctionType, types.CodeType,
 CONVERT_VALUE = opmap['CONVERT_VALUE']
 
 SET_FUNCTION_ATTRIBUTE = opmap['SET_FUNCTION_ATTRIBUTE']
-FUNCTION_ATTR_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure')
+FUNCTION_ATTR_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure', 'annotate')
 
 ENTER_EXECUTOR = opmap['ENTER_EXECUTOR']
 LOAD_CONST = opmap['LOAD_CONST']
