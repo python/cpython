@@ -159,6 +159,10 @@ PyAPI_FUNC(int) PyThread_detach_thread(PyThread_handle_t);
  * normally from its start function.  This is used during finalization in lieu
  * of actually exiting the thread.  Since the program is expected to terminate
  * soon anyway, it does not matter if the thread stack stays around until then.
+ *
+ * This is unfortunate for embedders who may not be terminating their process
+ * when they're done with the interpreter, but our C API design does not allow
+ * for safely exiting threads attempting to re-enter Python post finalization.
  */
 void _Py_NO_RETURN PyThread_hang_thread(void);
 
