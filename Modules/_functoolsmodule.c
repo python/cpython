@@ -482,31 +482,33 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
             return NULL;
         }
         if (nkwds) {
-            /* Merge kwds */
-            PyObject *new_kw = PyDict_Copy(pto->kw);
-            if (new_kw == NULL) {
+            /* Merge keywords with pto->kw */
+            PyObject *tot_kw = PyDict_Copy(pto->kw);
+            if (tot_kw == NULL) {
+                Py_DECREF(tot_kwnames);
                 return NULL;
             }
-
             for (Py_ssize_t i=0; i < nkwds; i++) {
                 key = PyTuple_GET_ITEM(kwnames, i);
-                if (PyDict_SetItem(new_kw, key, args[nargs + i])) {
-                    Py_DECREF(new_kw);
+                val = args[nargs + i];
+                if (PyDict_SetItem(tot_kw, key, val)) {
+                    Py_DECREF(tot_kwnames);
+                    Py_DECREF(tot_kw);
                     return NULL;
                 }
             }
 
             Py_ssize_t pos = 0, i = 0;
-            while (PyDict_Next(new_kw, &pos, &key, &val)) {
+            while (PyDict_Next(tot_kw, &pos, &key, &val)) {
                 PyTuple_SET_ITEM(tot_kwnames, i, key);
                 Py_INCREF(key);
                 stack[tot_nargs + i] = val;
                 i += 1;
             }
-            Py_DECREF(new_kw);
+            Py_DECREF(tot_kw);
         }
         else {
-            /* Set pto->kw only */
+            /* Call with pto->kw only */
             Py_ssize_t pos = 0, i = 0;
             while (PyDict_Next(pto->kw, &pos, &key, &val)) {
                 PyTuple_SET_ITEM(tot_kwnames, i, key);
