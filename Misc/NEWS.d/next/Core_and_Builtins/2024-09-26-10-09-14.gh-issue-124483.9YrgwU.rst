@@ -1,0 +1,2 @@
+Fix an issue where finalizers that mutate global or nonlocal state could
+cause the experimental JIT to crash or produce out-of-date results.
