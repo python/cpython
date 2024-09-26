@@ -654,6 +654,7 @@ init_interpreter(PyInterpreterState *interp,
             interp->monitoring_callables[t][e] = NULL;
 
         }
+        interp->monitoring_tool_versions[t] = 0;
     }
     interp->sys_profile_initialized = false;
     interp->sys_trace_initialized = false;
