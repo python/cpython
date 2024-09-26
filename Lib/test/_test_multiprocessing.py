@@ -5567,11 +5567,14 @@ class TestStartMethod(unittest.TestCase):
             # POSIX
             self.assertIn('fork', methods)
             if other_methods := set(methods) - {'fork', 'spawn'}:
+                # If there are more than those two, forkserver must be one.
                 self.assertEqual({'forkserver'}, other_methods)
-            # >=3.14 Defaults to forkserver if the platform supports it.
+            # The default is the first method in the list.
             self.assertIn(methods[0], {'forkserver', 'spawn'},
                           msg='3.14+ default must not be fork')
             if methods[0] == 'spawn':
+                # Confirm that the current default selection logic prefers
+                # forkserver vs spawn when available.
                 self.assertNotIn('forkserver', methods)
 
     def test_preload_resources(self):
