@@ -981,11 +981,19 @@ If any thread, other than the finalization thread, attempts to acquire the GIL
 during finalization, either explicitly via :c:func:`PyGILState_Ensure`,
 :c:macro:`Py_END_ALLOW_THREADS`, :c:func:`PyEval_AcquireThread`, or
 :c:func:`PyEval_AcquireLock`, or implicitly when the interpreter attempts to
-reacquire it after having yielded it, the thread enters a permanently blocked
-state where it remains until the program exits.  In most cases this is harmless,
-but this can result in deadlock if a later stage of finalization attempts to
-acquire a lock owned by the blocked thread, or otherwise waits on the blocked
-thread.
+reacquire it after having yielded it, the thread enters **a permanently blocked
+state** where it remains until the program exits.  In most cases this is
+harmless, but this can result in deadlock if a later stage of finalization
+attempts to acquire a lock owned by the blocked thread, or otherwise waits on
+the blocked thread.
+
+Gross? Yes. This prevents random crashes and/or unexpectedly skipped C++
+finalizations further up the call stack when such threads were forcably exited
+here in CPython 3.13 and earlier. The CPython runtime GIL acquiring C APIs
+have never had any error reporting or handling expectations at GIL acquisition
+time that would've allowed for graceful exit from this situation. Changing that
+would require new stable C APIs and rewriting the majority of C code in the
+CPython ecosystem to use those with error handling.
 
 
 High-level API
