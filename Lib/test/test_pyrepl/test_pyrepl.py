@@ -1327,3 +1327,17 @@ class TestMain(ReplTestCase):
     def test_keyboard_interrupt_after_isearch(self):
         output, exit_code = self.run_repl(["\x12", "\x03", "exit"])
         self.assertEqual(exit_code, 0)
+
+    def test_prompt_after_help(self):
+        # Ensure that we don't see a double prompt after exiting `help`
+        output, exit_code = self.run_repl(["help", "q", "exit"])
+
+        # Regex pattern to remove ANSI escape sequences
+        ansi_escape = re.compile(r"(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]")
+
+        # Remove ANSI escape codes from the string
+        cleaned_output = ansi_escape.sub("", output)
+
+        self.assertEqual(exit_code, 0)
+        self.assertRegex(cleaned_output, r"(?<!>>> )>>>\s*$")
+
