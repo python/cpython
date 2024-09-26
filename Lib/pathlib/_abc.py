@@ -865,44 +865,48 @@ class PathBase(PurePathBase):
                     raise
 
     def copy(self, target, *, follow_symlinks=True, dirs_exist_ok=False,
-             preserve_metadata=False, ignore=None, on_error=None):
+             preserve_metadata=False):
         """
         Recursively copy this file or directory tree to the given destination.
         """
         if not isinstance(target, PathBase):
             target = self.with_segments(target)
-        try:
-            self._ensure_distinct_path(target)
-        except OSError as err:
-            if on_error is None:
-                raise
-            on_error(err)
-            return
+        self._ensure_distinct_path(target)
         stack = [(self, target)]
         while stack:
             src, dst = stack.pop()
-            try:
-                if not follow_symlinks and src.is_symlink():
-                    dst._symlink_to_target_of(src)
-                    if preserve_metadata:
-                        src._copy_metadata(dst, follow_symlinks=False)
-                elif src.is_dir():
-                    children = src.iterdir()
-                    dst.mkdir(exist_ok=dirs_exist_ok)
-                    for child in children:
-                        if not (ignore and ignore(child)):
-                            stack.append((child, dst.joinpath(child.name)))
-                    if preserve_metadata:
-                        src._copy_metadata(dst)
-                else:
-                    src._copy_file(dst)
-                    if preserve_metadata:
-                        src._copy_metadata(dst)
-            except OSError as err:
-                if on_error is None:
-                    raise
-                on_error(err)
+            if not follow_symlinks and src.is_symlink():
+                dst._symlink_to_target_of(src)
+                if preserve_metadata:
+                    src._copy_metadata(dst, follow_symlinks=False)
+            elif src.is_dir():
+                children = src.iterdir()
+                dst.mkdir(exist_ok=dirs_exist_ok)
+                stack.extend((child, dst.joinpath(child.name))
+                             for child in children)
+                if preserve_metadata:
+                    src._copy_metadata(dst)
+            else:
+                src._copy_file(dst)
+                if preserve_metadata:
+                    src._copy_metadata(dst)
         return target
+
+    def copy_into(self, target_dir, *, follow_symlinks=True,
+                  dirs_exist_ok=False, preserve_metadata=False):
+        """
+        Copy this file or directory tree into the given existing directory.
+        """
+        name = self.name
+        if not name:
+            raise ValueError(f"{self!r} has an empty name")
+        elif isinstance(target_dir, PathBase):
+            target = target_dir / name
+        else:
+            target = self.with_segments(target_dir, name)
+        return self.copy(target, follow_symlinks=follow_symlinks,
+                         dirs_exist_ok=dirs_exist_ok,
+                         preserve_metadata=preserve_metadata)
 
     def rename(self, target):
         """
@@ -944,8 +948,21 @@ class PathBase(PurePathBase):
             if err.errno != EXDEV:
                 raise
         target = self.copy(target, follow_symlinks=False, preserve_metadata=True)
-        self.delete()
+        self._delete()
         return target
+
+    def move_into(self, target_dir):
+        """
+        Move this file or directory tree into the given existing directory.
+        """
+        name = self.name
+        if not name:
+            raise ValueError(f"{self!r} has an empty name")
+        elif isinstance(target_dir, PathBase):
+            target = target_dir / name
+        else:
+            target = self.with_segments(target_dir, name)
+        return self.move(target)
 
     def chmod(self, mode, *, follow_symlinks=True):
         """
@@ -973,47 +990,29 @@ class PathBase(PurePathBase):
         """
         raise UnsupportedOperation(self._unsupported_msg('rmdir()'))
 
-    def delete(self, ignore_errors=False, on_error=None):
+    def _delete(self):
         """
         Delete this file or directory (including all sub-directories).
-
-        If *ignore_errors* is true, exceptions raised from scanning the
-        filesystem and removing files and directories are ignored. Otherwise,
-        if *on_error* is set, it will be called to handle the error. If
-        neither *ignore_errors* nor *on_error* are set, exceptions are
-        propagated to the caller.
         """
-        if ignore_errors:
-            def on_error(err):
-                pass
-        elif on_error is None:
-            def on_error(err):
-                raise err
-        if self.is_dir(follow_symlinks=False):
-            results = self.walk(
-                on_error=on_error,
-                top_down=False,  # So we rmdir() empty directories.
-                follow_symlinks=False)
-            for dirpath, dirnames, filenames in results:
-                for name in filenames:
-                    try:
-                        dirpath.joinpath(name).unlink()
-                    except OSError as err:
-                        on_error(err)
-                for name in dirnames:
-                    try:
-                        dirpath.joinpath(name).rmdir()
-                    except OSError as err:
-                        on_error(err)
-            delete_self = self.rmdir
+        if self.is_symlink() or self.is_junction():
+            self.unlink()
+        elif self.is_dir():
+            self._rmtree()
         else:
-            delete_self = self.unlink
-        try:
-            delete_self()
-        except OSError as err:
-            err.filename = str(self)
-            on_error(err)
-    delete.avoids_symlink_attacks = False
+            self.unlink()
+
+    def _rmtree(self):
+        def on_error(err):
+            raise err
+        results = self.walk(
+            on_error=on_error,
+            top_down=False,  # So we rmdir() empty directories.
+            follow_symlinks=False)
+        for dirpath, _, filenames in results:
+            for filename in filenames:
+                filepath = dirpath / filename
+                filepath.unlink()
+            dirpath.rmdir()
 
     def owner(self, *, follow_symlinks=True):
         """

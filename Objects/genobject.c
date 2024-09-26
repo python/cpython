@@ -55,6 +55,11 @@ gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
             return err;
         }
     }
+    else {
+        // We still need to visit the code object when the frame is cleared to
+        // ensure that it's kept alive if the reference is deferred.
+        _Py_VISIT_STACKREF(gen->gi_iframe.f_executable);
+    }
     /* No need to visit cr_origin, because it's just tuples/str/int, so can't
        participate in a reference cycle. */
     Py_VISIT(gen->gi_exc_state.exc_value);
@@ -139,6 +144,9 @@ gen_dealloc(PyGenObject *gen)
            and GC_Del. */
         Py_CLEAR(((PyAsyncGenObject*)gen)->ag_origin_or_finalizer);
     }
+    if (PyCoro_CheckExact(gen)) {
+        Py_CLEAR(((PyCoroObject *)gen)->cr_origin_or_finalizer);
+    }
     if (gen->gi_frame_state != FRAME_CLEARED) {
         _PyInterpreterFrame *frame = &gen->gi_iframe;
         gen->gi_frame_state = FRAME_CLEARED;
@@ -147,10 +155,7 @@ gen_dealloc(PyGenObject *gen)
         _PyErr_ClearExcState(&gen->gi_exc_state);
     }
     assert(gen->gi_exc_state.exc_value == NULL);
-    if (_PyGen_GetCode(gen)->co_flags & CO_COROUTINE) {
-        Py_CLEAR(((PyCoroObject *)gen)->cr_origin_or_finalizer);
-    }
-    Py_DECREF(_PyGen_GetCode(gen));
+    PyStackRef_CLEAR(gen->gi_iframe.f_executable);
     Py_CLEAR(gen->gi_name);
     Py_CLEAR(gen->gi_qualname);
 
