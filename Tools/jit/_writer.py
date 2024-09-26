@@ -11,7 +11,7 @@ def _dump_footer(
     groups: dict[str, _stencils.StencilGroup], symbols: dict[str | None, int]
 ) -> typing.Iterator[str]:
     symbol_mask_size = max(math.ceil(len(symbols) / 32), 1)
-    yield f"static_assert(SYMBOL_MASK_WORDS >= {symbol_mask_size}, \"SYMBOL_MASK_WORDS too small\");"
+    yield f'static_assert(SYMBOL_MASK_WORDS >= {symbol_mask_size}, "SYMBOL_MASK_WORDS too small");'
     yield ""
     yield "typedef struct {"
     yield "    void (*emit)("
