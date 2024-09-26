@@ -347,7 +347,8 @@ The :mod:`functools` module defines the following functions:
 
       def partial(func, /, *args, **keywords):
           def newfunc(*more_args, **more_keywords):
-              return func(*args, *more_args, **keywords, **more_keywords)
+              keywords_union = {**keywords, **more_keywords}
+              return func(*args, *more_args, **keywords_union)
           newfunc.func = func
           newfunc.args = args
           newfunc.keywords = keywords
