@@ -7,7 +7,14 @@ import functools
 import itertools
 import pickle
 import unittest
-from annotationlib import Format, ForwardRef, get_annotations, get_annotate_function
+from annotationlib import (
+    Format,
+    ForwardRef,
+    get_annotations,
+    get_annotate_function,
+    annotations_to_source,
+    value_to_source,
+)
 from typing import Unpack
 
 from test import support
@@ -23,6 +30,11 @@ def times_three(fn):
         return fn(a * 3, b * 3)
 
     return wrapper
+
+
+class MyClass:
+    def __repr__(self):
+        return "my repr"
 
 
 class TestFormat(unittest.TestCase):
@@ -324,7 +336,10 @@ class TestForwardRefClass(unittest.TestCase):
         # namespaces without going through eval()
         self.assertIs(ForwardRef("int").evaluate(), int)
         self.assertIs(ForwardRef("int").evaluate(locals={"int": str}), str)
-        self.assertIs(ForwardRef("int").evaluate(locals={"int": float}, globals={"int": str}), float)
+        self.assertIs(
+            ForwardRef("int").evaluate(locals={"int": float}, globals={"int": str}),
+            float,
+        )
         self.assertIs(ForwardRef("int").evaluate(globals={"int": str}), str)
         with support.swap_attr(builtins, "int", dict):
             self.assertIs(ForwardRef("int").evaluate(), dict)
@@ -740,17 +755,96 @@ class TestGetAnnotations(unittest.TestCase):
 
         self.assertEqual(annotationlib.get_annotations(f), {"x": int})
         self.assertEqual(
-            annotationlib.get_annotations(f, format=annotationlib.Format.FORWARDREF),
+            annotationlib.get_annotations(f, format=Format.FORWARDREF),
             {"x": int},
         )
 
         f.__annotations__["x"] = str
         # The modification is reflected in VALUE (the default)
         self.assertEqual(annotationlib.get_annotations(f), {"x": str})
-        # ... but not in FORWARDREF, which uses __annotate__
+        # ... and also in FORWARDREF, which tries __annotations__ if available
         self.assertEqual(
-            annotationlib.get_annotations(f, format=annotationlib.Format.FORWARDREF),
-            {"x": int},
+            annotationlib.get_annotations(f, format=Format.FORWARDREF),
+            {"x": str},
+        )
+        # ... but not in SOURCE which always uses __annotate__
+        self.assertEqual(
+            annotationlib.get_annotations(f, format=Format.SOURCE),
+            {"x": "int"},
+        )
+
+    def test_non_dict_annotations(self):
+        class WeirdAnnotations:
+            @property
+            def __annotations__(self):
+                return "not a dict"
+
+        wa = WeirdAnnotations()
+        for format in Format:
+            with (
+                self.subTest(format=format),
+                self.assertRaisesRegex(
+                    ValueError, r".*__annotations__ is neither a dict nor None"
+                ),
+            ):
+                annotationlib.get_annotations(wa, format=format)
+
+    def test_annotations_on_custom_object(self):
+        class HasAnnotations:
+            @property
+            def __annotations__(self):
+                return {"x": int}
+
+        ha = HasAnnotations()
+        self.assertEqual(
+            annotationlib.get_annotations(ha, format=Format.VALUE), {"x": int}
+        )
+        self.assertEqual(
+            annotationlib.get_annotations(ha, format=Format.FORWARDREF), {"x": int}
+        )
+
+        self.assertEqual(
+            annotationlib.get_annotations(ha, format=Format.SOURCE), {"x": "int"}
+        )
+
+    def test_raising_annotations_on_custom_object(self):
+        class HasRaisingAnnotations:
+            @property
+            def __annotations__(self):
+                return {"x": undefined}
+
+        hra = HasRaisingAnnotations()
+
+        with self.assertRaises(NameError):
+            annotationlib.get_annotations(hra, format=Format.VALUE)
+
+        with self.assertRaises(NameError):
+            annotationlib.get_annotations(hra, format=Format.FORWARDREF)
+
+        undefined = float
+        self.assertEqual(
+            annotationlib.get_annotations(hra, format=Format.VALUE), {"x": float}
+        )
+
+    def test_forwardref_prefers_annotations(self):
+        class HasBoth:
+            @property
+            def __annotations__(self):
+                return {"x": int}
+
+            @property
+            def __annotate__(self):
+                return lambda format: {"x": str}
+
+        hb = HasBoth()
+        self.assertEqual(
+            annotationlib.get_annotations(hb, format=Format.VALUE), {"x": int}
+        )
+        self.assertEqual(
+            annotationlib.get_annotations(hb, format=Format.FORWARDREF), {"x": int}
+        )
+        self.assertEqual(
+            annotationlib.get_annotations(hb, format=Format.SOURCE), {"x": str}
         )
 
     def test_pep695_generic_class_with_future_annotations(self):
@@ -996,6 +1090,29 @@ class TestGetAnnotateFunction(unittest.TestCase):
             a: int
 
         self.assertEqual(get_annotate_function(C)(Format.VALUE), {"a": int})
+
+
+class TestToSource(unittest.TestCase):
+    def test_value_to_source(self):
+        self.assertEqual(value_to_source(int), "int")
+        self.assertEqual(value_to_source(MyClass), "test.test_annotationlib.MyClass")
+        self.assertEqual(value_to_source(len), "len")
+        self.assertEqual(value_to_source(value_to_source), "value_to_source")
+        self.assertEqual(value_to_source(times_three), "times_three")
+        self.assertEqual(value_to_source(...), "...")
+        self.assertEqual(value_to_source(None), "None")
+        self.assertEqual(value_to_source(1), "1")
+        self.assertEqual(value_to_source("1"), "'1'")
+        self.assertEqual(value_to_source(Format.VALUE), repr(Format.VALUE))
+        self.assertEqual(value_to_source(MyClass()), "my repr")
+
+    def test_annotations_to_source(self):
+        self.assertEqual(annotations_to_source({}), {})
+        self.assertEqual(annotations_to_source({"x": int}), {"x": "int"})
+        self.assertEqual(annotations_to_source({"x": "int"}), {"x": "int"})
+        self.assertEqual(
+            annotations_to_source({"x": int, "y": str}), {"x": "int", "y": "str"}
+        )
 
 
 class TestAnnotationLib(unittest.TestCase):
