@@ -231,6 +231,23 @@ def write_cert_reference(path):
         print(refdata, file=f)
 
 
+def extract_cert(pem_cert, index):
+    result = []
+    active = False
+    for line in pem_cert.splitlines():
+        match = active
+        if line == '-----BEGIN CERTIFICATE-----':
+            if index == 0:
+                active = True
+                match = True
+            index -= 1
+        elif line == '-----END CERTIFICATE-----':
+            active = False
+        if match:
+            result.append(line)
+    return '\n'.join(result) + '\n'
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Make the custom certificate and private key files used by test_ssl and friends.')
     parser.add_argument('--days', default=days_default)
@@ -264,6 +281,10 @@ if __name__ == '__main__':
     cert, key = make_cert_key(cmdlineargs, 'localhost', sign=True)
     with open('keycert3.pem', 'w') as f:
         f.write(key)
+        f.write(cert)
+
+    cert = extract_cert(cert, 0)
+    with open('cert3.pem', 'w') as f:
         f.write(cert)
 
     cert, key = make_cert_key(cmdlineargs, 'fakehostname', sign=True)
