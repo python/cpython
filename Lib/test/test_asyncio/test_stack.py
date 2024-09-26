@@ -11,7 +11,7 @@ def capture_test_stack(*, fut=None):
 
     def walk(s):
         ret = [
-            f"T<{n}>" if '-' not in (n := s.future.get_name()) else 'T<anon>'
+            (f"T<{n}>" if '-' not in (n := s.future.get_name()) else 'T<anon>')
                 if isinstance(s.future, asyncio.Task) else 'F'
         ]
 
@@ -258,3 +258,75 @@ class TestCallStack(unittest.IsolatedAsyncioTestCase):
                 ]
             ]
         ])
+
+    async def test_stack_task(self):
+
+        stack_for_inner = None
+
+        async def inner():
+            await asyncio.sleep(0)
+            nonlocal stack_for_inner
+            stack_for_inner = capture_test_stack()
+
+        async def c1():
+            await inner()
+
+        async def c2():
+            await asyncio.create_task(c1(), name='there there')
+
+        async def main():
+            await c2()
+
+        await main()
+
+        self.assertEqual(stack_for_inner, [
+            'T<there there>',
+            ['s capture_test_stack', 'a inner', 'a c1'],
+            [['T<anon>', ['a c2', 'a main', 'a test_stack_task'], []]]
+        ])
+
+    async def test_stack_future(self):
+
+        stack_for_fut = None
+
+        async def a2(fut):
+            await fut
+
+        async def a1(fut):
+            await a2(fut)
+
+        async def b1(fut):
+            await fut
+
+        async def main():
+            nonlocal stack_for_fut
+
+            fut = asyncio.Future()
+            async with asyncio.TaskGroup() as g:
+                g.create_task(a1(fut), name="task A")
+                g.create_task(b1(fut), name='task B')
+
+                for _ in range(5):
+                    # Do a few iterations to ensure that both a1 and b1
+                    # await on the future
+                    await asyncio.sleep(0)
+
+                stack_for_fut = capture_test_stack(fut=fut)
+                fut.set_result(None)
+
+        await main()
+
+        self.assertEqual(stack_for_fut,
+            ['F',
+            [],
+            [
+                ['T<task A>',
+                    ['a a2', 'a a1'],
+                    [['T<anon>', ['a test_stack_future'], []]]
+                ],
+                ['T<task B>',
+                    ['a b1'],
+                    [['T<anon>', ['a test_stack_future'], []]]
+                ],
+            ]]
+        )
