@@ -5558,7 +5558,7 @@ class TestStartMethod(unittest.TestCase):
         self.assertIn('spawn', methods)
         if sys.platform == 'win32':
             self.assertEqual(methods, ['spawn'])
-        if sys.platform == 'darwin':
+        elif sys.platform == 'darwin':
             self.assertEqual(methods[0], 'spawn')  # The default is first.
             # Whether these work or not, they remain available on macOS.
             self.assertIn('fork', methods)
