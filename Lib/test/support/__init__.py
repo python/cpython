@@ -2215,7 +2215,7 @@ def skip_if_broken_multiprocessing_synchronize():
             # default breaks TestResourceTracker.test_resource_tracker_reused
             # when the default start method is not fork as synchronize creates
             # a new multiprocessing.resource_tracker process at module import
-            # time via the aboe call in that scenario. This enables gh-84559.
+            # time via the above call in that scenario. This enables gh-84559.
         except OSError as exc:
             raise unittest.SkipTest(f"broken multiprocessing SemLock: {exc!r}")
 
