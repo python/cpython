@@ -369,7 +369,7 @@ Initializing and finalizing the interpreter
    :c:func:`Py_FinalizeEx` first).  There is no return value; it is a fatal
    error if the initialization fails.
 
-   Use the :c:func:`Py_InitializeFromConfig` function to customize the
+   Use :c:func:`Py_InitializeFromConfig` to customize the
    :ref:`Python Initialization Configuration <init-config>`.
 
    .. note::
@@ -383,6 +383,9 @@ Initializing and finalizing the interpreter
    *initsigs* is ``0``, it skips initialization registration of signal handlers,
    which may be useful when CPython is embedded as part of a larger application.
 
+   Use :c:func:`Py_InitializeFromConfig` to customize the
+   :ref:`Python Initialization Configuration <init-config>`.
+
 
 .. c:function:: PyStatus Py_InitializeFromConfig(const PyConfig *config)
 
@@ -391,9 +394,6 @@ Initializing and finalizing the interpreter
    See the :ref:`init-config` section for details on pre-initializing the
    interpreter, populating the runtime configuration structure, and querying
    the returned status structure.
-
-   Use the :c:func:`Py_InitializeFromConfig` function to customize the
-   :ref:`Python Initialization Configuration <init-config>`.
 
 
 .. c:function:: int Py_IsInitialized()
