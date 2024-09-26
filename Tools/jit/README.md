@@ -47,9 +47,6 @@ Alternatively, you can use [chocolatey](https://chocolatey.org):
 choco install llvm --version=19.1.0
 ```
 
-### Dev Containers
-
-If you are working CPython in a [Codespaces instance](https://devguide.python.org/getting-started/setup-building/#using-codespaces), there's no need to install LLVM as the Fedora 40 base image includes LLVM 18 out of the box.
 
 ## Building
 
