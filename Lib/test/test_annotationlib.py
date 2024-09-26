@@ -467,6 +467,8 @@ class TestGetAnnotations(unittest.TestCase):
 
         foo.__annotations__ = {"a": "foo", "b": "str"}
         for format in annotationlib.Format:
+            if format is Format.VALUE_WITH_FAKE_GLOBALS:
+                continue
             with self.subTest(format=format):
                 self.assertEqual(
                     annotationlib.get_annotations(foo, format=format),
@@ -778,6 +780,8 @@ class TestGetAnnotations(unittest.TestCase):
 
         wa = WeirdAnnotations()
         for format in Format:
+            if format is Format.VALUE_WITH_FAKE_GLOBALS:
+                continue
             with (
                 self.subTest(format=format),
                 self.assertRaisesRegex(

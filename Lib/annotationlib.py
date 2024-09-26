@@ -697,6 +697,8 @@ def get_annotations(
             # But if we didn't get it, we use __annotations__ instead.
             ann = _get_dunder_annotations(obj)
             return ann
+        case Format.VALUE_WITH_FAKE_GLOBALS:
+            raise ValueError("The VALUE_WITH_FAKE_GLOBALS format is for internal use only")
         case _:
             raise ValueError(f"Unsupported format {format!r}")
 
