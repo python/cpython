@@ -124,18 +124,10 @@ def run_multiline_interactive_console(
         reader.history.pop()  # skip internal commands in history
         command = REPL_COMMANDS[statement]
         if callable(command):
-            command()
+            # Make sure that history does not change because of commands
+            with reader.suspend_history():
+                command()
             return True
-
-        if isinstance(command, str):
-            # Internal readline commands require a prepared reader like
-            # inside multiline_input.
-            reader.prepare()
-            reader.refresh()
-            reader.do_cmd((command, [statement]))
-            reader.restore()
-            return True
-
         return False
 
     while 1:
