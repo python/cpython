@@ -1329,15 +1329,15 @@ class TestMain(ReplTestCase):
         self.assertEqual(exit_code, 0)
 
     def test_prompt_after_help(self):
-        # Ensure that we don't see a double prompt after exiting `help`
         output, exit_code = self.run_repl(["help", "q", "exit"])
 
         # Regex pattern to remove ANSI escape sequences
-        ansi_escape = re.compile(r"(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]")
-
-        # Remove ANSI escape codes from the string
+        ansi_escape = re.compile(r"(\x1B(=|>|(\[)[0-?]*[ -\/]*[@-~]))")
         cleaned_output = ansi_escape.sub("", output)
-
         self.assertEqual(exit_code, 0)
-        self.assertRegex(cleaned_output, r"(?<!>>> )>>>\s*$")
+
+        # Ensure that we don't see multiple prompts after exiting `help`
+        # Extra stuff (newline and `exit` rewrites) are necessary
+        # because of how run_repl works.
+        self.assertNotIn(">>> \n>>> >>>", cleaned_output)
 
