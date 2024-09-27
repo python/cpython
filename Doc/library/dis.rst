@@ -312,7 +312,8 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.14
       Added the *show_positions* parameter.
 
-.. function:: disassemble(code, lasti=-1, *, file=None, show_caches=False, adaptive=False)
+.. function:: disassemble(code, lasti=-1, *, file=None, show_caches=False,\
+                          adaptive=False, show_offsets=False, show_positions=False)
               disco(code, lasti=-1, *, file=None, show_caches=False, adaptive=False,\
                     show_offsets=False, show_positions=False)
 
@@ -958,7 +959,7 @@ iterations of the loop.
    list of constants supported by this instruction.  Used by the :keyword:`assert`
    statement to load :exc:`AssertionError`.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 
 .. opcode:: LOAD_BUILD_CLASS
@@ -1825,7 +1826,7 @@ iterations of the loop.
    If ``type(STACK[-1]).__xxx__`` is not a method, leave
    ``STACK[-1].__xxx__; NULL`` on the stack.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 
 **Pseudo-instructions**
@@ -1870,6 +1871,12 @@ but are replaced by real opcodes or removed before bytecode is generated.
 
    Undirected relative jump instructions which are replaced by their
    directed (forward/backward) counterparts by the assembler.
+
+.. opcode:: JUMP_IF_TRUE
+.. opcode:: JUMP_IF_FALSE
+
+   Conditional jumps which do not impact the stack. Replaced by the sequence
+   ``COPY 1``, ``TO_BOOL``, ``POP_JUMP_IF_TRUE/FALSE``.
 
 .. opcode:: LOAD_CLOSURE (i)
 
