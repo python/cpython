@@ -919,7 +919,7 @@ which will set the various import-controlled attributes to appropriate values.
 It's also possible to use the :class:`types.ModuleType` constructor to create
 modules directly, but this technique is more error-prone, as most attributes
 must be manually set on the module object after it has been created when using
-this method.
+this approach.
 
 With the exception of :attr:`~module.__name__`, it is **strongly** recommended
 that you rely on :attr:`~module.__spec__` and its attributes instead of any of
