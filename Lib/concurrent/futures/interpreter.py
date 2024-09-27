@@ -110,39 +110,43 @@ class WorkerContext(_thread.WorkerContext):
     def initialize(self):
         assert self.interpid is None, self.interpid
         self.interpid = _interpreters.create(reqrefs=True)
-        # This may raise InterpreterNotFoundError:
-        _interpreters.incref(self.interpid)
+        try:
+            _interpreters.incref(self.interpid)
 
-        maxsize = 0
-        fmt = 0
-        self.resultsid = _interpqueues.create(maxsize, fmt, UNBOUND)
+            initscript = f"""if True:
+                from {__name__} import WorkerContext
+                """
+            initscript += LINESEP + self.initscript
+            self._exec(initscript)
 
-        initscript = f"""if True:
-            from {__name__} import WorkerContext
-            """
-        initscript += LINESEP + self.initscript
-#        for i, line in enumerate(initscript.splitlines(), 1):
-#            print(f'{i:>3} {line}')
-        self._exec(initscript)
-        if self.shared:
-            _interpreters.set___main___attrs(
-                                self.interpid, self.shared, restrict=True)
+            if self.shared:
+                _interpreters.set___main___attrs(
+                                    self.interpid, self.shared, restrict=True)
+
+            maxsize = 0
+            fmt = 0
+            self.resultsid = _interpqueues.create(maxsize, fmt, UNBOUND)
+        except _interpreters.InterpreterNotFoundError:
+            raise  # re-raise
+        except BaseException:
+            self.finalize()
+            raise  # re-raise
 
     def finalize(self):
         interpid = self.interpid
         resultsid = self.resultsid
         self.resultsid = None
         self.interpid = None
-        assert interpid is not None
-        assert resultsid is not None
-        try:
-            _interpqueues.destroy(resultsid)
-        except _interpqueues.QueueNotFoundError:
-            pass
-        try:
-            _interpreters.decref(interpid)
-        except _interpreters.InterpreterNotFoundError:
-            pass
+        if resultsid is not None:
+            try:
+                _interpqueues.destroy(resultsid)
+            except _interpqueues.QueueNotFoundError:
+                pass
+        if interpid is not None:
+            try:
+                _interpreters.decref(interpid)
+            except _interpreters.InterpreterNotFoundError:
+                pass
 
     def run(self, task):
         data, kind = task
