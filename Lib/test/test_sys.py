@@ -1032,7 +1032,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(sys.implementation.name,
                          sys.implementation.name.lower())
 
-        if hasattr(os, 'uname'):
+        if sys.platform == 'win32':
             import platform
             self.assertTrue(hasattr(sys.implementation, '_architecture'))
             self.assertEqual(sys.implementation._architecture, platform.machine())
