@@ -16,6 +16,27 @@ Copyright (c) Corporation for National Research Initiatives.
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
+#define CODECS_STRICT_ERROR_POLICY              0
+#define CODECS_IGNORE_ERROR_POLICY              1
+#define CODECS_REPLACE_ERROR_POLICY             2
+#define CODECS_XMLCHARREFREPLACE_ERROR_POLICY   3
+#define CODECS_BACKSLASHREPLACE_ERROR_POLICY    4
+#define CODECS_NAMEREPLACE_ERROR_POLICY         5
+#define CODECS_SURROGATEPASS_ERROR_POLICY       6
+#define CODECS_SURROGATEESCAPE_ERROR_POLICY     7
+#define CODECS_ERROR_POLICY_COUNT               8
+
+static const char codecs_native_error_polcies[CODECS_ERROR_POLICY_COUNT][32] = {
+    [CODECS_STRICT_ERROR_POLICY] = "strict",
+    [CODECS_IGNORE_ERROR_POLICY] = "ignore",
+    [CODECS_REPLACE_ERROR_POLICY] = "replace",
+    [CODECS_XMLCHARREFREPLACE_ERROR_POLICY] = "xmlcharrefreplace",
+    [CODECS_BACKSLASHREPLACE_ERROR_POLICY] = "backslashreplace",
+    [CODECS_NAMEREPLACE_ERROR_POLICY] = "namereplace",
+    [CODECS_SURROGATEPASS_ERROR_POLICY] = "surrogatepass",
+    [CODECS_SURROGATEESCAPE_ERROR_POLICY] = "surrogateescape",
+};
+
 const char *Py_hexdigits = "0123456789abcdef";
 
 /* --- Codec Registry ----------------------------------------------------- */
@@ -1386,12 +1407,12 @@ PyStatus
 _PyCodec_InitRegistry(PyInterpreterState *interp)
 {
     static struct {
-        const char *name;
+        int policy;
         PyMethodDef def;
-    } methods[] =
+    } error_handlers[] =
     {
         {
-            "strict",
+            CODECS_STRICT_ERROR_POLICY,
             {
                 "strict_errors",
                 strict_errors,
@@ -1401,7 +1422,7 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
             }
         },
         {
-            "ignore",
+            CODECS_IGNORE_ERROR_POLICY,
             {
                 "ignore_errors",
                 ignore_errors,
@@ -1411,7 +1432,7 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
             }
         },
         {
-            "replace",
+            CODECS_REPLACE_ERROR_POLICY,
             {
                 "replace_errors",
                 replace_errors,
@@ -1421,7 +1442,7 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
             }
         },
         {
-            "xmlcharrefreplace",
+            CODECS_XMLCHARREFREPLACE_ERROR_POLICY,
             {
                 "xmlcharrefreplace_errors",
                 xmlcharrefreplace_errors,
@@ -1432,7 +1453,7 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
             }
         },
         {
-            "backslashreplace",
+            CODECS_BACKSLASHREPLACE_ERROR_POLICY,
             {
                 "backslashreplace_errors",
                 backslashreplace_errors,
@@ -1443,7 +1464,7 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
             }
         },
         {
-            "namereplace",
+            CODECS_NAMEREPLACE_ERROR_POLICY,
             {
                 "namereplace_errors",
                 namereplace_errors,
@@ -1454,7 +1475,7 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
             }
         },
         {
-            "surrogatepass",
+            CODECS_SURROGATEPASS_ERROR_POLICY,
             {
                 "surrogatepass",
                 surrogatepass_errors,
@@ -1462,7 +1483,7 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
             }
         },
         {
-            "surrogateescape",
+            CODECS_SURROGATEESCAPE_ERROR_POLICY,
             {
                 "surrogateescape",
                 surrogateescape_errors,
@@ -1484,14 +1505,14 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
     if (interp->codecs.error_registry == NULL) {
         return PyStatus_NoMemory();
     }
-    for (size_t i = 0; i < Py_ARRAY_LENGTH(methods); ++i) {
-        PyObject *func = PyCFunction_NewEx(&methods[i].def, NULL, NULL);
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(error_handlers); ++i) {
+        PyObject *func = PyCFunction_NewEx(&error_handlers[i].def, NULL, NULL);
         if (func == NULL) {
             return PyStatus_NoMemory();
         }
 
-        int res = PyDict_SetItemString(interp->codecs.error_registry,
-                                       methods[i].name, func);
+        const char *name = codecs_native_error_polcies[error_handlers[i].policy];
+        int res = PyDict_SetItemString(interp->codecs.error_registry, name, func);
         Py_DECREF(func);
         if (res < 0) {
             return PyStatus_Error("Failed to insert into codec error registry");
