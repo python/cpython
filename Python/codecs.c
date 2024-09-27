@@ -644,7 +644,7 @@ int PyCodec_UnregisterError(const char *name)
     for (size_t i = 0; i < CODECS_ERROR_POLICY_COUNT; ++i) {
         if (strcmp(name, codecs_native_error_polcies[i]) == 0) {
             PyErr_Format(PyExc_ValueError,
-                         "cannot unregister standard error policy '%s'", name);
+                         "cannot un-register standard error policy '%s'", name);
             return -1;
         }
     }
