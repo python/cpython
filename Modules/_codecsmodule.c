@@ -980,6 +980,26 @@ _codecs_register_error_impl(PyObject *module, const char *errors,
 }
 
 /*[clinic input]
+_codecs.unregister_error -> bool
+    errors: str
+    /
+
+Un-register the specified error handler under the name errors.
+
+Only custom handlers can be un-registered. Returns True if the
+handler has been successfully un-registered, and False if the
+errors policy is not recognized. An exception is raised when
+the errors policy is not allowed.
+[clinic start generated code]*/
+
+static int
+_codecs_unregister_error_impl(PyObject *module, const char *errors)
+/*[clinic end generated code: output=d8c1418e402aecdf input=103c9dae16f32e08]*/
+{
+    return PyCodec_UnregisterError(errors);
+}
+
+/*[clinic input]
 _codecs.lookup_error
     name: str
     /
@@ -1044,6 +1064,7 @@ static PyMethodDef _codecs_functions[] = {
     _CODECS_CODE_PAGE_ENCODE_METHODDEF
     _CODECS_CODE_PAGE_DECODE_METHODDEF
     _CODECS_REGISTER_ERROR_METHODDEF
+    _CODECS_UNREGISTER_ERROR_METHODDEF
     _CODECS_LOOKUP_ERROR_METHODDEF
     {NULL, NULL}                /* sentinel */
 };

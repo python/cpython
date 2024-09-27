@@ -2683,6 +2683,53 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_codecs_unregister_error__doc__,
+"unregister_error($module, errors, /)\n"
+"--\n"
+"\n"
+"Un-register the specified error handler under the name errors.\n"
+"\n"
+"Only custom handlers can be un-registered. Returns True if the\n"
+"handler has been successfully un-registered, and False if the\n"
+"errors policy is not recognized. An exception is raised when\n"
+"the errors policy is not allowed.");
+
+#define _CODECS_UNREGISTER_ERROR_METHODDEF    \
+    {"unregister_error", (PyCFunction)_codecs_unregister_error, METH_O, _codecs_unregister_error__doc__},
+
+static int
+_codecs_unregister_error_impl(PyObject *module, const char *errors);
+
+static PyObject *
+_codecs_unregister_error(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    const char *errors;
+    int _return_value;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("unregister_error", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t errors_length;
+    errors = PyUnicode_AsUTF8AndSize(arg, &errors_length);
+    if (errors == NULL) {
+        goto exit;
+    }
+    if (strlen(errors) != (size_t)errors_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    _return_value = _codecs_unregister_error_impl(module, errors);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_codecs_lookup_error__doc__,
 "lookup_error($module, name, /)\n"
 "--\n"
@@ -2746,4 +2793,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=e50d5fdf65bd45fa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d7cb9b22406515a2 input=a9049054013a1b77]*/
