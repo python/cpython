@@ -1662,7 +1662,7 @@ update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
     }
     // If the local monitors are out of date, clear them up
     _Py_LocalMonitors *local_monitors = &code->_co_monitoring->local_monitors;
-    for (int i = 0; i < PY_MONITORING_TOOL_IDS; i++) {
+    for (int i = 0; i < PY_MONITORING_SYS_PROFILE_ID; i++) {
         if (code->_co_monitoring->tool_versions[i] != interp->monitoring_tool_versions[i]) {
             for (int j = 0; j < _PY_MONITORING_LOCAL_EVENTS; j++) {
                 local_monitors->tools[j] &= ~(1 << i);
