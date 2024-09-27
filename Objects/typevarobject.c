@@ -168,7 +168,7 @@ constevaluator_call(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
     PyObject *value = ((constevaluatorobject *)self)->value;
-    if (format == 3) { // SOURCE
+    if (format == 3) { // STRING
         PyUnicodeWriter *writer = PyUnicodeWriter_Create(5);  // cannot be <5
         if (writer == NULL) {
             return NULL;
