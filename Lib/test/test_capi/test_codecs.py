@@ -1,6 +1,7 @@
 import codecs
 import contextlib
 import io
+import os
 import re
 import sys
 import unittest
@@ -526,14 +527,13 @@ class CAPIUnicodeTest(unittest.TestCase):
 class CAPICodecs(unittest.TestCase):
 
     def setUp(self):
-        self.enterContext(import_helper.isolated_modules())
-        self.enterContext(import_helper.CleanImport('codecs'))
-        self.codecs = import_helper.import_module('codecs')
         # Encoding names are normalized internally by converting them
         # to lowercase and their hyphens are replaced by underscores.
         self.encoding_name = f'codec_reversed_{id(self)}'
-        # make sure that our custom codec is not already registered
-        self.assertRaises(LookupError, self.codecs.lookup, self.encoding_name)
+        # Make sure that our custom codec is not already registered (that
+        # way we know whether we correctly unregistered the custom codec
+        # after a test or not).
+        self.assertRaises(LookupError, codecs.lookup, self.encoding_name)
         # create the search function without registering yet
         self._create_custom_codec()
 
@@ -586,41 +586,47 @@ class CAPICodecs(unittest.TestCase):
 
     @contextlib.contextmanager
     def use_custom_encoder(self):
-        self.assertRaises(LookupError, self.codecs.lookup, self.encoding_name)
-        self.codecs.register(self.search_function)
+        self.assertRaises(LookupError, codecs.lookup, self.encoding_name)
+        codecs.register(self.search_function)
         yield
-        self.codecs.unregister(self.search_function)
-        self.assertRaises(LookupError, self.codecs.lookup, self.encoding_name)
+        codecs.unregister(self.search_function)
+        self.assertRaises(LookupError, codecs.lookup, self.encoding_name)
 
     def test_codec_register(self):
         search_function, encoding = self.search_function, self.encoding_name
         # register the search function using the C API
         self.assertIsNone(_testcapi.codec_register(search_function))
-        self.assertIs(self.codecs.lookup(encoding), search_function(encoding))
-        self.assertEqual(self.codecs.encode('123', encoding=encoding), '321')
+        # in case the test failed before cleaning up
+        self.addCleanup(codecs.unregister, self.search_function)
+        self.assertIs(codecs.lookup(encoding), search_function(encoding))
+        self.assertEqual(codecs.encode('123', encoding=encoding), '321')
         # unregister the search function using the regular API
-        self.codecs.unregister(search_function)
-        self.assertRaises(LookupError, self.codecs.lookup, encoding)
+        codecs.unregister(search_function)
+        self.assertRaises(LookupError, codecs.lookup, encoding)
 
     def test_codec_unregister(self):
         search_function, encoding = self.search_function, self.encoding_name
-        self.assertRaises(LookupError, self.codecs.lookup, encoding)
+        self.assertRaises(LookupError, codecs.lookup, encoding)
         # register the search function using the regular API
-        self.codecs.register(search_function)
-        self.assertIsNotNone(self.codecs.lookup(encoding))
+        codecs.register(search_function)
+        # in case the test failed before cleaning up
+        self.addCleanup(codecs.unregister, self.search_function)
+        self.assertIsNotNone(codecs.lookup(encoding))
         # unregister the search function using the C API
         self.assertIsNone(_testcapi.codec_unregister(search_function))
-        self.assertRaises(LookupError, self.codecs.lookup, encoding)
+        self.assertRaises(LookupError, codecs.lookup, encoding)
 
     def test_codec_known_encoding(self):
-        self.assertRaises(LookupError, self.codecs.lookup, 'unknown-codec')
+        self.assertRaises(LookupError, codecs.lookup, 'unknown-codec')
         self.assertFalse(_testcapi.codec_known_encoding('unknown-codec'))
         self.assertFalse(_testcapi.codec_known_encoding('unknown_codec'))
         self.assertFalse(_testcapi.codec_known_encoding('UNKNOWN-codec'))
 
         encoding_name = self.encoding_name
-        self.assertRaises(LookupError, self.codecs.lookup, encoding_name)
-        self.codecs.register(self.search_function)
+        self.assertRaises(LookupError, codecs.lookup, encoding_name)
+
+        codecs.register(self.search_function)
+        self.addCleanup(codecs.unregister, self.search_function)
 
         for name in [
             encoding_name,
@@ -741,11 +747,6 @@ class CAPICodecs(unittest.TestCase):
 
 class CAPICodecErrors(unittest.TestCase):
 
-    def setUp(self):
-        self.enterContext(import_helper.isolated_modules())
-        self.enterContext(import_helper.CleanImport('codecs'))
-        self.codecs = import_helper.import_module('codecs')
-
     def test_codec_register_error(self):
         self.assertRaises(LookupError, _testcapi.codec_lookup_error, 'custom')
 
@@ -754,24 +755,25 @@ class CAPICodecErrors(unittest.TestCase):
 
         error_handler = mock.Mock(wraps=error_handler)
         _testcapi.codec_register_error('custom', error_handler)
+        # self.addCleanup(codecs.unregister_error, 'custom')
 
-        self.assertRaises(UnicodeEncodeError, self.codecs.encode,
+        self.assertRaises(UnicodeEncodeError, codecs.encode,
                           '\xff', 'ascii', errors='custom')
         error_handler.assert_called_once()
         error_handler.reset_mock()
 
-        self.assertRaises(UnicodeDecodeError, self.codecs.decode,
+        self.assertRaises(UnicodeDecodeError, codecs.decode,
                           b'\xff', 'ascii', errors='custom')
         error_handler.assert_called_once()
 
     def test_codec_lookup_error(self):
         codec_lookup_error = _testcapi.codec_lookup_error
-        self.assertIs(codec_lookup_error(NULL), self.codecs.strict_errors)
-        self.assertIs(codec_lookup_error('strict'), self.codecs.strict_errors)
-        self.assertIs(codec_lookup_error('ignore'), self.codecs.ignore_errors)
-        self.assertIs(codec_lookup_error('replace'), self.codecs.replace_errors)
-        self.assertIs(codec_lookup_error('xmlcharrefreplace'), self.codecs.xmlcharrefreplace_errors)
-        self.assertIs(codec_lookup_error('namereplace'), self.codecs.namereplace_errors)
+        self.assertIs(codec_lookup_error(NULL), codecs.strict_errors)
+        self.assertIs(codec_lookup_error('strict'), codecs.strict_errors)
+        self.assertIs(codec_lookup_error('ignore'), codecs.ignore_errors)
+        self.assertIs(codec_lookup_error('replace'), codecs.replace_errors)
+        self.assertIs(codec_lookup_error('xmlcharrefreplace'), codecs.xmlcharrefreplace_errors)
+        self.assertIs(codec_lookup_error('namereplace'), codecs.namereplace_errors)
         self.assertRaises(LookupError, codec_lookup_error, 'custom')
 
     def test_codec_error_handlers(self):
