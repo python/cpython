@@ -123,6 +123,7 @@ get_module_state(PyObject *mod)
 
 static struct PyModuleDef _decimal_module;
 static PyType_Spec dec_spec;
+static PyType_Spec context_spec;
 
 static inline decimal_state *
 get_module_state_by_def(PyTypeObject *tp)
@@ -190,6 +191,7 @@ typedef struct PyDecContextObject {
     PyObject *flags;
     int capitals;
     PyThreadState *tstate;
+    decimal_state *modstate;
 } PyDecContextObject;
 
 typedef struct {
@@ -209,6 +211,15 @@ typedef struct {
 #define SdFlags(v) (*((PyDecSignalDictObject *)v)->flags)
 #define CTX(v) (&((PyDecContextObject *)v)->ctx)
 #define CtxCaps(v) (((PyDecContextObject *)v)->capitals)
+
+static inline decimal_state *
+get_module_state_from_ctx(PyObject *v)
+{
+    assert(PyType_GetBaseByToken(Py_TYPE(v), &context_spec, NULL) == 1);
+    void *state = ((PyDecContextObject *)v)->modstate;
+    assert(state != NULL);
+    return (decimal_state *)state;
+}
 
 
 Py_LOCAL_INLINE(PyObject *)
@@ -1393,6 +1404,7 @@ context_new(PyTypeObject *type,
 
     CtxCaps(self) = 1;
     self->tstate = NULL;
+    self->modstate = state;
 
     if (type == state->PyDecContext_Type) {
         PyObject_GC_Track(self);
@@ -5736,6 +5748,7 @@ static PyMethodDef context_methods [] =
 };
 
 static PyType_Slot context_slots[] = {
+    {Py_tp_token, Py_TP_USE_SPEC},
     {Py_tp_dealloc, context_dealloc},
     {Py_tp_traverse, context_traverse},
     {Py_tp_clear, context_clear},
