@@ -589,11 +589,9 @@ The available presentation types for :class:`float` and
    +---------+----------------------------------------------------------+
 
 The result should be correctly rounded to a given precision ``p`` of digits
-after the decimal point.  For :class:`float`, used rounding mode match the one
-for :func:`round` builtin, i.e. it should round results midway between
-representable values toward the nearest value with an even (0) least
-significant bit.  For :class:`~decimal.Decimal`, rounding mode of the current
-:ref:`context <decimal-context>` is used.
+after the decimal point.  The rounding mode for :class:`float` matches that
+of the :func:`round` builtin.  For :class:`~decimal.Decimal`, the rounding
+mode of the current :ref:`context <decimal-context>` will be used.
 
 
 .. _formatexamples:
