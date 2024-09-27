@@ -85,6 +85,8 @@ async def staggered_race(coro_fns, delay, *, loop=None):
         tg = taskgroups.TaskGroup()
         # Intentionally override the loop in the TaskGroup to avoid
         # using the running loop, preserving backwards compatibility
+        # TaskGroup only starts using `_loop` after `__aenter__`
+        # so overrding it here is safe.
         tg._loop = loop
         async with tg:
             for this_index, coro_fn in enumerate(coro_fns):
