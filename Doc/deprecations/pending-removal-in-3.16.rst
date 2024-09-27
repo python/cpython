@@ -18,6 +18,14 @@ Pending Removal in Python 3.16
     Use the ``'w'`` format code (:c:type:`Py_UCS4`)
     for Unicode characters instead.
 
+* :mod:`asyncio`:
+
+   * :mod:`asyncio`:
+     :func:`!asyncio.iscoroutinefunction` is deprecated
+     and will be removed in Python 3.16,
+     use :func:`inspect.iscoroutinefunction` instead.
+     (Contributed by Jiahao Li and Kumar Aditya in :gh:`122875`.)
+
 * :mod:`shutil`:
 
   * The :class:`!ExecError` exception
