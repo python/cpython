@@ -493,7 +493,7 @@ The :mod:`functools` module defines the following functions:
      ...
 
    For code that dispatches on a collections type (e.g., ``list``), but wants
-   to typehint the items of the collection (e.g., ``list[int]``), then the
+   to typehint the items of the collection (e.g., ``list[int]``), the
    dispatch type should be passed explicitly to the decorator itself with the
    typehint going into the function definition::
 
