@@ -464,7 +464,9 @@ winconsoleio_dealloc(winconsoleio *self)
     PyTypeObject *tp = Py_TYPE(self);
     self->finalizing = 1;
     if (_PyIOBase_finalize((PyObject *) self) < 0) {
-        _PyObject_GC_TRACK_SAFE((PyObject *)self); // untracked by _Py_Dealloc
+        // if the object is resurrected, it will be tracked again by
+        // PyObject_CallFinalizerFromDealloc()
+        assert(_PyObject_GC_IS_TRACKED(self));
         return;
     }
     if (self->weakreflist != NULL)

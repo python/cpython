@@ -529,7 +529,8 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     if (_PyObject_IS_GC(self)) {
         /* If we get here, it must have originally been tracked when
          * _Py_Dealloc was called.  Make it tracked again so it can't become
-         * part of a reference cycle and leak.
+         * part of a reference cycle and leak.  Some types expect the object
+         * to be tracked when this returns non-zero.
          */
         if (!_PyObject_GC_IS_TRACKED(self)) {
             _PyObject_GC_TRACK(self);

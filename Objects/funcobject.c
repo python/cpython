@@ -1049,7 +1049,12 @@ func_dealloc(PyFunctionObject *op)
     handle_func_event(PyFunction_EVENT_DESTROY, op, NULL);
     if (Py_REFCNT(op) > 1) {
         Py_SET_REFCNT(op, Py_REFCNT(op) - 1);
-        _PyObject_GC_TRACK_SAFE((PyObject *)op); // untracked by _Py_Dealloc
+        // Ensure it's tracked again before we return.  _Py_Dealloc untracks
+        // it but, when it's resurrected, it needs to be re-tracked to avoid
+        // memory leaks in the case of cycles.
+        if (!_PyObject_GC_IS_TRACKED(op)) {
+            PyObject_GC_Track(op);
+        }
         return;
     }
     Py_SET_REFCNT(op, 0);

@@ -1993,7 +1993,9 @@ static void
 async_gen_athrow_dealloc(PyAsyncGenAThrow *o)
 {
     if (PyObject_CallFinalizerFromDealloc((PyObject *)o)) {
-        _PyObject_GC_TRACK_SAFE((PyObject *)o); // untracked by _Py_Dealloc
+        // if the object is resurrected, it will be tracked again by
+        // PyObject_CallFinalizerFromDealloc()
+        assert(_PyObject_GC_IS_TRACKED(o));
         return;
     }
 
