@@ -43,9 +43,6 @@ Data members:
 #  include <unistd.h>             // getpid()
 #endif
 
-#ifdef HAVE_SYS_UTSNAME_H
-#  include <sys/utsname.h>
-#endif /* HAVE_SYS_UTSNAME_H */
 #ifdef MS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
