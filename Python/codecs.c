@@ -650,13 +650,7 @@ int PyCodec_UnregisterError(const char *name)
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(interp->codecs.initialized);
-    PyObject *handler = NULL;
-    if (PyDict_PopString(interp->codecs.error_registry, name, &handler) < 0) {
-        return -1;
-    }
-    int exists = handler == NULL ? 0 : 1;
-    Py_XDECREF(handler);
-    return exists;
+    return PyDict_PopString(interp->codecs.error_registry, name, NULL);
 }
 
 /* Lookup the error handling callback function registered under the
