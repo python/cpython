@@ -549,7 +549,7 @@ Initializing and finalizing the interpreter
    any other unhandled exception.
 
    This function always finalizes the Python interpreter regardless of whether
-   it returns a value or immediately exits the process due to an an unhandled
+   it returns a value or immediately exits the process due to an unhandled
    :exc:`SystemExit` exception.
 
    See :ref:`Python Configuration <init-python-config>` for an example of a
