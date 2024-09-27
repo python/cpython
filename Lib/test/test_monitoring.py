@@ -46,6 +46,9 @@ def nth_line(func, offset):
 
 class MonitoringBasicTest(unittest.TestCase):
 
+    def tearDown(self):
+        sys.monitoring.free_tool_id(TEST_TOOL)
+
     def test_has_objects(self):
         m = sys.monitoring
         m.events
@@ -99,6 +102,20 @@ class MonitoringBasicTest(unittest.TestCase):
         callback = sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
         self.assertIs(callback, None)
 
+        sys.monitoring.free_tool_id(TEST_TOOL)
+
+        events = []
+        sys.monitoring.use_tool_id(TEST_TOOL, "MonitoringTest.Tool")
+        sys.monitoring.register_callback(TEST_TOOL, E.LINE, lambda *args: events.append(args))
+        sys.monitoring.set_local_events(TEST_TOOL, f.__code__, E.LINE)
+        f()
+        sys.monitoring.free_tool_id(TEST_TOOL)
+        sys.monitoring.use_tool_id(TEST_TOOL, "MonitoringTest.Tool")
+        f()
+        # the first f() should trigger a LINE event, and even if we use the
+        # tool id immediately after freeing it, the second f() should not
+        # trigger any event
+        self.assertEqual(len(events), 1)
         sys.monitoring.free_tool_id(TEST_TOOL)
 
 
