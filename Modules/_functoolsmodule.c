@@ -334,6 +334,27 @@ partial_descr_get(PyObject *self, PyObject *obj, PyObject *type)
     return PyMethod_New(self, obj);
 }
 
+#define ALLOCATE_STACK(type, size, small_stack, stack)          \
+    do {                                                        \
+        if (size <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) { \
+            stack = small_stack;                                \
+        }                                                       \
+        else {                                                  \
+            stack = PyMem_Malloc(size * sizeof(type *));        \
+            if (stack == NULL) {                                \
+                PyErr_NoMemory();                               \
+                return NULL;                                    \
+            }                                                   \
+        }                                                       \
+    } while (0)
+
+#define DEALLOCATE_STACK(small_stack, stack)    \
+    do {                                        \
+        if (stack != small_stack) {             \
+            PyMem_Free(stack);                  \
+        }                                       \
+    } while (0)
+
 static PyObject *
 partial_vectorcall(partialobject *pto, PyObject *const *args,
                    size_t nargsf, PyObject *kwnames)
@@ -355,13 +376,10 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
         return NULL;
     }
 
-    Py_ssize_t tot_nargs = pto_nargs + nargs - pto_phcount;
-    Py_ssize_t tot_nkwds;
-    Py_ssize_t tot_nargskw;
     PyObject **pto_args = _PyTuple_ITEMS(pto->args);
     PyObject *ret;
 
-    /* Divergence on whether pto has kwds */
+    /* Special cases */
     if (pto_nkwds == 0) {
         /* Fast path if we're called without arguments */
         if (nargskw == 0) {
@@ -370,7 +388,8 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
         }
 
         /* Use PY_VECTORCALL_ARGUMENTS_OFFSET to prepend a single
-         * positional argument */
+         * positional argument.
+         * NOTE: Could add (Placeholder, arg) case in similar manner */
         if (pto_nargs == 1 && (nargsf & PY_VECTORCALL_ARGUMENTS_OFFSET)) {
             PyObject **newargs = (PyObject **)args - 1;
             PyObject *tmp = newargs[0];
@@ -381,22 +400,21 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
             return ret;
         }
 
+    }
+
+    /* Size variables */
+    Py_ssize_t tot_nargs = pto_nargs + nargs - pto_phcount;
+    Py_ssize_t tot_nkwds;
+    Py_ssize_t tot_nargskw;
+
+    /* Divergence on whether pto has kwds */
+    if (pto_nkwds == 0) {
         tot_nkwds = nkwds;
         tot_nargskw = tot_nargs + tot_nkwds;
 
         /* Allocate Stack */
-        PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
-        PyObject **stack;
-        if (tot_nargskw <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) {
-            stack = small_stack;
-        }
-        else {
-            stack = PyMem_Malloc(tot_nargskw * sizeof(PyObject *));
-            if (stack == NULL) {
-                PyErr_NoMemory();
-                return NULL;
-            }
-        }
+        PyObject **stack, *small_stack[_PY_FASTCALL_SMALL_STACK];
+        ALLOCATE_STACK(PyObject, tot_nargskw, small_stack, stack);
 
         /* Copy Positionals to new stack */
         if (pto_phcount) {
@@ -420,56 +438,52 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
             memcpy(stack, pto_args, pto_nargs * sizeof(PyObject*));
             memcpy(stack + pto_nargs, args, nargskw * sizeof(PyObject*));
         }
-        ret = _PyObject_VectorcallTstate(tstate, pto->fn, stack, tot_nargs, kwnames);
 
-        /* Free stack & Return */
-        if (stack != small_stack) {
-            PyMem_Free(stack);
-        }
+        /* Call / Maintenance / Return */
+        ret = _PyObject_VectorcallTstate(tstate, pto->fn, stack, tot_nargs, kwnames);
+        DEALLOCATE_STACK(small_stack, stack);
         return ret;
     }
     else {
-        PyObject *tot_kw = NULL;
-        PyObject *tot_kwnames = NULL;
         PyObject *key, *val;
-        int has_nkwds = 0;
 
-        if (!nkwds) {
-            tot_kw = pto->kw;
-            tot_nkwds = pto_nkwds;
-            tot_nargskw = tot_nargs + tot_nkwds;
+        PyObject **pto_kwkeys, *small_pto_kwkeys[_PY_FASTCALL_SMALL_STACK];
+        PyObject **pto_kwvals, *small_pto_kwvals[_PY_FASTCALL_SMALL_STACK];
+        ALLOCATE_STACK(PyObject, pto_nkwds, small_pto_kwkeys, pto_kwkeys);
+        ALLOCATE_STACK(PyObject, pto_nkwds, small_pto_kwvals, pto_kwvals);
+        Py_ssize_t pos = 0, i = 0;
+        while (PyDict_Next(pto->kw, &pos, &key, &val)) {
+            pto_kwkeys[i] = key;
+            pto_kwvals[i] = val;
+            i++;
         }
-        else {
-            has_nkwds = 1;
-            tot_kw = PyDict_Copy(pto->kw);
+
+        /* Calculate total kw size and positions of items to override */
+        Py_ssize_t *positions, small_positions[_PY_FASTCALL_SMALL_STACK];
+        tot_nkwds = pto_nkwds + nkwds;
+        if (nkwds) {
+            ALLOCATE_STACK(Py_ssize_t, nkwds, small_positions, positions);
             for (Py_ssize_t i=0; i < nkwds; i++) {
+                positions[i] = -1;
                 key = PyTuple_GET_ITEM(kwnames, i);
-                val = args[nargs + i];
-                if (PyDict_SetItem(tot_kw, key, val)) {
-                    Py_DECREF(tot_kw);
-                    return NULL;
+                if (PyDict_Contains(pto->kw, key)) {
+                    tot_nkwds--;
+                    for (Py_ssize_t j=0; j < pto_nkwds; j++) {
+                        if (PyObject_RichCompareBool(key, pto_kwkeys[j], Py_EQ)) {
+                            positions[i] = j;
+                            break;
+                        }
+                    }
                 }
             }
-
-            tot_nkwds = PyDict_GET_SIZE(tot_kw);
-            tot_nargskw = tot_nargs + tot_nkwds;
         }
+        tot_nargskw = tot_nargs + tot_nkwds;
 
         /* Allocate Stack */
-        PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
-        PyObject **stack;
-        if (tot_nargskw <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) {
-            stack = small_stack;
-        }
-        else {
-            stack = PyMem_Malloc(tot_nargskw * sizeof(PyObject *));
-            if (stack == NULL) {
-                PyErr_NoMemory();
-                return NULL;
-            }
-        }
+        PyObject **stack, *small_stack[_PY_FASTCALL_SMALL_STACK];
+        ALLOCATE_STACK(PyObject, tot_nargskw, small_stack, stack);
 
-        /* Copy Positionals to new stack */
+        /* Copy Positionals to stack */
         if (pto_phcount) {
             Py_ssize_t j = 0;       // New args index
             for (Py_ssize_t i = 0; i < pto_nargs; i++) {
@@ -492,26 +506,43 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
             memcpy(stack + pto_nargs, args, nargs * sizeof(PyObject*));
         }
 
-        /* Copy Keywords to new stack */
-        tot_kwnames = PyTuple_New(tot_nkwds);
-        Py_ssize_t pos = 0, i = 0;
-        while (PyDict_Next(tot_kw, &pos, &key, &val)) {
+        /* Copy Pto Keywords to stack */
+        memcpy(stack + tot_nargs, pto_kwvals, pto_nkwds * sizeof(PyObject*));
+        DEALLOCATE_STACK(small_pto_kwvals, pto_kwvals);
+
+        /* Copy New Keywords to stack */
+        PyObject *tot_kwnames = PyTuple_New(tot_nkwds);
+        for (Py_ssize_t i=0; i < pto_nkwds; i++) {
+            key = pto_kwkeys[i];
             PyTuple_SET_ITEM(tot_kwnames, i, key);
             Py_INCREF(key);
-            stack[tot_nargs + i] = val;
-            i += 1;
         }
-        if (has_nkwds) {
-            Py_DECREF(tot_kw);
+        DEALLOCATE_STACK(small_pto_kwkeys, pto_kwkeys);
+
+        if (nkwds) {
+            Py_ssize_t k = 0;
+            Py_ssize_t j;
+            for (Py_ssize_t i=0; i < nkwds; i++) {
+                key = PyTuple_GET_ITEM(kwnames, i);
+                val = args[nargs + i];
+                j = positions[i];
+                if (j != -1) {
+                    stack[tot_nargs + j] = val;
+                }
+                else {
+                    PyTuple_SET_ITEM(tot_kwnames, pto_nkwds + k, key);
+                    Py_INCREF(key);
+                    stack[tot_nargs + pto_nkwds + k] = val;
+                    k++;
+                }
+            }
+            DEALLOCATE_STACK(small_positions, positions);
         }
 
+        /* Call / Maintenance / Return */
         ret = _PyObject_VectorcallTstate(tstate, pto->fn, stack, tot_nargs, tot_kwnames);
+        DEALLOCATE_STACK(small_stack, stack);
         Py_DECREF(tot_kwnames);
-
-        /* Free stack & Return */
-        if (stack != small_stack) {
-            PyMem_Free(stack);
-        }
         return ret;
     }
 }
@@ -531,7 +562,6 @@ partial_setvectorcall(partialobject *pto)
         pto->vectorcall = (vectorcallfunc)partial_vectorcall;
     }
 }
-
 
 // Not converted to argument clinic, because of `*args, **kwargs` arguments.
 static PyObject *
