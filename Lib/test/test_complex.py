@@ -255,8 +255,8 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                         (complex(NAN, 1e200), complex(NAN, 1e200), complex(-INF, NAN)),
                         (complex(NAN, NAN), complex(NAN, NAN), complex(NAN, NAN))]:
             with self.subTest(z=z, w=w, r=r):
-                self.assertComplexesAreIdentical(z * w, s)
-                self.assertComplexesAreIdentical(w * z, s)
+                self.assertComplexesAreIdentical(z * w, r)
+                self.assertComplexesAreIdentical(w * z, r)
 
     def test_mod(self):
         # % is no longer supported on complex numbers
