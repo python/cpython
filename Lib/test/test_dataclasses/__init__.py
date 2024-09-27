@@ -18,7 +18,7 @@ from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Op
 from typing import get_type_hints
 from collections import deque, OrderedDict, namedtuple, defaultdict
 from copy import deepcopy
-from functools import total_ordering, wraps
+from functools import total_ordering
 
 import typing       # Needed for the string "typing.ClassVar[int]" to work as an annotation.
 import dataclasses  # Needed for the string "dataclasses.InitVar[int]" to work as an annotation.
