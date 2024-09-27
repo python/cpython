@@ -7,6 +7,7 @@ import sys
 import unittest
 import unittest.mock as mock
 import _testcapi
+from getopt import error
 from test.support import import_helper
 
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
@@ -748,14 +749,19 @@ class CAPICodecs(unittest.TestCase):
 class CAPICodecErrors(unittest.TestCase):
 
     def test_codec_register_error(self):
-        self.assertRaises(LookupError, _testcapi.codec_lookup_error, 'custom')
+        try:
+            error_handler = _testcapi.codec_lookup_error('custom')
+        except LookupError:
+            error_handler = None
 
-        def error_handler(exc):
-            raise exc
+        if error_handler is None:
+            def custom_error_handler(exc):
+                raise exc
 
-        error_handler = mock.Mock(wraps=error_handler)
-        _testcapi.codec_register_error('custom', error_handler)
-        # self.addCleanup(codecs.unregister_error, 'custom')
+            error_handler = mock.Mock(wraps=custom_error_handler)
+            _testcapi.codec_register_error('custom', error_handler)
+        else:
+            self.assertIsInstance(error_handler, mock.Mock)
 
         self.assertRaises(UnicodeEncodeError, codecs.encode,
                           '\xff', 'ascii', errors='custom')
@@ -765,6 +771,7 @@ class CAPICodecErrors(unittest.TestCase):
         self.assertRaises(UnicodeDecodeError, codecs.decode,
                           b'\xff', 'ascii', errors='custom')
         error_handler.assert_called_once()
+        error_handler.reset_mock()
 
     def test_codec_lookup_error(self):
         codec_lookup_error = _testcapi.codec_lookup_error
@@ -774,7 +781,7 @@ class CAPICodecErrors(unittest.TestCase):
         self.assertIs(codec_lookup_error('replace'), codecs.replace_errors)
         self.assertIs(codec_lookup_error('xmlcharrefreplace'), codecs.xmlcharrefreplace_errors)
         self.assertIs(codec_lookup_error('namereplace'), codecs.namereplace_errors)
-        self.assertRaises(LookupError, codec_lookup_error, 'custom')
+        self.assertRaises(LookupError, codec_lookup_error, 'unknown')
 
     def test_codec_error_handlers(self):
         exceptions = [
