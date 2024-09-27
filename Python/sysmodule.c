@@ -3322,9 +3322,6 @@ static PyObject *
 make_impl_info(PyObject *version_info)
 {
     int res;
-#ifdef MS_WINDOWS
-    SYSTEM_INFO s;
-#endif /* !MS_WINDOWS */
     PyObject *impl_info, *value, *ns;
 
     impl_info = PyDict_New();
@@ -3361,24 +3358,22 @@ make_impl_info(PyObject *version_info)
     if (res < 0)
         goto error;
 
-#ifdef MS_WINDOWS
-    GetNativeSystemInfo(&s);
-    switch (s.wProcessorArchitecture) {
-    case PROCESSOR_ARCHITECTURE_AMD64:   value = PyUnicode_FromString("AMD64"); break;
-    case PROCESSOR_ARCHITECTURE_ARM:     value = PyUnicode_FromString("ARM");   break;
-    case PROCESSOR_ARCHITECTURE_ARM64:   value = PyUnicode_FromString("ARM64"); break;
-    case PROCESSOR_ARCHITECTURE_IA64:    value = PyUnicode_FromString("IA64");  break;
-    case PROCESSOR_ARCHITECTURE_INTEL:   value = PyUnicode_FromString("i386");  break;
-    default:                             value = PyUnicode_FromString("");      break;
-    }
+#ifdef _WIN32
+# define OS_PLATFORM "win32"
+#elif _WIN64
+# define OS_PLATFORM "amd64"
+#elif _M_ARM
+# define OS_PLATFORM "arm32"
+#elif _M_ARM64
+# define OS_PLATFORM "arm64"
+#endif
+    value = PyUnicode_FromString(OS_PLATFORM);
     if (value == NULL)
         goto error;
     res = PyDict_SetItemString(impl_info, "_architecture", value);
-    Py_DECREF(value);
+#undef OS_PLATFORM
     if (res < 0)
         goto error;
-#endif /* !MS_WINDOWS */
-
 
 #ifdef MULTIARCH
     value = PyUnicode_FromString(MULTIARCH);
