@@ -1349,17 +1349,15 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
         if isinstance(member, types.FunctionType):
             if _update_func_cell_for__class__(member, cls, newcls):
                 break
-        elif isinstance(member, property):
-            for f in member.fget, member.fset, member.fdel:
-                if f is None:
-                    continue
+        elif isinstance(member, property) and (
+            any(
                 # Unwrap once more in case function
                 # was wrapped before it became property.
-                f = inspect.unwrap(f)
-                if _update_func_cell_for__class__(f, cls, newcls):
-                    break
-            else:
-                continue
+                _update_func_cell_for__class__(inspect.unwrap(f), cls, newcls)
+                for f in (member.fget, member.fset, member.fdel)
+                if f is not None
+            )
+        ):
             break
         elif hasattr(member, "__get__") and not inspect.ismemberdescriptor(
             member
