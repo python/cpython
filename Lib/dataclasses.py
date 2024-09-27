@@ -1245,10 +1245,10 @@ def _find_inner_functions(obj, _seen=None, _depth=0):
     _seen.add(id(obj))
 
     _depth += 1
-    # normally just inspection of a descriptor object itself should be enough,
+    # Normally just inspection of a descriptor object itself should be enough,
     # and we should encounter the function as its attribute,
     # but in case function was wrapped (e.g. functools.partition was used),
-    # we want to dive at least one level deeper
+    # we want to dive at least one level deeper.
     if _depth > 2:
         return None
 
@@ -1353,8 +1353,8 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
             for f in member.fget, member.fset, member.fdel:
                 if f is None:
                     continue
-                # unwrap once more in case function
-                # was wrapped before it became property
+                # Unwrap once more in case function
+                # was wrapped before it became property.
                 f = inspect.unwrap(f)
                 if _update_func_cell_for__class__(f, cls, newcls):
                     break
@@ -1366,7 +1366,7 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
             # or a property and won't have to use slower recursive search.
             custom_descriptors_to_check.append(member)
     else:
-        # now let's ensure custom descriptors won't be left out
+        # Now let's ensure custom descriptors won't be left out.
         for descriptor in custom_descriptors_to_check:
             for f in _find_inner_functions(descriptor):
                 if _update_func_cell_for__class__(f, cls, newcls):
