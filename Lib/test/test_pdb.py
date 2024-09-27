@@ -491,6 +491,7 @@ def test_pdb_break_anywhere():
     >>> def test_function():
     ...     caller()
 
+    >>> reset_Breakpoint()
     >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
     ...     'b 3',
     ...     'c',
