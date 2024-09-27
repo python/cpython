@@ -189,7 +189,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
       it can fail with :exc:`OverflowError` or another exception.
 
       .. deprecated:: 3.14
-         The function is soft deprecated.      
+         The function is soft deprecated.
 
 .. c:function:: int PyLong_AsInt(PyObject *obj)
 
