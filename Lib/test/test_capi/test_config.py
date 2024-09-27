@@ -68,7 +68,7 @@ class CAPITests(unittest.TestCase):
             ("parser_debug", bool, None),
             ("parse_argv", bool, None),
             ("pathconfig_warnings", bool, None),
-            ("perf_profiling", bool, None),
+            ("perf_profiling", int, None),
             ("platlibdir", str, "platlibdir"),
             ("prefix", str | None, "prefix"),
             ("program_name", str, None),
