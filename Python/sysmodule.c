@@ -3366,6 +3366,8 @@ make_impl_info(PyObject *version_info)
 # define OS_PLATFORM "arm32"
 #elif _M_ARM64
 # define OS_PLATFORM "arm64"
+#else
+# define OS_PLATFORM ""
 #endif
     value = PyUnicode_FromString(OS_PLATFORM);
     if (value == NULL)
