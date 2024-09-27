@@ -13,6 +13,7 @@ import types
 import weakref
 import traceback
 import unittest
+from functools import partial
 from functools import update_wrapper
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol, DefaultDict
@@ -5117,6 +5118,26 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
             @CustomDescriptor
             def foo(cls):
                 return super().foo()
+
+        self.assertEqual(A().foo, "bar")
+
+    def test_custom_nested_descriptor_with_partial(self):
+        class CustomDescriptor:
+            def __init__(self, f):
+                self._wrapper = partial(f, value="bar")
+
+            def __get__(self, instance, owner):
+                return self._wrapper(instance)
+
+        class B:
+            def foo(self, value):
+                return value
+
+        @dataclass(slots=True)
+        class A(B):
+            @CustomDescriptor
+            def foo(self, value):
+                return super().foo(value)
 
         self.assertEqual(A().foo, "bar")
 
