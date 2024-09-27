@@ -39,7 +39,7 @@ class LockTests(unittest.IsolatedAsyncioTestCase):
 
         with self.assertRaisesRegex(
             TypeError,
-            "object Lock can't be used in 'await' expression"
+            "'Lock' object can't be awaited"
         ):
             await lock
 
@@ -77,7 +77,7 @@ class LockTests(unittest.IsolatedAsyncioTestCase):
             self.assertFalse(lock.locked())
             with self.assertRaisesRegex(
                 TypeError,
-                r"object \w+ can't be used in 'await' expression"
+                r"'\w+' object can't be awaited"
             ):
                 with await lock:
                     pass
@@ -941,7 +941,7 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
 
         with self.assertRaisesRegex(
             TypeError,
-            "object Semaphore can't be used in 'await' expression",
+            "'Semaphore' object can't be awaited",
         ):
             await sem
 
@@ -1194,14 +1194,14 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([2, 3], result)
 
     async def test_acquire_fifo_order_4(self):
-        # Test that a successfule `acquire()` will wake up multiple Tasks
+        # Test that a successful `acquire()` will wake up multiple Tasks
         # that were waiting in the Semaphore queue due to FIFO rules.
         sem = asyncio.Semaphore(0)
         result = []
         count = 0
 
         async def c1(result):
-            # First task immediatlly waits for semaphore.  It will be awoken by c2.
+            # First task immediately waits for semaphore.  It will be awoken by c2.
             self.assertEqual(sem._value, 0)
             await sem.acquire()
             # We should have woken up all waiting tasks now.
@@ -1270,7 +1270,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("filling", repr(barrier))
         with self.assertRaisesRegex(
             TypeError,
-            "object Barrier can't be used in 'await' expression",
+            "'Barrier' object can't be awaited",
         ):
             await barrier
 
@@ -1475,7 +1475,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
             # first time waiting
             await barrier.wait()
 
-            # after wainting once for all tasks
+            # after waiting once for all tasks
             if rewait_n > 0:
                 rewait_n -= 1
                 # wait again only for rewait tasks

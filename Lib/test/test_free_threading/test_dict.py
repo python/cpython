@@ -8,7 +8,10 @@ from functools import partial
 from threading import Thread
 from unittest import TestCase
 
-from _testcapi import dict_version
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
 
 from test.support import threading_helper
 
@@ -139,7 +142,9 @@ class TestDict(TestCase):
             for ref in thread_list:
                 self.assertIsNone(ref())
 
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_dict_version(self):
+        dict_version = _testcapi.dict_version
         THREAD_COUNT = 10
         DICT_COUNT = 10000
         lists = []

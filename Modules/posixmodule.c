@@ -16,7 +16,6 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_ReInitThreads()
 #include "pycore_fileutils.h"     // _Py_closerange()
-#include "pycore_import.h"        // _PyImport_ReInitLock()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
@@ -126,6 +125,7 @@
 #  define HAVE_PWRITEV_RUNTIME __builtin_available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
 #  define HAVE_MKFIFOAT_RUNTIME __builtin_available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 #  define HAVE_MKNODAT_RUNTIME __builtin_available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
+#  define HAVE_PTSNAME_R_RUNTIME __builtin_available(macOS 10.13.4, iOS 11.3, tvOS 11.3, watchOS 4.3, *)
 
 #  define HAVE_POSIX_SPAWN_SETSID_RUNTIME __builtin_available(macOS 10.15, *)
 
@@ -207,6 +207,10 @@
 #    define HAVE_MKNODAT_RUNTIME (mknodat != NULL)
 #  endif
 
+#  ifdef HAVE_PTSNAME_R
+#    define HAVE_PTSNAME_R_RUNTIME (ptsname_r != NULL)
+#  endif
+
 #endif
 
 #ifdef HAVE_FUTIMESAT
@@ -232,6 +236,7 @@
 #  define HAVE_PWRITEV_RUNTIME 1
 #  define HAVE_MKFIFOAT_RUNTIME 1
 #  define HAVE_MKNODAT_RUNTIME 1
+#  define HAVE_PTSNAME_R_RUNTIME 1
 #endif
 
 
@@ -627,10 +632,7 @@ PyOS_AfterFork_Parent(void)
     _PyEval_StartTheWorldAll(&_PyRuntime);
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (_PyImport_ReleaseLock(interp) <= 0) {
-        Py_FatalError("failed releasing import lock after fork");
-    }
-
+    _PyImport_ReleaseLock(interp);
     run_at_forkers(interp->after_forkers_parent, 0);
 }
 
@@ -675,10 +677,7 @@ PyOS_AfterFork_Child(void)
     _PyEval_StartTheWorldAll(&_PyRuntime);
     _PyThreadState_DeleteList(list);
 
-    status = _PyImport_ReInitLock(tstate->interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        goto fatal_error;
-    }
+    _PyImport_ReleaseLock(tstate->interp);
 
     _PySignal_AfterFork();
 
@@ -5504,7 +5503,7 @@ os__path_isjunction_impl(PyObject *module, path_t *path)
 /*[clinic input]
 os._path_splitroot_ex
 
-    path: path_t(make_wide=True, nonstrict=True)
+    p as path: path_t(make_wide=True, nonstrict=True)
 
 Split a pathname into drive, root and tail.
 
@@ -5513,7 +5512,7 @@ The tail contains anything after the root.
 
 static PyObject *
 os__path_splitroot_ex_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=4b0072b6cdf4b611 input=6eb76e9173412c92]*/
+/*[clinic end generated code: output=4b0072b6cdf4b611 input=4556b615c7cc13f2]*/
 {
     Py_ssize_t drvsize, rootsize;
     PyObject *drv = NULL, *root = NULL, *tail = NULL, *result = NULL;
@@ -7880,6 +7879,7 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
 }
 #endif /* HAVE_FORK */
 
+#if defined(HAVE_FORK1) || defined(HAVE_FORKPTY) || defined(HAVE_FORK)
 // Common code to raise a warning if we detect there is more than one thread
 // running in the process. Best effort, silent if unable to count threads.
 // Constraint: Quick. Never overcounts. Never leaves an error set.
@@ -7983,6 +7983,7 @@ warn_about_fork_with_threads(const char* name)
         PyErr_Clear();
     }
 }
+#endif  // HAVE_FORK1 || HAVE_FORKPTY || HAVE_FORK
 
 #ifdef HAVE_FORK1
 /*[clinic input]
@@ -8640,6 +8641,19 @@ os_unlockpt_impl(PyObject *module, int fd)
 #endif /* HAVE_UNLOCKPT */
 
 #if defined(HAVE_PTSNAME) || defined(HAVE_PTSNAME_R)
+static PyObject *
+py_ptsname(int fd)
+{
+    // POSIX manpage: Upon failure, ptsname() shall return a null pointer
+    // and may set errno. Always initialize errno to avoid undefined behavior.
+    errno = 0;
+    char *name = ptsname(fd);
+    if (name == NULL) {
+        return posix_error();
+    }
+    return PyUnicode_DecodeFSDefault(name);
+}
+
 /*[clinic input]
 os.ptsname
 
@@ -8661,22 +8675,22 @@ os_ptsname_impl(PyObject *module, int fd)
     int ret;
     char name[MAXPATHLEN+1];
 
-    ret = ptsname_r(fd, name, sizeof(name));
+    if (HAVE_PTSNAME_R_RUNTIME) {
+        ret = ptsname_r(fd, name, sizeof(name));
+    }
+    else {
+        // fallback to ptsname() if ptsname_r() is not available in runtime.
+        return py_ptsname(fd);
+    }
     if (ret != 0) {
         errno = ret;
         return posix_error();
     }
-#else
-    char *name;
-
-    name = ptsname(fd);
-    /* POSIX manpage: Upon failure, ptsname() shall return a null pointer and may set errno.
-       *MAY* set errno? Hmm... */
-    if (name == NULL)
-        return posix_error();
-#endif /* HAVE_PTSNAME_R */
 
     return PyUnicode_DecodeFSDefault(name);
+#else
+    return py_ptsname(fd);
+#endif /* HAVE_PTSNAME_R */
 }
 #endif /* defined(HAVE_PTSNAME) || defined(HAVE_PTSNAME_R) */
 
@@ -9030,7 +9044,7 @@ os_getgrouplist_impl(PyObject *module, const char *user, gid_t basegid)
 
     /*
      * NGROUPS_MAX is defined by POSIX.1 as the maximum
-     * number of supplimental groups a users can belong to.
+     * number of supplemental groups a users can belong to.
      * We have to increment it by one because
      * getgrouplist() returns both the supplemental groups
      * and the primary group, i.e. all of the groups the
@@ -10107,7 +10121,10 @@ os_wait_impl(PyObject *module)
 }
 #endif /* HAVE_WAIT */
 
-#if defined(__linux__) && defined(__NR_pidfd_open)
+
+// This system call always crashes on older Android versions.
+#if defined(__linux__) && defined(__NR_pidfd_open) && \
+    !(defined(__ANDROID__) && __ANDROID_API__ < 31)
 /*[clinic input]
 os.pidfd_open
   pid: pid_t
@@ -10590,12 +10607,12 @@ Return a collection containing process timing information.
 
 The object returned behaves like a named tuple with these fields:
   (utime, stime, cutime, cstime, elapsed_time)
-All fields are floating point numbers.
+All fields are floating-point numbers.
 [clinic start generated code]*/
 
 static PyObject *
 os_times_impl(PyObject *module)
-/*[clinic end generated code: output=35f640503557d32a input=2bf9df3d6ab2e48b]*/
+/*[clinic end generated code: output=35f640503557d32a input=8dbfe33a2dcc3df3]*/
 {
 #ifdef MS_WINDOWS
     FILETIME create, exit, kernel, user;
@@ -12548,6 +12565,7 @@ os_mknod_impl(PyObject *module, path_t *path, int mode, dev_t device,
 #endif /* defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV) */
 
 
+#ifdef HAVE_DEVICE_MACROS
 static PyObject *
 major_minor_conv(unsigned int value)
 {
@@ -12570,7 +12588,6 @@ major_minor_check(dev_t value)
     return (dev_t)(unsigned int)value == value;
 }
 
-#ifdef HAVE_DEVICE_MACROS
 /*[clinic input]
 os.major
 
@@ -16816,6 +16833,20 @@ os__is_inputhook_installed_impl(PyObject *module)
     return PyBool_FromLong(PyOS_InputHook != NULL);
 }
 
+/*[clinic input]
+os._create_environ
+
+Create the environment dictionary.
+[clinic start generated code]*/
+
+static PyObject *
+os__create_environ_impl(PyObject *module)
+/*[clinic end generated code: output=19d9039ab14f8ad4 input=a4c05686b34635e8]*/
+{
+    return convertenviron();
+}
+
+
 static PyMethodDef posix_methods[] = {
 
     OS_STAT_METHODDEF
@@ -17030,6 +17061,7 @@ static PyMethodDef posix_methods[] = {
     OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     OS__INPUTHOOK_METHODDEF
     OS__IS_INPUTHOOK_INSTALLED_METHODDEF
+    OS__CREATE_ENVIRON_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
 
@@ -17741,6 +17773,9 @@ PROBE(probe_futimens, HAVE_FUTIMENS_RUNTIME)
 PROBE(probe_utimensat, HAVE_UTIMENSAT_RUNTIME)
 #endif
 
+#ifdef HAVE_PTSNAME_R
+PROBE(probe_ptsname_r, HAVE_PTSNAME_R_RUNTIME)
+#endif
 
 
 
@@ -17879,6 +17914,10 @@ static const struct have_function {
 
 #ifdef HAVE_UTIMENSAT
     { "HAVE_UTIMENSAT", probe_utimensat },
+#endif
+
+#ifdef HAVE_PTSNAME_R
+    { "HAVE_PTSNAME_R", probe_ptsname_r },
 #endif
 
 #ifdef MS_WINDOWS

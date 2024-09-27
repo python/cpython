@@ -20,6 +20,7 @@ from asyncio import tasks
 from test.test_asyncio import utils as test_utils
 from test import support
 from test.support.script_helper import assert_python_ok
+from test.support.warnings_helper import ignore_warnings
 
 
 def tearDownModule():
@@ -86,6 +87,7 @@ class BaseTaskTests:
 
     Task = None
     Future = None
+    all_tasks = None
 
     def new_task(self, loop, coro, name='TestTask', context=None):
         return self.__class__.Task(coro, loop=loop, name=name, context=context)
@@ -1938,6 +1940,7 @@ class BaseTaskTests:
         self.assertFalse(task.cancelled())
         self.assertIs(task.exception(), base_exc)
 
+    @ignore_warnings(category=DeprecationWarning)
     def test_iscoroutinefunction(self):
         def fn():
             pass
@@ -1955,6 +1958,7 @@ class BaseTaskTests:
         self.assertFalse(asyncio.iscoroutinefunction(mock.Mock()))
         self.assertTrue(asyncio.iscoroutinefunction(mock.AsyncMock()))
 
+    @ignore_warnings(category=DeprecationWarning)
     def test_coroutine_non_gen_function(self):
         async def func():
             return 'test'
@@ -2267,7 +2271,7 @@ class BaseTaskTests:
         coro = kill_me(self.loop)
         task = asyncio.ensure_future(coro, loop=self.loop)
 
-        self.assertEqual(asyncio.all_tasks(loop=self.loop), {task})
+        self.assertEqual(self.all_tasks(loop=self.loop), {task})
 
         asyncio.set_event_loop(None)
 
@@ -2282,7 +2286,7 @@ class BaseTaskTests:
         # no more reference to kill_me() task: the task is destroyed by the GC
         support.gc_collect()
 
-        self.assertEqual(asyncio.all_tasks(loop=self.loop), set())
+        self.assertEqual(self.all_tasks(loop=self.loop), set())
 
         mock_handler.assert_called_with(self.loop, {
             'message': 'Task was destroyed but it is pending!',
@@ -2431,7 +2435,7 @@ class BaseTaskTests:
         message = m_log.error.call_args[0][0]
         self.assertIn('Task was destroyed but it is pending', message)
 
-        self.assertEqual(asyncio.all_tasks(self.loop), set())
+        self.assertEqual(self.all_tasks(self.loop), set())
 
     def test_create_task_with_noncoroutine(self):
         with self.assertRaisesRegex(TypeError,
@@ -2731,6 +2735,7 @@ def add_subclass_tests(cls):
     # Add patched Task & Future back to the test case
     cls.Task = Task
     cls.Future = Future
+    cls.all_tasks = tasks.all_tasks
 
     # Add an extra unit-test
     cls.test_subclasses_ctask_cfuture = test_subclasses_ctask_cfuture
@@ -2804,6 +2809,7 @@ class CTask_CFuture_Tests(BaseTaskTests, SetMethodsTest,
 
     Task = getattr(tasks, '_CTask', None)
     Future = getattr(futures, '_CFuture', None)
+    all_tasks = getattr(tasks, '_c_all_tasks', None)
 
     @support.refcount_test
     def test_refleaks_in_task___init__(self):
@@ -2835,6 +2841,7 @@ class CTask_CFuture_SubclassTests(BaseTaskTests, test_utils.TestCase):
 
     Task = getattr(tasks, '_CTask', None)
     Future = getattr(futures, '_CFuture', None)
+    all_tasks = getattr(tasks, '_c_all_tasks', None)
 
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
@@ -2844,6 +2851,7 @@ class CTaskSubclass_PyFuture_Tests(BaseTaskTests, test_utils.TestCase):
 
     Task = getattr(tasks, '_CTask', None)
     Future = futures._PyFuture
+    all_tasks = getattr(tasks, '_c_all_tasks', None)
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
@@ -2853,6 +2861,7 @@ class PyTask_CFutureSubclass_Tests(BaseTaskTests, test_utils.TestCase):
 
     Future = getattr(futures, '_CFuture', None)
     Task = tasks._PyTask
+    all_tasks = tasks._py_all_tasks
 
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
@@ -2861,6 +2870,7 @@ class CTask_PyFuture_Tests(BaseTaskTests, test_utils.TestCase):
 
     Task = getattr(tasks, '_CTask', None)
     Future = futures._PyFuture
+    all_tasks = getattr(tasks, '_c_all_tasks', None)
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
@@ -2869,6 +2879,7 @@ class PyTask_CFuture_Tests(BaseTaskTests, test_utils.TestCase):
 
     Task = tasks._PyTask
     Future = getattr(futures, '_CFuture', None)
+    all_tasks = staticmethod(tasks._py_all_tasks)
 
 
 class PyTask_PyFuture_Tests(BaseTaskTests, SetMethodsTest,
@@ -2876,6 +2887,7 @@ class PyTask_PyFuture_Tests(BaseTaskTests, SetMethodsTest,
 
     Task = tasks._PyTask
     Future = futures._PyFuture
+    all_tasks = staticmethod(tasks._py_all_tasks)
 
 
 @add_subclass_tests
@@ -2915,6 +2927,7 @@ class BaseTaskIntrospectionTests:
     _unregister_task = None
     _enter_task = None
     _leave_task = None
+    all_tasks = None
 
     def test__register_task_1(self):
         class TaskLike:
@@ -2928,9 +2941,9 @@ class BaseTaskIntrospectionTests:
         task = TaskLike()
         loop = mock.Mock()
 
-        self.assertEqual(asyncio.all_tasks(loop), set())
+        self.assertEqual(self.all_tasks(loop), set())
         self._register_task(task)
-        self.assertEqual(asyncio.all_tasks(loop), {task})
+        self.assertEqual(self.all_tasks(loop), {task})
         self._unregister_task(task)
 
     def test__register_task_2(self):
@@ -2944,9 +2957,9 @@ class BaseTaskIntrospectionTests:
         task = TaskLike()
         loop = mock.Mock()
 
-        self.assertEqual(asyncio.all_tasks(loop), set())
+        self.assertEqual(self.all_tasks(loop), set())
         self._register_task(task)
-        self.assertEqual(asyncio.all_tasks(loop), {task})
+        self.assertEqual(self.all_tasks(loop), {task})
         self._unregister_task(task)
 
     def test__register_task_3(self):
@@ -2960,9 +2973,9 @@ class BaseTaskIntrospectionTests:
         task = TaskLike()
         loop = mock.Mock()
 
-        self.assertEqual(asyncio.all_tasks(loop), set())
+        self.assertEqual(self.all_tasks(loop), set())
         self._register_task(task)
-        self.assertEqual(asyncio.all_tasks(loop), set())
+        self.assertEqual(self.all_tasks(loop), set())
         self._unregister_task(task)
 
     def test__enter_task(self):
@@ -3013,13 +3026,13 @@ class BaseTaskIntrospectionTests:
         task.get_loop = lambda: loop
         self._register_task(task)
         self._unregister_task(task)
-        self.assertEqual(asyncio.all_tasks(loop), set())
+        self.assertEqual(self.all_tasks(loop), set())
 
     def test__unregister_task_not_registered(self):
         task = mock.Mock()
         loop = mock.Mock()
         self._unregister_task(task)
-        self.assertEqual(asyncio.all_tasks(loop), set())
+        self.assertEqual(self.all_tasks(loop), set())
 
 
 class PyIntrospectionTests(test_utils.TestCase, BaseTaskIntrospectionTests):
@@ -3027,6 +3040,7 @@ class PyIntrospectionTests(test_utils.TestCase, BaseTaskIntrospectionTests):
     _unregister_task = staticmethod(tasks._py_unregister_task)
     _enter_task = staticmethod(tasks._py_enter_task)
     _leave_task = staticmethod(tasks._py_leave_task)
+    all_tasks = staticmethod(tasks._py_all_tasks)
 
 
 @unittest.skipUnless(hasattr(tasks, '_c_register_task'),
@@ -3037,6 +3051,7 @@ class CIntrospectionTests(test_utils.TestCase, BaseTaskIntrospectionTests):
         _unregister_task = staticmethod(tasks._c_unregister_task)
         _enter_task = staticmethod(tasks._c_enter_task)
         _leave_task = staticmethod(tasks._c_leave_task)
+        all_tasks = staticmethod(tasks._c_all_tasks)
     else:
         _register_task = _unregister_task = _enter_task = _leave_task = None
 
@@ -3103,14 +3118,14 @@ class GenericTaskTests(test_utils.TestCase):
         # fail on systems where C modules were successfully compiled
         # (hence the test for _functools etc), but _asyncio somehow didn't.
         try:
-            import _functools
-            import _json
-            import _pickle
+            import _functools  # noqa: F401
+            import _json       # noqa: F401
+            import _pickle     # noqa: F401
         except ImportError:
             self.skipTest('C modules are not available')
         else:
             try:
-                import _asyncio
+                import _asyncio  # noqa: F401
             except ImportError:
                 self.fail('_asyncio module is missing')
 

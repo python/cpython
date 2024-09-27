@@ -18,7 +18,7 @@ try:
     # compileall relies on ProcessPoolExecutor if ProcessPoolExecutor exists
     # and it can function.
     from multiprocessing.util import _cleanup_tests as multiprocessing_cleanup_tests
-    from concurrent.futures import ProcessPoolExecutor
+    from concurrent.futures import ProcessPoolExecutor  # noqa: F401
     from concurrent.futures.process import _check_system_limits
     _check_system_limits()
     _have_multiprocessing = True

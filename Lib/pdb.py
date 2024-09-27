@@ -306,8 +306,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     _file_mtime_table = {}
 
+    _last_pdb_instance = None
+
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
-                 nosigint=False, readrc=True):
+                 nosigint=False, readrc=True, mode=None):
         bdb.Bdb.__init__(self, skip=skip)
         cmd.Cmd.__init__(self, completekey, stdin, stdout)
         sys.audit("pdb.Pdb")
@@ -319,6 +321,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.mainpyfile = ''
         self._wait_for_mainpyfile = False
         self.tb_lineno = {}
+        self.mode = mode
         # Try to load readline if it exists
         try:
             import readline
@@ -359,6 +362,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self._chained_exceptions = tuple()
         self._chained_exception_index = 0
 
+    def set_trace(self, frame=None, *, commands=None):
+        Pdb._last_pdb_instance = self
+        if frame is None:
+            frame = sys._getframe().f_back
+
+        if commands is not None:
+            self.rcLines.extend(commands)
+
+        super().set_trace(frame)
+
     def sigint_handler(self, signum, frame):
         if self.allow_kbdint:
             raise KeyboardInterrupt
@@ -390,13 +403,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.tb_lineno[tb.tb_frame] = lineno
             tb = tb.tb_next
         self.curframe = self.stack[self.curindex][0]
-        # The f_locals dictionary used to be updated from the actual frame
-        # locals whenever the .f_locals accessor was called, so it was
-        # cached here to ensure that modifications were not overwritten. While
-        # the caching is no longer required now that f_locals is a direct proxy
-        # on optimized frames, it's also harmless, so the code structure has
-        # been left unchanged.
-        self.curframe_locals = self.curframe.f_locals
         self.set_convenience_variable(self.curframe, '_frame', self.curframe)
 
         if self._chained_exceptions:
@@ -517,7 +523,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     # Called before loop, handles display expressions
     # Set up convenience variable containers
-    def preloop(self):
+    def _show_display(self):
         displaying = self.displaying.get(self.curframe)
         if displaying:
             for expr, oldvalue in displaying.items():
@@ -603,10 +609,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             assert tb is not None, "main exception must have a traceback"
         with self._hold_exceptions(_chained_exceptions):
             self.setup(frame, tb)
-            # if we have more commands to process, do not show the stack entry
-            if not self.cmdqueue:
-                self.print_stack_entry(self.stack[self.curindex])
+            # We should print the stack entry if and only if the user input
+            # is expected, and we should print it right before the user input.
+            # We achieve this by appending _pdbcmd_print_frame_status to the
+            # command queue. If cmdqueue is not exhausted, the user input is
+            # not expected and we will not print the stack entry.
+            self.cmdqueue.append('_pdbcmd_print_frame_status')
             self._cmdloop()
+            # If _pdbcmd_print_frame_status is not used, pop it out
+            if self.cmdqueue and self.cmdqueue[-1] == '_pdbcmd_print_frame_status':
+                self.cmdqueue.pop()
             self.forget()
 
     def displayhook(self, obj):
@@ -713,7 +725,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def default(self, line):
         if line[:1] == '!': line = line[1:].strip()
-        locals = self.curframe_locals
+        locals = self.curframe.f_locals
         globals = self.curframe.f_globals
         try:
             buffer = line
@@ -838,6 +850,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """
         if not self.commands_defining:
             self._validate_file_mtime()
+            if line.startswith('_pdbcmd'):
+                command, arg, line = self.parseline(line)
+                if hasattr(self, command):
+                    return getattr(self, command)(arg)
             return cmd.Cmd.onecmd(self, line)
         else:
             return self.handle_command_def(line)
@@ -851,6 +867,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.commands_silent[self.commands_bnum] = True
             return False  # continue to handle other cmd def in the cmd list
         elif cmd == 'end':
+            return True  # end of cmd list
+        elif cmd == 'EOF':
+            print('')
             return True  # end of cmd list
         cmdlist = self.commands[self.commands_bnum]
         if arg:
@@ -934,7 +953,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # Collect globals and locals.  It is usually not really sensible to also
         # complete builtins, and they clutter the namespace quite heavily, so we
         # leave them out.
-        ns = {**self.curframe.f_globals, **self.curframe_locals}
+        ns = {**self.curframe.f_globals, **self.curframe.f_locals}
         if text.startswith("$"):
             # Complete convenience variables
             conv_vars = self.curframe.f_globals.get('__pdb_convenience_variables', {})
@@ -965,11 +984,17 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # Use rlcompleter to do the completion
         state = 0
         matches = []
-        completer = Completer(self.curframe.f_globals | self.curframe_locals)
+        completer = Completer(self.curframe.f_globals | self.curframe.f_locals)
         while (match := completer.complete(text, state)) is not None:
             matches.append(match)
             state += 1
         return matches
+
+    # Pdb meta commands, only intended to be used internally by pdb
+
+    def _pdbcmd_print_frame_status(self, arg):
+        self.print_stack_trace(0)
+        self._show_display()
 
     # Command definitions, called by cmdloop()
     # The argument is the remaining string on the command line
@@ -1121,7 +1146,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 try:
                     func = eval(arg,
                                 self.curframe.f_globals,
-                                self.curframe_locals)
+                                self.curframe.f_locals)
                 except:
                     func = arg
                 try:
@@ -1401,16 +1426,24 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     complete_cl = _complete_location
 
     def do_where(self, arg):
-        """w(here)
+        """w(here) [count]
 
-        Print a stack trace, with the most recent frame at the bottom.
+        Print a stack trace. If count is not specified, print the full stack.
+        If count is 0, print the current frame entry. If count is positive,
+        print count entries from the most recent frame. If count is negative,
+        print -count entries from the least recent frame.
         An arrow indicates the "current frame", which determines the
         context of most commands.  'bt' is an alias for this command.
         """
-        if arg:
-            self._print_invalid_arg(arg)
-            return
-        self.print_stack_trace()
+        if not arg:
+            count = None
+        else:
+            try:
+                count = int(arg)
+            except ValueError:
+                self.error('Invalid count (%s)' % arg)
+                return
+        self.print_stack_trace(count)
     do_w = do_where
     do_bt = do_where
 
@@ -1418,7 +1451,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         assert 0 <= number < len(self.stack)
         self.curindex = number
         self.curframe = self.stack[self.curindex][0]
-        self.curframe_locals = self.curframe.f_locals
         self.set_convenience_variable(self.curframe, '_frame', self.curframe)
         self.print_stack_entry(self.stack[self.curindex])
         self.lineno = None
@@ -1572,6 +1604,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         sys.argv.  History, breakpoints, actions and debugger options
         are preserved.  "restart" is an alias for "run".
         """
+        if self.mode == 'inline':
+            self.error('run/restart command is disabled when pdb is running in inline mode.\n'
+                       'Use the command line interface to enable restarting your program\n'
+                       'e.g. "python -m pdb myscript.py"')
+            return
         if arg:
             import shlex
             argv0 = sys.argv[0:1]
@@ -1659,7 +1696,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """
         sys.settrace(None)
         globals = self.curframe.f_globals
-        locals = self.curframe_locals
+        locals = self.curframe.f_locals
         p = Pdb(self.completekey, self.stdin, self.stdout)
         p.prompt = "(%s) " % self.prompt.strip()
         self.message("ENTERING RECURSIVE DEBUGGER")
@@ -1704,7 +1741,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self._print_invalid_arg(arg)
             return
         co = self.curframe.f_code
-        dict = self.curframe_locals
+        dict = self.curframe.f_locals
         n = co.co_argcount + co.co_kwonlyargcount
         if co.co_flags & inspect.CO_VARARGS: n = n+1
         if co.co_flags & inspect.CO_VARKEYWORDS: n = n+1
@@ -1724,15 +1761,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if arg:
             self._print_invalid_arg(arg)
             return
-        if '__return__' in self.curframe_locals:
-            self.message(self._safe_repr(self.curframe_locals['__return__'], "retval"))
+        if '__return__' in self.curframe.f_locals:
+            self.message(self._safe_repr(self.curframe.f_locals['__return__'], "retval"))
         else:
             self.error('Not yet returned!')
     do_rv = do_retval
 
     def _getval(self, arg):
         try:
-            return eval(arg, self.curframe.f_globals, self.curframe_locals)
+            return eval(arg, self.curframe.f_globals, self.curframe.f_locals)
         except:
             self._error_exc()
             raise
@@ -1740,7 +1777,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def _getval_except(self, arg, frame=None):
         try:
             if frame is None:
-                return eval(arg, self.curframe.f_globals, self.curframe_locals)
+                return eval(arg, self.curframe.f_globals, self.curframe.f_locals)
             else:
                 return eval(arg, frame.f_globals, frame.f_locals)
         except BaseException as exc:
@@ -1984,7 +2021,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Start an interactive interpreter whose global namespace
         contains all the (global and local) names found in the current scope.
         """
-        ns = {**self.curframe.f_globals, **self.curframe_locals}
+        ns = {**self.curframe.f_globals, **self.curframe.f_locals}
         console = _PdbInteractiveConsole(ns, message=self.message)
         console.interact(banner="*pdb interact start*",
                          exitmsg="*exit from pdb interact command*")
@@ -2065,10 +2102,22 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     # It is also consistent with the up/down commands (which are
     # compatible with dbx and gdb: up moves towards 'main()'
     # and down moves towards the most recent stack frame).
+    #     * if count is None, prints the full stack
+    #     * if count = 0, prints the current frame entry
+    #     * if count < 0, prints -count least recent frame entries
+    #     * if count > 0, prints count most recent frame entries
 
-    def print_stack_trace(self):
+    def print_stack_trace(self, count=None):
+        if count is None:
+            stack_to_print = self.stack
+        elif count == 0:
+            stack_to_print = [self.stack[self.curindex]]
+        elif count < 0:
+            stack_to_print = self.stack[:-count]
+        else:
+            stack_to_print = self.stack[-count:]
         try:
-            for frame_lineno in self.stack:
+            for frame_lineno in stack_to_print:
                 self.print_stack_entry(frame_lineno)
         except KeyboardInterrupt:
             pass
@@ -2303,18 +2352,22 @@ def runcall(*args, **kwds):
     """
     return Pdb().runcall(*args, **kwds)
 
-def set_trace(*, header=None):
+def set_trace(*, header=None, commands=None):
     """Enter the debugger at the calling stack frame.
 
     This is useful to hard-code a breakpoint at a given point in a
     program, even if the code is not otherwise being debugged (e.g. when
     an assertion fails). If given, *header* is printed to the console
-    just before debugging begins.
+    just before debugging begins. *commands* is an optional list of
+    pdb commands to run when the debugger starts.
     """
-    pdb = Pdb()
+    if Pdb._last_pdb_instance is not None:
+        pdb = Pdb._last_pdb_instance
+    else:
+        pdb = Pdb(mode='inline')
     if header is not None:
         pdb.message(header)
-    pdb.set_trace(sys._getframe().f_back)
+    pdb.set_trace(sys._getframe().f_back, commands=commands)
 
 # Post-Mortem interface
 
@@ -2426,7 +2479,7 @@ def main():
     # modified by the script being debugged. It's a bad idea when it was
     # changed by the user from the command line. There is a "restart" command
     # which allows explicit specification of command line arguments.
-    pdb = Pdb()
+    pdb = Pdb(mode='cli')
     pdb.rcLines.extend(opts.commands)
     while True:
         try:
@@ -2442,9 +2495,12 @@ def main():
             traceback.print_exception(e, colorize=_colorize.can_colorize())
             print("Uncaught exception. Entering post mortem debugging")
             print("Running 'cont' or 'step' will restart the program")
-            pdb.interaction(None, e)
-            print(f"Post mortem debugger finished. The {target} will "
-                  "be restarted")
+            try:
+                pdb.interaction(None, e)
+            except Restart:
+                print("Restarting", target, "with arguments:")
+                print("\t" + " ".join(sys.argv[1:]))
+                continue
         if pdb._user_requested_quit:
             break
         print("The program finished and will be restarted")

@@ -3,7 +3,7 @@ Quick Start Guide
 
 1.  Install Microsoft Visual Studio 2017 or later with Python workload and
     Python native development component.
-1a. Optionally install Python 3.6 or later.  If not installed,
+1a. Optionally install Python 3.10 or later.  If not installed,
     get_externals.bat (via build.bat) will download and use Python via
     NuGet.
 2.  Run "build.bat" to build Python in 32-bit Release configuration.
@@ -57,7 +57,7 @@ Building Python using the build.bat script
 
 In this directory you can find build.bat, a script designed to make
 building Python on Windows simpler.  This script will use the env.bat
-script to detect either Visual Studio 2017 or 2015, either of
+script to detect either Visual Studio 2017 or later, either of
 which may be used to build Python. Currently Visual Studio 2017 is
 officially supported.
 
@@ -172,7 +172,7 @@ _lzma
     Homepage:
         https://tukaani.org/xz/
 _ssl
-    Python wrapper for version 3.0 of the OpenSSL secure sockets
+    Python wrapper for version 3.0.15 of the OpenSSL secure sockets
     library, which is downloaded from our binaries repository at
     https://github.com/python/cpython-bin-deps.
 
@@ -195,7 +195,7 @@ _sqlite3
     Homepage:
         https://www.sqlite.org/
 _tkinter
-    Wraps version 8.6.6 of the Tk windowing system, which is downloaded
+    Wraps version 8.6.15 of the Tk windowing system, which is downloaded
     from our binaries repository at
     https://github.com/python/cpython-bin-deps.
 

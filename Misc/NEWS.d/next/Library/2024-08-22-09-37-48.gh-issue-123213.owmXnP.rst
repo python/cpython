@@ -1,0 +1,3 @@
+:meth:`xml.etree.ElementTree.Element.extend` and
+:class:`~xml.etree.ElementTree.Element` assignment no longer hide the internal
+exception if an erroneous generator is passed. Patch by Bar Harel.
