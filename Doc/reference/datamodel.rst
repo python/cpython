@@ -1014,7 +1014,7 @@ the other individual attributes listed in this subsection.
       using the :class:`types.ModuleType` constructor.
       Previously the attribute was optional.
 
-   .. versionchanged:: 3.12
+   .. deprecated-removed:: 3.12 3.14
       The value of :attr:`!module__loader__` is expected to be the same as
       :attr:`__spec__.loader <importlib.machinery.ModuleSpec.loader>`.
       The use of :attr:`!module.__loader__` is deprecated and slated for
