@@ -3325,8 +3325,8 @@ static PyObject *
 make_impl_info(PyObject *version_info)
 {
     int res;
-#if !defined(MS_WINDOWS) && defined(HAVE_SYS_UTSNAME_H)
-    struct utsname u;
+#ifdef MS_WINDOWS
+    SYSTEM_INFO s;
 #endif /* !MS_WINDOWS */
     PyObject *impl_info, *value, *ns;
 
@@ -3364,11 +3364,16 @@ make_impl_info(PyObject *version_info)
     if (res < 0)
         goto error;
 
-#if !defined(MS_WINDOWS) && defined(HAVE_SYS_UTSNAME_H)
-    res = uname(&u);
-    if (res < 0)
-        goto error;
-    value = PyUnicode_FromString(u.machine);
+#ifdef MS_WINDOWS
+    GetNativeSystemInfo(&s);
+    switch (s.wProcessorArchitecture) {
+    case PROCESSOR_ARCHITECTURE_AMD64:   value = PyUnicode_FromString("AMD64"); break;
+    case PROCESSOR_ARCHITECTURE_ARM:     value = PyUnicode_FromString("ARM");   break;
+    case PROCESSOR_ARCHITECTURE_ARM64:   value = PyUnicode_FromString("ARM64"); break;
+    case PROCESSOR_ARCHITECTURE_IA64:    value = PyUnicode_FromString("IA64");  break;
+    case PROCESSOR_ARCHITECTURE_INTEL:   value = PyUnicode_FromString("i386");  break;
+    default:                             value = PyUnicode_FromString("");      break;
+    }
     if (value == NULL)
         goto error;
     res = PyDict_SetItemString(impl_info, "_architecture", value);
@@ -3376,6 +3381,7 @@ make_impl_info(PyObject *version_info)
     if (res < 0)
         goto error;
 #endif /* !MS_WINDOWS */
+
 
 #ifdef MULTIARCH
     value = PyUnicode_FromString(MULTIARCH);
