@@ -22,4 +22,4 @@ it is not, please report that through the
 
 [Exception Handling](exception_handling.md)
 
-[Virtual Machine](vm-state.md)
+[The Virtual Machine](vm-state.md)
