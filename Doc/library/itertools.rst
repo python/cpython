@@ -58,7 +58,7 @@ Iterator                        Arguments                       Results         
 :func:`compress`                data, selectors                 (d[0] if s[0]), (d[1] if s[1]), ...                 ``compress('ABCDEF', [1,0,1,0,1,1]) → A C E F``
 :func:`dropwhile`               predicate, seq                  seq[n], seq[n+1], starting when predicate fails     ``dropwhile(lambda x: x<5, [1,4,6,3,8]) → 6 3 8``
 :func:`filterfalse`             predicate, seq                  elements of seq where predicate(elem) fails         ``filterfalse(lambda x: x<5, [1,4,6,3,8]) → 6 8``
-:func:`groupby`                 iterable[, key]                 sub-iterators grouped by value of key(v)            ``groupby(['A','B','ABC'], len) → (1, A B) (3, ABC)``
+:func:`groupby`                 iterable[, key]                 sub-iterators grouped by value of key(v)            ``groupby(['A','B','DEF'], len) → (1, A B) (3, DEF)``
 :func:`islice`                  seq, [start,] stop [, step]     elements from seq[start:stop:step]                  ``islice('ABCDEFG', 2, None) → C D E F G``
 :func:`pairwise`                iterable                        (p[0], p[1]), (p[1], p[2])                          ``pairwise('ABCDEFG') → AB BC CD DE EF FG``
 :func:`starmap`                 func, seq                       func(\*seq[0]), func(\*seq[1]), ...                 ``starmap(pow, [(2,5), (3,2), (10,3)]) → 32 9 1000``
@@ -93,7 +93,7 @@ Examples                                         Results
 Itertool Functions
 ------------------
 
-The following module functions all construct and return iterators. Some provide
+The following functions all construct and return iterators. Some provide
 streams of infinite length, so they should only be accessed by functions or
 loops that truncate the stream.
 
@@ -131,11 +131,12 @@ loops that truncate the stream.
                 total = function(total, element)
                 yield total
 
-    The *function* argument can be set to :func:`min` for a running
-    minimum, :func:`max` for a running maximum, or :func:`operator.mul`
-    for a running product.  `Amortization tables
-    <https://www.ramseysolutions.com/real-estate/amortization-schedule>`_
-    can be built by accumulating interest and applying payments:
+    To compute a running minimum, set *function* to :func:`min`.
+    For a running maximum, set *function* to :func:`max`.
+    Or for a running product, set *function* to :func:`operator.mul`.
+    To build an `Amortization table
+    <https://www.ramseysolutions.com/real-estate/amortization-schedule>`_,
+    accumulate the interest and apply payments:
 
     .. doctest::
 
@@ -202,10 +203,10 @@ loops that truncate the stream.
 
 .. function:: chain(*iterables)
 
-   Make an iterator that returns elements from the first iterable until it is
-   exhausted, then proceeds to the next iterable, until all of the iterables are
-   exhausted.  Used for treating consecutive sequences as a single sequence.
-   Roughly equivalent to::
+   Make an iterator that returns elements from the first iterable until
+   it is exhausted, then proceeds to the next iterable, until all of the
+   iterables are exhausted.  This combines multiple data sources into a
+   single iterator.  Roughly equivalent to::
 
       def chain(*iterables):
           # chain('ABC', 'DEF') → A B C D E F
@@ -353,10 +354,12 @@ loops that truncate the stream.
 
       def cycle(iterable):
           # cycle('ABCD') → A B C D A B C D A B C D ...
+
           saved = []
           for element in iterable:
               yield element
               saved.append(element)
+
           while saved:
               for element in saved:
                   yield element
@@ -396,8 +399,10 @@ loops that truncate the stream.
 
       def filterfalse(predicate, iterable):
           # filterfalse(lambda x: x<5, [1,4,6,3,8]) → 6 8
+
           if predicate is None:
               predicate = bool
+
           for x in iterable:
               if not predicate(x):
                   yield x
@@ -474,7 +479,7 @@ loops that truncate the stream.
    If *start* is zero or ``None``, iteration starts at zero.  Otherwise,
    elements from the iterable are skipped until *start* is reached.
 
-   If *stop* is ``None``, iteration continues until the iterable is
+   If *stop* is ``None``, iteration continues until the input is
    exhausted, if at all.  Otherwise, it stops at the specified position.
 
    If *step* is ``None``, the step defaults to one.  Elements are returned
@@ -520,8 +525,10 @@ loops that truncate the stream.
 
         def pairwise(iterable):
             # pairwise('ABCDEFG') → AB BC CD DE EF FG
+
             iterator = iter(iterable)
             a = next(iterator, None)
+
             for b in iterator:
                 yield a, b
                 a = b
@@ -584,7 +591,8 @@ loops that truncate the stream.
 
 .. function:: product(*iterables, repeat=1)
 
-   Cartesian product of input iterables.
+   `Cartesian product <https://en.wikipedia.org/wiki/Cartesian_product>`_
+   of the input iterables.
 
    Roughly equivalent to nested for-loops in a generator expression. For example,
    ``product(A, B)`` returns the same as ``((x,y) for x in A for y in B)``.
