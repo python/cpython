@@ -5141,6 +5141,52 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
 
         self.assertEqual(A().foo, "bar")
 
+    def test_pure_functions_preferred_to_custom_descriptors(self):
+        class CustomDescriptor:
+            def __init__(self, f):
+                self._wrapper = partial(f, value="bar")
+
+            def __get__(self, instance, owner):
+                return self._wrapper(instance)
+
+            def __dir__(self):
+                raise RuntimeError("Never should be accessed")
+
+        class B:
+            def foo(self, value):
+                return value
+
+        with self.assertRaises(RuntimeError) as context:
+            @dataclass(slots=True)
+            class A(B):
+                @CustomDescriptor
+                def foo(self, value): ...
+
+        self.assertEqual(context.exception.args, ("Never should be accessed",))
+
+        @dataclass(slots=True)
+        class A(B):
+            @CustomDescriptor
+            def foo(self, value):
+                return super().foo(value)
+
+            @property
+            def bar(self):
+                return super()
+
+        self.assertEqual(A().foo, "bar")
+
+        @dataclass(slots=True)
+        class A(B):
+            @CustomDescriptor
+            def foo(self, value):
+                return super().foo(value)
+
+            def bar(self):
+                return super()
+
+        self.assertEqual(A().foo, "bar")
+
     def test_custom_too_nested_descriptor(self):
         class UnnecessaryNestedWrapper:
             def __init__(self, wrapper):

@@ -1358,6 +1358,9 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
                 f = inspect.unwrap(f)
                 if _update_func_cell_for__class__(f, cls, newcls):
                     break
+            else:
+                continue
+            break
         elif hasattr(member, "__get__") and not inspect.ismemberdescriptor(
             member
         ):
