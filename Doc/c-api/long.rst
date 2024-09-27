@@ -159,7 +159,6 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    .. versionadded:: 3.13
 
 
-.. XXX alias PyLong_AS_LONG (for now)
 .. c:function:: long PyLong_AsLong(PyObject *obj)
 
    .. index::
@@ -181,6 +180,16 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    .. versionchanged:: 3.10
       This function will no longer use :meth:`~object.__int__`.
 
+   .. c:namespace:: NULL
+
+   .. c:function:: long PyLong_AS_LONG(PyObject *obj)
+
+      A :term:`soft deprecated` alias.
+      Exactly equivalent to the preferred ``PyLong_AsLong``. In particular,
+      it can fail with :exc:`OverflowError` or another exception.
+
+      .. deprecated:: 3.14
+         The function is soft deprecated.
 
 .. c:function:: int PyLong_AsInt(PyObject *obj)
 
