@@ -1235,6 +1235,31 @@ class CodecCallbackTest(unittest.TestCase):
                     with self.assertRaises((TypeError, FakeUnicodeError)):
                         handler(FakeUnicodeError())
 
+    def test_reject_unregister_native_error_policy(self):
+        for policy in [
+            'strict', 'ignore', 'replace', 'backslashreplace', 'namereplace',
+            'xmlcharrefreplace', 'surrogateescape', 'surrogatepass',
+        ]:
+            with self.subTest(f'reject native {policy!r} un-registration'):
+                self.assertRaises(ValueError, codecs.unregister_error, policy)
+
+    def test_unregister_custom_error_policy(self):
+        def custom_handler(exc):
+            raise exc
+
+        custom_name = f'test.test_unregister_error.custom.{id(self)}'
+        self.assertRaises(LookupError, codecs.lookup_error, custom_name)
+        codecs.register_error(custom_name, custom_handler)
+        self.assertIs(codecs.lookup_error(custom_name), custom_handler)
+        self.assertTrue(codecs.unregister_error(custom_name))
+        self.assertRaises(LookupError, codecs.lookup_error, custom_name)
+
+    def test_unregister_custom_unknown_error_policy(self):
+        unknown_name = f'test.test_unregister_error.custom.{id(self)}.unknown'
+        self.assertRaises(LookupError, codecs.lookup_error, unknown_name)
+        self.assertFalse(codecs.unregister_error(unknown_name))
+        self.assertRaises(LookupError, codecs.lookup_error, unknown_name)
+
 
 if __name__ == "__main__":
     unittest.main()
