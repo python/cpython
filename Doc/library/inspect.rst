@@ -520,7 +520,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    has a :meth:`~object.__get__` method, but not a :meth:`~object.__set__`
    method or a :meth:`~object.__delete__` method.  Beyond that, the set of
    attributes varies.  A :attr:`~definition.__name__` attribute is usually
-   sensible, and :attr:`!__doc__` often is.
+   sensible, and :attr:`~definition.__doc__` often is.
 
    Methods implemented via descriptors that also pass one of the other tests
    return ``False`` from the :func:`ismethoddescriptor` test, simply because the
@@ -1018,7 +1018,8 @@ function.
    .. attribute:: BoundArguments.kwargs
 
       A dict of keyword arguments values.  Dynamically computed from the
-      :attr:`arguments` attribute.
+      :attr:`arguments` attribute.  Arguments that can be passed positionally
+      are included in :attr:`args` instead.
 
    .. attribute:: BoundArguments.signature
 
