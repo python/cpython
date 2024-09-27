@@ -281,7 +281,7 @@ Strategies For Unorderable Types and Values
 A number of type and value issues can arise when sorting.
 Here are some strategies that can help:
 
-* Convert inputs to strings prior to sorting:
+* Convert non-comparable input types to strings prior to sorting:
 
 .. doctest::
 
@@ -316,7 +316,7 @@ Likewise, ``None`` can be stripped from datasets as well:
 
 This is needed because ``None`` is not comparable to other types.
 
-* Convert mapping types into sortable items before sorting:
+* Convert mapping types into sorted item lists before sorting:
 
 .. doctest::
 
