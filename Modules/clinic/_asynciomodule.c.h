@@ -1549,53 +1549,26 @@ exit:
 }
 
 PyDoc_STRVAR(_asyncio_future_add_to_awaited_by__doc__,
-"future_add_to_awaited_by($module, /, fut, waiter)\n"
+"future_add_to_awaited_by($module, fut, waiter, /)\n"
 "--\n"
 "\n"
 "Record that `fut` is awaited on by `waiter`.");
 
 #define _ASYNCIO_FUTURE_ADD_TO_AWAITED_BY_METHODDEF    \
-    {"future_add_to_awaited_by", _PyCFunction_CAST(_asyncio_future_add_to_awaited_by), METH_FASTCALL|METH_KEYWORDS, _asyncio_future_add_to_awaited_by__doc__},
+    {"future_add_to_awaited_by", _PyCFunction_CAST(_asyncio_future_add_to_awaited_by), METH_FASTCALL, _asyncio_future_add_to_awaited_by__doc__},
 
 static PyObject *
 _asyncio_future_add_to_awaited_by_impl(PyObject *module, PyObject *fut,
                                        PyObject *waiter);
 
 static PyObject *
-_asyncio_future_add_to_awaited_by(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_future_add_to_awaited_by(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 2
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(fut), &_Py_ID(waiter), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"fut", "waiter", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "future_add_to_awaited_by",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *fut;
     PyObject *waiter;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_CheckPositional("future_add_to_awaited_by", nargs, 2, 2)) {
         goto exit;
     }
     fut = args[0];
@@ -1607,53 +1580,26 @@ exit:
 }
 
 PyDoc_STRVAR(_asyncio_future_discard_from_awaited_by__doc__,
-"future_discard_from_awaited_by($module, /, fut, waiter)\n"
+"future_discard_from_awaited_by($module, fut, waiter, /)\n"
 "--\n"
 "\n"
 "Record that `fut` is no longer awaited on by `waiter`.");
 
 #define _ASYNCIO_FUTURE_DISCARD_FROM_AWAITED_BY_METHODDEF    \
-    {"future_discard_from_awaited_by", _PyCFunction_CAST(_asyncio_future_discard_from_awaited_by), METH_FASTCALL|METH_KEYWORDS, _asyncio_future_discard_from_awaited_by__doc__},
+    {"future_discard_from_awaited_by", _PyCFunction_CAST(_asyncio_future_discard_from_awaited_by), METH_FASTCALL, _asyncio_future_discard_from_awaited_by__doc__},
 
 static PyObject *
 _asyncio_future_discard_from_awaited_by_impl(PyObject *module, PyObject *fut,
                                              PyObject *waiter);
 
 static PyObject *
-_asyncio_future_discard_from_awaited_by(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_future_discard_from_awaited_by(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 2
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(fut), &_Py_ID(waiter), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"fut", "waiter", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "future_discard_from_awaited_by",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *fut;
     PyObject *waiter;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_CheckPositional("future_discard_from_awaited_by", nargs, 2, 2)) {
         goto exit;
     }
     fut = args[0];
@@ -1663,4 +1609,4 @@ _asyncio_future_discard_from_awaited_by(PyObject *module, PyObject *const *args,
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a05f7308434b488c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e164592826f13567 input=a9049054013a1b77]*/

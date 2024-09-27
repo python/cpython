@@ -3839,6 +3839,7 @@ _asyncio.future_add_to_awaited_by
 
     fut: object
     waiter: object
+    /
 
 Record that `fut` is awaited on by `waiter`.
 
@@ -3847,7 +3848,7 @@ Record that `fut` is awaited on by `waiter`.
 static PyObject *
 _asyncio_future_add_to_awaited_by_impl(PyObject *module, PyObject *fut,
                                        PyObject *waiter)
-/*[clinic end generated code: output=0ab9a1a63389e4df input=29259cdbafe9e7bf]*/
+/*[clinic end generated code: output=0ab9a1a63389e4df input=06e6eaac51f532b9]*/
 {
     asyncio_state *state = get_asyncio_state(module);
     if (future_awaited_by_add(state, fut, waiter)) {
@@ -3861,6 +3862,7 @@ _asyncio.future_discard_from_awaited_by
 
     fut: object
     waiter: object
+    /
 
 Record that `fut` is no longer awaited on by `waiter`.
 
@@ -3869,7 +3871,7 @@ Record that `fut` is no longer awaited on by `waiter`.
 static PyObject *
 _asyncio_future_discard_from_awaited_by_impl(PyObject *module, PyObject *fut,
                                              PyObject *waiter)
-/*[clinic end generated code: output=a03b0b4323b779de input=5d67a3edc79b6094]*/
+/*[clinic end generated code: output=a03b0b4323b779de input=b5f7a39ccd36b5db]*/
 {
     asyncio_state *state = get_asyncio_state(module);
     if (future_awaited_by_discard(state, fut, waiter)) {

@@ -423,7 +423,7 @@ def wrap_future(future, *, loop=None):
     return new_future
 
 
-def future_add_to_awaited_by(fut, waiter):
+def future_add_to_awaited_by(fut, waiter, /):
     """Record that `fut` is awaited on by `waiter`."""
     # For the sake of keeping the implementation minimal and assuming
     # that 99.9% of asyncio users use the built-in Futures and Tasks
@@ -451,7 +451,7 @@ def future_add_to_awaited_by(fut, waiter):
         fut._asyncio_awaited_by.add(waiter)
 
 
-def future_discard_from_awaited_by(fut, waiter):
+def future_discard_from_awaited_by(fut, waiter, /):
     """Record that `fut` is no longer awaited on by `waiter`."""
     # See the comment in "future_add_to_awaited_by()" body for
     # details on implemntation.

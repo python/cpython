@@ -65,7 +65,7 @@ Future Functions
       and *loop* is not specified and there is no running event loop.
 
 
-.. function:: wrap_future(future, *, loop=None)
+.. function:: wrap_future(future, /, *, loop=None)
 
    Wrap a :class:`concurrent.futures.Future` object in a
    :class:`asyncio.Future` object.

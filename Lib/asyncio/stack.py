@@ -4,6 +4,7 @@ import sys
 import types
 import typing
 
+from . import events
 from . import futures
 from . import tasks
 
@@ -103,11 +104,20 @@ def capture_call_stack(*, future: any = None) -> FutureCallStack | None:
     returns None.
     """
 
+    loop = events._get_running_loop()
+
     if future is not None:
-        if future is not tasks.current_task():
+        # Check if we're in a context of a running event loop;
+        # if yes - check if the passed future is the currently
+        # running task or not.
+        if loop is None or future is not tasks.current_task():
             return _build_stack_for_future(future)
         # else: future is the current task, move on.
     else:
+        if loop is None:
+            raise RuntimeError(
+                'capture_call_stack() is called outside of a running '
+                'event loop and no *future* to introspect was provided')
         future = tasks.current_task()
 
     if future is None:
