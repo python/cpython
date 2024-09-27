@@ -318,6 +318,9 @@ PyCodec_RegisterError:int:::
 PyCodec_RegisterError:const char*:name::
 PyCodec_RegisterError:PyObject*:error:+1:
 
+PyCodec_UnregisterError:int:::
+PyCodec_UnregisterError:const char*:name::
+
 PyCodec_LookupError:PyObject*::+1:
 PyCodec_LookupError:const char*:name::
 

@@ -128,6 +128,7 @@ SYMBOL_NAMES = (
     "PyCodec_StreamWriter",
     "PyCodec_StrictErrors",
     "PyCodec_Unregister",
+    "PyCodec_UnregisterError",
     "PyCodec_XMLCharRefReplaceErrors",
     "PyComplex_FromDoubles",
     "PyComplex_ImagAsDouble",
