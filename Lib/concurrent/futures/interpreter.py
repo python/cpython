@@ -53,11 +53,11 @@ class WorkerContext(_thread.WorkerContext):
     def prepare(cls, initializer, initargs, shared):
         if isinstance(initializer, str):
             if initargs:
-                raise ValueError(f'an initializer script does not take args, got {args!r}')
+                raise ValueError(f'an initializer script does not take args, got {initargs!r}')
             initscript = initializer
             # Make sure the script compiles.
             # XXX Keep the compiled code object?
-            compile(script, '<string>', 'exec')
+            compile(initscript, '<string>', 'exec')
         elif initializer is not None:
             pickled = pickle.dumps((initializer, initargs))
             initscript = f'''if True:
@@ -152,11 +152,11 @@ class WorkerContext(_thread.WorkerContext):
     def run(self, task):
         data, kind = task
         if kind == 'script':
-            self._exec(script)
+            self._exec(data)
             return None
         elif kind == 'function':
             self._exec(
-                f'WorkerContext._run_pickled_func({data}, {self.resultsid})')
+                f'WorkerContext._run_pickled_func({data!r}, {self.resultsid})')
             obj, pickled, unboundop = _interpqueues.get(self.resultsid)
             assert unboundop is None, unboundop
             return pickle.loads(obj) if pickled else obj
