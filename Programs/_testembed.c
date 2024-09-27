@@ -1844,6 +1844,10 @@ static int test_initconfig_api(void)
         goto error;
     }
 
+    if (PyInitConfig_SetInt(config, "perf_profiling", 2) < 0) {
+        goto error;
+    }
+
     // Set a UTF-8 string (program_name)
     if (PyInitConfig_SetStr(config, "program_name", PROGRAM_NAME_UTF8) < 0) {
         goto error;

@@ -560,7 +560,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'cpu_count': -1,
         'faulthandler': False,
         'tracemalloc': 0,
-        'perf_profiling': False,
+        'perf_profiling': 0,
         'import_time': False,
         'code_debug_ranges': True,
         'show_ref_count': False,
@@ -652,7 +652,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         use_hash_seed=False,
         faulthandler=False,
         tracemalloc=False,
-        perf_profiling=False,
+        perf_profiling=0,
         pathconfig_warnings=False,
     )
     if MS_WINDOWS:
@@ -966,7 +966,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'use_hash_seed': True,
             'hash_seed': 123,
             'tracemalloc': 2,
-            'perf_profiling': False,
+            'perf_profiling': 0,
             'import_time': True,
             'code_debug_ranges': False,
             'show_ref_count': True,
@@ -1031,7 +1031,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'use_hash_seed': True,
             'hash_seed': 42,
             'tracemalloc': 2,
-            'perf_profiling': False,
+            'perf_profiling': 0,
             'import_time': True,
             'code_debug_ranges': False,
             'malloc_stats': True,
@@ -1066,7 +1066,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'use_hash_seed': True,
             'hash_seed': 42,
             'tracemalloc': 2,
-            'perf_profiling': False,
+            'perf_profiling': 0,
             'import_time': True,
             'code_debug_ranges': False,
             'malloc_stats': True,
@@ -1763,6 +1763,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'xoptions': {'faulthandler': True},
             'hash_seed': 10,
             'use_hash_seed': True,
+            'perf_profiling': 2,
         }
         config_dev_mode(preconfig, config)
         self.check_all_configs("test_initconfig_api", config, preconfig,
