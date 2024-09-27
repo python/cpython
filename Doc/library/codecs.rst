@@ -439,6 +439,17 @@ handler:
    replacement from the error handler will be put into the output directly.
 
 
+.. function:: unregister_error(name)
+
+   Attempt to un-register the error handling function under the name *name*.
+
+   This raises a :exc:`ValueError` if *name* denotes a standard error policy
+   as specified above. Otherwise, this returns ``True`` if an error handler
+   existed for the given *name* and ``False`` otherwise.
+
+   .. versionadded:: 3.14
+
+
 Previously registered error handlers (including the standard error handlers)
 can be looked up by name:
 

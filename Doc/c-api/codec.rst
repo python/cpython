@@ -97,6 +97,22 @@ Registry API for Unicode encoding error handlers
 
    Return ``0`` on success, ``-1`` on error.
 
+.. c:function:: int PyCodec_UnregisterError(const char *name)
+
+   Un-register the error handling callback function error under the given error
+   policy *name*. :ref:`Standard error policies <serror-handlers>` cannot be
+   un-registered.
+
+   * Return ``-1`` and set a :exc:`ValueError` exception if *name* is a
+     standard error policy or if an error occurred (in which case the
+     existing exception is propagated).
+
+   * Return ``0`` if no error handler is associated with the given error policy.
+
+   * Return ``1`` if the error handler was successfully removed.
+
+   .. versionadded:: 3.14
+
 .. c:function:: PyObject* PyCodec_LookupError(const char *name)
 
    Lookup the error handling callback function registered under *name*.  As a
