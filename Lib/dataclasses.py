@@ -1337,8 +1337,9 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
     # (the newly created one, which we're returning) and not the
     # original class.  We can break out of this loop as soon as we
     # make an update, since all closures for a class will share a
-    # given cell.  First we try to find a pure function/properties,
-    # and then fallback to inspecting custom descriptors.
+    # given cell.  First we try to find a pure function or a property,
+    # and then fallback to inspecting custom descriptors
+    # if no pure function or property is found.
 
     custom_descriptors_to_check = []
     for member in newcls.__dict__.values():
@@ -1360,9 +1361,9 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
         elif hasattr(member, "__get__") and not inspect.ismemberdescriptor(
             member
         ):
-            # we don't want to inspect custom descriptors just yet
+            # We don't want to inspect custom descriptors just yet
             # there's still a chance we'll encounter a pure function
-            # or a property
+            # or a property and won't have to use slower recursive search.
             custom_descriptors_to_check.append(member)
     else:
         # now let's ensure custom descriptors won't be left out
