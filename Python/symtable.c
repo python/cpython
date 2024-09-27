@@ -843,7 +843,7 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
                 return 0;
             }
             SET_SCOPE(scopes, k, scope);
-            if (scope == LOCAL) {
+            if (scope == LOCAL || scope == CELL) {
                 if (PySet_Add(inlined_locals, k) < 0) {
                     return 0;
                 }
@@ -906,7 +906,8 @@ analyze_cells(PyObject *scopes, PyObject *free, PyObject *inlined_cells, PyObjec
         if (scope == -1 && PyErr_Occurred()) {
             goto error;
         }
-        if (scope != LOCAL)
+
+        if (scope != LOCAL && scope != CELL)
             continue;
         int contains = PySet_Contains(free, name);
         if (contains < 0) {
@@ -920,18 +921,19 @@ analyze_cells(PyObject *scopes, PyObject *free, PyObject *inlined_cells, PyObjec
             if (!contains) {
                 continue;
             }
-        }
-        /* If the name is defined by an inlined comprehension, it must be
-         * preserved as free in the outer scope. */
-        contains = PySet_Contains(inlined_locals, name);
-        if (contains < 0) {
-            goto error;
-        }
-        if (contains) {
-            if (PyDict_SetItem(scopes, name, v_free) < 0) {
+        } else {
+            /* If a free name is defined only by an inlined comprehension, it must be
+             * preserved as free in the outer scope. */
+            contains = PySet_Contains(inlined_locals, name);
+            if (contains < 0) {
                 goto error;
             }
-            continue;
+            if (contains) {
+                if (PyDict_SetItem(scopes, name, v_free) < 0) {
+                    goto error;
+                }
+                continue;
+            }
         }
 
         /* Replace LOCAL with CELL for this name, and remove
@@ -1248,7 +1250,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
 
         // we inline all non-generator-expression comprehensions,
         // except those in annotation scopes that are nested in classes
-        int inline_comp = true &&
+        int inline_comp =
             entry->ste_comprehension &&
             !entry->ste_generator &&
             !ste->ste_can_see_class_scope;
