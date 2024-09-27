@@ -1,0 +1,7 @@
+Protect against stack overflows in tp_dealloc for all types that implement
+GC (i.e. the "trashcan" mechanism).  The `Py_TRASHCAN_BEGIN` and
+`Py_TRASHCAN_END` macros are now only present for backwards compatibility and
+don't need to be used. A suble API change is that tp_dealloc methods are now
+called with GC objects untracked.  Previously they would be tracked if the type
+had them originally tracked.  `PyObject_CallFinalizerFromDealloc()` will now
+track GC objects if they are resurrected.
