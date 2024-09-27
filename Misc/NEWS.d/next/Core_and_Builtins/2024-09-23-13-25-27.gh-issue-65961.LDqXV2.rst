@@ -1,1 +1,1 @@
-Deprecate the setting and using ``__package__`` and ``__cached__``.
+Document the deprecation of setting and using ``__package__`` and ``__cached__``.
