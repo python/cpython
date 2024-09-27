@@ -889,8 +889,11 @@ def quartic_kernel():
     return pdf, cdf, invcdf, support
 
 def _triweight_invcdf_estimate(p):
+    # A handrolled piecewise approximation. There is no magic here.
     sign, p = (1.0, p) if p <= 1/2 else (-1.0, 1.0 - p)
     x = (2.0 * p) ** 0.3400218741872791 - 1.0
+    if 0.00001 < p < 0.499:
+        x -= 0.033 * sin(1.07 * tau * (p - 0.035))
     return x * sign
 
 @register('triweight')
