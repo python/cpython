@@ -1,0 +1,2 @@
+The ``__main__`` module no longer always contains an ``__annotations__``
+dictionary in its global namespace.

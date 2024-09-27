@@ -849,7 +849,6 @@ class RunStringTests(TestBase):
         ns.pop('__loader__')
         self.assertEqual(ns, {
             '__name__': '__main__',
-            '__annotations__': {},
             '__doc__': None,
             '__package__': None,
             '__spec__': None,

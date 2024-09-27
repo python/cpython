@@ -1080,7 +1080,7 @@ class TestMain(ReplTestCase):
 
     @force_not_colorized
     def test_exposed_globals_in_repl(self):
-        pre = "['__annotations__', '__builtins__'"
+        pre = "['__builtins__'"
         post = "'__loader__', '__name__', '__package__', '__spec__']"
         output, exit_code = self.run_repl(["sorted(dir())", "exit()"])
         if "can't use pyrepl" in output:
