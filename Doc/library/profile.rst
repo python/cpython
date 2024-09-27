@@ -47,7 +47,7 @@ profiling interface:
 .. note::
 
    Only one profiler can be active at any given time.
-   Attemting to enable a profiler while another one is already in use will 
+   Attemting to enable a profiler while another one is already in use will
    result in a :exc:`ValueError`.
 
 
