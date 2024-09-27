@@ -320,9 +320,8 @@ This is needed because ``None`` is not comparable to other types.
 
 .. doctest::
 
-   >>> from operator import methodcaller
    >>> data = [{'a': 1}, {'b': 2}]
-   >>> list(map(dict, sorted(map(methodcaller('items'), data))))
+   >>> sorted(data, key=lambda d: sorted(d.items()))
    [{'a': 1}, {'b': 2}]
 
 This is needed because dict-to-dict comparisons raise a
