@@ -4433,12 +4433,11 @@ dec_conjugate(PyObject *self, PyObject *Py_UNUSED(dummy))
     return Py_NewRef(self);
 }
 
-static PyObject *
-dec_mpd_radix(PyObject *self, PyObject *Py_UNUSED(dummy))
+static inline PyObject *
+_dec_mpd_radix(decimal_state *state)
 {
     PyObject *result;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     result = dec_alloc(state);
     if (result == NULL) {
         return NULL;
@@ -4446,6 +4445,13 @@ dec_mpd_radix(PyObject *self, PyObject *Py_UNUSED(dummy))
 
     _dec_settriple(result, MPD_POS, 10, 0);
     return result;
+}
+
+static PyObject *
+dec_mpd_radix(PyObject *self, PyObject *Py_UNUSED(dummy))
+{
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    return _dec_mpd_radix(state);
 }
 
 static PyObject *
@@ -5403,7 +5409,8 @@ DecCtx_TernaryFunc(mpd_qfma)
 static PyObject *
 ctx_mpd_radix(PyObject *context, PyObject *dummy)
 {
-    return dec_mpd_radix(context, dummy);
+    decimal_state *state = get_module_state_from_ctx(context);
+    return _dec_mpd_radix(state);
 }
 
 /* Boolean functions: single decimal argument */
