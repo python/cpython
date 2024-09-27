@@ -115,13 +115,12 @@ class InterpreterPoolExecutorTest(InterpreterPoolMixin, ExecutorTest, BaseTestCa
         self.assertIs(res, None)
 
     def test_submit_func_globals(self):
-        raise NotImplementedError
         executor = self.executor_type()
         fut = executor.submit(get_current_name)
         name = fut.result()
 
-        self.assertEqual(name, '__main__')
-        self.assertNotEqual(name, __name__)
+        self.assertEqual(name, __name__)
+        self.assertNotEqual(name, '__main__')
 
     def test_saturation(self):
         blocker = queues.create()
