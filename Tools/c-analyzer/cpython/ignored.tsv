@@ -345,8 +345,9 @@ Python/ast_opt.c	fold_unaryop	ops	-
 Python/ceval.c	-	_PyEval_BinaryOps	-
 Python/ceval.c	-	_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS	-
 Python/codecs.c	-	Py_hexdigits	-
+Python/codecs.c	-	codecs_native_error_polcies	-
 Python/codecs.c	-	ucnhash_capi	-
-Python/codecs.c	_PyCodec_InitRegistry	methods	-
+Python/codecs.c	_PyCodec_InitRegistry	error_handlers	-
 Python/compile.c	-	NO_LOCATION	-
 Python/dynload_shlib.c	-	_PyImport_DynLoadFiletab	-
 Python/dynload_stub.c	-	_PyImport_DynLoadFiletab	-
