@@ -177,8 +177,12 @@ PyAPI_FUNC(int) _PyLong_Size_t_Converter(PyObject *, void *);
  * we define them to the numbers in both places and then assert that
  * they're the same.
  */
-static_assert(SIGN_MASK == _PyLong_SIGN_MASK, "SIGN_MASK does not match _PyLong_SIGN_MASK");
-static_assert(NON_SIZE_BITS == _PyLong_NON_SIZE_BITS, "NON_SIZE_BITS does not match _PyLong_NON_SIZE_BITS");
+#if SIGN_MASK != _PyLong_SIGN_MASK
+#  error "SIGN_MASK does not match _PyLong_SIGN_MASK"
+#endif
+#if NON_SIZE_BITS != _PyLong_NON_SIZE_BITS
+#  error "NON_SIZE_BITS does not match _PyLong_NON_SIZE_BITS"
+#endif
 
 /* All *compact" values are guaranteed to fit into
  * a Py_ssize_t with at least one bit to spare.
@@ -223,7 +227,7 @@ static inline Py_ssize_t
 _PyLong_DigitCount(const PyLongObject *op)
 {
     assert(PyLong_Check(op));
-    return op->long_value.lv_tag >> NON_SIZE_BITS;
+    return (Py_ssize_t)(op->long_value.lv_tag >> NON_SIZE_BITS);
 }
 
 /* Equivalent to _PyLong_DigitCount(op) * _PyLong_NonCompactSign(op) */
@@ -258,7 +262,8 @@ _PyLong_SameSign(const PyLongObject *a, const PyLongObject *b)
     return (a->long_value.lv_tag & SIGN_MASK) == (b->long_value.lv_tag & SIGN_MASK);
 }
 
-#define TAG_FROM_SIGN_AND_SIZE(sign, size) ((1 - (sign)) | ((size) << NON_SIZE_BITS))
+#define TAG_FROM_SIGN_AND_SIZE(sign, size) \
+    ((uintptr_t)(1 - (sign)) | ((uintptr_t)(size) << NON_SIZE_BITS))
 
 static inline void
 _PyLong_SetSignAndDigitCount(PyLongObject *op, int sign, Py_ssize_t size)
@@ -266,7 +271,7 @@ _PyLong_SetSignAndDigitCount(PyLongObject *op, int sign, Py_ssize_t size)
     assert(size >= 0);
     assert(-1 <= sign && sign <= 1);
     assert(sign != 0 || size == 0);
-    op->long_value.lv_tag = TAG_FROM_SIGN_AND_SIZE(sign, (size_t)size);
+    op->long_value.lv_tag = TAG_FROM_SIGN_AND_SIZE(sign, size);
 }
 
 static inline void
@@ -276,7 +281,7 @@ _PyLong_SetDigitCount(PyLongObject *op, Py_ssize_t size)
     op->long_value.lv_tag = (((size_t)size) << NON_SIZE_BITS) | (op->long_value.lv_tag & SIGN_MASK);
 }
 
-#define NON_SIZE_MASK ~((1 << NON_SIZE_BITS) - 1)
+#define NON_SIZE_MASK ~(uintptr_t)((1 << NON_SIZE_BITS) - 1)
 
 static inline void
 _PyLong_FlipSign(PyLongObject *op) {

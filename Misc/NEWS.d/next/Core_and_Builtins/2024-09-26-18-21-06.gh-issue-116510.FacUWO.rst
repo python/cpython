@@ -1,0 +1,5 @@
+Fix a crash caused by immortal interned strings being shared between
+sub-interpreters that use basic single-phase init.  In that case, the string
+can be used by an interpreter that outlives the interpreter that created and
+interned it.  For interpreters that share obmalloc state, also share the
+interned dict with the main interpreter.
