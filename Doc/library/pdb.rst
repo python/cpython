@@ -430,14 +430,9 @@ can be overridden by the local file.
    breakpoint—which could have its own command list, leading to ambiguities about
    which list to execute.
 
-   If you have a command that resumes execution in the command list, the normal
-   frame information before you interact with pdb is not displayed.  If none of
-   the other commands print anything, you see no sign that the breakpoint was
-   reached.
-
-   If you don't have a command that resumes execution in the command list, you
-   can also use the ``silent`` command anywhere in the command list to suppress
-   the frame information.
+   If the command list contains the ``silent`` command, or a command that
+   resumes execution, then the breakpoint message containing information about
+   the frame is not displayed.
 
    .. versionchanged:: 3.14
       Frame information will not be displayed if a command that resumes execution
