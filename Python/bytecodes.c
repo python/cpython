@@ -1647,10 +1647,10 @@ dummy_func(
             value = PyStackRef_FromPyObjectSteal(value_o);
         }
 
-        inst(LOAD_DEREF, ( -- value[1])) {
+        inst(LOAD_DEREF, ( -- value)) {
             PyCellObject *cell = (PyCellObject *)PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
-            _PyCell_GetStackRef(cell, value);
-            if (PyStackRef_IsNull(*value)) {
+            value = _PyCell_GetStackRef(cell);
+            if (PyStackRef_IsNull(value)) {
                 _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
                 ERROR_IF(true, error);
             }
