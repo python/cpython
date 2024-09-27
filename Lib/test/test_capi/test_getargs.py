@@ -8,6 +8,7 @@ from test.support import script_helper
 from test.support import warnings_helper
 from test.support.classes import (ComplexSubclass, FloatSubclass, WithComplex,
                                   WithFloat, WithIndex, WithInt)
+from test.support.testcase import FloatsAreIdenticalMixin
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
 from _testcapi import getargs_keywords, getargs_keyword_only
@@ -382,11 +383,7 @@ class LongLong_TestCase(unittest.TestCase):
         self.assertEqual(VERY_LARGE & ULLONG_MAX, getargs_K(VERY_LARGE))
 
 
-class Float_TestCase(unittest.TestCase):
-    def assertEqualWithSign(self, actual, expected):
-        self.assertEqual(actual, expected)
-        self.assertEqual(math.copysign(1, actual), math.copysign(1, expected))
-
+class Float_TestCase(unittest.TestCase, FloatsAreIdenticalMixin):
     def test_f(self):
         from _testcapi import getargs_f
         self.assertEqual(getargs_f(4.25), 4.25)
@@ -408,10 +405,10 @@ class Float_TestCase(unittest.TestCase):
             self.assertEqual(getargs_f(DBL_MAX), INF)
             self.assertEqual(getargs_f(-DBL_MAX), -INF)
         if FLT_MIN > DBL_MIN:
-            self.assertEqualWithSign(getargs_f(DBL_MIN), 0.0)
-            self.assertEqualWithSign(getargs_f(-DBL_MIN), -0.0)
-        self.assertEqualWithSign(getargs_f(0.0), 0.0)
-        self.assertEqualWithSign(getargs_f(-0.0), -0.0)
+            self.assertFloatsAreIdentical(getargs_f(DBL_MIN), 0.0)
+            self.assertFloatsAreIdentical(getargs_f(-DBL_MIN), -0.0)
+        self.assertFloatsAreIdentical(getargs_f(0.0), 0.0)
+        self.assertFloatsAreIdentical(getargs_f(-0.0), -0.0)
         r = getargs_f(NAN)
         self.assertNotEqual(r, r)
 
@@ -440,8 +437,8 @@ class Float_TestCase(unittest.TestCase):
             self.assertEqual(getargs_d(x), x)
         self.assertRaises(OverflowError, getargs_d, 1<<DBL_MAX_EXP)
         self.assertRaises(OverflowError, getargs_d, -1<<DBL_MAX_EXP)
-        self.assertEqualWithSign(getargs_d(0.0), 0.0)
-        self.assertEqualWithSign(getargs_d(-0.0), -0.0)
+        self.assertFloatsAreIdentical(getargs_d(0.0), 0.0)
+        self.assertFloatsAreIdentical(getargs_d(-0.0), -0.0)
         r = getargs_d(NAN)
         self.assertNotEqual(r, r)
 
@@ -465,10 +462,10 @@ class Float_TestCase(unittest.TestCase):
             self.assertEqual(getargs_D(c), c)
             c = complex(1.0, x)
             self.assertEqual(getargs_D(c), c)
-        self.assertEqualWithSign(getargs_D(complex(0.0, 1.0)).real, 0.0)
-        self.assertEqualWithSign(getargs_D(complex(-0.0, 1.0)).real, -0.0)
-        self.assertEqualWithSign(getargs_D(complex(1.0, 0.0)).imag, 0.0)
-        self.assertEqualWithSign(getargs_D(complex(1.0, -0.0)).imag, -0.0)
+        self.assertFloatsAreIdentical(getargs_D(complex(0.0, 1.0)).real, 0.0)
+        self.assertFloatsAreIdentical(getargs_D(complex(-0.0, 1.0)).real, -0.0)
+        self.assertFloatsAreIdentical(getargs_D(complex(1.0, 0.0)).imag, 0.0)
+        self.assertFloatsAreIdentical(getargs_D(complex(1.0, -0.0)).imag, -0.0)
 
 
 class Paradox:

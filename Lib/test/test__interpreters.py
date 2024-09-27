@@ -43,7 +43,7 @@ def _run_output(interp, request):
 def _wait_for_interp_to_run(interp, timeout=None):
     # bpo-37224: Running this test file in multiprocesses will fail randomly.
     # The failure reason is that the thread can't acquire the cpu to
-    # run subinterpreter eariler than the main thread in multiprocess.
+    # run subinterpreter earlier than the main thread in multiprocess.
     if timeout is None:
         timeout = support.SHORT_TIMEOUT
     for _ in support.sleeping_retry(timeout, error=False):

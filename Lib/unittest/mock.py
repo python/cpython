@@ -32,7 +32,7 @@ import pprint
 import sys
 import builtins
 import pkgutil
-from asyncio import iscoroutinefunction
+from inspect import iscoroutinefunction
 import threading
 from types import CodeType, ModuleType, MethodType
 from unittest.util import safe_repr
@@ -628,7 +628,9 @@ class NonCallableMock(Base):
     side_effect = property(__get_side_effect, __set_side_effect)
 
 
-    def reset_mock(self,  visited=None,*, return_value=False, side_effect=False):
+    def reset_mock(self, visited=None, *,
+                   return_value: bool = False,
+                   side_effect: bool = False):
         "Restore the mock object to its initial state."
         if visited is None:
             visited = []
@@ -2166,8 +2168,6 @@ class MagicMixin(Base):
 
         if getattr(self, "_mock_methods", None) is not None:
             these_magics = orig_magics.intersection(self._mock_methods)
-
-            remove_magics = set()
             remove_magics = orig_magics - these_magics
 
             for entry in remove_magics:
@@ -2220,6 +2220,17 @@ class MagicMock(MagicMixin, Mock):
         self._mock_add_spec(spec, spec_set)
         self._mock_set_magics()
 
+    def reset_mock(self, /, *args, return_value: bool = False, **kwargs):
+        if (
+            return_value
+            and self._mock_name
+            and _is_magic(self._mock_name)
+        ):
+            # Don't reset return values for magic methods,
+            # otherwise `m.__str__` will start
+            # to return `MagicMock` instances, instead of `str` instances.
+            return_value = False
+        super().reset_mock(*args, return_value=return_value, **kwargs)
 
 
 class MagicProxy(Base):
@@ -2456,7 +2467,7 @@ class AsyncMock(AsyncMockMixin, AsyncMagicMixin, Mock):
     recognized as an async function, and the result of a call is an awaitable:
 
     >>> mock = AsyncMock()
-    >>> iscoroutinefunction(mock)
+    >>> inspect.iscoroutinefunction(mock)
     True
     >>> inspect.isawaitable(mock())
     True
