@@ -3089,7 +3089,7 @@ private:
             if (IsWindowsVersionOrGreater(10, 0, 0)) {
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows Server 2016 or later");
                 return;
-            if (IsWindowsVersionOrGreater(6, 2, 0)) {
+            } else if (IsWindowsVersionOrGreater(6, 2, 0)) {
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Server 2012");
             } else if (IsWindowsVersionOrGreater(6, 1, 1)) {
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Server 2008 R2");
