@@ -22,7 +22,6 @@ static void
 descr_dealloc(PyObject *self)
 {
     PyDescrObject *descr = (PyDescrObject *)self;
-    _PyObject_GC_UNTRACK(descr);
     Py_XDECREF(descr->d_type);
     Py_XDECREF(descr->d_name);
     Py_XDECREF(descr->d_qualname);
