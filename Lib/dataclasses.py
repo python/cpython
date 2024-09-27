@@ -1257,8 +1257,8 @@ def _find_inner_functions(obj, _seen=None, _depth=0):
         value = getattr(obj, attr, None)
         if value is None:
             continue
-        if isinstance(obj, types.FunctionType):
-            yield obj
+        if isinstance(value, types.FunctionType):
+            yield value
             return
         yield from _find_inner_functions(value, _seen, _depth)
 
