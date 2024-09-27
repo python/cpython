@@ -1251,14 +1251,12 @@ def _find_inner_functions(obj, _seen=None, _depth=0):
     if _depth > 2:
         return None
 
-    obj = inspect.unwrap(obj)
-
     for attr in dir(obj):
         value = getattr(obj, attr, None)
         if value is None:
             continue
         if isinstance(value, types.FunctionType):
-            yield value
+            yield inspect.unwrap(value)
             return
         yield from _find_inner_functions(value, _seen, _depth)
 

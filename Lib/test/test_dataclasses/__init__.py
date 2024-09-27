@@ -13,6 +13,7 @@ import types
 import weakref
 import traceback
 import unittest
+from functools import update_wrapper
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol, DefaultDict
 from typing import get_type_hints
@@ -5056,6 +5057,26 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
         class CustomDescriptor:
             def __init__(self, f):
                 self._f = f
+
+            def __get__(self, instance, owner):
+                return self._f(instance)
+
+        class B:
+            def foo(self):
+                return "bar"
+
+        @dataclass(slots=True)
+        class A(B):
+            @CustomDescriptor
+            def foo(cls):
+                return super().foo()
+
+        self.assertEqual(A().foo, "bar")
+
+    def test_custom_descriptor_wrapped(self):
+        class CustomDescriptor:
+            def __init__(self, f):
+                self._f = update_wrapper(lambda *args, **kwargs: f(*args, **kwargs), f)
 
             def __get__(self, instance, owner):
                 return self._f(instance)
