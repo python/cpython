@@ -3,7 +3,7 @@
 ## Definition of Tiers
 
 - **Tier 1** is the classic Python bytecode interpreter.
-  This includes the specializing adaptive interpreter described in [PEP 659](https://peps.python.org/pep-0659/) and introduced in Python 3.11.
+  This includes the specializing [Adaptive Interpreter](adaptive.md).
 - **Tier 2**, also known as the micro-instruction ("uop") interpreter, is a new interpreter with a different instruction format.
   It was introduced in Python 3.13, and also forms the basis for a JIT using copy-and-patch technology. See [Tier 2](tier2_engine.md) for more information.
 
