@@ -7,10 +7,21 @@
 - **Tier 2**, also known as the micro-instruction ("uop") interpreter, is a new interpreter with a different instruction format.
   It was introduced in Python 3.13, and also forms the basis for a JIT using copy-and-patch technology. See [Tier 2](tier2_engine.md) for more information.
 
+
 # Frame state
 
 Almost all interpreter state is nominally stored in the frame structure.
 A pointer to the current frame is held in `frame`, for more information about what `frame` contains see [Frames](frames.md):
+
+# Thread state and interpreter state
+
+Another important piece of VM state is the **thread state**, held in `tstate`.
+The current frame pointer, `frame`, is always equal to `tstate->current_frame`.
+The thread state also holds the exception state (`tstate->exc_info`) and the recursion counters (`tstate->c_recursion_remaining` and `tstate->py_recursion_remaining`).
+
+The thread state is also used to access the **interpreter state** (`tstate->interp`), which is important since the "eval breaker" flags are stored there (`tstate->interp->ceval.eval_breaker`, an "atomic" variable), as well as the "PEP 523 function" (`tstate->interp->eval_frame`).
+The interpreter state also holds the optimizer state (`optimizer` and some counters).
+Note that the eval breaker may be moved to the thread state soon as part of the multicore (PEP 703) work.
 
 ## Fast locals and evaluation stack
 
@@ -58,16 +69,6 @@ Patching exits should be fairly straightforward in the interpreter.
 It will be more complex in the JIT.
 
 (We might also consider deoptimizations as a separate jump type.)
-
-# Thread state and interpreter state
-
-Another important piece of VM state is the **thread state**, held in `tstate`.
-The current frame pointer, `frame`, is always equal to `tstate->current_frame`.
-The thread state also holds the exception state (`tstate->exc_info`) and the recursion counters (`tstate->c_recursion_remaining` and `tstate->py_recursion_remaining`).
-
-The thread state is also used to access the **interpreter state** (`tstate->interp`), which is important since the "eval breaker" flags are stored there (`tstate->interp->ceval.eval_breaker`, an "atomic" variable), as well as the "PEP 523 function" (`tstate->interp->eval_frame`).
-The interpreter state also holds the optimizer state (`optimizer` and some counters).
-Note that the eval breaker may be moved to the thread state soon as part of the multicore (PEP 703) work.
 
 # Tier 2 IR format
 
