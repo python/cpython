@@ -264,6 +264,12 @@ def clear_caches():
         for f in typing._cleanups:
             f()
 
+        import inspect
+        abs_classes = filter(inspect.isabstract, typing.__dict__.values())
+        for abc in abs_classes:
+            for obj in abc.__subclasses__() + [abc]:
+                obj._abc_caches_clear()
+
     try:
         fractions = sys.modules['fractions']
     except KeyError:
@@ -337,6 +343,11 @@ def get_build_info():
     if support.check_cflags_pgo():
         # PGO (--enable-optimizations)
         optimizations.append('PGO')
+
+    if support.check_bolt_optimized():
+        # BOLT (--enable-bolt)
+        optimizations.append('BOLT')
+
     if optimizations:
         build.append('+'.join(optimizations))
 
@@ -695,7 +706,7 @@ ILLEGAL_XML_CHARS_RE = re.compile(
     # Special Unicode characters
     '\uFFFE'
     '\uFFFF'
-    # Match multiple sequential invalid characters for better effiency
+    # Match multiple sequential invalid characters for better efficiency
     ']+')
 
 def _sanitize_xml_replace(regs):

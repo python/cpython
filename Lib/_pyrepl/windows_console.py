@@ -63,6 +63,7 @@ TYPE_CHECKING = False
 if TYPE_CHECKING:
     from typing import IO
 
+# Virtual-Key Codes: https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 VK_MAP: dict[int, str] = {
     0x23: "end",  # VK_END
     0x24: "home",  # VK_HOME
@@ -87,10 +88,10 @@ VK_MAP: dict[int, str] = {
     0x7D: "f14",  # VK_F14
     0x7E: "f15",  # VK_F15
     0x7F: "f16",  # VK_F16
-    0x79: "f17",  # VK_F17
-    0x80: "f18",  # VK_F18
-    0x81: "f19",  # VK_F19
-    0x82: "f20",  # VK_F20
+    0x80: "f17",  # VK_F17
+    0x81: "f18",  # VK_F18
+    0x82: "f19",  # VK_F19
+    0x83: "f20",  # VK_F20
 }
 
 # Console escape codes: https://learn.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences
@@ -231,7 +232,7 @@ class WindowsConsole(Console):
 
         # reuse the oldline as much as possible, but stop as soon as we
         # encounter an ESCAPE, because it might be the start of an escape
-        # sequene
+        # sequence
         while (
             x_coord < minlen
             and oldline[x_pos] == newline[x_pos]
@@ -253,7 +254,7 @@ class WindowsConsole(Console):
         else:
             self.__posxy = wlen(newline), y
 
-            if "\x1b" in newline or y != self.__posxy[1]:
+            if "\x1b" in newline or y != self.__posxy[1] or '\x1a' in newline:
                 # ANSI escape characters are present, so we can't assume
                 # anything about the position of the cursor.  Moving the cursor
                 # to the left margin should work to get to a known position.
@@ -291,6 +292,9 @@ class WindowsConsole(Console):
         self.__write("\x1b[?12l")
 
     def __write(self, text: str) -> None:
+        if "\x1a" in text:
+            text = ''.join(["^Z" if x == '\x1a' else x for x in text])
+
         if self.out is not None:
             self.out.write(text.encode(self.encoding, "replace"))
             self.out.flush()
@@ -367,14 +371,18 @@ class WindowsConsole(Console):
 
         return info.srWindow.Bottom  # type: ignore[no-any-return]
 
-    def _read_input(self) -> INPUT_RECORD | None:
+    def _read_input(self, block: bool = True) -> INPUT_RECORD | None:
+        if not block:
+            events = DWORD()
+            if not GetNumberOfConsoleInputEvents(InHandle, events):
+                raise WinError(GetLastError())
+            if not events.value:
+                return None
+
         rec = INPUT_RECORD()
         read = DWORD()
         if not ReadConsoleInput(InHandle, rec, 1, read):
             raise WinError(GetLastError())
-
-        if read.value == 0:
-            return None
 
         return rec
 
@@ -386,10 +394,8 @@ class WindowsConsole(Console):
             return self.event_queue.pop()
 
         while True:
-            rec = self._read_input()
+            rec = self._read_input(block)
             if rec is None:
-                if block:
-                    continue
                 return None
 
             if rec.EventType == WINDOW_BUFFER_SIZE_EVENT:
@@ -460,8 +466,8 @@ class WindowsConsole(Console):
 
     def forgetinput(self) -> None:
         """Forget all pending, but not yet processed input."""
-        while self._read_input() is not None:
-            pass
+        if not FlushConsoleInputBuffer(InHandle):
+            raise WinError(GetLastError())
 
     def getpending(self) -> Event:
         """Return the characters that have been typed but not yet
@@ -475,7 +481,7 @@ class WindowsConsole(Console):
         while True:
             if msvcrt.kbhit(): # type: ignore[attr-defined]
                 return True
-            if timeout and time.time() - start_time > timeout:
+            if timeout and time.time() - start_time > timeout / 1000:
                 return False
             time.sleep(0.01)
 
@@ -586,6 +592,14 @@ if sys.platform == "win32":
     ReadConsoleInput.argtypes = [HANDLE, POINTER(INPUT_RECORD), DWORD, POINTER(DWORD)]
     ReadConsoleInput.restype = BOOL
 
+    GetNumberOfConsoleInputEvents = _KERNEL32.GetNumberOfConsoleInputEvents
+    GetNumberOfConsoleInputEvents.argtypes = [HANDLE, POINTER(DWORD)]
+    GetNumberOfConsoleInputEvents.restype = BOOL
+
+    FlushConsoleInputBuffer = _KERNEL32.FlushConsoleInputBuffer
+    FlushConsoleInputBuffer.argtypes = [HANDLE]
+    FlushConsoleInputBuffer.restype = BOOL
+
     OutHandle = GetStdHandle(STD_OUTPUT_HANDLE)
     InHandle = GetStdHandle(STD_INPUT_HANDLE)
 else:
@@ -598,5 +612,7 @@ else:
     ScrollConsoleScreenBuffer = _win_only
     SetConsoleMode = _win_only
     ReadConsoleInput = _win_only
+    GetNumberOfConsoleInputEvents = _win_only
+    FlushConsoleInputBuffer = _win_only
     OutHandle = 0
     InHandle = 0

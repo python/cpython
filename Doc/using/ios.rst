@@ -33,6 +33,17 @@ running, so you only need to deal with the Python code itself.
 Python at runtime on iOS
 ========================
 
+iOS version compatibility
+-------------------------
+
+The minimum supported iOS version is specified at compile time, using the
+:option:`--host` option to ``configure``. By default, when compiled for iOS,
+Python will be compiled with a minimum supported iOS version of 13.0. To use a
+different minimum iOS version, provide the version number as part of the
+:option:`!--host` argument - for example,
+``--host=arm64-apple-ios15.4-simulator`` would compile an ARM64 simulator build
+with a deployment target of 15.4.
+
 Platform identification
 -----------------------
 
@@ -42,17 +53,17 @@ the simulator or a physical device.
 
 Information about the specific runtime environment, including the iOS version,
 device model, and whether the device is a simulator, can be obtained using
-:func:`platform.ios_ver()`. :func:`platform.system()` will report ``iOS`` or
+:func:`platform.ios_ver`. :func:`platform.system` will report ``iOS`` or
 ``iPadOS``, depending on the device.
 
-:func:`os.uname()` reports kernel-level details; it will report a name of
+:func:`os.uname` reports kernel-level details; it will report a name of
 ``Darwin``.
 
 Standard library availability
 -----------------------------
 
 The Python standard library has some notable omissions and restrictions on
-iOS. See the :ref:`API availability guide for iOS <iOS-availability>` for
+iOS. See the :ref:`API availability guide for iOS <mobile-availability>` for
 details.
 
 Binary extension modules

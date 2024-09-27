@@ -463,6 +463,14 @@ class PydocDocTest(unittest.TestCase):
         doc = pydoc.render_doc(BinaryInteger)
         self.assertIn('BinaryInteger.zero', doc)
 
+    def test_slotted_dataclass_with_field_docs(self):
+        import dataclasses
+        @dataclasses.dataclass(slots=True)
+        class My:
+            x: int = dataclasses.field(doc='Docstring for x')
+        doc = pydoc.render_doc(My)
+        self.assertIn('Docstring for x', doc)
+
     def test_mixed_case_module_names_are_lower_cased(self):
         # issue16484
         doc_link = get_pydoc_link(xml.etree.ElementTree)
@@ -776,9 +784,16 @@ class PydocDocTest(unittest.TestCase):
                         'Help on function help in module pydoc:')
         run_pydoc_pager('str', 'str', 'Help on class str in module builtins:')
         run_pydoc_pager(str, 'str', 'Help on class str in module builtins:')
-        run_pydoc_pager('str.upper', 'str.upper', 'Help on method_descriptor in str:')
-        run_pydoc_pager(str.upper, 'str.upper', 'Help on method_descriptor:')
-        run_pydoc_pager(str.__add__, 'str.__add__', 'Help on wrapper_descriptor:')
+        run_pydoc_pager('str.upper', 'str.upper',
+                        'Help on method descriptor upper in str:')
+        run_pydoc_pager(str.upper, 'str.upper',
+                        'Help on method descriptor upper:')
+        run_pydoc_pager(''.upper, 'str.upper',
+                        'Help on built-in function upper:')
+        run_pydoc_pager(str.__add__,
+                        'str.__add__', 'Help on method descriptor __add__:')
+        run_pydoc_pager(''.__add__,
+                        'str.__add__', 'Help on method wrapper __add__:')
         run_pydoc_pager(int.numerator, 'int.numerator',
                         'Help on getset descriptor builtins.int.numerator:')
         run_pydoc_pager(list[int], 'list',

@@ -96,7 +96,7 @@ def typed_approx_eq(a, b):
 
 class Symbolic:
     """Simple non-numeric class for testing mixed arithmetic.
-    It is not Integral, Rational, Real or Complex, and cannot be conveted
+    It is not Integral, Rational, Real or Complex, and cannot be converted
     to int, float or complex. but it supports some arithmetic operations.
     """
     def __init__(self, value):
@@ -353,6 +353,41 @@ class FractionTest(unittest.TestCase):
         self.assertRaises(ValueError, F, Decimal('snan'))
         self.assertRaises(OverflowError, F, Decimal('inf'))
         self.assertRaises(OverflowError, F, Decimal('-inf'))
+
+    def testInitFromIntegerRatio(self):
+        class Ratio:
+            def __init__(self, ratio):
+                self._ratio = ratio
+            def as_integer_ratio(self):
+                return self._ratio
+
+        self.assertEqual((7, 3), _components(F(Ratio((7, 3)))))
+        errmsg = "argument should be a string or a number"
+        # the type also has an "as_integer_ratio" attribute.
+        self.assertRaisesRegex(TypeError, errmsg, F, Ratio)
+        # bad ratio
+        self.assertRaises(TypeError, F, Ratio(7))
+        self.assertRaises(ValueError, F, Ratio((7,)))
+        self.assertRaises(ValueError, F, Ratio((7, 3, 1)))
+        # only single-argument form
+        self.assertRaises(TypeError, F, Ratio((3, 7)), 11)
+        self.assertRaises(TypeError, F, 2, Ratio((-10, 9)))
+
+        # as_integer_ratio not defined in a class
+        class A:
+            pass
+        a = A()
+        a.as_integer_ratio = lambda: (9, 5)
+        self.assertEqual((9, 5), _components(F(a)))
+
+        # as_integer_ratio defined in a metaclass
+        class M(type):
+            def as_integer_ratio(self):
+                return (11, 9)
+        class B(metaclass=M):
+            pass
+        self.assertRaisesRegex(TypeError, errmsg, F, B)
+        self.assertRaisesRegex(TypeError, errmsg, F, B())
 
     def testFromString(self):
         self.assertEqual((5, 1), _components(F("5")))
