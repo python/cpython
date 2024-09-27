@@ -242,42 +242,21 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertRaises(TypeError, operator.mul, 1j, None)
         self.assertRaises(TypeError, operator.mul, None, 1j)
 
-        self.assertComplexesAreIdentical((1e300+1j) * complex(INF, INF),
-                                         complex(NAN, INF))
-        self.assertComplexesAreIdentical(complex(INF, INF) * (1e300+1j),
-                                         complex(NAN, INF))
-        self.assertComplexesAreIdentical((1e300+1j) * complex(NAN, INF),
-                                         complex(-INF, INF))
-        self.assertComplexesAreIdentical(complex(NAN, INF) * (1e300+1j),
-                                         complex(-INF, INF))
-        self.assertComplexesAreIdentical((1e300+1j) * complex(INF, NAN),
-                                         complex(INF, INF))
-        self.assertComplexesAreIdentical(complex(INF, NAN) * (1e300+1j),
-                                         complex(INF, INF))
-        self.assertComplexesAreIdentical(complex(INF, 1) * complex(NAN, INF),
-                                         complex(NAN, INF))
-        self.assertComplexesAreIdentical(complex(INF, 1) * complex(INF, NAN),
-                                         complex(INF, NAN))
-        self.assertComplexesAreIdentical(complex(NAN, INF) * complex(INF, 1),
-                                         complex(NAN, INF))
-        self.assertComplexesAreIdentical(complex(INF, NAN) * complex(INF, 1),
-                                         complex(INF, NAN))
-        self.assertComplexesAreIdentical(complex(NAN, 1) * complex(1, INF),
-                                         complex(-INF, NAN))
-        self.assertComplexesAreIdentical(complex(1, NAN) * complex(1, INF),
-                                         complex(NAN, INF))
-
-        self.assertComplexesAreIdentical(complex(1e200, NAN) * complex(1e200, NAN),
-                                         complex(INF, NAN))
-        self.assertComplexesAreIdentical(complex(1e200, NAN) * complex(NAN, 1e200),
-                                         complex(NAN, INF))
-        self.assertComplexesAreIdentical(complex(NAN, 1e200) * complex(1e200, NAN),
-                                         complex(NAN, INF))
-        self.assertComplexesAreIdentical(complex(NAN, 1e200) * complex(NAN, 1e200),
-                                         complex(-INF, NAN))
-
-        self.assertComplexesAreIdentical(complex(NAN, NAN) * complex(NAN, NAN),
-                                         complex(NAN, NAN))
+        for z, w, r in [(1e300+1j, complex(INF, INF), complex(NAN, INF)),
+                        (1e300+1j, complex(NAN, INF), complex(-INF, INF)),
+                        (1e300+1j, complex(INF, NAN), complex(INF, INF)),
+                        (complex(INF, 1), complex(NAN, INF), complex(NAN, INF)),
+                        (complex(INF, 1), complex(INF, NAN), complex(INF, NAN)),
+                        (complex(NAN, 1), complex(1, INF), complex(-INF, NAN)),
+                        (complex(1, NAN), complex(1, INF), complex(NAN, INF)),
+                        (complex(1e200, NAN), complex(1e200, NAN), complex(INF, NAN)),
+                        (complex(1e200, NAN), complex(NAN, 1e200), complex(NAN, INF)),
+                        (complex(NAN, 1e200), complex(1e200, NAN), complex(NAN, INF)),
+                        (complex(NAN, 1e200), complex(NAN, 1e200), complex(-INF, NAN)),
+                        (complex(NAN, NAN), complex(NAN, NAN), complex(NAN, NAN))]:
+            with self.subTest(z=z, w=w, r=r):
+                self.assertComplexesAreIdentical(z * w, s)
+                self.assertComplexesAreIdentical(w * z, s)
 
     def test_mod(self):
         # % is no longer supported on complex numbers
