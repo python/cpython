@@ -1662,9 +1662,16 @@ s_unpack_internal(PyStructObject *soself, const char *startfrom,
             if (e->format == 's') {
                 v = PyBytes_FromStringAndSize(res, code->size);
             } else if (e->format == 'p') {
-                Py_ssize_t n = *(unsigned char*)res;
-                if (n >= code->size)
-                    n = code->size - 1;
+                Py_ssize_t n;
+                if (code->size == 0) {
+                    n = 0;
+                }
+                else {
+                    n = *(unsigned char*)res;
+                    if (n >= code->size) {
+                        n = code->size - 1;
+                    }
+                }
                 v = PyBytes_FromStringAndSize(res + 1, n);
             } else {
                 v = e->unpack(state, res, e);
@@ -1975,8 +1982,12 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
                     n = PyByteArray_GET_SIZE(v);
                     p = PyByteArray_AS_STRING(v);
                 }
-                if (n > (code->size - 1))
+                if (code->size == 0) {
+                    n = 0;
+                }
+                else if (n > (code->size - 1)) {
                     n = code->size - 1;
+                }
                 if (n > 0)
                     memcpy(res + 1, p, n);
                 if (n > 255)

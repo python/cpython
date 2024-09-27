@@ -1013,7 +1013,7 @@ Not as such.
 For simple input parsing, the easiest approach is usually to split the line into
 whitespace-delimited words using the :meth:`~str.split` method of string objects
 and then convert decimal strings to numeric values using :func:`int` or
-:func:`float`.  :meth:`!split()` supports an optional "sep" parameter which is useful
+:func:`float`.  :meth:`!split` supports an optional "sep" parameter which is useful
 if the line uses something other than whitespace as a separator.
 
 For more complicated input parsing, regular expressions are more powerful
@@ -1613,9 +1613,16 @@ method too, and it must do so carefully.  The basic implementation of
            self.__dict__[name] = value
        ...
 
-Most :meth:`!__setattr__` implementations must modify
-:meth:`self.__dict__ <object.__dict__>` to store
-local state for self without causing an infinite recursion.
+Many :meth:`~object.__setattr__` implementations call :meth:`!object.__setattr__` to set
+an attribute on self without causing infinite recursion::
+
+   class X:
+       def __setattr__(self, name, value):
+           # Custom logic here...
+           object.__setattr__(self, name, value)
+
+Alternatively, it is possible to set attributes by inserting
+entries into :attr:`self.__dict__ <object.__dict__>` directly.
 
 
 How do I call a method defined in a base class from a derived class that extends it?

@@ -48,5 +48,5 @@ APIs:
   * ``read_binary()``
   * ``read_text()``
 
-  Use :func:`importlib.resources.files()` instead.  Refer to `importlib-resources: Migrating from Legacy
+  Use :func:`importlib.resources.files` instead.  Refer to `importlib-resources: Migrating from Legacy
   <https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy>`_ (:gh:`106531`)

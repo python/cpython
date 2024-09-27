@@ -425,7 +425,7 @@ The :mod:`signal` module defines the following functions:
    signal to a particular Python thread would be to force a running system call
    to fail with :exc:`InterruptedError`.
 
-   Use :func:`threading.get_ident()` or the :attr:`~threading.Thread.ident`
+   Use :func:`threading.get_ident` or the :attr:`~threading.Thread.ident`
    attribute of :class:`threading.Thread` objects to get a suitable value
    for *thread_id*.
 

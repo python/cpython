@@ -58,6 +58,7 @@ __all__ = [
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
     "Py_DEBUG", "EXCEEDS_RECURSION_LIMIT", "C_RECURSION_LIMIT",
     "skip_on_s390x",
+    "BrokenIter",
     ]
 
 
@@ -816,9 +817,19 @@ if hasattr(sys, "getobjects"):
     _align = '0P'
 _vheader = _header + 'n'
 
+def check_bolt_optimized():
+    # Always return false, if the platform is WASI,
+    # because BOLT optimization does not support WASM binary.
+    if is_wasi:
+        return False
+    config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
+    return '--enable-bolt' in config_args
+
+
 def calcobjsize(fmt):
     import struct
     return struct.calcsize(_header + fmt + _align)
+
 
 def calcvobjsize(fmt):
     import struct
@@ -2468,3 +2479,20 @@ def iter_slot_wrappers(cls):
         value = ns[name]
         if is_slot_wrapper(cls, name, value):
             yield name, True
+
+
+class BrokenIter:
+    def __init__(self, init_raises=False, next_raises=False, iter_raises=False):
+        if init_raises:
+            1/0
+        self.next_raises = next_raises
+        self.iter_raises = iter_raises
+
+    def __next__(self):
+        if self.next_raises:
+            1/0
+
+    def __iter__(self):
+        if self.iter_raises:
+            1/0
+        return self

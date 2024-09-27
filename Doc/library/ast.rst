@@ -2060,8 +2060,7 @@ Function and class definitions
    * ``name`` is a raw string for the class name
    * ``bases`` is a list of nodes for explicitly specified base classes.
    * ``keywords`` is a list of :class:`.keyword` nodes, principally for 'metaclass'.
-     Other keywords will be passed to the metaclass, as per `PEP-3115
-     <https://peps.python.org/pep-3115/>`_.
+     Other keywords will be passed to the metaclass, as per :pep:`3115`.
    * ``body`` is a list of nodes representing the code within the class
      definition.
    * ``decorator_list`` is a list of nodes, as in :class:`FunctionDef`.
@@ -2171,7 +2170,7 @@ and classes for traversing abstract syntax trees:
    If ``type_comments=True`` is given, the parser is modified to check
    and return type comments as specified by :pep:`484` and :pep:`526`.
    This is equivalent to adding :data:`ast.PyCF_TYPE_COMMENTS` to the
-   flags passed to :func:`compile()`.  This will report syntax errors
+   flags passed to :func:`compile`.  This will report syntax errors
    for misplaced type comments.  Without this flag, type comments will
    be ignored, and the ``type_comment`` field on selected AST nodes
    will always be ``None``.  In addition, the locations of ``# type:

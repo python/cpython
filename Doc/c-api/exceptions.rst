@@ -34,7 +34,7 @@ propagated, additional calls into the Python/C API may not behave as intended
 and may fail in mysterious ways.
 
 .. note::
-   The error indicator is **not** the result of :func:`sys.exc_info()`.
+   The error indicator is **not** the result of :func:`sys.exc_info`.
    The former corresponds to an exception that is not yet caught (and is
    therefore still propagating), while the latter returns an exception after
    it is caught (and has therefore stopped propagating).
@@ -720,7 +720,7 @@ Exception Classes
    This creates a class object derived from :exc:`Exception` (accessible in C as
    :c:data:`PyExc_Exception`).
 
-   The :attr:`!__module__` attribute of the new class is set to the first part (up
+   The :attr:`~type.__module__` attribute of the new class is set to the first part (up
    to the last dot) of the *name* argument, and the class name is set to the last
    part (after the last dot).  The *base* argument can be used to specify alternate
    base classes; it can either be only one class or a tuple of classes. The *dict*
