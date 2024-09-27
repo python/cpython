@@ -1,0 +1,2 @@
+.. default-role:: code
+Optimized endianness handling in the ctypes module. The `_other_endian` function has been refactored to reduce redundant type checks, improving performance during frequent calls. Additionally, the `_swapped_meta` class now efficiently handles attribute assignments without unnecessary list creation, enhancing overall efficiency. This update provides better handling of data serialization across different byte orders, ensuring compatibility and performance improvements in cross-platform applications.
