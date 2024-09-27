@@ -4810,7 +4810,7 @@ class TestSignatureObject(unittest.TestCase):
                             par('b', PORK, annotation=tuple),
                         )))
 
-    def test_signature_format_parameter(self):
+    def test_signature_annotation_format(self):
         ida = inspect_deferred_annotations
         sig = inspect.Signature
         par = inspect.Parameter
@@ -4818,15 +4818,15 @@ class TestSignatureObject(unittest.TestCase):
         for signature_func in (inspect.signature, inspect.Signature.from_callable):
             with self.subTest(signature_func=signature_func):
                 self.assertEqual(
-                    signature_func(ida.f, format=Format.STRING),
+                    signature_func(ida.f, annotation_format=Format.STRING),
                     sig([par("x", PORK, annotation="undefined")])
                 )
                 self.assertEqual(
-                    signature_func(ida.f, format=Format.FORWARDREF),
+                    signature_func(ida.f, annotation_format=Format.FORWARDREF),
                     sig([par("x", PORK, annotation=ForwardRef("undefined"))])
                 )
                 with self.assertRaisesRegex(NameError, "undefined"):
-                    signature_func(ida.f, format=Format.VALUE)
+                    signature_func(ida.f, annotation_format=Format.VALUE)
                 with self.assertRaisesRegex(NameError, "undefined"):
                     signature_func(ida.f)
 

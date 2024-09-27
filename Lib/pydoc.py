@@ -213,7 +213,7 @@ def splitdoc(doc):
 
 def _getargspec(object):
     try:
-        signature = inspect.signature(object, format=Format.STRING)
+        signature = inspect.signature(object, annotation_format=Format.STRING)
         if signature:
             name = getattr(object, '__name__', '')
             # <lambda> function are always single-line and should not be formatted

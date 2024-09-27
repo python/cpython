@@ -694,7 +694,7 @@ and its return annotation. To retrieve a :class:`!Signature` object,
 use the :func:`!signature`
 function.
 
-.. function:: signature(callable, *, follow_wrapped=True, globals=None, locals=None, eval_str=False, format=Format.VALUE)
+.. function:: signature(callable, *, follow_wrapped=True, globals=None, locals=None, eval_str=False, annotation_format=Format.VALUE)
 
    Return a :class:`Signature` object for the given *callable*:
 
@@ -722,11 +722,11 @@ function.
    ``from __future__ import annotations`` was used), :func:`signature` will
    attempt to automatically un-stringize the annotations using
    :func:`annotationlib.get_annotations`.  The
-   *globals*, *locals*, *eval_str*, and *format* parameters are passed
+   *globals*, *locals*, *eval_str*, and *annotation_format* parameters are passed
    into :func:`!annotationlib.get_annotations` when resolving the
    annotations; see the documentation for :func:`!annotationlib.get_annotations`
    for instructions on how to use these parameters. For example, use
-   ``format=annotationlib.Format.STRING`` to return annotations in string
+   ``annotation_format=annotationlib.Format.STRING`` to return annotations in string
    format.
 
    Raises :exc:`ValueError` if no signature can be provided, and
@@ -749,7 +749,7 @@ function.
       The *globals*, *locals*, and *eval_str* parameters were added.
 
    .. versionchanged:: 3.14
-      The *format* parameter was added.
+      The *annotation_format* parameter was added.
 
    .. note::
 
