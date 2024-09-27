@@ -61,6 +61,7 @@ class WorkerContext(_thread.WorkerContext):
         elif initializer is not None:
             pickled = pickle.dumps((initializer, initargs))
             initscript = f'''if True:
+                import pickle
                 initializer, initargs = pickle.loads({pickled!r})
                 initializer(*initargs)
                 '''
