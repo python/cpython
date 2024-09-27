@@ -639,6 +639,26 @@ int PyCodec_RegisterError(const char *name, PyObject *error)
                                 name, error);
 }
 
+int PyCodec_UnregisterError(const char *name)
+{
+    for (size_t i = 0; i < CODECS_ERROR_POLICY_COUNT; ++i) {
+        if (strcmp(name, codecs_native_error_polcies[i]) == 0) {
+            PyErr_Format(PyExc_ValueError,
+                         "cannot unregister standard error policy '%s'", name);
+            return -1;
+        }
+    }
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp->codecs.initialized);
+    PyObject *handler = NULL;
+    if (PyDict_PopString(interp->codecs.error_registry, name, &handler) < 0) {
+        return -1;
+    }
+    int exists = handler == NULL ? 0 : 1;
+    Py_XDECREF(handler);
+    return exists;
+}
+
 /* Lookup the error handling callback function registered under the
    name error. As a special case NULL can be passed, in which case
    the error handling callback for strict encoding will be returned. */
