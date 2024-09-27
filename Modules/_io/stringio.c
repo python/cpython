@@ -609,7 +609,6 @@ static void
 stringio_dealloc(stringio *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    _PyObject_GC_UNTRACK(self);
     self->ok = 0;
     if (self->buf) {
         PyMem_Free(self->buf);

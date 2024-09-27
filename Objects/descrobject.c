@@ -1186,7 +1186,6 @@ static void
 mappingproxy_dealloc(PyObject *self)
 {
     mappingproxyobject *pp = (mappingproxyobject *)self;
-    _PyObject_GC_UNTRACK(pp);
     Py_DECREF(pp->mapping);
     PyObject_GC_Del(pp);
 }
@@ -1632,7 +1631,6 @@ property_dealloc(PyObject *self)
 {
     propertyobject *gs = (propertyobject *)self;
 
-    _PyObject_GC_UNTRACK(self);
     Py_XDECREF(gs->prop_get);
     Py_XDECREF(gs->prop_set);
     Py_XDECREF(gs->prop_del);

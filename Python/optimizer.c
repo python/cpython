@@ -254,7 +254,6 @@ static void unlink_executor(_PyExecutorObject *executor);
 
 static void
 uop_dealloc(_PyExecutorObject *self) {
-    _PyObject_GC_UNTRACK(self);
     assert(self->vm_data.code == NULL);
     unlink_executor(self);
 #ifdef _Py_JIT

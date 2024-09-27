@@ -2434,10 +2434,12 @@ subtype_dealloc(PyObject *self)
                 return;
         }
         if (type->tp_del) {
+            _PyObject_GC_TRACK(self); // _Py_Dealloc untracks
             type->tp_del(self);
             if (Py_REFCNT(self) > 0) {
                 return;
             }
+            _PyObject_GC_UNTRACK(self);
         }
 
         /* Find the nearest base with a different tp_dealloc */
@@ -5992,7 +5994,6 @@ type_dealloc(PyObject *self)
     // Assert this is a heap-allocated type object
     _PyObject_ASSERT((PyObject *)type, type->tp_flags & Py_TPFLAGS_HEAPTYPE);
 
-    _PyObject_GC_UNTRACK(type);
     type_dealloc_common(type);
 
     // PyObject_ClearWeakRefs() raises an exception if Py_REFCNT() != 0
@@ -10181,7 +10182,6 @@ bufferwrapper_dealloc(PyObject *self)
 {
     PyBufferWrapper *bw = (PyBufferWrapper *)self;
 
-    _PyObject_GC_UNTRACK(self);
     Py_XDECREF(bw->mv);
     Py_XDECREF(bw->obj);
     Py_TYPE(self)->tp_free(self);
@@ -11331,7 +11331,6 @@ super_dealloc(PyObject *self)
 {
     superobject *su = (superobject *)self;
 
-    _PyObject_GC_UNTRACK(self);
     Py_XDECREF(su->obj);
     Py_XDECREF(su->type);
     Py_XDECREF(su->obj_type);

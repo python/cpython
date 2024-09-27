@@ -787,7 +787,6 @@ static void
 setiter_dealloc(setiterobject *si)
 {
     /* bpo-31095: UnTrack is needed before calling any callbacks */
-    _PyObject_GC_UNTRACK(si);
     Py_XDECREF(si->si_set);
     PyObject_GC_Del(si);
 }

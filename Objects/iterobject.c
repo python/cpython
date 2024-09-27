@@ -33,7 +33,6 @@ PySeqIter_New(PyObject *seq)
 static void
 iter_dealloc(seqiterobject *it)
 {
-    _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
     PyObject_GC_Del(it);
 }
@@ -197,7 +196,6 @@ PyCallIter_New(PyObject *callable, PyObject *sentinel)
 static void
 calliter_dealloc(calliterobject *it)
 {
-    _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_callable);
     Py_XDECREF(it->it_sentinel);
     PyObject_GC_Del(it);
@@ -307,7 +305,6 @@ typedef struct {
 static void
 anextawaitable_dealloc(anextawaitableobject *obj)
 {
-    _PyObject_GC_UNTRACK(obj);
     Py_XDECREF(obj->wrapped);
     Py_XDECREF(obj->default_value);
     PyObject_GC_Del(obj);

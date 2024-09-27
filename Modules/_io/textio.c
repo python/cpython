@@ -284,7 +284,6 @@ static void
 incrementalnewlinedecoder_dealloc(nldecoder_object *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    _PyObject_GC_UNTRACK(self);
     (void)incrementalnewlinedecoder_clear(self);
     tp->tp_free((PyObject *)self);
     Py_DECREF(tp);
@@ -1456,10 +1455,11 @@ textiowrapper_dealloc(textio *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     self->finalizing = 1;
-    if (_PyIOBase_finalize((PyObject *) self) < 0)
+    if (_PyIOBase_finalize((PyObject *) self) < 0) {
+        PyObject_GC_Track(self); // untracked by _Py_Dealloc
         return;
+    }
     self->ok = 0;
-    _PyObject_GC_UNTRACK(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)self);
     (void)textiowrapper_clear(self);

@@ -412,9 +412,10 @@ buffered_dealloc(buffered *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     self->finalizing = 1;
-    if (_PyIOBase_finalize((PyObject *) self) < 0)
+    if (_PyIOBase_finalize((PyObject *) self) < 0) {
+        PyObject_GC_Track(self); // untracked by _Py_Dealloc
         return;
-    _PyObject_GC_UNTRACK(self);
+    }
     self->ok = 0;
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)self);
@@ -2298,7 +2299,6 @@ static void
 bufferedrwpair_dealloc(rwpair *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    _PyObject_GC_UNTRACK(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)self);
     (void)bufferedrwpair_clear(self);

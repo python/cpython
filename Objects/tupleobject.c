@@ -986,7 +986,6 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 static void
 tupleiter_dealloc(_PyTupleIterObject *it)
 {
-    _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
     PyObject_GC_Del(it);
 }

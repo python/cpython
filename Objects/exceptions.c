@@ -698,7 +698,6 @@ SystemExit_clear(PySystemExitObject *self)
 static void
 SystemExit_dealloc(PySystemExitObject *self)
 {
-    _PyObject_GC_UNTRACK(self);
     SystemExit_clear(self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -887,7 +886,6 @@ BaseExceptionGroup_clear(PyBaseExceptionGroupObject *self)
 static void
 BaseExceptionGroup_dealloc(PyBaseExceptionGroupObject *self)
 {
-    _PyObject_GC_UNTRACK(self);
     BaseExceptionGroup_clear(self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -1605,7 +1603,6 @@ ImportError_clear(PyImportErrorObject *self)
 static void
 ImportError_dealloc(PyImportErrorObject *self)
 {
-    _PyObject_GC_UNTRACK(self);
     ImportError_clear(self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -1995,7 +1992,6 @@ OSError_clear(PyOSErrorObject *self)
 static void
 OSError_dealloc(PyOSErrorObject *self)
 {
-    _PyObject_GC_UNTRACK(self);
     OSError_clear(self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -2266,7 +2262,6 @@ NameError_clear(PyNameErrorObject *self)
 static void
 NameError_dealloc(PyNameErrorObject *self)
 {
-    _PyObject_GC_UNTRACK(self);
     NameError_clear(self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -2342,7 +2337,6 @@ AttributeError_clear(PyAttributeErrorObject *self)
 static void
 AttributeError_dealloc(PyAttributeErrorObject *self)
 {
-    _PyObject_GC_UNTRACK(self);
     AttributeError_clear(self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -2480,7 +2474,6 @@ SyntaxError_clear(PySyntaxErrorObject *self)
 static void
 SyntaxError_dealloc(PySyntaxErrorObject *self)
 {
-    _PyObject_GC_UNTRACK(self);
     SyntaxError_clear(self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -2930,7 +2923,6 @@ UnicodeError_clear(PyUnicodeErrorObject *self)
 static void
 UnicodeError_dealloc(PyUnicodeErrorObject *self)
 {
-    _PyObject_GC_UNTRACK(self);
     UnicodeError_clear(self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -3389,8 +3381,6 @@ _PyErr_NoMemory(PyThreadState *tstate)
 static void
 MemoryError_dealloc(PyBaseExceptionObject *self)
 {
-    _PyObject_GC_UNTRACK(self);
-
     BaseException_clear(self);
 
     /* If this is a subclass of MemoryError, we don't need to

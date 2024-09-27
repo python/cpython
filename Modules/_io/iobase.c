@@ -372,10 +372,10 @@ iobase_dealloc(iobase *self)
         if (_PyType_HasFeature(Py_TYPE(self), Py_TPFLAGS_HEAPTYPE)) {
             Py_INCREF(Py_TYPE(self));
         }
+        PyObject_GC_Track(self); // untracked by _Py_Dealloc
         return;
     }
     PyTypeObject *tp = Py_TYPE(self);
-    _PyObject_GC_UNTRACK(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
     Py_CLEAR(self->dict);

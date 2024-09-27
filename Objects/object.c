@@ -2854,8 +2854,17 @@ static void
 dealloc_gc(PyObject *op)
 {
     if (_PyObject_GC_IS_TRACKED(op)) {
-        // The trash list re-uses the GC prev pointer and so we must untrack
-        // the object first, if it is tracked.
+        // The trashcan list re-uses the GC prev pointer and so we must
+        // untrack the object first, if it is tracked.
+        //
+        // It used to be the case that tp_dealloc was called with the
+        // object tracked (if it originally was) and the method had to
+        // make sure to call untrack before calling tp_free.  Now we do
+        // the untrack here.  Types using the private API need to make
+        // sure not to call _PyObject_GC_UNTRACK() since that will fail
+        // if the object is already untracked.  Types using the public
+        // API are safe since PyObject_GC_UnTrack() can be called with
+        // the object already untracked.
         _PyObject_GC_UNTRACK(op);
     }
     PyThreadState *tstate = PyThreadState_Get();

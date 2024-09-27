@@ -74,7 +74,6 @@ PyCell_Set(PyObject *op, PyObject *value)
 static void
 cell_dealloc(PyCellObject *op)
 {
-    _PyObject_GC_UNTRACK(op);
     Py_XDECREF(op->ob_ref);
     PyObject_GC_Del(op);
 }

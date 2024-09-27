@@ -127,17 +127,15 @@ gen_dealloc(PyGenObject *gen)
 {
     PyObject *self = (PyObject *) gen;
 
-    _PyObject_GC_UNTRACK(gen);
-
     if (gen->gi_weakreflist != NULL)
         PyObject_ClearWeakRefs(self);
 
-    _PyObject_GC_TRACK(self);
+    _PyObject_GC_TRACK(self); // _Py_Dealloc calls untrack
 
     if (PyObject_CallFinalizerFromDealloc(self))
         return;                     /* resurrected.  :( */
 
-    _PyObject_GC_UNTRACK(self);
+    _PyObject_GC_UNTRACK(self); // tp_del requires this
     if (PyAsyncGen_CheckExact(gen)) {
         /* We have to handle this case for asynchronous generators
            right here, because this code has to be between UNTRACK
@@ -1222,7 +1220,6 @@ PyTypeObject PyCoro_Type = {
 static void
 coro_wrapper_dealloc(PyCoroWrapper *cw)
 {
-    _PyObject_GC_UNTRACK((PyObject *)cw);
     Py_CLEAR(cw->cw_coroutine);
     PyObject_GC_Del(cw);
 }
@@ -1691,7 +1688,6 @@ async_gen_asend_dealloc(PyAsyncGenASend *o)
         return;
     }
 
-    _PyObject_GC_UNTRACK((PyObject *)o);
     Py_CLEAR(o->ags_gen);
     Py_CLEAR(o->ags_sendval);
 
@@ -1913,7 +1909,6 @@ async_gen_asend_new(PyAsyncGenObject *gen, PyObject *sendval)
 static void
 async_gen_wrapped_val_dealloc(_PyAsyncGenWrappedValue *o)
 {
-    _PyObject_GC_UNTRACK((PyObject *)o);
     Py_CLEAR(o->agw_val);
     _Py_FREELIST_FREE(async_gens, o, PyObject_GC_Del);
 }
@@ -1998,10 +1993,10 @@ static void
 async_gen_athrow_dealloc(PyAsyncGenAThrow *o)
 {
     if (PyObject_CallFinalizerFromDealloc((PyObject *)o)) {
+        PyObject_GC_Track(o); // untracked by _Py_Dealloc
         return;
     }
 
-    _PyObject_GC_UNTRACK((PyObject *)o);
     Py_CLEAR(o->agt_gen);
     Py_CLEAR(o->agt_args);
     PyObject_GC_Del(o);

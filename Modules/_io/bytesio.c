@@ -886,7 +886,6 @@ static void
 bytesio_dealloc(bytesio *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    _PyObject_GC_UNTRACK(self);
     if (self->exports > 0) {
         PyErr_SetString(PyExc_SystemError,
                         "deallocated BytesIO object has exported buffers");

@@ -1635,7 +1635,6 @@ typedef struct {
 static void
 odictiter_dealloc(odictiterobject *di)
 {
-    _PyObject_GC_UNTRACK(di);
     Py_XDECREF(di->di_odict);
     Py_XDECREF(di->di_current);
     if ((di->kind & _odict_ITER_ITEMS) == _odict_ITER_ITEMS) {

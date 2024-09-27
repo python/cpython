@@ -1049,10 +1049,10 @@ func_dealloc(PyFunctionObject *op)
     handle_func_event(PyFunction_EVENT_DESTROY, op, NULL);
     if (Py_REFCNT(op) > 1) {
         Py_SET_REFCNT(op, Py_REFCNT(op) - 1);
+        _PyObject_GC_TRACK(op); // untracked by _Py_Dealloc
         return;
     }
     Py_SET_REFCNT(op, 0);
-    _PyObject_GC_UNTRACK(op);
     if (op->func_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) op);
     }
@@ -1254,7 +1254,6 @@ typedef struct {
 static void
 cm_dealloc(classmethod *cm)
 {
-    _PyObject_GC_UNTRACK((PyObject *)cm);
     Py_XDECREF(cm->cm_callable);
     Py_XDECREF(cm->cm_dict);
     Py_TYPE(cm)->tp_free((PyObject *)cm);
@@ -1473,7 +1472,6 @@ typedef struct {
 static void
 sm_dealloc(staticmethod *sm)
 {
-    _PyObject_GC_UNTRACK((PyObject *)sm);
     Py_XDECREF(sm->sm_callable);
     Py_XDECREF(sm->sm_dict);
     Py_TYPE(sm)->tp_free((PyObject *)sm);

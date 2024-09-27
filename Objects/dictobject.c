@@ -5015,8 +5015,6 @@ static void
 dictiter_dealloc(PyObject *self)
 {
     dictiterobject *di = (dictiterobject *)self;
-    /* bpo-31095: UnTrack is needed before calling any callbacks */
-    _PyObject_GC_UNTRACK(di);
     Py_XDECREF(di->di_dict);
     Py_XDECREF(di->di_result);
     PyObject_GC_Del(di);
@@ -5815,8 +5813,6 @@ static void
 dictview_dealloc(PyObject *self)
 {
     _PyDictViewObject *dv = (_PyDictViewObject *)self;
-    /* bpo-31095: UnTrack is needed before calling any callbacks */
-    _PyObject_GC_UNTRACK(dv);
     Py_XDECREF(dv->dv_dict);
     PyObject_GC_Del(dv);
 }

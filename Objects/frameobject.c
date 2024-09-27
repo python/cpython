@@ -1637,10 +1637,6 @@ frame_dealloc(PyFrameObject *f)
     /* It is the responsibility of the owning generator/coroutine
      * to have cleared the generator pointer */
 
-    if (_PyObject_GC_IS_TRACKED(f)) {
-        _PyObject_GC_UNTRACK(f);
-    }
-
     Py_TRASHCAN_BEGIN(f, frame_dealloc);
     /* GH-106092: If f->f_frame was on the stack and we reached the maximum
      * nesting depth for deallocations, the trashcan may have delayed this

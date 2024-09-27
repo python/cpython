@@ -19,8 +19,6 @@ unionobject_dealloc(PyObject *self)
 {
     unionobject *alias = (unionobject *)self;
 
-    _PyObject_GC_UNTRACK(self);
-
     Py_XDECREF(alias->args);
     Py_XDECREF(alias->parameters);
     Py_TYPE(self)->tp_free(self);

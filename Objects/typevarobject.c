@@ -127,8 +127,6 @@ constevaluator_dealloc(PyObject *self)
     PyTypeObject *tp = Py_TYPE(self);
     constevaluatorobject *ce = (constevaluatorobject *)self;
 
-    _PyObject_GC_UNTRACK(self);
-
     Py_XDECREF(ce->value);
 
     Py_TYPE(self)->tp_free(self);
@@ -454,8 +452,6 @@ typevar_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     typevarobject *tv = (typevarobject *)self;
-
-    _PyObject_GC_UNTRACK(self);
 
     Py_DECREF(tv->name);
     Py_XDECREF(tv->bound);
@@ -924,8 +920,6 @@ paramspecattr_dealloc(PyObject *self)
     PyTypeObject *tp = Py_TYPE(self);
     paramspecattrobject *psa = (paramspecattrobject *)self;
 
-    _PyObject_GC_UNTRACK(self);
-
     Py_XDECREF(psa->__origin__);
 
     Py_TYPE(self)->tp_free(self);
@@ -1146,8 +1140,6 @@ paramspec_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     paramspecobject *ps = (paramspecobject *)self;
-
-    _PyObject_GC_UNTRACK(self);
 
     Py_DECREF(ps->name);
     Py_XDECREF(ps->bound);
@@ -1491,7 +1483,6 @@ static void
 typevartuple_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    _PyObject_GC_UNTRACK(self);
     typevartupleobject *tvt = (typevartupleobject *)self;
 
     Py_DECREF(tvt->name);
@@ -1803,7 +1794,6 @@ static void
 typealias_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    _PyObject_GC_UNTRACK(self);
     typealiasobject *ta = (typealiasobject *)self;
     Py_DECREF(ta->name);
     Py_XDECREF(ta->type_params);
@@ -2190,7 +2180,6 @@ static void
 generic_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    _PyObject_GC_UNTRACK(self);
     Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
 }

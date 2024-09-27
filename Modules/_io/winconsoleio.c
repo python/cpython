@@ -463,9 +463,10 @@ winconsoleio_dealloc(winconsoleio *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     self->finalizing = 1;
-    if (_PyIOBase_finalize((PyObject *) self) < 0)
+    if (_PyIOBase_finalize((PyObject *) self) < 0) {
+        PyObject_GC_Track(self); // untracked by _Py_Dealloc
         return;
-    _PyObject_GC_UNTRACK(self);
+    }
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
     Py_CLEAR(self->dict);
