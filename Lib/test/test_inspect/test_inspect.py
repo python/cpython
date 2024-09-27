@@ -4566,6 +4566,18 @@ class TestSignatureObject(unittest.TestCase):
             expected_multiline,
         )
 
+    def test_signature_format_unquote(self):
+        def func(x: 'int') -> 'str': ...
+
+        self.assertEqual(
+            inspect.signature(func).format(),
+            "(x: 'int') -> 'str'"
+        )
+        self.assertEqual(
+            inspect.signature(func).format(unquote_annotations=True),
+            "(x: int) -> str"
+        )
+
     def test_signature_replace_parameters(self):
         def test(a, b) -> 42:
             pass
@@ -4806,7 +4818,7 @@ class TestSignatureObject(unittest.TestCase):
         for signature_func in (inspect.signature, inspect.Signature.from_callable):
             with self.subTest(signature_func=signature_func):
                 self.assertEqual(
-                    signature_func(ida.f, format=Format.SOURCE),
+                    signature_func(ida.f, format=Format.STRING),
                     sig([par("x", PORK, annotation="undefined")])
                 )
                 self.assertEqual(

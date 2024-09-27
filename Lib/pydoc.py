@@ -218,11 +218,8 @@ def _getargspec(object):
             name = getattr(object, '__name__', '')
             # <lambda> function are always single-line and should not be formatted
             max_width = (80 - len(name)) if name != '<lambda>' else None
-            return signature.format(max_width=max_width)
+            return signature.format(max_width=max_width, unquote_annotations=True)
     except (ValueError, TypeError):
-        import traceback
-        traceback.print_exc()
-        raise
         argspec = getattr(object, '__text_signature__', None)
         if argspec:
             if argspec[:2] == '($':

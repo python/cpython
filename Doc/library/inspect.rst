@@ -843,7 +843,7 @@ function.
       :class:`Signature` objects are also supported by the generic function
       :func:`copy.replace`.
 
-   .. method:: format(*, max_width=None)
+   .. method:: format(*, max_width=None, unquote_annotations=False)
 
       Create a string representation of the :class:`Signature` object.
 
@@ -852,7 +852,16 @@ function.
       If the signature is longer than *max_width*,
       all parameters will be on separate lines.
 
+      If *unquote_annotations* is True, :term:`annotations <annotation>`
+      in the signature are displayed without opening and closing quotation
+      marks. This is useful when the signature was created with the
+      :attr:`~annotationlib.Format.STRING` format or when
+      ``from __future__ import annotations`` was used.
+
       .. versionadded:: 3.13
+
+      .. versionchanged:: 3.14
+         The *unquote_annotations* parameter was added.
 
    .. classmethod:: Signature.from_callable(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False)
 

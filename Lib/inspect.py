@@ -1317,7 +1317,9 @@ def getargvalues(frame):
     args, varargs, varkw = getargs(frame.f_code)
     return ArgInfo(args, varargs, varkw, frame.f_locals)
 
-def formatannotation(annotation, base_module=None):
+def formatannotation(annotation, base_module=None, *, unquote_annotations=False):
+    if unquote_annotations and isinstance(annotation, str):
+        return annotation
     if getattr(annotation, '__module__', None) == 'typing':
         def repl(match):
             text = match.group()
@@ -2718,13 +2720,17 @@ class Parameter:
         return type(self)(name, kind, default=default, annotation=annotation)
 
     def __str__(self):
+        return self._format()
+
+    def _format(self, *, unquote_annotations=False):
         kind = self.kind
         formatted = self._name
 
         # Add annotation and default value
         if self._annotation is not _empty:
-            formatted = '{}: {}'.format(formatted,
-                                       formatannotation(self._annotation))
+            annotation = formatannotation(self._annotation,
+                                          unquote_annotations=unquote_annotations)
+            formatted = '{}: {}'.format(formatted, annotation)
 
         if self._default is not _empty:
             if self._annotation is not _empty:
@@ -3193,19 +3199,24 @@ class Signature:
     def __str__(self):
         return self.format()
 
-    def format(self, *, max_width=None):
+    def format(self, *, max_width=None, unquote_annotations=False):
         """Create a string representation of the Signature object.
 
         If *max_width* integer is passed,
         signature will try to fit into the *max_width*.
         If signature is longer than *max_width*,
         all parameters will be on separate lines.
+
+        If *unquote_annotations* is True, annotations
+        in the signature are displayed without opening and closing quotation
+        marks. This is useful when the signature was created with the
+        STRING format or when ``from __future__ import annotations`` was used.
         """
         result = []
         render_pos_only_separator = False
         render_kw_only_separator = True
         for param in self.parameters.values():
-            formatted = str(param)
+            formatted = param._format(unquote_annotations=unquote_annotations)
 
             kind = param.kind
 
@@ -3242,7 +3253,7 @@ class Signature:
             rendered = '(\n    {}\n)'.format(',\n    '.join(result))
 
         if self.return_annotation is not _empty:
-            anno = formatannotation(self.return_annotation)
+            anno = formatannotation(self.return_annotation, unquote_annotations=unquote_annotations)
             rendered += ' -> {}'.format(anno)
 
         return rendered

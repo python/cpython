@@ -279,6 +279,10 @@ inspect
   the :class:`annotationlib.Format` used for representing annotations.
   (Contributed by Jelle Zijlstra in :gh:`101552`.)
 
+* :meth:`inspect.Signature.format` takes a new argument *unquote_annotations*.
+  If True, string :term:`annotations <annotation>` are displayed without enclosing quotes.
+  (Contributed by Jelle Zijlstra in :gh:`101552`.)
+
 
 json
 ----
@@ -354,6 +358,14 @@ pickle
 * Add notes for pickle serialization errors that allow to identify the source
   of the error.
   (Contributed by Serhiy Storchaka in :gh:`122213`.)
+
+pydoc
+-----
+
+* :term:`Annotations <annotation>` in help output are now usually
+  displayed in a format closer to that in the original source.
+  (Contributed by Jelle Zijlstra in :gh:`101552`.)
+
 
 symtable
 --------
