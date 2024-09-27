@@ -559,7 +559,7 @@ fileio_dealloc(fileio *self)
     PyTypeObject *tp = Py_TYPE(self);
     self->finalizing = 1;
     if (_PyIOBase_finalize((PyObject *) self) < 0) {
-        PyObject_GC_Track(self); // untracked by _Py_Dealloc
+        _PyObject_GC_TRACK_SAFE((PyObject *)self); // untracked by _Py_Dealloc
         return;
     }
     if (self->stat_atopen != NULL) {

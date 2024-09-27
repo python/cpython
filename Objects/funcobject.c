@@ -1049,7 +1049,7 @@ func_dealloc(PyFunctionObject *op)
     handle_func_event(PyFunction_EVENT_DESTROY, op, NULL);
     if (Py_REFCNT(op) > 1) {
         Py_SET_REFCNT(op, Py_REFCNT(op) - 1);
-        _PyObject_GC_TRACK(op); // untracked by _Py_Dealloc
+        _PyObject_GC_TRACK_SAFE((PyObject *)op); // untracked by _Py_Dealloc
         return;
     }
     Py_SET_REFCNT(op, 0);

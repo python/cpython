@@ -101,6 +101,15 @@ static inline int _PyObject_GC_MAY_BE_TRACKED(PyObject *obj) {
     return 1;
 }
 
+// Track an object if it's not already tracked.  Normally you want to
+// use _PyObject_GC_TRACK() since you should know if it is already tracked
+// or not.
+static inline void _PyObject_GC_TRACK_SAFE(PyObject *obj) {
+    if (!_PyObject_GC_IS_TRACKED(obj)) {
+        PyObject_GC_Track(obj);
+    }
+}
+
 #ifdef Py_GIL_DISABLED
 
 /* True if memory the object references is shared between

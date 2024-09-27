@@ -2506,11 +2506,13 @@ subtype_dealloc(PyObject *self)
     }
 
     if (type->tp_del) {
+        _PyObject_GC_TRACK(self); // _Py_Dealloc untracks
         type->tp_del(self);
         if (Py_REFCNT(self) > 0) {
             /* Resurrected */
             return;
         }
+        _PyObject_GC_UNTRACK(self);
     }
     if (has_finalizer) {
         /* New weakrefs could be created during the finalizer call.
