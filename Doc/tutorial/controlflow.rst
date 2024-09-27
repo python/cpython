@@ -209,8 +209,10 @@ after the loop finishes its final iteration, that is, if no break occurred.
 
 In a :keyword:`while` loop, it's executed after the loop's condition becomes false.
 
-In either kind of loop, the :keyword:`!else` clause is **not** executed
-if the loop was terminated by a :keyword:`break`.
+In either kind of loop, the :keyword:`!else` clause is **not** executed if the
+loop was terminated by a :keyword:`break`.  Of course, other ways of ending the
+loop early, such as a :keyword:`return` or a raised exception, will also skip
+execution of the :keyword:`else` clause.
 
 This is exemplified in the following :keyword:`!for` loop,
 which searches for prime numbers::
