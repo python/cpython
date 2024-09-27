@@ -2034,11 +2034,10 @@ static PyType_Spec ctxmanager_spec = {
 /******************************************************************************/
 
 static PyObject *
-PyDecType_New(PyTypeObject *type)
+PyDecType_New(decimal_state *state, PyTypeObject *type)
 {
     PyDecObject *dec;
 
-    decimal_state *state = get_module_state_by_def(type);
     if (type == state->PyDec_Type) {
         dec = PyObject_GC_New(PyDecObject, state->PyDec_Type);
     }
@@ -2064,7 +2063,7 @@ PyDecType_New(PyTypeObject *type)
     assert(PyObject_GC_IsTracked((PyObject *)dec));
     return (PyObject *)dec;
 }
-#define dec_alloc(st) PyDecType_New((st)->PyDec_Type)
+#define dec_alloc(st) PyDecType_New(st, (st)->PyDec_Type)
 
 static int
 dec_traverse(PyObject *dec, visitproc visit, void *arg)
@@ -2167,7 +2166,8 @@ PyDecType_FromCString(PyTypeObject *type, const char *s,
     PyObject *dec;
     uint32_t status = 0;
 
-    dec = PyDecType_New(type);
+    decimal_state *state = get_module_state_from_ctx(context);
+    dec = PyDecType_New(state, type);
     if (dec == NULL) {
         return NULL;
     }
@@ -2191,7 +2191,8 @@ PyDecType_FromCStringExact(PyTypeObject *type, const char *s,
     uint32_t status = 0;
     mpd_context_t maxctx;
 
-    dec = PyDecType_New(type);
+    decimal_state *state = get_module_state_from_ctx(context);
+    dec = PyDecType_New(state, type);
     if (dec == NULL) {
         return NULL;
     }
@@ -2278,7 +2279,8 @@ PyDecType_FromSsize(PyTypeObject *type, mpd_ssize_t v, PyObject *context)
     PyObject *dec;
     uint32_t status = 0;
 
-    dec = PyDecType_New(type);
+    decimal_state *state = get_module_state_from_ctx(context);
+    dec = PyDecType_New(state, type);
     if (dec == NULL) {
         return NULL;
     }
@@ -2299,7 +2301,8 @@ PyDecType_FromSsizeExact(PyTypeObject *type, mpd_ssize_t v, PyObject *context)
     uint32_t status = 0;
     mpd_context_t maxctx;
 
-    dec = PyDecType_New(type);
+    decimal_state *state = get_module_state_from_ctx(context);
+    dec = PyDecType_New(state, type);
     if (dec == NULL) {
         return NULL;
     }
@@ -2317,13 +2320,13 @@ PyDecType_FromSsizeExact(PyTypeObject *type, mpd_ssize_t v, PyObject *context)
 /* Convert from a PyLongObject. The context is not modified; flags set
    during conversion are accumulated in the status parameter. */
 static PyObject *
-dec_from_long(PyTypeObject *type, PyObject *v,
+dec_from_long(decimal_state *state, PyTypeObject *type, PyObject *v,
               const mpd_context_t *ctx, uint32_t *status)
 {
     PyObject *dec;
     PyLongObject *l = (PyLongObject *)v;
 
-    dec = PyDecType_New(type);
+    dec = PyDecType_New(state, type);
     if (dec == NULL) {
         return NULL;
     }
@@ -2368,7 +2371,8 @@ PyDecType_FromLong(PyTypeObject *type, PyObject *v, PyObject *context)
         return NULL;
     }
 
-    dec = dec_from_long(type, v, CTX(context), &status);
+    decimal_state *state = get_module_state_from_ctx(context);
+    dec = dec_from_long(state, type, v, CTX(context), &status);
     if (dec == NULL) {
         return NULL;
     }
@@ -2397,7 +2401,8 @@ PyDecType_FromLongExact(PyTypeObject *type, PyObject *v,
     }
 
     mpd_maxcontext(&maxctx);
-    dec = dec_from_long(type, v, &maxctx, &status);
+    decimal_state *state = get_module_state_from_ctx(context);
+    dec = dec_from_long(state, type, v, &maxctx, &status);
     if (dec == NULL) {
         return NULL;
     }
@@ -2429,7 +2434,7 @@ PyDecType_FromFloatExact(PyTypeObject *type, PyObject *v,
     mpd_t *d1, *d2;
     uint32_t status = 0;
     mpd_context_t maxctx;
-    decimal_state *state = get_module_state_by_def(type);
+    decimal_state *state = get_module_state_from_ctx(context);
 
 #ifdef Py_DEBUG
     assert(PyType_IsSubtype(type, state->PyDec_Type));
@@ -2450,7 +2455,7 @@ PyDecType_FromFloatExact(PyTypeObject *type, PyObject *v,
     sign = (copysign(1.0, x) == 1.0) ? 0 : 1;
 
     if (isnan(x) || isinf(x)) {
-        dec = PyDecType_New(type);
+        dec = PyDecType_New(state, type);
         if (dec == NULL) {
             return NULL;
         }
@@ -2567,12 +2572,12 @@ PyDecType_FromDecimalExact(PyTypeObject *type, PyObject *v, PyObject *context)
     PyObject *dec;
     uint32_t status = 0;
 
-    decimal_state *state = get_module_state_by_def(type);
+    decimal_state *state = get_module_state_from_ctx(context);
     if (type == state->PyDec_Type && PyDec_CheckExact(state, v)) {
         return Py_NewRef(v);
     }
 
-    dec = PyDecType_New(type);
+    dec = PyDecType_New(state, type);
     if (dec == NULL) {
         return NULL;
     }
