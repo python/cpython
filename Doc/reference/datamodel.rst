@@ -954,7 +954,7 @@ the other individual attributes listed in this subsection.
 
    The :term:`package` a module belongs to.
 
-   If the module is top-level (i.e. not a part of any specific package)
+   If the module is top-level (that is, not a part of any specific package)
    then the attribute should be set to ``''``. Otherwise, it should be set to
    the name of the module's package (which can be equal to
    :attr:`module.__name__` if the module itself is a package). See :pep:`366`
@@ -1005,7 +1005,7 @@ the other individual attributes listed in this subsection.
    use :func:`importlib.util.module_from_spec` instead to ensure the attribute
    is set to a :term:`loader` object.
 
-   It is **strongly** recommended that use
+   It is **strongly** recommended that you use
    :attr:`module.__spec__.loader <importlib.machinery.ModuleSpec.loader>`
    instead of :attr:`!module.__loader__`.
 
@@ -1040,11 +1040,11 @@ the other individual attributes listed in this subsection.
    It might be missing for certain types of modules, such as C modules that are
    statically linked into the interpreter, and the
    :ref:`import system <importsystem>` may opt to leave it unset if it
-   has no semantic meaning (e.g. a module loaded from a database).
+   has no semantic meaning (for example, a module loaded from a database).
 
    If :attr:`!__file__` is set then the :attr:`!__cached__` attribute might
    also be set,  which is the path to any compiled version of
-   the code (e.g. byte-compiled file). The file does not need to exist
+   the code (for example, a byte-compiled file). The file does not need to exist
    to set this attribute; the path can simply point to where the
    compiled file *would* exist (see :pep:`3147`).
 
