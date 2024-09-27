@@ -1115,6 +1115,7 @@ class IncrementalGCTests(unittest.TestCase):
             olds.append(newhead)
             if len(olds) == 20:
                 live = _testinternalcapi.get_heap_size()
+                print(i, live, baseline_live)
                 self.assertLess(live, baseline_live*2)
                 del olds[:]
         if not enabled:

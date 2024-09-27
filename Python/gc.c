@@ -1287,8 +1287,8 @@ gc_list_set_space(PyGC_Head *list, int space)
  */
 
 /* Multiply by 5, so that the default incremental threshold of 10
- * scans objects at the same rate as the young generation */
-#define SCAN_RATE_MULTIPLIER 10
+ * scans objects at half the rate of the young generation */
+#define SCAN_RATE_MULTIPLIER 5
 
 static void
 add_stats(GCState *gcstate, int gen, struct gc_collection_stats *stats)
@@ -1428,7 +1428,29 @@ completed_cycle(GCState *gcstate)
         gc = next;
     }
     gcstate->work_to_do = 0;
+    gcstate->scan_reachable = 1;
 }
+
+
+static void
+gc_mark_reachable(PyThreadState *tstate)
+{
+    GCState *gcstate = &tstate->interp->gc;
+    PyGC_Head *visited = &gcstate->old[gcstate->visited_space].head;
+    PyObject *sysdict = tstate->interp->sysdict;
+    PyObject *sysmod = PyDict_GetItemString(sysdict, "modules");
+    if (sysmod == NULL) {
+        return;
+    }
+    PyGC_Head reachable;
+    gc_list_init(&reachable);
+    PyGC_Head *gc = _Py_AS_GC(sysmod);
+    gc_list_move(gc, &reachable);
+    gc_set_old_space(gc, gcstate->visited_space);
+    gcstate->work_to_do -= expand_region_transitively_reachable(&reachable, gc, gcstate);
+    gc_list_merge(&reachable, visited);
+}
+
 
 static void
 gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
@@ -1439,6 +1461,10 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     PyGC_Head *visited = &gcstate->old[gcstate->visited_space].head;
     PyGC_Head increment;
     gc_list_init(&increment);
+    if (gcstate->scan_reachable) {
+        gc_mark_reachable(tstate);
+        gcstate->scan_reachable = 0;
+    }
     Py_ssize_t scale_factor = gcstate->old[0].threshold;
     if (scale_factor < 1) {
         scale_factor = 1;
@@ -1461,7 +1487,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     gc_list_validate_space(&survivors, gcstate->visited_space);
     gc_list_merge(&survivors, visited);
     assert(gc_list_is_empty(&increment));
-    Py_ssize_t delta = (gcstate->heap_size - gcstate->prior_heap_size)*2;
+    Py_ssize_t delta = (gcstate->heap_size - gcstate->prior_heap_size)*3;
     delta += gcstate->young.threshold * SCAN_RATE_MULTIPLIER / scale_factor;
     if (delta > 0) {
         gcstate->work_to_do += delta;

@@ -328,7 +328,8 @@ struct _gc_runtime_state {
     Py_ssize_t heap_size;
     Py_ssize_t work_to_do;
     /* Which of the old spaces is the visited space */
-    int visited_space;
+    uint8_t visited_space;
+    uint8_t scan_reachable;
 
 #ifdef Py_GIL_DISABLED
     /* This is the number of objects that survived the last full
