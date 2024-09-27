@@ -810,6 +810,7 @@ static void set_most_env_vars(void)
 #ifdef Py_STATS
     putenv("PYTHONSTATS=1");
 #endif
+    putenv("PYTHONPERFSUPPORT=1");
 }
 
 

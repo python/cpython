@@ -1051,6 +1051,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'module_search_paths': self.IGNORE_CONFIG,
             'safe_path': True,
             'int_max_str_digits': 4567,
+            'perf_profiling': 1,
         }
         if Py_STATS:
             config['_pystats'] = 1
@@ -1086,6 +1087,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'module_search_paths': self.IGNORE_CONFIG,
             'safe_path': True,
             'int_max_str_digits': 4567,
+            'perf_profiling': 1,
         }
         if Py_STATS:
             config['_pystats'] = True
