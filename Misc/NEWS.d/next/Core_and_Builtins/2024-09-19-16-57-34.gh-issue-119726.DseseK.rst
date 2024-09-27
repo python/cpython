@@ -1,1 +1,2 @@
-Emit runtime machine code for calls to C functions from the JIT on AArch64. Patch by Diego Russo.
+The JIT now generates more efficient code for calls to C functions resulting
+in up to 0.8% memory savings and 1.5% speed improvement on AArch64. Patch by Diego Russo.
