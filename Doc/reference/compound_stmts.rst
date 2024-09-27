@@ -1217,9 +1217,10 @@ A function definition defines a user-defined function object (see section
                  :   | `parameter_list_no_posonly`
    parameter_list_no_posonly: `defparameter` ("," `defparameter`)* ["," [`parameter_list_starargs`]]
                             : | `parameter_list_starargs`
-   parameter_list_starargs: "*" [`parameter`] ("," `defparameter`)* ["," ["**" `parameter` [","]]]
+   parameter_list_starargs: "*" [`star_parameter`] ("," `defparameter`)* ["," ["**" `parameter` [","]]]
                           : | "**" `parameter` [","]
    parameter: `identifier` [":" `expression`]
+   star_parameter: `identifier` [":" ["*"] `expression`]
    defparameter: `parameter` ["=" `expression`]
    funcname: `identifier`
 
@@ -1326,10 +1327,15 @@ and may only be passed by positional arguments.
 
 Parameters may have an :term:`annotation <function annotation>` of the form "``: expression``"
 following the parameter name.  Any parameter may have an annotation, even those of the form
-``*identifier`` or ``**identifier``.  Functions may have "return" annotation of
+``*identifier`` or ``**identifier``. (As a special case, parameters of the form
+``*identifier`` may have an annotation "``: *expression``".) Functions may have "return" annotation of
 the form "``-> expression``" after the parameter list.  These annotations can be
 any valid Python expression.  The presence of annotations does not change the
 semantics of a function. See :ref:`annotations` for more information on annotations.
+
+.. versionchanged:: 3.11
+   Parameters of the form "``*identifier``" may have an annotation
+   "``: *expression``". See :pep:`646`.
 
 .. index:: pair: lambda; expression
 

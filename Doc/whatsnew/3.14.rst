@@ -91,7 +91,7 @@ annotations. Annotations may be evaluated in the :attr:`~annotationlib.Format.VA
 format (which evaluates annotations to runtime values, similar to the behavior in
 earlier Python versions), the :attr:`~annotationlib.Format.FORWARDREF` format
 (which replaces undefined names with special markers), and the
-:attr:`~annotationlib.Format.SOURCE` format (which returns annotations as strings).
+:attr:`~annotationlib.Format.STRING` format (which returns annotations as strings).
 
 This example shows how these formats behave:
 
@@ -106,7 +106,7 @@ This example shows how these formats behave:
    NameError: name 'Undefined' is not defined
    >>> get_annotations(func, format=Format.FORWARDREF)
    {'arg': ForwardRef('Undefined')}
-   >>> get_annotations(func, format=Format.SOURCE)
+   >>> get_annotations(func, format=Format.STRING)
    {'arg': 'Undefined'}
 
 Implications for annotated code
@@ -384,6 +384,14 @@ Deprecated
   :func:`complex` constructor is now deprecated; it should only be passed
   as a single positional argument.
   (Contributed by Serhiy Storchaka in :gh:`109218`.)
+
+* :mod:`multiprocessing` and :mod:`concurrent.futures`:
+  The default start method (see :ref:`multiprocessing-start-methods`) changed
+  away from *fork* to *forkserver* on platforms where it was not already
+  *spawn* (Windows & macOS). If you require the threading incompatible *fork*
+  start method you must explicitly specify it when using :mod:`multiprocessing`
+  or :mod:`concurrent.futures` APIs.
+  (Contributed by Gregory P. Smith in :gh:`84559`.)
 
 * :mod:`os`:
   :term:`Soft deprecate <soft deprecated>` :func:`os.popen` and

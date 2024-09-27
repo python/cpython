@@ -354,7 +354,7 @@ The :mod:`functools` module defines the following functions:
           newfunc.keywords = keywords
           return newfunc
 
-   The :func:`partial` function is used for partial function application which "freezes"
+   The :func:`!partial` function is used for partial function application which "freezes"
    some portion of a function's arguments and/or keywords resulting in a new object
    with a simplified signature.  For example, :func:`partial` can be used to create
    a callable that behaves like the :func:`int` function where the *base* argument
@@ -368,10 +368,11 @@ The :mod:`functools` module defines the following functions:
       18
 
    If :data:`Placeholder` sentinels are present in *args*, they will be filled first
-   when :func:`partial` is called. This allows custom selection of positional arguments
-   to be pre-filled when constructing a :ref:`partial object <partial-objects>`.
+   when :func:`!partial` is called. This makes it possible to pre-fill any positional
+   argument with a call to :func:`!partial`; without :data:`!Placeholder`, only the
+   first positional argument can be pre-filled.
 
-   If :data:`!Placeholder` sentinels are present, all of them must be filled at call time:
+   If any :data:`!Placeholder` sentinels are present, all must be filled at call time:
 
    .. doctest::
 
@@ -379,14 +380,15 @@ The :mod:`functools` module defines the following functions:
       >>> say_to_world('Hello', 'dear')
       Hello dear world!
 
-   Calling ``say_to_world('Hello')`` would raise a :exc:`TypeError`, because
-   only one positional argument is provided, while there are two placeholders
-   in :ref:`partial object <partial-objects>`.
+   Calling ``say_to_world('Hello')`` raises a :exc:`TypeError`, because
+   only one positional argument is provided, but there are two placeholders
+   that must be filled in.
 
-   Successive :func:`partial` applications fill :data:`!Placeholder` sentinels
-   of the input :func:`partial` objects with new positional arguments.
-   A place for positional argument can be retained by inserting new
-   :data:`!Placeholder` sentinel to the place held by previous :data:`!Placeholder`:
+   If :func:`!partial` is applied to an existing :func:`!partial` object,
+   :data:`!Placeholder` sentinels of the input object are filled in with
+   new positional arguments.
+   A placeholder can be retained by inserting a new
+   :data:`!Placeholder` sentinel to the place held by a previous :data:`!Placeholder`:
 
    .. doctest::
 
@@ -402,8 +404,8 @@ The :mod:`functools` module defines the following functions:
       >>> remove_first_dear(message)
       'Hello, dear world!'
 
-   Note, :data:`!Placeholder` has no special treatment when used for keyword
-   argument of :data:`!Placeholder`.
+   :data:`!Placeholder` has no special treatment when used in a keyword
+   argument to :func:`!partial`.
 
    .. versionchanged:: 3.14
       Added support for :data:`Placeholder` in positional arguments.
@@ -791,7 +793,7 @@ have three read-only attributes:
    The keyword arguments that will be supplied when the :class:`partial` object is
    called.
 
-:class:`partial` objects are like :class:`function` objects in that they are
+:class:`partial` objects are like :ref:`function objects <user-defined-funcs>` in that they are
 callable, weak referenceable, and can have attributes.  There are some important
-differences.  For instance, the :attr:`~definition.__name__` and :attr:`__doc__` attributes
+differences.  For instance, the :attr:`~definition.__name__` and :attr:`~definition.__doc__` attributes
 are not created automatically.
