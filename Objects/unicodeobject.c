@@ -319,12 +319,12 @@ init_interned_dict(PyInterpreterState *interp)
 static void
 clear_interned_dict(PyInterpreterState *interp)
 {
-    if (has_shared_intern_dict(interp)) {
-        return; // the dict doesn't belong to this interpreter
-    }
     PyObject *interned = get_interned_dict(interp);
     if (interned != NULL) {
-        PyDict_Clear(interned);
+        if (!has_shared_intern_dict(interp)) {
+            // only clear if the dict belongs to this interpreter
+            PyDict_Clear(interned);
+        }
         Py_DECREF(interned);
         _Py_INTERP_CACHED_OBJECT(interp, interned_strings) = NULL;
     }
@@ -14882,14 +14882,18 @@ PyUnicode_InternFromString(const char *cp)
 void
 _PyUnicode_ClearInterned(PyInterpreterState *interp)
 {
-    if (has_shared_intern_dict(interp)) {
-        return; // the dict doesn't belong to this interpreter
-    }
     PyObject *interned = get_interned_dict(interp);
     if (interned == NULL) {
         return;
     }
     assert(PyDict_CheckExact(interned));
+
+    if (has_shared_intern_dict(interp)) {
+        // the dict doesn't belong to this interpreter, skip the debug
+        // checks on it and just clear the pointer to it
+        clear_interned_dict(interp);
+        return;
+    }
 
     /* TODO:
      * Currently, the runtime is not able to guarantee that it can exit without
