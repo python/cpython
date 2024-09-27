@@ -1727,10 +1727,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             while True:
                 try:
                     reply = input('Quitting pdb will kill the process. Quit anyway? [y/n] ')
+                    reply = reply.lower().strip()
                 except EOFError:
                     reply = 'y'
                     self.message('')
-                if reply.lower() == 'y' or reply == '':
+                if reply == 'y' or reply == '':
                     os._exit(0)
                 elif reply.lower() == 'n':
                     return
