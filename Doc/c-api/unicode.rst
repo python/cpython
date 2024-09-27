@@ -317,7 +317,7 @@ These APIs can be used to work with surrogates:
 
 .. c:function:: Py_UCS4 Py_UNICODE_JOIN_SURROGATES(Py_UCS4 high, Py_UCS4 low)
 
-   Join two surrogate characters and return a single :c:type:`Py_UCS4` value.
+   Join two surrogate code points and return a single :c:type:`Py_UCS4` value.
    *high* and *low* are respectively the leading and trailing surrogates in a
    surrogate pair. *high* must be in the range [0xD800; 0xDBFF] and *low* must
    be in the range [0xDC00; 0xDFFF].
@@ -999,6 +999,9 @@ These are the UTF-8 codec APIs:
    object.  Error handling is "strict".  Return ``NULL`` if an exception was
    raised by the codec.
 
+   The function fails if the string contains surrogate code points
+   (``U+D800`` - ``U+DFFF``).
+
 
 .. c:function:: const char* PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *size)
 
@@ -1010,6 +1013,9 @@ These are the UTF-8 codec APIs:
 
    On error, set an exception, set *size* to ``-1`` (if it's not NULL) and
    return ``NULL``.
+
+   The function fails if the string contains surrogate code points
+   (``U+D800`` - ``U+DFFF``).
 
    This caches the UTF-8 representation of the string in the Unicode object, and
    subsequent calls will return a pointer to the same buffer.  The caller is not
@@ -1438,8 +1444,9 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    Compare a Unicode object with a char buffer which is interpreted as
    being UTF-8 or ASCII encoded and return true (``1``) if they are equal,
    or false (``0``) otherwise.
-   If the Unicode object contains surrogate characters or
-   the C string is not valid UTF-8, false (``0``) is returned.
+   If the Unicode object contains surrogate code points
+   (``U+D800`` - ``U+DFFF``) or the C string is not valid UTF-8,
+   false (``0``) is returned.
 
    This function does not raise exceptions.
 
