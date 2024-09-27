@@ -381,6 +381,7 @@ class Server(events.AbstractServer):
         except exceptions.CancelledError:
             try:
                 self.close()
+                self.close_clients()
                 await self.wait_closed()
             finally:
                 raise
