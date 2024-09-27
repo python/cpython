@@ -908,7 +908,7 @@ Import-related attributes on module objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Module objects have the following attributes that relate to the
-:ref:`importsystem`. When a module is created using the machinery associated
+:ref:`import system <importsystem>`. When a module is created using the machinery associated
 with the import system, these attributes are filled in based on the module's
 :term:`spec <module spec>`, before the :term:`loader` executes and loads the
 module.
