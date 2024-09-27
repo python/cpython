@@ -15,9 +15,10 @@ The :mod:`concurrent.futures` module provides a high-level interface for
 asynchronously executing callables.
 
 The asynchronous execution can be performed with threads, using
-:class:`ThreadPoolExecutor`, or separate processes, using
-:class:`ProcessPoolExecutor`.  Both implement the same interface, which is
-defined by the abstract :class:`Executor` class.
+:class:`ThreadPoolExecutor` or :class:`InterpreterPoolExecutor`,
+or separate processes, using :class:`ProcessPoolExecutor`.
+Both implement the same interface, which is defined
+by the abstract :class:`Executor` class.
 
 .. include:: ../includes/wasm-notavail.rst
 
@@ -63,7 +64,8 @@ Executor Objects
       setting *chunksize* to a positive integer.  For very long iterables,
       using a large value for *chunksize* can significantly improve
       performance compared to the default size of 1.  With
-      :class:`ThreadPoolExecutor`, *chunksize* has no effect.
+      :class:`ThreadPoolExecutor` and :class:`ThreadPoolExecutor`,
+      *chunksize* has no effect.
 
       .. versionchanged:: 3.5
          Added the *chunksize* argument.
@@ -225,6 +227,54 @@ ThreadPoolExecutor Example
                print('%r generated an exception: %s' % (url, exc))
            else:
                print('%r page is %d bytes' % (url, len(data)))
+
+
+InterpreterPoolExecutor
+-----------------------
+
+The :class:`InterpreterPoolExecutor` class is a :class:`ThreadPoolExecutor`
+subclass that uses a pool of isolated interpreters to execute calls
+asynchronously.  Each interpreter has its own GIL, which allows the
+executor to side-step the :term:`Global Interpreter Lock
+<global interpreter lock>`.  Interpreters mostly can't share objects
+between them, which means that, in most cases, only picklable objects
+can be executed and returned.
+
+.. class:: InterpreterPoolExecutor(max_workers=None, mp_context=None, initializer=None, initargs=(), shared=None)
+
+   A :class:`ThreadPoolExecutor` subclass that executes calls asynchronously
+   using a pool of at most *max_workers* interpreters.  Each interpreter
+   runs tasks in its own thread.
+
+   *initializer* and *initargs* are the same as with
+   :class:`ThreadPoolExecutor`, though they are pickled like with
+   :class:`ProcessPoolExecutor`.  Additionally, you can pass a script
+   (:class:`str`) for *initiazer*, which will be ``exec``ed in the
+   interpreter's ``__main__`` module.  In that case, *initargs* must
+   not be passed in.
+
+   Similarly you can pass a script to :meth:`Executor.submit()`, which
+   will be ``exec``ed in the interpreter's ``__main__`` module.  In that
+   case no arguments may be provided and the return value is always
+   ``None``.
+
+   :meth:`InterpreterPoolExecutor <Executor.map>` does *not* support
+   passing in a script.
+
+   In each of those cases, an uncaught exception from the initializer
+   or task is raised as an
+   :class:`~concurrent.futures.interpreter.ExecutionFailed` exception,
+   rather than the uncaught exception itself.
+
+   *shared* is an optional dict of objects shared by all interpreters
+   in the pool.  The items are added to each interpreter's ``__main__``
+   module.  Shareable objects include the builtin singletons, :class:`str`
+   and :class:`bytes`, and :class:`memoryview`.  See :pep:`734`
+   for more info.
+
+   The other caveats that apply to :class:`ThreadPoolExecutor` apply here.
+
+   .. versionadded:: 3.14
 
 
 ProcessPoolExecutor
@@ -573,6 +623,17 @@ Exception classes
    has failed initializing.
 
    .. versionadded:: 3.7
+
+.. currentmodule:: concurrent.futures.interpreter
+
+.. exception:: ExecutionFailed
+
+   Raised from :class:`~concurrent.futures.InterpreterPoolExecutor` when
+   the given initializer fails or from
+   :meth:`~concurrent.futures.Executor.submit` when there's an uncaught
+   exception from the submitted task.
+
+   .. versionadded:: 3.14
 
 .. currentmodule:: concurrent.futures.process
 
