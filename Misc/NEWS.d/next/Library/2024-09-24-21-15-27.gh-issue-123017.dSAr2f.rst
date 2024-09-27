@@ -1,0 +1,2 @@
+Due to unreliable results on some devices, :func:`time.strftime` no longer
+accepts negative years on Android.
