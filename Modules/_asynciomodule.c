@@ -246,8 +246,8 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
 static void
 clear_task_coro(TaskObj *task)
 {
-    if (task->task_coro != NULL &&PyCoro_CheckExact(task->task_coro)) {
-        _PyCoro_SetTask(task->task_coro, (PyObject *)task);
+    if (task->task_coro != NULL && PyCoro_CheckExact(task->task_coro)) {
+        _PyCoro_SetTask(task->task_coro, NULL);
     }
     Py_CLEAR(task->task_coro);
 }
@@ -256,6 +256,7 @@ clear_task_coro(TaskObj *task)
 static void
 set_task_coro(TaskObj *task, PyObject *coro)
 {
+    assert(coro != NULL);
     if (PyCoro_CheckExact(coro)) {
         _PyCoro_SetTask(coro, (PyObject *)task);
     }
