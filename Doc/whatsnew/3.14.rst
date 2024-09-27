@@ -280,7 +280,7 @@ inspect
   (Contributed by Jelle Zijlstra in :gh:`101552`.)
 
 * :meth:`inspect.Signature.format` takes a new argument *unquote_annotations*.
-  If True, string :term:`annotations <annotation>` are displayed without enclosing quotes.
+  If true, string :term:`annotations <annotation>` are displayed without surrounding quotes.
   (Contributed by Jelle Zijlstra in :gh:`101552`.)
 
 

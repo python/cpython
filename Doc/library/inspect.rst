@@ -854,8 +854,8 @@ function.
 
       If *unquote_annotations* is True, :term:`annotations <annotation>`
       in the signature are displayed without opening and closing quotation
-      marks. This is useful when the signature was created with the
-      :attr:`~annotationlib.Format.STRING` format or when
+      marks. This is useful if the signature was created with the
+      :attr:`~annotationlib.Format.STRING` format or if
       ``from __future__ import annotations`` was used.
 
       .. versionadded:: 3.13

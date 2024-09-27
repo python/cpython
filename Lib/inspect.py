@@ -140,7 +140,8 @@ __all__ = [
 
 
 import abc
-from annotationlib import Format, get_annotations  # re-exported
+from annotationlib import Format
+from annotationlib import get_annotations  # re-exported
 import ast
 import dis
 import collections.abc
@@ -2271,7 +2272,7 @@ def _signature_from_builtin(cls, func, skip_bound_arg=True):
 
 def _signature_from_function(cls, func, skip_bound_arg=True,
                              globals=None, locals=None, eval_str=False,
-                             annotation_format=Format.VALUE):
+                             *, annotation_format=Format.VALUE):
     """Private helper: constructs Signature for the given python function."""
 
     is_duck_function = False
@@ -2298,7 +2299,7 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
     keyword_only_count = func_code.co_kwonlyargcount
     keyword_only = arg_names[pos_count:pos_count + keyword_only_count]
     annotations = get_annotations(func, globals=globals, locals=locals, eval_str=eval_str,
-                                  format=annotation_format)
+                                  *, format=annotation_format)
     defaults = func.__defaults__
     kwdefaults = func.__kwdefaults__
 
