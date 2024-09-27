@@ -471,7 +471,7 @@ Initializing and finalizing the interpreter
 .. c:function:: int Py_Main(int argc, wchar_t **argv)
 
    The main program for the standard interpreter, encapsulating a full
-   :c:func:`Py_Initialize`/:c:func:`Py_Finalize` cycle, as well as additional
+   initialization/finalization cycle, as well as additional
    behaviour to implement reading configurations settings from the environment
    and command line, and then executing ``__main__`` in accordance with
    :ref:`using-on-cmdline`.
