@@ -295,9 +295,7 @@ class Bdb:
         if lineno < code.co_firstlineno:
             return False
         if code not in self.code_lineno:
-            self.code_lineno[code] = set()
-            for _, _, lineno in code.co_lines():
-                self.code_lineno[code].add(lineno)
+            self.code_lineno[code] = set(lineno for _, _, lineno in code.co_lines())
         return lineno in self.code_lineno[frame.f_code]
 
     # Derived classes should override the user_* methods
