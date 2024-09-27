@@ -72,7 +72,7 @@ We currently also immortalize strings contained in code objects and similar,
 specifically in the compiler and in `marshal`.
 These are “close enough” to immortal: even in use cases like hot reloading
 or `eval`-ing user input, the number of distinct identifiers and string
-constants expected to stay low.
+constants is expected to stay low.
 
 
 ## Internal API
