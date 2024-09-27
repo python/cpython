@@ -272,6 +272,14 @@ module allow the browser to apply its default dark mode.
 (Contributed by Yorik Hansen in :gh:`123430`.)
 
 
+inspect
+-------
+
+* :func:`inspect.signature` takes a new argument *format* to control
+  the :class:`annotationlib.Format` used for representing annotations.
+  (Contributed by Jelle Zijlstra in :gh:`101552`.)
+
+
 json
 ----
 

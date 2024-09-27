@@ -140,7 +140,7 @@ __all__ = [
 
 
 import abc
-from annotationlib import get_annotations  # re-exported
+from annotationlib import Format, get_annotations  # re-exported
 import ast
 import dis
 import collections.abc
@@ -2268,7 +2268,8 @@ def _signature_from_builtin(cls, func, skip_bound_arg=True):
 
 
 def _signature_from_function(cls, func, skip_bound_arg=True,
-                             globals=None, locals=None, eval_str=False):
+                             globals=None, locals=None, eval_str=False,
+                             format=Format.VALUE):
     """Private helper: constructs Signature for the given python function."""
 
     is_duck_function = False
@@ -2294,7 +2295,8 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
     positional = arg_names[:pos_count]
     keyword_only_count = func_code.co_kwonlyargcount
     keyword_only = arg_names[pos_count:pos_count + keyword_only_count]
-    annotations = get_annotations(func, globals=globals, locals=locals, eval_str=eval_str)
+    annotations = get_annotations(func, globals=globals, locals=locals, eval_str=eval_str,
+                                  format=format)
     defaults = func.__defaults__
     kwdefaults = func.__kwdefaults__
 
@@ -2377,7 +2379,8 @@ def _signature_from_callable(obj, *,
                              globals=None,
                              locals=None,
                              eval_str=False,
-                             sigcls):
+                             sigcls,
+                             format=Format.VALUE):
 
     """Private helper function to get signature for arbitrary
     callable objects.
@@ -2389,7 +2392,8 @@ def _signature_from_callable(obj, *,
                                 globals=globals,
                                 locals=locals,
                                 sigcls=sigcls,
-                                eval_str=eval_str)
+                                eval_str=eval_str,
+                                format=format)
 
     if not callable(obj):
         raise TypeError('{!r} is not a callable object'.format(obj))
@@ -2478,7 +2482,8 @@ def _signature_from_callable(obj, *,
         # of a Python function (Cython functions, for instance), then:
         return _signature_from_function(sigcls, obj,
                                         skip_bound_arg=skip_bound_arg,
-                                        globals=globals, locals=locals, eval_str=eval_str)
+                                        globals=globals, locals=locals, eval_str=eval_str,
+                                        format=format)
 
     if _signature_is_builtin(obj):
         return _signature_from_builtin(sigcls, obj,
@@ -2967,11 +2972,13 @@ class Signature:
 
     @classmethod
     def from_callable(cls, obj, *,
-                      follow_wrapped=True, globals=None, locals=None, eval_str=False):
+                      follow_wrapped=True, globals=None, locals=None, eval_str=False,
+                      format=Format.VALUE):
         """Constructs Signature for the given callable object."""
         return _signature_from_callable(obj, sigcls=cls,
                                         follow_wrapper_chains=follow_wrapped,
-                                        globals=globals, locals=locals, eval_str=eval_str)
+                                        globals=globals, locals=locals, eval_str=eval_str,
+                                        format=format)
 
     @property
     def parameters(self):
@@ -3241,10 +3248,12 @@ class Signature:
         return rendered
 
 
-def signature(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False):
+def signature(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False,
+              format=Format.VALUE):
     """Get a signature object for the passed callable."""
     return Signature.from_callable(obj, follow_wrapped=follow_wrapped,
-                                   globals=globals, locals=locals, eval_str=eval_str)
+                                   globals=globals, locals=locals, eval_str=eval_str,
+                                   format=format)
 
 
 class BufferFlags(enum.IntFlag):

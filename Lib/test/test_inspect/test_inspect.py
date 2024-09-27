@@ -1,3 +1,4 @@
+from annotationlib import Format, ForwardRef
 import asyncio
 import builtins
 import collections
@@ -22,7 +23,6 @@ import time
 import types
 import tempfile
 import textwrap
-from typing import Unpack
 import unicodedata
 import unittest
 import unittest.mock
@@ -46,6 +46,7 @@ from test import support
 from test.test_inspect import inspect_fodder as mod
 from test.test_inspect import inspect_fodder2 as mod2
 from test.test_inspect import inspect_stringized_annotations
+from test.test_inspect import inspect_deferred_annotations
 
 
 # Functions tested in this suite:
@@ -4796,6 +4797,26 @@ class TestSignatureObject(unittest.TestCase):
                             par('a', PORK, annotation=float),
                             par('b', PORK, annotation=tuple),
                         )))
+
+    def test_signature_format_parameter(self):
+        ida = inspect_deferred_annotations
+        sig = inspect.Signature
+        par = inspect.Parameter
+        PORK = inspect.Parameter.POSITIONAL_OR_KEYWORD
+        for signature_func in (inspect.signature, inspect.Signature.from_callable):
+            with self.subTest(signature_func=signature_func):
+                self.assertEqual(
+                    signature_func(ida.f, format=Format.SOURCE),
+                    sig([par("x", PORK, annotation="undefined")])
+                )
+                self.assertEqual(
+                    signature_func(ida.f, format=Format.FORWARDREF),
+                    sig([par("x", PORK, annotation=ForwardRef("undefined"))])
+                )
+                with self.assertRaisesRegex(NameError, "undefined"):
+                    signature_func(ida.f, format=Format.VALUE)
+                with self.assertRaisesRegex(NameError, "undefined"):
+                    signature_func(ida.f)
 
     def test_signature_none_annotation(self):
         class funclike:
