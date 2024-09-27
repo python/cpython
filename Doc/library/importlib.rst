@@ -1167,7 +1167,7 @@ find and load modules.
 
    A specification for a module's import-system-related state.  This is
    typically exposed as the module's :attr:`__spec__` attribute.  Many
-   of these attributes are also available directly on a module: e.g.,
+   of these attributes are also available directly on a module: for example,
    ``module.__spec__.origin == module.__file__``.  Note, however, that
    while the *values* are usually equivalent, they can differ since there is
    no synchronization between the two objects.  For example, it is possible to update
@@ -1179,19 +1179,19 @@ find and load modules.
    .. attribute:: name
 
       The module's fully qualified name
-      (see :attr:`__name__ attributes on modules <__name__>`).
+      (see :attr:`__name__` attributes on modules).
       The :term:`finder` should always set this attribute to a non-empty string.
 
    .. attribute:: loader
 
       The :term:`loader` used to load the module
-      (see :attr:`__loader__ attributes on modules <__loader__>`).
+      (see :attr:`__loader__` attributes on modules).
       The :term:`finder` should always set this attribute.
 
    .. attribute:: origin
 
       The location the :term:`loader` should use to load the module
-      (see :attr:`__file__ attributes on modules <__file__>`).
+      (see :attr:`__file__` attributes on modules).
       For example, for modules loaded from a .py file this is the filename.
       The :term:`finder` should always set this attribute to a meaningful value
       for the :term:`loader` to use.  In the uncommon case that there is not one
@@ -1200,7 +1200,7 @@ find and load modules.
    .. attribute:: submodule_search_locations
 
       The list of locations where the package's submodules will be found
-      (see :attr:`__path__ attributes on modules <__path__>`).
+      (see :attr:`__path__` attributes on modules).
       Most of the time this is a single directory.
       The :term:`finder` should set this attribute to a list, even an empty one, to indicate
       to the import system that the module is a package.  It should be set to ``None`` for
@@ -1216,7 +1216,7 @@ find and load modules.
    .. attribute:: cached
 
       The filename of a compiled version of the module's code
-      (see :attr:`__cached__ attributes on modules <__cached__>`).
+      (see :attr:`__cached__` attributes on modules).
       The :term:`finder` should always set this attribute but it may be ``None``
       for modules that do not need compiled code stored.
 
@@ -1224,7 +1224,7 @@ find and load modules.
 
       (Read-only) The fully qualified name of the package the module is in (or the
       empty string for a top-level module).
-      See :attr:`__package__ attributes on modules <__package__>`.
+      See :attr:`__package__` attributes on modules.
       If the module is a package then this is the same as :attr:`name`.
 
    .. attribute:: has_location
