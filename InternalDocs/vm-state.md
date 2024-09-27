@@ -3,7 +3,7 @@
 ## Definition of Tiers
 
 - **Tier 1** is the classic Python bytecode interpreter.
-  This includes the specializing [Adaptive Interpreter](adaptive.md).
+  This includes the specializing [adaptive interpreter](adaptive.md).
 - **Tier 2**, also known as the micro-instruction ("uop") interpreter, is a new interpreter with a different instruction format.
   It was introduced in Python 3.13, and also forms the basis for a JIT using copy-and-patch technology. See [Tier 2](tier2_engine.md) for more information.
 
@@ -37,7 +37,7 @@ The Tier 2 instruction pointer is strictly internal to the Tier 2 interpreter, s
 
 ## Unwinding
 
-Unwinding uses exception tables to find the next point at which normal execution can occur, or fail if there are no exception handlers.
+Unwinding uses exception tables to find the next point at which normal execution can occur, or fail if there are no exception handlers. For more information on what exception tables are, see [exception handling](exception_handling.md).
 During unwinding both the stack and the instruction pointer should be in their canonical, in-memory representation.
 
 ## Jumps in bytecode
