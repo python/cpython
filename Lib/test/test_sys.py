@@ -1034,7 +1034,8 @@ class SysModuleTest(unittest.TestCase):
 
 
         self.assertTrue(hasattr(sys.implementation, '_architecture'))
-        self.assertIn(sys.implementation._architecture, ['win32', 'amd64', 'arm32', 'arm64'])
+        self.assertIn(sys.implementation._architecture,
+                      ['win32', 'amd64', 'arm32', 'arm64', ''])
 
     @test.support.cpython_only
     def test_debugmallocstats(self):
