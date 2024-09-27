@@ -260,63 +260,9 @@ Standard names are defined for the following types:
    The type of :term:`modules <module>`. The constructor takes the name of the
    module to be created and optionally its :term:`docstring`.
 
-   .. note::
-      Use :func:`importlib.util.module_from_spec` to create a new module if you
-      wish to set the various import-controlled attributes.
-
-   .. attribute:: __doc__
-
-      The :term:`docstring` of the module. Defaults to ``None``.
-
-   .. attribute:: __loader__
-
-      The :term:`loader` which loaded the module. Defaults to ``None``.
-
-      This attribute is to match :attr:`importlib.machinery.ModuleSpec.loader`
-      as stored in the :attr:`__spec__` object.
-
-      .. note::
-         A future version of Python may stop setting this attribute by default.
-         To guard against this potential change, preferably read from the
-         :attr:`__spec__` attribute instead or use
-         ``getattr(module, "__loader__", None)`` if you explicitly need to use
-         this attribute.
-
-      .. versionchanged:: 3.4
-         Defaults to ``None``. Previously the attribute was optional.
-
-   .. attribute:: __name__
-
-      The name of the module. Expected to match
-      :attr:`importlib.machinery.ModuleSpec.name`.
-
-   .. attribute:: __package__
-
-      Which :term:`package` a module belongs to. If the module is top-level
-      (i.e. not a part of any specific package) then the attribute should be set
-      to ``''``, else it should be set to the name of the package (which can be
-      :attr:`__name__` if the module is a package itself). Defaults to ``None``.
-
-      This attribute is to match :attr:`importlib.machinery.ModuleSpec.parent`
-      as stored in the :attr:`__spec__` object.
-
-      .. note::
-         A future version of Python may stop setting this attribute by default.
-         To guard against this potential change, preferably read from the
-         :attr:`__spec__` attribute instead or use
-         ``getattr(module, "__package__", None)`` if you explicitly need to use
-         this attribute.
-
-      .. versionchanged:: 3.4
-         Defaults to ``None``. Previously the attribute was optional.
-
-   .. attribute:: __spec__
-
-      A record of the module's import-system-related state. Expected to be an
-      instance of :class:`importlib.machinery.ModuleSpec`.
-
-      .. versionadded:: 3.4
-
+   See :ref:`documentation on module objects <module-objects>` for details
+   on the special attributes that can be found on instances of
+   :class:`!ModuleType`.
 
 .. data:: EllipsisType
 
