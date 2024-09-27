@@ -5072,6 +5072,74 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
 
         self.assertEqual(A().foo, "bar")
 
+    def test_custom_nested_descriptor(self):
+        class CustomFunctionWrapper:
+            def __init__(self, f):
+                self._f = f
+
+            def __call__(self, *args, **kwargs):
+                return self._f(*args, **kwargs)
+
+        class CustomDescriptor:
+            def __init__(self, f):
+                self._wrapper = CustomFunctionWrapper(f)
+
+            def __get__(self, instance, owner):
+                return self._wrapper(instance)
+
+        class B:
+            def foo(self):
+                return "bar"
+
+        @dataclass(slots=True)
+        class A(B):
+            @CustomDescriptor
+            def foo(cls):
+                return super().foo()
+
+        self.assertEqual(A().foo, "bar")
+
+    def test_custom_too_nested_descriptor(self):
+        class UnnecessaryNestedWrapper:
+            def __init__(self, wrapper):
+                self._wrapper = wrapper
+
+            def __call__(self, *args, **kwargs):
+                return self._wrapper(*args, **kwargs)
+
+        class CustomFunctionWrapper:
+            def __init__(self, f):
+                self._f = f
+
+            def __call__(self, *args, **kwargs):
+                return self._f(*args, **kwargs)
+
+        class CustomDescriptor:
+            def __init__(self, f):
+                self._wrapper = UnnecessaryNestedWrapper(CustomFunctionWrapper(f))
+
+            def __get__(self, instance, owner):
+                return self._wrapper(instance)
+
+        class B:
+            def foo(self):
+                return "bar"
+
+        @dataclass(slots=True)
+        class A(B):
+            @CustomDescriptor
+            def foo(cls):
+                return super().foo()
+
+        with self.assertRaises(TypeError) as context:
+            A().foo
+
+        expected_error_message = (
+            'super(type, obj): obj (instance of A) is not '
+            'an instance or subtype of type (A).'
+        )
+        self.assertEqual(context.exception.args, (expected_error_message,))
+
     def test_remembered_class(self):
         # Apply the dataclass decorator manually (not when the class
         # is created), so that we can keep a reference to the

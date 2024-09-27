@@ -1245,6 +1245,9 @@ def _find_inner_functions(obj, _seen=None, _depth=0):
     _seen.add(id(obj))
 
     _depth += 1
+    # we don't want to dive too deep in an object in search for a function.
+    # usually it will be stored on outer levels of nesting, but in just
+    # for sake of special cases when
     if _depth > 2:
         return None
 
