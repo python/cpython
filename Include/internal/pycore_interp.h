@@ -261,7 +261,7 @@ struct _is {
     struct callable_cache callable_cache;
     _PyOptimizerObject *optimizer;
     _PyExecutorObject *executor_list_head;
-
+    size_t trace_run_counter;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;
 

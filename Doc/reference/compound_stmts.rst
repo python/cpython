@@ -1217,9 +1217,10 @@ A function definition defines a user-defined function object (see section
                  :   | `parameter_list_no_posonly`
    parameter_list_no_posonly: `defparameter` ("," `defparameter`)* ["," [`parameter_list_starargs`]]
                             : | `parameter_list_starargs`
-   parameter_list_starargs: "*" [`parameter`] ("," `defparameter`)* ["," ["**" `parameter` [","]]]
+   parameter_list_starargs: "*" [`star_parameter`] ("," `defparameter`)* ["," ["**" `parameter` [","]]]
                           : | "**" `parameter` [","]
    parameter: `identifier` [":" `expression`]
+   star_parameter: `identifier` [":" ["*"] `expression`]
    defparameter: `parameter` ["=" `expression`]
    funcname: `identifier`
 
@@ -1326,10 +1327,15 @@ and may only be passed by positional arguments.
 
 Parameters may have an :term:`annotation <function annotation>` of the form "``: expression``"
 following the parameter name.  Any parameter may have an annotation, even those of the form
-``*identifier`` or ``**identifier``.  Functions may have "return" annotation of
+``*identifier`` or ``**identifier``. (As a special case, parameters of the form
+``*identifier`` may have an annotation "``: *expression``".) Functions may have "return" annotation of
 the form "``-> expression``" after the parameter list.  These annotations can be
 any valid Python expression.  The presence of annotations does not change the
 semantics of a function. See :ref:`annotations` for more information on annotations.
+
+.. versionchanged:: 3.11
+   Parameters of the form "``*identifier``" may have an annotation
+   "``: *expression``". See :pep:`646`.
 
 .. index:: pair: lambda; expression
 
@@ -1416,7 +1422,7 @@ dictionary.  The class name is bound to this class object in the original local
 namespace.
 
 The order in which attributes are defined in the class body is preserved
-in the new class's ``__dict__``.  Note that this is reliable only right
+in the new class's :attr:`~type.__dict__`.  Note that this is reliable only right
 after the class is created and only for classes that were defined using
 the definition syntax.
 
@@ -1447,8 +1453,8 @@ decorators.  The result is then bound to the class name.
 A list of :ref:`type parameters <type-params>` may be given in square brackets
 immediately after the class's name.
 This indicates to static type checkers that the class is generic. At runtime,
-the type parameters can be retrieved from the class's ``__type_params__``
-attribute. See :ref:`generic-classes` for more.
+the type parameters can be retrieved from the class's
+:attr:`~type.__type_params__` attribute. See :ref:`generic-classes` for more.
 
 .. versionchanged:: 3.12
    Type parameter lists are new in Python 3.12.
@@ -1661,8 +1667,8 @@ with more precision. The scope of type parameters is modeled with a special
 function (technically, an :ref:`annotation scope <annotation-scopes>`) that
 wraps the creation of the generic object.
 
-Generic functions, classes, and type aliases have a :attr:`!__type_params__`
-attribute listing their type parameters.
+Generic functions, classes, and type aliases have a
+:attr:`~definition.__type_params__` attribute listing their type parameters.
 
 Type parameters come in three kinds:
 
@@ -1924,5 +1930,5 @@ all annotations are instead stored as strings::
    therefore the function's :term:`docstring`.
 
 .. [#] A string literal appearing as the first statement in the class body is
-   transformed into the namespace's ``__doc__`` item and therefore the class's
-   :term:`docstring`.
+   transformed into the namespace's :attr:`~type.__doc__` item and therefore
+   the class's :term:`docstring`.

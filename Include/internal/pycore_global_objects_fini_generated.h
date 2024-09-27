@@ -604,7 +604,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__classdictcell__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__complex__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__contains__));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__copy__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__ctypes_from_outparam__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__del__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__delattr__));
@@ -769,7 +768,9 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_shutdown));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_slotnames));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_strptime));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_strptime_datetime));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_strptime_datetime_date));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_strptime_datetime_datetime));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_strptime_datetime_time));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_type_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_uninitialized_submodules));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_warn_unawaited_coroutine));
