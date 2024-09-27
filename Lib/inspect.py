@@ -2299,7 +2299,7 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
     keyword_only_count = func_code.co_kwonlyargcount
     keyword_only = arg_names[pos_count:pos_count + keyword_only_count]
     annotations = get_annotations(func, globals=globals, locals=locals, eval_str=eval_str,
-                                  *, format=annotation_format)
+                                  format=annotation_format)
     defaults = func.__defaults__
     kwdefaults = func.__kwdefaults__
 
