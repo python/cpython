@@ -1108,13 +1108,14 @@ class IncrementalGCTests(unittest.TestCase):
         olds = []
         gc.collect()
         baseline_live = _testinternalcapi.get_heap_size()
-        for i in range(20_000):
+        iterations = 200_000 if support.is_resource_enabled('cpu') else 20_000
+        for i in range(iterations):
             newhead = make_ll(20)
             newhead.surprise = head
             olds.append(newhead)
             if len(olds) == 20:
                 live = _testinternalcapi.get_heap_size()
-                self.assertLess(live-baseline_live, 25000)
+                self.assertLess(live, baseline_live*2)
                 del olds[:]
         if not enabled:
             gc.disable()

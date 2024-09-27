@@ -1287,8 +1287,8 @@ gc_list_set_space(PyGC_Head *list, int space)
  */
 
 /* Multiply by 5, so that the default incremental threshold of 10
- * scans objects at half the rate as the young generation */
-#define SCAN_RATE_MULTIPLIER 20
+ * scans objects at the same rate as the young generation */
+#define SCAN_RATE_MULTIPLIER 10
 
 static void
 add_stats(GCState *gcstate, int gen, struct gc_collection_stats *stats)
@@ -1461,7 +1461,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     gc_list_validate_space(&survivors, gcstate->visited_space);
     gc_list_merge(&survivors, visited);
     assert(gc_list_is_empty(&increment));
-    Py_ssize_t delta = gcstate->heap_size - gcstate->prior_heap_size;
+    Py_ssize_t delta = (gcstate->heap_size - gcstate->prior_heap_size)*2;
     delta += gcstate->young.threshold * SCAN_RATE_MULTIPLIER / scale_factor;
     if (delta > 0) {
         gcstate->work_to_do += delta;
