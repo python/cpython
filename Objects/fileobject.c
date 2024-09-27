@@ -80,13 +80,7 @@ PyFile_GetLine(PyObject *f, int n)
                             "EOF when reading a line");
         }
         else if (s[len-1] == '\n') {
-            if (Py_REFCNT(result) == 1)
-                _PyBytes_Resize(&result, len-1);
-            else {
-                PyObject *v;
-                v = PyBytes_FromStringAndSize(s, len-1);
-                Py_SETREF(result, v);
-            }
+            (void) _PyBytes_Resize(&result, len-1);
         }
     }
     if (n < 0 && result != NULL && PyUnicode_Check(result)) {
@@ -468,7 +462,7 @@ PyTypeObject PyStdPrinter_Type = {
     0,                                          /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     0,                                          /* tp_new */
-    PyObject_Del,                               /* tp_free */
+    PyObject_Free,                              /* tp_free */
 };
 
 

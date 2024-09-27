@@ -139,8 +139,9 @@ namespace.  Names are resolved in the top-level namespace by searching the
 global namespace, i.e. the namespace of the module containing the code block,
 and the builtins namespace, the namespace of the module :mod:`builtins`.  The
 global namespace is searched first.  If the names are not found there, the
-builtins namespace is searched.  The :keyword:`!global` statement must precede
-all uses of the listed names.
+builtins namespace is searched next. If the names are also not found in the
+builtins namespace, new variables are created in the global namespace.
+The global statement must precede all uses of the listed names.
 
 The :keyword:`global` statement has the same scope as a name binding operation
 in the same block.  If the nearest enclosing scope for a free variable contains
@@ -189,14 +190,15 @@ However, the following will succeed::
 Annotation scopes
 -----------------
 
-:ref:`Type parameter lists <type-params>` and :keyword:`type` statements
+:term:`Annotations <annotation>`, :ref:`type parameter lists <type-params>`
+and :keyword:`type` statements
 introduce *annotation scopes*, which behave mostly like function scopes,
-but with some exceptions discussed below. :term:`Annotations <annotation>`
-currently do not use annotation scopes, but they are expected to use
-annotation scopes in Python 3.13 when :pep:`649` is implemented.
+but with some exceptions discussed below.
 
 Annotation scopes are used in the following contexts:
 
+* :term:`Function annotations <function annotation>`.
+* :term:`Variable annotations <variable annotation>`.
 * Type parameter lists for :ref:`generic type aliases <generic-type-aliases>`.
 * Type parameter lists for :ref:`generic functions <generic-functions>`.
   A generic function's annotations are
@@ -204,7 +206,7 @@ Annotation scopes are used in the following contexts:
 * Type parameter lists for :ref:`generic classes <generic-classes>`.
   A generic class's base classes and
   keyword arguments are executed within the annotation scope, but its decorators are not.
-* The bounds and constraints for type variables
+* The bounds, constraints, and default values for type parameters
   (:ref:`lazily evaluated <lazy-evaluation>`).
 * The value of type aliases (:ref:`lazily evaluated <lazy-evaluation>`).
 
@@ -224,24 +226,34 @@ Annotation scopes differ from function scopes in the following ways:
   statements in inner scopes. This includes only type parameters, as no other
   syntactic elements that can appear within annotation scopes can introduce new names.
 * While annotation scopes have an internal name, that name is not reflected in the
-  :term:`__qualname__ <qualified name>` of objects defined within the scope.
-  Instead, the :attr:`!__qualname__`
+  :term:`qualified name` of objects defined within the scope.
+  Instead, the :attr:`~definition.__qualname__`
   of such objects is as if the object were defined in the enclosing scope.
 
 .. versionadded:: 3.12
    Annotation scopes were introduced in Python 3.12 as part of :pep:`695`.
+
+.. versionchanged:: 3.13
+   Annotation scopes are also used for type parameter defaults, as
+   introduced by :pep:`696`.
+
+.. versionchanged:: 3.14
+   Annotation scopes are now also used for annotations, as specified in
+   :pep:`649` and :pep:`749`.
 
 .. _lazy-evaluation:
 
 Lazy evaluation
 ---------------
 
-The values of type aliases created through the :keyword:`type` statement are
-*lazily evaluated*. The same applies to the bounds and constraints of type
+Most annotation scopes are *lazily evaluated*. This includes annotations,
+the values of type aliases created through the :keyword:`type` statement, and
+the bounds, constraints, and default values of type
 variables created through the :ref:`type parameter syntax <type-params>`.
 This means that they are not evaluated when the type alias or type variable is
-created. Instead, they are only evaluated when doing so is necessary to resolve
-an attribute access.
+created, or when the object carrying annotations is created. Instead, they
+are only evaluated when necessary, for example when the ``__value__``
+attribute on a type alias is accessed.
 
 Example:
 

@@ -1,5 +1,5 @@
-:mod:`copy` --- Shallow and deep copy operations
-================================================
+:mod:`!copy` --- Shallow and deep copy operations
+=================================================
 
 .. module:: copy
    :synopsis: Shallow and deep copy operations.

@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-
 """Python interface for the 'lsprof' profiler.
    Compatible with the 'profile' module.
 """

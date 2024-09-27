@@ -281,7 +281,7 @@ get_size_t(_structmodulestate *state, PyObject *v, size_t *p)
 #define RANGE_ERROR(state, f, flag) return _range_error(state, f, flag)
 
 
-/* Floating point helpers */
+/* Floating-point helpers */
 
 static PyObject *
 unpack_halffloat(const char *p,  /* start of 2-byte string */
@@ -1373,7 +1373,7 @@ whichtable(const char **pfmt)
     }
     default:
         --*pfmt; /* Back out of pointer increment */
-        /* Fall through */
+        _Py_FALLTHROUGH;
     case '@':
         return native_table;
     }
@@ -1475,7 +1475,7 @@ prepare_s(PyStructObject *self)
             return -1;
 
         switch (c) {
-            case 's': /* fall through */
+            case 's': _Py_FALLTHROUGH;
             case 'p': len++; ncodes++; break;
             case 'x': break;
             default: len += num; if (num) ncodes++; break;
@@ -1669,9 +1669,16 @@ s_unpack_internal(PyStructObject *soself, const char *startfrom,
             if (e->format == 's') {
                 v = PyBytes_FromStringAndSize(res, code->size);
             } else if (e->format == 'p') {
-                Py_ssize_t n = *(unsigned char*)res;
-                if (n >= code->size)
-                    n = code->size - 1;
+                Py_ssize_t n;
+                if (code->size == 0) {
+                    n = 0;
+                }
+                else {
+                    n = *(unsigned char*)res;
+                    if (n >= code->size) {
+                        n = code->size - 1;
+                    }
+                }
                 v = PyBytes_FromStringAndSize(res + 1, n);
             } else {
                 v = e->unpack(state, res, e);
@@ -1982,8 +1989,12 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
                     n = PyByteArray_GET_SIZE(v);
                     p = PyByteArray_AS_STRING(v);
                 }
-                if (n > (code->size - 1))
+                if (code->size == 0) {
+                    n = 0;
+                }
+                else if (n > (code->size - 1)) {
                     n = code->size - 1;
+                }
                 if (n > 0)
                     memcpy(res + 1, p, n);
                 if (n > 255)
@@ -2593,6 +2604,7 @@ _structmodule_exec(PyObject *m)
 static PyModuleDef_Slot _structmodule_slots[] = {
     {Py_mod_exec, _structmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

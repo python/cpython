@@ -1,5 +1,5 @@
-:mod:`tkinter.ttk` --- Tk themed widgets
-========================================
+:mod:`!tkinter.ttk` --- Tk themed widgets
+=========================================
 
 .. module:: tkinter.ttk
    :synopsis: Tk themed widget set
