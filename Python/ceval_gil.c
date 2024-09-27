@@ -1289,6 +1289,12 @@ _Py_HandlePending(PyThreadState *tstate)
         _Py_RunGC(tstate);
     }
 
+    if ((breaker & _PY_EVAL_JIT_INVALIDATE_COLD_BIT) != 0) {
+        _Py_unset_eval_breaker_bit(tstate, _PY_EVAL_JIT_INVALIDATE_COLD_BIT);
+        _Py_Executors_InvalidateCold(tstate->interp);
+        tstate->interp->trace_run_counter = JIT_CLEANUP_THRESHOLD;
+    }
+
     /* GIL drop request */
     if ((breaker & _PY_GIL_DROP_REQUEST_BIT) != 0) {
         /* Give another thread a chance */
