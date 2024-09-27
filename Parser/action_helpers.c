@@ -4,6 +4,7 @@
 #include "pycore_runtime.h" // _PyRuntime
 #include "string_parser.h"
 #include "tokenizer.h"
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 void *_PyPegen_dummy_name(Parser *p, ...) {
   return &_PyRuntime.parser.dummy_name;
@@ -148,7 +149,8 @@ expr_ty _PyPegen_join_names_with_dot(Parser *p, expr_ty first_name,
   if (!uni) {
     return NULL;
   }
-  PyUnicode_InternInPlace(&uni);
+  PyInterpreterState *interp = _PyInterpreterState_GET();
+  _PyUnicode_InternMortal(interp, &uni);
   if (_PyArena_AddPyObject(p->arena, uni) < 0) {
     Py_DECREF(uni);
     return NULL;
