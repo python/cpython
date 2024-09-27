@@ -1,0 +1,3 @@
+Fix a bug that can cause a crash when sub-interpreters use "basic"
+single-phase extension modules.  Shared objects could refer to PyGC_Head
+nodes that had been freed as part of interpreter cleanup.
