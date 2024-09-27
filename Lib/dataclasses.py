@@ -1222,11 +1222,6 @@ def _get_slots(cls):
 
 
 def _update_func_cell_for__class__(f, oldcls, newcls):
-    # Returns True if we update a cell, else False.
-    if f is None:
-        # f will be None in the case of a property where not all of
-        # fget, fset, and fdel are used.  Nothing to do in that case.
-        return False
     try:
         idx = f.__code__.co_freevars.index("__class__")
     except ValueError:
@@ -1235,11 +1230,34 @@ def _update_func_cell_for__class__(f, oldcls, newcls):
     # Fix the cell to point to the new class, if it's already pointing
     # at the old class.  I'm not convinced that the "is oldcls" test
     # is needed, but other than performance can't hurt.
-    closure = f.__closure__[idx]
-    if closure.cell_contents is oldcls:
-        closure.cell_contents = newcls
+    cell = f.__closure__[idx]
+    if cell.cell_contents is oldcls:
+        cell.cell_contents = newcls
         return True
     return False
+
+
+def _find_inner_functions(obj, _seen=None, _depth=0):
+    if _seen is None:
+        _seen = set()
+    if id(obj) in _seen:
+        return None
+    _seen.add(id(obj))
+
+    _depth += 1
+    if _depth > 2:
+        return None
+
+    obj = inspect.unwrap(obj)
+
+    for attr in dir(obj):
+        value = getattr(obj, attr, None)
+        if value is None:
+            continue
+        if isinstance(obj, types.FunctionType):
+            yield obj
+            return
+        yield from _find_inner_functions(value, _seen, _depth)
 
 
 def _create_slots(defined_fields, inherited_slots, field_names, weakref_slot):
@@ -1317,7 +1335,10 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
     # (the newly created one, which we're returning) and not the
     # original class.  We can break out of this loop as soon as we
     # make an update, since all closures for a class will share a
-    # given cell.
+    # given cell.  First we try to find a pure function/properties,
+    # and then fallback to inspecting custom descriptors.
+
+    custom_descriptors_to_check = []
     for member in newcls.__dict__.values():
         # If this is a wrapped function, unwrap it.
         member = inspect.unwrap(member)
@@ -1326,10 +1347,27 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
             if _update_func_cell_for__class__(member, cls, newcls):
                 break
         elif isinstance(member, property):
-            if (_update_func_cell_for__class__(member.fget, cls, newcls)
-                or _update_func_cell_for__class__(member.fset, cls, newcls)
-                or _update_func_cell_for__class__(member.fdel, cls, newcls)):
-                break
+            for f in member.fget, member.fset, member.fdel:
+                if f is None:
+                    continue
+                # unwrap once more in case function
+                # was wrapped before it became property
+                f = inspect.unwrap(f)
+                if _update_func_cell_for__class__(f, cls, newcls):
+                    break
+        elif hasattr(member, "__get__") and not inspect.ismemberdescriptor(
+            member
+        ):
+            # we don't want to inspect custom descriptors just yet
+            # there's still a chance we'll encounter a pure function
+            # or a property
+            custom_descriptors_to_check.append(member)
+    else:
+        # now let's ensure custom descriptors won't be left out
+        for descriptor in custom_descriptors_to_check:
+            for f in _find_inner_functions(descriptor):
+                if _update_func_cell_for__class__(f, cls, newcls):
+                    break
 
     return newcls
 

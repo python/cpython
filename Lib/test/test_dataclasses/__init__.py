@@ -5031,6 +5031,47 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
 
         A().foo()
 
+    def test_wrapped_property(self):
+        def mydecorator(f):
+            @wraps(f)
+            def wrapper(*args, **kwargs):
+                return f(*args, **kwargs)
+            return wrapper
+
+        class B:
+            @property
+            def foo(self):
+                return "bar"
+
+        @dataclass(slots=True)
+        class A(B):
+            @property
+            @mydecorator
+            def foo(self):
+                return super().foo
+
+        self.assertEqual(A().foo, "bar")
+
+    def test_custom_descriptor(self):
+        class CustomDescriptor:
+            def __init__(self, f):
+                self._f = f
+
+            def __get__(self, instance, owner):
+                return self._f(instance)
+
+        class B:
+            def foo(self):
+                return "bar"
+
+        @dataclass(slots=True)
+        class A(B):
+            @CustomDescriptor
+            def foo(cls):
+                return super().foo()
+
+        self.assertEqual(A().foo, "bar")
+
     def test_remembered_class(self):
         # Apply the dataclass decorator manually (not when the class
         # is created), so that we can keep a reference to the
