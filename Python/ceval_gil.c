@@ -49,13 +49,6 @@
      (Note: this mechanism is enabled with FORCE_SWITCHING above)
 */
 
-// GH-89279: Force inlining by using a macro.
-#if defined(_MSC_VER) && SIZEOF_INT == 4
-#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) (assert(sizeof((ATOMIC_VAL)->_value) == 4), *((volatile int*)&((ATOMIC_VAL)->_value)))
-#else
-#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) _Py_atomic_load_relaxed(ATOMIC_VAL)
-#endif
-
 // Atomically copy the bits indicated by mask between two values.
 static inline void
 copy_eval_breaker_bits(uintptr_t *from, uintptr_t *to, uintptr_t mask)
@@ -1294,6 +1287,12 @@ _Py_HandlePending(PyThreadState *tstate)
     if ((breaker & _PY_GC_SCHEDULED_BIT) != 0) {
         _Py_unset_eval_breaker_bit(tstate, _PY_GC_SCHEDULED_BIT);
         _Py_RunGC(tstate);
+    }
+
+    if ((breaker & _PY_EVAL_JIT_INVALIDATE_COLD_BIT) != 0) {
+        _Py_unset_eval_breaker_bit(tstate, _PY_EVAL_JIT_INVALIDATE_COLD_BIT);
+        _Py_Executors_InvalidateCold(tstate->interp);
+        tstate->interp->trace_run_counter = JIT_CLEANUP_THRESHOLD;
     }
 
     /* GIL drop request */
