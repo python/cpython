@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
         with open("jit_stencils.h", "w") as fp:
             for idx, target in enumerate(args.target):
-                fp.write(f"#{'if' if idx == 0 else 'elif'} defined(__{target.condition}__)\n")
+                fp.write(f"#{'if' if idx == 0 else 'elif'} {target.condition}\n")
                 fp.write(f'#   include "jit_stencils-{target.triple}.h"\n')
 
             fp.write("#else\n")
