@@ -934,7 +934,7 @@ the other individual attributes listed in this subsection.
    It is expected to match the value of
    :attr:`module.__spec__.name <importlib.machinery.ModuleSpec.name>`.
 
-.. attribute:: __spec__
+.. attribute:: module.__spec__
 
    A record of the module's import-system-related state.
 
@@ -1063,33 +1063,43 @@ the other individual attributes listed in this subsection.
       :attr:`!__cached__` will cease to be set or taken into consideration
       by the import system or standard library.
 
-Other attributes on module objects
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Other writable attributes on module objects
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As well as the import-related attributes listed above, module objects also have
 the following writable attributes:
 
-.. attribute:: module.__doc__
-   The module's documentation string, or ``None`` if unavailable.
-   See also: :attr:`__doc__ attributes <definition.__doc__>`.
+.. list-table::
+   :header-rows: 1
 
-.. attribute:: module.__annotations__
-   A dictionary containing :term:`variable annotations <variable annotation>`
-   collected during module body execution.  For best practices on working
-   with :attr:`!__annotations__`, see :mod:`annotationlib`.
+   * - Attribute
+     - Meaning
 
-   .. versionchanged:: 3.14
-      Annotations are now :ref:`lazily evaluated <lazy-evaluation>`.
-      See :pep:`649`.
+   * - .. attribute:: module.__doc__
+     - The module's documentation string, or ``None`` if unavailable.
+       See also: :attr:`__doc__ attributes <definition.__doc__>`.
 
-.. attribute:: module.__annotate__
-   The :term:`annotate function` for this module, or ``None`` if the module has
-   no annotations.
-   See also: :attr:`__annotate__ attributes <object.__annotate__>`.
+   * - .. attribute:: module.__annotations__
+     - A dictionary containing
+       :term:`variable annotations <variable annotation>` collected during
+       module body execution.  For best practices on working with
+       :attr:`!__annotations__`, see :mod:`annotationlib`.
 
-   .. versionadded:: 3.14
+       .. versionchanged:: 3.14
+          Annotations are now :ref:`lazily evaluated <lazy-evaluation>`.
+          See :pep:`649`.
 
-They also have the following special read-only attribute:
+   * - .. attribute:: module.__annotate__
+     - The :term:`annotate function` for this module, or ``None`` if the module
+       has no annotations. See also:
+       :attr:`__annotate__ attributes <object.__annotate__>`.
+
+       .. versionadded:: 3.14
+
+Module dictionaries
+^^^^^^^^^^^^^^^^^^^
+
+Module objects also have the following special read-only attribute:
 
 .. index:: single: __dict__ (module attribute)
 .. attribute:: module.__dict__
