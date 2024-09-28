@@ -216,13 +216,6 @@ ast
   (Contributed by Irit Katriel in :gh:`123958`.)
 
 
-codecs
-------
-
-* Added :func:`codecs.unregister_error` to un-register custom error handlers.
-  (Contributed by Bénédikt Tran in :gh:`124665`.)
-
-
 ctypes
 ------
 
@@ -678,10 +671,6 @@ New Features
   superclass identification, which attempts to resolve the `type checking issue
   <https://peps.python.org/pep-0630/#type-checking>`__ mentioned in :pep:`630`
   (:gh:`124153`).
-
-* Add :c:func:`PyCodec_UnregisterError` to the limited C API to un-register
-  custom error handlers.
-  (Contributed by Bénédikt Tran in :gh:`124665`.)
 
 
 Porting to Python 3.14
