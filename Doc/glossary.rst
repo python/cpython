@@ -260,19 +260,33 @@ Glossary
       advanced mathematical feature.  If you're not aware of a need for them,
       it's almost certain you can safely ignore them.
 
+   context
+      This term has different meanings depending on where and how it is used.
+      Some common meanings:
+
+      * The temporary state or environment established by a :term:`context
+        manager` via a :keyword:`with` statement.
+      * The collection of key­value bindings associated with a particular
+        :class:`contextvars.Context` object and accessed via
+        :class:`~contextvars.ContextVar` objects.  Also see :term:`context
+        variable`.
+      * A :class:`contextvars.Context` object.  Also see :term:`current
+        context`.
+
+   context management protocol
+      The :meth:`~object.__enter__` and :meth:`~object.__exit__` methods called
+      by the :keyword:`with` statement.  See :pep:`343`.
+
    context manager
-      An object which controls the environment seen in a :keyword:`with`
-      statement by defining :meth:`~object.__enter__` and :meth:`~object.__exit__` methods.
-      See :pep:`343`.
+      An object which implements the :term:`context management protocol` and
+      controls the environment seen in a :keyword:`with` statement.  See
+      :pep:`343`.
 
    context variable
-      A variable which can have different values depending on its context.
-      This is similar to Thread-Local Storage in which each execution
-      thread may have a different value for a variable. However, with context
-      variables, there may be several contexts in one execution thread and the
-      main usage for context variables is to keep track of variables in
+      A variable whose value depends on which context is the :term:`current
+      context`.  Values are accessed via :class:`contextvars.ContextVar`
+      objects.  Context variables are primarily used to isolate state between
       concurrent asynchronous tasks.
-      See :mod:`contextvars`.
 
    contiguous
       .. index:: C-contiguous, Fortran contiguous
@@ -305,6 +319,14 @@ Glossary
       distributed on `python.org <https://www.python.org>`_.  The term "CPython"
       is used when necessary to distinguish this implementation from others
       such as Jython or IronPython.
+
+   current context
+      The :term:`context` (:class:`contextvars.Context` object) that is
+      currently used by :class:`~contextvars.ContextVar` objects to access (get
+      or set) the values of :term:`context variables <context variable>`.  Each
+      thread has its own current context.  Frameworks for executing asynchronous
+      tasks (see :mod:`asyncio`) associate each task with a context which
+      becomes the current context whenever the task starts or resumes execution.
 
    decorator
       A function returning another function, usually applied as a function
