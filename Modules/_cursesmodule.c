@@ -4797,6 +4797,7 @@ curses_destructor(PyObject *op)
 static int
 _cursesmodule_exec(PyObject *module)
 {
+    _cursesmodule_state *st = get_cursesmodule_state(module);
     /* Initialize object type */
     if (PyType_Ready(&PyCursesWindow_Type) < 0) {
         return -1;
@@ -4837,12 +4838,11 @@ _cursesmodule_exec(PyObject *module)
     }
 
     /* For exception curses.error */
-    PyCursesError = PyErr_NewException("_curses.error", NULL, NULL);
-    if (PyCursesError == NULL) {
+    st->PyCursesError = PyErr_NewException("_curses.error", NULL, NULL);
+    if (st->PyCursesError == NULL) {
         return -1;
     }
-    rc = PyDict_SetItemString(module_dict, "error", PyCursesError);
-    Py_DECREF(PyCursesError);
+    rc = PyDict_SetItemString(module_dict, "error", st->PyCursesError);
     if (rc < 0) {
         return -1;
     }
