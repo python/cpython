@@ -1140,6 +1140,8 @@ class AbstractUnpickleTests:
         #   33: t        TUPLE      (MARK at 0)
         #   34: .    STOP
         for idx in [10**6, 10**9, 10**12]:
+            if idx > sys.maxsize:
+                continue
             self.assertEqual(self.loads(data(idx)), ([],)*2)
 
     def test_too_large_long_binput(self):
