@@ -375,7 +375,7 @@ class DeferredEvaluationTests(unittest.TestCase):
                 with self.assertRaises(NotImplementedError):
                     annotate(annotationlib.Format.FORWARDREF)
                 with self.assertRaises(NotImplementedError):
-                    annotate(annotationlib.Format.SOURCE)
+                    annotate(annotationlib.Format.STRING)
                 with self.assertRaises(TypeError):
                     annotate(None)
                 self.assertEqual(annotate(annotationlib.Format.VALUE), {"x": int})
