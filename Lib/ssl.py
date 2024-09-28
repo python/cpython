@@ -1339,7 +1339,6 @@ class SSLSocket(socket):
 
     def shutdown(self, how):
         self._checkClosed()
-        self._sslobj = None
         super().shutdown(how)
 
     @_sslcopydoc
