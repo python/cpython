@@ -259,8 +259,7 @@ PyCursesCheckERR(PyObject *module, int code, const char *fname)
 {
     if (code != ERR) {
         Py_RETURN_NONE;
-    }
-    else {
+    } else {
         _cursesmodule_state *st = get_cursesmodule_state(module);
         if (fname == NULL) {
             PyErr_SetString(st->PyCursesError, catchall_ERR);
