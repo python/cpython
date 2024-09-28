@@ -147,7 +147,7 @@ typedef struct {
 static void partial_setvectorcall(partialobject *pto);
 static struct PyModuleDef _functools_module;
 static PyObject *
-partial_call(partialobject *pto, PyObject *args, PyObject *kwargs);
+partial_call(PyObject *pto, PyObject *args, PyObject *kwargs);
 
 static inline _functools_state *
 get_functools_state_by_type(PyTypeObject *type)
@@ -476,8 +476,9 @@ partial_setvectorcall(partialobject *pto)
 
 // Not converted to argument clinic, because of `*args, **kwargs` arguments.
 static PyObject *
-partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
+partial_call(PyObject *self, PyObject *args, PyObject *kwargs)
 {
+    partialobject *pto = (partialobject *)self;
     assert(PyCallable_Check(pto->fn));
     assert(PyTuple_Check(pto->args));
     assert(PyDict_Check(pto->kw));
