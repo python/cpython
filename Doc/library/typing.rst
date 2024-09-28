@@ -1121,7 +1121,7 @@ These can be used as types in annotations. They all support subscription using
       Unions can now be written as ``X | Y``. See
       :ref:`union type expressions<types-union>`.
 
-   .. versionchanged:: 3.13
+   .. versionchanged:: 3.14
       :class:`types.UnionType` is now an alias for :class:`Union`, and both
       ``Union[int, str]`` and ``int | str`` create instances of the same class.
       To check whether an object is a ``Union`` at runtime, use

@@ -1649,11 +1649,11 @@ class _TupleType(_SpecialGenericAlias, _root=True):
 
 class _UnionGenericAliasMeta(type):
     def __instancecheck__(self, inst: type) -> bool:
-        warnings._deprecated("_UnionGenericAlias", remove=(3, 15))
+        warnings._deprecated("_UnionGenericAlias", remove=(3, 17))
         return isinstance(inst, Union)
 
     def __eq__(self, other):
-        warnings._deprecated("_UnionGenericAlias", remove=(3, 15))
+        warnings._deprecated("_UnionGenericAlias", remove=(3, 17))
         if other is _UnionGenericAlias or other is Union:
             return True
         return NotImplemented
@@ -1669,7 +1669,7 @@ class _UnionGenericAlias(metaclass=_UnionGenericAliasMeta):
 
     """
     def __new__(cls, self_cls, parameters, /, *, name=None):
-        warnings._deprecated("_UnionGenericAlias", remove=(3, 15))
+        warnings._deprecated("_UnionGenericAlias", remove=(3, 17))
         return Union[parameters]
 
 

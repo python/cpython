@@ -359,7 +359,7 @@ Standard names are defined for the following types:
 
    .. versionadded:: 3.10
 
-   .. versionchanged:: 3.13
+   .. versionchanged:: 3.14
 
       This is now an alias for :class:`typing.Union`.
 
