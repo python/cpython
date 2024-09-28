@@ -34,6 +34,7 @@ although there is currently no date scheduled for their removal.
     (Contributed by Serhiy Storchaka in :gh:`109218`.)
 
 * :mod:`argparse`:
+
   * Nesting argument groups and nesting mutually exclusive
     groups are deprecated.
   * The :class:`argparse.FileType` type converter is deprecated.
