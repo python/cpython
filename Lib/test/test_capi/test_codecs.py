@@ -1,13 +1,11 @@
 import codecs
 import contextlib
 import io
-import os
 import re
 import sys
 import unittest
 import unittest.mock as mock
 import _testcapi
-from getopt import error
 from test.support import import_helper
 
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
