@@ -194,6 +194,7 @@
     <ClCompile Include="..\Python\bootstrap_hash.c" />
     <ClCompile Include="..\Python\ceval.c" />
     <ClCompile Include="..\Python\codecs.c" />
+    <ClCompile Include="..\Python\codegen.c" />
     <ClCompile Include="..\Python\compile.c" />
     <ClCompile Include="..\Python\context.c" />
     <ClCompile Include="..\Python\critical_section.c" />
@@ -267,6 +268,7 @@
     <ClCompile Include="..\Python\thread.c" />
     <ClCompile Include="..\Python\traceback.c" />
     <ClCompile Include="..\Python\tracemalloc.c" />
+    <ClCompile Include="..\Python\typeid.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\PC\pyconfig.h.in" />

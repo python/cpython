@@ -426,6 +426,10 @@ get_or_create_weakref(PyTypeObject *type, PyObject *obj, PyObject *callback)
             return basic_ref;
         }
         PyWeakReference *newref = allocate_weakref(type, obj, callback);
+        if (newref == NULL) {
+            UNLOCK_WEAKREFS(obj);
+            return NULL;
+        }
         insert_weakref(newref, list);
         UNLOCK_WEAKREFS(obj);
         return newref;
@@ -433,6 +437,9 @@ get_or_create_weakref(PyTypeObject *type, PyObject *obj, PyObject *callback)
     else {
         // We may not be able to safely allocate inside the lock
         PyWeakReference *newref = allocate_weakref(type, obj, callback);
+        if (newref == NULL) {
+            return NULL;
+        }
         LOCK_WEAKREFS(obj);
         insert_weakref(newref, list);
         UNLOCK_WEAKREFS(obj);

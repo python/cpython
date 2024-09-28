@@ -245,13 +245,12 @@ handler is started. This search inspects the :keyword:`!except` clauses in turn
 until one is found that matches the exception.
 An expression-less :keyword:`!except` clause, if present, must be last;
 it matches any exception.
-For an :keyword:`!except` clause with an expression,
-that expression is evaluated, and the clause matches the exception
-if the resulting object is "compatible" with the exception.  An object is
-compatible with an exception if the object is the class or a
-:term:`non-virtual base class <abstract base class>` of the exception object,
-or a tuple containing an item that is the class or a non-virtual base class
-of the exception object.
+
+For an :keyword:`!except` clause with an expression, the
+expression must evaluate to an exception type or a tuple of exception types.
+The raised exception matches an :keyword:`!except` clause whose expression evaluates
+to the class or a :term:`non-virtual base class <abstract base class>` of the exception object,
+or to a tuple that contains such a class.
 
 If no :keyword:`!except` clause matches the exception,
 the search for an exception handler
@@ -378,8 +377,10 @@ exception group with an empty message string. ::
    ...
    ExceptionGroup('', (BlockingIOError()))
 
-An :keyword:`!except*` clause must have a matching type,
-and this type cannot be a subclass of :exc:`BaseExceptionGroup`.
+An :keyword:`!except*` clause must have a matching expression; it cannot be ``except*:``.
+Furthermore, this expression cannot contain exception group types, because that would
+have ambiguous semantics.
+
 It is not possible to mix :keyword:`except` and :keyword:`!except*`
 in the same :keyword:`try`.
 :keyword:`break`, :keyword:`continue` and :keyword:`return`
@@ -840,7 +841,7 @@ A literal pattern corresponds to most
                   : | "None"
                   : | "True"
                   : | "False"
-                  : | `signed_number`: NUMBER | "-" NUMBER
+   signed_number: ["-"] NUMBER
 
 The rule ``strings`` and the token ``NUMBER`` are defined in the
 :doc:`standard Python grammar <./grammar>`.  Triple-quoted strings are
@@ -1328,13 +1329,7 @@ following the parameter name.  Any parameter may have an annotation, even those 
 ``*identifier`` or ``**identifier``.  Functions may have "return" annotation of
 the form "``-> expression``" after the parameter list.  These annotations can be
 any valid Python expression.  The presence of annotations does not change the
-semantics of a function.  The annotation values are available as values of
-a dictionary keyed by the parameters' names in the :attr:`__annotations__`
-attribute of the function object.  If the ``annotations`` import from
-:mod:`__future__` is used, annotations are preserved as strings at runtime which
-enables postponed evaluation.  Otherwise, they are evaluated when the function
-definition is executed.  In this case annotations may be evaluated in
-a different order than they appear in the source code.
+semantics of a function. See :ref:`annotations` for more information on annotations.
 
 .. index:: pair: lambda; expression
 
@@ -1850,6 +1845,44 @@ this is equivalent to::
 Here, ``annotation-def`` (not a real keyword) indicates an
 :ref:`annotation scope <annotation-scopes>`. The capitalized names
 like ``TYPE_PARAMS_OF_ListOrSet`` are not actually bound at runtime.
+
+.. _annotations:
+
+Annotations
+===========
+
+.. versionchanged:: 3.14
+   Annotations are now lazily evaluated by default.
+
+Variables and function parameters may carry :term:`annotations <annotation>`,
+created by adding a colon after the name, followed by an expression::
+
+   x: annotation = 1
+   def f(param: annotation): ...
+
+Functions may also carry a return annotation following an arrow::
+
+   def f() -> annotation: ...
+
+Annotations are conventionally used for :term:`type hints <type hint>`, but this
+is not enforced by the language, and in general annotations may contain arbitrary
+expressions. The presence of annotations does not change the runtime semantics of
+the code, except if some mechanism is used that introspects and uses the annotations
+(such as :mod:`dataclasses` or :func:`functools.singledispatch`).
+
+By default, annotations are lazily evaluated in a :ref:`annotation scope <annotation-scopes>`.
+This means that they are not evaluated when the code containing the annotation is evaluated.
+Instead, the interpreter saves information that can be used to evaluate the annotation later
+if requested. The :mod:`annotationlib` module provides tools for evaluating annotations.
+
+If the :ref:`future statement <future>` ``from __future__ import annotations`` is present,
+all annotations are instead stored as strings::
+
+   >>> from __future__ import annotations
+   >>> def f(param: annotation): ...
+   >>> f.__annotations__
+   {'param': 'annotation'}
+
 
 .. rubric:: Footnotes
 

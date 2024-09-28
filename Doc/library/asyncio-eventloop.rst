@@ -126,7 +126,7 @@ Running and stopping the loop
 
    Run the event loop until :meth:`stop` is called.
 
-   If :meth:`stop` is called before :meth:`run_forever()` is called,
+   If :meth:`stop` is called before :meth:`run_forever` is called,
    the loop will poll the I/O selector once with a timeout of zero,
    run all callbacks scheduled in response to I/O events (and
    those that were already scheduled), and then exit.
@@ -165,7 +165,7 @@ Running and stopping the loop
 .. coroutinemethod:: loop.shutdown_asyncgens()
 
    Schedule all currently open :term:`asynchronous generator` objects to
-   close with an :meth:`~agen.aclose()` call.  After calling this method,
+   close with an :meth:`~agen.aclose` call.  After calling this method,
    the event loop will issue a warning if a new asynchronous generator
    is iterated. This should be used to reliably finalize all scheduled
    asynchronous generators.
@@ -1155,6 +1155,14 @@ DNS
 
    Asynchronous version of :meth:`socket.getnameinfo`.
 
+.. note::
+   Both *getaddrinfo* and *getnameinfo* internally utilize their synchronous
+   versions through the loop's default thread pool executor.
+   When this executor is saturated, these methods may experience delays,
+   which higher-level networking libraries may report as increased timeouts.
+   To mitigate this, consider using a custom executor for other user tasks,
+   or setting a default executor with a larger number of workers.
+
 .. versionchanged:: 3.7
    Both *getaddrinfo* and *getnameinfo* methods were always documented
    to return a coroutine, but prior to Python 3.7 they were, in fact,
@@ -1254,6 +1262,9 @@ Executing code in thread or process pools
 
    The *executor* argument should be an :class:`concurrent.futures.Executor`
    instance. The default executor is used if *executor* is ``None``.
+   The default executor can be set by :meth:`loop.set_default_executor`,
+   otherwise, a :class:`concurrent.futures.ThreadPoolExecutor` will be
+   lazy-initialized and used by :func:`run_in_executor` if needed.
 
    Example::
 
@@ -1391,7 +1402,7 @@ Allows customizing how exceptions are handled in the event loop.
 
        This method should not be overloaded in subclassed
        event loops.  For custom exception handling, use
-       the :meth:`set_exception_handler()` method.
+       the :meth:`set_exception_handler` method.
 
 Enabling debug mode
 ^^^^^^^^^^^^^^^^^^^
@@ -1474,7 +1485,7 @@ async/await code consider using the high-level
    * *stdin* can be any of these:
 
      * a file-like object
-     * an existing file descriptor (a positive integer), for example those created with :meth:`os.pipe()`
+     * an existing file descriptor (a positive integer), for example those created with :meth:`os.pipe`
      * the :const:`subprocess.PIPE` constant (default) which will create a new
        pipe and connect it,
      * the value ``None`` which will make the subprocess inherit the file

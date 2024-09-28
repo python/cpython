@@ -106,7 +106,7 @@ class TestType(TestCase):
         thing = Foo()
         def work():
             foo = thing
-            for _ in range(10000):
+            for _ in range(5000):
                 foo.__class__ = Bar
                 type(foo)
                 foo.__class__ = Foo

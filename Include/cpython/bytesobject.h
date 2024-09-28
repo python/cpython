@@ -31,3 +31,8 @@ static inline Py_ssize_t PyBytes_GET_SIZE(PyObject *op) {
     return Py_SIZE(self);
 }
 #define PyBytes_GET_SIZE(self) PyBytes_GET_SIZE(_PyObject_CAST(self))
+
+PyAPI_FUNC(PyObject*) PyBytes_Join(PyObject *sep, PyObject *iterable);
+
+// Alias kept for backward compatibility
+#define _PyBytes_Join PyBytes_Join
