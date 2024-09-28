@@ -1345,7 +1345,7 @@ _curses_window_derwin_impl(PyCursesWindowObject *self, int group_left_1,
         return NULL;
     }
 
-    return PyCursesWindow_New(win, NULL);
+    return (PyObject *)PyCursesWindow_New(win, NULL);
 }
 
 /*[clinic input]
@@ -2371,7 +2371,7 @@ _curses_window_subwin_impl(PyCursesWindowObject *self, int group_left_1,
         return NULL;
     }
 
-    return PyCursesWindow_New(win, self->encoding);
+    return (PyObject *)PyCursesWindow_New(win, self->encoding);
 }
 
 /*[clinic input]
@@ -3295,7 +3295,7 @@ _curses_initscr_impl(PyObject *module)
 
     if (curses_initscr_called) {
         wrefresh(stdscr);
-        return PyCursesWindow_New(stdscr, NULL);
+        return (PyObject *)PyCursesWindow_New(stdscr, NULL);
     }
 
     win = initscr();
@@ -3775,7 +3775,7 @@ _curses_newpad_impl(PyObject *module, int nlines, int ncols)
         return NULL;
     }
 
-    return PyCursesWindow_New(win, NULL);
+    return (PyObject *)PyCursesWindow_New(win, NULL);
 }
 
 /*[clinic input]
@@ -3815,7 +3815,7 @@ _curses_newwin_impl(PyObject *module, int nlines, int ncols,
         return NULL;
     }
 
-    return PyCursesWindow_New(win, NULL);
+    return (PyObject *)PyCursesWindow_New(win, NULL);
 }
 
 /*[clinic input]
