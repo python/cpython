@@ -1,3 +1,3 @@
-from _collections_abc import *
-from _collections_abc import __all__  # noqa: F401
-from _collections_abc import _CallableGenericAlias  # noqa: F401
+import _collections_abc
+import sys
+sys.modules[__name__] = _collections_abc
