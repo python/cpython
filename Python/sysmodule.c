@@ -3363,6 +3363,7 @@ make_impl_info(PyObject *version_info)
     if (value == NULL)
         goto error;
     res = PyDict_SetItemString(impl_info, "_architecture", value);
+    Py_DECREF(value);
     if (res < 0)
         goto error;
 #endif
