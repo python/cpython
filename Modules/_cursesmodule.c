@@ -264,8 +264,7 @@ PyCursesCheckERR(PyObject *module, int code, const char *fname)
         _cursesmodule_state *st = get_cursesmodule_state(module);
         if (fname == NULL) {
             PyErr_SetString(st->PyCursesError, catchall_ERR);
-        }
-        else {
+        } else {
             PyErr_Format(st->PyCursesError, "%s() returned ERR", fname);
         }
         return NULL;
@@ -776,9 +775,7 @@ PyCursesWindow_New(_cursesmodule_state *st, WINDOW *win, const char *encoding)
 
     PyTypeObject *type = st->PyCursesWindow_Type;
     wo = (PyCursesWindowObject *)type->tp_alloc(type, 0);
-    if (wo == NULL) {
-        return NULL;
-    }
+    if (wo == NULL) return NULL;
     wo->win = win;
     wo->encoding = _PyMem_Strdup(encoding);
     if (wo->encoding == NULL) {
