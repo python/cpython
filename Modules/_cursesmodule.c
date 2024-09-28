@@ -5133,5 +5133,23 @@ static struct PyModuleDef _cursesmodule = {
 PyMODINIT_FUNC
 PyInit__curses(void)
 {
-    return PyModuleDef_Init(&_cursesmodule);
+    // create the module
+    PyObject *mod = PyModule_Create(&_cursesmodule);
+    if (mod == NULL) {
+        goto error;
+    }
+#ifdef Py_GIL_DISABLED
+    if (PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED) < 0) {
+        goto error;
+    }
+#endif
+    // populate the module
+    if (_cursesmodule_exec(mod) < 0) {
+        goto error;
+    }
+    return mod;
+
+error:
+    Py_XDECREF(mod);
+    return NULL;
 }
