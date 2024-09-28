@@ -2,7 +2,7 @@ from _codecs import _unregister_error as _codecs_unregister_error
 import codecs
 import html.entities
 import itertools
-import os
+import random
 import sys
 import unicodedata
 import unittest
@@ -1250,7 +1250,7 @@ class CodecCallbackTest(unittest.TestCase):
 
         # We want a unique ID in case the test is executed multiple times
         # to be sure that we always try to un-register a new error policy.
-        unique_id = int.from_bytes(os.urandom(8))
+        unique_id = random.getrandbits(128)
         custom_name = f'test.test_unregister_error.custom.{unique_id}'
         self.assertRaises(LookupError, codecs.lookup_error, custom_name)
         codecs.register_error(custom_name, custom_handler)
@@ -1261,7 +1261,7 @@ class CodecCallbackTest(unittest.TestCase):
     def test_unregister_custom_unknown_error_policy(self):
         # We want a unique ID in case the test is executed multiple times
         # to be sure that we always try to un-register an unknown error policy.
-        unique_id = int.from_bytes(os.urandom(8))
+        unique_id = random.getrandbits(128)
         unknown_name = f'test.test_unregister_error.custom.unknown.{unique_id}'
         self.assertRaises(LookupError, codecs.lookup_error, unknown_name)
         self.assertFalse(_codecs_unregister_error(unknown_name))
