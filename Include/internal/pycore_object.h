@@ -16,11 +16,6 @@ extern "C" {
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_uniqueid.h"      // _PyType_IncrefSlow
 
-#ifdef MS_WINDOWS
-#  define WIN32_LEAN_AND_MEAN
-#  include <windows.h>            // SwitchToThread()
-#endif
-
 #define _Py_IMMORTAL_REFCNT_LOOSE ((_Py_IMMORTAL_REFCNT >> 1) + 1)
 
 // This value is added to `ob_ref_shared` for objects that use deferred
@@ -554,9 +549,6 @@ _Py_TryIncRefShared(PyObject *op)
             _Py_INCREF_STAT_INC();
             return 1;
         }
-        #ifdef MS_WINDOWS
-        SwitchToThread();
-        #endif
     }
 }
 

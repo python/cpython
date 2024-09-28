@@ -48,6 +48,7 @@ _PyStackRef _PyCell_GetStackRef(PyCellObject *cell)
 {
     PyObject *value;
 #ifdef Py_GIL_DISABLED
+    _Py_atomic_fence_acquire();
     value = _Py_atomic_load_ptr(&cell->ob_ref);
     if (value != NULL) {
         if (_Py_IsImmortal(value) || _PyObject_HasDeferredRefcount(value)) {
@@ -57,6 +58,7 @@ _PyStackRef _PyCell_GetStackRef(PyCellObject *cell)
             return _PyStackRef_FromPyObjectSteal(value);
         }
     }
+    _Py_atomic_fence_release();
 #endif
     value = PyCell_GetRef(cell);
     if (value == NULL) {
