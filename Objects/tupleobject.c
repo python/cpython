@@ -999,8 +999,9 @@ tupleiter_traverse(_PyTupleIterObject *it, visitproc visit, void *arg)
 }
 
 static PyObject *
-tupleiter_next(_PyTupleIterObject *it)
+tupleiter_next(PyObject *obj)
 {
+    _PyTupleIterObject *it = (_PyTupleIterObject *)obj;
     PyTupleObject *seq;
     PyObject *item;
 
@@ -1101,7 +1102,7 @@ PyTypeObject PyTupleIter_Type = {
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
-    (iternextfunc)tupleiter_next,               /* tp_iternext */
+    tupleiter_next,                             /* tp_iternext */
     tupleiter_methods,                          /* tp_methods */
     0,
 };
@@ -1146,7 +1147,6 @@ maybe_freelist_push(PyTupleObject *op)
 void
 _PyTuple_DebugMallocStats(FILE *out)
 {
-#ifdef WITH_FREELISTS
     for (int i = 0; i < PyTuple_MAXSAVESIZE; i++) {
         int len = i + 1;
         char buf[128];
@@ -1155,5 +1155,4 @@ _PyTuple_DebugMallocStats(FILE *out)
         _PyDebugAllocatorStats(out, buf, _Py_FREELIST_SIZE(tuples[i]),
                                _PyObject_VAR_SIZE(&PyTuple_Type, len));
     }
-#endif
 }

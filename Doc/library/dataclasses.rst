@@ -188,13 +188,6 @@ Module contents
      is raised.
 
     .. warning::
-        Calling no-arg :func:`super` in dataclasses using ``slots=True``
-        will result in the following exception being raised:
-        ``TypeError: super(type, obj): obj must be an instance or subtype of type``.
-        The two-arg :func:`super` is a valid workaround.
-        See :gh:`90562` for full details.
-
-    .. warning::
        Passing parameters to a base class :meth:`~object.__init_subclass__`
        when using ``slots=True`` will result in a :exc:`TypeError`.
        Either use ``__init_subclass__`` with no parameters
@@ -215,7 +208,8 @@ Module contents
 
    - *weakref_slot*: If true (the default is ``False``), add a slot
      named "__weakref__", which is required to make an instance
-     weakref-able.  It is an error to specify ``weakref_slot=True``
+     :func:`weakref-able <weakref.ref>`.
+     It is an error to specify ``weakref_slot=True``
      without also specifying ``slots=True``.
 
     .. versionadded:: 3.11
@@ -237,7 +231,7 @@ Module contents
    follows a field with a default value.  This is true whether this
    occurs in a single class, or as a result of class inheritance.
 
-.. function:: field(*, default=MISSING, default_factory=MISSING, init=True, repr=True, hash=None, compare=True, metadata=None, kw_only=MISSING)
+.. function:: field(*, default=MISSING, default_factory=MISSING, init=True, repr=True, hash=None, compare=True, metadata=None, kw_only=MISSING, doc=None)
 
    For common and simple use cases, no other functionality is
    required.  There are, however, some dataclass features that
@@ -305,6 +299,10 @@ Module contents
      parameters are computed.
 
     .. versionadded:: 3.10
+
+   - ``doc``: optional docstring for this field.
+
+    .. versionadded:: 3.13
 
    If the default value of a field is specified by a call to
    :func:`!field`, then the class attribute for this field will be

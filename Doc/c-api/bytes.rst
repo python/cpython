@@ -204,7 +204,7 @@ called with a non-bytes parameter.
    On success, return a new :class:`bytes` object.
    On error, set an exception and return ``NULL``.
 
-   .. versionadded: 3.14
+   .. versionadded:: 3.14
 
 
 .. c:function:: int _PyBytes_Resize(PyObject **bytes, Py_ssize_t newsize)
