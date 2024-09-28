@@ -1011,6 +1011,8 @@ class UnionTests(unittest.TestCase):
         union2 = int | bt2
         with self.assertRaises(ZeroDivisionError):
             union1 == union2
+        with self.assertRaises(ZeroDivisionError):
+            bt | bt2
 
         union_ga = (list[str] | int, collections.abc.Callable[..., str] | int,
                     d | int)
