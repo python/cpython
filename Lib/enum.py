@@ -207,7 +207,7 @@ class property(DynamicClassAttribute):
             # use previous enum.property
             return self.fget(instance)
         elif self._attr_type == 'attr':
-            # look up previous attibute
+            # look up previous attribute
             return getattr(self._cls_type, self.name)
         elif self._attr_type == 'desc':
             # use previous descriptor
@@ -365,7 +365,10 @@ class EnumDict(dict):
                     '_generate_next_value_', '_numeric_repr_', '_missing_', '_ignore_',
                     '_iter_member_', '_iter_member_by_value_', '_iter_member_by_def_',
                     '_add_alias_', '_add_value_alias_',
-                    ):
+                    # While not in use internally, those are common for pretty
+                    # printing and thus excluded from Enum's reservation of
+                    # _sunder_ names
+                    ) and not key.startswith('_repr_'):
                 raise ValueError(
                         '_sunder_ names, such as %r, are reserved for future Enum use'
                         % (key, )
@@ -439,7 +442,7 @@ class EnumDict(dict):
                         # accepts iterable as multiple arguments?
                         value = t(auto_valued)
                     except TypeError:
-                        # then pass them in singlely
+                        # then pass them in singly
                         value = t(*auto_valued)
             self._member_names[key] = None
             if non_auto_store:
@@ -2035,7 +2038,7 @@ def _test_simple_enum(checked_enum, simple_enum):
                 )
         for key in set(checked_keys + simple_keys):
             if key in ('__module__', '_member_map_', '_value2member_map_', '__doc__',
-                       '__static_attributes__'):
+                       '__static_attributes__', '__firstlineno__'):
                 # keys known to be different, or very long
                 continue
             elif key in member_names:

@@ -1,5 +1,5 @@
-:mod:`importlib.resources` -- Package resource reading, opening and access
---------------------------------------------------------------------------
+:mod:`!importlib.resources` -- Package resource reading, opening and access
+---------------------------------------------------------------------------
 
 .. module:: importlib.resources
     :synopsis: Package resource reading, opening, and access

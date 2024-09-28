@@ -3,7 +3,7 @@ Tests for the threading module.
 """
 
 import test.support
-from test.support import threading_helper, requires_subprocess
+from test.support import threading_helper, requires_subprocess, requires_gil_enabled
 from test.support import verbose, cpython_only, os_helper
 from test.support.import_helper import import_module
 from test.support.script_helper import assert_python_ok, assert_python_failure
@@ -49,7 +49,7 @@ def skip_unless_reliable_fork(test):
     if support.HAVE_ASAN_FORK_BUG:
         return unittest.skip("libasan has a pthread_create() dead lock related to thread+fork")(test)
     if support.check_sanitizer(thread=True):
-        return unittest.skip("TSAN doesn't support threads after fork")
+        return unittest.skip("TSAN doesn't support threads after fork")(test)
     return test
 
 
@@ -781,8 +781,7 @@ class ThreadTests(BaseTestCase):
                          "current is main True\n"
                          )
 
-    @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
-    @support.requires_fork()
+    @skip_unless_reliable_fork
     @unittest.skipUnless(hasattr(os, 'waitpid'), "test needs os.waitpid()")
     def test_main_thread_after_fork_from_foreign_thread(self, create_dummy=False):
         code = """if 1:
@@ -2025,6 +2024,7 @@ class InterruptMainTests(unittest.TestCase):
             # Restore original handler
             signal.signal(signum, handler)
 
+    @requires_gil_enabled("gh-118433: Flaky due to a longstanding bug")
     def test_interrupt_main_subthread(self):
         # Calling start_new_thread with a function that executes interrupt_main
         # should raise KeyboardInterrupt upon completion.

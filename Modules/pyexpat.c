@@ -754,13 +754,13 @@ pyexpat.xmlparser.Parse
 
 Parse XML data.
 
-`isfinal' should be true at end of input.
+'isfinal' should be true at end of input.
 [clinic start generated code]*/
 
 static PyObject *
 pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyTypeObject *cls,
                              PyObject *data, int isfinal)
-/*[clinic end generated code: output=8faffe07fe1f862a input=d0eb2a69fab3b9f1]*/
+/*[clinic end generated code: output=8faffe07fe1f862a input=053e0f047e55c05a]*/
 {
     const char *s;
     Py_ssize_t slen;
@@ -1651,7 +1651,7 @@ PyDoc_STRVAR(pyexpat_module_documentation,
 static int init_handler_descrs(pyexpat_state *state)
 {
     int i;
-    assert(!PyType_HasFeature(state->xml_parse_type, Py_TPFLAGS_VALID_VERSION_TAG));
+    assert(state->xml_parse_type->tp_version_tag == 0);
     for (i = 0; handler_info[i].name != NULL; i++) {
         struct HandlerInfo *hi = &handler_info[i];
         hi->getset.name = hi->name;
@@ -2117,6 +2117,7 @@ pyexpat_free(void *module)
 static PyModuleDef_Slot pyexpat_slots[] = {
     {Py_mod_exec, pyexpat_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

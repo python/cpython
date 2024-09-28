@@ -1,0 +1,3 @@
+:c:func:`PyDict_Next` no longer locks the dictionary in the free-threaded
+build.  The locking needs to be done by the caller around the entire iteration
+loop.

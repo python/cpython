@@ -1,5 +1,5 @@
-:mod:`queue` --- A synchronized queue class
-===========================================
+:mod:`!queue` --- A synchronized queue class
+============================================
 
 .. module:: queue
    :synopsis: A synchronized queue class.

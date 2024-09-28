@@ -1,0 +1,6 @@
+Add additional methods to :ref:`proxy objects <multiprocessing-proxy_objects>`
+in the :mod:`!multiprocessing` module:
+
+* :meth:`!clear` and :meth:`!copy` for proxies of :class:`list`
+* :meth:`~dict.fromkeys`, ``reversed(d)``, ``d | {}``, ``{} | d``,
+  ``d |= {'b': 2}`` for proxies of :class:`dict`

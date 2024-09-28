@@ -1,5 +1,5 @@
-:mod:`http` --- HTTP modules
-============================
+:mod:`!http` --- HTTP modules
+=============================
 
 .. module:: http
    :synopsis: HTTP status codes and messages

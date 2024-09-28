@@ -1,2 +1,0 @@
-Change the new multi-separator support in :meth:`asyncio.Stream.readuntil`
-to only accept tuples of separators rather than arbitrary iterables.

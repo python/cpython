@@ -9,13 +9,14 @@ Glossary
 .. glossary::
 
    ``>>>``
-      The default Python prompt of the interactive shell.  Often seen for code
-      examples which can be executed interactively in the interpreter.
+      The default Python prompt of the :term:`interactive` shell.  Often
+      seen for code examples which can be executed interactively in the
+      interpreter.
 
    ``...``
       Can refer to:
 
-      * The default Python prompt of the interactive shell when entering the
+      * The default Python prompt of the :term:`interactive` shell when entering the
         code for an indented code block, when within a pair of matching left and
         right delimiters (parentheses, square brackets, curly braces or triple
         quotes), or after specifying a decorator.
@@ -35,6 +36,12 @@ Glossary
       and loaders (in the :mod:`importlib.abc` module).  You can create your own
       ABCs with the :mod:`abc` module.
 
+   annotate function
+      A function that can be called to retrieve the :term:`annotations <annotation>`
+      of an object. This function is accessible as the :attr:`~object.__annotate__`
+      attribute of functions, classes, and modules. Annotate functions are a
+      subset of :term:`evaluate functions <evaluate function>`.
+
    annotation
       A label associated with a variable, a class
       attribute or a function parameter or return value,
@@ -42,12 +49,11 @@ Glossary
 
       Annotations of local variables cannot be accessed at runtime, but
       annotations of global variables, class attributes, and functions
-      are stored in the :attr:`__annotations__`
-      special attribute of modules, classes, and functions,
-      respectively.
+      can be retrieved by calling :func:`annotationlib.get_annotations`
+      on modules, classes, and functions, respectively.
 
-      See :term:`variable annotation`, :term:`function annotation`, :pep:`484`
-      and :pep:`526`, which describe this functionality.
+      See :term:`variable annotation`, :term:`function annotation`, :pep:`484`,
+      :pep:`526`, and :pep:`649`, which describe this functionality.
       Also see :ref:`annotations-howto`
       for best practices on working with annotations.
 
@@ -341,7 +347,7 @@ Glossary
    docstring
       A string literal which appears as the first expression in a class,
       function or module.  While ignored when the suite is executed, it is
-      recognized by the compiler and put into the :attr:`!__doc__` attribute
+      recognized by the compiler and put into the :attr:`~definition.__doc__` attribute
       of the enclosing class, function or module.  Since it is available via
       introspection, it is the canonical place for documentation of the
       object.
@@ -364,6 +370,11 @@ Glossary
       characterized by the presence of many :keyword:`try` and :keyword:`except`
       statements.  The technique contrasts with the :term:`LBYL` style
       common to many other languages such as C.
+
+   evaluate function
+      A function that can be called to evaluate a lazily evaluated attribute
+      of an object, such as the value of type aliases created with the :keyword:`type`
+      statement.
 
    expression
       A piece of syntax which can be evaluated to some value.  In other words,
@@ -424,11 +435,11 @@ Glossary
       An object that tries to find the :term:`loader` for a module that is
       being imported.
 
-      Since Python 3.3, there are two types of finder: :term:`meta path finders
+      There are two types of finder: :term:`meta path finders
       <meta path finder>` for use with :data:`sys.meta_path`, and :term:`path
       entry finders <path entry finder>` for use with :data:`sys.path_hooks`.
 
-      See :pep:`302`, :pep:`420` and :pep:`451` for much more detail.
+      See :ref:`importsystem` and :mod:`importlib` for much more detail.
 
    floor division
       Mathematical division that rounds down to nearest integer.  The floor
@@ -436,6 +447,12 @@ Glossary
       evaluates to ``2`` in contrast to the ``2.75`` returned by float true
       division.  Note that ``(-11) // 4`` is ``-3`` because that is ``-2.75``
       rounded *downward*. See :pep:`238`.
+
+   free threading
+      A threading model where multiple threads can run Python bytecode
+      simultaneously within the same interpreter.  This is in contrast to
+      the :term:`global interpreter lock` which allows only one thread to
+      execute Python bytecode at a time.  See :pep:`703`.
 
    function
       A series of statements which returns some value to a caller. It can also
@@ -583,14 +600,12 @@ Glossary
       which ships with the standard distribution of Python.
 
    immortal
-      If an object is immortal, its reference count is never modified, and
-      therefore it is never deallocated.
+      *Immortal objects* are a CPython implementation detail introduced
+      in :pep:`683`.
 
-      Built-in strings and singletons are immortal objects. For example,
-      :const:`True` and :const:`None` singletons are immmortal.
-
-      See `PEP 683 – Immortal Objects, Using a Fixed Refcount
-      <https://peps.python.org/pep-0683/>`_ for more information.
+      If an object is immortal, its :term:`reference count` is never modified,
+      and therefore it is never deallocated while the interpreter is running.
+      For example, :const:`True` and :const:`None` are immortal in CPython.
 
    immutable
       An object with a fixed value.  Immutable objects include numbers, strings and
@@ -620,7 +635,8 @@ Glossary
       execute them and see their results.  Just launch ``python`` with no
       arguments (possibly by selecting it from your computer's main
       menu). It is a very powerful way to test out new ideas or inspect
-      modules and packages (remember ``help(x)``).
+      modules and packages (remember ``help(x)``). For more on interactive
+      mode, see :ref:`tut-interac`.
 
    interpreted
       Python is an interpreted language, as opposed to a compiled one,
@@ -686,6 +702,9 @@ Glossary
 
          CPython does not consistently apply the requirement that an iterator
          define :meth:`~iterator.__iter__`.
+         And also please note that the free-threading CPython does not guarantee
+         the thread-safety of iterator operations.
+
 
    key function
       A key function or collation function is a callable that returns a value
@@ -887,6 +906,15 @@ Glossary
       (methods).  Also the ultimate base class of any :term:`new-style
       class`.
 
+   optimized scope
+      A scope where target local variable names are reliably known to the
+      compiler when the code is compiled, allowing optimization of read and
+      write access to these names. The local namespaces for functions,
+      generators, coroutines, comprehensions, and generator expressions are
+      optimized in this fashion. Note: most interpreter optimizations are
+      applied to all scopes, only those relying on a known set of local
+      and nonlocal variable names are restricted to optimized scopes.
+
    package
       A Python :term:`module` which can contain submodules or recursively,
       subpackages.  Technically, a package is a Python module with a
@@ -1084,6 +1112,10 @@ Glossary
 
       See also :term:`namespace package`.
 
+   REPL
+      An acronym for the "read–eval–print loop", another name for the
+      :term:`interactive` interpreter shell.
+
    __slots__
       A declaration inside a class that saves memory by pre-declaring space for
       instance attributes and eliminating instance dictionaries.  Though
@@ -1099,7 +1131,7 @@ Glossary
       :class:`tuple`, and :class:`bytes`. Note that :class:`dict` also
       supports :meth:`~object.__getitem__` and :meth:`!__len__`, but is considered a
       mapping rather than a sequence because the lookups use arbitrary
-      :term:`immutable` keys rather than integers.
+      :term:`hashable` keys rather than integers.
 
       The :class:`collections.abc.Sequence` abstract base class
       defines a much richer interface that goes beyond just
@@ -1209,7 +1241,7 @@ Glossary
    type
       The type of a Python object determines what kind of object it is; every
       object has a type.  An object's type is accessible as its
-      :attr:`~instance.__class__` attribute or can be retrieved with
+      :attr:`~object.__class__` attribute or can be retrieved with
       ``type(obj)``.
 
    type alias

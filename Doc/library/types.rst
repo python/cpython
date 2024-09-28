@@ -1,5 +1,5 @@
-:mod:`types` --- Dynamic type creation and names for built-in types
-===================================================================
+:mod:`!types` --- Dynamic type creation and names for built-in types
+====================================================================
 
 .. module:: types
    :synopsis: Names for built-in types.
@@ -91,8 +91,8 @@ Dynamic Type Creation
 
     For classes that have an ``__orig_bases__`` attribute, this
     function returns the value of ``cls.__orig_bases__``.
-    For classes without the ``__orig_bases__`` attribute, ``cls.__bases__`` is
-    returned.
+    For classes without the ``__orig_bases__`` attribute,
+    :attr:`cls.__bases__ <type.__bases__>` is returned.
 
     Examples::
 
@@ -396,7 +396,7 @@ Standard names are defined for the following types:
 
    In addition, when a class is defined with a :attr:`~object.__slots__` attribute, then for
    each slot, an instance of :class:`!MemberDescriptorType` will be added as an attribute
-   on the class. This allows the slot to appear in the class's :attr:`~object.__dict__`.
+   on the class. This allows the slot to appear in the class's :attr:`~type.__dict__`.
 
    .. impl-detail::
 

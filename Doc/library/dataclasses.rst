@@ -124,7 +124,7 @@ Module contents
    - *unsafe_hash*: If ``False`` (the default), a :meth:`~object.__hash__` method
      is generated according to how *eq* and *frozen* are set.
 
-     :meth:`!__hash__` is used by built-in :meth:`hash()`, and when objects are
+     :meth:`!__hash__` is used by built-in :meth:`hash`, and when objects are
      added to hashed collections such as dictionaries and sets.  Having a
      :meth:`!__hash__` implies that instances of the class are immutable.
      Mutability is a complicated property that depends on the programmer's
@@ -187,6 +187,13 @@ Module contents
      If :attr:`!__slots__` is already defined in the class, then :exc:`TypeError`
      is raised.
 
+    .. warning::
+       Passing parameters to a base class :meth:`~object.__init_subclass__`
+       when using ``slots=True`` will result in a :exc:`TypeError`.
+       Either use ``__init_subclass__`` with no parameters
+       or use default values as a workaround.
+       See :gh:`91126` for full details.
+
     .. versionadded:: 3.10
 
     .. versionchanged:: 3.11
@@ -201,7 +208,8 @@ Module contents
 
    - *weakref_slot*: If true (the default is ``False``), add a slot
      named "__weakref__", which is required to make an instance
-     weakref-able.  It is an error to specify ``weakref_slot=True``
+     :func:`weakref-able <weakref.ref>`.
+     It is an error to specify ``weakref_slot=True``
      without also specifying ``slots=True``.
 
     .. versionadded:: 3.11
@@ -223,7 +231,7 @@ Module contents
    follows a field with a default value.  This is true whether this
    occurs in a single class, or as a result of class inheritance.
 
-.. function:: field(*, default=MISSING, default_factory=MISSING, init=True, repr=True, hash=None, compare=True, metadata=None, kw_only=MISSING)
+.. function:: field(*, default=MISSING, default_factory=MISSING, init=True, repr=True, hash=None, compare=True, metadata=None, kw_only=MISSING, doc=None)
 
    For common and simple use cases, no other functionality is
    required.  There are, however, some dataclass features that
@@ -278,7 +286,7 @@ Module contents
      generated equality and comparison methods (:meth:`~object.__eq__`,
      :meth:`~object.__gt__`, et al.).
 
-   - *metadata*: This can be a mapping or None. None is treated as
+   - *metadata*: This can be a mapping or ``None``. ``None`` is treated as
      an empty dict.  This value is wrapped in
      :func:`~types.MappingProxyType` to make it read-only, and exposed
      on the :class:`Field` object. It is not used at all by Data
@@ -291,6 +299,10 @@ Module contents
      parameters are computed.
 
     .. versionadded:: 3.10
+
+   - ``doc``: optional docstring for this field.
+
+    .. versionadded:: 3.13
 
    If the default value of a field is specified by a call to
    :func:`!field`, then the class attribute for this field will be
@@ -458,8 +470,8 @@ Module contents
 
 .. function:: is_dataclass(obj)
 
-   Return ``True`` if its parameter is a dataclass or an instance of one,
-   otherwise return ``False``.
+   Return ``True`` if its parameter is a dataclass (including subclasses of a
+   dataclass) or an instance of one, otherwise return ``False``.
 
    If you need to know if a class is an instance of a dataclass (and
    not a dataclass itself), then add a further check for ``not
@@ -615,7 +627,9 @@ methods will raise a :exc:`FrozenInstanceError` when invoked.
 
 There is a tiny performance penalty when using ``frozen=True``:
 :meth:`~object.__init__` cannot use simple assignment to initialize fields, and
-must use :meth:`!__setattr__`.
+must use :meth:`!object.__setattr__`.
+
+.. Make sure to not remove "object" from "object.__setattr__" in the above markup!
 
 .. _dataclasses-inheritance:
 

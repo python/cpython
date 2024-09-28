@@ -19,7 +19,6 @@ devnull = 'nul'
 
 import os
 import sys
-import stat
 import genericpath
 from genericpath import *
 
@@ -168,19 +167,12 @@ def splitdrive(p):
 
 
 try:
-    from nt import _path_splitroot_ex
+    from nt import _path_splitroot_ex as splitroot
 except ImportError:
     def splitroot(p):
-        """Split a pathname into drive, root and tail. The drive is defined
-        exactly as in splitdrive(). On Windows, the root may be a single path
-        separator or an empty string. The tail contains anything after the root.
-        For example:
+        """Split a pathname into drive, root and tail.
 
-            splitroot('//server/share/') == ('//server/share', '/', '')
-            splitroot('C:/Users/Barney') == ('C:', '/', 'Users/Barney')
-            splitroot('C:///spam///ham') == ('C:', '/', '//spam///ham')
-            splitroot('Windows/notepad') == ('', '', 'Windows/notepad')
-        """
+        The tail contains anything after the root."""
         p = os.fspath(p)
         if isinstance(p, bytes):
             sep = b'\\'
@@ -220,23 +212,6 @@ except ImportError:
         else:
             # Relative path, e.g. Windows
             return empty, empty, p
-else:
-    def splitroot(p):
-        """Split a pathname into drive, root and tail. The drive is defined
-        exactly as in splitdrive(). On Windows, the root may be a single path
-        separator or an empty string. The tail contains anything after the root.
-        For example:
-
-            splitroot('//server/share/') == ('//server/share', '/', '')
-            splitroot('C:/Users/Barney') == ('C:', '/', 'Users/Barney')
-            splitroot('C:///spam///ham') == ('C:', '/', '//spam///ham')
-            splitroot('Windows/notepad') == ('', '', 'Windows/notepad')
-        """
-        p = os.fspath(p)
-        if isinstance(p, bytes):
-            drive, root, tail = _path_splitroot_ex(os.fsdecode(p))
-            return os.fsencode(drive), os.fsencode(root), os.fsencode(tail)
-        return _path_splitroot_ex(p)
 
 
 # Split a path in head (everything up to the last '/') and tail (the
@@ -286,21 +261,6 @@ def basename(p):
 def dirname(p):
     """Returns the directory component of a pathname"""
     return split(p)[0]
-
-
-# Is a path a junction?
-
-if hasattr(os.stat_result, 'st_reparse_tag'):
-    def isjunction(path):
-        """Test whether a path is a junction"""
-        try:
-            st = os.lstat(path)
-        except (OSError, ValueError, AttributeError):
-            return False
-        return st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT
-else:
-    # Use genericpath.isjunction as imported above
-    pass
 
 
 # Is a path a mount point?
@@ -553,7 +513,7 @@ def expandvars(path):
 # Previously, this function also truncated pathnames to 8+3 format,
 # but as this module is called "ntpath", that's obviously wrong!
 try:
-    from nt import _path_normpath
+    from nt import _path_normpath as normpath
 
 except ImportError:
     def normpath(path):
@@ -591,14 +551,6 @@ except ImportError:
         if not prefix and not comps:
             comps.append(curdir)
         return prefix + sep.join(comps)
-
-else:
-    def normpath(path):
-        """Normalize path, eliminating double slashes, etc."""
-        path = os.fspath(path)
-        if isinstance(path, bytes):
-            return os.fsencode(_path_normpath(os.fsdecode(path))) or b"."
-        return _path_normpath(path) or "."
 
 
 def _abspath_fallback(path):
@@ -805,6 +757,9 @@ supports_unicode_filenames = True
 def relpath(path, start=None):
     """Return a relative version of a path"""
     path = os.fspath(path)
+    if not path:
+        raise ValueError("no path specified")
+
     if isinstance(path, bytes):
         sep = b'\\'
         curdir = b'.'
@@ -816,22 +771,20 @@ def relpath(path, start=None):
 
     if start is None:
         start = curdir
+    else:
+        start = os.fspath(start)
 
-    if not path:
-        raise ValueError("no path specified")
-
-    start = os.fspath(start)
     try:
-        start_abs = abspath(normpath(start))
-        path_abs = abspath(normpath(path))
+        start_abs = abspath(start)
+        path_abs = abspath(path)
         start_drive, _, start_rest = splitroot(start_abs)
         path_drive, _, path_rest = splitroot(path_abs)
         if normcase(start_drive) != normcase(path_drive):
             raise ValueError("path is on mount %r, start on mount %r" % (
                 path_drive, start_drive))
 
-        start_list = [x for x in start_rest.split(sep) if x]
-        path_list = [x for x in path_rest.split(sep) if x]
+        start_list = start_rest.split(sep) if start_rest else []
+        path_list = path_rest.split(sep) if path_rest else []
         # Work out how much of the filepath is shared by start and path.
         i = 0
         for e1, e2 in zip(start_list, path_list):
@@ -842,7 +795,7 @@ def relpath(path, start=None):
         rel_list = [pardir] * (len(start_list)-i) + path_list[i:]
         if not rel_list:
             return curdir
-        return join(*rel_list)
+        return sep.join(rel_list)
     except (TypeError, ValueError, AttributeError, BytesWarning, DeprecationWarning):
         genericpath._check_arg_types('relpath', path, start)
         raise
@@ -910,13 +863,15 @@ def commonpath(paths):
 
 
 try:
-    # The isdir(), isfile(), islink() and exists() implementations in
-    # genericpath use os.stat(). This is overkill on Windows. Use simpler
+    # The isdir(), isfile(), islink(), exists() and lexists() implementations
+    # in genericpath use os.stat(). This is overkill on Windows. Use simpler
     # builtin functions if they are available.
     from nt import _path_isdir as isdir
     from nt import _path_isfile as isfile
     from nt import _path_islink as islink
+    from nt import _path_isjunction as isjunction
     from nt import _path_exists as exists
+    from nt import _path_lexists as lexists
 except ImportError:
     # Use genericpath.* as imported above
     pass

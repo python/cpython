@@ -26,7 +26,7 @@ from collections.abc import Sized, Container, Callable, Collection
 from collections.abc import Set, MutableSet
 from collections.abc import Mapping, MutableMapping, KeysView, ItemsView, ValuesView
 from collections.abc import Sequence, MutableSequence
-from collections.abc import ByteString, Buffer
+from collections.abc import Buffer
 
 
 class TestUserObjects(unittest.TestCase):
@@ -1934,28 +1934,6 @@ class TestCollectionABCs(ABCTestCase):
                     for stop in range(-3, len(nativeseq) + 3):
                         assert_index_same(
                             nativeseq, seqseq, (letter, start, stop))
-
-    def test_ByteString(self):
-        for sample in [bytes, bytearray]:
-            with self.assertWarns(DeprecationWarning):
-                self.assertIsInstance(sample(), ByteString)
-            self.assertTrue(issubclass(sample, ByteString))
-        for sample in [str, list, tuple]:
-            with self.assertWarns(DeprecationWarning):
-                self.assertNotIsInstance(sample(), ByteString)
-            self.assertFalse(issubclass(sample, ByteString))
-        with self.assertWarns(DeprecationWarning):
-            self.assertNotIsInstance(memoryview(b""), ByteString)
-        self.assertFalse(issubclass(memoryview, ByteString))
-        with self.assertWarns(DeprecationWarning):
-            self.validate_abstract_methods(ByteString, '__getitem__', '__len__')
-
-        with self.assertWarns(DeprecationWarning):
-            class X(ByteString): pass
-
-        with self.assertWarns(DeprecationWarning):
-            # No metaclass conflict
-            class Z(ByteString, Awaitable): pass
 
     def test_Buffer(self):
         for sample in [bytes, bytearray, memoryview]:

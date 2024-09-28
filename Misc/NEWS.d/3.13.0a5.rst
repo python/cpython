@@ -446,7 +446,7 @@ regardless of *lineterminator* value.
 .. section: Library
 
 Restore support of space delimiter with ``skipinitialspace=True`` in
-:mod:`csv`. :func:`csv.writer()` now quotes empty fields if delimiter is a
+:mod:`csv`. :func:`csv.writer` now quotes empty fields if delimiter is a
 space and skipinitialspace is true and raises exception if quoting is not
 possible.
 
@@ -541,7 +541,7 @@ descriptors in :meth:`inspect.Signature.from_callable`.
 .. nonce: sGMKr0
 .. section: Library
 
-Isolate :mod:`_lsprof` (apply :pep:`687`).
+Isolate :mod:`!_lsprof` (apply :pep:`687`).
 
 ..
 
@@ -606,10 +606,10 @@ is complete.
 .. nonce: SQ998l
 .. section: Library
 
-:func:`posixpath.commonpath()` now raises a :exc:`ValueError` exception when
+:func:`posixpath.commonpath` now raises a :exc:`ValueError` exception when
 passed an empty iterable. Previously, :exc:`IndexError` was raised.
 
-:func:`posixpath.commonpath()` now raises a :exc:`TypeError` exception when
+:func:`posixpath.commonpath` now raises a :exc:`TypeError` exception when
 passed ``None``. Previously, :exc:`ValueError` was raised.
 
 ..
@@ -773,8 +773,8 @@ combination with unicode encoding.
 .. section: Library
 
 Fix :func:`io.BufferedReader.tell`, :func:`io.BufferedReader.seek`,
-:func:`_pyio.BufferedReader.tell`, :func:`io.BufferedRandom.tell`,
-:func:`io.BufferedRandom.seek` and :func:`_pyio.BufferedRandom.tell` being
+:func:`!_pyio.BufferedReader.tell`, :func:`io.BufferedRandom.tell`,
+:func:`io.BufferedRandom.seek` and :func:`!_pyio.BufferedRandom.tell` being
 able to return negative offsets.
 
 ..
@@ -823,7 +823,7 @@ Add missing call to localization function in :mod:`argparse`.
 .. nonce: Me7fJe
 .. section: Library
 
-Fix :meth:`multiprocessing.connection.Listener.accept()` to accept empty
+Fix :meth:`multiprocessing.connection.Listener.accept` to accept empty
 bytes as authkey. Not accepting empty bytes as key causes it to hang
 indefinitely.
 
@@ -962,7 +962,7 @@ On Windows, commas passed in arguments to ``Tools\buildbot\test.bat`` and
 .. nonce: -dlzfI
 .. section: Tests
 
-Fix translation of exception hander targets by
+Fix translation of exception handler targets by
 ``_testinternalcapi.optimize_cfg``.
 
 ..

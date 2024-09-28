@@ -14,6 +14,7 @@ extern "C" {
 #include "pycore_atexit.h"        // struct atexit_state
 #include "pycore_ceval_state.h"   // struct _ceval_state
 #include "pycore_code.h"          // struct callable_cache
+#include "pycore_codecs.h"        // struct codecs_state
 #include "pycore_context.h"       // struct _Py_context_state
 #include "pycore_crossinterp.h"   // struct _xidregistry
 #include "pycore_dict_state.h"    // struct _Py_dict_state
@@ -22,17 +23,19 @@ extern "C" {
 #include "pycore_floatobject.h"   // struct _Py_float_state
 #include "pycore_function.h"      // FUNC_MAX_WATCHERS
 #include "pycore_gc.h"            // struct _gc_runtime_state
-#include "pycore_genobject.h"     // struct _Py_async_gen_state
+#include "pycore_genobject.h"     // _PyGen_FetchStopIterationValue
 #include "pycore_global_objects.h"// struct _Py_interp_cached_objects
 #include "pycore_import.h"        // struct _import_state
 #include "pycore_instruments.h"   // _PY_MONITORING_EVENTS
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_mimalloc.h"      // struct _mimalloc_interp_state
 #include "pycore_object_state.h"  // struct _py_object_state
+#include "pycore_optimizer.h"     // _PyOptimizerObject
 #include "pycore_obmalloc.h"      // struct _obmalloc_state
 #include "pycore_qsbr.h"          // struct _qsbr_state
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_tuple.h"         // struct _Py_tuple_state
+#include "pycore_typeid.h"        // struct _Py_type_id_pool
 #include "pycore_typeobject.h"    // struct types_state
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
@@ -182,10 +185,7 @@ struct _is {
      possible to facilitate out-of-process observability
      tools. */
 
-    PyObject *codec_search_path;
-    PyObject *codec_search_cache;
-    PyObject *codec_error_registry;
-    int codecs_initialized;
+    struct codecs_state codecs;
 
     PyConfig config;
     unsigned long feature_flags;
@@ -221,6 +221,7 @@ struct _is {
 #if defined(Py_GIL_DISABLED)
     struct _mimalloc_interp_state mimalloc;
     struct _brc_state brc;  // biased reference counting state
+    struct _Py_type_id_pool type_ids;
     PyMutex weakref_locks[NUM_WEAKREF_LIST_LOCKS];
 #endif
 
@@ -239,14 +240,17 @@ struct _is {
     PyObject *audit_hooks;
     PyType_WatchCallback type_watchers[TYPE_MAX_WATCHERS];
     PyCode_WatchCallback code_watchers[CODE_MAX_WATCHERS];
+    PyContext_WatchCallback context_watchers[CONTEXT_MAX_WATCHERS];
     // One bit is set for each non-NULL entry in code_watchers
     uint8_t active_code_watchers;
+    uint8_t active_context_watchers;
 
     struct _py_object_state object_state;
     struct _Py_unicode_state unicode;
     struct _Py_long_state long_state;
     struct _dtoa_state dtoa;
     struct _py_func_state func_state;
+    struct _py_code_state code_state;
 
     struct _Py_dict_state dict_state;
     struct _Py_exc_state exc_state;
@@ -257,7 +261,7 @@ struct _is {
     struct callable_cache callable_cache;
     _PyOptimizerObject *optimizer;
     _PyExecutorObject *executor_list_head;
-
+    size_t trace_run_counter;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;
 
@@ -402,7 +406,10 @@ PyAPI_FUNC(PyStatus) _PyInterpreterState_New(
 #define RARE_EVENT_INTERP_INC(interp, name) \
     do { \
         /* saturating add */ \
-        if (interp->rare_events.name < UINT8_MAX) interp->rare_events.name++; \
+        int val = FT_ATOMIC_LOAD_UINT8_RELAXED(interp->rare_events.name); \
+        if (val < UINT8_MAX) { \
+            FT_ATOMIC_STORE_UINT8(interp->rare_events.name, val + 1); \
+        } \
         RARE_EVENT_STAT_INC(name); \
     } while (0); \
 

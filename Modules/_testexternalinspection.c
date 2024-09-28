@@ -510,7 +510,7 @@ parse_frame_object(
         return 0;
     }
 
-    void* address_of_code_object;
+    uintptr_t address_of_code_object;
     bytes_read = read_memory(
             pid,
             (void*)(address + offsets->interpreter_frame.executable),
@@ -520,10 +520,11 @@ parse_frame_object(
         return -1;
     }
 
-    if (address_of_code_object == NULL) {
+    if (address_of_code_object == 0) {
         return 0;
     }
-    return parse_code_object(pid, result, offsets, address_of_code_object, previous_frame);
+    address_of_code_object &= ~Py_TAG_BITS;
+    return parse_code_object(pid, result, offsets, (void *)address_of_code_object, previous_frame);
 }
 
 static PyObject*
@@ -553,12 +554,12 @@ get_stack_trace(PyObject* self, PyObject* args)
     if (bytes_read == -1) {
         return NULL;
     }
-    off_t thread_state_list_head = local_debug_offsets.runtime_state.interpreters_head;
+    off_t interpreter_state_list_head = local_debug_offsets.runtime_state.interpreters_head;
 
     void* address_of_interpreter_state;
     bytes_read = read_memory(
             pid,
-            (void*)(runtime_start_address + thread_state_list_head),
+            (void*)(runtime_start_address + interpreter_state_list_head),
             sizeof(void*),
             &address_of_interpreter_state);
     if (bytes_read == -1) {
@@ -627,6 +628,12 @@ PyMODINIT_FUNC
 PyInit__testexternalinspection(void)
 {
     PyObject* mod = PyModule_Create(&module);
+    if (mod == NULL) {
+        return NULL;
+    }
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED);
+#endif
     int rc = PyModule_AddIntConstant(mod, "PROCESS_VM_READV_SUPPORTED", HAVE_PROCESS_VM_READV);
     if (rc < 0) {
         Py_DECREF(mod);

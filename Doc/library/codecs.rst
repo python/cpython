@@ -1,5 +1,5 @@
-:mod:`codecs` --- Codec registry and base classes
-=================================================
+:mod:`!codecs` --- Codec registry and base classes
+==================================================
 
 .. module:: codecs
    :synopsis: Encode and decode data and streams.

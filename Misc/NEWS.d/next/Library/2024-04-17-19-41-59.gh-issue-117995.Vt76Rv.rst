@@ -1,2 +1,0 @@
-Don't raise :exc:`DeprecationWarning` when a :term:`sequence` of parameters
-is used to bind indexed, nameless placeholders. See also :gh:`100668`.

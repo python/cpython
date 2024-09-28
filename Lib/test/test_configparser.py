@@ -2,7 +2,6 @@ import collections
 import configparser
 import io
 import os
-import pathlib
 import textwrap
 import unittest
 
@@ -745,12 +744,12 @@ boolean {0[0]} NO
         self.assertEqual(cf.get("Foo Bar", "foo"), "newbar")
         # check when we pass only a Path object:
         cf = self.newconfig()
-        parsed_files = cf.read(pathlib.Path(file1), encoding="utf-8")
+        parsed_files = cf.read(os_helper.FakePath(file1), encoding="utf-8")
         self.assertEqual(parsed_files, [file1])
         self.assertEqual(cf.get("Foo Bar", "foo"), "newbar")
         # check when we passed both a filename and a Path object:
         cf = self.newconfig()
-        parsed_files = cf.read([pathlib.Path(file1), file1], encoding="utf-8")
+        parsed_files = cf.read([os_helper.FakePath(file1), file1], encoding="utf-8")
         self.assertEqual(parsed_files, [file1, file1])
         self.assertEqual(cf.get("Foo Bar", "foo"), "newbar")
         # check when we pass only missing files:
@@ -2161,6 +2160,19 @@ class SectionlessTestCase(unittest.TestCase):
         self.assertEqual([configparser.UNNAMED_SECTION], cfg2.sections())
         self.assertEqual('1', cfg2[configparser.UNNAMED_SECTION]['a'])
         self.assertEqual('2', cfg2[configparser.UNNAMED_SECTION]['b'])
+
+    def test_add_section(self):
+        cfg = configparser.ConfigParser(allow_unnamed_section=True)
+        cfg.add_section(configparser.UNNAMED_SECTION)
+        cfg.set(configparser.UNNAMED_SECTION, 'a', '1')
+        self.assertEqual('1', cfg[configparser.UNNAMED_SECTION]['a'])
+
+    def test_disabled_error(self):
+        with self.assertRaises(configparser.MissingSectionHeaderError):
+            configparser.ConfigParser().read_string("a = 1")
+
+        with self.assertRaises(configparser.UnnamedSectionDisabledError):
+            configparser.ConfigParser().add_section(configparser.UNNAMED_SECTION)
 
 
 class MiscTestCase(unittest.TestCase):

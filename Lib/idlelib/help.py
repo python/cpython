@@ -33,6 +33,7 @@ from tkinter.ttk import Frame, Menubutton, Scrollbar, Style
 from tkinter import font as tkfont
 
 from idlelib.config import idleConf
+from idlelib.colorizer import color_config
 
 ## About IDLE ##
 
@@ -177,14 +178,16 @@ class HelpText(Text):
 
         normalfont = self.findfont(['TkDefaultFont', 'arial', 'helvetica'])
         fixedfont = self.findfont(['TkFixedFont', 'monaco', 'courier'])
+        color_config(self)
         self['font'] = (normalfont, 12)
         self.tag_configure('em', font=(normalfont, 12, 'italic'))
         self.tag_configure('h1', font=(normalfont, 20, 'bold'))
         self.tag_configure('h2', font=(normalfont, 18, 'bold'))
         self.tag_configure('h3', font=(normalfont, 15, 'bold'))
-        self.tag_configure('pre', font=(fixedfont, 12), background='#f6f6ff')
+        self.tag_configure('pre', font=(fixedfont, 12))
+        preback = self['selectbackground']
         self.tag_configure('preblock', font=(fixedfont, 10), lmargin1=25,
-                borderwidth=1, relief='solid', background='#eeffcc')
+                           background=preback)
         self.tag_configure('l1', lmargin1=25, lmargin2=25)
         self.tag_configure('l2', lmargin1=50, lmargin2=50)
         self.tag_configure('l3', lmargin1=75, lmargin2=75)

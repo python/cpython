@@ -968,24 +968,64 @@ exit:
 }
 
 PyDoc_STRVAR(sys_getunicodeinternedsize__doc__,
-"getunicodeinternedsize($module, /)\n"
+"getunicodeinternedsize($module, /, *, _only_immortal=False)\n"
 "--\n"
 "\n"
 "Return the number of elements of the unicode interned dictionary");
 
 #define SYS_GETUNICODEINTERNEDSIZE_METHODDEF    \
-    {"getunicodeinternedsize", (PyCFunction)sys_getunicodeinternedsize, METH_NOARGS, sys_getunicodeinternedsize__doc__},
+    {"getunicodeinternedsize", _PyCFunction_CAST(sys_getunicodeinternedsize), METH_FASTCALL|METH_KEYWORDS, sys_getunicodeinternedsize__doc__},
 
 static Py_ssize_t
-sys_getunicodeinternedsize_impl(PyObject *module);
+sys_getunicodeinternedsize_impl(PyObject *module, int _only_immortal);
 
 static PyObject *
-sys_getunicodeinternedsize(PyObject *module, PyObject *Py_UNUSED(ignored))
+sys_getunicodeinternedsize(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(_only_immortal), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"_only_immortal", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "getunicodeinternedsize",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    int _only_immortal = 0;
     Py_ssize_t _return_value;
 
-    _return_value = sys_getunicodeinternedsize_impl(module);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    _only_immortal = PyObject_IsTrue(args[0]);
+    if (_only_immortal < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    _return_value = sys_getunicodeinternedsize_impl(module, _only_immortal);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -1485,6 +1525,52 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys__baserepl__doc__,
+"_baserepl($module, /)\n"
+"--\n"
+"\n"
+"Private function for getting the base REPL");
+
+#define SYS__BASEREPL_METHODDEF    \
+    {"_baserepl", (PyCFunction)sys__baserepl, METH_NOARGS, sys__baserepl__doc__},
+
+static PyObject *
+sys__baserepl_impl(PyObject *module);
+
+static PyObject *
+sys__baserepl(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__baserepl_impl(module);
+}
+
+PyDoc_STRVAR(sys__is_gil_enabled__doc__,
+"_is_gil_enabled($module, /)\n"
+"--\n"
+"\n"
+"Return True if the GIL is currently enabled and False otherwise.");
+
+#define SYS__IS_GIL_ENABLED_METHODDEF    \
+    {"_is_gil_enabled", (PyCFunction)sys__is_gil_enabled, METH_NOARGS, sys__is_gil_enabled__doc__},
+
+static int
+sys__is_gil_enabled_impl(PyObject *module);
+
+static PyObject *
+sys__is_gil_enabled(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = sys__is_gil_enabled_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 #ifndef SYS_GETWINDOWSVERSION_METHODDEF
     #define SYS_GETWINDOWSVERSION_METHODDEF
 #endif /* !defined(SYS_GETWINDOWSVERSION_METHODDEF) */
@@ -1528,4 +1614,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=518424ee03e353b0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9cc9069aef1482bc input=a9049054013a1b77]*/

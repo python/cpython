@@ -24,6 +24,7 @@ int _PyCfgBuilder_CheckSize(struct _PyCfgBuilder* g);
 int _PyCfg_OptimizeCodeUnit(struct _PyCfgBuilder *g, PyObject *consts, PyObject *const_cache,
                             int nlocals, int nparams, int firstlineno);
 
+struct _PyCfgBuilder* _PyCfg_FromInstructionSequence(_PyInstructionSequence *seq);
 int _PyCfg_ToInstructionSequence(struct _PyCfgBuilder *g, _PyInstructionSequence *seq);
 int _PyCfg_OptimizedCfgToInstructionSequence(struct _PyCfgBuilder *g, _PyCompile_CodeUnitMetadata *umd,
                                              int code_flags, int *stackdepth, int *nlocalsplus,
@@ -33,6 +34,12 @@ PyCodeObject *
 _PyAssemble_MakeCodeObject(_PyCompile_CodeUnitMetadata *u, PyObject *const_cache,
                            PyObject *consts, int maxdepth, _PyInstructionSequence *instrs,
                            int nlocalsplus, int code_flags, PyObject *filename);
+
+// Export for '_testinternalcapi' shared extension
+PyAPI_FUNC(PyObject*) _PyCompile_OptimizeCfg(
+        PyObject *instructions,
+        PyObject *consts,
+        int nlocals);
 
 #ifdef __cplusplus
 }

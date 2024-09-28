@@ -1,5 +1,5 @@
-:mod:`sys.monitoring` --- Execution event monitoring
-====================================================
+:mod:`!sys.monitoring` --- Execution event monitoring
+=====================================================
 
 .. module:: sys.monitoring
    :synopsis: Access and control event monitoring
@@ -160,7 +160,7 @@ events, use the expression ``PY_RETURN | PY_START``.
 
 .. monitoring-event:: NO_EVENTS
 
-    An alias for ``0`` so users can do explict comparisions like::
+    An alias for ``0`` so users can do explicit comparisons like::
 
       if get_events(DEBUGGER_ID) == NO_EVENTS:
           ...
@@ -226,6 +226,10 @@ To allow tools to monitor for real exceptions without slowing down generators
 and coroutines, the :monitoring-event:`STOP_ITERATION` event is provided.
 :monitoring-event:`STOP_ITERATION` can be locally disabled, unlike :monitoring-event:`RAISE`.
 
+Note that the :monitoring-event:`STOP_ITERATION` event and the :monitoring-event:`RAISE`
+event for a :exc:`StopIteration` exception are equivalent, and are treated as interchangeable
+when generating events. Implementations will favor :monitoring-event:`STOP_ITERATION` for
+performance reasons, but may generate a :monitoring-event:`RAISE` event with a :exc:`StopIteration`.
 
 Turning events on and off
 -------------------------
@@ -255,7 +259,10 @@ No events are active by default.
 Per code object events
 ''''''''''''''''''''''
 
-Events can also be controlled on a per code object basis.
+Events can also be controlled on a per code object basis. The functions
+defined below which accept a :class:`types.CodeType` should be prepared
+to accept a look-alike object from functions which are not defined
+in Python (see :ref:`c-api-monitoring`).
 
 .. function:: get_local_events(tool_id: int, code: CodeType, /) -> int
 

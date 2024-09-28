@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """ This module tries to retrieve as much platform-identifying data as
     possible. It makes this information available via function APIs.
 
@@ -548,7 +546,7 @@ def java_ver(release='', vendor='', vminfo=('', '', ''), osinfo=('', '', '')):
     warnings._deprecated('java_ver', remove=(3, 15))
     # Import the needed APIs
     try:
-        import java.lang
+        import java.lang  # noqa: F401
     except ImportError:
         return release, vendor, vminfo, osinfo
 
@@ -1153,17 +1151,16 @@ def _sys_version(sys_version=None):
     if result is not None:
         return result
 
-    sys_version_parser = re.compile(
-        r'([\w.+]+)\s*'  # "version<space>"
-        r'\(#?([^,]+)'  # "(#buildno"
-        r'(?:,\s*([\w ]*)'  # ", builddate"
-        r'(?:,\s*([\w :]*))?)?\)\s*'  # ", buildtime)<space>"
-        r'\[([^\]]+)\]?', re.ASCII)  # "[compiler]"
-
     if sys.platform.startswith('java'):
         # Jython
+        jython_sys_version_parser = re.compile(
+            r'([\w.+]+)\s*'  # "version<space>"
+            r'\(#?([^,]+)'  # "(#buildno"
+            r'(?:,\s*([\w ]*)'  # ", builddate"
+            r'(?:,\s*([\w :]*))?)?\)\s*'  # ", buildtime)<space>"
+            r'\[([^\]]+)\]?', re.ASCII)  # "[compiler]"
         name = 'Jython'
-        match = sys_version_parser.match(sys_version)
+        match = jython_sys_version_parser.match(sys_version)
         if match is None:
             raise ValueError(
                 'failed to parse Jython sys.version: %s' %
@@ -1190,7 +1187,14 @@ def _sys_version(sys_version=None):
 
     else:
         # CPython
-        match = sys_version_parser.match(sys_version)
+        cpython_sys_version_parser = re.compile(
+            r'([\w.+]+)\s*'  # "version<space>"
+            r'(?:experimental free-threading build\s+)?' # "free-threading-build<space>"
+            r'\(#?([^,]+)'  # "(#buildno"
+            r'(?:,\s*([\w ]*)'  # ", builddate"
+            r'(?:,\s*([\w :]*))?)?\)\s*'  # ", buildtime)<space>"
+            r'\[([^\]]+)\]?', re.ASCII)  # "[compiler]"
+        match = cpython_sys_version_parser.match(sys_version)
         if match is None:
             raise ValueError(
                 'failed to parse CPython sys.version: %s' %

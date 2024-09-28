@@ -8,16 +8,19 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_freelist.h"             // _PyFreeListState
-#include "pycore_identifier.h"           // _Py_Identifier
 #include "pycore_object.h"               // PyManagedDictPointer
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_SSIZE_ACQUIRE
+#include "pycore_stackref.h"             // _PyStackRef
 
 // Unsafe flavor of PyDict_GetItemWithError(): no error checking
 extern PyObject* _PyDict_GetItemWithError(PyObject *dp, PyObject *key);
 
-extern int _PyDict_DelItemIf(PyObject *mp, PyObject *key,
-                             int (*predicate)(PyObject *value));
+// Delete an item from a dict if a predicate is true
+// Returns -1 on error, 1 if the item was deleted, 0 otherwise
+// Export for '_asyncio' shared extension
+PyAPI_FUNC(int) _PyDict_DelItemIf(PyObject *mp, PyObject *key,
+                                  int (*predicate)(PyObject *value, void *arg),
+                                  void *arg);
 
 // "KnownHash" variants
 // Export for '_asyncio' shared extension
@@ -81,7 +84,7 @@ typedef struct {
     PyObject *me_value; /* This field is only meaningful for combined tables */
 } PyDictUnicodeEntry;
 
-extern PyDictKeysObject *_PyDict_NewKeysForClass(void);
+extern PyDictKeysObject *_PyDict_NewKeysForClass(PyHeapTypeObject *);
 extern PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);
 
 /* Gets a version number unique to the current state of the keys of dict, if possible.
@@ -98,14 +101,24 @@ extern void _PyDictKeys_DecRef(PyDictKeysObject *keys);
  */
 extern Py_ssize_t _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
 extern Py_ssize_t _Py_dict_lookup_threadsafe(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
+extern Py_ssize_t _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t hash, _PyStackRef *value_addr);
 
 extern Py_ssize_t _PyDict_LookupIndex(PyDictObject *, PyObject *);
 extern Py_ssize_t _PyDictKeys_StringLookup(PyDictKeysObject* dictkeys, PyObject *key);
 PyAPI_FUNC(PyObject *)_PyDict_LoadGlobal(PyDictObject *, PyDictObject *, PyObject *);
+PyAPI_FUNC(void) _PyDict_LoadGlobalStackRef(PyDictObject *, PyDictObject *, PyObject *, _PyStackRef *);
 
 /* Consumes references to key and value */
 PyAPI_FUNC(int) _PyDict_SetItem_Take2(PyDictObject *op, PyObject *key, PyObject *value);
-extern int _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr, PyObject *name, PyObject *value);
+extern int _PyDict_SetItem_LockHeld(PyDictObject *dict, PyObject *name, PyObject *value);
+// Export for '_asyncio' shared extension
+PyAPI_FUNC(int) _PyDict_SetItem_KnownHash_LockHeld(PyDictObject *mp, PyObject *key,
+                                                   PyObject *value, Py_hash_t hash);
+// Export for '_asyncio' shared extension
+PyAPI_FUNC(int) _PyDict_GetItemRef_KnownHash_LockHeld(PyDictObject *op, PyObject *key, Py_hash_t hash, PyObject **result);
+extern int _PyDict_GetItemRef_KnownHash(PyDictObject *op, PyObject *key, Py_hash_t hash, PyObject **result);
+extern int _PyDict_GetItemRef_Unicode_LockHeld(PyDictObject *op, PyObject *key, PyObject **result);
+extern int _PyObjectDict_SetItem(PyTypeObject *tp, PyObject *obj, PyObject **dictptr, PyObject *name, PyObject *value);
 
 extern int _PyDict_Pop_KnownHash(
     PyDictObject *dict,
@@ -218,15 +231,32 @@ static inline PyDictUnicodeEntry* DK_UNICODE_ENTRIES(PyDictKeysObject *dk) {
 #define DICT_WATCHER_AND_MODIFICATION_MASK ((1 << (DICT_MAX_WATCHERS + DICT_WATCHED_MUTATION_BITS)) - 1)
 
 #ifdef Py_GIL_DISABLED
-#define DICT_NEXT_VERSION(INTERP) \
-    (_Py_atomic_add_uint64(&(INTERP)->dict_state.global_version, DICT_VERSION_INCREMENT) + DICT_VERSION_INCREMENT)
+
+#define THREAD_LOCAL_DICT_VERSION_COUNT 256
+#define THREAD_LOCAL_DICT_VERSION_BATCH THREAD_LOCAL_DICT_VERSION_COUNT * DICT_VERSION_INCREMENT
+
+static inline uint64_t
+dict_next_version(PyInterpreterState *interp)
+{
+    PyThreadState *tstate = PyThreadState_GET();
+    uint64_t cur_progress = (tstate->dict_global_version &
+                            (THREAD_LOCAL_DICT_VERSION_BATCH - 1));
+    if (cur_progress == 0) {
+        uint64_t next = _Py_atomic_add_uint64(&interp->dict_state.global_version,
+                                              THREAD_LOCAL_DICT_VERSION_BATCH);
+        tstate->dict_global_version = next;
+    }
+    return tstate->dict_global_version += DICT_VERSION_INCREMENT;
+}
+
+#define DICT_NEXT_VERSION(INTERP) dict_next_version(INTERP)
 
 #else
 #define DICT_NEXT_VERSION(INTERP) \
     ((INTERP)->dict_state.global_version += DICT_VERSION_INCREMENT)
 #endif
 
-void
+PyAPI_FUNC(void)
 _PyDict_SendEvent(int watcher_bits,
                   PyDict_WatchEvent event,
                   PyDictObject *mp,
@@ -302,6 +332,8 @@ _PyInlineValuesSize(PyTypeObject *tp)
 
 int
 _PyDict_DetachFromObject(PyDictObject *dict, PyObject *obj);
+
+PyDictObject *_PyObject_MaterializeManagedDict_LockHeld(PyObject *);
 
 #ifdef __cplusplus
 }

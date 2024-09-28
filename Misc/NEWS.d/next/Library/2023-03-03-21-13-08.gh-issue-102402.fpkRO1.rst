@@ -1,2 +1,0 @@
-Adjust ``logging.LogRecord`` to use ``time.time_ns()`` and fix minor bug
-related to floating point math.

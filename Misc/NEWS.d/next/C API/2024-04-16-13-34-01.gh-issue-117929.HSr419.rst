@@ -1,2 +1,0 @@
-Restore removed :c:func:`PyEval_InitThreads` function. Patch by Victor
-Stinner.
