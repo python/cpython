@@ -18,6 +18,64 @@ a suspended *future*.
 .. versionadded:: 3.14
 
 
+.. function:: print_call_stack(*, future=None, file=None)
+
+   Print the async call stack for the current task or the provided
+   :class:`Task` or :class:`Future`.
+
+   The function recieves an optional keyword-only *future* argument.
+   If not passed, the current running task will be used. If there's no
+   current task, the function returns ``None``.
+
+   If *file* is not specified the function will print to :data:`sys.stdout`.
+
+   **Example:**
+
+   The following Python code:
+
+   .. code-block:: python
+
+      import asyncio
+
+      async def test():
+         asyncio.print_call_stack()
+
+      async def main():
+         async with asyncio.TaskGroup() as g:
+            g.create_task(test())
+
+      asyncio.run(main())
+
+   will print::
+
+      * Task(name='Task-2', id=0x105038fe0)
+        + Call stack:
+        | * print_call_stack()
+        |   asyncio/stack.py:231
+        | * async test()
+        |   test.py:4
+        + Awaited by:
+           * Task(name='Task-1', id=0x1050a6060)
+              + Call stack:
+              | * async TaskGroup.__aexit__()
+              |   asyncio/taskgroups.py:107
+              | * async main()
+              |   test.py:7
+
+   For rendering the call stack to a string the following pattern
+   should be used:
+
+   .. code-block:: python
+
+      import io
+
+      ...
+
+      buf = io.StringIO()
+      asyncio.print_call_stack(file=buf)
+      output = buf.getvalue()
+
+
 .. function:: capture_call_stack(*, future=None)
 
    Capture the async call stack for the current task or the provided
@@ -48,17 +106,6 @@ a suspended *future*.
 
       Where ``coroutine`` is a coroutine object of an awaiting coroutine
       or asyncronous generator.
-
-.. function:: print_call_stack(*, future=None, file=None)
-
-   Print the async call stack for the current task or the provided
-   :class:`Task` or :class:`Future`.
-
-   The function recieves an optional keyword-only *future* argument.
-   If not passed, the current running task will be used. If there's no
-   current task, the function returns ``None``.
-
-   If *file* is not specified the function will print to :data:`sys.stdout`.
 
 
 Low level utility functions

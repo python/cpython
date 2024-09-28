@@ -164,13 +164,7 @@ def capture_call_stack(*, future: any = None) -> FutureCallStack | None:
 def print_call_stack(*, future: any = None, file=None) -> None:
     """Print async call stack for the current task or the provided Future."""
 
-    stack = capture_call_stack(future=future)
-    if stack is None:
-        return
-
-    buf = []
-
-    def render_level(st: FutureCallStack, level: int = 0):
+    def render_level(st: FutureCallStack, buf: list[str], level: int):
         def add_line(line: str):
             buf.append(level * '    ' + line)
 
@@ -226,9 +220,18 @@ def print_call_stack(*, future: any = None, file=None) -> None:
                 f'  + Awaited by:'
             )
             for fut in st.awaited_by:
-                render_level(fut, level + 1)
+                render_level(fut, buf, level + 1)
 
-    render_level(stack)
-    rendered = '\n'.join(buf)
+    stack = capture_call_stack(future=future)
+    if stack is None:
+        return
 
-    print(rendered, file=file)
+    try:
+        buf = []
+        render_level(stack, buf, 0)
+        rendered = '\n'.join(buf)
+        print(rendered, file=file)
+    finally:
+        # 'stack' has references to frames so we should
+        # make sure it's GC'ed as soon as we don't need it.
+        del stack
