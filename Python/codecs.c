@@ -24,9 +24,8 @@ Copyright (c) Corporation for National Research Initiatives.
 #define CODECS_NAMEREPLACE_ERROR_POLICY         5
 #define CODECS_SURROGATEPASS_ERROR_POLICY       6
 #define CODECS_SURROGATEESCAPE_ERROR_POLICY     7
-#define CODECS_ERROR_POLICY_COUNT               8
 
-static const char codecs_native_error_polcies[CODECS_ERROR_POLICY_COUNT][32] = {
+static const char *codecs_native_error_polcies[] = {
     [CODECS_STRICT_ERROR_POLICY] = "strict",
     [CODECS_IGNORE_ERROR_POLICY] = "ignore",
     [CODECS_REPLACE_ERROR_POLICY] = "replace",
@@ -641,7 +640,7 @@ int PyCodec_RegisterError(const char *name, PyObject *error)
 
 int _PyCodec_UnregisterError(const char *name)
 {
-    for (size_t i = 0; i < CODECS_ERROR_POLICY_COUNT; ++i) {
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(codecs_native_error_polcies); ++i) {
         if (strcmp(name, codecs_native_error_polcies[i]) == 0) {
             PyErr_Format(PyExc_ValueError,
                          "cannot un-register standard error policy '%s'", name);
