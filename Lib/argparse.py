@@ -40,7 +40,8 @@ The module contains the following public classes:
 
     - FileType -- A factory for defining types of files to be created. As the
         example above shows, instances of FileType are typically passed as
-        the type= argument of add_argument() calls. Deprecated since Python 3.14
+        the type= argument of add_argument() calls. Deprecated since
+        Python 3.14.
 
     - Action -- The base class for parser actions. Typically actions are
         selected by passing strings like 'store_true' or 'append_const' to
