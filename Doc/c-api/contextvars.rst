@@ -127,7 +127,7 @@ Context object management functions:
 
    .. versionadded:: 3.14
 
-.. c:type:: int (*PyContext_WatchCallback)(PyContextEvent event, PyContext* ctx)
+.. c:type:: void (*PyContext_WatchCallback)(PyContextEvent event, PyContext* ctx)
 
    Type of a context object watcher callback function.
    If *event* is ``Py_CONTEXT_EVENT_ENTER``, then the callback is invoked
@@ -138,9 +138,7 @@ Context object management functions:
    Any pending exception is cleared before the callback is called and restored
    after the callback returns.
 
-   If the callback returns with an exception set, it must return ``-1``; this
-   exception will be printed as an unraisable exception using
-   :c:func:`PyErr_FormatUnraisable`. Otherwise it should return ``0``.
+   If the callback raises an exception it will be ignored.
 
    .. versionadded:: 3.14
 
