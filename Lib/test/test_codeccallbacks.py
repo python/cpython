@@ -1210,7 +1210,6 @@ class CodecCallbackTest(unittest.TestCase):
             '\ufffd\x00\x00'
         )
 
-
     def test_fake_error_class(self):
         handlers = [
             codecs.strict_errors,
@@ -1241,7 +1240,7 @@ class CodecCallbackTest(unittest.TestCase):
             'xmlcharrefreplace', 'surrogateescape', 'surrogatepass',
         ]:
             with self.subTest(f'reject native {policy!r} un-registration'):
-                self.assertRaises(ValueError, codecs.unregister_error, policy)
+                self.assertRaises(ValueError, codecs._unregister_error, policy)
 
     def test_unregister_custom_error_policy(self):
         def custom_handler(exc):
@@ -1251,13 +1250,13 @@ class CodecCallbackTest(unittest.TestCase):
         self.assertRaises(LookupError, codecs.lookup_error, custom_name)
         codecs.register_error(custom_name, custom_handler)
         self.assertIs(codecs.lookup_error(custom_name), custom_handler)
-        self.assertTrue(codecs.unregister_error(custom_name))
+        self.assertTrue(codecs._unregister_error(custom_name))
         self.assertRaises(LookupError, codecs.lookup_error, custom_name)
 
     def test_unregister_custom_unknown_error_policy(self):
         unknown_name = f'test.test_unregister_error.custom.{id(self)}.unknown'
         self.assertRaises(LookupError, codecs.lookup_error, unknown_name)
-        self.assertFalse(codecs.unregister_error(unknown_name))
+        self.assertFalse(codecs._unregister_error(unknown_name))
         self.assertRaises(LookupError, codecs.lookup_error, unknown_name)
 
 
