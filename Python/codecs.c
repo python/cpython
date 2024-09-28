@@ -1510,7 +1510,8 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
             return PyStatus_NoMemory();
         }
 
-        int res = PyDict_SetItemString(interp->codecs.error_registry, error_handlers[i].name, func);
+        int res = PyDict_SetItemString(interp->codecs.error_registry,
+                                       error_handlers[i].name, func);
         Py_DECREF(func);
         if (res < 0) {
             return PyStatus_Error("Failed to insert into codec error registry");
