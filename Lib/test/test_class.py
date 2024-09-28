@@ -1,6 +1,7 @@
 "Test the functionality of Python classes implementing operators."
 
 import unittest
+import test.support
 
 testmeths = [
 
@@ -928,10 +929,24 @@ class TestInlineValues(unittest.TestCase):
         C.a
         C.a
 
-        # destructor shouldn't be able to see inconsisent state
+        # destructor shouldn't be able to see inconsistent state
         C.a = X()
         C.a = X()
 
+    def test_detach_materialized_dict_no_memory(self):
+        import _testcapi
+        class A:
+            def __init__(self):
+                self.a = 1
+                self.b = 2
+        a = A()
+        d = a.__dict__
+        with test.support.catch_unraisable_exception() as ex:
+            _testcapi.set_nomemory(0, 1)
+            del a
+            self.assertEqual(ex.unraisable.exc_type, MemoryError)
+        with self.assertRaises(KeyError):
+            d["a"]
 
 if __name__ == '__main__':
     unittest.main()

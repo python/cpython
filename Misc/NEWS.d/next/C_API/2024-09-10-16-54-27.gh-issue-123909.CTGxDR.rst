@@ -1,0 +1,3 @@
+:c:func:`PyType_FromSpec`, :c:func:`PyType_FromSpecWithBases` and
+:c:func:`PyType_FromModuleAndSpec` will now fail if the metaclass of the new
+type has custom :c:member:`~PyTypeObject.tp_new`.
