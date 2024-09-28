@@ -16,24 +16,10 @@ Copyright (c) Corporation for National Research Initiatives.
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
-#define CODECS_STRICT_ERROR_POLICY              0
-#define CODECS_IGNORE_ERROR_POLICY              1
-#define CODECS_REPLACE_ERROR_POLICY             2
-#define CODECS_XMLCHARREFREPLACE_ERROR_POLICY   3
-#define CODECS_BACKSLASHREPLACE_ERROR_POLICY    4
-#define CODECS_NAMEREPLACE_ERROR_POLICY         5
-#define CODECS_SURROGATEPASS_ERROR_POLICY       6
-#define CODECS_SURROGATEESCAPE_ERROR_POLICY     7
-
 static const char *codecs_native_error_polcies[] = {
-    [CODECS_STRICT_ERROR_POLICY] = "strict",
-    [CODECS_IGNORE_ERROR_POLICY] = "ignore",
-    [CODECS_REPLACE_ERROR_POLICY] = "replace",
-    [CODECS_XMLCHARREFREPLACE_ERROR_POLICY] = "xmlcharrefreplace",
-    [CODECS_BACKSLASHREPLACE_ERROR_POLICY] = "backslashreplace",
-    [CODECS_NAMEREPLACE_ERROR_POLICY] = "namereplace",
-    [CODECS_SURROGATEPASS_ERROR_POLICY] = "surrogatepass",
-    [CODECS_SURROGATEESCAPE_ERROR_POLICY] = "surrogateescape",
+    "strict", "ignore", "replace",
+    "xmlcharrefreplace", "backslashreplace", "namereplace",
+    "surrogatepass", "surrogateescape",
 };
 
 const char *Py_hexdigits = "0123456789abcdef";
@@ -1420,12 +1406,12 @@ PyStatus
 _PyCodec_InitRegistry(PyInterpreterState *interp)
 {
     static struct {
-        int policy;
+        const char *name;
         PyMethodDef def;
     } error_handlers[] =
     {
         {
-            CODECS_STRICT_ERROR_POLICY,
+            "strict",
             {
                 "strict_errors",
                 strict_errors,
@@ -1435,7 +1421,7 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
             }
         },
         {
-            CODECS_IGNORE_ERROR_POLICY,
+            "ignore",
             {
                 "ignore_errors",
                 ignore_errors,
@@ -1445,7 +1431,7 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
             }
         },
         {
-            CODECS_REPLACE_ERROR_POLICY,
+            "replace",
             {
                 "replace_errors",
                 replace_errors,
@@ -1455,7 +1441,7 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
             }
         },
         {
-            CODECS_XMLCHARREFREPLACE_ERROR_POLICY,
+            "xmlcharrefreplace",
             {
                 "xmlcharrefreplace_errors",
                 xmlcharrefreplace_errors,
@@ -1466,7 +1452,7 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
             }
         },
         {
-            CODECS_BACKSLASHREPLACE_ERROR_POLICY,
+            "backslashreplace",
             {
                 "backslashreplace_errors",
                 backslashreplace_errors,
@@ -1477,7 +1463,7 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
             }
         },
         {
-            CODECS_NAMEREPLACE_ERROR_POLICY,
+            "namereplace",
             {
                 "namereplace_errors",
                 namereplace_errors,
@@ -1488,7 +1474,7 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
             }
         },
         {
-            CODECS_SURROGATEPASS_ERROR_POLICY,
+            "surrogatepass",
             {
                 "surrogatepass",
                 surrogatepass_errors,
@@ -1496,7 +1482,7 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
             }
         },
         {
-            CODECS_SURROGATEESCAPE_ERROR_POLICY,
+            "surrogateescape",
             {
                 "surrogateescape",
                 surrogateescape_errors,
@@ -1524,8 +1510,7 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
             return PyStatus_NoMemory();
         }
 
-        const char *name = codecs_native_error_polcies[error_handlers[i].policy];
-        int res = PyDict_SetItemString(interp->codecs.error_registry, name, func);
+        int res = PyDict_SetItemString(interp->codecs.error_registry, error_handlers[i].name, func);
         Py_DECREF(func);
         if (res < 0) {
             return PyStatus_Error("Failed to insert into codec error registry");
