@@ -48,17 +48,15 @@ _PyStackRef _PyCell_GetStackRef(PyCellObject *cell)
 {
     PyObject *value;
 #ifdef Py_GIL_DISABLED
-    _Py_atomic_fence_acquire();
     value = _Py_atomic_load_ptr(&cell->ob_ref);
     if (value != NULL) {
-        if (_Py_IsImmortal(value) || _PyObject_HasDeferredRefcount(value)) {
-            return (_PyStackRef){ .bits = (uintptr_t)value | Py_TAG_DEFERRED };
-        }
+        // if (_Py_IsImmortal(value) || _PyObject_HasDeferredRefcount(value)) {
+        //     return (_PyStackRef){ .bits = (uintptr_t)value | Py_TAG_DEFERRED };
+        // }
         if (_Py_TryIncrefCompare(&cell->ob_ref, value)) {
             return _PyStackRef_FromPyObjectSteal(value);
         }
     }
-    _Py_atomic_fence_release();
 #endif
     value = PyCell_GetRef(cell);
     if (value == NULL) {
