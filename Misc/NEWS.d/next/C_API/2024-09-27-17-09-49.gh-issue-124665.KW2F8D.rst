@@ -1,2 +1,0 @@
-Add :c:func:`PyCodec_UnregisterError` to the limited C API to un-register
-custom error handlers. Patch by Bénédikt Tran.

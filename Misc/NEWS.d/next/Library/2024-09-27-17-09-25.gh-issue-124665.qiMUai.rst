@@ -1,2 +1,0 @@
-Added :func:`codecs.unregister_error` to un-register custom error handlers.
-Patch by Bénédikt Tran.
