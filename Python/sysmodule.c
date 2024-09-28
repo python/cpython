@@ -3362,7 +3362,7 @@ make_impl_info(PyObject *version_info)
     value = PyUnicode_FromString(VPLATFORM);
     if (value == NULL)
         goto error;
-    res = PyDict_SetItemString(impl_info, "_architecture", value);
+    res = PyDict_SetItemString(impl_info, "arch", value);
     Py_DECREF(value);
     if (res < 0)
         goto error;
