@@ -1,4 +1,5 @@
 import annotationlib
+import inspect
 import textwrap
 import types
 import unittest
@@ -379,6 +380,11 @@ class DeferredEvaluationTests(unittest.TestCase):
                 with self.assertRaises(NotImplementedError):
                     annotate(None)
                 self.assertEqual(annotate(annotationlib.Format.VALUE), {"x": int})
+
+                sig = inspect.signature(annotate)
+                self.assertEqual(sig, inspect.Signature([
+                    inspect.Parameter("format", inspect.Parameter.POSITIONAL_ONLY)
+                ]))
 
     def test_comprehension_in_annotation(self):
         # This crashed in an earlier version of the code
