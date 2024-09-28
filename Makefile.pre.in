@@ -2496,6 +2496,8 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_importlib/namespace_pkgs/project3/parent/child \
 		test/test_importlib/partial \
 		test/test_importlib/resources \
+		test/test_importlib/resources/data01 \
+		test/test_importlib/resources/data02 \
 		test/test_importlib/source \
 		test/test_inspect \
 		test/test_interpreters \
