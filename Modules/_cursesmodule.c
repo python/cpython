@@ -2905,7 +2905,7 @@ _curses_curs_set_impl(PyObject *module, int visibility)
     PyCursesStatefulInitialised(module);
 
     erg = curs_set(visibility);
-    if (erg == ERR) return PyCursesCheckERR(erg, "curs_set");
+    if (erg == ERR) return PyCursesCheckERR(module, erg, "curs_set");
 
     return PyLong_FromLong((long) erg);
 }
@@ -2956,7 +2956,7 @@ _curses_delay_output_impl(PyObject *module, int ms)
 {
     PyCursesStatefulInitialised(module);
 
-    return PyCursesCheckERR(delay_output(ms), "delay_output");
+    return PyCursesCheckERR(module, delay_output(ms), "delay_output");
 }
 
 /*[clinic input]
@@ -3127,7 +3127,7 @@ _curses_ungetmouse_impl(PyObject *module, short id, int x, int y, int z,
     event.y = y;
     event.z = z;
     event.bstate = bstate;
-    return PyCursesCheckERR(ungetmouse(&event), "ungetmouse");
+    return PyCursesCheckERR(module, ungetmouse(&event), "ungetmouse");
 }
 #endif
 
@@ -3211,7 +3211,7 @@ _curses_halfdelay_impl(PyObject *module, unsigned char tenths)
 {
     PyCursesStatefulInitialised(module);
 
-    return PyCursesCheckERR(halfdelay(tenths), "halfdelay");
+    return PyCursesCheckERR(module, halfdelay(tenths), "halfdelay");
 }
 
 /*[clinic input]
@@ -3296,7 +3296,8 @@ _curses_init_color_impl(PyObject *module, int color_number, short r, short g,
     PyCursesStatefulInitialised(module);
     PyCursesStatefulInitialisedColor(module);
 
-    return PyCursesCheckERR(_CURSES_INIT_COLOR_FUNC(color_number, r, g, b),
+    return PyCursesCheckERR(module,
+                            _CURSES_INIT_COLOR_FUNC(color_number, r, g, b),
                             Py_STRINGIFY(_CURSES_INIT_COLOR_FUNC));
 }
 
@@ -3563,7 +3564,7 @@ _curses_set_escdelay_impl(PyObject *module, int ms)
         return NULL;
     }
 
-    return PyCursesCheckERR(set_escdelay(ms), "set_escdelay");
+    return PyCursesCheckERR(module, set_escdelay(ms), "set_escdelay");
 }
 
 /*[clinic input]
@@ -3602,7 +3603,7 @@ _curses_set_tabsize_impl(PyObject *module, int size)
         return NULL;
     }
 
-    return PyCursesCheckERR(set_tabsize(size), "set_tabsize");
+    return PyCursesCheckERR(module, set_tabsize(size), "set_tabsize");
 }
 #endif
 
@@ -3620,7 +3621,7 @@ _curses_intrflush_impl(PyObject *module, int flag)
 {
     PyCursesStatefulInitialised(module);
 
-    return PyCursesCheckERR(intrflush(NULL, flag), "intrflush");
+    return PyCursesCheckERR(module, intrflush(NULL, flag), "intrflush");
 }
 
 /*[clinic input]
@@ -3733,7 +3734,7 @@ _curses_meta_impl(PyObject *module, int yes)
 {
     PyCursesStatefulInitialised(module);
 
-    return PyCursesCheckERR(meta(stdscr, yes), "meta");
+    return PyCursesCheckERR(module, meta(stdscr, yes), "meta");
 }
 
 #ifdef NCURSES_MOUSE_VERSION
@@ -3757,7 +3758,7 @@ _curses_mouseinterval_impl(PyObject *module, int interval)
 {
     PyCursesStatefulInitialised(module);
 
-    return PyCursesCheckERR(mouseinterval(interval), "mouseinterval");
+    return PyCursesCheckERR(module, mouseinterval(interval), "mouseinterval");
 }
 
 /*[clinic input]
@@ -4032,7 +4033,7 @@ static PyObject *
 _curses_putp_impl(PyObject *module, const char *string)
 /*[clinic end generated code: output=e98081d1b8eb5816 input=1601faa828b44cb3]*/
 {
-    return PyCursesCheckERR(putp(string), "putp");
+    return PyCursesCheckERR(module, putp(string), "putp");
 }
 
 /*[clinic input]
@@ -4209,7 +4210,7 @@ _curses_resizeterm_impl(PyObject *module, int nlines, int ncols)
 
     PyCursesStatefulInitialised(module);
 
-    result = PyCursesCheckERR(resizeterm(nlines, ncols), "resizeterm");
+    result = PyCursesCheckERR(module, resizeterm(nlines, ncols), "resizeterm");
     if (!result)
         return NULL;
     if (!update_lines_cols(module)) {
@@ -4248,7 +4249,7 @@ _curses_resize_term_impl(PyObject *module, int nlines, int ncols)
 
     PyCursesStatefulInitialised(module);
 
-    result = PyCursesCheckERR(resize_term(nlines, ncols), "resize_term");
+    result = PyCursesCheckERR(module, resize_term(nlines, ncols), "resize_term");
     if (!result)
         return NULL;
     if (!update_lines_cols(module)) {
@@ -4495,7 +4496,7 @@ _curses_typeahead_impl(PyObject *module, int fd)
 {
     PyCursesStatefulInitialised(module);
 
-    return PyCursesCheckERR(typeahead( fd ), "typeahead");
+    return PyCursesCheckERR(module, typeahead( fd ), "typeahead");
 }
 #endif
 
@@ -4545,7 +4546,7 @@ _curses_ungetch(PyObject *module, PyObject *ch)
     if (!PyCurses_ConvertToChtype(NULL, ch, &ch_))
         return NULL;
 
-    return PyCursesCheckERR(ungetch(ch_), "ungetch");
+    return PyCursesCheckERR(module, ungetch(ch_), "ungetch");
 }
 
 #ifdef HAVE_NCURSESW
@@ -4615,7 +4616,7 @@ _curses_unget_wch(PyObject *module, PyObject *ch)
 
     if (!PyCurses_ConvertToWchar_t(ch, &wch))
         return NULL;
-    return PyCursesCheckERR(unget_wch(wch), "unget_wch");
+    return PyCursesCheckERR(module, unget_wch(wch), "unget_wch");
 }
 #endif
 
