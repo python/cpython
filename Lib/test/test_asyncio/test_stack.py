@@ -1,4 +1,5 @@
 import asyncio
+import io
 import unittest
 
 
@@ -37,8 +38,11 @@ def capture_test_stack(*, fut=None):
 
         return ret
 
+    buf = io.StringIO()
+    asyncio.print_call_stack(future=fut, file=buf)
+
     stack = asyncio.capture_call_stack(future=fut)
-    return walk(stack)
+    return walk(stack), buf.getvalue()
 
 
 class TestCallStack(unittest.IsolatedAsyncioTestCase):
@@ -73,7 +77,7 @@ class TestCallStack(unittest.IsolatedAsyncioTestCase):
 
         await main()
 
-        self.assertEqual(stack_for_c5, [
+        self.assertEqual(stack_for_c5[0], [
             # task name
             'T<c2_root>',
             # call stack
@@ -102,6 +106,11 @@ class TestCallStack(unittest.IsolatedAsyncioTestCase):
             ]
         ])
 
+        self.assertIn(
+            '* async TestCallStack.test_stack_tgroup()',
+            stack_for_c5[1])
+
+
     async def test_stack_async_gen(self):
 
         stack_for_gen_nested_call = None
@@ -122,7 +131,7 @@ class TestCallStack(unittest.IsolatedAsyncioTestCase):
 
         await main()
 
-        self.assertEqual(stack_for_gen_nested_call, [
+        self.assertEqual(stack_for_gen_nested_call[0], [
             'T<anon>',
             [
                 's capture_test_stack',
@@ -133,6 +142,10 @@ class TestCallStack(unittest.IsolatedAsyncioTestCase):
             ],
             []
         ])
+
+        self.assertIn(
+            'async generator TestCallStack.test_stack_async_gen.<locals>.gen()',
+            stack_for_gen_nested_call[1])
 
     async def test_stack_gather(self):
 
@@ -155,7 +168,7 @@ class TestCallStack(unittest.IsolatedAsyncioTestCase):
 
         await main()
 
-        self.assertEqual(stack_for_deep, [
+        self.assertEqual(stack_for_deep[0], [
             'T<anon>',
             ['s capture_test_stack', 'a deep', 'a c1'],
             [
@@ -181,7 +194,7 @@ class TestCallStack(unittest.IsolatedAsyncioTestCase):
 
         await main()
 
-        self.assertEqual(stack_for_shield, [
+        self.assertEqual(stack_for_shield[0], [
             'T<anon>',
             ['s capture_test_stack', 'a deep', 'a c1'],
             [
@@ -208,7 +221,7 @@ class TestCallStack(unittest.IsolatedAsyncioTestCase):
 
         await main()
 
-        self.assertEqual(stack_for_inner, [
+        self.assertEqual(stack_for_inner[0], [
             'T<anon>',
             ['s capture_test_stack', 'a inner', 'a c1'],
             [
@@ -248,7 +261,7 @@ class TestCallStack(unittest.IsolatedAsyncioTestCase):
             await t1
             await t2
 
-        self.assertEqual(stack_for_inner, [
+        self.assertEqual(stack_for_inner[0], [
             'T<anon>',
             ['s capture_test_stack', 'a inner', 'a c1'],
             [
@@ -279,7 +292,7 @@ class TestCallStack(unittest.IsolatedAsyncioTestCase):
 
         await main()
 
-        self.assertEqual(stack_for_inner, [
+        self.assertEqual(stack_for_inner[0], [
             'T<there there>',
             ['s capture_test_stack', 'a inner', 'a c1'],
             [['T<anon>', ['a c2', 'a main', 'a test_stack_task'], []]]
@@ -316,7 +329,7 @@ class TestCallStack(unittest.IsolatedAsyncioTestCase):
 
         await main()
 
-        self.assertEqual(stack_for_fut,
+        self.assertEqual(stack_for_fut[0],
             ['F',
             [],
             [
@@ -330,3 +343,5 @@ class TestCallStack(unittest.IsolatedAsyncioTestCase):
                 ],
             ]]
         )
+
+        self.assertTrue(stack_for_fut[1].startswith('* Future(id='))

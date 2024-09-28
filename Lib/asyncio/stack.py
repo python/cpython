@@ -10,6 +10,7 @@ from . import tasks
 
 __all__ = (
     'capture_call_stack',
+    'print_call_stack',
     'FrameCallStackEntry',
     'CoroutineCallStackEntry',
     'FutureCallStack',
@@ -110,7 +111,7 @@ def capture_call_stack(*, future: any = None) -> FutureCallStack | None:
         # Check if we're in a context of a running event loop;
         # if yes - check if the passed future is the currently
         # running task or not.
-        if loop is None or future is not tasks.current_task():
+        if loop is None or future is not tasks.current_task(loop=loop):
             return _build_stack_for_future(future)
         # else: future is the current task, move on.
     else:
@@ -118,7 +119,7 @@ def capture_call_stack(*, future: any = None) -> FutureCallStack | None:
             raise RuntimeError(
                 'capture_call_stack() is called outside of a running '
                 'event loop and no *future* to introspect was provided')
-        future = tasks.current_task()
+        future = tasks.current_task(loop=loop)
 
     if future is None:
         # This isn't a generic call stack introspection utility. If we
@@ -158,3 +159,76 @@ def capture_call_stack(*, future: any = None) -> FutureCallStack | None:
             awaited_by.append(_build_stack_for_future(parent))
 
     return FutureCallStack(future, call_stack, awaited_by)
+
+
+def print_call_stack(*, future: any = None, file=None) -> None:
+    """Print async call stack for the current task or the provided Future."""
+
+    stack = capture_call_stack(future=future)
+    if stack is None:
+        return
+
+    buf = []
+
+    def render_level(st: FutureCallStack, level: int = 0):
+        def add_line(line: str):
+            buf.append(level * '    ' + line)
+
+        if isinstance(st.future, tasks.Task):
+            add_line(
+                f'* Task(name={st.future.get_name()!r}, id=0x{id(st.future):x})'
+            )
+        else:
+            add_line(
+                f'* Future(id=0x{id(st.future):x})'
+            )
+
+        if st.call_stack:
+            add_line(
+                f'  + Call stack:'
+            )
+            for ste in st.call_stack:
+                if isinstance(ste, FrameCallStackEntry):
+                    f = ste.frame
+                    add_line(
+                        f'  | * {f.f_code.co_qualname}()'
+                    )
+                    add_line(
+                        f'  |   {f.f_code.co_filename}:{f.f_lineno}'
+                    )
+                else:
+                    assert isinstance(ste, CoroutineCallStackEntry)
+                    c = ste.coroutine
+
+                    try:
+                        f = c.cr_frame
+                        code = c.cr_code
+                        tag = 'async'
+                    except AttributeError:
+                        try:
+                            f = c.ag_frame
+                            code = c.ag_code
+                            tag = 'async generator'
+                        except AttributeError:
+                            f = c.gi_frame
+                            code = c.gi_code
+                            tag = 'generator'
+
+                    add_line(
+                        f'  | * {tag} {code.co_qualname}()'
+                    )
+                    add_line(
+                        f'  |   {f.f_code.co_filename}:{f.f_lineno}'
+                    )
+
+        if st.awaited_by:
+            add_line(
+                f'  + Awaited by:'
+            )
+            for fut in st.awaited_by:
+                render_level(fut, level + 1)
+
+    render_level(stack)
+    rendered = '\n'.join(buf)
+
+    print(rendered, file=file)

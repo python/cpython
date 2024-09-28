@@ -23,9 +23,9 @@ a suspended *future*.
    Capture the async call stack for the current task or the provided
    :class:`Task` or :class:`Future`.
 
-   The function receives an optional keyword-only *future* argument.
-   If not passed, the current task will be used. If there's no current task,
-   the function returns ``None``.
+   The function recieves an optional keyword-only *future* argument.
+   If not passed, the current running task will be used. If there's no
+   current task, the function returns ``None``.
 
    Returns a ``FutureCallStack`` named tuple:
 
@@ -49,6 +49,17 @@ a suspended *future*.
       Where ``coroutine`` is a coroutine object of an awaiting coroutine
       or asyncronous generator.
 
+.. function:: print_call_stack(*, future=None, file=None)
+
+   Print the async call stack for the current task or the provided
+   :class:`Task` or :class:`Future`.
+
+   The function recieves an optional keyword-only *future* argument.
+   If not passed, the current running task will be used. If there's no
+   current task, the function returns ``None``.
+
+   If *file* is not specified the function will print to :data:`sys.stdout`.
+
 
 Low level utility functions
 ===========================
@@ -69,6 +80,10 @@ the tasks they wrap or control.
    Both *future* and *waiter* must be instances of
    :class:`asyncio.Future <Future>` or :class:`asyncio.Task <Task>` or
    their subclasses, otherwise the call would have no effect.
+
+   A call to ``future_add_to_awaited_by()`` must be followed by an
+   eventual call to the ``future_discard_from_awaited_by()`` function
+   with the same arguments.
 
 
 .. function:: future_discard_from_awaited_by(future, waiter, /)
