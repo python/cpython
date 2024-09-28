@@ -4796,7 +4796,7 @@ static struct PyModuleDef _cursesmodule = {
 };
 
 static void
-_curses_capi_destructor(PyObject *op)
+curses_destructor(PyObject *op)
 {
     void *ptr = PyCapsule_GetPointer(op, PyCurses_CAPSULE_NAME);
     Py_DECREF(*(void **)ptr);
@@ -4835,7 +4835,7 @@ cursesmodule_exec(PyObject *module)
 
     /* Add a capsule for the C API */
     PyObject *c_api_object = PyCapsule_New(PyCurses_API, PyCurses_CAPSULE_NAME,
-                                           _curses_capi_destructor);
+                                           curses_destructor);
     if (c_api_object == NULL) {
         Py_DECREF(PyCurses_API[0]);
         PyMem_Free(PyCurses_API);
