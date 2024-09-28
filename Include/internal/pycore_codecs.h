@@ -22,13 +22,13 @@ extern void _PyCodec_Fini(PyInterpreterState *interp);
 extern PyObject* _PyCodec_Lookup(const char *encoding);
 
 /*
- * Un-register the error handling callback function error under the given
- * name. Only non-built-in error handlers can be un-registered.
+ * Un-register the error handling callback function registered under
+ * the given 'name'. Only custom error handlers can be un-registered.
  *
- * - Return -1 and set an exception if 'name' is a built-in error policy,
- *   or if an error occurred.
- * - Return 0 if no error handler is associated with the given error policy.
- * - Return 1 if the error handler was successfully removed.
+ * - Return -1 and set an exception if 'name' refers to a built-in
+ *   error handling name (e.g., 'strict'), or if an error occurred.
+ * - Return 0 if no custom error handler can be found for 'name'.
+ * - Return 1 if the custom error handler was successfully removed.
  */
 extern int _PyCodec_UnregisterError(const char *name);
 

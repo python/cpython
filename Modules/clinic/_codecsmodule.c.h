@@ -2687,14 +2687,15 @@ PyDoc_STRVAR(_codecs__unregister_error__doc__,
 "_unregister_error($module, errors, /)\n"
 "--\n"
 "\n"
-"Un-register the specified error handler under the name \'errors\'.\n"
+"Un-register the specified error handler for the error handling `errors\'.\n"
 "\n"
-"Only custom error handlers can be un-registered. Returns True\n"
-"if the handler has been successfully un-registered, and False\n"
-"if the error policy is not registered.\n"
+"Only custom error handlers can be un-registered. An exception is raised\n"
+"if the error handling is a built-in one (e.g., \'strict\'), or if an error\n"
+"occurs.\n"
 "\n"
-"An exception is raised when the error policy is a built-in one\n"
-"or if an error occurred.");
+"Otherwise, this returns True if a custom handler has been successfully\n"
+"un-registered, and False if no custom handler for the specified error\n"
+"handling exists.");
 
 #define _CODECS__UNREGISTER_ERROR_METHODDEF    \
     {"_unregister_error", (PyCFunction)_codecs__unregister_error, METH_O, _codecs__unregister_error__doc__},
@@ -2795,4 +2796,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=b0d112761927032f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b3013d4709d96ffe input=a9049054013a1b77]*/

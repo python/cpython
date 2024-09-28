@@ -2,7 +2,6 @@ from _codecs import _unregister_error as _codecs_unregister_error
 import codecs
 import html.entities
 import itertools
-import random
 import sys
 import unicodedata
 import unittest
@@ -1236,33 +1235,27 @@ class CodecCallbackTest(unittest.TestCase):
                     with self.assertRaises((TypeError, FakeUnicodeError)):
                         handler(FakeUnicodeError())
 
-    def test_reject_unregister_builtin_error_policy(self):
-        for policy in [
+    def test_reject_unregister_builtin_error_handler(self):
+        for name in [
             'strict', 'ignore', 'replace', 'backslashreplace', 'namereplace',
             'xmlcharrefreplace', 'surrogateescape', 'surrogatepass',
         ]:
-            with self.subTest(policy):
-                self.assertRaises(ValueError, _codecs_unregister_error, policy)
+            with self.subTest(name):
+                self.assertRaises(ValueError, _codecs_unregister_error, name)
 
-    def test_unregister_custom_error_policy(self):
+    def test_unregister_custom_error_handler(self):
         def custom_handler(exc):
             raise exc
 
-        # We want a unique ID in case the test is executed multiple times
-        # to be sure that we always try to un-register a new error policy.
-        unique_id = random.getrandbits(128)
-        custom_name = f'test.test_unregister_error.custom.{unique_id}'
+        custom_name = 'test.test_unregister_custom_error_handler'
         self.assertRaises(LookupError, codecs.lookup_error, custom_name)
         codecs.register_error(custom_name, custom_handler)
         self.assertIs(codecs.lookup_error(custom_name), custom_handler)
         self.assertTrue(_codecs_unregister_error(custom_name))
         self.assertRaises(LookupError, codecs.lookup_error, custom_name)
 
-    def test_unregister_custom_unknown_error_policy(self):
-        # We want a unique ID in case the test is executed multiple times
-        # to be sure that we always try to un-register an unknown error policy.
-        unique_id = random.getrandbits(128)
-        unknown_name = f'test.test_unregister_error.custom.unknown.{unique_id}'
+    def test_unregister_custom_unknown_error_handler(self):
+        unknown_name = 'test.test_unregister_custom_unknown_error_handler'
         self.assertRaises(LookupError, codecs.lookup_error, unknown_name)
         self.assertFalse(_codecs_unregister_error(unknown_name))
         self.assertRaises(LookupError, codecs.lookup_error, unknown_name)
