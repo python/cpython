@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_object.h"               // PyManagedDictPointer
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_SSIZE_ACQUIRE
+#include "pycore_stackref.h"             // _PyStackRef
 
 // Unsafe flavor of PyDict_GetItemWithError(): no error checking
 extern PyObject* _PyDict_GetItemWithError(PyObject *dp, PyObject *key);
@@ -83,7 +84,7 @@ typedef struct {
     PyObject *me_value; /* This field is only meaningful for combined tables */
 } PyDictUnicodeEntry;
 
-extern PyDictKeysObject *_PyDict_NewKeysForClass(void);
+extern PyDictKeysObject *_PyDict_NewKeysForClass(PyHeapTypeObject *);
 extern PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);
 
 /* Gets a version number unique to the current state of the keys of dict, if possible.
@@ -100,16 +101,23 @@ extern void _PyDictKeys_DecRef(PyDictKeysObject *keys);
  */
 extern Py_ssize_t _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
 extern Py_ssize_t _Py_dict_lookup_threadsafe(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
+extern Py_ssize_t _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t hash, _PyStackRef *value_addr);
 
 extern Py_ssize_t _PyDict_LookupIndex(PyDictObject *, PyObject *);
 extern Py_ssize_t _PyDictKeys_StringLookup(PyDictKeysObject* dictkeys, PyObject *key);
 PyAPI_FUNC(PyObject *)_PyDict_LoadGlobal(PyDictObject *, PyDictObject *, PyObject *);
+PyAPI_FUNC(void) _PyDict_LoadGlobalStackRef(PyDictObject *, PyDictObject *, PyObject *, _PyStackRef *);
 
 /* Consumes references to key and value */
 PyAPI_FUNC(int) _PyDict_SetItem_Take2(PyDictObject *op, PyObject *key, PyObject *value);
 extern int _PyDict_SetItem_LockHeld(PyDictObject *dict, PyObject *name, PyObject *value);
-extern int _PyDict_GetItemRef_Unicode_LockHeld(PyDictObject *op, PyObject *key, PyObject **result);
+// Export for '_asyncio' shared extension
+PyAPI_FUNC(int) _PyDict_SetItem_KnownHash_LockHeld(PyDictObject *mp, PyObject *key,
+                                                   PyObject *value, Py_hash_t hash);
+// Export for '_asyncio' shared extension
+PyAPI_FUNC(int) _PyDict_GetItemRef_KnownHash_LockHeld(PyDictObject *op, PyObject *key, Py_hash_t hash, PyObject **result);
 extern int _PyDict_GetItemRef_KnownHash(PyDictObject *op, PyObject *key, Py_hash_t hash, PyObject **result);
+extern int _PyDict_GetItemRef_Unicode_LockHeld(PyDictObject *op, PyObject *key, PyObject **result);
 extern int _PyObjectDict_SetItem(PyTypeObject *tp, PyObject *obj, PyObject **dictptr, PyObject *name, PyObject *value);
 
 extern int _PyDict_Pop_KnownHash(

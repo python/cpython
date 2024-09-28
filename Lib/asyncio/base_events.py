@@ -837,7 +837,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     def _check_callback(self, callback, method):
         if (coroutines.iscoroutine(callback) or
-                coroutines.iscoroutinefunction(callback)):
+                coroutines._iscoroutinefunction(callback)):
             raise TypeError(
                 f"coroutines cannot be used with {method}()")
         if not callable(callback):
@@ -1144,7 +1144,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     (functools.partial(self._connect_sock,
                                        exceptions, addrinfo, laddr_infos)
                      for addrinfo in infos),
-                    happy_eyeballs_delay, loop=self)
+                    happy_eyeballs_delay)
 
             if sock is None:
                 exceptions = [exc for sub in exceptions for exc in sub]

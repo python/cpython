@@ -29,7 +29,7 @@ import functools
 import operator
 import sys
 import types
-from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType, GenericAlias
+from types import GenericAlias
 
 from _typing import (
     _idfunc,
@@ -242,21 +242,10 @@ def _type_repr(obj):
     typically enough to uniquely identify a type.  For everything
     else, we fall back on repr(obj).
     """
-    # When changing this function, don't forget about
-    # `_collections_abc._type_repr`, which does the same thing
-    # and must be consistent with this one.
-    if isinstance(obj, type):
-        if obj.__module__ == 'builtins':
-            return obj.__qualname__
-        return f'{obj.__module__}.{obj.__qualname__}'
-    if obj is ...:
-        return '...'
-    if isinstance(obj, types.FunctionType):
-        return obj.__name__
     if isinstance(obj, tuple):
         # Special case for `repr` of types with `ParamSpec`:
         return '[' + ', '.join(_type_repr(t) for t in obj) + ']'
-    return repr(obj)
+    return annotationlib.value_to_string(obj)
 
 
 def _collect_type_parameters(args, *, enforce_default_ordering: bool = True):
@@ -474,6 +463,10 @@ def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=f
         _deprecation_warning_for_no_type_params_passed("typing._eval_type")
         type_params = ()
     if isinstance(t, ForwardRef):
+        # If the forward_ref has __forward_module__ set, evaluate() infers the globals
+        # from the module, and it will probably pick better than the globals we have here.
+        if t.__forward_module__ is not None:
+            globalns = None
         return evaluate_forward_ref(t, globals=globalns, locals=localns,
                                     type_params=type_params, owner=owner,
                                     _recursive_guard=recursive_guard, format=format)
@@ -1043,7 +1036,7 @@ def evaluate_forward_ref(
     * Recursively evaluates forward references nested within the type hint.
     * Rejects certain objects that are not valid type hints.
     * Replaces type hints that evaluate to None with types.NoneType.
-    * Supports the *FORWARDREF* and *SOURCE* formats.
+    * Supports the *FORWARDREF* and *STRING* formats.
 
     *forward_ref* must be an instance of ForwardRef. *owner*, if given,
     should be the object that holds the annotations that the forward reference
@@ -1054,13 +1047,13 @@ def evaluate_forward_ref(
     evaluating the forward reference. This parameter must be provided (though
     it may be an empty tuple) if *owner* is not given and the forward reference
     does not already have an owner set. *format* specifies the format of the
-    annotation and is a member of the annoations.Format enum.
+    annotation and is a member of the annotationlib.Format enum.
 
     """
     if type_params is _sentinel:
         _deprecation_warning_for_no_type_params_passed("typing.evaluate_forward_ref")
         type_params = ()
-    if format == annotationlib.Format.SOURCE:
+    if format == annotationlib.Format.STRING:
         return forward_ref.__forward_arg__
     if forward_ref.__forward_arg__ in _recursive_guard:
         return forward_ref
@@ -2348,11 +2341,6 @@ def assert_type(val, typ, /):
     return val
 
 
-_allowed_types = (types.FunctionType, types.BuiltinFunctionType,
-                  types.MethodType, types.ModuleType,
-                  WrapperDescriptorType, MethodWrapperType, MethodDescriptorType)
-
-
 def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
                    *, format=annotationlib.Format.VALUE):
     """Return type hints for an object.
@@ -2392,7 +2380,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
         hints = {}
         for base in reversed(obj.__mro__):
             ann = annotationlib.get_annotations(base, format=format)
-            if format is annotationlib.Format.SOURCE:
+            if format is annotationlib.Format.STRING:
                 hints.update(ann)
                 continue
             if globalns is None:
@@ -2416,7 +2404,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
                 value = _eval_type(value, base_globals, base_locals, base.__type_params__,
                                    format=format, owner=obj)
                 hints[name] = value
-        if include_extras or format is annotationlib.Format.SOURCE:
+        if include_extras or format is annotationlib.Format.STRING:
             return hints
         else:
             return {k: _strip_annotations(t) for k, t in hints.items()}
@@ -2430,7 +2418,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
         and not hasattr(obj, '__annotate__')
     ):
         raise TypeError(f"{obj!r} is not a module, class, or callable.")
-    if format is annotationlib.Format.SOURCE:
+    if format is annotationlib.Format.STRING:
         return hints
 
     if globalns is None:
@@ -2949,12 +2937,8 @@ def _make_eager_annotate(types):
         if format in (annotationlib.Format.VALUE, annotationlib.Format.FORWARDREF):
             return checked_types
         else:
-            return _convert_to_source(types)
+            return annotationlib.annotations_to_string(types)
     return annotate
-
-
-def _convert_to_source(types):
-    return {n: t if isinstance(t, str) else _type_repr(t) for n, t in types.items()}
 
 
 # attributes prohibited to set in NamedTuple class syntax
@@ -2988,7 +2972,7 @@ class NamedTupleMeta(type):
 
             def annotate(format):
                 annos = annotationlib.call_annotate_function(original_annotate, format)
-                if format != annotationlib.Format.SOURCE:
+                if format != annotationlib.Format.STRING:
                     return {key: _type_check(val, f"field {key} annotation must be a type")
                             for key, val in annos.items()}
                 return annos
@@ -3236,13 +3220,13 @@ class _TypedDictMeta(type):
                 annos.update(base_annos)
             if own_annotate is not None:
                 own = annotationlib.call_annotate_function(own_annotate, format, owner=tp_dict)
-                if format != annotationlib.Format.SOURCE:
+                if format != annotationlib.Format.STRING:
                     own = {
                         n: _type_check(tp, msg, module=tp_dict.__module__)
                         for n, tp in own.items()
                     }
-            elif format == annotationlib.Format.SOURCE:
-                own = _convert_to_source(own_annotations)
+            elif format == annotationlib.Format.STRING:
+                own = annotationlib.annotations_to_string(own_annotations)
             else:
                 own = own_checked_annotations
             annos.update(own)

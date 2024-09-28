@@ -821,7 +821,7 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertSourceEqual(mod.eggs.__code__, 12, 18)
 
     def test_getsource_on_generated_class(self):
-        A = type('A', (), {})
+        A = type('A', (unittest.TestCase,), {})
         self.assertEqual(inspect.getsourcefile(A), __file__)
         self.assertEqual(inspect.getfile(A), __file__)
         self.assertIs(inspect.getmodule(A), sys.modules[__name__])
@@ -928,6 +928,24 @@ class TestOneliners(GetSourceBase):
         # Test inspect.getsource with a lambda function defined
         # as argument to another function.
         self.assertSourceEqual(mod2.anonymous, 55, 55)
+
+    def test_enum(self):
+        self.assertSourceEqual(mod2.enum322, 322, 323)
+        self.assertSourceEqual(mod2.enum326, 326, 327)
+        self.assertSourceEqual(mod2.flag330, 330, 331)
+        self.assertSourceEqual(mod2.flag334, 334, 335)
+        self.assertRaises(OSError, inspect.getsource, mod2.simple_enum338)
+        self.assertRaises(OSError, inspect.getsource, mod2.simple_enum339)
+        self.assertRaises(OSError, inspect.getsource, mod2.simple_flag340)
+        self.assertRaises(OSError, inspect.getsource, mod2.simple_flag341)
+
+    def test_namedtuple(self):
+        self.assertSourceEqual(mod2.nt346, 346, 348)
+        self.assertRaises(OSError, inspect.getsource, mod2.nt351)
+
+    def test_typeddict(self):
+        self.assertSourceEqual(mod2.td354, 354, 356)
+        self.assertRaises(OSError, inspect.getsource, mod2.td359)
 
 class TestBlockComments(GetSourceBase):
     fodderModule = mod
@@ -1549,6 +1567,56 @@ class TestClassesAndFunctions(unittest.TestCase):
         b = B()
         self.assertIn(('f', b.f), inspect.getmembers(b))
         self.assertIn(('f', b.f), inspect.getmembers(b, inspect.ismethod))
+
+    def test_getmembers_custom_dir(self):
+        class CorrectDir:
+            def __init__(self, attr):
+                self.attr = attr
+            def method(self):
+                return self.attr + 1
+            def __dir__(self):
+                return ['attr', 'method']
+
+        cd = CorrectDir(5)
+        self.assertEqual(inspect.getmembers(cd), [
+            ('attr', 5),
+            ('method', cd.method),
+        ])
+        self.assertEqual(inspect.getmembers(cd, inspect.ismethod), [
+            ('method', cd.method),
+        ])
+
+    def test_getmembers_custom_broken_dir(self):
+        # inspect.getmembers calls `dir()` on the passed object inside.
+        # if `__dir__` mentions some non-existent attribute,
+        # we still need to return others correctly.
+        class BrokenDir:
+            existing = 1
+            def method(self):
+                return self.existing + 1
+            def __dir__(self):
+                return ['method', 'missing', 'existing']
+
+        bd = BrokenDir()
+        self.assertEqual(inspect.getmembers(bd), [
+            ('existing', 1),
+            ('method', bd.method),
+        ])
+        self.assertEqual(inspect.getmembers(bd, inspect.ismethod), [
+            ('method', bd.method),
+        ])
+
+    def test_getmembers_custom_duplicated_dir(self):
+        # Duplicates in `__dir__` must not fail and return just one result.
+        class DuplicatedDir:
+            attr = 1
+            def __dir__(self):
+                return ['attr', 'attr']
+
+        dd = DuplicatedDir()
+        self.assertEqual(inspect.getmembers(dd), [
+            ('attr', 1),
+        ])
 
     def test_getmembers_VirtualAttribute(self):
         class M(type):
@@ -3273,7 +3341,7 @@ class TestSignatureObject(unittest.TestCase):
                           ...))
 
     def test_signature_on_partial(self):
-        from functools import partial
+        from functools import partial, Placeholder
 
         def test():
             pass
@@ -3328,6 +3396,25 @@ class TestSignatureObject(unittest.TestCase):
                            ('d', ..., ..., "keyword_only")),
                           ...))
 
+        # With Placeholder
+        self.assertEqual(self.signature(partial(test, Placeholder, 1)),
+                         ((('a', ..., ..., "positional_only"),
+                           ('c', ..., ..., "keyword_only"),
+                           ('d', ..., ..., "keyword_only")),
+                          ...))
+
+        self.assertEqual(self.signature(partial(test, Placeholder, 1, c=2)),
+                         ((('a', ..., ..., "positional_only"),
+                           ('c', 2, ..., "keyword_only"),
+                           ('d', ..., ..., "keyword_only")),
+                          ...))
+
+        # Ensure unittest.mock.ANY & similar do not get picked up as a Placeholder
+        self.assertEqual(self.signature(partial(test, unittest.mock.ANY, 1, c=2)),
+                         ((('c', 2, ..., "keyword_only"),
+                           ('d', ..., ..., "keyword_only")),
+                          ...))
+
         def test(a, *args, b, **kwargs):
             pass
 
@@ -3370,6 +3457,15 @@ class TestSignatureObject(unittest.TestCase):
 
         self.assertEqual(self.signature(partial(test, b=0, test=1)),
                          ((('a', ..., ..., "positional_or_keyword"),
+                           ('args', ..., ..., "var_positional"),
+                           ('b', 0, ..., "keyword_only"),
+                           ('kwargs', ..., ..., "var_keyword")),
+                          ...))
+
+        # With Placeholder
+        p = partial(test, Placeholder, Placeholder, 1, b=0, test=1)
+        self.assertEqual(self.signature(p),
+                         ((('a', ..., ..., "positional_only"),
                            ('args', ..., ..., "var_positional"),
                            ('b', 0, ..., "keyword_only"),
                            ('kwargs', ..., ..., "var_keyword")),
@@ -3479,6 +3575,34 @@ class TestSignatureObject(unittest.TestCase):
                            ('kwargs', ..., ..., 'var_keyword')),
                          ...))
 
+        # Positional only With Placeholder
+        p = partial(foo, Placeholder, 1, c=0, d=1)
+        self.assertEqual(self.signature(p),
+                         ((('a', ..., ..., "positional_only"),
+                           ('c', 0, ..., "keyword_only"),
+                           ('d', 1, ..., "keyword_only"),
+                           ('kwargs', ..., ..., "var_keyword")),
+                          ...))
+
+        # Optionals Positional With Placeholder
+        def foo(a=0, b=1, /, c=2, d=3):
+            pass
+
+        # Positional
+        p = partial(foo, Placeholder, 1, c=0, d=1)
+        self.assertEqual(self.signature(p),
+                         ((('a', ..., ..., "positional_only"),
+                           ('c', 0, ..., "keyword_only"),
+                           ('d', 1, ..., "keyword_only")),
+                          ...))
+
+        # Positional or Keyword - transformed to positional
+        p = partial(foo, Placeholder, 1, Placeholder, 1)
+        self.assertEqual(self.signature(p),
+                         ((('a', ..., ..., "positional_only"),
+                           ('c', ..., ..., "positional_only")),
+                          ...))
+
     def test_signature_on_partialmethod(self):
         from functools import partialmethod
 
@@ -3491,18 +3615,32 @@ class TestSignatureObject(unittest.TestCase):
             inspect.signature(Spam.ham)
 
         class Spam:
-            def test(it, a, *, c) -> 'spam':
+            def test(it, a, b, *, c) -> 'spam':
                 pass
             ham = partialmethod(test, c=1)
+            bar = partialmethod(test, functools.Placeholder, 1, c=1)
 
         self.assertEqual(self.signature(Spam.ham, eval_str=False),
                          ((('it', ..., ..., 'positional_or_keyword'),
                            ('a', ..., ..., 'positional_or_keyword'),
+                           ('b', ..., ..., 'positional_or_keyword'),
                            ('c', 1, ..., 'keyword_only')),
                           'spam'))
 
         self.assertEqual(self.signature(Spam().ham, eval_str=False),
                          ((('a', ..., ..., 'positional_or_keyword'),
+                           ('b', ..., ..., 'positional_or_keyword'),
+                           ('c', 1, ..., 'keyword_only')),
+                          'spam'))
+
+        # With Placeholder
+        self.assertEqual(self.signature(Spam.bar, eval_str=False),
+                         ((('it', ..., ..., 'positional_only'),
+                           ('a', ..., ..., 'positional_only'),
+                           ('c', 1, ..., 'keyword_only')),
+                          'spam'))
+        self.assertEqual(self.signature(Spam().bar, eval_str=False),
+                         ((('a', ..., ..., 'positional_only'),
                            ('c', 1, ..., 'keyword_only')),
                           'spam'))
 
