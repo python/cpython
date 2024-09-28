@@ -4787,7 +4787,7 @@ static PyMethodDef _cursesmodule_methods[] = {
 /* Module initialization and cleanup functions. */
 
 static void
-curses_destructor(PyObject *op)
+_curses_capi_destructor(PyObject *op)
 {
     void *ptr = PyCapsule_GetPointer(op, PyCurses_CAPSULE_NAME);
     Py_DECREF(*(void **)ptr);
@@ -4825,7 +4825,7 @@ _cursesmodule_exec(PyObject *module)
 
     /* Add a capsule for the C API */
     PyObject *c_api_object = PyCapsule_New(PyCurses_API, PyCurses_CAPSULE_NAME,
-                                           curses_destructor);
+                                           _curses_capi_destructor);
     if (c_api_object == NULL) {
         Py_DECREF(PyCurses_API[0]);
         PyMem_Free(PyCurses_API);
