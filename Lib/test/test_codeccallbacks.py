@@ -1235,12 +1235,12 @@ class CodecCallbackTest(unittest.TestCase):
                     with self.assertRaises((TypeError, FakeUnicodeError)):
                         handler(FakeUnicodeError())
 
-    def test_reject_unregister_native_error_policy(self):
+    def test_reject_unregister_standard_error_policy(self):
         for policy in [
             'strict', 'ignore', 'replace', 'backslashreplace', 'namereplace',
             'xmlcharrefreplace', 'surrogateescape', 'surrogatepass',
         ]:
-            with self.subTest(f'reject native {policy!r} un-registration'):
+            with self.subTest(policy):
                 self.assertRaises(ValueError, _codecs_unregister_error, policy)
 
     def test_unregister_custom_error_policy(self):
