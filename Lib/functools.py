@@ -930,13 +930,10 @@ def singledispatch(func):
             dispatch_cache[cls] = impl
         return impl
 
-    def _is_union_type(cls):
-        return isinstance(cls, UnionType)
-
     def _is_valid_dispatch_type(cls):
         if isinstance(cls, type):
             return True
-        return (_is_union_type(cls) and
+        return (isinstance(cls, UnionType) and
                 all(isinstance(arg, type) for arg in cls.__args__))
 
     def register(cls, func=None):
@@ -969,7 +966,7 @@ def singledispatch(func):
             from annotationlib import Format, ForwardRef
             argname, cls = next(iter(get_type_hints(func, format=Format.FORWARDREF).items()))
             if not _is_valid_dispatch_type(cls):
-                if _is_union_type(cls):
+                if isinstance(cls, UnionType):
                     raise TypeError(
                         f"Invalid annotation for {argname!r}. "
                         f"{cls!r} not all arguments are classes."
@@ -985,7 +982,7 @@ def singledispatch(func):
                         f"{cls!r} is not a class."
                     )
 
-        if _is_union_type(cls):
+        if isinstance(cls, UnionType):
             for arg in cls.__args__:
                 registry[arg] = func
         else:

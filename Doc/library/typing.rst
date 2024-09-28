@@ -1125,7 +1125,9 @@ These can be used as types in annotations. They all support subscription using
       :class:`types.UnionType` is now an alias for :class:`Union`, and both
       ``Union[int, str]`` and ``int | str`` create instances of the same class.
       To check whether an object is a ``Union`` at runtime, use
-      ``isinstance(obj, Union)``.
+      ``isinstance(obj, Union)``. For compatibility with earlier versions of
+      Python, use
+      ``get_origin(obj) is typing.Union or get_origin(obj) is types.UnionType``.
 
 .. data:: Optional
 
