@@ -1408,7 +1408,7 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
     static struct {
         const char *name;
         PyMethodDef def;
-    } error_handlers[] =
+    } methods[] =
     {
         {
             "strict",
@@ -1504,14 +1504,14 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
     if (interp->codecs.error_registry == NULL) {
         return PyStatus_NoMemory();
     }
-    for (size_t i = 0; i < Py_ARRAY_LENGTH(error_handlers); ++i) {
-        PyObject *func = PyCFunction_NewEx(&error_handlers[i].def, NULL, NULL);
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(methods); ++i) {
+        PyObject *func = PyCFunction_NewEx(&methods[i].def, NULL, NULL);
         if (func == NULL) {
             return PyStatus_NoMemory();
         }
 
         int res = PyDict_SetItemString(interp->codecs.error_registry,
-                                       error_handlers[i].name, func);
+                                       methods[i].name, func);
         Py_DECREF(func);
         if (res < 0) {
             return PyStatus_Error("Failed to insert into codec error registry");
