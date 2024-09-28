@@ -14,7 +14,7 @@ python-docs-theme>=2022.1
 
 alabaster==0.7.16
 Babel==2.15.0
-certifi==2024.6.2
+certifi==2024.7.4
 charset-normalizer==3.3.2
 docutils==0.19
 idna==3.7

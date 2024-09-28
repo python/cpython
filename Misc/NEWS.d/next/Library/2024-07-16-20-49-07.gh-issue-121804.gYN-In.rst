@@ -1,0 +1,2 @@
+Correctly show error locations, when :exc:`SyntaxError` raised in new repl.
+Patch by Sergey B Kirpichev.

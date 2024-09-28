@@ -1,6 +1,7 @@
 "Test the functionality of Python classes implementing operators."
 
 import unittest
+import test.support
 
 testmeths = [
 
@@ -787,6 +788,19 @@ class ClassTests(unittest.TestCase):
             Type(i)
         self.assertEqual(calls, 100)
 
+    def test_specialization_class_call_doesnt_crash(self):
+        # gh-123185
+
+        class Foo:
+            def __init__(self, arg):
+                pass
+
+        for _ in range(8):
+            try:
+                Foo()
+            except:
+                pass
+
 
 from _testinternalcapi import has_inline_values
 
@@ -882,6 +896,24 @@ class TestInlineValues(unittest.TestCase):
         f.a = 3
         self.assertEqual(f.a, 3)
 
+    def test_rematerialize_object_dict(self):
+        # gh-121860: rematerializing an object's managed dictionary after it
+        # had been deleted caused a crash.
+        class Foo: pass
+        f = Foo()
+        f.__dict__["attr"] = 1
+        del f.__dict__
+
+        # Using a str subclass is a way to trigger the re-materialization
+        class StrSubclass(str): pass
+        self.assertFalse(hasattr(f, StrSubclass("attr")))
+
+        # Changing the __class__ also triggers the re-materialization
+        class Bar: pass
+        f.__class__ = Bar
+        self.assertIsInstance(f, Bar)
+        self.assertEqual(f.__dict__, {})
+
     def test_store_attr_type_cache(self):
         """Verifies that the type cache doesn't provide a value which  is
         inconsistent from the dict."""
@@ -897,10 +929,24 @@ class TestInlineValues(unittest.TestCase):
         C.a
         C.a
 
-        # destructor shouldn't be able to see inconsisent state
+        # destructor shouldn't be able to see inconsistent state
         C.a = X()
         C.a = X()
 
+    def test_detach_materialized_dict_no_memory(self):
+        import _testcapi
+        class A:
+            def __init__(self):
+                self.a = 1
+                self.b = 2
+        a = A()
+        d = a.__dict__
+        with test.support.catch_unraisable_exception() as ex:
+            _testcapi.set_nomemory(0, 1)
+            del a
+            self.assertEqual(ex.unraisable.exc_type, MemoryError)
+        with self.assertRaises(KeyError):
+            d["a"]
 
 if __name__ == '__main__':
     unittest.main()

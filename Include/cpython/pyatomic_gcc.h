@@ -543,5 +543,9 @@ _Py_atomic_fence_seq_cst(void)
 { __atomic_thread_fence(__ATOMIC_SEQ_CST); }
 
  static inline void
+_Py_atomic_fence_acquire(void)
+{ __atomic_thread_fence(__ATOMIC_ACQUIRE); }
+
+ static inline void
 _Py_atomic_fence_release(void)
 { __atomic_thread_fence(__ATOMIC_RELEASE); }

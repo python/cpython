@@ -259,14 +259,21 @@ PyAPI_FUNC(void) _PyEval_FormatAwaitableError(PyThreadState *tstate, PyTypeObjec
 PyAPI_FUNC(void) _PyEval_FormatExcCheckArg(PyThreadState *tstate, PyObject *exc, const char *format_str, PyObject *obj);
 PyAPI_FUNC(void) _PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
 PyAPI_FUNC(void) _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs);
+PyAPI_FUNC(PyObject *) _PyEval_ImportFrom(PyThreadState *, PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) _PyEval_ImportName(PyThreadState *, _PyInterpreterFrame *, PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *)_PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t nargs, PyObject *kwargs);
 PyAPI_FUNC(PyObject *)_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
+PyAPI_FUNC(void) _PyEval_MonitorRaise(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *instr);
 PyAPI_FUNC(int) _PyEval_UnpackIterableStackRef(PyThreadState *tstate, _PyStackRef v, int argcnt, int argcntafter, _PyStackRef *sp);
 PyAPI_FUNC(void) _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
 PyAPI_FUNC(PyObject **) _PyObjectArray_FromStackRefArray(_PyStackRef *input, Py_ssize_t nargs, PyObject **scratch);
 
 PyAPI_FUNC(void) _PyObjectArray_Free(PyObject **array, PyObject **scratch);
 
+PyAPI_FUNC(PyObject *) _PyEval_GetANext(PyObject *aiter);
+PyAPI_FUNC(void) _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name, _PyStackRef *writeto);
+PyAPI_FUNC(PyObject *) _PyEval_GetAwaitable(PyObject *iterable, int oparg);
+PyAPI_FUNC(PyObject *) _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *name);
 
 /* Bits that can be set in PyThreadState.eval_breaker */
 #define _PY_GIL_DROP_REQUEST_BIT (1U << 0)
@@ -276,6 +283,7 @@ PyAPI_FUNC(void) _PyObjectArray_Free(PyObject **array, PyObject **scratch);
 #define _PY_GC_SCHEDULED_BIT (1U << 4)
 #define _PY_EVAL_PLEASE_STOP_BIT (1U << 5)
 #define _PY_EVAL_EXPLICIT_MERGE_BIT (1U << 6)
+#define _PY_EVAL_JIT_INVALIDATE_COLD_BIT (1U << 7)
 
 /* Reserve a few bits for future use */
 #define _PY_EVAL_EVENTS_BITS 8

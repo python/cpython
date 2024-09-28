@@ -106,9 +106,6 @@ typedef struct _symtable_entry {
     const char *ste_scope_info;
 
     int ste_nested;      /* true if block is nested */
-    unsigned ste_free : 1;        /* true if block has free variables */
-    unsigned ste_child_free : 1;  /* true if a child block has free vars,
-                                     including free refs to globals */
     unsigned ste_generator : 1;   /* true if namespace is a generator */
     unsigned ste_coroutine : 1;   /* true if namespace is a coroutine */
     unsigned ste_annotations_used : 1;  /* true if there are any annotations in this scope */
@@ -127,12 +124,7 @@ typedef struct _symtable_entry {
     unsigned ste_can_see_class_scope : 1; /* true if this block can see names bound in an
                                              enclosing class scope */
     int ste_comp_iter_expr; /* non-zero if visiting a comprehension range expression */
-    int ste_lineno;          /* first line of block */
-    int ste_col_offset;      /* offset of first line of block */
-    int ste_end_lineno;      /* end line of block */
-    int ste_end_col_offset;  /* end offset of first line of block */
-    int ste_opt_lineno;      /* lineno of last exec or import * */
-    int ste_opt_col_offset;  /* offset of last exec or import * */
+    _Py_SourceLocation ste_loc; /* source location of block */
     struct _symtable_entry *ste_annotation_block; /* symbol table entry for this entry's annotations */
     struct symtable *ste_table;
 } PySTEntryObject;
@@ -179,6 +171,7 @@ extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 */
 #define SCOPE_OFFSET 12
 #define SCOPE_MASK (DEF_GLOBAL | DEF_LOCAL | DEF_PARAM | DEF_NONLOCAL)
+#define SYMBOL_TO_SCOPE(S) (((S) >> SCOPE_OFFSET) & SCOPE_MASK)
 
 #define LOCAL 1
 #define GLOBAL_EXPLICIT 2
