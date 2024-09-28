@@ -159,32 +159,11 @@ typedef chtype attr_t;           /* No attr_t type is available */
 #define _CURSES_PAIR_CONTENT_FUNC       pair_content
 #endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
 
-typedef struct _cursesmodule_state {
-    PyObject *PyCursesError;
-    PyTypeObject *PyCursesWindow_Type;
-} _cursesmodule_state;
-
-static inline _cursesmodule_state *
-get_cursesmodule_state(PyObject *module)
-{
-    void *state = PyModule_GetState(module);
-    assert(state != NULL);
-    return (_cursesmodule_state *)state;
-}
-
-static inline _cursesmodule_state *
-get_cursesmodule_state_by_cls(PyTypeObject *cls)
-{
-    void *state = PyType_GetModuleState(cls);
-    assert(state != NULL);
-    return (_cursesmodule_state *)state;
-}
-
 /*[clinic input]
 module _curses
-class _curses.window "PyCursesWindowObject *" "clinic_state()->PyCursesWindow_Type"
+class _curses.window "PyCursesWindowObject *" "&PyCursesWindow_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=83369be6e20ef0da]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=43265c372c2887d6]*/
 
 /* Tells whether setupterm() has been called to initialise terminfo.  */
 static int curses_setupterm_called = FALSE;
@@ -2151,8 +2130,7 @@ _curses_window_noutrefresh_impl(PyCursesWindowObject *self)
 /*[clinic input]
 _curses.window.overlay
 
-    destwin: object(type="PyCursesWindowObject *",\
-                    subclass_of="clinic_state()->PyCursesWindow_Type")
+    destwin: object(type="PyCursesWindowObject *", subclass_of="&PyCursesWindow_Type")
 
     [
     sminrow: int
@@ -2181,7 +2159,7 @@ _curses_window_overlay_impl(PyCursesWindowObject *self,
                             PyCursesWindowObject *destwin, int group_right_1,
                             int sminrow, int smincol, int dminrow,
                             int dmincol, int dmaxrow, int dmaxcol)
-/*[clinic end generated code: output=82bb2c4cb443ca58 input=a1fa2bb9dd91ab1d]*/
+/*[clinic end generated code: output=82bb2c4cb443ca58 input=7edd23ad22cc1984]*/
 {
     int rtn;
 
@@ -2199,8 +2177,7 @@ _curses_window_overlay_impl(PyCursesWindowObject *self,
 /*[clinic input]
 _curses.window.overwrite
 
-    destwin: object(type="PyCursesWindowObject *",\
-                    subclass_of="clinic_state()->PyCursesWindow_Type")
+    destwin: object(type="PyCursesWindowObject *", subclass_of="&PyCursesWindow_Type")
 
     [
     sminrow: int
@@ -2230,7 +2207,7 @@ _curses_window_overwrite_impl(PyCursesWindowObject *self,
                               int group_right_1, int sminrow, int smincol,
                               int dminrow, int dmincol, int dmaxrow,
                               int dmaxcol)
-/*[clinic end generated code: output=12ae007d1681be28 input=c5b2388e80206a47]*/
+/*[clinic end generated code: output=12ae007d1681be28 input=ea5de1b35cd948e0]*/
 {
     int rtn;
 
@@ -2578,9 +2555,7 @@ PyCursesWindow_set_encoding(PyCursesWindowObject *self, PyObject *value, void *P
     return 0;
 }
 
-#define clinic_state() (get_cursesmodule_state_by_cls(Py_TYPE(self)))
 #include "clinic/_cursesmodule.c.h"
-#undef clinic_state
 
 static PyMethodDef PyCursesWindow_Methods[] = {
     _CURSES_WINDOW_ADDCH_METHODDEF
@@ -4753,7 +4728,7 @@ _curses_has_extended_color_support_impl(PyObject *module)
 
 /* List of functions defined in the module */
 
-static PyMethodDef _cursesmodule_methods[] = {
+static PyMethodDef PyCurses_methods[] = {
     _CURSES_BAUDRATE_METHODDEF
     _CURSES_BEEP_METHODDEF
     _CURSES_CAN_CHANGE_COLOR_METHODDEF
@@ -4838,7 +4813,20 @@ static PyMethodDef _cursesmodule_methods[] = {
     {NULL,                  NULL}         /* sentinel */
 };
 
-/* Module initialization and cleanup functions. */
+/* Initialization function for the module */
+
+
+static struct PyModuleDef _cursesmodule = {
+    PyModuleDef_HEAD_INIT,
+    "_curses",
+    NULL,
+    -1,
+    PyCurses_methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
 
 static void
 _curses_capi_destructor(PyObject *op)
@@ -4849,7 +4837,7 @@ _curses_capi_destructor(PyObject *op)
 }
 
 static int
-_cursesmodule_exec(PyObject *module)
+cursesmodule_exec(PyObject *module)
 {
     _cursesmodule_state *st = get_cursesmodule_state(module);
     /* Initialize object type */
@@ -5087,49 +5075,6 @@ _cursesmodule_exec(PyObject *module)
     return 0;
 }
 
-static int
-_cursesmodule_traverse(PyObject *mod, visitproc visit, void *arg)
-{
-    _cursesmodule_state *st = get_cursesmodule_state(mod);
-    Py_VISIT(st->PyCursesError);
-    Py_VISIT(st->PyCursesWindow_Type);
-    return 0;
-}
-
-static int
-_cursesmodule_clear(PyObject *mod)
-{
-    _cursesmodule_state *st = get_cursesmodule_state(mod);
-    Py_CLEAR(st->PyCursesError);
-    Py_CLEAR(st->PyCursesWindow_Type);
-    return 0;
-}
-
-static void
-_cursesmodule_free(void *mod)
-{
-    (void)_cursesmodule_clear((PyObject *)mod);
-}
-
-static PyModuleDef_Slot _cursesmodule_slots[] = {
-    {Py_mod_exec, _cursesmodule_exec},
-    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
-    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
-    {0, NULL}
-};
-
-static struct PyModuleDef _cursesmodule = {
-    PyModuleDef_HEAD_INIT,
-    .m_name = "_curses",
-    .m_doc = NULL,
-    .m_size = sizeof(_cursesmodule_state),
-    .m_methods = _cursesmodule_methods,
-    .m_slots = _cursesmodule_slots,
-    .m_traverse = _cursesmodule_traverse,
-    .m_clear = _cursesmodule_clear,
-    .m_free = _cursesmodule_free
-};
-
 PyMODINIT_FUNC
 PyInit__curses(void)
 {
@@ -5144,7 +5089,7 @@ PyInit__curses(void)
     }
 #endif
     // populate the module
-    if (_cursesmodule_exec(mod) < 0) {
+    if (cursesmodule_exec(mod) < 0) {
         goto error;
     }
     return mod;
