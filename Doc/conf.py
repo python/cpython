@@ -413,8 +413,8 @@ latex_elements = {
 \let\endVerbatim=\endOriginalVerbatim
 \setcounter{tocdepth}{2}
 ''',
-    # The paper size ('letter' or 'a4').
-    'papersize': 'a4',
+    # The paper size ('letterpaper' or 'a4paper').
+    'papersize': 'a4paper',
     # The font size ('10pt', '11pt' or '12pt').
     'pointsize': '10pt',
 }
