@@ -272,6 +272,13 @@ PyCursesCheckERR(PyObject *module, int code, const char *fname)
     }
 }
 
+static inline PyObject *
+PyCursesCheckERR_FromSelf(PyCursesWindowObject *self, int code, const char *fname)
+{
+    PyObject *module = PyType_GetModule(Py_TYPE(self));
+    return PyCursesCheckERR(module, code, fname);
+}
+
 /* Convert an object to a byte (an integer of type chtype):
 
    - int
