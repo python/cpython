@@ -623,10 +623,6 @@ static int func_PyCursesInitialisedColor(void)
  The Window Object
 ******************************************************************************/
 
-/* Definition of the window type */
-
-PyTypeObject PyCursesWindow_Type;
-
 /* Function prototype macros for Window object
 
    X - function name
@@ -756,7 +752,7 @@ Window_TwoArgNoReturnFunction(wresize, int, "ii;lines,columns")
 /* Allocation and deallocation of Window Objects */
 
 static PyObject *
-PyCursesWindow_New(WINDOW *win, const char *encoding)
+PyCursesWindow_New(_cursesmodule_state *st, WINDOW *win, const char *encoding)
 {
     PyCursesWindowObject *wo;
 
@@ -778,8 +774,11 @@ PyCursesWindow_New(WINDOW *win, const char *encoding)
             encoding = "utf-8";
     }
 
-    wo = PyObject_New(PyCursesWindowObject, &PyCursesWindow_Type);
-    if (wo == NULL) return NULL;
+    PyTypeObject *type = st->PyCursesWindow_Type;
+    wo = (PyCursesWindowObject *)type->tp_alloc(type, 0);
+    if (wo == NULL) {
+        return NULL;
+    }
     wo->win = win;
     wo->encoding = _PyMem_Strdup(encoding);
     if (wo->encoding == NULL) {
@@ -793,6 +792,7 @@ PyCursesWindow_New(WINDOW *win, const char *encoding)
 static void
 PyCursesWindow_Dealloc(PyCursesWindowObject *wo)
 {
+    PyTypeObject *tp = Py_TYPE(wo);
     if (wo->win != stdscr && wo->win != NULL) {
         // silently ignore errors in delwin(3)
         (void)delwin(wo->win);
@@ -800,7 +800,8 @@ PyCursesWindow_Dealloc(PyCursesWindowObject *wo)
     if (wo->encoding != NULL) {
         PyMem_Free(wo->encoding);
     }
-    PyObject_Free(wo);
+    tp->tp_free(wo);
+    Py_DECREF(tp);
 }
 
 /* Addch, Addstr, Addnstr */
@@ -2677,41 +2678,21 @@ static PyGetSetDef PyCursesWindow_getsets[] = {
     {NULL, NULL, NULL, NULL }  /* sentinel */
 };
 
-/* -------------------------------------------------------*/
-
-PyTypeObject PyCursesWindow_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_curses.window",           /*tp_name*/
-    sizeof(PyCursesWindowObject),       /*tp_basicsize*/
-    0,                          /*tp_itemsize*/
-    /* methods */
-    (destructor)PyCursesWindow_Dealloc, /*tp_dealloc*/
-    0,                          /*tp_vectorcall_offset*/
-    (getattrfunc)0,             /*tp_getattr*/
-    (setattrfunc)0,             /*tp_setattr*/
-    0,                          /*tp_as_async*/
-    0,                          /*tp_repr*/
-    0,                          /*tp_as_number*/
-    0,                          /*tp_as_sequence*/
-    0,                          /*tp_as_mapping*/
-    0,                          /*tp_hash*/
-    0,                          /*tp_call*/
-    0,                          /*tp_str*/
-    0,                          /*tp_getattro*/
-    0,                          /*tp_setattro*/
-    0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT,         /*tp_flags*/
-    0,                          /*tp_doc*/
-    0,                          /*tp_traverse*/
-    0,                          /*tp_clear*/
-    0,                          /*tp_richcompare*/
-    0,                          /*tp_weaklistoffset*/
-    0,                          /*tp_iter*/
-    0,                          /*tp_iternext*/
-    PyCursesWindow_Methods,     /*tp_methods*/
-    0,                          /* tp_members */
-    PyCursesWindow_getsets,     /* tp_getset */
+static PyType_Slot PyCursesWindow_Type_slots[] = {
+    {Py_tp_dealloc, PyCursesWindow_Dealloc},
+    {Py_tp_methods, PyCursesWindow_Methods},
+    {Py_tp_getset, PyCursesWindow_getsets},
+    {0, NULL}
 };
+
+static PyType_Spec PyCursesWindow_Type_spec = {
+    .name = "_curses.window",
+    .basicsize =  sizeof(PyCursesWindowObject),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = PyCursesWindow_Type_slots
+};
+
+/* -------------------------------------------------------*/
 
 /* Function Body Macros - They are ugly but very, very useful. ;-)
 
@@ -4869,10 +4850,9 @@ _cursesmodule_exec(PyObject *module)
 {
     _cursesmodule_state *st = get_cursesmodule_state(module);
     /* Initialize object type */
-    if (PyType_Ready(&PyCursesWindow_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddType(module, &PyCursesWindow_Type) < 0) {
+    st->PyCursesWindow_Type = (PyTypeObject *)PyType_FromModuleAndSpec(
+        module, &PyCursesWindow_Type_spec, NULL);
+    if (PyModule_AddType(module, st->PyCursesWindow_Type) < 0) {
         return -1;
     }
 
@@ -4888,7 +4868,7 @@ _cursesmodule_exec(PyObject *module)
         return -1;
     }
     /* Initialize the C API pointer array */
-    PyCurses_API[0] = (void *)Py_NewRef(&PyCursesWindow_Type);
+    PyCurses_API[0] = (void *)Py_NewRef(st->PyCursesWindow_Type);
     PyCurses_API[1] = (void *)func_PyCursesSetupTermCalled;
     PyCurses_API[2] = (void *)func_PyCursesInitialised;
     PyCurses_API[3] = (void *)func_PyCursesInitialisedColor;
