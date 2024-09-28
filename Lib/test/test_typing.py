@@ -2062,16 +2062,10 @@ class UnionTests(BaseTestCase):
 
         self.assertEqual(Union[A, B].__args__, (A, B))
         union1 = Union[A, B]
-        with self.assertRaises(TypeError):
-            hash(union1)
-
         union2 = Union[int, B]
-        with self.assertRaises(TypeError):
-            hash(union2)
-
         union3 = Union[A, int]
-        with self.assertRaises(TypeError):
-            hash(union3)
+
+        self.assertEqual(len({union1, union2, union3}), 3)
 
     def test_repr(self):
         u = Union[Employee, int]
