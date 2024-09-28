@@ -984,17 +984,19 @@ _codecs._unregister_error -> bool
     errors: str
     /
 
-Un-register the specified error handler under the name errors.
+Un-register the specified error handler under the name 'errors'.
 
-Only custom handlers can be un-registered. Returns True if the
-handler has been successfully un-registered, and False if the
-errors policy is not recognized. An exception is raised when
-the errors policy is not allowed.
+Only custom error handlers can be un-registered. Returns True
+if the handler has been successfully un-registered, and False
+if the error policy is not registered.
+
+An exception is raised when the error policy is a built-in one
+or if an error occurred.
 [clinic start generated code]*/
 
 static int
 _codecs__unregister_error_impl(PyObject *module, const char *errors)
-/*[clinic end generated code: output=28c22be667465503 input=aa488f7d1f308c8c]*/
+/*[clinic end generated code: output=28c22be667465503 input=b5fb3325eea01278]*/
 {
     return _PyCodec_UnregisterError(errors);
 }

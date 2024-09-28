@@ -16,7 +16,7 @@ Copyright (c) Corporation for National Research Initiatives.
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
-static const char *codecs_standard_error_polcies[] = {
+static const char *codecs_builtin_error_policies[] = {
     "strict", "ignore", "replace",
     "xmlcharrefreplace", "backslashreplace", "namereplace",
     "surrogatepass", "surrogateescape",
@@ -626,10 +626,10 @@ int PyCodec_RegisterError(const char *name, PyObject *error)
 
 int _PyCodec_UnregisterError(const char *name)
 {
-    for (size_t i = 0; i < Py_ARRAY_LENGTH(codecs_standard_error_polcies); ++i) {
-        if (strcmp(name, codecs_standard_error_polcies[i]) == 0) {
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(codecs_builtin_error_policies); ++i) {
+        if (strcmp(name, codecs_builtin_error_policies[i]) == 0) {
             PyErr_Format(PyExc_ValueError,
-                         "cannot un-register standard error policy '%s'", name);
+                         "cannot un-register built-in error policy '%s'", name);
             return -1;
         }
     }

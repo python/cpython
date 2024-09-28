@@ -2,6 +2,7 @@ from _codecs import _unregister_error as _codecs_unregister_error
 import codecs
 import html.entities
 import itertools
+import os
 import sys
 import unicodedata
 import unittest
@@ -1235,7 +1236,7 @@ class CodecCallbackTest(unittest.TestCase):
                     with self.assertRaises((TypeError, FakeUnicodeError)):
                         handler(FakeUnicodeError())
 
-    def test_reject_unregister_standard_error_policy(self):
+    def test_reject_unregister_builtin_error_policy(self):
         for policy in [
             'strict', 'ignore', 'replace', 'backslashreplace', 'namereplace',
             'xmlcharrefreplace', 'surrogateescape', 'surrogatepass',
@@ -1247,7 +1248,10 @@ class CodecCallbackTest(unittest.TestCase):
         def custom_handler(exc):
             raise exc
 
-        custom_name = f'test.test_unregister_error.custom.{id(self)}'
+        # We want a unique ID in case the test is executed multiple times
+        # to be sure that we always try to un-register a new error policy.
+        unique_id = int.from_bytes(os.urandom(8))
+        custom_name = f'test.test_unregister_error.custom.{unique_id}'
         self.assertRaises(LookupError, codecs.lookup_error, custom_name)
         codecs.register_error(custom_name, custom_handler)
         self.assertIs(codecs.lookup_error(custom_name), custom_handler)
@@ -1255,7 +1259,10 @@ class CodecCallbackTest(unittest.TestCase):
         self.assertRaises(LookupError, codecs.lookup_error, custom_name)
 
     def test_unregister_custom_unknown_error_policy(self):
-        unknown_name = f'test.test_unregister_error.custom.{id(self)}.unknown'
+        # We want a unique ID in case the test is executed multiple times
+        # to be sure that we always try to un-register an unknown error policy.
+        unique_id = int.from_bytes(os.urandom(8))
+        unknown_name = f'test.test_unregister_error.custom.unknown.{unique_id}'
         self.assertRaises(LookupError, codecs.lookup_error, unknown_name)
         self.assertFalse(_codecs_unregister_error(unknown_name))
         self.assertRaises(LookupError, codecs.lookup_error, unknown_name)
