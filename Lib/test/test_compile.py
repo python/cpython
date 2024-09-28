@@ -2705,6 +2705,5 @@ class TestInstructionSequence(unittest.TestCase):
             self.assertEqual(t.__static_attributes__, attributes)
 
 
-
 if __name__ == "__main__":
     unittest.main()
