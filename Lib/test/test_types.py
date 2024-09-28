@@ -723,16 +723,10 @@ class UnionTests(unittest.TestCase):
 
         self.assertEqual((A | B).__args__, (A, B))
         union1 = A | B
-        with self.assertRaises(TypeError):
-            hash(union1)
-
         union2 = int | B
-        with self.assertRaises(TypeError):
-            hash(union2)
-
         union3 = A | int
-        with self.assertRaises(TypeError):
-            hash(union3)
+
+        self.assertEqual(len({union1, union2, union3}), 3)
 
     def test_instancecheck_and_subclasscheck(self):
         for x in (int | str, typing.Union[int, str]):
@@ -1011,9 +1005,12 @@ class UnionTests(unittest.TestCase):
                 return 1 / 0
 
         bt = BadType('bt', (), {})
+        bt2 = BadType('bt2', (), {})
         # Comparison should fail and errors should propagate out for bad types.
+        union1 = int | bt
+        union2 = int | bt2
         with self.assertRaises(ZeroDivisionError):
-            list[int] | list[bt]
+            union1 == union2
 
         union_ga = (list[str] | int, collections.abc.Callable[..., str] | int,
                     d | int)
