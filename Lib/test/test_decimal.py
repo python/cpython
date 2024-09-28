@@ -4381,7 +4381,8 @@ class CheckAttributes(unittest.TestCase):
 
         self.assertEqual(C.__version__, P.__version__)
 
-        self.assertEqual(dir(C), dir(P))
+        self.assertLessEqual(set(dir(C)), set(dir(P)))
+        self.assertEqual([n for n in dir(C) if n[:2] != '__'], sorted(P.__all__))
 
     def test_context_attributes(self):
 
