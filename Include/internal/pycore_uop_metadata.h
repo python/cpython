@@ -274,6 +274,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_INTERNAL_INCREMENT_OPT_COUNTER] = 0,
     [_DYNAMIC_EXIT] = HAS_ESCAPES_FLAG,
     [_START_EXECUTOR] = 0,
+    [_MAKE_WARM] = 0,
     [_FATAL_ERROR] = 0,
     [_CHECK_VALIDITY_AND_SET_IP] = HAS_DEOPT_FLAG,
     [_DEOPT] = 0,
@@ -481,6 +482,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_LOAD_SUPER_ATTR_METHOD] = "_LOAD_SUPER_ATTR_METHOD",
     [_MAKE_CELL] = "_MAKE_CELL",
     [_MAKE_FUNCTION] = "_MAKE_FUNCTION",
+    [_MAKE_WARM] = "_MAKE_WARM",
     [_MAP_ADD] = "_MAP_ADD",
     [_MATCH_CLASS] = "_MATCH_CLASS",
     [_MATCH_KEYS] = "_MATCH_KEYS",
@@ -1061,6 +1063,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _DYNAMIC_EXIT:
             return 0;
         case _START_EXECUTOR:
+            return 0;
+        case _MAKE_WARM:
             return 0;
         case _FATAL_ERROR:
             return 0;
