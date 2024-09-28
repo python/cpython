@@ -638,50 +638,70 @@ PyTypeObject PyCursesWindow_Type;
 #define Window_NoArgNoReturnFunction(X)                         \
     static PyObject *PyCursesWindow_ ## X                       \
     (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))  \
-    { return PyCursesCheckERR(X(self->win), # X); }
+    {                                                           \
+        int rtn = X(self->win);                                 \
+        return PyCursesCheckERR_FromSelf(self, rtn, # X);       \
+    }
 
-#define Window_NoArgTrueFalseFunction(X)                                \
-    static PyObject * PyCursesWindow_ ## X                              \
-    (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))          \
-    {                                                                   \
-        return PyBool_FromLong(X(self->win)); }
+#define Window_NoArgTrueFalseFunction(X)                        \
+    static PyObject * PyCursesWindow_ ## X                      \
+    (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))  \
+    {                                                           \
+        return PyBool_FromLong(X(self->win));                   \
+    }
 
 #define Window_NoArgNoReturnVoidFunction(X)                     \
     static PyObject * PyCursesWindow_ ## X                      \
     (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))  \
     {                                                           \
-        X(self->win); Py_RETURN_NONE; }
+        X(self->win);                                           \
+        Py_RETURN_NONE;                                         \
+    }
 
-#define Window_NoArg2TupleReturnFunction(X, TYPE, ERGSTR)               \
-    static PyObject * PyCursesWindow_ ## X                              \
-    (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))          \
-    {                                                                   \
-        TYPE arg1, arg2;                                                \
-        X(self->win,arg1,arg2); return Py_BuildValue(ERGSTR, arg1, arg2); }
+#define Window_NoArg2TupleReturnFunction(X, TYPE, ERGSTR)       \
+    static PyObject * PyCursesWindow_ ## X                      \
+    (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))  \
+    {                                                           \
+        TYPE arg1, arg2;                                        \
+        X(self->win,arg1,arg2);                                 \
+        return Py_BuildValue(ERGSTR, arg1, arg2);               \
+    }
 
-#define Window_OneArgNoReturnVoidFunction(X, TYPE, PARSESTR)            \
-    static PyObject * PyCursesWindow_ ## X                              \
-    (PyCursesWindowObject *self, PyObject *args)                        \
-    {                                                                   \
-        TYPE arg1;                                                      \
-        if (!PyArg_ParseTuple(args, PARSESTR, &arg1)) return NULL;      \
-        X(self->win,arg1); Py_RETURN_NONE; }
+#define Window_OneArgNoReturnVoidFunction(X, TYPE, PARSESTR)    \
+    static PyObject * PyCursesWindow_ ## X                      \
+    (PyCursesWindowObject *self, PyObject *args)                \
+    {                                                           \
+        TYPE arg1;                                              \
+        if (!PyArg_ParseTuple(args, PARSESTR, &arg1)) {         \
+            return NULL;                                        \
+        }                                                       \
+        X(self->win,arg1);                                      \
+        Py_RETURN_NONE;                                         \
+    }
 
-#define Window_OneArgNoReturnFunction(X, TYPE, PARSESTR)                \
-    static PyObject * PyCursesWindow_ ## X                              \
-    (PyCursesWindowObject *self, PyObject *args)                        \
-    {                                                                   \
-        TYPE arg1;                                                      \
-        if (!PyArg_ParseTuple(args,PARSESTR, &arg1)) return NULL;       \
-        return PyCursesCheckERR(X(self->win, arg1), # X); }
+#define Window_OneArgNoReturnFunction(X, TYPE, PARSESTR)    \
+    static PyObject * PyCursesWindow_ ## X                  \
+    (PyCursesWindowObject *self, PyObject *args)            \
+    {                                                       \
+        TYPE arg1;                                          \
+        if (!PyArg_ParseTuple(args, PARSESTR, &arg1)) {     \
+            return NULL;                                    \
+        }                                                   \
+        int rtn = X(self->win, arg1);                       \
+        return PyCursesCheckERR_FromSelf(self, rtn, # X);   \
+    }
 
-#define Window_TwoArgNoReturnFunction(X, TYPE, PARSESTR)                \
-    static PyObject * PyCursesWindow_ ## X                              \
-    (PyCursesWindowObject *self, PyObject *args)                        \
-    {                                                                   \
-        TYPE arg1, arg2;                                                \
-        if (!PyArg_ParseTuple(args,PARSESTR, &arg1, &arg2)) return NULL; \
-        return PyCursesCheckERR(X(self->win, arg1, arg2), # X); }
+#define Window_TwoArgNoReturnFunction(X, TYPE, PARSESTR)        \
+    static PyObject * PyCursesWindow_ ## X                      \
+    (PyCursesWindowObject *self, PyObject *args)                \
+    {                                                           \
+        TYPE arg1, arg2;                                        \
+        if (!PyArg_ParseTuple(args, PARSESTR, &arg1, &arg2)) {  \
+            return NULL;                                        \
+        }                                                       \
+        int rtn = X(self->win, arg1, arg2);                     \
+        return PyCursesCheckERR_FromSelf(self, rtn, # X);       \
+    }
 
 /* ------------- WINDOW routines --------------- */
 
