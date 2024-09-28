@@ -34,7 +34,7 @@ Installation steps
 ------------------
 
 For `active Python versions <https://www.python.org/downloads/>`_
-(other than in `security` status), the release team produces a
+(other than in ``security`` status), the release team produces a
 **Python for macOS** installer package for each new release.
 A list of available installers
 is available `here <https://www.python.org/downloads/macos/>`_.
@@ -49,7 +49,7 @@ The downloaded file is a standard macOS installer package file (``.pkg``).
 File integrity information (checksum, size, sigstore signature, etc) for each file is included
 on the release download page. Installer packages and their contents are signed and notarized
 with ``Python Software Foundation`` Apple Developer ID certificates
-to meet `macOS Gatekeeper requirements <https://support.apple.com/en-us/102445>`_. 
+to meet `macOS Gatekeeper requirements <https://support.apple.com/en-us/102445>`_.
 
 For a default installation, double-click on the downloaded installer package file.
 This should launch the standard macOS Installer app and display the first of several
@@ -95,7 +95,7 @@ When the installation is complete, the **Summary** window will appear.
 
 If prompted to, double-click on the :command:`Install Certificates.command`
 icon or file in the |applications_folder_version| window to complete the
-installation. 
+installation.
 
 .. image:: mac_installer_07_applications.png
 
@@ -186,7 +186,7 @@ distributions for macOS that may include additional functionality.
 Some popular distributions and their key features:
 
 `ActivePython <https://www.activestate.com/products/python/>`_
-    Installer with multi-platform compatibility, documentation  
+    Installer with multi-platform compatibility, documentation
 
 `Anaconda <https://www.anaconda.com/download/>`_
     Popular scientific modules (such as numpy, scipy, and pandas) and the
@@ -266,14 +266,14 @@ Installing Free-threaded Binaries
 The python.org :ref:`Python for macOS <getting-and-installing-macpython>`
 installer package can optionally install an additional build of
 Python |version| that supports :pep:`703`, the experimental free-threading feature
-(running with the :term:`global interpreter lock` disabled).  
+(running with the :term:`global interpreter lock` disabled).
 Check the release page on python.org for possible updated information.
 
 Because this feature is still considered experimental, the support for it is not installed by default. It is packaged as a separate install option, available by clicking the **Customize** button on the **Installation Type** step of the installer as described above.
 
 .. image:: mac_installer_09_custom_install_free_threaded.png
 
-When selected, a separate :file:`PythonT.framework` will also be installed alongside the normal :file:`Python.framework` in :file:`/Library/Frameworks`. This configuration allows a free-threaded Python |version| build to co-exist on your system with a traditional (GIL only) Python |version| build with minimal risk while installing or testing. This installation layout is itself experimental and is subject to change in future releases. 
+When selected, a separate :file:`PythonT.framework` will also be installed alongside the normal :file:`Python.framework` in :file:`/Library/Frameworks`. This configuration allows a free-threaded Python |version| build to co-exist on your system with a traditional (GIL only) Python |version| build with minimal risk while installing or testing. This installation layout is itself experimental and is subject to change in future releases.
 
 Known cautions and limitations:
 
@@ -295,7 +295,7 @@ Known cautions and limitations:
   The free-threaded package will install a separate instance of :program:`pip` for use
   with |python_version_t|.
 
-  - To install a package using `pip` without a `venv`:
+  - To install a package using :command:`pip`` without a :command:`venv`:
 
         |python_version_t| ``-m pip install _package_name_``
 
@@ -365,7 +365,7 @@ release as an example:
 
     # download installer pkg
     curl -O https://www.python.org/ftp/python/3.13.0/${RELEASE}
-    
+
     # create installer choicechanges to customize the install:
     #    enable the PythonTFramework-3.13 package
     #    while accepting the other defaults (install all other packages)
@@ -385,9 +385,9 @@ release as an example:
     </array>
     </plist>
     EOF
-    
+
     sudo installer -pkg ./${RELEASE} -applyChoiceChangesXML ./choicechanges.plist -target /
-    
+
 
 You can then test that both installer builds are now available with something like:
 
