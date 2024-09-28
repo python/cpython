@@ -141,15 +141,12 @@ Context object management functions:
    Context object watcher callback function.  The object passed to the callback
    is event-specific; see :c:type:`PyContextEvent` for details.
 
+   Any pending exception is cleared before the callback is called and restored
+   after the callback returns.
+
    If the callback returns with an exception set, it must return ``-1``; this
    exception will be printed as an unraisable exception using
    :c:func:`PyErr_FormatUnraisable`. Otherwise it should return ``0``.
-
-   There may already be a pending exception set on entry to the callback. In
-   this case, the callback should return ``0`` with the same exception still
-   set. This means the callback may not call any other API that can set an
-   exception unless it saves and clears the exception state first, and restores
-   it before returning.
 
    .. versionadded:: 3.14
 

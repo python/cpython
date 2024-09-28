@@ -125,11 +125,13 @@ notify_context_watchers(PyThreadState *ts, PyContextEvent event, PyObject *ctx)
         if (bits & 1) {
             PyContext_WatchCallback cb = interp->context_watchers[i];
             assert(cb != NULL);
+            PyObject *exc = _PyErr_GetRaisedException(ts);
             if (cb(event, ctx) < 0) {
                 PyErr_FormatUnraisable(
                     "Exception ignored in %s watcher callback for %R",
                     context_event_name(event), ctx);
             }
+            _PyErr_SetRaisedException(ts, exc);
         }
         i++;
         bits >>= 1;
