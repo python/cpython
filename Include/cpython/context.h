@@ -38,6 +38,9 @@ typedef enum {
  * The callback is invoked with the event and a reference to
  * the context after its entered and before its exited.
  *
+ * Any pending exception is cleared before the callback is called and restored
+ * after the callback returns.
+ *
  * if the callback returns with an exception set, it must return -1. Otherwise
  * it should return 0
  */
