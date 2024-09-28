@@ -810,6 +810,7 @@ static void set_most_env_vars(void)
 #ifdef Py_STATS
     putenv("PYTHONSTATS=1");
 #endif
+    putenv("PYTHONPERFSUPPORT=1");
 }
 
 
@@ -1841,6 +1842,10 @@ static int test_initconfig_api(void)
     }
 
     if (PyInitConfig_SetInt(config, "hash_seed", 10) < 0) {
+        goto error;
+    }
+
+    if (PyInitConfig_SetInt(config, "perf_profiling", 2) < 0) {
         goto error;
     }
 

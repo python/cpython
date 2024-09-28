@@ -248,6 +248,7 @@ class PseudoInstruction:
     name: str
     stack: StackEffect
     targets: list[Instruction]
+    as_sequence: bool
     flags: list[str]
     opcode: int = -1
 
@@ -539,6 +540,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyList_FromStackRefSteal",
     "_PyTuple_FromArraySteal",
     "_PyTuple_FromStackRefSteal",
+    "_Py_set_eval_breaker_bit"
 )
 
 ESCAPING_FUNCTIONS = (
@@ -852,6 +854,7 @@ def add_pseudo(
         pseudo.name,
         analyze_stack(pseudo),
         [instructions[target] for target in pseudo.targets],
+        pseudo.as_sequence,
         pseudo.flags,
     )
 
