@@ -188,15 +188,18 @@ method_getattro(PyObject *obj, PyObject *name)
             if (PyType_Ready(tp) < 0)
                 return NULL;
         }
-        descr = _PyType_Lookup(tp, name);
+        descr = _PyType_LookupRef(tp, name);
     }
 
     if (descr != NULL) {
         descrgetfunc f = TP_DESCR_GET(Py_TYPE(descr));
-        if (f != NULL)
-            return f(descr, obj, (PyObject *)Py_TYPE(obj));
+        if (f != NULL) {
+            PyObject *res = f(descr, obj, (PyObject *)Py_TYPE(obj));
+            Py_DECREF(descr);
+            return res;
+        }
         else {
-            return Py_NewRef(descr);
+            return descr;
         }
     }
 
@@ -301,7 +304,7 @@ static Py_hash_t
 method_hash(PyMethodObject *a)
 {
     Py_hash_t x, y;
-    x = _Py_HashPointer(a->im_self);
+    x = PyObject_GenericHash(a->im_self);
     y = PyObject_Hash(a->im_func);
     if (y == -1)
         return -1;
@@ -317,6 +320,13 @@ method_traverse(PyMethodObject *im, visitproc visit, void *arg)
     Py_VISIT(im->im_func);
     Py_VISIT(im->im_self);
     return 0;
+}
+
+static PyObject *
+method_descr_get(PyObject *meth, PyObject *obj, PyObject *cls)
+{
+    Py_INCREF(meth);
+    return meth;
 }
 
 PyTypeObject PyMethod_Type = {
@@ -339,6 +349,7 @@ PyTypeObject PyMethod_Type = {
     .tp_methods = method_methods,
     .tp_members = method_memberlist,
     .tp_getset = method_getset,
+    .tp_descr_get = method_descr_get,
     .tp_new = method_new,
 };
 
@@ -402,14 +413,17 @@ instancemethod_getattro(PyObject *self, PyObject *name)
         if (PyType_Ready(tp) < 0)
             return NULL;
     }
-    descr = _PyType_Lookup(tp, name);
+    descr = _PyType_LookupRef(tp, name);
 
     if (descr != NULL) {
         descrgetfunc f = TP_DESCR_GET(Py_TYPE(descr));
-        if (f != NULL)
-            return f(descr, self, (PyObject *)Py_TYPE(self));
+        if (f != NULL) {
+            PyObject *res = f(descr, self, (PyObject *)Py_TYPE(self));
+            Py_DECREF(descr);
+            return res;
+        }
         else {
-            return Py_NewRef(descr);
+            return descr;
         }
     }
 

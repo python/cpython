@@ -9,7 +9,7 @@ import sys
 import weakref
 
 from test import support
-from test.support import import_helper
+from test.support import import_helper, suppress_immortalization
 from test.support.script_helper import assert_python_ok
 
 ISBIGENDIAN = sys.byteorder == "big"
@@ -96,6 +96,13 @@ class StructTest(unittest.TestCase):
             ('10s', b'helloworld', b'helloworld', b'helloworld', 0),
             ('11s', b'helloworld', b'helloworld\0', b'helloworld\0', 1),
             ('20s', b'helloworld', b'helloworld'+10*b'\0', b'helloworld'+10*b'\0', 1),
+            ('0p', b'helloworld', b'', b'', 1),
+            ('1p', b'helloworld', b'\x00', b'\x00', 1),
+            ('2p', b'helloworld', b'\x01h', b'\x01h', 1),
+            ('10p', b'helloworld', b'\x09helloworl', b'\x09helloworl', 1),
+            ('11p', b'helloworld', b'\x0Ahelloworld', b'\x0Ahelloworld', 0),
+            ('12p', b'helloworld', b'\x0Ahelloworld\0', b'\x0Ahelloworld\0', 1),
+            ('20p', b'helloworld', b'\x0Ahelloworld'+9*b'\0', b'\x0Ahelloworld'+9*b'\0', 1),
             ('b', 7, b'\7', b'\7', 0),
             ('b', -7, b'\371', b'\371', 0),
             ('B', 7, b'\7', b'\7', 0),
@@ -339,6 +346,7 @@ class StructTest(unittest.TestCase):
     def test_p_code(self):
         # Test p ("Pascal string") code.
         for code, input, expected, expectedback in [
+                ('0p', b'abc', b'',                b''),
                 ('p',  b'abc', b'\x00',            b''),
                 ('1p', b'abc', b'\x00',            b''),
                 ('2p', b'abc', b'\x01a',           b'a'),
@@ -580,6 +588,7 @@ class StructTest(unittest.TestCase):
         self.check_sizeof('187s', 1)
         self.check_sizeof('20p', 1)
         self.check_sizeof('0s', 1)
+        self.check_sizeof('0p', 1)
         self.check_sizeof('0c', 0)
 
     def test_boundary_error_message(self):
@@ -674,6 +683,7 @@ class StructTest(unittest.TestCase):
         self.assertIn(b"Exception ignored in:", stderr)
         self.assertIn(b"C.__del__", stderr)
 
+    @suppress_immortalization()
     def test__struct_reference_cycle_cleaned_up(self):
         # Regression test for python/cpython#94207.
 
@@ -700,20 +710,6 @@ class StructTest(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     cls.x = 1
 
-    @support.cpython_only
-    def test__struct_Struct__new__initialized(self):
-        # See https://github.com/python/cpython/issues/78724
-
-        s = struct.Struct.__new__(struct.Struct, "b")
-        s.unpack_from(b"abcd")
-
-    @support.cpython_only
-    def test__struct_Struct_subclassing(self):
-        class Bob(struct.Struct):
-            pass
-
-        s = Bob("b")
-        s.unpack_from(b"abcd")
 
     def test_issue35714(self):
         # Embedded null characters should not be allowed in format strings.
@@ -773,6 +769,15 @@ class StructTest(unittest.TestCase):
 
         test_error_propagation('N')
         test_error_propagation('n')
+
+    def test_struct_subclass_instantiation(self):
+        # Regression test for https://github.com/python/cpython/issues/112358
+        class MyStruct(struct.Struct):
+            def __init__(self):
+                super().__init__('>h')
+
+        my_struct = MyStruct()
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
 
     def test_repr(self):
         s = struct.Struct('=i2H')

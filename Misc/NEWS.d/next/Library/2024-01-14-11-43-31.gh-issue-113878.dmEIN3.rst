@@ -1,0 +1,9 @@
+Add *doc* parameter to :func:`dataclasses.field`, so it can be stored and
+shown as a documentation / metadata. If ``@dataclass(slots=True)`` is used,
+then the supplied string is availabl in the :attr:`~object.__slots__` dict.
+Otherwise, the supplied string is only available in the corresponding
+:class:`dataclasses.Field` object.
+
+In order to support this feature we are changing the ``__slots__`` format
+in dataclasses from :class:`tuple` to :class:`dict`
+when documentation / metadata is present.

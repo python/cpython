@@ -89,8 +89,8 @@ If your type supports garbage collection, the destructor should call
    }
 
 .. index::
-   single: PyErr_Fetch()
-   single: PyErr_Restore()
+   single: PyErr_Fetch (C function)
+   single: PyErr_Restore (C function)
 
 One important requirement of the deallocator function is that it leaves any
 pending exceptions alone.  This is important since deallocators are frequently
@@ -296,7 +296,7 @@ An interesting advantage of using the :c:member:`~PyTypeObject.tp_members` table
 descriptors that are used at runtime is that any attribute defined this way can
 have an associated doc string simply by providing the text in the table.  An
 application can use the introspection API to retrieve the descriptor from the
-class object, and get the doc string using its :attr:`__doc__` attribute.
+class object, and get the doc string using its :attr:`~type.__doc__` attribute.
 
 As with the :c:member:`~PyTypeObject.tp_methods` table, a sentinel entry with a :c:member:`~PyMethodDef.ml_name` value
 of ``NULL`` is required.
@@ -545,7 +545,7 @@ performance-critical objects (such as numbers).
 .. seealso::
    Documentation for the :mod:`weakref` module.
 
-For an object to be weakly referencable, the extension type must set the
+For an object to be weakly referenceable, the extension type must set the
 ``Py_TPFLAGS_MANAGED_WEAKREF`` bit of the :c:member:`~PyTypeObject.tp_flags`
 field. The legacy :c:member:`~PyTypeObject.tp_weaklistoffset` field should
 be left as zero.

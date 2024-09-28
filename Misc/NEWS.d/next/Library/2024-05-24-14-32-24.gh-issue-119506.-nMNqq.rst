@@ -1,0 +1,1 @@
+Fix :meth:`!io.TextIOWrapper.write` method breaks internal buffer when the method is called again during flushing internal buffer.

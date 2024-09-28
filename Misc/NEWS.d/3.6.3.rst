@@ -4,7 +4,7 @@
 .. release date: 2017-10-03
 .. section: Library
 
-Re-allow arbitrary iterables in `concurrent.futures.as_completed()`. Fixes
+Re-allow arbitrary iterables in ``concurrent.futures.as_completed()``. Fixes
 regression in 3.6.3rc1.
 
 ..

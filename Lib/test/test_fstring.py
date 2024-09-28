@@ -8,12 +8,13 @@
 # Unicode identifiers in tests is allowed by PEP 3131.
 
 import ast
+import datetime
+import dis
 import os
 import re
 import types
 import decimal
 import unittest
-import warnings
 from test import support
 from test.support.os_helper import temp_cwd
 from test.support.script_helper import assert_python_failure, assert_python_ok
@@ -743,13 +744,13 @@ x = (
 }''', 'A complex trick: 2')
         self.assertEqual(f'''
 {
-40 # fourty
+40 # forty
 +  # plus
 2  # two
 }''', '\n42')
         self.assertEqual(f'''
 {
-40 # fourty
+40 # forty
 +  # plus
 2  # two
 }''', '\n42')
@@ -895,6 +896,7 @@ x = (
                              "f'{:2}'",
                              "f'''{\t\f\r\n:a}'''",
                              "f'{:'",
+                             "F'{[F'{:'}[F'{:'}]]]",
                              ])
 
         self.assertAllRaise(SyntaxError,
@@ -1601,6 +1603,12 @@ x = (
         self.assertEqual(f'{f(a=4)}', '3=')
         self.assertEqual(x, 4)
 
+        # Check debug expressions in format spec
+        y = 20
+        self.assertEqual(f"{2:{y=}}", "yyyyyyyyyyyyyyyyyyy2")
+        self.assertEqual(f"{datetime.datetime.now():h1{y=}h2{y=}h3{y=}}",
+                         'h1y=20h2y=20h3y=20')
+
         # Make sure __format__ is being called.
         class C:
             def __format__(self, s):
@@ -1614,8 +1622,10 @@ x = (
         self.assertEqual(f'{C()=: }', 'C()=FORMAT- ')
         self.assertEqual(f'{C()=:x}', 'C()=FORMAT-x')
         self.assertEqual(f'{C()=!r:*^20}', 'C()=********REPR********')
+        self.assertEqual(f"{C():{20=}}", 'FORMAT-20=20')
 
         self.assertRaises(SyntaxError, eval, "f'{C=]'")
+
 
         # Make sure leading and following text works.
         x = 'foo'
@@ -1626,6 +1636,9 @@ x = (
         self.assertEqual(f'X{x=  }Y', 'Xx=  '+repr(x)+'Y')
         self.assertEqual(f'X{x  =  }Y', 'Xx  =  '+repr(x)+'Y')
         self.assertEqual(f"sadsd {1 + 1 =  :{1 + 1:1d}f}", "sadsd 1 + 1 =  2.000000")
+
+        self.assertEqual(f"{1+2 = # my comment
+  }", '1+2 = \n  3')
 
         # These next lines contains tabs.  Backslash escapes don't
         # work in f-strings.
@@ -1734,6 +1747,15 @@ print(f'''{{
             _, stdout, stderr = assert_python_ok(script)
             self.assertIn(rb'\1', stdout)
             self.assertEqual(len(stderr.strip().splitlines()), 2)
+
+    def test_fstring_without_formatting_bytecode(self):
+        # f-string without any formatting should emit the same bytecode
+        # as a normal string. See gh-99606.
+        def get_code(s):
+            return [(i.opname, i.oparg) for i in dis.get_instructions(s)]
+
+        for s in ["", "some string"]:
+            self.assertEqual(get_code(f"'{s}'"), get_code(f"f'{s}'"))
 
 if __name__ == '__main__':
     unittest.main()

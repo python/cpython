@@ -1,6 +1,3 @@
-
-/* System module interface */
-
 #ifndef Py_SYSMODULE_H
 #define Py_SYSMODULE_H
 #ifdef __cplusplus
@@ -9,6 +6,9 @@ extern "C" {
 
 PyAPI_FUNC(PyObject *) PySys_GetObject(const char *);
 PyAPI_FUNC(int) PySys_SetObject(const char *, PyObject *);
+
+Py_DEPRECATED(3.11) PyAPI_FUNC(void) PySys_SetArgv(int, wchar_t **);
+Py_DEPRECATED(3.11) PyAPI_FUNC(void) PySys_SetArgvEx(int, wchar_t **, int);
 
 PyAPI_FUNC(void) PySys_WriteStdout(const char *format, ...)
                  Py_GCC_ATTRIBUTE((format(printf, 1, 2)));
