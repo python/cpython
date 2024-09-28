@@ -1,6 +1,7 @@
 import contextlib
 import dis
 import io
+import itertools
 import math
 import opcode
 import os
@@ -2686,6 +2687,22 @@ class TestInstructionSequence(unittest.TestCase):
         seq.add_nested(nested)
         self.compare_instructions(seq, [('LOAD_CONST', 1, 1, 0, 0, 0)])
         self.compare_instructions(seq.get_nested()[0], [('LOAD_CONST', 2, 2, 0, 0, 0)])
+
+    def test_static_attributes_are_sorted(self):
+        code = (
+            'class T:\n'
+            '    def __init__(self):\n'
+            '        self.{V1} = 10\n'
+            '        self.{V2} = 10\n'
+            '    def foo(self):\n'
+            '        self.{V3} = 10\n'
+        )
+        attributes = ("a", "b", "c")
+        for perm in itertools.permutations(attributes):
+            var_names = {f'V{i + 1}': name for i, name in enumerate(perm)}
+            ns = run_code(code.format(**var_names))
+            t = ns['T']
+            self.assertEqual(t.__static_attributes__, attributes)
 
 
 if __name__ == "__main__":
