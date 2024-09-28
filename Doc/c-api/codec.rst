@@ -100,7 +100,7 @@ Registry API for Unicode encoding error handlers
 .. c:function:: int PyCodec_UnregisterError(const char *name)
 
    Un-register the error handling callback function error under the given error
-   policy *name*. :ref:`Standard error policies <error-handlers>` cannot be
+   policy *name*. :ref:`Standard error policies <serror-handlers>` cannot be
    un-registered.
 
    * Return ``-1`` and set a :exc:`ValueError` exception if *name* is a
