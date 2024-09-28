@@ -1,1 +1,2 @@
-Fix nondeterminism in compilation of ``__static_attributes__`` by sorting
+Fix nondeterminism in compilation by sorting the value of
+:attr:`~type.__static_attributes__`. Patch by kp2pml30.
