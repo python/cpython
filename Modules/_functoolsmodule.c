@@ -365,9 +365,10 @@ partial_vectorcall_fallback(PyThreadState *tstate, partialobject *pto,
 }
 
 static PyObject *
-partial_vectorcall(partialobject *pto, PyObject *const *args,
+partial_vectorcall(PyObject *self, PyObject *const *args,
                    size_t nargsf, PyObject *kwnames)
 {
+    partialobject *pto = (partialobject *)(self);
     PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
 
@@ -468,7 +469,7 @@ partial_setvectorcall(partialobject *pto)
      * but that is unlikely (why use partial without arguments?),
      * so we don't optimize that */
     else {
-        pto->vectorcall = (vectorcallfunc)partial_vectorcall;
+        pto->vectorcall = partial_vectorcall;
     }
 }
 
