@@ -2704,7 +2704,7 @@ PyTypeObject PyCursesWindow_Type = {
     PyCursesWindow_getsets,     /* tp_getset */
 };
 
-/* Function Prototype Macros - They are ugly but very, very useful. ;-)
+/* Function Body Macros - They are ugly but very, very useful. ;-)
 
    X - function name
    TYPE - parameter Type
@@ -2712,41 +2712,43 @@ PyTypeObject PyCursesWindow_Type = {
    PARSESTR - format string for argument parsing
    */
 
-#define NoArgNoReturnFunctionBody(X) \
-{ \
-  PyCursesInitialised; \
-  return PyCursesCheckERR(X(), # X); }
-
-#define NoArgOrFlagNoReturnFunctionBody(X, flag) \
-{ \
-    PyCursesInitialised; \
-    if (flag) \
-        return PyCursesCheckERR(X(), # X); \
-    else \
-        return PyCursesCheckERR(no ## X(), # X); \
+#define NoArgNoReturnFunctionBody(X)            \
+{                                               \
+    PyCursesStatefulInitialised(module);        \
+    return PyCursesCheckERR(module, X(), # X);  \
 }
 
-#define NoArgReturnIntFunctionBody(X) \
-{ \
- PyCursesInitialised; \
- return PyLong_FromLong((long) X()); }
+#define NoArgOrFlagNoReturnFunctionBody(X, flag)    \
+{                                                   \
+    PyCursesStatefulInitialised(module);            \
+    int rtn = (flag) ? X() : no ## X();             \
+    return PyCursesCheckERR(module, rtn, # X);      \
+}
 
+#define NoArgReturnIntFunctionBody(X)       \
+{                                           \
+    PyCursesStatefulInitialised(module);    \
+    return PyLong_FromLong((long) X());     \
+}
 
-#define NoArgReturnStringFunctionBody(X) \
-{ \
-  PyCursesInitialised; \
-  return PyBytes_FromString(X()); }
+#define NoArgReturnStringFunctionBody(X)    \
+{                                           \
+    PyCursesStatefulInitialised(module);    \
+    return PyBytes_FromString(X());         \
+}
 
-#define NoArgTrueFalseFunctionBody(X) \
-{ \
-  PyCursesInitialised; \
-  return PyBool_FromLong(X()); }
+#define NoArgTrueFalseFunctionBody(X)       \
+{                                           \
+    PyCursesStatefulInitialised(module);    \
+    return PyBool_FromLong(X());            \
+}
 
-#define NoArgNoReturnVoidFunctionBody(X) \
-{ \
-  PyCursesInitialised; \
-  X(); \
-  Py_RETURN_NONE; }
+#define NoArgNoReturnVoidFunctionBody(X)    \
+{                                           \
+    PyCursesStatefulInitialised(module);    \
+    X();                                    \
+    Py_RETURN_NONE;                         \
+}
 
 /*********************************************************************
  Global Functions
