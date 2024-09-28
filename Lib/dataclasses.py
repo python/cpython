@@ -1312,21 +1312,21 @@ def _update_func_cell_for__class__(f, oldcls, newcls):
     return False
 
 
-def _find_inner_functions(obj, _seen=None, _depth=0):
+def _find_inner_functions(obj, seen=None, depth=0):
     # inspect is imported lazily (see gh-137855).
     import inspect
-    if _seen is None:
-        _seen = set()
-    if id(obj) in _seen:
+    if seen is None:
+        seen = set()
+    if id(obj) in seen:
         return None
-    _seen.add(id(obj))
+    seen.add(id(obj))
 
-    _depth += 1
+    depth += 1
     # Normally just an inspection of a descriptor object itself should be enough,
     # and we should encounter the function as its attribute,
     # but in case function was wrapped (e.g. functools.partial was used),
     # we want to dive at least one level deeper.
-    if _depth > 2:
+    if depth > 2:
         return None
 
     for attr in dir(obj):
@@ -1336,7 +1336,7 @@ def _find_inner_functions(obj, _seen=None, _depth=0):
         if isinstance(value, types.FunctionType):
             yield inspect.unwrap(value)
             return
-        yield from _find_inner_functions(value, _seen, _depth)
+        yield from _find_inner_functions(value, seen, depth)
 
 
 def _create_slots(defined_fields, inherited_slots, field_names, weakref_slot):
