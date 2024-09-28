@@ -1107,6 +1107,21 @@ class SpecSignatureTest(unittest.TestCase):
                 with self.assertRaisesRegex(AttributeError, msg):
                     mock.b
 
+    def test_dataclass_with_wider_default(self):
+        # If field defines an actual default, we don't need to change
+        # the default type. Since this is how it used to work before #124176
+        @dataclass
+        class WithWiderDefault:
+            narrow_default: int | None = field(default=30)
+
+        for mock in [
+            create_autospec(WithWiderDefault, instance=True),
+            create_autospec(WithWiderDefault()),
+        ]:
+            with self.subTest(mock=mock):
+                self.assertIs(mock.narrow_default.__class__, int)
+
+
 class TestCallList(unittest.TestCase):
 
     def test_args_list_contains_call_list(self):
