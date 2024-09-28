@@ -1558,7 +1558,7 @@ _Unpickler_MemoGet(PickleState *st, UnpicklerObject *self, size_t idx)
         }
     }
     if (self->memo_dict != NULL) {
-        PyObject *key = PyLong_FromSsize_t(idx);
+        PyObject *key = PyLong_FromSize_t(idx);
         if (key == NULL) {
             return NULL;
         }
