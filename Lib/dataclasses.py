@@ -1245,9 +1245,9 @@ def _find_inner_functions(obj, _seen=None, _depth=0):
     _seen.add(id(obj))
 
     _depth += 1
-    # Normally just inspection of a descriptor object itself should be enough,
+    # Normally just an inspection of a descriptor object itself should be enough,
     # and we should encounter the function as its attribute,
-    # but in case function was wrapped (e.g. functools.partition was used),
+    # but in case function was wrapped (e.g. functools.partial was used),
     # we want to dive at least one level deeper.
     if _depth > 2:
         return None

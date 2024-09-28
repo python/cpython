@@ -13,8 +13,7 @@ import types
 import weakref
 import traceback
 import unittest
-from functools import partial
-from functools import update_wrapper
+from functools import partial, update_wrapper
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol, DefaultDict
 from typing import get_type_hints
