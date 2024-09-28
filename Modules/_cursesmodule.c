@@ -255,15 +255,18 @@ static const char *curses_screen_encoding = NULL;
  */
 
 static PyObject *
-PyCursesCheckERR(int code, const char *fname)
+PyCursesCheckERR(PyObject *module, int code, const char *fname)
 {
     if (code != ERR) {
         Py_RETURN_NONE;
-    } else {
+    }
+    else {
+        _cursesmodule_state *st = get_cursesmodule_state(module);
         if (fname == NULL) {
-            PyErr_SetString(PyCursesError, catchall_ERR);
-        } else {
-            PyErr_Format(PyCursesError, "%s() returned ERR", fname);
+            PyErr_SetString(st->PyCursesError, catchall_ERR);
+        }
+        else {
+            PyErr_Format(st->PyCursesError, "%s() returned ERR", fname);
         }
         return NULL;
     }
