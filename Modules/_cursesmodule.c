@@ -1405,7 +1405,8 @@ _curses_window_derwin_impl(PyCursesWindowObject *self, int group_left_1,
         return NULL;
     }
 
-    return (PyObject *)PyCursesWindow_New(win, NULL);
+    _cursesmodule_state *st = get_cursesmodule_state_by_cls(Py_TYPE(self));
+    return (PyObject *)PyCursesWindow_New(st, win, NULL);
 }
 
 /*[clinic input]
@@ -2442,7 +2443,8 @@ _curses_window_subwin_impl(PyCursesWindowObject *self, int group_left_1,
         return NULL;
     }
 
-    return (PyObject *)PyCursesWindow_New(win, self->encoding);
+    _cursesmodule_state *st = get_cursesmodule_state_by_cls(Py_TYPE(self));
+    return (PyObject *)PyCursesWindow_New(st, win, self->encoding);
 }
 
 /*[clinic input]
@@ -3177,7 +3179,8 @@ _curses_getwin(PyObject *module, PyObject *file)
         PyErr_SetString(st->PyCursesError, catchall_NULL);
         goto error;
     }
-    res = PyCursesWindow_New(win, NULL);
+    _cursesmodule_state *st = get_cursesmodule_state(module);
+    res = PyCursesWindow_New(st, win, NULL);
 
 error:
     fclose(fp);
@@ -3349,7 +3352,8 @@ _curses_initscr_impl(PyObject *module)
 
     if (curses_initscr_called) {
         wrefresh(stdscr);
-        return (PyObject *)PyCursesWindow_New(stdscr, NULL);
+        _cursesmodule_state *st = get_cursesmodule_state(module);
+        return (PyObject *)PyCursesWindow_New(st, stdscr, NULL);
     }
 
     win = initscr();
@@ -3452,7 +3456,8 @@ _curses_initscr_impl(PyObject *module)
     SetDictInt("COLS", COLS);
 #undef SetDictInt
 
-    PyCursesWindowObject *winobj = (PyCursesWindowObject *)PyCursesWindow_New(win, NULL);
+    _cursesmodule_state *st = get_cursesmodule_state(module);
+    PyCursesWindowObject *winobj = (PyCursesWindowObject *)PyCursesWindow_New(st, win, NULL);
     if (winobj == NULL) {
         return NULL;
     }
@@ -3829,7 +3834,8 @@ _curses_newpad_impl(PyObject *module, int nlines, int ncols)
         return NULL;
     }
 
-    return (PyObject *)PyCursesWindow_New(win, NULL);
+    _cursesmodule_state *st = get_cursesmodule_state(module);
+    return (PyObject *)PyCursesWindow_New(st, win, NULL);
 }
 
 /*[clinic input]
@@ -3869,7 +3875,8 @@ _curses_newwin_impl(PyObject *module, int nlines, int ncols,
         return NULL;
     }
 
-    return (PyObject *)PyCursesWindow_New(win, NULL);
+    _cursesmodule_state *st = get_cursesmodule_state(module);
+    return (PyObject *)PyCursesWindow_New(st, win, NULL);
 }
 
 /*[clinic input]
