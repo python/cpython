@@ -216,9 +216,9 @@ static inline decimal_state *
 get_module_state_from_ctx(PyObject *v)
 {
     assert(PyType_GetBaseByToken(Py_TYPE(v), &context_spec, NULL) == 1);
-    void *state = ((PyDecContextObject *)v)->modstate;
+    decimal_state *state = ((PyDecContextObject *)v)->modstate;
     assert(state != NULL);
-    return (decimal_state *)state;
+    return state;
 }
 
 
