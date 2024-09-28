@@ -3358,24 +3358,14 @@ make_impl_info(PyObject *version_info)
     if (res < 0)
         goto error;
 
-#ifdef _WIN32
-# define OS_PLATFORM "win32"
-#elif _WIN64
-# define OS_PLATFORM "amd64"
-#elif _M_ARM
-# define OS_PLATFORM "arm32"
-#elif _M_ARM64
-# define OS_PLATFORM "arm64"
-#else
-# define OS_PLATFORM ""
-#endif
-    value = PyUnicode_FromString(OS_PLATFORM);
+#ifdef VPLATFORM
+    value = PyUnicode_FromString(VPLATFORM);
     if (value == NULL)
         goto error;
     res = PyDict_SetItemString(impl_info, "_architecture", value);
-#undef OS_PLATFORM
     if (res < 0)
         goto error;
+#endif
 
 #ifdef MULTIARCH
     value = PyUnicode_FromString(MULTIARCH);
