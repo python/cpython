@@ -1373,11 +1373,13 @@ _curses_window_echochar_impl(PyCursesWindowObject *self, PyObject *ch,
 
 #ifdef py_is_pad
     if (py_is_pad(self->win)) {
-        return PyCursesCheckERR(pechochar(self->win, ch_ | (attr_t)attr), "echochar");
+        return PyCursesCheckERR(pechochar(self->win, ch_ | (attr_t)attr),
+                                "echochar");
     }
     else
 #endif
-        return PyCursesCheckERR(wechochar(self->win, ch_ | (attr_t)attr), "echochar");
+        return PyCursesCheckERR(wechochar(self->win, ch_ | (attr_t)attr),
+                                "echochar");
 }
 
 #ifdef NCURSES_MOUSE_VERSION
@@ -1488,9 +1490,8 @@ _curses_window_getkey_impl(PyCursesWindowObject *self, int group_right_1,
     if (rtn == ERR) {
         /* getch() returns ERR in nodelay mode */
         PyErr_CheckSignals();
-        if (!PyErr_Occurred()) {
+        if (!PyErr_Occurred())
             PyErr_SetString(curses_global_state.PyCursesError, "no input");
-        }
         return NULL;
     } else if (rtn <= 255) {
 #ifdef NCURSES_VERSION_MAJOR
@@ -2649,43 +2650,41 @@ PyTypeObject PyCursesWindow_Type = {
    PARSESTR - format string for argument parsing
    */
 
-#define NoArgNoReturnFunctionBody(X)            \
-{                                               \
-    PyCursesInitialised;        \
-    return PyCursesCheckERR(X(), # X);  \
+#define NoArgNoReturnFunctionBody(X) \
+{ \
+  PyCursesInitialised; \
+  return PyCursesCheckERR(X(), # X); }
+
+#define NoArgOrFlagNoReturnFunctionBody(X, flag) \
+{ \
+    PyCursesInitialised; \
+    if (flag) \
+        return PyCursesCheckERR(X(), # X); \
+    else \
+        return PyCursesCheckERR(no ## X(), # X); \
 }
 
-#define NoArgOrFlagNoReturnFunctionBody(X, flag)    \
-{                                                   \
-    PyCursesInitialised;            \
-    int rtn = (flag) ? X() : no ## X();             \
-    return PyCursesCheckERR(rtn, # X);      \
-}
+#define NoArgReturnIntFunctionBody(X) \
+{ \
+ PyCursesInitialised; \
+ return PyLong_FromLong((long) X()); }
 
-#define NoArgReturnIntFunctionBody(X)       \
-{                                           \
-    PyCursesInitialised;    \
-    return PyLong_FromLong((long) X());     \
-}
 
-#define NoArgReturnStringFunctionBody(X)    \
-{                                           \
-    PyCursesInitialised;    \
-    return PyBytes_FromString(X());         \
-}
+#define NoArgReturnStringFunctionBody(X) \
+{ \
+  PyCursesInitialised; \
+  return PyBytes_FromString(X()); }
 
-#define NoArgTrueFalseFunctionBody(X)       \
-{                                           \
-    PyCursesInitialised;    \
-    return PyBool_FromLong(X());            \
-}
+#define NoArgTrueFalseFunctionBody(X) \
+{ \
+  PyCursesInitialised; \
+  return PyBool_FromLong(X()); }
 
-#define NoArgNoReturnVoidFunctionBody(X)    \
-{                                           \
-    PyCursesInitialised;    \
-    X();                                    \
-    Py_RETURN_NONE;                         \
-}
+#define NoArgNoReturnVoidFunctionBody(X) \
+{ \
+  PyCursesInitialised; \
+  X(); \
+  Py_RETURN_NONE; }
 
 /*********************************************************************
  Global Functions
