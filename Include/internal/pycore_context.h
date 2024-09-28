@@ -7,6 +7,7 @@
 
 #include "pycore_hamt.h"          // PyHamtObject
 
+#define CONTEXT_MAX_WATCHERS 8
 
 extern PyTypeObject _PyContextTokenMissing_Type;
 

@@ -165,9 +165,12 @@ class Emitter:
             if var.name == "unused" or var.name == "null" or var.peek:
                 continue
             if var.size:
-                self.out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-                self.out.emit(f"PyStackRef_CLOSE({var.name}[_i]);\n")
-                self.out.emit("}\n")
+                if var.size == "1":
+                    self.out.emit(f"PyStackRef_CLOSE({var.name}[0]);\n")
+                else:
+                    self.out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
+                    self.out.emit(f"PyStackRef_CLOSE({var.name}[_i]);\n")
+                    self.out.emit("}\n")
             elif var.condition:
                 if var.condition == "1":
                     self.out.emit(f"PyStackRef_CLOSE({var.name});\n")
@@ -197,14 +200,15 @@ class Emitter:
         stack: Stack,
         inst: Instruction | None,
     ) -> None:
-        self.out.emit(tkn)
-        emit_to(self.out, tkn_iter, "SEMI")
-        self.out.emit(";\n")
-
         target = uop.deferred_refs[tkn]
         if target is None:
             # An assignment we don't handle, such as to a pointer or array.
+            self.out.emit(tkn)
             return
+
+        self.out.emit(tkn)
+        emit_to(self.out, tkn_iter, "SEMI")
+        self.out.emit(";\n")
 
         # Flush the assignment to the stack.  Note that we don't flush the
         # stack pointer here, and instead are currently relying on initializing

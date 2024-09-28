@@ -61,6 +61,7 @@ __all__ = [
     "without_optimizer",
     "force_not_colorized",
     "BrokenIter",
+    "in_systemd_nspawn_sync_suppressed",
     ]
 
 
@@ -2208,7 +2209,15 @@ def skip_if_broken_multiprocessing_synchronize():
             # bpo-38377: On Linux, creating a semaphore fails with OSError
             # if the current user does not have the permission to create
             # a file in /dev/shm/ directory.
-            synchronize.Lock(ctx=None)
+            import multiprocessing
+            synchronize.Lock(ctx=multiprocessing.get_context('fork'))
+            # The explicit fork mp context is required in order for
+            # TestResourceTracker.test_resource_tracker_reused to work.
+            # synchronize creates a new multiprocessing.resource_tracker
+            # process at module import time via the above call in that
+            # scenario. Awkward. This enables gh-84559. No code involved
+            # should have threads at that point so fork() should be safe.
+
         except OSError as exc:
             raise unittest.SkipTest(f"broken multiprocessing SemLock: {exc!r}")
 
@@ -2873,3 +2882,35 @@ class BrokenIter:
         if self.iter_raises:
             1/0
         return self
+
+
+def in_systemd_nspawn_sync_suppressed() -> bool:
+    """
+    Test whether the test suite is runing in systemd-nspawn
+    with ``--suppress-sync=true``.
+
+    This can be used to skip tests that rely on ``fsync()`` calls
+    and similar not being intercepted.
+    """
+
+    if not hasattr(os, "O_SYNC"):
+        return False
+
+    try:
+        with open("/run/systemd/container", "rb") as fp:
+            if fp.read().rstrip() != b"systemd-nspawn":
+                return False
+    except FileNotFoundError:
+        return False
+
+    # If systemd-nspawn is used, O_SYNC flag will immediately
+    # trigger EINVAL.  Otherwise, ENOENT will be given instead.
+    import errno
+    try:
+        with os.open(__file__, os.O_RDONLY | os.O_SYNC):
+            pass
+    except OSError as err:
+        if err.errno == errno.EINVAL:
+            return True
+
+    return False

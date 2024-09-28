@@ -211,6 +211,19 @@ class TypeAliasConstructorTest(unittest.TestCase):
         self.assertEqual(TA.__value__, list[T])
         self.assertEqual(TA.__type_params__, (T,))
         self.assertEqual(TA.__module__, __name__)
+        self.assertIs(type(TA[int]), types.GenericAlias)
+
+    def test_not_generic(self):
+        TA = TypeAliasType("TA", list[int], type_params=())
+        self.assertEqual(TA.__name__, "TA")
+        self.assertEqual(TA.__value__, list[int])
+        self.assertEqual(TA.__type_params__, ())
+        self.assertEqual(TA.__module__, __name__)
+        with self.assertRaisesRegex(
+            TypeError,
+            "Only generic type aliases are subscriptable",
+        ):
+            TA[int]
 
     def test_keywords(self):
         TA = TypeAliasType(name="TA", value=int)

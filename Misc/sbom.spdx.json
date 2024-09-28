@@ -352,6 +352,20 @@
       "fileName": "Modules/_hacl/Hacl_Hash_Blake2b_Simd256.h"
     },
     {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2b-Simd256-universal2.c",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "5afc433179d71abd6649596797a7e8953e89172d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "db42da82d18641d68d3670e6201e0cbb43415daaa84f29770b8f0ebf33562975"
+        }
+      ],
+      "fileName": "Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.c"
+    },
+    {
       "SPDXID": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2s.c",
       "checksums": [
         {
@@ -406,6 +420,20 @@
         }
       ],
       "fileName": "Modules/_hacl/Hacl_Hash_Blake2s_Simd128.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2s-Simd128-universal2.c",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "d70c6dbcb91d56bbd80f7bf860e508a748042d0d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5b132ab850a5e0fe6f27e08a955f8989ea3aae8e5b3115f0195039034ece8c04"
+        }
+      ],
+      "fileName": "Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.c"
     },
     {
       "SPDXID": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-MD5.c",
@@ -1801,6 +1829,11 @@
       "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
     },
     {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2b-Simd256-universal2.c",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2s.c",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
@@ -1817,6 +1850,11 @@
     },
     {
       "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2s-Simd128.h",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2s-Simd128-universal2.c",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
     },
