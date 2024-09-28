@@ -21,6 +21,17 @@ extern void _PyCodec_Fini(PyInterpreterState *interp);
 
 extern PyObject* _PyCodec_Lookup(const char *encoding);
 
+/*
+ * Un-register the error handling callback function error under the given
+ * name. Only non-standard error handlers can be un-registered.
+ *
+ * - Return -1 and set an exception if 'name' is a standard error policy,
+ *   or if an error occurred.
+ * - Return 0 if no error handler is associated with the given error policy.
+ * - Return 1 if the error handler was successfully removed.
+ */
+extern int _PyCodec_UnregisterError(const char *name);
+
 /* Text codec specific encoding and decoding API.
 
    Checks the encoding against a list of codecs which do not

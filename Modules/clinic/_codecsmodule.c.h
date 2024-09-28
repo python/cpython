@@ -2683,8 +2683,8 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_codecs_unregister_error__doc__,
-"unregister_error($module, errors, /)\n"
+PyDoc_STRVAR(_codecs__unregister_error__doc__,
+"_unregister_error($module, errors, /)\n"
 "--\n"
 "\n"
 "Un-register the specified error handler under the name errors.\n"
@@ -2694,21 +2694,21 @@ PyDoc_STRVAR(_codecs_unregister_error__doc__,
 "errors policy is not recognized. An exception is raised when\n"
 "the errors policy is not allowed.");
 
-#define _CODECS_UNREGISTER_ERROR_METHODDEF    \
-    {"unregister_error", (PyCFunction)_codecs_unregister_error, METH_O, _codecs_unregister_error__doc__},
+#define _CODECS__UNREGISTER_ERROR_METHODDEF    \
+    {"_unregister_error", (PyCFunction)_codecs__unregister_error, METH_O, _codecs__unregister_error__doc__},
 
 static int
-_codecs_unregister_error_impl(PyObject *module, const char *errors);
+_codecs__unregister_error_impl(PyObject *module, const char *errors);
 
 static PyObject *
-_codecs_unregister_error(PyObject *module, PyObject *arg)
+_codecs__unregister_error(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     const char *errors;
     int _return_value;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("unregister_error", "argument", "str", arg);
+        _PyArg_BadArgument("_unregister_error", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t errors_length;
@@ -2720,7 +2720,7 @@ _codecs_unregister_error(PyObject *module, PyObject *arg)
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    _return_value = _codecs_unregister_error_impl(module, errors);
+    _return_value = _codecs__unregister_error_impl(module, errors);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -2793,4 +2793,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=d7cb9b22406515a2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ca479a8de1f17423 input=a9049054013a1b77]*/

@@ -141,18 +141,6 @@ PyAPI_FUNC(PyObject *) PyCodec_StreamWriter(
    Return 0 on success, -1 on error */
 PyAPI_FUNC(int) PyCodec_RegisterError(const char *name, PyObject *error);
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
-/* Un-register the error handling callback function error under the given
-   name. Only non-native error handlers can be un-registered.
-
-   - Return -1 and set an exception if 'name' is a native error policy, or
-     if an error occurred.
-   - Return 0 if no error handler is associated with the given error policy.
-   - Return 1 if the error handler was successfully removed.
-*/
-PyAPI_FUNC(int) PyCodec_UnregisterError(const char *name);
-#endif
-
 /* Lookup the error handling callback function registered under the given
    name. As a special case NULL can be passed, in which case
    the error handling callback for "strict" will be returned. */

@@ -980,7 +980,7 @@ _codecs_register_error_impl(PyObject *module, const char *errors,
 }
 
 /*[clinic input]
-_codecs.unregister_error -> bool
+_codecs._unregister_error -> bool
     errors: str
     /
 
@@ -993,10 +993,10 @@ the errors policy is not allowed.
 [clinic start generated code]*/
 
 static int
-_codecs_unregister_error_impl(PyObject *module, const char *errors)
-/*[clinic end generated code: output=d8c1418e402aecdf input=103c9dae16f32e08]*/
+_codecs__unregister_error_impl(PyObject *module, const char *errors)
+/*[clinic end generated code: output=28c22be667465503 input=aa488f7d1f308c8c]*/
 {
-    return PyCodec_UnregisterError(errors);
+    return _PyCodec_UnregisterError(errors);
 }
 
 /*[clinic input]
@@ -1064,7 +1064,7 @@ static PyMethodDef _codecs_functions[] = {
     _CODECS_CODE_PAGE_ENCODE_METHODDEF
     _CODECS_CODE_PAGE_DECODE_METHODDEF
     _CODECS_REGISTER_ERROR_METHODDEF
-    _CODECS_UNREGISTER_ERROR_METHODDEF
+    _CODECS__UNREGISTER_ERROR_METHODDEF
     _CODECS_LOOKUP_ERROR_METHODDEF
     {NULL, NULL}                /* sentinel */
 };

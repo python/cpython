@@ -639,7 +639,7 @@ int PyCodec_RegisterError(const char *name, PyObject *error)
                                 name, error);
 }
 
-int PyCodec_UnregisterError(const char *name)
+int _PyCodec_UnregisterError(const char *name)
 {
     for (size_t i = 0; i < CODECS_ERROR_POLICY_COUNT; ++i) {
         if (strcmp(name, codecs_native_error_polcies[i]) == 0) {
