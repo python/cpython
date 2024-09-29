@@ -2366,7 +2366,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
         # allow any number of options or arguments
         elif nargs == REMAINDER:
-            nargs_pattern = '([-AO]*)'
+            nargs_pattern = '(.*)'
 
         # allow one argument followed by any number of options or arguments
         elif nargs == PARSER:
