@@ -46,26 +46,25 @@ static Py_hash_t
 union_hash(PyObject *self)
 {
     unionobject *alias = (unionobject *)self;
-    Py_hash_t hash;
-    if (alias->hashable_args) {
-        hash = PyObject_Hash(alias->hashable_args);
-        if (hash == -1) {
-            return -1;
-        }
-    }
-    else {
-        hash = 604;
-    }
-    // Mix in the ids of all the unhashable args.
+    // If there are any unhashable args, treat this union as unhashable.
+    // Otherwise, two unions might compare equal but have different hashes.
     if (alias->unhashable_args) {
+        // Attempt to get an error from one of the values.
         assert(PyTuple_CheckExact(alias->unhashable_args));
         Py_ssize_t n = PyTuple_GET_SIZE(alias->unhashable_args);
         for (Py_ssize_t i = 0; i < n; i++) {
             PyObject *arg = PyTuple_GET_ITEM(alias->unhashable_args, i);
-            hash ^= (Py_hash_t)arg;
+            Py_hash_t hash = PyObject_Hash(arg);
+            if (hash == -1) {
+                return -1;
+            }
         }
+        // The unhashable values somehow became hashable again. Still raise
+        // an error.
+        PyErr_Format(PyExc_TypeError, "union contains %d unhashable elements", n);
+        return -1;
     }
-    return hash;
+    return PyObject_Hash(alias->hashable_args);
 }
 
 static int

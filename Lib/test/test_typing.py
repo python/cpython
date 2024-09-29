@@ -2062,10 +2062,16 @@ class UnionTests(BaseTestCase):
 
         self.assertEqual(Union[A, B].__args__, (A, B))
         union1 = Union[A, B]
-        union2 = Union[int, B]
-        union3 = Union[A, int]
+        with self.assertRaisesRegex(TypeError, "unhashable type: 'UnhashableMeta'"):
+            hash(union1)
 
-        self.assertEqual(len({union1, union2, union3}), 3)
+        union2 = Union[int, B]
+        with self.assertRaisesRegex(TypeError, "unhashable type: 'UnhashableMeta'"):
+            hash(union2)
+
+        union3 = Union[A, int]
+        with self.assertRaisesRegex(TypeError, "unhashable type: 'UnhashableMeta'"):
+            hash(union3)
 
     def test_repr(self):
         u = Union[Employee, int]

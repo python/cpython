@@ -723,10 +723,39 @@ class UnionTests(unittest.TestCase):
 
         self.assertEqual((A | B).__args__, (A, B))
         union1 = A | B
-        union2 = int | B
-        union3 = A | int
+        with self.assertRaisesRegex(TypeError, "unhashable type: 'UnhashableMeta'"):
+            hash(union1)
 
-        self.assertEqual(len({union1, union2, union3}), 3)
+        union2 = int | B
+        with self.assertRaisesRegex(TypeError, "unhashable type: 'UnhashableMeta'"):
+            hash(union2)
+
+        union3 = A | int
+        with self.assertRaisesRegex(TypeError, "unhashable type: 'UnhashableMeta'"):
+            hash(union3)
+
+    def test_unhashable_becomes_hashable(self):
+        is_hashable = False
+        class UnhashableMeta(type):
+            def __hash__(self):
+                if is_hashable:
+                    return 1
+                else:
+                    raise TypeError("not hashable")
+
+        class A(metaclass=UnhashableMeta): ...
+        class B(metaclass=UnhashableMeta): ...
+
+        union = A | B
+        self.assertEqual(union.__args__, (A, B))
+
+        with self.assertRaisesRegex(TypeError, "not hashable"):
+            hash(union)
+
+        is_hashable = True
+
+        with self.assertRaisesRegex(TypeError, "union contains 2 unhashable elements"):
+            hash(union)
 
     def test_instancecheck_and_subclasscheck(self):
         for x in (int | str, typing.Union[int, str]):
