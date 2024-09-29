@@ -4149,9 +4149,9 @@ _curses_resizeterm_impl(PyObject *module, short nlines, short ncols)
 /*[clinic input]
 _curses.resize_term
 
-    nlines: int
+    nlines: short
         Height.
-    ncols: int
+    ncols: short
         Width.
     /
 
@@ -4165,8 +4165,8 @@ without additional interaction with the application.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_resize_term_impl(PyObject *module, int nlines, int ncols)
-/*[clinic end generated code: output=9e26d8b9ea311ed2 input=2197edd05b049ed4]*/
+_curses_resize_term_impl(PyObject *module, short nlines, short ncols)
+/*[clinic end generated code: output=46c6d749fa291dbd input=276afa43d8ea7091]*/
 {
     PyObject *result;
 
