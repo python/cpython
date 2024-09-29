@@ -1396,7 +1396,8 @@ _curses_window_derwin_impl(PyCursesWindowObject *self, int group_left_1,
     win = derwin(self->win,nlines,ncols,begin_y,begin_x);
 
     if (win == NULL) {
-        PyErr_SetString(curses_global_state.error, catchall_NULL);
+        _cursesmodule_state *st = get_cursesmodule_state_by_win(self);
+        PyErr_SetString(st->error, catchall_NULL);
         return NULL;
     }
 
@@ -1547,8 +1548,10 @@ _curses_window_getkey_impl(PyCursesWindowObject *self, int group_right_1,
     if (rtn == ERR) {
         /* getch() returns ERR in nodelay mode */
         PyErr_CheckSignals();
-        if (!PyErr_Occurred())
-            PyErr_SetString(curses_global_state.error, "no input");
+        if (!PyErr_Occurred()) {
+            _cursesmodule_state *st = get_cursesmodule_state_by_win(self);
+            PyErr_SetString(st->error, "no input");
+        }
         return NULL;
     } else if (rtn <= 255) {
 #ifdef NCURSES_VERSION_MAJOR
@@ -1606,7 +1609,8 @@ _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
             return NULL;
 
         /* get_wch() returns ERR in nodelay mode */
-        PyErr_SetString(curses_global_state.error, "no input");
+        _cursesmodule_state *st = get_cursesmodule_state_by_win(self);
+        PyErr_SetString(st->error, "no input");
         return NULL;
     }
     if (ct == KEY_CODE_YES)
@@ -2119,7 +2123,8 @@ _curses_window_noutrefresh_impl(PyCursesWindowObject *self)
 #ifdef py_is_pad
     if (py_is_pad(self->win)) {
         if (!group_right_1) {
-            PyErr_SetString(curses_global_state.error,
+            _cursesmodule_state *st = get_cursesmodule_state_by_win(self);
+            PyErr_SetString(st->error,
                             "noutrefresh() called for a pad "
                             "requires 6 arguments");
             return NULL;
@@ -2343,7 +2348,8 @@ _curses_window_refresh_impl(PyCursesWindowObject *self, int group_right_1,
 #ifdef py_is_pad
     if (py_is_pad(self->win)) {
         if (!group_right_1) {
-            PyErr_SetString(curses_global_state.error,
+            _cursesmodule_state *st = get_cursesmodule_state_by_win(self);
+            PyErr_SetString(st->error,
                             "refresh() for a pad requires 6 arguments");
             return NULL;
         }
@@ -2425,7 +2431,8 @@ _curses_window_subwin_impl(PyCursesWindowObject *self, int group_left_1,
         win = subwin(self->win, nlines, ncols, begin_y, begin_x);
 
     if (win == NULL) {
-        PyErr_SetString(curses_global_state.error, catchall_NULL);
+        _cursesmodule_state *st = get_cursesmodule_state_by_win(self);
+        PyErr_SetString(st->error, catchall_NULL);
         return NULL;
     }
 
