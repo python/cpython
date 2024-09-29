@@ -1,0 +1,2 @@
+Fix :mod:`argparse` for namespaces with not directly writable dict (e.g.
+classes).
