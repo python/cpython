@@ -517,6 +517,15 @@ Buffer-related functions
 
    ``0`` is returned on success, ``-1`` on error.
 
+.. c:function:: int PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len, char fortran)
+
+   Copy data from *buf* to *obj* buffer. Can convert between C-style and
+   or Fortran-style buffers.
+
+   ``0`` is returned on success, ``-1`` on error.
+
+   .. versionadded:: 3.14
+
 .. c:function:: void PyBuffer_FillContiguousStrides(int ndims, Py_ssize_t *shape, Py_ssize_t *strides, int itemsize, char order)
 
    Fill the *strides* array with byte-strides of a :term:`contiguous` (C-style if
