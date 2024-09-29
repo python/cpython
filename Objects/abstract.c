@@ -733,6 +733,40 @@ int PyObject_CopyData(PyObject *dest, PyObject *src)
     return 0;
 }
 
+int
+PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len, char fort)
+{
+    Py_buffer view_obj;
+
+    if (!PyObject_CheckBuffer(obj)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "object doesn't support buffer");
+        return -1;
+    }
+
+    if (PyObject_GetBuffer(obj, &view_obj, PyBUF_SIMPLE)) {
+        return -1;
+    }
+
+    if (view_obj.len < len) {
+        PyErr_SetString(PyExc_BufferError,
+                        "buffer length is insufficient");
+        PyBuffer_Release(&view_obj);
+        return -1;
+    }
+
+    /* just copy it directly through memcpy */
+    if (fort == 'C' || fort == 'F') {
+        memcpy(view_obj.buf, buf, len);
+        PyBuffer_Release(&view_obj);
+        return 0;
+    }
+    
+    /* i'm thinking... */
+
+    return -1;
+}
+
 void
 PyBuffer_FillContiguousStrides(int nd, Py_ssize_t *shape,
                                Py_ssize_t *strides, int itemsize,

@@ -75,6 +75,8 @@ PyAPI_FUNC(int) PyBuffer_FromContiguous(const Py_buffer *view, const void *buf,
    is 'A', then it does not matter and the copy will be made
    in whatever way is more efficient. */
 PyAPI_FUNC(int) PyObject_CopyData(PyObject *dest, PyObject *src);
+PyAPI_FUNC(int) PyObject_CopyToObject(PyObject *obj, void *buf,
+                                      Py_ssize_t len, char fortran);
 
 /* Copy the data from the src buffer to the buffer of destination. */
 PyAPI_FUNC(int) PyBuffer_IsContiguous(const Py_buffer *view, char fort);
