@@ -20,21 +20,24 @@ the Pythons provided by the CPython release team for download from
 the `python.org website <https://www.python.org/downloads/>`_. See
 :ref:`alternative_bundles` for some other options.
 
-.. |python_version_t| replace:: ``python3.14t``
-.. |python_version_t_config| replace:: ``python3.14t-config``
-.. |applications_folder_version| replace:: ``/Applications/Python 3.14/``
+.. |usemac_x_dot_y| replace:: 3.13
+.. |usemac_python_x_dot_y_literal| replace:: ``python3.13``
+.. |usemac_python_x_dot_y_t_literal| replace:: ``python3.13t``
+.. |usemac_python_x_dot_y_t_literal_config| replace:: ``python3.13t-config``
+.. |usemac_applications_folder_name| replace:: ``Python 3.13``
+.. |usemac_applications_folder_version| replace:: ``/Applications/Python 3.13/``
 
 .. _getting-osx:
 .. _getting-and-installing-macpython:
 
-Using Python for macOS from python.org
-======================================
+Using Python for macOS from ``python.org``
+==========================================
 
 Installation steps
 ------------------
 
-For `active Python versions <https://www.python.org/downloads/>`_
-(other than in ``security`` status), the release team produces a
+For `current Python versions <https://www.python.org/downloads/>`_
+(other than those in ``security`` status), the release team produces a
 **Python for macOS** installer package for each new release.
 A list of available installers
 is available `here <https://www.python.org/downloads/macos/>`_.
@@ -61,7 +64,7 @@ Clicking on the **Continue** button brings up the **Read Me** for this installer
 Besides other important information, the **Read Me** documents which Python version is
 going to be installed and on what versions of macOS it is supported. You may need
 to scroll through to read the whole file. By default, this **Read Me** will also be
-installed in |applications_folder_version| and available to read anytime.
+installed in |usemac_applications_folder_version| and available to read anytime.
 
 .. image:: mac_installer_02_readme.png
 
@@ -93,8 +96,8 @@ When the installation is complete, the **Summary** window will appear.
 
 .. image:: mac_installer_06_summary.png
 
-If prompted to, double-click on the :command:`Install Certificates.command`
-icon or file in the |applications_folder_version| window to complete the
+Double-click on the :command:`Install Certificates.command`
+icon or file in the |usemac_applications_folder_version| window to complete the
 installation.
 
 .. image:: mac_installer_07_applications.png
@@ -111,7 +114,7 @@ Close this terminal window and the installer window.
 
 A default install will include:
 
-* A |python_version_literal| folder in your :file:`Applications` folder. In here
+* A |usemac_applications_folder_name| folder in your :file:`Applications` folder. In here
   you find :program:`IDLE`, the development environment that is a standard part of official
   Python distributions; and :program:`Python Launcher`, which handles double-clicking Python
   scripts from the macOS `Finder <https://support.apple.com/en-us/HT201732>`_.
@@ -127,8 +130,8 @@ A default install will include:
    that links to a usually older and incomplete version of Python provided by and for use by
    the Apple development tools, :program:`Xcode` or the :program:`Command Line Tools for Xcode`.
    You should never modify or attempt to delete this installation, as it is
-   Apple-controlled and is used by Apple- or third-party software.  If
-   you choose to install a newer Python version from python.org, you will have
+   Apple-controlled and is used by Apple-provided or third-party software.  If
+   you choose to install a newer Python version from ``python.org``, you will have
    two different but functional Python installations on your computer that
    can co-exist. The default installer options should ensure that its :command:`python3`
    will be used instead of the system :command:`python3`.
@@ -138,7 +141,7 @@ How to run a Python script
 
 There are two ways to invoke the Python interpreter.
 If you are familiar with using a Unix shell in a terminal
-window, you can just invoke |python_x_dot_y_literal| or ``python3`` optionally
+window, you can invoke |usemac_python_x_dot_y_literal| or ``python3`` optionally
 followed by one or more command line options (described in :ref:`using-on-general`).
 The Python tutorial also has a useful section on
 :ref:`using Python interactively from a shell <tut-interac>`.
@@ -157,7 +160,7 @@ for more information.
 To run a Python script file from the terminal window, you can
 invoke the interpreter with the name of the script file:
 
-    |python_x_dot_y_literal| ``myscript.py``
+    |usemac_python_x_dot_y_literal| ``myscript.py``
 
 To run your script from the Finder, you can either:
 
@@ -181,7 +184,7 @@ be certain of what you are about to run.
 Alternative Distributions
 =========================
 
-Besides the standard python.org for macOS installer, there are third-party
+Besides the standard ``python.org`` for macOS installer, there are third-party
 distributions for macOS that may include additional functionality.
 Some popular distributions and their key features:
 
@@ -263,53 +266,62 @@ Installing Free-threaded Binaries
    Everything described in this section is considered experimental,
    and should be expected to change in future releases.
 
-The python.org :ref:`Python for macOS <getting-and-installing-macpython>`
+The ``python.org`` :ref:`Python for macOS <getting-and-installing-macpython>`
 installer package can optionally install an additional build of
-Python |version| that supports :pep:`703`, the experimental free-threading feature
+Python |usemac_x_dot_y| that supports :pep:`703`, the experimental free-threading feature
 (running with the :term:`global interpreter lock` disabled).
-Check the release page on python.org for possible updated information.
+Check the release page on ``python.org`` for possible updated information.
 
-Because this feature is still considered experimental, the support for it is not installed by default. It is packaged as a separate install option, available by clicking the **Customize** button on the **Installation Type** step of the installer as described above.
+Because this feature is still considered experimental, the support for it
+is not installed by default. It is packaged as a separate install option,
+available by clicking the **Customize** button on the **Installation Type**
+step of the installer as described above.
 
 .. image:: mac_installer_09_custom_install_free_threaded.png
 
-When selected, a separate :file:`PythonT.framework` will also be installed alongside the normal :file:`Python.framework` in :file:`/Library/Frameworks`. This configuration allows a free-threaded Python |version| build to co-exist on your system with a traditional (GIL only) Python |version| build with minimal risk while installing or testing. This installation layout is itself experimental and is subject to change in future releases.
+If the box next to the **Free-threaded Python** package name is checked,
+a separate :file:`PythonT.framework` will also be installed
+alongside the normal :file:`Python.framework` in :file:`/Library/Frameworks`.
+This configuration allows a free-threaded Python |usemac_x_dot_y| build to co-exist
+on your system with a traditional (GIL only) Python |usemac_x_dot_y| build with
+minimal risk while installing or testing. This installation layout is itself
+experimental and is subject to change in future releases.
 
 Known cautions and limitations:
 
 - The **UNIX command-line tools** package, which is selected by default,
-  will install links in :file:`/usr/local/bin` for |python_version_t|,
-  the free-threaded interpreter, and |python_version_t_config|,
+  will install links in :file:`/usr/local/bin` for |usemac_python_x_dot_y_t_literal|,
+  the free-threaded interpreter, and |usemac_python_x_dot_y_t_literal_config|,
   a configuration utility which may be useful for package builders.
   Since :file:`/usr/local/bin` is typically included in your shell ``PATH``,
   in most cases no changes to your ``PATH`` environment variables should
-  be needed to use |python_version_t|.
+  be needed to use |usemac_python_x_dot_y_t_literal|.
 
 - For this release, the **Shell profile updater** package and the
-  :file:`Update Shell Profile.command` in |applications_folder_version|
+  :file:`Update Shell Profile.command` in |usemac_applications_folder_version|
   do not support the free-threaded package.
 
 - The free-threaded build and the traditional build have separate search
   paths and separate :file:`site-packages` directories so, by default,
   if you need a package available in both builds, it may need to be installed in both.
   The free-threaded package will install a separate instance of :program:`pip` for use
-  with |python_version_t|.
+  with |usemac_python_x_dot_y_t_literal|.
 
-  - To install a package using :command:`pip`` without a :command:`venv`:
+  - To install a package using :command:`pip` without a :command:`venv`:
 
-        |python_version_t| ``-m pip install _package_name_``
+        |usemac_python_x_dot_y_t_literal| ``-m pip install <package_name>``
 
 - When working with multiple Python environments, it is usually safest and easiest
   to :ref:`create and use virtual environments <tut-venv>`.
   This can avoid possible command name conflicts and confusion about which Python is in use:
 
-      |python_version_t| ``-m venv directory_name``
+      |usemac_python_x_dot_y_t_literal| ``-m venv <venv_name>``
 
   then :command:`activate`.
 
 - To run a free-threaded version of IDLE:
 
-      |python_version_t| ``-m idlelib``
+      |usemac_python_x_dot_y_t_literal| ``-m idlelib``
 
 - The interpreters in both builds respond to the same
   :ref:`PYTHON environment variables <using-on-envvars>`
@@ -325,7 +337,7 @@ Known cautions and limitations:
   thus it only needs to be run once.
 
 - If you cannot depend on the link in ``/usr/local/bin`` pointing to the
-  python.org free-threaded |python_version_t| (for example, if you want
+  ``python.org`` free-threaded |usemac_python_x_dot_y_t_literal| (for example, if you want
   to install your own version there or some other distribution does),
   you can explicitly set your shell ``PATH`` environment variable to
   include the ``PythonT`` framework ``bin`` directory:
@@ -348,16 +360,17 @@ Known cautions and limitations:
      alias py3.13="/Library/Frameworks/Python.framework/Versions/3.13/bin/python3.13"
      alias py3.13t="/Library/Frameworks/PythonT.framework/Versions/3.13/bin/python3.13t"
 
-Installing Free-threaded Binaries using the command line
---------------------------------------------------------
+Installing using the command line
+---------------------------------
 
-If you want to use automation to install the free-threaded interpreter
+If you want to use automation to install the ``python.org`` installer package
 (rather than by using the familiar macOS :program:`Installer` GUI app),
 the macOS command line :command:`installer` utility lets you select non-default
 options, too. If you are not familiar with :command:`installer`, it can be
-somewhat cryptic (see :command:`man installer`` for more information).
-The following shell snippet shows one way to do it, using the ``3.13.0b2``
-release as an example:
+somewhat cryptic (see :command:`man installer` for more information).
+As an example, the following shell snippet shows one way to do it,
+using the ``3.13.0b2`` release and selecting the free-threaded interpreter
+option:
 
 ..  code-block:: sh
 
@@ -407,9 +420,9 @@ You can then test that both installer builds are now available with something li
 
 .. note::
 
-   Current python.org installers only install to fixed locations like
+   Current ``python.org`` installers only install to fixed locations like
    :file:`/Library/Frameworks/`, :file:`/Applications`, and :file:`/usr/local/bin`.
-   You cannot use the :command:`installer` ``-doman`` option to install to
+   You cannot use the :command:`installer` ``-domain`` option to install to
    other locations.
 
 .. _distributing-python-applications-on-the-mac:
