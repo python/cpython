@@ -16,15 +16,11 @@ __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
 
 from abc import get_cache_token
 from collections import namedtuple
-# import types, weakref  # Deferred to single_dispatch()
+# import weakref  # Deferred to single_dispatch()
 from operator import itemgetter
 from reprlib import recursive_repr
-from types import MethodType
+from types import GenericAlias, MethodType, MappingProxyType, UnionType
 from _thread import RLock
-
-# Avoid importing types, so we can speedup import time
-GenericAlias = type(list[int])
-UnionType = type(int | str)
 
 ################################################################################
 ### update_wrapper() and wraps() decorator
@@ -901,7 +897,7 @@ def singledispatch(func):
     # There are many programs that use functools without singledispatch, so we
     # trade-off making singledispatch marginally slower for the benefit of
     # making start-up of such applications slightly faster.
-    import types, weakref
+    import weakref
 
     registry = {}
     dispatch_cache = weakref.WeakKeyDictionary()
@@ -1002,7 +998,7 @@ def singledispatch(func):
     registry[object] = func
     wrapper.register = register
     wrapper.dispatch = dispatch
-    wrapper.registry = types.MappingProxyType(registry)
+    wrapper.registry = MappingProxyType(registry)
     wrapper._clear_cache = dispatch_cache.clear
     update_wrapper(wrapper, func)
     return wrapper
