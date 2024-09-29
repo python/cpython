@@ -95,6 +95,14 @@ static void _testembed_Py_Initialize(void)
 }
 
 
+static int test_import_in_subinterpreters(void)
+{
+    _testembed_Py_InitializeFromConfig();
+    PyThreadState_Swap(Py_NewInterpreter());
+    return PyRun_SimpleString("import readline"); // gh-124160
+}
+
+
 /*****************************************************
  * Test repeated initialisation and subinterpreters
  *****************************************************/
@@ -2398,6 +2406,7 @@ static struct TestCase TestCases[] = {
     {"test_repeated_init_exec", test_repeated_init_exec},
     {"test_repeated_simple_init", test_repeated_simple_init},
     {"test_forced_io_encoding", test_forced_io_encoding},
+    {"test_import_in_subinterpreters", test_import_in_subinterpreters},
     {"test_repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters},
     {"test_repeated_init_and_inittab", test_repeated_init_and_inittab},
     {"test_pre_initialization_api", test_pre_initialization_api},

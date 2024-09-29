@@ -310,13 +310,30 @@ framelocalsproxy_dealloc(PyObject *self)
 static PyObject *
 framelocalsproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+    if (PyTuple_GET_SIZE(args) != 1) {
+        PyErr_Format(PyExc_TypeError,
+                     "FrameLocalsProxy expected 1 argument, got %zd",
+                     PyTuple_GET_SIZE(args));
+        return NULL;
+    }
+    PyObject *item = PyTuple_GET_ITEM(args, 0);
+
+    if (!PyFrame_Check(item)) {
+        PyErr_Format(PyExc_TypeError, "expect frame, not %T", item);
+        return NULL;
+    }
+    PyFrameObject *frame = (PyFrameObject*)item;
+
+    if (kwds != NULL && PyDict_Size(kwds) != 0) {
+        PyErr_SetString(PyExc_TypeError,
+                        "FrameLocalsProxy takes no keyword arguments");
+        return 0;
+    }
+
     PyFrameLocalsProxyObject *self = (PyFrameLocalsProxyObject *)type->tp_alloc(type, 0);
     if (self == NULL) {
         return NULL;
     }
-
-    PyFrameObject *frame = (PyFrameObject*)PyTuple_GET_ITEM(args, 0);
-    assert(PyFrame_Check(frame));
 
     ((PyFrameLocalsProxyObject*)self)->frame = (PyFrameObject*)Py_NewRef(frame);
 
@@ -1634,7 +1651,7 @@ frame_dealloc(PyFrameObject *f)
     /* Kill all local variables including specials, if we own them */
     if (f->f_frame == frame && frame->owner == FRAME_OWNED_BY_FRAME_OBJECT) {
         PyStackRef_CLEAR(frame->f_executable);
-        Py_CLEAR(frame->f_funcobj);
+        PyStackRef_CLEAR(frame->f_funcobj);
         Py_CLEAR(frame->f_locals);
         _PyStackRef *locals = _PyFrame_GetLocalsArray(frame);
         _PyStackRef *sp = frame->stackpointer;
@@ -1790,7 +1807,7 @@ static void
 init_frame(_PyInterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
 {
     PyCodeObject *code = (PyCodeObject *)func->func_code;
-    _PyFrame_Initialize(frame, (PyFunctionObject*)Py_NewRef(func),
+    _PyFrame_Initialize(frame, PyStackRef_FromPyObjectNew(func),
                         Py_XNewRef(locals), code, 0, NULL);
 }
 
@@ -1861,14 +1878,15 @@ frame_init_get_vars(_PyInterpreterFrame *frame)
     PyCodeObject *co = _PyFrame_GetCode(frame);
     int lasti = _PyInterpreterFrame_LASTI(frame);
     if (!(lasti < 0 && _PyCode_CODE(co)->op.code == COPY_FREE_VARS
-          && PyFunction_Check(frame->f_funcobj)))
+          && PyStackRef_FunctionCheck(frame->f_funcobj)))
     {
         /* Free vars are initialized */
         return;
     }
 
     /* Free vars have not been initialized -- Do that */
-    PyObject *closure = ((PyFunctionObject *)frame->f_funcobj)->func_closure;
+    PyFunctionObject *func = _PyFrame_GetFunction(frame);
+    PyObject *closure = func->func_closure;
     int offset = PyUnstable_Code_GetFirstFree(co);
     for (int i = 0; i < co->co_nfreevars; ++i) {
         PyObject *o = PyTuple_GET_ITEM(closure, i);

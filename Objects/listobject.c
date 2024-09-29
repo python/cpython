@@ -200,12 +200,10 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 void
 _PyList_DebugMallocStats(FILE *out)
 {
-#ifdef WITH_FREELISTS
     _PyDebugAllocatorStats(out,
                            "free PyListObject",
                             _Py_FREELIST_SIZE(lists),
                            sizeof(PyListObject));
-#endif
 }
 
 PyObject *

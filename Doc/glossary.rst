@@ -347,7 +347,7 @@ Glossary
    docstring
       A string literal which appears as the first expression in a class,
       function or module.  While ignored when the suite is executed, it is
-      recognized by the compiler and put into the :attr:`!__doc__` attribute
+      recognized by the compiler and put into the :attr:`~definition.__doc__` attribute
       of the enclosing class, function or module.  Since it is available via
       introspection, it is the canonical place for documentation of the
       object.
@@ -1131,7 +1131,7 @@ Glossary
       :class:`tuple`, and :class:`bytes`. Note that :class:`dict` also
       supports :meth:`~object.__getitem__` and :meth:`!__len__`, but is considered a
       mapping rather than a sequence because the lookups use arbitrary
-      :term:`immutable` keys rather than integers.
+      :term:`hashable` keys rather than integers.
 
       The :class:`collections.abc.Sequence` abstract base class
       defines a much richer interface that goes beyond just
@@ -1241,7 +1241,7 @@ Glossary
    type
       The type of a Python object determines what kind of object it is; every
       object has a type.  An object's type is accessible as its
-      :attr:`~instance.__class__` attribute or can be retrieved with
+      :attr:`~object.__class__` attribute or can be retrieved with
       ``type(obj)``.
 
    type alias
