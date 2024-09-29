@@ -663,7 +663,7 @@ PyBuffer_FromContiguous(const Py_buffer *view, const void *buf, Py_ssize_t len, 
     return 0;
 }
 
-int 
+int
 PyObject_CopyData(PyObject *dest, PyObject *src)
 {
     Py_buffer view_dest, view_src;
