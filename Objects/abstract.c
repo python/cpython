@@ -742,7 +742,7 @@ PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len,
 
     if (!PyObject_CheckBuffer(obj)) {
         PyErr_SetString(PyExc_TypeError,
-                        "destination must be bytes-like objects");
+                        "object supporting the buffer protocol required");
         return -1;
     }
 
