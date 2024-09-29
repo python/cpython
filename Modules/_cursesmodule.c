@@ -173,6 +173,18 @@ get_cursesmodule_state(PyObject *Py_UNUSED(module))
     return &curses_global_state;
 }
 
+static inline _cursesmodule_state *
+get_cursesmodule_state_by_cls(PyObject *Py_UNUSED(cls))
+{
+    return &curses_global_state;
+}
+
+static inline _cursesmodule_state *
+get_cursesmodule_state_by_win(PyCursesWindowObject *Py_UNUSED(win))
+{
+    return &curses_global_state;
+}
+
 /*[clinic input]
 module _curses
 class _curses.window "PyCursesWindowObject *" "&PyCursesWindow_Type"
@@ -249,17 +261,37 @@ static const char *curses_screen_encoding = NULL;
  * capsule API.
  */
 
+#define _PyCursesSetError(MODULE_STATE, FUNCNAME)                   \
+    do {                                                            \
+        if ((FUNCNAME) == NULL) {                                   \
+            PyErr_SetString((MODULE_STATE)->error, catchall_ERR);   \
+        }                                                           \
+        else {                                                      \
+            PyErr_Format((MODULE_STATE)->error,                     \
+                         "%s() returned ERR", (FUNCNAME));          \
+        }                                                           \
+    } while (0)
+
 static PyObject *
-PyCursesCheckERR(int code, const char *fname)
+PyCursesCheckERR(PyObject *module, int code, const char *fname)
 {
     if (code != ERR) {
         Py_RETURN_NONE;
     } else {
-        if (fname == NULL) {
-            PyErr_SetString(curses_global_state.error, catchall_ERR);
-        } else {
-            PyErr_Format(curses_global_state.error, "%s() returned ERR", fname);
-        }
+        _cursesmodule_state *st = get_cursesmodule_state(module);
+        _PyCursesSetError(st, fname);
+        return NULL;
+    }
+}
+
+static PyObject *
+PyCursesCheckERR_ForWin(PyCursesWindowObject *win, int code, const char *fname)
+{
+    if (code != ERR) {
+        Py_RETURN_NONE;
+    } else {
+        _cursesmodule_state *st = get_cursesmodule_state_by_win(win);
+        _PyCursesSetError(st, fname);
         return NULL;
     }
 }
@@ -623,7 +655,7 @@ PyTypeObject PyCursesWindow_Type;
 #define Window_NoArgNoReturnFunction(X)                         \
     static PyObject *PyCursesWindow_ ## X                       \
     (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))  \
-    { return PyCursesCheckERR(X(self->win), # X); }
+    { return PyCursesCheckERR_ForWin(self, X(self->win), # X); }
 
 #define Window_NoArgTrueFalseFunction(X)                                \
     static PyObject * PyCursesWindow_ ## X                              \
@@ -658,7 +690,7 @@ PyTypeObject PyCursesWindow_Type;
     {                                                                   \
         TYPE arg1;                                                      \
         if (!PyArg_ParseTuple(args,PARSESTR, &arg1)) return NULL;       \
-        return PyCursesCheckERR(X(self->win, arg1), # X); }
+        return PyCursesCheckERR_ForWin(self, X(self->win, arg1), # X); }
 
 #define Window_TwoArgNoReturnFunction(X, TYPE, PARSESTR)                \
     static PyObject * PyCursesWindow_ ## X                              \
@@ -666,7 +698,7 @@ PyTypeObject PyCursesWindow_Type;
     {                                                                   \
         TYPE arg1, arg2;                                                \
         if (!PyArg_ParseTuple(args,PARSESTR, &arg1, &arg2)) return NULL; \
-        return PyCursesCheckERR(X(self->win, arg1, arg2), # X); }
+        return PyCursesCheckERR_ForWin(self, X(self->win, arg1, arg2), # X); }
 
 /* ------------- WINDOW routines --------------- */
 
@@ -840,7 +872,7 @@ _curses_window_addch_impl(PyCursesWindowObject *self, int group_left_1,
     else {
         return NULL;
     }
-    return PyCursesCheckERR(rtn, funcname);
+    return PyCursesCheckERR_ForWin(self, rtn, funcname);
 }
 
 /*[clinic input]
@@ -920,7 +952,7 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
     }
     if (use_attr)
         (void)wattrset(self->win,attr_old);
-    return PyCursesCheckERR(rtn, funcname);
+    return PyCursesCheckERR_ForWin(self, rtn, funcname);
 }
 
 /*[clinic input]
@@ -1003,7 +1035,7 @@ _curses_window_addnstr_impl(PyCursesWindowObject *self, int group_left_1,
     }
     if (use_attr)
         (void)wattrset(self->win,attr_old);
-    return PyCursesCheckERR(rtn, funcname);
+    return PyCursesCheckERR_ForWin(self, rtn, funcname);
 }
 
 /*[clinic input]
@@ -1027,7 +1059,7 @@ _curses_window_bkgd_impl(PyCursesWindowObject *self, PyObject *ch, long attr)
     if (!PyCurses_ConvertToChtype(self, ch, &bkgd))
         return NULL;
 
-    return PyCursesCheckERR(wbkgd(self->win, bkgd | attr), "bkgd");
+    return PyCursesCheckERR_ForWin(self, wbkgd(self->win, bkgd | attr), "bkgd");
 }
 
 /*[clinic input]
@@ -1043,7 +1075,7 @@ static PyObject *
 _curses_window_attroff_impl(PyCursesWindowObject *self, long attr)
 /*[clinic end generated code: output=8a2fcd4df682fc64 input=786beedf06a7befe]*/
 {
-    return PyCursesCheckERR(wattroff(self->win, (attr_t)attr), "attroff");
+    return PyCursesCheckERR_ForWin(self, wattroff(self->win, (attr_t)attr), "attroff");
 }
 
 /*[clinic input]
@@ -1059,7 +1091,7 @@ static PyObject *
 _curses_window_attron_impl(PyCursesWindowObject *self, long attr)
 /*[clinic end generated code: output=7afea43b237fa870 input=5a88fba7b1524f32]*/
 {
-    return PyCursesCheckERR(wattron(self->win, (attr_t)attr), "attron");
+    return PyCursesCheckERR_ForWin(self, wattron(self->win, (attr_t)attr), "attron");
 }
 
 /*[clinic input]
@@ -1075,7 +1107,7 @@ static PyObject *
 _curses_window_attrset_impl(PyCursesWindowObject *self, long attr)
 /*[clinic end generated code: output=84e379bff20c0433 input=42e400c0d0154ab5]*/
 {
-    return PyCursesCheckERR(wattrset(self->win, (attr_t)attr), "attrset");
+    return PyCursesCheckERR_ForWin(self, wattrset(self->win, (attr_t)attr), "attrset");
 }
 
 /*[clinic input]
@@ -1101,7 +1133,7 @@ _curses_window_bkgdset_impl(PyCursesWindowObject *self, PyObject *ch,
         return NULL;
 
     wbkgdset(self->win, bkgd | attr);
-    return PyCursesCheckERR(0, "bkgdset");
+    return PyCursesCheckERR_ForWin(self, 0, "bkgdset");
 }
 
 /*[clinic input]
@@ -1301,7 +1333,7 @@ PyCursesWindow_ChgAt(PyCursesWindowObject *self, PyObject *args)
         rtn = wchgat(self->win,num,attr,color,NULL);
         touchline(self->win,y,1);
     }
-    return PyCursesCheckERR(rtn, "chgat");
+    return PyCursesCheckERR_ForWin(self, rtn, "chgat");
 }
 #endif
 
@@ -1325,10 +1357,10 @@ _curses_window_delch_impl(PyCursesWindowObject *self, int group_right_1,
 /*[clinic end generated code: output=22e77bb9fa11b461 input=d2f79e630a4fc6d0]*/
 {
     if (!group_right_1) {
-        return PyCursesCheckERR(wdelch(self->win), "wdelch");
+        return PyCursesCheckERR_ForWin(self, wdelch(self->win), "wdelch");
     }
     else {
-        return PyCursesCheckERR(py_mvwdelch(self->win, y, x), "mvwdelch");
+        return PyCursesCheckERR_ForWin(self, py_mvwdelch(self->win, y, x), "mvwdelch");
     }
 }
 
@@ -1396,13 +1428,15 @@ _curses_window_echochar_impl(PyCursesWindowObject *self, PyObject *ch,
 
 #ifdef py_is_pad
     if (py_is_pad(self->win)) {
-        return PyCursesCheckERR(pechochar(self->win, ch_ | (attr_t)attr),
-                                "echochar");
+        return PyCursesCheckERR_ForWin(self,
+                                       pechochar(self->win, ch_ | (attr_t)attr),
+                                       "echochar");
     }
     else
 #endif
-        return PyCursesCheckERR(wechochar(self->win, ch_ | (attr_t)attr),
-                                "echochar");
+        return PyCursesCheckERR_ForWin(self,
+                                       wechochar(self->win, ch_ | (attr_t)attr),
+                                       "echochar");
 }
 
 #ifdef NCURSES_MOUSE_VERSION
@@ -1696,10 +1730,10 @@ _curses_window_hline_impl(PyCursesWindowObject *self, int group_left_1,
         return NULL;
     if (group_left_1) {
         if (wmove(self->win, y, x) == ERR) {
-            return PyCursesCheckERR(ERR, "wmove");
+            return PyCursesCheckERR_ForWin(self, ERR, "wmove");
         }
     }
-    return PyCursesCheckERR(whline(self->win, ch_ | (attr_t)attr, n), "hline");
+    return PyCursesCheckERR_ForWin(self, whline(self->win, ch_ | (attr_t)attr, n), "hline");
 }
 
 /*[clinic input]
@@ -1746,7 +1780,7 @@ _curses_window_insch_impl(PyCursesWindowObject *self, int group_left_1,
         rtn = mvwinsch(self->win, y, x, ch_ | (attr_t)attr);
     }
 
-    return PyCursesCheckERR(rtn, "insch");
+    return PyCursesCheckERR_ForWin(self, rtn, "insch");
 }
 
 /*[clinic input]
@@ -1923,7 +1957,7 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
     }
     if (use_attr)
         (void)wattrset(self->win,attr_old);
-    return PyCursesCheckERR(rtn, funcname);
+    return PyCursesCheckERR_ForWin(self, rtn, funcname);
 }
 
 /*[clinic input]
@@ -2008,7 +2042,7 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
     }
     if (use_attr)
         (void)wattrset(self->win,attr_old);
-    return PyCursesCheckERR(rtn, funcname);
+    return PyCursesCheckERR_ForWin(self, rtn, funcname);
 }
 
 /*[clinic input]
@@ -2094,7 +2128,7 @@ _curses_window_noutrefresh_impl(PyCursesWindowObject *self)
         rtn = pnoutrefresh(self->win, pminrow, pmincol,
                            sminrow, smincol, smaxrow, smaxcol);
         Py_END_ALLOW_THREADS
-        return PyCursesCheckERR(rtn, "pnoutrefresh");
+        return PyCursesCheckERR_ForWin(self, rtn, "pnoutrefresh");
     }
     if (group_right_1) {
         PyErr_SetString(PyExc_TypeError,
@@ -2105,7 +2139,7 @@ _curses_window_noutrefresh_impl(PyCursesWindowObject *self)
     Py_BEGIN_ALLOW_THREADS
     rtn = wnoutrefresh(self->win);
     Py_END_ALLOW_THREADS
-    return PyCursesCheckERR(rtn, "wnoutrefresh");
+    return PyCursesCheckERR_ForWin(self, rtn, "wnoutrefresh");
 }
 
 /*[clinic input]
@@ -2147,11 +2181,11 @@ _curses_window_overlay_impl(PyCursesWindowObject *self,
     if (group_right_1) {
         rtn = copywin(self->win, destwin->win, sminrow, smincol,
                       dminrow, dmincol, dmaxrow, dmaxcol, TRUE);
-        return PyCursesCheckERR(rtn, "copywin");
+        return PyCursesCheckERR_ForWin(self, rtn, "copywin");
     }
     else {
         rtn = overlay(self->win, destwin->win);
-        return PyCursesCheckERR(rtn, "overlay");
+        return PyCursesCheckERR_ForWin(self, rtn, "overlay");
     }
 }
 
@@ -2195,11 +2229,11 @@ _curses_window_overwrite_impl(PyCursesWindowObject *self,
     if (group_right_1) {
         rtn = copywin(self->win, destwin->win, sminrow, smincol,
                       dminrow, dmincol, dmaxrow, dmaxcol, FALSE);
-        return PyCursesCheckERR(rtn, "copywin");
+        return PyCursesCheckERR_ForWin(self, rtn, "copywin");
     }
     else {
         rtn = overwrite(self->win, destwin->win);
-        return PyCursesCheckERR(rtn, "overwrite");
+        return PyCursesCheckERR_ForWin(self, rtn, "overwrite");
     }
 }
 
@@ -2228,7 +2262,7 @@ _curses_window_putwin(PyCursesWindowObject *self, PyObject *file)
         return PyErr_SetFromErrno(PyExc_OSError);
     if (_Py_set_inheritable(fileno(fp), 0, NULL) < 0)
         goto exit;
-    res = PyCursesCheckERR(putwin(self->win, fp), "putwin");
+    res = PyCursesCheckERR_ForWin(self, putwin(self->win, fp), "putwin");
     if (res == NULL)
         goto exit;
     fseek(fp, 0, 0);
@@ -2267,7 +2301,7 @@ static PyObject *
 _curses_window_redrawln_impl(PyCursesWindowObject *self, int beg, int num)
 /*[clinic end generated code: output=ea216e334f9ce1b4 input=152155e258a77a7a]*/
 {
-    return PyCursesCheckERR(wredrawln(self->win,beg,num), "redrawln");
+    return PyCursesCheckERR_ForWin(self, wredrawln(self->win,beg,num), "redrawln");
 }
 
 /*[clinic input]
@@ -2317,7 +2351,7 @@ _curses_window_refresh_impl(PyCursesWindowObject *self, int group_right_1,
         rtn = prefresh(self->win, pminrow, pmincol,
                        sminrow, smincol, smaxrow, smaxcol);
         Py_END_ALLOW_THREADS
-        return PyCursesCheckERR(rtn, "prefresh");
+        return PyCursesCheckERR_ForWin(self, rtn, "prefresh");
     }
 #endif
     if (group_right_1) {
@@ -2328,7 +2362,7 @@ _curses_window_refresh_impl(PyCursesWindowObject *self, int group_right_1,
     Py_BEGIN_ALLOW_THREADS
     rtn = wrefresh(self->win);
     Py_END_ALLOW_THREADS
-    return PyCursesCheckERR(rtn, "prefresh");
+    return PyCursesCheckERR_ForWin(self, rtn, "prefresh");
 }
 
 /*[clinic input]
@@ -2350,7 +2384,7 @@ _curses_window_setscrreg_impl(PyCursesWindowObject *self, int top,
                               int bottom)
 /*[clinic end generated code: output=486ab5db218d2b1a input=1b517b986838bf0e]*/
 {
-    return PyCursesCheckERR(wsetscrreg(self->win, top, bottom), "wsetscrreg");
+    return PyCursesCheckERR_ForWin(self, wsetscrreg(self->win, top, bottom), "wsetscrreg");
 }
 
 /*[clinic input]
@@ -2418,10 +2452,10 @@ _curses_window_scroll_impl(PyCursesWindowObject *self, int group_right_1,
 /*[clinic end generated code: output=4541a8a11852d360 input=c969ca0cfabbdbec]*/
 {
     if (!group_right_1) {
-        return PyCursesCheckERR(scroll(self->win), "scroll");
+        return PyCursesCheckERR_ForWin(self, scroll(self->win), "scroll");
     }
     else {
-        return PyCursesCheckERR(wscrl(self->win, lines), "scroll");
+        return PyCursesCheckERR_ForWin(self, wscrl(self->win, lines), "scroll");
     }
 }
 
@@ -2447,10 +2481,10 @@ _curses_window_touchline_impl(PyCursesWindowObject *self, int start,
 /*[clinic end generated code: output=65d05b3f7438c61d input=a98aa4f79b6be845]*/
 {
     if (!group_right_1) {
-        return PyCursesCheckERR(touchline(self->win, start, count), "touchline");
+        return PyCursesCheckERR_ForWin(self, touchline(self->win, start, count), "touchline");
     }
     else {
-        return PyCursesCheckERR(wtouchln(self->win, start, count, changed), "touchline");
+        return PyCursesCheckERR_ForWin(self, wtouchln(self->win, start, count, changed), "touchline");
     }
 }
 
@@ -2490,9 +2524,9 @@ _curses_window_vline_impl(PyCursesWindowObject *self, int group_left_1,
         return NULL;
     if (group_left_1) {
         if (wmove(self->win, y, x) == ERR)
-            return PyCursesCheckERR(ERR, "wmove");
+            return PyCursesCheckERR_ForWin(self, ERR, "wmove");
     }
-    return PyCursesCheckERR(wvline(self->win, ch_ | (attr_t)attr, n), "vline");
+    return PyCursesCheckERR_ForWin(self, wvline(self->win, ch_ | (attr_t)attr, n), "vline");
 }
 
 static PyObject *
@@ -2676,15 +2710,15 @@ PyTypeObject PyCursesWindow_Type = {
 #define NoArgNoReturnFunctionBody(X) \
 { \
   PyCursesStatefulInitialised(module); \
-  return PyCursesCheckERR(X(), # X); }
+  return PyCursesCheckERR(module, X(), # X); }
 
 #define NoArgOrFlagNoReturnFunctionBody(X, flag) \
 { \
     PyCursesStatefulInitialised(module); \
     if (flag) \
-        return PyCursesCheckERR(X(), # X); \
+        return PyCursesCheckERR(module, X(), # X); \
     else \
-        return PyCursesCheckERR(no ## X(), # X); \
+        return PyCursesCheckERR(module, no ## X(), # X); \
 }
 
 #define NoArgReturnIntFunctionBody(X) \
@@ -2863,7 +2897,7 @@ _curses_curs_set_impl(PyObject *module, int visibility)
     PyCursesStatefulInitialised(module);
 
     erg = curs_set(visibility);
-    if (erg == ERR) return PyCursesCheckERR(erg, "curs_set");
+    if (erg == ERR) return PyCursesCheckERR(module, erg, "curs_set");
 
     return PyLong_FromLong((long) erg);
 }
@@ -2914,7 +2948,7 @@ _curses_delay_output_impl(PyObject *module, int ms)
 {
     PyCursesStatefulInitialised(module);
 
-    return PyCursesCheckERR(delay_output(ms), "delay_output");
+    return PyCursesCheckERR(module, delay_output(ms), "delay_output");
 }
 
 /*[clinic input]
@@ -3086,7 +3120,7 @@ _curses_ungetmouse_impl(PyObject *module, short id, int x, int y, int z,
     event.y = y;
     event.z = z;
     event.bstate = bstate;
-    return PyCursesCheckERR(ungetmouse(&event), "ungetmouse");
+    return PyCursesCheckERR(module, ungetmouse(&event), "ungetmouse");
 }
 #endif
 
@@ -3171,7 +3205,7 @@ _curses_halfdelay_impl(PyObject *module, unsigned char tenths)
 {
     PyCursesStatefulInitialised(module);
 
-    return PyCursesCheckERR(halfdelay(tenths), "halfdelay");
+    return PyCursesCheckERR(module, halfdelay(tenths), "halfdelay");
 }
 
 /*[clinic input]
@@ -3256,7 +3290,8 @@ _curses_init_color_impl(PyObject *module, int color_number, short r, short g,
     PyCursesStatefulInitialised(module);
     PyCursesStatefulInitialisedColor(module);
 
-    return PyCursesCheckERR(_CURSES_INIT_COLOR_FUNC(color_number, r, g, b),
+    return PyCursesCheckERR(module,
+                            _CURSES_INIT_COLOR_FUNC(color_number, r, g, b),
                             Py_STRINGIFY(_CURSES_INIT_COLOR_FUNC));
 }
 
@@ -3525,7 +3560,7 @@ _curses_set_escdelay_impl(PyObject *module, int ms)
         return NULL;
     }
 
-    return PyCursesCheckERR(set_escdelay(ms), "set_escdelay");
+    return PyCursesCheckERR(module, set_escdelay(ms), "set_escdelay");
 }
 
 /*[clinic input]
@@ -3564,7 +3599,7 @@ _curses_set_tabsize_impl(PyObject *module, int size)
         return NULL;
     }
 
-    return PyCursesCheckERR(set_tabsize(size), "set_tabsize");
+    return PyCursesCheckERR(module, set_tabsize(size), "set_tabsize");
 }
 #endif
 
@@ -3582,7 +3617,7 @@ _curses_intrflush_impl(PyObject *module, int flag)
 {
     PyCursesStatefulInitialised(module);
 
-    return PyCursesCheckERR(intrflush(NULL, flag), "intrflush");
+    return PyCursesCheckERR(module, intrflush(NULL, flag), "intrflush");
 }
 
 /*[clinic input]
@@ -3695,7 +3730,7 @@ _curses_meta_impl(PyObject *module, int yes)
 {
     PyCursesStatefulInitialised(module);
 
-    return PyCursesCheckERR(meta(stdscr, yes), "meta");
+    return PyCursesCheckERR(module, meta(stdscr, yes), "meta");
 }
 
 #ifdef NCURSES_MOUSE_VERSION
@@ -3719,7 +3754,7 @@ _curses_mouseinterval_impl(PyObject *module, int interval)
 {
     PyCursesStatefulInitialised(module);
 
-    return PyCursesCheckERR(mouseinterval(interval), "mouseinterval");
+    return PyCursesCheckERR(module, mouseinterval(interval), "mouseinterval");
 }
 
 /*[clinic input]
@@ -3997,7 +4032,7 @@ static PyObject *
 _curses_putp_impl(PyObject *module, const char *string)
 /*[clinic end generated code: output=e98081d1b8eb5816 input=1601faa828b44cb3]*/
 {
-    return PyCursesCheckERR(putp(string), "putp");
+    return PyCursesCheckERR(module, putp(string), "putp");
 }
 
 /*[clinic input]
@@ -4174,7 +4209,7 @@ _curses_resizeterm_impl(PyObject *module, int nlines, int ncols)
 
     PyCursesStatefulInitialised(module);
 
-    result = PyCursesCheckERR(resizeterm(nlines, ncols), "resizeterm");
+    result = PyCursesCheckERR(module, resizeterm(nlines, ncols), "resizeterm");
     if (!result)
         return NULL;
     if (!update_lines_cols(module)) {
@@ -4213,7 +4248,7 @@ _curses_resize_term_impl(PyObject *module, int nlines, int ncols)
 
     PyCursesStatefulInitialised(module);
 
-    result = PyCursesCheckERR(resize_term(nlines, ncols), "resize_term");
+    result = PyCursesCheckERR(module, resize_term(nlines, ncols), "resize_term");
     if (!result)
         return NULL;
     if (!update_lines_cols(module)) {
@@ -4462,7 +4497,7 @@ _curses_typeahead_impl(PyObject *module, int fd)
 {
     PyCursesStatefulInitialised(module);
 
-    return PyCursesCheckERR(typeahead( fd ), "typeahead");
+    return PyCursesCheckERR(module, typeahead( fd ), "typeahead");
 }
 #endif
 
@@ -4512,7 +4547,7 @@ _curses_ungetch(PyObject *module, PyObject *ch)
     if (!PyCurses_ConvertToChtype(NULL, ch, &ch_))
         return NULL;
 
-    return PyCursesCheckERR(ungetch(ch_), "ungetch");
+    return PyCursesCheckERR(module, ungetch(ch_), "ungetch");
 }
 
 #ifdef HAVE_NCURSESW
@@ -4582,7 +4617,7 @@ _curses_unget_wch(PyObject *module, PyObject *ch)
 
     if (!PyCurses_ConvertToWchar_t(ch, &wch))
         return NULL;
-    return PyCursesCheckERR(unget_wch(wch), "unget_wch");
+    return PyCursesCheckERR(module, unget_wch(wch), "unget_wch");
 }
 #endif
 
