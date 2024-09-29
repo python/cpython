@@ -733,8 +733,7 @@ int PyObject_CopyData(PyObject *dest, PyObject *src)
     return 0;
 }
 
-int
-PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len, char fort)
+int PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len, char fort)
 {
     Py_buffer view_obj;
 
@@ -761,7 +760,6 @@ PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len, char fort)
         PyBuffer_Release(&view_obj);
         return 0;
     }
-    
     /* i'm thinking... */
 
     return -1;
