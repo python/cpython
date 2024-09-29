@@ -1587,18 +1587,24 @@ class TestDefaultSuppress(ParserTestCase):
     """Test actions with suppressed defaults"""
 
     argument_signatures = [
-        Sig('foo', nargs='?', default=argparse.SUPPRESS),
-        Sig('bar', nargs='*', default=argparse.SUPPRESS),
+        Sig('foo', nargs='?', type=int, default=argparse.SUPPRESS),
+        Sig('bar', nargs='*', type=int, default=argparse.SUPPRESS),
         Sig('--baz', action='store_true', default=argparse.SUPPRESS),
+        Sig('--qux', nargs='?', type=int, default=argparse.SUPPRESS),
+        Sig('--quux', nargs='*', type=int, default=argparse.SUPPRESS),
     ]
-    failures = ['-x']
+    failures = ['-x', 'a', '1 a']
     successes = [
         ('', NS()),
-        ('a', NS(foo='a')),
-        ('a b', NS(foo='a', bar=['b'])),
+        ('1', NS(foo=1)),
+        ('1 2', NS(foo=1, bar=[2])),
         ('--baz', NS(baz=True)),
-        ('a --baz', NS(foo='a', baz=True)),
-        ('--baz a b', NS(foo='a', bar=['b'], baz=True)),
+        ('1 --baz', NS(foo=1, baz=True)),
+        ('--baz 1 2', NS(foo=1, bar=[2], baz=True)),
+        ('--qux', NS(qux=None)),
+        ('--qux 1', NS(qux=1)),
+        ('--quux', NS(quux=[])),
+        ('--quux 1 2', NS(quux=[1, 2])),
     ]
 
 
