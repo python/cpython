@@ -746,19 +746,13 @@ PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len,
         return -1;
     }
 
-    if (!buf) {
-        PyErr_SetString(PyExc_MemoryError, "buf pointer is null");
-        return -1;
-    }
-
     if (PyObject_GetBuffer(obj, &view_obj, PyBUF_SIMPLE)) {
         return -1;
     }
 
     if (view_obj.len < len) {
         PyErr_SetString(PyExc_BufferError,
-                        "destination is too small to"
-                        "receive data from buf");
+                        "destination is too small to receive data from buf");
         PyBuffer_Release(&view_obj);
         return -1;
     }
