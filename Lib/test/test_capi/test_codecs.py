@@ -528,7 +528,7 @@ class CAPICodecs(unittest.TestCase):
     def setUp(self):
         # Encoding names are normalized internally by converting them
         # to lowercase and their hyphens are replaced by underscores.
-        self.encoding_name = f'codec_reversed_{id(self)}'
+        self.encoding_name = 'test.test_capi.test_codecs.codec_reversed'
         # Make sure that our custom codec is not already registered (that
         # way we know whether we correctly unregistered the custom codec
         # after a test or not).
@@ -658,12 +658,13 @@ class CAPICodecs(unittest.TestCase):
         self.assertRaises(UnicodeDecodeError, decode, b, 'ascii', NULL)
         self.assertEqual(decode(b, 'ascii', 'replace'), 'a' + '\ufffd'*9)
 
-        # _codecs.decode() only reports unknown errors policy when they are
-        # used; this is different from PyUnicode_Decode() which checks that
-        # both the encoding and the errors policy are recognized before even
-        # attempting to call the decoder.
-        self.assertEqual(decode(b'', 'utf-8', 'unknown-errors-policy'), '')
-        self.assertEqual(decode(b'a', 'utf-8', 'unknown-errors-policy'), 'a')
+        # _codecs.decode() only reports an unknown error handling name when
+        # the corresponding error handling function is used; this difers
+        # from PyUnicode_Decode() which checks that both the encoding and
+        # the error handling name are recognized before even attempting to
+        # call the decoder.
+        self.assertEqual(decode(b'', 'utf-8', 'unknown-error-handler'), '')
+        self.assertEqual(decode(b'a', 'utf-8', 'unknown-error-handler'), 'a')
 
         self.assertRaises(TypeError, decode, NULL, 'ascii', 'strict')
         with self.assertRaisesRegex(TypeError, BAD_ARGUMENT):
@@ -695,9 +696,9 @@ class CAPICodecs(unittest.TestCase):
         with self.use_custom_encoder():
             encoding = self.encoding_name
 
-            for policy in ['strict', NULL]:
-                with self.subTest(policy=policy):
-                    encoder = codec_incremental_encoder(encoding, policy)
+            for errors in ['strict', NULL]:
+                with self.subTest(errors):
+                    encoder = codec_incremental_encoder(encoding, errors)
                     self.assertIsInstance(encoder, self.codec_info.incrementalencoder)
 
             with self.assertRaisesRegex(TypeError, BAD_ARGUMENT):
@@ -709,9 +710,9 @@ class CAPICodecs(unittest.TestCase):
         with self.use_custom_encoder():
             encoding = self.encoding_name
 
-            for policy in ['strict', NULL]:
-                with self.subTest(policy=policy):
-                    decoder = codec_incremental_decoder(encoding, policy)
+            for errors in ['strict', NULL]:
+                with self.subTest(errors):
+                    decoder = codec_incremental_decoder(encoding, errors)
                     self.assertIsInstance(decoder, self.codec_info.incrementaldecoder)
 
             with self.assertRaisesRegex(TypeError, BAD_ARGUMENT):
@@ -722,9 +723,9 @@ class CAPICodecs(unittest.TestCase):
 
         with self.use_custom_encoder():
             encoding, stream = self.encoding_name, io.StringIO()
-            for policy in ['strict', NULL]:
-                with self.subTest(policy=policy):
-                    writer = codec_stream_reader(encoding, stream, policy)
+            for errors in ['strict', NULL]:
+                with self.subTest(errors):
+                    writer = codec_stream_reader(encoding, stream, errors)
                     self.assertIsInstance(writer, self.codec_info.streamreader)
 
             with self.assertRaisesRegex(TypeError, BAD_ARGUMENT):
@@ -735,9 +736,9 @@ class CAPICodecs(unittest.TestCase):
 
         with self.use_custom_encoder():
             encoding, stream = self.encoding_name, io.StringIO()
-            for policy in ['strict', NULL]:
-                with self.subTest(policy=policy):
-                    writer = codec_stream_writer(encoding, stream, policy)
+            for errors in ['strict', NULL]:
+                with self.subTest(errors):
+                    writer = codec_stream_writer(encoding, stream, errors)
                     self.assertIsInstance(writer, self.codec_info.streamwriter)
 
             with self.assertRaisesRegex(TypeError, BAD_ARGUMENT):
