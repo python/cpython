@@ -768,6 +768,10 @@ class CAPICodecErrors(unittest.TestCase):
                           b'\xff', 'ascii', errors='custom')
         error_handler.assert_called_once()
 
+    # _codecs._unregister_error directly delegates to the internal C
+    # function so a Python-level function test is sufficient (it is
+    # tested in test_codeccallbacks).
+
     def test_codec_lookup_error(self):
         codec_lookup_error = _testcapi.codec_lookup_error
         self.assertIs(codec_lookup_error(NULL), codecs.strict_errors)
