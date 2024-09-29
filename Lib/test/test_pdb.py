@@ -363,6 +363,54 @@ def test_pdb_breakpoint_commands():
     4
     """
 
+def test_pdb_commands():
+    """Test the commands command of pdb.
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     print(1)
+    ...     print(2)
+    ...     print(3)
+
+    >>> reset_Breakpoint()
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'b 3',
+    ...     'commands',
+    ...     'silent',      # suppress the frame status output
+    ...     'p "hello"',
+    ...     'end',
+    ...     'b 4',
+    ...     'commands',
+    ...     'until 5',     # no output, should stop at line 5
+    ...     'continue',    # hit breakpoint at line 3
+    ...     '',            # repeat continue, hit breakpoint at line 4 then `until` to line 5
+    ...     '',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_commands[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) b 3
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_commands[0]>:3
+    (Pdb) commands
+    (com) silent
+    (com) p "hello"
+    (com) end
+    (Pdb) b 4
+    Breakpoint 2 at <doctest test.test_pdb.test_pdb_commands[0]>:4
+    (Pdb) commands
+    (com) until 5
+    (Pdb) continue
+    'hello'
+    (Pdb)
+    1
+    2
+    > <doctest test.test_pdb.test_pdb_commands[0]>(5)test_function()
+    -> print(3)
+    (Pdb)
+    3
+    """
+
 def test_pdb_breakpoint_with_filename():
     """Breakpoints with filename:lineno
 
