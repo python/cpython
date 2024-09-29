@@ -430,7 +430,7 @@ can be overridden by the local file.
    breakpoint—which could have its own command list, leading to ambiguities about
    which list to execute.
 
-   If the command list contains the ``silent`` command, or a command that
+   If the list of commands contains the ``silent`` command, or a command that
    resumes execution, then the breakpoint message containing information about
    the frame is not displayed.
 
