@@ -2319,7 +2319,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # but multiple character options always have to have their argument
         # separate
         elif option_string[0] in chars and option_string[1] not in chars:
-            option_prefix = option_string
+            option_prefix, sep, explicit_arg = option_string.partition('=')
+            if not sep:
+                sep = explicit_arg = None
             short_option_prefix = option_string[:2]
             short_explicit_arg = option_string[2:]
 
@@ -2328,9 +2330,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                     action = self._option_string_actions[option_string]
                     tup = action, option_string, '', short_explicit_arg
                     result.append(tup)
-                elif option_string.startswith(option_prefix):
+                elif self.allow_abbrev and option_string.startswith(option_prefix):
                     action = self._option_string_actions[option_string]
-                    tup = action, option_string, None, None
+                    tup = action, option_string, sep, explicit_arg
                     result.append(tup)
 
         # shouldn't ever get here
@@ -2483,9 +2485,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 value = action.const
             else:
                 value = action.default
-            if isinstance(value, str):
+            if isinstance(value, str) and value is not SUPPRESS:
                 value = self._get_value(action, value)
-                self._check_value(action, value)
 
         # when nargs='*' on a positional, if there were no command-line
         # args, use the default if it is anything other than None
@@ -2493,11 +2494,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
               not action.option_strings):
             if action.default is not None:
                 value = action.default
-                self._check_value(action, value)
             else:
-                # since arg_strings is always [] at this point
-                # there is no need to use self._check_value(action, value)
-                value = arg_strings
+                value = []
 
         # single argument or optional argument produces a single value
         elif len(arg_strings) == 1 and action.nargs in [None, OPTIONAL]:
