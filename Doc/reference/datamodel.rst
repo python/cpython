@@ -921,9 +921,25 @@ modules directly, but this technique is more error-prone, as most attributes
 must be manually set on the module object after it has been created when using
 this approach.
 
-With the exception of :attr:`~module.__name__`, it is **strongly** recommended
-that you rely on :attr:`~module.__spec__` and its attributes instead of any of
-the other individual attributes listed in this subsection.
+.. caution::
+
+   With the exception of :attr:`~module.__name__`, it is **strongly**
+   recommended that you rely on :attr:`~module.__spec__` and its attributes
+   instead of any of the other individual attributes listed in this subsection.
+   Note that updating an attribute on :attr:`!__spec__` will not update the
+   corresponding attribute on the module itself:
+
+   .. doctest::
+
+     >>> import typing
+     >>> typing.__name__, typing.__spec__.name
+     ('typing', 'typing')
+     >>> typing.__spec__.name = 'spelling'
+     >>> typing.__name__, typing.__spec__.name
+     ('typing', 'spelling')
+     >>> typing.__name__ = 'keyboard_smashing'
+     >>> typing.__name__, typing.__spec__.name
+     ('keyboard_smashing', 'spelling')
 
 .. attribute:: module.__name__
 
@@ -941,22 +957,15 @@ the other individual attributes listed in this subsection.
    Set to the :class:`module spec <importlib.machinery.ModuleSpec>` that was
    used when importing the module. See :ref:`module-specs` for more details.
 
-   When :attr:`__spec__.parent <importlib.machinery.ModuleSpec.parent>` is not
-   set, :attr:`~module.__package__` is used as a fallback.
-
    .. versionadded:: 3.4
-
-   .. versionchanged:: 3.6
-      :attr:`__spec__.parent <importlib.machinery.ModuleSpec.parent>` is used
-      as a fallback when :attr:`~module.__package__` is not defined.
 
 .. attribute:: module.__package__
 
    The :term:`package` a module belongs to.
 
    If the module is top-level (that is, not a part of any specific package)
-   then the attribute should be set to ``''``. Otherwise, it should be set to
-   the name of the module's package (which can be equal to
+   then the attribute should be set to ``''`` (the empty string). Otherwise,
+   it should be set to the name of the module's package (which can be equal to
    :attr:`module.__name__` if the module itself is a package). See :pep:`366`
    for further details.
 
@@ -968,7 +977,9 @@ the other individual attributes listed in this subsection.
 
    It is **strongly** recommended that you use
    :attr:`module.__spec__.package <importlib.machinery.ModuleSpec.parent>`
-   instead of :attr:`!module.__package__`.
+   instead of :attr:`!module.__package__`. :attr:`__package__` is now only used
+   as a fallback if :attr:`!__spec__.parent` is not set, and this fallback
+   path is deprecated.
 
    .. versionchanged:: 3.4
       This attribute now defaults to ``None`` for modules created dynamically
@@ -976,17 +987,19 @@ the other individual attributes listed in this subsection.
       Previously the attribute was optional.
 
    .. versionchanged:: 3.6
-      The value of :attr:`!__package__`` is expected to be the same as
+      The value of :attr:`!__package__` is expected to be the same as
       :attr:`__spec__.parent <importlib.machinery.ModuleSpec.parent>`.
+      :attr:`__package__` is now only used as a fallback during import
+      resolution if :attr:`!__spec__.parent` is not defined.
 
    .. versionchanged:: 3.10
-      :exc:`ImportWarning` is raised if import falls back to
+      :exc:`ImportWarning` is raised if an import resolution falls back to
       :attr:`!__package__` instead of
-      :attr:`~importlib.machinery.ModuleSpec.parent`.
+      :attr:`__spec__.parent <importlib.machinery.ModuleSpec.parent>`.
 
    .. versionchanged:: 3.12
-      Raise :exc:`DeprecationWarning` instead of :exc:`ImportWarning`
-      when falling back to :attr:`!__package__`.
+      Raise :exc:`DeprecationWarning` instead of :exc:`ImportWarning` when
+      falling back to :attr:`!__package__` during import resolution.
 
    .. deprecated-removed:: 3.13 3.15
       :attr:`!__package__` will cease to be set or taken into consideration
@@ -1027,12 +1040,16 @@ the other individual attributes listed in this subsection.
    not have a :attr:`!__path__` attribute. See :ref:`package-path-rules` for
    more details.
 
+   It is **strongly** recommended that you use
+   :attr:`module.__spec__.submodule_search_locations <importlib.machinery.ModuleSpec.submodule_search_locations>`
+   instead of :attr:`!module.__path__`.
+
 .. attribute:: module.__file__
 .. attribute:: module.__cached__
 
    :attr:`!__file__` and :attr:`!__cached__` are both optional attributes that
-   may or may not be set. Both attributes should be a :class:`string <str>`
-   when they are available.
+   may or may not be set. Both attributes should be a :class:`str` when they
+   are available.
 
    :attr:`!__file__` indicates the pathname of the file from which the module
    was loaded (if loaded from a file), or the pathname of the shared library
