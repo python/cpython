@@ -1,0 +1,2 @@
+Fix conflicts between abbreviated long options in the parent parser and
+subparsers in :mod:`argparse`.

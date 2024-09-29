@@ -2356,6 +2356,28 @@ class TestAddSubparsers(TestCase):
         self.assertEqual(C.w, 7)
         self.assertEqual(C.x, 'b')
 
+    def test_abbreviation(self):
+        parser = ErrorRaisingArgumentParser()
+        parser.add_argument('--foodle')
+        parser.add_argument('--foonly')
+        subparsers = parser.add_subparsers()
+        parser1 = subparsers.add_parser('bar')
+        parser1.add_argument('--fo')
+        parser1.add_argument('--foonew')
+
+        self.assertEqual(parser.parse_args(['--food', 'baz', 'bar']),
+                         NS(foodle='baz', foonly=None, fo=None, foonew=None))
+        self.assertEqual(parser.parse_args(['--foon', 'baz', 'bar']),
+                         NS(foodle=None, foonly='baz', fo=None, foonew=None))
+        self.assertArgumentParserError(parser.parse_args, ['--fo', 'baz', 'bar'])
+        self.assertEqual(parser.parse_args(['bar', '--fo', 'baz']),
+                         NS(foodle=None, foonly=None, fo='baz', foonew=None))
+        self.assertEqual(parser.parse_args(['bar', '--foo', 'baz']),
+                         NS(foodle=None, foonly=None, fo=None, foonew='baz'))
+        self.assertEqual(parser.parse_args(['bar', '--foon', 'baz']),
+                         NS(foodle=None, foonly=None, fo=None, foonew='baz'))
+        self.assertArgumentParserError(parser.parse_args, ['bar', '--food', 'baz'])
+
     def test_parse_known_args_with_single_dash_option(self):
         parser = ErrorRaisingArgumentParser()
         parser.add_argument('-k', '--known', action='count', default=0)
