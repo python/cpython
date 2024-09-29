@@ -1823,7 +1823,7 @@ Sub-commands
      >>>
      >>> # create the parser for the "b" command
      >>> parser_b = subparsers.add_parser('b', help='b help')
-     >>> parser_b.add_argument('--baz', choices='XYZ', help='baz help')
+     >>> parser_b.add_argument('--baz', choices=('X', 'Y', 'Z'), help='baz help')
      >>>
      >>> # parse some argument lists
      >>> parser.parse_args(['a', '12'])

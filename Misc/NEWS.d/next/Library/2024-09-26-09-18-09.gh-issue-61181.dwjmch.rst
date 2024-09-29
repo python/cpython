@@ -1,0 +1,2 @@
+Fix support of :ref:`choices` with string value in :mod:`argparse`. Substrings
+of the specified string no longer considered valid values.

@@ -686,7 +686,7 @@ class TestOptionalsChoices(ParserTestCase):
     argument_signatures = [
         Sig('-f', choices='abc'),
         Sig('-g', type=int, choices=range(5))]
-    failures = ['a', '-f d', '-fad', '-ga', '-g 6']
+    failures = ['a', '-f d', '-f ab', '-fad', '-ga', '-g 6']
     successes = [
         ('', NS(f=None, g=None)),
         ('-f a', NS(f='a', g=None)),
@@ -2270,14 +2270,14 @@ class TestAddSubparsers(TestCase):
             parser1_kwargs['aliases'] = ['1alias1', '1alias2']
         parser1 = subparsers.add_parser('1', **parser1_kwargs)
         parser1.add_argument('-w', type=int, help='w help')
-        parser1.add_argument('x', choices='abc', help='x help')
+        parser1.add_argument('x', choices=['a', 'b', 'c'], help='x help')
 
         # add second sub-parser
         parser2_kwargs = dict(description='2 description')
         if subparser_help:
             parser2_kwargs['help'] = '2 help'
         parser2 = subparsers.add_parser('2', **parser2_kwargs)
-        parser2.add_argument('-y', choices='123', help='y help')
+        parser2.add_argument('-y', choices=['1', '2', '3'], help='y help')
         parser2.add_argument('z', type=complex, nargs='*', help='z help')
 
         # add third sub-parser
@@ -4618,7 +4618,7 @@ class TestHelpVariableExpansion(HelpTestCase):
             help='x %(prog)s %(default)s %(type)s %%'),
         Sig('-y', action='store_const', default=42, const='XXX',
             help='y %(prog)s %(default)s %(const)s'),
-        Sig('--foo', choices='abc',
+        Sig('--foo', choices=['a', 'b', 'c'],
             help='foo %(prog)s %(default)s %(choices)s'),
         Sig('--bar', default='baz', choices=[1, 2], metavar='BBB',
             help='bar %(prog)s %(default)s %(dest)s'),
@@ -5281,7 +5281,7 @@ class TestInvalidArgumentConstructors(TestCase):
         for action in ['store_const', 'store_true', 'store_false',
                        'append_const', 'count']:
             for attrs in [dict(type=int), dict(nargs='+'),
-                          dict(choices='ab')]:
+                          dict(choices=['a', 'b'])]:
                 self.assertTypeError('-x', action=action, **attrs)
 
     def test_no_argument_no_const_actions(self):
