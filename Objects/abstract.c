@@ -733,7 +733,7 @@ int PyObject_CopyData(PyObject *dest, PyObject *src)
     return 0;
 }
 
-int PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len, char fort)
+int PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len, char fortran)
 {
     Py_buffer view_obj;
 
@@ -756,7 +756,7 @@ int PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len, char fort)
     }
 
     /* just copy it directly through memcpy */
-    if (fort == 'C' || fort == 'F') {
+    if (fortran == 'C' || fortran == 'F') {
         memcpy(view_obj.buf, buf, len);
         PyBuffer_Release(&view_obj);
         return 0;
