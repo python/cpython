@@ -1122,31 +1122,28 @@ class IncrementalGCTests(unittest.TestCase):
                 head = LinkedList(head, head.prev)
             return head
 
-        head = make_ll(1000)
-        count = 1000
+        head = make_ll(10000)
+        count = 10000
 
-        # There will be some objects we aren't counting,
-        # e.g. the gc stats dicts. This test checks
-        # that the counts don't grow, so we try to
-        # correct for the uncounted objects
-        # This is just an estimate.
-        CORRECTION = 20
+        # We expect the counts to go negative eventually
+        # as there will some objects we aren't counting,
+        # e.g. the gc stats dicts. The test merely checks
+        # that the counts don't grow.
 
         enabled = gc.isenabled()
         gc.enable()
         olds = []
-        for i in range(20_000):
-            newhead = make_ll(20)
-            count += 20
+        for i in range(1000):
+            newhead = make_ll(200)
+            count += 200
             newhead.surprise = head
             olds.append(newhead)
-            if len(olds) == 20:
+            if len(olds) == 50:
                 stats = gc.get_stats()
                 young = stats[0]
                 incremental = stats[1]
                 old = stats[2]
                 collected = young['collected'] + incremental['collected'] + old['collected']
-                count += CORRECTION
                 live = count - collected
                 self.assertLess(live, 25000)
                 del olds[:]

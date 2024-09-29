@@ -1377,7 +1377,7 @@ visit_get_objects(const mi_heap_t *heap, const mi_heap_area_t *area,
 }
 
 PyObject *
-_PyGC_GetObjects(PyInterpreterState *interp, int generation)
+_PyGC_GetObjects(PyInterpreterState *interp, Py_ssize_t generation)
 {
     PyObject *result = PyList_New(0);
     if (!result) {
