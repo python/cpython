@@ -521,7 +521,7 @@ Buffer-related functions
 
    Copy data from *buf* to *obj* buffer. Can convert between C-style and
    or Fortran-style buffers (C-style if *fort* is ``'C'`` or Fortran-style
-   if *fort* is ``'F'``, ``'A'``or other for defalut quick copy).
+   if *fort* is ``'F'``, ``'A'`` or other for defalut quick copy).
 
    ``0`` is returned on success, ``-1`` on error.
 
