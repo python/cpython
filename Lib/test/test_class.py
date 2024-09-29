@@ -1,8 +1,7 @@
 "Test the functionality of Python classes implementing operators."
 
 import unittest
-from test.support import cpython_only
-from test.support import import_helper, script_helper
+from test.support import cpython_only, import_helper, script_helper
 
 testmeths = [
 
