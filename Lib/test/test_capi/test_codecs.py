@@ -797,11 +797,11 @@ class CAPICodecErrors(unittest.TestCase):
             _testcapi.codec_ignore_errors,
             _testcapi.codec_replace_errors,
             _testcapi.codec_xmlcharrefreplace_errors,
-            _testcapi.codec_namereplace_errors,
+            _testlimitedcapi.codec_namereplace_errors,
         ]:
             for exc in exceptions:
                 with self.subTest(handler=handler, exc=exc):
-                    handler(exc)
+                    self.assertIsInstance(handler(exc), tuple)
 
 
 if __name__ == "__main__":

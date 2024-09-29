@@ -184,15 +184,6 @@ codec_backslashreplace_errors(PyObject *Py_UNUSED(module), PyObject *exc)
     return PyCodec_BackslashReplaceErrors(exc);
 }
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
-static PyObject *
-codec_namereplace_errors(PyObject *Py_UNUSED(module), PyObject *exc)
-{
-    assert(exc != NULL);
-    return PyCodec_NameReplaceErrors(exc);
-}
-#endif
-
 static PyMethodDef test_methods[] = {
     /* codecs registration */
     {"codec_register", codec_register, METH_O},
@@ -215,9 +206,7 @@ static PyMethodDef test_methods[] = {
     {"codec_replace_errors", codec_replace_errors, METH_O},
     {"codec_xmlcharrefreplace_errors", codec_xmlcharrefreplace_errors, METH_O},
     {"codec_backslashreplace_errors", codec_backslashreplace_errors, METH_O},
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
-    {"codec_namereplace_errors", codec_namereplace_errors, METH_O},
-#endif
+    // PyCodec_NameReplaceErrors() is tested in _testlimitedcapi/codec.c
     {NULL, NULL, 0, NULL},
 };
 
