@@ -1,0 +1,2 @@
+:mod:`argparse` vim supports abbreviated single-dash long options separated
+by ``=`` from its value.
