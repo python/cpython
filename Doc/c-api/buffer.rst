@@ -517,10 +517,11 @@ Buffer-related functions
 
    ``0`` is returned on success, ``-1`` on error.
 
-.. c:function:: int PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len, char fortran)
+.. c:function:: int PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len, char fort)
 
    Copy data from *buf* to *obj* buffer. Can convert between C-style and
-   or Fortran-style buffers.
+   or Fortran-style buffers (C-style if *fort* is ``'C'`` or Fortran-style
+   if *fort* is ``'F'``, ``'A'``or other for defalut quick copy).
 
    ``0`` is returned on success, ``-1`` on error.
 
