@@ -160,8 +160,8 @@ typedef chtype attr_t;           /* No attr_t type is available */
 #endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
 
 typedef struct _cursesmodule_state {
-    PyObject *PyCursesError;
-    PyTypeObject *PyCursesWindow_Type;
+    PyObject *error;                // PyCursesError
+    PyTypeObject *window_type;      // PyCursesWindow_Type
 } _cursesmodule_state;
 
 // For now, we keep a global state variable to prepare for PEP 489.
@@ -194,25 +194,25 @@ static const char *curses_screen_encoding = NULL;
 #define PyCursesSetupTermCalled                                         \
     do {                                                                \
         if (curses_setupterm_called != TRUE) {                          \
-            PyErr_SetString(curses_global_state.PyCursesError,          \
+            PyErr_SetString(curses_global_state.error,                  \
                             "must call (at least) setupterm() first");  \
             return 0;                                                   \
         }                                                               \
     } while (0)
 
-#define PyCursesInitialised                                     \
-    do {                                                        \
-        if (curses_initscr_called != TRUE) {                    \
-            PyErr_SetString(curses_global_state.PyCursesError,  \
-                            "must call initscr() first");       \
-            return 0;                                           \
-        }                                                       \
+#define PyCursesInitialised                                 \
+    do {                                                    \
+        if (curses_initscr_called != TRUE) {                \
+            PyErr_SetString(curses_global_state.error,      \
+                            "must call initscr() first");   \
+            return 0;                                       \
+        }                                                   \
     } while (0)
 
 #define PyCursesInitialisedColor                                \
     do {                                                        \
         if (curses_start_color_called != TRUE) {                \
-            PyErr_SetString(curses_global_state.PyCursesError,  \
+            PyErr_SetString(curses_global_state.error,          \
                             "must call start_color() first");   \
             return 0;                                           \
         }                                                       \
@@ -233,9 +233,9 @@ PyCursesCheckERR(int code, const char *fname)
         Py_RETURN_NONE;
     } else {
         if (fname == NULL) {
-            PyErr_SetString(curses_global_state.PyCursesError, catchall_ERR);
+            PyErr_SetString(curses_global_state.error, catchall_ERR);
         } else {
-            PyErr_Format(curses_global_state.PyCursesError, "%s() returned ERR", fname);
+            PyErr_Format(curses_global_state.error, "%s() returned ERR", fname);
         }
         return NULL;
     }
@@ -1341,7 +1341,7 @@ _curses_window_derwin_impl(PyCursesWindowObject *self, int group_left_1,
     win = derwin(self->win,nlines,ncols,begin_y,begin_x);
 
     if (win == NULL) {
-        PyErr_SetString(curses_global_state.PyCursesError, catchall_NULL);
+        PyErr_SetString(curses_global_state.error, catchall_NULL);
         return NULL;
     }
 
@@ -1491,7 +1491,7 @@ _curses_window_getkey_impl(PyCursesWindowObject *self, int group_right_1,
         /* getch() returns ERR in nodelay mode */
         PyErr_CheckSignals();
         if (!PyErr_Occurred())
-            PyErr_SetString(curses_global_state.PyCursesError, "no input");
+            PyErr_SetString(curses_global_state.error, "no input");
         return NULL;
     } else if (rtn <= 255) {
 #ifdef NCURSES_VERSION_MAJOR
@@ -1549,7 +1549,7 @@ _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
             return NULL;
 
         /* get_wch() returns ERR in nodelay mode */
-        PyErr_SetString(curses_global_state.PyCursesError, "no input");
+        PyErr_SetString(curses_global_state.error, "no input");
         return NULL;
     }
     if (ct == KEY_CODE_YES)
@@ -2062,7 +2062,7 @@ _curses_window_noutrefresh_impl(PyCursesWindowObject *self)
 #ifdef py_is_pad
     if (py_is_pad(self->win)) {
         if (!group_right_1) {
-            PyErr_SetString(curses_global_state.PyCursesError,
+            PyErr_SetString(curses_global_state.error,
                             "noutrefresh() called for a pad "
                             "requires 6 arguments");
             return NULL;
@@ -2286,7 +2286,7 @@ _curses_window_refresh_impl(PyCursesWindowObject *self, int group_right_1,
 #ifdef py_is_pad
     if (py_is_pad(self->win)) {
         if (!group_right_1) {
-            PyErr_SetString(curses_global_state.PyCursesError,
+            PyErr_SetString(curses_global_state.error,
                             "refresh() for a pad requires 6 arguments");
             return NULL;
         }
@@ -2368,7 +2368,7 @@ _curses_window_subwin_impl(PyCursesWindowObject *self, int group_left_1,
         win = subwin(self->win, nlines, ncols, begin_y, begin_x);
 
     if (win == NULL) {
-        PyErr_SetString(curses_global_state.PyCursesError, catchall_NULL);
+        PyErr_SetString(curses_global_state.error, catchall_NULL);
         return NULL;
     }
 
@@ -2785,7 +2785,7 @@ _curses_color_content_impl(PyObject *module, int color_number)
 
     if (_COLOR_CONTENT_FUNC(color_number, &r, &g, &b) == ERR) {
         _cursesmodule_state *st = get_cursesmodule_state(module);
-        PyErr_Format(st->PyCursesError, "%s() returned ERR",
+        PyErr_Format(st->error, "%s() returned ERR",
                      Py_STRINGIFY(_COLOR_CONTENT_FUNC));
         return NULL;
     }
@@ -3025,7 +3025,7 @@ _curses_getmouse_impl(PyObject *module)
     rtn = getmouse( &event );
     if (rtn == ERR) {
         _cursesmodule_state *st = get_cursesmodule_state(module);
-        PyErr_SetString(st->PyCursesError, "getmouse() returned ERR");
+        PyErr_SetString(st->error, "getmouse() returned ERR");
         return NULL;
     }
     return Py_BuildValue("(hiiik)",
@@ -3120,7 +3120,7 @@ _curses_getwin(PyObject *module, PyObject *file)
     win = getwin(fp);
     if (win == NULL) {
         _cursesmodule_state *st = get_cursesmodule_state(module);
-        PyErr_SetString(st->PyCursesError, catchall_NULL);
+        PyErr_SetString(st->error, catchall_NULL);
         goto error;
     }
     res = PyCursesWindow_New(win, NULL);
@@ -3269,7 +3269,7 @@ _curses_init_pair_impl(PyObject *module, int pair_number, int fg, int bg)
         }
         else {
             _cursesmodule_state *st = get_cursesmodule_state(module);
-            PyErr_Format(st->PyCursesError, "%s() returned ERR",
+            PyErr_Format(st->error, "%s() returned ERR",
                          Py_STRINGIFY(_CURSES_INIT_PAIR_FUNC));
         }
         return NULL;
@@ -3301,7 +3301,7 @@ _curses_initscr_impl(PyObject *module)
 
     if (win == NULL) {
         _cursesmodule_state *st = get_cursesmodule_state(module);
-        PyErr_SetString(st->PyCursesError, catchall_NULL);
+        PyErr_SetString(st->error, catchall_NULL);
         return NULL;
     }
 
@@ -3431,7 +3431,7 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
 
         if (sys_stdout == NULL || sys_stdout == Py_None) {
             _cursesmodule_state *st = get_cursesmodule_state(module);
-            PyErr_SetString(st->PyCursesError, "lost sys.stdout");
+            PyErr_SetString(st->error, "lost sys.stdout");
             return NULL;
         }
 
@@ -3452,7 +3452,7 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
         }
 
         _cursesmodule_state *st = get_cursesmodule_state(module);
-        PyErr_SetString(st->PyCursesError, s);
+        PyErr_SetString(st->error, s);
         return NULL;
     }
 
@@ -3770,7 +3770,7 @@ _curses_newpad_impl(PyObject *module, int nlines, int ncols)
 
     if (win == NULL) {
         _cursesmodule_state *st = get_cursesmodule_state(module);
-        PyErr_SetString(st->PyCursesError, catchall_NULL);
+        PyErr_SetString(st->error, catchall_NULL);
         return NULL;
     }
 
@@ -3810,7 +3810,7 @@ _curses_newwin_impl(PyObject *module, int nlines, int ncols,
     win = newwin(nlines,ncols,begin_y,begin_x);
     if (win == NULL) {
         _cursesmodule_state *st = get_cursesmodule_state(module);
-        PyErr_SetString(st->PyCursesError, catchall_NULL);
+        PyErr_SetString(st->error, catchall_NULL);
         return NULL;
     }
 
@@ -3929,7 +3929,7 @@ _curses_pair_content_impl(PyObject *module, int pair_number)
         }
         else {
             _cursesmodule_state *st = get_cursesmodule_state(module);
-            PyErr_Format(st->PyCursesError, "%s() returned ERR",
+            PyErr_Format(st->error, "%s() returned ERR",
                          Py_STRINGIFY(_CURSES_PAIR_CONTENT_FUNC));
         }
         return NULL;
@@ -4260,7 +4260,7 @@ _curses_start_color_impl(PyObject *module)
 
     if (start_color() == ERR) {
         _cursesmodule_state *st = get_cursesmodule_state(module);
-        PyErr_SetString(st->PyCursesError, "start_color() returned ERR");
+        PyErr_SetString(st->error, "start_color() returned ERR");
         return NULL;
     }
 
@@ -4413,7 +4413,7 @@ _curses_tparm_impl(PyObject *module, const char *str, int i1, int i2, int i3,
     result = tparm((char *)str,i1,i2,i3,i4,i5,i6,i7,i8,i9);
     if (!result) {
         _cursesmodule_state *st = get_cursesmodule_state(module);
-        PyErr_SetString(st->PyCursesError, "tparm() returned NULL");
+        PyErr_SetString(st->error, "tparm() returned NULL");
         return NULL;
     }
 
@@ -4615,7 +4615,7 @@ _curses_use_default_colors_impl(PyObject *module)
         Py_RETURN_NONE;
     } else {
         _cursesmodule_state *st = get_cursesmodule_state(module);
-        PyErr_SetString(st->PyCursesError, "use_default_colors() returned ERR");
+        PyErr_SetString(st->error, "use_default_colors() returned ERR");
         return NULL;
     }
 }
@@ -4814,7 +4814,7 @@ cursesmodule_exec(PyObject *module)
     if (PyModule_AddType(module, &PyCursesWindow_Type) < 0) {
         return -1;
     }
-    st->PyCursesWindow_Type = &PyCursesWindow_Type;
+    st->window_type = &PyCursesWindow_Type;
 
     /* Add some symbolic constants to the module */
     PyObject *module_dict = PyModule_GetDict(module);
@@ -4848,12 +4848,12 @@ cursesmodule_exec(PyObject *module)
     }
 
     /* For exception curses.error */
-    st->PyCursesError = PyErr_NewException("_curses.error", NULL, NULL);
-    if (st->PyCursesError == NULL) {
+    st->error = PyErr_NewException("_curses.error", NULL, NULL);
+    if (st->error == NULL) {
         return -1;
     }
-    rc = PyDict_SetItemString(module_dict, "error", st->PyCursesError);
-    Py_DECREF(st->PyCursesError);
+    rc = PyDict_SetItemString(module_dict, "error", st->error);
+    Py_DECREF(st->error);
     if (rc < 0) {
         return -1;
     }
