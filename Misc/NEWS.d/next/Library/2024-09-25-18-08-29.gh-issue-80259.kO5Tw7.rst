@@ -1,0 +1,2 @@
+Fix :mod:`argparse` support of positional arguments with ``nargs='?'``,
+``default=argparse.SUPPRESS`` and specified ``type``.
