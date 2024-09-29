@@ -2344,6 +2344,18 @@ class TestAddSubparsers(TestCase):
             (NS(foo=False, bar=0.5, w=7, x='b'), ['-W', '-X', 'Y', 'Z']),
         )
 
+    def test_parse_known_args_to_class_namespace(self):
+        class C:
+            pass
+        self.assertEqual(
+            self.parser.parse_known_args('0.5 1 b -w 7 -p'.split(), namespace=C),
+            (C, ['-p']),
+        )
+        self.assertIs(C.foo, False)
+        self.assertEqual(C.bar, 0.5)
+        self.assertEqual(C.w, 7)
+        self.assertEqual(C.x, 'b')
+
     def test_parse_known_args_with_single_dash_option(self):
         parser = ErrorRaisingArgumentParser()
         parser.add_argument('-k', '--known', action='count', default=0)
