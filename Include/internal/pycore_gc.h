@@ -140,9 +140,9 @@ static inline void _PyObject_GC_SET_SHARED_INLINE(PyObject *op) {
 
 /* Bit flags for _gc_prev */
 /* Bit 0 is set when tp_finalize is called */
-#define _PyGC_PREV_MASK_FINALIZED  1
+#define _PyGC_PREV_MASK_FINALIZED  ((uintptr_t)1)
 /* Bit 1 is set when the object is in generation which is GCed currently. */
-#define _PyGC_PREV_MASK_COLLECTING 2
+#define _PyGC_PREV_MASK_COLLECTING ((uintptr_t)2)
 
 /* Bit 0 in _gc_next is the old space bit.
  * It is set as follows:
@@ -381,10 +381,22 @@ extern void _PyGC_ClearAllFreeLists(PyInterpreterState *interp);
 extern void _Py_ScheduleGC(PyThreadState *tstate);
 extern void _Py_RunGC(PyThreadState *tstate);
 
-#ifdef Py_GIL_DISABLED
-// gh-117783: Immortalize objects that use deferred reference counting
-extern void _PyGC_ImmortalizeDeferredObjects(PyInterpreterState *interp);
-#endif
+union _PyStackRef;
+
+// GC visit callback for tracked interpreter frames
+extern int _PyGC_VisitFrameStack(struct _PyInterpreterFrame *frame, visitproc visit, void *arg);
+extern int _PyGC_VisitStackRef(union _PyStackRef *ref, visitproc visit, void *arg);
+
+// Like Py_VISIT but for _PyStackRef fields
+#define _Py_VISIT_STACKREF(ref)                                         \
+    do {                                                                \
+        if (!PyStackRef_IsNull(ref)) {                                  \
+            int vret = _PyGC_VisitStackRef(&(ref), visit, arg);         \
+            if (vret)                                                   \
+                return vret;                                            \
+        }                                                               \
+    } while (0)
+
 
 #ifdef __cplusplus
 }
