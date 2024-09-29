@@ -302,7 +302,6 @@ struct _gc_runtime_state {
     /* a list of callbacks to be invoked when collection is performed */
     PyObject *callbacks;
 
-#ifndef Py_GIL_DISABLED
     /* This is the number of objects that survived the last full
        collection. It approximates the number of long lived objects
        tracked by the GC.
@@ -315,6 +314,7 @@ struct _gc_runtime_state {
        the first time. */
     Py_ssize_t long_lived_pending;
 
+#ifdef Py_GIL_DISABLED
     /* gh-117783: Deferred reference counting is not fully implemented yet, so
        as a temporary measure we treat objects using deferred reference
        counting as immortal. The value may be zero, one, or a negative number:
