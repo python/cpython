@@ -978,10 +978,10 @@ conflict.
 
 .. envvar:: PYTHON_GC_THRESHOLD
 
-   Set the `threshold0` value for the garbage collector.  This is the same
-   as calling `gc.set_threshold(n)` where `n` is value of the variable.  Using
-   an empty value or the value "default" will cause the default threshold to be
-   used.
+   Set the ``threshold0`` value for the garbage collector.  This is the same as
+   calling ``gc.set_threshold(n)`` where ``n`` is value of the variable. Using
+   an empty value or the value ``default`` will cause the default threshold to
+   be used.
 
    .. versionadded:: 3.13
 
