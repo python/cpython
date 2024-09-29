@@ -2328,7 +2328,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                     action = self._option_string_actions[option_string]
                     tup = action, option_string, '', short_explicit_arg
                     result.append(tup)
-                elif option_string.startswith(option_prefix):
+                elif self.allow_abbrev and option_string.startswith(option_prefix):
                     action = self._option_string_actions[option_string]
                     tup = action, option_string, None, None
                     result.append(tup)

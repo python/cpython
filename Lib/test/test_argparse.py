@@ -914,6 +914,23 @@ class TestOptionalsDisallowLongAbbreviationPrefixChars(ParserTestCase):
     ]
 
 
+class TestOptionalsDisallowSingleDashLongAbbreviation(ParserTestCase):
+    """Do not allow abbreviations of long options at all"""
+
+    parser_signature = Sig(allow_abbrev=False)
+    argument_signatures = [
+        Sig('-foo'),
+        Sig('-foodle', action='store_true'),
+        Sig('-foonly'),
+    ]
+    failures = ['-foon 3', '-food', '-food -foo 2']
+    successes = [
+        ('', NS(foo=None, foodle=False, foonly=None)),
+        ('-foo 3', NS(foo='3', foodle=False, foonly=None)),
+        ('-foonly 7 -foodle -foo 2', NS(foo='2', foodle=True, foonly='7')),
+    ]
+
+
 class TestDisallowLongAbbreviationAllowsShortGrouping(ParserTestCase):
     """Do not allow abbreviations of long options at all"""
 
