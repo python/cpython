@@ -191,32 +191,55 @@ static int curses_start_color_called = FALSE;
 static const char *curses_screen_encoding = NULL;
 
 /* Utility Macros */
-#define PyCursesSetupTermCalled                                         \
+
+/*
+ * Macro to check that FUNC_NAME has been called by testing
+ * the CALLED boolean. If an error occurs, a PyCursesError
+ * is raised.
+ *
+ * Since these macros can be called in functions that do not
+ * have a direct access to the module's state, the exception
+ * type is imported on demand as well.
+ */
+#define _PyCursesCheckFunction(CALLED, FUNC_NAME)                       \
     do {                                                                \
-        if (curses_setupterm_called != TRUE) {                          \
-            PyErr_SetString(curses_global_state.error,                  \
-                            "must call (at least) setupterm() first");  \
+        if ((CALLED) != TRUE) {                                         \
+            PyObject *exc = _PyImport_GetModuleAttrString("_curses",    \
+                                                          "error");     \
+            if (exc == NULL) {                                          \
+                return 0;                                               \
+            }                                                           \
+            PyErr_SetString(exc, "must call " # FUNC_NAME "() first");  \
+            Py_DECREF(exc);                                             \
             return 0;                                                   \
         }                                                               \
     } while (0)
 
-#define PyCursesInitialised                                 \
-    do {                                                    \
-        if (curses_initscr_called != TRUE) {                \
-            PyErr_SetString(curses_global_state.error,      \
-                            "must call initscr() first");   \
-            return 0;                                       \
-        }                                                   \
+/*
+ * Macro to check that FUNC_NAME has been called by testing
+ * the CALLED boolean. If an error occurs, a PyCursesError
+ * is raised. The exception type is obtained from the module
+ * state.
+ */
+#define _PyCursesStatefulCheckFunction(CALLED, FUNC_NAME, MODULE)       \
+    do {                                                                \
+        if ((CALLED) != TRUE) {                                         \
+            _cursesmodule_state *st = get_cursesmodule_state((MODULE)); \
+            PyErr_SetString(st->error,                                  \
+                            "must call " # FUNC_NAME "() first");       \
+            return 0;                                                   \
+        }                                                               \
     } while (0)
 
-#define PyCursesInitialisedColor                                \
-    do {                                                        \
-        if (curses_start_color_called != TRUE) {                \
-            PyErr_SetString(curses_global_state.error,          \
-                            "must call start_color() first");   \
-            return 0;                                           \
-        }                                                       \
-    } while (0)
+#define PyCursesStatefulSetupTermCalled(MODULE)               \
+    _PyCursesStatefulCheckFunction(curses_setupterm_called,   \
+                                  "setupterm", (MODULE))
+#define PyCursesStatefulInitialised(MODULE)                   \
+    _PyCursesStatefulCheckFunction(curses_initscr_called,     \
+                                  "initscr", (MODULE))
+#define PyCursesStatefulInitialisedColor(MODULE)              \
+    _PyCursesStatefulCheckFunction(curses_start_color_called, \
+                                  "start_color", (MODULE))
 
 /* Utility Functions */
 
