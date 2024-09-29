@@ -1224,7 +1224,8 @@ class _SubParsersAction(Action):
             setattr(namespace, key, value)
 
         if arg_strings:
-            vars(namespace).setdefault(_UNRECOGNIZED_ARGS_ATTR, [])
+            if not hasattr(namespace, _UNRECOGNIZED_ARGS_ATTR):
+                setattr(namespace, _UNRECOGNIZED_ARGS_ATTR, [])
             getattr(namespace, _UNRECOGNIZED_ARGS_ATTR).extend(arg_strings)
 
 class _ExtendAction(_AppendAction):
