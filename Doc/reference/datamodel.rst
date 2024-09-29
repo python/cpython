@@ -1086,32 +1086,27 @@ Other writable attributes on module objects
 As well as the import-related attributes listed above, module objects also have
 the following writable attributes:
 
-.. list-table::
-   :header-rows: 1
+.. attribute:: module.__doc__
 
-   * - Attribute
-     - Meaning
+   The module's documentation string, or ``None`` if unavailable.
+   See also: :attr:`__doc__ attributes <definition.__doc__>`.
 
-   * - .. attribute:: module.__doc__
-     - The module's documentation string, or ``None`` if unavailable.
-       See also: :attr:`__doc__ attributes <definition.__doc__>`.
+.. attribute:: module.__annotations__
 
-   * - .. attribute:: module.__annotations__
-     - A dictionary containing
-       :term:`variable annotations <variable annotation>` collected during
-       module body execution.  For best practices on working with
-       :attr:`!__annotations__`, see :mod:`annotationlib`.
+   A dictionary containing :term:`variable annotations <variable annotation>`
+   collected during module body execution.  For best practices on working with
+   :attr:`!__annotations__`, see :mod:`annotationlib`.
 
-       .. versionchanged:: 3.14
-          Annotations are now :ref:`lazily evaluated <lazy-evaluation>`.
-          See :pep:`649`.
+   .. versionchanged:: 3.14
+      Annotations are now :ref:`lazily evaluated <lazy-evaluation>`.
+      See :pep:`649`.
 
-   * - .. attribute:: module.__annotate__
-     - The :term:`annotate function` for this module, or ``None`` if the module
-       has no annotations. See also:
-       :attr:`__annotate__ attributes <object.__annotate__>`.
+.. attribute:: module.__annotate__
 
-       .. versionadded:: 3.14
+   The :term:`annotate function` for this module, or ``None`` if the module has
+   no annotations. See also: :attr:`__annotate__ attributes <object.__annotate__>`.
+
+   .. versionadded:: 3.14
 
 Module dictionaries
 ^^^^^^^^^^^^^^^^^^^
