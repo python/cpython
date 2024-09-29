@@ -1098,9 +1098,9 @@ class TestCurses(unittest.TestCase):
         for func in (curses.resizeterm, curses.resize_term):
             with self.subTest(func=func):
                 with self.assertRaises(OverflowError):
-                    curses.resizeterm(35000, 1)
+                    func(35000, 1)
                 with self.assertRaises(OverflowError):
-                    curses.resizeterm(1, 35000)
+                    func(1, 35000)
                 # GH-120378: Overflow failure in resizeterm() causes refresh to fail
                 tmp = curses.initscr()
                 tmp.erase()
