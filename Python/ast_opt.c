@@ -169,11 +169,10 @@ safe_multiply(PyObject *v, PyObject *w)
     if (PyLong_Check(v) && PyLong_Check(w) &&
         !_PyLong_IsZero((PyLongObject *)v) && !_PyLong_IsZero((PyLongObject *)w)
     ) {
-        uint64_t vbits = _PyLong_NumBits(v);
-        uint64_t wbits = _PyLong_NumBits(w);
-        if (vbits == (uint64_t)-1 || wbits == (uint64_t)-1) {
-            return NULL;
-        }
+        int64_t vbits = _PyLong_NumBits(v);
+        int64_t wbits = _PyLong_NumBits(w);
+        assert(vbits >= 0);
+        assert(wbits >= 0);
         if (vbits + wbits > MAX_INT_SIZE) {
             return NULL;
         }
@@ -215,12 +214,13 @@ safe_power(PyObject *v, PyObject *w)
     if (PyLong_Check(v) && PyLong_Check(w) &&
         !_PyLong_IsZero((PyLongObject *)v) && _PyLong_IsPositive((PyLongObject *)w)
     ) {
-        uint64_t vbits = _PyLong_NumBits(v);
+        int64_t vbits = _PyLong_NumBits(v);
         size_t wbits = PyLong_AsSize_t(w);
-        if (vbits == (uint64_t)-1 || wbits == (size_t)-1) {
+        assert(vbits >= 0);
+        if (wbits == (size_t)-1) {
             return NULL;
         }
-        if (vbits > MAX_INT_SIZE / wbits) {
+        if ((uint64_t)vbits > MAX_INT_SIZE / wbits) {
             return NULL;
         }
     }
@@ -234,12 +234,13 @@ safe_lshift(PyObject *v, PyObject *w)
     if (PyLong_Check(v) && PyLong_Check(w) &&
         !_PyLong_IsZero((PyLongObject *)v) && !_PyLong_IsZero((PyLongObject *)w)
     ) {
-        uint64_t vbits = _PyLong_NumBits(v);
+        int64_t vbits = _PyLong_NumBits(v);
         size_t wbits = PyLong_AsSize_t(w);
-        if (vbits == (uint64_t)-1 || wbits == (size_t)-1) {
+        assert(vbits >= 0);
+        if (wbits == (size_t)-1) {
             return NULL;
         }
-        if (wbits > MAX_INT_SIZE || vbits > MAX_INT_SIZE - wbits) {
+        if (wbits > MAX_INT_SIZE || (uint64_t)vbits > MAX_INT_SIZE - wbits) {
             return NULL;
         }
     }
