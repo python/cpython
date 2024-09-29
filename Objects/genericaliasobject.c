@@ -180,7 +180,7 @@ tuple_extend(PyObject **dst, Py_ssize_t dstindex,
 PyObject *
 _Py_make_parameters(PyObject *args)
 {
-    assert (PyTuple_Check(args) || PyList_Check(args));
+    assert(PyTuple_Check(args) || PyList_Check(args));
     Py_ssize_t nargs = PySequence_Length(args);
     Py_ssize_t len = nargs;
     PyObject *parameters = PyTuple_New(len);
