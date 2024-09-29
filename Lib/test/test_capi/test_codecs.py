@@ -747,19 +747,17 @@ class CAPICodecs(unittest.TestCase):
 class CAPICodecErrors(unittest.TestCase):
 
     def test_codec_register_error(self):
-        try:
-            error_handler = _testcapi.codec_lookup_error('custom')
-        except LookupError:
-            error_handler = None
+        # for cleaning up between tests
+        from _codecs import _unregister_error as _codecs_unregister_error
 
-        if error_handler is None:
-            def custom_error_handler(exc):
-                raise exc
+        self.assertRaises(LookupError, _testcapi.codec_lookup_error, 'custom')
 
-            error_handler = mock.Mock(wraps=custom_error_handler)
-            _testcapi.codec_register_error('custom', error_handler)
-        else:
-            self.assertIsInstance(error_handler, mock.Mock)
+        def custom_error_handler(exc):
+            raise exc
+
+        error_handler = mock.Mock(wraps=custom_error_handler)
+        _testcapi.codec_register_error('custom', error_handler)
+        self.addCleanup(_codecs_unregister_error, 'custom')
 
         self.assertRaises(UnicodeEncodeError, codecs.encode,
                           '\xff', 'ascii', errors='custom')
@@ -769,7 +767,6 @@ class CAPICodecErrors(unittest.TestCase):
         self.assertRaises(UnicodeDecodeError, codecs.decode,
                           b'\xff', 'ascii', errors='custom')
         error_handler.assert_called_once()
-        error_handler.reset_mock()
 
     def test_codec_lookup_error(self):
         codec_lookup_error = _testcapi.codec_lookup_error
