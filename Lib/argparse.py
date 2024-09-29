@@ -138,7 +138,7 @@ class _AttributeHolder(object):
 def _copy_items(items):
     if items is None:
         return []
-    # The copy module is used only in the 'append' and 'append_const'
+    # The copy module is used only in the 'append', 'append_const', and 'extend'
     # actions, and it is needed only when the default value isn't a list.
     # Delay its import for speeding up the common case.
     if type(items) is list:
@@ -835,7 +835,7 @@ class Action(_AttributeHolder):
     def format_usage(self):
         return self.option_strings[0]
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, cache, namespace, values, option_string=None):
         raise NotImplementedError(_('.__call__() not defined'))
 
 
@@ -866,7 +866,7 @@ class BooleanOptionalAction(Action):
             deprecated=deprecated)
 
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, cache, namespace, values, option_string=None):
         if option_string in self.option_strings:
             setattr(namespace, self.dest, not option_string.startswith('--no-'))
 
@@ -907,7 +907,7 @@ class _StoreAction(Action):
             metavar=metavar,
             deprecated=deprecated)
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, cache, namespace, values, option_string=None):
         setattr(namespace, self.dest, values)
 
 
@@ -932,7 +932,7 @@ class _StoreConstAction(Action):
             help=help,
             deprecated=deprecated)
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, cache, namespace, values, option_string=None):
         setattr(namespace, self.dest, self.const)
 
 
@@ -1007,9 +1007,13 @@ class _AppendAction(Action):
             metavar=metavar,
             deprecated=deprecated)
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, cache, namespace, values, option_string=None):
         items = getattr(namespace, self.dest, None)
-        items = _copy_items(items)
+
+        if self.dest not in cache:
+            cache.add(self.dest)
+            items = _copy_items(items)
+
         items.append(values)
         setattr(namespace, self.dest, items)
 
@@ -1036,9 +1040,13 @@ class _AppendConstAction(Action):
             metavar=metavar,
             deprecated=deprecated)
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, cache, namespace, values, option_string=None):
         items = getattr(namespace, self.dest, None)
-        items = _copy_items(items)
+
+        if self.dest not in cache:
+            cache.add(self.dest)
+            items = _copy_items(items)
+
         items.append(self.const)
         setattr(namespace, self.dest, items)
 
@@ -1061,7 +1069,7 @@ class _CountAction(Action):
             help=help,
             deprecated=deprecated)
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, cache, namespace, values, option_string=None):
         count = getattr(namespace, self.dest, None)
         if count is None:
             count = 0
@@ -1084,7 +1092,7 @@ class _HelpAction(Action):
             help=help,
             deprecated=deprecated)
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, cache, namespace, values, option_string=None):
         parser.print_help()
         parser.exit()
 
@@ -1108,7 +1116,7 @@ class _VersionAction(Action):
             help=help)
         self.version = version
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, cache, namespace, values, option_string=None):
         version = self.version
         if version is None:
             version = parser.version
@@ -1191,7 +1199,7 @@ class _SubParsersAction(Action):
     def _get_subactions(self):
         return self._choices_actions
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, cache, namespace, values, option_string=None):
         parser_name = values[0]
         arg_strings = values[1:]
 
@@ -1228,9 +1236,13 @@ class _SubParsersAction(Action):
             getattr(namespace, _UNRECOGNIZED_ARGS_ATTR).extend(arg_strings)
 
 class _ExtendAction(_AppendAction):
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, cache, namespace, values, option_string=None):
         items = getattr(namespace, self.dest, None)
-        items = _copy_items(items)
+
+        if self.dest not in cache:
+            cache.add(self.dest)
+            items = _copy_items(items)
+
         items.extend(values)
         setattr(namespace, self.dest, items)
 
@@ -1941,6 +1953,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # converts arg strings to the appropriate and then takes the action
         seen_actions = set()
         seen_non_default_actions = set()
+        cache = set()
         warned = set()
 
         def take_action(action, argument_strings, option_string=None):
@@ -1960,7 +1973,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             # take the action if we didn't receive a SUPPRESS value
             # (e.g. from a default)
             if argument_values is not SUPPRESS:
-                action(self, namespace, argument_values, option_string)
+                action(self, cache, namespace, argument_values, option_string)
 
         # function to convert arg_strings into an optional action
         def consume_optional(start_index):
