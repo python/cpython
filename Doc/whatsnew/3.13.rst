@@ -824,6 +824,24 @@ copy
   (Contributed by Serhiy Storchaka in :gh:`108751`.)
 
 
+ctypes
+------
+
+* As a consequence of necessary internal refactoring, initialization of
+  internal metaclasses now happens in ``__init__`` rather
+  than in ``__new__``. This affects projects that subclass these internal
+  metaclasses to provide custom initialization.
+  Generally:
+
+  - Custom logic that was done in ``__new__`` after calling ``super().__new__``
+    should be moved to ``__init__``.
+  - To create a class, call the metaclass, not only the metaclass's
+    ``__new__`` method.
+
+  See :gh:`124520` for discussion and links to changes in some affected
+  projects.
+
+
 dbm
 ---
 

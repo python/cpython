@@ -403,13 +403,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.tb_lineno[tb.tb_frame] = lineno
             tb = tb.tb_next
         self.curframe = self.stack[self.curindex][0]
-        # The f_locals dictionary used to be updated from the actual frame
-        # locals whenever the .f_locals accessor was called, so it was
-        # cached here to ensure that modifications were not overwritten. While
-        # the caching is no longer required now that f_locals is a direct proxy
-        # on optimized frames, it's also harmless, so the code structure has
-        # been left unchanged.
-        self.curframe_locals = self.curframe.f_locals
         self.set_convenience_variable(self.curframe, '_frame', self.curframe)
 
         if self._chained_exceptions:
@@ -732,7 +725,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def default(self, line):
         if line[:1] == '!': line = line[1:].strip()
-        locals = self.curframe_locals
+        locals = self.curframe.f_locals
         globals = self.curframe.f_globals
         try:
             buffer = line
@@ -960,7 +953,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # Collect globals and locals.  It is usually not really sensible to also
         # complete builtins, and they clutter the namespace quite heavily, so we
         # leave them out.
-        ns = {**self.curframe.f_globals, **self.curframe_locals}
+        ns = {**self.curframe.f_globals, **self.curframe.f_locals}
         if text.startswith("$"):
             # Complete convenience variables
             conv_vars = self.curframe.f_globals.get('__pdb_convenience_variables', {})
@@ -991,7 +984,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # Use rlcompleter to do the completion
         state = 0
         matches = []
-        completer = Completer(self.curframe.f_globals | self.curframe_locals)
+        completer = Completer(self.curframe.f_globals | self.curframe.f_locals)
         while (match := completer.complete(text, state)) is not None:
             matches.append(match)
             state += 1
@@ -1153,7 +1146,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 try:
                     func = eval(arg,
                                 self.curframe.f_globals,
-                                self.curframe_locals)
+                                self.curframe.f_locals)
                 except:
                     func = arg
                 try:
@@ -1458,7 +1451,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         assert 0 <= number < len(self.stack)
         self.curindex = number
         self.curframe = self.stack[self.curindex][0]
-        self.curframe_locals = self.curframe.f_locals
         self.set_convenience_variable(self.curframe, '_frame', self.curframe)
         self.print_stack_entry(self.stack[self.curindex])
         self.lineno = None
@@ -1704,7 +1696,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """
         sys.settrace(None)
         globals = self.curframe.f_globals
-        locals = self.curframe_locals
+        locals = self.curframe.f_locals
         p = Pdb(self.completekey, self.stdin, self.stdout)
         p.prompt = "(%s) " % self.prompt.strip()
         self.message("ENTERING RECURSIVE DEBUGGER")
@@ -1749,7 +1741,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self._print_invalid_arg(arg)
             return
         co = self.curframe.f_code
-        dict = self.curframe_locals
+        dict = self.curframe.f_locals
         n = co.co_argcount + co.co_kwonlyargcount
         if co.co_flags & inspect.CO_VARARGS: n = n+1
         if co.co_flags & inspect.CO_VARKEYWORDS: n = n+1
@@ -1769,15 +1761,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if arg:
             self._print_invalid_arg(arg)
             return
-        if '__return__' in self.curframe_locals:
-            self.message(self._safe_repr(self.curframe_locals['__return__'], "retval"))
+        if '__return__' in self.curframe.f_locals:
+            self.message(self._safe_repr(self.curframe.f_locals['__return__'], "retval"))
         else:
             self.error('Not yet returned!')
     do_rv = do_retval
 
     def _getval(self, arg):
         try:
-            return eval(arg, self.curframe.f_globals, self.curframe_locals)
+            return eval(arg, self.curframe.f_globals, self.curframe.f_locals)
         except:
             self._error_exc()
             raise
@@ -1785,7 +1777,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def _getval_except(self, arg, frame=None):
         try:
             if frame is None:
-                return eval(arg, self.curframe.f_globals, self.curframe_locals)
+                return eval(arg, self.curframe.f_globals, self.curframe.f_locals)
             else:
                 return eval(arg, frame.f_globals, frame.f_locals)
         except BaseException as exc:
@@ -2029,7 +2021,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Start an interactive interpreter whose global namespace
         contains all the (global and local) names found in the current scope.
         """
-        ns = {**self.curframe.f_globals, **self.curframe_locals}
+        ns = {**self.curframe.f_globals, **self.curframe.f_locals}
         console = _PdbInteractiveConsole(ns, message=self.message)
         console.interact(banner="*pdb interact start*",
                          exitmsg="*exit from pdb interact command*")
