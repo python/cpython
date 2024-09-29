@@ -28,9 +28,10 @@
     <tkDLLName>$(tkPrefix)tk$(TkMajorVersion)$(TkMinorVersion)$(tcltkSuffix)$(TclDebugExt).dll</tkDLLName>
     <tkLibName>$(tkPrefix)tk$(TclMajorVersion)$(TclMinorVersion)$(tcltkSuffix)$(TclDebugExt).lib</tkLibName>
     <tclZlibDLLName>zlib1.dll</tclZlibDLLName>
-    <tommathDLLName Condition="'$(TclMajorVersion)' == '9'">$(tcltkDir)bin\libtommath.dll</tommathDLLName>
-    <tommathLibName Condition="'$(TclMajorVersion)' == '9'">$(tcltkDir)lib\tommath.lib</tommathLibName>
-    <tcltkLib>$(tcltkDir)lib\$(TclLibName);$(tcltkDir)lib\$(TkLibName);$(tommathLibName)</tcltkLib>
+    <tommathDLLName Condition="'$(TclMajorVersion)' == '9'">libtommath.dll</tommathDLLName>
+    <tommathLibName Condition="'$(TclMajorVersion)' == '9'">tommath.lib</tommathLibName>
+    <tcltkLib>$(tcltkDir)lib\$(TclLibName);$(tcltkDir)lib\$(TkLibName);</tcltkLib>
+    <tcltkLib Condition="'$(tommathLibName)' != ''">$(tcltkLib);$(tcltkDir)lib\$(tommathLibName)</tcltkLib>
     <TclMachine>IX86</TclMachine>
     <TclMachine Condition="'$(Platform)' == 'x64'">AMD64</TclMachine>
     <TclMachine Condition="'$(Platform)' == 'ARM64'">ARM64</TclMachine>
