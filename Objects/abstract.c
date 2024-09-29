@@ -739,7 +739,7 @@ int PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len, char fort)
 
     if (!PyObject_CheckBuffer(obj)) {
         PyErr_SetString(PyExc_TypeError,
-                        "object doesn't support buffer");
+                        "destination must be bytes-like objects");
         return -1;
     }
 
@@ -749,7 +749,8 @@ int PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len, char fort)
 
     if (view_obj.len < len) {
         PyErr_SetString(PyExc_BufferError,
-                        "buffer length is insufficient");
+                        "destination is too small to"
+                        "receive data from buf");
         PyBuffer_Release(&view_obj);
         return -1;
     }
