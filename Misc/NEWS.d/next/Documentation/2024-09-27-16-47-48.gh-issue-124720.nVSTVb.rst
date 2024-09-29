@@ -1,0 +1,2 @@
+Update "Using Python on a Mac" section of the "Python Setup and Usage"
+document and include information on installing free-threading support.
