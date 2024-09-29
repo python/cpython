@@ -744,7 +744,7 @@ void
 _PyGC_InitState(GCState *gcstate)
 {
     // TODO: move to pycore_runtime_init.h once the incremental GC lands.
-    gcstate->young.threshold = 2000;
+    gcstate->generations[0].threshold = 2000;
 }
 
 
@@ -1042,8 +1042,8 @@ cleanup_worklist(struct worklist *worklist)
 static bool
 gc_should_collect(GCState *gcstate)
 {
-    int count = _Py_atomic_load_int_relaxed(&gcstate->young.count);
-    int threshold = gcstate->young.threshold;
+    int count = _Py_atomic_load_int_relaxed(&gcstate->generations[0].count);
+    int threshold = gcstate->generations[0].threshold;
     if (count <= threshold || threshold == 0 || !gcstate->enabled) {
         return false;
     }
@@ -1051,7 +1051,7 @@ gc_should_collect(GCState *gcstate)
     // objects. A few tests rely on immediate scheduling of the GC so we ignore
     // the scaled threshold if generations[1].threshold is set to zero.
     return (count > gcstate->long_lived_total / 4 ||
-            gcstate->old[0].threshold == 0);
+            gcstate->generations[1].threshold == 0);
 }
 
 static void
@@ -1065,7 +1065,7 @@ record_allocation(PyThreadState *tstate)
     if (gc->alloc_count >= LOCAL_ALLOC_COUNT_THRESHOLD) {
         // TODO: Use Py_ssize_t for the generation count.
         GCState *gcstate = &tstate->interp->gc;
-        _Py_atomic_add_int(&gcstate->young.count, (int)gc->alloc_count);
+        _Py_atomic_add_int(&gcstate->generations[0].count, (int)gc->alloc_count);
         gc->alloc_count = 0;
 
         if (gc_should_collect(gcstate) &&
@@ -1084,7 +1084,7 @@ record_deallocation(PyThreadState *tstate)
     gc->alloc_count--;
     if (gc->alloc_count <= -LOCAL_ALLOC_COUNT_THRESHOLD) {
         GCState *gcstate = &tstate->interp->gc;
-        _Py_atomic_add_int(&gcstate->young.count, (int)gc->alloc_count);
+        _Py_atomic_add_int(&gcstate->generations[0].count, (int)gc->alloc_count);
         gc->alloc_count = 0;
     }
 }
@@ -1207,11 +1207,10 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 
     /* update collection and allocation counters */
     if (generation+1 < NUM_GENERATIONS) {
-        gcstate->old[generation].count += 1;
+        gcstate->generations[generation+1].count += 1;
     }
-    gcstate->young.count = 0;
-    for (i = 1; i <= generation; i++) {
-        gcstate->old[i-1].count = 0;
+    for (i = 0; i <= generation; i++) {
+        gcstate->generations[i].count = 0;
     }
 
     PyInterpreterState *interp = tstate->interp;
@@ -1377,7 +1376,7 @@ visit_get_objects(const mi_heap_t *heap, const mi_heap_area_t *area,
 }
 
 PyObject *
-_PyGC_GetObjects(PyInterpreterState *interp, Py_ssize_t generation)
+_PyGC_GetObjects(PyInterpreterState *interp, int generation)
 {
     PyObject *result = PyList_New(0);
     if (!result) {

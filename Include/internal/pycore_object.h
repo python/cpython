@@ -353,12 +353,11 @@ static inline void _PyObject_GC_TRACK(
                           filename, lineno, __func__);
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyGC_Head *generation0 = &interp->gc.young.head;
+    PyGC_Head *generation0 = interp->gc.generation0;
     PyGC_Head *last = (PyGC_Head*)(generation0->_gc_prev);
     _PyGCHead_SET_NEXT(last, gc);
     _PyGCHead_SET_PREV(gc, last);
     _PyGCHead_SET_NEXT(gc, generation0);
-    assert((gc->_gc_next & _PyGC_NEXT_MASK_OLD_SPACE_1) == 0);
     generation0->_gc_prev = (uintptr_t)gc;
 #endif
 }
