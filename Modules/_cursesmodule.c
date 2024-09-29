@@ -588,19 +588,19 @@ class component_converter(CConverter):
 
 static int func_PyCursesSetupTermCalled(void)
 {
-    PyCursesSetupTermCalled;
+    _PyCursesCheckFunction(curses_setupterm_called, "setupterm");
     return 1;
 }
 
 static int func_PyCursesInitialised(void)
 {
-    PyCursesInitialised;
+    _PyCursesCheckFunction(curses_initscr_called, "initscr");
     return 1;
 }
 
 static int func_PyCursesInitialisedColor(void)
 {
-    PyCursesInitialisedColor;
+    _PyCursesCheckFunction(curses_start_color_called, "start_color");;
     return 1;
 }
 
