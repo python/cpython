@@ -735,11 +735,13 @@ PyObject_CopyData(PyObject *dest, PyObject *src)
 }
 
 int
-PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len,
-                      char Py_UNUSED(fort))
+PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len, char fort)
 {
+    char *tmp_obj, *tmp_buf = buf;
     Py_buffer view_obj;
+    Py_ssize_t *indices, elem_num = 1;
 
+    assert(buf == NULL);
     if (!PyObject_CheckBuffer(obj)) {
         PyErr_SetString(PyExc_TypeError,
                         "object supporting the buffer protocol required");
@@ -758,7 +760,31 @@ PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len,
     }
 
     /* just copy it directly through memcpy */
-    memcpy(view_obj.buf, buf, len);
+    if (fort == 'C' || fort == 'F') {
+        memcpy(view_obj.buf, buf, len);
+        PyBuffer_Release(&view_obj);
+        return 0;
+    }
+
+    /* quick copy implementation */
+    indices = (Py_ssize_t *)PyMem_Malloc(sizeof(Py_ssize_t) * view_obj.ndim);
+    if (!indices) {
+        PyErr_NoMemory();
+        PyBuffer_Release(&view_obj);
+        return -1;
+    }
+    memset(indices, 0, view_obj.ndim);
+    for (int i = 0; i < view_obj.ndim; i++) {
+        /* XXX(nnorwitz): can this overflow? */
+        elem_num *= view_obj.shape[i];
+    }
+    while (elem_num--) {
+        tmp_obj = PyBuffer_GetPointer(&view_obj, indices);
+        memcpy(tmp_obj, tmp_buf, view_obj.itemsize);
+        tmp_buf += view_obj.itemsize;
+        _Py_add_one_to_index_C(view_obj.ndim, indices, view_obj.shape);
+    }
+    PyMem_Free(indices);
     PyBuffer_Release(&view_obj);
     return 0;
 }
