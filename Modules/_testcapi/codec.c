@@ -222,9 +222,9 @@ static PyMethodDef test_methods[] = {
 };
 
 int
-_PyTestCapi_Init_Codec(PyObject *module)
+_PyTestCapi_Init_Codec(PyObject *m)
 {
-    if (PyModule_AddFunctions(module, test_methods) < 0) {
+    if (PyModule_AddFunctions(m, test_methods) < 0) {
         return -1;
     }
     return 0;
