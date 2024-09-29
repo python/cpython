@@ -43,6 +43,9 @@ async def staggered_race(coro_fns, delay, *, loop=None):
         delay: amount of time, in seconds, between starting coroutines. If
             ``None``, the coroutines will run sequentially.
 
+        loop: the event loop to use.
+
+
     Returns:
         tuple *(winner_result, winner_index, exceptions)* where
 
