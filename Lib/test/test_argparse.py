@@ -380,15 +380,22 @@ class TestOptionalsSingleDashAmbiguous(ParserTestCase):
     """Test Optionals that partially match but are not subsets"""
 
     argument_signatures = [Sig('-foobar'), Sig('-foorab')]
-    failures = ['-f', '-f a', '-fa', '-foa', '-foo', '-fo', '-foo b']
+    failures = ['-f', '-f a', '-fa', '-foa', '-foo', '-fo', '-foo b',
+                '-f=a', '-foo=b']
     successes = [
         ('', NS(foobar=None, foorab=None)),
         ('-foob a', NS(foobar='a', foorab=None)),
+        ('-foob=a', NS(foobar='a', foorab=None)),
         ('-foor a', NS(foobar=None, foorab='a')),
+        ('-foor=a', NS(foobar=None, foorab='a')),
         ('-fooba a', NS(foobar='a', foorab=None)),
+        ('-fooba=a', NS(foobar='a', foorab=None)),
         ('-foora a', NS(foobar=None, foorab='a')),
+        ('-foora=a', NS(foobar=None, foorab='a')),
         ('-foobar a', NS(foobar='a', foorab=None)),
+        ('-foobar=a', NS(foobar='a', foorab=None)),
         ('-foorab a', NS(foobar=None, foorab='a')),
+        ('-foorab=a', NS(foobar=None, foorab='a')),
     ]
 
 
@@ -875,7 +882,9 @@ class TestOptionalsAllowLongAbbreviation(ParserTestCase):
     successes = [
         ('', NS(foo=None, foobaz=None, fooble=False)),
         ('--foo 7', NS(foo='7', foobaz=None, fooble=False)),
+        ('--foo=7', NS(foo='7', foobaz=None, fooble=False)),
         ('--fooba a', NS(foo=None, foobaz='a', fooble=False)),
+        ('--fooba=a', NS(foo=None, foobaz='a', fooble=False)),
         ('--foobl --foo g', NS(foo='g', foobaz=None, fooble=True)),
     ]
 

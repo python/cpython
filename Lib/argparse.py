@@ -2319,7 +2319,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # but multiple character options always have to have their argument
         # separate
         elif option_string[0] in chars and option_string[1] not in chars:
-            option_prefix = option_string
+            option_prefix, sep, explicit_arg = option_string.partition('=')
+            if not sep:
+                sep = explicit_arg = None
             short_option_prefix = option_string[:2]
             short_explicit_arg = option_string[2:]
 
@@ -2330,7 +2332,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                     result.append(tup)
                 elif self.allow_abbrev and option_string.startswith(option_prefix):
                     action = self._option_string_actions[option_string]
-                    tup = action, option_string, None, None
+                    tup = action, option_string, sep, explicit_arg
                     result.append(tup)
 
         # shouldn't ever get here
