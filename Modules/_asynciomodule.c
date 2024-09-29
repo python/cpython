@@ -16,6 +16,9 @@
 
 #include <stddef.h>               // offsetof()
 
+#if defined(__APPLE__)
+#  include <mach-o/loader.h>
+#endif
 
 /*[clinic input]
 module _asyncio
@@ -42,15 +45,15 @@ typedef enum {
     PyObject *prefix##_cancelled_exc;                                       \
     PyObject *prefix##_awaited_by;                                          \
     fut_state prefix##_state;                                               \
-    /* These bitfields need to be at the end of the struct
-       so that these and bitfields from TaskObj are contiguous.
+    /* Used by profilers to make traversing the stack from an external      \
+       process faster. */                                                   \
+    char prefix##_is_task;                                                  \
+    char prefix##_awaited_by_is_set;                                        \
+    /* These bitfields need to be at the end of the struct                  \
+       so that these and bitfields from TaskObj are contiguous.             \
     */                                                                      \
     unsigned prefix##_log_tb: 1;                                            \
     unsigned prefix##_blocking: 1;                                          \
-    /* Used by profilers to make traversing the stack from an external      \
-       process faster. */                                                   \
-    unsigned prefix##_is_task: 1;                                           \
-    unsigned prefix##_awaited_by_is_set: 1;
 
 typedef struct {
     FutureObj_HEAD(fut)
@@ -102,6 +105,40 @@ typedef struct {
 #endif
 
 typedef struct futureiterobject futureiterobject;
+typedef struct _Py_AsyncioModuleDebugOffsets {
+  struct _asyncio_task_object {
+    uint64_t size;
+    uint64_t task_name;
+    uint64_t task_awaited_by;
+    uint64_t task_is_task;
+    uint64_t task_awaited_by_is_set;
+    uint64_t task_coro;
+  } asyncio_task_object;
+} Py_AsyncioModuleDebugOffsets;
+
+#if defined(MS_WINDOWS)
+
+#pragma section("AsyncioDebug", read, write)
+__declspec(allocate("AsyncioDebug"))
+
+#elif defined(__APPLE__)
+
+__attribute__((section(SEG_DATA ",AsyncioDebug")))
+
+#endif
+
+Py_AsyncioModuleDebugOffsets AsyncioDebug
+#if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
+    __attribute__((section(".AsyncioDebug")))
+#endif
+    = {.asyncio_task_object = {
+           .size = sizeof(TaskObj),
+           .task_name = offsetof(TaskObj, task_name),
+           .task_awaited_by = offsetof(TaskObj, task_awaited_by),
+           .task_is_task = offsetof(TaskObj, task_is_task),
+           .task_awaited_by_is_set = offsetof(TaskObj, task_awaited_by_is_set),
+           .task_coro = offsetof(TaskObj, task_coro),
+       }};
 
 /* State of the _asyncio module */
 typedef struct {
