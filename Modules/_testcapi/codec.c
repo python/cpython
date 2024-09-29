@@ -24,7 +24,7 @@ codec_unregister(PyObject *Py_UNUSED(module), PyObject *search_function)
 static PyObject *
 codec_known_encoding(PyObject *Py_UNUSED(module), PyObject *args)
 {
-    const char *encoding;   // should not be NULL (see top-file comment)
+    const char *NULL_WOULD_RAISE(encoding); // NULL case will be tested
     if (!PyArg_ParseTuple(args, "z", &encoding)) {
         return NULL;
     }
