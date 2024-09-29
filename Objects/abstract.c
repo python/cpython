@@ -734,7 +734,8 @@ PyObject_CopyData(PyObject *dest, PyObject *src)
     return 0;
 }
 
-int PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len,
+int
+PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len,
                           char Py_UNUSED(fort))
 {
     Py_buffer view_obj;
