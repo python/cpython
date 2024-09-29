@@ -181,13 +181,13 @@ PyObject *
 _Py_make_parameters(PyObject *args)
 {
     assert(PyTuple_Check(args) || PyList_Check(args));
-    Py_ssize_t nargs = PySequence_Length(args);
+    const bool is_args_tuple = PyTuple_Check(args);
+    Py_ssize_t nargs = is_args_tuple ? PyTuple_GET_SIZE(args) : PyList_GET_SIZE(args);
     Py_ssize_t len = nargs;
     PyObject *parameters = PyTuple_New(len);
     if (parameters == NULL)
         return NULL;
     Py_ssize_t iparam = 0;
-    const bool is_args_tuple = PyTuple_Check(args);
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *t = is_args_tuple ? PyTuple_GET_ITEM(args, iarg) : PyList_GET_ITEM(args, iarg);
         // We don't want __parameters__ descriptor of a bare Python class.
@@ -431,7 +431,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
      */
     assert (PyTuple_Check(args) || PyList_Check(args));
     const bool is_args_tuple = PyTuple_Check(args);
-    Py_ssize_t nargs = PySequence_Length(args);
+    Py_ssize_t nargs = is_args_tuple ? PyTuple_GET_SIZE(args) : PyList_GET_SIZE(args);
     PyObject *newargs = PyTuple_New(nargs);
     if (newargs == NULL) {
         Py_DECREF(item);
