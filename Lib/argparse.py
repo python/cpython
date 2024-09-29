@@ -2007,11 +2007,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                             explicit_arg = explicit_arg[1:]
                             if not explicit_arg:
                                 sep = explicit_arg = None
-                            elif explicit_arg[0] == '=':
-                                sep = '='
-                                explicit_arg = explicit_arg[1:]
                             else:
                                 sep = ''
+                            continue
                         else:
                             extras.append(char + explicit_arg)
                             stop = start_index + 1
@@ -2264,7 +2262,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         option_string, sep, explicit_arg = arg_string.partition('=')
         if sep and option_string in self._option_string_actions:
             action = self._option_string_actions[option_string]
-            return action, option_string, sep, explicit_arg
+            if arg_string[1] not in self.prefix_chars and len(option_string) == 2:
+                # Short option with an argument starting with "=".
+                return action, option_string, None, sep + explicit_arg
+            else:
+                return action, option_string, sep, explicit_arg
 
         # search through all possible prefixes of the option string
         # and all actions in the parser for possible interpretations
