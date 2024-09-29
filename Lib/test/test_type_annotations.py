@@ -406,6 +406,7 @@ class DeferredEvaluationTests(unittest.TestCase):
 
     def test_name_clash_with_format(self):
         # this test would fail if __annotate__'s parameter was called "format"
+        # during symbol table construction
         code = """
         class format: pass
 
@@ -414,3 +415,21 @@ class DeferredEvaluationTests(unittest.TestCase):
         ns = run_code(code)
         f = ns["f"]
         self.assertEqual(f.__annotations__, {"x": ns["format"]})
+
+        code = """
+        class Outer:
+            class format: pass
+
+            def meth(self, x: format): ...
+        """
+        ns = run_code(code)
+        self.assertEqual(ns["Outer"].meth.__annotations__, {"x": ns["Outer"].format})
+
+        code = """
+        def f(format):
+            def inner(x: format): pass
+            return inner
+        res = f("closure var")
+        """
+        ns = run_code(code)
+        self.assertEqual(ns["res"].__annotations__, {"x": "closure var"})
