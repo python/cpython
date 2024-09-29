@@ -113,7 +113,7 @@ context_event_name(PyContextEvent event) {
 }
 
 static void
-notify_context_watchers(PyContextEvent event, PyObject *ctx, PyThreadState *ts)
+notify_context_watchers(PyThreadState *ts, PyContextEvent event, PyObject *ctx)
 {
     assert(Py_REFCNT(ctx) > 0);
     PyInterpreterState *interp = ts->interp;
@@ -196,7 +196,7 @@ _PyContext_Enter(PyThreadState *ts, PyObject *octx)
     ts->context = Py_NewRef(ctx);
     ts->context_ver++;
 
-    notify_context_watchers(Py_CONTEXT_EVENT_ENTER, octx, ts);
+    notify_context_watchers(ts, Py_CONTEXT_EVENT_ENTER, octx);
     return 0;
 }
 
@@ -230,7 +230,7 @@ _PyContext_Exit(PyThreadState *ts, PyObject *octx)
         return -1;
     }
 
-    notify_context_watchers(Py_CONTEXT_EVENT_EXIT, octx, ts);
+    notify_context_watchers(ts, Py_CONTEXT_EVENT_EXIT, octx);
     Py_SETREF(ts->context, (PyObject *)ctx->ctx_prev);
     ts->context_ver++;
 
