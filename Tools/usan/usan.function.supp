@@ -1,0 +1,136 @@
+# List of UBSan suppressions for -fsanitize=function.
+#
+# For detecting the UBSan failures, Python was configured using:
+#
+#   ./configure                                                 \
+#       --with-pydebug                                          \
+#       --prefix="$(pwd)/build"                                 \
+#       CC=clang LD=clang                                       \
+#       CFLAGS="-fsanitize=function     -fsanitize-recover"     \
+#       LDFLAGS="-fsanitize=function    -fsanitize-recover"
+#
+# The list was then generated using the following script:
+#
+#   PAT='runtime error: call to function (\w+) through pointer' && \
+#   make -j12 2>&1 >/dev/null | \
+#       grep -E "$PAT" | \
+#       sed -r "s#^([^:]+).+: $PAT.+#\1@\2#g" | \
+#       sort -k1,2 -t@ -u | \
+#       awk 'BEGIN {
+#               PROCINFO["sorted_in"]="@ind_num_asc";
+#               FS=SUBSEP="@"
+#           } {
+#               A[$1][length(A[$1])+1]=$2
+#           } END {
+#               for (m in A) {
+#                   for (i in A[m]) {
+#                       if (i == 1) printf "function:%s\n", m;
+#                       print "#", A[m][i]
+#                   }
+#                   print ""
+#               }
+#           }' | \
+#       sed -r "s#"$(pwd)"/?(\./)?(.+)#\2#g"
+#
+# Checking that a file does not err anymore is achieved via:
+#
+#   make UBSAN_OPTIONS=suppressions="$(pwd)/Tools/usan/usan.function.supp"
+#
+# Note: currently, it appears that suppressing specific UBSan failures
+# for specific functions in specific files is not supported by Clang,
+# so we need to suppress the entire file.
+
+function:Include/internal/pycore_call.h
+# partial_vectorcall
+
+function:Include/internal/pycore_object.h
+# PyObject_Free
+
+function:Objects/abstract.c
+# bytearray_ass_subscript
+# bytearray_iconcat
+# bytearray_releasebuffer
+# bytes_buffer_getbuffer
+# bytes_repeat
+# long_add
+# long_invert
+# long_mul
+# long_neg
+# set_ior
+# set_iter
+# setiter_iternext
+# set_len
+# tupleconcat
+# tuplecontains
+# tupleitem
+# tuplelength
+# tuplesubscript
+
+function:Objects/call.c
+# lru_cache_call
+# partial_call
+
+function:Objects/descrobject.c
+# bytes_decode
+# dict_items
+# dict_pop
+# func_get_name
+# func_set_name
+# _io_FileIO_close
+# list_append
+# rlock_acquire
+# rlock_release
+
+function:Objects/listobject.c
+# gen_iternext
+
+function:Objects/methodobject.c
+# dict_fromkeys
+# generic_init_subclass
+# int_from_bytes
+# _io_FileIO_readall
+# lock_PyThread_release_lock
+# type___subclasscheck__
+
+function:Objects/moduleobject.c
+# locale_free
+
+function:Objects/object.c
+# bytes_hash
+# bytes_richcompare
+# long_bool
+# _Py_module_getattro
+# set_len
+# tupleiter_dealloc
+# tuplelength
+
+function:Objects/typeobject.c
+# AttributeError_init
+# ImportError_dealloc
+# tupletraverse
+
+function:Python/bltinmodule.c
+# gen_iternext
+# reversed_next
+# unicode_ascii_iter_next
+
+function:Python/gc.c
+# func_clear
+# gc_traverse
+# meth_traverse
+# module_traverse
+
+function:Python/generated_cases.c.h
+# bytes_decode
+# dict_pop
+# list_append
+# list_extend
+# set_pop
+# typevar_typing_prepare_subst
+# unicode_ascii_iter_next
+
+function:Python/hashtable.c
+# del_extensions_cache_value
+
+function:Python/lock.c
+# init_types
