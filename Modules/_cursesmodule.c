@@ -174,12 +174,6 @@ get_cursesmodule_state(PyObject *Py_UNUSED(module))
 }
 
 static inline _cursesmodule_state *
-get_cursesmodule_state_by_cls(PyObject *Py_UNUSED(cls))
-{
-    return &curses_global_state;
-}
-
-static inline _cursesmodule_state *
 get_cursesmodule_state_by_win(PyCursesWindowObject *Py_UNUSED(win))
 {
     return &curses_global_state;
