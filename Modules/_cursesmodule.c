@@ -4036,7 +4036,7 @@ update_lines_cols(PyObject *private_module)
 
 error:
     Py_XDECREF(o);
-    Py_DECREF(exposed_module);
+    Py_XDECREF(exposed_module);
     return 0;
 }
 
