@@ -663,7 +663,8 @@ PyBuffer_FromContiguous(const Py_buffer *view, const void *buf, Py_ssize_t len, 
     return 0;
 }
 
-int PyObject_CopyData(PyObject *dest, PyObject *src)
+int 
+PyObject_CopyData(PyObject *dest, PyObject *src)
 {
     Py_buffer view_dest, view_src;
     int k;
@@ -733,13 +734,19 @@ int PyObject_CopyData(PyObject *dest, PyObject *src)
     return 0;
 }
 
-int PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len, char fortran)
+int PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len,
+                          char Py_UNUSED(fort))
 {
     Py_buffer view_obj;
 
     if (!PyObject_CheckBuffer(obj)) {
         PyErr_SetString(PyExc_TypeError,
                         "destination must be bytes-like objects");
+        return -1;
+    }
+
+    if (!buf) {
+        PyErr_SetString(PyExc_MemoryError, "buf pointer is null");
         return -1;
     }
 
@@ -756,14 +763,9 @@ int PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len, char fortran
     }
 
     /* just copy it directly through memcpy */
-    if (fortran == 'C' || fortran == 'F') {
-        memcpy(view_obj.buf, buf, len);
-        PyBuffer_Release(&view_obj);
-        return 0;
-    }
-    /* i'm thinking... */
-
-    return -1;
+    memcpy(view_obj.buf, buf, len);
+    PyBuffer_Release(&view_obj);
+    return 0;
 }
 
 void
