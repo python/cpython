@@ -235,21 +235,21 @@ _PyCursesStatefulCheckFunction(PyObject *module, int called, const char *funcnam
     return 0;
 }
 
-#define PyCursesStatefulSetupTermCalled(MODULE)                     \
-    do {                                                            \
-        if (_PyCursesStatefulCheckFunction(MODULE,                  \
-                                           curses_setupterm_called, \
-                                           "setupterm"))            \
-        {                                                           \
-            return 0;                                               \
-        }                                                           \
+#define PyCursesStatefulSetupTermCalled(MODULE)                         \
+    do {                                                                \
+        if (!_PyCursesStatefulCheckFunction(MODULE,                     \
+                                            curses_setupterm_called,    \
+                                            "setupterm"))               \
+        {                                                               \
+            return 0;                                                   \
+        }                                                               \
     } while (0)
 
 #define PyCursesStatefulInitialised(MODULE)                         \
     do {                                                            \
-        if (_PyCursesStatefulCheckFunction(MODULE,                  \
-                                           curses_initscr_called,   \
-                                           "initscr"))              \
+        if (!_PyCursesStatefulCheckFunction(MODULE,                 \
+                                            curses_initscr_called,  \
+                                            "initscr"))             \
         {                                                           \
             return 0;                                               \
         }                                                           \
@@ -257,9 +257,9 @@ _PyCursesStatefulCheckFunction(PyObject *module, int called, const char *funcnam
 
 #define PyCursesStatefulInitialisedColor(MODULE)                        \
     do {                                                                \
-        if (_PyCursesStatefulCheckFunction(MODULE,                      \
-                                           curses_start_color_called,   \
-                                           "start_color"))              \
+        if (!_PyCursesStatefulCheckFunction(MODULE,                     \
+                                            curses_start_color_called,  \
+                                            "start_color"))             \
         {                                                               \
             return 0;                                                   \
         }                                                               \
