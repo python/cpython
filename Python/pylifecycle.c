@@ -902,6 +902,11 @@ pycore_interp_init(PyThreadState *tstate)
 
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
 
+    status = _PyGC_InitConfig(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     status = _PyImport_InitCore(tstate, sysmod, config->_install_importlib);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;

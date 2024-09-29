@@ -362,6 +362,7 @@ struct _gc_thread_state {
 
 
 extern void _PyGC_InitState(struct _gc_runtime_state *);
+extern PyStatus _PyGC_InitConfig(PyInterpreterState *interp);
 
 extern Py_ssize_t _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason);
 extern void _PyGC_CollectNoFail(PyThreadState *tstate);

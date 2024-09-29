@@ -165,6 +165,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(stdio_encoding, WSTR, READ_ONLY, NO_SYS),
     SPEC(stdio_errors, WSTR, READ_ONLY, NO_SYS),
     SPEC(tracemalloc, UINT, READ_ONLY, NO_SYS),
+    SPEC(gc_strategy, WSTR_OPT, READ_ONLY, NO_SYS),
     SPEC(use_frozen_modules, BOOL, READ_ONLY, NO_SYS),
     SPEC(use_hash_seed, BOOL, READ_ONLY, NO_SYS),
     SPEC(user_site_directory, BOOL, READ_ONLY, NO_SYS),  // sys.flags.no_user_site
@@ -318,6 +319,7 @@ The following implementation-specific options are available:\n\
          the interactive interpreter; only works on debug builds\n\
 -X tracemalloc[=N]: trace Python memory allocations; N sets a traceback limit\n\
          of N frames (default: 1); also PYTHONTRACEMALLOC=N\n\
+-X gc_strategy=STRAT: set high-level GC strategy; also PYTHON_GC_STRATEGY\n\
 -X utf8[=0|1]: enable (1) or disable (0) UTF-8 mode; also PYTHONUTF8\n\
 -X warn_default_encoding: enable opt-in EncodingWarning for 'encoding=None';\n\
          also PYTHONWARNDEFAULTENCODING\
@@ -342,6 +344,7 @@ static const char usage_envvars[] =
 "                  on Python memory allocators.  Use PYTHONMALLOC=debug to\n"
 "                  install debug hooks.\n"
 "PYTHONMALLOCSTATS: print memory allocator statistics\n"
+"PYTHON_GC_STRATEGY: set the high-level strategy for the garbage collector.\n"
 "PYTHONCOERCECLOCALE: if this variable is set to 0, it disables the locale\n"
 "                  coercion behavior.  Use PYTHONCOERCECLOCALE=warn to request\n"
 "                  display of locale coercion and locale compatibility warnings\n"
@@ -913,6 +916,7 @@ PyConfig_Clear(PyConfig *config)
     CLEAR(config->base_exec_prefix);
     CLEAR(config->platlibdir);
     CLEAR(config->sys_path_0);
+    CLEAR(config->gc_strategy);
 
     CLEAR(config->filesystem_encoding);
     CLEAR(config->filesystem_errors);
@@ -1942,6 +1946,24 @@ config_init_tracemalloc(PyConfig *config)
 }
 
 static PyStatus
+config_init_gc_strategy(PyConfig *config)
+{
+    if (config->gc_strategy != NULL) {
+        return _PyStatus_OK();
+    }
+    PyStatus status = CONFIG_GET_ENV_DUP(config, &config->gc_strategy,
+                                L"PYTHON_GC_STRATEGY", "PYTHON_GC_STRATEGY");
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+    const wchar_t *value = config_get_xoption_value(config, L"gc_strategy");
+    if (value) {
+        config->gc_strategy = _PyMem_RawWcsdup(value);
+    }
+    return _PyStatus_OK();
+}
+
+static PyStatus
 config_init_int_max_str_digits(PyConfig *config)
 {
     int maxdigits;
@@ -2409,6 +2431,11 @@ config_read(PyConfig *config, int compute_path_config)
         config->_pystats = 0;
     }
 #endif
+
+    status = config_init_gc_strategy(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     status = config_read_complex_options(config);
     if (_PyStatus_EXCEPTION(status)) {

@@ -628,6 +628,11 @@ Miscellaneous options
 
      .. versionadded:: 3.13
 
+   * :samp:`-X gc_strategy={strategy}` Set the preferred strategy for the
+     cyclic garbage collector.  See :envvar:`PYTHON_GC_STRATEGY`.
+
+     .. versionadded:: 3.14
+
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
 
@@ -974,6 +979,34 @@ conflict.
    :ref:`debug mode <asyncio-debug-mode>` of the :mod:`asyncio` module.
 
    .. versionadded:: 3.4
+
+
+.. envvar:: PYTHON_GC_STRATEGY
+
+   Set the high-level strategy for the cyclic garbage collector (GC).  Possible
+   values are:
+
+   * ``aggressive``: prioritize freeing resources quickly in exchange for
+     higher GC cost and lower overall throughput.
+
+   * ``throughput``: prioritize throughput (lowest runtime cost) in exchange
+     for higher peak memory usage and potentially delayed freeing.  File
+     descriptiors and sockets, for example, should be cleaned by context
+     handlers rather than relying on the GC if this strategy is used.
+
+   * ``latency``: prioritize keeping GC pauses low, in exchange for higher GC
+     cost.  This strategy is not yet implemented and is equivalent to the
+     ``balanced`` strategy at this time.
+
+   * ``balanced``: a combination of the above three strategies, with tuning
+     that is intended to work well for most programs.
+
+   The default strategy in version 3.14 is ``aggressive``.  In future Python
+   versions, the default may be changed to ``balanced``.  If the stategy is set
+   to something not recognized as a valid strategy, the default strategy will
+   be used and an error will not be raised.
+
+   .. versionadded:: 3.14
 
 
 .. envvar:: PYTHONMALLOC
