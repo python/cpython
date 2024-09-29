@@ -1,1 +1,2 @@
-Added public :c:func:`PyObject_CopyToObject()` to ``pybuffer.h``
+Added :c:func:`PyObject_CopyToObject` to copy a C-style or Fortran-style
+buffer to a Python object.
