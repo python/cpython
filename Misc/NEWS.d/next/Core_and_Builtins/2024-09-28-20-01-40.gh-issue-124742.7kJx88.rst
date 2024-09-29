@@ -1,0 +1,4 @@
+Add the `PYTHON_GC_THRESHOLD` environment variable.  This can be used to set
+the `threshold0` value for the garbage collector, similar to calling
+`gc.set_threshold()`.  If the value is empty or "default", the default
+threshold value is used.

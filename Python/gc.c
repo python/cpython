@@ -166,11 +166,30 @@ _PyGC_InitState(GCState *gcstate)
 #undef INIT_HEAD
 }
 
+static void
+gc_set_threshold_from_env(PyInterpreterState *interp)
+{
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    const char *env = _Py_GetEnv(config->use_environment,
+                                 "PYTHON_GC_THRESHOLD");
+    if (env == NULL || strcmp(env, "default") == 0) {
+        return;
+    }
+    int threshold = -1;
+    if (_Py_str_to_int(env, &threshold) < 0) {
+        return; // parse failed, silently ignore
+    }
+    if (threshold > 0) {
+        interp->gc.young.threshold = threshold;
+    }
+}
 
 PyStatus
 _PyGC_Init(PyInterpreterState *interp)
 {
     GCState *gcstate = &interp->gc;
+
+    gc_set_threshold_from_env(interp);
 
     gcstate->garbage = PyList_New(0);
     if (gcstate->garbage == NULL) {

@@ -342,6 +342,8 @@ static const char usage_envvars[] =
 "                  on Python memory allocators.  Use PYTHONMALLOC=debug to\n"
 "                  install debug hooks.\n"
 "PYTHONMALLOCSTATS: print memory allocator statistics\n"
+"PYTHON_GC_THRESHOLD: set threshold0 for the garbage collector.  This\n"
+"                  threshold can also be set by gc.set_threshold().\n"
 "PYTHONCOERCECLOCALE: if this variable is set to 0, it disables the locale\n"
 "                  coercion behavior.  Use PYTHONCOERCECLOCALE=warn to request\n"
 "                  display of locale coercion and locale compatibility warnings\n"
