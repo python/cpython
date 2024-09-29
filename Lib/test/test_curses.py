@@ -1085,7 +1085,7 @@ class TestCurses(unittest.TestCase):
             curses.resize_term(35000, 1)
         with self.assertRaises(OverflowError):
             curses.resize_term(1, 35000)
-        # GH-120378: Overflow failure in resizeterm() causes refresh to fail
+        # GH-120378: Overflow failure in resize_term() causes refresh to fail
         tmp = curses.initscr()
         tmp.erase()
 
