@@ -40,7 +40,7 @@ def __dir__():
 
 
 def __getattr__(name):
-    global ProcessPoolExecutor, ThreadPoolExecutor
+    global ProcessPoolExecutor, ThreadPoolExecutor, InterpreterPoolExecutor
 
     if name == 'ProcessPoolExecutor':
         from .process import ProcessPoolExecutor as pe
@@ -53,8 +53,12 @@ def __getattr__(name):
         return te
 
     if name == 'InterpreterPoolExecutor':
-        from .interpreter import InterpreterPoolExecutor as ie
-        InterpreterPoolExecutor = ie
+        try:
+            from .interpreter import InterpreterPoolExecutor as ie
+        except ModuleNotFoundError:
+            InterpreterPoolExecutor = None
+        else:
+            InterpreterPoolExecutor = ie
         return ie
 
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
