@@ -2310,13 +2310,15 @@
                 assert(WITHIN_STACK_BOUNDS());
                 eliminate_pop_guard(this_instr, !Py_IsNone(value));
             }
-            else if (sym_has_type(flag)) {
-                assert(!sym_matches_type(flag, &_PyNone_Type));
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-                eliminate_pop_guard(this_instr, true);
-                stack_pointer += 1;
-                assert(WITHIN_STACK_BOUNDS());
+            else {
+                if (sym_has_type(flag)) {
+                    assert(!sym_matches_type(flag, &_PyNone_Type));
+                    stack_pointer += -1;
+                    assert(WITHIN_STACK_BOUNDS());
+                    eliminate_pop_guard(this_instr, true);
+                    stack_pointer += 1;
+                    assert(WITHIN_STACK_BOUNDS());
+                }
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
             }
@@ -2333,13 +2335,15 @@
                 assert(WITHIN_STACK_BOUNDS());
                 eliminate_pop_guard(this_instr, Py_IsNone(value));
             }
-            else if (sym_has_type(flag)) {
-                assert(!sym_matches_type(flag, &_PyNone_Type));
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-                eliminate_pop_guard(this_instr, false);
-                stack_pointer += 1;
-                assert(WITHIN_STACK_BOUNDS());
+            else {
+                if (sym_has_type(flag)) {
+                    assert(!sym_matches_type(flag, &_PyNone_Type));
+                    stack_pointer += -1;
+                    assert(WITHIN_STACK_BOUNDS());
+                    eliminate_pop_guard(this_instr, false);
+                    stack_pointer += 1;
+                    assert(WITHIN_STACK_BOUNDS());
+                }
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
             }

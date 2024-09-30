@@ -802,9 +802,11 @@ dummy_func(void) {
             assert(value != NULL);
             eliminate_pop_guard(this_instr, !Py_IsNone(value));
         }
-        else if (sym_has_type(flag)) {
-            assert(!sym_matches_type(flag, &_PyNone_Type));
-            eliminate_pop_guard(this_instr, true);
+        else {
+            if (sym_has_type(flag)) {
+                assert(!sym_matches_type(flag, &_PyNone_Type));
+                eliminate_pop_guard(this_instr, true);
+            }
         }
     }
 
@@ -814,9 +816,11 @@ dummy_func(void) {
             assert(value != NULL);
             eliminate_pop_guard(this_instr, Py_IsNone(value));
         }
-        else if (sym_has_type(flag)) {
-            assert(!sym_matches_type(flag, &_PyNone_Type));
-            eliminate_pop_guard(this_instr, false);
+        else {
+            if (sym_has_type(flag)) {
+                assert(!sym_matches_type(flag, &_PyNone_Type));
+                eliminate_pop_guard(this_instr, false);
+            }
         }
     }
 
