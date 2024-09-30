@@ -6,19 +6,6 @@ import _interpreters
 import _interpqueues
 
 
-LINESEP = '''
-'''
-
-
-_EXEC_FAILURE_STR = """
-{superstr}
-
-Uncaught in the interpreter:
-
-{formatted}
-""".strip()
-
-
 class ExecutionFailed(_interpreters.InterpreterError):
     """An unhandled exception happened during execution."""
 
@@ -38,10 +25,13 @@ class ExecutionFailed(_interpreters.InterpreterError):
         except Exception:
             return super().__str__()
         else:
-            return _EXEC_FAILURE_STR.format(
-                superstr=super().__str__(),
-                formatted=formatted,
-            )
+            return textwrap.dedent(f"""
+{super().__str__()}
+
+Uncaught in the interpreter:
+
+{formatted}
+                """.strip())
 
 
 UNBOUND = 2  # error; this should not happen.
