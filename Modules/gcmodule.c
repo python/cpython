@@ -331,7 +331,7 @@ gc_get_objects_impl(PyObject *module, Py_ssize_t generation)
     }
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return _PyGC_GetObjects(interp, generation);
+    return _PyGC_GetObjects(interp, (int)generation);
 }
 
 /*[clinic input]
