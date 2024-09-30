@@ -17,6 +17,9 @@ def generate_typeslots(out=sys.stdout):
             # The heap type structure (ht_*) is an implementation detail;
             # the public slot for it has a familiar `tp_` prefix
             member = '{-1, offsetof(PyHeapTypeObject, ht_token)}'
+        elif member == "tp_create_callback":
+            # PyType_GetSlot(tp_create_callback) returns NULL
+            member = '{-1, -1}'
         elif member.startswith("tp_"):
             member = f'{{-1, offsetof(PyTypeObject, {member})}}'
         elif member.startswith("am_"):

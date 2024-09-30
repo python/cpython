@@ -1221,6 +1221,15 @@ class CAPITest(unittest.TestCase):
         gen = genf()
         self.assertEqual(_testcapi.gen_get_code(gen), gen.gi_code)
 
+    def test_immutable_type(self):
+        immutable = _testcapi.Immutable
+
+        # Attribute created by the 'Py_tp_create_callback' callback
+        self.assertEqual(immutable.attr, "value")
+
+        with self.assertRaisesRegex(TypeError, "cannot set .* immutable type"):
+            setattr(immutable, "attr2", "value2")
+
 
 @requires_limited_api
 class TestHeapTypeRelative(unittest.TestCase):

@@ -508,10 +508,11 @@ The following functions and structs are used to create
       * ``Py_nb_add`` to set :c:member:`PyNumberMethods.nb_add`
       * ``Py_sq_length`` to set :c:member:`PySequenceMethods.sq_length`
 
-      An additional slot is supported that does not correspond to a
+      Additional slots are supported that don't correspond to a
       :c:type:`!PyTypeObject` struct field:
 
       * :c:data:`Py_tp_token`
+      * :c:data:`Py_tp_create_callback`
 
       The following “offset” fields cannot be set using :c:type:`PyType_Slot`:
 
@@ -607,3 +608,20 @@ The following functions and structs are used to create
       Expands to ``NULL``.
 
       .. versionadded:: 3.14
+
+
+.. c:macro:: Py_tp_create_callback
+
+   A :c:member:`~PyType_Slot.slot` that records a callback to create a type.
+
+   Prototype::
+
+       int create_callback(PyTypeObject *type)
+
+   The callback must return ``0`` on success, or set an exception and return
+   ``-1`` on error.
+
+   For example, the callback can be used to customize a type (set attributes)
+   before it's made immutable by the :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` flag.
+
+   .. versionadded:: 3.14

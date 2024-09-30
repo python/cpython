@@ -680,6 +680,11 @@ New Features
   <https://peps.python.org/pep-0630/#type-checking>`__ mentioned in :pep:`630`
   (:gh:`124153`).
 
+* Add :c:macro:`Py_tp_create_callback` slot to customize a class (set
+  attributes) before it's made immutable by the
+  :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` flag.
+  (Contributed by Victor Stinner in :gh:`121654`.)
+
 
 Porting to Python 3.14
 ----------------------

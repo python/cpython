@@ -4926,8 +4926,9 @@ PyType_FromMetaclass(
     res_start = (char*)res;
 
     type = &res->ht_type;
-    /* The flags must be initialized early, before the GC traverses us */
-    type->tp_flags = spec->flags | Py_TPFLAGS_HEAPTYPE;
+    /* The flags must be initialized early, before the GC traverses us.
+     * Py_TPFLAGS_IMMUTABLETYPE flag is set at the end. */
+    type->tp_flags = (spec->flags & ~Py_TPFLAGS_IMMUTABLETYPE) | Py_TPFLAGS_HEAPTYPE;
 
     res->ht_module = Py_XNewRef(module);
 
@@ -4963,6 +4964,7 @@ PyType_FromMetaclass(
 
     /* Copy all the ordinary slots */
 
+    void *create_callback = NULL;
     for (slot = spec->slots; slot->slot; slot++) {
         switch (slot->slot) {
         case Py_tp_base:
@@ -4991,6 +4993,11 @@ PyType_FromMetaclass(
         case Py_tp_token:
             {
                 res->ht_token = slot->pfunc == Py_TP_USE_SPEC ? spec : slot->pfunc;
+            }
+            break;
+        case Py_tp_create_callback:
+            {
+                create_callback = slot->pfunc;
             }
             break;
         default:
@@ -5094,6 +5101,17 @@ PyType_FromMetaclass(
         }
     }
 
+    if (create_callback != NULL) {
+        int (*callback) (PyTypeObject*) = create_callback;
+        if (callback(type) < 0) {
+            assert(PyErr_Occurred());
+            goto finally;
+        }
+    }
+    if (spec->flags & Py_TPFLAGS_IMMUTABLETYPE) {
+        type->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
+    }
+
     assert(_PyType_CheckConsistency(type));
 
  finally:
@@ -5146,14 +5164,16 @@ PyType_GetModuleName(PyTypeObject *type)
 void *
 PyType_GetSlot(PyTypeObject *type, int slot)
 {
-    void *parent_slot;
-    int slots_len = Py_ARRAY_LENGTH(pyslot_offsets);
-
-    if (slot <= 0 || slot >= slots_len) {
+    size_t slots_len = Py_ARRAY_LENGTH(pyslot_offsets);
+    if (slot <= 0 || (size_t)slot >= slots_len) {
         PyErr_BadInternalCall();
         return NULL;
     }
     int slot_offset = pyslot_offsets[slot].slot_offset;
+    if (slot_offset == -1) {
+        // Special case for Py_tp_create_callback: always NULL
+        return NULL;
+    }
 
     if (slot_offset >= (int)sizeof(PyTypeObject)) {
         if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
@@ -5161,7 +5181,7 @@ PyType_GetSlot(PyTypeObject *type, int slot)
         }
     }
 
-    parent_slot = *(void**)((char*)type + slot_offset);
+    void *parent_slot = *(void**)((char*)type + slot_offset);
     if (parent_slot == NULL) {
         return NULL;
     }

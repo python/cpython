@@ -1313,6 +1313,31 @@ static PyType_Spec HeapCCollection_spec = {
     .slots = HeapCCollection_slots,
 };
 
+static int
+immutable_create_callback(PyTypeObject *type)
+{
+    PyObject *value = PyUnicode_FromString("value");
+    if (value == NULL) {
+        return -1;
+    }
+
+    int res = PyObject_SetAttrString((PyObject*)type, "attr", value);
+    Py_DECREF(value);
+    return res;
+}
+
+static PyType_Slot Immutable_slots[] = {
+    {Py_tp_create_callback, (void *)immutable_create_callback},
+    {0, 0},
+};
+
+static PyType_Spec Immutable_spec = {
+    .name = "_testcapi.Immutable",
+    .basicsize = sizeof(PyObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = Immutable_slots,
+};
+
 int
 _PyTestCapi_Init_Heaptype(PyObject *m) {
     _testcapimodule = PyModule_GetDef(m);
@@ -1414,6 +1439,9 @@ _PyTestCapi_Init_Heaptype(PyObject *m) {
     if (rc < 0) {
         return -1;
     }
+
+    PyObject *Immutable = PyType_FromSpec(&Immutable_spec);
+    ADD("Immutable", Immutable);
 
     return 0;
 }

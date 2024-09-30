@@ -2536,3 +2536,5 @@
     added = '3.14'
 [const.Py_TP_USE_SPEC]
     added = '3.14'
+[const.Py_tp_create_callback]
+    added = '3.14'
