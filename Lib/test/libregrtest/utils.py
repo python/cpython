@@ -335,16 +335,16 @@ def get_build_info():
     else:
         PYTHON_JIT = None
 
-    if tier2 == 1:
-        jit = 'JIT'  # =yes
-    elif tier2 == 3:
+    if tier2 == 1:  # =yes
+        jit = 'JIT'
+    elif tier2 == 3:  # =yes-off
         if PYTHON_JIT:
             jit = 'JIT=on'
         else:
             jit = 'JIT=off'
-    elif tier2 == 4:
+    elif tier2 == 4:  # =interpreter
         jit = 'JIT=interpreter'
-    elif tier2 == 6:  # Secret option
+    elif tier2 == 6:  # =interpreter-off (Secret option!)
         if PYTHON_JIT:
             jit = 'JIT=interpreter-on'
         else:
