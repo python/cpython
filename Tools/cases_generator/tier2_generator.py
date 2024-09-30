@@ -34,9 +34,7 @@ DEFAULT_OUTPUT = ROOT / "Python/executor_cases.c.h"
 def declare_variable(
     var: StackItem, uop: Uop, required: set[str], out: CWriter
 ) -> None:
-    if var.name not in required:
-        return
-    if not var.used:
+    if not var.used or var.name not in required:
         return
     required.remove(var.name)
     type, null = type_and_null(var)

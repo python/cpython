@@ -38,10 +38,9 @@ class TokenIterator:
 
     def peek(self) -> Token | None:
         if self.look_ahead is None:
-            try:
-                self.look_ahead = next(self.iterator)
-            except StopIteration:
-                pass
+            for tkn in self.iterator:
+                self.look_ahead = tkn
+                break
         return self.look_ahead
 
 ROOT = Path(__file__).parent.parent.parent
@@ -97,7 +96,7 @@ ReplacementFunctionType = Callable[
 def always_true(tkn: Token | None) -> bool:
     if tkn is None:
         return False
-    return tkn.text == "true" or tkn.text == "1"
+    return tkn.text in {"true", "1"}
 
 
 class Emitter:
@@ -278,7 +277,7 @@ class Emitter:
                 var.defined = False
                 break
         else:
-            raise analysis_error(f"'{name} is not a live input-only variable", name_tkn)
+            raise analysis_error(f"'{name}' is not a live input-only variable", name_tkn)
         return True
 
     def stackref_close(
@@ -291,7 +290,7 @@ class Emitter:
     ) -> bool:
         self.out.emit(tkn)
         tkn = next(tkn_iter)
-        assert (tkn.kind == "LPAREN")
+        assert tkn.kind == "LPAREN"
         self.out.emit(tkn)
         name = next(tkn_iter)
         self.out.emit(name)
@@ -316,7 +315,7 @@ class Emitter:
         next(tkn_iter)
         next(tkn_iter)
         next(tkn_iter)
-        storage.clear_inputs(" when syncing stack")
+        storage.clear_inputs("when syncing stack")
         storage.flush(self.out)
         self._print_storage(storage)
         return True
@@ -370,9 +369,9 @@ class Emitter:
         storage: Storage,
         inst: Instruction | None,
     ) -> tuple[bool, Token, Storage]:
-        """ Returns (reachable?, closing '}', stack)."""
+        """Returns (reachable?, closing '}', stack)."""
         tkn = next(tkn_iter)
-        assert (tkn.kind == "LPAREN")
+        assert tkn.kind == "LPAREN"
         self.out.emit(tkn)
         rparen = emit_to(self.out, tkn_iter, "RPAREN")
         self.emit(rparen)
@@ -436,7 +435,7 @@ class Emitter:
             reachable = True
             line : int = -1
             if tkn.kind != "LBRACE":
-                raise analysis_error(f"PEP 7: expected '{{' found {tkn.text}", tkn)
+                raise analysis_error(f"PEP 7: expected '{{', found: {tkn.text}", tkn)
             escaping_calls = uop.properties.escaping_calls
             if emit_first_brace:
                 self.emit(tkn)

@@ -46,7 +46,7 @@ def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
     variables = {"unused"}
     if not skip_inputs:
         for var in reversed(uop.stack.inputs):
-            if var.name not in variables and var.used:
+            if var.used and var.name not in variables:
                 variables.add(var.name)
                 if var.condition:
                     out.emit(f"{type_name(var)}{var.name} = NULL;\n")

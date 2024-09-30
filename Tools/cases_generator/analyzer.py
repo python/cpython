@@ -378,7 +378,7 @@ def find_assignment_target(node: parser.InstDef, idx: int) -> list[lexer.Token]:
     """Find the tokens that make up the left-hand side of an assignment"""
     offset = 0
     for tkn in reversed(node.block.tokens[: idx]):
-        if tkn.kind == "SEMI" or tkn.kind == "LBRACE" or tkn.kind == "RBRACE":
+        if tkn.kind in {"SEMI", "LBRACE", "RBRACE"}:
             return node.block.tokens[idx - offset : idx]
         offset += 1
     return []
@@ -386,8 +386,8 @@ def find_assignment_target(node: parser.InstDef, idx: int) -> list[lexer.Token]:
 
 def find_stores_outputs(node: parser.InstDef) -> list[lexer.Token]:
     res: list[lexer.Token] = []
-    outnames = [ out.name for out in node.outputs ]
-    innames = [ out.name for out in node.inputs ]
+    outnames = { out.name for out in node.outputs }
+    innames = { out.name for out in node.inputs }
     for idx, tkn in enumerate(node.block.tokens):
         if tkn.kind == "AND":
             name = node.block.tokens[idx+1]
@@ -413,7 +413,7 @@ def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]
 
     def in_frame_push(idx: int) -> bool:
         for tkn in reversed(node.block.tokens[: idx - 1]):
-            if tkn.kind == "SEMI" or tkn.kind == "LBRACE" or tkn.kind == "RBRACE":
+            if tkn.kind in {"SEMI", "LBRACE", "RBRACE"}:
                 return False
             if tkn.kind == "IDENTIFIER" and tkn.text == "_PyFrame_PushUnchecked":
                 return True
@@ -451,15 +451,10 @@ def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]
             )
 
         name = lhs[0].text
-        match = False
-        for var in node.inputs:
-            if var.name == name:
-                match = True
-                break
-        for var in node.outputs:
-            if var.name == name:
-                match = True
-                break
+        match = (
+            any(var.name == name for var in node.inputs)
+            or any(var.name == name for var in node.outputs)
+        )
         if not match:
             raise analysis_error(
                 f"PyStackRef_FromPyObjectNew() must be assigned to an input or output, not '{name}'",
@@ -622,7 +617,7 @@ def find_stmt_start(node: parser.InstDef, idx: int) -> lexer.Token:
     assert idx < len(node.block.tokens)
     while True:
         tkn = node.block.tokens[idx-1]
-        if tkn.kind == "SEMI" or tkn.kind == "LBRACE" or tkn.kind == "RBRACE":
+        if tkn.kind in {"SEMI", "LBRACE", "RBRACE"}:
             break
         idx -= 1
         assert idx > 0
@@ -670,7 +665,7 @@ def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, tuple[le
             break
         if next_tkn.kind != lexer.LPAREN:
             continue
-        if not tkn.text.startswith("Py") and not tkn.text.startswith("_Py") and not tkn.text.startswith("monitor"):
+        if not tkn.text.startswith(("Py", "_Py", "monitor")):
             continue
         if tkn.text.endswith("Check"):
             continue
