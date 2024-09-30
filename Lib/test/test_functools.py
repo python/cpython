@@ -211,11 +211,16 @@ class TestPartial:
         p2.new_attr = 'spam'
         self.assertEqual(p2.new_attr, 'spam')
 
-    def test_placeholders_trailing_raise(self):
+    def test_placeholders_trailing_trim(self):
         PH = self.module.Placeholder
-        for args in [(PH,), (0, PH), (0, PH, 1, PH, PH, PH)]:
-            with self.assertRaises(TypeError):
-                self.partial(capture, *args)
+        for args, call_args, expected_args in [
+                    [(PH,), (), ()],
+                    [(0, PH), (), (0,)],
+                    [(0, PH, 1, PH, PH, PH), (2,), (0, 2, 1)]
+                ]:
+            actual_args, actual_kwds = self.partial(capture, *args)(*call_args)
+            self.assertEqual(actual_args, expected_args)
+            self.assertEqual(actual_kwds, {})
 
     def test_placeholders(self):
         PH = self.module.Placeholder
@@ -370,7 +375,7 @@ class TestPartial:
 
         # Trailing Placeholder error
         f = self.partial(signature)
-        msg_regex = re.escape("trailing Placeholders are not allowed")
+        msg_regex = re.escape("unexpected trailing Placeholders")
         with self.assertRaisesRegex(TypeError, f'^{msg_regex}$') as cm:
             f.__setstate__((capture, (1, PH), dict(a=10), dict(attr=[])))
 
@@ -713,6 +718,7 @@ class TestPartialMethod(unittest.TestCase):
         p = functools.partialmethod(min, 2)
         p2 = PartialMethodSubclass(p, 1)
         self.assertIs(p2.func, min)
+        print(p2.__get__(0)())
         self.assertEqual(p2.__get__(0)(), 0)
         # `partialmethod` subclass input to `partialmethod` subclass
         p = PartialMethodSubclass(min, 2)
