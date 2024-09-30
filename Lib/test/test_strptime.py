@@ -174,22 +174,26 @@ class TimeRETests(unittest.TestCase):
                 # gh-124529
                 params = _input_str_and_expected_year_for_few_digits_year(fmt)
                 if params is None:
-                    self.skipTest(f"this subtest needs locale for which "
-                                  f"{fmt!r} includes year in some variant")
+                    self.fail(f"it seems that using {fmt=} results in value "
+                              f"which does not include year representation "
+                              f"in any expected format (is there something "
+                              f"severely wrong with current locale?)")
                 input_string, _ = params
                 compiled = self.time_re.compile(fmt)
                 found = compiled.match(input_string)
                 self.assertTrue(found,
                                 (f"Matching failed on '{input_string}' "
                                  f"using '{compiled.pattern}' regex"))
-        for directive in ('y', 'Y'):
+        for directive in ('y', 'Y', 'G'):
             fmt = "%" + directive
             with self.subTest(f"{fmt!r} should not match input containing "
                               f"year with fewer digits than usual"):
                 params = _input_str_and_expected_year_for_few_digits_year(fmt)
                 if params is None:
-                    self.skipTest(f"this subtest needs locale for which "
-                                  f"{fmt!r} includes year in some variant")
+                    self.fail(f"it seems that using {fmt=} results in value "
+                              f"which does not include year representation "
+                              f"in any expected format (is there something "
+                              f"severely wrong with current locale?)")
                 input_string, _ = params
                 compiled = self.time_re.compile(fmt)
                 found = compiled.match(input_string)
@@ -334,8 +338,10 @@ class StrptimeTests(unittest.TestCase):
         fmt = "%" + directive
         params = _input_str_and_expected_year_for_few_digits_year(fmt)
         if params is None:
-            self.skipTest(f"test needs locale for which {fmt!r} "
-                          f"includes year in some variant")
+            self.fail(f"it seems that using {fmt=} results in value "
+                      f"which does not include year representation "
+                      f"in any expected format (is there something "
+                      f"severely wrong with current locale?)")
         input_string, expected_year = params
         try:
             output_year = _strptime._strptime(input_string, fmt)[0][0]

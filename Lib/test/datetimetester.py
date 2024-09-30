@@ -2125,17 +2125,22 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                     self.theclass.fromisocalendar(*isocal)
 
     def test_strftime_strptime_roundtrip_concerning_locale_specific_year(self):
-        concerned_formats = '%c', '%x'  # gh-124529
+        concerned_formats = '%c', '%x'
 
         def run_subtest():
-            reason = (f'test strftime/strptime roundtrip concerning '
-                      f'locale-specific year representation '
-                      f'- for {fmt=} and {year=}')
+            reason = (f"test strftime/strptime roundtrip concerning "
+                      f"locale-specific year representation "
+                      f"- for {fmt=} and {year=}")
+            fail_msg = f"{reason} - failed"
             initial = expected = self.theclass.strptime(f'{year:04}', '%Y')
             with self.subTest(reason=reason):
                 formatted = initial.strftime(fmt)
-                parsed = self.theclass.strptime(formatted, fmt)
-                self.assertEqual(parsed, expected, msg=reason)
+                try:
+                    parsed = self.theclass.strptime(formatted, fmt)
+                except ValueError as exc:
+                    # gh-124529
+                    self.fail(f"{fail_msg}; parsing error: {exc!r}")
+                self.assertEqual(parsed, expected, fail_msg)
 
         sample = self.theclass.strptime(f'1999-03-17', '%Y-%m-%d')
         for fmt in concerned_formats:
@@ -2161,17 +2166,22 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                               f"severely wrong with current locale?)")
 
     def test_strptime_accepting_locale_specific_year_with_fewer_digits(self):
-        concerned_formats = '%c', '%x'  # gh-124529
+        concerned_formats = '%c', '%x'
 
         def run_subtest():
             input_str = sample_str.replace(sample_digits, year_digits)
-            reason = (f'test strptime accepting locale-specific '
-                      f'year representation with fewer digits '
-                      f'- for {fmt=} and {input_str=} ({year=})')
+            reason = (f"test strptime accepting locale-specific "
+                      f"year representation with fewer digits "
+                      f"- for {fmt=} and {input_str=} ({year=})")
+            fail_msg = f"{reason} - failed"
             expected = sample.replace(year=year)
             with self.subTest(reason=reason):
-                parsed = self.theclass.strptime(input_str, fmt)
-                self.assertEqual(parsed, expected, msg=reason)
+                try:
+                    parsed = self.theclass.strptime(input_str, fmt)
+                except ValueError as exc:
+                    # gh-124529
+                    self.fail(f"{fail_msg}; parsing error: {exc!r}")
+                self.assertEqual(parsed, expected, fail_msg)
 
         sample = self.theclass.strptime(f'1999-03-17', '%Y-%m-%d')
         for fmt in concerned_formats:
