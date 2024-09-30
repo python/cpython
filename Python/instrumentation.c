@@ -2074,7 +2074,7 @@ int _PyMonitoring_ClearToolId(int tool_id)
 
     // monitoring_tool_versions[tool_id] is set to latest global version here to
     //   1. invalidate local events on all existing code objects
-    //   2. be ready for the next use_tool_id call so we can only do this in one place
+    //   2. be ready for the next call to set local events
     interp->monitoring_tool_versions[tool_id] = version;
 
     // Set the new global version so all the code objects can refresh the
