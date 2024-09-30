@@ -317,7 +317,7 @@ init_interned_dict(PyInterpreterState *interp)
             // allocate for main interpreter. We share obmalloc in this case
             // and we use a separate dict because it's cleaner to ensure these
             // objects don't show up in the main interpreter (which they could
-            // if uswe use interned_strings).  They will be shared by all
+            // if we use interned_strings).  They will be shared by all
             // subinterpreters that allow legacy single-phase init modules.
             interned = PyDict_New();
             if (interned == NULL) {
