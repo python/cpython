@@ -181,15 +181,24 @@ PyObject *
 _Py_make_parameters(PyObject *args)
 {
     assert(PyTuple_Check(args) || PyList_Check(args));
-    const bool is_args_tuple = PyTuple_Check(args);
-    Py_ssize_t nargs = is_args_tuple ? PyTuple_GET_SIZE(args) : PyList_GET_SIZE(args);
+    const bool is_args_list = PyList_Check(args);
+    PyObject *tuple_args = NULL;
+    if (is_args_list) {
+        args = tuple_args = PySequence_Tuple(args);
+        if (args == NULL) {
+            return NULL;
+        }
+    }
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t len = nargs;
     PyObject *parameters = PyTuple_New(len);
-    if (parameters == NULL)
+    if (parameters == NULL) {
+        Py_XDECREF(tuple_args);
         return NULL;
+    }
     Py_ssize_t iparam = 0;
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
-        PyObject *t = is_args_tuple ? PyTuple_GET_ITEM(args, iarg) : PyList_GET_ITEM(args, iarg);
+        PyObject *t = PyTuple_GET_ITEM(args, iarg);
         // We don't want __parameters__ descriptor of a bare Python class.
         if (PyType_Check(t)) {
             continue;
@@ -197,6 +206,7 @@ _Py_make_parameters(PyObject *args)
         int rc = PyObject_HasAttrWithError(t, &_Py_ID(__typing_subst__));
         if (rc < 0) {
             Py_DECREF(parameters);
+            Py_XDECREF(tuple_args);
             return NULL;
         }
         if (rc) {
@@ -207,6 +217,7 @@ _Py_make_parameters(PyObject *args)
             if (PyObject_GetOptionalAttr(t, &_Py_ID(__parameters__),
                                      &subparams) < 0) {
                 Py_DECREF(parameters);
+                Py_XDECREF(tuple_args);
                 return NULL;
             }
             if (!subparams && (PyTuple_Check(t) || PyList_Check(t))) {
@@ -215,6 +226,7 @@ _Py_make_parameters(PyObject *args)
                 subparams = _Py_make_parameters(t);
                 if (subparams == NULL) {
                     Py_DECREF(parameters);
+                    Py_XDECREF(tuple_args);
                     return NULL;
                 }
             }
@@ -226,6 +238,7 @@ _Py_make_parameters(PyObject *args)
                     if (_PyTuple_Resize(&parameters, len) < 0) {
                         Py_DECREF(subparams);
                         Py_DECREF(parameters);
+                        Py_XDECREF(tuple_args);
                         return NULL;
                     }
                 }
@@ -240,9 +253,11 @@ _Py_make_parameters(PyObject *args)
     if (iparam < len) {
         if (_PyTuple_Resize(&parameters, iparam) < 0) {
             Py_XDECREF(parameters);
+            Py_XDECREF(tuple_args);
             return NULL;
         }
     }
+    Py_XDECREF(tuple_args);
     return parameters;
 }
 
@@ -430,16 +445,23 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
         t = list[[T]];        t[str]      -> newargs = [[str]]
      */
     assert (PyTuple_Check(args) || PyList_Check(args));
-    const bool is_args_tuple = PyTuple_Check(args);
-    Py_ssize_t nargs = is_args_tuple ? PyTuple_GET_SIZE(args) : PyList_GET_SIZE(args);
+    const bool is_args_list = PyList_Check(args);
+    PyObject *tuple_args = NULL;
+    if (is_args_list) {
+        args = tuple_args = PySequence_Tuple(args);
+        if (args == NULL) {
+            return NULL;
+        }
+    }
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *newargs = PyTuple_New(nargs);
     if (newargs == NULL) {
         Py_DECREF(item);
+        Py_XDECREF(tuple_args);
         return NULL;
     }
     for (Py_ssize_t iarg = 0, jarg = 0; iarg < nargs; iarg++) {
-        PyObject *arg = is_args_tuple ?
-            PyTuple_GET_ITEM(args, iarg) : PyList_GET_ITEM(args, iarg);
+        PyObject *arg = PyTuple_GET_ITEM(args, iarg);
         if (PyType_Check(arg)) {
             PyTuple_SET_ITEM(newargs, jarg, Py_NewRef(arg));
             jarg++;
@@ -451,6 +473,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
             if (subargs == NULL) {
                 Py_DECREF(newargs);
                 Py_DECREF(item);
+                Py_XDECREF(tuple_args);
                 return NULL;
             }
             PyObject *subargs_list = PySequence_List(subargs);
@@ -458,6 +481,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
             if (subargs_list == NULL) {
                 Py_DECREF(newargs);
                 Py_DECREF(item);
+                Py_XDECREF(tuple_args);
                 return NULL;
             }
             PyTuple_SET_ITEM(newargs, jarg, subargs_list);
@@ -468,12 +492,14 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
         if (unpack < 0) {
             Py_DECREF(newargs);
             Py_DECREF(item);
+            Py_XDECREF(tuple_args);
             return NULL;
         }
         PyObject *subst;
         if (PyObject_GetOptionalAttr(arg, &_Py_ID(__typing_subst__), &subst) < 0) {
             Py_DECREF(newargs);
             Py_DECREF(item);
+            Py_XDECREF(tuple_args);
             return NULL;
         }
         if (subst) {
@@ -488,6 +514,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
         if (arg == NULL) {
             Py_DECREF(newargs);
             Py_DECREF(item);
+            Py_XDECREF(tuple_args);
             return NULL;
         }
         if (unpack) {
@@ -496,6 +523,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
             Py_DECREF(arg);
             if (jarg < 0) {
                 Py_DECREF(item);
+                Py_XDECREF(tuple_args);
                 return NULL;
             }
         }
@@ -506,6 +534,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
     }
 
     Py_DECREF(item);
+    Py_XDECREF(tuple_args);
     return newargs;
 }
 
