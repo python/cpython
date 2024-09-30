@@ -718,7 +718,6 @@ class TestPartialMethod(unittest.TestCase):
         p = functools.partialmethod(min, 2)
         p2 = PartialMethodSubclass(p, 1)
         self.assertIs(p2.func, min)
-        print(p2.__get__(0)())
         self.assertEqual(p2.__get__(0)(), 0)
         # `partialmethod` subclass input to `partialmethod` subclass
         p = PartialMethodSubclass(min, 2)

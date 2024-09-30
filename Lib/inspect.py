@@ -2437,7 +2437,6 @@ def _signature_from_callable(obj, *,
             return sig
 
     if isinstance(obj, functools.partial):
-        print('HERE?', obj)
         wrapped_sig = _get_signature_of(obj.func)
         return _signature_get_partial(wrapped_sig, obj)
 

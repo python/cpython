@@ -3607,6 +3607,16 @@ class TestSignatureObject(unittest.TestCase):
         from functools import partialmethod
 
         class Spam:
+             def test():
+                 pass
+             ham = partialmethod(test)
+
+        self.assertEqual(self.signature(Spam.ham, eval_str=False),
+                         ((), Ellipsis))
+        with self.assertRaisesRegex(ValueError, "invalid method signature"):
+             inspect.signature(Spam().ham)
+
+        class Spam:
             def test(it, a, b, *, c) -> 'spam':
                 pass
             ham = partialmethod(test, c=1)
