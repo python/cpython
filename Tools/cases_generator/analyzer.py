@@ -534,7 +534,6 @@ NON_ESCAPING_FUNCTIONS = (
     "Py_XDECREF",
     "Py_REFCNT",
     "_Py_DECREF_SPECIALIZED",
-    "DECREF_INPUTS_AND_REUSE_FLOAT",
     "PyUnicode_Append",
     "_PyLong_IsZero",
     "Py_SIZE",
@@ -574,8 +573,6 @@ NON_ESCAPING_FUNCTIONS = (
     "PyUnicode_Concat",
     "PySlice_New",
     "_Py_LeaveRecursiveCallPy",
-    "CALL_STAT_INC",
-    "STAT_INC",
     "maybe_lltrace_resume_frame",
     "_PyUnicode_JoinArray",
     "_PyEval_FrameClearAndPop",
@@ -584,9 +581,6 @@ NON_ESCAPING_FUNCTIONS = (
     "PyFloat_AS_DOUBLE",
     "_PyFrame_PushUnchecked",
     "Py_FatalError",
-    "STACKREFS_TO_PYOBJECTS",
-    "STACKREFS_TO_PYOBJECTS_CLEANUP",
-    "CONVERSION_FAILED",
     "_PyList_FromStackRefSteal",
     "_PyTuple_FromArraySteal",
     "_PyTuple_FromStackRefSteal",
@@ -603,13 +597,12 @@ NON_ESCAPING_FUNCTIONS = (
     "_Py_EnterRecursiveCallTstateUnchecked",
     "_PyObject_GC_IS_TRACKED",
     "_PyObject_GC_MAY_BE_TRACKED",
-    "ADAPTIVE_COUNTER_TRIGGERS",
     "_PyInterpreterState_GET",
     "PyType_HasFeature",
     "_Py_ID",
     "_Py_DECREF_NO_DEALLOC",
-    "EMPTY",
     "assert",
+    "backoff_counter_triggers",
 )
 
 def find_stmt_start(node: parser.InstDef, idx: int) -> lexer.Token:
@@ -664,7 +657,13 @@ def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, tuple[le
             break
         if next_tkn.kind != lexer.LPAREN:
             continue
-        if not tkn.text.startswith(("Py", "_Py", "monitor")):
+        if tkn.text.upper() == tkn.text:
+            # simple macro
+            continue
+        #if not tkn.text.startswith(("Py", "_Py", "monitor")):
+        #    continue
+        if tkn.text.startswith(("sym_", "optimize_")):
+            # Optimize functions
             continue
         if tkn.text.endswith("Check"):
             continue

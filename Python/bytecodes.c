@@ -956,7 +956,8 @@ dummy_func(
             assert(oparg < 3);
             PyObject *cause = oparg == 2 ? PyStackRef_AsPyObjectSteal(args[1]) : NULL;
             PyObject *exc = oparg > 0 ? PyStackRef_AsPyObjectSteal(args[0]) : NULL;
-            if (do_raise(tstate, exc, cause)) {
+            int err = do_raise(tstate, exc, cause);
+            if (err) {
                 assert(oparg == 0);
                 monitor_reraise(tstate, frame, this_instr);
                 goto exception_unwind;

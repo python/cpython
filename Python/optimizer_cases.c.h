@@ -362,7 +362,7 @@
                 sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
             {
                 assert(PyFloat_CheckExact(sym_get_const(left)));
-                assert(PyFloat_CheckExact(sym_get_const(right)));
+                assert(PyFloat_CheckExact(sym_get_const(right)));/* Escaping */
                 stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
                 PyObject *temp = PyFloat_FromDouble(
@@ -397,7 +397,7 @@
                 sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
             {
                 assert(PyFloat_CheckExact(sym_get_const(left)));
-                assert(PyFloat_CheckExact(sym_get_const(right)));
+                assert(PyFloat_CheckExact(sym_get_const(right)));/* Escaping */
                 stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
                 PyObject *temp = PyFloat_FromDouble(
@@ -432,7 +432,7 @@
                 sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
             {
                 assert(PyFloat_CheckExact(sym_get_const(left)));
-                assert(PyFloat_CheckExact(sym_get_const(right)));
+                assert(PyFloat_CheckExact(sym_get_const(right)));/* Escaping */
                 stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
                 PyObject *temp = PyFloat_FromDouble(
@@ -639,7 +639,7 @@
             retval = stack_pointer[-1];
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
-            ctx->frame->stack_pointer = stack_pointer;
+            ctx->frame->stack_pointer = stack_pointer;/* Escaping */
             frame_pop(ctx);
             stack_pointer = ctx->frame->stack_pointer;
             /* Stack space handling */
@@ -648,7 +648,7 @@
             int framesize = co->co_framesize;
             assert(framesize > 0);
             assert(framesize <= curr_space);
-            curr_space -= framesize;
+            curr_space -= framesize;/* Escaping */
             co = get_code(this_instr);
             if (co == NULL) {
                 // might be impossible, but bailing is still safe
@@ -1047,7 +1047,7 @@
             if (sym_matches_type_version(owner, type_version)) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             } else {
-                // add watcher so that whenever the type changes we invalidate this
+                // add watcher so that whenever the type changes we invalidate this/* Escaping */
                 PyTypeObject *type = _PyType_LookupByVersion(type_version);
                 // if the type is null, it was not found in the cache (there was a conflict)
                 // with the key, in which case we can't trust the version
@@ -1056,9 +1056,8 @@
                     // if it wasn't this means that the type version was previously set to something else
                     // and we set the owner to bottom, so we don't need to add a watcher because we must have
                     // already added one earlier.
-                    if (sym_set_type_version(owner, type_version)) {
-                        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
-                        _Py_BloomFilter_Add(dependencies, type);
+                    if (sym_set_type_version(owner, type_version)) {/* Escaping */
+                        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);/* Escaping */_Py_BloomFilter_Add(dependencies, type);
                     }
                 }
             }
@@ -1095,11 +1094,10 @@
                 PyObject *cnst = sym_get_const(owner);
                 if (PyModule_CheckExact(cnst)) {
                     PyModuleObject *mod = (PyModuleObject *)cnst;
-                    PyObject *dict = mod->md_dict;
+                    PyObject *dict = mod->md_dict;/* Escaping */
                     uint64_t watched_mutations = get_mutations(dict);
-                    if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
-                        PyDict_Watch(GLOBALS_WATCHER_ID, dict);
-                        _Py_BloomFilter_Add(dependencies, dict);
+                    if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {/* Escaping */
+                        PyDict_Watch(GLOBALS_WATCHER_ID, dict);/* Escaping */_Py_BloomFilter_Add(dependencies, dict);
                         this_instr->opcode = _NOP;
                     }
                 }
@@ -1121,12 +1119,18 @@
                 assert(sym_is_const(owner));
                 PyModuleObject *mod = (PyModuleObject *)sym_get_const(owner);
                 assert(PyModule_CheckExact(mod));
-                PyObject *dict = mod->md_dict;
+                PyObject *dict = mod->md_dict;/* Escaping */
+                stack_pointer[-1] = attr;
+                if (oparg & 1) stack_pointer[0] = null;
+                stack_pointer += (oparg & 1);
+                assert(WITHIN_STACK_BOUNDS());
                 PyObject *res = convert_global_to_const(this_instr, dict);
                 if (res != NULL) {
                     this_instr[-1].opcode = _POP_TOP;
                     attr = sym_new_const(ctx, res);
                 }
+                stack_pointer += -(oparg & 1);
+                assert(WITHIN_STACK_BOUNDS());
             }
             if (attr == NULL) {
                 /* No conversion made. We don't know what `attr` is. */
@@ -1246,7 +1250,7 @@
             if (oparg & 16) {
                 res = sym_new_type(ctx, &PyBool_Type);
             }
-            else {
+            else {/* Escaping */
                 stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
                 res = _Py_uop_sym_new_not_null(ctx);
@@ -1806,13 +1810,17 @@
                 args--;
                 argcount++;
             }
-            if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
+            if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {/* Escaping */
+                stack_pointer += -2 - oparg;
+                assert(WITHIN_STACK_BOUNDS());
                 new_frame = frame_new(ctx, co, 0, args, argcount);
-            } else {
+            } else {/* Escaping */
+                stack_pointer += -2 - oparg;
+                assert(WITHIN_STACK_BOUNDS());
                 new_frame = frame_new(ctx, co, 0, NULL, 0);
             }
-            stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)new_frame;
-            stack_pointer += -1 - oparg;
+            stack_pointer[0] = (_Py_UopsSymbol *)new_frame;
+            stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -1825,7 +1833,7 @@
             ctx->frame->stack_pointer = stack_pointer;
             ctx->frame = new_frame;
             ctx->curr_frame_depth++;
-            stack_pointer = new_frame->stack_pointer;
+            stack_pointer = new_frame->stack_pointer;/* Escaping */
             co = get_code(this_instr);
             if (co == NULL) {
                 // should be about to _EXIT_TRACE anyway
@@ -2130,7 +2138,7 @@
 
         case _RETURN_GENERATOR: {
             _Py_UopsSymbol *res;
-            ctx->frame->stack_pointer = stack_pointer;
+            ctx->frame->stack_pointer = stack_pointer;/* Escaping */
             frame_pop(ctx);
             stack_pointer = ctx->frame->stack_pointer;
             res = sym_new_unknown(ctx);
@@ -2140,15 +2148,15 @@
             int framesize = co->co_framesize;
             assert(framesize > 0);
             assert(framesize <= curr_space);
-            curr_space -= framesize;
+            curr_space -= framesize;/* Escaping */
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             co = get_code(this_instr);
             if (co == NULL) {
                 // might be impossible, but bailing is still safe
                 ctx->done = true;
             }
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -2261,8 +2269,12 @@
             flag = stack_pointer[-1];
             if (sym_is_const(flag)) {
                 PyObject *value = sym_get_const(flag);
-                assert(value != NULL);
+                assert(value != NULL);/* Escaping */
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 eliminate_pop_guard(this_instr, value != Py_True);
+                stack_pointer += 1;
+                assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -2274,8 +2286,12 @@
             flag = stack_pointer[-1];
             if (sym_is_const(flag)) {
                 PyObject *value = sym_get_const(flag);
-                assert(value != NULL);
+                assert(value != NULL);/* Escaping */
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 eliminate_pop_guard(this_instr, value != Py_False);
+                stack_pointer += 1;
+                assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -2287,15 +2303,21 @@
             flag = stack_pointer[-1];
             if (sym_is_const(flag)) {
                 PyObject *value = sym_get_const(flag);
-                assert(value != NULL);
+                assert(value != NULL);/* Escaping */
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 eliminate_pop_guard(this_instr, !Py_IsNone(value));
             }
             else if (sym_has_type(flag)) {
-                assert(!sym_matches_type(flag, &_PyNone_Type));
+                assert(!sym_matches_type(flag, &_PyNone_Type));/* Escaping */
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 eliminate_pop_guard(this_instr, true);
+                stack_pointer += 1;
+                assert(WITHIN_STACK_BOUNDS());
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
             }
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -2304,15 +2326,21 @@
             flag = stack_pointer[-1];
             if (sym_is_const(flag)) {
                 PyObject *value = sym_get_const(flag);
-                assert(value != NULL);
+                assert(value != NULL);/* Escaping */
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 eliminate_pop_guard(this_instr, Py_IsNone(value));
             }
             else if (sym_has_type(flag)) {
-                assert(!sym_matches_type(flag, &_PyNone_Type));
+                assert(!sym_matches_type(flag, &_PyNone_Type));/* Escaping */
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 eliminate_pop_guard(this_instr, false);
+                stack_pointer += 1;
+                assert(WITHIN_STACK_BOUNDS());
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
             }
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
