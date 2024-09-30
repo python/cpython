@@ -16,10 +16,6 @@
 
 #include <stddef.h>               // offsetof()
 
-#if defined(__APPLE__)
-#  include <mach-o/loader.h>
-#endif
-
 /*[clinic input]
 module _asyncio
 [clinic start generated code]*/
@@ -116,21 +112,7 @@ typedef struct _Py_AsyncioModuleDebugOffsets {
   } asyncio_task_object;
 } Py_AsyncioModuleDebugOffsets;
 
-#if defined(MS_WINDOWS)
-
-#pragma section("AsyncioDebug", read, write)
-__declspec(allocate("AsyncioDebug"))
-
-#elif defined(__APPLE__)
-
-__attribute__((section(SEG_DATA ",AsyncioDebug")))
-
-#endif
-
-Py_AsyncioModuleDebugOffsets AsyncioDebug
-#if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
-    __attribute__((section(".AsyncioDebug")))
-#endif
+GENERATE_DEBUG_SECTION(AsyncioDebug, Py_AsyncioModuleDebugOffsets AsyncioDebug)
     = {.asyncio_task_object = {
            .size = sizeof(TaskObj),
            .task_name = offsetof(TaskObj, task_name),
