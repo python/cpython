@@ -291,12 +291,18 @@ hashtable_unicode_compare(const void *key1, const void *key2)
    It's not safe to deallocate those strings until all interpreters that
    potentially use them are freed.  By storing them in the main interpreter, we
    ensure they get freed after all other interpreters are freed.
+
+   Subtle detail: it's only required to share the interned string dict in the
+   case that those kinds of legacy modules are actually imported.  However, we
+   can't wait until the import happens so we share if those kind of modules are
+   allowed (the Py_RTFLAGS_MULTI_INTERP_EXTENSIONS flag is set).
 */
 static bool
 has_shared_intern_dict(PyInterpreterState *interp)
 {
     PyInterpreterState *main_interp = _PyInterpreterState_Main();
-    return interp != main_interp  && interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC;
+    return (interp != main_interp  &&
+            !(interp->feature_flags & Py_RTFLAGS_MULTI_INTERP_EXTENSIONS));
 }
 
 static int
@@ -305,8 +311,20 @@ init_interned_dict(PyInterpreterState *interp)
     assert(get_interned_dict(interp) == NULL);
     PyObject *interned;
     if (has_shared_intern_dict(interp)) {
-        interned = get_interned_dict(_PyInterpreterState_Main());
-        Py_INCREF(interned);
+        PyInterpreterState *main = _PyInterpreterState_Main();
+        interned = _Py_INTERP_CACHED_OBJECT(main, interned_strings_legacy);
+        if (interned == NULL) {
+            // allocate for main interpreter. We share obmalloc in this case
+            // and we use a separate dict because it's cleaner to ensure these
+            // objects don't show up in the main interpreter (which they could
+            // if uswe use interned_strings).  They will be shared by all
+            // subinterpreters that allow legacy single-phase init modules.
+            interned = PyDict_New();
+            if (interned == NULL) {
+                return -1;
+            }
+            _Py_INTERP_CACHED_OBJECT(main, interned_strings_legacy) = interned;
+        }
     }
     else {
         interned = PyDict_New();
@@ -318,6 +336,61 @@ init_interned_dict(PyInterpreterState *interp)
     return 0;
 }
 
+/* Clean the dict of interned strings that is used by subinterpreters that
+ * allow basic single-phase extensions modules (has_shared_intern_dict() is
+ * true).  For those, they all share the interned_strings_legacy dict that's
+ * owned by the main interpreter.  Only the main interpreter does cleanup on
+ * it.  See GH-116510.
+ */
+static void
+clear_interned_dict_legacy(PyInterpreterState *interp)
+{
+    PyObject *interned = _Py_INTERP_CACHED_OBJECT(interp,
+                                                  interned_strings_legacy);
+    if (interned == NULL) {
+        return;
+    }
+    // This is similar but slightly different logic compared with
+    // _PyUnicode_ClearInterned().  These are strings created by
+    // subinterpreters but stored in a dict owned by the main interpreter.
+    // Immortalization loses the true reference count and so we need to ensure
+    // all those subinterpreters have exited before cleaning these strings up.
+    Py_ssize_t pos = 0;
+    PyObject *s, *ignored_value;
+    while (PyDict_Next(interned, &pos, &s, &ignored_value)) {
+        assert(PyUnicode_IS_READY(s));
+#ifdef Py_TRACE_REFS
+        _Py_AddToAllObjects(s);
+#endif
+        switch (PyUnicode_CHECK_INTERNED(s)) {
+        case SSTATE_INTERNED_IMMORTAL:
+        case SSTATE_INTERNED_IMMORTAL_STATIC:
+            _Py_SetMortal(s, 2);
+#ifdef Py_REF_DEBUG
+            /* let's be pedantic with the ref total */
+            _Py_IncRefTotal(_PyThreadState_GET());
+            _Py_IncRefTotal(_PyThreadState_GET());
+#endif
+            break;
+        case SSTATE_INTERNED_MORTAL:
+            Py_SET_REFCNT(s, Py_REFCNT(s) + 2);
+#ifdef Py_REF_DEBUG
+            /* let's be pedantic with the ref total */
+            _Py_IncRefTotal(_PyThreadState_GET());
+            _Py_IncRefTotal(_PyThreadState_GET());
+#endif
+            break;
+        case SSTATE_NOT_INTERNED:
+            /* fall through */
+        default:
+            Py_UNREACHABLE();
+        }
+        _PyUnicode_STATE(s).interned = SSTATE_NOT_INTERNED;
+    }
+    PyDict_Clear(interned);
+    _Py_INTERP_CACHED_OBJECT(interp, interned_strings_legacy) = NULL;
+}
+
 static void
 clear_interned_dict(PyInterpreterState *interp)
 {
@@ -326,8 +399,9 @@ clear_interned_dict(PyInterpreterState *interp)
         if (!has_shared_intern_dict(interp)) {
             // only clear if the dict belongs to this interpreter
             PyDict_Clear(interned);
+            Py_DECREF(interned);
+            clear_interned_dict_legacy(interp);
         }
-        Py_DECREF(interned);
         _Py_INTERP_CACHED_OBJECT(interp, interned_strings) = NULL;
     }
 }

@@ -65,6 +65,7 @@ struct _Py_static_objects {
 
 struct _Py_interp_cached_objects {
     PyObject *interned_strings;
+    PyObject *interned_strings_legacy;
 
     /* AST */
     PyObject *str_replace_inf;
