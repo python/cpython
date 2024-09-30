@@ -246,7 +246,7 @@ class TimeRE(dict):
         than the usual four or two digits, if the number is small enough
         (e.g., '999' instead of `0999', or '9' instead of '09').
 
-        Note that this helper is not used to generate the regex patterns
+        Note that this helper is *not* used to prepare the regex patterns
         for %Y and %y (these two still match, respectively, only four or
         two digits, exactly).
 

@@ -846,8 +846,8 @@ def _input_str_and_expected_year_for_few_digits_year(fmt):
     # where:
     # * <strptime input string> -- is a `strftime(fmt)`-result-like str
     #   containing a year number which is *shorter* than the usual four
-    #   or two digits (namely: the contained year number consist of just
-    #   one digit: 7; the choice of this particular digit is arbitrary);
+    #   or two digits (namely: here the contained year number consist of
+    #   one digit: 7; that's an arbitrary choice);
     # * <expected year> -- is an int representing the year number that
     #   is expected to be part of the result of a `strptime(<strptime
     #   input string>, fmt)` call (namely: either 7 or 2007, depending
@@ -856,36 +856,36 @@ def _input_str_and_expected_year_for_few_digits_year(fmt):
     #   part (for the given format string and current locale).
 
     # 1. Prepare auxiliary *magic* time data (note that the magic values
-    # we use here are guaranteed to be compatible with `time.strftime()`
-    # and also well distinguishable within a formatted string, thanks to
-    # the fact that the amount of overloaded numbers is minimized, as in
-    # `_strptime.LocaleTime.__calc_date_time()`...):
+    # we use here are guaranteed to be compatible with `time.strftime()`,
+    # and are also intended to be well distinguishable within a formatted
+    # string, thanks to the fact that the amount of overloaded numbers is
+    # minimized, as in `_strptime.LocaleTime.__calc_date_time()`):
     magic_year = 1999
     magic_tt = (magic_year, 3, 17, 22, 44, 55, 2, 76, 0)
-    magic_4digits = str(magic_year)
-    magic_2digits = magic_4digits[-2:]
 
-    # 2. Pick our example year whose representation
-    # is shorter than the usual four or two digits:
+    # 2. Pick an arbitrary year number representation that
+    # is always *shorter* than the usual four or two digits:
     input_year_str = '7'
 
-    # 3. Determine the <strptime input string> part of the return value:
+    # 3. Obtain the resultant 2-tuple:
+
     input_string = time.strftime(fmt, magic_tt)
-    if (index_4digits := input_string.find(magic_4digits)) != -1:
+    expected_year = None
+
+    magic_4digits = str(magic_year)
+    if found_4digits := (magic_4digits in input_string):
         # `input_string` contains up-to-4-digit year representation
         input_string = input_string.replace(magic_4digits, input_year_str)
-    if (index_2digits := input_string.find(magic_2digits)) != -1:
-        # `input_string` contains up-to-2-digit year representation
-        input_string = input_string.replace(magic_2digits, input_year_str)
-
-    # 4. Determine the <expected year> part of the return value:
-    if index_4digits > index_2digits:
         expected_year = int(input_year_str)
-    elif index_4digits < index_2digits:
+
+    magic_2digits = str(magic_year)[-2:]
+    if magic_2digits in input_string:
+        # `input_string` contains up-to-2-digit year representation
+        if found_4digits:
+            raise RuntimeError(f'case not supported by this helper: {fmt=} '
+                               f'(includes both 2-digit and 4-digit year)')
+        input_string = input_string.replace(magic_2digits, input_year_str)
         expected_year = 2000 + int(input_year_str)
-    else:
-        assert index_4digits == index_2digits == -1
-        expected_year = None
 
     return input_string, expected_year
 
