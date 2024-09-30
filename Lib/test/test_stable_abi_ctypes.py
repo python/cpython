@@ -546,6 +546,7 @@ SYMBOL_NAMES = (
     "PyObject_CheckReadBuffer",
     "PyObject_ClearWeakRefs",
     "PyObject_CopyData",
+    "PyObject_CopyToObject",
     "PyObject_DelAttr",
     "PyObject_DelAttrString",
     "PyObject_DelItem",
