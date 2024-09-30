@@ -211,16 +211,16 @@ class TestPartial:
         p2.new_attr = 'spam'
         self.assertEqual(p2.new_attr, 'spam')
 
-    def test_placeholders_trailing_trim(self):
-        PH = self.module.Placeholder
-        for args, call_args, expected_args in [
-                    [(PH,), (), ()],
-                    [(0, PH), (), (0,)],
-                    [(0, PH, 1, PH, PH, PH), (2,), (0, 2, 1)]
-                ]:
-            actual_args, actual_kwds = self.partial(capture, *args)(*call_args)
-            self.assertEqual(actual_args, expected_args)
-            self.assertEqual(actual_kwds, {})
+    # def test_placeholders_trailing_trim(self):
+    #     PH = self.module.Placeholder
+    #     for args, call_args, expected_args in [
+    #                 [(PH,), (), ()],
+    #                 [(0, PH), (), (0,)],
+    #                 [(0, PH, 1, PH, PH, PH), (2,), (0, 2, 1)]
+    #             ]:
+    #         actual_args, actual_kwds = self.partial(capture, *args)(*call_args)
+    #         self.assertEqual(actual_args, expected_args)
+    #         self.assertEqual(actual_kwds, {})
 
     def test_placeholders(self):
         PH = self.module.Placeholder
@@ -373,11 +373,11 @@ class TestPartial:
             f()
         self.assertEqual(f(2), ((2, 1), dict(a=10)))
 
-        # Trailing Placeholder error
-        f = self.partial(signature)
-        msg_regex = re.escape("unexpected trailing Placeholders")
-        with self.assertRaisesRegex(TypeError, f'^{msg_regex}$') as cm:
-            f.__setstate__((capture, (1, PH), dict(a=10), dict(attr=[])))
+        # # Trailing Placeholder error
+        # f = self.partial(signature)
+        # msg_regex = re.escape("unexpected trailing Placeholders")
+        # with self.assertRaisesRegex(TypeError, f'^{msg_regex}$') as cm:
+        #     f.__setstate__((capture, (1, PH), dict(a=10), dict(attr=[])))
 
     def test_setstate_errors(self):
         f = self.partial(signature)

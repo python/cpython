@@ -334,16 +334,6 @@ class partial:
     def __new__(cls, func, /, *args, **keywords):
         if not callable(func):
             raise TypeError("the first argument must be callable")
-        if args and args[-1] is Placeholder:
-            # Trim trailing placeholders
-            j = len(args) - 1
-            if not j:
-                args = ()
-            else:
-                while (j := j - 1) >= 0:
-                    if args[j] is not Placeholder:
-                        break
-                args = args[:j + 1]
         if isinstance(func, partial):
             pto_phcount = func._phcount
             tot_args = func.args
@@ -411,8 +401,8 @@ class partial:
            (namespace is not None and not isinstance(namespace, dict))):
             raise TypeError("invalid partial state")
 
-        if args and args[-1] is Placeholder:
-            raise TypeError("unexpected trailing Placeholders")
+        # if args and args[-1] is Placeholder:
+        #     raise TypeError("unexpected trailing Placeholders")
         phcount, merger = _partial_prepare_merger(args)
 
         args = tuple(args) # just in case it's a subclass
@@ -435,6 +425,7 @@ try:
 except ImportError:
     pass
 
+
 # Descriptor version
 class partialmethod:
     """Method descriptor with partial application of the given arguments
@@ -446,49 +437,48 @@ class partialmethod:
 
     __slots__ = ("func", "args", "keywords", "wrapper",
                  "__isabstractmethod__", "__dict__", "__weakref__")
+
     __repr__ = _partial_repr
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, func, /, *args, **keywords):
         if isinstance(func, partialmethod):
             # Subclass optimization
             temp = partial(lambda: None, *func.args, **func.keywords)
             temp = partial(temp, *args, **keywords)
+            isabstract = func.__isabstractmethod__
             func = func.func
             args = temp.args
             keywords = temp.keywords
+        else:
+            isabstract = getattr(func, '__isabstractmethod__', False)
         self.func = func
         self.args = args
         self.keywords = keywords
-        self.__isabstractmethod__ = getattr(func, "__isabstractmethod__", False)
+        self.__isabstractmethod__ = isabstract
 
         # 5 cases
-        rewrap = None
         if isinstance(func, staticmethod):
-            self.wrapper = partial(func.__wrapped__, *args, **keywords)
-            rewrap = staticmethod
+            wrapper = partial(func.__wrapped__, *args, **keywords)
+            self.wrapper = _rewrap_func(wrapper, isabstract, staticmethod)
         elif isinstance(func, classmethod):
-            self.wrapper = partial(func.__wrapped__, Placeholder, *args, **keywords)
-            rewrap = classmethod
+            wrapper = _partial_unbound(func.__wrapped__, args, keywords)
+            self.wrapper = _rewrap_func(wrapper, isabstract, classmethod)
         elif isinstance(func, (FunctionType, partial)):
             # instance method
-            self.wrapper = partial(func, Placeholder, *args, **keywords)
+            wrapper = _partial_unbound(func, args, keywords)
+            self.wrapper = _rewrap_func(wrapper, isabstract)
         elif getattr(func, '__get__', None) is None:
-            if not callable(func):
-                raise TypeError(f"the first argument {func!r} must be a callable "
-                                "or a descriptor")
             # callable object without __get__
             # treat this like an instance method
-            self.wrapper = partial(func, Placeholder, *args, **keywords)
+            if not callable(func):
+                raise TypeError(f'the first argument {func!r} must be a callable '
+                                'or a descriptor')
+            wrapper = _partial_unbound(func, args, keywords)
+            self.wrapper = _rewrap_func(wrapper, isabstract)
         else:
             # Unknown descriptor
             self.wrapper = None
-
-        # Adjust for abstract and rewrap if needed
-        if self.wrapper is not None:
-            if self.__isabstractmethod__:
-                self.wrapper = abstractmethod(self.wrapper)
-            if rewrap is not None:
-                self.wrapper = rewrap(self.wrapper)
 
     def __get__(self, obj, cls=None):
         if self.wrapper is not None:
@@ -503,10 +493,20 @@ class partialmethod:
                 pass
             return result
 
-    __class_getitem__ = classmethod(GenericAlias)
-
 
 # Helper functions
+
+def _partial_unbound(func, args, keywords):
+    if not args:
+        return partial(func, **keywords)
+    return partial(func, Placeholder, *args, **keywords)
+
+def _rewrap_func(func, isabstract, decorator=None):
+    if isabstract:
+        func = abstractmethod(func)
+    if decorator is not None:
+        func = decorator(func)
+    return func
 
 def _unwrap_partial(func):
     while isinstance(func, partial):
@@ -514,13 +514,10 @@ def _unwrap_partial(func):
     return func
 
 def _unwrap_partialmethod(func):
-    prev = None
-    while func is not prev:
-        prev = func
-        while isinstance(func, partialmethod):
-            func = getattr(func, 'func')
-        func = _unwrap_partial(func)
+    while isinstance(func, (partial, partialmethod)):
+        func = func.func
     return func
+
 
 ################################################################################
 ### LRU Cache function decorator

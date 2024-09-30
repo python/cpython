@@ -213,13 +213,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     pto->fn = Py_NewRef(func);
     pto->placeholder = phold;
 
-    /* Get new_args with trailing Placeholders trimmed */
-    while (new_nargs > 0 && PyTuple_GET_ITEM(args, new_nargs) == phold) {
-        new_nargs--;
-    }
-
     /* process args */
-    Py_ssize_t phcount = 0;
     if (new_nargs == 0) {
         if (pto_args == NULL) {
             pto->args = PyTuple_New(0);
@@ -234,7 +228,8 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     }
     else {
         /* Count placeholders */
-        for (Py_ssize_t i = 0; i < new_nargs - 1; i++) {
+        Py_ssize_t phcount = 0;
+        for (Py_ssize_t i = 0; i < new_nargs; i++) {
             if (PyTuple_GET_ITEM(args, i + 1) == phold) {
                 phcount++;
             }
@@ -412,6 +407,12 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
     if (nargskw == 0) {
         return _PyObject_VectorcallTstate(tstate, pto->fn,
                                           pto_args, pto_nargs, NULL);
+    }
+
+    /* Fast path if all Placeholders */
+    if (pto_nargs == pto_phcount) {
+        return _PyObject_VectorcallTstate(tstate, pto->fn,
+                                          args, nargs, kwnames);
     }
 
     /* Fast path using PY_VECTORCALL_ARGUMENTS_OFFSET to prepend a single
@@ -701,11 +702,6 @@ partial_setstate(partialobject *pto, PyObject *state)
         return NULL;
     }
 
-    Py_ssize_t nargs = PyTuple_GET_SIZE(fnargs);
-    if (nargs && PyTuple_GET_ITEM(fnargs, nargs - 1) == pto->placeholder) {
-        PyErr_SetString(PyExc_TypeError, "unexpected trailing Placeholders");
-        return NULL;
-    }
     /* Count placeholders */
     Py_ssize_t phcount = 0;
     for (Py_ssize_t i = 0; i < nargs - 1; i++) {

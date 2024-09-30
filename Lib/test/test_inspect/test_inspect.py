@@ -3671,7 +3671,7 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(self.signature(Spam.ham, eval_str=False),
                          ((), Ellipsis))
         with self.assertRaisesRegex(ValueError, "invalid method signature"):
-             inspect.signature(Spam().ham)
+            inspect.signature(Spam().ham)
 
         class Spam:
             def test(it, a, b, *, c) -> 'spam':
