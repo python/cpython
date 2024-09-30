@@ -1185,6 +1185,40 @@ class TestDateOnly(unittest.TestCase):
             date.strptime('20-03-14', '%y-%m-%d')
             date.strptime('02-29,2024', '%m-%d,%Y')
 
+    def test_strftime_strptime_roundtrip(self):
+        for fmt in [
+            '%c',
+            '%x',
+            '%Y%m%d',
+            'm:%m d:%d y:%y H:%H M:%M S:%S f:%f and some text',
+        ]:
+            with self.subTest(fmt=fmt):
+                sample = date(1999, 3, 17).strftime(fmt)
+                if '1999' in sample:
+                    year_seq = [
+                        1, 9, 10, 99, 100, 999,  # <- gh-124529 (ad %c/%x)
+                        1000, 1410, 1989, 2024, 2095, 9999]
+                elif '99' in sample:
+                    year_seq = [
+                        1969, 1999,
+                        2000, 2001, 2009,  # <- gh-124529 (ad %c/%x)
+                        2068]
+                else:
+                    self.skipTest(f"these subtests need locale for which "
+                                  f"{fmt!r} includes year in some variant")
+                for year in year_seq:
+                    for instance in [
+                        date(year, 1, 1),
+                        date(year, 6, 4),
+                        date(year, 12, 31),
+                    ]:
+                        reason = (f'strftime/strptime roundtrip '
+                                  f'for {fmt=} and {year=}')
+                        with self.subTest(reason=reason, instance=instance):
+                            formatted = instance.strftime(fmt)
+                            parsed = date.strptime(formatted, fmt)
+                            self.assertEqual(parsed, instance, msg=reason)
+
 class SubclassDate(date):
     sub_var = 1
 
@@ -2124,6 +2158,35 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                 with self.assertRaises(TypeError):
                     self.theclass.fromisocalendar(*isocal)
 
+    def test_strptime_accepting_year_with_fewer_digits(self):  # gh-124529
+        concerned_formats = '%c', '%x'
+
+        def run_subtest():
+            reason = (f'strptime accepting year with fewer '
+                      f'digits for {fmt=} and {input_string=}')
+            with self.subTest(reason=reason):
+                expected = prototype_inst.replace(year=year)
+                parsed = self.theclass.strptime(input_string, fmt)
+                self.assertEqual(parsed, expected, msg=reason)
+
+        prototype_inst = self.theclass.strptime('1999', '%Y')
+        for fmt in concerned_formats:
+            with self.subTest(fmt=fmt):
+                sample = prototype_inst.strftime(fmt)
+                if (sample_4digits := '1999') in sample:
+                    for year in [1, 9, 10, 99, 100, 999]:
+                        y_digits = str(year)
+                        input_string = sample.replace(sample_4digits, y_digits)
+                        run_subtest()
+                elif (sample_2digits := '99') in sample:
+                    for year in [2000, 2001, 2009]:
+                        y_digits = str(year - 2000)
+                        input_string = sample.replace(sample_2digits, y_digits)
+                        run_subtest()
+                else:
+                    self.skipTest(f"these subtests need locale for which "
+                                  f"{fmt!r} includes year in some variant")
+
 
 #############################################################################
 # datetime tests
@@ -2954,6 +3017,48 @@ class TestDateTime(TestDate):
             t.strftime('%y\ud800%m %H\ud800%M')
         except UnicodeEncodeError:
             pass
+
+    def test_strftime_strptime_roundtrip(self):
+        for tz in [
+            None,
+            UTC,
+            timezone(timedelta(hours=2)),
+            timezone(timedelta(hours=-7)),
+        ]:
+            fmt_suffix = '' if tz is None else ' %z'
+            for fmt in [
+                '%c %f',
+                '%x %X %f',
+                '%Y%m%d%H%M%S%f',
+                'm:%m d:%d y:%y H:%H M:%M S:%S f:%f and some text',
+            ]:
+                fmt += fmt_suffix
+                with self.subTest(fmt=fmt):
+                    sample = self.theclass(1999, 3, 17, 0, 0).strftime(fmt)
+                    if '1999' in sample:
+                        year_seq = [
+                            1, 9, 10, 99, 100, 999,  # <- gh-124529 (ad %c/%x)
+                            1000, 1410, 1989, 2024, 2095, 9999]
+                    elif '99' in sample:
+                        year_seq = [
+                            1969, 1999,
+                            2000, 2001, 2009,  # <- gh-124529 (ad %c/%x)
+                            2068]
+                    else:
+                        self.skipTest(f"these subtests need locale for which "
+                                      f"{fmt!r} includes year in some variant")
+                    for year in year_seq:
+                        for instance in [
+                            self.theclass(year, 1, 1, 0, 0, 0, tzinfo=tz),
+                            self.theclass(year, 6, 4, 1, 42, 7, 99, tzinfo=tz),
+                            self.theclass(year, 12, 31, 23, 59, 59, tzinfo=tz),
+                        ]:
+                            reason = (f'strftime/strptime roundtrip '
+                                      f'for {fmt=} and {year=}')
+                            with self.subTest(reason=reason, instance=instance):
+                                formatted = instance.strftime(fmt)
+                                parsed = self.theclass.strptime(formatted, fmt)
+                                self.assertEqual(parsed, instance, msg=reason)
 
     def test_extract(self):
         dt = self.theclass(2002, 3, 4, 18, 45, 3, 1234)
@@ -3900,6 +4005,32 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
                               target=target):
                 newdate = self.theclass.strptime(string, format)
                 self.assertEqual(newdate, target, msg=reason)
+
+    def test_strftime_strptime_roundtrip(self):
+        for tz in [
+            None,
+            UTC,
+            timezone(timedelta(hours=2)),
+            timezone(timedelta(hours=-7)),
+        ]:
+            fmt_suffix = '' if tz is None else ' %z'
+            for fmt in [
+                '%c %f',
+                '%X %f',
+                '%H%M%S%f',
+                'm:%m d:%d y:%y H:%H M:%M S:%S f:%f and some text',
+            ]:
+                fmt += fmt_suffix
+                for instance in [
+                    self.theclass(0, 0, 0, tzinfo=tz),
+                    self.theclass(1, 42, 7, tzinfo=tz),
+                    self.theclass(23, 59, 59, 654321, tzinfo=tz),
+                ]:
+                    reason = f'strftime/strptime round trip for {fmt=}'
+                    with self.subTest(reason=reason, instance=instance):
+                        formatted = instance.strftime(fmt)
+                        parsed = self.theclass.strptime(formatted, fmt)
+                        self.assertEqual(parsed, instance, msg=reason)
 
     def test_bool(self):
         # time is always True.

@@ -199,8 +199,6 @@ class TimeRE(dict):
             'V': r"(?P<V>5[0-3]|0[1-9]|[1-4]\d|\d)",
             # W is set below by using 'U'
             'y': r"(?P<y>\d\d)",
-            #XXX: Does 'Y' need to worry about having less or more than
-            #     4 digits?
             'Y': r"(?P<Y>\d\d\d\d)",
             'z': r"(?P<z>[+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?|(?-i:Z))",
             'A': self.__seqToRE(self.locale_time.f_weekday, 'A'),
@@ -213,8 +211,10 @@ class TimeRE(dict):
                                 'Z'),
             '%': '%'})
         base.__setitem__('W', base.__getitem__('U').replace('U', 'W'))
-        base.__setitem__('c', self.pattern(self.locale_time.LC_date_time))
-        base.__setitem__('x', self.pattern(self.locale_time.LC_date))
+        base.__setitem__(
+            'c', self.__pattern_with_lax_year(self.locale_time.LC_date_time))
+        base.__setitem__(
+            'x', self.__pattern_with_lax_year(self.locale_time.LC_date))
         base.__setitem__('X', self.pattern(self.locale_time.LC_time))
 
     def __seqToRE(self, to_convert, directive):
@@ -235,6 +235,26 @@ class TimeRE(dict):
         regex = '|'.join(re_escape(stuff) for stuff in to_convert)
         regex = '(?P<%s>%s' % (directive, regex)
         return '%s)' % regex
+
+    def __pattern_with_lax_year(self, format):
+        """Like pattern(), but making %Y and %y accept also fewer digits.
+
+        Necessary to ensure that strptime() is able to parse strftime()'s
+        output when %c or %x is used -- considering that for some locales
+        and platforms (e.g., 'C.UTF-8' on Linux), formatting with either
+        %c or %x may produce a year number representation that is shorter
+        than the usual four or two digits, if the number is small enough
+        (e.g., '999' instead of `0999', or '9' instead of '09').
+
+        Note that this helper is not used to generate the regex patterns
+        for %Y and %y (these two still match, respectively, only four or
+        two digits, exactly).
+
+        """
+        pattern = self.pattern(format)
+        pattern = pattern.replace(self['Y'], r"(?P<Y>\d{1,4})")
+        pattern = pattern.replace(self['y'], r"(?P<y>\d{1,2})")
+        return pattern
 
     def pattern(self, format):
         """Return regex pattern for the format string.
@@ -374,6 +394,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
         #   U, W
         #      worthless without day of the week
         if group_key == 'y':
+            # 1 or 2 digits (1 only for directive c or x; see TimeRE.__init__)
             year = int(found_dict['y'])
             # Open Group specification for strptime() states that a %y
             #value in the range of [00, 68] is in the century 2000, while
@@ -383,6 +404,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             else:
                 year += 1900
         elif group_key == 'Y':
+            # 1-4 digits (1-3 only for directive c or x; see TimeRE.__init__)
             year = int(found_dict['Y'])
         elif group_key == 'G':
             iso_year = int(found_dict['G'])
