@@ -59,7 +59,7 @@ def make_legacy_pyc(source):
     """
     pyc_file = importlib.util.cache_from_source(source)
     up_one = os.path.dirname(os.path.abspath(source))
-    legacy_pyc = os.path.join(up_one, source + 'c')
+    legacy_pyc = os.path.join(up_one, os.path.basename(source) + 'c')
     shutil.move(pyc_file, legacy_pyc)
     return legacy_pyc
 

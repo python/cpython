@@ -1697,6 +1697,20 @@ class _MutuallyExclusiveGroup(_ArgumentGroup):
         return super().add_mutually_exclusive_group(*args, **kwargs)
 
 
+def _prog_name(prog=None):
+    if prog is not None:
+        return prog
+    arg0 = _sys.argv[0]
+    modspec = _sys.modules['__main__'].__spec__
+    if modspec is None:
+        return _os.path.basename(arg0)
+    py = _os.path.basename(_sys.executable)
+    if (modspec.name == '__main__' and not modspec.parent and modspec.has_location
+        and _os.path.dirname(modspec.origin) == _os.path.join(_os.getcwd(), arg0)):
+        return f'{py} {arg0}'
+    return f'{py} -m {modspec.name.removesuffix(".__main__")}'
+
+
 class ArgumentParser(_AttributeHolder, _ActionsContainer):
     """Object for parsing command line strings into Python objects.
 
@@ -1740,11 +1754,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                   argument_default=argument_default,
                   conflict_handler=conflict_handler)
 
-        # default setting for prog
-        if prog is None:
-            prog = _os.path.basename(_sys.argv[0])
-
-        self.prog = prog
+        self.prog = _prog_name(prog)
         self.usage = usage
         self.epilog = epilog
         self.formatter_class = formatter_class

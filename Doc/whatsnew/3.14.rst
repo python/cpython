@@ -202,6 +202,13 @@ New Modules
 Improved Modules
 ================
 
+argparse
+--------
+
+* The default value of the :ref:`program name <prog>` for
+  :class:`argparse.ArgumentParser` depends now on the way the Python
+  interpreter was run.
+  (Contributed by Serhiy Storchaka and Alyssa Coghlan in :gh:`66436`.)
 
 ast
 ---
