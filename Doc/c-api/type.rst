@@ -621,7 +621,8 @@ The following functions and structs are used to create
    The callback must return ``0`` on success, or set an exception and return
    ``-1`` on error.
 
-   For example, the callback can be used to customize a type (set attributes)
-   before it's made immutable by the :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` flag.
+   For example, the callback can be used to customize a type (ex: set
+   attributes) before it's made immutable by the
+   :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` flag.
 
    .. versionadded:: 3.14
