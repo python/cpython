@@ -16,10 +16,10 @@ def _dump_footer(
     yield "typedef struct {"
     yield "    void (*emit)("
     yield "        unsigned char *code, unsigned char *data, _PyExecutorObject *executor,"
-    yield "        const _PyUOpInstruction *instruction, CompileState *state);"
+    yield "        const _PyUOpInstruction *instruction, jit_state *state);"
     yield "    size_t code_size;"
     yield "    size_t data_size;"
-    yield "    SymbolMask trampoline_mask;"
+    yield "    symbol_mask trampoline_mask;"
     yield "} StencilGroup;"
     yield ""
     yield f"static const StencilGroup trampoline = {groups['trampoline'].as_c('trampoline')};"
@@ -41,7 +41,7 @@ def _dump_stencil(opname: str, group: _stencils.StencilGroup) -> typing.Iterator
     yield "void"
     yield f"emit_{opname}("
     yield "    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,"
-    yield "    const _PyUOpInstruction *instruction, CompileState *state)"
+    yield "    const _PyUOpInstruction *instruction, jit_state *state)"
     yield "{"
     for part, stencil in [("code", group.code), ("data", group.data)]:
         for line in stencil.disassembly:

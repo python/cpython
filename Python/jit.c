@@ -116,18 +116,18 @@ mark_executable(unsigned char *memory, size_t size)
 
 #define SYMBOL_MASK_WORDS 4
 
-typedef uint32_t SymbolMask[SYMBOL_MASK_WORDS];
+typedef uint32_t symbol_mask[SYMBOL_MASK_WORDS];
 
 typedef struct {
     unsigned char *mem;
-    SymbolMask mask;
+    symbol_mask mask;
     size_t size;
-} TrampolineState;
+} trampoline_state;
 
 typedef struct {
-    TrampolineState trampolines;
+    trampoline_state trampolines;
     uintptr_t instruction_starts[UOP_MAX_TRACE_LENGTH];
-} CompileState;
+} jit_state;
 
 // Warning! AArch64 requires you to get your hands dirty. These are your gloves:
 
@@ -406,20 +406,16 @@ patch_x86_64_32rx(unsigned char *location, uint64_t value)
     patch_32r(location, value);
 }
 
-void patch_aarch64_trampoline(unsigned char *location, int ordinal, CompileState *state);
+void patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *state);
 
 #include "jit_stencils.h"
 
-#if defined(__aarch64__) || defined(_M_ARM64)
-    #define TRAMPOLINE_SIZE 16
-#else
-    #define TRAMPOLINE_SIZE 0
-#endif
+#define TRAMPOLINE_SIZE_AARCH64 16
 
 // Generate and patch AArch64 trampolines. The symbols to jump to are stored
 // in the jit_stencils.h in the symbols_map.
 void
-patch_aarch64_trampoline(unsigned char *location, int ordinal, CompileState *state)
+patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *state)
 {
     // Masking is done modulo 32 as the mask is stored as an array of uint32_t
     const uint32_t symbol_mask = 1 << (ordinal % 32);
@@ -433,8 +429,8 @@ patch_aarch64_trampoline(unsigned char *location, int ordinal, CompileState *sta
         index += _Py_popcount32(state->trampolines.mask[i]);
     }
 
-    uint32_t *p = (uint32_t*)(state->trampolines.mem + index * TRAMPOLINE_SIZE);
-    assert((size_t)index * TRAMPOLINE_SIZE < state->trampolines.size);
+    uint32_t *p = (uint32_t*)(state->trampolines.mem + index * TRAMPOLINE_SIZE_AARCH64);
+    assert((size_t)(index + 1) * TRAMPOLINE_SIZE_AARCH64 < state->trampolines.size);
 
     uint64_t value = (uintptr_t)symbols_map[ordinal];
 
@@ -453,7 +449,7 @@ patch_aarch64_trampoline(unsigned char *location, int ordinal, CompileState *sta
 }
 
 static void
-combine_symbol_mask(const SymbolMask src, SymbolMask dest)
+combine_symbol_mask(const symbol_mask src, symbol_mask dest)
 {
     // Calculate the union of the trampolines required by each StencilGroup
     for (size_t i = 0; i < SYMBOL_MASK_WORDS; i++) {
@@ -469,7 +465,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     // Loop once to find the total compiled size:
     size_t code_size = 0;
     size_t data_size = 0;
-    CompileState state = {};
+    jit_state state = {};
     group = &trampoline;
     code_size += group->code_size;
     data_size += group->data_size;
@@ -479,17 +475,15 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
         state.instruction_starts[i] = code_size;
         code_size += group->code_size;
         data_size += group->data_size;
-        combine_symbol_mask(group->trampoline_mask,
-                            state.trampolines.mask);
+        combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
     }
     group = &stencil_groups[_FATAL_ERROR];
     code_size += group->code_size;
     data_size += group->data_size;
-    combine_symbol_mask(group->trampoline_mask,
-                        state.trampolines.mask);
+    combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
     // Calculate the size of the trampolines required by the whole trace
     for (size_t i = 0; i < Py_ARRAY_LENGTH(state.trampolines.mask); i++) {
-        state.trampolines.size += _Py_popcount32(state.trampolines.mask[i]) * TRAMPOLINE_SIZE;
+        state.trampolines.size += _Py_popcount32(state.trampolines.mask[i]) * TRAMPOLINE_SIZE_AARCH64;
     }
     // Round up to the nearest page:
     size_t page_size = get_page_size();
