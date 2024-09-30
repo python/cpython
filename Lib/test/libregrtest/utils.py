@@ -307,7 +307,17 @@ def get_build_info():
 
     # --disable-gil
     if sysconfig.get_config_var('Py_GIL_DISABLED'):
-        build.append("free_threading")
+        if not sys.flags.ignore_environment:
+            PYTHON_GIL = os.environ.get('PYTHON_GIL', None)
+            if PYTHON_GIL:
+                PYTHON_GIL = (PYTHON_GIL == '1')
+        else:
+            PYTHON_GIL = None
+
+        free_threading = "free_threading"
+        if PYTHON_GIL is not None:
+            free_threading = f"{free_threading} GIL={int(PYTHON_GIL)}"
+        build.append(free_threading)
 
     if hasattr(sys, 'gettotalrefcount'):
         # --with-pydebug
