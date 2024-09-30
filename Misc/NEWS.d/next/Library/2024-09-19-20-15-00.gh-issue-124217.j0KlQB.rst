@@ -1,0 +1,1 @@
+Add RFC 9637 reserved IPv6 block ``3fff::/20`` in :mod:`ipaddress` module.

@@ -324,7 +324,7 @@ PyPreConfig
       * Set :c:member:`PyConfig.filesystem_encoding` to ``"mbcs"``,
       * Set :c:member:`PyConfig.filesystem_errors` to ``"replace"``.
 
-      Initialized the from :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment
+      Initialized from the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment
       variable value.
 
       Only available on Windows. ``#ifdef MS_WINDOWS`` macro can be used for
@@ -1248,18 +1248,23 @@ PyConfig
 
    .. c:member:: int perf_profiling
 
-      Enable compatibility mode with the perf profiler?
+      Enable the Linux ``perf`` profiler support?
 
-      If non-zero, initialize the perf trampoline. See :ref:`perf_profiling`
-      for more information.
+      If equals to ``1``, enable support for the Linux ``perf`` profiler.
 
-      Set by :option:`-X perf <-X>` command-line option and by the
-      :envvar:`PYTHON_PERF_JIT_SUPPORT` environment variable for perf support
-      with stack pointers and :option:`-X perf_jit <-X>` command-line option
-      and by the :envvar:`PYTHON_PERF_JIT_SUPPORT` environment variable for perf
-      support with DWARF JIT information.
+      If equals to ``2``, enable support for the Linux ``perf`` profiler with
+      DWARF JIT support.
+
+      Set to ``1`` by :option:`-X perf <-X>` command-line option and the
+      :envvar:`PYTHONPERFSUPPORT` environment variable.
+
+      Set to ``2`` by the :option:`-X perf_jit <-X>` command-line option and
+      the :envvar:`PYTHON_PERF_JIT_SUPPORT` environment variable.
 
       Default: ``-1``.
+
+      .. seealso::
+         See :ref:`perf_profiling` for more information.
 
       .. versionadded:: 3.12
 
@@ -1742,6 +1747,26 @@ only implemented when ``Py_InitializeFromInitConfig()`` is called, not by the
 
    * Return ``0`` on success.
    * Set an error in *config* and return ``-1`` on error.
+
+
+Module
+------
+
+.. c:function:: int PyInitConfig_AddModule(PyInitConfig *config, const char *name, PyObject* (*initfunc)(void))
+
+   Add a built-in extension module to the table of built-in modules.
+
+   The new module can be imported by the name *name*, and uses the function
+   *initfunc* as the initialization function called on the first attempted
+   import.
+
+   * Return ``0`` on success.
+   * Set an error in *config* and return ``-1`` on error.
+
+   If Python is initialized multiple times, ``PyInitConfig_AddModule()`` must
+   be called at each Python initialization.
+
+   Similar to the :c:func:`PyImport_AppendInittab` function.
 
 
 Initialize Python

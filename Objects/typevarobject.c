@@ -151,7 +151,7 @@ constevaluator_clear(PyObject *self)
 }
 
 static PyObject *
-constevaluator_repr(PyObject *self, PyObject *repr)
+constevaluator_repr(PyObject *self)
 {
     PyObject *value = ((constevaluatorobject *)self)->value;
     return PyUnicode_FromFormat("<constevaluator %R>", value);
@@ -168,7 +168,7 @@ constevaluator_call(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
     PyObject *value = ((constevaluatorobject *)self)->value;
-    if (format == 3) { // SOURCE
+    if (format == 3) { // STRING
         PyUnicodeWriter *writer = PyUnicodeWriter_Create(5);  // cannot be <5
         if (writer == NULL) {
             return NULL;
@@ -242,7 +242,8 @@ static PyType_Slot constevaluator_slots[] = {
 PyType_Spec constevaluator_spec = {
     .name = "_typing._ConstEvaluator",
     .basicsize = sizeof(constevaluatorobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .slots = constevaluator_slots,
 };
 
@@ -372,10 +373,10 @@ caller(void)
     if (f == NULL) {
         Py_RETURN_NONE;
     }
-    if (f == NULL || f->f_funcobj == NULL) {
+    if (f == NULL || PyStackRef_IsNull(f->f_funcobj)) {
         Py_RETURN_NONE;
     }
-    PyObject *r = PyFunction_GetModule(f->f_funcobj);
+    PyObject *r = PyFunction_GetModule(PyStackRef_AsPyObjectBorrow(f->f_funcobj));
     if (!r) {
         PyErr_Clear();
         Py_RETURN_NONE;
@@ -1914,7 +1915,16 @@ typealias_alloc(PyObject *name, PyObject *type_params, PyObject *compute_value,
         return NULL;
     }
     ta->name = Py_NewRef(name);
-    ta->type_params = Py_IsNone(type_params) ? NULL : Py_XNewRef(type_params);
+    if (
+        type_params == NULL
+        || Py_IsNone(type_params)
+        || (PyTuple_Check(type_params) && PyTuple_GET_SIZE(type_params) == 0)
+    ) {
+        ta->type_params = NULL;
+    }
+    else {
+        ta->type_params = Py_NewRef(type_params);
+    }
     ta->compute_value = Py_XNewRef(compute_value);
     ta->value = Py_XNewRef(value);
     ta->module = Py_XNewRef(module);
