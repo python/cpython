@@ -18,7 +18,7 @@ typedef struct {
      * Bits 0-7 are for dict watchers.
      * Bits 8-11 are for the watched mutation counter (used by tier2 optimization)
      * The remaining bits are not currently used. */
-    uint64_t ma_watcher_tag;
+    uint64_t _ma_watcher_tag;
 
     PyDictKeysObject *ma_keys;
 

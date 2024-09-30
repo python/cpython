@@ -877,7 +877,7 @@ new_dict(PyInterpreterState *interp,
     mp->ma_keys = keys;
     mp->ma_values = values;
     mp->ma_used = used;
-    mp->ma_watcher_tag = 0;
+    mp->_ma_watcher_tag = 0;
     ASSERT_CONSISTENT(mp);
     return (PyObject *)mp;
 }
@@ -3966,7 +3966,7 @@ copy_lock_held(PyObject *o)
         split_copy->ma_values = newvalues;
         split_copy->ma_keys = mp->ma_keys;
         split_copy->ma_used = mp->ma_used;
-        split_copy->ma_watcher_tag = 0;
+        split_copy->_ma_watcher_tag = 0;
         dictkeys_incref(mp->ma_keys);
         if (_PyObject_GC_IS_TRACKED(mp))
             _PyObject_GC_TRACK(split_copy);
@@ -4739,7 +4739,7 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyDictObject *d = (PyDictObject *)self;
 
     d->ma_used = 0;
-    d->ma_watcher_tag = 0;
+    d->_ma_watcher_tag = 0;
     dictkeys_incref(Py_EMPTY_KEYS);
     d->ma_keys = Py_EMPTY_KEYS;
     d->ma_values = NULL;
@@ -7356,7 +7356,7 @@ PyDict_Watch(int watcher_id, PyObject* dict)
     if (validate_watcher_id(interp, watcher_id)) {
         return -1;
     }
-    ((PyDictObject*)dict)->ma_watcher_tag |= (1LL << watcher_id);
+    ((PyDictObject*)dict)->_ma_watcher_tag |= (1LL << watcher_id);
     return 0;
 }
 
@@ -7371,7 +7371,7 @@ PyDict_Unwatch(int watcher_id, PyObject* dict)
     if (validate_watcher_id(interp, watcher_id)) {
         return -1;
     }
-    ((PyDictObject*)dict)->ma_watcher_tag &= ~(1LL << watcher_id);
+    ((PyDictObject*)dict)->_ma_watcher_tag &= ~(1LL << watcher_id);
     return 0;
 }
 

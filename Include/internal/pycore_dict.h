@@ -246,7 +246,7 @@ _PyDict_NotifyEvent(PyInterpreterState *interp,
                     PyObject *value)
 {
     assert(Py_REFCNT((PyObject*)mp) > 0);
-    int watcher_bits = mp->ma_watcher_tag & DICT_WATCHER_MASK;
+    int watcher_bits = mp->_ma_watcher_tag & DICT_WATCHER_MASK;
     if (watcher_bits) {
         RARE_EVENT_STAT_INC(watched_dict_modification);
         _PyDict_SendEvent(watcher_bits, event, mp, key, value);
