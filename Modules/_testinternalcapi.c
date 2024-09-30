@@ -2006,33 +2006,6 @@ get_tlbc_id(PyObject *Py_UNUSED(module), PyObject *obj)
     }
     return PyLong_FromVoidPtr(bc);
 }
-
-static int
-count_tlbc_blocks(PyObject *obj, Py_ssize_t *count)
-{
-    if (PyCode_Check(obj)) {
-        _PyCodeArray *tlbc = ((PyCodeObject *)obj)->co_tlbc;
-        // First entry always points to the bytecode at the end of the code
-        // object. Exclude it from the count as it is allocated as part of
-        // creating the code object.
-        for (Py_ssize_t i = 1; i < tlbc->size; i++) {
-            if (tlbc->entries[i] != NULL) {
-                (*count)++;
-            }
-        }
-    }
-    return 1;
-}
-
-// Return the total number of thread-local bytecode copies, excluding the
-// copies that are embedded in the code object.
-static PyObject *
-get_tlbc_blocks(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(ignored))
-{
-    Py_ssize_t count = 0;
-    PyUnstable_GC_VisitObjects((gcvisitobjects_t) count_tlbc_blocks, &count);
-    return PyLong_FromSsize_t(count);
-}
 #endif
 
 static PyObject *
@@ -2207,7 +2180,6 @@ static PyMethodDef module_functions[] = {
     {"py_thread_id", get_py_thread_id, METH_NOARGS},
     {"get_tlbc", get_tlbc, METH_O, NULL},
     {"get_tlbc_id", get_tlbc_id, METH_O, NULL},
-    {"get_tlbc_blocks", get_tlbc_blocks, METH_NOARGS},
 #endif
     {"suppress_immortalization", suppress_immortalization, METH_O},
     {"get_immortalize_deferred", get_immortalize_deferred, METH_NOARGS},
