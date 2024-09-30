@@ -253,10 +253,14 @@ in most cases, only picklable objects can be executed and returned.
    interpreter's ``__main__`` module.  In that case, *initargs* must
    not be passed in.
 
-   Similarly you can pass a script to :meth:`Executor.submit`, which
+   Similarly you can pass a script to :meth:`~Executor.submit`, which
    will be executed in the interpreter's ``__main__`` module.  In that
    case no arguments may be provided and the return value is always
    ``None``.
+
+   For both *initializer* and :meth:`~Executor.submit`, if a script
+   is passed in then it will automatically have :func:`textwrap.dedent`
+   applied to it.  That means you don't have to.
 
    :meth:`InterpreterPoolExecutor <Executor.map>` does *not* support
    passing in a script.

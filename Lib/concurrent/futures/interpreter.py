@@ -47,11 +47,11 @@ class WorkerContext(_thread.WorkerContext):
             if isinstance(fn, str):
                 if args or kwargs:
                     raise ValueError(f'a script does not take args or kwargs, got {args!r} and {kwargs!r}')
-                data = fn
+                data = textwrap.dedent(fn)
                 kind = 'script'
                 # Make sure the script compiles.
                 # XXX Keep the compiled code object?
-                compile(fn, '<string>', 'exec')
+                compile(data, '<string>', 'exec')
             else:
                 # XXX This does not work if fn comes from the __main__ module.
                 data = pickle.dumps((fn, args, kwargs))
@@ -126,10 +126,7 @@ class WorkerContext(_thread.WorkerContext):
             fmt = 0
             self.resultsid = _interpqueues.create(maxsize, fmt, UNBOUND)
 
-            initscript = f"""if True:
-                from {__name__} import WorkerContext
-                """
-            self._exec(initscript)
+            self._exec(f'from {__name__} import WorkerContext')
 
             if self.shared:
                 _interpreters.set___main___attrs(
@@ -162,10 +159,9 @@ class WorkerContext(_thread.WorkerContext):
     def run(self, task):
         data, kind = task
         if kind == 'script':
-            script = textwrap.dedent(f"""
-                with WorkerContext._capture_exc({self.resultsid}):
-                {{}}""")
-            script = script.format(textwrap.indent(data, '    '))
+            script = f"""
+with WorkerContext._capture_exc({self.resultsid}):
+{textwrap.indent(data, '    ')}"""
         elif kind == 'function':
             script = f'WorkerContext._call_pickled({data!r}, {self.resultsid})'
         else:

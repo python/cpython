@@ -39,12 +39,12 @@ class InterpreterPoolExecutorTest(InterpreterPoolMixin, ExecutorTest, BaseTestCa
         msg1 = b'step: init'
         msg2 = b'step: run'
         r, w = self.pipe()
-        initscript = f"""if True:
+        initscript = f"""
             import os
             msg = {msg2!r}
             os.write({w}, {msg1!r} + b'\\0')
             """
-        script = f"""if True:
+        script = f"""
             os.write({w}, msg + b'\\0')
             """
         os.write(w, b'\0')
@@ -106,7 +106,7 @@ class InterpreterPoolExecutorTest(InterpreterPoolMixin, ExecutorTest, BaseTestCa
     def test_init_shared(self):
         msg = b'eggs'
         r, w = self.pipe()
-        script = f"""if True:
+        script = f"""
             import os
             os.write({w}, spam + b'\\0')
             """
@@ -121,7 +121,7 @@ class InterpreterPoolExecutorTest(InterpreterPoolMixin, ExecutorTest, BaseTestCa
     def test_submit_script(self):
         msg = b'spam'
         r, w = self.pipe()
-        script = f"""if True:
+        script = f"""
             import os
             os.write({w}, __name__.encode('utf-8') + b'\\0')
             """
