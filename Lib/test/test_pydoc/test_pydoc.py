@@ -483,24 +483,15 @@ class PydocDocTest(unittest.TestCase):
             "MODULE DOCS incorrectly includes a link",
             )
 
-    def test_issue40051_non_matching_doc_and_module_names(self):
+    def test_gh84232_non_matching_doc_and_module_names(self):
         turtledemo = import_helper.import_module('turtledemo')
         self.assertIn('turtle.html', get_pydoc_link(turtledemo))
 
-    def test_issue40051_undocumented_modules(self):
+    def test_gh84232_undocumented_modules(self):
         self.assertIsNone(
             get_pydoc_link(_pickle),
             "MODULE DOCS incorrectly includes a link",
             )
-
-    def test_issue40051_non_library_link(self):
-        du_cmd = import_helper.import_module(
-            'distutils.command',
-            deprecated=True,
-            )
-        doc_link = get_pydoc_link(du_cmd)
-        self.assertIn('distutils/apiref.html', doc_link)
-        self.assertNotIn('library', doc_link)
 
     def test_getpager_with_stdin_none(self):
         previous_stdin = sys.stdin
