@@ -64,7 +64,7 @@ Executor Objects
       setting *chunksize* to a positive integer.  For very long iterables,
       using a large value for *chunksize* can significantly improve
       performance compared to the default size of 1.  With
-      :class:`ThreadPoolExecutor` and :class:`ThreadPoolExecutor`,
+      :class:`ThreadPoolExecutor` and :class:`InterpreterPoolExecutor`,
       *chunksize* has no effect.
 
       .. versionchanged:: 3.5
@@ -236,9 +236,9 @@ The :class:`InterpreterPoolExecutor` class is a :class:`ThreadPoolExecutor`
 subclass that uses a pool of isolated interpreters to execute calls
 asynchronously.  Each interpreter has its own GIL, which allows the
 executor to side-step the :term:`Global Interpreter Lock
-<global interpreter lock>`.  Interpreters mostly can't share objects
-between them, which means that, in most cases, only picklable objects
-can be executed and returned.
+<global interpreter lock>`, allowing the use of multiple cores.
+Interpreters mostly can't share objects between them, which means that,
+in most cases, only picklable objects can be executed and returned.
 
 .. class:: InterpreterPoolExecutor(max_workers=None, mp_context=None, initializer=None, initargs=(), shared=None)
 
@@ -249,12 +249,12 @@ can be executed and returned.
    *initializer* and *initargs* are the same as with
    :class:`ThreadPoolExecutor`, though they are pickled like with
    :class:`ProcessPoolExecutor`.  Additionally, you can pass a script
-   (:class:`str`) for *initiazer*, which will be ``exec``ed in the
+   (:class:`str`) for *initiazer*, which will be executed in the
    interpreter's ``__main__`` module.  In that case, *initargs* must
    not be passed in.
 
-   Similarly you can pass a script to :meth:`Executor.submit()`, which
-   will be ``exec``ed in the interpreter's ``__main__`` module.  In that
+   Similarly you can pass a script to :meth:`Executor.submit`, which
+   will be executed in the interpreter's ``__main__`` module.  In that
    case no arguments may be provided and the return value is always
    ``None``.
 
@@ -274,7 +274,7 @@ can be executed and returned.
 
    The other caveats that apply to :class:`ThreadPoolExecutor` apply here.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 
 ProcessPoolExecutor
@@ -633,7 +633,7 @@ Exception classes
    :meth:`~concurrent.futures.Executor.submit` when there's an uncaught
    exception from the submitted task.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 .. currentmodule:: concurrent.futures.process
 
