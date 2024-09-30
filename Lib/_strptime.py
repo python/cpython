@@ -244,11 +244,11 @@ class TimeRE(dict):
         and platforms (e.g., 'C.UTF-8' on Linux), formatting with either
         %c or %x may produce a year number representation that is shorter
         than the usual four or two digits, if the number is small enough
-        (e.g., '999' instead of `0999', or '9' instead of '09').
+        (e.g., '999' rather than `0999', or '9' rather than of '09').
 
-        Note that this helper is *not* used to prepare the regex patterns
-        for %Y and %y (these two still match, respectively, only four or
-        two digits, exactly).
+        Note that this helper is intended to be used to prepare only the
+        regex patterns for the `%c` and `%x` format codes (and *not* for
+        `%y`, `%Y` or `%G`).
 
         """
         pattern = self.pattern(format)
