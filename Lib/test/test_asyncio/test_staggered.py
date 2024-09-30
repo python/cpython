@@ -121,6 +121,25 @@ class StaggeredTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(excs[0], ValueError)
         self.assertIsNone(excs[1])
 
+    def test_loop_argument(self):
+        loop = asyncio.new_event_loop()
+        async def coro():
+            self.assertEqual(loop, asyncio.get_running_loop())
+            return 'coro'
+
+        async def main():
+            winner, index, excs = await staggered_race(
+                [coro],
+                delay=0.1,
+                loop=loop
+            )
+
+            self.assertEqual(winner, 'coro')
+            self.assertEqual(index, 0)
+
+        loop.run_until_complete(main())
+        loop.close()
+
 
 if __name__ == "__main__":
     unittest.main()
