@@ -433,3 +433,27 @@ class DeferredEvaluationTests(unittest.TestCase):
         """
         ns = run_code(code)
         self.assertEqual(ns["res"].__annotations__, {"x": "closure var"})
+
+        code = """
+        def f(x: format):
+            pass
+        """
+        ns = run_code(code)
+        # picks up the format() builtin
+        self.assertEqual(ns["f"].__annotations__, {"x": format})
+
+        code = """
+        def outer():
+            def f(x: format):
+                pass
+            if False:
+                class format: pass
+            return f
+        f = outer()
+        """
+        ns = run_code(code)
+        with self.assertRaisesRegex(
+            NameError,
+            "cannot access free variable 'format' where it is not associated with a value in enclosing scope",
+        ):
+            ns["f"].__annotations__
