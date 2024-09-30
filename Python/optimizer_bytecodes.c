@@ -339,47 +339,41 @@ dummy_func(void) {
     }
 
     op(_TO_BOOL, (value -- res)) {
-        int opt = optimize_to_bool(this_instr, ctx, value, &res);
-        if (!opt) {
+        if (!optimize_to_bool(this_instr, ctx, value, &res)) {
             res = sym_new_type(ctx, &PyBool_Type);
         }
     }
 
     op(_TO_BOOL_BOOL, (value -- res)) {
-        int opt = optimize_to_bool(this_instr, ctx, value, &res);
-        if (!opt) {
+        if (!optimize_to_bool(this_instr, ctx, value, &res)) {
             sym_set_type(value, &PyBool_Type);
             res = value;
         }
     }
 
     op(_TO_BOOL_INT, (value -- res)) {
-        int opt = optimize_to_bool(this_instr, ctx, value, &res);
-        if (!opt) {
+        if (!optimize_to_bool(this_instr, ctx, value, &res)) {
             sym_set_type(value, &PyLong_Type);
             res = sym_new_type(ctx, &PyBool_Type);
         }
     }
 
     op(_TO_BOOL_LIST, (value -- res)) {
-        int opt = optimize_to_bool(this_instr, ctx, value, &res);
-        if (!opt) {
+        if (!optimize_to_bool(this_instr, ctx, value, &res)) {
             sym_set_type(value, &PyList_Type);
             res = sym_new_type(ctx, &PyBool_Type);
         }
     }
 
     op(_TO_BOOL_NONE, (value -- res)) {
-        int opt = optimize_to_bool(this_instr, ctx, value, &res);
-        if (!opt) {
+        if (!optimize_to_bool(this_instr, ctx, value, &res)) {
             sym_set_const(value, Py_None);
             res = sym_new_const(ctx, Py_False);
         }
     }
 
     op(_TO_BOOL_STR, (value -- res)) {
-        int opt = optimize_to_bool(this_instr, ctx, value, &res);
-        if (!opt) {
+        if (!optimize_to_bool(this_instr, ctx, value, &res)) {
             res = sym_new_type(ctx, &PyBool_Type);
             sym_set_type(value, &PyUnicode_Type);
         }
