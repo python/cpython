@@ -414,6 +414,24 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
         return transp
 
 
+def overlapped_connection_reset_error_handler(func):
+    """
+    Rethrow common connection errors that come from clients
+    disconnecting unexpectedly. This is a common error that
+    can be safely ignored in most cases.
+    """
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except OSError as exc:
+            if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
+                                _overlapped.ERROR_OPERATION_ABORTED):
+                raise ConnectionResetError(*exc.args)
+            else:
+                raise
+    return wrapper
+
+
 class IocpProactor:
     """Proactor implementation using IOCP."""
 
@@ -458,15 +476,9 @@ class IocpProactor:
         return fut
 
     @staticmethod
+    @overlapped_connection_reset_error_handler
     def finish_socket_func(trans, key, ov):
-        try:
-            return ov.getresult()
-        except OSError as exc:
-            if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
-                                _overlapped.ERROR_OPERATION_ABORTED):
-                raise ConnectionResetError(*exc.args)
-            else:
-                raise
+        return ov.getresult()
 
     @classmethod
     def _finish_recvfrom(cls, trans, key, ov, *, empty_result):
@@ -552,6 +564,7 @@ class IocpProactor:
         ov = _overlapped.Overlapped(NULL)
         ov.AcceptEx(listener.fileno(), conn.fileno())
 
+        @overlapped_connection_reset_error_handler
         def finish_accept(trans, key, ov):
             ov.getresult()
             # Use SO_UPDATE_ACCEPT_CONTEXT so getsockname() etc work.
@@ -596,6 +609,7 @@ class IocpProactor:
         ov = _overlapped.Overlapped(NULL)
         ov.ConnectEx(conn.fileno(), address)
 
+        @overlapped_connection_reset_error_handler
         def finish_connect(trans, key, ov):
             ov.getresult()
             # Use SO_UPDATE_CONNECT_CONTEXT so getsockname() etc work.
@@ -628,6 +642,7 @@ class IocpProactor:
             # completion of the connection.
             return self._result(pipe)
 
+        @overlapped_connection_reset_error_handler
         def finish_accept_pipe(trans, key, ov):
             ov.getresult()
             return pipe
