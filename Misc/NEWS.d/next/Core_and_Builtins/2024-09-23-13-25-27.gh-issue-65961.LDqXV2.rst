@@ -1,0 +1,1 @@
+Document the deprecation of setting and using ``__package__`` and ``__cached__``.

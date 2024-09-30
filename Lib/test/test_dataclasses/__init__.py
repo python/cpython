@@ -17,6 +17,7 @@ from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol, DefaultDict
 from typing import get_type_hints
 from collections import deque, OrderedDict, namedtuple, defaultdict
+from copy import deepcopy
 from functools import total_ordering
 
 import typing       # Needed for the string "typing.ClassVar[int]" to work as an annotation.
@@ -3174,6 +3175,48 @@ class TestFrozen(unittest.TestCase):
         # If x is mutable, computing the hash is an error.
         with self.assertRaisesRegex(TypeError, 'unhashable type'):
             hash(C({}))
+
+    def test_frozen_deepcopy_without_slots(self):
+        # see: https://github.com/python/cpython/issues/89683
+        @dataclass(frozen=True, slots=False)
+        class C:
+            s: str
+
+        c = C('hello')
+        self.assertEqual(deepcopy(c), c)
+
+    def test_frozen_deepcopy_with_slots(self):
+        # see: https://github.com/python/cpython/issues/89683
+        with self.subTest('generated __slots__'):
+            @dataclass(frozen=True, slots=True)
+            class C:
+                s: str
+
+            c = C('hello')
+            self.assertEqual(deepcopy(c), c)
+
+        with self.subTest('user-defined __slots__ and no __{get,set}state__'):
+            @dataclass(frozen=True, slots=False)
+            class C:
+                __slots__ = ('s',)
+                s: str
+
+            # with user-defined slots, __getstate__ and __setstate__ are not
+            # automatically added, hence the error
+            err = r"^cannot\ assign\ to\ field\ 's'$"
+            self.assertRaisesRegex(FrozenInstanceError, err, deepcopy, C(''))
+
+        with self.subTest('user-defined __slots__ and __{get,set}state__'):
+            @dataclass(frozen=True, slots=False)
+            class C:
+                __slots__ = ('s',)
+                __getstate__ = dataclasses._dataclass_getstate
+                __setstate__ = dataclasses._dataclass_setstate
+
+                s: str
+
+            c = C('hello')
+            self.assertEqual(deepcopy(c), c)
 
 
 class TestSlots(unittest.TestCase):
