@@ -2156,8 +2156,8 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                         run_subtest()
                 else:
                     self.fail(f"it seems that {sample.strftime(fmt)=} "
-                              f"does not include year={sample.year!r} "
-                              f"in any variant (is there something "
+                              f"does not include year={sample.year!r} in "
+                              f"any expected format (is there something "
                               f"severely wrong with current locale?)")
 
     def test_strptime_accepting_locale_specific_year_with_fewer_digits(self):
@@ -2187,8 +2187,8 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                         run_subtest()
                 else:
                     self.fail(f"it seems that {sample.strftime(fmt)=} "
-                              f"does not include year={sample.year!r} "
-                              f"in any variant (is there something "
+                              f"does not include year={sample.year!r} in "
+                              f"any expected format (is there something "
                               f"severely wrong with current locale?)")
 
 
