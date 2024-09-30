@@ -310,7 +310,15 @@ def _partial_prepare_merger(args):
         else:
             order.append(i)
     phcount = j - nargs
-    merger = itemgetter(*order) if phcount else None
+    if phcount:
+        if nargs == 1:
+            i = order[0]
+            def merger(all_args):
+                return (all_args[i],)
+        else:
+            merger = itemgetter(*order)
+    else:
+        merger = None
     return phcount, merger
 
 def _partial_repr(self):
@@ -403,7 +411,8 @@ class partial:
 
         phcount, merger = _partial_prepare_merger(args)
 
-        args = tuple(args) # just in case it's a subclass
+        if type(args) is not tuple:
+            args = tuple(args)       # just in case it's a subclass
         if kwds is None:
             kwds = {}
         elif type(kwds) is not dict: # XXX does it need to be *exactly* dict?
