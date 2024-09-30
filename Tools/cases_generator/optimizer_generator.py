@@ -78,25 +78,26 @@ def decref_inputs(
 
 
 def emit_default(out: CWriter, uop: Uop, stack: Stack) -> None:
-    top_offset = stack.top_offset.copy()
-    for var in uop.stack.inputs:
+    for var in reversed(uop.stack.inputs):
         stack.pop(var)
+    top_offset = stack.top_offset.copy()
     for var in uop.stack.outputs:
         if var.is_array() and not var.peek and not var.name == "unused":
             c_offset = top_offset.to_c()
-            top_offset.push(var)
             out.emit(f"{var.name} = &stack_pointer[{c_offset}];\n")
-        else:
-            top_offset.push(var)
+        top_offset.push(var)
     for var in uop.stack.outputs:
         local = Local.undefined(var)
         stack.push(local)
         if var.name != "unused" and not var.peek:
             local.defined = True
             if var.is_array():
-                out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-                out.emit(f"{var.name}[_i] = sym_new_not_null(ctx);\n")
-                out.emit("}\n")
+                if var.size == "1":
+                    out.emit(f"{var.name}[0] = sym_new_not_null(ctx);\n")
+                else:
+                    out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
+                    out.emit(f"{var.name}[_i] = sym_new_not_null(ctx);\n")
+                    out.emit("}\n")
             elif var.name == "null":
                 out.emit(f"{var.name} = sym_new_null(ctx);\n")
             else:

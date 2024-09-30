@@ -383,7 +383,8 @@
                 // replace opcode with constant propagated one and update tests!
             }
             else {
-                res = sym_new_type(ctx, &PyFloat_Type);stack_pointer += -2;
+                res = sym_new_type(ctx, &PyFloat_Type);
+                stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer[0] = res;
@@ -417,7 +418,8 @@
                 // replace opcode with constant propagated one and update tests!
             }
             else {
-                res = sym_new_type(ctx, &PyFloat_Type);stack_pointer += -2;
+                res = sym_new_type(ctx, &PyFloat_Type);
+                stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer[0] = res;
@@ -451,7 +453,8 @@
                 // replace opcode with constant propagated one and update tests!
             }
             else {
-                res = sym_new_type(ctx, &PyFloat_Type);stack_pointer += -2;
+                res = sym_new_type(ctx, &PyFloat_Type);
+                stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer[0] = res;
@@ -765,7 +768,7 @@
 
         case _UNPACK_SEQUENCE_TUPLE: {
             _Py_UopsSymbol **values;
-            values = &stack_pointer[0];
+            values = &stack_pointer[-1];
             for (int _i = oparg; --_i >= 0;) {
                 values[_i] = sym_new_not_null(ctx);
             }
@@ -776,7 +779,7 @@
 
         case _UNPACK_SEQUENCE_LIST: {
             _Py_UopsSymbol **values;
-            values = &stack_pointer[0];
+            values = &stack_pointer[-1];
             for (int _i = oparg; --_i >= 0;) {
                 values[_i] = sym_new_not_null(ctx);
             }
@@ -847,9 +850,7 @@
             _Py_UopsSymbol **res;
             _Py_UopsSymbol *null = NULL;
             res = &stack_pointer[0];
-            for (int _i = 1; --_i >= 0;) {
-                res[_i] = sym_new_not_null(ctx);
-            }
+            res[0] = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             if (oparg & 1) stack_pointer[1] = null;
             stack_pointer += 1 + (oparg & 1);
@@ -1036,12 +1037,7 @@
             owner = stack_pointer[-1];
             (void)owner;
             attr = sym_new_not_null(ctx);
-            if (oparg & 1) {
-                self_or_null = sym_new_unknown(ctx);
-            }
-            else {
-                self_or_null = NULL;
-            }
+            self_or_null = sym_new_unknown(ctx);
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = self_or_null;
             stack_pointer += (oparg & 1);
@@ -1259,7 +1255,8 @@
             else {
                 stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
-                res = _Py_uop_sym_new_not_null(ctx);stack_pointer += 2;
+                res = _Py_uop_sym_new_not_null(ctx);
+                stack_pointer += 2;
                 assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer[-2] = res;
@@ -1710,14 +1707,10 @@
         case _EXPAND_METHOD: {
             _Py_UopsSymbol **method;
             _Py_UopsSymbol **self;
-            method = &stack_pointer[0];
-            self = &stack_pointer[1];
-            for (int _i = 1; --_i >= 0;) {
-                method[_i] = sym_new_not_null(ctx);
-            }
-            for (int _i = 1; --_i >= 0;) {
-                self[_i] = sym_new_not_null(ctx);
-            }
+            method = &stack_pointer[-2 - oparg];
+            self = &stack_pointer[-1 - oparg];
+            method[0] = sym_new_not_null(ctx);
+            self[0] = sym_new_not_null(ctx);
             break;
         }
 
@@ -2043,15 +2036,11 @@
             _Py_UopsSymbol **maybe_self;
             _Py_UopsSymbol **args;
             _Py_UopsSymbol *kwnames_out;
-            func = &stack_pointer[0];
-            maybe_self = &stack_pointer[1];
-            args = &stack_pointer[2];
-            for (int _i = 1; --_i >= 0;) {
-                func[_i] = sym_new_not_null(ctx);
-            }
-            for (int _i = 1; --_i >= 0;) {
-                maybe_self[_i] = sym_new_not_null(ctx);
-            }
+            func = &stack_pointer[-3 - oparg];
+            maybe_self = &stack_pointer[-2 - oparg];
+            args = &stack_pointer[-1 - oparg];
+            func[0] = sym_new_not_null(ctx);
+            maybe_self[0] = sym_new_not_null(ctx);
             for (int _i = oparg; --_i >= 0;) {
                 args[_i] = sym_new_not_null(ctx);
             }
@@ -2095,14 +2084,10 @@
         case _EXPAND_METHOD_KW: {
             _Py_UopsSymbol **method;
             _Py_UopsSymbol **self;
-            method = &stack_pointer[0];
-            self = &stack_pointer[1];
-            for (int _i = 1; --_i >= 0;) {
-                method[_i] = sym_new_not_null(ctx);
-            }
-            for (int _i = 1; --_i >= 0;) {
-                self[_i] = sym_new_not_null(ctx);
-            }
+            method = &stack_pointer[-3 - oparg];
+            self = &stack_pointer[-2 - oparg];
+            method[0] = sym_new_not_null(ctx);
+            self[0] = sym_new_not_null(ctx);
             break;
         }
 

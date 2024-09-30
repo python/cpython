@@ -489,12 +489,7 @@ dummy_func(void) {
     op(_LOAD_ATTR, (owner -- attr, self_or_null if (oparg & 1))) {
         (void)owner;
         attr = sym_new_not_null(ctx);
-        if (oparg & 1) {
-            self_or_null = sym_new_unknown(ctx);
-        }
-        else {
-            self_or_null = NULL;
-        }
+        self_or_null = sym_new_unknown(ctx);
     }
 
     op(_LOAD_ATTR_MODULE, (index/1, owner -- attr, null if (oparg & 1))) {

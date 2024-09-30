@@ -401,7 +401,8 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     res_o = PyObject_GetItem(PyStackRef_AsPyObjectBorrow(container), slice);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    Py_DECREF(slice);stack_pointer += 2;
+                    Py_DECREF(slice);
+                    stack_pointer += 2;
                     assert(WITHIN_STACK_BOUNDS());
                 }
                 PyStackRef_CLOSE(container);
@@ -3237,7 +3238,8 @@
                     res = res_bool ? PyStackRef_True : PyStackRef_False;
                 }
                 else {
-                    res = PyStackRef_FromPyObjectSteal(res_o);stack_pointer += -2;
+                    res = PyStackRef_FromPyObjectSteal(res_o);
+                    stack_pointer += -2;
                     assert(WITHIN_STACK_BOUNDS());
                 }
             }
@@ -6077,7 +6079,8 @@
                             if (true) goto error;
                         }
                     }
-                }stack_pointer += 1;
+                }
+                stack_pointer += 1;
                 assert(WITHIN_STACK_BOUNDS());
             }
             v = PyStackRef_FromPyObjectSteal(v_o);
@@ -6871,7 +6874,8 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     Py_DECREF(exc);
                     goto error;
-                }stack_pointer += 1;
+                }
+                stack_pointer += 1;
                 assert(WITHIN_STACK_BOUNDS());
             }
             assert(exc && PyExceptionInstance_Check(exc));
@@ -7621,7 +7625,8 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), slice, PyStackRef_AsPyObjectBorrow(v));
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    Py_DECREF(slice);stack_pointer += 2;
+                    Py_DECREF(slice);
+                    stack_pointer += 2;
                     assert(WITHIN_STACK_BOUNDS());
                 }
                 PyStackRef_CLOSE(v);

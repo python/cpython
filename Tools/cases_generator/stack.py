@@ -309,6 +309,7 @@ class Stack:
 
     def _adjust_stack_pointer(self, out: CWriter, number: str) -> None:
         if number != "0":
+            out.start_line()
             out.emit(f"stack_pointer += {number};\n")
             out.emit("assert(WITHIN_STACK_BOUNDS());\n")
 
