@@ -329,7 +329,6 @@ def analyze_stack(
     # Mark variables with matching names at the base of the stack as "peek"
     modified = False
     input_names: dict[str, lexer.Token] = { i.name : i.first_token for i in op.inputs if i.name != "unused" }
-    input_names
     for input, output in itertools.zip_longest(inputs, outputs):
         if output is None:
             pass
