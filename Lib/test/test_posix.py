@@ -411,8 +411,10 @@ class PosixTester(unittest.TestCase):
             # issue33655: Also ignore EINVAL on *BSD since ZFS is also
             # often used there.
             if inst.errno == errno.EINVAL and sys.platform.startswith(
-                ('sunos', 'freebsd', 'netbsd', 'openbsd', 'gnukfreebsd')):
+                ('sunos', 'freebsd', 'openbsd', 'gnukfreebsd')):
                 raise unittest.SkipTest("test may fail on ZFS filesystems")
+            elif inst.errno == errno.EOPNOTSUPP and sys.platform.startswith("netbsd"):
+                raise unittest.SkipTest("test may fail on FFS filesystems")
             else:
                 raise
         finally:
@@ -2139,6 +2141,13 @@ class TestPosixWeaklinking(unittest.TestCase):
 
             with self.assertRaisesRegex(NotImplementedError, "dir_fd unavailable"):
                 os.stat("file", dir_fd=0)
+
+    def test_ptsname_r(self):
+        self._verify_available("HAVE_PTSNAME_R")
+        if self.mac_ver >= (10, 13, 4):
+            self.assertIn("HAVE_PTSNAME_R", posix._have_functions)
+        else:
+            self.assertNotIn("HAVE_PTSNAME_R", posix._have_functions)
 
     def test_access(self):
         self._verify_available("HAVE_FACCESSAT")
