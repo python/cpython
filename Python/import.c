@@ -1897,6 +1897,11 @@ import_find_extension(PyThreadState *tstate,
         return NULL;
     }
 
+    /* Interned strings used by this module can be shared between
+     * subinterpreters, due to the PyDict_Update() call in basic single-phase
+     * module import case. */
+    tstate->interp->leak_interned_strings = 1;
+
     PyObject *mod = reload_singlephase_extension(tstate, cached, info);
     if (mod == NULL) {
         return NULL;

@@ -15296,6 +15296,42 @@ PyUnicode_InternFromString(const char *cp)
     return s;
 }
 
+void
+clear_interned_dict_legacy(PyInterpreterState *interp)
+{
+    // See GH-116510 for why this extra care is needed.  Immortal interned
+    // strings can be shared between subinterpreters in this case and we
+    // can't safely free them without a potential use-after-free crash.
+    PyObject *interned = get_interned_dict(interp);
+    Py_ssize_t pos = 0;
+    PyObject *s, *ignored_value;
+    while (PyDict_Next(interned, &pos, &s, &ignored_value)) {
+        assert(PyUnicode_IS_READY(s));
+        switch (PyUnicode_CHECK_INTERNED(s)) {
+        case SSTATE_INTERNED_IMMORTAL:
+        case SSTATE_INTERNED_IMMORTAL_STATIC:
+            // immortal strings leak since we can't safely free them
+            break;
+        case SSTATE_INTERNED_MORTAL:
+            // Restore 2 references held by the interned dict; these will
+            // be decref'd by clear_interned_dict's PyDict_Clear.
+            Py_SET_REFCNT(s, Py_REFCNT(s) + 2);
+#ifdef Py_REF_DEBUG
+            /* let's be pedantic with the ref total */
+            _Py_IncRefTotal(_PyThreadState_GET());
+            _Py_IncRefTotal(_PyThreadState_GET());
+#endif
+            break;
+        case SSTATE_NOT_INTERNED:
+            /* fall through */
+        default:
+            Py_UNREACHABLE();
+        }
+        _PyUnicode_STATE(s).interned = SSTATE_NOT_INTERNED;
+    }
+    PyDict_Clear(interned);
+    _Py_INTERP_CACHED_OBJECT(interp, interned_strings) = NULL;
+}
 
 void
 _PyUnicode_ClearInterned(PyInterpreterState *interp)
@@ -15305,6 +15341,11 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
         return;
     }
     assert(PyDict_CheckExact(interned));
+
+    if (interp->leak_interned_strings) {
+        clear_interned_dict_legacy(interp);
+        return;
+    }
 
 #ifdef INTERNED_STATS
     fprintf(stderr, "releasing %zd interned strings\n",

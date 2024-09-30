@@ -1,0 +1,2 @@
+Use simpler fix for interned string cleanup.  This avoids the potential
+use-after-free crashes but doesn't break the trace-refs debug build.

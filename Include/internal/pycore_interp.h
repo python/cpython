@@ -123,6 +123,10 @@ struct _is {
     /* Has been fully initialized via pylifecycle.c. */
     int _ready;
     int finalizing;
+    /* Set if a subinterpreter imports basic single-phase extensions and
+     * therefore needs to leak interned strings (it's too tricky to safely
+     * free them). */
+    int leak_interned_strings;
 
     uintptr_t last_restart_version;
     struct pythreads {
