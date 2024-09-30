@@ -300,7 +300,7 @@ def get_build_info():
 
     config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
     cflags = sysconfig.get_config_var('PY_CFLAGS') or ''
-    cflags_nodist = sysconfig.get_config_var('PY_CFLAGS_NODIST') or ''
+    cflags += ' ' + (sysconfig.get_config_var('PY_CFLAGS_NODIST') or '')
     ldflags_nodist = sysconfig.get_config_var('PY_LDFLAGS_NODIST') or ''
 
     build = []
@@ -313,15 +313,34 @@ def get_build_info():
         # --with-pydebug
         build.append('debug')
 
-        if '-DNDEBUG' in (cflags + cflags_nodist):
+        if '-DNDEBUG' in cflags:
             build.append('without_assert')
     else:
         build.append('release')
 
         if '--with-assertions' in config_args:
             build.append('with_assert')
-        elif '-DNDEBUG' not in (cflags + cflags_nodist):
+        elif '-DNDEBUG' not in cflags:
             build.append('with_assert')
+
+    # --enable-experimental-jit
+    tier2 = re.search('-D_Py_TIER2=([0-9]+)', cflags)
+    if tier2:
+        tier2 = int(tier2.group(1))
+    if tier2 == 1:
+        jit = 'JIT'  # =yes
+    elif tier2 == 2:
+        jit = 'JIT=yes-off'
+    elif tier2 == 4:
+        jit = 'JIT=interpreter'
+    elif tier2 == 6:  # Secret option
+        jit = 'JIT=interpreter-off'
+    elif '-D_Py_JIT' in cflags:
+        jit = 'JIT'
+    else:
+        jit = None
+    if jit:
+        build.append(jit)
 
     # --enable-framework=name
     framework = sysconfig.get_config_var('PYTHONFRAMEWORK')
