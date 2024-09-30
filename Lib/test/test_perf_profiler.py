@@ -24,14 +24,12 @@ if support.check_sanitizer(address=True, memory=True, ub=True):
 
 
 def is_jit_build():
-    cflags = sysconfig.get_config_var("PY_CORE_CFLAGS")
-    if not cflags:
-        return False
+    cflags = (sysconfig.get_config_var("PY_CORE_CFLAGS") or '')
     return "_Py_JIT" in cflags
 
 
 if is_jit_build():
-    raise unittest.SkipTest("Perf support is not available in jit builds")
+    raise unittest.SkipTest("Perf support is not available in JIT builds")
 
 
 def supports_trampoline_profiling():
