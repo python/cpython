@@ -651,29 +651,35 @@ def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, tuple[le
     result: dict[lexer.Token, tuple[lexer.Token, lexer.Token]] = {}
     tokens = instr.block.tokens
     for idx, tkn in enumerate(tokens):
-        if tkn.kind != lexer.IDENTIFIER:
-            continue
         try:
             next_tkn = tokens[idx+1]
         except IndexError:
             break
         if next_tkn.kind != lexer.LPAREN:
             continue
-        if tkn.text.upper() == tkn.text:
-            # simple macro
-            continue
-        #if not tkn.text.startswith(("Py", "_Py", "monitor")):
-        #    continue
-        if tkn.text.startswith(("sym_", "optimize_")):
-            # Optimize functions
-            continue
-        if tkn.text.endswith("Check"):
-            continue
-        if tkn.text.startswith("Py_Is"):
-            continue
-        if tkn.text.endswith("CheckExact"):
-            continue
-        if tkn.text in NON_ESCAPING_FUNCTIONS:
+        if tkn.kind == lexer.IDENTIFIER:
+            if tkn.text.upper() == tkn.text:
+                # simple macro
+                continue
+            #if not tkn.text.startswith(("Py", "_Py", "monitor")):
+            #    continue
+            if tkn.text.startswith(("sym_", "optimize_")):
+                # Optimize functions
+                continue
+            if tkn.text.endswith("Check"):
+                continue
+            if tkn.text.startswith("Py_Is"):
+                continue
+            if tkn.text.endswith("CheckExact"):
+                continue
+            if tkn.text in NON_ESCAPING_FUNCTIONS:
+                continue
+        elif tkn.kind == "RPAREN":
+            prev = tokens[idx-1]
+            if prev.text.endswith("_t") or prev.text == "*":
+                #cast
+                continue
+        elif tkn.kind != "RBRACKET":
             continue
         start = find_stmt_start(instr, idx)
         end = find_stmt_end(instr, idx)

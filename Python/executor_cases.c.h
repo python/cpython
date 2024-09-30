@@ -1301,7 +1301,9 @@
                 PyStackRef_CLOSE(obj);
                 if (true) JUMP_TO_ERROR();
             }
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             iter_o = (*getter)(obj_o);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(obj);
             if (iter_o == NULL) JUMP_TO_ERROR();
             if (Py_TYPE(iter_o)->tp_as_async == NULL ||
@@ -3348,7 +3350,9 @@
             iter = stack_pointer[-1];
             /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             if (next_o == NULL) {
                 if (_PyErr_Occurred(tstate)) {
                     _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -4561,10 +4565,12 @@
                 }
                 if (true) JUMP_TO_ERROR();
             }
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *res_o = ((PyCFunctionFast)(void(*)(void))cfunc)(
                 PyCFunction_GET_SELF(callable_o),
                 args_o,
                 total_args);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Free the arguments. */
@@ -4606,9 +4612,11 @@
             }
             STAT_INC(CALL, hit);
             /* res = func(self, args, nargs, kwnames) */
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             PyCFunctionFastWithKeywords cfunc =
             (PyCFunctionFastWithKeywords)(void(*)(void))
             PyCFunction_GET_FUNCTION(callable_o);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
             if (CONVERSION_FAILED(args_o)) {
                 PyStackRef_CLOSE(callable[0]);
@@ -4863,8 +4871,10 @@
             }
             STAT_INC(CALL, hit);
             int nargs = total_args - 1;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             PyCFunctionFastWithKeywords cfunc =
             (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
             if (CONVERSION_FAILED(args_o)) {
                 PyStackRef_CLOSE(callable[0]);
@@ -4983,8 +4993,10 @@
                 JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(CALL, hit);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             PyCFunctionFast cfunc =
             (PyCFunctionFast)(void(*)(void))meth->ml_meth;
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             int nargs = total_args - 1;
             STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
             if (CONVERSION_FAILED(args_o)) {
@@ -5445,7 +5457,9 @@
             PyObject *lhs_o = PyStackRef_AsPyObjectBorrow(lhs);
             PyObject *rhs_o = PyStackRef_AsPyObjectBorrow(rhs);
             assert(_PyEval_BinaryOps[oparg]);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *res_o = _PyEval_BinaryOps[oparg](lhs_o, rhs_o);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(lhs);
             PyStackRef_CLOSE(rhs);
             if (res_o == NULL) JUMP_TO_ERROR();
