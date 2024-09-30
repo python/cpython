@@ -53,6 +53,7 @@ class WorkerContext(_thread.WorkerContext):
                 # XXX Keep the compiled code object?
                 compile(fn, '<string>', 'exec')
             else:
+                # XXX This does not work if fn comes from the __main__ module.
                 data = pickle.dumps((fn, args, kwargs))
                 kind = 'function'
             return (data, kind)
@@ -177,6 +178,8 @@ class WorkerContext(_thread.WorkerContext):
                 obj = _interpqueues.get(self.resultsid)
             except _interpqueues.QueueNotFoundError:
                 raise  # re-raise
+            # XXX This breaks if test.support.interpreters.queues
+            # doesn't exist.
             except _interpqueues.QueueError:
                 continue
             else:
