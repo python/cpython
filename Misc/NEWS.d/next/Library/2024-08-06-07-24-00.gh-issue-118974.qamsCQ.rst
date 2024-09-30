@@ -1,2 +1,2 @@
-Add ``dataclass_factory`` parameter to :func:`dataclasses.make_dataclass`
+Add ``decorator`` parameter to :func:`dataclasses.make_dataclass`
 to customize the functional creation of dataclasses.
