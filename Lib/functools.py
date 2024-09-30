@@ -401,8 +401,6 @@ class partial:
            (namespace is not None and not isinstance(namespace, dict))):
             raise TypeError("invalid partial state")
 
-        # if args and args[-1] is Placeholder:
-        #     raise TypeError("unexpected trailing Placeholders")
         phcount, merger = _partial_prepare_merger(args)
 
         args = tuple(args) # just in case it's a subclass
