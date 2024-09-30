@@ -52,7 +52,7 @@ class WorkerContext:
                 raise TypeError("initializer must be a callable")
         def create_context():
             return cls(initializer, initargs)
-        def resolve_task(cls, fn, args, kwargs):
+        def resolve_task(fn, args, kwargs):
             return (fn, args, kwargs)
         return create_context, resolve_task
 
@@ -205,7 +205,7 @@ class ThreadPoolExecutor(_base.Executor):
                                    'interpreter shutdown')
 
             f = _base.Future()
-            task = self._resolve_work_item_task(f, fn, args, kwargs)
+            task = self._resolve_work_item_task(fn, args, kwargs)
             w = _WorkItem(f, task)
 
             self._work_queue.put(w)

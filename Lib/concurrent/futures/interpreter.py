@@ -59,7 +59,7 @@ class WorkerContext(_thread.WorkerContext):
             initscript = None
         def create_context():
             return cls(initscript, shared)
-        def resolve_task(cls, fn, args, kwargs):
+        def resolve_task(fn, args, kwargs):
             if isinstance(fn, str):
                 if args or kwargs:
                     raise ValueError(f'a script does not take args or kwargs, got {args!r} and {kwargs!r}')
