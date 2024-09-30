@@ -592,6 +592,8 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
 {
     Py_ssize_t start, stop, step, slicelen, needed;
     char *buf, *bytes;
+    Py_buffer vbytes;
+    int res = 0;
     buf = PyByteArray_AS_STRING(self);
 
     if (_PyIndex_Check(index)) {
@@ -649,7 +651,9 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
         bytes = NULL;
         needed = 0;
     }
-    else if (values == (PyObject *)self || !PyByteArray_Check(values)) {
+    else if (values == (PyObject *)self || !PyObject_CheckBuffer(values) ||
+            PyObject_GetBuffer(values, &vbytes, PyBUF_SIMPLE) != 0)
+    {
         int err;
         if (PyNumber_Check(values) || PyUnicode_Check(values)) {
             PyErr_SetString(PyExc_TypeError,
@@ -666,16 +670,15 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
         return err;
     }
     else {
-        assert(PyByteArray_Check(values));
-        bytes = PyByteArray_AS_STRING(values);
-        needed = Py_SIZE(values);
+        bytes = vbytes.buf;
+        needed = vbytes.len;
     }
     /* Make sure b[5:2] = ... inserts before 5, not before 2. */
     if ((step < 0 && start < stop) ||
         (step > 0 && start > stop))
         stop = start;
     if (step == 1) {
-        return bytearray_setslice_linear(self, start, stop, bytes, needed);
+        res = bytearray_setslice_linear(self, start, stop, bytes, needed);
     }
     else {
         if (needed == 0) {
@@ -683,40 +686,36 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
             size_t cur;
             Py_ssize_t i;
 
-            if (!_canresize(self))
-                return -1;
-
-            if (slicelen == 0)
-                /* Nothing to do here. */
-                return 0;
-
-            if (step < 0) {
-                stop = start + 1;
-                start = stop + step * (slicelen - 1) - 1;
-                step = -step;
+            if (!_canresize(self)) {
+                res = -1;
             }
-            for (cur = start, i = 0;
-                 i < slicelen; cur += step, i++) {
-                Py_ssize_t lim = step - 1;
+            else if (slicelen != 0) {
+                if (step < 0) {
+                    stop = start + 1;
+                    start = stop + step * (slicelen - 1) - 1;
+                    step = -step;
+                }
+                for (cur = start, i = 0;
+                     i < slicelen; cur += step, i++) {
+                    Py_ssize_t lim = step - 1;
 
-                if (cur + step >= (size_t)PyByteArray_GET_SIZE(self))
-                    lim = PyByteArray_GET_SIZE(self) - cur - 1;
+                    if (cur + step >= (size_t)PyByteArray_GET_SIZE(self))
+                        lim = PyByteArray_GET_SIZE(self) - cur - 1;
 
-                memmove(buf + cur - i,
-                        buf + cur + 1, lim);
+                    memmove(buf + cur - i,
+                            buf + cur + 1, lim);
+                }
+                /* Move the tail of the bytes, in one chunk */
+                cur = start + (size_t)slicelen*step;
+                if (cur < (size_t)PyByteArray_GET_SIZE(self)) {
+                    memmove(buf + cur - slicelen,
+                            buf + cur,
+                            PyByteArray_GET_SIZE(self) - cur);
+                }
+                if (PyByteArray_Resize((PyObject *)self,
+                                   PyByteArray_GET_SIZE(self) - slicelen) < 0)
+                    res = -1;
             }
-            /* Move the tail of the bytes, in one chunk */
-            cur = start + (size_t)slicelen*step;
-            if (cur < (size_t)PyByteArray_GET_SIZE(self)) {
-                memmove(buf + cur - slicelen,
-                        buf + cur,
-                        PyByteArray_GET_SIZE(self) - cur);
-            }
-            if (PyByteArray_Resize((PyObject *)self,
-                               PyByteArray_GET_SIZE(self) - slicelen) < 0)
-                return -1;
-
-            return 0;
         }
         else {
             /* Assign slice */
@@ -728,13 +727,16 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
                              "attempt to assign bytes of size %zd "
                              "to extended slice of size %zd",
                              needed, slicelen);
-                return -1;
+                res = -1;
             }
             for (cur = start, i = 0; i < slicelen; cur += step, i++)
                 buf[cur] = bytes[i];
-            return 0;
         }
     }
+
+    if (values != NULL)
+        PyBuffer_Release(&vbytes);
+    return res;
 }
 
 /*[clinic input]
