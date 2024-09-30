@@ -2273,7 +2273,9 @@ types.
 
    Backward-compatible usage::
 
-       # For creating a generic NamedTuple on Python 3.11 or lower
+       # For creating a generic NamedTuple on Python 3.11
+       T = TypeVar("T")
+
        class Group(NamedTuple, Generic[T]):
            key: T
            group: list[T]
