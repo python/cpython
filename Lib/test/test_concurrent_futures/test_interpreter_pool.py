@@ -35,9 +35,6 @@ class InterpreterPoolExecutorTest(InterpreterPoolMixin, ExecutorTest, BaseTestCa
         self.addCleanup(lambda: os.close(w))
         return r, w
 
-    def assertTaskRaises(self, exctype):
-        return self.assertRaisesRegex(ExecutionFailed, exctype.__name__)
-
     def test_init_script(self):
         msg1 = b'step: init'
         msg2 = b'step: run'

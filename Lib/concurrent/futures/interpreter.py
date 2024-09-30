@@ -1,6 +1,8 @@
 """Implements InterpreterPoolExecutor."""
 
+import contextlib
 import pickle
+import textwrap
 from . import thread as _thread
 import _interpreters
 import _interpqueues
@@ -41,49 +43,64 @@ class WorkerContext(_thread.WorkerContext):
 
     @classmethod
     def prepare(cls, initializer, initargs, shared):
-        if isinstance(initializer, str):
-            if initargs:
-                raise ValueError(f'an initializer script does not take args, got {initargs!r}')
-            initscript = initializer
-            # Make sure the script compiles.
-            # XXX Keep the compiled code object?
-            compile(initscript, '<string>', 'exec')
-        elif initializer is not None:
-            pickled = pickle.dumps((initializer, initargs))
-            initscript = f'''if True:
-                import pickle
-                initializer, initargs = pickle.loads({pickled!r})
-                initializer(*initargs)
-                '''
-        else:
-            initscript = None
-        def create_context():
-            return cls(initscript, shared)
         def resolve_task(fn, args, kwargs):
             if isinstance(fn, str):
                 if args or kwargs:
                     raise ValueError(f'a script does not take args or kwargs, got {args!r} and {kwargs!r}')
                 data = fn
                 kind = 'script'
+                # Make sure the script compiles.
+                # XXX Keep the compiled code object?
+                compile(fn, '<string>', 'exec')
             else:
                 data = pickle.dumps((fn, args, kwargs))
                 kind = 'function'
             return (data, kind)
+
+        if isinstance(initializer, str):
+            if initargs:
+                raise ValueError(f'an initializer script does not take args, got {initargs!r}')
+        if initializer is not None:
+            initdata = resolve_task(initializer, initargs, {})
+        else:
+            initdata = None
+        def create_context():
+            return cls(initdata, shared)
         return create_context, resolve_task
 
     @classmethod
-    def _run_pickled_func(cls, data, resultsid):
-        fn, args, kwargs = pickle.loads(data)
-        res = fn(*args, **kwargs)
-        # Send the result back.
+    @contextlib.contextmanager
+    def _capture_exc(cls, resultsid):
         try:
-            _interpqueues.put(resultsid, res, 0, UNBOUND)
-        except _interpreters.NotShareableError:
-            res = pickle.dumps(res)
-            _interpqueues.put(resultsid, res, 1, UNBOUND)
+            yield
+        except Exception as exc:
+            err = pickle.dumps(exc)
+            _interpqueues.put(resultsid, (None, err), 1, UNBOUND)
+        else:
+            _interpqueues.put(resultsid, (None, None), 0, UNBOUND)
 
-    def __init__(self, initscript, shared=None):
-        self.initscript = initscript or ''
+    @classmethod
+    def _call(cls, func, args, kwargs, resultsid):
+        try:
+            res = func(*args, **kwargs)
+        except Exception as exc:
+            err = pickle.dumps(exc)
+            _interpqueues.put(resultsid, (None, err), 1, UNBOUND)
+        else:
+            # Send the result back.
+            try:
+                _interpqueues.put(resultsid, (res, None), 0, UNBOUND)
+            except _interpreters.NotShareableError:
+                res = pickle.dumps(res)
+                _interpqueues.put(resultsid, (res, None), 1, UNBOUND)
+
+    @classmethod
+    def _call_pickled(cls, pickled, resultsid):
+        fn, args, kwargs = pickle.loads(pickled)
+        cls._call(fn, args, kwargs, resultsid)
+
+    def __init__(self, initdata, shared=None):
+        self.initdata = initdata
         self.shared = dict(shared) if shared else None
         self.interpid = None
         self.resultsid = None
@@ -104,19 +121,21 @@ class WorkerContext(_thread.WorkerContext):
         try:
             _interpreters.incref(self.interpid)
 
+            maxsize = 0
+            fmt = 0
+            self.resultsid = _interpqueues.create(maxsize, fmt, UNBOUND)
+
             initscript = f"""if True:
                 from {__name__} import WorkerContext
                 """
-            initscript += LINESEP + self.initscript
             self._exec(initscript)
 
             if self.shared:
                 _interpreters.set___main___attrs(
                                     self.interpid, self.shared, restrict=True)
 
-            maxsize = 0
-            fmt = 0
-            self.resultsid = _interpqueues.create(maxsize, fmt, UNBOUND)
+            if self.initdata:
+                self.run(self.initdata)
         except _interpreters.InterpreterNotFoundError:
             raise  # re-raise
         except BaseException:
@@ -142,16 +161,34 @@ class WorkerContext(_thread.WorkerContext):
     def run(self, task):
         data, kind = task
         if kind == 'script':
-            self._exec(data)
-            return None
+            script = textwrap.dedent(f"""
+                with WorkerContext._capture_exc({self.resultsid}):
+                {{}}""")
+            script = script.format(textwrap.indent(data, '    '))
         elif kind == 'function':
-            self._exec(
-                f'WorkerContext._run_pickled_func({data!r}, {self.resultsid})')
-            obj, pickled, unboundop = _interpqueues.get(self.resultsid)
-            assert unboundop is None, unboundop
-            return pickle.loads(obj) if pickled else obj
+            script = f'WorkerContext._call_pickled({data!r}, {self.resultsid})'
         else:
             raise NotImplementedError(kind)
+        self._exec(script)
+
+        # Return the result, or raise the exception.
+        while True:
+            try:
+                obj = _interpqueues.get(self.resultsid)
+            except _interpqueues.QueueNotFoundError:
+                raise  # re-raise
+            except _interpqueues.QueueError:
+                continue
+            else:
+                break
+        (res, exc), pickled, unboundop = obj
+        assert unboundop is None, unboundop
+        if exc is not None:
+            assert res is None, res
+            assert pickled
+            exc = pickle.loads(exc)
+            raise exc from exc
+        return pickle.loads(res) if pickled else res
 
 
 class InterpreterPoolExecutor(_thread.ThreadPoolExecutor):
