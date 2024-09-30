@@ -2546,9 +2546,11 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
     assert(c->u->u_static_attributes);
     PyObject *static_attributes_unsorted = PySequence_List(c->u->u_static_attributes);
     if (static_attributes_unsorted == NULL) {
+        compiler_exit_scope(c);
         return ERROR;
     }
     if (PyList_Sort(static_attributes_unsorted) != 0) {
+        compiler_exit_scope(c);
         Py_DECREF(static_attributes_unsorted);
         return ERROR;
     }
