@@ -68,10 +68,10 @@ similarly named file in PCbuild.)
 One of the dependencies used in builds is WiX, a toolset that lets developers
 create installers for Windows Installer, the Windows installation engine.
 
-Additionally, make sure "MSVC v14x - VS 20xx C++ ARM64 build tools" are
+Additionally, make sure "MSVC v14x - VS 20xx C++ ARM64/ARM64EC build tools" are
 selected under "Desktop Development with C++" in "Visual Studio installer",
 even if you are not building on ARM64. This is required because we have
-upgraded to WiX-3.14, which requires these tools for Python 3.11 and later
+upgraded to WiX-3.14, which requires these tools for Python 3.10 and later
 versions.
 
 For testing, the installer should be built with the Tools/msi/build.bat
