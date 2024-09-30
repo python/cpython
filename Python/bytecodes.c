@@ -2612,6 +2612,14 @@ dummy_func(
             JUMP_BACKWARD_NO_INTERRUPT,
         };
 
+        pseudo(JUMP_IF_FALSE, (cond -- cond)) = [
+            COPY, TO_BOOL, POP_JUMP_IF_FALSE,
+        ];
+
+        pseudo(JUMP_IF_TRUE, (cond -- cond)) = [
+            COPY, TO_BOOL, POP_JUMP_IF_TRUE,
+        ];
+
         tier1 inst(ENTER_EXECUTOR, (--)) {
             #ifdef _Py_TIER2
             PyCodeObject *code = _PyFrame_GetCode(frame);
@@ -3998,7 +4006,7 @@ dummy_func(
             PyCFunctionFastWithKeywords cfunc =
                 (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
 
-            STACKREFS_TO_PYOBJECTS(args, nargs, args_o);
+            STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
             if (CONVERSION_FAILED(args_o)) {
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
@@ -4082,7 +4090,7 @@ dummy_func(
                 (PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args - 1;
 
-            STACKREFS_TO_PYOBJECTS(args, nargs, args_o);
+            STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
             if (CONVERSION_FAILED(args_o)) {
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
@@ -4916,6 +4924,14 @@ dummy_func(
             current_executor = (_PyExecutorObject*)executor;
 #endif
             assert(((_PyExecutorObject *)executor)->vm_data.valid);
+        }
+
+        tier2 op(_MAKE_WARM, (--)) {
+            current_executor->vm_data.warm = true;
+            // It's okay if this ends up going negative.
+            if (--tstate->interp->trace_run_counter == 0) {
+                _Py_set_eval_breaker_bit(tstate, _PY_EVAL_JIT_INVALIDATE_COLD_BIT);
+            }
         }
 
         tier2 op(_FATAL_ERROR, (--)) {

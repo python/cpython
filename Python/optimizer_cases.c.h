@@ -2450,6 +2450,10 @@
             break;
         }
 
+        case _MAKE_WARM: {
+            break;
+        }
+
         case _FATAL_ERROR: {
             break;
         }
