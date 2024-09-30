@@ -21,7 +21,7 @@ modules.  The documentation can be presented as pages of text on the console,
 served to a web browser, or saved to HTML files.
 
 For modules, classes, functions and methods, the displayed documentation is
-derived from the docstring (i.e. the :attr:`!__doc__` attribute) of the object,
+derived from the docstring (i.e. the :attr:`~definition.__doc__` attribute) of the object,
 and recursively of its documentable members.  If there is no docstring,
 :mod:`!pydoc` tries to obtain a description from the block of comment lines just
 above the definition of the class, function or method in the source file, or at
