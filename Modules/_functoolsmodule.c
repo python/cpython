@@ -703,6 +703,7 @@ partial_setstate(partialobject *pto, PyObject *state)
     }
 
     /* Count placeholders */
+    Py_ssize_t nargs = PyTuple_GET_SIZE(fnargs);
     Py_ssize_t phcount = 0;
     for (Py_ssize_t i = 0; i < nargs - 1; i++) {
         if (PyTuple_GET_ITEM(fnargs, i) == pto->placeholder) {
