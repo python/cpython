@@ -1,0 +1,9 @@
+Fix :meth:`datetime.datetime.strptime`, :meth:`datetime.date.strptime` as
+well as :func:`time.strptime` (by modifying :class:`_strptime.TimeRE`) to
+make ``%c`` and ``%x`` accept year number representations consisting of
+fewer digits than the usual four or two (note that nothing changes for
+``%Y`` and ``%y``). Thanks to that, certain ``strftime/strptime`` round
+trips (such as ``datetime.strptime(dt.strftime("%c"), "%c"))`` for
+``dt.year`` less than 1000) no longer raise ``ValueError`` for some
+locales/platforms (this was the case, e.g., on Linux -- for various
+locales, including ``C``/``C.UTF-8``).
