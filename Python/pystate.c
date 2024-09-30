@@ -660,6 +660,7 @@ init_interpreter(PyInterpreterState *interp,
 #ifdef _Py_TIER2
     (void)_Py_SetOptimizer(interp, NULL);
     interp->executor_list_head = NULL;
+    interp->trace_run_counter = JIT_CLEANUP_THRESHOLD;
 #endif
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */
@@ -906,6 +907,11 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         interp->code_watchers[i] = NULL;
     }
     interp->active_code_watchers = 0;
+
+    for (int i=0; i < CONTEXT_MAX_WATCHERS; i++) {
+        interp->context_watchers[i] = NULL;
+    }
+    interp->active_context_watchers = 0;
     // XXX Once we have one allocator per interpreter (i.e.
     // per-interpreter GC) we must ensure that all of the interpreter's
     // objects have been cleaned up at the point.

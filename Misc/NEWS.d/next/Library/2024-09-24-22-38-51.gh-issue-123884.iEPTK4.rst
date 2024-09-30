@@ -1,0 +1,4 @@
+Fixed bug in itertools.tee() handling of other tee inputs (a tee in a tee).
+The output now has the promised *n* independent new iterators.  Formerly,
+the first iterator was identical (not independent) to the input iterator.
+This would sometimes give surprising results.

@@ -340,6 +340,18 @@ class LongTests(unittest.TestCase):
     def test_long_aspid_limited(self):
         self._test_long_aspid(_testlimitedcapi.pylong_aspid)
 
+    @support.bigmemtest(2**32, memuse=0.35)
+    def test_long_asnativebytes_huge(self, size):
+        asnativebytes = _testcapi.pylong_asnativebytes
+        v = 1 << size
+        buffer = bytearray(size * 2 // 15 + 10)
+        r = asnativebytes(v, buffer, 0, -1)
+        self.assertEqual(r, size // 8 + 1)
+        self.assertEqual(buffer.count(0), len(buffer))
+        r = asnativebytes(v, buffer, len(buffer), -1)
+        self.assertEqual(r, size // 8 + 1)
+        self.assertEqual(buffer.count(0), len(buffer) - 1)
+
     def test_long_asnativebytes(self):
         import math
         from _testcapi import (
@@ -631,6 +643,31 @@ class LongTests(unittest.TestCase):
 
         # CRASHES getsign(NULL)
 
+    def test_long_asint32(self):
+        # Test PyLong_AsInt32() and PyLong_FromInt32()
+        to_int32 = _testlimitedcapi.pylong_asint32
+        from _testcapi import INT32_MIN, INT32_MAX
+        self.check_long_asint(to_int32, INT32_MIN, INT32_MAX)
+
+    def test_long_asint64(self):
+        # Test PyLong_AsInt64() and PyLong_FromInt64()
+        as_int64 = _testlimitedcapi.pylong_asint64
+        from _testcapi import INT64_MIN, INT64_MAX
+        self.check_long_asint(as_int64, INT64_MIN, INT64_MAX)
+
+    def test_long_asuint32(self):
+        # Test PyLong_AsUInt32() and PyLong_FromUInt32()
+        as_uint32 = _testlimitedcapi.pylong_asuint32
+        from _testcapi import UINT32_MAX
+        self.check_long_asint(as_uint32, 0, UINT32_MAX,
+                              negative_value_error=ValueError)
+
+    def test_long_asuint64(self):
+        # Test PyLong_AsUInt64() and PyLong_FromUInt64()
+        as_uint64 = _testlimitedcapi.pylong_asuint64
+        from _testcapi import UINT64_MAX
+        self.check_long_asint(as_uint64, 0, UINT64_MAX,
+                              negative_value_error=ValueError)
 
 if __name__ == "__main__":
     unittest.main()

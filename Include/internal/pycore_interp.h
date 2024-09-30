@@ -240,8 +240,10 @@ struct _is {
     PyObject *audit_hooks;
     PyType_WatchCallback type_watchers[TYPE_MAX_WATCHERS];
     PyCode_WatchCallback code_watchers[CODE_MAX_WATCHERS];
+    PyContext_WatchCallback context_watchers[CONTEXT_MAX_WATCHERS];
     // One bit is set for each non-NULL entry in code_watchers
     uint8_t active_code_watchers;
+    uint8_t active_context_watchers;
 
     struct _py_object_state object_state;
     struct _Py_unicode_state unicode;
@@ -259,7 +261,7 @@ struct _is {
     struct callable_cache callable_cache;
     _PyOptimizerObject *optimizer;
     _PyExecutorObject *executor_list_head;
-
+    size_t trace_run_counter;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;
 

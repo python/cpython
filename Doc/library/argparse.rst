@@ -25,6 +25,25 @@ will figure out how to parse those out of :data:`sys.argv`.  The :mod:`argparse`
 module also automatically generates help and usage messages.  The module
 will also issue errors when users give the program invalid arguments.
 
+Quick Links for ArgumentParser
+---------------------------------------
+========================= =========================================================================================================== ==================================================================================
+Name                      Description                                                                                                 Values
+========================= =========================================================================================================== ==================================================================================
+prog_                     The name of the program                                                                                     Defaults to ``os.path.basename(sys.argv[0])``
+usage_                    The string describing the program usage
+description_              A brief description of what the program does
+epilog_                   Additional description of the program after the argument help
+parents_                  A list of :class:`ArgumentParser` objects whose arguments should also be included
+formatter_class_          A class for customizing the help output                                                                     ``argparse.HelpFormatter``
+prefix_chars_             The set of characters that prefix optional arguments                                                        Defaults to ``'-'``
+fromfile_prefix_chars_    The set of characters that prefix files to read additional arguments from                                   Defaults to ``None`` (meaning arguments will never be treated as file references)
+argument_default_         The global default value for arguments
+allow_abbrev_             Allows long options to be abbreviated if the abbreviation is unambiguous                                    ``True`` or ``False`` (default: ``True``)
+conflict_handler_         The strategy for resolving conflicting optionals
+add_help_                 Add a ``-h/--help`` option to the parser                                                                    ``True`` or ``False`` (default: ``True``)
+exit_on_error_            Determines whether or not to exit with error info when an error occurs                                      ``True`` or ``False`` (default: ``True``)
+========================= =========================================================================================================== ==================================================================================
 
 Core Functionality
 ------------------
@@ -249,11 +268,12 @@ The following sections describe how each of these are used.
 prog
 ^^^^
 
-By default, :class:`ArgumentParser` objects use ``sys.argv[0]`` to determine
+By default, :class:`ArgumentParser` objects use the base name
+(see :func:`os.path.basename`) of ``sys.argv[0]`` to determine
 how to display the name of the program in help messages.  This default is almost
-always desirable because it will make the help messages match how the program was
-invoked on the command line.  For example, consider a file named
-``myprogram.py`` with the following code::
+always desirable because it will make the help messages match the name that was
+used to invoke the program on the command line.  For example, consider a file
+named ``myprogram.py`` with the following code::
 
    import argparse
    parser = argparse.ArgumentParser()
@@ -1122,6 +1142,9 @@ is used when no command-line argument was present::
    >>> parser.parse_args([])
    Namespace(foo=42)
 
+For required_ arguments, the ``default`` value is ignored. For example, this
+applies to positional arguments with nargs_ values other than ``?`` or ``*``,
+or optional arguments marked as ``required=True``.
 
 Providing ``default=argparse.SUPPRESS`` causes no attribute to be added if the
 command-line argument was not present::
@@ -1455,7 +1478,7 @@ The ``deprecated`` keyword argument of
 specifies if the argument is deprecated and will be removed
 in the future.
 For arguments, if ``deprecated`` is ``True``, then a warning will be
-printed to standard error when the argument is used::
+printed to :data:`sys.stderr` when the argument is used::
 
    >>> import argparse
    >>> parser = argparse.ArgumentParser(prog='snake.py')
@@ -1800,7 +1823,7 @@ Sub-commands
      >>>
      >>> # create the parser for the "b" command
      >>> parser_b = subparsers.add_parser('b', help='b help')
-     >>> parser_b.add_argument('--baz', choices='XYZ', help='baz help')
+     >>> parser_b.add_argument('--baz', choices=('X', 'Y', 'Z'), help='baz help')
      >>>
      >>> # parse some argument lists
      >>> parser.parse_args(['a', '12'])
@@ -2235,8 +2258,8 @@ Exiting methods
 .. method:: ArgumentParser.exit(status=0, message=None)
 
    This method terminates the program, exiting with the specified *status*
-   and, if given, it prints a *message* before that. The user can override
-   this method to handle these steps differently::
+   and, if given, it prints a *message* to :data:`sys.stderr` before that.
+   The user can override this method to handle these steps differently::
 
     class ErrorCatchingArgumentParser(argparse.ArgumentParser):
         def exit(self, status=0, message=None):
@@ -2246,8 +2269,8 @@ Exiting methods
 
 .. method:: ArgumentParser.error(message)
 
-   This method prints a usage message including the *message* to the
-   standard error and terminates the program with a status code of 2.
+   This method prints a usage message, including the *message*, to
+   :data:`sys.stderr` and terminates the program with a status code of 2.
 
 
 Intermixed parsing
