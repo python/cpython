@@ -435,7 +435,6 @@ try:
 except ImportError:
     pass
 
-
 # Descriptor version
 class partialmethod:
     """Method descriptor with partial application of the given arguments

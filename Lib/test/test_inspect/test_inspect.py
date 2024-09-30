@@ -3664,9 +3664,9 @@ class TestSignatureObject(unittest.TestCase):
         from functools import partialmethod
 
         class Spam:
-             def test():
-                 pass
-             ham = partialmethod(test)
+            def test():
+                pass
+            ham = partialmethod(test)
 
         self.assertEqual(self.signature(Spam.ham, eval_str=False),
                          ((), Ellipsis))
