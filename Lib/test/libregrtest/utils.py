@@ -327,14 +327,28 @@ def get_build_info():
     tier2 = re.search('-D_Py_TIER2=([0-9]+)', cflags)
     if tier2:
         tier2 = int(tier2.group(1))
+
+    if not sys.flags.ignore_environment:
+        PYTHON_JIT = os.environ.get('PYTHON_JIT', '')
+        if PYTHON_JIT:
+            PYTHON_JIT = (PYTHON_JIT != '0')
+    else:
+        PYTHON_JIT = None
+
     if tier2 == 1:
         jit = 'JIT'  # =yes
-    elif tier2 == 2:
-        jit = 'JIT=yes-off'
+    elif tier2 == 3:
+        if PYTHON_JIT:
+            jit = 'JIT=on'
+        else:
+            jit = 'JIT=off'
     elif tier2 == 4:
         jit = 'JIT=interpreter'
     elif tier2 == 6:  # Secret option
-        jit = 'JIT=interpreter-off'
+        if PYTHON_JIT:
+            jit = 'JIT=interpreter-on'
+        else:
+            jit = 'JIT=interpreter-off'
     elif '-D_Py_JIT' in cflags:
         jit = 'JIT'
     else:
