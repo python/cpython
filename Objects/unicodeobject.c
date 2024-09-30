@@ -2897,7 +2897,6 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
             case F_INTMAX:   DO_SPRINTS("j", intmax_t, uintmax_t); break;
             default:         DO_SPRINTS("", int, unsigned int); break;
         }
-
         #undef SPRINT
         #undef DO_SPRINTS
 
@@ -2912,9 +2911,13 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
             precision = width - sign;
         }
 
+        Py_ssize_t spacepad = Py_MAX(width - precision - sign, 0);
+        Py_ssize_t zeropad = Py_MAX(precision - len, 0);
+
         if (_PyUnicodeWriter_Prepare(writer, width, 127) == -1)
             return NULL;
 
+        if (spacepad && !(flags & F_LJUST)) {
             if (PyUnicode_Fill(writer->buffer, writer->pos, spacepad, ' ') == -1)
                 return NULL;
             writer->pos += spacepad;
