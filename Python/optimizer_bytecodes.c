@@ -575,24 +575,12 @@ dummy_func(void) {
 
         PyCodeObject *co = NULL;
         assert((this_instr + 2)->opcode == _PUSH_FRAME);
-        uint64_t push_operand = (this_instr + 2)->operand;
-        if (push_operand & 1) {
-            co = (PyCodeObject *)(push_operand & ~1);
-            DPRINTF(3, "code=%p ", co);
-            assert(PyCode_Check(co));
+        co = get_code_with_logging((this_instr + 2));
+        if (co == NULL) {
+            ctx->done = true;
+            break;
         }
-        else {
-            PyFunctionObject *func = (PyFunctionObject *)push_operand;
-            DPRINTF(3, "func=%p ", func);
-            if (func == NULL) {
-                DPRINTF(3, "\n");
-                DPRINTF(1, "Missing function\n");
-                ctx->done = true;
-                break;
-            }
-            co = (PyCodeObject *)func->func_code;
-            DPRINTF(3, "code=%p ", co);
-        }
+
 
         assert(self_or_null != NULL);
         assert(args != NULL);
@@ -623,23 +611,10 @@ dummy_func(void) {
         (void)(callable);
         PyCodeObject *co = NULL;
         assert((this_instr + 2)->opcode == _PUSH_FRAME);
-        uint64_t push_operand = (this_instr + 2)->operand;
-        if (push_operand & 1) {
-            co = (PyCodeObject *)(push_operand & ~1);
-            DPRINTF(3, "code=%p ", co);
-            assert(PyCode_Check(co));
-        }
-        else {
-            PyFunctionObject *func = (PyFunctionObject *)push_operand;
-            DPRINTF(3, "func=%p ", func);
-            if (func == NULL) {
-                DPRINTF(3, "\n");
-                DPRINTF(1, "Missing function\n");
-                ctx->done = true;
-                break;
-            }
-            co = (PyCodeObject *)func->func_code;
-            DPRINTF(3, "code=%p ", co);
+        co = get_code_with_logging((this_instr + 2));
+        if (co == NULL) {
+            ctx->done = true;
+            break;
         }
 
         new_frame = frame_new(ctx, co, 0, NULL, 0);
