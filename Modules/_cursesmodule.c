@@ -279,8 +279,8 @@ _PyCursesSetError(_cursesmodule_state *state, const char *funcname)
 }
 
 /*
- * Check the return code from a curses function and return None
- * or raise an exception as appropriate.
+ * Check the return code from a curses function, returning None
+ * on success and setting an exception on error.
  */
 
 static PyObject *
@@ -654,59 +654,79 @@ PyTypeObject PyCursesWindow_Type;
 
 /* Function prototype macros for Window object
 
-   X - function name
+   X - function name (may be a macro or a C function)
    TYPE - parameter Type
    ERGSTR - format string for construction of the return value
    PARSESTR - format string for argument parsing
 */
 
-#define Window_NoArgNoReturnFunction(X)                         \
-    static PyObject *PyCursesWindow_ ## X                       \
-    (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))  \
-    { return PyCursesCheckERR_ForWin(self, X(self->win), # X); }
+#define Window_NoArgNoReturnFunction(X)                     \
+    static PyObject *PyCursesWindow_ ## X                   \
+    (PyCursesWindowObject *self, PyObject *Py_UNUSED(args)) \
+    {                                                       \
+        int rtn = X(self->win);                             \
+        return PyCursesCheckERR_ForWin(self, rtn, # X);     \
+    }
 
-#define Window_NoArgTrueFalseFunction(X)                                \
-    static PyObject * PyCursesWindow_ ## X                              \
-    (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))          \
-    {                                                                   \
-        return PyBool_FromLong(X(self->win)); }
+#define Window_NoArgTrueFalseFunction(X)                    \
+    static PyObject * PyCursesWindow_ ## X                  \
+    (PyCursesWindowObject *self, PyObject *Py_UNUSED(args)) \
+    {                                                       \
+        return PyBool_FromLong(X(self->win));               \
+    }
 
-#define Window_NoArgNoReturnVoidFunction(X)                     \
+#define Window_NoArgNoReturnVoidFunction(X)                 \
+    static PyObject * PyCursesWindow_ ## X                  \
+    (PyCursesWindowObject *self, PyObject *Py_UNUSED(args)) \
+    {                                                       \
+        X(self->win);                                       \
+        Py_RETURN_NONE;                                     \
+    }
+
+#define Window_NoArg2TupleReturnFunction(X, TYPE, ERGSTR)   \
+    static PyObject * PyCursesWindow_ ## X                  \
+    (PyCursesWindowObject *self, PyObject *Py_UNUSED(args)) \
+    {                                                       \
+        TYPE arg1, arg2;                                    \
+        X(self->win, arg1, arg2);                           \
+        return Py_BuildValue(ERGSTR, arg1, arg2);           \
+    }
+
+#define Window_OneArgNoReturnVoidFunction(X, TYPE, PARSESTR)    \
     static PyObject * PyCursesWindow_ ## X                      \
-    (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))  \
+    (PyCursesWindowObject *self, PyObject *args)                \
     {                                                           \
-        X(self->win); Py_RETURN_NONE; }
+        TYPE arg;                                               \
+        if (!PyArg_ParseTuple(args, PARSESTR, &arg)) {          \
+            return NULL;                                        \
+        }                                                       \
+        X(self->win, arg);                                      \
+        Py_RETURN_NONE;                                         \
+    }
 
-#define Window_NoArg2TupleReturnFunction(X, TYPE, ERGSTR)               \
-    static PyObject * PyCursesWindow_ ## X                              \
-    (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))          \
-    {                                                                   \
-        TYPE arg1, arg2;                                                \
-        X(self->win,arg1,arg2); return Py_BuildValue(ERGSTR, arg1, arg2); }
+#define Window_OneArgNoReturnFunction(X, TYPE, PARSESTR)    \
+    static PyObject * PyCursesWindow_ ## X                  \
+    (PyCursesWindowObject *self, PyObject *args)            \
+    {                                                       \
+        TYPE arg;                                           \
+        if (!PyArg_ParseTuple(args, PARSESTR, &arg)) {      \
+            return NULL;                                    \
+        }                                                   \
+        int rtn = X(self->win, arg);                        \
+        return PyCursesCheckERR_ForWin(self, rtn, # X);     \
+    }
 
-#define Window_OneArgNoReturnVoidFunction(X, TYPE, PARSESTR)            \
-    static PyObject * PyCursesWindow_ ## X                              \
-    (PyCursesWindowObject *self, PyObject *args)                        \
-    {                                                                   \
-        TYPE arg1;                                                      \
-        if (!PyArg_ParseTuple(args, PARSESTR, &arg1)) return NULL;      \
-        X(self->win,arg1); Py_RETURN_NONE; }
-
-#define Window_OneArgNoReturnFunction(X, TYPE, PARSESTR)                \
-    static PyObject * PyCursesWindow_ ## X                              \
-    (PyCursesWindowObject *self, PyObject *args)                        \
-    {                                                                   \
-        TYPE arg1;                                                      \
-        if (!PyArg_ParseTuple(args,PARSESTR, &arg1)) return NULL;       \
-        return PyCursesCheckERR_ForWin(self, X(self->win, arg1), # X); }
-
-#define Window_TwoArgNoReturnFunction(X, TYPE, PARSESTR)                \
-    static PyObject * PyCursesWindow_ ## X                              \
-    (PyCursesWindowObject *self, PyObject *args)                        \
-    {                                                                   \
-        TYPE arg1, arg2;                                                \
-        if (!PyArg_ParseTuple(args,PARSESTR, &arg1, &arg2)) return NULL; \
-        return PyCursesCheckERR_ForWin(self, X(self->win, arg1, arg2), # X); }
+#define Window_TwoArgNoReturnFunction(X, TYPE, PARSESTR)        \
+    static PyObject * PyCursesWindow_ ## X                      \
+    (PyCursesWindowObject *self, PyObject *args)                \
+    {                                                           \
+        TYPE arg1, arg2;                                        \
+        if (!PyArg_ParseTuple(args, PARSESTR, &arg1, &arg2)) {  \
+            return NULL;                                        \
+        }                                                       \
+        int rtn = X(self->win, arg1, arg2);                     \
+        return PyCursesCheckERR_ForWin(self, rtn, # X);         \
+    }
 
 /* ------------- WINDOW routines --------------- */
 
@@ -2714,49 +2734,57 @@ PyTypeObject PyCursesWindow_Type = {
     PyCursesWindow_getsets,     /* tp_getset */
 };
 
-/* Function Body Macros - They are ugly but very, very useful. ;-)
+/*
+ * Function Body Macros - They are ugly but very, very useful. ;-)
+ *
+ * Parameters
+ *
+ *  X       The name of the curses function to invoke.
+ *  flag    When false, prefixes the function name with 'no' at runtime,
+ *          This parameter is present in the signature and auto-generated
+ *          by Argument Clinic.
+ *
+ * These macros should only be used for generating the body of
+ * the module's methods since they need a module reference.
+*/
 
-   X - function name
-   TYPE - parameter Type
-   ERGSTR - format string for construction of the return value
-   PARSESTR - format string for argument parsing
-   */
-
-#define NoArgNoReturnFunctionBody(X) \
-{ \
-  PyCursesStatefulInitialised(module); \
-  return PyCursesCheckERR(module, X(), # X); }
-
-#define NoArgOrFlagNoReturnFunctionBody(X, flag) \
-{ \
-    PyCursesStatefulInitialised(module); \
-    if (flag) \
-        return PyCursesCheckERR(module, X(), # X); \
-    else \
-        return PyCursesCheckERR(module, no ## X(), # X); \
+#define NoArgNoReturnFunctionBody(X)            \
+{                                               \
+    PyCursesStatefulInitialised(module);        \
+    return PyCursesCheckERR(module, X(), # X);  \
 }
 
-#define NoArgReturnIntFunctionBody(X) \
-{ \
- PyCursesStatefulInitialised(module); \
- return PyLong_FromLong((long) X()); }
+#define NoArgOrFlagNoReturnFunctionBody(X, flag)    \
+{                                                   \
+    PyCursesStatefulInitialised(module);            \
+    int rtn = (flag) ? X() : no ## X();             \
+    return PyCursesCheckERR(module, rtn, # X);      \
+}
 
+#define NoArgReturnIntFunctionBody(X)       \
+{                                           \
+    PyCursesStatefulInitialised(module);    \
+    return PyLong_FromLong((long) X());     \
+}
 
-#define NoArgReturnStringFunctionBody(X) \
-{ \
-  PyCursesStatefulInitialised(module); \
-  return PyBytes_FromString(X()); }
+#define NoArgReturnStringFunctionBody(X)    \
+{                                           \
+    PyCursesStatefulInitialised(module);    \
+    return PyBytes_FromString(X());         \
+}
 
-#define NoArgTrueFalseFunctionBody(X) \
-{ \
-  PyCursesStatefulInitialised(module); \
-  return PyBool_FromLong(X()); }
+#define NoArgTrueFalseFunctionBody(X)       \
+{                                           \
+    PyCursesStatefulInitialised(module);    \
+    return PyBool_FromLong(X());            \
+}
 
-#define NoArgNoReturnVoidFunctionBody(X) \
-{ \
-  PyCursesStatefulInitialised(module); \
-  X(); \
-  Py_RETURN_NONE; }
+#define NoArgNoReturnVoidFunctionBody(X)    \
+{                                           \
+    PyCursesStatefulInitialised(module);    \
+    X();                                    \
+    Py_RETURN_NONE;                         \
+}
 
 /*********************************************************************
  Global Functions
