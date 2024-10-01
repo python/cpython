@@ -320,11 +320,8 @@ The free-threaded mode requires a different executable,
 usually called ``python3.13t`` or ``python3.13t.exe``.
 Pre-built binaries marked as *free-threaded* can be installed as part of
 the official :ref:`Windows <install-freethreaded-windows>`
-and :ref:`macOS <getting-and-installing-macpython>` installers,
+and :ref:`macOS <install-freethreaded-macos>` installers,
 or CPython can be built from source with the :option:`--disable-gil` option.
-
-.. better macOS link pending
-   https://github.com/python/cpython/issues/109975#issuecomment-2286391179
 
 Free-threaded execution allows for full utilization of the available
 processing power by running threads in parallel on available CPU cores.
