@@ -4631,7 +4631,7 @@ class TestSignatureObject(unittest.TestCase):
             "(x: 'int') -> 'str'"
         )
         self.assertEqual(
-            inspect.signature(func).format(unquote_annotations=True),
+            inspect.signature(func).format(quote_annotation_strings=False),
             "(x: int) -> str"
         )
 

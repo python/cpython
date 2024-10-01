@@ -722,10 +722,13 @@ function.
    ``from __future__ import annotations`` was used), :func:`signature` will
    attempt to automatically un-stringize the annotations using
    :func:`annotationlib.get_annotations`.  The
-   *globals*, *locals*, *eval_str*, and *annotation_format* parameters are passed
+   *globals*, *locals*, and *eval_str* parameters are passed
    into :func:`!annotationlib.get_annotations` when resolving the
    annotations; see the documentation for :func:`!annotationlib.get_annotations`
-   for instructions on how to use these parameters. For example, use
+   for instructions on how to use these parameters. A member of the
+   :class:`annotationlib.Format` enum can be passed to the
+   *annotation_format* parameter to control the format of the returned
+   annotations. For example, use
    ``annotation_format=annotationlib.Format.STRING`` to return annotations in string
    format.
 
@@ -843,7 +846,7 @@ function.
       :class:`Signature` objects are also supported by the generic function
       :func:`copy.replace`.
 
-   .. method:: format(*, max_width=None, unquote_annotations=False)
+   .. method:: format(*, max_width=None, quote_annotation_strings=True)
 
       Create a string representation of the :class:`Signature` object.
 
@@ -852,9 +855,9 @@ function.
       If the signature is longer than *max_width*,
       all parameters will be on separate lines.
 
-      If *unquote_annotations* is True, :term:`annotations <annotation>`
+      If *quote_annotation_strings* is False, :term:`annotations <annotation>`
       in the signature are displayed without opening and closing quotation
-      marks. This is useful if the signature was created with the
+      marks if they are strings. This is useful if the signature was created with the
       :attr:`~annotationlib.Format.STRING` format or if
       ``from __future__ import annotations`` was used.
 
