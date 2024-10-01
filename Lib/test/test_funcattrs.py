@@ -99,14 +99,7 @@ class FunctionPropertiesTest(FuncAttrsTest):
 
     def test___builtins__(self):
         if __name__ == "__main__":
-            # When this test is run by executing the current module,
-            # `__builtins__` is the built-in module `builtins`.
-
-            # When this test is run from another module, `__builtins__` is
-            # `builtins.__dict__`
-
-            import builtins
-            builtins_dict = builtins.__dict__
+            builtins_dict = __builtins__.__dict__
         else:
             builtins_dict = __builtins__
 
