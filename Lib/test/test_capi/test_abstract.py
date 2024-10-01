@@ -339,6 +339,20 @@ class CAPITest(unittest.TestCase):
         # CRASHES delattrstring(obj, NULL)
         # CRASHES delattrstring(NULL, b'a')
 
+    def test_copy_to_object(self):
+        copy_to_object = _testcapi.object_copy_to_object
+        s1 = copy_to_object(bytes(3), 'abc', 'C')
+        s2 = copy_to_object(bytes(3), 'abc', 'F')
+        s3 = copy_to_object(bytes(3), 'abc', 'A')
+        self.assertEqual(s1, s2)
+        self.assertEqual(s2, s3)
+        self.assertEqual(s1, s3)
+        self.assertRaises(BufferError, copy_to_object, bytes(2), 'abc', 'C')
+        self.assertRaises(BufferError, copy_to_object, bytes(2), 'abc', 'F')
+        self.assertRaises(BufferError, copy_to_object, bytes(2), 'abc', 'A')
+        self.assertRaises(TypeError, copy_to_object, list(), 'abc', 'C')
+        self.assertRaises(TypeError, copy_to_object, list(), 'abc', 'F')
+        self.assertRaises(TypeError, copy_to_object, list(), 'abc', 'A')
 
     def test_mapping_check(self):
         check = _testlimitedcapi.mapping_check

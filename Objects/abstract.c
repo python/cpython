@@ -741,7 +741,7 @@ PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len, char fort)
     Py_buffer view_obj;
     Py_ssize_t *indices, elem_num = 1;
 
-    assert(buf == NULL);
+    assert(buf != NULL);
     if (!PyObject_CheckBuffer(obj)) {
         PyErr_SetString(PyExc_TypeError,
                         "object supporting the buffer protocol required");

@@ -79,6 +79,25 @@ object_hasattrstringwitherror(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+object_copy_to_object(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    Py_ssize_t len;
+    int result;
+    char *buf, fort;
+
+    if (!PyArg_ParseTuple(args, "Os#C", &obj, &buf, &len, &fort)) {
+        return NULL;
+    }
+    result = PyObject_CopyToObject(obj, buf, len, fort);
+    if (result < 0) {
+        return NULL;
+    }
+    Py_INCREF(obj);
+    return obj;
+}
+
+static PyObject *
 mapping_getoptionalitemstring(PyObject *self, PyObject *args)
 {
     PyObject *obj, *value = UNINITIALIZED_PTR;
@@ -162,6 +181,8 @@ static PyMethodDef test_methods[] = {
     {"object_getoptionalattrstring", object_getoptionalattrstring, METH_VARARGS},
     {"object_hasattrwitherror", object_hasattrwitherror, METH_VARARGS},
     {"object_hasattrstringwitherror", object_hasattrstringwitherror, METH_VARARGS},
+    {"object_copy_to_object", object_copy_to_object, METH_VARARGS},
+
     {"mapping_getoptionalitem", mapping_getoptionalitem, METH_VARARGS},
     {"mapping_getoptionalitemstring", mapping_getoptionalitemstring, METH_VARARGS},
 
