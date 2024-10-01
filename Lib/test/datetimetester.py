@@ -2132,7 +2132,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             input_ = sample.replace(year=year)
             reason = (f"test strftime/strptime roundtrip concerning "
                       f"locale-specific year representation "
-                      f"- for {fmt=} and {year=}")
+                      f"- for {fmt=} and {input_=}")
             fail_msg = f"{reason} - failed"
             with self.subTest(reason=reason):
                 formatted = input_.strftime(fmt)
