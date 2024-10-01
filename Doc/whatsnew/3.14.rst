@@ -202,6 +202,13 @@ New Modules
 Improved Modules
 ================
 
+argparse
+--------
+
+* The default value of the :ref:`program name <prog>` for
+  :class:`argparse.ArgumentParser` now reflects the way the Python
+  interpreter was instructed to find the ``__main__`` module code.
+  (Contributed by Serhiy Storchaka and Alyssa Coghlan in :gh:`66436`.)
 
 ast
 ---
