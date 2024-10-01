@@ -3333,7 +3333,7 @@ test_critical_sections(PyObject *module, PyObject *Py_UNUSED(args))
 #ifdef _POSIX_THREADS
 static void finalize_thread_hang_cleanup_callback(void *Py_UNUSED(arg)) {
     // Should not reach here.
-    assert(0 && "pthread thread termination was triggered unexpectedly");
+    Py_FatalError("pthread thread termination was triggered unexpectedly");
 }
 #endif
 
@@ -3342,12 +3342,12 @@ static void finalize_thread_hang_cleanup_callback(void *Py_UNUSED(arg)) {
 // Must be called with a single nullary callable function that should block
 // (with GIL released) until finalization is in progress.
 static PyObject *
-finalize_thread_hang(PyObject *self, PyObject *arg)
+finalize_thread_hang(PyObject *self, PyObject *callback)
 {
 #ifdef _POSIX_THREADS
     pthread_cleanup_push(finalize_thread_hang_cleanup_callback, NULL);
 #endif
-    PyObject_CallNoArgs(arg);
+    PyObject_CallNoArgs(callback);
     // Should not reach here.
     Py_FatalError("thread unexpectedly did not hang");
 #ifdef _POSIX_THREADS

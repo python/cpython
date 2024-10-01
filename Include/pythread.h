@@ -17,7 +17,7 @@ typedef enum PyLockStatus {
 
 PyAPI_FUNC(void) PyThread_init_thread(void);
 PyAPI_FUNC(unsigned long) PyThread_start_new_thread(void (*)(void *), void *);
-/* Terminates the current thread.
+/* Terminates the current thread. Considered unsafe.
  *
  * WARNING: This function is only safe to call if all functions in the full call
  * stack are written to safely allow it.  Additionally, the behavior is
@@ -25,9 +25,9 @@ PyAPI_FUNC(unsigned long) PyThread_start_new_thread(void (*)(void *), void *);
  * by Python itself.  It is retained only for compatibility with existing C
  * extension code.
  *
- * With pthreads, calls `pthread_exit` which attempts to unwind the stack and
- * call C++ destructors.  If a `noexcept` function is reached, the program is
- * terminated.
+ * With pthreads, calls `pthread_exit` causes some libcs (glibc?) to attempt to
+ * unwind the stack and call C++ destructors; if a `noexcept` function is
+ * reached, they may terminate the process. Others (macOS) do unwinding.
  *
  * On Windows, calls `_endthreadex` which kills the thread without calling C++
  * destructors.
