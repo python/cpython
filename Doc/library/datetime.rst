@@ -295,11 +295,11 @@ Instance attributes (read-only):
 
    Between 0 and 86,399 inclusive.
 
-   .. warning::
+   .. caution::
 
       It is a somewhat common bug for code to unintentionally use this attribute
-      when it actually intended to get a :meth:`~timedelta.total_seconds` value
-      instead:
+      when it is actually intended to get a :meth:`~timedelta.total_seconds`
+      value instead:
 
       .. doctest::
 
