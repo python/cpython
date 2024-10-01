@@ -1834,7 +1834,7 @@ finalize_interp_types(PyInterpreterState *interp)
 
     _PyTypes_Fini(interp);
 #ifdef Py_GIL_DISABLED
-    _PyType_FinalizeIdPool(interp);
+    _PyObject_FinalizeUniqueIdPool(interp);
 #endif
 
     _PyCode_Fini(interp);

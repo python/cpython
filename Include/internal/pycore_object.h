@@ -335,12 +335,12 @@ _Py_INCREF_TYPE(PyTypeObject *type)
     // Unsigned comparison so that `unique_id=-1`, which indicates that
     // per-thread refcounting has been disabled on this type, is handled by
     // the "else".
-    if ((size_t)ht->unique_id < (size_t)tstate->types.size) {
+    if ((size_t)ht->unique_id < (size_t)tstate->refcounts.size) {
 #  ifdef Py_REF_DEBUG
         _Py_INCREF_IncRefTotal();
 #  endif
         _Py_INCREF_STAT_INC();
-        tstate->types.refcounts[ht->unique_id]++;
+        tstate->refcounts.values[ht->unique_id]++;
     }
     else {
         // The slow path resizes the thread-local refcount array if necessary.
@@ -368,12 +368,12 @@ _Py_DECREF_TYPE(PyTypeObject *type)
     // Unsigned comparison so that `unique_id=-1`, which indicates that
     // per-thread refcounting has been disabled on this type, is handled by
     // the "else".
-    if ((size_t)ht->unique_id < (size_t)tstate->types.size) {
+    if ((size_t)ht->unique_id < (size_t)tstate->refcounts.size) {
 #  ifdef Py_REF_DEBUG
         _Py_DECREF_DecRefTotal();
 #  endif
         _Py_DECREF_STAT_INC();
-        tstate->types.refcounts[ht->unique_id]--;
+        tstate->refcounts.values[ht->unique_id]--;
     }
     else {
         // Directly decref the type if the type id is not assigned or if

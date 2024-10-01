@@ -10,61 +10,58 @@ extern "C" {
 
 #ifdef Py_GIL_DISABLED
 
-// This contains code for allocating unique ids to heap type objects
-// and re-using those ids when the type is deallocated.
+// This contains code for allocating unique ids to objects for 
+// per-thread reference counting.
 //
-// The type ids are used to implement per-thread reference counts of
-// heap type objects to avoid contention on the reference count fields
-// of heap type objects. Static type objects are immortal, so contention
-// is not an issue for those types.
+// Per-thread reference counting is used along with deferred reference
+// counting to avoid scaling bottlenecks due to reference count contention.
 //
-// Type id of -1 is used to indicate a type doesn't use thread-local
-// refcounting. This value is used when a type object is finalized by the GC
-// and during interpreter shutdown to allow the type object to be
+// An id of -1 is used to indicate that an object doesn't use per-thread
+// refcounting. This value is used when the object is finalized by the GC
+// and during interpreter shutdown to allow the object to be
 // deallocated promptly when the object's refcount reaches zero.
 //
-// Each entry implicitly represents a type id based on it's offset in the
+// Each entry implicitly represents a unique id based on its offset in the
 // table. Non-allocated entries form a free-list via the 'next' pointer.
-// Allocated entries store the corresponding PyTypeObject.
-typedef union _Py_type_id_entry {
+// Allocated entries store the corresponding PyObject.
+typedef union _Py_unique_id_entry {
     // Points to the next free type id, when part of the freelist
-    union _Py_type_id_entry *next;
+    union _Py_unique_id_entry *next;
 
-    // Stores the type object when the id is assigned
-    PyHeapTypeObject *type;
-} _Py_type_id_entry;
+    // Stores the object when the id is assigned
+    PyObject *obj;
+} _Py_unique_id_entry;
 
-struct _Py_type_id_pool {
+struct _Py_unique_id_pool {
     PyMutex mutex;
 
-    // combined table of types with allocated type ids and unallocated
-    // type ids.
-    _Py_type_id_entry *table;
+    // combined table of object with allocated unique ids and unallocated ids.
+    _Py_unique_id_entry *table;
 
     // Next entry to allocate inside 'table' or NULL
-    _Py_type_id_entry *freelist;
+    _Py_unique_id_entry *freelist;
 
     // size of 'table'
     Py_ssize_t size;
 };
 
-// Assigns the next id from the pool of type ids.
-extern void _PyType_AssignId(PyHeapTypeObject *type);
+// Assigns the next id from the pool of ids.
+extern Py_ssize_t _PyObject_AssignUniqueId(PyObject *obj);
 
-// Releases the allocated type id back to the pool.
-extern void _PyType_ReleaseId(PyHeapTypeObject *type);
+// Releases the allocated id back to the pool.
+extern void _PyObject_ReleaseUniqueId(Py_ssize_t unique_id);
 
-// Merges the thread-local reference counts into the corresponding types.
-extern void _PyType_MergeThreadLocalRefcounts(_PyThreadStateImpl *tstate);
+// Merges the per-thread reference counts into the corresponding objects.
+extern void _PyObject_MergePerThreadRefcounts(_PyThreadStateImpl *tstate);
 
-// Like _PyType_MergeThreadLocalRefcounts, but also frees the thread-local
+// Like _PyObject_MergePerThreadRefcounts, but also frees the per-thread
 // array of refcounts.
-extern void _PyType_FinalizeThreadLocalRefcounts(_PyThreadStateImpl *tstate);
+extern void _PyObject_FinalizePerThreadRefcounts(_PyThreadStateImpl *tstate);
 
 // Frees the interpreter's pool of type ids.
-extern void _PyType_FinalizeIdPool(PyInterpreterState *interp);
+extern void _PyObject_FinalizeUniqueIdPool(PyInterpreterState *interp);
 
-// Increfs the type, resizing the thread-local refcount array if necessary.
+// Increfs the type, resizing the per-thread refcount array if necessary.
 PyAPI_FUNC(void) _PyType_IncrefSlow(PyHeapTypeObject *type);
 
 #endif   /* Py_GIL_DISABLED */
