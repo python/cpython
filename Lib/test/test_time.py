@@ -307,6 +307,43 @@ class TimeTestCase(unittest.TestCase):
                                    r'.*day of month without a year.*'):
             time.strptime('02-07 18:28', '%m-%d %H:%M')
 
+    def test_strptime_accepting_locale_specific_year_with_fewer_digits(self):
+        # GH-124529
+        concerned_formats = '%c', '%x'
+
+        def run_subtest():
+            input_str = sample_str.replace(sample_year_digits, year_digits)
+            reason = (f"test strptime accepting locale-specific "
+                      f"year representation with fewer digits "
+                      f"- for {fmt=} and {input_str=} ({year=})")
+            fail_msg = f"{reason} - failed"
+            expected = (year,) + sample_tt[1:6]
+            with self.subTest(reason=reason):
+                try:
+                    parsed_tt = time.strptime(input_str, fmt)
+                except ValueError as exc:
+                    self.fail(f"{fail_msg}; parsing error: {exc!r}")
+                self.assertEqual(parsed_tt[:6], expected, fail_msg)
+
+        sample_tt = (1999, 3, 17) + (0,) * 6
+        for fmt in concerned_formats:
+            with self.subTest(fmt=fmt):
+                sample_str = time.strftime(fmt, sample_tt)
+                if (sample_year_digits := '1999') in sample_str:
+                    for year in [1, 9, 10, 99, 100, 999]:
+                        year_digits = str(year)
+                        run_subtest()
+                elif (sample_year_digits := '99') in sample_str:
+                    for year in [2000, 2001, 2009]:
+                        year_digits = str(year - 2000)
+                        run_subtest()
+                else:
+                    self.fail(f"it seems that time.strftime(fmt, ...)="
+                              f"{sample_str!r} does not include year="
+                              f"{sample_tt[0]!r} in any expected format "
+                              f"(is there something severely wrong with "
+                              f"current locale?)")
+
     def test_asctime(self):
         time.asctime(time.gmtime(self.t))
 
