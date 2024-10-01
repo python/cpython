@@ -748,7 +748,7 @@ PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len, char fort)
         return -1;
     }
 
-    if (PyObject_GetBuffer(obj, &view_obj, PyBUF_SIMPLE)) {
+    if (PyObject_GetBuffer(obj, &view_obj, PyBUF_FULL_RO)) {
         return -1;
     }
 
@@ -767,21 +767,19 @@ PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len, char fort)
     }
 
     /* quick copy implementation */
-    indices = (Py_ssize_t *)PyMem_Malloc(sizeof(Py_ssize_t) * view_obj.ndim);
+    indices = (Py_ssize_t *)PyMem_Calloc(view_obj.ndim, sizeof(Py_ssize_t));
     if (!indices) {
         PyErr_NoMemory();
         PyBuffer_Release(&view_obj);
         return -1;
     }
-    memset(indices, 0, view_obj.ndim);
     for (int i = 0; i < view_obj.ndim; i++) {
         /* XXX(nnorwitz): can this overflow? */
         elem_num *= view_obj.shape[i];
     }
     while (elem_num--) {
         tmp_obj = PyBuffer_GetPointer(&view_obj, indices);
-        memcpy(tmp_obj, tmp_buf, view_obj.itemsize);
-        tmp_buf += view_obj.itemsize;
+        memcpy(tmp_obj, tmp_buf++, view_obj.itemsize);
         _Py_add_one_to_index_C(view_obj.ndim, indices, view_obj.shape);
     }
     PyMem_Free(indices);
