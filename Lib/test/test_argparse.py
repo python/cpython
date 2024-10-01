@@ -2878,11 +2878,10 @@ class TestParentParsers(TestCase):
 
     def test_parent_help(self):
         parents = [self.abcd_parent, self.wxyz_parent]
-        parser = ErrorRaisingArgumentParser(parents=parents)
+        parser = ErrorRaisingArgumentParser(prog='PROG', parents=parents)
         parser_help = parser.format_help()
-        progname = self.main_program
         self.assertEqual(parser_help, textwrap.dedent('''\
-            usage: {}{}[-h] [-b B] [--d D] [--w W] [-y Y] a z
+            usage: PROG [-h] [-b B] [--d D] [--w W] [-y Y] a z
 
             positional arguments:
               a
@@ -2898,7 +2897,7 @@ class TestParentParsers(TestCase):
 
             x:
               -y Y
-        '''.format(progname, ' ' if progname else '' )))
+        '''))
 
     def test_groups_parents(self):
         parent = ErrorRaisingArgumentParser(add_help=False)
