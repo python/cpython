@@ -23,15 +23,6 @@ if support.check_sanitizer(address=True, memory=True, ub=True):
     raise unittest.SkipTest("test crash randomly on ASAN/MSAN/UBSAN build")
 
 
-def is_jit_build():
-    cflags = (sysconfig.get_config_var("PY_CORE_CFLAGS") or '')
-    return "_Py_JIT" in cflags
-
-
-if is_jit_build():
-    raise unittest.SkipTest("Perf support is not available in JIT builds")
-
-
 def supports_trampoline_profiling():
     perf_trampoline = sysconfig.get_config_var("PY_HAVE_PERF_TRAMPOLINE")
     if not perf_trampoline:
@@ -238,7 +229,7 @@ def is_unwinding_reliable_with_frame_pointers():
     cflags = sysconfig.get_config_var("PY_CORE_CFLAGS")
     if not cflags:
         return False
-    return "no-omit-frame-pointer" in cflags
+    return "no-omit-frame-pointer" in cflags and "_Py_JIT" not in cflags
 
 
 def perf_command_works():
@@ -391,7 +382,6 @@ class TestPerfProfilerMixin:
             self.assertNotIn(f"py::bar:{script}", stdout)
             self.assertNotIn(f"py::baz:{script}", stdout)
 
-
 @unittest.skipUnless(perf_command_works(), "perf command doesn't work")
 @unittest.skipUnless(
     is_unwinding_reliable_with_frame_pointers(),
@@ -504,9 +494,7 @@ def _is_perf_version_at_least(major, minor):
 
 
 @unittest.skipUnless(perf_command_works(), "perf command doesn't work")
-@unittest.skipUnless(
-    _is_perf_version_at_least(6, 6), "perf command may not work due to a perf bug"
-)
+@unittest.skipUnless(_is_perf_version_at_least(6, 6), "perf command may not work due to a perf bug")
 class TestPerfProfilerWithDwarf(unittest.TestCase, TestPerfProfilerMixin):
     def run_perf(self, script_dir, script, activate_trampoline=True):
         if activate_trampoline:
