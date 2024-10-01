@@ -6,6 +6,7 @@ import inspect
 import io
 import operator
 import os
+import py_compile
 import shutil
 import stat
 import sys
@@ -15,8 +16,14 @@ import unittest
 import argparse
 import warnings
 
-from test.support import os_helper, captured_stderr
+from test.support import captured_stderr
+from test.support import import_helper
+from test.support import os_helper
+from test.support import script_helper
 from unittest import mock
+
+
+py = os.path.basename(sys.executable)
 
 
 class StdIOBuffer(io.TextIOWrapper):
@@ -2780,8 +2787,6 @@ class TestParentParsers(TestCase):
         group.add_argument('-a', action='store_true')
         group.add_argument('-b', action='store_true')
 
-        self.main_program = os.path.basename(sys.argv[0])
-
     def test_single_parent(self):
         parser = ErrorRaisingArgumentParser(parents=[self.wxyz_parent])
         self.assertEqual(parser.parse_args('-y 1 2 --w 3'.split()),
@@ -2871,11 +2876,10 @@ class TestParentParsers(TestCase):
 
     def test_parent_help(self):
         parents = [self.abcd_parent, self.wxyz_parent]
-        parser = ErrorRaisingArgumentParser(parents=parents)
+        parser = ErrorRaisingArgumentParser(prog='PROG', parents=parents)
         parser_help = parser.format_help()
-        progname = self.main_program
         self.assertEqual(parser_help, textwrap.dedent('''\
-            usage: {}{}[-h] [-b B] [--d D] [--w W] [-y Y] a z
+            usage: PROG [-h] [-b B] [--d D] [--w W] [-y Y] a z
 
             positional arguments:
               a
@@ -2891,7 +2895,7 @@ class TestParentParsers(TestCase):
 
             x:
               -y Y
-        '''.format(progname, ' ' if progname else '' )))
+        '''))
 
     def test_groups_parents(self):
         parent = ErrorRaisingArgumentParser(add_help=False)
@@ -2901,15 +2905,14 @@ class TestParentParsers(TestCase):
         m = parent.add_mutually_exclusive_group()
         m.add_argument('-y')
         m.add_argument('-z')
-        parser = ErrorRaisingArgumentParser(parents=[parent])
+        parser = ErrorRaisingArgumentParser(prog='PROG', parents=[parent])
 
         self.assertRaises(ArgumentParserError, parser.parse_args,
             ['-y', 'Y', '-z', 'Z'])
 
         parser_help = parser.format_help()
-        progname = self.main_program
         self.assertEqual(parser_help, textwrap.dedent('''\
-            usage: {}{}[-h] [-w W] [-x X] [-y Y | -z Z]
+            usage: PROG [-h] [-w W] [-x X] [-y Y | -z Z]
 
             options:
               -h, --help  show this help message and exit
@@ -2921,7 +2924,7 @@ class TestParentParsers(TestCase):
 
               -w W
               -x X
-        '''.format(progname, ' ' if progname else '' )))
+        '''))
 
     def test_wrong_type_parents(self):
         self.assertRaises(TypeError, ErrorRaisingArgumentParser, parents=[1])
@@ -6559,6 +6562,99 @@ class TestExitOnError(TestCase):
         self.assertRaisesRegex(argparse.ArgumentError,
                                "No such file or directory: 'no-such-file'",
                                self.parser.parse_args, ['@no-such-file'])
+
+
+class TestProgName(TestCase):
+    source = textwrap.dedent('''\
+        import argparse
+        parser = argparse.ArgumentParser()
+        parser.parse_args()
+    ''')
+
+    def setUp(self):
+        self.dirname = 'package' + os_helper.FS_NONASCII
+        self.addCleanup(os_helper.rmtree, self.dirname)
+        os.mkdir(self.dirname)
+
+    def make_script(self, dirname, basename, *, compiled=False):
+        script_name = script_helper.make_script(dirname, basename, self.source)
+        if not compiled:
+            return script_name
+        py_compile.compile(script_name, doraise=True)
+        os.remove(script_name)
+        pyc_file = import_helper.make_legacy_pyc(script_name)
+        return pyc_file
+
+    def make_zip_script(self, script_name, name_in_zip=None):
+        zip_name, _ = script_helper.make_zip_script(self.dirname, 'test_zip',
+                                                    script_name, name_in_zip)
+        return zip_name
+
+    def check_usage(self, expected, *args, **kwargs):
+        res = script_helper.assert_python_ok('-Xutf8', *args, '-h', **kwargs)
+        self.assertEqual(res.out.splitlines()[0].decode(),
+                         f'usage: {expected} [-h]')
+
+    def test_script(self, compiled=False):
+        basename = os_helper.TESTFN
+        script_name = self.make_script(self.dirname, basename, compiled=compiled)
+        self.check_usage(os.path.basename(script_name), script_name, '-h')
+
+    def test_script_compiled(self):
+        self.test_script(compiled=True)
+
+    def test_directory(self, compiled=False):
+        dirname = os.path.join(self.dirname, os_helper.TESTFN)
+        os.mkdir(dirname)
+        self.make_script(dirname, '__main__', compiled=compiled)
+        self.check_usage(f'{py} {dirname}', dirname)
+        dirname2 = os.path.join(os.curdir, dirname)
+        self.check_usage(f'{py} {dirname2}', dirname2)
+
+    def test_directory_compiled(self):
+        self.test_directory(compiled=True)
+
+    def test_module(self, compiled=False):
+        basename = 'module' + os_helper.FS_NONASCII
+        modulename = f'{self.dirname}.{basename}'
+        self.make_script(self.dirname, basename, compiled=compiled)
+        self.check_usage(f'{py} -m {modulename}',
+                         '-m', modulename, PYTHONPATH=os.curdir)
+
+    def test_module_compiled(self):
+        self.test_module(compiled=True)
+
+    def test_package(self, compiled=False):
+        basename = 'subpackage' + os_helper.FS_NONASCII
+        packagename = f'{self.dirname}.{basename}'
+        subdirname = os.path.join(self.dirname, basename)
+        os.mkdir(subdirname)
+        self.make_script(subdirname, '__main__', compiled=compiled)
+        self.check_usage(f'{py} -m {packagename}',
+                         '-m', packagename, PYTHONPATH=os.curdir)
+        self.check_usage(f'{py} -m {packagename}',
+                         '-m', packagename + '.__main__', PYTHONPATH=os.curdir)
+
+    def test_package_compiled(self):
+        self.test_package(compiled=True)
+
+    def test_zipfile(self, compiled=False):
+        script_name = self.make_script(self.dirname, '__main__', compiled=compiled)
+        zip_name = self.make_zip_script(script_name)
+        self.check_usage(f'{py} {zip_name}', zip_name)
+
+    def test_zipfile_compiled(self):
+        self.test_zipfile(compiled=True)
+
+    def test_directory_in_zipfile(self, compiled=False):
+        script_name = self.make_script(self.dirname, '__main__', compiled=compiled)
+        name_in_zip = 'package/subpackage/__main__' + ('.py', '.pyc')[compiled]
+        zip_name = self.make_zip_script(script_name, name_in_zip)
+        dirname = os.path.join(zip_name, 'package', 'subpackage')
+        self.check_usage(f'{py} {dirname}', dirname)
+
+    def test_directory_in_zipfile_compiled(self):
+        self.test_directory_in_zipfile(compiled=True)
 
 
 def tearDownModule():

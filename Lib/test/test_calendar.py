@@ -985,7 +985,7 @@ class CommandLineTestCase(unittest.TestCase):
     def test_help(self):
         stdout = self.run_cmd_ok('-h')
         self.assertIn(b'usage:', stdout)
-        self.assertIn(b'calendar.py', stdout)
+        self.assertIn(b' -m calendar ', stdout)
         self.assertIn(b'--help', stdout)
 
         # special case: stdout but sys.exit()

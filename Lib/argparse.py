@@ -1697,6 +1697,28 @@ class _MutuallyExclusiveGroup(_ArgumentGroup):
         return super().add_mutually_exclusive_group(*args, **kwargs)
 
 
+def _prog_name(prog=None):
+    if prog is not None:
+        return prog
+    arg0 = _sys.argv[0]
+    try:
+        modspec = _sys.modules['__main__'].__spec__
+    except (KeyError, AttributeError):
+        # possibly PYTHONSTARTUP or -X presite or other weird edge case
+        # no good answer here, so fall back to the default
+        modspec = None
+    if modspec is None:
+        # simple script
+        return _os.path.basename(arg0)
+    py = _os.path.basename(_sys.executable)
+    if modspec.name != '__main__':
+        # imported module or package
+        modname = modspec.name.removesuffix('.__main__')
+        return f'{py} -m {modname}'
+    # directory or ZIP file
+    return f'{py} {arg0}'
+
+
 class ArgumentParser(_AttributeHolder, _ActionsContainer):
     """Object for parsing command line strings into Python objects.
 
@@ -1740,11 +1762,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                   argument_default=argument_default,
                   conflict_handler=conflict_handler)
 
-        # default setting for prog
-        if prog is None:
-            prog = _os.path.basename(_sys.argv[0])
-
-        self.prog = prog
+        self.prog = _prog_name(prog)
         self.usage = usage
         self.epilog = epilog
         self.formatter_class = formatter_class

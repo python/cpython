@@ -1,0 +1,4 @@
+Improved :ref:`prog` default value for :class:`argparse.ArgumentParser`. It
+will now include the name of the Python executable along with the module or
+package name, or the path to a directory, ZIP file, or directory within a
+ZIP file if the code was run that way.
