@@ -358,7 +358,6 @@ clear_interned_dict_legacy(PyInterpreterState *interp)
     Py_ssize_t pos = 0;
     PyObject *s, *ignored_value;
     while (PyDict_Next(interned, &pos, &s, &ignored_value)) {
-        assert(PyUnicode_IS_READY(s));
 #ifdef Py_TRACE_REFS
         _Py_AddToAllObjects(s);
 #endif
@@ -381,7 +380,7 @@ clear_interned_dict_legacy(PyInterpreterState *interp)
 #endif
             break;
         case SSTATE_NOT_INTERNED:
-            /* fall through */
+            _Py_FALLTHROUGH;
         default:
             Py_UNREACHABLE();
         }
