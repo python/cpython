@@ -56,7 +56,7 @@ def __getattr__(name):
         try:
             from .interpreter import InterpreterPoolExecutor as ie
         except ModuleNotFoundError:
-            InterpreterPoolExecutor = None
+            ie = InterpreterPoolExecutor = None
         else:
             InterpreterPoolExecutor = ie
         return ie
