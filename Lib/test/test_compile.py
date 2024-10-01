@@ -1,6 +1,7 @@
 import contextlib
 import dis
 import io
+import itertools
 import math
 import opcode
 import os
@@ -12,7 +13,10 @@ import tempfile
 import types
 import textwrap
 import warnings
-import _testinternalcapi
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 
 from test import support
 from test.support import (script_helper, requires_debug_ranges, run_code,
@@ -2644,6 +2648,8 @@ class TestStackSizeStability(unittest.TestCase):
             """
         self.check_stack_size(snippet, async_=True)
 
+@support.cpython_only
+@unittest.skipIf(_testinternalcapi is None, 'need _testinternalcapi module')
 class TestInstructionSequence(unittest.TestCase):
     def compare_instructions(self, seq, expected):
         self.assertEqual([(opcode.opname[i[0]],) + i[1:] for i in seq.get_instructions()],
@@ -2686,6 +2692,22 @@ class TestInstructionSequence(unittest.TestCase):
         seq.add_nested(nested)
         self.compare_instructions(seq, [('LOAD_CONST', 1, 1, 0, 0, 0)])
         self.compare_instructions(seq.get_nested()[0], [('LOAD_CONST', 2, 2, 0, 0, 0)])
+
+    def test_static_attributes_are_sorted(self):
+        code = (
+            'class T:\n'
+            '    def __init__(self):\n'
+            '        self.{V1} = 10\n'
+            '        self.{V2} = 10\n'
+            '    def foo(self):\n'
+            '        self.{V3} = 10\n'
+        )
+        attributes = ("a", "b", "c")
+        for perm in itertools.permutations(attributes):
+            var_names = {f'V{i + 1}': name for i, name in enumerate(perm)}
+            ns = run_code(code.format(**var_names))
+            t = ns['T']
+            self.assertEqual(t.__static_attributes__, attributes)
 
 
 if __name__ == "__main__":
