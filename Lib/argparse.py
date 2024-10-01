@@ -1705,10 +1705,10 @@ def _prog_name(prog=None):
     if modspec is None:
         return _os.path.basename(arg0)
     py = _os.path.basename(_sys.executable)
-    if (modspec.name == '__main__' and not modspec.parent and modspec.has_location
-        and _os.path.dirname(modspec.origin) == _os.path.join(_os.getcwd(), arg0)):
-        return f'{py} {arg0}'
-    return f'{py} -m {modspec.name.removesuffix(".__main__")}'
+    if modspec.name != '__main__':
+        modname = modspec.name.removesuffix('.__main__')
+        return f'{py} -m {modname}'
+    return f'{py} {arg0}'
 
 
 class ArgumentParser(_AttributeHolder, _ActionsContainer):
