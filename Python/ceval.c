@@ -84,8 +84,7 @@
         } \
         _Py_DECREF_STAT_INC(); \
         if (--op->ob_refcnt == 0) { \
-            destructor dealloc = Py_TYPE(op)->tp_dealloc; \
-            (*dealloc)(op); \
+            _Py_Dealloc(op); \
         } \
     } while (0)
 
