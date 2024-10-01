@@ -172,14 +172,11 @@ class TimeRETests(unittest.TestCase):
             fmt = "%" + directive
             with self.subTest(f"{fmt!r} should match input containing "
                               f"year with fewer digits than usual"):
-                (input_string,
-                 year) = _get_data_to_test_strptime_with_few_digits_year(fmt)
-                if year is None:
-                    self.fail(f"it seems that using {fmt=} results in value "
-                              f"which does not include year representation "
-                              f"in any expected format (is there something "
-                              f"severely wrong with current locale?)")
-
+                try:
+                    (input_string,
+                     _) = _get_data_to_test_strptime_with_few_digits_year(fmt)
+                except AssertionError as exc:
+                    self.fail(str(exc))
                 compiled = self.time_re.compile(fmt)
                 found = compiled.match(input_string)
                 self.assertTrue(found,
@@ -189,13 +186,11 @@ class TimeRETests(unittest.TestCase):
             fmt = "%" + directive
             with self.subTest(f"{fmt!r} should not match input containing "
                               f"year with fewer digits than usual"):
-                (input_string,
-                 year) = _get_data_to_test_strptime_with_few_digits_year(fmt)
-                if year is None:
-                    self.fail(f"it seems that using {fmt=} results in value "
-                              f"which does not include year representation "
-                              f"in any expected format (is there something "
-                              f"severely wrong with current locale?)")
+                try:
+                    (input_string,
+                     _) = _get_data_to_test_strptime_with_few_digits_year(fmt)
+                except AssertionError as exc:
+                    self.fail(str(exc))
                 compiled = self.time_re.compile(fmt)
                 found = compiled.match(input_string)
                 self.assertFalse(found,
@@ -337,13 +332,14 @@ class StrptimeTests(unittest.TestCase):
 
     def helper_for_directives_accepting_few_digits_year(self, directive):
         fmt = "%" + directive
-        (input_string,
-         expected_year) = _get_data_to_test_strptime_with_few_digits_year(fmt)
-        if expected_year is None:
-            self.fail(f"it seems that using {fmt=} results in value "
-                      f"which does not include year representation "
-                      f"in any expected format (is there something "
-                      f"severely wrong with current locale?)")
+
+        try:
+            (input_string,
+             expected_year,
+             ) = _get_data_to_test_strptime_with_few_digits_year(fmt)
+        except AssertionError as exc:
+            self.fail(str(exc))
+
         try:
             output_year = _strptime._strptime(input_string, fmt)[0][0]
         except ValueError as exc:
@@ -853,47 +849,51 @@ def _get_data_to_test_strptime_with_few_digits_year(fmt):
     # where:
     # * <strptime input string> -- is a `strftime(fmt)`-result-like str
     #   containing a year number which is *shorter* than the usual four
-    #   or two digits (namely: here the contained year number consist of
-    #   one digit: 7; that's an arbitrary choice);
+    #   or two digits, because the number is small and *not* 0-padded
+    #   (namely: here the contained year number consist of one digit: 7
+    #   -- that's an arbitrary choice);
     # * <expected year> -- is an int representing the year number that
     #   is expected to be part of the result of a `strptime(<strptime
     #   input string>, fmt)` call (namely: either 7 or 2007, depending
-    #   on the given format string and current locale...); however, it
-    #   is None if <strptime input string> does *not* contain the year
-    #   part (for the given format string and current locale).
+    #   on the given format string and current locale...).
+    # Note: AssertionError (with an appropriate failure message) is
+    # raised if <strptime input string> does *not* contain the year
+    # part (for the given format string and current locale).
 
-    # 1. Prepare auxiliary *magic* time data (note that the magic values
+    # 1. Prepare auxiliary sample time data (note that the magic values
     # we use here are guaranteed to be compatible with `time.strftime()`,
-    # and are also intended to be well distinguishable within a formatted
-    # string, thanks to the fact that the amount of overloaded numbers is
-    # minimized, as in `_strptime.LocaleTime.__calc_date_time()`):
-    magic_year = 1999
-    magic_tt = (magic_year, 3, 17, 22, 44, 55, 2, 76, 0)
+    # and are also intended to be well distinguishable within formatted
+    # strings, thanks to the fact that the amount of overloaded numbers
+    # is minimized, as in `_strptime.LocaleTime.__calc_date_time()`):
+    sample_year = 1999
+    sample_tt = (sample_year, 3, 17, 22, 44, 55, 2, 76, 0)
+    sample_str = time.strftime(fmt, sample_tt)
+    sample_year_4digits = str(sample_year)
+    sample_year_2digits = str(sample_year)[-2:]
 
     # 2. Pick an arbitrary year number representation that
     # is always *shorter* than the usual four or two digits:
-    input_year_str = '7'
+    year_1digit = '7'
 
     # 3. Obtain the resultant 2-tuple:
-
-    input_string = time.strftime(fmt, magic_tt)
-    expected_year = None
-
-    magic_4digits = str(magic_year)
-    if found_4digits := (magic_4digits in input_string):
-        # `input_string` contains up-to-4-digit year representation
-        input_string = input_string.replace(magic_4digits, input_year_str)
-        expected_year = int(input_year_str)
-
-    magic_2digits = str(magic_year)[-2:]
-    if magic_2digits in input_string:
-        # `input_string` contains up-to-2-digit year representation
-        if found_4digits:
-            raise RuntimeError(f'case not supported by this helper: {fmt=} '
-                               f'(includes both 2-digit and 4-digit year)')
-        input_string = input_string.replace(magic_2digits, input_year_str)
-        expected_year = 2000 + int(input_year_str)
-
+    if sample_year_4digits in sample_str:
+        input_string = sample_str.replace(sample_year_4digits, year_1digit)
+        if sample_year_2digits in input_string:
+            raise RuntimeError(f"the {fmt!r} format is not supported by "
+                               f"this helper (a {fmt!r}-formatted string, "
+                               f"{sample_str!r}, seems to include both a "
+                               f"2-digit and 4-digit year number)")
+        expected_year = int(year_1digit)
+    elif sample_year_2digits in sample_str:
+        input_string = sample_str.replace(sample_year_2digits, year_1digit)
+        expected_year = 2000 + int(year_1digit)
+    else:
+        raise AssertionError(f"time.strftime({fmt!r}, ...)={sample_str!r} "
+                             f"does not include the year {sample_year!r} in "
+                             f"any expected format (are {fmt!r}-formatted "
+                             f"strings supposed to include a year number? "
+                             f"if they are, isn't there something severely "
+                             f"wrong with the current locale?)")
     return input_string, expected_year
 
 

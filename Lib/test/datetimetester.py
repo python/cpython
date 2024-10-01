@@ -2129,18 +2129,18 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         concerned_formats = '%c', '%x'
 
         def run_subtest():
-            input_ = sample.replace(year=year)
+            input_obj = sample.replace(year=year)
             reason = (f"test strftime/strptime roundtrip concerning "
                       f"locale-specific year representation "
-                      f"- for {fmt=} and {input_=}")
+                      f"- for {fmt=} and {input_obj=}")
             fail_msg = f"{reason} - failed"
             with self.subTest(reason=reason):
-                formatted = input_.strftime(fmt)
+                formatted = input_obj.strftime(fmt)
                 try:
                     parsed = self.theclass.strptime(formatted, fmt)
                 except ValueError as exc:
                     self.fail(f"{fail_msg}; parsing error: {exc!r}")
-                self.assertEqual(parsed, input_, fail_msg)
+                self.assertEqual(parsed, input_obj, fail_msg)
 
         sample = self.theclass.strptime('1999-03-17', '%Y-%m-%d')
         for fmt in concerned_formats:
@@ -2161,11 +2161,10 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                     ]:
                         run_subtest()
                 else:
-                    self.fail(f"it seems that sample.strftime({fmt!r})="
-                              f"{sample_str!r} does not include year="
-                              f"{sample.year!r} in any expected format "
-                              f"(is there something severely wrong with "
-                              f"current locale?)")
+                    self.fail(f"{sample!r}.strftime({fmt!r})={sample_str!r} "
+                              f"does not include year={sample.year!r} in "
+                              f"any expected format (is there something "
+                              f"severely wrong with the current locale?)")
 
     def test_strptime_accepting_locale_specific_year_with_fewer_digits(self):
         # gh-124529
@@ -2198,11 +2197,10 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                         year_digits = str(year - 2000)
                         run_subtest()
                 else:
-                    self.fail(f"it seems that sample.strftime({fmt!r})="
-                              f"{sample_str!r} does not include year="
-                              f"{sample.year!r} in any expected format "
-                              f"(is there something severely wrong with "
-                              f"current locale?)")
+                    self.fail(f"{sample!r}.strftime({fmt!r})={sample_str!r} "
+                              f"does not include year={sample.year!r} in "
+                              f"any expected format (is there something "
+                              f"severely wrong with the current locale?)")
 
 
 #############################################################################

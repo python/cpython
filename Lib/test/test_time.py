@@ -338,11 +338,10 @@ class TimeTestCase(unittest.TestCase):
                         year_digits = str(year - 2000)
                         run_subtest()
                 else:
-                    self.fail(f"it seems that time.strftime(fmt, ...)="
-                              f"{sample_str!r} does not include year="
-                              f"{sample_tt[0]!r} in any expected format "
-                              f"(is there something severely wrong with "
-                              f"current locale?)")
+                    self.fail(f"time.strftime({fmt!r}, ...)={sample_str!r} "
+                              f"does not include year={sample_tt[0]!r} in "
+                              f"any expected format (is there something "
+                              f"severely wrong with the current locale?)")
 
     def test_asctime(self):
         time.asctime(time.gmtime(self.t))
