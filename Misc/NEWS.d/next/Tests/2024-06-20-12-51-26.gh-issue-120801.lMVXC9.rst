@@ -1,0 +1,2 @@
+Cleaned up fixtures for importlib.metadata tests and consolidated behavior
+with 'test.support.os_helper'.

@@ -1,0 +1,45 @@
+on:
+  workflow_call:
+    inputs:
+      arch:
+        description: CPU architecture
+        required: true
+        type: string
+      free-threading:
+        description: Whether to compile CPython in free-threading mode
+        required: false
+        type: boolean
+        default: false
+
+env:
+  IncludeUwp: >-
+    true
+
+jobs:
+  build:
+    name: >-
+      build${{ inputs.arch != 'arm64' && ' and test' || '' }}
+      (${{ inputs.arch }})
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+    - uses: actions/checkout@v4
+    - name: Register MSVC problem matcher
+      if: inputs.arch != 'Win32'
+      run: echo "::add-matcher::.github/problem-matchers/msvc.json"
+    - name: Build CPython
+      run: >-
+        .\PCbuild\build.bat
+        -e -d -v
+        -p ${{ inputs.arch }}
+        ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
+    - name: Display build info
+      if: inputs.arch != 'arm64'
+      run: .\python.bat -m test.pythoninfo
+    - name: Tests
+      if: inputs.arch != 'arm64'
+      run: >-
+        .\PCbuild\rt.bat
+        -p ${{ inputs.arch }}
+        -d -q --fast-ci
+        ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}

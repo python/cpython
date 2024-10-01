@@ -1,0 +1,3 @@
+When using the ``**`` operator or :func:`pow` with :class:`~fractions.Fraction`
+as the base and an exponent that is not rational, a float, or a complex, the
+fraction is no longer converted to a float.

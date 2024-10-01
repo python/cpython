@@ -1,0 +1,2 @@
+Handle :exc:`ValueError`\s raised by :func:`os.stat` in :mod:`linecache`.
+Patch by Bénédikt Tran.

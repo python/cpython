@@ -1,5 +1,5 @@
-:mod:`urllib.parse` --- Parse URLs into components
-==================================================
+:mod:`!urllib.parse` --- Parse URLs into components
+===================================================
 
 .. module:: urllib.parse
    :synopsis: Parse URLs into or assemble them from components.
@@ -22,14 +22,27 @@ to an absolute URL given a "base URL."
 
 The module has been designed to match the internet RFC on Relative Uniform
 Resource Locators. It supports the following URL schemes: ``file``, ``ftp``,
-``gopher``, ``hdl``, ``http``, ``https``, ``imap``, ``mailto``, ``mms``,
-``news``, ``nntp``, ``prospero``, ``rsync``, ``rtsp``, ``rtspu``, ``sftp``,
-``shttp``, ``sip``, ``sips``, ``snews``, ``svn``, ``svn+ssh``, ``telnet``,
-``wais``, ``ws``, ``wss``.
+``gopher``, ``hdl``, ``http``, ``https``, ``imap``, ``itms-services``, ``mailto``, ``mms``,
+``news``, ``nntp``, ``prospero``, ``rsync``, ``rtsp``, ``rtsps``, ``rtspu``,
+``sftp``, ``shttp``, ``sip``, ``sips``, ``snews``, ``svn``, ``svn+ssh``,
+``telnet``, ``wais``, ``ws``, ``wss``.
+
+.. impl-detail::
+
+   The inclusion of the ``itms-services`` URL scheme can prevent an app from
+   passing Apple's App Store review process for the macOS and iOS App Stores.
+   Handling for the ``itms-services`` scheme is always removed on iOS; on
+   macOS, it *may* be removed if CPython has been built with the
+   :option:`--with-app-store-compliance` option.
 
 The :mod:`urllib.parse` module defines functions that fall into two broad
 categories: URL parsing and URL quoting. These are covered in detail in
 the following sections.
+
+This module's functions use the deprecated term ``netloc`` (or ``net_loc``),
+which was introduced in :rfc:`1808`. However, this term has been obsoleted by
+:rfc:`3986`, which introduced the term ``authority`` as its replacement.
+The use of ``netloc`` is continued for backward compatibility.
 
 URL Parsing
 -----------
@@ -168,7 +181,7 @@ or on combining URL components into a URL string.
       Added IPv6 URL parsing capabilities.
 
    .. versionchanged:: 3.3
-      The fragment is now parsed for all URL schemes (unless *allow_fragment* is
+      The fragment is now parsed for all URL schemes (unless *allow_fragments* is
       false), in accordance with :rfc:`3986`.  Previously, an allowlist of
       schemes that support fragments existed.
 
@@ -598,7 +611,7 @@ task isn't already covered by the URL parsing functions above.
 
 .. function:: quote(string, safe='/', encoding=None, errors=None)
 
-   Replace special characters in *string* using the ``%xx`` escape. Letters,
+   Replace special characters in *string* using the :samp:`%{xx}` escape. Letters,
    digits, and the characters ``'_.-~'`` are never quoted. By default, this
    function is intended for quoting the path section of a URL. The optional
    *safe* parameter specifies additional ASCII characters that should not be
@@ -645,7 +658,7 @@ task isn't already covered by the URL parsing functions above.
 
 .. function:: unquote(string, encoding='utf-8', errors='replace')
 
-   Replace ``%xx`` escapes with their single-character equivalent.
+   Replace :samp:`%{xx}` escapes with their single-character equivalent.
    The optional *encoding* and *errors* parameters specify how to decode
    percent-encoded sequences into Unicode characters, as accepted by the
    :meth:`bytes.decode` method.
@@ -676,7 +689,7 @@ task isn't already covered by the URL parsing functions above.
 
 .. function:: unquote_to_bytes(string)
 
-   Replace ``%xx`` escapes with their single-octet equivalent, and return a
+   Replace :samp:`%{xx}` escapes with their single-octet equivalent, and return a
    :class:`bytes` object.
 
    *string* may be either a :class:`str` or a :class:`bytes` object.
@@ -729,8 +742,8 @@ task isn't already covered by the URL parsing functions above.
    .. versionchanged:: 3.2
       *query* supports bytes and string objects.
 
-   .. versionadded:: 3.5
-      *quote_via* parameter.
+   .. versionchanged:: 3.5
+      Added the *quote_via* parameter.
 
 
 .. seealso::

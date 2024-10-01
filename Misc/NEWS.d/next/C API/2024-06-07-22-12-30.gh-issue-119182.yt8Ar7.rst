@@ -1,0 +1,16 @@
+Add a new :c:type:`PyUnicodeWriter` API to create a Python :class:`str` object:
+
+* :c:func:`PyUnicodeWriter_Create`.
+* :c:func:`PyUnicodeWriter_Discard`.
+* :c:func:`PyUnicodeWriter_Finish`.
+* :c:func:`PyUnicodeWriter_WriteChar`.
+* :c:func:`PyUnicodeWriter_WriteUTF8`.
+* :c:func:`PyUnicodeWriter_WriteUCS4`.
+* :c:func:`PyUnicodeWriter_WriteWideChar`.
+* :c:func:`PyUnicodeWriter_WriteStr`.
+* :c:func:`PyUnicodeWriter_WriteRepr`.
+* :c:func:`PyUnicodeWriter_WriteSubstring`.
+* :c:func:`PyUnicodeWriter_Format`.
+* :c:func:`PyUnicodeWriter_DecodeUTF8Stateful`.
+
+Patch by Victor Stinner.

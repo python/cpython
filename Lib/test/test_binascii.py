@@ -5,6 +5,7 @@ import binascii
 import array
 import re
 from test.support import bigmemtest, _1G, _4G
+from test.support.hypothesis_helper import hypothesis
 
 
 # Note: "*_hex" functions are aliases for "(un)hexlify"
@@ -26,6 +27,14 @@ class BinASCIITest(unittest.TestCase):
 
     def setUp(self):
         self.data = self.type2test(self.rawdata)
+
+    def assertConversion(self, original, converted, restored, **kwargs):
+        self.assertIsInstance(original, bytes)
+        self.assertIsInstance(converted, bytes)
+        self.assertIsInstance(restored, bytes)
+        if converted:
+            self.assertLess(max(converted), 128)
+        self.assertEqual(original, restored, msg=f'{self.type2test=} {kwargs=}')
 
     def test_exceptions(self):
         # Check module exceptions
@@ -52,9 +61,7 @@ class BinASCIITest(unittest.TestCase):
                 self.fail("{}/{} conversion raises {!r}".format(fb, fa, err))
             self.assertEqual(res, raw, "{}/{} conversion: "
                              "{!r} != {!r}".format(fb, fa, res, raw))
-            self.assertIsInstance(res, bytes)
-            self.assertIsInstance(a, bytes)
-            self.assertLess(max(a), 128)
+            self.assertConversion(raw, a, res)
         self.assertIsInstance(binascii.crc_hqx(raw, 0), int)
         self.assertIsInstance(binascii.crc32(raw), int)
 
@@ -132,13 +139,21 @@ class BinASCIITest(unittest.TestCase):
         def assertDiscontinuousPadding(data, non_strict_mode_expected_result: bytes):
             _assertRegexTemplate(r'(?i)Discontinuous padding', data, non_strict_mode_expected_result)
 
+        def assertExcessPadding(data, non_strict_mode_expected_result: bytes):
+            _assertRegexTemplate(r'(?i)Excess padding', data, non_strict_mode_expected_result)
+
         # Test excess data exceptions
         assertExcessData(b'ab==a', b'i')
         assertExcessData(b'ab===', b'i')
+        assertExcessData(b'ab====', b'i')
         assertExcessData(b'ab==:', b'i')
         assertExcessData(b'abc=a', b'i\xb7')
         assertExcessData(b'abc=:', b'i\xb7')
         assertExcessData(b'ab==\n', b'i')
+        assertExcessData(b'abc==', b'i\xb7')
+        assertExcessData(b'abc===', b'i\xb7')
+        assertExcessData(b'abc====', b'i\xb7')
+        assertExcessData(b'abc=====', b'i\xb7')
 
         # Test non-base64 data exceptions
         assertNonBase64Data(b'\nab==', b'i')
@@ -150,8 +165,15 @@ class BinASCIITest(unittest.TestCase):
         assertLeadingPadding(b'=', b'')
         assertLeadingPadding(b'==', b'')
         assertLeadingPadding(b'===', b'')
+        assertLeadingPadding(b'====', b'')
+        assertLeadingPadding(b'=====', b'')
         assertDiscontinuousPadding(b'ab=c=', b'i\xb7')
         assertDiscontinuousPadding(b'ab=ab==', b'i\xb6\x9b')
+        assertExcessPadding(b'abcd=', b'i\xb7\x1d')
+        assertExcessPadding(b'abcd==', b'i\xb7\x1d')
+        assertExcessPadding(b'abcd===', b'i\xb7\x1d')
+        assertExcessPadding(b'abcd====', b'i\xb7\x1d')
+        assertExcessPadding(b'abcd=====', b'i\xb7\x1d')
 
 
     def test_base64errors(self):
@@ -222,6 +244,15 @@ class BinASCIITest(unittest.TestCase):
         with self.assertRaises(TypeError):
             binascii.b2a_uu(b"", True)
 
+    @hypothesis.given(
+        binary=hypothesis.strategies.binary(max_size=45),
+        backtick=hypothesis.strategies.booleans(),
+    )
+    def test_b2a_roundtrip(self, binary, backtick):
+        converted = binascii.b2a_uu(self.type2test(binary), backtick=backtick)
+        restored = binascii.a2b_uu(self.type2test(converted))
+        self.assertConversion(binary, converted, restored, backtick=backtick)
+
     def test_crc_hqx(self):
         crc = binascii.crc_hqx(self.type2test(b"Test the CRC-32 of"), 0)
         crc = binascii.crc_hqx(self.type2test(b" this string."), crc)
@@ -258,6 +289,12 @@ class BinASCIITest(unittest.TestCase):
         # Confirm that b2a_hex == hexlify and a2b_hex == unhexlify
         self.assertEqual(binascii.hexlify(self.type2test(s)), t)
         self.assertEqual(binascii.unhexlify(self.type2test(t)), u)
+
+    @hypothesis.given(binary=hypothesis.strategies.binary())
+    def test_hex_roundtrip(self, binary):
+        converted = binascii.hexlify(self.type2test(binary))
+        restored = binascii.unhexlify(self.type2test(converted))
+        self.assertConversion(binary, converted, restored)
 
     def test_hex_separator(self):
         """Test that hexlify and b2a_hex are binary versions of bytes.hex."""
@@ -373,6 +410,21 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(b2a_qp(type2test(b'a.\n')), b'a.\n')
         self.assertEqual(b2a_qp(type2test(b'.a')[:-1]), b'=2E')
 
+    @hypothesis.given(
+        binary=hypothesis.strategies.binary(),
+        quotetabs=hypothesis.strategies.booleans(),
+        istext=hypothesis.strategies.booleans(),
+        header=hypothesis.strategies.booleans(),
+    )
+    def test_b2a_qp_a2b_qp_round_trip(self, binary, quotetabs, istext, header):
+        converted = binascii.b2a_qp(
+            self.type2test(binary),
+            quotetabs=quotetabs, istext=istext, header=header,
+        )
+        restored = binascii.a2b_qp(self.type2test(converted), header=header)
+        self.assertConversion(binary, converted, restored,
+                              quotetabs=quotetabs, istext=istext, header=header)
+
     def test_empty_string(self):
         # A test for SF bug #1022953.  Make sure SystemError is not raised.
         empty = self.type2test(b'')
@@ -427,6 +479,21 @@ class BinASCIITest(unittest.TestCase):
                          b'aGVsbG8=\n')
         self.assertEqual(binascii.b2a_base64(b, newline=False),
                          b'aGVsbG8=')
+
+    @hypothesis.given(
+        binary=hypothesis.strategies.binary(),
+        newline=hypothesis.strategies.booleans(),
+    )
+    def test_base64_roundtrip(self, binary, newline):
+        converted = binascii.b2a_base64(self.type2test(binary), newline=newline)
+        restored = binascii.a2b_base64(self.type2test(converted))
+        self.assertConversion(binary, converted, restored, newline=newline)
+
+    def test_c_contiguity(self):
+        m = memoryview(bytearray(b'noncontig'))
+        noncontig_writable = m[::-2]
+        with self.assertRaises(BufferError):
+            binascii.b2a_hex(noncontig_writable)
 
 
 class ArrayBinASCIITest(BinASCIITest):

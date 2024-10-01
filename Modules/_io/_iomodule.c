@@ -7,11 +7,14 @@
     Mostly written by Amaury Forgeot d'Arc
 */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "_iomodule.h"
-#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_long.h"          // _PyLong_IsNegative()
+#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+
+#include "_iomodule.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -199,7 +202,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               const char *newline, int closefd, PyObject *opener)
 /*[clinic end generated code: output=aefafc4ce2b46dc0 input=cd034e7cdfbf4e78]*/
 {
-    unsigned i;
+    size_t i;
 
     int creating = 0, reading = 0, writing = 0, appending = 0, updating = 0;
     int text = 0, binary = 0;
@@ -541,10 +544,7 @@ PyNumber_AsOff_t(PyObject *item, PyObject *err)
      */
     if (!err) {
         assert(PyLong_Check(value));
-        /* Whether or not it is less than or equal to
-           zero is determined by the sign of ob_size
-        */
-        if (_PyLong_Sign(value) < 0)
+        if (_PyLong_IsNegative((PyLongObject *)value))
             result = PY_OFF_T_MIN;
         else
             result = PY_OFF_T_MAX;
@@ -717,6 +717,7 @@ iomodule_exec(PyObject *m)
 static struct PyModuleDef_Slot iomodule_slots[] = {
     {Py_mod_exec, iomodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 

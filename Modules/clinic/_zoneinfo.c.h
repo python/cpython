@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(zoneinfo_ZoneInfo_from_file__doc__,
 "from_file($type, file_obj, /, key=None)\n"
@@ -372,4 +372,4 @@ zoneinfo_ZoneInfo__unpickle(PyTypeObject *type, PyTypeObject *cls, PyObject *con
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=54051388dfc408af input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2a15f32fdd2ab6cd input=a9049054013a1b77]*/
