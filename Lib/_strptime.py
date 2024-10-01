@@ -241,14 +241,15 @@ class TimeRE(dict):
 
         Necessary to ensure that strptime() is able to parse strftime()'s
         output when %c or %x is used -- considering that for some locales
-        and platforms (e.g., 'C.UTF-8' on Linux), formatting with either
-        %c or %x may produce a year number representation that is shorter
-        than the usual four or two digits, if the number is small enough
-        (e.g., '999' rather than `0999', or '9' rather than of '09').
+        and platforms (e.g., 'C.UTF-8' on Linux) formatting with either
+        %c or %x may produce a year number representation which is *not*
+        zero-padded and, consequently (if the number is small enough),
+        shorter than the usual four or two digits (e.g., '999' rather
+        than `0999', or '9' rather than of '09').
 
         Note that this helper is intended to be used to prepare regex
-        patterns only for the `%c` and `%x` format codes (and *not* for
-        `%y`, `%Y` or `%G`).
+        patterns *only* for the `%c` and `%x` format codes (and *not*
+        for `%y`, `%Y` or `%G`).
 
         """
         pattern = self.pattern(format)
