@@ -3100,7 +3100,7 @@ private:
             } else {
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Server 2003 or earlier");
             }
-            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Windows Server 2012 or later is required to continue installation");
+            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Windows Server 2016 or later is required to continue installation");
         } else {
             if (IsWindows10OrGreater()) {
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows 10 or later");
@@ -3116,7 +3116,7 @@ private:
             } else { 
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows XP or earlier");
             }
-            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Windows 8.1 or later is required to continue installation");
+            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Windows 10 or later is required to continue installation");
         }
 
         LocGetString(_wixLoc, L"#(loc.FailureOldOS)", &pLocString);
