@@ -633,12 +633,7 @@ them, though most actions simply add an attribute to the object returned by
 how the command-line arguments should be handled. The supplied actions are:
 
 * ``'store'`` - This just stores the argument's value.  This is the default
-  action. For example::
-
-    >>> parser = argparse.ArgumentParser()
-    >>> parser.add_argument('--foo')
-    >>> parser.parse_args('--foo 1'.split())
-    Namespace(foo='1')
+  action. 
 
 * ``'store_const'`` - This stores the value specified by the const_ keyword
   argument; note that the const_ keyword argument defaults to ``None``.  The
@@ -653,14 +648,7 @@ how the command-line arguments should be handled. The supplied actions are:
 * ``'store_true'`` and ``'store_false'`` - These are special cases of
   ``'store_const'`` used for storing the values ``True`` and ``False``
   respectively.  In addition, they create default values of ``False`` and
-  ``True`` respectively.  For example::
-
-    >>> parser = argparse.ArgumentParser()
-    >>> parser.add_argument('--foo', action='store_true')
-    >>> parser.add_argument('--bar', action='store_false')
-    >>> parser.add_argument('--baz', action='store_false')
-    >>> parser.parse_args('--foo --bar'.split())
-    Namespace(foo=True, bar=False, baz=True)
+  ``True`` respectively.
 
 * ``'append'`` - This stores a list, and appends each argument value to the
   list. It is useful to allow an option to be specified multiple times.
@@ -1021,28 +1009,11 @@ Some command-line arguments should be selected from a restricted set of values.
 These can be handled by passing a sequence object as the *choices* keyword
 argument to :meth:`~ArgumentParser.add_argument`.  When the command line is
 parsed, argument values will be checked, and an error message will be displayed
-if the argument was not one of the acceptable values::
-
-   >>> parser = argparse.ArgumentParser(prog='game.py')
-   >>> parser.add_argument('move', choices=['rock', 'paper', 'scissors'])
-   >>> parser.parse_args(['rock'])
-   Namespace(move='rock')
-   >>> parser.parse_args(['fire'])
-   usage: game.py [-h] {rock,paper,scissors}
-   game.py: error: argument move: invalid choice: 'fire' (choose from 'rock',
-   'paper', 'scissors')
+if the argument was not one of the acceptable values.
 
 Note that inclusion in the *choices* sequence is checked after any type_
 conversions have been performed, so the type of the objects in the *choices*
-sequence should match the type_ specified::
-
-   >>> parser = argparse.ArgumentParser(prog='doors.py')
-   >>> parser.add_argument('door', type=int, choices=range(1, 4))
-   >>> print(parser.parse_args(['3']))
-   Namespace(door=3)
-   >>> parser.parse_args(['4'])
-   usage: doors.py [-h] {1,2,3}
-   doors.py: error: argument door: invalid choice: 4 (choose from 1, 2, 3)
+sequence should match the type_ specified.
 
 Any sequence can be passed as the *choices* value, so :class:`list` objects,
 :class:`tuple` objects, and custom sequences are all supported.
@@ -1092,22 +1063,7 @@ help
 The ``help`` value is a string containing a brief description of the argument.
 When a user requests help (usually by using ``-h`` or ``--help`` at the
 command line), these ``help`` descriptions will be displayed with each
-argument::
-
-   >>> parser = argparse.ArgumentParser(prog='frobble')
-   >>> parser.add_argument('--foo', action='store_true',
-   ...                     help='foo the bars before frobbling')
-   >>> parser.add_argument('bar', nargs='+',
-   ...                     help='one of the bars to be frobbled')
-   >>> parser.parse_args(['-h'])
-   usage: frobble [-h] [--foo] bar [bar ...]
-
-   positional arguments:
-    bar     one of the bars to be frobbled
-
-   options:
-    -h, --help  show this help message and exit
-    --foo   foo the bars before frobbling
+argument.
 
 The ``help`` strings can include various format specifiers to avoid repetition
 of things like the program name or the argument default_.  The available
