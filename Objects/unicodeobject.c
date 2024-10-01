@@ -15457,6 +15457,7 @@ immortalize_interned(PyObject *s)
     _PyUnicode_STATE(s).interned = SSTATE_INTERNED_IMMORTAL;
     _Py_SetImmortal(s);
 #ifdef Py_TRACE_REFS
+    /* Make sure the ref is associated with the right interpreter. */
     _Py_NormalizeImmortalReference(s);
 #endif
 }
