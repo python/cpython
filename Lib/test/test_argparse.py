@@ -5293,15 +5293,15 @@ class TestHelpUsageLongSubparserCommand(TestCase):
 class TestInvalidArgumentConstructors(TestCase):
     """Test a bunch of invalid Argument constructors"""
 
-    def assertTypeError(self, *args, **kwargs):
+    def assertTypeError(self, *args, errmsg=None, **kwargs):
         parser = argparse.ArgumentParser()
-        self.assertRaises(TypeError, parser.add_argument,
-                          *args, **kwargs)
+        self.assertRaisesRegex(TypeError, errmsg, parser.add_argument,
+                               *args, **kwargs)
 
-    def assertValueError(self, *args, **kwargs):
+    def assertValueError(self, *args, errmsg=None, **kwargs):
         parser = argparse.ArgumentParser()
-        self.assertRaises(ValueError, parser.add_argument,
-                          *args, **kwargs)
+        self.assertRaisesRegex(ValueError, errmsg, parser.add_argument,
+                               *args, **kwargs)
 
     def test_invalid_keyword_arguments(self):
         self.assertTypeError('-x', bar=None)
@@ -5311,8 +5311,9 @@ class TestInvalidArgumentConstructors(TestCase):
 
     def test_missing_destination(self):
         self.assertTypeError()
-        for action in ['append', 'store']:
-            self.assertTypeError(action=action)
+        for action in ['store', 'append', 'extend']:
+            with self.subTest(action=action):
+                self.assertTypeError(action=action)
 
     def test_invalid_option_strings(self):
         self.assertValueError('--')
@@ -5329,10 +5330,8 @@ class TestInvalidArgumentConstructors(TestCase):
         self.assertValueError('-x', action='foo')
         self.assertValueError('foo', action='baz')
         self.assertValueError('--foo', action=('store', 'append'))
-        parser = argparse.ArgumentParser()
-        with self.assertRaises(ValueError) as cm:
-            parser.add_argument("--foo", action="store-true")
-        self.assertIn('unknown action', str(cm.exception))
+        self.assertValueError('--foo', action="store-true",
+                              errmsg='unknown action')
 
     def test_multiple_dest(self):
         parser = argparse.ArgumentParser()
@@ -5345,39 +5344,47 @@ class TestInvalidArgumentConstructors(TestCase):
     def test_no_argument_actions(self):
         for action in ['store_const', 'store_true', 'store_false',
                        'append_const', 'count']:
-            for attrs in [dict(type=int), dict(nargs='+'),
-                          dict(choices=['a', 'b'])]:
-                self.assertTypeError('-x', action=action, **attrs)
+            with self.subTest(action=action):
+                for attrs in [dict(type=int), dict(nargs='+'),
+                              dict(choices=['a', 'b'])]:
+                    with self.subTest(attrs=attrs):
+                        self.assertTypeError('-x', action=action, **attrs)
+                        self.assertTypeError('x', action=action, **attrs)
+                self.assertTypeError('-x', action=action, nargs=0)
+                self.assertTypeError('x', action=action, nargs=0)
 
     def test_no_argument_no_const_actions(self):
         # options with zero arguments
         for action in ['store_true', 'store_false', 'count']:
+            with self.subTest(action=action):
+                # const is always disallowed
+                self.assertTypeError('-x', const='foo', action=action)
 
-            # const is always disallowed
-            self.assertTypeError('-x', const='foo', action=action)
-
-            # nargs is always disallowed
-            self.assertTypeError('-x', nargs='*', action=action)
+                # nargs is always disallowed
+                self.assertTypeError('-x', nargs='*', action=action)
 
     def test_more_than_one_argument_actions(self):
-        for action in ['store', 'append']:
+        for action in ['store', 'append', 'extend']:
+            with self.subTest(action=action):
+                # nargs=0 is disallowed
+                action_name = 'append' if action == 'extend' else action
+                self.assertValueError('-x', nargs=0, action=action,
+                    errmsg=f'nargs for {action_name} actions must be != 0')
+                self.assertValueError('spam', nargs=0, action=action,
+                    errmsg=f'nargs for {action_name} actions must be != 0')
 
-            # nargs=0 is disallowed
-            self.assertValueError('-x', nargs=0, action=action)
-            self.assertValueError('spam', nargs=0, action=action)
-
-            # const is disallowed with non-optional arguments
-            for nargs in [1, '*', '+']:
-                self.assertValueError('-x', const='foo',
-                                      nargs=nargs, action=action)
-                self.assertValueError('spam', const='foo',
-                                      nargs=nargs, action=action)
+                # const is disallowed with non-optional arguments
+                for nargs in [1, '*', '+']:
+                    self.assertValueError('-x', const='foo',
+                                          nargs=nargs, action=action)
+                    self.assertValueError('spam', const='foo',
+                                          nargs=nargs, action=action)
 
     def test_required_const_actions(self):
         for action in ['store_const', 'append_const']:
-
-            # nargs is always disallowed
-            self.assertTypeError('-x', nargs='+', action=action)
+            with self.subTest(action=action):
+                # nargs is always disallowed
+                self.assertTypeError('-x', nargs='+', action=action)
 
     def test_parsers_action_missing_params(self):
         self.assertTypeError('command', action='parsers')
