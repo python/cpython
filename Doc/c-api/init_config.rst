@@ -1248,18 +1248,23 @@ PyConfig
 
    .. c:member:: int perf_profiling
 
-      Enable compatibility mode with the perf profiler?
+      Enable the Linux ``perf`` profiler support?
 
-      If non-zero, initialize the perf trampoline. See :ref:`perf_profiling`
-      for more information.
+      If equals to ``1``, enable support for the Linux ``perf`` profiler.
 
-      Set by :option:`-X perf <-X>` command-line option and by the
-      :envvar:`PYTHON_PERF_JIT_SUPPORT` environment variable for perf support
-      with stack pointers and :option:`-X perf_jit <-X>` command-line option
-      and by the :envvar:`PYTHON_PERF_JIT_SUPPORT` environment variable for perf
-      support with DWARF JIT information.
+      If equals to ``2``, enable support for the Linux ``perf`` profiler with
+      DWARF JIT support.
+
+      Set to ``1`` by :option:`-X perf <-X>` command-line option and the
+      :envvar:`PYTHONPERFSUPPORT` environment variable.
+
+      Set to ``2`` by the :option:`-X perf_jit <-X>` command-line option and
+      the :envvar:`PYTHON_PERF_JIT_SUPPORT` environment variable.
 
       Default: ``-1``.
+
+      .. seealso::
+         See :ref:`perf_profiling` for more information.
 
       .. versionadded:: 3.12
 

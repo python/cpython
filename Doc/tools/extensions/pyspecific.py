@@ -288,6 +288,9 @@ class DeprecatedRemoved(VersionChange):
         version_deprecated = expand_version_arg(self.arguments[0],
                                                 self.config.release)
         version_removed = self.arguments.pop(1)
+        if version_removed == 'next':
+            raise ValueError(
+                'deprecated-removed:: second argument cannot be `next`')
         self.arguments[0] = version_deprecated, version_removed
 
         # Set the label based on if we have reached the removal version
