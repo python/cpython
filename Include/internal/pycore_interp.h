@@ -272,6 +272,7 @@ struct _is {
     Py_ssize_t sys_tracing_threads; /* Count of threads with c_tracefunc set */
     PyObject *monitoring_callables[PY_MONITORING_TOOL_IDS][_PY_MONITORING_EVENTS];
     PyObject *monitoring_tool_names[PY_MONITORING_TOOL_IDS];
+    uintptr_t monitoring_tool_versions[PY_MONITORING_TOOL_IDS];
 
     struct _Py_interp_cached_objects cached_objects;
     struct _Py_interp_static_objects static_objects;
