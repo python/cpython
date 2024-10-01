@@ -867,7 +867,7 @@ def _get_data_to_test_strptime_with_few_digits_year(fmt):
     # is minimized, as in `_strptime.LocaleTime.__calc_date_time()`):
     sample_year = 1999
     sample_tt = (sample_year, 3, 17, 22, 44, 55, 2, 76, 0)
-    sample_str = time.strftime(fmt, sample_tt)
+    sample_string = time.strftime(fmt, sample_tt)
     sample_year_4digits = str(sample_year)
     sample_year_2digits = str(sample_year)[-2:]
 
@@ -876,19 +876,19 @@ def _get_data_to_test_strptime_with_few_digits_year(fmt):
     year_1digit = '7'
 
     # 3. Obtain the resultant 2-tuple:
-    if sample_year_4digits in sample_str:
-        input_string = sample_str.replace(sample_year_4digits, year_1digit)
+    if sample_year_4digits in sample_string:
+        input_string = sample_string.replace(sample_year_4digits, year_1digit)
         if sample_year_2digits in input_string:
             raise RuntimeError(f"the {fmt!r} format is not supported by "
                                f"this helper (a {fmt!r}-formatted string, "
-                               f"{sample_str!r}, seems to include both a "
+                               f"{sample_string!r}, seems to include both a "
                                f"2-digit and 4-digit year number)")
         expected_year = int(year_1digit)
-    elif sample_year_2digits in sample_str:
-        input_string = sample_str.replace(sample_year_2digits, year_1digit)
+    elif sample_year_2digits in sample_string:
+        input_string = sample_string.replace(sample_year_2digits, year_1digit)
         expected_year = 2000 + int(year_1digit)
     else:
-        raise AssertionError(f"time.strftime({fmt!r}, ...)={sample_str!r} "
+        raise AssertionError(f"time.strftime({fmt!r}, ...)={sample_string!r} "
                              f"does not include the year {sample_year!r} in "
                              f"any expected format (are {fmt!r}-formatted "
                              f"strings supposed to include a year number? "
