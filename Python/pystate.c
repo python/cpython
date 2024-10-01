@@ -20,7 +20,7 @@
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
-#include "pycore_typeid.h"        // _PyType_FinalizeThreadLocalRefcounts()
+#include "pycore_uniqueid.h"      // _PyType_FinalizeThreadLocalRefcounts()
 
 /* --------------------------------------------------------------------------
 CAUTION
@@ -1745,7 +1745,7 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     // Merge our thread-local refcounts into the type's own refcount and
     // free our local refcount array.
-    _PyType_FinalizeThreadLocalRefcounts((_PyThreadStateImpl *)tstate);
+    _PyObject_FinalizePerThreadRefcounts((_PyThreadStateImpl *)tstate);
 
     // Remove ourself from the biased reference counting table of threads.
     _Py_brc_remove_thread(tstate);
@@ -1805,7 +1805,7 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
     _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
     tstate->interp->object_state.reftotal += tstate_impl->reftotal;
     tstate_impl->reftotal = 0;
-    assert(tstate_impl->types.refcounts == NULL);
+    assert(tstate_impl->refcounts.values == NULL);
 #endif
 
     HEAD_UNLOCK(runtime);

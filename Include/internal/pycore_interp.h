@@ -35,7 +35,7 @@ extern "C" {
 #include "pycore_qsbr.h"          // struct _qsbr_state
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_tuple.h"         // struct _Py_tuple_state
-#include "pycore_typeid.h"        // struct _Py_type_id_pool
+#include "pycore_uniqueid.h"      // struct _Py_unique_id_pool
 #include "pycore_typeobject.h"    // struct types_state
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
@@ -221,7 +221,7 @@ struct _is {
 #if defined(Py_GIL_DISABLED)
     struct _mimalloc_interp_state mimalloc;
     struct _brc_state brc;  // biased reference counting state
-    struct _Py_type_id_pool type_ids;
+    struct _Py_unique_id_pool unique_ids;  // object ids for per-thread refcounts
     PyMutex weakref_locks[NUM_WEAKREF_LIST_LOCKS];
 #endif
 

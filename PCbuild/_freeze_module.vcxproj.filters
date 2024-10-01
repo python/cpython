@@ -467,7 +467,7 @@
     <ClCompile Include="..\Python\tracemalloc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\typeid.c">
+    <ClCompile Include="..\Python\uniqueid.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\tupleobject.c">

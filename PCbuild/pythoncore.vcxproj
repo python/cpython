@@ -304,13 +304,13 @@
     <ClInclude Include="..\Include\internal\pycore_tracemalloc.h" />
     <ClInclude Include="..\Include\internal\pycore_tstate.h" />
     <ClInclude Include="..\Include\internal\pycore_tuple.h" />
-    <ClInclude Include="..\Include\internal\pycore_typeid.h" />
     <ClInclude Include="..\Include\internal\pycore_typeobject.h" />
     <ClInclude Include="..\Include\internal\pycore_typevarobject.h" />
     <ClInclude Include="..\Include\internal\pycore_ucnhash.h" />
     <ClInclude Include="..\Include\internal\pycore_unionobject.h" />
     <ClInclude Include="..\Include\internal\pycore_unicodeobject.h" />
     <ClInclude Include="..\Include\internal\pycore_unicodeobject_generated.h" />
+    <ClInclude Include="..\Include\internal\pycore_uniqueid.h" />
     <ClInclude Include="..\Include\internal\pycore_warnings.h" />
     <ClInclude Include="..\Include\internal\pycore_weakref.h" />
     <ClInclude Include="..\Include\intrcheck.h" />
@@ -657,7 +657,7 @@
     <ClCompile Include="..\Python\thread.c" />
     <ClCompile Include="..\Python\traceback.c" />
     <ClCompile Include="..\Python\tracemalloc.c" />
-    <ClCompile Include="..\Python\typeid.c" />
+    <ClCompile Include="..\Python\uniqueid.c" />
   </ItemGroup>
   <ItemGroup Condition="$(IncludeExternals)">
     <ClCompile Include="..\Modules\zlibmodule.c" />

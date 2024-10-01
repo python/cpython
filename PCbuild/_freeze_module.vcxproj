@@ -268,7 +268,7 @@
     <ClCompile Include="..\Python\thread.c" />
     <ClCompile Include="..\Python\traceback.c" />
     <ClCompile Include="..\Python\tracemalloc.c" />
-    <ClCompile Include="..\Python\typeid.c" />
+    <ClCompile Include="..\Python\uniqueid.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\PC\pyconfig.h.in" />
