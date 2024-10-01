@@ -51,8 +51,6 @@ FILES = [
     "test_pdb.msi",
     "tools.msi",
     "ucrt.msi",
-    "Windows8.1-KB2999226-x64.msu",
-    "Windows8.1-KB2999226-x86.msu",
 ]
 PATHS = [
     "python-{}.exe".format(m.group(0)),
