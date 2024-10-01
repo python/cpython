@@ -1,0 +1,377 @@
+.. date: 2024-09-10-19-23-00
+.. gh-issue: 123915
+.. nonce: yZMEDO
+.. release date: 2024-10-01
+.. section: Windows
+
+Ensure that ``Tools\msi\buildrelease.bat`` uses different directories for
+AMD64 and ARM64 builds.
+
+..
+
+.. date: 2024-04-24-22-50-33
+.. gh-issue: 117505
+.. nonce: gcTb_p
+.. section: Windows
+
+Fixes an issue with the Windows installer not running ensurepip in a fully
+isolated environment. This could cause unexpected interactions with the user
+site-packages.
+
+..
+
+.. date: 2024-09-25-12-39-34
+.. gh-issue: 124378
+.. nonce: Ywwgia
+.. section: Tests
+
+Updated ``test_ttk`` to pass with Tcl/Tk 8.6.15.
+
+..
+
+.. date: 2024-08-07-10-42-13
+.. gh-issue: 122792
+.. nonce: oiTMo9
+.. section: Security
+
+Changed IPv4-mapped ``ipaddress.IPv6Address`` to consistently use the mapped
+IPv4 address value for deciding properties. Properties which have their
+behavior fixed are ``is_multicast``, ``is_reserved``, ``is_link_local``,
+``is_global``, and ``is_unspecified``.
+
+..
+
+.. date: 2024-09-27-15-16-04
+.. gh-issue: 116850
+.. nonce: dBkR0-
+.. section: Library
+
+Fix :mod:`argparse` for namespaces with not directly writable dict (e.g.
+classes).
+
+..
+
+.. date: 2024-09-26-22-14-12
+.. gh-issue: 58573
+.. nonce: hozbm9
+.. section: Library
+
+Fix conflicts between abbreviated long options in the parent parser and
+subparsers in :mod:`argparse`.
+
+..
+
+.. date: 2024-09-26-09-18-09
+.. gh-issue: 61181
+.. nonce: dwjmch
+.. section: Library
+
+Fix support of :ref:`choices` with string value in :mod:`argparse`.
+Substrings of the specified string no longer considered valid values.
+
+..
+
+.. date: 2024-09-25-18-08-29
+.. gh-issue: 80259
+.. nonce: kO5Tw7
+.. section: Library
+
+Fix :mod:`argparse` support of positional arguments with ``nargs='?'``,
+``default=argparse.SUPPRESS`` and specified ``type``.
+
+..
+
+.. date: 2024-09-25-12-14-58
+.. gh-issue: 124498
+.. nonce: Ozxs55
+.. section: Library
+
+Fix :class:`typing.TypeAliasType` not to be generic, when ``type_params`` is
+an empty tuple.
+
+..
+
+.. date: 2024-09-24-12-34-48
+.. gh-issue: 124345
+.. nonce: s3vKql
+.. section: Library
+
+:mod:`argparse` vim supports abbreviated single-dash long options separated
+by ``=`` from its value.
+
+..
+
+.. date: 2024-09-23-17-33-47
+.. gh-issue: 104860
+.. nonce: O86OSc
+.. section: Library
+
+Fix disallowing abbreviation of single-dash long options in :mod:`argparse`
+with ``allow_abbrev=False``.
+
+..
+
+.. date: 2024-09-21-23-56-41
+.. gh-issue: 63143
+.. nonce: YKu-LQ
+.. section: Library
+
+Fix parsing mutually exclusive arguments in :mod:`argparse`. Arguments with
+the value identical to the default value (e.g. booleans, small integers,
+empty or 1-character strings) are no longer considered "not present".
+
+..
+
+.. date: 2024-09-21-22-32-21
+.. gh-issue: 72795
+.. nonce: naLmkX
+.. section: Library
+
+Positional arguments with :ref:`nargs` equal to ``'*'`` or
+:data:`!argparse.REMAINDER` are no longer required. This allows to use
+positional argument with ``nargs='*'`` and without ``default`` in mutually
+exclusive group and improves error message about required arguments.
+
+..
+
+.. date: 2024-09-21-19-02-37
+.. gh-issue: 59317
+.. nonce: OAhNZZ
+.. section: Library
+
+Fix parsing positional argument with :ref:`nargs` equal to ``'?'`` or
+``'*'`` if it is preceded by an option and another positional argument.
+
+..
+
+.. date: 2024-09-20-12-23-11
+.. gh-issue: 53780
+.. nonce: mrV1zi
+.. section: Library
+
+:mod:`argparse` now ignores the first ``"--"`` (double dash) between an
+option and command.
+
+..
+
+.. date: 2024-09-19-20-15-00
+.. gh-issue: 124217
+.. nonce: j0KlQB
+.. section: Library
+
+Add RFC 9637 reserved IPv6 block ``3fff::/20`` in :mod:`ipaddress` module.
+
+..
+
+.. date: 2024-09-19-11-47-39
+.. gh-issue: 124248
+.. nonce: g7rufd
+.. section: Library
+
+Fixed potential crash when using :mod:`struct` to process zero-width 'Pascal
+string' fields (``0p``).
+
+..
+
+.. date: 2024-09-19-10-36-18
+.. gh-issue: 81691
+.. nonce: Hyhp_U
+.. section: Library
+
+Fix handling of multiple ``"--"`` (double dashes) in :mod:`argparse`. Only
+the first one has now been removed, all subsequent ones are now taken
+literally.
+
+..
+
+.. date: 2024-09-19-03-46-59
+.. gh-issue: 87041
+.. nonce: 9Ox7Bv
+.. section: Library
+
+Fix a bug in :mod:`argparse` where lengthy subparser argument help is
+incorrectly indented.
+
+..
+
+.. date: 2024-09-17-18-06-42
+.. gh-issue: 124171
+.. nonce: PHCvRJ
+.. section: Library
+
+Add workaround for broken :c:func:`!fmod()` implementations on Windows, that
+loose zero sign (e.g. ``fmod(-10, 1)`` returns ``0.0``).  Patch by Sergey B
+Kirpichev.
+
+..
+
+.. date: 2024-09-13-10-34-19
+.. gh-issue: 123934
+.. nonce: yMe7mL
+.. section: Library
+
+Fix :class:`unittest.mock.MagicMock` reseting magic methods return values
+after ``.reset_mock(return_value=True)`` was called.
+
+..
+
+.. date: 2024-09-11-13-33-19
+.. gh-issue: 123935
+.. nonce: fRZ_56
+.. section: Library
+
+Fix parent slots detection for dataclasses that inherit from classes with
+``__dictoffset__``.
+
+..
+
+.. date: 2024-09-10-11-26-14
+.. gh-issue: 123892
+.. nonce: 2gzIrz
+.. section: Library
+
+Add ``"_wmi"`` to :data:`sys.stdlib_module_names`. Patch by Victor Stinner.
+
+..
+
+.. date: 2024-08-23-15-49-10
+.. gh-issue: 116810
+.. nonce: QLBUU8
+.. section: Library
+
+Resolve a memory leak introduced in CPython 3.10's :mod:`ssl` when the
+:attr:`ssl.SSLSocket.session` property was accessed.  Speeds up read and
+write access to said property by no longer unnecessarily cloning session
+objects via serialization.
+
+..
+
+.. date: 2024-08-15-09-45-34
+.. gh-issue: 121735
+.. nonce: _1q0qf
+.. section: Library
+
+When working with zip archives, importlib.resources now properly honors
+module-adjacent references (e.g. ``files(pkg.mod)`` and not just
+``files(pkg)``).
+
+..
+
+.. date: 2024-07-03-14-23-04
+.. gh-issue: 119004
+.. nonce: L5MoUu
+.. section: Library
+
+Fix a crash in :ref:`OrderedDict.__eq__ <collections_OrderedDict__eq__>`
+when operands are mutated during the check. Patch by Bénédikt Tran.
+
+..
+
+.. bpo: 44864
+.. date: 2021-08-24-19-37-46
+.. nonce: KzxaDh
+.. section: Library
+
+Do not translate user-provided strings in :class:`argparse.ArgumentParser`.
+
+..
+
+.. date: 2024-09-21-23-12-18
+.. gh-issue: 112938
+.. nonce: OeiDru
+.. section: IDLE
+
+Fix uninteruptable hang when Shell gets rapid continuous output.
+
+..
+
+.. date: 2024-09-25-12-05-45
+.. gh-issue: 116510
+.. nonce: dhn8w8
+.. section: Core and Builtins
+
+Fix a bug that can cause a crash when sub-interpreters use "basic"
+single-phase extension modules.  Shared objects could refer to PyGC_Head
+nodes that had been freed as part of interpreter cleanup.
+
+..
+
+.. date: 2024-09-17-22-06-01
+.. gh-issue: 124188
+.. nonce: aFqNAB
+.. section: Core and Builtins
+
+Fix reading and decoding a line from the source file witn non-UTF-8 encoding
+for syntax errors raised in the compiler.
+
+..
+
+.. date: 2024-09-10-13-27-16
+.. gh-issue: 77894
+.. nonce: ZC-Olu
+.. section: Core and Builtins
+
+Fix possible crash in the garbage collector when it tries to break a
+reference loop containing a :class:`memoryview` object. Now a
+:class:`!memoryview` object can only be cleared if there are no buffers that
+refer it.
+
+..
+
+.. date: 2024-06-19-21-34-21
+.. gh-issue: 98442
+.. nonce: cqhjkN
+.. section: Core and Builtins
+
+Fix too wide source locations of the cleanup instructions of a with
+statement.
+
+..
+
+.. date: 2024-06-14-22-02-25
+.. gh-issue: 113993
+.. nonce: MiA0vX
+.. section: Core and Builtins
+
+Strings interned with :func:`sys.intern` are again garbage-collected when no
+longer used, as per the documentation. Strings interned with the C function
+:c:func:`PyUnicode_InternInPlace` are still immortal. Internals of the
+string interning mechanism have been changed. This may affect performance
+and identities of :class:`str` objects.
+
+..
+
+.. date: 2024-07-04-15-41-10
+.. gh-issue: 113993
+.. nonce: cLSiWV
+.. section: C API
+
+:c:func:`PyUnicode_InternInPlace` no longer prevents its argument from being
+garbage collected.
+
+Several functions that take ``char *`` are now documented as possibly
+preventing string objects from being garbage collected; refer to their
+documentation for details: :c:func:`PyUnicode_InternFromString`,
+:c:func:`PyDict_SetItemString`, :c:func:`PyObject_SetAttrString`,
+:c:func:`PyObject_DelAttrString`, :c:func:`PyUnicode_InternFromString`, and
+``PyModule_Add*`` convenience functions.
+
+..
+
+.. date: 2024-09-27-15-58-10
+.. gh-issue: 124487
+.. nonce: PAZTQf
+.. section: Build
+
+Windows builds now use Windows 8.1 as their API baseline (installation
+already required Windows 8.1).
+
+..
+
+.. date: 2024-09-11-16-06-42
+.. gh-issue: 123917
+.. nonce: JuZl0r
+.. section: Build
+
+Fix the check for the ``crypt()`` function in the configure script. Patch by
+Paul Smith and Victor Stinner.

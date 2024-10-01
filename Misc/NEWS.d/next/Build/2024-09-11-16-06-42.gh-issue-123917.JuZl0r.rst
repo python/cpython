@@ -1,2 +1,0 @@
-Fix the check for the ``crypt()`` function in the configure script. Patch by
-Paul Smith and Victor Stinner.
