@@ -806,7 +806,7 @@ jisx0213_encoder(const MultibyteCodec *codec, const Py_UCS4 *data,
                                 jisx0213_pair_encmap, JISX0213_ENCPAIRS);
         if (coded != DBCINV)
             return coded;
-        /* fall through */
+        _Py_FALLTHROUGH;
 
     case -1: /* flush unterminated */
         *length = 1;

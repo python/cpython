@@ -6,6 +6,7 @@ import copy
 from itertools import permutations
 import pickle
 from random import choice
+import re
 import sys
 from test import support
 import threading
@@ -30,10 +31,6 @@ c_functools = import_helper.import_fresh_module('functools',
                                                 fresh=['_functools'])
 
 decimal = import_helper.import_fresh_module('decimal', fresh=['_decimal'])
-
-_partial_types = [py_functools.partial]
-if c_functools:
-    _partial_types.append(c_functools.partial)
 
 
 @contextlib.contextmanager
@@ -189,6 +186,19 @@ class TestPartial:
         flat = partial(signature, 'asdf', bar=True)
         self.assertEqual(signature(nested), signature(flat))
 
+    def test_nested_optimization_bug(self):
+        partial = self.partial
+        class Builder:
+            def __call__(self, tag, *children, **attrib):
+                return (tag, children, attrib)
+
+            def __getattr__(self, tag):
+                return partial(self, tag)
+
+        B = Builder()
+        m = B.m
+        assert m(1, 2, a=2) == ('m', (1, 2), dict(a=2))
+
     def test_nested_partial_with_attribute(self):
         # see issue 25137
         partial = self.partial
@@ -201,16 +211,58 @@ class TestPartial:
         p2.new_attr = 'spam'
         self.assertEqual(p2.new_attr, 'spam')
 
+    def test_placeholders_trailing_raise(self):
+        PH = self.module.Placeholder
+        for args in [(PH,), (0, PH), (0, PH, 1, PH, PH, PH)]:
+            with self.assertRaises(TypeError):
+                self.partial(capture, *args)
+
+    def test_placeholders(self):
+        PH = self.module.Placeholder
+        # 1 Placeholder
+        args = (PH, 0)
+        p = self.partial(capture, *args)
+        actual_args, actual_kwds = p('x')
+        self.assertEqual(actual_args, ('x', 0))
+        self.assertEqual(actual_kwds, {})
+        # 2 Placeholders
+        args = (PH, 0, PH, 1)
+        p = self.partial(capture, *args)
+        with self.assertRaises(TypeError):
+            p('x')
+        actual_args, actual_kwds = p('x', 'y')
+        self.assertEqual(actual_args, ('x', 0, 'y', 1))
+        self.assertEqual(actual_kwds, {})
+
+    def test_placeholders_optimization(self):
+        PH = self.module.Placeholder
+        p = self.partial(capture, PH, 0)
+        p2 = self.partial(p, PH, 1, 2, 3)
+        self.assertEqual(p2.args, (PH, 0, 1, 2, 3))
+        p3 = self.partial(p2, -1, 4)
+        actual_args, actual_kwds = p3(5)
+        self.assertEqual(actual_args, (-1, 0, 1, 2, 3, 4, 5))
+        self.assertEqual(actual_kwds, {})
+        # inner partial has placeholders and outer partial has no args case
+        p = self.partial(capture, PH, 0)
+        p2 = self.partial(p)
+        self.assertEqual(p2.args, (PH, 0))
+        self.assertEqual(p2(1), ((1, 0), {}))
+
+    def test_construct_placeholder_singleton(self):
+        PH = self.module.Placeholder
+        tp = type(PH)
+        self.assertIs(tp(), PH)
+        self.assertRaises(TypeError, tp, 1, 2)
+        self.assertRaises(TypeError, tp, a=1, b=2)
+
     def test_repr(self):
         args = (object(), object())
         args_repr = ', '.join(repr(a) for a in args)
         kwargs = {'a': object(), 'b': object()}
         kwargs_reprs = ['a={a!r}, b={b!r}'.format_map(kwargs),
                         'b={b!r}, a={a!r}'.format_map(kwargs)]
-        if self.partial in _partial_types:
-            name = 'functools.partial'
-        else:
-            name = self.partial.__name__
+        name = f"{self.partial.__module__}.{self.partial.__qualname__}"
 
         f = self.partial(capture)
         self.assertEqual(f'{name}({capture!r})', repr(f))
@@ -229,10 +281,7 @@ class TestPartial:
                        for kwargs_repr in kwargs_reprs])
 
     def test_recursive_repr(self):
-        if self.partial in _partial_types:
-            name = 'functools.partial'
-        else:
-            name = self.partial.__name__
+        name = f"{self.partial.__module__}.{self.partial.__qualname__}"
 
         f = self.partial(capture)
         f.__setstate__((f, (), {}, {}))
@@ -308,6 +357,23 @@ class TestPartial:
         self.assertEqual(f(2), ((2,), {}))
         self.assertEqual(f(), ((), {}))
 
+        # Set State with placeholders
+        PH = self.module.Placeholder
+        f = self.partial(signature)
+        f.__setstate__((capture, (PH, 1), dict(a=10), dict(attr=[])))
+        self.assertEqual(signature(f), (capture, (PH, 1), dict(a=10), dict(attr=[])))
+        msg_regex = re.escape("missing positional arguments in 'partial' call; "
+                              "expected at least 1, got 0")
+        with self.assertRaisesRegex(TypeError, f'^{msg_regex}$') as cm:
+            f()
+        self.assertEqual(f(2), ((2, 1), dict(a=10)))
+
+        # Trailing Placeholder error
+        f = self.partial(signature)
+        msg_regex = re.escape("trailing Placeholders are not allowed")
+        with self.assertRaisesRegex(TypeError, f'^{msg_regex}$') as cm:
+            f.__setstate__((capture, (1, PH), dict(a=10), dict(attr=[])))
+
     def test_setstate_errors(self):
         f = self.partial(signature)
         self.assertRaises(TypeError, f.__setstate__, (capture, (), {}))
@@ -344,8 +410,10 @@ class TestPartial:
             f.__setstate__((f, (), {}, {}))
             try:
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                    with self.assertRaises(RecursionError):
-                        pickle.dumps(f, proto)
+                    # gh-117008: Small limit since pickle uses C stack memory
+                    with support.infinite_recursion(100):
+                        with self.assertRaises(RecursionError):
+                            pickle.dumps(f, proto)
             finally:
                 f.__setstate__((capture, (), {}, {}))
 
@@ -389,6 +457,21 @@ class TestPartial:
 
         f = self.partial(object)
         self.assertRaises(TypeError, f.__setstate__, BadSequence())
+
+    def test_partial_as_method(self):
+        class A:
+            meth = self.partial(capture, 1, a=2)
+            cmeth = classmethod(self.partial(capture, 1, a=2))
+            smeth = staticmethod(self.partial(capture, 1, a=2))
+
+        a = A()
+        self.assertEqual(A.meth(3, b=4), ((1, 3), {'a': 2, 'b': 4}))
+        self.assertEqual(A.cmeth(3, b=4), ((1, A, 3), {'a': 2, 'b': 4}))
+        self.assertEqual(A.smeth(3, b=4), ((1, 3), {'a': 2, 'b': 4}))
+        self.assertEqual(a.meth(3, b=4), ((1, a, 3), {'a': 2, 'b': 4}))
+        self.assertEqual(a.cmeth(3, b=4), ((1, A, 3), {'a': 2, 'b': 4}))
+        self.assertEqual(a.smeth(3, b=4), ((1, 3), {'a': 2, 'b': 4}))
+
 
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
 class TestPartialC(TestPartial, unittest.TestCase):
@@ -436,6 +519,19 @@ class TestPartialC(TestPartial, unittest.TestCase):
         self.assertIn('astr', r)
         self.assertIn("['sth']", r)
 
+    def test_placeholders_refcount_smoke(self):
+        PH = self.module.Placeholder
+        # sum supports vector call
+        lst1, start = [], []
+        sum_lists = self.partial(sum, PH, start)
+        for i in range(10):
+            sum_lists([lst1, lst1])
+        # collections.ChainMap initializer does not support vectorcall
+        map1, map2 = {}, {}
+        partial_cm = self.partial(collections.ChainMap, PH, map1)
+        for i in range(10):
+            partial_cm(map2, map2)
+
 
 class TestPartialPy(TestPartial, unittest.TestCase):
     module = py_functools
@@ -459,6 +555,19 @@ class TestPartialCSubclass(TestPartialC):
 
 class TestPartialPySubclass(TestPartialPy):
     partial = PyPartialSubclass
+
+    def test_subclass_optimization(self):
+        # `partial` input to `partial` subclass
+        p = py_functools.partial(min, 2)
+        p2 = self.partial(p, 1)
+        self.assertIs(p2.func, min)
+        self.assertEqual(p2(0), 0)
+        # `partial` subclass input to `partial` subclass
+        p = self.partial(min, 2)
+        p2 = self.partial(p, 1)
+        self.assertIs(p2.func, min)
+        self.assertEqual(p2(0), 0)
+
 
 class TestPartialMethod(unittest.TestCase):
 
@@ -564,6 +673,14 @@ class TestPartialMethod(unittest.TestCase):
                 method = functools.partialmethod(func=capture, a=1)
 
     def test_repr(self):
+        self.assertEqual(repr(vars(self.A)['nothing']),
+                         'functools.partialmethod({})'.format(capture))
+        self.assertEqual(repr(vars(self.A)['positional']),
+                         'functools.partialmethod({}, 1)'.format(capture))
+        self.assertEqual(repr(vars(self.A)['keywords']),
+                         'functools.partialmethod({}, a=2)'.format(capture))
+        self.assertEqual(repr(vars(self.A)['spec_keywords']),
+                         'functools.partialmethod({}, self=1, func=2)'.format(capture))
         self.assertEqual(repr(vars(self.A)['both']),
                          'functools.partialmethod({}, 3, b=4)'.format(capture))
 
@@ -588,6 +705,20 @@ class TestPartialMethod(unittest.TestCase):
 
         p = functools.partial(f, 1)
         self.assertEqual(p(2), f(1, 2))
+
+    def test_subclass_optimization(self):
+        class PartialMethodSubclass(functools.partialmethod):
+            pass
+        # `partialmethod` input to `partialmethod` subclass
+        p = functools.partialmethod(min, 2)
+        p2 = PartialMethodSubclass(p, 1)
+        self.assertIs(p2.func, min)
+        self.assertEqual(p2.__get__(0)(), 0)
+        # `partialmethod` subclass input to `partialmethod` subclass
+        p = PartialMethodSubclass(min, 2)
+        p2 = PartialMethodSubclass(p, 1)
+        self.assertIs(p2.func, min)
+        self.assertEqual(p2.__get__(0)(), 0)
 
 
 class TestUpdateWrapper(unittest.TestCase):
@@ -704,6 +835,34 @@ class TestUpdateWrapper(unittest.TestCase):
         self.assertEqual(wrapper.__name__, 'max')
         self.assertTrue(wrapper.__doc__.startswith('max('))
         self.assertEqual(wrapper.__annotations__, {})
+
+    def test_update_type_wrapper(self):
+        def wrapper(*args): pass
+
+        functools.update_wrapper(wrapper, type)
+        self.assertEqual(wrapper.__name__, 'type')
+        self.assertEqual(wrapper.__annotations__, {})
+        self.assertEqual(wrapper.__type_params__, ())
+
+    def test_update_wrapper_annotations(self):
+        def inner(x: int): pass
+        def wrapper(*args): pass
+
+        functools.update_wrapper(wrapper, inner)
+        self.assertEqual(wrapper.__annotations__, {'x': int})
+        self.assertIs(wrapper.__annotate__, inner.__annotate__)
+
+        def with_forward_ref(x: undefined): pass
+        def wrapper(*args): pass
+
+        functools.update_wrapper(wrapper, with_forward_ref)
+
+        self.assertIs(wrapper.__annotate__, with_forward_ref.__annotate__)
+        with self.assertRaises(NameError):
+            wrapper.__annotations__
+
+        undefined = str
+        self.assertEqual(wrapper.__annotations__, {'x': undefined})
 
 
 class TestWraps(TestUpdateWrapper):
@@ -939,9 +1098,16 @@ class TestCmpToKey:
         self.assertRaises(TypeError, hash, k)
         self.assertNotIsInstance(k, collections.abc.Hashable)
 
+    @unittest.skipIf(support.MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_cmp_to_signature(self):
-        self.assertEqual(str(Signature.from_callable(self.cmp_to_key)),
-                         '(mycmp)')
+        sig = Signature.from_callable(self.cmp_to_key)
+        self.assertEqual(str(sig), '(mycmp)')
+        def mycmp(x, y):
+            return y - x
+        sig = Signature.from_callable(self.cmp_to_key(mycmp))
+        self.assertEqual(str(sig), '(obj)')
+
 
 
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
@@ -1826,6 +1992,7 @@ class TestLRU:
             return 1
         self.assertEqual(f.cache_parameters(), {'maxsize': 1000, "typed": True})
 
+    @support.suppress_immortalization()
     def test_lru_cache_weakrefable(self):
         @self.module.lru_cache
         def test_function(x):
@@ -1856,11 +2023,32 @@ class TestLRU:
             self.assertIsNone(ref())
 
     def test_common_signatures(self):
-        def orig(): ...
+        def orig(a, /, b, c=True): ...
         lru = self.module.lru_cache(1)(orig)
 
+        self.assertEqual(str(Signature.from_callable(lru)), '(a, /, b, c=True)')
         self.assertEqual(str(Signature.from_callable(lru.cache_info)), '()')
         self.assertEqual(str(Signature.from_callable(lru.cache_clear)), '()')
+
+    @support.skip_on_s390x
+    @unittest.skipIf(support.is_wasi, "WASI has limited C stack")
+    def test_lru_recursion(self):
+
+        @self.module.lru_cache
+        def fib(n):
+            if n <= 1:
+                return n
+            return fib(n-1) + fib(n-2)
+
+        if not support.Py_DEBUG:
+            depth = support.get_c_recursion_limit()*2//7
+            with support.infinite_recursion():
+                fib(depth)
+        if self.module == c_functools:
+            fib.cache_clear()
+            with support.infinite_recursion():
+                with self.assertRaises(RecursionError):
+                    fib(10000)
 
 
 @py_functools.lru_cache()
@@ -2684,7 +2872,10 @@ class TestSingleDispatch(unittest.TestCase):
             A().static_func
         ):
             with self.subTest(meth=meth):
-                self.assertEqual(meth.__doc__, 'My function docstring')
+                self.assertEqual(meth.__doc__,
+                                 ('My function docstring'
+                                  if support.HAVE_DOCSTRINGS
+                                  else None))
                 self.assertEqual(meth.__annotations__['arg'], int)
 
         self.assertEqual(A.func.__name__, 'func')
@@ -2773,7 +2964,10 @@ class TestSingleDispatch(unittest.TestCase):
             WithSingleDispatch().decorated_classmethod
         ):
             with self.subTest(meth=meth):
-                self.assertEqual(meth.__doc__, 'My function docstring')
+                self.assertEqual(meth.__doc__,
+                                 ('My function docstring'
+                                  if support.HAVE_DOCSTRINGS
+                                  else None))
                 self.assertEqual(meth.__annotations__['arg'], int)
 
         self.assertEqual(
@@ -2845,11 +3039,26 @@ class TestSingleDispatch(unittest.TestCase):
 
     def test_invalid_positional_argument(self):
         @functools.singledispatch
-        def f(*args):
+        def f(*args, **kwargs):
             pass
         msg = 'f requires at least 1 positional argument'
         with self.assertRaisesRegex(TypeError, msg):
             f()
+        msg = 'f requires at least 1 positional argument'
+        with self.assertRaisesRegex(TypeError, msg):
+            f(a=1)
+
+    def test_invalid_positional_argument_singledispatchmethod(self):
+        class A:
+            @functools.singledispatchmethod
+            def t(self, *args, **kwargs):
+                pass
+        msg = 't requires at least 1 positional argument'
+        with self.assertRaisesRegex(TypeError, msg):
+            A().t()
+        msg = 't requires at least 1 positional argument'
+        with self.assertRaisesRegex(TypeError, msg):
+            A().t(a=1)
 
     def test_union(self):
         @functools.singledispatch
@@ -2973,6 +3182,27 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(f(""), "default")
         self.assertEqual(f(b""), "default")
 
+    def test_forward_reference(self):
+        @functools.singledispatch
+        def f(arg, arg2=None):
+            return "default"
+
+        @f.register
+        def _(arg: str, arg2: undefined = None):
+            return "forward reference"
+
+        self.assertEqual(f(1), "default")
+        self.assertEqual(f(""), "forward reference")
+
+    def test_unresolved_forward_reference(self):
+        @functools.singledispatch
+        def f(arg):
+            return "default"
+
+        with self.assertRaisesRegex(TypeError, "is an unresolved forward reference"):
+            @f.register
+            def _(arg: undefined):
+                return "forward reference"
 
 class CachedCostItem:
     _cost = 1
@@ -3101,7 +3331,10 @@ class TestCachedProperty(unittest.TestCase):
         self.assertIsInstance(CachedCostItem.cost, py_functools.cached_property)
 
     def test_doc(self):
-        self.assertEqual(CachedCostItem.cost.__doc__, "The cost of the item.")
+        self.assertEqual(CachedCostItem.cost.__doc__,
+                         ("The cost of the item."
+                          if support.HAVE_DOCSTRINGS
+                          else None))
 
     def test_module(self):
         self.assertEqual(CachedCostItem.cost.__module__, CachedCostItem.__module__)

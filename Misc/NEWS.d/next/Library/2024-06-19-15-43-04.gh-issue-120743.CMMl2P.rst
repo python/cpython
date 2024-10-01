@@ -1,0 +1,3 @@
+:term:`Soft deprecate <soft deprecated>` :func:`os.popen` and :func:`os.spawn*
+<os.spawnl>` functions. They should no longer be used to write new code. The
+:mod:`subprocess` module is recommended instead. Patch by Victor Stinner.

@@ -1,5 +1,5 @@
-:mod:`venv` --- Creation of virtual environments
-================================================
+:mod:`!venv` --- Creation of virtual environments
+=================================================
 
 .. module:: venv
    :synopsis: Creation of virtual environments.
@@ -27,7 +27,7 @@ optionally be isolated from the packages in the base environment,
 so only those explicitly installed in the virtual environment are available.
 
 When used from within a virtual environment, common installation tools such as
-`pip`_ will install Python packages into a virtual environment
+:pypi:`pip` will install Python packages into a virtual environment
 without needing to be told to do so explicitly.
 
 A virtual environment is (amongst other things):
@@ -37,14 +37,14 @@ A virtual environment is (amongst other things):
   are by default isolated from software in other virtual environments and Python
   interpreters and libraries installed in the operating system.
 
-* Contained in a directory, conventionally either named ``venv`` or ``.venv`` in
+* Contained in a directory, conventionally named ``.venv`` or ``venv`` in
   the project directory, or under a container directory for lots of virtual
   environments, such as ``~/.virtualenvs``.
 
 * Not checked into source control systems such as Git.
 
 * Considered as disposable -- it should be simple to delete and recreate it from
-  scratch. You don't place any project code in the environment
+  scratch. You don't place any project code in the environment.
 
 * Not considered as movable or copyable -- you just recreate the same
   environment in the target location.
@@ -54,14 +54,134 @@ See :pep:`405` for more background on Python virtual environments.
 .. seealso::
 
    `Python Packaging User Guide: Creating and using virtual environments
-   <https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment>`__
+   <https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#create-and-use-virtual-environments>`__
 
-.. include:: ../includes/wasm-notavail.rst
+.. include:: ../includes/wasm-mobile-notavail.rst
 
 Creating virtual environments
 -----------------------------
 
-.. include:: /using/venv-create.inc
+:ref:`Virtual environments <venv-def>` are created by executing the ``venv``
+module:
+
+.. code-block:: shell
+
+    python -m venv /path/to/new/virtual/environment
+
+This creates the target directory (including parent directories as needed)
+and places a :file:`pyvenv.cfg` file in it with a ``home`` key
+pointing to the Python installation from which the command was run.
+It also creates a :file:`bin` (or :file:`Scripts` on Windows) subdirectory
+containing a copy or symlink of the Python executable
+(as appropriate for the platform or arguments used at environment creation time).
+It also creates a :file:`lib/pythonX.Y/site-packages` subdirectory
+(on Windows, this is :file:`Lib\site-packages`).
+If an existing directory is specified, it will be re-used.
+
+.. versionchanged:: 3.5
+   The use of ``venv`` is now recommended for creating virtual environments.
+
+.. deprecated-removed:: 3.6 3.8
+   :program:`pyvenv` was the recommended tool for creating virtual environments
+   for Python 3.3 and 3.4, and replaced in 3.5 by executing ``venv`` directly.
+
+.. highlight:: none
+
+On Windows, invoke the ``venv`` command as follows:
+
+.. code-block:: ps1con
+
+   PS> python -m venv C:\path\to\new\virtual\environment
+
+The command, if run with ``-h``, will show the available options::
+
+   usage: venv [-h] [--system-site-packages] [--symlinks | --copies] [--clear]
+               [--upgrade] [--without-pip] [--prompt PROMPT] [--upgrade-deps]
+               [--without-scm-ignore-files]
+               ENV_DIR [ENV_DIR ...]
+
+   Creates virtual Python environments in one or more target directories.
+
+   positional arguments:
+     ENV_DIR               A directory to create the environment in.
+
+   options:
+     -h, --help            show this help message and exit
+     --system-site-packages
+                           Give the virtual environment access to the system
+                           site-packages dir.
+     --symlinks            Try to use symlinks rather than copies, when
+                           symlinks are not the default for the platform.
+     --copies              Try to use copies rather than symlinks, even when
+                           symlinks are the default for the platform.
+     --clear               Delete the contents of the environment directory
+                           if it already exists, before environment creation.
+     --upgrade             Upgrade the environment directory to use this
+                           version of Python, assuming Python has been
+                           upgraded in-place.
+     --without-pip         Skips installing or upgrading pip in the virtual
+                           environment (pip is bootstrapped by default)
+     --prompt PROMPT       Provides an alternative prompt prefix for this
+                           environment.
+     --upgrade-deps        Upgrade core dependencies (pip) to the latest
+                           version in PyPI
+     --without-scm-ignore-files
+                           Skips adding SCM ignore files to the environment
+                           directory (Git is supported by default).
+
+   Once an environment has been created, you may wish to activate it, e.g. by
+   sourcing an activate script in its bin directory.
+
+
+.. versionchanged:: 3.4
+   Installs pip by default, added the ``--without-pip``  and ``--copies``
+   options.
+
+.. versionchanged:: 3.4
+   In earlier versions, if the target directory already existed, an error was
+   raised, unless the ``--clear`` or ``--upgrade`` option was provided.
+
+.. versionchanged:: 3.9
+   Add ``--upgrade-deps`` option to upgrade pip + setuptools to the latest on PyPI.
+
+.. versionchanged:: 3.12
+
+   ``setuptools`` is no longer a core venv dependency.
+
+.. versionchanged:: 3.13
+
+   Added the ``--without-scm-ignore-files`` option.
+.. versionchanged:: 3.13
+   ``venv`` now creates a :file:`.gitignore` file for Git by default.
+
+.. note::
+   While symlinks are supported on Windows, they are not recommended. Of
+   particular note is that double-clicking ``python.exe`` in File Explorer
+   will resolve the symlink eagerly and ignore the virtual environment.
+
+.. note::
+   On Microsoft Windows, it may be required to enable the ``Activate.ps1``
+   script by setting the execution policy for the user. You can do this by
+   issuing the following PowerShell command:
+
+   .. code-block:: powershell
+
+      PS C:\> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+   See `About Execution Policies
+   <https://go.microsoft.com/fwlink/?LinkID=135170>`_
+   for more information.
+
+The created :file:`pyvenv.cfg` file also includes the
+``include-system-site-packages`` key, set to ``true`` if ``venv`` is
+run with the ``--system-site-packages`` option, ``false`` otherwise.
+
+Unless the ``--without-pip`` option is given, :mod:`ensurepip` will be
+invoked to bootstrap ``pip`` into the virtual environment.
+
+Multiple paths can be given to ``venv``, in which case an identical virtual
+environment will be created, according to the given options, at each provided
+path.
 
 .. _venv-explanation:
 
@@ -117,7 +237,7 @@ should be runnable without activating it.
 
 In order to achieve this, scripts installed into virtual environments have
 a "shebang" line which points to the environment's Python interpreter,
-i.e. :samp:`#!/{<path-to-venv>}/bin/python`.
+:samp:`#!/{<path-to-venv>}/bin/python`.
 This means that the script will run with that interpreter regardless of the
 value of :envvar:`PATH`. On Windows, "shebang" line processing is supported if
 you have the :ref:`launcher` installed. Thus, double-clicking an installed
@@ -168,31 +288,31 @@ creation according to their needs, the :class:`EnvBuilder` class.
     The :class:`EnvBuilder` class accepts the following keyword arguments on
     instantiation:
 
-    * ``system_site_packages`` -- a Boolean value indicating that the system Python
+    * *system_site_packages* -- a boolean value indicating that the system Python
       site-packages should be available to the environment (defaults to ``False``).
 
-    * ``clear`` -- a Boolean value which, if true, will delete the contents of
+    * *clear* -- a boolean value which, if true, will delete the contents of
       any existing target directory, before creating the environment.
 
-    * ``symlinks`` -- a Boolean value indicating whether to attempt to symlink the
+    * *symlinks* -- a boolean value indicating whether to attempt to symlink the
       Python binary rather than copying.
 
-    * ``upgrade`` -- a Boolean value which, if true, will upgrade an existing
+    * *upgrade* -- a boolean value which, if true, will upgrade an existing
       environment with the running Python - for use when that Python has been
       upgraded in-place (defaults to ``False``).
 
-    * ``with_pip`` -- a Boolean value which, if true, ensures pip is
+    * *with_pip* -- a boolean value which, if true, ensures pip is
       installed in the virtual environment. This uses :mod:`ensurepip` with
       the ``--default-pip`` option.
 
-    * ``prompt`` -- a String to be used after virtual environment is activated
+    * *prompt* -- a string to be used after virtual environment is activated
       (defaults to ``None`` which means directory name of the environment would
       be used). If the special string ``"."`` is provided, the basename of the
       current directory is used as the prompt.
 
-    * ``upgrade_deps`` -- Update the base venv modules to the latest on PyPI
+    * *upgrade_deps* -- Update the base venv modules to the latest on PyPI
 
-    * ``scm_ignore_files`` -- Create ignore files based for the specified source
+    * *scm_ignore_files* -- Create ignore files based for the specified source
       control managers (SCM) in the iterable. Support is defined by having a
       method named ``create_{scm}_ignore_file``. The only value supported by
       default is ``"git"`` via :meth:`create_git_ignore_file`.
@@ -201,19 +321,16 @@ creation according to their needs, the :class:`EnvBuilder` class.
     .. versionchanged:: 3.4
        Added the ``with_pip`` parameter
 
-    .. versionadded:: 3.6
+    .. versionchanged:: 3.6
        Added the ``prompt`` parameter
 
-    .. versionadded:: 3.9
+    .. versionchanged:: 3.9
        Added the ``upgrade_deps`` parameter
 
-    .. versionadded:: 3.13
+    .. versionchanged:: 3.13
        Added the ``scm_ignore_files`` parameter
 
-    Creators of third-party virtual environment tools will be free to use the
-    provided :class:`EnvBuilder` class as a base class.
-
-    The returned env-builder is an object which has a method, ``create``:
+    :class:`EnvBuilder` may be used as a base class.
 
     .. method:: create(env_dir)
 
@@ -286,14 +403,14 @@ creation according to their needs, the :class:`EnvBuilder` class.
           the virtual environment.
 
 
-        .. versionchanged:: 3.12
-           The attribute ``lib_path`` was added to the context, and the context
-           object was documented.
-
         .. versionchanged:: 3.11
            The *venv*
            :ref:`sysconfig installation scheme <installation_paths>`
            is used to construct the paths of the created directories.
+
+        .. versionchanged:: 3.12
+           The attribute ``lib_path`` was added to the context, and the context
+           object was documented.
 
     .. method:: create_configuration(context)
 
@@ -313,14 +430,14 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     .. method:: upgrade_dependencies(context)
 
-       Upgrades the core venv dependency packages (currently ``pip``)
+       Upgrades the core venv dependency packages (currently :pypi:`pip`)
        in the environment. This is done by shelling out to the
        ``pip`` executable in the environment.
 
        .. versionadded:: 3.9
        .. versionchanged:: 3.12
 
-          ``setuptools`` is no longer a core venv dependency.
+          :pypi:`setuptools` is no longer a core venv dependency.
 
     .. method:: post_setup(context)
 
@@ -328,25 +445,15 @@ creation according to their needs, the :class:`EnvBuilder` class.
         implementations to pre-install packages in the virtual environment or
         perform other post-creation steps.
 
-    .. versionchanged:: 3.7.2
-       Windows now uses redirector scripts for ``python[w].exe`` instead of
-       copying the actual binaries. In 3.7.2 only :meth:`setup_python` does
-       nothing unless running from a build in the source tree.
-
-    .. versionchanged:: 3.7.3
-       Windows copies the redirector scripts as part of :meth:`setup_python`
-       instead of :meth:`setup_scripts`. This was not the case in 3.7.2.
-       When using symlinks, the original executables will be linked.
-
-    In addition, :class:`EnvBuilder` provides this utility method that can be
-    called from :meth:`setup_scripts` or :meth:`post_setup` in subclasses to
-    assist in installing custom scripts into the virtual environment.
-
     .. method:: install_scripts(context, path)
 
+        This method can be
+        called from :meth:`setup_scripts` or :meth:`post_setup` in subclasses to
+        assist in installing custom scripts into the virtual environment.
+
         *path* is the path to a directory that should contain subdirectories
-        "common", "posix", "nt", each containing scripts destined for the bin
-        directory in the environment.  The contents of "common" and the
+        ``common``, ``posix``, ``nt``; each containing scripts destined for the
+        ``bin`` directory in the environment.  The contents of ``common`` and the
         directory corresponding to :data:`os.name` are copied after some text
         replacement of placeholders:
 
@@ -371,9 +478,19 @@ creation according to their needs, the :class:`EnvBuilder` class.
     .. method:: create_git_ignore_file(context)
 
        Creates a ``.gitignore`` file within the virtual environment that causes
-       the entire directory to be ignored by the ``git`` source control manager.
+       the entire directory to be ignored by the Git source control manager.
 
        .. versionadded:: 3.13
+
+    .. versionchanged:: 3.7.2
+       Windows now uses redirector scripts for ``python[w].exe`` instead of
+       copying the actual binaries. In 3.7.2 only :meth:`setup_python` does
+       nothing unless running from a build in the source tree.
+
+    .. versionchanged:: 3.7.3
+       Windows copies the redirector scripts as part of :meth:`setup_python`
+       instead of :meth:`setup_scripts`. This was not the case in 3.7.2.
+       When using symlinks, the original executables will be linked.
 
 There is also a module-level convenience function:
 
@@ -387,16 +504,16 @@ There is also a module-level convenience function:
     .. versionadded:: 3.3
 
     .. versionchanged:: 3.4
-       Added the ``with_pip`` parameter
+       Added the *with_pip* parameter
 
     .. versionchanged:: 3.6
-       Added the ``prompt`` parameter
+       Added the *prompt* parameter
 
     .. versionchanged:: 3.9
-       Added the ``upgrade_deps`` parameter
+       Added the *upgrade_deps* parameter
 
     .. versionchanged:: 3.13
-       Added the ``scm_ignore_files`` parameter
+       Added the *scm_ignore_files* parameter
 
 An example of extending ``EnvBuilder``
 --------------------------------------
@@ -614,7 +731,3 @@ subclass which installs setuptools and pip into a created virtual environment::
 
 This script is also available for download `online
 <https://gist.github.com/vsajip/4673395>`_.
-
-
-.. _setuptools: https://pypi.org/project/setuptools/
-.. _pip: https://pypi.org/project/pip/

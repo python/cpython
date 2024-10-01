@@ -1041,12 +1041,10 @@ on_hook(PyObject *func)
 }
 
 static int
-#if defined(_RL_FUNCTION_TYPEDEF)
+#if defined(_RL_FUNCTION_TYPEDEF) || !defined(Py_RL_STARTUP_HOOK_TAKES_ARGS)
 on_startup_hook(void)
-#elif defined(WITH_APPLE_EDITLINE)
-on_startup_hook(const char *Py_UNUSED(text), int Py_UNUSED(state))
 #else
-on_startup_hook(void)
+on_startup_hook(const char *Py_UNUSED(text), int Py_UNUSED(state))
 #endif
 {
     int r;
@@ -1063,12 +1061,10 @@ on_startup_hook(void)
 
 #ifdef HAVE_RL_PRE_INPUT_HOOK
 static int
-#if defined(_RL_FUNCTION_TYPEDEF)
+#if defined(_RL_FUNCTION_TYPEDEF) || !defined(Py_RL_STARTUP_HOOK_TAKES_ARGS)
 on_pre_input_hook(void)
-#elif defined(WITH_APPLE_EDITLINE)
-on_pre_input_hook(const char *Py_UNUSED(text), int Py_UNUSED(state))
 #else
-on_pre_input_hook(void)
+on_pre_input_hook(const char *Py_UNUSED(text), int Py_UNUSED(state))
 #endif
 {
     int r;
@@ -1556,6 +1552,9 @@ PyInit_readline(void)
 
     if (m == NULL)
         return NULL;
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
+#endif
 
     if (PyModule_AddIntConstant(m, "_READLINE_VERSION",
                                 RL_READLINE_VERSION) < 0) {

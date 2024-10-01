@@ -5,7 +5,7 @@ so portions are Copyright (C) 2001,2002 Python Software Foundation, and were
 written by Barry Warsaw.
 """
 
-# Regular expression that matches `special' characters in parameters, the
+# Regular expression that matches 'special' characters in parameters, the
 # existence of which force quoting of the parameter value.
 import re
 tspecials = re.compile(r'[ \(\)<>@,;:\\"/\[\]\?=]')

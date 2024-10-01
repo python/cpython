@@ -1,5 +1,5 @@
-:mod:`socketserver` --- A framework for network servers
-=======================================================
+:mod:`!socketserver` --- A framework for network servers
+========================================================
 
 .. module:: socketserver
    :synopsis: A framework for network servers.
@@ -125,6 +125,12 @@ server is the address family.
       :meth:`ThreadingMixIn.server_close <BaseServer.server_close>`
       waits until all non-daemon threads complete, except if
       :attr:`block_on_close` attribute is ``False``.
+
+   .. attribute:: max_children
+
+      Specify how many child processes will exist to handle requests at a time
+      for :class:`ForkingMixIn`.  If the limit is reached,
+      new requests will wait until one child process has finished.
 
    .. attribute:: daemon_threads
 
@@ -494,7 +500,7 @@ This is the server side::
        def handle(self):
            # self.request is the TCP socket connected to the client
            self.data = self.request.recv(1024).strip()
-           print("{} wrote:".format(self.client_address[0]))
+           print("Received from {}:".format(self.client_address[0]))
            print(self.data)
            # just send back the same data, but upper-cased
            self.request.sendall(self.data.upper())
@@ -525,8 +531,9 @@ objects that simplify communication by providing the standard file interface)::
 
 The difference is that the ``readline()`` call in the second handler will call
 ``recv()`` multiple times until it encounters a newline character, while the
-single ``recv()`` call in the first handler will just return what has been sent
-from the client in one ``sendall()`` call.
+single ``recv()`` call in the first handler will just return what has been
+received so far from the client's ``sendall()`` call (typically all of it, but
+this is not guaranteed by the TCP protocol).
 
 
 This is the client side::

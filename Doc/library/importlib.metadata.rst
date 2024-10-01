@@ -19,14 +19,14 @@ such as its entry points
 or its top-level names (`Import Package <https://packaging.python.org/en/latest/glossary/#term-Import-Package>`_\s, modules, if any).
 Built in part on Python's import system, this library
 intends to replace similar functionality in the `entry point
-API`_ and `metadata API`_ of ``pkg_resources``.  Along with
+API`_ and `metadata API`_ of ``pkg_resources``. Along with
 :mod:`importlib.resources`,
 this package can eliminate the need to use the older and less efficient
 ``pkg_resources`` package.
 
 ``importlib.metadata`` operates on third-party *distribution packages*
 installed into Python's ``site-packages`` directory via tools such as
-`pip <https://pypi.org/project/pip/>`_.
+:pypi:`pip`.
 Specifically, it works with distributions with discoverable
 ``dist-info`` or ``egg-info`` directories,
 and metadata defined by the `Core metadata specifications <https://packaging.python.org/en/latest/specifications/core-metadata/#core-metadata>`_.
@@ -46,7 +46,7 @@ and metadata defined by the `Core metadata specifications <https://packaging.pyt
 
 By default, distribution metadata can live on the file system
 or in zip archives on
-:data:`sys.path`.  Through an extension mechanism, the metadata can live almost
+:data:`sys.path`. Through an extension mechanism, the metadata can live almost
 anywhere.
 
 
@@ -68,7 +68,7 @@ Overview
 
 Let's say you wanted to get the version string for a
 `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_ you've installed
-using ``pip``.  We start by creating a virtual environment and installing
+using ``pip``. We start by creating a virtual environment and installing
 something into it:
 
 .. code-block:: shell-session
@@ -87,7 +87,7 @@ You can get the version string for ``wheel`` by running the following:
     '0.32.3'
 
 You can also get a collection of entry points selectable by properties of the EntryPoint (typically 'group' or 'name'), such as
-``console_scripts``, ``distutils.commands`` and others.  Each group contains a
+``console_scripts``, ``distutils.commands`` and others. Each group contains a
 collection of :ref:`EntryPoint <entry-points>` objects.
 
 You can get the :ref:`metadata for a distribution <metadata>`::
@@ -114,7 +114,7 @@ Entry points
 The ``entry_points()`` function returns a collection of entry points.
 Entry points are represented by ``EntryPoint`` instances;
 each ``EntryPoint`` has a ``.name``, ``.group``, and ``.value`` attributes and
-a ``.load()`` method to resolve the value.  There are also ``.module``,
+a ``.load()`` method to resolve the value. There are also ``.module``,
 ``.attr``, and ``.extras`` attributes for getting the components of the
 ``.value`` attribute.
 
@@ -167,20 +167,22 @@ Inspect the resolved entry point::
 
 The ``group`` and ``name`` are arbitrary values defined by the package author
 and usually a client will wish to resolve all entry points for a particular
-group.  Read `the setuptools docs
+group. Read `the setuptools docs
 <https://setuptools.pypa.io/en/latest/userguide/entry_point.html>`_
 for more information on entry points, their definition, and usage.
 
-*Compatibility Note*
+.. versionchanged:: 3.12
+   The "selectable" entry points were introduced in ``importlib_metadata``
+   3.6 and Python 3.10. Prior to those changes, ``entry_points`` accepted
+   no parameters and always returned a dictionary of entry points, keyed
+   by group. With ``importlib_metadata`` 5.0 and Python 3.12,
+   ``entry_points`` always returns an ``EntryPoints`` object. See
+   :pypi:`backports.entry_points_selectable`
+   for compatibility options.
 
-The "selectable" entry points were introduced in ``importlib_metadata``
-3.6 and Python 3.10. Prior to those changes, ``entry_points`` accepted
-no parameters and always returned a dictionary of entry points, keyed
-by group. With ``importlib_metadata`` 5.0 and Python 3.12,
-``entry_points`` always returns an ``EntryPoints`` object. See
-`backports.entry_points_selectable <https://pypi.org/project/backports.entry-points-selectable>`_
-for compatibility options.
-
+.. versionchanged:: 3.13
+   ``EntryPoint`` objects no longer present a tuple-like interface
+   (:meth:`~object.__getitem__`).
 
 .. _metadata:
 
@@ -217,7 +219,6 @@ all the metadata in a JSON-compatible form per :PEP:`566`::
    The ``Description`` is now included in the metadata when presented
    through the payload. Line continuation characters have been removed.
 
-.. versionadded:: 3.10
    The ``json`` attribute was added.
 
 
@@ -239,12 +240,12 @@ number, as a string::
 Distribution files
 ------------------
 
-You can also get the full set of files contained within a distribution.  The
+You can also get the full set of files contained within a distribution. The
 ``files()`` function takes a `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_ name
 and returns all of the
-files installed by this distribution.  Each file object returned is a
+files installed by this distribution. Each file object returned is a
 ``PackagePath``, a :class:`pathlib.PurePath` derived object with additional ``dist``,
-``size``, and ``hash`` properties as indicated by the metadata.  For example::
+``size``, and ``hash`` properties as indicated by the metadata. For example::
 
     >>> util = [p for p in files('wheel') if 'util.py' in str(p)][0]  # doctest: +SKIP
     >>> util  # doctest: +SKIP
@@ -320,9 +321,9 @@ Distributions
 =============
 
 While the above API is the most common and convenient usage, you can get all
-of that information from the ``Distribution`` class.  A ``Distribution`` is an
+of that information from the ``Distribution`` class. A ``Distribution`` is an
 abstract object that represents the metadata for
-a Python `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_.  You can
+a Python `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_. You can
 get the ``Distribution`` instance::
 
     >>> from importlib.metadata import distribution  # doctest: +SKIP
@@ -342,9 +343,17 @@ instance::
     >>> dist.metadata['License']  # doctest: +SKIP
     'MIT'
 
+For editable packages, an ``origin`` property may present :pep:`610`
+metadata::
+
+    >>> dist.origin.url
+    'file:///path/to/wheel-0.32.3.editable-py3-none-any.whl'
+
 The full set of available metadata is not described here.
 See the `Core metadata specifications <https://packaging.python.org/en/latest/specifications/core-metadata/#core-metadata>`_ for additional details.
 
+.. versionadded:: 3.13
+   The ``.origin`` property was added.
 
 Distribution Discovery
 ======================
@@ -357,21 +366,26 @@ This metadata finder search defaults to ``sys.path``, but varies slightly in how
 - ``importlib.metadata`` will incidentally honor :py:class:`pathlib.Path` objects on ``sys.path`` even though such values will be ignored for imports.
 
 
-Extending the search algorithm
-==============================
+Implementing Custom Providers
+=============================
+
+``importlib.metadata`` address two API surfaces, one for *consumers*
+and another for *providers*. Most users are consumers, consuming
+metadata provided by the packages. There are other use-cases, however,
+where users wish to expose metadata through some other mechanism,
+such as alongside a custom importer. Such a use case calls for a
+*custom provider*.
 
 Because `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_ metadata
 is not available through :data:`sys.path` searches, or
 package loaders directly,
 the metadata for a distribution is found through import
-system :ref:`finders <finders-and-loaders>`.  To find a distribution package's metadata,
+system :ref:`finders <finders-and-loaders>`. To find a distribution package's metadata,
 ``importlib.metadata`` queries the list of :term:`meta path finders <meta path finder>` on
 :data:`sys.meta_path`.
 
-By default ``importlib.metadata`` installs a finder for distribution packages
-found on the file system.
-This finder doesn't actually find any *distributions*,
-but it can find their metadata.
+The implementation has hooks integrated into the ``PathFinder``,
+serving metadata for distribution packages found on the file system.
 
 The abstract class :py:class:`importlib.abc.MetaPathFinder` defines the
 interface expected of finders by Python's import system.
@@ -382,20 +396,97 @@ interface expected of finders by Python's import system.
 method::
 
     @abc.abstractmethod
-    def find_distributions(context=DistributionFinder.Context()):
+    def find_distributions(context=DistributionFinder.Context()) -> Iterable[Distribution]:
         """Return an iterable of all Distribution instances capable of
         loading the metadata for packages for the indicated ``context``.
         """
 
 The ``DistributionFinder.Context`` object provides ``.path`` and ``.name``
 properties indicating the path to search and name to match and may
-supply other relevant context.
+supply other relevant context sought by the consumer.
 
-What this means in practice is that to support finding distribution package
+In practice, to support finding distribution package
 metadata in locations other than the file system, subclass
 ``Distribution`` and implement the abstract methods. Then from
 a custom finder, return instances of this derived ``Distribution`` in the
 ``find_distributions()`` method.
+
+Example
+-------
+
+Imagine a custom finder that loads Python modules from a database::
+
+    class DatabaseImporter(importlib.abc.MetaPathFinder):
+        def __init__(self, db):
+            self.db = db
+
+        def find_spec(self, fullname, target=None) -> ModuleSpec:
+            return self.db.spec_from_name(fullname)
+
+    sys.meta_path.append(DatabaseImporter(connect_db(...)))
+
+That importer now presumably provides importable modules from a
+database, but it provides no metadata or entry points. For this
+custom importer to provide metadata, it would also need to implement
+``DistributionFinder``::
+
+    from importlib.metadata import DistributionFinder
+
+    class DatabaseImporter(DistributionFinder):
+        ...
+
+        def find_distributions(self, context=DistributionFinder.Context()):
+            query = dict(name=context.name) if context.name else {}
+            for dist_record in self.db.query_distributions(query):
+                yield DatabaseDistribution(dist_record)
+
+In this way, ``query_distributions`` would return records for
+each distribution served by the database matching the query. For
+example, if ``requests-1.0`` is in the database, ``find_distributions``
+would yield a ``DatabaseDistribution`` for ``Context(name='requests')``
+or ``Context(name=None)``.
+
+For the sake of simplicity, this example ignores ``context.path``\. The
+``path`` attribute defaults to ``sys.path`` and is the set of import paths to
+be considered in the search. A ``DatabaseImporter`` could potentially function
+without any concern for a search path. Assuming the importer does no
+partitioning, the "path" would be irrelevant. In order to illustrate the
+purpose of ``path``, the example would need to illustrate a more complex
+``DatabaseImporter`` whose behavior varied depending on
+``sys.path``/``PYTHONPATH``. In that case, the ``find_distributions`` should
+honor the ``context.path`` and only yield ``Distribution``\ s pertinent to that
+path.
+
+``DatabaseDistribution``, then, would look something like::
+
+    class DatabaseDistribution(importlib.metadata.Distributon):
+        def __init__(self, record):
+            self.record = record
+
+        def read_text(self, filename):
+            """
+            Read a file like "METADATA" for the current distribution.
+            """
+            if filename == "METADATA":
+                return f"""Name: {self.record.name}
+    Version: {self.record.version}
+    """
+            if filename == "entry_points.txt":
+                return "\n".join(
+                  f"""[{ep.group}]\n{ep.name}={ep.value}"""
+                  for ep in self.record.entry_points)
+
+        def locate_file(self, path):
+            raise RuntimeError("This distribution has no file system")
+
+This basic implementation should provide metadata and entry points for
+packages served by the ``DatabaseImporter``, assuming that the
+``record`` supplies suitable ``.name``, ``.version``, and
+``.entry_points`` attributes.
+
+The ``DatabaseDistribution`` may also provide other metadata files, like
+``RECORD`` (required for ``Distribution.files``) or override the
+implementation of ``Distribution.files``. See the source for more inspiration.
 
 
 .. _`entry point API`: https://setuptools.readthedocs.io/en/latest/pkg_resources.html#entry-points

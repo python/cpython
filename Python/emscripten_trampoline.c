@@ -10,7 +10,17 @@
  * https://github.com/GoogleChromeLabs/wasm-feature-detect/blob/main/src/detectors/type-reflection/index.js
  */
 EM_JS(int, _PyEM_detect_type_reflection, (), {
-    return "Function" in WebAssembly;
+    if (!("Function" in WebAssembly)) {
+        return false;
+    }
+    if (WebAssembly.Function.type) {
+        // Node v20
+        Module.PyEM_CountArgs = (func) => WebAssembly.Function.type(wasmTable.get(func)).parameters.length;
+    } else {
+        // Node >= 22, v8-based browsers
+        Module.PyEM_CountArgs = (func) => wasmTable.get(func).type().parameters.length;
+    }
+    return true;
 });
 
 void
@@ -43,7 +53,7 @@ EM_JS(int, _PyEM_CountFuncParams, (PyCFunctionWithKeywords func),
     if (n !== undefined) {
         return n;
     }
-    n = WebAssembly.Function.type(wasmTable.get(func)).parameters.length;
+    n = Module.PyEM_CountArgs(func);
     _PyEM_CountFuncParams.cache.set(func, n);
     return n;
 }

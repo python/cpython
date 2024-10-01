@@ -1,0 +1,2 @@
+On some platforms such as Linux, year with century was not 0-padded when formatted by :meth:`~.datetime.strftime` with C99-specific specifiers ``'%C'`` or ``'%F'``. The 0-padding behavior is now guaranteed when the format specifiers ``'%C'`` and ``'%F'`` are supported by the C library.
+Patch by Ben Hsing
