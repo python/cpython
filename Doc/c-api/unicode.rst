@@ -1439,6 +1439,9 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
 
    The function always succeeds if *a* and *b* are :class:`str` objects.
 
+   The function works for :class:`str` subclasses, but does not honor custom
+   ``__eq__()`` method.
+
    .. seealso::
 
       The :c:func:`PyUnicode_Compare` function.
