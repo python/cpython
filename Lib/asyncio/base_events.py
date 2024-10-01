@@ -1110,7 +1110,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     (functools.partial(self._connect_sock,
                                        exceptions, addrinfo, laddr_infos)
                      for addrinfo in infos),
-                    happy_eyeballs_delay)
+                    happy_eyeballs_delay, loop=self)
 
             if sock is None:
                 exceptions = [exc for sub in exceptions for exc in sub]
