@@ -3365,6 +3365,13 @@ dummy_func(
             EXIT_IF(func->func_version != func_version);
         }
 
+        tier2 op(_CHECK_FUNCTION_VERSION_INLINE, (callable_o/4 --)) {
+            uint16_t func_version = oparg;
+            assert(PyFunction_Check(callable_o));
+            PyFunctionObject *func = (PyFunctionObject *)callable_o;
+            EXIT_IF(func->func_version != func_version);
+        }
+
         macro(CALL_PY_GENERAL) =
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +

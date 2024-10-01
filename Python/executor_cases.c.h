@@ -3636,6 +3636,19 @@
             break;
         }
 
+        case _CHECK_FUNCTION_VERSION_INLINE: {
+            oparg = CURRENT_OPARG();
+            PyObject *callable_o = (PyObject *)CURRENT_OPERAND();
+            uint16_t func_version = oparg;
+            assert(PyFunction_Check(callable_o));
+            PyFunctionObject *func = (PyFunctionObject *)callable_o;
+            if (func->func_version != func_version) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
         case _CHECK_METHOD_VERSION: {
             _PyStackRef *null;
             _PyStackRef callable;
