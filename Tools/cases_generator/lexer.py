@@ -79,7 +79,7 @@ for op in operators:
 opmap = {pattern.replace("\\", "") or "\\": op for op, pattern in operators.items()}
 
 # Macros
-macro = r"# *(ifdef|ifndef|undef|define|error|endif|if +defined|if|else|include|#)"
+macro = r"#.*\n"
 CMACRO = "CMACRO"
 
 id_re = r"[a-zA-Z_][0-9a-zA-Z_]*"
@@ -312,6 +312,8 @@ def tokenize(src: str, line: int = 1, filename: str = "") -> Iterator[Token]:
             kind = CHARACTER
         elif text[0] == "#":
             kind = CMACRO
+            linestart = start
+            line += 1
         elif text[0] == "/" and text[1] in "/*":
             kind = COMMENT
         else:
