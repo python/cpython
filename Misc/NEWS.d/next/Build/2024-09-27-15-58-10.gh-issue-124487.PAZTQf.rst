@@ -1,2 +1,0 @@
-Windows builds now use Windows 8.1 as their API baseline (installation
-already required Windows 8.1).

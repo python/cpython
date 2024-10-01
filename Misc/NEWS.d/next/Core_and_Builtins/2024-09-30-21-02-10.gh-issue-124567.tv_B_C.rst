@@ -1,1 +1,0 @@
-Revert the incremental GC (in 3.13), since it's not clear the benefits outweigh the costs at this point.
