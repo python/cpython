@@ -2492,6 +2492,24 @@ _Py_ResurrectReference(PyObject *op)
 
 #ifdef Py_TRACE_REFS
 void
+_Py_NormalizeImmortalReference(PyObject *op)
+{
+    assert(_Py_IsImmortal(op));
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (!_PyRefchain_IsTraced(interp, op)) {
+        return;
+    }
+    PyInterpreterState *main_interp = _PyInterpreterState_Main();
+    if (interp != main_interp
+           && interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC)
+    {
+        assert(!_PyRefchain_IsTraced(main_interp, op));
+        _PyRefchain_Remove(interp, op);
+        _PyRefchain_Trace(main_interp, op);
+    }
+}
+
+void
 _Py_ForgetReference(PyObject *op)
 {
     if (Py_REFCNT(op) < 0) {
