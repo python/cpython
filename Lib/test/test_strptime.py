@@ -168,17 +168,18 @@ class TimeRETests(unittest.TestCase):
                             (f"Matching failed on '{input_string}' "
                              f"using '{compiled.pattern}' regex"))
         for directive in ('c', 'x'):
+            # gh-124529
             fmt = "%" + directive
             with self.subTest(f"{fmt!r} should match input containing "
                               f"year with fewer digits than usual"):
-                # gh-124529
-                params = _input_str_and_expected_year_for_few_digits_year(fmt)
-                if params is None:
+                (input_string,
+                 year) = _get_data_to_test_strptime_with_few_digits_year(fmt)
+                if year is None:
                     self.fail(f"it seems that using {fmt=} results in value "
                               f"which does not include year representation "
                               f"in any expected format (is there something "
                               f"severely wrong with current locale?)")
-                input_string, _ = params
+
                 compiled = self.time_re.compile(fmt)
                 found = compiled.match(input_string)
                 self.assertTrue(found,
@@ -188,13 +189,13 @@ class TimeRETests(unittest.TestCase):
             fmt = "%" + directive
             with self.subTest(f"{fmt!r} should not match input containing "
                               f"year with fewer digits than usual"):
-                params = _input_str_and_expected_year_for_few_digits_year(fmt)
-                if params is None:
+                (input_string,
+                 year) = _get_data_to_test_strptime_with_few_digits_year(fmt)
+                if year is None:
                     self.fail(f"it seems that using {fmt=} results in value "
                               f"which does not include year representation "
                               f"in any expected format (is there something "
                               f"severely wrong with current locale?)")
-                input_string, _ = params
                 compiled = self.time_re.compile(fmt)
                 found = compiled.match(input_string)
                 self.assertFalse(found,
@@ -336,13 +337,13 @@ class StrptimeTests(unittest.TestCase):
 
     def helper_for_directives_accepting_few_digits_year(self, directive):
         fmt = "%" + directive
-        params = _input_str_and_expected_year_for_few_digits_year(fmt)
-        if params is None:
+        (input_string,
+         expected_year) = _get_data_to_test_strptime_with_few_digits_year(fmt)
+        if expected_year is None:
             self.fail(f"it seems that using {fmt=} results in value "
                       f"which does not include year representation "
                       f"in any expected format (is there something "
                       f"severely wrong with current locale?)")
-        input_string, expected_year = params
         try:
             output_year = _strptime._strptime(input_string, fmt)[0][0]
         except ValueError as exc:
@@ -846,7 +847,7 @@ class CacheTests(unittest.TestCase):
             _strptime._strptime_time(oldtzname[1], '%Z')
 
 
-def _input_str_and_expected_year_for_few_digits_year(fmt):
+def _get_data_to_test_strptime_with_few_digits_year(fmt):
     # This helper, for the given format string (fmt), returns a 2-tuple:
     #   (<strptime input string>, <expected year>)
     # where:
