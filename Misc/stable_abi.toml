@@ -2283,6 +2283,8 @@
     added = '3.11'
 [function.PyObject_CopyData]
     added = '3.11'
+[function.PyObject_CopyToObject]
+    added = '3.14'
 [function.PyBuffer_IsContiguous]
     added = '3.11'
 [function.PyBuffer_FillContiguousStrides]
