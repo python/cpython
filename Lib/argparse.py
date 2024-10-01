@@ -1701,13 +1701,21 @@ def _prog_name(prog=None):
     if prog is not None:
         return prog
     arg0 = _sys.argv[0]
-    modspec = _sys.modules['__main__'].__spec__
+    try:
+        modspec = _sys.modules['__main__'].__spec__
+    except KeyError:
+        # possibly PYTHONSTARTUP or -X presite
+        # no good answer here
+        return _os.path.basename(arg0)
     if modspec is None:
+        # simple script
         return _os.path.basename(arg0)
     py = _os.path.basename(_sys.executable)
     if modspec.name != '__main__':
+        # imported module or package
         modname = modspec.name.removesuffix('.__main__')
         return f'{py} -m {modname}'
+    # directory or ZIP file
     return f'{py} {arg0}'
 
 
