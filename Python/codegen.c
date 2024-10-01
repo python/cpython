@@ -678,10 +678,9 @@ codegen_leave_annotations_scope(compiler *c, location loc,
 
     // We want the parameter to __annotate__ to be named "format" in the
     // signature  shown by inspect.signature(), but we need to use a
-    // different name (.format) in the symtable so that if the name
-    // "format" appears in  the annotations, it does not get clobbered
-    // by this name.
-    // This code is essentially:
+    // different name (.format) in the symtable; if the name
+    // "format" appears in the annotations, it doesn't get clobbered
+    // by this name.  This code is essentially:
     // co->co_localsplusnames = ("format", *co->co_localsplusnames[1:])
     const Py_ssize_t size = PyObject_Size(co->co_localsplusnames);
     if (size == -1) {
