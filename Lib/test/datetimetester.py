@@ -2129,20 +2129,20 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         concerned_formats = '%c', '%x'
 
         def run_subtest():
+            input_ = sample.replace(year=year)
             reason = (f"test strftime/strptime roundtrip concerning "
                       f"locale-specific year representation "
                       f"- for {fmt=} and {year=}")
             fail_msg = f"{reason} - failed"
-            initial = expected = self.theclass.strptime(f'{year:04}', '%Y')
             with self.subTest(reason=reason):
-                formatted = initial.strftime(fmt)
+                formatted = input_.strftime(fmt)
                 try:
                     parsed = self.theclass.strptime(formatted, fmt)
                 except ValueError as exc:
                     self.fail(f"{fail_msg}; parsing error: {exc!r}")
-                self.assertEqual(parsed, expected, fail_msg)
+                self.assertEqual(parsed, input_, fail_msg)
 
-        sample = self.theclass.strptime('1999', '%Y')
+        sample = self.theclass.strptime('1999-03-17', '%Y-%m-%d')
         for fmt in concerned_formats:
             with self.subTest(fmt=fmt):
                 sample_str = sample.strftime(fmt)
