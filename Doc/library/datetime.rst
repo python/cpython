@@ -934,7 +934,7 @@ Other constructors, all class methods:
 
    This function is preferred over :meth:`today` and :meth:`utcnow`.
 
-   .. warning::
+   .. note::
 
       It's possible that subsequent ``datetime.now()`` return the same instant,
       depending on the precision of the underlying functions.
