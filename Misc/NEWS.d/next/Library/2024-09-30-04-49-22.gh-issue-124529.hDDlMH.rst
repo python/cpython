@@ -1,7 +1,5 @@
 Fix :meth:`datetime.datetime.strptime`, :meth:`datetime.date.strptime`
-and :func:`time.strptime` (by altering the underlying mechanism) to make
-``%c``/``%x`` accept year numbers with fewer digits than the usual 4 or
-2 (not zero-padded), so that certain ``strftime/strptime`` round trips
-(e.g., ``date.strptime(d.strftime('%c'), '%c'))`` for ``d.year < 1000``,
-with C-like locales on Linux) no longer raise :exc:`!ValueError`. Patch
-by Jan Kaliszewski.
+and :func:`time.strptime` to make ``%c`` and ``%x`` accept year numbers
+with fewer digits than the usual 4 or 2 (not zero-padded). This prevents
+:exc:`ValueError` in certain cases of ``strftime/strptime`` round trips.
+Patch by Jan Kaliszewski.
