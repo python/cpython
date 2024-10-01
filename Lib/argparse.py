@@ -1702,9 +1702,9 @@ def _prog_name(prog=None):
         return prog
     arg0 = _sys.argv[0]
     try:
-        modspec = getattr(_sys.modules['__main__'], "__spec__", None)
-    except KeyError:
-        # possibly PYTHONSTARTUP or -X presite
+        modspec = _sys.modules['__main__'].__spec__
+    except (KeyError, AttributeError):
+        # possibly PYTHONSTARTUP or -X presite or other weird edge case
         # no good answer here, so fall back to the default
         modspec = None
     if modspec is None:
