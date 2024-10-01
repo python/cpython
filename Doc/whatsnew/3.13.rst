@@ -46,7 +46,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.13, compared to 3.12.
-Python 3.13 will be released on October 1, 2024.
+Python 3.13 will be released on October 7, 2024.
 For full details, see the :ref:`changelog <changelog>`.
 
 .. seealso::
