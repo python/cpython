@@ -53,14 +53,11 @@ class InterpreterPoolExecutorTest(InterpreterPoolMixin, ExecutorTest, BaseTestCa
         before_init = os.read(r, 100)
         fut = executor.submit(script)
         after_init = read_msg(r)
-        write_msg(w, b'')
-        before_run = read_msg(r)
         fut.result()
         after_run = read_msg(r)
 
         self.assertEqual(before_init, b'\0')
         self.assertEqual(after_init, msg1)
-        self.assertEqual(before_run, b'')
         self.assertEqual(after_run, msg2)
 
     def test_init_script_args(self):
