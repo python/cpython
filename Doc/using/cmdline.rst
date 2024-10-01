@@ -628,8 +628,8 @@ Miscellaneous options
 
      .. versionadded:: 3.13
 
-   * :samp:`-X gc_strategy={strategy}` Set the preferred strategy for the
-     cyclic garbage collector.  See :envvar:`PYTHON_GC_STRATEGY`.
+   * :samp:`-X gc_preset={preset}` Tune the cyclic garbage collector
+     according to the specified preset.  See :envvar:`PYTHON_GC_PRESET`.
 
      .. versionadded:: 3.14
 
@@ -981,30 +981,30 @@ conflict.
    .. versionadded:: 3.4
 
 
-.. envvar:: PYTHON_GC_STRATEGY
+.. envvar:: PYTHON_GC_PRESET
 
-   Set the high-level strategy for the cyclic garbage collector (GC).  Possible
-   values are:
+   Tune the cyclic garbage collector (GC) according to the specificed
+   high-level preset objective.  Possible preset values are:
 
-   * ``aggressive``: prioritize freeing resources quickly in exchange for
+   * ``min-memory``: prioritize freeing resources quickly in exchange for
      higher GC cost and lower overall throughput.
 
-   * ``throughput``: prioritize throughput (lowest runtime cost) in exchange
+   * ``min-overhead``: prioritize throughput (lowest runtime cost) in exchange
      for higher peak memory usage and potentially delayed freeing.  File
      descriptiors and sockets, for example, should be cleaned by context
-     handlers rather than relying on the GC if this strategy is used.
+     handlers rather than relying on the GC if this preset is used.
 
-   * ``latency``: prioritize keeping GC pauses low, in exchange for higher GC
-     cost.  This strategy is not yet implemented and is equivalent to the
-     ``balanced`` strategy at this time.
+   * ``min-latency``: prioritize keeping GC pauses low, in exchange for higher
+     GC cost.  This preset is not yet implemented and is equivalent to the
+     ``balanced`` preset at this time.
 
-   * ``balanced``: a combination of the above three strategies, with tuning
-     that is intended to work well for most programs.
+   * ``balanced``: a combination of the above three presets, with tuning that
+     is intended to work well for most programs.
 
-   The default strategy in version 3.14 is ``aggressive``.  In future Python
+   The default preset in version 3.14 is ``min-memory``.  In future Python
    versions, the default may be changed to ``balanced``.  If the stategy is set
-   to something not recognized as a valid strategy, the default strategy will
-   be used and an error will not be raised.
+   to something not recognized as a valid preset, the default preset will be
+   used and an error will not be raised.
 
    .. versionadded:: 3.14
 

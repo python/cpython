@@ -857,27 +857,27 @@ _PyGC_Init(PyInterpreterState *interp)
 }
 
 static void
-gc_set_strategy(PyInterpreterState *interp, const PyConfig *config)
+gc_set_preset(PyInterpreterState *interp, const PyConfig *config)
 {
-    if (config->gc_strategy == NULL) {
+    if (config->gc_preset == NULL) {
         return;
     }
-    if (wcscmp(config->gc_strategy, L"aggressive") == 0) {
+    if (wcscmp(config->gc_preset, L"min-memory") == 0) {
         // This is currently the default.  In upcoming versions it
         // might be more aggressive than the default, which would become
         // "balanced".
         interp->gc.young.threshold = 700;
         return;
     }
-    if (wcscmp(config->gc_strategy, L"throughput") == 0) {
+    if (wcscmp(config->gc_preset, L"min-overhead") == 0) {
         interp->gc.young.threshold = 20000;
         return;
     }
-    if (wcscmp(config->gc_strategy, L"latency") == 0 ||
-        wcscmp(config->gc_strategy, L"balanced") == 0) {
+    if (wcscmp(config->gc_preset, L"min-latency") == 0 ||
+        wcscmp(config->gc_preset, L"balanced") == 0) {
         // these are the same for now.  If we get an incremental GC merged,
-        // then the "latency" setting could tune to have lower GC pauses than
-        // the default and balanced strategies.
+        // then the "min-latency" setting could tune to have lower GC pauses
+        // than the default and balanced strategies.
         interp->gc.young.threshold = 7000;
         return;
     }
@@ -887,7 +887,7 @@ PyStatus
 _PyGC_InitConfig(PyInterpreterState *interp)
 {
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
-    gc_set_strategy(interp, config);
+    gc_set_preset(interp, config);
     return _PyStatus_OK();
 }
 
