@@ -1,0 +1,3 @@
+:c:type:`PyDictObject` no longer maintains a private version tag field
+``ma_version_tag`` per :pep:`699`.  This field was originally added in
+Python 3.6 (:pep:`509`) and deprecated in Python 3.12.

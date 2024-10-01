@@ -2625,7 +2625,6 @@
                 JUMP_TO_JUMP_TARGET();
             }
             PyObject *old_value;
-            uint64_t new_version;
             if (!DK_IS_UNICODE(dict->ma_keys)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -2641,9 +2640,8 @@
             }
             old_value = ep->me_value;
             PyDict_WatchEvent event = old_value == NULL ? PyDict_EVENT_ADDED : PyDict_EVENT_MODIFIED;
-            new_version = _PyDict_NotifyEvent(tstate->interp, event, dict, name, PyStackRef_AsPyObjectBorrow(value));
+            _PyDict_NotifyEvent(tstate->interp, event, dict, name, PyStackRef_AsPyObjectBorrow(value));
             ep->me_value = PyStackRef_AsPyObjectSteal(value);
-            dict->ma_version_tag = new_version; // PEP 509
             // old_value should be DECREFed after GC track checking is done, if not, it could raise a segmentation fault,
             // when dict only holds the strong reference to value in ep->me_value.
             Py_XDECREF(old_value);
