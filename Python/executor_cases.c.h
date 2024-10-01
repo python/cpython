@@ -1419,11 +1419,11 @@
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
             #if TIER_ONE
             assert(frame->instr_ptr->op.code == INSTRUMENTED_LINE ||
-                   frame->instr_ptr->op.code == INSTRUMENTED_INSTRUCTION ||
-                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND ||
-                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == FOR_ITER ||
-                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == INTERPRETER_EXIT ||
-                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == ENTER_EXECUTOR);
+                  frame->instr_ptr->op.code == INSTRUMENTED_INSTRUCTION ||
+                  _PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND ||
+                  _PyOpcode_Deopt[frame->instr_ptr->op.code] == FOR_ITER ||
+                  _PyOpcode_Deopt[frame->instr_ptr->op.code] == INTERPRETER_EXIT ||
+                  _PyOpcode_Deopt[frame->instr_ptr->op.code] == ENTER_EXECUTOR);
             #endif
             stack_pointer = _PyFrame_GetStackPointer(frame);
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
@@ -4386,8 +4386,8 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
                 tstate, (PyCodeObject *)&_Py_InitCleanup, 1, frame);
-            assert(_PyCode_CODE(_PyFrame_GetCode(shim))[0].op.code == EXIT_INIT_CHECK);
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            assert(_PyCode_CODE(_PyFrame_GetCode(shim))[0].op.code == EXIT_INIT_CHECK);
             /* Push self onto stack of shim */
             shim->localsplus[0] = PyStackRef_DUP(self[0]);
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -5600,11 +5600,9 @@
             PyObject *exit_p = (PyObject *)CURRENT_OPERAND();
             _PyExitData *exit = (_PyExitData *)exit_p;
             PyCodeObject *code = _PyFrame_GetCode(frame);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
             #if defined(Py_DEBUG) && !defined(_Py_JIT)
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
             if (lltrace >= 2) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 printf("SIDE EXIT: [UOp ");
@@ -5617,17 +5615,15 @@
             }
             #endif
             if (exit->executor && !exit->executor->vm_data.valid) {
-                _PyFrame_SetStackPointer(frame, stack_pointer);
                 exit->temperature = initial_temperature_backoff_counter();
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 Py_CLEAR(exit->executor);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             if (exit->executor == NULL) {
                 _Py_BackoffCounter temperature = exit->temperature;
                 if (!backoff_counter_triggers(temperature)) {
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
                     exit->temperature = advance_backoff_counter(temperature);
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
                     tstate->previous_executor = (PyObject *)current_executor;
                     GOTO_TIER_ONE(target);
                 }
@@ -5642,9 +5638,7 @@
                     int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor, chain_depth);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (optimized <= 0) {
-                        _PyFrame_SetStackPointer(frame, stack_pointer);
                         exit->temperature = restart_backoff_counter(temperature);
-                        stack_pointer = _PyFrame_GetStackPointer(frame);
                         if (optimized < 0) {
                             GOTO_UNWIND();
                         }
@@ -5751,10 +5745,8 @@
             tstate->previous_executor = (PyObject *)current_executor;
             _PyExitData *exit = (_PyExitData *)exit_p;
             _Py_CODEUNIT *target = frame->instr_ptr;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             #if defined(Py_DEBUG) && !defined(_Py_JIT)
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
             if (lltrace >= 2) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 printf("DYNAMIC EXIT: [UOp ");
@@ -5774,27 +5766,21 @@
             }
             else {
                 if (!backoff_counter_triggers(exit->temperature)) {
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
                     exit->temperature = advance_backoff_counter(exit->temperature);
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
                     GOTO_TIER_ONE(target);
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor, 0);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (optimized <= 0) {
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
                     exit->temperature = restart_backoff_counter(exit->temperature);
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (optimized < 0) {
                         GOTO_UNWIND();
                     }
                     GOTO_TIER_ONE(target);
                 }
                 else {
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
                     exit->temperature = initial_temperature_backoff_counter();
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
                 }
             }
             GOTO_TIER_TWO(executor);

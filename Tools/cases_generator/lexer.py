@@ -312,8 +312,6 @@ def tokenize(src: str, line: int = 1, filename: str = "") -> Iterator[Token]:
             kind = CHARACTER
         elif text[0] == "#":
             kind = CMACRO
-            linestart = start
-            line += 1
         elif text[0] == "/" and text[1] in "/*":
             kind = COMMENT
         else:
@@ -335,6 +333,9 @@ def tokenize(src: str, line: int = 1, filename: str = "") -> Iterator[Token]:
                 line += newlines
         else:
             begin = line, start - linestart
+            if kind == CMACRO:
+                linestart = end
+                line += 1
         if kind != "\n":
             yield Token(
                 filename, kind, text, begin, (line, start - linestart + len(text))

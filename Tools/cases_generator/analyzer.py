@@ -29,8 +29,12 @@ class Properties:
     needs_prev: bool = False
 
     def dump(self, indent: str) -> None:
-        print(indent, end="")
-        text = ", ".join([f"{key}: {value}" for (key, value) in self.__dict__.items()])
+        simple_properties = self.__dict__.copy()
+        del simple_properties["escaping_calls"]
+        text = "escaping_calls:\n"
+        for tkns in self.escaping_calls.values():
+            text += f"{indent}    {tkns}\n"
+        text += ", ".join([f"{key}: {value}" for (key, value) in simple_properties.items()])
         print(indent, text, sep="")
 
     @staticmethod
@@ -605,6 +609,10 @@ NON_ESCAPING_FUNCTIONS = (
     "_Py_DECREF_NO_DEALLOC",
     "assert",
     "backoff_counter_triggers",
+    "initial_temperature_backoff_counter",
+    "advance_backoff_counter",
+    "restart_backoff_counter",
+    "_PyCode_CODE",
 )
 
 def find_stmt_start(node: parser.InstDef, idx: int) -> lexer.Token:
