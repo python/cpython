@@ -2640,9 +2640,9 @@ Notes:
       input to be zero-padded to the usual width (which is either 4 or
       2 digits, depending on the format code and current locale). In
       previous versions, a :exc:`ValueError` was raised if a shorter
-      *year*, not zero-padded to the 2- or 4-digit width as appropriate,
-      was part of the input (and it is worth noting that, depending
-      on the platform/locale, such inputs may be produced by using
+      *year* (not zero-padded to the 2- or 4-digit width as appropriate)
+      was part of the input. It is worth noting that, depending on the
+      platform/locale, such inputs may be produced by using
       :meth:`~.datetime.strftime` with ``%c`` or ``%x``).
 
 (2)
