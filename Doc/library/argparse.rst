@@ -25,29 +25,6 @@ will figure out how to parse those out of :data:`sys.argv`.  The :mod:`argparse`
 module also automatically generates help and usage messages.  The module
 will also issue errors when users give the program invalid arguments.
 
-Quick Links for ArgumentParser
----------------------------------------
-========================= =========================================================================================================== ==================================================================================
-Name                      Description                                                                                                 Values
-========================= =========================================================================================================== ==================================================================================
-prog_                     The name of the program                                                                                     Defaults to ``os.path.basename(sys.argv[0])``
-usage_                    The string describing the program usage
-description_              A brief description of what the program does
-epilog_                   Additional description of the program after the argument help
-parents_                  A list of :class:`ArgumentParser` objects whose arguments should also be included
-formatter_class_          A class for customizing the help output                                                                     ``argparse.HelpFormatter``
-prefix_chars_             The set of characters that prefix optional arguments                                                        Defaults to ``'-'``
-fromfile_prefix_chars_    The set of characters that prefix files to read additional arguments from                                   Defaults to ``None`` (meaning arguments will never be treated as file references)
-argument_default_         The global default value for arguments
-allow_abbrev_             Allows long options to be abbreviated if the abbreviation is unambiguous                                    ``True`` or ``False`` (default: ``True``)
-conflict_handler_         The strategy for resolving conflicting optionals
-add_help_                 Add a ``-h/--help`` option to the parser                                                                    ``True`` or ``False`` (default: ``True``)
-exit_on_error_            Determines whether or not to exit with error info when an error occurs                                      ``True`` or ``False`` (default: ``True``)
-========================= =========================================================================================================== ==================================================================================
-
-Core Functionality
-------------------
-
 The :mod:`argparse` module's support for command-line interfaces is built
 around an instance of :class:`argparse.ArgumentParser`.  It is a container for
 argument specifications and has options that apply to the parser as whole::
@@ -71,133 +48,6 @@ the extracted data in a :class:`argparse.Namespace` object::
 
    args = parser.parse_args()
    print(args.filename, args.count, args.verbose)
-
-
-Quick Links for add_argument()
-------------------------------
-
-============================ =========================================================== ==========================================================================================================================
-Name                         Description                                                 Values
-============================ =========================================================== ==========================================================================================================================
-action_                      Specify how an argument should be handled                   ``'store'``, ``'store_const'``, ``'store_true'``, ``'append'``, ``'append_const'``, ``'count'``, ``'help'``, ``'version'``
-choices_                     Limit values to a specific set of choices                   ``['foo', 'bar']``, ``range(1, 10)``, or :class:`~collections.abc.Container` instance
-const_                       Store a constant value
-default_                     Default value used when an argument is not provided         Defaults to ``None``
-dest_                        Specify the attribute name used in the result namespace
-help_                        Help message for an argument
-metavar_                     Alternate display name for the argument as shown in help
-nargs_                       Number of times the argument can be used                    :class:`int`, ``'?'``, ``'*'``, or ``'+'``
-required_                    Indicate whether an argument is required or optional        ``True`` or ``False``
-:ref:`type <argparse-type>`  Automatically convert an argument to the given type         :class:`int`, :class:`float`, ``argparse.FileType('w')``, or callable function
-============================ =========================================================== ==========================================================================================================================
-
-
-Example
--------
-
-The following code is a Python program that takes a list of integers and
-produces either the sum or the max::
-
-   import argparse
-
-   parser = argparse.ArgumentParser(description='Process some integers.')
-   parser.add_argument('integers', metavar='N', type=int, nargs='+',
-                       help='an integer for the accumulator')
-   parser.add_argument('--sum', dest='accumulate', action='store_const',
-                       const=sum, default=max,
-                       help='sum the integers (default: find the max)')
-
-   args = parser.parse_args()
-   print(args.accumulate(args.integers))
-
-Assuming the above Python code is saved into a file called ``prog.py``, it can
-be run at the command line and it provides useful help messages:
-
-.. code-block:: shell-session
-
-   $ python prog.py -h
-   usage: prog.py [-h] [--sum] N [N ...]
-
-   Process some integers.
-
-   positional arguments:
-    N           an integer for the accumulator
-
-   options:
-    -h, --help  show this help message and exit
-    --sum       sum the integers (default: find the max)
-
-When run with the appropriate arguments, it prints either the sum or the max of
-the command-line integers:
-
-.. code-block:: shell-session
-
-   $ python prog.py 1 2 3 4
-   4
-
-   $ python prog.py 1 2 3 4 --sum
-   10
-
-If invalid arguments are passed in, an error will be displayed:
-
-.. code-block:: shell-session
-
-   $ python prog.py a b c
-   usage: prog.py [-h] [--sum] N [N ...]
-   prog.py: error: argument N: invalid int value: 'a'
-
-The following sections walk you through this example.
-
-
-Creating a parser
-^^^^^^^^^^^^^^^^^
-
-The first step in using the :mod:`argparse` is creating an
-:class:`ArgumentParser` object::
-
-   >>> parser = argparse.ArgumentParser(description='Process some integers.')
-
-The :class:`ArgumentParser` object will hold all the information necessary to
-parse the command line into Python data types.
-
-
-Adding arguments
-^^^^^^^^^^^^^^^^
-
-Filling an :class:`ArgumentParser` with information about program arguments is
-done by making calls to the :meth:`~ArgumentParser.add_argument` method.
-Generally, these calls tell the :class:`ArgumentParser` how to take the strings
-on the command line and turn them into objects.  This information is stored and
-used when :meth:`~ArgumentParser.parse_args` is called. For example::
-
-   >>> parser.add_argument('integers', metavar='N', type=int, nargs='+',
-   ...                     help='an integer for the accumulator')
-   >>> parser.add_argument('--sum', dest='accumulate', action='store_const',
-   ...                     const=sum, default=max,
-   ...                     help='sum the integers (default: find the max)')
-
-Later, calling :meth:`~ArgumentParser.parse_args` will return an object with
-two attributes, ``integers`` and ``accumulate``.  The ``integers`` attribute
-will be a list of one or more integers, and the ``accumulate`` attribute will be
-either the :func:`sum` function, if ``--sum`` was specified at the command line,
-or the :func:`max` function if it was not.
-
-
-Parsing arguments
-^^^^^^^^^^^^^^^^^
-
-:class:`ArgumentParser` parses arguments through the
-:meth:`~ArgumentParser.parse_args` method.  This will inspect the command line,
-convert each argument to the appropriate type and then invoke the appropriate action.
-In most cases, this means a simple :class:`Namespace` object will be built up from
-attributes parsed out of the command line::
-
-   >>> parser.parse_args(['--sum', '7', '-1', '42'])
-   Namespace(accumulate=<built-in function sum>, integers=[7, -1, 42])
-
-In a script, :meth:`~ArgumentParser.parse_args` will typically be called with no
-arguments, and the :class:`ArgumentParser` will automatically determine the
-command-line arguments from :data:`sys.argv`.
 
 
 ArgumentParser objects
@@ -272,35 +122,9 @@ By default, :class:`ArgumentParser` objects use the base name
 (see :func:`os.path.basename`) of ``sys.argv[0]`` to determine
 how to display the name of the program in help messages.  This default is almost
 always desirable because it will make the help messages match the name that was
-used to invoke the program on the command line.  For example, consider a file
-named ``myprogram.py`` with the following code::
-
-   import argparse
-   parser = argparse.ArgumentParser()
-   parser.add_argument('--foo', help='foo help')
-   args = parser.parse_args()
-
-The help for this program will display ``myprogram.py`` as the program name
-(regardless of where the program was invoked from):
-
-.. code-block:: shell-session
-
-   $ python myprogram.py --help
-   usage: myprogram.py [-h] [--foo FOO]
-
-   options:
-    -h, --help  show this help message and exit
-    --foo FOO   foo help
-   $ cd ..
-   $ python subdir/myprogram.py --help
-   usage: myprogram.py [-h] [--foo FOO]
-
-   options:
-    -h, --help  show this help message and exit
-    --foo FOO   foo help
-
-To change this default behavior, another value can be supplied using the
-``prog=`` argument to :class:`ArgumentParser`::
+used to invoke the program on the command line.  However, to change this default 
+behavior, another value can be supplied using the ``prog=`` argument to 
+:class:`ArgumentParser`::
 
    >>> parser = argparse.ArgumentParser(prog='myprogram')
    >>> parser.print_help()
@@ -329,22 +153,8 @@ usage
 ^^^^^
 
 By default, :class:`ArgumentParser` calculates the usage message from the
-arguments it contains::
-
-   >>> parser = argparse.ArgumentParser(prog='PROG')
-   >>> parser.add_argument('--foo', nargs='?', help='foo help')
-   >>> parser.add_argument('bar', nargs='+', help='bar help')
-   >>> parser.print_help()
-   usage: PROG [-h] [--foo [FOO]] bar [bar ...]
-
-   positional arguments:
-    bar          bar help
-
-   options:
-    -h, --help   show this help message and exit
-    --foo [FOO]  foo help
-
-The default message can be overridden with the ``usage=`` keyword argument::
+arguments it contains. The default message can be overridden with the 
+``usage=`` keyword argument::
 
    >>> parser = argparse.ArgumentParser(prog='PROG', usage='%(prog)s [options]')
    >>> parser.add_argument('--foo', nargs='?', help='foo help')
@@ -372,16 +182,7 @@ Most calls to the :class:`ArgumentParser` constructor will use the
 ``description=`` keyword argument.  This argument gives a brief description of
 what the program does and how it works.  In help messages, the description is
 displayed between the command-line usage string and the help messages for the
-various arguments::
-
-   >>> parser = argparse.ArgumentParser(description='A foo that bars')
-   >>> parser.print_help()
-   usage: argparse.py [-h]
-
-   A foo that bars
-
-   options:
-    -h, --help  show this help message and exit
+various arguments.
 
 By default, the description will be line-wrapped so that it fits within the
 given space.  To change this behavior, see the formatter_class_ argument.
@@ -692,25 +493,8 @@ add_help
 ^^^^^^^^
 
 By default, ArgumentParser objects add an option which simply displays
-the parser's help message. For example, consider a file named
-``myprogram.py`` containing the following code::
-
-   import argparse
-   parser = argparse.ArgumentParser()
-   parser.add_argument('--foo', help='foo help')
-   args = parser.parse_args()
-
-If ``-h`` or ``--help`` is supplied at the command line, the ArgumentParser
-help will be printed:
-
-.. code-block:: shell-session
-
-   $ python myprogram.py --help
-   usage: myprogram.py [-h] [--foo FOO]
-
-   options:
-    -h, --help  show this help message and exit
-    --foo FOO   foo help
+the parser's help message. If ``-h`` or ``--help`` is supplied at the command 
+line, the ArgumentParser help will be printed.
 
 Occasionally, it may be useful to disable the addition of this help option.
 This can be achieved by passing ``False`` as the ``add_help=`` argument to
