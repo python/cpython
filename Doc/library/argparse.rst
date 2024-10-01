@@ -273,9 +273,9 @@ to display in help messages depending on the way the Python inerpreter was run:
 
 * The :func:`base name <os.path.basename>` of ``sys.argv[0]`` if a file was
   passed as argument.
-* The Python inerpreter name followed by ``sys.argv[0]`` if a directory or
+* The Python interpreter name followed by ``sys.argv[0]`` if a directory or
   a zipfile was passed as argument.
-* The Python inerpreter name followed by ``-m`` followed by the
+* The Python interpreter name followed by ``-m`` followed by the
   module or package name if the :option:`-m` option was used.
 
 This default is almost
@@ -289,7 +289,7 @@ named ``myprogram.py`` with the following code::
    args = parser.parse_args()
 
 The help for this program will display ``myprogram.py`` as the program name
-(regardless of where the program was invoked from) if run it as a script:
+(regardless of where the program was invoked from) if it is run as a script:
 
 .. code-block:: shell-session
 
@@ -307,7 +307,7 @@ The help for this program will display ``myprogram.py`` as the program name
     -h, --help  show this help message and exit
     --foo FOO   foo help
 
-If import it as a module, the help will display a corresponding command line:
+If it is executed via the :option:`-m` option, the help will display a corresponding command line:
 
 .. code-block:: shell-session
 
@@ -345,7 +345,8 @@ specifier.
     --foo FOO   foo of the myprogram program
 
 .. versionchanged:: 3.14
-   The default value is now not simply ``os.path.basename(sys.argv[0])``.
+   The default ``prog`` value now reflects how ``__main__`` was actually executed,
+   rather than always being ``os.path.basename(sys.argv[0])``.
 
 usage
 ^^^^^
