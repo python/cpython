@@ -14,7 +14,7 @@ extern "C" {
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_STORE_PTR_RELAXED
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_typeid.h"        // _PyType_IncrefSlow
+#include "pycore_uniqueid.h"      // _PyType_IncrefSlow
 
 
 #define _Py_IMMORTAL_REFCNT_LOOSE ((_Py_IMMORTAL_REFCNT >> 1) + 1)

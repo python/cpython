@@ -15,7 +15,7 @@
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
 #include "pydtrace.h"
-#include "pycore_typeid.h"        // _PyType_MergeThreadLocalRefcounts
+#include "pycore_uniqueid.h"      // _PyType_MergeThreadLocalRefcounts
 
 #ifdef Py_GIL_DISABLED
 

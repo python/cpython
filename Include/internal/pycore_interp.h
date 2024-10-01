@@ -35,7 +35,7 @@ extern "C" {
 #include "pycore_qsbr.h"          // struct _qsbr_state
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_tuple.h"         // struct _Py_tuple_state
-#include "pycore_typeid.h"        // struct _Py_type_id_pool
+#include "pycore_uniqueid.h"      // struct _Py_type_id_pool
 #include "pycore_typeobject.h"    // struct types_state
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state

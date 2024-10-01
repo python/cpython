@@ -1,5 +1,5 @@
-#ifndef Py_INTERNAL_TYPEID_H
-#define Py_INTERNAL_TYPEID_H
+#ifndef Py_INTERNAL_UNIQUEID_H
+#define Py_INTERNAL_UNIQUEID_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -72,4 +72,4 @@ PyAPI_FUNC(void) _PyType_IncrefSlow(PyHeapTypeObject *type);
 #ifdef __cplusplus
 }
 #endif
-#endif   /* !Py_INTERNAL_TYPEID_H */
+#endif   /* !Py_INTERNAL_UNIQUEID_H */

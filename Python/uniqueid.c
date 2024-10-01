@@ -3,12 +3,12 @@
 #include "pycore_lock.h"        // PyMutex_LockFlags()
 #include "pycore_pystate.h"     // _PyThreadState_GET()
 #include "pycore_object.h"      // _Py_IncRefTotal
-#include "pycore_typeid.h"
+#include "pycore_uniqueid.h"
 
 // This contains code for allocating unique ids to heap type objects
 // and re-using those ids when the type is deallocated.
 //
-// See Include/internal/pycore_typeid.h for more details.
+// See Include/internal/pycore_unique.h for more details.
 
 #ifdef Py_GIL_DISABLED
 
