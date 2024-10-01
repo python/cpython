@@ -10,8 +10,8 @@ extern "C" {
 
 #ifdef Py_GIL_DISABLED
 
-// This contains code for allocating unique ids to objects for 
-// per-thread reference counting.
+// This contains code for allocating unique ids to objects for per-thread
+// reference counting.
 //
 // Per-thread reference counting is used along with deferred reference
 // counting to avoid scaling bottlenecks due to reference count contention.
