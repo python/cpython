@@ -937,7 +937,7 @@ Other constructors, all class methods:
    .. note::
 
       It's possible that subsequent ``datetime.now()`` return the same instant,
-      depending on the precision of the underlying functions.
+      depending on the precision of the underlying clock.
 
 .. classmethod:: datetime.utcnow()
 
