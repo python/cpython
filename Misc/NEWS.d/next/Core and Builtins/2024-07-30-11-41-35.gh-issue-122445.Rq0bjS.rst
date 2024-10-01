@@ -1,1 +1,1 @@
-Add only fields which are modified via self.* to :attr:`~class.__static_attributes__`.
+Add only fields which are modified via self.* to :attr:`~type.__static_attributes__`.

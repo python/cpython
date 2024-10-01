@@ -380,15 +380,22 @@ class TestOptionalsSingleDashAmbiguous(ParserTestCase):
     """Test Optionals that partially match but are not subsets"""
 
     argument_signatures = [Sig('-foobar'), Sig('-foorab')]
-    failures = ['-f', '-f a', '-fa', '-foa', '-foo', '-fo', '-foo b']
+    failures = ['-f', '-f a', '-fa', '-foa', '-foo', '-fo', '-foo b',
+                '-f=a', '-foo=b']
     successes = [
         ('', NS(foobar=None, foorab=None)),
         ('-foob a', NS(foobar='a', foorab=None)),
+        ('-foob=a', NS(foobar='a', foorab=None)),
         ('-foor a', NS(foobar=None, foorab='a')),
+        ('-foor=a', NS(foobar=None, foorab='a')),
         ('-fooba a', NS(foobar='a', foorab=None)),
+        ('-fooba=a', NS(foobar='a', foorab=None)),
         ('-foora a', NS(foobar=None, foorab='a')),
+        ('-foora=a', NS(foobar=None, foorab='a')),
         ('-foobar a', NS(foobar='a', foorab=None)),
+        ('-foobar=a', NS(foobar='a', foorab=None)),
         ('-foorab a', NS(foobar=None, foorab='a')),
+        ('-foorab=a', NS(foobar=None, foorab='a')),
     ]
 
 
@@ -621,9 +628,9 @@ class TestOptionalsNargsOptional(ParserTestCase):
         Sig('-w', nargs='?'),
         Sig('-x', nargs='?', const=42),
         Sig('-y', nargs='?', default='spam'),
-        Sig('-z', nargs='?', type=int, const='42', default='84'),
+        Sig('-z', nargs='?', type=int, const='42', default='84', choices=[1, 2]),
     ]
-    failures = ['2']
+    failures = ['2', '-z a', '-z 42', '-z 84']
     successes = [
         ('', NS(w=None, x=None, y='spam', z=84)),
         ('-w', NS(w=None, x=None, y='spam', z=84)),
@@ -679,7 +686,7 @@ class TestOptionalsChoices(ParserTestCase):
     argument_signatures = [
         Sig('-f', choices='abc'),
         Sig('-g', type=int, choices=range(5))]
-    failures = ['a', '-f d', '-fad', '-ga', '-g 6']
+    failures = ['a', '-f d', '-f ab', '-fad', '-ga', '-g 6']
     successes = [
         ('', NS(f=None, g=None)),
         ('-f a', NS(f='a', g=None)),
@@ -875,7 +882,9 @@ class TestOptionalsAllowLongAbbreviation(ParserTestCase):
     successes = [
         ('', NS(foo=None, foobaz=None, fooble=False)),
         ('--foo 7', NS(foo='7', foobaz=None, fooble=False)),
+        ('--foo=7', NS(foo='7', foobaz=None, fooble=False)),
         ('--fooba a', NS(foo=None, foobaz='a', fooble=False)),
+        ('--fooba=a', NS(foo=None, foobaz='a', fooble=False)),
         ('--foobl --foo g', NS(foo='g', foobaz=None, fooble=True)),
     ]
 
@@ -911,6 +920,23 @@ class TestOptionalsDisallowLongAbbreviationPrefixChars(ParserTestCase):
         ('', NS(foo=None, foodle=False, foonly=None)),
         ('++foo 3', NS(foo='3', foodle=False, foonly=None)),
         ('++foonly 7 ++foodle ++foo 2', NS(foo='2', foodle=True, foonly='7')),
+    ]
+
+
+class TestOptionalsDisallowSingleDashLongAbbreviation(ParserTestCase):
+    """Do not allow abbreviations of long options at all"""
+
+    parser_signature = Sig(allow_abbrev=False)
+    argument_signatures = [
+        Sig('-foo'),
+        Sig('-foodle', action='store_true'),
+        Sig('-foonly'),
+    ]
+    failures = ['-foon 3', '-food', '-food -foo 2']
+    successes = [
+        ('', NS(foo=None, foodle=False, foonly=None)),
+        ('-foo 3', NS(foo='3', foodle=False, foonly=None)),
+        ('-foonly 7 -foodle -foo 2', NS(foo='2', foodle=True, foonly='7')),
     ]
 
 
@@ -1001,8 +1027,8 @@ class TestPositionalsNargsZeroOrMore(ParserTestCase):
 class TestPositionalsNargsZeroOrMoreDefault(ParserTestCase):
     """Test a Positional that specifies unlimited nargs and a default"""
 
-    argument_signatures = [Sig('foo', nargs='*', default='bar')]
-    failures = ['-x']
+    argument_signatures = [Sig('foo', nargs='*', default='bar', choices=['a', 'b'])]
+    failures = ['-x', 'bar', 'a c']
     successes = [
         ('', NS(foo='bar')),
         ('a', NS(foo=['a'])),
@@ -1035,8 +1061,8 @@ class TestPositionalsNargsOptional(ParserTestCase):
 class TestPositionalsNargsOptionalDefault(ParserTestCase):
     """Tests an Optional Positional with a default value"""
 
-    argument_signatures = [Sig('foo', nargs='?', default=42)]
-    failures = ['-x', 'a b']
+    argument_signatures = [Sig('foo', nargs='?', default=42, choices=['a', 'b'])]
+    failures = ['-x', 'a b', '42']
     successes = [
         ('', NS(foo=42)),
         ('a', NS(foo='a')),
@@ -1049,9 +1075,9 @@ class TestPositionalsNargsOptionalConvertedDefault(ParserTestCase):
     """
 
     argument_signatures = [
-        Sig('foo', nargs='?', type=int, default='42'),
+        Sig('foo', nargs='?', type=int, default='42', choices=[1, 2]),
     ]
-    failures = ['-x', 'a b', '1 2']
+    failures = ['-x', 'a b', '1 2', '42']
     successes = [
         ('', NS(foo=42)),
         ('1', NS(foo=1)),
@@ -1570,18 +1596,24 @@ class TestDefaultSuppress(ParserTestCase):
     """Test actions with suppressed defaults"""
 
     argument_signatures = [
-        Sig('foo', nargs='?', default=argparse.SUPPRESS),
-        Sig('bar', nargs='*', default=argparse.SUPPRESS),
+        Sig('foo', nargs='?', type=int, default=argparse.SUPPRESS),
+        Sig('bar', nargs='*', type=int, default=argparse.SUPPRESS),
         Sig('--baz', action='store_true', default=argparse.SUPPRESS),
+        Sig('--qux', nargs='?', type=int, default=argparse.SUPPRESS),
+        Sig('--quux', nargs='*', type=int, default=argparse.SUPPRESS),
     ]
-    failures = ['-x']
+    failures = ['-x', 'a', '1 a']
     successes = [
         ('', NS()),
-        ('a', NS(foo='a')),
-        ('a b', NS(foo='a', bar=['b'])),
+        ('1', NS(foo=1)),
+        ('1 2', NS(foo=1, bar=[2])),
         ('--baz', NS(baz=True)),
-        ('a --baz', NS(foo='a', baz=True)),
-        ('--baz a b', NS(foo='a', bar=['b'], baz=True)),
+        ('1 --baz', NS(foo=1, baz=True)),
+        ('--baz 1 2', NS(foo=1, bar=[2], baz=True)),
+        ('--qux', NS(qux=None)),
+        ('--qux 1', NS(qux=1)),
+        ('--quux', NS(quux=[])),
+        ('--quux 1 2', NS(quux=[1, 2])),
     ]
 
 
@@ -2238,14 +2270,14 @@ class TestAddSubparsers(TestCase):
             parser1_kwargs['aliases'] = ['1alias1', '1alias2']
         parser1 = subparsers.add_parser('1', **parser1_kwargs)
         parser1.add_argument('-w', type=int, help='w help')
-        parser1.add_argument('x', choices='abc', help='x help')
+        parser1.add_argument('x', choices=['a', 'b', 'c'], help='x help')
 
         # add second sub-parser
         parser2_kwargs = dict(description='2 description')
         if subparser_help:
             parser2_kwargs['help'] = '2 help'
         parser2 = subparsers.add_parser('2', **parser2_kwargs)
-        parser2.add_argument('-y', choices='123', help='y help')
+        parser2.add_argument('-y', choices=['1', '2', '3'], help='y help')
         parser2.add_argument('z', type=complex, nargs='*', help='z help')
 
         # add third sub-parser
@@ -2311,6 +2343,40 @@ class TestAddSubparsers(TestCase):
             self.parser.parse_known_args('0.5 -W 1 b -X Y -w 7 Z'.split()),
             (NS(foo=False, bar=0.5, w=7, x='b'), ['-W', '-X', 'Y', 'Z']),
         )
+
+    def test_parse_known_args_to_class_namespace(self):
+        class C:
+            pass
+        self.assertEqual(
+            self.parser.parse_known_args('0.5 1 b -w 7 -p'.split(), namespace=C),
+            (C, ['-p']),
+        )
+        self.assertIs(C.foo, False)
+        self.assertEqual(C.bar, 0.5)
+        self.assertEqual(C.w, 7)
+        self.assertEqual(C.x, 'b')
+
+    def test_abbreviation(self):
+        parser = ErrorRaisingArgumentParser()
+        parser.add_argument('--foodle')
+        parser.add_argument('--foonly')
+        subparsers = parser.add_subparsers()
+        parser1 = subparsers.add_parser('bar')
+        parser1.add_argument('--fo')
+        parser1.add_argument('--foonew')
+
+        self.assertEqual(parser.parse_args(['--food', 'baz', 'bar']),
+                         NS(foodle='baz', foonly=None, fo=None, foonew=None))
+        self.assertEqual(parser.parse_args(['--foon', 'baz', 'bar']),
+                         NS(foodle=None, foonly='baz', fo=None, foonew=None))
+        self.assertArgumentParserError(parser.parse_args, ['--fo', 'baz', 'bar'])
+        self.assertEqual(parser.parse_args(['bar', '--fo', 'baz']),
+                         NS(foodle=None, foonly=None, fo='baz', foonew=None))
+        self.assertEqual(parser.parse_args(['bar', '--foo', 'baz']),
+                         NS(foodle=None, foonly=None, fo=None, foonew='baz'))
+        self.assertEqual(parser.parse_args(['bar', '--foon', 'baz']),
+                         NS(foodle=None, foonly=None, fo=None, foonew='baz'))
+        self.assertArgumentParserError(parser.parse_args, ['bar', '--food', 'baz'])
 
     def test_parse_known_args_with_single_dash_option(self):
         parser = ErrorRaisingArgumentParser()
@@ -4586,7 +4652,7 @@ class TestHelpVariableExpansion(HelpTestCase):
             help='x %(prog)s %(default)s %(type)s %%'),
         Sig('-y', action='store_const', default=42, const='XXX',
             help='y %(prog)s %(default)s %(const)s'),
-        Sig('--foo', choices='abc',
+        Sig('--foo', choices=['a', 'b', 'c'],
             help='foo %(prog)s %(default)s %(choices)s'),
         Sig('--bar', default='baz', choices=[1, 2], metavar='BBB',
             help='bar %(prog)s %(default)s %(dest)s'),
@@ -5249,7 +5315,7 @@ class TestInvalidArgumentConstructors(TestCase):
         for action in ['store_const', 'store_true', 'store_false',
                        'append_const', 'count']:
             for attrs in [dict(type=int), dict(nargs='+'),
-                          dict(choices='ab')]:
+                          dict(choices=['a', 'b'])]:
                 self.assertTypeError('-x', action=action, **attrs)
 
     def test_no_argument_no_const_actions(self):
