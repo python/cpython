@@ -966,6 +966,16 @@ _PyPegen_check_fstring_conversion(Parser *p, Token* conv_token, expr_ty conv)
             "f-string: conversion type must come right after the exclamanation mark"
         );
     }
+
+    Py_UCS4 first = PyUnicode_READ_CHAR(conv->v.Name.id, 0);
+    if (PyUnicode_GET_LENGTH(conv->v.Name.id) > 1 ||
+            !(first == 's' || first == 'r' || first == 'a')) {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(conv,
+                                            "f-string: invalid conversion character %R: expected 's', 'r', or 'a'",
+                                            conv->v.Name.id);
+        return NULL;
+    }
+
     return result_token_with_metadata(p, conv, conv_token->metadata);
 }
 
@@ -1070,6 +1080,9 @@ _PyPegen_get_expr_name(expr_ty e)
         case JoinedStr_kind:
         case FormattedValue_kind:
             return "f-string expression";
+        case TemplateStr_kind:
+        case Interpolation_kind:
+            return "t-string expression";
         case Constant_kind: {
             PyObject *value = e->v.Constant.value;
             if (value == Py_None) {
@@ -1316,9 +1329,9 @@ unpack_top_level_joined_strs(Parser *p, asdl_expr_seq *raw_expressions)
     return expressions;
 }
 
-expr_ty
-_PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b) {
-
+static asdl_expr_seq *
+_get_resized_exprs(Parser *p, Token *a, asdl_expr_seq *raw_expressions, Token *b)
+{
     asdl_expr_seq *expr = unpack_top_level_joined_strs(p, raw_expressions);
     Py_ssize_t n_items = asdl_seq_LEN(expr);
 
@@ -1366,7 +1379,22 @@ _PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b
     else {
         resized_exprs = seq;
     }
+    return resized_exprs;
+}
 
+expr_ty
+_PyPegen_template_str(Parser *p, Token *a, asdl_expr_seq *raw_expressions, Token *b) {
+
+    asdl_expr_seq *resized_exprs = _get_resized_exprs(p, a, raw_expressions, b);
+    return _PyAST_TemplateStr(resized_exprs, a->lineno, a->col_offset,
+                              b->end_lineno, b->end_col_offset,
+                              p->arena);
+}
+
+expr_ty
+_PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b) {
+
+    asdl_expr_seq *resized_exprs = _get_resized_exprs(p, a, raw_expressions, b);
     return _PyAST_JoinedStr(resized_exprs, a->lineno, a->col_offset,
                             b->end_lineno, b->end_col_offset,
                             p->arena);
@@ -1433,29 +1461,87 @@ expr_ty _PyPegen_constant_from_string(Parser* p, Token* tok) {
     return _PyAST_Constant(s, kind, tok->lineno, tok->col_offset, tok->end_lineno, tok->end_col_offset, p->arena);
 }
 
-expr_ty _PyPegen_formatted_value(Parser *p, expr_ty expression, Token *debug, ResultTokenWithMetadata *conversion,
-                                 ResultTokenWithMetadata *format, Token *closing_brace, int lineno, int col_offset,
-                                 int end_lineno, int end_col_offset, PyArena *arena) {
-    int conversion_val = -1;
+static int
+_get_interpolation_conversion(Parser *p, Token *debug, ResultTokenWithMetadata *conversion,
+                              ResultTokenWithMetadata *format)
+{
     if (conversion != NULL) {
         expr_ty conversion_expr = (expr_ty) conversion->result;
         assert(conversion_expr->kind == Name_kind);
         Py_UCS4 first = PyUnicode_READ_CHAR(conversion_expr->v.Name.id, 0);
-
-        if (PyUnicode_GET_LENGTH(conversion_expr->v.Name.id) > 1 ||
-            !(first == 's' || first == 'r' || first == 'a')) {
-            RAISE_SYNTAX_ERROR_KNOWN_LOCATION(conversion_expr,
-                                              "f-string: invalid conversion character %R: expected 's', 'r', or 'a'",
-                                              conversion_expr->v.Name.id);
-            return NULL;
-        }
-
-        conversion_val = Py_SAFE_DOWNCAST(first, Py_UCS4, int);
+        return Py_SAFE_DOWNCAST(first, Py_UCS4, int);
     }
     else if (debug && !format) {
         /* If no conversion is specified, use !r for debug expressions */
-        conversion_val = (int)'r';
+        return (int)'r';
     }
+    return -1;
+}
+
+expr_ty _PyPegen_interpolation(Parser *p, expr_ty expression, Token *debug, ResultTokenWithMetadata *conversion,
+                                 ResultTokenWithMetadata *format, Token *closing_brace, int lineno, int col_offset,
+                                 int end_lineno, int end_col_offset, PyArena *arena) {
+
+    constant exprstr = _PyAST_ExprAsUnicode(expression);
+    if (exprstr == NULL) {
+        return NULL;
+    }
+
+    constant convstr = NULL;
+    int conversion_val = _get_interpolation_conversion(p, debug, conversion, format);
+    if (conversion_val >= 0) {
+        expr_ty conv = (expr_ty) conversion->result;
+        constant convstr = PyUnicode_FromObject(conv->v.Name.id);
+        if (convstr == NULL) {
+            return NULL;
+        }
+    }
+
+    expr_ty interpolation = _PyAST_Interpolation(
+        expression, exprstr, convstr, format ? (expr_ty) format->result : NULL,
+        lineno, col_offset, end_lineno,
+        end_col_offset, arena
+    );
+
+    if (!debug) {
+        return interpolation;
+    }
+
+    /* Find the non whitespace token after the "=" */
+    int debug_end_line, debug_end_offset;
+    PyObject *debug_metadata;
+
+    if (conversion) {
+        debug_end_line = ((expr_ty) conversion->result)->lineno;
+        debug_end_offset = ((expr_ty) conversion->result)->col_offset;
+        debug_metadata = conversion->metadata;
+    }
+    else if (format) {
+        debug_end_line = ((expr_ty) format->result)->lineno;
+        debug_end_offset = ((expr_ty) format->result)->col_offset + 1;
+        debug_metadata = format->metadata;
+    }
+    else {
+        debug_end_line = end_lineno;
+        debug_end_offset = end_col_offset;
+        debug_metadata = closing_brace->metadata;
+    }
+    expr_ty debug_text = _PyAST_Constant(debug_metadata, NULL, lineno, col_offset + 1, debug_end_line,
+                                            debug_end_offset - 1, p->arena);
+    if (!debug_text) {
+        return NULL;
+    }
+
+    asdl_expr_seq *values = _Py_asdl_expr_seq_new(2, arena);
+    asdl_seq_SET(values, 0, debug_text);
+    asdl_seq_SET(values, 1, interpolation);
+    return _PyAST_JoinedStr(values, lineno, col_offset, debug_end_line, debug_end_offset, p->arena);
+}
+
+expr_ty _PyPegen_formatted_value(Parser *p, expr_ty expression, Token *debug, ResultTokenWithMetadata *conversion,
+                                 ResultTokenWithMetadata *format, Token *closing_brace, int lineno, int col_offset,
+                                 int end_lineno, int end_col_offset, PyArena *arena) {
+    int conversion_val = _get_interpolation_conversion(p, debug, conversion, format);
 
     expr_ty formatted_value = _PyAST_FormattedValue(
         expression, conversion_val, format ? (expr_ty) format->result : NULL,
@@ -1463,40 +1549,39 @@ expr_ty _PyPegen_formatted_value(Parser *p, expr_ty expression, Token *debug, Re
         end_col_offset, arena
     );
 
-    if (debug) {
-        /* Find the non whitespace token after the "=" */
-        int debug_end_line, debug_end_offset;
-        PyObject *debug_metadata;
-
-        if (conversion) {
-            debug_end_line = ((expr_ty) conversion->result)->lineno;
-            debug_end_offset = ((expr_ty) conversion->result)->col_offset;
-            debug_metadata = conversion->metadata;
-        }
-        else if (format) {
-            debug_end_line = ((expr_ty) format->result)->lineno;
-            debug_end_offset = ((expr_ty) format->result)->col_offset + 1;
-            debug_metadata = format->metadata;
-        }
-        else {
-            debug_end_line = end_lineno;
-            debug_end_offset = end_col_offset;
-            debug_metadata = closing_brace->metadata;
-        }
-        expr_ty debug_text = _PyAST_Constant(debug_metadata, NULL, lineno, col_offset + 1, debug_end_line,
-                                             debug_end_offset - 1, p->arena);
-        if (!debug_text) {
-            return NULL;
-        }
-
-        asdl_expr_seq *values = _Py_asdl_expr_seq_new(2, arena);
-        asdl_seq_SET(values, 0, debug_text);
-        asdl_seq_SET(values, 1, formatted_value);
-        return _PyAST_JoinedStr(values, lineno, col_offset, debug_end_line, debug_end_offset, p->arena);
-    }
-    else {
+    if (!debug) {
         return formatted_value;
     }
+
+    /* Find the non whitespace token after the "=" */
+    int debug_end_line, debug_end_offset;
+    PyObject *debug_metadata;
+
+    if (conversion) {
+        debug_end_line = ((expr_ty) conversion->result)->lineno;
+        debug_end_offset = ((expr_ty) conversion->result)->col_offset;
+        debug_metadata = conversion->metadata;
+    }
+    else if (format) {
+        debug_end_line = ((expr_ty) format->result)->lineno;
+        debug_end_offset = ((expr_ty) format->result)->col_offset + 1;
+        debug_metadata = format->metadata;
+    }
+    else {
+        debug_end_line = end_lineno;
+        debug_end_offset = end_col_offset;
+        debug_metadata = closing_brace->metadata;
+    }
+    expr_ty debug_text = _PyAST_Constant(debug_metadata, NULL, lineno, col_offset + 1, debug_end_line,
+                                            debug_end_offset - 1, p->arena);
+    if (!debug_text) {
+        return NULL;
+    }
+
+    asdl_expr_seq *values = _Py_asdl_expr_seq_new(2, arena);
+    asdl_seq_SET(values, 0, debug_text);
+    asdl_seq_SET(values, 1, formatted_value);
+    return _PyAST_JoinedStr(values, lineno, col_offset, debug_end_line, debug_end_offset, p->arena);
 }
 
 expr_ty

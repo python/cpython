@@ -356,11 +356,23 @@ validate_expr(struct validator *state, expr_ty exp, expr_context_ty ctx)
     case JoinedStr_kind:
         ret = validate_exprs(state, exp->v.JoinedStr.values, Load, 0);
         break;
+    case TemplateStr_kind:
+        ret = validate_exprs(state, exp->v.TemplateStr.values, Load, 0);
+        break;
     case FormattedValue_kind:
         if (validate_expr(state, exp->v.FormattedValue.value, Load) == 0)
             return 0;
         if (exp->v.FormattedValue.format_spec) {
             ret = validate_expr(state, exp->v.FormattedValue.format_spec, Load);
+            break;
+        }
+        ret = 1;
+        break;
+    case Interpolation_kind:
+        if (validate_expr(state, exp->v.Interpolation.value, Load) == 0)
+            return 0;
+        if (exp->v.FormattedValue.format_spec) {
+            ret = validate_expr(state, exp->v.Interpolation.format_spec, Load);
             break;
         }
         ret = 1;
@@ -523,6 +535,7 @@ validate_pattern_match_value(struct validator *state, expr_ty exp)
             }
             break;
         case JoinedStr_kind:
+        case TemplateStr_kind:
             // Handled in the later stages
             return 1;
         default:

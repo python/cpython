@@ -215,6 +215,8 @@
 
 .. data:: FSTRING_START
 
+.. data:: TSTRING_START
+
 .. data:: FSTRING_MIDDLE
 
 .. data:: FSTRING_END

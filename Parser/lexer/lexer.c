@@ -647,13 +647,13 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     nonascii = 0;
     if (is_potential_identifier_start(c)) {
         /* Process the various legal combinations of b"", r"", u"", and f"". */
-        int saw_b = 0, saw_r = 0, saw_u = 0, saw_f = 0;
+        int saw_b = 0, saw_r = 0, saw_u = 0, saw_f = 0, saw_t = 0;
         while (1) {
-            if (!(saw_b || saw_u || saw_f) && (c == 'b' || c == 'B'))
+            if (!(saw_b || saw_u || saw_f || saw_t) && (c == 'b' || c == 'B'))
                 saw_b = 1;
             /* Since this is a backwards compatibility support literal we don't
                want to support it in arbitrary order like byte literals. */
-            else if (!(saw_b || saw_u || saw_r || saw_f)
+            else if (!(saw_b || saw_u || saw_r || saw_f || saw_t)
                      && (c == 'u'|| c == 'U')) {
                 saw_u = 1;
             }
@@ -661,15 +661,18 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             else if (!(saw_r || saw_u) && (c == 'r' || c == 'R')) {
                 saw_r = 1;
             }
-            else if (!(saw_f || saw_b || saw_u) && (c == 'f' || c == 'F')) {
+            else if (!(saw_f || saw_b || saw_u || saw_t) && (c == 'f' || c == 'F')) {
                 saw_f = 1;
+            }
+            else if (!(saw_t || saw_b || saw_u || saw_f) && (c == 't' || c == 'T')) {
+                saw_t = 1;
             }
             else {
                 break;
             }
             c = tok_nextc(tok);
             if (c == '"' || c == '\'') {
-                if (saw_f) {
+                if (saw_f || saw_t) {
                     goto f_string_quote;
                 }
                 goto letter_quote;
@@ -943,7 +946,9 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     }
 
   f_string_quote:
-    if (((Py_TOLOWER(*tok->start) == 'f' || Py_TOLOWER(*tok->start) == 'r') && (c == '\'' || c == '"'))) {
+    if (((Py_TOLOWER(*tok->start) == 'f' || Py_TOLOWER(*tok->start) == 'r' || Py_TOLOWER(*tok->start) == 't')
+        && (c == '\'' || c == '"'))) {
+
         int quote = c;
         int quote_size = 1;             /* 1 or 3 */
 
@@ -992,7 +997,13 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         the_current_tok->in_format_spec = 0;
         the_current_tok->f_string_debug = 0;
 
+        int tstring = 0;
         switch (*tok->start) {
+            case 'T':
+            case 't':
+                the_current_tok->f_string_raw = Py_TOLOWER(*(tok->start + 1)) == 'r';
+                tstring = 1;
+                break;
             case 'F':
             case 'f':
                 the_current_tok->f_string_raw = Py_TOLOWER(*(tok->start + 1)) == 'r';
@@ -1000,14 +1011,16 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             case 'R':
             case 'r':
                 the_current_tok->f_string_raw = 1;
+                tstring = Py_TOLOWER(*(tok->start + 1)) == 't';
                 break;
             default:
                 Py_UNREACHABLE();
         }
 
+        the_current_tok->tstring = tstring;
         the_current_tok->curly_bracket_depth = 0;
         the_current_tok->curly_bracket_expr_start_depth = -1;
-        return MAKE_TOKEN(FSTRING_START);
+        return tstring ? MAKE_TOKEN(TSTRING_START) : MAKE_TOKEN(FSTRING_START);
     }
 
   letter_quote:

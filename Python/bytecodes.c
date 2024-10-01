@@ -1726,6 +1726,25 @@ dummy_func(
             str = PyStackRef_FromPyObjectSteal(str_o);
         }
 
+        inst(BUILD_INTERPOLATION, (values[2 + ((oparg >> 1) & 1) + (oparg & 1)] -- interpolation)) {
+            PyObject *interpolation_o = _PyInterpolation_FromStackRefSteal(values, oparg);
+            ERROR_IF(interpolation_o == NULL, error);
+            interpolation = PyStackRef_FromPyObjectSteal(interpolation_o);
+        }
+
+        inst(BUILD_TEMPLATE, (pieces[oparg] -- template)) {
+            STACKREFS_TO_PYOBJECTS(pieces, oparg, pieces_o);
+            if (CONVERSION_FAILED(pieces_o)) {
+                DECREF_INPUTS();
+                ERROR_IF(true, error);
+            }
+            PyObject *template_o = _PyTemplate_Create(pieces_o, oparg);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(pieces_o);
+            DECREF_INPUTS();
+            ERROR_IF(template_o == NULL, error);
+            template = PyStackRef_FromPyObjectSteal(template_o);
+        }
+
         inst(BUILD_TUPLE, (values[oparg] -- tup)) {
             PyObject *tup_o = _PyTuple_FromStackRefSteal(values, oparg);
             INPUTS_DEAD();

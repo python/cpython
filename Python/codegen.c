@@ -3494,7 +3494,9 @@ infer_type(expr_ty e)
     case Lambda_kind:
         return &PyFunction_Type;
     case JoinedStr_kind:
+    case TemplateStr_kind:
     case FormattedValue_kind:
+    case Interpolation_kind:
         return &PyUnicode_Type;
     case Constant_kind:
         return Py_TYPE(e->v.Constant.value);
@@ -3517,7 +3519,9 @@ check_caller(compiler *c, expr_ty e)
     case SetComp_kind:
     case GeneratorExp_kind:
     case JoinedStr_kind:
-    case FormattedValue_kind: {
+    case TemplateStr_kind:
+    case FormattedValue_kind:
+    case Interpolation_kind: {
         location loc = LOC(e);
         return _PyCompile_Warn(c, loc, "'%.200s' object is not callable; "
                                        "perhaps you missed a comma?",
@@ -3580,7 +3584,9 @@ check_index(compiler *c, expr_ty e, expr_ty s)
     case List_kind:
     case ListComp_kind:
     case JoinedStr_kind:
-    case FormattedValue_kind: {
+    case TemplateStr_kind:
+    case FormattedValue_kind:
+    case Interpolation_kind: {
         location loc = LOC(e);
         return _PyCompile_Warn(c, loc, "%.200s indices must be integers "
                                        "or slices, not %.200s; "
@@ -3841,6 +3847,35 @@ codegen_call(compiler *c, expr_ty e)
 }
 
 static int
+codegen_template_str(compiler *c, expr_ty e)
+{
+    location loc = LOC(e);
+    Py_ssize_t value_count = asdl_seq_LEN(e->v.TemplateStr.values);
+    if (value_count > STACK_USE_GUIDELINE) {
+        _Py_DECLARE_STR(empty, "");
+        ADDOP_LOAD_CONST_NEW(c, loc, Py_NewRef(&_Py_STR(empty)));
+        ADDOP_NAME(c, loc, LOAD_METHOD, &_Py_ID(join), names);
+        ADDOP_I(c, loc, BUILD_LIST, 0);
+        for (Py_ssize_t i = 0; i < asdl_seq_LEN(e->v.TemplateStr.values); i++) {
+            VISIT(c, expr, asdl_seq_GET(e->v.TemplateStr.values, i));
+            ADDOP_I(c, loc, LIST_APPEND, 1);
+        }
+        ADDOP_I(c, loc, CALL, 1);
+    }
+    else {
+        VISIT_SEQ(c, expr, e->v.TemplateStr.values);
+        if (value_count > 1) {
+            ADDOP_I(c, loc, BUILD_TEMPLATE, value_count);
+        }
+        else if (value_count == 0) {
+            _Py_DECLARE_STR(empty, "");
+            ADDOP_LOAD_CONST_NEW(c, loc, Py_NewRef(&_Py_STR(empty)));
+        }
+    }
+    return SUCCESS;
+}
+
+static int
 codegen_joined_str(compiler *c, expr_ty e)
 {
     location loc = LOC(e);
@@ -3869,24 +3904,35 @@ codegen_joined_str(compiler *c, expr_ty e)
     return SUCCESS;
 }
 
+static int
+codegen_interpolation(compiler *c, expr_ty e)
+{
+    /* The oparg encodes which values are there:
+       - (oparg >> 2) & 1 == 1, always true, value and str are always there
+       - (oparg >> 1) & 1 == 1, if conversion is not NULL
+       - oparg & 1 == 1, if format_spec is not NULL
+    */
+    int oparg = 0b100;
+    location loc = LOC(e);
+
+    VISIT(c, expr, e->v.Interpolation.value);
+    ADDOP_LOAD_CONST(c, loc, e->v.Interpolation.str);
+    if (e->v.Interpolation.conversion) {
+        ADDOP_LOAD_CONST(c, loc, e->v.Interpolation.conversion);
+        oparg |= 0b10;
+    }
+    if (e->v.Interpolation.format_spec) {
+        VISIT(c, expr, e->v.Interpolation.format_spec);
+        oparg |= 1;
+    }
+    ADDOP_I(c, loc, BUILD_INTERPOLATION, oparg);
+    return SUCCESS;
+}
+
 /* Used to implement f-strings. Format a single value. */
 static int
 codegen_formatted_value(compiler *c, expr_ty e)
 {
-    /* Our oparg encodes 2 pieces of information: the conversion
-       character, and whether or not a format_spec was provided.
-
-       Convert the conversion char to 3 bits:
-           : 000  0x0  FVC_NONE   The default if nothing specified.
-       !s  : 001  0x1  FVC_STR
-       !r  : 010  0x2  FVC_REPR
-       !a  : 011  0x3  FVC_ASCII
-
-       next bit is whether or not we have a format spec:
-       yes : 100  0x4
-       no  : 000  0x0
-    */
-
     int conversion = e->v.FormattedValue.conversion;
     int oparg;
 
@@ -4958,8 +5004,12 @@ codegen_visit_expr(compiler *c, expr_ty e)
         break;
     case JoinedStr_kind:
         return codegen_joined_str(c, e);
+    case TemplateStr_kind:
+        return codegen_template_str(c, e);
     case FormattedValue_kind:
         return codegen_formatted_value(c, e);
+    case Interpolation_kind:
+        return codegen_interpolation(c, e);
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
         if (e->v.Attribute.ctx == Load) {

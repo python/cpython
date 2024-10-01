@@ -67,6 +67,8 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 2;
         case BINARY_SUBSCR_TUPLE_INT:
             return 2;
+        case BUILD_INTERPOLATION:
+            return (2 + ((oparg >> 1) & 1) + (oparg & 1));
         case BUILD_LIST:
             return oparg;
         case BUILD_MAP:
@@ -76,6 +78,8 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case BUILD_SLICE:
             return 2 + ((oparg == 3) ? 1 : 0);
         case BUILD_STRING:
+            return oparg;
+        case BUILD_TEMPLATE:
             return oparg;
         case BUILD_TUPLE:
             return oparg;
@@ -526,6 +530,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 1;
         case BINARY_SUBSCR_TUPLE_INT:
             return 1;
+        case BUILD_INTERPOLATION:
+            return 1;
         case BUILD_LIST:
             return 1;
         case BUILD_MAP:
@@ -535,6 +541,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case BUILD_SLICE:
             return 1;
         case BUILD_STRING:
+            return 1;
+        case BUILD_TEMPLATE:
             return 1;
         case BUILD_TUPLE:
             return 1;
@@ -1030,11 +1038,13 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[266] = {
     [BINARY_SUBSCR_LIST_INT] = { true, INSTR_FMT_IXC, HAS_DEOPT_FLAG },
     [BINARY_SUBSCR_STR_INT] = { true, INSTR_FMT_IXC, HAS_DEOPT_FLAG },
     [BINARY_SUBSCR_TUPLE_INT] = { true, INSTR_FMT_IXC, HAS_DEOPT_FLAG },
+    [BUILD_INTERPOLATION] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BUILD_LIST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG },
     [BUILD_MAP] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BUILD_SET] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BUILD_SLICE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG },
     [BUILD_STRING] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG },
+    [BUILD_TEMPLATE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BUILD_TUPLE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG },
     [CACHE] = { true, INSTR_FMT_IX, 0 },
     [CALL] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
@@ -1267,11 +1277,13 @@ _PyOpcode_macro_expansion[256] = {
     [BINARY_SUBSCR_LIST_INT] = { .nuops = 1, .uops = { { _BINARY_SUBSCR_LIST_INT, 0, 0 } } },
     [BINARY_SUBSCR_STR_INT] = { .nuops = 1, .uops = { { _BINARY_SUBSCR_STR_INT, 0, 0 } } },
     [BINARY_SUBSCR_TUPLE_INT] = { .nuops = 1, .uops = { { _BINARY_SUBSCR_TUPLE_INT, 0, 0 } } },
+    [BUILD_INTERPOLATION] = { .nuops = 1, .uops = { { _BUILD_INTERPOLATION, 0, 0 } } },
     [BUILD_LIST] = { .nuops = 1, .uops = { { _BUILD_LIST, 0, 0 } } },
     [BUILD_MAP] = { .nuops = 1, .uops = { { _BUILD_MAP, 0, 0 } } },
     [BUILD_SET] = { .nuops = 1, .uops = { { _BUILD_SET, 0, 0 } } },
     [BUILD_SLICE] = { .nuops = 1, .uops = { { _BUILD_SLICE, 0, 0 } } },
     [BUILD_STRING] = { .nuops = 1, .uops = { { _BUILD_STRING, 0, 0 } } },
+    [BUILD_TEMPLATE] = { .nuops = 1, .uops = { { _BUILD_TEMPLATE, 0, 0 } } },
     [BUILD_TUPLE] = { .nuops = 1, .uops = { { _BUILD_TUPLE, 0, 0 } } },
     [CALL_ALLOC_AND_ENTER_INIT] = { .nuops = 4, .uops = { { _CHECK_PEP_523, 0, 0 }, { _CHECK_AND_ALLOCATE_OBJECT, 2, 1 }, { _CREATE_INIT_FRAME, 0, 0 }, { _PUSH_FRAME, 0, 0 } } },
     [CALL_BOUND_METHOD_EXACT_ARGS] = { .nuops = 9, .uops = { { _CHECK_PEP_523, 0, 0 }, { _CHECK_CALL_BOUND_METHOD_EXACT_ARGS, 0, 0 }, { _INIT_CALL_BOUND_METHOD_EXACT_ARGS, 0, 0 }, { _CHECK_FUNCTION_VERSION, 2, 1 }, { _CHECK_FUNCTION_EXACT_ARGS, 0, 0 }, { _CHECK_STACK_SPACE, 0, 0 }, { _INIT_CALL_PY_EXACT_ARGS, 0, 0 }, { _SAVE_RETURN_OFFSET, 7, 3 }, { _PUSH_FRAME, 0, 0 } } },
@@ -1448,11 +1460,13 @@ const char *_PyOpcode_OpName[266] = {
     [BINARY_SUBSCR_LIST_INT] = "BINARY_SUBSCR_LIST_INT",
     [BINARY_SUBSCR_STR_INT] = "BINARY_SUBSCR_STR_INT",
     [BINARY_SUBSCR_TUPLE_INT] = "BINARY_SUBSCR_TUPLE_INT",
+    [BUILD_INTERPOLATION] = "BUILD_INTERPOLATION",
     [BUILD_LIST] = "BUILD_LIST",
     [BUILD_MAP] = "BUILD_MAP",
     [BUILD_SET] = "BUILD_SET",
     [BUILD_SLICE] = "BUILD_SLICE",
     [BUILD_STRING] = "BUILD_STRING",
+    [BUILD_TEMPLATE] = "BUILD_TEMPLATE",
     [BUILD_TUPLE] = "BUILD_TUPLE",
     [CACHE] = "CACHE",
     [CALL] = "CALL",
@@ -1704,11 +1718,13 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [BINARY_SUBSCR_LIST_INT] = BINARY_SUBSCR,
     [BINARY_SUBSCR_STR_INT] = BINARY_SUBSCR,
     [BINARY_SUBSCR_TUPLE_INT] = BINARY_SUBSCR,
+    [BUILD_INTERPOLATION] = BUILD_INTERPOLATION,
     [BUILD_LIST] = BUILD_LIST,
     [BUILD_MAP] = BUILD_MAP,
     [BUILD_SET] = BUILD_SET,
     [BUILD_SLICE] = BUILD_SLICE,
     [BUILD_STRING] = BUILD_STRING,
+    [BUILD_TEMPLATE] = BUILD_TEMPLATE,
     [BUILD_TUPLE] = BUILD_TUPLE,
     [CACHE] = CACHE,
     [CALL] = CALL,
@@ -1907,8 +1923,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif // NEED_OPCODE_METADATA
 
 #define EXTRA_CASES \
-    case 116: \
-    case 117: \
     case 118: \
     case 119: \
     case 120: \

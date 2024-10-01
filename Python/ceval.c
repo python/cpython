@@ -40,6 +40,8 @@
 #include "pydtrace.h"
 #include "setobject.h"
 #include "pycore_stackref.h"
+#include "pycore_template.h"
+#include "pycore_interpolation.h"
 
 #include <stdbool.h>              // bool
 

@@ -937,6 +937,24 @@
             break;
         }
 
+        case _BUILD_INTERPOLATION: {
+            _Py_UopsSymbol *interpolation;
+            interpolation = sym_new_not_null(ctx);
+            stack_pointer[-(2 + ((oparg >> 1) & 1) + (oparg & 1))] = interpolation;
+            stack_pointer += 1 - (2 + ((oparg >> 1) & 1) + (oparg & 1));
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _BUILD_TEMPLATE: {
+            _Py_UopsSymbol *template;
+            template = sym_new_not_null(ctx);
+            stack_pointer[-oparg] = template;
+            stack_pointer += 1 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _BUILD_TUPLE: {
             _Py_UopsSymbol *tup;
             tup = sym_new_not_null(ctx);

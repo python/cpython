@@ -66,6 +66,7 @@ const char * const _PyParser_TokenNames[] = {
     "TYPE_COMMENT",
     "SOFT_KEYWORD",
     "FSTRING_START",
+    "TSTRING_START",
     "FSTRING_MIDDLE",
     "FSTRING_END",
     "COMMENT",

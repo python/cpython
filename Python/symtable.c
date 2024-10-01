@@ -2454,8 +2454,16 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         if (e->v.FormattedValue.format_spec)
             VISIT(st, expr, e->v.FormattedValue.format_spec);
         break;
+    case Interpolation_kind:
+        VISIT(st, expr, e->v.Interpolation.value);
+        if (e->v.Interpolation.format_spec)
+            VISIT(st, expr, e->v.Interpolation.format_spec);
+        break;
     case JoinedStr_kind:
         VISIT_SEQ(st, expr, e->v.JoinedStr.values);
+        break;
+    case TemplateStr_kind:
+        VISIT_SEQ(st, expr, e->v.TemplateStr.values);
         break;
     case Constant_kind:
         /* Nothing to do here. */

@@ -35,6 +35,8 @@
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 #include "pycore_obmalloc.h"      // _PyMem_init_obmalloc()
+#include "pycore_template.h"      // _PyTemplate_InitTypes()
+#include "pycore_interpolation.h" // _PyInterpolation_InitTypes()
 
 #include "opcode.h"
 
@@ -768,6 +770,16 @@ pycore_init_types(PyInterpreterState *interp)
     }
 
     status = _PyXI_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyInterpolation_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyTemplate_InitTypes(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1830,6 +1842,8 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyFloat_FiniType(interp);
     _PyLong_FiniTypes(interp);
     _PyThread_FiniType(interp);
+    _PyInterpolation_FiniTypes(interp);
+    _PyTemplate_FiniTypes(interp);
     // XXX fini collections module static types (_PyStaticType_Dealloc())
     // XXX fini IO module static types (_PyStaticType_Dealloc())
     _PyErr_FiniTypes(interp);
