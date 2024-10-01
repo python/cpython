@@ -2193,9 +2193,12 @@ class TestNegativeNumber(ParserTestCase):
     failures = [
         '--float -_.45',
         '--float -1__000.0',
+        '--float -1.0.0',
         '--int -1__000',
         '--int -1.0',
         '--complex -1__000.0j',
+        '--complex -1.0jj',
+        '--complex -_.45j',
     ]
     successes = [
         ('--int -1000 --float -1000.0', NS(int=-1000, float=-1000.0, complex=None)),
