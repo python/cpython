@@ -1727,6 +1727,8 @@ always available.
    Activate the stack profiler trampoline *backend*.
    The only supported backend is ``"perf"``.
 
+   Stack trampolines cannot be activated if the JIT is active.
+
    .. availability:: Linux.
 
    .. versionadded:: 3.12
