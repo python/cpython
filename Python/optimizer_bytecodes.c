@@ -559,9 +559,10 @@ dummy_func(void) {
     }
 
     op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+        (void)self_or_null;
         if (sym_is_const(callable) && sym_matches_type(callable, &PyFunction_Type)) {
             assert(PyFunction_Check(sym_get_const(callable)));
-            REPLACE_OP(this_instr, _CHECK_FUNCTION_VERSION_INLINE, func_version, sym_get_const(callable));
+            REPLACE_OP(this_instr, _CHECK_FUNCTION_VERSION_INLINE, func_version, (uintptr_t)sym_get_const(callable));
         }
         sym_set_type(callable, &PyFunction_Type);
     }
@@ -571,7 +572,7 @@ dummy_func(void) {
         if (sym_is_const(callable) && sym_matches_type(callable, &PyFunction_Type)) {
             if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
                 PyFunctionObject *func = (PyFunctionObject *)sym_get_const(callable);
-                PyCodeObject *co = func->func_code;
+                PyCodeObject *co = (PyCodeObject *)func->func_code;
                 if (co->co_argcount == oparg + !sym_is_null(self_or_null)) {
                     // Note: this is only valid if CHECK_FUNCTION_VERSION precedes this instruction.
                     REPLACE_OP(this_instr, _NOP, 0 ,0);
