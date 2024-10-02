@@ -107,7 +107,7 @@ class TestCallStack(unittest.IsolatedAsyncioTestCase):
         ])
 
         self.assertIn(
-            '* async TestCallStack.test_stack_tgroup()',
+            ' async TestCallStack.test_stack_tgroup()',
             stack_for_c5[1])
 
 

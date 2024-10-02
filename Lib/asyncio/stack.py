@@ -75,7 +75,11 @@ def _build_stack_for_future(future: any) -> FutureCallGraph:
     return FutureCallGraph(future, st, awaited_by)
 
 
-def capture_call_graph(*, future: any = None) -> FutureCallGraph | None:
+def capture_call_graph(
+    *,
+    future: any = None,
+    depth: int = 1,
+) -> FutureCallGraph | None:
     """Capture async call stack for the current task or the provided Future.
 
     The stack is represented with three data structures:
@@ -103,6 +107,10 @@ def capture_call_graph(*, future: any = None) -> FutureCallGraph | None:
     Receives an optional keyword-only "future" argument. If not passed,
     the current task will be used. If there's no current task, the function
     returns None.
+
+    If "capture_call_graph()" is introspecting *the current task*, the
+    optional keyword-only "depth" argument can be used to skip the specified
+    number of frames from top of the stack.
     """
 
     loop = events._get_running_loop()
@@ -135,7 +143,7 @@ def capture_call_graph(*, future: any = None) -> FutureCallGraph | None:
 
     call_graph: list[FrameCallGraphEntry | CoroutineCallGraphEntry] = []
 
-    f = sys._getframe(1)
+    f = sys._getframe(depth)
     try:
         while f is not None:
             is_async = f.f_generator is not None
@@ -161,7 +169,7 @@ def capture_call_graph(*, future: any = None) -> FutureCallGraph | None:
     return FutureCallGraph(future, call_graph, awaited_by)
 
 
-def print_call_graph(*, future: any = None, file=None) -> None:
+def print_call_graph(*, future: any = None, file=None, depth: int = 1) -> None:
     """Print async call stack for the current task or the provided Future."""
 
     def render_level(st: FutureCallGraph, buf: list[str], level: int):
@@ -185,10 +193,9 @@ def print_call_graph(*, future: any = None, file=None) -> None:
                 if isinstance(ste, FrameCallGraphEntry):
                     f = ste.frame
                     add_line(
-                        f'  | * {f.f_code.co_qualname}()'
-                    )
-                    add_line(
-                        f'  |   {f.f_code.co_filename}:{f.f_lineno}'
+                        f'  |   File {f.f_code.co_filename!r},'
+                        f' line {f.f_lineno}, in'
+                        f' {f.f_code.co_qualname}()'
                     )
                 else:
                     assert isinstance(ste, CoroutineCallGraphEntry)
@@ -209,10 +216,9 @@ def print_call_graph(*, future: any = None, file=None) -> None:
                             tag = 'generator'
 
                     add_line(
-                        f'  | * {tag} {code.co_qualname}()'
-                    )
-                    add_line(
-                        f'  |   {f.f_code.co_filename}:{f.f_lineno}'
+                        f'  |   File {f.f_code.co_filename!r},'
+                        f' line {f.f_lineno}, in'
+                        f' {tag} {code.co_qualname}()'
                     )
 
         if st.awaited_by:
@@ -222,7 +228,7 @@ def print_call_graph(*, future: any = None, file=None) -> None:
             for fut in st.awaited_by:
                 render_level(fut, buf, level + 1)
 
-    stack = capture_call_graph(future=future)
+    stack = capture_call_graph(future=future, depth=depth + 1)
     if stack is None:
         return
 
