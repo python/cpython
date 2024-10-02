@@ -1894,9 +1894,10 @@ dummy_func(
             DECREF_INPUTS();
             ERROR_IF(super == NULL, error);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
-            attr = PyStackRef_FromPyObjectSteal(PyObject_GetAttr(super, name));
+            PyObject *attr_o = PyObject_GetAttr(super, name);
             Py_DECREF(super);
-            ERROR_IF(PyStackRef_IsNull(attr), error);
+            ERROR_IF(attr_o == NULL, error);
+            attr = PyStackRef_FromPyObjectSteal(attr_o);
             null = PyStackRef_NULL;
         }
 
@@ -2692,9 +2693,10 @@ dummy_func(
 
         inst(GET_ITER, (iterable -- iter)) {
             /* before: [obj]; after [getiter(obj)] */
-            iter = PyStackRef_FromPyObjectSteal(PyObject_GetIter(PyStackRef_AsPyObjectBorrow(iterable)));
+            PyObject *iter_o = PyObject_GetIter(PyStackRef_AsPyObjectBorrow(iterable));
             DECREF_INPUTS();
-            ERROR_IF(PyStackRef_IsNull(iter), error);
+            ERROR_IF(iter_o == NULL, error);
+            iter = PyStackRef_FromPyObjectSteal(iter_o);
         }
 
         inst(GET_YIELD_FROM_ITER, (iterable -- iter)) {
@@ -3002,16 +3004,18 @@ dummy_func(
             PyObject *owner_o = PyStackRef_AsPyObjectSteal(owner);
             PyObject *name = _Py_SpecialMethods[oparg].name;
             PyObject *self_or_null_o;
-            attr = PyStackRef_FromPyObjectSteal(_PyObject_LookupSpecialMethod(owner_o, name, &self_or_null_o));
-            if (PyStackRef_IsNull(attr)) {
+            PyObject *attr_o = _PyObject_LookupSpecialMethod(owner_o, name, &self_or_null_o);
+            if (attr_o == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
                                   _Py_SpecialMethods[oparg].error,
                                   Py_TYPE(owner_o)->tp_name);
                 }
+                ERROR_IF(true, error);
             }
-            ERROR_IF(PyStackRef_IsNull(attr), error);
-            self_or_null = PyStackRef_FromPyObjectSteal(self_or_null_o);
+            attr = PyStackRef_FromPyObjectSteal(attr_o);
+            self_or_null = self_or_null_o == NULL ?
+                PyStackRef_NULL : PyStackRef_FromPyObjectSteal(self_or_null_o);
         }
 
         inst(WITH_EXCEPT_START, (exit_func, exit_self, lasti, unused, val -- exit_func, exit_self, lasti, unused, val, res)) {
@@ -3042,9 +3046,10 @@ dummy_func(
             (void)lasti; // Shut up compiler warning if asserts are off
             PyObject *stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
             int has_self = !PyStackRef_IsNull(exit_self);
-            res = PyStackRef_FromPyObjectSteal(PyObject_Vectorcall(exit_func_o, stack + 2 - has_self,
-                    (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL));
-            ERROR_IF(PyStackRef_IsNull(res), error);
+            PyObject *res_o = PyObject_Vectorcall(exit_func_o, stack + 2 - has_self,
+                    (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+            ERROR_IF(res_o == NULL, error);
+            res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
         pseudo(SETUP_FINALLY, (-- unused), (HAS_ARG)) = {
@@ -4298,6 +4303,7 @@ dummy_func(
             }
             assert(PyTuple_CheckExact(callargs));
             EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_FUNCTION_EX, func);
+            PyObject *result_o;
             if (opcode == INSTRUMENTED_CALL_FUNCTION_EX) {
                 PyObject *arg = PyTuple_GET_SIZE(callargs) > 0 ?
                     PyTuple_GET_ITEM(callargs, 0) : &_PyInstrumentation_MISSING;
@@ -4305,10 +4311,10 @@ dummy_func(
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, this_instr, func, arg);
                 if (err) ERROR_NO_POP();
-                result = PyStackRef_FromPyObjectSteal(PyObject_Call(func, callargs, kwargs));
+                result_o = PyObject_Call(func, callargs, kwargs);
 
                 if (!PyFunction_Check(func) && !PyMethod_Check(func)) {
-                    if (PyStackRef_IsNull(result)) {
+                    if (result_o == NULL) {
                         _Py_call_instrumentation_exc2(
                             tstate, PY_MONITORING_EVENT_C_RAISE,
                             frame, this_instr, func, arg);
@@ -4318,7 +4324,7 @@ dummy_func(
                             tstate, PY_MONITORING_EVENT_C_RETURN,
                             frame, this_instr, func, arg);
                         if (err < 0) {
-                            PyStackRef_CLEAR(result);
+                            Py_CLEAR(result_o);
                         }
                     }
                 }
@@ -4344,11 +4350,12 @@ dummy_func(
                     frame->return_offset = 1;
                     DISPATCH_INLINED(new_frame);
                 }
-                result = PyStackRef_FromPyObjectSteal(PyObject_Call(func, callargs, kwargs));
+                result_o = PyObject_Call(func, callargs, kwargs);
             }
             DECREF_INPUTS();
             assert(PyStackRef_AsPyObjectBorrow(PEEK(2 + (oparg & 1))) == NULL);
-            ERROR_IF(PyStackRef_IsNull(result), error);
+            ERROR_IF(result_o == NULL, error);
+            result = PyStackRef_FromPyObjectSteal(result_o);
         }
 
         macro(CALL_FUNCTION_EX) =
@@ -4458,9 +4465,10 @@ dummy_func(
             /* If value is a unicode object, then we know the result
              * of format(value) is value itself. */
             if (!PyUnicode_CheckExact(value_o)) {
-                res = PyStackRef_FromPyObjectSteal(PyObject_Format(value_o, NULL));
+                PyObject *res_o = PyObject_Format(value_o, NULL);
                 PyStackRef_CLOSE(value);
-                ERROR_IF(PyStackRef_IsNull(res), error);
+                ERROR_IF(res_o == NULL, error);
+                res = PyStackRef_FromPyObjectSteal(res_o);
             }
             else {
                 res = value;
