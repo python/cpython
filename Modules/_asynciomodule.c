@@ -657,7 +657,7 @@ future_awaited_by_discard(asyncio_state *state, PyObject *fut, PyObject *thing)
 }
 
 static PyObject *
-future_get_awaited_by(FutureObj *fut)
+FutureObj_get_awaited_by(FutureObj *fut, void *Py_UNUSED(ignored))
 {
     /* Implementation of a Python getter. */
     if (fut->fut_awaited_by == NULL) {
@@ -1670,7 +1670,7 @@ static PyMethodDef FutureType_methods[] = {
                           NULL, NULL},                                        \
     {"_cancel_message", (getter)FutureObj_get_cancel_message,                 \
                         (setter)FutureObj_set_cancel_message, NULL},          \
-    {"_asyncio_awaited_by", (getter)future_get_awaited_by, NULL, NULL},
+    {"_asyncio_awaited_by", (getter)FutureObj_get_awaited_by, NULL, NULL},
 
 static PyGetSetDef FutureType_getsetlist[] = {
     FUTURE_COMMON_GETSETLIST
