@@ -432,6 +432,9 @@ try:
 except ImportError:
     pass
 
+_NULL = object()
+_UNKNOWN_DESCRIPTOR = object()
+_STD_METHOD_TYPES = (staticmethod, classmethod, FunctionType, partial)
 
 # Descriptor version
 class partialmethod:
@@ -443,86 +446,102 @@ class partialmethod:
     """
 
     __slots__ = ("func", "args", "keywords", "wrapper",
-                 "__isabstractmethod__", "__dict__", "__weakref__")
+                 "__dict__", "__weakref__")
 
     __repr__ = _partial_repr
-    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, func, /, *args, **keywords):
+        if not callable(func) and getattr(func, '__get__', None) is None:
+            raise TypeError(f'the first argument {func!r} must be a callable '
+                            'or a descriptor')
+
         if isinstance(func, partialmethod):
             # Subclass optimization
             temp = partial(lambda: None, *func.args, **func.keywords)
             temp = partial(temp, *args, **keywords)
-            isabstract = func.__isabstractmethod__
             func = func.func
             args = temp.args
             keywords = temp.keywords
-        else:
-            isabstract = getattr(func, '__isabstractmethod__', False)
+
         self.func = func
         self.args = args
         self.keywords = keywords
-        self.__isabstractmethod__ = isabstract
 
-        # 5 cases
-        if isinstance(func, staticmethod):
-            wrapper = partial(func.__wrapped__, *args, **keywords)
-            self.wrapper = _rewrap_func(wrapper, isabstract, staticmethod)
-        elif isinstance(func, classmethod):
-            wrapper = _partial_unbound(func.__wrapped__, args, keywords)
-            self.wrapper = _rewrap_func(wrapper, isabstract, classmethod)
-        elif isinstance(func, (FunctionType, partial)):
-            # instance method
-            wrapper = _partial_unbound(func, args, keywords)
-            self.wrapper = _rewrap_func(wrapper, isabstract)
-        elif getattr(func, '__get__', None) is None:
-            # callable object without __get__
-            # treat this like an instance method
-            if not callable(func):
-                raise TypeError(f'the first argument {func!r} must be a callable '
-                                'or a descriptor')
-            wrapper = _partial_unbound(func, args, keywords)
-            self.wrapper = _rewrap_func(wrapper, isabstract)
+        if (isinstance(func, _STD_METHOD_TYPES) or
+                getattr(func, '__get__', None) is None):
+            self.method = None
         else:
             # Unknown descriptor
-            self.wrapper = None
+            self.method = _UNKNOWN_DESCRIPTOR
+
+    def _set_func_attrs(self, func):
+        func.__partialmethod__ = self
+        if self.__isabstractmethod__:
+            func = abstractmethod(func)
+        return func
+
+    def _make_method(self):
+        args = self.args
+        func = self.func
+
+        # 4 cases
+        if isinstance(func, staticmethod):
+            func = partial(func.__wrapped__, *args, **self.keywords)
+            self._set_func_attrs(func)
+            return staticmethod(func)
+        elif isinstance(func, classmethod):
+            ph_args = (Placeholder,) if args else ()
+            func = partial(func.__wrapped__, *ph_args, *args, **self.keywords)
+            self._set_func_attrs(func)
+            return classmethod(func)
+        else:
+            # instance method. 2 cases:
+            #   a) FunctionType | partial
+            #   b) callable object without __get__
+            ph_args = (Placeholder,) if args else ()
+            func = partial(func, *ph_args, *args, **self.keywords)
+            self._set_func_attrs(func)
+            return func
 
     def __get__(self, obj, cls=None):
-        if self.wrapper is not None:
-            return self.wrapper.__get__(obj, cls)
-        else:
-            # Unknown descriptor
-            new_func = getattr(self.func, '__get__')(obj, cls)
+        method = self.method
+        if method is _UNKNOWN_DESCRIPTOR:
+            # Unknown descriptor == unknown binding
+            # Need to get callable at runtime and apply partial on top
+            new_func = self.func.__get__(obj, cls)
             result = partial(new_func, *self.args, **self.keywords)
-            try:
-                result.__self__ = new_func.__self__
-            except AttributeError:
-                pass
+            self._set_func_attrs(func)
+            __self__ = getattr(new_func, '__self__', _NULL)
+            if __self__ is not _NULL:
+                result.__self__ = __self__
             return result
+        if method is None:
+            # Cache method
+            self.method = method = self._make_method()
+        return method.__get__(obj, cls)
 
+    @property
+    def __isabstractmethod__(self):
+        return getattr(self.func, '__isabstractmethod__', False)
+
+    __class_getitem__ = classmethod(GenericAlias)
 
 # Helper functions
 
-def _partial_unbound(func, args, keywords):
-    if not args:
-        return partial(func, **keywords)
-    return partial(func, Placeholder, *args, **keywords)
-
-def _rewrap_func(func, isabstract, decorator=None):
-    if isabstract:
-        func = abstractmethod(func)
-    if decorator is not None:
-        func = decorator(func)
-    return func
-
 def _unwrap_partial(func):
-    while isinstance(func, partial):
+    if isinstance(func, partial):
         func = func.func
     return func
 
 def _unwrap_partialmethod(func):
-    while isinstance(func, (partial, partialmethod)):
-        func = func.func
+    prev = None
+    while func is not prev:
+        prev = func
+        __partialmethod__ = getattr(func, "__partialmethod__", None)
+        if isinstance(__partialmethod__, partialmethod):
+            func = __partialmethod__.func
+        if isinstance(func, (partial, partialmethod)):
+            func = func.func
     return func
 
 
