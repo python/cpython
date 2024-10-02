@@ -70,8 +70,7 @@ typedef struct _PyCompiler compiler;
 #define SYMTABLE(C) _PyCompile_Symtable(C)
 #define SYMTABLE_ENTRY(C) _PyCompile_SymtableEntry(C)
 #define OPTIMIZATION_LEVEL(C) _PyCompile_OptimizationLevel(C)
-#define IS_INTERACTIVE(C) _PyCompile_IsInteractive(C)
-#define IS_NESTED_SCOPE(C) _PyCompile_IsNestedScope(C)
+#define IS_INTERACTIVE_TOP_LEVEL(C) _PyCompile_IsInteractiveTopLevel(C)
 #define SCOPE_TYPE(C) _PyCompile_ScopeType(C)
 #define QUALNAME(C) _PyCompile_Qualname(C)
 #define METADATA(C) _PyCompile_Metadata(C)
@@ -2823,7 +2822,7 @@ codegen_assert(compiler *c, stmt_ty s)
 static int
 codegen_stmt_expr(compiler *c, location loc, expr_ty value)
 {
-    if (IS_INTERACTIVE(c) && !IS_NESTED_SCOPE(c)) {
+    if (IS_INTERACTIVE_TOP_LEVEL(c)) {
         VISIT(c, expr, value);
         ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_PRINT);
         ADDOP(c, NO_LOCATION, POP_TOP);
@@ -3141,17 +3140,15 @@ codegen_boolop(compiler *c, expr_ty e)
     location loc = LOC(e);
     assert(e->kind == BoolOp_kind);
     if (e->v.BoolOp.op == And)
-        jumpi = POP_JUMP_IF_FALSE;
+        jumpi = JUMP_IF_FALSE;
     else
-        jumpi = POP_JUMP_IF_TRUE;
+        jumpi = JUMP_IF_TRUE;
     NEW_JUMP_TARGET_LABEL(c, end);
     s = e->v.BoolOp.values;
     n = asdl_seq_LEN(s) - 1;
     assert(n >= 0);
     for (i = 0; i < n; ++i) {
         VISIT(c, expr, (expr_ty)asdl_seq_GET(s, i));
-        ADDOP_I(c, loc, COPY, 1);
-        ADDOP(c, loc, TO_BOOL);
         ADDOP_JUMP(c, loc, jumpi, end);
         ADDOP(c, loc, POP_TOP);
     }
