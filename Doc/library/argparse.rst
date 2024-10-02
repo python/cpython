@@ -1,4 +1,4 @@
-:mod:`!argparse` --- Parser for command-line options, arguments and sub-commands
+:mod:`!argparse` --- Parser for command-line options, arguments and subcommands
 ================================================================================
 
 .. module:: argparse
@@ -663,7 +663,13 @@ how the command-line arguments should be handled. The supplied actions are:
 * ``'store_true'`` and ``'store_false'`` - These are special cases of
   ``'store_const'`` used for storing the values ``True`` and ``False``
   respectively.  In addition, they create default values of ``False`` and
-  ``True`` respectively.
+  ``True`` respectively::
+
+    >>> parser = argparse.ArgumentParser()
+    >>> parser.add_argument('--foo', action='store_true')
+    >>> parser.add_argument('--bar', action='store_false')
+    >>> parser.parse_args(['--foo', '--bar'])
+    Namespace(bar=False, foo=True)
 
 * ``'append'`` - This stores a list, and appends each argument value to the
   list. It is useful to allow an option to be specified multiple times.
@@ -1024,7 +1030,15 @@ Some command-line arguments should be selected from a restricted set of values.
 These can be handled by passing a sequence object as the *choices* keyword
 argument to :meth:`~ArgumentParser.add_argument`.  When the command line is
 parsed, argument values will be checked, and an error message will be displayed
-if the argument was not one of the acceptable values.
+if the argument was not one of the acceptable values::
+   
+      >>> parser = argparse.ArgumentParser()
+      >>> parser.add_argument('move', choices=['rock', 'paper', 'scissors'])
+      >>> parser.parse_args(['rock'])
+      Namespace(move='rock')
+      >>> parser.parse_args(['fire'])
+      usage:  [-h] {rock,paper,scissors}
+      : error: argument move: invalid choice: 'fire' (choose from 'rock', 'paper', 'scissors')
 
 Note that inclusion in the *choices* sequence is checked after any type_
 conversions have been performed, so the type of the objects in the *choices*
@@ -1523,12 +1537,12 @@ Sub-commands
                                           [option_strings], [dest], [required], \
                                           [help], [metavar])
 
-   Many programs split up their functionality into a number of sub-commands,
-   for example, the ``svn`` program can invoke sub-commands like ``svn
+   Many programs split up their functionality into a number of subcommands,
+   for example, the ``svn`` program can invoke subcommands like ``svn
    checkout``, ``svn update``, and ``svn commit``.  Splitting up functionality
    this way can be a particularly good idea when a program performs several
    different functions which require different kinds of command-line arguments.
-   :class:`ArgumentParser` supports the creation of such sub-commands with the
+   :class:`ArgumentParser` supports the creation of such subcommands with the
    :meth:`add_subparsers` method.  The :meth:`add_subparsers` method is normally
    called with no arguments and returns a special action object.  This object
    has a single method, :meth:`~_SubParsersAction.add_parser`, which takes a
@@ -1538,7 +1552,7 @@ Sub-commands
    Description of parameters:
 
    * title - title for the sub-parser group in help output; by default
-     "sub-commands" if description is provided, otherwise uses title for
+     "subcommands" if description is provided, otherwise uses title for
      positional arguments
 
    * description - description for the sub-parser group in help output, by
@@ -1562,15 +1576,15 @@ Sub-commands
 
    * help_ - help for sub-parser group in help output, by default ``None``
 
-   * metavar_ - string presenting available sub-commands in help; by default it
-     is ``None`` and presents sub-commands in form {cmd1, cmd2, ..}
+   * metavar_ - string presenting available subcommands in help; by default it
+     is ``None`` and presents subcommands in form {cmd1, cmd2, ..}
 
    Some example usage::
 
      >>> # create the top-level parser
      >>> parser = argparse.ArgumentParser(prog='PROG')
      >>> parser.add_argument('--foo', action='store_true', help='foo help')
-     >>> subparsers = parser.add_subparsers(help='sub-command help')
+     >>> subparsers = parser.add_subparsers(help='subcommand help')
      >>>
      >>> # create the parser for the "a" command
      >>> parser_a = subparsers.add_parser('a', help='a help')
@@ -1605,7 +1619,7 @@ Sub-commands
      usage: PROG [-h] [--foo] {a,b} ...
 
      positional arguments:
-       {a,b}   sub-command help
+       {a,b}   subcommand help
          a     a help
          b     b help
 
@@ -1634,8 +1648,8 @@ Sub-commands
    appear in their own group in the help output.  For example::
 
      >>> parser = argparse.ArgumentParser()
-     >>> subparsers = parser.add_subparsers(title='sub-commands',
-     ...                                    description='valid sub-commands',
+     >>> subparsers = parser.add_subparsers(title='subcommands',
+     ...                                    description='valid subcommands',
      ...                                    help='additional help')
      >>> subparsers.add_parser('foo')
      >>> subparsers.add_parser('bar')
@@ -1645,8 +1659,8 @@ Sub-commands
      options:
        -h, --help  show this help message and exit
 
-     sub-commands:
-       valid sub-commands
+     subcommands:
+       valid subcommands
 
        {foo,bar}   additional help
 
@@ -1676,12 +1690,12 @@ Sub-commands
 
    .. versionadded:: 3.13
 
-   One particularly effective way of handling sub-commands is to combine the use
+   One particularly effective way of handling subcommands is to combine the use
    of the :meth:`add_subparsers` method with calls to :meth:`set_defaults` so
    that each subparser knows which Python function it should execute.  For
    example::
 
-     >>> # sub-command functions
+     >>> # subcommand functions
      >>> def foo(args):
      ...     print(args.x * args.y)
      ...
