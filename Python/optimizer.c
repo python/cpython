@@ -643,7 +643,6 @@ translate_bytecode_to_trace(
                 int bitcount = _Py_popcount32(counter);
                 int jump_likely = bitcount > 8;
                 /* If bitcount is 8 (half the jumps were taken), adjust confidence by 50%.
-                   If it's 16 or 0 (all or none were taken), adjust by 0%.
                    For values in between, adjust proportionally. */
                 if (jump_likely) {
                     confidence = confidence * bitcount / 16;
