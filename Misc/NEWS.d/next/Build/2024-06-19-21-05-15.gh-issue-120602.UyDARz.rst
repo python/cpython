@@ -1,0 +1,2 @@
+Correctly handle LLVM installs with ``LLVM_VERSION_SUFFIX`` when building
+with ``--enable-experimental-jit``.

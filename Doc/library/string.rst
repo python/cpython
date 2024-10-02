@@ -1,5 +1,5 @@
-:mod:`string` --- Common string operations
-==========================================
+:mod:`!string` --- Common string operations
+===========================================
 
 .. module:: string
    :synopsis: Common string operations.
@@ -206,15 +206,15 @@ literal text, it can be escaped by doubling: ``{{`` and ``}}``.
 
 The grammar for a replacement field is as follows:
 
-   .. productionlist:: format-string
-      replacement_field: "{" [`field_name`] ["!" `conversion`] [":" `format_spec`] "}"
-      field_name: arg_name ("." `attribute_name` | "[" `element_index` "]")*
-      arg_name: [`identifier` | `digit`+]
-      attribute_name: `identifier`
-      element_index: `digit`+ | `index_string`
-      index_string: <any source character except "]"> +
-      conversion: "r" | "s" | "a"
-      format_spec: <described in the next section>
+.. productionlist:: format-string
+   replacement_field: "{" [`field_name`] ["!" `conversion`] [":" `format_spec`] "}"
+   field_name: `arg_name` ("." `attribute_name` | "[" `element_index` "]")*
+   arg_name: [`~python-grammar:identifier` | `~python-grammar:digit`+]
+   attribute_name: `~python-grammar:identifier`
+   element_index: `~python-grammar:digit`+ | `index_string`
+   index_string: <any source character except "]"> +
+   conversion: "r" | "s" | "a"
+   format_spec: `format-spec:format_spec`
 
 In less formal terms, the replacement field can start with a *field_name* that specifies
 the object whose value is to be formatted and inserted
@@ -316,9 +316,9 @@ The general form of a *standard format specifier* is:
    fill: <any character>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
-   width: `digit`+
+   width: `~python-grammar:digit`+
    grouping_option: "_" | ","
-   precision: `digit`+
+   precision: `~python-grammar:digit`+
    type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "n" | "o" | "s" | "x" | "X" | "%"
 
 If a valid *align* value is specified, it can be preceded by a *fill*
@@ -332,30 +332,30 @@ affect the :func:`format` function.
 
 The meaning of the various alignment options is as follows:
 
-   .. index::
-      single: < (less); in string formatting
-      single: > (greater); in string formatting
-      single: = (equals); in string formatting
-      single: ^ (caret); in string formatting
+.. index::
+   single: < (less); in string formatting
+   single: > (greater); in string formatting
+   single: = (equals); in string formatting
+   single: ^ (caret); in string formatting
 
-   +---------+----------------------------------------------------------+
-   | Option  | Meaning                                                  |
-   +=========+==========================================================+
-   | ``'<'`` | Forces the field to be left-aligned within the available |
-   |         | space (this is the default for most objects).            |
-   +---------+----------------------------------------------------------+
-   | ``'>'`` | Forces the field to be right-aligned within the          |
-   |         | available space (this is the default for numbers).       |
-   +---------+----------------------------------------------------------+
-   | ``'='`` | Forces the padding to be placed after the sign (if any)  |
-   |         | but before the digits.  This is used for printing fields |
-   |         | in the form '+000000120'. This alignment option is only  |
-   |         | valid for numeric types.  It becomes the default for     |
-   |         | numbers when '0' immediately precedes the field width.   |
-   +---------+----------------------------------------------------------+
-   | ``'^'`` | Forces the field to be centered within the available     |
-   |         | space.                                                   |
-   +---------+----------------------------------------------------------+
++---------+----------------------------------------------------------+
+| Option  | Meaning                                                  |
++=========+==========================================================+
+| ``'<'`` | Forces the field to be left-aligned within the available |
+|         | space (this is the default for most objects).            |
++---------+----------------------------------------------------------+
+| ``'>'`` | Forces the field to be right-aligned within the          |
+|         | available space (this is the default for numbers).       |
++---------+----------------------------------------------------------+
+| ``'='`` | Forces the padding to be placed after the sign (if any)  |
+|         | but before the digits.  This is used for printing fields |
+|         | in the form '+000000120'. This alignment option is only  |
+|         | valid for numeric types.  It becomes the default for     |
+|         | numbers when '0' immediately precedes the field width.   |
++---------+----------------------------------------------------------+
+| ``'^'`` | Forces the field to be centered within the available     |
+|         | space.                                                   |
++---------+----------------------------------------------------------+
 
 Note that unless a minimum field width is defined, the field width will always
 be the same size as the data to fill it, so that the alignment option has no
@@ -364,23 +364,23 @@ meaning in this case.
 The *sign* option is only valid for number types, and can be one of the
 following:
 
-   .. index::
-      single: + (plus); in string formatting
-      single: - (minus); in string formatting
-      single: space; in string formatting
+.. index::
+   single: + (plus); in string formatting
+   single: - (minus); in string formatting
+   single: space; in string formatting
 
-   +---------+----------------------------------------------------------+
-   | Option  | Meaning                                                  |
-   +=========+==========================================================+
-   | ``'+'`` | indicates that a sign should be used for both            |
-   |         | positive as well as negative numbers.                    |
-   +---------+----------------------------------------------------------+
-   | ``'-'`` | indicates that a sign should be used only for negative   |
-   |         | numbers (this is the default behavior).                  |
-   +---------+----------------------------------------------------------+
-   | space   | indicates that a leading space should be used on         |
-   |         | positive numbers, and a minus sign on negative numbers.  |
-   +---------+----------------------------------------------------------+
++---------+----------------------------------------------------------+
+| Option  | Meaning                                                  |
++=========+==========================================================+
+| ``'+'`` | indicates that a sign should be used for both            |
+|         | positive as well as negative numbers.                    |
++---------+----------------------------------------------------------+
+| ``'-'`` | indicates that a sign should be used only for negative   |
+|         | numbers (this is the default behavior).                  |
++---------+----------------------------------------------------------+
+| space   | indicates that a leading space should be used on         |
+|         | positive numbers, and a minus sign on negative numbers.  |
++---------+----------------------------------------------------------+
 
 
 .. index:: single: z; in string formatting
@@ -418,7 +418,7 @@ instead.
 .. index:: single: _ (underscore); in string formatting
 
 The ``'_'`` option signals the use of an underscore for a thousands
-separator for floating point presentation types and for integer
+separator for floating-point presentation types and for integer
 presentation type ``'d'``.  For integer presentation types ``'b'``,
 ``'o'``, ``'x'``, and ``'X'``, underscores will be inserted every 4
 digits.  For other presentation types, specifying this option is an
@@ -491,9 +491,9 @@ The available integer presentation types are:
    +---------+----------------------------------------------------------+
 
 In addition to the above presentation types, integers can be formatted
-with the floating point presentation types listed below (except
+with the floating-point presentation types listed below (except
 ``'n'`` and ``None``). When doing so, :func:`float` is used to convert the
-integer to a floating point number before formatting.
+integer to a floating-point number before formatting.
 
 The available presentation types for :class:`float` and
 :class:`~decimal.Decimal` values are:
@@ -574,11 +574,13 @@ The available presentation types for :class:`float` and
    | ``'%'`` | Percentage. Multiplies the number by 100 and displays    |
    |         | in fixed (``'f'``) format, followed by a percent sign.   |
    +---------+----------------------------------------------------------+
-   | None    | For :class:`float` this is the same as ``'g'``, except   |
+   | None    | For :class:`float` this is like the ``'g'`` type, except |
    |         | that when fixed-point notation is used to format the     |
    |         | result, it always includes at least one digit past the   |
-   |         | decimal point. The precision used is as large as needed  |
-   |         | to represent the given value faithfully.                 |
+   |         | decimal point, and switches to the scientific notation   |
+   |         | when ``exp >= p - 1``.  When the precision is not        |
+   |         | specified, the latter will be as large as needed to      |
+   |         | represent the given value faithfully.                    |
    |         |                                                          |
    |         | For :class:`~decimal.Decimal`, this is the same as       |
    |         | either ``'g'`` or ``'G'`` depending on the value of      |

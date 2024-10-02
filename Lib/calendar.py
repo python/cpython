@@ -10,7 +10,6 @@ import datetime
 from enum import IntEnum, global_enum
 import locale as _locale
 from itertools import repeat
-import warnings
 
 __all__ = ["IllegalMonthError", "IllegalWeekdayError", "setfirstweekday",
            "firstweekday", "isleap", "leapdays", "weekday", "monthrange",
@@ -44,6 +43,7 @@ class IllegalWeekdayError(ValueError):
 
 def __getattr__(name):
     if name in ('January', 'February'):
+        import warnings
         warnings.warn(f"The '{name}' attribute is deprecated, use '{name.upper()}' instead",
                       DeprecationWarning, stacklevel=2)
         if name == 'January':
@@ -159,8 +159,8 @@ def weekday(year, month, day):
 
 
 def monthrange(year, month):
-    """Return weekday (0-6 ~ Mon-Sun) and number of days (28-31) for
-       year, month."""
+    """Return weekday of first day of month (0-6 ~ Mon-Sun)
+       and number of days (28-31) for year, month."""
     if not 1 <= month <= 12:
         raise IllegalMonthError(month)
     day1 = weekday(year, month, 1)
@@ -721,7 +721,7 @@ def main(args=None):
     parser.add_argument(
         "-L", "--locale",
         default=None,
-        help="locale to be used from month and weekday names"
+        help="locale to use for month and weekday names"
     )
     parser.add_argument(
         "-e", "--encoding",
@@ -735,9 +735,14 @@ def main(args=None):
         help="output type (text or html)"
     )
     parser.add_argument(
+        "-f", "--first-weekday",
+        type=int, default=0,
+        help="weekday (0 is Monday, 6 is Sunday) to start each week (default 0)"
+    )
+    parser.add_argument(
         "year",
         nargs='?', type=int,
-        help="year number (1-9999)"
+        help="year number"
     )
     parser.add_argument(
         "month",
@@ -761,6 +766,7 @@ def main(args=None):
             cal = LocaleHTMLCalendar(locale=locale)
         else:
             cal = HTMLCalendar()
+        cal.setfirstweekday(options.first_weekday)
         encoding = options.encoding
         if encoding is None:
             encoding = sys.getdefaultencoding()
@@ -775,6 +781,7 @@ def main(args=None):
             cal = LocaleTextCalendar(locale=locale)
         else:
             cal = TextCalendar()
+        cal.setfirstweekday(options.first_weekday)
         optdict = dict(w=options.width, l=options.lines)
         if options.month is None:
             optdict["c"] = options.spacing

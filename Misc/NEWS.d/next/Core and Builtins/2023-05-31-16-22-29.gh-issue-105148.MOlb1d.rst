@@ -1,3 +1,0 @@
-Make ``_PyASTOptimizeState`` internal to ast_opt.c. Make ``_PyAST_Optimize``
-take two integers instead of a pointer to this struct. This avoids the need
-to include pycore_compile.h in ast_opt.c.

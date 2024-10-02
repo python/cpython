@@ -1,0 +1,2 @@
+Added support for converting any objects that have the
+:meth:`!as_integer_ratio` method to a :class:`~fractions.Fraction`.

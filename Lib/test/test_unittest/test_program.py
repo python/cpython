@@ -167,6 +167,18 @@ class Test_TestProgram(unittest.TestCase):
                     'expected failures=1, unexpected successes=1)\n')
         self.assertTrue(out.endswith(expected))
 
+    def test_ExitSkippedSuite(self):
+        stream = BufferedWriter()
+        with self.assertRaises(SystemExit) as cm:
+            unittest.main(
+                argv=["foobar", "-k", "testSkipped"],
+                testRunner=unittest.TextTestRunner(stream=stream),
+                testLoader=self.TestLoader(self.FooBar))
+        self.assertEqual(cm.exception.code, 0)
+        out = stream.getvalue()
+        expected = '\n\nOK (skipped=1)\n'
+        self.assertTrue(out.endswith(expected))
+
     def test_ExitEmptySuite(self):
         stream = BufferedWriter()
         with self.assertRaises(SystemExit) as cm:
@@ -447,8 +459,8 @@ class TestCommandLineArgs(unittest.TestCase):
 
     def testParseArgsAbsolutePathsThatCannotBeConverted(self):
         program = self.program
-        # even on Windows '/...' is considered absolute by os.path.abspath
-        argv = ['progname', '/foo/bar/baz.py', '/green/red.py']
+        drive = os.path.splitdrive(os.getcwd())[0]
+        argv = ['progname', f'{drive}/foo/bar/baz.py', f'{drive}/green/red.py']
         self._patch_isfile(argv)
 
         program.createTests = lambda: None

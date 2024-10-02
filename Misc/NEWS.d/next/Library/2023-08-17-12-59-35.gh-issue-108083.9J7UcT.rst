@@ -1,3 +1,0 @@
-Fix bugs in the constructor of :mod:`sqlite3.Connection` and
-:meth:`sqlite3.Connection.close` where exceptions could be leaked. Patch by
-Erlend E. Aasland.

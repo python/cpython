@@ -7,7 +7,6 @@ import unittest
 from unittest import mock
 from asyncio import tasks
 from test.test_asyncio import utils as test_utils
-import test.support
 from test.support.script_helper import assert_python_ok
 
 MOCK_ANY = mock.ANY
@@ -241,6 +240,18 @@ class CEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase)
 
         _, out, err = assert_python_ok("-c", code)
         self.assertFalse(err)
+
+    def test_issue122332(self):
+       async def coro():
+           pass
+
+       async def run():
+           task = self.loop.create_task(coro())
+           await task
+           self.assertIsNone(task.get_coro())
+
+       self.run_coro(run())
+
 
 class AsyncTaskCounter:
     def __init__(self, loop, *, task_class, eager):

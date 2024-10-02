@@ -1,5 +1,5 @@
-:mod:`ctypes` --- A foreign function library for Python
-=======================================================
+:mod:`!ctypes` --- A foreign function library for Python
+========================================================
 
 .. module:: ctypes
    :synopsis: A foreign function library for Python.
@@ -51,7 +51,7 @@ function call fails.
 
 
 Here are some examples for Windows. Note that ``msvcrt`` is the MS standard C
-library containing most standard C functions, and uses the cdecl calling
+library containing most standard C functions, and uses the ``cdecl`` calling
 convention::
 
    >>> from ctypes import *
@@ -93,7 +93,6 @@ Accessing functions from loaded dlls
 
 Functions are accessed as attributes of dll objects::
 
-   >>> from ctypes import *
    >>> libc.printf
    <_FuncPtr object at 0x...>
    >>> print(windll.kernel32.GetModuleHandleA)  # doctest: +WINDOWS
@@ -108,7 +107,7 @@ Functions are accessed as attributes of dll objects::
 
 Note that win32 system dlls like ``kernel32`` and ``user32`` often export ANSI
 as well as UNICODE versions of a function. The UNICODE version is exported with
-an ``W`` appended to the name, while the ANSI version is exported with an ``A``
+a ``W`` appended to the name, while the ANSI version is exported with an ``A``
 appended to the name. The win32 ``GetModuleHandle`` function, which returns a
 *module handle* for a given module name, has the following C prototype, and a
 macro is used to expose one of them as ``GetModuleHandle`` depending on whether
@@ -200,7 +199,7 @@ calls).
 Python objects that can directly be used as parameters in these function calls.
 ``None`` is passed as a C ``NULL`` pointer, bytes objects and strings are passed
 as pointer to the memory block that contains their data (:c:expr:`char *` or
-:c:expr:`wchar_t *`).  Python integers are passed as the platforms default C
+:c:expr:`wchar_t *`).  Python integers are passed as the platform's default C
 :c:expr:`int` type, their value is masked to fit into the C type.
 
 Before we move on calling functions with other parameter types, we have to learn
@@ -266,6 +265,20 @@ Fundamental data types
 
 (1)
    The constructor accepts any object with a truth value.
+
+Additionally, if IEC 60559 compatible complex arithmetic (Annex G) is supported, the following
+complex types are available:
+
++----------------------------------+---------------------------------+-----------------+
+| ctypes type                      | C type                          | Python type     |
++==================================+=================================+=================+
+| :class:`c_float_complex`         | :c:expr:`float complex`         | complex         |
++----------------------------------+---------------------------------+-----------------+
+| :class:`c_double_complex`        | :c:expr:`double complex`        | complex         |
++----------------------------------+---------------------------------+-----------------+
+| :class:`c_longdouble_complex`    | :c:expr:`long double complex`   | complex         |
++----------------------------------+---------------------------------+-----------------+
+
 
 All these types can be created by calling them with an optional initializer of
 the correct type and value::
@@ -662,14 +675,22 @@ for debugging because they can provide useful information::
    guaranteed by the library to work in the general case.  Unions and
    structures with bit-fields should always be passed to functions by pointer.
 
-Structure/union alignment and byte order
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Structure/union layout, alignment and byte order
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default, Structure and Union fields are aligned in the same way the C
-compiler does it. It is possible to override this behavior by specifying a
-:attr:`~Structure._pack_` class attribute in the subclass definition.
-This must be set to a positive integer and specifies the maximum alignment for the fields.
-This is what ``#pragma pack(n)`` also does in MSVC.
+By default, Structure and Union fields are laid out in the same way the C
+compiler does it.  It is possible to override this behavior entirely by specifying a
+:attr:`~Structure._layout_` class attribute in the subclass definition; see
+the attribute documentation for details.
+
+It is possible to specify the maximum alignment for the fields by setting
+the :attr:`~Structure._pack_` class attribute to a positive integer.
+This matches what ``#pragma pack(n)`` does in MSVC.
+
+It is also possible to set a minimum alignment for how the subclass itself is packed in the
+same way ``#pragma align(n)`` works in MSVC.
+This can be achieved by specifying a ::attr:`~Structure._align_` class attribute
+in the subclass definition.
 
 :mod:`ctypes` uses the native byte order for Structures and Unions.  To build
 structures with non-native byte order, you can use one of the
@@ -1113,10 +1134,6 @@ api::
    >>> print(hex(version.value))
    0x30c00a0
 
-If the interpreter would have been started with :option:`-O`, the sample would
-have printed ``c_long(1)``, or ``c_long(2)`` if :option:`-OO` would have been
-specified.
-
 An extended example which also demonstrates the use of pointers accesses the
 :c:data:`PyImport_FrozenModules` pointer exported by Python.
 
@@ -1335,8 +1352,9 @@ Here are some examples::
    'libbz2.so.1.0'
    >>>
 
-On macOS, :func:`~ctypes.util.find_library` tries several predefined naming schemes and paths
-to locate the library, and returns a full pathname if successful::
+On macOS and Android, :func:`~ctypes.util.find_library` uses the system's
+standard naming schemes and paths to locate the library, and returns a full
+pathname if successful::
 
    >>> from ctypes.util import find_library
    >>> find_library("c")
@@ -1403,7 +1421,8 @@ way is to instantiate one of the following classes:
    failure, an :class:`OSError` is automatically raised.
 
    .. versionchanged:: 3.3
-      :exc:`WindowsError` used to be raised.
+      :exc:`WindowsError` used to be raised,
+      which is now an alias of :exc:`OSError`.
 
    .. versionchanged:: 3.12
 
@@ -1440,7 +1459,7 @@ function exported by these libraries, and reacquired afterwards.
 All these classes can be instantiated by calling them with at least one
 argument, the pathname of the shared library.  If you have an existing handle to
 an already loaded shared library, it can be passed as the ``handle`` named
-parameter, otherwise the underlying platforms :c:func:`!dlopen` or
+parameter, otherwise the underlying platform's :c:func:`!dlopen` or
 :c:func:`!LoadLibrary` function is used to load the library into
 the process, and to get a handle to it.
 
@@ -1451,7 +1470,7 @@ configurable.
 
 The *use_errno* parameter, when set to true, enables a ctypes mechanism that
 allows accessing the system :data:`errno` error number in a safe way.
-:mod:`ctypes` maintains a thread-local copy of the systems :data:`errno`
+:mod:`ctypes` maintains a thread-local copy of the system's :data:`errno`
 variable; if you call foreign functions created with ``use_errno=True`` then the
 :data:`errno` value before the function call is swapped with the ctypes private
 copy, the same happens immediately after the function call.
@@ -1737,70 +1756,70 @@ See :ref:`ctypes-callback-functions` for examples.
 Function prototypes created by these factory functions can be instantiated in
 different ways, depending on the type and number of the parameters in the call:
 
+.. function:: prototype(address)
+   :noindex:
+   :module:
 
-   .. function:: prototype(address)
-      :noindex:
-      :module:
-
-      Returns a foreign function at the specified address which must be an integer.
-
-
-   .. function:: prototype(callable)
-      :noindex:
-      :module:
-
-      Create a C callable function (a callback function) from a Python *callable*.
+   Returns a foreign function at the specified address which must be an integer.
 
 
-   .. function:: prototype(func_spec[, paramflags])
-      :noindex:
-      :module:
+.. function:: prototype(callable)
+   :noindex:
+   :module:
 
-      Returns a foreign function exported by a shared library. *func_spec* must
-      be a 2-tuple ``(name_or_ordinal, library)``. The first item is the name of
-      the exported function as string, or the ordinal of the exported function
-      as small integer.  The second item is the shared library instance.
+   Create a C callable function (a callback function) from a Python *callable*.
 
 
-   .. function:: prototype(vtbl_index, name[, paramflags[, iid]])
-      :noindex:
-      :module:
+.. function:: prototype(func_spec[, paramflags])
+   :noindex:
+   :module:
 
-      Returns a foreign function that will call a COM method. *vtbl_index* is
-      the index into the virtual function table, a small non-negative
-      integer. *name* is name of the COM method. *iid* is an optional pointer to
-      the interface identifier which is used in extended error reporting.
+   Returns a foreign function exported by a shared library. *func_spec* must
+   be a 2-tuple ``(name_or_ordinal, library)``. The first item is the name of
+   the exported function as string, or the ordinal of the exported function
+   as small integer.  The second item is the shared library instance.
 
-      COM methods use a special calling convention: They require a pointer to
-      the COM interface as first argument, in addition to those parameters that
-      are specified in the :attr:`!argtypes` tuple.
 
-   The optional *paramflags* parameter creates foreign function wrappers with much
-   more functionality than the features described above.
+.. function:: prototype(vtbl_index, name[, paramflags[, iid]])
+   :noindex:
+   :module:
 
-   *paramflags* must be a tuple of the same length as :attr:`~_FuncPtr.argtypes`.
+   Returns a foreign function that will call a COM method. *vtbl_index* is
+   the index into the virtual function table, a small non-negative
+   integer. *name* is name of the COM method. *iid* is an optional pointer to
+   the interface identifier which is used in extended error reporting.
 
-   Each item in this tuple contains further information about a parameter, it must
-   be a tuple containing one, two, or three items.
+   COM methods use a special calling convention: They require a pointer to
+   the COM interface as first argument, in addition to those parameters that
+   are specified in the :attr:`!argtypes` tuple.
 
-   The first item is an integer containing a combination of direction
-   flags for the parameter:
+The optional *paramflags* parameter creates foreign function wrappers with much
+more functionality than the features described above.
 
-      1
-         Specifies an input parameter to the function.
+*paramflags* must be a tuple of the same length as :attr:`~_FuncPtr.argtypes`.
 
-      2
-         Output parameter.  The foreign function fills in a value.
+Each item in this tuple contains further information about a parameter, it must
+be a tuple containing one, two, or three items.
 
-      4
-         Input parameter which defaults to the integer zero.
+The first item is an integer containing a combination of direction
+flags for the parameter:
 
-   The optional second item is the parameter name as string.  If this is specified,
-   the foreign function can be called with named parameters.
+   1
+      Specifies an input parameter to the function.
 
-   The optional third item is the default value for this parameter.
+   2
+      Output parameter.  The foreign function fills in a value.
 
-This example demonstrates how to wrap the Windows ``MessageBoxW`` function so
+   4
+      Input parameter which defaults to the integer zero.
+
+The optional second item is the parameter name as string.  If this is specified,
+the foreign function can be called with named parameters.
+
+The optional third item is the default value for this parameter.
+
+
+The following example demonstrates how to wrap the Windows ``MessageBoxW`` function so
 that it supports default parameters and named arguments. The C declaration from
 the windows header file is this::
 
@@ -2076,35 +2095,36 @@ Utility functions
    Does the same as the C ``sizeof`` operator.
 
 
-.. function:: string_at(address, size=-1)
+.. function:: string_at(ptr, size=-1)
 
-   This function returns the C string starting at memory address *address* as a bytes
-   object. If size is specified, it is used as size, otherwise the string is assumed
+   Return the byte string at *void \*ptr*.
+   If *size* is specified, it is used as size, otherwise the string is assumed
    to be zero-terminated.
 
-   .. audit-event:: ctypes.string_at address,size ctypes.string_at
+   .. audit-event:: ctypes.string_at ptr,size ctypes.string_at
 
 
 .. function:: WinError(code=None, descr=None)
 
    Windows only: this function is probably the worst-named thing in ctypes. It
-   creates an instance of OSError.  If *code* is not specified,
+   creates an instance of :exc:`OSError`.  If *code* is not specified,
    ``GetLastError`` is called to determine the error code. If *descr* is not
    specified, :func:`FormatError` is called to get a textual description of the
    error.
 
    .. versionchanged:: 3.3
-      An instance of :exc:`WindowsError` used to be created.
+      An instance of :exc:`WindowsError` used to be created, which is now an
+      alias of :exc:`OSError`.
 
 
-.. function:: wstring_at(address, size=-1)
+.. function:: wstring_at(ptr, size=-1)
 
-   This function returns the wide character string starting at memory address
-   *address* as a string.  If *size* is specified, it is used as the number of
+   Return the wide-character string at *void \*ptr*.
+   If *size* is specified, it is used as the number of
    characters of the string, otherwise the string is assumed to be
    zero-terminated.
 
-   .. audit-event:: ctypes.wstring_at address,size ctypes.wstring_at
+   .. audit-event:: ctypes.wstring_at ptr,size ctypes.wstring_at
 
 
 .. _ctypes-data-types:
@@ -2276,6 +2296,30 @@ These are the fundamental ctypes data types:
 
    Represents the C :c:expr:`float` datatype.  The constructor accepts an
    optional float initializer.
+
+
+.. class:: c_double_complex
+
+   Represents the C :c:expr:`double complex` datatype, if available.  The
+   constructor accepts an optional :class:`complex` initializer.
+
+   .. versionadded:: next
+
+
+.. class:: c_float_complex
+
+   Represents the C :c:expr:`float complex` datatype, if available.  The
+   constructor accepts an optional :class:`complex` initializer.
+
+   .. versionadded:: 3.14
+
+
+.. class:: c_longdouble_complex
+
+   Represents the C :c:expr:`long double complex` datatype, if available.  The
+   constructor accepts an optional :class:`complex` initializer.
+
+   .. versionadded:: 3.14
 
 
 .. class:: c_int
@@ -2455,6 +2499,8 @@ Structured data types
 
    Abstract base class for unions in native byte order.
 
+   Unions share common attributes and behavior with structures;
+   see :class:`Structure` documentation for details.
 
 .. class:: BigEndianUnion(*args, **kw)
 
@@ -2514,14 +2560,19 @@ fields, or any other data types containing pointer type fields.
                           ...
                          ]
 
-      The :attr:`_fields_` class variable must, however, be defined before the
-      type is first used (an instance is created, :func:`sizeof` is called on it,
-      and so on).  Later assignments to the :attr:`_fields_` class variable will
-      raise an AttributeError.
+      The :attr:`!_fields_` class variable can only be set once.
+      Later assignments will raise an :exc:`AttributeError`.
 
-      It is possible to define sub-subclasses of structure types, they inherit
-      the fields of the base class plus the :attr:`_fields_` defined in the
-      sub-subclass, if any.
+      Additionally, the :attr:`!_fields_` class variable must be defined before
+      the structure or union type is first used: an instance or subclass is
+      created, :func:`sizeof` is called on it, and so on.
+      Later assignments to :attr:`!_fields_` will raise an :exc:`AttributeError`.
+      If :attr:`!_fields_` has not been set before such use,
+      the structure or union will have no own fields, as if :attr:`!_fields_`
+      was empty.
+
+      Sub-subclasses of structure types inherit the fields of the base class
+      plus the :attr:`_fields_` defined in the sub-subclass, if any.
 
 
    .. attribute:: _pack_
@@ -2531,6 +2582,37 @@ fields, or any other data types containing pointer type fields.
       when :attr:`_fields_` is assigned, otherwise it will have no effect.
       Setting this attribute to 0 is the same as not setting it at all.
 
+
+   .. attribute:: _align_
+
+      An optional small integer that allows overriding the alignment of
+      the structure when being packed or unpacked to/from memory.
+      Setting this attribute to 0 is the same as not setting it at all.
+
+   .. attribute:: _layout_
+
+      An optional string naming the struct/union layout. It can currently
+      be set to:
+
+      - ``"ms"``: the layout used by the Microsoft compiler (MSVC).
+        On GCC and Clang, this layout can be selected with
+        ``__attribute__((ms_struct))``.
+      - ``"gcc-sysv"``: the layout used by GCC with the System V or “SysV-like”
+        data model, as used on Linux and macOS.
+        With this layout, :attr:`~Structure._pack_` must be unset or zero.
+
+      If not set explicitly, ``ctypes`` will use a default that
+      matches the platform conventions. This default may change in future
+      Python releases (for example, when a new platform gains official support,
+      or when a difference between similar platforms is found).
+      Currently the default will be:
+
+      - On Windows: ``"ms"``
+      - When :attr:`~Structure._pack_` is specified: ``"ms"``
+      - Otherwise: ``"gcc-sysv"``
+
+      :attr:`!_layout_` must already be defined when
+      :attr:`~Structure._fields_` is assigned, otherwise it will have no effect.
 
    .. attribute:: _anonymous_
 
@@ -2612,6 +2694,15 @@ Arrays and pointers
 
    Array subclass constructors accept positional arguments, used to
    initialize the elements in order.
+
+.. function:: ARRAY(type, length)
+
+   Create an array.
+   Equivalent to ``type * length``, where *type* is a
+   :mod:`ctypes` data type and *length* an integer.
+
+   This function is :term:`soft deprecated` in favor of multiplication.
+   There are no plans to remove it.
 
 
 .. class:: _Pointer

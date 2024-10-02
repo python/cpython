@@ -244,7 +244,7 @@ load_functools_lru_cache(PyObject *module)
 static PyMethodDef module_methods[] = {
     PYSQLITE_ADAPT_METHODDEF
     PYSQLITE_COMPLETE_STATEMENT_METHODDEF
-    PYSQLITE_CONNECT_METHODDEF
+    {"connect", _PyCFunction_CAST(pysqlite_connect), METH_FASTCALL|METH_KEYWORDS, pysqlite_connect__doc__},
     PYSQLITE_ENABLE_CALLBACK_TRACE_METHODDEF
     PYSQLITE_REGISTER_ADAPTER_METHODDEF
     PYSQLITE_REGISTER_CONVERTER_METHODDEF
@@ -714,10 +714,6 @@ module_exec(PyObject *module)
         goto error;
     }
 
-    if (PyModule_AddStringConstant(module, "_deprecated_version", PYSQLITE_VERSION) < 0) {
-        goto error;
-    }
-
     if (PyModule_AddStringConstant(module, "sqlite_version", sqlite3_libversion())) {
         goto error;
     }
@@ -758,6 +754,7 @@ error:
 static struct PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 

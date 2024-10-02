@@ -24,11 +24,13 @@ Running an asyncio Program
 
 .. function:: run(coro, *, debug=None, loop_factory=None)
 
-   Execute the :term:`coroutine` *coro* and return the result.
+   Execute *coro* in an asyncio event loop and return the result.
 
-   This function runs the passed coroutine, taking care of
-   managing the asyncio event loop, *finalizing asynchronous
-   generators*, and closing the executor.
+   The argument can be any awaitable object.
+
+   This function runs the awaitable, taking care of managing the
+   asyncio event loop, *finalizing asynchronous generators*, and
+   closing the executor.
 
    This function cannot be called when another asyncio event loop is
    running in the same thread.
@@ -42,6 +44,8 @@ Running an asyncio Program
    This function should be used as a main entry point for asyncio programs,
    and should ideally only be called once. It is recommended to use
    *loop_factory* to configure the event loop instead of policies.
+   Passing :class:`asyncio.EventLoop` allows running asyncio without the
+   policy system.
 
    The executor is given a timeout duration of 5 minutes to shutdown.
    If the executor hasn't finished within that duration, a warning is
@@ -68,6 +72,10 @@ Running an asyncio Program
 
       Added *loop_factory* parameter.
 
+   .. versionchanged:: 3.14
+
+      *coro* can be any awaitable object.
+
 
 Runner context manager
 ======================
@@ -89,7 +97,7 @@ Runner context manager
    current one. By default :func:`asyncio.new_event_loop` is used and set as
    current event loop with :func:`asyncio.set_event_loop` if *loop_factory* is ``None``.
 
-   Basically, :func:`asyncio.run()` example can be rewritten with the runner usage::
+   Basically, :func:`asyncio.run` example can be rewritten with the runner usage::
 
         async def main():
             await asyncio.sleep(1)
@@ -102,16 +110,24 @@ Runner context manager
 
    .. method:: run(coro, *, context=None)
 
-      Run a :term:`coroutine <coroutine>` *coro* in the embedded loop.
+      Execute *coro* in the embedded event loop.
 
-      Return the coroutine's result or raise its exception.
+      The argument can be any awaitable object.
+
+      If the argument is a coroutine, it is wrapped in a Task.
 
       An optional keyword-only *context* argument allows specifying a
-      custom :class:`contextvars.Context` for the *coro* to run in.
-      The runner's default context is used if ``None``.
+      custom :class:`contextvars.Context` for the code to run in.
+      The runner's default context is used if context is ``None``.
+
+      Returns the awaitable's result or raises an exception.
 
       This function cannot be called when another asyncio event loop is
       running in the same thread.
+
+      .. versionchanged:: 3.14
+
+         *coro* can be any awaitable object.
 
    .. method:: close()
 

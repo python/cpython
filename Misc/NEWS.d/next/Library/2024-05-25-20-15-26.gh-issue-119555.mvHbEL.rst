@@ -1,0 +1,2 @@
+Catch :exc:`SyntaxError` from :func:`compile` in the runsource() method of
+the InteractiveColoredConsole.  Patch by Sergey B Kirpichev.

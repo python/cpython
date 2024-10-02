@@ -1,3 +1,0 @@
-We now release the GIL around built-in :mod:`hashlib` computations of
-reasonable size for the SHA families and MD5 hash functions, matching
-what our OpenSSL backed hash computations already does.

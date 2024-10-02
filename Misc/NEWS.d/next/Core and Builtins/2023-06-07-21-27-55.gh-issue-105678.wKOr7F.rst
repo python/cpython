@@ -1,4 +1,0 @@
-Break the ``MAKE_FUNCTION`` instruction into two parts, ``MAKE_FUNCTION``
-which makes the function and ``SET_FUNCTION_ATTRIBUTE`` which sets the
-attributes on the function. This makes the stack effect of ``MAKE_FUNCTION``
-regular to ease optimization and code generation.

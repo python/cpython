@@ -1,3 +1,0 @@
-Increase C recursion limit for functions other than the main interpreter
-from 800 to 1500. This should allow functions like ``list.__repr__`` and
-``json.dumps`` to handle all the inputs that they could prior to 3.12

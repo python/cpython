@@ -4,8 +4,8 @@
 .. release date: 2020-02-25
 .. section: Security
 
-Add audit events to functions in `fcntl`, `msvcrt`, `os`, `resource`,
-`shutil`, `signal` and `syslog`.
+Add audit events to functions in ``fcntl``, ``msvcrt``, ``os``, ``resource``,
+``shutil``, ``signal`` and ``syslog``.
 
 ..
 
@@ -43,7 +43,7 @@ first item. Patch by Yonatan Goldschmidt.
 .. nonce: BIIX2M
 .. section: Core and Builtins
 
-Update clinic tool to use :c:func:`Py_IS_TYPE`. Patch by Dong-hee Na.
+Update clinic tool to use :c:func:`Py_IS_TYPE`. Patch by Donghee Na.
 
 ..
 
@@ -81,9 +81,9 @@ Fix regression caused by fix for bpo-39386, that prevented calling
 .. nonce: itNmC0
 .. section: Core and Builtins
 
-Change the ending column offset of `Attribute` nodes constructed in
-`ast_for_dotted_name` to point at the end of the current node and not at the
-end of the last `NAME` node.
+Change the ending column offset of ``Attribute`` nodes constructed in
+``ast_for_dotted_name`` to point at the end of the current node and not at the
+end of the last ``NAME`` node.
 
 ..
 
@@ -141,7 +141,7 @@ collection of deleted, pickled objects.
 .. section: Core and Builtins
 
 Fixed a possible crash in :meth:`list.__contains__` when a list is changed
-during comparing items. Patch by Dong-hee Na.
+during comparing items. Patch by Donghee Na.
 
 ..
 
@@ -152,7 +152,7 @@ during comparing items. Patch by Dong-hee Na.
 
 :term:`floor division` of float operation now has a better performance. Also
 the message of :exc:`ZeroDivisionError` for this operation is updated. Patch
-by Dong-hee Na.
+by Donghee Na.
 
 ..
 
@@ -269,7 +269,7 @@ codec.
 .. nonce: qiubSp
 .. section: Library
 
-Remove obsolete check for `__args__` in bdb.Bdb.format_stack_entry.
+Remove obsolete check for ``__args__`` in ``bdb.Bdb.format_stack_entry``.
 
 ..
 
@@ -599,7 +599,7 @@ default return values. Patch by Karthikeyan Singaravelan.
 .. nonce: udRSWE
 .. section: Library
 
-`inspect.Signature.parameters` and `inspect.BoundArguments.arguments` are
+``inspect.Signature.parameters`` and ``inspect.BoundArguments.arguments`` are
 now dicts instead of OrderedDicts. Patch contributed by Rémi Lapeyre.
 
 ..
@@ -619,9 +619,9 @@ multiprocessing.Process.
 .. nonce: e0C5dF
 .. section: Library
 
-* Add `lazycache` function to `__all__`.
-* Use `dict.clear` to clear the cache.
-* Refactoring `getline` function and `checkcache` function.
+* Add ``lazycache`` function to ``__all__``.
+* Use ``dict.clear`` to clear the cache.
+* Refactoring ``getline`` function and ``checkcache`` function.
 
 ..
 
@@ -755,7 +755,7 @@ dependencies.
 .. nonce: X7FRaN
 .. section: Windows
 
-:meth:`~pathlib.Path.home()` and :meth:`~pathlib.Path.expanduser()` on
+:meth:`~pathlib.Path.home` and :meth:`~pathlib.Path.expanduser` on
 Windows now prefer :envvar:`USERPROFILE` and no longer use :envvar:`HOME`,
 which is not normally set for regular user accounts. This makes them again
 behave like :func:`os.path.expanduser`, which was changed to ignore

@@ -70,7 +70,7 @@ operations. This means that as far as floating-point operations are concerned,
 Python behaves like many popular languages including C and Java.
 
 Many numbers that can be written easily in decimal notation cannot be expressed
-exactly in binary floating-point.  For example, after::
+exactly in binary floating point.  For example, after::
 
     >>> x = 1.2
 
@@ -87,7 +87,7 @@ which is exactly::
 The typical precision of 53 bits provides Python floats with 15--16
 decimal digits of accuracy.
 
-For a fuller explanation, please see the :ref:`floating point arithmetic
+For a fuller explanation, please see the :ref:`floating-point arithmetic
 <tut-fp-issues>` chapter in the Python tutorial.
 
 
@@ -259,9 +259,11 @@ is evaluated in all cases.
 Why isn't there a switch or case statement in Python?
 -----------------------------------------------------
 
-You can do this easily enough with a sequence of ``if... elif... elif... else``.
-For literal values, or constants within a namespace, you can also use a
-``match ... case`` statement.
+In general, structured switch statements execute one block of code
+when an expression has a particular value or set of values.
+Since Python 3.10 one can easily match literal values, or constants
+within a namespace, with a ``match ... case`` statement.
+An older alternative is a sequence of ``if... elif... elif... else``.
 
 For cases where you need to choose from a very large number of possibilities,
 you can create a dictionary mapping case values to functions to call.  For
@@ -289,6 +291,9 @@ For calling methods on objects, you can simplify yet further by using the
 It's suggested that you use a prefix for the method names, such as ``visit_`` in
 this example.  Without such a prefix, if values are coming from an untrusted
 source, an attacker would be able to call any method on your object.
+
+Imitating switch with fallthrough, as with C's switch-case-default,
+is possible, much harder, and less needed.
 
 
 Can't you emulate threads in the interpreter instead of relying on an OS-specific thread implementation?
@@ -323,7 +328,7 @@ Can Python be compiled to machine code, C or some other language?
 -----------------------------------------------------------------
 
 `Cython <https://cython.org/>`_ compiles a modified version of Python with
-optional annotations into C extensions.  `Nuitka <https://www.nuitka.net/>`_ is
+optional annotations into C extensions.  `Nuitka <https://nuitka.net/>`_ is
 an up-and-coming compiler of Python into C++ code, aiming to support the full
 Python language.
 
@@ -340,7 +345,7 @@ to perform a garbage collection, obtain debugging statistics, and tune the
 collector's parameters.
 
 Other implementations (such as `Jython <https://www.jython.org>`_ or
-`PyPy <https://www.pypy.org>`_), however, can rely on a different mechanism
+`PyPy <https://pypy.org>`_), however, can rely on a different mechanism
 such as a full-blown garbage collector.  This difference can cause some
 subtle porting problems if your Python code depends on the behavior of the
 reference counting implementation.
@@ -451,7 +456,7 @@ on the key and a per-process seed; for example, ``'Python'`` could hash to
 to ``1142331976``.  The hash code is then used to calculate a location in an
 internal array where the value will be stored.  Assuming that you're storing
 keys that all have different hash values, this means that dictionaries take
-constant time -- O(1), in Big-O notation -- to retrieve a key.
+constant time -- *O*\ (1), in Big-O notation -- to retrieve a key.
 
 
 Why must dictionary keys be immutable?
