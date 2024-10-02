@@ -17,7 +17,7 @@ The :mod:`argparse` module improves on the :mod:`optparse`
 module in a number of ways including:
 
 * Handling positional arguments.
-* Supporting sub-commands.
+* Supporting subcommands.
 * Allowing alternative option prefixes like ``+`` and ``/``.
 * Handling zero-or-more and one-or-more style arguments.
 * Producing more informative usage messages.
