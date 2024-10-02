@@ -3956,45 +3956,28 @@ class ConfigDictTest(BaseTest):
     @support.requires_subprocess()
     @patch("multiprocessing.Manager")
     def test_config_queue_handler_does_not_create_multiprocessing_manager(self, manager):
-        # gh-120868, gh-121723
-
-        from multiprocessing import Queue as MQ
-
-        q1 = {"()": "queue.Queue", "maxsize": -1}
-        q2 = MQ()
-        q3 = queue.Queue()
-        # CustomQueueFakeProtocol passes the checks but will not be usable
-        # since the signatures are incompatible. Checking the Queue API
-        # without testing the type of the actual queue is a trade-off
-        # between usability and the work we need to do in order to safely
-        # check that the queue object correctly implements the API.
-        q4 = CustomQueueFakeProtocol()
-        q5 = MinimalQueueProtocol()
-
-        for qspec in (q1, q2, q3, q4, q5):
-            self.apply_config(
-                {
-                    "version": 1,
-                    "handlers": {
-                        "queue_listener": {
-                            "class": "logging.handlers.QueueHandler",
-                            "queue": qspec,
-                        },
-                    },
-                }
-            )
-            manager.assert_not_called()
-
-    @patch("multiprocessing.Manager")
-    def test_config_queue_handler_invalid_config_does_not_create_multiprocessing_manager(self, manager):
         # gh-120868, gh-121723, gh-124653
 
-        from multiprocessing import SimpleQueue as MPSimpleQueue
-        # MPSimpleQueue does not have the 'put_nowait' method and thus
-        # cannot be used as a queue-like object here.
+        import multiprocessing
 
-        for qspec in [object(), CustomQueueWrongProtocol(), MPSimpleQueue()]:
-            with self.assertRaises(ValueError):
+        for qspec in [
+            {"()": "queue.Queue", "maxsize": -1},
+            queue.Queue(),
+            # queue.SimpleQueue does not inherit from queue.Queue
+            queue.SimpleQueue(),
+            # CustomQueueFakeProtocol passes the checks but will not be usable
+            # since the signatures are incompatible. Checking the Queue API
+            # without testing the type of the actual queue is a trade-off
+            # between usability and the work we need to do in order to safely
+            # check that the queue object correctly implements the API.
+            CustomQueueFakeProtocol(),
+            MinimalQueueProtocol(),
+            # multiprocessing.Queue() is a valid queue for the logging module
+            # multiprocessing.SimpleQueue() is NOT valid because it lacks the
+            # 'put_nowait' method which is needed by the logging queue handler.
+            multiprocessing.Queue(),
+        ]:
+            with self.subTest(qspec=qspec):
                 self.apply_config(
                     {
                         "version": 1,
@@ -4006,7 +3989,35 @@ class ConfigDictTest(BaseTest):
                         },
                     }
                 )
-            manager.assert_not_called()
+                manager.assert_not_called()
+
+    @patch("multiprocessing.Manager")
+    def test_config_queue_handler_invalid_config_does_not_create_multiprocessing_manager(self, manager):
+        # gh-120868, gh-121723, gh-124653
+
+        import multiprocessing
+
+        for qspec in [
+            object(),
+            CustomQueueWrongProtocol(),
+            # multiprocessing.SimpleQueue does not implement the 'put_nowait'
+            # method and thus cannot be used as a queue-like object here.
+            multiprocessing.SimpleQueue(),
+        ]:
+            with self.subTest(qspec=qspec):
+                with self.assertRaises(ValueError):
+                    self.apply_config(
+                        {
+                            "version": 1,
+                            "handlers": {
+                                "queue_listener": {
+                                    "class": "logging.handlers.QueueHandler",
+                                    "queue": qspec,
+                                },
+                            },
+                        }
+                    )
+                    manager.assert_not_called()
 
     @skip_if_tsan_fork
     @support.requires_subprocess()
