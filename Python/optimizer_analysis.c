@@ -385,6 +385,30 @@ get_code(_PyUOpInstruction *op)
     return co;
 }
 
+static PyCodeObject *
+get_code_with_logging(_PyUOpInstruction *op)
+{
+    PyCodeObject *co = NULL;
+    uint64_t push_operand = op->operand;
+    if (push_operand & 1) {
+        co = (PyCodeObject *)(push_operand & ~1);
+        DPRINTF(3, "code=%p ", co);
+        assert(PyCode_Check(co));
+    }
+    else {
+        PyFunctionObject *func = (PyFunctionObject *)push_operand;
+        DPRINTF(3, "func=%p ", func);
+        if (func == NULL) {
+            DPRINTF(3, "\n");
+            DPRINTF(1, "Missing function\n");
+            return NULL;
+        }
+        co = (PyCodeObject *)func->func_code;
+        DPRINTF(3, "code=%p ", co);
+    }
+    return co;
+}
+
 /* 1 for success, 0 for not ready, cannot error at the moment. */
 static int
 optimize_uops(

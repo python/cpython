@@ -1663,15 +1663,18 @@
             _Py_UopsSymbol *self_or_null;
             _Py_UopsSymbol *callable;
             _Py_UOpsAbstractFrame *new_frame;
-            args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            /* The _Py_UOpsAbstractFrame design assumes that we can copy arguments across directly */
-            (void)callable;
-            (void)self_or_null;
-            (void)args;
-            new_frame = NULL;
-            ctx->done = true;
+            (void)(self_or_null);
+            (void)(callable);
+            PyCodeObject *co = NULL;
+            assert((this_instr + 2)->opcode == _PUSH_FRAME);
+            co = get_code_with_logging((this_instr + 2));
+            if (co == NULL) {
+                ctx->done = true;
+                break;
+            }
+            new_frame = frame_new(ctx, co, 0, NULL, 0);
             stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)new_frame;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1771,23 +1774,10 @@
             (void)callable;
             PyCodeObject *co = NULL;
             assert((this_instr + 2)->opcode == _PUSH_FRAME);
-            uint64_t push_operand = (this_instr + 2)->operand;
-            if (push_operand & 1) {
-                co = (PyCodeObject *)(push_operand & ~1);
-                DPRINTF(3, "code=%p ", co);
-                assert(PyCode_Check(co));
-            }
-            else {
-                PyFunctionObject *func = (PyFunctionObject *)push_operand;
-                DPRINTF(3, "func=%p ", func);
-                if (func == NULL) {
-                    DPRINTF(3, "\n");
-                    DPRINTF(1, "Missing function\n");
-                    ctx->done = true;
-                    break;
-                }
-                co = (PyCodeObject *)func->func_code;
-                DPRINTF(3, "code=%p ", co);
+            co = get_code_with_logging((this_instr + 2));
+            if (co == NULL) {
+                ctx->done = true;
+                break;
             }
             assert(self_or_null != NULL);
             assert(args != NULL);
