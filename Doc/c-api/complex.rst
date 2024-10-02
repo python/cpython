@@ -44,10 +44,34 @@ pointers.  This is consistent throughout the API.
    representation.
 
 
+.. c:function:: Py_complex _Py_cd_sum(Py_complex left, double right)
+
+   Return the sum of complex and real number, using the C :c:type:`Py_complex`
+   representation.
+
+   .. versionadded:: 3.14
+
+
 .. c:function:: Py_complex _Py_c_diff(Py_complex left, Py_complex right)
 
    Return the difference between two complex numbers, using the C
    :c:type:`Py_complex` representation.
+
+
+.. c:function:: Py_complex _Py_dc_diff(double left, Py_complex right)
+
+   Return the difference of real and complex number, using the C
+   :c:type:`Py_complex` representation.
+
+   .. versionadded:: 3.14
+
+
+.. c:function:: Py_complex _Py_cd_diff(Py_complex left, double right)
+
+   Return the difference of complex and real number, using the C
+   :c:type:`Py_complex` representation.
+
+   .. versionadded:: 3.14
 
 
 .. c:function:: Py_complex _Py_c_neg(Py_complex num)
@@ -62,6 +86,14 @@ pointers.  This is consistent throughout the API.
    representation.
 
 
+.. c:function:: Py_complex _Py_cd_prod(Py_complex left, double right)
+
+   Return the product of complex and real number, using the C
+   :c:type:`Py_complex` representation.
+
+   .. versionadded:: 3.14
+
+
 .. c:function:: Py_complex _Py_c_quot(Py_complex dividend, Py_complex divisor)
 
    Return the quotient of two complex numbers, using the C :c:type:`Py_complex`
@@ -69,6 +101,28 @@ pointers.  This is consistent throughout the API.
 
    If *divisor* is null, this method returns zero and sets
    :c:data:`errno` to :c:macro:`!EDOM`.
+
+
+.. c:function:: Py_complex _Py_dc_quot(double left, Py_complex right)
+
+   Return the quotent of real and complex number, using the C
+   :c:type:`Py_complex` representation.
+
+   If *divisor* is zero, this method returns zero and sets
+   :c:data:`errno` to :c:macro:`!EDOM`.
+
+   .. versionadded:: 3.14
+
+
+.. c:function:: Py_complex _Py_cd_quot(Py_complex left, double right)
+
+   Return the quotient of complex and real number, using the C
+   :c:type:`Py_complex` representation.
+
+   If *divisor* is zero, this method returns zero and sets
+   :c:data:`errno` to :c:macro:`!EDOM`.
+
+   .. versionadded:: 3.14
 
 
 .. c:function:: Py_complex _Py_c_pow(Py_complex num, Py_complex exp)
