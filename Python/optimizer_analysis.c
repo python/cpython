@@ -56,14 +56,14 @@ static int
 get_mutations(PyObject* dict) {
     assert(PyDict_CheckExact(dict));
     PyDictObject *d = (PyDictObject *)dict;
-    return (d->ma_version_tag >> DICT_MAX_WATCHERS) & ((1 << DICT_WATCHED_MUTATION_BITS)-1);
+    return (d->_ma_watcher_tag >> DICT_MAX_WATCHERS) & ((1 << DICT_WATCHED_MUTATION_BITS)-1);
 }
 
 static void
 increment_mutations(PyObject* dict) {
     assert(PyDict_CheckExact(dict));
     PyDictObject *d = (PyDictObject *)dict;
-    d->ma_version_tag += (1 << DICT_MAX_WATCHERS);
+    d->_ma_watcher_tag += (1 << DICT_MAX_WATCHERS);
 }
 
 /* The first two dict watcher IDs are reserved for CPython,

@@ -1080,7 +1080,10 @@ Special attributes
        .. versionadded:: 3.13
 
    * - .. attribute:: type.__firstlineno__
-     - The line number of the first line of the class definition, including decorators.
+     - The line number of the first line of the class definition,
+       including decorators.
+       Setting the :attr:`__module__` attribute removes the
+       :attr:`!__firstlineno__` item from the type's dictionary.
 
        .. versionadded:: 3.13
 
@@ -1109,8 +1112,10 @@ have the following two methods available:
 
    .. doctest::
 
-      >>> int.__subclasses__()
-      [<class 'bool'>, <enum 'IntEnum'>, <flag 'IntFlag'>, <class 're._constants._NamedIntConstant'>, <class 're._ZeroSentinel'>]
+      >>> class A: pass
+      >>> class B(A): pass
+      >>> A.__subclasses__()
+      [<class 'B'>]
 
 Class instances
 ---------------

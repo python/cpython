@@ -50,16 +50,14 @@ Registering and using tools
    *tool_id* must be in the range 0 to 5 inclusive.
    Raises a :exc:`ValueError` if *tool_id* is in use.
 
+.. function:: clear_tool_id(tool_id: int, /) -> None
+
+   Unregister all events and callback functions associated with *tool_id*.
+
 .. function:: free_tool_id(tool_id: int, /) -> None
 
    Should be called once a tool no longer requires *tool_id*.
-
-.. note::
-
-   :func:`free_tool_id` will not disable global or local events associated
-   with *tool_id*, nor will it unregister any callback functions. This
-   function is only intended to be used to notify the VM that the
-   particular *tool_id* is no longer in use.
+   Will call :func:`clear_tool_id` before releasing *tool_id*.
 
 .. function:: get_tool(tool_id: int, /) -> str | None
 
