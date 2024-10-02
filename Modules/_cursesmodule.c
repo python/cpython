@@ -4892,48 +4892,11 @@ _curses_capi_capsule_destructor(PyObject *op)
     _curses_capi_free(capi);
 }
 
-static int
-_curses_capi_capsule_traverse(PyObject *op, visitproc visit, void *arg)
-{
-    void *capi = PyCapsule_GetPointer(op, PyCurses_CAPSULE_NAME);
-    assert(capi != NULL);
-    void *window_type = *(void **)(capi);
-    assert(window_type != NULL);
-    if (_PyType_HasFeature(_PyType_CAST(window_type), Py_TPFLAGS_HEAPTYPE)) {
-        Py_VISIT(window_type);
-    }
-    return 0;
-}
-
-static int
-_curses_capi_capsule_clear(PyObject *op) {
-    void *capi = PyCapsule_GetPointer(op, PyCurses_CAPSULE_NAME);
-    assert(capi != NULL);
-    void *window_type = *(void **)(capi);
-    if (_PyType_HasFeature(_PyType_CAST(window_type), Py_TPFLAGS_HEAPTYPE)) {
-        Py_CLEAR(window_type);
-    }
-    return 0;
-}
-
 static PyObject *
 _curses_capi_capsule_new(void *capi)
 {
     PyObject *capsule = PyCapsule_New(capi, PyCurses_CAPSULE_NAME,
                                       _curses_capi_capsule_destructor);
-    if (capsule == NULL) {
-        return NULL;
-    }
-    void *window_type = *(void **)(capi);
-    if (_PyType_HasFeature(_PyType_CAST(window_type), Py_TPFLAGS_HEAPTYPE)) {
-        if (_PyCapsule_SetTraverse(capsule,
-                                   _curses_capi_capsule_traverse,
-                                   _curses_capi_capsule_clear) < 0)
-        {
-            Py_DECREF(capsule);
-            return NULL;
-        }
-    }
     return capsule;
 }
 
