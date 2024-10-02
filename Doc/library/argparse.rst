@@ -668,8 +668,9 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser = argparse.ArgumentParser()
     >>> parser.add_argument('--foo', action='store_true')
     >>> parser.add_argument('--bar', action='store_false')
-    >>> parser.parse_args(['--foo', '--bar'])
-    Namespace(bar=False, foo=True)
+    >>> parser.add_argument('--baz', action='store_false')
+    >>> parser.parse_args('--foo --bar'.split())
+    Namespace(foo=True, bar=False, baz=True)
 
 * ``'append'`` - This stores a list, and appends each argument value to the
   list. It is useful to allow an option to be specified multiple times.
