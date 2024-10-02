@@ -130,7 +130,7 @@ class CCallMakerVisitor(GrammarVisitor):
         self.gen = parser_generator
         self.exact_tokens = exact_tokens
         self.non_exact_tokens = non_exact_tokens
-        self.cache: Dict[Any, FunctionCall] = {}
+        self.cache: Dict[str, str] = {}
         self.cleanup_statements: List[str] = []
 
     def keyword_helper(self, keyword: str) -> FunctionCall:
@@ -207,19 +207,23 @@ class CCallMakerVisitor(GrammarVisitor):
             )
 
     def visit_Rhs(self, node: Rhs) -> FunctionCall:
-        if node in self.cache:
-            return self.cache[node]
         if node.can_be_inlined:
-            self.cache[node] = self.generate_call(node.alts[0].items[0])
+            return self.generate_call(node.alts[0].items[0])
+
+        node_str = f"{node}"
+        key = f"rhs_{node_str}"
+        if key in self.cache:
+            name = self.cache[key]
         else:
             name = self.gen.artificial_rule_from_rhs(node)
-            self.cache[node] = FunctionCall(
-                assigned_variable=f"{name}_var",
-                function=f"{name}_rule",
-                arguments=["p"],
-                comment=f"{node}",
-            )
-        return self.cache[node]
+            self.cache[key] = name
+
+        return FunctionCall(
+            assigned_variable=f"{name}_var",
+            function=f"{name}_rule",
+            arguments=["p"],
+            comment=node_str,
+        )
 
     def visit_NamedItem(self, node: NamedItem) -> FunctionCall:
         call = self.generate_call(node.item)
@@ -303,43 +307,55 @@ class CCallMakerVisitor(GrammarVisitor):
         )
 
     def visit_Repeat0(self, node: Repeat0) -> FunctionCall:
-        if node in self.cache:
-            return self.cache[node]
-        name = self.gen.artificial_rule_from_repeat(node.node, False)
-        self.cache[node] = FunctionCall(
+        node_str = f"{node}"
+        key = f"repeat0_{node_str}"
+        if key in self.cache:
+            name = self.cache[key]
+        else:
+            name = self.gen.artificial_rule_from_repeat(node.node, False)
+            self.cache[key] = name
+
+        return FunctionCall(
             assigned_variable=f"{name}_var",
             function=f"{name}_rule",
             arguments=["p"],
             return_type="asdl_seq *",
-            comment=f"{node}",
+            comment=node_str,
         )
-        return self.cache[node]
 
     def visit_Repeat1(self, node: Repeat1) -> FunctionCall:
-        if node in self.cache:
-            return self.cache[node]
-        name = self.gen.artificial_rule_from_repeat(node.node, True)
-        self.cache[node] = FunctionCall(
+        node_str = f"{node}"
+        key = f"repeat1_{node_str}"
+        if key in self.cache:
+            name = self.cache[key]
+        else:
+            name = self.gen.artificial_rule_from_repeat(node.node, True)
+            self.cache[key] = name
+
+        return FunctionCall(
             assigned_variable=f"{name}_var",
             function=f"{name}_rule",
             arguments=["p"],
             return_type="asdl_seq *",
-            comment=f"{node}",
+            comment=node_str,
         )
-        return self.cache[node]
 
     def visit_Gather(self, node: Gather) -> FunctionCall:
-        if node in self.cache:
-            return self.cache[node]
-        name = self.gen.artificial_rule_from_gather(node)
-        self.cache[node] = FunctionCall(
+        node_str = f"{node}"
+        key = f"gather_{node_str}"
+        if key in self.cache:
+            name = self.cache[key]
+        else:
+            name = self.gen.artificial_rule_from_gather(node)
+            self.cache[key] = name
+
+        return FunctionCall(
             assigned_variable=f"{name}_var",
             function=f"{name}_rule",
             arguments=["p"],
             return_type="asdl_seq *",
-            comment=f"{node}",
+            comment=node_str,
         )
-        return self.cache[node]
 
     def visit_Group(self, node: Group) -> FunctionCall:
         return self.generate_call(node.rhs)
