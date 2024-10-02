@@ -1,0 +1,1 @@
+Fix reference cycles left in tracebacks in :func:`asyncio.open_connection` when used with ``happy_eyeballs_delay``
