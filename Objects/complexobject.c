@@ -482,7 +482,7 @@ complex_hash(PyComplexObject *v)
         return (obj)
 
 static int
-real_to_float(PyObject **pobj, double *dbl)
+real_to_double(PyObject **pobj, double *dbl)
 {
     PyObject *obj = *pobj;
 
@@ -499,7 +499,7 @@ static int
 real_to_complex(PyObject **pobj, Py_complex *pc)
 {
     pc->imag = 0.0;
-    return real_to_float(pobj, &(pc->real));
+    return real_to_double(pobj, &(pc->real));
 }
 
 /* Complex arithmetic rules implement special mixed-mode case: combining
@@ -536,7 +536,7 @@ complex_add(PyObject *v, PyObject *w)
         Py_complex b = ((PyComplexObject *)(w))->cval;
         a = _Py_c_sum(a, b);
     }
-    else if (real_to_float(&w, &b) < 0) {
+    else if (real_to_double(&w, &b) < 0) {
         return w;
     }
     else {
@@ -558,7 +558,7 @@ complex_sub(PyObject *v, PyObject *w)
             a = ((PyComplexObject *)(v))->cval;
             a = _Py_c_diff(a, b);
         }
-        else if (real_to_float(&v, &a.real) < 0) {
+        else if (real_to_double(&v, &a.real) < 0) {
             return v;
         }
         else {
@@ -570,7 +570,7 @@ complex_sub(PyObject *v, PyObject *w)
         a = ((PyComplexObject *)(v))->cval;
         double b;
 
-        if (real_to_float(&w, &b) < 0) {
+        if (real_to_double(&w, &b) < 0) {
             return w;
         }
         a.real -= b;
@@ -595,7 +595,7 @@ complex_mul(PyObject *v, PyObject *w)
         Py_complex b = ((PyComplexObject *)(w))->cval;
         a = _Py_c_prod(a, b);
     }
-    else if (real_to_float(&w, &b) < 0) {
+    else if (real_to_double(&w, &b) < 0) {
         return w;
     }
     else {
@@ -620,7 +620,7 @@ complex_div(PyObject *v, PyObject *w)
     else {
         double b;
 
-        if (real_to_float(&w, &b) < 0) {
+        if (real_to_double(&w, &b) < 0) {
             return w;
         }
         if (b) {
