@@ -52,7 +52,7 @@ module _locale
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=ed98569b726feada]*/
 
-/* support functions for formatting floating point numbers */
+/* support functions for formatting floating-point numbers */
 
 /* the grouping is terminated by either 0 or CHAR_MAX */
 static PyObject*
@@ -881,9 +881,9 @@ locale_clear(PyObject *module)
 }
 
 static void
-locale_free(PyObject *module)
+locale_free(void *module)
 {
-    locale_clear(module);
+    locale_clear((PyObject*)module);
 }
 
 static struct PyModuleDef _localemodule = {
@@ -895,7 +895,7 @@ static struct PyModuleDef _localemodule = {
     _locale_slots,
     locale_traverse,
     locale_clear,
-    (freefunc)locale_free,
+    locale_free,
 };
 
 PyMODINIT_FUNC

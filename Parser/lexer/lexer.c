@@ -884,7 +884,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                 return MAKE_TOKEN(ERRORTOKEN);
             }
             {
-                /* Accept floating point numbers. */
+                /* Accept floating-point numbers. */
                 if (c == '.') {
                     c = tok_nextc(tok);
         fraction:
@@ -1238,6 +1238,9 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
 
         if (INSIDE_FSTRING(tok)) {
             current_tok->curly_bracket_depth--;
+            if (current_tok->curly_bracket_depth < 0) {
+                return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "f-string: unmatched '%c'", c));
+            }
             if (c == '}' && current_tok->curly_bracket_depth == current_tok->curly_bracket_expr_start_depth) {
                 current_tok->curly_bracket_expr_start_depth--;
                 current_tok->kind = TOK_FSTRING_MODE;

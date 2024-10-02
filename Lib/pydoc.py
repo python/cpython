@@ -1682,6 +1682,13 @@ def describe(thing):
         return 'function ' + thing.__name__
     if inspect.ismethod(thing):
         return 'method ' + thing.__name__
+    if inspect.ismethodwrapper(thing):
+        return 'method wrapper ' + thing.__name__
+    if inspect.ismethoddescriptor(thing):
+        try:
+            return 'method descriptor ' + thing.__name__
+        except AttributeError:
+            pass
     return type(thing).__name__
 
 def locate(path, forceload=0):
@@ -1863,6 +1870,7 @@ class Helper:
         ':': 'SLICINGS DICTIONARYLITERALS',
         '@': 'def class',
         '\\': 'STRINGS',
+        ':=': 'ASSIGNMENTEXPRESSIONS',
         '_': 'PRIVATENAMES',
         '__': 'PRIVATENAMES SPECIALMETHODS',
         '`': 'BACKQUOTES',
@@ -1956,6 +1964,7 @@ class Helper:
         'ASSERTION': 'assert',
         'ASSIGNMENT': ('assignment', 'AUGMENTEDASSIGNMENT'),
         'AUGMENTEDASSIGNMENT': ('augassign', 'NUMBERMETHODS'),
+        'ASSIGNMENTEXPRESSIONS': ('assignment-expressions', ''),
         'DELETION': 'del',
         'RETURNING': 'return',
         'IMPORTING': 'import',

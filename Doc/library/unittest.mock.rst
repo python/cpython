@@ -239,7 +239,7 @@ the *new_callable* argument to :func:`patch`.
       Accessing any attribute not in this list will raise an :exc:`AttributeError`.
 
       If *spec* is an object (rather than a list of strings) then
-      :attr:`~instance.__class__` returns the class of the spec object. This
+      :attr:`~object.__class__` returns the class of the spec object. This
       allows mocks to pass :func:`isinstance` tests.
 
     * *spec_set*: A stricter variant of *spec*. If used, attempting to *set*
@@ -401,6 +401,8 @@ the *new_callable* argument to :func:`patch`.
 
         The reset_mock method resets all the call attributes on a mock object:
 
+        .. doctest::
+
             >>> mock = Mock(return_value=None)
             >>> mock('hello')
             >>> mock.called
@@ -409,20 +411,41 @@ the *new_callable* argument to :func:`patch`.
             >>> mock.called
             False
 
+        This can be useful where you want to make a series of assertions that
+        reuse the same object.
+
+        *return_value* parameter when set to ``True`` resets :attr:`return_value`:
+
+        .. doctest::
+
+            >>> mock = Mock(return_value=5)
+            >>> mock('hello')
+            5
+            >>> mock.reset_mock(return_value=True)
+            >>> mock('hello')  # doctest: +ELLIPSIS
+            <Mock name='mock()' id='...'>
+
+        *side_effect* parameter when set to ``True`` resets :attr:`side_effect`:
+
+        .. doctest::
+
+            >>> mock = Mock(side_effect=ValueError)
+            >>> mock('hello')
+            Traceback (most recent call last):
+              ...
+            ValueError
+            >>> mock.reset_mock(side_effect=True)
+            >>> mock('hello')  # doctest: +ELLIPSIS
+            <Mock name='mock()' id='...'>
+
+        Note that :meth:`reset_mock` *doesn't* clear the
+        :attr:`return_value`, :attr:`side_effect` or any child attributes you have
+        set using normal assignment by default.
+
+        Child mocks are reset as well.
+
         .. versionchanged:: 3.6
            Added two keyword-only arguments to the reset_mock function.
-
-        This can be useful where you want to make a series of assertions that
-        reuse the same object. Note that :meth:`reset_mock` *doesn't* clear the
-        :attr:`return_value`, :attr:`side_effect` or any child attributes you have
-        set using normal assignment by default. In case you want to reset
-        :attr:`return_value` or :attr:`side_effect`, then pass the corresponding
-        parameter as ``True``. Child mocks and the return value mock
-        (if any) are reset as well.
-
-        .. note:: *return_value*, and *side_effect* are keyword-only
-                  arguments.
-
 
     .. method:: mock_add_spec(spec, spec_set=False)
 
@@ -882,7 +905,7 @@ object::
   call is an awaitable.
 
     >>> mock = AsyncMock()
-    >>> asyncio.iscoroutinefunction(mock)
+    >>> inspect.iscoroutinefunction(mock)
     True
     >>> inspect.isawaitable(mock())  # doctest: +SKIP
     True
