@@ -1,6 +1,6 @@
-"""Generate the cases for the tier 2 optimizer.
-Reads the instruction definitions from bytecodes.c and optimizer_bytecodes.c
-Writes the cases to optimizer_cases.c.h, which is #included in Python/optimizer_analysis.c.
+"""Generate the cases for the tier 2 partial evaluator.
+Reads the instruction definitions from bytecodes.c, optimizer_bytecodes.c and partial_evaluator_bytecodes.c
+Writes the cases to partial_evaluator_cases.c.h, which is #included in Python/optimizer_analysis.c.
 """
 
 import argparse
@@ -24,9 +24,9 @@ from typing import TextIO, Iterator
 from lexer import Token
 from stack import Local, Stack, StackError
 
-DEFAULT_OUTPUT = ROOT / "Python/optimizer_cases.c.h"
+DEFAULT_OUTPUT = ROOT / "Python/partial_evaluator_cases.c.h"
 DEFAULT_ABSTRACT_INPUT = (ROOT / "Python/optimizer_bytecodes.c").absolute().as_posix()
-
+DEFAULT_PE_INPUT = (ROOT / "Python/partial_evaluator_bytecodes.c").absolute().as_posix()
 
 def validate_uop(override: Uop, uop: Uop) -> None:
     # To do
@@ -225,6 +225,7 @@ if __name__ == "__main__":
     if not args.input:
         args.base.append(DEFAULT_INPUT)
         args.input.append(DEFAULT_ABSTRACT_INPUT)
+        args.input.append(DEFAULT_PE_INPUT)
     else:
         args.base.append(args.input[-1])
         args.input.pop()

@@ -385,11 +385,6 @@ get_code(_PyUOpInstruction *op)
     return co;
 }
 
-static inline _Py_UopsLocalsPlusSlot
-sym_to_slot(_Py_UopsSymbol *sym)
-{
-    return (_Py_UopsLocalsPlusSlot){sym, 0};
-}
 
 /* 1 for success, 0 for not ready, cannot error at the moment. */
 static int
