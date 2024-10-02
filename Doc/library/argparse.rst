@@ -2091,4 +2091,4 @@ Exceptions
    :caption: Guides and Tutorials
 
    ../howto/argparse.rst
-   argparse-optparse.rst
+   ../howto/argparse-optparse.rst
