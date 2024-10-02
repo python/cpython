@@ -739,7 +739,6 @@ extern "C" {
     INIT_ID(_argtypes_), \
     INIT_ID(_as_parameter_), \
     INIT_ID(_asyncio_future_blocking), \
-    INIT_ID(_awaited_by), \
     INIT_ID(_blksize), \
     INIT_ID(_bootstrap), \
     INIT_ID(_check_retval_), \

@@ -230,7 +230,6 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(_argtypes_)
         STRUCT_FOR_ID(_as_parameter_)
         STRUCT_FOR_ID(_asyncio_future_blocking)
-        STRUCT_FOR_ID(_awaited_by)
         STRUCT_FOR_ID(_blksize)
         STRUCT_FOR_ID(_bootstrap)
         STRUCT_FOR_ID(_check_retval_)
