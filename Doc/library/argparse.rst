@@ -665,12 +665,12 @@ how the command-line arguments should be handled. The supplied actions are:
   respectively.  In addition, they create default values of ``False`` and
   ``True`` respectively::
 
-    >>> parser = argparse.ArgumentParser()
-    >>> parser.add_argument('--foo', action='store_true')
-    >>> parser.add_argument('--bar', action='store_false')
-    >>> parser.add_argument('--baz', action='store_false')
-    >>> parser.parse_args('--foo --bar'.split())
-    Namespace(foo=True, bar=False, baz=True)
+   >>> parser = argparse.ArgumentParser()
+   >>> parser.add_argument('--foo', action='store_true')
+   >>> parser.add_argument('--bar', action='store_false')
+   >>> parser.add_argument('--baz', action='store_false')
+   >>> parser.parse_args('--foo --bar'.split())
+   Namespace(foo=True, bar=False, baz=True)
 
 * ``'append'`` - This stores a list, and appends each argument value to the
   list. It is useful to allow an option to be specified multiple times.
@@ -1032,7 +1032,7 @@ These can be handled by passing a sequence object as the *choices* keyword
 argument to :meth:`~ArgumentParser.add_argument`.  When the command line is
 parsed, argument values will be checked, and an error message will be displayed
 if the argument was not one of the acceptable values::
-   
+
       >>> parser = argparse.ArgumentParser()
       >>> parser.add_argument('move', choices=['rock', 'paper', 'scissors'])
       >>> parser.parse_args(['rock'])
@@ -2107,4 +2107,3 @@ Exceptions
 
    ../howto/argparse.rst
    ../howto/argparse-optparse.rst
-   
