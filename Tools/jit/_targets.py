@@ -44,7 +44,7 @@ class _Target(typing.Generic[_S, _R]):
     stable: bool = False
     debug: bool = False
     verbose: bool = False
-    known_symbols: dict[str | None, int] = dataclasses.field(default_factory=dict)
+    known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
 
     def _compute_digest(self, out: pathlib.Path) -> str:
         hasher = hashlib.sha256()

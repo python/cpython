@@ -254,7 +254,7 @@ class StencilGroup:
 
     def process_relocations(
         self,
-        known_symbols: dict[str | None, int],
+        known_symbols: dict[str, int],
         *,
         alignment: int = 1,
     ) -> None:
@@ -267,6 +267,7 @@ class StencilGroup:
             ):
                 hole.func = "patch_aarch64_trampoline"
                 hole.need_state = True
+                assert hole.symbol is not None
                 if hole.symbol in known_symbols:
                     ordinal = known_symbols[hole.symbol]
                 else:
