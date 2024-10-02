@@ -230,31 +230,6 @@ static inline PyDictUnicodeEntry* DK_UNICODE_ENTRIES(PyDictKeysObject *dk) {
 #define DICT_WATCHER_MASK ((1 << DICT_MAX_WATCHERS) - 1)
 #define DICT_WATCHER_AND_MODIFICATION_MASK ((1 << (DICT_MAX_WATCHERS + DICT_WATCHED_MUTATION_BITS)) - 1)
 
-#ifdef Py_GIL_DISABLED
-
-#define THREAD_LOCAL_DICT_VERSION_COUNT 256
-#define THREAD_LOCAL_DICT_VERSION_BATCH THREAD_LOCAL_DICT_VERSION_COUNT * DICT_VERSION_INCREMENT
-
-static inline uint64_t
-dict_next_version(PyInterpreterState *interp)
-{
-    PyThreadState *tstate = PyThreadState_GET();
-    uint64_t cur_progress = (tstate->dict_global_version &
-                            (THREAD_LOCAL_DICT_VERSION_BATCH - 1));
-    if (cur_progress == 0) {
-        uint64_t next = _Py_atomic_add_uint64(&interp->dict_state.global_version,
-                                              THREAD_LOCAL_DICT_VERSION_BATCH);
-        tstate->dict_global_version = next;
-    }
-    return tstate->dict_global_version += DICT_VERSION_INCREMENT;
-}
-
-#define DICT_NEXT_VERSION(INTERP) dict_next_version(INTERP)
-
-#else
-#define DICT_NEXT_VERSION(INTERP) \
-    ((INTERP)->dict_state.global_version += DICT_VERSION_INCREMENT)
-#endif
 
 PyAPI_FUNC(void)
 _PyDict_SendEvent(int watcher_bits,
@@ -263,7 +238,7 @@ _PyDict_SendEvent(int watcher_bits,
                   PyObject *key,
                   PyObject *value);
 
-static inline uint64_t
+static inline void
 _PyDict_NotifyEvent(PyInterpreterState *interp,
                     PyDict_WatchEvent event,
                     PyDictObject *mp,
@@ -271,12 +246,11 @@ _PyDict_NotifyEvent(PyInterpreterState *interp,
                     PyObject *value)
 {
     assert(Py_REFCNT((PyObject*)mp) > 0);
-    int watcher_bits = mp->ma_version_tag & DICT_WATCHER_MASK;
+    int watcher_bits = mp->_ma_watcher_tag & DICT_WATCHER_MASK;
     if (watcher_bits) {
         RARE_EVENT_STAT_INC(watched_dict_modification);
         _PyDict_SendEvent(watcher_bits, event, mp, key, value);
     }
-    return DICT_NEXT_VERSION(interp) | (mp->ma_version_tag & DICT_WATCHER_AND_MODIFICATION_MASK);
 }
 
 extern PyDictObject *_PyObject_MaterializeManagedDict(PyObject *obj);
