@@ -8,7 +8,7 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_complexobject.h" // _PyComplex_FormatAdvancedWriter()
-#include "pycore_floatobject.h"   // _Py_convert_to_double()
+#include "pycore_floatobject.h"   // _Py_convert_int_to_double()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_pymath.h"        // _Py_ADJUST_ERANGE2()
@@ -475,31 +475,31 @@ complex_hash(PyComplexObject *v)
 }
 
 /* This macro may return! */
-#define TO_COMPLEX(obj, c) \
-    if (PyComplex_Check(obj)) \
-        c = ((PyComplexObject *)(obj))->cval; \
-    else if (to_complex(&(obj), &(c)) < 0) \
+#define TO_COMPLEX(obj, c)                      \
+    if (PyComplex_Check(obj))                   \
+        c = ((PyComplexObject *)(obj))->cval;   \
+    else if (real_to_complex(&(obj), &(c)) < 0) \
         return (obj)
 
 static int
-to_float(PyObject **pobj, double *dbl)
+real_to_float(PyObject **pobj, double *dbl)
 {
     PyObject *obj = *pobj;
 
     if (PyFloat_Check(obj)) {
         *dbl = PyFloat_AS_DOUBLE(obj);
     }
-    else if (_Py_convert_to_double(pobj, dbl) < 0) {
+    else if (_Py_convert_int_to_double(pobj, dbl) < 0) {
         return -1;
     }
     return 0;
 }
 
 static int
-to_complex(PyObject **pobj, Py_complex *pc)
+real_to_complex(PyObject **pobj, Py_complex *pc)
 {
     pc->imag = 0.0;
-    return to_float(pobj, &(pc->real));
+    return real_to_float(pobj, &(pc->real));
 }
 
 /* Complex arithmetic rules implement special mixed-mode case: combining
@@ -523,7 +523,7 @@ to_complex(PyObject **pobj, Py_complex *pc)
 static PyObject *
 complex_add(PyObject *v, PyObject *w)
 {
-    if (PyComplex_Check(w)) {
+    if (!PyComplex_Check(v)) {
         PyObject *tmp = v;
         v = w;
         w = tmp;
@@ -536,7 +536,7 @@ complex_add(PyObject *v, PyObject *w)
         Py_complex b = ((PyComplexObject *)(w))->cval;
         a = _Py_c_sum(a, b);
     }
-    else if (to_float(&w, &b) < 0) {
+    else if (real_to_float(&w, &b) < 0) {
         return w;
     }
     else {
@@ -559,19 +559,19 @@ complex_sub(PyObject *v, PyObject *w)
             errno = 0;
             a = _Py_c_diff(a, b);
         }
-        else if (to_float(&v, &a.real) < 0) {
+        else if (real_to_float(&v, &a.real) < 0) {
             return v;
         }
         else {
-            a = (Py_complex) {a.real, -b.imag};
             a.real -= b.real;
+            a.imag = -b.imag;
         }
     }
     else {
         a = ((PyComplexObject *)(v))->cval;
         double b;
 
-        if (to_float(&w, &b) < 0) {
+        if (real_to_float(&w, &b) < 0) {
             return w;
         }
         a.real -= b;
@@ -583,7 +583,7 @@ complex_sub(PyObject *v, PyObject *w)
 static PyObject *
 complex_mul(PyObject *v, PyObject *w)
 {
-    if (PyComplex_Check(w)) {
+    if (!PyComplex_Check(v)) {
         PyObject *tmp = v;
         v = w;
         w = tmp;
@@ -596,7 +596,7 @@ complex_mul(PyObject *v, PyObject *w)
         Py_complex b = ((PyComplexObject *)(w))->cval;
         a = _Py_c_prod(a, b);
     }
-    else if (to_float(&w, &b) < 0) {
+    else if (real_to_float(&w, &b) < 0) {
         return w;
     }
     else {
@@ -621,7 +621,7 @@ complex_div(PyObject *v, PyObject *w)
     else {
         double b;
 
-        if (to_float(&w, &b) < 0) {
+        if (real_to_float(&w, &b) < 0) {
             return w;
         }
         if (b) {

@@ -249,10 +249,12 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
     def test_mul(self):
         self.assertEqual(1j * int(20), complex(0, 20))
         self.assertEqual(1j * int(-1), complex(0, -1))
-        self.assertComplexesAreIdentical(complex(INF, NAN) * 2,
-                                         complex(INF, NAN))
-        self.assertComplexesAreIdentical(2 * complex(INF, NAN),
-                                         complex(INF, NAN))
+        for c, r in [(2, complex(INF, 2)), (INF, complex(INF, INF)),
+                     (0, complex(NAN, 0)), (-0.0, complex(NAN, -0.0)),
+                     (NAN, complex(NAN, NAN))]:
+            with self.subTest(c=c, r=r):
+                self.assertComplexesAreIdentical(complex(INF, 1) * c, r)
+                self.assertComplexesAreIdentical(c * complex(INF, 1), r)
         self.assertRaises(OverflowError, operator.mul, 1j, 10**1000)
         self.assertRaises(TypeError, operator.mul, 1j, None)
         self.assertRaises(TypeError, operator.mul, None, 1j)
