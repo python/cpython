@@ -3973,8 +3973,8 @@ class ConfigDictTest(BaseTest):
             CustomQueueFakeProtocol(),
             MinimalQueueProtocol(),
             # multiprocessing.Queue() is a valid queue for the logging module
-            # multiprocessing.SimpleQueue() is NOT valid because it lacks the
-            # 'put_nowait' method which is needed by the logging queue handler.
+            # but multiprocessing.SimpleQueue() is NOT valid because it lacks
+            # the 'put_nowait' method needed by the logging queue handler.
             multiprocessing.Queue(),
         ]:
             with self.subTest(qspec=qspec):
