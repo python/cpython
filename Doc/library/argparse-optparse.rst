@@ -8,12 +8,12 @@ Upgrading optparse code
 
 Originally, the :mod:`argparse` module had attempted to maintain compatibility
 with :mod:`optparse`.  However, :mod:`optparse` was difficult to extend
-transparently, particularly with the changes required to support the new
+transparently, particularly with the changes required to support
 ``nargs=`` specifiers and better usage messages.  When most everything in
 :mod:`optparse` had either been copy-pasted over or monkey-patched, it no
 longer seemed practical to try to maintain the backwards compatibility.
 
-The :mod:`argparse` module improves on the standard library :mod:`optparse`
+The :mod:`argparse` module improves on the :mod:`optparse`
 module in a number of ways including:
 
 * Handling positional arguments.
