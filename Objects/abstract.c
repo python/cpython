@@ -748,7 +748,7 @@ PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len, char fort)
         return -1;
     }
 
-    if (PyObject_GetBuffer(obj, &view_obj, PyBUF_FULL_RO)) {
+    if (PyObject_GetBuffer(obj, &view_obj, PyBUF_FULL)) {
         return -1;
     }
 
