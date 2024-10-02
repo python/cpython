@@ -700,6 +700,18 @@ task isn't already covered by the URL parsing functions above.
    Example: ``unquote_to_bytes('a%26%EF')`` yields ``b'a&\xef'``.
 
 
+.. function:: unquote_to_bytes_plus(string)
+
+   Like :func:`unquote_to_bytes`, but also replace plus signs with spaces, as
+   required for unquoting HTML form values.
+
+   *string* must be a :class:`str`.
+
+   Example: ``unquote_to_bytes_plus('/El+Ni%C3%B1o/')`` yields ``b'/El Ni\xc3\xb1o'``.
+
+   .. versionadded:: 3.9
+
+
 .. function:: urlencode(query, doseq=False, safe='', encoding=None, \
                         errors=None, quote_via=quote_plus)
 
