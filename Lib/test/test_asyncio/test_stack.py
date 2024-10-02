@@ -8,7 +8,7 @@ def tearDownModule():
     asyncio.set_event_loop_policy(None)
 
 
-def capture_test_stack(*, fut=None):
+def capture_test_stack(*, fut=None, depth=1):
 
     def walk(s):
         ret = [
@@ -39,9 +39,9 @@ def capture_test_stack(*, fut=None):
         return ret
 
     buf = io.StringIO()
-    asyncio.print_call_graph(future=fut, file=buf)
+    asyncio.print_call_graph(future=fut, file=buf, depth=depth+1)
 
-    stack = asyncio.capture_call_graph(future=fut)
+    stack = asyncio.capture_call_graph(future=fut, depth=depth)
     return walk(stack), buf.getvalue()
 
 
@@ -54,7 +54,7 @@ class TestCallStack(unittest.IsolatedAsyncioTestCase):
 
         def c5():
             nonlocal stack_for_c5
-            stack_for_c5 = capture_test_stack()
+            stack_for_c5 = capture_test_stack(depth=2)
 
         async def c4():
             await asyncio.sleep(0)
@@ -81,7 +81,7 @@ class TestCallStack(unittest.IsolatedAsyncioTestCase):
             # task name
             'T<c2_root>',
             # call stack
-            ['s capture_test_stack', 's c5', 'a c4', 'a c3', 'a c2'],
+            ['s c5', 'a c4', 'a c3', 'a c2'],
             # awaited by
             [
                 ['T<anon>',
