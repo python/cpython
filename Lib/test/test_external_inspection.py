@@ -134,14 +134,16 @@ class TestGetStackTrace(unittest.TestCase):
                 p.terminate()
                 p.wait(timeout=SHORT_TIMEOUT)
 
+            # sets are unordered, so we want to sort "awaited_by"s
+            stack_trace[2].sort(key=lambda x: x[1])
 
             expected_stack_trace = [
                 ["c5", "c4", "c3", "c2"],
                 "c2_root",
                 [
                     [["main"], "Task-1", []],
-                    [["c1"], "sub_main_2", [[["main"], "Task-1", []]]],
                     [["c1"], "sub_main_1", [[["main"], "Task-1", []]]],
+                    [["c1"], "sub_main_2", [[["main"], "Task-1", []]]],
                 ],
             ]
             self.assertEqual(stack_trace, expected_stack_trace)
