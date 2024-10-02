@@ -557,7 +557,7 @@ read_py_long(
     _Py_DebugOffsets* offsets,
     uintptr_t address) {
     unsigned int shift = PYLONG_BITS_IN_DIGIT;
-    
+
     ssize_t size;
     uintptr_t lv_tag;
     int bytes_read = read_memory(pid, address + offsets->long_object.lv_tag, sizeof(uintptr_t), &lv_tag);
@@ -581,7 +581,7 @@ read_py_long(
     }
 
     long value = 0;
- 
+
     for (ssize_t i = 0; i < size; ++i) {
         long long factor;
         if (__builtin_mul_overflow(digits[i], (1Lu << (ssize_t)(shift * i)), &factor)) {
@@ -642,7 +642,7 @@ parse_task_name(
         }
         return PyUnicode_FromFormat("Task-%d", res);
     }
-    
+
     if(!(flags & Py_TPFLAGS_UNICODE_SUBCLASS)) {
         PyErr_SetString(PyExc_RuntimeError, "Invalid task name object");
         return NULL;

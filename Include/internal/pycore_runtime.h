@@ -70,7 +70,7 @@ typedef struct _Py_AuditHookEntry {
     _GENERATE_DEBUG_SECTION_WINDOWS(name)         \
     _GENERATE_DEBUG_SECTION_APPLE(name)           \
     declaration                                   \
-    _GENERATE_DEBUG_SECTION_LINUX(name)           
+    _GENERATE_DEBUG_SECTION_LINUX(name)
 
 #if defined(MS_WINDOWS)
 #define _GENERATE_DEBUG_SECTION_WINDOWS(name)                       \
