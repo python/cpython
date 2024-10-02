@@ -18,9 +18,9 @@ a suspended *future*.
 .. versionadded:: 3.14
 
 
-.. function:: print_call_stack(*, future=None, file=None)
+.. function:: print_call_graph(*, future=None, file=None)
 
-   Print the async call stack for the current task or the provided
+   Print the async call graph for the current task or the provided
    :class:`Task` or :class:`Future`.
 
    The function recieves an optional keyword-only *future* argument.
@@ -38,7 +38,7 @@ a suspended *future*.
       import asyncio
 
       async def test():
-         asyncio.print_call_stack()
+         asyncio.print_call_graph()
 
       async def main():
          async with asyncio.TaskGroup() as g:
@@ -50,7 +50,7 @@ a suspended *future*.
 
       * Task(name='Task-2', id=0x105038fe0)
         + Call stack:
-        | * print_call_stack()
+        | * print_call_graph()
         |   asyncio/stack.py:231
         | * async test()
         |   test.py:4
@@ -72,37 +72,37 @@ a suspended *future*.
       ...
 
       buf = io.StringIO()
-      asyncio.print_call_stack(file=buf)
+      asyncio.print_call_graph(file=buf)
       output = buf.getvalue()
 
 
-.. function:: capture_call_stack(*, future=None)
+.. function:: capture_call_graph(*, future=None)
 
-   Capture the async call stack for the current task or the provided
+   Capture the async call graph for the current task or the provided
    :class:`Task` or :class:`Future`.
 
    The function recieves an optional keyword-only *future* argument.
    If not passed, the current running task will be used. If there's no
    current task, the function returns ``None``.
 
-   Returns a ``FutureCallStack`` named tuple:
+   Returns a ``FutureCallGraph`` named tuple:
 
-   * ``FutureCallStack(future, call_stack, awaited_by)``
+   * ``FutureCallGraph(future, call_graph, awaited_by)``
 
       Where 'future' is a reference to a *Future* or a *Task*
       (or their subclasses.)
 
-      ``call_stack`` is a list of ``FrameCallStackEntry`` and
-      ``CoroutineCallStackEntry`` objects (more on them below.)
+      ``call_graph`` is a list of ``FrameCallGraphEntry`` and
+      ``CoroutineCallGraphEntry`` objects (more on them below.)
 
-      ``awaited_by`` is a list of ``FutureCallStack`` tuples.
+      ``awaited_by`` is a list of ``FutureCallGraph`` tuples.
 
-   * ``FrameCallStackEntry(frame)``
+   * ``FrameCallGraphEntry(frame)``
 
       Where ``frame`` is a frame object of a regular Python function
       in the call stack.
 
-   * ``CoroutineCallStackEntry(coroutine)``
+   * ``CoroutineCallGraphEntry(coroutine)``
 
       Where ``coroutine`` is a coroutine object of an awaiting coroutine
       or asyncronous generator.
@@ -111,7 +111,7 @@ a suspended *future*.
 Low level utility functions
 ===========================
 
-To introspect an async call stack asyncio requires cooperation from
+To introspect an async call graph asyncio requires cooperation from
 control flow structures, such as :func:`shield` or :class:`TaskGroup`.
 Any time an intermediate ``Future`` object with low-level APIs like
 :meth:`Future.add_done_callback() <asyncio.Future.add_done_callback>` is

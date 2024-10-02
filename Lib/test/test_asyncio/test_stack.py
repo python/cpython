@@ -20,13 +20,13 @@ def capture_test_stack(*, fut=None):
             [
                 (
                     f"s {entry.frame.f_code.co_name}"
-                        if isinstance(entry, asyncio.FrameCallStackEntry) else
+                        if isinstance(entry, asyncio.FrameCallGraphEntry) else
                         (
                             f"a {entry.coroutine.cr_code.co_name}"
                             if hasattr(entry.coroutine, 'cr_code') else
                             f"ag {entry.coroutine.ag_code.co_name}"
                         )
-                ) for entry in s.call_stack
+                ) for entry in s.call_graph
             ]
         )
 
@@ -39,9 +39,9 @@ def capture_test_stack(*, fut=None):
         return ret
 
     buf = io.StringIO()
-    asyncio.print_call_stack(future=fut, file=buf)
+    asyncio.print_call_graph(future=fut, file=buf)
 
-    stack = asyncio.capture_call_stack(future=fut)
+    stack = asyncio.capture_call_graph(future=fut)
     return walk(stack), buf.getvalue()
 
 
