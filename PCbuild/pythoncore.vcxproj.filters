@@ -831,9 +831,6 @@
     <ClInclude Include="..\Include\internal\pycore_tuple.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\pycore_typeid.h">
-      <Filter>Include\internal</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_typeobject.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -844,6 +841,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_unionobject.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_uniqueid.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\mimalloc\mimalloc.h">
@@ -1499,7 +1499,7 @@
     <ClCompile Include="..\Python\tracemalloc.c">
       <Filter>Python</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\typeid.c">
+    <ClCompile Include="..\Python\uniqueid.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\bootstrap_hash.c">
