@@ -52,11 +52,13 @@ dummy_func(void) {
 
     override op(_LOAD_FAST, (-- value)) {
         value = GETLOCAL(oparg);
+        sym_set_origin_inst_override(&value, this_instr);
     }
 
     override op(_LOAD_FAST_AND_CLEAR, (-- value)) {
         value = GETLOCAL(oparg);
         GETLOCAL(oparg) = sym_new_null(ctx);
+        sym_set_origin_inst_override(&value, this_instr);
     }
 
     override op(_LOAD_CONST, (-- value)) {
@@ -66,21 +68,38 @@ dummy_func(void) {
 
     override op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
         value = sym_new_const(ctx, ptr);
+        sym_set_origin_inst_override(&value, this_instr);
     }
 
     override op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
         value = sym_new_const(ctx, ptr);
+        sym_set_origin_inst_override(&value, this_instr);
     }
 
     override op(_STORE_FAST, (value --)) {
-        GETLOCAL(oparg) = value;
+        _PyUOpInstruction *origin = sym_get_origin(value);
+        // Gets rid of things like x = x.
+        if (sym_is_virtual(value) &&
+            origin != NULL &&
+            origin->opcode == _LOAD_FAST &&
+            origin->oparg == oparg) {
+            // Leave it as virtual.
+        }
+        else {
+            materialize(&value);
+            MATERIALIZE_INST();
+            GETLOCAL(oparg) = value;
+        }
+
     }
 
     override op(_POP_TOP, (pop --)) {
+        if (!sym_is_virtual(pop)) {
+            MATERIALIZE_INST();
+        }
     }
 
     override op(_NOP, (--)) {
-        SET_STATIC_INST();
     }
 
     override op(_CHECK_STACK_SPACE_OPERAND, ( -- )) {

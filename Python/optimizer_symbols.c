@@ -57,7 +57,7 @@ static _Py_UopsSymbol NO_SPACE_SYMBOL = {
 
 static _Py_UopsLocalsPlusSlot NO_SPACE_SLOT = {
     .sym = &NO_SPACE_SYMBOL,
-    .is_virtual = 0,
+    .origin_inst = NULL,
 };
 
 _Py_UopsLocalsPlusSlot
@@ -213,11 +213,34 @@ _Py_uop_sym_set_non_null(_Py_UOpsContext *ctx, _Py_UopsLocalsPlusSlot sym)
     sym_set_flag(sym, NOT_NULL);
 }
 
+void
+_Py_uop_sym_set_origin_inst_override(_Py_UopsLocalsPlusSlot *sym, _PyUOpInstruction *origin)
+{
+    sym->origin_inst = origin;
+}
+
+_PyUOpInstruction *
+_Py_uop_sym_get_origin(_Py_UopsLocalsPlusSlot sym)
+{
+    return sym.origin_inst;
+}
+
+bool
+_Py_uop_sym_is_virtual(_Py_UopsLocalsPlusSlot sym)
+{
+    if (!sym.origin_inst) {
+        return false;
+    }
+    else {
+        return sym.origin_inst->is_virtual;
+    }
+}
+
 
 _Py_UopsLocalsPlusSlot
 _Py_uop_sym_new_unknown(_Py_UOpsContext *ctx)
 {
-    return (_Py_UopsLocalsPlusSlot){sym_new(ctx), 0};
+    return (_Py_UopsLocalsPlusSlot){sym_new(ctx), NULL};
 }
 
 _Py_UopsLocalsPlusSlot

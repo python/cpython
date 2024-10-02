@@ -59,6 +59,7 @@ typedef struct {
         };
     };
     uint64_t operand;  // A cache entry
+    char is_virtual; // Used by tier 2 optimizer.
 } _PyUOpInstruction;
 
 typedef struct {
@@ -160,7 +161,6 @@ struct _Py_UopsSymbol {
     PyTypeObject *typ;  // Borrowed reference
     PyObject *const_val;  // Owned reference (!)
     unsigned int type_version; // currently stores type version
-
 };
 
 #define UOP_FORMAT_TARGET 0
@@ -203,7 +203,7 @@ typedef struct _Py_UopsSymbol _Py_UopsSymbol;
 
 typedef struct _Py_UopsLocalsPlusSlot {
     _Py_UopsSymbol *sym;
-    char is_virtual;
+    _PyUOpInstruction *origin_inst; // The instruction this symbol originates from.
 } _Py_UopsLocalsPlusSlot;
 
 struct _Py_UOpsAbstractFrame {
@@ -268,6 +268,9 @@ extern bool _Py_uop_sym_set_type_version(_Py_UOpsContext *ctx, _Py_UopsLocalsPlu
 extern void _Py_uop_sym_set_const(_Py_UOpsContext *ctx, _Py_UopsLocalsPlusSlot sym, PyObject *const_val);
 extern bool _Py_uop_sym_is_bottom(_Py_UopsLocalsPlusSlot sym);
 extern int _Py_uop_sym_truthiness(_Py_UopsLocalsPlusSlot sym);
+extern void _Py_uop_sym_set_origin_inst_override(_Py_UopsLocalsPlusSlot *sym, _PyUOpInstruction *origin);
+extern bool _Py_uop_sym_is_virtual(_Py_UopsLocalsPlusSlot sym);
+extern _PyUOpInstruction *_Py_uop_sym_get_origin(_Py_UopsLocalsPlusSlot sym);
 extern PyTypeObject *_Py_uop_sym_get_type(_Py_UopsLocalsPlusSlot sym);
 
 

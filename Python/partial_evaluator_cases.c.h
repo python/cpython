@@ -4,7 +4,6 @@
 // Do not edit!
 
         case _NOP: {
-            SET_STATIC_INST();
             break;
         }
 
@@ -40,6 +39,7 @@
         case _LOAD_FAST: {
             _Py_UopsLocalsPlusSlot value;
             value = GETLOCAL(oparg);
+            sym_set_origin_inst_override(&value, this_instr);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -50,6 +50,7 @@
             _Py_UopsLocalsPlusSlot value;
             value = GETLOCAL(oparg);
             GETLOCAL(oparg) = sym_new_null(ctx);
+            sym_set_origin_inst_override(&value, this_instr);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -69,7 +70,19 @@
         case _STORE_FAST: {
             _Py_UopsLocalsPlusSlot value;
             value = stack_pointer[-1];
-            GETLOCAL(oparg) = value;
+            _PyUOpInstruction *origin = sym_get_origin(value);
+            // Gets rid of things like x = x.
+            if (sym_is_virtual(value) &&
+                origin != NULL &&
+                origin->opcode == _LOAD_FAST &&
+                origin->oparg == oparg) {
+                // Leave it as virtual.
+            }
+            else {
+                materialize(&value);
+                MATERIALIZE_INST();
+                GETLOCAL(oparg) = value;
+            }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -77,6 +90,10 @@
 
         case _POP_TOP: {
             _Py_UopsLocalsPlusSlot pop;
+            pop = stack_pointer[-1];
+            if (!sym_is_virtual(pop)) {
+                MATERIALIZE_INST();
+            }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -2310,6 +2327,7 @@
             _Py_UopsLocalsPlusSlot value;
             PyObject *ptr = (PyObject *)this_instr->operand;
             value = sym_new_const(ctx, ptr);
+            sym_set_origin_inst_override(&value, this_instr);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -2320,6 +2338,7 @@
             _Py_UopsLocalsPlusSlot value;
             PyObject *ptr = (PyObject *)this_instr->operand;
             value = sym_new_const(ctx, ptr);
+            sym_set_origin_inst_override(&value, this_instr);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());

@@ -491,32 +491,41 @@ error:
 
 }
 
-#define WRITE_OP(INST, OP, ARG, OPERAND)    \
-    (INST)->opcode = OP;            \
-    (INST)->oparg = ARG;            \
-    (INST)->operand = OPERAND;
+#define MATERIALIZE_INST() (this_instr->is_virtual = false)
+#define sym_set_origin_inst_override _Py_uop_sym_set_origin_inst_override
+#define sym_is_virtual _Py_uop_sym_is_virtual
+#define sym_get_origin _Py_uop_sym_get_origin
 
-#define SET_STATIC_INST() instr_is_truly_static = true;
-
-static _Py_UopsLocalsPlusSlot
-materialize(_Py_UOpsContext *ctx, _Py_UopsLocalsPlusSlot slot)
+static void
+materialize(_Py_UopsLocalsPlusSlot *slot)
 {
-    return slot;
+    assert(slot != NULL);
+    if (slot->origin_inst) {
+        slot->origin_inst->is_virtual = false;
+    }
 }
 
 static void
-materialize_whole_stack(_Py_UOpsContext *ctx, _Py_UopsLocalsPlusSlot *stack_start, _Py_UopsLocalsPlusSlot *stack_end)
+materialize_stack(_Py_UopsLocalsPlusSlot *stack_start, _Py_UopsLocalsPlusSlot *stack_end)
 {
     while (stack_start < stack_end) {
-        materialize(ctx, *stack_start);
+        materialize(stack_start);
         stack_start++;
     }
 }
 
 static void
-materialize_frame(_Py_UOpsContext *ctx, _Py_UOpsAbstractFrame *frame)
+materialize_frame(_Py_UOpsAbstractFrame *frame)
 {
-    materialize_whole_stack(ctx, frame->stack, frame->stack_pointer);
+    materialize_stack(frame->stack, frame->stack_pointer);
+}
+
+static void
+materialize_ctx(_Py_UOpsContext *ctx)
+{
+    for (int i = 0; i < ctx->curr_frame_depth; i++) {
+        materialize_frame(&ctx->frames[i]);
+    }
 }
 
 /* 1 for success, 0 for not ready, cannot error at the moment. */
@@ -529,11 +538,10 @@ partial_evaluate_uops(
     _PyBloomFilter *dependencies
 )
 {
-
     _PyUOpInstruction trace_dest[UOP_MAX_TRACE_LENGTH];
     _Py_UOpsContext context;
     context.trace_dest = trace_dest;
-    context.n_trace_dest = 0;
+    context.n_trace_dest = trace_len;
     _Py_UOpsContext *ctx = &context;
     uint32_t opcode = UINT16_MAX;
     int curr_space = 0;
@@ -552,28 +560,47 @@ partial_evaluate_uops(
     ctx->out_of_space = false;
     ctx->contradiction = false;
 
+   for (int i = 0; i < trace_len; i++) {
+       // The key part of PE --- we assume everything starts off virtual.
+       trace_dest[i] = trace[i];
+       trace_dest[i].is_virtual = true;
+   }
+
     _PyUOpInstruction *this_instr = NULL;
     int i = 0;
     for (; !ctx->done; i++) {
         assert(i < trace_len);
-        this_instr = &trace[i];
+        this_instr = &trace_dest[i];
 
         int oparg = this_instr->oparg;
         opcode = this_instr->opcode;
         _Py_UopsLocalsPlusSlot *stack_pointer = ctx->frame->stack_pointer;
 
-        bool instr_is_truly_static = false;
-        if (!(_PyUop_Flags[opcode] & HAS_STATIC_FLAG)) {
-            materialize_frame(ctx, ctx->frame);
-        }
-
 #ifdef Py_DEBUG
         if (get_lltrace() >= 3) {
-            printf("%4d pe: ", (int)(this_instr - trace));
+            printf("%4d pe: ", (int)(this_instr - trace_dest));
             _PyUOpPrint(this_instr);
             printf(" ");
         }
 #endif
+
+        int is_static = (_PyUop_Flags[opcode] & HAS_STATIC_FLAG);
+        if (!is_static) {
+            MATERIALIZE_INST();
+        }
+        if (!is_static &&
+            // During these two opcodes, there's an abstract frame on the stack.
+            // Which is not a valid symbol.
+            (opcode != _PUSH_FRAME && opcode != _SAVE_RETURN_OFFSET)) {
+            // An escaping opcode means we need to materialize _everything_.
+            if (_PyUop_Flags[opcode] & HAS_ESCAPES_FLAG) {
+                materialize_ctx(ctx);
+            }
+            else {
+
+                materialize_frame(ctx->frame);
+            }
+        }
 
         switch (opcode) {
 
@@ -587,23 +614,6 @@ partial_evaluate_uops(
         DPRINTF(3, " stack_level %d\n", STACK_LEVEL());
         ctx->frame->stack_pointer = stack_pointer;
         assert(STACK_LEVEL() >= 0);
-        if (!instr_is_truly_static) {
-            trace_dest[ctx->n_trace_dest] = *this_instr;
-            ctx->n_trace_dest++;
-            if (ctx->n_trace_dest >= UOP_MAX_TRACE_LENGTH) {
-                ctx->out_of_space = true;
-                ctx->done = true;
-            }
-        }
-        else {
-            // Inst is static. Nothing written :)!
-            assert((_PyUop_Flags[opcode] & HAS_STATIC_FLAG));
-#ifdef Py_DEBUG
-            if (get_lltrace() >= 3) {
-                printf("%4d pe -STATIC-\n", (int) (this_instr - trace));
-            }
-#endif
-        }
         if (ctx->done) {
             break;
         }
@@ -636,8 +646,18 @@ partial_evaluate_uops(
         assert(ctx->n_trace_dest <= trace_len);
 
         // Copy trace_dest into trace.
-        memcpy(trace, trace_dest, ctx->n_trace_dest * sizeof(_PyUOpInstruction ));
         int trace_dest_len = ctx->n_trace_dest;
+        // Only valid before we start inserting side exits.
+        assert(trace_dest_len == trace_len);
+        for (int x = 0; x < trace_dest_len; x++) {
+            // Skip all virtual instructions.
+            if (trace_dest[x].is_virtual) {
+                trace[x].opcode = _NOP;
+            }
+            else {
+                trace[x] = trace_dest[x];
+            }
+        }
         _Py_uop_abstractcontext_fini(ctx);
         return trace_dest_len;
     }
