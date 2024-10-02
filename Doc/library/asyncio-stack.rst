@@ -23,7 +23,7 @@ a suspended *future*.
    Print the async call graph for the current task or the provided
    :class:`Task` or :class:`Future`.
 
-   The function recieves an optional keyword-only *future* argument.
+   The function receives an optional keyword-only *future* argument.
    If not passed, the current running task will be used. If there's no
    current task, the function returns ``None``.
 
@@ -80,7 +80,7 @@ a suspended *future*.
    Capture the async call graph for the current task or the provided
    :class:`Task` or :class:`Future`.
 
-   The function recieves an optional keyword-only *future* argument.
+   The function receives an optional keyword-only *future* argument.
    If not passed, the current running task will be used. If there's no
    current task, the function returns ``None``.
 
