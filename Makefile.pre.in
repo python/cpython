@@ -2006,7 +2006,7 @@ regen-optimizer-cases:
 
 .PHONY: regen-partial-evaluator-cases
 regen-partial-evaluator-cases:
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/optimizer_generator.py \
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/partial_evaluator_generator.py \
 	    -o $(srcdir)/Python/partial_evaluator_cases.c.h.new \
         $(srcdir)/Python/optimizer_bytecodes.c \
 	    $(srcdir)/Python/partial_evaluator_bytecodes.c \
@@ -2051,7 +2051,8 @@ Python/optimizer.o: \
 Python/optimizer_analysis.o: \
 		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
 		$(srcdir)/Include/internal/pycore_optimizer.h \
-		$(srcdir)/Python/optimizer_cases.c.h
+		$(srcdir)/Python/optimizer_cases.c.h \
+        $(srcdir)/Python/partial_evaluator_cases.c.h
 
 Python/frozen.o: $(FROZEN_FILES_OUT)
 
