@@ -385,6 +385,11 @@ asyncio
   reduces memory usage.
   (Contributed by Kumar Aditya in :gh:`107803`.)
 
+* :mod:`asyncio` has new utility functions for introspecting and printing
+  the program's call graph.
+  (Contributed by Yury Selivanov and Pablo Galindo Salgado in :gh:`91048`.)
+
+
 Deprecated
 ==========
 
