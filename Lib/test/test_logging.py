@@ -3952,13 +3952,22 @@ class ConfigDictTest(BaseTest):
             msg = str(ctx.exception)
             self.assertEqual(msg, "Unable to configure handler 'ah'")
 
+    def _apply_simple_queue_listener_configuration(self, qspec):
+        self.apply_config({
+            "version": 1,
+            "handlers": {
+                "queue_listener": {
+                    "class": "logging.handlers.QueueHandler",
+                    "queue": qspec,
+                },
+            },
+        })
+
     @threading_helper.requires_working_threading()
     @support.requires_subprocess()
     @patch("multiprocessing.Manager")
     def test_config_queue_handler_does_not_create_multiprocessing_manager(self, manager):
         # gh-120868, gh-121723, gh-124653
-
-        import multiprocessing
 
         for qspec in [
             {"()": "queue.Queue", "maxsize": -1},
@@ -3972,52 +3981,41 @@ class ConfigDictTest(BaseTest):
             # check that the queue object correctly implements the API.
             CustomQueueFakeProtocol(),
             MinimalQueueProtocol(),
-            # multiprocessing.Queue() is a valid queue for the logging module
-            # but multiprocessing.SimpleQueue() is NOT valid because it lacks
-            # the 'put_nowait' method needed by the logging queue handler.
-            multiprocessing.Queue(),
         ]:
             with self.subTest(qspec=qspec):
-                self.apply_config(
-                    {
-                        "version": 1,
-                        "handlers": {
-                            "queue_listener": {
-                                "class": "logging.handlers.QueueHandler",
-                                "queue": qspec,
-                            },
-                        },
-                    }
-                )
+                self._apply_simple_queue_listener_configuration(qspec)
                 manager.assert_not_called()
 
     @patch("multiprocessing.Manager")
     def test_config_queue_handler_invalid_config_does_not_create_multiprocessing_manager(self, manager):
         # gh-120868, gh-121723, gh-124653
 
+        for qspec in [object(), CustomQueueWrongProtocol()]:
+            with self.subTest(qspec=qspec), self.assertRaises(ValueError):
+                self._apply_simple_queue_listener_configuration(qspec)
+                manager.assert_not_called()
+
+    @skip_if_tsan_fork
+    @support.requires_subprocess()
+    @unittest.skipUnless(support.Py_DEBUG, "requires a debug build for testing"
+                                           " assertions in multiprocessing")
+    def test_config_reject_simple_queue_handler_multiprocessing_context(self):
+        # multiprocessing.SimpleQueue does not implement 'put_nowait'
+        # and thus cannot be used as a queue-like object (gh-124653)
+
         import multiprocessing
 
-        for qspec in [
-            object(),
-            CustomQueueWrongProtocol(),
-            # multiprocessing.SimpleQueue does not implement the 'put_nowait'
-            # method and thus cannot be used as a queue-like object here.
-            multiprocessing.SimpleQueue(),
-        ]:
-            with self.subTest(qspec=qspec):
+        if support.MS_WINDOWS:
+            start_methods = ['spawn']
+        else:
+            start_methods = ['spawn', 'fork', 'forkserver']
+
+        for start_method in start_methods:
+            with self.subTest(start_method=start_method):
+                ctx = multiprocessing.get_context(start_method)
+                qspec = ctx.SimpleQueue()
                 with self.assertRaises(ValueError):
-                    self.apply_config(
-                        {
-                            "version": 1,
-                            "handlers": {
-                                "queue_listener": {
-                                    "class": "logging.handlers.QueueHandler",
-                                    "queue": qspec,
-                                },
-                            },
-                        }
-                    )
-                    manager.assert_not_called()
+                    self._apply_simple_queue_listener_configuration(qspec)
 
     @skip_if_tsan_fork
     @support.requires_subprocess()
