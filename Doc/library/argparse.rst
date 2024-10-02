@@ -49,6 +49,9 @@ the extracted data in a :class:`argparse.Namespace` object::
    args = parser.parse_args()
    print(args.filename, args.count, args.verbose)
 
+.. note::
+   If you're looking a guide about how to upgrade optparse code
+   to argparse, see :ref:`Upgrading Optparse Code <upgrading-optparse-code>`.
 
 ArgumentParser objects
 ----------------------
@@ -124,7 +127,9 @@ how to display the name of the program in help messages.  This default is almost
 always desirable because it will make the help messages match the name that was
 used to invoke the program on the command line.  However, to change this default 
 behavior, another value can be supplied using the ``prog=`` argument to 
-:class:`ArgumentParser`::
+:class:`ArgumentParser`
+
+::
 
    >>> parser = argparse.ArgumentParser(prog='myprogram')
    >>> parser.print_help()
@@ -1523,7 +1528,7 @@ Sub-commands
    Description of parameters:
 
    * title - title for the sub-parser group in help output; by default
-     "subcommands" if description is provided, otherwise uses title for
+     "sub-commands" if description is provided, otherwise uses title for
      positional arguments
 
    * description - description for the sub-parser group in help output, by
@@ -1542,7 +1547,7 @@ Sub-commands
    * dest_ - name of the attribute under which sub-command name will be
      stored; by default ``None`` and no value is stored
 
-   * required_ - Whether or not a subcommand must be provided, by default
+   * required_ - Whether or not a sub-command must be provided, by default
      ``False`` (added in 3.7)
 
    * help_ - help for sub-parser group in help output, by default ``None``
@@ -1619,8 +1624,8 @@ Sub-commands
    appear in their own group in the help output.  For example::
 
      >>> parser = argparse.ArgumentParser()
-     >>> subparsers = parser.add_subparsers(title='subcommands',
-     ...                                    description='valid subcommands',
+     >>> subparsers = parser.add_subparsers(title='sub-commands',
+     ...                                    description='valid sub-commands',
      ...                                    help='additional help')
      >>> subparsers.add_parser('foo')
      >>> subparsers.add_parser('bar')
@@ -1630,8 +1635,8 @@ Sub-commands
      options:
        -h, --help  show this help message and exit
 
-     subcommands:
-       valid subcommands
+     sub-commands:
+       valid sub-commands
 
        {foo,bar}   additional help
 
@@ -2051,8 +2056,6 @@ remaining unparsed argument strings.
 
 .. versionadded:: 3.7
 
-.. _upgrading-optparse-code:
-
 
 Exceptions
 ----------
@@ -2067,3 +2070,15 @@ Exceptions
 .. exception:: ArgumentTypeError
 
    Raised when something goes wrong converting a command line string to a type.
+
+.. We use the "rubric" directive here to avoid creating
+   the "Reference" subsection in the TOC.
+
+.. rubric:: Reference
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Guides and Tutorials
+
+   ../howto/argparse.rst
+   argparse-optparse.rst
