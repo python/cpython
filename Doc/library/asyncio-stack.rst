@@ -90,13 +90,12 @@ a suspended *future*.
 
    Returns a ``FutureCallGraph`` named tuple:
 
-   * ``FutureCallGraph(future, call_graph, awaited_by)``
+   * ``FutureCallGraph(future, call_stack, awaited_by)``
 
       Where 'future' is a reference to a *Future* or a *Task*
       (or their subclasses.)
 
-      ``call_graph`` is a list of ``FrameCallGraphEntry`` and
-      ``CoroutineCallGraphEntry`` objects (more on them below.)
+      ``call_stack`` is a list of ``FrameCallGraphEntry`` objects.
 
       ``awaited_by`` is a list of ``FutureCallGraph`` tuples.
 
@@ -104,11 +103,6 @@ a suspended *future*.
 
       Where ``frame`` is a frame object of a regular Python function
       in the call stack.
-
-   * ``CoroutineCallGraphEntry(coroutine)``
-
-      Where ``coroutine`` is a coroutine object of an awaiting coroutine
-      or asyncronous generator.
 
 
 Low level utility functions

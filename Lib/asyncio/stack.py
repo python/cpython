@@ -12,7 +12,6 @@ __all__ = (
     'capture_call_graph',
     'print_call_graph',
     'FrameCallGraphEntry',
-    'CoroutineCallGraphEntry',
     'FutureCallGraph',
 )
 
@@ -28,13 +27,9 @@ class FrameCallGraphEntry(typing.NamedTuple):
     frame: types.FrameType
 
 
-class CoroutineCallGraphEntry(typing.NamedTuple):
-    coroutine: types.CoroutineType
-
-
 class FutureCallGraph(typing.NamedTuple):
     future: futures.Future
-    call_graph: list[FrameCallGraphEntry | CoroutineCallGraphEntry]
+    call_stack: list[FrameCallGraphEntry]
     awaited_by: list[FutureCallGraph]
 
 
@@ -52,17 +47,17 @@ def _build_stack_for_future(future: any) -> FutureCallGraph:
     else:
         coro = get_coro()
 
-    st: list[CoroutineCallGraphEntry] = []
+    st: list[FrameCallGraphEntry] = []
     awaited_by: list[FutureCallGraph] = []
 
     while coro is not None:
         if hasattr(coro, 'cr_await'):
             # A native coroutine or duck-type compatible iterator
-            st.append(CoroutineCallGraphEntry(coro))
+            st.append(FrameCallGraphEntry(coro.cr_frame))
             coro = coro.cr_await
         elif hasattr(coro, 'ag_await'):
             # A native async generator or duck-type compatible iterator
-            st.append(CoroutineCallGraphEntry(coro))
+            st.append(FrameCallGraphEntry(coro.cr_frame))
             coro = coro.ag_await
         else:
             break
@@ -84,13 +79,12 @@ def capture_call_graph(
 
     The stack is represented with three data structures:
 
-    * FutureCallGraph(future, call_graph, awaited_by)
+    * FutureCallGraph(future, call_stack, awaited_by)
 
       Where 'future' is a reference to an asyncio.Future or asyncio.Task
       (or their subclasses.)
 
-      'call_graph' is a list of FrameCallGraphEntry and CoroutineCallGraphEntry
-      objects (more on them below.)
+      'call_stack' is a list of FrameGraphEntry objects.
 
       'awaited_by' is a list of FutureCallGraph objects.
 
@@ -98,11 +92,6 @@ def capture_call_graph(
 
       Where 'frame' is a frame object of a regular Python function
       in the call stack.
-
-    * CoroutineCallGraphEntry(coroutine)
-
-      Where 'coroutine' is a coroutine object of an awaiting coroutine
-      or asyncronous generator.
 
     Receives an optional keyword-only "future" argument. If not passed,
     the current task will be used. If there's no current task, the function
@@ -141,21 +130,19 @@ def capture_call_graph(
             f"with asyncio.Future"
         )
 
-    call_graph: list[FrameCallGraphEntry | CoroutineCallGraphEntry] = []
+    call_stack: list[FrameCallGraphEntry] = []
 
     f = sys._getframe(depth)
     try:
         while f is not None:
             is_async = f.f_generator is not None
+            call_stack.append(FrameCallGraphEntry(f))
 
             if is_async:
-                call_graph.append(CoroutineCallGraphEntry(f.f_generator))
                 if f.f_back is not None and f.f_back.f_generator is None:
                     # We've reached the bottom of the coroutine stack, which
                     # must be the Task that runs it.
                     break
-            else:
-                call_graph.append(FrameCallGraphEntry(f))
 
             f = f.f_back
     finally:
@@ -166,7 +153,7 @@ def capture_call_graph(
         for parent in fut_waiters:
             awaited_by.append(_build_stack_for_future(parent))
 
-    return FutureCallGraph(future, call_graph, awaited_by)
+    return FutureCallGraph(future, call_stack, awaited_by)
 
 
 def print_call_graph(*, future: any = None, file=None, depth: int = 1) -> None:
@@ -185,12 +172,14 @@ def print_call_graph(*, future: any = None, file=None, depth: int = 1) -> None:
                 f'* Future(id=0x{id(st.future):x})'
             )
 
-        if st.call_graph:
+        if st.call_stack:
             add_line(
                 f'  + Call stack:'
             )
-            for ste in st.call_graph:
-                if isinstance(ste, FrameCallGraphEntry):
+            for ste in st.call_stack:
+                f = ste.frame
+
+                if f.f_generator is None:
                     f = ste.frame
                     add_line(
                         f'  |   File {f.f_code.co_filename!r},'
@@ -198,8 +187,7 @@ def print_call_graph(*, future: any = None, file=None, depth: int = 1) -> None:
                         f' {f.f_code.co_qualname}()'
                     )
                 else:
-                    assert isinstance(ste, CoroutineCallGraphEntry)
-                    c = ste.coroutine
+                    c = f.f_generator
 
                     try:
                         f = c.cr_frame

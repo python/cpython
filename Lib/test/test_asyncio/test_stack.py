@@ -20,13 +20,13 @@ def capture_test_stack(*, fut=None):
             [
                 (
                     f"s {entry.frame.f_code.co_name}"
-                        if isinstance(entry, asyncio.FrameCallGraphEntry) else
+                        if entry.frame.f_generator is None else
                         (
-                            f"a {entry.coroutine.cr_code.co_name}"
-                            if hasattr(entry.coroutine, 'cr_code') else
-                            f"ag {entry.coroutine.ag_code.co_name}"
+                            f"a {entry.frame.f_generator.cr_code.co_name}"
+                            if hasattr(entry.frame.f_generator, 'cr_code') else
+                            f"ag {entry.frame.f_generator.ag_code.co_name}"
                         )
-                ) for entry in s.call_graph
+                ) for entry in s.call_stack
             ]
         )
 
