@@ -881,9 +881,9 @@ locale_clear(PyObject *module)
 }
 
 static void
-locale_free(PyObject *module)
+locale_free(void *module)
 {
-    locale_clear(module);
+    locale_clear((PyObject*)module);
 }
 
 static struct PyModuleDef _localemodule = {
@@ -895,7 +895,7 @@ static struct PyModuleDef _localemodule = {
     _locale_slots,
     locale_traverse,
     locale_clear,
-    (freefunc)locale_free,
+    locale_free,
 };
 
 PyMODINIT_FUNC
