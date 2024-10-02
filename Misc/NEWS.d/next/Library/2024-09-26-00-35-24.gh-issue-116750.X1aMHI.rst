@@ -1,0 +1,1 @@
+Provide :func:`sys.monitoring.clear_tool_id` to unregister all events and callbacks set by the tool.
