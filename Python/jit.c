@@ -410,7 +410,11 @@ void patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *s
 
 #include "jit_stencils.h"
 
-#define TRAMPOLINE_SIZE_AARCH64 16
+#if defined(__aarch64__) || defined(_M_ARM64)
+    #define TRAMPOLINE_SIZE 16
+#else
+    #define TRAMPOLINE_SIZE 0
+#endif
 
 // Generate and patch AArch64 trampolines. The symbols to jump to are stored
 // in the jit_stencils.h in the symbols_map.
@@ -429,8 +433,8 @@ patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *state)
         index += _Py_popcount32(state->trampolines.mask[i]);
     }
 
-    uint32_t *p = (uint32_t*)(state->trampolines.mem + index * TRAMPOLINE_SIZE_AARCH64);
-    assert((size_t)(index + 1) * TRAMPOLINE_SIZE_AARCH64 < state->trampolines.size);
+    uint32_t *p = (uint32_t*)(state->trampolines.mem + index * TRAMPOLINE_SIZE);
+    assert((size_t)(index + 1) * TRAMPOLINE_SIZE < state->trampolines.size);
 
     uint64_t value = (uintptr_t)symbols_map[ordinal];
 
@@ -483,7 +487,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
     // Calculate the size of the trampolines required by the whole trace
     for (size_t i = 0; i < Py_ARRAY_LENGTH(state.trampolines.mask); i++) {
-        state.trampolines.size += _Py_popcount32(state.trampolines.mask[i]) * TRAMPOLINE_SIZE_AARCH64;
+        state.trampolines.size += _Py_popcount32(state.trampolines.mask[i]) * TRAMPOLINE_SIZE;
     }
     // Round up to the nearest page:
     size_t page_size = get_page_size();
