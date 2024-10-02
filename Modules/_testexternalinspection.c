@@ -910,16 +910,25 @@ parse_tasks_in_set(
         return -1;
     }
 
-    Py_ssize_t set_len;
+    Py_ssize_t num_els;
     if (read_ssize_t(
             pid,
             set_obj + offsets->set_object.used,
-            &set_len)
+            &num_els)
     ) {
         return -1;
     }
 
-    Py_ssize_t cnt = 0;
+    Py_ssize_t set_len;
+    if (read_ssize_t(
+            pid,
+            set_obj + offsets->set_object.mask,
+            &set_len)
+    ) {
+        return -1;
+    }
+    set_len++; // The set contains the `mask+1` element slots.
+
     uintptr_t table_ptr;
     if (read_ptr(
             pid,
@@ -929,7 +938,9 @@ parse_tasks_in_set(
         return -1;
     }
 
-    while (cnt < set_len) {
+    Py_ssize_t i = 0;
+    Py_ssize_t els = 0;
+    while (i < set_len) {
         uintptr_t key_addr;
         if (read_py_ptr(pid, table_ptr, &key_addr)) {
             return -1;
@@ -954,11 +965,14 @@ parse_tasks_in_set(
                     return -1;
                 }
 
-                cnt++;
+                if (++els == num_els) {
+                    break;
+                }
             }
         }
 
         table_ptr += sizeof(void*) * 2;
+        i++;
     }
     return 0;
 }

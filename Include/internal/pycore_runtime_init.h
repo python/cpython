@@ -112,6 +112,7 @@ extern PyTypeObject _PyExc_MemoryError;
                 .size = sizeof(PySetObject), \
                 .used = offsetof(PySetObject, used), \
                 .table = offsetof(PySetObject, table), \
+                .mask = offsetof(PySetObject, mask), \
             }, \
             .dict_object = { \
                 .size = sizeof(PyDictObject), \

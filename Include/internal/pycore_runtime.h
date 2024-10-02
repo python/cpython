@@ -193,6 +193,7 @@ typedef struct _Py_DebugOffsets {
         uint64_t size;
         uint64_t used;
         uint64_t table;
+        uint64_t mask;
     } set_object;
 
     // PyDict object offset;
