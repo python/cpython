@@ -2377,16 +2377,22 @@ class CustomQueueProtocol:
         return getattr(queue, attribute)
 
 class CustomQueueFakeProtocol(CustomQueueProtocol):
-    # An object implementing the Queue API (incorrect signatures).
+    # An object implementing the minimial Queue API for
+    # the logging module but with incorrect signatures.
+    #
     # The object will be considered a valid queue class since we
     # do not check the signatures (only callability of methods)
     # but will NOT be usable in production since a TypeError will
-    # be raised due to a missing argument.
-    def empty(self, x):
+    # be raised due to the extra argument in 'put_nowait'.
+    def put_nowait(self):
         pass
 
 class CustomQueueWrongProtocol(CustomQueueProtocol):
-    empty = None
+    put_nowait = None
+
+class MinimalQueueProtocol:
+    def put_nowait(self, x): pass
+    def get(self): pass
 
 def queueMaker():
     return queue.Queue()
@@ -3963,6 +3969,7 @@ class ConfigDictTest(BaseTest):
         # between usability and the work we need to do in order to safely
         # check that the queue object correctly implements the API.
         q4 = CustomQueueFakeProtocol()
+        q5 = MinimalQueueProtocol()
 
         for qspec in (q1, q2, q3, q4):
             self.apply_config(
@@ -3980,9 +3987,13 @@ class ConfigDictTest(BaseTest):
 
     @patch("multiprocessing.Manager")
     def test_config_queue_handler_invalid_config_does_not_create_multiprocessing_manager(self, manager):
-        # gh-120868, gh-121723
+        # gh-120868, gh-121723, gh-124653
 
-        for qspec in [object(), CustomQueueWrongProtocol()]:
+        from multiprocessing import SimpleQueue as MPSimpleQueue
+        # MPSimpleQueue does not have the 'put_nowait' method and thus
+        # cannot be used as a queue-like object here.
+
+        for qspec in [object(), CustomQueueWrongProtocol(), MPSimpleQueue()]:
             with self.assertRaises(ValueError):
                 self.apply_config(
                     {
