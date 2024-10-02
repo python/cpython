@@ -665,12 +665,12 @@ how the command-line arguments should be handled. The supplied actions are:
   respectively.  In addition, they create default values of ``False`` and
   ``True`` respectively::
 
-   >>> parser = argparse.ArgumentParser()
-   >>> parser.add_argument('--foo', action='store_true')
-   >>> parser.add_argument('--bar', action='store_false')
-   >>> parser.add_argument('--baz', action='store_false')
-   >>> parser.parse_args('--foo --bar'.split())
-   Namespace(foo=True, bar=False, baz=True)
+    >>> parser = argparse.ArgumentParser()
+    >>> parser.add_argument('--foo', action='store_true')
+    >>> parser.add_argument('--bar', action='store_false')
+    >>> parser.add_argument('--baz', action='store_false')
+    >>> parser.parse_args('--foo --bar'.split())
+    Namespace(foo=True, bar=False, baz=True)
 
 * ``'append'`` - This stores a list, and appends each argument value to the
   list. It is useful to allow an option to be specified multiple times.
@@ -1033,13 +1033,13 @@ argument to :meth:`~ArgumentParser.add_argument`.  When the command line is
 parsed, argument values will be checked, and an error message will be displayed
 if the argument was not one of the acceptable values::
 
-      >>> parser = argparse.ArgumentParser()
-      >>> parser.add_argument('move', choices=['rock', 'paper', 'scissors'])
-      >>> parser.parse_args(['rock'])
-      Namespace(move='rock')
-      >>> parser.parse_args(['fire'])
-      usage:  [-h] {rock,paper,scissors}
-      : error: argument move: invalid choice: 'fire' (choose from 'rock', 'paper', 'scissors')
+    >>> parser = argparse.ArgumentParser()
+    >>> parser.add_argument('move', choices=['rock', 'paper', 'scissors'])
+    >>> parser.parse_args(['rock'])
+    Namespace(move='rock')
+    >>> parser.parse_args(['fire'])
+    usage:  [-h] {rock,paper,scissors}
+    : error: argument move: invalid choice: 'fire' (choose from 'rock', 'paper', 'scissors')
 
 Note that inclusion in the *choices* sequence is checked after any type_
 conversions have been performed, so the type of the objects in the *choices*
