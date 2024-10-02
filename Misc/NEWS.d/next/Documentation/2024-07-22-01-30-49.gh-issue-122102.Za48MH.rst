@@ -1,3 +1,0 @@
-Fix and improve the descriptions of
-:func:`inspect.ismethoddescriptor` and :func:`inspect.isdatadescriptor`.
-Patch by Jan Kaliszewski.
