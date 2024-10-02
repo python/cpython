@@ -451,10 +451,6 @@ class partialmethod:
     __repr__ = _partial_repr
 
     def __init__(self, func, /, *args, **keywords):
-        if not callable(func) and getattr(func, '__get__', None) is None:
-            raise TypeError(f'the first argument {func!r} must be a callable '
-                            'or a descriptor')
-
         if isinstance(func, partialmethod):
             # Subclass optimization
             temp = partial(lambda: None, *func.args, **func.keywords)
@@ -467,8 +463,12 @@ class partialmethod:
         self.args = args
         self.keywords = keywords
 
-        if (isinstance(func, _STD_METHOD_TYPES) or
-                getattr(func, '__get__', None) is None):
+        if isinstance(func, _STD_METHOD_TYPES):
+            self.method = None
+        elif getattr(func, '__get__', None) is None:
+            if not callable(func):
+                raise TypeError(f'the first argument {func!r} must be a callable '
+                                'or a descriptor')
             self.method = None
         else:
             # Unknown descriptor
@@ -486,22 +486,26 @@ class partialmethod:
 
         # 4 cases
         if isinstance(func, staticmethod):
-            func = partial(func.__wrapped__, *args, **self.keywords)
-            self._set_func_attrs(func)
-            return staticmethod(func)
+            deco = staticmethod
+            method = partial(func.__wrapped__, *args, **self.keywords)
         elif isinstance(func, classmethod):
+            deco = classmethod
             ph_args = (Placeholder,) if args else ()
-            func = partial(func.__wrapped__, *ph_args, *args, **self.keywords)
-            self._set_func_attrs(func)
-            return classmethod(func)
+            method = partial(func.__wrapped__, *ph_args, *args, **self.keywords)
         else:
             # instance method. 2 cases:
             #   a) FunctionType | partial
             #   b) callable object without __get__
+            deco = None
             ph_args = (Placeholder,) if args else ()
-            func = partial(func, *ph_args, *args, **self.keywords)
-            self._set_func_attrs(func)
-            return func
+            method = partial(func, *ph_args, *args, **self.keywords)
+
+        method.__partialmethod__ = self
+        if self.__isabstractmethod__:
+            method = abstractmethod(method)
+        if deco is not None:
+            method = deco(method)
+        return method
 
     def __get__(self, obj, cls=None):
         method = self.method
@@ -510,7 +514,9 @@ class partialmethod:
             # Need to get callable at runtime and apply partial on top
             new_func = self.func.__get__(obj, cls)
             result = partial(new_func, *self.args, **self.keywords)
-            self._set_func_attrs(func)
+            result.__partialmethod__ = self
+            if self.__isabstractmethod__:
+                result = abstractmethod(result)
             __self__ = getattr(new_func, '__self__', _NULL)
             if __self__ is not _NULL:
                 result.__self__ = __self__
