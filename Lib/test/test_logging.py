@@ -3971,7 +3971,7 @@ class ConfigDictTest(BaseTest):
         q4 = CustomQueueFakeProtocol()
         q5 = MinimalQueueProtocol()
 
-        for qspec in (q1, q2, q3, q4):
+        for qspec in (q1, q2, q3, q4, q5):
             self.apply_config(
                 {
                     "version": 1,
