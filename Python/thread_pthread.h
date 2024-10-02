@@ -422,7 +422,11 @@ void _Py_NO_RETURN
 PyThread_hang_thread(void)
 {
     while (1) {
+#if defined(__wasi__)
+        sleep(9999999);  // WASI doesn't have pause() ?!
+#else
         pause();
+#endif
     }
 }
 
