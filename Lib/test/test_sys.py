@@ -1042,14 +1042,10 @@ class SysModuleTest(unittest.TestCase):
         # Output of sys._debugmallocstats() depends on configure flags.
         # The sysconfig vars are not available on Windows.
         if sys.platform != "win32":
-            with_freelists = sysconfig.get_config_var("WITH_FREELISTS")
             with_pymalloc = sysconfig.get_config_var("WITH_PYMALLOC")
-            if with_freelists:
-                self.assertIn(b"free PyDictObjects", err)
+            self.assertIn(b"free PyDictObjects", err)
             if with_pymalloc:
                 self.assertIn(b'Small block threshold', err)
-            if not with_freelists and not with_pymalloc:
-                self.assertFalse(err)
 
         # The function has no parameter
         self.assertRaises(TypeError, sys._debugmallocstats, True)
@@ -1718,7 +1714,7 @@ class SizeofTest(unittest.TestCase):
                   '3P'                  # PyMappingMethods
                   '10P'                 # PySequenceMethods
                   '2P'                  # PyBufferProcs
-                  '6P'
+                  '7P'
                   '1PIP'                # Specializer cache
                   + typeid              # heap type id (free-threaded only)
                   )

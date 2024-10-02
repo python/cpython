@@ -19,7 +19,7 @@ from generators_common import (
     emit_to,
     write_header,
     type_and_null,
-    Emitter
+    Emitter,
 )
 from cwriter import CWriter
 from typing import TextIO, Iterator
@@ -62,7 +62,6 @@ def declare_variables(uop: Uop, out: CWriter) -> None:
 
 
 class Tier2Emitter(Emitter):
-
     def __init__(self, out: CWriter):
         super().__init__(out)
         self._replacers["oparg"] = self.oparg
@@ -110,10 +109,10 @@ class Tier2Emitter(Emitter):
         next(tkn_iter)  # Semi colon
         self.emit(") {\n")
         self.emit("UOP_STAT_INC(uopcode, miss);\n")
-        self.emit("JUMP_TO_JUMP_TARGET();\n");
+        self.emit("JUMP_TO_JUMP_TARGET();\n")
         self.emit("}\n")
 
-    def exit_if( # type: ignore[override]
+    def exit_if(  # type: ignore[override]
         self,
         tkn: Token,
         tkn_iter: Iterator[Token],
@@ -150,6 +149,7 @@ class Tier2Emitter(Emitter):
         assert one.text == "1"
         self.out.emit_at(uop.name[-1], tkn)
 
+
 def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> None:
     locals: dict[str, Local] = {}
     try:
@@ -166,6 +166,13 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> None:
             if local.defined:
                 locals[local.name] = local
         emitter.emit(stack.define_output_arrays(uop.stack.outputs))
+        outputs: list[Local] = []
+        for var in uop.stack.outputs:
+            if var.name in locals:
+                local = locals[var.name]
+            else:
+                local = Local.local(var)
+            outputs.append(local)
         for cache in uop.caches:
             if cache.name != "unused":
                 if cache.size == 4:
@@ -175,12 +182,11 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> None:
                     cast = f"uint{cache.size*16}_t"
                 emitter.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND();\n")
         emitter.emit_tokens(uop, stack, None)
-        for i, var in enumerate(uop.stack.outputs):
-            if var.name in locals:
-                local = locals[var.name]
-            else:
-                local = Local.local(var)
-            emitter.emit(stack.push(local))
+        for output in outputs:
+            if output.name in uop.deferred_refs.values():
+                # We've already spilled this when emitting tokens
+                output.cached = False
+            stack.push(output)
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body[0]) from None
 
@@ -213,7 +219,9 @@ def generate_tier2(
             continue
         why_not_viable = uop.why_not_viable()
         if why_not_viable is not None:
-            out.emit(f"/* {uop.name} is not a viable micro-op for tier 2 because it {why_not_viable} */\n\n")
+            out.emit(
+                f"/* {uop.name} is not a viable micro-op for tier 2 because it {why_not_viable} */\n\n"
+            )
             continue
         out.emit(f"case {uop.name}: {{\n")
         declare_variables(uop, out)
@@ -222,8 +230,6 @@ def generate_tier2(
         out.start_line()
         if not uop.properties.always_exits:
             stack.flush(out)
-            if uop.properties.ends_with_eval_breaker:
-                out.emit("CHECK_EVAL_BREAKER();\n")
             out.emit("break;\n")
         out.start_line()
         out.emit("}")

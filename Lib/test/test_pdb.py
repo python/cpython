@@ -363,6 +363,54 @@ def test_pdb_breakpoint_commands():
     4
     """
 
+def test_pdb_commands():
+    """Test the commands command of pdb.
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     print(1)
+    ...     print(2)
+    ...     print(3)
+
+    >>> reset_Breakpoint()
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'b 3',
+    ...     'commands',
+    ...     'silent',      # suppress the frame status output
+    ...     'p "hello"',
+    ...     'end',
+    ...     'b 4',
+    ...     'commands',
+    ...     'until 5',     # no output, should stop at line 5
+    ...     'continue',    # hit breakpoint at line 3
+    ...     '',            # repeat continue, hit breakpoint at line 4 then `until` to line 5
+    ...     '',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_commands[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) b 3
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_commands[0]>:3
+    (Pdb) commands
+    (com) silent
+    (com) p "hello"
+    (com) end
+    (Pdb) b 4
+    Breakpoint 2 at <doctest test.test_pdb.test_pdb_commands[0]>:4
+    (Pdb) commands
+    (com) until 5
+    (Pdb) continue
+    'hello'
+    (Pdb)
+    1
+    2
+    > <doctest test.test_pdb.test_pdb_commands[0]>(5)test_function()
+    -> print(3)
+    (Pdb)
+    3
+    """
+
 def test_pdb_breakpoint_with_filename():
     """Breakpoints with filename:lineno
 
@@ -901,6 +949,38 @@ def test_pdb_where_command():
     (Pdb) continue
     """
 
+def test_pdb_restart_command():
+    """Test restart command
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False, mode='inline').set_trace()
+    ...     x = 1
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'restart',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_restart_command[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False, mode='inline').set_trace()
+    (Pdb) restart
+    *** run/restart command is disabled when pdb is running in inline mode.
+    Use the command line interface to enable restarting your program
+    e.g. "python -m pdb myscript.py"
+    (Pdb) continue
+    """
+
+def test_pdb_commands_with_set_trace():
+    """Test that commands can be passed to Pdb.set_trace()
+
+    >>> def test_function():
+    ...     x = 1
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace(commands=['p x', 'c'])
+
+    >>> test_function()
+    1
+    """
+
 
 # skip this test if sys.flags.no_site = True;
 # exit() isn't defined unless there's a site module.
@@ -1263,7 +1343,7 @@ def test_post_mortem_context_of_the_cause():
 def test_post_mortem_from_none():
     """Test post mortem traceback debugging of chained exception
 
-    In particular that cause from None (which sets __supress_context__ to True)
+    In particular that cause from None (which sets __suppress_context__ to True)
     does not show context.
 
 

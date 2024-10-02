@@ -6,6 +6,7 @@ from analyzer import (
     Uop,
     Properties,
     StackItem,
+    analysis_error,
 )
 from cwriter import CWriter
 from typing import Callable, Mapping, TextIO, Iterator
@@ -57,12 +58,13 @@ def emit_to(out: CWriter, tkn_iter: Iterator[Token], end: str) -> None:
             parens -= 1
         out.emit(tkn)
 
+
 ReplacementFunctionType = Callable[
     [Token, Iterator[Token], Uop, Stack, Instruction | None], None
 ]
 
-class Emitter:
 
+class Emitter:
     out: CWriter
     _replacers: dict[str, ReplacementFunctionType]
 
@@ -73,8 +75,8 @@ class Emitter:
             "ERROR_IF": self.error_if,
             "ERROR_NO_POP": self.error_no_pop,
             "DECREF_INPUTS": self.decref_inputs,
-            "CHECK_EVAL_BREAKER": self.check_eval_breaker,
             "SYNC_SP": self.sync_sp,
+            "PyStackRef_FromPyObjectNew": self.py_stack_ref_from_py_object_new,
         }
         self.out = out
 
@@ -163,9 +165,12 @@ class Emitter:
             if var.name == "unused" or var.name == "null" or var.peek:
                 continue
             if var.size:
-                self.out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-                self.out.emit(f"PyStackRef_CLOSE({var.name}[_i]);\n")
-                self.out.emit("}\n")
+                if var.size == "1":
+                    self.out.emit(f"PyStackRef_CLOSE({var.name}[0]);\n")
+                else:
+                    self.out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
+                    self.out.emit(f"PyStackRef_CLOSE({var.name}[_i]);\n")
+                    self.out.emit("}\n")
             elif var.condition:
                 if var.condition == "1":
                     self.out.emit(f"PyStackRef_CLOSE({var.name});\n")
@@ -173,7 +178,6 @@ class Emitter:
                     self.out.emit(f"PyStackRef_XCLOSE({var.name});\n")
             else:
                 self.out.emit(f"PyStackRef_CLOSE({var.name});\n")
-
 
     def sync_sp(
         self,
@@ -188,8 +192,7 @@ class Emitter:
         next(tkn_iter)
         stack.flush(self.out)
 
-
-    def check_eval_breaker(
+    def py_stack_ref_from_py_object_new(
         self,
         tkn: Token,
         tkn_iter: Iterator[Token],
@@ -197,11 +200,20 @@ class Emitter:
         stack: Stack,
         inst: Instruction | None,
     ) -> None:
-        next(tkn_iter)
-        next(tkn_iter)
-        next(tkn_iter)
-        if not uop.properties.ends_with_eval_breaker:
-            self.out.emit_at("CHECK_EVAL_BREAKER();", tkn)
+        target = uop.deferred_refs[tkn]
+        if target is None:
+            # An assignment we don't handle, such as to a pointer or array.
+            self.out.emit(tkn)
+            return
+
+        self.out.emit(tkn)
+        emit_to(self.out, tkn_iter, "SEMI")
+        self.out.emit(";\n")
+
+        # Flush the assignment to the stack.  Note that we don't flush the
+        # stack pointer here, and instead are currently relying on initializing
+        # unused portions of the stack to NULL.
+        stack.flush_single_var(self.out, target, uop.stack.outputs)
 
     def emit_tokens(
         self,
@@ -222,6 +234,7 @@ class Emitter:
 
     def emit(self, txt: str | Token) -> None:
         self.out.emit(txt)
+
 
 def cflags(p: Properties) -> str:
     flags: list[str] = []
