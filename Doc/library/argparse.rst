@@ -1573,7 +1573,7 @@ Sub-commands
    * dest_ - name of the attribute under which sub-command name will be
      stored; by default ``None`` and no value is stored
 
-   * required_ - Whether or not a sub-command must be provided, by default
+   * required_ - Whether or not a subcommand must be provided, by default
      ``False`` (added in 3.7)
 
    * help_ - help for sub-parser group in help output, by default ``None``
