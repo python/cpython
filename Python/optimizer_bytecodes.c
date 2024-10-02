@@ -575,23 +575,10 @@ dummy_func(void) {
 
         PyCodeObject *co = NULL;
         assert((this_instr + 2)->opcode == _PUSH_FRAME);
-        uint64_t push_operand = (this_instr + 2)->operand;
-        if (push_operand & 1) {
-            co = (PyCodeObject *)(push_operand & ~1);
-            DPRINTF(3, "code=%p ", co);
-            assert(PyCode_Check(co));
-        }
-        else {
-            PyFunctionObject *func = (PyFunctionObject *)push_operand;
-            DPRINTF(3, "func=%p ", func);
-            if (func == NULL) {
-                DPRINTF(3, "\n");
-                DPRINTF(1, "Missing function\n");
-                ctx->done = true;
-                break;
-            }
-            co = (PyCodeObject *)func->func_code;
-            DPRINTF(3, "code=%p ", co);
+        co = get_code_with_logging((this_instr + 2));
+        if (co == NULL) {
+            ctx->done = true;
+            break;
         }
 
         assert(self_or_null.sym != NULL);
@@ -619,12 +606,17 @@ dummy_func(void) {
     }
 
     op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame)) {
-        /* The _Py_UOpsAbstractFrame design assumes that we can copy arguments across directly */
-        (void)callable;
-        (void)self_or_null;
-        (void)args;
-        new_frame = (_Py_UopsLocalsPlusSlot){NULL, 0};
-        ctx->done = true;
+        (void)(self_or_null);
+        (void)(callable);
+        PyCodeObject *co = NULL;
+        assert((this_instr + 2)->opcode == _PUSH_FRAME);
+        co = get_code_with_logging((this_instr + 2));
+        if (co == NULL) {
+            ctx->done = true;
+            break;
+        }
+
+        new_frame.sym = frame_new(ctx, co, 0, NULL, 0);
     }
 
     op(_PY_FRAME_KW, (callable, self_or_null, args[oparg], kwnames -- new_frame)) {
