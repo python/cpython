@@ -324,8 +324,6 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_set_type(SYM, TYPE) _Py_uop_sym_set_type(ctx, SYM, TYPE)
 #define sym_set_type_version(SYM, VERSION) _Py_uop_sym_set_type_version(ctx, SYM, VERSION)
 #define sym_set_const(SYM, CNST) _Py_uop_sym_set_const(ctx, SYM, CNST)
-#define sym_set_locals_idx _Py_uop_sym_set_locals_idx
-#define sym_get_locals_idx _Py_uop_sym_get_locals_idx
 #define sym_is_bottom _Py_uop_sym_is_bottom
 #define sym_truthiness _Py_uop_sym_truthiness
 #define frame_new _Py_uop_frame_new
@@ -500,46 +498,25 @@ error:
 
 #define SET_STATIC_INST() instr_is_truly_static = true;
 
-static void
-reify_shadow_stack(_Py_UOpsContext *ctx)
+static _Py_UopsLocalsPlusSlot
+materialize(_Py_UOpsContext *ctx, _Py_UopsLocalsPlusSlot slot)
 {
-    _PyUOpInstruction *trace_dest = ctx->trace_dest;
-    for (_Py_UopsLocalsPlusSlot *sp = ctx->frame->stack; sp < ctx->frame->stack_pointer; sp++) {
-        _Py_UopsLocalsPlusSlot slot = *sp;
-        assert(slot.sym != NULL);
-        // Need reifying.
-        if (slot.is_virtual) {
-            sp->is_virtual = false;
-            if (slot.sym->locals_idx >= 0) {
-                DPRINTF(3, "reifying %d LOAD_FAST %d\n", (int)(sp - ctx->frame->stack), slot.sym->locals_idx);
-                WRITE_OP(&trace_dest[ctx->n_trace_dest], _LOAD_FAST, slot.sym->locals_idx, 0);
-                trace_dest[ctx->n_trace_dest].format = UOP_FORMAT_TARGET;
-                trace_dest[ctx->n_trace_dest].target = 0;
-            }
-            else if (slot.sym->const_val) {
-                DPRINTF(3, "reifying %d LOAD_CONST_INLINE %p\n", (int)(sp - ctx->frame->stack), slot.sym->const_val);
-                WRITE_OP(&trace_dest[ctx->n_trace_dest], _Py_IsImmortal(slot.sym->const_val) ?
-                    _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE, 0, (uint64_t)slot.sym->const_val);
-                trace_dest[ctx->n_trace_dest].format = UOP_FORMAT_TARGET;
-                trace_dest[ctx->n_trace_dest].target = 0;
-            }
-            else if (sym_is_null(slot)) {
-                DPRINTF(3, "reifying %d PUSH_NULL\n", (int)(sp - ctx->frame->stack));
-                WRITE_OP(&trace_dest[ctx->n_trace_dest], _PUSH_NULL, 0, 0);
-            }
-            else {
-                // Is static but not a constant value of locals or NULL.
-                // How is that possible?
-                Py_UNREACHABLE();
-            }
-            ctx->n_trace_dest++;
-            if (ctx->n_trace_dest >= UOP_MAX_TRACE_LENGTH) {
-                ctx->out_of_space = true;
-                ctx->done = true;
-                return;
-            }
-        }
+    return slot;
+}
+
+static void
+materialize_whole_stack(_Py_UOpsContext *ctx, _Py_UopsLocalsPlusSlot *stack_start, _Py_UopsLocalsPlusSlot *stack_end)
+{
+    while (stack_start < stack_end) {
+        materialize(ctx, *stack_start);
+        stack_start++;
     }
+}
+
+static void
+materialize_frame(_Py_UOpsContext *ctx, _Py_UOpsAbstractFrame *frame)
+{
+    materialize_whole_stack(ctx, frame->stack, frame->stack_pointer);
 }
 
 /* 1 for success, 0 for not ready, cannot error at the moment. */
@@ -585,12 +562,9 @@ partial_evaluate_uops(
         opcode = this_instr->opcode;
         _Py_UopsLocalsPlusSlot *stack_pointer = ctx->frame->stack_pointer;
 
-        // An instruction is candidate static if it has no escapes, and all its inputs
-        // are static.
-        // If so, whether it can be eliminated is up to whether it has an implementation.
         bool instr_is_truly_static = false;
         if (!(_PyUop_Flags[opcode] & HAS_STATIC_FLAG)) {
-            reify_shadow_stack(ctx);
+            materialize_frame(ctx, ctx->frame);
         }
 
 #ifdef Py_DEBUG

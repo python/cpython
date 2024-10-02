@@ -52,9 +52,6 @@ dummy_func(void) {
 
     override op(_LOAD_FAST, (-- value)) {
         value = GETLOCAL(oparg);
-        sym_set_locals_idx(value, oparg);
-        SET_STATIC_INST();
-        value.is_virtual = true;
     }
 
     override op(_LOAD_FAST_AND_CLEAR, (-- value)) {
@@ -69,35 +66,17 @@ dummy_func(void) {
 
     override op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
         value = sym_new_const(ctx, ptr);
-        SET_STATIC_INST();
-        value.is_virtual = true;
     }
 
     override op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
         value = sym_new_const(ctx, ptr);
-        SET_STATIC_INST();
-        value.is_virtual = true;
     }
 
     override op(_STORE_FAST, (value --)) {
-        // Gets rid of stores by the same load
-        if (value.is_virtual && oparg == sym_get_locals_idx(value)) {
-            SET_STATIC_INST();
-        }
-        else {
-            reify_shadow_stack(ctx);
-            value.is_virtual = false;
-        }
         GETLOCAL(oparg) = value;
     }
 
     override op(_POP_TOP, (pop --)) {
-        if (pop.is_virtual) {
-            SET_STATIC_INST();
-        }
-        else {
-            reify_shadow_stack(ctx);
-        }
     }
 
     override op(_NOP, (--)) {

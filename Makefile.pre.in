@@ -2052,7 +2052,7 @@ Python/optimizer_analysis.o: \
 		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
 		$(srcdir)/Include/internal/pycore_optimizer.h \
 		$(srcdir)/Python/optimizer_cases.c.h \
-        $(srcdir)/Python/partial_evaluator_cases.c.h
+		$(srcdir)/Python/partial_evaluator_cases.c.h
 
 Python/frozen.o: $(FROZEN_FILES_OUT)
 

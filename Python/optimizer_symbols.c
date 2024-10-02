@@ -82,8 +82,6 @@ sym_new(_Py_UOpsContext *ctx)
     self->typ = NULL;
     self->const_val = NULL;
     self->type_version = 0;
-    self->is_static = false;
-    self->locals_idx = -1;
 
     return self;
 }
@@ -195,7 +193,6 @@ _Py_uop_sym_set_const(_Py_UOpsContext *ctx, _Py_UopsLocalsPlusSlot sym, PyObject
         sym.sym->typ = typ;
         sym.sym->const_val = Py_NewRef(const_val);
     }
-    sym.sym->is_static = true;
 }
 
 void
@@ -205,7 +202,6 @@ _Py_uop_sym_set_null(_Py_UOpsContext *ctx, _Py_UopsLocalsPlusSlot sym)
         sym_set_bottom(ctx, sym);
     }
     sym_set_flag(sym, IS_NULL);
-    sym.sym->is_static = true;
 }
 
 void
@@ -309,19 +305,6 @@ _Py_uop_sym_matches_type_version(_Py_UopsLocalsPlusSlot sym, unsigned int versio
     return _Py_uop_sym_get_type_version(sym) == version;
 }
 
-void
-_Py_uop_sym_set_locals_idx(_Py_UopsLocalsPlusSlot sym, int locals_idx)
-{
-    assert(locals_idx >= 0);
-    sym.sym->locals_idx = locals_idx;
-}
-
-int
-_Py_uop_sym_get_locals_idx(_Py_UopsLocalsPlusSlot sym)
-{
-    return sym.sym->locals_idx;
-}
-
 int
 _Py_uop_sym_truthiness(_Py_UopsLocalsPlusSlot sym)
 {
@@ -389,11 +372,6 @@ _Py_uop_frame_new(
     for (int i = arg_len; i < co->co_nlocalsplus; i++) {
         frame->locals[i] = _Py_uop_sym_new_unknown(ctx);;
     }
-
-    for (int i = 0; i < co->co_nlocalsplus; i++) {
-        frame->locals[i].sym->locals_idx = i;
-    }
-
 
     // Initialize the stack as well
     for (int i = 0; i < curr_stackentries; i++) {
