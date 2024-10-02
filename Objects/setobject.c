@@ -1503,7 +1503,7 @@ set_intersection_update_multi_impl(PySetObject *so, PyObject *args)
 static PyObject *
 set_and(PyObject *self, PyObject *other)
 {
-    if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
+    if (!PyAnySet_Check(self) || !PyAnySet_Check(other))
         Py_RETURN_NOTIMPLEMENTED;
     PySetObject *so = _PySet_CAST(self);
 
@@ -1825,7 +1825,7 @@ set_difference_multi_impl(PySetObject *so, PyObject *args)
 static PyObject *
 set_sub(PyObject *self, PyObject *other)
 {
-    if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
+    if (!PyAnySet_Check(self) || !PyAnySet_Check(other))
         Py_RETURN_NOTIMPLEMENTED;
     PySetObject *so = _PySet_CAST(self);
 
