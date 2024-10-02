@@ -1,7 +1,7 @@
 .. currentmodule:: argparse
 
 .. _upgrading-optparse-code:
-    
+
 ==========================
 Upgrading optparse code
 ==========================

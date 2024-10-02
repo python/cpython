@@ -132,9 +132,9 @@ to display in help messages depending on the way the Python interpreter was run:
 * The Python interpreter name followed by ``-m`` followed by the
   module or package name if the :option:`-m` option was used.
 
-This default is almost always desirable because it will make the help messages 
-match the string that was used to invoke the program on the command line. 
-However, to change this default behavior, another value can be supplied using 
+This default is almost always desirable because it will make the help messages
+match the string that was used to invoke the program on the command line.
+However, to change this default behavior, another value can be supplied using
 the ``prog=`` argument to :class:`ArgumentParser`::
 
    >>> parser = argparse.ArgumentParser(prog='myprogram')
@@ -168,7 +168,7 @@ usage
 ^^^^^
 
 By default, :class:`ArgumentParser` calculates the usage message from the
-arguments it contains. The default message can be overridden with the 
+arguments it contains. The default message can be overridden with the
 ``usage=`` keyword argument::
 
    >>> parser = argparse.ArgumentParser(prog='PROG', usage='%(prog)s [options]')
@@ -508,7 +508,7 @@ add_help
 ^^^^^^^^
 
 By default, ArgumentParser objects add an option which simply displays
-the parser's help message. If ``-h`` or ``--help`` is supplied at the command 
+the parser's help message. If ``-h`` or ``--help`` is supplied at the command
 line, the ArgumentParser help will be printed.
 
 Occasionally, it may be useful to disable the addition of this help option.
@@ -648,7 +648,7 @@ them, though most actions simply add an attribute to the object returned by
 how the command-line arguments should be handled. The supplied actions are:
 
 * ``'store'`` - This just stores the argument's value.  This is the default
-  action. 
+  action.
 
 * ``'store_const'`` - This stores the value specified by the const_ keyword
   argument; note that the const_ keyword argument defaults to ``None``.  The
@@ -2092,3 +2092,4 @@ Exceptions
 
    ../howto/argparse.rst
    ../howto/argparse-optparse.rst
+   
