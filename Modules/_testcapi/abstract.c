@@ -86,7 +86,7 @@ object_copy_to_object(PyObject *self, PyObject *args)
     int result;
     char *buf, fort;
 
-    if (!PyArg_ParseTuple(args, "Os#C", &obj, &buf, &len, &fort)) {
+    if (!PyArg_ParseTuple(args, "Os#c", &obj, &buf, &len, &fort)) {
         return NULL;
     }
     result = PyObject_CopyToObject(obj, buf, len, fort);
