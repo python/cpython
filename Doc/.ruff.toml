@@ -5,7 +5,6 @@ line-length = 79
 extend-exclude = [
     "includes/*",
     # Temporary exclusions:
-    "tools/extensions/escape4chm.py",
     "tools/extensions/pyspecific.py",
 ]
 

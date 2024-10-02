@@ -305,7 +305,7 @@ def run_single_test(test_name: TestName, runtests: RunTests) -> TestResult:
     pgo = runtests.pgo
     try:
         # gh-117783: don't immortalize deferred objects when tracking
-        # refleaks. Only releveant for the free-threaded build.
+        # refleaks. Only relevant for the free-threaded build.
         with support.suppress_immortalization(runtests.hunt_refleak):
             _runtest(result, runtests)
     except:
