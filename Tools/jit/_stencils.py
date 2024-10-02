@@ -2,7 +2,6 @@
 
 import dataclasses
 import enum
-import sys
 import typing
 
 import _schema
@@ -103,8 +102,8 @@ _HOLE_EXPRS = {
     HoleValue.OPERAND_HI: "(instruction->operand >> 32)",
     HoleValue.OPERAND_LO: "(instruction->operand & UINT32_MAX)",
     HoleValue.TARGET: "instruction->target",
-    HoleValue.JUMP_TARGET: "instruction_starts[instruction->jump_target]",
-    HoleValue.ERROR_TARGET: "instruction_starts[instruction->error_target]",
+    HoleValue.JUMP_TARGET: "state->instruction_starts[instruction->jump_target]",
+    HoleValue.ERROR_TARGET: "state->instruction_starts[instruction->error_target]",
     HoleValue.ZERO: "",
 }
 
@@ -125,6 +124,7 @@ class Hole:
     symbol: str | None
     # ...plus this addend:
     addend: int
+    need_state: bool = False
     func: str = dataclasses.field(init=False)
     # Convenience method:
     replace = dataclasses.replace
@@ -157,10 +157,12 @@ class Hole:
             if value:
                 value += " + "
             value += f"(uintptr_t)&{self.symbol}"
-        if _signed(self.addend):
+        if _signed(self.addend) or not value:
             if value:
                 value += " + "
             value += f"{_signed(self.addend):#x}"
+        if self.need_state:
+            return f"{self.func}({location}, {value}, state);"
         return f"{self.func}({location}, {value});"
 
 
@@ -175,7 +177,6 @@ class Stencil:
     body: bytearray = dataclasses.field(default_factory=bytearray, init=False)
     holes: list[Hole] = dataclasses.field(default_factory=list, init=False)
     disassembly: list[str] = dataclasses.field(default_factory=list, init=False)
-    trampolines: dict[str, int] = dataclasses.field(default_factory=dict, init=False)
 
     def pad(self, alignment: int) -> None:
         """Pad the stencil to the given alignment."""
@@ -183,39 +184,6 @@ class Stencil:
         padding = -offset % alignment
         self.disassembly.append(f"{offset:x}: {' '.join(['00'] * padding)}")
         self.body.extend([0] * padding)
-
-    def emit_aarch64_trampoline(self, hole: Hole, alignment: int) -> Hole:
-        """Even with the large code model, AArch64 Linux insists on 28-bit jumps."""
-        assert hole.symbol is not None
-        reuse_trampoline = hole.symbol in self.trampolines
-        if reuse_trampoline:
-            # Re-use the base address of the previously created trampoline
-            base = self.trampolines[hole.symbol]
-        else:
-            self.pad(alignment)
-            base = len(self.body)
-        new_hole = hole.replace(addend=base, symbol=None, value=HoleValue.DATA)
-
-        if reuse_trampoline:
-            return new_hole
-
-        self.disassembly += [
-            f"{base + 4 * 0:x}: 58000048      ldr     x8, 8",
-            f"{base + 4 * 1:x}: d61f0100      br      x8",
-            f"{base + 4 * 2:x}: 00000000",
-            f"{base + 4 * 2:016x}:  R_AARCH64_ABS64    {hole.symbol}",
-            f"{base + 4 * 3:x}: 00000000",
-        ]
-        for code in [
-            0x58000048.to_bytes(4, sys.byteorder),
-            0xD61F0100.to_bytes(4, sys.byteorder),
-            0x00000000.to_bytes(4, sys.byteorder),
-            0x00000000.to_bytes(4, sys.byteorder),
-        ]:
-            self.body.extend(code)
-        self.holes.append(hole.replace(offset=base + 8, kind="R_AARCH64_ABS64"))
-        self.trampolines[hole.symbol] = base
-        return new_hole
 
     def remove_jump(self, *, alignment: int = 1) -> None:
         """Remove a zero-length continuation jump, if it exists."""
@@ -282,8 +250,14 @@ class StencilGroup:
         default_factory=dict, init=False
     )
     _got: dict[str, int] = dataclasses.field(default_factory=dict, init=False)
+    _trampolines: set[int] = dataclasses.field(default_factory=set, init=False)
 
-    def process_relocations(self, *, alignment: int = 1) -> None:
+    def process_relocations(
+        self,
+        known_symbols: dict[str, int],
+        *,
+        alignment: int = 1,
+    ) -> None:
         """Fix up all GOT and internal relocations for this stencil group."""
         for hole in self.code.holes.copy():
             if (
@@ -291,9 +265,17 @@ class StencilGroup:
                 in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26", "ARM64_RELOC_BRANCH26"}
                 and hole.value is HoleValue.ZERO
             ):
-                new_hole = self.data.emit_aarch64_trampoline(hole, alignment)
-                self.code.holes.remove(hole)
-                self.code.holes.append(new_hole)
+                hole.func = "patch_aarch64_trampoline"
+                hole.need_state = True
+                assert hole.symbol is not None
+                if hole.symbol in known_symbols:
+                    ordinal = known_symbols[hole.symbol]
+                else:
+                    ordinal = len(known_symbols)
+                    known_symbols[hole.symbol] = ordinal
+                self._trampolines.add(ordinal)
+                hole.addend = ordinal
+                hole.symbol = None
         self.code.remove_jump(alignment=alignment)
         self.code.pad(alignment)
         self.data.pad(8)
@@ -348,9 +330,20 @@ class StencilGroup:
             )
             self.data.body.extend([0] * 8)
 
+    def _get_trampoline_mask(self) -> str:
+        bitmask: int = 0
+        trampoline_mask: list[str] = []
+        for ordinal in self._trampolines:
+            bitmask |= 1 << ordinal
+        while bitmask:
+            word = bitmask & ((1 << 32) - 1)
+            trampoline_mask.append(f"{word:#04x}")
+            bitmask >>= 32
+        return "{" + ", ".join(trampoline_mask) + "}"
+
     def as_c(self, opname: str) -> str:
         """Dump this hole as a StencilGroup initializer."""
-        return f"{{emit_{opname}, {len(self.code.body)}, {len(self.data.body)}}}"
+        return f"{{emit_{opname}, {len(self.code.body)}, {len(self.data.body)}, {self._get_trampoline_mask()}}}"
 
 
 def symbol_to_value(symbol: str) -> tuple[HoleValue, str | None]:
