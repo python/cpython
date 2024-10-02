@@ -3746,7 +3746,7 @@ x_sub(PyLongObject *a, PyLongObject *b)
     return maybe_small_long(long_normalize(z));
 }
 
-PyLongObject *
+static PyLongObject *
 long_add(PyLongObject *a, PyLongObject *b)
 {
     if (_PyLong_BothAreCompact(a, b)) {
