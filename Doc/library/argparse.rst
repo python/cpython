@@ -2097,14 +2097,11 @@ Exceptions
 
    Raised when something goes wrong converting a command line string to a type.
 
-.. We use the "rubric" directive here to avoid creating
-   the "Reference" subsection in the TOC.
 
-.. rubric:: Reference
+.. rubric:: Guides and Tutorials
 
 .. toctree::
    :maxdepth: 1
-   :caption: Guides and Tutorials
 
    ../howto/argparse.rst
    ../howto/argparse-optparse.rst
