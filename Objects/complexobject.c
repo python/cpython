@@ -556,7 +556,6 @@ complex_sub(PyObject *v, PyObject *w)
 
         if (PyComplex_Check(v)) {
             a = ((PyComplexObject *)(v))->cval;
-            errno = 0;
             a = _Py_c_diff(a, b);
         }
         else if (real_to_float(&v, &a.real) < 0) {
