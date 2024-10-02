@@ -1033,13 +1033,14 @@ argument to :meth:`~ArgumentParser.add_argument`.  When the command line is
 parsed, argument values will be checked, and an error message will be displayed
 if the argument was not one of the acceptable values::
 
-    >>> parser = argparse.ArgumentParser()
-    >>> parser.add_argument('move', choices=['rock', 'paper', 'scissors'])
-    >>> parser.parse_args(['rock'])
-    Namespace(move='rock')
-    >>> parser.parse_args(['fire'])
-    usage:  [-h] {rock,paper,scissors}
-    : error: argument move: invalid choice: 'fire' (choose from 'rock', 'paper', 'scissors')
+   >>> parser = argparse.ArgumentParser(prog='game.py')
+   >>> parser.add_argument('move', choices=['rock', 'paper', 'scissors'])
+   >>> parser.parse_args(['rock'])
+   Namespace(move='rock')
+   >>> parser.parse_args(['fire'])
+   usage: game.py [-h] {rock,paper,scissors}
+   game.py: error: argument move: invalid choice: 'fire' (choose from 'rock',
+   'paper', 'scissors')
 
 Note that inclusion in the *choices* sequence is checked after any type_
 conversions have been performed, so the type of the objects in the *choices*
