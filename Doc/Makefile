@@ -305,13 +305,15 @@ serve:
 
 # for development releases: always build
 .PHONY: autobuild-dev
+autobuild-dev: DISTVERSION = $(shell $(PYTHON) tools/extensions/patchlevel.py --short)
 autobuild-dev:
-	$(MAKE) dist SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1'
+	$(MAKE) dist-no-html SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1' DISTVERSION=$(DISTVERSION)
 
-# for quick rebuilds (HTML only)
+# for HTML-only rebuilds
 .PHONY: autobuild-dev-html
+autobuild-dev-html: DISTVERSION = $(shell $(PYTHON) tools/extensions/patchlevel.py --short)
 autobuild-dev-html:
-	$(MAKE) html SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1'
+	$(MAKE) dist-html SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1' DISTVERSION=$(DISTVERSION)
 
 # for stable releases: only build if not in pre-release stage (alpha, beta)
 # release candidate downloads are okay, since the stable tree can be in that stage
