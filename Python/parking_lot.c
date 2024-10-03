@@ -104,7 +104,7 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, PyTime_t timeout)
     else {
         PyTime_t div = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_TIMEOUT);
         // Prevent overflow with clamping the result
-        if ((PyTime_t)PY_DWORD_MAX * 1000000 < div) {
+        if ((PyTime_t)PY_DWORD_MAX < div) {
             millis = PY_DWORD_MAX;
         }
         else {
