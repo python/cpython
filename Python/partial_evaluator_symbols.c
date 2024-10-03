@@ -42,7 +42,7 @@ static _Py_UopsPESymbol NO_SPACE_SYMBOL = {
     .const_val = NULL,
 };
 
-_Py_UopsPESlot
+static _Py_UopsPESlot
 out_of_space(_Py_UOpsPEContext *ctx)
 {
     ctx->done = true;

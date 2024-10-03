@@ -55,7 +55,7 @@ static _Py_UopsSymbol NO_SPACE_SYMBOL = {
     .type_version = 0,
 };
 
-_Py_UopsSymbol *
+static _Py_UopsSymbol *
 out_of_space(_Py_UOpsContext *ctx)
 {
     ctx->done = true;
