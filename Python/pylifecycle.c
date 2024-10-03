@@ -1290,7 +1290,7 @@ init_interp_main(PyThreadState *tstate)
     // This is also needed when the JIT is enabled
 #ifdef _Py_TIER2
     if (is_main_interp) {
-        int enabled = 0;
+        int enabled = 1;
 #if _Py_TIER2 & 2
         enabled = 0;
 #endif
