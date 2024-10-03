@@ -122,7 +122,7 @@ The special characters are:
    matches both ``'foo'`` and ``'foobar'``, while the regular expression ``foo$``
    matches
    only ``'foo'``.  More interestingly, searching for ``foo.$`` in ``'foo1\nfoo2\n'``
-   matches ``'foo2'`` normally, but ``'foo1'`` in :const:`MULTILINE` mode; searching
+   matches ``'foo2'`` normally, but also ``'foo1'`` in :const:`MULTILINE` mode; searching
    for
    a single ``$`` in ``'foo\n'`` will find two (empty) matches: one just before
    the newline, and one at the end of the string.
@@ -1601,6 +1601,8 @@ Regular Expression Examples
 ---------------------------
 
 
+.. _checking-for-a-pair:
+
 Checking for a Pair
 ^^^^^^^^^^^^^^^^^^^
 
@@ -1654,6 +1656,8 @@ To find out what card the pair consists of, one could use the
    >>> pair.match("354aa").group(1)
    'a'
 
+
+.. _simulating-scanf:
 
 Simulating scanf()
 ^^^^^^^^^^^^^^^^^^
@@ -1742,6 +1746,8 @@ beginning with ``'^'`` will match at the beginning of each line. ::
    <re.Match object; span=(4, 5), match='X'>
 
 
+.. _making-a-phonebook:
+
 Making a Phonebook
 ^^^^^^^^^^^^^^^^^^
 
@@ -1803,6 +1809,8 @@ house number from the street name:
    ['Heather', 'Albrecht', '548.326.4584', '919', 'Park Place']]
 
 
+.. _text-munging:
+
 Text Munging
 ^^^^^^^^^^^^
 
@@ -1823,6 +1831,8 @@ in each word of a sentence except for the first and last characters::
    'Pofsroser Aodlambelk, plasee reoprt yuor asnebces potlmrpy.'
 
 
+.. _finding-all-adverbs:
+
 Finding all Adverbs
 ^^^^^^^^^^^^^^^^^^^
 
@@ -1835,6 +1845,8 @@ the following manner::
    >>> re.findall(r"\w+ly\b", text)
    ['carefully', 'quickly']
 
+
+.. _finding-all-adverbs-and-their-positions:
 
 Finding all Adverbs and their Positions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1851,6 +1863,8 @@ to find all of the adverbs *and their positions* in some text, they would use
    07-16: carefully
    40-47: quickly
 
+
+.. _raw-string-notation:
 
 Raw String Notation
 ^^^^^^^^^^^^^^^^^^^
@@ -1875,6 +1889,8 @@ functionally identical::
    >>> re.match("\\\\", r"\\")
    <re.Match object; span=(0, 1), match='\\'>
 
+
+.. _writing-a-tokenizer:
 
 Writing a Tokenizer
 ^^^^^^^^^^^^^^^^^^^
