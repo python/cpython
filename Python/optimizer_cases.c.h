@@ -363,8 +363,6 @@
             {
                 assert(PyFloat_CheckExact(sym_get_const(left)));
                 assert(PyFloat_CheckExact(sym_get_const(right)));
-                stack_pointer += -2;
-                assert(WITHIN_STACK_BOUNDS());
                 PyObject *temp = PyFloat_FromDouble(
                     PyFloat_AS_DOUBLE(sym_get_const(left)) *
                     PyFloat_AS_DOUBLE(sym_get_const(right)));
@@ -378,11 +376,9 @@
             }
             else {
                 res = sym_new_type(ctx, &PyFloat_Type);
-                stack_pointer += -2;
-                assert(WITHIN_STACK_BOUNDS());
             }
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -398,8 +394,6 @@
             {
                 assert(PyFloat_CheckExact(sym_get_const(left)));
                 assert(PyFloat_CheckExact(sym_get_const(right)));
-                stack_pointer += -2;
-                assert(WITHIN_STACK_BOUNDS());
                 PyObject *temp = PyFloat_FromDouble(
                     PyFloat_AS_DOUBLE(sym_get_const(left)) +
                     PyFloat_AS_DOUBLE(sym_get_const(right)));
@@ -413,11 +407,9 @@
             }
             else {
                 res = sym_new_type(ctx, &PyFloat_Type);
-                stack_pointer += -2;
-                assert(WITHIN_STACK_BOUNDS());
             }
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -433,8 +425,6 @@
             {
                 assert(PyFloat_CheckExact(sym_get_const(left)));
                 assert(PyFloat_CheckExact(sym_get_const(right)));
-                stack_pointer += -2;
-                assert(WITHIN_STACK_BOUNDS());
                 PyObject *temp = PyFloat_FromDouble(
                     PyFloat_AS_DOUBLE(sym_get_const(left)) -
                     PyFloat_AS_DOUBLE(sym_get_const(right)));
@@ -448,11 +438,9 @@
             }
             else {
                 res = sym_new_type(ctx, &PyFloat_Type);
-                stack_pointer += -2;
-                assert(WITHIN_STACK_BOUNDS());
             }
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
