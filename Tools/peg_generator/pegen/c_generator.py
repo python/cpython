@@ -3,7 +3,7 @@ import os.path
 import re
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import IO, Any, Dict, List, Optional, Set, Text, Tuple
+from typing import IO, Any, Callable, Dict, List, Optional, Set, Text, Tuple
 
 from pegen import grammar
 from pegen.grammar import (
@@ -206,25 +206,6 @@ class CCallMakerVisitor(GrammarVisitor):
                 comment=f"token='{val}'",
             )
 
-    def visit_Rhs(self, node: Rhs) -> FunctionCall:
-        if node.can_be_inlined:
-            return self.generate_call(node.alts[0].items[0])
-
-        node_str = f"{node}"
-        key = f"rhs_{node_str}"
-        if key in self.cache:
-            name = self.cache[key]
-        else:
-            name = self.gen.artificial_rule_from_rhs(node)
-            self.cache[key] = name
-
-        return FunctionCall(
-            assigned_variable=f"{name}_var",
-            function=f"{name}_rule",
-            arguments=["p"],
-            comment=node_str,
-        )
-
     def visit_NamedItem(self, node: NamedItem) -> FunctionCall:
         call = self.generate_call(node.item)
         if node.name:
@@ -306,55 +287,61 @@ class CCallMakerVisitor(GrammarVisitor):
             comment=f"{node}",
         )
 
-    def visit_Repeat0(self, node: Repeat0) -> FunctionCall:
+    def _generate_artificial_rule_call(
+        self,
+        node: Any,
+        prefix: str,
+        rule_generation_func: Callable[[], str],
+        return_type: Optional[str] = None,
+    ) -> FunctionCall:
         node_str = f"{node}"
-        key = f"repeat0_{node_str}"
+        key = f"{prefix}_{node_str}"
         if key in self.cache:
             name = self.cache[key]
         else:
-            name = self.gen.artificial_rule_from_repeat(node.node, False)
+            name = rule_generation_func()
             self.cache[key] = name
 
         return FunctionCall(
             assigned_variable=f"{name}_var",
             function=f"{name}_rule",
             arguments=["p"],
-            return_type="asdl_seq *",
+            return_type=return_type,
             comment=node_str,
+        )
+
+    def visit_Rhs(self, node: Rhs) -> FunctionCall:
+        if node.can_be_inlined:
+            return self.generate_call(node.alts[0].items[0])
+
+        return self._generate_artificial_rule_call(
+            node,
+            "rhs",
+            lambda: self.gen.artificial_rule_from_rhs(node),
+        )
+
+    def visit_Repeat0(self, node: Repeat0) -> FunctionCall:
+        return self._generate_artificial_rule_call(
+            node,
+            "repeat0",
+            lambda: self.gen.artificial_rule_from_repeat(node.node, False),
+            "asdl_seq *",
         )
 
     def visit_Repeat1(self, node: Repeat1) -> FunctionCall:
-        node_str = f"{node}"
-        key = f"repeat1_{node_str}"
-        if key in self.cache:
-            name = self.cache[key]
-        else:
-            name = self.gen.artificial_rule_from_repeat(node.node, True)
-            self.cache[key] = name
-
-        return FunctionCall(
-            assigned_variable=f"{name}_var",
-            function=f"{name}_rule",
-            arguments=["p"],
-            return_type="asdl_seq *",
-            comment=node_str,
+        return self._generate_artificial_rule_call(
+            node,
+            "repeat1",
+            lambda: self.gen.artificial_rule_from_repeat(node.node, True),
+            "asdl_seq *",
         )
 
     def visit_Gather(self, node: Gather) -> FunctionCall:
-        node_str = f"{node}"
-        key = f"gather_{node_str}"
-        if key in self.cache:
-            name = self.cache[key]
-        else:
-            name = self.gen.artificial_rule_from_gather(node)
-            self.cache[key] = name
-
-        return FunctionCall(
-            assigned_variable=f"{name}_var",
-            function=f"{name}_rule",
-            arguments=["p"],
-            return_type="asdl_seq *",
-            comment=node_str,
+        return self._generate_artificial_rule_call(
+            node,
+            "gather",
+            lambda: self.gen.artificial_rule_from_gather(node),
+            "asdl_seq *",
         )
 
     def visit_Group(self, node: Group) -> FunctionCall:
