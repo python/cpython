@@ -27,7 +27,7 @@
             _Py_UopsPESlot value;
             value = GETLOCAL(oparg);
             // We guarantee this will error - just bail and don't optimize it.
-            if (sym_is_null(value)) {
+            if (sym_is_null(&value)) {
                 ctx->done = true;
             }
             stack_pointer[0] = value;
@@ -70,9 +70,9 @@
         case _STORE_FAST: {
             _Py_UopsPESlot value;
             value = stack_pointer[-1];
-            _PyUOpInstruction *origin = sym_get_origin(value);
+            _PyUOpInstruction *origin = sym_get_origin(&value);
             // Gets rid of things like x = x.
-            if (sym_is_virtual(value) &&
+            if (sym_is_virtual(&value) &&
                 origin != NULL &&
                 origin->opcode == _LOAD_FAST &&
                 origin->oparg == oparg) {
@@ -91,7 +91,7 @@
         case _POP_TOP: {
             _Py_UopsPESlot pop;
             pop = stack_pointer[-1];
-            if (!sym_is_virtual(pop)) {
+            if (!sym_is_virtual(&pop)) {
                 MATERIALIZE_INST();
             }
             stack_pointer += -1;
@@ -346,8 +346,15 @@
         }
 
         case _BINARY_SUBSCR_INIT_CALL: {
-            _PyInterpreterFrame *new_frame;
-            new_frame = sym_new_not_null(ctx);
+            _Py_UopsPESlot sub;
+            _Py_UopsPESlot container;
+            _Py_UopsPESlot new_frame;
+            sub = stack_pointer[-1];
+            container = stack_pointer[-2];
+            (void)container;
+            (void)sub;
+            new_frame = (_Py_UopsPESlot){NULL, NULL};
+            ctx->done = true;
             stack_pointer[-2] = new_frame;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -407,9 +414,30 @@
         }
 
         case _RETURN_VALUE: {
+            _Py_UopsPESlot retval;
             _Py_UopsPESlot res;
-            res = sym_new_not_null(ctx);
-            stack_pointer[-1] = res;
+            retval = stack_pointer[-1];
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            ctx->frame->stack_pointer = stack_pointer;
+            frame_pop(ctx);
+            stack_pointer = ctx->frame->stack_pointer;
+            res = retval;
+            /* Stack space handling */
+            assert(corresponding_check_stack == NULL);
+            assert(co != NULL);
+            int framesize = co->co_framesize;
+            assert(framesize > 0);
+            assert(framesize <= curr_space);
+            curr_space -= framesize;
+            co = get_code(this_instr);
+            if (co == NULL) {
+                // might be impossible, but bailing is still safe
+                ctx->done = true;
+            }
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -439,16 +467,15 @@
         /* _SEND is not a viable micro-op for tier 2 */
 
         case _SEND_GEN_FRAME: {
-            _PyInterpreterFrame *gen_frame;
-            gen_frame = sym_new_not_null(ctx);
-            stack_pointer[-1] = gen_frame;
+            // We are about to hit the end of the trace:
+            ctx->done = true;
             break;
         }
 
         case _YIELD_VALUE: {
-            _Py_UopsPESlot value;
-            value = sym_new_not_null(ctx);
-            stack_pointer[-1] = value;
+            _Py_UopsPESlot res;
+            res = sym_new_unknown(ctx);
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -867,8 +894,14 @@
         }
 
         case _LOAD_ATTR_PROPERTY_FRAME: {
-            _PyInterpreterFrame *new_frame;
-            new_frame = sym_new_not_null(ctx);
+            _Py_UopsPESlot owner;
+            _Py_UopsPESlot new_frame;
+            owner = stack_pointer[-1];
+            PyObject *fget = (PyObject *)this_instr->operand;
+            (void)fget;
+            (void)owner;
+            new_frame = (_Py_UopsPESlot){NULL, NULL};
+            ctx->done = true;
             stack_pointer[-1] = new_frame;
             break;
         }
@@ -1145,11 +1178,8 @@
         }
 
         case _FOR_ITER_GEN_FRAME: {
-            _PyInterpreterFrame *gen_frame;
-            gen_frame = sym_new_not_null(ctx);
-            stack_pointer[0] = gen_frame;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
+            /* We are about to hit the end of the trace */
+            ctx->done = true;
             break;
         }
 
@@ -1269,8 +1299,22 @@
         /* _MONITOR_CALL is not a viable micro-op for tier 2 */
 
         case _PY_FRAME_GENERAL: {
-            _PyInterpreterFrame *new_frame;
-            new_frame = sym_new_not_null(ctx);
+            _Py_UopsPESlot *args;
+            _Py_UopsPESlot self_or_null;
+            _Py_UopsPESlot callable;
+            _Py_UopsPESlot new_frame;
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            (void)(self_or_null);
+            (void)(callable);
+            PyCodeObject *co = NULL;
+            assert((this_instr + 2)->opcode == _PUSH_FRAME);
+            co = get_code_with_logging((this_instr + 2));
+            if (co == NULL) {
+                ctx->done = true;
+                break;
+            }
+            new_frame = (_Py_UopsPESlot){(_Py_UopsPESymbol *)frame_new(ctx, co, 0, NULL, 0), NULL};
             stack_pointer[-2 - oparg] = new_frame;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1339,8 +1383,34 @@
         }
 
         case _INIT_CALL_PY_EXACT_ARGS: {
-            _PyInterpreterFrame *new_frame;
-            new_frame = sym_new_not_null(ctx);
+            _Py_UopsPESlot *args;
+            _Py_UopsPESlot self_or_null;
+            _Py_UopsPESlot callable;
+            _Py_UopsPESlot new_frame;
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            int argcount = oparg;
+            (void)callable;
+            PyCodeObject *co = NULL;
+            assert((this_instr + 2)->opcode == _PUSH_FRAME);
+            co = get_code_with_logging((this_instr + 2));
+            if (co == NULL) {
+                ctx->done = true;
+                break;
+            }
+            assert(self_or_null.sym != NULL);
+            assert(args != NULL);
+            if (sym_is_not_null(&self_or_null)) {
+                // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in VM
+                args--;
+                argcount++;
+            }
+            if (sym_is_null(&self_or_null) || sym_is_not_null(&self_or_null)) {
+                new_frame = (_Py_UopsPESlot){(_Py_UopsPESymbol *)frame_new(ctx, co, 0, args, argcount), NULL};
+            } else {
+                new_frame = (_Py_UopsPESlot){(_Py_UopsPESymbol *)frame_new(ctx, co, 0, NULL, 0), NULL};
+            }
             stack_pointer[-2 - oparg] = new_frame;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1348,8 +1418,38 @@
         }
 
         case _PUSH_FRAME: {
+            _Py_UopsPESlot new_frame;
+            new_frame = stack_pointer[-1];
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
+            ctx->frame->stack_pointer = stack_pointer;
+            ctx->frame = (_Py_UOpsPEAbstractFrame *)new_frame.sym;
+            ctx->curr_frame_depth++;
+            stack_pointer = ((_Py_UOpsPEAbstractFrame *)new_frame.sym)->stack_pointer;
+            co = get_code(this_instr);
+            if (co == NULL) {
+                // should be about to _EXIT_TRACE anyway
+                ctx->done = true;
+                break;
+            }
+            /* Stack space handling */
+            int framesize = co->co_framesize;
+            assert(framesize > 0);
+            curr_space += framesize;
+            if (curr_space < 0 || curr_space > INT32_MAX) {
+                // won't fit in signed 32-bit int
+                ctx->done = true;
+                break;
+            }
+            max_space = curr_space > max_space ? curr_space : max_space;
+            if (first_valid_check_stack == NULL) {
+                first_valid_check_stack = corresponding_check_stack;
+            }
+            else if (corresponding_check_stack) {
+                // delete all but the first valid _CHECK_STACK_SPACE
+                corresponding_check_stack->opcode = _NOP;
+            }
+            corresponding_check_stack = NULL;
             break;
         }
 
@@ -1395,8 +1495,18 @@
         }
 
         case _CREATE_INIT_FRAME: {
-            _PyInterpreterFrame *init_frame;
-            init_frame = sym_new_not_null(ctx);
+            _Py_UopsPESlot *args;
+            _Py_UopsPESlot init;
+            _Py_UopsPESlot self;
+            _Py_UopsPESlot init_frame;
+            args = &stack_pointer[-oparg];
+            init = stack_pointer[-1 - oparg];
+            self = stack_pointer[-2 - oparg];
+            (void)self;
+            (void)init;
+            (void)args;
+            init_frame = (_Py_UopsPESlot){NULL, NULL};
+            ctx->done = true;
             stack_pointer[-2 - oparg] = init_frame;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1510,8 +1620,21 @@
         /* _DO_CALL_KW is not a viable micro-op for tier 2 */
 
         case _PY_FRAME_KW: {
-            _PyInterpreterFrame *new_frame;
-            new_frame = sym_new_not_null(ctx);
+            _Py_UopsPESlot kwnames;
+            _Py_UopsPESlot *args;
+            _Py_UopsPESlot self_or_null;
+            _Py_UopsPESlot callable;
+            _Py_UopsPESlot new_frame;
+            kwnames = stack_pointer[-1];
+            args = &stack_pointer[-1 - oparg];
+            self_or_null = stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
+            (void)callable;
+            (void)self_or_null;
+            (void)args;
+            (void)kwnames;
+            new_frame = (_Py_UopsPESlot){NULL, NULL};
+            ctx->done = true;
             stack_pointer[-3 - oparg] = new_frame;
             stack_pointer += -2 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1576,7 +1699,22 @@
 
         case _RETURN_GENERATOR: {
             _Py_UopsPESlot res;
-            res = sym_new_not_null(ctx);
+            ctx->frame->stack_pointer = stack_pointer;
+            frame_pop(ctx);
+            stack_pointer = ctx->frame->stack_pointer;
+            res = sym_new_unknown(ctx);
+            /* Stack space handling */
+            assert(corresponding_check_stack == NULL);
+            assert(co != NULL);
+            int framesize = co->co_framesize;
+            assert(framesize > 0);
+            assert(framesize <= curr_space);
+            curr_space -= framesize;
+            co = get_code(this_instr);
+            if (co == NULL) {
+                // might be impossible, but bailing is still safe
+                ctx->done = true;
+            }
             stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());

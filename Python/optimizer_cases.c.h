@@ -48,7 +48,7 @@
         case _LOAD_FAST_AND_CLEAR: {
             _Py_UopsSymbol *value;
             value = GETLOCAL(oparg);
-            _Py_UopsPESlot temp = sym_new_null(ctx);
+            _Py_UopsSymbol *temp = sym_new_null(ctx);
             GETLOCAL(oparg) = temp;
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -556,14 +556,14 @@
         case _BINARY_SUBSCR_INIT_CALL: {
             _Py_UopsSymbol *sub;
             _Py_UopsSymbol *container;
-            _Py_UopsSymbol *new_frame;
+            _Py_UOpsAbstractFrame *new_frame;
             sub = stack_pointer[-1];
             container = stack_pointer[-2];
             (void)container;
             (void)sub;
-            new_frame = (_Py_UopsPESlot){NULL, 0};
+            new_frame = NULL;
             ctx->done = true;
-            stack_pointer[-2] = new_frame;
+            stack_pointer[-2] = (_Py_UopsSymbol *)new_frame;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -1107,7 +1107,7 @@
             uint16_t index = (uint16_t)this_instr->operand;
             (void)index;
             null = sym_new_null(ctx);
-            attr = (_Py_UopsPESlot){NULL, 0};
+            attr = NULL;
             if (this_instr[-1].opcode == _NOP) {
                 // Preceding _CHECK_ATTR_MODULE was removed: mod is const and dict is watched.
                 assert(sym_is_const(owner));
@@ -1120,7 +1120,7 @@
                     attr = sym_new_const(ctx, res);
                 }
             }
-            if (attr.sym == NULL) {
+            if (attr == NULL) {
                 /* No conversion made. We don't know what `attr` is. */
                 attr = sym_new_not_null(ctx);
             }
@@ -1192,14 +1192,14 @@
 
         case _LOAD_ATTR_PROPERTY_FRAME: {
             _Py_UopsSymbol *owner;
-            _Py_UopsSymbol *new_frame;
+            _Py_UOpsAbstractFrame *new_frame;
             owner = stack_pointer[-1];
             PyObject *fget = (PyObject *)this_instr->operand;
             (void)fget;
             (void)owner;
-            new_frame = (_Py_UopsPESlot){NULL, 0};
+            new_frame = NULL;
             ctx->done = true;
-            stack_pointer[-1] = new_frame;
+            stack_pointer[-1] = (_Py_UopsSymbol *)new_frame;
             break;
         }
 
@@ -1662,7 +1662,7 @@
             _Py_UopsSymbol **args;
             _Py_UopsSymbol *self_or_null;
             _Py_UopsSymbol *callable;
-            _Py_UopsSymbol *new_frame;
+            _Py_UOpsAbstractFrame *new_frame;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             (void)(self_or_null);
@@ -1674,8 +1674,8 @@
                 ctx->done = true;
                 break;
             }
-            new_frame.sym = frame_new(ctx, co, 0, NULL, 0);
-            stack_pointer[-2 - oparg] = new_frame;
+            new_frame = frame_new(ctx, co, 0, NULL, 0);
+            stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)new_frame;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -1766,7 +1766,7 @@
             _Py_UopsSymbol **args;
             _Py_UopsSymbol *self_or_null;
             _Py_UopsSymbol *callable;
-            _Py_UopsSymbol *new_frame;
+            _Py_UOpsAbstractFrame *new_frame;
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
@@ -1779,7 +1779,7 @@
                 ctx->done = true;
                 break;
             }
-            assert(self_or_null.sym != NULL);
+            assert(self_or_null != NULL);
             assert(args != NULL);
             if (sym_is_not_null(self_or_null)) {
                 // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in VM
@@ -1787,25 +1787,25 @@
                 argcount++;
             }
             if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
-                new_frame.sym = (_Py_UopsSymbol *)frame_new(ctx, co, 0, args, argcount);
+                new_frame = frame_new(ctx, co, 0, args, argcount);
             } else {
-                new_frame.sym = (_Py_UopsSymbol *)frame_new(ctx, co, 0, NULL, 0);
+                new_frame = frame_new(ctx, co, 0, NULL, 0);
             }
-            stack_pointer[-2 - oparg] = new_frame;
+            stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)new_frame;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _PUSH_FRAME: {
-            _Py_UopsSymbol *new_frame;
-            new_frame = stack_pointer[-1];
+            _Py_UOpsAbstractFrame *new_frame;
+            new_frame = (_Py_UOpsAbstractFrame *)stack_pointer[-1];
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             ctx->frame->stack_pointer = stack_pointer;
-            ctx->frame = (_Py_UOpsAbstractFrame *)new_frame.sym;
+            ctx->frame = new_frame;
             ctx->curr_frame_depth++;
-            stack_pointer = ((_Py_UOpsAbstractFrame *)new_frame.sym)->stack_pointer;
+            stack_pointer = new_frame->stack_pointer;
             co = get_code(this_instr);
             if (co == NULL) {
                 // should be about to _EXIT_TRACE anyway
@@ -1886,16 +1886,16 @@
             _Py_UopsSymbol **args;
             _Py_UopsSymbol *init;
             _Py_UopsSymbol *self;
-            _Py_UopsSymbol *init_frame;
+            _Py_UOpsAbstractFrame *init_frame;
             args = &stack_pointer[-oparg];
             init = stack_pointer[-1 - oparg];
             self = stack_pointer[-2 - oparg];
             (void)self;
             (void)init;
             (void)args;
-            init_frame = (_Py_UopsPESlot){NULL, 0};
+            init_frame = NULL;
             ctx->done = true;
-            stack_pointer[-2 - oparg] = init_frame;
+            stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)init_frame;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -2012,7 +2012,7 @@
             _Py_UopsSymbol **args;
             _Py_UopsSymbol *self_or_null;
             _Py_UopsSymbol *callable;
-            _Py_UopsSymbol *new_frame;
+            _Py_UOpsAbstractFrame *new_frame;
             kwnames = stack_pointer[-1];
             args = &stack_pointer[-1 - oparg];
             self_or_null = stack_pointer[-2 - oparg];
@@ -2021,9 +2021,9 @@
             (void)self_or_null;
             (void)args;
             (void)kwnames;
-            new_frame = (_Py_UopsPESlot){NULL, 0};
+            new_frame = NULL;
             ctx->done = true;
-            stack_pointer[-3 - oparg] = new_frame;
+            stack_pointer[-3 - oparg] = (_Py_UopsSymbol *)new_frame;
             stack_pointer += -2 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             break;

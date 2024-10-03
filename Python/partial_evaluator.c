@@ -110,6 +110,21 @@ get_code_with_logging(_PyUOpInstruction *op)
     return co;
 }
 
+#define sym_is_not_null _Py_uop_pe_sym_is_not_null
+#define sym_is_const _Py_uop_pe_sym_is_const
+#define sym_get_const _Py_uop_pe_sym_get_const
+#define sym_new_unknown _Py_uop_pe_sym_new_unknown
+#define sym_new_not_null _Py_uop_pe_sym_new_not_null
+#define sym_is_null _Py_uop_pe_sym_is_null
+#define sym_new_const _Py_uop_pe_sym_new_const
+#define sym_new_null _Py_uop_pe_sym_new_null
+#define sym_set_null(SYM) _Py_uop_pe_sym_set_null(ctx, SYM)
+#define sym_set_non_null(SYM) _Py_uop_pe_sym_set_non_null(ctx, SYM)
+#define sym_set_const(SYM, CNST) _Py_uop_pe_sym_set_const(ctx, SYM, CNST)
+#define sym_is_bottom _Py_uop_pe_sym_is_bottom
+#define frame_new _Py_uop_pe_frame_new
+#define frame_pop _Py_uop_pe_frame_pop
+
 #define MATERIALIZE_INST() (this_instr->is_virtual = false)
 #define sym_set_origin_inst_override _Py_uop_sym_set_origin_inst_override
 #define sym_is_virtual _Py_uop_sym_is_virtual
@@ -134,13 +149,13 @@ materialize_stack(_Py_UopsPESlot *stack_start, _Py_UopsPESlot *stack_end)
 }
 
 static void
-materialize_frame(_Py_UOpsAbstractFrame *frame)
+materialize_frame(_Py_UOpsPEAbstractFrame *frame)
 {
     materialize_stack(frame->stack, frame->stack_pointer);
 }
 
 static void
-materialize_ctx(_Py_UOpsContext *ctx)
+materialize_ctx(_Py_UOpsPEContext *ctx)
 {
     for (int i = 0; i < ctx->curr_frame_depth; i++) {
         materialize_frame(&ctx->frames[i]);
@@ -167,7 +182,7 @@ partial_evaluate_uops(
     _PyUOpInstruction *corresponding_check_stack = NULL;
 
     _Py_uop_abstractcontext_init(ctx);
-    _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, curr_stacklen, NULL, 0);
+    _Py_UOpsPEAbstractFrame *frame = _Py_uop_pe_frame_new(ctx, co, curr_stacklen, NULL, 0);
     if (frame == NULL) {
         return -1;
     }
@@ -247,12 +262,12 @@ partial_evaluate_uops(
         // retrying later.
         DPRINTF(3, "\n");
         DPRINTF(1, "Hit bottom in pe's abstract interpreter\n");
-        _Py_uop_abstractcontext_fini(ctx);
+        _Py_uop_pe_abstractcontext_fini(ctx);
         return 0;
     }
 
     if (ctx->out_of_space || !is_terminator(this_instr)) {
-        _Py_uop_abstractcontext_fini(ctx);
+        _Py_uop_pe_abstractcontext_fini(ctx);
         return trace_len;
     }
     else {
@@ -273,7 +288,7 @@ partial_evaluate_uops(
                 trace[x] = trace_dest[x];
             }
         }
-        _Py_uop_abstractcontext_fini(ctx);
+        _Py_uop_pe_abstractcontext_fini(ctx);
         return trace_dest_len;
     }
 
@@ -283,7 +298,7 @@ error:
     if (opcode <= MAX_UOP_ID) {
         OPT_ERROR_IN_OPCODE(opcode);
     }
-    _Py_uop_abstractcontext_fini(ctx);
+    _Py_uop_pe_abstractcontext_fini(ctx);
     return -1;
 
 }

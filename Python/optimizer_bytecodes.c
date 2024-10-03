@@ -85,11 +85,11 @@ dummy_func(void) {
 
     op(_LOAD_FAST_AND_CLEAR, (-- value)) {
         value = GETLOCAL(oparg);
-        _Py_UopsPESlot temp = sym_new_null(ctx);
+        _Py_UopsSymbol *temp = sym_new_null(ctx);
         GETLOCAL(oparg) = temp;
     }
 
-    _static op(_STORE_FAST, (value --)) {
+    op(_STORE_FAST, (value --)) {
         GETLOCAL(oparg) = value;
     }
 
@@ -329,10 +329,10 @@ dummy_func(void) {
         }
     }
 
-    op(_BINARY_SUBSCR_INIT_CALL, (container, sub -- new_frame)) {
+    op(_BINARY_SUBSCR_INIT_CALL, (container, sub -- new_frame: _Py_UOpsAbstractFrame *)) {
         (void)container;
         (void)sub;
-        new_frame = (_Py_UopsPESlot){NULL, 0};
+        new_frame = NULL;
         ctx->done = true;
     }
 
@@ -487,7 +487,7 @@ dummy_func(void) {
     op(_LOAD_ATTR_MODULE, (index/1, owner -- attr, null if (oparg & 1))) {
         (void)index;
         null = sym_new_null(ctx);
-        attr = (_Py_UopsPESlot){NULL, 0};
+        attr = NULL;
         if (this_instr[-1].opcode == _NOP) {
             // Preceding _CHECK_ATTR_MODULE was removed: mod is const and dict is watched.
             assert(sym_is_const(owner));
@@ -500,7 +500,7 @@ dummy_func(void) {
                 attr = sym_new_const(ctx, res);
             }
         }
-        if (attr.sym == NULL) {
+        if (attr == NULL) {
             /* No conversion made. We don't know what `attr` is. */
             attr = sym_new_not_null(ctx);
         }
@@ -545,10 +545,10 @@ dummy_func(void) {
         self = owner;
     }
 
-    op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame)) {
+    op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame: _Py_UOpsAbstractFrame *)) {
         (void)fget;
         (void)owner;
-        new_frame = (_Py_UopsPESlot){NULL, 0};
+        new_frame = NULL;
         ctx->done = true;
     }
 
@@ -568,7 +568,7 @@ dummy_func(void) {
         sym_set_type(callable, &PyMethod_Type);
     }
 
-    op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame)) {
+    op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
         int argcount = oparg;
 
         (void)callable;
@@ -581,7 +581,8 @@ dummy_func(void) {
             break;
         }
 
-        assert(self_or_null.sym != NULL);
+
+        assert(self_or_null != NULL);
         assert(args != NULL);
         if (sym_is_not_null(self_or_null)) {
             // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in VM
@@ -590,9 +591,9 @@ dummy_func(void) {
         }
 
         if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
-            new_frame.sym = (_Py_UopsSymbol *)frame_new(ctx, co, 0, args, argcount);
+            new_frame = frame_new(ctx, co, 0, args, argcount);
         } else {
-            new_frame.sym = (_Py_UopsSymbol *)frame_new(ctx, co, 0, NULL, 0);
+            new_frame = frame_new(ctx, co, 0, NULL, 0);
 
         }
     }
@@ -605,7 +606,7 @@ dummy_func(void) {
         maybe_self = sym_new_not_null(ctx);
     }
 
-    op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame)) {
+    op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
         (void)(self_or_null);
         (void)(callable);
         PyCodeObject *co = NULL;
@@ -616,15 +617,15 @@ dummy_func(void) {
             break;
         }
 
-        new_frame.sym = frame_new(ctx, co, 0, NULL, 0);
+        new_frame = frame_new(ctx, co, 0, NULL, 0);
     }
 
-    op(_PY_FRAME_KW, (callable, self_or_null, args[oparg], kwnames -- new_frame)) {
+    op(_PY_FRAME_KW, (callable, self_or_null, args[oparg], kwnames -- new_frame: _Py_UOpsAbstractFrame *)) {
         (void)callable;
         (void)self_or_null;
         (void)args;
         (void)kwnames;
-        new_frame = (_Py_UopsPESlot){NULL, 0};
+        new_frame = NULL;
         ctx->done = true;
     }
 
@@ -637,11 +638,11 @@ dummy_func(void) {
         init = sym_new_not_null(ctx);
     }
 
-    op(_CREATE_INIT_FRAME, (self, init, args[oparg] -- init_frame)) {
+    op(_CREATE_INIT_FRAME, (self, init, args[oparg] -- init_frame: _Py_UOpsAbstractFrame *)) {
         (void)self;
         (void)init;
         (void)args;
-        init_frame = (_Py_UopsPESlot){NULL, 0};
+        init_frame = NULL;
         ctx->done = true;
     }
 
@@ -715,12 +716,12 @@ dummy_func(void) {
         Py_UNREACHABLE();
     }
 
-    op(_PUSH_FRAME, (new_frame -- unused if (0))) {
+    op(_PUSH_FRAME, (new_frame: _Py_UOpsAbstractFrame * -- unused if (0))) {
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;
-        ctx->frame = (_Py_UOpsAbstractFrame *)new_frame.sym;
+        ctx->frame = new_frame;
         ctx->curr_frame_depth++;
-        stack_pointer = ((_Py_UOpsAbstractFrame *)new_frame.sym)->stack_pointer;
+        stack_pointer = new_frame->stack_pointer;
         co = get_code(this_instr);
         if (co == NULL) {
             // should be about to _EXIT_TRACE anyway
