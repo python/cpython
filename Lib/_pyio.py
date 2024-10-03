@@ -1796,6 +1796,7 @@ class FileIO(RawIOBase):
 
     def _isatty_openonly(self):
         """Checks whether the file is a TTY using an open-only optimization.
+
         Normally isatty always makes a system call. In the case of open() there
         is a _inside the same python call_ stat result which we can use to
         skip that system call for non-character files. Outside of that context
