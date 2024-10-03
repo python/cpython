@@ -4859,7 +4859,7 @@ curses_capi_start_color_called(void)
 }
 
 static void *
-_curses_capi_new(_cursesmodule_state *state)
+curses_capi_new(_cursesmodule_state *state)
 {
     assert(state->window_type != NULL);
     void **capi = (void **)PyMem_Calloc(PyCurses_API_pointers, sizeof(void *));
@@ -4875,7 +4875,7 @@ _curses_capi_new(_cursesmodule_state *state)
 }
 
 static void
-_curses_capi_free(void *capi)
+curses_capi_free(void *capi)
 {
     assert(capi != NULL);
     void **capi_ptr = (void **)capi;
@@ -4887,17 +4887,17 @@ _curses_capi_free(void *capi)
 /* Module C API Capsule */
 
 static void
-_curses_capi_capsule_destructor(PyObject *op)
+curses_capi_capsule_destructor(PyObject *op)
 {
     void *capi = PyCapsule_GetPointer(op, PyCurses_CAPSULE_NAME);
-    _curses_capi_free(capi);
+    curses_capi_free(capi);
 }
 
 static PyObject *
-_curses_capi_capsule_new(void *capi)
+curses_capi_capsule_new(void *capi)
 {
     return PyCapsule_New(capi, PyCurses_CAPSULE_NAME,
-                         _curses_capi_capsule_destructor);
+                         curses_capi_capsule_destructor);
 }
 
 /* Module initialization */
@@ -4922,14 +4922,14 @@ cursesmodule_exec(PyObject *module)
     }
 
     /* Create the C API object */
-    void *capi = _curses_capi_new(state);
+    void *capi = curses_capi_new(state);
     if (capi == NULL) {
         return -1;
     }
     /* Add a capsule for the C API */
-    PyObject *capi_capsule = _curses_capi_capsule_new(capi);
+    PyObject *capi_capsule = curses_capi_capsule_new(capi);
     if (capi_capsule == NULL) {
-        _curses_capi_free(capi);
+        curses_capi_free(capi);
         return -1;
     }
     int rc = PyDict_SetItemString(module_dict, "_C_API", capi_capsule);
