@@ -1207,13 +1207,14 @@ _io_FileIO_isatty_impl(fileio *self)
 
 /* Checks whether the file is a TTY using an open-only optimization.
 
-   Normally isatty always makes a system call. In the case of open() there
-   is a _inside the same python call_ stat result which we can use to
-   skip that system call for non-character files. Outside of that context
-   this is subject to TOCTOU issues (the FD has been returned to user code
-   and arbitrary syscalls could have happened). */
+   TTYs are always character devices. If the interpreter knows a file is
+   not a character device when it would call `isatty`, can skip that call.
+   Inside `open()`  there is a fresh stat result that contains that
+   information. Use the stat result to skip a system call. Outside of that
+   context TOCTOU issues (the fd could be arbitrarily modified by
+   surrounding code). */
 static PyObject *
-_io_FileIO_isatty_openonly(fileio *self, void *Py_UNUSED(ignored))
+_io_FileIO_isatty_open_only(fileio *self, void *Py_UNUSED(ignored))
 {
     if (self->stat_atopen != NULL && !S_ISCHR(self->stat_atopen->st_mode)) {
         Py_RETURN_FALSE;
@@ -1237,7 +1238,7 @@ static PyMethodDef fileio_methods[] = {
     _IO_FILEIO_WRITABLE_METHODDEF
     _IO_FILEIO_FILENO_METHODDEF
     _IO_FILEIO_ISATTY_METHODDEF
-    {"_isatty_openonly", (PyCFunction)_io_FileIO_isatty_openonly, METH_NOARGS},
+    {"_isatty_open_only", (PyCFunction)_io_FileIO_isatty_open_only, METH_NOARGS},
     {"_dealloc_warn", (PyCFunction)fileio_dealloc_warn, METH_O, NULL},
     {"__reduce__", _PyIOBase_cannot_pickle, METH_NOARGS},
     {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_O},

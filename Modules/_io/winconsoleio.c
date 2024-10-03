@@ -1128,7 +1128,7 @@ static PyMethodDef winconsoleio_methods[] = {
     _IO__WINDOWSCONSOLEIO_WRITABLE_METHODDEF
     _IO__WINDOWSCONSOLEIO_FILENO_METHODDEF
     _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
-    {"_isatty_openonly", (PyCFunction)_io__WindowsConsoleIO_isatty, METH_NOARGS},
+    {"_isatty_open_only", (PyCFunction)_io__WindowsConsoleIO_isatty, METH_NOARGS},
     {NULL,           NULL}             /* sentinel */
 };
 
