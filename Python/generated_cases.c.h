@@ -4701,9 +4701,7 @@
             int original_opcode = 0;
             if (tstate->tracing) {
                 PyCodeObject *code = _PyFrame_GetCode(frame);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
                 original_opcode = code->_co_monitoring->lines[(int)(this_instr - _PyCode_CODE(code))].original_opcode;
-                stack_pointer = _PyFrame_GetStackPointer(frame);
                 next_instr = this_instr;
             } else {
                 _PyFrame_SetStackPointer(frame, stack_pointer);

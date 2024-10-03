@@ -699,7 +699,7 @@ def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, tuple[le
                 continue
         elif tkn.kind == "RPAREN":
             prev = tokens[idx-1]
-            if prev.text.endswith("_t") or prev.text == "*":
+            if prev.text.endswith("_t") or prev.text == "*" or prev.text == "int":
                 #cast
                 continue
         elif tkn.kind != "RBRACKET":
