@@ -1284,18 +1284,22 @@
         }
 
         case _MAYBE_EXPAND_METHOD: {
-            _Py_UopsPESlot func;
-            _Py_UopsPESlot *maybe_self;
             _Py_UopsPESlot *args;
-            maybe_self = &stack_pointer[-1 - oparg];
+            _Py_UopsPESlot self_or_null;
+            _Py_UopsPESlot callable;
+            _Py_UopsPESlot func;
+            _Py_UopsPESlot maybe_self;
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            args = &stack_pointer[-oparg];
+            (void)callable;
+            (void)self_or_null;
+            (void)args;
             func = sym_new_not_null(ctx);
-            for (int _i = 1; --_i >= 0;) {
-                maybe_self[_i] = sym_new_not_null(ctx);
-            }
-            for (int _i = oparg; --_i >= 0;) {
-                args[_i] = sym_new_not_null(ctx);
-            }
+            maybe_self = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = func;
+            stack_pointer[-1 - oparg] = maybe_self;
             break;
         }
 

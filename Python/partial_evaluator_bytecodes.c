@@ -297,6 +297,14 @@ dummy_func(void) {
             values[i] = sym_new_unknown(ctx);
         }
     }
+
+    op(_MAYBE_EXPAND_METHOD, (callable, self_or_null, args[oparg] -- func, maybe_self, args[oparg])) {
+        (void)callable;
+        (void)self_or_null;
+        (void)args;
+        func = sym_new_not_null(ctx);
+        maybe_self = sym_new_not_null(ctx);
+    }
 // END BYTECODES //
 
 }
