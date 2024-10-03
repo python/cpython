@@ -626,24 +626,6 @@ class component_converter(CConverter):
 [python start generated code]*/
 /*[python end generated code: output=da39a3ee5e6b4b0d input=38e9be01d33927fb]*/
 
-/* Function versions of the 3 functions for testing whether curses has been
-   initialised or not. */
-
-static int func_PyCursesSetupTermCalled(void)
-{
-    return _PyCursesCheckFunction(curses_setupterm_called, "setupterm");
-}
-
-static int func_PyCursesInitialised(void)
-{
-    return _PyCursesCheckFunction(curses_initscr_called, "initscr");
-}
-
-static int func_PyCursesInitialisedColor(void)
-{
-    return _PyCursesCheckFunction(curses_start_color_called, "start_color");
-}
-
 /*****************************************************************************
  The Window Object
 ******************************************************************************/
@@ -4853,28 +4835,72 @@ static PyMethodDef PyCurses_methods[] = {
     {NULL,                  NULL}         /* sentinel */
 };
 
-/* Initialization function for the module */
+/* Module C API */
 
+/* Function versions of the 3 functions for testing whether curses has been
+   initialised or not. */
 
-static struct PyModuleDef _cursesmodule = {
-    PyModuleDef_HEAD_INIT,
-    "_curses",
-    NULL,
-    -1,
-    PyCurses_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
+static inline int
+curses_capi_setupterm_called(void)
+{
+    return _PyCursesCheckFunction(curses_setupterm_called, "setupterm");
+}
+
+static inline int
+curses_capi_initscr_called(void)
+{
+    return _PyCursesCheckFunction(curses_initscr_called, "initscr");
+}
+
+static inline int
+curses_capi_start_color_called(void)
+{
+    return _PyCursesCheckFunction(curses_start_color_called, "start_color");
+}
+
+static void *
+curses_capi_new(_cursesmodule_state *state)
+{
+    assert(state->window_type != NULL);
+    void **capi = (void **)PyMem_Calloc(PyCurses_API_pointers, sizeof(void *));
+    if (capi == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    capi[0] = (void *)Py_NewRef(state->window_type);
+    capi[1] = curses_capi_setupterm_called;
+    capi[2] = curses_capi_initscr_called;
+    capi[3] = curses_capi_start_color_called;
+    return (void *)capi;
+}
 
 static void
-curses_destructor(PyObject *op)
+curses_capi_free(void *capi)
 {
-    void *ptr = PyCapsule_GetPointer(op, PyCurses_CAPSULE_NAME);
-    Py_DECREF(*(void **)ptr);
-    PyMem_Free(ptr);
+    assert(capi != NULL);
+    void **capi_ptr = (void **)capi;
+    assert(capi_ptr[0] != NULL);
+    Py_DECREF(capi_ptr[0]); // decref curses window type
+    PyMem_Free(capi_ptr);
 }
+
+/* Module C API Capsule */
+
+static void
+curses_capi_capsule_destructor(PyObject *op)
+{
+    void *capi = PyCapsule_GetPointer(op, PyCurses_CAPSULE_NAME);
+    curses_capi_free(capi);
+}
+
+static PyObject *
+curses_capi_capsule_new(void *capi)
+{
+    return PyCapsule_New(capi, PyCurses_CAPSULE_NAME,
+                         curses_capi_capsule_destructor);
+}
+
+/* Module initialization */
 
 static int
 cursesmodule_exec(PyObject *module)
@@ -4895,27 +4921,19 @@ cursesmodule_exec(PyObject *module)
         return -1;
     }
 
-    void **PyCurses_API = PyMem_Calloc(PyCurses_API_pointers, sizeof(void *));
-    if (PyCurses_API == NULL) {
-        PyErr_NoMemory();
+    /* Create the C API object */
+    void *capi = curses_capi_new(state);
+    if (capi == NULL) {
         return -1;
     }
-    /* Initialize the C API pointer array */
-    PyCurses_API[0] = (void *)Py_NewRef(&PyCursesWindow_Type);
-    PyCurses_API[1] = (void *)func_PyCursesSetupTermCalled;
-    PyCurses_API[2] = (void *)func_PyCursesInitialised;
-    PyCurses_API[3] = (void *)func_PyCursesInitialisedColor;
-
     /* Add a capsule for the C API */
-    PyObject *c_api_object = PyCapsule_New(PyCurses_API, PyCurses_CAPSULE_NAME,
-                                           curses_destructor);
-    if (c_api_object == NULL) {
-        Py_DECREF(PyCurses_API[0]);
-        PyMem_Free(PyCurses_API);
+    PyObject *capi_capsule = curses_capi_capsule_new(capi);
+    if (capi_capsule == NULL) {
+        curses_capi_free(capi);
         return -1;
     }
-    int rc = PyDict_SetItemString(module_dict, "_C_API", c_api_object);
-    Py_DECREF(c_api_object);
+    int rc = PyDict_SetItemString(module_dict, "_C_API", capi_capsule);
+    Py_DECREF(capi_capsule);
     if (rc < 0) {
         return -1;
     }
@@ -5117,6 +5135,15 @@ cursesmodule_exec(PyObject *module)
 #undef SetDictInt
     return 0;
 }
+
+/* Initialization function for the module */
+
+static struct PyModuleDef _cursesmodule = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_curses",
+    .m_size = -1,
+    .m_methods = PyCurses_methods,
+};
 
 PyMODINIT_FUNC
 PyInit__curses(void)
