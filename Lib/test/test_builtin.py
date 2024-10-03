@@ -148,9 +148,8 @@ def filter_char(arg):
 def map_char(arg):
     return chr(ord(arg)+1)
 
-# DO NOT replace these functions with lambda's, pickle doesn't support them
-def f2(x, y): return (x, y)
-def f3(x, y, z): return (x, y, z)
+def pack(*args):
+    return args
 
 class BuiltinTest(unittest.TestCase):
     # Helper to check picklability
@@ -1280,7 +1279,7 @@ class BuiltinTest(unittest.TestCase):
         b = (4, 5, 6)
         t = [(1, 4), (2, 5), (3, 6)]
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            m1 = map(f2, a, b, strict=True)
+            m1 = map(pack, a, b, strict=True)
             self.check_iter_pickle(m1, t, proto)
 
     def test_map_pickle_strict_fail(self):
@@ -1288,27 +1287,27 @@ class BuiltinTest(unittest.TestCase):
         b = (4, 5, 6, 7)
         t = [(1, 4), (2, 5), (3, 6)]
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            m1 = map(f2, a, b, strict=True)
+            m1 = map(pack, a, b, strict=True)
             m2 = pickle.loads(pickle.dumps(m1, proto))
             self.assertEqual(self.iter_error(m1, ValueError), t)
             self.assertEqual(self.iter_error(m2, ValueError), t)
 
     def test_map_strict(self):
-        self.assertEqual(tuple(map(f2, (1, 2, 3), 'abc', strict=True)),
+        self.assertEqual(tuple(map(pack, (1, 2, 3), 'abc', strict=True)),
                          ((1, 'a'), (2, 'b'), (3, 'c')))
         self.assertRaises(ValueError, tuple,
-                          map(f2, (1, 2, 3, 4), 'abc', strict=True))
+                          map(pack, (1, 2, 3, 4), 'abc', strict=True))
         self.assertRaises(ValueError, tuple,
-                          map(f2, (1, 2), 'abc', strict=True))
+                          map(pack, (1, 2), 'abc', strict=True))
         self.assertRaises(ValueError, tuple,
-                          map(f3, (1, 2), (1, 2), 'abc', strict=True))
+                          map(pack, (1, 2), (1, 2), 'abc', strict=True))
 
     def test_map_strict_iterators(self):
         x = iter(range(5))
         y = [0]
         z = iter(range(5))
         self.assertRaises(ValueError, list,
-                          (map(f3, x, y, z, strict=True)))
+                          (map(pack, x, y, z, strict=True)))
         self.assertEqual(next(x), 2)
         self.assertEqual(next(z), 1)
 
@@ -1328,21 +1327,21 @@ class BuiltinTest(unittest.TestCase):
                     raise Error
                 return self.size
 
-        l1 = self.iter_error(map(f2, "AB", Iter(1), strict=True), Error)
+        l1 = self.iter_error(map(pack, "AB", Iter(1), strict=True), Error)
         self.assertEqual(l1, [("A", 0)])
-        l2 = self.iter_error(map(f3, "AB", Iter(2), "A", strict=True), ValueError)
+        l2 = self.iter_error(map(pack, "AB", Iter(2), "A", strict=True), ValueError)
         self.assertEqual(l2, [("A", 1, "A")])
-        l3 = self.iter_error(map(f3, "AB", Iter(2), "ABC", strict=True), Error)
+        l3 = self.iter_error(map(pack, "AB", Iter(2), "ABC", strict=True), Error)
         self.assertEqual(l3, [("A", 1, "A"), ("B", 0, "B")])
-        l4 = self.iter_error(map(f2, "AB", Iter(3), strict=True), ValueError)
+        l4 = self.iter_error(map(pack, "AB", Iter(3), strict=True), ValueError)
         self.assertEqual(l4, [("A", 2), ("B", 1)])
-        l5 = self.iter_error(map(f2, Iter(1), "AB", strict=True), Error)
+        l5 = self.iter_error(map(pack, Iter(1), "AB", strict=True), Error)
         self.assertEqual(l5, [(0, "A")])
-        l6 = self.iter_error(map(f2, Iter(2), "A", strict=True), ValueError)
+        l6 = self.iter_error(map(pack, Iter(2), "A", strict=True), ValueError)
         self.assertEqual(l6, [(1, "A")])
-        l7 = self.iter_error(map(f2, Iter(2), "ABC", strict=True), Error)
+        l7 = self.iter_error(map(pack, Iter(2), "ABC", strict=True), Error)
         self.assertEqual(l7, [(1, "A"), (0, "B")])
-        l8 = self.iter_error(map(f2, Iter(3), "AB", strict=True), ValueError)
+        l8 = self.iter_error(map(pack, Iter(3), "AB", strict=True), ValueError)
         self.assertEqual(l8, [(2, "A"), (1, "B")])
 
     def test_map_strict_error_handling_stopiteration(self):
@@ -1358,21 +1357,21 @@ class BuiltinTest(unittest.TestCase):
                     raise StopIteration
                 return self.size
 
-        l1 = self.iter_error(map(f2, "AB", Iter(1), strict=True), ValueError)
+        l1 = self.iter_error(map(pack, "AB", Iter(1), strict=True), ValueError)
         self.assertEqual(l1, [("A", 0)])
-        l2 = self.iter_error(map(f3, "AB", Iter(2), "A", strict=True), ValueError)
+        l2 = self.iter_error(map(pack, "AB", Iter(2), "A", strict=True), ValueError)
         self.assertEqual(l2, [("A", 1, "A")])
-        l3 = self.iter_error(map(f3, "AB", Iter(2), "ABC", strict=True), ValueError)
+        l3 = self.iter_error(map(pack, "AB", Iter(2), "ABC", strict=True), ValueError)
         self.assertEqual(l3, [("A", 1, "A"), ("B", 0, "B")])
-        l4 = self.iter_error(map(f2, "AB", Iter(3), strict=True), ValueError)
+        l4 = self.iter_error(map(pack, "AB", Iter(3), strict=True), ValueError)
         self.assertEqual(l4, [("A", 2), ("B", 1)])
-        l5 = self.iter_error(map(f2, Iter(1), "AB", strict=True), ValueError)
+        l5 = self.iter_error(map(pack, Iter(1), "AB", strict=True), ValueError)
         self.assertEqual(l5, [(0, "A")])
-        l6 = self.iter_error(map(f2, Iter(2), "A", strict=True), ValueError)
+        l6 = self.iter_error(map(pack, Iter(2), "A", strict=True), ValueError)
         self.assertEqual(l6, [(1, "A")])
-        l7 = self.iter_error(map(f2, Iter(2), "ABC", strict=True), ValueError)
+        l7 = self.iter_error(map(pack, Iter(2), "ABC", strict=True), ValueError)
         self.assertEqual(l7, [(1, "A"), (0, "B")])
-        l8 = self.iter_error(map(f2, Iter(3), "AB", strict=True), ValueError)
+        l8 = self.iter_error(map(pack, Iter(3), "AB", strict=True), ValueError)
         self.assertEqual(l8, [(2, "A"), (1, "B")])
 
     def test_max(self):
