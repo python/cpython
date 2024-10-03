@@ -69,7 +69,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
              dictConfigClass(config).configure()
 
    For example, a subclass of :class:`DictConfigurator` could call
-   ``DictConfigurator.__init__()`` in its own :meth:`__init__()`, then
+   ``DictConfigurator.__init__()`` in its own :meth:`__init__`, then
    set up custom prefixes which would be usable in the subsequent
    :meth:`configure` call. :attr:`dictConfigClass` would be bound to
    this new subclass, and then :func:`dictConfig` could be called exactly as

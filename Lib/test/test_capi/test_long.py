@@ -340,6 +340,18 @@ class LongTests(unittest.TestCase):
     def test_long_aspid_limited(self):
         self._test_long_aspid(_testlimitedcapi.pylong_aspid)
 
+    @support.bigmemtest(2**32, memuse=0.35)
+    def test_long_asnativebytes_huge(self, size):
+        asnativebytes = _testcapi.pylong_asnativebytes
+        v = 1 << size
+        buffer = bytearray(size * 2 // 15 + 10)
+        r = asnativebytes(v, buffer, 0, -1)
+        self.assertEqual(r, size // 8 + 1)
+        self.assertEqual(buffer.count(0), len(buffer))
+        r = asnativebytes(v, buffer, len(buffer), -1)
+        self.assertEqual(r, size // 8 + 1)
+        self.assertEqual(buffer.count(0), len(buffer) - 1)
+
     def test_long_asnativebytes(self):
         import math
         from _testcapi import (

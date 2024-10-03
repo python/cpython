@@ -36,8 +36,7 @@ from .trace import trace
 
 # types
 Command = commands.Command
-if False:
-    from .types import Callback, SimpleContextManager, KeySpec, CommandName
+from .types import Callback, SimpleContextManager, KeySpec, CommandName
 
 
 def disp_str(buffer: str) -> tuple[str, list[int]]:
@@ -151,6 +150,7 @@ default_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         (r"\<right>", "right"),
         (r"\C-\<right>", "forward-word"),
         (r"\<delete>", "delete"),
+        (r"\x1b[3~", "delete"),
         (r"\<backspace>", "backspace"),
         (r"\M-\<backspace>", "backward-kill-word"),
         (r"\<end>", "end-of-line"),  # was 'end'
@@ -247,6 +247,7 @@ class Reader:
     lxy: tuple[int, int] = field(init=False)
     scheduled_commands: list[str] = field(default_factory=list)
     can_colorize: bool = False
+    threading_hook: Callback | None = None
 
     ## cached metadata to speed up screen refreshes
     @dataclass
@@ -722,6 +723,24 @@ class Reader:
             self.console.finish()
             self.finish()
 
+    def run_hooks(self) -> None:
+        threading_hook = self.threading_hook
+        if threading_hook is None and 'threading' in sys.modules:
+            from ._threading_handler import install_threading_hook
+            install_threading_hook(self)
+        if threading_hook is not None:
+            try:
+                threading_hook()
+            except Exception:
+                pass
+
+        input_hook = self.console.input_hook
+        if input_hook:
+            try:
+                input_hook()
+            except Exception:
+                pass
+
     def handle1(self, block: bool = True) -> bool:
         """Handle a single event.  Wait as long as it takes if block
         is true (the default), otherwise return False if no event is
@@ -732,16 +751,13 @@ class Reader:
             self.dirty = True
 
         while True:
-            input_hook = self.console.input_hook
-            if input_hook:
-                input_hook()
-                # We use the same timeout as in readline.c: 100ms
-                while not self.console.wait(100):
-                    input_hook()
-                event = self.console.get_event(block=False)
-            else:
-                event = self.console.get_event(block)
-            if not event:  # can only happen if we're not blocking
+            # We use the same timeout as in readline.c: 100ms
+            self.run_hooks()
+            self.console.wait(100)
+            event = self.console.get_event(block=False)
+            if not event:
+                if block:
+                    continue
                 return False
 
             translate = True
@@ -763,8 +779,7 @@ class Reader:
             if cmd is None:
                 if block:
                     continue
-                else:
-                    return False
+                return False
 
             self.do_cmd(cmd)
             return True
