@@ -7,7 +7,8 @@ import re
 import os
 import sys
 from test import support
-from test.support import skip_if_buggy_ucrt_strfptime, warnings_helper
+from test.support import warnings_helper
+from test.support import skip_if_buggy_ucrt_strfptime, run_with_locales
 from datetime import date as datetime_date
 
 import _strptime
@@ -289,54 +290,64 @@ class StrptimeTests(unittest.TestCase):
         # Check ValueError is raised when there is unconverted data
         self.assertRaises(ValueError, _strptime._strptime_time, "10 12", "%m")
 
-    def helper(self, directive, position):
+    def roundtrip(self, fmt, position, time_tuple=None):
         """Helper fxn in testing."""
-        fmt = "%d %Y" if directive == 'd' else "%" + directive
-        strf_output = time.strftime(fmt, self.time_tuple)
+        if time_tuple is None:
+            time_tuple = self.time_tuple
+        strf_output = time.strftime(fmt, time_tuple)
         strp_output = _strptime._strptime_time(strf_output, fmt)
-        self.assertTrue(strp_output[position] == self.time_tuple[position],
-                        "testing of '%s' directive failed; '%s' -> %s != %s" %
-                         (directive, strf_output, strp_output[position],
-                          self.time_tuple[position]))
+        self.assertEqual(strp_output[position], time_tuple[position],
+                        "testing of %r format failed; %r -> %r != %r" %
+                         (fmt, strf_output, strp_output[position],
+                          time_tuple[position]))
+        if support.verbose >= 3:
+            print("testing of %r format: %r -> %r" %
+                  (fmt, strf_output, strp_output[position]))
 
     def test_year(self):
         # Test that the year is handled properly
-        for directive in ('y', 'Y'):
-            self.helper(directive, 0)
+        self.roundtrip('%Y', 0)
+        self.roundtrip('%y', 0)
+        self.roundtrip('%Y', 0, (1900, 1, 1, 0, 0, 0, 0, 1, 0))
+
         # Must also make sure %y values are correct for bounds set by Open Group
-        for century, bounds in ((1900, ('69', '99')), (2000, ('00', '68'))):
-            for bound in bounds:
-                strp_output = _strptime._strptime_time(bound, '%y')
-                expected_result = century + int(bound)
-                self.assertTrue(strp_output[0] == expected_result,
-                                "'y' test failed; passed in '%s' "
-                                "and returned '%s'" % (bound, strp_output[0]))
+        strptime = _strptime._strptime_time
+        self.assertEqual(strptime('00', '%y')[0], 2000)
+        self.assertEqual(strptime('68', '%y')[0], 2068)
+        self.assertEqual(strptime('69', '%y')[0], 1969)
+        self.assertEqual(strptime('99', '%y')[0], 1999)
 
     def test_month(self):
         # Test for month directives
-        for directive in ('B', 'b', 'm'):
-            self.helper(directive, 1)
+        self.roundtrip('%m', 1)
+
+    @run_with_locales('LC_TIME', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', 'he_IL', '')
+    def test_month_locale(self):
+        # Test for month directives
+        self.roundtrip('%B', 1)
+        self.roundtrip('%b', 1)
 
     def test_day(self):
         # Test for day directives
-        self.helper('d', 2)
+        self.roundtrip('%d %Y', 2)
 
     def test_hour(self):
         # Test hour directives
-        self.helper('H', 3)
-        strf_output = time.strftime("%I %p", self.time_tuple)
-        strp_output = _strptime._strptime_time(strf_output, "%I %p")
-        self.assertTrue(strp_output[3] == self.time_tuple[3],
-                        "testing of '%%I %%p' directive failed; '%s' -> %s != %s" %
-                         (strf_output, strp_output[3], self.time_tuple[3]))
+        self.roundtrip('%H', 3)
+
+    # NB: Only works on locales with AM/PM
+    @run_with_locales('LC_TIME', 'en_US', 'ja_JP')
+    def test_hour_locale(self):
+        # Test hour directives
+        self.roundtrip('%I %p', 3)
 
     def test_minute(self):
         # Test minute directives
-        self.helper('M', 4)
+        self.roundtrip('%M', 4)
 
     def test_second(self):
         # Test second directives
-        self.helper('S', 5)
+        self.roundtrip('%S', 5)
 
     def test_fraction(self):
         # Test microseconds
@@ -347,12 +358,18 @@ class StrptimeTests(unittest.TestCase):
 
     def test_weekday(self):
         # Test weekday directives
-        for directive in ('A', 'a', 'w', 'u'):
-            self.helper(directive,6)
+        self.roundtrip('%w', 6)
+        self.roundtrip('%u', 6)
+
+    @run_with_locales('LC_TIME', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', '')
+    def test_weekday_locale(self):
+        # Test weekday directives
+        self.roundtrip('%A', 6)
+        self.roundtrip('%a', 6)
 
     def test_julian(self):
         # Test julian directives
-        self.helper('j', 7)
+        self.roundtrip('%j', 7)
 
     def test_offset(self):
         one_hour = 60 * 60
@@ -449,20 +466,26 @@ class StrptimeTests(unittest.TestCase):
                     "time.daylight set to %s and passing in %s" %
                     (time.tzname, tz_value, time.daylight, tz_name))
 
-    def test_date_time(self):
+    # NB: Does not roundtrip on some locales like hif_FJ.
+    @run_with_locales('LC_TIME', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', 'he_IL', '')
+    def test_date_time_locale(self):
         # Test %c directive
-        for position in range(6):
-            self.helper('c', position)
+        self.roundtrip('%c', slice(0, 6))
+        self.roundtrip('%c', slice(0, 6), (1900, 1, 1, 0, 0, 0, 0, 1, 0))
 
-    def test_date(self):
+    # NB: Dates before 1969 do not work on locales: C, POSIX,
+    # az_IR, fa_IR, sd_PK, uk_UA.
+    @run_with_locales('LC_TIME', 'en_US', 'fr_FR', 'de_DE', 'ja_JP')
+    def test_date_locale(self):
         # Test %x directive
-        for position in range(0,3):
-            self.helper('x', position)
+        self.roundtrip('%x', slice(0, 3))
+        self.roundtrip('%x', slice(0, 3), (1900, 1, 1, 0, 0, 0, 0, 1, 0))
 
-    def test_time(self):
+    # NB: Does not distinguish AM/PM time on a number of locales.
+    @run_with_locales('LC_TIME', 'en_US', 'fr_FR', 'de_DE', 'ja_JP')
+    def test_time_locale(self):
         # Test %X directive
-        for position in range(3,6):
-            self.helper('X', position)
+        self.roundtrip('%X', slice(3, 6))
 
     def test_percent(self):
         # Make sure % signs are handled properly

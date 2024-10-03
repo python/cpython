@@ -119,13 +119,19 @@ class LocaleTime(object):
         date_time[1] = time.strftime("%x", time_tuple).lower()
         date_time[2] = time.strftime("%X", time_tuple).lower()
         replacement_pairs = [('%', '%%'), (self.f_weekday[2], '%A'),
-                    (self.f_month[3], '%B'), (self.a_weekday[2], '%a'),
-                    (self.a_month[3], '%b'), (self.am_pm[1], '%p'),
+                    (self.a_weekday[2], '%a'),
+                    (self.am_pm[1], '%p'),
                     ('1999', '%Y'), ('99', '%y'), ('22', '%H'),
                     ('44', '%M'), ('55', '%S'), ('76', '%j'),
                     ('17', '%d'), ('03', '%m'), ('3', '%m'),
                     # '3' needed for when no leading zero.
                     ('2', '%w'), ('10', '%I')]
+        # The month format is treated specially because of a possible
+        # ambiguity in some locales where the full and abbreviated
+        # month names are equal. See doc of __find_month_format for more
+        # details.
+        #
+        month_format = self.__find_month_format()
         replacement_pairs.extend([(tz, "%Z") for tz_values in self.timezone
                                                 for tz in tz_values])
         for offset,directive in ((0,'%c'), (1,'%x'), (2,'%X')):
@@ -137,6 +143,8 @@ class LocaleTime(object):
                 # strings (e.g., MacOS 9 having timezone as ('','')).
                 if old:
                     current_format = current_format.replace(old, new)
+            for month_str in (self.f_month[3], self.a_month[3]):
+                current_format = current_format.replace(month_str, month_format)
             # If %W is used, then Sunday, 2005-01-03 will fall on week 0 since
             # 2005-01-03 occurs before the first Monday of the year.  Otherwise
             # %U is used.
@@ -149,6 +157,26 @@ class LocaleTime(object):
         self.LC_date_time = date_time[0]
         self.LC_date = date_time[1]
         self.LC_time = date_time[2]
+
+    def __find_month_format(self):
+        """Find the month format appropriate for the current locale.
+
+        In some locales (for example French and Hebrew), the default month
+        used in __calc_date_time has the same name in full and abbreviated
+        form. Thus, cycle months of the year until a month is found where
+        these representations differ, and check the datetime string created
+        by strftime against this month, to make sure we select the correct
+        format specifier.
+        """
+        for m in range(1, 13):
+            if self.f_month[m] != self.a_month[m]:
+                time_tuple = time.struct_time((1999, m, 17, 22, 44, 55, 2, 76, 0))
+                datetime = time.strftime('%c', time_tuple).lower()
+                if datetime.find(self.f_month[m]) >= 0:
+                    return '%B'
+                elif datetime.find(self.a_month[m]) >= 0:
+                    return '%b'
+        return '%B'
 
     def __calc_timezone(self):
         # Set self.timezone by using time.tzname.

@@ -1,0 +1,2 @@
+Fix :func:`time.strptime` for ``%c`` format in locales with a short March
+month name, such as French or Hebrew.
