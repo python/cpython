@@ -769,7 +769,8 @@ PyCursesWindow_New(_cursesmodule_state *state,
         }
     }
 
-    PyCursesWindowObject *wo = PyObject_New(PyCursesWindowObject, state->window_type);
+    PyCursesWindowObject *wo = PyObject_GC_New(PyCursesWindowObject, 
+                                               state->window_type);
     if (wo == NULL) {
         return NULL;
     }
@@ -780,6 +781,7 @@ PyCursesWindow_New(_cursesmodule_state *state,
         PyErr_NoMemory();
         return NULL;
     }
+    PyObject_GC_Track((PyObject *)wo);
     return (PyObject *)wo;
 }
 
@@ -787,6 +789,7 @@ static void
 PyCursesWindow_dealloc(PyObject *self)
 {
     PyTypeObject *window_type = Py_TYPE(self);
+    PyObject_GC_Untrack(self);
     PyCursesWindowObject *wo = (PyCursesWindowObject *)self;
     if (wo->win != stdscr && wo->win != NULL) {
         // silently ignore errors in delwin(3)
@@ -2694,7 +2697,8 @@ static PyType_Spec PyCursesWindow_Type_spec = {
     .flags = Py_TPFLAGS_DEFAULT
         | Py_TPFLAGS_DISALLOW_INSTANTIATION
         | Py_TPFLAGS_IMMUTABLETYPE
-        | Py_TPFLAGS_HEAPTYPE,
+        | Py_TPFLAGS_HEAPTYPE
+        | Py_TPFLAGS_HAVE_GC,
     .slots = PyCursesWindow_Type_slots
 };
 
