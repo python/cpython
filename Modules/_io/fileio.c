@@ -1212,7 +1212,7 @@ _io_FileIO_isatty_impl(fileio *self)
    this is subject to TOCTOU issues (the FD has been returned to user code
    and arbitrary syscalls could have happened). */
 static PyObject *
-_io_FileIO_isatty_openonly(fileio *self)
+_io_FileIO_isatty_openonly(fileio *self, void *Py_UNUSED(ignored))
 {
     if (self->stat_atopen != NULL && !S_ISCHR(self->stat_atopen->st_mode)) {
         Py_RETURN_FALSE;
