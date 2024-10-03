@@ -421,7 +421,7 @@ arguments will never be treated as file references.
 
 .. versionchanged:: 3.12
    :class:`ArgumentParser` changed encoding and errors to read arguments files
-   from default (e.g. :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>` 
+   from default (e.g. :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>`
    and ``"strict"``) to the :term:`filesystem encoding and error handler`.
    Arguments file should be encoded in UTF-8 instead of ANSI Codepage on Windows.
 
@@ -1298,10 +1298,10 @@ this API may be passed as the ``action`` parameter to
       applied.  Type conversions are specified with the type_ keyword argument to
       :meth:`~ArgumentParser.add_argument`.
 
-   * ``option_string`` - The option string that was used to invoke this action. 
+   * ``option_string`` - The option string that was used to invoke this action.
       The ``option_string`` argument is optional, and will be absent if the action
       is associated with a positional argument.
-   
+
    The ``__call__`` method may perform arbitrary actions, but will typically set
    attributes on the ``namespace`` based on ``dest`` and ``values``.
 
