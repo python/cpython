@@ -769,7 +769,7 @@ PyCursesWindow_New(_cursesmodule_state *state,
         }
     }
 
-    PyCursesWindowObject *wo = PyObject_GC_New(PyCursesWindowObject, 
+    PyCursesWindowObject *wo = PyObject_GC_New(PyCursesWindowObject,
                                                state->window_type);
     if (wo == NULL) {
         return NULL;
