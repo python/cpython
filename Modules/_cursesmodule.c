@@ -789,7 +789,7 @@ static void
 PyCursesWindow_dealloc(PyObject *self)
 {
     PyTypeObject *window_type = Py_TYPE(self);
-    PyObject_GC_Untrack(self);
+    PyObject_GC_UnTrack(self);
     PyCursesWindowObject *wo = (PyCursesWindowObject *)self;
     if (wo->win != stdscr && wo->win != NULL) {
         // silently ignore errors in delwin(3)
