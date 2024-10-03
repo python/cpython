@@ -1,0 +1,3 @@
+Convert the :ref:`curses.window <curses-window-objects>` type exposed by the
+:c:macro:`!PyCursesWindow_Type` macro in :file:`Include/py_curses.h` into a
+heap type instead of a static type. Patch by Bénédikt Tran.

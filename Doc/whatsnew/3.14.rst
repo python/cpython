@@ -696,6 +696,11 @@ Porting to Python 3.14
   implementation details.
   (Contributed by Victor Stinner in :gh:`120600` and :gh:`124127`.)
 
+* Convert the :ref:`curses.window <curses-window-objects>` static type exposed
+  by the :c:macro:`!PyCursesWindow_Type` macro in :file:`Include/py_curses.h`
+  to a heap type.
+  (Contributed by Bénédikt Tran in :gh:`123961`.)
+
 
 Deprecated
 ----------
