@@ -1,0 +1,1 @@
+Improved the performance of string.Template

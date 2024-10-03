@@ -297,6 +297,9 @@ class TestTemplate(unittest.TestCase):
         m.bag.what = 'ham'
         s = PathPattern('$bag.foo.who likes to eat a bag of $bag.what')
         self.assertEqual(s.substitute(m), 'tim likes to eat a bag of ham')
+        self.assertEqual(s.safe_substitute(m), 'tim likes to eat a bag of ham')
+        del m.bag.foo.who
+        self.assertEqual(s.safe_substitute(m), '$bag.foo.who likes to eat a bag of ham')
 
     def test_flags_override(self):
         class MyPattern(Template):
@@ -345,6 +348,9 @@ class TestTemplate(unittest.TestCase):
         m.bag.what = 'ham'
         s = MyPattern('@bag.foo.who likes to eat a bag of @bag.what')
         self.assertEqual(s.substitute(m), 'tim likes to eat a bag of ham')
+        self.assertEqual(s.safe_substitute(m), 'tim likes to eat a bag of ham')
+        del m.bag.foo.who
+        self.assertEqual(s.safe_substitute(m), '@bag.foo.who likes to eat a bag of ham')
 
         class BadPattern(Template):
             pattern = r"""
@@ -391,6 +397,31 @@ class TestTemplate(unittest.TestCase):
         self.assertEqual(t.safe_substitute(), tmpl)
         val = t.safe_substitute({'location': 'Cleveland'})
         self.assertEqual(val, 'PyCon in Cleveland')
+
+    def test_special_characters_in_name(self):
+        class MyTemplate(Template):
+            pattern = r"""
+            @[[](?P<braced>[^]]*)[]]    |
+            @(?P<named>[a-z]+)          |
+            (?P<escaped>@@)             |
+            (?P<invalid>@)
+            """
+        m = {
+            '\\': 'backslash',
+            "\t": 'tab',
+            '"': 'quotation mark',
+            "'": 'apostrophe',
+            '"""': 'triple quotation mark',
+            "'''": 'triple apostrophe',
+            "%": 'percent sign',
+            "$": 'dollar sign',
+            "{": 'left brace',
+            "}": 'right brace',
+        }
+        for k in m:
+            s = MyTemplate('<@[%s]>' % k)
+            self.assertEqual(s.substitute(m), '<%s>' % m[k])
+            self.assertEqual(s.safe_substitute(m), '<%s>' % m[k])
 
     def test_invalid_with_no_lines(self):
         # The error formatting for invalid templates
