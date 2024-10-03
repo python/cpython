@@ -11105,6 +11105,12 @@ then :
   printf "%s\n" "#define HAVE_LINUX_SOUNDCARD_H 1" >>confdefs.h
 
 fi
+ac_fn_c_check_header_compile "$LINENO" "linux/netfilter_ipv4.h" "ac_cv_header_linux_netfilter_ipv4_h" "$ac_includes_default"
+if test "x$ac_cv_header_linux_netfilter_ipv4_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_LINUX_NETFILTER_IPV4_H 1" >>confdefs.h
+
+fi
 ac_fn_c_check_header_compile "$LINENO" "linux/tipc.h" "ac_cv_header_linux_tipc_h" "$ac_includes_default"
 if test "x$ac_cv_header_linux_tipc_h" = xyes
 then :
