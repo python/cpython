@@ -1803,8 +1803,8 @@ class FileIO(RawIOBase):
         this is subject to TOCTOU issues (the FD has been returned to user code
         and arbitrary syscalls could have happened).
         """
-        if (self._stat_atopen is not None and
-            not stat.S_ISCHR(self._stat_atopen.st_mode)):
+        if (self._stat_atopen is not None
+            and not stat.S_ISCHR(self._stat_atopen.st_mode)):
             return True
         return os.isatty(self._fd)
 
