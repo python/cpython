@@ -19,13 +19,13 @@
    introduction to Python command-line parsing, have a look at the
    :ref:`argparse tutorial <argparse-tutorial>`.
 
-The :mod:`argparse` module makes it easy to write user-friendly command-line
-interfaces. The program defines what arguments it requires, and :mod:`argparse`
-will figure out how to parse those out of :data:`sys.argv`.  The :mod:`argparse`
+The :mod:`!argparse` module makes it easy to write user-friendly command-line
+interfaces. The program defines what arguments it requires, and :mod:`!argparse`
+will figure out how to parse those out of :data:`sys.argv`.  The :mod:`!argparse`
 module also automatically generates help and usage messages.  The module
 will also issue errors when users give the program invalid arguments.
 
-The :mod:`argparse` module's support for command-line interfaces is built
+The :mod:`!argparse` module's support for command-line interfaces is built
 around an instance of :class:`argparse.ArgumentParser`.  It is a container for
 argument specifications and has options that apply to the parser as whole::
 
@@ -327,7 +327,7 @@ should not be line-wrapped::
     -h, --help  show this help message and exit
 
 :class:`RawTextHelpFormatter` maintains whitespace for all sorts of help text,
-including argument descriptions. However, multiple new lines are replaced with
+including argument descriptions. However, multiple newlines are replaced with
 one. If you wish to preserve multiple blank lines, add spaces between the
 newlines.
 
@@ -421,8 +421,8 @@ arguments will never be treated as file references.
 
 .. versionchanged:: 3.12
    :class:`ArgumentParser` changed encoding and errors to read arguments files
-   from default (e.g. :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>` and
-   ``"strict"``) to :term:`filesystem encoding and error handler`.
+   from default (e.g. :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>` 
+   and ``"strict"``) to the :term:`filesystem encoding and error handler`.
    Arguments file should be encoded in UTF-8 instead of ANSI Codepage on Windows.
 
 
@@ -908,7 +908,7 @@ was not present at the command line::
    Namespace(foo=42)
 
 If the target namespace already has an attribute set, the action *default*
-will not over write it::
+will not overwrite it::
 
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('--foo', default=42)
@@ -982,7 +982,6 @@ Common built-in types and functions can be used as type converters:
    parser.add_argument('distance', type=float)
    parser.add_argument('street', type=ascii)
    parser.add_argument('code_point', type=ord)
-   parser.add_argument('source_file', type=open)
    parser.add_argument('dest_file', type=argparse.FileType('w', encoding='latin-1'))
    parser.add_argument('datapath', type=pathlib.Path)
 
@@ -1275,40 +1274,41 @@ this API may be passed as the ``action`` parameter to
                   type=None, choices=None, required=False, help=None, \
                   metavar=None)
 
-Action objects are used by an ArgumentParser to represent the information
-needed to parse a single argument from one or more strings from the
-command line. The Action class must accept the two positional arguments
-plus any keyword arguments passed to :meth:`ArgumentParser.add_argument`
-except for the ``action`` itself.
+   Action objects are used by an ArgumentParser to represent the information
+   needed to parse a single argument from one or more strings from the
+   command line. The Action class must accept the two positional arguments
+   plus any keyword arguments passed to :meth:`ArgumentParser.add_argument`
+   except for the ``action`` itself.
 
-Instances of Action (or return value of any callable to the ``action``
-parameter) should have attributes "dest", "option_strings", "default", "type",
-"required", "help", etc. defined. The easiest way to ensure these attributes
-are defined is to call ``Action.__init__``.
+   Instances of Action (or return value of any callable to the ``action``
+   parameter) should have attributes "dest", "option_strings", "default", "type",
+   "required", "help", etc. defined. The easiest way to ensure these attributes
+   are defined is to call ``Action.__init__``.
 
-Action instances should be callable, so subclasses must override the
-``__call__`` method, which should accept four parameters:
+   Action instances should be callable, so subclasses must override the
+   ``__call__`` method, which should accept four parameters:
 
-* ``parser`` - The ArgumentParser object which contains this action.
+   * ``parser`` - The ArgumentParser object which contains this action.
 
-* ``namespace`` - The :class:`Namespace` object that will be returned by
-  :meth:`~ArgumentParser.parse_args`.  Most actions add an attribute to this
-  object using :func:`setattr`.
+   * ``namespace`` - The :class:`Namespace` object that will be returned by
+      :meth:`~ArgumentParser.parse_args`.  Most actions add an attribute to this
+      object using :func:`setattr`.
 
-* ``values`` - The associated command-line arguments, with any type conversions
-  applied.  Type conversions are specified with the type_ keyword argument to
-  :meth:`~ArgumentParser.add_argument`.
+   * ``values`` - The associated command-line arguments, with any type conversions
+      applied.  Type conversions are specified with the type_ keyword argument to
+      :meth:`~ArgumentParser.add_argument`.
 
-* ``option_string`` - The option string that was used to invoke this action.
-  The ``option_string`` argument is optional, and will be absent if the action
-  is associated with a positional argument.
+   * ``option_string`` - The option string that was used to invoke this action. 
+      The ``option_string`` argument is optional, and will be absent if the action
+      is associated with a positional argument.
+   
+   The ``__call__`` method may perform arbitrary actions, but will typically set
+   attributes on the ``namespace`` based on ``dest`` and ``values``.
 
-The ``__call__`` method may perform arbitrary actions, but will typically set
-attributes on the ``namespace`` based on ``dest`` and ``values``.
+   Action subclasses can define a ``format_usage`` method that takes no argument
+   and return a string which will be used when printing the usage of the program.
+   If such method is not provided, a sensible default will be used.
 
-Action subclasses can define a ``format_usage`` method that takes no argument
-and return a string which will be used when printing the usage of the program.
-If such method is not provided, a sensible default will be used.
 
 The parse_args() method
 -----------------------
@@ -1503,29 +1503,29 @@ The Namespace object
    Simple class used by default by :meth:`~ArgumentParser.parse_args` to create
    an object holding attributes and return it.
 
-This class is deliberately simple, just an :class:`object` subclass with a
-readable string representation. If you prefer to have dict-like view of the
-attributes, you can use the standard Python idiom, :func:`vars`::
+   This class is deliberately simple, just an :class:`object` subclass with a
+   readable string representation. If you prefer to have dict-like view of the
+   attributes, you can use the standard Python idiom, :func:`vars`::
 
-   >>> parser = argparse.ArgumentParser()
-   >>> parser.add_argument('--foo')
-   >>> args = parser.parse_args(['--foo', 'BAR'])
-   >>> vars(args)
-   {'foo': 'BAR'}
+      >>> parser = argparse.ArgumentParser()
+      >>> parser.add_argument('--foo')
+      >>> args = parser.parse_args(['--foo', 'BAR'])
+      >>> vars(args)
+      {'foo': 'BAR'}
 
-It may also be useful to have an :class:`ArgumentParser` assign attributes to an
-already existing object, rather than a new :class:`Namespace` object.  This can
-be achieved by specifying the ``namespace=`` keyword argument::
+   It may also be useful to have an :class:`ArgumentParser` assign attributes to an
+   already existing object, rather than a new :class:`Namespace` object.  This can
+   be achieved by specifying the ``namespace=`` keyword argument::
 
-   >>> class C:
-   ...     pass
-   ...
-   >>> c = C()
-   >>> parser = argparse.ArgumentParser()
-   >>> parser.add_argument('--foo')
-   >>> parser.parse_args(args=['--foo', 'BAR'], namespace=c)
-   >>> c.foo
-   'BAR'
+      >>> class C:
+      ...     pass
+      ...
+      >>> c = C()
+      >>> parser = argparse.ArgumentParser()
+      >>> parser.add_argument('--foo')
+      >>> parser.parse_args(args=['--foo', 'BAR'], namespace=c)
+      >>> c.foo
+      'BAR'
 
 
 Other utilities
@@ -1979,20 +1979,20 @@ Partial parsing
 
 .. method:: ArgumentParser.parse_known_args(args=None, namespace=None)
 
-Sometimes a script may only parse a few of the command-line arguments, passing
-the remaining arguments on to another script or program. In these cases, the
-:meth:`~ArgumentParser.parse_known_args` method can be useful.  It works much like
-:meth:`~ArgumentParser.parse_args` except that it does not produce an error when
-extra arguments are present.  Instead, it returns a two item tuple containing
-the populated namespace and the list of remaining argument strings.
+   Sometimes a script may only parse a few of the command-line arguments, passing
+   the remaining arguments on to another script or program. In these cases, the
+   :meth:`~ArgumentParser.parse_known_args` method can be useful.  It works much like
+   :meth:`~ArgumentParser.parse_args` except that it does not produce an error when
+   extra arguments are present.  Instead, it returns a two item tuple containing
+   the populated namespace and the list of remaining argument strings.
 
-::
+   ::
 
-   >>> parser = argparse.ArgumentParser()
-   >>> parser.add_argument('--foo', action='store_true')
-   >>> parser.add_argument('bar')
-   >>> parser.parse_known_args(['--foo', '--badger', 'BAR', 'spam'])
-   (Namespace(bar='BAR', foo=True), ['--badger', 'spam'])
+      >>> parser = argparse.ArgumentParser()
+      >>> parser.add_argument('--foo', action='store_true')
+      >>> parser.add_argument('bar')
+      >>> parser.parse_known_args(['--foo', '--badger', 'BAR', 'spam'])
+      (Namespace(bar='BAR', foo=True), ['--badger', 'spam'])
 
 .. warning::
    :ref:`Prefix matching <prefix-matching>` rules apply to
@@ -2050,37 +2050,37 @@ Intermixed parsing
 .. method:: ArgumentParser.parse_intermixed_args(args=None, namespace=None)
 .. method:: ArgumentParser.parse_known_intermixed_args(args=None, namespace=None)
 
-A number of Unix commands allow the user to intermix optional arguments with
-positional arguments.  The :meth:`~ArgumentParser.parse_intermixed_args`
-and :meth:`~ArgumentParser.parse_known_intermixed_args` methods
-support this parsing style.
+   A number of Unix commands allow the user to intermix optional arguments with
+   positional arguments.  The :meth:`~ArgumentParser.parse_intermixed_args`
+   and :meth:`~ArgumentParser.parse_known_intermixed_args` methods
+   support this parsing style.
 
-These parsers do not support all the argparse features, and will raise
-exceptions if unsupported features are used.  In particular, subparsers,
-and mutually exclusive groups that include both
-optionals and positionals are not supported.
+   These parsers do not support all the argparse features, and will raise
+   exceptions if unsupported features are used.  In particular, subparsers,
+   and mutually exclusive groups that include both
+   optionals and positionals are not supported.
 
-The following example shows the difference between
-:meth:`~ArgumentParser.parse_known_args` and
-:meth:`~ArgumentParser.parse_intermixed_args`: the former returns ``['2',
-'3']`` as unparsed arguments, while the latter collects all the positionals
-into ``rest``.  ::
+   The following example shows the difference between
+   :meth:`~ArgumentParser.parse_known_args` and
+   :meth:`~ArgumentParser.parse_intermixed_args`: the former returns ``['2',
+   '3']`` as unparsed arguments, while the latter collects all the positionals
+   into ``rest``.  ::
 
-   >>> parser = argparse.ArgumentParser()
-   >>> parser.add_argument('--foo')
-   >>> parser.add_argument('cmd')
-   >>> parser.add_argument('rest', nargs='*', type=int)
-   >>> parser.parse_known_args('doit 1 --foo bar 2 3'.split())
-   (Namespace(cmd='doit', foo='bar', rest=[1]), ['2', '3'])
-   >>> parser.parse_intermixed_args('doit 1 --foo bar 2 3'.split())
-   Namespace(cmd='doit', foo='bar', rest=[1, 2, 3])
+      >>> parser = argparse.ArgumentParser()
+      >>> parser.add_argument('--foo')
+      >>> parser.add_argument('cmd')
+      >>> parser.add_argument('rest', nargs='*', type=int)
+      >>> parser.parse_known_args('doit 1 --foo bar 2 3'.split())
+      (Namespace(cmd='doit', foo='bar', rest=[1]), ['2', '3'])
+      >>> parser.parse_intermixed_args('doit 1 --foo bar 2 3'.split())
+      Namespace(cmd='doit', foo='bar', rest=[1, 2, 3])
 
-:meth:`~ArgumentParser.parse_known_intermixed_args` returns a two item tuple
-containing the populated namespace and the list of remaining argument strings.
-:meth:`~ArgumentParser.parse_intermixed_args` raises an error if there are any
-remaining unparsed argument strings.
+   :meth:`~ArgumentParser.parse_known_intermixed_args` returns a two item tuple
+   containing the populated namespace and the list of remaining argument strings.
+   :meth:`~ArgumentParser.parse_intermixed_args` raises an error if there are any
+   remaining unparsed argument strings.
 
-.. versionadded:: 3.7
+   .. versionadded:: 3.7
 
 
 Exceptions
