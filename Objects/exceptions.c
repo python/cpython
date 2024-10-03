@@ -3110,7 +3110,7 @@ UnicodeDecodeError_str(PyObject *self)
 {
     PyUnicodeErrorObject *exc = (PyUnicodeErrorObject *)self;
 
-    if (!exc->object) {
+    if (exc->object == NULL) {
         /* Not properly initialized. */
         return PyUnicode_FromString("");
     }
