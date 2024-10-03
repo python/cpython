@@ -2907,10 +2907,11 @@ def in_systemd_nspawn_sync_suppressed() -> bool:
     # trigger EINVAL.  Otherwise, ENOENT will be given instead.
     import errno
     try:
-        with os.open(__file__, os.O_RDONLY | os.O_SYNC):
-            pass
+        fd = os.open(__file__, os.O_RDONLY | os.O_SYNC)
     except OSError as err:
         if err.errno == errno.EINVAL:
             return True
+    else:
+        os.close(fd)
 
     return False
