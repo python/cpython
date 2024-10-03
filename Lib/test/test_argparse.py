@@ -4898,7 +4898,7 @@ class TestHelpNone(HelpTestCase):
     version = ''
 
 
-class TestHelpTupleMetavar(HelpTestCase):
+class TestHelpTupleMetavarOptional(HelpTestCase):
     """Test specifying metavar as a tuple"""
 
     parser_signature = Sig(prog='PROG')
@@ -4921,6 +4921,34 @@ class TestHelpTupleMetavar(HelpTestCase):
           -x [X1 [X2 ...]]  x
           -y Y1 Y2 Y3       y
           -z [Z1]           z
+        '''
+    version = ''
+
+
+class TestHelpTupleMetavarPositional(HelpTestCase):
+    """Test specifying metavar on a Positional as a tuple"""
+
+    parser_signature = Sig(prog='PROG')
+    argument_signatures = [
+        Sig('w', help='w help', nargs='+', metavar=('W1', 'W2')),
+        Sig('x', help='x help', nargs='*', metavar=('X1', 'X2')),
+        Sig('y', help='y help', nargs=3, metavar=('Y1', 'Y2', 'Y3')),
+        Sig('z', help='z help', nargs='?', metavar=('Z1',)),
+    ]
+    argument_group_signatures = []
+    usage = '''\
+        usage: PROG [-h] W1 [W2 ...] [X1 [X2 ...]] Y1 Y2 Y3 [Z1]
+        '''
+    help = usage + '''\
+
+        positional arguments:
+          W1 W2       w help
+          X1 X2       x help
+          Y1 Y2 Y3    y help
+          Z1          z help
+
+        options:
+          -h, --help  show this help message and exit
         '''
     version = ''
 
@@ -5265,15 +5293,15 @@ class TestHelpUsageLongSubparserCommand(TestCase):
 class TestInvalidArgumentConstructors(TestCase):
     """Test a bunch of invalid Argument constructors"""
 
-    def assertTypeError(self, *args, **kwargs):
+    def assertTypeError(self, *args, errmsg=None, **kwargs):
         parser = argparse.ArgumentParser()
-        self.assertRaises(TypeError, parser.add_argument,
-                          *args, **kwargs)
+        self.assertRaisesRegex(TypeError, errmsg, parser.add_argument,
+                               *args, **kwargs)
 
-    def assertValueError(self, *args, **kwargs):
+    def assertValueError(self, *args, errmsg=None, **kwargs):
         parser = argparse.ArgumentParser()
-        self.assertRaises(ValueError, parser.add_argument,
-                          *args, **kwargs)
+        self.assertRaisesRegex(ValueError, errmsg, parser.add_argument,
+                               *args, **kwargs)
 
     def test_invalid_keyword_arguments(self):
         self.assertTypeError('-x', bar=None)
@@ -5283,8 +5311,9 @@ class TestInvalidArgumentConstructors(TestCase):
 
     def test_missing_destination(self):
         self.assertTypeError()
-        for action in ['append', 'store']:
-            self.assertTypeError(action=action)
+        for action in ['store', 'append', 'extend']:
+            with self.subTest(action=action):
+                self.assertTypeError(action=action)
 
     def test_invalid_option_strings(self):
         self.assertValueError('--')
@@ -5301,10 +5330,8 @@ class TestInvalidArgumentConstructors(TestCase):
         self.assertValueError('-x', action='foo')
         self.assertValueError('foo', action='baz')
         self.assertValueError('--foo', action=('store', 'append'))
-        parser = argparse.ArgumentParser()
-        with self.assertRaises(ValueError) as cm:
-            parser.add_argument("--foo", action="store-true")
-        self.assertIn('unknown action', str(cm.exception))
+        self.assertValueError('--foo', action="store-true",
+                              errmsg='unknown action')
 
     def test_multiple_dest(self):
         parser = argparse.ArgumentParser()
@@ -5317,39 +5344,47 @@ class TestInvalidArgumentConstructors(TestCase):
     def test_no_argument_actions(self):
         for action in ['store_const', 'store_true', 'store_false',
                        'append_const', 'count']:
-            for attrs in [dict(type=int), dict(nargs='+'),
-                          dict(choices=['a', 'b'])]:
-                self.assertTypeError('-x', action=action, **attrs)
+            with self.subTest(action=action):
+                for attrs in [dict(type=int), dict(nargs='+'),
+                              dict(choices=['a', 'b'])]:
+                    with self.subTest(attrs=attrs):
+                        self.assertTypeError('-x', action=action, **attrs)
+                        self.assertTypeError('x', action=action, **attrs)
+                self.assertTypeError('-x', action=action, nargs=0)
+                self.assertTypeError('x', action=action, nargs=0)
 
     def test_no_argument_no_const_actions(self):
         # options with zero arguments
         for action in ['store_true', 'store_false', 'count']:
+            with self.subTest(action=action):
+                # const is always disallowed
+                self.assertTypeError('-x', const='foo', action=action)
 
-            # const is always disallowed
-            self.assertTypeError('-x', const='foo', action=action)
-
-            # nargs is always disallowed
-            self.assertTypeError('-x', nargs='*', action=action)
+                # nargs is always disallowed
+                self.assertTypeError('-x', nargs='*', action=action)
 
     def test_more_than_one_argument_actions(self):
-        for action in ['store', 'append']:
+        for action in ['store', 'append', 'extend']:
+            with self.subTest(action=action):
+                # nargs=0 is disallowed
+                action_name = 'append' if action == 'extend' else action
+                self.assertValueError('-x', nargs=0, action=action,
+                    errmsg=f'nargs for {action_name} actions must be != 0')
+                self.assertValueError('spam', nargs=0, action=action,
+                    errmsg=f'nargs for {action_name} actions must be != 0')
 
-            # nargs=0 is disallowed
-            self.assertValueError('-x', nargs=0, action=action)
-            self.assertValueError('spam', nargs=0, action=action)
-
-            # const is disallowed with non-optional arguments
-            for nargs in [1, '*', '+']:
-                self.assertValueError('-x', const='foo',
-                                      nargs=nargs, action=action)
-                self.assertValueError('spam', const='foo',
-                                      nargs=nargs, action=action)
+                # const is disallowed with non-optional arguments
+                for nargs in [1, '*', '+']:
+                    self.assertValueError('-x', const='foo',
+                                          nargs=nargs, action=action)
+                    self.assertValueError('spam', const='foo',
+                                          nargs=nargs, action=action)
 
     def test_required_const_actions(self):
         for action in ['store_const', 'append_const']:
-
-            # nargs is always disallowed
-            self.assertTypeError('-x', nargs='+', action=action)
+            with self.subTest(action=action):
+                # nargs is always disallowed
+                self.assertTypeError('-x', nargs='+', action=action)
 
     def test_parsers_action_missing_params(self):
         self.assertTypeError('command', action='parsers')
@@ -6521,6 +6556,27 @@ class TestExitOnError(TestCase):
                                'the following arguments are required: bar, baz$',
                                self.parser.parse_args, [])
 
+    def test_required_args_with_metavar(self):
+        self.parser.add_argument('bar')
+        self.parser.add_argument('baz', metavar='BaZ')
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               'the following arguments are required: bar, BaZ$',
+                               self.parser.parse_args, [])
+
+    def test_required_args_n(self):
+        self.parser.add_argument('bar')
+        self.parser.add_argument('baz', nargs=3)
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               'the following arguments are required: bar, baz$',
+                               self.parser.parse_args, [])
+
+    def test_required_args_n_with_metavar(self):
+        self.parser.add_argument('bar')
+        self.parser.add_argument('baz', nargs=3, metavar=('B', 'A', 'Z'))
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               'the following arguments are required: bar, B, A, Z$',
+                               self.parser.parse_args, [])
+
     def test_required_args_optional(self):
         self.parser.add_argument('bar')
         self.parser.add_argument('baz', nargs='?')
@@ -6533,6 +6589,20 @@ class TestExitOnError(TestCase):
         self.parser.add_argument('baz', nargs='*')
         self.assertRaisesRegex(argparse.ArgumentError,
                                'the following arguments are required: bar$',
+                               self.parser.parse_args, [])
+
+    def test_required_args_one_or_more(self):
+        self.parser.add_argument('bar')
+        self.parser.add_argument('baz', nargs='+')
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               'the following arguments are required: bar, baz$',
+                               self.parser.parse_args, [])
+
+    def test_required_args_one_or_more_with_metavar(self):
+        self.parser.add_argument('bar')
+        self.parser.add_argument('baz', nargs='+', metavar=('BaZ1', 'BaZ2'))
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               r'the following arguments are required: bar, BaZ1\[, BaZ2]$',
                                self.parser.parse_args, [])
 
     def test_required_args_remainder(self):
@@ -6549,6 +6619,39 @@ class TestExitOnError(TestCase):
         self.assertRaisesRegex(argparse.ArgumentError,
                                'one of the arguments --bar --baz is required',
                                self.parser.parse_args, [])
+
+    def test_conflicting_mutually_exclusive_args_optional_with_metavar(self):
+        group = self.parser.add_mutually_exclusive_group()
+        group.add_argument('--bar')
+        group.add_argument('baz', nargs='?', metavar='BaZ')
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               'argument BaZ: not allowed with argument --bar$',
+                               self.parser.parse_args, ['--bar', 'a', 'b'])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               'argument --bar: not allowed with argument BaZ$',
+                               self.parser.parse_args, ['a', '--bar', 'b'])
+
+    def test_conflicting_mutually_exclusive_args_zero_or_more_with_metavar1(self):
+        group = self.parser.add_mutually_exclusive_group()
+        group.add_argument('--bar')
+        group.add_argument('baz', nargs='*', metavar=('BAZ1',))
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               'argument BAZ1: not allowed with argument --bar$',
+                               self.parser.parse_args, ['--bar', 'a', 'b'])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               'argument --bar: not allowed with argument BAZ1$',
+                               self.parser.parse_args, ['a', '--bar', 'b'])
+
+    def test_conflicting_mutually_exclusive_args_zero_or_more_with_metavar2(self):
+        group = self.parser.add_mutually_exclusive_group()
+        group.add_argument('--bar')
+        group.add_argument('baz', nargs='*', metavar=('BAZ1', 'BAZ2'))
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               r'argument BAZ1\[, BAZ2]: not allowed with argument --bar$',
+                               self.parser.parse_args, ['--bar', 'a', 'b'])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                               r'argument --bar: not allowed with argument BAZ1\[, BAZ2]$',
+                               self.parser.parse_args, ['a', '--bar', 'b'])
 
     def test_ambiguous_option(self):
         self.parser.add_argument('--foobaz')
