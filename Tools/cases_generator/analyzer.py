@@ -678,6 +678,8 @@ def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, tuple[le
             next_tkn = tokens[idx+1]
         except IndexError:
             break
+        if tkn.kind == "SWITCH":
+            raise analysis_error(f"switch statements are not supported due to their complex flow control. Sorry.", tkn)
         if next_tkn.kind != lexer.LPAREN:
             continue
         if tkn.kind == lexer.IDENTIFIER:

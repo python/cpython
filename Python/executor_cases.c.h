@@ -1447,16 +1447,14 @@
             _PyStackRef value;
             oparg = CURRENT_OPARG();
             // Keep in sync with _common_constants in opcode.py
+            // If we ever have more than two constants, use a lookup table
             PyObject *val;
-            switch(oparg) {
-                case CONSTANT_ASSERTIONERROR:
+            if (oparg == CONSTANT_ASSERTIONERROR) {
                 val = PyExc_AssertionError;
-                break;
-                case CONSTANT_NOTIMPLEMENTEDERROR:
+            }
+            else {
+                assert(oparg == CONSTANT_NOTIMPLEMENTEDERROR);
                 val = PyExc_NotImplementedError;
-                break;
-                default:
-                Py_FatalError("bad LOAD_COMMON_CONSTANT oparg");
             }
             value = PyStackRef_FromPyObjectImmortal(val);
             stack_pointer[0] = value;
