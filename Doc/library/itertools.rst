@@ -736,6 +736,26 @@ loops that truncate the stream.
    allows nested :func:`tee` calls to share the same underlying data
    chain and to have a single update step rather than a chain of calls.
 
+   The flattening property makes tee iterators efficiently peekable:
+
+   .. testcode::
+
+      def lookahead(tee_iterator):
+           "Return the next value without moving the input forward"
+           [forked_iterator] = tee(tee_iterator, 1)
+           return next(forked_iterator)
+
+   .. doctest::
+
+      >>> iterator = iter('abcdef')
+      >>> [iterator] = tee(iterator, 1)   # Make the input peekable
+      >>> next(iterator)                  # Move the iterator forward
+      'a'
+      >>> lookahead(iterator)             # Check next value
+      'b'
+      >>> next(iterator)                  # Continue moving forward
+      'b'
+
    ``tee`` iterators are not threadsafe. A :exc:`RuntimeError` may be
    raised when simultaneously using iterators returned by the same :func:`tee`
    call, even if the original *iterable* is threadsafe.
