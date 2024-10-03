@@ -324,7 +324,7 @@ class CCallMakerVisitor(GrammarVisitor):
         return self._generate_artificial_rule_call(
             node,
             "repeat0",
-            lambda: self.gen.artificial_rule_from_repeat(node.node, False),
+            lambda: self.gen.artificial_rule_from_repeat(node.node, is_repeat1=False),
             "asdl_seq *",
         )
 
@@ -332,7 +332,7 @@ class CCallMakerVisitor(GrammarVisitor):
         return self._generate_artificial_rule_call(
             node,
             "repeat1",
-            lambda: self.gen.artificial_rule_from_repeat(node.node, True),
+            lambda: self.gen.artificial_rule_from_repeat(node.node, is_repeat1=True),
             "asdl_seq *",
         )
 
