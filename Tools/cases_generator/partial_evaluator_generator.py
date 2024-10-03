@@ -25,8 +25,7 @@ from lexer import Token
 from stack import Local, Stack, StackError
 
 DEFAULT_OUTPUT = ROOT / "Python/partial_evaluator_cases.c.h"
-DEFAULT_ABSTRACT_INPUT = (ROOT / "Python/optimizer_bytecodes.c").absolute().as_posix()
-DEFAULT_PE_INPUT = (ROOT / "Python/partial_evaluator_bytecodes.c").absolute().as_posix()
+DEFAULT_ABSTRACT_INPUT = (ROOT / "Python/partial_evaluator_bytecodes.c").absolute().as_posix()
 
 def validate_uop(override: Uop, uop: Uop) -> None:
     # To do
@@ -225,7 +224,6 @@ if __name__ == "__main__":
     if not args.input:
         args.base.append(DEFAULT_INPUT)
         args.input.append(DEFAULT_ABSTRACT_INPUT)
-        args.input.append(DEFAULT_PE_INPUT)
     else:
         args.base.append(args.input[-1])
         args.input.pop()

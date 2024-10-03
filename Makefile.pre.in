@@ -470,6 +470,7 @@ PYTHON_OBJS=	\
 		Python/optimizer_analysis.o \
 		Python/optimizer_symbols.o \
 		Python/parking_lot.o \
+		Python/partial_evaluator.o \
 		Python/pathconfig.o \
 		Python/preconfig.o \
 		Python/pyarena.o \
@@ -2008,7 +2009,6 @@ regen-optimizer-cases:
 regen-partial-evaluator-cases:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/partial_evaluator_generator.py \
 	    -o $(srcdir)/Python/partial_evaluator_cases.c.h.new \
-        $(srcdir)/Python/optimizer_bytecodes.c \
 	    $(srcdir)/Python/partial_evaluator_bytecodes.c \
 	    $(srcdir)/Python/bytecodes.c
 	$(UPDATE_FILE) $(srcdir)/Python/partial_evaluator_cases.c.h $(srcdir)/Python/partial_evaluator_cases.c.h.new

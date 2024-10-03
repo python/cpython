@@ -333,8 +333,8 @@ static int
 optimize_to_bool(
     _PyUOpInstruction *this_instr,
     _Py_UOpsContext *ctx,
-    _Py_UopsLocalsPlusSlot value,
-    _Py_UopsLocalsPlusSlot *result_ptr)
+    _Py_UopsSymbol *value,
+    _Py_UopsSymbol **result_ptr)
 {
     if (sym_matches_type(value, &PyBool_Type)) {
         REPLACE_OP(this_instr, _NOP, 0, 0);
@@ -446,7 +446,7 @@ optimize_uops(
 
         int oparg = this_instr->oparg;
         opcode = this_instr->opcode;
-        _Py_UopsLocalsPlusSlot *stack_pointer = ctx->frame->stack_pointer;
+        _Py_UopsSymbol **stack_pointer = ctx->frame->stack_pointer;
 
 #ifdef Py_DEBUG
         if (get_lltrace() >= 3) {
@@ -509,187 +509,6 @@ error:
 
 }
 
-#define MATERIALIZE_INST() (this_instr->is_virtual = false)
-#define sym_set_origin_inst_override _Py_uop_sym_set_origin_inst_override
-#define sym_is_virtual _Py_uop_sym_is_virtual
-#define sym_get_origin _Py_uop_sym_get_origin
-
-static void
-materialize(_Py_UopsLocalsPlusSlot *slot)
-{
-    assert(slot != NULL);
-    if (slot->origin_inst) {
-        slot->origin_inst->is_virtual = false;
-    }
-}
-
-static void
-materialize_stack(_Py_UopsLocalsPlusSlot *stack_start, _Py_UopsLocalsPlusSlot *stack_end)
-{
-    while (stack_start < stack_end) {
-        materialize(stack_start);
-        stack_start++;
-    }
-}
-
-static void
-materialize_frame(_Py_UOpsAbstractFrame *frame)
-{
-    materialize_stack(frame->stack, frame->stack_pointer);
-}
-
-static void
-materialize_ctx(_Py_UOpsContext *ctx)
-{
-    for (int i = 0; i < ctx->curr_frame_depth; i++) {
-        materialize_frame(&ctx->frames[i]);
-    }
-}
-
-/* 1 for success, 0 for not ready, cannot error at the moment. */
-static int
-partial_evaluate_uops(
-    PyCodeObject *co,
-    _PyUOpInstruction *trace,
-    int trace_len,
-    int curr_stacklen,
-    _PyBloomFilter *dependencies
-)
-{
-    _PyUOpInstruction trace_dest[UOP_MAX_TRACE_LENGTH];
-    _Py_UOpsContext context;
-    context.trace_dest = trace_dest;
-    context.n_trace_dest = trace_len;
-    _Py_UOpsContext *ctx = &context;
-    uint32_t opcode = UINT16_MAX;
-    int curr_space = 0;
-    int max_space = 0;
-    _PyUOpInstruction *first_valid_check_stack = NULL;
-    _PyUOpInstruction *corresponding_check_stack = NULL;
-
-    _Py_uop_abstractcontext_init(ctx);
-    _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, curr_stacklen, NULL, 0);
-    if (frame == NULL) {
-        return -1;
-    }
-    ctx->curr_frame_depth++;
-    ctx->frame = frame;
-    ctx->done = false;
-    ctx->out_of_space = false;
-    ctx->contradiction = false;
-
-   for (int i = 0; i < trace_len; i++) {
-       // The key part of PE --- we assume everything starts off virtual.
-       trace_dest[i] = trace[i];
-       trace_dest[i].is_virtual = true;
-   }
-
-    _PyUOpInstruction *this_instr = NULL;
-    int i = 0;
-    for (; !ctx->done; i++) {
-        assert(i < trace_len);
-        this_instr = &trace_dest[i];
-
-        int oparg = this_instr->oparg;
-        opcode = this_instr->opcode;
-        _Py_UopsLocalsPlusSlot *stack_pointer = ctx->frame->stack_pointer;
-
-#ifdef Py_DEBUG
-        if (get_lltrace() >= 3) {
-            printf("%4d pe: ", (int)(this_instr - trace_dest));
-            _PyUOpPrint(this_instr);
-            printf(" ");
-        }
-#endif
-
-        int is_static = (_PyUop_Flags[opcode] & HAS_STATIC_FLAG);
-        if (!is_static) {
-            MATERIALIZE_INST();
-        }
-        if (!is_static &&
-            // During these two opcodes, there's an abstract frame on the stack.
-            // Which is not a valid symbol.
-            (opcode != _PUSH_FRAME && opcode != _SAVE_RETURN_OFFSET)) {
-            // An escaping opcode means we need to materialize _everything_.
-            if (_PyUop_Flags[opcode] & HAS_ESCAPES_FLAG) {
-                materialize_ctx(ctx);
-            }
-            else {
-
-                materialize_frame(ctx->frame);
-            }
-        }
-
-        switch (opcode) {
-
-#include "partial_evaluator_cases.c.h"
-
-            default:
-                DPRINTF(1, "\nUnknown opcode in pe's abstract interpreter\n");
-                Py_UNREACHABLE();
-        }
-        assert(ctx->frame != NULL);
-        DPRINTF(3, " stack_level %d\n", STACK_LEVEL());
-        ctx->frame->stack_pointer = stack_pointer;
-        assert(STACK_LEVEL() >= 0);
-        if (ctx->done) {
-            break;
-        }
-    }
-    if (ctx->out_of_space) {
-        DPRINTF(3, "\n");
-        DPRINTF(1, "Out of space in pe's abstract interpreter\n");
-    }
-    if (ctx->contradiction) {
-        // Attempted to push a "bottom" (contradiction) symbol onto the stack.
-        // This means that the abstract interpreter has hit unreachable code.
-        // We *could* generate an _EXIT_TRACE or _FATAL_ERROR here, but hitting
-        // bottom indicates type instability, so we are probably better off
-        // retrying later.
-        DPRINTF(3, "\n");
-        DPRINTF(1, "Hit bottom in pe's abstract interpreter\n");
-        _Py_uop_abstractcontext_fini(ctx);
-        return 0;
-    }
-
-    if (ctx->out_of_space || !is_terminator(this_instr)) {
-        _Py_uop_abstractcontext_fini(ctx);
-        return trace_len;
-    }
-    else {
-        // We MUST not have bailed early here.
-        // That's the only time the PE's residual is valid.
-        assert(ctx->n_trace_dest < UOP_MAX_TRACE_LENGTH);
-        assert(is_terminator(this_instr));
-        assert(ctx->n_trace_dest <= trace_len);
-
-        // Copy trace_dest into trace.
-        int trace_dest_len = ctx->n_trace_dest;
-        // Only valid before we start inserting side exits.
-        assert(trace_dest_len == trace_len);
-        for (int x = 0; x < trace_dest_len; x++) {
-            // Skip all virtual instructions.
-            if (trace_dest[x].is_virtual) {
-                trace[x].opcode = _NOP;
-            }
-            else {
-                trace[x] = trace_dest[x];
-            }
-        }
-        _Py_uop_abstractcontext_fini(ctx);
-        return trace_dest_len;
-    }
-
-error:
-    DPRINTF(3, "\n");
-    DPRINTF(1, "Encountered error in pe's abstract interpreter\n");
-    if (opcode <= MAX_UOP_ID) {
-        OPT_ERROR_IN_OPCODE(opcode);
-    }
-    _Py_uop_abstractcontext_fini(ctx);
-    return -1;
-
-}
 
 static int
 remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
@@ -803,19 +622,8 @@ _Py_uop_analyze_and_optimize(
         return length;
     }
 
-    // Help the PE by removing as many _CHECK_VALIDITY as possible,
-    // Since PE treats that as non-static since it can deopt arbitrarily.
     length = remove_unneeded_uops(buffer, length);
     assert(length > 0);
-
-    length = partial_evaluate_uops(
-        _PyFrame_GetCode(frame), buffer,
-        length, curr_stacklen, dependencies);
-
-    if (length <= 0) {
-        return length;
-    }
-
 
     OPT_STAT_INC(optimizer_successes);
     return length;

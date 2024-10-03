@@ -50,33 +50,41 @@ dummy_func(void) {
 
 // BEGIN BYTECODES //
 
-    override op(_LOAD_FAST, (-- value)) {
+    op(_LOAD_FAST_CHECK, (-- value)) {
+        value = GETLOCAL(oparg);
+        // We guarantee this will error - just bail and don't optimize it.
+        if (sym_is_null(value)) {
+            ctx->done = true;
+        }
+    }
+
+    op(_LOAD_FAST, (-- value)) {
         value = GETLOCAL(oparg);
         sym_set_origin_inst_override(&value, this_instr);
     }
 
-    override op(_LOAD_FAST_AND_CLEAR, (-- value)) {
+    op(_LOAD_FAST_AND_CLEAR, (-- value)) {
         value = GETLOCAL(oparg);
         GETLOCAL(oparg) = sym_new_null(ctx);
         sym_set_origin_inst_override(&value, this_instr);
     }
 
-    override op(_LOAD_CONST, (-- value)) {
+    op(_LOAD_CONST, (-- value)) {
         // Should've all been converted by specializer.
         Py_UNREACHABLE();
     }
 
-    override op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
+    op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
         value = sym_new_const(ctx, ptr);
         sym_set_origin_inst_override(&value, this_instr);
     }
 
-    override op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
+    op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
         value = sym_new_const(ctx, ptr);
         sym_set_origin_inst_override(&value, this_instr);
     }
 
-    override op(_STORE_FAST, (value --)) {
+    op(_STORE_FAST, (value --)) {
         _PyUOpInstruction *origin = sym_get_origin(value);
         // Gets rid of things like x = x.
         if (sym_is_virtual(value) &&
@@ -93,16 +101,16 @@ dummy_func(void) {
 
     }
 
-    override op(_POP_TOP, (pop --)) {
+    op(_POP_TOP, (pop --)) {
         if (!sym_is_virtual(pop)) {
             MATERIALIZE_INST();
         }
     }
 
-    override op(_NOP, (--)) {
+    op(_NOP, (--)) {
     }
 
-    override op(_CHECK_STACK_SPACE_OPERAND, ( -- )) {
+    op(_CHECK_STACK_SPACE_OPERAND, ( -- )) {
         (void)framesize;
     }
 
