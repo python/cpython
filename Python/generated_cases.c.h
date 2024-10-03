@@ -7038,14 +7038,14 @@
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
-            frame->instr_ptr++;/* Virtual flush 1 */
-            _PyFrame_Copy(frame, gen_frame);/* Virtual reload 1 */
+            frame->instr_ptr++;
+            _PyFrame_Copy(frame, gen_frame);
             assert(frame->frame_obj == NULL);
             gen->gi_frame_state = FRAME_CREATED;
             gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
             _Py_LeaveRecursiveCallPy(tstate);
-            _PyInterpreterFrame *prev = frame->previous;/* Virtual flush 1 */
-            _PyThreadState_PopFrame(tstate, frame);/* Virtual reload 1 */
+            _PyInterpreterFrame *prev = frame->previous;
+            _PyThreadState_PopFrame(tstate, frame);
             frame = tstate->current_frame = prev;
             LOAD_IP(frame->return_offset);
             stack_pointer = _PyFrame_GetStackPointer(frame);

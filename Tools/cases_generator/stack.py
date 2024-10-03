@@ -502,8 +502,6 @@ class Storage:
             self.flush(out)
             out.start_line()
             out.emit("_PyFrame_SetStackPointer(frame, stack_pointer);\n")
-        else:
-            out.emit(f"/* Virtual flush {self.spilled} */\n")
         self.spilled += 1
 
     def reload(self, out: CWriter) -> None:
@@ -514,8 +512,6 @@ class Storage:
         if self.spilled == 0:
             out.start_line()
             out.emit("stack_pointer = _PyFrame_GetStackPointer(frame);\n")
-        else:
-            out.emit(f"/* Virtual reload {self.spilled} */\n")
 
     @staticmethod
     def for_uop(stack: Stack, uop: Uop, extract_bits: bool = True) -> tuple[list[str], "Storage"]:
