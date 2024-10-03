@@ -2,6 +2,9 @@
 #  error "this header file must not be included directly"
 #endif
 
+#define _PyLong_CAST(op) \
+    (assert(PyLong_Check(op)), _Py_CAST(PyLongObject*, (op)))
+
 PyAPI_FUNC(PyObject*) PyLong_FromUnicodeObject(PyObject *u, int base);
 
 #define Py_ASNATIVEBYTES_DEFAULTS -1
