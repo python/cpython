@@ -8,6 +8,7 @@ import pickle
 import weakref
 import errno
 from codecs import BOM_UTF8
+from itertools import product
 from textwrap import dedent
 
 from test.support import (captured_stderr, check_impl_detail,
@@ -1335,6 +1336,22 @@ class ExceptionTests(unittest.TestCase):
         klasses = UnicodeEncodeError, UnicodeDecodeError, UnicodeTranslateError
         for klass in klasses:
             self.assertEqual(str(klass.__new__(klass)), "")
+
+    def test_unicode_error_str_gh_123378(self):
+        for meth, start, end in product(
+            (str, repr),
+            range(-5, 5),
+            range(-5, 5),
+        ):
+            for obj in ('', 'a'):
+                with self.subTest(meth, obj=obj, start=start, end=end):
+                    res = meth(UnicodeEncodeError('utf-8', obj, start, end, ''))
+                    self.assertIsInstance(res, str)
+
+            for obj in (b'', b'a'):
+                with self.subTest(meth, obj=obj, start=start, end=end):
+                    res = meth(UnicodeDecodeError('utf-8', obj, start, end, ''))
+                    self.assertIsInstance(res, str)
 
     @no_tracing
     def test_badisinstance(self):
