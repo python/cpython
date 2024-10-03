@@ -181,7 +181,7 @@ partial_evaluate_uops(
     _PyUOpInstruction *first_valid_check_stack = NULL;
     _PyUOpInstruction *corresponding_check_stack = NULL;
 
-    _Py_uop_abstractcontext_init(ctx);
+    _Py_uop_pe_abstractcontext_init(ctx);
     _Py_UOpsPEAbstractFrame *frame = _Py_uop_pe_frame_new(ctx, co, curr_stacklen, NULL, 0);
     if (frame == NULL) {
         return -1;

@@ -514,10 +514,14 @@
         }
 
         case _UNPACK_SEQUENCE: {
-            _Py_UopsPESlot *output;
-            output = &stack_pointer[-1];
-            for (int _i = oparg; --_i >= 0;) {
-                output[_i] = sym_new_not_null(ctx);
+            _Py_UopsPESlot seq;
+            _Py_UopsPESlot *values;
+            seq = stack_pointer[-1];
+            values = &stack_pointer[-1];
+            /* This has to be done manually */
+            (void)seq;
+            for (int i = 0; i < oparg; i++) {
+                values[i] = sym_new_unknown(ctx);
             }
             stack_pointer += -1 + oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -559,14 +563,15 @@
         }
 
         case _UNPACK_EX: {
-            _Py_UopsPESlot *left;
-            _Py_UopsPESlot *right;
-            right = &stack_pointer[(oparg & 0xFF)];
-            for (int _i = oparg & 0xFF; --_i >= 0;) {
-                left[_i] = sym_new_not_null(ctx);
-            }
-            for (int _i = oparg >> 8; --_i >= 0;) {
-                right[_i] = sym_new_not_null(ctx);
+            _Py_UopsPESlot seq;
+            _Py_UopsPESlot *values;
+            seq = stack_pointer[-1];
+            values = &stack_pointer[-1];
+            /* This has to be done manually */
+            (void)seq;
+            int totalargs = (oparg & 0xFF) + (oparg >> 8) + 1;
+            for (int i = 0; i < totalargs; i++) {
+                values[i] = sym_new_unknown(ctx);
             }
             stack_pointer += (oparg & 0xFF) + (oparg >> 8);
             assert(WITHIN_STACK_BOUNDS());
@@ -1481,14 +1486,22 @@
         }
 
         case _CHECK_AND_ALLOCATE_OBJECT: {
+            _Py_UopsPESlot *args;
+            _Py_UopsPESlot null;
+            _Py_UopsPESlot callable;
             _Py_UopsPESlot self;
             _Py_UopsPESlot init;
-            _Py_UopsPESlot *args;
+            args = &stack_pointer[-oparg];
+            null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            args = &stack_pointer[-oparg];
+            uint32_t type_version = (uint32_t)this_instr->operand;
+            (void)type_version;
+            (void)callable;
+            (void)null;
+            (void)args;
             self = sym_new_not_null(ctx);
             init = sym_new_not_null(ctx);
-            for (int _i = oparg; --_i >= 0;) {
-                args[_i] = sym_new_not_null(ctx);
-            }
             stack_pointer[-2 - oparg] = self;
             stack_pointer[-1 - oparg] = init;
             break;
@@ -1822,6 +1835,7 @@
         }
 
         case _JUMP_TO_TOP: {
+            ctx->done = true;
             break;
         }
 
@@ -1840,6 +1854,9 @@
         }
 
         case _EXIT_TRACE: {
+            PyObject *exit_p = (PyObject *)this_instr->operand;
+            (void)exit_p;
+            ctx->done = true;
             break;
         }
 

@@ -164,6 +164,15 @@ dummy_func(void) {
         ctx->done = true;
     }
 
+    op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, null, args[oparg] -- self, init, args[oparg])) {
+        (void)type_version;
+        (void)callable;
+        (void)null;
+        (void)args;
+        self = sym_new_not_null(ctx);
+        init = sym_new_not_null(ctx);
+    }
+
     op(_CREATE_INIT_FRAME, (self, init, args[oparg] -- init_frame)) {
         (void)self;
         (void)init;
@@ -261,6 +270,32 @@ dummy_func(void) {
 
     op(_YIELD_VALUE, (unused -- res)) {
         res = sym_new_unknown(ctx);
+    }
+
+    op(_JUMP_TO_TOP, (--)) {
+        ctx->done = true;
+    }
+
+    op(_EXIT_TRACE, (exit_p/4 --)) {
+        (void)exit_p;
+        ctx->done = true;
+    }
+
+    op(_UNPACK_SEQUENCE, (seq -- values[oparg])) {
+        /* This has to be done manually */
+        (void)seq;
+        for (int i = 0; i < oparg; i++) {
+            values[i] = sym_new_unknown(ctx);
+        }
+    }
+
+    op(_UNPACK_EX, (seq -- values[oparg & 0xFF], unused, unused[oparg >> 8])) {
+        /* This has to be done manually */
+        (void)seq;
+        int totalargs = (oparg & 0xFF) + (oparg >> 8) + 1;
+        for (int i = 0; i < totalargs; i++) {
+            values[i] = sym_new_unknown(ctx);
+        }
     }
 // END BYTECODES //
 

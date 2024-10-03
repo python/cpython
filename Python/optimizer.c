@@ -1253,6 +1253,10 @@ uop_optimize(
         if (length <= 0) {
             return length;
         }
+        length = _Py_uop_partial_evaluate(frame, buffer, length, curr_stackentries, &dependencies);
+        if (length <= 0) {
+            return length;
+        }
     }
     assert(length < UOP_MAX_TRACE_LENGTH);
     assert(length >= 1);
