@@ -4840,17 +4840,20 @@ static PyMethodDef PyCurses_methods[] = {
 /* Function versions of the 3 functions for testing whether curses has been
    initialised or not. */
 
-static inline int curses_capi_setupterm_called(void)
+static inline int
+curses_capi_setupterm_called(void)
 {
     return _PyCursesCheckFunction(curses_setupterm_called, "setupterm");
 }
 
-static inline int curses_capi_initscr_called(void)
+static inline int
+curses_capi_initscr_called(void)
 {
     return _PyCursesCheckFunction(curses_initscr_called, "initscr");
 }
 
-static inline int curses_capi_start_color_called(void)
+static inline int
+curses_capi_start_color_called(void)
 {
     return _PyCursesCheckFunction(curses_start_color_called, "start_color");
 }
