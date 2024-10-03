@@ -1843,9 +1843,11 @@
             if (first_valid_check_stack == NULL) {
                 first_valid_check_stack = corresponding_check_stack;
             }
-            else if (corresponding_check_stack) {
-                // delete all but the first valid _CHECK_STACK_SPACE
-                corresponding_check_stack->opcode = _NOP;
+            else {
+                if (corresponding_check_stack) {
+                    // delete all but the first valid _CHECK_STACK_SPACE
+                    corresponding_check_stack->opcode = _NOP;
+                }
             }
             corresponding_check_stack = NULL;
             break;

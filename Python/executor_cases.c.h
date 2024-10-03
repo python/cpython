@@ -3309,18 +3309,20 @@
                 }
                 iter = iterable;
             }
-            else if (PyGen_CheckExact(iterable_o)) {
-                iter = iterable;
-            }
             else {
-                /* `iterable` is not a generator. */
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                iter = PyStackRef_FromPyObjectSteal(PyObject_GetIter(iterable_o));
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (PyStackRef_IsNull(iter)) {
-                    JUMP_TO_ERROR();
+                if (PyGen_CheckExact(iterable_o)) {
+                    iter = iterable;
                 }
-                PyStackRef_CLOSE(iterable);
+                else {
+                    /* `iterable` is not a generator. */
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    iter = PyStackRef_FromPyObjectSteal(PyObject_GetIter(iterable_o));
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    if (PyStackRef_IsNull(iter)) {
+                        JUMP_TO_ERROR();
+                    }
+                    PyStackRef_CLOSE(iterable);
+                }
             }
             stack_pointer[-1] = iter;
             break;

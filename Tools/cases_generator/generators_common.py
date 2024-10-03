@@ -385,8 +385,12 @@ class Emitter:
                 self.emit(next(tkn_iter))
                 maybe_if = tkn_iter.peek()
                 if maybe_if and maybe_if.kind == "IF":
+                    #Emit extra braces around the if to get scoping right
+                    self.emit(" {\n")
                     self.emit(next(tkn_iter))
                     else_reachable, rbrace, else_storage = self._emit_if(tkn_iter, uop, storage, inst)
+                    self.out.start_line()
+                    self.emit("}\n")
                 else:
                     else_reachable, rbrace, else_storage = self._emit_block(tkn_iter, uop, storage, inst, True)
                 if not reachable:
