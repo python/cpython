@@ -1012,10 +1012,11 @@ better reporting than can be given by the ``type`` keyword.  A
 :exc:`FileNotFoundError` exception would not be handled at all.
 
 Even :class:`~argparse.FileType` has its limitations for use with the ``type``
-keyword.  If one argument uses *FileType* and then a subsequent argument fails,
-an error is reported but the file is not automatically closed.  In this case, it
-would be better to wait until after the parser has run and then use the
-:keyword:`with`-statement to manage the files.
+keyword.  If one argument uses :class:`~argparse.FileType` and then a
+subsequent argument fails, an error is reported but the file is not
+automatically closed.  In this case, it would be better to wait until after
+the parser has run and then use the :keyword:`with`-statement to manage the
+files.
 
 For type checkers that simply check against a fixed set of values, consider
 using the choices_ keyword instead.
@@ -1288,17 +1289,17 @@ this API may be passed as the ``action`` parameter to
    Action instances should be callable, so subclasses must override the
    ``__call__`` method, which should accept four parameters:
 
-   * ``parser`` - The ArgumentParser object which contains this action.
+   * parser - The ArgumentParser object which contains this action.
 
-   * ``namespace`` - The :class:`Namespace` object that will be returned by
+   * namespace - The :class:`Namespace` object that will be returned by
       :meth:`~ArgumentParser.parse_args`.  Most actions add an attribute to this
       object using :func:`setattr`.
 
-   * ``values`` - The associated command-line arguments, with any type conversions
+   * values - The associated command-line arguments, with any type conversions
       applied.  Type conversions are specified with the type_ keyword argument to
       :meth:`~ArgumentParser.add_argument`.
 
-   * ``option_string`` - The option string that was used to invoke this action.
+   * option_string - The option string that was used to invoke this action.
       The ``option_string`` argument is optional, and will be absent if the action
       is associated with a positional argument.
 
