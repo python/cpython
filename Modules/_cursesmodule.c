@@ -165,25 +165,26 @@ typedef struct _cursesmodule_state {
     PyTypeObject *window_type;      // PyCursesWindow_Type
 } _cursesmodule_state;
 
-// For now, we keep a global state variable to prepare for PEP 489.
-static _cursesmodule_state curses_global_state;
-
 static inline _cursesmodule_state *
-get_cursesmodule_state(PyObject *Py_UNUSED(module))
+get_cursesmodule_state(PyObject *module)
 {
-    return &curses_global_state;
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_cursesmodule_state *)state;
 }
 
 static inline _cursesmodule_state *
-get_cursesmodule_state_by_cls(PyTypeObject *Py_UNUSED(cls))
+get_cursesmodule_state_by_cls(PyTypeObject *cls)
 {
-    return &curses_global_state;
+    void *state = PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return (_cursesmodule_state *)state;
 }
 
 static inline _cursesmodule_state *
-get_cursesmodule_state_by_win(PyCursesWindowObject *Py_UNUSED(win))
+get_cursesmodule_state_by_win(PyCursesWindowObject *win)
 {
-    return &curses_global_state;
+    return get_cursesmodule_state_by_cls(Py_TYPE(win));
 }
 
 /*[clinic input]
@@ -211,8 +212,8 @@ static const char *curses_screen_encoding = NULL;
  * set and this returns 0. Otherwise, this returns 1.
  *
  * Since this function can be called in functions that do not
- * have a direct access to the module's state, the exception
- * type is directly taken from the global state for now.
+ * have a direct access to the module's state, '_curses.error'
+ * is imported on demand.
  */
 static inline int
 _PyCursesCheckFunction(int called, const char *funcname)
@@ -220,7 +221,12 @@ _PyCursesCheckFunction(int called, const char *funcname)
     if (called == TRUE) {
         return 1;
     }
-    PyErr_Format(curses_global_state.error, "must call %s() first", funcname);
+    PyObject *exc = _PyImport_GetModuleAttrString("_curses", "error");
+    if (exc != NULL) {
+        PyErr_Format(exc, "must call %s() first", funcname);
+        Py_DECREF(exc);
+    }
+    // assert(PyErr_Occurred());
     return 0;
 }
 
@@ -4763,7 +4769,7 @@ _curses_has_extended_color_support_impl(PyObject *module)
 
 /* List of functions defined in the module */
 
-static PyMethodDef PyCurses_methods[] = {
+static PyMethodDef _cursesmodule_methods[] = {
     _CURSES_BAUDRATE_METHODDEF
     _CURSES_BEEP_METHODDEF
     _CURSES_CAN_CHANGE_COLOR_METHODDEF
@@ -4942,10 +4948,34 @@ curses_capi_capsule_new(void *capi)
     return capsule;
 }
 
-/* Module initialization */
+/* Module initialization and cleanup functions */
 
 static int
-cursesmodule_exec(PyObject *module)
+_cursesmodule_traverse(PyObject *mod, visitproc visit, void *arg)
+{
+    _cursesmodule_state *state = get_cursesmodule_state(mod);
+    Py_VISIT(state->error);
+    Py_VISIT(state->window_type);
+    return 0;
+}
+
+static int
+_cursesmodule_clear(PyObject *mod)
+{
+    _cursesmodule_state *state = get_cursesmodule_state(mod);
+    Py_CLEAR(state->error);
+    Py_CLEAR(state->window_type);
+    return 0;
+}
+
+static void
+_cursesmodule_free(void *mod)
+{
+    (void)_cursesmodule_clear((PyObject *)mod);
+}
+
+static int
+_cursesmodule_exec(PyObject *module)
 {
     _cursesmodule_state *state = get_cursesmodule_state(module);
     /* Initialize object type */
@@ -4987,7 +5017,6 @@ cursesmodule_exec(PyObject *module)
         return -1;
     }
     rc = PyDict_SetItemString(module_dict, "error", state->error);
-    Py_DECREF(state->error);
     if (rc < 0) {
         return -1;
     }
@@ -5181,33 +5210,27 @@ cursesmodule_exec(PyObject *module)
 
 /* Initialization function for the module */
 
+static PyModuleDef_Slot _cursesmodule_slots[] = {
+    {Py_mod_exec, _cursesmodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL}
+};
+
 static struct PyModuleDef _cursesmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_curses",
-    .m_size = -1,
-    .m_methods = PyCurses_methods,
+    .m_doc = NULL,
+    .m_size = sizeof(_cursesmodule_state),
+    .m_methods = _cursesmodule_methods,
+    .m_slots = _cursesmodule_slots,
+    .m_traverse = _cursesmodule_traverse,
+    .m_clear = _cursesmodule_clear,
+    .m_free = _cursesmodule_free
 };
 
 PyMODINIT_FUNC
 PyInit__curses(void)
 {
-    // create the module
-    PyObject *mod = PyModule_Create(&_cursesmodule);
-    if (mod == NULL) {
-        goto error;
-    }
-#ifdef Py_GIL_DISABLED
-    if (PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED) < 0) {
-        goto error;
-    }
-#endif
-    // populate the module
-    if (cursesmodule_exec(mod) < 0) {
-        goto error;
-    }
-    return mod;
-
-error:
-    Py_XDECREF(mod);
-    return NULL;
+    return PyModuleDef_Init(&_cursesmodule);
 }
