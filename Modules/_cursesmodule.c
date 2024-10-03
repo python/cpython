@@ -4893,9 +4893,8 @@ _curses_capi_capsule_destructor(PyObject *op)
 static PyObject *
 _curses_capi_capsule_new(void *capi)
 {
-    PyObject *capsule = PyCapsule_New(capi, PyCurses_CAPSULE_NAME,
-                                      _curses_capi_capsule_destructor);
-    return capsule;
+    return PyCapsule_New(capi, PyCurses_CAPSULE_NAME,
+                         _curses_capi_capsule_destructor);
 }
 
 /* Module initialization */
@@ -5138,14 +5137,9 @@ cursesmodule_exec(PyObject *module)
 
 static struct PyModuleDef _cursesmodule = {
     PyModuleDef_HEAD_INIT,
-    "_curses",
-    NULL,
-    -1,
-    PyCurses_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "_curses",
+    .m_size = -1,
+    .m_methods = PyCurses_methods,
 };
 
 PyMODINIT_FUNC
