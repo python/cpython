@@ -3014,8 +3014,8 @@ UnicodeEncodeError_str(PyObject *self)
     }
 
     PyObject *res;
-    ssize_t len = PyUnicode_GET_LENGTH(exc->object);
-    ssize_t start = exc->start, end = exc->end;
+    Py_ssize_t len = PyUnicode_GET_LENGTH(exc->object);
+    Py_ssize_t start = exc->start, end = exc->end;
 
     if ((start >= 0 && start < len) && (end >= 0 && end <= len) && end == start + 1) {
         Py_UCS4 badchar = PyUnicode_ReadChar(exc->object, start);
@@ -3128,8 +3128,8 @@ UnicodeDecodeError_str(PyObject *self)
     }
 
     PyObject *res;
-    ssize_t len = PyBytes_GET_SIZE(exc->object);
-    ssize_t start = exc->start, end = exc->end;
+    Py_ssize_t len = PyBytes_GET_SIZE(exc->object);
+    Py_ssize_t start = exc->start, end = exc->end;
 
     if ((start >= 0 && start < len) && (end >= 0 && end <= len) && end == start + 1) {
         int badbyte = (int)(PyBytes_AS_STRING(exc->object)[start] & 0xff);
