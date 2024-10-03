@@ -27,15 +27,14 @@ Arithmetic conversions
 
 .. index:: pair: arithmetic; conversion
 
-When a description of an arithmetic operator below uses the phrase "the real numeric
-arguments are converted to a common type", this means that the operator
+When a description of an arithmetic operator below uses the phrase "the numeric
+arguments are converted to a common real type", this means that the operator
 implementation for built-in types works as follows:
 
-* If only one argument is a complex number, the other is converted to a
-  floating-point number;
+* If both arguments are complex numbers, no conversion is necessary;
 
-* otherwise, if either argument is a floating-point number, the other is
-  converted to floating point;
+* otherwise, if either argument is a complex or a floating-point number, the
+  other is converted to a floating-point number;
 
 * otherwise, both must be integers and no conversion is necessary.
 
@@ -1322,8 +1321,8 @@ operators and one for additive operators:
 
 The ``*`` (multiplication) operator yields the product of its arguments.  The
 arguments must either both be numbers, or one argument must be an integer and
-the other must be a sequence. In the former case, the real numbers are converted to a
-common type and then multiplied together.  In the latter case, sequence
+the other must be a sequence. In the former case, the numbers are converted to a
+common real type and then multiplied together.  In the latter case, sequence
 repetition is performed; a negative repetition factor yields an empty sequence.
 
 This operation can be customized using the special :meth:`~object.__mul__` and
@@ -1400,7 +1399,7 @@ floating-point number using the :func:`abs` function if appropriate.
 
 The ``+`` (addition) operator yields the sum of its arguments.  The arguments
 must either both be numbers or both be sequences of the same type.  In the
-former case, the real numbers are converted to a common type and then added together.
+former case, the numbers are converted to a common real type and then added together.
 In the latter case, the sequences are concatenated.
 
 This operation can be customized using the special :meth:`~object.__add__` and
@@ -1416,7 +1415,7 @@ This operation can be customized using the special :meth:`~object.__add__` and
    single: - (minus); binary operator
 
 The ``-`` (subtraction) operator yields the difference of its arguments.  The
-real numeric arguments are first converted to a common type.
+numeric arguments are first converted to a common real type.
 
 This operation can be customized using the special :meth:`~object.__sub__` and
 :meth:`~object.__rsub__` methods.
