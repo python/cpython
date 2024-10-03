@@ -24,7 +24,7 @@
         /* _MONITOR_RESUME is not a viable micro-op for tier 2 */
 
         case _LOAD_FAST_CHECK: {
-            _Py_UopsLocalsPlusSlot value;
+            _Py_UopsPESlot value;
             value = GETLOCAL(oparg);
             // We guarantee this will error - just bail and don't optimize it.
             if (sym_is_null(value)) {
@@ -37,7 +37,7 @@
         }
 
         case _LOAD_FAST: {
-            _Py_UopsLocalsPlusSlot value;
+            _Py_UopsPESlot value;
             value = GETLOCAL(oparg);
             sym_set_origin_inst_override(&value, this_instr);
             stack_pointer[0] = value;
@@ -47,7 +47,7 @@
         }
 
         case _LOAD_FAST_AND_CLEAR: {
-            _Py_UopsLocalsPlusSlot value;
+            _Py_UopsPESlot value;
             value = GETLOCAL(oparg);
             GETLOCAL(oparg) = sym_new_null(ctx);
             sym_set_origin_inst_override(&value, this_instr);
@@ -58,7 +58,7 @@
         }
 
         case _LOAD_CONST: {
-            _Py_UopsLocalsPlusSlot value;
+            _Py_UopsPESlot value;
             // Should've all been converted by specializer.
             Py_UNREACHABLE();
             stack_pointer[0] = value;
@@ -68,7 +68,7 @@
         }
 
         case _STORE_FAST: {
-            _Py_UopsLocalsPlusSlot value;
+            _Py_UopsPESlot value;
             value = stack_pointer[-1];
             _PyUOpInstruction *origin = sym_get_origin(value);
             // Gets rid of things like x = x.
@@ -89,7 +89,7 @@
         }
 
         case _POP_TOP: {
-            _Py_UopsLocalsPlusSlot pop;
+            _Py_UopsPESlot pop;
             pop = stack_pointer[-1];
             if (!sym_is_virtual(pop)) {
                 MATERIALIZE_INST();
@@ -100,7 +100,7 @@
         }
 
         case _PUSH_NULL: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -109,7 +109,7 @@
         }
 
         case _END_SEND: {
-            _Py_UopsLocalsPlusSlot value;
+            _Py_UopsPESlot value;
             value = sym_new_not_null(ctx);
             stack_pointer[-2] = value;
             stack_pointer += -1;
@@ -118,21 +118,21 @@
         }
 
         case _UNARY_NEGATIVE: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-1] = res;
             break;
         }
 
         case _UNARY_NOT: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-1] = res;
             break;
         }
 
         case _TO_BOOL: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-1] = res;
             break;
@@ -143,42 +143,42 @@
         }
 
         case _TO_BOOL_INT: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-1] = res;
             break;
         }
 
         case _TO_BOOL_LIST: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-1] = res;
             break;
         }
 
         case _TO_BOOL_NONE: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-1] = res;
             break;
         }
 
         case _TO_BOOL_STR: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-1] = res;
             break;
         }
 
         case _REPLACE_WITH_TRUE: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-1] = res;
             break;
         }
 
         case _UNARY_INVERT: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-1] = res;
             break;
@@ -197,7 +197,7 @@
         }
 
         case _BINARY_OP_MULTIPLY_INT: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -206,7 +206,7 @@
         }
 
         case _BINARY_OP_ADD_INT: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -215,7 +215,7 @@
         }
 
         case _BINARY_OP_SUBTRACT_INT: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -236,7 +236,7 @@
         }
 
         case _BINARY_OP_MULTIPLY_FLOAT: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -245,7 +245,7 @@
         }
 
         case _BINARY_OP_ADD_FLOAT: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -254,7 +254,7 @@
         }
 
         case _BINARY_OP_SUBTRACT_FLOAT: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -267,7 +267,7 @@
         }
 
         case _BINARY_OP_ADD_UNICODE: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -282,7 +282,7 @@
         }
 
         case _BINARY_SUBSCR: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -291,7 +291,7 @@
         }
 
         case _BINARY_SLICE: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-3] = res;
             stack_pointer += -2;
@@ -306,7 +306,7 @@
         }
 
         case _BINARY_SUBSCR_LIST_INT: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -315,7 +315,7 @@
         }
 
         case _BINARY_SUBSCR_STR_INT: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -324,7 +324,7 @@
         }
 
         case _BINARY_SUBSCR_TUPLE_INT: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -333,7 +333,7 @@
         }
 
         case _BINARY_SUBSCR_DICT: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -391,14 +391,14 @@
         }
 
         case _CALL_INTRINSIC_1: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-1] = res;
             break;
         }
 
         case _CALL_INTRINSIC_2: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -407,21 +407,21 @@
         }
 
         case _RETURN_VALUE: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-1] = res;
             break;
         }
 
         case _GET_AITER: {
-            _Py_UopsLocalsPlusSlot iter;
+            _Py_UopsPESlot iter;
             iter = sym_new_not_null(ctx);
             stack_pointer[-1] = iter;
             break;
         }
 
         case _GET_ANEXT: {
-            _Py_UopsLocalsPlusSlot awaitable;
+            _Py_UopsPESlot awaitable;
             awaitable = sym_new_not_null(ctx);
             stack_pointer[0] = awaitable;
             stack_pointer += 1;
@@ -430,7 +430,7 @@
         }
 
         case _GET_AWAITABLE: {
-            _Py_UopsLocalsPlusSlot iter;
+            _Py_UopsPESlot iter;
             iter = sym_new_not_null(ctx);
             stack_pointer[-1] = iter;
             break;
@@ -446,7 +446,7 @@
         }
 
         case _YIELD_VALUE: {
-            _Py_UopsLocalsPlusSlot value;
+            _Py_UopsPESlot value;
             value = sym_new_not_null(ctx);
             stack_pointer[-1] = value;
             break;
@@ -459,7 +459,7 @@
         }
 
         case _LOAD_COMMON_CONSTANT: {
-            _Py_UopsLocalsPlusSlot value;
+            _Py_UopsPESlot value;
             value = sym_new_not_null(ctx);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -468,7 +468,7 @@
         }
 
         case _LOAD_BUILD_CLASS: {
-            _Py_UopsLocalsPlusSlot bc;
+            _Py_UopsPESlot bc;
             bc = sym_new_not_null(ctx);
             stack_pointer[0] = bc;
             stack_pointer += 1;
@@ -487,7 +487,7 @@
         }
 
         case _UNPACK_SEQUENCE: {
-            _Py_UopsLocalsPlusSlot *output;
+            _Py_UopsPESlot *output;
             output = &stack_pointer[-1];
             for (int _i = oparg; --_i >= 0;) {
                 output[_i] = sym_new_not_null(ctx);
@@ -498,8 +498,8 @@
         }
 
         case _UNPACK_SEQUENCE_TWO_TUPLE: {
-            _Py_UopsLocalsPlusSlot val1;
-            _Py_UopsLocalsPlusSlot val0;
+            _Py_UopsPESlot val1;
+            _Py_UopsPESlot val0;
             val1 = sym_new_not_null(ctx);
             val0 = sym_new_not_null(ctx);
             stack_pointer[-1] = val1;
@@ -510,7 +510,7 @@
         }
 
         case _UNPACK_SEQUENCE_TUPLE: {
-            _Py_UopsLocalsPlusSlot *values;
+            _Py_UopsPESlot *values;
             values = &stack_pointer[-1];
             for (int _i = oparg; --_i >= 0;) {
                 values[_i] = sym_new_not_null(ctx);
@@ -521,7 +521,7 @@
         }
 
         case _UNPACK_SEQUENCE_LIST: {
-            _Py_UopsLocalsPlusSlot *values;
+            _Py_UopsPESlot *values;
             values = &stack_pointer[-1];
             for (int _i = oparg; --_i >= 0;) {
                 values[_i] = sym_new_not_null(ctx);
@@ -532,8 +532,8 @@
         }
 
         case _UNPACK_EX: {
-            _Py_UopsLocalsPlusSlot *left;
-            _Py_UopsLocalsPlusSlot *right;
+            _Py_UopsPESlot *left;
+            _Py_UopsPESlot *right;
             right = &stack_pointer[(oparg & 0xFF)];
             for (int _i = oparg & 0xFF; --_i >= 0;) {
                 left[_i] = sym_new_not_null(ctx);
@@ -569,7 +569,7 @@
         }
 
         case _LOAD_LOCALS: {
-            _Py_UopsLocalsPlusSlot locals;
+            _Py_UopsPESlot locals;
             locals = sym_new_not_null(ctx);
             stack_pointer[0] = locals;
             stack_pointer += 1;
@@ -580,7 +580,7 @@
         /* _LOAD_FROM_DICT_OR_GLOBALS is not a viable micro-op for tier 2 */
 
         case _LOAD_NAME: {
-            _Py_UopsLocalsPlusSlot v;
+            _Py_UopsPESlot v;
             v = sym_new_not_null(ctx);
             stack_pointer[0] = v;
             stack_pointer += 1;
@@ -589,8 +589,8 @@
         }
 
         case _LOAD_GLOBAL: {
-            _Py_UopsLocalsPlusSlot *res;
-            _Py_UopsLocalsPlusSlot null = (_Py_UopsLocalsPlusSlot){NULL, 0};
+            _Py_UopsPESlot *res;
+            _Py_UopsPESlot null = (_Py_UopsPESlot){NULL, 0};
             res = &stack_pointer[0];
             for (int _i = 1; --_i >= 0;) {
                 res[_i] = sym_new_not_null(ctx);
@@ -611,8 +611,8 @@
         }
 
         case _LOAD_GLOBAL_MODULE: {
-            _Py_UopsLocalsPlusSlot res;
-            _Py_UopsLocalsPlusSlot null = (_Py_UopsLocalsPlusSlot){NULL, 0};
+            _Py_UopsPESlot res;
+            _Py_UopsPESlot null = (_Py_UopsPESlot){NULL, 0};
             res = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             stack_pointer[0] = res;
@@ -623,8 +623,8 @@
         }
 
         case _LOAD_GLOBAL_BUILTINS: {
-            _Py_UopsLocalsPlusSlot res;
-            _Py_UopsLocalsPlusSlot null = (_Py_UopsLocalsPlusSlot){NULL, 0};
+            _Py_UopsPESlot res;
+            _Py_UopsPESlot null = (_Py_UopsPESlot){NULL, 0};
             res = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             stack_pointer[0] = res;
@@ -647,14 +647,14 @@
         }
 
         case _LOAD_FROM_DICT_OR_DEREF: {
-            _Py_UopsLocalsPlusSlot value;
+            _Py_UopsPESlot value;
             value = sym_new_not_null(ctx);
             stack_pointer[-1] = value;
             break;
         }
 
         case _LOAD_DEREF: {
-            _Py_UopsLocalsPlusSlot value;
+            _Py_UopsPESlot value;
             value = sym_new_not_null(ctx);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -673,7 +673,7 @@
         }
 
         case _BUILD_STRING: {
-            _Py_UopsLocalsPlusSlot str;
+            _Py_UopsPESlot str;
             str = sym_new_not_null(ctx);
             stack_pointer[-oparg] = str;
             stack_pointer += 1 - oparg;
@@ -682,7 +682,7 @@
         }
 
         case _BUILD_TUPLE: {
-            _Py_UopsLocalsPlusSlot tup;
+            _Py_UopsPESlot tup;
             tup = sym_new_not_null(ctx);
             stack_pointer[-oparg] = tup;
             stack_pointer += 1 - oparg;
@@ -691,7 +691,7 @@
         }
 
         case _BUILD_LIST: {
-            _Py_UopsLocalsPlusSlot list;
+            _Py_UopsPESlot list;
             list = sym_new_not_null(ctx);
             stack_pointer[-oparg] = list;
             stack_pointer += 1 - oparg;
@@ -712,7 +712,7 @@
         }
 
         case _BUILD_SET: {
-            _Py_UopsLocalsPlusSlot set;
+            _Py_UopsPESlot set;
             set = sym_new_not_null(ctx);
             stack_pointer[-oparg] = set;
             stack_pointer += 1 - oparg;
@@ -721,7 +721,7 @@
         }
 
         case _BUILD_MAP: {
-            _Py_UopsLocalsPlusSlot map;
+            _Py_UopsPESlot map;
             map = sym_new_not_null(ctx);
             stack_pointer[-oparg*2] = map;
             stack_pointer += 1 - oparg*2;
@@ -754,7 +754,7 @@
         /* _INSTRUMENTED_LOAD_SUPER_ATTR is not a viable micro-op for tier 2 */
 
         case _LOAD_SUPER_ATTR_ATTR: {
-            _Py_UopsLocalsPlusSlot attr_st;
+            _Py_UopsPESlot attr_st;
             attr_st = sym_new_not_null(ctx);
             stack_pointer[-3] = attr_st;
             stack_pointer += -2;
@@ -763,8 +763,8 @@
         }
 
         case _LOAD_SUPER_ATTR_METHOD: {
-            _Py_UopsLocalsPlusSlot attr;
-            _Py_UopsLocalsPlusSlot self_or_null;
+            _Py_UopsPESlot attr;
+            _Py_UopsPESlot self_or_null;
             attr = sym_new_not_null(ctx);
             self_or_null = sym_new_not_null(ctx);
             stack_pointer[-3] = attr;
@@ -775,8 +775,8 @@
         }
 
         case _LOAD_ATTR: {
-            _Py_UopsLocalsPlusSlot attr;
-            _Py_UopsLocalsPlusSlot self_or_null = (_Py_UopsLocalsPlusSlot){NULL, 0};
+            _Py_UopsPESlot attr;
+            _Py_UopsPESlot self_or_null = (_Py_UopsPESlot){NULL, 0};
             attr = sym_new_not_null(ctx);
             self_or_null = sym_new_not_null(ctx);
             stack_pointer[-1] = attr;
@@ -795,8 +795,8 @@
         }
 
         case _LOAD_ATTR_INSTANCE_VALUE: {
-            _Py_UopsLocalsPlusSlot attr;
-            _Py_UopsLocalsPlusSlot null = (_Py_UopsLocalsPlusSlot){NULL, 0};
+            _Py_UopsPESlot attr;
+            _Py_UopsPESlot null = (_Py_UopsPESlot){NULL, 0};
             attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             stack_pointer[-1] = attr;
@@ -811,8 +811,8 @@
         }
 
         case _LOAD_ATTR_MODULE: {
-            _Py_UopsLocalsPlusSlot attr;
-            _Py_UopsLocalsPlusSlot null = (_Py_UopsLocalsPlusSlot){NULL, 0};
+            _Py_UopsPESlot attr;
+            _Py_UopsPESlot null = (_Py_UopsPESlot){NULL, 0};
             attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             stack_pointer[-1] = attr;
@@ -827,8 +827,8 @@
         }
 
         case _LOAD_ATTR_WITH_HINT: {
-            _Py_UopsLocalsPlusSlot attr;
-            _Py_UopsLocalsPlusSlot null = (_Py_UopsLocalsPlusSlot){NULL, 0};
+            _Py_UopsPESlot attr;
+            _Py_UopsPESlot null = (_Py_UopsPESlot){NULL, 0};
             attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             stack_pointer[-1] = attr;
@@ -839,8 +839,8 @@
         }
 
         case _LOAD_ATTR_SLOT: {
-            _Py_UopsLocalsPlusSlot attr;
-            _Py_UopsLocalsPlusSlot null = (_Py_UopsLocalsPlusSlot){NULL, 0};
+            _Py_UopsPESlot attr;
+            _Py_UopsPESlot null = (_Py_UopsPESlot){NULL, 0};
             attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             stack_pointer[-1] = attr;
@@ -855,8 +855,8 @@
         }
 
         case _LOAD_ATTR_CLASS: {
-            _Py_UopsLocalsPlusSlot attr;
-            _Py_UopsLocalsPlusSlot null = (_Py_UopsLocalsPlusSlot){NULL, 0};
+            _Py_UopsPESlot attr;
+            _Py_UopsPESlot null = (_Py_UopsPESlot){NULL, 0};
             attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             stack_pointer[-1] = attr;
@@ -898,7 +898,7 @@
         }
 
         case _COMPARE_OP: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -907,7 +907,7 @@
         }
 
         case _COMPARE_OP_FLOAT: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -916,7 +916,7 @@
         }
 
         case _COMPARE_OP_INT: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -925,7 +925,7 @@
         }
 
         case _COMPARE_OP_STR: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -934,7 +934,7 @@
         }
 
         case _IS_OP: {
-            _Py_UopsLocalsPlusSlot b;
+            _Py_UopsPESlot b;
             b = sym_new_not_null(ctx);
             stack_pointer[-2] = b;
             stack_pointer += -1;
@@ -943,7 +943,7 @@
         }
 
         case _CONTAINS_OP: {
-            _Py_UopsLocalsPlusSlot b;
+            _Py_UopsPESlot b;
             b = sym_new_not_null(ctx);
             stack_pointer[-2] = b;
             stack_pointer += -1;
@@ -952,7 +952,7 @@
         }
 
         case _CONTAINS_OP_SET: {
-            _Py_UopsLocalsPlusSlot b;
+            _Py_UopsPESlot b;
             b = sym_new_not_null(ctx);
             stack_pointer[-2] = b;
             stack_pointer += -1;
@@ -961,7 +961,7 @@
         }
 
         case _CONTAINS_OP_DICT: {
-            _Py_UopsLocalsPlusSlot b;
+            _Py_UopsPESlot b;
             b = sym_new_not_null(ctx);
             stack_pointer[-2] = b;
             stack_pointer += -1;
@@ -970,8 +970,8 @@
         }
 
         case _CHECK_EG_MATCH: {
-            _Py_UopsLocalsPlusSlot rest;
-            _Py_UopsLocalsPlusSlot match;
+            _Py_UopsPESlot rest;
+            _Py_UopsPESlot match;
             rest = sym_new_not_null(ctx);
             match = sym_new_not_null(ctx);
             stack_pointer[-2] = rest;
@@ -980,14 +980,14 @@
         }
 
         case _CHECK_EXC_MATCH: {
-            _Py_UopsLocalsPlusSlot b;
+            _Py_UopsPESlot b;
             b = sym_new_not_null(ctx);
             stack_pointer[-1] = b;
             break;
         }
 
         case _IMPORT_NAME: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -996,7 +996,7 @@
         }
 
         case _IMPORT_FROM: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -1009,14 +1009,14 @@
         /* _POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 */
 
         case _IS_NONE: {
-            _Py_UopsLocalsPlusSlot b;
+            _Py_UopsPESlot b;
             b = sym_new_not_null(ctx);
             stack_pointer[-1] = b;
             break;
         }
 
         case _GET_LEN: {
-            _Py_UopsLocalsPlusSlot len;
+            _Py_UopsPESlot len;
             len = sym_new_not_null(ctx);
             stack_pointer[0] = len;
             stack_pointer += 1;
@@ -1025,7 +1025,7 @@
         }
 
         case _MATCH_CLASS: {
-            _Py_UopsLocalsPlusSlot attrs;
+            _Py_UopsPESlot attrs;
             attrs = sym_new_not_null(ctx);
             stack_pointer[-3] = attrs;
             stack_pointer += -2;
@@ -1034,7 +1034,7 @@
         }
 
         case _MATCH_MAPPING: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -1043,7 +1043,7 @@
         }
 
         case _MATCH_SEQUENCE: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -1052,7 +1052,7 @@
         }
 
         case _MATCH_KEYS: {
-            _Py_UopsLocalsPlusSlot values_or_none;
+            _Py_UopsPESlot values_or_none;
             values_or_none = sym_new_not_null(ctx);
             stack_pointer[0] = values_or_none;
             stack_pointer += 1;
@@ -1061,14 +1061,14 @@
         }
 
         case _GET_ITER: {
-            _Py_UopsLocalsPlusSlot iter;
+            _Py_UopsPESlot iter;
             iter = sym_new_not_null(ctx);
             stack_pointer[-1] = iter;
             break;
         }
 
         case _GET_YIELD_FROM_ITER: {
-            _Py_UopsLocalsPlusSlot iter;
+            _Py_UopsPESlot iter;
             iter = sym_new_not_null(ctx);
             stack_pointer[-1] = iter;
             break;
@@ -1077,7 +1077,7 @@
         /* _FOR_ITER is not a viable micro-op for tier 2 */
 
         case _FOR_ITER_TIER_TWO: {
-            _Py_UopsLocalsPlusSlot next;
+            _Py_UopsPESlot next;
             next = sym_new_not_null(ctx);
             stack_pointer[0] = next;
             stack_pointer += 1;
@@ -1098,7 +1098,7 @@
         }
 
         case _ITER_NEXT_LIST: {
-            _Py_UopsLocalsPlusSlot next;
+            _Py_UopsPESlot next;
             next = sym_new_not_null(ctx);
             stack_pointer[0] = next;
             stack_pointer += 1;
@@ -1117,7 +1117,7 @@
         }
 
         case _ITER_NEXT_TUPLE: {
-            _Py_UopsLocalsPlusSlot next;
+            _Py_UopsPESlot next;
             next = sym_new_not_null(ctx);
             stack_pointer[0] = next;
             stack_pointer += 1;
@@ -1136,7 +1136,7 @@
         }
 
         case _ITER_NEXT_RANGE: {
-            _Py_UopsLocalsPlusSlot next;
+            _Py_UopsPESlot next;
             next = sym_new_not_null(ctx);
             stack_pointer[0] = next;
             stack_pointer += 1;
@@ -1154,8 +1154,8 @@
         }
 
         case _LOAD_SPECIAL: {
-            _Py_UopsLocalsPlusSlot attr;
-            _Py_UopsLocalsPlusSlot self_or_null;
+            _Py_UopsPESlot attr;
+            _Py_UopsPESlot self_or_null;
             attr = sym_new_not_null(ctx);
             self_or_null = sym_new_not_null(ctx);
             stack_pointer[-1] = attr;
@@ -1166,7 +1166,7 @@
         }
 
         case _WITH_EXCEPT_START: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -1175,8 +1175,8 @@
         }
 
         case _PUSH_EXC_INFO: {
-            _Py_UopsLocalsPlusSlot prev_exc;
-            _Py_UopsLocalsPlusSlot new_exc;
+            _Py_UopsPESlot prev_exc;
+            _Py_UopsPESlot new_exc;
             prev_exc = sym_new_not_null(ctx);
             new_exc = sym_new_not_null(ctx);
             stack_pointer[-1] = prev_exc;
@@ -1195,8 +1195,8 @@
         }
 
         case _LOAD_ATTR_METHOD_WITH_VALUES: {
-            _Py_UopsLocalsPlusSlot attr;
-            _Py_UopsLocalsPlusSlot self = (_Py_UopsLocalsPlusSlot){NULL, 0};
+            _Py_UopsPESlot attr;
+            _Py_UopsPESlot self = (_Py_UopsPESlot){NULL, 0};
             attr = sym_new_not_null(ctx);
             self = sym_new_not_null(ctx);
             stack_pointer[-1] = attr;
@@ -1207,8 +1207,8 @@
         }
 
         case _LOAD_ATTR_METHOD_NO_DICT: {
-            _Py_UopsLocalsPlusSlot attr;
-            _Py_UopsLocalsPlusSlot self = (_Py_UopsLocalsPlusSlot){NULL, 0};
+            _Py_UopsPESlot attr;
+            _Py_UopsPESlot self = (_Py_UopsPESlot){NULL, 0};
             attr = sym_new_not_null(ctx);
             self = sym_new_not_null(ctx);
             stack_pointer[-1] = attr;
@@ -1219,14 +1219,14 @@
         }
 
         case _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES: {
-            _Py_UopsLocalsPlusSlot attr;
+            _Py_UopsPESlot attr;
             attr = sym_new_not_null(ctx);
             stack_pointer[-1] = attr;
             break;
         }
 
         case _LOAD_ATTR_NONDESCRIPTOR_NO_DICT: {
-            _Py_UopsLocalsPlusSlot attr;
+            _Py_UopsPESlot attr;
             attr = sym_new_not_null(ctx);
             stack_pointer[-1] = attr;
             break;
@@ -1237,8 +1237,8 @@
         }
 
         case _LOAD_ATTR_METHOD_LAZY_DICT: {
-            _Py_UopsLocalsPlusSlot attr;
-            _Py_UopsLocalsPlusSlot self = (_Py_UopsLocalsPlusSlot){NULL, 0};
+            _Py_UopsPESlot attr;
+            _Py_UopsPESlot self = (_Py_UopsPESlot){NULL, 0};
             attr = sym_new_not_null(ctx);
             self = sym_new_not_null(ctx);
             stack_pointer[-1] = attr;
@@ -1249,9 +1249,9 @@
         }
 
         case _MAYBE_EXPAND_METHOD: {
-            _Py_UopsLocalsPlusSlot func;
-            _Py_UopsLocalsPlusSlot *maybe_self;
-            _Py_UopsLocalsPlusSlot *args;
+            _Py_UopsPESlot func;
+            _Py_UopsPESlot *maybe_self;
+            _Py_UopsPESlot *args;
             maybe_self = &stack_pointer[-1 - oparg];
             func = sym_new_not_null(ctx);
             for (int _i = 1; --_i >= 0;) {
@@ -1286,8 +1286,8 @@
         }
 
         case _EXPAND_METHOD: {
-            _Py_UopsLocalsPlusSlot method;
-            _Py_UopsLocalsPlusSlot *self;
+            _Py_UopsPESlot method;
+            _Py_UopsPESlot *self;
             self = &stack_pointer[-1 - oparg];
             method = sym_new_not_null(ctx);
             for (int _i = 1; --_i >= 0;) {
@@ -1302,7 +1302,7 @@
         }
 
         case _CALL_NON_PY_GENERAL: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -1315,8 +1315,8 @@
         }
 
         case _INIT_CALL_BOUND_METHOD_EXACT_ARGS: {
-            _Py_UopsLocalsPlusSlot func;
-            _Py_UopsLocalsPlusSlot *self;
+            _Py_UopsPESlot func;
+            _Py_UopsPESlot *self;
             self = &stack_pointer[-1 - oparg];
             func = sym_new_not_null(ctx);
             for (int _i = 1; --_i >= 0;) {
@@ -1354,7 +1354,7 @@
         }
 
         case _CALL_TYPE_1: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-3] = res;
             stack_pointer += -2;
@@ -1363,7 +1363,7 @@
         }
 
         case _CALL_STR_1: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-3] = res;
             stack_pointer += -2;
@@ -1372,7 +1372,7 @@
         }
 
         case _CALL_TUPLE_1: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-3] = res;
             stack_pointer += -2;
@@ -1381,9 +1381,9 @@
         }
 
         case _CHECK_AND_ALLOCATE_OBJECT: {
-            _Py_UopsLocalsPlusSlot self;
-            _Py_UopsLocalsPlusSlot init;
-            _Py_UopsLocalsPlusSlot *args;
+            _Py_UopsPESlot self;
+            _Py_UopsPESlot init;
+            _Py_UopsPESlot *args;
             self = sym_new_not_null(ctx);
             init = sym_new_not_null(ctx);
             for (int _i = oparg; --_i >= 0;) {
@@ -1410,7 +1410,7 @@
         }
 
         case _CALL_BUILTIN_CLASS: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -1419,7 +1419,7 @@
         }
 
         case _CALL_BUILTIN_O: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -1428,7 +1428,7 @@
         }
 
         case _CALL_BUILTIN_FAST: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -1437,7 +1437,7 @@
         }
 
         case _CALL_BUILTIN_FAST_WITH_KEYWORDS: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -1446,7 +1446,7 @@
         }
 
         case _CALL_LEN: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -1455,7 +1455,7 @@
         }
 
         case _CALL_ISINSTANCE: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -1470,7 +1470,7 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_O: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -1479,7 +1479,7 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -1488,7 +1488,7 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_NOARGS: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -1497,7 +1497,7 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_FAST: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -1527,9 +1527,9 @@
         }
 
         case _EXPAND_METHOD_KW: {
-            _Py_UopsLocalsPlusSlot method;
-            _Py_UopsLocalsPlusSlot *self;
-            _Py_UopsLocalsPlusSlot kwnames;
+            _Py_UopsPESlot method;
+            _Py_UopsPESlot *self;
+            _Py_UopsPESlot kwnames;
             self = &stack_pointer[-2 - oparg];
             method = sym_new_not_null(ctx);
             for (int _i = 1; --_i >= 0;) {
@@ -1546,7 +1546,7 @@
         }
 
         case _CALL_KW_NON_PY: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-3 - oparg] = res;
             stack_pointer += -2 - oparg;
@@ -1559,14 +1559,14 @@
         /* __DO_CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
 
         case _MAKE_FUNCTION: {
-            _Py_UopsLocalsPlusSlot func;
+            _Py_UopsPESlot func;
             func = sym_new_not_null(ctx);
             stack_pointer[-1] = func;
             break;
         }
 
         case _SET_FUNCTION_ATTRIBUTE: {
-            _Py_UopsLocalsPlusSlot func_st;
+            _Py_UopsPESlot func_st;
             func_st = sym_new_not_null(ctx);
             stack_pointer[-2] = func_st;
             stack_pointer += -1;
@@ -1575,7 +1575,7 @@
         }
 
         case _RETURN_GENERATOR: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -1584,7 +1584,7 @@
         }
 
         case _BUILD_SLICE: {
-            _Py_UopsLocalsPlusSlot slice;
+            _Py_UopsPESlot slice;
             slice = sym_new_not_null(ctx);
             stack_pointer[-2 - ((oparg == 3) ? 1 : 0)] = slice;
             stack_pointer += -1 - ((oparg == 3) ? 1 : 0);
@@ -1593,21 +1593,21 @@
         }
 
         case _CONVERT_VALUE: {
-            _Py_UopsLocalsPlusSlot result;
+            _Py_UopsPESlot result;
             result = sym_new_not_null(ctx);
             stack_pointer[-1] = result;
             break;
         }
 
         case _FORMAT_SIMPLE: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-1] = res;
             break;
         }
 
         case _FORMAT_WITH_SPEC: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -1616,7 +1616,7 @@
         }
 
         case _COPY: {
-            _Py_UopsLocalsPlusSlot top;
+            _Py_UopsPESlot top;
             top = sym_new_not_null(ctx);
             stack_pointer[0] = top;
             stack_pointer += 1;
@@ -1625,7 +1625,7 @@
         }
 
         case _BINARY_OP: {
-            _Py_UopsLocalsPlusSlot res;
+            _Py_UopsPESlot res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -1634,8 +1634,8 @@
         }
 
         case _SWAP: {
-            _Py_UopsLocalsPlusSlot top;
-            _Py_UopsLocalsPlusSlot bottom;
+            _Py_UopsPESlot top;
+            _Py_UopsPESlot bottom;
             top = sym_new_not_null(ctx);
             bottom = sym_new_not_null(ctx);
             stack_pointer[-2 - (oparg-2)] = top;
@@ -1710,7 +1710,7 @@
         }
 
         case _LOAD_CONST_INLINE: {
-            _Py_UopsLocalsPlusSlot value;
+            _Py_UopsPESlot value;
             PyObject *ptr = (PyObject *)this_instr->operand;
             value = sym_new_const(ctx, ptr);
             sym_set_origin_inst_override(&value, this_instr);
@@ -1721,7 +1721,7 @@
         }
 
         case _LOAD_CONST_INLINE_BORROW: {
-            _Py_UopsLocalsPlusSlot value;
+            _Py_UopsPESlot value;
             PyObject *ptr = (PyObject *)this_instr->operand;
             value = sym_new_const(ctx, ptr);
             sym_set_origin_inst_override(&value, this_instr);
@@ -1732,15 +1732,15 @@
         }
 
         case _POP_TOP_LOAD_CONST_INLINE_BORROW: {
-            _Py_UopsLocalsPlusSlot value;
+            _Py_UopsPESlot value;
             value = sym_new_not_null(ctx);
             stack_pointer[-1] = value;
             break;
         }
 
         case _LOAD_CONST_INLINE_WITH_NULL: {
-            _Py_UopsLocalsPlusSlot value;
-            _Py_UopsLocalsPlusSlot null;
+            _Py_UopsPESlot value;
+            _Py_UopsPESlot null;
             value = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             stack_pointer[0] = value;
@@ -1751,8 +1751,8 @@
         }
 
         case _LOAD_CONST_INLINE_BORROW_WITH_NULL: {
-            _Py_UopsLocalsPlusSlot value;
-            _Py_UopsLocalsPlusSlot null;
+            _Py_UopsPESlot value;
+            _Py_UopsPESlot null;
             value = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             stack_pointer[0] = value;

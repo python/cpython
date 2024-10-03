@@ -116,7 +116,7 @@ get_code_with_logging(_PyUOpInstruction *op)
 #define sym_get_origin _Py_uop_sym_get_origin
 
 static void
-materialize(_Py_UopsLocalsPlusSlot *slot)
+materialize(_Py_UopsPESlot *slot)
 {
     assert(slot != NULL);
     if (slot->origin_inst) {
@@ -125,7 +125,7 @@ materialize(_Py_UopsLocalsPlusSlot *slot)
 }
 
 static void
-materialize_stack(_Py_UopsLocalsPlusSlot *stack_start, _Py_UopsLocalsPlusSlot *stack_end)
+materialize_stack(_Py_UopsPESlot *stack_start, _Py_UopsPESlot *stack_end)
 {
     while (stack_start < stack_end) {
         materialize(stack_start);
@@ -158,10 +158,8 @@ partial_evaluate_uops(
 )
 {
     _PyUOpInstruction trace_dest[UOP_MAX_TRACE_LENGTH];
-    _Py_UOpsContext context;
-    context.trace_dest = trace_dest;
-    context.n_trace_dest = trace_len;
-    _Py_UOpsContext *ctx = &context;
+    _Py_UOpsPEContext context;
+    _Py_UOpsPEContext *ctx = &context;
     uint32_t opcode = UINT16_MAX;
     int curr_space = 0;
     int max_space = 0;
@@ -193,7 +191,7 @@ partial_evaluate_uops(
 
         int oparg = this_instr->oparg;
         opcode = this_instr->opcode;
-        _Py_UopsLocalsPlusSlot *stack_pointer = ctx->frame->stack_pointer;
+        _Py_UopsPESlot *stack_pointer = ctx->frame->stack_pointer;
 
 #ifdef Py_DEBUG
         if (get_lltrace() >= 3) {
@@ -260,12 +258,10 @@ partial_evaluate_uops(
     else {
         // We MUST not have bailed early here.
         // That's the only time the PE's residual is valid.
-        assert(ctx->n_trace_dest < UOP_MAX_TRACE_LENGTH);
         assert(is_terminator(this_instr));
-        assert(ctx->n_trace_dest <= trace_len);
 
         // Copy trace_dest into trace.
-        int trace_dest_len = ctx->n_trace_dest;
+        int trace_dest_len = trace_len;
         // Only valid before we start inserting side exits.
         assert(trace_dest_len == trace_len);
         for (int x = 0; x < trace_dest_len; x++) {

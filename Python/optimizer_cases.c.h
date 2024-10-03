@@ -48,7 +48,7 @@
         case _LOAD_FAST_AND_CLEAR: {
             _Py_UopsSymbol *value;
             value = GETLOCAL(oparg);
-            _Py_UopsLocalsPlusSlot temp = sym_new_null(ctx);
+            _Py_UopsPESlot temp = sym_new_null(ctx);
             GETLOCAL(oparg) = temp;
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -561,7 +561,7 @@
             container = stack_pointer[-2];
             (void)container;
             (void)sub;
-            new_frame = (_Py_UopsLocalsPlusSlot){NULL, 0};
+            new_frame = (_Py_UopsPESlot){NULL, 0};
             ctx->done = true;
             stack_pointer[-2] = new_frame;
             stack_pointer += -1;
@@ -1107,7 +1107,7 @@
             uint16_t index = (uint16_t)this_instr->operand;
             (void)index;
             null = sym_new_null(ctx);
-            attr = (_Py_UopsLocalsPlusSlot){NULL, 0};
+            attr = (_Py_UopsPESlot){NULL, 0};
             if (this_instr[-1].opcode == _NOP) {
                 // Preceding _CHECK_ATTR_MODULE was removed: mod is const and dict is watched.
                 assert(sym_is_const(owner));
@@ -1197,7 +1197,7 @@
             PyObject *fget = (PyObject *)this_instr->operand;
             (void)fget;
             (void)owner;
-            new_frame = (_Py_UopsLocalsPlusSlot){NULL, 0};
+            new_frame = (_Py_UopsPESlot){NULL, 0};
             ctx->done = true;
             stack_pointer[-1] = new_frame;
             break;
@@ -1893,7 +1893,7 @@
             (void)self;
             (void)init;
             (void)args;
-            init_frame = (_Py_UopsLocalsPlusSlot){NULL, 0};
+            init_frame = (_Py_UopsPESlot){NULL, 0};
             ctx->done = true;
             stack_pointer[-2 - oparg] = init_frame;
             stack_pointer += -1 - oparg;
@@ -2021,7 +2021,7 @@
             (void)self_or_null;
             (void)args;
             (void)kwnames;
-            new_frame = (_Py_UopsLocalsPlusSlot){NULL, 0};
+            new_frame = (_Py_UopsPESlot){NULL, 0};
             ctx->done = true;
             stack_pointer[-3 - oparg] = new_frame;
             stack_pointer += -2 - oparg;

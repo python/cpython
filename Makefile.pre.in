@@ -471,6 +471,7 @@ PYTHON_OBJS=	\
 		Python/optimizer_symbols.o \
 		Python/parking_lot.o \
 		Python/partial_evaluator.o \
+		Python/partial_evaluator_symbols.o \
 		Python/pathconfig.o \
 		Python/preconfig.o \
 		Python/pyarena.o \

@@ -34,10 +34,10 @@ def validate_uop(override: Uop, uop: Uop) -> None:
 
 def type_name(var: StackItem) -> str:
     if var.is_array():
-        return f"_Py_UopsLocalsPlusSlot *"
+        return f"_Py_UopsPESlot *"
     if var.type:
         return var.type
-    return f"_Py_UopsLocalsPlusSlot "
+    return f"_Py_UopsPESlot "
 
 
 def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
@@ -47,7 +47,7 @@ def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
             if var.name not in variables:
                 variables.add(var.name)
                 if var.condition:
-                    out.emit(f"{type_name(var)}{var.name} = (_Py_UopsLocalsPlusSlot){{NULL, 0}};\n")
+                    out.emit(f"{type_name(var)}{var.name} = (_Py_UopsPESlot){{NULL, 0}};\n")
                 else:
                     out.emit(f"{type_name(var)}{var.name};\n")
     for var in uop.stack.outputs:
@@ -56,7 +56,7 @@ def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
         if var.name not in variables:
             variables.add(var.name)
             if var.condition:
-                out.emit(f"{type_name(var)}{var.name} = (_Py_UopsLocalsPlusSlot){{NULL, 0}};\n")
+                out.emit(f"{type_name(var)}{var.name} = (_Py_UopsPESlot){{NULL, 0}};\n")
             else:
                 out.emit(f"{type_name(var)}{var.name};\n")
 

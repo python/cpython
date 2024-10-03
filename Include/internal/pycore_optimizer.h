@@ -59,6 +59,7 @@ typedef struct {
         };
     };
     uint64_t operand;  // A cache entry
+    char is_virtual;   // Used for tier2 optimization.
 } _PyUOpInstruction;
 
 typedef struct {
@@ -154,6 +155,8 @@ extern PyTypeObject _PyUOpOptimizer_Type;
 
 /* Symbols */
 /* See explanation in optimizer_symbols.c */
+
+// Specializer.
 
 struct _Py_UopsSymbol {
     int flags;  // 0 bits: Top; 2 or more bits: Bottom
@@ -283,6 +286,56 @@ static inline int is_terminator(const _PyUOpInstruction *uop)
         opcode == _DYNAMIC_EXIT
     );
 }
+
+// Partial evaluator.
+struct _Py_UopsPESymbol {
+    int flags;  // 0 bits: Top; 2 or more bits: Bottom
+    PyObject *const_val;  // Owned reference (!)
+};
+
+typedef struct _Py_UopsPESlot {
+    _Py_UopsSymbol *sym;
+    _PyUOpInstruction *origin_inst; // The instruction this symbol originates from.
+} _Py_UopsPESlot;
+
+typedef struct _Py_UopsPESymbol _Py_UopsPESymbol;
+
+struct _Py_UOpsPEAbstractFrame {
+    // Max stacklen
+    int stack_len;
+    int locals_len;
+
+    _Py_UopsPESlot *stack_pointer;
+    _Py_UopsPESlot *stack;
+    _Py_UopsPESlot *locals;
+};
+
+typedef struct _Py_UOpsPEAbstractFrame _Py_UOpsPEAbstractFrame;
+
+typedef struct pe_arena {
+    int sym_curr_number;
+    int sym_max_number;
+    _Py_UopsSymbol arena[TY_ARENA_SIZE];
+} pe_arena;
+
+struct _Py_UOpsPEContext {
+    char done;
+    char out_of_space;
+    bool contradiction;
+    // The current "executing" frame.
+    _Py_UOpsPEAbstractFrame *frame;
+    _Py_UOpsPEAbstractFrame frames[MAX_ABSTRACT_FRAME_DEPTH];
+    int curr_frame_depth;
+
+    // Arena for the symbolic information.
+    pe_arena t_arena;
+
+    _Py_UopsPESymbol **n_consumed;
+    _Py_UopsPESymbol **limit;
+    _Py_UopsPESymbol *locals_and_stack[MAX_ABSTRACT_INTERP_SIZE];
+};
+
+typedef struct _Py_UOpsPEContext _Py_UOpsPEContext;
 
 #ifdef __cplusplus
 }

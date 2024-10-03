@@ -85,7 +85,7 @@ dummy_func(void) {
 
     op(_LOAD_FAST_AND_CLEAR, (-- value)) {
         value = GETLOCAL(oparg);
-        _Py_UopsLocalsPlusSlot temp = sym_new_null(ctx);
+        _Py_UopsPESlot temp = sym_new_null(ctx);
         GETLOCAL(oparg) = temp;
     }
 
@@ -332,7 +332,7 @@ dummy_func(void) {
     op(_BINARY_SUBSCR_INIT_CALL, (container, sub -- new_frame)) {
         (void)container;
         (void)sub;
-        new_frame = (_Py_UopsLocalsPlusSlot){NULL, 0};
+        new_frame = (_Py_UopsPESlot){NULL, 0};
         ctx->done = true;
     }
 
@@ -487,7 +487,7 @@ dummy_func(void) {
     op(_LOAD_ATTR_MODULE, (index/1, owner -- attr, null if (oparg & 1))) {
         (void)index;
         null = sym_new_null(ctx);
-        attr = (_Py_UopsLocalsPlusSlot){NULL, 0};
+        attr = (_Py_UopsPESlot){NULL, 0};
         if (this_instr[-1].opcode == _NOP) {
             // Preceding _CHECK_ATTR_MODULE was removed: mod is const and dict is watched.
             assert(sym_is_const(owner));
@@ -548,7 +548,7 @@ dummy_func(void) {
     op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame)) {
         (void)fget;
         (void)owner;
-        new_frame = (_Py_UopsLocalsPlusSlot){NULL, 0};
+        new_frame = (_Py_UopsPESlot){NULL, 0};
         ctx->done = true;
     }
 
@@ -624,7 +624,7 @@ dummy_func(void) {
         (void)self_or_null;
         (void)args;
         (void)kwnames;
-        new_frame = (_Py_UopsLocalsPlusSlot){NULL, 0};
+        new_frame = (_Py_UopsPESlot){NULL, 0};
         ctx->done = true;
     }
 
@@ -641,7 +641,7 @@ dummy_func(void) {
         (void)self;
         (void)init;
         (void)args;
-        init_frame = (_Py_UopsLocalsPlusSlot){NULL, 0};
+        init_frame = (_Py_UopsPESlot){NULL, 0};
         ctx->done = true;
     }
 

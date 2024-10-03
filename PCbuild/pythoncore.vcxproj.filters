@@ -1427,6 +1427,9 @@
     <ClCompile Include="..\Python\partial_evaluator.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\partial_evaluator_symbols.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\pathconfig.c">
       <Filter>Python</Filter>
     </ClCompile>
