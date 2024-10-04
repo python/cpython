@@ -448,9 +448,14 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
             if (PyDict_Contains(pto->kw, key)) {
                 if (pto_kw == NULL) {
                     pto_kw = PyDict_Copy(pto->kw);
+                    if (pto_kw == NULL) {
+                        DEALLOCATE_STACK(small_kwtail, kwtail);
+                        return NULL;
+                    }
                 }
                 if (PyDict_SetItem(pto_kw, key, val)) {
                     DEALLOCATE_STACK(small_kwtail, kwtail);
+                    Py_DECREF(pto_kw);
                     return NULL;
                 }
             }
