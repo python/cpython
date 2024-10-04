@@ -257,7 +257,8 @@ _PyUnicode_InternedSize_Immortal(void)
     // value, to help detect bugs in optimizations.
 
     while (PyDict_Next(dict, &pos, &key, &value)) {
-       if (_Py_IsImmortal(key)) {
+        assert(PyUnicode_CHECK_INTERNED(key) != SSTATE_INTERNED_IMMORTAL_STATIC);
+        if (PyUnicode_CHECK_INTERNED(key) == SSTATE_INTERNED_IMMORTAL) {
            count++;
        }
     }
@@ -691,10 +692,14 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
 
     /* Check interning state */
 #ifdef Py_DEBUG
+    // Note that we do not check `_Py_IsImmortal(op)`, since stable ABI
+    // extensions can make immortal strings mortal (but with a high enough
+    // refcount).
+    // The other way is extremely unlikely (worth a potential failed assertion
+    // in a debug build), so we do check `!_Py_IsImmortal(op)`.
     switch (PyUnicode_CHECK_INTERNED(op)) {
         case SSTATE_NOT_INTERNED:
             if (ascii->state.statically_allocated) {
-                CHECK(_Py_IsImmortal(op));
                 // This state is for two exceptions:
                 // - strings are currently checked before they're interned
                 // - the 256 one-latin1-character strings
@@ -710,11 +715,9 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
             break;
         case SSTATE_INTERNED_IMMORTAL:
             CHECK(!ascii->state.statically_allocated);
-            CHECK(_Py_IsImmortal(op));
             break;
         case SSTATE_INTERNED_IMMORTAL_STATIC:
             CHECK(ascii->state.statically_allocated);
-            CHECK(_Py_IsImmortal(op));
             break;
         default:
             Py_UNREACHABLE();
@@ -1899,7 +1902,8 @@ unicode_write_cstr(PyObject *unicode, Py_ssize_t index,
 static PyObject*
 get_latin1_char(Py_UCS1 ch)
 {
-    return Py_NewRef(LATIN1(ch));
+    PyObject *o = LATIN1(ch);
+    return o;
 }
 
 static PyObject*
@@ -15015,7 +15019,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
     {
         PyObject *r = (PyObject *)_Py_hashtable_get(INTERNED_STRINGS, s);
         if (r != NULL) {
-            assert(_Py_IsImmortal(r));
+            assert(_PyUnicode_STATE(r).statically_allocated);
             assert(r != s);  // r must be statically_allocated; s is not
             Py_DECREF(s);
             return Py_NewRef(r);
