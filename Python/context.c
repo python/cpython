@@ -404,27 +404,15 @@ _PyGen_ResetContext(PyThreadState *ts, PyGenObject *self, PyObject *ctx)
 }
 
 void
-_PyGen_ActivateContext(PyThreadState *ts, PyGenObject *self)
+_PyGen_ActivateContextImpl(_PyThreadStateImpl *tsi, PyGenObject *self)
 {
-    _PyThreadStateImpl *tsi = (_PyThreadStateImpl *)ts;
-    assert(self->_ctx_chain.prev == NULL);
-    if (self->_ctx_chain.ctx == NULL) {
-        return;
-    }
     contextchain_link(&self->_ctx_chain, &tsi->_ctx_chain);
     context_switched(tsi);
 }
 
 void
-_PyGen_DeactivateContext(PyThreadState *ts, PyGenObject *self)
+_PyGen_DeactivateContextImpl(_PyThreadStateImpl *tsi, PyGenObject *self)
 {
-    _PyThreadStateImpl *tsi = (_PyThreadStateImpl *)ts;
-    if (tsi->_ctx_chain.prev != &self->_ctx_chain) {
-        assert(self->_ctx_chain.ctx == NULL);
-        assert(self->_ctx_chain.prev == NULL);
-        return;
-    }
-    assert(self->_ctx_chain.ctx != NULL);
     contextchain_unlink(&self->_ctx_chain, &tsi->_ctx_chain);
     context_switched(tsi);
 }
