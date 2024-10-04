@@ -324,7 +324,7 @@ basic block.
 
 As an example, consider the following code snippet:
 
-```
+```python
    if x < 10:
        f1()
        f2()
