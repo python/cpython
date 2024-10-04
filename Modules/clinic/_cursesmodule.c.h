@@ -1389,12 +1389,12 @@ _curses_window_overlay(PyCursesWindowObject *self, PyObject *args)
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
-            if (!PyArg_ParseTuple(args, "O!:overlay", &PyCursesWindow_Type, &destwin)) {
+            if (!PyArg_ParseTuple(args, "O!:overlay", clinic_state()->window_type, &destwin)) {
                 goto exit;
             }
             break;
         case 7:
-            if (!PyArg_ParseTuple(args, "O!iiiiii:overlay", &PyCursesWindow_Type, &destwin, &sminrow, &smincol, &dminrow, &dmincol, &dmaxrow, &dmaxcol)) {
+            if (!PyArg_ParseTuple(args, "O!iiiiii:overlay", clinic_state()->window_type, &destwin, &sminrow, &smincol, &dminrow, &dmincol, &dmaxrow, &dmaxcol)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -1448,12 +1448,12 @@ _curses_window_overwrite(PyCursesWindowObject *self, PyObject *args)
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
-            if (!PyArg_ParseTuple(args, "O!:overwrite", &PyCursesWindow_Type, &destwin)) {
+            if (!PyArg_ParseTuple(args, "O!:overwrite", clinic_state()->window_type, &destwin)) {
                 goto exit;
             }
             break;
         case 7:
-            if (!PyArg_ParseTuple(args, "O!iiiiii:overwrite", &PyCursesWindow_Type, &destwin, &sminrow, &smincol, &dminrow, &dmincol, &dmaxrow, &dmaxcol)) {
+            if (!PyArg_ParseTuple(args, "O!iiiiii:overwrite", clinic_state()->window_type, &destwin, &sminrow, &smincol, &dminrow, &dmincol, &dmaxrow, &dmaxcol)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -4378,4 +4378,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=8745c1562b537fb4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cd1273354b08948f input=a9049054013a1b77]*/
