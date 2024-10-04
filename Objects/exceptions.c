@@ -3205,46 +3205,47 @@ UnicodeTranslateError_init(PyUnicodeErrorObject *self, PyObject *args,
 static PyObject *
 UnicodeTranslateError_str(PyObject *self)
 {
-    PyUnicodeErrorObject *uself = (PyUnicodeErrorObject *)self;
-    PyObject *result = NULL;
-    PyObject *reason_str = NULL;
+    PyUnicodeErrorObject *exc = (PyUnicodeErrorObject *)self;
 
-    if (!uself->object)
+    if (exc->object == NULL) {
         /* Not properly initialized. */
         return PyUnicode_FromString("");
+    }
 
     /* Get reason as a string, which it might not be if it's been
        modified after we were constructed. */
-    reason_str = PyObject_Str(uself->reason);
-    if (reason_str == NULL)
-        goto done;
-
-    if (uself->start < PyUnicode_GET_LENGTH(uself->object) && uself->end == uself->start+1) {
-        Py_UCS4 badchar = PyUnicode_ReadChar(uself->object, uself->start);
-        const char *fmt;
-        if (badchar <= 0xff)
-            fmt = "can't translate character '\\x%02x' in position %zd: %U";
-        else if (badchar <= 0xffff)
-            fmt = "can't translate character '\\u%04x' in position %zd: %U";
-        else
-            fmt = "can't translate character '\\U%08x' in position %zd: %U";
-        result = PyUnicode_FromFormat(
-            fmt,
-            (int)badchar,
-            uself->start,
-            reason_str
-        );
-    } else {
-        result = PyUnicode_FromFormat(
-            "can't translate characters in position %zd-%zd: %U",
-            uself->start,
-            uself->end-1,
-            reason_str
-            );
+    PyObject *reason = PyObject_Str(exc->reason);
+    if (reason == NULL) {
+        return NULL;
     }
-done:
-    Py_XDECREF(reason_str);
-    return result;
+
+    PyObject *res;
+    Py_ssize_t len = PyUnicode_GET_LENGTH(exc->object);
+    Py_ssize_t start = exc->start, end = exc->end;
+
+    if ((start >= 0 && start < len) && (end >= 0 && end <= len) && end == start + 1) {
+        Py_UCS4 badchar = PyUnicode_ReadChar(exc->object, start);
+        const char *fmt;
+        if (badchar <= 0xff) {
+            fmt = "can't translate character '\\x%02x' in position %zd: %U";
+        }
+        else if (badchar <= 0xffff) {
+            fmt = "can't translate character '\\u%04x' in position %zd: %U";
+        }
+        else {
+            fmt = "can't translate character '\\U%08x' in position %zd: %U";
+        }
+        res = PyUnicode_FromFormat(fmt, (int)badchar, start, reason);
+    }
+    else {
+        res = PyUnicode_FromFormat(
+            "can't translate characters in position %zd-%zd: %U",
+            start, end - 1, reason
+        );
+    }
+
+    Py_DECREF(reason);
+    return res;
 }
 
 static PyTypeObject _PyExc_UnicodeTranslateError = {
