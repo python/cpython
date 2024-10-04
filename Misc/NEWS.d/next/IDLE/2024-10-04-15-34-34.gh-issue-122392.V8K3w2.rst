@@ -1,1 +1,2 @@
-Fixed the wrong vertical spacing of the Path Browser of IDLE.
+Increase currently inadequate vertical spacing for the IDLE browsers (path, 
+module, and stack) on high-resolution monitors.
