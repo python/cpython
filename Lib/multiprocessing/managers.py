@@ -758,6 +758,10 @@ class BaseProxy(object):
     _address_to_local = {}
     _mutex = util.ForkAwareThreadLock()
 
+    # Each instance gets a `_serial` number. Unlike `id(...)`, this number
+    # is never reused.
+    _next_serial = 0
+
     def __init__(self, token, serializer, manager=None,
                  authkey=None, exposed=None, incref=True, manager_owned=False):
         with BaseProxy._mutex:
@@ -765,6 +769,9 @@ class BaseProxy(object):
             if tls_idset is None:
                 tls_idset = util.ForkAwareLocal(), ProcessLocalSet()
                 BaseProxy._address_to_local[token.address] = tls_idset
+
+            self._serial = BaseProxy._next_serial
+            BaseProxy._next_serial += 1
 
         # self._tls is used to record the connection used by this
         # thread to communicate with the manager at token.address
@@ -856,20 +863,20 @@ class BaseProxy(object):
         dispatch(conn, None, 'incref', (self._id,))
         util.debug('INCREF %r', self._token.id)
 
-        self._idset.add(self._id)
+        self._idset.add(self._serial)
 
         state = self._manager and self._manager._state
 
         self._close = util.Finalize(
             self, BaseProxy._decref,
-            args=(self._token, self._authkey, state,
+            args=(self._token, self._serial, self._authkey, state,
                   self._tls, self._idset, self._Client),
             exitpriority=10
             )
 
     @staticmethod
-    def _decref(token, authkey, state, tls, idset, _Client):
-        idset.discard(token.id)
+    def _decref(token, serial, authkey, state, tls, idset, _Client):
+        idset.discard(serial)
 
         # check whether manager is still alive
         if state is None or state.value == State.STARTED:
