@@ -1121,6 +1121,17 @@ class SpecSignatureTest(unittest.TestCase):
             with self.subTest(mock=mock):
                 self.assertIs(mock.narrow_default.__class__, int)
 
+    def test_dataclass_with_no_default(self):
+        @dataclass
+        class WithWiderDefault:
+            narrow_default: int | None
+
+        mock = create_autospec(WithWiderDefault, instance=True)
+        self.assertIs(mock.narrow_default.__class__, type(int | None))
+
+        mock = create_autospec(WithWiderDefault(1))
+        self.assertIs(mock.narrow_default.__class__, int)
+
 
 class TestCallList(unittest.TestCase):
 
