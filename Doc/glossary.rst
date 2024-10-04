@@ -1161,14 +1161,14 @@ Glossary
 
    soft deprecated
       A soft deprecated API should not
-      be used on new code, but it is safe for already existing code to use it.
+      be used in new code, but it is safe for already existing code to use it.
       The API remains documented and tested, but will not be
       enhanced further.
 
       The main difference from a normal deprecation
       is that soft deprecation does not plan on removing the API.
 
-      Another difference is that the use a soft deprecated API does not issue a warning.
+      Another difference is that soft deprecated APIs don't emit warnings.
 
       See `PEP 387: Soft Deprecation
       <https://peps.python.org/pep-0387/#soft-deprecation>`_.
