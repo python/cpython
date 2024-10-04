@@ -11,11 +11,6 @@ import warnings
 
 from test.test_asyncio.utils import await_without_task
 
-if False:
-    asyncio.Task = asyncio.tasks._CTask = asyncio.tasks.Task = asyncio.tasks._PyTask
-    asyncio.Future = asyncio.futures._CFuture = asyncio.futures.Future = asyncio.futures._PyFuture
-
-
 # To prevent a warning "test altered the execution environment"
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
