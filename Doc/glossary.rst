@@ -1167,7 +1167,7 @@ Glossary
 
       The main difference with a regular deprecation
       is that the soft deprecation does not schedule the removal of the
-      deprecated API.
+      API.
 
       Another difference is that the use a soft deprecated API does not issue a warning.
 
