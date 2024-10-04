@@ -226,7 +226,7 @@ _PyCursesCheckFunction(int called, const char *funcname)
         PyErr_Format(exc, "must call %s() first", funcname);
         Py_DECREF(exc);
     }
-    // assert(PyErr_Occurred());
+    assert(PyErr_Occurred());
     return 0;
 }
 
