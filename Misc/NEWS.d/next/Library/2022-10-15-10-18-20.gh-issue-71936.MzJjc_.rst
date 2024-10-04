@@ -1,1 +1,1 @@
-Fix a race condition in :class:`multiprocessing.Pool`.
+Fix a race condition in :class:`multiprocessing.pool.Pool`.
