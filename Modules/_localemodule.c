@@ -659,18 +659,13 @@ _locale_nl_langinfo_impl(PyObject *module, int item)
                instead of an empty string for nl_langinfo(ERA).  */
             const char *result = nl_langinfo(item);
             result = result != NULL ? result : "";
-            if (langinfo_constants[i].category == LC_CTYPE || is_all_ascii(result)) {
-                return PyUnicode_DecodeLocale(result, NULL);
-            }
-
-            char *oldloc;
-            if (change_locale(langinfo_constants[i].category, &oldloc) < 0) {
+            char *oldloc = NULL;
+            if (langinfo_constants[i].category != LC_CTYPE
+                && !is_all_ascii(result)
+                && change_locale(langinfo_constants[i].category, &oldloc) < 0)
+            {
                 return NULL;
             }
-            /* The pointer returned by the previous call to nl_langinfo()
-             * may be invalidated by a call to setlocale(). */
-            result = nl_langinfo(item);
-            result = result != NULL ? result : "";
             PyObject *unicode = PyUnicode_DecodeLocale(result, NULL);
             restore_locale(oldloc);
             return unicode;
