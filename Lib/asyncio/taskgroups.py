@@ -66,94 +66,103 @@ class TaskGroup:
         return self
 
     async def __aexit__(self, et, exc, tb):
-        self._exiting = True
+        try:
+            self._exiting = True
 
-        if (exc is not None and
-                self._is_base_error(exc) and
-                self._base_error is None):
-            self._base_error = exc
+            if (exc is not None and
+                    self._is_base_error(exc) and
+                    self._base_error is None):
+                self._base_error = exc
 
-        if et is not None and issubclass(et, exceptions.CancelledError):
-            propagate_cancellation_error = exc
-        else:
-            propagate_cancellation_error = None
+            if et is not None and issubclass(et, exceptions.CancelledError):
+                propagate_cancellation_error = exc
+            else:
+                propagate_cancellation_error = None
 
-        if et is not None:
-            if not self._aborting:
-                # Our parent task is being cancelled:
-                #
-                #    async with TaskGroup() as g:
-                #        g.create_task(...)
-                #        await ...  # <- CancelledError
-                #
-                # or there's an exception in "async with":
-                #
-                #    async with TaskGroup() as g:
-                #        g.create_task(...)
-                #        1 / 0
-                #
-                self._abort()
-
-        # We use while-loop here because "self._on_completed_fut"
-        # can be cancelled multiple times if our parent task
-        # is being cancelled repeatedly (or even once, when
-        # our own cancellation is already in progress)
-        while self._tasks:
-            if self._on_completed_fut is None:
-                self._on_completed_fut = self._loop.create_future()
-
-            try:
-                await self._on_completed_fut
-            except exceptions.CancelledError as ex:
+            if et is not None:
                 if not self._aborting:
                     # Our parent task is being cancelled:
                     #
-                    #    async def wrapper():
-                    #        async with TaskGroup() as g:
-                    #            g.create_task(foo)
+                    #    async with TaskGroup() as g:
+                    #        g.create_task(...)
+                    #        await ...  # <- CancelledError
                     #
-                    # "wrapper" is being cancelled while "foo" is
-                    # still running.
-                    propagate_cancellation_error = ex
+                    # or there's an exception in "async with":
+                    #
+                    #    async with TaskGroup() as g:
+                    #        g.create_task(...)
+                    #        1 / 0
+                    #
                     self._abort()
 
-            self._on_completed_fut = None
+            # We use while-loop here because "self._on_completed_fut"
+            # can be cancelled multiple times if our parent task
+            # is being cancelled repeatedly (or even once, when
+            # our own cancellation is already in progress)
+            while self._tasks:
+                if self._on_completed_fut is None:
+                    self._on_completed_fut = self._loop.create_future()
 
-        assert not self._tasks
+                try:
+                    await self._on_completed_fut
+                except exceptions.CancelledError as ex:
+                    if not self._aborting:
+                        # Our parent task is being cancelled:
+                        #
+                        #    async def wrapper():
+                        #        async with TaskGroup() as g:
+                        #            g.create_task(foo)
+                        #
+                        # "wrapper" is being cancelled while "foo" is
+                        # still running.
+                        propagate_cancellation_error = ex
+                        self._abort()
 
-        if self._base_error is not None:
-            raise self._base_error
+                self._on_completed_fut = None
 
-        if self._parent_cancel_requested:
-            # If this flag is set we *must* call uncancel().
-            if self._parent_task.uncancel() == 0:
-                # If there are no pending cancellations left,
-                # don't propagate CancelledError.
-                propagate_cancellation_error = None
+            assert not self._tasks
 
-        # Propagate CancelledError if there is one, except if there
-        # are other errors -- those have priority.
-        if propagate_cancellation_error is not None and not self._errors:
-            raise propagate_cancellation_error
+            if self._base_error is not None:
+                raise self._base_error
 
-        if et is not None and not issubclass(et, exceptions.CancelledError):
-            self._errors.append(exc)
+            if self._parent_cancel_requested:
+                # If this flag is set we *must* call uncancel().
+                if self._parent_task.uncancel() == 0:
+                    # If there are no pending cancellations left,
+                    # don't propagate CancelledError.
+                    propagate_cancellation_error = None
 
-        if self._errors:
-            # If the parent task is being cancelled from the outside
-            # of the taskgroup, un-cancel and re-cancel the parent task,
-            # which will keep the cancel count stable.
-            if self._parent_task.cancelling():
-                self._parent_task.uncancel()
-                self._parent_task.cancel()
+            # Propagate CancelledError if there is one, except if there
+            # are other errors -- those have priority.
+            if propagate_cancellation_error is not None and not self._errors:
+                raise propagate_cancellation_error
+
+            if et is not None and not issubclass(et, exceptions.CancelledError):
+                self._errors.append(exc)
+
+            if self._errors:
+                # If the parent task is being cancelled from the outside
+                # of the taskgroup, un-cancel and re-cancel the parent task,
+                # which will keep the cancel count stable.
+                if self._parent_task.cancelling():
+                    self._parent_task.uncancel()
+                    self._parent_task.cancel()
+                raise BaseExceptionGroup(
+                    'unhandled errors in a TaskGroup',
+                    self._errors,
+                ) from None
+        finally:
             # Exceptions are heavy objects that can have object
             # cycles (bad for GC); let's not keep a reference to
             # a bunch of them.
-            try:
-                me = BaseExceptionGroup('unhandled errors in a TaskGroup', self._errors)
-                raise me from None
-            finally:
-                self._errors = None
+            propagate_cancellation_error = None
+            self._parent_task = None
+            self._errors = None
+            self._base_error = None
+            et = None
+            exc = None
+            tb = None
+
 
     def create_task(self, coro, *, name=None, context=None):
         """Create a new task in this group and return it.
