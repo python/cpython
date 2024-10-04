@@ -1338,20 +1338,20 @@ class ExceptionTests(unittest.TestCase):
             self.assertEqual(str(klass.__new__(klass)), "")
 
     def test_unicode_error_str_gh_123378(self):
-        for meth, start, end in product(
+        for fn, start, end, obj in product(
             (str, repr),
             range(-5, 5),
             range(-5, 5),
+            ('', 'a', '123', '1234', '12345', 'abc123'),
         ):
-            for obj in ('', 'a'):
-                with self.subTest(meth, obj=obj, start=start, end=end):
-                    res = meth(UnicodeEncodeError('utf-8', obj, start, end, ''))
-                    self.assertIsInstance(res, str)
+            with self.subTest(fn, obj=obj, start=start, end=end):
+                exc = UnicodeEncodeError('utf-8', obj, start, end, '')
+                self.assertIsInstance(fn(exc), str)
 
-            for obj in (b'', b'a'):
-                with self.subTest(meth, obj=obj, start=start, end=end):
-                    res = meth(UnicodeDecodeError('utf-8', obj, start, end, ''))
-                    self.assertIsInstance(res, str)
+            encoded = obj.encode()
+            with self.subTest(fn, obj=encoded, start=start, end=end):
+                exc = UnicodeDecodeError('utf-8', encoded, start, end, '')
+                self.assertIsInstance(fn(exc), str)
 
     @no_tracing
     def test_badisinstance(self):
