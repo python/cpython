@@ -91,6 +91,7 @@ class TreeNode:
         self.selected = False
         self.children = []
         self.x = self.y = None
+        self.dy = 0
         self.iconimages = {} # cache of PhotoImage instances for icons
 
     def destroy(self):
@@ -199,12 +200,11 @@ class TreeNode:
 
     def draw(self, x, y):
         # XXX This hard-codes too many geometry constants!
-        dy = 20
         self.x, self.y = x, y
         self.drawicon()
         self.drawtext()
         if self.state != 'expanded':
-            return y + dy
+            return y + self.dy
         # draw children
         if not self.children:
             sublist = self.item._GetSubList()
@@ -215,7 +215,7 @@ class TreeNode:
                 child = self.__class__(self.canvas, self, item)
                 self.children.append(child)
         cx = x+20
-        cy = y + dy
+        cy = y + self.dy
         cylast = 0
         for child in self.children:
             cylast = cy
@@ -289,6 +289,11 @@ class TreeNode:
             self.label.bind("<Button-4>", lambda e: wheel_event(e, self.canvas))
             self.label.bind("<Button-5>", lambda e: wheel_event(e, self.canvas))
         self.text_id = id
+        if self.dy == 0:
+            # The first row doesn't matter what the dy is, just measure its
+            # size to get the value of the subsequent dy
+            coords = self.canvas.bbox(id)
+            self.dy = coords[3] - coords[1]
 
     def select_or_edit(self, event=None):
         if self.selected and self.item.IsEditable():
