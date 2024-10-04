@@ -597,7 +597,7 @@ static struct langinfo_constant{
     {0, 0, 0}
 };
 
-/* Temporary make the LC_CTYPE locale to be equal to
+/* Temporary make the LC_CTYPE locale to be the same as
  * the locale of the specified category. */
 static int
 change_locale(int category, char **oldloc)
@@ -667,6 +667,8 @@ _locale_nl_langinfo_impl(PyObject *module, int item)
             if (change_locale(langinfo_constants[i].category, &oldloc) < 0) {
                 return NULL;
             }
+            /* The pointer returned by the previous call to nl_langinfo()
+             * may be invalidated by a call to setlocale(). */
             result = nl_langinfo(item);
             result = result != NULL ? result : "";
             PyObject *unicode = PyUnicode_DecodeLocale(result, NULL);
