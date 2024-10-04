@@ -324,6 +324,7 @@ basic block.
 
 As an example, consider the following code snippet:
 
+
 ```
    if x < 10:
        f1()
@@ -332,6 +333,7 @@ As an example, consider the following code snippet:
        g()
    end()
 ```
+
 
 The ``x < 10`` guard is represented by its own basic block that
 compares ``x`` with ``10`` and then ends in a conditional jump based on
