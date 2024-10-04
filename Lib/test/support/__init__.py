@@ -942,7 +942,7 @@ def run_with_locale(catstr, *locales):
     except AttributeError:
         # if the test author gives us an invalid category string
         raise
-    except:
+    except Exception:
         # cannot retrieve original locale, so do nothing
         locale = orig_locale = None
     else:
@@ -950,7 +950,7 @@ def run_with_locale(catstr, *locales):
             try:
                 locale.setlocale(category, loc)
                 break
-            except:
+            except locale.Error:
                 pass
 
     try:
@@ -967,7 +967,7 @@ def run_with_locales(catstr, *locales):
     def deco(func):
         @functools.wraps(func)
         def wrapper(self, /, *args, **kwargs):
-            dry_run = True
+            dry_run = '' in locales
             try:
                 import locale
                 category = getattr(locale, catstr)
@@ -975,7 +975,7 @@ def run_with_locales(catstr, *locales):
             except AttributeError:
                 # if the test author gives us an invalid category string
                 raise
-            except:
+            except Exception:
                 # cannot retrieve original locale, so do nothing
                 pass
             else:
@@ -984,7 +984,7 @@ def run_with_locales(catstr, *locales):
                         with self.subTest(locale=loc):
                             try:
                                 locale.setlocale(category, loc)
-                            except:
+                            except locale.Error:
                                 self.skipTest(f'no locale {loc!r}')
                             else:
                                 dry_run = False

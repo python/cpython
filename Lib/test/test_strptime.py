@@ -321,11 +321,14 @@ class StrptimeTests(unittest.TestCase):
         # Test for month directives
         self.roundtrip('%m', 1)
 
-    @run_with_locales('LC_TIME', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', 'he_IL', '')
+    @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', 'he_IL', '')
     def test_month_locale(self):
         # Test for month directives
         self.roundtrip('%B', 1)
         self.roundtrip('%b', 1)
+        for m in range(1, 13):
+            self.roundtrip('%B', 1, (1900, m, 1, 0, 0, 0, 0, 1, 0))
+            self.roundtrip('%b', 1, (1900, m, 1, 0, 0, 0, 0, 1, 0))
 
     def test_day(self):
         # Test for day directives
@@ -336,7 +339,7 @@ class StrptimeTests(unittest.TestCase):
         self.roundtrip('%H', 3)
 
     # NB: Only works on locales with AM/PM
-    @run_with_locales('LC_TIME', 'en_US', 'ja_JP')
+    @run_with_locales('LC_TIME', 'C', 'en_US', 'ja_JP')
     def test_hour_locale(self):
         # Test hour directives
         self.roundtrip('%I %p', 3)
@@ -361,7 +364,7 @@ class StrptimeTests(unittest.TestCase):
         self.roundtrip('%w', 6)
         self.roundtrip('%u', 6)
 
-    @run_with_locales('LC_TIME', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', '')
+    @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', '')
     def test_weekday_locale(self):
         # Test weekday directives
         self.roundtrip('%A', 6)
@@ -467,14 +470,13 @@ class StrptimeTests(unittest.TestCase):
                     (time.tzname, tz_value, time.daylight, tz_name))
 
     # NB: Does not roundtrip on some locales like hif_FJ.
-    @run_with_locales('LC_TIME', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', 'he_IL', '')
+    @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', 'he_IL', '')
     def test_date_time_locale(self):
         # Test %c directive
         self.roundtrip('%c', slice(0, 6))
         self.roundtrip('%c', slice(0, 6), (1900, 1, 1, 0, 0, 0, 0, 1, 0))
 
-    # NB: Dates before 1969 do not work on locales: C, POSIX,
-    # az_IR, fa_IR, sd_PK, uk_UA.
+    # NB: Dates before 1969 do not work on a number of locales, including C.
     @run_with_locales('LC_TIME', 'en_US', 'fr_FR', 'de_DE', 'ja_JP')
     def test_date_locale(self):
         # Test %x directive
@@ -482,7 +484,7 @@ class StrptimeTests(unittest.TestCase):
         self.roundtrip('%x', slice(0, 3), (1900, 1, 1, 0, 0, 0, 0, 1, 0))
 
     # NB: Does not distinguish AM/PM time on a number of locales.
-    @run_with_locales('LC_TIME', 'en_US', 'fr_FR', 'de_DE', 'ja_JP')
+    @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP')
     def test_time_locale(self):
         # Test %X directive
         self.roundtrip('%X', slice(3, 6))
