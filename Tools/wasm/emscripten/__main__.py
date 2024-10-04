@@ -160,6 +160,26 @@ def make_build_python(context, working_dir):
 
 
 @subdir(HOST_DIR, clean_ok=True)
+def make_emscripten_libffi(context, working_dir):
+    shutil.rmtree(HOST_DIR/"libffi", ignore_errors=True)
+
+    call([
+        "git",
+        "clone",
+        "https://github.com/libffi/libffi",
+        "--depth=1"
+    ],
+    quiet=context.quiet,
+    )
+    call(
+        [EMSCRIPTEN_DIR / "make_libffi.sh"],
+        env=updated_env({"PREFIX": HOST_DIR}),
+        cwd=HOST_DIR/"libffi",
+        quiet=context.quiet,
+    )
+
+
+@subdir(HOST_DIR, clean_ok=True)
 def configure_emscripten_python(context, working_dir):
     """Configure the emscripten/host build."""
     config_site = os.fsdecode(
@@ -183,12 +203,14 @@ def configure_emscripten_python(context, working_dir):
         sysconfig_data += "-pydebug"
 
     host_runner = context.host_runner
-    env_additions = {"CONFIG_SITE": config_site, "HOSTRUNNER": host_runner}
+    pkg_config_path_dir = (working_dir / "lib/pkgconfig/").resolve()
+    env_additions = {"CONFIG_SITE": config_site, "HOSTRUNNER": host_runner, "EM_PKG_CONFIG_PATH": str(pkg_config_path_dir)}
     build_python = os.fsdecode(build_python_path())
     configure = [
         "emconfigure",
         os.path.relpath(CHECKOUT / "configure", working_dir),
         "CFLAGS=-DPY_CALL_TRAMPOLINE -sUSE_BZIP2",
+        'PKG_CONFIG=pkg-config',
         f"--host={HOST_TRIPLE}",
         f"--build={build_platform()}",
         f"--with-build-python={build_python}",
@@ -264,6 +286,7 @@ def build_all(context):
     steps = [
         configure_build_python,
         make_build_python,
+        make_emscripten_libffi,
         configure_emscripten_python,
         make_emscripten_python,
     ]
@@ -292,6 +315,9 @@ def main():
     configure_build = subcommands.add_parser(
         "configure-build-python", help="Run `configure` for the " "build Python"
     )
+    make_libffi_cmd = subcommands.add_parser(
+        "make-libffi", help="Clone libffi repo, configure and build it for emscripten"
+    )
     make_build = subcommands.add_parser(
         "make-build-python", help="Run `make` for the build Python"
     )
@@ -303,7 +329,7 @@ def main():
     clean = subcommands.add_parser(
         "clean", help="Delete files and directories created by this script"
     )
-    for subcommand in build, configure_build, make_build, configure_host, make_host:
+    for subcommand in build, configure_build, make_libffi_cmd, make_build, configure_host, make_host:
         subcommand.add_argument(
             "--quiet",
             action="store_true",
@@ -336,6 +362,7 @@ def main():
     context = parser.parse_args()
 
     dispatch = {
+        "make-libffi": make_emscripten_libffi,
         "configure-build-python": configure_build_python,
         "make-build-python": make_build_python,
         "configure-host": configure_emscripten_python,
