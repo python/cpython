@@ -1559,7 +1559,7 @@ and are now removed:
 * :mod:`!msilib`
 * :mod:`!nis`
 * :mod:`!nntplib`:
-  Use the :pypi:`nntplib` library from PyPI instead.
+  Use the :pypi:`pynntp` library from PyPI instead.
 * :mod:`!ossaudiodev`:
   For audio playback, use the :pypi:`pygame` library from PyPI instead.
 * :mod:`!pipes`:
