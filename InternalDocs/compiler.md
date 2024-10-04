@@ -325,12 +325,12 @@ basic block.
 As an example, consider the following code snippet:
 
 ```python
-   if x < 10:
-       f1()
-       f2()
-   else:
-       g()
-   end()
+ if x < 10:
+     f1()
+     f2()
+ else:
+     g()
+ end()
 ```
 
 The ``x < 10`` guard is represented by its own basic block that
