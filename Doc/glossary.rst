@@ -1160,16 +1160,16 @@ Glossary
       (subscript) notation uses :class:`slice` objects internally.
 
    soft deprecated
-      A soft deprecation can be used when using an API which should no longer
-      be used to write new code, but it remains safe to continue using it in
-      existing code. The API remains documented and tested, but will not be
-      developed further (no enhancement).
+      A soft deprecated API should not
+      be used on new code, but it is safe for already existing code to use it.
+      The API remains documented and tested, but will not be
+      enhanced further.
 
-      The main difference between a "soft" and a (regular) "hard" deprecation
-      is that the soft deprecation does not imply scheduling the removal of the
+      The main difference with a regular deprecation
+      is that the soft deprecation does not schedule the removal of the
       deprecated API.
 
-      Another difference is that a soft deprecation does not issue a warning.
+      Another difference is that the use a soft deprecated API does not issue a warning.
 
       See `PEP 387: Soft Deprecation
       <https://peps.python.org/pep-0387/#soft-deprecation>`_.
