@@ -477,10 +477,18 @@ class StrptimeTests(unittest.TestCase):
         self.roundtrip('%c', slice(0, 6), (1900, 1, 1, 0, 0, 0, 0, 1, 0))
 
     # NB: Dates before 1969 do not work on a number of locales, including C.
-    @run_with_locales('LC_TIME', 'en_US', 'fr_FR', 'de_DE', 'ja_JP')
+    @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', 'he_IL', '')
     def test_date_locale(self):
         # Test %x directive
         self.roundtrip('%x', slice(0, 3))
+
+    # NB: Dates before 1969 do not work on a number of locales, including C.
+    @unittest.skipIf(
+        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
+    )
+    @run_with_locales('LC_TIME', 'en_US', 'fr_FR', 'de_DE', 'ja_JP')
+    def test_date_locale2(self):
+        # Test %x directive
         self.roundtrip('%x', slice(0, 3), (1900, 1, 1, 0, 0, 0, 0, 1, 0))
 
     # NB: Does not distinguish AM/PM time on a number of locales.
