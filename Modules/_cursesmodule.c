@@ -4898,8 +4898,9 @@ curses_capi_free(void *capi)
 {
     assert(capi != NULL);
     void **capi_ptr = (void **)capi;
-    assert(capi_ptr[0] != NULL);
-    Py_DECREF(capi_ptr[0]); // decref curses window type
+    // In free-threaded builds, capi_ptr[0] may have been already cleared
+    // by curses_capi_capsule_destructor(), hence the use of Py_XDECREF().
+    Py_XDECREF(capi_ptr[0]); // decref curses window type
     PyMem_Free(capi_ptr);
 }
 
