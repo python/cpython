@@ -160,9 +160,9 @@ typedef chtype attr_t;           /* No attr_t type is available */
 #define _CURSES_PAIR_CONTENT_FUNC       pair_content
 #endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
 
-typedef struct _cursesmodule_state {
-    PyObject *error;                // PyCursesError
-    PyTypeObject *window_type;      // PyCursesWindow_Type
+typedef struct {
+    PyObject *error;                // curses exception type
+    PyTypeObject *window_type;      // exposed by PyCursesWindow_Type
 } cursesmodule_state;
 
 static inline cursesmodule_state *
