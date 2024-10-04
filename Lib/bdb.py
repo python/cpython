@@ -37,7 +37,7 @@ class Bdb:
         self.frame_returning = None
         self.trace_opcodes = False
         self.enterframe = None
-        self.code_lineno = weakref.WeakKeyDictionary()
+        self.code_linenos = weakref.WeakKeyDictionary()
 
         self._load_breaks()
 
@@ -278,25 +278,25 @@ class Bdb:
         raise NotImplementedError("subclass of bdb must implement do_clear()")
 
     def break_anywhere(self, frame):
-        """Return True if there is any breakpoint for frame's filename.
+        """Return True if there is any breakpoint in that frame
         """
         filename = self.canonic(frame.f_code.co_filename)
         if filename not in self.breaks:
             return False
         for lineno in self.breaks[filename]:
-            if self.lineno_in_frame(lineno, frame):
+            if self._lineno_in_frame(lineno, frame):
                 return True
         return False
 
-    def lineno_in_frame(self, lineno, frame):
+    def _lineno_in_frame(self, lineno, frame):
         """Return True if the line number is in the frame's code object.
         """
         code = frame.f_code
         if lineno < code.co_firstlineno:
             return False
-        if code not in self.code_lineno:
-            self.code_lineno[code] = set(lineno for _, _, lineno in code.co_lines())
-        return lineno in self.code_lineno[frame.f_code]
+        if code not in self.code_linenos:
+            self.code_linenos[code] = set(lineno for _, _, lineno in code.co_lines())
+        return lineno in self.code_linenos[code]
 
     # Derived classes should override the user_* methods
     # to gain control.
