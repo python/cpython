@@ -1,3 +1,5 @@
+import createEmscriptenModule from "./python.mjs";
+
 class StdinBuffer {
     constructor() {
         this.sab = new SharedArrayBuffer(128 * Int32Array.BYTES_PER_ELEMENT)
@@ -59,24 +61,38 @@ const stderr = (charCode) => {
 
 const stdinBuffer = new StdinBuffer()
 
-var Module = {
+const emscriptenSettings = {
     noInitialRun: true,
     stdin: stdinBuffer.stdin,
     stdout: stdout,
     stderr: stderr,
     onRuntimeInitialized: () => {
         postMessage({type: 'ready', stdinBuffer: stdinBuffer.sab})
+    },
+    async preRun(Module) {
+        // TODO: remove fixed version number
+        // Prevent complaints about not finding exec-prefix by making a lib-dynload directory
+        Module.FS.mkdirTree("/lib/python3.14/lib-dynload/");
+        Module.addRunDependency("install-stdlib");
+        const resp = await fetch("python3.14.zip");
+        const stdlibBuffer = await resp.arrayBuffer();
+        Module.FS.writeFile(`/lib/python314.zip`, new Uint8Array(stdlibBuffer), { canOwn: true });
+        Module.removeRunDependency("install-stdlib");
     }
 }
 
-onmessage = (event) => {
+const modulePromise = createEmscriptenModule(emscriptenSettings);
+
+
+onmessage = async (event) => {
     if (event.data.type === 'run') {
+        const Module = await modulePromise;
         if (event.data.files) {
             for (const [filename, contents] of Object.entries(event.data.files)) {
                 Module.FS.writeFile(filename, contents)
             }
         }
-        const ret = callMain(event.data.args)
+        const ret = Module.callMain(event.data.args);
         postMessage({
             type: 'finished',
             returnCode: ret
@@ -84,4 +100,3 @@ onmessage = (event) => {
     }
 }
 
-importScripts('python.js')

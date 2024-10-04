@@ -47,7 +47,7 @@ class WorkerManager {
 
     async initialiseWorker() {
         if (!this.worker) {
-            this.worker = new Worker(this.workerURL)
+            this.worker = new Worker(this.workerURL, {type: "module"})
             this.worker.addEventListener('message', this.handleMessageFromWorker)
         }
     }
@@ -347,7 +347,7 @@ window.onload = () => {
         programRunning(false)
     }
 
-    const pythonWorkerManager = new WorkerManager('./python.worker.js', stdio, readyCallback, finishedCallback)
+    const pythonWorkerManager = new WorkerManager('./python.worker.mjs', stdio, readyCallback, finishedCallback)
 }
     </script>
 </head>

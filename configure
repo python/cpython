@@ -8335,8 +8335,12 @@ fi
 
 
 fi
-elif test "$ac_sys_system" = "Emscripten" -o "$ac_sys_system" = "WASI"; then
-      DEF_MAKE_ALL_RULE="build_wasm"
+elif test "$ac_sys_system" = "Emscripten"; then
+    DEF_MAKE_ALL_RULE="build_emscripten"
+  REQUIRE_PGO="no"
+  DEF_MAKE_RULE="all"
+elif test "$ac_sys_system" = "WASI"; then
+    DEF_MAKE_ALL_RULE="build_wasm"
   REQUIRE_PGO="no"
   DEF_MAKE_RULE="all"
 else
@@ -9427,12 +9431,12 @@ else $as_nop
   wasm_debug=no
 fi
 
-        as_fn_append LDFLAGS_NODIST " -sALLOW_MEMORY_GROWTH -sTOTAL_MEMORY=20971520"
+        as_fn_append LDFLAGS_NODIST " -sALLOW_MEMORY_GROWTH -sINITIAL_MEMORY=20971520"
 
         as_fn_append LDFLAGS_NODIST " -sWASM_BIGINT"
 
         as_fn_append LDFLAGS_NODIST " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
-    as_fn_append LDFLAGS_NODIST " -sEXPORTED_RUNTIME_METHODS=FS"
+    as_fn_append LDFLAGS_NODIST " -sEXPORTED_RUNTIME_METHODS=FS,callMain"
 
     if test "x$enable_wasm_dynamic_linking" = xyes
 then :
@@ -9449,7 +9453,6 @@ then :
       as_fn_append LINKFORSHARED " -sPROXY_TO_PTHREAD"
 
 fi
-    as_fn_append LDFLAGS_NODIST " -sALLOW_MEMORY_GROWTH"
         as_fn_append LDFLAGS_NODIST " -sEXIT_RUNTIME"
     WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
 

@@ -269,10 +269,6 @@ SRCDIRS= 	@SRCDIRS@
 # Other subdirectories
 SUBDIRSTOO=	Include Lib Misc
 
-# assets for Emscripten browser builds
-WASM_ASSETS_DIR=.$(prefix)
-WASM_STDLIB=$(WASM_ASSETS_DIR)/lib/python$(VERSION)/os.py
-
 # Files and directories to be distributed
 CONFIGFILES=	configure configure.ac acconfig.h pyconfig.h.in Makefile.pre.in
 DISTFILES=	README.rst ChangeLog $(CONFIGFILES)
@@ -737,6 +733,9 @@ build_all:	check-clean-src check-app-store-compliance $(BUILDPYTHON) platform sh
 build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
 		python-config checksharedmods
 
+.PHONY: build_emscripten
+build_emscripten: build_wasm web_example
+
 # Check that the source is clean when building out of source.
 .PHONY: check-clean-src
 check-clean-src:
@@ -1016,23 +1015,38 @@ $(DLLLIBRARY) libpython$(LDVERSION).dll.a: $(LIBRARY_OBJS)
 	else true; \
 	fi
 
-# wasm32-emscripten browser build
-# wasm assets directory is relative to current build dir, e.g. "./usr/local".
-# --preload-file turns a relative asset path into an absolute path.
+# wasm32-emscripten browser web example
 
-.PHONY: wasm_stdlib
-wasm_stdlib: $(WASM_STDLIB)
-$(WASM_STDLIB): $(srcdir)/Lib/*.py $(srcdir)/Lib/*/*.py \
-	    $(srcdir)/Tools/wasm/wasm_assets.py \
+WEBEX_DIR=$(srcdir)/Tools/wasm/emscripten/web_example/
+web_example/python.html: $(WEBEX_DIR)/python.html
+	@mkdir -p web_example
+	@cp $< $@
+
+web_example/python.worker.mjs: $(WEBEX_DIR)/python.worker.mjs
+	@mkdir -p web_example
+	@cp $< $@
+
+web_example/server.py: $(WEBEX_DIR)/server.py
+	@mkdir -p web_example
+	@cp $< $@
+
+WEB_STDLIB=web_example/python$(VERSION)$(ABI_THREAD).zip
+$(WEB_STDLIB): $(srcdir)/Lib/*.py $(srcdir)/Lib/*/*.py \
+	    $(WEBEX_DIR)/wasm_assets.py \
 	    Makefile pybuilddir.txt Modules/Setup.local
-	$(PYTHON_FOR_BUILD) $(srcdir)/Tools/wasm/wasm_assets.py \
-	    --buildroot . --prefix $(prefix)
+	$(PYTHON_FOR_BUILD) $(WEBEX_DIR)/wasm_assets.py \
+	    --buildroot . --prefix $(prefix) -o $@
 
-python.html: $(srcdir)/Tools/wasm/python.html python.worker.js
-	@cp $(srcdir)/Tools/wasm/python.html $@
+web_example/python.mjs web_example/python.wasm: $(BUILDPYTHON)
+	@if test $(HOST_GNU_TYPE) != 'wasm32-unknown-emscripten' ; then \
+		echo "Can only build web_example when target is Emscripten" ;\
+		exit 1 ;\
+	fi
+	cp python.mjs web_example/python.mjs
+	cp python.wasm web_example/python.wasm
 
-python.worker.js: $(srcdir)/Tools/wasm/python.worker.js
-	@cp $(srcdir)/Tools/wasm/python.worker.js $@
+.PHONY: web_example
+web_example: web_example/python.mjs web_example/python.worker.mjs web_example/python.html web_example/server.py $(WEB_STDLIB)
 
 ############################################################################
 # Header files
@@ -3053,8 +3067,7 @@ clean-retain-profile: pycremoval
 	find build -name '*.py[co]' -exec rm -f {} ';' || true
 	-rm -f pybuilddir.txt
 	-rm -f _bootstrap_python
-	-rm -f python.html python*.js python.data python*.symbols python*.map
-	-rm -f $(WASM_STDLIB)
+	-rm -rf web_example python.mjs python.wasm python*.symbols python*.map
 	-rm -f Programs/_testembed Programs/_freeze_module
 	-rm -rf Python/deepfreeze
 	-rm -f Python/frozen_modules/*.h

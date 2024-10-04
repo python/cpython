@@ -1854,9 +1854,13 @@ if test "$Py_OPT" = 'true' ; then
       LDFLAGS_NODIST="$LDFLAGS_NODIST -fno-semantic-interposition"
       ], [], [-Werror])
   ])
-elif test "$ac_sys_system" = "Emscripten" -o "$ac_sys_system" = "WASI"; then
-  dnl Emscripten does not support shared extensions yet. Build
-  dnl "python.[js,wasm]", "pybuilddir.txt", and "platform" files.
+elif test "$ac_sys_system" = "Emscripten"; then
+  dnl Build "python.[js,wasm]", "pybuilddir.txt", and "platform" files.
+  DEF_MAKE_ALL_RULE="build_emscripten"
+  REQUIRE_PGO="no"
+  DEF_MAKE_RULE="all"
+elif test "$ac_sys_system" = "WASI"; then
+  dnl Build "python.wasm", "pybuilddir.txt", and "platform" files.
   DEF_MAKE_ALL_RULE="build_wasm"
   REQUIRE_PGO="no"
   DEF_MAKE_RULE="all"
@@ -2321,14 +2325,14 @@ AS_CASE([$ac_sys_system],
     AS_VAR_IF([Py_DEBUG], [yes], [wasm_debug=yes], [wasm_debug=no])
 
     dnl Start with 20 MB and allow to grow
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH -sTOTAL_MEMORY=20971520"])
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH -sINITIAL_MEMORY=20971520"])
 
     dnl map int64_t and uint64_t to JS bigint
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -sWASM_BIGINT"])
 
     dnl Include file system support
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sEXPORTED_RUNTIME_METHODS=FS"])
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain"])
 
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
       AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
@@ -2339,7 +2343,6 @@ AS_CASE([$ac_sys_system],
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -sUSE_PTHREADS"])
       AS_VAR_APPEND([LINKFORSHARED], [" -sPROXY_TO_PTHREAD"])
     ])
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" -sALLOW_MEMORY_GROWTH"])
     dnl not completely sure whether or not we want -sEXIT_RUNTIME, keeping it for now.
     AS_VAR_APPEND([LDFLAGS_NODIST], [" -sEXIT_RUNTIME"])
     WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
