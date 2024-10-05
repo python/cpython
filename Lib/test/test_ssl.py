@@ -2801,7 +2801,7 @@ class ThreadedTests(unittest.TestCase):
                 'Cannot create a client socket with a PROTOCOL_TLS_SERVER context',
                 str(e.exception))
 
-    @unittest.skipUnless(support.Py_GIL_DISABLED, "test is only useful is GIL is disabled")
+    @unittest.skipUnless(support.Py_GIL_DISABLED, "test is only useful if the GIL is disabled")
     def test_ssl_in_multiple_threads(self):
         # See GH-124984
         threads = []
