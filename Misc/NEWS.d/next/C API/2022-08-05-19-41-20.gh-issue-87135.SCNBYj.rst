@@ -1,0 +1,15 @@
+Attempting to acquire the GIL after runtime finalization has begun in a
+different thread now causes the thread to hang rather than terminate, which
+avoids potential crashes or memory corruption caused by attempting to
+terminate a thread that is running code not specifically designed to support
+termination. In most cases this hanging is harmless since the process will
+soon exit anyway.
+
+The ``PyThread_exit_thread`` function is now deprecated.  Its behavior is
+inconsistent across platforms, and it can only be used safely in the
+unlikely case that every function in the entire call stack has been designed
+to support the platform-dependent termination mechanism.  It is recommended
+that users of this function change their design to not require thread
+termination.  In the unlikely case that thread termination is needed and can
+be done safely, users may migrate to calling platform-specific APIs such as
+``pthread_exit`` (POSIX) or ``_endthreadex`` (Windows) directly.

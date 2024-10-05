@@ -32,15 +32,15 @@ typedef struct _PyThreadStateImpl {
     struct _Py_freelists freelists;
     struct _brc_thread_state brc;
     struct {
-        // The thread-local refcounts for heap type objects
-        Py_ssize_t *refcounts;
+        // The per-thread refcounts
+        Py_ssize_t *values;
 
         // Size of the refcounts array.
         Py_ssize_t size;
 
-        // If set, don't use thread-local refcounts
+        // If set, don't use per-thread refcounts
         int is_finalized;
-    } types;
+    } refcounts;
 
     // Index to use to retrieve thread-local bytecode for this thread
     Py_ssize_t tlbc_index;
