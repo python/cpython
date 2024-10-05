@@ -5271,9 +5271,9 @@ static PyObject *
 memory_bio_get_pending(PySSLMemoryBIO *self, void *c)
 {
     PySSL_LOCK(self);
-    PyObject *res = PyLong_FromSize_t(BIO_ctrl_pending(self->bio));
+    size_t res = BIO_ctrl_pending(self->bio);
     PySSL_UNLOCK(self);
-    return res;
+    return PyLong_FromSize_t(res);
 }
 
 PyDoc_STRVAR(PySSL_memory_bio_pending_doc,
@@ -5283,10 +5283,9 @@ static PyObject *
 memory_bio_get_eof(PySSLMemoryBIO *self, void *c)
 {
     PySSL_LOCK(self);
-    PyObject *res = PyBool_FromLong((BIO_ctrl_pending(self->bio) == 0)
-                           && self->eof_written);
+    size_t pending = BIO_ctrl_pending(self->bio);
     PySSL_UNLOCK(self);
-    return res;
+    return PyBool_FromLong((pending == 0) && self->eof_written);
 }
 
 PyDoc_STRVAR(PySSL_memory_bio_eof_doc,
@@ -5536,13 +5535,17 @@ PySSLSession_clear(PySSLSession *self)
 
 static PyObject *
 PySSLSession_get_time(PySSLSession *self, void *closure) {
-    PySSL_LOCK(self);
 #if OPENSSL_VERSION_NUMBER >= 0x30300000L
-    PyObject *res = _PyLong_FromTime_t(SSL_SESSION_get_time_ex(self->session));
-#else
-    PyObject *res = PyLong_FromLong(SSL_SESSION_get_time(self->session));
-#endif
+    PySSL_LOCK(self);
+    time_t time = SSL_SESSION_get_time_ex(self->session);
     PySSL_UNLOCK(self);
+    PyObject *res = _PyLong_FromTime_t(time);
+#else
+    PySSL_LOCK(self);
+    int time = SSL_SESSION_get_time(self->session);
+    PySSL_UNLOCK(self);
+    PyObject *res = PyLong_FromLong(time);
+#endif
     return res;
 }
 
@@ -5553,8 +5556,9 @@ PyDoc_STRVAR(PySSLSession_get_time_doc,
 static PyObject *
 PySSLSession_get_timeout(PySSLSession *self, void *closure) {
     PySSL_LOCK(self);
-    PyObject *res = PyLong_FromLong(SSL_SESSION_get_timeout(self->session));
+    long timeout = SSL_SESSION_get_timeout(self->session);
     PySSL_UNLOCK(self);
+    PyObject *res = PyLong_FromLong(timeout);
     return res;
 }
 
