@@ -16,6 +16,7 @@
 # RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF
 # CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+import __future__
 
 from __future__ import annotations
 
@@ -166,6 +167,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
         for node in ast.walk(tree):
             if isinstance(node, ast.ImportFrom) and node.module == "__future__":
                 if any(alias.name == "barry_as_FLUFL" for alias in node.names):
+                    self.compile.compiler.flags |= getattr(__future__, "barry_as_FLUFL").compiler_flag
                     self.barry_as_FLUFL = True
 
     def showsyntaxerror(self, filename=None, **kwargs):
@@ -180,8 +182,6 @@ class InteractiveColoredConsole(code.InteractiveConsole):
         self.write(''.join(lines))
 
     def runsource(self, source, filename="<input>", symbol="single"):
-        if self.barry_as_FLUFL:
-            source = source.replace("<>", "!=")
         try:
             tree = ast.parse(source)
             self.check_barry_as_FLUFL(tree)
