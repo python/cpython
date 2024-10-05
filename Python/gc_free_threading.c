@@ -15,7 +15,7 @@
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
 #include "pydtrace.h"
-#include "pycore_typeid.h"        // _PyType_MergeThreadLocalRefcounts
+#include "pycore_uniqueid.h"      // _PyType_MergeThreadLocalRefcounts
 
 #ifdef Py_GIL_DISABLED
 
@@ -200,6 +200,7 @@ frame_disable_deferred_refcounting(_PyInterpreterFrame *frame)
         }
     }
 
+    frame->f_funcobj = PyStackRef_AsStrongReference(frame->f_funcobj);
     for (_PyStackRef *ref = frame->localsplus; ref < frame->stackpointer; ref++) {
         if (!PyStackRef_IsNull(*ref) && PyStackRef_IsDeferred(*ref)) {
             *ref = PyStackRef_AsStrongReference(*ref);
@@ -216,12 +217,12 @@ disable_deferred_refcounting(PyObject *op)
         merge_refcount(op, 0);
     }
 
-    // Heap types also use thread-local refcounting -- disable it here.
+    // Heap types also use per-thread refcounting -- disable it here.
     if (PyType_Check(op)) {
-        // Disable thread-local refcounting for heap types
-        PyTypeObject *type = (PyTypeObject *)op;
-        if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-            _PyType_ReleaseId((PyHeapTypeObject *)op);
+        if (PyType_HasFeature((PyTypeObject *)op, Py_TPFLAGS_HEAPTYPE)) {
+            PyHeapTypeObject *ht = (PyHeapTypeObject *)op;
+            _PyObject_ReleaseUniqueId(ht->unique_id);
+            ht->unique_id = -1;
         }
     }
 
@@ -994,9 +995,7 @@ _PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg)
     _PyStackRef *ref = _PyFrame_GetLocalsArray(frame);
     /* locals and stack */
     for (; ref < frame->stackpointer; ref++) {
-        if (_PyGC_VisitStackRef(ref, visit, arg) < 0) {
-            return -1;
-        }
+        _Py_VISIT_STACKREF(*ref);
     }
     return 0;
 }
@@ -1222,7 +1221,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
         _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)p;
 
         // merge per-thread refcount for types into the type's actual refcount
-        _PyType_MergeThreadLocalRefcounts(tstate);
+        _PyObject_MergePerThreadRefcounts(tstate);
 
         // merge refcounts for all queued objects
         merge_queued_objects(tstate, state);

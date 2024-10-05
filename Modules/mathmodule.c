@@ -1673,7 +1673,7 @@ math_isqrt(PyObject *module, PyObject *n)
 /*[clinic end generated code: output=35a6f7f980beab26 input=5b6e7ae4fa6c43d6]*/
 {
     int a_too_large, c_bit_length;
-    uint64_t c, d;
+    int64_t c, d;
     uint64_t m;
     uint32_t u;
     PyObject *a = NULL, *b;
@@ -1696,14 +1696,13 @@ math_isqrt(PyObject *module, PyObject *n)
 
     /* c = (n.bit_length() - 1) // 2 */
     c = _PyLong_NumBits(n);
-    if (c == (uint64_t)(-1)) {
-        goto error;
-    }
-    c = (c - 1U) / 2U;
+    assert(c > 0);
+    assert(!PyErr_Occurred());
+    c = (c - 1) / 2;
 
     /* Fast path: if c <= 31 then n < 2**64 and we can compute directly with a
        fast, almost branch-free algorithm. */
-    if (c <= 31U) {
+    if (c <= 31) {
         int shift = 31 - (int)c;
         m = (uint64_t)PyLong_AsUnsignedLongLong(n);
         Py_DECREF(n);
@@ -1720,13 +1719,13 @@ math_isqrt(PyObject *module, PyObject *n)
 
     /* From n >= 2**64 it follows that c.bit_length() >= 6. */
     c_bit_length = 6;
-    while ((c >> c_bit_length) > 0U) {
+    while ((c >> c_bit_length) > 0) {
         ++c_bit_length;
     }
 
     /* Initialise d and a. */
     d = c >> (c_bit_length - 5);
-    b = _PyLong_Rshift(n, 2U*c - 62U);
+    b = _PyLong_Rshift(n, 2*c - 62);
     if (b == NULL) {
         goto error;
     }
@@ -1743,12 +1742,12 @@ math_isqrt(PyObject *module, PyObject *n)
 
     for (int s = c_bit_length - 6; s >= 0; --s) {
         PyObject *q;
-        uint64_t e = d;
+        int64_t e = d;
 
         d = c >> s;
 
         /* q = (n >> 2*c - e - d + 1) // a */
-        q = _PyLong_Rshift(n, 2U*c - d - e + 1U);
+        q = _PyLong_Rshift(n, 2*c - d - e + 1);
         if (q == NULL) {
             goto error;
         }
@@ -1758,7 +1757,7 @@ math_isqrt(PyObject *module, PyObject *n)
         }
 
         /* a = (a << d - 1 - e) + q */
-        Py_SETREF(a, _PyLong_Lshift(a, d - 1U - e));
+        Py_SETREF(a, _PyLong_Lshift(a, d - 1 - e));
         if (a == NULL) {
             Py_DECREF(q);
             goto error;
@@ -2218,8 +2217,8 @@ loghelper(PyObject* arg, double (*func)(double))
                to compute the log anyway.  Clear the exception and continue. */
             PyErr_Clear();
             x = _PyLong_Frexp((PyLongObject *)arg, &e);
-            if (x == -1.0 && PyErr_Occurred())
-                return NULL;
+            assert(e >= 0);
+            assert(!PyErr_Occurred());
             /* Value is ~= x * 2**e, so the log ~= log(x) + log(2) * e. */
             result = func(x) + func(2.0) * e;
         }

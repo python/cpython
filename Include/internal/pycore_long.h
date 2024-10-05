@@ -79,11 +79,10 @@ static inline PyObject* _PyLong_FromUnsignedChar(unsigned char i)
 }
 
 // _PyLong_Frexp returns a double x and an exponent e such that the
-// true value is approximately equal to x * 2**e.  e is >= 0.  x is
+// true value is approximately equal to x * 2**e.  x is
 // 0.0 if and only if the input is 0 (in which case, e and x are both
-// zeroes); otherwise, 0.5 <= abs(x) < 1.0.  On overflow, which is
-// possible if the number of bits doesn't fit into a Py_ssize_t, sets
-// OverflowError and returns -1.0 for x, 0 for e.
+// zeroes); otherwise, 0.5 <= abs(x) < 1.0.
+// Always successful.
 //
 // Export for 'math' shared extension
 PyAPI_DATA(double) _PyLong_Frexp(PyLongObject *a, int64_t *e);
@@ -105,10 +104,10 @@ PyAPI_DATA(PyObject*) _PyLong_DivmodNear(PyObject *, PyObject *);
 PyAPI_DATA(PyObject*) _PyLong_Format(PyObject *obj, int base);
 
 // Export for 'math' shared extension
-PyAPI_DATA(PyObject*) _PyLong_Rshift(PyObject *, uint64_t);
+PyAPI_DATA(PyObject*) _PyLong_Rshift(PyObject *, int64_t);
 
 // Export for 'math' shared extension
-PyAPI_DATA(PyObject*) _PyLong_Lshift(PyObject *, uint64_t);
+PyAPI_DATA(PyObject*) _PyLong_Lshift(PyObject *, int64_t);
 
 PyAPI_FUNC(PyObject*) _PyLong_Add(PyLongObject *left, PyLongObject *right);
 PyAPI_FUNC(PyObject*) _PyLong_Multiply(PyLongObject *left, PyLongObject *right);
