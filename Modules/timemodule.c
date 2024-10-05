@@ -893,41 +893,55 @@ time_strftime(PyObject *module, PyObject *args)
             PyErr_NoMemory();
             break;
         }
-#if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
-        errno = 0;
-#endif
-        _Py_BEGIN_SUPPRESS_IPH
-        buflen = format_time(outbuf + outpos, outsize - outpos, fmt, &buf);
-        _Py_END_SUPPRESS_IPH
-#if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
-        /* VisualStudio .NET 2005 does this properly */
-        if (buflen == 0 && errno == EINVAL) {
-            PyErr_SetString(PyExc_ValueError, "Invalid format string");
-            break;
+        if (fmtlen == 0) {
+            /* Empty format string or leading or trailing NUL,
+               or consequent NULs.
+               strftime() on macOS does not work well with empty format string.
+             */
+            if (outpos == outsize) {
+                outsize += outsize;
+                continue;
+            }
+            outbuf[outpos] = 0;
         }
+        else {
+#if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
+            errno = 0;
 #endif
-        if (buflen == 0 && outsize - outpos < 256 * fmtlen) {
-            outsize += outsize;
-            continue;
+            _Py_BEGIN_SUPPRESS_IPH
+            buflen = format_time(outbuf + outpos, outsize - outpos, fmt, &buf);
+            _Py_END_SUPPRESS_IPH
+#if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
+            /* VisualStudio .NET 2005 does this properly */
+            if (buflen == 0 && errno == EINVAL) {
+                PyErr_SetString(PyExc_ValueError, "Invalid format string");
+                break;
+            }
+#endif
+            if (buflen == 0 && outsize - outpos < 256 * fmtlen) {
+                outsize += outsize;
+                continue;
+            }
+            /* If the buffer is 256 times as long as the format,
+               it's probably not failing for lack of room!
+               More likely, the format yields an empty result,
+               e.g. an empty format, or %Z when the timezone
+               is unknown. */
+            outpos += buflen;
         }
-        /* If the buffer is 256 times as long as the format,
-           it's probably not failing for lack of room!
-           More likely, the format yields an empty result,
-           e.g. an empty format, or %Z when the timezone
-           is unknown. */
-        outpos += buflen + 1;
         if (fmtlen < (size_t)fmtsize) {
             /* It was not terminating NUL, but an embedded NUL.
                Skip the NUL and continue. */
+            outpos++;
             fmt += fmtlen + 1;
             fmtsize -= fmtlen + 1;
             fmtlen = time_strlen(fmt);
             continue;
         }
 #ifdef HAVE_WCSFTIME
-        ret = PyUnicode_FromWideChar(outbuf, outpos - 1);
+        ret = PyUnicode_FromWideChar(outbuf, outpos);
 #else
-        ret = PyUnicode_DecodeLocaleAndSize(outbuf, outpos - 1, "surrogateescape");
+        ret = PyUnicode_DecodeLocaleAndSize(outbuf, outpos, "surrogateescape");
 #endif
         break;
     }
