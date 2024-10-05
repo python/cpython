@@ -34,7 +34,7 @@
 #define ECX7_AVX512_VBMI    (1 << 1)    // avx512-vbmi, ECX, page 7, bit 1
 
 void
-detect_cpu_simd_features(cpu_simd_flags *flags)
+_Py_detect_cpu_simd_features(cpu_simd_flags *flags)
 {
     if (flags->done) {
         return;

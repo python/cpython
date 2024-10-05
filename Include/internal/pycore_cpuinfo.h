@@ -17,7 +17,7 @@ typedef struct {
 } cpu_simd_flags;
 
 extern void
-detect_cpu_simd_features(cpu_simd_flags *flags);
+_Py_detect_cpu_simd_features(cpu_simd_flags *flags);
 
 #ifdef __cplusplus
 }
