@@ -2163,7 +2163,6 @@ _ssl__SSLSocket_version_impl(PySSLSocket *self)
         Py_RETURN_NONE;
     }
 
-    PySSL_LOCK(self);
     version = SSL_get_version(self->ssl);
     PySSL_UNLOCK(self);
     if (!strcmp(version, "unknown"))
