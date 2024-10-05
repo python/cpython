@@ -1,0 +1,2 @@
+Fix a use-after-free bug in the :func:`repr` implementation of
+:class:`ast.AST` nodes.
