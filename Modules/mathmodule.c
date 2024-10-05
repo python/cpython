@@ -978,6 +978,7 @@ math_1a(PyObject *arg, double (*func) (double), const char *err_msg)
     r = (*func)(x);
     if (errno && is_error(r, err_msg ? 0 : 1)) {
         if (err_msg && errno == EDOM) {
+            assert(!PyErr_Occurred()); /* exception is not set by is_error() */
             char *buf = PyOS_double_to_string(x, 'r', 0, Py_DTSF_ADD_DOT_0, NULL);
             if (buf) {
                 PyErr_Format(PyExc_ValueError, err_msg, buf);
