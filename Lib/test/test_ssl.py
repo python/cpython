@@ -2809,7 +2809,20 @@ class ThreadedTests(unittest.TestCase):
         for func in (
             self.test_echo,
             self.test_alpn_protocols,
-            self.test_getpeercert
+            self.test_getpeercert,
+            self.test_crl_check,
+            self.test_ecc_cert,
+            self.test_dual_rsa_ecc,
+            self.test_check_hostname_idn,
+            self.test_wrong_cert_tls12,
+            self.test_wrong_cert_tls13,
+            self.test_rude_shutdown,
+            self.test_ssl_cert_verify_error,
+            self.test_starttls,
+            self.test_socketserver,
+            self.test_recv_send,
+            self.test_recv_zero,
+            self.test_nonblocking_send
         ):
             for num in range(10):
                 with self.subTest(func=func, num=num):
