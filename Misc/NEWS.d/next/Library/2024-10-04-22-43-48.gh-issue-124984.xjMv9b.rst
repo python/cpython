@@ -1,0 +1,1 @@
+Fixed thread safety in :mod:`ssl`.
