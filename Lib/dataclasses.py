@@ -1184,9 +1184,9 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     return cls
 
 
-# _dataclass_reduce and _dataclass_produce are needed because there is a
-# bug in pickle when there is a cycle in the object graph and the object
-# serves as a key for a dict, set or frozenset in one of its descendants.
+# _dataclass_reduce and _dataclass_produce are needed because pickle will
+# crash when there is a cycle in the object graph and the object serves
+# as a key for a dict, set or frozenset in one of its descendants.
 # cf. gh python/cpython#124937.
 #
 # These could be slightly more performant if we generated
