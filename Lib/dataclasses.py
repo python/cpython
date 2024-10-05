@@ -1310,7 +1310,7 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
         newcls.__qualname__ = qualname
 
     if '__reduce__' not in cls_dict:
-        cls.__reduce__ = _dataclass_reduce
+        newcls.__reduce__ = _dataclass_reduce
 
     # Fix up any closures which reference __class__.  This is used to
     # fix zero argument super so that it points to the correct class
