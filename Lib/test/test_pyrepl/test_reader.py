@@ -313,6 +313,15 @@ class TestReader(TestCase):
 
         self.assert_screen_equals(reader, f"{code}a")
 
+    def test_setpos_from_xy_for_non_printing_char(self):
+        code = "# non \u200c printing character"
+        events = code_to_events(code)
+
+        reader, _ = handle_all_events(events)
+        reader.setpos_from_xy(8, 0)
+
+        self.assertEqual(reader.pos, 7)
+
     def test_pos2xy_with_no_columns(self):
         console = prepare_console([])
         reader = prepare_reader(console)
