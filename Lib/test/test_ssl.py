@@ -278,11 +278,19 @@ def test_wrap_socket(sock, *,
     return context.wrap_socket(sock, **kwargs)
 
 
+USE_SAME_TEST_CONTEXT = False
+_TEST_CONTEXT = None
+
 def testing_context(server_cert=SIGNED_CERTFILE, *, server_chain=True):
     """Create context
 
     client_context, server_context, hostname = testing_context()
     """
+    global _TEST_CONTEXT
+    if USE_SAME_TEST_CONTEXT:
+        if _TEST_CONTEXT is not None:
+            return _TEST_CONTEXT
+
     if server_cert == SIGNED_CERTFILE:
         hostname = SIGNED_CERTFILE_HOSTNAME
     elif server_cert == SIGNED_CERTFILE2:
@@ -299,6 +307,10 @@ def testing_context(server_cert=SIGNED_CERTFILE, *, server_chain=True):
     server_context.load_cert_chain(server_cert)
     if server_chain:
         server_context.load_verify_locations(SIGNING_CA)
+
+    if USE_SAME_TEST_CONTEXT:
+        if _TEST_CONTEXT is not None:
+            _TEST_CONTEXT = client_context, server_context, hostname
 
     return client_context, server_context, hostname
 
@@ -2806,6 +2818,7 @@ class ThreadedTests(unittest.TestCase):
         # See GH-124984
         threads = []
 
+        USE_SAME_TEST_CONTEXT = True
         for func in (
             self.test_echo,
             self.test_alpn_protocols,
@@ -2835,6 +2848,8 @@ class ThreadedTests(unittest.TestCase):
         for thread in threads:
             with self.subTest(thread=thread):
                 thread.join()
+
+        USE_SAME_TEST_CONTEXT = False
 
     def test_getpeercert(self):
         if support.verbose:
