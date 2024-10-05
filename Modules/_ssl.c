@@ -637,7 +637,7 @@ PySSL_SetError(PySSLSocket *sslsock, const char *filename, int lineno)
     _sslmodulestate *state = get_state_sock(sslsock);
     type = state->PySSLErrorObject;
 
-    // XXX Are ERR functions thread-safe?
+    // ERR functions are thread local, no need to lock them.
     e = ERR_peek_last_error();
 
     if (sslsock->ssl != NULL) {
