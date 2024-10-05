@@ -250,17 +250,17 @@ typedef unsigned int pymem_uint;  /* assuming >= 16 bits */
 /* When you say memory, my mind reasons in terms of (pointers to) blocks */
 typedef uint8_t pymem_block;
 
-/* Pool for small blocks. */
+/* Pool for small blocks (see "Pool table" below for details). */
 struct pool_header {
     union { pymem_block *_padding;
-            uint count; } ref;          /* number of allocated blocks           */
-    pymem_block *freeblock;             /* pool's free list head                */
-    struct pool_header *nextpool;       /* see Pool table below for details     */
-    struct pool_header *prevpool;       /* ""                                   */
-    uint arenaindex;                    /* index into arenas of base adr        */
-    uint szidx;                         /* block size class index               */
-    uint nextoffset;                    /* bytes to virgin block                */
-    uint maxnextoffset;                 /* largest valid nextoffset             */
+            uint count; } ref;          /* number of allocated blocks       */
+    pymem_block *freeblock;             /* pool's free list head            */
+    struct pool_header *nextpool;       /* next pool of this size class     */
+    struct pool_header *prevpool;       /* previous pool ""                 */
+    uint arenaindex;                    /* index into arenas of base adr    */
+    uint szidx;                         /* block size class index           */
+    uint nextoffset;                    /* bytes to virgin block            */
+    uint maxnextoffset;                 /* largest valid nextoffset         */
 };
 
 typedef struct pool_header *poolp;
