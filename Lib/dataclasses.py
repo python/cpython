@@ -1222,6 +1222,7 @@ def _get_slots(cls):
 
 
 def _update_func_cell_for__class__(f, oldcls, newcls):
+    # Returns True if we update a cell, else False.
     try:
         idx = f.__code__.co_freevars.index("__class__")
     except ValueError:
