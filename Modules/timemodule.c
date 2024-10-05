@@ -787,16 +787,14 @@ time_strftime(PyObject *module, PyObject *args)
     PyObject *format;
 #endif
     PyObject *format_arg;
+    Py_ssize_t fmtsize;
     size_t fmtlen, buflen;
     time_char *outbuf = NULL;
-    size_t i;
+    size_t outsize, outpos;
     PyObject *ret = NULL;
 
     memset((void *) &buf, '\0', sizeof(buf));
 
-    /* Will always expect a unicode string to be passed as format.
-       Given that there's no str type anymore in py3k this seems safe.
-    */
     if (!PyArg_ParseTuple(args, "U|O:strftime", &format_arg, &tup))
         return NULL;
 
@@ -835,7 +833,7 @@ time_strftime(PyObject *module, PyObject *args)
         buf.tm_isdst = 1;
 
 #ifdef HAVE_WCSFTIME
-    format = PyUnicode_AsWideCharString(format_arg, NULL);
+    format = PyUnicode_AsWideCharString(format_arg, &fmtsize);
     if (format == NULL)
         return NULL;
     fmt = format;
@@ -845,19 +843,20 @@ time_strftime(PyObject *module, PyObject *args)
     if (format == NULL)
         return NULL;
     fmt = PyBytes_AS_STRING(format);
+    fmtsize = PyBytes_GET_SIZE(format);
 #endif
 
 #if defined(MS_WINDOWS) && !defined(HAVE_WCSFTIME)
     /* check that the format string contains only valid directives */
-    for (outbuf = strchr(fmt, '%');
-        outbuf != NULL;
-        outbuf = strchr(outbuf+2, '%'))
+    for (const time_char *f = memchr(fmt, '%', fmtsize);
+        f != NULL;
+        f = memchr(f + 2, '%', fmtsize - (f + 2 - fmt)))
     {
-        if (outbuf[1] == '#')
-            ++outbuf; /* not documented by python, */
-        if (outbuf[1] == '\0')
+        if (f[1] == '#')
+            ++f; /* not documented by python, */
+        if (f + 1 >= fmt + fmtsize)
             break;
-        if ((outbuf[1] == 'y') && buf.tm_year < 0) {
+        if ((f[1] == 'y') && buf.tm_year < 0) {
             PyErr_SetString(PyExc_ValueError,
                         "format %y requires year >= 1900 on Windows");
             Py_DECREF(format);
@@ -865,15 +864,15 @@ time_strftime(PyObject *module, PyObject *args)
         }
     }
 #elif (defined(_AIX) || (defined(__sun) && defined(__SVR4))) && defined(HAVE_WCSFTIME)
-    for (outbuf = wcschr(fmt, '%');
-        outbuf != NULL;
-        outbuf = wcschr(outbuf+2, '%'))
+    for (const time_char *f = wmemchr(fmt, '%', fmtsize);
+        f != NULL;
+        f = wmemchr(f + 2, '%', fmtsize - (f + 2 - fmt)))
     {
-        if (outbuf[1] == L'\0')
+        if (f + 1 >= fmt + fmtsize)
             break;
         /* Issue #19634: On AIX, wcsftime("y", (1899, 1, 1, 0, 0, 0, 0, 0, 0))
            returns "0/" instead of "99" */
-        if (outbuf[1] == L'y' && buf.tm_year < 0) {
+        if (f[1] == L'y' && buf.tm_year < 0) {
             PyErr_SetString(PyExc_ValueError,
                             "format %y requires year >= 1900 on AIX");
             PyMem_Free(format);
@@ -882,13 +881,14 @@ time_strftime(PyObject *module, PyObject *args)
     }
 #endif
 
-    fmtlen = time_strlen(fmt);
-
     /* I hate these functions that presume you know how big the output
      * will be ahead of time...
      */
-    for (i = 1024; ; i += i) {
-        outbuf = (time_char *)PyMem_Malloc(i*sizeof(time_char));
+    outsize = fmtsize + 128;
+    outpos = 0;
+    fmtlen = time_strlen(fmt);
+    while (1) {
+        outbuf = (time_char *)PyMem_Realloc(outbuf, outsize*sizeof(time_char));
         if (outbuf == NULL) {
             PyErr_NoMemory();
             break;
@@ -897,32 +897,41 @@ time_strftime(PyObject *module, PyObject *args)
         errno = 0;
 #endif
         _Py_BEGIN_SUPPRESS_IPH
-        buflen = format_time(outbuf, i, fmt, &buf);
+        buflen = format_time(outbuf + outpos, outsize - outpos, fmt, &buf);
         _Py_END_SUPPRESS_IPH
 #if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
         /* VisualStudio .NET 2005 does this properly */
         if (buflen == 0 && errno == EINVAL) {
             PyErr_SetString(PyExc_ValueError, "Invalid format string");
-            PyMem_Free(outbuf);
             break;
         }
 #endif
-        if (buflen > 0 || i >= 256 * fmtlen) {
-            /* If the buffer is 256 times as long as the format,
-               it's probably not failing for lack of room!
-               More likely, the format yields an empty result,
-               e.g. an empty format, or %Z when the timezone
-               is unknown. */
+        if (buflen == 0 && outsize - outpos < 256 * fmtlen) {
+            outsize += outsize;
+            continue;
+        }
+        /* If the buffer is 256 times as long as the format,
+           it's probably not failing for lack of room!
+           More likely, the format yields an empty result,
+           e.g. an empty format, or %Z when the timezone
+           is unknown. */
+        outpos += buflen + 1;
+        if (fmtlen < (size_t)fmtsize) {
+            /* It was not terminating NUL, but an embedded NUL.
+               Skip the NUL and continue. */
+            fmt += fmtlen + 1;
+            fmtsize -= fmtlen + 1;
+            fmtlen = time_strlen(fmt);
+            continue;
+        }
 #ifdef HAVE_WCSFTIME
-            ret = PyUnicode_FromWideChar(outbuf, buflen);
+        ret = PyUnicode_FromWideChar(outbuf, outpos - 1);
 #else
-            ret = PyUnicode_DecodeLocaleAndSize(outbuf, buflen, "surrogateescape");
+        ret = PyUnicode_DecodeLocaleAndSize(outbuf, outpos - 1, "surrogateescape");
 #endif
-            PyMem_Free(outbuf);
-            break;
-        }
-        PyMem_Free(outbuf);
+        break;
     }
+    PyMem_Free(outbuf);
 #ifdef HAVE_WCSFTIME
     PyMem_Free(format);
 #else

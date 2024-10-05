@@ -182,8 +182,16 @@ class TimeTestCase(unittest.TestCase):
                 self.fail('conversion specifier: %r failed.' % format)
 
         self.assertRaises(TypeError, time.strftime, b'%S', tt)
-        # embedded null character
-        self.assertRaises(ValueError, time.strftime, '%S\0', tt)
+
+    def test_strftime_embedded_nul(self):
+        # gh-124531: The null character should not terminate the format string.
+        tt = time.gmtime(self.t)
+        self.assertEqual(time.strftime('\0', tt), '\0')
+        self.assertEqual(time.strftime('\0'*1000, tt), '\0'*1000)
+        s1 = time.strftime('%c', tt)
+        s2 = time.strftime('%x', tt)
+        self.assertEqual(time.strftime('\0%c\0%x', tt), f'\0{s1}\0{s2}')
+        self.assertEqual(time.strftime('\0%c\0%x\0', tt), f'\0{s1}\0{s2}\0')
 
     def _bounds_checking(self, func):
         # Make sure that strftime() checks the bounds of the various parts

@@ -1837,6 +1837,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     PyObject *freplacement = NULL;      /* py string, replacement for %f */
 
     const char *pin;            /* pointer to next char in input format */
+    const char *pend;           /* pointer past the end of input format */
     Py_ssize_t flen;            /* length of input format */
     char ch;                    /* next char in input format */
 
@@ -1886,22 +1887,15 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     pnew = PyBytes_AsString(newfmt);
     usednew = 0;
 
-    while ((ch = *pin++) != '\0') {
-        if (ch != '%') {
-            ptoappend = pin - 1;
-            ntoappend = 1;
-        }
-        else if ((ch = *pin++) == '\0') {
-        /* Null byte follows %, copy only '%'.
-         *
-         * Back the pin up one char so that we catch the null check
-         * the next time through the loop.*/
-            pin--;
+    pend = pin + flen;
+    while (pin != pend) {
+        ch = *pin++;
+        if (ch != '%' || pin == pend) {
             ptoappend = pin - 1;
             ntoappend = 1;
         }
         /* A % has been seen and ch is the character after it. */
-        else if (ch == 'z') {
+        else if ((ch = *pin++) == 'z') {
             /* %z -> +HHMM */
             if (zreplacement == NULL) {
                 zreplacement = make_somezreplacement(object, "", tzinfoarg);
@@ -2035,12 +2029,10 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         assert(usednew <= totalnew);
     }  /* end while() */
 
-    if (_PyBytes_Resize(&newfmt, usednew) < 0)
-        goto Done;
     {
         PyObject *format;
 
-        format = PyUnicode_FromString(PyBytes_AS_STRING(newfmt));
+        format = PyUnicode_FromStringAndSize(PyBytes_AS_STRING(newfmt), usednew);
         if (format != NULL) {
             result = PyObject_CallFunctionObjArgs(strftime,
                                                    format, timetuple, NULL);

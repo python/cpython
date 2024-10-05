@@ -1,0 +1,4 @@
+Fix :func:`time.strftime`, the :meth:`~datetime.datetime.strftime` method of
+the :mod:`datetime` classes :class:`~datetime.datetime`,
+:class:`~datetime.date` and :class:`~datetime.time` and formatting of these
+classes with format strings containing embedded null characters.

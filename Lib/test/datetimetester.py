@@ -2955,6 +2955,16 @@ class TestDateTime(TestDate):
         except UnicodeEncodeError:
             pass
 
+    def test_strftime_embedded_nul(self):
+        # gh-124531: The null character should not terminate the format string.
+        t = self.theclass(2004, 12, 31, 6, 22, 33, 47)
+        self.assertEqual(t.strftime('\0'), '\0')
+        self.assertEqual(t.strftime('\0'*1000), '\0'*1000)
+        s1 = t.strftime('%c')
+        s2 = t.strftime('%x')
+        self.assertEqual(t.strftime('\0%c\0%x'), f'\0{s1}\0{s2}')
+        self.assertEqual(t.strftime('\0%c\0%x\0'), f'\0{s1}\0{s2}\0')
+
     def test_extract(self):
         dt = self.theclass(2002, 3, 4, 18, 45, 3, 1234)
         self.assertEqual(dt.date(), date(2002, 3, 4))
@@ -3735,6 +3745,16 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
 
         # gh-85432: The parameter was named "fmt" in the pure-Python impl.
         t.strftime(format="%f")
+
+    def test_strftime_embedded_nul(self):
+        # gh-124531: The null character should not terminate the format string.
+        t = self.theclass(1, 2, 3, 4)
+        self.assertEqual(t.strftime('\0'), '\0')
+        self.assertEqual(t.strftime('\0'*1000), '\0'*1000)
+        s1 = t.strftime('%Z')
+        s2 = t.strftime('%X')
+        self.assertEqual(t.strftime('\0%Z\0%X'), f'\0{s1}\0{s2}')
+        self.assertEqual(t.strftime('\0%Z\0%X\0'), f'\0{s1}\0{s2}\0')
 
     def test_format(self):
         t = self.theclass(1, 2, 3, 4)
