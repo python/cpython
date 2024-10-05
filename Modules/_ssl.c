@@ -3815,14 +3815,16 @@ set_check_hostname(PySSLContext *self, PyObject *arg, void *c)
     if (!PyArg_Parse(arg, "p", &check_hostname))
         return -1;
     PySSL_LOCK(self);
+    int verify_mode = check_hostname ? SSL_CTX_get_verify_mode(self->ctx) : 0;
+    PySSL_UNLOCK(self);
     if (check_hostname &&
-            SSL_CTX_get_verify_mode(self->ctx) == SSL_VERIFY_NONE) {
+            verify_mode == SSL_VERIFY_NONE) {
         /* check_hostname = True sets verify_mode = CERT_REQUIRED */
         if (_set_verify_mode(self, PY_SSL_CERT_REQUIRED) == -1) {
-            PySSL_UNLOCK(self);
             return -1;
         }
     }
+    PySSL_LOCK(self);
     self->check_hostname = check_hostname;
     PySSL_UNLOCK(self);
     return 0;
