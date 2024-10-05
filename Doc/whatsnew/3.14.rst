@@ -356,6 +356,12 @@ pickle
   of the error.
   (Contributed by Serhiy Storchaka in :gh:`122213`.)
 
+socket
+------
+
+Add constants for the ISO-TP CAN protocol.
+(Contributed by Patrick Menschel and Stefan Tatschner in :gh:`86819`.)
+
 symtable
 --------
 
