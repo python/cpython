@@ -890,7 +890,6 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
 #undef SID_CTX
     }
 
-    PySSL_LOCK(self);
     /* bpo43522 and OpenSSL < 1.1.1l: copy hostflags manually */
 #if OPENSSL_VERSION < 0x101010cf
     X509_VERIFY_PARAM *ssl_params = SSL_get0_param(self->ssl);
@@ -927,7 +926,6 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
         }
     }
 #endif
-    PySSL_UNLOCK(self);
 
     if (server_hostname != NULL) {
         if (_ssl_configure_hostname(self, server_hostname) < 0) {
@@ -939,19 +937,15 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
      * to non-blocking mode (blocking is the default)
      */
     if (sock && sock->sock_timeout >= 0) {
-        PySSL_LOCK(self);
         BIO_set_nbio(SSL_get_rbio(self->ssl), 1);
         BIO_set_nbio(SSL_get_wbio(self->ssl), 1);
-        PySSL_UNLOCK(self);
     }
 
     PySSL_BEGIN_ALLOW_THREADS
-    PySSL_LOCK(self);
     if (socket_type == PY_SSL_CLIENT)
         SSL_set_connect_state(self->ssl);
     else
         SSL_set_accept_state(self->ssl);
-    PySSL_UNLOCK(self);
     PySSL_END_ALLOW_THREADS
 
     self->socket_type = socket_type;
