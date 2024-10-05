@@ -1020,9 +1020,11 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
     /* XXX If SSL_do_handshake() returns 0, it's also a failure. */
     do {
         PySSL_BEGIN_ALLOW_THREADS
-        PySSL_LOCK(self);
+        // XXX This isn't thread safe anymore, but locking this can cause a
+        // deadlock if a callback is active (see bpo-43577). I guess this
+        // isn't a huge problem because people shouldn't be calling
+        // do_handshake() across multiple threads anyway.
         ret = SSL_do_handshake(self->ssl);
-        PySSL_UNLOCK(self);
         err = _PySSL_errno(ret < 1, self->ssl, ret);
         PySSL_END_ALLOW_THREADS
         self->err = err;
