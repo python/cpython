@@ -869,7 +869,9 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     self->server_hostname = NULL;
     self->err = err;
     self->exc = NULL;
+#ifdef Py_GIL_DISABLED
     self->lock = (PyMutex) { 0 };
+#endif
 
     /* Make sure the SSL error state is initialized */
     ERR_clear_error();
@@ -2923,7 +2925,9 @@ PySSL_get_session(PySSLSocket *self, void *closure) {
     assert(self->ctx);
     pysess->ctx = (PySSLContext*)Py_NewRef(self->ctx);
     pysess->session = session;
-    self->lock = (PyMutex) { 0 };
+#ifdef Py_GIL_DISABLED
+    pysess->lock = (PyMutex) { 0 };
+#endif
     PyObject_GC_Track(pysess);
     return (PyObject *)pysess;
 }
@@ -3174,6 +3178,9 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
 #ifndef OPENSSL_NO_PSK
     self->psk_client_callback = NULL;
     self->psk_server_callback = NULL;
+#endif
+#ifdef Py_GIL_DISABLED
+    self->lock = (PyMutex) { 0 };
 #endif
 
     /* Don't check host name by default */
@@ -5233,7 +5240,9 @@ _ssl_MemoryBIO_impl(PyTypeObject *type)
     }
     self->bio = bio;
     self->eof_written = 0;
+#ifdef Py_GIL_DISABLED
     self->lock = (PyMutex) { 0 };
+#endif
 
     return (PyObject *) self;
 }
