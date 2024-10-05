@@ -3416,14 +3416,15 @@ _ssl__SSLContext__set_alpn_protocols_impl(PySSLContext *self,
         return NULL;
     }
 
+    PySSL_LOCK(self);
     PyMem_Free(self->alpn_protocols);
     self->alpn_protocols = PyMem_Malloc(protos->len);
-    if (!self->alpn_protocols)
+    if (!self->alpn_protocols) {
+        PySSL_UNLOCK(self);
         return PyErr_NoMemory();
+    }
     memcpy(self->alpn_protocols, protos->buf, protos->len);
     self->alpn_protocols_len = (unsigned int)protos->len;
-
-    PySSL_LOCK(self);
     if (SSL_CTX_set_alpn_protos(self->ctx, self->alpn_protocols, self->alpn_protocols_len)) {
         PySSL_UNLOCK(self);
         return PyErr_NoMemory();
