@@ -3468,7 +3468,10 @@ get_verify_mode(PySSLContext *self, void *c)
     /* ignore SSL_VERIFY_CLIENT_ONCE and SSL_VERIFY_POST_HANDSHAKE */
     int mask = (SSL_VERIFY_NONE | SSL_VERIFY_PEER |
                 SSL_VERIFY_FAIL_IF_NO_PEER_CERT);
-    switch (SSL_CTX_get_verify_mode(self->ctx) & mask) {
+    PySSL_LOCK(self);
+    int verify_mode = SSL_CTX_get_verify_mode(self->ctx);
+    PySSL_UNLOCK(self);
+    switch (verify_mode & mask) {
     case SSL_VERIFY_NONE:
         return PyLong_FromLong(PY_SSL_CERT_NONE);
     case SSL_VERIFY_PEER:
@@ -3504,8 +3507,8 @@ get_verify_flags(PySSLContext *self, void *c)
 
     PySSL_LOCK(self);
     param = SSL_CTX_get0_param(self->ctx);
-    PySSL_UNLOCK(self);
     flags = X509_VERIFY_PARAM_get_flags(param);
+    PySSL_UNLOCK(self);
     return PyLong_FromUnsignedLong(flags);
 }
 
@@ -3519,21 +3522,27 @@ set_verify_flags(PySSLContext *self, PyObject *arg, void *c)
         return -1;
     PySSL_LOCK(self);
     param = SSL_CTX_get0_param(self->ctx);
-    PySSL_UNLOCK(self);
     flags = X509_VERIFY_PARAM_get_flags(param);
+    PySSL_UNLOCK(self);
     clear = flags & ~new_flags;
     set = ~flags & new_flags;
     if (clear) {
+        PySSL_LOCK(self);
         if (!X509_VERIFY_PARAM_clear_flags(param, clear)) {
+            PySSL_UNLOCK(self);
             _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
             return -1;
         }
+        PySSL_UNLOCK(self);
     }
     if (set) {
+        PySSL_LOCK(self);
         if (!X509_VERIFY_PARAM_set_flags(param, set)) {
+            PySSL_UNLOCK(self);
             _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
             return -1;
         }
+        PySSL_UNLOCK(self);
     }
     return 0;
 }
@@ -3785,9 +3794,9 @@ set_host_flags(PySSLContext *self, PyObject *arg, void *c)
 
     PySSL_LOCK(self);
     param = SSL_CTX_get0_param(self->ctx);
-    PySSL_UNLOCK(self);
     self->hostflags = new_flags;
     X509_VERIFY_PARAM_set_hostflags(param, new_flags);
+    PySSL_UNLOCK(self);
     return 0;
 }
 
@@ -3812,8 +3821,8 @@ set_check_hostname(PySSLContext *self, PyObject *arg, void *c)
             return -1;
         }
     }
-    PySSL_UNLOCK(self);
     self->check_hostname = check_hostname;
+    PySSL_UNLOCK(self);
     return 0;
 }
 
