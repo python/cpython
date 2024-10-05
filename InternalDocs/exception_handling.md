@@ -190,5 +190,6 @@ Exception Chaining Implementation
 [Exception chaining](https://docs.python.org/dev/tutorial/errors.html#exception-chaining)
 refers to setting the ``__context__`` and ``__cause__`` fields of an exception as it is
 being raised. The ``__context__`` field is set by ``_PyErr_SetObject()`` in
-:cpy-file:`Python/errors.c` (which is ultimately called by all ``PyErr_Set*()`` functions).
+[Python/errors.c](https://github.com/python/cpython/blob/main/Python/errors.c)
+(which is ultimately called by all ``PyErr_Set*()`` functions).
 The ``__cause__`` field (explicit chaining) is set by the ``RAISE_VARARGS`` bytecode.
