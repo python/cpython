@@ -2830,6 +2830,8 @@ class ThreadedTests(unittest.TestCase):
                 self.test_wrong_cert_tls12,
                 self.test_wrong_cert_tls13,
             ):
+                # Be careful with the number of threads here.
+                # Too many can result in failing tests.
                 for num in range(5):
                     with self.subTest(func=func, num=num):
                         threads.append(Thread(target=func))
