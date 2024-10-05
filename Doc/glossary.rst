@@ -1160,13 +1160,12 @@ Glossary
       (subscript) notation uses :class:`slice` objects internally.
 
    soft deprecated
-      A soft deprecated API should not
-      be used in new code, but it is safe for already existing code to use it.
-      The API remains documented and tested, but will not be
-      enhanced further.
+      A soft deprecated API should not be used in new code, but it is
+      safe for already existing code to use it.  The API remains
+      documented and tested, but will not be enhanced further.
 
-      The main difference from a normal deprecation
-      is that soft deprecation does not plan on removing the API.
+      The main difference from a normal deprecation is that soft
+      deprecation does not plan on removing the API.
 
       Another difference is that soft deprecated APIs don't emit warnings.
 
