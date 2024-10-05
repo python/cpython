@@ -4,6 +4,7 @@ import sys
 import unittest
 import unittest.mock
 from ast import literal_eval
+from threading import Thread
 from test import support
 from test.support import import_helper
 from test.support import os_helper
@@ -2799,6 +2800,28 @@ class ThreadedTests(unittest.TestCase):
             self.assertIn(
                 'Cannot create a client socket with a PROTOCOL_TLS_SERVER context',
                 str(e.exception))
+
+    @unittest.skipUnless(support.Py_GIL_DISABLED, "test is only useful is GIL is disabled")
+    def test_ssl_in_multiple_threads(self):
+        # See GH-124984
+        threads = []
+
+        for func in (
+            self.test_echo,
+            self.test_alpn_protocols,
+            self.test_getpeercert
+        ):
+            for num in range(10):
+                with self.subTest(func=func, num=num):
+                    threads.append(Thread(target=func))
+
+        for thread in threads:
+            with self.subTest(thread=thread):
+                thread.start()
+
+        for thread in threads:
+            with self.subTest(thread=thread):
+                thread.join()
 
     def test_getpeercert(self):
         if support.verbose:
