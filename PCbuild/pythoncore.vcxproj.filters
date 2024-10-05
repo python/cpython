@@ -597,6 +597,9 @@
     <ClInclude Include="..\Include\internal\pycore_context.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_cpuinfo.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_critical_section.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -1303,6 +1306,9 @@
     </ClCompile>
     <ClCompile Include="..\Python\compile.c">
       <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\cpuinfo.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\critical_section.c">
       <Filter>Python</Filter>
