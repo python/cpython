@@ -1313,6 +1313,28 @@ def _update_func_cell_for__class__(f, oldcls, newcls):
     return False
 
 
+_object_members_values = None
+
+
+def _is_not_object_member(v):
+    # _object_members_values is initialized on first use, so that
+    # importing dataclasses does not eagerly import inspect (gh-137855).
+    global _object_members_values
+    if _object_members_values is None:
+        import inspect
+        _object_members_values = {
+            value for _, value in
+            (
+                *inspect.getmembers_static(object),
+                *inspect.getmembers_static(object())
+             )
+        }
+    try:
+        return v not in _object_members_values
+    except TypeError:
+        return True
+
+
 def _find_inner_functions(obj, seen=None, depth=0):
     # inspect is imported lazily (see gh-137855).
     import inspect
@@ -1330,22 +1352,14 @@ def _find_inner_functions(obj, seen=None, depth=0):
     if depth > 2:
         return None
 
-    for attribute in dir(obj):
-        try:
-            value = inspect.getattr_static(obj, attribute)
-        except AttributeError:
-            continue
-        builtin_value = inspect.getattr_static(object, attribute, None)
-        if value is builtin_value:
-            # don't waste time on builtin objects
-            continue
-        if (
-            # isinstance() would trigger `value.__getattribute__("__class__")`
-            type(value) is types.MemberDescriptorType
-            and type not in inspect._static_getmro(type(obj))
-        ):
+    obj_is_type_instance = type in inspect._static_getmro(type(obj))
+    for _, value in inspect.getmembers_static(obj, _is_not_object_member):
+        value_type = type(value)
+        if value_type is types.MemberDescriptorType and not obj_is_type_instance:
             value = value.__get__(obj)
-        if isinstance(value, types.FunctionType):
+            value_type = type(value)
+
+        if value_type is types.FunctionType:
             yield inspect.unwrap(value)
         else:
             yield from _find_inner_functions(value, seen, depth)
