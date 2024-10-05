@@ -3988,7 +3988,7 @@ class ConfigDictTest(BaseTest):
 
     @patch("multiprocessing.Manager")
     def test_config_queue_handler_invalid_config_does_not_create_multiprocessing_manager(self, manager):
-        # gh-120868, gh-121723, gh-124653
+        # gh-120868, gh-121723
 
         for qspec in [object(), CustomQueueWrongProtocol()]:
             with self.subTest(qspec=qspec), self.assertRaises(ValueError):
