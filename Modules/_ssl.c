@@ -2161,7 +2161,6 @@ _ssl__SSLSocket_version_impl(PySSLSocket *self)
         /* handshake not finished */
         Py_RETURN_NONE;
     }
-
     version = SSL_get_version(self->ssl);
     PySSL_UNLOCK(self);
     if (!strcmp(version, "unknown"))
