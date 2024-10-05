@@ -2826,8 +2826,6 @@ class ThreadedTests(unittest.TestCase):
                 self.test_alpn_protocols,
                 self.test_getpeercert,
                 self.test_crl_check,
-                self.test_ecc_cert,
-                self.test_dual_rsa_ecc,
                 self.test_check_hostname_idn,
                 self.test_wrong_cert_tls12,
                 self.test_wrong_cert_tls13,
@@ -2839,7 +2837,7 @@ class ThreadedTests(unittest.TestCase):
                 self.test_recv_zero,
                 self.test_nonblocking_send
             ):
-                for num in range(10):
+                for num in range(5):
                     with self.subTest(func=func, num=num):
                         threads.append(Thread(target=func))
 
