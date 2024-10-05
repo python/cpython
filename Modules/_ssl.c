@@ -788,30 +788,39 @@ _ssl_configure_hostname(PySSLSocket *self, const char* server_hostname)
     if (hostname == NULL) {
         goto error;
     }
+    PySSL_LOCK(self);
     self->server_hostname = hostname;
+    PySSL_UNLOCK(self);
 
     /* Only send SNI extension for non-IP hostnames */
     if (ip == NULL) {
+        PySSL_LOCK(self);
         if (!SSL_set_tlsext_host_name(self->ssl, server_hostname)) {
+            PySSL_UNLOCK(self);
             _setSSLError(get_state_sock(self), NULL, 0, __FILE__, __LINE__);
             goto error;
         }
+        PySSL_UNLOCK(self);
     }
     if (self->ctx->check_hostname) {
+        PySSL_LOCK(self);
         X509_VERIFY_PARAM *param = SSL_get0_param(self->ssl);
         if (ip == NULL) {
             if (!X509_VERIFY_PARAM_set1_host(param, server_hostname,
                                              strlen(server_hostname))) {
+                PySSL_UNLOCK(self);
                 _setSSLError(get_state_sock(self), NULL, 0, __FILE__, __LINE__);
                 goto error;
             }
         } else {
             if (!X509_VERIFY_PARAM_set1_ip(param, ASN1_STRING_get0_data(ip),
                                            ASN1_STRING_length(ip))) {
+                PySSL_UNLOCK(self);
                 _setSSLError(get_state_sock(self), NULL, 0, __FILE__, __LINE__);
                 goto error;
             }
         }
+        PySSL_UNLOCK(self);
     }
     retval = 0;
   error:
