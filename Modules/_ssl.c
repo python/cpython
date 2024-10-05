@@ -869,6 +869,7 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     self->server_hostname = NULL;
     self->err = err;
     self->exc = NULL;
+    self->lock = (PyMutex) { 0 };
 
     /* Make sure the SSL error state is initialized */
     ERR_clear_error();
@@ -1019,8 +1020,8 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
         PySSL_BEGIN_ALLOW_THREADS
         PySSL_LOCK(self);
         ret = SSL_do_handshake(self->ssl);
-        err = _PySSL_errno(ret < 1, self->ssl, ret);
         PySSL_UNLOCK(self);
+        err = _PySSL_errno(ret < 1, self->ssl, ret);
         PySSL_END_ALLOW_THREADS
         self->err = err;
 
@@ -2922,6 +2923,7 @@ PySSL_get_session(PySSLSocket *self, void *closure) {
     assert(self->ctx);
     pysess->ctx = (PySSLContext*)Py_NewRef(self->ctx);
     pysess->session = session;
+    self->lock = (PyMutex) { 0 };
     PyObject_GC_Track(pysess);
     return (PyObject *)pysess;
 }
@@ -5231,6 +5233,7 @@ _ssl_MemoryBIO_impl(PyTypeObject *type)
     }
     self->bio = bio;
     self->eof_written = 0;
+    self->lock = (PyMutex) { 0 };
 
     return (PyObject *) self;
 }
