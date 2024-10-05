@@ -4689,8 +4689,8 @@ set_sni_callback(PySSLContext *self, PyObject *arg, void *c)
                             "not a callable object");
             return -1;
         }
-        self->set_sni_cb = Py_NewRef(arg);
         PySSL_LOCK(self);
+        self->set_sni_cb = Py_NewRef(arg);
         SSL_CTX_set_tlsext_servername_callback(self->ctx, _servername_callback);
         SSL_CTX_set_tlsext_servername_arg(self->ctx, self);
         PySSL_UNLOCK(self);
@@ -4990,8 +4990,8 @@ _ssl__SSLContext_set_psk_client_callback_impl(PySSLContext *self,
     Py_XDECREF(self->psk_client_callback);
     Py_XINCREF(callback);
 
-    self->psk_client_callback = callback;
     PySSL_LOCK(self);
+    self->psk_client_callback = callback;
     SSL_CTX_set_psk_client_callback(self->ctx, ssl_callback);
     PySSL_UNLOCK(self);
 
@@ -5111,8 +5111,8 @@ _ssl__SSLContext_set_psk_server_callback_impl(PySSLContext *self,
     Py_XDECREF(self->psk_server_callback);
     Py_XINCREF(callback);
 
-    self->psk_server_callback = callback;
     PySSL_LOCK(self);
+    self->psk_server_callback = callback;
     SSL_CTX_set_psk_server_callback(self->ctx, ssl_callback);
     PySSL_UNLOCK(self);
 
@@ -5387,10 +5387,10 @@ static PyObject *
 _ssl_MemoryBIO_write_eof_impl(PySSLMemoryBIO *self)
 /*[clinic end generated code: output=d4106276ccd1ed34 input=56a945f1d29e8bd6]*/
 {
+    PySSL_LOCK(self);
     self->eof_written = 1;
     /* After an EOF is written, a zero return from read() should be a real EOF
      * i.e. it should not be retried. Clear the SHOULD_RETRY flag. */
-    PySSL_LOCK(self);
     BIO_clear_retry_flags(self->bio);
     BIO_set_mem_eof_return(self->bio, 0);
     PySSL_UNLOCK(self);
