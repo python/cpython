@@ -160,6 +160,13 @@ class InteractiveColoredConsole(code.InteractiveConsole):
     ) -> None:
         super().__init__(locals=locals, filename=filename, local_exit=local_exit)  # type: ignore[call-arg]
         self.can_colorize = _colorize.can_colorize()
+        self.barry_as_FLUFL = False
+
+    def check_barry_as_FLUFL(self, tree):
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom) and node.module == "__future__":
+                if any(alias.name == "barry_as_FLUFL" for alias in node.names):
+                    self.barry_as_FLUFL = True
 
     def showsyntaxerror(self, filename=None, **kwargs):
         super().showsyntaxerror(filename=filename, **kwargs)
@@ -173,8 +180,11 @@ class InteractiveColoredConsole(code.InteractiveConsole):
         self.write(''.join(lines))
 
     def runsource(self, source, filename="<input>", symbol="single"):
+        if self.barry_as_FLUFL:
+            source = source.replace("<>", "!=")
         try:
             tree = ast.parse(source)
+            self.check_barry_as_FLUFL(tree)
         except (SyntaxError, OverflowError, ValueError):
             self.showsyntaxerror(filename, source=source)
             return False

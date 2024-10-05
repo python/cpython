@@ -102,6 +102,29 @@ class TestSimpleInteract(unittest.TestCase):
 SyntaxError: duplicate argument 'x' in function definition"""
         self.assertIn(r, f.getvalue())
 
+    @force_not_colorized
+    def test_check_barry_as_FLUFL_show_syntax_error(self):
+        console = InteractiveColoredConsole()
+        source = "1 <> 2"
+        f = io.StringIO()
+        with contextlib.redirect_stderr(f):
+            result = console.runsource(source)
+        self.assertFalse(result)
+        r = """
+    1 <> 2
+      ^^
+SyntaxError: invalid syntax"""
+        self.assertIn(r, f.getvalue())
+
+    @force_not_colorized
+    def test_check_barry_as_FLUFL(self):
+        console = InteractiveColoredConsole()
+        source = "from __future__ import barry_as_FLUFL; 1 <> 2"
+        f = io.StringIO()
+        with contextlib.redirect_stderr(f):
+            result = console.runsource(source)
+        self.assertEqual(result, True)
+
     def test_runsource_shows_syntax_error_for_failed_compilation(self):
         console = InteractiveColoredConsole()
         source = "print('Hello, world!'"
