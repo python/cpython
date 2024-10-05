@@ -2818,38 +2818,40 @@ class ThreadedTests(unittest.TestCase):
         # See GH-124984
         threads = []
 
+        global USE_SAME_TEST_CONTEXT
         USE_SAME_TEST_CONTEXT = True
-        for func in (
-            self.test_echo,
-            self.test_alpn_protocols,
-            self.test_getpeercert,
-            self.test_crl_check,
-            self.test_ecc_cert,
-            self.test_dual_rsa_ecc,
-            self.test_check_hostname_idn,
-            self.test_wrong_cert_tls12,
-            self.test_wrong_cert_tls13,
-            self.test_rude_shutdown,
-            self.test_ssl_cert_verify_error,
-            self.test_starttls,
-            self.test_socketserver,
-            self.test_recv_send,
-            self.test_recv_zero,
-            self.test_nonblocking_send
-        ):
-            for num in range(10):
-                with self.subTest(func=func, num=num):
-                    threads.append(Thread(target=func))
+        try:
+            for func in (
+                self.test_echo,
+                self.test_alpn_protocols,
+                self.test_getpeercert,
+                self.test_crl_check,
+                self.test_ecc_cert,
+                self.test_dual_rsa_ecc,
+                self.test_check_hostname_idn,
+                self.test_wrong_cert_tls12,
+                self.test_wrong_cert_tls13,
+                self.test_rude_shutdown,
+                self.test_ssl_cert_verify_error,
+                self.test_starttls,
+                self.test_socketserver,
+                self.test_recv_send,
+                self.test_recv_zero,
+                self.test_nonblocking_send
+            ):
+                for num in range(10):
+                    with self.subTest(func=func, num=num):
+                        threads.append(Thread(target=func))
 
-        for thread in threads:
-            with self.subTest(thread=thread):
-                thread.start()
+            for thread in threads:
+                with self.subTest(thread=thread):
+                    thread.start()
 
-        for thread in threads:
-            with self.subTest(thread=thread):
-                thread.join()
-
-        USE_SAME_TEST_CONTEXT = False
+            for thread in threads:
+                with self.subTest(thread=thread):
+                    thread.join()
+        finally:
+            USE_SAME_TEST_CONTEXT = False
 
     def test_getpeercert(self):
         if support.verbose:
