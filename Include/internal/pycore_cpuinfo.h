@@ -14,10 +14,10 @@ extern "C" {
 typedef struct {
     bool sse, sse2, sse3, sse41, sse42, avx, avx2, avx512vbmi;
     bool done;
-} cpu_simd_flags;
+} _py_cpu_simd_flags;
 
 extern void
-_Py_detect_cpu_simd_features(cpu_simd_flags *flags);
+_Py_detect_cpu_simd_features(_py_cpu_simd_flags *flags);
 
 #ifdef __cplusplus
 }

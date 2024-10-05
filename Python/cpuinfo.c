@@ -10,9 +10,9 @@
 #include <stdbool.h>
 
 #if defined(__x86_64__) && defined(__GNUC__)
-#include <cpuid.h>
+#  include <cpuid.h>
 #elif defined(_M_X64)
-#include <intrin.h>
+#  include <intrin.h>
 #endif
 
 // AVX2 cannot be compiled on macOS ARM64 (yet it can be compiled on x86_64).
@@ -34,7 +34,7 @@
 #define ECX7_AVX512_VBMI    (1 << 1)    // avx512-vbmi, ECX, page 7, bit 1
 
 void
-_Py_detect_cpu_simd_features(cpu_simd_flags *flags)
+_Py_detect_cpu_simd_features(_py_cpu_simd_flags *flags)
 {
     if (flags->done) {
         return;
