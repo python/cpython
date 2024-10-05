@@ -2535,6 +2535,9 @@ class MathTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,
                                     f"expected a positive input"):
             math.log(x)
+        with self.assertRaisesRegex(ValueError,
+                                    f"expected a float or nonnegative integer, got {x}"):
+            math.gamma(x)
         x = 1.0
         with self.assertRaisesRegex(ValueError,
                                     f"expected a number between -1 and 1, got {x}"):
