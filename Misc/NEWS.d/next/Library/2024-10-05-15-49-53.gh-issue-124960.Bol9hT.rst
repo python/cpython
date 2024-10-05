@@ -1,2 +1,1 @@
-Fixed barry_as_FLUFL future flag does not work in new REPL. Patch by Jiahao
-Li
+Fix support for the ``barry_as_FLUFL`` future flag in the new REPL.

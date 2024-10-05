@@ -164,11 +164,14 @@ class InteractiveColoredConsole(code.InteractiveConsole):
         self.barry_as_FLUFL = False
 
     def check_barry_as_FLUFL(self, tree):
+        if self.barry_as_FLUFL:
+            return
         for node in ast.walk(tree):
             if isinstance(node, ast.ImportFrom) and node.module == "__future__":
                 if any(alias.name == "barry_as_FLUFL" for alias in node.names):
                     self.compile.compiler.flags |= getattr(__future__, "barry_as_FLUFL").compiler_flag
                     self.barry_as_FLUFL = True
+                    break
 
     def showsyntaxerror(self, filename=None, **kwargs):
         super().showsyntaxerror(filename=filename, **kwargs)
