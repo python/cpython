@@ -857,7 +857,7 @@ is_error(double x, int raise_edom)
     assert(errno);      /* non-zero errno is a precondition for calling */
     if (errno == EDOM) {
         if (raise_edom) {
-            PyErr_Format(PyExc_ValueError, "math domain error");
+            PyErr_SetString(PyExc_ValueError, "math domain error");
         }
     }
 
@@ -927,7 +927,6 @@ static PyObject *
 math_1(PyObject *arg, double (*func) (double), int can_overflow,
        const char *err_msg)
 {
-    char *buf;
     double x, r;
     x = PyFloat_AsDouble(arg);
     if (x == -1.0 && PyErr_Occurred())
@@ -951,13 +950,16 @@ math_1(PyObject *arg, double (*func) (double), int can_overflow,
     return PyFloat_FromDouble(r);
 
 domain_err:
-    buf = PyOS_double_to_string(x, 'r', 0, Py_DTSF_ADD_DOT_0, NULL);
-
-    if (buf) {
-        PyErr_Format(PyExc_ValueError,
-                     err_msg ? err_msg : "math domain error", buf);
-        PyMem_Free(buf);
-    }
+    if (err_msg) {
+        char *buf = PyOS_double_to_string(x, 'r', 0, Py_DTSF_ADD_DOT_0, NULL);
+        if (buf) {
+	        PyErr_Format(PyExc_ValueError, err_msg, buf);
+	        PyMem_Free(buf);
+        }
+	}
+	else {
+		PyErr_SetString(PyExc_ValueError, "math domain error");
+	}
     return NULL;
 }
 
