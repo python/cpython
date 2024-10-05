@@ -3151,7 +3151,10 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
         return NULL;
     }
 
-    // This is the constructor, no need to lock it.
+    // This is the constructor, no need to lock it, because
+    // no other thread can be touching this object yet.
+    // (Technically, we can't even lock if we wanted to, as the
+    // lock hasn't been initialized yet.)
     PySSL_BEGIN_ALLOW_THREADS
     ctx = SSL_CTX_new(method);
     PySSL_END_ALLOW_THREADS
