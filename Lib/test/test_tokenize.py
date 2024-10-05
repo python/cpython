@@ -1919,6 +1919,16 @@ class TestRoundtrip(TestCase):
         self.check_roundtrip(r"f'\\\\N{{'")
         self.check_roundtrip(r"f'\\\\\\N{{'")
         self.check_roundtrip(r"f'\\\\\\\\N{{'")
+
+        self.check_roundtrip(r"f'\n{{foo}}'")
+        self.check_roundtrip(r"f'\\n{{foo}}'")
+        self.check_roundtrip(r"f'\\\n{{foo}}'")
+        self.check_roundtrip(r"f'\\\\n{{foo}}'")
+
+        self.check_roundtrip(r"f'\t{{foo}}'")
+        self.check_roundtrip(r"f'\\t{{foo}}'")
+        self.check_roundtrip(r"f'\\\t{{foo}}'")
+        self.check_roundtrip(r"f'\\\\t{{foo}}'")
         cases = [
     """
 if 1:
