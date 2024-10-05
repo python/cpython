@@ -1007,8 +1007,10 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
 
         /* just in case the blocking state of the socket has been changed */
         nonblocking = (sock->sock_timeout >= 0);
+        PySSL_LOCK(self);
         BIO_set_nbio(SSL_get_rbio(self->ssl), nonblocking);
         BIO_set_nbio(SSL_get_wbio(self->ssl), nonblocking);
+        PySSL_UNLOCK(self);
     }
 
     timeout = GET_SOCKET_TIMEOUT(sock);
@@ -1920,7 +1922,9 @@ _ssl__SSLSocket_get_verified_chain_impl(PySSLSocket *self)
 /*[clinic end generated code: output=802421163cdc3110 input=5fb0714f77e2bd51]*/
 {
     /* borrowed reference */
+    PySSL_LOCK(self);
     STACK_OF(X509) *chain = SSL_get0_verified_chain(self->ssl);
+    PySSL_UNLOCK(self);
     if (chain == NULL) {
         Py_RETURN_NONE;
     }
@@ -2445,8 +2449,10 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
     if (sock != NULL) {
         /* just in case the blocking state of the socket has been changed */
         nonblocking = (sock->sock_timeout >= 0);
+        PySSL_LOCK(self);
         BIO_set_nbio(SSL_get_rbio(self->ssl), nonblocking);
         BIO_set_nbio(SSL_get_wbio(self->ssl), nonblocking);
+        PySSL_UNLOCK(self);
     }
 
     timeout = GET_SOCKET_TIMEOUT(sock);
@@ -2477,7 +2483,9 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
         PySSL_UNLOCK(self);
         err = _PySSL_errno(retval == 0, self->ssl, retval);
         PySSL_END_ALLOW_THREADS
+        PySSL_LOCK(self);
         self->err = err;
+        PySSL_UNLOCK(self);
 
         if (PyErr_CheckSignals())
             goto error;
@@ -2539,7 +2547,9 @@ _ssl__SSLSocket_pending_impl(PySSLSocket *self)
     PySSL_UNLOCK(self);
     err = _PySSL_errno(count < 0, self->ssl, count);
     PySSL_END_ALLOW_THREADS
+    PySSL_LOCK(self);
     self->err = err;
+    PySSL_UNLOCK(self);
 
     if (count < 0)
         return PySSL_SetError(self, __FILE__, __LINE__);
@@ -2636,7 +2646,9 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
         PySSL_UNLOCK(self);
         err = _PySSL_errno(retval == 0, self->ssl, retval);
         PySSL_END_ALLOW_THREADS
+        PySSL_LOCK(self);
         self->err = err;
+        PySSL_UNLOCK(self);
 
         if (PyErr_CheckSignals())
             goto error;
@@ -2751,7 +2763,9 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
         PySSL_UNLOCK(self);
         err = _PySSL_errno(ret < 0, self->ssl, ret);
         PySSL_END_ALLOW_THREADS
+        PySSL_LOCK(self);
         self->err = err;
+        PySSL_UNLOCK(self);
 
         /* If err == 1, a secure shutdown with SSL_shutdown() is complete */
         if (ret > 0)
@@ -2763,7 +2777,9 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
             if (++zeros > 1)
                 break;
             /* Shutdown was sent, now try receiving */
+            PySSL_LOCK(self);
             self->shutdown_seen_zero = 1;
+            PySSL_UNLOCK(self);
             continue;
         }
 
@@ -3311,7 +3327,9 @@ static PyObject *
 _ssl__SSLContext_set_ciphers_impl(PySSLContext *self, const char *cipherlist)
 /*[clinic end generated code: output=3a3162f3557c0f3f input=a7ac931b9f3ca7fc]*/
 {
+    PySSL_LOCK(self);
     int ret = SSL_CTX_set_cipher_list(self->ctx, cipherlist);
+    PySSL_UNLOCK(self);
     if (ret == 0) {
         /* Clearing the error queue is necessary on some OpenSSL versions,
            otherwise the error will be reported again when another SSL call
