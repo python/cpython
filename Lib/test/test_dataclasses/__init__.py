@@ -5181,6 +5181,45 @@ class TestZeroArgumentSuperWithSlots(unittest.TestCase):
         )
         self.assertEqual(context.exception.args, (expected_error_message,))
 
+    def test_user_defined_code_execution(self):
+        class CustomDescriptor:
+            def __init__(self, f):
+                self._wrapper = partial(f, value="bar")
+
+            def __get__(self, instance, owner):
+                return object.__getattribute__(self, "_wrapper")(instance)
+
+            def __getattribute__(self, name):
+                if name in {
+                    # these are the bare minimum for the feature to work
+                    "__class__",  # accessed on `isinstance(value, Field)`
+                    "__wrapped__",  # accessed by unwrap
+                    "__get__",  # is required for the descriptor protocol
+                    "__dict__",  # is accessed by dir() to work
+                }:
+                   return object.__getattribute__(self, name)
+                raise RuntimeError(f"Never should be accessed: {name}")
+
+        class B:
+            def foo(self, value):
+                return value
+
+        @dataclass(slots=True)
+        class A(B):
+            @CustomDescriptor
+            def foo(self, value):
+                return super().foo(value)
+
+        self.assertEqual(A().foo, "bar")
+
+        @dataclass(slots=True)
+        class A(B):
+            @CustomDescriptor
+            def foo(self, value):
+                return super().foo(value)
+
+        self.assertEqual(A().foo, "bar")
+
     def test_remembered_class(self):
         # Apply the dataclass decorator manually (not when the class
         # is created), so that we can keep a reference to the

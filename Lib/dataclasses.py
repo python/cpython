@@ -1237,25 +1237,6 @@ def _update_func_cell_for__class__(f, oldcls, newcls):
     return False
 
 
-def _safe_get_attributes(obj):
-    # we should avoid triggering any user-defined code
-    # when inspecting attributes if possible
-
-    # look for __slots__ descriptors
-    type_dict = object.__getattribute__(type(obj), "__dict__")
-    for value in type_dict.values():
-        if isinstance(value, types.MemberDescriptorType):
-            yield value.__get__(obj)
-
-    instance_dict_descriptor = type_dict.get("__dict__", None)
-    if not isinstance(instance_dict_descriptor, types.GetSetDescriptorType):
-        # __dict__ is either not present, or redefined by user
-        # as custom descriptor, either way, we're done here
-        return
-
-    yield from instance_dict_descriptor.__get__(obj).values()
-
-
 def _find_inner_functions(obj, seen=None, depth=0):
     if seen is None:
         seen = set()
@@ -1271,11 +1252,25 @@ def _find_inner_functions(obj, seen=None, depth=0):
     if depth > 2:
         return None
 
-    for value in _safe_get_attributes(obj):
+    for attribute in dir(obj):
+        try:
+            value = inspect.getattr_static(obj, attribute)
+        except AttributeError:
+            continue
+        builtin_value = inspect.getattr_static(object, attribute, None)
+        if value is builtin_value:
+            # don't waste time on builtin objects
+            continue
+        if (
+            # isinstance() would trigger `value.__getattribute__("__class__")`
+            type(value) is types.MemberDescriptorType
+            and type not in inspect._static_getmro(type(obj))
+        ):
+            value = value.__get__(obj)
         if isinstance(value, types.FunctionType):
             yield inspect.unwrap(value)
-            return
-        yield from _find_inner_functions(value, seen, depth)
+        else:
+            yield from _find_inner_functions(value, seen, depth)
 
 
 def _create_slots(defined_fields, inherited_slots, field_names, weakref_slot):
