@@ -52,11 +52,11 @@
 #define PySSL_END_ALLOW_THREADS PySSL_END_ALLOW_THREADS_S(_save); }
 
 #ifdef Py_GIL_DISABLED
-#define PySSL_LOCK(obj) PyMutex_Lock(&(obj)->lock)
-#define PySSL_UNLOCK(obj) PyMutex_Unlock(&(obj)->lock)
+#  define PySSL_LOCK(OBJ) 	PyMutex_Lock(&(OBJ)->lock)
+#  define PySSL_UNLOCK(OBJ)	PyMutex_Unlock(&(OBJ)->lock)
 #else
-#define PySSL_LOCK(obj)
-#define PySSL_UNLOCK(obj)
+#  define PySSL_LOCK(OBJ)
+#  define PySSL_UNLOCK(OBJ)
 #endif
 
 #if defined(HAVE_POLL_H)
@@ -2161,7 +2161,6 @@ _ssl__SSLSocket_version_impl(PySSLSocket *self)
         /* handshake not finished */
         Py_RETURN_NONE;
     }
-
     version = SSL_get_version(self->ssl);
     PySSL_UNLOCK(self);
     if (!strcmp(version, "unknown"))
