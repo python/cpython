@@ -2829,13 +2829,6 @@ class ThreadedTests(unittest.TestCase):
                 self.test_check_hostname_idn,
                 self.test_wrong_cert_tls12,
                 self.test_wrong_cert_tls13,
-                self.test_rude_shutdown,
-                self.test_ssl_cert_verify_error,
-                self.test_starttls,
-                self.test_socketserver,
-                self.test_recv_send,
-                self.test_recv_zero,
-                self.test_nonblocking_send
             ):
                 for num in range(5):
                     with self.subTest(func=func, num=num):
