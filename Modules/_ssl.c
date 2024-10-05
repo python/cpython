@@ -52,8 +52,8 @@
 #define PySSL_END_ALLOW_THREADS PySSL_END_ALLOW_THREADS_S(_save); }
 
 #ifdef Py_GIL_DISABLED
-#define PySSL_LOCK(obj) PyMutex_Lock(obj->lock)
-#define PySSL_UNLOCK(obj) PyMutex_Unlock(obj->lock)
+#define PySSL_LOCK(obj) PyMutex_Lock(&(obj)->lock)
+#define PySSL_UNLOCK(obj) PyMutex_Unlock(&(obj)->lock)
 #else
 #define PySSL_LOCK(obj)
 #define PySSL_UNLOCK(obj)
@@ -2196,7 +2196,7 @@ _ssl__SSLSocket_compression_impl(PySSLSocket *self)
         Py_RETURN_NONE;
     PySSL_LOCK(self);
     comp_method = SSL_get_current_compression(self->ssl);
-    PySSL_UNLOCK(self)
+    PySSL_UNLOCK(self);
     if (comp_method == NULL || COMP_get_type(comp_method) == NID_undef)
         Py_RETURN_NONE;
     short_name = OBJ_nid2sn(COMP_get_type(comp_method));
@@ -5431,14 +5431,14 @@ PySSLSession_richcompare(PyObject *left, PyObject *right, int op)
     } else {
         const unsigned char *left_id, *right_id;
         unsigned int left_len, right_len;
-        PySSL_LOCK(left);
+        PySSL_LOCK((PySSLSession *)left);
         left_id = SSL_SESSION_get_id(((PySSLSession *)left)->session,
                                      &left_len);
-        PySSL_UNLOCK(left);
-        PySSL_LOCK(right);
+        PySSL_UNLOCK((PySSLSession *)left);
+        PySSL_LOCK((PySSLSession *)right);
         right_id = SSL_SESSION_get_id(((PySSLSession *)right)->session,
                                       &right_len);
-        PySSL_UNLOCK(right);
+        PySSL_UNLOCK((PySSLSession *)right);
         if (left_len == right_len) {
             result = memcmp(left_id, right_id, left_len);
         } else {
