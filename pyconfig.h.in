@@ -47,7 +47,7 @@
 /* Define if '-msse3' is a valid compiler flag. */
 #undef CAN_COMPILE_SIMD_SSE3_INSTRUCTIONS
 
-/* Define if '-msse4.2' is a valid compiler flag. */
+/* Define if '-msse4.1' is a valid compiler flag. */
 #undef CAN_COMPILE_SIMD_SSE4_1_INSTRUCTIONS
 
 /* Define if '-msse4.2' is a valid compiler flag. */

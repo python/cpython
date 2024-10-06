@@ -7789,11 +7789,14 @@ PY_STDLIB_MOD([_sha2], [test "$with_builtin_sha2" = yes])
 PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
 PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
 
-dnl PY_SIMD_DETECT(INSTRUCTION_SET_NAME, COMPILER_FLAG, DEFINE_CONSTANT_SUFFIX)
+dnl PY_SIMD_DETECT(INSTRUCTION_SET_NAME, COMPILER_FLAG, NORMALIZED_NAME)
 AC_DEFUN([PY_SIMD_DETECT], [
-    AS_VAR_PUSHDEF([py_var], [[ac_cv_simd_]m4_tolower($1)])
+    AS_VAR_PUSHDEF([py_var], [m4_ifblank([$3],
+        [[ac_cv_can_compile_simd_]m4_tolower([$1])],
+        [[ac_cv_can_compile_simd_]m4_tolower([$3])])])
     AS_VAR_PUSHDEF([py_define], [m4_ifblank([$3],
-        [[CAN_COMPILE_SIMD_]m4_toupper($1)[_INSTRUCTIONS]], [$3])])
+        [[CAN_COMPILE_SIMD_]m4_toupper([$1])[_INSTRUCTIONS]],
+        [[CAN_COMPILE_SIMD_]m4_toupper([$3])[_INSTRUCTIONS]])])
     AC_MSG_CHECKING([checking SIMD instruction set])
     AX_CHECK_COMPILE_FLAG([$2],
         [AC_DEFINE([py_define], [1], [Define if '$2' is a valid compiler flag.])],
@@ -7812,8 +7815,8 @@ if test "$ac_sys_system" != "Linux-android" || test "$ANDROID_API_LEVEL" -ge 28;
     PY_SIMD_DETECT([SSE], [-msse])
     PY_SIMD_DETECT([SSE2], [-msse2])
     PY_SIMD_DETECT([SSE3], [-msse3])
-    PY_SIMD_DETECT([SSE4.1], [-msse4.1], [CAN_COMPILE_SIMD_SSE4_1_INSTRUCTIONS])
-    PY_SIMD_DETECT([SSE4.2], [-msse4.2], [CAN_COMPILE_SIMD_SSE4_2_INSTRUCTIONS])
+    PY_SIMD_DETECT([SSE4.1], [-msse4.1], [SSE4_1])
+    PY_SIMD_DETECT([SSE4.2], [-msse4.2], [SSE4_2])
     PY_SIMD_DETECT([AVX], [-mavx])
     PY_SIMD_DETECT([AVX2], [-mavx2])
     PY_SIMD_DETECT([AVX512_VBMI], [-mavx512vbmi])
