@@ -177,6 +177,7 @@ _Py_c_pow(Py_complex a, Py_complex b)
     return r;
 }
 
+/* Switch to exponentiation by squaring is integer exponent less that this. */
 #define C_EXP_CUTOFF 100
 
 static Py_complex
@@ -188,7 +189,7 @@ c_powu(Py_complex x, long n)
     p = x;
     assert(0 <= n && n <= C_EXP_CUTOFF);
     while (n >= mask) {
-        assert(mask>0);
+        assert(mask > 0);
         if (n & mask)
             r = _Py_c_prod(r,p);
         mask <<= 1;
@@ -641,7 +642,7 @@ complex_richcompare(PyObject *v, PyObject *w, int op)
     }
 
     assert(PyComplex_Check(v));
-    i = ((PyComplexObject*)v)->cval;
+    i = ((PyComplexObject *)v)->cval;
 
     if (PyLong_Check(w)) {
         /* Check for 0.0 imaginary part first to avoid the rich
@@ -667,7 +668,7 @@ complex_richcompare(PyObject *v, PyObject *w, int op)
     else if (PyComplex_Check(w)) {
         Py_complex j;
 
-        j = ((PyComplexObject*)w)->cval;
+        j = ((PyComplexObject *)w)->cval;
         equal = (i.real == j.real && i.imag == j.imag);
     }
     else {
