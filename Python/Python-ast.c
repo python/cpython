@@ -5809,7 +5809,6 @@ ast_repr_max_depth(AST_object *self, int depth)
 
         if (!value_repr) {
             Py_DECREF(name);
-            Py_DECREF(value);
             goto error;
         }
 
