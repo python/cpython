@@ -9,15 +9,25 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include <stdbool.h>
-
 typedef struct {
-    bool sse, sse2, sse3, sse41, sse42, avx, avx2, avx512vbmi;
-    bool done;
-} _py_cpu_simd_flags;
+    /* Streaming SIMD Extensions */
+    uint8_t sse: 1;
+    uint8_t sse2: 1;
+    uint8_t sse3: 1;
+    uint8_t sse41: 1;       // SSE4.1
+    uint8_t sse42: 1;       // SSE4.2
 
+    /* Advanced Vector Extensions */
+    uint8_t avx: 1;
+    uint8_t avx2: 1;
+    uint8_t avx512vbmi: 1;  // AVX-512 Vector Byte Manipulation Instructions
+
+    uint8_t done;           // indicate whether the structure was filled or not
+} py_cpu_simd_flags;
+
+/* Detect the available SIMD features on this machine. */
 extern void
-_Py_detect_cpu_simd_features(_py_cpu_simd_flags *flags);
+_Py_detect_cpu_simd_features(py_cpu_simd_flags *flags);
 
 #ifdef __cplusplus
 }
