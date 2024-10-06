@@ -1616,8 +1616,13 @@ Module(
 
     def test_literal_eval_large_input_crash(self):
         # gh-125010: Fix use-after-free in ast repr()
+        # Note: Without setting sys.set_int_max_str_digits(0),
+        # this code throws a 'ValueError: Exceeds the limit (4300 digits)'.
+        # With sys.set_int_max_str_digits(0),
+        # this code throws a 'ValueError: malformed node or string on line 1':
         source = "{0x0" + "e" * 250_000 + "%" + "e" * 250_000 + "1j}"
-        with self.assertRaisesRegex(ValueError, "Exceeds the limit"):
+        with self.assertRaisesRegex(ValueError,
+                                    r"Exceeds the limit \(4300 digits\)"):
             ast.literal_eval(source)
 
     def test_bad_integer(self):
