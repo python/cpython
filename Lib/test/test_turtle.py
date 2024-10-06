@@ -4,6 +4,8 @@ import re
 import unittest
 import unittest.mock
 import tempfile
+import sys
+from contextlib import contextmanager
 from test import support
 from test.support import import_helper
 from test.support import os_helper
@@ -525,6 +527,112 @@ class TestTurtleScreen(unittest.TestCase):
             turtle.TurtleScreen.save(screen, file_path)
             with open(file_path) as f:
                 assert f.read() == "postscript"
+
+
+class TestTurtle(unittest.TestCase):
+    @contextmanager
+    def patch_screen(self):
+        """Patch turtle._Screen for testing without a display.
+
+        We must patch the `_Screen` class itself instead of the `_Screen`
+        instance because instatiating it requires a display.
+        """
+        m = unittest.mock.MagicMock()
+        m.__class__ = turtle._Screen
+        m.mode.return_value = "standard"
+
+        patch = unittest.mock.patch('turtle._Screen.__new__', return_value=m)
+        try:
+            yield patch.__enter__()
+        finally:
+            patch.__exit__(*sys.exc_info())
+
+    def test_begin_end_fill(self):
+        """begin_fill and end_fill counter each other."""
+        with self.patch_screen():
+            t = turtle.Turtle()
+
+        self.assertFalse(t.filling())
+        t.begin_fill()
+        self.assertTrue(t.filling())
+        t.end_fill()
+        self.assertFalse(t.filling())
+
+    def test_fill(self):
+        """The context manager behaves like begin_ and end_ fill."""
+        with self.patch_screen():
+            t = turtle.Turtle()
+
+        self.assertFalse(t.filling())
+        with t.fill():
+            self.assertTrue(t.filling())
+        self.assertFalse(t.filling())
+
+    def test_fill_resets_after_exception(self):
+        """The context manager cleans up correctly after exceptions."""
+        with self.patch_screen():
+            t = turtle.Turtle()
+        try:
+            with t.fill():
+                self.assertTrue(t.filling())
+                raise Exception
+        except Exception:
+            self.assertFalse(t.filling())
+
+    def test_fill_context_when_filling(self):
+        """The context manager works even when the turtle is already filling."""
+        with self.patch_screen():
+            t = turtle.Turtle()
+
+        t.begin_fill()
+        self.assertTrue(t.filling())
+        with t.fill():
+            self.assertTrue(t.filling())
+        self.assertFalse(t.filling())
+
+    def test_begin_end_poly(self):
+        """begin_fill and end_poly counter each other."""
+        with self.patch_screen():
+            t = turtle.Turtle()
+
+        self.assertFalse(t._creatingPoly)
+        t.begin_poly()
+        self.assertTrue(t._creatingPoly)
+        t.end_poly()
+        self.assertFalse(t._creatingPoly)
+
+    def test_poly(self):
+        """The context manager behaves like begin_ and end_ poly."""
+        with self.patch_screen():
+            t = turtle.Turtle()
+
+        self.assertFalse(t._creatingPoly)
+        with t.poly():
+            self.assertTrue(t._creatingPoly)
+        self.assertFalse(t._creatingPoly)
+
+    def test_poly_resets_after_exception(self):
+        """The context manager cleans up correctly after exceptions."""
+        with self.patch_screen():
+            t = turtle.Turtle()
+        try:
+            with t.poly():
+                self.assertTrue(t._creatingPoly)
+                raise Exception
+        except Exception:
+            self.assertFalse(t._creatingPoly)
+
+    def test_poly_context_when_creating_poly(self):
+        """The context manager works when the turtle is already creating poly.
+        """
+        with self.patch_screen():
+            t = turtle.Turtle()
+
+        t.begin_poly()
+        self.assertTrue(t._creatingPoly)
+        with t.poly():
+            self.assertTrue(t._creatingPoly)
+        self.assertFalse(t._creatingPoly)
 
 
 class TestModuleLevel(unittest.TestCase):

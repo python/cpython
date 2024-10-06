@@ -110,6 +110,8 @@ from pathlib import Path
 from copy import deepcopy
 from tkinter import simpledialog
 
+from contextlib import contextmanager
+
 _tg_classes = ['ScrolledCanvas', 'TurtleScreen', 'Screen',
                'RawTurtle', 'Turtle', 'RawPen', 'Pen', 'Shape', 'Vec2D']
 _tg_screen_functions = ['addshape', 'bgcolor', 'bgpic', 'bye',
@@ -3382,6 +3384,14 @@ class RawTurtle(TPen, TNavigator):
         """
         return isinstance(self._fillpath, list)
 
+    @contextmanager
+    def fill(self):
+        self.begin_fill()
+        try:
+            yield
+        finally:
+            self.end_fill()
+
     def begin_fill(self):
         """Called just before drawing a shape to be filled.
 
@@ -3401,7 +3411,6 @@ class RawTurtle(TPen, TNavigator):
         if self.undobuffer:
             self.undobuffer.push(("beginfill", self._fillitem))
         self._update()
-
 
     def end_fill(self):
         """Fill the shape drawn after the call begin_fill().
@@ -3505,6 +3514,14 @@ class RawTurtle(TPen, TNavigator):
             self.setpos(end, y)
         if self.undobuffer:
             self.undobuffer.cumulate = False
+
+    @contextmanager
+    def poly(self):
+        self.begin_poly()
+        try:
+            yield
+        finally:
+            self.end_poly()
 
     def begin_poly(self):
         """Start recording the vertices of a polygon.
