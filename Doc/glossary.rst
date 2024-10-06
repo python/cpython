@@ -1164,8 +1164,8 @@ Glossary
       safe for already existing code to use it.  The API remains
       documented and tested, but will not be enhanced further.
 
-      The main difference from a normal deprecation is that soft
-      deprecation does not plan on removing the API.
+      Soft deprecation, unlike normal deprecation, does not plan on removing the API and
+      will not emit warnings.
 
       Another difference is that soft deprecated APIs don't emit warnings.
 
