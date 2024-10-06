@@ -789,6 +789,13 @@ class AST_Tests(unittest.TestCase):
             with self.subTest(test_input=test):
                 self.assertEqual(repr(ast.parse(test)), snapshot)
 
+    def test_repr_large_input_crash(self):
+        # gh-125010: Fix use-after-free in ast repr()
+        source = "0x0" + "e" * 10_000
+        with self.assertRaisesRegex(ValueError,
+                                    r"Exceeds the limit \(\d+ digits\)"):
+            repr(ast.Constant(value=eval(source)))
+
 
 class CopyTests(unittest.TestCase):
     """Test copying and pickling AST nodes."""
@@ -1613,17 +1620,6 @@ Module(
                 \
                 (\
             \ ''')
-
-    def test_literal_eval_large_input_crash(self):
-        # gh-125010: Fix use-after-free in ast repr()
-        # Note: Without setting sys.set_int_max_str_digits(0),
-        # this code throws a 'ValueError: Exceeds the limit (4300 digits)'.
-        # With sys.set_int_max_str_digits(0),
-        # this code throws a 'ValueError: malformed node or string on line 1':
-        source = "{0x0" + "e" * 250_000 + "%" + "e" * 250_000 + "1j}"
-        with self.assertRaisesRegex(ValueError,
-                                    r"Exceeds the limit \(4300 digits\)"):
-            ast.literal_eval(source)
 
     def test_bad_integer(self):
         # issue13436: Bad error message with invalid numeric values
