@@ -1,2 +1,2 @@
-Fix `function__return` and `function__entry` dTrace probe missing after
-`GH-103083`
+Fix ``function__return`` and ``function__entry`` dTrace probe missing after
+``GH-103083``
