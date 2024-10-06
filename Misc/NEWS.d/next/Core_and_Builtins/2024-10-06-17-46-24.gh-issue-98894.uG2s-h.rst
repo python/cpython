@@ -1,2 +1,1 @@
-Fix ``function__return`` and ``function__entry`` dTrace probe missing after
-``GH-103083``
+Fix ``function__return`` and ``function__entry`` dtrace probe missing after :gh:`103083`.
