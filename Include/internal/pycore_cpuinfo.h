@@ -29,6 +29,14 @@ typedef struct {
 extern void
 _Py_detect_cpu_simd_features(py_cpu_simd_flags *flags);
 
+/*
+ * Apply a bitwise-OR on all flags in 'out' using those in 'src',
+ * unconditionally updating 'out' (i.e. out->done is ignored) and
+ * setting 'out->done' to 1.
+ */
+extern void
+_Py_extend_cpu_simd_features(py_cpu_simd_flags *out, const py_cpu_simd_flags *src);
+
 #ifdef __cplusplus
 }
 #endif

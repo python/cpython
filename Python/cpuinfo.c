@@ -119,7 +119,7 @@ detect_cpu_simd_features(py_cpu_simd_flags *flags)
 #endif
 }
 
-/* Extended feature bits (EAX=7, ECX=0). */
+/* Extended Feature Bits (EAX=7, ECX=0). */
 static inline void
 detect_cpu_simd_extended_features(py_cpu_simd_flags *flags)
 {
@@ -151,4 +151,22 @@ _Py_detect_cpu_simd_features(py_cpu_simd_flags *flags)
     flags->avx2 = flags->avx512vbmi = 0;
 #endif
     flags->done = 1;
+}
+
+void
+_Py_extend_cpu_simd_features(py_cpu_simd_flags *out,
+                             const py_cpu_simd_flags *src)
+{
+#define UPDATE(FLAG)   out->FLAG |= src->FLAG
+    UPDATE(sse);
+    UPDATE(sse2);
+    UPDATE(sse3);
+    UPDATE(sse41);
+    UPDATE(sse42);
+
+    UPDATE(avx);
+    UPDATE(avx2);
+    UPDATE(avx512vbmi);
+#undef UPDATE
+    out->done = 1;
 }
