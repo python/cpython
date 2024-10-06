@@ -9,8 +9,8 @@
 
 /* Macro to mark a CPUID register function parameter as being used. */
 #define CPUID_REG(PARAM)                PARAM
-/* Macro to check a CPUID register bit. */
-#define CPUID_CHECK_REG(REGISTER, MASK) ((REGISTER) & (MASK)) == 0 ? 0 : 1
+/* Macro to check one or more CPUID register bits. */
+#define CPUID_CHECK_REG(REG, MASK)  ((((REG) & (MASK)) == (MASK)) ? 0 : 1)
 
 /*
  * For simplicity, we only enable SIMD instructions for Intel CPUs,
