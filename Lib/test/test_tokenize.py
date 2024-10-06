@@ -1929,6 +1929,11 @@ class TestRoundtrip(TestCase):
         self.check_roundtrip(r"f'\\t{{foo}}'")
         self.check_roundtrip(r"f'\\\t{{foo}}'")
         self.check_roundtrip(r"f'\\\\t{{foo}}'")
+
+        self.check_roundtrip(r"rf'\t{{foo}}'")
+        self.check_roundtrip(r"rf'\\t{{foo}}'")
+        self.check_roundtrip(r"rf'\\\t{{foo}}'")
+        self.check_roundtrip(r"rf'\\\\t{{foo}}'")
         cases = [
     """
 if 1:
