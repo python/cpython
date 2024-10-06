@@ -7812,7 +7812,7 @@ if test "$ac_sys_system" != "Linux-android" || test "$ANDROID_API_LEVEL" -ge 28;
     PY_SIMD_DETECT([SSE], [-msse])
     PY_SIMD_DETECT([SSE2], [-msse2])
     PY_SIMD_DETECT([SSE3], [-msse3])
-    PY_SIMD_DETECT([SSE4.1], [-msse4.2], [CAN_COMPILE_SIMD_SSE4_1_INSTRUCTIONS])
+    PY_SIMD_DETECT([SSE4.1], [-msse4.1], [CAN_COMPILE_SIMD_SSE4_1_INSTRUCTIONS])
     PY_SIMD_DETECT([SSE4.2], [-msse4.2], [CAN_COMPILE_SIMD_SSE4_2_INSTRUCTIONS])
     PY_SIMD_DETECT([AVX], [-mavx])
     PY_SIMD_DETECT([AVX2], [-mavx2])
