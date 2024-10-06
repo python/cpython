@@ -30,6 +30,18 @@ PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLongMask(PyObject *);
 PyAPI_FUNC(int) PyLong_AsInt(PyObject *);
 #endif
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+PyAPI_FUNC(PyObject*) PyLong_FromInt32(int32_t value);
+PyAPI_FUNC(PyObject*) PyLong_FromUInt32(uint32_t value);
+PyAPI_FUNC(PyObject*) PyLong_FromInt64(int64_t value);
+PyAPI_FUNC(PyObject*) PyLong_FromUInt64(uint64_t value);
+
+PyAPI_FUNC(int) PyLong_AsInt32(PyObject *obj, int32_t *value);
+PyAPI_FUNC(int) PyLong_AsUInt32(PyObject *obj, uint32_t *value);
+PyAPI_FUNC(int) PyLong_AsInt64(PyObject *obj, int64_t *value);
+PyAPI_FUNC(int) PyLong_AsUInt64(PyObject *obj, uint64_t *value);
+#endif
+
 PyAPI_FUNC(PyObject *) PyLong_GetInfo(void);
 
 /* It may be useful in the future. I've added it in the PyInt -> PyLong

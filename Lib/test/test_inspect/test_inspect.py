@@ -835,6 +835,47 @@ class TestRetrievingSourceCode(GetSourceBase):
             nonlocal __firstlineno__
         self.assertRaises(OSError, inspect.getsource, C)
 
+class TestGetsourceStdlib(unittest.TestCase):
+    # Test Python implementations of the stdlib modules
+
+    def test_getsource_stdlib_collections_abc(self):
+        import collections.abc
+        lines, lineno = inspect.getsourcelines(collections.abc.Sequence)
+        self.assertEqual(lines[0], 'class Sequence(Reversible, Collection):\n')
+        src = inspect.getsource(collections.abc.Sequence)
+        self.assertEqual(src.splitlines(True), lines)
+
+    def test_getsource_stdlib_tomllib(self):
+        import tomllib
+        self.assertRaises(OSError, inspect.getsource, tomllib.TOMLDecodeError)
+        self.assertRaises(OSError, inspect.getsourcelines, tomllib.TOMLDecodeError)
+
+    def test_getsource_stdlib_abc(self):
+        # Pure Python implementation
+        abc = import_helper.import_fresh_module('abc', blocked=['_abc'])
+        with support.swap_item(sys.modules, 'abc', abc):
+            self.assertRaises(OSError, inspect.getsource, abc.ABCMeta)
+            self.assertRaises(OSError, inspect.getsourcelines, abc.ABCMeta)
+        # With C acceleration
+        import abc
+        try:
+            src = inspect.getsource(abc.ABCMeta)
+            lines, lineno = inspect.getsourcelines(abc.ABCMeta)
+        except OSError:
+            pass
+        else:
+            self.assertEqual(lines[0], '    class ABCMeta(type):\n')
+            self.assertEqual(src.splitlines(True), lines)
+
+    def test_getsource_stdlib_decimal(self):
+        # Pure Python implementation
+        decimal = import_helper.import_fresh_module('decimal', blocked=['_decimal'])
+        with support.swap_item(sys.modules, 'decimal', decimal):
+            src = inspect.getsource(decimal.Decimal)
+            lines, lineno = inspect.getsourcelines(decimal.Decimal)
+        self.assertEqual(lines[0], 'class Decimal(object):\n')
+        self.assertEqual(src.splitlines(True), lines)
+
 class TestGetsourceInteractive(unittest.TestCase):
     def test_getclasses_interactive(self):
         # bpo-44648: simulate a REPL session;
@@ -947,6 +988,11 @@ class TestOneliners(GetSourceBase):
         self.assertSourceEqual(mod2.td354, 354, 356)
         self.assertRaises(OSError, inspect.getsource, mod2.td359)
 
+    def test_dataclass(self):
+        self.assertSourceEqual(mod2.dc364, 364, 367)
+        self.assertRaises(OSError, inspect.getsource, mod2.dc370)
+        self.assertRaises(OSError, inspect.getsource, mod2.dc371)
+
 class TestBlockComments(GetSourceBase):
     fodderModule = mod
 
@@ -1010,7 +1056,7 @@ class TestBuggyCases(GetSourceBase):
             self.assertRaises(IOError, inspect.findsource, co)
             self.assertRaises(IOError, inspect.getsource, co)
 
-    def test_findsource_with_out_of_bounds_lineno(self):
+    def test_findsource_on_func_with_out_of_bounds_lineno(self):
         mod_len = len(inspect.getsource(mod))
         src = '\n' * 2* mod_len + "def f(): pass"
         co = compile(src, mod.__file__, "exec")
@@ -1018,8 +1064,19 @@ class TestBuggyCases(GetSourceBase):
         eval(co, g, l)
         func = l['f']
         self.assertEqual(func.__code__.co_firstlineno, 1+2*mod_len)
-        with self.assertRaisesRegex(IOError, "lineno is out of bounds"):
+        with self.assertRaisesRegex(OSError, "lineno is out of bounds"):
             inspect.findsource(func)
+
+    def test_findsource_on_class_with_out_of_bounds_lineno(self):
+        mod_len = len(inspect.getsource(mod))
+        src = '\n' * 2* mod_len + "class A: pass"
+        co = compile(src, mod.__file__, "exec")
+        g, l = {'__name__': mod.__name__}, {}
+        eval(co, g, l)
+        cls = l['A']
+        self.assertEqual(cls.__firstlineno__, 1+2*mod_len)
+        with self.assertRaisesRegex(OSError, "lineno is out of bounds"):
+            inspect.findsource(cls)
 
     def test_getsource_on_method(self):
         self.assertSourceEqual(mod2.ClassWithMethod.method, 118, 119)
@@ -3341,7 +3398,7 @@ class TestSignatureObject(unittest.TestCase):
                           ...))
 
     def test_signature_on_partial(self):
-        from functools import partial
+        from functools import partial, Placeholder
 
         def test():
             pass
@@ -3396,6 +3453,25 @@ class TestSignatureObject(unittest.TestCase):
                            ('d', ..., ..., "keyword_only")),
                           ...))
 
+        # With Placeholder
+        self.assertEqual(self.signature(partial(test, Placeholder, 1)),
+                         ((('a', ..., ..., "positional_only"),
+                           ('c', ..., ..., "keyword_only"),
+                           ('d', ..., ..., "keyword_only")),
+                          ...))
+
+        self.assertEqual(self.signature(partial(test, Placeholder, 1, c=2)),
+                         ((('a', ..., ..., "positional_only"),
+                           ('c', 2, ..., "keyword_only"),
+                           ('d', ..., ..., "keyword_only")),
+                          ...))
+
+        # Ensure unittest.mock.ANY & similar do not get picked up as a Placeholder
+        self.assertEqual(self.signature(partial(test, unittest.mock.ANY, 1, c=2)),
+                         ((('c', 2, ..., "keyword_only"),
+                           ('d', ..., ..., "keyword_only")),
+                          ...))
+
         def test(a, *args, b, **kwargs):
             pass
 
@@ -3438,6 +3514,15 @@ class TestSignatureObject(unittest.TestCase):
 
         self.assertEqual(self.signature(partial(test, b=0, test=1)),
                          ((('a', ..., ..., "positional_or_keyword"),
+                           ('args', ..., ..., "var_positional"),
+                           ('b', 0, ..., "keyword_only"),
+                           ('kwargs', ..., ..., "var_keyword")),
+                          ...))
+
+        # With Placeholder
+        p = partial(test, Placeholder, Placeholder, 1, b=0, test=1)
+        self.assertEqual(self.signature(p),
+                         ((('a', ..., ..., "positional_only"),
                            ('args', ..., ..., "var_positional"),
                            ('b', 0, ..., "keyword_only"),
                            ('kwargs', ..., ..., "var_keyword")),
@@ -3547,6 +3632,34 @@ class TestSignatureObject(unittest.TestCase):
                            ('kwargs', ..., ..., 'var_keyword')),
                          ...))
 
+        # Positional only With Placeholder
+        p = partial(foo, Placeholder, 1, c=0, d=1)
+        self.assertEqual(self.signature(p),
+                         ((('a', ..., ..., "positional_only"),
+                           ('c', 0, ..., "keyword_only"),
+                           ('d', 1, ..., "keyword_only"),
+                           ('kwargs', ..., ..., "var_keyword")),
+                          ...))
+
+        # Optionals Positional With Placeholder
+        def foo(a=0, b=1, /, c=2, d=3):
+            pass
+
+        # Positional
+        p = partial(foo, Placeholder, 1, c=0, d=1)
+        self.assertEqual(self.signature(p),
+                         ((('a', ..., ..., "positional_only"),
+                           ('c', 0, ..., "keyword_only"),
+                           ('d', 1, ..., "keyword_only")),
+                          ...))
+
+        # Positional or Keyword - transformed to positional
+        p = partial(foo, Placeholder, 1, Placeholder, 1)
+        self.assertEqual(self.signature(p),
+                         ((('a', ..., ..., "positional_only"),
+                           ('c', ..., ..., "positional_only")),
+                          ...))
+
     def test_signature_on_partialmethod(self):
         from functools import partialmethod
 
@@ -3559,18 +3672,32 @@ class TestSignatureObject(unittest.TestCase):
             inspect.signature(Spam.ham)
 
         class Spam:
-            def test(it, a, *, c) -> 'spam':
+            def test(it, a, b, *, c) -> 'spam':
                 pass
             ham = partialmethod(test, c=1)
+            bar = partialmethod(test, functools.Placeholder, 1, c=1)
 
         self.assertEqual(self.signature(Spam.ham, eval_str=False),
                          ((('it', ..., ..., 'positional_or_keyword'),
                            ('a', ..., ..., 'positional_or_keyword'),
+                           ('b', ..., ..., 'positional_or_keyword'),
                            ('c', 1, ..., 'keyword_only')),
                           'spam'))
 
         self.assertEqual(self.signature(Spam().ham, eval_str=False),
                          ((('a', ..., ..., 'positional_or_keyword'),
+                           ('b', ..., ..., 'positional_or_keyword'),
+                           ('c', 1, ..., 'keyword_only')),
+                          'spam'))
+
+        # With Placeholder
+        self.assertEqual(self.signature(Spam.bar, eval_str=False),
+                         ((('it', ..., ..., 'positional_only'),
+                           ('a', ..., ..., 'positional_only'),
+                           ('c', 1, ..., 'keyword_only')),
+                          'spam'))
+        self.assertEqual(self.signature(Spam().bar, eval_str=False),
+                         ((('a', ..., ..., 'positional_only'),
                            ('c', 1, ..., 'keyword_only')),
                           'spam'))
 

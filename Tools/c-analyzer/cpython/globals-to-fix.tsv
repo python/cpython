@@ -391,9 +391,6 @@ Modules/xxmodule.c	-	ErrorObject	-
 ##-----------------------
 ## other
 
-## initialized once
-Modules/_cursesmodule.c	-	ModDict	-
-
 ## state
 Modules/_datetimemodule.c	-	_datetime_global_state	-
 Modules/_tkinter.c	-	tcl_lock	-
@@ -412,10 +409,10 @@ Modules/_tkinter.c	-	trbInCmd	-
 Include/datetime.h	-	PyDateTimeAPI	-
 Modules/_ctypes/cfield.c	_ctypes_get_fielddesc	initialized	-
 Modules/_ctypes/malloc_closure.c	-	_pagesize	-
-Modules/_cursesmodule.c	-	initialised	-
-Modules/_cursesmodule.c	-	initialised_setupterm	-
-Modules/_cursesmodule.c	-	initialisedcolors	-
-Modules/_cursesmodule.c	-	screen_encoding	-
+Modules/_cursesmodule.c	-	curses_initscr_called	-
+Modules/_cursesmodule.c	-	curses_setupterm_called	-
+Modules/_cursesmodule.c	-	curses_start_color_called	-
+Modules/_cursesmodule.c	-	curses_screen_encoding	-
 Modules/_elementtree.c	-	expat_capi	-
 Modules/readline.c	-	libedit_append_replace_history_offset	-
 Modules/readline.c	-	using_libedit_emulation	-
@@ -426,6 +423,7 @@ Modules/readline.c	-	libedit_history_start	-
 
 Modules/_ctypes/cfield.c	-	formattable	-
 Modules/_ctypes/malloc_closure.c	-	free_list	-
+Modules/_cursesmodule.c	-	curses_global_state	-
 Modules/_curses_panel.c	-	lop	-
 Modules/_ssl/debughelpers.c	_PySSL_keylog_callback	lock	-
 Modules/_tkinter.c	-	quitMainLoop	-
