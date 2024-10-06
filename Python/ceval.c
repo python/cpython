@@ -275,8 +275,6 @@ static void monitor_throw(PyThreadState *tstate,
                  _Py_CODEUNIT *instr);
 
 static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
-static void dtrace_function_entry(_PyInterpreterFrame *);
-static void dtrace_function_return(_PyInterpreterFrame *);
 static  _PyInterpreterFrame *
 _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
     PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs, _PyInterpreterFrame *previous);
@@ -825,6 +823,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         DTRACE_FUNCTION_ENTRY();
         goto resume_with_error;
     }
+
     /* Local "register" variables.
      * These are cached values from the frame and code object.  */
     _Py_CODEUNIT *next_instr;
