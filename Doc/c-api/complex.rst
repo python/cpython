@@ -58,17 +58,17 @@ pointers.  This is consistent throughout the API.
    :c:type:`Py_complex` representation.
 
 
-.. c:function:: Py_complex _Py_rc_diff(double left, Py_complex right)
+.. c:function:: Py_complex _Py_cr_diff(Py_complex left, double right)
 
-   Return the difference of real and complex number, using the C
+   Return the difference of complex and real number, using the C
    :c:type:`Py_complex` representation.
 
    .. versionadded:: 3.14
 
 
-.. c:function:: Py_complex _Py_cr_diff(Py_complex left, double right)
+.. c:function:: Py_complex _Py_rc_diff(double left, Py_complex right)
 
-   Return the difference of complex and real number, using the C
+   Return the difference of real and complex number, using the C
    :c:type:`Py_complex` representation.
 
    .. versionadded:: 3.14
@@ -103,9 +103,9 @@ pointers.  This is consistent throughout the API.
    :c:data:`errno` to :c:macro:`!EDOM`.
 
 
-.. c:function:: Py_complex _Py_rc_quot(double left, Py_complex right)
+.. c:function:: Py_complex _Py_cr_quot(Py_complex left, double right)
 
-   Return the quotent of real and complex number, using the C
+   Return the quotient of complex and real number, using the C
    :c:type:`Py_complex` representation.
 
    If *divisor* is zero, this method returns zero and sets
@@ -114,9 +114,9 @@ pointers.  This is consistent throughout the API.
    .. versionadded:: 3.14
 
 
-.. c:function:: Py_complex _Py_cr_quot(Py_complex left, double right)
+.. c:function:: Py_complex _Py_rc_quot(double left, Py_complex right)
 
-   Return the quotient of complex and real number, using the C
+   Return the quotent of real and complex number, using the C
    :c:type:`Py_complex` representation.
 
    If *divisor* is zero, this method returns zero and sets
