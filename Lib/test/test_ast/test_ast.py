@@ -1614,6 +1614,12 @@ Module(
                 (\
             \ ''')
 
+    def test_literal_eval_large_input_crash(self):
+        # gh-125010: Fix use-after-free in ast repr()
+        source = "{0x0" + "e" * 250_000 + "%" + "e" * 250_000 + "1j}"
+        with self.assertRaisesRegex(ValueError, "Exceeds the limit"):
+            ast.literal_eval(source)
+
     def test_bad_integer(self):
         # issue13436: Bad error message with invalid numeric values
         body = [ast.ImportFrom(module='time',
