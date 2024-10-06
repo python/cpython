@@ -36,7 +36,7 @@ _Py_c_sum(Py_complex a, Py_complex b)
 }
 
 Py_complex
-_Py_cd_sum(Py_complex a, double b)
+_Py_cr_sum(Py_complex a, double b)
 {
     Py_complex r = a;
     r.real += b;
@@ -44,9 +44,9 @@ _Py_cd_sum(Py_complex a, double b)
 }
 
 static inline Py_complex
-_Py_dc_sum(double a, Py_complex b)
+_Py_rc_sum(double a, Py_complex b)
 {
-    return _Py_cd_sum(b, a);
+    return _Py_cr_sum(b, a);
 }
 
 Py_complex
@@ -59,7 +59,7 @@ _Py_c_diff(Py_complex a, Py_complex b)
 }
 
 Py_complex
-_Py_cd_diff(Py_complex a, double b)
+_Py_cr_diff(Py_complex a, double b)
 {
     Py_complex r = a;
     r.real -= b;
@@ -67,7 +67,7 @@ _Py_cd_diff(Py_complex a, double b)
 }
 
 Py_complex
-_Py_dc_diff(double a, Py_complex b)
+_Py_rc_diff(double a, Py_complex b)
 {
     Py_complex r = {a, -b.imag};
     r.real -= b.real;
@@ -93,7 +93,7 @@ _Py_c_prod(Py_complex a, Py_complex b)
 }
 
 Py_complex
-_Py_cd_prod(Py_complex a, double b)
+_Py_cr_prod(Py_complex a, double b)
 {
     Py_complex r = a;
     r.real *= b;
@@ -102,9 +102,9 @@ _Py_cd_prod(Py_complex a, double b)
 }
 
 static inline Py_complex
-_Py_dc_prod(double a, Py_complex b)
+_Py_rc_prod(double a, Py_complex b)
 {
-    return _Py_cd_prod(b, a);
+    return _Py_cr_prod(b, a);
 }
 
 /* Avoid bad optimization on Windows ARM64 until the compiler is fixed */
@@ -191,7 +191,7 @@ _Py_c_quot(Py_complex a, Py_complex b)
 }
 
 Py_complex
-_Py_cd_quot(Py_complex a, double b)
+_Py_cr_quot(Py_complex a, double b)
 {
     Py_complex r = a;
     if (b) {
@@ -207,7 +207,7 @@ _Py_cd_quot(Py_complex a, double b)
 
 /* an equivalent of _Py_c_quot() function, when 1st argument is real */
 Py_complex
-_Py_dc_quot(double a, Py_complex b)
+_Py_rc_quot(double a, Py_complex b)
 {
     Py_complex r;
     const double abs_breal = b.real < 0 ? -b.real : b.real;
@@ -636,7 +636,7 @@ real_to_complex(PyObject **pobj, Py_complex *pc)
                 return v;                                     \
             }                                                 \
             else {                                            \
-                a = _Py_dc_##func(a.real, b);                 \
+                a = _Py_rc_##func(a.real, b);                 \
             }                                                 \
         }                                                     \
         else {                                                \
@@ -645,7 +645,7 @@ real_to_complex(PyObject **pobj, Py_complex *pc)
             if (real_to_double(&w, &b) < 0) {                 \
                 return w;                                     \
             }                                                 \
-            a = _Py_cd_##func(a, b);                          \
+            a = _Py_cr_##func(a, b);                          \
         }                                                     \
         if (errno == EDOM) {                                  \
             PyErr_SetString(PyExc_ZeroDivisionError,          \

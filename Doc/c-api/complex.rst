@@ -44,7 +44,7 @@ pointers.  This is consistent throughout the API.
    representation.
 
 
-.. c:function:: Py_complex _Py_cd_sum(Py_complex left, double right)
+.. c:function:: Py_complex _Py_cr_sum(Py_complex left, double right)
 
    Return the sum of complex and real number, using the C :c:type:`Py_complex`
    representation.
@@ -58,7 +58,7 @@ pointers.  This is consistent throughout the API.
    :c:type:`Py_complex` representation.
 
 
-.. c:function:: Py_complex _Py_dc_diff(double left, Py_complex right)
+.. c:function:: Py_complex _Py_rc_diff(double left, Py_complex right)
 
    Return the difference of real and complex number, using the C
    :c:type:`Py_complex` representation.
@@ -66,7 +66,7 @@ pointers.  This is consistent throughout the API.
    .. versionadded:: 3.14
 
 
-.. c:function:: Py_complex _Py_cd_diff(Py_complex left, double right)
+.. c:function:: Py_complex _Py_cr_diff(Py_complex left, double right)
 
    Return the difference of complex and real number, using the C
    :c:type:`Py_complex` representation.
@@ -86,7 +86,7 @@ pointers.  This is consistent throughout the API.
    representation.
 
 
-.. c:function:: Py_complex _Py_cd_prod(Py_complex left, double right)
+.. c:function:: Py_complex _Py_cr_prod(Py_complex left, double right)
 
    Return the product of complex and real number, using the C
    :c:type:`Py_complex` representation.
@@ -103,7 +103,7 @@ pointers.  This is consistent throughout the API.
    :c:data:`errno` to :c:macro:`!EDOM`.
 
 
-.. c:function:: Py_complex _Py_dc_quot(double left, Py_complex right)
+.. c:function:: Py_complex _Py_rc_quot(double left, Py_complex right)
 
    Return the quotent of real and complex number, using the C
    :c:type:`Py_complex` representation.
@@ -114,7 +114,7 @@ pointers.  This is consistent throughout the API.
    .. versionadded:: 3.14
 
 
-.. c:function:: Py_complex _Py_cd_quot(Py_complex left, double right)
+.. c:function:: Py_complex _Py_cr_quot(Py_complex left, double right)
 
    Return the quotient of complex and real number, using the C
    :c:type:`Py_complex` representation.
