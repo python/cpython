@@ -100,6 +100,13 @@ You can also get a :ref:`distribution's version number <version>`, list its
 :ref:`requirements`.
 
 
+.. class:: PackageNotFoundError
+
+   Subclass of :class:`ModuleNotFoundError` raised by several functions in this
+   module when queried for a distribution package which is not installed in the
+   current Python environment.
+
+
 Functional API
 ==============
 
@@ -111,12 +118,31 @@ This package provides the following functionality via its public API.
 Entry points
 ------------
 
-The ``entry_points()`` function returns a collection of entry points.
+.. class:: EntryPoint
+
+    Details of an installed entry point (as described below).
+
+.. class:: EntryPoints
+
+    Details of a collection of installed entry points (as described below).
+
+.. function:: entry_points(**select_params)
+
+   Returns a :class:`EntryPoints` instance describing entry points for the
+   current environment. Any given keyword parameters are passed to
+   ``EntryPoints.select`` for comparison to the attributes of the
+   individual entry point definitions (as described below).
+
+   Note: it is not currently possible to query for entry points based on
+   their ``dist`` attribute (as different ``Distribution`` instances do
+   not compare equal, even if they have the same attributes)
+
 Entry points are represented by ``EntryPoint`` instances;
 each ``EntryPoint`` has a ``.name``, ``.group``, and ``.value`` attributes and
 a ``.load()`` method to resolve the value. There are also ``.module``,
 ``.attr``, and ``.extras`` attributes for getting the components of the
-``.value`` attribute.
+``.value`` attribute, and ``.dist`` for obtaining information regarding
+the distribution package that provides the entry point.
 
 Query all entry points::
 
@@ -189,9 +215,16 @@ for more information on entry points, their definition, and usage.
 Distribution metadata
 ---------------------
 
-Every `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_ includes some metadata,
-which you can extract using the
-``metadata()`` function::
+.. function:: metadata(distribution_name)
+
+   Return the distribution metadata corresponding to the named
+   distribution package.
+
+   Raises :class:`PackageNotFoundError` if the named distribution
+   package is not installed in the current Python environment.
+
+Every `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_
+includes some metadata, which you can extract using the ``metadata()`` function::
 
     >>> wheel_metadata = metadata('wheel')  # doctest: +SKIP
 
@@ -227,6 +260,14 @@ all the metadata in a JSON-compatible form per :PEP:`566`::
 Distribution versions
 ---------------------
 
+.. function:: version(distribution_name)
+
+   Return the installed distribution package version for the named
+   distribution package.
+
+   Raises :class:`PackageNotFoundError` if the named distribution
+   package is not installed in the current Python environment.
+
 The ``version()`` function is the quickest way to get a
 `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_'s version
 number, as a string::
@@ -240,9 +281,17 @@ number, as a string::
 Distribution files
 ------------------
 
-You can also get the full set of files contained within a distribution. The
-``files()`` function takes a `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_ name
-and returns all of the
+.. function:: files(distribution_name)
+
+   Return the full set of files contained within the named
+   distribution package.
+
+   Raises :class:`PackageNotFoundError` if the named distribution
+   package is not installed in the current Python environment.
+
+The ``files()`` function takes a
+`Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_
+name and returns all of the
 files installed by this distribution. Each file object returned is a
 ``PackagePath``, a :class:`pathlib.PurePath` derived object with additional ``dist``,
 ``size``, and ``hash`` properties as indicated by the metadata. For example::
@@ -287,6 +336,14 @@ distribution is not known to have the metadata present.
 Distribution requirements
 -------------------------
 
+.. function:: requires(distribution_name)
+
+   Return the declared dependency specifiers for the named
+   distribution package.
+
+   Raises :class:`PackageNotFoundError` if the named distribution
+   package is not installed in the current Python environment.
+
 To get the full set of requirements for a `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_,
 use the ``requires()``
 function::
@@ -300,6 +357,15 @@ function::
 
 Mapping import to distribution packages
 ---------------------------------------
+
+.. function:: packages_distributions()
+
+   Return a mapping from importable top level module and import package
+   names to the names of the distribution packages (if any) that provide
+   the corresponding files. To allow for namespace packages (which may
+   have members provided by multiple distribution packages), each module
+   name maps to a list of distribution names rather than mapping directly
+   to a single name.
 
 A convenience method to resolve the `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_
 name (or names, in the case of a namespace package)
@@ -319,6 +385,22 @@ function is not reliable with such installs.
 
 Distributions
 =============
+
+.. class:: Distribution
+
+   Details of an installed distribution package (as described below).
+
+   Note: different ``Distribution`` instances do not currently compare
+   equal, even if they relate to the same installed distribution (and
+   hence have the same attributes)
+
+.. function:: distribution(distribution_name)
+
+   Return a :class:`Distribution` instance describing the named
+   distribution package.
+
+   Raises :class:`PackageNotFoundError` if the named distribution
+   package is not installed in the current Python environment.
 
 While the above API is the most common and convenient usage, you can get all
 of that information from the ``Distribution`` class. A ``Distribution`` is an
