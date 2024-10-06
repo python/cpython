@@ -7,7 +7,10 @@
 #include "Python.h"
 #include "pycore_cpuinfo.h"
 
-#define CPUID_REG(ARG)    ARG
+/* Macro to mark a CPUID register function parameter as being used. */
+#define CPUID_REG(PARAM)                PARAM
+/* Macro to check a CPUID register bit. */
+#define CPUID_CHECK_REG(REGISTER, MASK) ((REGISTER) & (MASK)) == 0 ? 0 : 1
 
 /*
  * For simplicity, we only enable SIMD instructions for Intel CPUs,
@@ -19,7 +22,7 @@
 #  include <intrin.h>
 #else
 #  undef  CPUID_REG
-#  define CPUID_REG(ARG)    Py_UNUSED(ARG)
+#  define CPUID_REG(PARAM)  Py_UNUSED(PARAM)
 #endif
 
 // AVX2 cannot be compiled on macOS ARM64 (yet it can be compiled on x86_64).
@@ -38,18 +41,16 @@
  *
  * - REGISTER is either EBX, ECX or EDX,
  * - PAGE is either 1 or 7 depending, and
- * - FEATURE is an SIMD instruction set.
+ * - FEATURE is a SIMD feature (with one or more specialized instructions).
  */
-#define EDX1_SSE            (1 << 25)   // sse, EDX, page 1, bit 25
-#define EDX1_SSE2           (1 << 26)   // sse2, EDX, page 1, bit 26
-#define ECX1_SSE3           (1 << 9)    // sse3, ECX, page 1, bit 0
-#define ECX1_SSE4_1         (1 << 19)   // sse4.1, ECX, page 1, bit 19
-#define ECX1_SSE4_2         (1 << 20)   // sse4.2, ECX, page 1, bit 20
-#define ECX1_AVX            (1 << 28)   // avx, ECX, page 1, bit 28
-#define EBX7_AVX2           (1 << 5)    // avx2, EBX, page 7, bit 5
-#define ECX7_AVX512_VBMI    (1 << 1)    // avx512-vbmi, ECX, page 7, bit 1
-
-#define CHECK_CPUID_REGISTER(REGISTER, MASK) ((REGISTER) & (MASK)) == 0 ? 0 : 1
+#define EDX1_SSE            (1 << 25)
+#define EDX1_SSE2           (1 << 26)
+#define ECX1_SSE3           (1 << 9)
+#define ECX1_SSE4_1         (1 << 19)
+#define ECX1_SSE4_2         (1 << 20)
+#define ECX1_AVX            (1 << 28)
+#define EBX7_AVX2           (1 << 5)
+#define ECX7_AVX512_VBMI    (1 << 1)
 
 /*
  * Indicate whether the CPUID input EAX=1 may be needed to
@@ -100,22 +101,22 @@ detect_cpu_simd_features(py_cpu_simd_flags *flags)
     int32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
     get_cpuid_info(1, 0, &eax, &ebx, &ecx, &edx);
 #ifdef CAN_COMPILE_SIMD_SSE_INSTRUCTIONS
-    flags->sse = CHECK_CPUID_REGISTER(edx, EDX1_SSE);
+    flags->sse = CPUID_CHECK_REG(edx, EDX1_SSE);
 #endif
 #ifdef CAN_COMPILE_SIMD_SSE2_INSTRUCTIONS
-    flags->sse2 = CHECK_CPUID_REGISTER(edx, EDX1_SSE2);
+    flags->sse2 = CPUID_CHECK_REG(edx, EDX1_SSE2);
 #endif
 #ifdef CAN_COMPILE_SIMD_SSE3_INSTRUCTIONS
-    flags->sse3 = CHECK_CPUID_REGISTER(ecx, ECX1_SSE3);
+    flags->sse3 = CPUID_CHECK_REG(ecx, ECX1_SSE3);
 #endif
 #ifdef CAN_COMPILE_SIMD_SSE4_1_INSTRUCTIONS
-    flags->sse41 = CHECK_CPUID_REGISTER(ecx, ECX1_SSE4_1);
+    flags->sse41 = CPUID_CHECK_REG(ecx, ECX1_SSE4_1);
 #endif
 #ifdef CAN_COMPILE_SIMD_SSE4_2_INSTRUCTIONS
-    flags->sse42 = CHECK_CPUID_REGISTER(ecx, ECX1_SSE4_2);
+    flags->sse42 = CPUID_CHECK_REG(ecx, ECX1_SSE4_2);
 #endif
 #ifdef CAN_COMPILE_SIMD_AVX_INSTRUCTIONS
-    flags->avx = CHECK_CPUID_REGISTER(ecx, ECX1_AVX);
+    flags->avx = CPUID_CHECK_REG(ecx, ECX1_AVX);
 #endif
 }
 
@@ -126,10 +127,10 @@ detect_cpu_simd_extended_features(py_cpu_simd_flags *flags)
     int32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
     get_cpuid_info(7, 0, &eax, &ebx, &ecx, &edx);
 #ifdef CAN_COMPILE_SIMD_AVX2_INSTRUCTIONS
-    flags->avx2 = CHECK_CPUID_REGISTER(ebx, EBX7_AVX2);
+    flags->avx2 = CPUID_CHECK_REG(ebx, EBX7_AVX2);
 #endif
 #ifdef CAN_COMPILE_SIMD_AVX512_VBMI_INSTRUCTIONS
-    flags->avx512vbmi = CHECK_CPUID_REGISTER(ecx, ECX7_AVX512_VBMI);
+    flags->avx512vbmi = CPUID_CHECK_REG(ecx, ECX7_AVX512_VBMI);
 #endif
 }
 
