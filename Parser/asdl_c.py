@@ -1604,13 +1604,12 @@ ast_repr_max_depth(AST_object *self, int depth)
             value_repr = PyObject_Repr(value);
         }
 
+        Py_DECREF(value);
+
         if (!value_repr) {
             Py_DECREF(name);
-            Py_DECREF(value);
             goto error;
         }
-
-        Py_DECREF(value);
 
         if (i > 0) {
             if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0) {
