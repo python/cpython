@@ -4911,6 +4911,7 @@
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
                 _PyFrame_SetStackPointer(frame, stack_pointer);
+                DTRACE_FUNCTION_EXIT();
                 assert(EMPTY());
                 _Py_LeaveRecursiveCallPy(tstate);
                 // GH-99729: We need to unlink the frame *before* clearing it:
@@ -4956,6 +4957,7 @@
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
                 _PyFrame_SetStackPointer(frame, stack_pointer);
+                DTRACE_FUNCTION_EXIT();
                 assert(EMPTY());
                 _Py_LeaveRecursiveCallPy(tstate);
                 // GH-99729: We need to unlink the frame *before* clearing it:
@@ -5015,6 +5017,7 @@
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
                 _PyFrame_SetStackPointer(frame, stack_pointer);
+                DTRACE_FUNCTION_EXIT();
                 tstate->exc_info = gen->gi_exc_state.previous_item;
                 gen->gi_exc_state.previous_item = NULL;
                 _Py_LeaveRecursiveCallPy(tstate);
@@ -6969,6 +6972,7 @@
                 #endif
                 _PyStackRef temp = retval;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
+                DTRACE_FUNCTION_EXIT();
                 assert(EMPTY());
                 _Py_LeaveRecursiveCallPy(tstate);
                 // GH-99729: We need to unlink the frame *before* clearing it:
@@ -7033,6 +7037,7 @@
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            DTRACE_FUNCTION_EXIT();
             assert(EMPTY());
             _Py_LeaveRecursiveCallPy(tstate);
             // GH-99729: We need to unlink the frame *before* clearing it:
@@ -8171,6 +8176,7 @@
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            DTRACE_FUNCTION_EXIT();
             tstate->exc_info = gen->gi_exc_state.previous_item;
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
