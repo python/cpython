@@ -168,6 +168,7 @@ type.
    .. c:member:: const char *name
 
       Fully qualified name of the type; null-terminated UTF-8 encoded.
+      The name must contain the module name.
 
    .. c:member:: const char *doc
 
