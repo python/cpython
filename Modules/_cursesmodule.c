@@ -4975,9 +4975,19 @@ cursesmodule_free(void *mod)
     (void)cursesmodule_clear((PyObject *)mod);
 }
 
+/* Indicate whether the module has already been loaded or not. */
+static int curses_module_loaded = 0;
+
 static int
 cursesmodule_exec(PyObject *module)
 {
+    if (curses_module_loaded) {
+        PyErr_SetString(PyExc_ImportError,
+                        "module 'curses' can only be loaded once per process");
+        return -1;
+    }
+    curses_module_loaded = 1;
+
     cursesmodule_state *state = get_cursesmodule_state(module);
     /* Initialize object type */
     state->window_type = (PyTypeObject *)PyType_FromModuleAndSpec(
