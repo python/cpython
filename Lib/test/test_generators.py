@@ -268,6 +268,12 @@ class GeneratorTest(unittest.TestCase):
         #This should not raise
         loop()
 
+    def test_issue125038(self):
+        g = (x for x in range(10))
+        g.gi_frame.f_locals['.0'] = range(20)
+        l = list(g)
+        self.assertListEqual(l, [])
+
 class ExceptionTest(unittest.TestCase):
     # Tests for the issue #23353: check that the currently handled exception
     # is correctly saved/restored in PyEval_EvalFrameEx().
