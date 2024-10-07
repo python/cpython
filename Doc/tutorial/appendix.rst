@@ -53,6 +53,32 @@ Typing an interrupt while a command is executing raises the
 :exc:`KeyboardInterrupt` exception, which may be handled by a :keyword:`try`
 statement.
 
+.. _tut-var:
+
+Special ``_`` variable
+-------------------------
+
+There is a special variable ``_`` in interactive mode, which stores the result of the last
+evaluated expression. If the last expression evaluated to ``None``, then the value of ``_``
+is not updated.
+
+For example:
+
+   >>> _  # Not defined yet
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+       _
+   NameError: name '_' is not defined
+   >>> 1 + 2
+   3
+   >>> _
+   3
+   >>> print("1+2=3")
+   1+2=3
+   >>> _  # Doesn't store None returned by print()
+   3
+   >>> _ + 4
+   7
 
 .. _tut-scripts:
 
