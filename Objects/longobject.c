@@ -4828,21 +4828,12 @@ long_divmod(PyObject *a, PyObject *b)
 static PyLongObject *
 long_invmod(PyLongObject *a, PyLongObject *n)
 {
-    PyLongObject *b, *c;
-
     /* Should only ever be called for positive n */
     assert(_PyLong_IsPositive(n));
 
-    b = (PyLongObject *)PyLong_FromLong(1L);
-    if (b == NULL) {
-        return NULL;
-    }
-    c = (PyLongObject *)PyLong_FromLong(0L);
-    if (c == NULL) {
-        Py_DECREF(b);
-        return NULL;
-    }
     Py_INCREF(a);
+    PyLongObject *b = (PyLongObject *)Py_NewRef(_PyLong_GetOne());
+    PyLongObject *c = (PyLongObject *)Py_NewRef(_PyLong_GetZero());
     Py_INCREF(n);
 
     /* references now owned: a, b, c, n */
