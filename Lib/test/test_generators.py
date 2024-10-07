@@ -274,17 +274,9 @@ class GeneratorTest(unittest.TestCase):
             g.gi_frame.f_locals['.0'] = range(20)
             return g
 
-        def genexpr_to_list():
-            try:
-                l = list(get_generator())
-                return "NoError"
-            except TypeError:
-                return "TypeError"
-
-        # This should not raise
-        r = genexpr_to_list()
-
-        self.assertIs(r, "TypeError")
+        err_msg = "'for' requires an object with __iter__ method, got range"
+        with self.assertRaisesRegex(TypeError, err_msg):
+            l = list(get_generator())
 
 class ExceptionTest(unittest.TestCase):
     # Tests for the issue #23353: check that the currently handled exception
