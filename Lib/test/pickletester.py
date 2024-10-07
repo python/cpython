@@ -2017,12 +2017,10 @@ class AbstractPicklingErrorTests:
                     'PickleBuffer can only be pickled with protocol >= 5')
 
     def test_non_continuous_buffer(self):
-        if self.pickler is pickle._Pickler:
-            self.skipTest('CRASHES (see gh-122306)')
         for proto in protocols[5:]:
             with self.subTest(proto=proto):
                 pb = pickle.PickleBuffer(memoryview(b"foobar")[::2])
-                with self.assertRaises(pickle.PicklingError):
+                with self.assertRaises((pickle.PicklingError, BufferError)):
                     self.dumps(pb, proto)
 
     def test_buffer_callback_error(self):
@@ -2063,7 +2061,7 @@ class AbstractPicklingErrorTests:
     @support.cpython_only
     def test_bad_ext_code(self):
         # This should never happen in normal circumstances, because the type
-        # and the value of the extesion code is checked in copyreg.add_extension().
+        # and the value of the extension code is checked in copyreg.add_extension().
         key = (__name__, 'MyList')
         def check(code, exc):
             assert key not in copyreg._extension_registry
@@ -4041,7 +4039,9 @@ class MyIntWithNew2(MyIntWithNew):
 class SlotList(MyList):
     __slots__ = ["foo"]
 
-class SimpleNewObj(int):
+# Ruff "redefined while unused" false positive here due to `global` variables
+# being assigned (and then restored) from within test methods earlier in the file
+class SimpleNewObj(int):  # noqa: F811
     def __init__(self, *args, **kwargs):
         # raise an error, to make sure this isn't called
         raise TypeError("SimpleNewObj.__init__() didn't expect to get called")

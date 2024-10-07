@@ -392,11 +392,19 @@ class GCTests(unittest.TestCase):
         # each call to collect(N)
         x = []
         gc.collect(0)
-        # x is now in the old gen
+        # x is now in gen 1
         a, b, c = gc.get_count()
-        # We don't check a since its exact values depends on
+        gc.collect(1)
+        # x is now in gen 2
+        d, e, f = gc.get_count()
+        gc.collect(2)
+        # x is now in gen 3
+        g, h, i = gc.get_count()
+        # We don't check a, d, g since their exact values depends on
         # internal implementation details of the interpreter.
         self.assertEqual((b, c), (1, 0))
+        self.assertEqual((e, f), (0, 1))
+        self.assertEqual((h, i), (0, 0))
 
     def test_trashcan(self):
         class Ouch:
@@ -835,9 +843,41 @@ class GCTests(unittest.TestCase):
         self.assertTrue(
                 any(l is element for element in gc.get_objects(generation=0))
         )
-        gc.collect()
+        self.assertFalse(
+                any(l is element for element in  gc.get_objects(generation=1))
+        )
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=2))
+        )
+        gc.collect(generation=0)
         self.assertFalse(
                 any(l is element for element in gc.get_objects(generation=0))
+        )
+        self.assertTrue(
+                any(l is element for element in  gc.get_objects(generation=1))
+        )
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=2))
+        )
+        gc.collect(generation=1)
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=0))
+        )
+        self.assertFalse(
+                any(l is element for element in  gc.get_objects(generation=1))
+        )
+        self.assertTrue(
+                any(l is element for element in gc.get_objects(generation=2))
+        )
+        gc.collect(generation=2)
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=0))
+        )
+        self.assertFalse(
+                any(l is element for element in  gc.get_objects(generation=1))
+        )
+        self.assertTrue(
+                any(l is element for element in gc.get_objects(generation=2))
         )
         del l
         gc.collect()
@@ -1064,72 +1104,6 @@ class GCTests(unittest.TestCase):
 
         self.assertEqual(len(gc.get_referents(untracked_capsule)), 0)
         gc.get_referents(tracked_capsule)
-
-
-
-class IncrementalGCTests(unittest.TestCase):
-
-    def setUp(self):
-        # Reenable GC as it is disabled module-wide
-        gc.enable()
-
-    def tearDown(self):
-        gc.disable()
-
-    @requires_gil_enabled("Free threading does not support incremental GC")
-    # Use small increments to emulate longer running process in a shorter time
-    @gc_threshold(200, 10)
-    def test_incremental_gc_handles_fast_cycle_creation(self):
-
-        class LinkedList:
-
-            #Use slots to reduce number of implicit objects
-            __slots__ = "next", "prev", "surprise"
-
-            def __init__(self, next=None, prev=None):
-                self.next = next
-                if next is not None:
-                    next.prev = self
-                self.prev = prev
-                if prev is not None:
-                    prev.next = self
-
-        def make_ll(depth):
-            head = LinkedList()
-            for i in range(depth):
-                head = LinkedList(head, head.prev)
-            return head
-
-        head = make_ll(1000)
-        count = 1000
-
-        # There will be some objects we aren't counting,
-        # e.g. the gc stats dicts. This test checks
-        # that the counts don't grow, so we try to
-        # correct for the uncounted objects
-        # This is just an estimate.
-        CORRECTION = 20
-
-        enabled = gc.isenabled()
-        gc.enable()
-        olds = []
-        for i in range(20_000):
-            newhead = make_ll(20)
-            count += 20
-            newhead.surprise = head
-            olds.append(newhead)
-            if len(olds) == 20:
-                stats = gc.get_stats()
-                young = stats[0]
-                incremental = stats[1]
-                old = stats[2]
-                collected = young['collected'] + incremental['collected'] + old['collected']
-                count += CORRECTION
-                live = count - collected
-                self.assertLess(live, 25000)
-                del olds[:]
-        if not enabled:
-            gc.disable()
 
 
 class GCCallbackTests(unittest.TestCase):

@@ -831,6 +831,7 @@ this case, the special read-only attribute :attr:`!__self__` is set to the objec
 denoted by *alist*. (The attribute has the same semantics as it does with
 :attr:`other instance methods <method.__self__>`.)
 
+.. _classes:
 
 Classes
 ^^^^^^^
@@ -1032,7 +1033,10 @@ Special attributes
        .. versionadded:: 3.13
 
    * - .. attribute:: type.__firstlineno__
-     - The line number of the first line of the class definition, including decorators.
+     - The line number of the first line of the class definition,
+       including decorators.
+       Setting the :attr:`__module__` attribute removes the
+       :attr:`!__firstlineno__` item from the type's dictionary.
 
        .. versionadded:: 3.13
 
