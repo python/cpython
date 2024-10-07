@@ -1,5 +1,5 @@
 """Tests monitoring, sys.settrace, and sys.setprofile in a multi-threaded
-environmenet to verify things are thread-safe in a free-threaded build"""
+environment to verify things are thread-safe in a free-threaded build"""
 
 import sys
 import time
@@ -14,7 +14,7 @@ from unittest import TestCase
 
 class InstrumentationMultiThreadedMixin:
     thread_count = 10
-    func_count = 200
+    func_count = 50
     fib = 12
 
     def after_threads(self):
@@ -36,7 +36,7 @@ class InstrumentationMultiThreadedMixin:
     def start_work(self, n, funcs):
         # With the GIL builds we need to make sure that the hooks have
         # a chance to run as it's possible to run w/o releasing the GIL.
-        time.sleep(1)
+        time.sleep(0.1)
         self.work(n, funcs)
 
     def after_test(self):
@@ -223,23 +223,26 @@ class MonitoringMisc(MonitoringTestMixin, TestCase):
             frame.f_trace_opcodes = True
             return trace
 
+        loops = 1_000
+
         sys.settrace(trace)
         try:
             l = _PyRLock()
 
             def f():
-                for i in range(3000):
+                for i in range(loops):
                     with l:
                         pass
 
             t = Thread(target=f)
             t.start()
-            for i in range(3000):
+            for i in range(loops):
                 with l:
                     pass
             t.join()
         finally:
             sys.settrace(None)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -342,7 +342,7 @@ Glossary
    docstring
       A string literal which appears as the first expression in a class,
       function or module.  While ignored when the suite is executed, it is
-      recognized by the compiler and put into the :attr:`!__doc__` attribute
+      recognized by the compiler and put into the :attr:`~definition.__doc__` attribute
       of the enclosing class, function or module.  Since it is available via
       introspection, it is the canonical place for documentation of the
       object.
@@ -1150,16 +1150,12 @@ Glossary
       (subscript) notation uses :class:`slice` objects internally.
 
    soft deprecated
-      A soft deprecation can be used when using an API which should no longer
-      be used to write new code, but it remains safe to continue using it in
-      existing code. The API remains documented and tested, but will not be
-      developed further (no enhancement).
+      A soft deprecated API should not be used in new code,
+      but it is safe for already existing code to use it.
+      The API remains documented and tested, but will not be enhanced further.
 
-      The main difference between a "soft" and a (regular) "hard" deprecation
-      is that the soft deprecation does not imply scheduling the removal of the
-      deprecated API.
-
-      Another difference is that a soft deprecation does not issue a warning.
+      Soft deprecation, unlike normal deprecation, does not plan on removing the API
+      and will not emit warnings.
 
       See `PEP 387: Soft Deprecation
       <https://peps.python.org/pep-0387/#soft-deprecation>`_.
@@ -1231,7 +1227,7 @@ Glossary
    type
       The type of a Python object determines what kind of object it is; every
       object has a type.  An object's type is accessible as its
-      :attr:`~instance.__class__` attribute or can be retrieved with
+      :attr:`~object.__class__` attribute or can be retrieved with
       ``type(obj)``.
 
    type alias

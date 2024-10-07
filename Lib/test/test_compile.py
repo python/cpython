@@ -1,6 +1,7 @@
 import contextlib
 import dis
 import io
+import itertools
 import math
 import opcode
 import os
@@ -475,6 +476,19 @@ class TestSpecifics(unittest.TestCase):
                     x = 2
                """), '<eval>', 'exec')
 
+    def test_try_except_in_while_with_chained_condition_compiles(self):
+        # see gh-124871
+        compile(textwrap.dedent("""
+            name_1, name_2, name_3 = 1, 2, 3
+            while name_3 <= name_2 > name_1:
+                try:
+                    raise
+                except:
+                    pass
+                finally:
+                    pass
+            """), '<eval>', 'exec')
+
     def test_compile_invalid_namedexpr(self):
         # gh-109351
         m = ast.Module(
@@ -869,6 +883,32 @@ class TestSpecifics(unittest.TestCase):
         self.assertEqual(
             'RETURN_CONST',
             list(dis.get_instructions(unused_code_at_end))[-1].opname)
+
+    @support.cpython_only
+    def test_docstring(self):
+        src = textwrap.dedent("""
+            def with_docstring():
+                "docstring"
+
+            def with_fstring():
+                f"not docstring"
+
+            def with_const_expression():
+                "also" + " not docstring"
+            """)
+
+        for opt in [0, 1, 2]:
+            with self.subTest(opt=opt):
+                code = compile(src, "<test>", "exec", optimize=opt)
+                ns = {}
+                exec(code, ns)
+
+                if opt < 2:
+                    self.assertEqual(ns['with_docstring'].__doc__, "docstring")
+                else:
+                    self.assertIsNone(ns['with_docstring'].__doc__)
+                self.assertIsNone(ns['with_fstring'].__doc__)
+                self.assertIsNone(ns['with_const_expression'].__doc__)
 
     @support.cpython_only
     def test_docstring_omitted(self):
@@ -2592,6 +2632,22 @@ class TestInstructionSequence(unittest.TestCase):
         seq.add_nested(nested)
         self.compare_instructions(seq, [('LOAD_CONST', 1, 1, 0, 0, 0)])
         self.compare_instructions(seq.get_nested()[0], [('LOAD_CONST', 2, 2, 0, 0, 0)])
+
+    def test_static_attributes_are_sorted(self):
+        code = (
+            'class T:\n'
+            '    def __init__(self):\n'
+            '        self.{V1} = 10\n'
+            '        self.{V2} = 10\n'
+            '    def foo(self):\n'
+            '        self.{V3} = 10\n'
+        )
+        attributes = ("a", "b", "c")
+        for perm in itertools.permutations(attributes):
+            var_names = {f'V{i + 1}': name for i, name in enumerate(perm)}
+            ns = run_code(code.format(**var_names))
+            t = ns['T']
+            self.assertEqual(t.__static_attributes__, attributes)
 
 
 if __name__ == "__main__":

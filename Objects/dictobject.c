@@ -1549,7 +1549,7 @@ read_failed:
     *value_addr = value;
     if (value != NULL) {
         assert(ix >= 0);
-        Py_INCREF(value);
+        _Py_NewRefWithLock(value);
     }
     Py_END_CRITICAL_SECTION();
     return ix;
@@ -3918,13 +3918,13 @@ dict_copy_impl(PyDictObject *self)
 }
 
 /* Copies the values, but does not change the reference
- * counts of the objects in the array. */
+ * counts of the objects in the array.
+ * Return NULL, but does *not* set an exception on failure  */
 static PyDictValues *
 copy_values(PyDictValues *values)
 {
     PyDictValues *newvalues = new_values(values->capacity);
     if (newvalues == NULL) {
-        PyErr_NoMemory();
         return NULL;
     }
     newvalues->size = values->size;
@@ -6988,7 +6988,7 @@ _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name, PyObject **attr
             // Still no dict, we can read from the values
             assert(values->valid);
             value = values->values[ix];
-            *attr = Py_XNewRef(value);
+            *attr = _Py_XNewRefWithLock(value);
             success = true;
         }
 
@@ -7008,7 +7008,7 @@ _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name, PyObject **attr
 
     if (dict->ma_values == values && FT_ATOMIC_LOAD_UINT8(values->valid)) {
         value = _Py_atomic_load_ptr_relaxed(&values->values[ix]);
-        *attr = Py_XNewRef(value);
+        *attr = _Py_XNewRefWithLock(value);
         success = true;
     } else {
         // Caller needs to lookup from the dictionary
@@ -7189,6 +7189,13 @@ _PyDict_DetachFromObject(PyDictObject *mp, PyObject *obj)
     PyDictValues *values = copy_values(mp->ma_values);
 
     if (values == NULL) {
+        /* Out of memory. Clear the dict */
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        PyDictKeysObject *oldkeys = mp->ma_keys;
+        set_keys(mp, Py_EMPTY_KEYS);
+        dictkeys_decref(interp, oldkeys, IS_DICT_SHARED(mp));
+        STORE_USED(mp, 0);
+        PyErr_NoMemory();
         return -1;
     }
     mp->ma_values = values;
