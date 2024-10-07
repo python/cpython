@@ -141,12 +141,17 @@ class EnableDeferredRefcountingTest(unittest.TestCase):
 
         if support.Py_GIL_DISABLED:
             def foo(obj):
-                with self.assertRaises(ValueError):
-                    _testcapi.pyobject_enable_deferred_refcount(obj)
+                _testcapi.pyobject_enable_deferred_refcount(obj)
 
-            thread = Thread(target=foo, args=([],))
-            thread.start()
-            thread.join()
+            x = []
+            y = [x]  # Increase x's refcnt
+            threads = [Thread(target=foo, args=(x,)) for _ in range(5)]
+
+            for thread in threads:
+                thread.start()
+
+            for thread in threads:
+                thread.join()
 
         self.assertEqual(_testcapi.pyobject_enable_deferred_refcount([]), int(support.Py_GIL_DISABLED))
 
