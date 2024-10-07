@@ -131,7 +131,6 @@ class LocaleTime(object):
         # month names are equal. See doc of __find_month_format for more
         # details.
         #
-        month_format = self.__find_month_format()
         replacement_pairs.extend([(tz, "%Z") for tz_values in self.timezone
                                                 for tz in tz_values])
         for offset,directive in ((0,'%c'), (1,'%x'), (2,'%X')):
@@ -144,7 +143,9 @@ class LocaleTime(object):
                 if old:
                     current_format = current_format.replace(old, new)
             for month_str in (self.f_month[3], self.a_month[3]):
-                current_format = current_format.replace(month_str, month_format)
+                if month_str in current_format:
+                    month_format = self.__find_month_format(directive)
+                    current_format = current_format.replace(month_str, month_format)
             # If %W is used, then Sunday, 2005-01-03 will fall on week 0 since
             # 2005-01-03 occurs before the first Monday of the year.  Otherwise
             # %U is used.
@@ -158,7 +159,7 @@ class LocaleTime(object):
         self.LC_date = date_time[1]
         self.LC_time = date_time[2]
 
-    def __find_month_format(self):
+    def __find_month_format(self, directive):
         """Find the month format appropriate for the current locale.
 
         In some locales (for example French and Hebrew), the default month
@@ -171,7 +172,7 @@ class LocaleTime(object):
         for m in range(1, 13):
             if self.f_month[m] != self.a_month[m]:
                 time_tuple = time.struct_time((1999, m, 17, 22, 44, 55, 2, 76, 0))
-                datetime = time.strftime('%c', time_tuple).lower()
+                datetime = time.strftime(directive, time_tuple).lower()
                 if datetime.find(self.f_month[m]) >= 0:
                     return '%B'
                 elif datetime.find(self.a_month[m]) >= 0:

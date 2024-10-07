@@ -476,13 +476,15 @@ class StrptimeTests(unittest.TestCase):
     # * Hours are in 12-hour notation without AM/PM indication: hy_AM,
     #   id_ID, ms_MY.
     # * Year is not included: ha_NG.
+    # * Use non-Gregorian calendar: lo_LA, thai, th_TH.
     #
     # BUG: Generates invalid regexp for a number of Arabic locales,
-    # br_FR, csb_PL, lo_LA, thai, th_TH.
+    # br_FR, csb_PL.
     # BUG: Generates regexp that does not match the current date and time
     # for a number of Arabic locales, fa_IR, gez_ER, gez_ET, lzh_TW,
     # my_MM, or_IN, shn_MM, yo_NG.
-    @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', 'he_IL')
+    @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
+                      'he_IL', 'eu_ES')
     def test_date_time_locale(self):
         # Test %c directive
         self.roundtrip('%c', slice(0, 6))
@@ -494,11 +496,13 @@ class StrptimeTests(unittest.TestCase):
         # Test %c directive
         self.roundtrip('%c', slice(0, 6), (1900, 1, 1, 0, 0, 0, 0, 1, 0))
 
-    # BUG: Generates invalid regexp for lo_LA, thai, th_TH.
+    # NB: Does not roundtrip because use non-Gregorian calendar:
+    # lo_LA, thai, th_TH.
     # BUG: Generates regexp that does not match the current date
-    # for a number of Arabic locales, az_IR, eu_ES, eu_FR, fa_IR, lzh_TW,
-    # my_MM, or_IN, shn_MM.
-    @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', 'he_IL', '')
+    # for a number of Arabic locales, az_IR, fa_IR, lzh_TW, my_MM,
+    # or_IN, shn_MM.
+    @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
+                      'he_IL', 'eu_ES', '')
     def test_date_locale(self):
         # Test %x directive
         self.roundtrip('%x', slice(0, 3))
