@@ -100,7 +100,7 @@ You can also get a :ref:`distribution's version number <version>`, list its
 :ref:`requirements`.
 
 
-.. class:: PackageNotFoundError
+.. exception:: PackageNotFoundError
 
    Subclass of :class:`ModuleNotFoundError` raised by several functions in this
    module when queried for a distribution package which is not installed in the
