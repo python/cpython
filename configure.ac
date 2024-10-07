@@ -7809,17 +7809,52 @@ AC_DEFUN([PY_SIMD_DETECT], [
 # we do not necessarily know which instruction sets will be used,
 # we disable SIMD support on some older Android platforms.
 #
-# Detection for more instruction sets can be added. By default, we detect
-# SSE-based instruction sets, AVX/AVX2 and AVX512 VBMI.
+# See py_simd_features in pycore_cpuinfo.h for how to order fields
+# and where to put blank lines to separate processor generations
+# for AVX-512 instructions.
 if test "$ac_sys_system" != "Linux-android" || test "$ANDROID_API_LEVEL" -ge 28; then
+    # SSE
     PY_SIMD_DETECT([SSE], [-msse])
     PY_SIMD_DETECT([SSE2], [-msse2])
     PY_SIMD_DETECT([SSE3], [-msse3])
+    PY_SIMD_DETECT([SSSE3], [-mssse3])
     PY_SIMD_DETECT([SSE4.1], [-msse4.1], [SSE4_1])
     PY_SIMD_DETECT([SSE4.2], [-msse4.2], [SSE4_2])
+    # AVX
     PY_SIMD_DETECT([AVX], [-mavx])
+    PY_SIMD_DETECT([AVX_IFMA], [-mavxifma])
+    PY_SIMD_DETECT([AVX_NE_CONVERT], [-mavxneconvert])
+    #
+    PY_SIMD_DETECT([AVX_VNNI], [-mavxvnni])
+    PY_SIMD_DETECT([AVX_VNNI_INT8], [-mavxvnniint8])
+    PY_SIMD_DETECT([AVX_VNNI_INT16], [-mavxvnniint16])
+    # AVX 2
     PY_SIMD_DETECT([AVX2], [-mavx2])
+    #
+    PY_SIMD_DETECT([AVX512_F], [-mavx512f])
+    PY_SIMD_DETECT([AVX512_CD], [-mavx512cd])
+    PY_SIMD_DETECT([AVX512_ER], [-mavx512er])
+    PY_SIMD_DETECT([AVX512_PF], [-mavx512pf])
+    #
+    PY_SIMD_DETECT([AVX512_4FMAPS], [-mavx5124fmaps])
+    PY_SIMD_DETECT([AVX512_4VNNIW], [-mavx5124vnniw])
+    #
+    PY_SIMD_DETECT([AVX512_VPOPCNTDQ], [-mavx512vpopcntdq])
+    #
+    PY_SIMD_DETECT([AVX512_VL], [-mavx512vl])
+    PY_SIMD_DETECT([AVX512_DQ], [-mavx512dq])
+    PY_SIMD_DETECT([AVX512_BW], [-mavx512bw])
+    #
+    PY_SIMD_DETECT([AVX512_IFMA], [-mavx512ifma])
+    #
     PY_SIMD_DETECT([AVX512_VBMI], [-mavx512vbmi])
+    #
+    PY_SIMD_DETECT([AVX512_VNNI], [-mavx512vnni])
+    #
+    PY_SIMD_DETECT([AVX512_VBMI2], [-mavx512vbmi2])
+    PY_SIMD_DETECT([AVX512_BITALG], [-mavx512bitalg])
+    #
+    PY_SIMD_DETECT([AVX512_VP2INTERSECT], [-mavx512vp2intersect])
 fi
 
 LIBHACL_CFLAGS='-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)'
