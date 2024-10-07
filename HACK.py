@@ -33,8 +33,11 @@ class CLOSER(object):
             start = arg.start
             stop = arg.stop
             step = arg.step
-            if isinstance(stop, int) and isinstance(step, int):
-                ...
+            if isinstance(stop, int):
+                if step is None:
+                    stop += 1
+                elif isinstance(step, int):
+                    stop += step
             return slice(start, stop, step)
         else:
             return arg
