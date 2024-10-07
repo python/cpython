@@ -1,0 +1,1 @@
+Fixed :mod:`email` preserving leading whitespace in wrapped headers.
