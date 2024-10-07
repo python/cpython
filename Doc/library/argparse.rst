@@ -25,6 +25,25 @@ will figure out how to parse those out of :data:`sys.argv`.  The :mod:`argparse`
 module also automatically generates help and usage messages.  The module
 will also issue errors when users give the program invalid arguments.
 
+Quick Links for ArgumentParser
+---------------------------------------
+========================= =========================================================================================================== ==================================================================================
+Name                      Description                                                                                                 Values
+========================= =========================================================================================================== ==================================================================================
+prog_                     The name of the program
+usage_                    The string describing the program usage
+description_              A brief description of what the program does
+epilog_                   Additional description of the program after the argument help
+parents_                  A list of :class:`ArgumentParser` objects whose arguments should also be included
+formatter_class_          A class for customizing the help output                                                                     ``argparse.HelpFormatter``
+prefix_chars_             The set of characters that prefix optional arguments                                                        Defaults to ``'-'``
+fromfile_prefix_chars_    The set of characters that prefix files to read additional arguments from                                   Defaults to ``None`` (meaning arguments will never be treated as file references)
+argument_default_         The global default value for arguments
+allow_abbrev_             Allows long options to be abbreviated if the abbreviation is unambiguous                                    ``True`` or ``False`` (default: ``True``)
+conflict_handler_         The strategy for resolving conflicting optionals
+add_help_                 Add a ``-h/--help`` option to the parser                                                                    ``True`` or ``False`` (default: ``True``)
+exit_on_error_            Determines whether or not to exit with error info when an error occurs                                      ``True`` or ``False`` (default: ``True``)
+========================= =========================================================================================================== ==================================================================================
 
 Core Functionality
 ------------------
@@ -195,8 +214,8 @@ ArgumentParser objects
    as keyword arguments. Each parameter has its own more detailed description
    below, but in short they are:
 
-   * prog_ - The name of the program (default:
-     ``os.path.basename(sys.argv[0])``)
+   * prog_ - The name of the program (default: generated from the ``__main__``
+     module attributes and ``sys.argv[0]``)
 
    * usage_ - The string describing the program usage (default: generated from
      arguments added to parser)
@@ -249,10 +268,18 @@ The following sections describe how each of these are used.
 prog
 ^^^^
 
-By default, :class:`ArgumentParser` objects use the base name
-(see :func:`os.path.basename`) of ``sys.argv[0]`` to determine
-how to display the name of the program in help messages.  This default is almost
-always desirable because it will make the help messages match the name that was
+By default, :class:`ArgumentParser` calculates the name of the program
+to display in help messages depending on the way the Python inerpreter was run:
+
+* The :func:`base name <os.path.basename>` of ``sys.argv[0]`` if a file was
+  passed as argument.
+* The Python interpreter name followed by ``sys.argv[0]`` if a directory or
+  a zipfile was passed as argument.
+* The Python interpreter name followed by ``-m`` followed by the
+  module or package name if the :option:`-m` option was used.
+
+This default is almost
+always desirable because it will make the help messages match the string that was
 used to invoke the program on the command line.  For example, consider a file
 named ``myprogram.py`` with the following code::
 
@@ -262,7 +289,7 @@ named ``myprogram.py`` with the following code::
    args = parser.parse_args()
 
 The help for this program will display ``myprogram.py`` as the program name
-(regardless of where the program was invoked from):
+(regardless of where the program was invoked from) if it is run as a script:
 
 .. code-block:: shell-session
 
@@ -280,6 +307,17 @@ The help for this program will display ``myprogram.py`` as the program name
     -h, --help  show this help message and exit
     --foo FOO   foo help
 
+If it is executed via the :option:`-m` option, the help will display a corresponding command line:
+
+.. code-block:: shell-session
+
+   $ /usr/bin/python3 -m subdir.myprogram --help
+   usage: python3 -m subdir.myprogram [-h] [--foo FOO]
+
+   options:
+    -h, --help  show this help message and exit
+    --foo FOO   foo help
+
 To change this default behavior, another value can be supplied using the
 ``prog=`` argument to :class:`ArgumentParser`::
 
@@ -290,7 +328,8 @@ To change this default behavior, another value can be supplied using the
    options:
     -h, --help  show this help message and exit
 
-Note that the program name, whether determined from ``sys.argv[0]`` or from the
+Note that the program name, whether determined from ``sys.argv[0]``,
+from the ``__main__`` module attributes or from the
 ``prog=`` argument, is available to help messages using the ``%(prog)s`` format
 specifier.
 
@@ -305,6 +344,9 @@ specifier.
     -h, --help  show this help message and exit
     --foo FOO   foo of the myprogram program
 
+.. versionchanged:: 3.14
+   The default ``prog`` value now reflects how ``__main__`` was actually executed,
+   rather than always being ``os.path.basename(sys.argv[0])``.
 
 usage
 ^^^^^
@@ -1804,7 +1846,7 @@ Sub-commands
      >>>
      >>> # create the parser for the "b" command
      >>> parser_b = subparsers.add_parser('b', help='b help')
-     >>> parser_b.add_argument('--baz', choices='XYZ', help='baz help')
+     >>> parser_b.add_argument('--baz', choices=('X', 'Y', 'Z'), help='baz help')
      >>>
      >>> # parse some argument lists
      >>> parser.parse_args(['a', '12'])

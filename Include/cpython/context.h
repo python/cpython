@@ -33,10 +33,9 @@ typedef enum {
 } PyContextEvent;
 
 /*
- * A Callback to clue in non-python contexts impls about a
- * change in the active python context.
+ * Callback to be invoked when a context object is entered or exited.
  *
- * The callback is invoked with the event and a reference to =
+ * The callback is invoked with the event and a reference to
  * the context after its entered and before its exited.
  *
  * if the callback returns with an exception set, it must return -1. Otherwise
