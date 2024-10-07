@@ -17,9 +17,10 @@
 // For simplicity, we only enable SIMD instructions for Intel CPUs,
 // even though we could support ARM NEON and POWER.
 #if defined(__x86_64__) && defined(__GNUC__)
-#  include <cpuid.h>    // __cpuid_count()
+#  include <cpuid.h>        // __cpuid_count()
 #elif defined(_M_X64)
-#  include <intrin.h>   // __cpuidex()
+#  include <immintrin.h>    // _xgetbv()
+#  include <intrin.h>       // __cpuidex()
 #else
 #  undef  CPUID_REG
 #  define CPUID_REG(PARAM)  Py_UNUSED(PARAM)
@@ -202,7 +203,7 @@ get_xgetbv(uint32_t index)
     uint32_t eax = 0, edx = 0;
     __asm__ __volatile__("xgetbv" : "=a" (eax), "=d" (edx) : "c" (index));
     return ((uint64_t)edx << 32) | eax;
-#elif defined (_MSC_VER)
+#elif defined(_M_X64)
     return (uint64_t)_xgetbv(index);
 #else
     (void) index;
