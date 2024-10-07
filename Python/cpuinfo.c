@@ -259,9 +259,10 @@ detect_simd_features(py_simd_features *flags,
 #ifdef SIMD_AVX_INSTRUCTIONS_DETECTION_GUARD
 #ifdef CAN_COMPILE_SIMD_AVX_INSTRUCTIONS
     flags->avx = CPUID_CHECK_REG(ecx, ECX_L1_AVX);
+#endif
+#endif
+
     flags->os_xsave = CPUID_CHECK_REG(ecx, ECX_L1_OSXSAVE);
-#endif
-#endif
 }
 
 /* Extended Feature Bits (LEAF=7, SUBLEAF=0). */
