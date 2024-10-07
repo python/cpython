@@ -2617,7 +2617,7 @@ libinstall:	all $(srcdir)/Modules/xxmodule.c
 			esac; \
 		done; \
 	done
-	$(INSTALL_DATA) `cat pybuilddir.txt`/_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH).py \
+	$(INSTALL_DATA) `cat pybuilddir.txt`/_sysconfigdata_$(ABIFLAGS)_$(firstword $(MULTIARCH) $$(MACHDEP)).py \
 		$(DESTDIR)$(LIBDEST); \
 	$(INSTALL_DATA) $(srcdir)/LICENSE $(DESTDIR)$(LIBDEST)/LICENSE.txt
 	@ # If app store compliance has been configured, apply the patch to the

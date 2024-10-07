@@ -1,0 +1,4 @@
+The ``_sysconfigdata`` module filename (``_PYTHON_SYSCONFIGDATA_NAME``) no
+longer includes both the platform and multiarch triplet, on platforms that
+use multiarch triplets (e.g. Linux). This filename is specified in
+cross-compilation.

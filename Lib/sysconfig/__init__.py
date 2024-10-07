@@ -331,9 +331,10 @@ def get_makefile_filename():
 
 def _get_sysconfigdata_name():
     multiarch = getattr(sys.implementation, '_multiarch', '')
+    platform = multiarch or sys.platform
     return os.environ.get(
         '_PYTHON_SYSCONFIGDATA_NAME',
-        f'_sysconfigdata_{sys.abiflags}_{sys.platform}_{multiarch}',
+        f'_sysconfigdata_{sys.abiflags}_{platform}',
     )
 
 def _init_posix(vars):

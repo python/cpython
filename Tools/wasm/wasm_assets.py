@@ -95,10 +95,10 @@ OMIT_MODULE_FILES = {
 }
 
 SYSCONFIG_NAMES = (
-    "_sysconfigdata__emscripten_wasm32-emscripten",
-    "_sysconfigdata__emscripten_wasm32-emscripten",
-    "_sysconfigdata__wasi_wasm32-wasi",
-    "_sysconfigdata__wasi_wasm64-wasi",
+    "_sysconfigdata__wasm32-emscripten",
+    "_sysconfigdata__wasm32-emscripten",
+    "_sysconfigdata__wasm32-wasi",
+    "_sysconfigdata__wasm64-wasi",
 )
 
 
