@@ -10,14 +10,12 @@
 #include <stdint.h>     // UINT32_C()
 
 /* Macro to mark a CPUID register function parameter as being used. */
-#define CPUID_REG(PARAM)                PARAM
+#define CPUID_REG(PARAM)            PARAM
 /* Macro to check one or more CPUID register bits. */
 #define CPUID_CHECK_REG(REG, MASK)  ((((REG) & (MASK)) == (MASK)) ? 0 : 1)
 
-/*
- * For simplicity, we only enable SIMD instructions for Intel CPUs,
- * even though we could support ARM NEON and POWER.
- */
+// For simplicity, we only enable SIMD instructions for Intel CPUs,
+// even though we could support ARM NEON and POWER.
 #if defined(__x86_64__) && defined(__GNUC__)
 #  include <cpuid.h>    // __cpuid_count()
 #elif defined(_M_X64)
@@ -33,7 +31,7 @@
     || defined(CAN_COMPILE_SIMD_SSSE3_INSTRUCTIONS)         \
     || defined(CAN_COMPILE_SIMD_SSE4_1_INSTRUCTIONS)        \
     || defined(CAN_COMPILE_SIMD_SSE4_2_INSTRUCTIONS)        \
-    // macros above should be sorted in an alphabetical order
+    // macros above should be sorted in alphabetical order
 /* Used to guard any SSE instructions detection code. */
 #  define SIMD_SSE_INSTRUCTIONS_DETECTION_GUARD
 #endif
@@ -44,13 +42,13 @@
     || defined(CAN_COMPILE_SIMD_AVX_VNNI_INSTRUCTIONS)          \
     || defined(CAN_COMPILE_SIMD_AVX_VNNI_INT8_INSTRUCTIONS)     \
     || defined(CAN_COMPILE_SIMD_AVX_VNNI_INT16_INSTRUCTIONS)    \
-    // macros above should be sorted in an alphabetical order
+    // macros above should be sorted in alphabetical order
 /* Used to guard any AVX instructions detection code. */
 #  define SIMD_AVX_INSTRUCTIONS_DETECTION_GUARD
 #endif
 
 #if defined(CAN_COMPILE_SIMD_AVX2_INSTRUCTIONS)                 \
-    // macros above should be sorted in an alphabetical order
+    // macros above should be sorted in alphabetical order
 /* Used to guard any AVX-2 instructions detection code. */
 #  define SIMD_AVX2_INSTRUCTIONS_DETECTION_GUARD
 #endif
@@ -71,7 +69,7 @@
     || defined(CAN_COMPILE_SIMD_AVX512_VPOPCNTDQ_INSTRUCTIONS)      \
     || defined(CAN_COMPILE_SIMD_AVX512_4FMAPS_INSTRUCTIONS)         \
     || defined(CAN_COMPILE_SIMD_AVX512_4VNNIW_INSTRUCTIONS)         \
-    // macros above should be sorted in an alphabetical order
+    // macros above should be sorted in alphabetical order
 /* Used to guard any AVX-512 instructions detection code. */
 #  define SIMD_AVX512_INSTRUCTIONS_DETECTION_GUARD
 #endif
@@ -84,7 +82,7 @@
 //
 // Additionally, AVX2 cannot be compiled on macOS ARM64 (yet it can be
 // compiled on x86_64). However, since autoconf incorrectly assumes so
-// when compiling a universal2 binary, we disable AVX for such builds.
+// when compiling a universal2 binary, we disable AVX on such builds.
 #if defined(__APPLE__)
 #  undef SIMD_AVX512_INSTRUCTIONS_DETECTION_GUARD
 #  if defined(__arm64__)
@@ -181,7 +179,7 @@ get_cpuid_info(uint32_t level /* input eax */,
 #if defined(__x86_64__) && defined(__GNUC__)
     __cpuid_count(level, count, *eax, *ebx, *ecx, *edx);
 #elif defined(_M_X64)
-    int32_t info[4] = {0};
+    uint32_t info[4] = {0};
     __cpuidex(info, level, count);
     *eax = info[0];
     *ebx = info[1];
@@ -247,13 +245,13 @@ detect_simd_features(py_simd_features *flags,
 #ifdef CAN_COMPILE_SIMD_SSE4_2_INSTRUCTIONS
     flags->sse42 = CPUID_CHECK_REG(ecx, ECX_L1_SSE4_2);
 #endif
-#endif
+#endif // !SIMD_SSE_INSTRUCTIONS_DETECTION_GUARD
 
 #ifdef SIMD_AVX_INSTRUCTIONS_DETECTION_GUARD
 #ifdef CAN_COMPILE_SIMD_AVX_INSTRUCTIONS
     flags->avx = CPUID_CHECK_REG(ecx, ECX_L1_AVX);
 #endif
-#endif
+#endif // !SIMD_AVX_INSTRUCTIONS_DETECTION_GUARD
 
     flags->os_xsave = CPUID_CHECK_REG(ecx, ECX_L1_OSXSAVE);
 }
@@ -329,7 +327,7 @@ detect_simd_extended_features_ecx_0(py_simd_features *flags,
 #ifdef CAN_COMPILE_SIMD_AVX512_VP2INTERSECT_INSTRUCTIONS
     flags->avx512_vp2intersect = CPUID_CHECK_REG(edx, EDX_L7_AVX512_VP2INTERSECT);
 #endif
-#endif
+#endif // !SIMD_AVX512_INSTRUCTIONS_DETECTION_GUARD
 }
 
 /* Extended Feature Bits (LEAF=7, SUBLEAF=1). */
@@ -357,7 +355,7 @@ detect_simd_extended_features_ecx_1(py_simd_features *flags,
 #ifdef CAN_COMPILE_SIMD_AVX_VNNI_INT16_INSTRUCTIONS
     flags->avx_vnni_int16 = CPUID_CHECK_REG(edx, EDX_L7S1_AVX_VNNI_INT16);
 #endif
-#endif
+#endif // !SIMD_AVX_INSTRUCTIONS_DETECTION_GUARD
 }
 
 static inline void
@@ -552,7 +550,7 @@ _Py_detect_simd_features(py_simd_features *flags)
 #else
     (void) maxleaf;
     (void) eax; (void) ebx; (void) ecx; (void) edx;
-#endif
+#endif // !SHOULD_DETECT_SIMD_FEATURES_L1
 #ifdef SHOULD_DETECT_SIMD_FEATURES_L7
     if (maxleaf >= 7) {
 #ifdef SHOULD_DETECT_SIMD_FEATURES_L7S0
@@ -569,7 +567,7 @@ _Py_detect_simd_features(py_simd_features *flags)
 #else
     (void) maxleaf;
     (void) eax; (void) ebx; (void) ecx; (void) edx;
-#endif
+#endif // !SHOULD_DETECT_SIMD_FEATURES_L7
     finalize_simd_features(flags);
     if (validate_simd_features(flags) < 0) {
         _Py_disable_simd_features(flags);
