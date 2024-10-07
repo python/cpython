@@ -236,10 +236,10 @@ Glossary
       scope rather than being resolved at runtime from the globals or builtin namespaces.
       May be explicitly defined with the :keyword:`nonlocal` keyword to allow write access,
       or implicitly defined if the variable is only read without being written to.
-      
+
       For example, in the ``inner`` function in the following code, both ``x`` and ``print`` are
       :term:`free variables <free variable>`, but only ``x`` is a *closure variable*::
-      
+
           def outer():
               x = 0
               def inner():
