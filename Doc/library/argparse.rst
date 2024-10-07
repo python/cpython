@@ -1289,17 +1289,17 @@ this API may be passed as the ``action`` parameter to
    Action instances should be callable, so subclasses must override the
    ``__call__`` method, which should accept four parameters:
 
-   * parser - The ArgumentParser object which contains this action.
+   * *parser* - The ArgumentParser object which contains this action.
 
-   * namespace - The :class:`Namespace` object that will be returned by
+   * *namespace* - The :class:`Namespace` object that will be returned by
       :meth:`~ArgumentParser.parse_args`.  Most actions add an attribute to this
       object using :func:`setattr`.
 
-   * values - The associated command-line arguments, with any type conversions
+   * *values* - The associated command-line arguments, with any type conversions
       applied.  Type conversions are specified with the type_ keyword argument to
       :meth:`~ArgumentParser.add_argument`.
 
-   * option_string - The option string that was used to invoke this action.
+   * *option_string* - The option string that was used to invoke this action.
       The ``option_string`` argument is optional, and will be absent if the action
       is associated with a positional argument.
 
@@ -1554,18 +1554,18 @@ Sub-commands
 
    Description of parameters:
 
-   * title - title for the sub-parser group in help output; by default
+   * *title* - title for the sub-parser group in help output; by default
      "subcommands" if description is provided, otherwise uses title for
      positional arguments
 
-   * description - description for the sub-parser group in help output, by
+   * *description* - description for the sub-parser group in help output, by
      default ``None``
 
-   * prog - usage information that will be displayed with sub-command help,
+   * *prog* - usage information that will be displayed with sub-command help,
      by default the name of the program and any positional arguments before the
      subparser argument
 
-   * parser_class - class which will be used to create sub-parser instances, by
+   * *parser_class* - class which will be used to create sub-parser instances, by
      default the class of the current parser (e.g. ArgumentParser)
 
    * action_ - the basic type of action to be taken when this argument is
