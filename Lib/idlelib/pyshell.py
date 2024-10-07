@@ -679,7 +679,21 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def runsource(self, source):
         "Extend base class method: Stuff the source in the line cache first"
+        from _pyrepl.main import CAN_USE_PYREPL
         filename = self.stuffsource(source)
+
+        # Synchronize the new interactive shell in Python 3.13
+        # help, exit, license and quit without the need to call them as functions
+        # To disable, set the PYTHON_BASIC_REPL environment variable
+        if CAN_USE_PYREPL and not os.getenv('PYTHON_BASIC_REPL'):
+            REPL_COMMANDS = {
+                "quit": "quit()",
+                "exit": "exit()",
+                "help": "help()",
+                "license": "license()"
+            }
+            source = REPL_COMMANDS.get(source, source)
+
         # at the moment, InteractiveInterpreter expects str
         assert isinstance(source, str)
         # InteractiveInterpreter.runsource() calls its runcode() method,
@@ -1132,7 +1146,7 @@ class PyShell(OutputWindow):
         return self.shell_title
 
     COPYRIGHT = \
-          'Type "help", "copyright", "credits" or "license()" for more information.'
+          'Type "help", "copyright", "credits" or "license" for more information.'
 
     def begin(self):
         self.text.mark_set("iomark", "insert")

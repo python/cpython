@@ -3,6 +3,8 @@ What's New in IDLE 3.13.0
 Released on 2024-10-xx
 =========================
 
+gh-123369: IDLE now support for REPL-specific commands, like help, exit,
+license and quit, without the need to call them as functions.
 
 gh-120083: Add explicit black IDLE Hovertip foreground color needed for
 recent macOS. Fixes Sonoma showing unreadable white on pale yellow.
