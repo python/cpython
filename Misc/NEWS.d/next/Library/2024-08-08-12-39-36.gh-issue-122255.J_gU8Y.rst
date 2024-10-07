@@ -1,0 +1,4 @@
+In the :mod:`linecache` module and in the Python implementation of the
+:mod:`warnings` module, a ``DeprecationWarning`` is issued when
+``m.__loader__`` differs from ``m.__spec__.loader`` (like in the C
+implementation of the :mod:`!warnings` module).
