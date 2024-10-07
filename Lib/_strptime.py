@@ -28,6 +28,18 @@ def _getlang():
     # Figure out what the current language is set to.
     return locale.getlocale(locale.LC_TIME)
 
+def _findall(haystack, needle):
+    # Find all positions of needle in haystack.
+    if not needle:
+        return
+    i = 0
+    while True:
+        i = haystack.find(needle, i)
+        if i < 0:
+            break
+        yield i
+        i += len(needle)
+
 class LocaleTime(object):
     """Stores and handles locale-specific information related to time.
 
@@ -119,6 +131,7 @@ class LocaleTime(object):
         date_time[1] = time.strftime("%x", time_tuple).lower()
         date_time[2] = time.strftime("%X", time_tuple).lower()
         replacement_pairs = [('%', '%%'), (self.f_weekday[2], '%A'),
+                    ('', ''), # month name, if used
                     (self.a_weekday[2], '%a'),
                     (self.am_pm[1], '%p'),
                     ('1999', '%Y'), ('99', '%y'), ('22', '%H'),
@@ -135,6 +148,10 @@ class LocaleTime(object):
                                                 for tz in tz_values])
         for offset,directive in ((0,'%c'), (1,'%x'), (2,'%X')):
             current_format = date_time[offset]
+            assert replacement_pairs[2] == ('', '')
+            month_format = self.__find_month_format(directive)
+            if month_format:
+                replacement_pairs[2] = (month_format[0][3], month_format[1])
             for old, new in replacement_pairs:
                 # Must deal with possible lack of locale info
                 # manifesting itself as the empty string (e.g., Swedish's
@@ -142,10 +159,7 @@ class LocaleTime(object):
                 # strings (e.g., MacOS 9 having timezone as ('','')).
                 if old:
                     current_format = current_format.replace(old, new)
-            for month_str in (self.f_month[3], self.a_month[3]):
-                if month_str in current_format:
-                    month_format = self.__find_month_format(directive)
-                    current_format = current_format.replace(month_str, month_format)
+            replacement_pairs[2] = ('', '')
             # If %W is used, then Sunday, 2005-01-03 will fall on week 0 since
             # 2005-01-03 occurs before the first Monday of the year.  Otherwise
             # %U is used.
@@ -164,20 +178,35 @@ class LocaleTime(object):
 
         In some locales (for example French and Hebrew), the default month
         used in __calc_date_time has the same name in full and abbreviated
-        form. Thus, cycle months of the year until a month is found where
-        these representations differ, and check the datetime string created
-        by strftime against this month, to make sure we select the correct
-        format specifier.
+        form.  Also, the month name can by accident match other part of the
+        representation: the day of the week name (for example in Morisyen)
+        or the month number (for example in Japanese).  Thus, cycle months
+        of the year and find all positions that match the month name for
+        each month,  If no common positions are found, the representation
+        does not use the month name.
         """
+        full_indices = abbr_indices = None
         for m in range(1, 13):
+            time_tuple = time.struct_time((1999, m, 17, 22, 44, 55, 2, 76, 0))
+            datetime = time.strftime(directive, time_tuple).lower()
+            indices = set(_findall(datetime, self.f_month[m]))
+            if full_indices is None:
+                full_indices = indices
+            else:
+                full_indices &= indices
             if self.f_month[m] != self.a_month[m]:
-                time_tuple = time.struct_time((1999, m, 17, 22, 44, 55, 2, 76, 0))
-                datetime = time.strftime(directive, time_tuple).lower()
-                if datetime.find(self.f_month[m]) >= 0:
-                    return '%B'
-                elif datetime.find(self.a_month[m]) >= 0:
-                    return '%b'
-        return '%B'
+                indices = set(_findall(datetime, self.a_month[m]))
+            if abbr_indices is None:
+                abbr_indices = indices
+            else:
+                abbr_indices &= indices
+            if not full_indices and not abbr_indices:
+                return None
+        if full_indices:
+            return self.f_month, '%B'
+        if abbr_indices:
+            return self.a_month, '%b'
+        return None
 
     def __calc_timezone(self):
         # Set self.timezone by using time.tzname.
