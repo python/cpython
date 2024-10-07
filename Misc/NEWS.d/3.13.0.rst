@@ -1,0 +1,18 @@
+.. date: 2024-10-05-23-53-06
+.. gh-issue: 125008
+.. nonce: ETANpd
+.. release date: 2024-10-07
+.. section: Core and Builtins
+
+Fix :func:`tokenize.untokenize` producing invalid syntax for double braces
+preceded by certain escape characters.
+
+..
+
+.. date: 2024-10-03-22-26-39
+.. gh-issue: 124871
+.. nonce: tAMF47
+.. section: Core and Builtins
+
+Fix compiler bug (in some versions of 3.13) where an assertion fails during
+reachability analysis.
