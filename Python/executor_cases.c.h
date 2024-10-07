@@ -2625,7 +2625,6 @@
                 JUMP_TO_JUMP_TARGET();
             }
             PyObject *old_value;
-            uint64_t new_version;
             if (!DK_IS_UNICODE(dict->ma_keys)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -2641,9 +2640,8 @@
             }
             old_value = ep->me_value;
             PyDict_WatchEvent event = old_value == NULL ? PyDict_EVENT_ADDED : PyDict_EVENT_MODIFIED;
-            new_version = _PyDict_NotifyEvent(tstate->interp, event, dict, name, PyStackRef_AsPyObjectBorrow(value));
+            _PyDict_NotifyEvent(tstate->interp, event, dict, name, PyStackRef_AsPyObjectBorrow(value));
             ep->me_value = PyStackRef_AsPyObjectSteal(value);
-            dict->ma_version_tag = new_version; // PEP 509
             // old_value should be DECREFed after GC track checking is done, if not, it could raise a segmentation fault,
             // when dict only holds the strong reference to value in ep->me_value.
             Py_XDECREF(old_value);
@@ -5254,7 +5252,7 @@
                 printf("SIDE EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
                 printf(", exit %u, temp %d, target %d -> %s]\n",
-                       exit - current_executor->exits, exit->temperature.as_counter,
+                       exit - current_executor->exits, exit->temperature.value_and_backoff,
                        (int)(target - _PyCode_CODE(code)),
                        _PyOpcode_OpName[target->op.code]);
             }
@@ -5392,7 +5390,7 @@
                 printf("DYNAMIC EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
                 printf(", exit %u, temp %d, target %d -> %s]\n",
-                       exit - current_executor->exits, exit->temperature.as_counter,
+                       exit - current_executor->exits, exit->temperature.value_and_backoff,
                        (int)(target - _PyCode_CODE(_PyFrame_GetCode(frame))),
                        _PyOpcode_OpName[target->op.code]);
             }
@@ -5432,6 +5430,15 @@
             current_executor = (_PyExecutorObject*)executor;
             #endif
             assert(((_PyExecutorObject *)executor)->vm_data.valid);
+            break;
+        }
+
+        case _MAKE_WARM: {
+            current_executor->vm_data.warm = true;
+            // It's okay if this ends up going negative.
+            if (--tstate->interp->trace_run_counter == 0) {
+                _Py_set_eval_breaker_bit(tstate, _PY_EVAL_JIT_INVALIDATE_COLD_BIT);
+            }
             break;
         }
 

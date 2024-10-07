@@ -324,14 +324,14 @@ basic block.
 
 As an example, consider the following code snippet:
 
-.. code-block:: Python
-
-   if x < 10:
-       f1()
-       f2()
-   else:
-       g()
-   end()
+```python
+if x < 10:
+    f1()
+    f2()
+else:
+    g()
+end()
+```
 
 The ``x < 10`` guard is represented by its own basic block that
 compares ``x`` with ``10`` and then ends in a conditional jump based on

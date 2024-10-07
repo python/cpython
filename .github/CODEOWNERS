@@ -207,7 +207,6 @@ Doc/c-api/stable.rst          @encukou
 **/*bisect*                   @rhettinger
 **/*heapq*                    @rhettinger
 **/*functools*                @rhettinger
-**/*decimal*                  @rhettinger
 
 **/*dataclasses*              @ericvsmith
 

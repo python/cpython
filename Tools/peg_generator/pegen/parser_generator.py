@@ -185,8 +185,6 @@ class ParserGenerator:
 
     def artificial_rule_from_gather(self, node: Gather) -> str:
         self.counter += 1
-        name = f"_gather_{self.counter}"
-        self.counter += 1
         extra_function_name = f"_loop0_{self.counter}"
         extra_function_alt = Alt(
             [NamedItem(None, node.separator), NamedItem("elem", node.node)],
@@ -197,6 +195,8 @@ class ParserGenerator:
             None,
             Rhs([extra_function_alt]),
         )
+        self.counter += 1
+        name = f"_gather_{self.counter}"
         alt = Alt(
             [NamedItem("elem", node.node), NamedItem("seq", NameLeaf(extra_function_name))],
         )

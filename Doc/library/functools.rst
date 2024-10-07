@@ -347,14 +347,13 @@ The :mod:`functools` module defines the following functions:
 
       def partial(func, /, *args, **keywords):
           def newfunc(*more_args, **more_keywords):
-              keywords_union = {**keywords, **more_keywords}
-              return func(*args, *more_args, **keywords_union)
+              return func(*args, *more_args, **(keywords | more_keywords))
           newfunc.func = func
           newfunc.args = args
           newfunc.keywords = keywords
           return newfunc
 
-   The :func:`partial` function is used for partial function application which "freezes"
+   The :func:`!partial` function is used for partial function application which "freezes"
    some portion of a function's arguments and/or keywords resulting in a new object
    with a simplified signature.  For example, :func:`partial` can be used to create
    a callable that behaves like the :func:`int` function where the *base* argument
@@ -368,10 +367,11 @@ The :mod:`functools` module defines the following functions:
       18
 
    If :data:`Placeholder` sentinels are present in *args*, they will be filled first
-   when :func:`partial` is called. This allows custom selection of positional arguments
-   to be pre-filled when constructing a :ref:`partial object <partial-objects>`.
+   when :func:`!partial` is called. This makes it possible to pre-fill any positional
+   argument with a call to :func:`!partial`; without :data:`!Placeholder`, only the
+   first positional argument can be pre-filled.
 
-   If :data:`!Placeholder` sentinels are present, all of them must be filled at call time:
+   If any :data:`!Placeholder` sentinels are present, all must be filled at call time:
 
    .. doctest::
 
@@ -379,14 +379,15 @@ The :mod:`functools` module defines the following functions:
       >>> say_to_world('Hello', 'dear')
       Hello dear world!
 
-   Calling ``say_to_world('Hello')`` would raise a :exc:`TypeError`, because
-   only one positional argument is provided, while there are two placeholders
-   in :ref:`partial object <partial-objects>`.
+   Calling ``say_to_world('Hello')`` raises a :exc:`TypeError`, because
+   only one positional argument is provided, but there are two placeholders
+   that must be filled in.
 
-   Successive :func:`partial` applications fill :data:`!Placeholder` sentinels
-   of the input :func:`partial` objects with new positional arguments.
-   A place for positional argument can be retained by inserting new
-   :data:`!Placeholder` sentinel to the place held by previous :data:`!Placeholder`:
+   If :func:`!partial` is applied to an existing :func:`!partial` object,
+   :data:`!Placeholder` sentinels of the input object are filled in with
+   new positional arguments.
+   A placeholder can be retained by inserting a new
+   :data:`!Placeholder` sentinel to the place held by a previous :data:`!Placeholder`:
 
    .. doctest::
 
@@ -402,8 +403,8 @@ The :mod:`functools` module defines the following functions:
       >>> remove_first_dear(message)
       'Hello, dear world!'
 
-   Note, :data:`!Placeholder` has no special treatment when used for keyword
-   argument of :data:`!Placeholder`.
+   :data:`!Placeholder` has no special treatment when used in a keyword
+   argument to :func:`!partial`.
 
    .. versionchanged:: 3.14
       Added support for :data:`Placeholder` in positional arguments.
@@ -541,6 +542,25 @@ The :mod:`functools` module defines the following functions:
      ...     print(arg.real, arg.imag)
      ...
 
+   For code that dispatches on a collections type (e.g., ``list``), but wants
+   to typehint the items of the collection (e.g., ``list[int]``), the
+   dispatch type should be passed explicitly to the decorator itself with the
+   typehint going into the function definition::
+
+     >>> @fun.register(list)
+     ... def _(arg: list[int], verbose=False):
+     ...     if verbose:
+     ...         print("Enumerate this:")
+     ...     for i, elem in enumerate(arg):
+     ...         print(i, elem)
+
+   .. note::
+
+      At runtime the function will dispatch on an instance of a list regardless
+      of the type contained within the list i.e. ``[1,2,3]`` will be
+      dispatched the same as ``["foo", "bar", "baz"]``. The annotation
+      provided in this example is for static type checkers only and has no
+      runtime impact.
 
    To enable registering :term:`lambdas<lambda>` and pre-existing functions,
    the :func:`register` attribute can also be used in a functional form::
@@ -791,7 +811,7 @@ have three read-only attributes:
    The keyword arguments that will be supplied when the :class:`partial` object is
    called.
 
-:class:`partial` objects are like :class:`function` objects in that they are
+:class:`partial` objects are like :ref:`function objects <user-defined-funcs>` in that they are
 callable, weak referenceable, and can have attributes.  There are some important
-differences.  For instance, the :attr:`~definition.__name__` and :attr:`__doc__` attributes
+differences.  For instance, the :attr:`~definition.__name__` and :attr:`~definition.__doc__` attributes
 are not created automatically.
