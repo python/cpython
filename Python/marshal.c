@@ -1544,7 +1544,7 @@ r_object(RFILE *p)
 
     case TYPE_SLICE:
     {
-        int idx = r_ref_reserve(flag, p);
+        Py_ssize_t idx = r_ref_reserve(flag, p);
         PyObject *stop = NULL;
         PyObject *step = NULL;
         PyObject *start = r_object(p);
