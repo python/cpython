@@ -105,7 +105,7 @@ _Py_disable_simd_features(py_simd_features *flags);
  * Apply a bitwise-OR on all flags in 'out' using those in 'src',
  * unconditionally updating 'out' (i.e. 'out->done' is ignored).
  *
- * This also sets 'out->done' to 1 at the end. 
+ * This also sets 'out->done' to 1 at the end.
  *
  * Note that the caller is responsible to ensure that the flags set to 1
  * must not lead to illegal instruction errors if the corresponding SIMD
