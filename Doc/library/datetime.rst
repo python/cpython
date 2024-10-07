@@ -812,7 +812,7 @@ Instance methods:
 .. method:: date.__format__(format)
 
    Same as :meth:`.date.strftime`. This makes it possible to specify a format
-   string for a :class:`.date` object in :ref:`formatted string
+   string for a :class:`date` object in :ref:`formatted string
    literals <f-strings>` and when using :meth:`str.format`.
    See also :ref:`strftime-strptime-behavior` and :meth:`date.isoformat`.
 
