@@ -1,0 +1,2 @@
+Reformat the text output of :mod:`unittest`. Print the test description on a
+single line, even if the test has a docstring.
