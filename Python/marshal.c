@@ -1544,6 +1544,7 @@ r_object(RFILE *p)
 
     case TYPE_SLICE:
     {
+        int idx = r_ref_reserve(flag, p);
         PyObject *stop = NULL;
         PyObject *step = NULL;
         PyObject *start = r_object(p);
@@ -1559,6 +1560,8 @@ r_object(RFILE *p)
             goto cleanup;
         }
         retval = PySlice_New(start, stop, step);
+        if (idx)
+            r_ref_insert(retval, idx, flag, p);
     cleanup:
         Py_XDECREF(start);
         Py_XDECREF(stop);
