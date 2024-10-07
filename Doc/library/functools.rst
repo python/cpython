@@ -328,6 +328,14 @@ The :mod:`functools` module defines the following functions:
       Returning ``NotImplemented`` from the underlying comparison function for
       unrecognised types is now supported.
 
+.. data:: Placeholder
+
+   A singleton object used as a sentinel to reserve a place
+   for positional arguments when calling :func:`partial`
+   and :func:`partialmethod`.
+
+   .. versionadded:: 3.14
+
 .. function:: partial(func, /, *args, **keywords)
 
    Return a new :ref:`partial object<partial-objects>` which when called
@@ -338,26 +346,68 @@ The :mod:`functools` module defines the following functions:
    Roughly equivalent to::
 
       def partial(func, /, *args, **keywords):
-          def newfunc(*fargs, **fkeywords):
-              newkeywords = {**keywords, **fkeywords}
-              return func(*args, *fargs, **newkeywords)
+          def newfunc(*more_args, **more_keywords):
+              return func(*args, *more_args, **(keywords | more_keywords))
           newfunc.func = func
           newfunc.args = args
           newfunc.keywords = keywords
           return newfunc
 
-   The :func:`partial` is used for partial function application which "freezes"
+   The :func:`!partial` function is used for partial function application which "freezes"
    some portion of a function's arguments and/or keywords resulting in a new object
    with a simplified signature.  For example, :func:`partial` can be used to create
    a callable that behaves like the :func:`int` function where the *base* argument
-   defaults to two:
+   defaults to ``2``:
 
-      >>> from functools import partial
+   .. doctest::
+
       >>> basetwo = partial(int, base=2)
       >>> basetwo.__doc__ = 'Convert base 2 string to an int.'
       >>> basetwo('10010')
       18
 
+   If :data:`Placeholder` sentinels are present in *args*, they will be filled first
+   when :func:`!partial` is called. This makes it possible to pre-fill any positional
+   argument with a call to :func:`!partial`; without :data:`!Placeholder`, only the
+   first positional argument can be pre-filled.
+
+   If any :data:`!Placeholder` sentinels are present, all must be filled at call time:
+
+   .. doctest::
+
+      >>> say_to_world = partial(print, Placeholder, Placeholder, "world!")
+      >>> say_to_world('Hello', 'dear')
+      Hello dear world!
+
+   Calling ``say_to_world('Hello')`` raises a :exc:`TypeError`, because
+   only one positional argument is provided, but there are two placeholders
+   that must be filled in.
+
+   If :func:`!partial` is applied to an existing :func:`!partial` object,
+   :data:`!Placeholder` sentinels of the input object are filled in with
+   new positional arguments.
+   A placeholder can be retained by inserting a new
+   :data:`!Placeholder` sentinel to the place held by a previous :data:`!Placeholder`:
+
+   .. doctest::
+
+      >>> from functools import partial, Placeholder as _
+      >>> remove = partial(str.replace, _, _, '')
+      >>> message = 'Hello, dear dear world!'
+      >>> remove(message, ' dear')
+      'Hello, world!'
+      >>> remove_dear = partial(remove, _, ' dear')
+      >>> remove_dear(message)
+      'Hello, world!'
+      >>> remove_first_dear = partial(remove_dear, _, 1)
+      >>> remove_first_dear(message)
+      'Hello, dear world!'
+
+   :data:`!Placeholder` has no special treatment when used in a keyword
+   argument to :func:`!partial`.
+
+   .. versionchanged:: 3.14
+      Added support for :data:`Placeholder` in positional arguments.
 
 .. class:: partialmethod(func, /, *args, **keywords)
 
@@ -492,6 +542,25 @@ The :mod:`functools` module defines the following functions:
      ...     print(arg.real, arg.imag)
      ...
 
+   For code that dispatches on a collections type (e.g., ``list``), but wants
+   to typehint the items of the collection (e.g., ``list[int]``), the
+   dispatch type should be passed explicitly to the decorator itself with the
+   typehint going into the function definition::
+
+     >>> @fun.register(list)
+     ... def _(arg: list[int], verbose=False):
+     ...     if verbose:
+     ...         print("Enumerate this:")
+     ...     for i, elem in enumerate(arg):
+     ...         print(i, elem)
+
+   .. note::
+
+      At runtime the function will dispatch on an instance of a list regardless
+      of the type contained within the list i.e. ``[1,2,3]`` will be
+      dispatched the same as ``["foo", "bar", "baz"]``. The annotation
+      provided in this example is for static type checkers only and has no
+      runtime impact.
 
    To enable registering :term:`lambdas<lambda>` and pre-existing functions,
    the :func:`register` attribute can also be used in a functional form::
@@ -646,10 +715,11 @@ The :mod:`functools` module defines the following functions:
    attributes of the wrapper function are updated with the corresponding attributes
    from the original function. The default values for these arguments are the
    module level constants ``WRAPPER_ASSIGNMENTS`` (which assigns to the wrapper
-   function's ``__module__``, ``__name__``, ``__qualname__``, ``__annotations__``,
-   ``__type_params__``, and ``__doc__``, the documentation string)
-   and ``WRAPPER_UPDATES`` (which
-   updates the wrapper function's ``__dict__``, i.e. the instance dictionary).
+   function's :attr:`~function.__module__`, :attr:`~function.__name__`,
+   :attr:`~function.__qualname__`, :attr:`~function.__annotations__`,
+   :attr:`~function.__type_params__`, and :attr:`~function.__doc__`, the
+   documentation string) and ``WRAPPER_UPDATES`` (which updates the wrapper
+   function's :attr:`~function.__dict__`, i.e. the instance dictionary).
 
    To allow access to the original function for introspection and other purposes
    (e.g. bypassing a caching decorator such as :func:`lru_cache`), this function
@@ -670,7 +740,7 @@ The :mod:`functools` module defines the following functions:
 
    .. versionchanged:: 3.2
       The ``__wrapped__`` attribute is now automatically added.
-      The ``__annotations__`` attribute is now copied by default.
+      The :attr:`~function.__annotations__` attribute is now copied by default.
       Missing attributes no longer trigger an :exc:`AttributeError`.
 
    .. versionchanged:: 3.4
@@ -679,7 +749,7 @@ The :mod:`functools` module defines the following functions:
       (see :issue:`17482`)
 
    .. versionchanged:: 3.12
-      The ``__type_params__`` attribute is now copied by default.
+      The :attr:`~function.__type_params__` attribute is now copied by default.
 
 
 .. decorator:: wraps(wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
@@ -741,9 +811,7 @@ have three read-only attributes:
    The keyword arguments that will be supplied when the :class:`partial` object is
    called.
 
-:class:`partial` objects are like :class:`function` objects in that they are
+:class:`partial` objects are like :ref:`function objects <user-defined-funcs>` in that they are
 callable, weak referenceable, and can have attributes.  There are some important
-differences.  For instance, the :attr:`~definition.__name__` and :attr:`__doc__` attributes
-are not created automatically.  Also, :class:`partial` objects defined in
-classes behave like static methods and do not transform into bound methods
-during instance attribute look-up.
+differences.  For instance, the :attr:`~definition.__name__` and :attr:`~definition.__doc__` attributes
+are not created automatically.

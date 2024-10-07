@@ -56,14 +56,14 @@ static int
 get_mutations(PyObject* dict) {
     assert(PyDict_CheckExact(dict));
     PyDictObject *d = (PyDictObject *)dict;
-    return (d->ma_version_tag >> DICT_MAX_WATCHERS) & ((1 << DICT_WATCHED_MUTATION_BITS)-1);
+    return (d->_ma_watcher_tag >> DICT_MAX_WATCHERS) & ((1 << DICT_WATCHED_MUTATION_BITS)-1);
 }
 
 static void
 increment_mutations(PyObject* dict) {
     assert(PyDict_CheckExact(dict));
     PyDictObject *d = (PyDictObject *)dict;
-    d->ma_version_tag += (1 << DICT_MAX_WATCHERS);
+    d->_ma_watcher_tag += (1 << DICT_MAX_WATCHERS);
 }
 
 /* The first two dict watcher IDs are reserved for CPython,
@@ -145,7 +145,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
         return 1;
     }
     PyObject *globals = frame->f_globals;
-    PyFunctionObject *function = (PyFunctionObject *)frame->f_funcobj;
+    PyFunctionObject *function = _PyFrame_GetFunction(frame);
     assert(PyFunction_Check(function));
     assert(function->func_builtins == builtins);
     assert(function->func_globals == globals);
@@ -382,6 +382,30 @@ get_code(_PyUOpInstruction *op)
         co = (PyCodeObject *)func->func_code;
     }
     assert(PyCode_Check(co));
+    return co;
+}
+
+static PyCodeObject *
+get_code_with_logging(_PyUOpInstruction *op)
+{
+    PyCodeObject *co = NULL;
+    uint64_t push_operand = op->operand;
+    if (push_operand & 1) {
+        co = (PyCodeObject *)(push_operand & ~1);
+        DPRINTF(3, "code=%p ", co);
+        assert(PyCode_Check(co));
+    }
+    else {
+        PyFunctionObject *func = (PyFunctionObject *)push_operand;
+        DPRINTF(3, "func=%p ", func);
+        if (func == NULL) {
+            DPRINTF(3, "\n");
+            DPRINTF(1, "Missing function\n");
+            return NULL;
+        }
+        co = (PyCodeObject *)func->func_code;
+        DPRINTF(3, "code=%p ", co);
+    }
     return co;
 }
 

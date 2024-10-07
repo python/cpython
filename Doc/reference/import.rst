@@ -544,7 +544,7 @@ the module.
 
 It is **strongly** recommended that you rely on :attr:`__spec__` and
 its attributes instead of any of the other individual attributes
-listed below.
+listed below, except :attr:`__name__`.
 
 .. attribute:: __name__
 
