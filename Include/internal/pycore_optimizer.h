@@ -29,8 +29,10 @@ typedef struct {
 typedef struct {
     uint8_t opcode;
     uint8_t oparg;
-    uint8_t valid;
-    uint8_t linked;
+    uint8_t valid:1;
+    uint8_t linked:1;
+    uint8_t chain_depth:6;  // Must be big enough for MAX_CHAIN_DEPTH - 1.
+    bool warm;
     int index;           // Index of ENTER_EXECUTOR (if code isn't NULL, below).
     _PyBloomFilter bloom;
     _PyExecutorLinkListNode links;
@@ -83,7 +85,7 @@ typedef struct _PyOptimizerObject _PyOptimizerObject;
 typedef int (*_Py_optimize_func)(
     _PyOptimizerObject* self, struct _PyInterpreterFrame *frame,
     _Py_CODEUNIT *instr, _PyExecutorObject **exec_ptr,
-    int curr_stackentries);
+    int curr_stackentries, bool progress_needed);
 
 struct _PyOptimizerObject {
     PyObject_HEAD
@@ -122,11 +124,18 @@ PyAPI_FUNC(PyObject *) _PyOptimizer_NewUOpOptimizer(void);
 #ifdef _Py_TIER2
 PyAPI_FUNC(void) _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation);
 PyAPI_FUNC(void) _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation);
+PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyInterpreterState *interp);
+
 #else
 #  define _Py_Executors_InvalidateDependency(A, B, C) ((void)0)
 #  define _Py_Executors_InvalidateAll(A, B) ((void)0)
+#  define _Py_Executors_InvalidateCold(A) ((void)0)
+
 #endif
 
+// Used as the threshold to trigger executor invalidation when
+// trace_run_counter is greater than this value.
+#define JIT_CLEANUP_THRESHOLD 100000
 
 // This is the length of the trace we project initially.
 #define UOP_MAX_TRACE_LENGTH 800
@@ -181,6 +190,12 @@ static inline uint16_t uop_get_error_target(const _PyUOpInstruction *inst)
 
 // Need extras for root frame and for overflow frame (see TRACE_STACK_PUSH())
 #define MAX_ABSTRACT_FRAME_DEPTH (TRACE_STACK_SIZE + 2)
+
+// The maximum number of side exits that we can take before requiring forward
+// progress (and inserting a new ENTER_EXECUTOR instruction). In practice, this
+// is the "maximum amount of polymorphism" that an isolated trace tree can
+// handle before rejoining the rest of the program.
+#define MAX_CHAIN_DEPTH 4
 
 typedef struct _Py_UopsSymbol _Py_UopsSymbol;
 
@@ -257,7 +272,17 @@ extern int _Py_uop_frame_pop(_Py_UOpsContext *ctx);
 
 PyAPI_FUNC(PyObject *) _Py_uop_symbols_test(PyObject *self, PyObject *ignored);
 
-PyAPI_FUNC(int) _PyOptimizer_Optimize(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *start, _PyStackRef *stack_pointer, _PyExecutorObject **exec_ptr);
+PyAPI_FUNC(int) _PyOptimizer_Optimize(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *start, _PyStackRef *stack_pointer, _PyExecutorObject **exec_ptr, int chain_depth);
+
+static inline int is_terminator(const _PyUOpInstruction *uop)
+{
+    int opcode = uop->opcode;
+    return (
+        opcode == _EXIT_TRACE ||
+        opcode == _JUMP_TO_TOP ||
+        opcode == _DYNAMIC_EXIT
+    );
+}
 
 #ifdef __cplusplus
 }

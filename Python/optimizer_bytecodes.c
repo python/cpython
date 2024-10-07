@@ -329,6 +329,13 @@ dummy_func(void) {
         }
     }
 
+    op(_BINARY_SUBSCR_INIT_CALL, (container, sub -- new_frame: _Py_UOpsAbstractFrame *)) {
+        (void)container;
+        (void)sub;
+        new_frame = NULL;
+        ctx->done = true;
+    }
+
     op(_TO_BOOL, (value -- res)) {
         if (!optimize_to_bool(this_instr, ctx, value, &res)) {
             res = sym_new_type(ctx, &PyBool_Type);
@@ -445,10 +452,10 @@ dummy_func(void) {
         top, unused[oparg-2], bottom)) {
     }
 
-    op(_LOAD_ATTR_INSTANCE_VALUE, (index/1, owner -- attr, null if (oparg & 1))) {
+    op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr, null if (oparg & 1))) {
         attr = sym_new_not_null(ctx);
         null = sym_new_null(ctx);
-        (void)index;
+        (void)offset;
         (void)owner;
     }
 
@@ -538,6 +545,13 @@ dummy_func(void) {
         self = owner;
     }
 
+    op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame: _Py_UOpsAbstractFrame *)) {
+        (void)fget;
+        (void)owner;
+        new_frame = NULL;
+        ctx->done = true;
+    }
+
     op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, unused, unused[oparg] -- func, self, unused[oparg])) {
         (void)callable;
         func = sym_new_not_null(ctx);
@@ -561,24 +575,12 @@ dummy_func(void) {
 
         PyCodeObject *co = NULL;
         assert((this_instr + 2)->opcode == _PUSH_FRAME);
-        uint64_t push_operand = (this_instr + 2)->operand;
-        if (push_operand & 1) {
-            co = (PyCodeObject *)(push_operand & ~1);
-            DPRINTF(3, "code=%p ", co);
-            assert(PyCode_Check(co));
+        co = get_code_with_logging((this_instr + 2));
+        if (co == NULL) {
+            ctx->done = true;
+            break;
         }
-        else {
-            PyFunctionObject *func = (PyFunctionObject *)push_operand;
-            DPRINTF(3, "func=%p ", func);
-            if (func == NULL) {
-                DPRINTF(3, "\n");
-                DPRINTF(1, "Missing function\n");
-                ctx->done = true;
-                break;
-            }
-            co = (PyCodeObject *)func->func_code;
-            DPRINTF(3, "code=%p ", co);
-        }
+
 
         assert(self_or_null != NULL);
         assert(args != NULL);
@@ -605,11 +607,42 @@ dummy_func(void) {
     }
 
     op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
-        /* The _Py_UOpsAbstractFrame design assumes that we can copy arguments across directly */
+        (void)(self_or_null);
+        (void)(callable);
+        PyCodeObject *co = NULL;
+        assert((this_instr + 2)->opcode == _PUSH_FRAME);
+        co = get_code_with_logging((this_instr + 2));
+        if (co == NULL) {
+            ctx->done = true;
+            break;
+        }
+
+        new_frame = frame_new(ctx, co, 0, NULL, 0);
+    }
+
+    op(_PY_FRAME_KW, (callable, self_or_null, args[oparg], kwnames -- new_frame: _Py_UOpsAbstractFrame *)) {
         (void)callable;
         (void)self_or_null;
         (void)args;
+        (void)kwnames;
         new_frame = NULL;
+        ctx->done = true;
+    }
+
+    op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, null, args[oparg] -- self, init, args[oparg])) {
+        (void)type_version;
+        (void)callable;
+        (void)null;
+        (void)args;
+        self = sym_new_not_null(ctx);
+        init = sym_new_not_null(ctx);
+    }
+
+    op(_CREATE_INIT_FRAME, (self, init, args[oparg] -- init_frame: _Py_UOpsAbstractFrame *)) {
+        (void)self;
+        (void)init;
+        (void)args;
+        init_frame = NULL;
         ctx->done = true;
     }
 

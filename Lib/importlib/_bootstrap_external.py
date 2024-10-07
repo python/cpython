@@ -221,7 +221,7 @@ def _write_atomic(path, data, mode=0o666):
 
 _code_type = type(_write_atomic.__code__)
 
-MAGIC_NUMBER = (_imp.pyc_magic_number).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = _imp.pyc_magic_number_token.to_bytes(4, 'little')
 
 _PYCACHE = '__pycache__'
 _OPT = 'opt-'
@@ -1523,14 +1523,14 @@ def _get_supported_file_loaders():
 
     Each item is a tuple (loader, suffixes).
     """
-    if sys.platform in {"ios", "tvos", "watchos"}:
-        extension_loaders = [(AppleFrameworkLoader, [
-            suffix.replace(".so", ".fwork")
-            for suffix in _imp.extension_suffixes()
-        ])]
-    else:
-        extension_loaders = []
-    extension_loaders.append((ExtensionFileLoader, _imp.extension_suffixes()))
+    extension_loaders = []
+    if hasattr(_imp, 'create_dynamic'):
+        if sys.platform in {"ios", "tvos", "watchos"}:
+            extension_loaders = [(AppleFrameworkLoader, [
+                suffix.replace(".so", ".fwork")
+                for suffix in _imp.extension_suffixes()
+            ])]
+        extension_loaders.append((ExtensionFileLoader, _imp.extension_suffixes()))
     source = SourceFileLoader, SOURCE_SUFFIXES
     bytecode = SourcelessFileLoader, BYTECODE_SUFFIXES
     return extension_loaders + [source, bytecode]

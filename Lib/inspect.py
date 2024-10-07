@@ -24,8 +24,6 @@ Here are some of the useful functions provided by this module:
     stack(), trace() - get info about frames on the stack or in a traceback
 
     signature() - get a Signature object for the callable
-
-    get_annotations() - safely compute an object's annotations
 """
 
 # This module is in the public domain.  No warranties.
@@ -142,7 +140,7 @@ __all__ = [
 
 
 import abc
-from annotationlib import get_annotations
+from annotationlib import get_annotations  # re-exported
 import ast
 import dis
 import collections.abc
@@ -264,11 +262,16 @@ def isfunction(object):
     Function objects provide these attributes:
         __doc__         documentation string
         __name__        name with which this function was defined
+        __qualname__    qualified name of this function
+        __module__      name of the module the function was defined in or None
         __code__        code object containing compiled function bytecode
         __defaults__    tuple of any default values for arguments
         __globals__     global namespace in which this function was defined
         __annotations__ dict of parameter annotations
-        __kwdefaults__  dict of keyword only parameters with defaults"""
+        __kwdefaults__  dict of keyword only parameters with defaults
+        __dict__        namespace which is supporting arbitrary function attributes
+        __closure__     a tuple of cells or None
+        __type_params__ tuple of type parameters"""
     return isinstance(object, types.FunctionType)
 
 def _has_code_flag(f, flag):
@@ -333,17 +336,18 @@ def isgenerator(object):
     """Return true if the object is a generator.
 
     Generator objects provide these attributes:
-        __iter__        defined to support iteration over container
-        close           raises a new GeneratorExit exception inside the
-                        generator to terminate the iteration
         gi_code         code object
         gi_frame        frame object or possibly None once the generator has
                         been exhausted
         gi_running      set to 1 when generator is executing, 0 otherwise
-        next            return the next item from the container
-        send            resumes the generator and "sends" a value that becomes
+        gi_yieldfrom    object being iterated by yield from or None
+
+        __iter__()      defined to support iteration over container
+        close()         raises a new GeneratorExit exception inside the
+                        generator to terminate the iteration
+        send()          resumes the generator and "sends" a value that becomes
                         the result of the current yield-expression
-        throw           used to raise an exception inside the generator"""
+        throw()         used to raise an exception inside the generator"""
     return isinstance(object, types.GeneratorType)
 
 def iscoroutine(object):
@@ -378,7 +382,11 @@ def isframe(object):
         f_lasti         index of last attempted instruction in bytecode
         f_lineno        current line number in Python source code
         f_locals        local namespace seen by this frame
-        f_trace         tracing function for this frame, or None"""
+        f_trace         tracing function for this frame, or None
+        f_trace_lines   is a tracing event triggered for each source line?
+        f_trace_opcodes are per-opcode events being requested?
+
+        clear()          used to clear all references to local variables"""
     return isinstance(object, types.FrameType)
 
 def iscode(object):
@@ -403,7 +411,12 @@ def iscode(object):
         co_names            tuple of names other than arguments and function locals
         co_nlocals          number of local variables
         co_stacksize        virtual machine stack space required
-        co_varnames         tuple of names of arguments and local variables"""
+        co_varnames         tuple of names of arguments and local variables
+        co_qualname         fully qualified function name
+
+        co_lines()          returns an iterator that yields successive bytecode ranges
+        co_positions()      returns an iterator of source code positions for each bytecode instruction
+        replace()           returns a copy of the code object with a new values"""
     return isinstance(object, types.CodeType)
 
 def isbuiltin(object):
@@ -957,10 +970,12 @@ def findsource(object):
 
     if isclass(object):
         try:
-            firstlineno = object.__firstlineno__
-        except AttributeError:
+            lnum = vars(object)['__firstlineno__'] - 1
+        except (TypeError, KeyError):
             raise OSError('source code not available')
-        return lines, object.__firstlineno__ - 1
+        if lnum >= len(lines):
+            raise OSError('lineno is out of bounds')
+        return lines, lnum
 
     if ismethod(object):
         object = object.__func__
@@ -1917,7 +1932,12 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
             if param.kind is _POSITIONAL_ONLY:
                 # If positional-only parameter is bound by partial,
                 # it effectively disappears from the signature
-                new_params.pop(param_name)
+                # However, if it is a Placeholder it is not removed
+                # And also looses default value
+                if arg_value is functools.Placeholder:
+                    new_params[param_name] = param.replace(default=_empty)
+                else:
+                    new_params.pop(param_name)
                 continue
 
             if param.kind is _POSITIONAL_OR_KEYWORD:
@@ -1939,7 +1959,17 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
                     new_params[param_name] = param.replace(default=arg_value)
                 else:
                     # was passed as a positional argument
-                    new_params.pop(param.name)
+                    # Do not pop if it is a Placeholder
+                    #   also change kind to positional only
+                    #   and remove default
+                    if arg_value is functools.Placeholder:
+                        new_param = param.replace(
+                            kind=_POSITIONAL_ONLY,
+                            default=_empty
+                        )
+                        new_params[param_name] = new_param
+                    else:
+                        new_params.pop(param_name)
                     continue
 
             if param.kind is _KEYWORD_ONLY:
@@ -2433,6 +2463,11 @@ def _signature_from_callable(obj, *,
                 sig_params = tuple(sig.parameters.values())
                 assert (not sig_params or
                         first_wrapped_param is not sig_params[0])
+                # If there were placeholders set,
+                #   first param is transformed to positional only
+                if partialmethod.args.count(functools.Placeholder):
+                    first_wrapped_param = first_wrapped_param.replace(
+                        kind=Parameter.POSITIONAL_ONLY)
                 new_params = (first_wrapped_param,) + sig_params
                 return sig.replace(parameters=new_params)
 
