@@ -1,6 +1,6 @@
-"Test stackviewer, coverage 63%."
+"Test stackbrowser, coverage 63%."
 
-from idlelib import stackviewer
+from idlelib import stackbrowser
 import unittest
 from test.support import requires
 from tkinter import Tk
@@ -30,11 +30,11 @@ class StackBrowserTest(unittest.TestCase):
         try:
             abc
         except NameError as exc:
-            sb = stackviewer.StackBrowser(self.root, exc)
+            sb = stackbrowser.StackBrowser(self.root, exc)
         isi = self.assertIsInstance
-        isi(stackviewer.sc, ScrolledCanvas)
-        isi(stackviewer.item, stackviewer.StackTreeItem)
-        isi(stackviewer.node, TreeNode)
+        isi(stackbrowser.sc, ScrolledCanvas)
+        isi(stackbrowser.item, stackbrowser.StackTreeItem)
+        isi(stackbrowser.node, TreeNode)
 
 
 if __name__ == '__main__':
