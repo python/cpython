@@ -227,10 +227,21 @@ Glossary
       class level (i.e., not in an instance of the class).
 
    closure variable
-      A variable referenced from a :term:`nested scope` that is defined in an outer scope
-      rather than being resolved at runtime from the globals or builtin namespaces.
+      A :term:`free variable` referenced from a :term:`nested scope` that is defined in an outer
+      scope rather than being resolved at runtime from the globals or builtin namespaces.
       May be explicitly defined with the :keyword:`nonlocal` keyword to allow write access,
       or implicitly defined if the variable is only read without being written to.
+      
+      For example, in the ``inner`` function in the following code, both ``x`` and ``print`` are
+      :term:`free variables <free variable>`, but only ``x`` is a *closure variable*::
+      
+          def outer():
+              x = 0
+              def inner():
+                  nonlocal x
+                  x += 1
+                  print(x)
+              return inner
       Due to the name of the :attr:`codeobject.co_freevars` attribute, sometimes instead
       referred to as a :term:`free variable`.
 
@@ -455,7 +466,7 @@ Glossary
    free variable
       Formally, as defined in the :ref:`language execution model <bind_names>`, a free
       variable is any variable used in a namespace which is not a local variable in that
-      namespace.
+      namespace. See :term:`closure variable` for an example.
       Pragmatically, due to the name of the :attr:`codeobject.co_freevars` attribute,
       the term is also sometimes used as a synonym for :term:`closure variable`.
 

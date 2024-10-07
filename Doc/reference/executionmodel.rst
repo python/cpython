@@ -332,6 +332,7 @@ namespace.  If only one namespace is specified, it is used for both.
 
 .. XXX(ncoghlan) above is only accurate for string execution. When executing code objects,
    closure cells may now be passed explicitly to resolve co_freevars references.
+   Docs issue: https://github.com/python/cpython/issues/122826
 
 .. _exceptions:
 
