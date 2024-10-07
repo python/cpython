@@ -4705,7 +4705,7 @@ dummy_func(
                 printf("SIDE EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
                 printf(", exit %u, temp %d, target %d -> %s]\n",
-                    exit - current_executor->exits, exit->temperature.as_counter,
+                    exit - current_executor->exits, exit->temperature.value_and_backoff,
                     (int)(target - _PyCode_CODE(code)),
                     _PyOpcode_OpName[target->op.code]);
             }
@@ -4794,7 +4794,7 @@ dummy_func(
                 printf("DYNAMIC EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
                 printf(", exit %u, temp %d, target %d -> %s]\n",
-                    exit - current_executor->exits, exit->temperature.as_counter,
+                    exit - current_executor->exits, exit->temperature.value_and_backoff,
                     (int)(target - _PyCode_CODE(_PyFrame_GetCode(frame))),
                     _PyOpcode_OpName[target->op.code]);
             }
