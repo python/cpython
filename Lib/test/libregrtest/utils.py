@@ -784,7 +784,7 @@ ILLEGAL_XML_CHARS_RE = re.compile(
     # Special Unicode characters
     '\uFFFE'
     '\uFFFF'
-    # Match multiple sequential invalid characters for better effiency
+    # Match multiple sequential invalid characters for better efficiency
     ']+')
 
 def _sanitize_xml_replace(regs):
