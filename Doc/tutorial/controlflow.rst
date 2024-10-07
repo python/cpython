@@ -543,7 +543,7 @@ Fibonacci series, instead of printing it::
    ...     return result
    ...
    >>> f100 = fib2(100)    # call it
-   >>> f100                # write the result
+   >>> print(f100)                # write the result
    [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]
 
 This example, as usual, demonstrates some new Python features:
