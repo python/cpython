@@ -1,1 +1,1 @@
-Add :attr:`SO_ORIGINAL_DST` to the :mod:`sockets`.
+Add :attr:`SO_ORIGINAL_DST` to the :mod:`socket` module.
