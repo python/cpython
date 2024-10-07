@@ -2999,18 +2999,21 @@ UnicodeEncodeError_str(PyObject *self)
     PyObject *reason_str = NULL;
     PyObject *encoding_str = NULL;
 
-    if (exc->object == NULL)
+    if (exc->object == NULL) {
         /* Not properly initialized. */
         return PyUnicode_FromString("");
+    }
 
     /* Get reason and encoding as strings, which they might not be if
        they've been modified after we were constructed. */
     reason_str = PyObject_Str(exc->reason);
-    if (reason_str == NULL)
+    if (reason_str == NULL) {
         goto done;
+    }
     encoding_str = PyObject_Str(exc->encoding);
-    if (encoding_str == NULL)
+    if (encoding_str == NULL) {
         goto done;
+    }
 
     Py_ssize_t len = PyUnicode_GET_LENGTH(exc->object);
     Py_ssize_t start = exc->start, end = exc->end;
@@ -3018,12 +3021,15 @@ UnicodeEncodeError_str(PyObject *self)
     if ((start >= 0 && start < len) && (end >= 0 && end <= len) && end == start + 1) {
         Py_UCS4 badchar = PyUnicode_ReadChar(exc->object, start);
         const char *fmt;
-        if (badchar <= 0xff)
+        if (badchar <= 0xff) {
             fmt = "'%U' codec can't encode character '\\x%02x' in position %zd: %U";
-        else if (badchar <= 0xffff)
+        }
+        else if (badchar <= 0xffff) {
             fmt = "'%U' codec can't encode character '\\u%04x' in position %zd: %U";
-        else
+        }
+        else {
             fmt = "'%U' codec can't encode character '\\U%08x' in position %zd: %U";
+        }
         result = PyUnicode_FromFormat(
             fmt,
             encoding_str,
@@ -3115,18 +3121,21 @@ UnicodeDecodeError_str(PyObject *self)
     PyObject *reason_str = NULL;
     PyObject *encoding_str = NULL;
 
-    if (exc->object == NULL)
+    if (exc->object == NULL) {
         /* Not properly initialized. */
         return PyUnicode_FromString("");
+    }
 
     /* Get reason and encoding as strings, which they might not be if
        they've been modified after we were constructed. */
     reason_str = PyObject_Str(exc->reason);
-    if (reason_str == NULL)
+    if (reason_str == NULL) {
         goto done;
+    }
     encoding_str = PyObject_Str(exc->encoding);
-    if (encoding_str == NULL)
+    if (encoding_str == NULL) {
         goto done;
+    }
 
     Py_ssize_t len = PyBytes_GET_SIZE(exc->object);
     Py_ssize_t start = exc->start, end = exc->end;
@@ -3213,15 +3222,17 @@ UnicodeTranslateError_str(PyObject *self)
     PyObject *result = NULL;
     PyObject *reason_str = NULL;
 
-    if (exc->object == NULL)
+    if (exc->object == NULL) {
         /* Not properly initialized. */
         return PyUnicode_FromString("");
+    }
 
     /* Get reason as a string, which it might not be if it's been
        modified after we were constructed. */
     reason_str = PyObject_Str(exc->reason);
-    if (reason_str == NULL)
+    if (reason_str == NULL) {
         goto done;
+    }
 
     Py_ssize_t len = PyUnicode_GET_LENGTH(exc->object);
     Py_ssize_t start = exc->start, end = exc->end;
@@ -3229,18 +3240,22 @@ UnicodeTranslateError_str(PyObject *self)
     if ((start >= 0 && start < len) && (end >= 0 && end <= len) && end == start + 1) {
         Py_UCS4 badchar = PyUnicode_ReadChar(exc->object, start);
         const char *fmt;
-        if (badchar <= 0xff)
+        if (badchar <= 0xff) {
             fmt = "can't translate character '\\x%02x' in position %zd: %U";
-        else if (badchar <= 0xffff)
+        }
+        else if (badchar <= 0xffff) {
             fmt = "can't translate character '\\u%04x' in position %zd: %U";
-        else
+        }
+        else {
             fmt = "can't translate character '\\U%08x' in position %zd: %U";
+        }
         result = PyUnicode_FromFormat(
             fmt,
             (int)badchar,
             start,
             reason_str);
-    } else {
+    }
+    else {
         result = PyUnicode_FromFormat(
             "can't translate characters in position %zd-%zd: %U",
             start,
