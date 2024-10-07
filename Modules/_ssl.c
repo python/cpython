@@ -2327,10 +2327,8 @@ PySSL_dealloc(PySSLSocket *self)
         //
         // See elaborate explanation at
         // https://github.com/python/cpython/pull/123249#discussion_r1766164530
-        PySSL_LOCK(self);
         SSL_set_shutdown(self->ssl, SSL_SENT_SHUTDOWN | SSL_get_shutdown(self->ssl));
         SSL_free(self->ssl);
-        PySSL_UNLOCK(self);
     }
     Py_XDECREF(self->Socket);
     Py_XDECREF(self->ctx);
