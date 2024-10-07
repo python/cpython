@@ -126,7 +126,7 @@ Entry points
    the individual entry point definitions.
 
    Note: it is not currently possible to query for entry points based on
-   their :attr:`EntryPoint.dist` attribute (as different :class:`!Distribution`
+   their :attr:`!EntryPoint.dist` attribute (as different :class:`!Distribution`
    instances do not currently compare equal, even if they have the same attributes)
 
 .. class:: EntryPoints
@@ -305,7 +305,7 @@ Distribution files
     ``size``, and ``hash`` properties corresponding to the distribution
     package's installation metadata for that file.
 
-The :func:`!files()` function takes a
+The :func:`!files` function takes a
 `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_
 name and returns all of the files installed by this distribution. Each file is reported
 as a :class:`PackagePath` instance. For example::
@@ -338,9 +338,9 @@ path to the file::
     PosixPath('/home/gustav/example/lib/site-packages/wheel/util.py')
 
 In the case where the metadata file listing files
-(``RECORD`` or ``SOURCES.txt``) is missing, :func:`!files()` will
+(``RECORD`` or ``SOURCES.txt``) is missing, :func:`!files` will
 return :const:`None`. The caller may wish to wrap calls to
-:func:`!files()` in `always_iterable
+:func:`!files` in `always_iterable
 <https://more-itertools.readthedocs.io/en/stable/api.html#more_itertools.always_iterable>`_
 or otherwise guard against this condition if the target
 distribution is not known to have the metadata present.
@@ -375,7 +375,7 @@ Mapping import to distribution packages
 .. function:: packages_distributions()
 
    Return a mapping from the top level module and import package
-   names found via :attr:`sys.metapath` to the names of the distribution
+   names found via :attr:`sys.meta_path` to the names of the distribution
    packages (if any) that provide the corresponding files.
 
    To allow for namespace packages (which may have members provided by
