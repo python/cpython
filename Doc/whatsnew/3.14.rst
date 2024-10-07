@@ -687,6 +687,10 @@ New Features
   <https://peps.python.org/pep-0630/#type-checking>`__ mentioned in :pep:`630`
   (:gh:`124153`).
 
+* Add :c:func:`PyUnicode_Equal` function to the limited C API:
+  test if two strings are equal.
+  (Contributed by Victor Stinner in :gh:`124502`.)
+
 
 Porting to Python 3.14
 ----------------------

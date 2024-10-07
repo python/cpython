@@ -1,0 +1,2 @@
+Add :c:func:`PyUnicode_Equal` function to the limited C API: test if two
+strings are equal. Patch by Victor Stinner.
