@@ -869,6 +869,12 @@ conforming to :rfc:`8089`.
    :exc:`ValueError` is raised if the URI does not start with ``file:``, or
    the parsed path isn't absolute.
 
+   On POSIX systems, :exc:`ValueError` is raised if the URI specifies a
+   non-local authority::
+
+      >>> Path.from_uri('file://server/share')
+      ValueError: URI is not local: 'file://server/share'
+
    .. versionadded:: 3.13
 
 
