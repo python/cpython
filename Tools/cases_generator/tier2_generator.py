@@ -20,11 +20,13 @@ from generators_common import (
     write_header,
     type_and_null,
     Emitter,
+    TokenIterator,
+    always_true,
 )
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
-from stack import Local, Stack, StackError, get_stack_effect
+from stack import Local, Stack, StackError, Storage
 
 DEFAULT_OUTPUT = ROOT / "Python/executor_cases.c.h"
 
@@ -32,7 +34,7 @@ DEFAULT_OUTPUT = ROOT / "Python/executor_cases.c.h"
 def declare_variable(
     var: StackItem, uop: Uop, required: set[str], out: CWriter
 ) -> None:
-    if var.name not in required:
+    if not var.used or var.name not in required:
         return
     required.remove(var.name)
     type, null = type_and_null(var)
@@ -52,7 +54,7 @@ def declare_variables(uop: Uop, out: CWriter) -> None:
     for var in reversed(uop.stack.inputs):
         stack.pop(var)
     for var in uop.stack.outputs:
-        stack.push(Local.unused(var))
+        stack.push(Local.undefined(var))
     required = set(stack.defined)
     required.discard("unused")
     for var in reversed(uop.stack.inputs):
@@ -69,88 +71,103 @@ class Tier2Emitter(Emitter):
     def error_if(
         self,
         tkn: Token,
-        tkn_iter: Iterator[Token],
+        tkn_iter: TokenIterator,
         uop: Uop,
-        stack: Stack,
+        storage: Storage,
         inst: Instruction | None,
-    ) -> None:
+    ) -> bool:
         self.out.emit_at("if ", tkn)
-        self.emit(next(tkn_iter))
+        lparen = next(tkn_iter)
+        self.emit(lparen)
+        assert lparen.kind == "LPAREN"
+        first_tkn = next(tkn_iter)
+        self.out.emit(first_tkn)
         emit_to(self.out, tkn_iter, "COMMA")
         label = next(tkn_iter).text
         next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
         self.emit(") JUMP_TO_ERROR();\n")
+        return not always_true(first_tkn)
+
 
     def error_no_pop(
         self,
         tkn: Token,
-        tkn_iter: Iterator[Token],
+        tkn_iter: TokenIterator,
         uop: Uop,
-        stack: Stack,
+        storage: Storage,
         inst: Instruction | None,
-    ) -> None:
+    ) -> bool:
         next(tkn_iter)  # LPAREN
         next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
         self.out.emit_at("JUMP_TO_ERROR();", tkn)
+        return False
 
     def deopt_if(
         self,
         tkn: Token,
-        tkn_iter: Iterator[Token],
+        tkn_iter: TokenIterator,
         uop: Uop,
-        unused: Stack,
+        storage: Storage,
         inst: Instruction | None,
-    ) -> None:
+    ) -> bool:
         self.out.emit_at("if ", tkn)
-        self.emit(next(tkn_iter))
+        lparen = next(tkn_iter)
+        self.emit(lparen)
+        assert lparen.kind == "LPAREN"
+        first_tkn = tkn_iter.peek()
         emit_to(self.out, tkn_iter, "RPAREN")
         next(tkn_iter)  # Semi colon
         self.emit(") {\n")
         self.emit("UOP_STAT_INC(uopcode, miss);\n")
         self.emit("JUMP_TO_JUMP_TARGET();\n")
         self.emit("}\n")
+        return not always_true(first_tkn)
 
     def exit_if(  # type: ignore[override]
         self,
         tkn: Token,
-        tkn_iter: Iterator[Token],
+        tkn_iter: TokenIterator,
         uop: Uop,
-        unused: Stack,
+        storage: Storage,
         inst: Instruction | None,
-    ) -> None:
+    ) -> bool:
         self.out.emit_at("if ", tkn)
-        self.emit(next(tkn_iter))
+        lparen = next(tkn_iter)
+        self.emit(lparen)
+        first_tkn = tkn_iter.peek()
         emit_to(self.out, tkn_iter, "RPAREN")
         next(tkn_iter)  # Semi colon
         self.emit(") {\n")
         self.emit("UOP_STAT_INC(uopcode, miss);\n")
         self.emit("JUMP_TO_JUMP_TARGET();\n")
         self.emit("}\n")
+        return not always_true(first_tkn)
 
     def oparg(
         self,
         tkn: Token,
-        tkn_iter: Iterator[Token],
+        tkn_iter: TokenIterator,
         uop: Uop,
-        unused: Stack,
+        storage: Storage,
         inst: Instruction | None,
-    ) -> None:
+    ) -> bool:
         if not uop.name.endswith("_0") and not uop.name.endswith("_1"):
             self.emit(tkn)
-            return
+            return True
         amp = next(tkn_iter)
         if amp.text != "&":
             self.emit(tkn)
             self.emit(amp)
-            return
+            return True
         one = next(tkn_iter)
         assert one.text == "1"
         self.out.emit_at(uop.name[-1], tkn)
+        return True
 
 
-def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> None:
+def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
     locals: dict[str, Local] = {}
     try:
         emitter.out.start_line()
@@ -160,19 +177,9 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> None:
         elif uop.properties.const_oparg >= 0:
             emitter.emit(f"oparg = {uop.properties.const_oparg};\n")
             emitter.emit(f"assert(oparg == CURRENT_OPARG());\n")
-        for var in reversed(uop.stack.inputs):
-            code, local = stack.pop(var)
+        code_list, storage = Storage.for_uop(stack, uop)
+        for code in code_list:
             emitter.emit(code)
-            if local.defined:
-                locals[local.name] = local
-        emitter.emit(stack.define_output_arrays(uop.stack.outputs))
-        outputs: list[Local] = []
-        for var in uop.stack.outputs:
-            if var.name in locals:
-                local = locals[var.name]
-            else:
-                local = Local.local(var)
-            outputs.append(local)
         for cache in uop.caches:
             if cache.name != "unused":
                 if cache.size == 4:
@@ -181,15 +188,10 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> None:
                     type = f"uint{cache.size*16}_t "
                     cast = f"uint{cache.size*16}_t"
                 emitter.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND();\n")
-        emitter.emit_tokens(uop, stack, None)
-        for output in outputs:
-            if output.name in uop.deferred_refs.values():
-                # We've already spilled this when emitting tokens
-                output.cached = False
-            stack.push(output)
+        storage = emitter.emit_tokens(uop, storage, None)
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body[0]) from None
-
+    return storage.stack
 
 SKIPS = ("_EXTENDED_ARG",)
 
@@ -226,7 +228,7 @@ def generate_tier2(
         out.emit(f"case {uop.name}: {{\n")
         declare_variables(uop, out)
         stack = Stack()
-        write_uop(uop, emitter, stack)
+        stack = write_uop(uop, emitter, stack)
         out.start_line()
         if not uop.properties.always_exits:
             stack.flush(out)

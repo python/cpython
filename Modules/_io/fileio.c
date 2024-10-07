@@ -83,6 +83,7 @@ typedef struct {
 } fileio;
 
 #define PyFileIO_Check(state, op) (PyObject_TypeCheck((op), state->PyFileIO_Type))
+#define _PyFileIO_CAST(op) _Py_CAST(fileio*, (op))
 
 /* Forward declarations */
 static PyObject* portable_lseek(fileio *self, PyObject *posobj, int whence, bool suppress_pipe_error);
@@ -90,15 +91,16 @@ static PyObject* portable_lseek(fileio *self, PyObject *posobj, int whence, bool
 int
 _PyFileIO_closed(PyObject *self)
 {
-    return ((fileio *)self)->fd < 0;
+    return (_PyFileIO_CAST(self)->fd < 0);
 }
 
 /* Because this can call arbitrary code, it shouldn't be called when
    the refcount is 0 (that is, not directly from tp_dealloc unless
    the refcount has been temporarily re-incremented). */
 static PyObject *
-fileio_dealloc_warn(fileio *self, PyObject *source)
+fileio_dealloc_warn(PyObject *op, PyObject *source)
 {
+    fileio *self = _PyFileIO_CAST(op);
     if (self->fd >= 0 && self->closefd) {
         PyObject *exc = PyErr_GetRaisedException();
         if (PyErr_ResourceWarning(source, 1, "unclosed file %R", source)) {
@@ -168,7 +170,7 @@ _io_FileIO_close_impl(fileio *self, PyTypeObject *cls)
         exc = PyErr_GetRaisedException();
     }
     if (self->finalizing) {
-        PyObject *r = fileio_dealloc_warn(self, (PyObject *) self);
+        PyObject *r = fileio_dealloc_warn((PyObject*)self, (PyObject *) self);
         if (r) {
             Py_DECREF(r);
         }
@@ -189,23 +191,22 @@ _io_FileIO_close_impl(fileio *self, PyTypeObject *cls)
 static PyObject *
 fileio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    fileio *self;
-
     assert(type != NULL && type->tp_alloc != NULL);
 
-    self = (fileio *) type->tp_alloc(type, 0);
-    if (self != NULL) {
-        self->fd = -1;
-        self->created = 0;
-        self->readable = 0;
-        self->writable = 0;
-        self->appending = 0;
-        self->seekable = -1;
-        self->stat_atopen = NULL;
-        self->closefd = 1;
-        self->weakreflist = NULL;
+    fileio *self = (fileio *) type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
     }
 
+    self->fd = -1;
+    self->created = 0;
+    self->readable = 0;
+    self->writable = 0;
+    self->appending = 0;
+    self->seekable = -1;
+    self->stat_atopen = NULL;
+    self->closefd = 1;
+    self->weakreflist = NULL;
     return (PyObject *) self;
 }
 
@@ -536,36 +537,43 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 }
 
 static int
-fileio_traverse(fileio *self, visitproc visit, void *arg)
+fileio_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    fileio *self = _PyFileIO_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
     return 0;
 }
 
 static int
-fileio_clear(fileio *self)
+fileio_clear(PyObject *op)
 {
+    fileio *self = _PyFileIO_CAST(op);
     Py_CLEAR(self->dict);
     return 0;
 }
 
 static void
-fileio_dealloc(fileio *self)
+fileio_dealloc(PyObject *op)
 {
-    PyTypeObject *tp = Py_TYPE(self);
+    fileio *self = _PyFileIO_CAST(op);
     self->finalizing = 1;
-    if (_PyIOBase_finalize((PyObject *) self) < 0)
+    if (_PyIOBase_finalize(op) < 0) {
         return;
+    }
+
     _PyObject_GC_UNTRACK(self);
     if (self->stat_atopen != NULL) {
         PyMem_Free(self->stat_atopen);
         self->stat_atopen = NULL;
     }
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) self);
-    (void)fileio_clear(self);
-    tp->tp_free((PyObject *)self);
+    if (self->weakreflist != NULL) {
+        PyObject_ClearWeakRefs(op);
+    }
+    (void)fileio_clear(op);
+
+    PyTypeObject *tp = Py_TYPE(op);
+    tp->tp_free(op);
     Py_DECREF(tp);
 }
 
@@ -1148,18 +1156,20 @@ mode_string(fileio *self)
 }
 
 static PyObject *
-fileio_repr(fileio *self)
+fileio_repr(PyObject *op)
 {
-    PyObject *nameobj, *res;
-    const char *type_name = Py_TYPE((PyObject *) self)->tp_name;
+    fileio *self = _PyFileIO_CAST(op);
+    const char *type_name = Py_TYPE(self)->tp_name;
 
     if (self->fd < 0) {
         return PyUnicode_FromFormat("<%.100s [closed]>", type_name);
     }
 
+    PyObject *nameobj;
     if (PyObject_GetOptionalAttr((PyObject *) self, &_Py_ID(name), &nameobj) < 0) {
         return NULL;
     }
+    PyObject *res;
     if (nameobj == NULL) {
         res = PyUnicode_FromFormat(
             "<%.100s fd=%d mode='%s' closefd=%s>",
@@ -1214,8 +1224,9 @@ _io_FileIO_isatty_impl(fileio *self)
    context TOCTOU issues (the fd could be arbitrarily modified by
    surrounding code). */
 static PyObject *
-_io_FileIO_isatty_open_only(fileio *self, void *Py_UNUSED(ignored))
+_io_FileIO_isatty_open_only(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    fileio *self = _PyFileIO_CAST(op);
     if (self->stat_atopen != NULL && !S_ISCHR(self->stat_atopen->st_mode)) {
         Py_RETURN_FALSE;
     }
@@ -1238,8 +1249,8 @@ static PyMethodDef fileio_methods[] = {
     _IO_FILEIO_WRITABLE_METHODDEF
     _IO_FILEIO_FILENO_METHODDEF
     _IO_FILEIO_ISATTY_METHODDEF
-    {"_isatty_open_only", (PyCFunction)_io_FileIO_isatty_open_only, METH_NOARGS},
-    {"_dealloc_warn", (PyCFunction)fileio_dealloc_warn, METH_O, NULL},
+    {"_isatty_open_only", _io_FileIO_isatty_open_only, METH_NOARGS},
+    {"_dealloc_warn", fileio_dealloc_warn, METH_O, NULL},
     {"__reduce__", _PyIOBase_cannot_pickle, METH_NOARGS},
     {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_O},
     {NULL,           NULL}             /* sentinel */
@@ -1248,26 +1259,30 @@ static PyMethodDef fileio_methods[] = {
 /* 'closed' and 'mode' are attributes for backwards compatibility reasons. */
 
 static PyObject *
-get_closed(fileio *self, void *closure)
+fileio_get_closed(PyObject *op, void *closure)
 {
+    fileio *self = _PyFileIO_CAST(op);
     return PyBool_FromLong((long)(self->fd < 0));
 }
 
 static PyObject *
-get_closefd(fileio *self, void *closure)
+fileio_get_closefd(PyObject *op, void *closure)
 {
+    fileio *self = _PyFileIO_CAST(op);
     return PyBool_FromLong((long)(self->closefd));
 }
 
 static PyObject *
-get_mode(fileio *self, void *closure)
+fileio_get_mode(PyObject *op, void *closure)
 {
+    fileio *self = _PyFileIO_CAST(op);
     return PyUnicode_FromString(mode_string(self));
 }
 
 static PyObject *
-get_blksize(fileio *self, void *closure)
+fileio_get_blksize(PyObject *op, void *closure)
 {
+    fileio *self = _PyFileIO_CAST(op);
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
     if (self->stat_atopen != NULL && self->stat_atopen->st_blksize > 1) {
         return PyLong_FromLong(self->stat_atopen->st_blksize);
@@ -1277,11 +1292,11 @@ get_blksize(fileio *self, void *closure)
 }
 
 static PyGetSetDef fileio_getsetlist[] = {
-    {"closed", (getter)get_closed, NULL, "True if the file is closed"},
-    {"closefd", (getter)get_closefd, NULL,
+    {"closed", fileio_get_closed, NULL, "True if the file is closed"},
+    {"closefd", fileio_get_closefd, NULL,
         "True if the file descriptor will be closed by close()."},
-    {"mode", (getter)get_mode, NULL, "String giving the file mode"},
-    {"_blksize", (getter)get_blksize, NULL, "Stat st_blksize if available"},
+    {"mode", fileio_get_mode, NULL, "String giving the file mode"},
+    {"_blksize", fileio_get_blksize, NULL, "Stat st_blksize if available"},
     {NULL},
 };
 
