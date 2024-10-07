@@ -469,20 +469,41 @@ class StrptimeTests(unittest.TestCase):
                     "time.daylight set to %s and passing in %s" %
                     (time.tzname, tz_value, time.daylight, tz_name))
 
-    # NB: Does not roundtrip on some locales like hif_FJ.
-    @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', 'he_IL', '')
+    # NB: Does not roundtrip in some locales due to the ambiguity of
+    # the date and time representation (bugs in locales?):
+    # * Seconds are not included: bem_ZM, bokmal, ff_SN, nb_NO, nn_NO,
+    #   no_NO, norwegian, nynorsk.
+    # * Hours are in 12-hour notation without AM/PM indication: hy_AM,
+    #   id_ID, ms_MY.
+    # * Year is not included: ha_NG.
+    #
+    # BUG: Generates invalid regexp for a number of Arabic locales,
+    # br_FR, csb_PL, lo_LA, thai, th_TH.
+    # BUG: Generates regexp that does not match the current date and time
+    # for a number of Arabic locales, fa_IR, gez_ER, gez_ET, lzh_TW,
+    # my_MM, or_IN, shn_MM, yo_NG.
+    @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', 'he_IL')
     def test_date_time_locale(self):
         # Test %c directive
         self.roundtrip('%c', slice(0, 6))
+
+    # NB: Dates before 1969 do not roundtrip on some locales:
+    # bo_CN, bo_IN, dz_BT, eu_ES, eu_FR.
+    @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', 'he_IL')
+    def test_date_time_locale2(self):
+        # Test %c directive
         self.roundtrip('%c', slice(0, 6), (1900, 1, 1, 0, 0, 0, 0, 1, 0))
 
-    # NB: Dates before 1969 do not work on a number of locales, including C.
+    # BUG: Generates invalid regexp for lo_LA, thai, th_TH.
+    # BUG: Generates regexp that does not match the current date
+    # for a number of Arabic locales, az_IR, eu_ES, eu_FR, fa_IR, lzh_TW,
+    # my_MM, or_IN, shn_MM.
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', 'he_IL', '')
     def test_date_locale(self):
         # Test %x directive
         self.roundtrip('%x', slice(0, 3))
 
-    # NB: Dates before 1969 do not work on a number of locales, including C.
+    # NB: Dates before 1969 do not roundtrip on many locales, including C.
     @unittest.skipIf(
         support.is_emscripten or support.is_wasi,
         "musl libc issue on Emscripten, bpo-46390"
@@ -492,7 +513,16 @@ class StrptimeTests(unittest.TestCase):
         # Test %x directive
         self.roundtrip('%x', slice(0, 3), (1900, 1, 1, 0, 0, 0, 0, 1, 0))
 
-    # NB: Does not distinguish AM/PM time on a number of locales.
+    # NB: Does not roundtrip in some locales due to the ambiguity of
+    # the time representation (bugs in locales?):
+    # * Seconds are not included: bokmal, ff_SN, nb_NO, nn_NO, no_NO,
+    #   norwegian, nynorsk.
+    # * Hours are in 12-hour notation without AM/PM indication: hy_AM,
+    #   ms_MY, sm_WS.
+    # BUG: Generates regexp that does not match the current time for
+    # aa_DJ, aa_ER, aa_ET, am_ET, az_IR, byn_ER, fa_IR, gez_ER, gez_ET,
+    # lzh_TW, my_MM, om_ET, om_KE, or_IN, shn_MM, sid_ET, so_DJ, so_ET,
+    # so_SO, ti_ER, ti_ET, tig_ER, wal_ET.
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP')
     def test_time_locale(self):
         # Test %X directive
