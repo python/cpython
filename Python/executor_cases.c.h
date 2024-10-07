@@ -3337,9 +3337,12 @@
             iter = stack_pointer[-1];
             /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            PyObject *next_o = NULL;
+            if (PyIter_Check(iter_o)) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
             if (next_o == NULL) {
                 if (_PyErr_Occurred(tstate)) {
                     _PyFrame_SetStackPointer(frame, stack_pointer);

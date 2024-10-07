@@ -3921,9 +3921,12 @@
             {
                 /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
                 PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
+                PyObject *next_o = NULL;
+                if (PyIter_Check(iter_o)) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                }
                 if (next_o == NULL) {
                     if (_PyErr_Occurred(tstate)) {
                         _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -4614,9 +4617,12 @@
             _Py_CODEUNIT *target;
             _PyStackRef iter_stackref = TOP();
             PyObject *iter = PyStackRef_AsPyObjectBorrow(iter_stackref);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            PyObject *next = NULL;
+            if (PyIter_Check(iter)) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                next = (*Py_TYPE(iter)->tp_iternext)(iter);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
             if (next != NULL) {
                 PUSH(PyStackRef_FromPyObjectSteal(next));
                 target = next_instr;
