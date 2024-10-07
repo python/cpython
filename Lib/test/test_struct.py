@@ -794,7 +794,7 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         s = struct.Struct('=i2H')
         self.assertEqual(repr(s), f'Struct({s.format!r})')
 
-    @unittest.skipUnless(have_c_complex, "requires C11 complex type")
+    @unittest.skipUnless(have_c_complex, "requires C11 complex type support")
     def test_c_complex_round_trip(self):
         values = [complex(*_) for _ in combinations([1, -1, 0.0, -0.0, 2,
                                                      -3, INF, -INF, NAN], 2)]
@@ -804,7 +804,7 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                     round_trip = struct.unpack(f, struct.pack(f, z))[0]
                     self.assertComplexesAreIdentical(z, round_trip)
 
-    @unittest.skipIf(have_c_complex, "requires no C11 complex type")
+    @unittest.skipIf(have_c_complex, "requires no C11 complex type support")
     def test_c_complex_error(self):
         msg1 = "'E' format not supported on this system"
         msg2 = "'C' format not supported on this system"

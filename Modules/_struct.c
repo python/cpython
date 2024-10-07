@@ -97,8 +97,8 @@ typedef struct { char c; _Bool x; } st_bool;
 #define FLOAT_ALIGN (sizeof(st_float) - sizeof(float))
 #define DOUBLE_ALIGN (sizeof(st_double) - sizeof(double))
 #ifdef Py_HAVE_C_COMPLEX
-#define FLOAT_COMPLEX_ALIGN (sizeof(st_float_complex) - sizeof(float complex))
-#define DOUBLE_COMPLEX_ALIGN (sizeof(st_double_complex) - sizeof(double complex))
+#  define FLOAT_COMPLEX_ALIGN (sizeof(st_float_complex) - sizeof(float complex))
+#  define DOUBLE_COMPLEX_ALIGN (sizeof(st_double_complex) - sizeof(double complex))
 #endif
 #define VOID_P_ALIGN (sizeof(st_void_p) - sizeof(void *))
 #define SIZE_T_ALIGN (sizeof(st_size_t) - sizeof(size_t))
@@ -1023,13 +1023,11 @@ bu_double(_structmodulestate *state, const char *p, const formatdef *f)
 static PyObject *
 bu_float_complex(_structmodulestate *state, const char *p, const formatdef *f)
 {
-    double x, y;
-
-    x = PyFloat_Unpack4(p, 0);
+    double x = PyFloat_Unpack4(p, 0);
     if (x == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
-    y = PyFloat_Unpack4(p + 4, 0);
+    double y = PyFloat_Unpack4(p + 4, 0);
     if (y == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
@@ -1364,13 +1362,11 @@ lu_double(_structmodulestate *state, const char *p, const formatdef *f)
 static PyObject *
 lu_float_complex(_structmodulestate *state, const char *p, const formatdef *f)
 {
-    double x, y;
-
-    x = PyFloat_Unpack4(p, 1);
+    double x = PyFloat_Unpack4(p, 1);
     if (x == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
-    y = PyFloat_Unpack4(p + 4, 1);
+    double y = PyFloat_Unpack4(p + 4, 1);
     if (y == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
