@@ -261,13 +261,12 @@ class HelpFormatter(object):
 
             # find all invocations
             get_invocation = self._format_action_invocation
-            invocations = [get_invocation(action)]
+            invocation_lengths = [len(get_invocation(action)) + self._current_indent]
             for subaction in self._iter_indented_subactions(action):
-                invocations.append(get_invocation(subaction))
+                invocation_lengths.append(len(get_invocation(subaction)) + self._current_indent)
 
             # update the maximum item length
-            invocation_length = max(map(len, invocations))
-            action_length = invocation_length + self._current_indent
+            action_length = max(invocation_lengths)
             self._action_max_length = max(self._action_max_length,
                                           action_length)
 
@@ -1834,8 +1833,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         kwargs.setdefault('parser_class', type(self))
 
         if 'title' in kwargs or 'description' in kwargs:
-            title = _(kwargs.pop('title', 'subcommands'))
-            description = _(kwargs.pop('description', None))
+            title = kwargs.pop('title', _('subcommands'))
+            description = kwargs.pop('description', None)
             self._subparsers = self.add_argument_group(title, description)
         else:
             self._subparsers = self._positionals
@@ -2098,6 +2097,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             # and add the Positional and its args to the list
             for action, arg_count in zip(positionals, arg_counts):
                 args = arg_strings[start_index: start_index + arg_count]
+                # Strip out the first '--' if it is not in PARSER or REMAINDER arg.
+                if (action.nargs not in [PARSER, REMAINDER]
+                    and arg_strings_pattern.find('-', start_index,
+                                                 start_index + arg_count) >= 0):
+                    args.remove('--')
                 start_index += arg_count
                 if args and action.deprecated and action.dest not in warned:
                     self._warning(_("argument '%(argument_name)s' is deprecated") %
@@ -2498,13 +2502,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # Value conversion methods
     # ========================
     def _get_values(self, action, arg_strings):
-        # for everything but PARSER, REMAINDER args, strip out first '--'
-        if not action.option_strings and action.nargs not in [PARSER, REMAINDER]:
-            try:
-                arg_strings.remove('--')
-            except ValueError:
-                pass
-
         # optional argument produces a default when not present
         if not arg_strings and action.nargs == OPTIONAL:
             if action.option_strings:
