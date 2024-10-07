@@ -4,13 +4,6 @@
  * See https://en.wikipedia.org/wiki/CPUID for details.
  */
 
-/*
- * In order to properly maintain this file, the following rules should
- * be observed and enforced if possible:
- *
- * - Defining the SIMD_*_INSTRUCTIONS_DETECTION_GUARD macros should
- */
-
 #include "Python.h"
 #include "pycore_cpuinfo.h"
 
