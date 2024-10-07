@@ -256,9 +256,14 @@ class TimeRE(dict):
         while '%' in format:
             directive_index = format.index('%')+1
             format_char = format[directive_index]
-            processed_format = "%s%s%s" % (processed_format,
-                                           format[:directive_index-1],
-                                           self[format_char])
+            if format_char == 'z':
+                processed_format = "%s(?:%s%s)?" % (processed_format,
+                                            format[:directive_index - 1],
+                                            self[format_char])
+            else:
+                processed_format = "%s%s%s" % (processed_format,
+                                            format[:directive_index-1],
+                                            self[format_char])
             format = format[directive_index+1:]
             match format_char:
                 case 'Y' | 'y' | 'G':
@@ -450,7 +455,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             z = found_dict['z']
             if z == 'Z':
                 gmtoff = 0
-            else:
+            elif z is not None:
                 if z[3] == ':':
                     z = z[:3] + z[4:]
                     if len(z) > 5:
