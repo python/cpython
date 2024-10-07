@@ -1552,7 +1552,7 @@ lp_double_complex(_structmodulestate *state, char *p, PyObject *v, const formatd
     if (PyFloat_Pack8(x.real, p, 1)) {
         return -1;
     }
-    return PyFloat_Pack8(x.imag, p + 4, 1);
+    return PyFloat_Pack8(x.imag, p + 8, 1);
 }
 #endif
 
