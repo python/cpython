@@ -367,6 +367,8 @@ static struct PyMemberDef Dialect_memberlist[] = {
     { NULL }
 };
 
+#undef D_OFF
+
 static PyGetSetDef Dialect_getsetlist[] = {
     { "delimiter",          (getter)Dialect_get_delimiter},
     { "escapechar",             (getter)Dialect_get_escapechar},
@@ -502,6 +504,7 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         DIALECT_GETATTR(skipinitialspace, "skipinitialspace");
         DIALECT_GETATTR(strict, "strict");
     }
+#undef DIALECT_GETATTR
 
     /* check types and convert to C values */
 #define DIASET(meth, name, target, src, dflt) \
@@ -515,6 +518,7 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     DIASET(_set_int, "quoting", &self->quoting, quoting, QUOTE_MINIMAL);
     DIASET(_set_bool, "skipinitialspace", &self->skipinitialspace, skipinitialspace, false);
     DIASET(_set_bool, "strict", &self->strict, strict, false);
+#undef DIASET
 
     /* validate options */
     if (dialect_check_quoting(self->quoting))
@@ -1026,6 +1030,8 @@ static struct PyMemberDef Reader_memberlist[] = {
     { NULL }
 };
 
+#undef R_OFF
+
 
 static PyType_Slot Reader_Type_slots[] = {
     {Py_tp_doc, (char*)Reader_Type_doc},
@@ -1440,6 +1446,8 @@ static struct PyMemberDef Writer_memberlist[] = {
     { "dialect", _Py_T_OBJECT, W_OFF(dialect), Py_READONLY },
     { NULL }
 };
+
+#undef W_OFF
 
 static int
 Writer_traverse(WriterObj *self, visitproc visit, void *arg)
