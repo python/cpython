@@ -829,11 +829,13 @@
         }
 
         case _LOAD_GLOBAL: {
-            _Py_UopsSymbol *res;
+            _Py_UopsSymbol **res;
             _Py_UopsSymbol *null = NULL;
-            res = sym_new_not_null(ctx);
+            res = &stack_pointer[0];
+            for (int _i = 1; --_i >= 0;) {
+                res[_i] = sym_new_not_null(ctx);
+            }
             null = sym_new_null(ctx);
-            stack_pointer[0] = res;
             if (oparg & 1) stack_pointer[1] = null;
             stack_pointer += 1 + (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
@@ -1064,10 +1066,10 @@
             _Py_UopsSymbol *attr;
             _Py_UopsSymbol *null = NULL;
             owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)this_instr->operand;
+            uint16_t offset = (uint16_t)this_instr->operand;
             attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
-            (void)index;
+            (void)offset;
             (void)owner;
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = null;
@@ -1661,15 +1663,18 @@
             _Py_UopsSymbol *self_or_null;
             _Py_UopsSymbol *callable;
             _Py_UOpsAbstractFrame *new_frame;
-            args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            /* The _Py_UOpsAbstractFrame design assumes that we can copy arguments across directly */
-            (void)callable;
-            (void)self_or_null;
-            (void)args;
-            new_frame = NULL;
-            ctx->done = true;
+            (void)(self_or_null);
+            (void)(callable);
+            PyCodeObject *co = NULL;
+            assert((this_instr + 2)->opcode == _PUSH_FRAME);
+            co = get_code_with_logging((this_instr + 2));
+            if (co == NULL) {
+                ctx->done = true;
+                break;
+            }
+            new_frame = frame_new(ctx, co, 0, NULL, 0);
             stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)new_frame;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1686,11 +1691,13 @@
 
         case _EXPAND_METHOD: {
             _Py_UopsSymbol *method;
-            _Py_UopsSymbol *self;
+            _Py_UopsSymbol **self;
+            self = &stack_pointer[-1 - oparg];
             method = sym_new_not_null(ctx);
-            self = sym_new_not_null(ctx);
+            for (int _i = 1; --_i >= 0;) {
+                self[_i] = sym_new_not_null(ctx);
+            }
             stack_pointer[-2 - oparg] = method;
-            stack_pointer[-1 - oparg] = self;
             break;
         }
 
@@ -1767,23 +1774,10 @@
             (void)callable;
             PyCodeObject *co = NULL;
             assert((this_instr + 2)->opcode == _PUSH_FRAME);
-            uint64_t push_operand = (this_instr + 2)->operand;
-            if (push_operand & 1) {
-                co = (PyCodeObject *)(push_operand & ~1);
-                DPRINTF(3, "code=%p ", co);
-                assert(PyCode_Check(co));
-            }
-            else {
-                PyFunctionObject *func = (PyFunctionObject *)push_operand;
-                DPRINTF(3, "func=%p ", func);
-                if (func == NULL) {
-                    DPRINTF(3, "\n");
-                    DPRINTF(1, "Missing function\n");
-                    ctx->done = true;
-                    break;
-                }
-                co = (PyCodeObject *)func->func_code;
-                DPRINTF(3, "code=%p ", co);
+            co = get_code_with_logging((this_instr + 2));
+            if (co == NULL) {
+                ctx->done = true;
+                break;
             }
             assert(self_or_null != NULL);
             assert(args != NULL);
@@ -1866,7 +1860,46 @@
             break;
         }
 
-        /* _CALL_ALLOC_AND_ENTER_INIT is not a viable micro-op for tier 2 */
+        case _CHECK_AND_ALLOCATE_OBJECT: {
+            _Py_UopsSymbol **args;
+            _Py_UopsSymbol *null;
+            _Py_UopsSymbol *callable;
+            _Py_UopsSymbol *self;
+            _Py_UopsSymbol *init;
+            args = &stack_pointer[-oparg];
+            null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            args = &stack_pointer[-oparg];
+            uint32_t type_version = (uint32_t)this_instr->operand;
+            (void)type_version;
+            (void)callable;
+            (void)null;
+            (void)args;
+            self = sym_new_not_null(ctx);
+            init = sym_new_not_null(ctx);
+            stack_pointer[-2 - oparg] = self;
+            stack_pointer[-1 - oparg] = init;
+            break;
+        }
+
+        case _CREATE_INIT_FRAME: {
+            _Py_UopsSymbol **args;
+            _Py_UopsSymbol *init;
+            _Py_UopsSymbol *self;
+            _Py_UOpsAbstractFrame *init_frame;
+            args = &stack_pointer[-oparg];
+            init = stack_pointer[-1 - oparg];
+            self = stack_pointer[-2 - oparg];
+            (void)self;
+            (void)init;
+            (void)args;
+            init_frame = NULL;
+            ctx->done = true;
+            stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)init_frame;
+            stack_pointer += -1 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
         case _EXIT_INIT_CHECK: {
             stack_pointer += -1;
@@ -2006,13 +2039,15 @@
 
         case _EXPAND_METHOD_KW: {
             _Py_UopsSymbol *method;
-            _Py_UopsSymbol *self;
+            _Py_UopsSymbol **self;
             _Py_UopsSymbol *kwnames;
+            self = &stack_pointer[-2 - oparg];
             method = sym_new_not_null(ctx);
-            self = sym_new_not_null(ctx);
+            for (int _i = 1; --_i >= 0;) {
+                self[_i] = sym_new_not_null(ctx);
+            }
             kwnames = sym_new_not_null(ctx);
             stack_pointer[-3 - oparg] = method;
-            stack_pointer[-2 - oparg] = self;
             stack_pointer[-1] = kwnames;
             break;
         }
@@ -2333,6 +2368,10 @@
         }
 
         case _START_EXECUTOR: {
+            break;
+        }
+
+        case _MAKE_WARM: {
             break;
         }
 

@@ -411,7 +411,7 @@ The :mod:`signal` module defines the following functions:
 
    See the :manpage:`pidfd_send_signal(2)` man page for more information.
 
-   .. availability:: Linux >= 5.1
+   .. availability:: Linux >= 5.1, Android >= :func:`build-time <sys.getandroidapilevel>` API level 31
    .. versionadded:: 3.9
 
 
@@ -425,7 +425,7 @@ The :mod:`signal` module defines the following functions:
    signal to a particular Python thread would be to force a running system call
    to fail with :exc:`InterruptedError`.
 
-   Use :func:`threading.get_ident()` or the :attr:`~threading.Thread.ident`
+   Use :func:`threading.get_ident` or the :attr:`~threading.Thread.ident`
    attribute of :class:`threading.Thread` objects to get a suitable value
    for *thread_id*.
 

@@ -124,7 +124,7 @@ message objects.
 
    .. method:: __bytes__()
 
-      Equivalent to :meth:`.as_bytes()`.  Allows ``bytes(msg)`` to produce a
+      Equivalent to :meth:`.as_bytes`.  Allows ``bytes(msg)`` to produce a
       bytes object containing the serialized message.
 
 

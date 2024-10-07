@@ -150,7 +150,7 @@ Cross Platform
 
    On iOS and Android, this returns the user-facing OS name (i.e, ``'iOS``,
    ``'iPadOS'`` or ``'Android'``). To obtain the kernel name (``'Darwin'`` or
-   ``'Linux'``), use :func:`os.uname()`.
+   ``'Linux'``), use :func:`os.uname`.
 
 .. function:: system_alias(system, release, version)
 
@@ -165,7 +165,7 @@ Cross Platform
    returned if the value cannot be determined.
 
    On iOS and Android, this is the user-facing OS version. To obtain the
-   Darwin or Linux kernel version, use :func:`os.uname()`.
+   Darwin or Linux kernel version, use :func:`os.uname`.
 
 .. function:: uname()
 

@@ -1,0 +1,3 @@
+:func:`os.pidfd_open` and :func:`signal.pidfd_send_signal` are now
+unavailable when building against Android API levels older than 31, since
+the underlying system calls may cause a crash.

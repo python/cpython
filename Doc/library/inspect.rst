@@ -545,7 +545,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    has a :meth:`~object.__get__` method, but not a :meth:`~object.__set__`
    method or a :meth:`~object.__delete__` method.  Beyond that, the set of
    attributes varies.  A :attr:`~definition.__name__` attribute is usually
-   sensible, and :attr:`!__doc__` often is.
+   sensible, and :attr:`~definition.__doc__` often is.
 
    Methods implemented via descriptors that also pass one of the other tests
    return ``False`` from the :func:`ismethoddescriptor` test, simply because the
@@ -718,19 +718,19 @@ function.
    Accepts a wide range of Python callables, from plain functions and classes to
    :func:`functools.partial` objects.
 
-   For objects defined in modules using stringized annotations
-   (``from __future__ import annotations``), :func:`signature` will
+   If some of the annotations are strings (e.g., because
+   ``from __future__ import annotations`` was used), :func:`signature` will
    attempt to automatically un-stringize the annotations using
-   :func:`get_annotations`.  The
+   :func:`annotationlib.get_annotations`.  The
    *globals*, *locals*, and *eval_str* parameters are passed
-   into :func:`get_annotations` when resolving the
-   annotations; see the documentation for :func:`get_annotations`
+   into :func:`!annotationlib.get_annotations` when resolving the
+   annotations; see the documentation for :func:`!annotationlib.get_annotations`
    for instructions on how to use these parameters.
 
    Raises :exc:`ValueError` if no signature can be provided, and
    :exc:`TypeError` if that type of object is not supported.  Also,
    if the annotations are stringized, and *eval_str* is not false,
-   the ``eval()`` call(s) to un-stringize the annotations in :func:`get_annotations`
+   the ``eval()`` call(s) to un-stringize the annotations in :func:`annotationlib.get_annotations`
    could potentially raise any kind of exception.
 
    A slash(/) in the signature of a function denotes that the parameters prior
@@ -1043,7 +1043,8 @@ function.
    .. attribute:: BoundArguments.kwargs
 
       A dict of keyword arguments values.  Dynamically computed from the
-      :attr:`arguments` attribute.
+      :attr:`arguments` attribute.  Arguments that can be passed positionally
+      are included in :attr:`args` instead.
 
    .. attribute:: BoundArguments.signature
 
@@ -1247,61 +1248,18 @@ Classes and functions
    .. versionadded:: 3.4
 
 
-.. function:: get_annotations(obj, *, globals=None, locals=None, eval_str=False)
+.. function:: get_annotations(obj, *, globals=None, locals=None, eval_str=False, format=annotationlib.Format.VALUE)
 
    Compute the annotations dict for an object.
 
-   ``obj`` may be a callable, class, or module.
-   Passing in an object of any other type raises :exc:`TypeError`.
-
-   Returns a dict.  ``get_annotations()`` returns a new dict every time
-   it's called; calling it twice on the same object will return two
-   different but equivalent dicts.
-
-   This function handles several details for you:
-
-   * If ``eval_str`` is true, values of type ``str`` will
-     be un-stringized using :func:`eval()`.  This is intended
-     for use with stringized annotations
-     (``from __future__ import annotations``).
-   * If ``obj`` doesn't have an annotations dict, returns an
-     empty dict.  (Functions and methods always have an
-     annotations dict; classes, modules, and other types of
-     callables may not.)
-   * Ignores inherited annotations on classes.  If a class
-     doesn't have its own annotations dict, returns an empty dict.
-   * All accesses to object members and dict values are done
-     using ``getattr()`` and ``dict.get()`` for safety.
-   * Always, always, always returns a freshly created dict.
-
-   ``eval_str`` controls whether or not values of type ``str`` are replaced
-   with the result of calling :func:`eval()` on those values:
-
-   * If eval_str is true, :func:`eval()` is called on values of type ``str``.
-     (Note that ``get_annotations`` doesn't catch exceptions; if :func:`eval()`
-     raises an exception, it will unwind the stack past the ``get_annotations``
-     call.)
-   * If eval_str is false (the default), values of type ``str`` are unchanged.
-
-   ``globals`` and ``locals`` are passed in to :func:`eval()`; see the documentation
-   for :func:`eval()` for more information.  If ``globals`` or ``locals``
-   is ``None``, this function may replace that value with a context-specific
-   default, contingent on ``type(obj)``:
-
-   * If ``obj`` is a module, ``globals`` defaults to ``obj.__dict__``.
-   * If ``obj`` is a class, ``globals`` defaults to
-     ``sys.modules[obj.__module__].__dict__`` and ``locals`` defaults
-     to the ``obj`` class namespace.
-   * If ``obj`` is a callable, ``globals`` defaults to
-     :attr:`obj.__globals__ <function.__globals__>`,
-     although if ``obj`` is a wrapped function (using
-     :func:`functools.update_wrapper`) it is first unwrapped.
-
-   Calling ``get_annotations`` is best practice for accessing the
-   annotations dict of any object.  See :ref:`annotations-howto` for
-   more information on annotations best practices.
+   This is an alias for :func:`annotationlib.get_annotations`; see the documentation
+   of that function for more information.
 
    .. versionadded:: 3.10
+
+   .. versionchanged:: 3.14
+      This function is now an alias for :func:`annotationlib.get_annotations`.
+      Calling it as ``inspect.get_annotations`` will continue to work.
 
 
 .. _inspect-stack:

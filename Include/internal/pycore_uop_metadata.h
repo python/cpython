@@ -54,10 +54,10 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_UNARY_NOT] = HAS_PURE_FLAG,
     [_TO_BOOL] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_TO_BOOL_BOOL] = HAS_EXIT_FLAG,
-    [_TO_BOOL_INT] = HAS_EXIT_FLAG,
+    [_TO_BOOL_INT] = HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
     [_TO_BOOL_LIST] = HAS_EXIT_FLAG,
     [_TO_BOOL_NONE] = HAS_EXIT_FLAG,
-    [_TO_BOOL_STR] = HAS_EXIT_FLAG,
+    [_TO_BOOL_STR] = HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
     [_REPLACE_WITH_TRUE] = 0,
     [_UNARY_INVERT] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_BOTH_INT] = HAS_EXIT_FLAG,
@@ -225,6 +225,8 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CALL_TYPE_1] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
     [_CALL_STR_1] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_CALL_TUPLE_1] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_CHECK_AND_ALLOCATE_OBJECT] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
+    [_CREATE_INIT_FRAME] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_EXIT_INIT_CHECK] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_CALL_BUILTIN_CLASS] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_CALL_BUILTIN_O] = HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -272,6 +274,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_INTERNAL_INCREMENT_OPT_COUNTER] = 0,
     [_DYNAMIC_EXIT] = HAS_ESCAPES_FLAG,
     [_START_EXECUTOR] = 0,
+    [_MAKE_WARM] = 0,
     [_FATAL_ERROR] = 0,
     [_CHECK_VALIDITY_AND_SET_IP] = HAS_DEOPT_FLAG,
     [_DEOPT] = 0,
@@ -327,6 +330,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_CALL_STR_1] = "_CALL_STR_1",
     [_CALL_TUPLE_1] = "_CALL_TUPLE_1",
     [_CALL_TYPE_1] = "_CALL_TYPE_1",
+    [_CHECK_AND_ALLOCATE_OBJECT] = "_CHECK_AND_ALLOCATE_OBJECT",
     [_CHECK_ATTR_CLASS] = "_CHECK_ATTR_CLASS",
     [_CHECK_ATTR_METHOD_LAZY_DICT] = "_CHECK_ATTR_METHOD_LAZY_DICT",
     [_CHECK_ATTR_MODULE] = "_CHECK_ATTR_MODULE",
@@ -360,6 +364,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_CONVERT_VALUE] = "_CONVERT_VALUE",
     [_COPY] = "_COPY",
     [_COPY_FREE_VARS] = "_COPY_FREE_VARS",
+    [_CREATE_INIT_FRAME] = "_CREATE_INIT_FRAME",
     [_DELETE_ATTR] = "_DELETE_ATTR",
     [_DELETE_DEREF] = "_DELETE_DEREF",
     [_DELETE_FAST] = "_DELETE_FAST",
@@ -477,6 +482,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_LOAD_SUPER_ATTR_METHOD] = "_LOAD_SUPER_ATTR_METHOD",
     [_MAKE_CELL] = "_MAKE_CELL",
     [_MAKE_FUNCTION] = "_MAKE_FUNCTION",
+    [_MAKE_WARM] = "_MAKE_WARM",
     [_MAP_ADD] = "_MAP_ADD",
     [_MATCH_CLASS] = "_MATCH_CLASS",
     [_MATCH_KEYS] = "_MATCH_KEYS",
@@ -960,6 +966,10 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 3;
         case _CALL_TUPLE_1:
             return 3;
+        case _CHECK_AND_ALLOCATE_OBJECT:
+            return 2 + oparg;
+        case _CREATE_INIT_FRAME:
+            return 2 + oparg;
         case _EXIT_INIT_CHECK:
             return 1;
         case _CALL_BUILTIN_CLASS:
@@ -1053,6 +1063,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _DYNAMIC_EXIT:
             return 0;
         case _START_EXECUTOR:
+            return 0;
+        case _MAKE_WARM:
             return 0;
         case _FATAL_ERROR:
             return 0;
