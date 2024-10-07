@@ -1,0 +1,2 @@
+Fix SIGSEGV in genexpr after direct changes on gi_frame.f_locals. Patch by
+Mikhail Efimov.
