@@ -127,7 +127,8 @@ support.
    Yields :class:`ModuleInfo` for all submodules on *path*, or, if
    *path* is ``None``, all top-level modules on :data:`sys.path`.
 
-   *path* should be either ``None`` or a list of paths to look for modules in.
+   *path* should be either ``None`` or a list of paths (List[str]) to search
+   for modules.
 
    *prefix* is a string to output on the front of every module name on output.
 
@@ -148,7 +149,8 @@ support.
    Yields :class:`ModuleInfo` for all modules recursively on
    *path*, or, if *path* is ``None``, all accessible modules.
 
-   *path* should be either ``None`` or a list of paths to look for modules in.
+   *path* should be either ``None`` or a list of paths (List[str]) to search
+   for modules.
 
    *prefix* is a string to output on the front of every module name on output.
 
