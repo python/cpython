@@ -362,7 +362,7 @@ Initializing and finalizing the interpreter
    :ref:`Before Python Initialization <pre-init-safe>` for the few exceptions.
 
    This initializes the table of loaded modules (``sys.modules``), and creates
-   the fundamental modules :mod:`builtins`, :mod:`__main__` and :mod:`sys`. 
+   the fundamental modules :mod:`builtins`, :mod:`__main__` and :mod:`sys`.
    It also initializes the module search path (``sys.path``). It does not set
    ``sys.argv``; use the :ref:`Python Initialization Configuration <init-config>`
    API for that. This is a no-op when called for a second time (without calling
