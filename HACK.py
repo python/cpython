@@ -37,9 +37,26 @@ class CLOSER(object):
                 if step is None:
                     stop += 1
                 elif isinstance(step, int):
-                    stop += step
+                    stop += 1 if step > 0 else -1 if step < 0 else 0
             return slice(start, stop, step)
         else:
             return arg
 
 CLOSE = CLOSER()
+
+RANGE = range
+
+class RANGER(object):
+    def __call__(self, *args):
+        print("CALL")
+        return RANGE(*args)
+
+    def __getitem__(self, arg):
+        if isinstance(arg, slice):
+            step = 1 if arg.step is None else arg.step
+            return RANGE(arg.start, arg.stop, step)
+        else:
+            raise ValueError("only range[slice] allowed")
+        print("GETITEM")
+
+range = RANGER()
