@@ -247,6 +247,7 @@ Glossary
                   x += 1
                   print(x)
               return inner
+
       Due to the name of the :attr:`codeobject.co_freevars` attribute, sometimes instead
       referred to as a :term:`free variable`.
 
