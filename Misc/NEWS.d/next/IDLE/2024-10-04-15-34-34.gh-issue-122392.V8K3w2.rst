@@ -1,0 +1,2 @@
+Increase currently inadequate vertical spacing for the IDLE browsers (path,
+module, and stack) on high-resolution monitors.
