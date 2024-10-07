@@ -76,25 +76,20 @@ typedef struct py_simd_features {
     /* XCR0 register bits */
     _Py_SIMD_XCR0_BIT xcr0_sse: 1;
 
-    /*
-     * On some Intel CPUs, it is possible for the CPU to support AVX2
-     * instructions even though the underlying OS does not know about
-     * AVX. In particular, only (SSE) XMM registers will be saved and
-     * restored on context-switch, but not (AVX) YMM registers.
-     */
+    // On some Intel CPUs, it is possible for the CPU to support AVX2
+    // instructions even though the underlying OS does not know about
+    // AVX. In particular, only (SSE) XMM registers will be saved and
+    // restored on context-switch, but not (AVX) YMM registers.
     _Py_SIMD_XCR0_BIT xcr0_avx: 1;
     _Py_SIMD_XCR0_BIT xcr0_avx512_opmask: 1;
     _Py_SIMD_XCR0_BIT xcr0_avx512_zmm_hi256: 1;
     _Py_SIMD_XCR0_BIT xcr0_avx512_hi16_zmm: 1;
 
-    /*
-     * We want to align the bit-fields correctly so the bitsize of
-     * 'done' must be chosen so that the sum of all bit fields is
-     * a multiple of 8.
-     *
-     * Whenever a field is added or removed above, update the
-     * following number (35) and adjust the bitsize of 'done'.
-     */
+    // We want the structure to be aligned correctly, namely
+    // its size in bits must be a multiple of 8.
+    // 
+    // Whenever a field is added or removed above, update the
+    // number of fields (35) and adjust the bitsize of 'done'.
     uint8_t done: 5;    // set if the structure was filled
 } py_simd_features;
 
@@ -107,10 +102,15 @@ extern void
 _Py_disable_simd_features(py_simd_features *flags);
 
 /*
-* Apply a bitwise-OR on all flags in 'out' using those in 'src',
-* unconditionally updating 'out' (i.e. out->done is ignored) and
-* setting 'out->done' to 1.
-*/
+ * Apply a bitwise-OR on all flags in 'out' using those in 'src',
+ * unconditionally updating 'out' (i.e. 'out->done' is ignored).
+ *
+ * This also sets 'out->done' to 1 at the end. 
+ *
+ * Note that the caller is responsible to ensure that the flags set to 1
+ * must not lead to illegal instruction errors if the corresponding SIMD
+ * instruction(s) are used.
+ */
 extern void
 _Py_update_simd_features(py_simd_features *out, const py_simd_features *src);
 
