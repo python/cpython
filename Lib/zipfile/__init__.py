@@ -444,16 +444,21 @@ class ZipInfo:
     def _compresslevel(self, value):
         self.compress_level = value
 
+    @property
+    def file_mode(self):
+        hi = self.external_attr >> 16
+        if hi:
+            return stat.filemode(hi)
+
     def __repr__(self):
         result = ['<%s filename=%r' % (self.__class__.__name__, self.filename)]
         if self.compress_type != ZIP_STORED:
             result.append(' compress_type=%s' %
                           compressor_names.get(self.compress_type,
                                                self.compress_type))
-        hi = self.external_attr >> 16
+        if self.file_mode:
+            result.append(' file_mode=%r' % self.file_mode)
         lo = self.external_attr & 0xFFFF
-        if hi:
-            result.append(' filemode=%r' % stat.filemode(hi))
         if lo:
             result.append(' external_attr=%#x' % lo)
         isdir = self.is_dir()
