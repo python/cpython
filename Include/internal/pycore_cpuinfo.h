@@ -87,7 +87,7 @@ typedef struct py_simd_features {
 
     // We want the structure to be aligned correctly, namely
     // its size in bits must be a multiple of 8.
-    // 
+    //
     // Whenever a field is added or removed above, update the
     // number of fields (35) and adjust the bitsize of 'done'.
     uint8_t done: 5;    // set if the structure was filled
