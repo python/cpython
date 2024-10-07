@@ -2886,14 +2886,9 @@ zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     int strict = 0;
 
     if (kwds) {
-        PyObject *empty = PyTuple_New(0);
-        if (empty == NULL) {
-            return NULL;
-        }
         static char *kwlist[] = {"strict", NULL};
-        int parsed = PyArg_ParseTupleAndKeywords(
-                empty, kwds, "|$p:zip", kwlist, &strict);
-        Py_DECREF(empty);
+        int parsed = PyArg_ParseTupleAndKeywords(_Py_EMPTY_TUPLE, kwds,
+                                                 "|$p:zip", kwlist, &strict);
         if (!parsed) {
             return NULL;
         }

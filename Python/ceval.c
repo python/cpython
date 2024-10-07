@@ -1478,7 +1478,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
     if (co->co_flags & CO_VARARGS) {
         PyObject *u = NULL;
         if (argcount == n) {
-            u = (PyObject *)&_Py_SINGLETON(tuple_empty);
+            u = _Py_EMPTY_TUPLE;
         }
         else {
             u = _PyTuple_FromStackRefSteal(args + n, argcount - n);

@@ -1561,7 +1561,6 @@ static int
 ImportError_init(PyImportErrorObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"name", "path", "name_from", 0};
-    PyObject *empty_tuple;
     PyObject *msg = NULL;
     PyObject *name = NULL;
     PyObject *path = NULL;
@@ -1570,15 +1569,11 @@ ImportError_init(PyImportErrorObject *self, PyObject *args, PyObject *kwds)
     if (BaseException_init((PyBaseExceptionObject *)self, args, NULL) == -1)
         return -1;
 
-    empty_tuple = PyTuple_New(0);
-    if (!empty_tuple)
-        return -1;
-    if (!PyArg_ParseTupleAndKeywords(empty_tuple, kwds, "|$OOO:ImportError", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(_Py_EMPTY_TUPLE, kwds,
+                                     "|$OOO:ImportError", kwlist,
                                      &name, &path, &name_from)) {
-        Py_DECREF(empty_tuple);
         return -1;
     }
-    Py_DECREF(empty_tuple);
 
     Py_XSETREF(self->name, Py_XNewRef(name));
     Py_XSETREF(self->path, Py_XNewRef(path));
@@ -2240,16 +2235,11 @@ NameError_init(PyNameErrorObject *self, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    PyObject *empty_tuple = PyTuple_New(0);
-    if (!empty_tuple) {
-        return -1;
-    }
-    if (!PyArg_ParseTupleAndKeywords(empty_tuple, kwds, "|$O:NameError", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(_Py_EMPTY_TUPLE, kwds,
+                                     "|$O:NameError", kwlist,
                                      &name)) {
-        Py_DECREF(empty_tuple);
         return -1;
     }
-    Py_DECREF(empty_tuple);
 
     Py_XSETREF(self->name, Py_XNewRef(name));
 
@@ -2314,16 +2304,11 @@ AttributeError_init(PyAttributeErrorObject *self, PyObject *args, PyObject *kwds
         return -1;
     }
 
-    PyObject *empty_tuple = PyTuple_New(0);
-    if (!empty_tuple) {
-        return -1;
-    }
-    if (!PyArg_ParseTupleAndKeywords(empty_tuple, kwds, "|$OO:AttributeError", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(_Py_EMPTY_TUPLE, kwds,
+                                     "|$OO:AttributeError", kwlist,
                                      &name, &obj)) {
-        Py_DECREF(empty_tuple);
         return -1;
     }
-    Py_DECREF(empty_tuple);
 
     Py_XSETREF(self->name, Py_XNewRef(name));
     Py_XSETREF(self->obj, Py_XNewRef(obj));

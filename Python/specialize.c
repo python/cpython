@@ -2743,11 +2743,11 @@ static const PyBytesObject no_location = {
 
 const struct _PyCode8 _Py_InitCleanup = {
     _PyVarObject_HEAD_INIT(&PyCode_Type, 3),
-    .co_consts = (PyObject *)&_Py_SINGLETON(tuple_empty),
-    .co_names = (PyObject *)&_Py_SINGLETON(tuple_empty),
+    .co_consts = _Py_EMPTY_TUPLE,
+    .co_names = _Py_EMPTY_TUPLE,
     .co_exceptiontable = (PyObject *)&_Py_SINGLETON(bytes_empty),
     .co_flags = CO_OPTIMIZED | CO_NO_MONITORING_EVENTS,
-    .co_localsplusnames = (PyObject *)&_Py_SINGLETON(tuple_empty),
+    .co_localsplusnames = _Py_EMPTY_TUPLE,
     .co_localspluskinds = (PyObject *)&_Py_SINGLETON(bytes_empty),
     .co_filename = &_Py_ID(__init__),
     .co_name = &_Py_ID(__init__),
