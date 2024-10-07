@@ -1838,10 +1838,10 @@
             oparg = CURRENT_OPARG();
             globals_keys = (PyDictKeysObject *)stack_pointer[-1].bits;
             uint16_t index = (uint16_t)CURRENT_OPERAND();
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(globals_keys);
             PyObject *res_o = entries[index].me_value;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             if (res_o == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -1864,10 +1864,10 @@
             oparg = CURRENT_OPARG();
             builtins_keys = (PyDictKeysObject *)stack_pointer[-1].bits;
             uint16_t index = (uint16_t)CURRENT_OPERAND();
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(builtins_keys);
             PyObject *res_o = entries[index].me_value;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             if (res_o == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
