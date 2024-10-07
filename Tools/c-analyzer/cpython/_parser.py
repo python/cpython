@@ -84,10 +84,12 @@ Python/frozen_modules/*.h
 Python/generated_cases.c.h
 Python/executor_cases.c.h
 Python/optimizer_cases.c.h
+Python/partial_evaluator_cases.c.h
 
 # not actually source
 Python/bytecodes.c
 Python/optimizer_bytecodes.c
+Python/partial_evaluator_bytecodes.c
 
 # mimalloc
 Objects/mimalloc/*.c

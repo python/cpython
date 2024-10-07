@@ -140,7 +140,7 @@ dummy_func(
     switch (opcode) {
 
 // BEGIN BYTECODES //
-        pure inst(NOP, (--)) {
+        _static inst(NOP, (--)) {
         }
 
         family(RESUME, 0) = {
@@ -239,7 +239,7 @@ dummy_func(
             value = PyStackRef_DUP(value_s);
         }
 
-        replicate(8) pure inst(LOAD_FAST, (-- value)) {
+        replicate(8) _static inst(LOAD_FAST, (-- value)) {
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
         }
@@ -261,7 +261,7 @@ dummy_func(
             value = PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
         }
 
-        replicate(8) inst(STORE_FAST, (value --)) {
+        replicate(8) _static inst(STORE_FAST, (value --)) {
             SETLOCAL(oparg, value);
         }
 
@@ -283,7 +283,7 @@ dummy_func(
             SETLOCAL(oparg2, value2);
         }
 
-        pure inst(POP_TOP, (value --)) {
+        _static inst(POP_TOP, (value --)) {
             DECREF_INPUTS();
         }
 
@@ -4704,7 +4704,7 @@ dummy_func(
             if (lltrace >= 2) {
                 printf("SIDE EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
-                printf(", exit %u, temp %d, target %d -> %s]\n",
+                printf(", exit %ld, temp %d, target %d -> %s]\n",
                     exit - current_executor->exits, exit->temperature.as_counter,
                     (int)(target - _PyCode_CODE(code)),
                     _PyOpcode_OpName[target->op.code]);
@@ -4749,11 +4749,11 @@ dummy_func(
             DEOPT_IF(!current_executor->vm_data.valid);
         }
 
-        tier2 pure op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
+        tier2 _static op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
             value = PyStackRef_FromPyObjectNew(ptr);
         }
 
-        tier2 pure op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
+        tier2 _static op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
             value = PyStackRef_FromPyObjectImmortal(ptr);
         }
 
@@ -4793,7 +4793,7 @@ dummy_func(
             if (lltrace >= 2) {
                 printf("DYNAMIC EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
-                printf(", exit %u, temp %d, target %d -> %s]\n",
+                printf(", exit %ld, temp %d, target %d -> %s]\n",
                     exit - current_executor->exits, exit->temperature.as_counter,
                     (int)(target - _PyCode_CODE(_PyFrame_GetCode(frame))),
                     _PyOpcode_OpName[target->op.code]);

@@ -42,6 +42,8 @@ Python/bytecodes.c            @markshannon
 Python/optimizer*.c           @markshannon
 Python/optimizer_analysis.c   @Fidget-Spinner
 Python/optimizer_bytecodes.c  @Fidget-Spinner
+Python/partial_evaluator.c   @Fidget-Spinner
+Python/partial_evaluator_bytecodes.c  @Fidget-Spinner
 Python/symtable.c             @JelleZijlstra @carljm
 Lib/_pyrepl/*                 @pablogsal @lysnikolaou @ambv
 Lib/test/test_patma.py        @brandtbucher
