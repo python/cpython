@@ -3921,12 +3921,20 @@
             {
                 /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
                 PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-                PyObject *next_o = NULL;
-                if (PyIter_Check(iter_o)) {
+                PyTypeObject *type = Py_TYPE(iter_o);
+                iternextfunc iternext = type->tp_iternext;
+                if (iternext == NULL) {
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                              "'for' requires an object with "
+                              "__iter__ method, got %.100s",
+                              type->tp_name);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
+                    goto error;
                 }
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyObject *next_o = (*iternext)(iter_o);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (next_o == NULL) {
                     if (_PyErr_Occurred(tstate)) {
                         _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -4617,12 +4625,20 @@
             _Py_CODEUNIT *target;
             _PyStackRef iter_stackref = TOP();
             PyObject *iter = PyStackRef_AsPyObjectBorrow(iter_stackref);
-            PyObject *next = NULL;
-            if (PyIter_Check(iter)) {
+            PyTypeObject *type = Py_TYPE(iter);
+            iternextfunc iternext = type->tp_iternext;
+            if (iternext == NULL) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                next = (*Py_TYPE(iter)->tp_iternext)(iter);
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "'for' requires an object with "
+                              "__iter__ method, got %.100s",
+                              type->tp_name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                goto error;
             }
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyObject *next = (*iternext)(iter);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             if (next != NULL) {
                 PUSH(PyStackRef_FromPyObjectSteal(next));
                 target = next_instr;

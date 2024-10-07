@@ -3337,12 +3337,20 @@
             iter = stack_pointer[-1];
             /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            PyObject *next_o = NULL;
-            if (PyIter_Check(iter_o)) {
+            PyTypeObject *type = Py_TYPE(iter_o);
+            iternextfunc iternext = type->tp_iternext;
+            if (iternext == NULL) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "'for' requires an object with "
+                              "__iter__ method, got %.100s",
+                              type->tp_name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                JUMP_TO_ERROR();
             }
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyObject *next_o = (*iternext)(iter_o);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             if (next_o == NULL) {
                 if (_PyErr_Occurred(tstate)) {
                     _PyFrame_SetStackPointer(frame, stack_pointer);

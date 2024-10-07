@@ -269,10 +269,22 @@ class GeneratorTest(unittest.TestCase):
         loop()
 
     def test_issue125038(self):
-        g = (x for x in range(10))
-        g.gi_frame.f_locals['.0'] = range(20)
-        l = list(g)
-        self.assertListEqual(l, [])
+        def get_generator():
+            g = (x for x in range(10))
+            g.gi_frame.f_locals['.0'] = range(20)
+            return g
+
+        def genexpr_to_list():
+            try:
+                l = list(get_generator())
+                return "NoError"
+            except TypeError:
+                return "TypeError"
+
+        # This should not raise
+        r = genexpr_to_list()
+
+        self.assertIs(r, "TypeError")
 
 class ExceptionTest(unittest.TestCase):
     # Tests for the issue #23353: check that the currently handled exception
