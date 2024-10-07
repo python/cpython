@@ -2442,6 +2442,41 @@ sys__is_gil_enabled_impl(PyObject *module)
 #endif
 }
 
+#ifdef Py_GIL_DISABLED
+static int
+count_tlbc_blocks(PyObject *obj, Py_ssize_t *count)
+{
+    if (PyCode_Check(obj)) {
+        _PyCodeArray *tlbc = ((PyCodeObject *)obj)->co_tlbc;
+        // First entry always points to the bytecode at the end of the code
+        // object. Exclude it from the count as it is allocated as part of
+        // creating the code object.
+        for (Py_ssize_t i = 1; i < tlbc->size; i++) {
+            if (tlbc->entries[i] != NULL) {
+                (*count)++;
+            }
+        }
+    }
+    return 1;
+}
+
+/*[clinic input]
+sys._get_tlbc_blocks -> Py_ssize_t
+
+Return the total number of thread-local bytecode copies, excluding the copies that are embedded in the code object.
+[clinic start generated code]*/
+
+static Py_ssize_t
+sys__get_tlbc_blocks_impl(PyObject *module)
+/*[clinic end generated code: output=4b4e350583cbd643 input=37c14e47d8905a95]*/
+{
+    Py_ssize_t count = 0;
+    PyUnstable_GC_VisitObjects((gcvisitobjects_t) count_tlbc_blocks, &count);
+    return count;
+}
+#endif   /* Py_GIL_DISABLED */
+
+
 
 static PerfMapState perf_map_state;
 
@@ -2617,6 +2652,7 @@ static PyMethodDef sys_methods[] = {
 #endif
     SYS__GET_CPU_COUNT_CONFIG_METHODDEF
     SYS__IS_GIL_ENABLED_METHODDEF
+    SYS__GET_TLBC_BLOCKS_METHODDEF
     {NULL, NULL}  // sentinel
 };
 

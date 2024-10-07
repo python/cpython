@@ -184,7 +184,7 @@ lltrace_instruction(_PyInterpreterFrame *frame,
     dump_stack(frame, stack_pointer);
     const char *opname = _PyOpcode_OpName[opcode];
     assert(opname != NULL);
-    int offset = (int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame)));
+    int offset = (int)(next_instr - _PyFrame_GetBytecode(frame));
     if (OPCODE_HAS_ARG((int)_PyOpcode_Deopt[opcode])) {
         printf("%d: %s %d\n", offset * 2, opname, oparg);
     }
@@ -811,6 +811,19 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         }
         /* Because this avoids the RESUME,
          * we need to update instrumentation */
+#ifdef Py_GIL_DISABLED
+        /* Load thread-local bytecode */
+        _Py_CODEUNIT *bytecode =
+            _PyEval_GetExecutableCode(_PyFrame_GetCode(frame));
+        if (bytecode == NULL) {
+            goto error;
+        }
+        if (frame->bytecode != bytecode) {
+            ptrdiff_t off = frame->instr_ptr - frame->bytecode;
+            frame->bytecode = bytecode;
+            frame->instr_ptr = frame->bytecode + off;
+        }
+#endif
         _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
         monitor_throw(tstate, frame, frame->instr_ptr);
         /* TO DO -- Monitor throw entry. */
@@ -953,7 +966,7 @@ exception_unwind:
                 Python main loop. */
             PyObject *exc = _PyErr_GetRaisedException(tstate);
             PUSH(PyStackRef_FromPyObjectSteal(exc));
-            next_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + handler;
+            next_instr = _PyFrame_GetBytecode(frame) + handler;
 
             if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
                 goto exception_unwind;
@@ -1109,7 +1122,7 @@ exit_to_tier1_dynamic:
     goto goto_to_tier1;
 exit_to_tier1:
     assert(next_uop[-1].format == UOP_FORMAT_TARGET);
-    next_instr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
+    next_instr = next_uop[-1].target + _PyFrame_GetBytecode(frame);
 goto_to_tier1:
 #ifdef Py_DEBUG
     if (lltrace >= 2) {
@@ -3208,5 +3221,3 @@ _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *na
     }
     return value;
 }
-
-

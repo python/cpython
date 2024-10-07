@@ -6,15 +6,19 @@
 #include "pycore_code.h"          // _PyCodeConstructor
 #include "pycore_frame.h"         // FRAME_SPECIALS_SIZE
 #include "pycore_hashtable.h"     // _Py_hashtable_t
+#include "pycore_index_pool.h"     // _PyIndexPool
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
 #include "pycore_object.h"        // _PyObject_SetDeferredRefcount
 #include "pycore_opcode_metadata.h" // _PyOpcode_Deopt, _PyOpcode_Caches
 #include "pycore_opcode_utils.h"  // RESUME_AT_FUNC_START
+#include "pycore_pymem.h"         // _PyMem_FreeDelayed
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "clinic/codeobject.c.h"
+
+#define INITIAL_SPECIALIZED_CODE_SIZE 16
 
 static const char *
 code_event_name(PyCodeEvent event) {
@@ -447,9 +451,14 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
     return 0;
 }
 
-extern void _PyCode_Quicken(PyCodeObject *code);
+extern void _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size);
 
-static void
+#ifdef Py_GIL_DISABLED
+extern void _PyCode_DisableSpecialization(_Py_CODEUNIT *instructions, Py_ssize_t size);
+static _PyCodeArray * _PyCodeArray_New(Py_ssize_t size);
+#endif
+
+static int
 init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
 {
     int nlocalsplus = (int)PyTuple_GET_SIZE(con->localsplusnames);
@@ -512,14 +521,31 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
 
     memcpy(_PyCode_CODE(co), PyBytes_AS_STRING(con->code),
            PyBytes_GET_SIZE(con->code));
+#ifdef Py_GIL_DISABLED
+    co->co_tlbc = _PyCodeArray_New(INITIAL_SPECIALIZED_CODE_SIZE);
+    if (co->co_tlbc == NULL) {
+        return -1;
+    }
+    co->co_tlbc->entries[0] = co->co_code_adaptive;
+#endif
     int entry_point = 0;
     while (entry_point < Py_SIZE(co) &&
         _PyCode_CODE(co)[entry_point].op.code != RESUME) {
         entry_point++;
     }
     co->_co_firsttraceable = entry_point;
-    _PyCode_Quicken(co);
+#ifdef Py_GIL_DISABLED
+    if (interp->config.tlbc_enabled) {
+        _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co));
+    }
+    else {
+        _PyCode_DisableSpecialization(_PyCode_CODE(co), Py_SIZE(co));
+    }
+#else
+    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co));
+#endif
     notify_code_watchers(PY_CODE_EVENT_CREATE, co);
+    return 0;
 }
 
 static int
@@ -674,7 +700,12 @@ _PyCode_New(struct _PyCodeConstructor *con)
         PyErr_NoMemory();
         return NULL;
     }
-    init_code(co, con);
+
+    if (init_code(co, con) < 0) {
+        Py_DECREF(co);
+        return NULL;
+    }
+
 #ifdef Py_GIL_DISABLED
     _PyObject_SetDeferredRefcount((PyObject *)co);
     _PyObject_GC_TRACK(co);
@@ -1870,6 +1901,17 @@ code_dealloc(PyCodeObject *co)
         PyObject_ClearWeakRefs((PyObject*)co);
     }
     free_monitoring_data(co->_co_monitoring);
+#ifdef Py_GIL_DISABLED
+    // The first element always points to the mutable bytecode at the end of
+    // the code object, which will be freed when the code object is freed.
+    for (Py_ssize_t i = 1; i < co->co_tlbc->size; i++) {
+        char *entry = co->co_tlbc->entries[i];
+        if (entry != NULL) {
+            PyMem_Free(entry);
+        }
+    }
+    PyMem_Free(co->co_tlbc);
+#endif
     PyObject_Free(co);
 }
 
@@ -2633,5 +2675,129 @@ _PyCode_Fini(PyInterpreterState *interp)
         _Py_hashtable_destroy(state->constants);
         state->constants = NULL;
     }
+    _PyIndexPool_Fini(&interp->tlbc_indices);
 #endif
 }
+
+#ifdef Py_GIL_DISABLED
+
+// Thread-local bytecode (TLBC)
+//
+// Each thread specializes a thread-local copy of the bytecode, created on the
+// first RESUME, in free-threaded builds. All copies of the bytecode for a code
+// object are stored in the `co_tlbc` array. Threads reserve a globally unique
+// index identifying its copy of the bytecode in all `co_tlbc` arrays at thread
+// creation and release the index at thread destruction. The first entry in
+// every `co_tlbc` array always points to the "main" copy of the bytecode that
+// is stored at the end of the code object. This ensures that no bytecode is
+// copied for programs that do not use threads.
+//
+// Thread-local bytecode can be disabled at runtime by providing either `-X
+// tlbc=0` or `PYTHON_TLBC=0`. Disabling thread-local bytecode also disables
+// specialization.
+//
+// Concurrent modifications to the bytecode made by the specializing
+// interpreter and instrumentation use atomics, with specialization taking care
+// not to overwrite an instruction that was instrumented concurrently.
+
+Py_ssize_t
+_Py_ReserveTLBCIndex(PyInterpreterState *interp)
+{
+    return _PyIndexPool_AllocIndex(&interp->tlbc_indices);
+}
+
+void
+_Py_ClearTLBCIndex(_PyThreadStateImpl *tstate)
+{
+    PyInterpreterState *interp = ((PyThreadState *)tstate)->interp;
+    _PyIndexPool_FreeIndex(&interp->tlbc_indices, tstate->tlbc_index);
+}
+
+static _PyCodeArray *
+_PyCodeArray_New(Py_ssize_t size)
+{
+    _PyCodeArray *arr = PyMem_Calloc(
+        1, offsetof(_PyCodeArray, entries) + sizeof(void *) * size);
+    if (arr == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    arr->size = size;
+    return arr;
+}
+
+static void
+copy_code(_Py_CODEUNIT *dst, PyCodeObject *co)
+{
+    int code_len = (int) Py_SIZE(co);
+    for (int i = 0; i < code_len; i += _PyInstruction_GetLength(co, i)) {
+        dst[i] = _Py_GetBaseCodeUnit(co, i);
+    }
+    _PyCode_Quicken(dst, code_len);
+}
+
+static Py_ssize_t
+get_pow2_greater(Py_ssize_t initial, Py_ssize_t limit)
+{
+    // initial must be a power of two
+    assert(!(initial & (initial - 1)));
+    Py_ssize_t res = initial;
+    while (res && res < limit) {
+        res <<= 1;
+    }
+    return res;
+}
+
+static _Py_CODEUNIT *
+create_tlbc_lock_held(PyCodeObject *co, Py_ssize_t idx)
+{
+    _PyCodeArray *tlbc = co->co_tlbc;
+    if (idx >= tlbc->size) {
+        Py_ssize_t new_size = get_pow2_greater(tlbc->size, idx + 1);
+        if (!new_size) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        _PyCodeArray *new_tlbc = _PyCodeArray_New(new_size);
+        if (new_tlbc == NULL) {
+            return NULL;
+        }
+        memcpy(new_tlbc->entries, tlbc->entries, tlbc->size * sizeof(void *));
+        _Py_atomic_store_ptr_release(&co->co_tlbc, new_tlbc);
+        _PyMem_FreeDelayed(tlbc);
+        tlbc = new_tlbc;
+    }
+    char *bc = PyMem_Calloc(1, _PyCode_NBYTES(co));
+    if (bc == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    copy_code((_Py_CODEUNIT *) bc, co);
+    assert(tlbc->entries[idx] == NULL);
+    tlbc->entries[idx] = bc;
+    return (_Py_CODEUNIT *) bc;
+}
+
+static _Py_CODEUNIT *
+get_tlbc_lock_held(PyCodeObject *co)
+{
+    _PyCodeArray *tlbc = co->co_tlbc;
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)PyThreadState_GET();
+    Py_ssize_t idx = tstate->tlbc_index;
+    if (idx < tlbc->size && tlbc->entries[idx] != NULL) {
+        return (_Py_CODEUNIT *)tlbc->entries[idx];
+    }
+    return create_tlbc_lock_held(co, idx);
+}
+
+_Py_CODEUNIT *
+_PyCode_GetTLBC(PyCodeObject *co)
+{
+    _Py_CODEUNIT *result;
+    Py_BEGIN_CRITICAL_SECTION(co);
+    result = get_tlbc_lock_held(co);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
+#endif

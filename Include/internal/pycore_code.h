@@ -11,6 +11,7 @@ extern "C" {
 #include "pycore_stackref.h"    // _PyStackRef
 #include "pycore_lock.h"        // PyMutex
 #include "pycore_backoff.h"     // _Py_BackoffCounter
+#include "pycore_tstate.h"      // _PyThreadStateImpl
 
 
 /* Each instruction in a code object is a fixed-width value,
@@ -313,11 +314,41 @@ extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 /** API for executors */
 extern void _PyCode_Clear_Executors(PyCodeObject *code);
 
+#define ENABLE_SPECIALIZATION 1
+
 #ifdef Py_GIL_DISABLED
 // gh-115999 tracks progress on addressing this.
-#define ENABLE_SPECIALIZATION 0
+#define ENABLE_SPECIALIZED_BINARY_OP ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_BINARY_SUBSCR 0 && ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_CALL 0 && ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_CALL_KW 0 && ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_COMPARE_OP 0 && ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_CONTAINS_OP 0 && ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_FOR_ITER 0 && ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_LOAD_ATTR 0 && ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_LOAD_GLOBAL 0 && ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_LOAD_SUPER_ATTR 0 && ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_SEND 0 && ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_STORE_ATTR 0 && ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_STORE_SUBSCR 0 && ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_TO_BOOL 0 && ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_UNPACK_SEQUENCE 0 && ENABLE_SPECIALIZATION
 #else
-#define ENABLE_SPECIALIZATION 1
+#define ENABLE_SPECIALIZED_BINARY_OP ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_BINARY_SUBSCR ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_CALL ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_CALL_KW ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_COMPARE_OP ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_CONTAINS_OP ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_FOR_ITER ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_LOAD_ATTR ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_LOAD_GLOBAL ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_LOAD_SUPER_ATTR ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_SEND ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_STORE_ATTR ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_STORE_SUBSCR ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_TO_BOOL ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZED_UNPACK_SEQUENCE ENABLE_SPECIALIZATION
 #endif
 
 /* Specialization functions */
@@ -599,6 +630,36 @@ extern int _PyInstruction_GetLength(PyCodeObject *code, int offset);
 struct _PyCode8 _PyCode_DEF(8);
 
 PyAPI_DATA(const struct _PyCode8) _Py_InitCleanup;
+
+#ifdef Py_GIL_DISABLED
+
+// Return a pointer to the thread-local bytecode for the current thread, if it
+// exists.
+static inline _Py_CODEUNIT *
+_PyCode_GetTLBCFast(PyCodeObject *co)
+{
+    _PyCodeArray *code = _Py_atomic_load_ptr_acquire(&co->co_tlbc);
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *) PyThreadState_GET();
+    Py_ssize_t idx = tstate->tlbc_index;
+    if (idx < code->size && code->entries[idx] != NULL) {
+        return (_Py_CODEUNIT *) code->entries[idx];
+    }
+    return NULL;
+}
+
+// Return a pointer to the thread-local bytecode for the current thread,
+// creating it if necessary.
+extern _Py_CODEUNIT *_PyCode_GetTLBC(PyCodeObject *co);
+
+// Reserve an index for the current thread into thread-local bytecode
+// arrays
+//
+// Returns the reserved index or -1 on error.
+extern Py_ssize_t _Py_ReserveTLBCIndex(PyInterpreterState *interp);
+
+// Release the current thread's index into thread-local bytecode arrays
+extern void _Py_ClearTLBCIndex(_PyThreadStateImpl *tstate);
+#endif
 
 #ifdef __cplusplus
 }

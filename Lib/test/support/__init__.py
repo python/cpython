@@ -1257,6 +1257,20 @@ def requires_specialization(test):
         _opcode.ENABLE_SPECIALIZATION, "requires specialization")(test)
 
 
+def requires_specialization_of(*ops):
+    missing_ops = []
+    is_enabled = True
+    for op in ops:
+        is_op_specialized = getattr(_opcode, f"ENABLE_SPECIALIZED_{op}")
+        if not is_op_specialized:
+            missing_ops.append(op)
+        is_enabled = is_enabled and is_op_specialized
+    reason = f"requires specialized {', '.join(missing_ops)}"
+    def f(test):
+        return unittest.skipUnless(is_enabled, reason)(test)
+    return f
+
+
 #=======================================================================
 # Check for the presence of docstrings.
 

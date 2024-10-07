@@ -37,6 +37,8 @@
 
         /* _QUICKEN_RESUME is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
+        /* _LOAD_BYTECODE is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
+
         case _RESUME_CHECK: {
             #if defined(__EMSCRIPTEN__)
             if (_Py_emscripten_signal_clock == 0) {
@@ -52,6 +54,19 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            #ifdef Py_GIL_DISABLED
+            _Py_CODEUNIT *bytecode = _PyEval_GetExecutableCode(_PyFrame_GetCode(frame));
+            if (bytecode == NULL) JUMP_TO_ERROR();
+            if (frame->bytecode != bytecode) {
+                /* Avoid using this_instr here so that _RESUME_CHECK can be included
+                   in traces.
+                 */
+                int off = frame->instr_ptr - frame->bytecode;
+                frame->bytecode = bytecode;
+                frame->instr_ptr = frame->bytecode + off;
+                next_instr = frame->instr_ptr + 1;
+            }
+            #endif
             break;
         }
 
@@ -4127,7 +4142,7 @@
             self = stack_pointer[-2 - oparg];
             _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
                 tstate, (PyCodeObject *)&_Py_InitCleanup, 1, frame);
-            assert(_PyCode_CODE(_PyFrame_GetCode(shim))[0].op.code == EXIT_INIT_CHECK);
+            assert(_PyFrame_GetBytecode(shim)[0].op.code == EXIT_INIT_CHECK);
             /* Push self onto stack of shim */
             shim->localsplus[0] = PyStackRef_DUP(self);
             args[-1] = self;
@@ -5245,7 +5260,7 @@
             PyObject *exit_p = (PyObject *)CURRENT_OPERAND();
             _PyExitData *exit = (_PyExitData *)exit_p;
             PyCodeObject *code = _PyFrame_GetCode(frame);
-            _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
+            _Py_CODEUNIT *target = _PyFrame_GetBytecode(frame) + exit->target;
             #if defined(Py_DEBUG) && !defined(_Py_JIT)
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
             if (lltrace >= 2) {
@@ -5253,7 +5268,7 @@
                 _PyUOpPrint(&next_uop[-1]);
                 printf(", exit %u, temp %d, target %d -> %s]\n",
                        exit - current_executor->exits, exit->temperature.as_counter,
-                       (int)(target - _PyCode_CODE(code)),
+                       (int)(target - _PyFrame_GetBytecode(frame)),
                        _PyOpcode_OpName[target->op.code]);
             }
             #endif
@@ -5391,7 +5406,7 @@
                 _PyUOpPrint(&next_uop[-1]);
                 printf(", exit %u, temp %d, target %d -> %s]\n",
                        exit - current_executor->exits, exit->temperature.as_counter,
-                       (int)(target - _PyCode_CODE(_PyFrame_GetCode(frame))),
+                       (int)(target - _PyFrame_GetBytecode(frame)),
                        _PyOpcode_OpName[target->op.code]);
             }
             #endif
@@ -5466,7 +5481,7 @@
         case _ERROR_POP_N: {
             oparg = CURRENT_OPARG();
             uint32_t target = (uint32_t)CURRENT_OPERAND();
-            frame->instr_ptr = ((_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive) + target;
+            frame->instr_ptr = _PyFrame_GetBytecode(frame) + target;
             stack_pointer += -oparg;
             assert(WITHIN_STACK_BOUNDS());
             GOTO_UNWIND();
