@@ -3,29 +3,13 @@ import sys
 import test.support as support
 
 from test.support import import_helper
+from test.support.classes import IntSubclass, WithIndex, WithIntAndIndex
 
 # Skip this test if the _testcapi and _testlimitedcapi modules isn't available.
 _testcapi = import_helper.import_module('_testcapi')
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 
 NULL = None
-
-class IntSubclass(int):
-    pass
-
-class Index:
-    def __init__(self, value):
-        self.value = value
-
-    def __index__(self):
-        return self.value
-
-# use __index__(), not __int__()
-class MyIndexAndInt:
-    def __index__(self):
-        return 10
-    def __int__(self):
-        return 22
 
 
 class LongTests(unittest.TestCase):
@@ -175,13 +159,13 @@ class LongTests(unittest.TestCase):
                 self.assertEqual(func(value), value)
                 self.assertEqual(func(IntSubclass(value)), value)
                 if use_index:
-                    self.assertEqual(func(Index(value)), value)
+                    self.assertEqual(func(WithIndex(value)), value)
 
         if use_index:
-            self.assertEqual(func(MyIndexAndInt()), 10)
+            self.assertEqual(func(WithIntAndIndex(10)), 10)
         else:
-            self.assertRaises(TypeError, func, Index(42))
-            self.assertRaises(TypeError, func, MyIndexAndInt())
+            self.assertRaises(TypeError, func, WithIndex(42))
+            self.assertRaises(TypeError, func, WithIntAndIndex(10))
 
         if mask:
             self.assertEqual(func(min_val - 1), max_val)
@@ -204,9 +188,9 @@ class LongTests(unittest.TestCase):
             with self.subTest(value=value):
                 self.assertEqual(func(value), (value, 0))
                 self.assertEqual(func(IntSubclass(value)), (value, 0))
-                self.assertEqual(func(Index(value)), (value, 0))
+                self.assertEqual(func(WithIndex(value)), (value, 0))
 
-        self.assertEqual(func(MyIndexAndInt()), (10, 0))
+        self.assertEqual(func(WithIntAndIndex(10)), (10, 0))
 
         self.assertEqual(func(min_val - 1), (-1, -1))
         self.assertEqual(func(max_val + 1), (-1, +1))
@@ -292,8 +276,8 @@ class LongTests(unittest.TestCase):
                 self.assertIsInstance(asdouble(value), float)
 
         self.assertEqual(asdouble(IntSubclass(42)), 42.0)
-        self.assertRaises(TypeError, asdouble, Index(42))
-        self.assertRaises(TypeError, asdouble, MyIndexAndInt())
+        self.assertRaises(TypeError, asdouble, WithIndex(42))
+        self.assertRaises(TypeError, asdouble, WithIntAndIndex(10))
 
         self.assertRaises(OverflowError, asdouble, 2 * MAX)
         self.assertRaises(OverflowError, asdouble, -2 * MAX)
@@ -320,7 +304,7 @@ class LongTests(unittest.TestCase):
         if y >= M//2:
             self.assertIs(asvoidptr(y - M), NULL)
 
-        self.assertRaises(TypeError, asvoidptr, Index(x))
+        self.assertRaises(TypeError, asvoidptr, WithIndex(x))
         self.assertRaises(TypeError, asvoidptr, object())
         self.assertRaises(OverflowError, asvoidptr, 2**1000)
         self.assertRaises(OverflowError, asvoidptr, -2**1000)
@@ -397,8 +381,8 @@ class LongTests(unittest.TestCase):
                     "buffer overwritten when it should not have been")
                 # Also check via the __index__ path.
                 # We pass Py_ASNATIVEBYTES_NATIVE_ENDIAN | ALLOW_INDEX
-                self.assertEqual(expect, asnativebytes(Index(v), buffer, 0, 3 | 16),
-                    "PyLong_AsNativeBytes(Index(v), <unknown>, 0, -1)")
+                self.assertEqual(expect, asnativebytes(WithIndex(v), buffer, 0, 3 | 16),
+                    "PyLong_AsNativeBytes(WithIndex(v), <unknown>, 0, -1)")
                 self.assertEqual(buffer, b"\x5a",
                     "buffer overwritten when it should not have been")
 
@@ -509,9 +493,9 @@ class LongTests(unittest.TestCase):
 
         # Ensure omitting Py_ASNATIVEBYTES_ALLOW_INDEX raises on __index__ value
         with self.assertRaises(TypeError):
-            asnativebytes(Index(1), buffer, 0, -1)
+            asnativebytes(WithIndex(1), buffer, 0, -1)
         with self.assertRaises(TypeError):
-            asnativebytes(Index(1), buffer, 0, 3)
+            asnativebytes(WithIndex(1), buffer, 0, 3)
 
         # Check a few error conditions. These are validated in code, but are
         # unspecified in docs, so if we make changes to the implementation, it's
@@ -639,7 +623,7 @@ class LongTests(unittest.TestCase):
         self.assertEqual(getsign(False), 0)
 
         self.assertRaises(TypeError, getsign, 1.0)
-        self.assertRaises(TypeError, getsign, Index(123))
+        self.assertRaises(TypeError, getsign, WithIndex(123))
 
         # CRASHES getsign(NULL)
 
