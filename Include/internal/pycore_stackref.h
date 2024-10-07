@@ -111,7 +111,8 @@ PyStackRef_AsPyObjectBorrow(_PyStackRef stackref)
 static inline PyObject *
 PyStackRef_AsPyObjectSteal(_PyStackRef stackref)
 {
-    if (!PyStackRef_IsNull(stackref) && PyStackRef_IsDeferred(stackref)) {
+    assert(!PyStackRef_IsNull(stackref));
+    if (PyStackRef_IsDeferred(stackref)) {
         return Py_NewRef(PyStackRef_AsPyObjectBorrow(stackref));
     }
     return PyStackRef_AsPyObjectBorrow(stackref);
@@ -131,9 +132,10 @@ PyStackRef_AsPyObjectSteal(_PyStackRef stackref)
 static inline _PyStackRef
 _PyStackRef_FromPyObjectSteal(PyObject *obj)
 {
+    assert(obj != NULL);
     // Make sure we don't take an already tagged value.
     assert(((uintptr_t)obj & Py_TAG_BITS) == 0);
-    unsigned int tag = (obj == NULL || _Py_IsImmortal(obj)) ? (Py_TAG_DEFERRED) : Py_TAG_PTR;
+    unsigned int tag = _Py_IsImmortal(obj) ? (Py_TAG_DEFERRED) : Py_TAG_PTR;
     return ((_PyStackRef){.bits = ((uintptr_t)(obj)) | tag});
 }
 #   define PyStackRef_FromPyObjectSteal(obj) _PyStackRef_FromPyObjectSteal(_PyObject_CAST(obj))
@@ -193,6 +195,7 @@ PyStackRef_FromPyObjectImmortal(PyObject *obj)
 #   define PyStackRef_CLOSE(REF)                                        \
         do {                                                            \
             _PyStackRef _close_tmp = (REF);                             \
+            assert(!PyStackRef_IsNull(_close_tmp));                     \
             if (!PyStackRef_IsDeferred(_close_tmp)) {                   \
                 Py_DECREF(PyStackRef_AsPyObjectBorrow(_close_tmp));     \
             }                                                           \
@@ -214,10 +217,11 @@ PyStackRef_FromPyObjectImmortal(PyObject *obj)
 static inline _PyStackRef
 PyStackRef_DUP(_PyStackRef stackref)
 {
+    assert(!PyStackRef_IsNull(stackref));
     if (PyStackRef_IsDeferred(stackref)) {
-        assert(PyStackRef_IsNull(stackref) ||
-            _Py_IsImmortal(PyStackRef_AsPyObjectBorrow(stackref)) ||
-            _PyObject_HasDeferredRefcount(PyStackRef_AsPyObjectBorrow(stackref)));
+        assert(_Py_IsImmortal(PyStackRef_AsPyObjectBorrow(stackref)) ||
+               _PyObject_HasDeferredRefcount(PyStackRef_AsPyObjectBorrow(stackref))
+        );
         return stackref;
     }
     Py_INCREF(PyStackRef_AsPyObjectBorrow(stackref));
