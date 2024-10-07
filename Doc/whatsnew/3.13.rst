@@ -46,7 +46,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.13, compared to 3.12.
-Python 3.13 will be released on October 7, 2024.
+Python 3.13 was released on October 7, 2024.
 For full details, see the :ref:`changelog <changelog>`.
 
 .. seealso::
@@ -60,7 +60,7 @@ Summary -- Release Highlights
 .. This section singles out the most important changes in Python 3.13.
    Brevity is key.
 
-Python 3.13 will be the latest stable release of the Python programming
+Python 3.13 is the latest stable release of the Python programming
 language, with a mix of changes to the language, the implementation
 and the standard library.
 The biggest changes include a new `interactive interpreter
