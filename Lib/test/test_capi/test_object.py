@@ -143,8 +143,7 @@ class EnableDeferredRefcountingTest(unittest.TestCase):
             def foo(obj):
                 obj.append(1)  # Do something with it from another thread
 
-                with self.assertRaises(TypeError):
-                    _testcapi.pyobject_enable_deferred_refcount(obj)
+                self.assertEqual(_testcapi.pyobject_enable_deferred_refcount(obj), 0)
 
             x = []
             self.assertEqual(_testcapi.pyobject_enable_deferred_refcount(x), int(support.Py_GIL_DISABLED))
