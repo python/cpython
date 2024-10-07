@@ -785,8 +785,6 @@ class CheckEvents(MonitoringTestBase, unittest.TestCase):
 
     def check_events(self, func, expected, tool=TEST_TOOL, recorders=(ExceptionRecorder,)):
         events = self.get_events(func, tool, recorders)
-        if events != expected:
-            print(events, file = sys.stderr)
         self.assertEqual(events, expected)
 
     def check_balanced(self, func, recorders):

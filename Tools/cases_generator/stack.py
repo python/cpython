@@ -46,19 +46,40 @@ class Local:
     in_memory: bool
     defined: bool
 
+    def __repr__(self) -> str:
+        return f"Local('{self.item.name}', mem={self.in_memory}, defined={self.defined}, array={self.is_array()})"
+
+    def compact_str(self) -> str:
+        mtag = "M" if self.in_memory else ""
+        dtag = "D" if self.defined else ""
+        atag = "A" if self.is_array() else ""
+        return f"'{self.item.name}'{mtag}{dtag}{atag}"
+
     @staticmethod
     def unused(defn: StackItem) -> "Local":
         return Local(defn, False, defn.is_array(), False)
 
     @staticmethod
-    def local(defn: StackItem) -> "Local":
+    def undefined(defn: StackItem) -> "Local":
         array = defn.is_array()
-        return Local(defn, not array, array, True)
+        return Local(defn, not array, array, False)
 
     @staticmethod
     def redefinition(var: StackItem, prev: "Local") -> "Local":
         assert var.is_array() == prev.is_array()
         return Local(var, prev.cached, prev.in_memory, True)
+
+    @staticmethod
+    def from_memory(defn: StackItem) -> "Local":
+        return Local(defn, True, True, True)
+
+    def copy(self) -> "Local":
+        return Local(
+            self.item,
+            self.cached,
+            self.in_memory,
+            self.defined
+        )
 
     @property
     def size(self) -> str:
@@ -74,6 +95,16 @@ class Local:
 
     def is_array(self) -> bool:
         return self.item.is_array()
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Local):
+            return NotImplemented
+        return (
+            self.item is other.item
+            and self.cached is other.cached
+            and self.in_memory is other.in_memory
+            and self.defined is other.defined
+        )
 
 
 @dataclass
@@ -156,9 +187,33 @@ class StackOffset:
             res = "-" + res[3:]
         return res
 
+    def as_int(self) -> int | None:
+        self.simplify()
+        int_offset = 0
+        for item in self.popped:
+            try:
+                int_offset -= int(item)
+            except ValueError:
+                return None
+        for item in self.pushed:
+            try:
+                int_offset += int(item)
+            except ValueError:
+                return None
+        return int_offset
+
     def clear(self) -> None:
         self.popped = []
         self.pushed = []
+
+    def __bool__(self) -> bool:
+        self.simplify()
+        return bool(self.popped) or bool(self.pushed)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, StackOffset):
+            return NotImplemented
+        return self.to_c() == other.to_c()
 
 
 class StackError(Exception):
@@ -174,7 +229,7 @@ class Stack:
         self.variables: list[Local] = []
         self.defined: set[str] = set()
 
-    def pop(self, var: StackItem, extract_bits: bool = False) -> tuple[str, Local]:
+    def pop(self, var: StackItem, extract_bits: bool = True) -> tuple[str, Local]:
         self.top_offset.pop(var)
         indirect = "&" if var.is_array() else ""
         if self.variables:
@@ -192,7 +247,7 @@ class Stack:
             if var.name in UNUSED:
                 if popped.name not in UNUSED and popped.name in self.defined:
                     raise StackError(
-                        f"Value is declared unused, but is already cached by prior operation"
+                        f"Value is declared unused, but is already cached by prior operation as '{popped.name}'"
                     )
                 return "", popped
             if not var.used:
@@ -208,6 +263,7 @@ class Stack:
                     defn = f"{var.name} = &stack_pointer[{self.top_offset.to_c()}];\n"
                 else:
                     defn = f"{var.name} = stack_pointer[{self.top_offset.to_c()}];\n"
+                    popped.in_memory = True
             return defn, Local.redefinition(var, popped)
 
         self.base_offset.pop(var)
@@ -215,7 +271,7 @@ class Stack:
             return "", Local.unused(var)
         self.defined.add(var.name)
         cast = f"({var.type})" if (not indirect and var.type) else ""
-        bits = ".bits" if cast and not extract_bits else ""
+        bits = ".bits" if cast and extract_bits else ""
         assign = f"{var.name} = {cast}{indirect}stack_pointer[{self.base_offset.to_c()}]{bits};"
         if var.condition:
             if var.condition == "1":
@@ -226,27 +282,14 @@ class Stack:
                 assign = f"if ({var.condition}) {{ {assign} }}\n"
         else:
             assign = f"{assign}\n"
-        in_memory = var.is_array() or var.peek
-        return assign, Local(var, not var.is_array(), in_memory, True)
+        return assign, Local.from_memory(var)
 
     def push(self, var: Local) -> None:
+        assert(var not in self.variables)
         self.variables.append(var)
         self.top_offset.push(var.item)
         if var.item.used:
             self.defined.add(var.name)
-            var.defined = True
-
-    def define_output_arrays(self, outputs: list[StackItem]) -> str:
-        res = []
-        top_offset = self.top_offset.copy()
-        for var in outputs:
-            if var.is_array() and var.used and not var.peek:
-                c_offset = top_offset.to_c()
-                top_offset.push(var)
-                res.append(f"{var.name} = &stack_pointer[{c_offset}];\n")
-            else:
-                top_offset.push(var)
-        return "\n".join(res)
 
     @staticmethod
     def _do_emit(
@@ -254,102 +297,92 @@ class Stack:
         var: StackItem,
         base_offset: StackOffset,
         cast_type: str = "uintptr_t",
-        extract_bits: bool = False,
+        extract_bits: bool = True,
     ) -> None:
         cast = f"({cast_type})" if var.type else ""
-        bits = ".bits" if cast and not extract_bits else ""
+        bits = ".bits" if cast and extract_bits else ""
         if var.condition == "0":
             return
         if var.condition and var.condition != "1":
             out.emit(f"if ({var.condition}) ")
         out.emit(f"stack_pointer[{base_offset.to_c()}]{bits} = {cast}{var.name};\n")
 
-    @staticmethod
-    def _do_flush(
-        out: CWriter,
-        variables: list[Local],
-        base_offset: StackOffset,
-        top_offset: StackOffset,
-        cast_type: str = "uintptr_t",
-        extract_bits: bool = False,
-    ) -> None:
-        out.start_line()
-        for var in variables:
-            if (
-                var.cached
-                and not var.in_memory
-                and not var.item.peek
-                and not var.name in UNUSED
-            ):
-                Stack._do_emit(out, var.item, base_offset, cast_type, extract_bits)
-            base_offset.push(var.item)
-        if base_offset.to_c() != top_offset.to_c():
-            print("base", base_offset, "top", top_offset)
-            assert False
-        number = base_offset.to_c()
+    def _adjust_stack_pointer(self, out: CWriter, number: str) -> None:
         if number != "0":
+            out.start_line()
             out.emit(f"stack_pointer += {number};\n")
             out.emit("assert(WITHIN_STACK_BOUNDS());\n")
-        out.start_line()
-
-    def flush_locally(
-        self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = False
-    ) -> None:
-        self._do_flush(
-            out,
-            self.variables[:],
-            self.base_offset.copy(),
-            self.top_offset.copy(),
-            cast_type,
-            extract_bits,
-        )
 
     def flush(
-        self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = False
+        self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = True
     ) -> None:
-        self._do_flush(
-            out,
-            self.variables,
-            self.base_offset,
-            self.top_offset,
-            cast_type,
-            extract_bits,
-        )
-        self.variables = []
-        self.base_offset.clear()
-        self.top_offset.clear()
-
-    def flush_single_var(
-        self,
-        out: CWriter,
-        var_name: str,
-        outputs: list[StackItem],
-        cast_type: str = "uintptr_t",
-        extract_bits: bool = False,
-    ) -> None:
-        assert any(var.name == var_name for var in outputs)
-        base_offset = self.base_offset.copy()
-        top_offset = self.top_offset.copy()
+        out.start_line()
+        var_offset = self.base_offset.copy()
         for var in self.variables:
-            base_offset.push(var.item)
-        for output in outputs:
-            if any(output == v.item for v in self.variables):
-                # The variable is already on the stack, such as a peeked value
-                # in the tier1 generator
-                continue
-            if output.name == var_name:
-                Stack._do_emit(out, output, base_offset, cast_type, extract_bits)
-            base_offset.push(output)
-            top_offset.push(output)
-        if base_offset.to_c() != top_offset.to_c():
-            print("base", base_offset, "top", top_offset)
-            assert False
+            if (
+                var.defined and
+                not var.in_memory
+            ):
+                Stack._do_emit(out, var.item, var_offset, cast_type, extract_bits)
+                var.in_memory = True
+            var_offset.push(var.item)
+        number = self.top_offset.to_c()
+        self._adjust_stack_pointer(out, number)
+        self.base_offset -= self.top_offset
+        self.top_offset.clear()
+        out.start_line()
+
+    def is_flushed(self) -> bool:
+        return not self.variables and not self.base_offset and not self.top_offset
 
     def peek_offset(self) -> str:
         return self.top_offset.to_c()
 
     def as_comment(self) -> str:
-        return f"/* Variables: {[v.name for v in self.variables]}. Base offset: {self.base_offset.to_c()}. Top offset: {self.top_offset.to_c()} */"
+        variables = ", ".join([v.compact_str() for v in self.variables])
+        return (
+            f"/* Variables: {variables}. base: {self.base_offset.to_c()}. top: {self.top_offset.to_c()} */"
+        )
+
+    def copy(self) -> "Stack":
+        other = Stack()
+        other.top_offset = self.top_offset.copy()
+        other.base_offset = self.base_offset.copy()
+        other.variables = [var.copy() for var in self.variables]
+        other.defined = set(self.defined)
+        return other
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Stack):
+            return NotImplemented
+        return (
+            self.top_offset == other.top_offset
+            and self.base_offset == other.base_offset
+            and self.variables == other.variables
+        )
+
+    def align(self, other: "Stack", out: CWriter) -> None:
+        if len(self.variables) != len(other.variables):
+            raise StackError("Cannot align stacks: differing variables")
+        if self.top_offset == other.top_offset:
+            return
+        diff = self.top_offset - other.top_offset
+        try:
+            self.top_offset -= diff
+            self.base_offset -= diff
+            self._adjust_stack_pointer(out, diff.to_c())
+        except ValueError:
+            raise StackError("Cannot align stacks: cannot adjust stack pointer")
+
+    def merge(self, other: "Stack", out: CWriter) -> None:
+        if len(self.variables) != len(other.variables):
+            raise StackError("Cannot merge stacks: differing variables")
+        for self_var, other_var in zip(self.variables, other.variables):
+            if self_var.name != other_var.name:
+                raise StackError(f"Mismatched variables on stack: {self_var.name} and {other_var.name}")
+            self_var.defined = self_var.defined and other_var.defined
+            self_var.in_memory = self_var.in_memory and other_var.in_memory
+        self.align(other, out)
 
 
 def get_stack_effect(inst: Instruction | PseudoInstruction) -> Stack:
@@ -377,3 +410,213 @@ def get_stack_effect(inst: Instruction | PseudoInstruction) -> Stack:
                 local = Local.unused(var)
             stack.push(local)
     return stack
+
+@dataclass
+class Storage:
+
+    stack: Stack
+    inputs: list[Local]
+    outputs: list[Local]
+    peeks: list[Local]
+    spilled: int = 0
+
+    @staticmethod
+    def needs_defining(var: Local) -> bool:
+        return (
+            not var.defined and
+            not var.is_array() and
+            var.name != "unused"
+        )
+
+    @staticmethod
+    def is_live(var: Local) -> bool:
+        return (
+            var.defined and
+            var.name != "unused"
+        )
+
+    def first_input_not_cleared(self) -> str:
+        for input in self.inputs:
+            if input.defined:
+                return input.name
+        return ""
+
+    def clear_inputs(self, reason:str) -> None:
+        while self.inputs:
+            tos = self.inputs.pop()
+            if self.is_live(tos) and not tos.is_array():
+                raise StackError(
+                    f"Input '{tos.name}' is still live {reason}"
+                )
+            self.stack.pop(tos.item)
+
+    def clear_dead_inputs(self) -> None:
+        live = ""
+        while self.inputs:
+            tos = self.inputs[-1]
+            if self.is_live(tos):
+                live = tos.name
+                break
+            self.inputs.pop()
+            self.stack.pop(tos.item)
+        for var in self.inputs:
+            if not var.defined and not var.is_array() and var.name != "unused":
+                raise StackError(
+                    f"Input '{var.name}' is not live, but '{live}' is"
+                )
+
+    def _push_defined_outputs(self) -> None:
+        defined_output = ""
+        for output in self.outputs:
+            if output.defined and not output.in_memory:
+                defined_output = output.name
+        if not defined_output:
+            return
+        self.clear_inputs(f"when output '{defined_output}' is defined")
+        undefined = ""
+        for out in self.outputs:
+            if out.defined:
+                if undefined:
+                    f"Locals not defined in stack order. "
+                    f"Expected '{undefined}' to be defined before '{out.name}'"
+            else:
+                undefined = out.name
+        while self.outputs and not self.needs_defining(self.outputs[0]):
+            out = self.outputs.pop(0)
+            self.stack.push(out)
+
+    def locals_cached(self) -> bool:
+        for out in self.outputs:
+            if out.defined:
+                return True
+        return False
+
+    def flush(self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = True) -> None:
+        self.clear_dead_inputs()
+        self._push_defined_outputs()
+        self.stack.flush(out, cast_type, extract_bits)
+
+    def save(self, out: CWriter) -> None:
+        assert self.spilled >= 0
+        if self.spilled == 0:
+            self.flush(out)
+            out.start_line()
+            out.emit("_PyFrame_SetStackPointer(frame, stack_pointer);\n")
+        self.spilled += 1
+
+    def reload(self, out: CWriter) -> None:
+        if self.spilled == 0:
+            raise StackError("Cannot reload stack as it hasn't been saved")
+        assert self.spilled > 0
+        self.spilled -= 1
+        if self.spilled == 0:
+            out.start_line()
+            out.emit("stack_pointer = _PyFrame_GetStackPointer(frame);\n")
+
+    @staticmethod
+    def for_uop(stack: Stack, uop: Uop, extract_bits: bool = True) -> tuple[list[str], "Storage"]:
+        code_list: list[str] = []
+        inputs: list[Local] = []
+        peeks: list[Local] = []
+        for input in reversed(uop.stack.inputs):
+            code, local = stack.pop(input, extract_bits)
+            code_list.append(code)
+            if input.peek:
+                peeks.append(local)
+            else:
+                inputs.append(local)
+        inputs.reverse()
+        peeks.reverse()
+        for peek in peeks:
+            stack.push(peek)
+        top_offset = stack.top_offset.copy()
+        for ouput in uop.stack.outputs:
+            if ouput.is_array() and ouput.used and not ouput.peek:
+                c_offset = top_offset.to_c()
+                top_offset.push(ouput)
+                code_list.append(f"{ouput.name} = &stack_pointer[{c_offset}];\n")
+            else:
+                top_offset.push(ouput)
+        for var in inputs:
+            stack.push(var)
+        outputs = [ Local.undefined(var) for var in uop.stack.outputs if not var.peek ]
+        return code_list, Storage(stack, inputs, outputs, peeks)
+
+    @staticmethod
+    def copy_list(arg: list[Local]) -> list[Local]:
+        return [ l.copy() for l in arg ]
+
+    def copy(self) -> "Storage":
+        new_stack = self.stack.copy()
+        variables = { var.name: var for var in new_stack.variables }
+        inputs = [ variables[var.name] for var in self.inputs]
+        assert [v.name for v in inputs] == [v.name for v in self.inputs], (inputs, self.inputs)
+        return Storage(
+            new_stack, inputs,
+            self.copy_list(self.outputs), self.copy_list(self.peeks)
+        )
+
+    def sanity_check(self) -> None:
+        names: set[str] = set()
+        for var in self.inputs:
+            if var.name in names:
+                raise StackError(f"Duplicate name {var.name}")
+            names.add(var.name)
+        names = set()
+        for var in self.outputs:
+            if var.name in names:
+                raise StackError(f"Duplicate name {var.name}")
+            names.add(var.name)
+        names = set()
+        for var in self.stack.variables:
+            if var.name in names:
+                raise StackError(f"Duplicate name {var.name}")
+            names.add(var.name)
+
+    def is_flushed(self) -> bool:
+        for var in self.outputs:
+            if var.defined and not var.in_memory:
+                return False
+        return self.stack.is_flushed()
+
+    def merge(self, other: "Storage", out: CWriter) -> None:
+        self.sanity_check()
+        if len(self.inputs) != len(other.inputs):
+            self.clear_dead_inputs()
+            other.clear_dead_inputs()
+        if len(self.inputs) != len(other.inputs):
+            diff = self.inputs[-1] if len(self.inputs) > len(other.inputs) else other.inputs[-1]
+            raise StackError(f"Unmergeable inputs. Differing state of '{diff.name}'")
+        for var, other_var in zip(self.inputs, other.inputs):
+            if var.defined != other_var.defined:
+                raise StackError(f"'{var.name}' is cleared on some paths, but not all")
+        if len(self.outputs) != len(other.outputs):
+            self._push_defined_outputs()
+            other._push_defined_outputs()
+        if len(self.outputs) != len(other.outputs):
+            var = self.outputs[0] if len(self.outputs) > len(other.outputs) else other.outputs[0]
+            raise StackError(f"'{var.name}' is set on some paths, but not all")
+        self.stack.merge(other.stack, out)
+        self.sanity_check()
+
+    def push_outputs(self) -> None:
+        if self.spilled:
+            raise StackError(f"Unbalanced stack spills")
+        self.clear_inputs("at the end of the micro-op")
+        if self.inputs:
+            raise StackError(f"Input variable '{self.inputs[-1].name}' is still live")
+        self._push_defined_outputs()
+        if self.outputs:
+            for out in self.outputs:
+                if self.needs_defining(out):
+                    raise StackError(f"Output variable '{self.outputs[0].name}' is not defined")
+                self.stack.push(out)
+            self.outputs = []
+
+    def as_comment(self) -> str:
+        stack_comment = self.stack.as_comment()
+        next_line = "\n               "
+        inputs = ", ".join([var.compact_str() for var in self.inputs])
+        outputs = ", ".join([var.compact_str() for var in self.outputs])
+        peeks = ", ".join([var.name for var in self.peeks])
+        return f"{stack_comment[:-2]}{next_line}inputs: {inputs}{next_line}outputs: {outputs}{next_line}peeks: {peeks} */"
