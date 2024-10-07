@@ -7,8 +7,6 @@
 
 #ifdef HAVE_SYS_STAT_H
 #  include <sys/stat.h>           // S_ISREG()
-#elif defined(HAVE_STAT_H)
-#  include <stat.h>               // S_ISREG()
 #endif
 
 #ifndef S_IFMT
