@@ -463,6 +463,13 @@ Initializing and finalizing the interpreter
 
    .. versionadded:: 3.6
 
+
+.. c:function:: void Py_Finalize()
+
+   This is a backwards-compatible version of :c:func:`Py_FinalizeEx` that
+   disregards the return value.
+
+
 .. c:function:: int Py_BytesMain(int argc, char **argv)
 
    Similar to :c:func:`Py_Main` but *argv* is an array of bytes strings,
