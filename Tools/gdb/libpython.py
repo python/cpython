@@ -69,9 +69,6 @@ def _type_unsigned_int_ptr():
 def _sizeof_void_p():
     return gdb.lookup_type('void').pointer().sizeof
 
-def _sizeof_pyobject():
-    return gdb.lookup_type('PyObject').sizeof
-
 def _managed_dict_offset():
     # See pycore_object.h
     pyobj = gdb.lookup_type("PyObject")
@@ -161,8 +158,11 @@ class PyObjectPtr(object):
 
     def __init__(self, gdbval, cast_to=None):
         # Clear the tagged pointer
-        gdbval = gdb.Value(int(gdbval) & (~USED_TAGS)).cast(gdbval.type)
-        if cast_to:
+        if gdbval.type.name == '_PyStackRef':
+            if cast_to is None:
+                cast_to = gdb.lookup_type('PyObject').pointer()
+            self._gdbval = gdb.Value(int(gdbval['bits']) & ~USED_TAGS).cast(cast_to)
+        elif cast_to:
             self._gdbval = gdbval.cast(cast_to)
         else:
             self._gdbval = gdbval
@@ -505,7 +505,7 @@ class HeapTypeObjectPtr(PyObjectPtr):
         dict_ptr = dict_ptr_ptr.cast(_type_char_ptr().pointer()).dereference()
         if int(dict_ptr):
             return None
-        char_ptr = obj_ptr + _sizeof_pyobject()
+        char_ptr = obj_ptr + typeobj.field('tp_basicsize')
         values_ptr = char_ptr.cast(gdb.lookup_type("PyDictValues").pointer())
         values = values_ptr['values']
         return PyKeysValuesPair(self.get_cached_keys(), values)
@@ -1055,7 +1055,7 @@ class PyFramePtr:
 
         obj_ptr_ptr = gdb.lookup_type("PyObject").pointer().pointer()
 
-        localsplus = self._gdbval["localsplus"].cast(obj_ptr_ptr)
+        localsplus = self._gdbval["localsplus"]
 
         for i in safe_range(self.co_nlocals):
             pyop_value = PyObjectPtr.from_pyobject_ptr(localsplus[i])
@@ -1584,7 +1584,10 @@ class PyObjectPtrPrinter:
             return stringify(proxyval)
 
 def pretty_printer_lookup(gdbval):
-    type = gdbval.type.unqualified()
+    type = gdbval.type.strip_typedefs().unqualified()
+    if type.code == gdb.TYPE_CODE_UNION and type.tag == '_PyStackRef':
+        return PyObjectPtrPrinter(gdbval)
+
     if type.code != gdb.TYPE_CODE_PTR:
         return None
 

@@ -1,0 +1,1 @@
+Raise audit events for the :func:`input` in the new REPL.

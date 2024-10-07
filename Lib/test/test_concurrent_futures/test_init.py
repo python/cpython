@@ -139,6 +139,7 @@ class FailingInitializerResourcesTest(unittest.TestCase):
     def test_spawn(self):
         self._test(ProcessPoolSpawnFailingInitializerTest)
 
+    @support.skip_if_sanitizer("TSAN doesn't support threads after fork", thread=True)
     def test_forkserver(self):
         self._test(ProcessPoolForkserverFailingInitializerTest)
 

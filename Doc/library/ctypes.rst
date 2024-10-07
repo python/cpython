@@ -51,7 +51,7 @@ function call fails.
 
 
 Here are some examples for Windows. Note that ``msvcrt`` is the MS standard C
-library containing most standard C functions, and uses the cdecl calling
+library containing most standard C functions, and uses the ``cdecl`` calling
 convention::
 
    >>> from ctypes import *
@@ -107,7 +107,7 @@ Functions are accessed as attributes of dll objects::
 
 Note that win32 system dlls like ``kernel32`` and ``user32`` often export ANSI
 as well as UNICODE versions of a function. The UNICODE version is exported with
-an ``W`` appended to the name, while the ANSI version is exported with an ``A``
+a ``W`` appended to the name, while the ANSI version is exported with an ``A``
 appended to the name. The win32 ``GetModuleHandle`` function, which returns a
 *module handle* for a given module name, has the following C prototype, and a
 macro is used to expose one of them as ``GetModuleHandle`` depending on whether
@@ -2303,7 +2303,7 @@ These are the fundamental ctypes data types:
    Represents the C :c:expr:`double complex` datatype, if available.  The
    constructor accepts an optional :class:`complex` initializer.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 
 .. class:: c_float_complex
@@ -2499,6 +2499,8 @@ Structured data types
 
    Abstract base class for unions in native byte order.
 
+   Unions share common attributes and behavior with structures;
+   see :class:`Structure` documentation for details.
 
 .. class:: BigEndianUnion(*args, **kw)
 
@@ -2558,14 +2560,19 @@ fields, or any other data types containing pointer type fields.
                           ...
                          ]
 
-      The :attr:`_fields_` class variable must, however, be defined before the
-      type is first used (an instance is created, :func:`sizeof` is called on it,
-      and so on).  Later assignments to the :attr:`_fields_` class variable will
-      raise an AttributeError.
+      The :attr:`!_fields_` class variable can only be set once.
+      Later assignments will raise an :exc:`AttributeError`.
 
-      It is possible to define sub-subclasses of structure types, they inherit
-      the fields of the base class plus the :attr:`_fields_` defined in the
-      sub-subclass, if any.
+      Additionally, the :attr:`!_fields_` class variable must be defined before
+      the structure or union type is first used: an instance or subclass is
+      created, :func:`sizeof` is called on it, and so on.
+      Later assignments to :attr:`!_fields_` will raise an :exc:`AttributeError`.
+      If :attr:`!_fields_` has not been set before such use,
+      the structure or union will have no own fields, as if :attr:`!_fields_`
+      was empty.
+
+      Sub-subclasses of structure types inherit the fields of the base class
+      plus the :attr:`_fields_` defined in the sub-subclass, if any.
 
 
    .. attribute:: _pack_
@@ -2687,6 +2694,15 @@ Arrays and pointers
 
    Array subclass constructors accept positional arguments, used to
    initialize the elements in order.
+
+.. function:: ARRAY(type, length)
+
+   Create an array.
+   Equivalent to ``type * length``, where *type* is a
+   :mod:`ctypes` data type and *length* an integer.
+
+   This function is :term:`soft deprecated` in favor of multiplication.
+   There are no plans to remove it.
 
 
 .. class:: _Pointer

@@ -191,6 +191,19 @@ Examining Symbol Tables
 
       For example:
 
+      .. testsetup:: symtable.Class.get_methods
+
+         import warnings
+         context = warnings.catch_warnings()
+         context.__enter__()
+         warnings.simplefilter("ignore", category=DeprecationWarning)
+
+      .. testcleanup:: symtable.Class.get_methods
+
+         context.__exit__()
+
+      .. doctest:: symtable.Class.get_methods
+
          >>> import symtable
          >>> st = symtable.symtable('''
          ... def outer(): pass
@@ -213,6 +226,9 @@ Examining Symbol Tables
 
       Although ``A().f()`` raises :exc:`TypeError` at runtime, ``A.f`` is still
       considered as a method-like function.
+
+      .. deprecated-removed:: 3.14 3.16
+
 
 .. class:: Symbol
 
@@ -239,7 +255,7 @@ Examining Symbol Tables
 
       Return ``True`` if the symbol is a type parameter.
 
-      .. versionadded:: 3.14
+      .. versionadded:: next
 
    .. method:: is_global()
 
@@ -286,7 +302,7 @@ Examining Symbol Tables
       be free from the perspective of ``C.method``, thereby allowing
       the latter to return *1* at runtime and not *2*.
 
-      .. versionadded:: 3.14
+      .. versionadded:: next
 
    .. method:: is_assigned()
 
@@ -296,13 +312,13 @@ Examining Symbol Tables
 
       Return ``True`` if the symbol is a comprehension iteration variable.
 
-      .. versionadded:: 3.14
+      .. versionadded:: next
 
    .. method:: is_comp_cell()
 
       Return ``True`` if the symbol is a cell in an inlined comprehension.
 
-      .. versionadded:: 3.14
+      .. versionadded:: next
 
    .. method:: is_namespace()
 

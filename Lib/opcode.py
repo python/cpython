@@ -85,6 +85,10 @@ _cache_format = {
         "counter": 1,
         "func_version": 2,
     },
+    "CALL_KW": {
+        "counter": 1,
+        "func_version": 2,
+    },
     "STORE_SUBSCR": {
         "counter": 1,
     },

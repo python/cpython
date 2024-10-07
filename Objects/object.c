@@ -10,6 +10,7 @@
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
 #include "pycore_dict.h"          // _PyObject_MakeDictFromInstanceAttributes()
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
+#include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_instruction_sequence.h" // _PyInstructionSequence_Type
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
@@ -375,13 +376,17 @@ _Py_MergeZeroLocalRefcount(PyObject *op)
 {
     assert(op->ob_ref_local == 0);
 
-    _Py_atomic_store_uintptr_relaxed(&op->ob_tid, 0);
     Py_ssize_t shared = _Py_atomic_load_ssize_acquire(&op->ob_ref_shared);
     if (shared == 0) {
         // Fast-path: shared refcount is zero (including flags)
         _Py_Dealloc(op);
         return;
     }
+
+    // gh-121794: This must be before the store to `ob_ref_shared` (gh-119999),
+    // but should outside the fast-path to maintain the invariant that
+    // a zero `ob_tid` implies a merged refcount.
+    _Py_atomic_store_uintptr_relaxed(&op->ob_tid, 0);
 
     // Slow-path: atomically set the flags (low two bits) to _Py_REF_MERGED.
     Py_ssize_t new_shared;
@@ -531,6 +536,7 @@ int
 PyObject_Print(PyObject *op, FILE *fp, int flags)
 {
     int ret = 0;
+    int write_error = 0;
     if (PyErr_CheckSignals())
         return -1;
 #ifdef USE_STACKCHECK
@@ -569,14 +575,20 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
                     ret = -1;
                 }
                 else {
-                    fwrite(t, 1, len, fp);
+                    /* Versions of Android and OpenBSD from before 2023 fail to
+                       set the `ferror` indicator when writing to a read-only
+                       stream, so we need to check the return value.
+                       (https://github.com/openbsd/src/commit/fc99cf9338942ecd9adc94ea08bf6188f0428c15) */
+                    if (fwrite(t, 1, len, fp) != (size_t)len) {
+                        write_error = 1;
+                    }
                 }
                 Py_DECREF(s);
             }
         }
     }
     if (ret == 0) {
-        if (ferror(fp)) {
+        if (write_error || ferror(fp)) {
             PyErr_SetFromErrno(PyExc_OSError);
             clearerr(fp);
             ret = -1;
@@ -804,20 +816,52 @@ PyObject_Bytes(PyObject *v)
     return PyBytes_FromObject(v);
 }
 
+static void
+clear_freelist(struct _Py_freelist *freelist, int is_finalization,
+               freefunc dofree)
+{
+    void *ptr;
+    while ((ptr = _PyFreeList_PopNoStats(freelist)) != NULL) {
+        dofree(ptr);
+    }
+    assert(freelist->size == 0 || freelist->size == -1);
+    assert(freelist->freelist == NULL);
+    if (is_finalization) {
+        freelist->size = -1;
+    }
+}
+
+static void
+free_object(void *obj)
+{
+    PyObject *op = (PyObject *)obj;
+    PyTypeObject *tp = Py_TYPE(op);
+    tp->tp_free(op);
+    Py_DECREF(tp);
+}
+
 void
-_PyObject_ClearFreeLists(struct _Py_object_freelists *freelists, int is_finalization)
+_PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
 {
     // In the free-threaded build, freelists are per-PyThreadState and cleared in PyThreadState_Clear()
     // In the default build, freelists are per-interpreter and cleared in finalize_interp_types()
-    _PyFloat_ClearFreeList(freelists, is_finalization);
-    _PyTuple_ClearFreeList(freelists, is_finalization);
-    _PyList_ClearFreeList(freelists, is_finalization);
-    _PyDict_ClearFreeList(freelists, is_finalization);
-    _PyContext_ClearFreeList(freelists, is_finalization);
-    _PyAsyncGen_ClearFreeLists(freelists, is_finalization);
-    // Only be cleared if is_finalization is true.
-    _PyObjectStackChunk_ClearFreeList(freelists, is_finalization);
-    _PySlice_ClearFreeList(freelists, is_finalization);
+    clear_freelist(&freelists->floats, is_finalization, free_object);
+    for (Py_ssize_t i = 0; i < PyTuple_MAXSAVESIZE; i++) {
+        clear_freelist(&freelists->tuples[i], is_finalization, free_object);
+    }
+    clear_freelist(&freelists->lists, is_finalization, free_object);
+    clear_freelist(&freelists->dicts, is_finalization, free_object);
+    clear_freelist(&freelists->dictkeys, is_finalization, PyMem_Free);
+    clear_freelist(&freelists->slices, is_finalization, free_object);
+    clear_freelist(&freelists->contexts, is_finalization, free_object);
+    clear_freelist(&freelists->async_gens, is_finalization, free_object);
+    clear_freelist(&freelists->async_gen_asends, is_finalization, free_object);
+    clear_freelist(&freelists->futureiters, is_finalization, free_object);
+    if (is_finalization) {
+        // Only clear object stack chunks during finalization. We use object
+        // stacks during GC, so emptying the free-list is counterproductive.
+        clear_freelist(&freelists->object_stack_chunks, 1, PyMem_RawFree);
+    }
 }
 
 /*
@@ -1209,9 +1253,9 @@ PyObject_GetOptionalAttr(PyObject *v, PyObject *name, PyObject **result)
         return 0;
     }
     if (tp->tp_getattro == _Py_type_getattro) {
-        int supress_missing_attribute_exception = 0;
-        *result = _Py_type_getattro_impl((PyTypeObject*)v, name, &supress_missing_attribute_exception);
-        if (supress_missing_attribute_exception) {
+        int suppress_missing_attribute_exception = 0;
+        *result = _Py_type_getattro_impl((PyTypeObject*)v, name, &suppress_missing_attribute_exception);
+        if (suppress_missing_attribute_exception) {
             // return 0 without having to clear the exception
             return 0;
         }
@@ -2298,6 +2342,7 @@ static PyTypeObject* static_types[] = {
     &_PyWeakref_ProxyType,
     &_PyWeakref_RefType,
     &_PyTypeAlias_Type,
+    &_PyNoDefault_Type,
 
     // subclasses: _PyTypes_FiniTypes() deallocates them before their base
     // class
@@ -2428,15 +2473,7 @@ _PyObject_SetDeferredRefcount(PyObject *op)
     assert(_Py_IsOwnedByCurrentThread(op));
     assert(op->ob_ref_shared == 0);
     _PyObject_SET_GC_BITS(op, _PyGC_BITS_DEFERRED);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (_Py_atomic_load_int_relaxed(&interp->gc.immortalize) == 1) {
-        // gh-117696: immortalize objects instead of using deferred reference
-        // counting for now.
-        _Py_SetImmortal(op);
-        return;
-    }
-    op->ob_ref_local += 1;
-    op->ob_ref_shared = _Py_REF_QUEUED;
+    op->ob_ref_shared = _Py_REF_SHARED(_Py_REF_DEFERRED, 0);
 #endif
 }
 
@@ -2724,7 +2761,6 @@ _PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op)
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
 #ifdef Py_GIL_DISABLED
-    _PyObject_ASSERT(op, op->ob_tid == 0);
     op->ob_tid = (uintptr_t)tstate->delete_later;
 #else
     _PyGCHead_SET_PREV(_Py_AS_GC(op), (PyGC_Head*)tstate->delete_later);
@@ -2757,6 +2793,7 @@ _PyTrash_thread_destroy_chain(PyThreadState *tstate)
 #ifdef Py_GIL_DISABLED
         tstate->delete_later = (PyObject*) op->ob_tid;
         op->ob_tid = 0;
+        _Py_atomic_store_ssize_relaxed(&op->ob_ref_shared, _Py_REF_MERGED);
 #else
         tstate->delete_later = (PyObject*) _PyGCHead_PREV(_Py_AS_GC(op));
 #endif
@@ -3002,7 +3039,17 @@ Py_GetConstantBorrowed(unsigned int constant_id)
 
 // Py_TYPE() implementation for the stable ABI
 #undef Py_TYPE
-PyTypeObject* Py_TYPE(PyObject *ob)
+PyTypeObject*
+Py_TYPE(PyObject *ob)
 {
     return _Py_TYPE(ob);
+}
+
+
+// Py_REFCNT() implementation for the stable ABI
+#undef Py_REFCNT
+Py_ssize_t
+Py_REFCNT(PyObject *ob)
+{
+    return _Py_REFCNT(ob);
 }
