@@ -484,7 +484,8 @@ class StrptimeTests(unittest.TestCase):
 
     # NB: Dates before 1969 do not work on a number of locales, including C.
     @unittest.skipIf(
-        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
+        support.is_emscripten or support.is_wasi,
+        "musl libc issue on Emscripten, bpo-46390"
     )
     @run_with_locales('LC_TIME', 'en_US', 'fr_FR', 'de_DE', 'ja_JP')
     def test_date_locale2(self):
