@@ -418,7 +418,7 @@ static PyObject *
 nu_short(_structmodulestate *state, const char *p, const formatdef *f)
 {
     short x;
-    memcpy((char *)&x, p, sizeof x);
+    memcpy(&x, p, sizeof x);
     return PyLong_FromLong((long)x);
 }
 
@@ -426,7 +426,7 @@ static PyObject *
 nu_ushort(_structmodulestate *state, const char *p, const formatdef *f)
 {
     unsigned short x;
-    memcpy((char *)&x, p, sizeof x);
+    memcpy(&x, p, sizeof x);
     return PyLong_FromLong((long)x);
 }
 
@@ -434,7 +434,7 @@ static PyObject *
 nu_int(_structmodulestate *state, const char *p, const formatdef *f)
 {
     int x;
-    memcpy((char *)&x, p, sizeof x);
+    memcpy(&x, p, sizeof x);
     return PyLong_FromLong((long)x);
 }
 
@@ -442,7 +442,7 @@ static PyObject *
 nu_uint(_structmodulestate *state, const char *p, const formatdef *f)
 {
     unsigned int x;
-    memcpy((char *)&x, p, sizeof x);
+    memcpy(&x, p, sizeof x);
     return PyLong_FromUnsignedLong((unsigned long)x);
 }
 
@@ -450,7 +450,7 @@ static PyObject *
 nu_long(_structmodulestate *state, const char *p, const formatdef *f)
 {
     long x;
-    memcpy((char *)&x, p, sizeof x);
+    memcpy(&x, p, sizeof x);
     return PyLong_FromLong(x);
 }
 
@@ -458,7 +458,7 @@ static PyObject *
 nu_ulong(_structmodulestate *state, const char *p, const formatdef *f)
 {
     unsigned long x;
-    memcpy((char *)&x, p, sizeof x);
+    memcpy(&x, p, sizeof x);
     return PyLong_FromUnsignedLong(x);
 }
 
@@ -466,7 +466,7 @@ static PyObject *
 nu_ssize_t(_structmodulestate *state, const char *p, const formatdef *f)
 {
     Py_ssize_t x;
-    memcpy((char *)&x, p, sizeof x);
+    memcpy(&x, p, sizeof x);
     return PyLong_FromSsize_t(x);
 }
 
@@ -474,7 +474,7 @@ static PyObject *
 nu_size_t(_structmodulestate *state, const char *p, const formatdef *f)
 {
     size_t x;
-    memcpy((char *)&x, p, sizeof x);
+    memcpy(&x, p, sizeof x);
     return PyLong_FromSize_t(x);
 }
 
@@ -482,7 +482,7 @@ static PyObject *
 nu_longlong(_structmodulestate *state, const char *p, const formatdef *f)
 {
     long long x;
-    memcpy((char *)&x, p, sizeof x);
+    memcpy(&x, p, sizeof x);
     return PyLong_FromLongLong(x);
 }
 
@@ -490,7 +490,7 @@ static PyObject *
 nu_ulonglong(_structmodulestate *state, const char *p, const formatdef *f)
 {
     unsigned long long x;
-    memcpy((char *)&x, p, sizeof x);
+    memcpy(&x, p, sizeof x);
     return PyLong_FromUnsignedLongLong(x);
 }
 
@@ -498,7 +498,7 @@ static PyObject *
 nu_bool(_structmodulestate *state, const char *p, const formatdef *f)
 {
     _Bool x;
-    memcpy((char *)&x, p, sizeof x);
+    memcpy(&x, p, sizeof x);
     return PyBool_FromLong(x != 0);
 }
 
@@ -517,7 +517,7 @@ static PyObject *
 nu_float(_structmodulestate *state, const char *p, const formatdef *f)
 {
     float x;
-    memcpy((char *)&x, p, sizeof x);
+    memcpy(&x, p, sizeof x);
     return PyFloat_FromDouble((double)x);
 }
 
@@ -525,7 +525,7 @@ static PyObject *
 nu_double(_structmodulestate *state, const char *p, const formatdef *f)
 {
     double x;
-    memcpy((char *)&x, p, sizeof x);
+    memcpy(&x, p, sizeof x);
     return PyFloat_FromDouble(x);
 }
 
@@ -553,7 +553,7 @@ static PyObject *
 nu_void_p(_structmodulestate *state, const char *p, const formatdef *f)
 {
     void *x;
-    memcpy((char *)&x, p, sizeof x);
+    memcpy(&x, p, sizeof x);
     return PyLong_FromVoidPtr(x);
 }
 
@@ -618,7 +618,7 @@ np_short(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
         RANGE_ERROR(state, f, 0);
     }
     y = (short)x;
-    memcpy(p, (char *)&y, sizeof y);
+    memcpy(p, &y, sizeof y);
     return 0;
 }
 
@@ -637,7 +637,7 @@ np_ushort(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
         RANGE_ERROR(state, f, 1);
     }
     y = (unsigned short)x;
-    memcpy(p, (char *)&y, sizeof y);
+    memcpy(p, &y, sizeof y);
     return 0;
 }
 
@@ -657,7 +657,7 @@ np_int(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
         RANGE_ERROR(state, f, 0);
 #endif
     y = (int)x;
-    memcpy(p, (char *)&y, sizeof y);
+    memcpy(p, &y, sizeof y);
     return 0;
 }
 
@@ -677,7 +677,7 @@ np_uint(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     if (x > ((unsigned long)UINT_MAX))
         RANGE_ERROR(state, f, 1);
 #endif
-    memcpy(p, (char *)&y, sizeof y);
+    memcpy(p, &y, sizeof y);
     return 0;
 }
 
@@ -691,7 +691,7 @@ np_long(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
         }
         return -1;
     }
-    memcpy(p, (char *)&x, sizeof x);
+    memcpy(p, &x, sizeof x);
     return 0;
 }
 
@@ -705,7 +705,7 @@ np_ulong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
         }
         return -1;
     }
-    memcpy(p, (char *)&x, sizeof x);
+    memcpy(p, &x, sizeof x);
     return 0;
 }
 
@@ -719,7 +719,7 @@ np_ssize_t(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
         }
         return -1;
     }
-    memcpy(p, (char *)&x, sizeof x);
+    memcpy(p, &x, sizeof x);
     return 0;
 }
 
@@ -733,7 +733,7 @@ np_size_t(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
         }
         return -1;
     }
-    memcpy(p, (char *)&x, sizeof x);
+    memcpy(p, &x, sizeof x);
     return 0;
 }
 
@@ -751,7 +751,7 @@ np_longlong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
         }
         return -1;
     }
-    memcpy(p, (char *)&x, sizeof x);
+    memcpy(p, &x, sizeof x);
     return 0;
 }
 
@@ -768,7 +768,7 @@ np_ulonglong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
         }
         return -1;
     }
-    memcpy(p, (char *)&x, sizeof x);
+    memcpy(p, &x, sizeof x);
     return 0;
 }
 
@@ -782,7 +782,7 @@ np_bool(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     if (y < 0)
         return -1;
     x = y;
-    memcpy(p, (char *)&x, sizeof x);
+    memcpy(p, &x, sizeof x);
     return 0;
 }
 
@@ -805,7 +805,7 @@ np_float(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
                         "required argument is not a float");
         return -1;
     }
-    memcpy(p, (char *)&x, sizeof x);
+    memcpy(p, &x, sizeof x);
     return 0;
 }
 
@@ -818,7 +818,7 @@ np_double(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
                         "required argument is not a float");
         return -1;
     }
-    memcpy(p, (char *)&x, sizeof(double));
+    memcpy(p, &x, sizeof(double));
     return 0;
 }
 
@@ -835,7 +835,7 @@ np_float_complex(_structmodulestate *state, char *p, PyObject *v,
                         "required argument is not a complex");
         return -1;
     }
-    memcpy(p, (char *)&x, sizeof(x));
+    memcpy(p, &x, sizeof(x));
     return 0;
 }
 
@@ -851,7 +851,7 @@ np_double_complex(_structmodulestate *state, char *p, PyObject *v,
                         "required argument is not a complex");
         return -1;
     }
-    memcpy(p, (char *)&x, sizeof(x));
+    memcpy(p, &x, sizeof(x));
     return 0;
 }
 #else
@@ -887,7 +887,7 @@ np_void_p(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     Py_DECREF(v);
     if (x == NULL && PyErr_Occurred())
         return -1;
-    memcpy(p, (char *)&x, sizeof x);
+    memcpy(p, &x, sizeof x);
     return 0;
 }
 
