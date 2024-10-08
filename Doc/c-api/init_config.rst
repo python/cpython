@@ -1356,14 +1356,13 @@ the :option:`-X` command line option.
    The ``show_alloc_count`` field has been removed.
 
 
+.. _init-from-config:
+
 Initialization with PyConfig
 ----------------------------
 
-Function to initialize Python:
-
-.. c:function:: PyStatus Py_InitializeFromConfig(const PyConfig *config)
-
-   Initialize Python from *config* configuration.
+Initializing the interpreter from a populated configuration struct is handled
+by calling :c:func:`Py_InitializeFromConfig`.
 
 The caller is responsible to handle exceptions (error or exit) using
 :c:func:`PyStatus_Exception` and :c:func:`Py_ExitStatusException`.
@@ -1833,26 +1832,6 @@ return ``-1`` on error:
 
         return -1;
     }
-
-
-Py_RunMain()
-============
-
-.. c:function:: int Py_RunMain(void)
-
-   Execute the command (:c:member:`PyConfig.run_command`), the script
-   (:c:member:`PyConfig.run_filename`) or the module
-   (:c:member:`PyConfig.run_module`) specified on the command line or in the
-   configuration.
-
-   By default and when if :option:`-i` option is used, run the REPL.
-
-   Finally, finalizes Python and returns an exit status that can be passed to
-   the ``exit()`` function.
-
-See :ref:`Python Configuration <init-python-config>` for an example of
-customized Python always running in isolated mode using
-:c:func:`Py_RunMain`.
 
 
 Runtime Python configuration API
