@@ -39,6 +39,10 @@ from .trace import trace
 from .unix_eventqueue import EventQueue
 from .utils import wlen
 
+try:
+    import posix
+except ImportError:
+    posix = None
 
 TYPE_CHECKING = False
 
@@ -564,11 +568,9 @@ class UnixConsole(Console):
 
     @property
     def input_hook(self):
-        try:
-            import posix
-        except ImportError:
-            return None
-        if posix._is_inputhook_installed():
+        # avoid inline imports here so the repl doesn't get flooded with import
+        # logging from -Ximporttime=2
+        if posix is not None and posix._is_inputhook_installed():
             return posix._inputhook
 
     def __enable_bracketed_paste(self) -> None:
