@@ -1,4 +1,4 @@
 Fix :class:`typing.TypeAliasType` with incorrect ``type_params`` argument.
-Now it raises a :exc:`TypeError` when: 1. A type var without default follows
-a type var with default 2. Not a typelike parameter passed in
-``type_params`` tuple
+Now it raises a :exc:`TypeError` when a type parameter without a default
+follows one with a default, and when an entry in the ``type_params`` tuple
+is not a type parameter object.
