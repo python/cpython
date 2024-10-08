@@ -5315,7 +5315,8 @@ get_base_by_token_recursive(PyObject *bases, void *token)
 }
 
 static int
-check_base_by_token(PyTypeObject *type, void *token) {
+check_base_by_token(PyTypeObject *type, void *token)
+{
     if (token == NULL) {
         PyErr_Format(PyExc_SystemError,
                      "PyType_GetBaseByToken called with token=NULL");
@@ -5337,22 +5338,17 @@ check_base_by_token(PyTypeObject *type, void *token) {
         return get_base_by_token_recursive(lookup_tp_bases(type), token) ? 1 : 0;
     }
     else {
-        // mro_invoke() ensures that the type MRO cannot be empty.
         assert(PyTuple_GET_SIZE(mro) >= 1);
-        // Also, the first item in the MRO is the type itself, which
-        // we already checked above. We skip it in the loop.
         assert(PyTuple_GET_ITEM(mro, 0) == (PyObject *)type);
-        PyTypeObject *res = NULL;
-        Py_ssize_t n = PyTuple_GET_SIZE(mro);
-        for (Py_ssize_t i = 1; i < n; i++) {
+        // Find from the last when only checking
+        for (Py_ssize_t i = PyTuple_GET_SIZE(mro) - 1; i >= 1; i--) {
             PyTypeObject *base = (PyTypeObject *)PyTuple_GET_ITEM(mro, i);
             if (_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)
                 && ((PyHeapTypeObject*)base)->ht_token == token) {
-                res = base;
-                break;
+                return 1;
             }
         }
-        return res ? 1 : 0;
+        return 0;
     }
 }
 
