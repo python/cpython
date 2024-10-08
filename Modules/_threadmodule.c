@@ -788,8 +788,10 @@ lock_PyThread_acquire_lock(PyObject *op, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyLockStatus r = _PyMutex_LockTimed(&self->lock, timeout, _PY_LOCK_DETACH);
-    if (r == PY_LOCK_INTR) {
+    PyLockStatus r = _PyMutex_LockTimed(&self->lock, timeout,
+                                        _PY_LOCK_HANDLE_SIGNALS | _PY_LOCK_DETACH);
+    if (r == PY_LOCK_INTR)
+    {
         return NULL;
     }
 
