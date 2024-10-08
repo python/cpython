@@ -1676,7 +1676,7 @@ class UnicodeTest(string_tests.CommonTest,
             self.assertIn('str', exc)
             self.assertIn('tuple', exc)
 
-    @support.run_with_locale('LC_ALL', 'de_DE', 'fr_FR')
+    @support.run_with_locale('LC_ALL', 'de_DE', 'fr_FR', '')
     def test_format_float(self):
         # should not format with a comma, but always with C locale
         self.assertEqual('1.0', '%.1f' % 1.0)
