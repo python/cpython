@@ -1,0 +1,3 @@
+In :class:`code.InteractiveInterpreter`, handle exceptions caused by calling a
+non-default :func:`sys.excepthook`. Before, the exception bubbled up to the
+caller, ending the :term:`REPL`.

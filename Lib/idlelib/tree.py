@@ -83,6 +83,8 @@ def wheel_event(event, widget=None):
 
 class TreeNode:
 
+    dy = 0
+
     def __init__(self, canvas, parent, item):
         self.canvas = canvas
         self.parent = parent
@@ -199,23 +201,22 @@ class TreeNode:
 
     def draw(self, x, y):
         # XXX This hard-codes too many geometry constants!
-        dy = 20
         self.x, self.y = x, y
         self.drawicon()
         self.drawtext()
         if self.state != 'expanded':
-            return y + dy
+            return y + TreeNode.dy
         # draw children
         if not self.children:
             sublist = self.item._GetSubList()
             if not sublist:
                 # _IsExpandable() was mistaken; that's allowed
-                return y+17
+                return y + TreeNode.dy
             for item in sublist:
                 child = self.__class__(self.canvas, self, item)
                 self.children.append(child)
         cx = x+20
-        cy = y + dy
+        cy = y + TreeNode.dy
         cylast = 0
         for child in self.children:
             cylast = cy
@@ -289,6 +290,11 @@ class TreeNode:
             self.label.bind("<Button-4>", lambda e: wheel_event(e, self.canvas))
             self.label.bind("<Button-5>", lambda e: wheel_event(e, self.canvas))
         self.text_id = id
+        if TreeNode.dy == 0:
+            # The first row doesn't matter what the dy is, just measure its
+            # size to get the value of the subsequent dy
+            coords = self.canvas.bbox(id)
+            TreeNode.dy = max(20, coords[3] - coords[1] - 3)
 
     def select_or_edit(self, event=None):
         if self.selected and self.item.IsEditable():

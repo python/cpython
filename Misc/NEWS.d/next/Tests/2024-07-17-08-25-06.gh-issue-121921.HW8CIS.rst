@@ -1,0 +1,2 @@
+Update ``Lib/test/crashers/bogus_code_obj.py`` so that it crashes properly
+again.

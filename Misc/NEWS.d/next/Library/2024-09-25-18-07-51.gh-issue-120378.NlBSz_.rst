@@ -1,0 +1,2 @@
+Fix a crash related to an integer overflow in :func:`curses.resizeterm`
+and :func:`curses.resize_term`.

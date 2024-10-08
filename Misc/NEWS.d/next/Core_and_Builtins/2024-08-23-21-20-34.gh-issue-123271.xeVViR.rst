@@ -1,0 +1,1 @@
+Make concurrent iterations over the same :func:`zip` iterator safe under free-threading.

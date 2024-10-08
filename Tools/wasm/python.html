@@ -35,11 +35,12 @@
     <script src="https://unpkg.com/xterm@4.18.0/lib/xterm.js" crossorigin integrity="sha384-yYdNmem1ioP5Onm7RpXutin5A8TimLheLNQ6tnMi01/ZpxXdAwIm2t4fJMx1Djs+"/></script>
     <script type="module">
 class WorkerManager {
-    constructor(workerURL, standardIO, readyCallBack) {
+    constructor(workerURL, standardIO, readyCallBack, finishedCallback) {
         this.workerURL = workerURL
         this.worker = null
         this.standardIO = standardIO
         this.readyCallBack = readyCallBack
+        this.finishedCallback = finishedCallback
 
         this.initialiseWorker()
     }
@@ -57,6 +58,15 @@ class WorkerManager {
             args: options.args || [],
             files: options.files || {}
         })
+    }
+
+    reset() {
+        if (this.worker) {
+            this.worker.terminate()
+            this.worker = null
+        }
+        this.standardIO.message('Worker process terminated.')
+        this.initialiseWorker()
     }
 
     handleStdinData(inputValue) {
@@ -92,7 +102,8 @@ class WorkerManager {
                 this.handleStdinData(inputValue)
             })
         } else if (type === 'finished') {
-            this.standardIO.stderr(`Exited with status: ${event.data.returnCode}\r\n`)
+            this.standardIO.message(`Exited with status: ${event.data.returnCode}`)
+            this.finishedCallback()
         }
     }
 }
@@ -168,9 +179,14 @@ class WasmTerminal {
                     break;
                 case "\x7F": // BACKSPACE
                 case "\x08": // CTRL+H
-                case "\x04": // CTRL+D
                     this.handleCursorErase(true);
                     break;
+                case "\x04": // CTRL+D
+                    // Send empty input
+                    if (this.input === '') {
+                        this.resolveInput('')
+                        this.activeInput = false;
+                    }
             }
         } else {
             this.handleCursorInsert(data);
@@ -265,8 +281,12 @@ class BufferQueue {
     }
 }
 
+const runButton = document.getElementById('run')
 const replButton = document.getElementById('repl')
+const stopButton = document.getElementById('stop')
 const clearButton = document.getElementById('clear')
+
+const codeBox = document.getElementById('codebox')
 
 window.onload = () => {
     const terminal = new WasmTerminal()
@@ -277,13 +297,40 @@ window.onload = () => {
         stderr: (charCode) => { terminal.print(charCode) },
         stdin: async () => {
             return await terminal.prompt()
+        },
+        message: (text) => { terminal.writeLine(`\r\n${text}\r\n`) },
+    }
+
+    const programRunning = (isRunning) => {
+        if (isRunning) {
+            replButton.setAttribute('disabled', true)
+            runButton.setAttribute('disabled', true)
+            stopButton.removeAttribute('disabled')
+        } else {
+            replButton.removeAttribute('disabled')
+            runButton.removeAttribute('disabled')
+            stopButton.setAttribute('disabled', true)
         }
     }
 
+    runButton.addEventListener('click', (e) => {
+        terminal.clear()
+        programRunning(true)
+        const code = codeBox.value
+        pythonWorkerManager.run({args: ['main.py'], files: {'main.py': code}})
+    })
+
     replButton.addEventListener('click', (e) => {
+        terminal.clear()
+        programRunning(true)
         // Need to use "-i -" to force interactive mode.
         // Looks like isatty always returns false in emscripten
         pythonWorkerManager.run({args: ['-i', '-'], files: {}})
+    })
+
+    stopButton.addEventListener('click', (e) => {
+        programRunning(false)
+        pythonWorkerManager.reset()
     })
 
     clearButton.addEventListener('click', (e) => {
@@ -292,20 +339,30 @@ window.onload = () => {
 
     const readyCallback = () => {
         replButton.removeAttribute('disabled')
+        runButton.removeAttribute('disabled')
         clearButton.removeAttribute('disabled')
     }
 
-    const pythonWorkerManager = new WorkerManager('./python.worker.js', stdio, readyCallback)
+    const finishedCallback = () => {
+        programRunning(false)
+    }
+
+    const pythonWorkerManager = new WorkerManager('./python.worker.js', stdio, readyCallback, finishedCallback)
 }
     </script>
 </head>
 <body>
     <h1>Simple REPL for Python WASM</h1>
-    <div id="terminal"></div>
+<textarea id="codebox" cols="108" rows="16">
+print('Welcome to WASM!')
+</textarea>
     <div class="button-container">
+      <button id="run" disabled>Run</button>
       <button id="repl" disabled>Start REPL</button>
+      <button id="stop" disabled>Stop</button>
       <button id="clear" disabled>Clear</button>
     </div>
+    <div id="terminal"></div>
     <div id="info">
         The simple REPL provides a limited Python experience in the browser.
         <a href="https://github.com/python/cpython/blob/main/Tools/wasm/README.md">

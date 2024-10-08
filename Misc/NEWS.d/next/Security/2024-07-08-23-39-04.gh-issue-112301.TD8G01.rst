@@ -1,0 +1,2 @@
+Enable runtime protections for glibc to abort execution when unsafe behavior is encountered,
+for all platforms except Windows.

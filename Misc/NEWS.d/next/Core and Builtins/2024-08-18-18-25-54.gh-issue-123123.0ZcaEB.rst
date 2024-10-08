@@ -1,0 +1,2 @@
+Fix displaying :exc:`SyntaxError` exceptions covering multiple lines. Patch
+by Pablo Galindo

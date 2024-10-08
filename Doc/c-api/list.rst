@@ -38,9 +38,12 @@ List Objects
    .. note::
 
       If *len* is greater than zero, the returned list object's items are
-      set to ``NULL``.  Thus you cannot use abstract API functions such as
-      :c:func:`PySequence_SetItem`  or expose the object to Python code before
-      setting all items to a real object with :c:func:`PyList_SetItem`.
+      set to ``NULL``. Thus you cannot use abstract API functions such as
+      :c:func:`PySequence_SetItem` or expose the object to Python code before
+      setting all items to a real object with :c:func:`PyList_SetItem` or
+      :c:func:`PyList_SET_ITEM()`. The following APIs are safe APIs before
+      the list is fully initialized: :c:func:`PyList_SetItem()` and :c:func:`PyList_SET_ITEM()`.
+
 
 
 .. c:function:: Py_ssize_t PyList_Size(PyObject *list)

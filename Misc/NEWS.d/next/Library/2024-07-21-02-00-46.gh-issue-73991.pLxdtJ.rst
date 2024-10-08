@@ -1,0 +1,1 @@
+Add :meth:`pathlib.Path.move`, which moves a file or directory tree.

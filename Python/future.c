@@ -8,7 +8,7 @@
 static int
 future_check_features(_PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
 {
-    int i;
+    Py_ssize_t i;
 
     assert(s->kind == ImportFrom_kind);
 

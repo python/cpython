@@ -1,0 +1,1 @@
+Fixed scalability issue in free-threaded builds for lock-free reads from dictionaries in multi-threaded scenarios

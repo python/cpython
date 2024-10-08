@@ -1,10 +1,9 @@
 import sys
-import test.support
 import unittest
 from contextlib import closing
 from functools import partial
 from pathlib import Path
-from test.support import cpython_only, import_helper, os_helper
+from test.support import import_helper, os_helper
 
 dbm_sqlite3 = import_helper.import_module("dbm.sqlite3")
 # N.B. The test will fail on some platforms without sqlite3

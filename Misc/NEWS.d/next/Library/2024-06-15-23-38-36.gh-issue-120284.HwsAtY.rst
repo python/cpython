@@ -1,0 +1,2 @@
+Allow :meth:`asyncio.Runner.run` to accept :term:`awaitable`
+objects instead of simply :term:`coroutine`\s.

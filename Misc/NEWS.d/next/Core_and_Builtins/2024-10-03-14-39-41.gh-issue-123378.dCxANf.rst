@@ -1,0 +1,3 @@
+Fix a crash in the :meth:`~object.__str__` method of :exc:`UnicodeError`
+objects when the :attr:`UnicodeError.start` and :attr:`UnicodeError.end`
+values are invalid or out-of-range. Patch by Bénédikt Tran.

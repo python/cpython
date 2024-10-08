@@ -129,7 +129,7 @@ The module defines the following:
 
    Empty iterables are allowed, but acceptance of three empty iterables is
    platform-dependent. (It is known to work on Unix but not on Windows.)  The
-   optional *timeout* argument specifies a time-out as a floating point number
+   optional *timeout* argument specifies a time-out as a floating-point number
    in seconds.  When the *timeout* argument is omitted the function blocks until
    at least one file descriptor is ready.  A time-out value of zero specifies a
    poll and never blocks.

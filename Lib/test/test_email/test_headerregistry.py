@@ -7,7 +7,6 @@ from email.message import Message
 from test.test_email import TestEmailBase, parameterize
 from email import headerregistry
 from email.headerregistry import Address, Group
-from email.header import decode_header
 from test.support import ALWAYS_EQ
 
 

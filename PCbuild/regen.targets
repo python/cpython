@@ -90,23 +90,23 @@
           Inputs="@(_CasesSources)" Outputs="@(_CasesOutputs)"
           DependsOnTargets="FindPythonForBuild">
     <Message Text="Regenerate cases" Importance="high" />
-    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\opcode_id_generator.py $(PySourcePath)Python\bytecodes.c"
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\opcode_id_generator.py Python\bytecodes.c"
           WorkingDirectory="$(PySourcePath)" />
-    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\target_generator.py $(PySourcePath)Python\bytecodes.c"
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\target_generator.py Python\bytecodes.c"
           WorkingDirectory="$(PySourcePath)" />
-    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\uop_id_generator.py $(PySourcePath)Python\bytecodes.c"
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\uop_id_generator.py Python\bytecodes.c"
           WorkingDirectory="$(PySourcePath)" />
-    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\py_metadata_generator.py $(PySourcePath)Python\bytecodes.c"
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\py_metadata_generator.py Python\bytecodes.c"
           WorkingDirectory="$(PySourcePath)" />
-    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\tier1_generator.py $(PySourcePath)Python\bytecodes.c"
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\tier1_generator.py Python\bytecodes.c"
           WorkingDirectory="$(PySourcePath)" />
-    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\tier2_generator.py $(PySourcePath)Python\bytecodes.c"
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\tier2_generator.py Python\bytecodes.c"
           WorkingDirectory="$(PySourcePath)" />
-    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\optimizer_generator.py $(PySourcePath)Python\optimizer_bytecodes.c $(PySourcePath)Python\bytecodes.c"
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\optimizer_generator.py Python\optimizer_bytecodes.c Python\bytecodes.c"
           WorkingDirectory="$(PySourcePath)" />
-    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\opcode_metadata_generator.py $(PySourcePath)Python\bytecodes.c"
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\opcode_metadata_generator.py Python\bytecodes.c"
           WorkingDirectory="$(PySourcePath)" />
-    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\uop_metadata_generator.py $(PySourcePath)Python\bytecodes.c"
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\uop_metadata_generator.py Python\bytecodes.c"
           WorkingDirectory="$(PySourcePath)" />
   </Target>
 

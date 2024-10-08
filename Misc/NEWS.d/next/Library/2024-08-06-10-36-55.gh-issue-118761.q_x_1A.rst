@@ -1,0 +1,2 @@
+Improve import time of :mod:`pprint` by around seven times. Patch by Hugo
+van Kemenade.

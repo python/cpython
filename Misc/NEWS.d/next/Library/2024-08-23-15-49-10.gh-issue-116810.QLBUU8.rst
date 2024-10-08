@@ -1,0 +1,4 @@
+Resolve a memory leak introduced in CPython 3.10's :mod:`ssl` when the
+:attr:`ssl.SSLSocket.session` property was accessed.  Speeds up read and
+write access to said property by no longer unnecessarily cloning session
+objects via serialization.

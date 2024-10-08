@@ -1,0 +1,4 @@
+Fix edge-case bug where :func:`typing.get_type_hints` would produce
+incorrect results if type parameters in a class scope were overridden by
+assignments in a class scope and ``from __future__ import annotations``
+semantics were enabled. Patch by Alex Waygood.

@@ -1,0 +1,4 @@
+The ``f_executable`` field in the internal :c:struct:`_PyInterpreterFrame`
+struct now uses a tagged pointer.  Profilers and debuggers that uses this
+field should clear the least significant bit to recover the
+:c:expr:`PyObject*` pointer.

@@ -4,12 +4,9 @@ Writes the IDs to pycore_uop_ids.h by default.
 """
 
 import argparse
-import os.path
-import sys
 
 from analyzer import (
     Analysis,
-    Instruction,
     analyze_files,
 )
 from generators_common import (

@@ -1,0 +1,1 @@
+Do not translate user-provided strings in :class:`argparse.ArgumentParser`.

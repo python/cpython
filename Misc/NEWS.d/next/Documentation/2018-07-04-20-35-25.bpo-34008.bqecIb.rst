@@ -1,0 +1,8 @@
+The :c:func:`Py_Main` documentation moved from the "Very High Level API" section to the
+"Initialization and Finalization" section.
+
+Also make it explicit that we expect ``Py_Main`` to typically be called instead
+of ``Py_Initialize`` rather than after it (since ``Py_Main`` makes its own
+call to ``Py_Initialize``). Document that calling both is
+supported but is version dependent on which settings
+will be applied correctly.

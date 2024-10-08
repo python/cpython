@@ -1,0 +1,1 @@
+Update :mod:`unicodedata` database to Unicode 16.0.0.

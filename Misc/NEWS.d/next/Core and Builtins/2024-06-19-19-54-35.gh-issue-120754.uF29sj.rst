@@ -1,0 +1,1 @@
+Reduce the number of system calls invoked when reading a whole file (ex. ``open('a.txt').read()``). For a sample program that reads the contents of the 400+ ``.rst`` files in the cpython repository ``Doc`` folder, there is an over 10% reduction in system call count.

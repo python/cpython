@@ -102,7 +102,14 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, PyTime_t timeout)
         millis = INFINITE;
     }
     else {
-        millis = (DWORD) (timeout / 1000000);
+        PyTime_t div = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_TIMEOUT);
+        // Prevent overflow with clamping the result
+        if ((PyTime_t)PY_DWORD_MAX < div) {
+            millis = PY_DWORD_MAX;
+        }
+        else {
+            millis = (DWORD) div;
+        }
     }
     wait = WaitForSingleObjectEx(sema->platform_sem, millis, FALSE);
     if (wait == WAIT_OBJECT_0) {
@@ -119,7 +126,7 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, PyTime_t timeout)
     if (timeout >= 0) {
         struct timespec ts;
 
-#if defined(CLOCK_MONOTONIC) && defined(HAVE_SEM_CLOCKWAIT)
+#if defined(CLOCK_MONOTONIC) && defined(HAVE_SEM_CLOCKWAIT) && !defined(_Py_THREAD_SANITIZER)
         PyTime_t now;
         // silently ignore error: cannot report error to the caller
         (void)PyTime_MonotonicRaw(&now);

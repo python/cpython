@@ -1,0 +1,1 @@
+Add :meth:`pathlib.Path.copy`, which copies a file or directory to another.

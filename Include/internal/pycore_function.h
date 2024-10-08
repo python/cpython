@@ -18,6 +18,10 @@ extern PyObject* _PyFunction_Vectorcall(
 
 #define FUNC_MAX_WATCHERS 8
 
+#define FUNC_VERSION_UNSET 0
+#define FUNC_VERSION_CLEARED 1
+#define FUNC_VERSION_FIRST_VALID 2
+
 #define FUNC_VERSION_CACHE_SIZE (1<<12)  /* Must be a power of 2 */
 
 struct _func_version_cache_item {
@@ -40,6 +44,12 @@ struct _py_func_state {
 };
 
 extern PyFunctionObject* _PyFunction_FromConstructor(PyFrameConstructor *constr);
+
+static inline int
+_PyFunction_IsVersionValid(uint32_t version)
+{
+    return version >= FUNC_VERSION_FIRST_VALID;
+}
 
 extern uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func);
 PyAPI_FUNC(void) _PyFunction_SetVersion(PyFunctionObject *func, uint32_t version);

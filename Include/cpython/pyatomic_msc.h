@@ -1069,6 +1069,18 @@ _Py_atomic_fence_seq_cst(void)
 }
 
  static inline void
+_Py_atomic_fence_acquire(void)
+{
+#if defined(_M_ARM64)
+    __dmb(_ARM64_BARRIER_ISHLD);
+#elif defined(_M_X64) || defined(_M_IX86)
+    _ReadBarrier();
+#else
+#  error "no implementation of _Py_atomic_fence_acquire"
+#endif
+}
+
+ static inline void
 _Py_atomic_fence_release(void)
 {
 #if defined(_M_ARM64)

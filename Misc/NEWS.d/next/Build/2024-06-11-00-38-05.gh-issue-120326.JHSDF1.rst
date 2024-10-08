@@ -1,0 +1,2 @@
+On Windows, fix build error when ``--disable-gil`` and ``--experimental-jit``
+options are combined.

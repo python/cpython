@@ -81,6 +81,7 @@ struct _Py_interp_cached_objects {
     PyTypeObject *paramspec_type;
     PyTypeObject *paramspecargs_type;
     PyTypeObject *paramspeckwargs_type;
+    PyTypeObject *constevaluator_type;
 };
 
 #define _Py_INTERP_STATIC_OBJECT(interp, NAME) \

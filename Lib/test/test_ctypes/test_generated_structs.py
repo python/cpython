@@ -14,10 +14,9 @@ from test.support import import_helper
 import re
 from dataclasses import dataclass
 from functools import cached_property
-import sys
 
 import ctypes
-from ctypes import Structure, Union, _SimpleCData
+from ctypes import Structure, Union
 from ctypes import sizeof, alignment, pointer, string_at
 _ctypes_test = import_helper.import_module("_ctypes_test")
 

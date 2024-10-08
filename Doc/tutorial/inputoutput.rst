@@ -87,12 +87,12 @@ Some examples::
    >>> print(s)
    The value of x is 32.5, and y is 40000...
    >>> # The repr() of a string adds string quotes and backslashes:
-   ... hello = 'hello, world\n'
+   >>> hello = 'hello, world\n'
    >>> hellos = repr(hello)
    >>> print(hellos)
    'hello, world\n'
    >>> # The argument to repr() may be any Python object:
-   ... repr((x, y, ('spam', 'eggs')))
+   >>> repr((x, y, ('spam', 'eggs')))
    "(32.5, 40000, ('spam', 'eggs'))"
 
 The :mod:`string` module contains a :class:`~string.Template` class that offers
@@ -279,9 +279,11 @@ left with zeros.  It understands about plus and minus signs::
 Old string formatting
 ---------------------
 
-The % operator (modulo) can also be used for string formatting. Given ``'string'
-% values``, instances of ``%`` in ``string`` are replaced with zero or more
-elements of ``values``. This operation is commonly known as string
+The % operator (modulo) can also be used for string formatting.
+Given ``format % values`` (where *format* is a string),
+``%`` conversion specifications in *format* are replaced with
+zero or more elements of *values*.
+This operation is commonly known as string
 interpolation. For example::
 
    >>> import math

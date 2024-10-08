@@ -1,0 +1,3 @@
+Fix test_typing random leaks. Clear typing ABC caches when running tests for
+refleaks (``-R`` option): call ``_abc_caches_clear()`` on typing abstract
+classes and their subclasses. Patch by Victor Stinner.

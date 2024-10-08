@@ -1,0 +1,2 @@
+Fix detection of the minimal Queue API needed by the :mod:`logging` module.
+Patch by Bénédikt Tran.

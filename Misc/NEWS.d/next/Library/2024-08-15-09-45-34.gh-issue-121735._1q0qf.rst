@@ -1,0 +1,3 @@
+When working with zip archives, importlib.resources now properly honors
+module-adjacent references (e.g. ``files(pkg.mod)`` and not just
+``files(pkg)``).

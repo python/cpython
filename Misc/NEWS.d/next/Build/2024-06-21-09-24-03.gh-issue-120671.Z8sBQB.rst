@@ -1,0 +1,1 @@
+Fix failing configure tests due to a missing space when appending to CFLAGS.

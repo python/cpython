@@ -67,19 +67,19 @@ class FutureTest(unittest.TestCase):
         with import_helper.CleanImport(
             'test.test_future_stmt.test_future_single_import',
         ):
-            from test.test_future_stmt import test_future_single_import
+            from test.test_future_stmt import test_future_single_import  # noqa: F401
 
     def test_future_multiple_imports(self):
         with import_helper.CleanImport(
             'test.test_future_stmt.test_future_multiple_imports',
         ):
-            from test.test_future_stmt import test_future_multiple_imports
+            from test.test_future_stmt import test_future_multiple_imports  # noqa: F401
 
     def test_future_multiple_features(self):
         with import_helper.CleanImport(
             "test.test_future_stmt.test_future_multiple_features",
         ):
-            from test.test_future_stmt import test_future_multiple_features
+            from test.test_future_stmt import test_future_multiple_features  # noqa: F401
 
     def test_unknown_future_flag(self):
         code = """
@@ -153,7 +153,7 @@ class FutureTest(unittest.TestCase):
 
     def test_module_with_future_import_not_on_top(self):
         with self.assertRaises(SyntaxError) as cm:
-            from test.test_future_stmt import badsyntax_future
+            from test.test_future_stmt import badsyntax_future  # noqa: F401
         self.check_syntax_error(cm.exception, "badsyntax_future", lineno=3)
 
     def test_ensure_flags_dont_clash(self):

@@ -1,0 +1,1 @@
+Upgrade pip wheel bundled with ensurepip (pip 24.1.1)

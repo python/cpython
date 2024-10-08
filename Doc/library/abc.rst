@@ -99,7 +99,7 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
       that you can customize the behavior of :func:`issubclass` further without the
       need to call :meth:`register` on every class you want to consider a
       subclass of the ABC.  (This class method is called from the
-      :meth:`~class.__subclasscheck__` method of the ABC.)
+      :meth:`~type.__subclasscheck__` method of the ABC.)
 
       This method should return ``True``, ``False`` or :data:`NotImplemented`.  If
       it returns ``True``, the *subclass* is considered a subclass of this ABC.
@@ -149,7 +149,7 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
    The :meth:`__subclasshook__` class method defined here says that any class
    that has an :meth:`~iterator.__iter__` method in its
    :attr:`~object.__dict__` (or in that of one of its base classes, accessed
-   via the :attr:`~class.__mro__` list) is considered a ``MyIterable`` too.
+   via the :attr:`~type.__mro__` list) is considered a ``MyIterable`` too.
 
    Finally, the last line makes ``Foo`` a virtual subclass of ``MyIterable``,
    even though it does not define an :meth:`~iterator.__iter__` method (it uses

@@ -1264,6 +1264,12 @@ def _check_types(a, b, *args):
     if b and not isinstance(b[0], str):
         raise TypeError('lines to compare must be str, not %s (%r)' %
                         (type(b[0]).__name__, b[0]))
+    if isinstance(a, str):
+        raise TypeError('input must be a sequence of strings, not %s' %
+                        type(a).__name__)
+    if isinstance(b, str):
+        raise TypeError('input must be a sequence of strings, not %s' %
+                        type(b).__name__)
     for arg in args:
         if not isinstance(arg, str):
             raise TypeError('all arguments must be str, not: %r' % (arg,))

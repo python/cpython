@@ -97,10 +97,11 @@ struct _ts {
 #ifdef Py_BUILD_CORE
 #  define _PyThreadState_WHENCE_NOTSET -1
 #  define _PyThreadState_WHENCE_UNKNOWN 0
-#  define _PyThreadState_WHENCE_INTERP 1
-#  define _PyThreadState_WHENCE_THREADING 2
-#  define _PyThreadState_WHENCE_GILSTATE 3
-#  define _PyThreadState_WHENCE_EXEC 4
+#  define _PyThreadState_WHENCE_INIT 1
+#  define _PyThreadState_WHENCE_FINI 2
+#  define _PyThreadState_WHENCE_THREADING 3
+#  define _PyThreadState_WHENCE_GILSTATE 4
+#  define _PyThreadState_WHENCE_EXEC 5
 #endif
     int _whence;
 
@@ -191,6 +192,14 @@ struct _ts {
     PyObject *previous_executor;
 
     uint64_t dict_global_version;
+
+    /* Used to store/retrieve `threading.local` keys/values for this thread */
+    PyObject *threading_local_key;
+
+    /* Used by `threading.local`s to be remove keys/values for dying threads.
+       The PyThreadObject must hold the only reference to this value.
+    */
+    PyObject *threading_local_sentinel;
 };
 
 #ifdef Py_DEBUG
@@ -209,8 +218,14 @@ struct _ts {
 #  define Py_C_RECURSION_LIMIT 3000
 #elif defined(_Py_ADDRESS_SANITIZER)
 #  define Py_C_RECURSION_LIMIT 4000
+#elif defined(__sparc__)
+   // test_descr crashed on sparc64 with >7000 but let's keep a margin of error.
+#  define Py_C_RECURSION_LIMIT 4000
 #elif defined(__wasi__)
    // Based on wasmtime 16.
+#  define Py_C_RECURSION_LIMIT 5000
+#elif defined(__hppa__) || defined(__powerpc64__)
+   // test_descr crashed with >8000 but let's keep a margin of error.
 #  define Py_C_RECURSION_LIMIT 5000
 #else
    // This value is duplicated in Lib/test/support/__init__.py

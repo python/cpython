@@ -1,0 +1,2 @@
+Fix missing sanity check for ``parties`` arg in :class:`threading.Barrier`
+constructor. Patch by Clinton Christian (pygeek).

@@ -1,0 +1,2 @@
+Remove the previously-deprecated delegation of :func:`int` to
+:meth:`~object.__trunc__`.

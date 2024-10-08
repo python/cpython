@@ -1,0 +1,1 @@
+Fix padding in config and search dialog windows in IDLE.

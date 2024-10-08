@@ -923,7 +923,7 @@ _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
             {
                 break;
             }
-            /* fall through */
+            _Py_FALLTHROUGH;
         default:
             return SetFromWindowsErr(err);
     }

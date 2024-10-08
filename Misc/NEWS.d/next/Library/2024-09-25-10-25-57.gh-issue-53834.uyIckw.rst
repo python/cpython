@@ -1,0 +1,4 @@
+Fix support of arguments with :ref:`choices` in :mod:`argparse`. Positional
+arguments with :ref:`nargs` equal to ``'?'`` or ``'*'`` no longer check
+:ref:`default` against ``choices``. Optional arguments with ``nargs`` equal
+to ``'?'`` no longer check :ref:`const` against ``choices``.

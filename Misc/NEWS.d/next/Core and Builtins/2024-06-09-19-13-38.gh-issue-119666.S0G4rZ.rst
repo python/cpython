@@ -1,0 +1,1 @@
+Fix a compiler crash in the case where two comprehensions in class scope both reference ``__class__``.

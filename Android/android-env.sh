@@ -28,7 +28,7 @@ ndk_version=26.2.11394342
 
 ndk=$ANDROID_HOME/ndk/$ndk_version
 if ! [ -e $ndk ]; then
-    log "Installing NDK: this may take several minutes"
+    log "Installing NDK - this may take several minutes"
     yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;$ndk_version"
 fi
 

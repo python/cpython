@@ -1,0 +1,2 @@
+Add default compiler options to improve security. Enable
+-Wimplicit-fallthrough, -fstack-protector-strong, -Wtrampolines.

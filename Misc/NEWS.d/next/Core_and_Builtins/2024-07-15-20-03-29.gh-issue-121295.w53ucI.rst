@@ -1,0 +1,2 @@
+Fix PyREPL console getting into a blocked state after interrupting a long
+paste

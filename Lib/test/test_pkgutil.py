@@ -522,7 +522,43 @@ class ExtendPathTests(unittest.TestCase):
         del sys.modules['foo.bar']
         del sys.modules['foo.baz']
 
-    # XXX: test .pkg files
+
+    def test_extend_path_argument_types(self):
+        pkgname = 'foo'
+        dirname_0 = self.create_init(pkgname)
+
+        # If the input path is not a list it is returned unchanged
+        self.assertEqual('notalist', pkgutil.extend_path('notalist', 'foo'))
+        self.assertEqual(('not', 'a', 'list'), pkgutil.extend_path(('not', 'a', 'list'), 'foo'))
+        self.assertEqual(123, pkgutil.extend_path(123, 'foo'))
+        self.assertEqual(None, pkgutil.extend_path(None, 'foo'))
+
+        # Cleanup
+        shutil.rmtree(dirname_0)
+        del sys.path[0]
+
+
+    def test_extend_path_pkg_files(self):
+        pkgname = 'foo'
+        dirname_0 = self.create_init(pkgname)
+
+        with open(os.path.join(dirname_0, 'bar.pkg'), 'w') as pkg_file:
+            pkg_file.write('\n'.join([
+                'baz',
+                '/foo/bar/baz',
+                '',
+                '#comment'
+            ]))
+
+        extended_paths = pkgutil.extend_path(sys.path, 'bar')
+
+        self.assertEqual(extended_paths[:-2], sys.path)
+        self.assertEqual(extended_paths[-2], 'baz')
+        self.assertEqual(extended_paths[-1], '/foo/bar/baz')
+
+        # Cleanup
+        shutil.rmtree(dirname_0)
+        del sys.path[0]
 
 
 class NestedNamespacePackageTest(unittest.TestCase):
@@ -588,8 +624,11 @@ class ImportlibMigrationTests(unittest.TestCase):
         mod = type(sys)(name)
         del mod.__spec__
         with CleanImport(name):
-            sys.modules[name] = mod
-            loader = pkgutil.get_loader(name)
+            try:
+                sys.modules[name] = mod
+                loader = pkgutil.get_loader(name)
+            finally:
+                sys.modules.pop(name, None)
         self.assertIsNone(loader)
 
     @ignore_warnings(category=DeprecationWarning)
@@ -598,8 +637,11 @@ class ImportlibMigrationTests(unittest.TestCase):
         mod = type(sys)(name)
         mod.__spec__ = None
         with CleanImport(name):
-            sys.modules[name] = mod
-            loader = pkgutil.get_loader(name)
+            try:
+                sys.modules[name] = mod
+                loader = pkgutil.get_loader(name)
+            finally:
+                sys.modules.pop(name, None)
         self.assertIsNone(loader)
 
     @ignore_warnings(category=DeprecationWarning)

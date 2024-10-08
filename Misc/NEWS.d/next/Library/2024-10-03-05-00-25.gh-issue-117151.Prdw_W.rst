@@ -1,0 +1,3 @@
+The default buffer size used by :func:`shutil.copyfileobj` has been
+increased from 64k to 256k on non-Windows platforms. It was already larger
+on Windows.

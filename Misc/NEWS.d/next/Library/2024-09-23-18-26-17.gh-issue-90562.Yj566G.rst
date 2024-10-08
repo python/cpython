@@ -1,0 +1,3 @@
+Modify dataclasses to support zero-argument super() when ``slots=True`` is
+specified.  This works by modifying all references to ``__class__`` to point
+to the newly created class.

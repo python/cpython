@@ -1,0 +1,2 @@
+Fixed the use-after-free issue in :mod:`cProfile` by disallowing
+``disable()`` and ``clear()`` in external timers.

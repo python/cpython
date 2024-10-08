@@ -1,0 +1,2 @@
+Removed debug build assertions related to interning strings, which were
+falsely triggered by stable ABI extensions.

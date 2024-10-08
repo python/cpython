@@ -698,6 +698,8 @@ class StackSummary(list):
         with suppress(SyntaxError, ImportError):
             import ast
             tree = ast.parse('\n'.join(all_lines))
+            if not tree.body:
+                return False
             statement = tree.body[0]
             value = None
             def _spawns_full_line(value):
@@ -1292,11 +1294,15 @@ class TracebackException:
                 yield '    {}\n'.format(ltext)
             else:
                 offset = self.offset
-                end_offset = self.end_offset if self.end_offset not in {None, 0} else offset
+                if self.lineno == self.end_lineno:
+                    end_offset = self.end_offset if self.end_offset not in {None, 0} else offset
+                else:
+                    end_offset = len(rtext) + 1
+
                 if self.text and offset > len(self.text):
-                    offset = len(self.text) + 1
+                    offset = len(rtext) + 1
                 if self.text and end_offset > len(self.text):
-                    end_offset = len(self.text) + 1
+                    end_offset = len(rtext) + 1
                 if offset >= end_offset or end_offset < 0:
                     end_offset = offset + 1
 

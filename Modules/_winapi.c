@@ -2803,7 +2803,7 @@ _winapi__mimetypes_read_windows_registry_impl(PyObject *module,
         }
 
         err = RegOpenKeyExW(hkcr, ext, 0, KEY_READ, &subkey);
-        if (err == ERROR_FILE_NOT_FOUND) {
+        if (err == ERROR_FILE_NOT_FOUND || err == ERROR_ACCESS_DENIED) {
             err = ERROR_SUCCESS;
             continue;
         } else if (err != ERROR_SUCCESS) {
@@ -3166,6 +3166,11 @@ static int winapi_exec(PyObject *m)
     #define COPY_FILE_REQUEST_COMPRESSED_TRAFFIC 0x10000000
 #endif
     WINAPI_CONSTANT(F_DWORD, COPY_FILE_REQUEST_COMPRESSED_TRAFFIC);
+#ifndef COPY_FILE_DIRECTORY
+    // Only defined in newer WinSDKs
+    #define COPY_FILE_DIRECTORY 0x00000080
+#endif
+    WINAPI_CONSTANT(F_DWORD, COPY_FILE_DIRECTORY);
 
     WINAPI_CONSTANT(F_DWORD, COPYFILE2_CALLBACK_CHUNK_STARTED);
     WINAPI_CONSTANT(F_DWORD, COPYFILE2_CALLBACK_CHUNK_FINISHED);

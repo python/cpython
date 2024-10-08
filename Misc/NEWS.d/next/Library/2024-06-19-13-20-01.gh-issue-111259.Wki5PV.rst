@@ -1,0 +1,3 @@
+:mod:`re` now handles patterns like ``"[\s\S]"`` or ``"\s|\S"`` which match
+any character as effectively as a dot with the ``DOTALL`` modifier
+(``"(?s:.)"``).

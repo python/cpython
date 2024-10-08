@@ -1,0 +1,3 @@
+Fix ``test_expanduser_pwd2()`` of ``test_posixpath``.  Call ``getpwnam()``
+to get ``pw_dir``, since it can be different than ``getpwall()`` ``pw_dir``.
+Patch by Victor Stinner.

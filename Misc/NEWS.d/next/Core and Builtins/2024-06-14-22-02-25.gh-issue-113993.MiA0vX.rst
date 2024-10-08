@@ -1,0 +1,5 @@
+Strings interned with :func:`sys.intern` are again garbage-collected when no
+longer used, as per the documentation. Strings interned with the C function
+:c:func:`PyUnicode_InternInPlace` are still immortal. Internals of the
+string interning mechanism have been changed. This may affect performance
+and identities of :class:`str` objects.

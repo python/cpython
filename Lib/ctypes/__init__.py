@@ -205,6 +205,18 @@ class c_longdouble(_SimpleCData):
 if sizeof(c_longdouble) == sizeof(c_double):
     c_longdouble = c_double
 
+try:
+    class c_double_complex(_SimpleCData):
+        _type_ = "C"
+    _check_size(c_double_complex)
+    class c_float_complex(_SimpleCData):
+        _type_ = "E"
+    _check_size(c_float_complex)
+    class c_longdouble_complex(_SimpleCData):
+        _type_ = "F"
+except AttributeError:
+    pass
+
 if _calcsize("l") == _calcsize("q"):
     # if long and long long have the same size, make c_longlong an alias for c_long
     c_longlong = c_long
@@ -314,8 +326,6 @@ def SetPointerType(pointer, cls):
     del _pointer_type_cache[id(pointer)]
 
 def ARRAY(typ, len):
-    import warnings
-    warnings._deprecated("ctypes.ARRAY", remove=(3, 15))
     return typ * len
 
 ################################################################

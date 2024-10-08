@@ -7,7 +7,8 @@ import re
 import os
 import sys
 from test import support
-from test.support import skip_if_buggy_ucrt_strfptime, warnings_helper
+from test.support import warnings_helper
+from test.support import skip_if_buggy_ucrt_strfptime, run_with_locales
 from datetime import date as datetime_date
 
 import _strptime
@@ -207,8 +208,8 @@ class StrptimeTests(unittest.TestCase):
     """Tests for _strptime.strptime."""
 
     def setUp(self):
-        """Create testing time tuple."""
-        self.time_tuple = time.gmtime()
+        """Create testing time tuples."""
+        self.time_tuple = time.localtime()
 
     def test_ValueError(self):
         # Make sure ValueError is raised when match fails or format is bad
@@ -289,54 +290,67 @@ class StrptimeTests(unittest.TestCase):
         # Check ValueError is raised when there is unconverted data
         self.assertRaises(ValueError, _strptime._strptime_time, "10 12", "%m")
 
-    def helper(self, directive, position):
+    def roundtrip(self, fmt, position, time_tuple=None):
         """Helper fxn in testing."""
-        fmt = "%d %Y" if directive == 'd' else "%" + directive
-        strf_output = time.strftime(fmt, self.time_tuple)
+        if time_tuple is None:
+            time_tuple = self.time_tuple
+        strf_output = time.strftime(fmt, time_tuple)
         strp_output = _strptime._strptime_time(strf_output, fmt)
-        self.assertTrue(strp_output[position] == self.time_tuple[position],
-                        "testing of '%s' directive failed; '%s' -> %s != %s" %
-                         (directive, strf_output, strp_output[position],
-                          self.time_tuple[position]))
+        self.assertEqual(strp_output[position], time_tuple[position],
+                        "testing of %r format failed; %r -> %r != %r" %
+                         (fmt, strf_output, strp_output[position],
+                          time_tuple[position]))
+        if support.verbose >= 3:
+            print("testing of %r format: %r -> %r" %
+                  (fmt, strf_output, strp_output[position]))
 
     def test_year(self):
         # Test that the year is handled properly
-        for directive in ('y', 'Y'):
-            self.helper(directive, 0)
+        self.roundtrip('%Y', 0)
+        self.roundtrip('%y', 0)
+        self.roundtrip('%Y', 0, (1900, 1, 1, 0, 0, 0, 0, 1, 0))
+
         # Must also make sure %y values are correct for bounds set by Open Group
-        for century, bounds in ((1900, ('69', '99')), (2000, ('00', '68'))):
-            for bound in bounds:
-                strp_output = _strptime._strptime_time(bound, '%y')
-                expected_result = century + int(bound)
-                self.assertTrue(strp_output[0] == expected_result,
-                                "'y' test failed; passed in '%s' "
-                                "and returned '%s'" % (bound, strp_output[0]))
+        strptime = _strptime._strptime_time
+        self.assertEqual(strptime('00', '%y')[0], 2000)
+        self.assertEqual(strptime('68', '%y')[0], 2068)
+        self.assertEqual(strptime('69', '%y')[0], 1969)
+        self.assertEqual(strptime('99', '%y')[0], 1999)
 
     def test_month(self):
         # Test for month directives
-        for directive in ('B', 'b', 'm'):
-            self.helper(directive, 1)
+        self.roundtrip('%m', 1)
+
+    @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', 'he_IL', '')
+    def test_month_locale(self):
+        # Test for month directives
+        self.roundtrip('%B', 1)
+        self.roundtrip('%b', 1)
+        for m in range(1, 13):
+            self.roundtrip('%B', 1, (1900, m, 1, 0, 0, 0, 0, 1, 0))
+            self.roundtrip('%b', 1, (1900, m, 1, 0, 0, 0, 0, 1, 0))
 
     def test_day(self):
         # Test for day directives
-        self.helper('d', 2)
+        self.roundtrip('%d %Y', 2)
 
     def test_hour(self):
         # Test hour directives
-        self.helper('H', 3)
-        strf_output = time.strftime("%I %p", self.time_tuple)
-        strp_output = _strptime._strptime_time(strf_output, "%I %p")
-        self.assertTrue(strp_output[3] == self.time_tuple[3],
-                        "testing of '%%I %%p' directive failed; '%s' -> %s != %s" %
-                         (strf_output, strp_output[3], self.time_tuple[3]))
+        self.roundtrip('%H', 3)
+
+    # NB: Only works on locales with AM/PM
+    @run_with_locales('LC_TIME', 'C', 'en_US', 'ja_JP')
+    def test_hour_locale(self):
+        # Test hour directives
+        self.roundtrip('%I %p', 3)
 
     def test_minute(self):
         # Test minute directives
-        self.helper('M', 4)
+        self.roundtrip('%M', 4)
 
     def test_second(self):
         # Test second directives
-        self.helper('S', 5)
+        self.roundtrip('%S', 5)
 
     def test_fraction(self):
         # Test microseconds
@@ -347,12 +361,18 @@ class StrptimeTests(unittest.TestCase):
 
     def test_weekday(self):
         # Test weekday directives
-        for directive in ('A', 'a', 'w', 'u'):
-            self.helper(directive,6)
+        self.roundtrip('%w', 6)
+        self.roundtrip('%u', 6)
+
+    @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', '')
+    def test_weekday_locale(self):
+        # Test weekday directives
+        self.roundtrip('%A', 6)
+        self.roundtrip('%a', 6)
 
     def test_julian(self):
         # Test julian directives
-        self.helper('j', 7)
+        self.roundtrip('%j', 7)
 
     def test_offset(self):
         one_hour = 60 * 60
@@ -449,20 +469,96 @@ class StrptimeTests(unittest.TestCase):
                     "time.daylight set to %s and passing in %s" %
                     (time.tzname, tz_value, time.daylight, tz_name))
 
-    def test_date_time(self):
+    # NB: Does not roundtrip in some locales due to the ambiguity of
+    # the date and time representation (bugs in locales?):
+    # * Seconds are not included: bem_ZM, bokmal, ff_SN, nb_NO, nn_NO,
+    #   no_NO, norwegian, nynorsk.
+    # * Hours are in 12-hour notation without AM/PM indication: hy_AM,
+    #   id_ID, ms_MY.
+    # * Year is not included: ha_NG.
+    # * Use non-Gregorian calendar: lo_LA, thai, th_TH.
+    #
+    # BUG: Generates invalid regexp for br_FR, csb_PL, Arabic.
+    # BUG: Generates regexp that does not match the current date and time
+    # for fa_IR, gez_ER, gez_ET, lzh_TW, my_MM, or_IN, shn_MM, yo_NG.
+    # BUG: Generates regexp that does not match the current date and time
+    # for fa_IR, gez_ER, gez_ET, lzh_TW, my_MM, or_IN, shn_MM, yo_NG,
+    # fr_FR, ja_JP, he_IL, ko_KR, zh_CN, etc.
+    @run_with_locales('LC_TIME', 'C', 'en_US', 'de_DE',
+                      'eu_ES', 'mfe_MU')
+    def test_date_time_locale(self):
         # Test %c directive
-        for position in range(6):
-            self.helper('c', position)
+        now = time.time()
+        self.roundtrip('%c', slice(0, 6), time.localtime(now))
+        # 1 hour 20 minutes 30 seconds ago
+        self.roundtrip('%c', slice(0, 6), time.localtime(now - 4830))
+        # 12 hours ago
+        self.roundtrip('%c', slice(0, 6), time.localtime(now - 12*3600))
+        # different days of the week
+        for i in range(1, 7):
+            self.roundtrip('%c', slice(0, 6), time.localtime(now - i*24*3600))
+        # different months
+        for i in range(1, 12):
+            self.roundtrip('%c', slice(0, 6), time.localtime(now - i*30*24*3600))
+        # different year
+        self.roundtrip('%c', slice(0, 6), time.localtime(now - 366*24*3600))
 
-    def test_date(self):
+    # NB: Dates before 1969 do not roundtrip on some locales:
+    # bo_CN, bo_IN, dz_BT, eu_ES, eu_FR.
+    @run_with_locales('LC_TIME', 'C', 'en_US', 'de_DE', 'ja_JP')
+    def test_date_time_locale2(self):
+        # Test %c directive
+        self.roundtrip('%c', slice(0, 6), (1900, 1, 1, 0, 0, 0, 0, 1, 0))
+
+    # NB: Does not roundtrip because use non-Gregorian calendar:
+    # lo_LA, thai, th_TH.
+    # BUG: Generates regexp that does not match the current date
+    # for az_IR, fa_IR, lzh_TW, my_MM, or_IN, shn_MM,
+    # Arabic, ja_JP, ko_KR, zh_CN, etc.
+    @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE',
+                      'he_IL', 'eu_ES')
+    def test_date_locale(self):
         # Test %x directive
-        for position in range(0,3):
-            self.helper('x', position)
+        now = time.time()
+        self.roundtrip('%x', slice(0, 3), time.localtime(now))
+        # different days of the week
+        for i in range(1, 7):
+            self.roundtrip('%x', slice(0, 3), time.localtime(now - i*24*3600))
+        # different months
+        for i in range(1, 12):
+            self.roundtrip('%x', slice(0, 3), time.localtime(now - i*30*24*3600))
+        # different year
+        self.roundtrip('%x', slice(0, 3), time.localtime(now - 366*24*3600))
 
-    def test_time(self):
+    # NB: Dates before 1969 do not roundtrip on many locales, including C.
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "musl libc issue on Emscripten, bpo-46390"
+    )
+    @run_with_locales('LC_TIME', 'en_US', 'fr_FR', 'de_DE', 'ja_JP')
+    def test_date_locale2(self):
+        # Test %x directive
+        self.roundtrip('%x', slice(0, 3), (1900, 1, 1, 0, 0, 0, 0, 1, 0))
+
+    # NB: Does not roundtrip in some locales due to the ambiguity of
+    # the time representation (bugs in locales?):
+    # * Seconds are not included: bokmal, ff_SN, nb_NO, nn_NO, no_NO,
+    #   norwegian, nynorsk.
+    # * Hours are in 12-hour notation without AM/PM indication: hy_AM,
+    #   ms_MY, sm_WS.
+    # BUG: Generates regexp that does not match the current time for
+    # aa_DJ, aa_ER, aa_ET, am_ET, az_IR, byn_ER, fa_IR, gez_ER, gez_ET,
+    # lzh_TW, my_MM, om_ET, om_KE, or_IN, shn_MM, sid_ET, so_DJ, so_ET,
+    # so_SO, ti_ER, ti_ET, tig_ER, wal_ET.
+    @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP')
+    def test_time_locale(self):
         # Test %X directive
-        for position in range(3,6):
-            self.helper('X', position)
+        now = time.time()
+        self.roundtrip('%X', slice(3, 6), time.localtime(now))
+        # 1 hour 20 minutes 30 seconds ago
+        self.roundtrip('%X', slice(3, 6), time.localtime(now - 4830))
+        # 12 hours ago
+        self.roundtrip('%X', slice(3, 6), time.localtime(now - 12*3600))
 
     def test_percent(self):
         # Make sure % signs are handled properly
@@ -714,12 +810,7 @@ class CacheTests(unittest.TestCase):
 
     def test_TimeRE_recreation_locale(self):
         # The TimeRE instance should be recreated upon changing the locale.
-        locale_info = locale.getlocale(locale.LC_TIME)
-        try:
-            locale.setlocale(locale.LC_TIME, ('en_US', 'UTF8'))
-        except locale.Error:
-            self.skipTest('test needs en_US.UTF8 locale')
-        try:
+        with support.run_with_locale('LC_TIME', 'en_US.UTF8'):
             _strptime._strptime_time('10 2004', '%d %Y')
             # Get id of current cache object.
             first_time_re = _strptime._TimeRE_cache
@@ -736,10 +827,6 @@ class CacheTests(unittest.TestCase):
             # to the resetting to the original locale.
             except locale.Error:
                 self.skipTest('test needs de_DE.UTF8 locale')
-        # Make sure we don't trample on the locale setting once we leave the
-        # test.
-        finally:
-            locale.setlocale(locale.LC_TIME, locale_info)
 
     @support.run_with_tz('STD-1DST,M4.1.0,M10.1.0')
     def test_TimeRE_recreation_timezone(self):

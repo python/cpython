@@ -1,0 +1,2 @@
+Fix crash in free-threaded build when calling :c:func:`Py_Initialize` from
+a non-main thread.

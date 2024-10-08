@@ -1,0 +1,2 @@
+Fix too wide source locations of the cleanup instructions of a with
+statement.

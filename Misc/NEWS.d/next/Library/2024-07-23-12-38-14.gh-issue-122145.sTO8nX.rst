@@ -1,0 +1,3 @@
+Fix an issue when reporting tracebacks corresponding to Python code
+emitting an empty AST body.
+Patch by Nikita Sobolev and Bénédikt Tran.

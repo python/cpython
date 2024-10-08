@@ -1,0 +1,3 @@
+Fix parsing mutually exclusive arguments in :mod:`argparse`. Arguments with
+the value identical to the default value (e.g. booleans, small integers,
+empty or 1-character strings) are no longer considered "not present".

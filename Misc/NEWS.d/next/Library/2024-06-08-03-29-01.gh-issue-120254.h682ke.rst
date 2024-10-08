@@ -1,0 +1,1 @@
+Added ``commands`` argument to :func:`pdb.set_trace` which allows users to send debugger commands from the source file.

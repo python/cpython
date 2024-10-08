@@ -262,7 +262,7 @@ class ParseArgsCodeGen:
             if p.is_keyword_only():
                 assert not p.is_positional_only()
                 if not p.is_optional():
-                    self.min_kw_only = i - self.max_pos
+                    self.min_kw_only = i - self.max_pos - int(self.vararg != NO_VARARG)
             elif p.is_vararg():
                 self.pseudo_args += 1
                 self.vararg = i - 1

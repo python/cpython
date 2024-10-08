@@ -1,0 +1,2 @@
+Fix empty function name in :exc:`TypeError` when builtin magic methods are
+used without the required args.

@@ -1,0 +1,2 @@
+Preserve relative path in URL without netloc in
+:func:`urllib.parse.urlunsplit` and :func:`urllib.parse.urlunparse`.

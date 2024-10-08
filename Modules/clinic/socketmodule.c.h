@@ -6,7 +6,34 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+
+PyDoc_STRVAR(_socket_socket_close__doc__,
+"close($self, /)\n"
+"--\n"
+"\n"
+"close()\n"
+"\n"
+"Close the socket.  It cannot be used after this call.");
+
+#define _SOCKET_SOCKET_CLOSE_METHODDEF    \
+    {"close", (PyCFunction)_socket_socket_close, METH_NOARGS, _socket_socket_close__doc__},
+
+static PyObject *
+_socket_socket_close_impl(PySocketSockObject *s);
+
+static PyObject *
+_socket_socket_close(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(s);
+    return_value = _socket_socket_close_impl(s);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
 
 static int
 sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
@@ -259,4 +286,4 @@ exit:
 #ifndef _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
     #define _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
 #endif /* !defined(_SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF) */
-/*[clinic end generated code: output=eb37b5d88a1e4661 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6037e47b012911c5 input=a9049054013a1b77]*/

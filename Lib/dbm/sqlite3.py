@@ -1,6 +1,5 @@
 import os
 import sqlite3
-import sys
 from pathlib import Path
 from contextlib import suppress, closing
 from collections.abc import MutableMapping

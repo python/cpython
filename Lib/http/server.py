@@ -114,6 +114,11 @@ DEFAULT_ERROR_MESSAGE = """\
 <html lang="en">
     <head>
         <meta charset="utf-8">
+        <style type="text/css">
+            :root {
+                color-scheme: light dark;
+            }
+        </style>
         <title>Error response</title>
     </head>
     <body>
@@ -129,7 +134,8 @@ DEFAULT_ERROR_CONTENT_TYPE = "text/html;charset=utf-8"
 
 class HTTPServer(socketserver.TCPServer):
 
-    allow_reuse_address = 1    # Seems to make sense in testing environment
+    allow_reuse_address = True    # Seems to make sense in testing environment
+    allow_reuse_port = True
 
     def server_bind(self):
         """Override server_bind to store the server name."""
@@ -803,6 +809,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         r.append('<html lang="en">')
         r.append('<head>')
         r.append(f'<meta charset="{enc}">')
+        r.append('<style type="text/css">\n:root {\ncolor-scheme: light dark;\n}\n</style>')
         r.append(f'<title>{title}</title>\n</head>')
         r.append(f'<body>\n<h1>{title}</h1>')
         r.append('<hr>\n<ul>')
