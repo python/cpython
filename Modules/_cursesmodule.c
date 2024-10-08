@@ -4976,6 +4976,7 @@ static void
 cursesmodule_free(void *mod)
 {
     (void)cursesmodule_clear((PyObject *)mod);
+    curses_module_loaded = 0;  // allow reloading once garbage-collected
 }
 
 static int
