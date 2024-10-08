@@ -193,6 +193,9 @@ class _curses.window "PyCursesWindowObject *" "clinic_state()->window_type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=ae6cb623018f2cbc]*/
 
+/* Indicate whether the module has already been loaded or not. */
+static int curses_module_loaded = 0;
+
 /* Tells whether setupterm() has been called to initialise terminfo.  */
 static int curses_setupterm_called = FALSE;
 
@@ -4975,9 +4978,6 @@ cursesmodule_free(void *mod)
     (void)cursesmodule_clear((PyObject *)mod);
 }
 
-/* Indicate whether the module has already been loaded or not. */
-static int curses_module_loaded = 0;
-
 static int
 cursesmodule_exec(PyObject *module)
 {
@@ -5231,7 +5231,6 @@ static PyModuleDef_Slot cursesmodule_slots[] = {
 static struct PyModuleDef cursesmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_curses",
-    .m_doc = NULL,
     .m_size = sizeof(cursesmodule_state),
     .m_methods = cursesmodule_methods,
     .m_slots = cursesmodule_slots,
