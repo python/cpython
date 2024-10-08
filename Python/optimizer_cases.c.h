@@ -845,18 +845,22 @@
         }
 
         case _GUARD_GLOBALS_VERSION_PUSH_KEYS: {
-            PyDictKeysObject *globals_keys;
-            globals_keys = sym_new_not_null(ctx);
-            stack_pointer[0] = (_Py_UopsSymbol *)globals_keys;
+            _Py_UopsSymbol *globals_keys;
+            uint16_t version = (uint16_t)this_instr->operand;
+            globals_keys = sym_new_unknown(ctx);
+            (void)version;
+            stack_pointer[0] = globals_keys;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _GUARD_BUILTINS_VERSION_PUSH_KEYS: {
-            PyDictKeysObject *builtins_keys;
-            builtins_keys = sym_new_not_null(ctx);
-            stack_pointer[0] = (_Py_UopsSymbol *)builtins_keys;
+            _Py_UopsSymbol *builtins_keys;
+            uint16_t version = (uint16_t)this_instr->operand;
+            builtins_keys = sym_new_unknown(ctx);
+            (void)version;
+            stack_pointer[0] = builtins_keys;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
