@@ -1006,6 +1006,7 @@ rlock_acquire(PyObject *op, PyObject *args, PyObject *kwds)
     if (r == PY_LOCK_INTR) {
         return NULL;
     }
+
     return PyBool_FromLong(r == PY_LOCK_ACQUIRED);
 }
 
