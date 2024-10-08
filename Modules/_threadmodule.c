@@ -1101,6 +1101,8 @@ rlock_release_save(PyObject *op, PyObject *Py_UNUSED(ignored))
                         "cannot release un-acquired lock");
         return NULL;
     }
+    self->lock.thread = 0;
+    self->lock.level = 0;
     return Py_BuildValue("k" Py_PARSE_THREAD_IDENT_T, count, owner);
 }
 
@@ -1130,7 +1132,8 @@ static PyObject *
 rlock_is_owned(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     rlockobject *self = (rlockobject*)op;
-    return PyBool_FromLong(_PyRecursiveMutex_IsLockedByCurrentThread(&self->lock));
+    long owned = _PyRecursiveMutex_IsLockedByCurrentThread(&self->lock);
+    return PyBool_FromLong(owned);
 }
 
 PyDoc_STRVAR(rlock_is_owned_doc,
