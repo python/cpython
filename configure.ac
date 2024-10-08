@@ -2496,6 +2496,20 @@ AC_DEFUN([PY_CHECK_CC_WARNING], [
   AS_VAR_POPDEF([py_var])
 ])
 
+dnl PY_CHECK_CC_CFLAG(ENABLE, CFLAG, [MSG])
+AC_DEFUN([PY_CHECK_CC_CFLAG], [
+  AS_VAR_PUSHDEF([py_var], [ac_cv_$1_]m4_normalize($2)[_flag])
+  AC_CACHE_CHECK([m4_ifblank([$3], [if we can $1 $CC $2 flag], [$3])], [py_var], [
+    AS_VAR_COPY([py_cflags], [CFLAGS])
+    AS_VAR_APPEND([CFLAGS], [" -f$2 -Werror"])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+                      [AS_VAR_SET([py_var], [yes])],
+                      [AS_VAR_SET([py_var], [no])])
+    AS_VAR_COPY([CFLAGS], [py_cflags])
+  ])
+  AS_VAR_POPDEF([py_var])
+])
+
 # tweak BASECFLAGS based on compiler and platform
 AS_VAR_IF([with_strict_overflow], [yes],
           [BASECFLAGS="$BASECFLAGS $STRICT_OVERFLOW_CFLAGS"],
@@ -2512,7 +2526,10 @@ AC_MSG_RESULT([$enable_safety])
 
 if test "$enable_safety" = "yes"
 then
-  AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [CFLAGS_NODIST="$CFLAGS_NODIST -fstack-protector-strong"], [AC_MSG_WARN([-fstack-protector-strong not supported])], [-Werror])
+  PY_CHECK_CC_CFLAG([enable], [stack-protector-strong], [if we can add -fstack-protector-strong])
+  AS_VAR_IF([ac_cv_enable_stack_protector_strong_flag], [yes],
+            [CFLAGS_NODIST="$CFLAGS_NODIST -fstack-protector-strong"], AC_MSG_WARN([-fstack-protector-strong not supported]))
+
   AX_CHECK_COMPILE_FLAG([-Wtrampolines], [CFLAGS_NODIST="$CFLAGS_NODIST -Wtrampolines"], [AC_MSG_WARN([-Wtrampolines not supported])], [-Werror])
   AX_CHECK_COMPILE_FLAG([-Wimplicit-fallthrough], [CFLAGS_NODIST="$CFLAGS_NODIST -Wimplicit-fallthrough"], [AC_MSG_WARN([-Wimplicit-fallthrough not supported])], [-Werror])
   AX_CHECK_COMPILE_FLAG([-Werror=format-security], [CFLAGS_NODIST="$CFLAGS_NODIST -Werror=format-security"], [AC_MSG_WARN([-Werror=format-security not supported])], [-Werror])
