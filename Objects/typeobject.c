@@ -5315,30 +5315,24 @@ get_base_by_token_recursive(PyObject *bases, void *token)
 }
 
 static inline PyTypeObject *
-get_base_by_token_from_mro(PyTypeObject *type, void *token)
+get_base_by_token_from_mro(PyObject *mro, void *token)
 {
-    // Bypass lookup_tp_mro() as PyType_IsSubtype() does
-    PyObject *mro = type->tp_mro;
-    assert(mro != NULL);
-    assert(PyTuple_Check(mro));
     // mro_invoke() ensures that the type MRO cannot be empty.
     assert(PyTuple_GET_SIZE(mro) >= 1);
-    // Also, the first item in the MRO is the type itself, which is supposed
-    // to be already checked by the caller. We skip it in the loop.
+    // Also, the first item in the MRO is the type itself, which
+    // we already checked above. We skip it in the loop.
     assert(PyTuple_GET_ITEM(mro, 0) == (PyObject *)type);
-    assert(PyType_GetSlot(type, Py_tp_token) != token);
-
+    PyTypeObject *res = NULL;
     Py_ssize_t n = PyTuple_GET_SIZE(mro);
     for (Py_ssize_t i = 1; i < n; i++) {
-        PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(mro, i));
-        if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
-            continue;
-        }
-        if (((PyHeapTypeObject*)base)->ht_token == token) {
-            return base;
+        PyTypeObject *base = (PyTypeObject *)PyTuple_GET_ITEM(mro, i);
+        if (_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)
+            && ((PyHeapTypeObject*)base)->ht_token == token) {
+            res = base;
+            break;
         }
     }
-    return NULL;
+    return res;
 }
 
 static int
@@ -5359,12 +5353,13 @@ check_base_by_token(PyTypeObject *type, void *token) {
     if (((PyHeapTypeObject*)type)->ht_token == token) {
         return 1;
     }
-    if (type->tp_mro != NULL) {
-        // This will not be inlined
-        return get_base_by_token_from_mro(type, token) ? 1 : 0;
+    PyObject *mro = type->tp_mro;
+    if (mro == NULL) {
+        return get_base_by_token_recursive(lookup_tp_bases(type), token) ? 1 : 0;
     }
     else {
-        return get_base_by_token_recursive(lookup_tp_bases(type), token) ? 1 : 0;
+        // This will not be inlined
+        return get_base_by_token_from_mro(type, token) ? 1 : 0;
     }
 }
 
@@ -5393,12 +5388,13 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
     }
 
     PyTypeObject *base;
-    if (type->tp_mro != NULL) {
-        // Expect this to be inlined
-        base = get_base_by_token_from_mro(type, token);
+    PyObject *mro = type->tp_mro;  // No lookup, following PyType_IsSubtype()
+    if (mro == NULL) {
+        base = get_base_by_token_recursive(lookup_tp_bases(type), token);
     }
     else {
-        base = get_base_by_token_recursive(lookup_tp_bases(type), token);
+        // Expect this to be inlined
+        base = get_base_by_token_from_mro(type, token);
     }
     if (base != NULL) {
         *result = (PyTypeObject *)Py_NewRef(base);
