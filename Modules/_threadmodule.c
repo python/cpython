@@ -1077,7 +1077,7 @@ rlock_acquire_restore(PyObject *op, PyObject *args)
         return NULL;
 
     _PyRecursiveMutex_Lock(&self->lock);
-    self->lock.thread = owner;
+    _Py_atomic_store_ullong_relaxed(&self->lock.thread, owner);
     self->lock.level = count - 1;
     Py_RETURN_NONE;
 }
@@ -1093,17 +1093,16 @@ rlock_release_save(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     rlockobject *self = (rlockobject*)op;
 
-    PyThread_ident_t owner = self->lock.thread;
-    size_t count = self->lock.level + 1;
-
-    if (_PyRecursiveMutex_TryUnlock(&self->lock) < 0)
-    {
+    if (!_PyRecursiveMutex_IsLockedByCurrentThread(&self->lock)) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot release un-acquired lock");
         return NULL;
     }
-    self->lock.thread = 0;
-    self->lock.level = 0;
+
+    PyThread_ident_t owner = self->lock.thread;
+    size_t count = self->lock.level + 1;
+    self->lock.level = 0;  // ensure the unlock releases the lock
+    _PyRecursiveMutex_Unlock(&self->lock);
     return Py_BuildValue("k" Py_PARSE_THREAD_IDENT_T, count, owner);
 }
 
