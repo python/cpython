@@ -705,9 +705,7 @@ static PyType_Spec ThreadHandle_Type_spec = {
 
 typedef struct {
     PyObject_HEAD
-    PyThread_type_lock lock_lock;
-    PyObject *in_weakreflist;
-    char locked; /* for sanity checking */
+    PyMutex lock;
 } lockobject;
 
 static int
@@ -722,15 +720,7 @@ lock_dealloc(PyObject *op)
 {
     lockobject *self = (lockobject*)op;
     PyObject_GC_UnTrack(self);
-    if (self->in_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *) self);
-    }
-    if (self->lock_lock != NULL) {
-        /* Unlock the lock so it's safe to free it */
-        if (self->locked)
-            PyThread_release_lock(self->lock_lock);
-        PyThread_free_lock(self->lock_lock);
-    }
+    PyObject_ClearWeakRefs((PyObject *) self);
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free((PyObject*)self);
     Py_DECREF(tp);
@@ -798,13 +788,12 @@ lock_PyThread_acquire_lock(PyObject *op, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyLockStatus r = acquire_timed(self->lock_lock, timeout);
+    PyLockStatus r = _PyMutex_LockTimed(&self->lock, timeout,
+                                        _PY_LOCK_HANDLE_SIGNALS | _PY_LOCK_DETACH);
     if (r == PY_LOCK_INTR) {
         return NULL;
     }
 
-    if (r == PY_LOCK_ACQUIRED)
-        self->locked = 1;
     return PyBool_FromLong(r == PY_LOCK_ACQUIRED);
 }
 
@@ -836,13 +825,11 @@ lock_PyThread_release_lock(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     lockobject *self = (lockobject*)op;
     /* Sanity check: the lock must be locked */
-    if (!self->locked) {
+    if (_PyMutex_TryUnlock(&self->lock) < 0) {
         PyErr_SetString(ThreadError, "release unlocked lock");
         return NULL;
     }
 
-    self->locked = 0;
-    PyThread_release_lock(self->lock_lock);
     Py_RETURN_NONE;
 }
 
@@ -870,7 +857,7 @@ static PyObject *
 lock_locked_lock(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     lockobject *self = (lockobject*)op;
-    return PyBool_FromLong((long)self->locked);
+    return PyBool_FromLong(PyMutex_IsLocked(&self->lock));
 }
 
 PyDoc_STRVAR(locked_doc,
@@ -890,21 +877,15 @@ lock_repr(PyObject *op)
 {
     lockobject *self = (lockobject*)op;
     return PyUnicode_FromFormat("<%s %s object at %p>",
-        self->locked ? "locked" : "unlocked", Py_TYPE(self)->tp_name, self);
+        PyMutex_IsLocked(&self->lock) ? "locked" : "unlocked", Py_TYPE(self)->tp_name, self);
 }
 
 #ifdef HAVE_FORK
 static PyObject *
 lock__at_fork_reinit(PyObject *op, PyObject *Py_UNUSED(args))
 {
-    lockobject *self = (lockobject*)op;
-    if (_PyThread_at_fork_reinit(&self->lock_lock) < 0) {
-        PyErr_SetString(ThreadError, "failed to reinitialize lock at fork");
-        return NULL;
-    }
-
-    self->locked = 0;
-
+    lockobject *self = (lockobject *)op;
+    _PyMutex_at_fork_reinit(&self->lock);
     Py_RETURN_NONE;
 }
 #endif  /* HAVE_FORK */
@@ -970,18 +951,12 @@ A lock is not owned by the thread that locked it; another thread may\n\
 unlock it.  A thread attempting to lock a lock that it has already locked\n\
 will block until another thread unlocks it.  Deadlocks may ensue.");
 
-static PyMemberDef lock_type_members[] = {
-    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(lockobject, in_weakreflist), Py_READONLY},
-    {NULL},
-};
-
 static PyType_Slot lock_type_slots[] = {
     {Py_tp_dealloc, lock_dealloc},
     {Py_tp_repr, lock_repr},
     {Py_tp_doc, (void *)lock_doc},
     {Py_tp_methods, lock_methods},
     {Py_tp_traverse, lock_traverse},
-    {Py_tp_members, lock_type_members},
     {Py_tp_new, lock_new},
     {0, 0}
 };
@@ -990,7 +965,7 @@ static PyType_Spec lock_type_spec = {
     .name = "_thread.lock",
     .basicsize = sizeof(lockobject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-              Py_TPFLAGS_IMMUTABLETYPE),
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_MANAGED_WEAKREF),
     .slots = lock_type_slots,
 };
 
@@ -1340,16 +1315,7 @@ newlockobject(PyObject *module)
     if (self == NULL) {
         return NULL;
     }
-
-    self->lock_lock = PyThread_allocate_lock();
-    self->locked = 0;
-    self->in_weakreflist = NULL;
-
-    if (self->lock_lock == NULL) {
-        Py_DECREF(self);
-        PyErr_SetString(ThreadError, "can't allocate lock");
-        return NULL;
-    }
+    self->lock = (PyMutex){0};
     return self;
 }
 
