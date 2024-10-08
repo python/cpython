@@ -12908,4 +12908,4 @@ os__create_environ(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=41d3b3fd06c77934 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7d60f7241e7bde81 input=a9049054013a1b77]*/
