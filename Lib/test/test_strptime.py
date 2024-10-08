@@ -208,8 +208,8 @@ class StrptimeTests(unittest.TestCase):
     """Tests for _strptime.strptime."""
 
     def setUp(self):
-        """Create testing time tuple."""
-        self.time_tuple = time.gmtime()
+        """Create testing time tuples."""
+        self.time_tuple = time.localtime()
 
     def test_ValueError(self):
         # Make sure ValueError is raised when match fails or format is bad
@@ -478,14 +478,27 @@ class StrptimeTests(unittest.TestCase):
     # * Year is not included: ha_NG.
     # * Use non-Gregorian calendar: lo_LA, thai, th_TH.
     #
-    # BUG: Generates invalid regexp for br_FR, csb_PL.
+    # BUG: Generates invalid regexp for br_FR, csb_PL, Arabic.
     # BUG: Generates regexp that does not match the current date and time
     # for fa_IR, gez_ER, gez_ET, lzh_TW, my_MM, or_IN, shn_MM, yo_NG.
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
                       'he_IL', 'eu_ES', 'ar_AE', 'mfe_MU')
     def test_date_time_locale(self):
         # Test %c directive
-        self.roundtrip('%c', slice(0, 6))
+        now = time.time()
+        self.roundtrip('%c', slice(0, 6), time.localtime(now))
+        # 1 hour 20 minutes 30 seconds ago
+        self.roundtrip('%c', slice(0, 6), time.localtime(now - 4830))
+        # 12 hours ago
+        self.roundtrip('%c', slice(0, 6), time.localtime(now - 12*3600))
+        # different days of the week
+        for i in range(1, 7):
+            self.roundtrip('%c', slice(0, 6), time.localtime(now - i*24*3600))
+        # different months
+        for i in range(1, 12):
+            self.roundtrip('%c', slice(0, 6), time.localtime(now - i*30*24*3600))
+        # different year
+        self.roundtrip('%c', slice(0, 6), time.localtime(now - 366*24*3600))
 
     # NB: Dates before 1969 do not roundtrip on some locales:
     # bo_CN, bo_IN, dz_BT, eu_ES, eu_FR.
@@ -502,7 +515,16 @@ class StrptimeTests(unittest.TestCase):
                       'he_IL', 'eu_ES', 'ar_AE')
     def test_date_locale(self):
         # Test %x directive
-        self.roundtrip('%x', slice(0, 3))
+        now = time.time()
+        self.roundtrip('%x', slice(0, 3), time.localtime(now))
+        # different days of the week
+        for i in range(1, 7):
+            self.roundtrip('%x', slice(0, 3), time.localtime(now - i*24*3600))
+        # different months
+        for i in range(1, 12):
+            self.roundtrip('%x', slice(0, 3), time.localtime(now - i*30*24*3600))
+        # different year
+        self.roundtrip('%x', slice(0, 3), time.localtime(now - 366*24*3600))
 
     # NB: Dates before 1969 do not roundtrip on many locales, including C.
     @unittest.skipIf(
@@ -527,7 +549,12 @@ class StrptimeTests(unittest.TestCase):
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP')
     def test_time_locale(self):
         # Test %X directive
-        self.roundtrip('%X', slice(3, 6))
+        now = time.time()
+        self.roundtrip('%X', slice(3, 6), time.localtime(now))
+        # 1 hour 20 minutes 30 seconds ago
+        self.roundtrip('%X', slice(3, 6), time.localtime(now - 4830))
+        # 12 hours ago
+        self.roundtrip('%X', slice(3, 6), time.localtime(now - 12*3600))
 
     def test_percent(self):
         # Make sure % signs are handled properly
@@ -779,12 +806,7 @@ class CacheTests(unittest.TestCase):
 
     def test_TimeRE_recreation_locale(self):
         # The TimeRE instance should be recreated upon changing the locale.
-        locale_info = locale.getlocale(locale.LC_TIME)
-        try:
-            locale.setlocale(locale.LC_TIME, ('en_US', 'UTF8'))
-        except locale.Error:
-            self.skipTest('test needs en_US.UTF8 locale')
-        try:
+        with support.run_with_locale('LC_TIME', 'en_US.UTF8'):
             _strptime._strptime_time('10 2004', '%d %Y')
             # Get id of current cache object.
             first_time_re = _strptime._TimeRE_cache
@@ -801,10 +823,6 @@ class CacheTests(unittest.TestCase):
             # to the resetting to the original locale.
             except locale.Error:
                 self.skipTest('test needs de_DE.UTF8 locale')
-        # Make sure we don't trample on the locale setting once we leave the
-        # test.
-        finally:
-            locale.setlocale(locale.LC_TIME, locale_info)
 
     @support.run_with_tz('STD-1DST,M4.1.0,M10.1.0')
     def test_TimeRE_recreation_timezone(self):

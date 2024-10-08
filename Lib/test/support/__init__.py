@@ -945,6 +945,8 @@ def run_with_locale(catstr, *locales):
     except Exception:
         # cannot retrieve original locale, so do nothing
         locale = orig_locale = None
+        if '' not in locales:
+            raise unittest.SkipTest('no locales')
     else:
         for loc in locales:
             try:
@@ -952,6 +954,9 @@ def run_with_locale(catstr, *locales):
                 break
             except locale.Error:
                 pass
+        else:
+            if '' not in locales:
+                raise unittest.SkipTest(f'no locales {locales}')
 
     try:
         yield

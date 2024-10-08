@@ -353,8 +353,8 @@ class MiscNews(SphinxDirective):
 # Support for building "topic help" for pydoc
 
 pydoc_topic_labels = [
-    'assert', 'assignment', 'async', 'atom-identifiers', 'atom-literals',
-    'attribute-access', 'attribute-references', 'augassign', 'await',
+    'assert', 'assignment', 'assignment-expressions', 'async',  'atom-identifiers',
+    'atom-literals', 'attribute-access', 'attribute-references', 'augassign', 'await',
     'binary', 'bitwise', 'bltin-code-objects', 'bltin-ellipsis-object',
     'bltin-null-object', 'bltin-type-objects', 'booleans',
     'break', 'callable-types', 'calls', 'class', 'comparisons', 'compound',
