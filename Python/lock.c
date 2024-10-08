@@ -397,11 +397,13 @@ void
 _PyRecursiveMutex_Unlock(_PyRecursiveMutex *m)
 {
     if (_PyRecursiveMutex_TryUnlock(m) < 0) {
-        Py_FatalError("cannot unlock un-acquired lock");
+        Py_FatalError("unlocking a recursive mutex that is not "
+                        "owned by the current thread");
     }
 }
 
-int _PyRecursiveMutex_TryUnlock(_PyRecursiveMutex *m)
+int
+_PyRecursiveMutex_TryUnlock(_PyRecursiveMutex *m)
 {
     PyThread_ident_t thread = PyThread_get_thread_ident_ex();
     if (!recursive_mutex_is_owned_by(m, thread)) {
@@ -412,10 +414,10 @@ int _PyRecursiveMutex_TryUnlock(_PyRecursiveMutex *m)
         return 0;
     }
     assert(m->level == 0);
-    if (_PyMutex_TryUnlock(&m->mutex) < 0){
-        return -1;
-    };
     _Py_atomic_store_ullong_relaxed(&m->thread, 0);
+    if (_PyMutex_TryUnlock(&m->mutex) < 0) {
+        return -1;
+    }
     return 0;
 }
 
