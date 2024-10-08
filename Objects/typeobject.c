@@ -5289,11 +5289,12 @@ _PyType_GetModuleByDef2(PyTypeObject *left, PyTypeObject *right,
 
 
 static PyTypeObject *
-get_base_by_token_recursive(PyTypeObject *type, void *token)
+get_base_by_token_recursive(PyObject *bases, void *token)
 {
-    assert(PyType_GetSlot(type, Py_tp_token) != token);
-    PyObject *bases = lookup_tp_bases(type);
     assert(bases != NULL);
+    // MSVC: The result should be initialized outside the loop to avoid the c
+    // file being less PGO-optimized. Returning it from inside seems to be OK.
+    PyTypeObject *res = NULL;
     Py_ssize_t n = PyTuple_GET_SIZE(bases);
     for (Py_ssize_t i = 0; i < n; i++) {
         PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(bases, i));
@@ -5301,14 +5302,16 @@ get_base_by_token_recursive(PyTypeObject *type, void *token)
             continue;
         }
         if (((PyHeapTypeObject*)base)->ht_token == token) {
-            return base;
+            res = base;
+            break;
         }
-        base = get_base_by_token_recursive(base, token);
+        base = get_base_by_token_recursive(lookup_tp_bases(base), token);
         if (base != NULL) {
-            return base;
+            res = base;
+            break;
         }
     }
-    return NULL;
+    return res;  // Prefer to return in one place
 }
 
 static inline PyTypeObject *
@@ -5361,7 +5364,7 @@ check_base_by_token(PyTypeObject *type, void *token) {
         return get_base_by_token_from_mro(type, token) ? 1 : 0;
     }
     else {
-        return get_base_by_token_recursive(type, token)  ? 1 : 0;
+        return get_base_by_token_recursive(lookup_tp_bases(type), token) ? 1 : 0;
     }
 }
 
@@ -5395,7 +5398,7 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
         base = get_base_by_token_from_mro(type, token);
     }
     else {
-        base = get_base_by_token_recursive(type, token);
+        base = get_base_by_token_recursive(lookup_tp_bases(type), token);
     }
     if (base != NULL) {
         *result = (PyTypeObject *)Py_NewRef(base);
