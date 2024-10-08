@@ -885,11 +885,10 @@ static PyObject *
 lock__at_fork_reinit(PyObject *op, PyObject *Py_UNUSED(args))
 {
     lockobject *self = (lockobject *)op;
-    self->lock = (PyMutex){0};
+    _PyMutex_at_fork_reinit(&self->lock);
     Py_RETURN_NONE;
 }
 #endif  /* HAVE_FORK */
-
 
 static lockobject *newlockobject(PyObject *module);
 
