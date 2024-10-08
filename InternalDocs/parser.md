@@ -29,7 +29,11 @@ in that the way it is written more closely reflects how the parser will operate
 when parsing. The fundamental technical difference is that the choice operator
 is ordered. This means that when writing:
 
-> rule: A | B | C
+```
+{
+    rule: A | B | C
+}
+```
 
 a parser that implements a context-free-grammar (such as an ``LL(1)`` parser) will
 generate constructions that, given an input string, *deduce* which alternative
@@ -107,9 +111,12 @@ If a rule has two alternatives and the first of them succeeds, the second one is
 Thus the parser is said to be "eager". To illustrate this, consider
 the following two rules (in these examples, a token is an individual character):
 
-> first_rule:  ( 'a' | 'aa' ) 'a'
-
-> second_rule: ('aa' | 'a'  ) 'a'
+```
+{
+    first_rule:  ( 'a' | 'aa' ) 'a'
+    second_rule: ('aa' | 'a'  ) 'a'
+}
+```
 
 In a regular EBNF grammar, both rules specify the language ``{aa, aaa}`` but
 in PEG, one of these two rules accepts the string ``aaa`` but not the string
@@ -134,21 +141,25 @@ hidden by many levels of rules.
 For this reason, writing rules where an alternative is contained in the next
 one is in almost all cases a mistake, for example:
 
-> my_rule:
-
->   | 'if' expression 'then' block
-
->   | 'if' expression 'then' block 'else' block
+```
+{
+    my_rule:
+      | 'if' expression 'then' block
+      | 'if' expression 'then' block 'else' block
+}
+```
 
 In this example, the second alternative will never be tried because the first one will
 succeed first (even if the input string has an ``'else' block`` that follows). To correctly
 write this rule you can simply alter the order:
 
-> my_rule:
-
->   | 'if' expression 'then' block 'else' block
-
->   | 'if' expression 'then' block
+```
+{
+    my_rule:
+      | 'if' expression 'then' block 'else' block
+      | 'if' expression 'then' block
+}
+```
 
 In this case, if the input string doesn't have an ``'else' block``, the first alternative
 will fail and the second will be attempted.
@@ -158,13 +169,21 @@ Grammar Syntax
 
 The grammar consists of a sequence of rules of the form:
 
-> rule_name: expression
+```
+{
+    rule_name: expression
+}
+```
 
 Optionally, a type can be included right after the rule name, which
 specifies the return type of the C or Python function corresponding to
 the rule:
 
-> rule_name[return_type]: expression
+```
+{
+    rule_name[return_type]: expression
+}
+```
 
 If the return type is omitted, then a ``void *`` is returned in C and an
 ``Any`` in Python.
@@ -180,7 +199,11 @@ Python-style comments.
 
 Match ``e1``, then match ``e2``.
 
-> rule_name: first_rule second_rule
+```
+{
+    rule_name: first_rule second_rule
+}
+```
 
 **``e1 | e2``**
 
@@ -190,45 +213,71 @@ The first alternative can also appear on the line after the rule name
 for formatting purposes. In that case, a \| must be used before the
 first alternative, like so:
 
-> rule_name[return_type]:
-
->   | first_alt
-
->   | second_alt
+```
+{
+    rule_name[return_type]:
+       | first_alt
+       | second_alt
+}
+```
 
 **``( e )`` (grouping operator)**
 
 Match ``e``.
 
-> rule_name: (e)
+```
+{
+    rule_name: (e)
+}
+```
 
 A slightly more complex and useful example includes using the grouping
 operator together with the repeat operator:
 
-> rule_name: (e1 e2)*
+```
+{
+    rule_name: (e1 e2)*
+}
+```
 
 **``[ e ] or e?``**
 
 Optionally match ``e``.
 
-> rule_name: [e]
+```
+{
+    rule_name: [e]
+}
+```
 
 A more useful example includes defining that a trailing comma is
 optional:
 
-> rule_name: e (',' e)* [',']
+```
+{
+    rule_name: e (',' e)* [',']
+}
+```
 
 **``e*``**
 
 Match zero or more occurrences of ``e``.
 
-> rule_name: (e1 e2)*
+```
+{
+    rule_name: (e1 e2)*
+}
+```
 
 **``e+``**
 
 Match one or more occurrences of ``e``.
 
-> rule_name: (e1 e2)+
+```
+{
+    rule_name: (e1 e2)+
+}
+```
 
 **``s.e+``**
 
@@ -236,7 +285,11 @@ Match one or more occurrences of ``e``, separated by ``s``. The generated
 parse tree does not include the separator. This is otherwise identical to
 ``(e (s e)*)``.
 
-> rule_name: ','.e+
+```
+{
+    rule_name: ','.e+
+}
+```
 
 **``&e`` (positive lookahead)**
 
@@ -250,14 +303,22 @@ An example taken from the Python grammar specifies that a primary
 consists of an atom, which is not followed by a ``.`` or a ``(`` or a
 ``[``:
 
-> primary: atom !'.' !'(' !'['
+```
+{
+    primary: atom !'.' !'(' !'['
+}
+```
 
 **``~``**
 
 Commit to the current alternative, even if it fails to parse (this is called
 the "cut").
 
-> rule_name: '(' ~ some_rule ')' | some_alt
+```
+{
+    rule_name: '(' ~ some_rule ')' | some_alt
+}
+```
 
 In this example, if a left parenthesis is parsed, then the other
 alternative won’t be considered, even if some_rule or ``)`` fail to be
@@ -274,15 +335,21 @@ in [Warth et al.](http://web.cs.ucla.edu/~todd/research/pepm08.pdf). This
 allows us to write not only simple left-recursive rules but also more
 complicated rules that involve indirect left-recursion like:
 
-> rule1: rule2 | 'a'
-
-> rule2: rule3 | 'b'
-
-> rule3: rule1 | 'c'
+```
+{
+    rule1: rule2 | 'a'
+    rule2: rule3 | 'b'
+    rule3: rule1 | 'c'
+}
+```
 
 and "hidden left-recursion" like:
 
-> rule: 'optional'? rule '@' some_other_rule
+```
+{
+    rule: 'optional'? rule '@' some_other_rule
+}
+```
 
 Variables in the grammar
 ------------------------
@@ -290,7 +357,11 @@ Variables in the grammar
 A sub-expression can be named by preceding it with an identifier and an
 ``=`` sign. The name can then be used in the action (see below), like this:
 
-> rule_name[return_type]: '(' a=some_other_rule ')' { a }
+```
+{
+    rule_name[return_type]: '(' a=some_other_rule ')' { a }
+}
+```
 
 Grammar actions
 ---------------
@@ -317,11 +388,13 @@ some other required operations that are not directly related to the grammar.
 To indicate these actions each alternative can be followed by the action code
 inside curly-braces, which specifies the return value of the alternative:
 
-> rule_name[return_type]:
-
->   | first_alt1 first_alt2 { first_alt1 }
-
->   | second_alt1 second_alt2 { second_alt1 }
+```
+{
+    rule_name[return_type]:
+       | first_alt1 first_alt2 { first_alt1 }
+       | second_alt1 second_alt2 { second_alt1 }
+}
+```
 
 If the action is omitted, a default action is generated:
 
@@ -528,12 +601,20 @@ How to regenerate the parser
 Once you have made the changes to the grammar files, to regenerate the ``C``
 parser (the one used by the interpreter) just execute:
 
-> make regen-pegen
+```
+{
+    make regen-pegen
+}
+```
 
 using the ``Makefile`` in the main directory.  If you are on Windows you can
 use the Visual Studio project files to regenerate the parser or to execute:
 
-> ./PCbuild/build.bat --regen
+```
+{
+    ./PCbuild/build.bat --regen
+}
+```
 
 The generated parser file is located at
 [`Parser/parser.c`](https://github.com/python/cpython/blob/main/Parser/parser.c).
@@ -549,12 +630,20 @@ any modifications to this file (in order to implement new Pegen features) you wi
 need to regenerate the meta-parser (the parser that parses the grammar files).
 To do so just execute:
 
-> make regen-pegen-metaparser
+```
+{
+    make regen-pegen-metaparser
+}
+```
 
 If you are on Windows you can use the Visual Studio project files
 to regenerate the parser or to execute:
 
-> ./PCbuild/build.bat --regen
+```
+{
+    ./PCbuild/build.bat --regen
+}
+```
 
 
 Grammatical elements and rules
@@ -594,12 +683,20 @@ be found in thei
 file. If you change this file to add new tokens, make sure to regenerate the
 files by executing:
 
-> make regen-token
+```
+{
+    make regen-token
+}
+```
 
 If you are on Windows you can use the Visual Studio project files to regenerate
 the tokens or to execute:
 
-> ./PCbuild/build.bat --regen
+```
+{
+    ./PCbuild/build.bat --regen
+}
+```
 
 How tokens are generated and the rules governing this are completely up to the tokenizer
 ([`Parser/lexer`](https://github.com/python/cpython/blob/main/Parser/lexer)
@@ -621,8 +718,12 @@ situations, just parsing it again can be faster. Pegen **disables memoization
 by default** except for rules with the special marker ``memo`` after the rule
 name (and type, if present):
 
-> rule_name[typr] (memo):
->   ...
+```
+{
+    rule_name[typr] (memo):
+      ...
+}
+```
 
 By selectively turning on memoization for a handful of rules, the parser becomes
 faster and uses less memory.
@@ -792,24 +893,28 @@ between rules.
 
 ---
 
-To generate more precise syntax errors, custom rules are used. This is a common practice
-also in context free grammars: the parser will try to accept some construct that is known
-to be incorrect just to report a specific syntax error for that construct. In pegen grammars,
-these rules start with the ``invalid_`` prefix. This is because trying to match these rules
-normally has a performance impact on parsing (and can also affect the 'correct' grammar itself
-in some tricky cases, depending on the ordering of the rules) so the generated parser acts in
-two phases:
+To generate more precise syntax errors, custom rules are used. This is a common
+practice also in context free grammars: the parser will try to accept some
+construct that is known to be incorrect just to report a specific syntax error
+for that construct. In pegen grammars, these rules start with the ``invalid_``
+prefix. This is because trying to match these rules normally has a performance
+impact on parsing (and can also affect the 'correct' grammar itself in some
+tricky cases, depending on the ordering of the rules) so the generated parser
+acts in two phases:
 
-1. The first phase will try to parse the input stream without taking into account rules that
-   start with the ``invalid_`` prefix. If the parsing succeeds it will return the generated AST
-   and the second phase will be skipped.
+1. The first phase will try to parse the input stream without taking into
+   account rules that start with the ``invalid_`` prefix. If the parsing
+   succeeds it will return the generated AST and the second phase will be
+   skipped.
 
-2. If the first phase failed, a second parsing attempt is done including the rules that start
-   with an ``invalid_`` prefix. By design this attempt **cannot succeed** and is only executed
-   to give to the invalid rules a chance to detect specific situations where custom, more precise,
-   syntax errors can be raised. This also allows to trade a bit of performance for precision reporting
-   errors: given that we know that the input text is invalid, there is typically no need to be fast
-   because execution is going to stop anyway.
+2. If the first phase failed, a second parsing attempt is done including the
+   rules that start with an ``invalid_`` prefix. By design this attempt
+   **cannot succeed** and is only executed to give to the invalid rules a
+   chance to detect specific situations where custom, more precise, syntax
+   errors can be raised. This also allows to trade a bit of performance for
+   precision reporting errors: given that we know that the input text is
+   invalid, there is typically no need to be fast because execution is going
+   to stop anyway.
 
 ---
 **Important**
@@ -839,13 +944,21 @@ displayed when the error is reported.
 A good way to test whether an invalid rule will be triggered when you expect is to test if introducing
 a syntax error **after** valid code triggers the rule or not. For example:
 
-> <valid python code> $ 42
+```
+{
+   <valid python code> $ 42
+}
+```
 
 should trigger the syntax error in the ``$`` character. If your rule is not correctly defined this
 won't happen. As another example, suppose that you try to define a rule to match Python 2 style
 ``print`` statements in order to create a better error message and you define it as:
 
-> invalid_print: "print" expression
+```
+{
+    invalid_print: "print" expression
+}
+```
 
 This will **seem** to work because the parser will correctly parse ``print(something)`` because it is valid
 code and the second phase will never execute but if you try to parse ``print(something) $ 3`` the first pass
@@ -926,12 +1039,20 @@ parser. To do this, you can go to the
 [Tools/peg_generator](https://github.com/python/cpython/blob/main/Tools/peg_generator)
 directory on the CPython repository and manually call the parser generator by executing:
 
-> $ python -m pegen python <PATH TO YOUR GRAMMAR FILE>
+```
+{
+    $ python -m pegen python <PATH TO YOUR GRAMMAR FILE>
+}
+```
 
 This will generate a file called ``parse.py`` in the same directory that you
 can use to parse some input:
 
-> $ python parse.py file_with_source_code_to_test.py
+```
+{
+    $ python parse.py file_with_source_code_to_test.py
+}
+```
 
 As the generated ``parse.py`` file is just Python code, you can modify it
 and add breakpoints to debug or better understand some complex situations.
@@ -958,13 +1079,21 @@ special steps compared to regular parsing.
 
 To activate verbose mode you can add the ``-d`` flag when executing Python:
 
-> $ python -d file_to_test.py
+```
+{
+    $ python -d file_to_test.py
+}
+```
 
 This will print **a lot** of output to ``stderr`` so it is probably better to dump
 it to a file for further analysis. The output consists of trace lines with the
 following structure::
 
-> <indentation> ('>'|'-'|'+'|'!') <rule_name>[<token_location>]: <alternative> ...
+```
+{
+    <indentation> ('>'|'-'|'+'|'!') <rule_name>[<token_location>]: <alternative> ...
+}
+```
 
 Every line is indented by a different amount (``<indentation>``) depending on how
 deep the call stack is. The next character marks the type of the trace:
