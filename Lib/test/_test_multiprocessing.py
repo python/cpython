@@ -2992,7 +2992,7 @@ class FooBar(object):
     def f(self):
         return 'f()'
     def g(self):
-        raise ValueError
+        raise ValueError  # exception raised here
     def _h(self):
         return '_h()'
 
@@ -3059,6 +3059,11 @@ class _TestMyManager(BaseTestCase):
 
         self.assertEqual(foo.f(), 'f()')
         self.assertRaises(ValueError, foo.g)
+        with self.assertRaises(ValueError) as ctx:
+            foo.g()
+        cause = ctx.exception.__cause__
+        self.assertIsInstance(cause, multiprocessing.pool.RemoteTraceback)
+        self.assertIn('# exception raised here', str(cause))
         self.assertEqual(foo._callmethod('f'), 'f()')
         self.assertRaises(RemoteError, foo._callmethod, '_h')
 
