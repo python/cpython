@@ -2336,6 +2336,7 @@ _PyCode_ConstantKey(PyObject *op)
     if (op == Py_None || op == Py_Ellipsis
        || PyLong_CheckExact(op)
        || PyUnicode_CheckExact(op)
+       || PySlice_Check(op)
           /* code_richcompare() uses _PyCode_ConstantKey() internally */
        || PyCode_Check(op))
     {
