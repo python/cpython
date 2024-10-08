@@ -36,15 +36,6 @@ Uncaught in the interpreter:
                 """.strip())
 
 
-def _serialize_exception(exc):
-    # XXX Capture the traceback too.
-    return pickle.dumps(exc)
-
-
-def _deserialize_exception(data):
-    return pickle.loads(data)
-
-
 UNBOUND = 2  # error; this should not happen.
 
 
@@ -86,7 +77,7 @@ class WorkerContext(_thread.WorkerContext):
         except BaseException as exc:
             # Send the captured exception out on the results queue,
             # but still leave it unhandled for the interpreter to handle.
-            err = _serialize_exception(exc)
+            err = pickle.dumps(exc)
             _interpqueues.put(resultsid, (None, err), 1, UNBOUND)
             raise  # re-raise
 
@@ -203,7 +194,7 @@ WorkerContext._send_script_result({self.resultsid})"""
             assert res is None, res
             assert pickled
             assert exc_wrapper is not None
-            exc = _deserialize_exception(excdata)
+            exc = pickle.loads(excdata)
             raise exc from exc_wrapper
         return pickle.loads(res) if pickled else res
 
