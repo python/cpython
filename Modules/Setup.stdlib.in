@@ -32,6 +32,7 @@
 @MODULE__ASYNCIO_TRUE@_asyncio _asynciomodule.c
 @MODULE__BISECT_TRUE@_bisect _bisectmodule.c
 @MODULE__CONTEXTVARS_TRUE@_contextvars _contextvarsmodule.c
+@MODULE__COPY_TRUE@_copy _copy.c
 @MODULE__CSV_TRUE@_csv _csv.c
 @MODULE__HEAPQ_TRUE@_heapq _heapqmodule.c
 @MODULE__JSON_TRUE@_json _json.c
