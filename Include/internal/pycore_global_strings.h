@@ -246,6 +246,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(_initializing)
         STRUCT_FOR_ID(_io)
         STRUCT_FOR_ID(_is_text_encoding)
+        STRUCT_FOR_ID(_isatty_open_only)
         STRUCT_FOR_ID(_length_)
         STRUCT_FOR_ID(_limbo)
         STRUCT_FOR_ID(_lock_unlock_module)
