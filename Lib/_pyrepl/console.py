@@ -174,7 +174,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
 
     def runsource(self, source, filename="<input>", symbol="single"):
         try:
-            tree = self.compile.compiler(source, filename, symbol, ast.PyCF_ONLY_AST)
+            tree = self.compile.compiler(source, filename, "exec", ast.PyCF_ONLY_AST, incomplete_input=False)
         except (SyntaxError, OverflowError, ValueError):
             self.showsyntaxerror(filename, source=source)
             return False
