@@ -5286,9 +5286,6 @@ codegen_slice_two_parts(compiler *c, expr_ty s)
     return 0;
 }
 
-/* Returns the number of the values emitted as part of the slice.
- * May be 0 if a constant slice was emitted.
- * -1 if there is an error. */
 static int
 codegen_slice(compiler *c, expr_ty s)
 {
@@ -5309,8 +5306,11 @@ codegen_slice(compiler *c, expr_ty s)
             step = s->v.Slice.step->v.Constant.value;
         }
         PyObject *slice = PySlice_New(start, stop, step);
+        if (slice == NULL) {
+            return ERROR;
+        }
         ADDOP_LOAD_CONST_NEW(c, LOC(s), slice);
-        return 0;
+        return SUCCESS;
     }
 
     RETURN_IF_ERROR(codegen_slice_two_parts(c, s));
@@ -5321,7 +5321,7 @@ codegen_slice(compiler *c, expr_ty s)
     }
 
     ADDOP_I(c, LOC(s), BUILD_SLICE, n);
-    return n;
+    return SUCCESS;
 }
 
 
