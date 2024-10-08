@@ -1190,6 +1190,7 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
         return NULL;
     }
 
+    (void)&_Py_ID(__copy__); // Retain a reference to __copy__
     itertools_state *state = get_module_state(module);
     to = tee_fromiterable(state, it);
     Py_DECREF(it);
