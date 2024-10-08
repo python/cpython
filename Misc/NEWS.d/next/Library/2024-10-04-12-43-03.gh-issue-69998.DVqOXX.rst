@@ -1,0 +1,3 @@
+Fix :func:`locale.nl_langinfo` in case when different categories have
+different locales. The function now sets temporarily the ``LC_CTYPE`` locale
+in some cases. This temporary change affects other threads.
