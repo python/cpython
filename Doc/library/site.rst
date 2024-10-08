@@ -190,7 +190,13 @@ Module contents
    was disabled by user request (with :option:`-s` or
    :envvar:`PYTHONNOUSERSITE`).  ``None`` means it was disabled for security
    reasons (mismatch between user or group id and effective id) or by an
-   administrator.
+   administrator. Note that :func:`getusersitepackages` and :func:`getuserbase`
+   don't take this variable into account. The check for :data:`ENABLE_USER_SITE` and
+   modification of ``sys.path`` occurs later.  To disable user site-packages,
+   users are encouraged to create :mod:`sitecustomize` or :mod:`usercustomize`,
+   rather than try to edit :file:`Lib/site.py`. Changing :file:`Lib/site.py`
+   won't work unless recompile Python, but administrators should still be able
+   to set :data:`ENABLE_USER_SITE` in a :mod:`sitecustomize` module.
 
 
 .. data:: USER_SITE
