@@ -46,8 +46,8 @@ class Availability(SphinxDirective):
             refwarn=True,
         )
         sep = nodes.Text(': ')
-        parsed, messages = self.state.inline_text(self.arguments[0], self.lineno)
-        pnode = nodes.paragraph(title, '', refnode, sep, *parsed, *messages)
+        parsed, msgs = self.state.inline_text(self.arguments[0], self.lineno)
+        pnode = nodes.paragraph(title, '', refnode, sep, *parsed, *msgs)
         self.set_source_info(pnode)
         cnode = nodes.container('', pnode, classes=['availability'])
         self.set_source_info(cnode)
