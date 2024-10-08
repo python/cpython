@@ -17,19 +17,17 @@ Therefore, changes to the Python language are made by modifying the
 [grammar file](https://github.com/python/cpython/blob/main/Grammar/python.gram).
 Developers rarely need to modify the generator itself.
 
-See Also:
-
-- [Changing CPython’s grammar](https://devguide.python.org/developer-workflow/grammar/#grammar)
-  for a detailed description of the grammar.
+See [Changing CPython’s grammar](https://devguide.python.org/developer-workflow/grammar/#grammar)
+for a detailed description of the grammar and the process for changing it.
 
 How PEG parsers work
 ====================
-#how-peg-parsers-work
 
-A PEG (Parsing Expression Grammar) grammar differs from a context-free grammar
+A PEG (Parsing Expression Grammar) grammar differs from a
+[context-free grammar](https://en.wikipedia.org/wiki/Context-free_grammar)
 in that the way it is written more closely reflects how the parser will operate
 when parsing. The fundamental technical difference is that the choice operator
-is ordered. This means that when writing::
+is ordered. This means that when writing:
 
 > rule: A | B | C
 
@@ -74,18 +72,6 @@ which normally are table-based.
 Key ideas
 ---------
 
----
-**Important**
-
-Don't try to reason about a PEG grammar in the same way you would to with an EBNF
-or context free grammar. PEG is optimized to describe **how** input strings will
-be parsed, while context-free grammars are optimized to generate strings of the
-language they describe (in EBNF, to know whether a given string is in the
-language, you need to do work to find out as it is not immediately obvious from
-the grammar).
-
----
-
 - Alternatives are ordered ( ``A | B`` is not the same as ``B | A`` ).
 - If a rule returns a failure, it doesn't mean that the parsing has failed,
   it just means "try something else".
@@ -96,9 +82,21 @@ the grammar).
   [``SyntaxError``](https://docs.python.org/3/library/exceptions.html#SyntaxError) is".
 
 
+---
+**Important**
+
+Don't try to reason about a PEG grammar in the same way you would to with an
+[EBNF](https://en.wikipedia.org/wiki/Extended_Backus–Naur_form)
+or context free grammar. PEG is optimized to describe **how** input strings will
+be parsed, while context-free grammars are optimized to generate strings of the
+language they describe (in EBNF, to know whether a given string is in the
+language, you need to do work to find out as it is not immediately obvious from
+the grammar).
+
+---
+
 Consequences of the ordered choice operator
 -------------------------------------------
-#order-consequences
 
 Although PEG may look like EBNF, its meaning is quite different. The fact
 that the alternatives are ordered in a PEG grammer (which is at the core of
@@ -110,6 +108,7 @@ Thus the parser is said to be "eager". To illustrate this, consider
 the following two rules (in these examples, a token is an individual character):
 
 > first_rule:  ( 'a' | 'aa' ) 'a'
+
 > second_rule: ('aa' | 'a'  ) 'a'
 
 In a regular EBNF grammar, both rules specify the language ``{aa, aaa}`` but
@@ -136,7 +135,9 @@ For this reason, writing rules where an alternative is contained in the next
 one is in almost all cases a mistake, for example:
 
 > my_rule:
+
 >   | 'if' expression 'then' block
+
 >   | 'if' expression 'then' block 'else' block
 
 In this example, the second alternative will never be tried because the first one will
@@ -144,7 +145,9 @@ succeed first (even if the input string has an ``'else' block`` that follows). T
 write this rule you can simply alter the order:
 
 > my_rule:
+
 >   | 'if' expression 'then' block 'else' block
+
 >   | 'if' expression 'then' block
 
 In this case, if the input string doesn't have an ``'else' block``, the first alternative
@@ -169,20 +172,17 @@ If the return type is omitted, then a ``void *`` is returned in C and an
 Grammar expressions
 -------------------
 
-``# comment``
-^^^^^^^^^^^^^
+**``# comment``**
 
 Python-style comments.
 
-``e1 e2``
-^^^^^^^^^
+**``e1 e2``**
 
 Match ``e1``, then match ``e2``.
 
 > rule_name: first_rule second_rule
 
-``e1 | e2``
-^^^^^^^^^^^
+**``e1 | e2``**
 
 Match ``e1`` or ``e2``.
 
@@ -191,13 +191,14 @@ for formatting purposes. In that case, a \| must be used before the
 first alternative, like so:
 
 > rule_name[return_type]:
+
 >   | first_alt
+
 >   | second_alt
 
-``( e )``
-^^^^^^^^^
+**``( e )`` (grouping operator)**
 
-Match ``e``. This is the grouping operator.
+Match ``e``.
 
 > rule_name: (e)
 
@@ -206,8 +207,7 @@ operator together with the repeat operator:
 
 > rule_name: (e1 e2)*
 
-``[ e ] or e?``
-^^^^^^^^^^^^^^^
+**``[ e ] or e?``**
 
 Optionally match ``e``.
 
@@ -218,38 +218,31 @@ optional:
 
 > rule_name: e (',' e)* [',']
 
-``e*``
-^^^^^^
+**``e*``**
 
 Match zero or more occurrences of ``e``.
 
 > rule_name: (e1 e2)*
 
-``e+``
-^^^^^^
+**``e+``**
 
 Match one or more occurrences of ``e``.
 
 > rule_name: (e1 e2)+
 
-``s.e+``
-^^^^^^^^
+**``s.e+``**
 
-Match one or more occurrences of ``e``, separated by ``s``. The generated parse
-tree does not include the separator. This is otherwise identical to
+Match one or more occurrences of ``e``, separated by ``s``. The generated
+parse tree does not include the separator. This is otherwise identical to
 ``(e (s e)*)``.
 
 > rule_name: ','.e+
 
-``&e``
-^^^^^^
-#peg-positive-lookahead
+**``&e`` (positive lookahead)**
 
 Succeed if ``e`` can be parsed, without consuming any input.
 
-``!e``
-^^^^^^
-#peg-negative-lookahead
+**``!e`` (negative lookahead)**
 
 Fail if ``e`` can be parsed, without consuming any input.
 
@@ -259,8 +252,7 @@ consists of an atom, which is not followed by a ``.`` or a ``(`` or a
 
 > primary: atom !'.' !'(' !'['
 
-``~``
-^^^^^
+**``~``**
 
 Commit to the current alternative, even if it fails to parse (this is called
 the "cut").
@@ -283,7 +275,9 @@ allows us to write not only simple left-recursive rules but also more
 complicated rules that involve indirect left-recursion like:
 
 > rule1: rule2 | 'a'
+
 > rule2: rule3 | 'b'
+
 > rule3: rule1 | 'c'
 
 and "hidden left-recursion" like:
@@ -300,7 +294,6 @@ A sub-expression can be named by preceding it with an identifier and an
 
 Grammar actions
 ---------------
-#peg-grammar-actions
 
 To avoid the intermediate steps that obscure the relationship between the
 grammar and the AST generation, the PEG parser allows directly generating AST
@@ -325,7 +318,9 @@ To indicate these actions each alternative can be followed by the action code
 inside curly-braces, which specifies the return value of the alternative:
 
 > rule_name[return_type]:
+
 >   | first_alt1 first_alt2 { first_alt1 }
+
 >   | second_alt1 second_alt2 { second_alt1 }
 
 If the action is omitted, a default action is generated:
@@ -739,9 +734,10 @@ as well as soft keywords:
 
 Soft keywords can be a bit challenging to manage as they can be accepted in
 places you don't intend, given how the order alternatives behave in PEG
-parsers (see [consequences of ordered choice section](#order-consequences)
-for some background on this). In general, try to define them in places where
-there are not many alternatives.
+parsers (see the
+[consequences of ordered choice](#consequences-of-the-ordered-choice-operator)
+section for some background on this). In general, try to define them in places
+where there are not many alternatives.
 
 ---
 
@@ -751,7 +747,7 @@ Error handling
 When a pegen-generated parser detects that an exception is raised, it will
 **automatically stop parsing**, no matter what the current state of the parser
 is, and it will unwind the stack and report the exception. This means that if a
-[rule action](#peg-grammar-actions) raises an exception, all parsing will
+[rule action](#grammar-actions) raises an exception, all parsing will
 stop at that exact point. This is done to allow to correctly propagate any
 exception set by calling Python's C API functions. This also includes
 [``SyntaxError``](https://docs.python.org/3/library/exceptions.html#SyntaxError)
@@ -784,9 +780,8 @@ was attempted to be matched but failed. This is only done if parsing has failed
 been raised.
 
 As the Python grammar was primordially written as an ``LL(1)`` grammar, this heuristic
-has an extremely high success rate, but some PEG features can have small effects,
-such as [positive lookaheads](#peg-positive-lookahead) and
-[negative lookaheads)(#peg-negative-lookahead).
+has an extremely high success rate, but some PEG features, such as lookaheads,
+can impact this.
 
 ---
 **Caution**
