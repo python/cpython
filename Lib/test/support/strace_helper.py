@@ -166,4 +166,5 @@ def requires_strace():
     return unittest.skipUnless(_can_strace(), "Requires working strace")
 
 
-__all__ = ["requires_strace", "strace_python", "StraceEvent", "StraceResult"]
+__all__ = ["get_events", "get_syscalls", "requires_strace", "strace_python",
+           "StraceEvent", "StraceResult"]
