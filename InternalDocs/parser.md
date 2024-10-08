@@ -30,9 +30,7 @@ when parsing. The fundamental technical difference is that the choice operator
 is ordered. This means that when writing:
 
 ```
-{
     rule: A | B | C
-}
 ```
 
 a parser that implements a context-free-grammar (such as an ``LL(1)`` parser) will
@@ -112,10 +110,8 @@ Thus the parser is said to be "eager". To illustrate this, consider
 the following two rules (in these examples, a token is an individual character):
 
 ```
-{
     first_rule:  ( 'a' | 'aa' ) 'a'
     second_rule: ('aa' | 'a'  ) 'a'
-}
 ```
 
 In a regular EBNF grammar, both rules specify the language ``{aa, aaa}`` but
@@ -142,11 +138,9 @@ For this reason, writing rules where an alternative is contained in the next
 one is in almost all cases a mistake, for example:
 
 ```
-{
     my_rule:
       | 'if' expression 'then' block
       | 'if' expression 'then' block 'else' block
-}
 ```
 
 In this example, the second alternative will never be tried because the first one will
@@ -154,11 +148,9 @@ succeed first (even if the input string has an ``'else' block`` that follows). T
 write this rule you can simply alter the order:
 
 ```
-{
     my_rule:
       | 'if' expression 'then' block 'else' block
       | 'if' expression 'then' block
-}
 ```
 
 In this case, if the input string doesn't have an ``'else' block``, the first alternative
@@ -170,9 +162,7 @@ Grammar Syntax
 The grammar consists of a sequence of rules of the form:
 
 ```
-{
     rule_name: expression
-}
 ```
 
 Optionally, a type can be included right after the rule name, which
@@ -180,9 +170,7 @@ specifies the return type of the C or Python function corresponding to
 the rule:
 
 ```
-{
     rule_name[return_type]: expression
-}
 ```
 
 If the return type is omitted, then a ``void *`` is returned in C and an
@@ -200,9 +188,7 @@ Python-style comments.
 Match ``e1``, then match ``e2``.
 
 ```
-{
     rule_name: first_rule second_rule
-}
 ```
 
 **``e1 | e2``**
@@ -214,11 +200,9 @@ for formatting purposes. In that case, a \| must be used before the
 first alternative, like so:
 
 ```
-{
     rule_name[return_type]:
        | first_alt
        | second_alt
-}
 ```
 
 **``( e )`` (grouping operator)**
@@ -226,18 +210,14 @@ first alternative, like so:
 Match ``e``.
 
 ```
-{
     rule_name: (e)
-}
 ```
 
 A slightly more complex and useful example includes using the grouping
 operator together with the repeat operator:
 
 ```
-{
     rule_name: (e1 e2)*
-}
 ```
 
 **``[ e ] or e?``**
@@ -245,18 +225,14 @@ operator together with the repeat operator:
 Optionally match ``e``.
 
 ```
-{
     rule_name: [e]
-}
 ```
 
 A more useful example includes defining that a trailing comma is
 optional:
 
 ```
-{
     rule_name: e (',' e)* [',']
-}
 ```
 
 **``e*``**
@@ -264,9 +240,7 @@ optional:
 Match zero or more occurrences of ``e``.
 
 ```
-{
     rule_name: (e1 e2)*
-}
 ```
 
 **``e+``**
@@ -274,9 +248,7 @@ Match zero or more occurrences of ``e``.
 Match one or more occurrences of ``e``.
 
 ```
-{
     rule_name: (e1 e2)+
-}
 ```
 
 **``s.e+``**
@@ -286,9 +258,7 @@ parse tree does not include the separator. This is otherwise identical to
 ``(e (s e)*)``.
 
 ```
-{
     rule_name: ','.e+
-}
 ```
 
 **``&e`` (positive lookahead)**
@@ -304,9 +274,7 @@ consists of an atom, which is not followed by a ``.`` or a ``(`` or a
 ``[``:
 
 ```
-{
     primary: atom !'.' !'(' !'['
-}
 ```
 
 **``~``**
@@ -315,9 +283,7 @@ Commit to the current alternative, even if it fails to parse (this is called
 the "cut").
 
 ```
-{
     rule_name: '(' ~ some_rule ')' | some_alt
-}
 ```
 
 In this example, if a left parenthesis is parsed, then the other
@@ -336,19 +302,15 @@ allows us to write not only simple left-recursive rules but also more
 complicated rules that involve indirect left-recursion like:
 
 ```
-{
     rule1: rule2 | 'a'
     rule2: rule3 | 'b'
     rule3: rule1 | 'c'
-}
 ```
 
 and "hidden left-recursion" like:
 
 ```
-{
     rule: 'optional'? rule '@' some_other_rule
-}
 ```
 
 Variables in the grammar
@@ -358,9 +320,7 @@ A sub-expression can be named by preceding it with an identifier and an
 ``=`` sign. The name can then be used in the action (see below), like this:
 
 ```
-{
     rule_name[return_type]: '(' a=some_other_rule ')' { a }
-}
 ```
 
 Grammar actions
@@ -389,11 +349,9 @@ To indicate these actions each alternative can be followed by the action code
 inside curly-braces, which specifies the return value of the alternative:
 
 ```
-{
     rule_name[return_type]:
        | first_alt1 first_alt2 { first_alt1 }
        | second_alt1 second_alt2 { second_alt1 }
-}
 ```
 
 If the action is omitted, a default action is generated:
@@ -421,7 +379,6 @@ new copy of the node and change that.
 The full meta-grammar for the grammars supported by the PEG generator is:
 
 ```
-{
     start[Grammar]: grammar ENDMARKER { grammar }
 
     grammar[Grammar]:
@@ -508,7 +465,6 @@ The full meta-grammar for the grammars supported by the PEG generator is:
         | STRING { string.string }
         | "?" { "?" }
         | ":" { ":" }
-}
 ```
 
 As an illustrative example this simple grammar file allows directly
@@ -516,7 +472,6 @@ generating a full parser that can parse simple arithmetic expressions and that
 returns a valid C-based Python AST:
 
 ```
-{
     start[mod_ty]: a=expr_stmt* ENDMARKER { _PyAST_Module(a, NULL, p->arena) }
     expr_stmt[stmt_ty]: a=expr NEWLINE { _PyAST_Expr(a, EXTRA) }
 
@@ -537,7 +492,6 @@ returns a valid C-based Python AST:
     atom[expr_ty]:
         | NAME
         | NUMBER
-}
 ```
 
 Here ``EXTRA`` is a macro that expands to ``start_lineno, start_col_offset,
@@ -548,7 +502,6 @@ for the parser.
 A similar grammar written to target Python AST objects:
 
 ```
-{
     start[ast.Module]: a=expr_stmt* ENDMARKER { ast.Module(body=a or [] }
     expr_stmt: a=expr NEWLINE { ast.Expr(value=a, EXTRA) }
 
@@ -569,7 +522,6 @@ A similar grammar written to target Python AST objects:
     atom:
         | NAME
         | NUMBER
-}
 ```
 
 Pegen
@@ -602,18 +554,14 @@ Once you have made the changes to the grammar files, to regenerate the ``C``
 parser (the one used by the interpreter) just execute:
 
 ```
-{
     make regen-pegen
-}
 ```
 
 using the ``Makefile`` in the main directory.  If you are on Windows you can
 use the Visual Studio project files to regenerate the parser or to execute:
 
 ```
-{
     ./PCbuild/build.bat --regen
-}
 ```
 
 The generated parser file is located at
@@ -631,18 +579,14 @@ need to regenerate the meta-parser (the parser that parses the grammar files).
 To do so just execute:
 
 ```
-{
     make regen-pegen-metaparser
-}
 ```
 
 If you are on Windows you can use the Visual Studio project files
 to regenerate the parser or to execute:
 
 ```
-{
     ./PCbuild/build.bat --regen
-}
 ```
 
 
@@ -684,18 +628,14 @@ file. If you change this file to add new tokens, make sure to regenerate the
 files by executing:
 
 ```
-{
     make regen-token
-}
 ```
 
 If you are on Windows you can use the Visual Studio project files to regenerate
 the tokens or to execute:
 
 ```
-{
     ./PCbuild/build.bat --regen
-}
 ```
 
 How tokens are generated and the rules governing this are completely up to the tokenizer
@@ -719,10 +659,8 @@ by default** except for rules with the special marker ``memo`` after the rule
 name (and type, if present):
 
 ```
-{
     rule_name[typr] (memo):
       ...
-}
 ```
 
 By selectively turning on memoization for a handful of rules, the parser becomes
@@ -778,7 +716,6 @@ meaning in context. Trying to use a hard keyword as a variable will always
 fail:
 
 ```
-{
     >>> class = 3
     File "<stdin>", line 1
         class = 3
@@ -789,17 +726,14 @@ fail:
         foo(class=3)
             ^^^^^
     SyntaxError: invalid syntax
-}
 ```
 
 While soft keywords don't have this limitation if used in a context other the
 one where they are defined as keywords:
 
 ```
-{
     >>> match = 45
     >>> foo(match="Yeah!")
-}
 ```
 
 The ``match`` and ``case`` keywords are soft keywords, so that they are
@@ -810,24 +744,20 @@ argument names.
 You can get a list of all keywords defined in the grammar from Python:
 
 ```
-{
     >>> import keyword
     >>> keyword.kwlist
     ['False', 'None', 'True', 'and', 'as', 'assert', 'async', 'await', 'break',
     'class', 'continue', 'def', 'del', 'elif', 'else', 'except', 'finally', 'for',
     'from', 'global', 'if', 'import', 'in', 'is', 'lambda', 'nonlocal', 'not', 'or',
     'pass', 'raise', 'return', 'try', 'while', 'with', 'yield']
-}
 ```
 
 as well as soft keywords:
 
 ```
-{
     >>> import keyword
     >>> keyword.softkwlist
     ['_', 'case', 'match']
-}
 ```
 
 ---
@@ -945,9 +875,7 @@ A good way to test whether an invalid rule will be triggered when you expect is 
 a syntax error **after** valid code triggers the rule or not. For example:
 
 ```
-{
    <valid python code> $ 42
-}
 ```
 
 should trigger the syntax error in the ``$`` character. If your rule is not correctly defined this
@@ -955,9 +883,7 @@ won't happen. As another example, suppose that you try to define a rule to match
 ``print`` statements in order to create a better error message and you define it as:
 
 ```
-{
     invalid_print: "print" expression
-}
 ```
 
 This will **seem** to work because the parser will correctly parse ``print(something)`` because it is valid
@@ -1040,18 +966,14 @@ parser. To do this, you can go to the
 directory on the CPython repository and manually call the parser generator by executing:
 
 ```
-{
     $ python -m pegen python <PATH TO YOUR GRAMMAR FILE>
-}
 ```
 
 This will generate a file called ``parse.py`` in the same directory that you
 can use to parse some input:
 
 ```
-{
     $ python parse.py file_with_source_code_to_test.py
-}
 ```
 
 As the generated ``parse.py`` file is just Python code, you can modify it
@@ -1080,9 +1002,7 @@ special steps compared to regular parsing.
 To activate verbose mode you can add the ``-d`` flag when executing Python:
 
 ```
-{
     $ python -d file_to_test.py
-}
 ```
 
 This will print **a lot** of output to ``stderr`` so it is probably better to dump
@@ -1090,9 +1010,7 @@ it to a file for further analysis. The output consists of trace lines with the
 following structure::
 
 ```
-{
     <indentation> ('>'|'-'|'+'|'!') <rule_name>[<token_location>]: <alternative> ...
-}
 ```
 
 Every line is indented by a different amount (``<indentation>``) depending on how
