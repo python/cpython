@@ -122,7 +122,7 @@ Entry points
 
    Returns a :class:`EntryPoints` instance describing entry points for the
    current environment. Any given keyword parameters are passed to the
-   :meth:`!~EntryPoints.select` method for comparison to the attributes of
+   :meth:`!select` method for comparison to the attributes of
    the individual entry point definitions.
 
    Note: it is not currently possible to query for entry points based on
@@ -158,7 +158,7 @@ attributes for convenience::
     >>> sorted(eps.groups)  # doctest: +SKIP
     ['console_scripts', 'distutils.commands', 'distutils.setup_keywords', 'egg_info.writers', 'setuptools.installation']
 
-:class:`!EntryPoints` has a :meth:`!~EntryPoints.select` method to select entry points
+:class:`!EntryPoints` has a :meth:`!select` method to select entry points
 matching specific properties. Select entry points in the
 ``console_scripts`` group::
 
@@ -232,7 +232,7 @@ Distribution metadata
     `PackageMetadata protocol <https://importlib-metadata.readthedocs.io/en/latest/api.html#importlib_metadata.PackageMetadata>`_.
 
     In addition to providing the defined protocol methods and attributes, subscripting
-    the instance is equivalent to calling the :meth:`!~PackageMetadata.get` method.
+    the instance is equivalent to calling the :meth:`!get` method.
 
 Every `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_
 includes some metadata, which you can extract using the :func:`!metadata` function::
@@ -245,7 +245,7 @@ the values are returned unparsed from the distribution metadata::
     >>> wheel_metadata['Requires-Python']  # doctest: +SKIP
     '>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
 
-:class:`PackageMetadata` also presents a :attr:`!~PackageMetadata.json` attribute that returns
+:class:`PackageMetadata` also presents a :attr:`!json` attribute that returns
 all the metadata in a JSON-compatible form per :PEP:`566`::
 
     >>> wheel_metadata.json['requires_python']
@@ -331,7 +331,7 @@ Once you have the file, you can also read its contents::
             return s.encode('utf-8')
         return s
 
-You can also use the :meth:`!~PackagePath.locate` method to get the absolute
+You can also use the :meth:`!locate` method to get the absolute
 path to the file::
 
     >>> util.locate()  # doctest: +SKIP
