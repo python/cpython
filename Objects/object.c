@@ -816,7 +816,6 @@ PyObject_Bytes(PyObject *v)
     return PyBytes_FromObject(v);
 }
 
-#ifdef WITH_FREELISTS
 static void
 clear_freelist(struct _Py_freelist *freelist, int is_finalization,
                freefunc dofree)
@@ -841,12 +840,9 @@ free_object(void *obj)
     Py_DECREF(tp);
 }
 
-#endif
-
 void
 _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
 {
-#ifdef WITH_FREELISTS
     // In the free-threaded build, freelists are per-PyThreadState and cleared in PyThreadState_Clear()
     // In the default build, freelists are per-interpreter and cleared in finalize_interp_types()
     clear_freelist(&freelists->floats, is_finalization, free_object);
@@ -866,7 +862,6 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
         // stacks during GC, so emptying the free-list is counterproductive.
         clear_freelist(&freelists->object_stack_chunks, 1, PyMem_RawFree);
     }
-#endif
 }
 
 /*
@@ -1258,9 +1253,9 @@ PyObject_GetOptionalAttr(PyObject *v, PyObject *name, PyObject **result)
         return 0;
     }
     if (tp->tp_getattro == _Py_type_getattro) {
-        int supress_missing_attribute_exception = 0;
-        *result = _Py_type_getattro_impl((PyTypeObject*)v, name, &supress_missing_attribute_exception);
-        if (supress_missing_attribute_exception) {
+        int suppress_missing_attribute_exception = 0;
+        *result = _Py_type_getattro_impl((PyTypeObject*)v, name, &suppress_missing_attribute_exception);
+        if (suppress_missing_attribute_exception) {
             // return 0 without having to clear the exception
             return 0;
         }
@@ -2347,6 +2342,7 @@ static PyTypeObject* static_types[] = {
     &_PyWeakref_ProxyType,
     &_PyWeakref_RefType,
     &_PyTypeAlias_Type,
+    &_PyNoDefault_Type,
 
     // subclasses: _PyTypes_FiniTypes() deallocates them before their base
     // class
@@ -3043,7 +3039,17 @@ Py_GetConstantBorrowed(unsigned int constant_id)
 
 // Py_TYPE() implementation for the stable ABI
 #undef Py_TYPE
-PyTypeObject* Py_TYPE(PyObject *ob)
+PyTypeObject*
+Py_TYPE(PyObject *ob)
 {
     return _Py_TYPE(ob);
+}
+
+
+// Py_REFCNT() implementation for the stable ABI
+#undef Py_REFCNT
+Py_ssize_t
+Py_REFCNT(PyObject *ob)
+{
+    return _Py_REFCNT(ob);
 }

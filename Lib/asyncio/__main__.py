@@ -1,6 +1,7 @@
 import ast
 import asyncio
 import concurrent.futures
+import contextvars
 import inspect
 import os
 import site
@@ -22,6 +23,7 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
         self.compile.compiler.flags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
 
         self.loop = loop
+        self.context = contextvars.copy_context()
 
     def runcode(self, code):
         global return_code
@@ -55,12 +57,12 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
                 return
 
             try:
-                repl_future = self.loop.create_task(coro)
+                repl_future = self.loop.create_task(coro, context=self.context)
                 futures._chain_future(repl_future, future)
             except BaseException as exc:
                 future.set_exception(exc)
 
-        loop.call_soon_threadsafe(callback)
+        loop.call_soon_threadsafe(callback, context=self.context)
 
         try:
             return future.result()
@@ -127,6 +129,15 @@ class REPLThread(threading.Thread):
 
             loop.call_soon_threadsafe(loop.stop)
 
+    def interrupt(self) -> None:
+        if not CAN_USE_PYREPL:
+            return
+
+        from _pyrepl.simple_interact import _get_reader
+        r = _get_reader()
+        if r.threading_hook is not None:
+            r.threading_hook.add("")  # type: ignore
+
 
 if __name__ == '__main__':
     sys.audit("cpython.run_stdin")
@@ -184,6 +195,7 @@ if __name__ == '__main__':
             keyboard_interrupted = True
             if repl_future and not repl_future.done():
                 repl_future.cancel()
+            repl_thread.interrupt()
             continue
         else:
             break

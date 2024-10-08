@@ -46,10 +46,14 @@ def nth_line(func, offset):
 
 class MonitoringBasicTest(unittest.TestCase):
 
+    def tearDown(self):
+        sys.monitoring.free_tool_id(TEST_TOOL)
+
     def test_has_objects(self):
         m = sys.monitoring
         m.events
         m.use_tool_id
+        m.clear_tool_id
         m.free_tool_id
         m.get_tool
         m.get_events
@@ -76,6 +80,43 @@ class MonitoringBasicTest(unittest.TestCase):
         self.assertEqual(sys.monitoring.get_tool(TEST_TOOL), None)
         with self.assertRaises(ValueError):
             sys.monitoring.set_events(TEST_TOOL, sys.monitoring.events.CALL)
+
+    def test_clear(self):
+        events = []
+        sys.monitoring.use_tool_id(TEST_TOOL, "MonitoringTest.Tool")
+        sys.monitoring.register_callback(TEST_TOOL, E.PY_START, lambda *args: events.append(args))
+        sys.monitoring.register_callback(TEST_TOOL, E.LINE, lambda *args: events.append(args))
+        def f():
+            a = 1
+        sys.monitoring.set_local_events(TEST_TOOL, f.__code__, E.LINE)
+        sys.monitoring.set_events(TEST_TOOL, E.PY_START)
+
+        f()
+        sys.monitoring.clear_tool_id(TEST_TOOL)
+        f()
+
+        # the first f() should trigger a PY_START and a LINE event
+        # the second f() after clear_tool_id should not trigger any event
+        # the callback function should be cleared as well
+        self.assertEqual(len(events), 2)
+        callback = sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
+        self.assertIs(callback, None)
+
+        sys.monitoring.free_tool_id(TEST_TOOL)
+
+        events = []
+        sys.monitoring.use_tool_id(TEST_TOOL, "MonitoringTest.Tool")
+        sys.monitoring.register_callback(TEST_TOOL, E.LINE, lambda *args: events.append(args))
+        sys.monitoring.set_local_events(TEST_TOOL, f.__code__, E.LINE)
+        f()
+        sys.monitoring.free_tool_id(TEST_TOOL)
+        sys.monitoring.use_tool_id(TEST_TOOL, "MonitoringTest.Tool")
+        f()
+        # the first f() should trigger a LINE event, and even if we use the
+        # tool id immediately after freeing it, the second f() should not
+        # trigger any event
+        self.assertEqual(len(events), 1)
+        sys.monitoring.free_tool_id(TEST_TOOL)
 
 
 class MonitoringTestBase:
@@ -744,8 +785,6 @@ class CheckEvents(MonitoringTestBase, unittest.TestCase):
 
     def check_events(self, func, expected, tool=TEST_TOOL, recorders=(ExceptionRecorder,)):
         events = self.get_events(func, tool, recorders)
-        if events != expected:
-            print(events, file = sys.stderr)
         self.assertEqual(events, expected)
 
     def check_balanced(self, func, recorders):
