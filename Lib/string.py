@@ -54,6 +54,14 @@ from collections import ChainMap as _ChainMap
 
 _sentinel_dict = {}
 
+
+def _safe_getitem(mapping, key, default):
+    try:
+        return mapping[key]
+    except KeyError:
+        return default
+
+
 class Template:
     """A string class for supporting $-substitutions."""
 
@@ -86,8 +94,61 @@ class Template:
 
     def __init__(self, template):
         self.template = template
+        self._substitute = self._compile_substitute(template)
+        self._safe_substitute = self._compile_safe_substitute(template)
 
     # Search for $$, $identifier, ${identifier}, and any bare $'s
+
+    def _compile_substitute(self, template):
+        parts = []
+        prev = 0
+        for mo in self.pattern.finditer(template):
+            literal = template[prev: mo.start()]
+            if literal:
+                parts.append(repr(literal))
+            prev = mo.end()
+            # Check the most common path first.
+            named = mo.group('named') or mo.group('braced')
+            if named is not None:
+                sub = "mapping[%r]" % named
+                if '\\' in sub or "'''" in sub:
+                    return None
+                parts.append("f'''{%s!s}'''" % sub)
+            elif mo.group('escaped') is not None:
+                parts.append(repr(self.delimiter))
+            else:
+                return None
+        literal = template[prev:]
+        if literal:
+            parts.append(repr(literal))
+        return eval('lambda mapping: ' + ''.join(parts))
+
+    def _compile_safe_substitute(self, template):
+        parts = []
+        prev = 0
+        for mo in self.pattern.finditer(template):
+            literal = template[prev: mo.start()]
+            if literal:
+                parts.append(repr(literal))
+            prev = mo.end()
+            # Check the most common path first.
+            named = mo.group('named') or mo.group('braced')
+            if named is not None:
+                sub = "_safe_getitem(mapping, %r, %r)" % (named, mo.group())
+                if '\\' in sub or "'''" in sub:
+                    return None
+                parts.append("f'''{%s!s}'''" % sub)
+            elif mo.group('escaped') is not None:
+                parts.append(repr(self.delimiter))
+            elif mo.group('invalid') is not None:
+                parts.append(repr(mo.group()))
+            else:
+                return None
+        literal = template[prev:]
+        if literal:
+            parts.append(repr(literal))
+        return eval('lambda mapping, _safe_getitem=_safe_getitem: ' +
+                    ''.join(parts))
 
     def _invalid(self, mo):
         i = mo.start('invalid')
@@ -106,6 +167,10 @@ class Template:
             mapping = kws
         elif kws:
             mapping = _ChainMap(kws, mapping)
+
+        if self._substitute is not None:
+            return self._substitute(mapping)
+
         # Helper function for .sub()
         def convert(mo):
             # Check the most common path first.
@@ -125,6 +190,10 @@ class Template:
             mapping = kws
         elif kws:
             mapping = _ChainMap(kws, mapping)
+
+        if self._safe_substitute is not None:
+            return self._safe_substitute(mapping)
+
         # Helper function for .sub()
         def convert(mo):
             named = mo.group('named') or mo.group('braced')
