@@ -790,8 +790,7 @@ lock_PyThread_acquire_lock(PyObject *op, PyObject *args, PyObject *kwds)
 
     PyLockStatus r = _PyMutex_LockTimed(&self->lock, timeout,
                                         _PY_LOCK_HANDLE_SIGNALS | _PY_LOCK_DETACH);
-    if (r == PY_LOCK_INTR)
-    {
+    if (r == PY_LOCK_INTR) {
         return NULL;
     }
 
@@ -932,7 +931,7 @@ static PyMethodDef lock_methods[] = {
     {"__exit__",    lock_PyThread_release_lock,
      METH_VARARGS, lock_exit_doc},
 #ifdef HAVE_FORK
-    {"_at_fork_reinit", (PyCFunction)lock__at_fork_reinit,
+    {"_at_fork_reinit", lock__at_fork_reinit,
      METH_NOARGS, NULL},
 #endif
     {NULL,           NULL}              /* sentinel */
