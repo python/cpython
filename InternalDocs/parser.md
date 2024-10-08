@@ -84,18 +84,15 @@ Key ideas
   [``SyntaxError``](https://docs.python.org/3/library/exceptions.html#SyntaxError) is".
 
 
----
-**Important**
+> **Important**
+> Don't try to reason about a PEG grammar in the same way you would to with an
+> [EBNF](https://en.wikipedia.org/wiki/Extended_Backus–Naur_form)
+> or context free grammar. PEG is optimized to describe **how** input strings will
+> be parsed, while context-free grammars are optimized to generate strings of the
+> language they describe (in EBNF, to know whether a given string is in the
+> language, you need to do work to find out as it is not immediately obvious from
+> the grammar).
 
-Don't try to reason about a PEG grammar in the same way you would to with an
-[EBNF](https://en.wikipedia.org/wiki/Extended_Backus–Naur_form)
-or context free grammar. PEG is optimized to describe **how** input strings will
-be parsed, while context-free grammars are optimized to generate strings of the
-language they describe (in EBNF, to know whether a given string is in the
-language, you need to do work to find out as it is not immediately obvious from
-the grammar).
-
----
 
 Consequences of the ordered choice operator
 -------------------------------------------
@@ -126,13 +123,9 @@ not accept ``aa`` because ``'aa'|'a'`` accepts all of ``aa``, leaving nothing
 for the final ``a``. Again, the second alternative of ``'aa'|'a'`` is not
 tried.
 
----
-**Caution**
-
-The effects of ordered choice, such as the ones illustrated above, may be
-hidden by many levels of rules.
-
----
+> **Caution**
+> The effects of ordered choice, such as the ones illustrated above, may be
+> hidden by many levels of rules.
 
 For this reason, writing rules where an alternative is contained in the next
 one is in almost all cases a mistake, for example:
@@ -364,17 +357,13 @@ If the action is omitted, a default action is generated:
 This default behaviour is primarily made for very simple situations and for
 debugging purposes.
 
----
-**Warning**
-
-It's important that the actions don't mutate any AST nodes that are passed
-into them via variables referring to other rules. The reason for mutation
-being not allowed is that the AST nodes are cached by memoization and could
-potentially be reused in a different context, where the mutation would be
-invalid. If an action needs to change an AST node, it should instead make a
-new copy of the node and change that.
-
----
+> **Warning**
+> It's important that the actions don't mutate any AST nodes that are passed
+> into them via variables referring to other rules. The reason for mutation
+> being not allowed is that the AST nodes are cached by memoization and could
+> potentially be reused in a different context, where the mutation would be
+> invalid. If an action needs to change an AST node, it should instead make a
+> new copy of the node and change that.
 
 The full meta-grammar for the grammars supported by the PEG generator is:
 
@@ -666,13 +655,9 @@ name (and type, if present):
 By selectively turning on memoization for a handful of rules, the parser becomes
 faster and uses less memory.
 
----
-**Note**
-
-    Left-recursive rules always use memoization, since the implementation of
-    left-recursion depends on it.
-
----
+> **Note**
+> Left-recursive rules always use memoization, since the implementation of
+> left-recursion depends on it.
 
 To determine whether a new rule needs memoization or not, benchmarking is required
 (comparing execution times and memory usage of some considerably large files with
@@ -699,14 +684,10 @@ automatic variable names are:
 Hard and soft keywords
 ----------------------
 
----
-**Note**
-
-In the grammar files, keywords are defined using **single quotes** (for example,
-``'class'``) while soft keywords are defined using **double quotes** (for example,
-``"match"``).
-
----
+> **Note**
+> In the grammar files, keywords are defined using **single quotes** (for example,
+> ``'class'``) while soft keywords are defined using **double quotes** (for example,
+> ``"match"``).
 
 There are two kinds of keywords allowed in pegen grammars: *hard* and *soft*
 keywords. The difference between hard and soft keywords is that hard keywords
@@ -760,17 +741,13 @@ as well as soft keywords:
     ['_', 'case', 'match']
 ```
 
----
-**Caution**
-
-Soft keywords can be a bit challenging to manage as they can be accepted in
-places you don't intend, given how the order alternatives behave in PEG
-parsers (see the
-[consequences of ordered choice](#consequences-of-the-ordered-choice-operator)
-section for some background on this). In general, try to define them in places
-where there are not many alternatives.
-
----
+> **Caution**
+> Soft keywords can be a bit challenging to manage as they can be accepted in
+> places you don't intend, given how the order alternatives behave in PEG
+> parsers (see the
+> [consequences of ordered choice](#consequences-of-the-ordered-choice-operator)
+> section for some background on this). In general, try to define them in places
+> where there are not many alternatives.
 
 Error handling
 --------------
@@ -785,14 +762,10 @@ exception set by calling Python's C API functions. This also includes
 exceptions and it is the main mechanism the parser uses to report custom syntax
 error messages.
 
----
-**Note**
-
-Tokenizer errors are normally reported by raising exceptions but some special
-tokenizer errors such as unclosed parenthesis will be reported only after the
-parser finishes without returning anything.
-
----
+> **Note**
+> Tokenizer errors are normally reported by raising exceptions but some special
+> tokenizer errors such as unclosed parenthesis will be reported only after the
+> parser finishes without returning anything.
 
 How syntax errors are reported
 ------------------------------
@@ -814,14 +787,10 @@ As the Python grammar was primordially written as an ``LL(1)`` grammar, this heu
 has an extremely high success rate, but some PEG features, such as lookaheads,
 can impact this.
 
----
-**Caution**
-
-Positive and negative lookaheads will try to match a token so they will affect
-the location of generic syntax errors. Use them carefully at boundaries
-between rules.
-
----
+> **Caution**
+> Positive and negative lookaheads will try to match a token so they will affect
+> the location of generic syntax errors. Use them carefully at boundaries
+> between rules.
 
 To generate more precise syntax errors, custom rules are used. This is a common
 practice also in context free grammars: the parser will try to accept some
@@ -846,20 +815,16 @@ acts in two phases:
    invalid, there is typically no need to be fast because execution is going
    to stop anyway.
 
----
-**Important**
-
-When defining invalid rules:
-
-- Make sure all custom invalid rules raise
-  [``SyntaxError``](https://docs.python.org/3/library/exceptions.html#SyntaxError)
-  exceptions (or a subclass of it).
-- Make sure **all** invalid rules start with the ``invalid_`` prefix to not
-  impact performance of parsing correct Python code.
-- Make sure the parser doesn't behave differently for regular rules when you introduce invalid rules
-  (see the [how PEG parsers work](#how-peg-parsers-work) section for more information).
-
----
+> **Important**
+> When defining invalid rules:
+> 
+> - Make sure all custom invalid rules raise
+>   [``SyntaxError``](https://docs.python.org/3/library/exceptions.html#SyntaxError)
+>   exceptions (or a subclass of it).
+> - Make sure **all** invalid rules start with the ``invalid_`` prefix to not
+>   impact performance of parsing correct Python code.
+> - Make sure the parser doesn't behave differently for regular rules when you introduce invalid rules
+>   (see the [how PEG parsers work](#how-peg-parsers-work) section for more information).
 
 You can find a collection of macros to raise specialized syntax errors in the
 [`Parser/pegen.h`](https://github.com/python/cpython/blob/main/Parser/pegen.h)
@@ -868,11 +833,10 @@ the custom errors, which will be highlighted in the tracebacks that will be
 displayed when the error is reported.
 
 
----
-**Tip**
-
-A good way to test whether an invalid rule will be triggered when you expect is to test if introducing
-a syntax error **after** valid code triggers the rule or not. For example:
+> **Tip**
+> A good way to test whether an invalid rule will be triggered when you expect
+> is to test if introducing a syntax error **after** valid code triggers the
+> rule or not. For example:
 
 ```
    <valid python code> $ 42
@@ -910,17 +874,13 @@ file. The helpers include functions that join AST sequences, get specific elemen
 from them or to perform extra processing on the generated tree.
 
 
----
-**Caution**
-
-Actions must **never** be used to accept or reject rules. It may be tempting
-in some situations to write a very generic rule and then check the generated
-AST to decide whether it is valid or not, but this will render the
-(official grammar)[https://docs.python.org/3/reference/grammar.html] partially
-incorrect (because it does not include actions) and will make it more difficult
-for other Python implementations to adapt the grammar to their own needs.
-
----
+> **Caution**
+> Actions must **never** be used to accept or reject rules. It may be tempting
+> in some situations to write a very generic rule and then check the generated
+> AST to decide whether it is valid or not, but this will render the
+> (official grammar)[https://docs.python.org/3/reference/grammar.html] partially
+> incorrect (because it does not include actions) and will make it more difficult
+> for other Python implementations to adapt the grammar to their own needs.
 
 As a general rule, if an action spawns multiple lines or requires something more
 complicated than a single expression of C code, is normally better to create a
@@ -990,14 +950,10 @@ it is possible to activate a **very** verbose mode in the generated parser. This
 is very useful to debug the generated parser and to understand how it works, but it
 can be a bit hard to understand at first.
 
----
-**Note:**
-
-When activating verbose mode in the Python parser, it is better to not use interactive
-mode as it can be much harder to understand, because interactive mode involves some
-special steps compared to regular parsing.
-
----
+> **Note:**
+> When activating verbose mode in the Python parser, it is better to not use
+> interactive mode as it can be much harder to understand, because interactive
+> mode involves some special steps compared to regular parsing.
 
 To activate verbose mode you can add the ``-d`` flag when executing Python:
 
@@ -1027,9 +983,6 @@ the ``<alternative>`` part indicates what alternative within that rule
 is being attempted.
 
 
----
-**Admonition: Document history**
-
-   Pablo Galindo Salgado - Original author
-
---
+> **Admonition: Document history**
+>
+>   Pablo Galindo Salgado - Original author
