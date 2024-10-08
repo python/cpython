@@ -246,13 +246,13 @@ detect_simd_features(py_simd_features *flags,
 #ifdef CAN_COMPILE_SIMD_SSE4_2_INSTRUCTIONS
     flags->sse42 = CPUID_CHECK_REG(ecx, ECX_L1_SSE4_2);
 #endif
-#endif // !SIMD_SSE_INSTRUCTIONS_DETECTION_GUARD
+#endif // SIMD_SSE_INSTRUCTIONS_DETECTION_GUARD
 
 #ifdef SIMD_AVX_INSTRUCTIONS_DETECTION_GUARD
 #ifdef CAN_COMPILE_SIMD_AVX_INSTRUCTIONS
     flags->avx = CPUID_CHECK_REG(ecx, ECX_L1_AVX);
 #endif
-#endif // !SIMD_AVX_INSTRUCTIONS_DETECTION_GUARD
+#endif // SIMD_AVX_INSTRUCTIONS_DETECTION_GUARD
 
     flags->os_xsave = CPUID_CHECK_REG(ecx, ECX_L1_OSXSAVE);
 }
@@ -328,7 +328,7 @@ detect_simd_extended_features_ecx_0(py_simd_features *flags,
 #ifdef CAN_COMPILE_SIMD_AVX512_VP2INTERSECT_INSTRUCTIONS
     flags->avx512_vp2intersect = CPUID_CHECK_REG(edx, EDX_L7_AVX512_VP2INTERSECT);
 #endif
-#endif // !SIMD_AVX512_INSTRUCTIONS_DETECTION_GUARD
+#endif // SIMD_AVX512_INSTRUCTIONS_DETECTION_GUARD
 }
 
 /* Extended Feature Bits (LEAF=7, SUBLEAF=1). */
@@ -356,7 +356,7 @@ detect_simd_extended_features_ecx_1(py_simd_features *flags,
 #ifdef CAN_COMPILE_SIMD_AVX_VNNI_INT16_INSTRUCTIONS
     flags->avx_vnni_int16 = CPUID_CHECK_REG(edx, EDX_L7S1_AVX_VNNI_INT16);
 #endif
-#endif // !SIMD_AVX_INSTRUCTIONS_DETECTION_GUARD
+#endif // SIMD_AVX_INSTRUCTIONS_DETECTION_GUARD
 }
 
 static inline void
@@ -551,7 +551,7 @@ _Py_detect_simd_features(py_simd_features *flags)
 #else
     (void) maxleaf;
     (void) eax; (void) ebx; (void) ecx; (void) edx;
-#endif // !SHOULD_DETECT_SIMD_FEATURES_L1
+#endif // SHOULD_DETECT_SIMD_FEATURES_L1
 #ifdef SHOULD_DETECT_SIMD_FEATURES_L7
     if (maxleaf >= 7) {
 #ifdef SHOULD_DETECT_SIMD_FEATURES_L7S0
@@ -568,7 +568,7 @@ _Py_detect_simd_features(py_simd_features *flags)
 #else
     (void) maxleaf;
     (void) eax; (void) ebx; (void) ecx; (void) edx;
-#endif // !SHOULD_DETECT_SIMD_FEATURES_L7
+#endif // SHOULD_DETECT_SIMD_FEATURES_L7
     finalize_simd_features(flags);
     if (validate_simd_features(flags) < 0) {
         _Py_disable_simd_features(flags);
