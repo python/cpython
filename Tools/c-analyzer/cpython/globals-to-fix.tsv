@@ -423,6 +423,7 @@ Modules/readline.c	-	libedit_history_start	-
 
 Modules/_ctypes/cfield.c	-	formattable	-
 Modules/_ctypes/malloc_closure.c	-	free_list	-
+Modules/_cursesmodule.c	-	curses_global_state	-
 Modules/_curses_panel.c	-	lop	-
 Modules/_ssl/debughelpers.c	_PySSL_keylog_callback	lock	-
 Modules/_tkinter.c	-	quitMainLoop	-

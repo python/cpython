@@ -602,7 +602,6 @@ extern "C" {
     INIT_ID(__classdictcell__), \
     INIT_ID(__complex__), \
     INIT_ID(__contains__), \
-    INIT_ID(__copy__), \
     INIT_ID(__ctypes_from_outparam__), \
     INIT_ID(__del__), \
     INIT_ID(__delattr__), \
@@ -756,6 +755,7 @@ extern "C" {
     INIT_ID(_initializing), \
     INIT_ID(_io), \
     INIT_ID(_is_text_encoding), \
+    INIT_ID(_isatty_open_only), \
     INIT_ID(_length_), \
     INIT_ID(_limbo), \
     INIT_ID(_lock_unlock_module), \
@@ -767,7 +767,9 @@ extern "C" {
     INIT_ID(_shutdown), \
     INIT_ID(_slotnames), \
     INIT_ID(_strptime), \
-    INIT_ID(_strptime_datetime), \
+    INIT_ID(_strptime_datetime_date), \
+    INIT_ID(_strptime_datetime_datetime), \
+    INIT_ID(_strptime_datetime_time), \
     INIT_ID(_type_), \
     INIT_ID(_uninitialized_submodules), \
     INIT_ID(_warn_unawaited_coroutine), \

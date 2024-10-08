@@ -1,0 +1,1 @@
+Fixed a :mod:`pdb` bug where ``until`` has no effect when it appears in a ``commands`` sequence. Also avoid printing the frame information at a breakpoint that has a command list containing a command that resumes execution.

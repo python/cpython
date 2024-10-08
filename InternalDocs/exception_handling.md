@@ -75,7 +75,8 @@ table. If it finds a handler, control flow transfers to it. Otherwise, the
 exception bubbles up to the caller, and the caller's frame is
 checked for a handler covering the `CALL` instruction. This
 repeats until a handler is found or the topmost frame is reached.
-If no handler is found, the program terminates. During unwinding,
+If no handler is found, then the interpreter function
+(``_PyEval_EvalFrameDefault()``) returns NULL. During unwinding,
 the traceback is constructed as each frame is added to it by
 ``PyTraceBack_Here()``, which is in
 [Python/traceback.c](https://github.com/python/cpython/blob/main/Python/traceback.c).
@@ -182,3 +183,13 @@ The interpreter's function to lookup the table by instruction offset is
 The Python function ``_parse_exception_table()`` in
 [Lib/dis.py](https://github.com/python/cpython/blob/main/Lib/dis.py)
 returns the exception table content as a list of namedtuple instances.
+
+Exception Chaining Implementation
+---------------------------------
+
+[Exception chaining](https://docs.python.org/dev/tutorial/errors.html#exception-chaining)
+refers to setting the ``__context__`` and ``__cause__`` fields of an exception as it is
+being raised. The ``__context__`` field is set by ``_PyErr_SetObject()`` in
+[Python/errors.c](https://github.com/python/cpython/blob/main/Python/errors.c)
+(which is ultimately called by all ``PyErr_Set*()`` functions).
+The ``__cause__`` field (explicit chaining) is set by the ``RAISE_VARARGS`` bytecode.
