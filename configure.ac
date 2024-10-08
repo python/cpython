@@ -7846,7 +7846,6 @@ if test "$ac_sys_system" != "Linux-android" || test "$ANDROID_API_LEVEL" -ge 28;
     PY_SIMD_DETECT([AVX512_BW], [-mavx512bw])
     #
     PY_SIMD_DETECT([AVX512_IFMA], [-mavx512ifma])
-    #
     PY_SIMD_DETECT([AVX512_VBMI], [-mavx512vbmi])
     #
     PY_SIMD_DETECT([AVX512_VNNI], [-mavx512vnni])

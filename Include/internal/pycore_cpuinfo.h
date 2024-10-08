@@ -11,112 +11,138 @@ extern "C" {
 
 #include <stdint.h>         // uint8_t
 
-/* Macro indicating that the member is a CPUID bit. */
-#define _Py_SIMD_FEAT       uint8_t
-/* Macro indicating that the member is a XCR0 bit. */
-#define _Py_SIMD_XCR0_BIT   uint8_t
+/* Declare a member of 'py_cpuid_features' storing a CPUID bit. */
+#define _Py_CPUID_DECL_FEAT(X)    uint8_t X:1
+/* Declare a member of 'py_cpuid_features' storing a XCR0 bit. */
+#define _Py_CPUID_DECL_XCR0(X)    uint8_t X:1
 
-typedef struct py_simd_features {
-    /* Streaming SIMD Extensions */
-    _Py_SIMD_FEAT sse: 1;
-    _Py_SIMD_FEAT sse2: 1;
-    _Py_SIMD_FEAT sse3: 1;
-    _Py_SIMD_FEAT ssse3: 1; // Supplemental SSE3 instructions
-    _Py_SIMD_FEAT sse41: 1; // SSE4.1
-    _Py_SIMD_FEAT sse42: 1; // SSE4.2
+typedef struct py_cpuid_features {
+    // --- Streaming SIMD Extensions ------------------------------------------
+    _Py_CPUID_DECL_FEAT(sse);
+    _Py_CPUID_DECL_FEAT(sse2);
+    _Py_CPUID_DECL_FEAT(sse3);
+    _Py_CPUID_DECL_FEAT(ssse3); // Supplemental SSE3 instructions
+    _Py_CPUID_DECL_FEAT(sse41); // SSE4.1
+    _Py_CPUID_DECL_FEAT(sse42); // SSE4.2
 
-    /* Advanced Vector Extensions */
-    _Py_SIMD_FEAT avx: 1;
-    _Py_SIMD_FEAT avx_ifma: 1;
-    _Py_SIMD_FEAT avx_ne_convert: 1;
+    // --- Advanced Vector Extensions -----------------------------------------
+    _Py_CPUID_DECL_FEAT(avx);
+    _Py_CPUID_DECL_FEAT(avx_ifma);
+    _Py_CPUID_DECL_FEAT(avx_ne_convert);
 
-    _Py_SIMD_FEAT avx_vnni: 1;
-    _Py_SIMD_FEAT avx_vnni_int8: 1;
-    _Py_SIMD_FEAT avx_vnni_int16: 1;
+    _Py_CPUID_DECL_FEAT(avx_vnni);
+    _Py_CPUID_DECL_FEAT(avx_vnni_int8);
+    _Py_CPUID_DECL_FEAT(avx_vnni_int16);
 
-    /* Advanced Vector Extensions 2. */
-    _Py_SIMD_FEAT avx2: 1;
+    // --- Advanced Vector Extensions 2 ---------------------------------------
+    _Py_CPUID_DECL_FEAT(avx2);
 
+    // --- Advanced Vector Extensions (512-bit) -------------------------------
     /*
+     *
      * AVX-512 instruction set are grouped by the processor generation
      * that implements them (see https://en.wikipedia.org/wiki/AVX-512).
      *
      * We do not include GFNI, VPCLMULQDQ and VAES instructions since
      * they are not exactly AVX-512 per se, nor do we include BF16 or
      * FP16 since they operate on bfloat16 and binary16 (half-float).
+     *
+     * See https://en.wikipedia.org/wiki/AVX-512#Instruction_set for
+     * the meaning of each suffix (e.g., 'f' stands for 'Foundation').
      */
-    _Py_SIMD_FEAT avx512_f: 1;
-    _Py_SIMD_FEAT avx512_cd: 1;
+    _Py_CPUID_DECL_FEAT(avx512_f);
+    _Py_CPUID_DECL_FEAT(avx512_cd);
 
-    _Py_SIMD_FEAT avx512_er: 1;
-    _Py_SIMD_FEAT avx512_pf: 1;
+    _Py_CPUID_DECL_FEAT(avx512_er);
+    _Py_CPUID_DECL_FEAT(avx512_pf);
 
-    _Py_SIMD_FEAT avx512_4fmaps: 1;
-    _Py_SIMD_FEAT avx512_4vnniw: 1;
+    _Py_CPUID_DECL_FEAT(avx512_4fmaps);
+    _Py_CPUID_DECL_FEAT(avx512_4vnniw);
 
-    _Py_SIMD_FEAT avx512_vpopcntdq: 1;
+    _Py_CPUID_DECL_FEAT(avx512_vpopcntdq);
 
-    _Py_SIMD_FEAT avx512_vl: 1;
-    _Py_SIMD_FEAT avx512_dq: 1;
-    _Py_SIMD_FEAT avx512_bw: 1;
+    _Py_CPUID_DECL_FEAT(avx512_vl);
+    _Py_CPUID_DECL_FEAT(avx512_dq);
+    _Py_CPUID_DECL_FEAT(avx512_bw);
 
-    _Py_SIMD_FEAT avx512_ifma: 1;
+    _Py_CPUID_DECL_FEAT(avx512_ifma);
+    _Py_CPUID_DECL_FEAT(avx512_vbmi);
 
-    _Py_SIMD_FEAT avx512_vbmi: 1;
+    _Py_CPUID_DECL_FEAT(avx512_vnni);
 
-    _Py_SIMD_FEAT avx512_vnni: 1;
+    _Py_CPUID_DECL_FEAT(avx512_vbmi2);
+    _Py_CPUID_DECL_FEAT(avx512_bitalg);
 
-    _Py_SIMD_FEAT avx512_vbmi2: 1;
-    _Py_SIMD_FEAT avx512_bitalg: 1;
+    _Py_CPUID_DECL_FEAT(avx512_vp2intersect);
 
-    _Py_SIMD_FEAT avx512_vp2intersect: 1;
+    // --- Instructions -------------------------------------------------------
+    _Py_CPUID_DECL_FEAT(cmov);
+    _Py_CPUID_DECL_FEAT(fma);
+    _Py_CPUID_DECL_FEAT(popcnt);
+    _Py_CPUID_DECL_FEAT(pclmulqdq);
 
-    _Py_SIMD_FEAT os_xsave: 1;  // XSAVE is supported
+    _Py_CPUID_DECL_FEAT(xsave);     // XSAVE/XRSTOR/XSETBV/XGETBV
+    _Py_CPUID_DECL_FEAT(os_xsave);  // XSAVE is enabled by the OS
 
-    /* XCR0 register bits */
-    _Py_SIMD_XCR0_BIT xcr0_sse: 1;
-
+    // --- XCR0 register bits -------------------------------------------------
+    _Py_CPUID_DECL_XCR0(xcr0_sse);
     // On some Intel CPUs, it is possible for the CPU to support AVX2
     // instructions even though the underlying OS does not know about
     // AVX. In particular, only (SSE) XMM registers will be saved and
     // restored on context-switch, but not (AVX) YMM registers.
-    _Py_SIMD_XCR0_BIT xcr0_avx: 1;
-    _Py_SIMD_XCR0_BIT xcr0_avx512_opmask: 1;
-    _Py_SIMD_XCR0_BIT xcr0_avx512_zmm_hi256: 1;
-    _Py_SIMD_XCR0_BIT xcr0_avx512_hi16_zmm: 1;
+    _Py_CPUID_DECL_XCR0(xcr0_avx);
+    _Py_CPUID_DECL_XCR0(xcr0_avx512_opmask);
+    _Py_CPUID_DECL_XCR0(xcr0_avx512_zmm_hi256);
+    _Py_CPUID_DECL_XCR0(xcr0_avx512_hi16_zmm);
 
-    // We want the structure to be aligned correctly, namely
-    // its size in bits must be a multiple of 8.
-    //
     // Whenever a field is added or removed above, update the
-    // number of fields (35) and adjust the bitsize of 'done'.
-    uint8_t done: 5;    // set if the structure was filled
-} py_simd_features;
+    // number of fields (40) and adjust the bitsize of 'ready'
+    // so that the size of this structure is a multiple of 8.
+    uint8_t ready; // set if the structure is ready for usage
+} py_cpuid_features;
 
 /*
  * Explicitly initialize all members to zero to guarantee that
  * we never have an un-initialized attribute at runtime which
  * could lead to an illegal instruction error.
+ *
+ * This does not mark 'flags' as being ready yet.
  */
 extern void
-_Py_disable_simd_features(py_simd_features *flags);
+_Py_cpuid_disable_features(py_cpuid_features *flags);
 
 /*
- * Apply a bitwise-OR on all flags in 'out' using those in 'src',
- * unconditionally updating 'out' (i.e. 'out->done' is ignored).
+ * Check whether the structure is ready and flags are inter-compatible,
+ * returning 1 on success and 0 otherwise.
  *
- * This also sets 'out->done' to 1 at the end.
- *
- * Note that the caller is responsible to ensure that the flags set to 1
- * must not lead to illegal instruction errors if the corresponding SIMD
- * instruction(s) are used.
+ * The caller should disable all CPUID detected features if the check
+ * fails to avoid encountering runtime illegal instruction errors.
  */
-extern void
-_Py_update_simd_features(py_simd_features *out, const py_simd_features *src);
+extern int
+_Py_cpuid_check_features(const py_cpuid_features *flags);
 
-/* Detect the available SIMD features on this machine. */
+/*
+ * Return 1 if all expected flags are set in 'actual', 0 otherwise.
+ *
+ * If 'actual' or 'expect' are not ready yet, this also returns 0.
+ */
+extern int
+_Py_cpuid_has_features(const py_cpuid_features *actual,
+                       const py_cpuid_features *expect);
+
+
+/*
+ * Return 1 if 'actual' and 'expect' are identical, 0 otherwise.
+ *
+ * If 'actual' or 'expect' are not ready yet, this also returns 0.
+ */
+extern int
+_Py_cpuid_match_features(const py_cpuid_features *actual,
+                         const py_cpuid_features *expect);
+
+/* Detect the available features on this machine. */
 extern void
-_Py_detect_simd_features(py_simd_features *flags);
+_Py_cpuid_detect_features(py_cpuid_features *flags);
 
 #ifdef __cplusplus
 }
