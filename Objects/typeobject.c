@@ -5272,8 +5272,6 @@ static PyTypeObject *
 get_base_by_token_recursive(PyObject *bases, void *token)
 {
     assert(bases != NULL);
-    // MSVC: The result should be initialized outside the loop to avoid the c
-    // file being less PGO-optimized. Returning it from inside seems to be OK.
     PyTypeObject *res = NULL;
     Py_ssize_t n = PyTuple_GET_SIZE(bases);
     for (Py_ssize_t i = 0; i < n; i++) {
@@ -5291,7 +5289,7 @@ get_base_by_token_recursive(PyObject *bases, void *token)
             break;
         }
     }
-    return res;  // Prefer to return in one place
+    return res;
 }
 
 static int
@@ -5344,7 +5342,7 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
         *result = NULL;
         return check_base_by_token(type, token);
     }
-    // Prefer not to use gotos here for Windows PGO
+
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // No static type has a heaptype superclass,
         // which is ensured by type_ready_mro().
