@@ -1560,8 +1560,7 @@ r_object(RFILE *p)
             goto cleanup;
         }
         retval = PySlice_New(start, stop, step);
-        if (idx)
-            r_ref_insert(retval, idx, flag, p);
+        r_ref_insert(retval, idx, flag, p);
     cleanup:
         Py_XDECREF(start);
         Py_XDECREF(stop);
