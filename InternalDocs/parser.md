@@ -84,7 +84,7 @@ Key ideas
   [``SyntaxError``](https://docs.python.org/3/library/exceptions.html#SyntaxError) is".
 
 
-> **Important**
+> [!IMPORTANT]
 > Don't try to reason about a PEG grammar in the same way you would to with an
 > [EBNF](https://en.wikipedia.org/wiki/Extended_Backus–Naur_form)
 > or context free grammar. PEG is optimized to describe **how** input strings will
@@ -123,7 +123,7 @@ not accept ``aa`` because ``'aa'|'a'`` accepts all of ``aa``, leaving nothing
 for the final ``a``. Again, the second alternative of ``'aa'|'a'`` is not
 tried.
 
-> **Caution**
+> [!CAUTION]
 > The effects of ordered choice, such as the ones illustrated above, may be
 > hidden by many levels of rules.
 
@@ -357,7 +357,7 @@ If the action is omitted, a default action is generated:
 This default behaviour is primarily made for very simple situations and for
 debugging purposes.
 
-> **Warning**
+> [!WARNING]
 > It's important that the actions don't mutate any AST nodes that are passed
 > into them via variables referring to other rules. The reason for mutation
 > being not allowed is that the AST nodes are cached by memoization and could
@@ -655,7 +655,7 @@ name (and type, if present):
 By selectively turning on memoization for a handful of rules, the parser becomes
 faster and uses less memory.
 
-> **Note**
+> [!NOTE]
 > Left-recursive rules always use memoization, since the implementation of
 > left-recursion depends on it.
 
@@ -684,7 +684,7 @@ automatic variable names are:
 Hard and soft keywords
 ----------------------
 
-> **Note**
+> [!NOTE]
 > In the grammar files, keywords are defined using **single quotes** (for example,
 > ``'class'``) while soft keywords are defined using **double quotes** (for example,
 > ``"match"``).
@@ -741,7 +741,7 @@ as well as soft keywords:
     ['_', 'case', 'match']
 ```
 
-> **Caution**
+> [!CAUTION]
 > Soft keywords can be a bit challenging to manage as they can be accepted in
 > places you don't intend, given how the order alternatives behave in PEG
 > parsers (see the
@@ -762,7 +762,7 @@ exception set by calling Python's C API functions. This also includes
 exceptions and it is the main mechanism the parser uses to report custom syntax
 error messages.
 
-> **Note**
+> [!NOTE]
 > Tokenizer errors are normally reported by raising exceptions but some special
 > tokenizer errors such as unclosed parenthesis will be reported only after the
 > parser finishes without returning anything.
@@ -787,7 +787,7 @@ As the Python grammar was primordially written as an ``LL(1)`` grammar, this heu
 has an extremely high success rate, but some PEG features, such as lookaheads,
 can impact this.
 
-> **Caution**
+> [!CAUTION]
 > Positive and negative lookaheads will try to match a token so they will affect
 > the location of generic syntax errors. Use them carefully at boundaries
 > between rules.
@@ -815,9 +815,9 @@ acts in two phases:
    invalid, there is typically no need to be fast because execution is going
    to stop anyway.
 
-> **Important**
+> [!IMPORTANT]
 > When defining invalid rules:
-> 
+>
 > - Make sure all custom invalid rules raise
 >   [``SyntaxError``](https://docs.python.org/3/library/exceptions.html#SyntaxError)
 >   exceptions (or a subclass of it).
@@ -833,7 +833,7 @@ the custom errors, which will be highlighted in the tracebacks that will be
 displayed when the error is reported.
 
 
-> **Tip**
+> [!TIP]
 > A good way to test whether an invalid rule will be triggered when you expect
 > is to test if introducing a syntax error **after** valid code triggers the
 > rule or not. For example:
@@ -874,7 +874,7 @@ file. The helpers include functions that join AST sequences, get specific elemen
 from them or to perform extra processing on the generated tree.
 
 
-> **Caution**
+> [!CAUTION]
 > Actions must **never** be used to accept or reject rules. It may be tempting
 > in some situations to write a very generic rule and then check the generated
 > AST to decide whether it is valid or not, but this will render the
@@ -950,7 +950,7 @@ it is possible to activate a **very** verbose mode in the generated parser. This
 is very useful to debug the generated parser and to understand how it works, but it
 can be a bit hard to understand at first.
 
-> **Note:**
+> [!NOTE]
 > When activating verbose mode in the Python parser, it is better to not use
 > interactive mode as it can be much harder to understand, because interactive
 > mode involves some special steps compared to regular parsing.
@@ -983,6 +983,6 @@ the ``<alternative>`` part indicates what alternative within that rule
 is being attempted.
 
 
-> **Admonition: Document history**
+> [!IMPORTANT]: **Document history**
 >
 >   Pablo Galindo Salgado - Original author
