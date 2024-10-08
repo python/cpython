@@ -1261,12 +1261,6 @@ The following recipes have a more mathematical flavor:
     [1, 2, 3, 4, 5, 6]
 
 
-    >>> list(repeatfunc(pow, 5, 2, 3))
-    [8, 8, 8, 8, 8]
-    >>> take(5, map(int, repeatfunc(random.random)))
-    [0, 0, 0, 0, 0]
-
-
     >>> list(ncycles('abc', 3))
     ['a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c']
     >>> # Verify greedy consumption of input iterator
@@ -1551,6 +1545,10 @@ The following recipes have a more mathematical flavor:
     ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
 
 
+    >>> list(repeatfunc(pow, 5, 2, 3))
+    [8, 8, 8, 8, 8]
+    >>> take(5, map(int, repeatfunc(random.random)))
+    [0, 0, 0, 0, 0]
     >>> random.seed(85753098575309)
     >>> list(repeatfunc(random.random, 3))
     [0.16370491282496968, 0.45889608687313455, 0.3747076837820118]
