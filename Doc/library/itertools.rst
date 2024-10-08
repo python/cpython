@@ -134,7 +134,7 @@ loops that truncate the stream.
     To compute a running minimum, set *function* to :func:`min`.
     For a running maximum, set *function* to :func:`max`.
     Or for a running product, set *function* to :func:`operator.mul`.
-    To build an `Amortization table
+    To build an `amortization table
     <https://www.ramseysolutions.com/real-estate/amortization-schedule>`_,
     accumulate the interest and apply payments:
 
