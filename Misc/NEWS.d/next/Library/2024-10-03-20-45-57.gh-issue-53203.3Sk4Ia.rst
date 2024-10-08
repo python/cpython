@@ -1,2 +1,5 @@
-Fix :func:`time.strptime` for ``%c`` format in locales with a short March
-month name, such as French or Hebrew.
+Fix :func:`time.strptime` for ``%c`` and ``%x`` format in many locales:
+Arabic, Bislama, Chuvash, Estonian, French, Irish, Gurajati, Manx Gaelic,
+Hebrew, Hindi, Chhattisgarhi, Haitian Kreyol, Japanese, Kannada, Korean,
+Marathi, Malay, Norwegian, Nynorsk, Punjabi, Rajasthani, Tok Pisin,
+Yue Chinese, Yau/Nungon and Chinese.
