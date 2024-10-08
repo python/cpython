@@ -17,7 +17,7 @@ asynchronously executing callables.
 The asynchronous execution can be performed with threads, using
 :class:`ThreadPoolExecutor` or :class:`InterpreterPoolExecutor`,
 or separate processes, using :class:`ProcessPoolExecutor`.
-Both implement the same interface, which is defined
+Each implements the same interface, which is defined
 by the abstract :class:`Executor` class.
 
 .. include:: ../includes/wasm-notavail.rst
@@ -234,17 +234,17 @@ InterpreterPoolExecutor
 
 The :class:`InterpreterPoolExecutor` class is a :class:`ThreadPoolExecutor`
 subclass that uses a pool of isolated interpreters to execute calls
-asynchronously.  Each interpreter has its own GIL, which allows the
-executor to side-step the :term:`Global Interpreter Lock
-<global interpreter lock>`, allowing the use of multiple cores.
-Interpreters mostly can't share objects between them, which means that,
-in most cases, only picklable objects can be executed and returned.
+asynchronously.  Each interpreter is isolated from the others and thus
+can side-step the :term:`Global Interpreter Lock <global interpreter lock>`,
+allowing the use of multiple cores.  Interpreters mostly can't share
+objects between them, which means that, in most cases, only picklable
+objects can be executed and returned.
 
 .. class:: InterpreterPoolExecutor(max_workers=None, mp_context=None, initializer=None, initargs=(), shared=None)
 
    A :class:`ThreadPoolExecutor` subclass that executes calls asynchronously
-   using a pool of at most *max_workers* interpreters.  Each interpreter
-   runs tasks in its own thread.
+   using a pool of at most *max_workers* threads.  Each thread runs
+   tasks in its own interpreter.
 
    *initializer* and *initargs* are the same as with
    :class:`ThreadPoolExecutor`, though they are pickled like with
@@ -256,25 +256,26 @@ in most cases, only picklable objects can be executed and returned.
    Similarly you can pass a script to :meth:`~Executor.submit`, which
    will be executed in the interpreter's ``__main__`` module.  In that
    case no arguments may be provided and the return value is always
-   ``None``.
+   ``None``.  Functions (and arguments) are pickled like we do with
+   the initializer.
 
    For both *initializer* and :meth:`~Executor.submit`, if a script
    is passed in then it will automatically have :func:`textwrap.dedent`
-   applied to it.  That means you don't have to.
+   applied to it.  That means you don't have to do so.
 
-   :meth:`InterpreterPoolExecutor <Executor.map>` does *not* support
-   passing in a script.
+   :meth:`~Executor.map` does *not* support passing in a script.
 
    In each of those cases, an uncaught exception from the initializer
-   or task is raised as an
-   :class:`~concurrent.futures.interpreter.ExecutionFailed` exception,
-   rather than the uncaught exception itself.
+   or task might not be suitable to send between interpreters, to be
+   raised as is.  In tha case, an
+   :class:`~concurrent.futures.interpreter.ExecutionFailed` exception
+   is raised instead which contains a summary of the original exception.
 
    *shared* is an optional dict of objects shared by all interpreters
    in the pool.  The items are added to each interpreter's ``__main__``
-   module.  Shareable objects include the builtin singletons, :class:`str`
-   and :class:`bytes`, and :class:`memoryview`.  See :pep:`734`
-   for more info.
+   module.  Not all objects are shareable.  Those that are include
+   the builtin singletons, :class:`str` and :class:`bytes`,
+   and :class:`memoryview`.  See :pep:`734` for more info.
 
    The other caveats that apply to :class:`ThreadPoolExecutor` apply here.
 
