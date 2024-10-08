@@ -96,7 +96,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
                     return entry;
                 if (PyUnicode_CheckExact(startkey)
                     && PyUnicode_CheckExact(key)
-                    && _PyUnicode_EQ(startkey, key))
+                    && _PyUnicode_Equal(startkey, key))
                     return entry;
                 table = so->table;
                 Py_INCREF(startkey);
@@ -157,7 +157,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
                     goto found_active;
                 if (PyUnicode_CheckExact(startkey)
                     && PyUnicode_CheckExact(key)
-                    && _PyUnicode_EQ(startkey, key))
+                    && _PyUnicode_Equal(startkey, key))
                     goto found_active;
                 table = so->table;
                 Py_INCREF(startkey);
