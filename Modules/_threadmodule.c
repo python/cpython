@@ -1111,7 +1111,7 @@ rlock_recursion_count(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     rlockobject *self = (rlockobject*)op;
     if (_PyRecursiveMutex_IsLockedByCurrentThread(&self->lock)) {
-        return PyLong_FromUnsignedLong(self->lock.level + 1);
+        return PyLong_FromSize_t(self->lock.level + 1);
     }
     return PyLong_FromLong(0);
 }
