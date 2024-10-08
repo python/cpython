@@ -192,16 +192,117 @@ class _curses.window "PyCursesWindowObject *" "clinic_state()->window_type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=ae6cb623018f2cbc]*/
 
-/* Tells whether setupterm() has been called to initialise terminfo.  */
+/*
+ * Tells whether setupterm() has been called to initialise terminfo.
+ *
+ * Use curses_setupterm_{was,set}_called() for atomic reads and writes.
+ */
 static int curses_setupterm_called = FALSE;
 
-/* Tells whether initscr() has been called to initialise curses.  */
+static inline int
+curses_setupterm_was_called(void)
+{
+#ifdef Py_GIL_DISABLED
+    return _Py_atomic_load_int(&curses_setupterm_called);
+#else
+    return curses_setupterm_called;
+#endif
+}
+
+static inline void
+curses_setupterm_set_called(void)
+{
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_store_int(&curses_setupterm_called, TRUE);
+#else
+    curses_setupterm_called = TRUE;
+#endif
+}
+
+/*
+ * Tells whether initscr() has been called to initialise curses.
+ *
+ * Use curses_initscr_{was,set}_called() for atomic reads and writes.
+ */
 static int curses_initscr_called = FALSE;
 
-/* Tells whether start_color() has been called to initialise color usage. */
+static inline int
+curses_initscr_was_called(void)
+{
+#ifdef Py_GIL_DISABLED
+    return _Py_atomic_load_int(&curses_initscr_called);
+#else
+    return curses_initscr_called;
+#endif
+}
+
+static inline void
+curses_initscr_set_called(void)
+{
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_store_int(&curses_initscr_called, TRUE);
+#else
+    curses_initscr_called = TRUE;
+#endif
+}
+
+/*
+ * Tells whether start_color() has been called to initialise color usage.
+ *
+ * Use curses_start_color_{was,set}_called() for atomic reads and writes.
+ */
 static int curses_start_color_called = FALSE;
 
+static inline int
+curses_start_color_was_called(void)
+{
+#ifdef Py_GIL_DISABLED
+    return _Py_atomic_load_int(&curses_start_color_called);
+#else
+    return curses_start_color_called;
+#endif
+}
+
+static inline void
+curses_start_color_set_called(void)
+{
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_store_int(&curses_start_color_called, TRUE);
+#else
+    curses_start_color_called = TRUE;
+#endif
+}
+
+/*
+ * The curses screen encoding.
+ *
+ * Use curses_{get,set}_screen_encoding() to
+ * safely (atomically) access this variable.
+ */
 static const char *curses_screen_encoding = NULL;
+
+/* Atomically retrieve the current screen encoding. */
+static inline const char *
+curses_get_screen_encoding(void)
+{
+#ifdef Py_GIL_DISABLED
+    return (const char *)_Py_atomic_load_ptr(&curses_screen_encoding);
+#else
+    return curses_screen_encoding;
+#endif
+}
+
+/* Atomically set the current screen encoding. */
+static inline void
+curses_set_screen_encoding(const char *encoding)
+{
+    assert(encoding != NULL);
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_store_ptr(&curses_screen_encoding, (char *)encoding);
+#else
+    curses_screen_encoding = encoding;
+#endif
+}
 
 /* Utility Checking Procedures */
 
@@ -215,7 +316,7 @@ static const char *curses_screen_encoding = NULL;
  * type is directly taken from the global state for now.
  */
 static inline int
-_PyCursesCheckFunction(int called, const char *funcname)
+_PyCursesStatelessCheckWasCalled(int called, const char *funcname)
 {
     if (called == TRUE) {
         return 1;
@@ -232,7 +333,7 @@ _PyCursesCheckFunction(int called, const char *funcname)
  * The exception type is obtained from the 'module' state.
  */
 static inline int
-_PyCursesStatefulCheckFunction(PyObject *module, int called, const char *funcname)
+_PyCursesCheckWasCalled(PyObject *module, int called, const char *funcname)
 {
     if (called == TRUE) {
         return 1;
@@ -244,30 +345,24 @@ _PyCursesStatefulCheckFunction(PyObject *module, int called, const char *funcnam
 
 #define PyCursesStatefulSetupTermCalled(MODULE)                         \
     do {                                                                \
-        if (!_PyCursesStatefulCheckFunction(MODULE,                     \
-                                            curses_setupterm_called,    \
-                                            "setupterm"))               \
-        {                                                               \
+        int called = curses_setupterm_was_called();                     \
+        if (!_PyCursesCheckWasCalled(MODULE, called, "setupterm")) {    \
             return 0;                                                   \
         }                                                               \
     } while (0)
 
 #define PyCursesStatefulInitialised(MODULE)                         \
     do {                                                            \
-        if (!_PyCursesStatefulCheckFunction(MODULE,                 \
-                                            curses_initscr_called,  \
-                                            "initscr"))             \
-        {                                                           \
+        int called = curses_initscr_was_called();                   \
+        if (!_PyCursesCheckWasCalled(MODULE, called, "initscr")) {  \
             return 0;                                               \
         }                                                           \
     } while (0)
 
 #define PyCursesStatefulInitialisedColor(MODULE)                        \
     do {                                                                \
-        if (!_PyCursesStatefulCheckFunction(MODULE,                     \
-                                            curses_start_color_called,  \
-                                            "start_color"))             \
-        {                                                               \
+        int called = curses_start_color_was_called();                   \
+        if (!_PyCursesCheckWasCalled(MODULE, called, "start_color")) {  \
             return 0;                                                   \
         }                                                               \
     } while (0)
@@ -350,7 +445,7 @@ PyCurses_ConvertToChtype(PyCursesWindowObject *win, PyObject *obj, chtype *ch)
             if (win)
                 encoding = win->encoding;
             else
-                encoding = curses_screen_encoding;
+                encoding = curses_get_screen_encoding();
             bytes = PyUnicode_AsEncodedString(obj, encoding, NULL);
             if (bytes == NULL)
                 return 0;
@@ -3356,7 +3451,7 @@ _curses_initscr_impl(PyObject *module)
 {
     WINDOW *win;
 
-    if (curses_initscr_called) {
+    if (curses_initscr_was_called()) {
         wrefresh(stdscr);
         _cursesmodule_state *state = get_cursesmodule_state(module);
         return PyCursesWindow_New(state, stdscr, NULL);
@@ -3370,7 +3465,8 @@ _curses_initscr_impl(PyObject *module)
         return NULL;
     }
 
-    curses_initscr_called = curses_setupterm_called = TRUE;
+    curses_initscr_set_called();
+    curses_setupterm_set_called();
 
     PyObject *module_dict = PyModule_GetDict(module); // borrowed
     if (module_dict == NULL) {
@@ -3467,7 +3563,7 @@ _curses_initscr_impl(PyObject *module)
     if (winobj == NULL) {
         return NULL;
     }
-    curses_screen_encoding = ((PyCursesWindowObject *)winobj)->encoding;
+    curses_set_screen_encoding(((PyCursesWindowObject *)winobj)->encoding);
     return winobj;
 }
 
@@ -3522,8 +3618,7 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
         return NULL;
     }
 
-    curses_setupterm_called = TRUE;
-
+    curses_setupterm_set_called();
     Py_RETURN_NONE;
 }
 
@@ -4332,7 +4427,7 @@ _curses_start_color_impl(PyObject *module)
         return NULL;
     }
 
-    curses_start_color_called = TRUE;
+    curses_start_color_set_called();
 
     PyObject *module_dict = PyModule_GetDict(module); // borrowed
     if (module_dict == NULL) {
@@ -4854,21 +4949,24 @@ static PyMethodDef PyCurses_methods[] = {
    initialised or not. */
 
 static inline int
-curses_capi_setupterm_called(void)
+curses_capi_setupterm_was_called(void)
 {
-    return _PyCursesCheckFunction(curses_setupterm_called, "setupterm");
+    int called = curses_setupterm_was_called();
+    return _PyCursesStatelessCheckWasCalled(called, "setupterm");
 }
 
 static inline int
-curses_capi_initscr_called(void)
+curses_capi_initscr_was_called(void)
 {
-    return _PyCursesCheckFunction(curses_initscr_called, "initscr");
+    int called = curses_initscr_was_called();
+    return _PyCursesStatelessCheckWasCalled(called, "initscr");
 }
 
 static inline int
-curses_capi_start_color_called(void)
+curses_capi_start_color_was_called(void)
 {
-    return _PyCursesCheckFunction(curses_start_color_called, "start_color");
+    int called = curses_start_color_was_called();
+    return _PyCursesStatelessCheckWasCalled(called, "start_color");
 }
 
 static void *
@@ -4881,9 +4979,9 @@ curses_capi_new(_cursesmodule_state *state)
         return NULL;
     }
     capi[0] = (void *)Py_NewRef(state->window_type);
-    capi[1] = curses_capi_setupterm_called;
-    capi[2] = curses_capi_initscr_called;
-    capi[3] = curses_capi_start_color_called;
+    capi[1] = curses_capi_setupterm_was_called;
+    capi[2] = curses_capi_initscr_was_called;
+    capi[3] = curses_capi_start_color_was_called;
     return (void *)capi;
 }
 
@@ -4944,9 +5042,24 @@ curses_capi_capsule_new(void *capi)
 
 /* Module initialization */
 
+/* Indicate whether the module has been loaded or not. */
+static int curses_module_loaded = 0;
+
 static int
 cursesmodule_exec(PyObject *module)
 {
+    if (_Py_atomic_load_int(&curses_module_loaded)) {
+        PyErr_SetString(PyExc_ImportError,
+                        "module 'curses' can only be loaded once per process");
+        return -1;
+    }
+
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_store_int(&curses_module_loaded, 1);
+#else
+    curses_module_loaded = 1;
+#endif
+
     _cursesmodule_state *state = get_cursesmodule_state(module);
     /* Initialize object type */
     state->window_type = (PyTypeObject *)PyType_FromModuleAndSpec(
