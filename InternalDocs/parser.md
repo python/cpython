@@ -983,6 +983,8 @@ the ``<alternative>`` part indicates what alternative within that rule
 is being attempted.
 
 
-> [!IMPORTANT]: **Document history**
+> [!NOTE]
+> **Document history**
 >
 >   Pablo Galindo Salgado - Original author
+>   Irit Katriel - Convert to Markdown
