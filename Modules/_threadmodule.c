@@ -847,7 +847,6 @@ Release the lock.");
 static PyObject *
 lock_locked_lock(lockobject *self, PyObject *Py_UNUSED(ignored))
 {
-    lockobject *self = (lockobject*)op;
     return PyBool_FromLong(PyMutex_IsLocked(&self->lock));
 }
 
@@ -874,7 +873,6 @@ lock_repr(lockobject *self)
 static PyObject *
 lock__at_fork_reinit(lockobject *self, PyObject *Py_UNUSED(args))
 {
-    lockobject *self = (lockobject *)op;
     _PyMutex_at_fork_reinit(&self->lock);
     Py_RETURN_NONE;
 }
