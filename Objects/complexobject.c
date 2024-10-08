@@ -69,8 +69,9 @@ _Py_cr_diff(Py_complex a, double b)
 Py_complex
 _Py_rc_diff(double a, Py_complex b)
 {
-    Py_complex r = {a, -b.imag};
-    r.real -= b.real;
+    Py_complex r;
+    r.real = a - b.real;
+    r.imag = -b.imag;
     return r;
 }
 
@@ -606,11 +607,11 @@ real_to_complex(PyObject **pobj, Py_complex *pc)
 }
 
 /* Complex arithmetic rules implement special mixed-mode case: combining
-   pure-real (float's or int's) value and complex value performed directly, not
+   a pure-real (float's or int's) value and a complex value is performed directly, not
    by first coercing the real value to complex.
 
-   Lets consider the addition as an example, assuming that int's are implicitly
-   converted to float's.  We have following rules (up to variants with changed
+   Let us consider the addition as an example, assuming that int's are implicitly
+   converted to float's.  We have the following rules (up to variants with changed
    order of operands):
 
        complex(x, y) + complex(u, v) = complex(x + u, y + v)

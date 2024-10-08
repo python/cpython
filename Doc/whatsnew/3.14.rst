@@ -191,8 +191,8 @@ Other Language Changes
   (Contributed by Serhiy Storchaka in :gh:`84978`.)
 
 * Implement mixed-mode arithmetic rules combining real and complex numbers as
-  specified by C standards since C99.  (Contributed by Sergey B Kirpichev in
-  :gh:`69639`.)
+  specified by C standards since C99.
+  (Contributed by Sergey B Kirpichev in :gh:`69639`.)
 
 
 New Modules

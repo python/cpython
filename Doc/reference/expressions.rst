@@ -31,7 +31,7 @@ When a description of an arithmetic operator below uses the phrase "the numeric
 arguments are converted to a common real type", this means that the operator
 implementation for built-in types works as follows:
 
-* If both arguments are complex numbers, no conversion is necessary;
+* If both arguments are complex numbers, no conversion is performed;
 
 * otherwise, if either argument is a complex or a floating-point number, the
   other is converted to a floating-point number;
@@ -1329,7 +1329,7 @@ This operation can be customized using the special :meth:`~object.__mul__` and
 :meth:`~object.__rmul__` methods.
 
 .. versionchanged:: 3.14
-   If only one operand is a complex number, the other operand converted
+   If only one operand is a complex number, the other operand is converted
    to a floating-point number.
 
 .. index::
@@ -1406,7 +1406,7 @@ This operation can be customized using the special :meth:`~object.__add__` and
 :meth:`~object.__radd__` methods.
 
 .. versionchanged:: 3.14
-   If only one operand is a complex number, the other operand converted
+   If only one operand is a complex number, the other operand is converted
    to a floating-point number.
 
 .. index::
@@ -1421,7 +1421,7 @@ This operation can be customized using the special :meth:`~object.__sub__` and
 :meth:`~object.__rsub__` methods.
 
 .. versionchanged:: 3.14
-   If only one operand is a complex number, the other operand converted
+   If only one operand is a complex number, the other operand is converted
    to a floating-point number.
 
 
