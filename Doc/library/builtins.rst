@@ -8,8 +8,8 @@
 
 This module provides direct access to all 'built-in' identifiers of Python; for
 example, ``builtins.open`` is the full name for the built-in function
-:func:`open`.  See :ref:`built-in-funcs` and :ref:`built-in-consts` for
-documentation.
+:func:`open`. For more information, see :ref:`built-in-funcs`, :ref:`built-in-consts`,
+:ref:`bltin-types` and :ref:`bltin-exceptions`.
 
 
 This module is not normally accessed explicitly by most applications, but can be
