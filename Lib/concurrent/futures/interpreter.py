@@ -135,8 +135,6 @@ class WorkerContext(_thread.WorkerContext):
 
             if self.initdata:
                 self.run(self.initdata)
-        except _interpreters.InterpreterNotFoundError:
-            raise  # re-raise
         except BaseException:
             self.finalize()
             raise  # re-raise
