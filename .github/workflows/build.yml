@@ -168,7 +168,9 @@ jobs:
             --with-pydebug \
             --with-openssl="$(brew --prefix openssl@3.0)" \
             --with-tcltk-libs="$(pkg-config --libs tk)" \
-            --with-tcltk-includes="$(pkg-config --cflags tk)"
+            --with-tcltk-includes="$(pkg-config --cflags tk)" \
+            --with-dbmliborder=gdbm:ndbm
+        # (--with-dbmliborder needed for homebrew's gdbm 1.24: see gh-89452)
     - name: Build CPython
       run: make -j4
     - name: Display build info
