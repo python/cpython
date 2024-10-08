@@ -246,36 +246,32 @@ objects can be executed and returned.
    using a pool of at most *max_workers* threads.  Each thread runs
    tasks in its own interpreter.
 
-   *initializer* and *initargs* are the same as with
-   :class:`ThreadPoolExecutor`, though they are pickled like with
-   :class:`ProcessPoolExecutor`.  Additionally, you can pass a script
-   (:class:`str`) for *initiazer*, which will be executed in the
-   interpreter's ``__main__`` module.  In that case, *initargs* must
-   not be passed in.
-
-   Similarly you can pass a script to :meth:`~Executor.submit`, which
-   will be executed in the interpreter's ``__main__`` module.  In that
-   case no arguments may be provided and the return value is always
-   ``None``.  Functions (and arguments) are pickled like we do with
-   the initializer.
-
-   For both *initializer* and :meth:`~Executor.submit`, if a script
-   is passed in then it will automatically have :func:`textwrap.dedent`
-   applied to it.  That means you don't have to do so.
-
-   :meth:`~Executor.map` does *not* support passing in a script.
-
-   In each of those cases, an uncaught exception from the initializer
-   or task might not be suitable to send between interpreters, to be
-   raised as is.  In tha case, an
-   :class:`~concurrent.futures.interpreter.ExecutionFailed` exception
-   is raised instead which contains a summary of the original exception.
+   *initializer* may be a callable and *initargs* a tuple of arguments,
+   just like with :class:`ThreadPoolExecutor`.  However, they are pickled
+   like with :class:`ProcessPoolExecutor`.  Likewise, functions (and
+   arguments) passed to :meth:`~Executor.submit` are pickled.
 
    *shared* is an optional dict of objects shared by all interpreters
    in the pool.  The items are added to each interpreter's ``__main__``
    module.  Not all objects are shareable.  Those that are include
    the builtin singletons, :class:`str` and :class:`bytes`,
    and :class:`memoryview`.  See :pep:`734` for more info.
+
+   You can also pass a script (:class:`str`) for *initiazer* or to
+   :meth:`~Executor.submit` (but not to :meth:`~Executor.map`).
+   In both cases, the script will be executed in the interpreter's
+   ``__main__`` module.  The executor will automatically apply
+   :func:`textwrap.dedent` to the script, so you don't have to do so.
+   With a script, arguments must not be passed in.
+   For :meth:`!Executor.submit`, the return value for a script
+   is always ``None``.
+
+   Normally an uncaught exception from *initializer* or from a submitted
+   task will be sent back between interpreters to be raised as is.
+   However, in some situations the exception might not be suitable to be
+   sent back.  In that case, the executor raises an
+   :class:`~concurrent.futures.interpreter.ExecutionFailed` exception
+   instead, which contains a summary of the original exception.
 
    The other caveats that apply to :class:`ThreadPoolExecutor` apply here.
 
