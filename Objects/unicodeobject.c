@@ -10971,19 +10971,22 @@ unicode_compare(PyObject *str1, PyObject *str2)
 static int
 unicode_compare_eq(PyObject *str1, PyObject *str2)
 {
-    Py_ssize_t len = PyUnicode_GET_LENGTH(str1);
-    if (PyUnicode_GET_LENGTH(str2) != len) {
-        return 0;
-    }
+    int kind;
+    const void *data1, *data2;
+    Py_ssize_t len;
+    int cmp;
 
-    int kind = PyUnicode_KIND(str1);
-    if (PyUnicode_KIND(str2) != kind) {
+    len = PyUnicode_GET_LENGTH(str1);
+    if (PyUnicode_GET_LENGTH(str2) != len)
         return 0;
-    }
+    kind = PyUnicode_KIND(str1);
+    if (PyUnicode_KIND(str2) != kind)
+        return 0;
+    data1 = PyUnicode_DATA(str1);
+    data2 = PyUnicode_DATA(str2);
 
-    const void *data1 = PyUnicode_DATA(str1);
-    const void *data2 = PyUnicode_DATA(str2);
-    return (memcmp(data1, data2, len * kind) == 0);
+    cmp = memcmp(data1, data2, len * kind);
+    return (cmp == 0);
 }
 
 int
