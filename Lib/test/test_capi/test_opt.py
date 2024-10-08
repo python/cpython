@@ -1482,5 +1482,27 @@ class TestUopsOptimization(unittest.TestCase):
         fn(A())
 
 
+    def test_type_attribute_type_check_eliminated(self):
+        ns = {}
+        src = textwrap.dedent("""
+            class MyEnum:
+                A = 1
+
+            def testfunc(n):
+                for i in range(n):
+                    enum = MyEnum
+                    # Note: can't just put MyEnum here because we lose
+                    # information between constant promotions.
+                    x = enum.A
+                    y = enum.A
+        """)
+        exec(src, ns, ns)
+        testfunc = ns['testfunc']
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD * 2)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertLessEqual(uops.count("_CHECK_ATTR_CLASS"), 1)
+
+
 if __name__ == "__main__":
     unittest.main()
