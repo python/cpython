@@ -1,1 +1,1 @@
-:mod:`socket` supports `sendmsg`, `recvmsg` on `windows`
+:mod:`socket` supports :meth:`sendmsg`, :meth:`recvmsg` on `windows`
