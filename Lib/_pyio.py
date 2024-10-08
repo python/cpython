@@ -1480,6 +1480,7 @@ class FileIO(RawIOBase):
         """
         if self._fd >= 0:
             # Have to close the existing file first.
+            self._stat_atopen = None
             try:
                 if self._closefd:
                     os.close(self._fd)
@@ -1585,6 +1586,7 @@ class FileIO(RawIOBase):
         except:
             if owned_fd is not None:
                 os.close(owned_fd)
+            self._stat_atopen = None
             raise
         self._fd = fd
 
@@ -1756,6 +1758,7 @@ class FileIO(RawIOBase):
         called more than once without error.
         """
         if not self.closed:
+            self._stat_atopen = None
             try:
                 if self._closefd:
                     os.close(self._fd)
