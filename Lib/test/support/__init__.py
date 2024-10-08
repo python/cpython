@@ -61,6 +61,7 @@ __all__ = [
     "without_optimizer",
     "force_not_colorized",
     "BrokenIter",
+    "in_systemd_nspawn_sync_suppressed",
     ]
 
 
@@ -929,8 +930,8 @@ def check_sizeof(test, o, size):
     test.assertEqual(result, size, msg)
 
 #=======================================================================
-# Decorator for running a function in a different locale, correctly resetting
-# it afterwards.
+# Decorator/context manager for running a code in a different locale,
+# correctly resetting it afterwards.
 
 @contextlib.contextmanager
 def run_with_locale(catstr, *locales):
@@ -941,22 +942,67 @@ def run_with_locale(catstr, *locales):
     except AttributeError:
         # if the test author gives us an invalid category string
         raise
-    except:
+    except Exception:
         # cannot retrieve original locale, so do nothing
         locale = orig_locale = None
+        if '' not in locales:
+            raise unittest.SkipTest('no locales')
     else:
         for loc in locales:
             try:
                 locale.setlocale(category, loc)
                 break
-            except:
+            except locale.Error:
                 pass
+        else:
+            if '' not in locales:
+                raise unittest.SkipTest(f'no locales {locales}')
 
     try:
         yield
     finally:
         if locale and orig_locale:
             locale.setlocale(category, orig_locale)
+
+#=======================================================================
+# Decorator for running a function in multiple locales (if they are
+# availasble) and resetting the original locale afterwards.
+
+def run_with_locales(catstr, *locales):
+    def deco(func):
+        @functools.wraps(func)
+        def wrapper(self, /, *args, **kwargs):
+            dry_run = '' in locales
+            try:
+                import locale
+                category = getattr(locale, catstr)
+                orig_locale = locale.setlocale(category)
+            except AttributeError:
+                # if the test author gives us an invalid category string
+                raise
+            except Exception:
+                # cannot retrieve original locale, so do nothing
+                pass
+            else:
+                try:
+                    for loc in locales:
+                        with self.subTest(locale=loc):
+                            try:
+                                locale.setlocale(category, loc)
+                            except locale.Error:
+                                self.skipTest(f'no locale {loc!r}')
+                            else:
+                                dry_run = False
+                                func(self, *args, **kwargs)
+                finally:
+                    locale.setlocale(category, orig_locale)
+            if dry_run:
+                # no locales available, so just run the test
+                # with the current locale
+                with self.subTest(locale=None):
+                    func(self, *args, **kwargs)
+        return wrapper
+    return deco
 
 #=======================================================================
 # Decorator for running a function in a specific timezone, correctly
@@ -2208,7 +2254,15 @@ def skip_if_broken_multiprocessing_synchronize():
             # bpo-38377: On Linux, creating a semaphore fails with OSError
             # if the current user does not have the permission to create
             # a file in /dev/shm/ directory.
-            synchronize.Lock(ctx=None)
+            import multiprocessing
+            synchronize.Lock(ctx=multiprocessing.get_context('fork'))
+            # The explicit fork mp context is required in order for
+            # TestResourceTracker.test_resource_tracker_reused to work.
+            # synchronize creates a new multiprocessing.resource_tracker
+            # process at module import time via the above call in that
+            # scenario. Awkward. This enables gh-84559. No code involved
+            # should have threads at that point so fork() should be safe.
+
         except OSError as exc:
             raise unittest.SkipTest(f"broken multiprocessing SemLock: {exc!r}")
 
@@ -2873,3 +2927,36 @@ class BrokenIter:
         if self.iter_raises:
             1/0
         return self
+
+
+def in_systemd_nspawn_sync_suppressed() -> bool:
+    """
+    Test whether the test suite is runing in systemd-nspawn
+    with ``--suppress-sync=true``.
+
+    This can be used to skip tests that rely on ``fsync()`` calls
+    and similar not being intercepted.
+    """
+
+    if not hasattr(os, "O_SYNC"):
+        return False
+
+    try:
+        with open("/run/systemd/container", "rb") as fp:
+            if fp.read().rstrip() != b"systemd-nspawn":
+                return False
+    except FileNotFoundError:
+        return False
+
+    # If systemd-nspawn is used, O_SYNC flag will immediately
+    # trigger EINVAL.  Otherwise, ENOENT will be given instead.
+    import errno
+    try:
+        fd = os.open(__file__, os.O_RDONLY | os.O_SYNC)
+    except OSError as err:
+        if err.errno == errno.EINVAL:
+            return True
+    else:
+        os.close(fd)
+
+    return False

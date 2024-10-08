@@ -1,0 +1,1 @@
+Check for runtime availability of ``ptsname_r`` function on macos.

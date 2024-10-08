@@ -564,8 +564,9 @@ Special read-only attributes
        in which the function was defined.
 
    * - .. attribute:: function.__closure__
-     - ``None`` or a :class:`tuple` of cells that contain bindings for the
-       function's free variables.
+     - ``None`` or a :class:`tuple` of cells that contain bindings for the names specified
+       in the :attr:`~codeobject.co_freevars` attribute of the function's
+       :attr:`code object <function.__code__>`.
 
        A cell object has the attribute ``cell_contents``.
        This can be used to get the value of the cell, as well as set the value.
@@ -581,6 +582,7 @@ Special writable attributes
    single: __defaults__ (function attribute)
    single: __code__ (function attribute)
    single: __annotations__ (function attribute)
+   single: __annotate__ (function attribute)
    single: __kwdefaults__ (function attribute)
    single: __type_params__ (function attribute)
 
@@ -594,7 +596,6 @@ Most of these attributes check the type of the assigned value:
 
    * - .. attribute:: function.__doc__
      - The function's documentation string, or ``None`` if unavailable.
-       Not inherited by subclasses.
 
    * - .. attribute:: function.__name__
      - The function's name.
@@ -628,7 +629,17 @@ Most of these attributes check the type of the assigned value:
        :term:`parameters <parameter>`.
        The keys of the dictionary are the parameter names,
        and ``'return'`` for the return annotation, if provided.
-       See also: :ref:`annotations-howto`.
+       See also: :attr:`object.__annotations__`.
+
+       .. versionchanged:: 3.14
+          Annotations are now :ref:`lazily evaluated <lazy-evaluation>`.
+          See :pep:`649`.
+
+   * - .. attribute:: function.__annotate__
+     - The :term:`annotate function` for this function, or ``None``
+       if the function has no annotations. See :attr:`object.__annotate__`.
+
+       .. versionadded:: 3.14
 
    * - .. attribute:: function.__kwdefaults__
      - A :class:`dictionary <dict>` containing defaults for keyword-only
@@ -835,6 +846,7 @@ this case, the special read-only attribute :attr:`!__self__` is set to the objec
 denoted by *alist*. (The attribute has the same semantics as it does with
 :attr:`other instance methods <method.__self__>`.)
 
+.. _classes:
 
 Classes
 ^^^^^^^
@@ -881,6 +893,7 @@ Attribute assignment updates the module's namespace dictionary, e.g.,
    single: __doc__ (module attribute)
    single: __file__ (module attribute)
    single: __annotations__ (module attribute)
+   single: __annotate__ (module attribute)
    pair: module; namespace
 
 Predefined (writable) attributes:
@@ -901,11 +914,21 @@ Predefined (writable) attributes:
       loaded dynamically from a shared library, it's the pathname of the shared
       library file.
 
-   :attr:`__annotations__`
+   :attr:`~object.__annotations__`
       A dictionary containing
       :term:`variable annotations <variable annotation>` collected during
       module body execution.  For best practices on working
-      with :attr:`__annotations__`, please see :ref:`annotations-howto`.
+      with :attr:`!__annotations__`, see :mod:`annotationlib`.
+
+      .. versionchanged:: 3.14
+         Annotations are now :ref:`lazily evaluated <lazy-evaluation>`.
+         See :pep:`649`.
+
+   :attr:`~object.__annotate__`
+      The :term:`annotate function` for this module, or ``None``
+      if the module has no annotations. See :attr:`object.__annotate__`.
+
+      .. versionadded:: 3.14
 
 .. index:: single: __dict__ (module attribute)
 
@@ -919,6 +942,8 @@ namespace as a dictionary object.
    dictionary still has live references.  To avoid this, copy the dictionary
    or keep the module around while using its dictionary directly.
 
+
+.. _class-attrs-and-methods:
 
 Custom classes
 --------------
@@ -962,6 +987,9 @@ of a base class.
 
 A class object can be called (see above) to yield a class instance (see below).
 
+Special attributes
+^^^^^^^^^^^^^^^^^^
+
 .. index::
    single: __name__ (class attribute)
    single: __module__ (class attribute)
@@ -969,46 +997,126 @@ A class object can be called (see above) to yield a class instance (see below).
    single: __bases__ (class attribute)
    single: __doc__ (class attribute)
    single: __annotations__ (class attribute)
+   single: __annotate__ (class attribute)
    single: __type_params__ (class attribute)
    single: __static_attributes__ (class attribute)
    single: __firstlineno__ (class attribute)
 
-Special attributes:
+.. list-table::
+   :header-rows: 1
 
-   :attr:`~definition.__name__`
-      The class name.
+   * - Attribute
+     - Meaning
 
-   :attr:`__module__`
-      The name of the module in which the class was defined.
+   * - .. attribute:: type.__name__
+     - The class's name.
+       See also: :attr:`__name__ attributes <definition.__name__>`.
 
-   :attr:`~object.__dict__`
-      The dictionary containing the class's namespace.
+   * - .. attribute:: type.__qualname__
+     - The class's :term:`qualified name`.
+       See also: :attr:`__qualname__ attributes <definition.__qualname__>`.
 
-   :attr:`~class.__bases__`
-      A tuple containing the base classes, in the order of
-      their occurrence in the base class list.
+   * - .. attribute:: type.__module__
+     - The name of the module in which the class was defined.
 
-   :attr:`__doc__`
-      The class's documentation string, or ``None`` if undefined.
+   * - .. attribute:: type.__dict__
+     - A :class:`mapping proxy <types.MappingProxyType>`
+       providing a read-only view of the class's namespace.
+       See also: :attr:`__dict__ attributes <object.__dict__>`.
 
-   :attr:`__annotations__`
-      A dictionary containing
-      :term:`variable annotations <variable annotation>`
-      collected during class body execution.  For best practices on
-      working with :attr:`__annotations__`, please see
-      :ref:`annotations-howto`.
+   * - .. attribute:: type.__bases__
+     - A :class:`tuple` containing the class's bases.
+       In most cases, for a class defined as ``class X(A, B, C)``,
+       ``X.__bases__`` will be exactly equal to ``(A, B, C)``.
 
-   :attr:`__type_params__`
-      A tuple containing the :ref:`type parameters <type-params>` of
-      a :ref:`generic class <generic-classes>`.
+   * - .. attribute:: type.__doc__
+     - The class's documentation string, or ``None`` if undefined.
+       Not inherited by subclasses.
 
-   :attr:`~class.__static_attributes__`
-      A tuple containing names of attributes of this class which are assigned
-      through ``self.X`` from any function in its body.
+   * - .. attribute:: type.__annotations__
+     - A dictionary containing
+       :term:`variable annotations <variable annotation>`
+       collected during class body execution. See also:
+       :attr:`__annotations__ attributes <object.__annotations__>`.
 
-   :attr:`__firstlineno__`
-      The line number of the first line of the class definition, including decorators.
+       For best practices on working with :attr:`~object.__annotations__`,
+       please see :mod:`annotationlib`.
 
+       .. caution::
+
+          Accessing the :attr:`!__annotations__` attribute of a class
+          object directly may yield incorrect results in the presence of
+          metaclasses. In addition, the attribute may not exist for
+          some classes. Use :func:`annotationlib.get_annotations` to
+          retrieve class annotations safely.
+
+       .. versionchanged:: 3.14
+          Annotations are now :ref:`lazily evaluated <lazy-evaluation>`.
+          See :pep:`649`.
+
+   * - .. method:: type.__annotate__
+     - The :term:`annotate function` for this class, or ``None``
+       if the class has no annotations.
+       See also: :attr:`__annotate__ attributes <object.__annotate__>`.
+
+       .. caution::
+
+          Accessing the :attr:`!__annotate__` attribute of a class
+          object directly may yield incorrect results in the presence of
+          metaclasses. Use :func:`annotationlib.get_annotate_function` to
+          retrieve the annotate function safely.
+
+       .. versionadded:: 3.14
+
+   * - .. attribute:: type.__type_params__
+     - A :class:`tuple` containing the :ref:`type parameters <type-params>` of
+       a :ref:`generic class <generic-classes>`.
+
+       .. versionadded:: 3.12
+
+   * - .. attribute:: type.__static_attributes__
+     - A :class:`tuple` containing names of attributes of this class which are
+       assigned through ``self.X`` from any function in its body.
+
+       .. versionadded:: 3.13
+
+   * - .. attribute:: type.__firstlineno__
+     - The line number of the first line of the class definition,
+       including decorators.
+       Setting the :attr:`__module__` attribute removes the
+       :attr:`!__firstlineno__` item from the type's dictionary.
+
+       .. versionadded:: 3.13
+
+   * - .. attribute:: type.__mro__
+     - The :class:`tuple` of classes that are considered when looking for
+       base classes during method resolution.
+
+
+Special methods
+^^^^^^^^^^^^^^^
+
+In addition to the special attributes described above, all Python classes also
+have the following two methods available:
+
+.. method:: type.mro
+
+   This method can be overridden by a metaclass to customize the method
+   resolution order for its instances.  It is called at class instantiation,
+   and its result is stored in :attr:`~type.__mro__`.
+
+.. method:: type.__subclasses__
+
+   Each class keeps a list of weak references to its immediate subclasses. This
+   method returns a list of all those references still alive. The list is in
+   definition order. Example:
+
+   .. doctest::
+
+      >>> class A: pass
+      >>> class B(A): pass
+      >>> A.__subclasses__()
+      [<class 'B'>]
 
 Class instances
 ---------------
@@ -1048,12 +1156,22 @@ dictionary directly.
 Class instances can pretend to be numbers, sequences, or mappings if they have
 methods with certain special names.  See section :ref:`specialnames`.
 
+Special attributes
+^^^^^^^^^^^^^^^^^^
+
 .. index::
    single: __dict__ (instance attribute)
    single: __class__ (instance attribute)
 
-Special attributes: :attr:`~object.__dict__` is the attribute dictionary;
-:attr:`~instance.__class__` is the instance's class.
+.. attribute:: object.__class__
+
+   The class to which a class instance belongs.
+
+.. attribute:: object.__dict__
+
+   A dictionary or other mapping object used to store an object's (writable)
+   attributes. Not all instances have a :attr:`!__dict__` attribute; see the
+   section on :ref:`slots` for more details.
 
 
 I/O objects (also known as file objects)
@@ -1168,10 +1286,14 @@ Special read-only attributes
 
    * - .. attribute:: codeobject.co_cellvars
      - A :class:`tuple` containing the names of :ref:`local variables <naming>`
-       that are referenced by nested functions inside the function
+       that are referenced from at least one :term:`nested scope` inside the function
 
    * - .. attribute:: codeobject.co_freevars
-     - A :class:`tuple` containing the names of free variables in the function
+     - A :class:`tuple` containing the names of
+       :term:`free (closure) variables <closure variable>` that a :term:`nested scope`
+       references in an outer scope. See also :attr:`function.__closure__`.
+
+       Note: references to global and builtin names are *not* included.
 
    * - .. attribute:: codeobject.co_code
      - A string representing the sequence of :term:`bytecode` instructions in
@@ -2283,9 +2405,9 @@ Notes on using *__slots__*:
 
 * The action of a *__slots__* declaration is not limited to the class
   where it is defined.  *__slots__* declared in parents are available in
-  child classes. However, child subclasses will get a :attr:`~object.__dict__` and
-  *__weakref__* unless they also define *__slots__* (which should only
-  contain names of any *additional* slots).
+  child classes. However, instances of a child subclass will get a
+  :attr:`~object.__dict__` and *__weakref__* unless the subclass also defines
+  *__slots__* (which should only contain names of any *additional* slots).
 
 * If a class defines a slot also defined in a base class, the instance variable
   defined by the base class slot is inaccessible (except by retrieving its
@@ -2304,7 +2426,7 @@ Notes on using *__slots__*:
   to provide per-attribute docstrings that will be recognised by
   :func:`inspect.getdoc` and displayed in the output of :func:`help`.
 
-* :attr:`~instance.__class__` assignment works only if both classes have the
+* :attr:`~object.__class__` assignment works only if both classes have the
   same *__slots__*.
 
 * :ref:`Multiple inheritance <tut-multiple>` with multiple slotted parent
@@ -2570,7 +2692,7 @@ in the local namespace as the defined class.
 When a new class is created by ``type.__new__``, the object provided as the
 namespace parameter is copied to a new ordered mapping and the original
 object is discarded. The new copy is wrapped in a read-only proxy, which
-becomes the :attr:`~object.__dict__` attribute of the class object.
+becomes the :attr:`~type.__dict__` attribute of the class object.
 
 .. seealso::
 
@@ -2598,14 +2720,14 @@ order to allow the addition of Abstract Base Classes (ABCs) as "virtual base
 classes" to any class or type (including built-in types), including other
 ABCs.
 
-.. method:: class.__instancecheck__(self, instance)
+.. method:: type.__instancecheck__(self, instance)
 
    Return true if *instance* should be considered a (direct or indirect)
    instance of *class*. If defined, called to implement ``isinstance(instance,
    class)``.
 
 
-.. method:: class.__subclasscheck__(self, subclass)
+.. method:: type.__subclasscheck__(self, subclass)
 
    Return true if *subclass* should be considered a (direct or indirect)
    subclass of *class*.  If defined, called to implement ``issubclass(subclass,
@@ -2621,8 +2743,8 @@ case the instance is itself a class.
 
    :pep:`3119` - Introducing Abstract Base Classes
       Includes the specification for customizing :func:`isinstance` and
-      :func:`issubclass` behavior through :meth:`~class.__instancecheck__` and
-      :meth:`~class.__subclasscheck__`, with motivation for this functionality
+      :func:`issubclass` behavior through :meth:`~type.__instancecheck__` and
+      :meth:`~type.__subclasscheck__`, with motivation for this functionality
       in the context of adding Abstract Base Classes (see the :mod:`abc`
       module) to the language.
 
@@ -3252,6 +3374,51 @@ implement the protocol in Python.
 
    :class:`collections.abc.Buffer`
       ABC for buffer types.
+
+Annotations
+-----------
+
+Functions, classes, and modules may contain :term:`annotations <annotation>`,
+which are a way to associate information (usually :term:`type hints <type hint>`)
+with a symbol.
+
+.. attribute:: object.__annotations__
+
+   This attribute contains the annotations for an object. It is
+   :ref:`lazily evaluated <lazy-evaluation>`, so accessing the attribute may
+   execute arbitrary code and raise exceptions. If evaluation is successful, the
+   attribute is set to a dictionary mapping from variable names to annotations.
+
+   .. versionchanged:: 3.14
+      Annotations are now lazily evaluated.
+
+.. method:: object.__annotate__(format)
+
+   An :term:`annotate function`.
+   Returns a new dictionary object mapping attribute/parameter names to their annotation values.
+
+   Takes a format parameter specifying the format in which annotations values should be provided.
+   It must be a member of the :class:`annotationlib.Format` enum, or an integer with
+   a value corresponding to a member of the enum.
+
+   If an annotate function doesn't support the requested format, it must raise
+   :exc:`NotImplementedError`. Annotate functions must always support
+   :attr:`~annotationlib.Format.VALUE` format; they must not raise
+   :exc:`NotImplementedError()` when called with this format.
+
+   When called with  :attr:`~annotationlib.Format.VALUE` format, an annotate function may raise
+   :exc:`NameError`; it must not raise :exc:`!NameError` when called requesting any other format.
+
+   If an object does not have any annotations, :attr:`~object.__annotate__` should preferably be set
+   to ``None`` (it can’t be deleted), rather than set to a function that returns an empty dict.
+
+   .. versionadded:: 3.14
+
+.. seealso::
+
+   :pep:`649` --- Deferred evaluation of annotation using descriptors
+      Introduces lazy evaluation of annotations and the ``__annotate__`` function.
+
 
 .. _special-lookup:
 

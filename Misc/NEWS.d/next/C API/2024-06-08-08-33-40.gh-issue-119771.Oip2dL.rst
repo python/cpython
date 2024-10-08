@@ -1,0 +1,2 @@
+Set :data:`errno` in :c:func:`_Py_c_pow` on overflows.  Patch by Sergey B
+Kirpichev.

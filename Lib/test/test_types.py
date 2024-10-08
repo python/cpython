@@ -398,7 +398,7 @@ class TypesTests(unittest.TestCase):
         test(123456, "1=20", '11111111111111123456')
         test(123456, "*=20", '**************123456')
 
-    @run_with_locale('LC_NUMERIC', 'en_US.UTF8')
+    @run_with_locale('LC_NUMERIC', 'en_US.UTF8', '')
     def test_float__format__locale(self):
         # test locale support for __format__ code 'n'
 
@@ -407,7 +407,7 @@ class TypesTests(unittest.TestCase):
             self.assertEqual(locale.format_string('%g', x, grouping=True), format(x, 'n'))
             self.assertEqual(locale.format_string('%.10g', x, grouping=True), format(x, '.10n'))
 
-    @run_with_locale('LC_NUMERIC', 'en_US.UTF8')
+    @run_with_locale('LC_NUMERIC', 'en_US.UTF8', '')
     def test_int__format__locale(self):
         # test locale support for __format__ code 'n' for integers
 
@@ -2410,9 +2410,6 @@ class SubinterpreterTests(unittest.TestCase):
         def collate_results(raw):
             results = {}
             for cls, attr, wrapper in raw:
-                # XXX This should not be necessary.
-                if cls == repr(bool) and attr in self.NUMERIC_METHODS:
-                    continue
                 key = cls, attr
                 assert key not in results, (results, key, wrapper)
                 results[key] = wrapper
@@ -2433,14 +2430,7 @@ class SubinterpreterTests(unittest.TestCase):
             cls, attr = key
             with self.subTest(cls=cls, slotattr=attr):
                 actual = interp_results.pop(key)
-                # XXX This should not be necessary.
-                if cls == "<class 'collections.OrderedDict'>" and attr == '__len__':
-                    continue
                 self.assertEqual(actual, expected)
-        # XXX This should not be necessary.
-        interp_results = {k: v for k, v in interp_results.items() if k[1] != '__hash__'}
-        # XXX This should not be necessary.
-        interp_results.pop(("<class 'collections.OrderedDict'>", '__getitem__'), None)
         self.maxDiff = None
         self.assertEqual(interp_results, {})
 
