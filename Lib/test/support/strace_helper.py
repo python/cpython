@@ -160,6 +160,9 @@ def requires_strace():
     if sys.platform != "linux":
         return unittest.skip("Linux only, requires strace.")
 
+    if support.check_sanitizer(address=True, memory=True):
+        return unittest.skip("LeakSanitizer does not work under ptrace (strace, gdb, etc)")
+
     return unittest.skipUnless(_can_strace(), "Requires working strace")
 
 
