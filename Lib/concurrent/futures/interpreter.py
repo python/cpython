@@ -182,9 +182,11 @@ WorkerContext._send_script_result({self.resultsid})"""
                 obj = _interpqueues.get(self.resultsid)
             except _interpqueues.QueueNotFoundError:
                 raise  # re-raise
-            # XXX This breaks if test.support.interpreters.queues
-            # doesn't exist.
             except _interpqueues.QueueError:
+                continue
+            except ModuleNotFoundError:
+                # interpreters.queues doesn't exist, which means
+                # QueueEmpty doesn't.  Act as though it does.
                 continue
             else:
                 break
