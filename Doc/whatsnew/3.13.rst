@@ -814,6 +814,10 @@ ctypes
   See :gh:`124520` for discussion and links to changes in some affected
   projects.
 
+* :class:`ctypes.Structure` objects have a new :attr:`~ctypes.Structure._align_`
+  attribute which allows the alignment of the structure being packed to/from
+  memory to be specified explicitly.
+  (Contributed by Matt Sanderson in :gh:`112433`)
 
 dbm
 ---
