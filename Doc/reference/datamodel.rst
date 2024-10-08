@@ -976,7 +976,7 @@ this approach.
    is set to a :class:`str`.
 
    It is **strongly** recommended that you use
-   :attr:`module.__spec__.package <importlib.machinery.ModuleSpec.parent>`
+   :attr:`module.__spec__.parent <importlib.machinery.ModuleSpec.parent>`
    instead of :attr:`!module.__package__`. :attr:`__package__` is now only used
    as a fallback if :attr:`!__spec__.parent` is not set, and this fallback
    path is deprecated.
