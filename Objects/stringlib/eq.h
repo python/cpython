@@ -18,6 +18,5 @@ unicode_eq(PyObject *str1, PyObject *str2)
 
     const void *data1 = PyUnicode_DATA(str1);
     const void *data2 = PyUnicode_DATA(str2);
-    int cmp = memcmp(data1, data2, len * kind);
-    return (cmp == 0);
+    return (memcmp(data1, data2, len * kind) == 0);
 }
