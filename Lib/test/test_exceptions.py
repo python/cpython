@@ -1337,25 +1337,28 @@ class ExceptionTests(unittest.TestCase):
         for klass in klasses:
             self.assertEqual(str(klass.__new__(klass)), "")
 
-    def test_unicode_error_str_gh_123378(self):
-        for formatter, start, end, obj in product(
-            (str, repr),
-            range(-5, 5),
-            range(-5, 5),
-            ('', 'a', '123', '1234', '12345', 'abc123'),
-        ):
-            with self.subTest(formatter, obj=obj, start=start, end=end):
-                exc = UnicodeEncodeError('utf-8', obj, start, end, '')
-                self.assertIsInstance(formatter(exc), str)
+    def test_unicode_error_str_does_not_crash(self):
+        # Test that str(UnicodeError(...)) does not crash.
+        # See https://github.com/python/cpython/issues/123378.
 
-            with self.subTest(formatter, obj=obj, start=start, end=end):
+        for start, end, objlen in product(
+            range(-5, 5),
+            range(-5, 5),
+            range(7),
+        ):
+            obj = 'a' * objlen
+            with self.subTest('encode', objlen=objlen, start=start, end=end):
+                exc = UnicodeEncodeError('utf-8', obj, start, end, '')
+                self.assertIsInstance(str(exc), str)
+
+            with self.subTest('translate', objlen=objlen, start=start, end=end):
                 exc = UnicodeTranslateError(obj, start, end, '')
-                self.assertIsInstance(formatter(exc), str)
+                self.assertIsInstance(str(exc), str)
 
             encoded = obj.encode()
-            with self.subTest(formatter, obj=encoded, start=start, end=end):
+            with self.subTest('decode', objlen=objlen, start=start, end=end):
                 exc = UnicodeDecodeError('utf-8', encoded, start, end, '')
-                self.assertIsInstance(formatter(exc), str)
+                self.assertIsInstance(str(exc), str)
 
     @no_tracing
     def test_badisinstance(self):
