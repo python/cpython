@@ -11002,6 +11002,24 @@ _PyUnicode_Equal(PyObject *str1, PyObject *str2)
 
 
 int
+PyUnicode_Equal(PyObject *str1, PyObject *str2)
+{
+    if (!PyUnicode_Check(str1)) {
+        PyErr_Format(PyExc_TypeError,
+                     "first argument must be str, not %T", str1);
+        return -1;
+    }
+    if (!PyUnicode_Check(str2)) {
+        PyErr_Format(PyExc_TypeError,
+                     "second argument must be str, not %T", str2);
+        return -1;
+    }
+
+    return _PyUnicode_Equal(str1, str2);
+}
+
+
+int
 PyUnicode_Compare(PyObject *left, PyObject *right)
 {
     if (PyUnicode_Check(left) && PyUnicode_Check(right)) {
