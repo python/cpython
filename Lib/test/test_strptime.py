@@ -161,11 +161,42 @@ class TimeRETests(unittest.TestCase):
         for directive in ('a','A','b','B','c','d','G','H','I','j','m','M','p',
                           'S','u','U','V','w','W','x','X','y','Y','Z','%'):
             fmt = "%d %Y" if directive == 'd' else "%" + directive
+            input_string = time.strftime(fmt)
             compiled = self.time_re.compile(fmt)
-            found = compiled.match(time.strftime(fmt))
-            self.assertTrue(found, "Matching failed on '%s' using '%s' regex" %
-                                    (time.strftime(fmt),
-                                     compiled.pattern))
+            found = compiled.match(input_string)
+            self.assertTrue(found,
+                            (f"Matching failed on '{input_string}' "
+                             f"using '{compiled.pattern}' regex"))
+        for directive in ('c', 'x'):
+            # gh-124529
+            fmt = "%" + directive
+            with self.subTest(f"{fmt!r} should match input containing "
+                              f"year with fewer digits than usual"):
+                try:
+                    (input_string,
+                     _) = _get_data_to_test_strptime_with_few_digits_year(fmt)
+                except AssertionError as exc:
+                    self.fail(str(exc))
+                compiled = self.time_re.compile(fmt)
+                found = compiled.match(input_string)
+                self.assertTrue(found,
+                                (f"Matching failed on '{input_string}' "
+                                 f"using '{compiled.pattern}' regex"))
+        for directive in ('y', 'Y', 'G'):
+            fmt = "%" + directive
+            with self.subTest(f"{fmt!r} should not match input containing "
+                              f"year with fewer digits than usual"):
+                try:
+                    (input_string,
+                     _) = _get_data_to_test_strptime_with_few_digits_year(fmt)
+                except AssertionError as exc:
+                    self.fail(str(exc))
+                compiled = self.time_re.compile(fmt)
+                found = compiled.match(input_string)
+                self.assertFalse(found,
+                                 (f"Matching unexpectedly succeeded "
+                                  f"on '{input_string}' using "
+                                  f"'{compiled.pattern}' regex"))
 
     def test_blankpattern(self):
         # Make sure when tuple or something has no values no regex is generated.
@@ -299,6 +330,28 @@ class StrptimeTests(unittest.TestCase):
                          (directive, strf_output, strp_output[position],
                           self.time_tuple[position]))
 
+    def helper_for_directives_accepting_few_digits_year(self, directive):
+        fmt = "%" + directive
+
+        try:
+            (input_string,
+             expected_year,
+             ) = _get_data_to_test_strptime_with_few_digits_year(fmt)
+        except AssertionError as exc:
+            self.fail(str(exc))
+
+        try:
+            output_year = _strptime._strptime(input_string, fmt)[0][0]
+        except ValueError as exc:
+            # See: gh-124529
+            self.fail(f"testing of {directive!r} directive failed; "
+                      f"{input_string!r} -> exception: {exc!r}")
+        else:
+            self.assertEqual(output_year, expected_year,
+                             (f"testing of {directive!r} directive failed; "
+                              f"{input_string!r} -> output including year "
+                              f"{output_year!r} != {expected_year!r}"))
+
     def test_year(self):
         # Test that the year is handled properly
         for directive in ('y', 'Y'):
@@ -311,6 +364,17 @@ class StrptimeTests(unittest.TestCase):
                 self.assertTrue(strp_output[0] == expected_result,
                                 "'y' test failed; passed in '%s' "
                                 "and returned '%s'" % (bound, strp_output[0]))
+
+    def test_bad_year(self):
+        for directive, bad_inputs in (
+            ('y', ('9', '100', 'ni')),
+            ('Y', ('7', '42', '999', '10000', 'SPAM')),
+        ):
+            fmt = "%" + directive
+            for input_val in bad_inputs:
+                with self.subTest(directive=directive, input_val=input_val):
+                    with self.assertRaises(ValueError):
+                        _strptime._strptime_time(input_val, fmt)
 
     def test_month(self):
         # Test for month directives
@@ -454,10 +518,20 @@ class StrptimeTests(unittest.TestCase):
         for position in range(6):
             self.helper('c', position)
 
+    def test_date_time_accepting_few_digits_year(self):  # gh-124529
+        # Test %c directive with input containing year
+        # number consisting of fewer digits than usual
+        self.helper_for_directives_accepting_few_digits_year('c')
+
     def test_date(self):
         # Test %x directive
         for position in range(0,3):
             self.helper('x', position)
+
+    def test_date_accepting_few_digits_year(self):  # gh-124529
+        # Test %x directive with input containing year
+        # number consisting of fewer digits than usual
+        self.helper_for_directives_accepting_few_digits_year('x')
 
     def test_time(self):
         # Test %X directive
@@ -767,6 +841,60 @@ class CacheTests(unittest.TestCase):
             _strptime._strptime_time(oldtzname[0], '%Z')
         with self.assertRaises(ValueError):
             _strptime._strptime_time(oldtzname[1], '%Z')
+
+
+def _get_data_to_test_strptime_with_few_digits_year(fmt):
+    # This helper, for the given format string (fmt), returns a 2-tuple:
+    #   (<strptime input string>, <expected year>)
+    # where:
+    # * <strptime input string> -- is a `strftime(fmt)`-result-like str
+    #   containing a year number which is *shorter* than the usual four
+    #   or two digits, because the number is small and *not* 0-padded
+    #   (namely: here the contained year number consist of one digit: 7
+    #   -- that's an arbitrary choice);
+    # * <expected year> -- is an int representing the year number that
+    #   is expected to be part of the result of a `strptime(<strptime
+    #   input string>, fmt)` call (namely: either 7 or 2007, depending
+    #   on the given format string and current locale...).
+    # Note: AssertionError (with an appropriate failure message) is
+    # raised if <strptime input string> does *not* contain the year
+    # part (for the given format string and current locale).
+
+    # 1. Prepare auxiliary sample time data (note that the magic values
+    # we use here are guaranteed to be compatible with `time.strftime()`,
+    # and are also intended to be well distinguishable within formatted
+    # strings, thanks to the fact that the amount of overloaded numbers
+    # is minimized, as in `_strptime.LocaleTime.__calc_date_time()`):
+    sample_year = 1999
+    sample_tt = (sample_year, 3, 17, 22, 44, 55, 2, 76, 0)
+    sample_string = time.strftime(fmt, sample_tt)
+    sample_year_4digits = str(sample_year)
+    sample_year_2digits = str(sample_year)[-2:]
+
+    # 2. Pick an arbitrary year number representation that
+    # is always *shorter* than the usual four or two digits:
+    year_1digit = '7'
+
+    # 3. Obtain the resultant 2-tuple:
+    if sample_year_4digits in sample_string:
+        input_string = sample_string.replace(sample_year_4digits, year_1digit)
+        if sample_year_2digits in input_string:
+            raise RuntimeError(f"the {fmt!r} format is not supported by "
+                               f"this helper (a {fmt!r}-formatted string, "
+                               f"{sample_string!r}, seems to include both a "
+                               f"2-digit and 4-digit year number)")
+        expected_year = int(year_1digit)
+    elif sample_year_2digits in sample_string:
+        input_string = sample_string.replace(sample_year_2digits, year_1digit)
+        expected_year = 2000 + int(year_1digit)
+    else:
+        raise AssertionError(f"time.strftime({fmt!r}, ...)={sample_string!r} "
+                             f"does not include the year {sample_year!r} in "
+                             f"any expected format (are {fmt!r}-formatted "
+                             f"strings supposed to include a year number? "
+                             f"if they are, isn't there something severely "
+                             f"wrong with the current locale?)")
+    return input_string, expected_year
 
 
 if __name__ == '__main__':

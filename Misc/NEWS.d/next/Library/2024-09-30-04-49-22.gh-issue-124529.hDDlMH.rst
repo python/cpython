@@ -1,0 +1,5 @@
+Fix :meth:`datetime.datetime.strptime`, :meth:`datetime.date.strptime`
+and :func:`time.strptime` to make ``%c`` and ``%x`` accept year numbers
+with fewer digits than the usual 4 or 2 (not zero-padded). This prevents
+:exc:`ValueError` in certain cases of ``strftime/strptime`` round trips.
+Patch by Jan Kaliszewski.

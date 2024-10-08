@@ -2648,6 +2648,17 @@ Notes:
    example, "month/day/year" versus "day/month/year"), and the output may
    contain non-ASCII characters.
 
+   .. versionchanged:: 3.14
+      The :meth:`~.datetime.strptime` method, if used with the ``%c``
+      or ``%x`` format code, no longer requires the *year* part of the
+      input to be zero-padded to the usual width (which is either 4 or
+      2 digits, depending on the format code and current locale). In
+      previous versions, a :exc:`ValueError` was raised if a narrower
+      (i.e., not zero-padded) year representation was part of the input
+      (and it is worth noting that, depending on the platform/locale,
+      such inputs may be produced by using :meth:`~.datetime.strftime`
+      with ``%c`` or ``%x``).
+
 (2)
    The :meth:`~.datetime.strptime` method can parse years in the full [1, 9999] range, but
    years < 1000 must be zero-filled to 4-digit width.
