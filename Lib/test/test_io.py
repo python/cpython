@@ -3917,6 +3917,22 @@ class TextIOWrapperTest(unittest.TestCase):
         f.write(res)
         self.assertEqual(res + f.readline(), 'foo\nbar\n')
 
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    def test_read_non_blocking(self):
+        import os
+        r, w = os.pipe()
+        try:
+            os.set_blocking(r, False)
+            with self.io.open(r, 'rt') as textfile:
+                r = None
+                # Nothing has been written so a non-blocking read raises a BlockingIOError exception.
+                with self.assertRaises(BlockingIOError):
+                    textfile.read()
+        finally:
+            if r is not None:
+                os.close(r)
+            os.close(w)
+
 
 class MemviewBytesIO(io.BytesIO):
     '''A BytesIO object whose read method returns memoryviews

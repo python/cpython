@@ -1992,6 +1992,13 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
         if (bytes == NULL)
             goto fail;
 
+        if (bytes == Py_None){
+            PyErr_SetString(PyExc_BlockingIOError, "Unexpected None encountered. This may be due to non-blocking I/O "
+                                                   "or an issue with the underlying I/O implementation.");
+            return NULL;
+
+        }
+
         _PyIO_State *state = self->state;
         if (Py_IS_TYPE(self->decoder, state->PyIncrementalNewlineDecoder_Type))
             decoded = _PyIncrementalNewlineDecoder_decode(self->decoder,
