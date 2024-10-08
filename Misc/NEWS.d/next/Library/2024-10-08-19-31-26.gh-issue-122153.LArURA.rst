@@ -1,0 +1,1 @@
+:mod:`socket` supports `sendmsg`, `recvmsg` on `windows`
