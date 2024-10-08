@@ -415,9 +415,7 @@ _PyRecursiveMutex_TryUnlock(_PyRecursiveMutex *m)
     }
     assert(m->level == 0);
     _Py_atomic_store_ullong_relaxed(&m->thread, 0);
-    if (_PyMutex_TryUnlock(&m->mutex) < 0) {
-        return -1;
-    }
+    PyMutex_Unlock(&m->mutex);
     return 0;
 }
 
