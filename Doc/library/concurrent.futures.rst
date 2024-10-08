@@ -251,6 +251,10 @@ objects can be executed and returned.
    like with :class:`ProcessPoolExecutor`.  Likewise, functions (and
    arguments) passed to :meth:`~Executor.submit` are pickled.
 
+   .. note::
+      functions defined in the ``__main__`` module cannot be pickled
+      and thus cannot be used.
+
    *shared* is an optional dict of objects shared by all interpreters
    in the pool.  The items are added to each interpreter's ``__main__``
    module.  Not all objects are shareable.  Those that are include

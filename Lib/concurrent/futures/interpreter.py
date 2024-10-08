@@ -53,7 +53,9 @@ class WorkerContext(_thread.WorkerContext):
                 # XXX Keep the compiled code object?
                 compile(data, '<string>', 'exec')
             else:
-                # XXX This does not work if fn comes from the __main__ module.
+                # Functions defined in the __main__ module can't be pickled,
+                # so they can't be used here (for now).  We could possibly
+                # borrow from multiprocessing to work around this.
                 data = pickle.dumps((fn, args, kwargs))
                 kind = 'function'
             return (data, kind)
