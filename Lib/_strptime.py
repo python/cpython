@@ -126,49 +126,48 @@ class LocaleTime(object):
         # values within the format string is very important; it eliminates
         # possible ambiguity for what something represents.
         time_tuple = time.struct_time((1999,3,17,22,44,55,2,76,0))
-        date_time = [None, None, None]
-        date_time[0] = time.strftime("%c", time_tuple).lower()
-        date_time[1] = time.strftime("%x", time_tuple).lower()
-        date_time[2] = time.strftime("%X", time_tuple).lower()
-        replacement_pairs = [('%', '%%'), (self.f_weekday[2], '%A'),
-                    ('', ''), # month name, if used
-                    (self.a_weekday[2], '%a'),
-                    (self.am_pm[1], '%p'),
+        time_tuple2 = time.struct_time((1999,1,3,1,1,1,6,3,0))
+        replacement_pairs = [
                     ('1999', '%Y'), ('99', '%y'), ('22', '%H'),
                     ('44', '%M'), ('55', '%S'), ('76', '%j'),
                     ('17', '%d'), ('03', '%m'), ('3', '%m'),
                     # '3' needed for when no leading zero.
                     ('2', '%w'), ('10', '%I')]
-        # The month format is treated specially because of a possible
-        # ambiguity in some locales where the full and abbreviated
-        # month names are equal. See doc of __find_month_format for more
-        # details.
-        #
-        replacement_pairs.extend([(tz, "%Z") for tz_values in self.timezone
-                                                for tz in tz_values])
-        for offset,directive in ((0,'%c'), (1,'%x'), (2,'%X')):
-            current_format = date_time[offset]
-            assert replacement_pairs[2] == ('', '')
+        date_time = []
+        for directive in ('%c', '%x', '%X'):
+            current_format = time.strftime(directive, time_tuple).lower()
+            current_format = current_format.replace('%', '%%')
+            current_format = current_format.replace(self.f_weekday[2], '%A')
+            # The month format is treated specially because of a possible
+            # ambiguity in some locales where the full and abbreviated
+            # month names are equal. See doc of __find_month_format for more
+            # details.
             month_format = self.__find_month_format(directive)
             if month_format:
-                replacement_pairs[2] = (month_format[0][3], month_format[1])
-            for old, new in replacement_pairs:
+                current_format = current_format.replace(month_format[0][3],
+                                                        month_format[1])
+            current_format = current_format.replace(self.a_weekday[2], '%a')
+            if self.am_pm[1]:
                 # Must deal with possible lack of locale info
                 # manifesting itself as the empty string (e.g., Swedish's
                 # lack of AM/PM info) or a platform returning a tuple of empty
                 # strings (e.g., MacOS 9 having timezone as ('','')).
-                if old:
-                    current_format = current_format.replace(old, new)
-            replacement_pairs[2] = ('', '')
+                current_format = current_format.replace(self.am_pm[1], '%p')
+            for tz_values in self.timezone:
+                for tz in tz_values:
+                    if tz:
+                        current_format = current_format.replace(tz, "%Z")
+            for old, new in replacement_pairs:
+                current_format = current_format.replace(old, new)
             # If %W is used, then Sunday, 2005-01-03 will fall on week 0 since
             # 2005-01-03 occurs before the first Monday of the year.  Otherwise
             # %U is used.
-            time_tuple = time.struct_time((1999,1,3,1,1,1,6,3,0))
-            if '00' in time.strftime(directive, time_tuple):
+            if '00' in time.strftime(directive, time_tuple2):
                 U_W = '%W'
             else:
                 U_W = '%U'
-            date_time[offset] = current_format.replace('11', U_W)
+            current_format = current_format.replace('11', U_W)
+            date_time.append(current_format)
         self.LC_date_time = date_time[0]
         self.LC_date = date_time[1]
         self.LC_time = date_time[2]
