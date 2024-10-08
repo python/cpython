@@ -222,7 +222,8 @@ In addition to these methods, lock objects can also be used via the
 * It is platform-dependent whether the :meth:`~threading.Lock.acquire` method
   on a lock can be interrupted (so that the :exc:`KeyboardInterrupt` exception
   will happen immediately, rather than only after the lock has been acquired or
-  the operation has timed out). E.g., it can be interrupted on POSIX.
+  the operation has timed out). It can be interrupted on POSIX, but not on
+  Windows.
 
 * When the main thread exits, it is system defined whether the other threads
   survive.  On most systems, they are killed without executing
