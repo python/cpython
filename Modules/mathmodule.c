@@ -987,7 +987,7 @@ math_1a(PyObject *arg, double (*func) (double))
    The last rule is used to catch overflow on platforms which follow
    C89 but for which HUGE_VAL is not an infinity.
 
-   For most two-argument functions (copysign, fmod, hypot, atan2)
+   For most two-argument functions (copysign, remainder, atan2)
    these rules are enough to ensure that Python's functions behave as
    specified in 'Annex F' of the C99 standard, with the 'invalid' and
    'divide-by-zero' floating-point exceptions mapping to Python's
@@ -2158,10 +2158,12 @@ math_modf_impl(PyObject *module, double x)
     double y;
     /* some platforms don't do the right thing for NaNs and
        infinities, so we take care of special cases directly. */
-    if (isinf(x))
-        return Py_BuildValue("(dd)", copysign(0., x), x);
-    else if (isnan(x))
-        return Py_BuildValue("(dd)", x, x);
+    if (!isfinite(x)) {
+        if (isinf(x))
+            return Py_BuildValue("(dd)", copysign(0., x), x);
+        else
+            return Py_BuildValue("(dd)", x, x);
+    }
 
     errno = 0;
     x = modf(x, &y);
@@ -2194,7 +2196,7 @@ loghelper(PyObject* arg, double (*func)(double))
         }
 
         x = PyLong_AsDouble(arg);
-        if (x == -1.0 && PyErr_Occurred()) {
+        if (x == -1.0) {
             if (!PyErr_ExceptionMatches(PyExc_OverflowError))
                 return NULL;
             /* Here the conversion to double overflowed, but it's possible
@@ -2990,7 +2992,8 @@ math_pow_impl(PyObject *module, double x, double y)
                (A) (+/-0.)**negative (-> divide-by-zero)
                (B) overflow of x**y with x and y finite
             */
-            else if (isinf(r)) {
+            else {
+                assert(isinf(r));
                 if (x == 0.)
                     errno = EDOM;
                 else
