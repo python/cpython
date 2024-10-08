@@ -883,19 +883,8 @@ lock_repr(PyObject *op)
 static PyObject *
 lock__at_fork_reinit(PyObject *op, PyObject *Py_UNUSED(args))
 {
-<<<<<<< HEAD
     lockobject *self = (lockobject *)op;
     self->lock = (PyMutex){0};
-=======
-    lockobject *self = (lockobject*)op;
-    if (_PyThread_at_fork_reinit(&self->lock_lock) < 0) {
-        PyErr_SetString(ThreadError, "failed to reinitialize lock at fork");
-        return NULL;
-    }
-
-    self->locked = 0;
-
->>>>>>> 5967dd8a4de60a418de84d1d1d9efc063ad12c47
     Py_RETURN_NONE;
 }
 #endif  /* HAVE_FORK */
@@ -941,11 +930,7 @@ static PyMethodDef lock_methods[] = {
     {"__exit__",    lock_PyThread_release_lock,
      METH_VARARGS, lock_exit_doc},
 #ifdef HAVE_FORK
-<<<<<<< HEAD
     {"_at_fork_reinit", (PyCFunction)lock__at_fork_reinit,
-=======
-    {"_at_fork_reinit", lock__at_fork_reinit,
->>>>>>> 5967dd8a4de60a418de84d1d1d9efc063ad12c47
      METH_NOARGS, NULL},
 #endif
     {NULL,           NULL}              /* sentinel */
