@@ -17,7 +17,7 @@ Therefore, changes to the Python language are made by modifying the
 [grammar file](https://github.com/python/cpython/blob/main/Grammar/python.gram).
 Developers rarely need to modify the generator itself.
 
-See [Changing CPython’s grammar](https://devguide.python.org/developer-workflow/grammar/#grammar)
+See the devguide's [Changing CPython’s grammar](https://devguide.python.org/developer-workflow/grammar/#grammar)
 for a detailed description of the grammar and the process for changing it.
 
 How PEG parsers work
@@ -39,7 +39,7 @@ generate constructions that, given an input string, *deduce* which alternative
 check each alternative, in the order in which they are specified, and select
 that first one that succeeds.
 
-This means that in a PEG grammer, the choice operator is not commutative.
+This means that in a PEG grammar, the choice operator is not commutative.
 Furthermore, unlike context-free grammars, the derivation according to a
 PEG grammar cannot be ambiguous: if a string parses, it has exactly one
 valid parse tree.
@@ -172,11 +172,11 @@ If the return type is omitted, then a ``void *`` is returned in C and an
 Grammar expressions
 -------------------
 
-**``# comment``**
+### ``# comment``
 
 Python-style comments.
 
-**``e1 e2``**
+### ``e1 e2``
 
 Match ``e1``, then match ``e2``.
 
@@ -184,7 +184,7 @@ Match ``e1``, then match ``e2``.
     rule_name: first_rule second_rule
 ```
 
-**``e1 | e2``**
+### ``e1 | e2``
 
 Match ``e1`` or ``e2``.
 
@@ -198,7 +198,7 @@ first alternative, like so:
        | second_alt
 ```
 
-**``( e )`` (grouping operator)**
+### ``( e )`` (grouping operator)
 
 Match ``e``.
 
@@ -213,7 +213,7 @@ operator together with the repeat operator:
     rule_name: (e1 e2)*
 ```
 
-**``[ e ] or e?``**
+### ``[ e ] or e?``
 
 Optionally match ``e``.
 
@@ -228,7 +228,7 @@ optional:
     rule_name: e (',' e)* [',']
 ```
 
-**``e*``**
+### ``e*``
 
 Match zero or more occurrences of ``e``.
 
@@ -236,7 +236,7 @@ Match zero or more occurrences of ``e``.
     rule_name: (e1 e2)*
 ```
 
-**``e+``**
+### ``e+``
 
 Match one or more occurrences of ``e``.
 
@@ -244,7 +244,7 @@ Match one or more occurrences of ``e``.
     rule_name: (e1 e2)+
 ```
 
-**``s.e+``**
+### ``s.e+``
 
 Match one or more occurrences of ``e``, separated by ``s``. The generated
 parse tree does not include the separator. This is otherwise identical to
@@ -254,11 +254,11 @@ parse tree does not include the separator. This is otherwise identical to
     rule_name: ','.e+
 ```
 
-**``&e`` (positive lookahead)**
+### ``&e`` (positive lookahead)
 
 Succeed if ``e`` can be parsed, without consuming any input.
 
-**``!e`` (negative lookahead)**
+### ``!e`` (negative lookahead)
 
 Fail if ``e`` can be parsed, without consuming any input.
 
@@ -270,7 +270,7 @@ consists of an atom, which is not followed by a ``.`` or a ``(`` or a
     primary: atom !'.' !'(' !'['
 ```
 
-**``~``**
+### ``~``
 
 Commit to the current alternative, even if it fails to parse (this is called
 the "cut").
