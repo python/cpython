@@ -688,8 +688,9 @@ _locale_nl_langinfo_impl(PyObject *module, int item)
                     }
                 }
             }
+            else
 #endif
-            else {
+            {
                 pyresult = PyUnicode_DecodeLocale(result, NULL);
             }
             restore_locale(oldloc);
