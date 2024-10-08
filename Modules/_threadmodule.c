@@ -1132,7 +1132,8 @@ static PyObject *
 rlock_is_owned(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     rlockobject *self = (rlockobject*)op;
-    long owned = _PyRecursiveMutex_IsLockedByCurrentThread(&self->lock);
+    long owned = _PyRecursiveMutex_IsLockedByCurrentThread(&self->lock)
+                 && PyMutex_IsLocked(&self->lock.mutex);
     return PyBool_FromLong(owned);
 }
 
