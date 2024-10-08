@@ -972,15 +972,6 @@ and :term:`generators <generator>` which incur interpreter overhead.
            iterators = cycle(islice(iterators, num_active))
            yield from map(next, iterators)
 
-   def partition(predicate, iterable):
-       """Partition entries into false entries and true entries.
-
-       If *predicate* is slow, consider wrapping it with functools.lru_cache().
-       """
-       # partition(is_odd, range(10)) → 0 2 4 6 8   and  1 3 5 7 9
-       t1, t2 = tee(iterable)
-       return filterfalse(predicate, t1), filter(predicate, t2)
-
    def subslices(seq):
        "Return all contiguous non-empty subslices of a sequence."
        # subslices('ABCD') → A AB ABC ABCD B BC BCD C CD D
@@ -1603,26 +1594,6 @@ The following recipes have a more mathematical flavor:
     >>> ''.join(chain(*input_iterators))
     'dijkopqr'
 
-    >>> def is_odd(x):
-    ...     return x % 2 == 1
-
-    >>> evens, odds = partition(is_odd, range(10))
-    >>> list(evens)
-    [0, 2, 4, 6, 8]
-    >>> list(odds)
-    [1, 3, 5, 7, 9]
-    >>> # Verify that the input is consumed lazily
-    >>> input_iterator = iter(range(10))
-    >>> evens, odds = partition(is_odd, input_iterator)
-    >>> next(odds)
-    1
-    >>> next(odds)
-    3
-    >>> next(evens)
-    0
-    >>> list(input_iterator)
-    [4, 5, 6, 7, 8, 9]
-
     >>> list(subslices('ABCD'))
     ['A', 'AB', 'ABC', 'ABCD', 'B', 'BC', 'BCD', 'C', 'CD', 'D']
 
@@ -1767,6 +1738,17 @@ The following recipes have a more mathematical flavor:
 
        return true_iterator(), chain(transition, it)
 
+    def partition(predicate, iterable):
+        """Partition entries into false entries and true entries.
+
+        If *predicate* is slow, consider wrapping it with functools.lru_cache().
+        """
+        # partition(is_odd, range(10)) → 0 2 4 6 8   and  1 3 5 7 9
+        t1, t2 = tee(iterable)
+        return filterfalse(predicate, t1), filter(predicate, t2)
+
+
+
 .. doctest::
     :hide:
 
@@ -1802,3 +1784,23 @@ The following recipes have a more mathematical flavor:
     'ABC'
     >>> ''.join(remainder)
     'dEfGhI'
+
+    >>> def is_odd(x):
+    ...     return x % 2 == 1
+
+    >>> evens, odds = partition(is_odd, range(10))
+    >>> list(evens)
+    [0, 2, 4, 6, 8]
+    >>> list(odds)
+    [1, 3, 5, 7, 9]
+    >>> # Verify that the input is consumed lazily
+    >>> input_iterator = iter(range(10))
+    >>> evens, odds = partition(is_odd, input_iterator)
+    >>> next(odds)
+    1
+    >>> next(odds)
+    3
+    >>> next(evens)
+    0
+    >>> list(input_iterator)
+    [4, 5, 6, 7, 8, 9]
