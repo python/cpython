@@ -43,8 +43,8 @@ class TokenIterator:
                 break
         return self.look_ahead
 
-ROOT = Path(__file__).parent.parent.parent
-DEFAULT_INPUT = (ROOT / "Python/bytecodes.c").resolve().as_posix()
+ROOT = Path(__file__).parent.parent.parent.resolve()
+DEFAULT_INPUT = (ROOT / "Python/bytecodes.c").as_posix()
 
 
 def root_relative_path(filename: str) -> str:
