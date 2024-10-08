@@ -415,6 +415,9 @@ class AutoFileTests:
                     # Should open and close the file exactly once
                     ("open", 1),
                     ("close", 1),
+                    # There should no longer be an isatty call (All files being
+                    # tested are block devices / not character devices).
+                    ('ioctl', 0),
                     # Should only have one fstat (bpo-21679, gh-120754)
                     # note: It's important this uses a fd rather than filename,
                     # That is validated by the `fd` check above.
@@ -462,10 +465,7 @@ class AutoFileTests:
             # GH-122111: read_text uses BufferedIO which requires looking up
             # position in file. `read_bytes` disables that buffering and avoids
             # these calls which is tested the `pathlib read_bytes` case.
-            extra_checks=[
-                ("ioctl", 1),
-                ("seek", 1)
-            ]
+            extra_checks=[("seek", 1)]
         )
 
         check_readall(
@@ -473,10 +473,7 @@ class AutoFileTests:
             "p.read_bytes()",
             prelude=f"""from pathlib import Path; p = Path("{TESTFN}")""",
             # GH-122111: Buffering is disabled so these calls are avoided.
-            extra_checks=[
-                ("ioctl", 0),
-                ("seek", 0)
-            ]
+            extra_checks=[("seek", 0)]
         )
 
         check_readall(
