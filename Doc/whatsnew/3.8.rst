@@ -428,9 +428,9 @@ Other Language Changes
   normal assignment syntax::
 
     >>> def parse(family):
-            lastname, *members = family.split()
-            return lastname.upper(), *members
-
+    ...     lastname, *members = family.split()
+    ...     return lastname.upper(), *members
+    ...
     >>> parse('simpsons homer marge bart lisa maggie')
     ('SIMPSONS', 'homer', 'marge', 'bart', 'lisa', 'maggie')
 

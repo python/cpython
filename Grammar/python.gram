@@ -151,9 +151,9 @@ assignment[stmt_ty]:
     | a=('(' b=single_target ')' { b }
          | single_subscript_attribute_target) ':' b=expression c=['=' d=annotated_rhs { d }] {
         CHECK_VERSION(stmt_ty, 6, "Variable annotations syntax is", _PyAST_AnnAssign(a, b, c, 0, EXTRA)) }
-    | a[asdl_expr_seq*]=(z=star_targets '=' { z })+ b=(yield_expr | star_expressions) !'=' tc=[TYPE_COMMENT] {
+    | a[asdl_expr_seq*]=(z=star_targets '=' { z })+ b=annotated_rhs !'=' tc=[TYPE_COMMENT] {
          _PyAST_Assign(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA) }
-    | a=single_target b=augassign ~ c=(yield_expr | star_expressions) {
+    | a=single_target b=augassign ~ c=annotated_rhs {
          _PyAST_AugAssign(a, b->kind, c, EXTRA) }
     | invalid_assignment
 

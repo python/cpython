@@ -1,0 +1,2 @@
+Fix :func:`tokenize.untokenize` producing invalid syntax for
+double braces preceded by certain escape characters.
