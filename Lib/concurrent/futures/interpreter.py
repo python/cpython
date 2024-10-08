@@ -74,7 +74,7 @@ class WorkerContext(_thread.WorkerContext):
     def _capture_exc(cls, resultsid):
         try:
             yield
-        except Exception as exc:
+        except BaseException as exc:
             err = pickle.dumps(exc)
             _interpqueues.put(resultsid, (None, err), 1, UNBOUND)
         else:
@@ -84,7 +84,7 @@ class WorkerContext(_thread.WorkerContext):
     def _call(cls, func, args, kwargs, resultsid):
         try:
             res = func(*args, **kwargs)
-        except Exception as exc:
+        except BaseException as exc:
             err = pickle.dumps(exc)
             _interpqueues.put(resultsid, (None, err), 1, UNBOUND)
         else:
