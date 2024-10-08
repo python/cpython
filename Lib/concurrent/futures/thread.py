@@ -148,6 +148,8 @@ class BrokenThreadPool(_base.BrokenExecutor):
 
 class ThreadPoolExecutor(_base.Executor):
 
+    BROKEN = BrokenThreadPool
+
     # Used to assign unique thread names when thread_name_prefix is not supplied.
     _counter = itertools.count().__next__
 
@@ -196,7 +198,7 @@ class ThreadPoolExecutor(_base.Executor):
     def submit(self, fn, /, *args, **kwargs):
         with self._shutdown_lock, _global_shutdown_lock:
             if self._broken:
-                raise BrokenThreadPool(self._broken)
+                raise self.BROKEN(self._broken)
 
             if self._shutdown:
                 raise RuntimeError('cannot schedule new futures after shutdown')
@@ -246,7 +248,7 @@ class ThreadPoolExecutor(_base.Executor):
                 except queue.Empty:
                     break
                 if work_item is not None:
-                    work_item.future.set_exception(BrokenThreadPool(self._broken))
+                    work_item.future.set_exception(self.BROKEN(self._broken))
 
     def shutdown(self, wait=True, *, cancel_futures=False):
         with self._shutdown_lock:

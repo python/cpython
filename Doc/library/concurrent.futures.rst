@@ -630,6 +630,15 @@ Exception classes
 
 .. currentmodule:: concurrent.futures.interpreter
 
+.. exception:: BrokenInterpreterPool
+
+   Derived from :exc:`~concurrent.futures.thread.BrokenThreadPool`,
+   this exception class is raised when one of the workers
+   of a :class:`~concurrent.futures.InterpreterPoolExecutor`
+   has failed initializing.
+
+   .. versionadded:: next
+
 .. exception:: ExecutionFailed
 
    Raised from :class:`~concurrent.futures.InterpreterPoolExecutor` when

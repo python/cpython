@@ -190,7 +190,15 @@ with WorkerContext._capture_exc({self.resultsid}):
         return pickle.loads(res) if pickled else res
 
 
+class BrokenInterpreterPool(_thread.BrokenThreadPool):
+    """
+    Raised when a worker thread in an InterpreterPoolExecutor failed initializing.
+    """
+
+
 class InterpreterPoolExecutor(_thread.ThreadPoolExecutor):
+
+    BROKEN = BrokenInterpreterPool
 
     @classmethod
     def prepare_context(cls, initializer, initargs, shared):
