@@ -5283,9 +5283,8 @@ get_base_by_token_recursive(PyObject *bases, void *token)
             res = base;
             break;
         }
-        base = get_base_by_token_recursive(lookup_tp_bases(base), token);
-        if (base != NULL) {
-            res = base;
+        res = get_base_by_token_recursive(lookup_tp_bases(base), token);
+        if (res != NULL) {
             break;
         }
     }
