@@ -84,25 +84,26 @@ class WorkerContext(_thread.WorkerContext):
         try:
             yield
         except BaseException as exc:
+            # Send the captured exception out on the results queue,
+            # but still leave it unhandled for the interpreter to handle.
             err = _serialize_exception(exc)
             _interpqueues.put(resultsid, (None, err), 1, UNBOUND)
-        else:
-            _interpqueues.put(resultsid, (None, None), 0, UNBOUND)
+            raise  # re-raise
+
+    @classmethod
+    def _send_script_result(cls, resultsid):
+        _interpqueues.put(resultsid, (None, None), 0, UNBOUND)
 
     @classmethod
     def _call(cls, func, args, kwargs, resultsid):
+        with cls._capture_exc(resultsid):
+            res = func(*args or (), **kwargs or {})
+        # Send the result back.
         try:
-            res = func(*args, **kwargs)
-        except BaseException as exc:
-            err = _serialize_exception(exc)
-            _interpqueues.put(resultsid, (None, err), 1, UNBOUND)
-        else:
-            # Send the result back.
-            try:
-                _interpqueues.put(resultsid, (res, None), 0, UNBOUND)
-            except _interpreters.NotShareableError:
-                res = pickle.dumps(res)
-                _interpqueues.put(resultsid, (res, None), 1, UNBOUND)
+            _interpqueues.put(resultsid, (res, None), 0, UNBOUND)
+        except _interpreters.NotShareableError:
+            res = pickle.dumps(res)
+            _interpqueues.put(resultsid, (res, None), 1, UNBOUND)
 
     @classmethod
     def _call_pickled(cls, pickled, resultsid):
@@ -170,12 +171,19 @@ class WorkerContext(_thread.WorkerContext):
         if kind == 'script':
             script = f"""
 with WorkerContext._capture_exc({self.resultsid}):
-{textwrap.indent(data, '    ')}"""
+{textwrap.indent(data, '    ')}
+WorkerContext._send_script_result({self.resultsid})"""
         elif kind == 'function':
             script = f'WorkerContext._call_pickled({data!r}, {self.resultsid})'
         else:
             raise NotImplementedError(kind)
-        self._exec(script)
+
+        try:
+            self._exec(script)
+        except ExecutionFailed as exc:
+            exc_wrapper = exc
+        else:
+            exc_wrapper = None
 
         # Return the result, or raise the exception.
         while True:
@@ -189,13 +197,14 @@ with WorkerContext._capture_exc({self.resultsid}):
                 continue
             else:
                 break
-        (res, exc), pickled, unboundop = obj
+        (res, excdata), pickled, unboundop = obj
         assert unboundop is None, unboundop
-        if exc is not None:
+        if excdata is not None:
             assert res is None, res
             assert pickled
-            exc = _deserialize_exception(exc)
-            raise exc from exc
+            assert exc_wrapper is not None
+            exc = _deserialize_exception(excdata)
+            raise exc from exc_wrapper
         return pickle.loads(res) if pickled else res
 
 
