@@ -1204,6 +1204,18 @@ class TestMain(ReplTestCase):
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
+        # The site module must not load _pyrepl if PYTHON_BASIC_REPL is set
+        commands = ("import sys\n"
+                    "print('_pyrepl' in sys.modules)\n"
+                    "exit()\n")
+        env["PYTHON_BASIC_REPL"] = "1"
+        output, exit_code = self.run_repl(commands, env=env)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("False", output)
+        self.assertNotIn("True", output)
+        self.assertNotIn("Exception", output)
+        self.assertNotIn("Traceback", output)
+
     @force_not_colorized
     def test_bad_sys_excepthook_doesnt_crash_pyrepl(self):
         env = os.environ.copy()
