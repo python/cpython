@@ -537,7 +537,6 @@ class TestFrameLocals(unittest.TestCase):
             range(0),
             range(20),
             [1, 2, 3],
-            (1, 2, 3),
             (2,),
             set((13, 48, 211)),
             frozenset((15, 8, 6)),
@@ -545,14 +544,16 @@ class TestFrameLocals(unittest.TestCase):
         ]
 
         for seq in sequences:
-            self.assertListEqual(list(get_generator_genexpr(iter(seq))), list(seq))
             err_msg_genexpr = err_msg_pattern_genexpr % type(seq).__name__
             with self.assertRaisesRegex(TypeError, err_msg_genexpr):
                 list(get_generator_genexpr(seq))
+            self.assertListEqual(list(get_generator_genexpr(iter(seq))),
+                                 list(seq))
 
-        for seq in sequences:
-            self.assertListEqual(list(get_generator_fn_call(iter(seq))), list(seq))
-            self.assertListEqual(list(get_generator_fn_call(seq)), list(seq))
+            self.assertListEqual(list(get_generator_fn_call(seq)),
+                                 list(seq))
+            self.assertListEqual(list(get_generator_fn_call(iter(seq))),
+                                 list(seq))
 
         non_sequences = [
             None,
@@ -562,12 +563,12 @@ class TestFrameLocals(unittest.TestCase):
         ]
 
         for obj in non_sequences:
-            err_msg_fn_call = err_msg_pattern_fn_call % type(obj).__name__
-            with self.assertRaisesRegex(TypeError, err_msg_fn_call):
-                list(get_generator_fn_call(obj))
             err_msg_genexpr = err_msg_pattern_genexpr % type(obj).__name__
             with self.assertRaisesRegex(TypeError, err_msg_genexpr):
                 list(get_generator_genexpr(obj))
+            err_msg_fn_call = err_msg_pattern_fn_call % type(obj).__name__
+            with self.assertRaisesRegex(TypeError, err_msg_fn_call):
+                list(get_generator_fn_call(obj))
 
 
 class FrameLocalsProxyMappingTests(mapping_tests.TestHashMappingProtocol):
