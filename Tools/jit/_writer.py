@@ -32,8 +32,11 @@ def _dump_footer(
     yield "};"
     yield ""
     yield f"static const void * const symbols_map[{max(len(symbols), 1)}] = {{"
-    for symbol, ordinal in symbols.items():
-        yield f"    [{ordinal}] = &{symbol},"
+    if len(symbols):
+        for symbol, ordinal in symbols.items():
+            yield f"    [{ordinal}] = &{symbol},"
+    else:
+        yield "    0"
     yield "};"
 
 
