@@ -699,6 +699,35 @@ class TracebackErrorLocationCaretTestBase:
         result_lines = self.get_exception(f_with_multiline)
         self.assertEqual(result_lines, expected_f.splitlines())
 
+        # Check custom error messages covering multiple lines
+        code = textwrap.dedent("""
+        dummy_call(
+            "dummy value"
+            foo="bar",
+        )
+        """)
+
+        def f_with_multiline():
+            # Need to defer the compilation until in self.get_exception(..)
+            return compile(code, "?", "exec")
+
+        lineno_f = f_with_multiline.__code__.co_firstlineno
+
+        expected_f = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f_with_multiline\n'
+            '    return compile(code, "?", "exec")\n'
+            '  File "?", line 3\n'
+            '    "dummy value"\n'
+            '    ^^^^^^^^^^^^^'
+            )
+
+        result_lines = self.get_exception(f_with_multiline)
+        self.assertEqual(result_lines, expected_f.splitlines())
+
     def test_caret_multiline_expression_bin_op(self):
         # Make sure no carets are printed for expressions spanning multiple
         # lines.
@@ -2312,19 +2341,22 @@ class BaseExceptionReportingTests:
     def test_syntax_error_various_offsets(self):
         for offset in range(-5, 10):
             for add in [0, 2]:
-                text = " "*add + "text%d" % offset
+                text = " " * add + "text%d" % offset
                 expected = ['  File "file.py", line 1']
                 if offset < 1:
                     expected.append("    %s" % text.lstrip())
                 elif offset <= 6:
                     expected.append("    %s" % text.lstrip())
-                    expected.append("    %s^" % (" "*(offset-1)))
+                    # Set the caret length to match the length of the text minus the offset.
+                    caret_length = max(1, len(text.lstrip()) - offset + 1)
+                    expected.append("    %s%s" % (" " * (offset - 1), "^" * caret_length))
                 else:
+                    caret_length = max(1, len(text.lstrip()) - 4)
                     expected.append("    %s" % text.lstrip())
-                    expected.append("    %s^" % (" "*5))
+                    expected.append("    %s%s" % (" " * 5, "^" * caret_length))
                 expected.append("SyntaxError: msg")
                 expected.append("")
-                err = self.get_report(SyntaxError("msg", ("file.py", 1, offset+add, text)))
+                err = self.get_report(SyntaxError("msg", ("file.py", 1, offset + add, text)))
                 exp = "\n".join(expected)
                 self.assertEqual(exp, err)
 
@@ -3274,6 +3306,41 @@ class TestStack(unittest.TestCase):
             stack[0],
             f'  File "{__file__}", line {lno}, in f\n    1/0\n'
         )
+
+    def test_summary_should_show_carets(self):
+        # See: https://github.com/python/cpython/issues/122353
+
+        # statement to execute and to get a ZeroDivisionError for a traceback
+        statement = "abcdef = 1 / 0 and 2.0"
+        colno = statement.index('1 / 0')
+        end_colno = colno + len('1 / 0')
+
+        # Actual line to use when rendering the traceback
+        # and whose AST will be extracted (it will be empty).
+        cached_line = '# this line will be used during rendering'
+        self.addCleanup(unlink, TESTFN)
+        with open(TESTFN, "w") as file:
+            file.write(cached_line)
+        linecache.updatecache(TESTFN, {})
+
+        try:
+            exec(compile(statement, TESTFN, "exec"))
+        except ZeroDivisionError as exc:
+            # This is the simplest way to create a StackSummary
+            # whose FrameSummary items have their column offsets.
+            s = traceback.TracebackException.from_exception(exc).stack
+            self.assertIsInstance(s, traceback.StackSummary)
+            with unittest.mock.patch.object(s, '_should_show_carets',
+                                            wraps=s._should_show_carets) as ff:
+                self.assertEqual(len(s), 2)
+                self.assertListEqual(
+                    s.format_frame_summary(s[1]).splitlines(),
+                    [
+                        f'  File "{TESTFN}", line 1, in <module>',
+                        f'    {cached_line}'
+                     ]
+                )
+                ff.assert_called_with(colno, end_colno, [cached_line], None)
 
 class Unrepresentable:
     def __repr__(self) -> str:

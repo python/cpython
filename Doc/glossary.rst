@@ -36,6 +36,12 @@ Glossary
       and loaders (in the :mod:`importlib.abc` module).  You can create your own
       ABCs with the :mod:`abc` module.
 
+   annotate function
+      A function that can be called to retrieve the :term:`annotations <annotation>`
+      of an object. This function is accessible as the :attr:`~object.__annotate__`
+      attribute of functions, classes, and modules. Annotate functions are a
+      subset of :term:`evaluate functions <evaluate function>`.
+
    annotation
       A label associated with a variable, a class
       attribute or a function parameter or return value,
@@ -43,12 +49,11 @@ Glossary
 
       Annotations of local variables cannot be accessed at runtime, but
       annotations of global variables, class attributes, and functions
-      are stored in the :attr:`__annotations__`
-      special attribute of modules, classes, and functions,
-      respectively.
+      can be retrieved by calling :func:`annotationlib.get_annotations`
+      on modules, classes, and functions, respectively.
 
-      See :term:`variable annotation`, :term:`function annotation`, :pep:`484`
-      and :pep:`526`, which describe this functionality.
+      See :term:`variable annotation`, :term:`function annotation`, :pep:`484`,
+      :pep:`526`, and :pep:`649`, which describe this functionality.
       Also see :ref:`annotations-howto`
       for best practices on working with annotations.
 
@@ -226,6 +231,28 @@ Glossary
       A variable defined in a class and intended to be modified only at
       class level (i.e., not in an instance of the class).
 
+   closure variable
+      A :term:`free variable` referenced from a :term:`nested scope` that is defined in an outer
+      scope rather than being resolved at runtime from the globals or builtin namespaces.
+      May be explicitly defined with the :keyword:`nonlocal` keyword to allow write access,
+      or implicitly defined if the variable is only being read.
+
+      For example, in the ``inner`` function in the following code, both ``x`` and ``print`` are
+      :term:`free variables <free variable>`, but only ``x`` is a *closure variable*::
+
+          def outer():
+              x = 0
+              def inner():
+                  nonlocal x
+                  x += 1
+                  print(x)
+              return inner
+
+      Due to the :attr:`codeobject.co_freevars` attribute (which, despite its name, only
+      includes the names of closure variables rather than listing all referenced free
+      variables), the more general :term:`free variable` term is sometimes used even
+      when the intended meaning is to refer specifically to closure variables.
+
    complex number
       An extension of the familiar real number system in which all numbers are
       expressed as a sum of a real part and an imaginary part.  Imaginary
@@ -342,7 +369,7 @@ Glossary
    docstring
       A string literal which appears as the first expression in a class,
       function or module.  While ignored when the suite is executed, it is
-      recognized by the compiler and put into the :attr:`!__doc__` attribute
+      recognized by the compiler and put into the :attr:`~definition.__doc__` attribute
       of the enclosing class, function or module.  Since it is available via
       introspection, it is the canonical place for documentation of the
       object.
@@ -365,6 +392,11 @@ Glossary
       characterized by the presence of many :keyword:`try` and :keyword:`except`
       statements.  The technique contrasts with the :term:`LBYL` style
       common to many other languages such as C.
+
+   evaluate function
+      A function that can be called to evaluate a lazily evaluated attribute
+      of an object, such as the value of type aliases created with the :keyword:`type`
+      statement.
 
    expression
       A piece of syntax which can be evaluated to some value.  In other words,
@@ -429,7 +461,7 @@ Glossary
       <meta path finder>` for use with :data:`sys.meta_path`, and :term:`path
       entry finders <path entry finder>` for use with :data:`sys.path_hooks`.
 
-      See :ref:`importsystem` and :mod:`importlib` for much more detail.
+      See :ref:`finders-and-loaders` and :mod:`importlib` for much more detail.
 
    floor division
       Mathematical division that rounds down to nearest integer.  The floor
@@ -443,6 +475,13 @@ Glossary
       simultaneously within the same interpreter.  This is in contrast to
       the :term:`global interpreter lock` which allows only one thread to
       execute Python bytecode at a time.  See :pep:`703`.
+
+   free variable
+      Formally, as defined in the :ref:`language execution model <bind_names>`, a free
+      variable is any variable used in a namespace which is not a local variable in that
+      namespace. See :term:`closure variable` for an example.
+      Pragmatically, due to the name of the :attr:`codeobject.co_freevars` attribute,
+      the term is also sometimes used as a synonym for :term:`closure variable`.
 
    function
       A series of statements which returns some value to a caller. It can also
@@ -590,14 +629,12 @@ Glossary
       which ships with the standard distribution of Python.
 
    immortal
-      If an object is immortal, its reference count is never modified, and
-      therefore it is never deallocated.
+      *Immortal objects* are a CPython implementation detail introduced
+      in :pep:`683`.
 
-      Built-in strings and singletons are immortal objects. For example,
-      :const:`True` and :const:`None` singletons are immortal.
-
-      See `PEP 683 – Immortal Objects, Using a Fixed Refcount
-      <https://peps.python.org/pep-0683/>`_ for more information.
+      If an object is immortal, its :term:`reference count` is never modified,
+      and therefore it is never deallocated while the interpreter is running.
+      For example, :const:`True` and :const:`None` are immortal in CPython.
 
    immutable
       An object with a fixed value.  Immutable objects include numbers, strings and
@@ -754,8 +791,11 @@ Glossary
    loader
       An object that loads a module. It must define a method named
       :meth:`load_module`. A loader is typically returned by a
-      :term:`finder`. See :pep:`302` for details and
-      :class:`importlib.abc.Loader` for an :term:`abstract base class`.
+      :term:`finder`. See also:
+
+      * :ref:`finders-and-loaders`
+      * :class:`importlib.abc.Loader`
+      * :pep:`302`
 
    locale encoding
       On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
@@ -824,6 +864,8 @@ Glossary
    module spec
       A namespace containing the import-related information used to load a
       module. An instance of :class:`importlib.machinery.ModuleSpec`.
+
+      See also :ref:`module-specs`.
 
    MRO
       See :term:`method resolution order`.
@@ -1123,7 +1165,7 @@ Glossary
       :class:`tuple`, and :class:`bytes`. Note that :class:`dict` also
       supports :meth:`~object.__getitem__` and :meth:`!__len__`, but is considered a
       mapping rather than a sequence because the lookups use arbitrary
-      :term:`immutable` keys rather than integers.
+      :term:`hashable` keys rather than integers.
 
       The :class:`collections.abc.Sequence` abstract base class
       defines a much richer interface that goes beyond just
@@ -1152,16 +1194,12 @@ Glossary
       (subscript) notation uses :class:`slice` objects internally.
 
    soft deprecated
-      A soft deprecation can be used when using an API which should no longer
-      be used to write new code, but it remains safe to continue using it in
-      existing code. The API remains documented and tested, but will not be
-      developed further (no enhancement).
+      A soft deprecated API should not be used in new code,
+      but it is safe for already existing code to use it.
+      The API remains documented and tested, but will not be enhanced further.
 
-      The main difference between a "soft" and a (regular) "hard" deprecation
-      is that the soft deprecation does not imply scheduling the removal of the
-      deprecated API.
-
-      Another difference is that a soft deprecation does not issue a warning.
+      Soft deprecation, unlike normal deprecation, does not plan on removing the API
+      and will not emit warnings.
 
       See `PEP 387: Soft Deprecation
       <https://peps.python.org/pep-0387/#soft-deprecation>`_.
@@ -1233,7 +1271,7 @@ Glossary
    type
       The type of a Python object determines what kind of object it is; every
       object has a type.  An object's type is accessible as its
-      :attr:`~instance.__class__` attribute or can be retrieved with
+      :attr:`~object.__class__` attribute or can be retrieved with
       ``type(obj)``.
 
    type alias

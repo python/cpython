@@ -289,7 +289,7 @@ static PyTypeObject _HashInheritanceTester_Type = {
     "hashinheritancetester",            /* Name of this type */
     sizeof(PyObject),           /* Basic object size */
     0,                          /* Item size for varobject */
-    (destructor)PyObject_Del, /* tp_dealloc */
+    (destructor)PyObject_Free,  /* tp_dealloc */
     0,                          /* tp_vectorcall_offset */
     0,                          /* tp_getattr */
     0,                          /* tp_setattr */
@@ -1909,25 +1909,6 @@ getitem_with_error(PyObject *self, PyObject *args)
     return PyObject_GetItem(map, key);
 }
 
-static PyObject *
-dict_get_version(PyObject *self, PyObject *args)
-{
-    PyDictObject *dict;
-    uint64_t version;
-
-    if (!PyArg_ParseTuple(args, "O!", &PyDict_Type, &dict))
-        return NULL;
-
-    _Py_COMP_DIAG_PUSH
-    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    version = dict->ma_version_tag;
-    _Py_COMP_DIAG_POP
-
-    static_assert(sizeof(unsigned long long) >= sizeof(version),
-                  "version is larger than unsigned long long");
-    return PyLong_FromUnsignedLongLong((unsigned long long)version);
-}
-
 
 static PyObject *
 raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
@@ -2656,18 +2637,6 @@ test_frame_getvarstring(PyObject *self, PyObject *args)
 
 
 static PyObject *
-eval_get_func_name(PyObject *self, PyObject *func)
-{
-    return PyUnicode_FromString(PyEval_GetFuncName(func));
-}
-
-static PyObject *
-eval_get_func_desc(PyObject *self, PyObject *func)
-{
-    return PyUnicode_FromString(PyEval_GetFuncDesc(func));
-}
-
-static PyObject *
 gen_get_code(PyObject *self, PyObject *gen)
 {
     if (!PyGen_Check(gen)) {
@@ -3341,6 +3310,35 @@ test_critical_sections(PyObject *module, PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+// Used by `finalize_thread_hang`.
+#ifdef _POSIX_THREADS
+static void finalize_thread_hang_cleanup_callback(void *Py_UNUSED(arg)) {
+    // Should not reach here.
+    Py_FatalError("pthread thread termination was triggered unexpectedly");
+}
+#endif
+
+// Tests that finalization does not trigger pthread cleanup.
+//
+// Must be called with a single nullary callable function that should block
+// (with GIL released) until finalization is in progress.
+static PyObject *
+finalize_thread_hang(PyObject *self, PyObject *callback)
+{
+    // WASI builds some pthread stuff but doesn't have these APIs today?
+#if defined(_POSIX_THREADS) && !defined(__wasi__)
+    pthread_cleanup_push(finalize_thread_hang_cleanup_callback, NULL);
+#endif
+    PyObject_CallNoArgs(callback);
+    // Should not reach here.
+    Py_FatalError("thread unexpectedly did not hang");
+#if defined(_POSIX_THREADS) && !defined(__wasi__)
+    pthread_cleanup_pop(0);
+#endif
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3419,7 +3417,6 @@ static PyMethodDef TestMethods[] = {
     {"return_result_with_error", return_result_with_error, METH_NOARGS},
     {"getitem_with_error", getitem_with_error, METH_VARARGS},
     {"Py_CompileString",     pycompilestring, METH_O},
-    {"dict_get_version", dict_get_version, METH_VARARGS},
     {"raise_SIGINT_then_send_None", raise_SIGINT_then_send_None, METH_VARARGS},
     {"stack_pointer", stack_pointer, METH_NOARGS},
 #ifdef W_STOPCODE
@@ -3461,8 +3458,6 @@ static PyMethodDef TestMethods[] = {
     {"frame_new", frame_new, METH_VARARGS, NULL},
     {"frame_getvar", test_frame_getvar, METH_VARARGS, NULL},
     {"frame_getvarstring", test_frame_getvarstring, METH_VARARGS, NULL},
-    {"eval_get_func_name", eval_get_func_name, METH_O, NULL},
-    {"eval_get_func_desc", eval_get_func_desc, METH_O, NULL},
     {"gen_get_code", gen_get_code, METH_O, NULL},
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},
     {"test_code_api", test_code_api, METH_NOARGS, NULL},
@@ -3483,6 +3478,7 @@ static PyMethodDef TestMethods[] = {
     {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
     {"function_set_warning", function_set_warning, METH_NOARGS},
     {"test_critical_sections", test_critical_sections, METH_NOARGS},
+    {"finalize_thread_hang", finalize_thread_hang, METH_O, NULL},
     {NULL, NULL} /* sentinel */
 };
 
@@ -3587,7 +3583,7 @@ static PyTypeObject matmulType = {
     0,
     0,
     PyType_GenericNew,                  /* tp_new */
-    PyObject_Del,                       /* tp_free */
+    PyObject_Free,                      /* tp_free */
 };
 
 typedef struct {
@@ -3699,7 +3695,7 @@ static PyTypeObject awaitType = {
     0,
     0,
     awaitObject_new,                    /* tp_new */
-    PyObject_Del,                       /* tp_free */
+    PyObject_Free,                      /* tp_free */
 };
 
 
@@ -4060,6 +4056,12 @@ PyInit__testcapi(void)
 
     PyModule_AddIntConstant(m, "the_number_three", 3);
     PyModule_AddIntMacro(m, Py_C_RECURSION_LIMIT);
+    PyModule_AddObject(m, "INT32_MIN", PyLong_FromInt32(INT32_MIN));
+    PyModule_AddObject(m, "INT32_MAX", PyLong_FromInt32(INT32_MAX));
+    PyModule_AddObject(m, "UINT32_MAX", PyLong_FromUInt32(UINT32_MAX));
+    PyModule_AddObject(m, "INT64_MIN", PyLong_FromInt64(INT64_MIN));
+    PyModule_AddObject(m, "INT64_MAX", PyLong_FromInt64(INT64_MAX));
+    PyModule_AddObject(m, "UINT64_MAX", PyLong_FromUInt64(UINT64_MAX));
 
     if (PyModule_AddIntMacro(m, Py_single_input)) {
         return NULL;
@@ -4178,6 +4180,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Object(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Config(m) < 0) {
         return NULL;
     }
 

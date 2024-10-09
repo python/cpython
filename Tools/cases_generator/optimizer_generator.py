@@ -17,13 +17,13 @@ from generators_common import (
     DEFAULT_INPUT,
     ROOT,
     write_header,
-    emit_tokens,
-    replace_sync_sp,
+    Emitter,
+    TokenIterator,
 )
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
-from stack import Stack, StackError
+from stack import Local, Stack, StackError, Storage
 
 DEFAULT_OUTPUT = ROOT / "Python/optimizer_cases.c.h"
 DEFAULT_ABSTRACT_INPUT = (ROOT / "Python/optimizer_bytecodes.c").absolute().as_posix()
@@ -46,7 +46,7 @@ def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
     variables = {"unused"}
     if not skip_inputs:
         for var in reversed(uop.stack.inputs):
-            if var.name not in variables:
+            if var.used and var.name not in variables:
                 variables.add(var.name)
                 if var.condition:
                     out.emit(f"{type_name(var)}{var.name} = NULL;\n")
@@ -66,7 +66,7 @@ def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
 def decref_inputs(
     out: CWriter,
     tkn: Token,
-    tkn_iter: Iterator[Token],
+    tkn_iter: TokenIterator,
     uop: Uop,
     stack: Stack,
     inst: Instruction | None,
@@ -77,17 +77,40 @@ def decref_inputs(
     out.emit_at("", tkn)
 
 
-def emit_default(out: CWriter, uop: Uop) -> None:
-    for i, var in enumerate(uop.stack.outputs):
+def emit_default(out: CWriter, uop: Uop, stack: Stack) -> None:
+    for var in reversed(uop.stack.inputs):
+        stack.pop(var)
+    top_offset = stack.top_offset.copy()
+    for var in uop.stack.outputs:
+        if var.is_array() and not var.peek and not var.name == "unused":
+            c_offset = top_offset.to_c()
+            out.emit(f"{var.name} = &stack_pointer[{c_offset}];\n")
+        top_offset.push(var)
+    for var in uop.stack.outputs:
+        local = Local.undefined(var)
+        stack.push(local)
         if var.name != "unused" and not var.peek:
+            local.defined = True
             if var.is_array():
-                out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-                out.emit(f"{var.name}[_i] = sym_new_not_null(ctx);\n")
-                out.emit("}\n")
+                if var.size == "1":
+                    out.emit(f"{var.name}[0] = sym_new_not_null(ctx);\n")
+                else:
+                    out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
+                    out.emit(f"{var.name}[_i] = sym_new_not_null(ctx);\n")
+                    out.emit("}\n")
             elif var.name == "null":
                 out.emit(f"{var.name} = sym_new_null(ctx);\n")
             else:
                 out.emit(f"{var.name} = sym_new_not_null(ctx);\n")
+
+
+class OptimizerEmitter(Emitter):
+
+    def emit_save(self, storage: Storage) -> None:
+        storage.flush(self.out)
+
+    def emit_reload(self, storage: Storage) -> None:
+        pass
 
 
 def write_uop(
@@ -98,24 +121,19 @@ def write_uop(
     debug: bool,
     skip_inputs: bool,
 ) -> None:
+    locals: dict[str, Local] = {}
+    prototype = override if override else uop
     try:
-        prototype = override if override else uop
-        is_override = override is not None
         out.start_line()
-        for var in reversed(prototype.stack.inputs):
-            res = stack.pop(var, extract_bits=True)
-            if not skip_inputs:
-                out.emit(res)
-        if not prototype.properties.stores_sp:
-            for i, var in enumerate(prototype.stack.outputs):
-                res = stack.push(var)
-                if not var.peek or is_override:
-                    out.emit(res)
+        if override:
+            code_list, storage = Storage.for_uop(stack, prototype, extract_bits=False)
+            for code in code_list:
+                out.emit(code)
         if debug:
             args = []
-            for var in prototype.stack.inputs:
-                if not var.peek or is_override:
-                    args.append(var.name)
+            for input in prototype.stack.inputs:
+                if not input.peek or override:
+                    args.append(input.name)
             out.emit(f'DEBUG_PRINTF({", ".join(args)});\n')
         if override:
             for cache in uop.caches:
@@ -127,22 +145,19 @@ def write_uop(
                         cast = f"uint{cache.size*16}_t"
                     out.emit(f"{type}{cache.name} = ({cast})this_instr->operand;\n")
         if override:
-            replacement_funcs = {
-                "DECREF_INPUTS": decref_inputs,
-                "SYNC_SP": replace_sync_sp,
-            }
-            emit_tokens(out, override, stack, None, replacement_funcs)
+            emitter = OptimizerEmitter(out)
+            # No reference management of inputs needed.
+            for var in storage.inputs:  # type: ignore[possibly-undefined]
+                var.defined = False
+            storage = emitter.emit_tokens(override, storage, None)
+            out.start_line()
+            storage.flush(out, cast_type="_Py_UopsSymbol *", extract_bits=False)
         else:
-            emit_default(out, uop)
-
-        if prototype.properties.stores_sp:
-            for i, var in enumerate(prototype.stack.outputs):
-                if not var.peek or is_override:
-                    out.emit(stack.push(var))
-        out.start_line()
-        stack.flush(out, cast_type="_Py_UopsSymbol *", extract_bits=True)
+            emit_default(out, uop, stack)
+            out.start_line()
+            stack.flush(out, cast_type="_Py_UopsSymbol *", extract_bits=False)
     except StackError as ex:
-        raise analysis_error(ex.args[0], uop.body[0])
+        raise analysis_error(ex.args[0], prototype.body[0]) # from None
 
 
 SKIPS = ("_EXTENDED_ARG",)
@@ -160,8 +175,9 @@ def generate_abstract_interpreter(
     out.emit("\n")
     base_uop_names = set([uop.name for uop in base.uops.values()])
     for abstract_uop_name in abstract.uops:
-        assert abstract_uop_name in base_uop_names,\
-            f"All abstract uops should override base uops, but {abstract_uop_name} is not."
+        assert (
+            abstract_uop_name in base_uop_names
+        ), f"All abstract uops should override base uops, but {abstract_uop_name} is not."
 
     for uop in base.uops.values():
         override: Uop | None = None
@@ -191,7 +207,7 @@ def generate_abstract_interpreter(
 
 
 def generate_tier2_abstract_from_files(
-    filenames: list[str], outfilename: str, debug: bool=False
+    filenames: list[str], outfilename: str, debug: bool = False
 ) -> None:
     assert len(filenames) == 2, "Need a base file and an abstract cases file."
     base = analyze_files([filenames[0]])
@@ -210,7 +226,7 @@ arg_parser.add_argument(
 )
 
 
-arg_parser.add_argument("input", nargs='*', help="Abstract interpreter definition file")
+arg_parser.add_argument("input", nargs="*", help="Abstract interpreter definition file")
 
 arg_parser.add_argument(
     "base", nargs="*", help="The base instruction definition file(s)"

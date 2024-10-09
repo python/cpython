@@ -3166,6 +3166,17 @@ sock_setsockopt(PySocketSockObject *s, PyObject *args)
     /* setsockopt(level, opt, flag) */
     if (PyArg_ParseTuple(args, "iii:setsockopt",
                          &level, &optname, &flag)) {
+#ifdef MS_WINDOWS
+        if (optname == SIO_TCP_SET_ACK_FREQUENCY) {
+            int dummy;
+            res = WSAIoctl(s->sock_fd, SIO_TCP_SET_ACK_FREQUENCY, &flag,
+                           sizeof(flag), NULL, 0, &dummy, NULL, NULL);
+            if (res >= 0) {
+                s->quickack = flag;
+            }
+            goto done;
+        }
+#endif
         res = setsockopt(s->sock_fd, level, optname,
                          (char*)&flag, sizeof flag);
         goto done;
@@ -3250,6 +3261,11 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
             if (res < 0)
                 return s->errorhandler();
             return PyLong_FromUnsignedLong(vflag);
+        }
+#endif
+#ifdef MS_WINDOWS
+        if (optname == SIO_TCP_SET_ACK_FREQUENCY) {
+            return PyLong_FromLong(s->quickack);
         }
 #endif
         flagsize = sizeof flag;
@@ -3405,6 +3421,18 @@ sock_connect_impl(PySocketSockObject *s, void* Py_UNUSED(data))
     return 1;
 }
 
+/* Common functionality for socket.connect and socket.connect_ex.
+ *
+ * If *raise* is set:
+ * - On success, return 0.
+ * - On any failure, return -1 with an exception set.
+ * If *raise* is zero:
+ * - On success, return 0.
+ * - On connect() failure, return errno (without an exception set)
+ * - On other error, return -1 with an exception set.
+ *
+ *   Note that -1 is a valid errno value on some systems.
+ */
 static int
 internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
                  int raise)
@@ -3489,8 +3517,10 @@ sock_connect(PySocketSockObject *s, PyObject *addro)
     }
 
     res = internal_connect(s, SAS2SA(&addrbuf), addrlen, 1);
-    if (res < 0)
+    if (res < 0) {
+        assert(PyErr_Occurred());
         return NULL;
+    }
 
     Py_RETURN_NONE;
 }
@@ -3520,8 +3550,9 @@ sock_connect_ex(PySocketSockObject *s, PyObject *addro)
     }
 
     res = internal_connect(s, SAS2SA(&addrbuf), addrlen, 0);
-    if (res < 0)
+    if (res == -1 && PyErr_Occurred()) {
         return NULL;
+    }
 
     return PyLong_FromLong((long) res);
 }
@@ -5316,6 +5347,9 @@ sock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         ((PySocketSockObject *)new)->sock_fd = INVALID_SOCKET;
         ((PySocketSockObject *)new)->sock_timeout = _PyTime_FromSeconds(-1);
         ((PySocketSockObject *)new)->errorhandler = &set_error;
+#ifdef MS_WINDOWS
+        ((PySocketSockObject *)new)->quickack = 0;
+#endif
     }
     return new;
 }
@@ -8615,6 +8649,9 @@ socket_exec(PyObject *m)
 #endif
 #ifdef  TCP_CONNECTION_INFO
     ADD_INT_MACRO(m, TCP_CONNECTION_INFO);
+#endif
+#ifdef  SIO_TCP_SET_ACK_FREQUENCY
+#define TCP_QUICKACK SIO_TCP_SET_ACK_FREQUENCY
 #endif
 #ifdef  TCP_QUICKACK
     ADD_INT_MACRO(m, TCP_QUICKACK);

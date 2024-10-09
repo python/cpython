@@ -200,12 +200,10 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 void
 _PyList_DebugMallocStats(FILE *out)
 {
-#ifdef WITH_FREELISTS
     _PyDebugAllocatorStats(out,
                            "free PyListObject",
                             _Py_FREELIST_SIZE(lists),
                            sizeof(PyListObject));
-#endif
 }
 
 PyObject *
@@ -3142,7 +3140,7 @@ PyList_AsTuple(PyObject *v)
 }
 
 PyObject *
-_PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n)
+_PyList_FromStackRefSteal(const _PyStackRef *src, Py_ssize_t n)
 {
     if (n == 0) {
         return PyList_New(0);
@@ -3151,13 +3149,15 @@ _PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n)
     PyListObject *list = (PyListObject *)PyList_New(n);
     if (list == NULL) {
         for (Py_ssize_t i = 0; i < n; i++) {
-            Py_DECREF(src[i]);
+            PyStackRef_CLOSE(src[i]);
         }
         return NULL;
     }
 
     PyObject **dst = list->ob_item;
-    memcpy(dst, src, n * sizeof(PyObject *));
+    for (Py_ssize_t i = 0; i < n; i++) {
+        dst[i] = PyStackRef_AsPyObjectSteal(src[i]);
+    }
 
     return (PyObject *)list;
 }

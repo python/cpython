@@ -3,6 +3,7 @@
 import sys
 import unittest
 import unittest.mock
+from ast import literal_eval
 from test import support
 from test.support import import_helper
 from test.support import os_helper
@@ -82,46 +83,19 @@ BYTES_CAPATH = os.fsencode(CAPATH)
 CAFILE_NEURONIO = data_file("capath", "4e1295a3.0")
 CAFILE_CACERT = data_file("capath", "5ed36f99.0")
 
-CERTFILE_INFO = {
-    'issuer': ((('countryName', 'XY'),),
-               (('localityName', 'Castle Anthrax'),),
-               (('organizationName', 'Python Software Foundation'),),
-               (('commonName', 'localhost'),)),
-    'notAfter': 'Jan 24 04:21:36 2043 GMT',
-    'notBefore': 'Nov 25 04:21:36 2023 GMT',
-    'serialNumber': '53E14833F7546C29256DD0F034F776C5E983004C',
-    'subject': ((('countryName', 'XY'),),
-             (('localityName', 'Castle Anthrax'),),
-             (('organizationName', 'Python Software Foundation'),),
-             (('commonName', 'localhost'),)),
-    'subjectAltName': (('DNS', 'localhost'),),
-    'version': 3
-}
+with open(data_file('keycert.pem.reference')) as file:
+    CERTFILE_INFO = literal_eval(file.read())
 
 # empty CRL
 CRLFILE = data_file("revocation.crl")
 
 # Two keys and certs signed by the same CA (for SNI tests)
 SIGNED_CERTFILE = data_file("keycert3.pem")
+SINGED_CERTFILE_ONLY = data_file("cert3.pem")
 SIGNED_CERTFILE_HOSTNAME = 'localhost'
 
-SIGNED_CERTFILE_INFO = {
-    'OCSP': ('http://testca.pythontest.net/testca/ocsp/',),
-    'caIssuers': ('http://testca.pythontest.net/testca/pycacert.cer',),
-    'crlDistributionPoints': ('http://testca.pythontest.net/testca/revocation.crl',),
-    'issuer': ((('countryName', 'XY'),),
-            (('organizationName', 'Python Software Foundation CA'),),
-            (('commonName', 'our-ca-server'),)),
-    'notAfter': 'Oct 28 14:23:16 2037 GMT',
-    'notBefore': 'Aug 29 14:23:16 2018 GMT',
-    'serialNumber': 'CB2D80995A69525C',
-    'subject': ((('countryName', 'XY'),),
-             (('localityName', 'Castle Anthrax'),),
-             (('organizationName', 'Python Software Foundation'),),
-             (('commonName', 'localhost'),)),
-    'subjectAltName': (('DNS', 'localhost'),),
-    'version': 3
-}
+with open(data_file('keycert3.pem.reference')) as file:
+    SIGNED_CERTFILE_INFO = literal_eval(file.read())
 
 SIGNED_CERTFILE2 = data_file("keycert4.pem")
 SIGNED_CERTFILE2_HOSTNAME = 'fakehostname'
@@ -409,6 +383,7 @@ class BasicSocketTests(unittest.TestCase):
         ssl.RAND_add(bytearray(b"this is a random bytearray object"), 75.0)
 
     def test_parse_cert(self):
+        self.maxDiff = None
         # note that this uses an 'unofficial' function in _ssl.c,
         # provided solely for this test, to exercise the certificate
         # parsing code
@@ -4719,6 +4694,40 @@ class TestPostHandshakeAuth(unittest.TestCase):
                 self.assertEqual(
                     ssl.PEM_cert_to_DER_cert(pem), der
                 )
+
+    def test_certificate_chain(self):
+        client_context, server_context, hostname = testing_context(
+            server_chain=False
+        )
+        server = ThreadedEchoServer(context=server_context, chatty=False)
+
+        with open(SIGNING_CA) as f:
+            expected_ca_cert = ssl.PEM_cert_to_DER_cert(f.read())
+
+        with open(SINGED_CERTFILE_ONLY) as f:
+            expected_ee_cert = ssl.PEM_cert_to_DER_cert(f.read())
+
+        with server:
+            with client_context.wrap_socket(
+                socket.socket(),
+                server_hostname=hostname
+            ) as s:
+                s.connect((HOST, server.port))
+                vc = s.get_verified_chain()
+                self.assertEqual(len(vc), 2)
+
+                ee, ca = vc
+                self.assertIsInstance(ee, bytes)
+                self.assertIsInstance(ca, bytes)
+                self.assertEqual(expected_ca_cert, ca)
+                self.assertEqual(expected_ee_cert, ee)
+
+                uvc = s.get_unverified_chain()
+                self.assertEqual(len(uvc), 1)
+                self.assertIsInstance(uvc[0], bytes)
+
+                self.assertEqual(ee, uvc[0])
+                self.assertNotEqual(ee, ca)
 
     def test_internal_chain_server(self):
         client_context, server_context, hostname = testing_context()

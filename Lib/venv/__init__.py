@@ -303,8 +303,11 @@ class EnvBuilder:
             copier(context.executable, path)
             if not os.path.islink(path):
                 os.chmod(path, 0o755)
-            for suffix in ('python', 'python3',
-                           f'python3.{sys.version_info[1]}'):
+
+            suffixes = ['python', 'python3', f'python3.{sys.version_info[1]}']
+            if sys.version_info[:2] == (3, 14):
+                suffixes.append('python𝜋')
+            for suffix in suffixes:
                 path = os.path.join(binpath, suffix)
                 if not os.path.exists(path):
                     # Issue 18807: make copies if
@@ -393,7 +396,7 @@ class EnvBuilder:
                         os.symlink(src, dest)
                         to_unlink.append(dest)
                     except OSError:
-                        logger.warning('Unable to symlink %r to %r', src, dst)
+                        logger.warning('Unable to symlink %r to %r', src, dest)
                         do_copies = True
                         for f in to_unlink:
                             try:
