@@ -209,8 +209,8 @@ class _LocaleTests(unittest.TestCase):
                 with self.subTest(locale=loc):
                     alt_digits = nl_langinfo(locale.ALT_DIGITS)
                     self.assertIsInstance(alt_digits, tuple)
-                    if count and not alt_digits and sys.platform == 'darwin':
-                        self.skipTest(f'ALT_DIGITS is not set for locale {loc!r} on macOS')
+                    if count and not alt_digits and support.is_apple:
+                        self.skipTest(f'ALT_DIGITS is not set for locale {loc!r} on Apple platforms')
                     self.assertEqual(len(alt_digits), count)
                     for i in samples:
                         self.assertEqual(alt_digits[i], samples[i])
