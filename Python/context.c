@@ -1154,48 +1154,31 @@ token_tp_dealloc(PyContextToken *self)
 static PyObject *
 token_tp_repr(PyContextToken *self)
 {
-    _PyUnicodeWriter writer;
-
-    _PyUnicodeWriter_Init(&writer);
-
-    if (_PyUnicodeWriter_WriteASCIIString(&writer, "<Token", 6) < 0) {
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        return NULL;
+    }
+    if (PyUnicodeWriter_WriteUTF8(writer, "<Token", 6) < 0) {
         goto error;
     }
-
     if (self->tok_used) {
-        if (_PyUnicodeWriter_WriteASCIIString(&writer, " used", 5) < 0) {
+        if (PyUnicodeWriter_WriteUTF8(writer, " used", 5) < 0) {
             goto error;
         }
     }
-
-    if (_PyUnicodeWriter_WriteASCIIString(&writer, " var=", 5) < 0) {
+    if (PyUnicodeWriter_WriteUTF8(writer, " var=", 5) < 0) {
         goto error;
     }
-
-    PyObject *var = PyObject_Repr((PyObject *)self->tok_var);
-    if (var == NULL) {
+    if (PyUnicodeWriter_WriteRepr(writer, (PyObject *)self->tok_var) < 0) {
         goto error;
     }
-    if (_PyUnicodeWriter_WriteStr(&writer, var) < 0) {
-        Py_DECREF(var);
+    if (PyUnicodeWriter_Format(writer, " at %p>", self) < 0) {
         goto error;
     }
-    Py_DECREF(var);
-
-    PyObject *addr = PyUnicode_FromFormat(" at %p>", self);
-    if (addr == NULL) {
-        goto error;
-    }
-    if (_PyUnicodeWriter_WriteStr(&writer, addr) < 0) {
-        Py_DECREF(addr);
-        goto error;
-    }
-    Py_DECREF(addr);
-
-    return _PyUnicodeWriter_Finish(&writer);
+    return PyUnicodeWriter_Finish(writer);
 
 error:
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     return NULL;
 }
 

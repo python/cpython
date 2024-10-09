@@ -13455,6 +13455,9 @@ PyUnicodeWriter_Create(Py_ssize_t length)
 
 void PyUnicodeWriter_Discard(PyUnicodeWriter *writer)
 {
+    if (writer == NULL) {
+        return;
+    }
     _PyUnicodeWriter_Dealloc((_PyUnicodeWriter*)writer);
     PyMem_Free(writer);
 }
@@ -13632,6 +13635,10 @@ _PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str)
 int
 PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
 {
+    if (Py_TYPE(obj) == &PyLong_Type) {
+        return _PyLong_FormatWriter((_PyUnicodeWriter*)writer, obj, 10, 0);
+    }
+
     PyObject *str = PyObject_Str(obj);
     if (str == NULL) {
         return -1;
@@ -13646,6 +13653,10 @@ PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
 int
 PyUnicodeWriter_WriteRepr(PyUnicodeWriter *writer, PyObject *obj)
 {
+    if (Py_TYPE(obj) == &PyLong_Type) {
+        return _PyLong_FormatWriter((_PyUnicodeWriter*)writer, obj, 10, 0);
+    }
+
     PyObject *repr = PyObject_Repr(obj);
     if (repr == NULL) {
         return -1;
