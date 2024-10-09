@@ -66,7 +66,7 @@ class ContextTest(unittest.TestCase):
         tok = c.set(1)
         self.assertRegex(repr(tok),
                          r"^<Token var=<ContextVar name='a' "
-                         r"at 0x[0-9a-f]+> at 0x[0-9a-f]+>$")
+                         r"at 0x[0-9a-fA-F]+> at 0x[0-9a-fA-F]+>$")
 
     def test_context_subclassing_1(self):
         with self.assertRaisesRegex(TypeError, 'not an acceptable base type'):
