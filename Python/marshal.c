@@ -1226,7 +1226,7 @@ r_object(RFILE *p)
             v = PyUnicode_DecodeUTF8(buffer, n, "surrogatepass");
         }
         else {
-            v = PyUnicode_New(0, 0);
+            v = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
         }
         if (v == NULL)
             break;

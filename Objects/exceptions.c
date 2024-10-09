@@ -154,7 +154,7 @@ BaseException_str(PyBaseExceptionObject *self)
 {
     switch (PyTuple_GET_SIZE(self->args)) {
     case 0:
-        return PyUnicode_FromString("");
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     case 1:
         return PyObject_Str(PyTuple_GET_ITEM(self->args, 0));
     default:
@@ -3001,7 +3001,7 @@ UnicodeEncodeError_str(PyObject *self)
 
     if (exc->object == NULL) {
         /* Not properly initialized. */
-        return PyUnicode_FromString("");
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
 
     /* Get reason and encoding as strings, which they might not be if
@@ -3123,7 +3123,7 @@ UnicodeDecodeError_str(PyObject *self)
 
     if (exc->object == NULL) {
         /* Not properly initialized. */
-        return PyUnicode_FromString("");
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
 
     /* Get reason and encoding as strings, which they might not be if
@@ -3224,7 +3224,7 @@ UnicodeTranslateError_str(PyObject *self)
 
     if (exc->object == NULL) {
         /* Not properly initialized. */
-        return PyUnicode_FromString("");
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
 
     /* Get reason as a string, which it might not be if it's been
