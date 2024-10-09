@@ -62,7 +62,7 @@ typedef union _PyStackRef {
 #ifdef Py_GIL_DISABLED
 
 static const _PyStackRef PyStackRef_NULL = { .bits = Py_TAG_DEFERRED};
-#define PyStackRef_IsNull(stackref) ((stackref).bits == Py_TAG_DEFERRED)
+#define PyStackRef_IsNull(stackref) ((stackref).bits == PyStackRef_NULL.bits)
 #define PyStackRef_True ((_PyStackRef){.bits = ((uintptr_t)&_Py_TrueStruct) | Py_TAG_DEFERRED })
 #define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) | Py_TAG_DEFERRED })
 #define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) | Py_TAG_DEFERRED })
