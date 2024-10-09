@@ -497,25 +497,27 @@ def register_readline():
         PYTHON_BASIC_REPL = False
 
     import atexit
-    if PYTHON_BASIC_REPL:
-        CAN_USE_PYREPL = False
-    else:
-        from _pyrepl.main import CAN_USE_PYREPL
+    try:
         try:
-            try:
-                import readline
+            import readline
+            real_readline = True
+        except ImportError:
+            import _pyrepl.readline as readline
+            real_readline = False
+        import rlcompleter  # noqa: F401
+        if PYTHON_BASIC_REPL:
+            CAN_USE_PYREPL = False
+        else:
+            from _pyrepl.main import CAN_USE_PYREPL
+            if real_readline:
                 import _pyrepl.unix_console
                 console_error = _pyrepl.unix_console._error
-                real_readline = True
-            except ImportError:
-                import _pyrepl.readline as readline
+            else:
                 import _pyrepl.windows_console
                 console_error = [_pyrepl.windows_console._error]
-                real_readline = False
-            import rlcompleter  # noqa: F401
 
-        except ImportError:
-            return
+    except ImportError:
+        return
 
     # Reading the initialization (config) file may not be enough to set a
     # completion key, so we set one first and then read the file.
