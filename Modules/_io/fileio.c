@@ -462,7 +462,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
        out the old fd (see: internal_close) should always nullify
        self->stat_atopen before this point. Just in case though, to prevent
        leaks, only allocate a new one if required. */
-    if (self->stat_atopen != NULL) {
+    if (self->stat_atopen == NULL) {
         self->stat_atopen = PyMem_New(struct _Py_stat_struct, 1);
         if (self->stat_atopen == NULL) {
             PyErr_NoMemory();
