@@ -172,116 +172,20 @@ If the return type is omitted, then a ``void *`` is returned in C and an
 Grammar expressions
 -------------------
 
-### ``# comment``
+| Expression      | Description and Example                                                                                               |
+|-----------------|-----------------------------------------------------------------------------------------------------------------------|
+| `# comment`     | Python-style comments.                                                                                                |
+| `e1 e2`         | Match `e1`, then match `e2`. <br> `rule_name: first_rule second_rule`                                                 |
+| `e1 \| e2`      | Match `e1` or `e2`. <br> `rule_name[return_type]:`<br>`    \| first_alt`<br>`    \| second_alt`                       |
+| `( e )`         | Grouping operator: Match `e`. <br> `rule_name: (e)`<br>`rule_name: (e1 e2)*`                                          |
+| `[ e ]` or `e?` | Optionally match `e`. <br> `rule_name: [e]`<br>`rule_name: e (',' e)* [',']`                                          |
+| `e*`            | Match zero or more occurrences of `e`. <br> `rule_name: (e1 e2)*`                                                     |
+| `e+`            | Match one or more occurrences of `e`. <br> `rule_name: (e1 e2)+`                                                      |
+| `s.e+`          | Match one or more occurrences of `e`, separated by `s`. <br> `rule_name: ','.e+`                                      |
+| `&e`            | Positive lookahead: Succeed if `e` can be parsed, without consuming input.                                            |
+| `!e`            | Negative lookahead: Fail if `e` can be parsed, without consuming input. <br> `primary: atom !'.' !'(' !'['`           |
+| `~`             | Commit to the current alternative, even if it fails to parse (cut). <br> `rule_name: '(' ~ some_rule ')' \| some_alt` |
 
-    Python-style comments.
-
-### ``e1 e2``
-
-    Match ``e1``, then match ``e2``.
-
-```
-    rule_name: first_rule second_rule
-```
-
-### ``e1 | e2``
-
-    Match ``e1`` or ``e2``.
-
-    The first alternative can also appear on the line after the rule name
-    for formatting purposes. In that case, a \| must be used before the
-    first alternative, like so:
-
-```
-    rule_name[return_type]:
-       | first_alt
-       | second_alt
-```
-
-### ``( e )`` (grouping operator)
-
-    Match ``e``.
-
-```
-    rule_name: (e)
-```
-
-    A slightly more complex and useful example includes using the grouping
-    operator together with the repeat operator:
-
-```
-    rule_name: (e1 e2)*
-```
-
-### ``[ e ] or e?``
-
-    Optionally match ``e``.
-
-```
-    rule_name: [e]
-```
-
-    A more useful example includes defining that a trailing comma is
-    optional:
-
-```
-    rule_name: e (',' e)* [',']
-```
-
-### ``e*``
-
-    Match zero or more occurrences of ``e``.
-
-```
-    rule_name: (e1 e2)*
-```
-
-### ``e+``
-
-    Match one or more occurrences of ``e``.
-
-```
-    rule_name: (e1 e2)+
-```
-
-### ``s.e+``
-
-    Match one or more occurrences of ``e``, separated by ``s``. The generated
-    parse tree does not include the separator. This is otherwise identical to
-    ``(e (s e)*)``.
-
-```
-    rule_name: ','.e+
-```
-
-### ``&e`` (positive lookahead)
-
-    Succeed if ``e`` can be parsed, without consuming any input.
-
-### ``!e`` (negative lookahead)
-
-    Fail if ``e`` can be parsed, without consuming any input.
-
-    An example taken from the Python grammar specifies that a primary
-    consists of an atom, which is not followed by a ``.`` or a ``(`` or a
-    ``[``:
-
-```
-    primary: atom !'.' !'(' !'['
-```
-
-### ``~``
-
-    Commit to the current alternative, even if it fails to parse (this is called
-    the "cut").
-
-```
-    rule_name: '(' ~ some_rule ')' | some_alt
-```
-
-    In this example, if a left parenthesis is parsed, then the other
-    alternative won’t be considered, even if some_rule or ``)`` fail to be
-    parsed.
 
 Left recursion
 --------------
