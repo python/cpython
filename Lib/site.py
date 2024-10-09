@@ -521,7 +521,7 @@ def register_readline():
 
     # Reading the initialization (config) file may not be enough to set a
     # completion key, so we set one first and then read the file.
-    if hasattr(readline, "backend") and readline.backend == 'editline':
+    if getattr(readline, "backend", None) == 'editline':
         readline.parse_and_bind('bind ^I rl_complete')
     else:
         readline.parse_and_bind('tab: complete')
