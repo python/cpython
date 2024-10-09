@@ -1309,14 +1309,15 @@ Deprecated
   may be removed in a future version of Python. Use the single-arg versions
   of these functions instead. (Contributed by Ofey Chan in :gh:`89874`.)
 
-* :exc:`DeprecationWarning` is now raised when ``__package__`` on a
-  module differs from ``__spec__.parent`` (previously it was
-  :exc:`ImportWarning`).
+* :exc:`DeprecationWarning` is now raised when :attr:`~module.__package__` on a
+  module differs from
+  :attr:`__spec__.parent <importlib.machinery.ModuleSpec.parent>` (previously
+  it was :exc:`ImportWarning`).
   (Contributed by Brett Cannon in :gh:`65961`.)
 
-* Setting ``__package__`` or ``__cached__`` on a module is deprecated,
-  and will cease to be set or taken into consideration by the import system in Python 3.14.
-  (Contributed by Brett Cannon in :gh:`65961`.)
+* Setting :attr:`~module.__package__` or :attr:`~module.__cached__` on a
+  module is deprecated, and will cease to be set or taken into consideration by
+  the import system in Python 3.14. (Contributed by Brett Cannon in :gh:`65961`.)
 
 * The bitwise inversion operator (``~``) on bool is deprecated. It will throw an
   error in Python 3.16. Use ``not`` for logical negation of bools instead.

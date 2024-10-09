@@ -4237,8 +4237,8 @@ by :mod:`asyncio` to AIX platform only.
 .. nonce: 4dzB80
 .. section: Library
 
-Set :attr:`doctest.DocTest.lineno` to ``None`` when object does not have
-:attr:`__doc__`.
+Set :attr:`doctest.DocTest.lineno` to ``None`` when an object does not have
+:attr:`~definition.__doc__`.
 
 ..
 
