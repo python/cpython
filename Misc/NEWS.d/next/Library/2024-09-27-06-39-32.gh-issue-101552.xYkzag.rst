@@ -1,0 +1,4 @@
+Add an *annoation_format* parameter to :func:`inspect.signature`. Add an
+*quote_annotation_strings* parameter to :meth:`inspect.Signature.format`. Use the
+new functionality to improve the display of annotations in signatures in
+:mod:`pydoc`. Patch by Jelle Zijlstra.
