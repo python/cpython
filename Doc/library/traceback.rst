@@ -30,14 +30,14 @@ which are assigned to the :attr:`~BaseException.__traceback__` field of
    Module :mod:`pdb`
       Interactive source code debugger for Python programs.
 
-In the following, we first introduce a number of module-level functions that
-offer basic functionality. They are sufficient for many use cases, including
-interactive inspection of exceptions and tracebacks. We then describe the
-:class:`TracebackException` class and its two helper classes
-:class:`StackSummary` and :class:`FrameSummary`. They offer both more
-flexibility in the output generated and the ability to store the information
-necessary for later formatting without holding references to actual exception
-and traceback objects.
+The module's API can be divided into two parts:
+* Module-level functions offering basic functionality, which are useful for interactive
+  inspection of exceptions and tracebacks.
+* :class:`TracebackException` class and its helper classes
+  :class:`StackSummary` and :class:`FrameSummary`. These offer both more
+  flexibility in the output generated and the ability to store the information
+  necessary for later formatting without holding references to actual exception
+  and traceback objects.
 
 
 Module-Level Functions
@@ -255,9 +255,9 @@ Module-Level Functions
 
 .. versionadded:: 3.5
 
-:class:`TracebackException` objects are created from actual exceptions to
+:class:`!TracebackException` objects are created from actual exceptions to
 capture data for later printing.  They offer a more lightweight method of
-storing this information because they don't hold references to traceback
+storing this information by avoiding holding references to traceback
 and frame objects.  In addition, they expose more options to configure the
 output compared to the module-level functions described above.
 
