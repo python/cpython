@@ -478,9 +478,9 @@ class StrptimeTests(unittest.TestCase):
     # * Year is not included: ha_NG.
     # * Use non-Gregorian calendar: lo_LA, thai, th_TH.
     #
-    # BUG: Generates invalid regexp for br_FR, csb_PL, Arabic.
+    # BUG: Generates invalid regexp for br_FR, csb_PL.
     # BUG: Generates regexp that does not match the current date and time
-    # for fa_IR, gez_ER, gez_ET, lzh_TW, my_MM, or_IN, shn_MM, yo_NG.
+    # for az_IR, brx_IN, fa_IR, gez_ER, gez_ET, lzh_TW, my_MM, or_IN, shn_MM, yo_NG.
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
                       'he_IL', 'eu_ES', 'ar_AE', 'mfe_MU')
     def test_date_time_locale(self):
@@ -502,7 +502,8 @@ class StrptimeTests(unittest.TestCase):
 
     # NB: Dates before 1969 do not roundtrip on some locales:
     # bo_CN, bo_IN, dz_BT, eu_ES, eu_FR.
-    @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', 'he_IL')
+    @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
+                      'he_IL', 'ar_AE', 'mfe_MU')
     def test_date_time_locale2(self):
         # Test %c directive
         self.roundtrip('%c', slice(0, 6), (1900, 1, 1, 0, 0, 0, 0, 1, 0))
@@ -531,7 +532,8 @@ class StrptimeTests(unittest.TestCase):
         support.is_emscripten or support.is_wasi,
         "musl libc issue on Emscripten, bpo-46390"
     )
-    @run_with_locales('LC_TIME', 'en_US', 'fr_FR', 'de_DE', 'ja_JP')
+    @run_with_locales('LC_TIME', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
+                      'eu_ES', 'ar_AE')
     def test_date_locale2(self):
         # Test %x directive
         self.roundtrip('%x', slice(0, 3), (1900, 1, 1, 0, 0, 0, 0, 1, 0))
