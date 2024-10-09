@@ -462,10 +462,15 @@ remove_unusable_flags(PyObject *m)
 
 #ifdef MS_WINDOWS
 typedef SSIZE_T         ssize_t;
+# undef CMSG_LEN
 #define CMSG_LEN        WSA_CMSG_LEN
+# undef CMSG_DATA
 #define CMSG_DATA       WSA_CMSG_DATA
+# undef CMSG_SPACE
 #define CMSG_SPACE      WSA_CMSG_SPACE
+# undef CMSG_FIRSTHDR
 #define CMSG_FIRSTHDR   WSA_CMSG_FIRSTHDR
+# undef CMSG_NXTHDR
 #define CMSG_NXTHDR     WSA_CMSG_NXTHDR
 #define SOCKETCLOSE     closesocket
 #endif
@@ -2822,7 +2827,7 @@ cmsg_min_space(struct msghdr *msg, struct cmsghdr *cmsgh, size_t space)
    msg->msg_controllen are valid. */
 static int
 #ifdef MS_WINDOWS
-get_cmsg_data_space(WSAMSG * msg, WSACMSGHDR *cmsgh, size_t* space)
+get_cmsg_data_space(WSAMSG *msg, WSACMSGHDR *cmsgh, size_t *space)
 #else
 get_cmsg_data_space(struct msghdr *msg, struct cmsghdr *cmsgh, size_t *space)
 #endif /* !MS_WINDOWS */
@@ -2833,7 +2838,7 @@ get_cmsg_data_space(struct msghdr *msg, struct cmsghdr *cmsgh, size_t *space)
     if ((data_ptr = (char *)CMSG_DATA(cmsgh)) == NULL)
         return 0;
 #ifdef MS_WINDOWS
-    data_offset = data_ptr - (char*)msg->Control.buf;
+    data_offset = data_ptr - (char *)msg->Control.buf;
     if (data_offset > msg->Control.len)
         return 0;
     *space = msg->Control.len - data_offset;
@@ -2854,7 +2859,11 @@ get_cmsg_data_space(struct msghdr *msg, struct cmsghdr *cmsgh, size_t *space)
    valid, set *data_len to the length contained in the buffer and
    return 1. */
 static int
+#ifdef MS_WINDOWS
+get_cmsg_data_len(WSAMSG *msg, WSACMSGHDR *cmsgh, size_t *data_len)
+#else
 get_cmsg_data_len(struct msghdr *msg, struct cmsghdr *cmsgh, size_t *data_len)
+#endif /* !MS_WINDOWS */
 {
     size_t space, cmsg_data_len;
 
