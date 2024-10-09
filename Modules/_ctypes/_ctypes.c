@@ -5707,10 +5707,12 @@ wstring_at(const wchar_t *ptr, int size)
 static int
 _ctypes_add_types(PyObject *mod)
 {
-#define TYPE_READY(TYPE) \
-    if (PyType_Ready(TYPE) < 0) { \
-        return -1; \
-    }
+#define TYPE_READY(TYPE) do {       \
+    if (PyType_Ready(TYPE) < 0) {   \
+        return -1;                  \
+    }                               \
+} while (0)
+
 #define CREATE_TYPE(TP, SPEC, META, BASE) do {                      \
     PyObject *type = PyType_FromMetaclass(META, mod, SPEC,          \
                                           (PyObject *)BASE);        \

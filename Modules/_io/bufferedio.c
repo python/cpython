@@ -332,29 +332,33 @@ _enter_buffered_busy(buffered *self)
         PyThread_release_lock(self->lock); \
     } while(0);
 
-#define CHECK_INITIALIZED(self) \
-    if (self->ok <= 0) { \
-        if (self->detached) { \
-            PyErr_SetString(PyExc_ValueError, \
-                 "raw stream has been detached"); \
-        } else { \
-            PyErr_SetString(PyExc_ValueError, \
-                "I/O operation on uninitialized object"); \
-        } \
-        return NULL; \
-    }
+#define CHECK_INITIALIZED(self)                                 \
+    do {                                                        \
+        if (self->ok <= 0) {                                    \
+            if (self->detached) {                               \
+                    PyErr_SetString(PyExc_ValueError,           \
+                         "raw stream has been detached");       \
+            } else {                                            \
+                PyErr_SetString(PyExc_ValueError,               \
+                    "I/O operation on uninitialized object");   \
+            }                                                   \
+            return NULL;                                        \
+       }                                                        \
+    } while (0)
 
-#define CHECK_INITIALIZED_INT(self) \
-    if (self->ok <= 0) { \
-        if (self->detached) { \
-            PyErr_SetString(PyExc_ValueError, \
-                 "raw stream has been detached"); \
-        } else { \
-            PyErr_SetString(PyExc_ValueError, \
-                "I/O operation on uninitialized object"); \
-        } \
-        return -1; \
-    }
+#define CHECK_INITIALIZED_INT(self)                             \
+    do {                                                        \
+        if (self->ok <= 0) {                                    \
+            if (self->detached) {                               \
+                PyErr_SetString(PyExc_ValueError,               \
+                     "raw stream has been detached");           \
+            } else {                                            \
+                PyErr_SetString(PyExc_ValueError,               \
+                    "I/O operation on uninitialized object");   \
+            }                                                   \
+            return -1;                                          \
+        }                                                       \
+    } while (0)
 
 #define IS_CLOSED(self) \
     (!self->buffer || \
@@ -362,11 +366,15 @@ _enter_buffered_busy(buffered *self)
      ? _PyFileIO_closed(self->raw) \
      : buffered_closed(self)))
 
-#define CHECK_CLOSED(self, error_msg) \
-    if (IS_CLOSED(self) && (Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t) == 0)) { \
-        PyErr_SetString(PyExc_ValueError, error_msg); \
-        return NULL; \
-    } \
+#define CHECK_CLOSED(self, error_msg)                                           \
+    do {                                                                        \
+        if (IS_CLOSED(self)                                                     \
+            && (Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t) == 0))  \
+        {                                                                       \
+            PyErr_SetString(PyExc_ValueError, error_msg);                       \
+            return NULL;                                                        \
+        }                                                                       \
+    } while (0)
 
 #define VALID_READ_BUFFER(self) \
     (self->readable && self->read_end != -1)
@@ -498,7 +506,7 @@ static PyObject *
 _io__Buffered_simple_flush_impl(buffered *self)
 /*[clinic end generated code: output=29ebb3820db1bdfd input=5248cb84a65f80bd]*/
 {
-    CHECK_INITIALIZED(self)
+    CHECK_INITIALIZED(self);
     return PyObject_CallMethodNoArgs(self->raw, &_Py_ID(flush));
 }
 
@@ -507,7 +515,7 @@ buffered_closed(buffered *self)
 {
     int closed;
     PyObject *res;
-    CHECK_INITIALIZED_INT(self)
+    CHECK_INITIALIZED_INT(self);
     res = PyObject_GetAttr(self->raw, &_Py_ID(closed));
     if (res == NULL)
         return -1;
@@ -526,7 +534,7 @@ static PyObject *
 _io__Buffered_closed_get_impl(buffered *self)
 /*[clinic end generated code: output=f08ce57290703a1a input=18eddefdfe4a3d2f]*/
 {
-    CHECK_INITIALIZED(self)
+    CHECK_INITIALIZED(self);
     return PyObject_GetAttr(self->raw, &_Py_ID(closed));
 }
 
@@ -542,7 +550,7 @@ _io__Buffered_close_impl(buffered *self)
     PyObject *res = NULL;
     int r;
 
-    CHECK_INITIALIZED(self)
+    CHECK_INITIALIZED(self);
     if (!ENTER_BUFFERED(self)) {
         return NULL;
     }
@@ -603,7 +611,7 @@ _io__Buffered_detach_impl(buffered *self)
 /*[clinic end generated code: output=dd0fc057b8b779f7 input=d4ef1828a678be37]*/
 {
     PyObject *raw;
-    CHECK_INITIALIZED(self)
+    CHECK_INITIALIZED(self);
     if (_PyFile_Flush((PyObject *)self) < 0) {
         return NULL;
     }
@@ -625,7 +633,7 @@ static PyObject *
 _io__Buffered_seekable_impl(buffered *self)
 /*[clinic end generated code: output=90172abb5ceb6e8f input=e3a4fc1d297b2fd3]*/
 {
-    CHECK_INITIALIZED(self)
+    CHECK_INITIALIZED(self);
     return PyObject_CallMethodNoArgs(self->raw, &_Py_ID(seekable));
 }
 
@@ -638,7 +646,7 @@ static PyObject *
 _io__Buffered_readable_impl(buffered *self)
 /*[clinic end generated code: output=92afa07661ecb698 input=abe54107d59bca9a]*/
 {
-    CHECK_INITIALIZED(self)
+    CHECK_INITIALIZED(self);
     return PyObject_CallMethodNoArgs(self->raw, &_Py_ID(readable));
 }
 
@@ -651,7 +659,7 @@ static PyObject *
 _io__Buffered_writable_impl(buffered *self)
 /*[clinic end generated code: output=4e3eee8d6f9d8552 input=45eb76bf6a10e6f7]*/
 {
-    CHECK_INITIALIZED(self)
+    CHECK_INITIALIZED(self);
     return PyObject_CallMethodNoArgs(self->raw, &_Py_ID(writable));
 }
 
@@ -666,7 +674,7 @@ static PyObject *
 _io__Buffered_name_get_impl(buffered *self)
 /*[clinic end generated code: output=d2adf384051d3d10 input=6b84a0e6126f545e]*/
 {
-    CHECK_INITIALIZED(self)
+    CHECK_INITIALIZED(self);
     return PyObject_GetAttr(self->raw, &_Py_ID(name));
 }
 
@@ -680,7 +688,7 @@ static PyObject *
 _io__Buffered_mode_get_impl(buffered *self)
 /*[clinic end generated code: output=0feb205748892fa4 input=0762d5e28542fd8c]*/
 {
-    CHECK_INITIALIZED(self)
+    CHECK_INITIALIZED(self);
     return PyObject_GetAttr(self->raw, &_Py_ID(mode));
 }
 
@@ -695,7 +703,7 @@ static PyObject *
 _io__Buffered_fileno_impl(buffered *self)
 /*[clinic end generated code: output=b717648d58a95ee3 input=1c4fead777bae20a]*/
 {
-    CHECK_INITIALIZED(self)
+    CHECK_INITIALIZED(self);
     return PyObject_CallMethodNoArgs(self->raw, &_Py_ID(fileno));
 }
 
@@ -708,7 +716,7 @@ static PyObject *
 _io__Buffered_isatty_impl(buffered *self)
 /*[clinic end generated code: output=c20e55caae67baea input=e53d182d7e490e3a]*/
 {
-    CHECK_INITIALIZED(self)
+    CHECK_INITIALIZED(self);
     return PyObject_CallMethodNoArgs(self->raw, &_Py_ID(isatty));
 }
 
@@ -922,8 +930,8 @@ _io__Buffered_flush_impl(buffered *self)
 {
     PyObject *res;
 
-    CHECK_INITIALIZED(self)
-    CHECK_CLOSED(self, "flush of closed file")
+    CHECK_INITIALIZED(self);
+    CHECK_CLOSED(self, "flush of closed file");
 
     if (!ENTER_BUFFERED(self))
         return NULL;
@@ -947,8 +955,8 @@ _io__Buffered_peek_impl(buffered *self, Py_ssize_t size)
 {
     PyObject *res = NULL;
 
-    CHECK_INITIALIZED(self)
-    CHECK_CLOSED(self, "peek of closed file")
+    CHECK_INITIALIZED(self);
+    CHECK_CLOSED(self, "peek of closed file");
 
     if (!ENTER_BUFFERED(self))
         return NULL;
@@ -979,14 +987,14 @@ _io__Buffered_read_impl(buffered *self, Py_ssize_t n)
 {
     PyObject *res;
 
-    CHECK_INITIALIZED(self)
+    CHECK_INITIALIZED(self);
     if (n < -1) {
         PyErr_SetString(PyExc_ValueError,
                         "read length must be non-negative or -1");
         return NULL;
     }
 
-    CHECK_CLOSED(self, "read of closed file")
+    CHECK_CLOSED(self, "read of closed file");
 
     if (n == -1) {
         /* The number of bytes is unspecified, read until the end of stream */
@@ -1022,12 +1030,12 @@ _io__Buffered_read1_impl(buffered *self, Py_ssize_t n)
     Py_ssize_t have, r;
     PyObject *res = NULL;
 
-    CHECK_INITIALIZED(self)
+    CHECK_INITIALIZED(self);
     if (n < 0) {
         n = self->buffer_size;
     }
 
-    CHECK_CLOSED(self, "read of closed file")
+    CHECK_CLOSED(self, "read of closed file");
 
     if (n == 0)
         return PyBytes_FromStringAndSize(NULL, 0);
@@ -1079,8 +1087,8 @@ _buffered_readinto_generic(buffered *self, Py_buffer *buffer, char readinto1)
     Py_ssize_t n, written = 0, remaining;
     PyObject *res = NULL;
 
-    CHECK_INITIALIZED(self)
-    CHECK_CLOSED(self, "readinto of closed file")
+    CHECK_INITIALIZED(self);
+    CHECK_CLOSED(self, "readinto of closed file");
 
     n = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
     if (n > 0) {
@@ -1192,7 +1200,7 @@ _buffered_readline(buffered *self, Py_ssize_t limit)
     Py_ssize_t n;
     const char *start, *s, *end;
 
-    CHECK_CLOSED(self, "readline of closed file")
+    CHECK_CLOSED(self, "readline of closed file");
 
     /* First, try to find a line in the buffer. This can run unlocked because
        the calls to the C API are simple enough that they can't trigger
@@ -1303,7 +1311,7 @@ static PyObject *
 _io__Buffered_readline_impl(buffered *self, Py_ssize_t size)
 /*[clinic end generated code: output=24dd2aa6e33be83c input=e81ca5abd4280776]*/
 {
-    CHECK_INITIALIZED(self)
+    CHECK_INITIALIZED(self);
     return _buffered_readline(self, size);
 }
 
@@ -1319,7 +1327,7 @@ _io__Buffered_tell_impl(buffered *self)
 {
     Py_off_t pos;
 
-    CHECK_INITIALIZED(self)
+    CHECK_INITIALIZED(self);
     pos = _buffered_raw_tell(self);
     if (pos == -1)
         return NULL;
@@ -1347,7 +1355,7 @@ _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence)
     Py_off_t target, n;
     PyObject *res = NULL;
 
-    CHECK_INITIALIZED(self)
+    CHECK_INITIALIZED(self);
 
     /* Do some error checking instead of trusting OS 'seek()'
     ** error detection, just in case.
@@ -1365,7 +1373,7 @@ _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence)
         return NULL;
     }
 
-    CHECK_CLOSED(self, "seek of closed file")
+    CHECK_CLOSED(self, "seek of closed file");
 
     _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     if (_PyIOBase_check_seekable(state, self->raw, Py_True) == NULL) {
@@ -1449,8 +1457,8 @@ _io__Buffered_truncate_impl(buffered *self, PyTypeObject *cls, PyObject *pos)
 {
     PyObject *res = NULL;
 
-    CHECK_INITIALIZED(self)
-    CHECK_CLOSED(self, "truncate of closed file")
+    CHECK_INITIALIZED(self);
+    CHECK_CLOSED(self, "truncate of closed file");
     if (!self->writable) {
         _PyIO_State *state = get_io_state_by_cls(cls);
         return bufferediobase_unsupported(state, "truncate");
@@ -2073,7 +2081,7 @@ _io_BufferedWriter_write_impl(buffered *self, Py_buffer *buffer)
     Py_ssize_t written, avail, remaining;
     Py_off_t offset;
 
-    CHECK_INITIALIZED(self)
+    CHECK_INITIALIZED(self);
 
     if (!ENTER_BUFFERED(self))
         return NULL;

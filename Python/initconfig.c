@@ -1564,14 +1564,18 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
         return;
     }
 
-#define COPY_FLAG(ATTR, VALUE) \
-        if (config->ATTR == -1) { \
-            config->ATTR = VALUE; \
-        }
-#define COPY_NOT_FLAG(ATTR, VALUE) \
-        if (config->ATTR == -1) { \
-            config->ATTR = !(VALUE); \
-        }
+#define COPY_FLAG(ATTR, VALUE)      \
+    do {                            \
+        if (config->ATTR == -1) {   \
+            config->ATTR = VALUE;   \
+        }                           \
+    } while (0)
+#define COPY_NOT_FLAG(ATTR, VALUE)      \
+    do {                                \
+        if (config->ATTR == -1) {       \
+            config->ATTR = !(VALUE);    \
+        }                               \
+    } while (0)
 
     COPY_FLAG(isolated, Py_IsolatedFlag);
     COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
@@ -1604,14 +1608,18 @@ config_set_global_vars(const PyConfig *config)
 {
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-#define COPY_FLAG(ATTR, VAR) \
-        if (config->ATTR != -1) { \
-            VAR = config->ATTR; \
-        }
-#define COPY_NOT_FLAG(ATTR, VAR) \
-        if (config->ATTR != -1) { \
-            VAR = !config->ATTR; \
-        }
+#define COPY_FLAG(ATTR, VAR)        \
+    do {                            \
+        if (config->ATTR != -1) {   \
+            VAR = config->ATTR;     \
+        }                           \
+    } while (0)
+#define COPY_NOT_FLAG(ATTR, VAR)    \
+    do {                            \
+        if (config->ATTR != -1) {   \
+            VAR = !config->ATTR;    \
+        }                           \
+    } while (0)
 
     COPY_FLAG(isolated, Py_IsolatedFlag);
     COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);

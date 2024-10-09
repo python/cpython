@@ -54,15 +54,19 @@ check_exports(bytesio *self)
     return 0;
 }
 
-#define CHECK_CLOSED(self)                                  \
-    if (check_closed(self)) {                               \
-        return NULL;                                        \
-    }
+#define CHECK_CLOSED(self)          \
+    do {                            \
+        if (check_closed(self)) {   \
+            return NULL;            \
+        }                           \
+    } while (0)
 
-#define CHECK_EXPORTS(self) \
-    if (check_exports(self)) { \
-        return NULL; \
-    }
+#define CHECK_EXPORTS(self)         \
+    do {                            \
+        if (check_exports(self)) {  \
+            return NULL;            \
+        }                           \
+    } while (0)
 
 #define SHARED_BUF(self) (Py_REFCNT((self)->buf) > 1)
 

@@ -389,11 +389,13 @@ Py_ssize_t NUM_BITS(Py_ssize_t bitsize) {
 /* This macro CHANGES the first parameter IN PLACE. For proper sign handling,
    we must first shift left, then right.
 */
-#define GET_BITFIELD(v, size)                                           \
-    if (NUM_BITS(size)) {                                               \
-        v <<= (sizeof(v)*8 - LOW_BIT(size) - NUM_BITS(size));           \
-        v >>= (sizeof(v)*8 - NUM_BITS(size));                           \
-    }
+#define GET_BITFIELD(v, size)                                       \
+    do {                                                            \
+        if (NUM_BITS(size)) {                                       \
+            v <<= (sizeof(v)*8 - LOW_BIT(size) - NUM_BITS(size));   \
+            v >>= (sizeof(v)*8 - NUM_BITS(size));                   \
+        }                                                           \
+    } while (0)
 
 /* This macro RETURNS the first parameter with the bit field CHANGED. */
 #define SET(type, x, v, size)                                                 \
