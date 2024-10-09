@@ -5323,7 +5323,7 @@ found:
         base = get_base_by_token_recursive(lookup_tp_bases(type), token);
         if (base != NULL) {
             // Copying the given type can cause a slowdown,
-            // unlike this overwriting.
+            // unlike overwriting below.
             type = base;
             goto found;
         }
