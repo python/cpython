@@ -200,17 +200,21 @@ class _LocaleTests(unittest.TestCase):
         # Test nl_langinfo(ALT_DIGITS)
         tested = False
         for loc, (count, samples) in known_alt_digits.items():
-            try:
-                setlocale(LC_TIME, loc)
-            except Error:
-                continue
             with self.subTest(locale=loc):
-                alt_digits = nl_langinfo(locale.ALT_DIGITS)
-                self.assertIsInstance(alt_digits, tuple)
-                self.assertEqual(len(alt_digits), count)
-                for i in samples:
-                    self.assertEqual(alt_digits[i], samples[i])
-                tested = True
+                try:
+                    setlocale(LC_TIME, loc)
+                except Error:
+                    self.skipTest(f'no locale {loc!r}')
+                    continue
+                with self.subTest(locale=loc):
+                    alt_digits = nl_langinfo(locale.ALT_DIGITS)
+                    self.assertIsInstance(alt_digits, tuple)
+                    if count and not alt_digits and sys.platform == 'darwin':
+                        self.skipTest(f'ALT_DIGITS is not set for locale {loc!r} on macOS')
+                    self.assertEqual(len(alt_digits), count)
+                    for i in samples:
+                        self.assertEqual(alt_digits[i], samples[i])
+                    tested = True
         if not tested:
             self.skipTest('no suitable locales')
 
