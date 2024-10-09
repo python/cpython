@@ -115,7 +115,7 @@ fileio_dealloc_warn(PyObject *op, PyObject *source)
 
 /* Returns 0 on success, -1 with exception set on failure. */
 static int
-internal_close(fileio *self, bool clear_stat)
+internal_close(fileio *self)
 {
     int err = 0;
     int save_errno = 0;
@@ -130,12 +130,9 @@ internal_close(fileio *self, bool clear_stat)
             save_errno = errno;
         _Py_END_SUPPRESS_IPH
         Py_END_ALLOW_THREADS
-
     }
-    if (clear_stat && self->stat_atopen != NULL) {
-        PyMem_Free(self->stat_atopen);
-        self->stat_atopen = NULL;
-    }
+    PyMem_Free(self->stat_atopen);
+    self->stat_atopen = NULL;
     if (err < 0) {
         errno = save_errno;
         PyErr_SetFromErrno(PyExc_OSError);
@@ -183,7 +180,7 @@ _io_FileIO_close_impl(fileio *self, PyTypeObject *cls)
             PyErr_Clear();
         }
     }
-    rc = internal_close(self, true);
+    rc = internal_close(self);
     if (res == NULL) {
         _PyErr_ChainExceptions1(exc);
     }
@@ -272,10 +269,8 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 #endif
     if (self->fd >= 0) {
         if (self->closefd) {
-            /* Have to close the existing file first.
-
-               This leaves the stat so we can reuse the memory. */
-            if (internal_close(self, false) < 0) {
+            /* Have to close the existing file first. */
+            if (internal_close(self) < 0) {
                 return -1;
             }
         }
@@ -463,15 +458,18 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 #endif
     }
 
-    /* Reuse stat_atopen memory if possible. */
-    if (self->stat_atopen == NULL) {
+    /* FileIO.__init__ may be called on an already initialized object. Closing
+       out the old fd (see: internal_close) should always nullify
+       self->stat_atopen before this point. Just in case though, to prevent
+       leaks, only allocate a new one if required. */
+    assert(self->stat_atopen == NULL)
+    if (self->stat_atopen != NULL) {
         self->stat_atopen = PyMem_New(struct _Py_stat_struct, 1);
         if (self->stat_atopen == NULL) {
             PyErr_NoMemory();
             goto error;
         }
     }
-
     Py_BEGIN_ALLOW_THREADS
     fstat_result = _Py_fstat_noraise(self->fd, self->stat_atopen);
     Py_END_ALLOW_THREADS
@@ -531,13 +529,11 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
         self->fd = -1;
     if (self->fd >= 0) {
         PyObject *exc = PyErr_GetRaisedException();
-        internal_close(self, true);
+        internal_close(self);
         _PyErr_ChainExceptions1(exc);
     }
-    if (self->stat_atopen != NULL) {
-        PyMem_Free(self->stat_atopen);
-        self->stat_atopen = NULL;
-    }
+    PyMem_Free(self->stat_atopen);
+    self->stat_atopen = NULL;
 
  done:
 #ifdef MS_WINDOWS
