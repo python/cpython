@@ -5283,8 +5283,9 @@ get_base_by_token_recursive(PyObject *bases, void *token)
             res = base;
             break;
         }
-        res = get_base_by_token_recursive(lookup_tp_bases(base), token);
-        if (res != NULL) {
+        base = get_base_by_token_recursive(lookup_tp_bases(base), token);
+        if (base != NULL) {
+            res = base;
             break;
         }
     }
@@ -5323,7 +5324,7 @@ found:
         base = get_base_by_token_recursive(lookup_tp_bases(type), token);
         if (base != NULL) {
             // Copying the given type can cause a slowdown,
-            // unlike overwriting below.
+            // unlike the overwrite below.
             type = base;
             goto found;
         }
@@ -5337,10 +5338,8 @@ found:
     Py_ssize_t n = PyTuple_GET_SIZE(mro);
     for (Py_ssize_t i = 1; i < n; i++) {
         PyTypeObject *base = (PyTypeObject *)PyTuple_GET_ITEM(mro, i);
-        if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
-            continue;
-        }
-        if (((PyHeapTypeObject*)base)->ht_token == token) {
+        if (_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)
+            && ((PyHeapTypeObject*)base)->ht_token == token) {
             type = base;
             goto found;
         }
