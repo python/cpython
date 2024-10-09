@@ -1825,17 +1825,18 @@ init_timezone(PyObject *m)
     julyzone_t = -get_gmtoff(t, &p);
     julyname[9] = '\0';
 
+    int janzone = (int)janzone_t;
+    int julyzone = (int)julyzone_t;
+
     /* Sanity check, don't check for the validity of timezones.
        In practice, it should be more in range -12 hours .. +14 hours. */
 #define MAX_TIMEZONE (48 * 3600)
-    if (janzone_t < -MAX_TIMEZONE || janzone_t > MAX_TIMEZONE
-        || julyzone_t < -MAX_TIMEZONE || julyzone_t > MAX_TIMEZONE)
+    if (janzone < -MAX_TIMEZONE || janzone > MAX_TIMEZONE
+        || julyzone < -MAX_TIMEZONE || julyzone > MAX_TIMEZONE)
     {
         PyErr_SetString(PyExc_RuntimeError, "invalid GMT offset");
         return -1;
     }
-    int janzone = (int)janzone_t;
-    int julyzone = (int)julyzone_t;
 
     PyObject *tzname_obj;
     if (janzone < julyzone) {
