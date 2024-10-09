@@ -235,15 +235,10 @@ static void
 float_dealloc(PyObject *op)
 {
     assert(PyFloat_Check(op));
-#ifdef WITH_FREELISTS
-    if (PyFloat_CheckExact(op)) {
+    if (PyFloat_CheckExact(op))
         _PyFloat_ExactDealloc(op);
-    }
     else
-#endif
-    {
         Py_TYPE(op)->tp_free(op);
-    }
 }
 
 double
@@ -411,19 +406,16 @@ float_richcompare(PyObject *v, PyObject *w, int op)
         }
         /* The signs are the same. */
         /* Convert w to a double if it fits.  In particular, 0 fits. */
-        uint64_t nbits64 = _PyLong_NumBits(w);
-        if (nbits64 > (unsigned int)DBL_MAX_EXP) {
+        int64_t nbits64 = _PyLong_NumBits(w);
+        assert(nbits64 >= 0);
+        assert(!PyErr_Occurred());
+        if (nbits64 > DBL_MAX_EXP) {
             /* This Python integer is larger than any finite C double.
              * Replace with little doubles
              * that give the same outcome -- w is so large that
              * its magnitude must exceed the magnitude of any
              * finite float.
              */
-            if (nbits64 == (uint64_t)-1 && PyErr_Occurred()) {
-                /* This Python integer is so large that uint64_t isn't
-                 * big enough to hold the # of bits. */
-                PyErr_Clear();
-            }
             i = (double)vsign;
             assert(wsign != 0);
             j = wsign * 2.0;
@@ -1975,12 +1967,10 @@ _PyFloat_FiniType(PyInterpreterState *interp)
 void
 _PyFloat_DebugMallocStats(FILE *out)
 {
-#ifdef WITH_FREELISTS
     _PyDebugAllocatorStats(out,
                            "free PyFloatObject",
                            _Py_FREELIST_SIZE(floats),
                            sizeof(PyFloatObject));
-#endif
 }
 
 

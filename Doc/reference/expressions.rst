@@ -104,8 +104,8 @@ identifier is used but only the following private identifiers are mangled:
 - Any name used as the name of a variable that is assigned or read or any
   name of an attribute being accessed.
 
-  The ``__name__`` attribute of nested functions, classes, and type aliases
-  is however not mangled.
+  The :attr:`~definition.__name__` attribute of nested functions, classes, and
+  type aliases is however not mangled.
 
 - The name of imported modules, e.g., ``__spam`` in ``import __spam``.
   If the module is part of a package (i.e., its name contains a dot),
@@ -284,7 +284,7 @@ A list display is a possibly empty series of expressions enclosed in square
 brackets:
 
 .. productionlist:: python-grammar
-   list_display: "[" [`starred_list` | `comprehension`] "]"
+   list_display: "[" [`flexible_expression_list` | `comprehension`] "]"
 
 A list display yields a new list object, the contents being specified by either
 a list of expressions or a comprehension.  When a comma-separated list of
@@ -309,7 +309,7 @@ A set display is denoted by curly braces and distinguishable from dictionary
 displays by the lack of colons separating keys and values:
 
 .. productionlist:: python-grammar
-   set_display: "{" (`starred_list` | `comprehension`) "}"
+   set_display: "{" (`flexible_expression_list` | `comprehension`) "}"
 
 A set display yields a new mutable set object, the contents being specified by
 either a sequence of expressions or a comprehension.  When a comma-separated
@@ -454,7 +454,7 @@ Yield expressions
 .. productionlist:: python-grammar
    yield_atom: "(" `yield_expression` ")"
    yield_from: "yield" "from" `expression`
-   yield_expression: "yield" `expression_list` | `yield_from`
+   yield_expression: "yield" `yield_list` | `yield_from`
 
 The yield expression is used when defining a :term:`generator` function
 or an :term:`asynchronous generator` function and
@@ -485,9 +485,9 @@ When a generator function is called, it returns an iterator known as a
 generator.  That generator then controls the execution of the generator
 function.  The execution starts when one of the generator's methods is called.
 At that time, the execution proceeds to the first yield expression, where it is
-suspended again, returning the value of :token:`~python-grammar:expression_list`
+suspended again, returning the value of :token:`~python-grammar:yield_list`
 to the generator's caller,
-or ``None`` if :token:`~python-grammar:expression_list` is omitted.
+or ``None`` if :token:`~python-grammar:yield_list` is omitted.
 By suspended, we mean that all local state is
 retained, including the current bindings of local variables, the instruction
 pointer, the internal evaluation stack, and the state of any exception handling.
@@ -576,7 +576,7 @@ is already executing raises a :exc:`ValueError` exception.
    :meth:`~generator.__next__` method, the current yield expression always
    evaluates to :const:`None`.  The execution then continues to the next yield
    expression, where the generator is suspended again, and the value of the
-   :token:`~python-grammar:expression_list` is returned to :meth:`__next__`'s
+   :token:`~python-grammar:yield_list` is returned to :meth:`__next__`'s
    caller.  If the generator exits without yielding another value, a
    :exc:`StopIteration` exception is raised.
 
@@ -695,7 +695,7 @@ how a generator object would be used in a :keyword:`for` statement.
 Calling one of the asynchronous generator's methods returns an :term:`awaitable`
 object, and the execution starts when this object is awaited on. At that time,
 the execution proceeds to the first yield expression, where it is suspended
-again, returning the value of :token:`~python-grammar:expression_list` to the
+again, returning the value of :token:`~python-grammar:yield_list` to the
 awaiting coroutine. As with a generator, suspension means that all local state
 is retained, including the current bindings of local variables, the instruction
 pointer, the internal evaluation stack, and the state of any exception handling.
@@ -759,7 +759,7 @@ which are used to control the execution of a generator function.
    asynchronous generator function is resumed with an :meth:`~agen.__anext__`
    method, the current yield expression always evaluates to :const:`None` in the
    returned awaitable, which when run will continue to the next yield
-   expression. The value of the :token:`~python-grammar:expression_list` of the
+   expression. The value of the :token:`~python-grammar:yield_list` of the
    yield expression is the value of the :exc:`StopIteration` exception raised by
    the completing coroutine.  If the asynchronous generator exits without
    yielding another value, the awaitable instead raises a
@@ -892,7 +892,7 @@ will generally select an element from the container. The subscription of a
 :ref:`GenericAlias <types-genericalias>` object.
 
 .. productionlist:: python-grammar
-   subscription: `primary` "[" `expression_list` "]"
+   subscription: `primary` "[" `flexible_expression_list` "]"
 
 When an object is subscripted, the interpreter will evaluate the primary and
 the expression list.
@@ -904,9 +904,13 @@ primary is subscripted, the evaluated result of the expression list will be
 passed to one of these methods. For more details on when ``__class_getitem__``
 is called instead of ``__getitem__``, see :ref:`classgetitem-versus-getitem`.
 
-If the expression list contains at least one comma, it will evaluate to a
-:class:`tuple` containing the items of the expression list. Otherwise, the
-expression list will evaluate to the value of the list's sole member.
+If the expression list contains at least one comma, or if any of the expressions
+are starred, the expression list will evaluate to a :class:`tuple` containing
+the items of the expression list. Otherwise, the expression list will evaluate
+to the value of the list's sole member.
+
+.. versionchanged:: 3.11
+   Expressions in an expression list may be starred. See :pep:`646`.
 
 For built-in objects, there are two types of objects that support subscription
 via :meth:`~object.__getitem__`:
@@ -1803,6 +1807,9 @@ returns a boolean value regardless of the type of its argument
    single: assignment expression
    single: walrus operator
    single: named expression
+   pair: assignment; expression
+
+.. _assignment-expressions:
 
 Assignment expressions
 ======================
@@ -1905,10 +1912,12 @@ Expression lists
    single: , (comma); expression list
 
 .. productionlist:: python-grammar
+   starred_expression: ["*"] `or_expr`
+   flexible_expression: `assignment_expression` | `starred_expression`
+   flexible_expression_list: `flexible_expression` ("," `flexible_expression`)* [","]
+   starred_expression_list: `starred_expression` ("," `starred_expression`)* [","]
    expression_list: `expression` ("," `expression`)* [","]
-   starred_list: `starred_item` ("," `starred_item`)* [","]
-   starred_expression: `expression` | (`starred_item` ",")* [`starred_item`]
-   starred_item: `assignment_expression` | "*" `or_expr`
+   yield_list: `expression_list` | `starred_expression` "," [`starred_expression_list`]
 
 .. index:: pair: object; tuple
 
@@ -1928,6 +1937,9 @@ the unpacking.
 
 .. versionadded:: 3.5
    Iterable unpacking in expression lists, originally proposed by :pep:`448`.
+
+.. versionadded:: 3.11
+   Any item in an expression list may be starred. See :pep:`646`.
 
 .. index:: pair: trailing; comma
 
