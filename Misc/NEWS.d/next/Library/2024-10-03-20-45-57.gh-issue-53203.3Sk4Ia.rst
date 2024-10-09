@@ -1,5 +1,5 @@
 Fix :func:`time.strptime` for ``%c`` and ``%x`` format in many locales:
 Arabic, Bislama, Breton, Kashubian, Chuvash, Estonian, French, Irish,
-Gurajati, Manx Gaelic, Hebrew, Hindi, Chhattisgarhi, Haitian Kreyol,
+Ge'ez, Gurajati, Manx Gaelic, Hebrew, Hindi, Chhattisgarhi, Haitian Kreyol,
 Japanese, Kannada, Korean, Marathi, Malay, Norwegian, Nynorsk, Punjabi,
 Rajasthani, Tok Pisin, Yoruba, Yue Chinese, Yau/Nungon and Chinese.
