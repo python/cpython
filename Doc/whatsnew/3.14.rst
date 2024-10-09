@@ -1,6 +1,6 @@
 
 ****************************
-  What's New In Python 3.14
+  What's new in Python 3.14
 ****************************
 
 :Editor: TBD
@@ -56,7 +56,7 @@ For full details, see the :ref:`changelog <changelog>`.
    so it's worth checking back even after reading earlier versions.
 
 
-Summary -- Release highlights
+Summary -- release highlights
 =============================
 
 .. This section singles out the most important changes in Python 3.14.
@@ -67,12 +67,12 @@ Summary -- Release highlights
 
 
 
-New Features
+New features
 ============
 
 .. _whatsnew-314-pep649:
 
-PEP 649: Deferred Evaluation of Annotations
+PEP 649: deferred evaluation of annotations
 -------------------------------------------
 
 The :term:`annotations <annotation>` on functions, classes, and modules are no
@@ -155,7 +155,7 @@ In Python 3.14, the behavior of code using ``from __future__ import annotations`
 is unchanged.
 
 
-Improved Error Messages
+Improved error messages
 -----------------------
 
 * When unpacking assignment fails due to incorrect number of variables, the
@@ -172,7 +172,7 @@ Improved Error Messages
      ValueError: too many values to unpack (expected 3, got 4)
 
 
-Other Language Changes
+Other language changes
 ======================
 
 * Incorrect usage of :keyword:`await` and asynchronous comprehensions
@@ -191,7 +191,7 @@ Other Language Changes
   (Contributed by Serhiy Storchaka in :gh:`84978`.)
 
 
-New Modules
+New modules
 ===========
 
 * :mod:`annotationlib`: For introspecting :term:`annotations <annotation>`.
@@ -199,7 +199,7 @@ New Modules
   (Contributed by Jelle Zijlstra in :gh:`119180`.)
 
 
-Improved Modules
+Improved modules
 ================
 
 argparse
@@ -623,14 +623,14 @@ Changes in the Python API
   (Contributed by Serhiy Storchaka in :gh:`69998`.)
 
 
-Build Changes
+Build changes
 =============
 
 
-C API Changes
+C API changes
 =============
 
-New Features
+New features
 ------------
 
 * Add :c:func:`PyLong_GetSign` function to get the sign of :class:`int` objects.
