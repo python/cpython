@@ -1600,7 +1600,7 @@ object.
 
    Discard the internal Unicode buffer and destroy the writer instance.
 
-   Do nothing if *writer* is ``NULL``.
+   If *writer* is ``NULL``, no operation is performed.
 
 .. c:function:: int PyUnicodeWriter_WriteChar(PyUnicodeWriter *writer, Py_UCS4 ch)
 
