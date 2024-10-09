@@ -695,10 +695,13 @@ PyDoc_STRVAR(builtin_hash__doc__,
 "hash($module, obj, /)\n"
 "--\n"
 "\n"
-"Return the hash value for the given object.\n"
+"Return the integer hash value for the given object within this process.\n"
 "\n"
 "Two objects that compare equal must also have the same hash value, but the\n"
-"reverse is not necessarily true.");
+"reverse is not necessarily true.  Hash values may vary between Python\n"
+"processes.\n"
+"\n"
+"This hash value is used internally by Python dict and set hash tables.");
 
 #define BUILTIN_HASH_METHODDEF    \
     {"hash", (PyCFunction)builtin_hash, METH_O, builtin_hash__doc__},
@@ -1228,4 +1231,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=435d3f286a863c49 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8743b427edc26536 input=a9049054013a1b77]*/
