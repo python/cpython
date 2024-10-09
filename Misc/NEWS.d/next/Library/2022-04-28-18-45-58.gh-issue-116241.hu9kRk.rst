@@ -1,1 +1,1 @@
-Add support of multiple inheritance with :class:`typing.NamedTuple`.
+Add support for arbitrary multiple inheritance with :class:`typing.NamedTuple`.

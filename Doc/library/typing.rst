@@ -2389,8 +2389,8 @@ types.
       disallowed in Python 3.15. To create a NamedTuple class with 0 fields,
       use ``class NT(NamedTuple): pass`` or ``NT = NamedTuple("NT", [])``.
 
-   .. versionchanged:: 3.13
-      Added support of multiple inheritence.
+   .. versionchanged:: 3.14
+      Added support for arbitrary multiple inheritance.
 
 .. class:: NewType(name, tp)
 

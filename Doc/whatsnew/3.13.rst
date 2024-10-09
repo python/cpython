@@ -1397,9 +1397,6 @@ typing
   (Contributed by Mehdi Drissi in :gh:`89547`.)
 
 
-* Add support of multiple inheritance with :class:`~typing.NamedTuple`.
-  (Contributed by Serhiy Storchaka in :gh:`116241`.)
-
 unicodedata
 -----------
 
