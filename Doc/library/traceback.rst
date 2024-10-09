@@ -680,30 +680,30 @@ Examples of Using :class:`TracebackException`
 
 With the helper class, we have more options::
 
-   import sys
-   from traceback import TracebackException
-
-   def lumberjack():
-       bright_side_of_life()
-
-   def bright_side_of_life():
-       t = "bright", "side", "of", "life"
-       return t[5]
-
-   try:
-       lumberjack()
-   except IndexError as e:
-       exc = e
-
-   try:
-      try:
-         lumberjack()
-      except:
-         1/0
-   except Exception as e:
-       chained_exc = e
-
-   # limit works as with the module-level functions
+   >>> import sys
+   >>> from traceback import TracebackException
+   ...
+   >>> def lumberjack():
+   ...     bright_side_of_life()
+   ...
+   >>> def bright_side_of_life():
+   ...     t = "bright", "side", "of", "life"
+   ...     return t[5]
+   ...
+   >>> try:
+   ...     lumberjack()
+   ... except IndexError as e:
+   ...     exc = e
+   ...
+   >>> try:
+   ...     try:
+   ...         lumberjack()
+   ...     except:
+   ...         1/0
+   ... except Exception as e:
+   ...     chained_exc = e
+   ...
+   >>> # limit works as with the module-level functions
    >>> TracebackException.from_exception(exc, limit=-2).print()
    Traceback (most recent call last):
      File "<python-input-1>", line 6, in lumberjack
