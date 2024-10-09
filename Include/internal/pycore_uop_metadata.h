@@ -33,7 +33,15 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_FAST_6] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
     [_LOAD_FAST_7] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
     [_LOAD_FAST] = HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_PURE_FLAG,
-    [_LOAD_FAST_DEFERRED] = HAS_ARG_FLAG | HAS_LOCAL_FLAG,
+    [_LOAD_FAST_TEMP_0] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
+    [_LOAD_FAST_TEMP_1] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
+    [_LOAD_FAST_TEMP_2] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
+    [_LOAD_FAST_TEMP_3] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
+    [_LOAD_FAST_TEMP_4] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
+    [_LOAD_FAST_TEMP_5] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
+    [_LOAD_FAST_TEMP_6] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
+    [_LOAD_FAST_TEMP_7] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
+    [_LOAD_FAST_TEMP] = HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_PURE_FLAG,
     [_LOAD_FAST_AND_CLEAR] = HAS_ARG_FLAG | HAS_LOCAL_FLAG,
     [_LOAD_FAST_LOAD_FAST] = HAS_ARG_FLAG | HAS_LOCAL_FLAG,
     [_LOAD_CONST] = HAS_ARG_FLAG | HAS_CONST_FLAG | HAS_PURE_FLAG,
@@ -284,6 +292,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
 
 const uint8_t _PyUop_Replication[MAX_UOP_ID+1] = {
     [_LOAD_FAST] = 8,
+    [_LOAD_FAST_TEMP] = 8,
     [_STORE_FAST] = 8,
     [_INIT_CALL_PY_EXACT_ARGS] = 5,
 };
@@ -470,8 +479,16 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_LOAD_FAST_7] = "_LOAD_FAST_7",
     [_LOAD_FAST_AND_CLEAR] = "_LOAD_FAST_AND_CLEAR",
     [_LOAD_FAST_CHECK] = "_LOAD_FAST_CHECK",
-    [_LOAD_FAST_DEFERRED] = "_LOAD_FAST_DEFERRED",
     [_LOAD_FAST_LOAD_FAST] = "_LOAD_FAST_LOAD_FAST",
+    [_LOAD_FAST_TEMP] = "_LOAD_FAST_TEMP",
+    [_LOAD_FAST_TEMP_0] = "_LOAD_FAST_TEMP_0",
+    [_LOAD_FAST_TEMP_1] = "_LOAD_FAST_TEMP_1",
+    [_LOAD_FAST_TEMP_2] = "_LOAD_FAST_TEMP_2",
+    [_LOAD_FAST_TEMP_3] = "_LOAD_FAST_TEMP_3",
+    [_LOAD_FAST_TEMP_4] = "_LOAD_FAST_TEMP_4",
+    [_LOAD_FAST_TEMP_5] = "_LOAD_FAST_TEMP_5",
+    [_LOAD_FAST_TEMP_6] = "_LOAD_FAST_TEMP_6",
+    [_LOAD_FAST_TEMP_7] = "_LOAD_FAST_TEMP_7",
     [_LOAD_FROM_DICT_OR_DEREF] = "_LOAD_FROM_DICT_OR_DEREF",
     [_LOAD_GLOBAL] = "_LOAD_GLOBAL",
     [_LOAD_GLOBAL_BUILTINS] = "_LOAD_GLOBAL_BUILTINS",
@@ -582,7 +599,23 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _LOAD_FAST:
             return 0;
-        case _LOAD_FAST_DEFERRED:
+        case _LOAD_FAST_TEMP_0:
+            return 0;
+        case _LOAD_FAST_TEMP_1:
+            return 0;
+        case _LOAD_FAST_TEMP_2:
+            return 0;
+        case _LOAD_FAST_TEMP_3:
+            return 0;
+        case _LOAD_FAST_TEMP_4:
+            return 0;
+        case _LOAD_FAST_TEMP_5:
+            return 0;
+        case _LOAD_FAST_TEMP_6:
+            return 0;
+        case _LOAD_FAST_TEMP_7:
+            return 0;
+        case _LOAD_FAST_TEMP:
             return 0;
         case _LOAD_FAST_AND_CLEAR:
             return 0;

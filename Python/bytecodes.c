@@ -244,7 +244,7 @@ dummy_func(
             value = PyStackRef_DUP(GETLOCAL(oparg));
         }
 
-        inst(LOAD_FAST_DEFERRED, (-- value)) {
+        replicate(8) pure inst(LOAD_FAST_TEMP, (-- value)) {
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
         }

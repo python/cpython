@@ -259,7 +259,7 @@ Known values:
     Python 3.14a1 3605 (Move ENTER_EXECUTOR to opcode 255)
     Python 3.14a1 3606 (Specialize CALL_KW)
 
-    Python 3.14a1 3607 (LOAD_FAST_DEFERRED)
+    Python 3.14a1 3607 (LOAD_FAST_TEMP)
 
     Python 3.15 will start with 3650
 

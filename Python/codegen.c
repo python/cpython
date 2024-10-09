@@ -3105,7 +3105,7 @@ codegen_nameop2(compiler *c, location loc,
     case COMPILE_OP_FAST:
         switch (ctx) {
         case Load:
-            op = ref_consumed ? LOAD_FAST_DEFERRED : LOAD_FAST;
+            op = ref_consumed ? LOAD_FAST_TEMP : LOAD_FAST;
             break;
         case Store:
             op = STORE_FAST;

@@ -94,8 +94,8 @@ extern "C" {
 #define LOAD_FAST                               81
 #define LOAD_FAST_AND_CLEAR                     82
 #define LOAD_FAST_CHECK                         83
-#define LOAD_FAST_DEFERRED                      84
-#define LOAD_FAST_LOAD_FAST                     85
+#define LOAD_FAST_LOAD_FAST                     84
+#define LOAD_FAST_TEMP                          85
 #define LOAD_FROM_DICT_OR_DEREF                 86
 #define LOAD_FROM_DICT_OR_GLOBALS               87
 #define LOAD_GLOBAL                             88

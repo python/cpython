@@ -81,7 +81,7 @@ class IsolatedCodeGenTests(CodegenTestCase):
             [
                 # Function body
                 ('RESUME', 0),
-                ('LOAD_FAST', 0),
+                ('LOAD_FAST_TEMP', 0),
                 ('LOAD_CONST', 1),
                 ('BINARY_OP', 0),
                 ('RETURN_VALUE', None),

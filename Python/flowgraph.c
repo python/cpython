@@ -1994,7 +1994,7 @@ scan_block_for_locals(basicblock *b, basicblock ***sp)
                 unsafe_mask &= ~bit;
                 break;
             case LOAD_FAST:
-            case LOAD_FAST_DEFERRED:
+            case LOAD_FAST_TEMP:
                 if (unsafe_mask & bit) {
                     instr->i_opcode = LOAD_FAST_CHECK;
                 }
@@ -2046,6 +2046,7 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
                     states[arg - 64] = blocknum;
                     break;
                 case LOAD_FAST:
+                case LOAD_FAST_TEMP:
                     if (states[arg - 64] != blocknum) {
                         instr->i_opcode = LOAD_FAST_CHECK;
                     }
