@@ -261,7 +261,6 @@ _PyUnicode_InternedSize_Immortal(void)
 }
 
 static Py_hash_t unicode_hash(PyObject *);
-static int unicode_compare_eq(PyObject *, PyObject *);
 
 static Py_uhash_t
 hashtable_unicode_hash(const void *key)
@@ -275,7 +274,7 @@ hashtable_unicode_compare(const void *key1, const void *key2)
     PyObject *obj1 = (PyObject *)key1;
     PyObject *obj2 = (PyObject *)key2;
     if (obj1 != NULL && obj2 != NULL) {
-        return unicode_compare_eq(obj1, obj2);
+        return unicode_eq(obj1, obj2);
     }
     else {
         return obj1 == obj2;
@@ -10968,26 +10967,6 @@ unicode_compare(PyObject *str1, PyObject *str2)
 #undef COMPARE
 }
 
-static int
-unicode_compare_eq(PyObject *str1, PyObject *str2)
-{
-    int kind;
-    const void *data1, *data2;
-    Py_ssize_t len;
-    int cmp;
-
-    len = PyUnicode_GET_LENGTH(str1);
-    if (PyUnicode_GET_LENGTH(str2) != len)
-        return 0;
-    kind = PyUnicode_KIND(str1);
-    if (PyUnicode_KIND(str2) != kind)
-        return 0;
-    data1 = PyUnicode_DATA(str1);
-    data2 = PyUnicode_DATA(str2);
-
-    cmp = memcmp(data1, data2, len * kind);
-    return (cmp == 0);
-}
 
 int
 _PyUnicode_Equal(PyObject *str1, PyObject *str2)
@@ -10997,7 +10976,7 @@ _PyUnicode_Equal(PyObject *str1, PyObject *str2)
     if (str1 == str2) {
         return 1;
     }
-    return unicode_compare_eq(str1, str2);
+    return unicode_eq(str1, str2);
 }
 
 
@@ -11213,7 +11192,7 @@ _PyUnicode_EqualToASCIIId(PyObject *left, _Py_Identifier *right)
         return 0;
     }
 
-    return unicode_compare_eq(left, right_uni);
+    return unicode_eq(left, right_uni);
 }
 
 PyObject *
@@ -11241,7 +11220,7 @@ PyUnicode_RichCompare(PyObject *left, PyObject *right, int op)
         }
     }
     else if (op == Py_EQ || op == Py_NE) {
-        result = unicode_compare_eq(left, right);
+        result = unicode_eq(left, right);
         result ^= (op == Py_NE);
         return PyBool_FromLong(result);
     }
@@ -11249,12 +11228,6 @@ PyUnicode_RichCompare(PyObject *left, PyObject *right, int op)
         result = unicode_compare(left, right);
         Py_RETURN_RICHCOMPARE(result, 0, op);
     }
-}
-
-int
-_PyUnicode_EQ(PyObject *aa, PyObject *bb)
-{
-    return unicode_eq(aa, bb);
 }
 
 int
