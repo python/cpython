@@ -275,8 +275,9 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
             /* Have to close the existing file first.
 
                This leaves the stat so we can reuse the memory. */
-            if (internal_close(self, false) < 0)
+            if (internal_close(self, false) < 0) {
                 return -1;
+            }
         }
         else
             self->fd = -1;
