@@ -191,12 +191,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
             the_symbol = symbol if stmt is last_stmt else "exec"
             item = wrapper([stmt])
             try:
-                code = self.compile.compiler(
-                    item,
-                    filename,
-                    the_symbol,
-                    dont_inherit=True,
-                )
+                code = self.compile.compiler(item, filename, the_symbol)
             except SyntaxError as e:
                 if e.args[0] == "'await' outside function":
                     python = os.path.basename(sys.executable)
