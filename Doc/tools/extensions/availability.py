@@ -83,8 +83,9 @@ class Availability(SphinxDirective):
 
         if unknown := set(platforms).difference(KNOWN_PLATFORMS):
             logger.warning(
-                "Unknown platform(s) or syntax '%s' in '.. availability:: %s', "
+                "Unknown platform%s or syntax '%s' in '.. availability:: %s', "
                 'see %s:KNOWN_PLATFORMS for a set of known platforms.',
+                's' if len(platforms) != 1 else '',
                 ' '.join(sorted(unknown)),
                 self.arguments[0],
                 __file__,
