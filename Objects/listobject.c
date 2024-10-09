@@ -563,9 +563,7 @@ list_repr_impl(PyListObject *v)
     return PyUnicodeWriter_Finish(writer);
 
 error:
-    if (writer != NULL) {
-        PyUnicodeWriter_Discard(writer);
-    }
+    PyUnicodeWriter_Discard(writer);
     Py_ReprLeave((PyObject *)v);
     return NULL;
 }
