@@ -2806,7 +2806,16 @@ dummy_func(
         replaced op(_FOR_ITER, (iter -- iter, next)) {
             /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
+            PyTypeObject *type = Py_TYPE(iter_o);
+            iternextfunc iternext = type->tp_iternext;
+            if (iternext == NULL) {
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "'for' requires an object with "
+                              "__iter__ method, got %.100s",
+                              type->tp_name);
+                ERROR_NO_POP();
+            }
+            PyObject *next_o = (*iternext)(iter_o);
             if (next_o == NULL) {
                 if (_PyErr_Occurred(tstate)) {
                     int matches = _PyErr_ExceptionMatches(tstate, PyExc_StopIteration);
@@ -2832,7 +2841,16 @@ dummy_func(
         op(_FOR_ITER_TIER_TWO, (iter -- iter, next)) {
             /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
+            PyTypeObject *type = Py_TYPE(iter_o);
+            iternextfunc iternext = type->tp_iternext;
+            if (iternext == NULL) {
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "'for' requires an object with "
+                              "__iter__ method, got %.100s",
+                              type->tp_name);
+                ERROR_NO_POP();
+            }
+            PyObject *next_o = (*iternext)(iter_o);
             if (next_o == NULL) {
                 if (_PyErr_Occurred(tstate)) {
                     int matches = _PyErr_ExceptionMatches(tstate, PyExc_StopIteration);
@@ -2856,7 +2874,16 @@ dummy_func(
             _Py_CODEUNIT *target;
             _PyStackRef iter_stackref = TOP();
             PyObject *iter = PyStackRef_AsPyObjectBorrow(iter_stackref);
-            PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
+            PyTypeObject *type = Py_TYPE(iter);
+            iternextfunc iternext = type->tp_iternext;
+            if (iternext == NULL) {
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "'for' requires an object with "
+                              "__iter__ method, got %.100s",
+                              type->tp_name);
+                ERROR_NO_POP();
+            }
+            PyObject *next = (*iternext)(iter);
             if (next != NULL) {
                 PUSH(PyStackRef_FromPyObjectSteal(next));
                 target = next_instr;
