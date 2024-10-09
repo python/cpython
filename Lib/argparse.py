@@ -1521,7 +1521,11 @@ class _ActionsContainer(object):
         # NOTE: if add_mutually_exclusive_group ever gains title= and
         # description= then this code will need to be expanded as above
         for group in container._mutually_exclusive_groups:
-            mutex_group = self.add_mutually_exclusive_group(
+            if group._container is container:
+                cont = self
+            else:
+                cont = title_group_map[group._container.title]
+            mutex_group = cont.add_mutually_exclusive_group(
                 required=group.required)
 
             # map the actions to their new mutex group
