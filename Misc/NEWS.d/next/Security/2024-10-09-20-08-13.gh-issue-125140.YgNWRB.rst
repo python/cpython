@@ -1,0 +1,1 @@
+Remove the current directory from ``sys.path`` when using PyREPL.
