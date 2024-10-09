@@ -1791,7 +1791,28 @@
             break;
         }
 
-        case _GUARD_BUILTINS_VERSION: {
+        case _GUARD_GLOBALS_VERSION_PUSH_KEYS: {
+            PyDictKeysObject *globals_keys;
+            uint16_t version = (uint16_t)CURRENT_OPERAND();
+            PyDictObject *dict = (PyDictObject *)GLOBALS();
+            if (!PyDict_CheckExact(dict)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (dict->ma_keys->dk_version != version) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            globals_keys = dict->ma_keys;
+            assert(DK_IS_UNICODE(globals_keys));
+            stack_pointer[0].bits = (uintptr_t)globals_keys;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _GUARD_BUILTINS_VERSION_PUSH_KEYS: {
+            PyDictKeysObject *builtins_keys;
             uint16_t version = (uint16_t)CURRENT_OPERAND();
             PyDictObject *dict = (PyDictObject *)BUILTINS();
             if (!PyDict_CheckExact(dict)) {
@@ -1802,18 +1823,25 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            assert(DK_IS_UNICODE(dict->ma_keys));
+            builtins_keys = dict->ma_keys;
+            assert(DK_IS_UNICODE(builtins_keys));
+            stack_pointer[0].bits = (uintptr_t)builtins_keys;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
-        case _LOAD_GLOBAL_MODULE: {
+        case _LOAD_GLOBAL_MODULE_FROM_KEYS: {
+            PyDictKeysObject *globals_keys;
             _PyStackRef res;
             _PyStackRef null = PyStackRef_NULL;
             oparg = CURRENT_OPARG();
+            globals_keys = (PyDictKeysObject *)stack_pointer[-1].bits;
             uint16_t index = (uint16_t)CURRENT_OPERAND();
-            PyDictObject *dict = (PyDictObject *)GLOBALS();
-            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
+            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(globals_keys);
             PyObject *res_o = entries[index].me_value;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             if (res_o == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -1829,14 +1857,17 @@
             break;
         }
 
-        case _LOAD_GLOBAL_BUILTINS: {
+        case _LOAD_GLOBAL_BUILTINS_FROM_KEYS: {
+            PyDictKeysObject *builtins_keys;
             _PyStackRef res;
             _PyStackRef null = PyStackRef_NULL;
             oparg = CURRENT_OPARG();
+            builtins_keys = (PyDictKeysObject *)stack_pointer[-1].bits;
             uint16_t index = (uint16_t)CURRENT_OPERAND();
-            PyDictObject *bdict = (PyDictObject *)BUILTINS();
-            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(bdict->ma_keys);
+            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(builtins_keys);
             PyObject *res_o = entries[index].me_value;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             if (res_o == NULL) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -5695,6 +5726,50 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            break;
+        }
+
+        case _LOAD_GLOBAL_MODULE: {
+            _PyStackRef res;
+            _PyStackRef null = PyStackRef_NULL;
+            oparg = CURRENT_OPARG();
+            uint16_t index = (uint16_t)CURRENT_OPERAND();
+            PyDictObject *dict = (PyDictObject *)GLOBALS();
+            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
+            PyObject *res_o = entries[index].me_value;
+            if (res_o == NULL) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            Py_INCREF(res_o);
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            null = PyStackRef_NULL;
+            stack_pointer[0] = res;
+            if (oparg & 1) stack_pointer[1] = null;
+            stack_pointer += 1 + (oparg & 1);
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_GLOBAL_BUILTINS: {
+            _PyStackRef res;
+            _PyStackRef null = PyStackRef_NULL;
+            oparg = CURRENT_OPARG();
+            uint16_t index = (uint16_t)CURRENT_OPERAND();
+            PyDictObject *dict = (PyDictObject *)BUILTINS();
+            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
+            PyObject *res_o = entries[index].me_value;
+            if (res_o == NULL) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            Py_INCREF(res_o);
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            null = PyStackRef_NULL;
+            stack_pointer[0] = res;
+            if (oparg & 1) stack_pointer[1] = null;
+            stack_pointer += 1 + (oparg & 1);
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 

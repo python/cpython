@@ -150,9 +150,9 @@ def generate_tier1(
         out.emit(f"TARGET({name}) {{\n")
         unused_guard = "(void)this_instr;\n" if inst.family is None else ""
         if inst.properties.needs_prev:
-            out.emit(f"_Py_CODEUNIT *prev_instr = frame->instr_ptr;\n")
+            out.emit(f"_Py_CODEUNIT* const prev_instr = frame->instr_ptr;\n")
         if needs_this and not inst.is_target:
-            out.emit(f"_Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;\n")
+            out.emit(f"_Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;\n")
             out.emit(unused_guard)
         else:
             out.emit(f"frame->instr_ptr = next_instr;\n")
@@ -161,7 +161,7 @@ def generate_tier1(
         if inst.is_target:
             out.emit(f"PREDICTED({name});\n")
             if needs_this:
-                out.emit(f"_Py_CODEUNIT *this_instr = next_instr - {inst.size};\n")
+                out.emit(f"_Py_CODEUNIT* const this_instr = next_instr - {inst.size};\n")
                 out.emit(unused_guard)
         if inst.family is not None:
             out.emit(

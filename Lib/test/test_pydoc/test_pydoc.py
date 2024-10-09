@@ -1073,7 +1073,7 @@ class B(A)
 
 class A(builtins.object)
  |  A(
- |      arg1: collections.abc.Callable[[int, int, int], str],
+ |      arg1: Callable[[int, int, int], str],
  |      arg2: Literal['some value', 'other value'],
  |      arg3: Annotated[int, 'some docs about this type']
  |  ) -> None
@@ -1082,7 +1082,7 @@ class A(builtins.object)
  |
  |  __init__(
  |      self,
- |      arg1: collections.abc.Callable[[int, int, int], str],
+ |      arg1: Callable[[int, int, int], str],
  |      arg2: Literal['some value', 'other value'],
  |      arg3: Annotated[int, 'some docs about this type']
  |  ) -> None
@@ -1109,7 +1109,7 @@ class A(builtins.object)
         self.assertEqual(doc, '''Python Library Documentation: function func in module %s
 
 func(
-    arg1: collections.abc.Callable[[typing.Annotated[int, 'Some doc']], str],
+    arg1: Callable[[Annotated[int, 'Some doc']], str],
     arg2: Literal[1, 2, 3, 4, 5, 6, 7, 8]
 ) -> Annotated[int, 'Some other']
 ''' % __name__)
@@ -1394,8 +1394,8 @@ class TestDescriptions(unittest.TestCase):
         T = typing.TypeVar('T')
         class C(typing.Generic[T], typing.Mapping[int, str]): ...
         self.assertEqual(pydoc.render_doc(foo).splitlines()[-1],
-                         'f\x08fo\x08oo\x08o(data: List[Any], x: int)'
-                         ' -> Iterator[Tuple[int, Any]]')
+                         'f\x08fo\x08oo\x08o(data: typing.List[typing.Any], x: int)'
+                         ' -> typing.Iterator[typing.Tuple[int, typing.Any]]')
         self.assertEqual(pydoc.render_doc(C).splitlines()[2],
                          'class C\x08C(collections.abc.Mapping, typing.Generic)')
 
