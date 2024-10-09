@@ -196,7 +196,7 @@ list_join(PyObject* list)
     PyObject* joiner;
     PyObject* result;
 
-    joiner = PyUnicode_FromStringAndSize("", 0);
+    joiner = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     if (!joiner)
         return NULL;
     result = PyUnicode_Join(joiner, list);
