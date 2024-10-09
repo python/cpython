@@ -13632,6 +13632,10 @@ _PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str)
 int
 PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
 {
+    if (Py_TYPE(obj) == &PyLong_Type) {
+        return _PyLong_FormatWriter((_PyUnicodeWriter*)writer, obj, 10, 0);
+    }
+
     PyObject *str = PyObject_Str(obj);
     if (str == NULL) {
         return -1;
@@ -13646,6 +13650,10 @@ PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
 int
 PyUnicodeWriter_WriteRepr(PyUnicodeWriter *writer, PyObject *obj)
 {
+    if (Py_TYPE(obj) == &PyLong_Type) {
+        return _PyLong_FormatWriter((_PyUnicodeWriter*)writer, obj, 10, 0);
+    }
+
     PyObject *repr = PyObject_Repr(obj);
     if (repr == NULL) {
         return -1;
