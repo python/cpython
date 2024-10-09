@@ -1,0 +1,3 @@
+Fix ``locale.nl_langinfo(locale.ALT_DIGITS)``. Now it returns a tuple of up
+to 100 strings (an empty tuple on most locales). Previously it returned the
+first item of that tuple or an empty string.
