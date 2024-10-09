@@ -326,7 +326,7 @@ class IsolationLevelPostInit(unittest.TestCase):
             self.cx.execute(self.QUERY)
         self.assertEqual(self.traced, ["BEGIN ", self.QUERY, "COMMIT"])
 
-    def test_isolation_level_deferrred(self):
+    def test_isolation_level_deferred(self):
         self.cx.isolation_level = "DEFERRED"
         with self.cx:
             self.cx.execute(self.QUERY)

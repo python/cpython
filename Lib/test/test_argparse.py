@@ -2862,7 +2862,7 @@ class TestParentParsers(TestCase):
         parser = ErrorRaisingArgumentParser(parents=[self.ab_mutex_parent])
         self._test_mutex_ab(parser.parse_args)
 
-    def test_single_granparent_mutex(self):
+    def test_single_grandparent_mutex(self):
         parents = [self.ab_mutex_parent]
         parser = ErrorRaisingArgumentParser(add_help=False, parents=parents)
         parser = ErrorRaisingArgumentParser(parents=[parser])

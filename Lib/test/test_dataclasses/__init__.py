@@ -2918,7 +2918,7 @@ class TestFrozen(unittest.TestCase):
             class D(C):
                 j: int
 
-    def test_inherit_frozen_mutliple_inheritance(self):
+    def test_inherit_frozen_multiple_inheritance(self):
         @dataclass
         class NotFrozen:
             pass
@@ -2960,7 +2960,7 @@ class TestFrozen(unittest.TestCase):
                     class FrozenChild(*bases):
                         pass
 
-    def test_inherit_frozen_mutliple_inheritance_regular_mixins(self):
+    def test_inherit_frozen_multiple_inheritance_regular_mixins(self):
         @dataclass(frozen=True)
         class Frozen:
             pass

@@ -732,7 +732,7 @@ class Test_OldTestResult(unittest.TestCase):
             test = Test(test_name)
             self.assertOldResultWarning(test, int(not should_pass))
 
-    def testOldTestTesultSetup(self):
+    def testOldTestResultSetup(self):
         class Test(unittest.TestCase):
             def setUp(self):
                 self.skipTest('no reason')

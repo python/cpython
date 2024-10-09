@@ -698,7 +698,7 @@ def dedup(lst, prev=object()):
             yield item
             prev = item
 
-def lines_from_postions(positions):
+def lines_from_positions(positions):
     return dedup(l for (l, _, _, _) in positions)
 
 def misshappen():
@@ -759,7 +759,7 @@ class CodeLocationTest(unittest.TestCase):
         co = func.__code__
         lines1 = [line for _, _, line in co.co_lines()]
         self.assertEqual(lines1, list(dedup(lines1)))
-        lines2 = list(lines_from_postions(positions_from_location_table(co)))
+        lines2 = list(lines_from_positions(positions_from_location_table(co)))
         for l1, l2 in zip(lines1, lines2):
             self.assertEqual(l1, l2)
         self.assertEqual(len(lines1), len(lines2))

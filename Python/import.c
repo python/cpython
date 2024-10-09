@@ -1845,7 +1845,7 @@ reload_singlephase_extension(PyThreadState *tstate,
         assert(res.err == NULL);
         assert(res.kind == _Py_ext_module_kind_SINGLEPHASE);
         mod = res.module;
-        /* Tchnically, the init function could return a different module def.
+        /* Technically, the init function could return a different module def.
          * Then we would probably need to update the global cache.
          * However, we don't expect anyone to change the def. */
         assert(res.def == def);

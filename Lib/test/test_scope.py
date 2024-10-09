@@ -51,7 +51,7 @@ class ScopeTests(unittest.TestCase):
 
     def testNestingGlobalNoFree(self):
 
-        def make_adder4(): # XXX add exta level of indirection
+        def make_adder4(): # XXX add extra level of indirection
             def nest():
                 def nest():
                     def adder(y):

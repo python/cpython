@@ -2384,7 +2384,7 @@ class TunnelTests(TestCase):
         self.assertIn(expected, self.conn.sock.data)
 
     def test_tunnel_connect_single_send_connection_setup(self):
-        """Regresstion test for https://bugs.python.org/issue43332."""
+        """Regression test for https://bugs.python.org/issue43332."""
         with mock.patch.object(self.conn, 'send') as mock_send:
             self.conn.set_tunnel('destination.com')
             self.conn.connect()

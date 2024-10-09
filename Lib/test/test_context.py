@@ -418,7 +418,7 @@ class KeyStr(str):
         return super().__eq__(other)
 
 
-class HaskKeyCrasher:
+class HashKeyCrasher:
     def __init__(self, *, error_on_hash=False, error_on_eq=False):
         self.error_on_hash = error_on_hash
         self.error_on_eq = error_on_eq
@@ -595,14 +595,14 @@ class HamtTest(unittest.TestCase):
                 key = KeyStr(i)
 
                 if not (i % CRASH_HASH_EVERY):
-                    with HaskKeyCrasher(error_on_hash=True):
+                    with HashKeyCrasher(error_on_hash=True):
                         with self.assertRaises(HashingError):
                             h.set(key, i)
 
                 h = h.set(key, i)
 
                 if not (i % CRASH_EQ_EVERY):
-                    with HaskKeyCrasher(error_on_eq=True):
+                    with HashKeyCrasher(error_on_eq=True):
                         with self.assertRaises(EqError):
                             h.get(KeyStr(i))  # really trigger __eq__
 
@@ -624,12 +624,12 @@ class HamtTest(unittest.TestCase):
                 key = KeyStr(i)
 
                 if not (iter_i % CRASH_HASH_EVERY):
-                    with HaskKeyCrasher(error_on_hash=True):
+                    with HashKeyCrasher(error_on_hash=True):
                         with self.assertRaises(HashingError):
                             h.delete(key)
 
                 if not (iter_i % CRASH_EQ_EVERY):
-                    with HaskKeyCrasher(error_on_eq=True):
+                    with HashKeyCrasher(error_on_eq=True):
                         with self.assertRaises(EqError):
                             h.delete(KeyStr(i))
 
@@ -1078,11 +1078,11 @@ class HamtTest(unittest.TestCase):
         self.assertFalse(B in h)
 
         with self.assertRaises(EqError):
-            with HaskKeyCrasher(error_on_eq=True):
+            with HashKeyCrasher(error_on_eq=True):
                 AA in h
 
         with self.assertRaises(HashingError):
-            with HaskKeyCrasher(error_on_hash=True):
+            with HashKeyCrasher(error_on_hash=True):
                 AA in h
 
     def test_hamt_getitem_1(self):
@@ -1101,11 +1101,11 @@ class HamtTest(unittest.TestCase):
             h[B]
 
         with self.assertRaises(EqError):
-            with HaskKeyCrasher(error_on_eq=True):
+            with HashKeyCrasher(error_on_eq=True):
                 h[AA]
 
         with self.assertRaises(HashingError):
-            with HaskKeyCrasher(error_on_hash=True):
+            with HashKeyCrasher(error_on_hash=True):
                 h[AA]
 
 

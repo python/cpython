@@ -2970,7 +2970,7 @@ class CExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
 class LimitTests(unittest.TestCase):
 
     ''' Tests for limit argument.
-        It's enough to test extact_tb, extract_stack and format_exception '''
+        It's enough to test extract_tb, extract_stack and format_exception '''
 
     def last_raises1(self):
         raise Exception('Last raised')

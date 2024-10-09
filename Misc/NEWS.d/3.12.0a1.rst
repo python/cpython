@@ -2088,7 +2088,7 @@ annotations on class objects.
 
 Removed deprecated interfaces in ``importlib.metadata`` (entry points
 accessed as dictionary, implicit dictionary construction of sequence of
-``EntryPoint`` objects, mutablility of ``EntryPoints`` result, access of
+``EntryPoint`` objects, mutability of ``EntryPoints`` result, access of
 entry point by index). ``entry_points`` now has a simpler, more
 straightforward API (returning ``EntryPoints``).
 
@@ -4728,7 +4728,7 @@ Updated tests to use preferred location for ``importlib.resources`` ABCs.
 .. nonce: IiTs5f
 .. section: Tests
 
-Add a regression test for :mod:`re` exponentional slowdown when using
+Add a regression test for :mod:`re` exponential slowdown when using
 rjsmin.
 
 ..

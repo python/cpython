@@ -1,5 +1,5 @@
 {
-    "__comment": "Taken from vscode-cpptools's Extension/package.json gcc rule",
+    "__comment": "Taken from vscode-cpptools' Extension/package.json gcc rule",
     "problemMatcher": [
         {
             "owner": "gcc-problem-matcher",

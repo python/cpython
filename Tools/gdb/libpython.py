@@ -1534,7 +1534,7 @@ class wrapperobject(PyObjectPtr):
         except (NullPyObjectPtr, RuntimeError, UnicodeDecodeError):
             return '<unknown tp_name>'
 
-    def safe_self_addresss(self):
+    def safe_self_address(self):
         try:
             address = int(self.field('self'))
             return '%#x' % address
@@ -1544,7 +1544,7 @@ class wrapperobject(PyObjectPtr):
     def proxyval(self, visited):
         name = self.safe_name()
         tp_name = self.safe_tp_name()
-        self_address = self.safe_self_addresss()
+        self_address = self.safe_self_address()
         return ("<method-wrapper %s of %s object at %s>"
                 % (name, tp_name, self_address))
 

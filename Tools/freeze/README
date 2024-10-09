@@ -208,7 +208,7 @@ used, since the standard DLL is used.
 
 In order for this to work, you must have built Python using the VC++
 (Developer Studio) 5.0 compiler.  The provided project builds
-python20.lib in the subdirectory pcbuild\Release of thje Python source
+python20.lib in the subdirectory pcbuild\Release of the Python source
 tree, and this is where the generated Makefile expects it to be.  If
 this is not the case, you can edit the Makefile or (probably better)
 winmakemakefile.py (e.g., if you are using the 4.2 compiler, the

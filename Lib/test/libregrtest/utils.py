@@ -37,7 +37,7 @@ ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network',
 
 # Other resources excluded from --use=all:
 #
-# - extralagefile (ex: test_zipfile64): really too slow to be enabled
+# - extralargefile (ex: test_zipfile64): really too slow to be enabled
 #   "by default"
 # - tzdata: while needed to validate fully test_datetime, it makes
 #   test_datetime too slow (15-20 min on some buildbots) and so is disabled by

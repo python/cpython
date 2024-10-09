@@ -708,7 +708,7 @@ Made cumtime the default sorting key for cProfile
 .. nonce: 4n2aVU
 .. section: Library
 
-Fix :class:`asyncio.Semaphore` re-aquiring FIFO order.
+Fix :class:`asyncio.Semaphore` re-acquiring FIFO order.
 
 ..
 

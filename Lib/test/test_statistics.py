@@ -2162,10 +2162,10 @@ class TestSqrtHelpers(unittest.TestCase):
 
         for i in range(60_000):
             numerator: int = randrange(10 ** randrange(50))
-            denonimator: int = randrange(10 ** randrange(50)) + 1
-            with self.subTest(numerator=numerator, denonimator=denonimator):
-                x: Fraction = Fraction(numerator, denonimator)
-                root: float = statistics._float_sqrt_of_frac(numerator, denonimator)
+            denominator: int = randrange(10 ** randrange(50)) + 1
+            with self.subTest(numerator=numerator, denominator=denominator):
+                x: Fraction = Fraction(numerator, denominator)
+                root: float = statistics._float_sqrt_of_frac(numerator, denominator)
                 self.assertTrue(is_root_correctly_rounded(x, root))
 
         # Verify that corner cases and error handling match math.sqrt()

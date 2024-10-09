@@ -2702,7 +2702,7 @@ ATOMIC_GROUP
 17: SUCCESS
 ''')
 
-    def test_possesive_repeat_one(self):
+    def test_possessive_repeat_one(self):
         self.assertEqual(get_debug_out(r'a?+'), '''\
 POSSESSIVE_REPEAT 0 1
   LITERAL 97
@@ -2714,7 +2714,7 @@ POSSESSIVE_REPEAT 0 1
 12: SUCCESS
 ''')
 
-    def test_possesive_repeat(self):
+    def test_possessive_repeat(self):
         self.assertEqual(get_debug_out(r'(?:ab)?+'), '''\
 POSSESSIVE_REPEAT 0 1
   LITERAL 97

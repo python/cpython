@@ -1911,7 +1911,7 @@ remove_redundant_nops_and_jumps(cfg_builder *g)
    The consts object should still be in list form to allow new constants
    to be appended.
 
-   Code trasnformations that reduce code size initially fill the gaps with
+   Code transformations that reduce code size initially fill the gaps with
    NOPs.  Later those NOPs are removed.
 */
 static int

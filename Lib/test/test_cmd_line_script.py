@@ -503,7 +503,7 @@ class CmdLineTest(unittest.TestCase):
             self.assertNotIn(b'is a package', err)
             self.assertNotIn(b'Traceback', err)
 
-    def test_hint_when_triying_to_import_a_py_file(self):
+    def test_hint_when_trying_to_import_a_py_file(self):
         with os_helper.temp_dir() as script_dir, \
                 os_helper.change_cwd(path=script_dir):
             # Create invalid *.pyc as empty file

@@ -194,7 +194,7 @@ in memory.
 .. nonce: Mo3ppp
 .. section: Library
 
-[Enum] - fix psuedo-flag creation
+[Enum] - fix pseudo-flag creation
 
 ..
 

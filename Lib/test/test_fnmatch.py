@@ -95,22 +95,22 @@ class FnmatchTestCase(unittest.TestCase):
     def test_char_set(self):
         ignorecase = os.path.normcase('ABC') == os.path.normcase('abc')
         check = self.check_match
-        tescases = string.ascii_lowercase + string.digits + string.punctuation
-        for c in tescases:
+        testcases = string.ascii_lowercase + string.digits + string.punctuation
+        for c in testcases:
             check(c, '[az]', c in 'az')
             check(c, '[!az]', c not in 'az')
         # Case insensitive.
-        for c in tescases:
+        for c in testcases:
             check(c, '[AZ]', (c in 'az') and ignorecase)
             check(c, '[!AZ]', (c not in 'az') or not ignorecase)
         for c in string.ascii_uppercase:
             check(c, '[az]', (c in 'AZ') and ignorecase)
             check(c, '[!az]', (c not in 'AZ') or not ignorecase)
         # Repeated same character.
-        for c in tescases:
+        for c in testcases:
             check(c, '[aa]', c == 'a')
         # Special cases.
-        for c in tescases:
+        for c in testcases:
             check(c, '[^az]', c in '^az')
             check(c, '[[az]', c in '[az')
             check(c, r'[!]]', c != ']')
@@ -123,24 +123,24 @@ class FnmatchTestCase(unittest.TestCase):
         ignorecase = os.path.normcase('ABC') == os.path.normcase('abc')
         normsep = os.path.normcase('\\') == os.path.normcase('/')
         check = self.check_match
-        tescases = string.ascii_lowercase + string.digits + string.punctuation
-        for c in tescases:
+        testcases = string.ascii_lowercase + string.digits + string.punctuation
+        for c in testcases:
             check(c, '[b-d]', c in 'bcd')
             check(c, '[!b-d]', c not in 'bcd')
             check(c, '[b-dx-z]', c in 'bcdxyz')
             check(c, '[!b-dx-z]', c not in 'bcdxyz')
         # Case insensitive.
-        for c in tescases:
+        for c in testcases:
             check(c, '[B-D]', (c in 'bcd') and ignorecase)
             check(c, '[!B-D]', (c not in 'bcd') or not ignorecase)
         for c in string.ascii_uppercase:
             check(c, '[b-d]', (c in 'BCD') and ignorecase)
             check(c, '[!b-d]', (c not in 'BCD') or not ignorecase)
         # Upper bound == lower bound.
-        for c in tescases:
+        for c in testcases:
             check(c, '[b-b]', c == 'b')
         # Special cases.
-        for c in tescases:
+        for c in testcases:
             check(c, '[!-#]', c not in '-#')
             check(c, '[!--.]', c not in '-.')
             check(c, '[^-`]', c in '^_`')
@@ -154,7 +154,7 @@ class FnmatchTestCase(unittest.TestCase):
             check(c, '[-]', c in '-')
             check(c, '[!-]', c not in '-')
         # Upper bound is less that lower bound: error in RE.
-        for c in tescases:
+        for c in testcases:
             check(c, '[d-b]', False)
             check(c, '[!d-b]', True)
             check(c, '[d-bx-z]', c in 'xyz')

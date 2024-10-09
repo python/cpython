@@ -138,7 +138,7 @@ subclassed through multiple inheritance.
 .. nonce: HlUSuy
 .. section: Core and Builtins
 
-Fixed a number of bugs in UTF-7 decoding of misformed data.
+Fixed a number of bugs in UTF-7 decoding of malformed data.
 
 ..
 

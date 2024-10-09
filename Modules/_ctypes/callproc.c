@@ -439,7 +439,7 @@ static void SetException(DWORD code, EXCEPTION_RECORD *pr)
         /* The thread attempted to continue execution after a
            noncontinuable exception occurred. */
         PyErr_SetString(PyExc_OSError,
-                        "exception: nocontinuable");
+                        "exception: noncontinuable");
         break;
 
     default:

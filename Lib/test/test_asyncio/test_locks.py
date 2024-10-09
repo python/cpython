@@ -784,8 +784,8 @@ class ConditionTests(unittest.IsolatedAsyncioTestCase):
         # originally raised.
         self.assertIs(err.exception, raised)
 
-    async def test_cancelled_error_re_aquire(self):
-        # Test that a cancelled error, received when re-aquiring lock,
+    async def test_cancelled_error_re_acquire(self):
+        # Test that a cancelled error, received when re-acquiring lock,
         # will be re-raised un-modified.
         wake = False
         raised = None
@@ -846,7 +846,7 @@ class ConditionTests(unittest.IsolatedAsyncioTestCase):
             c[0].cancel()
 
             # now wait for the item to be consumed
-            # if it doesn't means that our "notify" didn"t take hold.
+            # if it doesn't means that our "notify" didn't take hold.
             # because it raced with a cancel()
             try:
                 async with asyncio.timeout(0.01):
@@ -886,7 +886,7 @@ class ConditionTests(unittest.IsolatedAsyncioTestCase):
             condition.notify(1)
 
             # now we sleep for a bit.  This allows the target task to wake up and
-            # settle on re-aquiring the lock
+            # settle on re-acquiring the lock
             await asyncio.sleep(0)
 
             # Cancel it while awaiting the lock
@@ -894,7 +894,7 @@ class ConditionTests(unittest.IsolatedAsyncioTestCase):
             c[0].cancel()
 
             # now wait for the item to be consumed
-            # if it doesn't means that our "notify" didn"t take hold.
+            # if it doesn't means that our "notify" didn't take hold.
             # because it raced with a cancel()
             try:
                 async with asyncio.timeout(0.01):

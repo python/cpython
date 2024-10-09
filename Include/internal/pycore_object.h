@@ -61,9 +61,9 @@ extern void _Py_ForgetReference(PyObject *);
 PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 
 /* We need to maintain an internal copy of Py{Var}Object_HEAD_INIT to avoid
-   designated initializer conflicts in C++20. If we use the deinition in
+   designated initializer conflicts in C++20. If we use the definition in
    object.h, we will be mixing designated and non-designated initializers in
-   pycore objects which is forbiddent in C++20. However, if we then use
+   pycore objects which is forbidden in C++20. However, if we then use
    designated initializers in object.h then Extensions without designated break.
    Furthermore, we can't use designated initializers in Extensions since these
    are not supported pre-C++20. Thus, keeping an internal copy here is the most

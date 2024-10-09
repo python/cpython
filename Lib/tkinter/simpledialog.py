@@ -3,7 +3,7 @@
 #
 # Copyright (c) 1997 by Fredrik Lundh
 #
-# This copyright applies to Dialog, askinteger, askfloat and asktring
+# This copyright applies to Dialog, askinteger, askfloat and askstring
 #
 # fredrik@pythonware.com
 # http://www.pythonware.com

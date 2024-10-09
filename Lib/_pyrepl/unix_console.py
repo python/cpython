@@ -784,7 +784,7 @@ class UnixConsole(Console):
         will never do anyone any good."""
         # using .get() means that things will blow up
         # only if the bps is actually needed (which I'm
-        # betting is pretty unlkely)
+        # betting is pretty unlikely)
         bps = ratedict.get(self.__svtermstate.ospeed)
         while 1:
             m = prog.search(fmt)

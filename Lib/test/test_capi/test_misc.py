@@ -2106,7 +2106,7 @@ class SubinterpreterTest(unittest.TestCase):
             self.assertEqual(ret, 0)
             self.assertEqual(pickle.load(f), {'a': '123x', 'b': '123'})
 
-    def test_py_config_isoloated_per_interpreter(self):
+    def test_py_config_isolated_per_interpreter(self):
         # A config change in one interpreter must not leak to out to others.
         #
         # This test could verify ANY config value, it just happens to have been

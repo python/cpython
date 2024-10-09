@@ -30,14 +30,14 @@ separators:
    + (stmt) break:  at end
    + (stmt) return:  at end
 * ","
-   + (decl) struct/union:  between member declators
+   + (decl) struct/union:  between member declarators
    + (decl) param-list:  between params
    + (decl) enum: between enumerators
    + (decl) initializer (compound):  between initializers
    + (expr) postfix:  between func call args
    + (expr) expression:  between "assignment" exprs
 * ":"
-   + (decl) struct/union:  in member declators
+   + (decl) struct/union:  in member declarators
    + (stmt) label:  between label and stmt
    + (stmt) case:  between expression and stmt
    + (stmt) default:  between "default" and stmt

@@ -1435,19 +1435,19 @@ class ElementTreeTest(unittest.TestCase):
 
     def test_dump_attribute_order(self):
         # See BPO 34160
-        e = ET.Element('cirriculum', status='public', company='example')
+        e = ET.Element('curriculum', status='public', company='example')
         with support.captured_stdout() as stdout:
             ET.dump(e)
         self.assertEqual(stdout.getvalue(),
-                         '<cirriculum status="public" company="example" />\n')
+                         '<curriculum status="public" company="example" />\n')
 
     def test_tree_write_attribute_order(self):
         # See BPO 34160
-        root = ET.Element('cirriculum', status='public', company='example')
+        root = ET.Element('curriculum', status='public', company='example')
         self.assertEqual(serialize(root),
-                         '<cirriculum status="public" company="example" />')
+                         '<curriculum status="public" company="example" />')
         self.assertEqual(serialize(root, method='html'),
-                '<cirriculum status="public" company="example"></cirriculum>')
+                '<curriculum status="public" company="example"></curriculum>')
 
     def test_attlist_default(self):
         # Test default attribute values; See BPO 42151.

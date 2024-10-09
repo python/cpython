@@ -489,7 +489,7 @@ _PyPegen_expect_soft_keyword(Parser *p, const char *keyword)
 }
 
 Token *
-_PyPegen_get_last_nonnwhitespace_token(Parser *p)
+_PyPegen_get_last_nonwhitespace_token(Parser *p)
 {
     assert(p->mark >= 0);
     Token *token = NULL;

@@ -1015,7 +1015,7 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(len(phrase), 7)
         self.assertEqual(phrase[3].comments, ['weird'])
 
-    def test_get_phrase_pharse_must_start_with_word(self):
+    def test_get_phrase_phrase_must_start_with_word(self):
         phrase = self._test_get_x(parser.get_phrase,
             '(even weirder).name',
             '(even weirder).name',
@@ -1422,7 +1422,7 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(addr_spec.domain, 'example.com')
         self.assertEqual(addr_spec.addr_spec, 'dinsdale@example.com')
 
-    def test_get_addr_spec_with_doamin_literal(self):
+    def test_get_addr_spec_with_domain_literal(self):
         addr_spec = self._test_get_x(parser.get_addr_spec,
                                     'dinsdale@[127.0.0.1]',
                                     'dinsdale@[127.0.0.1]',
@@ -1444,7 +1444,7 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(addr_spec.domain, 'example.com')
         self.assertEqual(addr_spec.addr_spec, 'dinsdale@example.com')
 
-    def test_get_addr_spec_with_qouoted_string_and_cfws(self):
+    def test_get_addr_spec_with_quoted_string_and_cfws(self):
         addr_spec = self._test_get_x(parser.get_addr_spec,
                 '(foo) "roy a bug"(bar)@ (bird) example.com (bog)',
                 '(foo) "roy a bug"(bar)@ (bird) example.com (bog)',
@@ -2290,7 +2290,7 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(group.mailboxes[1].local_part, 'x')
         self.assertIsNone(group.all_mailboxes[1].display_name)
 
-    def test_get_group_missing_final_semicol(self):
+    def test_get_group_missing_final_semicolon(self):
         group = self._test_get_x(parser.get_group,
             ('Monty Python:"Fred A. Bear" <dinsdale@example.com>,'
              'eric@where.test,John <jdoe@test>'),

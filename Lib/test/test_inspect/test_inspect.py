@@ -4736,7 +4736,7 @@ class TestSignatureObject(unittest.TestCase):
         l = list(signature.parameters)
         self.assertEqual(l, unsorted_keyword_only_parameters)
 
-    def test_signater_parameters_is_ordered(self):
+    def test_signature_parameters_is_ordered(self):
         p1 = inspect.signature(lambda x, y: None).parameters
         p2 = inspect.signature(lambda y, x: None).parameters
         self.assertNotEqual(p1, p2)

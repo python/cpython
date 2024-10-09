@@ -258,7 +258,7 @@ syslog_closelog_impl(PyObject *module)
     // Since the sys.closelog changes the process level state of syslog library,
     // this operation is only allowed for the main interpreter.
     if (!is_main_interpreter()) {
-        PyErr_SetString(PyExc_RuntimeError, "sunbinterpreter can't use syslog.closelog()");
+        PyErr_SetString(PyExc_RuntimeError, "subinterpreter can't use syslog.closelog()");
         return NULL;
     }
 

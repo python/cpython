@@ -889,7 +889,7 @@ def effective(file, line, frame):
        must exist) that is enabled, for which checkfuncname is True, and that
        has neither a False condition nor a positive ignore count.  The flag,
        meaning that a temporary breakpoint should be deleted, is False only
-       when the condiion cannot be evaluated (in which case, ignore count is
+       when the condition cannot be evaluated (in which case, ignore count is
        ignored).
 
        If no such entry exists, then (None, None) is returned.

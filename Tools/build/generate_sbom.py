@@ -340,7 +340,7 @@ def create_externals_sbom() -> None:
         download_location_changed = download_location != package["downloadLocation"]
         package["downloadLocation"] = download_location
 
-        # If the download URL has changed we want one to get recalulated.
+        # If the download URL has changed we want one to get recalculated.
         if download_location_changed:
             package.pop("checksums", None)
 

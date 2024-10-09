@@ -53,13 +53,13 @@ extern "C" {
 
 // Asserts that the mutex is locked.  The mutex must be held by the
 // top-most critical section otherwise there's the possibility
-// that the mutex would be swalled out in some code paths.
+// that the mutex would be stalled out in some code paths.
 #define _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(mutex) \
     _PyCriticalSection_AssertHeld(mutex)
 
 // Asserts that the mutex for the given object is locked. The mutex must
 // be held by the top-most critical section otherwise there's the
-// possibility that the mutex would be swalled out in some code paths.
+// possibility that the mutex would be stalled out in some code paths.
 #ifdef Py_DEBUG
 
 # define _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op)                           \

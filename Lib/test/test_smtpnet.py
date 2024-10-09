@@ -12,7 +12,7 @@ support.requires("network")
 
 SMTP_TEST_SERVER = os.getenv('CPYTHON_TEST_SMTP_SERVER', 'smtp.gmail.com')
 
-def check_ssl_verifiy(host, port):
+def check_ssl_verify(host, port):
     context = ssl.create_default_context()
     with socket.create_connection((host, port)) as sock:
         try:
@@ -77,7 +77,7 @@ class SmtpSSLTest(unittest.TestCase):
 
     def test_connect_using_sslcontext_verified(self):
         with socket_helper.transient_internet(self.testServer):
-            can_verify = check_ssl_verifiy(self.testServer, self.remotePort)
+            can_verify = check_ssl_verify(self.testServer, self.remotePort)
             if not can_verify:
                 self.skipTest("SSL certificate can't be verified")
 

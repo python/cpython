@@ -1113,7 +1113,7 @@ class TestOldPyTime(CPyTimeTestCase, unittest.TestCase):
                 _PyTime_ObjectToTimespec(float('nan'), time_rnd)
 
 @unittest.skipUnless(sys.platform == "darwin", "test weak linking on macOS")
-class TestTimeWeaklinking(unittest.TestCase):
+class TestTimeWeakLinking(unittest.TestCase):
     # These test cases verify that weak linking support on macOS works
     # as expected. These cases only test new behaviour introduced by weak linking,
     # regular behaviour is tested by the normal test cases.

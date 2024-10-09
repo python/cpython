@@ -645,7 +645,7 @@ Improve documentation about converting datetime.timedelta to scalars.
 .. section: Documentation
 
 A new entry was added to the Core Language Section of the Programming FAQ,
-which explaines the usage of slash(/) in the signature of a function. Patch
+which explains the usage of slash(/) in the signature of a function. Patch
 by Lysandros Nikolaou
 
 ..

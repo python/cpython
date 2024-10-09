@@ -21,7 +21,7 @@ from shutil import (make_archive,
                     get_archive_formats, Error, unpack_archive,
                     register_unpack_format, RegistryError,
                     unregister_unpack_format, get_unpack_formats,
-                    SameFileError, _GiveupOnFastCopy)
+                    SameFileError, _GiveUpOnFastCopy)
 import tarfile
 import zipfile
 try:
@@ -3132,7 +3132,7 @@ class _ZeroCopyFileTest(object):
     def test_same_file(self):
         self.addCleanup(self.reset)
         with self.get_files() as (src, dst):
-            with self.assertRaises((OSError, _GiveupOnFastCopy)):
+            with self.assertRaises((OSError, _GiveUpOnFastCopy)):
                 self.zerocopy_fun(src, src)
         # Make sure src file is not corrupted.
         self.assertEqual(read_file(TESTFN, binary=True), self.FILEDATA)
@@ -3170,7 +3170,7 @@ class _ZeroCopyFileTest(object):
         with unittest.mock.patch(self.PATCHPOINT,
                                  side_effect=OSError(errno.EINVAL, "yo")):
             with self.get_files() as (src, dst):
-                with self.assertRaises(_GiveupOnFastCopy):
+                with self.assertRaises(_GiveUpOnFastCopy):
                     self.zerocopy_fun(src, dst)
 
     def test_filesystem_full(self):
@@ -3192,7 +3192,7 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
     def test_non_regular_file_src(self):
         with io.BytesIO(self.FILEDATA) as src:
             with open(TESTFN2, "wb") as dst:
-                with self.assertRaises(_GiveupOnFastCopy):
+                with self.assertRaises(_GiveUpOnFastCopy):
                     self.zerocopy_fun(src, dst)
                 shutil.copyfileobj(src, dst)
 
@@ -3201,7 +3201,7 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
     def test_non_regular_file_dst(self):
         with open(TESTFN, "rb") as src:
             with io.BytesIO() as dst:
-                with self.assertRaises(_GiveupOnFastCopy):
+                with self.assertRaises(_GiveUpOnFastCopy):
                     self.zerocopy_fun(src, dst)
                 shutil.copyfileobj(src, dst)
                 dst.seek(0)
@@ -3289,7 +3289,7 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
                     self.PATCHPOINT,
                     side_effect=OSError(errno.ENOTSOCK, "yo")) as m:
                 with self.get_files() as (src, dst):
-                    with self.assertRaises(_GiveupOnFastCopy):
+                    with self.assertRaises(_GiveUpOnFastCopy):
                         shutil._fastcopy_sendfile(src, dst)
                 assert m.called
             assert not shutil._USE_CP_SENDFILE

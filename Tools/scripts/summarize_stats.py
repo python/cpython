@@ -1088,7 +1088,7 @@ def object_stats_section() -> Section:
 
     return Section(
         "Object stats",
-        "Allocations, frees and dict materializatons",
+        "Allocations, frees and dict materializations",
         [
             Table(
                 ("", "Count:", "Ratio:"),

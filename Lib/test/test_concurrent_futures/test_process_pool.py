@@ -86,7 +86,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
                       f1.getvalue())
 
     @hashlib_helper.requires_hashdigest('md5')
-    def test_ressources_gced_in_workers(self):
+    def test_resources_gced_in_workers(self):
         # Ensure that argument for a job are correctly gc-ed after the job
         # is finished
         mgr = self.get_context().Manager()

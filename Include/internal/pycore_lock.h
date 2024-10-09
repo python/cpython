@@ -209,7 +209,7 @@ PyAPI_FUNC(void) _PyRWMutex_Unlock(_PyRWMutex *rwmutex);
 // sequence has not changed the data is valid.
 //
 // Differs a little bit in that we use CAS on sequence as the lock, instead of a separate spin lock.
-// The writer can also detect that the undelering data has not changed and abandon the write
+// The writer can also detect that the underlying data has not changed and abandon the write
 // and restore the previous sequence.
 typedef struct {
     uint32_t sequence;

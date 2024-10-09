@@ -634,7 +634,7 @@ script is killed by signal 11, it now logs: "CGI script exit code -11."
 .. nonce: EGDVQ_
 .. section: Library
 
-Improve the error message when triying to import a module using :mod:`runpy`
+Improve the error message when trying to import a module using :mod:`runpy`
 and incorrectly using the ".py" extension at the end of the module name. Patch
 by Pablo Galindo.
 

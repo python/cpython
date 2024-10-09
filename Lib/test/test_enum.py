@@ -3666,7 +3666,7 @@ class OldTestFlag(unittest.TestCase):
         self.assertEqual(list(Color), [Color.RED, Color.GREEN, Color.BLUE])
         self.assertEqual(list(Open), [Open.WO, Open.RW, Open.CE])
 
-    def test_programatic_function_string(self):
+    def test_programmatic_function_string(self):
         Perm = Flag('Perm', 'R W X')
         lst = list(Perm)
         self.assertEqual(len(lst), len(Perm))
@@ -3681,7 +3681,7 @@ class OldTestFlag(unittest.TestCase):
             self.assertIn(e, Perm)
             self.assertIs(type(e), Perm)
 
-    def test_programatic_function_string_with_start(self):
+    def test_programmatic_function_string_with_start(self):
         Perm = Flag('Perm', 'R W X', start=8)
         lst = list(Perm)
         self.assertEqual(len(lst), len(Perm))
@@ -3696,7 +3696,7 @@ class OldTestFlag(unittest.TestCase):
             self.assertIn(e, Perm)
             self.assertIs(type(e), Perm)
 
-    def test_programatic_function_string_list(self):
+    def test_programmatic_function_string_list(self):
         Perm = Flag('Perm', ['R', 'W', 'X'])
         lst = list(Perm)
         self.assertEqual(len(lst), len(Perm))
@@ -3711,7 +3711,7 @@ class OldTestFlag(unittest.TestCase):
             self.assertIn(e, Perm)
             self.assertIs(type(e), Perm)
 
-    def test_programatic_function_iterable(self):
+    def test_programmatic_function_iterable(self):
         Perm = Flag('Perm', (('R', 2), ('W', 8), ('X', 32)))
         lst = list(Perm)
         self.assertEqual(len(lst), len(Perm))
@@ -3726,7 +3726,7 @@ class OldTestFlag(unittest.TestCase):
             self.assertIn(e, Perm)
             self.assertIs(type(e), Perm)
 
-    def test_programatic_function_from_dict(self):
+    def test_programmatic_function_from_dict(self):
         Perm = Flag('Perm', OrderedDict((('R', 2), ('W', 8), ('X', 32))))
         lst = list(Perm)
         self.assertEqual(len(lst), len(Perm))
@@ -4240,7 +4240,7 @@ class OldTestIntFlag(unittest.TestCase):
         self.assertEqual(list(Color), [Color.RED, Color.GREEN, Color.BLUE])
         self.assertEqual(list(Open), [Open.WO, Open.RW, Open.CE])
 
-    def test_programatic_function_string(self):
+    def test_programmatic_function_string(self):
         Perm = IntFlag('Perm', 'R W X')
         lst = list(Perm)
         self.assertEqual(len(lst), len(Perm))
@@ -4256,7 +4256,7 @@ class OldTestIntFlag(unittest.TestCase):
             self.assertIn(e, Perm)
             self.assertIs(type(e), Perm)
 
-    def test_programatic_function_string_with_start(self):
+    def test_programmatic_function_string_with_start(self):
         Perm = IntFlag('Perm', 'R W X', start=8)
         lst = list(Perm)
         self.assertEqual(len(lst), len(Perm))
@@ -4272,7 +4272,7 @@ class OldTestIntFlag(unittest.TestCase):
             self.assertIn(e, Perm)
             self.assertIs(type(e), Perm)
 
-    def test_programatic_function_string_list(self):
+    def test_programmatic_function_string_list(self):
         Perm = IntFlag('Perm', ['R', 'W', 'X'])
         lst = list(Perm)
         self.assertEqual(len(lst), len(Perm))
@@ -4288,7 +4288,7 @@ class OldTestIntFlag(unittest.TestCase):
             self.assertIn(e, Perm)
             self.assertIs(type(e), Perm)
 
-    def test_programatic_function_iterable(self):
+    def test_programmatic_function_iterable(self):
         Perm = IntFlag('Perm', (('R', 2), ('W', 8), ('X', 32)))
         lst = list(Perm)
         self.assertEqual(len(lst), len(Perm))
@@ -4304,7 +4304,7 @@ class OldTestIntFlag(unittest.TestCase):
             self.assertIn(e, Perm)
             self.assertIs(type(e), Perm)
 
-    def test_programatic_function_from_dict(self):
+    def test_programmatic_function_from_dict(self):
         Perm = IntFlag('Perm', OrderedDict((('R', 2), ('W', 8), ('X', 32))))
         lst = list(Perm)
         self.assertEqual(len(lst), len(Perm))
@@ -4321,7 +4321,7 @@ class OldTestIntFlag(unittest.TestCase):
             self.assertIs(type(e), Perm)
 
 
-    def test_programatic_function_from_empty_list(self):
+    def test_programmatic_function_from_empty_list(self):
         Perm = enum.IntFlag('Perm', [])
         lst = list(Perm)
         self.assertEqual(len(lst), len(Perm))
@@ -4332,7 +4332,7 @@ class OldTestIntFlag(unittest.TestCase):
         self.assertEqual(len(Thing), 0, Thing)
 
 
-    def test_programatic_function_from_empty_tuple(self):
+    def test_programmatic_function_from_empty_tuple(self):
         Perm = enum.IntFlag('Perm', ())
         lst = list(Perm)
         self.assertEqual(len(lst), len(Perm))
@@ -4811,7 +4811,7 @@ class TestInternals(unittest.TestCase):
                 def _generate_next_value_(name, start, count, last):
                     return name
 
-    def test_auto_order_wierd(self):
+    def test_auto_order_weird(self):
         weird_auto = auto()
         weird_auto.value = 'pathological case'
         class Color(Enum):

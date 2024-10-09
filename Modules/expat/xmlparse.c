@@ -3624,7 +3624,7 @@ storeAtts(XML_Parser parser, const ENCODING *enc, const char *attStr,
            * has to have passed through the hash table lookup once
            * already.  That implies that an entry for it already
            * exists, so the lookup above will return a pointer to
-           * already allocated memory.  There is no opportunaity for
+           * already allocated memory.  There is no opportunity for
            * the allocator to fail, so the condition above cannot be
            * fulfilled.
            *
@@ -7860,8 +7860,8 @@ accountingReportDiff(XML_Parser rootParser,
           bytesMore, (account == XML_ACCOUNT_DIRECT) ? "DIR" : "EXP",
           levelsAwayFromRootParser, source_line, 10, "");
 
-  const char ellipis[] = "[..]";
-  const size_t ellipsisLength = sizeof(ellipis) /* because compile-time */ - 1;
+  const char ellipsis[] = "[..]";
+  const size_t ellipsisLength = sizeof(ellipsis) /* because compile-time */ - 1;
   const unsigned int contextLength = 10;
 
   /* Note: Performance is of no concern here */
@@ -7876,7 +7876,7 @@ accountingReportDiff(XML_Parser rootParser,
     for (; walker < before + contextLength; walker++) {
       fprintf(stderr, "%s", unsignedCharToPrintable(walker[0]));
     }
-    fprintf(stderr, ellipis);
+    fprintf(stderr, ellipsis);
     walker = after - contextLength;
     for (; walker < after; walker++) {
       fprintf(stderr, "%s", unsignedCharToPrintable(walker[0]));

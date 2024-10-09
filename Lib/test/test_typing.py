@@ -6834,7 +6834,7 @@ class GetTypeHintTests(BaseTestCase):
                           'x': ClassVar[Optional[B]]})
         self.assertEqual(gth(G), {'lst': ClassVar[List[T]]})
 
-    def test_get_type_hints_wrapped_decoratored_func(self):
+    def test_get_type_hints_wrapped_decorated_func(self):
         expects = {'self': ForRefExample}
         self.assertEqual(gth(ForRefExample.func), expects)
         self.assertEqual(gth(ForRefExample.nested), expects)

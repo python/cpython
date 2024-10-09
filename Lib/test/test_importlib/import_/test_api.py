@@ -43,7 +43,7 @@ class APITest:
         with self.assertRaises(ModuleNotFoundError):
             util.import_importlib('some module that does not exist')
 
-    def test_name_requires_rparition(self):
+    def test_name_requires_rpartition(self):
         # Raise TypeError if a non-string is passed in for the module name.
         with self.assertRaises(TypeError):
             self.__import__(42)

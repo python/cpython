@@ -82,7 +82,7 @@ class RegistryError(Exception):
     """Raised when a registry operation with the archiving
     and unpacking registries fails"""
 
-class _GiveupOnFastCopy(Exception):
+class _GiveUpOnFastCopy(Exception):
     """Raised as a signal to fallback on using raw read()/write()
     file copy when fast-copy functions fail to do so.
     """
@@ -95,7 +95,7 @@ def _fastcopy_fcopyfile(fsrc, fdst, flags):
         infd = fsrc.fileno()
         outfd = fdst.fileno()
     except Exception as err:
-        raise _GiveupOnFastCopy(err)  # not a regular file
+        raise _GiveUpOnFastCopy(err)  # not a regular file
 
     try:
         posix._fcopyfile(infd, outfd, flags)
@@ -103,7 +103,7 @@ def _fastcopy_fcopyfile(fsrc, fdst, flags):
         err.filename = fsrc.name
         err.filename2 = fdst.name
         if err.errno in {errno.EINVAL, errno.ENOTSUP}:
-            raise _GiveupOnFastCopy(err)
+            raise _GiveUpOnFastCopy(err)
         else:
             raise err from None
 
@@ -126,7 +126,7 @@ def _fastcopy_sendfile(fsrc, fdst):
         infd = fsrc.fileno()
         outfd = fdst.fileno()
     except Exception as err:
-        raise _GiveupOnFastCopy(err)  # not a regular file
+        raise _GiveUpOnFastCopy(err)  # not a regular file
 
     # Hopefully the whole file will be copied in a single call.
     # sendfile() is called in a loop 'till EOF is reached (0 return)
@@ -156,14 +156,14 @@ def _fastcopy_sendfile(fsrc, fdst):
                 # does not support copies between regular files (only
                 # sockets).
                 _USE_CP_SENDFILE = False
-                raise _GiveupOnFastCopy(err)
+                raise _GiveUpOnFastCopy(err)
 
             if err.errno == errno.ENOSPC:  # filesystem is full
                 raise err from None
 
             # Give up on first call and if no data was copied.
             if offset == 0 and os.lseek(outfd, 0, os.SEEK_CUR) == 0:
-                raise _GiveupOnFastCopy(err)
+                raise _GiveUpOnFastCopy(err)
 
             raise err
         else:
@@ -263,14 +263,14 @@ def copyfile(src, dst, *, follow_symlinks=True):
                         try:
                             _fastcopy_fcopyfile(fsrc, fdst, posix._COPYFILE_DATA)
                             return dst
-                        except _GiveupOnFastCopy:
+                        except _GiveUpOnFastCopy:
                             pass
                     # Linux / Android / Solaris
                     elif _USE_CP_SENDFILE:
                         try:
                             _fastcopy_sendfile(fsrc, fdst)
                             return dst
-                        except _GiveupOnFastCopy:
+                        except _GiveUpOnFastCopy:
                             pass
                     # Windows, see:
                     # https://github.com/python/cpython/pull/7160#discussion_r195405230

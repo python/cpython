@@ -2817,7 +2817,7 @@ empty:
     return NULL;
 }
 
-static PyMethodDef permuations_methods[] = {
+static PyMethodDef permutations_methods[] = {
     {"__sizeof__",      (PyCFunction)permutations_sizeof,      METH_NOARGS,
      sizeof_doc},
     {NULL,              NULL}   /* sentinel */
@@ -2830,7 +2830,7 @@ static PyType_Slot permutations_slots[] = {
     {Py_tp_traverse, permutations_traverse},
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, permutations_next},
-    {Py_tp_methods, permuations_methods},
+    {Py_tp_methods, permutations_methods},
     {Py_tp_new, itertools_permutations},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},

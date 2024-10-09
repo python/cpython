@@ -470,7 +470,7 @@ class CmdLineTest(unittest.TestCase):
             self.assertEqual(b'1\n2\n', out)
             self.assertEqual(b'3\n4\n', err)
 
-    def test_unmached_quote(self):
+    def test_unmatched_quote(self):
         # Issue #10206: python program starting with unmatched quote
         # spewed spaces to stdout
         rc, out, err = assert_python_failure('-c', "'")

@@ -33,15 +33,15 @@ class ASTGrammarPrinter:
         value = self.name(node)
 
         line = prefix + ("└──" if istail else "├──") + value + "\n"
-        sufix = "   " if istail else "│  "
+        suffix = "   " if istail else "│  "
 
         if not children:
             return line
 
         *children, last = children
         for child in children:
-            line += self.print_nodes_recursively(child, prefix + sufix, False)
-        line += self.print_nodes_recursively(last, prefix + sufix, True)
+            line += self.print_nodes_recursively(child, prefix + suffix, False)
+        line += self.print_nodes_recursively(last, prefix + suffix, True)
 
         return line
 

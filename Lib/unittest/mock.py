@@ -3101,7 +3101,7 @@ class ThreadingMixin(Base):
 
         `timeout` - time to wait for in seconds, waits forever otherwise.
         Defaults to the constructor provided timeout.
-        Use None to block undefinetively.
+        Use None to block indefinitely.
         """
         if timeout is _timeout_unset:
             timeout = self._mock_wait_timeout
@@ -3132,7 +3132,7 @@ class ThreadingMock(ThreadingMixin, MagicMixin, Mock):
     You can change the default timeout of all instances via the
     `ThreadingMock.DEFAULT_TIMEOUT` attribute.
 
-    If no timeout is set, it will block undefinetively.
+    If no timeout is set, it will block indefinitely.
     """
     pass
 

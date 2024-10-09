@@ -39,7 +39,7 @@ class TestFileIOSignalInterrupt:
     def _generate_infile_setup_code(self):
         """Returns the infile = ... line of code for the reader process.
 
-        subclasseses should override this to test different IO objects.
+        subclasses should override this to test different IO objects.
         """
         return ('import %s as io ;'
                 'infile = io.FileIO(sys.stdin.fileno(), "rb")' %

@@ -81,7 +81,7 @@ last line executed.
 .. section: Core and Builtins
 
 Speed up comparison of bytes objects with non-bytes objects when option
-:option:`-b` is specified. Speed up comparison of bytarray objects with
+:option:`-b` is specified. Speed up comparison of bytearray objects with
 non-buffer object.
 
 ..
@@ -1413,7 +1413,7 @@ Stinner.
 The :c:func:`PyConfig_Read` function now only parses
 :c:member:`PyConfig.argv` arguments once: :c:member:`PyConfig.parse_argv` is
 set to ``2`` after arguments are parsed. Since Python arguments are
-strippped from :c:member:`PyConfig.argv`, parsing arguments twice would
+stripped from :c:member:`PyConfig.argv`, parsing arguments twice would
 parse the application options as Python options.
 
 ..

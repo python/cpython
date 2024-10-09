@@ -1172,7 +1172,7 @@ test case
         else:
             self.fail(f'{self.failureException} not raised')
 
-    def testAssertEqualwithEmptyString(self):
+    def testAssertEqualWithEmptyString(self):
         '''Verify when there is an empty string involved, the diff output
          does not treat the empty string as a single empty line. It should
          instead be handled as a non-line.

@@ -701,7 +701,7 @@ AC_ARG_WITH(
   [app_store_compliance],
   [AS_HELP_STRING(
     [--with-app-store-compliance=@<:@PATCH-FILE@:>@],
-    [Enable any patches required for compiliance with app stores.
+    [Enable any patches required for compliance with app stores.
      Optional PATCH-FILE specifies the custom patch to apply.]
   )],[
     case "$withval" in
@@ -1271,7 +1271,7 @@ AC_ARG_WITH([emscripten-target],
       [browser], [ac_sys_emscripten_target=browser],
       [node], [ac_sys_emscripten_target=node],
 dnl Debug builds with source map / dwarf symbols. Py_DEBUG builds easily
-dnl run out of stack space. Detached sybmols and map prohibit some
+dnl run out of stack space. Detached symbols and map prohibit some
 dnl optimizations and increase file size. Options are undocumented so we
 dnl are free to remove them in the future.
       [browser-debug], [ac_sys_emscripten_target=browser-debug],

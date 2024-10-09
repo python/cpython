@@ -289,7 +289,7 @@ static PyThreadState *tcl_tstate = NULL;
       if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); \
       tcl_tstate = tstate; }
 
-#define CHECK_TCL_APPARTMENT \
+#define CHECK_TCL_APARTMENT \
     if (((TkappObject *)self)->threaded && \
         ((TkappObject *)self)->thread_id != Tcl_GetCurrentThread()) { \
         PyErr_SetString(PyExc_RuntimeError, \
@@ -1539,7 +1539,7 @@ _tkinter_tkapp_eval_impl(TkappObject *self, const char *script)
     int err;
 
     CHECK_STRING_LENGTH(script);
-    CHECK_TCL_APPARTMENT;
+    CHECK_TCL_APARTMENT;
 
     TRACE(self, ("((ss))", "eval", script));
 
@@ -1570,7 +1570,7 @@ _tkinter_tkapp_evalfile_impl(TkappObject *self, const char *fileName)
     int err;
 
     CHECK_STRING_LENGTH(fileName);
-    CHECK_TCL_APPARTMENT;
+    CHECK_TCL_APARTMENT;
 
     TRACE(self, ("((ss))", "source", fileName));
 
@@ -1601,7 +1601,7 @@ _tkinter_tkapp_record_impl(TkappObject *self, const char *script)
     int err;
 
     CHECK_STRING_LENGTH(script);
-    CHECK_TCL_APPARTMENT;
+    CHECK_TCL_APARTMENT;
 
     TRACE(self, ("((ssss))", "history", "add", script, "exec"));
 
@@ -1629,7 +1629,7 @@ _tkinter_tkapp_adderrorinfo_impl(TkappObject *self, const char *msg)
 /*[clinic end generated code: output=52162eaca2ee53cb input=f4b37aec7c7e8c77]*/
 {
     CHECK_STRING_LENGTH(msg);
-    CHECK_TCL_APPARTMENT;
+    CHECK_TCL_APARTMENT;
 
     ENTER_TCL
     Tcl_AddErrorInfo(Tkapp_Interp(self), msg);
@@ -2109,7 +2109,7 @@ _tkinter_tkapp_exprstring_impl(TkappObject *self, const char *s)
     int retval;
 
     CHECK_STRING_LENGTH(s);
-    CHECK_TCL_APPARTMENT;
+    CHECK_TCL_APARTMENT;
 
     TRACE(self, ("((ss))", "expr", s));
 
@@ -2141,7 +2141,7 @@ _tkinter_tkapp_exprlong_impl(TkappObject *self, const char *s)
     long v;
 
     CHECK_STRING_LENGTH(s);
-    CHECK_TCL_APPARTMENT;
+    CHECK_TCL_APARTMENT;
 
     TRACE(self, ("((ss))", "expr", s));
 
@@ -2173,7 +2173,7 @@ _tkinter_tkapp_exprdouble_impl(TkappObject *self, const char *s)
     int retval;
 
     CHECK_STRING_LENGTH(s);
-    CHECK_TCL_APPARTMENT;
+    CHECK_TCL_APARTMENT;
 
     TRACE(self, ("((ss))", "expr", s));
 
@@ -2205,7 +2205,7 @@ _tkinter_tkapp_exprboolean_impl(TkappObject *self, const char *s)
     int v;
 
     CHECK_STRING_LENGTH(s);
-    CHECK_TCL_APPARTMENT;
+    CHECK_TCL_APARTMENT;
 
     TRACE(self, ("((ss))", "expr", s));
 
@@ -2617,7 +2617,7 @@ _tkinter_tkapp_createfilehandler_impl(TkappObject *self, PyObject *file,
     FileHandler_ClientData *data;
     int tfile;
 
-    CHECK_TCL_APPARTMENT;
+    CHECK_TCL_APARTMENT;
 
     tfile = PyObject_AsFileDescriptor(file);
     if (tfile < 0)
@@ -2654,7 +2654,7 @@ _tkinter_tkapp_deletefilehandler(TkappObject *self, PyObject *file)
 {
     int tfile;
 
-    CHECK_TCL_APPARTMENT;
+    CHECK_TCL_APARTMENT;
 
     tfile = PyObject_AsFileDescriptor(file);
     if (tfile < 0)
@@ -2797,7 +2797,7 @@ _tkinter_tkapp_createtimerhandler_impl(TkappObject *self, int milliseconds,
         return NULL;
     }
 
-    CHECK_TCL_APPARTMENT;
+    CHECK_TCL_APARTMENT;
 
     TRACE(self, ("((siO))", "after", milliseconds, func));
 
@@ -2827,7 +2827,7 @@ _tkinter_tkapp_mainloop_impl(TkappObject *self, int threshold)
 {
     PyThreadState *tstate = PyThreadState_Get();
 
-    CHECK_TCL_APPARTMENT;
+    CHECK_TCL_APARTMENT;
     self->dispatching = 1;
 
     quitMainLoop = 0;
@@ -2930,7 +2930,7 @@ _tkinter_tkapp_loadtk_impl(TkappObject *self)
     int err;
 
     /* We want to guard against calling Tk_Init() multiple times */
-    CHECK_TCL_APPARTMENT;
+    CHECK_TCL_APARTMENT;
     ENTER_TCL
     err = Tcl_Eval(Tkapp_Interp(self), "info exists     tk_version");
     ENTER_OVERLAP
@@ -3030,7 +3030,7 @@ static void
 Tkapp_Dealloc(PyObject *self)
 {
     PyObject *tp = (PyObject *) Py_TYPE(self);
-    /*CHECK_TCL_APPARTMENT;*/
+    /*CHECK_TCL_APARTMENT;*/
     ENTER_TCL
     Tcl_DeleteInterp(Tkapp_Interp(self));
     LEAVE_TCL

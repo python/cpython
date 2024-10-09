@@ -2203,7 +2203,7 @@ def wait_process(pid, *, exitcode, timeout=None):
             pid2, status = os.waitpid(pid, os.WNOHANG)
             if pid2 != 0:
                 break
-            # rety: the process is still running
+            # retry: the process is still running
         else:
             try:
                 os.kill(pid, signal.SIGKILL)
@@ -2570,7 +2570,7 @@ class CPUStopwatch:
     N.B.:
     - This *includes* time spent in other threads.
     - Some systems only have a coarse resolution; check
-      stopwatch.clock_info.rseolution if.
+      stopwatch.clock_info.resolution if.
 
     Usage:
 

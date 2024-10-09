@@ -35,7 +35,7 @@ def count_instr_recursively(f, opname):
     return count
 
 
-class TestTranforms(BytecodeTestCase):
+class TestTransforms(BytecodeTestCase):
 
     def check_jump_targets(self, code):
         instructions = list(dis.get_instructions(code))

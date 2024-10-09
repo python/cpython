@@ -1432,7 +1432,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         self.assertEqual(res, 200)
         guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
-        # Note: This will actually be 1 for noe
+        # Note: This will actually be 1 for now
         # https://github.com/python/cpython/pull/119365#discussion_r1626220129
         self.assertEqual(guard_type_version_count, 2)
 

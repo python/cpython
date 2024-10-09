@@ -512,7 +512,7 @@ class Test_Csv(unittest.TestCase):
         self.assertRaises(StopIteration, next, r)
         self.assertEqual(r.line_num, 3)
 
-    def test_roundtrip_quoteed_newlines(self):
+    def test_roundtrip_quoted_newlines(self):
         rows = [
             ['\na', 'b\nc', 'd\n'],
             ['\re', 'f\rg', 'h\r'],

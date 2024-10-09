@@ -751,7 +751,7 @@ The UTF-8 decoder is now up to 15 times as fast for error handlers:
 .. nonce: HlUSuy
 .. section: Core and Builtins
 
-Fixed a number of bugs in UTF-7 decoding of misformed data.
+Fixed a number of bugs in UTF-7 decoding of malformed data.
 
 ..
 

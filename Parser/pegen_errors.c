@@ -419,7 +419,7 @@ _Pypegen_set_syntax_error(Parser* p, Token* last_token) {
     if (p->fill == 0) {
         RAISE_SYNTAX_ERROR("error at start before reading any input");
     }
-    // Parser encountered EOF (End of File) unexpectedtly
+    // Parser encountered EOF (End of File) unexpectedly
     if (last_token->type == ERRORTOKEN && p->tok->done == E_EOF) {
         if (p->tok->level) {
             raise_unclosed_parentheses_error(p);

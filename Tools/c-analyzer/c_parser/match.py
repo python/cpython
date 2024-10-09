@@ -98,7 +98,7 @@ def has_internal_symbol(decl):
 def is_external_reference(decl):
     if not can_have_symbol(decl):
         return False
-    # We have to check the declared storage rather tnan the effective.
+    # We have to check the declared storage rather than the effective.
     if decl.storage != 'extern':
         return False
     if decl.kind is _KIND.FUNCTION:

@@ -619,7 +619,7 @@ class TestInterpreterClose(TestBase):
                 with self.running_from_capi(interpid, main=True):
                     with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
                         interp.close()
-                    # Make sure it wssn't closed.
+                    # Make sure it wasn't closed.
                     self.assertTrue(
                         self.interp_exists(interpid))
 
@@ -632,7 +632,7 @@ class TestInterpreterClose(TestBase):
                 with self.running_from_capi(interpid, main=False):
                     with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
                         interp.close()
-                    # Make sure it wssn't closed.
+                    # Make sure it wasn't closed.
                     self.assertTrue(
                         self.interp_exists(interpid))
 

@@ -245,7 +245,7 @@ class ListTest(list_tests.CommonTest):
         with self.assertRaises(TypeError):
             a[0] < a
 
-    def test_list_index_modifing_operand(self):
+    def test_list_index_modifying_operand(self):
         # See gh-120384
         class evil:
             def __init__(self, lst):

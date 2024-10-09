@@ -2381,7 +2381,7 @@ class TextIOWrapper(TextIOBase):
             assert skip_bytes <= len(next_input)
             while skip_bytes > 0:
                 decoder.setstate((b'', dec_flags))
-                # Decode up to temptative start point
+                # Decode up to tentative start point
                 n = len(decoder.decode(next_input[:skip_bytes]))
                 if n <= chars_to_skip:
                     b, d = decoder.getstate()

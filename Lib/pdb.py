@@ -2428,7 +2428,7 @@ def main():
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      allow_abbrev=False)
 
-    # We need to maunally get the script from args, because the first positional
+    # We need to manually get the script from args, because the first positional
     # arguments could be either the script we need to debug, or the argument
     # to the -m module
     parser.add_argument('-c', '--command', action='append', default=[], metavar='command', dest='commands',

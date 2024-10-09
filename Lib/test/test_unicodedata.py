@@ -112,7 +112,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
             char = chr(i)
             self.assertRaises(ValueError, self.db.name, char)
 
-    def test_lookup_nonexistant(self):
+    def test_lookup_nonexistent(self):
         # just make sure that lookup can fail
         for nonexistent in [
             "LATIN SMLL LETR A",

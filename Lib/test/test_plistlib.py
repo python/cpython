@@ -177,14 +177,14 @@ INVALID_BINARY_PLISTS = [
         b'\x00\x00\x00\x00\x00\x00\x00\x00'
         b'\x00\x00\x00\x00\x00\x00\x00\x09'
     ),
-    ('extremally large num_objects (32 bit)',
+    ('extremely large num_objects (32 bit)',
         b'\x00\x08'
         b'\x00\x00\x00\x00\x00\x00\x01\x01'
         b'\x00\x00\x00\x00\x7f\xff\xff\xff'
         b'\x00\x00\x00\x00\x00\x00\x00\x00'
         b'\x00\x00\x00\x00\x00\x00\x00\x09'
     ),
-    ('extremally large num_objects (64 bit)',
+    ('extremely large num_objects (64 bit)',
         b'\x00\x08'
         b'\x00\x00\x00\x00\x00\x00\x01\x01'
         b'\x00\x00\x00\xff\xff\xff\xff\xff'
@@ -233,14 +233,14 @@ INVALID_BINARY_PLISTS = [
         b'\x00\x00\x00\x00\x00\x00\x00\x00'
         b'\x00\x00\x00\x00\x00\x00\x00\x0d'
     ),
-    ('extremally large array size (32-bit)',
+    ('extremely large array size (32-bit)',
         b'\xaf\x02\x7f\xff\xff\xff\x01\x00\x08\x0f'
         b'\x00\x00\x00\x00\x00\x00\x01\x01'
         b'\x00\x00\x00\x00\x00\x00\x00\x02'
         b'\x00\x00\x00\x00\x00\x00\x00\x00'
         b'\x00\x00\x00\x00\x00\x00\x00\x10'
     ),
-    ('extremally large array size (64-bit)',
+    ('extremely large array size (64-bit)',
         b'\xaf\x03\x00\x00\x00\xff\xff\xff\xff\xff\x01\x00\x08\x13'
         b'\x00\x00\x00\x00\x00\x00\x01\x01'
         b'\x00\x00\x00\x00\x00\x00\x00\x02'
@@ -275,14 +275,14 @@ INVALID_BINARY_PLISTS = [
         b'\x00\x00\x00\x00\x00\x00\x00\x00'
         b'\x00\x00\x00\x00\x00\x00\x00\x0c'
     ),
-    ('extremally large bytes size (32-bit)',
+    ('extremely large bytes size (32-bit)',
         b'\x4f\x02\x7f\xff\xff\xff\x41\x08'
         b'\x00\x00\x00\x00\x00\x00\x01\x01'
         b'\x00\x00\x00\x00\x00\x00\x00\x01'
         b'\x00\x00\x00\x00\x00\x00\x00\x00'
         b'\x00\x00\x00\x00\x00\x00\x00\x0f'
     ),
-    ('extremally large bytes size (64-bit)',
+    ('extremely large bytes size (64-bit)',
         b'\x4f\x03\x00\x00\x00\xff\xff\xff\xff\xff\x41\x08'
         b'\x00\x00\x00\x00\x00\x00\x01\x01'
         b'\x00\x00\x00\x00\x00\x00\x00\x01'
@@ -303,14 +303,14 @@ INVALID_BINARY_PLISTS = [
         b'\x00\x00\x00\x00\x00\x00\x00\x00'
         b'\x00\x00\x00\x00\x00\x00\x00\x0c'
     ),
-    ('extremally large ASCII size (32-bit)',
+    ('extremely large ASCII size (32-bit)',
         b'\x5f\x02\x7f\xff\xff\xff\x41\x08'
         b'\x00\x00\x00\x00\x00\x00\x01\x01'
         b'\x00\x00\x00\x00\x00\x00\x00\x01'
         b'\x00\x00\x00\x00\x00\x00\x00\x00'
         b'\x00\x00\x00\x00\x00\x00\x00\x0f'
     ),
-    ('extremally large ASCII size (64-bit)',
+    ('extremely large ASCII size (64-bit)',
         b'\x5f\x03\x00\x00\x00\xff\xff\xff\xff\xff\x41\x08'
         b'\x00\x00\x00\x00\x00\x00\x01\x01'
         b'\x00\x00\x00\x00\x00\x00\x00\x01'
@@ -338,14 +338,14 @@ INVALID_BINARY_PLISTS = [
         b'\x00\x00\x00\x00\x00\x00\x00\x00'
         b'\x00\x00\x00\x00\x00\x00\x00\x0e'
     ),
-    ('extremally large UTF-16 size (32-bit)',
+    ('extremely large UTF-16 size (32-bit)',
         b'\x6f\x02\x4f\xff\xff\xff\x20\xac\x00\x08'
         b'\x00\x00\x00\x00\x00\x00\x01\x01'
         b'\x00\x00\x00\x00\x00\x00\x00\x01'
         b'\x00\x00\x00\x00\x00\x00\x00\x00'
         b'\x00\x00\x00\x00\x00\x00\x00\x11'
     ),
-    ('extremally large UTF-16 size (64-bit)',
+    ('extremely large UTF-16 size (64-bit)',
         b'\x6f\x03\x00\x00\x00\xff\xff\xff\xff\xff\x20\xac\x00\x08'
         b'\x00\x00\x00\x00\x00\x00\x01\x01'
         b'\x00\x00\x00\x00\x00\x00\x00\x01'
@@ -858,7 +858,7 @@ class TestPlistlib(unittest.TestCase):
         self.assertEqual(dt.tzinfo, datetime.UTC)
 
     @unittest.skipUnless("America/Los_Angeles" in zoneinfo.available_timezones(),
-                         "Can't find timezone datebase")
+                         "Can't find timezone database")
     def test_dump_aware_datetime(self):
         dt = datetime.datetime(2345, 6, 7, 8, 9, 10,
                                tzinfo=zoneinfo.ZoneInfo("America/Los_Angeles"))
@@ -877,7 +877,7 @@ class TestPlistlib(unittest.TestCase):
             self.assertEqual(loaded_dt, dt)
 
     @unittest.skipUnless("America/Los_Angeles" in zoneinfo.available_timezones(),
-                         "Can't find timezone datebase")
+                         "Can't find timezone database")
     def test_dump_aware_datetime_without_aware_datetime_option(self):
         dt = datetime.datetime(2345, 6, 7, 8,
                                tzinfo=zoneinfo.ZoneInfo("America/Los_Angeles"))
@@ -1032,7 +1032,7 @@ class TestBinaryPlistlib(unittest.TestCase):
                          datetime.datetime(2345, 6, 7, 8, tzinfo=datetime.UTC))
 
     @unittest.skipUnless("America/Los_Angeles" in zoneinfo.available_timezones(),
-                         "Can't find timezone datebase")
+                         "Can't find timezone database")
     def test_dump_aware_datetime_without_aware_datetime_option(self):
         dt = datetime.datetime(2345, 6, 7, 8,
                                tzinfo=zoneinfo.ZoneInfo("America/Los_Angeles"))
@@ -1092,7 +1092,7 @@ class TestPlutil(unittest.TestCase):
             "lname":"A",
             "marks" : {"a":100, "b":0x10}
         }
-    exptected_properties = {
+    expected_properties = {
         "fname" : "H",
         "lname": "A",
         "marks" : {"a":100, "b":16}
@@ -1140,13 +1140,13 @@ class TestPlutil(unittest.TestCase):
         self.convert_to_json()
         with open(self.file_name) as f:
             ff = json.loads(f.read())
-            self.assertEqual(ff, self.exptected_properties)
+            self.assertEqual(ff, self.expected_properties)
 
     def check_plistlib_parse(self):
         # Generate plist files with plutil and parse with plistlib
         self.convert_to_bin()
         with open(self.file_name, 'rb') as f:
-            self.assertEqual(plistlib.load(f), self.exptected_properties)
+            self.assertEqual(plistlib.load(f), self.expected_properties)
 
     def test_octal_and_hex(self):
         self.write_pl()

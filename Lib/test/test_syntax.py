@@ -333,7 +333,7 @@ Traceback (most recent call last):
 SyntaxError: invalid syntax. Perhaps you forgot a comma?
 
 # Make sure soft keywords constructs don't raise specialized
-# errors regarding missing commas or other spezialiced errors
+# errors regarding missing commas or other specialized errors
 
 >>> match x:
 ...     y = 3
@@ -2726,7 +2726,7 @@ func(
 
         self._check_error("match y:\n case e(e=v,v,", " was never closed")
 
-        # Examples with dencodings
+        # Examples with encodings
         s = b'# coding=latin\n(aaaaaaaaaaaaaaaaa\naaaaaaaaaaa\xb5'
         self._check_error(s, r"'\(' was never closed")
 

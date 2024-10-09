@@ -727,7 +727,7 @@ class FractionTest(unittest.TestCase):
         self.assertEqual(int(f), 2)
         self.assertEqual(type(int(f)), int)
 
-    def testBoolGuarateesBoolReturn(self):
+    def testBoolGuaranteesBoolReturn(self):
         # Ensure that __bool__ is used on numerator which guarantees a bool
         # return.  See also bpo-39274.
         @functools.total_ordering

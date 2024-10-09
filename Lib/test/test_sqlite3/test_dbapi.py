@@ -982,7 +982,7 @@ class CursorTests(unittest.TestCase):
         self.cu.execute("/* bar */ update test set name='bar' where name='foo'")
         self.assertEqual(self.cu.rowcount, 3)
 
-    def test_rowcount_vaccuum(self):
+    def test_rowcount_vacuum(self):
         data = ((1,), (2,), (3,))
         self.cu.executemany("insert into test(income) values(?)", data)
         self.assertEqual(self.cu.rowcount, 3)

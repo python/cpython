@@ -963,7 +963,7 @@ _PyPegen_check_fstring_conversion(Parser *p, Token* conv_token, expr_ty conv)
     if (conv_token->lineno != conv->lineno || conv_token->end_col_offset != conv->col_offset) {
         return RAISE_SYNTAX_ERROR_KNOWN_RANGE(
             conv_token, conv,
-            "f-string: conversion type must come right after the exclamanation mark"
+            "f-string: conversion type must come right after the exclamation mark"
         );
     }
     return result_token_with_metadata(p, conv, conv_token->metadata);
@@ -1671,7 +1671,7 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
                 }
             }
 
-            /* Drop all empty contanst strings */
+            /* Drop all empty constant strings */
             if (f_string_found &&
                 PyUnicode_CheckExact(elem->v.Constant.value) &&
                 PyUnicode_GET_LENGTH(elem->v.Constant.value) == 0) {

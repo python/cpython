@@ -3,7 +3,7 @@
 
 """Generate binary message catalog from textual translation description.
 
-This program converts a textual Uniforum-style message catalog (.po file) into
+This program converts a textual Uniform-style message catalog (.po file) into
 a binary GNU catalog (.mo file).  This is essentially the same function as the
 GNU msgfmt program, however, it is a simpler implementation.  Currently it
 does not handle plural forms but it does handle message contexts.

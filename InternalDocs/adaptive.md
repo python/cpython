@@ -54,7 +54,7 @@ and `Tadaptive` is the mean time to execute the specialized and adaptive forms.
 
 `Ti` is the time to execute the `i`th instruction in the family and `Ni` is
 the number of times that instruction is executed.
-`Tmiss` is the time to process a miss, including de-optimzation
+`Tmiss` is the time to process a miss, including de-optimization
 and the time to execute the base instruction.
 
 The ideal situation is where misses are rare and the specialized

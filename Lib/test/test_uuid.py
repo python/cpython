@@ -743,7 +743,7 @@ class BaseTestUUID:
 
     @mock.patch.object(sys, "argv",
                        ["", "-u", "uuid3", "-n", "@dns", "-N", "python.org"])
-    def test_cli_uuid3_ouputted_with_valid_namespace_and_name(self):
+    def test_cli_uuid3_outputted_with_valid_namespace_and_name(self):
         stdout = io.StringIO()
         with contextlib.redirect_stdout(stdout):
             self.uuid.main()
@@ -757,7 +757,7 @@ class BaseTestUUID:
 
     @mock.patch.object(sys, "argv",
                        ["", "-u", "uuid5", "-n", "@dns", "-N", "python.org"])
-    def test_cli_uuid5_ouputted_with_valid_namespace_and_name(self):
+    def test_cli_uuid5_outputted_with_valid_namespace_and_name(self):
         stdout = io.StringIO()
         with contextlib.redirect_stdout(stdout):
             self.uuid.main()

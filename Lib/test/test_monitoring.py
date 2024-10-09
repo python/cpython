@@ -1985,7 +1985,7 @@ class TestOptimizer(MonitoringTestBase, unittest.TestCase):
 
 class TestTier2Optimizer(CheckEvents):
 
-    def test_monitoring_already_opimized_loop(self):
+    def test_monitoring_already_optimized_loop(self):
         def test_func(recorder):
             set_events = sys.monitoring.set_events
             line = E.LINE
