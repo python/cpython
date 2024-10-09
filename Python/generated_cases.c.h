@@ -3925,10 +3925,9 @@
                 iternextfunc iternext = type->tp_iternext;
                 if (iternext == NULL) {
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                              "'for' requires an object with "
-                              "__iter__ method, got %.100s",
-                              type->tp_name);
+                    PyErr_Format(PyExc_TypeError,
+                             "'%.200s' object is not an iterator",
+                             type->tp_name);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     goto error;
                 }
@@ -4629,10 +4628,9 @@
             iternextfunc iternext = type->tp_iternext;
             if (iternext == NULL) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyErr_Format(tstate, PyExc_TypeError,
-                              "'for' requires an object with "
-                              "__iter__ method, got %.100s",
-                              type->tp_name);
+                PyErr_Format(PyExc_TypeError,
+                             "'%.200s' object is not an iterator",
+                             type->tp_name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 goto error;
             }

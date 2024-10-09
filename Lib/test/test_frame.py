@@ -530,7 +530,7 @@ class TestFrameLocals(unittest.TestCase):
             g.gi_frame.f_locals['it'] = new_value
             return g
 
-        err_msg_pattern_genexpr = "'for' requires an object with __iter__ method, got %s"
+        err_msg_pattern_genexpr = "'%s' object is not an iterator"
         err_msg_pattern_fn_call = "'%s' object is not iterable"
 
         sequences = [

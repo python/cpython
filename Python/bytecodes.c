@@ -2809,10 +2809,9 @@ dummy_func(
             PyTypeObject *type = Py_TYPE(iter_o);
             iternextfunc iternext = type->tp_iternext;
             if (iternext == NULL) {
-                _PyErr_Format(tstate, PyExc_TypeError,
-                              "'for' requires an object with "
-                              "__iter__ method, got %.100s",
-                              type->tp_name);
+                PyErr_Format(PyExc_TypeError,
+                    "'%.200s' object is not an iterator",
+                    type->tp_name);
                 ERROR_NO_POP();
             }
             PyObject *next_o = (*iternext)(iter_o);
@@ -2844,10 +2843,9 @@ dummy_func(
             PyTypeObject *type = Py_TYPE(iter_o);
             iternextfunc iternext = type->tp_iternext;
             if (iternext == NULL) {
-                _PyErr_Format(tstate, PyExc_TypeError,
-                              "'for' requires an object with "
-                              "__iter__ method, got %.100s",
-                              type->tp_name);
+                PyErr_Format(PyExc_TypeError,
+                    "'%.200s' object is not an iterator",
+                    type->tp_name);
                 ERROR_NO_POP();
             }
             PyObject *next_o = (*iternext)(iter_o);
@@ -2877,10 +2875,9 @@ dummy_func(
             PyTypeObject *type = Py_TYPE(iter);
             iternextfunc iternext = type->tp_iternext;
             if (iternext == NULL) {
-                _PyErr_Format(tstate, PyExc_TypeError,
-                              "'for' requires an object with "
-                              "__iter__ method, got %.100s",
-                              type->tp_name);
+                PyErr_Format(PyExc_TypeError,
+                    "'%.200s' object is not an iterator",
+                    type->tp_name);
                 ERROR_NO_POP();
             }
             PyObject *next = (*iternext)(iter);
