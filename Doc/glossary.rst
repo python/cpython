@@ -461,7 +461,7 @@ Glossary
       <meta path finder>` for use with :data:`sys.meta_path`, and :term:`path
       entry finders <path entry finder>` for use with :data:`sys.path_hooks`.
 
-      See :ref:`importsystem` and :mod:`importlib` for much more detail.
+      See :ref:`finders-and-loaders` and :mod:`importlib` for much more detail.
 
    floor division
       Mathematical division that rounds down to nearest integer.  The floor
@@ -791,8 +791,11 @@ Glossary
    loader
       An object that loads a module. It must define a method named
       :meth:`load_module`. A loader is typically returned by a
-      :term:`finder`. See :pep:`302` for details and
-      :class:`importlib.abc.Loader` for an :term:`abstract base class`.
+      :term:`finder`. See also:
+
+      * :ref:`finders-and-loaders`
+      * :class:`importlib.abc.Loader`
+      * :pep:`302`
 
    locale encoding
       On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
@@ -861,6 +864,8 @@ Glossary
    module spec
       A namespace containing the import-related information used to load a
       module. An instance of :class:`importlib.machinery.ModuleSpec`.
+
+      See also :ref:`module-specs`.
 
    MRO
       See :term:`method resolution order`.

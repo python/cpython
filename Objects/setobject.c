@@ -40,6 +40,8 @@
 #include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_LOAD_SSIZE_RELAXED()
 #include "pycore_pyerrors.h"            // _PyErr_SetKeyError()
 #include "pycore_setobject.h"           // _PySet_NextEntry() definition
+
+#include "stringlib/eq.h"               // unicode_eq()
 #include <stddef.h>                     // offsetof()
 #include "clinic/setobject.c.h"
 
@@ -96,7 +98,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
                     return entry;
                 if (PyUnicode_CheckExact(startkey)
                     && PyUnicode_CheckExact(key)
-                    && _PyUnicode_EQ(startkey, key))
+                    && unicode_eq(startkey, key))
                     return entry;
                 table = so->table;
                 Py_INCREF(startkey);
@@ -157,7 +159,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
                     goto found_active;
                 if (PyUnicode_CheckExact(startkey)
                     && PyUnicode_CheckExact(key)
-                    && _PyUnicode_EQ(startkey, key))
+                    && unicode_eq(startkey, key))
                     goto found_active;
                 table = so->table;
                 Py_INCREF(startkey);

@@ -836,6 +836,16 @@ dummy_func(void) {
         ctx->done = true;
     }
 
+    op(_GUARD_GLOBALS_VERSION_PUSH_KEYS, (version/1 -- globals_keys)) {
+        globals_keys = sym_new_unknown(ctx);
+        (void)version;
+    }
+
+    op(_GUARD_BUILTINS_VERSION_PUSH_KEYS, (version/1 -- builtins_keys)) {
+        builtins_keys = sym_new_unknown(ctx);
+        (void)version;
+    }
+
 // END BYTECODES //
 
 }
