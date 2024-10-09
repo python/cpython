@@ -531,7 +531,7 @@ list_repr_impl(PyListObject *v)
     Py_ssize_t prealloc = 1 + 1 + (2 + 1) * (Py_SIZE(v) - 1) + 1;
     PyUnicodeWriter *writer = PyUnicodeWriter_Create(prealloc);
     if (writer == NULL) {
-        return NULL;
+        goto error;
     }
 
     if (PyUnicodeWriter_WriteChar(writer, '[') < 0) {
@@ -560,7 +560,9 @@ list_repr_impl(PyListObject *v)
     return PyUnicodeWriter_Finish(writer);
 
 error:
-    PyUnicodeWriter_Discard(writer);
+    if (writer != NULL) {
+        PyUnicodeWriter_Discard(writer);
+    }
     Py_ReprLeave((PyObject *)v);
     return NULL;
 }
