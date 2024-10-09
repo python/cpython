@@ -512,8 +512,6 @@ def register_readline():
         if PYTHON_BASIC_REPL:
             CAN_USE_PYREPL = False
         else:
-            import _pyrepl.readline
-            import _pyrepl.unix_console
             from _pyrepl.main import CAN_USE_PYREPL
     except ImportError:
         return
