@@ -4732,7 +4732,7 @@ Array_subscript(PyObject *myself, PyObject *item)
             char *dest;
 
             if (slicelen <= 0)
-                return PyBytes_FromStringAndSize("", 0);
+                return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
             if (step == 1) {
                 return PyBytes_FromStringAndSize(ptr + start,
                                                  slicelen);
@@ -5418,7 +5418,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             char *dest;
 
             if (len <= 0)
-                return PyBytes_FromStringAndSize("", 0);
+                return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
             if (step == 1) {
                 return PyBytes_FromStringAndSize(ptr + start,
                                                  len);

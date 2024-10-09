@@ -1638,7 +1638,7 @@ bytes_subscript(PyObject *op, PyObject* item)
                                             &stop, step);
 
         if (slicelength <= 0) {
-            return PyBytes_FromStringAndSize("", 0);
+            return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
         }
         else if (start == 0 && step == 1 &&
                  slicelength == PyBytes_GET_SIZE(self) &&
