@@ -202,6 +202,13 @@ New Modules
 Improved Modules
 ================
 
+argparse
+--------
+
+* The default value of the :ref:`program name <prog>` for
+  :class:`argparse.ArgumentParser` now reflects the way the Python
+  interpreter was instructed to find the ``__main__`` module code.
+  (Contributed by Serhiy Storchaka and Alyssa Coghlan in :gh:`66436`.)
 
 ast
 ---
@@ -600,6 +607,12 @@ Changes in the Python API
   Wrap it in :func:`staticmethod` if you want to preserve the old behavior.
   (Contributed by Serhiy Storchaka and Dominykas Grigonis in :gh:`121027`.)
 
+* The :func:`locale.nl_langinfo` function now sets temporarily the ``LC_CTYPE``
+  locale in some cases.
+  This temporary change affects other threads.
+  (Contributed by Serhiy Storchaka in :gh:`69998`.)
+
+
 Build Changes
 =============
 
@@ -699,6 +712,10 @@ New Features
   superclass identification, which attempts to resolve the `type checking issue
   <https://peps.python.org/pep-0630/#type-checking>`__ mentioned in :pep:`630`
   (:gh:`124153`).
+
+* Add :c:func:`PyUnicode_Equal` function to the limited C API:
+  test if two strings are equal.
+  (Contributed by Victor Stinner in :gh:`124502`.)
 
 
 Porting to Python 3.14
