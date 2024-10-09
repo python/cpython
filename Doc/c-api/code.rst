@@ -32,11 +32,19 @@ bound into a function.
 
 .. c:function:: Py_ssize_t PyCode_GetNumFree(PyCodeObject *co)
 
-   Return the number of free variables in a code object.
+   Return the number of :term:`free (closure) variables <closure variable>`
+   in a code object.
 
-.. c:function:: int PyCode_GetFirstFree(PyCodeObject *co)
+.. c:function:: int PyUnstable_Code_GetFirstFree(PyCodeObject *co)
 
-   Return the position of the first free variable in a code object.
+   Return the position of the first :term:`free (closure) variable <closure variable>`
+   in a code object.
+
+   .. versionchanged:: 3.13
+
+      Renamed from ``PyCode_GetFirstFree`` as part of :ref:`unstable-c-api`.
+      The old name is deprecated, but will remain available until the
+      signature changes again.
 
 .. c:function:: PyCodeObject* PyUnstable_Code_New(int argcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, PyObject *qualname, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
 
@@ -90,8 +98,8 @@ bound into a function.
     Return the line number of the instruction that occurs on or before ``byte_offset`` and ends after it.
     If you just need the line number of a frame, use :c:func:`PyFrame_GetLineNumber` instead.
 
-    For efficiently iterating over the line numbers in a code object, use `the API described in PEP 626
-    <https://peps.python.org/pep-0626/#out-of-process-debuggers-and-profilers>`_.
+    For efficiently iterating over the line numbers in a code object, use :pep:`the API described in PEP 626
+    <0626#out-of-process-debuggers-and-profilers>`.
 
 .. c:function:: int PyCode_Addr2Location(PyObject *co, int byte_offset, int *start_line, int *start_column, int *end_line, int *end_column)
 
@@ -138,7 +146,8 @@ bound into a function.
 
    Equivalent to the Python code ``getattr(co, 'co_freevars')``.
    Returns a new reference to a :c:type:`PyTupleObject` containing the names of
-   the free variables. On error, ``NULL`` is returned and an exception is raised.
+   the :term:`free (closure) variables <closure variable>`. On error, ``NULL`` is returned
+   and an exception is raised.
 
    .. versionadded:: 3.11
 

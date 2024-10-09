@@ -10,7 +10,7 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 # Raise SkipTest if subinterpreters not supported.
-import_helper.import_module('_xxsubinterpreters')
+import_helper.import_module('_interpreters')
 from .utils import TestBase
 
 

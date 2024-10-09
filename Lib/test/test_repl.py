@@ -1,13 +1,26 @@
 """Test the interactive interpreter."""
 
-import sys
 import os
-import unittest
+import select
 import subprocess
+import sys
+import unittest
 from textwrap import dedent
 from test import support
-from test.support import cpython_only, has_subprocess_support, SuppressCrashReport
+from test.support import (
+    cpython_only,
+    has_subprocess_support,
+    os_helper,
+    SuppressCrashReport,
+    SHORT_TIMEOUT,
+)
 from test.support.script_helper import kill_python
+from test.support.import_helper import import_module
+
+try:
+    import pty
+except ImportError:
+    pty = None
 
 
 if not has_subprocess_support:
@@ -28,7 +41,7 @@ def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
     # path may be used by Py_GetPath() to build the default module search
     # path.
     stdin_fname = os.path.join(os.path.dirname(sys.executable), "<stdin>")
-    cmd_line = [stdin_fname, '-E', '-i']
+    cmd_line = [stdin_fname, '-I', '-i']
     cmd_line.extend(args)
 
     # Set TERM=vt100, for the rationale see the comments in spawn_python() of
@@ -64,6 +77,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
     # _PyRefchain_Trace() on memory allocation error.
     @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
     def test_no_memory(self):
+        import_module("_testcapi")
         # Issue #30696: Fix the interactive interpreter looping endlessly when
         # no memory. Check also that the fix does not break the interactive
         # loop when an exception is raised.
@@ -173,6 +187,19 @@ class TestInteractiveInterpreter(unittest.TestCase):
         ]
         self.assertEqual(traceback_lines, expected_lines)
 
+    def test_runsource_show_syntax_error_location(self):
+        user_input = dedent("""def f(x, x): ...
+                            """)
+        p = spawn_repl()
+        p.stdin.write(user_input)
+        output = kill_python(p)
+        expected_lines = [
+            '    def f(x, x): ...',
+            '             ^',
+            "SyntaxError: duplicate argument 'x' in function definition"
+        ]
+        self.assertEqual(output.splitlines()[4:-1], expected_lines)
+
     def test_interactive_source_is_in_linecache(self):
         user_input = dedent("""
         def foo(x):
@@ -193,7 +220,58 @@ class TestInteractiveInterpreter(unittest.TestCase):
         expected = "(30, None, [\'def foo(x):\\n\', \'    return x + 1\\n\', \'\\n\'], \'<stdin>\')"
         self.assertIn(expected, output, expected)
 
+    def test_asyncio_repl_reaches_python_startup_script(self):
+        with os_helper.temp_dir() as tmpdir:
+            script = os.path.join(tmpdir, "pythonstartup.py")
+            with open(script, "w") as f:
+                f.write("print('pythonstartup done!')" + os.linesep)
+                f.write("exit(0)" + os.linesep)
 
+            env = os.environ.copy()
+            env["PYTHON_HISTORY"] = os.path.join(tmpdir, ".asyncio_history")
+            env["PYTHONSTARTUP"] = script
+            subprocess.check_call(
+                [sys.executable, "-m", "asyncio"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                env=env,
+                timeout=SHORT_TIMEOUT,
+            )
+
+    @unittest.skipUnless(pty, "requires pty")
+    def test_asyncio_repl_is_ok(self):
+        m, s = pty.openpty()
+        cmd = [sys.executable, "-I", "-m", "asyncio"]
+        env = os.environ.copy()
+        proc = subprocess.Popen(
+            cmd,
+            stdin=s,
+            stdout=s,
+            stderr=s,
+            text=True,
+            close_fds=True,
+            env=env,
+        )
+        os.close(s)
+        os.write(m, b"await asyncio.sleep(0)\n")
+        os.write(m, b"exit()\n")
+        output = []
+        while select.select([m], [], [], SHORT_TIMEOUT)[0]:
+            try:
+                data = os.read(m, 1024).decode("utf-8")
+                if not data:
+                    break
+            except OSError:
+                break
+            output.append(data)
+        os.close(m)
+        try:
+            exit_code = proc.wait(timeout=SHORT_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            exit_code = proc.wait()
+
+        self.assertEqual(exit_code, 0, "".join(output))
 
 class TestInteractiveModeSyntaxErrors(unittest.TestCase):
 
@@ -211,6 +289,43 @@ class TestInteractiveModeSyntaxErrors(unittest.TestCase):
             'SyntaxError: invalid syntax'
         ]
         self.assertEqual(traceback_lines, expected_lines)
+
+
+class TestAsyncioREPLContextVars(unittest.TestCase):
+    def test_toplevel_contextvars_sync(self):
+        user_input = dedent("""\
+        from contextvars import ContextVar
+        var = ContextVar("var", default="failed")
+        var.set("ok")
+        """)
+        p = spawn_repl("-m", "asyncio")
+        p.stdin.write(user_input)
+        user_input2 = dedent("""
+        print(f"toplevel contextvar test: {var.get()}")
+        """)
+        p.stdin.write(user_input2)
+        output = kill_python(p)
+        self.assertEqual(p.returncode, 0)
+        expected = "toplevel contextvar test: ok"
+        self.assertIn(expected, output, expected)
+
+    def test_toplevel_contextvars_async(self):
+        user_input = dedent("""\
+        from contextvars import ContextVar
+        var = ContextVar('var', default='failed')
+        """)
+        p = spawn_repl("-m", "asyncio")
+        p.stdin.write(user_input)
+        user_input2 = "async def set_var(): var.set('ok')\n"
+        p.stdin.write(user_input2)
+        user_input3 = "await set_var()\n"
+        p.stdin.write(user_input3)
+        user_input4 = "print(f'toplevel contextvar test: {var.get()}')\n"
+        p.stdin.write(user_input4)
+        output = kill_python(p)
+        self.assertEqual(p.returncode, 0)
+        expected = "toplevel contextvar test: ok"
+        self.assertIn(expected, output, expected)
 
 
 if __name__ == "__main__":

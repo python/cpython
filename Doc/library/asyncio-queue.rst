@@ -55,12 +55,15 @@ Queue
       Return ``True`` if there are :attr:`maxsize` items in the queue.
 
       If the queue was initialized with ``maxsize=0`` (the default),
-      then :meth:`full()` never returns ``True``.
+      then :meth:`full` never returns ``True``.
 
    .. coroutinemethod:: get()
 
       Remove and return an item from the queue. If queue is empty,
       wait until an item is available.
+
+      Raises :exc:`QueueShutDown` if the queue has been shut down and
+      is empty, or if the queue has been shut down immediately.
 
    .. method:: get_nowait()
 
@@ -82,6 +85,8 @@ Queue
       Put an item into the queue. If the queue is full, wait until a
       free slot is available before adding the item.
 
+      Raises :exc:`QueueShutDown` if the queue has been shut down.
+
    .. method:: put_nowait(item)
 
       Put an item into the queue without blocking.
@@ -91,6 +96,22 @@ Queue
    .. method:: qsize()
 
       Return the number of items in the queue.
+
+   .. method:: shutdown(immediate=False)
+
+      Shut down the queue, making :meth:`~Queue.get` and :meth:`~Queue.put`
+      raise :exc:`QueueShutDown`.
+
+      By default, :meth:`~Queue.get` on a shut down queue will only
+      raise once the queue is empty. Set *immediate* to true to make
+      :meth:`~Queue.get` raise immediately instead.
+
+      All blocked callers of :meth:`~Queue.put` and :meth:`~Queue.get`
+      will be unblocked. If *immediate* is true, a task will be marked
+      as done for each remaining item in the queue, which may unblock
+      callers of :meth:`~Queue.join`.
+
+      .. versionadded:: 3.13
 
    .. method:: task_done()
 
@@ -104,6 +125,9 @@ Queue
       items have been processed (meaning that a :meth:`task_done`
       call was received for every item that had been :meth:`~Queue.put`
       into the queue).
+
+      ``shutdown(immediate=True)`` calls :meth:`task_done` for each
+      remaining item in the queue.
 
       Raises :exc:`ValueError` if called more times than there were
       items placed in the queue.
@@ -143,6 +167,14 @@ Exceptions
 
    Exception raised when the :meth:`~Queue.put_nowait` method is called
    on a queue that has reached its *maxsize*.
+
+
+.. exception:: QueueShutDown
+
+   Exception raised when :meth:`~Queue.put` or :meth:`~Queue.get` is
+   called on a queue which has been shut down.
+
+   .. versionadded:: 3.13
 
 
 Examples

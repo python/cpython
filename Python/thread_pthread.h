@@ -16,6 +16,7 @@
 #undef destructor
 #endif
 #include <signal.h>
+#include <unistd.h>             /* pause(), also getthrid() on OpenBSD */
 
 #if defined(__linux__)
 #   include <sys/syscall.h>     /* syscall(SYS_gettid) */
@@ -23,8 +24,6 @@
 #   include <pthread_np.h>      /* pthread_getthreadid_np() */
 #elif defined(__FreeBSD_kernel__)
 #   include <sys/syscall.h>     /* syscall(SYS_thr_self) */
-#elif defined(__OpenBSD__)
-#   include <unistd.h>          /* getthrid() */
 #elif defined(_AIX)
 #   include <sys/thread.h>      /* thread_self() */
 #elif defined(__NetBSD__)
@@ -95,6 +94,10 @@
 #endif
 #endif
 
+/* Thread sanitizer doesn't currently support sem_clockwait */
+#ifdef _Py_THREAD_SANITIZER
+#undef HAVE_SEM_CLOCKWAIT
+#endif
 
 /* Whether or not to use semaphores directly rather than emulating them with
  * mutexes and condition variables:
@@ -154,12 +157,14 @@ _PyThread_cond_after(long long us, struct timespec *abs)
     PyTime_t t;
 #ifdef CONDATTR_MONOTONIC
     if (condattr_monotonic) {
-        t = _PyTime_MonotonicUnchecked();
+        // silently ignore error: cannot report error to the caller
+        (void)PyTime_MonotonicRaw(&t);
     }
     else
 #endif
     {
-        t = _PyTime_TimeUnchecked();
+        // silently ignore error: cannot report error to the caller
+        (void)PyTime_TimeRaw(&t);
     }
     t = _PyTime_Add(t, timeout);
     _PyTime_AsTimespec_clamp(t, abs);
@@ -413,6 +418,18 @@ PyThread_exit_thread(void)
 #endif
 }
 
+void _Py_NO_RETURN
+PyThread_hang_thread(void)
+{
+    while (1) {
+#if defined(__wasi__)
+        sleep(9999999);  // WASI doesn't have pause() ?!
+#else
+        pause();
+#endif
+    }
+}
+
 #ifdef USE_SEMAPHORES
 
 /*
@@ -502,7 +519,10 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     struct timespec abs_timeout;
     // Local scope for deadline
     {
-        PyTime_t deadline = _PyTime_Add(_PyTime_MonotonicUnchecked(), timeout);
+        PyTime_t now;
+        // silently ignore error: cannot report error to the caller
+        (void)PyTime_MonotonicRaw(&now);
+        PyTime_t deadline = _PyTime_Add(now, timeout);
         _PyTime_AsTimespec_clamp(deadline, &abs_timeout);
     }
 #else
@@ -518,8 +538,11 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
             status = fix_status(sem_clockwait(thelock, CLOCK_MONOTONIC,
                                               &abs_timeout));
 #else
-            PyTime_t abs_time = _PyTime_Add(_PyTime_TimeUnchecked(),
-                                             timeout);
+            PyTime_t now;
+            // silently ignore error: cannot report error to the caller
+            (void)PyTime_TimeRaw(&now);
+            PyTime_t abs_time = _PyTime_Add(now, timeout);
+
             struct timespec ts;
             _PyTime_AsTimespec_clamp(abs_time, &ts);
             status = fix_status(sem_timedwait(thelock, &ts));

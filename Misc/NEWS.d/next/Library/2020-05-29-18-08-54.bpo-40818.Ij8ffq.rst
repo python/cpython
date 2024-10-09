@@ -1,3 +1,0 @@
-The asyncio REPL now runs :data:`sys.__interactivehook__` on startup. The
-default implementation of :data:`sys.__interactivehook__` provides
-auto-completion to the asyncio REPL. Patch contributed by Rémi Lapeyre.

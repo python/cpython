@@ -1,1 +1,0 @@
-Add missing call to localization function in :mod:`argparse`.

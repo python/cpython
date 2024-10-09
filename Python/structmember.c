@@ -4,7 +4,21 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_long.h"          // _PyLong_IsNegative()
+#include "pycore_object.h"        // _Py_TryIncrefCompare(), FT_ATOMIC_*()
+#include "pycore_critical_section.h"
 
+
+static inline PyObject *
+member_get_object(const char *addr, const char *obj_addr, PyMemberDef *l)
+{
+    PyObject *v = FT_ATOMIC_LOAD_PTR(*(PyObject **) addr);
+    if (v == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "'%T' object has no attribute '%s'",
+                     (PyObject *)obj_addr, l->name);
+    }
+    return v;
+}
 
 PyObject *
 PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
@@ -75,15 +89,19 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         Py_INCREF(v);
         break;
     case Py_T_OBJECT_EX:
-        v = *(PyObject **)addr;
-        if (v == NULL) {
-            PyObject *obj = (PyObject *)obj_addr;
-            PyTypeObject *tp = Py_TYPE(obj);
-            PyErr_Format(PyExc_AttributeError,
-                         "'%.200s' object has no attribute '%s'",
-                         tp->tp_name, l->name);
-        }
+        v = member_get_object(addr, obj_addr, l);
+#ifndef Py_GIL_DISABLED
         Py_XINCREF(v);
+#else
+        if (v != NULL) {
+            if (!_Py_TryIncrefCompare((PyObject **) addr, v)) {
+                Py_BEGIN_CRITICAL_SECTION((PyObject *) obj_addr);
+                v = member_get_object(addr, obj_addr, l);
+                Py_XINCREF(v);
+                Py_END_CRITICAL_SECTION();
+            }
+        }
+#endif
         break;
     case Py_T_LONGLONG:
         v = PyLong_FromLongLong(*(long long *)addr);
@@ -92,6 +110,7 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         v = PyLong_FromUnsignedLongLong(*(unsigned long long *)addr);
         break;
     case _Py_T_NONE:
+        // doesn't require free-threading code path
         v = Py_NewRef(Py_None);
         break;
     default:
@@ -118,6 +137,9 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         return -1;
     }
 
+#ifdef Py_GIL_DISABLED
+    PyObject *obj = (PyObject *) addr;
+#endif
     addr += l->offset;
 
     if ((l->flags & Py_READONLY))
@@ -281,8 +303,10 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         break;
     case _Py_T_OBJECT:
     case Py_T_OBJECT_EX:
+        Py_BEGIN_CRITICAL_SECTION(obj);
         oldv = *(PyObject **)addr;
-        *(PyObject **)addr = Py_XNewRef(v);
+        FT_ATOMIC_STORE_PTR_RELEASE(*(PyObject **)addr, Py_XNewRef(v));
+        Py_END_CRITICAL_SECTION();
         Py_XDECREF(oldv);
         break;
     case Py_T_CHAR: {
