@@ -708,6 +708,17 @@ New Features
 
   (Contributed by Victor Stinner in :gh:`107954`.)
 
+* Add a new import and export API for Python :class:`int` objects:
+
+  * :c:func:`PyLong_GetNativeLayout`;
+  * :c:func:`PyLong_Export`;
+  * :c:func:`PyLong_FreeExport`;
+  * :c:func:`PyLongWriter_Create`;
+  * :c:func:`PyLongWriter_Finish`;
+  * :c:func:`PyLongWriter_Discard`.
+
+  (Contributed by Victor Stinner in :gh:`102471`.)
+
 * Add :c:func:`PyType_GetBaseByToken` and :c:data:`Py_tp_token` slot for easier
   superclass identification, which attempts to resolve the `type checking issue
   <https://peps.python.org/pep-0630/#type-checking>`__ mentioned in :pep:`630`

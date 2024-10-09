@@ -139,6 +139,55 @@ _PyLong_CompactValue(const PyLongObject *op)
 #define PyUnstable_Long_CompactValue _PyLong_CompactValue
 
 
+/* --- Import/Export API -------------------------------------------------- */
+
+typedef struct PyLongLayout {
+    // Bits per digit
+    uint8_t bits_per_digit;
+
+    // Digit size in bytes
+    uint8_t digit_size;
+
+    // Word endian:
+    // * 1 for most significant word first (big endian)
+    // * -1 for least significant first (little endian)
+    int8_t digits_order;
+
+    // Array endian:
+    // * 1 for most significant byte first (big endian)
+    // * -1 for least significant first (little endian)
+    int8_t endian;
+} PyLongLayout;
+
+PyAPI_FUNC(const PyLongLayout*) PyLong_GetNativeLayout(void);
+
+typedef struct PyLongExport {
+    int64_t value;
+    uint8_t negative;
+    Py_ssize_t ndigits;
+    const void *digits;
+    // Member used internally, must not be used for other purpose.
+    Py_uintptr_t _reserved;
+} PyLongExport;
+
+PyAPI_FUNC(int) PyLong_Export(
+    PyObject *obj,
+    PyLongExport *export_long);
+PyAPI_FUNC(void) PyLong_FreeExport(
+    PyLongExport *export_long);
+
+
+/* --- PyLongWriter API --------------------------------------------------- */
+
+typedef struct PyLongWriter PyLongWriter;
+
+PyAPI_FUNC(PyLongWriter*) PyLongWriter_Create(
+    int negative,
+    Py_ssize_t ndigits,
+    void **digits);
+PyAPI_FUNC(PyObject*) PyLongWriter_Finish(PyLongWriter *writer);
+PyAPI_FUNC(void) PyLongWriter_Discard(PyLongWriter *writer);
+
 #ifdef __cplusplus
 }
 #endif

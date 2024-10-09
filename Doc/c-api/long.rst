@@ -608,6 +608,9 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Exactly what values are considered compact is an implementation detail
    and is subject to change.
 
+   .. versionadded:: 3.12
+
+
 .. c:function:: Py_ssize_t PyUnstable_Long_CompactValue(const PyLongObject* op)
 
    If *op* is compact, as determined by :c:func:`PyUnstable_Long_IsCompact`,
@@ -615,3 +618,144 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    Otherwise, the return value is undefined.
 
+   .. versionadded:: 3.12
+
+
+Export API
+^^^^^^^^^^
+
+.. versionadded:: 3.14
+
+.. c:struct:: PyLongLayout
+
+   Layout of an array of digits, used by Python :class:`int` object.
+
+   Use :c:func:`PyLong_GetNativeLayout` to get the native layout of Python
+   :class:`int` objects.
+
+   See also :data:`sys.int_info` which exposes similar information to Python.
+
+   .. c:member:: uint8_t bits_per_digit
+
+      Bits per digit.
+
+   .. c:member:: uint8_t digit_size
+
+      Digit size in bytes.
+
+   .. c:member:: int8_t digits_order
+
+      Digits order:
+
+      - ``1`` for most significant digit first
+      - ``-1`` for least significant digit first
+
+   .. c:member:: int8_t endian
+
+      Digit endianness:
+
+      - ``1`` for most significant byte first (big endian)
+      - ``-1`` for least significant first (little endian)
+
+
+.. c:function:: const PyLongLayout* PyLong_GetNativeLayout(void)
+
+   Get the native layout of Python :class:`int` objects.
+
+   See the :c:struct:`PyLongLayout` structure.
+
+
+.. c:struct:: PyLongExport
+
+   Export of a Python :class:`int` object.
+
+   There are two cases:
+
+   * If :c:member:`digits` is ``NULL``, only use the :c:member:`value` member.
+     Calling :c:func:`PyLong_FreeExport` is optional in this case.
+   * If :c:member:`digits` is not ``NULL``, use :c:member:`negative`,
+     :c:member:`ndigits` and :c:member:`digits` members.
+     Calling :c:func:`PyLong_FreeExport` is mandatory in this case.
+
+   .. c:member:: int64_t value
+
+      The native integer value of the exported :class:`int` object.
+      Only valid if :c:member:`digits` is ``NULL``.
+
+   .. c:member:: uint8_t negative
+
+      1 if the number is negative, 0 otherwise.
+      Only valid if :c:member:`digits` is not ``NULL``.
+
+   .. c:member:: Py_ssize_t ndigits
+
+      Number of digits in :c:member:`digits` array.
+      Only valid if :c:member:`digits` is not ``NULL``.
+
+   .. c:member:: const void *digits
+
+      Read-only array of unsigned digits. Can be ``NULL``.
+
+
+.. c:function:: int PyLong_Export(PyObject *obj, PyLongExport *export_long)
+
+   Export a Python :class:`int` object.
+
+   On success, set *\*export_long* and return 0.
+   On error, set an exception and return -1.
+
+   This function always succeeds if *obj* is a Python :class:`int` object or a
+   subclass.
+
+   If *export_long.digits* is not ``NULL``, :c:func:`PyLong_FreeExport` must be
+   called when the export is no longer needed.
+
+
+.. c:function:: void PyLong_FreeExport(PyLongExport *export_long)
+
+   Release the export *export_long* created by :c:func:`PyLong_Export`.
+
+
+PyLongWriter API
+^^^^^^^^^^^^^^^^
+
+The :c:type:`PyLongWriter` API can be used to import an integer.
+
+.. versionadded:: 3.14
+
+.. c:struct:: PyLongWriter
+
+   A Python :class:`int` writer instance.
+
+   The instance must be destroyed by :c:func:`PyLongWriter_Finish`.
+
+
+.. c:function:: PyLongWriter* PyLongWriter_Create(int negative, Py_ssize_t ndigits, void **digits)
+
+   Create a :c:type:`PyLongWriter`.
+
+   On success, set *\*digits* and return a writer.
+   On error, set an exception and return ``NULL``.
+
+   *negative* is ``1`` if the number is negative, or ``0`` otherwise.
+
+   *ndigits* is the number of digits in the *digits* array. It must be
+   greater than or equal to 0.
+
+   The caller must initialize the array of digits *digits* and then call
+   :c:func:`PyLongWriter_Finish` to get a Python :class:`int`. Digits must be
+   in the range [``0``; ``PyLong_BASE - 1``]. Unused digits must be set to
+   ``0``.
+
+
+.. c:function:: PyObject* PyLongWriter_Finish(PyLongWriter *writer)
+
+   Finish a :c:type:`PyLongWriter` created by :c:func:`PyLongWriter_Create`.
+
+   On success, return a Python :class:`int` object.
+   On error, set an exception and return ``NULL``.
+
+
+.. c:function:: void PyLongWriter_Discard(PyLongWriter *writer)
+
+   Discard the internal object and destroy the writer instance.
