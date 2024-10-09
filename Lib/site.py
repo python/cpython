@@ -503,9 +503,14 @@ def register_readline():
         if PYTHON_BASIC_REPL:
             CAN_USE_PYREPL = False
         else:
-            import _pyrepl.readline
-            import _pyrepl.unix_console
-            from _pyrepl.main import CAN_USE_PYREPL
+            original_path = sys.path
+            sys.path = [p for p in original_path if p != '']
+            try:
+                import _pyrepl.readline
+                import _pyrepl.unix_console
+                from _pyrepl.main import CAN_USE_PYREPL
+            finally:
+                sys.path = original_path
     except ImportError:
         return
 
