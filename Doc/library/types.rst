@@ -260,9 +260,18 @@ Standard names are defined for the following types:
    The type of :term:`modules <module>`. The constructor takes the name of the
    module to be created and optionally its :term:`docstring`.
 
-   See :ref:`documentation on module objects <module-objects>` for details
-   on the special attributes that can be found on instances of
-   :class:`!ModuleType`.
+   .. seealso::
+
+      :ref:`Documentation on module objects <module-objects>`
+         Provides details on the special attributes that can be found on
+         instances of :class:`!ModuleType`.
+
+      :func:`importlib.util.module_from_spec`
+         Modules created using the :class:`!ModuleType` constructor are
+         created with many of their special attributes unset or set to default
+         values. :func:`!module_from_spec` provides a more robust way of
+         creating :class:`!ModuleType` instances which ensures the various
+         attributes are set appropriately.
 
 .. data:: EllipsisType
 

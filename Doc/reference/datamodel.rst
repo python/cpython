@@ -1028,10 +1028,10 @@ this approach.
       Previously the attribute was optional.
 
    .. deprecated-removed:: 3.12 3.14
-      The value of :attr:`!module__loader__` is expected to be the same as
-      :attr:`__spec__.loader <importlib.machinery.ModuleSpec.loader>`.
-      The use of :attr:`!module.__loader__` is deprecated and slated for
-      removal in Python 3.14.
+      Setting :attr:`!__loader__` on a module while failing to set
+      :attr:`!__spec__.loader` is deprecated. In Python 3.14,
+      :attr:`!module.__loader__` will cease to be set or taken into
+      consideration by the import system or the standard library.
 
 .. attribute:: module.__path__
 
@@ -1077,8 +1077,10 @@ this approach.
    instead of :attr:`!module.__cached__`.
 
    .. deprecated-removed:: 3.13 3.15
-      :attr:`!__cached__` will cease to be set or taken into consideration
-      by the import system or standard library.
+      Setting :attr:`!__cached__` on a module while failing to set
+      :attr:`!__spec__.cached` is deprecated. In Python 3.15,
+      :attr:`!__cached__` will cease to be set or taken into consideration by
+      the import system or standard library.
 
 Other writable attributes on module objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
