@@ -891,4 +891,4 @@ is being attempted.
 > **Document history**
 >
 >   Pablo Galindo Salgado - Original author
->   Irit Katriel - Convert to Markdown
+>   Irit Katriel and Jacob Coffee - Convert to Markdown
