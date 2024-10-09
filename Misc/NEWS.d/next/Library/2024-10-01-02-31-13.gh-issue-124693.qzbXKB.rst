@@ -1,0 +1,1 @@
+Fix a bug where :mod:`argparse` doesn't recognize negative complex numbers or negative numbers using scientific notation.
