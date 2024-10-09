@@ -497,7 +497,8 @@ nu_ulonglong(_structmodulestate *state, const char *p, const formatdef *f)
 static PyObject *
 nu_bool(_structmodulestate *state, const char *p, const formatdef *f)
 {
-    return PyBool_FromLong((*p) != 0);
+    const _Bool f = false;
+    return PyBool_FromLong(memcmp(p, &f, sizeof(_Bool));
 }
 
 
