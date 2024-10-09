@@ -1030,8 +1030,8 @@ this approach.
    .. deprecated-removed:: 3.12 3.14
       Setting :attr:`!__loader__` on a module while failing to set
       :attr:`!__spec__.loader` is deprecated. In Python 3.14,
-      :attr:`!module.__loader__` will cease to be set or taken into
-      consideration by the import system or the standard library.
+      :attr:`!__loader__` will cease to be set or taken into consideration by
+      the import system or the standard library.
 
 .. attribute:: module.__path__
 
