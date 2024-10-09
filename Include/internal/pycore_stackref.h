@@ -54,12 +54,13 @@ typedef union _PyStackRef {
 } _PyStackRef;
 
 
+#ifdef Py_GIL_DISABLED
+
 #define Py_TAG_DEFERRED (1)
 
 #define Py_TAG_PTR      ((uintptr_t)0)
 #define Py_TAG_BITS     ((uintptr_t)1)
 
-#ifdef Py_GIL_DISABLED
 
 static const _PyStackRef PyStackRef_NULL = { .bits = Py_TAG_DEFERRED};
 #define PyStackRef_IsNull(stackref) ((stackref).bits == PyStackRef_NULL.bits)
@@ -153,36 +154,104 @@ PyStackRef_AsStrongReference(_PyStackRef stackref)
     return PyStackRef_FromPyObjectSteal(PyStackRef_AsPyObjectSteal(stackref));
 }
 
-
 #else // Py_GIL_DISABLED
 
 // With GIL
+
+#define Py_TAG_BITS 1
+#define Py_TAG_REFCNT 1
+#define BITS_TO_PTR(REF) ((PyObject *)((REF).bits))
+#define BITS_TO_PTR_MASKED(REF) ((PyObject *)(((REF).bits) & (~Py_TAG_BITS)))
+
 static const _PyStackRef PyStackRef_NULL = { .bits = 0 };
-#define PyStackRef_IsNull(stackref) ((stackref).bits == 0)
-#define PyStackRef_True ((_PyStackRef){.bits = (uintptr_t)&_Py_TrueStruct })
-#define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) })
-#define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) })
 
-#define PyStackRef_AsPyObjectBorrow(stackref) ((PyObject *)(stackref).bits)
+#define PyStackRef_IsNull(ref) ((ref).bits == 0)
+#define PyStackRef_True ((_PyStackRef){.bits = ((uintptr_t)&_Py_TrueStruct) | Py_TAG_REFCNT })
+#define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) | Py_TAG_REFCNT })
+#define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) | Py_TAG_REFCNT })
 
-#define PyStackRef_AsPyObjectSteal(stackref) PyStackRef_AsPyObjectBorrow(stackref)
+static inline int
+PyStackRef_HasCount(_PyStackRef ref)
+{
+    return ref.bits & Py_TAG_REFCNT;
+}
 
-#define PyStackRef_FromPyObjectSteal(obj) ((_PyStackRef){.bits = ((uintptr_t)(obj))})
+static inline PyObject *
+PyStackRef_AsPyObjectBorrow(_PyStackRef ref)
+{
+    return BITS_TO_PTR_MASKED(ref);
+}
 
-#define PyStackRef_FromPyObjectNew(obj) ((_PyStackRef){ .bits = (uintptr_t)(Py_NewRef(obj)) })
+static inline PyObject *
+PyStackRef_AsPyObjectSteal(_PyStackRef ref)
+{
+    if (PyStackRef_HasCount(ref)) {
+        return Py_NewRef(BITS_TO_PTR_MASKED(ref));
+    }
+    else {
+        return BITS_TO_PTR(ref);
+    }
+}
 
-#define PyStackRef_FromPyObjectImmortal(obj) ((_PyStackRef){ .bits = (uintptr_t)(obj) })
+/* We will want to extend this to a larger set of objects in the future */
+#define _Py_IsDeferrable _Py_IsImmortal
 
-#define PyStackRef_CLOSE(stackref) Py_DECREF(PyStackRef_AsPyObjectBorrow(stackref))
+static inline _PyStackRef
+PyStackRef_FromPyObjectSteal(PyObject *obj)
+{
+    assert(obj != NULL);
+    unsigned int tag = _Py_IsDeferrable(obj) ? Py_TAG_REFCNT : 0;
+    _PyStackRef ref = ((_PyStackRef){.bits = ((uintptr_t)(obj)) | tag});
+    return ref;
+}
 
-#define PyStackRef_DUP(stackref) PyStackRef_FromPyObjectSteal(Py_NewRef(PyStackRef_AsPyObjectBorrow(stackref)))
+static inline _PyStackRef
+_PyStackRef_FromPyObjectNew(PyObject *obj)
+{
+    if (_Py_IsDeferrable(obj)) {
+        return (_PyStackRef){ .bits = ((uintptr_t)obj) | Py_TAG_REFCNT};
+    }
+    Py_INCREF(obj);
+    _PyStackRef ref = (_PyStackRef){ .bits = (uintptr_t)obj };
+    return ref;
+}
+#define PyStackRef_FromPyObjectNew(obj) _PyStackRef_FromPyObjectNew(_PyObject_CAST(obj))
 
+/* Create a new reference from an object with an embedded reference count */
+static inline _PyStackRef
+_PyStackRef_FromPyObjectWithCount(PyObject *obj)
+{
+    return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_REFCNT};
+}
+#define PyStackRef_FromPyObjectWithCount(obj) _PyStackRef_FromPyObjectWithCount(_PyObject_CAST(obj))
+
+#define PyStackRef_FromPyObjectImmortal PyStackRef_FromPyObjectWithCount
+
+
+static inline _PyStackRef
+PyStackRef_DUP(_PyStackRef ref)
+{
+    assert(!PyStackRef_IsNull(ref));
+    if (!PyStackRef_HasCount(ref)) {
+        Py_INCREF_MORTAL(BITS_TO_PTR(ref));
+    }
+    return ref;
+}
+
+static inline void
+PyStackRef_CLOSE(_PyStackRef ref)
+{
+    assert(!PyStackRef_IsNull(ref));
+    if (!PyStackRef_HasCount(ref)) {
+        Py_DECREF_MORTAL(BITS_TO_PTR(ref));
+    }
+}
 
 #endif // Py_GIL_DISABLED
 
 // Note: this is a macro because MSVC (Windows) has trouble inlining it.
 
-#define PyStackRef_Is(a, b) ((a).bits == (b).bits)
+#define PyStackRef_Is(a, b) (((a).bits & (~Py_TAG_BITS)) == ((b).bits & (~Py_TAG_BITS)))
 
 // Converts a PyStackRef back to a PyObject *, converting the
 // stackref to a new reference.

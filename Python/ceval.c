@@ -1765,7 +1765,6 @@ _PyEvalFramePushAndInit_UnTagged(PyThreadState *tstate, _PyStackRef func,
                         PyObject *locals, PyObject *const* args,
                         size_t argcount, PyObject *kwnames, _PyInterpreterFrame *previous)
 {
-#if defined(Py_GIL_DISABLED)
     size_t kw_count = kwnames == NULL ? 0 : PyTuple_GET_SIZE(kwnames);
     size_t total_argcount = argcount + kw_count;
     _PyStackRef *tagged_args_buffer = PyMem_Malloc(sizeof(_PyStackRef) * total_argcount);
@@ -1782,9 +1781,6 @@ _PyEvalFramePushAndInit_UnTagged(PyThreadState *tstate, _PyStackRef func,
     _PyInterpreterFrame *res = _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)tagged_args_buffer, argcount, kwnames, previous);
     PyMem_Free(tagged_args_buffer);
     return res;
-#else
-    return _PyEvalFramePushAndInit(tstate, func, locals, (_PyStackRef const *)args, argcount, kwnames, previous);
-#endif
 }
 
 /* Same as _PyEvalFramePushAndInit but takes an args tuple and kwargs dict.
