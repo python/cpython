@@ -1104,7 +1104,7 @@ the following writable attributes:
 .. attribute:: module.__annotate__
 
    The :term:`annotate function` for this module, or ``None`` if the module has
-   no annotations. See also: :attr:`__annotate__ attributes <object.__annotate__>`.
+   no annotations. See also: :attr:`~object.__annotate__` attributes.
 
    .. versionadded:: 3.14
 
