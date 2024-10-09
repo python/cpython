@@ -564,8 +564,7 @@ exception and traceback:
 
    try:
        lumberjack()
-   except IndexError:
-       exc = sys.exception()
+   except IndexError as exc:
        print("*** print_tb:")
        traceback.print_tb(exc.__traceback__, limit=1, file=sys.stdout)
        print("*** print_exception:")
@@ -616,8 +615,8 @@ The output for the example would look similar to this:
    IndexError: tuple index out of range
    *** format_exception:
    ['Traceback (most recent call last):\n',
-    '  File "<doctest default[0]>", line 10, in <module>\n    lumberjack()\n    ^^^^^^^^^^^^\n',
-    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_life()\n    ^^^^^^^^^^^^^^^^^^^^^\n',
+    '  File "<doctest default[0]>", line 10, in <module>\n    lumberjack()\n    ~~~~~~~~~~^^\n',
+    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_life()\n    ~~~~~~~~~~~~~~~~~~~^^\n',
     '  File "<doctest default[0]>", line 7, in bright_side_of_life\n    return tuple()[0]\n           ~~~~~~~^^^\n',
     'IndexError: tuple index out of range\n']
    *** extract_tb:
@@ -625,8 +624,8 @@ The output for the example would look similar to this:
     <FrameSummary file <doctest...>, line 4 in lumberjack>,
     <FrameSummary file <doctest...>, line 7 in bright_side_of_life>]
    *** format_tb:
-   ['  File "<doctest default[0]>", line 10, in <module>\n    lumberjack()\n    ^^^^^^^^^^^^\n',
-    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_life()\n    ^^^^^^^^^^^^^^^^^^^^^\n',
+   ['  File "<doctest default[0]>", line 10, in <module>\n    lumberjack()\n    ~~~~~~~~~~^^\n',
+    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_life()\n    ~~~~~~~~~~~~~~~~~~~^^\n',
     '  File "<doctest default[0]>", line 7, in bright_side_of_life\n    return tuple()[0]\n           ~~~~~~~^^^\n']
    *** tb_lineno: 10
 
@@ -672,10 +671,10 @@ This last example demonstrates the final few formatting functions:
    ['IndexError: tuple index out of range\n']
 
 
-Examples of Using `TracebackException` et al.
----------------------------------------------
+Examples of Using `TracebackException`
+--------------------------------------
 
-With the helper classes, we have more options::
+With the helper class, we have more options::
 
    import sys
    from traceback import TracebackException
@@ -684,51 +683,70 @@ With the helper classes, we have more options::
        bright_side_of_life()
 
    def bright_side_of_life():
-       t = tuple((1,2,3))
+       t = "bright", "side", "of", "life"
        return t[5]
 
    try:
        lumberjack()
    except IndexError as e:
-       exc_info = sys.exc_info()
+       exc = e
 
+   try:
+      try:
+         lumberjack()
+      except:
+         1/0
+   except Exception as e:
+       chained_exc = e
 
    # limit works as with the module-level functions
-   >>> TracebackException(*exc_info, limit=-2).print()
+   >>> TracebackException.from_exception(exc, limit=-2).print()
    Traceback (most recent call last):
-     File "<stdin>", line 3, in lumberjack
-     File "<stdin>", line 4, in bright_side_of_life
+     File "<python-input-1>", line 6, in lumberjack
+       bright_side_of_life()
+       ~~~~~~~~~~~~~~~~~~~^^
+     File "<python-input-1>", line 10, in bright_side_of_life
+       return t[5]
+              ~^^^
    IndexError: tuple index out of range
 
    # capture_locals adds local variables in frames
-   >>> TracebackException(*exc_info, limit=-2, capture_locals=True).print()
+   >>> TracebackException.from_exception(exc, limit=-2, capture_locals=True).print()
    Traceback (most recent call last):
-     File "<stdin>", line 3, in lumberjack
-     File "<stdin>", line 4, in bright_side_of_life
-       t = (1, 2, 3)
+     File "<python-input-1>", line 6, in lumberjack
+       bright_side_of_life()
+       ~~~~~~~~~~~~~~~~~~~^^
+     File "<python-input-1>", line 10, in bright_side_of_life
+       return t[5]
+              ~^^^
+       t = ("bright", "side", "of", "life")
    IndexError: tuple index out of range
 
-   # We can change the format by replacing the default StackSummary class
-   >>> class CustomStackSummary(traceback.StackSummary):
-   ...     def format_frame(self, frame):
-   ...         return f'{frame.filename}:{frame.lineno}\n'
-   ...
-   >>> TracebackException(*exc_info, limit=-2, stack_summary_cls=CustomStackSummary).print()
+   # The *chain* kwarg to print() controls whether chained
+   # exceptions are displayed
+   >>> TracebackException.from_exception(chained_exc).print()
    Traceback (most recent call last):
-   <stdin>:3
-   <stdin>:4
+     File "<python-input-19>", line 4, in <module>
+       lumberjack()
+       ~~~~~~~~~~^^
+     File "<python-input-8>", line 7, in lumberjack
+       bright_side_of_life()
+       ~~~~~~~~~~~~~~~~~~~^^
+     File "<python-input-8>", line 11, in bright_side_of_life
+       return t[5]
+              ~^^^
    IndexError: tuple index out of range
-   >>>
 
-   # We can omit frames from the output with a diffent StackSummary replacement
-   >>> class OmitLumberjack(traceback.StackSummary):
-   ...     def format_frame(self, frame):
-   ...         if frame.name == 'lumberjack':
-   ...             return None
-   ...         return super().format_frame(frame)
-   ...
-   >>> TracebackExclinkedineption(*exc_info, limit=-2, stack_summary_cls=OmitLumberjack).print()
+   During handling of the above exception, another exception occurred:
+
    Traceback (most recent call last):
-     File "<stdin>", line 4, in bright_side_of_life
-   IndexError: tuple index out of range
-   >>>
+     File "<python-input-19>", line 6, in <module>
+       1/0
+       ~^~
+   ZeroDivisionError: division by zero
+   >>> TracebackException.from_exception(chained_exc).print(chain=False)
+   Traceback (most recent call last):
+     File "<python-input-19>", line 6, in <module>
+       1/0
+       ~^~
+   ZeroDivisionError: division by zero
