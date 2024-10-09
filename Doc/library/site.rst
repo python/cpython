@@ -195,8 +195,8 @@ Module contents
    Note that :func:`getusersitepackages` and :func:`getuserbase`
    don't take this variable into account. The check for :data:`ENABLE_USER_SITE` and
    modification of ``sys.path`` occur later.  To disable user site-packages,
-   users are encouraged to create :mod:`sitecustomize` or :mod:`usercustomize`,
-   rather than try to edit :file:`site.py`.
+   administrators or users are encouraged to create :mod:`sitecustomize`
+   or :mod:`usercustomize` rather than try to edit :file:`site.py`.
 
 
 .. data:: USER_SITE
