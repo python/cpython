@@ -48,6 +48,10 @@
    of less than one character */
 #define SMALLBUF 4
 
+/* Limit write size to consoles so that interrupts feel
+   responsive. */
+#define WRITE_LIMIT_CONSOLE (1024 * 1024)
+
 char _get_console_type(HANDLE handle) {
     DWORD mode, peek_count;
 
@@ -132,24 +136,6 @@ char _PyIO_get_console_type(PyObject *path_or_fd) {
     if (pname_buf != name_buf)
         PyMem_Free(pname_buf);
     return m;
-}
-
-static DWORD
-_find_last_utf8_boundary(const char *buf, DWORD len)
-{
-    /* This function never returns 0, returns the original len instead */
-    DWORD count = 1;
-    if (len == 0 || (buf[len - 1] & 0x80) == 0) {
-        return len;
-    }
-    for (;; count++) {
-        if (count > 3 || count >= len) {
-            return len;
-        }
-        if ((buf[len - count] & 0xc0) != 0x80) {
-            return len - count;
-        }
-    }
 }
 
 /*[clinic input]
@@ -1016,25 +1002,23 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, PyTypeObject *cls,
     if (!b->len) {
         return PyLong_FromLong(0);
     }
-    if (b->len > BUFMAX)
-        len = BUFMAX;
+    /* Ensure len fits in a DWORD. This cap is larger than the write
+       limit because it doesn't respect utf-8 characters boundaries.
+       Rely on _Py_LimitConsoleWriteSize to do a character split. */
+    if (b->len > WRITE_LIMIT_CONSOLE * 2)
+        len = WRITE_LIMIT_CONSOLE * 2;
     else
         len = (DWORD)b->len;
 
+
+    /* Limit console write size to keep interactivity.
+
+       This is a soft cap / wlen may be higher, but that is
+       okay because it isn't a hard OS limit in Windows 8+. */
+    len = (DWORD)_Py_LimitConsoleWriteSize(b->buf, len, WRITE_LIMIT_CONSOLE);
+
     Py_BEGIN_ALLOW_THREADS
     wlen = MultiByteToWideChar(CP_UTF8, 0, b->buf, len, NULL, 0);
-
-    /* issue11395 there is an unspecified upper bound on how many bytes
-       can be written at once. We cap at 32k - the caller will have to
-       handle partial writes.
-       Since we don't know how many input bytes are being ignored, we
-       have to reduce and recalculate. */
-    while (wlen > 32766 / sizeof(wchar_t)) {
-        len /= 2;
-        /* Fix for github issues gh-110913 and gh-82052. */
-        len = _find_last_utf8_boundary(b->buf, len);
-        wlen = MultiByteToWideChar(CP_UTF8, 0, b->buf, len, NULL, 0);
-    }
     Py_END_ALLOW_THREADS
 
     if (!wlen)
