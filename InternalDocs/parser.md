@@ -6,7 +6,7 @@ Abstract
 --------
 
 Python's Parser is currently a
-[``PEG`` (Parser Expression Grammar)](https://en.wikipedia.org/wiki/Parsing_expression_grammar)
+[`PEG` (Parser Expression Grammar)](https://en.wikipedia.org/wiki/Parsing_expression_grammar)
 parser. It was introduced in
 [PEP 617: New PEG parser for CPython](https://peps.python.org/pep-0617/) to replace
 the original [``LL(1)``](https://en.wikipedia.org/wiki/LL_parser) parser.
@@ -17,7 +17,7 @@ Therefore, changes to the Python language are made by modifying the
 [grammar file](https://github.com/python/cpython/blob/main/Grammar/python.gram).
 Developers rarely need to modify the generator itself.
 
-See the devguide's [Changing CPython’s grammar](https://devguide.python.org/developer-workflow/grammar/#grammar)
+See the devguide's [Changing CPython's grammar](https://devguide.python.org/developer-workflow/grammar/#grammar)
 for a detailed description of the grammar and the process for changing it.
 
 How PEG parsers work
