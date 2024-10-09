@@ -3666,6 +3666,10 @@ x_add(PyLongObject *a, PyLongObject *b)
     Py_ssize_t i;
     digit carry = 0;
 
+    /* There are fast paths for cases where a and b both have at most a single
+       digit, so if we end up here then at least one of them is multi-digit. */
+    assert(size_a >= 2 || size_b >= 2);
+
     /* Ensure a is the larger of the two: */
     if (size_a < size_b) {
         { PyLongObject *temp = a; a = b; b = temp; }
@@ -3673,7 +3677,15 @@ x_add(PyLongObject *a, PyLongObject *b)
             size_a = size_b;
             size_b = size_temp; }
     }
-    z = _PyLong_New(size_a+1);
+
+    /* Allocate sufficient space for the result. In the majority of cases
+       we allocate exactly the right number of digits, but in the (relatively
+       rare) case where the sum of the topmost digits is exactly PyLong_MASK,
+       we'll sometimes end up overallocating by a single digit. */
+    digit top_sum = a->long_value.ob_digit[size_a - 1]
+        + (size_b == size_a ? b->long_value.ob_digit[size_b - 1] : (digit)0);
+    int extra_digit = top_sum >= PyLong_MASK;
+    z = _PyLong_New(size_a + extra_digit);
     if (z == NULL)
         return NULL;
     for (i = 0; i < size_b; ++i) {
@@ -3686,7 +3698,10 @@ x_add(PyLongObject *a, PyLongObject *b)
         z->long_value.ob_digit[i] = carry & PyLong_MASK;
         carry >>= PyLong_SHIFT;
     }
-    z->long_value.ob_digit[i] = carry;
+    assert(carry == 0 || extra_digit);
+    if (extra_digit) {
+        z->long_value.ob_digit[i] = carry;
+    }
     return long_normalize(z);
 }
 
