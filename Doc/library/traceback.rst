@@ -682,7 +682,6 @@ Examples of Using :class:`TracebackException`
 
 With the helper class, we have more options:
 
-.. doctest::
 
    >>> import sys
    >>> from traceback import TracebackException
