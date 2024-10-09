@@ -357,10 +357,10 @@ ABC hierarchy::
 
         - :attr:`module.__name__`
         - :attr:`module.__file__`
-        - :attr:`module.__cached__`
+        - :attr:`module.__cached__` *(deprecated)*
         - :attr:`module.__path__`
-        - :attr:`module.__package__`
-        - :attr:`module.__loader__`
+        - :attr:`module.__package__` *(deprecated)*
+        - :attr:`module.__loader__` *(deprecated)*
 
         When :meth:`exec_module` is available then backwards-compatible
         functionality is provided.
