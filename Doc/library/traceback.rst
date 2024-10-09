@@ -15,7 +15,7 @@ possible to configure certain aspects of the output. Finally,
 it contains a utility for capturing enough information about an
 exception to print it later, without the need to save a reference
 to the actual exception. Since exceptions can be the roots of large
-objects graph, using this utility can significantly improve
+objects graph, this utility can significantly improve
 memory management.
 
 .. index:: pair: object; traceback
@@ -34,8 +34,10 @@ which are assigned to the :attr:`~BaseException.__traceback__` field of
       Interactive source code debugger for Python programs.
 
 The module's API can be divided into two parts:
+
 * Module-level functions offering basic functionality, which are useful for interactive
   inspection of exceptions and tracebacks.
+
 * :class:`TracebackException` class and its helper classes
   :class:`StackSummary` and :class:`FrameSummary`. These offer both more
   flexibility in the output generated and the ability to store the information
@@ -678,7 +680,9 @@ This last example demonstrates the final few formatting functions:
 Examples of Using :class:`TracebackException`
 ---------------------------------------------
 
-With the helper class, we have more options::
+With the helper class, we have more options:
+
+.. doctest::
 
    >>> import sys
    >>> from traceback import TracebackException
@@ -714,7 +718,7 @@ With the helper class, we have more options::
               ~^^^
    IndexError: tuple index out of range
 
-   # capture_locals adds local variables in frames
+   >>> # capture_locals adds local variables in frames
    >>> TracebackException.from_exception(exc, limit=-2, capture_locals=True).print()
    Traceback (most recent call last):
      File "<python-input-1>", line 6, in lumberjack
@@ -726,8 +730,8 @@ With the helper class, we have more options::
        t = ("bright", "side", "of", "life")
    IndexError: tuple index out of range
 
-   # The *chain* kwarg to print() controls whether chained
-   # exceptions are displayed
+   >>> # The *chain* kwarg to print() controls whether chained
+   >>> # exceptions are displayed
    >>> TracebackException.from_exception(chained_exc).print()
    Traceback (most recent call last):
      File "<python-input-19>", line 4, in <module>
