@@ -9,11 +9,14 @@
 --------------
 
 This module provides a standard interface to extract, format and print
-stack traces of Python programs.  It can mimic the behavior of the Python
-interpreter when it prints a stack trace, which is useful when you want
-to print stack traces under program control. It is also more flexible
-than the interpreter's default traceback printout, so it is possible to
-configure certain aspects of the output.
+stack traces of Python programs. It is more flexible than the
+interpreter's default traceback display, and therefore makes it
+possible to configure certain aspects of the output. Finally,
+it contains a utility for capturing enough information about an
+exception to print it later, without the need to save a reference
+to the actual exception. Since exceptions can be the roots of large
+objects graph, using this utility can significantly improve
+memory management.
 
 .. index:: pair: object; traceback
 
@@ -257,9 +260,10 @@ Module-Level Functions
 
 :class:`!TracebackException` objects are created from actual exceptions to
 capture data for later printing.  They offer a more lightweight method of
-storing this information by avoiding holding references to traceback
-and frame objects.  In addition, they expose more options to configure the
-output compared to the module-level functions described above.
+storing this information by avoiding holding references to
+:ref:`traceback<traceback-objects>` and :ref:`frame<frame-objects>` objects
+In addition, they expose more options to configure the output compared to
+the module-level functions described above.
 
 .. class:: TracebackException(exc_type, exc_value, exc_traceback, *, limit=None, lookup_lines=True, capture_locals=False, compact=False, max_group_width=15, max_group_depth=10)
 
