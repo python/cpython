@@ -1584,9 +1584,9 @@ class FileIO(RawIOBase):
                     if e.errno != errno.ESPIPE:
                         raise
         except:
+            self._stat_atopen = None
             if owned_fd is not None:
                 os.close(owned_fd)
-            self._stat_atopen = None
             raise
         self._fd = fd
 
