@@ -498,26 +498,37 @@ def register_readline():
 
     import atexit
     try:
-        import readline
+        try:
+            import readline
+            real_readline = True
+        except ImportError:
+            import _pyrepl.readline as readline
+            real_readline = False
         import rlcompleter  # noqa: F401
         if PYTHON_BASIC_REPL:
             CAN_USE_PYREPL = False
         else:
-            import _pyrepl.readline
-            import _pyrepl.unix_console
             from _pyrepl.main import CAN_USE_PYREPL
+            if real_readline:
+                import _pyrepl.unix_console
+                console_error = _pyrepl.unix_console._error
+            else:
+                import _pyrepl.windows_console
+                console_error = [_pyrepl.windows_console._error]
+
     except ImportError:
         return
 
     # Reading the initialization (config) file may not be enough to set a
     # completion key, so we set one first and then read the file.
-    if readline.backend == 'editline':
+    if getattr(readline, "backend", None) == 'editline':
         readline.parse_and_bind('bind ^I rl_complete')
     else:
         readline.parse_and_bind('tab: complete')
 
     try:
-        readline.read_init_file()
+        if real_readline:
+            readline.read_init_file()
     except OSError:
         # An OSError here could have many causes, but the most likely one
         # is that there's no .inputrc file (or .editrc file in the case of
@@ -536,7 +547,7 @@ def register_readline():
 
         if CAN_USE_PYREPL:
             readline_module = _pyrepl.readline
-            exceptions = (OSError, *_pyrepl.unix_console._error)
+            exceptions = (OSError, *console_error)
         else:
             readline_module = readline
             exceptions = OSError
