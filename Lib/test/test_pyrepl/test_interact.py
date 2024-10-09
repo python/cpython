@@ -119,12 +119,37 @@ SyntaxError: duplicate argument 'x' in function definition"""
 
     def test_no_active_future(self):
         console = InteractiveColoredConsole()
-        source = "x: int = 1; print(__annotate__(1))"
+        source = dedent("""\
+        x: int = 1
+        print(__annotate__(1))
+        """)
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
             result = console.runsource(source)
         self.assertFalse(result)
         self.assertEqual(f.getvalue(), "{'x': <class 'int'>}\n")
+
+    def test_future_annotations(self):
+        console = InteractiveColoredConsole()
+        source = dedent("""\
+        from __future__ import annotations
+        def g(x: int): ...
+        print(g.__annotations__)
+        """)
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            result = console.runsource(source)
+        self.assertFalse(result)
+        self.assertEqual(f.getvalue(), "{'x': 'int'}\n")
+
+    def test_future_barry_as_flufl(self):
+        console = InteractiveColoredConsole()
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            result = console.runsource("from __future__ import barry_as_FLUFL\n")
+            result = console.runsource("""print("black" <> 'blue')\n""")
+        self.assertFalse(result)
+        self.assertEqual(f.getvalue(), "True\n")
 
 
 class TestMoreLines(unittest.TestCase):

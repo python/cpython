@@ -117,7 +117,7 @@ class Compile:
             flags &= ~PyCF_ALLOW_INCOMPLETE_INPUT
         codeob = compile(source, filename, symbol, flags, True)
         if flags & PyCF_ONLY_AST:
-            return compile(source, filename, symbol, flags, True)
+            return codeob  # this is an ast.Module in this case
         for feature in _features:
             if codeob.co_flags & feature.compiler_flag:
                 self.flags |= feature.compiler_flag
