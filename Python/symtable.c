@@ -354,7 +354,7 @@ static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
 
 static void dump_symtable(PySTEntryObject* ste)
 {
-    PyObject *empty = PyUnicode_FromString("");
+    PyObject *empty = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     assert(empty != NULL);
     _dump_symtable(ste, empty);
     Py_DECREF(empty);
