@@ -686,7 +686,7 @@ With the helper class, we have more options:
 
    >>> import sys
    >>> from traceback import TracebackException
-   ...
+   >>>
    >>> def lumberjack():
    ...     bright_side_of_life()
    ...
