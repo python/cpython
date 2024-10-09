@@ -142,10 +142,9 @@ class LocaleTime(object):
             # ambiguity in some locales where the full and abbreviated
             # month names are equal. See doc of __find_month_format for more
             # details.
-            month_format = self.__find_month_format(directive)
-            if month_format:
-                current_format = current_format.replace(month_format[0][3],
-                                                        month_format[1])
+            lst, fmt = self.__find_month_format(directive)
+            if lst:
+                current_format = current_format.replace(lst[3], fmt)
             current_format = current_format.replace(self.a_weekday[2], '%a')
             if self.am_pm[1]:
                 # Must deal with possible lack of locale info
@@ -200,12 +199,12 @@ class LocaleTime(object):
             else:
                 abbr_indices &= indices
             if not full_indices and not abbr_indices:
-                return None
+                return None, None
         if full_indices:
             return self.f_month, '%B'
         if abbr_indices:
             return self.a_month, '%b'
-        return None
+        return None, None
 
     def __calc_timezone(self):
         # Set self.timezone by using time.tzname.
