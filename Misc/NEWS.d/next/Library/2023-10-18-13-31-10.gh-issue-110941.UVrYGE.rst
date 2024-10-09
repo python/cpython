@@ -1,0 +1,2 @@
+Fix ``json.dump`` and ``json.dumps`` encoding certain dict subclasses as
+empty.
