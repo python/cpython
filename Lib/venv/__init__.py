@@ -575,8 +575,7 @@ def create(env_dir, system_site_packages=False, clear=False,
 def main(args=None):
     import argparse
 
-    parser = argparse.ArgumentParser(prog=__name__,
-                                     description='Creates virtual Python '
+    parser = argparse.ArgumentParser(description='Creates virtual Python '
                                                  'environments in one or '
                                                  'more target '
                                                  'directories.',

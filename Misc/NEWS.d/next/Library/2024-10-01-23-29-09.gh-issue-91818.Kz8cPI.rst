@@ -1,0 +1,4 @@
+The CLI of many modules (:mod:`ast`, :mod:`ensurepip`, :mod:`json`,
+:mod:`pdb`, :mod:`sqlite3`, :mod:`tokenize`, :mod:`venv`) now uses the
+actual executable name instead of simply "python" to display in the usage
+message.

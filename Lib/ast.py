@@ -1743,7 +1743,7 @@ def unparse(ast_obj):
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(prog='python -m ast')
+    parser = argparse.ArgumentParser()
     parser.add_argument('infile', nargs='?', default='-',
                         help='the file to parse; defaults to stdin')
     parser.add_argument('-m', '--mode', default='exec',
