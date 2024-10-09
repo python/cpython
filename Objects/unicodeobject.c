@@ -13455,6 +13455,9 @@ PyUnicodeWriter_Create(Py_ssize_t length)
 
 void PyUnicodeWriter_Discard(PyUnicodeWriter *writer)
 {
+    if (writer == NULL) {
+        return;
+    }
     _PyUnicodeWriter_Dealloc((_PyUnicodeWriter*)writer);
     PyMem_Free(writer);
 }
