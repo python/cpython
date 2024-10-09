@@ -13,18 +13,39 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.util.typing import ExtensionMetadata
 
-logger = logging.getLogger('availability')
+logger = logging.getLogger("availability")
 
 # known platform, libc, and threading implementations
-KNOWN_PLATFORMS = frozenset({
-    'AIX', 'Android', 'BSD', 'DragonFlyBSD', 'Emscripten', 'FreeBSD',
-    'GNU/kFreeBSD', 'iOS', 'Linux', 'macOS', 'NetBSD', 'OpenBSD',
-    'POSIX', 'Solaris', 'Unix', 'VxWorks', 'WASI', 'Windows',
-    # libc
-    'BSD libc', 'glibc', 'musl',
+_PLATFORMS = frozenset({
+    "AIX",
+    "Android",
+    "BSD",
+    "DragonFlyBSD",
+    "Emscripten",
+    "FreeBSD",
+    "GNU/kFreeBSD",
+    "iOS",
+    "Linux",
+    "macOS",
+    "NetBSD",
+    "OpenBSD",
+    "POSIX",
+    "Solaris",
+    "Unix",
+    "VxWorks",
+    "WASI",
+    "Windows",
+})
+_LIBC = frozenset({
+    "BSD libc",
+    "glibc",
+    "musl",
+})
+_THREADING = frozenset({
     # POSIX platforms with pthreads
-    'pthreads',
-})  # fmt: skip
+    "pthreads",
+})
+KNOWN_PLATFORMS = _PLATFORMS | _LIBC | _THREADING
 
 
 class Availability(SphinxDirective):
@@ -34,22 +55,22 @@ class Availability(SphinxDirective):
     final_argument_whitespace = True
 
     def run(self) -> list[nodes.container]:
-        title = 'Availability'
+        title = "Availability"
         refnode = addnodes.pending_xref(
             title,
-            nodes.inline(title, title, classes=['xref', 'std', 'std-ref']),
+            nodes.inline(title, title, classes=["xref", "std", "std-ref"]),
             refdoc=self.env.docname,
-            refdomain='std',
+            refdomain="std",
             refexplicit=True,
-            reftarget='availability',
-            reftype='ref',
+            reftarget="availability",
+            reftype="ref",
             refwarn=True,
         )
-        sep = nodes.Text(': ')
+        sep = nodes.Text(": ")
         parsed, msgs = self.state.inline_text(self.arguments[0], self.lineno)
-        pnode = nodes.paragraph(title, '', refnode, sep, *parsed, *msgs)
+        pnode = nodes.paragraph(title, "", refnode, sep, *parsed, *msgs)
         self.set_source_info(pnode)
-        cnode = nodes.container('', pnode, classes=['availability'])
+        cnode = nodes.container("", pnode, classes=["availability"])
         self.set_source_info(cnode)
         if self.content:
             self.state.nested_parse(self.content, self.content_offset, cnode)
@@ -71,12 +92,12 @@ class Availability(SphinxDirective):
         parsed into separate tokens.
         """
         platforms = {}
-        for arg in self.arguments[0].rstrip('.').split(','):
+        for arg in self.arguments[0].rstrip(".").split(","):
             arg = arg.strip()
-            platform, _, version = arg.partition(' >= ')
-            if platform.startswith('not '):
+            platform, _, version = arg.partition(" >= ")
+            if platform.startswith("not "):
                 version = False
-                platform = platform.removeprefix('not ')
+                platform = platform.removeprefix("not ")
             elif not version:
                 version = True
             platforms[platform] = version
@@ -84,9 +105,9 @@ class Availability(SphinxDirective):
         if unknown := set(platforms).difference(KNOWN_PLATFORMS):
             logger.warning(
                 "Unknown platform%s or syntax '%s' in '.. availability:: %s', "
-                'see %s:KNOWN_PLATFORMS for a set of known platforms.',
-                's' if len(platforms) != 1 else '',
-                ' '.join(sorted(unknown)),
+                "see %s:KNOWN_PLATFORMS for a set of known platforms.",
+                "s" if len(platforms) != 1 else "",
+                " ".join(sorted(unknown)),
                 self.arguments[0],
                 __file__,
             )
@@ -95,10 +116,10 @@ class Availability(SphinxDirective):
 
 
 def setup(app: Sphinx) -> ExtensionMetadata:
-    app.add_directive('availability', Availability)
+    app.add_directive("availability", Availability)
 
     return {
-        'version': '1.0',
-        'parallel_read_safe': True,
-        'parallel_write_safe': True,
+        "version": "1.0",
+        "parallel_read_safe": True,
+        "parallel_write_safe": True,
     }
