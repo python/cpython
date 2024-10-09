@@ -639,6 +639,7 @@ New Features
   * :c:func:`PyUnicodeWriter_WriteStr`
   * :c:func:`PyUnicodeWriter_WriteRepr`
   * :c:func:`PyUnicodeWriter_WriteSubstring`
+  * :c:func:`PyUnicodeWriter_Fill`
   * :c:func:`PyUnicodeWriter_Format`
   * :c:func:`PyUnicodeWriter_DecodeUTF8Stateful`
 

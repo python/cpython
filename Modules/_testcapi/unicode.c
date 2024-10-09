@@ -510,6 +510,27 @@ writer_finish(PyObject *self_raw, PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject*
+writer_fill(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    Py_ssize_t len;
+    int ch;
+    if (!PyArg_ParseTuple(args, "nC", &len, &ch)) {
+        return NULL;
+    }
+
+    if (PyUnicodeWriter_Fill(self->writer, len, ch) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef writer_methods[] = {
     {"write_char", _PyCFunction_CAST(writer_write_char), METH_VARARGS},
     {"write_utf8", _PyCFunction_CAST(writer_write_utf8), METH_VARARGS},
@@ -519,6 +540,7 @@ static PyMethodDef writer_methods[] = {
     {"write_repr", _PyCFunction_CAST(writer_write_repr), METH_VARARGS},
     {"write_substring", _PyCFunction_CAST(writer_write_substring), METH_VARARGS},
     {"decodeutf8stateful", _PyCFunction_CAST(writer_decodeutf8stateful), METH_VARARGS},
+    {"fill", _PyCFunction_CAST(writer_fill), METH_VARARGS},
     {"get_pointer", _PyCFunction_CAST(writer_get_pointer), METH_VARARGS},
     {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
     {NULL,              NULL}           /* sentinel */

@@ -1744,8 +1744,11 @@ class PyUnicodeWriterTest(unittest.TestCase):
         # test PyUnicodeWriter_WriteRepr()
         writer.write_repr("repr")
 
+        # test PyUnicodeWriter_Fill()
+        writer.fill(3, ".")
+
         self.assertEqual(writer.finish(),
-                         "var=long value 'repr'")
+                         "var=long value 'repr'...")
 
     def test_utf8(self):
         writer = self.create_writer(0)
@@ -1866,6 +1869,17 @@ class PyUnicodeWriterTest(unittest.TestCase):
         writer = self.create_writer(0)
         writer.write_substring("abc", 1, 1)
         self.assertEqual(writer.finish(), '')
+
+    def test_fill(self):
+        writer = self.create_writer(0)
+        writer.fill(0, "#")
+        writer.write_char('(')
+        writer.fill(3, ".")
+        writer.write_char(')')
+        writer.fill(5, "-")
+        writer.write_char('.')
+        self.assertEqual(writer.finish(),
+                         "(...)-----.")
 
 
 @unittest.skipIf(ctypes is None, 'need ctypes')

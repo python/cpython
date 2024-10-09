@@ -1,0 +1,1 @@
+Add :c:func:`PyUnicodeWriter_Fill` function. Patch by Victor Stinner.
