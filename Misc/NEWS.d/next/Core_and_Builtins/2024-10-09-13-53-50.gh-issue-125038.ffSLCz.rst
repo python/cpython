@@ -1,3 +1,2 @@
 Fix crash when iterating over a generator expression after direct changes on ``gi_frame.f_locals``.
-Tests on generator modifying through ``gi_frame.f_locals`` are added,
-both to genexpr generators and function generators. Patch by Mikhail Efimov.
+Patch by Mikhail Efimov.
