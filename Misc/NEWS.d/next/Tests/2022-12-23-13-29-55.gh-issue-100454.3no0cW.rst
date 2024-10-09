@@ -1,0 +1,1 @@
+Fix SSL tests CI for OpenSSL 3.1+
