@@ -479,10 +479,10 @@ class StrptimeTests(unittest.TestCase):
     # * Use non-Gregorian calendar: lo_LA, thai, th_TH.
     #
     # BUG: Generates regexp that does not match the current date and time
-    # for az_IR, brx_IN, fa_IR, lzh_TW, my_MM, or_IN, shn_MM.
+    # for az_IR, fa_IR, lzh_TW, my_MM, or_IN, shn_MM.
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
                       'he_IL', 'eu_ES', 'ar_AE', 'mfe_MU', 'yo_NG',
-                      'csb_PL', 'br_FR', 'gez_ET')
+                      'csb_PL', 'br_FR', 'gez_ET', 'brx_IN')
     def test_date_time_locale(self):
         # Test %c directive
         now = time.time()
@@ -504,7 +504,7 @@ class StrptimeTests(unittest.TestCase):
     # bo_CN, bo_IN, dz_BT, eu_ES, eu_FR.
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
                       'he_IL', 'ar_AE', 'mfe_MU', 'yo_NG',
-                      'csb_PL', 'br_FR', 'gez_ET')
+                      'csb_PL', 'br_FR', 'gez_ET', 'brx_IN')
     def test_date_time_locale2(self):
         # Test %c directive
         self.roundtrip('%c', slice(0, 6), (1900, 1, 1, 0, 0, 0, 0, 1, 0))

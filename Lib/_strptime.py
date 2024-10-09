@@ -194,8 +194,7 @@ class LocaleTime(object):
                 full_indices = indices
             else:
                 full_indices &= indices
-            if self.f_month[m] != self.a_month[m]:
-                indices = set(_findall(datetime, self.a_month[m]))
+            indices = set(_findall(datetime, self.a_month[m]))
             if abbr_indices is None:
                 abbr_indices = indices
             else:
