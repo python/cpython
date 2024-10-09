@@ -922,12 +922,12 @@ importlib
   * :func:`~importlib.resources.read_text`
 
   These functions are no longer deprecated and are not scheduled for removal.
-  (Contributed by Petr Viktorin in :gh:`106532`.)
+  (Contributed by Petr Viktorin in :gh:`116608`.)
 
 * :func:`~importlib.resources.contents` remains deprecated in favor of
   the fully-featured :class:`~importlib.resources.abc.Traversable` API.
   However, there is now no plan to remove it.
-  (Contributed by Petr Viktorin in :gh:`106532`.)
+  (Contributed by Petr Viktorin in :gh:`116608`.)
 
 
 io
