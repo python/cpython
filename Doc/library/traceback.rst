@@ -671,7 +671,7 @@ This last example demonstrates the final few formatting functions:
    ['IndexError: tuple index out of range\n']
 
 
-Examples of Using `TracebackException`
+Examples of Using ``TracebackException``
 --------------------------------------
 
 With the helper class, we have more options::
