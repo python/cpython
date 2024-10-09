@@ -6146,6 +6146,7 @@
             next_instr += 5;
             INSTRUCTION_STATS(LOAD_GLOBAL_BUILTIN);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 4, "incorrect cache size");
+            PyDictKeysObject *builtins_keys;
             _PyStackRef res;
             _PyStackRef null = PyStackRef_NULL;
             /* Skip 1 cache entry */
@@ -6157,19 +6158,19 @@
                 DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
                 assert(DK_IS_UNICODE(dict->ma_keys));
             }
-            // _GUARD_BUILTINS_VERSION
+            // _GUARD_BUILTINS_VERSION_PUSH_KEYS
             {
                 uint16_t version = read_u16(&this_instr[3].cache);
                 PyDictObject *dict = (PyDictObject *)BUILTINS();
                 DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
                 DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
-                assert(DK_IS_UNICODE(dict->ma_keys));
+                builtins_keys = dict->ma_keys;
+                assert(DK_IS_UNICODE(builtins_keys));
             }
-            // _LOAD_GLOBAL_BUILTINS
+            // _LOAD_GLOBAL_BUILTINS_FROM_KEYS
             {
                 uint16_t index = read_u16(&this_instr[4].cache);
-                PyDictObject *bdict = (PyDictObject *)BUILTINS();
-                PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(bdict->ma_keys);
+                PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(builtins_keys);
                 PyObject *res_o = entries[index].me_value;
                 DEOPT_IF(res_o == NULL, LOAD_GLOBAL);
                 Py_INCREF(res_o);
@@ -6189,23 +6190,24 @@
             next_instr += 5;
             INSTRUCTION_STATS(LOAD_GLOBAL_MODULE);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 4, "incorrect cache size");
+            PyDictKeysObject *globals_keys;
             _PyStackRef res;
             _PyStackRef null = PyStackRef_NULL;
             /* Skip 1 cache entry */
-            // _GUARD_GLOBALS_VERSION
+            // _GUARD_GLOBALS_VERSION_PUSH_KEYS
             {
                 uint16_t version = read_u16(&this_instr[2].cache);
                 PyDictObject *dict = (PyDictObject *)GLOBALS();
                 DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
                 DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
-                assert(DK_IS_UNICODE(dict->ma_keys));
+                globals_keys = dict->ma_keys;
+                assert(DK_IS_UNICODE(globals_keys));
             }
             /* Skip 1 cache entry */
-            // _LOAD_GLOBAL_MODULE
+            // _LOAD_GLOBAL_MODULE_FROM_KEYS
             {
                 uint16_t index = read_u16(&this_instr[4].cache);
-                PyDictObject *dict = (PyDictObject *)GLOBALS();
-                PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
+                PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(globals_keys);
                 PyObject *res_o = entries[index].me_value;
                 DEOPT_IF(res_o == NULL, LOAD_GLOBAL);
                 Py_INCREF(res_o);

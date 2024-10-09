@@ -1569,17 +1569,29 @@ dummy_func(
             assert(DK_IS_UNICODE(dict->ma_keys));
         }
 
-        op(_GUARD_BUILTINS_VERSION, (version/1 --)) {
+        op(_GUARD_GLOBALS_VERSION_PUSH_KEYS, (version / 1 -- globals_keys: PyDictKeysObject *))
+        {
+            PyDictObject *dict = (PyDictObject *)GLOBALS();
+            DEOPT_IF(!PyDict_CheckExact(dict));
+            DEOPT_IF(dict->ma_keys->dk_version != version);
+            globals_keys = dict->ma_keys;
+            assert(DK_IS_UNICODE(globals_keys));
+        }
+
+        op(_GUARD_BUILTINS_VERSION_PUSH_KEYS, (version / 1 -- builtins_keys: PyDictKeysObject *))
+        {
             PyDictObject *dict = (PyDictObject *)BUILTINS();
             DEOPT_IF(!PyDict_CheckExact(dict));
             DEOPT_IF(dict->ma_keys->dk_version != version);
-            assert(DK_IS_UNICODE(dict->ma_keys));
+            builtins_keys = dict->ma_keys;
+            assert(DK_IS_UNICODE(builtins_keys));
         }
 
-        op(_LOAD_GLOBAL_MODULE, (index/1 -- res, null if (oparg & 1))) {
-            PyDictObject *dict = (PyDictObject *)GLOBALS();
-            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
+        op(_LOAD_GLOBAL_MODULE_FROM_KEYS, (index/1, globals_keys: PyDictKeysObject* -- res, null if (oparg & 1))) {
+            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(globals_keys);
             PyObject *res_o = entries[index].me_value;
+            DEAD(globals_keys);
+            SYNC_SP();
             DEOPT_IF(res_o == NULL);
             Py_INCREF(res_o);
             STAT_INC(LOAD_GLOBAL, hit);
@@ -1587,10 +1599,11 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
-        op(_LOAD_GLOBAL_BUILTINS, (index/1 -- res, null if (oparg & 1))) {
-            PyDictObject *bdict = (PyDictObject *)BUILTINS();
-            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(bdict->ma_keys);
+        op(_LOAD_GLOBAL_BUILTINS_FROM_KEYS, (index/1, builtins_keys: PyDictKeysObject* -- res, null if (oparg & 1))) {
+            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(builtins_keys);
             PyObject *res_o = entries[index].me_value;
+            DEAD(builtins_keys);
+            SYNC_SP();
             DEOPT_IF(res_o == NULL);
             Py_INCREF(res_o);
             STAT_INC(LOAD_GLOBAL, hit);
@@ -1600,15 +1613,15 @@ dummy_func(
 
         macro(LOAD_GLOBAL_MODULE) =
             unused/1 + // Skip over the counter
-            _GUARD_GLOBALS_VERSION +
+            _GUARD_GLOBALS_VERSION_PUSH_KEYS +
             unused/1 + // Skip over the builtins version
-            _LOAD_GLOBAL_MODULE;
+            _LOAD_GLOBAL_MODULE_FROM_KEYS;
 
         macro(LOAD_GLOBAL_BUILTIN) =
             unused/1 + // Skip over the counter
             _GUARD_GLOBALS_VERSION +
-            _GUARD_BUILTINS_VERSION +
-            _LOAD_GLOBAL_BUILTINS;
+            _GUARD_BUILTINS_VERSION_PUSH_KEYS +
+            _LOAD_GLOBAL_BUILTINS_FROM_KEYS;
 
         inst(DELETE_FAST, (--)) {
             _PyStackRef v = GETLOCAL(oparg);
@@ -4870,6 +4883,26 @@ dummy_func(
             PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
             DEOPT_IF(func->func_version != func_version);
         }
+
+        tier2 op(_LOAD_GLOBAL_MODULE, (index/1 -- res, null if (oparg & 1))) {
+            PyDictObject *dict = (PyDictObject *)GLOBALS();
+            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
+            PyObject *res_o = entries[index].me_value;
+            DEOPT_IF(res_o == NULL);
+            Py_INCREF(res_o);
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            null = PyStackRef_NULL;
+         }
+
+        tier2 op(_LOAD_GLOBAL_BUILTINS, (index/1 -- res, null if (oparg & 1))) {
+            PyDictObject *dict = (PyDictObject *)BUILTINS();
+            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
+            PyObject *res_o = entries[index].me_value;
+            DEOPT_IF(res_o == NULL);
+            Py_INCREF(res_o);
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            null = PyStackRef_NULL;
+         }
 
         /* Internal -- for testing executors */
         op(_INTERNAL_INCREMENT_OPT_COUNTER, (opt --)) {
