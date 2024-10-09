@@ -111,7 +111,7 @@ Module Objects
 
    Return the name of the file from which *module* was loaded using *module*'s
    :attr:`~module.__file__` attribute.  If this is not defined, or if it is not a
-   unicode string, raise :exc:`SystemError` and return ``NULL``; otherwise return
+   string, raise :exc:`SystemError` and return ``NULL``; otherwise return
    a reference to a Unicode object.
 
    .. versionadded:: 3.2

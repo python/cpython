@@ -542,8 +542,8 @@ the module spec.
 
 .. _package-path-rules:
 
-Module __path__ attributes
---------------------------
+__path__ attributes on modules
+------------------------------
 
 The :attr:`~module.__path__` attribute should be a (possibly empty)
 :term:`sequence` of strings enumerating the locations where the package's
