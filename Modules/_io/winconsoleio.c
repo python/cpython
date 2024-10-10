@@ -48,6 +48,30 @@
    of less than one character */
 #define SMALLBUF 4
 
+/* winconsole has to use a different size than the DEFAULT_BUFFER_SIZE.
+
+   issue11395 (2011): there is an unspecified upper bound on how many bytes
+   can be written at once. We cap at 32k - the caller will have to
+   handle partial writes.
+   Since we don't know how many input bytes are being ignored, we
+   have to reduce and recalculate.
+
+   update (2024): looking at historic threads around the issue
+   - the MSDN documentation for WriteConsoleW mentioned a length limitation
+   of 64 KiB at the time. it's not on the page anymore.
+   - that would be 32767 UTF-16 characters and a NULL. encoding may vary.
+   - old threads mention having issues with 26000-27000 characters,
+     it's less than expected so there may have been something more at play.
+   - the python interpreter capped writes to 32766 / sizeof(wchar_t)
+     in this winconsole module in 2011 to work around this bug.
+   - that is 16383 UTF-16 characters and room for a NULL if needed.
+
+   it really looks like a bug in Microsoft Windows, it could have been fixed
+   years ago but it's difficult to tell without Microsoft stepping in.
+*/
+#define WINCONSOLE_MAX_WRITE_SIZE (32766 / sizeof(wchar_t))
+#define WINCONSOLE_DEFAULT_BUFFER_SIZE (8*1024)
+
 char _get_console_type(HANDLE handle) {
     DWORD mode, peek_count;
 
@@ -422,7 +446,7 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
         goto error;
     }
 
-    self->blksize = DEFAULT_BUFFER_SIZE;
+    self->blksize = WINCONSOLE_DEFAULT_BUFFER_SIZE;
     memset(self->buf, 0, 4);
 
     if (PyObject_SetAttr((PyObject *)self, &_Py_ID(name), nameobj) < 0)
@@ -1023,13 +1047,7 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, PyTypeObject *cls,
 
     Py_BEGIN_ALLOW_THREADS
     wlen = MultiByteToWideChar(CP_UTF8, 0, b->buf, len, NULL, 0);
-
-    /* issue11395 there is an unspecified upper bound on how many bytes
-       can be written at once. We cap at 32k - the caller will have to
-       handle partial writes.
-       Since we don't know how many input bytes are being ignored, we
-       have to reduce and recalculate. */
-    while (wlen > 32766 / sizeof(wchar_t)) {
+    while (wlen > WINCONSOLE_MAX_WRITE_SIZE) {
         len /= 2;
         /* Fix for github issues gh-110913 and gh-82052. */
         len = _find_last_utf8_boundary(b->buf, len);
