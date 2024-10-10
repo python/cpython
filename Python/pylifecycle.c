@@ -1922,23 +1922,69 @@ finalize_interp_delete(PyInterpreterState *interp)
    we do our best here to accommodate that possibility. */
 
 static PyThreadState *
-resolve_final_tstate(_PyRuntimeState *runtime)
+resolve_final_tstate(_PyRuntimeState *runtime, struct pyfinalize_args *args)
 {
-    PyThreadState *main_tstate = runtime->main_tstate;
-    assert(main_tstate != NULL);
-    assert(main_tstate->thread_id == runtime->main_thread);
-    PyInterpreterState *main_interp = _PyInterpreterState_Main();
-    assert(main_tstate->interp == main_interp);
-
     PyThreadState *tstate = _PyThreadState_GET();
-    if (_Py_IsMainThread()) {
+    assert(tstate->interp->runtime == runtime);
+    assert(tstate->thread_id == PyThread_get_thread_ident());
+    PyInterpreterState *main_interp = _PyInterpreterState_Main();
+    PyThreadState *main_tstate = runtime->main_tstate;
+
+    /* First we report unexpected Py_Finalize() usage. */
+
+#define PRINT_ERROR(msg)                                \
+    if (args->verbose) {                                \
+        fprintf(stderr, "%s: %s\n", args->caller, msg); \
+    }
+
+    /* The main tstate is set by Py_Initialize(), but can be unset
+     * or even replaced in unlikely cases. */
+    if (main_tstate == NULL) {
+        PRINT_ERROR("main thread state not set");
+        /* Ideally, we would make sure a main tstate is set.
+           For now we leave it unset. */
+    }
+    else {
+        assert(main_tstate->thread_id == runtime->main_thread);
+        assert(main_tstate->interp == main_interp);
         if (tstate != main_tstate) {
+            /* Code running in the main thread could swap out the main tstate,
+               which ends up being a headache. */
+            PRINT_ERROR("using different thread state than Py_Initialize()");
+        }
+        else {
+            assert(main_tstate->interp != NULL);
+            assert(main_tstate->interp == main_interp);
+        }
+    }
+
+    if (!_Py_IsMainThread()) {
+        PRINT_ERROR("expected to be in the main thread");
+    }
+
+    if (tstate->interp != main_interp) {
+        PRINT_ERROR("expected main interpreter to be active");
+    }
+
+#undef PRINT_ERROR
+
+    /* Then we decide the thread state we should use for finalization. */
+
+    PyThreadState *final_tstate = tstate;
+    if (_Py_IsMainThread()) {
+        if (main_tstate == NULL) {
+            if (tstate->interp != main_interp) {
+                /* We will swap in a tstate for the main interpreter. */
+                final_tstate = NULL;
+            }
+        }
+        else if (tstate != main_tstate) {
             /* This implies that Py_Finalize() was called while
                a non-main interpreter was active or while the main
                tstate was temporarily swapped out with another.
                Neither case should be allowed, but, until we get around
                to fixing that (and Py_Exit()), we're letting it go. */
-            (void)PyThreadState_Swap(main_tstate);
+            final_tstate = main_tstate;
         }
     }
     else {
@@ -1946,30 +1992,32 @@ resolve_final_tstate(_PyRuntimeState *runtime)
            called when it shouldn't have been.  We can't simply switch
            over to the main thread.  At the least, however, we can make
            sure the main interpreter is active. */
-        if (!_Py_IsMainInterpreter(tstate->interp)) {
-            /* We don't go to the trouble of updating runtime->main_tstate
-               since it will be dead soon anyway. */
-            main_tstate =
-                _PyThreadState_New(main_interp, _PyThreadState_WHENCE_FINI);
-            if (main_tstate != NULL) {
-                _PyThreadState_Bind(main_tstate);
-                (void)PyThreadState_Swap(main_tstate);
-            }
-            else {
-                /* Fall back to the current tstate.  It's better than nothing. */
-                main_tstate = tstate;
-            }
+        if (tstate->interp != main_interp) {
+            final_tstate = NULL;
         }
     }
-    assert(main_tstate != NULL);
+    if (final_tstate == NULL) {
+        /* We don't go to the trouble of updating runtime->main_tstate
+           since it will be dead soon anyway. */
+        final_tstate =
+            _PyThreadState_New(main_interp, _PyThreadState_WHENCE_FINI);
+        if (final_tstate == NULL) {
+            /* Fall back to the current tstate.  It's better than nothing. */
+            final_tstate = tstate;
+        }
+        else {
+            _PyThreadState_Bind(final_tstate);
+        }
+    }
+    assert(final_tstate->interp == main_interp);
 
-    /* We might want to warn if main_tstate->current_frame != NULL. */
+    /* We might want to warn if final_tstate->current_frame != NULL. */
 
-    return main_tstate;
+    return final_tstate;
 }
 
-static int
-_Py_Finalize(_PyRuntimeState *runtime)
+int
+_Py_Finalize(_PyRuntimeState *runtime, struct pyfinalize_args *args)
 {
     int status = 0;
 
@@ -1978,8 +2026,11 @@ _Py_Finalize(_PyRuntimeState *runtime)
         return status;
     }
 
-    /* Get final thread state pointer. */
-    PyThreadState *tstate = resolve_final_tstate(runtime);
+    /* Get/attach the final thread state pointer. */
+    PyThreadState *tstate = resolve_final_tstate(runtime, args);
+    if (tstate != _PyThreadState_GET()) {
+        (void)PyThreadState_Swap(tstate);
+    }
 
     // Block some operations.
     tstate->interp->finalizing = 1;
@@ -2207,13 +2258,21 @@ _Py_Finalize(_PyRuntimeState *runtime)
 int
 Py_FinalizeEx(void)
 {
-    return _Py_Finalize(&_PyRuntime);
+    struct pyfinalize_args args = {
+        .caller = "Py_FinalizeEx",
+        .verbose = 1,
+    };
+    return _Py_Finalize(&_PyRuntime, &args);
 }
 
 void
 Py_Finalize(void)
 {
-    (void)_Py_Finalize(&_PyRuntime);
+    struct pyfinalize_args args = {
+        .caller = "Py_Finalize",
+        .verbose = 1,
+    };
+    (void)_Py_Finalize(&_PyRuntime, &args);
 }
 
 
@@ -3387,7 +3446,13 @@ Py_Exit(int sts)
     if (tstate != NULL && _PyThreadState_IsRunningMain(tstate)) {
         _PyInterpreterState_SetNotRunningMain(tstate->interp);
     }
-    if (_Py_Finalize(&_PyRuntime) < 0) {
+    struct pyfinalize_args args = {
+        .caller = "Py_Exit",
+#ifdef Py_DEBUG
+        .verbose = 1,
+#endif
+    };
+    if (_Py_Finalize(&_PyRuntime, &args) < 0) {
         sts = 120;
     }
 
