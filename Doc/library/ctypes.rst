@@ -51,7 +51,7 @@ function call fails.
 
 
 Here are some examples for Windows. Note that ``msvcrt`` is the MS standard C
-library containing most standard C functions, and uses the cdecl calling
+library containing most standard C functions, and uses the ``cdecl`` calling
 convention::
 
    >>> from ctypes import *
@@ -2539,6 +2539,8 @@ fields, or any other data types containing pointer type fields.
       An optional small integer that allows overriding the alignment of
       the structure when being packed or unpacked to/from memory.
       Setting this attribute to 0 is the same as not setting it at all.
+
+      .. versionadded:: 3.13
 
    .. attribute:: _anonymous_
 
