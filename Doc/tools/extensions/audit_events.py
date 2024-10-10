@@ -149,6 +149,7 @@ class AuditEvent(SphinxDirective):
         node = nodes.paragraph("", classes=["audit-hook"], ids=ids)
         self.set_source_info(node)
         if self.content:
+            node.rawsource = '\n'.join(self.content)  # for gettext
             self.state.nested_parse(self.content, self.content_offset, node)
         else:
             num_args = min(2, len(args))
@@ -156,6 +157,7 @@ class AuditEvent(SphinxDirective):
                 name=f"``{name}``",
                 args=", ".join(f"``{a}``" for a in args),
             )
+            node.rawsource = text  # for gettext
             parsed, messages = self.state.inline_text(text, self.lineno)
             node += parsed
             node += messages

@@ -13,6 +13,7 @@ try:
 except ImportError:
     _testcapi = None
 
+from collections.abc import Mapping
 from test import support
 from test.support import import_helper, threading_helper, Py_GIL_DISABLED
 from test.support.script_helper import assert_python_ok
@@ -421,6 +422,17 @@ class TestFrameLocals(unittest.TestCase):
         with self.assertRaises(TypeError):
             copy.deepcopy(d)
 
+    def test_is_mapping(self):
+        x = 1
+        d = sys._getframe().f_locals
+        self.assertIsInstance(d, Mapping)
+        match d:
+            case {"x": value}:
+                self.assertEqual(value, 1)
+                kind = "mapping"
+            case _:
+                kind = "other"
+        self.assertEqual(kind, "mapping")
 
     def _x_stringlikes(self):
         class StringSubclass(str):
@@ -483,6 +495,27 @@ class TestFrameLocals(unittest.TestCase):
                     proxy[obj]
                 with self.assertRaises(TypeError):
                     proxy[obj] = 0
+
+    def test_constructor(self):
+        FrameLocalsProxy = type([sys._getframe().f_locals
+                                 for x in range(1)][0])
+        self.assertEqual(FrameLocalsProxy.__name__, 'FrameLocalsProxy')
+
+        def make_frame():
+            x = 1
+            y = 2
+            return sys._getframe()
+
+        proxy = FrameLocalsProxy(make_frame())
+        self.assertEqual(proxy, {'x': 1, 'y': 2})
+
+        # constructor expects 1 frame argument
+        with self.assertRaises(TypeError):
+            FrameLocalsProxy()     # no arguments
+        with self.assertRaises(TypeError):
+            FrameLocalsProxy(123)  # wrong type
+        with self.assertRaises(TypeError):
+            FrameLocalsProxy(frame=sys._getframe())  # no keyword arguments
 
 
 class FrameLocalsProxyMappingTests(mapping_tests.TestHashMappingProtocol):

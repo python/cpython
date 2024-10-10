@@ -994,13 +994,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, xtuple, 42)
         self.assertRaises(SystemError, xtuple, NULL)
 
-    def test_number_check(self):
-        number_check = _testlimitedcapi.number_check
-        self.assertTrue(number_check(1 + 1j))
-        self.assertTrue(number_check(1))
-        self.assertTrue(number_check(0.5))
-        self.assertFalse(number_check("1 + 1j"))
-
     def test_object_generichash(self):
         # Test PyObject_GenericHash()
         generichash = _testcapi.object_generichash

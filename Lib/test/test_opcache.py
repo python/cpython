@@ -28,6 +28,13 @@ def disabling_optimizer(func):
     return wrapper
 
 
+class TestBase(unittest.TestCase):
+    def assert_specialized(self, f, opname):
+        instructions = dis.get_instructions(f, adaptive=True)
+        opnames = {instruction.opname for instruction in instructions}
+        self.assertIn(opname, opnames)
+
+
 class TestLoadSuperAttrCache(unittest.TestCase):
     def test_descriptor_not_double_executed_on_spec_fail(self):
         calls = []
@@ -479,7 +486,7 @@ class TestLoadMethodCache(unittest.TestCase):
             self.assertFalse(f())
 
 
-class TestCallCache(unittest.TestCase):
+class TestCallCache(TestBase):
     def test_too_many_defaults_0(self):
         def f():
             pass
@@ -507,21 +514,39 @@ class TestCallCache(unittest.TestCase):
             f(None)
             f()
 
+    @disabling_optimizer
+    @requires_specialization
+    def test_assign_init_code(self):
+        class MyClass:
+            def __init__(self):
+                pass
+
+        def instantiate():
+            return MyClass()
+
+        # Trigger specialization
+        for _ in range(1025):
+            instantiate()
+        self.assert_specialized(instantiate, "CALL_ALLOC_AND_ENTER_INIT")
+
+        def count_args(self, *args):
+            self.num_args = len(args)
+
+        # Set MyClass.__init__.__code__ to a code object that is incompatible
+        # (uses varargs) with the current specialization
+        MyClass.__init__.__code__ = count_args.__code__
+        instantiate()
+
 
 @threading_helper.requires_working_threading()
 @requires_specialization
-class TestRacesDoNotCrash(unittest.TestCase):
+class TestRacesDoNotCrash(TestBase):
     # Careful with these. Bigger numbers have a higher chance of catching bugs,
     # but you can also burn through a *ton* of type/dict/function versions:
     ITEMS = 1000
     LOOPS = 4
     WARMUPS = 2
     WRITERS = 2
-
-    def assert_specialized(self, f, opname):
-        instructions = dis.get_instructions(f, adaptive=True)
-        opnames = {instruction.opname for instruction in instructions}
-        self.assertIn(opname, opnames)
 
     @disabling_optimizer
     def assert_races_do_not_crash(

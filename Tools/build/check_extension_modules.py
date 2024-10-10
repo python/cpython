@@ -53,6 +53,7 @@ WINDOWS_MODULES = {
     "_overlapped",
     "_testconsole",
     "_winapi",
+    "_wmi",
     "msvcrt",
     "nt",
     "winreg",

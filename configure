@@ -4144,9 +4144,9 @@ if test -z "$CPP"; then
 fi
 if test -z "$CXX"; then
 	case "$host" in
-		aarch64-apple-ios*-simulator) CXX=arm64-apple-ios-simulator-clang ;;
-		aarch64-apple-ios*)           CXX=arm64-apple-ios-clang ;;
-		x86_64-apple-ios*-simulator)  CXX=x86_64-apple-ios-simulator-clang ;;
+		aarch64-apple-ios*-simulator) CXX=arm64-apple-ios-simulator-clang++ ;;
+		aarch64-apple-ios*)           CXX=arm64-apple-ios-clang++ ;;
+		x86_64-apple-ios*-simulator)  CXX=x86_64-apple-ios-simulator-clang++ ;;
 		*)
 	esac
 fi
@@ -4507,7 +4507,7 @@ if test "$cross_compiling" = yes; then
 		# IPHONEOS_DEPLOYMENT_TARGET is the minimum supported iOS version
 		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking iOS deployment target" >&5
 printf %s "checking iOS deployment target... " >&6; }
-		IPHONEOS_DEPLOYMENT_TARGET=${_host_os:3}
+		IPHONEOS_DEPLOYMENT_TARGET=$(echo ${_host_os} | cut -c4-)
 		IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET:=13.0}
 		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $IPHONEOS_DEPLOYMENT_TARGET" >&5
 printf "%s\n" "$IPHONEOS_DEPLOYMENT_TARGET" >&6; }
@@ -8232,6 +8232,10 @@ printf "%s\n" "#define Py_TRACE_REFS 1" >>confdefs.h
 
 fi
 
+if test "$disable_gil" = "yes" -a "$with_trace_refs" = "yes";
+then
+  as_fn_error $? "--disable-gil cannot be used with --with-trace-refs" "$LINENO" 5
+fi
 
 # Check for --enable-pystats
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-pystats" >&5
@@ -23754,7 +23758,7 @@ else
   # While Python doesn't currently have full support for these platforms
   # (see e.g., issue 1762561), we can at least make sure that float <-> string
   # conversions work.
-  # FLOAT_WORDS_BIGENDIAN doesnt actually detect this case, but if it's not big
+  # FLOAT_WORDS_BIGENDIAN doesn't actually detect this case, but if it's not big
   # or little, then it must be this?
 
 printf "%s\n" "#define DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754 1" >>confdefs.h
@@ -28430,9 +28434,6 @@ fi
 
 # builtin hash modules
 default_hashlib_hashes="md5,sha1,sha2,sha3,blake2"
-
-printf "%s\n" "#define PY_BUILTIN_HASHLIB_HASHES /**/" >>confdefs.h
-
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-builtin-hashlib-hashes" >&5
 printf %s "checking for --with-builtin-hashlib-hashes... " >&6; }
 
@@ -28457,6 +28458,7 @@ fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_builtin_hashlib_hashes" >&5
 printf "%s\n" "$with_builtin_hashlib_hashes" >&6; }
+
 printf "%s\n" "#define PY_BUILTIN_HASHLIB_HASHES \"$with_builtin_hashlib_hashes\"" >>confdefs.h
 
 

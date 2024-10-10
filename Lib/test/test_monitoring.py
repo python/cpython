@@ -1841,6 +1841,21 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
         self.assertEqual(call_data[0], (f, 1))
         self.assertEqual(call_data[1], (f, sys.monitoring.MISSING))
 
+    def test_instruction_explicit_callback(self):
+        # gh-122247
+        # Calling the instruction event callback explicitly should not
+        # crash CPython
+        def callback(code, instruction_offset):
+            pass
+
+        sys.monitoring.use_tool_id(0, "test")
+        self.addCleanup(sys.monitoring.free_tool_id, 0)
+        sys.monitoring.register_callback(0, sys.monitoring.events.INSTRUCTION, callback)
+        sys.monitoring.set_events(0, sys.monitoring.events.INSTRUCTION)
+        callback(None, 0)  # call the *same* handler while it is registered
+        sys.monitoring.restart_events()
+        sys.monitoring.set_events(0, 0)
+
 
 class TestOptimizer(MonitoringTestBase, unittest.TestCase):
 

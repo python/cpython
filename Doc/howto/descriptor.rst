@@ -389,7 +389,9 @@ Here are three practical data validation utilities:
 
         def validate(self, value):
             if value not in self.options:
-                raise ValueError(f'Expected {value!r} to be one of {self.options!r}')
+                raise ValueError(
+                    f'Expected {value!r} to be one of {self.options!r}'
+                )
 
     class Number(Validator):
 
@@ -469,6 +471,7 @@ The descriptors prevent invalid instances from being created:
     Traceback (most recent call last):
         ...
     ValueError: Expected -5 to be at least 0
+
     >>> Component('WIDGET', 'metal', 'V')    # Blocked: 'V' isn't a number
     Traceback (most recent call last):
         ...
@@ -513,7 +516,7 @@ were defined.
 
 Descriptors are a powerful, general purpose protocol.  They are the mechanism
 behind properties, methods, static methods, class methods, and
-:func:`super()`.  They are used throughout Python itself.  Descriptors
+:func:`super`.  They are used throughout Python itself.  Descriptors
 simplify the underlying C code and offer a flexible set of new tools for
 everyday Python programs.
 
@@ -559,8 +562,8 @@ attribute access.
 
 The expression ``obj.x`` looks up the attribute ``x`` in the chain of
 namespaces for ``obj``.  If the search finds a descriptor outside of the
-instance ``__dict__``, its :meth:`__get__` method is invoked according to the
-precedence rules listed below.
+instance :attr:`~object.__dict__`, its :meth:`~object.__get__` method is
+invoked according to the precedence rules listed below.
 
 The details of invocation depend on whether ``obj`` is an object, class, or
 instance of super.
@@ -803,7 +806,7 @@ The full C implementation can be found in :c:func:`!super_getattro` in
 Summary of invocation logic
 ---------------------------
 
-The mechanism for descriptors is embedded in the :meth:`__getattribute__()`
+The mechanism for descriptors is embedded in the :meth:`__getattribute__`
 methods for :class:`object`, :class:`type`, and :func:`super`.
 
 The important points to remember are:
@@ -990,7 +993,7 @@ The documentation shows a typical use to define a managed attribute ``x``:
     AttributeError: 'C' object has no attribute '_C__x'
 
 To see how :func:`property` is implemented in terms of the descriptor protocol,
-here is a pure Python equivalent:
+here is a pure Python equivalent that implements most of the core functionality:
 
 .. testcode::
 
@@ -1004,59 +1007,35 @@ here is a pure Python equivalent:
             if doc is None and fget is not None:
                 doc = fget.__doc__
             self.__doc__ = doc
-            self._name = None
 
         def __set_name__(self, owner, name):
-            self._name = name
-
-        @property
-        def __name__(self):
-            return self._name if self._name is not None else self.fget.__name__
-
-        @__name__.setter
-        def __name__(self, value):
-            self._name = value
+            self.__name__ = name
 
         def __get__(self, obj, objtype=None):
             if obj is None:
                 return self
             if self.fget is None:
-                raise AttributeError(
-                    f'property {self.__name__!r} of {type(obj).__name__!r} '
-                    'object has no getter'
-                 )
+                raise AttributeError
             return self.fget(obj)
 
         def __set__(self, obj, value):
             if self.fset is None:
-                raise AttributeError(
-                    f'property {self.__name__!r} of {type(obj).__name__!r} '
-                    'object has no setter'
-                 )
+                raise AttributeError
             self.fset(obj, value)
 
         def __delete__(self, obj):
             if self.fdel is None:
-                raise AttributeError(
-                    f'property {self.__name__!r} of {type(obj).__name__!r} '
-                    'object has no deleter'
-                 )
+                raise AttributeError
             self.fdel(obj)
 
         def getter(self, fget):
-            prop = type(self)(fget, self.fset, self.fdel, self.__doc__)
-            prop._name = self._name
-            return prop
+            return type(self)(fget, self.fset, self.fdel, self.__doc__)
 
         def setter(self, fset):
-            prop = type(self)(self.fget, fset, self.fdel, self.__doc__)
-            prop._name = self._name
-            return prop
+            return type(self)(self.fget, fset, self.fdel, self.__doc__)
 
         def deleter(self, fdel):
-            prop = type(self)(self.fget, self.fset, fdel, self.__doc__)
-            prop._name = self._name
-            return prop
+            return type(self)(self.fget, self.fset, fdel, self.__doc__)
 
 .. testcode::
     :hide:
@@ -1119,23 +1098,23 @@ here is a pure Python equivalent:
     >>> try:
     ...     cc.no_getter
     ... except AttributeError as e:
-    ...     e.args[0]
+    ...     type(e).__name__
     ...
-    "property 'no_getter' of 'CC' object has no getter"
+    'AttributeError'
 
     >>> try:
     ...     cc.no_setter = 33
     ... except AttributeError as e:
-    ...     e.args[0]
+    ...     type(e).__name__
     ...
-    "property 'no_setter' of 'CC' object has no setter"
+    'AttributeError'
 
     >>> try:
     ...     del cc.no_deleter
     ... except AttributeError as e:
-    ...     e.args[0]
+    ...     type(e).__name__
     ...
-    "property 'no_deleter' of 'CC' object has no deleter"
+    'AttributeError'
 
     >>> CC.no_doc.__doc__ is None
     True
@@ -1326,8 +1305,8 @@ mean, median, and other descriptive statistics that depend on the data. However,
 there may be useful functions which are conceptually related but do not depend
 on the data.  For instance, ``erf(x)`` is handy conversion routine that comes up
 in statistical work but does not directly depend on a particular dataset.
-It can be called either from an object or the class:  ``s.erf(1.5) --> .9332`` or
-``Sample.erf(1.5) --> .9332``.
+It can be called either from an object or the class:  ``s.erf(1.5) --> 0.9332``
+or ``Sample.erf(1.5) --> 0.9332``.
 
 Since static methods return the underlying function with no changes, the
 example calls are unexciting:
