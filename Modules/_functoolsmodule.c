@@ -604,7 +604,7 @@ partial_repr(partialobject *pto)
         return PyUnicode_FromString("...");
     }
 
-    arglist = PyUnicode_FromString("");
+    arglist = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     if (arglist == NULL)
         goto done;
     /* Pack positional arguments */

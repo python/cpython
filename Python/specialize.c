@@ -1636,7 +1636,7 @@ function_get_version(PyObject *o, int opcode)
     assert(Py_IS_TYPE(o, &PyFunction_Type));
     PyFunctionObject *func = (PyFunctionObject *)o;
     uint32_t version = _PyFunction_GetVersionForCurrentState(func);
-    if (version == 0) {
+    if (!_PyFunction_IsVersionValid(version)) {
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_OUT_OF_VERSIONS);
         return 0;
     }
@@ -1729,7 +1729,7 @@ _Py_Specialize_BinarySubscr(
             goto fail;
         }
         uint32_t version = _PyFunction_GetVersionForCurrentState(func);
-        if (version == 0) {
+        if (!_PyFunction_IsVersionValid(version)) {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OUT_OF_VERSIONS);
             goto fail;
         }
@@ -2014,7 +2014,7 @@ specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
         argcount = code->co_argcount;
     }
     int version = _PyFunction_GetVersionForCurrentState(func);
-    if (version == 0) {
+    if (!_PyFunction_IsVersionValid(version)) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OUT_OF_VERSIONS);
         return -1;
     }
@@ -2046,7 +2046,7 @@ specialize_py_call_kw(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
         return -1;
     }
     int version = _PyFunction_GetVersionForCurrentState(func);
-    if (version == 0) {
+    if (!_PyFunction_IsVersionValid(version)) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OUT_OF_VERSIONS);
         return -1;
     }

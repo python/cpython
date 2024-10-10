@@ -1608,7 +1608,6 @@ ast_repr_max_depth(AST_object *self, int depth)
 
         if (!value_repr) {
             Py_DECREF(name);
-            Py_DECREF(value);
             goto error;
         }
 
@@ -2243,8 +2242,6 @@ def generate_ast_fini(module_state, f):
     for s in module_state:
         f.write("    Py_CLEAR(state->" + s + ');\n')
     f.write(textwrap.dedent("""
-                Py_CLEAR(_Py_INTERP_CACHED_OBJECT(interp, str_replace_inf));
-
                 state->finalized = 1;
                 state->once = (_PyOnceFlag){0};
             }
