@@ -5532,17 +5532,21 @@ PyDoc_STRVAR(PySSLSession_get_ticket_lifetime_hint_doc,
 "Ticket life time hint.");
 
 
+/*[clinic input]
+@critical_section
+@getter
+_ssl.SSLSession.session_id
+[clinic start generated code]*/
+
 static PyObject *
-PySSLSession_get_session_id(PySSLSession *self, void *closure) {
+_ssl_SSLSession_session_id_get_impl(PySSLSession *self)
+/*[clinic end generated code: output=3882d1e7a7f8bab3 input=3a867b83fdff3183]*/
+{
     const unsigned char *id;
     unsigned int len;
     id = SSL_SESSION_get_id(self->session, &len);
     return PyBytes_FromStringAndSize((const char *)id, len);
 }
-
-PyDoc_STRVAR(PySSLSession_get_session_id_doc,
-"Session id");
-
 
 /*[clinic input]
 @critical_section
