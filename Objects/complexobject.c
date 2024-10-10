@@ -179,6 +179,9 @@ _Py_c_pow(Py_complex a, Py_complex b)
     return r;
 }
 
+/* Switch to exponentiation by squaring is integer exponent less that this. */
+#define C_EXP_CUTOFF 100
+
 static Py_complex
 c_powu(Py_complex x, long n)
 {
@@ -186,7 +189,10 @@ c_powu(Py_complex x, long n)
     long mask = 1;
     r = c_1;
     p = x;
-    while (mask > 0 && n >= mask) {
+    assert(0 <= n);
+    assert(n <= C_EXP_CUTOFF);
+    while (n >= mask) {
+        assert(mask > 0);
         if (n & mask)
             r = _Py_c_prod(r,p);
         mask <<= 1;
@@ -456,11 +462,11 @@ complex_hash(PyComplexObject *v)
 {
     Py_uhash_t hashreal, hashimag, combined;
     hashreal = (Py_uhash_t)_Py_HashDouble((PyObject *) v, v->cval.real);
-    if (hashreal == (Py_uhash_t)-1)
-        return -1;
     hashimag = (Py_uhash_t)_Py_HashDouble((PyObject *)v, v->cval.imag);
-    if (hashimag == (Py_uhash_t)-1)
-        return -1;
+    /* In current implementation of hashing for numberic types,
+     * -1 is reserved. */
+    assert(hashreal != (Py_uhash_t)-1);
+    assert(hashimag != (Py_uhash_t)-1);
     /* Note:  if the imaginary part is 0, hashimag is 0 now,
      * so the following returns hashreal unchanged.  This is
      * important because numbers of different types that
@@ -567,7 +573,7 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
     errno = 0;
     // Check whether the exponent has a small integer value, and if so use
     // a faster and more accurate algorithm.
-    if (b.imag == 0.0 && b.real == floor(b.real) && fabs(b.real) <= 100.0) {
+    if (b.imag == 0.0 && b.real == floor(b.real) && fabs(b.real) <= C_EXP_CUTOFF) {
         p = c_powi(a, (long)b.real);
         _Py_ADJUST_ERANGE2(p.real, p.imag);
     }
@@ -640,7 +646,7 @@ complex_richcompare(PyObject *v, PyObject *w, int op)
     }
 
     assert(PyComplex_Check(v));
-    TO_COMPLEX(v, i);
+    i = ((PyComplexObject *)v)->cval;
 
     if (PyLong_Check(w)) {
         /* Check for 0.0 imaginary part first to avoid the rich
@@ -666,7 +672,7 @@ complex_richcompare(PyObject *v, PyObject *w, int op)
     else if (PyComplex_Check(w)) {
         Py_complex j;
 
-        TO_COMPLEX(w, j);
+        j = ((PyComplexObject *)w)->cval;
         equal = (i.real == j.real && i.imag == j.imag);
     }
     else {
@@ -889,22 +895,15 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
     PyObject *s_buffer = NULL, *result = NULL;
     Py_ssize_t len;
 
-    if (PyUnicode_Check(v)) {
-        s_buffer = _PyUnicode_TransformDecimalAndSpaceToASCII(v);
-        if (s_buffer == NULL) {
-            return NULL;
-        }
-        assert(PyUnicode_IS_ASCII(s_buffer));
-        /* Simply get a pointer to existing ASCII characters. */
-        s = PyUnicode_AsUTF8AndSize(s_buffer, &len);
-        assert(s != NULL);
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-            "complex() argument must be a string or a number, not %T",
-            v);
+    assert(PyUnicode_Check(v));
+    s_buffer = _PyUnicode_TransformDecimalAndSpaceToASCII(v);
+    if (s_buffer == NULL) {
         return NULL;
     }
+    assert(PyUnicode_IS_ASCII(s_buffer));
+    /* Simply get a pointer to existing ASCII characters. */
+    s = PyUnicode_AsUTF8AndSize(s_buffer, &len);
+    assert(s != NULL);
 
     result = _Py_string_to_number_with_underscores(s, len, "complex", v, type,
                                                    complex_from_string_inner);
@@ -956,13 +955,6 @@ actual_complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     }
     else if (PyErr_Occurred()) {
         return NULL;
-    }
-    else if (PyComplex_Check(arg)) {
-        /* Note that if arg is of a complex subtype, we're only
-           retaining its real & imag parts here, and the return
-           value is (properly) of the builtin complex type. */
-        Py_complex c = ((PyComplexObject*)arg)->cval;
-        res = complex_subtype_from_doubles(type, c.real, c.imag);
     }
     else if ((nbr = Py_TYPE(arg)->tp_as_number) != NULL &&
              (nbr->nb_float != NULL || nbr->nb_index != NULL))
@@ -1031,9 +1023,9 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
         PyErr_Format(PyExc_TypeError,
                      "complex() argument 'real' must be a real number, not %T",
                      r);
-        if (own_r) {
-            Py_DECREF(r);
-        }
+        /* Here r is not a complex subtype, hence above
+           try_complex_special_method() call was unsuccessful. */
+        assert(!own_r);
         return NULL;
     }
     if (i != NULL) {
@@ -1065,11 +1057,10 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
            value is (properly) of the builtin complex type. */
         cr = ((PyComplexObject*)r)->cval;
         cr_is_complex = 1;
-        if (own_r) {
-            /* r was a newly created complex number, rather
-               than the original "real" argument. */
-            Py_DECREF(r);
-        }
+        assert(own_r);
+        /* r was a newly created complex number, rather
+           than the original "real" argument. */
+        Py_DECREF(r);
         nbr = Py_TYPE(orig_r)->tp_as_number;
         if (nbr == NULL ||
             (nbr->nb_float == NULL && nbr->nb_index == NULL))
