@@ -202,7 +202,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
         openssl_ver: [3.0.15, 3.1.7, 3.2.3, 3.3.2]
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
