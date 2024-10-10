@@ -1,0 +1,2 @@
+Keep :mod:`tkinter` TCL paths in venv pointing to base installation on
+Windows.
