@@ -311,7 +311,7 @@ Create a new ZoneInfo instance.
 
 static PyObject *
 zoneinfo_ZoneInfo_impl(PyTypeObject *type, PyObject *key)
-/*[clinic end generated code: output=95e61dab86bb95c3 input=4619eb0305327e83]*/
+/*[clinic end generated code: output=95e61dab86bb95c3 input=ef73d7a83bf8790e]*/
 {
     zoneinfo_state *state = zoneinfo_get_state_by_self(type);
     PyObject *instance = zone_from_strong_cache(state, type, key);

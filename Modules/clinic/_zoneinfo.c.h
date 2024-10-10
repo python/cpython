@@ -13,7 +13,7 @@ PyDoc_STRVAR(zoneinfo_ZoneInfo__doc__,
 "ZoneInfo(key)\n"
 "--\n"
 "\n"
-"Get a new instance of ZoneInfo, bypassing the cache.");
+"Create a new ZoneInfo instance.");
 
 static PyObject *
 zoneinfo_ZoneInfo_impl(PyTypeObject *type, PyObject *key);
@@ -431,4 +431,4 @@ zoneinfo_ZoneInfo__unpickle(PyTypeObject *type, PyTypeObject *cls, PyObject *con
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=74e3b003fe5652ca input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b4fdc0b30247110a input=a9049054013a1b77]*/
