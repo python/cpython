@@ -1,0 +1,3 @@
+modified the get_payload method in :mod:`email.message` by adding ``.strip()``
+to the ``cte = str(self.get('content-transfer-encoding', '')).lower()`` line to
+remove unwanted spaces.
