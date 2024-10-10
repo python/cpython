@@ -360,4 +360,62 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4d0770a1c20fbf40 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(is_dict_version_overflowed__doc__,
+"is_dict_version_overflowed($module, /, dict)\n"
+"--\n"
+"\n");
+
+#define IS_DICT_VERSION_OVERFLOWED_METHODDEF    \
+    {"is_dict_version_overflowed", _PyCFunction_CAST(is_dict_version_overflowed), METH_FASTCALL|METH_KEYWORDS, is_dict_version_overflowed__doc__},
+
+static PyObject *
+is_dict_version_overflowed_impl(PyObject *module, PyDictObject *dict);
+
+static PyObject *
+is_dict_version_overflowed(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(dict), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"dict", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "is_dict_version_overflowed",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyDictObject *dict;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyDict_Check(args[0])) {
+        _PyArg_BadArgument("is_dict_version_overflowed", "argument 'dict'", "dict", args[0]);
+        goto exit;
+    }
+    dict = (PyDictObject *)args[0];
+    return_value = is_dict_version_overflowed_impl(module, dict);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=72c1ccc6a2d4dd3b input=a9049054013a1b77]*/
