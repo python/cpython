@@ -717,6 +717,10 @@ class TestGzip(BaseTest):
         for mtime in (0, 42):
             with self.subTest(mtime=mtime):
                 nocompress = gzip.compress(data1, compresslevel=0, mtime=mtime)
+                if mtime == 0:
+                    # test for gh-125260
+                    nocompressnomtime = gzip.compress(data1, compresslevel=0)
+                    self.assertEqual(nocompress, nocompressnomtime)
                 yescompress = gzip.compress(data1, compresslevel=1, mtime=mtime)
                 self.assertIn(data1, nocompress)
                 self.assertNotIn(data1, yescompress)

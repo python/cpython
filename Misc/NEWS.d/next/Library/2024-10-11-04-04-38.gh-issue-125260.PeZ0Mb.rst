@@ -1,0 +1,1 @@
+The :func:`gzip.compress` *mtime* parameter now defaults to 0 for reproducible output.
