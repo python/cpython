@@ -3406,8 +3406,15 @@ _ssl__SSLContext__set_alpn_protocols_impl(PySSLContext *self,
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+_ssl._SSLContext.verify_mode
+[clinic start generated code]*/
+
 static PyObject *
-get_verify_mode(PySSLContext *self, void *c)
+_ssl__SSLContext_verify_mode_get_impl(PySSLContext *self)
+/*[clinic end generated code: output=3e788736cc7229bc input=7e3c7f4454121d0a]*/
 {
     /* ignore SSL_VERIFY_CLIENT_ONCE and SSL_VERIFY_POST_HANDSHAKE */
     int mask = (SSL_VERIFY_NONE | SSL_VERIFY_PEER |
@@ -3426,11 +3433,18 @@ get_verify_mode(PySSLContext *self, void *c)
     return NULL;
 }
 
+/*[clinic input]
+@critical_section
+@setter
+_ssl._SSLContext.verify_mode
+[clinic start generated code]*/
+
 static int
-set_verify_mode(PySSLContext *self, PyObject *arg, void *c)
+_ssl__SSLContext_verify_mode_set_impl(PySSLContext *self, PyObject *value)
+/*[clinic end generated code: output=d698e16c58db3118 input=3ee60057c3a22378]*/
 {
     int n;
-    if (!PyArg_Parse(arg, "i", &n))
+    if (!PyArg_Parse(value, "i", &n))
         return -1;
     if (n == PY_SSL_CERT_NONE && self->check_hostname) {
         PyErr_SetString(PyExc_ValueError,
@@ -5118,8 +5132,7 @@ static PyGetSetDef context_getsetlist[] = {
                             NULL},
     _SSL__SSLCONTEXT_PROTOCOL_GETSETDEF
     _SSL__SSLCONTEXT_VERIFY_FLAGS_GETSETDEF
-    {"verify_mode", (getter) get_verify_mode,
-                    (setter) set_verify_mode, NULL},
+    _SSL__SSLCONTEXT_VERIFY_MODE_GETSETDEF
     {"security_level", (getter) get_security_level,
                        NULL, PySSLContext_security_level_doc},
     {NULL},            /* sentinel */
