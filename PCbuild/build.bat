@@ -55,6 +55,12 @@ echo.  -t Build ^| Rebuild ^| Clean ^| CleanAll
 echo.     Set the target manually
 echo.  --pgo-job  The job to use for PGO training; implies --pgo
 echo.             (default: "-m test --pgo")
+echo.
+echo.Use the TclVersion environment variable to build _tkinter with a specific
+echo.version of Tcl and Tk.  For example, after building Tcl and Tk 9.0.0.0
+echo.and installing them in ../externals/tcltk-9.0.0.0, run the commands:
+echo.  set TclVersion=9.0.0.0
+echo.  build.bat 
 exit /b 127
 
 :Run
