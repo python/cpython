@@ -880,6 +880,61 @@ exit:
     return return_value;
 }
 
+#if defined(_ssl__SSLContext_minimum_version_HAS_DOCSTR)
+#  define _ssl__SSLContext_minimum_version_DOCSTR _ssl__SSLContext_minimum_version__doc__
+#else
+#  define _ssl__SSLContext_minimum_version_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_MINIMUM_VERSION_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_MINIMUM_VERSION_GETSETDEF
+#  define _SSL__SSLCONTEXT_MINIMUM_VERSION_GETSETDEF {"minimum_version", (getter)_ssl__SSLContext_minimum_version_get, (setter)_ssl__SSLContext_minimum_version_set, _ssl__SSLContext_minimum_version_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_MINIMUM_VERSION_GETSETDEF {"minimum_version", (getter)_ssl__SSLContext_minimum_version_get, NULL, _ssl__SSLContext_minimum_version_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLContext_minimum_version_get_impl(PySSLContext *self);
+
+static PyObject *
+_ssl__SSLContext_minimum_version_get(PySSLContext *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_minimum_version_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_SSL__SSLCONTEXT_MINIMUM_VERSION_HAS_DOCSTR)
+#  define _ssl__SSLContext_minimum_version_DOCSTR _ssl__SSLContext_minimum_version__doc__
+#else
+#  define _ssl__SSLContext_minimum_version_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_MINIMUM_VERSION_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_MINIMUM_VERSION_GETSETDEF
+#  define _SSL__SSLCONTEXT_MINIMUM_VERSION_GETSETDEF {"minimum_version", (getter)_ssl__SSLContext_minimum_version_get, (setter)_ssl__SSLContext_minimum_version_set, _ssl__SSLContext_minimum_version_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_MINIMUM_VERSION_GETSETDEF {"minimum_version", NULL, (setter)_ssl__SSLContext_minimum_version_set, NULL},
+#endif
+
+static int
+_ssl__SSLContext_minimum_version_set_impl(PySSLContext *self,
+                                          PyObject *value);
+
+static int
+_ssl__SSLContext_minimum_version_set(PySSLContext *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_minimum_version_set_impl(self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 #if defined(_ssl__SSLContext__host_flags_HAS_DOCSTR)
 #  define _ssl__SSLContext__host_flags_DOCSTR _ssl__SSLContext__host_flags__doc__
 #else
@@ -2213,4 +2268,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=caca896be11b53a6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1bdcf2ac943863a1 input=a9049054013a1b77]*/

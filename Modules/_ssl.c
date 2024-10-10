@@ -3566,8 +3566,15 @@ set_min_max_proto_version(PySSLContext *self, PyObject *arg, int what)
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+_ssl._SSLContext.minimum_version
+[clinic start generated code]*/
+
 static PyObject *
-get_minimum_version(PySSLContext *self, void *c)
+_ssl__SSLContext_minimum_version_get_impl(PySSLContext *self)
+/*[clinic end generated code: output=27fa8382276635ed input=6832821e7e974d40]*/
 {
     int v = SSL_CTX_get_min_proto_version(self->ctx);
     if (v == 0) {
@@ -3576,10 +3583,18 @@ get_minimum_version(PySSLContext *self, void *c)
     return PyLong_FromLong(v);
 }
 
+/*[clinic input]
+@critical_section
+@setter
+_ssl._SSLContext.minimum_version
+[clinic start generated code]*/
+
 static int
-set_minimum_version(PySSLContext *self, PyObject *arg, void *c)
+_ssl__SSLContext_minimum_version_set_impl(PySSLContext *self,
+                                          PyObject *value)
+/*[clinic end generated code: output=482e82f7372afb78 input=2c64724901a514b3]*/
 {
-    return set_min_max_proto_version(self, arg, 0);
+    return set_min_max_proto_version(self, value, 0);
 }
 
 static PyObject *
@@ -5012,8 +5027,7 @@ _ssl__SSLContext_set_psk_server_callback_impl(PySSLContext *self,
 static PyGetSetDef context_getsetlist[] = {
     _SSL__SSLCONTEXT_CHECK_HOSTNAME_GETSETDEF
     _SSL__SSLCONTEXT__HOST_FLAGS_GETSETDEF
-    {"minimum_version", (getter) get_minimum_version,
-                        (setter) set_minimum_version, NULL},
+    _SSL__SSLCONTEXT_MINIMUM_VERSION_GETSETDEF
     {"maximum_version", (getter) get_maximum_version,
                         (setter) set_maximum_version, NULL},
     {"keylog_filename", (getter) _PySSLContext_get_keylog_filename,
