@@ -680,8 +680,7 @@ This last example demonstrates the final few formatting functions:
 Examples of Using :class:`TracebackException`
 ---------------------------------------------
 
-With the helper class, we have more options:
-
+With the helper class, we have more options::
 
    >>> import sys
    >>> from traceback import TracebackException
