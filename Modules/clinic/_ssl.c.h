@@ -2306,6 +2306,33 @@ _ssl_SSLSession_time_get(PySSLSession *self, void *Py_UNUSED(context))
     return return_value;
 }
 
+#if defined(_ssl_SSLSession_timeout_HAS_DOCSTR)
+#  define _ssl_SSLSession_timeout_DOCSTR _ssl_SSLSession_timeout__doc__
+#else
+#  define _ssl_SSLSession_timeout_DOCSTR NULL
+#endif
+#if defined(_SSL_SSLSESSION_TIMEOUT_GETSETDEF)
+#  undef _SSL_SSLSESSION_TIMEOUT_GETSETDEF
+#  define _SSL_SSLSESSION_TIMEOUT_GETSETDEF {"timeout", (getter)_ssl_SSLSession_timeout_get, (setter)_ssl_SSLSession_timeout_set, _ssl_SSLSession_timeout_DOCSTR},
+#else
+#  define _SSL_SSLSESSION_TIMEOUT_GETSETDEF {"timeout", (getter)_ssl_SSLSession_timeout_get, NULL, _ssl_SSLSession_timeout_DOCSTR},
+#endif
+
+static PyObject *
+_ssl_SSLSession_timeout_get_impl(PySSLSession *self);
+
+static PyObject *
+_ssl_SSLSession_timeout_get(PySSLSession *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl_SSLSession_timeout_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 #if defined(_ssl_SSLSession_ticket_lifetime_hint_HAS_DOCSTR)
 #  define _ssl_SSLSession_ticket_lifetime_hint_DOCSTR _ssl_SSLSession_ticket_lifetime_hint__doc__
 #else
@@ -2809,4 +2836,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=6a8338feec145d07 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=139101c7caeefcae input=a9049054013a1b77]*/
