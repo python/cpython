@@ -5295,21 +5295,25 @@ get_base_by_token_recursive(PyObject *bases, void *token)
 int
 PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
 {
+    if (result != NULL) {
+        *result = NULL;
+    }
+
     if (token == NULL) {
         PyErr_Format(PyExc_SystemError,
                      "PyType_GetBaseByToken called with token=NULL");
-        goto error;
+        return -1;
     }
     if (!PyType_Check(type)) {
         PyErr_Format(PyExc_TypeError,
                      "expected a type, got a '%T' object", type);
-        goto error;
+        return -1;
     }
 
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // No static type has a heaptype superclass,
         // which is ensured by type_ready_mro().
-        goto not_found;
+        return 0;
     }
     if (((PyHeapTypeObject*)type)->ht_token == token) {
 found:
@@ -5328,7 +5332,7 @@ found:
             type = base;
             goto found;
         }
-        goto not_found;
+        return 0;
     }
     // mro_invoke() ensures that the type MRO cannot be empty.
     assert(PyTuple_GET_SIZE(mro) >= 1);
@@ -5344,16 +5348,7 @@ found:
             goto found;
         }
     }
-not_found:
-    if (result != NULL) {
-        *result = NULL;
-    }
     return 0;
-error:
-    if (result != NULL) {
-        *result = NULL;
-    }
-    return -1;
 }
 
 
