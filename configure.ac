@@ -5274,10 +5274,13 @@ AS_VAR_IF([ac_cv_broken_unsetenv], [yes], [
 dnl check for true
 AC_CHECK_PROGS([TRUE], [true], [/bin/true])
 
-dnl On some systems (e.g. Solaris 9), hstrerror and inet_aton are in -lresolv
+dnl On some systems (e.g. Solaris), hstrerror and inet_aton are in -lresolv
 dnl On others, they are in the C library, so we to take no action
 AC_CHECK_LIB([c], [inet_aton], [$ac_cv_prog_TRUE],
-  AC_CHECK_LIB([resolv], [inet_aton])
+  AC_CHECK_LIB([resolv], [inet_aton], [SOCKET_LIBS="-lresolv"])
+)
+AC_CHECK_LIB([c], [hstrerror], [$ac_cv_prog_TRUE],
+  AC_CHECK_LIB([resolv], [hstrerror], [SOCKET_LIBS="-lresolv"])
 )
 
 # On Tru64, chflags seems to be present, but calling it will
@@ -7753,7 +7756,7 @@ PY_STDLIB_MOD([mmap],
 PY_STDLIB_MOD([_socket],
   [], m4_flatten([test "$ac_cv_header_sys_socket_h" = "yes"
                     -a "$ac_cv_header_sys_types_h" = "yes"
-                    -a "$ac_cv_header_netinet_in_h" = "yes"]))
+                    -a "$ac_cv_header_netinet_in_h" = "yes"]), [], [$SOCKET_LIBS])
 
 dnl platform specific extensions
 PY_STDLIB_MOD([grp], [],

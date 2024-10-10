@@ -20421,10 +20421,89 @@ fi
 printf "%s\n" "$ac_cv_lib_resolv_inet_aton" >&6; }
 if test "x$ac_cv_lib_resolv_inet_aton" = xyes
 then :
-  printf "%s\n" "#define HAVE_LIBRESOLV 1" >>confdefs.h
+  SOCKET_LIBS="-lresolv"
+fi
 
-  LIBS="-lresolv $LIBS"
 
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for hstrerror in -lc" >&5
+printf %s "checking for hstrerror in -lc... " >&6; }
+if test ${ac_cv_lib_c_hstrerror+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lc  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char hstrerror ();
+int
+main (void)
+{
+return hstrerror ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_c_hstrerror=yes
+else $as_nop
+  ac_cv_lib_c_hstrerror=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_c_hstrerror" >&5
+printf "%s\n" "$ac_cv_lib_c_hstrerror" >&6; }
+if test "x$ac_cv_lib_c_hstrerror" = xyes
+then :
+  $ac_cv_prog_TRUE
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for hstrerror in -lresolv" >&5
+printf %s "checking for hstrerror in -lresolv... " >&6; }
+if test ${ac_cv_lib_resolv_hstrerror+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lresolv  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char hstrerror ();
+int
+main (void)
+{
+return hstrerror ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_resolv_hstrerror=yes
+else $as_nop
+  ac_cv_lib_resolv_hstrerror=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_resolv_hstrerror" >&5
+printf "%s\n" "$ac_cv_lib_resolv_hstrerror" >&6; }
+if test "x$ac_cv_lib_resolv_hstrerror" = xyes
+then :
+  SOCKET_LIBS="-lresolv"
 fi
 
 
@@ -29928,7 +30007,7 @@ fi
 then :
 
 
-
+    as_fn_append MODULE_BLOCK "MODULE__SOCKET_LDFLAGS=$SOCKET_LIBS$as_nl"
 
 fi
    if test "$py_cv_module__socket" = yes; then
