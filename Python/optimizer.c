@@ -1568,8 +1568,9 @@ _Py_ExecutorDetach(_PyExecutorObject *executor)
     Py_DECREF(executor);
 }
 
-static int
-executor_clear(_PyExecutorObject *executor)
+
+int
+_Py_ExecutorClear(_PyExecutorObject *executor)
 {
     if (!executor->vm_data.valid) {
         return 0;
@@ -1589,6 +1590,12 @@ executor_clear(_PyExecutorObject *executor)
     _Py_ExecutorDetach(executor);
     Py_DECREF(executor);
     return 0;
+}
+
+static int
+executor_clear(_PyExecutorObject *executor)
+{
+    return _Py_ExecutorClear(executor);
 }
 
 void
