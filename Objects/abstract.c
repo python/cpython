@@ -663,7 +663,8 @@ PyBuffer_FromContiguous(const Py_buffer *view, const void *buf, Py_ssize_t len, 
     return 0;
 }
 
-int PyObject_CopyData(PyObject *dest, PyObject *src)
+int
+PyObject_CopyData(PyObject *dest, PyObject *src)
 {
     Py_buffer view_dest, view_src;
     int k;
@@ -730,6 +731,59 @@ int PyObject_CopyData(PyObject *dest, PyObject *src)
     PyMem_Free(indices);
     PyBuffer_Release(&view_dest);
     PyBuffer_Release(&view_src);
+    return 0;
+}
+
+int
+PyObject_CopyToObject(PyObject *obj, void *buf, Py_ssize_t len, char fort)
+{
+    char *tmp_obj, *tmp_buf = buf;
+    Py_buffer view_obj;
+    Py_ssize_t *indices, elem_num = 1;
+
+    assert(buf != NULL);
+    if (!PyObject_CheckBuffer(obj)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "object supporting the buffer protocol required");
+        return -1;
+    }
+
+    if (PyObject_GetBuffer(obj, &view_obj, PyBUF_FULL)) {
+        return -1;
+    }
+
+    if (view_obj.len < len) {
+        PyErr_SetString(PyExc_BufferError,
+                        "destination is too small to receive data from buf");
+        PyBuffer_Release(&view_obj);
+        return -1;
+    }
+
+    /* just copy it directly through memcpy */
+    if (fort == 'C' || fort == 'F') {
+        memcpy(view_obj.buf, buf, len);
+        PyBuffer_Release(&view_obj);
+        return 0;
+    }
+
+    /* quick copy implementation */
+    indices = (Py_ssize_t *)PyMem_Calloc(view_obj.ndim, sizeof(Py_ssize_t));
+    if (!indices) {
+        PyErr_NoMemory();
+        PyBuffer_Release(&view_obj);
+        return -1;
+    }
+    for (int i = 0; i < view_obj.ndim; i++) {
+        /* XXX(nnorwitz): can this overflow? */
+        elem_num *= view_obj.shape[i];
+    }
+    while (elem_num--) {
+        tmp_obj = PyBuffer_GetPointer(&view_obj, indices);
+        memcpy(tmp_obj, tmp_buf++, view_obj.itemsize);
+        _Py_add_one_to_index_C(view_obj.ndim, indices, view_obj.shape);
+    }
+    PyMem_Free(indices);
+    PyBuffer_Release(&view_obj);
     return 0;
 }
 
