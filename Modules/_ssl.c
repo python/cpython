@@ -376,7 +376,6 @@ class _ssl.SSLSession "PySSLSession *" "get_state_type(type)->PySSLSession_Type"
 static int PySSL_select(PySocketSockObject *s, int writing, PyTime_t timeout);
 
 static int PySSL_set_owner(PySSLSocket *, PyObject *, void *);
-static int PySSL_set_session(PySSLSocket *, PyObject *, void *);
 
 typedef enum {
     SOCKET_IS_NONBLOCKING,
@@ -932,7 +931,7 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
         }
     }
     if (session && session != Py_None) {
-        if (PySSL_set_session(self, session, NULL) == -1) {
+        if (_ssl__SSLSocket_session_set_impl(self, session) == -1) {
             Py_DECREF(self);
             return NULL;
         }
@@ -2820,8 +2819,18 @@ _ssl__SSLSocket_verify_client_post_handshake_impl(PySSLSocket *self)
 #endif
 }
 
+/*[clinic input]
+@critical_section
+@getter
+_ssl._SSLSocket.session
+
+Get / set SSLSession.
+[clinic start generated code]*/
+
 static PyObject *
-PySSL_get_session(PySSLSocket *self, void *closure) {
+_ssl__SSLSocket_session_get_impl(PySSLSocket *self)
+/*[clinic end generated code: output=a5cd5755b35da670 input=be77165ad3547c3d]*/
+{
     /* get_session can return sessions from a server-side connection,
      * it does not check for handshake done or client socket. */
     PySSLSession *pysess;
@@ -2846,8 +2855,16 @@ PySSL_get_session(PySSLSocket *self, void *closure) {
     return (PyObject *)pysess;
 }
 
-static int PySSL_set_session(PySSLSocket *self, PyObject *value,
-                             void *closure) {
+/*[clinic input]
+@critical_section
+@setter
+_ssl._SSLSocket.session
+[clinic start generated code]*/
+
+static int
+_ssl__SSLSocket_session_set_impl(PySSLSocket *self, PyObject *value)
+/*[clinic end generated code: output=a3fa2ddd7c2d54a2 input=5fa5f921640db98b]*/
+{
     PySSLSession *pysess;
 
     if (!Py_IS_TYPE(value, get_state_sock(self)->PySSLSession_Type)) {
@@ -2879,11 +2896,6 @@ static int PySSL_set_session(PySSLSocket *self, PyObject *value,
     return 0;
 }
 
-PyDoc_STRVAR(PySSL_set_session_doc,
-"_setter_session(session)\n\
-\
-Get / set SSLSession.");
-
 /*[clinic input]
 @critical_section
 @getter
@@ -2893,14 +2905,12 @@ Was the client session reused during handshake?
 [clinic start generated code]*/
 
 static PyObject *
-_ssl__SSLSocket_session_reused_get_impl(PySSLSocket *self) {
+_ssl__SSLSocket_session_reused_get_impl(PySSLSocket *self)
 /*[clinic end generated code: output=c8916909bcb80893 input=cec8bfec73a4461e]*/
+{
     int res = SSL_session_reused(self->ssl);
     return res ? Py_True : Py_False;
 }
-
-PyDoc_STRVAR(PySSL_get_session_reused_doc,
-"Was the client session reused during handshake?");
 
 static PyGetSetDef ssl_getsetlist[] = {
     {"context", (getter) PySSL_get_context,
@@ -2911,8 +2921,7 @@ static PyGetSetDef ssl_getsetlist[] = {
                         PySSL_get_server_hostname_doc},
     {"owner", (getter) PySSL_get_owner, (setter) PySSL_set_owner,
               PySSL_get_owner_doc},
-    {"session", (getter) PySSL_get_session,
-                (setter) PySSL_set_session, PySSL_set_session_doc},
+    _SSL__SSLSOCKET_SESSION_GETSETDEF
     _SSL__SSLSOCKET_SESSION_REUSED_GETSETDEF
     {NULL},            /* sentinel */
 };
