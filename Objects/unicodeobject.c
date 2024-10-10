@@ -13608,6 +13608,33 @@ PyUnicodeWriter_WriteChar(PyUnicodeWriter *writer, Py_UCS4 ch)
 }
 
 int
+PyUnicodeWriter_Fill(PyUnicodeWriter *pub_writer, Py_ssize_t len, Py_UCS4 ch)
+{
+    if (len < 0) {
+        PyErr_Format(PyExc_ValueError, "len must not be negative");
+        return -1;
+    }
+    if (ch > MAX_UNICODE) {
+        PyErr_SetString(PyExc_ValueError,
+                        "character must be in range(0x110000)");
+        return -1;
+    }
+
+    if (len == 0) {
+        return 0;
+    }
+
+    _PyUnicodeWriter *writer = (_PyUnicodeWriter *)pub_writer;
+    if (_PyUnicodeWriter_Prepare(writer, len, ch) < 0) {
+        return -1;
+    }
+
+    _PyUnicode_FastFill(writer->buffer, writer->pos, len, ch);
+    writer->pos += len;
+    return 0;
+}
+
+int
 _PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str)
 {
     assert(PyUnicode_Check(str));

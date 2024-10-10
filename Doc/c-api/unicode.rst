@@ -1665,6 +1665,15 @@ object.
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
+.. c:function:: int PyUnicodeWriter_Fill(PyUnicodeWriter *writer, Py_ssize_t len, Py_UCS4 ch)
+
+   Write *len* times the single Unicode character *ch* into *writer*.
+
+   *len* must not be negative.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
 .. c:function:: int PyUnicodeWriter_Format(PyUnicodeWriter *writer, const char *format, ...)
 
    Similar to :c:func:`PyUnicode_FromFormat`, but write the output directly into *writer*.
