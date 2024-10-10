@@ -232,56 +232,54 @@ tuple_repr(PyObject *self)
         return res > 0 ? PyUnicode_FromString("(...)") : NULL;
     }
 
-    _PyUnicodeWriter writer;
-    _PyUnicodeWriter_Init(&writer);
-    writer.overallocate = 1;
+    Py_ssize_t prealloc;
     if (n > 1) {
-        /* "(" + "1" + ", 2" * (len - 1) + ")" */
-        writer.min_length = 1 + 1 + (2 + 1) * (n - 1) + 1;
+        // "(" + "1" + ", 2" * (len - 1) + ")"
+        prealloc = 1 + 1 + (2 + 1) * (n - 1) + 1;
     }
     else {
-        /* "(1,)" */
-        writer.min_length = 4;
+        // "(1,)"
+        prealloc = 4;
+    }
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(prealloc);
+    if (writer == NULL) {
+        goto error;
     }
 
-    if (_PyUnicodeWriter_WriteChar(&writer, '(') < 0)
+    if (PyUnicodeWriter_WriteChar(writer, '(') < 0) {
         goto error;
+    }
 
     /* Do repr() on each element. */
     for (Py_ssize_t i = 0; i < n; ++i) {
-        PyObject *s;
-
         if (i > 0) {
-            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0)
+            if (PyUnicodeWriter_WriteChar(writer, ',') < 0) {
                 goto error;
+            }
+            if (PyUnicodeWriter_WriteChar(writer, ' ') < 0) {
+                goto error;
+            }
         }
 
-        s = PyObject_Repr(v->ob_item[i]);
-        if (s == NULL)
-            goto error;
-
-        if (_PyUnicodeWriter_WriteStr(&writer, s) < 0) {
-            Py_DECREF(s);
+        if (PyUnicodeWriter_WriteRepr(writer, v->ob_item[i]) < 0) {
             goto error;
         }
-        Py_DECREF(s);
     }
 
-    writer.overallocate = 0;
-    if (n > 1) {
-        if (_PyUnicodeWriter_WriteChar(&writer, ')') < 0)
+    if (n == 1) {
+        if (PyUnicodeWriter_WriteChar(writer, ',') < 0) {
             goto error;
+        }
     }
-    else {
-        if (_PyUnicodeWriter_WriteASCIIString(&writer, ",)", 2) < 0)
-            goto error;
+    if (PyUnicodeWriter_WriteChar(writer, ')') < 0) {
+        goto error;
     }
 
     Py_ReprLeave((PyObject *)v);
-    return _PyUnicodeWriter_Finish(&writer);
+    return PyUnicodeWriter_Finish(writer);
 
 error:
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     Py_ReprLeave((PyObject *)v);
     return NULL;
 }
