@@ -132,21 +132,23 @@ _heapq_heappush_impl(PyObject *module, PyObject *heap, PyObject *item)
 {
     if (PyList_Append(heap, item))
         return NULL;
-
-    if (siftdown((PyListObject *)heap, 0, PyList_GET_SIZE(heap)-1))
+    Py_ssize_t pos = PyList_GET_SIZE(heap)-1;
+    if (siftdown((PyListObject *)heap, 0, pos))
         return NULL;
     Py_RETURN_NONE;
 }
 
 static PyObject *
-heappop_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
+heapremove_internal(PyObject *heap, Py_ssize_t index, int siftup_func(PyListObject *, Py_ssize_t))
 {
     PyObject *lastelt, *returnitem;
     Py_ssize_t n;
 
     /* raises IndexError if the heap is empty */
     n = PyList_GET_SIZE(heap);
-    if (n == 0) {
+    if (index < 0)
+        index += n;
+    if (index < 0 || index >= n) {
         PyErr_SetString(PyExc_IndexError, "index out of range");
         return NULL;
     }
@@ -157,17 +159,32 @@ heappop_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
         Py_DECREF(lastelt);
         return NULL;
     }
-    n--;
-
-    if (!n)
+    if (index == n-1)
         return lastelt;
-    returnitem = PyList_GET_ITEM(heap, 0);
-    PyList_SET_ITEM(heap, 0, lastelt);
-    if (siftup_func((PyListObject *)heap, 0)) {
-        Py_DECREF(returnitem);
-        return NULL;
+
+    returnitem = PyList_GET_ITEM(heap, index);
+    PyList_SET_ITEM(heap, index, lastelt);
+    /* sift down if new item is less than old, else up */
+    int value = 0;
+    if (index > 0){
+        value = PyObject_RichCompareBool(lastelt, returnitem, Py_LT);
+        if (value < 0)
+            goto err;
     }
+    /* the only _max version to call this method is _heappop_max
+     * where index is 0.  So, we need no indirection for the
+     * for 'siftdown' which is only called if index > 0
+     */
+    if (value)
+        value = siftdown((PyListObject *)heap, 0, index);
+    else
+        value = siftup_func((PyListObject *)heap, index);
+    if (value)
+        goto err;
     return returnitem;
+err:
+    Py_DECREF(returnitem);
+    return NULL;
 }
 
 /*[clinic input]
@@ -183,7 +200,7 @@ static PyObject *
 _heapq_heappop_impl(PyObject *module, PyObject *heap)
 /*[clinic end generated code: output=96dfe82d37d9af76 input=91487987a583c856]*/
 {
-    return heappop_internal(heap, siftup);
+    return heapremove_internal(heap, 0, siftup);
 }
 
 static PyObject *
@@ -278,6 +295,28 @@ _heapq_heappushpop_impl(PyObject *module, PyObject *heap, PyObject *item)
     }
     return returnitem;
 }
+
+
+/*[clinic input]
+_heapq.heapremove_index
+
+    heap: object(subclass_of='&PyList_Type')
+    index: Py_ssize_t
+    /
+
+Remove the element at the given index maintaining the heap invariant.
+
+Returns the removed item.
+[clinic start generated code]*/
+
+static PyObject *
+_heapq_heapremove_index_impl(PyObject *module, PyObject *heap,
+                             Py_ssize_t index)
+/*[clinic end generated code: output=d4157859dfa7484a input=84eff69c62afff1d]*/
+{
+    return heapremove_internal(heap, index, siftup);
+}
+
 
 static Py_ssize_t
 keep_top_bit(Py_ssize_t n)
@@ -494,7 +533,7 @@ static PyObject *
 _heapq__heappop_max_impl(PyObject *module, PyObject *heap)
 /*[clinic end generated code: output=9e77aadd4e6a8760 input=362c06e1c7484793]*/
 {
-    return heappop_internal(heap, siftup_max);
+    return heapremove_internal(heap, 0, siftup_max);
 }
 
 /*[clinic input]
@@ -540,6 +579,7 @@ static PyMethodDef heapq_methods[] = {
     _HEAPQ__HEAPPOP_MAX_METHODDEF
     _HEAPQ__HEAPIFY_MAX_METHODDEF
     _HEAPQ__HEAPREPLACE_MAX_METHODDEF
+    _HEAPQ_HEAPREMOVE_INDEX_METHODDEF
     {NULL, NULL}           /* sentinel */
 };
 
