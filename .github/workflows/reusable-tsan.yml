@@ -17,12 +17,19 @@ on:
         description: 'Name of the TSAN logs artifact. Must be unique for each job.'
         required: true
         type: string
+      os-matrix:
+        required: false
+        type: string
+        default: '["ubuntu-22.04"]'
 
 jobs:
   build_tsan_reusable:
-    name: 'Thread sanitizer'
-    runs-on: ubuntu-22.04
+    name: 'Thread sanitizer (${{ matrix.os }})'
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 60
+    strategy:
+      matrix:
+        os: ${{fromJson(inputs.os-matrix)}}
     steps:
     - uses: actions/checkout@v4
     - name: Runner image version
@@ -33,6 +40,7 @@ jobs:
         path: config.cache
         key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ inputs.config_hash }}
     - name: Install Dependencies
+      if: ${{ startsWith(matrix.os, 'ubuntu') }}
       run: |
         sudo ./.github/workflows/posix-deps-apt.sh
         # Install clang-18
@@ -66,6 +74,10 @@ jobs:
       run: make pythoninfo
     - name: Tests
       run: ./python -m test --tsan -j4
+      if: ${{ startsWith(matrix.os, 'ubuntu') }}
+    - name: Tests
+      run: ./python.exe -m test --tsan -j4
+      if: ${{ startsWith(matrix.os, 'macos') }}
     - name: Display TSAN logs
       if: always()
       run: find ${GITHUB_WORKSPACE} -name 'tsan_log.*' | xargs head -n 1000
