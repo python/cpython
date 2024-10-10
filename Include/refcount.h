@@ -24,13 +24,6 @@ cleanup during runtime finalization.
 In 64+ bit systems, any object whose 32 bit reference count is >= 2**31
 will be treated as immortal.
 
-In order to offer some resilience to C extensions using the stable ABI
-compiled against 3.11 or earlier, we set the initial value near the
-middle of the range (2**31, 2**32 - 2**29). That way the
-
-will be marked as immortal by setting all of the
-lower 32 bits of the reference count field, which is equal to: 0xFFFFFFFF
-
 Using the lower 32 bits makes the value backwards compatible by allowing
 C-Extensions without the updated checks in Py_INCREF and Py_DECREF to safely
 increase and decrease the objects reference count.
