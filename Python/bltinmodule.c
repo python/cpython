@@ -1373,7 +1373,7 @@ map_vectorcall(PyObject *type, PyObject * const*args,
     if (kwnames != NULL && PyTuple_GET_SIZE(kwnames) != 0) {
         // Fallback to map_new()
         PyThreadState *tstate = _PyThreadState_GET();
-        return _PyObject_MakeTpCall(tstate, type, args, nargsf, kwnames);
+        return _PyObject_MakeTpCall(tstate, type, args, nargs, kwnames);
     }
 
     if (nargs < 2) {
