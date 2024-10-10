@@ -169,6 +169,24 @@ class ProcessPoolExecutorTest(ExecutorTest):
 
         executor.shutdown()
 
+    def test_max_tasks_per_child_with_fast_submit(self):
+        # gh-115634:
+        # If many tasks are submitted quickly, the idle worker count
+        # would be wrong so the new worker won't be spawned.
+
+        context = self.get_context()
+        if context.get_start_method(allow_none=False) == "fork":
+            raise unittest.SkipTest("Incompatible with the fork start method.")
+
+        executor = self.executor_type(
+                1, mp_context=context, max_tasks_per_child=3)
+
+        # This will halt the process as there's no worker available and the
+        # pool won't spawn more
+        _ = [executor.submit(mul, i, i) for i in range(10)]
+
+        executor.shutdown()
+
     def test_max_tasks_per_child_defaults_to_spawn_context(self):
         # not using self.executor as we need to control construction.
         # arguably this could go in another class w/o that mixin.
