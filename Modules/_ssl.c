@@ -3709,17 +3709,31 @@ set_host_flags(PySSLContext *self, PyObject *arg, void *c)
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+_ssl._SSLContext.check_hostname
+[clinic start generated code]*/
+
 static PyObject *
-get_check_hostname(PySSLContext *self, void *c)
+_ssl__SSLContext_check_hostname_get_impl(PySSLContext *self)
+/*[clinic end generated code: output=e046d6eeefc76063 input=1b8341e705f9ecf5]*/
 {
     return PyBool_FromLong(self->check_hostname);
 }
 
+/*[clinic input]
+@critical_section
+@setter
+_ssl._SSLContext.check_hostname
+[clinic start generated code]*/
+
 static int
-set_check_hostname(PySSLContext *self, PyObject *arg, void *c)
+_ssl__SSLContext_check_hostname_set_impl(PySSLContext *self, PyObject *value)
+/*[clinic end generated code: output=0e767b4784e7dc3f input=e6a771cb5919f74d]*/
 {
     int check_hostname;
-    if (!PyArg_Parse(arg, "p", &check_hostname))
+    if (!PyArg_Parse(value, "p", &check_hostname))
         return -1;
     int verify_mode = check_hostname ? SSL_CTX_get_verify_mode(self->ctx) : 0;
     if (check_hostname &&
@@ -4982,8 +4996,7 @@ _ssl__SSLContext_set_psk_server_callback_impl(PySSLContext *self,
 
 
 static PyGetSetDef context_getsetlist[] = {
-    {"check_hostname", (getter) get_check_hostname,
-                       (setter) set_check_hostname, NULL},
+    _SSL__SSLCONTEXT_CHECK_HOSTNAME_GETSETDEF
     {"_host_flags", (getter) get_host_flags,
                     (setter) set_host_flags, NULL},
     {"minimum_version", (getter) get_minimum_version,
