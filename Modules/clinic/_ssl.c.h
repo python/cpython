@@ -1532,6 +1532,60 @@ _ssl__SSLContext_set_ecdh_curve(PySSLContext *self, PyObject *name)
     return return_value;
 }
 
+#if defined(_ssl__SSLContext_sni_callback_HAS_DOCSTR)
+#  define _ssl__SSLContext_sni_callback_DOCSTR _ssl__SSLContext_sni_callback__doc__
+#else
+#  define _ssl__SSLContext_sni_callback_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_SNI_CALLBACK_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_SNI_CALLBACK_GETSETDEF
+#  define _SSL__SSLCONTEXT_SNI_CALLBACK_GETSETDEF {"sni_callback", (getter)_ssl__SSLContext_sni_callback_get, (setter)_ssl__SSLContext_sni_callback_set, _ssl__SSLContext_sni_callback_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_SNI_CALLBACK_GETSETDEF {"sni_callback", (getter)_ssl__SSLContext_sni_callback_get, NULL, _ssl__SSLContext_sni_callback_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLContext_sni_callback_get_impl(PySSLContext *self);
+
+static PyObject *
+_ssl__SSLContext_sni_callback_get(PySSLContext *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_sni_callback_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_SSL__SSLCONTEXT_SNI_CALLBACK_HAS_DOCSTR)
+#  define _ssl__SSLContext_sni_callback_DOCSTR _ssl__SSLContext_sni_callback__doc__
+#else
+#  define _ssl__SSLContext_sni_callback_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_SNI_CALLBACK_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_SNI_CALLBACK_GETSETDEF
+#  define _SSL__SSLCONTEXT_SNI_CALLBACK_GETSETDEF {"sni_callback", (getter)_ssl__SSLContext_sni_callback_get, (setter)_ssl__SSLContext_sni_callback_set, _ssl__SSLContext_sni_callback_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_SNI_CALLBACK_GETSETDEF {"sni_callback", NULL, (setter)_ssl__SSLContext_sni_callback_set, NULL},
+#endif
+
+static int
+_ssl__SSLContext_sni_callback_set_impl(PySSLContext *self, PyObject *value);
+
+static int
+_ssl__SSLContext_sni_callback_set(PySSLContext *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_sni_callback_set_impl(self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_ssl__SSLContext_cert_store_stats__doc__,
 "cert_store_stats($self, /)\n"
 "--\n"
@@ -2323,4 +2377,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=2cdc16c38db51f7c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4fc34fbd4ebf95c7 input=a9049054013a1b77]*/

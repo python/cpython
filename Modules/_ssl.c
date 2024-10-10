@@ -4595,8 +4595,15 @@ error:
     return ret;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+_ssl._SSLContext.sni_callback
+[clinic start generated code]*/
+
 static PyObject *
-get_sni_callback(PySSLContext *self, void *c)
+_ssl__SSLContext_sni_callback_get_impl(PySSLContext *self)
+/*[clinic end generated code: output=961e6575cdfaf036 input=22dd28c31fdc4318]*/
 {
     PyObject *cb = self->set_sni_cb;
     if (cb == NULL) {
@@ -4605,8 +4612,15 @@ get_sni_callback(PySSLContext *self, void *c)
     return Py_NewRef(cb);
 }
 
+/*[clinic input]
+@critical_section
+@setter
+_ssl._SSLContext.sni_callback
+[clinic start generated code]*/
+
 static int
-set_sni_callback(PySSLContext *self, PyObject *arg, void *c)
+_ssl__SSLContext_sni_callback_set_impl(PySSLContext *self, PyObject *value)
+/*[clinic end generated code: output=b32736c6b891f61a input=c3c4ff33540b3c85]*/
 {
     if (self->protocol == PY_SSL_VERSION_TLS_CLIENT) {
         PyErr_SetString(PyExc_ValueError,
@@ -4614,17 +4628,17 @@ set_sni_callback(PySSLContext *self, PyObject *arg, void *c)
         return -1;
     }
     Py_CLEAR(self->set_sni_cb);
-    if (arg == Py_None) {
+    if (value == Py_None) {
         SSL_CTX_set_tlsext_servername_callback(self->ctx, NULL);
     }
     else {
-        if (!PyCallable_Check(arg)) {
+        if (!PyCallable_Check(value)) {
             SSL_CTX_set_tlsext_servername_callback(self->ctx, NULL);
             PyErr_SetString(PyExc_TypeError,
                             "not a callable object");
             return -1;
         }
-        self->set_sni_cb = Py_NewRef(arg);
+        self->set_sni_cb = Py_NewRef(value);
         SSL_CTX_set_tlsext_servername_callback(self->ctx, _servername_callback);
         SSL_CTX_set_tlsext_servername_arg(self->ctx, self);
     }
@@ -4671,16 +4685,8 @@ X509_STORE_get1_objects(X509_STORE *store)
     ret = sk_X509_OBJECT_deep_copy(X509_STORE_get0_objects(store),
                                    x509_object_dup, X509_OBJECT_free);
     X509_STORE_unlock(store);
-    return ret;
 }
 #endif
-
-PyDoc_STRVAR(PySSLContext_sni_callback_doc,
-"Set a callback that will be called when a server name is provided by the SSL/TLS client in the SNI extension.\n\
-\n\
-If the argument is None then the callback is disabled. The method is called\n\
-with the SSLSocket, the server name as a string, and the SSLContext object.\n\
-See RFC 6066 for details of the SNI extension.");
 
 /*[clinic input]
 @critical_section
@@ -5048,8 +5054,7 @@ static PyGetSetDef context_getsetlist[] = {
                         (setter) _PySSLContext_set_keylog_filename, NULL},
     {"_msg_callback", (getter) _PySSLContext_get_msg_callback,
                       (setter) _PySSLContext_set_msg_callback, NULL},
-    {"sni_callback", (getter) get_sni_callback,
-                     (setter) set_sni_callback, PySSLContext_sni_callback_doc},
+    _SSL__SSLCONTEXT_SNI_CALLBACK_GETSETDEF
 #if defined(TLS1_3_VERSION) && !defined(OPENSSL_NO_TLS1_3)
     {"num_tickets", (getter) get_num_tickets,
                     (setter) set_num_tickets, PySSLContext_num_tickets_doc},
