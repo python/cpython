@@ -2928,27 +2928,44 @@ delta_repr(PyDateTime_Delta *self)
     }
 
     const char *sep = "";
+    int days = GET_TD_DAYS(self);
+    int multiplier = 1;
+    if (days < 0){
+        multiplier = -1;
+        days = days * -1;
+    }
+    int microseconds = GET_TD_MICROSECONDS(self) * multiplier;
+    int seconds = GET_TD_SECONDS(self) * multiplier;
+    if(multiplier == -1)
+        normalize_d_s_us(&days, &seconds, &microseconds);
 
-    if (GET_TD_DAYS(self) != 0) {
-        Py_SETREF(args, PyUnicode_FromFormat("days=%d", GET_TD_DAYS(self)));
+    if (multiplier == -1) {
+        Py_SETREF(args, PyUnicode_FromString("- "));
+        if (args == NULL) {
+            return NULL;
+        }
+    }
+
+    if (days != 0) {
+        Py_SETREF(args, PyUnicode_FromFormat("days=%d", days));
         if (args == NULL) {
             return NULL;
         }
         sep = ", ";
     }
 
-    if (GET_TD_SECONDS(self) != 0) {
+    if (seconds != 0) {
         Py_SETREF(args, PyUnicode_FromFormat("%U%sseconds=%d", args, sep,
-                                             GET_TD_SECONDS(self)));
+                                             seconds));
         if (args == NULL) {
             return NULL;
         }
         sep = ", ";
     }
 
-    if (GET_TD_MICROSECONDS(self) != 0) {
+    if (microseconds != 0) {
         Py_SETREF(args, PyUnicode_FromFormat("%U%smicroseconds=%d", args, sep,
-                                             GET_TD_MICROSECONDS(self)));
+                                             microseconds));
         if (args == NULL) {
             return NULL;
         }
@@ -2970,27 +2987,38 @@ delta_repr(PyDateTime_Delta *self)
 static PyObject *
 delta_str(PyDateTime_Delta *self)
 {
-    int us = GET_TD_MICROSECONDS(self);
-    int seconds = GET_TD_SECONDS(self);
+    int days = GET_TD_DAYS(self);
+    int multiplier = 1;
+    if (days < 0){
+        multiplier = -1;
+        days = days * -1;
+    }
+    int us = GET_TD_MICROSECONDS(self) * multiplier;
+    int seconds = GET_TD_SECONDS(self) * multiplier;
+    if(multiplier == -1)
+        normalize_d_s_us(&days, &seconds, &us);
     int minutes = divmod(seconds, 60, &seconds);
     int hours = divmod(minutes, 60, &minutes);
-    int days = GET_TD_DAYS(self);
 
     if (days) {
         if (us)
-            return PyUnicode_FromFormat("%d day%s, %d:%02d:%02d.%06d",
-                                        days, (days == 1 || days == -1) ? "" : "s",
+            return PyUnicode_FromFormat("%s%d day%s, %d:%02d:%02d.%06d",
+                                        multiplier == -1 ? "-" : "",
+                                        days, days == 1 ? "" : "s",
                                         hours, minutes, seconds, us);
         else
-            return PyUnicode_FromFormat("%d day%s, %d:%02d:%02d",
-                                        days, (days == 1 || days == -1) ? "" : "s",
+            return PyUnicode_FromFormat("%s%d day%s, %d:%02d:%02d",
+                                        multiplier == -1 ? "-" : "",
+                                        days, days == 1 ? "" : "s",
                                         hours, minutes, seconds);
     } else {
         if (us)
-            return PyUnicode_FromFormat("%d:%02d:%02d.%06d",
+            return PyUnicode_FromFormat("%s%d:%02d:%02d.%06d",
+                                        multiplier == -1 ? "-" : "",
                                         hours, minutes, seconds, us);
         else
-            return PyUnicode_FromFormat("%d:%02d:%02d",
+            return PyUnicode_FromFormat("%s%d:%02d:%02d",
+                                        multiplier == -1 ? "-" : "",
                                         hours, minutes, seconds);
     }
 
