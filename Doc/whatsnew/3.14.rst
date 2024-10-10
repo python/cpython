@@ -321,6 +321,17 @@ datetime
 * Add :meth:`datetime.time.strptime` and :meth:`datetime.date.strptime`.
   (Contributed by Wannes Boeykens in :gh:`41431`.)
 
+datetime
+--------
+
+* Add support for ISO 8601 basic format for the following methods:
+
+  - :meth:`date.isoformat <datetime.date.isoformat>`
+  - :meth:`datetime.isoformat <datetime.datetime.isoformat>`
+  - :meth:`time.isoformat <datetime.time.isoformat>`
+
+  (Contributed by Bénédikt Tran in :gh:`118948`.)
+
 os
 --
 
