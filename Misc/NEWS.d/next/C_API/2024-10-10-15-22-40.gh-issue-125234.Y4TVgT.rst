@@ -1,0 +1,1 @@
+:c:func:`PyInitConfig_Free` has no behavior when the `config` is NULL.
