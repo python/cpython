@@ -13438,7 +13438,7 @@ PyUnicodeWriter_Create(Py_ssize_t length)
 
     const size_t size = sizeof(_PyUnicodeWriter);
     PyUnicodeWriter *pub_writer;
-    pub_writer = _Py_FREELIST_POP(PyUnicodeWriter, unicode_writers);
+    pub_writer = _Py_FREELIST_POP_MEM(unicode_writers);
     if (pub_writer == NULL) {
         pub_writer = (PyUnicodeWriter *)PyMem_Malloc(size);
         if (pub_writer == NULL) {
