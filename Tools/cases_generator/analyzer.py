@@ -614,7 +614,6 @@ NON_ESCAPING_FUNCTIONS = (
     "_Py_EnterRecursiveCallTstateUnchecked",
     "_Py_ID",
     "_Py_IsImmortal",
-    "_Py_IsImmortalLoose",
     "_Py_LeaveRecursiveCallPy",
     "_Py_LeaveRecursiveCallTstate",
     "_Py_NewRef",

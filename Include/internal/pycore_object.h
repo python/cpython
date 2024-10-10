@@ -16,9 +16,6 @@ extern "C" {
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_uniqueid.h"      // _PyType_IncrefSlow
 
-
-#define _Py_IMMORTAL_REFCNT_LOOSE ((_Py_IMMORTAL_REFCNT >> 1) + 1)
-
 // This value is added to `ob_ref_shared` for objects that use deferred
 // reference counting so that they are not immediately deallocated when the
 // non-deferred reference count drops to zero.
@@ -27,25 +24,8 @@ extern "C" {
 // `ob_ref_shared` are used for flags.
 #define _Py_REF_DEFERRED (PY_SSIZE_T_MAX / 8)
 
-// gh-121528, gh-118997: Similar to _Py_IsImmortal() but be more loose when
-// comparing the reference count to stay compatible with C extensions built
-// with the stable ABI 3.11 or older. Such extensions implement INCREF/DECREF
-// as refcnt++ and refcnt-- without taking in account immortal objects. For
-// example, the reference count of an immortal object can change from
-// _Py_IMMORTAL_REFCNT to _Py_IMMORTAL_REFCNT+1 (INCREF) or
-// _Py_IMMORTAL_REFCNT-1 (DECREF).
-//
-// This function should only be used in assertions. Otherwise, _Py_IsImmortal()
-// must be used instead.
-static inline int _Py_IsImmortalLoose(PyObject *op)
-{
-#if defined(Py_GIL_DISABLED)
-    return _Py_IsImmortal(op);
-#else
-    return (op->ob_refcnt >= _Py_IMMORTAL_REFCNT_LOOSE);
-#endif
-}
-#define _Py_IsImmortalLoose(op) _Py_IsImmortalLoose(_PyObject_CAST(op))
+/* For backwards compatibility -- Do not use this */
+#define _Py_IsImmortalLoose(op) _Py_IsImmortal
 
 
 /* Check if an object is consistent. For example, ensure that the reference
@@ -97,7 +77,7 @@ PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 #else
 #define _PyObject_HEAD_INIT(type)         \
     {                                     \
-        .ob_refcnt = _Py_IMMORTAL_REFCNT, \
+        .ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT, \
         .ob_type = (type)                 \
     }
 #endif
@@ -184,7 +164,7 @@ PyAPI_FUNC(void) _Py_SetImmortalUntracked(PyObject *op);
 static inline void _Py_SetMortal(PyObject *op, Py_ssize_t refcnt)
 {
     if (op) {
-        assert(_Py_IsImmortalLoose(op));
+        assert(_Py_IsImmortal(op));
 #ifdef Py_GIL_DISABLED
         op->ob_tid = _Py_UNOWNED_TID;
         op->ob_ref_local = 0;
@@ -316,7 +296,7 @@ static inline void
 _Py_INCREF_TYPE(PyTypeObject *type)
 {
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-        assert(_Py_IsImmortalLoose(type));
+        assert(_Py_IsImmortal(type));
         _Py_INCREF_IMMORTAL_STAT_INC();
         return;
     }
@@ -357,7 +337,7 @@ static inline void
 _Py_DECREF_TYPE(PyTypeObject *type)
 {
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-        assert(_Py_IsImmortalLoose(type));
+        assert(_Py_IsImmortal(type));
         _Py_DECREF_IMMORTAL_STAT_INC();
         return;
     }
@@ -393,7 +373,7 @@ _PyObject_Init(PyObject *op, PyTypeObject *typeobj)
 {
     assert(op != NULL);
     Py_SET_TYPE(op, typeobj);
-    assert(_PyType_HasFeature(typeobj, Py_TPFLAGS_HEAPTYPE) || _Py_IsImmortalLoose(typeobj));
+    assert(_PyType_HasFeature(typeobj, Py_TPFLAGS_HEAPTYPE) || _Py_IsImmortal(typeobj));
     _Py_INCREF_TYPE(typeobj);
     _Py_NewReference(op);
 }

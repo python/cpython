@@ -416,6 +416,8 @@ _PyDict_DebugMallocStats(FILE *out)
 
 #define DK_MASK(dk) (DK_SIZE(dk)-1)
 
+#define _Py_DICT_IMMORTAL_INITIAL_REFCNT PY_SSIZE_T_MIN
+
 static void free_keys_object(PyDictKeysObject *keys, bool use_qsbr);
 
 /* PyDictKeysObject has refcounts like PyObject does, so we have the
@@ -428,7 +430,8 @@ static void free_keys_object(PyDictKeysObject *keys, bool use_qsbr);
 static inline void
 dictkeys_incref(PyDictKeysObject *dk)
 {
-    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(dk->dk_refcnt) == _Py_IMMORTAL_REFCNT) {
+    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(dk->dk_refcnt) < 0) {
+        assert(FT_ATOMIC_LOAD_SSIZE_RELAXED(dk->dk_refcnt) == _Py_DICT_IMMORTAL_INITIAL_REFCNT);
         return;
     }
 #ifdef Py_REF_DEBUG
@@ -440,7 +443,8 @@ dictkeys_incref(PyDictKeysObject *dk)
 static inline void
 dictkeys_decref(PyInterpreterState *interp, PyDictKeysObject *dk, bool use_qsbr)
 {
-    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(dk->dk_refcnt) == _Py_IMMORTAL_REFCNT) {
+    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(dk->dk_refcnt) < 0) {
+        assert(FT_ATOMIC_LOAD_SSIZE_RELAXED(dk->dk_refcnt) == _Py_DICT_IMMORTAL_INITIAL_REFCNT);
         return;
     }
     assert(FT_ATOMIC_LOAD_SSIZE(dk->dk_refcnt) > 0);
@@ -586,7 +590,7 @@ estimate_log2_keysize(Py_ssize_t n)
  * (which cannot fail and thus can do no allocation).
  */
 static PyDictKeysObject empty_keys_struct = {
-        _Py_IMMORTAL_REFCNT, /* dk_refcnt */
+        _Py_DICT_IMMORTAL_INITIAL_REFCNT, /* dk_refcnt */
         0, /* dk_log2_size */
         0, /* dk_log2_index_bytes */
         DICT_KEYS_UNICODE, /* dk_kind */

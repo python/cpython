@@ -2574,9 +2574,9 @@ class ShutdownTest(unittest.TestCase):
 class ImmortalTests(unittest.TestCase):
 
     if sys.maxsize < (1 << 32):
-        IMMORTAL_REFCOUNT = (1 << 30) - 1
+        IMMORTAL_REFCOUNT = 3 << 29
     else:
-        IMMORTAL_REFCOUNT = (1 << 32) - 1
+        IMMORTAL_REFCOUNT = 3 << 30
 
     IMMORTALS = (None, True, False, Ellipsis, NotImplemented, *range(-5, 257))
 

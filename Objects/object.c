@@ -2453,7 +2453,7 @@ _Py_SetImmortalUntracked(PyObject *op)
     op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
     op->ob_ref_shared = 0;
 #else
-    op->ob_refcnt = _Py_IMMORTAL_REFCNT;
+    op->ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
 #endif
 }
 

@@ -11,7 +11,7 @@ extern "C" {
 #ifdef Py_DEBUG
 static inline void
 _PyStaticObject_CheckRefcnt(PyObject *obj) {
-    if (Py_REFCNT(obj) < _Py_IMMORTAL_REFCNT) {
+    if (!_Py_IsImmortal(obj)) {
         fprintf(stderr, "Immortal Object has less refcnt than expected.\n");
         _PyObject_Dump(obj);
     }
