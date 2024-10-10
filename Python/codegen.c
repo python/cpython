@@ -656,8 +656,7 @@ codegen_setup_annotations_scope(compiler *c, location loc,
         codegen_enter_scope(c, name, COMPILE_SCOPE_ANNOTATIONS,
                             key, loc.lineno, NULL, &umd));
 
-    // if .format != 1: raise NotImplementedError
-    _Py_DECLARE_STR(format, ".format");
+    // if __format__ != 1: raise NotImplementedError
     ADDOP_I(c, loc, LOAD_FAST, 0);
     ADDOP_LOAD_CONST(c, loc, _PyLong_GetOne());
     ADDOP_I(c, loc, COMPARE_OP, (Py_NE << 5) | compare_masks[Py_NE]);

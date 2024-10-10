@@ -1,4 +1,5 @@
 import annotationlib
+import inspect
 import textwrap
 import types
 import unittest
@@ -265,6 +266,17 @@ class AnnotateTests(unittest.TestCase):
         # Setting f.__annotations__ also clears __annotate__
         f.__annotations__ = {"z": 43}
         self.assertIs(f.__annotate__, None)
+
+    def test_annotate_function_signature(self):
+        def f(x: int): pass
+        anno = f.__annotate__
+        self.assertIsInstance(anno, types.FunctionType)
+        self.assertEqual(anno.__name__, "__annotate__")
+
+        expected_sig = inspect.Signature(
+            [inspect.Parameter("__format__", inspect.Parameter.POSITIONAL_ONLY)]
+        )
+        self.assertEqual(inspect.signature(anno), expected_sig)
 
 
 class DeferredEvaluationTests(unittest.TestCase):
