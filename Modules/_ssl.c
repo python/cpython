@@ -2884,8 +2884,17 @@ PyDoc_STRVAR(PySSL_set_session_doc,
 \
 Get / set SSLSession.");
 
+/*[clinic input]
+@critical_section
+@getter
+_ssl._SSLSocket.session_reused
+
+Was the client session reused during handshake?
+[clinic start generated code]*/
+
 static PyObject *
-PySSL_get_session_reused(PySSLSocket *self, void *closure) {
+_ssl__SSLSocket_session_reused_get_impl(PySSLSocket *self) {
+/*[clinic end generated code: output=c8916909bcb80893 input=cec8bfec73a4461e]*/
     int res = SSL_session_reused(self->ssl);
     return res ? Py_True : Py_False;
 }
@@ -2904,8 +2913,7 @@ static PyGetSetDef ssl_getsetlist[] = {
               PySSL_get_owner_doc},
     {"session", (getter) PySSL_get_session,
                 (setter) PySSL_set_session, PySSL_set_session_doc},
-    {"session_reused", (getter) PySSL_get_session_reused, NULL,
-              PySSL_get_session_reused_doc},
+    _SSL__SSLSOCKET_SESSION_REUSED_GETSETDEF
     {NULL},            /* sentinel */
 };
 

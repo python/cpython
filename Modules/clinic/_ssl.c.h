@@ -493,6 +493,37 @@ _ssl__SSLSocket_verify_client_post_handshake(PySSLSocket *self, PyObject *Py_UNU
     return return_value;
 }
 
+PyDoc_STRVAR(_ssl__SSLSocket_session_reused__doc__,
+"Was the client session reused during handshake?");
+#define _ssl__SSLSocket_session_reused_HAS_DOCSTR
+
+#if defined(_ssl__SSLSocket_session_reused_HAS_DOCSTR)
+#  define _ssl__SSLSocket_session_reused_DOCSTR _ssl__SSLSocket_session_reused__doc__
+#else
+#  define _ssl__SSLSocket_session_reused_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLSOCKET_SESSION_REUSED_GETSETDEF)
+#  undef _SSL__SSLSOCKET_SESSION_REUSED_GETSETDEF
+#  define _SSL__SSLSOCKET_SESSION_REUSED_GETSETDEF {"session_reused", (getter)_ssl__SSLSocket_session_reused_get, (setter)_ssl__SSLSocket_session_reused_set, _ssl__SSLSocket_session_reused_DOCSTR},
+#else
+#  define _SSL__SSLSOCKET_SESSION_REUSED_GETSETDEF {"session_reused", (getter)_ssl__SSLSocket_session_reused_get, NULL, _ssl__SSLSocket_session_reused_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLSocket_session_reused_get_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_session_reused_get(PySSLSocket *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_session_reused_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 static PyObject *
 _ssl__SSLContext_impl(PyTypeObject *type, int proto_version);
 
@@ -1842,4 +1873,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=930f7b2ce6d07704 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=79aaaf0e264304c7 input=a9049054013a1b77]*/
