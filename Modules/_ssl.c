@@ -5576,10 +5576,6 @@ _ssl_SSLSession_has_ticket_get_impl(PySSLSession *self)
     return res ? Py_True : Py_False;
 }
 
-PyDoc_STRVAR(PySSLSession_get_has_ticket_doc,
-"Does the session contain a ticket?");
-
-
 static PyGetSetDef PySSLSession_getsetlist[] = {
     _SSL_SSLSESSION_HAS_TICKET_GETSETDEF
     _SSL_SSLSESSION_ID_GETSETDEF
