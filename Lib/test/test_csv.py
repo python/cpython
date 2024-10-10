@@ -9,7 +9,6 @@ from tempfile import TemporaryFile
 import csv
 import gc
 import pickle
-import os
 from test import support
 from itertools import permutations
 from textwrap import dedent
@@ -1053,6 +1052,7 @@ Stonecutters Seafood and Chop House+ Lemont+ IL+ 12/19/02+ Week Back
         self.assertTrue(dialect.doublequote)
 
     def test_guess_lineterminator(self):
+        from os import linesep
         sniffer = csv.Sniffer()
         dialect = sniffer.sniff('Date;Value\r\n2010-01-01;10')
         self.assertEqual(dialect.lineterminator, '\r\n')
@@ -1061,9 +1061,9 @@ Stonecutters Seafood and Chop House+ Lemont+ IL+ 12/19/02+ Week Back
         dialect = sniffer.sniff('Date;Value\r2010-01-01;10')
         self.assertEqual(dialect.lineterminator, '\r')
         dialect = sniffer.sniff('Date;Value\v2010-01-01;10')
-        self.assertEqual(dialect.lineterminator, os.linesep)
+        self.assertEqual(dialect.lineterminator, linesep)
         dialect = sniffer.sniff('Date;Value')
-        self.assertEqual(dialect.lineterminator, os.linesep)
+        self.assertEqual(dialect.lineterminator, linesep)
 
 
 class NUL:

@@ -12,7 +12,6 @@ from _csv import Error, __version__, writer, reader, register_dialect, \
 from _csv import Dialect as _Dialect
 
 from io import StringIO
-import os
 
 __all__ = ["QUOTE_MINIMAL", "QUOTE_ALL", "QUOTE_NONNUMERIC", "QUOTE_NONE",
            "Error", "Dialect", "__doc__", "excel", "excel_tab",
@@ -459,4 +458,5 @@ class Sniffer:
             if terminator in sample:
                 return terminator
 
-        return os.linesep
+        from os import linesep
+        return linesep
