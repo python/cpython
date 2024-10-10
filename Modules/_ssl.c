@@ -3441,8 +3441,15 @@ set_verify_mode(PySSLContext *self, PyObject *arg, void *c)
     return _set_verify_mode(self, n);
 }
 
+/*[clinic input]
+@critical_section
+@getter
+_ssl._SSLContext.verify_flags
+[clinic start generated code]*/
+
 static PyObject *
-get_verify_flags(PySSLContext *self, void *c)
+_ssl__SSLContext_verify_flags_get_impl(PySSLContext *self)
+/*[clinic end generated code: output=fbbf8ba28ad6e56e input=c1ec36d610b3f391]*/
 {
     X509_VERIFY_PARAM *param;
     unsigned long flags;
@@ -3452,13 +3459,20 @@ get_verify_flags(PySSLContext *self, void *c)
     return PyLong_FromUnsignedLong(flags);
 }
 
+/*[clinic input]
+@critical_section
+@setter
+_ssl._SSLContext.verify_flags
+[clinic start generated code]*/
+
 static int
-set_verify_flags(PySSLContext *self, PyObject *arg, void *c)
+_ssl__SSLContext_verify_flags_set_impl(PySSLContext *self, PyObject *value)
+/*[clinic end generated code: output=a3e3b2a0ce6c2e99 input=b2a0c42583d4f34e]*/
 {
     X509_VERIFY_PARAM *param;
     unsigned long new_flags, flags, set, clear;
 
-    if (!PyArg_Parse(arg, "k", &new_flags))
+    if (!PyArg_Parse(value, "k", &new_flags))
         return -1;
     param = SSL_CTX_get0_param(self->ctx);
     flags = X509_VERIFY_PARAM_get_flags(param);
@@ -5103,8 +5117,7 @@ static PyGetSetDef context_getsetlist[] = {
 #endif
                             NULL},
     _SSL__SSLCONTEXT_PROTOCOL_GETSETDEF
-    {"verify_flags", (getter) get_verify_flags,
-                     (setter) set_verify_flags, NULL},
+    _SSL__SSLCONTEXT_VERIFY_FLAGS_GETSETDEF
     {"verify_mode", (getter) get_verify_mode,
                     (setter) set_verify_mode, NULL},
     {"security_level", (getter) get_security_level,

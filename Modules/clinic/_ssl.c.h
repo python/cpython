@@ -880,6 +880,60 @@ exit:
     return return_value;
 }
 
+#if defined(_ssl__SSLContext_verify_flags_HAS_DOCSTR)
+#  define _ssl__SSLContext_verify_flags_DOCSTR _ssl__SSLContext_verify_flags__doc__
+#else
+#  define _ssl__SSLContext_verify_flags_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_VERIFY_FLAGS_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_VERIFY_FLAGS_GETSETDEF
+#  define _SSL__SSLCONTEXT_VERIFY_FLAGS_GETSETDEF {"verify_flags", (getter)_ssl__SSLContext_verify_flags_get, (setter)_ssl__SSLContext_verify_flags_set, _ssl__SSLContext_verify_flags_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_VERIFY_FLAGS_GETSETDEF {"verify_flags", (getter)_ssl__SSLContext_verify_flags_get, NULL, _ssl__SSLContext_verify_flags_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLContext_verify_flags_get_impl(PySSLContext *self);
+
+static PyObject *
+_ssl__SSLContext_verify_flags_get(PySSLContext *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_verify_flags_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_SSL__SSLCONTEXT_VERIFY_FLAGS_HAS_DOCSTR)
+#  define _ssl__SSLContext_verify_flags_DOCSTR _ssl__SSLContext_verify_flags__doc__
+#else
+#  define _ssl__SSLContext_verify_flags_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_VERIFY_FLAGS_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_VERIFY_FLAGS_GETSETDEF
+#  define _SSL__SSLCONTEXT_VERIFY_FLAGS_GETSETDEF {"verify_flags", (getter)_ssl__SSLContext_verify_flags_get, (setter)_ssl__SSLContext_verify_flags_set, _ssl__SSLContext_verify_flags_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_VERIFY_FLAGS_GETSETDEF {"verify_flags", NULL, (setter)_ssl__SSLContext_verify_flags_set, NULL},
+#endif
+
+static int
+_ssl__SSLContext_verify_flags_set_impl(PySSLContext *self, PyObject *value);
+
+static int
+_ssl__SSLContext_verify_flags_set(PySSLContext *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_verify_flags_set_impl(self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 #if defined(_ssl__SSLContext_minimum_version_HAS_DOCSTR)
 #  define _ssl__SSLContext_minimum_version_DOCSTR _ssl__SSLContext_minimum_version__doc__
 #else
@@ -2512,4 +2566,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=26e79b114b8c43df input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6d9009cbbac4cf2f input=a9049054013a1b77]*/
