@@ -3641,8 +3641,7 @@ _validate_paramflags(ctypes_state *st, PyTypeObject *type, PyObject *paramflags)
         PyObject *name = Py_None;
         PyObject *defval;
         PyObject *typ;
-        if (!PyArg_ParseTuple(item, "i|OO", &flag, &name, &defval) ||
-            !(name == Py_None || PyUnicode_Check(name)))
+        if (!PyArg_ParseTuple(item, "i|?UO", &flag, &name, &defval))
         {
             PyErr_SetString(PyExc_TypeError,
                    "paramflags must be a sequence of (int [,string [,value]]) tuples");
@@ -3707,10 +3706,8 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
     void *handle;
     PyObject *paramflags = NULL;
 
-    if (!PyArg_ParseTuple(args, "O|O", &ftuple, &paramflags))
+    if (!PyArg_ParseTuple(args, "O|?O", &ftuple, &paramflags))
         return NULL;
-    if (paramflags == Py_None)
-        paramflags = NULL;
 
     ftuple = PySequence_Tuple(ftuple);
     if (!ftuple)
@@ -3825,10 +3822,8 @@ PyCFuncPtr_FromVtblIndex(PyTypeObject *type, PyObject *args, PyObject *kwds)
     GUID *iid = NULL;
     Py_ssize_t iid_len = 0;
 
-    if (!PyArg_ParseTuple(args, "is|Oz#", &index, &name, &paramflags, &iid, &iid_len))
+    if (!PyArg_ParseTuple(args, "is|?Oz#", &index, &name, &paramflags, &iid, &iid_len))
         return NULL;
-    if (paramflags == Py_None)
-        paramflags = NULL;
 
     ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
     if (!_validate_paramflags(st, type, paramflags)) {
