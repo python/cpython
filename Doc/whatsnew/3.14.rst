@@ -321,6 +321,13 @@ datetime
 * Add :meth:`datetime.time.strptime` and :meth:`datetime.date.strptime`.
   (Contributed by Wannes Boeykens in :gh:`41431`.)
 
+fnmatch
+-------
+
+* Added :func:`fnmatch.filterfalse` for excluding names matching a pattern.
+
+  (Contributed by Bénédikt Tran in :gh:`74598`.)
+
 os
 --
 
