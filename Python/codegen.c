@@ -676,6 +676,33 @@ codegen_leave_annotations_scope(compiler *c, location loc,
     ADDOP_I(c, loc, BUILD_MAP, annotations_len);
     ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
     PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 1);
+
+    // We want the parameter to __annotate__ to be named "format" in the
+    // signature  shown by inspect.signature(), but we need to use a
+    // different name (.format) in the symtable; if the name
+    // "format" appears in the annotations, it doesn't get clobbered
+    // by this name.  This code is essentially:
+    // co->co_localsplusnames = ("format", *co->co_localsplusnames[1:])
+    const Py_ssize_t size = PyObject_Size(co->co_localsplusnames);
+    if (size == -1) {
+        return ERROR;
+    }
+    PyObject *new_names = PyTuple_New(size);
+    if (new_names == NULL) {
+        return ERROR;
+    }
+    PyTuple_SET_ITEM(new_names, 0, Py_NewRef(&_Py_ID(format)));
+    for (int i = 1; i < size; i++) {
+        PyObject *item = PyTuple_GetItem(co->co_localsplusnames, i);
+        if (item == NULL) {
+            Py_DECREF(new_names);
+            return ERROR;
+        }
+        Py_INCREF(item);
+        PyTuple_SET_ITEM(new_names, i, item);
+    }
+    Py_SETREF(co->co_localsplusnames, new_names);
+
     _PyCompile_ExitScope(c);
     if (co == NULL) {
         return ERROR;
