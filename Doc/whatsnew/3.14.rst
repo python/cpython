@@ -239,6 +239,9 @@ ctypes
   to help match a non-default ABI.
   (Contributed by Petr Viktorin in :gh:`97702`.)
 
+* Added :func:`ctypes.util.dllist` for listing the shared libraries
+  loaded by the current process.
+  (Contributed by Brian Ward in :gh:`119349`.)
 
 dis
 ---
