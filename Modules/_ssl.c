@@ -3688,19 +3688,33 @@ set_options(PySSLContext *self, PyObject *arg, void *c)
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+_ssl._SSLContext._host_flags
+[clinic start generated code]*/
+
 static PyObject *
-get_host_flags(PySSLContext *self, void *c)
+_ssl__SSLContext__host_flags_get_impl(PySSLContext *self)
+/*[clinic end generated code: output=0f9db6654ce32582 input=8e3c49499eefd0e5]*/
 {
     return PyLong_FromUnsignedLong(self->hostflags);
 }
 
+/*[clinic input]
+@critical_section
+@setter
+_ssl._SSLContext._host_flags
+[clinic start generated code]*/
+
 static int
-set_host_flags(PySSLContext *self, PyObject *arg, void *c)
+_ssl__SSLContext__host_flags_set_impl(PySSLContext *self, PyObject *value)
+/*[clinic end generated code: output=1ed6f4027aaf2e3e input=28caf1fb9c32f6cb]*/
 {
     X509_VERIFY_PARAM *param;
     unsigned int new_flags = 0;
 
-    if (!PyArg_Parse(arg, "I", &new_flags))
+    if (!PyArg_Parse(value, "I", &new_flags))
         return -1;
 
     param = SSL_CTX_get0_param(self->ctx);
@@ -4997,8 +5011,7 @@ _ssl__SSLContext_set_psk_server_callback_impl(PySSLContext *self,
 
 static PyGetSetDef context_getsetlist[] = {
     _SSL__SSLCONTEXT_CHECK_HOSTNAME_GETSETDEF
-    {"_host_flags", (getter) get_host_flags,
-                    (setter) set_host_flags, NULL},
+    _SSL__SSLCONTEXT__HOST_FLAGS_GETSETDEF
     {"minimum_version", (getter) get_minimum_version,
                         (setter) set_minimum_version, NULL},
     {"maximum_version", (getter) get_maximum_version,

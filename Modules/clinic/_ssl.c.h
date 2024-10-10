@@ -880,6 +880,60 @@ exit:
     return return_value;
 }
 
+#if defined(_ssl__SSLContext__host_flags_HAS_DOCSTR)
+#  define _ssl__SSLContext__host_flags_DOCSTR _ssl__SSLContext__host_flags__doc__
+#else
+#  define _ssl__SSLContext__host_flags_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT__HOST_FLAGS_GETSETDEF)
+#  undef _SSL__SSLCONTEXT__HOST_FLAGS_GETSETDEF
+#  define _SSL__SSLCONTEXT__HOST_FLAGS_GETSETDEF {"_host_flags", (getter)_ssl__SSLContext__host_flags_get, (setter)_ssl__SSLContext__host_flags_set, _ssl__SSLContext__host_flags_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT__HOST_FLAGS_GETSETDEF {"_host_flags", (getter)_ssl__SSLContext__host_flags_get, NULL, _ssl__SSLContext__host_flags_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLContext__host_flags_get_impl(PySSLContext *self);
+
+static PyObject *
+_ssl__SSLContext__host_flags_get(PySSLContext *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext__host_flags_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_SSL__SSLCONTEXT__HOST_FLAGS_HAS_DOCSTR)
+#  define _ssl__SSLContext__host_flags_DOCSTR _ssl__SSLContext__host_flags__doc__
+#else
+#  define _ssl__SSLContext__host_flags_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT__HOST_FLAGS_GETSETDEF)
+#  undef _SSL__SSLCONTEXT__HOST_FLAGS_GETSETDEF
+#  define _SSL__SSLCONTEXT__HOST_FLAGS_GETSETDEF {"_host_flags", (getter)_ssl__SSLContext__host_flags_get, (setter)_ssl__SSLContext__host_flags_set, _ssl__SSLContext__host_flags_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT__HOST_FLAGS_GETSETDEF {"_host_flags", NULL, (setter)_ssl__SSLContext__host_flags_set, NULL},
+#endif
+
+static int
+_ssl__SSLContext__host_flags_set_impl(PySSLContext *self, PyObject *value);
+
+static int
+_ssl__SSLContext__host_flags_set(PySSLContext *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext__host_flags_set_impl(self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 #if defined(_ssl__SSLContext_check_hostname_HAS_DOCSTR)
 #  define _ssl__SSLContext_check_hostname_DOCSTR _ssl__SSLContext_check_hostname__doc__
 #else
@@ -2159,4 +2213,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=fdfe4b2244ae2a54 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=caca896be11b53a6 input=a9049054013a1b77]*/
