@@ -24,6 +24,7 @@
 #include "pycore_instruction_sequence.h" // _PyInstructionSequence_NewLabel()
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_object.h"        // _Py_ANNOTATE_FORMAT_VALUE_WITH_FAKE_GLOBALS
 #include "pycore_pystate.h"       // _Py_GetConfig()
 #include "pycore_symtable.h"      // PySTEntryObject
 
@@ -656,13 +657,14 @@ codegen_setup_annotations_scope(compiler *c, location loc,
         codegen_enter_scope(c, name, COMPILE_SCOPE_ANNOTATIONS,
                             key, loc.lineno, NULL, &umd));
 
-    // if .format != 1: raise NotImplementedError
-    _Py_DECLARE_STR(format, ".format");
+    // if .format > VALUE_WITH_FAKE_GLOBALS: raise NotImplementedError
+    PyObject *two = PyLong_FromLong(_Py_ANNOTATE_FORMAT_VALUE_WITH_FAKE_GLOBALS);
     ADDOP_I(c, loc, LOAD_FAST, 0);
-    ADDOP_LOAD_CONST(c, loc, _PyLong_GetOne());
-    ADDOP_I(c, loc, COMPARE_OP, (Py_NE << 5) | compare_masks[Py_NE]);
+    ADDOP_LOAD_CONST(c, loc, two);
+    ADDOP_I(c, loc, COMPARE_OP, (Py_GT << 5) | compare_masks[Py_GT]);
     NEW_JUMP_TARGET_LABEL(c, body);
     ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, body);
+
     ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_NOTIMPLEMENTEDERROR);
     ADDOP_I(c, loc, RAISE_VARARGS, 1);
     USE_LABEL(c, body);
