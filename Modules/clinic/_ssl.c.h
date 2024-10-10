@@ -1152,6 +1152,33 @@ _ssl__SSLContext_num_tickets_set(PySSLContext *self, PyObject *value, void *Py_U
     return return_value;
 }
 
+#if defined(_ssl__SSLContext_security_level_HAS_DOCSTR)
+#  define _ssl__SSLContext_security_level_DOCSTR _ssl__SSLContext_security_level__doc__
+#else
+#  define _ssl__SSLContext_security_level_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_SECURITY_LEVEL_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_SECURITY_LEVEL_GETSETDEF
+#  define _SSL__SSLCONTEXT_SECURITY_LEVEL_GETSETDEF {"security_level", (getter)_ssl__SSLContext_security_level_get, (setter)_ssl__SSLContext_security_level_set, _ssl__SSLContext_security_level_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_SECURITY_LEVEL_GETSETDEF {"security_level", (getter)_ssl__SSLContext_security_level_get, NULL, _ssl__SSLContext_security_level_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLContext_security_level_get_impl(PySSLContext *self);
+
+static PyObject *
+_ssl__SSLContext_security_level_get(PySSLContext *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_security_level_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 #if defined(_ssl__SSLContext_options_HAS_DOCSTR)
 #  define _ssl__SSLContext_options_DOCSTR _ssl__SSLContext_options__doc__
 #else
@@ -2620,4 +2647,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=f2adf3bcedabfea3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5921bfbc09f4d44f input=a9049054013a1b77]*/

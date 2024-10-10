@@ -3704,13 +3704,19 @@ _ssl__SSLContext_num_tickets_set_impl(PySSLContext *self, PyObject *value)
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+_ssl._SSLContext.security_level
+[clinic start generated code]*/
+
 static PyObject *
-get_security_level(PySSLContext *self, void *c)
+_ssl__SSLContext_security_level_get_impl(PySSLContext *self)
+/*[clinic end generated code: output=56ece09e6a9572d0 input=a0416598e07c3183]*/
 {
     PyObject *res = PyLong_FromLong(SSL_CTX_get_security_level(self->ctx));
     return res;
 }
-PyDoc_STRVAR(PySSLContext_security_level_doc, "The current security level");
 
 /*[clinic input]
 @critical_section
@@ -5133,8 +5139,7 @@ static PyGetSetDef context_getsetlist[] = {
     _SSL__SSLCONTEXT_PROTOCOL_GETSETDEF
     _SSL__SSLCONTEXT_VERIFY_FLAGS_GETSETDEF
     _SSL__SSLCONTEXT_VERIFY_MODE_GETSETDEF
-    {"security_level", (getter) get_security_level,
-                       NULL, PySSLContext_security_level_doc},
+    _SSL__SSLCONTEXT_SECURITY_LEVEL_GETSETDEF
     {NULL},            /* sentinel */
 };
 
