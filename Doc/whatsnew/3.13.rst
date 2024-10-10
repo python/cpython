@@ -1488,7 +1488,6 @@ Optimizations
 Removed Modules And APIs
 ========================
 
-
 .. _whatsnew313-pep594:
 
 PEP 594: Remove "dead batteries" from the standard library
