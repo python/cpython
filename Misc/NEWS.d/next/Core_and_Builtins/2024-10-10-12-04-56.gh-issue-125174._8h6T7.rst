@@ -1,0 +1,4 @@
+Make the handling of reference counts of immortal objects more robust.
+Immortal objects with reference counts that deviate from their original
+reference count by up to a billion (half a billion on 32 bit builds) are
+still counted as immortal.

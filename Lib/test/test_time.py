@@ -2,7 +2,6 @@ from test import support
 from test.support import warnings_helper
 import decimal
 import enum
-import locale
 import math
 import platform
 import sys
@@ -600,17 +599,8 @@ class TimeTestCase(unittest.TestCase):
 
 
 class TestLocale(unittest.TestCase):
-    def setUp(self):
-        self.oldloc = locale.setlocale(locale.LC_ALL)
-
-    def tearDown(self):
-        locale.setlocale(locale.LC_ALL, self.oldloc)
-
+    @support.run_with_locale('LC_ALL', 'fr_FR', '')
     def test_bug_3061(self):
-        try:
-            tmp = locale.setlocale(locale.LC_ALL, "fr_FR")
-        except locale.Error:
-            self.skipTest('could not set locale.LC_ALL to fr_FR')
         # This should not cause an exception
         time.strftime("%B", (2009,2,1,0,0,0,0,0,0))
 

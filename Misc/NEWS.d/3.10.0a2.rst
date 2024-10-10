@@ -226,8 +226,8 @@ thread at the time the function is called.
 .. section: Core and Builtins
 
 Enable ``from __future__ import annotations`` (:pep:`563`) by default. The
-values found in :attr:`__annotations__` dicts are now strings, e.g. ``{"x":
-"int"}`` instead of ``{"x": int}``.
+values found in :attr:`~object.__annotations__` dicts are now strings, for
+example ``{"x": "int"}`` instead of ``{"x": int}``.
 
 ..
 
