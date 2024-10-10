@@ -11,6 +11,8 @@ import os
 import sys
 import time
 
+import sphinx
+
 sys.path.append(os.path.abspath('tools/extensions'))
 sys.path.append(os.path.abspath('includes'))
 
@@ -62,7 +64,10 @@ manpages_url = 'https://manpages.debian.org/{path}'
 
 # General substitutions.
 project = 'Python'
-copyright = f"2001-{time.strftime('%Y')}, Python Software Foundation"
+if sphinx.version_info[:2] >= (8, 1):
+    copyright = f"2001-%Y, Python Software Foundation"
+else:
+    copyright = f"2001-{time.strftime('%Y')}, Python Software Foundation"
 
 # We look for the Include/patchlevel.h file in the current Python source tree
 # and replace the values accordingly.
@@ -94,7 +99,7 @@ toc_object_entries = False
 # Ignore any .rst files in the includes/ directory;
 # they're embedded in pages but not rendered individually.
 # Ignore any .rst files in the venv/ directory.
-exclude_patterns = ['includes/*.rst', 'venv/*', 'README.rst']
+exclude_patterns = ['includes/*.rst', 'venv/*', 'venv-3.11/*', 'README.rst']
 venvdir = os.getenv('VENVDIR')
 if venvdir is not None:
     exclude_patterns.append(venvdir + '/*')
@@ -361,10 +366,14 @@ html_context = {
 }
 
 # This 'Last updated on:' timestamp is inserted at the bottom of every page.
-html_time = int(os.environ.get('SOURCE_DATE_EPOCH', time.time()))
-html_last_updated_fmt = time.strftime(
-    '%b %d, %Y (%H:%M UTC)', time.gmtime(html_time)
-)
+html_last_updated_fmt = '%b %d, %Y (%H:%M UTC)'
+if sphinx.version_info[:2] >= (8, 1):
+    html_last_updated_use_utc = True
+else:
+    html_time = int(os.environ.get('SOURCE_DATE_EPOCH', time.time()))
+    html_last_updated_fmt = time.strftime(
+        html_last_updated_fmt, time.gmtime(html_time)
+    )
 
 # Path to find HTML templates.
 templates_path = ['tools/templates']
@@ -596,12 +605,17 @@ linkcheck_ignore = [
 # mapping unique short aliases to a base URL and a prefix.
 # https://www.sphinx-doc.org/en/master/usage/extensions/extlinks.html
 extlinks = {
-    "cve": ("https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-%s", "CVE-%s"),
-    "cwe": ("https://cwe.mitre.org/data/definitions/%s.html", "CWE-%s"),
     "pypi": ("https://pypi.org/project/%s/", "%s"),
     "source": (SOURCE_URI, "%s"),
 }
 extlinks_detect_hardcoded_links = True
+
+if sphinx.version_info[:2] < (8, 1):
+    # Sphinx 8.1 has in-built CVE and CWE roles.
+    extlinks |= {
+        "cve": ("https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-%s", "CVE-%s"),
+        "cwe": ("https://cwe.mitre.org/data/definitions/%s.html", "CWE-%s"),
+    }
 
 # Options for c_annotations
 # -------------------------
