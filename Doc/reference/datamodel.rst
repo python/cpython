@@ -3320,7 +3320,7 @@ left undefined.
             object.__rfloordiv__(self, other)
             object.__rmod__(self, other)
             object.__rdivmod__(self, other)
-            object.__rpow__(self, other[, modulo])
+            object.__rpow__(self, other)
             object.__rlshift__(self, other)
             object.__rrshift__(self, other)
             object.__rand__(self, other)
