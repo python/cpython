@@ -2758,13 +2758,15 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
                                f'[object={spec!r}]')
     is_async_func = _is_async_func(spec)
 
-    entries = [(entry, _missing) for entry in dir(spec)]
+    base_entries = {entry: _missing for entry in dir(spec)}
     if is_type and instance and is_dataclass(spec):
         dataclass_fields = fields(spec)
-        entries.extend((f.name, f.type) for f in dataclass_fields)
+        entries = {f.name: f.type for f in dataclass_fields}
+        entries.update(base_entries)
         _kwargs = {'spec': [f.name for f in dataclass_fields]}
     else:
         _kwargs = {'spec': spec}
+        entries = base_entries
 
     if spec_set:
         _kwargs = {'spec_set': spec}
@@ -2822,7 +2824,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
                                             _name='()', _parent=mock,
                                             wraps=wrapped)
 
-    for entry, original in entries:
+    for entry, original in entries.items():
         if _is_magic(entry):
             # MagicMock already does the useful magic methods for us
             continue
