@@ -105,8 +105,8 @@ information associated to the GC is needed the previous fields can be accessed b
 simple type cast from the original object: `((PyGC_Head *)(the_object)-1)`.
 
 As is explained later in the
-[Optimization: reusing fields to save memory](#Optimization-reusing-fields-to-save-memory] section,
-these two extra fields are normally used to keep doubly linked lists of all the
+[Optimization: reusing fields to save memory](#optimization-reusing-fields-to-save-memory)
+section, these two extra fields are normally used to keep doubly linked lists of all the
 objects tracked by the garbage collector (these lists are the GC generations, more on
 that in the [Optimization: generations](#Optimization-generations) section), but
 they are also reused to fulfill other purposes when the full doubly linked list
