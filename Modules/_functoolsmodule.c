@@ -147,7 +147,7 @@ typedef struct {
 static void partial_setvectorcall(partialobject *pto);
 static struct PyModuleDef _functools_module;
 static PyObject *
-partial_call(partialobject *pto, PyObject *args, PyObject *kwargs);
+partial_call(PyObject *pto, PyObject *args, PyObject *kwargs);
 
 static inline _functools_state *
 get_functools_state_by_type(PyTypeObject *type)
@@ -365,9 +365,10 @@ partial_vectorcall_fallback(PyThreadState *tstate, partialobject *pto,
 }
 
 static PyObject *
-partial_vectorcall(partialobject *pto, PyObject *const *args,
+partial_vectorcall(PyObject *self, PyObject *const *args,
                    size_t nargsf, PyObject *kwnames)
 {
+    partialobject *pto = (partialobject *)(self);
     PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
 
@@ -468,15 +469,16 @@ partial_setvectorcall(partialobject *pto)
      * but that is unlikely (why use partial without arguments?),
      * so we don't optimize that */
     else {
-        pto->vectorcall = (vectorcallfunc)partial_vectorcall;
+        pto->vectorcall = partial_vectorcall;
     }
 }
 
 
 // Not converted to argument clinic, because of `*args, **kwargs` arguments.
 static PyObject *
-partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
+partial_call(PyObject *self, PyObject *args, PyObject *kwargs)
 {
+    partialobject *pto = (partialobject *)self;
     assert(PyCallable_Check(pto->fn));
     assert(PyTuple_Check(pto->args));
     assert(PyDict_Check(pto->kw));
@@ -749,7 +751,7 @@ static PyType_Slot partial_type_slots[] = {
     {Py_tp_methods, partial_methods},
     {Py_tp_members, partial_memberlist},
     {Py_tp_getset, partial_getsetlist},
-    {Py_tp_descr_get, (descrgetfunc)partial_descr_get},
+    {Py_tp_descr_get, partial_descr_get},
     {Py_tp_new, partial_new},
     {Py_tp_free, PyObject_GC_Del},
     {0, 0}
