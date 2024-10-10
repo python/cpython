@@ -174,7 +174,13 @@ class InteractiveColoredConsole(code.InteractiveConsole):
 
     def runsource(self, source, filename="<input>", symbol="single"):
         try:
-            tree = ast.parse(source)
+            tree = self.compile.compiler(
+                source,
+                filename,
+                "exec",
+                ast.PyCF_ONLY_AST,
+                incomplete_input=False,
+            )
         except (SyntaxError, OverflowError, ValueError):
             self.showsyntaxerror(filename, source=source)
             return False
@@ -185,7 +191,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
             the_symbol = symbol if stmt is last_stmt else "exec"
             item = wrapper([stmt])
             try:
-                code = self.compile.compiler(item, filename, the_symbol, dont_inherit=True)
+                code = self.compile.compiler(item, filename, the_symbol)
             except SyntaxError as e:
                 if e.args[0] == "'await' outside function":
                     python = os.path.basename(sys.executable)
