@@ -2,6 +2,7 @@
 
 import io
 import pathlib
+import re
 import stat
 import sys
 import tempfile
@@ -316,6 +317,73 @@ class ZipAppTest(unittest.TestCase):
         with zipfile.ZipFile(new_target, 'r') as z:
             self.assertEqual(set(z.namelist()), {'__main__.py'})
 
+    def test_create_archive_with_include_pattern(self):
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '.DS_Store').touch()
+        (source / 'zed.py').touch()
+        (source / 'bin').mkdir()
+        (source / 'bin' / 'qux').touch()
+        (source / 'bin' / 'baz').touch()
+        (source / '__main__.py').touch()
+
+        target = io.BytesIO()
+        zipapp.create_archive(
+            source=str(source),
+            target=target,
+            include_pattern=re.compile(r".*\.py")
+        )
+
+        target.seek(0)
+        with zipfile.ZipFile(target, 'r') as zf:
+            self.assertEqual(zf.namelist(),
+                ["__main__.py", "zed.py"])
+
+    def test_create_archive_with_exclude_pattern(self):
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '.DS_Store').touch()
+        (source / 'zed.py').touch()
+        (source / 'bin').mkdir()
+        (source / 'bin' / 'qux').touch()
+        (source / 'bin' / 'baz').touch()
+        (source / '__main__.py').touch()
+
+        target = io.BytesIO()
+        zipapp.create_archive(
+            source=str(source),
+            target=target,
+            exclude_pattern=re.compile(r".*\.py")
+        )
+
+        target.seek(0)
+        with zipfile.ZipFile(target, 'r') as zf:
+            self.assertEqual(zf.namelist(),
+                [".DS_Store", "bin/", "bin/baz", "bin/qux"])
+
+    def test_create_archive_with_include_and_exclude_pattern(self):
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '.DS_Store').touch()
+        (source / 'zed.py').touch()
+        (source / 'bin').mkdir()
+        (source / 'bin' / 'qux').touch()
+        (source / 'bin' / 'baz').touch()
+        (source / '__main__.py').touch()
+
+        target = io.BytesIO()
+        zipapp.create_archive(
+            source=str(source),
+            target=target,
+            include_pattern=re.compile(r".*\.py"),
+            exclude_pattern=re.compile(r".*zed\.py")
+        )
+
+        target.seek(0)
+        with zipfile.ZipFile(target, 'r') as zf:
+            self.assertEqual(zf.namelist(),
+                ["__main__.py"])
+
     # (Unix only) tests that archives with shebang lines are made executable
     @unittest.skipIf(sys.platform == 'win32',
                      'Windows does not support an executable bit')
@@ -416,6 +484,63 @@ class ZipAppCmdlineTest(unittest.TestCase):
             zipapp.main(args)
         # Program should exit with a non-zero return code.
         self.assertTrue(cm.exception.code)
+
+    def test_cmdline_create_with_include_pattern(self):
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '.DS_Store').touch()
+        (source / 'zed.py').touch()
+        (source / 'bin').mkdir()
+        (source / 'bin' / 'qux').touch()
+        (source / 'bin' / 'baz').touch()
+        (source / '__main__.py').touch()
+
+        args = [str(source), '--include-pattern', r'.*\.py']
+        zipapp.main(args)
+        target = source.with_suffix('.pyz')
+        self.assertTrue(target.is_file())
+
+        with zipfile.ZipFile(target, 'r') as zf:
+            self.assertEqual(zf.namelist(),
+                    ["__main__.py", "zed.py"])
+
+    def test_cmdline_create_with_exclude_pattern(self):
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '.DS_Store').touch()
+        (source / 'zed.py').touch()
+        (source / 'bin').mkdir()
+        (source / 'bin' / 'qux').touch()
+        (source / 'bin' / 'baz').touch()
+        (source / '__main__.py').touch()
+
+        args = [str(source), '--exclude-pattern', r'.*\.py']
+        zipapp.main(args)
+        target = source.with_suffix('.pyz')
+        self.assertTrue(target.is_file())
+
+        with zipfile.ZipFile(target, 'r') as zf:
+            self.assertEqual(zf.namelist(),
+                [".DS_Store", "bin/", "bin/baz", "bin/qux"])
+
+    def test_cmdline_create_with_include_and_exclude_pattern(self):
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '.DS_Store').touch()
+        (source / 'zed.py').touch()
+        (source / 'bin').mkdir()
+        (source / 'bin' / 'qux').touch()
+        (source / 'bin' / 'baz').touch()
+        (source / '__main__.py').touch()
+
+        args = [str(source), '--include-pattern', r'.*\.py', '--exclude-pattern', r'.*zed\.py']
+        zipapp.main(args)
+        target = source.with_suffix('.pyz')
+        self.assertTrue(target.is_file())
+
+        with zipfile.ZipFile(target, 'r') as zf:
+            self.assertEqual(zf.namelist(),
+                ["__main__.py"])
 
 
 if __name__ == "__main__":
