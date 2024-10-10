@@ -11093,6 +11093,12 @@ then :
   printf "%s\n" "#define HAVE_LINUX_MEMFD_H 1" >>confdefs.h
 
 fi
+ac_fn_c_check_header_compile "$LINENO" "linux/netfilter_ipv4.h" "ac_cv_header_linux_netfilter_ipv4_h" "$ac_includes_default"
+if test "x$ac_cv_header_linux_netfilter_ipv4_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_LINUX_NETFILTER_IPV4_H 1" >>confdefs.h
+
+fi
 ac_fn_c_check_header_compile "$LINENO" "linux/random.h" "ac_cv_header_linux_random_h" "$ac_includes_default"
 if test "x$ac_cv_header_linux_random_h" = xyes
 then :

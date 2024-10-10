@@ -172,6 +172,10 @@ typedef int socklen_t;
 # undef AF_VSOCK
 #endif
 
+#ifdef HAVE_LINUX_NETFILTER_IPV4_H
+# include <linux/netfilter_ipv4.h>
+#endif
+
 #ifdef HAVE_SOCKADDR_ALG
 
 # include <linux/if_alg.h>
