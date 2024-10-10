@@ -162,7 +162,7 @@ C APIs
 
 Specific APIs are offered to allocate, deallocate, initialize, track, and untrack
 objects with GC support. These APIs can be found in the
-[Garbage Collector C API documentation](https://docs.python.org/3.8/c-api/gcsupport.html).
+[Garbage Collector C API documentation](https://docs.python.org/3/c-api/gcsupport.html).
 
 Apart from this object structure, the type object for objects supporting garbage
 collection must include the ``Py_TPFLAGS_HAVE_GC`` in its ``tp_flags`` slot and
