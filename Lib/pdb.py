@@ -1683,6 +1683,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         globals = self.curframe.f_globals
         locals = self.curframe.f_locals
         p = Pdb(self.completekey, self.stdin, self.stdout)
+        p.use_rawinput = self.use_rawinput
         p.prompt = "(%s) " % self.prompt.strip()
         self.message("ENTERING RECURSIVE DEBUGGER")
         try:
