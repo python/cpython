@@ -325,7 +325,6 @@ typedef struct pyruntimestate {
     } audit_hooks;
 
     struct _py_object_runtime_state object_state;
-    struct _Py_float_runtime_state float_state;
     struct _Py_unicode_runtime_state unicode_state;
     struct _types_runtime_state types;
 
