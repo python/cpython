@@ -1372,19 +1372,8 @@ map_vectorcall(PyObject *type, PyObject * const*args,
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (kwnames != NULL && PyTuple_GET_SIZE(kwnames) != 0) {
         // Fallback to map_new()
-        PyObject *tuple = _PyTuple_FromArray(args, nargs);
-        if (tuple == NULL) {
-            return NULL;
-        }
-        PyObject *dict = _PyStack_AsDict(args + nargs, kwnames);
-        if (dict == NULL) {
-            Py_DECREF(tuple);
-            return NULL;
-        }
-        PyObject *ret = map_new(tp, tuple, dict);
-        Py_DECREF(tuple);
-        Py_DECREF(dict);
-        return ret;
+        PyThreadState *tstate = _PyThreadState_GET();
+        return _PyObject_MakeTpCall(tstate, type, args, nargsf, kwnames);
     }
 
     if (nargs < 2) {
