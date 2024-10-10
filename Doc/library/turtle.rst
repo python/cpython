@@ -11,7 +11,6 @@
 
 .. testsetup:: default
 
-   import turtle as turtle_module
    from turtle import *
    turtle = Turtle()
 
