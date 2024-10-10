@@ -14,6 +14,11 @@
    from turtle import *
    turtle = Turtle()
 
+.. testcleanup::
+
+   import os
+   os.remove("my_drawing.ps")
+
 --------------
 
 Introduction
