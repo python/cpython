@@ -1,0 +1,1 @@
+Improve handling of containers with items of unsupported types during marshalling: fail after first unsupported item and do not propagate possibly raised exception on attempts to marshal subsequent ones.
