@@ -559,7 +559,7 @@ _io_IncrementalNewlineDecoder_getstate_impl(nldecoder_object *self)
         Py_DECREF(state);
     }
     else {
-        buffer = PyBytes_FromString("");
+        buffer = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
         flag = 0;
     }
     flag <<= 1;

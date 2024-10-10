@@ -199,6 +199,7 @@ static int codegen_visit_expr(compiler *, expr_ty, bool);
 static int codegen_augassign(compiler *, stmt_ty);
 static int codegen_annassign(compiler *, stmt_ty);
 static int codegen_subscript(compiler *, expr_ty);
+static int codegen_slice_two_parts(compiler *, expr_ty);
 static int codegen_slice(compiler *, expr_ty);
 
 static bool are_all_items_const(asdl_expr_seq *, Py_ssize_t, Py_ssize_t);
@@ -3170,17 +3171,15 @@ codegen_boolop(compiler *c, expr_ty e, bool ref_consumed)
     location loc = LOC(e);
     assert(e->kind == BoolOp_kind);
     if (e->v.BoolOp.op == And)
-        jumpi = POP_JUMP_IF_FALSE;
+        jumpi = JUMP_IF_FALSE;
     else
-        jumpi = POP_JUMP_IF_TRUE;
+        jumpi = JUMP_IF_TRUE;
     NEW_JUMP_TARGET_LABEL(c, end);
     s = e->v.BoolOp.values;
     n = asdl_seq_LEN(s) - 1;
     assert(n >= 0);
     for (i = 0; i < n; ++i) {
         VISIT_EXPR2(c, (expr_ty)asdl_seq_GET(s, i), ref_consumed);
-        ADDOP_I(c, loc, COPY, 1);
-        ADDOP(c, loc, TO_BOOL);
         ADDOP_JUMP(c, loc, jumpi, end);
         ADDOP(c, loc, POP_TOP);
     }
@@ -5036,12 +5035,8 @@ codegen_visit_expr(compiler *c, expr_ty e, bool ref_consumed)
         }
         break;
     case Slice_kind:
-    {
-        int n = codegen_slice(c, e);
-        RETURN_IF_ERROR(n);
-        ADDOP_I(c, loc, BUILD_SLICE, n);
+        RETURN_IF_ERROR(codegen_slice(c, e));
         break;
-    }
     case Name_kind:
         return codegen_nameop2(c, loc, e->v.Name.id, e->v.Name.ctx, ref_consumed);
     /* child nodes of List and Tuple will have expr_context set */
@@ -5054,9 +5049,22 @@ codegen_visit_expr(compiler *c, expr_ty e, bool ref_consumed)
 }
 
 static bool
-is_two_element_slice(expr_ty s)
+is_constant_slice(expr_ty s)
 {
     return s->kind == Slice_kind &&
+        (s->v.Slice.lower == NULL ||
+         s->v.Slice.lower->kind == Constant_kind) &&
+        (s->v.Slice.upper == NULL ||
+         s->v.Slice.upper->kind == Constant_kind) &&
+        (s->v.Slice.step == NULL ||
+         s->v.Slice.step->kind == Constant_kind);
+}
+
+static bool
+should_apply_two_element_slice_optimization(expr_ty s)
+{
+    return !is_constant_slice(s) &&
+           s->kind == Slice_kind &&
            s->v.Slice.step == NULL;
 }
 
@@ -5077,8 +5085,8 @@ codegen_augassign(compiler *c, stmt_ty s)
         break;
     case Subscript_kind:
         VISIT_EXPR_CONSUMED(c, e->v.Subscript.value);
-        if (is_two_element_slice(e->v.Subscript.slice)) {
-            RETURN_IF_ERROR(codegen_slice(c, e->v.Subscript.slice));
+        if (should_apply_two_element_slice_optimization(e->v.Subscript.slice)) {
+            RETURN_IF_ERROR(codegen_slice_two_parts(c, e->v.Subscript.slice));
             ADDOP_I(c, loc, COPY, 3);
             ADDOP_I(c, loc, COPY, 3);
             ADDOP_I(c, loc, COPY, 3);
@@ -5115,7 +5123,7 @@ codegen_augassign(compiler *c, stmt_ty s)
         ADDOP_NAME(c, loc, STORE_ATTR, e->v.Attribute.attr, names);
         break;
     case Subscript_kind:
-        if (is_two_element_slice(e->v.Subscript.slice)) {
+        if (should_apply_two_element_slice_optimization(e->v.Subscript.slice)) {
             ADDOP_I(c, loc, SWAP, 4);
             ADDOP_I(c, loc, SWAP, 3);
             ADDOP_I(c, loc, SWAP, 2);
@@ -5262,8 +5270,10 @@ codegen_subscript(compiler *c, expr_ty e)
     }
 
     VISIT_EXPR(c, e->v.Subscript.value);
-    if (is_two_element_slice(e->v.Subscript.slice) && ctx != Del) {
-        RETURN_IF_ERROR(codegen_slice(c, e->v.Subscript.slice));
+    if (should_apply_two_element_slice_optimization(e->v.Subscript.slice) &&
+        ctx != Del
+    ) {
+        RETURN_IF_ERROR(codegen_slice_two_parts(c, e->v.Subscript.slice));
         if (ctx == Load) {
             ADDOP(c, loc, BINARY_SLICE);
         }
@@ -5285,15 +5295,9 @@ codegen_subscript(compiler *c, expr_ty e)
     return SUCCESS;
 }
 
-/* Returns the number of the values emitted,
- * thus are needed to build the slice, or -1 if there is an error. */
 static int
-codegen_slice(compiler *c, expr_ty s)
+codegen_slice_two_parts(compiler *c, expr_ty s)
 {
-    int n = 2;
-    assert(s->kind == Slice_kind);
-
-    /* only handles the cases where BUILD_SLICE is emitted */
     if (s->v.Slice.lower) {
         VISIT_EXPR(c, s->v.Slice.lower);
     }
@@ -5308,11 +5312,45 @@ codegen_slice(compiler *c, expr_ty s)
         ADDOP_LOAD_CONST(c, LOC(s), Py_None);
     }
 
+    return 0;
+}
+
+static int
+codegen_slice(compiler *c, expr_ty s)
+{
+    int n = 2;
+    assert(s->kind == Slice_kind);
+
+    if (is_constant_slice(s)) {
+        PyObject *start = NULL;
+        if (s->v.Slice.lower) {
+            start = s->v.Slice.lower->v.Constant.value;
+        }
+        PyObject *stop = NULL;
+        if (s->v.Slice.upper) {
+            stop = s->v.Slice.upper->v.Constant.value;
+        }
+        PyObject *step = NULL;
+        if (s->v.Slice.step) {
+            step = s->v.Slice.step->v.Constant.value;
+        }
+        PyObject *slice = PySlice_New(start, stop, step);
+        if (slice == NULL) {
+            return ERROR;
+        }
+        ADDOP_LOAD_CONST_NEW(c, LOC(s), slice);
+        return SUCCESS;
+    }
+
+    RETURN_IF_ERROR(codegen_slice_two_parts(c, s));
+
     if (s->v.Slice.step) {
         n++;
         VISIT_EXPR(c, s->v.Slice.step);
     }
-    return n;
+
+    ADDOP_I(c, LOC(s), BUILD_SLICE, n);
+    return SUCCESS;
 }
 
 

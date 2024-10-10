@@ -1,6 +1,7 @@
 import contextlib
 import dis
 import io
+import itertools
 import math
 import opcode
 import os
@@ -12,7 +13,10 @@ import tempfile
 import types
 import textwrap
 import warnings
-import _testinternalcapi
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 
 from test import support
 from test.support import (script_helper, requires_debug_ranges, run_code,
@@ -474,6 +478,19 @@ class TestSpecifics(unittest.TestCase):
                 else:
                     x = 2
                """), '<eval>', 'exec')
+
+    def test_try_except_in_while_with_chained_condition_compiles(self):
+        # see gh-124871
+        compile(textwrap.dedent("""
+            name_1, name_2, name_3 = 1, 2, 3
+            while name_3 <= name_2 > name_1:
+                try:
+                    raise
+                except:
+                    pass
+                finally:
+                    pass
+            """), '<eval>', 'exec')
 
     def test_compile_invalid_namedexpr(self):
         # gh-109351
@@ -1369,6 +1386,14 @@ class TestSpecifics(unittest.TestCase):
                     actual += 1
             self.assertEqual(actual, expected)
 
+        def check_consts(func, typ, expected):
+            slice_consts = 0
+            consts = func.__code__.co_consts
+            for instr in dis.Bytecode(func):
+                if instr.opname == "LOAD_CONST" and isinstance(consts[instr.oparg], typ):
+                    slice_consts += 1
+            self.assertEqual(slice_consts, expected)
+
         def load():
             return x[a:b] + x [a:] + x[:b] + x[:]
 
@@ -1384,15 +1409,30 @@ class TestSpecifics(unittest.TestCase):
         def aug():
             x[a:b] += y
 
-        check_op_count(load, "BINARY_SLICE", 4)
+        def aug_const():
+            x[1:2] += y
+
+        def compound_const_slice():
+            x[1:2:3, 4:5:6] = y
+
+        check_op_count(load, "BINARY_SLICE", 3)
         check_op_count(load, "BUILD_SLICE", 0)
-        check_op_count(store, "STORE_SLICE", 4)
+        check_consts(load, slice, 1)
+        check_op_count(store, "STORE_SLICE", 3)
         check_op_count(store, "BUILD_SLICE", 0)
+        check_consts(store, slice, 1)
         check_op_count(long_slice, "BUILD_SLICE", 1)
         check_op_count(long_slice, "BINARY_SLICE", 0)
         check_op_count(aug, "BINARY_SLICE", 1)
         check_op_count(aug, "STORE_SLICE", 1)
         check_op_count(aug, "BUILD_SLICE", 0)
+        check_op_count(aug_const, "BINARY_SLICE", 0)
+        check_op_count(aug_const, "STORE_SLICE", 0)
+        check_consts(aug_const, slice, 1)
+        check_op_count(compound_const_slice, "BINARY_SLICE", 0)
+        check_op_count(compound_const_slice, "BUILD_SLICE", 0)
+        check_consts(compound_const_slice, slice, 0)
+        check_consts(compound_const_slice, tuple, 1)
 
     def test_compare_positions(self):
         for opname_prefix, op in [
@@ -1526,6 +1566,45 @@ class TestSpecifics(unittest.TestCase):
                 case []:
                     pass
             [[]]
+
+class TestBooleanExpression(unittest.TestCase):
+    class Value:
+        def __init__(self):
+            self.called = 0
+
+        def __bool__(self):
+            self.called += 1
+            return self.value
+
+    class Yes(Value):
+        value = True
+
+    class No(Value):
+        value = False
+
+    def test_short_circuit_and(self):
+        v = [self.Yes(), self.No(), self.Yes()]
+        res = v[0] and v[1] and v[0]
+        self.assertIs(res, v[1])
+        self.assertEqual([e.called for e in v], [1, 1, 0])
+
+    def test_short_circuit_or(self):
+        v = [self.No(), self.Yes(), self.No()]
+        res = v[0] or v[1] or v[0]
+        self.assertIs(res, v[1])
+        self.assertEqual([e.called for e in v], [1, 1, 0])
+
+    def test_compound(self):
+        # See gh-124285
+        v = [self.No(), self.Yes(), self.Yes(), self.Yes()]
+        res = v[0] and v[1] or v[2] or v[3]
+        self.assertIs(res, v[2])
+        self.assertEqual([e.called for e in v], [1, 0, 1, 0])
+
+        v = [self.No(), self.No(), self.Yes(), self.Yes(), self.No()]
+        res = v[0] or v[1] and v[2] or v[3] or v[4]
+        self.assertIs(res, v[3])
+        self.assertEqual([e.called for e in v], [1, 1, 0, 1, 0])
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
@@ -2605,6 +2684,8 @@ class TestStackSizeStability(unittest.TestCase):
             """
         self.check_stack_size(snippet, async_=True)
 
+@support.cpython_only
+@unittest.skipIf(_testinternalcapi is None, 'need _testinternalcapi module')
 class TestInstructionSequence(unittest.TestCase):
     def compare_instructions(self, seq, expected):
         self.assertEqual([(opcode.opname[i[0]],) + i[1:] for i in seq.get_instructions()],
@@ -2647,6 +2728,22 @@ class TestInstructionSequence(unittest.TestCase):
         seq.add_nested(nested)
         self.compare_instructions(seq, [('LOAD_CONST', 1, 1, 0, 0, 0)])
         self.compare_instructions(seq.get_nested()[0], [('LOAD_CONST', 2, 2, 0, 0, 0)])
+
+    def test_static_attributes_are_sorted(self):
+        code = (
+            'class T:\n'
+            '    def __init__(self):\n'
+            '        self.{V1} = 10\n'
+            '        self.{V2} = 10\n'
+            '    def foo(self):\n'
+            '        self.{V3} = 10\n'
+        )
+        attributes = ("a", "b", "c")
+        for perm in itertools.permutations(attributes):
+            var_names = {f'V{i + 1}': name for i, name in enumerate(perm)}
+            ns = run_code(code.format(**var_names))
+            t = ns['T']
+            self.assertEqual(t.__static_attributes__, attributes)
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@
 import sys
 import unittest
 import unittest.mock
+from ast import literal_eval
 from test import support
 from test.support import import_helper
 from test.support import os_helper
@@ -82,21 +83,8 @@ BYTES_CAPATH = os.fsencode(CAPATH)
 CAFILE_NEURONIO = data_file("capath", "4e1295a3.0")
 CAFILE_CACERT = data_file("capath", "5ed36f99.0")
 
-CERTFILE_INFO = {
-    'issuer': ((('countryName', 'XY'),),
-               (('localityName', 'Castle Anthrax'),),
-               (('organizationName', 'Python Software Foundation'),),
-               (('commonName', 'localhost'),)),
-    'notAfter': 'Jan 24 04:21:36 2043 GMT',
-    'notBefore': 'Nov 25 04:21:36 2023 GMT',
-    'serialNumber': '53E14833F7546C29256DD0F034F776C5E983004C',
-    'subject': ((('countryName', 'XY'),),
-             (('localityName', 'Castle Anthrax'),),
-             (('organizationName', 'Python Software Foundation'),),
-             (('commonName', 'localhost'),)),
-    'subjectAltName': (('DNS', 'localhost'),),
-    'version': 3
-}
+with open(data_file('keycert.pem.reference')) as file:
+    CERTFILE_INFO = literal_eval(file.read())
 
 # empty CRL
 CRLFILE = data_file("revocation.crl")
@@ -106,23 +94,8 @@ SIGNED_CERTFILE = data_file("keycert3.pem")
 SINGED_CERTFILE_ONLY = data_file("cert3.pem")
 SIGNED_CERTFILE_HOSTNAME = 'localhost'
 
-SIGNED_CERTFILE_INFO = {
-    'OCSP': ('http://testca.pythontest.net/testca/ocsp/',),
-    'caIssuers': ('http://testca.pythontest.net/testca/pycacert.cer',),
-    'crlDistributionPoints': ('http://testca.pythontest.net/testca/revocation.crl',),
-    'issuer': ((('countryName', 'XY'),),
-            (('organizationName', 'Python Software Foundation CA'),),
-            (('commonName', 'our-ca-server'),)),
-    'notAfter': 'Oct 28 14:23:16 2037 GMT',
-    'notBefore': 'Aug 29 14:23:16 2018 GMT',
-    'serialNumber': 'CB2D80995A69525C',
-    'subject': ((('countryName', 'XY'),),
-             (('localityName', 'Castle Anthrax'),),
-             (('organizationName', 'Python Software Foundation'),),
-             (('commonName', 'localhost'),)),
-    'subjectAltName': (('DNS', 'localhost'),),
-    'version': 3
-}
+with open(data_file('keycert3.pem.reference')) as file:
+    SIGNED_CERTFILE_INFO = literal_eval(file.read())
 
 SIGNED_CERTFILE2 = data_file("keycert4.pem")
 SIGNED_CERTFILE2_HOSTNAME = 'fakehostname'
@@ -410,6 +383,7 @@ class BasicSocketTests(unittest.TestCase):
         ssl.RAND_add(bytearray(b"this is a random bytearray object"), 75.0)
 
     def test_parse_cert(self):
+        self.maxDiff = None
         # note that this uses an 'unofficial' function in _ssl.c,
         # provided solely for this test, to exercise the certificate
         # parsing code

@@ -21,6 +21,7 @@ from pyspecific import SOURCE_URI
 
 extensions = [
     'audit_events',
+    'availability',
     'c_annotations',
     'glossary_search',
     'lexers',
@@ -132,6 +133,8 @@ nitpick_ignore = [
     ('c:func', 'vsnprintf'),
     # Standard C types
     ('c:type', 'FILE'),
+    ('c:type', 'int8_t'),
+    ('c:type', 'int16_t'),
     ('c:type', 'int32_t'),
     ('c:type', 'int64_t'),
     ('c:type', 'intmax_t'),
@@ -141,6 +144,8 @@ nitpick_ignore = [
     ('c:type', 'size_t'),
     ('c:type', 'ssize_t'),
     ('c:type', 'time_t'),
+    ('c:type', 'uint8_t'),
+    ('c:type', 'uint16_t'),
     ('c:type', 'uint32_t'),
     ('c:type', 'uint64_t'),
     ('c:type', 'uintmax_t'),
@@ -244,6 +249,7 @@ nitpick_ignore += [
     ('c:data', 'PyExc_OverflowError'),
     ('c:data', 'PyExc_PermissionError'),
     ('c:data', 'PyExc_ProcessLookupError'),
+    ('c:data', 'PyExc_PythonFinalizationError'),
     ('c:data', 'PyExc_RecursionError'),
     ('c:data', 'PyExc_ReferenceError'),
     ('c:data', 'PyExc_RuntimeError'),
@@ -408,8 +414,8 @@ latex_elements = {
 \let\endVerbatim=\endOriginalVerbatim
 \setcounter{tocdepth}{2}
 ''',
-    # The paper size ('letter' or 'a4').
-    'papersize': 'a4',
+    # The paper size ('letterpaper' or 'a4paper').
+    'papersize': 'a4paper',
     # The font size ('10pt', '11pt' or '12pt').
     'pointsize': '10pt',
 }

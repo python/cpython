@@ -2921,7 +2921,7 @@ delta_bool(PyDateTime_Delta *self)
 static PyObject *
 delta_repr(PyDateTime_Delta *self)
 {
-    PyObject *args = PyUnicode_FromString("");
+    PyObject *args = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
 
     if (args == NULL) {
         return NULL;
@@ -3445,6 +3445,27 @@ date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
     return new_date_subclass_ex(year, month, day, cls);
 }
 
+/* Return new date from _strptime.strptime_datetime_date(). */
+static PyObject *
+date_strptime(PyObject *cls, PyObject *args)
+{
+    PyObject *string, *format, *result;
+
+    if (!PyArg_ParseTuple(args, "UU:strptime", &string, &format)) {
+        return NULL;
+    }
+
+    PyObject *module = PyImport_Import(&_Py_ID(_strptime));
+    if (module == NULL) {
+        return NULL;
+    }
+    result = PyObject_CallMethodObjArgs(module,
+                                        &_Py_ID(_strptime_datetime_date), cls,
+                                        string, format, NULL);
+    Py_DECREF(module);
+    return result;
+}
+
 
 /*
  * Date arithmetic.
@@ -3909,6 +3930,11 @@ static PyMethodDef date_methods[] = {
       PyDoc_STR("int, int, int -> Construct a date from the ISO year, week "
                 "number and weekday.\n\n"
                 "This is the inverse of the date.isocalendar() function")},
+
+    {"strptime", (PyCFunction)date_strptime,
+     METH_VARARGS | METH_CLASS,
+     PyDoc_STR("string, format -> new date parsed from a string "
+               "(like time.strptime()).")},
 
     {"today",         (PyCFunction)date_today,   METH_NOARGS | METH_CLASS,
      PyDoc_STR("Current date or datetime:  same as "
@@ -4644,6 +4670,27 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     return self;
 }
 
+/* Return new time from _strptime.strptime_datetime_time(). */
+static PyObject *
+time_strptime(PyObject *cls, PyObject *args)
+{
+    PyObject *string, *format, *result;
+
+    if (!PyArg_ParseTuple(args, "UU:strptime", &string, &format)) {
+        return NULL;
+    }
+
+    PyObject *module = PyImport_Import(&_Py_ID(_strptime));
+    if (module == NULL) {
+        return NULL;
+    }
+    result = PyObject_CallMethodObjArgs(module,
+                                        &_Py_ID(_strptime_datetime_time), cls,
+                                        string, format, NULL);
+    Py_DECREF(module);
+    return result;
+}
+
 /*
  * Destructor.
  */
@@ -4997,6 +5044,14 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
         goto invalid_string_error;
     }
 
+    if (hour == 24) {
+        if (minute == 0 && second == 0 && microsecond == 0) {
+            hour = 0;
+        } else {
+            goto invalid_iso_midnight;
+        }
+    }
+
     PyObject *tzinfo = tzinfo_from_isoformat_results(rv, tzoffset,
                                                      tzimicrosecond);
 
@@ -5014,6 +5069,10 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
 
     Py_DECREF(tzinfo);
     return t;
+
+invalid_iso_midnight:
+    PyErr_SetString(PyExc_ValueError, "minute, second, and microsecond must be 0 when hour is 24");
+    return NULL;
 
 invalid_string_error:
     PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %R", tstr);
@@ -5066,6 +5125,15 @@ time_reduce(PyDateTime_Time *self, PyObject *arg)
 }
 
 static PyMethodDef time_methods[] = {
+
+    /* Class method: */
+
+    {"strptime", (PyCFunction)time_strptime,
+     METH_VARARGS | METH_CLASS,
+     PyDoc_STR("string, format -> new time parsed from a string "
+               "(like time.strptime()).")},
+
+    /* Instance methods: */
 
     {"isoformat",   _PyCFunction_CAST(time_isoformat),        METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return string in ISO 8601 format, [HH[:MM[:SS[.mmm[uuu]]]]]"
@@ -5574,7 +5642,7 @@ datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
     return result;
 }
 
-/* Return new datetime from _strptime.strptime_datetime(). */
+/* Return new datetime from _strptime.strptime_datetime_datetime(). */
 static PyObject *
 datetime_strptime(PyObject *cls, PyObject *args)
 {
@@ -5587,7 +5655,8 @@ datetime_strptime(PyObject *cls, PyObject *args)
     if (module == NULL) {
         return NULL;
     }
-    result = PyObject_CallMethodObjArgs(module, &_Py_ID(_strptime_datetime),
+    result = PyObject_CallMethodObjArgs(module,
+                                        &_Py_ID(_strptime_datetime_datetime),
                                         cls, string, format, NULL);
     Py_DECREF(module);
     return result;
@@ -5861,12 +5930,38 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
         goto error;
     }
 
+    if ((hour == 24) && (month <= 12))  {
+        int d_in_month = days_in_month(year, month);
+        if (day <= d_in_month) {
+            if (minute == 0 && second == 0 && microsecond == 0) {
+                // Calculate midnight of the next day
+                hour = 0;
+                day += 1;
+                if (day > d_in_month) {
+                    day = 1;
+                    month += 1;
+                    if (month > 12) {
+                        month = 1;
+                        year += 1;
+                    }
+                }
+            } else {
+                goto invalid_iso_midnight;
+            }
+        }
+    }
     PyObject *dt = new_datetime_subclass_ex(year, month, day, hour, minute,
                                             second, microsecond, tzinfo, cls);
 
     Py_DECREF(tzinfo);
     Py_DECREF(dtstr_clean);
     return dt;
+
+invalid_iso_midnight:
+    PyErr_SetString(PyExc_ValueError, "minute, second, and microsecond must be 0 when hour is 24");
+    Py_DECREF(tzinfo);
+    Py_DECREF(dtstr_clean);
+    return NULL;
 
 invalid_string_error:
     PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %R", dtstr);

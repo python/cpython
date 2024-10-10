@@ -1,0 +1,1 @@
+Fixed crash when using :func:`gc.get_referents` on a capsule object.

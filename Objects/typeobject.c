@@ -1435,6 +1435,9 @@ type_set_module(PyTypeObject *type, PyObject *value, void *context)
     PyType_Modified(type);
 
     PyObject *dict = lookup_tp_dict(type);
+    if (PyDict_Pop(dict, &_Py_ID(__firstlineno__), NULL) < 0) {
+        return -1;
+    }
     return PyDict_SetItem(dict, &_Py_ID(__module__), value);
 }
 
@@ -3929,7 +3932,7 @@ type_new_alloc(type_new_ctx *ctx)
     et->ht_token = NULL;
 
 #ifdef Py_GIL_DISABLED
-    _PyType_AssignId(et);
+    et->unique_id = _PyObject_AssignUniqueId((PyObject *)et);
 #endif
 
     return type;
@@ -5023,7 +5026,7 @@ PyType_FromMetaclass(
 
 #ifdef Py_GIL_DISABLED
     // Assign a type id to enable thread-local refcounting
-    _PyType_AssignId(res);
+    res->unique_id = _PyObject_AssignUniqueId((PyObject *)res);
 #endif
 
     /* Ready the type (which includes inheritance).
@@ -5207,8 +5210,8 @@ PyType_GetModuleState(PyTypeObject *type)
 /* Get the module of the first superclass where the module has the
  * given PyModuleDef.
  */
-static inline PyObject *
-get_module_by_def(PyTypeObject *type, PyModuleDef *def)
+PyObject *
+PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
 {
     assert(PyType_Check(type));
 
@@ -5241,7 +5244,7 @@ get_module_by_def(PyTypeObject *type, PyModuleDef *def)
     Py_ssize_t n = PyTuple_GET_SIZE(mro);
     for (Py_ssize_t i = 1; i < n; i++) {
         PyObject *super = PyTuple_GET_ITEM(mro, i);
-        if(!_PyType_HasFeature((PyTypeObject *)super, Py_TPFLAGS_HEAPTYPE)) {
+        if (!_PyType_HasFeature((PyTypeObject *)super, Py_TPFLAGS_HEAPTYPE)) {
             // Static types in the MRO need to be skipped
             continue;
         }
@@ -5254,37 +5257,14 @@ get_module_by_def(PyTypeObject *type, PyModuleDef *def)
         }
     }
     END_TYPE_LOCK();
-    return res;
-}
 
-PyObject *
-PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
-{
-    PyObject *module = get_module_by_def(type, def);
-    if (module == NULL) {
+    if (res == NULL) {
         PyErr_Format(
             PyExc_TypeError,
             "PyType_GetModuleByDef: No superclass of '%s' has the given module",
             type->tp_name);
     }
-    return module;
-}
-
-PyObject *
-_PyType_GetModuleByDef2(PyTypeObject *left, PyTypeObject *right,
-                        PyModuleDef *def)
-{
-    PyObject *module = get_module_by_def(left, def);
-    if (module == NULL) {
-        module = get_module_by_def(right, def);
-        if (module == NULL) {
-            PyErr_Format(
-                PyExc_TypeError,
-                "PyType_GetModuleByDef: No superclass of '%s' nor '%s' has "
-                "the given module", left->tp_name, right->tp_name);
-        }
-    }
-    return module;
+    return res;
 }
 
 
@@ -6100,7 +6080,7 @@ type_dealloc(PyObject *self)
     Py_XDECREF(et->ht_module);
     PyMem_Free(et->_ht_tpname);
 #ifdef Py_GIL_DISABLED
-    _PyType_ReleaseId(et);
+    _PyObject_ReleaseUniqueId(et->unique_id);
 #endif
     et->ht_token = NULL;
     Py_TYPE(type)->tp_free((PyObject *)type);
