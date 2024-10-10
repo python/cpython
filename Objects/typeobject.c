@@ -116,36 +116,58 @@ type_from_ref(PyObject *ref)
 }
 
 
-/* helpers for for static builtin types */
+/* helpers for for managed static types */
 
-#ifndef NDEBUG
 static inline int
 managed_static_type_index_is_set(PyTypeObject *self)
 {
     return self->tp_subclasses != NULL;
 }
-#endif
 
 static inline size_t
 managed_static_type_index_get(PyTypeObject *self)
 {
     assert(managed_static_type_index_is_set(self));
     /* We store a 1-based index so 0 can mean "not initialized". */
-    return (size_t)self->tp_subclasses - 1;
+    size_t index = (size_t)self->tp_subclasses - 1;
+    assert(index < _Py_MAX_MANAGED_STATIC_TYPES);
+    return index;
 }
 
-static inline void
-managed_static_type_index_set(PyTypeObject *self, size_t index)
+static size_t
+managed_static_type_index_init(PyTypeObject *self)
 {
-    assert(index < _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES);
+    assert(!managed_static_type_index_is_set(self));
+
+    PyMutex_Lock(&_PyRuntime.types.managed_static.mutex);
+    size_t index = _PyRuntime.types.managed_static.next_index;
+    _PyRuntime.types.managed_static.next_index += 1;
+    PyMutex_Unlock(&_PyRuntime.types.managed_static.mutex);
+    assert(index < _Py_MAX_MANAGED_STATIC_TYPES);
+
     /* We store a 1-based index so 0 can mean "not initialized". */
     self->tp_subclasses = (PyObject *)(index + 1);
+    return index;
+}
+
+static size_t
+managed_static_type_index_reinit(PyTypeObject *self)
+{
+    size_t index = managed_static_type_index_get(self);
+    PyMutex_Lock(&_PyRuntime.types.managed_static.mutex);
+    if (index >= _PyRuntime.types.managed_static.next_index) {
+        _PyRuntime.types.managed_static.next_index = index + 1;
+    }
+    PyMutex_Unlock(&_PyRuntime.types.managed_static.mutex);
+    return index;
 }
 
 static inline void
-managed_static_type_index_clear(PyTypeObject *self)
+managed_static_type_index_clear(PyTypeObject *Py_UNUSED(self))
 {
-    self->tp_subclasses = NULL;
+    /* We actually leave the index set on the type (in tp_subclasses).
+       That way it will occupy the same array entry if re-initialized,
+       rather than advancing next_index. */
 }
 
 static PyTypeObject *
@@ -153,39 +175,31 @@ static_ext_type_lookup(PyInterpreterState *interp, size_t index,
                        int64_t *p_interp_count)
 {
     assert(interp->runtime == &_PyRuntime);
-    assert(index < _Py_MAX_MANAGED_STATIC_EXT_TYPES);
+    assert(index < _Py_MAX_MANAGED_STATIC_TYPES);
+    assert(index >= _PyRuntime.types.managed_static.num_builtins);
+    assert(!_PyRuntime.types.managed_static.types[index].isbuiltin);
 
-    size_t full_index = index + _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES;
-    int64_t interp_count =
-            _PyRuntime.types.managed_static.types[full_index].interp_count;
-    assert((interp_count == 0) ==
-            (_PyRuntime.types.managed_static.types[full_index].type == NULL));
-    *p_interp_count = interp_count;
-
-    PyTypeObject *type = interp->types.for_extensions.initialized[index].type;
+    PyTypeObject *type = _PyRuntime.types.managed_static.types[index].type;
+    int64_t count = _PyRuntime.types.managed_static.types[index].interp_count;
     if (type == NULL) {
+        /* It was already cleared. */
+        assert(count == 0);
+        *p_interp_count = count;
         return NULL;
     }
-    assert(!interp->types.for_extensions.initialized[index].isbuiltin);
-    assert(type == _PyRuntime.types.managed_static.types[full_index].type);
+    assert(count > 0);
+    assert(interp->types.managed_static.types[index].type == type);
     assert(managed_static_type_index_is_set(type));
+
+    *p_interp_count = count;
     return type;
 }
 
 static managed_static_type_state *
 managed_static_type_state_get(PyInterpreterState *interp, PyTypeObject *self)
 {
-    // It's probably a builtin type.
     size_t index = managed_static_type_index_get(self);
-    managed_static_type_state *state =
-            &(interp->types.builtins.initialized[index]);
-    if (state->type == self) {
-        return state;
-    }
-    if (index > _Py_MAX_MANAGED_STATIC_EXT_TYPES) {
-        return state;
-    }
-    return &(interp->types.for_extensions.initialized[index]);
+    return &(interp->types.managed_static.types[index]);
 }
 
 /* For static types we store some state in an array on each interpreter. */
@@ -202,69 +216,105 @@ managed_static_type_state_init(PyInterpreterState *interp, PyTypeObject *self,
                                int isbuiltin, int initial)
 {
     assert(interp->runtime == &_PyRuntime);
+    assert(!isbuiltin ||
+            ((initial == 0) == (_Py_IsMainInterpreter(interp) == 0)));
 
+    /* Initialize the index. */
     size_t index;
     if (initial) {
-        assert(!managed_static_type_index_is_set(self));
-        if (isbuiltin) {
-            index = interp->types.builtins.num_initialized;
-            assert(index < _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES);
+        if (managed_static_type_index_is_set(self)) {
+            /* The runtime was re-initialized. */
+            index = managed_static_type_index_reinit(self);
         }
         else {
-            PyMutex_Lock(&interp->types.mutex);
-            index = interp->types.for_extensions.next_index;
-            interp->types.for_extensions.next_index++;
-            PyMutex_Unlock(&interp->types.mutex);
-            assert(index < _Py_MAX_MANAGED_STATIC_EXT_TYPES);
+            index = managed_static_type_index_init(self);
         }
-        managed_static_type_index_set(self, index);
     }
     else {
         index = managed_static_type_index_get(self);
+    }
+    managed_static_type_state *state =
+            &(interp->types.managed_static.types[index]);
+
+    /* Check the existing global state. */
+    if (initial) {
         if (isbuiltin) {
-            assert(index == interp->types.builtins.num_initialized);
-            assert(index < _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES);
+            assert(_PyRuntime.types.managed_static.num_builtins ==
+                    _PyRuntime.types.managed_static.num_types);
+            assert(index == _PyRuntime.types.managed_static.num_builtins);
+            assert(index == _PyRuntime.types.managed_static.num_types);
+            /* All builtin static types are initialized during runtime init,
+               before any extension module static type is initialized,
+               and always in the same order. */
+            assert(index == 0 ||
+                    _PyRuntime.types.managed_static.types[index-1].isbuiltin);
         }
         else {
-            assert(index < _Py_MAX_MANAGED_STATIC_EXT_TYPES);
+            assert(_PyRuntime.types.managed_static.num_builtins <=
+                    _PyRuntime.types.managed_static.num_types);
+            assert(index >= _PyRuntime.types.managed_static.num_builtins);
+            /* There may be gaps for ext. module static types. */
+            assert(index <= _PyRuntime.types.managed_static.num_types);
         }
-    }
-    size_t full_index = isbuiltin
-        ? index
-        : index + _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES;
-
-    assert((initial == 1) ==
-            (_PyRuntime.types.managed_static.types[full_index].interp_count == 0));
-    (void)_Py_atomic_add_int64(
-            &_PyRuntime.types.managed_static.types[full_index].interp_count, 1);
-
-    if (initial) {
-        assert(_PyRuntime.types.managed_static.types[full_index].type == NULL);
-        _PyRuntime.types.managed_static.types[full_index].type = self;
+        assert(_PyRuntime.types.managed_static.types[index].type == NULL);
+        assert(_PyRuntime.types.managed_static.types[index].interp_count == 0);
     }
     else {
-        assert(_PyRuntime.types.managed_static.types[full_index].type == self);
+        assert(_PyRuntime.types.managed_static.types[index].type == self);
+        assert(_PyRuntime.types.managed_static.types[index].isbuiltin == isbuiltin);
+        assert(_PyRuntime.types.managed_static.types[index].interp_count > 0);
     }
 
-    managed_static_type_state *state = isbuiltin
-        ? &(interp->types.builtins.initialized[index])
-        : &(interp->types.for_extensions.initialized[index]);
-
-    /* It should only be called once for each builtin type per interpreter. */
+    /* Check the existing per-interpreter state. */
+    if (initial) {
+        assert(_PyRuntime.types.managed_static.num_builtins ==
+                interp->types.managed_static.num_builtins);
+        assert(_PyRuntime.types.managed_static.num_types ==
+                interp->types.managed_static.num_types);
+        if (isbuiltin) {
+            assert(index == interp->types.managed_static.num_builtins);
+            assert(index == interp->types.managed_static.num_types);
+        }
+        else {
+            assert(index >= interp->types.managed_static.num_builtins);
+            /* There may be gaps for ext. module static types. */
+            assert(index <= interp->types.managed_static.num_types);
+        }
+    }
+    else {
+    }
     assert(state->type == NULL);
-    state->type = self;
-    state->isbuiltin = isbuiltin;
+    assert(!state->readying && !state->ready);
+    assert(state->tp_dict == NULL);
+    assert(state->tp_subclasses == NULL);
+    assert(state->tp_weaklist == NULL);
 
+    /* Update the global state. */
+    if (initial) {
+        if (isbuiltin) {
+            _PyRuntime.types.managed_static.num_types += 1;
+            _PyRuntime.types.managed_static.num_builtins += 1;
+        }
+        else {
+            PyMutex_Lock(&_PyRuntime.types.managed_static.mutex);
+            _PyRuntime.types.managed_static.num_types += 1;
+            PyMutex_Unlock(&_PyRuntime.types.managed_static.mutex);
+        }
+    }
+    _PyRuntime.types.managed_static.types[index].type = self;
+    _PyRuntime.types.managed_static.types[index].isbuiltin = isbuiltin;
+    (void)_Py_atomic_add_int64(
+            &_PyRuntime.types.managed_static.types[index].interp_count, 1);
+
+    /* Update the per-interpreter state. */
+    interp->types.managed_static.num_types += 1;
+    if (isbuiltin) {
+        interp->types.managed_static.num_builtins += 1;
+    }
+    state->type = self;
     /* state->tp_subclasses is left NULL until init_subclasses() sets it. */
     /* state->tp_weaklist is left NULL until insert_head() or insert_after()
        (in weakrefobject.c) sets it. */
-
-    if (isbuiltin) {
-        interp->types.builtins.num_initialized++;
-    }
-    else {
-        interp->types.for_extensions.num_initialized++;
-    }
 }
 
 /* Reset the type's per-interpreter state.
@@ -273,44 +323,74 @@ static void
 managed_static_type_state_clear(PyInterpreterState *interp, PyTypeObject *self,
                                 int isbuiltin, int final)
 {
+    assert(interp->runtime == &_PyRuntime);
+
     size_t index = managed_static_type_index_get(self);
-    size_t full_index = isbuiltin
-        ? index
-        : index + _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES;
-
-    managed_static_type_state *state = isbuiltin
-        ? &(interp->types.builtins.initialized[index])
-        : &(interp->types.for_extensions.initialized[index]);
-    assert(state != NULL);
-
-    assert(_PyRuntime.types.managed_static.types[full_index].interp_count > 0);
-    assert(_PyRuntime.types.managed_static.types[full_index].type == state->type);
-
-    assert(state->type != NULL);
-    state->type = NULL;
-    assert(state->tp_weaklist == NULL);  // It was already cleared out.
-
-    (void)_Py_atomic_add_int64(
-            &_PyRuntime.types.managed_static.types[full_index].interp_count, -1);
-    if (final) {
-        assert(!_PyRuntime.types.managed_static.types[full_index].interp_count);
-        _PyRuntime.types.managed_static.types[full_index].type = NULL;
-
-        managed_static_type_index_clear(self);
-    }
-
     if (isbuiltin) {
-        assert(interp->types.builtins.num_initialized > 0);
-        interp->types.builtins.num_initialized--;
+        assert(!final
+                || _PyRuntime.types.managed_static.num_types ==
+                    _PyRuntime.types.managed_static.num_builtins);
+        assert(_PyRuntime.types.managed_static.types[index].isbuiltin);
     }
     else {
-        PyMutex_Lock(&interp->types.mutex);
-        assert(interp->types.for_extensions.num_initialized > 0);
-        interp->types.for_extensions.num_initialized--;
-        if (interp->types.for_extensions.num_initialized == 0) {
-            interp->types.for_extensions.next_index = 0;
+        assert(_PyRuntime.types.managed_static.num_types >
+                _PyRuntime.types.managed_static.num_builtins);
+        assert(!_PyRuntime.types.managed_static.types[index].isbuiltin);
+    }
+    managed_static_type_state *state =
+            &(interp->types.managed_static.types[index]);
+    assert(state != NULL);
+
+    assert(_PyRuntime.types.managed_static.types[index].type == state->type);
+    assert(_PyRuntime.types.managed_static.types[index].interp_count > 0);
+    (void)_Py_atomic_add_int64(
+            &_PyRuntime.types.managed_static.types[index].interp_count, -1);
+
+    /* Update the various counts. */
+    interp->types.managed_static.num_types -= 1;
+    if (isbuiltin) {
+        interp->types.managed_static.num_builtins -= 1;
+    }
+    if (final) {
+        if (isbuiltin) {
+            _PyRuntime.types.managed_static.num_types -= 1;
+            _PyRuntime.types.managed_static.num_builtins -= 1;
         }
-        PyMutex_Unlock(&interp->types.mutex);
+        else {
+            PyMutex_Lock(&_PyRuntime.types.managed_static.mutex);
+            _PyRuntime.types.managed_static.num_types -= 1;
+            PyMutex_Unlock(&_PyRuntime.types.managed_static.mutex);
+        }
+    }
+
+    /* Clear the state. */
+    assert(_PyRuntime.types.managed_static.types[index].type == self);
+    assert(state->type == self);
+    state->type = NULL;
+    assert(state->tp_weaklist == NULL);  // It was already cleared out.
+    if (final) {
+        assert(!_PyRuntime.types.managed_static.types[index].interp_count);
+        _PyRuntime.types.managed_static.types[index].type = NULL;
+        _PyRuntime.types.managed_static.types[index].isbuiltin = 0;
+        managed_static_type_index_clear(self);
+    }
+}
+
+static void
+managed_static_types_fini(PyInterpreterState *interp)
+{
+    assert(interp->types.managed_static.num_types == 0);
+    // All the managed static types should have been finalized already.
+    for (size_t i = 0; i < _Py_MAX_MANAGED_STATIC_TYPES; i++) {
+        assert(interp->types.managed_static.types[i].type == NULL);
+    }
+    if (_Py_IsMainInterpreter(interp)) {
+        assert(_PyRuntime.types.managed_static.num_types == 0);
+        // All the managed static types should have been finalized already.
+        for (size_t i = 0; i < _Py_MAX_MANAGED_STATIC_TYPES; i++) {
+            assert(_PyRuntime.types.managed_static.types[i].type == NULL);
+            assert(_PyRuntime.types.managed_static.types[i].interp_count == 0);
+        }
     }
 }
 
@@ -895,15 +975,7 @@ _PyTypes_Fini(PyInterpreterState *interp)
     struct type_cache *cache = &interp->types.type_cache;
     type_cache_clear(cache, NULL);
 
-    // All the managed static types should have been finalized already.
-    assert(interp->types.for_extensions.num_initialized == 0);
-    for (size_t i = 0; i < _Py_MAX_MANAGED_STATIC_EXT_TYPES; i++) {
-        assert(interp->types.for_extensions.initialized[i].type == NULL);
-    }
-    assert(interp->types.builtins.num_initialized == 0);
-    for (size_t i = 0; i < _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES; i++) {
-        assert(interp->types.builtins.initialized[i].type == NULL);
-    }
+    managed_static_types_fini(interp);
 }
 
 
@@ -5985,17 +6057,30 @@ fini_static_type(PyInterpreterState *interp, PyTypeObject *type,
 void
 _PyTypes_FiniExtTypes(PyInterpreterState *interp)
 {
-    for (size_t i = _Py_MAX_MANAGED_STATIC_EXT_TYPES; i > 0; i--) {
-        if (interp->types.for_extensions.num_initialized == 0) {
+    /* Static extension types must be finalized before the builtins. */
+    assert(interp->types.managed_static.num_builtins > 0);
+#ifndef NDEBUG
+    int started = 0;
+#endif
+    for (size_t i = _Py_MAX_MANAGED_STATIC_TYPES; i > 0; i--)
+    {
+        /* There may be gaps. */
+        if (interp->types.managed_static.num_types ==
+                interp->types.managed_static.num_builtins)
+        {
             break;
         }
         int64_t count = 0;
         PyTypeObject *type = static_ext_type_lookup(interp, i-1, &count);
-        if (type == NULL) {
-            continue;
+        assert(!started || type != NULL);
+        /* Currently there is no other way to finalize one of these types. */
+        if (type != NULL) {
+#ifndef NDEBUG
+            started = 1;
+#endif
+            int final = (count == 1);
+            fini_static_type(interp, type, 0, final);
         }
-        int final = (count == 1);
-        fini_static_type(interp, type, 0, final);
     }
 }
 
