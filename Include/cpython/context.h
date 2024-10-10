@@ -52,7 +52,7 @@ typedef enum {
  * if the callback returns with an exception set, it must return -1. Otherwise
  * it should return 0
  */
-typedef int (*PyContext_WatchCallback)(PyContextEvent, PyContext *);
+typedef int (*PyContext_WatchCallback)(PyContextEvent, PyObject *);
 
 /*
  * Register a per-interpreter callback that will be invoked for context object
