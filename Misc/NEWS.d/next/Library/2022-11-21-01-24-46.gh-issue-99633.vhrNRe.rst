@@ -1,0 +1,2 @@
+Added support for the :term:`context management protocol` to
+:class:`contextvars.Context`.  Patch by Richard Hansen.

@@ -597,6 +597,9 @@
     <ClInclude Include="..\Include\internal\pycore_context.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_contextchain.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_critical_section.h">
       <Filter>Include\internal</Filter>
     </ClInclude>

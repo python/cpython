@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_brc.h"             // struct _brc_thread_state
+#include "pycore_contextchain.h"    // _PyContextChain
 #include "pycore_freelist_state.h"  // struct _Py_freelists
 #include "pycore_mimalloc.h"        // struct _mimalloc_thread_state
 #include "pycore_qsbr.h"            // struct qsbr
@@ -20,6 +21,9 @@ extern "C" {
 typedef struct _PyThreadStateImpl {
     // semi-public fields are in PyThreadState.
     PyThreadState base;
+
+    // Lazily initialized (must be zeroed at startup).
+    _PyContextChain _ctx_chain;
 
     PyObject *asyncio_running_loop; // Strong reference
 
