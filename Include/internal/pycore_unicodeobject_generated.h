@@ -1447,7 +1447,10 @@ _PyUnicode_InitStaticStrings(PyInterpreterState *interp) {
     string = &_Py_ID(exp);
     _PyUnicode_InternStatic(interp, &string);
     assert(_PyUnicode_CheckConsistency(string, 1));
-    assert(PyUnicode_GET_LENGTH(string) != 1);
+    _PyUnicode_InternInPlace(interp, &string);
+    string = &_Py_ID(explicit_curdir);
+    assert(_PyUnicode_CheckConsistency(string, 1));
+    _PyUnicode_InternInPlace(interp, &string);
     string = &_Py_ID(extend);
     _PyUnicode_InternStatic(interp, &string);
     assert(_PyUnicode_CheckConsistency(string, 1));
