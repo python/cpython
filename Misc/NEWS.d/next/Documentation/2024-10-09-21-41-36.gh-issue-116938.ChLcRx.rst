@@ -1,0 +1,2 @@
+Clarify documentation of :class:`dict` and :meth:`dict.update` regarding the
+positional argument they accept.
