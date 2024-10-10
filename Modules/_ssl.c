@@ -5239,25 +5239,33 @@ memory_bio_dealloc(PySSLMemoryBIO *self)
     Py_DECREF(tp);
 }
 
+/*[clinic input]
+@critical_section
+@getter
+_ssl.MemoryBIO.pending
+[clinic start generated code]*/
+
 static PyObject *
-memory_bio_get_pending(PySSLMemoryBIO *self, void *c)
+_ssl_MemoryBIO_pending_get_impl(PySSLMemoryBIO *self)
+/*[clinic end generated code: output=19236a32a51ac8ff input=c0b6d14eba107f6a]*/
 {
     size_t res = BIO_ctrl_pending(self->bio);
     return PyLong_FromSize_t(res);
 }
 
-PyDoc_STRVAR(PySSL_memory_bio_pending_doc,
-"The number of bytes pending in the memory BIO.");
+/*[clinic input]
+@critical_section
+@getter
+_ssl.MemoryBIO.eof
+[clinic start generated code]*/
 
 static PyObject *
-memory_bio_get_eof(PySSLMemoryBIO *self, void *c)
+_ssl_MemoryBIO_eof_get_impl(PySSLMemoryBIO *self)
+/*[clinic end generated code: output=c255a9ea16e31b92 input=0f5c6be69752e04c]*/
 {
     size_t pending = BIO_ctrl_pending(self->bio);
     return PyBool_FromLong((pending == 0) && self->eof_written);
 }
-
-PyDoc_STRVAR(PySSL_memory_bio_eof_doc,
-"Whether the memory BIO is at EOF.");
 
 /*[clinic input]
 @critical_section
@@ -5369,10 +5377,8 @@ _ssl_MemoryBIO_write_eof_impl(PySSLMemoryBIO *self)
 }
 
 static PyGetSetDef memory_bio_getsetlist[] = {
-    {"pending", (getter) memory_bio_get_pending, NULL,
-                PySSL_memory_bio_pending_doc},
-    {"eof", (getter) memory_bio_get_eof, NULL,
-            PySSL_memory_bio_eof_doc},
+    _SSL_MEMORYBIO_PENDING_GETSETDEF
+    _SSL_MEMORYBIO_EOF_GETSETDEF
     {NULL},            /* sentinel */
 };
 

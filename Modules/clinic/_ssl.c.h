@@ -2121,6 +2121,60 @@ exit:
     return return_value;
 }
 
+#if defined(_ssl_MemoryBIO_pending_HAS_DOCSTR)
+#  define _ssl_MemoryBIO_pending_DOCSTR _ssl_MemoryBIO_pending__doc__
+#else
+#  define _ssl_MemoryBIO_pending_DOCSTR NULL
+#endif
+#if defined(_SSL_MEMORYBIO_PENDING_GETSETDEF)
+#  undef _SSL_MEMORYBIO_PENDING_GETSETDEF
+#  define _SSL_MEMORYBIO_PENDING_GETSETDEF {"pending", (getter)_ssl_MemoryBIO_pending_get, (setter)_ssl_MemoryBIO_pending_set, _ssl_MemoryBIO_pending_DOCSTR},
+#else
+#  define _SSL_MEMORYBIO_PENDING_GETSETDEF {"pending", (getter)_ssl_MemoryBIO_pending_get, NULL, _ssl_MemoryBIO_pending_DOCSTR},
+#endif
+
+static PyObject *
+_ssl_MemoryBIO_pending_get_impl(PySSLMemoryBIO *self);
+
+static PyObject *
+_ssl_MemoryBIO_pending_get(PySSLMemoryBIO *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl_MemoryBIO_pending_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_ssl_MemoryBIO_eof_HAS_DOCSTR)
+#  define _ssl_MemoryBIO_eof_DOCSTR _ssl_MemoryBIO_eof__doc__
+#else
+#  define _ssl_MemoryBIO_eof_DOCSTR NULL
+#endif
+#if defined(_SSL_MEMORYBIO_EOF_GETSETDEF)
+#  undef _SSL_MEMORYBIO_EOF_GETSETDEF
+#  define _SSL_MEMORYBIO_EOF_GETSETDEF {"eof", (getter)_ssl_MemoryBIO_eof_get, (setter)_ssl_MemoryBIO_eof_set, _ssl_MemoryBIO_eof_DOCSTR},
+#else
+#  define _SSL_MEMORYBIO_EOF_GETSETDEF {"eof", (getter)_ssl_MemoryBIO_eof_get, NULL, _ssl_MemoryBIO_eof_DOCSTR},
+#endif
+
+static PyObject *
+_ssl_MemoryBIO_eof_get_impl(PySSLMemoryBIO *self);
+
+static PyObject *
+_ssl_MemoryBIO_eof_get(PySSLMemoryBIO *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl_MemoryBIO_eof_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_ssl_MemoryBIO_read__doc__,
 "read($self, size=-1, /)\n"
 "--\n"
@@ -2647,4 +2701,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=5921bfbc09f4d44f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a006967d9642ce21 input=a9049054013a1b77]*/
