@@ -1,0 +1,3 @@
+The iterator returned by :meth:`concurrent.futures.Executor.map` is no longer
+automatically closed if a function call raises an exception.
+Use method :meth:`!close` to explicitly close the iterator.

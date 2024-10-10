@@ -199,7 +199,14 @@ def _process_chunk(fn, chunk):
     This function is run in a separate process.
 
     """
-    return [fn(*args) for args in chunk]
+    results = []
+    for args in chunk:
+        try:
+            result = (fn(*args), None)
+        except BaseException as exc:
+            result = (None, exc)
+        results.append(result)
+    return results
 
 
 def _sendback_result(result_queue, work_id, result=None, exception=None,
@@ -840,7 +847,7 @@ class ProcessPoolExecutor(_base.Executor):
         results = super().map(partial(_process_chunk, fn),
                               itertools.batched(zip(*iterables), chunksize),
                               timeout=timeout)
-        return _chain_from_iterable_of_lists(results)
+        return _base._MapResultIterator(_chain_from_iterable_of_lists(results))
 
     def shutdown(self, wait=True, *, cancel_futures=False):
         with self._shutdown_lock:
