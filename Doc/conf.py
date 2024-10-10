@@ -65,7 +65,7 @@ manpages_url = 'https://manpages.debian.org/{path}'
 # General substitutions.
 project = 'Python'
 if sphinx.version_info[:2] >= (8, 1):
-    copyright = f"2001-%Y, Python Software Foundation"
+    copyright = "2001-%Y, Python Software Foundation"
 else:
     copyright = f"2001-{time.strftime('%Y')}, Python Software Foundation"
 
