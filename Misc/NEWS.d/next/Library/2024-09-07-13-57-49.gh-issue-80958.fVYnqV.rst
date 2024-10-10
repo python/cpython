@@ -1,0 +1,1 @@
+Restore support for unittest discovery of PEP 420 namespace packages.
