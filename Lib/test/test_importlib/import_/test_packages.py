@@ -1,7 +1,7 @@
-from .. import util
+from test.test_importlib import util
 import sys
 import unittest
-from test import support
+from test.support import import_helper
 
 
 class ParentModuleTests:
@@ -98,7 +98,7 @@ class ParentModuleTests:
                 try:
                     submodule = self.__import__(subname)
                 finally:
-                    support.unload(subname)
+                    import_helper.unload(subname)
 
 
 (Frozen_ParentTests,

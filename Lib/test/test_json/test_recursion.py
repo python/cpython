@@ -1,3 +1,4 @@
+from test import support
 from test.test_json import PyTest, CTest
 
 
@@ -11,8 +12,8 @@ class TestRecursion:
         x.append(x)
         try:
             self.dumps(x)
-        except ValueError:
-            pass
+        except ValueError as exc:
+            self.assertEqual(exc.__notes__, ["when serializing list item 0"])
         else:
             self.fail("didn't raise ValueError on list recursion")
         x = []
@@ -20,8 +21,8 @@ class TestRecursion:
         x.append(y)
         try:
             self.dumps(x)
-        except ValueError:
-            pass
+        except ValueError as exc:
+            self.assertEqual(exc.__notes__, ["when serializing list item 0"]*2)
         else:
             self.fail("didn't raise ValueError on alternating list recursion")
         y = []
@@ -34,8 +35,8 @@ class TestRecursion:
         x["test"] = x
         try:
             self.dumps(x)
-        except ValueError:
-            pass
+        except ValueError as exc:
+            self.assertEqual(exc.__notes__, ["when serializing dict item 'test'"])
         else:
             self.fail("didn't raise ValueError on dict recursion")
         x = {}
@@ -52,15 +53,17 @@ class TestRecursion:
                         return [JSONTestObject]
                     else:
                         return 'JSONTestObject'
-                return pyjson.JSONEncoder.default(o)
+                return self.json.JSONEncoder.default(o)
 
         enc = RecursiveJSONEncoder()
         self.assertEqual(enc.encode(JSONTestObject), '"JSONTestObject"')
         enc.recurse = True
         try:
             enc.encode(JSONTestObject)
-        except ValueError:
-            pass
+        except ValueError as exc:
+            self.assertEqual(exc.__notes__,
+                             ["when serializing list item 0",
+                              "when serializing type object"])
         else:
             self.fail("didn't raise ValueError on default recursion")
 
@@ -69,11 +72,14 @@ class TestRecursion:
         # test that loading highly-nested objects doesn't segfault when C
         # accelerations are used. See #12017
         with self.assertRaises(RecursionError):
-            self.loads('{"a":' * 100000 + '1' + '}' * 100000)
+            with support.infinite_recursion():
+                self.loads('{"a":' * 100000 + '1' + '}' * 100000)
         with self.assertRaises(RecursionError):
-            self.loads('{"a":' * 100000 + '[1]' + '}' * 100000)
+            with support.infinite_recursion():
+                self.loads('{"a":' * 100000 + '[1]' + '}' * 100000)
         with self.assertRaises(RecursionError):
-            self.loads('[' * 100000 + '1' + ']' * 100000)
+            with support.infinite_recursion():
+                self.loads('[' * 100000 + '1' + ']' * 100000)
 
     def test_highly_nested_objects_encoding(self):
         # See #12051
@@ -81,9 +87,11 @@ class TestRecursion:
         for x in range(100000):
             l, d = [l], {'k':d}
         with self.assertRaises(RecursionError):
-            self.dumps(l)
+            with support.infinite_recursion(5000):
+                self.dumps(l)
         with self.assertRaises(RecursionError):
-            self.dumps(d)
+            with support.infinite_recursion(5000):
+                self.dumps(d)
 
     def test_endless_recursion(self):
         # See #12051
@@ -93,7 +101,8 @@ class TestRecursion:
                 return [o]
 
         with self.assertRaises(RecursionError):
-            EndlessJSONEncoder(check_circular=False).encode(5j)
+            with support.infinite_recursion(1000):
+                EndlessJSONEncoder(check_circular=False).encode(5j)
 
 
 class TestPyRecursion(TestRecursion, PyTest): pass

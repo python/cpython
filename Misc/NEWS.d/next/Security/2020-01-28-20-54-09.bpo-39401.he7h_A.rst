@@ -1,1 +1,0 @@
-Avoid unsafe DLL load at startup on Windows 7 and earlier.

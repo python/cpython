@@ -6,6 +6,8 @@ Context Variables Objects
 -------------------------
 
 .. _contextvarsobjects_pointertype_change:
+.. versionadded:: 3.7
+
 .. versionchanged:: 3.7.1
 
    .. note::
@@ -23,8 +25,6 @@ Context Variables Objects
 
       See :issue:`34762` for more details.
 
-
-.. versionadded:: 3.7
 
 This section details the public C API for the :mod:`contextvars` module.
 
@@ -101,10 +101,57 @@ Context object management functions:
    current context for the current thread.  Returns ``0`` on success,
    and ``-1`` on error.
 
-.. c:function:: int PyContext_ClearFreeList()
+.. c:function:: int PyContext_AddWatcher(PyContext_WatchCallback callback)
 
-   Clear the context variable free list. Return the total number of
-   freed items.  This function always succeeds.
+   Register *callback* as a context object watcher for the current interpreter.
+   Return an ID which may be passed to :c:func:`PyContext_ClearWatcher`.
+   In case of error (e.g. no more watcher IDs available),
+   return ``-1`` and set an exception.
+
+   .. versionadded:: 3.14
+
+.. c:function:: int PyContext_ClearWatcher(int watcher_id)
+
+   Clear watcher identified by *watcher_id* previously returned from
+   :c:func:`PyContext_AddWatcher` for the current interpreter.
+   Return ``0`` on success, or ``-1`` and set an exception on error
+   (e.g. if the given *watcher_id* was never registered.)
+
+   .. versionadded:: 3.14
+
+.. c:type:: PyContextEvent
+
+   Enumeration of possible context object watcher events:
+
+   - ``Py_CONTEXT_EVENT_ENTER``: A context has been entered, causing the
+     :term:`current context` to switch to it.  The object passed to the watch
+     callback is the now-current :class:`contextvars.Context` object.  Each
+     enter event will eventually have a corresponding exit event for the same
+     context object after any subsequently entered contexts have themselves been
+     exited.
+   - ``Py_CONTEXT_EVENT_EXIT``: A context is about to be exited, which will
+     cause the :term:`current context` to switch back to what it was before the
+     context was entered.  The object passed to the watch callback is the
+     still-current :class:`contextvars.Context` object.
+
+   .. versionadded:: 3.14
+
+.. c:type:: int (*PyContext_WatchCallback)(PyContextEvent event, PyContext* ctx)
+
+   Context object watcher callback function.  The object passed to the callback
+   is event-specific; see :c:type:`PyContextEvent` for details.
+
+   If the callback returns with an exception set, it must return ``-1``; this
+   exception will be printed as an unraisable exception using
+   :c:func:`PyErr_FormatUnraisable`. Otherwise it should return ``0``.
+
+   There may already be a pending exception set on entry to the callback. In
+   this case, the callback should return ``0`` with the same exception still
+   set. This means the callback may not call any other API that can set an
+   exception unless it saves and clears the exception state first, and restores
+   it before returning.
+
+   .. versionadded:: 3.14
 
 
 Context variable functions:
@@ -112,9 +159,9 @@ Context variable functions:
 .. c:function:: PyObject *PyContextVar_New(const char *name, PyObject *def)
 
    Create a new ``ContextVar`` object.  The *name* parameter is used
-   for introspection and debug purposes.  The *def* parameter may optionally
-   specify the default value for the context variable.  If an error has
-   occurred, this function returns ``NULL``.
+   for introspection and debug purposes.  The *def* parameter specifies
+   a default value for the context variable, or ``NULL`` for no default.
+   If an error has occurred, this function returns ``NULL``.
 
 .. c:function:: int PyContextVar_Get(PyObject *var, PyObject *default_value, PyObject **value)
 
@@ -129,13 +176,12 @@ Context variable functions:
    - the default value of *var*, if not ``NULL``;
    - ``NULL``
 
-   If the value was found, the function will create a new reference to it.
+   Except for ``NULL``, the function returns a new reference.
 
 .. c:function:: PyObject *PyContextVar_Set(PyObject *var, PyObject *value)
 
-   Set the value of *var* to *value* in the current context.  Returns a
-   pointer to a :c:type:`PyObject` object, or ``NULL`` if an error
-   has occurred.
+   Set the value of *var* to *value* in the current context.  Returns
+   a new token object for this change, or ``NULL`` if an error has occurred.
 
 .. c:function:: int PyContextVar_Reset(PyObject *var, PyObject *token)
 

@@ -47,8 +47,17 @@ def format_shell_args(args):
     return ' '.join(args)
 
 
+def python_cmd():
+    cmd = [sys.executable]
+    cmd.extend(subprocess._args_from_interpreter_flags())
+    cmd.extend(subprocess._optim_args_from_interpreter_flags())
+    cmd.extend(('-X', 'faulthandler'))
+    return cmd
+
+
 def list_cases(args):
-    cmd = [sys.executable, '-m', 'test', '--list-cases']
+    cmd = python_cmd()
+    cmd.extend(['-m', 'test', '--list-cases'])
     cmd.extend(args.test_args)
     proc = subprocess.run(cmd,
                           stdout=subprocess.PIPE,
@@ -68,9 +77,14 @@ def run_tests(args, tests, huntrleaks=None):
     try:
         write_tests(tmp, tests)
 
-        cmd = [sys.executable, '-m', 'test', '--matchfile', tmp]
+        cmd = python_cmd()
+        cmd.extend(['-u', '-m', 'test', '--matchfile', tmp])
         cmd.extend(args.test_args)
         print("+ %s" % format_shell_args(cmd))
+
+        sys.stdout.flush()
+        sys.stderr.flush()
+
         proc = subprocess.run(cmd)
         return proc.returncode
     finally:
@@ -100,6 +114,10 @@ def parse_args():
 
 def main():
     args = parse_args()
+    for opt in ('-w', '--rerun', '--verbose2'):
+        if opt in args.test_args:
+            print(f"WARNING: {opt} option should not be used to bisect!")
+            print()
 
     if args.input:
         with open(args.input) as fp:
@@ -124,8 +142,8 @@ def main():
             ntest = max(ntest // 2, 1)
             subtests = random.sample(tests, ntest)
 
-            print("[+] Iteration %s: run %s tests/%s"
-                  % (iteration, len(subtests), len(tests)))
+            print(f"[+] Iteration {iteration}/{args.max_iter}: "
+                  f"run {len(subtests)} tests/{len(tests)}")
             print()
 
             exitcode = run_tests(args, subtests)
@@ -157,10 +175,10 @@ def main():
     if len(tests) <= args.max_tests:
         print("Bisection completed in %s iterations and %s"
               % (iteration, datetime.timedelta(seconds=dt)))
-        sys.exit(1)
     else:
         print("Bisection failed after %s iterations and %s"
               % (iteration, datetime.timedelta(seconds=dt)))
+        sys.exit(1)
 
 
 if __name__ == "__main__":

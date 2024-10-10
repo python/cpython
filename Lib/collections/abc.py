@@ -1,2 +1,3 @@
-from _collections_abc import *
-from _collections_abc import __all__
+import _collections_abc
+import sys
+sys.modules[__name__] = _collections_abc

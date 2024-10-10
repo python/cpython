@@ -1,5 +1,0 @@
-Clarify refcounting semantics for the following functions:
-- PyObject_SetItem
-- PyMapping_SetItemString
-- PyDict_SetItem
-- PyDict_SetItemString

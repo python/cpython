@@ -11,6 +11,9 @@
  * --------------------------------------------------------------------------
  * HISTORY:
  *
+ * 2020-10-03  (Sebastian Pipping)
+ *   - Drop support for Visual Studio 9.0/2008 and earlier
+ *
  * 2019-08-03  (Sebastian Pipping)
  *   - Mark part of sip24_valid as to be excluded from clang-format
  *   - Re-format code using clang-format 9
@@ -96,22 +99,14 @@
 #define SIPHASH_H
 
 #include <stddef.h> /* size_t */
-
-#if defined(_WIN32) && defined(_MSC_VER) && (_MSC_VER < 1600)
-/* For vs2003/7.1 up to vs2008/9.0; _MSC_VER 1600 is vs2010/10.0 */
-typedef unsigned __int8 uint8_t;
-typedef unsigned __int32 uint32_t;
-typedef unsigned __int64 uint64_t;
-#else
-#  include <stdint.h> /* uint64_t uint32_t uint8_t */
-#endif
+#include <stdint.h> /* uint64_t uint32_t uint8_t */
 
 /*
  * Workaround to not require a C++11 compiler for using ULL suffix
  * if this code is included and compiled as C++; related GCC warning is:
  * warning: use of C++11 long long integer constant [-Wlong-long]
  */
-#define _SIP_ULL(high, low) (((uint64_t)high << 32) | low)
+#define SIP_ULL(high, low) ((((uint64_t)high) << 32) | (low))
 
 #define SIP_ROTL(x, b) (uint64_t)(((x) << (b)) | ((x) >> (64 - (b))))
 
@@ -131,8 +126,7 @@ typedef unsigned __int64 uint64_t;
    | ((uint64_t)((p)[4]) << 32) | ((uint64_t)((p)[5]) << 40)                   \
    | ((uint64_t)((p)[6]) << 48) | ((uint64_t)((p)[7]) << 56))
 
-#define SIPHASH_INITIALIZER                                                    \
-  { 0, 0, 0, 0, {0}, 0, 0 }
+#define SIPHASH_INITIALIZER {0, 0, 0, 0, {0}, 0, 0}
 
 struct siphash {
   uint64_t v0, v1, v2, v3;
@@ -195,10 +189,10 @@ sip_round(struct siphash *H, const int rounds) {
 
 static struct siphash *
 sip24_init(struct siphash *H, const struct sipkey *key) {
-  H->v0 = _SIP_ULL(0x736f6d65U, 0x70736575U) ^ key->k[0];
-  H->v1 = _SIP_ULL(0x646f7261U, 0x6e646f6dU) ^ key->k[1];
-  H->v2 = _SIP_ULL(0x6c796765U, 0x6e657261U) ^ key->k[0];
-  H->v3 = _SIP_ULL(0x74656462U, 0x79746573U) ^ key->k[1];
+  H->v0 = SIP_ULL(0x736f6d65U, 0x70736575U) ^ key->k[0];
+  H->v1 = SIP_ULL(0x646f7261U, 0x6e646f6dU) ^ key->k[1];
+  H->v2 = SIP_ULL(0x6c796765U, 0x6e657261U) ^ key->k[0];
+  H->v3 = SIP_ULL(0x74656462U, 0x79746573U) ^ key->k[1];
 
   H->p = H->buf;
   H->c = 0;
