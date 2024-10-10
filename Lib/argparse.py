@@ -138,7 +138,7 @@ class _AttributeHolder(object):
 def _copy_items(items):
     if items is None:
         return []
-    # The copy module is used only in the 'append' and 'append_const'
+    # The copy module is used only in the 'append', 'append_const', and 'extend'
     # actions, and it is needed only when the default value isn't a list.
     # Delay its import for speeding up the common case.
     if type(items) is list:
@@ -981,7 +981,13 @@ class _StoreFalseAction(_StoreConstAction):
             deprecated=deprecated)
 
 
-class _AppendAction(Action):
+class _CloningAction(Action):
+
+    def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+
+class _AppendAction(_CloningAction):
 
     def __init__(self,
                  option_strings,
@@ -1016,12 +1022,11 @@ class _AppendAction(Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
         items = getattr(namespace, self.dest, None)
-        items = _copy_items(items)
         items.append(values)
         setattr(namespace, self.dest, items)
 
 
-class _AppendConstAction(Action):
+class _AppendConstAction(_CloningAction):
 
     def __init__(self,
                  option_strings,
@@ -1045,7 +1050,6 @@ class _AppendConstAction(Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
         items = getattr(namespace, self.dest, None)
-        items = _copy_items(items)
         items.append(self.const)
         setattr(namespace, self.dest, items)
 
@@ -1238,7 +1242,6 @@ class _SubParsersAction(Action):
 class _ExtendAction(_AppendAction):
     def __call__(self, parser, namespace, values, option_string=None):
         items = getattr(namespace, self.dest, None)
-        items = _copy_items(items)
         items.extend(values)
         setattr(namespace, self.dest, items)
 
@@ -1967,6 +1970,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # converts arg strings to the appropriate and then takes the action
         seen_actions = set()
         seen_non_default_actions = set()
+        cloned = set()
         warned = set()
 
         def take_action(action, argument_strings, option_string=None):
@@ -1986,6 +1990,15 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             # take the action if we didn't receive a SUPPRESS value
             # (e.g. from a default)
             if argument_values is not SUPPRESS:
+                # copy the destination attribute in case the action modifies it
+                # in-place.
+                if isinstance(action, _CloningAction) and action not in cloned:
+                    # only copy on the first action call.
+                    cloned.add(action)
+
+                    items = getattr(namespace, action.dest, None)
+                    setattr(namespace, action.dest, _copy_items(items))
+
                 action(self, namespace, argument_values, option_string)
 
         # function to convert arg_strings into an optional action
