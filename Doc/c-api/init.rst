@@ -1566,6 +1566,12 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    :c:func:`PyEval_SaveThread` is a higher-level function which is always
    available (even when threads have not been initialized).
 
+.. c:function:: PyObject* PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *interp)
+
+   Returns a :term:`strong reference` to the ``__main__`` module of the given interpreter *interp*.
+   Fails with a :exc:`RuntimeError` if the interpreter is not initialized.
+
+   .. versionadded:: 3.12
 
 .. _sub-interpreter-support:
 
@@ -1805,6 +1811,29 @@ function. You can create and destroy them using the following functions:
    :c:func:`Py_FinalizeEx` will destroy all sub-interpreters that
    haven't been explicitly destroyed at that point.
 
+Interpreter ID Objects
+----------------------
+
+A interpreter ID identifies a interpreter and may be used as an int.
+
+.. versionadded:: 3.12
+
+.. c:var:: PyTypeObject PyInterpreterID_Type
+
+   This instance of :c:type:`PyTypeObject` represents the Python interpreter ID type.
+
+.. c:function:: PyObject* PyInterpreterID_New(int64_t id)
+
+   Returns a new interpreter ID object with the given *id*.
+
+.. c:function:: PyInterpreterState* PyInterpreterID_LookUp(PyObject *requested_id)
+
+   Returns a :term:`borrowed reference` to the :c:type:`PyInterpreterState` interpreter state for the given interpreter ID object *requested_id*.
+   Fails with :exc:`RuntimeError` if the interpreter is not found.
+
+.. c:function:: PyObject* PyInterpreterState_GetIDObject(PyInterpreterState *interp)
+
+   Returns a new interpreter ID object for the given interpreter state *interp*.
 
 A Per-Interpreter GIL
 ---------------------
