@@ -1414,6 +1414,21 @@ ghi\0jkl
         dialect = sniffer.sniff(self.sample9)
         self.assertTrue(dialect.doublequote)
 
+    def test_guess_lineterminator(self):
+        from os import linesep
+        sniffer = csv.Sniffer()
+        dialect = sniffer.sniff('Date;Value\r\n2010-01-01;10')
+        self.assertEqual(dialect.lineterminator, '\r\n')
+        dialect = sniffer.sniff('Date;Value\n2010-01-01;10')
+        self.assertEqual(dialect.lineterminator, '\n')
+        dialect = sniffer.sniff('Date;Value\r2010-01-01;10')
+        self.assertEqual(dialect.lineterminator, '\r')
+        dialect = sniffer.sniff('Date;Value\v2010-01-01;10')
+        self.assertEqual(dialect.lineterminator, linesep)
+        dialect = sniffer.sniff('Date;Value')
+        self.assertEqual(dialect.lineterminator, linesep)
+
+
 class NUL:
     def write(s, *args):
         pass
