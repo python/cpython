@@ -835,15 +835,15 @@ _PyModuleSpec_IsUninitializedSubmodule(PyObject *spec, PyObject *name)
     return rc;
 }
 
-static int
-_get_file_origin_from_spec(PyObject *spec, PyObject **p_origin)
+int
+_PyModuleSpec_GetFileOrigin(PyObject *spec, PyObject **p_origin)
 {
     PyObject *has_location = NULL;
     int rc = PyObject_GetOptionalAttr(spec, &_Py_ID(has_location), &has_location);
     if (rc <= 0) {
         return rc;
     }
-    // If origin is not a location, or doesn't exist, or is not a str), we could consider falling
+    // If origin is not a location, or doesn't exist, or is not a str, we could consider falling
     // back to module.__file__. But the cases in which module.__file__ is not __spec__.origin
     // are cases in which we probably shouldn't be guessing.
     rc = PyObject_IsTrue(has_location);
@@ -866,8 +866,8 @@ _get_file_origin_from_spec(PyObject *spec, PyObject **p_origin)
     return 1;
 }
 
-static int
-_is_module_possibly_shadowing(PyObject *origin)
+int
+_PyModule_IsPossiblyShadowing(PyObject *origin)
 {
     // origin must be a unicode subtype
     // Returns 1 if the module at origin could be shadowing a module of the
@@ -992,11 +992,11 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     }
 
     PyObject *origin = NULL;
-    if (_get_file_origin_from_spec(spec, &origin) < 0) {
+    if (_PyModuleSpec_GetFileOrigin(spec, &origin) < 0) {
         goto done;
     }
 
-    int is_possibly_shadowing = _is_module_possibly_shadowing(origin);
+    int is_possibly_shadowing = _PyModule_IsPossiblyShadowing(origin);
     if (is_possibly_shadowing < 0) {
         goto done;
     }
@@ -1022,7 +1022,10 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     }
     else {
         int rc = _PyModuleSpec_IsInitializing(spec);
-        if (rc > 0) {
+        if (rc < 0) {
+            goto done;
+        }
+        else if (rc > 0) {
             if (is_possibly_shadowing) {
                 assert(origin);
                 // For third-party modules, only mention the possibility of
@@ -1048,7 +1051,8 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
                             mod_name, name);
             }
         }
-        else if (rc == 0) {
+        else {
+            assert(rc == 0);
             rc = _PyModuleSpec_IsUninitializedSubmodule(spec, name);
             if (rc > 0) {
                 PyErr_Format(PyExc_AttributeError,

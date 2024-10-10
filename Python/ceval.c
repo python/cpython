@@ -2773,7 +2773,7 @@ PyObject *
 _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
 {
     PyObject *x;
-    PyObject *fullmodname, *pkgname, *pkgpath, *pkgname_or_unknown, *errmsg;
+    PyObject *fullmodname, *mod_name, *origin, *mod_name_or_unknown, *errmsg, *spec;
 
     if (PyObject_GetOptionalAttr(v, name, &x) != 0) {
         return x;
@@ -2781,16 +2781,16 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     /* Issue #17636: in case this failed because of a circular relative
        import, try to fallback on reading the module directly from
        sys.modules. */
-    if (PyObject_GetOptionalAttr(v, &_Py_ID(__name__), &pkgname) < 0) {
+    if (PyObject_GetOptionalAttr(v, &_Py_ID(__name__), &mod_name) < 0) {
         return NULL;
     }
-    if (pkgname == NULL || !PyUnicode_Check(pkgname)) {
-        Py_CLEAR(pkgname);
+    if (mod_name == NULL || !PyUnicode_Check(mod_name)) {
+        Py_CLEAR(mod_name);
         goto error;
     }
-    fullmodname = PyUnicode_FromFormat("%U.%U", pkgname, name);
+    fullmodname = PyUnicode_FromFormat("%U.%U", mod_name, name);
     if (fullmodname == NULL) {
-        Py_DECREF(pkgname);
+        Py_DECREF(mod_name);
         return NULL;
     }
     x = PyImport_GetModule(fullmodname);
@@ -2798,63 +2798,121 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     if (x == NULL && !_PyErr_Occurred(tstate)) {
         goto error;
     }
-    Py_DECREF(pkgname);
+    Py_DECREF(mod_name);
     return x;
+
  error:
-    if (pkgname == NULL) {
-        pkgname_or_unknown = PyUnicode_FromString("<unknown module name>");
-        if (pkgname_or_unknown == NULL) {
+    if (mod_name == NULL) {
+        mod_name_or_unknown = PyUnicode_FromString("<unknown module name>");
+        if (mod_name_or_unknown == NULL) {
             return NULL;
         }
     } else {
-        pkgname_or_unknown = pkgname;
+        mod_name_or_unknown = mod_name;
     }
+    // mod_name is no longer an owned reference
+    assert(mod_name_or_unknown);
+    assert(mod_name == NULL || mod_name == mod_name_or_unknown);
 
-    pkgpath = NULL;
-    if (PyModule_Check(v)) {
-        pkgpath = PyModule_GetFilenameObject(v);
-        if (pkgpath == NULL) {
-            if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
-                Py_DECREF(pkgname_or_unknown);
-                return NULL;
-            }
-            // module filename missing
-            _PyErr_Clear(tstate);
-        }
+    origin = NULL;
+    if (PyObject_GetOptionalAttr(v, &_Py_ID(__spec__), &spec) < 0) {
+        Py_DECREF(mod_name_or_unknown);
+        return NULL;
     }
-    if (pkgpath == NULL || !PyUnicode_Check(pkgpath)) {
-        Py_CLEAR(pkgpath);
+    if (spec == NULL) {
         errmsg = PyUnicode_FromFormat(
             "cannot import name %R from %R (unknown location)",
-            name, pkgname_or_unknown
+            name, mod_name_or_unknown
+        );
+        goto done_with_errmsg;
+    }
+    if (_PyModuleSpec_GetFileOrigin(spec, &origin) < 0) {
+        goto done;
+    }
+
+    int is_possibly_shadowing = _PyModule_IsPossiblyShadowing(origin);
+    if (is_possibly_shadowing < 0) {
+        goto done;
+    }
+    int is_possibly_shadowing_stdlib = 0;
+    if (is_possibly_shadowing) {
+        PyObject *stdlib_modules = PySys_GetObject("stdlib_module_names");
+        if (stdlib_modules && PyAnySet_Check(stdlib_modules)) {
+            is_possibly_shadowing_stdlib = PySet_Contains(stdlib_modules, mod_name_or_unknown);
+            if (is_possibly_shadowing_stdlib < 0) {
+                goto done;
+            }
+        }
+    }
+
+    if (is_possibly_shadowing_stdlib) {
+        assert(origin);
+        errmsg = PyUnicode_FromFormat(
+            "cannot import name %R from %R "
+            "(consider renaming %R since it has the same "
+            "name as the standard library module named %R "
+            "and the import system gives it precedence)",
+            name, mod_name_or_unknown, origin, mod_name_or_unknown
         );
     }
     else {
-        PyObject *spec;
-        int rc = PyObject_GetOptionalAttr(v, &_Py_ID(__spec__), &spec);
-        if (rc > 0) {
-            rc = _PyModuleSpec_IsInitializing(spec);
-            Py_DECREF(spec);
-        }
+        int rc = _PyModuleSpec_IsInitializing(spec);
         if (rc < 0) {
-            Py_DECREF(pkgname_or_unknown);
-            Py_DECREF(pkgpath);
-            return NULL;
+            goto done;
         }
-        const char *fmt =
-            rc ?
-            "cannot import name %R from partially initialized module %R "
-            "(most likely due to a circular import) (%S)" :
-            "cannot import name %R from %R (%S)";
-
-        errmsg = PyUnicode_FromFormat(fmt, name, pkgname_or_unknown, pkgpath);
+        else if (rc > 0) {
+            if (is_possibly_shadowing) {
+                assert(origin);
+                // For third-party modules, only mention the possibility of
+                // shadowing if the module is being initialized.
+                errmsg = PyUnicode_FromFormat(
+                    "cannot import name %R from %R "
+                    "(consider renaming %R if it has the same name "
+                    "as a third-party module you intended to import)",
+                    name, mod_name_or_unknown, origin
+                );
+            }
+            else if (origin) {
+                errmsg = PyUnicode_FromFormat(
+                    "cannot import name %R from partially initialized module %R "
+                    "(most likely due to a circular import) (%S)",
+                    name, mod_name_or_unknown, origin
+                );
+            }
+            else {
+                errmsg = PyUnicode_FromFormat(
+                    "cannot import name %R from partially initialized module %R "
+                    "(most likely due to a circular import)",
+                    name, mod_name_or_unknown
+                );
+            }
+        }
+        else {
+            assert(rc == 0);
+            if (origin) {
+                errmsg = PyUnicode_FromFormat(
+                    "cannot import name %R from %R (%S)",
+                    name, mod_name_or_unknown, origin
+                );
+            }
+            else {
+                errmsg = PyUnicode_FromFormat(
+                    "cannot import name %R from %R (unknown location)",
+                    name, mod_name_or_unknown
+                );
+            }
+        }
     }
-    /* NULL checks for errmsg and pkgname done by PyErr_SetImportError. */
-    _PyErr_SetImportErrorWithNameFrom(errmsg, pkgname, pkgpath, name);
 
-    Py_XDECREF(errmsg);
-    Py_DECREF(pkgname_or_unknown);
-    Py_XDECREF(pkgpath);
+done_with_errmsg:
+    /* NULL checks for errmsg, mod_name, origin done by PyErr_SetImportError. */
+    _PyErr_SetImportErrorWithNameFrom(errmsg, mod_name, origin, name);
+    Py_DECREF(errmsg);
+
+done:
+    Py_XDECREF(origin);
+    Py_XDECREF(spec);
+    Py_DECREF(mod_name_or_unknown);
     return NULL;
 }
 
@@ -3214,5 +3272,3 @@ _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *na
     }
     return value;
 }
-
-
