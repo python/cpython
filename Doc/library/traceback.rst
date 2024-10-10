@@ -751,9 +751,11 @@ With the helper class, we have more options:
        1/0
        ~^~
    ZeroDivisionError: division by zero
+
    >>> TracebackException.from_exception(chained_exc).print(chain=False)
    Traceback (most recent call last):
      File "<python-input-19>", line 6, in <module>
        1/0
        ~^~
    ZeroDivisionError: division by zero
+
