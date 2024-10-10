@@ -119,11 +119,13 @@ class PurePath(PurePathBase):
         paths = []
         for arg in args:
             if isinstance(arg, PurePath):
-                if arg.parser is ntpath and self.parser is posixpath:
-                    # GH-103631: Convert separators for backwards compatibility.
-                    paths.extend(path.replace('\\', '/') for path in arg._raw_paths)
-                else:
+                if arg.parser is self.parser:
                     paths.extend(arg._raw_paths)
+                elif arg.parser is ntpath:
+                    # GH-103631: Convert separators for backwards compatibility.
+                    paths.append(str(arg).replace('\\', '/'))
+                else:
+                    paths.append(str(arg))
             else:
                 try:
                     path = os.fspath(arg)
