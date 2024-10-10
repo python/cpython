@@ -141,6 +141,13 @@ prefix=		@prefix@
 # Install prefix for architecture-dependent files
 exec_prefix=	@exec_prefix@
 
+# For cross compilation, we distinguish between "prefix" (where we install the
+# files) and "host_prefix" (where getpath.c expects to find the files at
+# runtime)
+host_prefix= 	@host_prefix@
+host_exec_prefix= 	@host_exec_prefix@
+
+
 # Install prefix for data files
 datarootdir=    @datarootdir@
 
@@ -1737,8 +1744,8 @@ Modules/getbuildinfo.o: $(PARSER_OBJS) \
 
 Modules/getpath.o: $(srcdir)/Modules/getpath.c Python/frozen_modules/getpath.h Makefile $(PYTHON_HEADERS)
 	$(CC) -c $(PY_CORE_CFLAGS) -DPYTHONPATH='"$(PYTHONPATH)"' \
-		-DPREFIX='"$(prefix)"' \
-		-DEXEC_PREFIX='"$(exec_prefix)"' \
+		-DPREFIX='"$(host_prefix)"' \
+		-DEXEC_PREFIX='"$(host_exec_prefix)"' \
 		-DVERSION='"$(VERSION)"' \
 		-DVPATH='"$(VPATH)"' \
 		-DPLATLIBDIR='"$(PLATLIBDIR)"' \
