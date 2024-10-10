@@ -2233,11 +2233,14 @@ Basic customization
    .. index:: single: __len__() (mapping object method)
 
    Called to implement truth value testing and the built-in operation
-   ``bool()``; should return ``False`` or ``True``.  When this method is not
+   :func:`bool`; should return ``False`` or ``True``.  When this method is not
    defined, :meth:`~object.__len__` is called, if it is defined, and the object is
    considered true if its result is nonzero.  If a class defines neither
    :meth:`!__len__` nor :meth:`!__bool__`, all its instances are considered
    true.
+
+   Two successive calls to :meth:`!__bool__` on the same object must
+   return same value.
 
 
 .. _attribute-access:
@@ -3142,6 +3145,9 @@ through the object's keys; for sequences, it should iterate through the values.
    of the object, an integer ``>=`` 0.  Also, an object that doesn't define a
    :meth:`~object.__bool__` method and whose :meth:`!__len__` method returns zero is
    considered to be false in a Boolean context.
+
+   Two successive calls to :meth:`!__len__` on the same object must
+   return same value.
 
    .. impl-detail::
 
