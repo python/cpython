@@ -5522,15 +5522,19 @@ PyDoc_STRVAR(PySSLSession_get_timeout_doc,
 "Session timeout (delta in seconds).");
 
 
+/*[clinic input]
+@critical_section
+@getter
+_ssl.SSLSession.ticket_lifetime_hint
+[clinic start generated code]*/
+
 static PyObject *
-PySSLSession_get_ticket_lifetime_hint(PySSLSession *self, void *closure) {
+_ssl_SSLSession_ticket_lifetime_hint_get_impl(PySSLSession *self)
+/*[clinic end generated code: output=c8b6db498136c275 input=d0e06942ddd8d07f]*/
+{
     unsigned long hint = SSL_SESSION_get_ticket_lifetime_hint(self->session);
     return PyLong_FromUnsignedLong(hint);
 }
-
-PyDoc_STRVAR(PySSLSession_get_ticket_lifetime_hint_doc,
-"Ticket life time hint.");
-
 
 /*[clinic input]
 @critical_section
@@ -5568,10 +5572,8 @@ PyDoc_STRVAR(PySSLSession_get_has_ticket_doc,
 
 static PyGetSetDef PySSLSession_getsetlist[] = {
     _SSL_SSLSESSION_HAS_TICKET_GETSETDEF
-    {"id",   (getter) PySSLSession_get_session_id, NULL,
-              PySSLSession_get_session_id_doc},
-    {"ticket_lifetime_hint", (getter) PySSLSession_get_ticket_lifetime_hint,
-              NULL, PySSLSession_get_ticket_lifetime_hint_doc},
+    _SSL_SSLSESSION_SESSION_ID_GETSETDEF
+    _SSL_SSLSESSION_TICKET_LIFETIME_HINT_GETSETDEF
     {"time", (getter) PySSLSession_get_time, NULL,
               PySSLSession_get_time_doc},
     {"timeout", (getter) PySSLSession_get_timeout, NULL,

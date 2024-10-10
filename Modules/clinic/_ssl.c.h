@@ -2279,6 +2279,33 @@ _ssl_MemoryBIO_write_eof(PySSLMemoryBIO *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
+#if defined(_ssl_SSLSession_ticket_lifetime_hint_HAS_DOCSTR)
+#  define _ssl_SSLSession_ticket_lifetime_hint_DOCSTR _ssl_SSLSession_ticket_lifetime_hint__doc__
+#else
+#  define _ssl_SSLSession_ticket_lifetime_hint_DOCSTR NULL
+#endif
+#if defined(_SSL_SSLSESSION_TICKET_LIFETIME_HINT_GETSETDEF)
+#  undef _SSL_SSLSESSION_TICKET_LIFETIME_HINT_GETSETDEF
+#  define _SSL_SSLSESSION_TICKET_LIFETIME_HINT_GETSETDEF {"ticket_lifetime_hint", (getter)_ssl_SSLSession_ticket_lifetime_hint_get, (setter)_ssl_SSLSession_ticket_lifetime_hint_set, _ssl_SSLSession_ticket_lifetime_hint_DOCSTR},
+#else
+#  define _SSL_SSLSESSION_TICKET_LIFETIME_HINT_GETSETDEF {"ticket_lifetime_hint", (getter)_ssl_SSLSession_ticket_lifetime_hint_get, NULL, _ssl_SSLSession_ticket_lifetime_hint_DOCSTR},
+#endif
+
+static PyObject *
+_ssl_SSLSession_ticket_lifetime_hint_get_impl(PySSLSession *self);
+
+static PyObject *
+_ssl_SSLSession_ticket_lifetime_hint_get(PySSLSession *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl_SSLSession_ticket_lifetime_hint_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 #if defined(_ssl_SSLSession_session_id_HAS_DOCSTR)
 #  define _ssl_SSLSession_session_id_DOCSTR _ssl_SSLSession_session_id__doc__
 #else
@@ -2755,4 +2782,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=9cc4a80ccece933a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f09b15ce11130fd6 input=a9049054013a1b77]*/
