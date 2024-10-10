@@ -375,8 +375,6 @@ class _ssl.SSLSession "PySSLSession *" "get_state_type(type)->PySSLSession_Type"
 
 static int PySSL_select(PySocketSockObject *s, int writing, PyTime_t timeout);
 
-static int PySSL_set_owner(PySSLSocket *, PyObject *, void *);
-
 typedef enum {
     SOCKET_IS_NONBLOCKING,
     SOCKET_IS_BLOCKING,
@@ -925,13 +923,13 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
         }
     }
     if (owner && owner != Py_None) {
-        if (PySSL_set_owner(self, owner, NULL) == -1) {
+        if (_ssl__SSLSocket_owner_set(self, owner, NULL) == -1) {
             Py_DECREF(self);
             return NULL;
         }
     }
     if (session && session != Py_None) {
-        if (_ssl__SSLSocket_session_set_impl(self, session) == -1) {
+        if (_ssl__SSLSocket_session_set(self, session, NULL) == -1) {
             Py_DECREF(self);
             return NULL;
         }
@@ -2211,8 +2209,17 @@ PySSL_get_server_hostname(PySSLSocket *self, void *c)
 PyDoc_STRVAR(PySSL_get_server_hostname_doc,
 "The currently set server hostname (for SNI).");
 
+/*[clinic input]
+@critical_section
+@getter
+_ssl._SSLSocket.owner
+
+The Python-level owner of this object. Passed as "self" in servername callback.
+[clinic start generated code]*/
+
 static PyObject *
-PySSL_get_owner(PySSLSocket *self, void *c)
+_ssl__SSLSocket_owner_get_impl(PySSLSocket *self)
+/*[clinic end generated code: output=1f278cb930382927 input=57fd0d5f2644757a]*/
 {
     if (self->owner == NULL) {
         Py_RETURN_NONE;
@@ -2224,18 +2231,21 @@ PySSL_get_owner(PySSLSocket *self, void *c)
     return owner;
 }
 
+/*[clinic input]
+@critical_section
+@setter
+_ssl._SSLSocket.owner
+[clinic start generated code]*/
+
 static int
-PySSL_set_owner(PySSLSocket *self, PyObject *value, void *c)
+_ssl__SSLSocket_owner_set_impl(PySSLSocket *self, PyObject *value)
+/*[clinic end generated code: output=2e3924498f2b6cde input=875666fd32367a73]*/
 {
     Py_XSETREF(self->owner, PyWeakref_NewRef(value, NULL));
     if (self->owner == NULL)
         return -1;
     return 0;
 }
-
-PyDoc_STRVAR(PySSL_get_owner_doc,
-"The Python-level owner of this object.\
-Passed as \"self\" in servername callback.");
 
 static int
 PySSL_traverse(PySSLSocket *self, visitproc visit, void *arg)
@@ -2919,8 +2929,7 @@ static PyGetSetDef ssl_getsetlist[] = {
                     PySSL_get_server_side_doc},
     {"server_hostname", (getter) PySSL_get_server_hostname, NULL,
                         PySSL_get_server_hostname_doc},
-    {"owner", (getter) PySSL_get_owner, (setter) PySSL_set_owner,
-              PySSL_get_owner_doc},
+    _SSL__SSLSOCKET_OWNER_GETSETDEF
     _SSL__SSLSOCKET_SESSION_GETSETDEF
     _SSL__SSLSOCKET_SESSION_REUSED_GETSETDEF
     {NULL},            /* sentinel */

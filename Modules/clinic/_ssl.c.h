@@ -258,6 +258,64 @@ _ssl__SSLSocket_compression(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
     return _ssl__SSLSocket_compression_impl(self);
 }
 
+PyDoc_STRVAR(_ssl__SSLSocket_owner__doc__,
+"The Python-level owner of this object. Passed as \"self\" in servername callback.");
+#define _ssl__SSLSocket_owner_HAS_DOCSTR
+
+#if defined(_ssl__SSLSocket_owner_HAS_DOCSTR)
+#  define _ssl__SSLSocket_owner_DOCSTR _ssl__SSLSocket_owner__doc__
+#else
+#  define _ssl__SSLSocket_owner_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLSOCKET_OWNER_GETSETDEF)
+#  undef _SSL__SSLSOCKET_OWNER_GETSETDEF
+#  define _SSL__SSLSOCKET_OWNER_GETSETDEF {"owner", (getter)_ssl__SSLSocket_owner_get, (setter)_ssl__SSLSocket_owner_set, _ssl__SSLSocket_owner_DOCSTR},
+#else
+#  define _SSL__SSLSOCKET_OWNER_GETSETDEF {"owner", (getter)_ssl__SSLSocket_owner_get, NULL, _ssl__SSLSocket_owner_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLSocket_owner_get_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_owner_get(PySSLSocket *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_owner_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_SSL__SSLSOCKET_OWNER_HAS_DOCSTR)
+#  define _ssl__SSLSocket_owner_DOCSTR _ssl__SSLSocket_owner__doc__
+#else
+#  define _ssl__SSLSocket_owner_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLSOCKET_OWNER_GETSETDEF)
+#  undef _SSL__SSLSOCKET_OWNER_GETSETDEF
+#  define _SSL__SSLSOCKET_OWNER_GETSETDEF {"owner", (getter)_ssl__SSLSocket_owner_get, (setter)_ssl__SSLSocket_owner_set, _ssl__SSLSocket_owner_DOCSTR},
+#else
+#  define _SSL__SSLSOCKET_OWNER_GETSETDEF {"owner", NULL, (setter)_ssl__SSLSocket_owner_set, NULL},
+#endif
+
+static int
+_ssl__SSLSocket_owner_set_impl(PySSLSocket *self, PyObject *value);
+
+static int
+_ssl__SSLSocket_owner_set(PySSLSocket *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_owner_set_impl(self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_ssl__SSLSocket_write__doc__,
 "write($self, b, /)\n"
 "--\n"
@@ -1931,4 +1989,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=4e7e2b7a652aa50a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=21899c86029bc674 input=a9049054013a1b77]*/
