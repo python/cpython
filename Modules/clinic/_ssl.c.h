@@ -1206,6 +1206,33 @@ _ssl__SSLContext_check_hostname_set(PySSLContext *self, PyObject *value, void *P
     return return_value;
 }
 
+#if defined(_ssl__SSLContext_protocol_HAS_DOCSTR)
+#  define _ssl__SSLContext_protocol_DOCSTR _ssl__SSLContext_protocol__doc__
+#else
+#  define _ssl__SSLContext_protocol_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_PROTOCOL_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_PROTOCOL_GETSETDEF
+#  define _SSL__SSLCONTEXT_PROTOCOL_GETSETDEF {"protocol", (getter)_ssl__SSLContext_protocol_get, (setter)_ssl__SSLContext_protocol_set, _ssl__SSLContext_protocol_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_PROTOCOL_GETSETDEF {"protocol", (getter)_ssl__SSLContext_protocol_get, NULL, _ssl__SSLContext_protocol_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLContext_protocol_get_impl(PySSLContext *self);
+
+static PyObject *
+_ssl__SSLContext_protocol_get(PySSLContext *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_protocol_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_ssl__SSLContext_load_cert_chain__doc__,
 "load_cert_chain($self, /, certfile, keyfile=None, password=None)\n"
 "--\n"
@@ -2485,4 +2512,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=4f8d4d84a6974ef2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=26e79b114b8c43df input=a9049054013a1b77]*/

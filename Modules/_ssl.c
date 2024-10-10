@@ -3849,8 +3849,16 @@ set_post_handshake_auth(PySSLContext *self, PyObject *arg, void *c) {
 }
 #endif
 
+/*[clinic input]
+@critical_section
+@getter
+_ssl._SSLContext.protocol
+[clinic start generated code]*/
+
 static PyObject *
-get_protocol(PySSLContext *self, void *c) {
+_ssl__SSLContext_protocol_get_impl(PySSLContext *self)
+/*[clinic end generated code: output=a9a48febc16cee22 input=c9f5fa1a2bd4b8a8]*/
+{
     return PyLong_FromLong(self->protocol);
 }
 
@@ -5094,8 +5102,7 @@ static PyGetSetDef context_getsetlist[] = {
                             NULL,
 #endif
                             NULL},
-    {"protocol", (getter) get_protocol,
-                 NULL, NULL},
+    _SSL__SSLCONTEXT_PROTOCOL_GETSETDEF
     {"verify_flags", (getter) get_verify_flags,
                      (setter) set_verify_flags, NULL},
     {"verify_mode", (getter) get_verify_mode,
