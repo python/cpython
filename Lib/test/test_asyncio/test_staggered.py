@@ -95,3 +95,30 @@ class StaggeredTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(excs), 2)
         self.assertIsInstance(excs[0], ValueError)
         self.assertIsInstance(excs[1], ValueError)
+
+
+    async def test_multiple_winners(self):
+        event = asyncio.Event()
+
+        async def coro(index):
+            await event.wait()
+            return index
+
+        async def do_set():
+            event.set()
+            await asyncio.Event().wait()
+
+        winner, index, excs = await staggered_race(
+            [
+                lambda: coro(0),
+                lambda: coro(1),
+                do_set,
+            ],
+            delay=0.1,
+        )
+        self.assertIs(winner, 0)
+        self.assertIs(index, 0)
+        self.assertEqual(len(excs), 3)
+        self.assertIsNone(excs[0], None)
+        self.assertIsInstance(excs[1], asyncio.CancelledError)
+        self.assertIsInstance(excs[2], asyncio.CancelledError)
