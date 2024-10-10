@@ -1,0 +1,1 @@
+Disallow ``store_true``, ``store_false``, and ``store_const`` actions for positional arguments in :mod:`argparse` module.
