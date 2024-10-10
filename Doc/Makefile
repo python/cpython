@@ -173,11 +173,11 @@ venv:
 		echo "Creating venv in $(VENVDIR)"; \
 		if $(UV) --version >/dev/null 2>&1; then \
 			$(UV) venv $(VENVDIR); \
-			VIRTUAL_ENV=$(VENVDIR) $(UV) pip install -r $(REQUIREMENTS); \
+			VIRTUAL_ENV=$(VENVDIR) $(UV) pip install -r $(REQUIREMENTS) --only-binary PyStemmer; \
 		else \
 			$(PYTHON) -m venv $(VENVDIR); \
 			$(VENVDIR)/bin/python3 -m pip install --upgrade pip; \
-			$(VENVDIR)/bin/python3 -m pip install -r $(REQUIREMENTS); \
+			$(VENVDIR)/bin/python3 -m pip install -r $(REQUIREMENTS) --only-binary PyStemmer; \
 		fi; \
 		echo "The venv has been created in the $(VENVDIR) directory"; \
 	fi
