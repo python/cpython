@@ -7,7 +7,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetDict()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_metadata.h" // _PyOpcode_Deopt, _PyOpcode_Caches
-
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION
 
 #include "frameobject.h"          // PyFrameObject
 #include "pycore_frame.h"
@@ -1703,7 +1703,7 @@ frame_tp_clear(PyFrameObject *f)
 }
 
 static PyObject *
-frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
+frame_clear_unlocked(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
     if (f->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
         PyGenObject *gen = _PyGen_GetGeneratorFromFrame(f->f_frame);
@@ -1731,6 +1731,17 @@ suspended:
     PyErr_SetString(PyExc_RuntimeError,
                     "cannot clear a suspended frame");
     return NULL;
+}
+
+static PyObject *
+frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *res;
+    // Another materialized frame might be racing on clearing the frame.
+    Py_BEGIN_CRITICAL_SECTION(f);
+    res = frame_clear_unlocked(f, NULL);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 PyDoc_STRVAR(clear__doc__,
