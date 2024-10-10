@@ -299,15 +299,11 @@ parameters[arguments_ty]:
     | a=param_with_default+ b=[star_etc] { _PyPegen_make_arguments(p, NULL, NULL, NULL, a, b)}
     | a=star_etc { _PyPegen_make_arguments(p, NULL, NULL, NULL, NULL, a) }
 
-# Some duplication here because we can't write (',' | &')'),
-# which is because we don't support empty alternatives (yet).
-
+# NOTE: action (void *)1 is needed since &')' is empty alternative.
 slash_no_default[asdl_arg_seq*]:
-    | a[asdl_arg_seq*]=param_no_default+ '/' ',' { a }
-    | a[asdl_arg_seq*]=param_no_default+ '/' &')' { a }
+    | a[asdl_arg_seq*]=param_no_default+ '/' (',' | &')' { (void *)1 }) { a }
 slash_with_default[SlashWithDefault*]:
-    | a=param_no_default* b=param_with_default+ '/' ',' { _PyPegen_slash_with_default(p, (asdl_arg_seq *)a, b) }
-    | a=param_no_default* b=param_with_default+ '/' &')' { _PyPegen_slash_with_default(p, (asdl_arg_seq *)a, b) }
+    | a=param_no_default* b=param_with_default+ '/' (',' | &')' { (void *)1 }) { _PyPegen_slash_with_default(p, (asdl_arg_seq *)a, b) }
 
 star_etc[StarEtc*]:
     | invalid_star_etc
