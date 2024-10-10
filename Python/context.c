@@ -102,18 +102,24 @@ PyContext_CopyCurrent(void)
 static const char *
 context_event_name(PyContextEvent event) {
     switch (event) {
-        case Py_CONTEXT_EVENT_ENTER:
-            return "Py_CONTEXT_EVENT_ENTER";
-        case Py_CONTEXT_EVENT_EXIT:
-            return "Py_CONTEXT_EVENT_EXIT";
+        case Py_CONTEXT_SWITCHED:
+            return "Py_CONTEXT_SWITCHED";
         default:
             return "?";
     }
     Py_UNREACHABLE();
 }
 
-static void notify_context_watchers(PyContextEvent event, PyContext *ctx, PyThreadState *ts)
+static void
+notify_context_watchers(PyThreadState *ts, PyContextEvent event, PyObject *ctx)
 {
+    if (ctx == NULL) {
+        // This will happen after exiting the last context in the stack, which
+        // can occur if context_get was never called before entering a context
+        // (e.g., called `contextvars.Context().run()` on a fresh thread, as
+        // PyContext_Enter doesn't call context_get).
+        ctx = Py_None;
+    }
     assert(Py_REFCNT(ctx) > 0);
     PyInterpreterState *interp = ts->interp;
     assert(interp->_initialized);
@@ -124,11 +130,14 @@ static void notify_context_watchers(PyContextEvent event, PyContext *ctx, PyThre
         if (bits & 1) {
             PyContext_WatchCallback cb = interp->context_watchers[i];
             assert(cb != NULL);
-            if (cb(event, ctx) < 0) {
+            PyObject *exc = _PyErr_GetRaisedException(ts);
+            cb(event, ctx);
+            if (_PyErr_Occurred(ts) != NULL) {
                 PyErr_FormatUnraisable(
                     "Exception ignored in %s watcher callback for %R",
                     context_event_name(event), ctx);
             }
+            _PyErr_SetRaisedException(ts, exc);
         }
         i++;
         bits >>= 1;
@@ -174,6 +183,16 @@ PyContext_ClearWatcher(int watcher_id)
 }
 
 
+static inline void
+context_switched(PyThreadState *ts)
+{
+    ts->context_ver++;
+    // ts->context is used instead of context_get() because context_get() might
+    // throw if ts->context is NULL.
+    notify_context_watchers(ts, Py_CONTEXT_SWITCHED, ts->context);
+}
+
+
 static int
 _PyContext_Enter(PyThreadState *ts, PyObject *octx)
 {
@@ -190,9 +209,7 @@ _PyContext_Enter(PyThreadState *ts, PyObject *octx)
     ctx->ctx_entered = 1;
 
     ts->context = Py_NewRef(ctx);
-    ts->context_ver++;
-
-    notify_context_watchers(Py_CONTEXT_EVENT_ENTER, ctx, ts);
+    context_switched(ts);
     return 0;
 }
 
@@ -226,13 +243,11 @@ _PyContext_Exit(PyThreadState *ts, PyObject *octx)
         return -1;
     }
 
-    notify_context_watchers(Py_CONTEXT_EVENT_EXIT, ctx, ts);
     Py_SETREF(ts->context, (PyObject *)ctx->ctx_prev);
-    ts->context_ver++;
 
     ctx->ctx_prev = NULL;
     ctx->ctx_entered = 0;
-
+    context_switched(ts);
     return 0;
 }
 
