@@ -523,7 +523,7 @@ def safeimport(path, forceload=0, cache={}):
 class Doc:
 
     PYTHONDOCS = os.environ.get("PYTHONDOCS",
-                                "https://docs.python.org/%d.%d/library"
+                                "https://docs.python.org/%d.%d"
                                 % sys.version_info[:2])
 
     def document(self, object, name=None, *args):
@@ -552,29 +552,24 @@ class Doc:
 
     def getdocloc(self, object, basedir=sysconfig.get_path('stdlib')):
         """Return the location of module docs or None"""
-
         try:
-            file = inspect.getabsfile(object)
-        except TypeError:
-            file = '(built-in)'
+            from pydoc_data.topics import modules
+        except ImportError:
+            return None
 
+        loc = modules.get(object.__name__)
+        if loc is None:
+            return None
+        # It's possible at this point that we're going to try to give a link to
+        # standard library documentation for an entirely unrelated module.  The
+        # standard library name would have to be shadowed, though, so a wrong
+        # link is probably not the biggest concern.
         docloc = os.environ.get("PYTHONDOCS", self.PYTHONDOCS)
+        if docloc.startswith(('http://', 'https://')):
+            return f'{docloc.rstrip("/")}/{loc}'
+        # The location may contain a '#' anchor, which does not fit an fs path
+        return os.path.join(docloc, loc.split('#')[0])
 
-        basedir = os.path.normcase(basedir)
-        if (isinstance(object, type(os)) and
-            (object.__name__ in ('errno', 'exceptions', 'gc',
-                                 'marshal', 'posix', 'signal', 'sys',
-                                 '_thread', 'zipimport') or
-             (file.startswith(basedir) and
-              not file.startswith(os.path.join(basedir, 'site-packages')))) and
-            object.__name__ not in ('xml.etree', 'test.test_pydoc.pydoc_mod')):
-            if docloc.startswith(("http://", "https://")):
-                docloc = "{}/{}.html".format(docloc.rstrip("/"), object.__name__.lower())
-            else:
-                docloc = os.path.join(docloc, object.__name__.lower() + ".html")
-        else:
-            docloc = None
-        return docloc
 
 # -------------------------------------------- HTML documentation generator
 

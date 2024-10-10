@@ -478,8 +478,20 @@ class PydocDocTest(unittest.TestCase):
 
     def test_issue8225(self):
         # Test issue8225 to ensure no doc link appears for xml.etree
-        result, doc_loc = get_pydoc_text(xml.etree)
-        self.assertEqual(doc_loc, "", "MODULE DOCS incorrectly includes a link")
+        self.assertIsNone(
+            get_pydoc_link(xml.etree),
+            "MODULE DOCS incorrectly includes a link",
+            )
+
+    def test_gh84232_non_matching_doc_and_module_names(self):
+        turtledemo = import_helper.import_module('turtledemo')
+        self.assertIn('turtle.html', get_pydoc_link(turtledemo))
+
+    def test_gh84232_undocumented_modules(self):
+        self.assertIsNone(
+            get_pydoc_link(_pickle),
+            "MODULE DOCS incorrectly includes a link",
+            )
 
     def test_getpager_with_stdin_none(self):
         previous_stdin = sys.stdin
