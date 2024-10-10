@@ -23,7 +23,8 @@ number used as a parameter, so that the programmer can determine how and why it
 was generated in the first place.
 
 The following functions are provided by this module.  Except when explicitly
-noted otherwise, all return values are floats.
+noted otherwise, return values for module functions are either floats or
+determined from acceptable types of arguments.
 
 
 Number-theoretic and representation functions
