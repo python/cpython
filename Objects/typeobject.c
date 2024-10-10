@@ -5289,7 +5289,7 @@ get_base_by_token_recursive(PyObject *bases, void *token)
             break;
         }
     }
-    return res;
+    return res;  // Prefer to return recursively from one place
 }
 
 int
@@ -5322,6 +5322,7 @@ found:
         }
         return 1;
     }
+
     PyObject *mro = type->tp_mro;  // No lookup, following PyType_IsSubtype()
     if (mro == NULL) {
         PyTypeObject *base;
