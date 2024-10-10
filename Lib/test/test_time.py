@@ -181,8 +181,33 @@ class TimeTestCase(unittest.TestCase):
                 self.fail('conversion specifier: %r failed.' % format)
 
         self.assertRaises(TypeError, time.strftime, b'%S', tt)
-        # embedded null character
-        self.assertRaises(ValueError, time.strftime, '%S\0', tt)
+
+    def test_strftime_special(self):
+        tt = time.gmtime(self.t)
+        s1 = time.strftime('%c', tt)
+        s2 = time.strftime('%B', tt)
+        # gh-52551, gh-78662: Unicode strings should pass through strftime,
+        # independently from locale.
+        self.assertEqual(time.strftime('\U0001f40d', tt), '\U0001f40d')
+        self.assertEqual(time.strftime('\U0001f4bb%c\U0001f40d%B', tt), f'\U0001f4bb{s1}\U0001f40d{s2}')
+        self.assertEqual(time.strftime('%c\U0001f4bb%B\U0001f40d', tt), f'{s1}\U0001f4bb{s2}\U0001f40d')
+        # Lone surrogates should pass through.
+        self.assertEqual(time.strftime('\ud83d', tt), '\ud83d')
+        self.assertEqual(time.strftime('\udc0d', tt), '\udc0d')
+        self.assertEqual(time.strftime('\ud83d%c\udc0d%B', tt), f'\ud83d{s1}\udc0d{s2}')
+        self.assertEqual(time.strftime('%c\ud83d%B\udc0d', tt), f'{s1}\ud83d{s2}\udc0d')
+        self.assertEqual(time.strftime('%c\udc0d%B\ud83d', tt), f'{s1}\udc0d{s2}\ud83d')
+        # Surrogate pairs should not recombine.
+        self.assertEqual(time.strftime('\ud83d\udc0d', tt), '\ud83d\udc0d')
+        self.assertEqual(time.strftime('%c\ud83d\udc0d%B', tt), f'{s1}\ud83d\udc0d{s2}')
+        # Surrogate-escaped bytes should not recombine.
+        self.assertEqual(time.strftime('\udcf0\udc9f\udc90\udc8d', tt), '\udcf0\udc9f\udc90\udc8d')
+        self.assertEqual(time.strftime('%c\udcf0\udc9f\udc90\udc8d%B', tt), f'{s1}\udcf0\udc9f\udc90\udc8d{s2}')
+        # gh-124531: The null character should not terminate the format string.
+        self.assertEqual(time.strftime('\0', tt), '\0')
+        self.assertEqual(time.strftime('\0'*1000, tt), '\0'*1000)
+        self.assertEqual(time.strftime('\0%c\0%B', tt), f'\0{s1}\0{s2}')
+        self.assertEqual(time.strftime('%c\0%B\0', tt), f'{s1}\0{s2}\0')
 
     def _bounds_checking(self, func):
         # Make sure that strftime() checks the bounds of the various parts
