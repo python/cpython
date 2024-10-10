@@ -54,6 +54,7 @@ can be customized by end users easily.
 
    import os
    os.remove("example.ini")
+   os.remove("override.ini")
 
 
 Quick Start
