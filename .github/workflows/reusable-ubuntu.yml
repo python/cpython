@@ -1,3 +1,5 @@
+name: Reusable Ubuntu
+
 on:
   workflow_call:
     inputs:

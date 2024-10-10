@@ -1,4 +1,4 @@
-name: Docs
+name: Reusable Docs
 
 on:
   workflow_call:

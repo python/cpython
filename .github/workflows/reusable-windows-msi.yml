@@ -1,4 +1,4 @@
-name: TestsMSI
+name: Reusable Windows MSI
 
 on:
   workflow_call:
