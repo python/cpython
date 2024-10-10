@@ -258,6 +258,91 @@ _ssl__SSLSocket_compression(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
     return _ssl__SSLSocket_compression_impl(self);
 }
 
+#if defined(_ssl__SSLSocket_context_HAS_DOCSTR)
+#  define _ssl__SSLSocket_context_DOCSTR _ssl__SSLSocket_context__doc__
+#else
+#  define _ssl__SSLSocket_context_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLSOCKET_CONTEXT_GETSETDEF)
+#  undef _SSL__SSLSOCKET_CONTEXT_GETSETDEF
+#  define _SSL__SSLSOCKET_CONTEXT_GETSETDEF {"context", (getter)_ssl__SSLSocket_context_get, (setter)_ssl__SSLSocket_context_set, _ssl__SSLSocket_context_DOCSTR},
+#else
+#  define _SSL__SSLSOCKET_CONTEXT_GETSETDEF {"context", (getter)_ssl__SSLSocket_context_get, NULL, _ssl__SSLSocket_context_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLSocket_context_get_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_context_get(PySSLSocket *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_context_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_SSL__SSLSOCKET_CONTEXT_HAS_DOCSTR)
+#  define _ssl__SSLSocket_context_DOCSTR _ssl__SSLSocket_context__doc__
+#else
+#  define _ssl__SSLSocket_context_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLSOCKET_CONTEXT_GETSETDEF)
+#  undef _SSL__SSLSOCKET_CONTEXT_GETSETDEF
+#  define _SSL__SSLSOCKET_CONTEXT_GETSETDEF {"context", (getter)_ssl__SSLSocket_context_get, (setter)_ssl__SSLSocket_context_set, _ssl__SSLSocket_context_DOCSTR},
+#else
+#  define _SSL__SSLSOCKET_CONTEXT_GETSETDEF {"context", NULL, (setter)_ssl__SSLSocket_context_set, NULL},
+#endif
+
+static int
+_ssl__SSLSocket_context_set_impl(PySSLSocket *self, PyObject *value);
+
+static int
+_ssl__SSLSocket_context_set(PySSLSocket *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_context_set_impl(self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_ssl__SSLSocket_server_side__doc__,
+"Whether this is a server-side socket.");
+#define _ssl__SSLSocket_server_side_HAS_DOCSTR
+
+#if defined(_ssl__SSLSocket_server_side_HAS_DOCSTR)
+#  define _ssl__SSLSocket_server_side_DOCSTR _ssl__SSLSocket_server_side__doc__
+#else
+#  define _ssl__SSLSocket_server_side_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLSOCKET_SERVER_SIDE_GETSETDEF)
+#  undef _SSL__SSLSOCKET_SERVER_SIDE_GETSETDEF
+#  define _SSL__SSLSOCKET_SERVER_SIDE_GETSETDEF {"server_side", (getter)_ssl__SSLSocket_server_side_get, (setter)_ssl__SSLSocket_server_side_set, _ssl__SSLSocket_server_side_DOCSTR},
+#else
+#  define _SSL__SSLSOCKET_SERVER_SIDE_GETSETDEF {"server_side", (getter)_ssl__SSLSocket_server_side_get, NULL, _ssl__SSLSocket_server_side_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLSocket_server_side_get_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_server_side_get(PySSLSocket *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_server_side_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_ssl__SSLSocket_server_hostname__doc__,
 "The currently set server hostname (for SNI).");
 #define _ssl__SSLSocket_server_hostname_HAS_DOCSTR
@@ -2020,4 +2105,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=236e1d55e76c93ca input=a9049054013a1b77]*/
+/*[clinic end generated code: output=92017ea0e2f2fcba input=a9049054013a1b77]*/

@@ -2157,13 +2157,29 @@ _ssl__SSLSocket_compression_impl(PySSLSocket *self)
 #endif
 }
 
-static PySSLContext *PySSL_get_context(PySSLSocket *self, void *closure) {
-    return (PySSLContext*)Py_NewRef(self->ctx);
+/*[clinic input]
+@critical_section
+@getter
+_ssl._SSLSocket.context
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_context_get_impl(PySSLSocket *self)
+/*[clinic end generated code: output=d23e82f72f32e3d7 input=25aa82e4d9fa344a]*/
+{
+    return Py_NewRef(self->ctx);
 }
 
-static int PySSL_set_context(PySSLSocket *self, PyObject *value,
-                                   void *closure) {
+/*[clinic input]
+@critical_section
+@setter
+_ssl._SSLSocket.context
+[clinic start generated code]*/
 
+static int
+_ssl__SSLSocket_context_set_impl(PySSLSocket *self, PyObject *value)
+/*[clinic end generated code: output=6b0a6cc5cf33d9fe input=48ece77724fd9dd4]*/
+{
     if (PyObject_TypeCheck(value, self->ctx->state->PySSLContext_Type)) {
         Py_SETREF(self->ctx, (PySSLContext *)Py_NewRef(value));
         SSL_set_SSL_CTX(self->ssl, self->ctx->ctx);
@@ -2180,24 +2196,20 @@ static int PySSL_set_context(PySSLSocket *self, PyObject *value,
     return 0;
 }
 
-PyDoc_STRVAR(PySSL_set_context_doc,
-"_setter_context(ctx)\n\
-\
-This changes the context associated with the SSLSocket. This is typically\n\
-used from within a callback function set by the sni_callback\n\
-on the SSLContext to change the certificate information associated with the\n\
-SSLSocket before the cryptographic exchange handshake messages\n");
+/*[clinic input]
+@critical_section
+@getter
+_ssl._SSLSocket.server_side
 
+Whether this is a server-side socket.
+[clinic start generated code]*/
 
 static PyObject *
-PySSL_get_server_side(PySSLSocket *self, void *c)
+_ssl__SSLSocket_server_side_get_impl(PySSLSocket *self)
+/*[clinic end generated code: output=ae51e372489148e3 input=b09b320510bc7cae]*/
 {
     return PyBool_FromLong(self->socket_type == PY_SSL_SERVER);
 }
-
-PyDoc_STRVAR(PySSL_get_server_side_doc,
-"Whether this is a server-side socket.");
-
 
 /*[clinic input]
 @critical_section
@@ -2930,10 +2942,8 @@ _ssl__SSLSocket_session_reused_get_impl(PySSLSocket *self)
 }
 
 static PyGetSetDef ssl_getsetlist[] = {
-    {"context", (getter) PySSL_get_context,
-                (setter) PySSL_set_context, PySSL_set_context_doc},
-    {"server_side", (getter) PySSL_get_server_side, NULL,
-                    PySSL_get_server_side_doc},
+    _SSL__SSLSOCKET_CONTEXT_GETSETDEF
+    _SSL__SSLSOCKET_SERVER_SIDE_GETSETDEF
     _SSL__SSLSOCKET_SERVER_HOSTNAME_GETSETDEF
     _SSL__SSLSOCKET_OWNER_GETSETDEF
     _SSL__SSLSOCKET_SESSION_GETSETDEF
