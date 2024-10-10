@@ -2360,28 +2360,28 @@ _ssl_SSLSession_ticket_lifetime_hint_get(PySSLSession *self, void *Py_UNUSED(con
     return return_value;
 }
 
-#if defined(_ssl_SSLSession_session_id_HAS_DOCSTR)
-#  define _ssl_SSLSession_session_id_DOCSTR _ssl_SSLSession_session_id__doc__
+#if defined(_ssl_SSLSession_id_HAS_DOCSTR)
+#  define _ssl_SSLSession_id_DOCSTR _ssl_SSLSession_id__doc__
 #else
-#  define _ssl_SSLSession_session_id_DOCSTR NULL
+#  define _ssl_SSLSession_id_DOCSTR NULL
 #endif
-#if defined(_SSL_SSLSESSION_SESSION_ID_GETSETDEF)
-#  undef _SSL_SSLSESSION_SESSION_ID_GETSETDEF
-#  define _SSL_SSLSESSION_SESSION_ID_GETSETDEF {"session_id", (getter)_ssl_SSLSession_session_id_get, (setter)_ssl_SSLSession_session_id_set, _ssl_SSLSession_session_id_DOCSTR},
+#if defined(_SSL_SSLSESSION_ID_GETSETDEF)
+#  undef _SSL_SSLSESSION_ID_GETSETDEF
+#  define _SSL_SSLSESSION_ID_GETSETDEF {"id", (getter)_ssl_SSLSession_id_get, (setter)_ssl_SSLSession_id_set, _ssl_SSLSession_id_DOCSTR},
 #else
-#  define _SSL_SSLSESSION_SESSION_ID_GETSETDEF {"session_id", (getter)_ssl_SSLSession_session_id_get, NULL, _ssl_SSLSession_session_id_DOCSTR},
+#  define _SSL_SSLSESSION_ID_GETSETDEF {"id", (getter)_ssl_SSLSession_id_get, NULL, _ssl_SSLSession_id_DOCSTR},
 #endif
 
 static PyObject *
-_ssl_SSLSession_session_id_get_impl(PySSLSession *self);
+_ssl_SSLSession_id_get_impl(PySSLSession *self);
 
 static PyObject *
-_ssl_SSLSession_session_id_get(PySSLSession *self, void *Py_UNUSED(context))
+_ssl_SSLSession_id_get(PySSLSession *self, void *Py_UNUSED(context))
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _ssl_SSLSession_session_id_get_impl(self);
+    return_value = _ssl_SSLSession_id_get_impl(self);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -2836,4 +2836,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=139101c7caeefcae input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b4d8f9eb33016974 input=a9049054013a1b77]*/

@@ -5547,12 +5547,13 @@ _ssl_SSLSession_ticket_lifetime_hint_get_impl(PySSLSession *self)
 /*[clinic input]
 @critical_section
 @getter
-_ssl.SSLSession.session_id
+_ssl.SSLSession.id
 [clinic start generated code]*/
 
 static PyObject *
-_ssl_SSLSession_session_id_get_impl(PySSLSession *self)
-/*[clinic end generated code: output=3882d1e7a7f8bab3 input=3a867b83fdff3183]*/
+_ssl_SSLSession_id_get_impl(PySSLSession *self)
+/*[clinic end generated code: output=c532fb96b10c5adf input=e7322372cf6325dd]*/
+
 {
     const unsigned char *id;
     unsigned int len;
@@ -5580,7 +5581,7 @@ PyDoc_STRVAR(PySSLSession_get_has_ticket_doc,
 
 static PyGetSetDef PySSLSession_getsetlist[] = {
     _SSL_SSLSESSION_HAS_TICKET_GETSETDEF
-    _SSL_SSLSESSION_SESSION_ID_GETSETDEF
+    _SSL_SSLSESSION_ID_GETSETDEF
     _SSL_SSLSESSION_TICKET_LIFETIME_HINT_GETSETDEF
     _SSL_SSLSESSION_TIME_GETSETDEF
     _SSL_SSLSESSION_TIMEOUT_GETSETDEF
