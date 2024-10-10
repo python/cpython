@@ -1,6 +1,4 @@
----
-
-name: Change detection
+name: Reusable change detection
 
 on:  # yamllint disable-line rule:truthy
   workflow_call:
