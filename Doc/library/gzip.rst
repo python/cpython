@@ -184,7 +184,7 @@ The module defines the following items:
       attribute instead.
 
 
-.. function:: compress(data, compresslevel=9, *, mtime=None)
+.. function:: compress(data, compresslevel=9, *, mtime=0)
 
    Compress the *data*, returning a :class:`bytes` object containing
    the compressed data.  *compresslevel* and *mtime* have the same meaning as in
@@ -203,6 +203,8 @@ The module defines the following items:
    .. versionchanged:: 3.13
       The gzip header OS byte is guaranteed to be set to 255 when this function
       is used as was the case in 3.10 and earlier.
+   .. versionchanged:: 3.14
+      The *mtime* parameter now defaults to 0 for reproducible output.
 
 .. function:: decompress(data)
 
