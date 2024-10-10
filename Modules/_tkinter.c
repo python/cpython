@@ -143,7 +143,8 @@ _get_tcl_lib_path(void)
         struct stat stat_buf;
         int stat_return_value;
 
-        PyObject *prefix = PySys_GetObject("prefix");  // borrowed reference
+        /* gh-125235: Should not use "prefix" which might point to venv root. */
+        PyObject *prefix = PySys_GetObject("base_prefix");  // borrowed reference
         if (prefix == NULL) {
             return NULL;
         }
