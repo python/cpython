@@ -1,0 +1,2 @@
+:mod:`socket` supports :meth:`socket.socket.sendmsg`,
+:meth:`socket.socket.recvmsg` on windows.
