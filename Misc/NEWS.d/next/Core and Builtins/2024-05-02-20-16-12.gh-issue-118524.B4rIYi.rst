@@ -1,0 +1,1 @@
+Since Python 3.10, it was possible to use unions as the second argument to :func:`isinstance`. Now, :pep:`604` style unions types can also be used as match patterns.
