@@ -1080,7 +1080,7 @@ class TestMain(ReplTestCase):
 
     @force_not_colorized
     def test_exposed_globals_in_repl(self):
-        pre = "['__annotations__', '__builtins__'"
+        pre = "['__builtins__'"
         post = "'__loader__', '__name__', '__package__', '__spec__']"
         output, exit_code = self.run_repl(["sorted(dir())", "exit()"])
         if "can't use pyrepl" in output:
@@ -1196,6 +1196,18 @@ class TestMain(ReplTestCase):
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
+        env["PYTHON_BASIC_REPL"] = "1"
+        output, exit_code = self.run_repl(commands, env=env)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("False", output)
+        self.assertNotIn("True", output)
+        self.assertNotIn("Exception", output)
+        self.assertNotIn("Traceback", output)
+
+        # The site module must not load _pyrepl if PYTHON_BASIC_REPL is set
+        commands = ("import sys\n"
+                    "print('_pyrepl' in sys.modules)\n"
+                    "exit()\n")
         env["PYTHON_BASIC_REPL"] = "1"
         output, exit_code = self.run_repl(commands, env=env)
         self.assertEqual(exit_code, 0)

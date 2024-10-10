@@ -1435,6 +1435,9 @@ type_set_module(PyTypeObject *type, PyObject *value, void *context)
     PyType_Modified(type);
 
     PyObject *dict = lookup_tp_dict(type);
+    if (PyDict_Pop(dict, &_Py_ID(__firstlineno__), NULL) < 0) {
+        return -1;
+    }
     return PyDict_SetItem(dict, &_Py_ID(__module__), value);
 }
 
@@ -3929,7 +3932,7 @@ type_new_alloc(type_new_ctx *ctx)
     et->ht_token = NULL;
 
 #ifdef Py_GIL_DISABLED
-    _PyType_AssignId(et);
+    et->unique_id = _PyObject_AssignUniqueId((PyObject *)et);
 #endif
 
     return type;
@@ -5023,7 +5026,7 @@ PyType_FromMetaclass(
 
 #ifdef Py_GIL_DISABLED
     // Assign a type id to enable thread-local refcounting
-    _PyType_AssignId(res);
+    res->unique_id = _PyObject_AssignUniqueId((PyObject *)res);
 #endif
 
     /* Ready the type (which includes inheritance).
@@ -6077,7 +6080,7 @@ type_dealloc(PyObject *self)
     Py_XDECREF(et->ht_module);
     PyMem_Free(et->_ht_tpname);
 #ifdef Py_GIL_DISABLED
-    _PyType_ReleaseId(et);
+    _PyObject_ReleaseUniqueId(et->unique_id);
 #endif
     et->ht_token = NULL;
     Py_TYPE(type)->tp_free((PyObject *)type);
