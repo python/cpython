@@ -56,9 +56,9 @@ Starting in version 3.13, CPython contains two GC implementations:
   performing a collection for thread safety.
 
 Both implementations use the same basic algorithms, but operate on different
-data structures.  The
+data structures.  The the section on
 [Differences between GC implementations](#Differences-between-GC-implementations)
-section summarizes the differences between the two GC implementations.
+for the details.
 
 
 Memory layout and object structure
@@ -105,15 +105,15 @@ information associated to the GC is needed the previous fields can be accessed b
 simple type cast from the original object: `((PyGC_Head *)(the_object)-1)`.
 
 As is explained later in the
-[Optimization: reusing fields to save memory](#Optimization:-reusing-fields-to-save-memory] section,
+[Optimization: reusing fields to save memory](#Optimization-reusing-fields-to-save-memory] section,
 these two extra fields are normally used to keep doubly linked lists of all the
 objects tracked by the garbage collector (these lists are the GC generations, more on
-that in the [Optimization: generations](#Optimization:-generations) section), but
+that in the [Optimization: generations](#Optimization-generations) section), but
 they are also reused to fulfill other purposes when the full doubly linked list
 structure is not needed as a memory optimization.
 
-Doubly linked lists are used because they efficiently support most frequently required operations.  In
-general, the collection of all objects tracked by GC are partitioned into disjoint sets, each in its own
+Doubly linked lists are used because they efficiently support the most frequently required operations.  In
+general, the collection of all objects tracked by GC is partitioned into disjoint sets, each in its own
 doubly linked list.  Between collections, objects are partitioned into "generations", reflecting how
 often they've survived collection attempts.  During collections, the generation(s) being collected
 are further partitioned into, for example, sets of reachable and unreachable objects.  Doubly linked lists
@@ -381,7 +381,7 @@ collection starts. Initially only generation 0 is examined. If generation 0 has
 been examined more than ``threshold_1`` times since generation 1 has been
 examined, then generation 1 is examined as well. With generation 2,
 things are a bit more complicated; see
-[Collecting the oldest generation](#Colelcting-the-oldest-generation) for
+[Collecting the oldest generation](#Collecting-the-oldest-generation) for
 more information. These thresholds can be examined using the
 [`gc.get_threshold`](https://docs.python.org/3/library/gc.html#gc.get_threshold)
 function:
@@ -592,4 +592,5 @@ heap.
 > **Document history**
 >   
 >   Pablo Galindo Salgado - Original author
+> 
 >   Irit Katriel - Convert to Markdown
