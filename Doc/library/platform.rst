@@ -359,3 +359,15 @@ Android Platform
    <https://storage.googleapis.com/play_public/supported_devices.html>`__.
 
    .. versionadded:: 3.13
+
+
+Miscellaneous
+-------------
+
+.. function:: invalidate_caches()
+
+   Clear out the internal cache of information, such as the :func:`uname`.
+   This is typically useful when the platform's :func:`node` is changed
+   by an external process and one needs to retrieve the updated value.
+
+   .. versionadded:: 3.14
