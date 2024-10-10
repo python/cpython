@@ -879,19 +879,29 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(proc.stdout.rstrip(), 'True')
         self.assertEqual(proc.returncode, 0, proc)
 
-    @unittest.skipUnless(support.Py_GIL_DISABLED,
-                         "PYTHON_GIL and -X gil only supported in Py_GIL_DISABLED builds")
     def test_python_gil(self):
         cases = [
             # (env, opt, expected, msg)
-            (None, None, 'None', "no options set"),
-            ('0', None, '0', "PYTHON_GIL=0"),
             ('1', None, '1', "PYTHON_GIL=1"),
-            ('1', '0', '0', "-X gil=0 overrides PYTHON_GIL=1"),
-            (None, '0', '0', "-X gil=0"),
             (None, '1', '1', "-X gil=1"),
         ]
 
+        if support.Py_GIL_DISABLED:
+            cases.extend(
+                [
+                    (None, None, 'None', "no options set"),
+                    ('0', None, '0', "PYTHON_GIL=0"),
+                    ('1', '0', '0', "-X gil=0 overrides PYTHON_GIL=1"),
+                    (None, '0', '0', "-X gil=0"),
+                ]
+            )
+        else:
+            cases.extend(
+                [
+                    (None, None, '1', '-X gil=0 (unsupported by this build)'),
+                    ('1', None, '1', 'PYTHON_GIL=0 (unsupported by this build)'),
+                ]
+            )
         code = "import sys; print(sys.flags.gil)"
         environ = dict(os.environ)
 

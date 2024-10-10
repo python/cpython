@@ -8,6 +8,7 @@
 #include <Python.h>
 #include "pycore_initconfig.h"    // _PyConfig_InitCompatConfig()
 #include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_pythread.h"      // PyThread_start_joinable_thread()
 #include "pycore_import.h"        // _PyImport_FrozenBootstrap
 #include <inttypes.h>
 #include <stdio.h>
@@ -90,6 +91,14 @@ static void _testembed_Py_Initialize(void)
 {
    Py_SetProgramName(PROGRAM_NAME);
    Py_Initialize();
+}
+
+
+static int test_import_in_subinterpreters(void)
+{
+    _testembed_Py_InitializeFromConfig();
+    PyThreadState_Swap(Py_NewInterpreter());
+    return PyRun_SimpleString("import readline"); // gh-124160
 }
 
 
@@ -301,13 +310,35 @@ static int test_pre_initialization_api(void)
     _Py_EMBED_PREINIT_CHECK("Checking Py_SetProgramName\n");
     Py_SetProgramName(program);
 
+    _Py_EMBED_PREINIT_CHECK("Checking !Py_IsInitialized pre-initialization\n");
+    if (Py_IsInitialized()) {
+        fprintf(stderr, "Fatal error: initialized before initialization!\n");
+        return 1;
+    }
+
     _Py_EMBED_PREINIT_CHECK("Initializing interpreter\n");
     Py_Initialize();
+
+    _Py_EMBED_PREINIT_CHECK("Checking Py_IsInitialized post-initialization\n");
+    if (!Py_IsInitialized()) {
+        fprintf(stderr, "Fatal error: not initialized after initialization!\n");
+        return 1;
+    }
+
     _Py_EMBED_PREINIT_CHECK("Check sys module contents\n");
-    PyRun_SimpleString("import sys; "
-                       "print('sys.executable:', sys.executable)");
+    PyRun_SimpleString(
+        "import sys; "
+        "print('sys.executable:', sys.executable); "
+        "sys.stdout.flush(); "
+    );
     _Py_EMBED_PREINIT_CHECK("Finalizing interpreter\n");
     Py_Finalize();
+
+    _Py_EMBED_PREINIT_CHECK("Checking !Py_IsInitialized post-finalization\n");
+    if (Py_IsInitialized()) {
+        fprintf(stderr, "Fatal error: still initialized after finalization!\n");
+        return 1;
+    }
 
     _Py_EMBED_PREINIT_CHECK("Freeing memory allocated by Py_DecodeLocale\n");
     PyMem_RawFree(program);
@@ -354,12 +385,15 @@ static int test_pre_initialization_sys_options(void)
     _Py_EMBED_PREINIT_CHECK("Initializing interpreter\n");
     _testembed_Py_InitializeFromConfig();
     _Py_EMBED_PREINIT_CHECK("Check sys module contents\n");
-    PyRun_SimpleString("import sys; "
-                       "print('sys.warnoptions:', sys.warnoptions); "
-                       "print('sys._xoptions:', sys._xoptions); "
-                       "warnings = sys.modules['warnings']; "
-                       "latest_filters = [f[0] for f in warnings.filters[:3]]; "
-                       "print('warnings.filters[:3]:', latest_filters)");
+    PyRun_SimpleString(
+        "import sys; "
+        "print('sys.warnoptions:', sys.warnoptions); "
+        "print('sys._xoptions:', sys._xoptions); "
+        "warnings = sys.modules['warnings']; "
+        "latest_filters = [f[0] for f in warnings.filters[:3]]; "
+        "print('warnings.filters[:3]:', latest_filters); "
+        "sys.stdout.flush(); "
+    );
     _Py_EMBED_PREINIT_CHECK("Finalizing interpreter\n");
     Py_Finalize();
 
@@ -2022,6 +2056,22 @@ static int test_init_main_interpreter_settings(void)
     return 0;
 }
 
+static void do_init(void *unused)
+{
+    _testembed_Py_Initialize();
+    Py_Finalize();
+}
+
+static int test_init_in_background_thread(void)
+{
+    PyThread_handle_t handle;
+    PyThread_ident_t ident;
+    if (PyThread_start_joinable_thread(&do_init, NULL, &ident, &handle) < 0) {
+        return -1;
+    }
+    return PyThread_join_thread(handle);
+}
+
 
 #ifndef MS_WINDOWS
 #include "test_frozenmain.h"      // M_test_frozenmain
@@ -2167,6 +2217,7 @@ static struct TestCase TestCases[] = {
     {"test_repeated_init_exec", test_repeated_init_exec},
     {"test_repeated_simple_init", test_repeated_simple_init},
     {"test_forced_io_encoding", test_forced_io_encoding},
+    {"test_import_in_subinterpreters", test_import_in_subinterpreters},
     {"test_repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters},
     {"test_repeated_init_and_inittab", test_repeated_init_and_inittab},
     {"test_pre_initialization_api", test_pre_initialization_api},
@@ -2211,6 +2262,7 @@ static struct TestCase TestCases[] = {
     {"test_get_argc_argv", test_get_argc_argv},
     {"test_init_use_frozen_modules", test_init_use_frozen_modules},
     {"test_init_main_interpreter_settings", test_init_main_interpreter_settings},
+    {"test_init_in_background_thread", test_init_in_background_thread},
 
     // Audit
     {"test_open_code_hook", test_open_code_hook},

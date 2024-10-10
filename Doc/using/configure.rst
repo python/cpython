@@ -1101,7 +1101,7 @@ Remove built files.
 make distclean
 ^^^^^^^^^^^^^^
 
-In addition to the the work done by ``make clean``, remove files
+In addition to the work done by ``make clean``, remove files
 created by the configure script.  ``configure`` will have to be run
 before building again. [#]_
 

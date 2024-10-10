@@ -308,13 +308,30 @@ framelocalsproxy_dealloc(PyObject *self)
 static PyObject *
 framelocalsproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+    if (PyTuple_GET_SIZE(args) != 1) {
+        PyErr_Format(PyExc_TypeError,
+                     "FrameLocalsProxy expected 1 argument, got %zd",
+                     PyTuple_GET_SIZE(args));
+        return NULL;
+    }
+    PyObject *item = PyTuple_GET_ITEM(args, 0);
+
+    if (!PyFrame_Check(item)) {
+        PyErr_Format(PyExc_TypeError, "expect frame, not %T", item);
+        return NULL;
+    }
+    PyFrameObject *frame = (PyFrameObject*)item;
+
+    if (kwds != NULL && PyDict_Size(kwds) != 0) {
+        PyErr_SetString(PyExc_TypeError,
+                        "FrameLocalsProxy takes no keyword arguments");
+        return 0;
+    }
+
     PyFrameLocalsProxyObject *self = (PyFrameLocalsProxyObject *)type->tp_alloc(type, 0);
     if (self == NULL) {
         return NULL;
     }
-
-    PyFrameObject *frame = (PyFrameObject*)PyTuple_GET_ITEM(args, 0);
-    assert(PyFrame_Check(frame));
 
     ((PyFrameLocalsProxyObject*)self)->frame = (PyFrameObject*)Py_NewRef(frame);
 
@@ -740,7 +757,7 @@ PyTypeObject PyFrameLocalsProxy_Type = {
     .tp_as_mapping = &framelocalsproxy_as_mapping,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_setattro = PyObject_GenericSetAttr,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_MAPPING,
     .tp_traverse = framelocalsproxy_visit,
     .tp_clear = framelocalsproxy_tp_clear,
     .tp_richcompare = framelocalsproxy_richcompare,

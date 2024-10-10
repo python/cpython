@@ -1,2 +1,0 @@
-Fixed double-free when using :func:`gc.get_referents` with a freed
-:class:`asyncio.Future` iterator.

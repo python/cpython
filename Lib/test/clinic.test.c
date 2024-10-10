@@ -3935,8 +3935,8 @@ test_vararg_and_posonly
 
 
     a: object
-    *args: object
     /
+    *args: object
 
 [clinic start generated code]*/
 
@@ -3978,7 +3978,7 @@ exit:
 
 static PyObject *
 test_vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=79b75dc07decc8d6 input=08dc2bf7afbf1613]*/
+/*[clinic end generated code: output=79b75dc07decc8d6 input=9cfa748bbff09877]*/
 
 /*[clinic input]
 test_vararg
@@ -4721,7 +4721,7 @@ Test_an_metho_arg_named_arg_impl(TestObj *self, int arg)
 /*[clinic input]
 Test.__init__
     *args: object
-    /
+
 Varargs init method. For example, nargs is translated to PyTuple_GET_SIZE.
 [clinic start generated code]*/
 
@@ -4759,14 +4759,14 @@ exit:
 
 static int
 Test___init___impl(TestObj *self, PyObject *args)
-/*[clinic end generated code: output=0ed1009fe0dcf98d input=96c3ddc0cd38fc0c]*/
+/*[clinic end generated code: output=0ed1009fe0dcf98d input=2a8bd0033c9ac772]*/
 
 
 /*[clinic input]
 @classmethod
 Test.__new__
     *args: object
-    /
+
 Varargs new method. For example, nargs is translated to PyTuple_GET_SIZE.
 [clinic start generated code]*/
 
@@ -4803,7 +4803,7 @@ exit:
 
 static PyObject *
 Test_impl(PyTypeObject *type, PyObject *args)
-/*[clinic end generated code: output=8b219f6633e2a2e9 input=26a672e2e9750120]*/
+/*[clinic end generated code: output=8b219f6633e2a2e9 input=70ad829df3dd9b84]*/
 
 
 /*[clinic input]

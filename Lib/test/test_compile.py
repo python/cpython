@@ -1,6 +1,7 @@
 import contextlib
 import dis
 import io
+import itertools
 import math
 import opcode
 import os
@@ -475,6 +476,19 @@ class TestSpecifics(unittest.TestCase):
                     x = 2
                """), '<eval>', 'exec')
 
+    def test_try_except_in_while_with_chained_condition_compiles(self):
+        # see gh-124871
+        compile(textwrap.dedent("""
+            name_1, name_2, name_3 = 1, 2, 3
+            while name_3 <= name_2 > name_1:
+                try:
+                    raise
+                except:
+                    pass
+                finally:
+                    pass
+            """), '<eval>', 'exec')
+
     def test_compile_invalid_namedexpr(self):
         # gh-109351
         m = ast.Module(
@@ -871,6 +885,32 @@ class TestSpecifics(unittest.TestCase):
             list(dis.get_instructions(unused_code_at_end))[-1].opname)
 
     @support.cpython_only
+    def test_docstring(self):
+        src = textwrap.dedent("""
+            def with_docstring():
+                "docstring"
+
+            def with_fstring():
+                f"not docstring"
+
+            def with_const_expression():
+                "also" + " not docstring"
+            """)
+
+        for opt in [0, 1, 2]:
+            with self.subTest(opt=opt):
+                code = compile(src, "<test>", "exec", optimize=opt)
+                ns = {}
+                exec(code, ns)
+
+                if opt < 2:
+                    self.assertEqual(ns['with_docstring'].__doc__, "docstring")
+                else:
+                    self.assertIsNone(ns['with_docstring'].__doc__)
+                self.assertIsNone(ns['with_fstring'].__doc__)
+                self.assertIsNone(ns['with_const_expression'].__doc__)
+
+    @support.cpython_only
     def test_docstring_omitted(self):
         # See gh-115347
         src = textwrap.dedent("""
@@ -1172,7 +1212,7 @@ class TestSpecifics(unittest.TestCase):
                     x
                     in
                     y)
-        genexp_lines = [0, 2, 0]
+        genexp_lines = [0, 4, 2, 0, 4]
 
         genexp_code = return_genexp.__code__.co_consts[1]
         code_lines = self.get_code_lines(genexp_code)
@@ -1627,7 +1667,7 @@ class TestSourcePositions(unittest.TestCase):
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
             line=1, end_line=2, column=1, end_column=8, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_CONST',
-            line=1, end_line=6, column=0, end_column=32, occurrence=1)
+            line=4, end_line=4, column=7, end_column=14, occurrence=1)
 
     def test_multiline_async_generator_expression(self):
         snippet = textwrap.dedent("""\
@@ -2054,6 +2094,39 @@ class TestSourcePositions(unittest.TestCase):
                         self.assertLessEqual(end_col, code_end)
                         self.assertGreaterEqual(end_col, start_col)
                         self.assertLessEqual(end_col, code_end)
+
+    def test_return_in_with_positions(self):
+        # See gh-98442
+        def f():
+            with xyz:
+                1
+                2
+                3
+                4
+                return R
+
+        # All instructions should have locations on a single line
+        for instr in dis.get_instructions(f):
+            start_line, end_line, _, _ = instr.positions
+            self.assertEqual(start_line, end_line)
+
+        # Expect three load None instructions for the no-exception __exit__ call,
+        # and one RETURN_VALUE.
+        # They should all have the locations of the context manager ('xyz').
+
+        load_none = [instr for instr in dis.get_instructions(f) if
+                     instr.opname == 'LOAD_CONST' and instr.argval is None]
+        return_value = [instr for instr in dis.get_instructions(f) if
+                        instr.opname == 'RETURN_VALUE']
+
+        self.assertEqual(len(load_none), 3)
+        self.assertEqual(len(return_value), 1)
+        for instr in load_none + return_value:
+            start_line, end_line, start_col, end_col = instr.positions
+            self.assertEqual(start_line, f.__code__.co_firstlineno + 1)
+            self.assertEqual(end_line, f.__code__.co_firstlineno + 1)
+            self.assertEqual(start_col, 17)
+            self.assertEqual(end_col, 20)
 
 
 class TestStaticAttributes(unittest.TestCase):
@@ -2559,6 +2632,22 @@ class TestInstructionSequence(unittest.TestCase):
         seq.add_nested(nested)
         self.compare_instructions(seq, [('LOAD_CONST', 1, 1, 0, 0, 0)])
         self.compare_instructions(seq.get_nested()[0], [('LOAD_CONST', 2, 2, 0, 0, 0)])
+
+    def test_static_attributes_are_sorted(self):
+        code = (
+            'class T:\n'
+            '    def __init__(self):\n'
+            '        self.{V1} = 10\n'
+            '        self.{V2} = 10\n'
+            '    def foo(self):\n'
+            '        self.{V3} = 10\n'
+        )
+        attributes = ("a", "b", "c")
+        for perm in itertools.permutations(attributes):
+            var_names = {f'V{i + 1}': name for i, name in enumerate(perm)}
+            ns = run_code(code.format(**var_names))
+            t = ns['T']
+            self.assertEqual(t.__static_attributes__, attributes)
 
 
 if __name__ == "__main__":

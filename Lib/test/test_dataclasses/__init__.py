@@ -17,6 +17,7 @@ from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol, DefaultDict
 from typing import get_type_hints
 from collections import deque, OrderedDict, namedtuple, defaultdict
+from copy import deepcopy
 from functools import total_ordering
 
 import typing       # Needed for the string "typing.ClassVar[int]" to work as an annotation.
@@ -3175,6 +3176,48 @@ class TestFrozen(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'unhashable type'):
             hash(C({}))
 
+    def test_frozen_deepcopy_without_slots(self):
+        # see: https://github.com/python/cpython/issues/89683
+        @dataclass(frozen=True, slots=False)
+        class C:
+            s: str
+
+        c = C('hello')
+        self.assertEqual(deepcopy(c), c)
+
+    def test_frozen_deepcopy_with_slots(self):
+        # see: https://github.com/python/cpython/issues/89683
+        with self.subTest('generated __slots__'):
+            @dataclass(frozen=True, slots=True)
+            class C:
+                s: str
+
+            c = C('hello')
+            self.assertEqual(deepcopy(c), c)
+
+        with self.subTest('user-defined __slots__ and no __{get,set}state__'):
+            @dataclass(frozen=True, slots=False)
+            class C:
+                __slots__ = ('s',)
+                s: str
+
+            # with user-defined slots, __getstate__ and __setstate__ are not
+            # automatically added, hence the error
+            err = r"^cannot\ assign\ to\ field\ 's'$"
+            self.assertRaisesRegex(FrozenInstanceError, err, deepcopy, C(''))
+
+        with self.subTest('user-defined __slots__ and __{get,set}state__'):
+            @dataclass(frozen=True, slots=False)
+            class C:
+                __slots__ = ('s',)
+                __getstate__ = dataclasses._dataclass_getstate
+                __setstate__ = dataclasses._dataclass_setstate
+
+                s: str
+
+            c = C('hello')
+            self.assertEqual(deepcopy(c), c)
+
 
 class TestSlots(unittest.TestCase):
     def test_simple(self):
@@ -3663,6 +3706,38 @@ class TestSlots(unittest.TestCase):
         self.assertEqual(A.__slots__, ())
         self.assertEqual(A().__dict__, {})
         A()
+
+    @support.cpython_only
+    def test_slots_with_wrong_init_subclass(self):
+        # TODO: This test is for a kinda-buggy behavior.
+        # Ideally, it should be fixed and `__init_subclass__`
+        # should be fully supported in the future versions.
+        # See https://github.com/python/cpython/issues/91126
+        class WrongSuper:
+            def __init_subclass__(cls, arg):
+                pass
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "missing 1 required positional argument: 'arg'",
+        ):
+            @dataclass(slots=True)
+            class WithWrongSuper(WrongSuper, arg=1):
+                pass
+
+        class CorrectSuper:
+            args = []
+            def __init_subclass__(cls, arg="default"):
+                cls.args.append(arg)
+
+        @dataclass(slots=True)
+        class WithCorrectSuper(CorrectSuper):
+            pass
+
+        # __init_subclass__ is called twice: once for `WithCorrectSuper`
+        # and once for `WithCorrectSuper__slots__` new class
+        # that we create internally.
+        self.assertEqual(CorrectSuper.args, ["default", "default"])
 
 
 class TestDescriptors(unittest.TestCase):

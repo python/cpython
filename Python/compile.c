@@ -119,6 +119,7 @@ enum fblocktype { WHILE_LOOP, FOR_LOOP, TRY_EXCEPT, FINALLY_TRY, FINALLY_END,
 struct fblockinfo {
     enum fblocktype fb_type;
     jump_target_label fb_block;
+    location fb_loc;
     /* (optional) type-specific exit or cleanup block */
     jump_target_label fb_exit;
     /* (optional) additional information required for unwinding */
@@ -1433,6 +1434,7 @@ compiler_push_fblock(struct compiler *c, location loc,
     f = &c->u->u_fblock[c->u->u_nfblocks++];
     f->fb_type = t;
     f->fb_block = block_label;
+    f->fb_loc = loc;
     f->fb_exit = exit;
     f->fb_datum = datum;
     return SUCCESS;
@@ -1560,7 +1562,7 @@ compiler_unwind_fblock(struct compiler *c, location *ploc,
 
         case WITH:
         case ASYNC_WITH:
-            *ploc = LOC((stmt_ty)info->fb_datum);
+            *ploc = info->fb_loc;
             ADDOP(c, *ploc, POP_BLOCK);
             if (preserve_tos) {
                 ADDOP_I(c, *ploc, SWAP, 2);
@@ -2542,7 +2544,18 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
         return ERROR;
     }
     assert(c->u->u_static_attributes);
-    PyObject *static_attributes = PySequence_Tuple(c->u->u_static_attributes);
+    PyObject *static_attributes_unsorted = PySequence_List(c->u->u_static_attributes);
+    if (static_attributes_unsorted == NULL) {
+        compiler_exit_scope(c);
+        return ERROR;
+    }
+    if (PyList_Sort(static_attributes_unsorted) != 0) {
+        compiler_exit_scope(c);
+        Py_DECREF(static_attributes_unsorted);
+        return ERROR;
+    }
+    PyObject *static_attributes = PySequence_Tuple(static_attributes_unsorted);
+    Py_DECREF(static_attributes_unsorted);
     if (static_attributes == NULL) {
         compiler_exit_scope(c);
         return ERROR;
@@ -3160,7 +3173,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     NEW_JUMP_TARGET_LABEL(c, end);
 
     VISIT(c, expr, s->v.AsyncFor.iter);
-    ADDOP(c, loc, GET_AITER);
+    ADDOP(c, LOC(s->v.AsyncFor.iter), GET_AITER);
 
     USE_LABEL(c, start);
     RETURN_IF_ERROR(compiler_push_fblock(c, loc, FOR_LOOP, start, end, NULL));
@@ -5384,14 +5397,15 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
             }
             if (IS_LABEL(start)) {
                 VISIT(c, expr, gen->iter);
-                ADDOP(c, loc, GET_ITER);
+                ADDOP(c, LOC(gen->iter), GET_ITER);
             }
         }
     }
+
     if (IS_LABEL(start)) {
         depth++;
         USE_LABEL(c, start);
-        ADDOP_JUMP(c, loc, FOR_ITER, anchor);
+        ADDOP_JUMP(c, LOC(gen->iter), FOR_ITER, anchor);
     }
     VISIT(c, expr, gen->target);
 
@@ -5483,7 +5497,7 @@ compiler_async_comprehension_generator(struct compiler *c, location loc,
         else {
             /* Sub-iter - calculate on the fly */
             VISIT(c, expr, gen->iter);
-            ADDOP(c, loc, GET_AITER);
+            ADDOP(c, LOC(gen->iter), GET_AITER);
         }
     }
 
@@ -5773,15 +5787,14 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
 }
 
 static inline int
-compiler_comprehension_iter(struct compiler *c, location loc,
-                            comprehension_ty comp)
+compiler_comprehension_iter(struct compiler *c, comprehension_ty comp)
 {
     VISIT(c, expr, comp->iter);
     if (comp->is_async) {
-        ADDOP(c, loc, GET_AITER);
+        ADDOP(c, LOC(comp->iter), GET_AITER);
     }
     else {
-        ADDOP(c, loc, GET_ITER);
+        ADDOP(c, LOC(comp->iter), GET_ITER);
     }
     return SUCCESS;
 }
@@ -5807,7 +5820,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 
     outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
     if (is_inlined) {
-        if (compiler_comprehension_iter(c, loc, outermost)) {
+        if (compiler_comprehension_iter(c, outermost)) {
             goto error;
         }
         if (push_inlined_comprehension_state(c, loc, entry, &inline_state)) {
@@ -5893,7 +5906,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
     Py_CLEAR(co);
 
-    if (compiler_comprehension_iter(c, loc, outermost)) {
+    if (compiler_comprehension_iter(c, outermost)) {
         goto error;
     }
 
@@ -6036,7 +6049,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 
     /* Evaluate EXPR */
     VISIT(c, expr, item->context_expr);
-
+    loc = LOC(item->context_expr);
     ADDOP(c, loc, BEFORE_ASYNC_WITH);
     ADDOP_I(c, loc, GET_AWAITABLE, 1);
     ADDOP_LOAD_CONST(c, loc, Py_None);
@@ -6134,7 +6147,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     /* Evaluate EXPR */
     VISIT(c, expr, item->context_expr);
     /* Will push bound __exit__ */
-    location loc = LOC(s);
+    location loc = LOC(item->context_expr);
     ADDOP(c, loc, BEFORE_WITH);
     ADDOP_JUMP(c, loc, SETUP_WITH, final);
 
@@ -6167,7 +6180,6 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     /* For successful outcome:
      * call __exit__(None, None, None)
      */
-    loc = LOC(s);
     RETURN_IF_ERROR(compiler_call_exit_with_nones(c, loc));
     ADDOP(c, loc, POP_TOP);
     ADDOP_JUMP(c, loc, JUMP, exit);
@@ -7478,7 +7490,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
             ADDOP(c, LOC(m->pattern), POP_TOP);
         }
         VISIT_SEQ(c, stmt, m->body);
-        ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, end);
+        ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
         // If the pattern fails to match, we want the line number of the
         // cleanup to be associated with the failed pattern, not the last line
         // of the body
