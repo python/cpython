@@ -2279,6 +2279,33 @@ _ssl_MemoryBIO_write_eof(PySSLMemoryBIO *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
+#if defined(_ssl_SSLSession_time_HAS_DOCSTR)
+#  define _ssl_SSLSession_time_DOCSTR _ssl_SSLSession_time__doc__
+#else
+#  define _ssl_SSLSession_time_DOCSTR NULL
+#endif
+#if defined(_SSL_SSLSESSION_TIME_GETSETDEF)
+#  undef _SSL_SSLSESSION_TIME_GETSETDEF
+#  define _SSL_SSLSESSION_TIME_GETSETDEF {"time", (getter)_ssl_SSLSession_time_get, (setter)_ssl_SSLSession_time_set, _ssl_SSLSession_time_DOCSTR},
+#else
+#  define _SSL_SSLSESSION_TIME_GETSETDEF {"time", (getter)_ssl_SSLSession_time_get, NULL, _ssl_SSLSession_time_DOCSTR},
+#endif
+
+static PyObject *
+_ssl_SSLSession_time_get_impl(PySSLSession *self);
+
+static PyObject *
+_ssl_SSLSession_time_get(PySSLSession *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl_SSLSession_time_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 #if defined(_ssl_SSLSession_ticket_lifetime_hint_HAS_DOCSTR)
 #  define _ssl_SSLSession_ticket_lifetime_hint_DOCSTR _ssl_SSLSession_ticket_lifetime_hint__doc__
 #else
@@ -2782,4 +2809,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=f09b15ce11130fd6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6a8338feec145d07 input=a9049054013a1b77]*/

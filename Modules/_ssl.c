@@ -5498,18 +5498,22 @@ PySSLSession_clear(PySSLSession *self)
 }
 
 
+/*[clinic input]
+@critical_section
+@getter
+_ssl.SSLSession.time
+[clinic start generated code]*/
+
 static PyObject *
-PySSLSession_get_time(PySSLSession *self, void *closure) {
+_ssl_SSLSession_time_get_impl(PySSLSession *self)
+/*[clinic end generated code: output=4b887b9299de9be4 input=8d1e4afd09103279]*/
+{
 #if OPENSSL_VERSION_NUMBER >= 0x30300000L
     return _PyLong_FromTime_t(SSL_SESSION_get_time_ex(self->session));
 #else
     return PyLong_FromLong(SSL_SESSION_get_time(self->session));
 #endif
 }
-
-PyDoc_STRVAR(PySSLSession_get_time_doc,
-"Session creation time (seconds since epoch).");
-
 
 static PyObject *
 PySSLSession_get_timeout(PySSLSession *self, void *closure) {
@@ -5520,7 +5524,6 @@ PySSLSession_get_timeout(PySSLSession *self, void *closure) {
 
 PyDoc_STRVAR(PySSLSession_get_timeout_doc,
 "Session timeout (delta in seconds).");
-
 
 /*[clinic input]
 @critical_section
@@ -5574,8 +5577,7 @@ static PyGetSetDef PySSLSession_getsetlist[] = {
     _SSL_SSLSESSION_HAS_TICKET_GETSETDEF
     _SSL_SSLSESSION_SESSION_ID_GETSETDEF
     _SSL_SSLSESSION_TICKET_LIFETIME_HINT_GETSETDEF
-    {"time", (getter) PySSLSession_get_time, NULL,
-              PySSLSession_get_time_doc},
+    _SSL_SSLSESSION_TIME_GETSETDEF
     {"timeout", (getter) PySSLSession_get_timeout, NULL,
               PySSLSession_get_timeout_doc},
     {NULL},            /* sentinel */
