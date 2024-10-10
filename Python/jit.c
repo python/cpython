@@ -462,6 +462,7 @@ combine_symbol_mask(const symbol_mask src, symbol_mask dest)
 }
 
 
+
 // Compiles executor in-place. Don't forget to call _PyJIT_Free later!
 int
 _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], size_t length)
