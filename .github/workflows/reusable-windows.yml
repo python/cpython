@@ -1,4 +1,4 @@
-name: Windows
+name: Reusable Windows
 
 on:
   workflow_call:

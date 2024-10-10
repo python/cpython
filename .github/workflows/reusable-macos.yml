@@ -1,4 +1,4 @@
-name: macOS
+name: Reusable macOS
 
 on:
   workflow_call:
