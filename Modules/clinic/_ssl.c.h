@@ -1044,6 +1044,60 @@ _ssl__SSLContext_num_tickets_set(PySSLContext *self, PyObject *value, void *Py_U
     return return_value;
 }
 
+#if defined(_ssl__SSLContext_options_HAS_DOCSTR)
+#  define _ssl__SSLContext_options_DOCSTR _ssl__SSLContext_options__doc__
+#else
+#  define _ssl__SSLContext_options_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_OPTIONS_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_OPTIONS_GETSETDEF
+#  define _SSL__SSLCONTEXT_OPTIONS_GETSETDEF {"options", (getter)_ssl__SSLContext_options_get, (setter)_ssl__SSLContext_options_set, _ssl__SSLContext_options_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_OPTIONS_GETSETDEF {"options", (getter)_ssl__SSLContext_options_get, NULL, _ssl__SSLContext_options_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLContext_options_get_impl(PySSLContext *self);
+
+static PyObject *
+_ssl__SSLContext_options_get(PySSLContext *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_options_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_SSL__SSLCONTEXT_OPTIONS_HAS_DOCSTR)
+#  define _ssl__SSLContext_options_DOCSTR _ssl__SSLContext_options__doc__
+#else
+#  define _ssl__SSLContext_options_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_OPTIONS_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_OPTIONS_GETSETDEF
+#  define _SSL__SSLCONTEXT_OPTIONS_GETSETDEF {"options", (getter)_ssl__SSLContext_options_get, (setter)_ssl__SSLContext_options_set, _ssl__SSLContext_options_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_OPTIONS_GETSETDEF {"options", NULL, (setter)_ssl__SSLContext_options_set, NULL},
+#endif
+
+static int
+_ssl__SSLContext_options_set_impl(PySSLContext *self, PyObject *value);
+
+static int
+_ssl__SSLContext_options_set(PySSLContext *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_options_set_impl(self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 #if defined(_ssl__SSLContext__host_flags_HAS_DOCSTR)
 #  define _ssl__SSLContext__host_flags_DOCSTR _ssl__SSLContext__host_flags__doc__
 #else
@@ -2431,4 +2485,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=9d61586e3ca7fcfd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4f8d4d84a6974ef2 input=a9049054013a1b77]*/

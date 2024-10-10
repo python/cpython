@@ -3684,16 +3684,30 @@ get_security_level(PySSLContext *self, void *c)
 }
 PyDoc_STRVAR(PySSLContext_security_level_doc, "The current security level");
 
+/*[clinic input]
+@critical_section
+@getter
+_ssl._SSLContext.options
+[clinic start generated code]*/
+
 static PyObject *
-get_options(PySSLContext *self, void *c)
+_ssl__SSLContext_options_get_impl(PySSLContext *self)
+/*[clinic end generated code: output=3dfa6a74837f525b input=f5a2805c7cda6f25]*/
 {
     uint64_t options = SSL_CTX_get_options(self->ctx);
     Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(options));
     return PyLong_FromUnsignedLongLong(options);
 }
 
+/*[clinic input]
+@critical_section
+@setter
+_ssl._SSLContext.options
+[clinic start generated code]*/
+
 static int
-set_options(PySSLContext *self, PyObject *arg, void *c)
+_ssl__SSLContext_options_set_impl(PySSLContext *self, PyObject *value)
+/*[clinic end generated code: output=92ca34731ece5dbb input=2b94bf789e9ae5dd]*/
 {
     PyObject *new_opts_obj;
     unsigned long long new_opts_arg;
@@ -3703,7 +3717,7 @@ set_options(PySSLContext *self, PyObject *arg, void *c)
         SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2 | SSL_OP_NO_TLSv1_3
     );
 
-    if (!PyArg_Parse(arg, "O!", &PyLong_Type, &new_opts_obj)) {
+    if (!PyArg_Parse(value, "O!", &PyLong_Type, &new_opts_obj)) {
         return -1;
     }
     new_opts_arg = PyLong_AsUnsignedLongLong(new_opts_obj);
@@ -5072,8 +5086,7 @@ static PyGetSetDef context_getsetlist[] = {
 #if defined(TLS1_3_VERSION) && !defined(OPENSSL_NO_TLS1_3)
     _SSL__SSLCONTEXT_NUM_TICKETS_GETSETDEF
 #endif
-    {"options", (getter) get_options,
-                (setter) set_options, NULL},
+    _SSL__SSLCONTEXT_OPTIONS_GETSETDEF
     {"post_handshake_auth", (getter) get_post_handshake_auth,
 #if defined(PySSL_HAVE_POST_HS_AUTH)
                             (setter) set_post_handshake_auth,
