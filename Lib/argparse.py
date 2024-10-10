@@ -1266,6 +1266,12 @@ class FileType(object):
     """
 
     def __init__(self, mode='r', bufsize=-1, encoding=None, errors=None):
+        import warnings
+        warnings.warn(
+            "FileType is deprecated. Simply open files after parsing arguments.",
+            category=PendingDeprecationWarning,
+            stacklevel=2
+        )
         self._mode = mode
         self._bufsize = bufsize
         self._encoding = encoding
