@@ -139,6 +139,10 @@ gen_dealloc(PyObject *self)
 {
     PyGenObject *gen = _PyGen_CAST(self);
 
+    /* A borrowed reference used only by coroutines and async
+       frameworks. Just set it to NULL. */
+    gen->gi_task = NULL;
+
     _PyObject_GC_UNTRACK(gen);
 
     if (gen->gi_weakreflist != NULL)
@@ -914,6 +918,7 @@ make_gen(PyTypeObject *type, PyFunctionObject *func)
     gen->gi_name = Py_NewRef(func->func_name);
     assert(func->func_qualname != NULL);
     gen->gi_qualname = Py_NewRef(func->func_qualname);
+    gen->gi_task = NULL;
     _PyObject_GC_TRACK(gen);
     return (PyObject *)gen;
 }
@@ -990,6 +995,7 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
     frame->owner = FRAME_OWNED_BY_GENERATOR;
     assert(PyObject_GC_IsTracked((PyObject *)f));
     Py_DECREF(f);
+    gen->gi_task = NULL;
     gen->gi_weakreflist = NULL;
     gen->gi_exc_state.exc_value = NULL;
     gen->gi_exc_state.previous_item = NULL;
@@ -1003,6 +1009,13 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
         gen->gi_qualname = Py_NewRef(_PyGen_GetCode(gen)->co_qualname);
     _PyObject_GC_TRACK(gen);
     return (PyObject *)gen;
+}
+
+void
+_PyCoro_SetTask(PyObject *coro, PyObject *task)
+{
+    assert(PyCoro_CheckExact(coro));
+    ((PyCoroObject *)coro)->cr_task = task;
 }
 
 PyObject *
@@ -1150,7 +1163,6 @@ cr_getcode(PyObject *coro, void *Py_UNUSED(ignored))
 {
     return _gen_getcode(_PyGen_CAST(coro), "cr_code");
 }
-
 
 static PyGetSetDef coro_getsetlist[] = {
     {"__name__", gen_get_name, gen_set_name,
@@ -1390,6 +1402,8 @@ PyCoro_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
     if (!coro) {
         return NULL;
     }
+
+    ((PyCoroObject *)coro)->cr_task = NULL;
 
     PyThreadState *tstate = _PyThreadState_GET();
     int origin_depth = tstate->coroutine_origin_tracking_depth;
