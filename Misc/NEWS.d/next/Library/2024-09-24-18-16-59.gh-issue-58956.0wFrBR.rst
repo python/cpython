@@ -1,0 +1,1 @@
+Setting a :mod:`pdb` breakpoint on a function that's already in the call stack will enable the trace function on that frame so the breakpoint would trigger.
