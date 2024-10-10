@@ -37,18 +37,19 @@ Module Objects
       single: __package__ (module attribute)
       single: __loader__ (module attribute)
 
-   Return a new module object with the :attr:`__name__` attribute set to *name*.
-   The module's :attr:`__name__`, :attr:`__doc__`, :attr:`__package__`, and
-   :attr:`__loader__` attributes are filled in (all but :attr:`__name__` are set
-   to ``None``); the caller is responsible for providing a :attr:`__file__`
-   attribute.
+   Return a new module object with :attr:`module.__name__` set to *name*.
+   The module's :attr:`!__name__`, :attr:`~module.__doc__`,
+   :attr:`~module.__package__` and :attr:`~module.__loader__` attributes are
+   filled in (all but :attr:`!__name__` are set to ``None``). The caller is
+   responsible for setting a :attr:`~module.__file__` attribute.
 
    Return ``NULL`` with an exception set on error.
 
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.4
-      :attr:`__package__` and :attr:`__loader__` are set to ``None``.
+      :attr:`~module.__package__` and :attr:`~module.__loader__` are now set to
+      ``None``.
 
 
 .. c:function:: PyObject* PyModule_New(const char *name)
@@ -77,8 +78,9 @@ Module Objects
       single: __name__ (module attribute)
       single: SystemError (built-in exception)
 
-   Return *module*'s :attr:`__name__` value.  If the module does not provide one,
-   or if it is not a string, :exc:`SystemError` is raised and ``NULL`` is returned.
+   Return *module*'s :attr:`~module.__name__` value.  If the module does not
+   provide one, or if it is not a string, :exc:`SystemError` is raised and
+   ``NULL`` is returned.
 
    .. versionadded:: 3.3
 
@@ -108,8 +110,8 @@ Module Objects
       single: SystemError (built-in exception)
 
    Return the name of the file from which *module* was loaded using *module*'s
-   :attr:`__file__` attribute.  If this is not defined, or if it is not a
-   unicode string, raise :exc:`SystemError` and return ``NULL``; otherwise return
+   :attr:`~module.__file__` attribute.  If this is not defined, or if it is not a
+   string, raise :exc:`SystemError` and return ``NULL``; otherwise return
    a reference to a Unicode object.
 
    .. versionadded:: 3.2
@@ -526,6 +528,14 @@ state:
    Note that ``Py_XDECREF()`` should be used instead of ``Py_DECREF()`` in
    this case, since *obj* can be ``NULL``.
 
+   The number of different *name* strings passed to this function
+   should be kept small, usually by only using statically allocated strings
+   as *name*.
+   For names that aren't known at compile time, prefer calling
+   :c:func:`PyUnicode_FromString` and :c:func:`PyObject_SetAttr` directly.
+   For more details, see :c:func:`PyUnicode_InternFromString`, which may be
+   used internally to create a key object.
+
    .. versionadded:: 3.10
 
 
@@ -590,6 +600,9 @@ state:
    used from the module's initialization function.
    Return ``-1`` with an exception set on error, ``0`` on success.
 
+   This is a convenience function that calls :c:func:`PyLong_FromLong` and
+   :c:func:`PyModule_AddObjectRef`; see their documentation for details.
+
 
 .. c:function:: int PyModule_AddStringConstant(PyObject *module, const char *name, const char *value)
 
@@ -597,6 +610,10 @@ state:
    used from the module's initialization function.  The string *value* must be
    ``NULL``-terminated.
    Return ``-1`` with an exception set on error, ``0`` on success.
+
+   This is a convenience function that calls
+   :c:func:`PyUnicode_InternFromString` and :c:func:`PyModule_AddObjectRef`;
+   see their documentation for details.
 
 
 .. c:macro:: PyModule_AddIntMacro(module, macro)

@@ -353,7 +353,7 @@ module:
 
 The new functions return the number of nanoseconds as an integer value.
 
-`Measurements <https://peps.python.org/pep-0564/#annex-clocks-resolution-in-python>`_
+:pep:`Measurements <0564#annex-clocks-resolution-in-python>`
 show that on Linux and Windows the resolution of :func:`time.time_ns` is
 approximately 3 times better than that of :func:`time.time`.
 

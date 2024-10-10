@@ -600,7 +600,7 @@ class IdleConf:
         """
         # TODO: = dict(sorted([(v-event, keys), ...]))?
         keyBindings={
-            # vitual-event: list of key events.
+            # virtual-event: list of key events.
             '<<copy>>': ['<Control-c>', '<Control-C>'],
             '<<cut>>': ['<Control-x>', '<Control-X>'],
             '<<paste>>': ['<Control-v>', '<Control-V>'],

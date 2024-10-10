@@ -108,6 +108,42 @@ class ImplicitContextFilesTests(SiteDir, unittest.TestCase):
         _path.build(spec, self.site_dir)
         assert importlib.import_module('somepkg').val == 'resources are the best'
 
+    def test_implicit_files_zip_submodule(self):
+        """
+        Special test for gh-121735 for Python 3.12.
+        """
+        import os
+        import zipfile
+
+        def create_zip_from_directory(source_dir, zip_filename):
+            with zipfile.ZipFile(zip_filename, 'w') as zipf:
+                for root, _, files in os.walk(source_dir):
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        # Ensure files are at the root
+                        arcname = os.path.relpath(file_path, source_dir)
+                        zipf.write(file_path, arcname)
+
+        set_val = textwrap.dedent(
+            """
+            import importlib.resources as res
+            val = res.files().joinpath('res.txt').read_text(encoding='utf-8')
+            """
+        )
+        spec = {
+            'somepkg': {
+                '__init__.py': set_val,
+                'submod.py': set_val,
+                'res.txt': 'resources are the best',
+            },
+        }
+        build_dir = self.fixtures.enter_context(os_helper.temp_dir())
+        _path.build(spec, build_dir)
+        zip_file = os.path.join(self.site_dir, 'thepkg.zip')
+        create_zip_from_directory(build_dir, zip_file)
+        self.fixtures.enter_context(import_helper.DirsOnSysPath(zip_file))
+        assert importlib.import_module('somepkg.submod').val == 'resources are the best'
+
 
 if __name__ == '__main__':
     unittest.main()
