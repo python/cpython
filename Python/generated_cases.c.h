@@ -7840,9 +7840,7 @@
             DEOPT_IF(!PyLong_CheckExact(value_o), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
             if (_PyLong_IsZero((PyLongObject *)value_o)) {
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                assert(_Py_IsImmortalLoose(value_o));
-                stack_pointer = _PyFrame_GetStackPointer(frame);
+                assert(_Py_IsImmortal(value_o));
                 res = PyStackRef_False;
             }
             else {
@@ -7904,9 +7902,7 @@
             DEOPT_IF(!PyUnicode_CheckExact(value_o), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
             if (value_o == &_Py_STR(empty)) {
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                assert(_Py_IsImmortalLoose(value_o));
-                stack_pointer = _PyFrame_GetStackPointer(frame);
+                assert(_Py_IsImmortal(value_o));
                 res = PyStackRef_False;
             }
             else {
