@@ -487,8 +487,8 @@ class TestRawDataManager(TestEmailBase):
                 policy = self.policy.clone(max_line_length=max_line_length)
                 m = self.message(policy=policy)
                 content = ("áàäéèęöőáàäéèęöőáàäéèęöőáàäéèęöő"
-                        "áàäéèęöőáàäéèęöőáàäéèęöőáàäéèęöő"
-                        "áàäéèęöőáàäéèęöőáàäéèęöőáàäéèęöő.\n")
+                           "áàäéèęöőáàäéèęöőáàäéèęöőáàäéèęöő"
+                           "áàäéèęöőáàäéèęöőáàäéèęöőáàäéèęöő.\n")
                 raw_data_manager.set_content(m, content)
                 self.assertEqual(bytes(m), (textwrap.dedent("""\
                     Content-Type: text/plain; charset="utf-8"
