@@ -1,0 +1,1 @@
+Fix error report about ambiguous option in :mod:`argparse`.
