@@ -2198,16 +2198,23 @@ PySSL_get_server_side(PySSLSocket *self, void *c)
 PyDoc_STRVAR(PySSL_get_server_side_doc,
 "Whether this is a server-side socket.");
 
+
+/*[clinic input]
+@critical_section
+@getter
+_ssl._SSLSocket.server_hostname
+
+The currently set server hostname (for SNI).
+[clinic start generated code]*/
+
 static PyObject *
-PySSL_get_server_hostname(PySSLSocket *self, void *c)
+_ssl__SSLSocket_server_hostname_get_impl(PySSLSocket *self)
+/*[clinic end generated code: output=1f40ea5a076de8e7 input=55d12a1dc6634b08]*/
 {
     if (self->server_hostname == NULL)
         Py_RETURN_NONE;
     return Py_NewRef(self->server_hostname);
 }
-
-PyDoc_STRVAR(PySSL_get_server_hostname_doc,
-"The currently set server hostname (for SNI).");
 
 /*[clinic input]
 @critical_section
@@ -2927,8 +2934,7 @@ static PyGetSetDef ssl_getsetlist[] = {
                 (setter) PySSL_set_context, PySSL_set_context_doc},
     {"server_side", (getter) PySSL_get_server_side, NULL,
                     PySSL_get_server_side_doc},
-    {"server_hostname", (getter) PySSL_get_server_hostname, NULL,
-                        PySSL_get_server_hostname_doc},
+    _SSL__SSLSOCKET_SERVER_HOSTNAME_GETSETDEF
     _SSL__SSLSOCKET_OWNER_GETSETDEF
     _SSL__SSLSOCKET_SESSION_GETSETDEF
     _SSL__SSLSOCKET_SESSION_REUSED_GETSETDEF
