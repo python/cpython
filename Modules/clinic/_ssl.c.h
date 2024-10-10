@@ -2279,6 +2279,33 @@ _ssl_MemoryBIO_write_eof(PySSLMemoryBIO *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
+#if defined(_ssl_SSLSession_has_ticket_HAS_DOCSTR)
+#  define _ssl_SSLSession_has_ticket_DOCSTR _ssl_SSLSession_has_ticket__doc__
+#else
+#  define _ssl_SSLSession_has_ticket_DOCSTR NULL
+#endif
+#if defined(_SSL_SSLSESSION_HAS_TICKET_GETSETDEF)
+#  undef _SSL_SSLSESSION_HAS_TICKET_GETSETDEF
+#  define _SSL_SSLSESSION_HAS_TICKET_GETSETDEF {"has_ticket", (getter)_ssl_SSLSession_has_ticket_get, (setter)_ssl_SSLSession_has_ticket_set, _ssl_SSLSession_has_ticket_DOCSTR},
+#else
+#  define _SSL_SSLSESSION_HAS_TICKET_GETSETDEF {"has_ticket", (getter)_ssl_SSLSession_has_ticket_get, NULL, _ssl_SSLSession_has_ticket_DOCSTR},
+#endif
+
+static PyObject *
+_ssl_SSLSession_has_ticket_get_impl(PySSLSession *self);
+
+static PyObject *
+_ssl_SSLSession_has_ticket_get(PySSLSession *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl_SSLSession_has_ticket_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_ssl_RAND_add__doc__,
 "RAND_add($module, string, entropy, /)\n"
 "--\n"
@@ -2701,4 +2728,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=a006967d9642ce21 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3e62ae8f7ba3d7f9 input=a9049054013a1b77]*/

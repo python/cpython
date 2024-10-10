@@ -5544,8 +5544,16 @@ PyDoc_STRVAR(PySSLSession_get_session_id_doc,
 "Session id");
 
 
+/*[clinic input]
+@critical_section
+@getter
+_ssl.SSLSession.has_ticket
+[clinic start generated code]*/
+
 static PyObject *
-PySSLSession_get_has_ticket(PySSLSession *self, void *closure) {
+_ssl_SSLSession_has_ticket_get_impl(PySSLSession *self)
+/*[clinic end generated code: output=aa3ccfc40b10b96d input=1a48ae8955fa9601]*/
+{
     int res = SSL_SESSION_has_ticket(self->session);
     return res ? Py_True : Py_False;
 }
@@ -5555,8 +5563,7 @@ PyDoc_STRVAR(PySSLSession_get_has_ticket_doc,
 
 
 static PyGetSetDef PySSLSession_getsetlist[] = {
-    {"has_ticket", (getter) PySSLSession_get_has_ticket, NULL,
-              PySSLSession_get_has_ticket_doc},
+    _SSL_SSLSESSION_HAS_TICKET_GETSETDEF
     {"id",   (getter) PySSLSession_get_session_id, NULL,
               PySSLSession_get_session_id_doc},
     {"ticket_lifetime_hint", (getter) PySSLSession_get_ticket_lifetime_hint,
