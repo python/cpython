@@ -402,7 +402,9 @@
             }
             STAT_INC(TO_BOOL, hit);
             if (_PyLong_IsZero((PyLongObject *)value_o)) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 assert(_Py_IsImmortalLoose(value_o));
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 res = PyStackRef_False;
             }
             else {
@@ -455,7 +457,9 @@
             }
             STAT_INC(TO_BOOL, hit);
             if (value_o == &_Py_STR(empty)) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 assert(_Py_IsImmortalLoose(value_o));
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 res = PyStackRef_False;
             }
             else {
