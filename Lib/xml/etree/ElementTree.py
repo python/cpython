@@ -1200,6 +1200,15 @@ def parse(source, parser=None):
     Return an ElementTree instance.
 
     """
+    import warnings
+
+    if (hasattr(source, 'encoding') and
+        source.encoding == 'ISO-8859-1' and
+        source.mode == 'r'):
+        warnings.warn(
+            "For file objects containing XML data"
+            "with non-ASCII and non-UTF-8 encoding (e.g. ISO 8859-1), "
+            "the file must have been opened in binary mode.", category=RuntimeWarning)
     tree = ElementTree()
     tree.parse(source, parser)
     return tree

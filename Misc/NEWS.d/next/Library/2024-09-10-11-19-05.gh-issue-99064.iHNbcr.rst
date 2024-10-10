@@ -1,0 +1,2 @@
+added a warning in the :mod:`xml.etree.ElementTree` :func:`xml.etree.ElementTree.parse` for
+non-UTF8 files opened in ``r`` mode.
