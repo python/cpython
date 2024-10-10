@@ -3628,19 +3628,37 @@ _ssl__SSLContext_maximum_version_set_impl(PySSLContext *self,
     return set_min_max_proto_version(self, value, 1);
 }
 
-#if defined(TLS1_3_VERSION) && !defined(OPENSSL_NO_TLS1_3)
+/*[clinic input]
+@critical_section
+@getter
+_ssl._SSLContext.num_tickets
+[clinic start generated code]*/
+
 static PyObject *
-get_num_tickets(PySSLContext *self, void *c)
+_ssl__SSLContext_num_tickets_get_impl(PySSLContext *self)
+/*[clinic end generated code: output=3d06d016318846c9 input=1dee26d75163c073]*/
 {
+    // Clinic seems to be misbehaving when the comment is wrapped with in directive
+#if defined(TLS1_3_VERSION) && !defined(OPENSSL_NO_TLS1_3)
     PyObject *res = PyLong_FromSize_t(SSL_CTX_get_num_tickets(self->ctx));
     return res;
+#else
+    return 0;
+#endif
 }
 
+/*[clinic input]
+@critical_section
+@setter
+_ssl._SSLContext.num_tickets
+[clinic start generated code]*/
+
 static int
-set_num_tickets(PySSLContext *self, PyObject *arg, void *c)
+_ssl__SSLContext_num_tickets_set_impl(PySSLContext *self, PyObject *value)
+/*[clinic end generated code: output=ced81b46f3beab09 input=6ef8067ac55607e7]*/
 {
     long num;
-    if (!PyArg_Parse(arg, "l", &num))
+    if (!PyArg_Parse(value, "l", &num))
         return -1;
     if (num < 0) {
         PyErr_SetString(PyExc_ValueError, "value must be non-negative");
@@ -3657,10 +3675,6 @@ set_num_tickets(PySSLContext *self, PyObject *arg, void *c)
     }
     return 0;
 }
-
-PyDoc_STRVAR(PySSLContext_num_tickets_doc,
-"Control the number of TLSv1.3 session tickets");
-#endif /* defined(TLS1_3_VERSION) */
 
 static PyObject *
 get_security_level(PySSLContext *self, void *c)
@@ -5056,8 +5070,7 @@ static PyGetSetDef context_getsetlist[] = {
                       (setter) _PySSLContext_set_msg_callback, NULL},
     _SSL__SSLCONTEXT_SNI_CALLBACK_GETSETDEF
 #if defined(TLS1_3_VERSION) && !defined(OPENSSL_NO_TLS1_3)
-    {"num_tickets", (getter) get_num_tickets,
-                    (setter) set_num_tickets, PySSLContext_num_tickets_doc},
+    _SSL__SSLCONTEXT_NUM_TICKETS_GETSETDEF
 #endif
     {"options", (getter) get_options,
                 (setter) set_options, NULL},

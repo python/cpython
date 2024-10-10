@@ -990,6 +990,60 @@ _ssl__SSLContext_maximum_version_set(PySSLContext *self, PyObject *value, void *
     return return_value;
 }
 
+#if defined(_ssl__SSLContext_num_tickets_HAS_DOCSTR)
+#  define _ssl__SSLContext_num_tickets_DOCSTR _ssl__SSLContext_num_tickets__doc__
+#else
+#  define _ssl__SSLContext_num_tickets_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_NUM_TICKETS_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_NUM_TICKETS_GETSETDEF
+#  define _SSL__SSLCONTEXT_NUM_TICKETS_GETSETDEF {"num_tickets", (getter)_ssl__SSLContext_num_tickets_get, (setter)_ssl__SSLContext_num_tickets_set, _ssl__SSLContext_num_tickets_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_NUM_TICKETS_GETSETDEF {"num_tickets", (getter)_ssl__SSLContext_num_tickets_get, NULL, _ssl__SSLContext_num_tickets_DOCSTR},
+#endif
+
+static PyObject *
+_ssl__SSLContext_num_tickets_get_impl(PySSLContext *self);
+
+static PyObject *
+_ssl__SSLContext_num_tickets_get(PySSLContext *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_num_tickets_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_SSL__SSLCONTEXT_NUM_TICKETS_HAS_DOCSTR)
+#  define _ssl__SSLContext_num_tickets_DOCSTR _ssl__SSLContext_num_tickets__doc__
+#else
+#  define _ssl__SSLContext_num_tickets_DOCSTR NULL
+#endif
+#if defined(_SSL__SSLCONTEXT_NUM_TICKETS_GETSETDEF)
+#  undef _SSL__SSLCONTEXT_NUM_TICKETS_GETSETDEF
+#  define _SSL__SSLCONTEXT_NUM_TICKETS_GETSETDEF {"num_tickets", (getter)_ssl__SSLContext_num_tickets_get, (setter)_ssl__SSLContext_num_tickets_set, _ssl__SSLContext_num_tickets_DOCSTR},
+#else
+#  define _SSL__SSLCONTEXT_NUM_TICKETS_GETSETDEF {"num_tickets", NULL, (setter)_ssl__SSLContext_num_tickets_set, NULL},
+#endif
+
+static int
+_ssl__SSLContext_num_tickets_set_impl(PySSLContext *self, PyObject *value);
+
+static int
+_ssl__SSLContext_num_tickets_set(PySSLContext *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_num_tickets_set_impl(self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 #if defined(_ssl__SSLContext__host_flags_HAS_DOCSTR)
 #  define _ssl__SSLContext__host_flags_DOCSTR _ssl__SSLContext__host_flags__doc__
 #else
@@ -2377,4 +2431,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=4fc34fbd4ebf95c7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9d61586e3ca7fcfd input=a9049054013a1b77]*/
