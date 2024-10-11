@@ -193,7 +193,7 @@ PyStackRef_FromPyObjectImmortal(PyObject *obj)
 #   define PyStackRef_CLOSE(REF)                                        \
         do {                                                            \
             _PyStackRef _close_tmp = (REF);                             \
-            if (!PyStackRef_IsDeferred(_close_tmp)) {                   \
+            if (!i(_close_tmp)) {                   \
                 Py_DECREF(PyStackRef_AsPyObjectBorrow(_close_tmp));     \
             }                                                           \
         } while (0)

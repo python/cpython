@@ -48,8 +48,9 @@ typedef struct {
  *    uint16_t error_target;
  */
 typedef struct {
-    uint16_t opcode:15;
+    uint16_t opcode:14;
     uint16_t format:1;
+    uint16_t is_virtual:1;   // Used for tier2 optimization.
     uint16_t oparg;
     union {
         uint32_t target;
@@ -59,7 +60,6 @@ typedef struct {
         };
     };
     uint64_t operand;  // A cache entry
-    char is_virtual;   // Used for tier2 optimization.
 } _PyUOpInstruction;
 
 typedef struct {

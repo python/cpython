@@ -23,7 +23,6 @@ class Properties:
     has_free: bool
     side_exit: bool
     pure: bool
-    static: bool = False
     tier: int | None = None
     oparg_and_1: bool = False
     const_oparg: int = -1
@@ -689,7 +688,6 @@ def compute_properties(op: parser.InstDef) -> Properties:
         and not has_free,
         has_free=has_free,
         pure="pure" in op.annotations,
-        static="_static" in op.annotations,
         tier=tier_variable(op),
         needs_prev=variable_used(op, "prev_instr"),
     )

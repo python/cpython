@@ -28,55 +28,77 @@ DEFAULT_OUTPUT = ROOT / "Python/partial_evaluator_cases.c.h"
 DEFAULT_ABSTRACT_INPUT = (ROOT / "Python/partial_evaluator_bytecodes.c").absolute().as_posix()
 
 def validate_uop(override: Uop, uop: Uop) -> None:
-    # To do
-    pass
+    for override_input, uop_input in zip(override.stack.inputs, uop.stack.inputs):
+        if override_input.name != uop_input.name:
+            assert False, f"Uop {uop.name} input names don't match."
+        if override_input.size != uop_input.size:
+            assert False, f"Uop {uop.name} input sizes don't match."
+    for override_output, uop_output in zip(override.stack.outputs, uop.stack.outputs):
+        if override_output.name != uop_output.name:
+            assert False, f"Uop {uop.name} output names don't match."
+        if override_output.size != uop_output.size:
+            assert False, f"Uop {uop.name} output sizes don't match."
+
 
 
 def type_name(var: StackItem) -> str:
     if var.is_array():
         return f"_Py_UopsPESlot *"
-    if var.type:
-        return var.type
     return f"_Py_UopsPESlot "
 
+def var_name(var: StackItem, unused_count: int) -> tuple[str, int]:
+    if var.name == "unused":
+        var = f"unused_{unused_count}"
+        unused_count += 1
+    else:
+        var = var.name
+    return var, unused_count
 
-def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
-    variables = {"unused"}
-    if not skip_inputs:
-        for var in reversed(uop.stack.inputs):
-            if var.name not in variables:
-                variables.add(var.name)
-                if var.condition:
-                    out.emit(f"{type_name(var)}{var.name} = (_Py_UopsPESlot){{NULL, 0}};\n")
-                else:
-                    out.emit(f"{type_name(var)}{var.name};\n")
-    for var in uop.stack.outputs:
-        if var.peek:
-            continue
+
+def declare_variables(uop: Uop, out: CWriter) -> None:
+    variables = set()
+    unused_count = 0
+    for var in reversed(uop.stack.inputs):
         if var.name not in variables:
-            variables.add(var.name)
+            name, unused_count = var_name(var, unused_count)
+            variables.add(name)
             if var.condition:
-                out.emit(f"{type_name(var)}{var.name} = (_Py_UopsPESlot){{NULL, 0}};\n")
+                out.emit(f"{type_name(var)}{name} = (_Py_UopsPESlot){{NULL, 0}};\n")
             else:
-                out.emit(f"{type_name(var)}{var.name};\n")
+                out.emit(f"{type_name(var)}{name};\n")
+    for var in uop.stack.outputs:
+        if var.name not in variables:
+            name, unused_count = var_name(var, unused_count)
+            variables.add(name)
+            if var.condition:
+                out.emit(f"{type_name(var)}{name} = (_Py_UopsPESlot){{NULL, 0}};\n")
+            else:
+                out.emit(f"{type_name(var)}{name};\n")
 
 
-def decref_inputs(
-    out: CWriter,
-    tkn: Token,
-    tkn_iter: Iterator[Token],
-    uop: Uop,
-    stack: Stack,
-    inst: Instruction | None,
-) -> None:
-    next(tkn_iter)
-    next(tkn_iter)
-    next(tkn_iter)
-    out.emit_at("", tkn)
 
 
 def emit_default(out: CWriter, uop: Uop) -> None:
-    for i, var in enumerate(uop.stack.outputs):
+    out.emit("MATERIALIZE_INST();\n")
+    unused_count = 0
+    if uop.properties.escapes:
+        out.emit("materialize_ctx(ctx);\n")
+        for var in reversed(uop.stack.inputs):
+            name, unused_count = var_name(var, unused_count)
+            out.emit(f"(void){name};\n")
+        for var in uop.stack.outputs:
+            name, unused_count = var_name(var, unused_count)
+            out.emit(f"(void){name};\n")
+    else:
+        for var in reversed(uop.stack.inputs):
+            name, unused_count = var_name(var, unused_count)
+            if var.is_array():
+                out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
+                out.emit(f"materialize(&{name}[_i]);\n")
+                out.emit("}\n")
+            else:
+                out.emit(f"materialize(&{name});\n")
+    for var in uop.stack.outputs:
         if var.name != "unused" and not var.peek:
             if var.is_array():
                 out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
@@ -88,8 +110,38 @@ def emit_default(out: CWriter, uop: Uop) -> None:
                 out.emit(f"{var.name} = sym_new_not_null(ctx);\n")
 
 
-class OptimizerEmitter(Emitter):
-    pass
+class Tier2PEEmitter(Emitter):
+    def __init__(self, out: CWriter):
+        super().__init__(out)
+        self._replacers["MATERIALIZE_INPUTS"] = self.materialize_inputs
+
+    def materialize_inputs(
+        self,
+        tkn: Token,
+        tkn_iter: Iterator[Token],
+        uop: Uop,
+        stack: Stack,
+        inst: Instruction | None,
+    ) -> None:
+        next(tkn_iter)
+        next(tkn_iter)
+        next(tkn_iter)
+        self.out.emit_at("", tkn)
+        for var in uop.stack.inputs:
+            if var.size:
+                if var.size == "1":
+                    self.out.emit(f"materialize(&{var.name}[0]);\n")
+                else:
+                    self.out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
+                    self.out.emit(f"materialize(&{var.name}[_i]);\n")
+                    self.out.emit("}\n")
+            elif var.condition:
+                if var.condition == "1":
+                    self.out.emit(f"materialize(&{var.name});\n")
+                elif var.condition != "0":
+                    self.out.emit(f"materialize(&{var.name});\n")
+            else:
+                self.out.emit(f"materialize(&{var.name});\n")
 
 
 def write_uop(
@@ -98,19 +150,22 @@ def write_uop(
     out: CWriter,
     stack: Stack,
     debug: bool,
-    skip_inputs: bool,
 ) -> None:
     locals: dict[str, Local] = {}
+    unused_count = 0
     try:
         prototype = override if override else uop
         is_override = override is not None
         out.start_line()
         for var in reversed(prototype.stack.inputs):
-            code, local = stack.pop(var, extract_bits=True)
-            if not skip_inputs:
-                out.emit(code)
+            name, unused_count = var_name(var, unused_count)
+            old_name = var.name
+            var.name = name
+            code, local = stack.pop(var, extract_bits=True, assign_unused=True)
+            var.name = old_name
+            out.emit(code)
             if local.defined:
-                locals[local.name] = local
+                locals[name] = local
         out.emit(stack.define_output_arrays(prototype.stack.outputs))
         if debug:
             args = []
@@ -128,10 +183,11 @@ def write_uop(
                         cast = f"uint{cache.size*16}_t"
                     out.emit(f"{type}{cache.name} = ({cast})this_instr->operand;\n")
         if override:
-            emitter = OptimizerEmitter(out)
+            emitter = Tier2PEEmitter(out)
             emitter.emit_tokens(override, stack, None)
         else:
             emit_default(out, uop)
+
 
         for var in prototype.stack.outputs:
             if var.name in locals:
@@ -179,12 +235,9 @@ def generate_abstract_interpreter(
             out.emit(f"/* {uop.name} is not a viable micro-op for tier 2 */\n\n")
             continue
         out.emit(f"case {uop.name}: {{\n")
-        if override:
-            declare_variables(override, out, skip_inputs=False)
-        else:
-            declare_variables(uop, out, skip_inputs=True)
+        declare_variables(uop, out)
         stack = Stack()
-        write_uop(override, uop, out, stack, debug, skip_inputs=(override is None))
+        write_uop(override, uop, out, stack, debug)
         out.start_line()
         out.emit("break;\n")
         out.emit("}")

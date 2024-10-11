@@ -226,7 +226,6 @@ annotations = {
     "replicate",
     "tier1",
     "tier2",
-    "_static",
 }
 
 __all__ = []

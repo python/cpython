@@ -34,6 +34,7 @@ dummy_func(void) {
 // BEGIN BYTECODES //
 
     op(_LOAD_FAST_CHECK, (-- value)) {
+        MATERIALIZE_INST();
         value = GETLOCAL(oparg);
         // We guarantee this will error - just bail and don't optimize it.
         if (sym_is_null(&value)) {
@@ -47,6 +48,7 @@ dummy_func(void) {
     }
 
     op(_LOAD_FAST_AND_CLEAR, (-- value)) {
+        MATERIALIZE_INST();
         value = GETLOCAL(oparg);
         GETLOCAL(oparg) = sym_new_null(ctx);
         sym_set_origin_inst_override(&value, this_instr);
@@ -58,11 +60,13 @@ dummy_func(void) {
     }
 
     op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
+        MATERIALIZE_INST();
         value = sym_new_const(ctx, ptr);
         sym_set_origin_inst_override(&value, this_instr);
     }
 
     op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
+        MATERIALIZE_INST();
         value = sym_new_const(ctx, ptr);
         sym_set_origin_inst_override(&value, this_instr);
     }
@@ -84,8 +88,8 @@ dummy_func(void) {
 
     }
 
-    op(_POP_TOP, (pop --)) {
-        if (!sym_is_virtual(&pop)) {
+    op(_POP_TOP, (value --)) {
+        if (!sym_is_virtual(&value)) {
             MATERIALIZE_INST();
         }
     }
@@ -94,27 +98,29 @@ dummy_func(void) {
     }
 
     op(_CHECK_STACK_SPACE_OPERAND, ( -- )) {
+        MATERIALIZE_INST();
         (void)framesize;
     }
 
     op(_BINARY_SUBSCR_INIT_CALL, (container, sub -- new_frame)) {
-        (void)container;
-        (void)sub;
+        MATERIALIZE_INST();
+        MATERIALIZE_INPUTS();
         new_frame = (_Py_UopsPESlot){NULL, NULL};
         ctx->done = true;
     }
 
     op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame)) {
-        (void)fget;
-        (void)owner;
+        MATERIALIZE_INST();
+        MATERIALIZE_INPUTS();
         new_frame = (_Py_UopsPESlot){NULL, NULL};
         ctx->done = true;
     }
 
-    op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame)) {
-        int argcount = oparg;
+    op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null[1], args[oparg] -- new_frame)) {
+        MATERIALIZE_INST();
+        MATERIALIZE_INPUTS();
 
-        (void)callable;
+        int argcount = oparg;
 
         PyCodeObject *co = NULL;
         assert((this_instr + 2)->opcode == _PUSH_FRAME);
@@ -125,15 +131,15 @@ dummy_func(void) {
         }
 
 
-        assert(self_or_null.sym != NULL);
+        assert(self_or_null->sym != NULL);
         assert(args != NULL);
-        if (sym_is_not_null(&self_or_null)) {
+        if (sym_is_not_null(self_or_null)) {
             // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in VM
             args--;
             argcount++;
         }
 
-        if (sym_is_null(&self_or_null) || sym_is_not_null(&self_or_null)) {
+        if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
             new_frame = (_Py_UopsPESlot){(_Py_UopsPESymbol *)frame_new(ctx, co, 0, args, argcount), NULL};
         } else {
             new_frame = (_Py_UopsPESlot){(_Py_UopsPESymbol *)frame_new(ctx, co, 0, NULL, 0), NULL};
@@ -141,9 +147,9 @@ dummy_func(void) {
         }
     }
 
-    op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame)) {
-        (void)(self_or_null);
-        (void)(callable);
+    op(_PY_FRAME_GENERAL, (callable, self_or_null[1], args[oparg] -- new_frame)) {
+        MATERIALIZE_INST();
+        MATERIALIZE_INPUTS();
         PyCodeObject *co = NULL;
         assert((this_instr + 2)->opcode == _PUSH_FRAME);
         co = get_code_with_logging((this_instr + 2));
@@ -155,43 +161,42 @@ dummy_func(void) {
         new_frame = (_Py_UopsPESlot){(_Py_UopsPESymbol *)frame_new(ctx, co, 0, NULL, 0), NULL};
     }
 
-    op(_PY_FRAME_KW, (callable, self_or_null, args[oparg], kwnames -- new_frame)) {
-        (void)callable;
-        (void)self_or_null;
-        (void)args;
-        (void)kwnames;
+    op(_PY_FRAME_KW, (callable, self_or_null[1], args[oparg], kwnames -- new_frame)) {
+        MATERIALIZE_INST();
+        MATERIALIZE_INPUTS();
         new_frame = (_Py_UopsPESlot){NULL, NULL};
         ctx->done = true;
     }
 
     op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, null, args[oparg] -- self, init, args[oparg])) {
         (void)type_version;
-        (void)callable;
-        (void)null;
-        (void)args;
+        MATERIALIZE_INST();
+        MATERIALIZE_INPUTS();
         self = sym_new_not_null(ctx);
         init = sym_new_not_null(ctx);
     }
 
     op(_CREATE_INIT_FRAME, (self, init, args[oparg] -- init_frame)) {
-        (void)self;
-        (void)init;
-        (void)args;
+        MATERIALIZE_INST();
+        MATERIALIZE_INPUTS();
         init_frame = (_Py_UopsPESlot){NULL, NULL};
         ctx->done = true;
     }
 
     op(_FOR_ITER_GEN_FRAME, ( -- )) {
+        MATERIALIZE_INST();
         /* We are about to hit the end of the trace */
         ctx->done = true;
     }
 
     op(_SEND_GEN_FRAME, ( -- )) {
+        MATERIALIZE_INST();
         // We are about to hit the end of the trace:
         ctx->done = true;
     }
 
     op(_PUSH_FRAME, (new_frame -- unused if (0))) {
+        MATERIALIZE_INST();
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;
         ctx->frame = (_Py_UOpsPEAbstractFrame *)new_frame.sym;
@@ -225,6 +230,8 @@ dummy_func(void) {
     }
 
     op(_RETURN_VALUE, (retval -- res)) {
+        MATERIALIZE_INST();
+        MATERIALIZE_INPUTS();
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;
         frame_pop(ctx);
@@ -247,6 +254,7 @@ dummy_func(void) {
     }
 
     op(_RETURN_GENERATOR, ( -- res)) {
+        MATERIALIZE_INST();
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;
         frame_pop(ctx);
@@ -268,42 +276,50 @@ dummy_func(void) {
         }
     }
 
-    op(_YIELD_VALUE, (unused -- res)) {
-        res = sym_new_unknown(ctx);
+    op(_YIELD_VALUE, (retval -- value)) {
+        MATERIALIZE_INST();
+        MATERIALIZE_INPUTS();
+        value = sym_new_unknown(ctx);
     }
 
     op(_JUMP_TO_TOP, (--)) {
+        MATERIALIZE_INST();
+        materialize_ctx(ctx);
         ctx->done = true;
     }
 
     op(_EXIT_TRACE, (exit_p/4 --)) {
+        MATERIALIZE_INST();
+        materialize_ctx(ctx);
         (void)exit_p;
         ctx->done = true;
     }
 
-    op(_UNPACK_SEQUENCE, (seq -- values[oparg])) {
+    op(_UNPACK_SEQUENCE, (seq -- output[oparg])) {
         /* This has to be done manually */
-        (void)seq;
+        MATERIALIZE_INST();
+        MATERIALIZE_INPUTS();
         for (int i = 0; i < oparg; i++) {
-            values[i] = sym_new_unknown(ctx);
+            output[i] = sym_new_unknown(ctx);
         }
     }
 
-    op(_UNPACK_EX, (seq -- values[oparg & 0xFF], unused, unused[oparg >> 8])) {
+    op(_UNPACK_EX, (seq -- left[oparg & 0xFF], unused, right[oparg >> 8])) {
         /* This has to be done manually */
-        (void)seq;
+        MATERIALIZE_INST();
+        MATERIALIZE_INPUTS();
         int totalargs = (oparg & 0xFF) + (oparg >> 8) + 1;
         for (int i = 0; i < totalargs; i++) {
-            values[i] = sym_new_unknown(ctx);
+            left[i] = sym_new_unknown(ctx);
         }
+        (void)right;
     }
 
-    op(_MAYBE_EXPAND_METHOD, (callable, self_or_null, args[oparg] -- func, maybe_self, args[oparg])) {
-        (void)callable;
-        (void)self_or_null;
-        (void)args;
+    op(_MAYBE_EXPAND_METHOD, (callable, self_or_null[1], args[oparg] -- func, maybe_self[1], args[oparg])) {
+        MATERIALIZE_INST();
+        MATERIALIZE_INPUTS();
         func = sym_new_not_null(ctx);
-        maybe_self = sym_new_not_null(ctx);
+        maybe_self[0] = sym_new_not_null(ctx);
     }
 // END BYTECODES //
 

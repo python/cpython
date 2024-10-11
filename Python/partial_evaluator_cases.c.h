@@ -8,16 +8,21 @@
         }
 
         case _CHECK_PERIODIC: {
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
             break;
         }
 
         case _CHECK_PERIODIC_IF_NOT_YIELD_FROM: {
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
             break;
         }
 
         /* _QUICKEN_RESUME is not a viable micro-op for tier 2 */
 
         case _RESUME_CHECK: {
+            MATERIALIZE_INST();
             break;
         }
 
@@ -25,6 +30,7 @@
 
         case _LOAD_FAST_CHECK: {
             _Py_UopsPESlot value;
+            MATERIALIZE_INST();
             value = GETLOCAL(oparg);
             // We guarantee this will error - just bail and don't optimize it.
             if (sym_is_null(&value)) {
@@ -48,6 +54,7 @@
 
         case _LOAD_FAST_AND_CLEAR: {
             _Py_UopsPESlot value;
+            MATERIALIZE_INST();
             value = GETLOCAL(oparg);
             GETLOCAL(oparg) = sym_new_null(ctx);
             sym_set_origin_inst_override(&value, this_instr);
@@ -89,9 +96,9 @@
         }
 
         case _POP_TOP: {
-            _Py_UopsPESlot pop;
-            pop = stack_pointer[-1];
-            if (!sym_is_virtual(&pop)) {
+            _Py_UopsPESlot value;
+            value = stack_pointer[-1];
+            if (!sym_is_virtual(&value)) {
                 MATERIALIZE_INST();
             }
             stack_pointer += -1;
@@ -101,6 +108,7 @@
 
         case _PUSH_NULL: {
             _Py_UopsPESlot res;
+            MATERIALIZE_INST();
             res = sym_new_not_null(ctx);
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -110,6 +118,12 @@
 
         case _END_SEND: {
             _Py_UopsPESlot value;
+            _Py_UopsPESlot receiver;
+            value = stack_pointer[-1];
+            receiver = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize(&value);
+            materialize(&receiver);
             value = sym_new_not_null(ctx);
             stack_pointer[-2] = value;
             stack_pointer += -1;
@@ -118,86 +132,162 @@
         }
 
         case _UNARY_NEGATIVE: {
+            _Py_UopsPESlot value;
             _Py_UopsPESlot res;
+            value = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)value;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-1] = res;
             break;
         }
 
         case _UNARY_NOT: {
+            _Py_UopsPESlot value;
             _Py_UopsPESlot res;
+            value = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&value);
             res = sym_new_not_null(ctx);
             stack_pointer[-1] = res;
             break;
         }
 
         case _TO_BOOL: {
+            _Py_UopsPESlot value;
             _Py_UopsPESlot res;
+            value = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)value;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-1] = res;
             break;
         }
 
         case _TO_BOOL_BOOL: {
+            _Py_UopsPESlot value;
+            value = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&value);
             break;
         }
 
         case _TO_BOOL_INT: {
+            _Py_UopsPESlot value;
             _Py_UopsPESlot res;
+            value = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)value;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-1] = res;
             break;
         }
 
         case _TO_BOOL_LIST: {
+            _Py_UopsPESlot value;
             _Py_UopsPESlot res;
+            value = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&value);
             res = sym_new_not_null(ctx);
             stack_pointer[-1] = res;
             break;
         }
 
         case _TO_BOOL_NONE: {
+            _Py_UopsPESlot value;
             _Py_UopsPESlot res;
+            value = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&value);
             res = sym_new_not_null(ctx);
             stack_pointer[-1] = res;
             break;
         }
 
         case _TO_BOOL_STR: {
+            _Py_UopsPESlot value;
             _Py_UopsPESlot res;
+            value = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)value;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-1] = res;
             break;
         }
 
         case _REPLACE_WITH_TRUE: {
+            _Py_UopsPESlot value;
             _Py_UopsPESlot res;
+            value = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&value);
             res = sym_new_not_null(ctx);
             stack_pointer[-1] = res;
             break;
         }
 
         case _UNARY_INVERT: {
+            _Py_UopsPESlot value;
             _Py_UopsPESlot res;
+            value = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)value;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-1] = res;
             break;
         }
 
         case _GUARD_BOTH_INT: {
+            _Py_UopsPESlot right;
+            _Py_UopsPESlot left;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize(&right);
+            materialize(&left);
             break;
         }
 
         case _GUARD_NOS_INT: {
+            _Py_UopsPESlot unused_0;
+            _Py_UopsPESlot left;
+            _Py_UopsPESlot unused_1;
+            unused_0 = stack_pointer[-1];
+            left = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize(&unused_0);
+            materialize(&left);
             break;
         }
 
         case _GUARD_TOS_INT: {
+            _Py_UopsPESlot value;
+            value = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&value);
             break;
         }
 
         case _BINARY_OP_MULTIPLY_INT: {
+            _Py_UopsPESlot right;
+            _Py_UopsPESlot left;
             _Py_UopsPESlot res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize(&right);
+            materialize(&left);
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -206,7 +296,14 @@
         }
 
         case _BINARY_OP_ADD_INT: {
+            _Py_UopsPESlot right;
+            _Py_UopsPESlot left;
             _Py_UopsPESlot res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize(&right);
+            materialize(&left);
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -215,7 +312,14 @@
         }
 
         case _BINARY_OP_SUBTRACT_INT: {
+            _Py_UopsPESlot right;
+            _Py_UopsPESlot left;
             _Py_UopsPESlot res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize(&right);
+            materialize(&left);
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -224,19 +328,45 @@
         }
 
         case _GUARD_BOTH_FLOAT: {
+            _Py_UopsPESlot right;
+            _Py_UopsPESlot left;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize(&right);
+            materialize(&left);
             break;
         }
 
         case _GUARD_NOS_FLOAT: {
+            _Py_UopsPESlot unused_0;
+            _Py_UopsPESlot left;
+            _Py_UopsPESlot unused_1;
+            unused_0 = stack_pointer[-1];
+            left = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize(&unused_0);
+            materialize(&left);
             break;
         }
 
         case _GUARD_TOS_FLOAT: {
+            _Py_UopsPESlot value;
+            value = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&value);
             break;
         }
 
         case _BINARY_OP_MULTIPLY_FLOAT: {
+            _Py_UopsPESlot right;
+            _Py_UopsPESlot left;
             _Py_UopsPESlot res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize(&right);
+            materialize(&left);
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -245,7 +375,14 @@
         }
 
         case _BINARY_OP_ADD_FLOAT: {
+            _Py_UopsPESlot right;
+            _Py_UopsPESlot left;
             _Py_UopsPESlot res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize(&right);
+            materialize(&left);
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -254,7 +391,14 @@
         }
 
         case _BINARY_OP_SUBTRACT_FLOAT: {
+            _Py_UopsPESlot right;
+            _Py_UopsPESlot left;
             _Py_UopsPESlot res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize(&right);
+            materialize(&left);
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -263,11 +407,25 @@
         }
 
         case _GUARD_BOTH_UNICODE: {
+            _Py_UopsPESlot right;
+            _Py_UopsPESlot left;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize(&right);
+            materialize(&left);
             break;
         }
 
         case _BINARY_OP_ADD_UNICODE: {
+            _Py_UopsPESlot right;
+            _Py_UopsPESlot left;
             _Py_UopsPESlot res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize(&right);
+            materialize(&left);
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -276,13 +434,30 @@
         }
 
         case _BINARY_OP_INPLACE_ADD_UNICODE: {
+            _Py_UopsPESlot right;
+            _Py_UopsPESlot left;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)right;
+            (void)left;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _BINARY_SUBSCR: {
+            _Py_UopsPESlot sub;
+            _Py_UopsPESlot container;
             _Py_UopsPESlot res;
+            sub = stack_pointer[-1];
+            container = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)sub;
+            (void)container;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -291,7 +466,19 @@
         }
 
         case _BINARY_SLICE: {
+            _Py_UopsPESlot stop;
+            _Py_UopsPESlot start;
+            _Py_UopsPESlot container;
             _Py_UopsPESlot res;
+            stop = stack_pointer[-1];
+            start = stack_pointer[-2];
+            container = stack_pointer[-3];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)stop;
+            (void)start;
+            (void)container;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-3] = res;
             stack_pointer += -2;
@@ -300,13 +487,34 @@
         }
 
         case _STORE_SLICE: {
+            _Py_UopsPESlot stop;
+            _Py_UopsPESlot start;
+            _Py_UopsPESlot container;
+            _Py_UopsPESlot v;
+            stop = stack_pointer[-1];
+            start = stack_pointer[-2];
+            container = stack_pointer[-3];
+            v = stack_pointer[-4];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)stop;
+            (void)start;
+            (void)container;
+            (void)v;
             stack_pointer += -4;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _BINARY_SUBSCR_LIST_INT: {
+            _Py_UopsPESlot sub_st;
+            _Py_UopsPESlot list_st;
             _Py_UopsPESlot res;
+            sub_st = stack_pointer[-1];
+            list_st = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize(&sub_st);
+            materialize(&list_st);
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -315,7 +523,14 @@
         }
 
         case _BINARY_SUBSCR_STR_INT: {
+            _Py_UopsPESlot sub_st;
+            _Py_UopsPESlot str_st;
             _Py_UopsPESlot res;
+            sub_st = stack_pointer[-1];
+            str_st = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize(&sub_st);
+            materialize(&str_st);
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -324,7 +539,14 @@
         }
 
         case _BINARY_SUBSCR_TUPLE_INT: {
+            _Py_UopsPESlot sub_st;
+            _Py_UopsPESlot tuple_st;
             _Py_UopsPESlot res;
+            sub_st = stack_pointer[-1];
+            tuple_st = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize(&sub_st);
+            materialize(&tuple_st);
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -333,7 +555,16 @@
         }
 
         case _BINARY_SUBSCR_DICT: {
+            _Py_UopsPESlot sub_st;
+            _Py_UopsPESlot dict_st;
             _Py_UopsPESlot res;
+            sub_st = stack_pointer[-1];
+            dict_st = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)sub_st;
+            (void)dict_st;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -342,6 +573,17 @@
         }
 
         case _BINARY_SUBSCR_CHECK_FUNC: {
+            _Py_UopsPESlot unused_0;
+            _Py_UopsPESlot container;
+            _Py_UopsPESlot unused_1;
+            unused_0 = stack_pointer[-1];
+            container = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)unused_0;
+            (void)container;
+            (void)container;
+            (void)unused_1;
             break;
         }
 
@@ -351,8 +593,9 @@
             _Py_UopsPESlot new_frame;
             sub = stack_pointer[-1];
             container = stack_pointer[-2];
-            (void)container;
-            (void)sub;
+            MATERIALIZE_INST();
+            materialize(&container);
+            materialize(&sub);
             new_frame = (_Py_UopsPESlot){NULL, NULL};
             ctx->done = true;
             stack_pointer[-2] = new_frame;
@@ -362,50 +605,132 @@
         }
 
         case _LIST_APPEND: {
+            _Py_UopsPESlot v;
+            _Py_UopsPESlot *unused_0;
+            _Py_UopsPESlot list;
+            _Py_UopsPESlot *unused_1;
+            v = stack_pointer[-1];
+            unused_0 = &stack_pointer[-1 - (oparg-1)];
+            list = stack_pointer[-2 - (oparg-1)];
+            MATERIALIZE_INST();
+            materialize(&v);
+            for (int _i = oparg-1; --_i >= 0;) {
+                materialize(&unused_0[_i]);
+            }
+            materialize(&list);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _SET_ADD: {
+            _Py_UopsPESlot v;
+            _Py_UopsPESlot *unused_0;
+            _Py_UopsPESlot set;
+            _Py_UopsPESlot *unused_1;
+            v = stack_pointer[-1];
+            unused_0 = &stack_pointer[-1 - (oparg-1)];
+            set = stack_pointer[-2 - (oparg-1)];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)v;
+            (void)unused_0;
+            (void)set;
+            (void)set;
+            (void)unused_1;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _STORE_SUBSCR: {
+            _Py_UopsPESlot sub;
+            _Py_UopsPESlot container;
+            _Py_UopsPESlot v;
+            sub = stack_pointer[-1];
+            container = stack_pointer[-2];
+            v = stack_pointer[-3];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)sub;
+            (void)container;
+            (void)v;
             stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _STORE_SUBSCR_LIST_INT: {
+            _Py_UopsPESlot sub_st;
+            _Py_UopsPESlot list_st;
+            _Py_UopsPESlot value;
+            sub_st = stack_pointer[-1];
+            list_st = stack_pointer[-2];
+            value = stack_pointer[-3];
+            MATERIALIZE_INST();
+            materialize(&sub_st);
+            materialize(&list_st);
+            materialize(&value);
             stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _STORE_SUBSCR_DICT: {
+            _Py_UopsPESlot sub;
+            _Py_UopsPESlot dict_st;
+            _Py_UopsPESlot value;
+            sub = stack_pointer[-1];
+            dict_st = stack_pointer[-2];
+            value = stack_pointer[-3];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)sub;
+            (void)dict_st;
+            (void)value;
             stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _DELETE_SUBSCR: {
+            _Py_UopsPESlot sub;
+            _Py_UopsPESlot container;
+            sub = stack_pointer[-1];
+            container = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)sub;
+            (void)container;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _CALL_INTRINSIC_1: {
+            _Py_UopsPESlot value;
             _Py_UopsPESlot res;
+            value = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)value;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-1] = res;
             break;
         }
 
         case _CALL_INTRINSIC_2: {
+            _Py_UopsPESlot value1_st;
+            _Py_UopsPESlot value2_st;
             _Py_UopsPESlot res;
+            value1_st = stack_pointer[-1];
+            value2_st = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)value1_st;
+            (void)value2_st;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -417,6 +742,8 @@
             _Py_UopsPESlot retval;
             _Py_UopsPESlot res;
             retval = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&retval);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             ctx->frame->stack_pointer = stack_pointer;
@@ -442,14 +769,27 @@
         }
 
         case _GET_AITER: {
+            _Py_UopsPESlot obj;
             _Py_UopsPESlot iter;
+            obj = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)obj;
+            (void)iter;
             iter = sym_new_not_null(ctx);
             stack_pointer[-1] = iter;
             break;
         }
 
         case _GET_ANEXT: {
+            _Py_UopsPESlot aiter;
             _Py_UopsPESlot awaitable;
+            aiter = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)aiter;
+            (void)aiter;
+            (void)awaitable;
             awaitable = sym_new_not_null(ctx);
             stack_pointer[0] = awaitable;
             stack_pointer += 1;
@@ -458,7 +798,13 @@
         }
 
         case _GET_AWAITABLE: {
+            _Py_UopsPESlot iterable;
             _Py_UopsPESlot iter;
+            iterable = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)iterable;
+            (void)iter;
             iter = sym_new_not_null(ctx);
             stack_pointer[-1] = iter;
             break;
@@ -467,19 +813,32 @@
         /* _SEND is not a viable micro-op for tier 2 */
 
         case _SEND_GEN_FRAME: {
+            _Py_UopsPESlot v;
+            _Py_UopsPESlot receiver;
+            _Py_UopsPESlot gen_frame;
+            MATERIALIZE_INST();
             // We are about to hit the end of the trace:
             ctx->done = true;
             break;
         }
 
         case _YIELD_VALUE: {
-            _Py_UopsPESlot res;
-            res = sym_new_unknown(ctx);
-            stack_pointer[-1] = res;
+            _Py_UopsPESlot retval;
+            _Py_UopsPESlot value;
+            retval = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&retval);
+            value = sym_new_unknown(ctx);
+            stack_pointer[-1] = value;
             break;
         }
 
         case _POP_EXCEPT: {
+            _Py_UopsPESlot exc_value;
+            exc_value = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)exc_value;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -487,6 +846,7 @@
 
         case _LOAD_COMMON_CONSTANT: {
             _Py_UopsPESlot value;
+            MATERIALIZE_INST();
             value = sym_new_not_null(ctx);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -496,6 +856,9 @@
 
         case _LOAD_BUILD_CLASS: {
             _Py_UopsPESlot bc;
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)bc;
             bc = sym_new_not_null(ctx);
             stack_pointer[0] = bc;
             stack_pointer += 1;
@@ -504,24 +867,32 @@
         }
 
         case _STORE_NAME: {
+            _Py_UopsPESlot v;
+            v = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)v;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _DELETE_NAME: {
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
             break;
         }
 
         case _UNPACK_SEQUENCE: {
             _Py_UopsPESlot seq;
-            _Py_UopsPESlot *values;
+            _Py_UopsPESlot *output;
             seq = stack_pointer[-1];
-            values = &stack_pointer[-1];
+            output = &stack_pointer[-1];
             /* This has to be done manually */
-            (void)seq;
+            MATERIALIZE_INST();
+            materialize(&seq);
             for (int i = 0; i < oparg; i++) {
-                values[i] = sym_new_unknown(ctx);
+                output[i] = sym_new_unknown(ctx);
             }
             stack_pointer += -1 + oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -529,8 +900,12 @@
         }
 
         case _UNPACK_SEQUENCE_TWO_TUPLE: {
+            _Py_UopsPESlot seq;
             _Py_UopsPESlot val1;
             _Py_UopsPESlot val0;
+            seq = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&seq);
             val1 = sym_new_not_null(ctx);
             val0 = sym_new_not_null(ctx);
             stack_pointer[-1] = val1;
@@ -541,8 +916,12 @@
         }
 
         case _UNPACK_SEQUENCE_TUPLE: {
+            _Py_UopsPESlot seq;
             _Py_UopsPESlot *values;
+            seq = stack_pointer[-1];
             values = &stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&seq);
             for (int _i = oparg; --_i >= 0;) {
                 values[_i] = sym_new_not_null(ctx);
             }
@@ -552,8 +931,12 @@
         }
 
         case _UNPACK_SEQUENCE_LIST: {
+            _Py_UopsPESlot seq;
             _Py_UopsPESlot *values;
+            seq = stack_pointer[-1];
             values = &stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&seq);
             for (int _i = oparg; --_i >= 0;) {
                 values[_i] = sym_new_not_null(ctx);
             }
@@ -564,44 +947,73 @@
 
         case _UNPACK_EX: {
             _Py_UopsPESlot seq;
-            _Py_UopsPESlot *values;
+            _Py_UopsPESlot *left;
+            _Py_UopsPESlot unused_0;
+            _Py_UopsPESlot *right;
             seq = stack_pointer[-1];
-            values = &stack_pointer[-1];
+            left = &stack_pointer[-1];
+
+right = &stack_pointer[(oparg & 0xFF)];
             /* This has to be done manually */
-            (void)seq;
+            MATERIALIZE_INST();
+            materialize(&seq);
             int totalargs = (oparg & 0xFF) + (oparg >> 8) + 1;
             for (int i = 0; i < totalargs; i++) {
-                values[i] = sym_new_unknown(ctx);
+                left[i] = sym_new_unknown(ctx);
             }
+            (void)right;
             stack_pointer += (oparg & 0xFF) + (oparg >> 8);
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _STORE_ATTR: {
+            _Py_UopsPESlot owner;
+            _Py_UopsPESlot v;
+            owner = stack_pointer[-1];
+            v = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)owner;
+            (void)v;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _DELETE_ATTR: {
+            _Py_UopsPESlot owner;
+            owner = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)owner;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _STORE_GLOBAL: {
+            _Py_UopsPESlot v;
+            v = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)v;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _DELETE_GLOBAL: {
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
             break;
         }
 
         case _LOAD_LOCALS: {
             _Py_UopsPESlot locals;
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)locals;
             locals = sym_new_not_null(ctx);
             stack_pointer[0] = locals;
             stack_pointer += 1;
@@ -613,6 +1025,9 @@
 
         case _LOAD_NAME: {
             _Py_UopsPESlot v;
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)v;
             v = sym_new_not_null(ctx);
             stack_pointer[0] = v;
             stack_pointer += 1;
@@ -624,6 +1039,10 @@
             _Py_UopsPESlot *res;
             _Py_UopsPESlot null = (_Py_UopsPESlot){NULL, 0};
             res = &stack_pointer[0];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)res;
+            (void)null;
             for (int _i = 1; --_i >= 0;) {
                 res[_i] = sym_new_not_null(ctx);
             }
@@ -635,16 +1054,19 @@
         }
 
         case _GUARD_GLOBALS_VERSION: {
+            MATERIALIZE_INST();
             break;
         }
 
         case _GUARD_BUILTINS_VERSION: {
+            MATERIALIZE_INST();
             break;
         }
 
         case _LOAD_GLOBAL_MODULE: {
             _Py_UopsPESlot res;
             _Py_UopsPESlot null = (_Py_UopsPESlot){NULL, 0};
+            MATERIALIZE_INST();
             res = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             stack_pointer[0] = res;
@@ -657,6 +1079,7 @@
         case _LOAD_GLOBAL_BUILTINS: {
             _Py_UopsPESlot res;
             _Py_UopsPESlot null = (_Py_UopsPESlot){NULL, 0};
+            MATERIALIZE_INST();
             res = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             stack_pointer[0] = res;
@@ -667,19 +1090,30 @@
         }
 
         case _DELETE_FAST: {
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
             break;
         }
 
         case _MAKE_CELL: {
+            MATERIALIZE_INST();
             break;
         }
 
         case _DELETE_DEREF: {
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
             break;
         }
 
         case _LOAD_FROM_DICT_OR_DEREF: {
+            _Py_UopsPESlot class_dict_st;
             _Py_UopsPESlot value;
+            class_dict_st = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)class_dict_st;
+            (void)value;
             value = sym_new_not_null(ctx);
             stack_pointer[-1] = value;
             break;
@@ -687,6 +1121,9 @@
 
         case _LOAD_DEREF: {
             _Py_UopsPESlot value;
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)value;
             value = sym_new_not_null(ctx);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -695,17 +1132,29 @@
         }
 
         case _STORE_DEREF: {
+            _Py_UopsPESlot v;
+            v = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)v;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _COPY_FREE_VARS: {
+            MATERIALIZE_INST();
             break;
         }
 
         case _BUILD_STRING: {
+            _Py_UopsPESlot *pieces;
             _Py_UopsPESlot str;
+            pieces = &stack_pointer[-oparg];
+            MATERIALIZE_INST();
+            for (int _i = oparg; --_i >= 0;) {
+                materialize(&pieces[_i]);
+            }
             str = sym_new_not_null(ctx);
             stack_pointer[-oparg] = str;
             stack_pointer += 1 - oparg;
@@ -714,7 +1163,13 @@
         }
 
         case _BUILD_TUPLE: {
+            _Py_UopsPESlot *values;
             _Py_UopsPESlot tup;
+            values = &stack_pointer[-oparg];
+            MATERIALIZE_INST();
+            for (int _i = oparg; --_i >= 0;) {
+                materialize(&values[_i]);
+            }
             tup = sym_new_not_null(ctx);
             stack_pointer[-oparg] = tup;
             stack_pointer += 1 - oparg;
@@ -723,7 +1178,13 @@
         }
 
         case _BUILD_LIST: {
+            _Py_UopsPESlot *values;
             _Py_UopsPESlot list;
+            values = &stack_pointer[-oparg];
+            MATERIALIZE_INST();
+            for (int _i = oparg; --_i >= 0;) {
+                materialize(&values[_i]);
+            }
             list = sym_new_not_null(ctx);
             stack_pointer[-oparg] = list;
             stack_pointer += 1 - oparg;
@@ -732,19 +1193,53 @@
         }
 
         case _LIST_EXTEND: {
+            _Py_UopsPESlot iterable_st;
+            _Py_UopsPESlot *unused_0;
+            _Py_UopsPESlot list_st;
+            _Py_UopsPESlot *unused_1;
+            iterable_st = stack_pointer[-1];
+            unused_0 = &stack_pointer[-1 - (oparg-1)];
+            list_st = stack_pointer[-2 - (oparg-1)];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)iterable_st;
+            (void)unused_0;
+            (void)list_st;
+            (void)list_st;
+            (void)unused_1;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _SET_UPDATE: {
+            _Py_UopsPESlot iterable;
+            _Py_UopsPESlot *unused_0;
+            _Py_UopsPESlot set;
+            _Py_UopsPESlot *unused_1;
+            iterable = stack_pointer[-1];
+            unused_0 = &stack_pointer[-1 - (oparg-1)];
+            set = stack_pointer[-2 - (oparg-1)];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)iterable;
+            (void)unused_0;
+            (void)set;
+            (void)set;
+            (void)unused_1;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _BUILD_SET: {
+            _Py_UopsPESlot *values;
             _Py_UopsPESlot set;
+            values = &stack_pointer[-oparg];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)values;
+            (void)set;
             set = sym_new_not_null(ctx);
             stack_pointer[-oparg] = set;
             stack_pointer += 1 - oparg;
@@ -753,7 +1248,13 @@
         }
 
         case _BUILD_MAP: {
+            _Py_UopsPESlot *values;
             _Py_UopsPESlot map;
+            values = &stack_pointer[-oparg*2];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)values;
+            (void)map;
             map = sym_new_not_null(ctx);
             stack_pointer[-oparg*2] = map;
             stack_pointer += 1 - oparg*2;
@@ -762,22 +1263,83 @@
         }
 
         case _SETUP_ANNOTATIONS: {
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
             break;
         }
 
         case _DICT_UPDATE: {
+            _Py_UopsPESlot update;
+            _Py_UopsPESlot *unused_0;
+            _Py_UopsPESlot dict;
+            _Py_UopsPESlot *unused_1;
+            update = stack_pointer[-1];
+            unused_0 = &stack_pointer[-1 - (oparg - 1)];
+            dict = stack_pointer[-2 - (oparg - 1)];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)update;
+            (void)unused_0;
+            (void)dict;
+            (void)dict;
+            (void)unused_1;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _DICT_MERGE: {
+            _Py_UopsPESlot update;
+            _Py_UopsPESlot *unused_0;
+            _Py_UopsPESlot dict;
+            _Py_UopsPESlot unused_1;
+            _Py_UopsPESlot unused_2;
+            _Py_UopsPESlot callable;
+            _Py_UopsPESlot unused_3;
+            _Py_UopsPESlot unused_4;
+            _Py_UopsPESlot *unused_5;
+            update = stack_pointer[-1];
+            unused_0 = &stack_pointer[-1 - (oparg - 1)];
+            dict = stack_pointer[-2 - (oparg - 1)];
+            unused_1 = stack_pointer[-3 - (oparg - 1)];
+            unused_2 = stack_pointer[-4 - (oparg - 1)];
+            callable = stack_pointer[-5 - (oparg - 1)];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)update;
+            (void)unused_0;
+            (void)dict;
+            (void)unused_1;
+            (void)unused_2;
+            (void)callable;
+            (void)callable;
+            (void)unused_3;
+            (void)unused_4;
+            (void)dict;
+            (void)unused_5;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _MAP_ADD: {
+            _Py_UopsPESlot value;
+            _Py_UopsPESlot key;
+            _Py_UopsPESlot *unused_0;
+            _Py_UopsPESlot dict_st;
+            _Py_UopsPESlot *unused_1;
+            value = stack_pointer[-1];
+            key = stack_pointer[-2];
+            unused_0 = &stack_pointer[-2 - (oparg - 1)];
+            dict_st = stack_pointer[-3 - (oparg - 1)];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)value;
+            (void)key;
+            (void)unused_0;
+            (void)dict_st;
+            (void)dict_st;
+            (void)unused_1;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -786,7 +1348,21 @@
         /* _INSTRUMENTED_LOAD_SUPER_ATTR is not a viable micro-op for tier 2 */
 
         case _LOAD_SUPER_ATTR_ATTR: {
+            _Py_UopsPESlot self_st;
+            _Py_UopsPESlot class_st;
+            _Py_UopsPESlot global_super_st;
             _Py_UopsPESlot attr_st;
+            _Py_UopsPESlot unused_0 = (_Py_UopsPESlot){NULL, 0};
+            self_st = stack_pointer[-1];
+            class_st = stack_pointer[-2];
+            global_super_st = stack_pointer[-3];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)self_st;
+            (void)class_st;
+            (void)global_super_st;
+            (void)attr_st;
+            (void)unused_0;
             attr_st = sym_new_not_null(ctx);
             stack_pointer[-3] = attr_st;
             stack_pointer += -2;
@@ -795,8 +1371,21 @@
         }
 
         case _LOAD_SUPER_ATTR_METHOD: {
+            _Py_UopsPESlot self_st;
+            _Py_UopsPESlot class_st;
+            _Py_UopsPESlot global_super_st;
             _Py_UopsPESlot attr;
             _Py_UopsPESlot self_or_null;
+            self_st = stack_pointer[-1];
+            class_st = stack_pointer[-2];
+            global_super_st = stack_pointer[-3];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)self_st;
+            (void)class_st;
+            (void)global_super_st;
+            (void)attr;
+            (void)self_or_null;
             attr = sym_new_not_null(ctx);
             self_or_null = sym_new_not_null(ctx);
             stack_pointer[-3] = attr;
@@ -807,8 +1396,15 @@
         }
 
         case _LOAD_ATTR: {
+            _Py_UopsPESlot owner;
             _Py_UopsPESlot attr;
             _Py_UopsPESlot self_or_null = (_Py_UopsPESlot){NULL, 0};
+            owner = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)owner;
+            (void)attr;
+            (void)self_or_null;
             attr = sym_new_not_null(ctx);
             self_or_null = sym_new_not_null(ctx);
             stack_pointer[-1] = attr;
@@ -819,16 +1415,28 @@
         }
 
         case _GUARD_TYPE_VERSION: {
+            _Py_UopsPESlot owner;
+            owner = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&owner);
             break;
         }
 
         case _CHECK_MANAGED_OBJECT_HAS_VALUES: {
+            _Py_UopsPESlot owner;
+            owner = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&owner);
             break;
         }
 
         case _LOAD_ATTR_INSTANCE_VALUE: {
+            _Py_UopsPESlot owner;
             _Py_UopsPESlot attr;
             _Py_UopsPESlot null = (_Py_UopsPESlot){NULL, 0};
+            owner = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&owner);
             attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             stack_pointer[-1] = attr;
@@ -839,12 +1447,20 @@
         }
 
         case _CHECK_ATTR_MODULE: {
+            _Py_UopsPESlot owner;
+            owner = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&owner);
             break;
         }
 
         case _LOAD_ATTR_MODULE: {
+            _Py_UopsPESlot owner;
             _Py_UopsPESlot attr;
             _Py_UopsPESlot null = (_Py_UopsPESlot){NULL, 0};
+            owner = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&owner);
             attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             stack_pointer[-1] = attr;
@@ -855,12 +1471,20 @@
         }
 
         case _CHECK_ATTR_WITH_HINT: {
+            _Py_UopsPESlot owner;
+            owner = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&owner);
             break;
         }
 
         case _LOAD_ATTR_WITH_HINT: {
+            _Py_UopsPESlot owner;
             _Py_UopsPESlot attr;
             _Py_UopsPESlot null = (_Py_UopsPESlot){NULL, 0};
+            owner = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&owner);
             attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             stack_pointer[-1] = attr;
@@ -871,8 +1495,12 @@
         }
 
         case _LOAD_ATTR_SLOT: {
+            _Py_UopsPESlot owner;
             _Py_UopsPESlot attr;
             _Py_UopsPESlot null = (_Py_UopsPESlot){NULL, 0};
+            owner = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&owner);
             attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             stack_pointer[-1] = attr;
@@ -883,12 +1511,20 @@
         }
 
         case _CHECK_ATTR_CLASS: {
+            _Py_UopsPESlot owner;
+            owner = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&owner);
             break;
         }
 
         case _LOAD_ATTR_CLASS: {
+            _Py_UopsPESlot owner;
             _Py_UopsPESlot attr;
             _Py_UopsPESlot null = (_Py_UopsPESlot){NULL, 0};
+            owner = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&owner);
             attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             stack_pointer[-1] = attr;
@@ -903,8 +1539,8 @@
             _Py_UopsPESlot new_frame;
             owner = stack_pointer[-1];
             PyObject *fget = (PyObject *)this_instr->operand;
-            (void)fget;
-            (void)owner;
+            MATERIALIZE_INST();
+            materialize(&owner);
             new_frame = (_Py_UopsPESlot){NULL, NULL};
             ctx->done = true;
             stack_pointer[-1] = new_frame;
@@ -914,29 +1550,64 @@
         /* _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN is not a viable micro-op for tier 2 */
 
         case _GUARD_DORV_NO_DICT: {
+            _Py_UopsPESlot owner;
+            owner = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&owner);
             break;
         }
 
         case _STORE_ATTR_INSTANCE_VALUE: {
+            _Py_UopsPESlot owner;
+            _Py_UopsPESlot value;
+            owner = stack_pointer[-1];
+            value = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize(&owner);
+            materialize(&value);
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _STORE_ATTR_WITH_HINT: {
+            _Py_UopsPESlot owner;
+            _Py_UopsPESlot value;
+            owner = stack_pointer[-1];
+            value = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)owner;
+            (void)value;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _STORE_ATTR_SLOT: {
+            _Py_UopsPESlot owner;
+            _Py_UopsPESlot value;
+            owner = stack_pointer[-1];
+            value = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize(&owner);
+            materialize(&value);
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _COMPARE_OP: {
+            _Py_UopsPESlot right;
+            _Py_UopsPESlot left;
             _Py_UopsPESlot res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)right;
+            (void)left;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -945,7 +1616,14 @@
         }
 
         case _COMPARE_OP_FLOAT: {
+            _Py_UopsPESlot right;
+            _Py_UopsPESlot left;
             _Py_UopsPESlot res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize(&right);
+            materialize(&left);
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -954,7 +1632,14 @@
         }
 
         case _COMPARE_OP_INT: {
+            _Py_UopsPESlot right;
+            _Py_UopsPESlot left;
             _Py_UopsPESlot res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize(&right);
+            materialize(&left);
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -963,7 +1648,14 @@
         }
 
         case _COMPARE_OP_STR: {
+            _Py_UopsPESlot right;
+            _Py_UopsPESlot left;
             _Py_UopsPESlot res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize(&right);
+            materialize(&left);
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -972,7 +1664,14 @@
         }
 
         case _IS_OP: {
+            _Py_UopsPESlot right;
+            _Py_UopsPESlot left;
             _Py_UopsPESlot b;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize(&right);
+            materialize(&left);
             b = sym_new_not_null(ctx);
             stack_pointer[-2] = b;
             stack_pointer += -1;
@@ -981,7 +1680,16 @@
         }
 
         case _CONTAINS_OP: {
+            _Py_UopsPESlot right;
+            _Py_UopsPESlot left;
             _Py_UopsPESlot b;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)right;
+            (void)left;
+            (void)b;
             b = sym_new_not_null(ctx);
             stack_pointer[-2] = b;
             stack_pointer += -1;
@@ -990,7 +1698,16 @@
         }
 
         case _CONTAINS_OP_SET: {
+            _Py_UopsPESlot right;
+            _Py_UopsPESlot left;
             _Py_UopsPESlot b;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)right;
+            (void)left;
+            (void)b;
             b = sym_new_not_null(ctx);
             stack_pointer[-2] = b;
             stack_pointer += -1;
@@ -999,7 +1716,16 @@
         }
 
         case _CONTAINS_OP_DICT: {
+            _Py_UopsPESlot right;
+            _Py_UopsPESlot left;
             _Py_UopsPESlot b;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)right;
+            (void)left;
+            (void)b;
             b = sym_new_not_null(ctx);
             stack_pointer[-2] = b;
             stack_pointer += -1;
@@ -1008,8 +1734,18 @@
         }
 
         case _CHECK_EG_MATCH: {
+            _Py_UopsPESlot match_type_st;
+            _Py_UopsPESlot exc_value_st;
             _Py_UopsPESlot rest;
             _Py_UopsPESlot match;
+            match_type_st = stack_pointer[-1];
+            exc_value_st = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)match_type_st;
+            (void)exc_value_st;
+            (void)rest;
+            (void)match;
             rest = sym_new_not_null(ctx);
             match = sym_new_not_null(ctx);
             stack_pointer[-2] = rest;
@@ -1018,14 +1754,33 @@
         }
 
         case _CHECK_EXC_MATCH: {
+            _Py_UopsPESlot right;
+            _Py_UopsPESlot left;
             _Py_UopsPESlot b;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)right;
+            (void)left;
+            (void)left;
+            (void)b;
             b = sym_new_not_null(ctx);
             stack_pointer[-1] = b;
             break;
         }
 
         case _IMPORT_NAME: {
+            _Py_UopsPESlot fromlist;
+            _Py_UopsPESlot level;
             _Py_UopsPESlot res;
+            fromlist = stack_pointer[-1];
+            level = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)fromlist;
+            (void)level;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -1034,7 +1789,14 @@
         }
 
         case _IMPORT_FROM: {
+            _Py_UopsPESlot from;
             _Py_UopsPESlot res;
+            from = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)from;
+            (void)from;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -1047,14 +1809,25 @@
         /* _POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 */
 
         case _IS_NONE: {
+            _Py_UopsPESlot value;
             _Py_UopsPESlot b;
+            value = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&value);
             b = sym_new_not_null(ctx);
             stack_pointer[-1] = b;
             break;
         }
 
         case _GET_LEN: {
+            _Py_UopsPESlot obj;
             _Py_UopsPESlot len;
+            obj = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)obj;
+            (void)obj;
+            (void)len;
             len = sym_new_not_null(ctx);
             stack_pointer[0] = len;
             stack_pointer += 1;
@@ -1063,7 +1836,19 @@
         }
 
         case _MATCH_CLASS: {
+            _Py_UopsPESlot names;
+            _Py_UopsPESlot type;
+            _Py_UopsPESlot subject;
             _Py_UopsPESlot attrs;
+            names = stack_pointer[-1];
+            type = stack_pointer[-2];
+            subject = stack_pointer[-3];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)names;
+            (void)type;
+            (void)subject;
+            (void)attrs;
             attrs = sym_new_not_null(ctx);
             stack_pointer[-3] = attrs;
             stack_pointer += -2;
@@ -1072,7 +1857,11 @@
         }
 
         case _MATCH_MAPPING: {
+            _Py_UopsPESlot subject;
             _Py_UopsPESlot res;
+            subject = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&subject);
             res = sym_new_not_null(ctx);
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -1081,7 +1870,11 @@
         }
 
         case _MATCH_SEQUENCE: {
+            _Py_UopsPESlot subject;
             _Py_UopsPESlot res;
+            subject = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&subject);
             res = sym_new_not_null(ctx);
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -1090,7 +1883,18 @@
         }
 
         case _MATCH_KEYS: {
+            _Py_UopsPESlot keys;
+            _Py_UopsPESlot subject;
             _Py_UopsPESlot values_or_none;
+            keys = stack_pointer[-1];
+            subject = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)keys;
+            (void)subject;
+            (void)subject;
+            (void)keys;
+            (void)values_or_none;
             values_or_none = sym_new_not_null(ctx);
             stack_pointer[0] = values_or_none;
             stack_pointer += 1;
@@ -1099,14 +1903,26 @@
         }
 
         case _GET_ITER: {
+            _Py_UopsPESlot iterable;
             _Py_UopsPESlot iter;
+            iterable = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)iterable;
+            (void)iter;
             iter = sym_new_not_null(ctx);
             stack_pointer[-1] = iter;
             break;
         }
 
         case _GET_YIELD_FROM_ITER: {
+            _Py_UopsPESlot iterable;
             _Py_UopsPESlot iter;
+            iterable = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)iterable;
+            (void)iter;
             iter = sym_new_not_null(ctx);
             stack_pointer[-1] = iter;
             break;
@@ -1115,7 +1931,14 @@
         /* _FOR_ITER is not a viable micro-op for tier 2 */
 
         case _FOR_ITER_TIER_TWO: {
+            _Py_UopsPESlot iter;
             _Py_UopsPESlot next;
+            iter = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)iter;
+            (void)iter;
+            (void)next;
             next = sym_new_not_null(ctx);
             stack_pointer[0] = next;
             stack_pointer += 1;
@@ -1126,17 +1949,29 @@
         /* _INSTRUMENTED_FOR_ITER is not a viable micro-op for tier 2 */
 
         case _ITER_CHECK_LIST: {
+            _Py_UopsPESlot iter;
+            iter = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&iter);
             break;
         }
 
         /* _ITER_JUMP_LIST is not a viable micro-op for tier 2 */
 
         case _GUARD_NOT_EXHAUSTED_LIST: {
+            _Py_UopsPESlot iter;
+            iter = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&iter);
             break;
         }
 
         case _ITER_NEXT_LIST: {
+            _Py_UopsPESlot iter;
             _Py_UopsPESlot next;
+            iter = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&iter);
             next = sym_new_not_null(ctx);
             stack_pointer[0] = next;
             stack_pointer += 1;
@@ -1145,17 +1980,29 @@
         }
 
         case _ITER_CHECK_TUPLE: {
+            _Py_UopsPESlot iter;
+            iter = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&iter);
             break;
         }
 
         /* _ITER_JUMP_TUPLE is not a viable micro-op for tier 2 */
 
         case _GUARD_NOT_EXHAUSTED_TUPLE: {
+            _Py_UopsPESlot iter;
+            iter = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&iter);
             break;
         }
 
         case _ITER_NEXT_TUPLE: {
+            _Py_UopsPESlot iter;
             _Py_UopsPESlot next;
+            iter = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&iter);
             next = sym_new_not_null(ctx);
             stack_pointer[0] = next;
             stack_pointer += 1;
@@ -1164,17 +2011,29 @@
         }
 
         case _ITER_CHECK_RANGE: {
+            _Py_UopsPESlot iter;
+            iter = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&iter);
             break;
         }
 
         /* _ITER_JUMP_RANGE is not a viable micro-op for tier 2 */
 
         case _GUARD_NOT_EXHAUSTED_RANGE: {
+            _Py_UopsPESlot iter;
+            iter = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&iter);
             break;
         }
 
         case _ITER_NEXT_RANGE: {
+            _Py_UopsPESlot iter;
             _Py_UopsPESlot next;
+            iter = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&iter);
             next = sym_new_not_null(ctx);
             stack_pointer[0] = next;
             stack_pointer += 1;
@@ -1183,14 +2042,24 @@
         }
 
         case _FOR_ITER_GEN_FRAME: {
+            _Py_UopsPESlot iter;
+            _Py_UopsPESlot gen_frame;
+            MATERIALIZE_INST();
             /* We are about to hit the end of the trace */
             ctx->done = true;
             break;
         }
 
         case _LOAD_SPECIAL: {
+            _Py_UopsPESlot owner;
             _Py_UopsPESlot attr;
             _Py_UopsPESlot self_or_null;
+            owner = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)owner;
+            (void)attr;
+            (void)self_or_null;
             attr = sym_new_not_null(ctx);
             self_or_null = sym_new_not_null(ctx);
             stack_pointer[-1] = attr;
@@ -1201,7 +2070,31 @@
         }
 
         case _WITH_EXCEPT_START: {
+            _Py_UopsPESlot val;
+            _Py_UopsPESlot unused_0;
+            _Py_UopsPESlot lasti;
+            _Py_UopsPESlot exit_self;
+            _Py_UopsPESlot exit_func;
+            _Py_UopsPESlot unused_1;
             _Py_UopsPESlot res;
+            val = stack_pointer[-1];
+            unused_0 = stack_pointer[-2];
+            lasti = stack_pointer[-3];
+            exit_self = stack_pointer[-4];
+            exit_func = stack_pointer[-5];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)val;
+            (void)unused_0;
+            (void)lasti;
+            (void)exit_self;
+            (void)exit_func;
+            (void)exit_func;
+            (void)exit_self;
+            (void)lasti;
+            (void)unused_1;
+            (void)val;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -1210,8 +2103,11 @@
         }
 
         case _PUSH_EXC_INFO: {
-            _Py_UopsPESlot prev_exc;
             _Py_UopsPESlot new_exc;
+            _Py_UopsPESlot prev_exc;
+            new_exc = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&new_exc);
             prev_exc = sym_new_not_null(ctx);
             new_exc = sym_new_not_null(ctx);
             stack_pointer[-1] = prev_exc;
@@ -1222,16 +2118,28 @@
         }
 
         case _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT: {
+            _Py_UopsPESlot owner;
+            owner = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&owner);
             break;
         }
 
         case _GUARD_KEYS_VERSION: {
+            _Py_UopsPESlot owner;
+            owner = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&owner);
             break;
         }
 
         case _LOAD_ATTR_METHOD_WITH_VALUES: {
+            _Py_UopsPESlot owner;
             _Py_UopsPESlot attr;
             _Py_UopsPESlot self = (_Py_UopsPESlot){NULL, 0};
+            owner = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&owner);
             attr = sym_new_not_null(ctx);
             self = sym_new_not_null(ctx);
             stack_pointer[-1] = attr;
@@ -1242,8 +2150,12 @@
         }
 
         case _LOAD_ATTR_METHOD_NO_DICT: {
+            _Py_UopsPESlot owner;
             _Py_UopsPESlot attr;
             _Py_UopsPESlot self = (_Py_UopsPESlot){NULL, 0};
+            owner = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&owner);
             attr = sym_new_not_null(ctx);
             self = sym_new_not_null(ctx);
             stack_pointer[-1] = attr;
@@ -1254,26 +2166,44 @@
         }
 
         case _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES: {
+            _Py_UopsPESlot owner;
             _Py_UopsPESlot attr;
+            _Py_UopsPESlot unused_0 = (_Py_UopsPESlot){NULL, 0};
+            owner = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&owner);
             attr = sym_new_not_null(ctx);
             stack_pointer[-1] = attr;
             break;
         }
 
         case _LOAD_ATTR_NONDESCRIPTOR_NO_DICT: {
+            _Py_UopsPESlot owner;
             _Py_UopsPESlot attr;
+            _Py_UopsPESlot unused_0 = (_Py_UopsPESlot){NULL, 0};
+            owner = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&owner);
             attr = sym_new_not_null(ctx);
             stack_pointer[-1] = attr;
             break;
         }
 
         case _CHECK_ATTR_METHOD_LAZY_DICT: {
+            _Py_UopsPESlot owner;
+            owner = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&owner);
             break;
         }
 
         case _LOAD_ATTR_METHOD_LAZY_DICT: {
+            _Py_UopsPESlot owner;
             _Py_UopsPESlot attr;
             _Py_UopsPESlot self = (_Py_UopsPESlot){NULL, 0};
+            owner = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&owner);
             attr = sym_new_not_null(ctx);
             self = sym_new_not_null(ctx);
             stack_pointer[-1] = attr;
@@ -1285,21 +2215,23 @@
 
         case _MAYBE_EXPAND_METHOD: {
             _Py_UopsPESlot *args;
-            _Py_UopsPESlot self_or_null;
+            _Py_UopsPESlot *self_or_null;
             _Py_UopsPESlot callable;
             _Py_UopsPESlot func;
-            _Py_UopsPESlot maybe_self;
+            _Py_UopsPESlot *maybe_self;
             args = &stack_pointer[-oparg];
-            self_or_null = stack_pointer[-1 - oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            args = &stack_pointer[-oparg];
-            (void)callable;
-            (void)self_or_null;
-            (void)args;
+            maybe_self = &stack_pointer[-1 - oparg];
+            MATERIALIZE_INST();
+            materialize(&callable);
+            materialize(&self_or_null[0]);
+            for (int _i = oparg; --_i >= 0;) {
+                materialize(&args[_i]);
+            }
             func = sym_new_not_null(ctx);
-            maybe_self = sym_new_not_null(ctx);
+            maybe_self[0] = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = func;
-            stack_pointer[-1 - oparg] = maybe_self;
             break;
         }
 
@@ -1309,13 +2241,18 @@
 
         case _PY_FRAME_GENERAL: {
             _Py_UopsPESlot *args;
-            _Py_UopsPESlot self_or_null;
+            _Py_UopsPESlot *self_or_null;
             _Py_UopsPESlot callable;
             _Py_UopsPESlot new_frame;
-            self_or_null = stack_pointer[-1 - oparg];
+            args = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            (void)(self_or_null);
-            (void)(callable);
+            MATERIALIZE_INST();
+            materialize(&callable);
+            materialize(&self_or_null[0]);
+            for (int _i = oparg; --_i >= 0;) {
+                materialize(&args[_i]);
+            }
             PyCodeObject *co = NULL;
             assert((this_instr + 2)->opcode == _PUSH_FRAME);
             co = get_code_with_logging((this_instr + 2));
@@ -1331,17 +2268,62 @@
         }
 
         case _CHECK_FUNCTION_VERSION: {
+            _Py_UopsPESlot *unused_0;
+            _Py_UopsPESlot *self_or_null;
+            _Py_UopsPESlot callable;
+            _Py_UopsPESlot *unused_1;
+            unused_0 = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            MATERIALIZE_INST();
+            for (int _i = oparg; --_i >= 0;) {
+                materialize(&unused_0[_i]);
+            }
+            for (int _i = 1; --_i >= 0;) {
+                materialize(&self_or_null[_i]);
+            }
+            materialize(&callable);
             break;
         }
 
         case _CHECK_METHOD_VERSION: {
+            _Py_UopsPESlot *unused_0;
+            _Py_UopsPESlot *null;
+            _Py_UopsPESlot callable;
+            _Py_UopsPESlot *unused_1;
+            unused_0 = &stack_pointer[-oparg];
+            null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            MATERIALIZE_INST();
+            for (int _i = oparg; --_i >= 0;) {
+                materialize(&unused_0[_i]);
+            }
+            for (int _i = 1; --_i >= 0;) {
+                materialize(&null[_i]);
+            }
+            materialize(&callable);
             break;
         }
 
         case _EXPAND_METHOD: {
+            _Py_UopsPESlot *unused_0;
+            _Py_UopsPESlot *null;
+            _Py_UopsPESlot callable;
             _Py_UopsPESlot method;
             _Py_UopsPESlot *self;
+            _Py_UopsPESlot *unused_1;
+            unused_0 = &stack_pointer[-oparg];
+            null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             self = &stack_pointer[-1 - oparg];
+            MATERIALIZE_INST();
+            for (int _i = oparg; --_i >= 0;) {
+                materialize(&unused_0[_i]);
+            }
+            for (int _i = 1; --_i >= 0;) {
+                materialize(&null[_i]);
+            }
+            materialize(&callable);
             method = sym_new_not_null(ctx);
             for (int _i = 1; --_i >= 0;) {
                 self[_i] = sym_new_not_null(ctx);
@@ -1351,11 +2333,39 @@
         }
 
         case _CHECK_IS_NOT_PY_CALLABLE: {
+            _Py_UopsPESlot *unused_0;
+            _Py_UopsPESlot *unused_1;
+            _Py_UopsPESlot callable;
+            _Py_UopsPESlot *unused_2;
+            _Py_UopsPESlot *unused_3;
+            unused_0 = &stack_pointer[-oparg];
+            unused_1 = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            MATERIALIZE_INST();
+            for (int _i = oparg; --_i >= 0;) {
+                materialize(&unused_0[_i]);
+            }
+            for (int _i = 1; --_i >= 0;) {
+                materialize(&unused_1[_i]);
+            }
+            materialize(&callable);
             break;
         }
 
         case _CALL_NON_PY_GENERAL: {
+            _Py_UopsPESlot *args;
+            _Py_UopsPESlot *self_or_null;
+            _Py_UopsPESlot callable;
             _Py_UopsPESlot res;
+            args = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)args;
+            (void)self_or_null;
+            (void)callable;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -1364,13 +2374,43 @@
         }
 
         case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS: {
+            _Py_UopsPESlot *unused_0;
+            _Py_UopsPESlot *null;
+            _Py_UopsPESlot callable;
+            _Py_UopsPESlot *unused_1;
+            unused_0 = &stack_pointer[-oparg];
+            null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            MATERIALIZE_INST();
+            for (int _i = oparg; --_i >= 0;) {
+                materialize(&unused_0[_i]);
+            }
+            for (int _i = 1; --_i >= 0;) {
+                materialize(&null[_i]);
+            }
+            materialize(&callable);
             break;
         }
 
         case _INIT_CALL_BOUND_METHOD_EXACT_ARGS: {
+            _Py_UopsPESlot *unused_0;
+            _Py_UopsPESlot *null;
+            _Py_UopsPESlot callable;
             _Py_UopsPESlot func;
             _Py_UopsPESlot *self;
+            _Py_UopsPESlot *unused_1;
+            unused_0 = &stack_pointer[-oparg];
+            null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             self = &stack_pointer[-1 - oparg];
+            MATERIALIZE_INST();
+            for (int _i = oparg; --_i >= 0;) {
+                materialize(&unused_0[_i]);
+            }
+            for (int _i = 1; --_i >= 0;) {
+                materialize(&null[_i]);
+            }
+            materialize(&callable);
             func = sym_new_not_null(ctx);
             for (int _i = 1; --_i >= 0;) {
                 self[_i] = sym_new_not_null(ctx);
@@ -1380,27 +2420,63 @@
         }
 
         case _CHECK_PEP_523: {
+            MATERIALIZE_INST();
             break;
         }
 
         case _CHECK_FUNCTION_EXACT_ARGS: {
+            _Py_UopsPESlot *unused_0;
+            _Py_UopsPESlot *self_or_null;
+            _Py_UopsPESlot callable;
+            _Py_UopsPESlot *unused_1;
+            unused_0 = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            MATERIALIZE_INST();
+            for (int _i = oparg; --_i >= 0;) {
+                materialize(&unused_0[_i]);
+            }
+            for (int _i = 1; --_i >= 0;) {
+                materialize(&self_or_null[_i]);
+            }
+            materialize(&callable);
             break;
         }
 
         case _CHECK_STACK_SPACE: {
+            _Py_UopsPESlot *unused_0;
+            _Py_UopsPESlot *self_or_null;
+            _Py_UopsPESlot callable;
+            _Py_UopsPESlot *unused_1;
+            unused_0 = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            MATERIALIZE_INST();
+            for (int _i = oparg; --_i >= 0;) {
+                materialize(&unused_0[_i]);
+            }
+            for (int _i = 1; --_i >= 0;) {
+                materialize(&self_or_null[_i]);
+            }
+            materialize(&callable);
             break;
         }
 
         case _INIT_CALL_PY_EXACT_ARGS: {
             _Py_UopsPESlot *args;
-            _Py_UopsPESlot self_or_null;
+            _Py_UopsPESlot *self_or_null;
             _Py_UopsPESlot callable;
             _Py_UopsPESlot new_frame;
             args = &stack_pointer[-oparg];
-            self_or_null = stack_pointer[-1 - oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
+            MATERIALIZE_INST();
+            materialize(&callable);
+            materialize(&self_or_null[0]);
+            for (int _i = oparg; --_i >= 0;) {
+                materialize(&args[_i]);
+            }
             int argcount = oparg;
-            (void)callable;
             PyCodeObject *co = NULL;
             assert((this_instr + 2)->opcode == _PUSH_FRAME);
             co = get_code_with_logging((this_instr + 2));
@@ -1408,14 +2484,14 @@
                 ctx->done = true;
                 break;
             }
-            assert(self_or_null.sym != NULL);
+            assert(self_or_null->sym != NULL);
             assert(args != NULL);
-            if (sym_is_not_null(&self_or_null)) {
+            if (sym_is_not_null(self_or_null)) {
                 // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in VM
                 args--;
                 argcount++;
             }
-            if (sym_is_null(&self_or_null) || sym_is_not_null(&self_or_null)) {
+            if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
                 new_frame = (_Py_UopsPESlot){(_Py_UopsPESymbol *)frame_new(ctx, co, 0, args, argcount), NULL};
             } else {
                 new_frame = (_Py_UopsPESlot){(_Py_UopsPESymbol *)frame_new(ctx, co, 0, NULL, 0), NULL};
@@ -1429,6 +2505,7 @@
         case _PUSH_FRAME: {
             _Py_UopsPESlot new_frame;
             new_frame = stack_pointer[-1];
+            MATERIALIZE_INST();
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             ctx->frame->stack_pointer = stack_pointer;
@@ -1463,7 +2540,17 @@
         }
 
         case _CALL_TYPE_1: {
+            _Py_UopsPESlot arg;
+            _Py_UopsPESlot null;
+            _Py_UopsPESlot callable;
             _Py_UopsPESlot res;
+            arg = stack_pointer[-1];
+            null = stack_pointer[-2];
+            callable = stack_pointer[-3];
+            MATERIALIZE_INST();
+            materialize(&arg);
+            materialize(&null);
+            materialize(&callable);
             res = sym_new_not_null(ctx);
             stack_pointer[-3] = res;
             stack_pointer += -2;
@@ -1472,7 +2559,19 @@
         }
 
         case _CALL_STR_1: {
+            _Py_UopsPESlot arg;
+            _Py_UopsPESlot null;
+            _Py_UopsPESlot callable;
             _Py_UopsPESlot res;
+            arg = stack_pointer[-1];
+            null = stack_pointer[-2];
+            callable = stack_pointer[-3];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)arg;
+            (void)null;
+            (void)callable;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-3] = res;
             stack_pointer += -2;
@@ -1481,7 +2580,19 @@
         }
 
         case _CALL_TUPLE_1: {
+            _Py_UopsPESlot arg;
+            _Py_UopsPESlot null;
+            _Py_UopsPESlot callable;
             _Py_UopsPESlot res;
+            arg = stack_pointer[-1];
+            null = stack_pointer[-2];
+            callable = stack_pointer[-3];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)arg;
+            (void)null;
+            (void)callable;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-3] = res;
             stack_pointer += -2;
@@ -1498,12 +2609,14 @@
             args = &stack_pointer[-oparg];
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            args = &stack_pointer[-oparg];
             uint32_t type_version = (uint32_t)this_instr->operand;
             (void)type_version;
-            (void)callable;
-            (void)null;
-            (void)args;
+            MATERIALIZE_INST();
+            materialize(&callable);
+            materialize(&null);
+            for (int _i = oparg; --_i >= 0;) {
+                materialize(&args[_i]);
+            }
             self = sym_new_not_null(ctx);
             init = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = self;
@@ -1519,9 +2632,12 @@
             args = &stack_pointer[-oparg];
             init = stack_pointer[-1 - oparg];
             self = stack_pointer[-2 - oparg];
-            (void)self;
-            (void)init;
-            (void)args;
+            MATERIALIZE_INST();
+            materialize(&self);
+            materialize(&init);
+            for (int _i = oparg; --_i >= 0;) {
+                materialize(&args[_i]);
+            }
             init_frame = (_Py_UopsPESlot){NULL, NULL};
             ctx->done = true;
             stack_pointer[-2 - oparg] = init_frame;
@@ -1531,13 +2647,30 @@
         }
 
         case _EXIT_INIT_CHECK: {
+            _Py_UopsPESlot should_be_none;
+            should_be_none = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)should_be_none;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _CALL_BUILTIN_CLASS: {
+            _Py_UopsPESlot *args;
+            _Py_UopsPESlot *self_or_null;
+            _Py_UopsPESlot callable;
             _Py_UopsPESlot res;
+            args = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)args;
+            (void)self_or_null;
+            (void)callable;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -1546,7 +2679,19 @@
         }
 
         case _CALL_BUILTIN_O: {
+            _Py_UopsPESlot *args;
+            _Py_UopsPESlot *self_or_null;
+            _Py_UopsPESlot callable;
             _Py_UopsPESlot res;
+            args = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)args;
+            (void)self_or_null;
+            (void)callable;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -1555,7 +2700,19 @@
         }
 
         case _CALL_BUILTIN_FAST: {
+            _Py_UopsPESlot *args;
+            _Py_UopsPESlot *self_or_null;
+            _Py_UopsPESlot callable;
             _Py_UopsPESlot res;
+            args = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)args;
+            (void)self_or_null;
+            (void)callable;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -1564,7 +2721,19 @@
         }
 
         case _CALL_BUILTIN_FAST_WITH_KEYWORDS: {
+            _Py_UopsPESlot *args;
+            _Py_UopsPESlot *self_or_null;
+            _Py_UopsPESlot callable;
             _Py_UopsPESlot res;
+            args = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)args;
+            (void)self_or_null;
+            (void)callable;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -1573,7 +2742,19 @@
         }
 
         case _CALL_LEN: {
+            _Py_UopsPESlot *args;
+            _Py_UopsPESlot *self_or_null;
+            _Py_UopsPESlot callable;
             _Py_UopsPESlot res;
+            args = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)args;
+            (void)self_or_null;
+            (void)callable;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -1582,7 +2763,19 @@
         }
 
         case _CALL_ISINSTANCE: {
+            _Py_UopsPESlot *args;
+            _Py_UopsPESlot *self_or_null;
+            _Py_UopsPESlot callable;
             _Py_UopsPESlot res;
+            args = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)args;
+            (void)self_or_null;
+            (void)callable;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -1591,13 +2784,35 @@
         }
 
         case _CALL_LIST_APPEND: {
+            _Py_UopsPESlot arg;
+            _Py_UopsPESlot self;
+            _Py_UopsPESlot callable;
+            arg = stack_pointer[-1];
+            self = stack_pointer[-2];
+            callable = stack_pointer[-3];
+            MATERIALIZE_INST();
+            materialize(&arg);
+            materialize(&self);
+            materialize(&callable);
             stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _CALL_METHOD_DESCRIPTOR_O: {
+            _Py_UopsPESlot *args;
+            _Py_UopsPESlot *self_or_null;
+            _Py_UopsPESlot callable;
             _Py_UopsPESlot res;
+            args = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)args;
+            (void)self_or_null;
+            (void)callable;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -1606,7 +2821,19 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
+            _Py_UopsPESlot *args;
+            _Py_UopsPESlot *self_or_null;
+            _Py_UopsPESlot callable;
             _Py_UopsPESlot res;
+            args = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)args;
+            (void)self_or_null;
+            (void)callable;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -1615,7 +2842,19 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_NOARGS: {
+            _Py_UopsPESlot *args;
+            _Py_UopsPESlot *self_or_null;
+            _Py_UopsPESlot callable;
             _Py_UopsPESlot res;
+            args = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)args;
+            (void)self_or_null;
+            (void)callable;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -1624,7 +2863,19 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_FAST: {
+            _Py_UopsPESlot *args;
+            _Py_UopsPESlot *self_or_null;
+            _Py_UopsPESlot callable;
             _Py_UopsPESlot res;
+            args = &stack_pointer[-oparg];
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)args;
+            (void)self_or_null;
+            (void)callable;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -1639,17 +2890,20 @@
         case _PY_FRAME_KW: {
             _Py_UopsPESlot kwnames;
             _Py_UopsPESlot *args;
-            _Py_UopsPESlot self_or_null;
+            _Py_UopsPESlot *self_or_null;
             _Py_UopsPESlot callable;
             _Py_UopsPESlot new_frame;
             kwnames = stack_pointer[-1];
             args = &stack_pointer[-1 - oparg];
-            self_or_null = stack_pointer[-2 - oparg];
+            self_or_null = &stack_pointer[-2 - oparg];
             callable = stack_pointer[-3 - oparg];
-            (void)callable;
-            (void)self_or_null;
-            (void)args;
-            (void)kwnames;
+            MATERIALIZE_INST();
+            materialize(&callable);
+            materialize(&self_or_null[0]);
+            for (int _i = oparg; --_i >= 0;) {
+                materialize(&args[_i]);
+            }
+            materialize(&kwnames);
             new_frame = (_Py_UopsPESlot){NULL, NULL};
             ctx->done = true;
             stack_pointer[-3 - oparg] = new_frame;
@@ -1659,18 +2913,71 @@
         }
 
         case _CHECK_FUNCTION_VERSION_KW: {
+            _Py_UopsPESlot kwnames;
+            _Py_UopsPESlot *unused_0;
+            _Py_UopsPESlot *self_or_null;
+            _Py_UopsPESlot callable;
+            _Py_UopsPESlot *unused_1;
+            kwnames = stack_pointer[-1];
+            unused_0 = &stack_pointer[-1 - oparg];
+            self_or_null = &stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
+            MATERIALIZE_INST();
+            materialize(&kwnames);
+            for (int _i = oparg; --_i >= 0;) {
+                materialize(&unused_0[_i]);
+            }
+            for (int _i = 1; --_i >= 0;) {
+                materialize(&self_or_null[_i]);
+            }
+            materialize(&callable);
             break;
         }
 
         case _CHECK_METHOD_VERSION_KW: {
+            _Py_UopsPESlot kwnames;
+            _Py_UopsPESlot *unused_0;
+            _Py_UopsPESlot *null;
+            _Py_UopsPESlot callable;
+            _Py_UopsPESlot *unused_1;
+            kwnames = stack_pointer[-1];
+            unused_0 = &stack_pointer[-1 - oparg];
+            null = &stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
+            MATERIALIZE_INST();
+            materialize(&kwnames);
+            for (int _i = oparg; --_i >= 0;) {
+                materialize(&unused_0[_i]);
+            }
+            for (int _i = 1; --_i >= 0;) {
+                materialize(&null[_i]);
+            }
+            materialize(&callable);
             break;
         }
 
         case _EXPAND_METHOD_KW: {
+            _Py_UopsPESlot kwnames;
+            _Py_UopsPESlot *unused_0;
+            _Py_UopsPESlot *null;
+            _Py_UopsPESlot callable;
             _Py_UopsPESlot method;
             _Py_UopsPESlot *self;
-            _Py_UopsPESlot kwnames;
+            _Py_UopsPESlot *unused_1;
+            kwnames = stack_pointer[-1];
+            unused_0 = &stack_pointer[-1 - oparg];
+            null = &stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
             self = &stack_pointer[-2 - oparg];
+            MATERIALIZE_INST();
+            materialize(&kwnames);
+            for (int _i = oparg; --_i >= 0;) {
+                materialize(&unused_0[_i]);
+            }
+            for (int _i = 1; --_i >= 0;) {
+                materialize(&null[_i]);
+            }
+            materialize(&callable);
             method = sym_new_not_null(ctx);
             for (int _i = 1; --_i >= 0;) {
                 self[_i] = sym_new_not_null(ctx);
@@ -1682,11 +2989,45 @@
         }
 
         case _CHECK_IS_NOT_PY_CALLABLE_KW: {
+            _Py_UopsPESlot kwnames;
+            _Py_UopsPESlot *unused_0;
+            _Py_UopsPESlot *unused_1;
+            _Py_UopsPESlot callable;
+            _Py_UopsPESlot *unused_2;
+            _Py_UopsPESlot *unused_3;
+            kwnames = stack_pointer[-1];
+            unused_0 = &stack_pointer[-1 - oparg];
+            unused_1 = &stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
+            MATERIALIZE_INST();
+            materialize(&kwnames);
+            for (int _i = oparg; --_i >= 0;) {
+                materialize(&unused_0[_i]);
+            }
+            for (int _i = 1; --_i >= 0;) {
+                materialize(&unused_1[_i]);
+            }
+            materialize(&callable);
             break;
         }
 
         case _CALL_KW_NON_PY: {
+            _Py_UopsPESlot kwnames;
+            _Py_UopsPESlot *args;
+            _Py_UopsPESlot *self_or_null;
+            _Py_UopsPESlot callable;
             _Py_UopsPESlot res;
+            kwnames = stack_pointer[-1];
+            args = &stack_pointer[-1 - oparg];
+            self_or_null = &stack_pointer[-2 - oparg];
+            callable = stack_pointer[-3 - oparg];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)kwnames;
+            (void)args;
+            (void)self_or_null;
+            (void)callable;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-3 - oparg] = res;
             stack_pointer += -2 - oparg;
@@ -1699,7 +3040,13 @@
         /* __DO_CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
 
         case _MAKE_FUNCTION: {
+            _Py_UopsPESlot codeobj_st;
             _Py_UopsPESlot func;
+            codeobj_st = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)codeobj_st;
+            (void)func;
             func = sym_new_not_null(ctx);
             stack_pointer[-1] = func;
             break;
@@ -1707,6 +3054,14 @@
 
         case _SET_FUNCTION_ATTRIBUTE: {
             _Py_UopsPESlot func_st;
+            _Py_UopsPESlot attr_st;
+            func_st = stack_pointer[-1];
+            attr_st = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)func_st;
+            (void)attr_st;
+            (void)func_st;
             func_st = sym_new_not_null(ctx);
             stack_pointer[-2] = func_st;
             stack_pointer += -1;
@@ -1716,6 +3071,7 @@
 
         case _RETURN_GENERATOR: {
             _Py_UopsPESlot res;
+            MATERIALIZE_INST();
             ctx->frame->stack_pointer = stack_pointer;
             frame_pop(ctx);
             stack_pointer = ctx->frame->stack_pointer;
@@ -1739,7 +3095,17 @@
         }
 
         case _BUILD_SLICE: {
+            _Py_UopsPESlot step = (_Py_UopsPESlot){NULL, 0};
+            _Py_UopsPESlot stop;
+            _Py_UopsPESlot start;
             _Py_UopsPESlot slice;
+            if (oparg == 3) { step = stack_pointer[-((oparg == 3) ? 1 : 0)]; }
+            stop = stack_pointer[-1 - ((oparg == 3) ? 1 : 0)];
+            start = stack_pointer[-2 - ((oparg == 3) ? 1 : 0)];
+            MATERIALIZE_INST();
+            materialize(&step);
+            materialize(&stop);
+            materialize(&start);
             slice = sym_new_not_null(ctx);
             stack_pointer[-2 - ((oparg == 3) ? 1 : 0)] = slice;
             stack_pointer += -1 - ((oparg == 3) ? 1 : 0);
@@ -1748,21 +3114,40 @@
         }
 
         case _CONVERT_VALUE: {
+            _Py_UopsPESlot value;
             _Py_UopsPESlot result;
+            value = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&value);
             result = sym_new_not_null(ctx);
             stack_pointer[-1] = result;
             break;
         }
 
         case _FORMAT_SIMPLE: {
+            _Py_UopsPESlot value;
             _Py_UopsPESlot res;
+            value = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)value;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-1] = res;
             break;
         }
 
         case _FORMAT_WITH_SPEC: {
+            _Py_UopsPESlot fmt_spec;
+            _Py_UopsPESlot value;
             _Py_UopsPESlot res;
+            fmt_spec = stack_pointer[-1];
+            value = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)fmt_spec;
+            (void)value;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -1771,7 +3156,17 @@
         }
 
         case _COPY: {
+            _Py_UopsPESlot *unused_0;
+            _Py_UopsPESlot bottom;
+            _Py_UopsPESlot *unused_1;
             _Py_UopsPESlot top;
+            unused_0 = &stack_pointer[-(oparg-1)];
+            bottom = stack_pointer[-1 - (oparg-1)];
+            MATERIALIZE_INST();
+            for (int _i = oparg-1; --_i >= 0;) {
+                materialize(&unused_0[_i]);
+            }
+            materialize(&bottom);
             top = sym_new_not_null(ctx);
             stack_pointer[0] = top;
             stack_pointer += 1;
@@ -1780,7 +3175,16 @@
         }
 
         case _BINARY_OP: {
+            _Py_UopsPESlot rhs;
+            _Py_UopsPESlot lhs;
             _Py_UopsPESlot res;
+            rhs = stack_pointer[-1];
+            lhs = stack_pointer[-2];
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
+            (void)rhs;
+            (void)lhs;
+            (void)res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -1790,7 +3194,18 @@
 
         case _SWAP: {
             _Py_UopsPESlot top;
+            _Py_UopsPESlot *unused_0;
             _Py_UopsPESlot bottom;
+            _Py_UopsPESlot *unused_1;
+            top = stack_pointer[-1];
+            unused_0 = &stack_pointer[-1 - (oparg-2)];
+            bottom = stack_pointer[-2 - (oparg-2)];
+            MATERIALIZE_INST();
+            materialize(&top);
+            for (int _i = oparg-2; --_i >= 0;) {
+                materialize(&unused_0[_i]);
+            }
+            materialize(&bottom);
             top = sym_new_not_null(ctx);
             bottom = sym_new_not_null(ctx);
             stack_pointer[-2 - (oparg-2)] = top;
@@ -1815,62 +3230,87 @@
         /* _INSTRUMENTED_POP_JUMP_IF_NOT_NONE is not a viable micro-op for tier 2 */
 
         case _GUARD_IS_TRUE_POP: {
+            _Py_UopsPESlot flag;
+            flag = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&flag);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _GUARD_IS_FALSE_POP: {
+            _Py_UopsPESlot flag;
+            flag = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&flag);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _GUARD_IS_NONE_POP: {
+            _Py_UopsPESlot val;
+            val = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&val);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _GUARD_IS_NOT_NONE_POP: {
+            _Py_UopsPESlot val;
+            val = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&val);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _JUMP_TO_TOP: {
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
             ctx->done = true;
             break;
         }
 
         case _SET_IP: {
+            MATERIALIZE_INST();
             break;
         }
 
         case _CHECK_STACK_SPACE_OPERAND: {
             uint32_t framesize = (uint32_t)this_instr->operand;
+            MATERIALIZE_INST();
             (void)framesize;
             break;
         }
 
         case _SAVE_RETURN_OFFSET: {
+            MATERIALIZE_INST();
             break;
         }
 
         case _EXIT_TRACE: {
             PyObject *exit_p = (PyObject *)this_instr->operand;
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
             (void)exit_p;
             ctx->done = true;
             break;
         }
 
         case _CHECK_VALIDITY: {
+            MATERIALIZE_INST();
             break;
         }
 
         case _LOAD_CONST_INLINE: {
             _Py_UopsPESlot value;
             PyObject *ptr = (PyObject *)this_instr->operand;
+            MATERIALIZE_INST();
             value = sym_new_const(ctx, ptr);
             sym_set_origin_inst_override(&value, this_instr);
             stack_pointer[0] = value;
@@ -1882,6 +3322,7 @@
         case _LOAD_CONST_INLINE_BORROW: {
             _Py_UopsPESlot value;
             PyObject *ptr = (PyObject *)this_instr->operand;
+            MATERIALIZE_INST();
             value = sym_new_const(ctx, ptr);
             sym_set_origin_inst_override(&value, this_instr);
             stack_pointer[0] = value;
@@ -1891,7 +3332,11 @@
         }
 
         case _POP_TOP_LOAD_CONST_INLINE_BORROW: {
+            _Py_UopsPESlot pop;
             _Py_UopsPESlot value;
+            pop = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&pop);
             value = sym_new_not_null(ctx);
             stack_pointer[-1] = value;
             break;
@@ -1900,6 +3345,7 @@
         case _LOAD_CONST_INLINE_WITH_NULL: {
             _Py_UopsPESlot value;
             _Py_UopsPESlot null;
+            MATERIALIZE_INST();
             value = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             stack_pointer[0] = value;
@@ -1912,6 +3358,7 @@
         case _LOAD_CONST_INLINE_BORROW_WITH_NULL: {
             _Py_UopsPESlot value;
             _Py_UopsPESlot null;
+            MATERIALIZE_INST();
             value = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             stack_pointer[0] = value;
@@ -1922,46 +3369,65 @@
         }
 
         case _CHECK_FUNCTION: {
+            MATERIALIZE_INST();
             break;
         }
 
         case _INTERNAL_INCREMENT_OPT_COUNTER: {
+            _Py_UopsPESlot opt;
+            opt = stack_pointer[-1];
+            MATERIALIZE_INST();
+            materialize(&opt);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _DYNAMIC_EXIT: {
+            MATERIALIZE_INST();
+            materialize_ctx(ctx);
             break;
         }
 
         case _START_EXECUTOR: {
+            MATERIALIZE_INST();
             break;
         }
 
         case _MAKE_WARM: {
+            MATERIALIZE_INST();
             break;
         }
 
         case _FATAL_ERROR: {
+            MATERIALIZE_INST();
             break;
         }
 
         case _CHECK_VALIDITY_AND_SET_IP: {
+            MATERIALIZE_INST();
             break;
         }
 
         case _DEOPT: {
+            MATERIALIZE_INST();
             break;
         }
 
         case _ERROR_POP_N: {
+            _Py_UopsPESlot *unused_0;
+            unused_0 = &stack_pointer[-oparg];
+            MATERIALIZE_INST();
+            for (int _i = oparg; --_i >= 0;) {
+                materialize(&unused_0[_i]);
+            }
             stack_pointer += -oparg;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _TIER2_RESUME_CHECK: {
+            MATERIALIZE_INST();
             break;
         }
 

@@ -174,7 +174,7 @@ class Stack:
         self.variables: list[Local] = []
         self.defined: set[str] = set()
 
-    def pop(self, var: StackItem, extract_bits: bool = False) -> tuple[str, Local]:
+    def pop(self, var: StackItem, extract_bits: bool = False, assign_unused: bool = False) -> tuple[str, Local]:
         self.top_offset.pop(var)
         indirect = "&" if var.is_array() else ""
         if self.variables:
@@ -189,7 +189,7 @@ class Stack:
                     f"Size mismatch when popping '{popped.name}' from stack to assign to '{var.name}'. "
                     f"Expected {var_size(var)} got {var_size(popped.item)}"
                 )
-            if var.name in UNUSED:
+            if var.name in UNUSED and not assign_unused:
                 if popped.name not in UNUSED and popped.name in self.defined:
                     raise StackError(
                         f"Value is declared unused, but is already cached by prior operation"
@@ -211,7 +211,7 @@ class Stack:
             return defn, Local.redefinition(var, popped)
 
         self.base_offset.pop(var)
-        if var.name in UNUSED or not var.used:
+        if not assign_unused and (var.name in UNUSED or not var.used):
             return "", Local.unused(var)
         self.defined.add(var.name)
         cast = f"({var.type})" if (not indirect and var.type) else ""

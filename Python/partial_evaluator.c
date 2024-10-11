@@ -216,24 +216,6 @@ partial_evaluate_uops(
         }
 #endif
 
-        int is_static = (_PyUop_Flags[opcode] & HAS_STATIC_FLAG);
-        if (!is_static) {
-            MATERIALIZE_INST();
-        }
-        if (!is_static &&
-            // During these two opcodes, there's an abstract frame on the stack.
-            // Which is not a valid symbol.
-            (opcode != _PUSH_FRAME && opcode != _SAVE_RETURN_OFFSET)) {
-            // An escaping opcode means we need to materialize _everything_.
-            if (_PyUop_Flags[opcode] & HAS_ESCAPES_FLAG) {
-                materialize_ctx(ctx);
-            }
-            else {
-
-                materialize_frame(ctx->frame);
-            }
-        }
-
         switch (opcode) {
 
 #include "partial_evaluator_cases.c.h"
