@@ -105,7 +105,7 @@ pthread_join(pthread_t thread, void** value_ptr)
 
 PyAPI_FUNC(pthread_t) pthread_self(void)
 {
-    return 0;
+    return (pthread_t)(uintptr_t)&py_tls_entries;
 }
 
 int
