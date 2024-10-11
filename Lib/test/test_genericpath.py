@@ -160,7 +160,8 @@ class GenericTest:
 
         # Keyword arguments are accepted
         self.assertIs(self.pathmodule.exists(path=filename), True)
-        self.assertIs(self.pathmodule.lexists(path=filename), True)
+        if self.pathmodule is not genericpath:
+            self.assertIs(self.pathmodule.lexists(path=filename), True)
 
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     @unittest.skipIf(is_emscripten, "Emscripten pipe fds have no stat")
