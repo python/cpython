@@ -57,6 +57,8 @@ dummy_func(void) {
     op(_LOAD_CONST, (-- value)) {
         // Should've all been converted by specializer.
         Py_UNREACHABLE();
+        // Just to please the code generator that value is defined.
+        value = sym_new_const(ctx, NULL);
     }
 
     op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
@@ -99,7 +101,6 @@ dummy_func(void) {
 
     op(_CHECK_STACK_SPACE_OPERAND, ( -- )) {
         MATERIALIZE_INST();
-        (void)framesize;
     }
 
     op(_BINARY_SUBSCR_INIT_CALL, (container, sub -- new_frame)) {
@@ -116,7 +117,7 @@ dummy_func(void) {
         ctx->done = true;
     }
 
-    op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null[1], args[oparg] -- new_frame)) {
+    op(_INIT_CALL_PY_EXACT_ARGS, (callable[1], self_or_null[1], args[oparg] -- new_frame)) {
         MATERIALIZE_INST();
         MATERIALIZE_INPUTS();
 
@@ -139,15 +140,20 @@ dummy_func(void) {
             argcount++;
         }
 
+        _Py_UopsPESlot temp;
         if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
-            new_frame = (_Py_UopsPESlot){(_Py_UopsPESymbol *)frame_new(ctx, co, 0, args, argcount), NULL};
+             temp = (_Py_UopsPESlot){
+                (_Py_UopsPESymbol *)frame_new(ctx, co, 0, args, argcount), NULL
+            };
         } else {
-            new_frame = (_Py_UopsPESlot){(_Py_UopsPESymbol *)frame_new(ctx, co, 0, NULL, 0), NULL};
-
+            temp = (_Py_UopsPESlot){
+                (_Py_UopsPESymbol *)frame_new(ctx, co, 0, NULL, 0), NULL
+            };
         }
+        new_frame = temp;
     }
 
-    op(_PY_FRAME_GENERAL, (callable, self_or_null[1], args[oparg] -- new_frame)) {
+    op(_PY_FRAME_GENERAL, (callable[1], self_or_null[1], args[oparg] -- new_frame)) {
         MATERIALIZE_INST();
         MATERIALIZE_INPUTS();
         PyCodeObject *co = NULL;
@@ -158,25 +164,26 @@ dummy_func(void) {
             break;
         }
 
-        new_frame = (_Py_UopsPESlot){(_Py_UopsPESymbol *)frame_new(ctx, co, 0, NULL, 0), NULL};
+        _Py_UopsPESlot temp = (_Py_UopsPESlot){(_Py_UopsPESymbol *)frame_new(ctx, co, 0, NULL, 0), NULL};
+        new_frame = temp;
     }
 
-    op(_PY_FRAME_KW, (callable, self_or_null[1], args[oparg], kwnames -- new_frame)) {
+    op(_PY_FRAME_KW, (callable[1], self_or_null[1], args[oparg], kwnames -- new_frame)) {
         MATERIALIZE_INST();
         MATERIALIZE_INPUTS();
         new_frame = (_Py_UopsPESlot){NULL, NULL};
         ctx->done = true;
     }
 
-    op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, null, args[oparg] -- self, init, args[oparg])) {
+    op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable[1], null[1], args[oparg] -- init[1], self[1], args[oparg])) {
         (void)type_version;
         MATERIALIZE_INST();
         MATERIALIZE_INPUTS();
-        self = sym_new_not_null(ctx);
-        init = sym_new_not_null(ctx);
+        self[0] = sym_new_not_null(ctx);
+        init[0] = sym_new_not_null(ctx);
     }
 
-    op(_CREATE_INIT_FRAME, (self, init, args[oparg] -- init_frame)) {
+    op(_CREATE_INIT_FRAME, (init[1], self[1], args[oparg] -- init_frame)) {
         MATERIALIZE_INST();
         MATERIALIZE_INPUTS();
         init_frame = (_Py_UopsPESlot){NULL, NULL};
@@ -315,11 +322,27 @@ dummy_func(void) {
         (void)right;
     }
 
-    op(_MAYBE_EXPAND_METHOD, (callable, self_or_null[1], args[oparg] -- func, maybe_self[1], args[oparg])) {
+    op(_MAYBE_EXPAND_METHOD, (callable[1], self_or_null[1], args[oparg] -- func[1], maybe_self[1], args[oparg])) {
         MATERIALIZE_INST();
         MATERIALIZE_INPUTS();
-        func = sym_new_not_null(ctx);
+        func[0] = sym_new_not_null(ctx);
         maybe_self[0] = sym_new_not_null(ctx);
+    }
+
+    op(_LOAD_GLOBAL_MODULE_FROM_KEYS, (index/1, globals_keys -- res, null if (oparg & 1))) {
+        (void)index;
+        MATERIALIZE_INST();
+        MATERIALIZE_INPUTS();
+        res = sym_new_not_null(ctx);
+        null = sym_new_null(ctx);
+    }
+
+    op(_LOAD_GLOBAL_BUILTINS_FROM_KEYS, (index/1, builtins_keys -- res, null if (oparg & 1))) {
+        (void)index;
+        MATERIALIZE_INST();
+        MATERIALIZE_INPUTS();
+        res = sym_new_not_null(ctx);
+        null = sym_new_null(ctx);
     }
 // END BYTECODES //
 

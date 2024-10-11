@@ -81,33 +81,43 @@ def declare_variables(uop: Uop, out: CWriter) -> None:
 def emit_default(out: CWriter, uop: Uop, stack: Stack) -> None:
     out.emit("MATERIALIZE_INST();\n")
     unused_count = 0
-    if uop.properties.escapes:
-        out.emit("materialize_ctx(ctx);\n")
-        for var in reversed(uop.stack.inputs):
-            name, unused_count = var_name(var, unused_count)
-            out.emit(f"(void){name};\n")
-        for var in uop.stack.outputs:
-            name, unused_count = var_name(var, unused_count)
-            out.emit(f"(void){name};\n")
-    else:
-        for var in reversed(uop.stack.inputs):
-            name, unused_count = var_name(var, unused_count)
-            if var.is_array():
-                out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-                out.emit(f"materialize(&{name}[_i]);\n")
-                out.emit("}\n")
-            else:
-                out.emit(f"materialize(&{name});\n")
+    for var in reversed(uop.stack.inputs):
+        name, unused_count = var_name(var, unused_count)
+        old_var_name = var.name
+        var.name = name
+        assign, _ = stack.pop(var, assign_unused=True)
+        var.name = old_var_name
+        out.emit(assign)
+        if var.is_array():
+            out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
+            out.emit(f"materialize(&{name}[_i]);\n")
+            out.emit("}\n")
+        else:
+            out.emit(f"materialize(&{name});\n")
+    top_offset = stack.top_offset.copy()
     for var in uop.stack.outputs:
+        if var.is_array() and not var.peek and not var.name == "unused":
+            c_offset = top_offset.to_c()
+            out.emit(f"{var.name} = &stack_pointer[{c_offset}];\n")
+        top_offset.push(var)
+    for var in uop.stack.outputs:
+        local = Local.undefined(var)
+        stack.push(local)
         if var.name != "unused" and not var.peek:
+            local.defined = True
             if var.is_array():
-                out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-                out.emit(f"{var.name}[_i] = sym_new_not_null(ctx);\n")
-                out.emit("}\n")
+                if var.size == "1":
+                    out.emit(f"{var.name}[0] = sym_new_not_null(ctx);\n")
+                else:
+                    out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
+                    out.emit(f"{var.name}[_i] = sym_new_not_null(ctx);\n")
+                    out.emit("}\n")
             elif var.name == "null":
                 out.emit(f"{var.name} = sym_new_null(ctx);\n")
             else:
                 out.emit(f"{var.name} = sym_new_not_null(ctx);\n")
+    if uop.properties.escapes:
+        out.emit("materialize_ctx(ctx);\n")
 
 
 class Tier2PEEmitter(Emitter):
@@ -143,6 +153,11 @@ class Tier2PEEmitter(Emitter):
             else:
                 self.out.emit(f"materialize(&{var.name});\n")
 
+    def emit_save(self, storage: Storage) -> None:
+        storage.flush(self.out)
+
+    def emit_reload(self, storage: Storage) -> None:
+        pass
 
 def write_uop(
     override: Uop | None,
@@ -151,7 +166,6 @@ def write_uop(
     stack: Stack,
     debug: bool,
 ) -> None:
-    locals: dict[str, Local] = {}
     prototype = override if override else uop
     try:
         out.start_line()
@@ -179,6 +193,12 @@ def write_uop(
             # No reference management of inputs needed.
             for var in storage.inputs:  # type: ignore[possibly-undefined]
                 var.defined = False
+            base_offset = stack.base_offset.copy()
+            for var in reversed(uop.stack.inputs):
+                if var.is_array():
+                    c_offset = base_offset.to_c()
+                    out.emit(f"{var.name} = &stack_pointer[{c_offset}];\n")
+                base_offset.push(var)
             storage = emitter.emit_tokens(override, storage, None)
             out.start_line()
             storage.flush(out, cast_type="", extract_bits=False)

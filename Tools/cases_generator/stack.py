@@ -299,7 +299,7 @@ class Stack:
         cast_type: str = "uintptr_t",
         extract_bits: bool = True,
     ) -> None:
-        cast = f"({cast_type})" if var.type else ""
+        cast = f"({cast_type})" if (var.type and cast_type) else ""
         bits = ".bits" if cast and extract_bits else ""
         if var.condition == "0":
             return
