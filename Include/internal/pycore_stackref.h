@@ -269,6 +269,7 @@ PyStackRef_CLOSE(_PyStackRef ref)
 static inline void
 PyStackRef_XCLOSE(_PyStackRef ref)
 {
+    assert(ref.bits != 0);
     if (!PyStackRef_HasCount(ref)) {
         assert(!PyStackRef_IsNull(ref));
         Py_DECREF_MORTAL(BITS_TO_PTR(ref));

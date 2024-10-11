@@ -3325,13 +3325,11 @@ dummy_func(
                     tstate, callable[0], locals,
                     args, total_args, NULL, frame
                 );
+                ERROR_IF(new_frame == NULL, error);
                 // Manipulate stack directly since we leave using DISPATCH_INLINED().
-                SYNC_SP();
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
-                if (new_frame == NULL) {
-                    ERROR_NO_POP();
-                }
+                SYNC_SP();
                 frame->return_offset = (uint16_t)(next_instr - this_instr);
                 DISPATCH_INLINED(new_frame);
             }
@@ -3695,10 +3693,9 @@ dummy_func(
             DEAD(self);
             init_frame = _PyEvalFramePushAndInit(
                 tstate, init[0], NULL, args-1, oparg+1, NULL, shim);
-            SYNC_SP();
             if (init_frame == NULL) {
                 _PyEval_FrameClearAndPop(tstate, shim);
-                ERROR_NO_POP();
+                ERROR_IF(true, error);
             }
             frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
             /* Account for pushing the extra frame.
@@ -4258,12 +4255,10 @@ dummy_func(
                 args, positional_args, kwnames_o, frame
             );
             PyStackRef_CLOSE(kwnames);
+            ERROR_IF(new_frame == NULL, error);
             // The frame has stolen all the arguments from the stack,
             // so there is no need to clean them up.
             SYNC_SP();
-            if (new_frame == NULL) {
-                ERROR_NO_POP();
-            }
         }
 
         op(_CHECK_FUNCTION_VERSION_KW, (func_version/2, callable[1], self_or_null[1], unused[oparg], kwnames -- callable[1], self_or_null[1], unused[oparg], kwnames)) {

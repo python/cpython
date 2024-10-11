@@ -146,6 +146,10 @@ dump_stack(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
         if (ptr != stack_base) {
             printf(", ");
         }
+        if (PyStackRef_IsNull(*ptr)) {
+            printf("<NULL>");
+            continue;
+        }
         PyObject *obj = PyStackRef_AsPyObjectBorrow(*ptr);
         if (obj == NULL) {
             printf("<nil>");

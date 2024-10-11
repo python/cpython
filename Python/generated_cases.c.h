@@ -925,14 +925,16 @@
                         args, total_args, NULL, frame
                     );
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    // Manipulate stack directly since we leave using DISPATCH_INLINED().
-                    stack_pointer += -2 - oparg;
-                    assert(WITHIN_STACK_BOUNDS());
-                    // The frame has stolen all the arguments from the stack,
-                    // so there is no need to clean them up.
                     if (new_frame == NULL) {
+                        stack_pointer += -2 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
                         goto error;
                     }
+                    // Manipulate stack directly since we leave using DISPATCH_INLINED().
+                    // The frame has stolen all the arguments from the stack,
+                    // so there is no need to clean them up.
+                    stack_pointer += -2 - oparg;
+                    assert(WITHIN_STACK_BOUNDS());
                     frame->return_offset = (uint16_t)(next_instr - this_instr);
                     DISPATCH_INLINED(new_frame);
                 }
@@ -1072,12 +1074,13 @@
                 init_frame = _PyEvalFramePushAndInit(
                     tstate, init[0], NULL, args-1, oparg+1, NULL, shim);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                stack_pointer[-2 - oparg].bits = (uintptr_t)init_frame;
-                stack_pointer += -1 - oparg;
-                assert(WITHIN_STACK_BOUNDS());
                 if (init_frame == NULL) {
                     _PyEval_FrameClearAndPop(tstate, shim);
-                    goto error;
+                    if (true) {
+                        stack_pointer += -2 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
+                        goto error;
+                    }
                 }
                 frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
                 /* Account for pushing the extra frame.
@@ -1092,7 +1095,7 @@
                 // Eventually this should be the only occurrence of this code.
                 assert(tstate->interp->eval_frame == NULL);
                 _PyInterpreterFrame *temp = new_frame;
-                stack_pointer += -1;
+                stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 assert(new_frame->previous == frame || new_frame->previous->previous == frame);
@@ -2092,14 +2095,16 @@
                 );
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(kwnames);
+                if (new_frame == NULL) {
+                    stack_pointer += -3 - oparg;
+                    assert(WITHIN_STACK_BOUNDS());
+                    goto error;
+                }
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
                 stack_pointer[-3 - oparg].bits = (uintptr_t)new_frame;
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
-                if (new_frame == NULL) {
-                    goto error;
-                }
             }
             // _SAVE_RETURN_OFFSET
             {
@@ -2270,14 +2275,16 @@
                 );
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(kwnames);
+                if (new_frame == NULL) {
+                    stack_pointer += -3 - oparg;
+                    assert(WITHIN_STACK_BOUNDS());
+                    goto error;
+                }
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
                 stack_pointer[-3 - oparg].bits = (uintptr_t)new_frame;
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
-                if (new_frame == NULL) {
-                    goto error;
-                }
             }
             // _SAVE_RETURN_OFFSET
             {
@@ -4438,14 +4445,16 @@
                         args, total_args, NULL, frame
                     );
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    // Manipulate stack directly since we leave using DISPATCH_INLINED().
-                    stack_pointer += -2 - oparg;
-                    assert(WITHIN_STACK_BOUNDS());
-                    // The frame has stolen all the arguments from the stack,
-                    // so there is no need to clean them up.
                     if (new_frame == NULL) {
+                        stack_pointer += -2 - oparg;
+                        assert(WITHIN_STACK_BOUNDS());
                         goto error;
                     }
+                    // Manipulate stack directly since we leave using DISPATCH_INLINED().
+                    // The frame has stolen all the arguments from the stack,
+                    // so there is no need to clean them up.
+                    stack_pointer += -2 - oparg;
+                    assert(WITHIN_STACK_BOUNDS());
                     frame->return_offset = (uint16_t)(next_instr - this_instr);
                     DISPATCH_INLINED(new_frame);
                 }

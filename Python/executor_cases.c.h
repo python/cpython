@@ -4408,18 +4408,18 @@
             init_frame = _PyEvalFramePushAndInit(
                 tstate, init[0], NULL, args-1, oparg+1, NULL, shim);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            stack_pointer[-2 - oparg].bits = (uintptr_t)init_frame;
-            stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
             if (init_frame == NULL) {
                 _PyEval_FrameClearAndPop(tstate, shim);
-                JUMP_TO_ERROR();
+                if (true) JUMP_TO_ERROR();
             }
             frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
             /* Account for pushing the extra frame.
              * We don't check recursion depth here,
              * as it will be checked after start_frame */
             tstate->py_recursion_remaining--;
+            stack_pointer[-2 - oparg].bits = (uintptr_t)init_frame;
+            stack_pointer += -1 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -5096,14 +5096,12 @@
             );
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(kwnames);
+            if (new_frame == NULL) JUMP_TO_ERROR();
             // The frame has stolen all the arguments from the stack,
             // so there is no need to clean them up.
             stack_pointer[-3 - oparg].bits = (uintptr_t)new_frame;
             stack_pointer += -2 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            if (new_frame == NULL) {
-                JUMP_TO_ERROR();
-            }
             break;
         }
 
