@@ -2195,20 +2195,33 @@ class TestNegativeNumber(ParserTestCase):
     argument_signatures = [
         Sig('--int', type=int),
         Sig('--float', type=float),
+        Sig('--complex', type=complex),
     ]
     failures = [
         '--float -_.45',
         '--float -1__000.0',
+        '--float -1.0.0',
         '--int -1__000',
+        '--int -1.0',
+        '--complex -1__000.0j',
+        '--complex -1.0jj',
+        '--complex -_.45j',
     ]
     successes = [
-        ('--int -1000 --float -1000.0', NS(int=-1000, float=-1000.0)),
-        ('--int -1_000 --float -1_000.0', NS(int=-1000, float=-1000.0)),
-        ('--int -1_000_000 --float -1_000_000.0', NS(int=-1000000, float=-1000000.0)),
-        ('--float -1_000.0', NS(int=None, float=-1000.0)),
-        ('--float -1_000_000.0_0', NS(int=None, float=-1000000.0)),
-        ('--float -.5', NS(int=None, float=-0.5)),
-        ('--float -.5_000', NS(int=None, float=-0.5)),
+        ('--int -1000 --float -1000.0', NS(int=-1000, float=-1000.0, complex=None)),
+        ('--int -1_000 --float -1_000.0', NS(int=-1000, float=-1000.0, complex=None)),
+        ('--int -1_000_000 --float -1_000_000.0', NS(int=-1000000, float=-1000000.0, complex=None)),
+        ('--float -1_000.0', NS(int=None, float=-1000.0, complex=None)),
+        ('--float -1_000_000.0_0', NS(int=None, float=-1000000.0, complex=None)),
+        ('--float -.5', NS(int=None, float=-0.5, complex=None)),
+        ('--float -.5_000', NS(int=None, float=-0.5, complex=None)),
+        ('--float -1e3', NS(int=None, float=-1000, complex=None)),
+        ('--float -1e-3', NS(int=None, float=-0.001, complex=None)),
+        ('--complex -1j', NS(int=None, float=None, complex=-1j)),
+        ('--complex -1_000j', NS(int=None, float=None, complex=-1000j)),
+        ('--complex -1_000.0j', NS(int=None, float=None, complex=-1000.0j)),
+        ('--complex -1e3j', NS(int=None, float=None, complex=-1000j)),
+        ('--complex -1e-3j', NS(int=None, float=None, complex=-0.001j)),
     ]
 
 class TestInvalidAction(TestCase):

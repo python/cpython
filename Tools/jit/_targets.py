@@ -44,6 +44,7 @@ class _Target(typing.Generic[_S, _R]):
     stable: bool = False
     debug: bool = False
     verbose: bool = False
+    known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
 
     def _compute_digest(self, out: pathlib.Path) -> str:
         hasher = hashlib.sha256()
@@ -95,7 +96,9 @@ class _Target(typing.Generic[_S, _R]):
         if group.data.body:
             line = f"0: {str(bytes(group.data.body)).removeprefix('b')}"
             group.data.disassembly.append(line)
-        group.process_relocations(alignment=self.alignment)
+        group.process_relocations(
+            known_symbols=self.known_symbols, alignment=self.alignment
+        )
         return group
 
     def _handle_section(self, section: _S, group: _stencils.StencilGroup) -> None:
@@ -231,7 +234,7 @@ class _Target(typing.Generic[_S, _R]):
                 if comment:
                     file.write(f"// {comment}\n")
                 file.write("\n")
-                for line in _writer.dump(stencil_groups):
+                for line in _writer.dump(stencil_groups, self.known_symbols):
                     file.write(f"{line}\n")
             try:
                 jit_stencils_new.replace(jit_stencils)

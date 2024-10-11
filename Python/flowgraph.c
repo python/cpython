@@ -1001,13 +1001,14 @@ remove_unreachable(basicblock *entryblock) {
     basicblock **sp = stack;
     entryblock->b_predecessors = 1;
     *sp++ = entryblock;
+    entryblock->b_visited = 1;
     while (sp > stack) {
         basicblock *b = *(--sp);
-        b->b_visited = 1;
         if (b->b_next && BB_HAS_FALLTHROUGH(b)) {
             if (!b->b_next->b_visited) {
                 assert(b->b_next->b_predecessors == 0);
                 *sp++ = b->b_next;
+                b->b_next->b_visited = 1;
             }
             b->b_next->b_predecessors++;
         }
@@ -1017,8 +1018,8 @@ remove_unreachable(basicblock *entryblock) {
             if (is_jump(instr) || is_block_push(instr)) {
                 target = instr->i_target;
                 if (!target->b_visited) {
-                    assert(target->b_predecessors == 0 || target == b->b_next);
                     *sp++ = target;
+                    target->b_visited = 1;
                 }
                 target->b_predecessors++;
             }

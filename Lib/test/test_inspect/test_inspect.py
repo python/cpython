@@ -1,3 +1,4 @@
+from annotationlib import Format, ForwardRef
 import asyncio
 import builtins
 import collections
@@ -22,7 +23,6 @@ import time
 import types
 import tempfile
 import textwrap
-from typing import Unpack
 import unicodedata
 import unittest
 import unittest.mock
@@ -46,6 +46,7 @@ from test import support
 from test.test_inspect import inspect_fodder as mod
 from test.test_inspect import inspect_fodder2 as mod2
 from test.test_inspect import inspect_stringized_annotations
+from test.test_inspect import inspect_deferred_annotations
 
 
 # Functions tested in this suite:
@@ -4622,6 +4623,18 @@ class TestSignatureObject(unittest.TestCase):
             expected_multiline,
         )
 
+    def test_signature_format_unquote(self):
+        def func(x: 'int') -> 'str': ...
+
+        self.assertEqual(
+            inspect.signature(func).format(),
+            "(x: 'int') -> 'str'"
+        )
+        self.assertEqual(
+            inspect.signature(func).format(quote_annotation_strings=False),
+            "(x: int) -> str"
+        )
+
     def test_signature_replace_parameters(self):
         def test(a, b) -> 42:
             pass
@@ -4854,6 +4867,26 @@ class TestSignatureObject(unittest.TestCase):
                             par('b', PORK, annotation=tuple),
                         )))
 
+    def test_signature_annotation_format(self):
+        ida = inspect_deferred_annotations
+        sig = inspect.Signature
+        par = inspect.Parameter
+        PORK = inspect.Parameter.POSITIONAL_OR_KEYWORD
+        for signature_func in (inspect.signature, inspect.Signature.from_callable):
+            with self.subTest(signature_func=signature_func):
+                self.assertEqual(
+                    signature_func(ida.f, annotation_format=Format.STRING),
+                    sig([par("x", PORK, annotation="undefined")])
+                )
+                self.assertEqual(
+                    signature_func(ida.f, annotation_format=Format.FORWARDREF),
+                    sig([par("x", PORK, annotation=ForwardRef("undefined"))])
+                )
+                with self.assertRaisesRegex(NameError, "undefined"):
+                    signature_func(ida.f, annotation_format=Format.VALUE)
+                with self.assertRaisesRegex(NameError, "undefined"):
+                    signature_func(ida.f)
+
     def test_signature_none_annotation(self):
         class funclike:
             # Has to be callable, and have correct
@@ -4878,38 +4911,6 @@ class TestSignatureObject(unittest.TestCase):
             with self.subTest(signature_func = signature_func):
                 self.assertEqual(signature_func(foo), inspect.Signature())
         self.assertEqual(inspect.get_annotations(foo), {})
-
-    def test_signature_as_str(self):
-        self.maxDiff = None
-        class S:
-            __signature__ = '(a, b=2)'
-
-        self.assertEqual(self.signature(S),
-                         ((('a', ..., ..., 'positional_or_keyword'),
-                           ('b', 2, ..., 'positional_or_keyword')),
-                          ...))
-
-    def test_signature_as_callable(self):
-        # __signature__ should be either a staticmethod or a bound classmethod
-        class S:
-            @classmethod
-            def __signature__(cls):
-                return '(a, b=2)'
-
-        self.assertEqual(self.signature(S),
-                         ((('a', ..., ..., 'positional_or_keyword'),
-                           ('b', 2, ..., 'positional_or_keyword')),
-                          ...))
-
-        class S:
-            @staticmethod
-            def __signature__():
-                return '(a, b=2)'
-
-        self.assertEqual(self.signature(S),
-                         ((('a', ..., ..., 'positional_or_keyword'),
-                           ('b', 2, ..., 'positional_or_keyword')),
-                          ...))
 
     def test_signature_on_derived_classes(self):
         # gh-105080: Make sure that signatures are consistent on derived classes

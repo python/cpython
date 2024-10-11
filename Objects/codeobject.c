@@ -1278,8 +1278,9 @@ typedef struct {
 
 
 static void
-lineiter_dealloc(lineiterator *li)
+lineiter_dealloc(PyObject *self)
 {
+    lineiterator *li = (lineiterator*)self;
     Py_DECREF(li->li_code);
     Py_TYPE(li)->tp_free(li);
 }
@@ -1293,8 +1294,9 @@ _source_offset_converter(int *value) {
 }
 
 static PyObject *
-lineiter_next(lineiterator *li)
+lineiter_next(PyObject *self)
 {
+    lineiterator *li = (lineiterator*)self;
     PyCodeAddressRange *bounds = &li->li_line;
     if (!_PyLineTable_NextAddressRange(bounds)) {
         return NULL;
@@ -1318,7 +1320,7 @@ PyTypeObject _PyLineIterator = {
     sizeof(lineiterator),               /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /* methods */
-    (destructor)lineiter_dealloc,       /* tp_dealloc */
+    lineiter_dealloc,                   /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -1340,7 +1342,7 @@ PyTypeObject _PyLineIterator = {
     0,                                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
     PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)lineiter_next,        /* tp_iternext */
+    lineiter_next,                      /* tp_iternext */
     0,                                  /* tp_methods */
     0,                                  /* tp_members */
     0,                                  /* tp_getset */
@@ -1379,15 +1381,17 @@ typedef struct {
 } positionsiterator;
 
 static void
-positionsiter_dealloc(positionsiterator* pi)
+positionsiter_dealloc(PyObject *self)
 {
+    positionsiterator *pi = (positionsiterator*)self;
     Py_DECREF(pi->pi_code);
     Py_TYPE(pi)->tp_free(pi);
 }
 
 static PyObject*
-positionsiter_next(positionsiterator* pi)
+positionsiter_next(PyObject *self)
 {
+    positionsiterator *pi = (positionsiterator*)self;
     if (pi->pi_offset >= pi->pi_range.ar_end) {
         assert(pi->pi_offset == pi->pi_range.ar_end);
         if (at_end(&pi->pi_range)) {
@@ -1409,7 +1413,7 @@ PyTypeObject _PyPositionsIterator = {
     sizeof(positionsiterator),          /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /* methods */
-    (destructor)positionsiter_dealloc,  /* tp_dealloc */
+    positionsiter_dealloc,              /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -1431,7 +1435,7 @@ PyTypeObject _PyPositionsIterator = {
     0,                                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
     PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)positionsiter_next,   /* tp_iternext */
+    positionsiter_next,                 /* tp_iternext */
     0,                                  /* tp_methods */
     0,                                  /* tp_members */
     0,                                  /* tp_getset */
@@ -1447,8 +1451,9 @@ PyTypeObject _PyPositionsIterator = {
 };
 
 static PyObject*
-code_positionsiterator(PyCodeObject* code, PyObject* Py_UNUSED(args))
+code_positionsiterator(PyObject *self, PyObject* Py_UNUSED(args))
 {
+    PyCodeObject *code = (PyCodeObject*)self;
     positionsiterator* pi = (positionsiterator*)PyType_GenericAlloc(&_PyPositionsIterator, 0);
     if (pi == NULL) {
         return NULL;
@@ -1875,16 +1880,18 @@ code_dealloc(PyCodeObject *co)
 
 #ifdef Py_GIL_DISABLED
 static int
-code_traverse(PyCodeObject *co, visitproc visit, void *arg)
+code_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    PyCodeObject *co = (PyCodeObject*)self;
     Py_VISIT(co->co_consts);
     return 0;
 }
 #endif
 
 static PyObject *
-code_repr(PyCodeObject *co)
+code_repr(PyObject *self)
 {
+    PyCodeObject *co = (PyCodeObject*)self;
     int lineno;
     if (co->co_firstlineno != 0)
         lineno = co->co_firstlineno;
@@ -1991,8 +1998,9 @@ code_richcompare(PyObject *self, PyObject *other, int op)
 }
 
 static Py_hash_t
-code_hash(PyCodeObject *co)
+code_hash(PyObject *self)
 {
+    PyCodeObject *co = (PyCodeObject*)self;
     Py_uhash_t uhash = 20221211;
     #define SCRAMBLE_IN(H) do {       \
         uhash ^= (Py_uhash_t)(H);     \
@@ -2053,8 +2061,9 @@ static PyMemberDef code_memberlist[] = {
 
 
 static PyObject *
-code_getlnotab(PyCodeObject *code, void *closure)
+code_getlnotab(PyObject *self, void *closure)
 {
+    PyCodeObject *code = (PyCodeObject*)self;
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "co_lnotab is deprecated, use co_lines instead.",
                      1) < 0) {
@@ -2064,51 +2073,57 @@ code_getlnotab(PyCodeObject *code, void *closure)
 }
 
 static PyObject *
-code_getvarnames(PyCodeObject *code, void *closure)
+code_getvarnames(PyObject *self, void *closure)
 {
+    PyCodeObject *code = (PyCodeObject*)self;
     return _PyCode_GetVarnames(code);
 }
 
 static PyObject *
-code_getcellvars(PyCodeObject *code, void *closure)
+code_getcellvars(PyObject *self, void *closure)
 {
+    PyCodeObject *code = (PyCodeObject*)self;
     return _PyCode_GetCellvars(code);
 }
 
 static PyObject *
-code_getfreevars(PyCodeObject *code, void *closure)
+code_getfreevars(PyObject *self, void *closure)
 {
+    PyCodeObject *code = (PyCodeObject*)self;
     return _PyCode_GetFreevars(code);
 }
 
 static PyObject *
-code_getcodeadaptive(PyCodeObject *code, void *closure)
+code_getcodeadaptive(PyObject *self, void *closure)
 {
+    PyCodeObject *code = (PyCodeObject*)self;
     return PyBytes_FromStringAndSize(code->co_code_adaptive,
                                      _PyCode_NBYTES(code));
 }
 
 static PyObject *
-code_getcode(PyCodeObject *code, void *closure)
+code_getcode(PyObject *self, void *closure)
 {
+    PyCodeObject *code = (PyCodeObject*)self;
     return _PyCode_GetCode(code);
 }
 
 static PyGetSetDef code_getsetlist[] = {
-    {"co_lnotab",         (getter)code_getlnotab,       NULL, NULL},
-    {"_co_code_adaptive", (getter)code_getcodeadaptive, NULL, NULL},
+    {"co_lnotab",         code_getlnotab,       NULL, NULL},
+    {"_co_code_adaptive", code_getcodeadaptive, NULL, NULL},
     // The following old names are kept for backward compatibility.
-    {"co_varnames",       (getter)code_getvarnames,     NULL, NULL},
-    {"co_cellvars",       (getter)code_getcellvars,     NULL, NULL},
-    {"co_freevars",       (getter)code_getfreevars,     NULL, NULL},
-    {"co_code",           (getter)code_getcode,         NULL, NULL},
+    {"co_varnames",       code_getvarnames,     NULL, NULL},
+    {"co_cellvars",       code_getcellvars,     NULL, NULL},
+    {"co_freevars",       code_getfreevars,     NULL, NULL},
+    {"co_code",           code_getcode,         NULL, NULL},
     {0}
 };
 
 
 static PyObject *
-code_sizeof(PyCodeObject *co, PyObject *Py_UNUSED(args))
+code_sizeof(PyObject *self, PyObject *Py_UNUSED(args))
 {
+    PyCodeObject *co = (PyCodeObject*)self;
     size_t res = _PyObject_VAR_SIZE(Py_TYPE(co), Py_SIZE(co));
     _PyCodeObjectExtra *co_extra = (_PyCodeObjectExtra*) co->co_extra;
     if (co_extra != NULL) {
@@ -2119,8 +2134,9 @@ code_sizeof(PyCodeObject *co, PyObject *Py_UNUSED(args))
 }
 
 static PyObject *
-code_linesiterator(PyCodeObject *code, PyObject *Py_UNUSED(args))
+code_linesiterator(PyObject *self, PyObject *Py_UNUSED(args))
 {
+    PyCodeObject *code = (PyCodeObject*)self;
     return (PyObject *)new_linesiterator(code);
 }
 
@@ -2262,9 +2278,9 @@ code__varname_from_oparg_impl(PyCodeObject *self, int oparg)
 /* XXX code objects need to participate in GC? */
 
 static struct PyMethodDef code_methods[] = {
-    {"__sizeof__", (PyCFunction)code_sizeof, METH_NOARGS},
-    {"co_lines", (PyCFunction)code_linesiterator, METH_NOARGS},
-    {"co_positions", (PyCFunction)code_positionsiterator, METH_NOARGS},
+    {"__sizeof__", code_sizeof, METH_NOARGS},
+    {"co_lines", code_linesiterator, METH_NOARGS},
+    {"co_positions", code_positionsiterator, METH_NOARGS},
     CODE_REPLACE_METHODDEF
     CODE__VARNAME_FROM_OPARG_METHODDEF
     {"__replace__", _PyCFunction_CAST(code_replace), METH_FASTCALL|METH_KEYWORDS,
@@ -2283,11 +2299,11 @@ PyTypeObject PyCode_Type = {
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
     0,                                  /* tp_as_async */
-    (reprfunc)code_repr,                /* tp_repr */
+    code_repr,                          /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
     0,                                  /* tp_as_mapping */
-    (hashfunc)code_hash,                /* tp_hash */
+    code_hash,                          /* tp_hash */
     0,                                  /* tp_call */
     0,                                  /* tp_str */
     PyObject_GenericGetAttr,            /* tp_getattro */
@@ -2300,7 +2316,7 @@ PyTypeObject PyCode_Type = {
 #endif
     code_new__doc__,                    /* tp_doc */
 #ifdef Py_GIL_DISABLED
-    (traverseproc)code_traverse,        /* tp_traverse */
+    code_traverse,                      /* tp_traverse */
 #else
     0,                                  /* tp_traverse */
 #endif
@@ -2336,6 +2352,7 @@ _PyCode_ConstantKey(PyObject *op)
     if (op == Py_None || op == Py_Ellipsis
        || PyLong_CheckExact(op)
        || PyUnicode_CheckExact(op)
+       || PySlice_Check(op)
           /* code_richcompare() uses _PyCode_ConstantKey() internally */
        || PyCode_Check(op))
     {
