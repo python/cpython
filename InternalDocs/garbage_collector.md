@@ -12,11 +12,11 @@ a local variable in some C function. When an object’s reference count becomes 
 the object is deallocated. If it contains references to other objects, their
 reference counts are decremented. Those other objects may be deallocated in turn, if
 this decrement makes their reference count become zero, and so on. The reference
-count field can be examined using the ``sys.getrefcount`` function (notice that the
+count field can be examined using the ``sys.getrefcount()`` function (notice that the
 value returned by this function is always 1 more as the function also has a reference
 to the object when called):
 
-```
+```pycon
     >>> x = object()
     >>> sys.getrefcount(x)
     2
@@ -31,7 +31,7 @@ to the object when called):
 The main problem with the reference counting scheme is that it does not handle reference
 cycles. For instance, consider this code:
 
-```
+```pycon
     >>> container = []
     >>> container.append(container)
     >>> sys.getrefcount(container)
@@ -198,7 +198,7 @@ the case of a circular linked list which has one link referenced by a
 variable ``A``, and one self-referencing object which is completely
 unreachable:
 
-```
+```pycon
     >>> import gc
 
     >>> class Link:
@@ -242,7 +242,7 @@ interpreter will not modify the real reference count field.
 ![gc-image1](images/python-cyclic-gc-1-new-page.png)
 
 The GC then iterates over all containers in the first list and decrements by one the
-``gc_ref`` field of any other object that container is referencing.  Doing
+`gc_ref` field of any other object that container is referencing.  Doing
 this makes use of the ``tp_traverse`` slot in the container class (implemented
 using the C API or inherited by a superclass) to know what objects are referenced by
 each container. After all the objects have been scanned, only the objects that have
@@ -383,10 +383,10 @@ examined, then generation 1 is examined as well. With generation 2,
 things are a bit more complicated; see
 [Collecting the oldest generation](#Collecting-the-oldest-generation) for
 more information. These thresholds can be examined using the
-[`gc.get_threshold`](https://docs.python.org/3/library/gc.html#gc.get_threshold)
+[`gc.get_threshold()`](https://docs.python.org/3/library/gc.html#gc.get_threshold)
 function:
 
-```
+```pycon
     >>> import gc
     >>> gc.get_threshold()
     (700, 10, 10)
@@ -396,7 +396,7 @@ The content of these generations can be examined using the
 ``gc.get_objects(generation=NUM)`` function and collections can be triggered
 specifically in a generation by calling ``gc.collect(generation=NUM)``.
 
-```
+```pycon
     >>> import gc
     >>> class MyObj:
     ...     pass
@@ -535,7 +535,7 @@ The garbage collector module provides the Python function ``is_tracked(obj)``, w
 the current tracking status of the object. Subsequent garbage collections may change the
 tracking status of the object.
 
-```
+```pycon
       >>> gc.is_tracked(0)
       False
       >>> gc.is_tracked("a")
