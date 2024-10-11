@@ -4509,7 +4509,7 @@ can be used interchangeably to index the same dictionary entry.
    dictionary is created by calling :meth:`~object.__getitem__` on the argument with
    each returned key from the method.  Otherwise, the positional argument must be an
    :term:`iterable` object.  Each item in the iterable must itself be an iterable
-   with exactly two objects.  The first element of each item becomes a key in the
+   with exactly two elements.  The first element of each item becomes a key in the
    new dictionary, and the second element the corresponding value.  If a key occurs
    more than once, the last value for that key becomes the corresponding value in
    the new dictionary.
