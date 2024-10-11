@@ -202,10 +202,11 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
                 yield obj
 
     def popitem(self):
-        key, wr = self.data.popitem()
-        o = wr()
-        if o is not None:
-            return key, o
+        while True:
+            key, wr = self.data.popitem()
+            o = wr()
+            if o is not None:
+                return key, o
 
     def pop(self, key, *args):
         try:
