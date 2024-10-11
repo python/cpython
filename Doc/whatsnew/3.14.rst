@@ -281,6 +281,18 @@ http
   (Contributed by Yorik Hansen in :gh:`123430`.)
 
 
+inspect
+-------
+
+* :func:`inspect.signature` takes a new argument *annotation_format* to control
+  the :class:`annotationlib.Format` used for representing annotations.
+  (Contributed by Jelle Zijlstra in :gh:`101552`.)
+
+* :meth:`inspect.Signature.format` takes a new argument *unquote_annotations*.
+  If true, string :term:`annotations <annotation>` are displayed without surrounding quotes.
+  (Contributed by Jelle Zijlstra in :gh:`101552`.)
+
+
 json
 ----
 
@@ -355,6 +367,14 @@ pickle
 * Add notes for pickle serialization errors that allow to identify the source
   of the error.
   (Contributed by Serhiy Storchaka in :gh:`122213`.)
+
+pydoc
+-----
+
+* :term:`Annotations <annotation>` in help output are now usually
+  displayed in a format closer to that in the original source.
+  (Contributed by Jelle Zijlstra in :gh:`101552`.)
+
 
 symtable
 --------
@@ -587,6 +607,12 @@ Changes in the Python API
   Wrap it in :func:`staticmethod` if you want to preserve the old behavior.
   (Contributed by Serhiy Storchaka and Dominykas Grigonis in :gh:`121027`.)
 
+* The :func:`locale.nl_langinfo` function now sets temporarily the ``LC_CTYPE``
+  locale in some cases.
+  This temporary change affects other threads.
+  (Contributed by Serhiy Storchaka in :gh:`69998`.)
+
+
 Build Changes
 =============
 
@@ -686,6 +712,10 @@ New Features
   superclass identification, which attempts to resolve the `type checking issue
   <https://peps.python.org/pep-0630/#type-checking>`__ mentioned in :pep:`630`
   (:gh:`124153`).
+
+* Add :c:func:`PyUnicode_Equal` function to the limited C API:
+  test if two strings are equal.
+  (Contributed by Victor Stinner in :gh:`124502`.)
 
 
 Porting to Python 3.14

@@ -81,7 +81,7 @@ whose size is determined when the object is allocated.
 #else
 #define PyObject_HEAD_INIT(type)    \
     {                               \
-        { _Py_IMMORTAL_REFCNT },    \
+        { _Py_IMMORTAL_INITIAL_REFCNT },    \
         (type)                      \
     },
 #endif
