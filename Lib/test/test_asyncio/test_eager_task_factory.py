@@ -213,6 +213,52 @@ class EagerTaskFactoryLoopTests:
 
         self.run_coro(run())
 
+    def test_staggered_race_with_eager_tasks(self):
+        # See https://github.com/python/cpython/issues/124309
+
+        async def fail():
+            await asyncio.sleep(0)
+            raise ValueError("no good")
+
+        async def run():
+            winner, index, excs = await asyncio.staggered.staggered_race(
+                [
+                    lambda: asyncio.sleep(2, result="sleep2"),
+                    lambda: asyncio.sleep(1, result="sleep1"),
+                    lambda: fail()
+                ],
+                delay=0.25
+            )
+            self.assertEqual(winner, 'sleep1')
+            self.assertEqual(index, 1)
+            self.assertIsNone(excs[index])
+            self.assertIsInstance(excs[0], asyncio.CancelledError)
+            self.assertIsInstance(excs[2], ValueError)
+
+        self.run_coro(run())
+
+    def test_staggered_race_with_eager_tasks_no_delay(self):
+        # See https://github.com/python/cpython/issues/124309
+        async def fail():
+            raise ValueError("no good")
+
+        async def run():
+            winner, index, excs = await asyncio.staggered.staggered_race(
+                [
+                    lambda: fail(),
+                    lambda: asyncio.sleep(1, result="sleep1"),
+                    lambda: asyncio.sleep(0, result="sleep0"),
+                ],
+                delay=None
+            )
+            self.assertEqual(winner, 'sleep1')
+            self.assertEqual(index, 1)
+            self.assertIsNone(excs[index])
+            self.assertIsInstance(excs[0], ValueError)
+            self.assertEqual(len(excs), 2)
+
+        self.run_coro(run())
+
 
 class PyEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase):
     Task = tasks._PyTask
