@@ -1260,7 +1260,7 @@ _PyInterpreterState_IDDecref(PyInterpreterState *interp)
 
     Py_ssize_t refcount = _Py_atomic_add_ssize(&interp->id_refcount, -1);
 
-    if (refcount == 0 && interp->requires_idref) {
+    if (refcount == 1 && interp->requires_idref) {
         PyThreadState *tstate =
             _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_FINI);
 
