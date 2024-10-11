@@ -1,0 +1,2 @@
+Fix race condition when importing :mod:`collections.abc`, which could
+incorrectly return an empty module.
