@@ -602,7 +602,7 @@ The add_argument() method
 The following sections describe how each of these are used.
 
 
-.. _name_or_flags:
+.. _`name or flags`:
 
 name or flags
 ^^^^^^^^^^^^^
