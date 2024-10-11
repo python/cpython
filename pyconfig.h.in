@@ -1683,7 +1683,7 @@
 #undef Py_ENABLE_SHARED
 
 /* Defined if _Complex C type can be used with libffi. */
-#undef Py_FFI_TARGET_HAS_COMPLEX_TYPE
+#undef Py_FFI_SUPPORT_C_COMPLEX
 
 /* Define if you want to disable the GIL */
 #undef Py_GIL_DISABLED

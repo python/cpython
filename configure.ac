@@ -4124,7 +4124,7 @@ int main(void)
 [ac_cv_ffi_complex_double_supported=no])
 CC="$ac_save_cc"])
 if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
-    AC_DEFINE([Py_FFI_TARGET_HAS_COMPLEX_TYPE], [1],
+    AC_DEFINE([Py_FFI_SUPPORT_C_COMPLEX], [1],
               [Defined if _Complex C type can be used with libffi.])
 fi
 

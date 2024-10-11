@@ -15105,7 +15105,7 @@ fi
 printf "%s\n" "$ac_cv_ffi_complex_double_supported" >&6; }
 if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
 
-printf "%s\n" "#define Py_FFI_TARGET_HAS_COMPLEX_TYPE 1" >>confdefs.h
+printf "%s\n" "#define Py_FFI_SUPPORT_C_COMPLEX 1" >>confdefs.h
 
 fi
 
