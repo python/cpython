@@ -2377,16 +2377,22 @@ class CustomQueueProtocol:
         return getattr(queue, attribute)
 
 class CustomQueueFakeProtocol(CustomQueueProtocol):
-    # An object implementing the Queue API (incorrect signatures).
+    # An object implementing the minimial Queue API for
+    # the logging module but with incorrect signatures.
+    #
     # The object will be considered a valid queue class since we
     # do not check the signatures (only callability of methods)
     # but will NOT be usable in production since a TypeError will
-    # be raised due to a missing argument.
-    def empty(self, x):
+    # be raised due to the extra argument in 'put_nowait'.
+    def put_nowait(self):
         pass
 
 class CustomQueueWrongProtocol(CustomQueueProtocol):
-    empty = None
+    put_nowait = None
+
+class MinimalQueueProtocol:
+    def put_nowait(self, x): pass
+    def get(self): pass
 
 def queueMaker():
     return queue.Queue()
@@ -3946,56 +3952,70 @@ class ConfigDictTest(BaseTest):
             msg = str(ctx.exception)
             self.assertEqual(msg, "Unable to configure handler 'ah'")
 
+    def _apply_simple_queue_listener_configuration(self, qspec):
+        self.apply_config({
+            "version": 1,
+            "handlers": {
+                "queue_listener": {
+                    "class": "logging.handlers.QueueHandler",
+                    "queue": qspec,
+                },
+            },
+        })
+
     @threading_helper.requires_working_threading()
     @support.requires_subprocess()
     @patch("multiprocessing.Manager")
     def test_config_queue_handler_does_not_create_multiprocessing_manager(self, manager):
-        # gh-120868, gh-121723
+        # gh-120868, gh-121723, gh-124653
 
-        from multiprocessing import Queue as MQ
-
-        q1 = {"()": "queue.Queue", "maxsize": -1}
-        q2 = MQ()
-        q3 = queue.Queue()
-        # CustomQueueFakeProtocol passes the checks but will not be usable
-        # since the signatures are incompatible. Checking the Queue API
-        # without testing the type of the actual queue is a trade-off
-        # between usability and the work we need to do in order to safely
-        # check that the queue object correctly implements the API.
-        q4 = CustomQueueFakeProtocol()
-
-        for qspec in (q1, q2, q3, q4):
-            self.apply_config(
-                {
-                    "version": 1,
-                    "handlers": {
-                        "queue_listener": {
-                            "class": "logging.handlers.QueueHandler",
-                            "queue": qspec,
-                        },
-                    },
-                }
-            )
-            manager.assert_not_called()
+        for qspec in [
+            {"()": "queue.Queue", "maxsize": -1},
+            queue.Queue(),
+            # queue.SimpleQueue does not inherit from queue.Queue
+            queue.SimpleQueue(),
+            # CustomQueueFakeProtocol passes the checks but will not be usable
+            # since the signatures are incompatible. Checking the Queue API
+            # without testing the type of the actual queue is a trade-off
+            # between usability and the work we need to do in order to safely
+            # check that the queue object correctly implements the API.
+            CustomQueueFakeProtocol(),
+            MinimalQueueProtocol(),
+        ]:
+            with self.subTest(qspec=qspec):
+                self._apply_simple_queue_listener_configuration(qspec)
+                manager.assert_not_called()
 
     @patch("multiprocessing.Manager")
     def test_config_queue_handler_invalid_config_does_not_create_multiprocessing_manager(self, manager):
         # gh-120868, gh-121723
 
         for qspec in [object(), CustomQueueWrongProtocol()]:
-            with self.assertRaises(ValueError):
-                self.apply_config(
-                    {
-                        "version": 1,
-                        "handlers": {
-                            "queue_listener": {
-                                "class": "logging.handlers.QueueHandler",
-                                "queue": qspec,
-                            },
-                        },
-                    }
-                )
-            manager.assert_not_called()
+            with self.subTest(qspec=qspec), self.assertRaises(ValueError):
+                self._apply_simple_queue_listener_configuration(qspec)
+                manager.assert_not_called()
+
+    @skip_if_tsan_fork
+    @support.requires_subprocess()
+    @unittest.skipUnless(support.Py_DEBUG, "requires a debug build for testing"
+                                           " assertions in multiprocessing")
+    def test_config_reject_simple_queue_handler_multiprocessing_context(self):
+        # multiprocessing.SimpleQueue does not implement 'put_nowait'
+        # and thus cannot be used as a queue-like object (gh-124653)
+
+        import multiprocessing
+
+        if support.MS_WINDOWS:
+            start_methods = ['spawn']
+        else:
+            start_methods = ['spawn', 'fork', 'forkserver']
+
+        for start_method in start_methods:
+            with self.subTest(start_method=start_method):
+                ctx = multiprocessing.get_context(start_method)
+                qspec = ctx.SimpleQueue()
+                with self.assertRaises(ValueError):
+                    self._apply_simple_queue_listener_configuration(qspec)
 
     @skip_if_tsan_fork
     @support.requires_subprocess()

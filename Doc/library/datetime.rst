@@ -948,6 +948,10 @@ Other constructors, all class methods:
 
    This function is preferred over :meth:`today` and :meth:`utcnow`.
 
+   .. note::
+
+      Subsequent calls to :meth:`!datetime.now` may return the same
+      instant depending on the precision of the underlying clock.
 
 .. classmethod:: datetime.utcnow()
 

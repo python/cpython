@@ -168,7 +168,8 @@ class EmbeddingTestsMixin:
             # Parse the line from the loop.  The first line is the main
             # interpreter and the 3 afterward are subinterpreters.
             interp = Interp(*match.groups())
-            if support.verbose > 1:
+            if support.verbose > 2:
+                # 5 lines per pass is super-spammy, so limit that to -vvv
                 print(interp)
             self.assertTrue(interp.interp)
             self.assertTrue(interp.tstate)
@@ -279,6 +280,10 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         """
         env = dict(os.environ, PYTHONPATH=os.pathsep.join(sys.path))
         out, err = self.run_embedded_interpreter("test_pre_initialization_api", env=env)
+        if support.verbose > 1:
+            print()
+            print(out)
+            print(err)
         if MS_WINDOWS:
             expected_path = self.test_exe
         else:
@@ -296,6 +301,10 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         env['PYTHONPATH'] = os.pathsep.join(sys.path)
         out, err = self.run_embedded_interpreter(
                         "test_pre_initialization_sys_options", env=env)
+        if support.verbose > 1:
+            print()
+            print(out)
+            print(err)
         expected_output = (
             "sys.warnoptions: ['once', 'module', 'default']\n"
             "sys._xoptions: {'not_an_option': '1', 'also_not_an_option': '2'}\n"

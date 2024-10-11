@@ -1253,7 +1253,7 @@ class FormatTest:
             self.assertRaises(ValueError, format, h, '10Nf')
             self.assertRaises(ValueError, format, h, 'Nx')
 
-    @run_with_locale('LC_ALL', 'ps_AF')
+    @run_with_locale('LC_ALL', 'ps_AF', '')
     def test_wide_char_separator_decimal_point(self):
         # locale with wide char separator and decimal point
         Decimal = self.decimal.Decimal

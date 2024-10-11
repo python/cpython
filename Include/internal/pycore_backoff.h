@@ -15,13 +15,7 @@ extern "C" {
 
 
 typedef struct {
-    union {
-        struct {
-            uint16_t backoff : 4;
-            uint16_t value : 12;
-        };
-        uint16_t as_counter;  // For printf("%#x", ...)
-    };
+    uint16_t value_and_backoff;
 } _Py_BackoffCounter;
 
 
@@ -38,17 +32,19 @@ typedef struct {
    and a 4-bit 'backoff' field. When resetting the counter, the
    backoff field is incremented (until it reaches a limit) and the
    value is set to a bit mask representing the value 2**backoff - 1.
-   The maximum backoff is 12 (the number of value bits).
+   The maximum backoff is 12 (the number of bits in the value).
 
    There is an exceptional value which must not be updated, 0xFFFF.
 */
 
-#define UNREACHABLE_BACKOFF 0xFFFF
+#define BACKOFF_BITS 4
+#define MAX_BACKOFF 12
+#define UNREACHABLE_BACKOFF 15
 
 static inline bool
 is_unreachable_backoff_counter(_Py_BackoffCounter counter)
 {
-    return counter.as_counter == UNREACHABLE_BACKOFF;
+    return counter.value_and_backoff == UNREACHABLE_BACKOFF;
 }
 
 static inline _Py_BackoffCounter
@@ -57,8 +53,7 @@ make_backoff_counter(uint16_t value, uint16_t backoff)
     assert(backoff <= 15);
     assert(value <= 0xFFF);
     _Py_BackoffCounter result;
-    result.value = value;
-    result.backoff = backoff;
+    result.value_and_backoff = (value << BACKOFF_BITS) | backoff;
     return result;
 }
 
@@ -66,7 +61,7 @@ static inline _Py_BackoffCounter
 forge_backoff_counter(uint16_t counter)
 {
     _Py_BackoffCounter result;
-    result.as_counter = counter;
+    result.value_and_backoff = counter;
     return result;
 }
 
@@ -74,35 +69,36 @@ static inline _Py_BackoffCounter
 restart_backoff_counter(_Py_BackoffCounter counter)
 {
     assert(!is_unreachable_backoff_counter(counter));
-    if (counter.backoff < 12) {
-        return make_backoff_counter((1 << (counter.backoff + 1)) - 1, counter.backoff + 1);
+    int backoff = counter.value_and_backoff & 15;
+    if (backoff < MAX_BACKOFF) {
+        return make_backoff_counter((1 << (backoff + 1)) - 1, backoff + 1);
     }
     else {
-        return make_backoff_counter((1 << 12) - 1, 12);
+        return make_backoff_counter((1 << MAX_BACKOFF) - 1, MAX_BACKOFF);
     }
 }
 
 static inline _Py_BackoffCounter
 pause_backoff_counter(_Py_BackoffCounter counter)
 {
-    return make_backoff_counter(counter.value | 1, counter.backoff);
+    _Py_BackoffCounter result;
+    result.value_and_backoff = counter.value_and_backoff | (1 << BACKOFF_BITS);
+    return result;
 }
 
 static inline _Py_BackoffCounter
 advance_backoff_counter(_Py_BackoffCounter counter)
 {
-    if (!is_unreachable_backoff_counter(counter)) {
-        return make_backoff_counter((counter.value - 1) & 0xFFF, counter.backoff);
-    }
-    else {
-        return counter;
-    }
+    _Py_BackoffCounter result;
+    result.value_and_backoff = counter.value_and_backoff - (1 << BACKOFF_BITS);
+    return result;
 }
 
 static inline bool
 backoff_counter_triggers(_Py_BackoffCounter counter)
 {
-    return counter.value == 0;
+    /* Test whether the value is zero and the backoff is not UNREACHABLE_BACKOFF */
+    return counter.value_and_backoff < UNREACHABLE_BACKOFF;
 }
 
 /* Initial JUMP_BACKWARD counter.
@@ -136,7 +132,7 @@ initial_temperature_backoff_counter(void)
 static inline _Py_BackoffCounter
 initial_unreachable_backoff_counter(void)
 {
-    return forge_backoff_counter(UNREACHABLE_BACKOFF);
+    return make_backoff_counter(0, UNREACHABLE_BACKOFF);
 }
 
 #ifdef __cplusplus

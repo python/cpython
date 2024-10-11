@@ -479,6 +479,19 @@ class TestSpecifics(unittest.TestCase):
                     x = 2
                """), '<eval>', 'exec')
 
+    def test_try_except_in_while_with_chained_condition_compiles(self):
+        # see gh-124871
+        compile(textwrap.dedent("""
+            name_1, name_2, name_3 = 1, 2, 3
+            while name_3 <= name_2 > name_1:
+                try:
+                    raise
+                except:
+                    pass
+                finally:
+                    pass
+            """), '<eval>', 'exec')
+
     def test_compile_invalid_namedexpr(self):
         # gh-109351
         m = ast.Module(
@@ -1373,6 +1386,14 @@ class TestSpecifics(unittest.TestCase):
                     actual += 1
             self.assertEqual(actual, expected)
 
+        def check_consts(func, typ, expected):
+            slice_consts = 0
+            consts = func.__code__.co_consts
+            for instr in dis.Bytecode(func):
+                if instr.opname == "LOAD_CONST" and isinstance(consts[instr.oparg], typ):
+                    slice_consts += 1
+            self.assertEqual(slice_consts, expected)
+
         def load():
             return x[a:b] + x [a:] + x[:b] + x[:]
 
@@ -1388,15 +1409,30 @@ class TestSpecifics(unittest.TestCase):
         def aug():
             x[a:b] += y
 
-        check_op_count(load, "BINARY_SLICE", 4)
+        def aug_const():
+            x[1:2] += y
+
+        def compound_const_slice():
+            x[1:2:3, 4:5:6] = y
+
+        check_op_count(load, "BINARY_SLICE", 3)
         check_op_count(load, "BUILD_SLICE", 0)
-        check_op_count(store, "STORE_SLICE", 4)
+        check_consts(load, slice, 1)
+        check_op_count(store, "STORE_SLICE", 3)
         check_op_count(store, "BUILD_SLICE", 0)
+        check_consts(store, slice, 1)
         check_op_count(long_slice, "BUILD_SLICE", 1)
         check_op_count(long_slice, "BINARY_SLICE", 0)
         check_op_count(aug, "BINARY_SLICE", 1)
         check_op_count(aug, "STORE_SLICE", 1)
         check_op_count(aug, "BUILD_SLICE", 0)
+        check_op_count(aug_const, "BINARY_SLICE", 0)
+        check_op_count(aug_const, "STORE_SLICE", 0)
+        check_consts(aug_const, slice, 1)
+        check_op_count(compound_const_slice, "BINARY_SLICE", 0)
+        check_op_count(compound_const_slice, "BUILD_SLICE", 0)
+        check_consts(compound_const_slice, slice, 0)
+        check_consts(compound_const_slice, tuple, 1)
 
     def test_compare_positions(self):
         for opname_prefix, op in [

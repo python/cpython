@@ -1,0 +1,1 @@
+Make ``this_instr`` and ``prev_instr`` const in cases generator.
