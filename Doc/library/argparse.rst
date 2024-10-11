@@ -568,7 +568,7 @@ The add_argument() method
                            [help], [metavar], [dest], [deprecated])
 
    Define how a single command-line argument should be parsed.  Each parameter
-   has its own more detailed description below, but in short they are (see `name or flags`_):
+   has its own more detailed description below, but in short they are:
 
    * `name or flags`_ - Either a name or a list of option strings, e.g. ``foo``
      or ``-f, --foo``.
