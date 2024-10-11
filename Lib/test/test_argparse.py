@@ -2610,26 +2610,28 @@ class TestAddSubparsers(TestCase):
               --foo       foo help
             '''))
 
+    def assert_bad_help(self, context_type, func, *args, **kwargs):
+        with self.assertRaisesRegex(ValueError, 'badly formed help string') as cm:
+            func(*args, **kwargs)
+        self.assertIsInstance(cm.exception.__context__, context_type)
+
     def test_invalid_subparsers_help(self):
         parser = ErrorRaisingArgumentParser(prog='PROG')
-        with self.assertRaisesRegex(ValueError, 'badly formed help string'):
-            parser.add_subparsers(help='%Y-%m-%d')
+        self.assert_bad_help(ValueError, parser.add_subparsers, help='%Y-%m-%d')
         parser = ErrorRaisingArgumentParser(prog='PROG')
-        with self.assertRaisesRegex(ValueError, 'badly formed help string'):
-            parser.add_subparsers(help='%(spam)s')
+        self.assert_bad_help(KeyError, parser.add_subparsers, help='%(spam)s')
         parser = ErrorRaisingArgumentParser(prog='PROG')
-        with self.assertRaisesRegex(ValueError, 'badly formed help string'):
-            parser.add_subparsers(help='%(prog)d')
+        self.assert_bad_help(TypeError, parser.add_subparsers, help='%(prog)d')
 
     def test_invalid_subparser_help(self):
         parser = ErrorRaisingArgumentParser(prog='PROG')
         subparsers = parser.add_subparsers()
-        with self.assertRaisesRegex(ValueError, 'badly formed help string'):
-            subparsers.add_parser('1', help='%Y-%m-%d')
-        with self.assertRaisesRegex(ValueError, 'badly formed help string'):
-            subparsers.add_parser('1', help='%(spam)s')
-        with self.assertRaisesRegex(ValueError, 'badly formed help string'):
-            subparsers.add_parser('1', help='%(prog)d')
+        self.assert_bad_help(ValueError, subparsers.add_parser, '1',
+                             help='%Y-%m-%d')
+        self.assert_bad_help(KeyError, subparsers.add_parser, '1',
+                             help='%(spam)s')
+        self.assert_bad_help(TypeError, subparsers.add_parser, '1',
+                             help='%(prog)d')
 
     def test_subparser_title_help(self):
         parser = ErrorRaisingArgumentParser(prog='PROG',

@@ -1644,8 +1644,8 @@ class _ActionsContainer(object):
             formatter = self._get_formatter()
             try:
                 formatter._expand_help(action)
-            except (ValueError, TypeError, KeyError):
-                raise ValueError('badly formed help string')
+            except (ValueError, TypeError, KeyError) as exc:
+                raise ValueError('badly formed help string') from exc
 
 
 class _ArgumentGroup(_ActionsContainer):
