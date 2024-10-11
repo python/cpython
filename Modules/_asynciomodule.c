@@ -1387,7 +1387,7 @@ FutureObj_get_state(FutureObj *fut, void *Py_UNUSED(ignored))
     default:
         assert (0);
     }
-    assert(_Py_IsImmortalLoose(ret));
+    assert(_Py_IsImmortal(ret));
     return ret;
 }
 

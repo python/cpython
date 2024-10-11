@@ -21,25 +21,30 @@ cleanup during runtime finalization.
 
 #if SIZEOF_VOID_P > 4
 /*
-In 64+ bit systems, an object will be marked as immortal by setting all of the
-lower 32 bits of the reference count field, which is equal to: 0xFFFFFFFF
+In 64+ bit systems, any object whose 32 bit reference count is >= 2**31
+will be treated as immortal.
 
 Using the lower 32 bits makes the value backwards compatible by allowing
 C-Extensions without the updated checks in Py_INCREF and Py_DECREF to safely
-increase and decrease the objects reference count. The object would lose its
-immortality, but the execution would still be correct.
+increase and decrease the objects reference count.
+
+In order to offer sufficient resilience to C extensions using the stable ABI
+compiled against 3.11 or earlier, we set the initial value near the
+middle of the range (2**31, 2**32). That way the the refcount can be
+off by ~1 billion without affecting immortality.
 
 Reference count increases will use saturated arithmetic, taking advantage of
 having all the lower 32 bits set, which will avoid the reference count to go
 beyond the refcount limit. Immortality checks for reference count decreases will
 be done by checking the bit sign flag in the lower 32 bits.
+
 */
-#define _Py_IMMORTAL_REFCNT ((Py_ssize_t)0xb0000000)
+#define _Py_IMMORTAL_INITIAL_REFCNT ((Py_ssize_t)(3UL << 30))
 
 #else
 /*
-In 32 bit systems, an object will be marked as immortal by setting all of the
-lower 30 bits of the reference count field, which is equal to: 0x3FFFFFFF
+In 32 bit systems, an object will be treated as immortal if its reference
+count equals or exceeds _Py_IMMORTAL_MINIMUM_REFCNT (2**30).
 
 Using the lower 30 bits makes the value backwards compatible by allowing
 C-Extensions without the updated checks in Py_INCREF and Py_DECREF to safely
@@ -47,9 +52,10 @@ increase and decrease the objects reference count. The object would lose its
 immortality, but the execution would still be correct.
 
 Reference count increases and decreases will first go through an immortality
-check by comparing the reference count field to the immortality reference count.
+check by comparing the reference count field to the minimum immortality refcount.
 */
-#define _Py_IMMORTAL_REFCNT _Py_CAST(Py_ssize_t, UINT_MAX >> 2)
+#define _Py_IMMORTAL_INITIAL_REFCNT ((Py_ssize_t)(3L << 29))
+#define _Py_IMMORTAL_MINIMUM_REFCNT ((Py_ssize_t)(1L << 30))
 #endif
 
 // Py_GIL_DISABLED builds indicate immortal objects using `ob_ref_local`, which is
@@ -90,7 +96,7 @@ PyAPI_FUNC(Py_ssize_t) Py_REFCNT(PyObject *ob);
     #else
         uint32_t local = _Py_atomic_load_uint32_relaxed(&ob->ob_ref_local);
         if (local == _Py_IMMORTAL_REFCNT_LOCAL) {
-            return _Py_IMMORTAL_REFCNT;
+            return _Py_IMMORTAL_INITIAL_REFCNT;
         }
         Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&ob->ob_ref_shared);
         return _Py_STATIC_CAST(Py_ssize_t, local) +
@@ -109,9 +115,9 @@ static inline Py_ALWAYS_INLINE int _Py_IsImmortal(PyObject *op)
     return (_Py_atomic_load_uint32_relaxed(&op->ob_ref_local) ==
             _Py_IMMORTAL_REFCNT_LOCAL);
 #elif SIZEOF_VOID_P > 4
-    return (_Py_CAST(PY_INT32_T, op->ob_refcnt) < 0);
+    return _Py_CAST(PY_INT32_T, op->ob_refcnt) < 0;
 #else
-    return (op->ob_refcnt == _Py_IMMORTAL_REFCNT);
+    return op->ob_refcnt >= _Py_IMMORTAL_MINIMUM_REFCNT;
 #endif
 }
 #define _Py_IsImmortal(op) _Py_IsImmortal(_PyObject_CAST(op))
@@ -216,6 +222,25 @@ PyAPI_FUNC(void) Py_DecRef(PyObject *);
 PyAPI_FUNC(void) _Py_IncRef(PyObject *);
 PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
+#ifndef Py_GIL_DISABLED
+static inline Py_ALWAYS_INLINE void Py_INCREF_MORTAL(PyObject *op)
+{
+#if SIZEOF_VOID_P > 4
+    PY_UINT32_T cur_refcnt = op->ob_refcnt_split[PY_BIG_ENDIAN];
+    PY_UINT32_T new_refcnt = cur_refcnt + 1;
+    op->ob_refcnt_split[PY_BIG_ENDIAN] = new_refcnt;
+#else
+    op->ob_refcnt++;
+#endif
+    _Py_INCREF_STAT_INC();
+#if defined(Py_REF_DEBUG) && !defined(Py_LIMITED_API)
+    if (!_Py_IsImmortal(op)) {
+        _Py_INCREF_IncRefTotal();
+    }
+#endif
+}
+#endif
+
 static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 {
 #if defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))
@@ -236,7 +261,7 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
     uint32_t new_local = local + 1;
     if (new_local == 0) {
         _Py_INCREF_IMMORTAL_STAT_INC();
-        // local is equal to _Py_IMMORTAL_REFCNT: do nothing
+        // local is equal to _Py_IMMORTAL_REFCNT_LOCAL: do nothing
         return;
     }
     if (_Py_IsOwnedByCurrentThread(op)) {
@@ -246,18 +271,14 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
         _Py_atomic_add_ssize(&op->ob_ref_shared, (1 << _Py_REF_SHARED_SHIFT));
     }
 #elif SIZEOF_VOID_P > 4
-    // Portable saturated add, branching on the carry flag and set low bits
     PY_UINT32_T cur_refcnt = op->ob_refcnt_split[PY_BIG_ENDIAN];
-    PY_UINT32_T new_refcnt = cur_refcnt + 1;
-    if (new_refcnt == 0) {
+    if (((int32_t)cur_refcnt) < 0) {
+        // the object is immortal
         _Py_INCREF_IMMORTAL_STAT_INC();
-        // cur_refcnt is equal to _Py_IMMORTAL_REFCNT: the object is immortal,
-        // do nothing
         return;
     }
-    op->ob_refcnt_split[PY_BIG_ENDIAN] = new_refcnt;
+    op->ob_refcnt_split[PY_BIG_ENDIAN] = cur_refcnt + 1;
 #else
-    // Explicitly check immortality against the immortal value
     if (_Py_IsImmortal(op)) {
         _Py_INCREF_IMMORTAL_STAT_INC();
         return;
@@ -274,32 +295,6 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 #  define Py_INCREF(op) Py_INCREF(_PyObject_CAST(op))
 #endif
 
-static inline Py_ALWAYS_INLINE void Py_INCREF_MORTAL(PyObject *op)
-{
-#if defined(Py_GIL_DISABLED)
-    uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
-    uint32_t new_local = local + 1;
-    assert (new_local != 0);
-    if (_Py_IsOwnedByCurrentThread(op)) {
-        _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, new_local);
-    }
-    else {
-        _Py_atomic_add_ssize(&op->ob_ref_shared, (1 << _Py_REF_SHARED_SHIFT));
-    }
-#elif SIZEOF_VOID_P > 4
-    PY_UINT32_T cur_refcnt = op->ob_refcnt_split[PY_BIG_ENDIAN];
-    PY_UINT32_T new_refcnt = cur_refcnt + 1;
-    op->ob_refcnt_split[PY_BIG_ENDIAN] = new_refcnt;
-#else
-    op->ob_refcnt++;
-#endif
-    _Py_INCREF_STAT_INC();
-#if defined(Py_REF_DEBUG) && !defined(Py_LIMITED_API)
-    if (!_Py_IsImmortal(op)) {
-        _Py_INCREF_IncRefTotal();
-    }
-#endif
-}
 
 #if !defined(Py_LIMITED_API) && defined(Py_GIL_DISABLED)
 // Implements Py_DECREF on objects not owned by the current thread.
@@ -328,27 +323,6 @@ static inline void Py_DECREF(PyObject *op) {
 #define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
 
 #elif defined(Py_GIL_DISABLED) && defined(Py_REF_DEBUG)
-static inline void Py_DECREF_MORTAL(const char *filename, int lineno, PyObject *op)
-{
-    uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
-    _Py_DECREF_STAT_INC();
-    _Py_DECREF_DecRefTotal();
-    if (_Py_IsOwnedByCurrentThread(op)) {
-        if (local == 0) {
-            _Py_NegativeRefcount(filename, lineno, op);
-        }
-        local--;
-        _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, local);
-        if (local == 0) {
-            _Py_MergeZeroLocalRefcount(op);
-        }
-    }
-    else {
-        _Py_DecRefSharedDebug(op, filename, lineno);
-    }
-}
-#define Py_DECREF_MORTAL(op) Py_DECREF_MORTAL(__FILE__, __LINE__, _PyObject_CAST(op))
-
 static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 {
     uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
@@ -375,22 +349,6 @@ static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 #define Py_DECREF(op) Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
 
 #elif defined(Py_GIL_DISABLED)
-static inline void Py_DECREF_MORTAL(PyObject *op)
-{
-    uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
-    _Py_DECREF_STAT_INC();
-    if (_Py_IsOwnedByCurrentThread(op)) {
-        local--;
-        _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, local);
-        if (local == 0) {
-            _Py_MergeZeroLocalRefcount(op);
-        }
-    }
-    else {
-        _Py_DecRefShared(op);
-    }
-}
-
 static inline void Py_DECREF(PyObject *op)
 {
     uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
@@ -413,14 +371,18 @@ static inline void Py_DECREF(PyObject *op)
 #define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
 
 #elif defined(Py_REF_DEBUG)
-static inline Py_ALWAYS_INLINE void Py_DECREF_MORTAL(PyObject *op)
+static inline void Py_DECREF_MORTAL(const char *filename, int lineno, PyObject *op)
 {
+    if (op->ob_refcnt <= 0) {
+        _Py_NegativeRefcount(filename, lineno, op);
+    }
     _Py_DECREF_STAT_INC();
     _Py_DECREF_DecRefTotal();
     if (--op->ob_refcnt == 0) {
         _Py_Dealloc(op);
     }
 }
+#define Py_DECREF_MORTAL(op) Py_DECREF_MORTAL(__FILE__, __LINE__, _PyObject_CAST(op))
 
 static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 {
@@ -431,20 +393,23 @@ static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
         _Py_DECREF_IMMORTAL_STAT_INC();
         return;
     }
-    Py_DECREF_MORTAL(op);
-}
-#define Py_DECREF(op) Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
-
-#else
-static inline Py_ALWAYS_INLINE void Py_DECREF_MORTAL(PyObject *op)
-{
-    if (!_Py_IsImmortal(op)) {
-        _Py_DECREF_STAT_INC();
-    }
+    _Py_DECREF_STAT_INC();
+    _Py_DECREF_DecRefTotal();
     if (--op->ob_refcnt == 0) {
         _Py_Dealloc(op);
     }
 }
+#define Py_DECREF(op) Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
+
+#else
+static inline void Py_DECREF_MORTAL(PyObject *op)
+{
+    _Py_DECREF_STAT_INC();
+    if (--op->ob_refcnt == 0) {
+        _Py_Dealloc(op);
+    }
+}
+#define Py_DECREF_MORTAL(op) Py_DECREF_MORTAL(_PyObject_CAST(op))
 
 static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
 {
@@ -454,7 +419,10 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
         _Py_DECREF_IMMORTAL_STAT_INC();
         return;
     }
-    Py_DECREF_MORTAL(op);
+    _Py_DECREF_STAT_INC();
+    if (--op->ob_refcnt == 0) {
+        _Py_Dealloc(op);
+    }
 }
 #define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
 #endif
