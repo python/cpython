@@ -126,7 +126,6 @@ extern "C" {
 #define UNPACK_EX                              113
 #define UNPACK_SEQUENCE                        114
 #define YIELD_VALUE                            115
-#define _DO_CALL_FUNCTION_EX                   116
 #define RESUME                                 149
 #define BINARY_OP_ADD_FLOAT                    150
 #define BINARY_OP_ADD_INT                      151
@@ -226,13 +225,15 @@ extern "C" {
 #define INSTRUMENTED_LINE                      254
 #define ENTER_EXECUTOR                         255
 #define JUMP                                   256
-#define JUMP_NO_INTERRUPT                      257
-#define LOAD_CLOSURE                           258
-#define POP_BLOCK                              259
-#define SETUP_CLEANUP                          260
-#define SETUP_FINALLY                          261
-#define SETUP_WITH                             262
-#define STORE_FAST_MAYBE_NULL                  263
+#define JUMP_IF_FALSE                          257
+#define JUMP_IF_TRUE                           258
+#define JUMP_NO_INTERRUPT                      259
+#define LOAD_CLOSURE                           260
+#define POP_BLOCK                              261
+#define SETUP_CLEANUP                          262
+#define SETUP_FINALLY                          263
+#define SETUP_WITH                             264
+#define STORE_FAST_MAYBE_NULL                  265
 
 #define HAVE_ARGUMENT                           41
 #define MIN_SPECIALIZED_OPCODE                 150

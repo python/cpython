@@ -4505,14 +4505,14 @@ can be used interchangeably to index the same dictionary entry.
      ``dict([('foo', 100), ('bar', 200)])``, ``dict(foo=100, bar=200)``
 
    If no positional argument is given, an empty dictionary is created.
-   If a positional argument is given and it is a mapping object, a dictionary
-   is created with the same key-value pairs as the mapping object.  Otherwise,
-   the positional argument must be an :term:`iterable` object.  Each item in
-   the iterable must itself be an iterable with exactly two objects.  The
-   first object of each item becomes a key in the new dictionary, and the
-   second object the corresponding value.  If a key occurs more than once, the
-   last value for that key becomes the corresponding value in the new
-   dictionary.
+   If a positional argument is given and it defines a ``keys()`` method, a
+   dictionary is created by calling :meth:`~object.__getitem__` on the argument with
+   each returned key from the method.  Otherwise, the positional argument must be an
+   :term:`iterable` object.  Each item in the iterable must itself be an iterable
+   with exactly two elements.  The first element of each item becomes a key in the
+   new dictionary, and the second element the corresponding value.  If a key occurs
+   more than once, the last value for that key becomes the corresponding value in
+   the new dictionary.
 
    If keyword arguments are given, the keyword arguments and their values are
    added to the dictionary created from the positional argument.  If a key
@@ -4669,10 +4669,11 @@ can be used interchangeably to index the same dictionary entry.
       Update the dictionary with the key/value pairs from *other*, overwriting
       existing keys.  Return ``None``.
 
-      :meth:`update` accepts either another dictionary object or an iterable of
-      key/value pairs (as tuples or other iterables of length two).  If keyword
-      arguments are specified, the dictionary is then updated with those
-      key/value pairs: ``d.update(red=1, blue=2)``.
+      :meth:`update` accepts either another object with a ``keys()`` method (in
+      which case :meth:`~object.__getitem__` is called with every key returned from
+      the method). or an iterable of key/value pairs (as tuples or other iterables
+      of length two). If keyword arguments are specified, the dictionary is then
+      updated with those key/value pairs: ``d.update(red=1, blue=2)``.
 
    .. method:: values()
 
@@ -5521,22 +5522,6 @@ types, where they are relevant.  Some of these are not reported by the
 :func:`dir` built-in function.
 
 
-.. attribute:: object.__dict__
-
-   A dictionary or other mapping object used to store an object's (writable)
-   attributes.
-
-
-.. attribute:: instance.__class__
-
-   The class to which a class instance belongs.
-
-
-.. attribute:: class.__bases__
-
-   The tuple of base classes of a class object.
-
-
 .. attribute:: definition.__name__
 
    The name of the class, function, method, descriptor, or
@@ -5551,43 +5536,24 @@ types, where they are relevant.  Some of these are not reported by the
    .. versionadded:: 3.3
 
 
+.. attribute:: definition.__module__
+
+   The name of the module in which a class or function was defined.
+
+
+.. attribute:: definition.__doc__
+
+   The documentation string of a class or function, or ``None`` if undefined.
+
+
 .. attribute:: definition.__type_params__
 
    The :ref:`type parameters <type-params>` of generic classes, functions,
-   and :ref:`type aliases <type-aliases>`.
+   and :ref:`type aliases <type-aliases>`. For classes and functions that
+   are not generic, this will be an empty tuple.
 
    .. versionadded:: 3.12
 
-
-.. attribute:: class.__mro__
-
-   This attribute is a tuple of classes that are considered when looking for
-   base classes during method resolution.
-
-
-.. method:: class.mro()
-
-   This method can be overridden by a metaclass to customize the method
-   resolution order for its instances.  It is called at class instantiation, and
-   its result is stored in :attr:`~class.__mro__`.
-
-
-.. method:: class.__subclasses__
-
-   Each class keeps a list of weak references to its immediate subclasses.  This
-   method returns a list of all those references still alive.  The list is in
-   definition order.  Example::
-
-      >>> int.__subclasses__()
-      [<class 'bool'>, <enum 'IntEnum'>, <flag 'IntFlag'>, <class 're._constants._NamedIntConstant'>]
-
-
-.. attribute:: class.__static_attributes__
-
-      A tuple containing names of attributes of this class which are accessed
-      through ``self.X`` from any function in its body.
-
-      .. versionadded:: 3.13
 
 .. _int_max_str_digits:
 

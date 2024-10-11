@@ -24,7 +24,6 @@ from sphinx.builders import Builder
 from sphinx.domains.changeset import VersionChange, versionlabels, versionlabel_classes
 from sphinx.domains.python import PyFunction, PyMethod, PyModule
 from sphinx.locale import _ as sphinx_gettext
-from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 from sphinx.writers.text import TextWriter, TextTranslator
 from sphinx.util.display import status_iterator
@@ -108,80 +107,6 @@ class ImplementationDetail(SphinxDirective):
         return [pnode]
 
 
-# Support for documenting platform availability
-
-class Availability(SphinxDirective):
-
-    has_content = True
-    required_arguments = 1
-    optional_arguments = 0
-    final_argument_whitespace = True
-
-    # known platform, libc, and threading implementations
-    known_platforms = frozenset({
-        "AIX", "Android", "BSD", "DragonFlyBSD", "Emscripten", "FreeBSD",
-        "GNU/kFreeBSD", "Linux", "NetBSD", "OpenBSD", "POSIX", "Solaris",
-        "Unix", "VxWorks", "WASI", "Windows", "macOS", "iOS",
-        # libc
-        "BSD libc", "glibc", "musl",
-        # POSIX platforms with pthreads
-        "pthreads",
-    })
-
-    def run(self):
-        availability_ref = ':ref:`Availability <availability>`: '
-        avail_nodes, avail_msgs = self.state.inline_text(
-            availability_ref + self.arguments[0],
-            self.lineno)
-        pnode = nodes.paragraph(availability_ref + self.arguments[0],
-                                '', *avail_nodes, *avail_msgs)
-        self.set_source_info(pnode)
-        cnode = nodes.container("", pnode, classes=["availability"])
-        self.set_source_info(cnode)
-        if self.content:
-            self.state.nested_parse(self.content, self.content_offset, cnode)
-        self.parse_platforms()
-
-        return [cnode]
-
-    def parse_platforms(self):
-        """Parse platform information from arguments
-
-        Arguments is a comma-separated string of platforms. A platform may
-        be prefixed with "not " to indicate that a feature is not available.
-
-        Example::
-
-           .. availability:: Windows, Linux >= 4.2, not WASI
-
-        Arguments like "Linux >= 3.17 with glibc >= 2.27" are currently not
-        parsed into separate tokens.
-        """
-        platforms = {}
-        for arg in self.arguments[0].rstrip(".").split(","):
-            arg = arg.strip()
-            platform, _, version = arg.partition(" >= ")
-            if platform.startswith("not "):
-                version = False
-                platform = platform[4:]
-            elif not version:
-                version = True
-            platforms[platform] = version
-
-        unknown = set(platforms).difference(self.known_platforms)
-        if unknown:
-            cls = type(self)
-            logger = logging.getLogger(cls.__qualname__)
-            logger.warning(
-                f"Unknown platform(s) or syntax '{' '.join(sorted(unknown))}' "
-                f"in '.. availability:: {self.arguments[0]}', see "
-                f"{__file__}:{cls.__qualname__}.known_platforms for a set "
-                "known platforms."
-            )
-
-        return platforms
-
-
 # Support for documenting decorators
 
 class PyDecoratorMixin(object):
@@ -259,7 +184,22 @@ class PyAbstractMethod(PyMethod):
         return PyMethod.run(self)
 
 
-# Support for documenting version of removal in deprecations
+# Support for documenting version of changes, additions, deprecations
+
+def expand_version_arg(argument, release):
+    """Expand "next" to the current version"""
+    if argument == 'next':
+        return sphinx_gettext('{} (unreleased)').format(release)
+    return argument
+
+
+class PyVersionChange(VersionChange):
+    def run(self):
+        # Replace the 'next' special token with the current development version
+        self.arguments[0] = expand_version_arg(self.arguments[0],
+                                               self.config.release)
+        return super().run()
+
 
 class DeprecatedRemoved(VersionChange):
     required_arguments = 2
@@ -270,8 +210,12 @@ class DeprecatedRemoved(VersionChange):
     def run(self):
         # Replace the first two arguments (deprecated version and removed version)
         # with a single tuple of both versions.
-        version_deprecated = self.arguments[0]
+        version_deprecated = expand_version_arg(self.arguments[0],
+                                                self.config.release)
         version_removed = self.arguments.pop(1)
+        if version_removed == 'next':
+            raise ValueError(
+                'deprecated-removed:: second argument cannot be `next`')
         self.arguments[0] = version_deprecated, version_removed
 
         # Set the label based on if we have reached the removal version
@@ -334,8 +278,8 @@ class MiscNews(SphinxDirective):
 # Support for building "topic help" for pydoc
 
 pydoc_topic_labels = [
-    'assert', 'assignment', 'async', 'atom-identifiers', 'atom-literals',
-    'attribute-access', 'attribute-references', 'augassign', 'await',
+    'assert', 'assignment', 'assignment-expressions', 'async',  'atom-identifiers',
+    'atom-literals', 'attribute-access', 'attribute-references', 'augassign', 'await',
     'binary', 'bitwise', 'bltin-code-objects', 'bltin-ellipsis-object',
     'bltin-null-object', 'bltin-type-objects', 'booleans',
     'break', 'callable-types', 'calls', 'class', 'comparisons', 'compound',
@@ -473,7 +417,10 @@ def setup(app):
     app.add_role('issue', issue_role)
     app.add_role('gh', gh_issue_role)
     app.add_directive('impl-detail', ImplementationDetail)
-    app.add_directive('availability', Availability)
+    app.add_directive('versionadded', PyVersionChange, override=True)
+    app.add_directive('versionchanged', PyVersionChange, override=True)
+    app.add_directive('versionremoved', PyVersionChange, override=True)
+    app.add_directive('deprecated', PyVersionChange, override=True)
     app.add_directive('deprecated-removed', DeprecatedRemoved)
     app.add_builder(PydocTopicsBuilder)
     app.add_object_type('opcode', 'opcode', '%s (opcode)', parse_opcode_signature)

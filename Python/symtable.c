@@ -354,7 +354,7 @@ static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
 
 static void dump_symtable(PySTEntryObject* ste)
 {
-    PyObject *empty = PyUnicode_FromString("");
+    PyObject *empty = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     assert(empty != NULL);
     _dump_symtable(ste, empty);
     Py_DECREF(empty);
@@ -3120,33 +3120,30 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
     if (ipriv == plen) {
         return Py_NewRef(ident); /* Don't mangle if class is just underscores */
     }
-    plen -= ipriv;
 
-    if (plen + nlen >= PY_SSIZE_T_MAX - 1) {
+    if (nlen + (plen - ipriv) >= PY_SSIZE_T_MAX - 1) {
         PyErr_SetString(PyExc_OverflowError,
                         "private identifier too large to be mangled");
         return NULL;
     }
 
-    Py_UCS4 maxchar = PyUnicode_MAX_CHAR_VALUE(ident);
-    if (PyUnicode_MAX_CHAR_VALUE(privateobj) > maxchar) {
-        maxchar = PyUnicode_MAX_CHAR_VALUE(privateobj);
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(1 + nlen + (plen - ipriv));
+    if (!writer) {
+        return NULL;
     }
+    // ident = "_" + priv[ipriv:] + ident
+    if (PyUnicodeWriter_WriteChar(writer, '_') < 0) {
+        goto error;
+    }
+    if (PyUnicodeWriter_WriteSubstring(writer, privateobj, ipriv, plen) < 0) {
+        goto error;
+    }
+    if (PyUnicodeWriter_WriteStr(writer, ident) < 0) {
+        goto error;
+    }
+    return PyUnicodeWriter_Finish(writer);
 
-    PyObject *result = PyUnicode_New(1 + nlen + plen, maxchar);
-    if (!result) {
-        return NULL;
-    }
-    /* ident = "_" + priv[ipriv:] + ident # i.e. 1+plen+nlen bytes */
-    PyUnicode_WRITE(PyUnicode_KIND(result), PyUnicode_DATA(result), 0, '_');
-    if (PyUnicode_CopyCharacters(result, 1, privateobj, ipriv, plen) < 0) {
-        Py_DECREF(result);
-        return NULL;
-    }
-    if (PyUnicode_CopyCharacters(result, plen+1, ident, 0, nlen) < 0) {
-        Py_DECREF(result);
-        return NULL;
-    }
-    assert(_PyUnicode_CheckConsistency(result, 1));
-    return result;
+error:
+    PyUnicodeWriter_Discard(writer);
+    return NULL;
 }

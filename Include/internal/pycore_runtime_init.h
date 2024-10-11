@@ -11,6 +11,7 @@ extern "C" {
 #include "pycore_ceval_state.h"   // _PyEval_RUNTIME_PERF_INIT
 #include "pycore_faulthandler.h"  // _faulthandler_runtime_state_INIT
 #include "pycore_floatobject.h"   // _py_float_format_unknown
+#include "pycore_function.h"
 #include "pycore_object.h"        // _PyObject_HEAD_INIT
 #include "pycore_obmalloc_init.h" // _obmalloc_global_state_INIT
 #include "pycore_parser.h"        // _parser_runtime_state_INIT
@@ -243,7 +244,7 @@ extern PyTypeObject _PyExc_MemoryError;
         .dict_state = _dict_state_INIT, \
         .mem_free_queue = _Py_mem_free_queue_INIT(INTERP.mem_free_queue), \
         .func_state = { \
-            .next_version = 1, \
+            .next_version = FUNC_VERSION_FIRST_VALID, \
         }, \
         .types = { \
             .next_version_tag = _Py_TYPE_BASE_VERSION_TAG, \

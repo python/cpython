@@ -565,6 +565,7 @@ translate_bytecode_to_trace(
             code->co_firstlineno,
             2 * INSTR_IP(initial_instr, code));
     ADD_TO_TRACE(_START_EXECUTOR, 0, (uintptr_t)instr, INSTR_IP(instr, code));
+    ADD_TO_TRACE(_MAKE_WARM, 0, 0, 0);
     uint32_t target = 0;
 
     for (;;) {
@@ -642,14 +643,12 @@ translate_bytecode_to_trace(
                 int bitcount = _Py_popcount32(counter);
                 int jump_likely = bitcount > 8;
                 /* If bitcount is 8 (half the jumps were taken), adjust confidence by 50%.
-                   If it's 16 or 0 (all or none were taken), adjust by 10%
-                   (since the future is still somewhat uncertain).
                    For values in between, adjust proportionally. */
                 if (jump_likely) {
-                    confidence = confidence * (bitcount + 2) / 20;
+                    confidence = confidence * bitcount / 16;
                 }
                 else {
-                    confidence = confidence * (18 - bitcount) / 20;
+                    confidence = confidence * (16 - bitcount) / 16;
                 }
                 uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_likely];
                 DPRINTF(2, "%d: %s(%d): counter=%04x, bitcount=%d, likely=%d, confidence=%d, uopcode=%s\n",
@@ -1194,6 +1193,9 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     executor->jit_code = NULL;
     executor->jit_side_entry = NULL;
     executor->jit_size = 0;
+    // This is initialized to true so we can prevent the executor
+    // from being immediately detected as cold and invalidated.
+    executor->vm_data.warm = true;
     if (_PyJIT_Compile(executor, executor->trace, length)) {
         Py_DECREF(executor);
         return NULL;
@@ -1657,6 +1659,44 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
             OPT_STAT_INC(executors_invalidated);
         }
     }
+}
+
+void
+_Py_Executors_InvalidateCold(PyInterpreterState *interp)
+{
+    /* Walk the list of executors */
+    /* TO DO -- Use a tree to avoid traversing as many objects */
+    PyObject *invalidate = PyList_New(0);
+    if (invalidate == NULL) {
+        goto error;
+    }
+
+    /* Clearing an executor can deallocate others, so we need to make a list of
+     * executors to invalidate first */
+    for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
+        assert(exec->vm_data.valid);
+        _PyExecutorObject *next = exec->vm_data.links.next;
+
+        if (!exec->vm_data.warm && PyList_Append(invalidate, (PyObject *)exec) < 0) {
+            goto error;
+        }
+        else {
+            exec->vm_data.warm = false;
+        }
+
+        exec = next;
+    }
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(invalidate); i++) {
+        _PyExecutorObject *exec = (_PyExecutorObject *)PyList_GET_ITEM(invalidate, i);
+        executor_clear(exec);
+    }
+    Py_DECREF(invalidate);
+    return;
+error:
+    PyErr_Clear();
+    Py_XDECREF(invalidate);
+    // If we're truly out of memory, wiping out everything is a fine fallback
+    _Py_Executors_InvalidateAll(interp, 0);
 }
 
 #endif /* _Py_TIER2 */

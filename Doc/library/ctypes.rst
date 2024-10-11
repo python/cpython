@@ -2303,7 +2303,7 @@ These are the fundamental ctypes data types:
    Represents the C :c:expr:`double complex` datatype, if available.  The
    constructor accepts an optional :class:`complex` initializer.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 
 .. class:: c_float_complex
@@ -2588,6 +2588,8 @@ fields, or any other data types containing pointer type fields.
       An optional small integer that allows overriding the alignment of
       the structure when being packed or unpacked to/from memory.
       Setting this attribute to 0 is the same as not setting it at all.
+
+      .. versionadded:: 3.13
 
    .. attribute:: _layout_
 

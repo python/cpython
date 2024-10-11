@@ -5391,7 +5391,6 @@ _testFileType(path_t *path, int testedType)
 os._path_exists -> bool
 
     path: path_t(allow_fd=True, suppress_value_error=True)
-    /
 
 Test whether a path exists.  Returns False for broken symbolic links.
 
@@ -5399,7 +5398,7 @@ Test whether a path exists.  Returns False for broken symbolic links.
 
 static int
 os__path_exists_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=8da13acf666e16ba input=29198507a6082a57]*/
+/*[clinic end generated code: output=8da13acf666e16ba input=142beabfc66783eb]*/
 {
     return _testFileExists(path, TRUE);
 }
@@ -5409,7 +5408,6 @@ os__path_exists_impl(PyObject *module, path_t *path)
 os._path_lexists -> bool
 
     path: path_t(allow_fd=True, suppress_value_error=True)
-    /
 
 Test whether a path exists.  Returns True for broken symbolic links.
 
@@ -5417,7 +5415,7 @@ Test whether a path exists.  Returns True for broken symbolic links.
 
 static int
 os__path_lexists_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=e7240ed5fc45bff3 input=03d9fed8bc6ce96f]*/
+/*[clinic end generated code: output=e7240ed5fc45bff3 input=208205112a3cc1ed]*/
 {
     return _testFileExists(path, FALSE);
 }
@@ -10121,7 +10119,10 @@ os_wait_impl(PyObject *module)
 }
 #endif /* HAVE_WAIT */
 
-#if defined(__linux__) && defined(__NR_pidfd_open)
+
+// This system call always crashes on older Android versions.
+#if defined(__linux__) && defined(__NR_pidfd_open) && \
+    !(defined(__ANDROID__) && __ANDROID_API__ < 31)
 /*[clinic input]
 os.pidfd_open
   pid: pid_t
