@@ -46,7 +46,7 @@ Py_LOCAL_INLINE(Py_ssize_t) _PyBytesWriter_GetSize(_PyBytesWriter *writer,
 static inline PyObject* bytes_get_empty(void)
 {
     PyObject *empty = &EMPTY->ob_base.ob_base;
-    assert(_Py_IsImmortalLoose(empty));
+    assert(_Py_IsImmortal(empty));
     return empty;
 }
 
@@ -119,7 +119,7 @@ PyBytes_FromStringAndSize(const char *str, Py_ssize_t size)
     }
     if (size == 1 && str != NULL) {
         op = CHARACTER(*str & 255);
-        assert(_Py_IsImmortalLoose(op));
+        assert(_Py_IsImmortal(op));
         return (PyObject *)op;
     }
     if (size == 0) {
@@ -155,7 +155,7 @@ PyBytes_FromString(const char *str)
     }
     else if (size == 1) {
         op = CHARACTER(*str & 255);
-        assert(_Py_IsImmortalLoose(op));
+        assert(_Py_IsImmortal(op));
         return (PyObject *)op;
     }
 
@@ -1638,7 +1638,7 @@ bytes_subscript(PyObject *op, PyObject* item)
                                             &stop, step);
 
         if (slicelength <= 0) {
-            return PyBytes_FromStringAndSize("", 0);
+            return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
         }
         else if (start == 0 && step == 1 &&
                  slicelength == PyBytes_GET_SIZE(self) &&

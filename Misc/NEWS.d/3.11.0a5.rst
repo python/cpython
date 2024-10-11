@@ -486,8 +486,8 @@ Use ``dis.Positions`` in ``dis.Instruction`` instead of a regular ``tuple``.
 .. nonce: geS-aP
 .. section: Library
 
-:mod:`pdb` now gracefully handles ``help`` when :attr:`__doc__` is missing,
-for example when run with pregenerated optimized ``.pyc`` files.
+:mod:`pdb` now gracefully handles ``help`` when :attr:`~module.__doc__` is
+missing, for example when run with pregenerated optimized ``.pyc`` files.
 
 ..
 

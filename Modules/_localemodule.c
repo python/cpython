@@ -666,9 +666,35 @@ _locale_nl_langinfo_impl(PyObject *module, int item)
             {
                 return NULL;
             }
-            PyObject *unicode = PyUnicode_DecodeLocale(result, NULL);
+            PyObject *pyresult;
+#ifdef ALT_DIGITS
+            if (item == ALT_DIGITS) {
+                /* The result is a sequence of up to 100 NUL-separated strings. */
+                const char *s = result;
+                int count = 0;
+                for (; count < 100 && *s; count++) {
+                    s += strlen(s) + 1;
+                }
+                pyresult = PyTuple_New(count);
+                if (pyresult != NULL) {
+                    for (int i = 0; i < count; i++) {
+                        PyObject *unicode = PyUnicode_DecodeLocale(result, NULL);
+                        if (unicode == NULL) {
+                            Py_CLEAR(pyresult);
+                            break;
+                        }
+                        PyTuple_SET_ITEM(pyresult, i, unicode);
+                        result += strlen(result) + 1;
+                    }
+                }
+            }
+            else
+#endif
+            {
+                pyresult = PyUnicode_DecodeLocale(result, NULL);
+            }
             restore_locale(oldloc);
-            return unicode;
+            return pyresult;
         }
     }
     PyErr_SetString(PyExc_ValueError, "unsupported langinfo constant");
