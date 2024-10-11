@@ -188,7 +188,8 @@ The module defines the following items:
 
    Compress the *data*, returning a :class:`bytes` object containing
    the compressed data.  *compresslevel* and *mtime* have the same meaning as in
-   the :class:`GzipFile` constructor above.
+   the :class:`GzipFile` constructor above,
+   but *mtime* defaults to 0 for reproducible output.
 
    .. versionadded:: 3.2
    .. versionchanged:: 3.8
@@ -205,6 +206,8 @@ The module defines the following items:
       is used as was the case in 3.10 and earlier.
    .. versionchanged:: 3.14
       The *mtime* parameter now defaults to 0 for reproducible output.
+      For the previous behaviour of using the current time,
+      pass ``None`` to *mtime*.
 
 .. function:: decompress(data)
 
