@@ -5209,7 +5209,6 @@ _testFileType(path_t *path, int testedType)
 os._path_exists -> bool
 
     path: path_t(allow_fd=True, suppress_value_error=True)
-    /
 
 Test whether a path exists.  Returns False for broken symbolic links.
 
@@ -5217,7 +5216,7 @@ Test whether a path exists.  Returns False for broken symbolic links.
 
 static int
 os__path_exists_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=8da13acf666e16ba input=29198507a6082a57]*/
+/*[clinic end generated code: output=8da13acf666e16ba input=142beabfc66783eb]*/
 {
     return _testFileExists(path, TRUE);
 }
