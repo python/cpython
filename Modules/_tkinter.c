@@ -143,7 +143,7 @@ _get_tcl_lib_path(void)
         struct stat stat_buf;
         int stat_return_value;
 
-        PyObject *prefix = PySys_GetObject("prefix");  // borrowed reference
+        PyObject *prefix = PySys_GetObject("base_prefix");  // borrowed reference
         if (prefix == NULL) {
             return NULL;
         }
