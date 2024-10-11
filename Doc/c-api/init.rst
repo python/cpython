@@ -625,7 +625,7 @@ Process-wide parameters
    returned string points into static storage; the caller should not modify its
    value.  This corresponds to the :makevar:`prefix` variable in the top-level
    :file:`Makefile` and the :option:`--prefix` argument to the :program:`configure`
-   script at build time.  The value is available to Python code as ``sys.prefix``.
+   script at build time.  The value is available to Python code as ``sys.base_prefix``.
    It is only useful on Unix.  See also the next function.
 
    This function should not be called before :c:func:`Py_Initialize`, otherwise
@@ -635,7 +635,8 @@ Process-wide parameters
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
    .. deprecated-removed:: 3.13 3.15
-      Get :data:`sys.prefix` instead.
+      Get :data:`sys.base_prefix` instead, or :data:`sys.prefix` if
+      :ref:`virtual environments <venv-def>` need to be handled.
 
 
 .. c:function:: wchar_t* Py_GetExecPrefix()
@@ -648,7 +649,8 @@ Process-wide parameters
    should not modify its value.  This corresponds to the :makevar:`exec_prefix`
    variable in the top-level :file:`Makefile` and the ``--exec-prefix``
    argument to the :program:`configure` script at build  time.  The value is
-   available to Python code as ``sys.exec_prefix``.  It is only useful on Unix.
+   available to Python code as ``sys.base_exec_prefix``.  It is only useful on
+   Unix.
 
    Background: The exec-prefix differs from the prefix when platform dependent
    files (such as executables and shared libraries) are installed in a different
@@ -679,7 +681,8 @@ Process-wide parameters
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
    .. deprecated-removed:: 3.13 3.15
-      Get :data:`sys.exec_prefix` instead.
+      Get :data:`sys.base_exec_prefix` instead, or :data:`sys.exec_prefix` if
+      :ref:`virtual environments <venv-def>` need to be handled.
 
 
 .. c:function:: wchar_t* Py_GetProgramFullPath()
