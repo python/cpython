@@ -18,6 +18,7 @@ from generators_common import (
     ROOT,
     write_header,
     Emitter,
+    TokenIterator,
 )
 from cwriter import CWriter
 from typing import TextIO, Iterator
@@ -48,11 +49,11 @@ def type_name(var: StackItem) -> str:
 
 def var_name(var: StackItem, unused_count: int) -> tuple[str, int]:
     if var.name == "unused":
-        var = f"unused_{unused_count}"
+        name = f"unused_{unused_count}"
         unused_count += 1
     else:
-        var = var.name
-    return var, unused_count
+        name = var.name
+    return name, unused_count
 
 
 def declare_variables(uop: Uop, out: CWriter) -> None:
@@ -123,14 +124,14 @@ def emit_default(out: CWriter, uop: Uop, stack: Stack) -> None:
 class Tier2PEEmitter(Emitter):
     def __init__(self, out: CWriter):
         super().__init__(out)
-        self._replacers["MATERIALIZE_INPUTS"] = self.materialize_inputs
+        self._replacers["MATERIALIZE_INPUTS"] = self.materialize_inputs  # type: ignore[assignment]
 
     def materialize_inputs(
         self,
         tkn: Token,
-        tkn_iter: Iterator[Token],
+        tkn_iter: TokenIterator,
         uop: Uop,
-        stack: Stack,
+        storage: Storage,
         inst: Instruction | None,
     ) -> None:
         next(tkn_iter)
@@ -194,11 +195,11 @@ def write_uop(
             for var in storage.inputs:  # type: ignore[possibly-undefined]
                 var.defined = False
             base_offset = stack.base_offset.copy()
-            for var in reversed(uop.stack.inputs):
-                if var.is_array():
+            for input in reversed(uop.stack.inputs):
+                if input.is_array():
                     c_offset = base_offset.to_c()
-                    out.emit(f"{var.name} = &stack_pointer[{c_offset}];\n")
-                base_offset.push(var)
+                    out.emit(f"{input.name} = &stack_pointer[{c_offset}];\n")
+                base_offset.push(input)
             storage = emitter.emit_tokens(override, storage, None)
             out.start_line()
             storage.flush(out, cast_type="", extract_bits=False)
