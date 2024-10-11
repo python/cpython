@@ -154,6 +154,24 @@ PyStackRef_AsStrongReference(_PyStackRef stackref)
     return PyStackRef_FromPyObjectSteal(PyStackRef_AsPyObjectSteal(stackref));
 }
 
+#define PyStackRef_XCLOSE(stackref) \
+    do {                            \
+        _PyStackRef _tmp = (stackref); \
+        if (!PyStackRef_IsNull(_tmp)) { \
+            PyStackRef_CLOSE(_tmp); \
+        } \
+    } while (0);
+
+#define PyStackRef_CLEAR(op) \
+    do { \
+        _PyStackRef *_tmp_op_ptr = &(op); \
+        _PyStackRef _tmp_old_op = (*_tmp_op_ptr); \
+        if (!PyStackRef_IsNull(_tmp_old_op)) { \
+            *_tmp_op_ptr = PyStackRef_NULL; \
+            PyStackRef_CLOSE(_tmp_old_op); \
+        } \
+    } while (0)
+
 #else // Py_GIL_DISABLED
 
 // With GIL
@@ -163,9 +181,10 @@ PyStackRef_AsStrongReference(_PyStackRef stackref)
 #define BITS_TO_PTR(REF) ((PyObject *)((REF).bits))
 #define BITS_TO_PTR_MASKED(REF) ((PyObject *)(((REF).bits) & (~Py_TAG_BITS)))
 
-static const _PyStackRef PyStackRef_NULL = { .bits = 0 };
+#define PyStackRef_NULL_BITS Py_TAG_REFCNT
+static const _PyStackRef PyStackRef_NULL = { .bits = PyStackRef_NULL_BITS };
 
-#define PyStackRef_IsNull(ref) ((ref).bits == 0)
+#define PyStackRef_IsNull(ref) ((ref).bits == PyStackRef_NULL_BITS)
 #define PyStackRef_True ((_PyStackRef){.bits = ((uintptr_t)&_Py_TrueStruct) | Py_TAG_REFCNT })
 #define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) | Py_TAG_REFCNT })
 #define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) | Py_TAG_REFCNT })
@@ -247,6 +266,23 @@ PyStackRef_CLOSE(_PyStackRef ref)
     }
 }
 
+static inline void
+PyStackRef_XCLOSE(_PyStackRef ref)
+{
+    if (!PyStackRef_HasCount(ref)) {
+        assert(!PyStackRef_IsNull(ref));
+        Py_DECREF_MORTAL(BITS_TO_PTR(ref));
+    }
+}
+
+#define PyStackRef_CLEAR(REF) \
+    do { \
+        _PyStackRef *_tmp_op_ptr = &(REF); \
+        _PyStackRef _tmp_old_op = (*_tmp_op_ptr); \
+        *_tmp_op_ptr = PyStackRef_NULL; \
+        PyStackRef_XCLOSE(_tmp_old_op); \
+    } while (0)
+
 #endif // Py_GIL_DISABLED
 
 // Note: this is a macro because MSVC (Windows) has trouble inlining it.
@@ -258,24 +294,6 @@ PyStackRef_CLOSE(_PyStackRef ref)
 #define PyStackRef_AsPyObjectNew(stackref) Py_NewRef(PyStackRef_AsPyObjectBorrow(stackref))
 
 #define PyStackRef_TYPE(stackref) Py_TYPE(PyStackRef_AsPyObjectBorrow(stackref))
-
-#define PyStackRef_CLEAR(op) \
-    do { \
-        _PyStackRef *_tmp_op_ptr = &(op); \
-        _PyStackRef _tmp_old_op = (*_tmp_op_ptr); \
-        if (!PyStackRef_IsNull(_tmp_old_op)) { \
-            *_tmp_op_ptr = PyStackRef_NULL; \
-            PyStackRef_CLOSE(_tmp_old_op); \
-        } \
-    } while (0)
-
-#define PyStackRef_XCLOSE(stackref) \
-    do {                            \
-        _PyStackRef _tmp = (stackref); \
-        if (!PyStackRef_IsNull(_tmp)) { \
-            PyStackRef_CLOSE(_tmp); \
-        } \
-    } while (0);
 
 
 
