@@ -2832,6 +2832,16 @@ case "$CC_BASENAME" in
     ;;
 esac
 
+# -fwrapv for new icc versions
+case "$CC" in
+*icc*)
+    icc_version=`icc -dumpversion`
+    if test ${icc_version} '>' 18.9; then
+        CFLAGS_NODIST="$CFLAGS_NODIST -fwrapv"
+    fi
+    ;;
+esac
+
 if test "$assertions" = 'true'; then
   :
 else
