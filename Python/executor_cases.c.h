@@ -59,6 +59,17 @@
                 JUMP_TO_JUMP_TARGET();
             }
             #ifdef Py_GIL_DISABLED
+            // Work around a bug in the cases_generator logic that inserts code
+            // to save and restore the stack pointer. Without splitting these
+            // lines the cases_generator will insert code to save the stack
+            // pointer before the `#ifdef Py_GIL_DISABLED` and will insert code
+            // to clear the stack pointer immediately after the call to
+            // `_PyEval_GetExecutableCode` below. As a result, the stack
+            // pointer won't properly be cleared in default (with-gil)
+            // builds. By putting the declaration and assignment on separate
+            // lines, we cause the cases_generator to correctly insert the code
+            // to save and clear the stack pointer immediately before and after
+            // the call to _PyEval_GetExectableCode.
             _Py_CODEUNIT *bytecode;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             bytecode = _PyEval_GetExecutableCode(_PyFrame_GetCode(frame));

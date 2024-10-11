@@ -210,11 +210,9 @@ dummy_func(
                 int off = this_instr - frame->bytecode;
                 frame->bytecode = bytecode;
                 frame->instr_ptr = frame->bytecode + off;
-                this_instr = frame->instr_ptr;
-                next_instr = frame->instr_ptr + 1;
+                next_instr = frame->instr_ptr;
+                DISPATCH();
             }
-            #else
-            (void)this_instr;
             #endif
         }
 
