@@ -2232,13 +2232,11 @@ _ssl__SSLSocket_server_hostname_get_impl(PySSLSocket *self)
 @critical_section
 @getter
 _ssl._SSLSocket.owner
-
-The Python-level owner of this object. Passed as "self" in servername callback.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl__SSLSocket_owner_get_impl(PySSLSocket *self)
-/*[clinic end generated code: output=1f278cb930382927 input=57fd0d5f2644757a]*/
+/*[clinic end generated code: output=1f278cb930382927 input=bc2861ff3cf1402e]*/
 {
     if (self->owner == NULL) {
         Py_RETURN_NONE;
@@ -2852,13 +2850,11 @@ _ssl__SSLSocket_verify_client_post_handshake_impl(PySSLSocket *self)
 @critical_section
 @getter
 _ssl._SSLSocket.session
-
-Get / set SSLSession.
 [clinic start generated code]*/
 
 static PyObject *
 _ssl__SSLSocket_session_get_impl(PySSLSocket *self)
-/*[clinic end generated code: output=a5cd5755b35da670 input=be77165ad3547c3d]*/
+/*[clinic end generated code: output=a5cd5755b35da670 input=b9792df9255a9f63]*/
 {
     /* get_session can return sessions from a server-side connection,
      * it does not check for handshake done or client socket. */
