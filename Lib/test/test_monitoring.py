@@ -11,7 +11,7 @@ import types
 import unittest
 
 import test.support
-from test.support import requires_specialization_of, script_helper
+from test.support import requires_specialization, script_helper
 from test.support.import_helper import import_module
 
 _testcapi = test.support.import_helper.import_module("_testcapi")
@@ -1045,7 +1045,7 @@ class ExceptionMonitoringTest(CheckEvents):
         )
         self.assertEqual(events[0], ("throw", IndexError))
 
-    @requires_specialization_of("CALL")
+    @requires_specialization
     def test_no_unwind_for_shim_frame(self):
 
         class B:

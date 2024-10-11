@@ -1034,6 +1034,8 @@ enter_tier_two:
 
 #undef ENABLE_SPECIALIZATION
 #define ENABLE_SPECIALIZATION 0
+#undef ENABLE_SPECIALIZATION_FT
+#define ENABLE_SPECIALIZATION_FT 0
 
 #ifdef Py_DEBUG
     #define DPRINTF(level, ...) \

@@ -2,7 +2,7 @@
 import unittest
 import dis
 from test import support
-from test.support import import_helper, requires_specialization_of
+from test.support import import_helper, requires_specialization
 try:
     from sys import _clear_type_cache
 except ImportError:
@@ -110,6 +110,7 @@ class TypeCacheTests(unittest.TestCase):
             HolderSub.value
 
 @support.cpython_only
+@requires_specialization
 class TypeCacheWithSpecializationTests(unittest.TestCase):
     def tearDown(self):
         _clear_type_cache()
@@ -139,7 +140,6 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
         else:
             self.assertIn(opname, self._all_opnames(func))
 
-    @requires_specialization_of("LOAD_ATTR")
     def test_class_load_attr_specialization_user_type(self):
         class A:
             def foo(self):
@@ -160,7 +160,6 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
 
         self._check_specialization(load_foo_2, A, "LOAD_ATTR", should_specialize=False)
 
-    @requires_specialization_of("LOAD_ATTR")
     def test_class_load_attr_specialization_static_type(self):
         self.assertNotEqual(type_get_version(str), 0)
         self.assertNotEqual(type_get_version(bytes), 0)
@@ -172,7 +171,6 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
         self.assertEqual(get_capitalize_1(str)('hello'), 'Hello')
         self.assertEqual(get_capitalize_1(bytes)(b'hello'), b'Hello')
 
-    @requires_specialization_of("LOAD_ATTR")
     def test_property_load_attr_specialization_user_type(self):
         class G:
             @property
@@ -194,7 +192,6 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
 
         self._check_specialization(load_x_2, G(), "LOAD_ATTR", should_specialize=False)
 
-    @requires_specialization_of("STORE_ATTR")
     def test_store_attr_specialization_user_type(self):
         class B:
             __slots__ = ("bar",)
@@ -214,7 +211,6 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
 
         self._check_specialization(store_bar_2, B(), "STORE_ATTR", should_specialize=False)
 
-    @requires_specialization_of("CALL")
     def test_class_call_specialization_user_type(self):
         class F:
             def __init__(self):
@@ -235,7 +231,6 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
 
         self._check_specialization(call_class_2, F, "CALL", should_specialize=False)
 
-    @requires_specialization_of("TO_BOOL")
     def test_to_bool_specialization_user_type(self):
         class H:
             pass

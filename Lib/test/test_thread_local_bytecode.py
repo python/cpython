@@ -4,7 +4,7 @@ import textwrap
 import unittest
 
 from test import support
-from test.support import cpython_only, import_helper, requires_specialization_of
+from test.support import cpython_only, import_helper, requires_specialization_ft
 from test.support.script_helper import assert_python_ok
 from test.support.threading_helper import requires_working_threading
 
@@ -16,7 +16,7 @@ _testinternalcapi = import_helper.import_module("_testinternalcapi")
 @requires_working_threading()
 @unittest.skipUnless(support.Py_GIL_DISABLED, "only in free-threaded builds")
 class TLBCTests(unittest.TestCase):
-    @requires_specialization_of("BINARY_OP")
+    @requires_specialization_ft
     def test_new_threads_start_with_unspecialized_code(self):
         code = textwrap.dedent("""
         import dis
@@ -47,7 +47,7 @@ class TLBCTests(unittest.TestCase):
         """)
         assert_python_ok("-X", "tlbc=1", "-c", code)
 
-    @requires_specialization_of("BINARY_OP")
+    @requires_specialization_ft
     def test_threads_specialize_independently(self):
         code = textwrap.dedent("""
         import dis
