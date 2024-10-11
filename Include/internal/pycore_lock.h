@@ -65,7 +65,7 @@ PyMutex_LockFlags(PyMutex *m, _PyLockFlags flags)
 }
 
 // Unlock a mutex, returns -1 if the mutex is not locked (used for improved
-// error messages) otherwise returns 0;
+// error messages) otherwise returns 0.
 extern int _PyMutex_TryUnlock(PyMutex *m);
 
 
