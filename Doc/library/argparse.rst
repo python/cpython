@@ -635,8 +635,11 @@ be positional::
    usage: PROG [-h] [-f FOO] bar
    PROG: error: the following arguments are required: bar
 
-You do not need to specify the dest_ and metavar_ parameters.  The
-dest_ parameter defaults to the argument name with underscores ``_``
+By default, argparse automatically handles the internal naming and
+display names of arguments, simplifying the process without requiring
+additional configuration.
+As such, you do not need to specify the dest_ and metavar_ parameters.
+The dest_ parameter defaults to the argument name with underscores ``_``
 replacing hyphens ``-`` . The metavar_ parameter defaults to the
 upper-cased name. For example::
 
