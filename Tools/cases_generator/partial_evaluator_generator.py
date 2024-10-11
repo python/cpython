@@ -196,9 +196,11 @@ def write_uop(
                 var.defined = False
             base_offset = stack.base_offset.copy()
             for input in reversed(uop.stack.inputs):
+                c_offset = base_offset.to_c()
                 if input.is_array():
-                    c_offset = base_offset.to_c()
                     out.emit(f"{input.name} = &stack_pointer[{c_offset}];\n")
+                else:
+                    out.emit(f"{input.name} = stack_pointer[{c_offset}];\n")
                 base_offset.push(input)
             storage = emitter.emit_tokens(override, storage, None)
             out.start_line()
