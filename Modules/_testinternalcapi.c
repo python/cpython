@@ -1986,7 +1986,7 @@ get_tlbc(PyObject *Py_UNUSED(module), PyObject *obj)
     if (code == NULL) {
         return NULL;
     }
-    _Py_CODEUNIT *bc = _PyCode_GetTLBCFast(code);
+    _Py_CODEUNIT *bc = _PyCode_GetTLBCFast(PyThreadState_GET(), code);
     if (bc == NULL) {
         Py_RETURN_NONE;
     }
@@ -2000,7 +2000,7 @@ get_tlbc_id(PyObject *Py_UNUSED(module), PyObject *obj)
     if (code == NULL) {
         return NULL;
     }
-    _Py_CODEUNIT *bc = _PyCode_GetTLBCFast(code);
+    _Py_CODEUNIT *bc = _PyCode_GetTLBCFast(PyThreadState_GET(), code);
     if (bc == NULL) {
         Py_RETURN_NONE;
     }

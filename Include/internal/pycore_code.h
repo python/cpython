@@ -636,11 +636,10 @@ PyAPI_DATA(const struct _PyCode8) _Py_InitCleanup;
 // Return a pointer to the thread-local bytecode for the current thread, if it
 // exists.
 static inline _Py_CODEUNIT *
-_PyCode_GetTLBCFast(PyCodeObject *co)
+_PyCode_GetTLBCFast(PyThreadState *tstate, PyCodeObject *co)
 {
     _PyCodeArray *code = _Py_atomic_load_ptr_acquire(&co->co_tlbc);
-    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *) PyThreadState_GET();
-    Py_ssize_t idx = tstate->tlbc_index;
+    Py_ssize_t idx = ((_PyThreadStateImpl*) tstate)->tlbc_index;
     if (idx < code->size && code->entries[idx] != NULL) {
         return (_Py_CODEUNIT *) code->entries[idx];
     }

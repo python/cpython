@@ -820,7 +820,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #ifdef Py_GIL_DISABLED
         /* Load thread-local bytecode */
         _Py_CODEUNIT *bytecode =
-            _PyEval_GetExecutableCode(_PyFrame_GetCode(frame));
+            _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
         if (bytecode == NULL) {
             goto error;
         }

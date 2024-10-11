@@ -4844,7 +4844,7 @@
                 // the call to `_PyEval_GetExecutableCode`.
                 _Py_CODEUNIT *bytecode;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                bytecode = _PyEval_GetExecutableCode(_PyFrame_GetCode(frame));
+                bytecode = _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (bytecode == NULL) goto error;
                 if (frame->bytecode != bytecode) {
@@ -6928,7 +6928,7 @@
                 // the call to `_PyEval_GetExecutableCode`.
                 _Py_CODEUNIT *bytecode;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                bytecode = _PyEval_GetExecutableCode(_PyFrame_GetCode(frame));
+                bytecode = _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (bytecode == NULL) goto error;
                 if (frame->bytecode != bytecode) {
@@ -7008,7 +7008,7 @@
             // the call to `_PyCode_GetTLBCFast`.
             _Py_CODEUNIT *bytecode;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            bytecode = _PyCode_GetTLBCFast(_PyFrame_GetCode(frame));
+            bytecode = _PyCode_GetTLBCFast(tstate, _PyFrame_GetCode(frame));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             DEOPT_IF(bytecode == NULL, RESUME);
             if (frame->bytecode != bytecode) {

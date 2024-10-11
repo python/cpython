@@ -180,9 +180,9 @@ extern int _PyEval_DisableGIL(PyThreadState *state);
 
 
 static inline _Py_CODEUNIT *
-_PyEval_GetExecutableCode(PyCodeObject *co)
+_PyEval_GetExecutableCode(PyThreadState *tstate, PyCodeObject *co)
 {
-    _Py_CODEUNIT *bc = _PyCode_GetTLBCFast(co);
+    _Py_CODEUNIT *bc = _PyCode_GetTLBCFast(tstate, co);
     if (bc != NULL) {
         return bc;
     }

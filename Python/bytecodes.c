@@ -204,7 +204,7 @@ dummy_func(
             // to save and clear the stack pointer immediately before and after
             // the call to `_PyEval_GetExecutableCode`.
             _Py_CODEUNIT *bytecode;
-            bytecode = _PyEval_GetExecutableCode(_PyFrame_GetCode(frame));
+            bytecode = _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
             ERROR_IF(bytecode == NULL, error);
             if (frame->bytecode != bytecode) {
                 int off = this_instr - frame->bytecode;
@@ -244,7 +244,7 @@ dummy_func(
             // to save and clear the stack pointer immediately before and after
             // the call to `_PyCode_GetTLBCFast`.
             _Py_CODEUNIT *bytecode;
-            bytecode = _PyCode_GetTLBCFast(_PyFrame_GetCode(frame));
+            bytecode = _PyCode_GetTLBCFast(tstate, _PyFrame_GetCode(frame));
             DEOPT_IF(bytecode == NULL);
             if (frame->bytecode != bytecode) {
                 /* Avoid using this_instr here so that _RESUME_CHECK can be included
