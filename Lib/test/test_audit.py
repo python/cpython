@@ -174,6 +174,14 @@ class AuditTest(unittest.TestCase):
             ]
         self.assertEqual(actual, expected)
 
+    def test_asyncio(self):
+        returncode, events, stderr = self.run_python("test_asyncio")
+        if returncode:
+            self.fail(stderr)
+        if support.verbose:
+            print(*events, sep='\n')
+        self.assertEqual(events[0][0], "asyncio.stalled")
+
 
     def test_sys_getframe(self):
         returncode, events, stderr = self.run_python("test_sys_getframe")

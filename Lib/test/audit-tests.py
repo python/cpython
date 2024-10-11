@@ -567,6 +567,25 @@ def test_winapi_createnamedpipe(pipe_name):
     _winapi.CreateNamedPipe(pipe_name, _winapi.PIPE_ACCESS_DUPLEX, 8, 2, 0, 0, 0, 0)
 
 
+def test_asyncio():
+    import asyncio
+
+    def hook(event, args):
+        if event == "asyncio.stalled":
+            print(event, *args[1:])
+
+    sys.addaudithook(hook)
+
+    ev = asyncio.new_event_loop()
+    ev.slow_callback_duration = 0.0
+
+    def stop_loop(loop):
+        loop.stop()
+
+    ev.call_soon(stop_loop, ev)
+    ev.run_forever()
+
+
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts
 
