@@ -1,0 +1,3 @@
+Support the :c:expr:`float complex` and :c:expr:`double complex`
+C types in the :mod:`struct` module if the compiler has C11 complex
+arithmetic.  Patch by Sergey B Kirpichev.

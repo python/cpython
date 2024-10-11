@@ -1541,7 +1541,7 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
     }
 
     if (bytes_found) {
-        PyObject* res = PyBytes_FromString("");
+        PyObject* res = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
 
         /* Bytes literals never get a kind, but just for consistency
            since they are represented as Constant nodes, we'll mirror

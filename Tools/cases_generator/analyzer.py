@@ -1,13 +1,13 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+import itertools
 import lexer
 import parser
 import re
 from typing import Optional
 
-
 @dataclass
 class Properties:
-    escapes: bool
+    escaping_calls: dict[lexer.Token, tuple[lexer.Token, lexer.Token]]
     error_with_pop: bool
     error_without_pop: bool
     deopts: bool
@@ -29,14 +29,21 @@ class Properties:
     needs_prev: bool = False
 
     def dump(self, indent: str) -> None:
-        print(indent, end="")
-        text = ", ".join([f"{key}: {value}" for (key, value) in self.__dict__.items()])
+        simple_properties = self.__dict__.copy()
+        del simple_properties["escaping_calls"]
+        text = "escaping_calls:\n"
+        for tkns in self.escaping_calls.values():
+            text += f"{indent}    {tkns}\n"
+        text += ", ".join([f"{key}: {value}" for (key, value) in simple_properties.items()])
         print(indent, text, sep="")
 
     @staticmethod
     def from_list(properties: list["Properties"]) -> "Properties":
+        escaping_calls: dict[lexer.Token, tuple[lexer.Token, lexer.Token]] = {}
+        for p in properties:
+            escaping_calls.update(p.escaping_calls)
         return Properties(
-            escapes=any(p.escapes for p in properties),
+            escaping_calls=escaping_calls,
             error_with_pop=any(p.error_with_pop for p in properties),
             error_without_pop=any(p.error_without_pop for p in properties),
             deopts=any(p.deopts for p in properties),
@@ -59,9 +66,12 @@ class Properties:
     def infallible(self) -> bool:
         return not self.error_with_pop and not self.error_without_pop
 
+    @property
+    def escapes(self) -> bool:
+        return bool(self.escaping_calls)
 
 SKIP_PROPERTIES = Properties(
-    escapes=False,
+    escaping_calls={},
     error_with_pop=False,
     error_without_pop=False,
     deopts=False,
@@ -156,6 +166,7 @@ class Uop:
     stack: StackEffect
     caches: list[CacheEntry]
     deferred_refs: dict[lexer.Token, str | None]
+    output_stores: list[lexer.Token]
     body: list[lexer.Token]
     properties: Properties
     _size: int = -1
@@ -322,11 +333,24 @@ def analyze_stack(
     ]
     # Mark variables with matching names at the base of the stack as "peek"
     modified = False
-    for input, output in zip(inputs, outputs):
-        if input.name == output.name and not modified:
-            input.peek = output.peek = True
+    input_names: dict[str, lexer.Token] = { i.name : i.first_token for i in op.inputs if i.name != "unused" }
+    for input, output in itertools.zip_longest(inputs, outputs):
+        if output is None:
+            pass
+        elif input is None:
+            if output.name in input_names:
+                raise analysis_error(
+                    f"Reuse of variable '{output.name}' at different stack location",
+                    input_names[output.name])
+        elif input.name == output.name:
+            if not modified:
+                input.peek = output.peek = True
         else:
             modified = True
+            if output.name in input_names:
+                raise analysis_error(
+                    f"Reuse of variable '{output.name}' at different stack location",
+                    input_names[output.name])
     if isinstance(op, parser.InstDef):
         output_names = [out.name for out in outputs]
         for input in inputs:
@@ -354,21 +378,46 @@ def analyze_caches(inputs: list[parser.InputEffect]) -> list[CacheEntry]:
     return [CacheEntry(i.name, int(i.size)) for i in caches]
 
 
+def find_assignment_target(node: parser.InstDef, idx: int) -> list[lexer.Token]:
+    """Find the tokens that make up the left-hand side of an assignment"""
+    offset = 0
+    for tkn in reversed(node.block.tokens[: idx]):
+        if tkn.kind in {"SEMI", "LBRACE", "RBRACE"}:
+            return node.block.tokens[idx - offset : idx]
+        offset += 1
+    return []
+
+
+def find_stores_outputs(node: parser.InstDef) -> list[lexer.Token]:
+    res: list[lexer.Token] = []
+    outnames = { out.name for out in node.outputs }
+    innames = { out.name for out in node.inputs }
+    for idx, tkn in enumerate(node.block.tokens):
+        if tkn.kind == "AND":
+            name = node.block.tokens[idx+1]
+            if name.text in outnames:
+                res.append(name)
+        if tkn.kind != "EQUALS":
+            continue
+        lhs = find_assignment_target(node, idx)
+        assert lhs
+        while lhs and lhs[0].kind == "COMMENT":
+            lhs = lhs[1:]
+        if len(lhs) != 1 or lhs[0].kind != "IDENTIFIER":
+            continue
+        name = lhs[0]
+        if name.text in innames:
+            raise analysis_error(f"Cannot assign to input variable '{name.text}'", name)
+        if name.text in outnames:
+            res.append(name)
+    return res
+
 def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]:
     """Look for PyStackRef_FromPyObjectNew() calls"""
 
-    def find_assignment_target(idx: int) -> list[lexer.Token]:
-        """Find the tokens that make up the left-hand side of an assignment"""
-        offset = 1
-        for tkn in reversed(node.block.tokens[: idx - 1]):
-            if tkn.kind == "SEMI" or tkn.kind == "LBRACE" or tkn.kind == "RBRACE":
-                return node.block.tokens[idx - offset : idx - 1]
-            offset += 1
-        return []
-
     def in_frame_push(idx: int) -> bool:
         for tkn in reversed(node.block.tokens[: idx - 1]):
-            if tkn.kind == "SEMI" or tkn.kind == "LBRACE" or tkn.kind == "RBRACE":
+            if tkn.kind in {"SEMI", "LBRACE", "RBRACE"}:
                 return False
             if tkn.kind == "IDENTIFIER" and tkn.text == "_PyFrame_PushUnchecked":
                 return True
@@ -386,7 +435,7 @@ def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]
                 continue
             raise analysis_error("Expected '=' before PyStackRef_FromPyObjectNew", tkn)
 
-        lhs = find_assignment_target(idx)
+        lhs = find_assignment_target(node, idx - 1)
         if len(lhs) == 0:
             raise analysis_error(
                 "PyStackRef_FromPyObjectNew() must be assigned to an output", tkn
@@ -406,9 +455,13 @@ def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]
             )
 
         name = lhs[0].text
-        if not any(var.name == name for var in node.outputs):
+        match = (
+            any(var.name == name for var in node.inputs)
+            or any(var.name == name for var in node.outputs)
+        )
+        if not match:
             raise analysis_error(
-                f"PyStackRef_FromPyObjectNew() must be assigned to an output, not '{name}'",
+                f"PyStackRef_FromPyObjectNew() must be assigned to an input or output, not '{name}'",
                 tkn,
             )
 
@@ -461,125 +514,202 @@ def has_error_without_pop(op: parser.InstDef) -> bool:
 
 
 NON_ESCAPING_FUNCTIONS = (
-    "PyStackRef_FromPyObjectSteal",
+    "PyCFunction_GET_FLAGS",
+    "PyCFunction_GET_FUNCTION",
+    "PyCFunction_GET_SELF",
+    "PyCell_GetRef",
+    "PyCell_New",
+    "PyCell_SwapTakeRef",
+    "PyExceptionInstance_Class",
+    "PyException_GetCause",
+    "PyException_GetContext",
+    "PyException_GetTraceback",
+    "PyFloat_AS_DOUBLE",
+    "PyFloat_FromDouble",
+    "PyFunction_GET_CODE",
+    "PyFunction_GET_GLOBALS",
+    "PyList_GET_ITEM",
+    "PyList_GET_SIZE",
+    "PyList_SET_ITEM",
+    "PyLong_AsLong",
+    "PyLong_FromLong",
+    "PyLong_FromSsize_t",
+    "PySlice_New",
     "PyStackRef_AsPyObjectBorrow",
+    "PyStackRef_AsPyObjectNew",
     "PyStackRef_AsPyObjectSteal",
+    "PyStackRef_CLEAR",
     "PyStackRef_CLOSE",
     "PyStackRef_DUP",
-    "PyStackRef_CLEAR",
-    "PyStackRef_IsNull",
-    "PyStackRef_TYPE",
     "PyStackRef_False",
-    "PyStackRef_True",
-    "PyStackRef_None",
-    "PyStackRef_Is",
-    "PyStackRef_FromPyObjectNew",
-    "PyStackRef_AsPyObjectNew",
     "PyStackRef_FromPyObjectImmortal",
-    "Py_INCREF",
-    "_PyManagedDictPointer_IsValues",
-    "_PyObject_GetManagedDict",
-    "_PyObject_ManagedDictPointer",
-    "_PyObject_InlineValues",
-    "_PyDictValues_AddToInsertionOrder",
-    "Py_DECREF",
-    "Py_XDECREF",
-    "_Py_DECREF_SPECIALIZED",
-    "DECREF_INPUTS_AND_REUSE_FLOAT",
+    "PyStackRef_FromPyObjectNew",
+    "PyStackRef_FromPyObjectSteal",
+    "PyStackRef_Is",
+    "PyStackRef_IsNull",
+    "PyStackRef_None",
+    "PyStackRef_TYPE",
+    "PyStackRef_True",
+    "PyTuple_GET_ITEM",
+    "PyTuple_GET_SIZE",
+    "PyType_HasFeature",
     "PyUnicode_Append",
-    "_PyLong_IsZero",
+    "PyUnicode_Concat",
+    "PyUnicode_GET_LENGTH",
+    "PyUnicode_READ_CHAR",
+    "Py_ARRAY_LENGTH",
+    "Py_CLEAR",
+    "Py_DECREF",
+    "Py_FatalError",
+    "Py_INCREF",
+    "Py_IS_TYPE",
+    "Py_NewRef",
+    "Py_REFCNT",
     "Py_SIZE",
     "Py_TYPE",
-    "PyList_GET_ITEM",
-    "PyList_SET_ITEM",
-    "PyTuple_GET_ITEM",
-    "PyList_GET_SIZE",
-    "PyTuple_GET_SIZE",
-    "Py_ARRAY_LENGTH",
+    "Py_UNREACHABLE",
     "Py_Unicode_GET_LENGTH",
-    "PyUnicode_READ_CHAR",
-    "_Py_SINGLETON",
-    "PyUnicode_GET_LENGTH",
-    "_PyLong_IsCompact",
-    "_PyLong_IsNonNegativeCompact",
+    "Py_XDECREF",
+    "_PyCode_CODE",
+    "_PyDictValues_AddToInsertionOrder",
+    "_PyErr_Occurred",
+    "_PyEval_FrameClearAndPop",
+    "_PyFrame_GetCode",
+    "_PyFrame_IsIncomplete",
+    "_PyFrame_PushUnchecked",
+    "_PyFrame_SetStackPointer",
+    "_PyFrame_StackPush",
+    "_PyFunction_SetVersion",
+    "_PyGen_GetGeneratorFromFrame",
+    "_PyInterpreterState_GET",
+    "_PyList_AppendTakeRef",
+    "_PyList_FromStackRefSteal",
+    "_PyList_ITEMS",
+    "_PyLong_Add",
     "_PyLong_CompactValue",
     "_PyLong_DigitCount",
-    "_Py_NewRef",
-    "_Py_IsImmortal",
-    "PyLong_FromLong",
-    "_Py_STR",
-    "_PyLong_Add",
+    "_PyLong_IsCompact",
+    "_PyLong_IsNonNegativeCompact",
+    "_PyLong_IsZero",
     "_PyLong_Multiply",
     "_PyLong_Subtract",
-    "Py_NewRef",
-    "_PyList_ITEMS",
-    "_PyTuple_ITEMS",
-    "_PyList_AppendTakeRef",
-    "_Py_atomic_load_uintptr_relaxed",
-    "_PyFrame_GetCode",
+    "_PyManagedDictPointer_IsValues",
+    "_PyObject_GC_IS_TRACKED",
+    "_PyObject_GC_MAY_BE_TRACKED",
+    "_PyObject_GC_TRACK",
+    "_PyObject_GetManagedDict",
+    "_PyObject_InlineValues",
+    "_PyObject_ManagedDictPointer",
     "_PyThreadState_HasStackSpace",
-    "_PyUnicode_Equal",
-    "_PyFrame_SetStackPointer",
-    "_PyType_HasFeature",
-    "PyUnicode_Concat",
-    "PySlice_New",
-    "_Py_LeaveRecursiveCallPy",
-    "CALL_STAT_INC",
-    "STAT_INC",
-    "maybe_lltrace_resume_frame",
-    "_PyUnicode_JoinArray",
-    "_PyEval_FrameClearAndPop",
-    "_PyFrame_StackPush",
-    "PyCell_New",
-    "PyFloat_AS_DOUBLE",
-    "_PyFrame_PushUnchecked",
-    "Py_FatalError",
-    "STACKREFS_TO_PYOBJECTS",
-    "STACKREFS_TO_PYOBJECTS_CLEANUP",
-    "CONVERSION_FAILED",
-    "_PyList_FromStackRefSteal",
     "_PyTuple_FromArraySteal",
     "_PyTuple_FromStackRefSteal",
-    "_Py_set_eval_breaker_bit"
+    "_PyTuple_ITEMS",
+    "_PyType_HasFeature",
+    "_PyType_NewManagedObject",
+    "_PyUnicode_Equal",
+    "_PyUnicode_JoinArray",
+    "_Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY",
+    "_Py_DECREF_NO_DEALLOC",
+    "_Py_DECREF_SPECIALIZED",
+    "_Py_EnterRecursiveCallTstateUnchecked",
+    "_Py_ID",
+    "_Py_IsImmortal",
+    "_Py_LeaveRecursiveCallPy",
+    "_Py_LeaveRecursiveCallTstate",
+    "_Py_NewRef",
+    "_Py_SINGLETON",
+    "_Py_STR",
+    "_Py_atomic_load_uintptr_relaxed",
+    "_Py_set_eval_breaker_bit",
+    "advance_backoff_counter",
+    "assert",
+    "backoff_counter_triggers",
+    "initial_temperature_backoff_counter",
+    "maybe_lltrace_resume_frame",
+    "restart_backoff_counter",
 )
 
-ESCAPING_FUNCTIONS = (
-    "import_name",
-    "import_from",
-)
+def find_stmt_start(node: parser.InstDef, idx: int) -> lexer.Token:
+    assert idx < len(node.block.tokens)
+    while True:
+        tkn = node.block.tokens[idx-1]
+        if tkn.kind in {"SEMI", "LBRACE", "RBRACE"}:
+            break
+        idx -= 1
+        assert idx > 0
+    while node.block.tokens[idx].kind == "COMMENT":
+        idx += 1
+    return node.block.tokens[idx]
 
 
-def makes_escaping_api_call(instr: parser.InstDef) -> bool:
-    if "CALL_INTRINSIC" in instr.name:
-        return True
-    if instr.name == "_BINARY_OP":
-        return True
-    tkns = iter(instr.tokens)
-    for tkn in tkns:
-        if tkn.kind != lexer.IDENTIFIER:
-            continue
+def find_stmt_end(node: parser.InstDef, idx: int) -> lexer.Token:
+    assert idx < len(node.block.tokens)
+    while True:
+        idx += 1
+        tkn = node.block.tokens[idx]
+        if tkn.kind == "SEMI":
+            return node.block.tokens[idx+1]
+
+def check_escaping_calls(instr: parser.InstDef, escapes: dict[lexer.Token, tuple[lexer.Token, lexer.Token]]) -> None:
+    calls = {escapes[t][0] for t in escapes}
+    in_if = 0
+    tkn_iter = iter(instr.block.tokens)
+    for tkn in tkn_iter:
+        if tkn.kind == "IF":
+            next(tkn_iter)
+            in_if = 1
+        if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF"):
+            next(tkn_iter)
+            in_if = 1
+        elif tkn.kind == "LPAREN" and in_if:
+            in_if += 1
+        elif tkn.kind == "RPAREN":
+            if in_if:
+                in_if -= 1
+        elif tkn in calls and in_if:
+            raise analysis_error(f"Escaping call '{tkn.text} in condition", tkn)
+
+def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, tuple[lexer.Token, lexer.Token]]:
+    result: dict[lexer.Token, tuple[lexer.Token, lexer.Token]] = {}
+    tokens = instr.block.tokens
+    for idx, tkn in enumerate(tokens):
         try:
-            next_tkn = next(tkns)
-        except StopIteration:
-            return False
+            next_tkn = tokens[idx+1]
+        except IndexError:
+            break
+        if tkn.kind == "SWITCH":
+            raise analysis_error(f"switch statements are not supported due to their complex flow control. Sorry.", tkn)
         if next_tkn.kind != lexer.LPAREN:
             continue
-        if tkn.text in ESCAPING_FUNCTIONS:
-            return True
-        if tkn.text == "tp_vectorcall":
-            return True
-        if not tkn.text.startswith("Py") and not tkn.text.startswith("_Py"):
+        if tkn.kind == lexer.IDENTIFIER:
+            if tkn.text.upper() == tkn.text:
+                # simple macro
+                continue
+            #if not tkn.text.startswith(("Py", "_Py", "monitor")):
+            #    continue
+            if tkn.text.startswith(("sym_", "optimize_")):
+                # Optimize functions
+                continue
+            if tkn.text.endswith("Check"):
+                continue
+            if tkn.text.startswith("Py_Is"):
+                continue
+            if tkn.text.endswith("CheckExact"):
+                continue
+            if tkn.text in NON_ESCAPING_FUNCTIONS:
+                continue
+        elif tkn.kind == "RPAREN":
+            prev = tokens[idx-1]
+            if prev.text.endswith("_t") or prev.text == "*" or prev.text == "int":
+                #cast
+                continue
+        elif tkn.kind != "RBRACKET":
             continue
-        if tkn.text.endswith("Check"):
-            continue
-        if tkn.text.startswith("Py_Is"):
-            continue
-        if tkn.text.endswith("CheckExact"):
-            continue
-        if tkn.text in NON_ESCAPING_FUNCTIONS:
-            continue
-        return True
-    return False
+        start = find_stmt_start(instr, idx)
+        end = find_stmt_end(instr, idx)
+        result[start] = tkn, end
+    check_escaping_calls(instr, result)
+    return result
 
 
 EXITS = {
@@ -651,6 +781,7 @@ def effect_depends_on_oparg_1(op: parser.InstDef) -> bool:
 
 
 def compute_properties(op: parser.InstDef) -> Properties:
+    escaping_calls = find_escaping_api_calls(op)
     has_free = (
         variable_used(op, "PyCell_New")
         or variable_used(op, "PyCell_GetRef")
@@ -671,7 +802,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
     error_with_pop = has_error_with_pop(op)
     error_without_pop = has_error_without_pop(op)
     return Properties(
-        escapes=makes_escaping_api_call(op),
+        escaping_calls=escaping_calls,
         error_with_pop=error_with_pop,
         error_without_pop=error_without_pop,
         deopts=deopts_if,
@@ -706,6 +837,7 @@ def make_uop(
         stack=analyze_stack(op),
         caches=analyze_caches(inputs),
         deferred_refs=analyze_deferred_refs(op),
+        output_stores=find_stores_outputs(op),
         body=op.block.tokens,
         properties=compute_properties(op),
     )
@@ -726,6 +858,7 @@ def make_uop(
                 stack=analyze_stack(op, bit),
                 caches=analyze_caches(inputs),
                 deferred_refs=analyze_deferred_refs(op),
+                output_stores=find_stores_outputs(op),
                 body=op.block.tokens,
                 properties=properties,
             )
@@ -749,6 +882,7 @@ def make_uop(
             stack=analyze_stack(op),
             caches=analyze_caches(inputs),
             deferred_refs=analyze_deferred_refs(op),
+            output_stores=find_stores_outputs(op),
             body=op.block.tokens,
             properties=properties,
         )

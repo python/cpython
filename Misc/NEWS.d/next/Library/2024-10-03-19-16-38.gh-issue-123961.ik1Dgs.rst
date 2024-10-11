@@ -1,0 +1,2 @@
+Convert :mod:`curses` to multi-phase initialization (:pep:`489`), thereby
+fixing reference leaks at interpreter shutdown. Patch by Bénédikt Tran.

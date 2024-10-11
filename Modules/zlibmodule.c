@@ -267,12 +267,12 @@ newcompobject(PyTypeObject *type)
     self->eof = 0;
     self->is_initialised = 0;
     self->zdict = NULL;
-    self->unused_data = PyBytes_FromStringAndSize("", 0);
+    self->unused_data = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     if (self->unused_data == NULL) {
         Py_DECREF(self);
         return NULL;
     }
-    self->unconsumed_tail = PyBytes_FromStringAndSize("", 0);
+    self->unconsumed_tail = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     if (self->unconsumed_tail == NULL) {
         Py_DECREF(self);
         return NULL;
