@@ -246,7 +246,8 @@ extern Py_ssize_t _PyUnicode_InsertThousandsGrouping(
     Py_ssize_t min_width,
     const char *grouping,
     PyObject *thousands_sep,
-    Py_UCS4 *maxchar);
+    Py_UCS4 *maxchar,
+    int forward);
 
 /* --- Misc functions ----------------------------------------------------- */
 

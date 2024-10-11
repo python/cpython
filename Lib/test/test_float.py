@@ -759,10 +759,10 @@ class FormatTestCase(unittest.TestCase):
         self.assertEqual(format(x, '_f'), '123_456.123456')
         self.assertEqual(format(x, '._f'), '123456.123_456')
         self.assertEqual(format(x, '_._f'), '123_456.123_456')
-        self.assertEqual(format(x, '.10_f'), '123456.1_234_560_000')
+        self.assertEqual(format(x, '.10_f'), '123456.123_456_000_0')
         self.assertEqual(format(x, '>21._f'), '       123456.123_456')
         self.assertEqual(format(x, '<21._f'), '123456.123_456       ')
-        self.assertEqual(format(x, '+.11_e'), '+1.23_456_123_456e+05')
+        self.assertEqual(format(x, '+.11_e'), '+1.234_561_234_56e+05')
 
         self.assertRaises(ValueError, format, x , '._6f')
 

@@ -573,7 +573,7 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
             NULL, 0,
             NULL, 0, spec->n_digits,
             spec->n_min_width,
-            locale->grouping, locale->thousands_sep, &grouping_maxchar);
+            locale->grouping, locale->thousands_sep, &grouping_maxchar, 0);
         if (spec->n_grouped_digits == -1) {
             return -1;
         }
@@ -589,7 +589,7 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
             NULL, 0,
             NULL, 0, spec->n_frac,
             spec->n_frac,
-            locale->grouping, locale->frac_thousands_sep, &grouping_maxchar);
+            locale->grouping, locale->frac_thousands_sep, &grouping_maxchar, 1);
         if (spec->n_grouped_frac_digits == -1) {
             return -1;
         }
@@ -689,7 +689,7 @@ fill_number(_PyUnicodeWriter *writer, const NumberFieldWidths *spec,
                 writer, spec->n_grouped_digits,
                 digits, d_pos, spec->n_digits,
                 spec->n_min_width,
-                locale->grouping, locale->thousands_sep, NULL);
+                locale->grouping, locale->thousands_sep, NULL, 0);
         if (r == -1)
             return -1;
         assert(r == spec->n_grouped_digits);
@@ -721,7 +721,7 @@ fill_number(_PyUnicodeWriter *writer, const NumberFieldWidths *spec,
         r = _PyUnicode_InsertThousandsGrouping(
                 writer, spec->n_grouped_frac_digits,
                 digits, d_pos, spec->n_frac, spec->n_frac,
-                locale->grouping, locale->frac_thousands_sep, NULL);
+                locale->grouping, locale->frac_thousands_sep, NULL, 1);
         if (r == -1) {
             return -1;
         }
