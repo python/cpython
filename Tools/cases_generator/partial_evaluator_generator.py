@@ -22,7 +22,7 @@ from generators_common import (
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
-from stack import Local, Stack, StackError
+from stack import Local, Stack, StackError, Storage
 
 DEFAULT_OUTPUT = ROOT / "Python/partial_evaluator_cases.c.h"
 DEFAULT_ABSTRACT_INPUT = (ROOT / "Python/partial_evaluator_bytecodes.c").absolute().as_posix()
@@ -78,7 +78,7 @@ def declare_variables(uop: Uop, out: CWriter) -> None:
 
 
 
-def emit_default(out: CWriter, uop: Uop) -> None:
+def emit_default(out: CWriter, uop: Uop, stack: Stack) -> None:
     out.emit("MATERIALIZE_INST();\n")
     unused_count = 0
     if uop.properties.escapes:
@@ -152,26 +152,18 @@ def write_uop(
     debug: bool,
 ) -> None:
     locals: dict[str, Local] = {}
-    unused_count = 0
+    prototype = override if override else uop
     try:
-        prototype = override if override else uop
-        is_override = override is not None
         out.start_line()
-        for var in reversed(prototype.stack.inputs):
-            name, unused_count = var_name(var, unused_count)
-            old_name = var.name
-            var.name = name
-            code, local = stack.pop(var, extract_bits=True, assign_unused=True)
-            var.name = old_name
-            out.emit(code)
-            if local.defined:
-                locals[name] = local
-        out.emit(stack.define_output_arrays(prototype.stack.outputs))
+        if override:
+            code_list, storage = Storage.for_uop(stack, prototype, extract_bits=False)
+            for code in code_list:
+                out.emit(code)
         if debug:
             args = []
-            for var in prototype.stack.inputs:
-                if not var.peek or is_override:
-                    args.append(var.name)
+            for input in prototype.stack.inputs:
+                if not input.peek or override:
+                    args.append(input.name)
             out.emit(f'DEBUG_PRINTF({", ".join(args)});\n')
         if override:
             for cache in uop.caches:
@@ -184,21 +176,18 @@ def write_uop(
                     out.emit(f"{type}{cache.name} = ({cast})this_instr->operand;\n")
         if override:
             emitter = Tier2PEEmitter(out)
-            emitter.emit_tokens(override, stack, None)
+            # No reference management of inputs needed.
+            for var in storage.inputs:  # type: ignore[possibly-undefined]
+                var.defined = False
+            storage = emitter.emit_tokens(override, storage, None)
+            out.start_line()
+            storage.flush(out, cast_type="", extract_bits=False)
         else:
-            emit_default(out, uop)
-
-
-        for var in prototype.stack.outputs:
-            if var.name in locals:
-                local = locals[var.name]
-            else:
-                local = Local.local(var)
-            stack.push(local)
-        out.start_line()
-        stack.flush(out, cast_type="", extract_bits=True)
+            emit_default(out, uop, stack)
+            out.start_line()
+            stack.flush(out, cast_type="", extract_bits=False)
     except StackError as ex:
-        raise analysis_error(ex.args[0], uop.body[0])
+        raise analysis_error(ex.args[0], prototype.body[0]) # from None
 
 
 SKIPS = ("_EXTENDED_ARG",)
