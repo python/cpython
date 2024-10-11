@@ -1754,7 +1754,6 @@ def FileType(*args, **kwargs):
 class TestFileTypeDeprecation(TestCase):
 
     def test(self):
-        parser = argparse.ArgumentParser()
         with self.assertWarns(PendingDeprecationWarning) as cm:
             argparse.FileType()
         self.assertIn('FileType is deprecated', str(cm.warning))
