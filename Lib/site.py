@@ -511,7 +511,8 @@ def register_readline():
             original_path = sys.path
             sys.path = [p for p in original_path if p != '']
             try:
-                import _pyrepl.readline as readline
+                if not readline:
+                    import _pyrepl.readline as readline
                 from _pyrepl.main import CAN_USE_PYREPL
                 if real_readline:
                     import _pyrepl.unix_console
