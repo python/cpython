@@ -891,7 +891,9 @@ Output:
 
    $ python prog.py -a value1 +a value2
    Namespace(a=[('-', 'value1'), ('+', 'value2')])
+   
 In this example, we:
+
 * Created a parser with custom prefix characters using the ``prefix_chars``
   parameter.
 
