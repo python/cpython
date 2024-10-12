@@ -646,13 +646,16 @@ class component_converter(CConverter):
  The Window Object
 ******************************************************************************/
 
-/* Function prototype macros for Window object
-
-   X - function name (may be a macro or a C function)
-   TYPE - parameter Type
-   ERGSTR - format string for construction of the return value
-   PARSESTR - format string for argument parsing
-*/
+/*
+ * Macros for creating a PyCursesWindowObject object's method.
+ *
+ * Parameters
+ *
+ *  X           The name of the curses C function or macro to invoke.
+ *  TYPE        The function parameter(s) type.
+ *  ERGSTR      The format string for construction of the return value.
+ *  PARSESTR    The format string for argument parsing.
+ */
 
 #define Window_NoArgNoReturnFunction(X)                     \
     static PyObject *PyCursesWindow_ ## X                   \
@@ -2734,12 +2737,12 @@ static PyType_Spec PyCursesWindow_Type_spec = {
 /* -------------------------------------------------------*/
 
 /*
- * Function Body Macros - They are ugly but very, very useful. ;-)
+ * Macros for implementing simple module's methods.
  *
  * Parameters
  *
- *  X       The name of the curses function to invoke.
- *  flag    When false, prefixes the function name with 'no' at runtime,
+ *  X       The name of the curses C function or macro to invoke.
+ *  FLAG    When false, prefixes the function name with 'no' at runtime,
  *          This parameter is present in the signature and auto-generated
  *          by Argument Clinic.
  *
@@ -2753,10 +2756,10 @@ static PyType_Spec PyCursesWindow_Type_spec = {
     return PyCursesCheckERR(module, X(), # X);  \
 }
 
-#define NoArgOrFlagNoReturnFunctionBody(X, flag)    \
+#define NoArgOrFlagNoReturnFunctionBody(X, FLAG)    \
 {                                                   \
     PyCursesStatefulInitialised(module);            \
-    int rtn = (flag) ? X() : no ## X();             \
+    int rtn = (FLAG) ? X() : no ## X();             \
     return PyCursesCheckERR(module, rtn, # X);      \
 }
 
