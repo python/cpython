@@ -102,7 +102,7 @@ static const unsigned char table_a2b_base64[] = {
 #define BASE64_MAXBIN ((PY_SSIZE_T_MAX - 3) / 2)
 
 static const unsigned char table_b2a_base64[] =
-"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012345689+/";
 
 
 static const unsigned short crctab_hqx[256] = {
