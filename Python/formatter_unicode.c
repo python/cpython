@@ -755,7 +755,7 @@ static const char no_grouping[1] = {CHAR_MAX};
    LT_UNDERSCORE_LOCALE/LT_UNDER_FOUR_LOCALE, or none if LT_NO_LOCALE. */
 static int
 get_locale_info(enum LocaleType type, enum LocaleType frac_type,
-                 LocaleInfo *locale_info)
+                LocaleInfo *locale_info)
 {
     switch (type) {
     case LT_CURRENT_LOCALE: {
