@@ -2760,6 +2760,10 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
 
     base_entries = {entry: _missing for entry in dir(spec)}
     if is_type and instance and is_dataclass(spec):
+        # Dataclass instance mocks created from a class may not have all of their fields
+        # prepopulated with default values. Create an initial set of attribute entries from
+        # the dataclass field annotations, but override them with the actual attribute types
+        # when fields have already been populated.
         dataclass_fields = fields(spec)
         entries = {f.name: f.type for f in dataclass_fields}
         entries.update(base_entries)
