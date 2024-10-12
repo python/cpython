@@ -6277,12 +6277,23 @@ class TestIntermixedArgs(TestCase):
         # cannot parse the '1,2,3'
         self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1]), args)
         self.assertEqual(["2", "3"], extras)
+        args, extras = parser.parse_known_intermixed_args(argv)
+        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1, 2, 3]), args)
+        self.assertEqual([], extras)
 
+        # unknown optionals go into extras
+        argv = 'cmd --foo x --error 1 2 --bar y 3'.split()
+        args, extras = parser.parse_known_intermixed_args(argv)
+        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1, 2, 3]), args)
+        self.assertEqual(['--error'], extras)
         argv = 'cmd --foo x 1 --error 2 --bar y 3'.split()
         args, extras = parser.parse_known_intermixed_args(argv)
-        # unknown optionals go into extras
-        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1]), args)
-        self.assertEqual(['--error', '2', '3'], extras)
+        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1, 2, 3]), args)
+        self.assertEqual(['--error'], extras)
+        argv = 'cmd --foo x 1 2 --error --bar y 3'.split()
+        args, extras = parser.parse_known_intermixed_args(argv)
+        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1, 2, 3]), args)
+        self.assertEqual(['--error'], extras)
 
         # restores attributes that were temporarily changed
         self.assertIsNone(parser.usage)
@@ -6327,11 +6338,6 @@ class TestIntermixedArgs(TestCase):
         parser = ErrorRaisingArgumentParser(prog='PROG')
         self.assertRaises(ArgumentParserError, parser.parse_intermixed_args, ['a'])
 
-        parser = ErrorRaisingArgumentParser(prog='PROG')
-        parser.add_argument('--foo', nargs="*")
-        parser.add_argument('foo')
-        with self.assertWarns(UserWarning):
-            parser.parse_intermixed_args(['hello', '--foo'])
 
 class TestIntermixedMessageContentError(TestCase):
     # case where Intermixed gives different error message
@@ -6350,7 +6356,7 @@ class TestIntermixedMessageContentError(TestCase):
         with self.assertRaises(ArgumentParserError) as cm:
             parser.parse_intermixed_args([])
         msg = str(cm.exception)
-        self.assertNotRegex(msg, 'req_pos')
+        self.assertRegex(msg, 'req_pos')
         self.assertRegex(msg, 'req_opt')
 
 # ==========================
