@@ -1,2 +1,2 @@
-Improve :exc:`SyntaxError` message for using invalid type parameters
+Improve :exc:`SyntaxError` message for using invalid :ref:`type parameters <type-params>`
 definition.
