@@ -832,7 +832,7 @@ parameters as there is a ``/`` in the function definition::
      File "<stdin>", line 1, in <module>
    TypeError: pos_only_arg() got some positional-only arguments passed as keyword arguments: 'arg'
 
-The third function ``kwd_only_args`` only allows keyword arguments as indicated
+The third function ``kwd_only_arg`` only allows keyword arguments as indicated
 by a ``*`` in the function definition::
 
    >>> kwd_only_arg(3)

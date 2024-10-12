@@ -102,9 +102,8 @@ struct _is {
     PyInterpreterState *next;
 
     int64_t id;
-    int64_t id_refcount;
+    Py_ssize_t id_refcount;
     int requires_idref;
-    PyThread_type_lock id_mutex;
 
 #define _PyInterpreterState_WHENCE_NOTSET -1
 #define _PyInterpreterState_WHENCE_UNKNOWN 0
@@ -318,8 +317,7 @@ _PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tst
 PyAPI_FUNC(int64_t) _PyInterpreterState_ObjectToID(PyObject *);
 PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(int64_t);
 PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpIDObject(PyObject *);
-PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
-PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
+PyAPI_FUNC(void) _PyInterpreterState_IDIncref(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
 
 PyAPI_FUNC(int) _PyInterpreterState_IsReady(PyInterpreterState *interp);
