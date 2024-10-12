@@ -226,6 +226,13 @@ ast
   (Contributed by Tomas R in :gh:`116022`.)
 
 
+contextvars
+-----------
+
+* Added support for the :term:`context management protocol` to
+  :class:`contextvars.Context`.  (Contributed by Richard Hansen in :gh:`99634`.)
+
+
 ctypes
 ------
 

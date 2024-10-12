@@ -1,5 +1,8 @@
 #ifndef Py_INTERNAL_GENOBJECT_H
 #define Py_INTERNAL_GENOBJECT_H
+
+#include "pycore_contextchain.h"  // _PyContextChain
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -22,6 +25,7 @@ extern "C" {
     PyObject *prefix##_qualname;                                            \
     _PyErr_StackItem prefix##_exc_state;                                    \
     PyObject *prefix##_origin_or_finalizer;                                 \
+    _PyContextChain _ctx_chain;                                             \
     char prefix##_hooks_inited;                                             \
     char prefix##_closed;                                                   \
     char prefix##_running_async;                                            \

@@ -123,33 +123,22 @@ Context object management functions:
 
    Enumeration of possible context object watcher events:
 
-   - ``Py_CONTEXT_EVENT_ENTER``: A context has been entered, causing the
-     :term:`current context` to switch to it.  The object passed to the watch
-     callback is the now-current :class:`contextvars.Context` object.  Each
-     enter event will eventually have a corresponding exit event for the same
-     context object after any subsequently entered contexts have themselves been
-     exited.
-   - ``Py_CONTEXT_EVENT_EXIT``: A context is about to be exited, which will
-     cause the :term:`current context` to switch back to what it was before the
-     context was entered.  The object passed to the watch callback is the
-     still-current :class:`contextvars.Context` object.
+   - ``Py_CONTEXT_SWITCHED``: The :term:`current context` has switched to a
+     different context.  The object passed to the watch callback is the
+     now-current :class:`contextvars.Context` object, or None if no context is
+     current.
 
    .. versionadded:: 3.14
 
-.. c:type:: int (*PyContext_WatchCallback)(PyContextEvent event, PyContext* ctx)
+.. c:type:: void (*PyContext_WatchCallback)(PyContextEvent event, PyObject* obj)
 
    Context object watcher callback function.  The object passed to the callback
    is event-specific; see :c:type:`PyContextEvent` for details.
 
-   If the callback returns with an exception set, it must return ``-1``; this
-   exception will be printed as an unraisable exception using
-   :c:func:`PyErr_FormatUnraisable`. Otherwise it should return ``0``.
+   Any pending exception is cleared before the callback is called and restored
+   after the callback returns.
 
-   There may already be a pending exception set on entry to the callback. In
-   this case, the callback should return ``0`` with the same exception still
-   set. This means the callback may not call any other API that can set an
-   exception unless it saves and clears the exception state first, and restores
-   it before returning.
+   If the callback raises an exception it will be ignored.
 
    .. versionadded:: 3.14
 
