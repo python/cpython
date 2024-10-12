@@ -124,7 +124,7 @@ def emit_default(out: CWriter, uop: Uop, stack: Stack) -> None:
 class Tier2PEEmitter(Emitter):
     def __init__(self, out: CWriter):
         super().__init__(out)
-        self._replacers["MATERIALIZE_INPUTS"] = self.materialize_inputs  # type: ignore[assignment]
+        self._replacers["MATERIALIZE_INPUTS"] = self.materialize_inputs
 
     def materialize_inputs(
         self,
@@ -133,7 +133,7 @@ class Tier2PEEmitter(Emitter):
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
-    ) -> None:
+    ) -> bool:
         next(tkn_iter)
         next(tkn_iter)
         next(tkn_iter)
@@ -153,6 +153,7 @@ class Tier2PEEmitter(Emitter):
                     self.out.emit(f"materialize(&{var.name});\n")
             else:
                 self.out.emit(f"materialize(&{var.name});\n")
+        return False
 
     def emit_save(self, storage: Storage) -> None:
         storage.flush(self.out)
