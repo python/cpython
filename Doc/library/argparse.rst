@@ -636,6 +636,25 @@ be positional::
    usage: PROG [-h] [-f FOO] bar
    PROG: error: the following arguments are required: bar
 
+By default, argparse automatically handles the internal naming and
+display names of arguments, simplifying the process without requiring
+additional configuration.
+As such, you do not need to specify the dest_ and metavar_ parameters.
+The dest_ parameter defaults to the argument name with underscores ``_``
+replacing hyphens ``-`` . The metavar_ parameter defaults to the
+upper-cased name. For example::
+
+   >>> parser = argparse.ArgumentParser(prog='PROG')
+   >>> parser.add_argument('--foo-bar')
+   >>> parser.parse_args(['--foo-bar', 'FOO-BAR']
+   Namespace(foo_bar='FOO-BAR')
+   >>> parser.print_help()
+   usage:  [-h] [--foo-bar FOO-BAR]
+
+   optional arguments:
+    -h, --help  show this help message and exit
+    --foo-bar FOO-BAR
+
 
 .. _action:
 

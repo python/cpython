@@ -5411,7 +5411,8 @@ class TestInvalidArgumentConstructors(TestCase):
         parser.add_argument(dest='foo')
         with self.assertRaises(ValueError) as cm:
             parser.add_argument('bar', dest='baz')
-        self.assertIn('dest supplied twice for positional argument',
+        self.assertIn('dest supplied twice for positional argument,'
+                      ' did you mean metavar?',
                       str(cm.exception))
 
     def test_no_argument_actions(self):
