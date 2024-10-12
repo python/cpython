@@ -12,6 +12,8 @@ it is not, please report that through the
 [issue tracker](https://github.com/python/cpython/issues).
 
 
+[Guide to the parser](parser.md)
+
 [Compiler Design](compiler.md)
 
 [Frames](frames.md)

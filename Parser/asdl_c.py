@@ -843,8 +843,9 @@ typedef struct {
 } AST_object;
 
 static void
-ast_dealloc(AST_object *self)
+ast_dealloc(PyObject *op)
 {
+    AST_object *self = (AST_object*)op;
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
@@ -856,16 +857,18 @@ ast_dealloc(AST_object *self)
 }
 
 static int
-ast_traverse(AST_object *self, visitproc visit, void *arg)
+ast_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    AST_object *self = (AST_object*)op;
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
     return 0;
 }
 
 static int
-ast_clear(AST_object *self)
+ast_clear(PyObject *op)
 {
+    AST_object *self = (AST_object*)op;
     Py_CLEAR(self->dict);
     return 0;
 }
@@ -1605,7 +1608,6 @@ ast_repr_max_depth(AST_object *self, int depth)
 
         if (!value_repr) {
             Py_DECREF(name);
-            Py_DECREF(value);
             goto error;
         }
 
@@ -1651,9 +1653,9 @@ error:
 }
 
 static PyObject *
-ast_repr(AST_object *self)
+ast_repr(PyObject *self)
 {
-    return ast_repr_max_depth(self, 3);
+    return ast_repr_max_depth((AST_object*)self, 3);
 }
 
 static PyType_Slot AST_type_slots[] = {
@@ -1847,8 +1849,9 @@ static int add_ast_fields(struct ast_state *state)
 
         self.file.write(textwrap.dedent('''
             static int
-            init_types(struct ast_state *state)
+            init_types(void *arg)
             {
+                struct ast_state *state = arg;
                 if (init_identifiers(state) < 0) {
                     return -1;
                 }
@@ -2239,8 +2242,6 @@ def generate_ast_fini(module_state, f):
     for s in module_state:
         f.write("    Py_CLEAR(state->" + s + ');\n')
     f.write(textwrap.dedent("""
-                Py_CLEAR(_Py_INTERP_CACHED_OBJECT(interp, str_replace_inf));
-
                 state->finalized = 1;
                 state->once = (_PyOnceFlag){0};
             }
@@ -2296,7 +2297,7 @@ def generate_module_def(mod, metadata, f, internal_h):
         };
 
         // Forward declaration
-        static int init_types(struct ast_state *state);
+        static int init_types(void *arg);
 
         static struct ast_state*
         get_ast_state(void)
