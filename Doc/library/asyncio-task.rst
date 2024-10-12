@@ -152,7 +152,7 @@ other coroutines::
     import asyncio
 
     async def nested():
-        print(42)
+        return 42
 
     async def main():
         # Nothing happens if we just call "nested()".
