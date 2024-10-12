@@ -897,7 +897,7 @@ In this example, we:
   parameter.
 
 * Defined two arguments, ``-a`` and ``+a``, which used the ``type`` parameter to
-  create custom type converters to prepend a prefix to the argument values.
+  create custom type converters to store the value in a tuple with the prefix.
 
 Without the custom type converters, the arguments would have treated the ``-a``
 and ``+a`` as the same argument, which would have been undesirable. By using custom
