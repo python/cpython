@@ -649,9 +649,10 @@ type_param_seq[asdl_type_param_seq*]: a[asdl_type_param_seq*]=','.type_param+ ['
 
 type_param[type_param_ty] (memo):
     | a=NAME b=[type_param_bound] c=[type_param_default] { _PyAST_TypeVar(a->v.Name.id, b, c, EXTRA) }
-    | invalid_type_param
+    | invalid_type_param_def
     | '*' a=NAME b=[type_param_starred_default] { _PyAST_TypeVarTuple(a->v.Name.id, b, EXTRA) }
     | '**' a=NAME b=[type_param_default] { _PyAST_ParamSpec(a->v.Name.id, b, EXTRA) }
+    | invalid_type_param_expr
 
 type_param_bound[expr_ty]: ':' e=expression { e }
 type_param_default[expr_ty]: '=' e=expression {
@@ -1165,7 +1166,15 @@ invalid_legacy_expression:
         _PyPegen_check_legacy_stmt(p, a) ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b,
             "Missing parentheses in call to '%U'. Did you mean %U(...)?", a->v.Name.id, a->v.Name.id) : NULL}
 
-invalid_type_param:
+# Invalid type parameters:
+
+invalid_type_params:
+    | '[' token=']' {
+        RAISE_SYNTAX_ERROR_STARTING_FROM(
+            token, 
+            "Type parameter list cannot be empty")}
+
+invalid_type_param_def:
     | '*' a=NAME colon=':' e=expression {
             RAISE_SYNTAX_ERROR_STARTING_FROM(colon, e->kind == Tuple_kind
                 ? "cannot use constraints with TypeVarTuple"
@@ -1175,6 +1184,13 @@ invalid_type_param:
             RAISE_SYNTAX_ERROR_STARTING_FROM(colon, e->kind == Tuple_kind
                 ? "cannot use constraints with ParamSpec"
                 : "cannot use bound with ParamSpec")
+        }
+
+invalid_type_param_expr:
+    | ('*' | '**')? a=expression { 
+            RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+                a, "expected a type parameter definition, found %s", 
+                _PyPegen_get_expr_name(a))
         }
 
 invalid_expression:
@@ -1453,9 +1469,3 @@ invalid_arithmetic:
     | sum ('+'|'-'|'*'|'/'|'%'|'//'|'@') a='not' b=inversion { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "'not' after an operator must be parenthesized") }
 invalid_factor:
     | ('+' | '-' | '~') a='not' b=factor { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "'not' after an operator must be parenthesized") }
-
-invalid_type_params:
-    | '[' token=']' {
-        RAISE_SYNTAX_ERROR_STARTING_FROM(
-            token, 
-            "Type parameter list cannot be empty")}
