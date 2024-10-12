@@ -136,7 +136,7 @@ Context object management functions:
 
    .. versionadded:: 3.14
 
-.. c:type:: int (*PyContext_WatchCallback)(PyContextEvent event, PyContext* ctx)
+.. c:type:: int (*PyContext_WatchCallback)(PyContextEvent event, PyObject *obj)
 
    Context object watcher callback function.  The object passed to the callback
    is event-specific; see :c:type:`PyContextEvent` for details.
