@@ -15080,7 +15080,8 @@ int main(void)
     void *values[1] = {&z};
     ffi_cif cif;
     if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1,
-        &ffi_type_sint, args) != FFI_OK) {
+        &ffi_type_sint, args) != FFI_OK)
+    {
         return 2;
     }
     ffi_arg rc;
