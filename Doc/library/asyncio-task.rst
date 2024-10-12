@@ -161,7 +161,7 @@ other coroutines::
         nested()  # will raise a "RuntimeWarning".
 
         # Let's do it differently now and await it:
-        await nested()  # will print "42".
+        print(await nested())  # will print "42".
 
     asyncio.run(main())
 
