@@ -2583,7 +2583,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         choices = action.choices
         if choices is None:
             return
-    
+
         if isinstance(choices, str):
             choices = iter(choices)
 
@@ -2599,7 +2599,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                         args['closest'] = suggestions[0]
                         msg = _('invalid choice: %(value)r, maybe you meant %(closest)r? '
                                 '(choose from %(choices)s)')
-    
+
             raise ArgumentError(action, msg % args)
 
     # =======================
