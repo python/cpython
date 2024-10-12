@@ -4,10 +4,12 @@
 __author__ = 'Brian Quinlan (brian@sweetapp.com)'
 
 import collections
+from itertools import islice
 import logging
 import threading
 import time
 import types
+import weakref
 
 FIRST_COMPLETED = 'FIRST_COMPLETED'
 FIRST_EXCEPTION = 'FIRST_EXCEPTION'
@@ -572,18 +574,22 @@ class Executor(object):
         """
         raise NotImplementedError()
 
-    def map(self, fn, *iterables, timeout=None, chunksize=1):
+    def map(self, fn, *iterables, timeout=None, chunksize=1, buffersize=None):
         """Returns an iterator equivalent to map(fn, iter).
 
         Args:
             fn: A callable that will take as many arguments as there are
                 passed iterables.
             timeout: The maximum number of seconds to wait. If None, then there
-                is no limit on the wait time.
+                is no limit on the wait time. Incompatible with buffersize.
             chunksize: The size of the chunks the iterable will be broken into
                 before being passed to a child process. This argument is only
                 used by ProcessPoolExecutor; it is ignored by
                 ThreadPoolExecutor.
+            buffersize: The maximum number of results that can be buffered
+                before being yielded. If the buffer is full, the iteration over
+                iterables is paused until an element is yielded from the
+                buffer.
 
         Returns:
             An iterator equivalent to: map(func, *iterables) but the calls may
@@ -594,10 +600,24 @@ class Executor(object):
                 before the given timeout.
             Exception: If fn(*args) raises for any values.
         """
+        if buffersize is not None and buffersize < 1:
+            raise ValueError("buffersize must be None or >= 1.")
+
+        if buffersize is not None and timeout is not None:
+            raise ValueError("cannot specify both buffersize and timeout.")
+
         if timeout is not None:
             end_time = timeout + time.monotonic()
 
-        fs = [self.submit(fn, *args) for args in zip(*iterables)]
+        args_iter = iter(zip(*iterables))
+        if buffersize:
+            fs = collections.deque(
+                self.submit(fn, *args) for args in islice(args_iter, buffersize)
+            )
+        else:
+            fs = [self.submit(fn, *args) for args in args_iter]
+
+        executor_weakref = weakref.ref(self)
 
         # Yield must be hidden in closure so that the futures are submitted
         # before the first iterator value is required.
@@ -606,6 +626,12 @@ class Executor(object):
                 # reverse to keep finishing order
                 fs.reverse()
                 while fs:
+                    if (
+                        buffersize
+                        and (executor := executor_weakref())
+                        and (args := next(args_iter, None))
+                    ):
+                        fs.appendleft(executor.submit(fn, *args))
                     # Careful not to keep a reference to the popped future
                     if timeout is None:
                         yield _result_or_cancel(fs.pop())
