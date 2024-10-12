@@ -845,7 +845,7 @@ Custom type converters
 ======================
 
 The :mod:`argparse` module allows you to specify custom type converters for
-your command-line arguments. This allows you to modify user input before it is
+your command-line arguments. This allows you to modify user input before it's
 stored in the :class:`argparse.Namespace`. This can be useful when you need to
 pre-process the input before it is used in your program.
 
@@ -900,7 +900,7 @@ In this example, we:
   create custom type converters to prepend a prefix to the argument values.
 
 Without the custom type converters, the arguments would have treated the ``-a``
-and ``+a`` as the same flag, which would have been undesirable. By using custom
+and ``+a`` as the same argument, which would have been undesirable. By using custom
 type converters, we were able to differentiate between the two arguments.
 
 Conclusion
