@@ -5,6 +5,7 @@ import time
 import locale
 import re
 import os
+import platform
 import sys
 from test import support
 from test.support import warnings_helper
@@ -12,6 +13,13 @@ from test.support import skip_if_buggy_ucrt_strfptime, run_with_locales
 from datetime import date as datetime_date
 
 import _strptime
+
+libc_ver = platform.libc_ver()
+if libc_ver[0] == 'glibc':
+    glibc_ver = tuple(map(int, libc_ver[1].split('.')))
+else:
+    glibc_ver = None
+
 
 class getlang_Tests(unittest.TestCase):
     """Test _getlang"""
@@ -482,9 +490,12 @@ class StrptimeTests(unittest.TestCase):
     # for az_IR, fa_IR, lzh_TW, my_MM, or_IN, shn_MM.
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
                       'he_IL', 'eu_ES', 'ar_AE', 'mfe_MU', 'yo_NG',
-                      'csb_PL', 'br_FR', 'gez_ET', 'brx_IN')
+                      'csb_PL', 'br_FR', 'gez_ET', 'brx_IN', 'id_ID')
     def test_date_time_locale(self):
         # Test %c directive
+        loc = locale.getlocale(locale.LC_TIME)[0]
+        if glibc_ver and glibc_ver < (2, 31) and loc == 'br_FR':
+            self.skipTest('%c in locale br_FR does not include time')
         now = time.time()
         self.roundtrip('%c', slice(0, 6), time.localtime(now))
         # 1 hour 20 minutes 30 seconds ago
