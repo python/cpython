@@ -588,17 +588,20 @@ class HelpFormatter(object):
         return result
 
     def _expand_help(self, action):
+        help_string = self._get_help_string(action)
+        if '%' not in help_string:
+            return help_string
         params = dict(vars(action), prog=self._prog)
         for name in list(params):
-            if params[name] is SUPPRESS:
+            value = params[name]
+            if value is SUPPRESS:
                 del params[name]
-        for name in list(params):
-            if hasattr(params[name], '__name__'):
-                params[name] = params[name].__name__
+            elif hasattr(value, '__name__'):
+                params[name] = value.__name__
         if params.get('choices') is not None:
             choices_str = ', '.join([str(c) for c in params['choices']])
             params['choices'] = choices_str
-        return self._get_help_string(action) % params
+        return help_string % params
 
     def _iter_indented_subactions(self, action):
         try:
@@ -1180,9 +1183,13 @@ class _SubParsersAction(Action):
             help = kwargs.pop('help')
             choice_action = self._ChoicesPseudoAction(name, aliases, help)
             self._choices_actions.append(choice_action)
+        else:
+            choice_action = None
 
         # create the parser and add it to the map
         parser = self._parser_class(**kwargs)
+        if choice_action is not None:
+            parser._check_help(choice_action)
         self._name_parser_map[name] = parser
 
         # make parser available under aliases also
@@ -1449,11 +1456,12 @@ class _ActionsContainer(object):
 
         # raise an error if the metavar does not match the type
         if hasattr(self, "_get_formatter"):
+            formatter = self._get_formatter()
             try:
-                self._get_formatter()._format_args(action, None)
+                formatter._format_args(action, None)
             except TypeError:
                 raise ValueError("length of metavar tuple does not match nargs")
-
+        self._check_help(action)
         return self._add_action(action)
 
     def add_argument_group(self, *args, **kwargs):
@@ -1634,6 +1642,14 @@ class _ActionsContainer(object):
             # container holding it
             if not action.option_strings:
                 action.container._remove_action(action)
+
+    def _check_help(self, action):
+        if action.help and hasattr(self, "_get_formatter"):
+            formatter = self._get_formatter()
+            try:
+                formatter._expand_help(action)
+            except (ValueError, TypeError, KeyError) as exc:
+                raise ValueError('badly formed help string') from exc
 
 
 class _ArgumentGroup(_ActionsContainer):
@@ -1852,6 +1868,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # create the parsers action and add it to the positionals list
         parsers_class = self._pop_action_class(kwargs, 'parsers')
         action = parsers_class(option_strings=[], **kwargs)
+        self._check_help(action)
         self._subparsers._add_action(action)
 
         # return the created parsers action
