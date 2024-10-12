@@ -2623,6 +2623,29 @@ class TestAddSubparsers(TestCase):
               --foo       foo help
             '''))
 
+    def assert_bad_help(self, context_type, func, *args, **kwargs):
+        with self.assertRaisesRegex(ValueError, 'badly formed help string') as cm:
+            func(*args, **kwargs)
+        self.assertIsInstance(cm.exception.__context__, context_type)
+
+    def test_invalid_subparsers_help(self):
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        self.assert_bad_help(ValueError, parser.add_subparsers, help='%Y-%m-%d')
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        self.assert_bad_help(KeyError, parser.add_subparsers, help='%(spam)s')
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        self.assert_bad_help(TypeError, parser.add_subparsers, help='%(prog)d')
+
+    def test_invalid_subparser_help(self):
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        subparsers = parser.add_subparsers()
+        self.assert_bad_help(ValueError, subparsers.add_parser, '1',
+                             help='%Y-%m-%d')
+        self.assert_bad_help(KeyError, subparsers.add_parser, '1',
+                             help='%(spam)s')
+        self.assert_bad_help(TypeError, subparsers.add_parser, '1',
+                             help='%(prog)d')
+
     def test_subparser_title_help(self):
         parser = ErrorRaisingArgumentParser(prog='PROG',
                                             description='main description')
@@ -5374,6 +5397,14 @@ class TestInvalidArgumentConstructors(TestCase):
         self.assertValueError('--foo', action=('store', 'append'))
         self.assertValueError('--foo', action="store-true",
                               errmsg='unknown action')
+
+    def test_invalid_help(self):
+        self.assertValueError('--foo', help='%Y-%m-%d',
+                              errmsg='badly formed help string')
+        self.assertValueError('--foo', help='%(spam)s',
+                              errmsg='badly formed help string')
+        self.assertValueError('--foo', help='%(prog)d',
+                              errmsg='badly formed help string')
 
     def test_multiple_dest(self):
         parser = argparse.ArgumentParser()
