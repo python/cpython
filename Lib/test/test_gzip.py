@@ -720,6 +720,9 @@ class TestGzip(BaseTest):
         self.assertEqual(datac, datac2)
         datac3 = gzip.compress(data1, mtime=None)
         self.assertNotEqual(datac, datac3)
+        with gzip.GzipFile(fileobj=io.BytesIO(datac3), mode="rb") as f:
+            f.read(1) # to set mtime attribute
+            self.assertGreater(f.mtime, 1)
 
     def test_compress_correct_level(self):
         for mtime in (0, 42):
