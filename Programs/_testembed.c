@@ -2074,38 +2074,23 @@ static void configure_init_main(PyConfig *config)
 
 static int test_subinterpreter_finalize(void)
 {
-    // This test is done by creating two subinterpreters and then sharing
-    // objects between them by importing a basic single-phase init extension
-    // (m_size == -1). Then we finalize the interpreters in the reverse order
-    // so that the interpreter that created the shared objects gets finalized
-    // first.
+    // Create a legacy subinterpreter (with the interned dict shared
+    // with the main interpreter).  This checks that interned strings are
+    // freed correctly.
     _testembed_Py_InitializeFromConfig();
 
     PyThreadState *tstate1 = Py_NewInterpreter();
     PyThreadState_Swap(tstate1);
     PyRun_SimpleString(
-        "import test.support.singlephase_helper\n"
-        "test.support.singlephase_helper.init_sub1\n"
-    );
-
-    PyThreadState *tstate2 = Py_NewInterpreter();
-    PyThreadState_Swap(tstate2);
-    PyRun_SimpleString(
-        "import test.support.singlephase_helper\n"
-        "test.support.singlephase_helper.init_sub2\n"
+        "import test.support.import_helper\n"
     );
 
     PyThreadState *main_tstate = _PyRuntime.main_tstate;
     PyThreadState_Swap(main_tstate);
     PyRun_SimpleString(
-        "import test.support.singlephase_helper\n"
-        "test.support.singlephase_helper.init_main\n"
+        "import test.support.import_helper\n"
     );
 
-    PyThreadState_Swap(tstate1);
-    Py_EndInterpreter(tstate1);
-    PyThreadState_Swap(tstate2);
-    Py_EndInterpreter(tstate2);
     Py_Finalize();
 
     return 0;

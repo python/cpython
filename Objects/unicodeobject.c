@@ -15675,7 +15675,9 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
         assert(PyUnicode_IS_READY(s));
         int shared = 0;
 #ifdef Py_TRACE_REFS
-        /* Make sure the ref is associated with the right interpreter. */
+        /* Make sure the ref is associated with the right interpreter.
+         * _Py_ForgetReference() will fail if the string is traced by the
+         * different interpreter. */
         _Py_NormalizeReference(s);
 #endif
         switch (PyUnicode_CHECK_INTERNED(s)) {

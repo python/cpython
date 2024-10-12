@@ -1,3 +1,2 @@
-Fix the TraceRefs build to handle objects that are shared between
-interpreters (interned strings and globals of single-phase init extension
-modules).
+Fix the TraceRefs build to handle interned strings shared between
+interpreters.
