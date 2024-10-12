@@ -891,12 +891,11 @@ Output:
 
    $ python prog.py -a value1 +a value2
    Namespace(a=[('-', 'value1'), ('+', 'value2')])
-
 In this example, we:
-  * Created a parser with custom prefix characters using the ``prefix_chars``
+* Created a parser with custom prefix characters using the ``prefix_chars``
   parameter.
 
-  * Defined two arguments, ``-a`` and ``+a``, which used the ``type`` parameter to
+* Defined two arguments, ``-a`` and ``+a``, which used the ``type`` parameter to
   create custom type converters to store the value in a tuple with the prefix.
 
 Without the custom type converters, the arguments would have treated the ``-a``
