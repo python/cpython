@@ -1,1 +1,1 @@
-Fix error report about ambiguous option in :mod:`argparse`.
+Fix a bug where ArgumentError includes the incorrect ambiguous option in :mod:`argparse`
