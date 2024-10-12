@@ -6312,26 +6312,42 @@ class TestIntermixedArgs(TestCase):
             parser.parse_intermixed_args(argv)
         self.assertRegex(str(cm.exception), r'\.\.\.')
 
-    def test_exclusive(self):
-        # mutually exclusive group; intermixed works fine
-        parser = ErrorRaisingArgumentParser(prog='PROG')
+    def test_required_exclusive(self):
+        # required mutually exclusive group; intermixed works fine
+        parser = argparse.ArgumentParser(prog='PROG', exit_on_error=False)
         group = parser.add_mutually_exclusive_group(required=True)
         group.add_argument('--foo', action='store_true', help='FOO')
         group.add_argument('--spam', help='SPAM')
         parser.add_argument('badger', nargs='*', default='X', help='BADGER')
+        args = parser.parse_intermixed_args('--foo 1 2'.split())
+        self.assertEqual(NS(badger=['1', '2'], foo=True, spam=None), args)
         args = parser.parse_intermixed_args('1 --foo 2'.split())
         self.assertEqual(NS(badger=['1', '2'], foo=True, spam=None), args)
-        self.assertRaises(ArgumentParserError, parser.parse_intermixed_args, '1 2'.split())
+        self.assertRaisesRegex(argparse.ArgumentError,
+                'one of the arguments --foo --spam is required',
+                parser.parse_intermixed_args, '1 2'.split())
         self.assertEqual(group.required, True)
 
-    def test_exclusive_incompatible(self):
-        # mutually exclusive group including positional - fail
-        parser = ErrorRaisingArgumentParser(prog='PROG')
+    def test_required_exclusive_with_positional(self):
+        # required mutually exclusive group with positional argument
+        parser = argparse.ArgumentParser(prog='PROG', exit_on_error=False)
         group = parser.add_mutually_exclusive_group(required=True)
         group.add_argument('--foo', action='store_true', help='FOO')
         group.add_argument('--spam', help='SPAM')
         group.add_argument('badger', nargs='*', default='X', help='BADGER')
-        self.assertRaises(TypeError, parser.parse_intermixed_args, [])
+        args = parser.parse_intermixed_args(['--foo'])
+        self.assertEqual(NS(foo=True, spam=None, badger='X'), args)
+        args = parser.parse_intermixed_args(['a', 'b'])
+        self.assertEqual(NS(foo=False, spam=None, badger=['a', 'b']), args)
+        self.assertRaisesRegex(argparse.ArgumentError,
+                'one of the arguments --foo --spam badger is required',
+                parser.parse_intermixed_args, [])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                'argument badger: not allowed with argument --foo',
+                parser.parse_intermixed_args, ['--foo', 'a', 'b'])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                'argument badger: not allowed with argument --foo',
+                parser.parse_intermixed_args, ['a', '--foo', 'b'])
         self.assertEqual(group.required, True)
 
     def test_invalid_args(self):
