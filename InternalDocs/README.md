@@ -12,6 +12,8 @@ it is not, please report that through the
 [issue tracker](https://github.com/python/cpython/issues).
 
 
+[Guide to the parser](parser.md)
+
 [Compiler Design](compiler.md)
 
 [Frames](frames.md)
@@ -19,5 +21,7 @@ it is not, please report that through the
 [Adaptive Instruction Families](adaptive.md)
 
 [The Source Code Locations Table](locations.md)
+
+[Garbage collector design](garbage_collector.md)
 
 [Exception Handling](exception_handling.md)

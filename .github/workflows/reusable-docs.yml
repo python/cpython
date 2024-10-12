@@ -1,4 +1,4 @@
-name: Docs
+name: Reusable Docs
 
 on:
   workflow_call:
@@ -95,7 +95,7 @@ jobs:
   # Run "doctest" on HEAD as new syntax doesn't exist in the latest stable release
   doctest:
     name: 'Doctest'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@v4
