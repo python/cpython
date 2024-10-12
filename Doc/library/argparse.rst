@@ -731,7 +731,7 @@ how the command-line arguments should be handled. The supplied actions are:
 
   .. versionadded:: 3.8
 
-Only actions that consume command-line arguments (such as ``'store'``,
+Only actions that consume command-line arguments (e.g. ``'store'``,
 ``'append'`` or ``'extend'``) can be used with positional arguments.
 
 You may also specify an arbitrary action by passing an Action subclass or
@@ -861,7 +861,7 @@ See also :ref:`specifying-ambiguous-arguments`. The supported values are:
 If the ``nargs`` keyword argument is not provided, the number of arguments consumed
 is determined by the action_.  Generally this means a single command-line argument
 will be consumed and a single item (not a list) will be produced.
-Actions that do not consume command-line arguments (such as
+Actions that do not consume command-line arguments (e.g.
 ``'store_const'``) set ``nargs=0``.
 
 
