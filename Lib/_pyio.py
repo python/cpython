@@ -1806,7 +1806,7 @@ class FileIO(RawIOBase):
         """
         if (self._stat_atopen is not None
             and not stat.S_ISCHR(self._stat_atopen.st_mode)):
-            return True
+            return False
         return os.isatty(self._fd)
 
     @property

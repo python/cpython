@@ -2195,20 +2195,33 @@ class TestNegativeNumber(ParserTestCase):
     argument_signatures = [
         Sig('--int', type=int),
         Sig('--float', type=float),
+        Sig('--complex', type=complex),
     ]
     failures = [
         '--float -_.45',
         '--float -1__000.0',
+        '--float -1.0.0',
         '--int -1__000',
+        '--int -1.0',
+        '--complex -1__000.0j',
+        '--complex -1.0jj',
+        '--complex -_.45j',
     ]
     successes = [
-        ('--int -1000 --float -1000.0', NS(int=-1000, float=-1000.0)),
-        ('--int -1_000 --float -1_000.0', NS(int=-1000, float=-1000.0)),
-        ('--int -1_000_000 --float -1_000_000.0', NS(int=-1000000, float=-1000000.0)),
-        ('--float -1_000.0', NS(int=None, float=-1000.0)),
-        ('--float -1_000_000.0_0', NS(int=None, float=-1000000.0)),
-        ('--float -.5', NS(int=None, float=-0.5)),
-        ('--float -.5_000', NS(int=None, float=-0.5)),
+        ('--int -1000 --float -1000.0', NS(int=-1000, float=-1000.0, complex=None)),
+        ('--int -1_000 --float -1_000.0', NS(int=-1000, float=-1000.0, complex=None)),
+        ('--int -1_000_000 --float -1_000_000.0', NS(int=-1000000, float=-1000000.0, complex=None)),
+        ('--float -1_000.0', NS(int=None, float=-1000.0, complex=None)),
+        ('--float -1_000_000.0_0', NS(int=None, float=-1000000.0, complex=None)),
+        ('--float -.5', NS(int=None, float=-0.5, complex=None)),
+        ('--float -.5_000', NS(int=None, float=-0.5, complex=None)),
+        ('--float -1e3', NS(int=None, float=-1000, complex=None)),
+        ('--float -1e-3', NS(int=None, float=-0.001, complex=None)),
+        ('--complex -1j', NS(int=None, float=None, complex=-1j)),
+        ('--complex -1_000j', NS(int=None, float=None, complex=-1000j)),
+        ('--complex -1_000.0j', NS(int=None, float=None, complex=-1000.0j)),
+        ('--complex -1e3j', NS(int=None, float=None, complex=-1000j)),
+        ('--complex -1e-3j', NS(int=None, float=None, complex=-0.001j)),
     ]
 
 class TestInvalidAction(TestCase):
@@ -2610,6 +2623,29 @@ class TestAddSubparsers(TestCase):
               --foo       foo help
             '''))
 
+    def assert_bad_help(self, context_type, func, *args, **kwargs):
+        with self.assertRaisesRegex(ValueError, 'badly formed help string') as cm:
+            func(*args, **kwargs)
+        self.assertIsInstance(cm.exception.__context__, context_type)
+
+    def test_invalid_subparsers_help(self):
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        self.assert_bad_help(ValueError, parser.add_subparsers, help='%Y-%m-%d')
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        self.assert_bad_help(KeyError, parser.add_subparsers, help='%(spam)s')
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        self.assert_bad_help(TypeError, parser.add_subparsers, help='%(prog)d')
+
+    def test_invalid_subparser_help(self):
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        subparsers = parser.add_subparsers()
+        self.assert_bad_help(ValueError, subparsers.add_parser, '1',
+                             help='%Y-%m-%d')
+        self.assert_bad_help(KeyError, subparsers.add_parser, '1',
+                             help='%(spam)s')
+        self.assert_bad_help(TypeError, subparsers.add_parser, '1',
+                             help='%(prog)d')
+
     def test_subparser_title_help(self):
         parser = ErrorRaisingArgumentParser(prog='PROG',
                                             description='main description')
@@ -2928,6 +2964,35 @@ class TestParentParsers(TestCase):
 
     def test_wrong_type_parents(self):
         self.assertRaises(TypeError, ErrorRaisingArgumentParser, parents=[1])
+
+    def test_mutex_groups_parents(self):
+        parent = ErrorRaisingArgumentParser(add_help=False)
+        g = parent.add_argument_group(title='g', description='gd')
+        g.add_argument('-w')
+        g.add_argument('-x')
+        m = g.add_mutually_exclusive_group()
+        m.add_argument('-y')
+        m.add_argument('-z')
+        parser = ErrorRaisingArgumentParser(prog='PROG', parents=[parent])
+
+        self.assertRaises(ArgumentParserError, parser.parse_args,
+            ['-y', 'Y', '-z', 'Z'])
+
+        parser_help = parser.format_help()
+        self.assertEqual(parser_help, textwrap.dedent('''\
+            usage: PROG [-h] [-w W] [-x X] [-y Y | -z Z]
+
+            options:
+              -h, --help  show this help message and exit
+
+            g:
+              gd
+
+              -w W
+              -x X
+              -y Y
+              -z Z
+        '''))
 
 # ==============================
 # Mutually exclusive group tests
@@ -5333,12 +5398,21 @@ class TestInvalidArgumentConstructors(TestCase):
         self.assertValueError('--foo', action="store-true",
                               errmsg='unknown action')
 
+    def test_invalid_help(self):
+        self.assertValueError('--foo', help='%Y-%m-%d',
+                              errmsg='badly formed help string')
+        self.assertValueError('--foo', help='%(spam)s',
+                              errmsg='badly formed help string')
+        self.assertValueError('--foo', help='%(prog)d',
+                              errmsg='badly formed help string')
+
     def test_multiple_dest(self):
         parser = argparse.ArgumentParser()
         parser.add_argument(dest='foo')
         with self.assertRaises(ValueError) as cm:
             parser.add_argument('bar', dest='baz')
-        self.assertIn('dest supplied twice for positional argument',
+        self.assertIn('dest supplied twice for positional argument,'
+                      ' did you mean metavar?',
                       str(cm.exception))
 
     def test_no_argument_actions(self):
@@ -5350,8 +5424,11 @@ class TestInvalidArgumentConstructors(TestCase):
                     with self.subTest(attrs=attrs):
                         self.assertTypeError('-x', action=action, **attrs)
                         self.assertTypeError('x', action=action, **attrs)
+                self.assertValueError('x', action=action,
+                    errmsg=f"action '{action}' is not valid for positional arguments")
                 self.assertTypeError('-x', action=action, nargs=0)
-                self.assertTypeError('x', action=action, nargs=0)
+                self.assertValueError('x', action=action, nargs=0,
+                    errmsg='nargs for positionals must be != 0')
 
     def test_no_argument_no_const_actions(self):
         # options with zero arguments
@@ -5371,7 +5448,7 @@ class TestInvalidArgumentConstructors(TestCase):
                 self.assertValueError('-x', nargs=0, action=action,
                     errmsg=f'nargs for {action_name} actions must be != 0')
                 self.assertValueError('spam', nargs=0, action=action,
-                    errmsg=f'nargs for {action_name} actions must be != 0')
+                    errmsg='nargs for positionals must be != 0')
 
                 # const is disallowed with non-optional arguments
                 for nargs in [1, '*', '+']:
@@ -6656,9 +6733,19 @@ class TestExitOnError(TestCase):
     def test_ambiguous_option(self):
         self.parser.add_argument('--foobaz')
         self.parser.add_argument('--fooble', action='store_true')
+        self.parser.add_argument('--foogle')
         self.assertRaisesRegex(argparse.ArgumentError,
-                               "ambiguous option: --foob could match --foobaz, --fooble",
-                               self.parser.parse_args, ['--foob'])
+                "ambiguous option: --foob could match --foobaz, --fooble",
+            self.parser.parse_args, ['--foob'])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                "ambiguous option: --foob=1 could match --foobaz, --fooble$",
+            self.parser.parse_args, ['--foob=1'])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                "ambiguous option: --foob could match --foobaz, --fooble$",
+            self.parser.parse_args, ['--foob', '1', '--foogle', '2'])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                "ambiguous option: --foob=1 could match --foobaz, --fooble$",
+            self.parser.parse_args, ['--foob=1', '--foogle', '2'])
 
     def test_os_error(self):
         self.parser.add_argument('file')

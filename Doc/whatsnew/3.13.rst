@@ -814,6 +814,10 @@ ctypes
   See :gh:`124520` for discussion and links to changes in some affected
   projects.
 
+* :class:`ctypes.Structure` objects have a new :attr:`~ctypes.Structure._align_`
+  attribute which allows the alignment of the structure being packed to/from
+  memory to be specified explicitly.
+  (Contributed by Matt Sanderson in :gh:`112433`)
 
 dbm
 ---
@@ -918,12 +922,12 @@ importlib
   * :func:`~importlib.resources.read_text`
 
   These functions are no longer deprecated and are not scheduled for removal.
-  (Contributed by Petr Viktorin in :gh:`106532`.)
+  (Contributed by Petr Viktorin in :gh:`116608`.)
 
 * :func:`~importlib.resources.contents` remains deprecated in favor of
   the fully-featured :class:`~importlib.resources.abc.Traversable` API.
   However, there is now no plan to remove it.
-  (Contributed by Petr Viktorin in :gh:`106532`.)
+  (Contributed by Petr Viktorin in :gh:`116608`.)
 
 
 io
