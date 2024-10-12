@@ -841,6 +841,68 @@ translated messages.
 
 To translate your own strings in the :mod:`argparse` output, use :mod:`gettext`.
 
+Custom type converters
+======================
+
+The :mod:`argparse` module allows you to specify custom type converters for
+your command-line arguments. This allows you to modify user input before it is
+stored in the :class:`argparse.Namespace`. This can be useful when you need to
+pre-process the input before it is used in your program.
+
+For example, let's say that you want to accept a string that represents a
+fraction, and you want to convert it to a :class:`fractions.Fraction` object.
+
+Here is how you can do it::
+
+   import argparse
+   import fractions
+
+   parser = argparse.ArgumentParser()
+   parser.add_argument("x", type=lambda s: fractions.Fraction(s))
+   args = parser.parse_args()
+   print(type(args.x))
+
+Output:
+
+.. code-block:: shell-session
+
+   $ python prog.py 1/2
+   <class 'fractions.Fraction'>
+
+You can also use custom type converters to handle more complex scenarios. For
+example, let's say you want to handle arguments with different prefixes and
+process them accordingly::
+
+   import argparse
+
+   parser = argparse.ArgumentParser(prefix_chars='-+')
+
+   parser.add_argument('-a', metavar='<value>', action='append',
+                       type=lambda x: ('-', x))
+   parser.add_argument('+a', metavar='<value>', action='append',
+                       type=lambda x: ('+', x))
+
+   args = parser.parse_args('-a value1 +a value2'.split())
+   print(args)
+
+Output:
+
+.. code-block:: shell-session
+
+   $ python prog.py -a value1 +a value2
+   Namespace(a=[('-', 'value1'), ('+', 'value2')])
+
+In this example, we:
+* Created a parser with custom prefix characters using the ``prefix_chars``
+  parameter.
+
+* Defined two arguments, ``-a`` and ``+a``, which used the ``type`` parameter to
+  create custom type converters to prepend a prefix to the argument values.
+
+Without the custom type converters, the arguments would have treated the ``-a``
+and ``+a`` as the same flag, which would have been undesirable. By using custom
+type converters, we were able to differentiate between the two arguments.
+
 Conclusion
 ==========
 
