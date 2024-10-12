@@ -1441,10 +1441,16 @@ class _ActionsContainer(object):
                 kwargs['default'] = self.argument_default
 
         # create the action object, and add it to the parser
+        action_name = kwargs.get('action')
         action_class = self._pop_action_class(kwargs)
         if not callable(action_class):
             raise ValueError('unknown action "%s"' % (action_class,))
         action = action_class(**kwargs)
+
+        # raise an error if action for positional argument does not
+        # consume arguments
+        if not action.option_strings and action.nargs == 0:
+            raise ValueError(f'action {action_name!r} is not valid for positional arguments')
 
         # raise an error if the action type is not callable
         type_func = self._registry_get('type', action.type, action.type)
@@ -1554,7 +1560,9 @@ class _ActionsContainer(object):
         # mark positional arguments as required if at least one is
         # always required
         nargs = kwargs.get('nargs')
-        if nargs not in [OPTIONAL, ZERO_OR_MORE, REMAINDER, SUPPRESS, 0]:
+        if nargs == 0:
+            raise ValueError('nargs for positionals must be != 0')
+        if nargs not in [OPTIONAL, ZERO_OR_MORE, REMAINDER, SUPPRESS]:
             kwargs['required'] = True
 
         # return the keyword arguments with no option strings

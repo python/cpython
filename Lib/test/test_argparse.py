@@ -5424,8 +5424,11 @@ class TestInvalidArgumentConstructors(TestCase):
                     with self.subTest(attrs=attrs):
                         self.assertTypeError('-x', action=action, **attrs)
                         self.assertTypeError('x', action=action, **attrs)
+                self.assertValueError('x', action=action,
+                    errmsg=f"action '{action}' is not valid for positional arguments")
                 self.assertTypeError('-x', action=action, nargs=0)
-                self.assertTypeError('x', action=action, nargs=0)
+                self.assertValueError('x', action=action, nargs=0,
+                    errmsg='nargs for positionals must be != 0')
 
     def test_no_argument_no_const_actions(self):
         # options with zero arguments
@@ -5445,7 +5448,7 @@ class TestInvalidArgumentConstructors(TestCase):
                 self.assertValueError('-x', nargs=0, action=action,
                     errmsg=f'nargs for {action_name} actions must be != 0')
                 self.assertValueError('spam', nargs=0, action=action,
-                    errmsg=f'nargs for {action_name} actions must be != 0')
+                    errmsg='nargs for positionals must be != 0')
 
                 # const is disallowed with non-optional arguments
                 for nargs in [1, '*', '+']:
