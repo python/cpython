@@ -105,7 +105,7 @@ _PyFloat_FromPyTime(PyTime_t t)
 
 
 static PyObject *
-time_time(PyObject *self, PyObject *unused)
+time_time(PyObject *self, PyObject *Py_UNUSED(unused))
 {
     PyTime_t t;
     if (PyTime_Time(&t) < 0) {
@@ -122,7 +122,7 @@ Return the current time in seconds since the Epoch.\n\
 Fractions of a second may be present if the system clock provides them.");
 
 static PyObject *
-time_time_ns(PyObject *self, PyObject *unused)
+time_time_ns(PyObject *self, PyObject *Py_UNUSED(unused))
 {
     PyTime_t t;
     if (PyTime_Time(&t) < 0) {
@@ -1116,7 +1116,7 @@ of the timezone or altzone attributes on the time module.");
 static int init_timezone(PyObject *module);
 
 static PyObject *
-time_tzset(PyObject *self, PyObject *unused)
+time_tzset(PyObject *self, PyObject *Py_UNUSED(unused))
 {
     PyObject* m;
 
@@ -1156,7 +1156,7 @@ should not be relied on.");
 
 
 static PyObject *
-time_monotonic(PyObject *self, PyObject *unused)
+time_monotonic(PyObject *self, PyObject *Py_UNUSED(unused))
 {
     PyTime_t t;
     if (PyTime_Monotonic(&t) < 0) {
@@ -1171,7 +1171,7 @@ PyDoc_STRVAR(monotonic_doc,
 Monotonic clock, cannot go backward.");
 
 static PyObject *
-time_monotonic_ns(PyObject *self, PyObject *unused)
+time_monotonic_ns(PyObject *self, PyObject *Py_UNUSED(unused))
 {
     PyTime_t t;
     if (PyTime_Monotonic(&t) < 0) {
@@ -1187,7 +1187,7 @@ Monotonic clock, cannot go backward, as nanoseconds.");
 
 
 static PyObject *
-time_perf_counter(PyObject *self, PyObject *unused)
+time_perf_counter(PyObject *self, PyObject *Py_UNUSED(unused))
 {
     PyTime_t t;
     if (PyTime_PerfCounter(&t) < 0) {
@@ -1203,7 +1203,7 @@ Performance counter for benchmarking.");
 
 
 static PyObject *
-time_perf_counter_ns(PyObject *self, PyObject *unused)
+time_perf_counter_ns(PyObject *self, PyObject *Py_UNUSED(unused))
 {
     PyTime_t t;
     if (PyTime_PerfCounter(&t) < 0) {
@@ -1370,7 +1370,7 @@ py_process_time(time_module_state *state, PyTime_t *tp,
 }
 
 static PyObject *
-time_process_time(PyObject *module, PyObject *unused)
+time_process_time(PyObject *module, PyObject *Py_UNUSED(unused))
 {
     time_module_state *state = get_time_state(module);
     PyTime_t t;
@@ -1386,7 +1386,7 @@ PyDoc_STRVAR(process_time_doc,
 Process time for profiling: sum of the kernel and user-space CPU time.");
 
 static PyObject *
-time_process_time_ns(PyObject *module, PyObject *unused)
+time_process_time_ns(PyObject *module, PyObject *Py_UNUSED(unused))
 {
     time_module_state *state = get_time_state(module);
     PyTime_t t;
@@ -1538,7 +1538,7 @@ _PyTime_GetThreadTimeWithInfo(PyTime_t *tp, _Py_clock_info_t *info)
 #endif
 
 static PyObject *
-time_thread_time(PyObject *self, PyObject *unused)
+time_thread_time(PyObject *self, PyObject *Py_UNUSED(unused))
 {
     PyTime_t t;
     if (_PyTime_GetThreadTimeWithInfo(&t, NULL) < 0) {
@@ -1553,7 +1553,7 @@ PyDoc_STRVAR(thread_time_doc,
 Thread time for profiling: sum of the kernel and user-space CPU time.");
 
 static PyObject *
-time_thread_time_ns(PyObject *self, PyObject *unused)
+time_thread_time_ns(PyObject *self, PyObject *Py_UNUSED(unused))
 {
     PyTime_t t;
     if (_PyTime_GetThreadTimeWithInfo(&t, NULL) < 0) {
