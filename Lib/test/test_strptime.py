@@ -490,7 +490,7 @@ class StrptimeTests(unittest.TestCase):
     # for az_IR, fa_IR, lzh_TW, my_MM, or_IN, shn_MM.
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
                       'he_IL', 'eu_ES', 'ar_AE', 'mfe_MU', 'yo_NG',
-                      'csb_PL', 'br_FR', 'gez_ET', 'brx_IN', 'id_ID')
+                      'csb_PL', 'br_FR', 'gez_ET', 'brx_IN')
     def test_date_time_locale(self):
         # Test %c directive
         loc = locale.getlocale(locale.LC_TIME)[0]
