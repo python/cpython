@@ -1,5 +1,6 @@
 import sys
 import builtins as bltns
+from functools import partial
 from types import MappingProxyType, DynamicClassAttribute
 
 
@@ -37,7 +38,7 @@ def _is_descriptor(obj):
     """
     Returns True if obj is a descriptor, False otherwise.
     """
-    return (
+    return not isinstance(obj, partial) and (
             hasattr(obj, '__get__') or
             hasattr(obj, '__set__') or
             hasattr(obj, '__delete__')
@@ -402,6 +403,12 @@ class EnumDict(dict):
         elif isinstance(value, nonmember):
             # unwrap value here; it won't be processed by the below `else`
             value = value.value
+        elif isinstance(value, partial):
+            import warnings
+            warnings.warn('functools.partial will be a method descriptor '
+                          'in future Python versions; wrap it in '
+                          'enum.member() if you want to preserve the '
+                          'old behavior', FutureWarning, stacklevel=2)
         elif _is_descriptor(value):
             pass
         elif _is_internal_class(self._cls_name, value):
