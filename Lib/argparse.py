@@ -2019,7 +2019,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             if len(option_tuples) > 1:
                 options = ', '.join([option_string
                     for action, option_string, sep, explicit_arg in option_tuples])
-                args = {'option': arg_string, 'matches': options}
+                args = {'option': arg_strings[start_index], 'matches': options}
                 msg = _('ambiguous option: %(option)s could match %(matches)s')
                 raise ArgumentError(None, msg % args)
 
