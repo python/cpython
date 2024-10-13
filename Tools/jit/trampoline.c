@@ -4,10 +4,7 @@
 #include "pycore_frame.h"
 #include "pycore_jit.h"
 
-// This is where the calling convention changes, on platforms that require it.
-// The actual change is patched in while the JIT compiler is being built, in
-// Tools/jit/_targets.py. On other platforms, this function compiles to nothing.
-_Py_CODEUNIT *
+__attribute__((preserve_none)) _Py_CODEUNIT *
 _ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate)
 {
     // This is subtle. The actual trace will return to us once it exits, so we
