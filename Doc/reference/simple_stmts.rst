@@ -514,8 +514,9 @@ becomes the :attr:`StopIteration.value` attribute.
 
 In an asynchronous generator function, an empty :keyword:`return` statement
 indicates that the asynchronous generator is done and will cause
-:exc:`StopAsyncIteration` to be raised.  A non-empty :keyword:`!return`
-statement is a syntax error in an asynchronous generator function.
+:exc:`StopAsyncIteration` to be raised. The returned
+value (if any) is used as an argument to construct :exc:`StopAsyncIteration` and
+becomes the :attr:`StopAsyncIteration.value` attribute.
 
 .. _yield:
 
