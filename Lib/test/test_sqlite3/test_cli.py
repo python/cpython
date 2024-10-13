@@ -34,7 +34,9 @@ class CommandLineInterface(unittest.TestCase):
 
     def test_cli_help(self):
         out = self.expect_success("-h")
-        self.assertIn("usage: python -m sqlite3", out)
+        self.assertIn("usage: ", out)
+        self.assertIn(" [-h] [-v] [filename] [sql]", out)
+        self.assertIn("Python sqlite3 CLI", out)
 
     def test_cli_version(self):
         out = self.expect_success("-v")

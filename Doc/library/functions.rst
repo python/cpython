@@ -686,7 +686,7 @@ are always available.  They are listed here in alphabetical order.
    The *closure* argument specifies a closure--a tuple of cellvars.
    It's only valid when the *object* is a code object containing
    :term:`free (closure) variables <closure variable>`.
-   The length of the tuple must exactly match the length of the code object'S
+   The length of the tuple must exactly match the length of the code object's
    :attr:`~codeobject.co_freevars` attribute.
 
    .. audit-event:: exec code_object exec
