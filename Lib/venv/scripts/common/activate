@@ -14,8 +14,9 @@ deactivate () {
         unset _OLD_VIRTUAL_PYTHONHOME
     fi
 
-    # Call hash to forget past commands. Without forgetting
-    # past commands the $PATH changes we made may not be respected
+    # Call hash to forget past locations. Without forgetting
+    # past locations the $PATH changes we made may not be respected.
+    # See "man bash" for more details. hash is usually a builtin of your shell
     hash -r 2> /dev/null
 
     if [ -n "${_OLD_VIRTUAL_PS1:-}" ] ; then
