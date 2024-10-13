@@ -101,17 +101,12 @@ class PathGlobber(_GlobberBase):
         a context manager. This method is called by walk() and glob().
         """
         import contextlib
-        return contextlib.nullcontext(path.iterdir())
+        return contextlib.nullcontext(child.dir_entry for child in path.iterdir())
 
     @staticmethod
     def concat_path(path, text):
         """Appends text to the given path."""
         return path.with_segments(path._raw_path + text)
-
-    @staticmethod
-    def parse_entry(entry):
-        """Returns the path of an entry yielded from scandir()."""
-        return entry
 
 
 class PurePathBase:
@@ -132,6 +127,12 @@ class PurePathBase:
         # is being processed by `PathBase.resolve()`. This prevents duplicate
         # work from occurring when `resolve()` calls `stat()` or `readlink()`.
         '_resolving',
+
+        # The 'dir_entry' slot stores an `os.DirEntry`-like object or `None`.
+        # It is available for paths generated from `PathBase.iterdir()`. It is
+        # defined here rather than in `PathBase` to avoid a class layout
+        # conflict in `Path`.
+        'dir_entry',
     )
     parser = ParserBase()
     _globber = PathGlobber
@@ -142,6 +143,7 @@ class PurePathBase:
             raise TypeError(
                 f"path should be a str, not {type(self._raw_path).__name__!r}")
         self._resolving = False
+        self.dir_entry = None
 
     def with_segments(self, *pathsegments):
         """Construct a new path object from any number of path-like objects.
@@ -696,15 +698,16 @@ class PathBase(PurePathBase):
                 paths.append((path, dirnames, filenames))
             try:
                 for child in path.iterdir():
+                    entry = child.dir_entry
                     try:
-                        if child.is_dir(follow_symlinks=follow_symlinks):
+                        if entry.is_dir(follow_symlinks=follow_symlinks):
                             if not top_down:
                                 paths.append(child)
-                            dirnames.append(child.name)
+                            dirnames.append(entry.name)
                         else:
-                            filenames.append(child.name)
+                            filenames.append(entry.name)
                     except OSError:
-                        filenames.append(child.name)
+                        filenames.append(entry.name)
             except OSError as error:
                 if on_error is not None:
                     on_error(error)
@@ -875,11 +878,12 @@ class PathBase(PurePathBase):
         stack = [(self, target)]
         while stack:
             src, dst = stack.pop()
-            if not follow_symlinks and src.is_symlink():
+            entry = src.dir_entry or src
+            if not follow_symlinks and entry.is_symlink():
                 dst._symlink_to_target_of(src)
                 if preserve_metadata:
                     src._copy_metadata(dst, follow_symlinks=False)
-            elif src.is_dir():
+            elif entry.is_dir():
                 children = src.iterdir()
                 dst.mkdir(exist_ok=dirs_exist_ok)
                 stack.extend((child, dst.joinpath(child.name))

@@ -1289,6 +1289,29 @@ Reading directories
    raised.
 
 
+.. attribute:: Path.dir_entry
+
+   In a path yielded from :meth:`Path.iterdir`, this attribute stores a
+   :class:`os.DirEntry` object corresponding to the path; in other cases it is
+   ``None``. This can be used to retrieve the file type and attributes of
+   directory children without necessarily incurring further system calls::
+
+      >>> p = Path('docs')
+      >>> for child in p.iterdir():
+      ...     entry = child.dir_entry
+      ...     if entry.is_dir():
+      ...         child
+      ...
+      PosixPath('docs/_templates')
+      PosixPath('docs/_build')
+      PosixPath('docs/_static')
+
+   For technical reasons, this attribute is also available from
+   :class:`PurePath` objects, where its value is always ``None``.
+
+   .. versionadded:: 3.14
+
+
 .. method:: Path.glob(pattern, *, case_sensitive=None, recurse_symlinks=False)
 
    Glob the given relative *pattern* in the directory represented by this path,

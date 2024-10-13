@@ -137,6 +137,7 @@ class PurePath(PurePathBase):
                 paths.append(path)
         # Avoid calling super().__init__, as an optimisation
         self._raw_paths = paths
+        self.dir_entry = None
 
     def joinpath(self, *pathsegments):
         """Combine this path with one or several arguments, and return a
@@ -622,11 +623,12 @@ class Path(PathBase, PurePath):
         special entries '.' and '..' are not included.
         """
         root_dir = str(self)
-        with os.scandir(root_dir) as scandir_it:
-            paths = [entry.path for entry in scandir_it]
-        if root_dir == '.':
-            paths = map(self._remove_leading_dot, paths)
-        return map(self._from_parsed_string, paths)
+        str_attr = 'name' if root_dir == '.' else 'path'
+        def parse(entry):
+            path = self._from_parsed_string(getattr(entry, str_attr))
+            path.dir_entry = entry
+            return path
+        return map(parse, list(os.scandir(root_dir)))
 
     def glob(self, pattern, *, case_sensitive=None, recurse_symlinks=False):
         """Iterate over this subtree and yield all existing files (of any
