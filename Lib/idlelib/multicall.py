@@ -337,8 +337,8 @@ def MultiCallCreator(widget):
             def wrapper(event):
                 if event.type == tkinter.EventType.Key:
                     # Check for any mismatch between event.char and event.keysym
-                    if len(event.char) and event.char.isprintable() \
-                        and event.char.lower() != event.keysym.lower():
+                    if (len(event.char) and event.char.isprintable()
+                        and event.char.lower() != event.keysym.lower()):
                         return None
                 return func(event)
             if type(sequence) is str and len(sequence) > 2 and \
