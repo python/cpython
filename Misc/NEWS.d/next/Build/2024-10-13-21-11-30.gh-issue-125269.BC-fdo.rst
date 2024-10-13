@@ -1,0 +1,2 @@
+Fix detection of whether ``-latomic`` is needed when cross-compiling CPython
+using the configure script.
