@@ -46,7 +46,7 @@ pointers.  This is consistent throughout the API.
 
 .. c:function:: Py_complex _Py_cr_sum(Py_complex left, double right)
 
-   Return the sum of a complex and a real number, using the C :c:type:`Py_complex`
+   Return the sum of a complex number and a real number, using the C :c:type:`Py_complex`
    representation.
 
    .. versionadded:: 3.14
