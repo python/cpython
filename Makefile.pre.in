@@ -432,9 +432,9 @@ PYTHON_OBJS=	\
 		Python/codegen.o \
 		Python/compile.o \
 		Python/context.o \
+		Python/cpuinfo.o \
 		Python/critical_section.o \
 		Python/crossinterp.o \
-		Python/cpuinfo.o \
 		Python/dynamic_annotations.o \
 		Python/errors.o \
 		Python/flowgraph.o \
