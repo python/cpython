@@ -869,6 +869,12 @@ Output:
    $ python prog.py 1/2
    <class 'fractions.Fraction'>
 
+
+When using a custom type converter, you can use any callable that takes a
+single string argument (the argument value) and returns the converted value.
+However, if you need to handle more complex scenarios, you can use a custom
+action class with the **action** parameter instead.
+
 You can also use custom type converters to handle more complex scenarios. For
 example, let's say you want to handle arguments with different prefixes and
 process them accordingly::
