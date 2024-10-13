@@ -432,7 +432,7 @@ _SHAKE_digest(SHA3object *self, unsigned long digestlen, int hex)
     }
 
     /* Get the raw (binary) digest value. The HACL functions errors out if:
-     * - the algorith is not shake -- not the case here
+     * - the algorithm is not shake -- not the case here
      * - the output length is zero -- we follow the existing behavior and return
      *   an empty digest, without raising an error */
     if (digestlen > 0) {
@@ -602,6 +602,7 @@ _sha3_exec(PyObject *m)
 static PyModuleDef_Slot _sha3_slots[] = {
     {Py_mod_exec, _sha3_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

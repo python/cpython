@@ -82,3 +82,12 @@ class Sentinels(enum.Enum):
 
 unspecified: Final = Sentinels.unspecified
 unknown: Final = Sentinels.unknown
+
+
+# This one needs to be a distinct class, unlike the other two
+class Null:
+    def __repr__(self) -> str:
+        return '<Null>'
+
+
+NULL = Null()

@@ -1,2 +1,0 @@
-Improve the :exc:`SyntaxError` that happens when 'not' appears after an
-operator. Patch by Pablo Galindo

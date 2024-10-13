@@ -1,5 +1,5 @@
-:mod:`webbrowser` --- Convenient web-browser controller
-=======================================================
+:mod:`!webbrowser` --- Convenient web-browser controller
+========================================================
 
 .. module:: webbrowser
    :synopsis: Easy-to-use controller for web browsers.
@@ -42,13 +42,16 @@ a new tab, with the browser being brought to the foreground. The use of the
 
 The script :program:`webbrowser` can be used as a command-line interface for the
 module. It accepts a URL as the argument. It accepts the following optional
-parameters: ``-n`` opens the URL in a new browser window, if possible;
-``-t`` opens the URL in a new browser page ("tab"). The options are,
-naturally, mutually exclusive.  Usage example::
+parameters:
+
+* ``-n``/``--new-window`` opens the URL in a new browser window, if possible.
+* ``-t``/``--new-tab`` opens the URL in a new browser page ("tab").
+
+The options are, naturally, mutually exclusive.  Usage example::
 
    python -m webbrowser -t "https://www.python.org"
 
-.. include:: ../includes/wasm-notavail.rst
+.. availability:: not WASI, not Android.
 
 The following exception is defined:
 
@@ -69,6 +72,8 @@ The following functions are defined:
    (note that under many window managers this will occur regardless of the
    setting of this variable).
 
+   Returns ``True`` if a browser was successfully launched, ``False`` otherwise.
+
    Note that on some platforms, trying to open a filename using this function,
    may work and start the operating system's associated program.  However, this
    is neither supported nor portable.
@@ -81,10 +86,15 @@ The following functions are defined:
    Open *url* in a new window of the default browser, if possible, otherwise, open
    *url* in the only browser window.
 
+   Returns ``True`` if a browser was successfully launched, ``False`` otherwise.
+
+
 .. function:: open_new_tab(url)
 
    Open *url* in a new page ("tab") of the default browser, if possible, otherwise
    equivalent to :func:`open_new`.
+
+   Returns ``True`` if a browser was successfully launched, ``False`` otherwise.
 
 
 .. function:: get(using=None)

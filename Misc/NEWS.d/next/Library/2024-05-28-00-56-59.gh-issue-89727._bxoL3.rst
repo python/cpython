@@ -1,0 +1,3 @@
+Fix issue with :func:`os.fwalk` where a :exc:`RecursionError` was raised on
+deep directory trees by adjusting the implementation to be iterative instead
+of recursive.

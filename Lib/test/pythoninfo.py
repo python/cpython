@@ -105,9 +105,13 @@ def collect_sys(info_add):
     )
     copy_attributes(info_add, sys, 'sys.%s', attributes)
 
-    call_func(info_add, 'sys.androidapilevel', sys, 'getandroidapilevel')
-    call_func(info_add, 'sys.windowsversion', sys, 'getwindowsversion')
-    call_func(info_add, 'sys.getrecursionlimit', sys, 'getrecursionlimit')
+    for func in (
+        '_is_gil_enabled',
+        'getandroidapilevel',
+        'getrecursionlimit',
+        'getwindowsversion',
+    ):
+        call_func(info_add, f'sys.{func}', sys, func)
 
     encoding = sys.getfilesystemencoding()
     if hasattr(sys, 'getfilesystemencodeerrors'):
@@ -513,6 +517,7 @@ def collect_sysconfig(info_add):
         'MACHDEP',
         'MULTIARCH',
         'OPT',
+        'PGO_PROF_USE_FLAG',
         'PY_CFLAGS',
         'PY_CFLAGS_NODIST',
         'PY_CORE_LDFLAGS',
@@ -548,7 +553,6 @@ def collect_sysconfig(info_add):
     for name in (
         'WITH_DOC_STRINGS',
         'WITH_DTRACE',
-        'WITH_FREELISTS',
         'WITH_MIMALLOC',
         'WITH_PYMALLOC',
         'WITH_VALGRIND',

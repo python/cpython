@@ -398,9 +398,9 @@ already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
         return -1;
 
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
-        return -1;
-    }
+    assert(st != NULL);
+    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
+
     PyObject *version_obj;
     if (PyDict_GetItemRef(registry, &_Py_ID(version), &version_obj) < 0) {
         return -1;
@@ -569,10 +569,9 @@ call_show_warning(PyThreadState *tstate, PyObject *category,
     PyObject *show_fn, *msg, *res, *warnmsg_cls = NULL;
     PyInterpreterState *interp = tstate->interp;
 
-    /* If the source parameter is set, try to get the Python implementation.
-       The Python implementation is able to log the traceback where the source
+    /* The Python implementation is able to log the traceback where the source
        was allocated, whereas the C implementation doesn't. */
-    show_fn = GET_WARNINGS_ATTR(interp, _showwarnmsg, source != NULL);
+    show_fn = GET_WARNINGS_ATTR(interp, _showwarnmsg, 1);
     if (show_fn == NULL) {
         if (PyErr_Occurred())
             return -1;
@@ -705,9 +704,9 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
     }
 
     /* Store in the registry that we've been here, *except* when the action
-       is "always". */
+       is "always" or "all". */
     rc = 0;
-    if (!_PyUnicode_EqualToASCIIString(action, "always")) {
+    if (!_PyUnicode_EqualToASCIIString(action, "always") && !_PyUnicode_EqualToASCIIString(action, "all")) {
         if (registry != NULL && registry != Py_None &&
             PyDict_SetItem(registry, key, Py_True) < 0)
         {
@@ -894,8 +893,8 @@ setup_context(Py_ssize_t stack_level,
 
     if (f == NULL) {
         globals = interp->sysdict;
-        *filename = PyUnicode_FromString("sys");
-        *lineno = 1;
+        *filename = PyUnicode_FromString("<sys>");
+        *lineno = 0;
     }
     else {
         globals = f->f_frame->f_globals;
@@ -994,8 +993,10 @@ do_warn(PyObject *message, PyObject *category, Py_ssize_t stack_level,
                        &filename, &lineno, &module, &registry))
         return NULL;
 
+#ifdef Py_GIL_DISABLED
     WarningsState *st = warnings_get_state(tstate->interp);
     assert(st != NULL);
+#endif
 
     Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     res = warn_explicit(tstate, category, message, filename, lineno, module, registry,
@@ -1149,8 +1150,10 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
         }
     }
 
+#ifdef Py_GIL_DISABLED
     WarningsState *st = warnings_get_state(tstate->interp);
     assert(st != NULL);
+#endif
 
     Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     returned = warn_explicit(tstate, category, message, filename, lineno,
@@ -1173,11 +1176,14 @@ warnings_filters_mutated_impl(PyObject *module)
     if (interp == NULL) {
         return NULL;
     }
+
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
-        return NULL;
-    }
+    assert(st != NULL);
+
+    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     st->filters_version++;
+    Py_END_CRITICAL_SECTION();
+
     Py_RETURN_NONE;
 }
 
@@ -1296,8 +1302,10 @@ PyErr_WarnExplicitObject(PyObject *category, PyObject *message,
         return -1;
     }
 
+#ifdef Py_GIL_DISABLED
     WarningsState *st = warnings_get_state(tstate->interp);
     assert(st != NULL);
+#endif
 
     Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     res = warn_explicit(tstate, category, message, filename, lineno,
@@ -1367,8 +1375,10 @@ PyErr_WarnExplicitFormat(PyObject *category,
         PyObject *res;
         PyThreadState *tstate = get_current_tstate();
         if (tstate != NULL) {
+#ifdef Py_GIL_DISABLED
             WarningsState *st = warnings_get_state(tstate->interp);
             assert(st != NULL);
+#endif
 
             Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
             res = warn_explicit(tstate, category, message, filename, lineno,
@@ -1487,6 +1497,7 @@ warnings_module_exec(PyObject *module)
 static PyModuleDef_Slot warnings_slots[] = {
     {Py_mod_exec, warnings_module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

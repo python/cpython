@@ -1,7 +1,0 @@
-Fix a race in ``threading.Thread.join()``.
-
-``threading._MainThread`` now always represents the main thread of the main
-interpreter.
-
-``PyThreadState.on_delete`` and ``PyThreadState.on_delete_data`` have been
-removed.

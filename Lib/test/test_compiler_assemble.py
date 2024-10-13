@@ -27,8 +27,8 @@ class IsolatedAssembleTests(AssemblerTestCase):
 
     def insts_to_code_object(self, insts, metadata):
         metadata = self.complete_metadata(metadata)
-        insts = self.complete_insts_info(insts)
-        return self.get_code_object(metadata['filename'], insts, metadata)
+        seq = self.seq_from_insts(insts)
+        return self.get_code_object(metadata['filename'], seq, metadata)
 
     def assemble_test(self, insts, metadata, expected):
         co = self.insts_to_code_object(insts, metadata)
@@ -71,7 +71,7 @@ class IsolatedAssembleTests(AssemblerTestCase):
             ('BINARY_OP', 0, 1),   # '+'
             ('LOAD_CONST', 0, 1),  # 2
             ('BINARY_OP', 11, 1),   # '/'
-            ('RETURN_VALUE', 1),
+            ('RETURN_VALUE', None, 1),
         ]
         expected = {(3, 4) : 3.5, (-100, 200) : 50, (10, 18) : 14}
         self.assemble_test(insts, metadata, expected)
@@ -102,13 +102,13 @@ class IsolatedAssembleTests(AssemblerTestCase):
             ('LOAD_CLOSURE', 0, 1),
             ('BUILD_TUPLE', 1, 1),
             ('LOAD_CONST', 1, 1),
-            ('MAKE_FUNCTION', 0, 2),
+            ('MAKE_FUNCTION', None, 2),
             ('SET_FUNCTION_ATTRIBUTE', 8, 2),
-            ('PUSH_NULL', 0, 1),
+            ('PUSH_NULL', None, 1),
             ('CALL', 0, 2),                     # (lambda: x)()
             ('LOAD_CONST', 2, 2),               # 2
             ('BINARY_OP', 6, 2),                # %
-            ('RETURN_VALUE', 0, 2)
+            ('RETURN_VALUE', None, 2)
         ]
 
         expected = {(0,): 0, (1,): 1, (2,): 0, (120,): 0, (121,): 1}
@@ -128,12 +128,12 @@ class IsolatedAssembleTests(AssemblerTestCase):
             ('SETUP_FINALLY', 3),
             ('RETURN_CONST', 0),
             ('SETUP_CLEANUP', 8),
-            ('PUSH_EXC_INFO', 0),
-            ('POP_TOP', 0),
-            ('POP_EXCEPT', 0),
+            ('PUSH_EXC_INFO', None),
+            ('POP_TOP', None),
+            ('POP_EXCEPT', None),
             ('RETURN_CONST', 0),
             ('COPY', 3),
-            ('POP_EXCEPT', 0),
+            ('POP_EXCEPT', None),
             ('RERAISE', 1),
         ]
         co = self.insts_to_code_object(insts, metadata)

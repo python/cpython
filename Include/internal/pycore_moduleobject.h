@@ -22,6 +22,9 @@ typedef struct {
     PyObject *md_weaklist;
     // for logging purposes after md_dict is cleared
     PyObject *md_name;
+#ifdef Py_GIL_DISABLED
+    void *md_gil;
+#endif
 } PyModuleObject;
 
 static inline PyModuleDef* _PyModule_GetDef(PyObject *mod) {
@@ -43,7 +46,7 @@ static inline PyObject* _PyModule_GetDict(PyObject *mod) {
 }
 
 PyObject* _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress);
-PyObject* _Py_module_getattro(PyModuleObject *m, PyObject *name);
+PyObject* _Py_module_getattro(PyObject *m, PyObject *name);
 
 #ifdef __cplusplus
 }

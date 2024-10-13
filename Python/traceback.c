@@ -5,7 +5,6 @@
 
 #include "pycore_ast.h"           // asdl_seq_GET()
 #include "pycore_call.h"          // _PyObject_CallMethodFormat()
-#include "pycore_compile.h"       // _PyAST_Optimize()
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_frame.h"         // _PyFrame_GetCode()
 #include "pycore_interp.h"        // PyInterpreterState.gc
@@ -35,9 +34,9 @@
 extern char* _PyTokenizer_FindEncodingFilename(int, PyObject *);
 
 /*[clinic input]
-class TracebackType "PyTracebackObject *" "&PyTraceback_Type"
+class traceback "PyTracebackObject *" "&PyTraceback_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=928fa06c10151120]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=cf96294b2bebc811]*/
 
 #include "clinic/traceback.c.h"
 
@@ -64,7 +63,7 @@ tb_create_raw(PyTracebackObject *next, PyFrameObject *frame, int lasti,
 
 /*[clinic input]
 @classmethod
-TracebackType.__new__ as tb_new
+traceback.__new__ as tb_new
 
   tb_next: object
   tb_frame: object(type='PyFrameObject *', subclass_of='&PyFrame_Type')
@@ -77,7 +76,7 @@ Create a new traceback object.
 static PyObject *
 tb_new_impl(PyTypeObject *type, PyObject *tb_next, PyFrameObject *tb_frame,
             int tb_lasti, int tb_lineno)
-/*[clinic end generated code: output=fa077debd72d861a input=01cbe8ec8783fca7]*/
+/*[clinic end generated code: output=fa077debd72d861a input=b88143145454cb59]*/
 {
     if (tb_next == Py_None) {
         tb_next = NULL;

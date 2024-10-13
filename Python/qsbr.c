@@ -2,7 +2,7 @@
  * Implementation of safe memory reclamation scheme using
  * quiescent states.
  *
- * This is dervied from the "GUS" safe memory reclamation technique
+ * This is derived from the "GUS" safe memory reclamation technique
  * in FreeBSD written by Jeffrey Roberson. It is heavily modified. Any bugs
  * in this code are likely due to the modifications.
  *
@@ -160,7 +160,8 @@ qsbr_poll_scan(struct _qsbr_shared *shared)
 bool
 _Py_qsbr_poll(struct _qsbr_thread_state *qsbr, uint64_t goal)
 {
-    assert(_PyThreadState_GET()->state == _Py_THREAD_ATTACHED);
+    assert(_Py_atomic_load_int_relaxed(&_PyThreadState_GET()->state) == _Py_THREAD_ATTACHED);
+
     if (_Py_qbsr_goal_reached(qsbr, goal)) {
         return true;
     }
@@ -231,20 +232,26 @@ _Py_qsbr_register(_PyThreadStateImpl *tstate, PyInterpreterState *interp,
 }
 
 void
-_Py_qsbr_unregister(_PyThreadStateImpl *tstate)
+_Py_qsbr_unregister(PyThreadState *tstate)
 {
-    struct _qsbr_shared *shared = tstate->qsbr->shared;
+    struct _qsbr_shared *shared = &tstate->interp->qsbr;
+    struct _PyThreadStateImpl *tstate_imp = (_PyThreadStateImpl*) tstate;
+
+    // gh-119369: GIL must be released (if held) to prevent deadlocks, because
+    // we might not have an active tstate, which means that blocking on PyMutex
+    // locks will not implicitly release the GIL.
+    assert(!tstate->_status.holds_gil);
 
     PyMutex_Lock(&shared->mutex);
     // NOTE: we must load (or reload) the thread state's qbsr inside the mutex
     // because the array may have been resized (changing tstate->qsbr) while
     // we waited to acquire the mutex.
-    struct _qsbr_thread_state *qsbr = tstate->qsbr;
+    struct _qsbr_thread_state *qsbr = tstate_imp->qsbr;
 
     assert(qsbr->seq == 0 && "thread state must be detached");
-    assert(qsbr->allocated && qsbr->tstate == (PyThreadState *)tstate);
+    assert(qsbr->allocated && qsbr->tstate == tstate);
 
-    tstate->qsbr = NULL;
+    tstate_imp->qsbr = NULL;
     qsbr->tstate = NULL;
     qsbr->allocated = false;
     qsbr->freelist_next = shared->freelist;

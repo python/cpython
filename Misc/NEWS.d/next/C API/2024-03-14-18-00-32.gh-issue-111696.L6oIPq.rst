@@ -1,3 +1,0 @@
-Add :c:func:`PyType_GetModuleName` function to get the type's module name.
-Equivalent to getting the ``type.__module__`` attribute. Patch by Eric Snow
-and Victor Stinner.

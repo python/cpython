@@ -62,7 +62,7 @@ For example::
    20
    >>> (50 - 5*6) / 4
    5.0
-   >>> 8 / 5  # division always returns a floating point number
+   >>> 8 / 5  # division always returns a floating-point number
    1.6
 
 The integer numbers (e.g. ``2``, ``4``, ``20``) have type :class:`int`,
@@ -197,21 +197,19 @@ and workarounds.
 String literals can span multiple lines.  One way is using triple-quotes:
 ``"""..."""`` or ``'''...'''``.  End of lines are automatically
 included in the string, but it's possible to prevent this by adding a ``\`` at
-the end of the line.  The following example::
+the end of the line.  In the following example, the initial newline is not
+included::
 
-   print("""\
+   >>> print("""\
+   ... Usage: thingy [OPTIONS]
+   ...      -h                        Display this usage message
+   ...      -H hostname               Hostname to connect to
+   ... """)
    Usage: thingy [OPTIONS]
         -h                        Display this usage message
         -H hostname               Hostname to connect to
-   """)
 
-produces the following output (note that the initial newline is not included):
-
-.. code-block:: text
-
-   Usage: thingy [OPTIONS]
-        -h                        Display this usage message
-        -H hostname               Hostname to connect to
+   >>>
 
 Strings can be concatenated (glued together) with the ``+`` operator, and
 repeated with ``*``::
@@ -501,8 +499,8 @@ together.  For instance, we can write an initial sub-sequence of the
 as follows::
 
    >>> # Fibonacci series:
-   ... # the sum of two elements defines the next
-   ... a, b = 0, 1
+   >>> # the sum of two elements defines the next
+   >>> a, b = 0, 1
    >>> while a < 10:
    ...     print(a)
    ...     a, b = b, a+b
@@ -544,7 +542,7 @@ This example introduces several new features.
 * The :func:`print` function writes the value of the argument(s) it is given.
   It differs from just writing the expression you want to write (as we did
   earlier in the calculator examples) in the way it handles multiple arguments,
-  floating point quantities, and strings.  Strings are printed without quotes,
+  floating-point quantities, and strings.  Strings are printed without quotes,
   and a space is inserted between items, so you can format things nicely, like
   this::
 

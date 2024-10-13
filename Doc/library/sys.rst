@@ -1,5 +1,5 @@
-:mod:`sys` --- System-specific parameters and functions
-=======================================================
+:mod:`!sys` --- System-specific parameters and functions
+========================================================
 
 .. module:: sys
    :synopsis: Access system-specific parameters and functions.
@@ -735,11 +735,11 @@ always available.
    regardless of their size.  This function is mainly useful for tracking
    and debugging memory leaks.  Because of the interpreter's internal
    caches, the result can vary from call to call; you may have to call
-   :func:`_clear_internal_caches()` and :func:`gc.collect()` to get more
+   :func:`_clear_internal_caches` and :func:`gc.collect` to get more
    predictable results.
 
    If a Python build or implementation cannot reasonably compute this
-   information, :func:`getallocatedblocks()` is allowed to return 0 instead.
+   information, :func:`getallocatedblocks` is allowed to return 0 instead.
 
    .. versionadded:: 3.4
 
@@ -877,7 +877,7 @@ always available.
    additional garbage collector overhead if the object is managed by the garbage
    collector.
 
-   See `recursive sizeof recipe <https://code.activestate.com/recipes/577504/>`_
+   See `recursive sizeof recipe <https://code.activestate.com/recipes/577504-compute-memory-footprint-of-an-object-and-its-cont/>`_
    for an example of using :func:`getsizeof` recursively to find the size of
    containers and all their contents.
 
@@ -1199,6 +1199,14 @@ always available.
    return value of :func:`intern` around to benefit from it.
 
 
+.. function:: _is_gil_enabled()
+
+   Return :const:`True` if the :term:`GIL` is enabled and :const:`False` if
+   it is disabled.
+
+   .. versionadded:: 3.13
+
+
 .. function:: is_finalizing()
 
    Return :const:`True` if the main Python interpreter is
@@ -1266,7 +1274,8 @@ always available.
     that implement Python's default import semantics. The
     :meth:`~importlib.abc.MetaPathFinder.find_spec` method is called with at
     least the absolute name of the module being imported. If the module to be
-    imported is contained in a package, then the parent package's :attr:`__path__`
+    imported is contained in a package, then the parent package's
+    :attr:`~module.__path__`
     attribute is passed in as a second argument. The method returns a
     :term:`module spec`, or ``None`` if the module cannot be found.
 
@@ -1700,11 +1709,11 @@ always available.
    contain a tuple of (filename, line number, function name) tuples
    describing the traceback where the coroutine object was created,
    with the most recent call first. When disabled, ``cr_origin`` will
-   be None.
+   be ``None``.
 
    To enable, pass a *depth* value greater than zero; this sets the
    number of frames whose information will be captured. To disable,
-   pass set *depth* to zero.
+   set *depth* to zero.
 
    This setting is thread-specific.
 
