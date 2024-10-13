@@ -11,35 +11,31 @@ extern "C" {
 
 #include <stdint.h>         // uint8_t
 
-/* Declare a member of 'py_cpuid_features' storing a CPUID bit. */
-#define _Py_CPUID_DECL_FEAT(X)    uint8_t X:1
-/* Declare a member of 'py_cpuid_features' storing a XCR0 bit. */
-#define _Py_CPUID_DECL_XCR0(X)    uint8_t X:1
-
 typedef struct py_cpuid_features {
+    /* Macro to declare a member flag of 'py_cpuid_features' as a uint8_t. */
+#define _Py_CPUID_DECL_FLAG(MEMBER_NAME)    uint8_t MEMBER_NAME:1
     // --- Streaming SIMD Extensions ------------------------------------------
-    _Py_CPUID_DECL_FEAT(sse);
-    _Py_CPUID_DECL_FEAT(sse2);
-    _Py_CPUID_DECL_FEAT(sse3);
-    _Py_CPUID_DECL_FEAT(ssse3); // Supplemental SSE3 instructions
-    _Py_CPUID_DECL_FEAT(sse41); // SSE4.1
-    _Py_CPUID_DECL_FEAT(sse42); // SSE4.2
+    _Py_CPUID_DECL_FLAG(sse);
+    _Py_CPUID_DECL_FLAG(sse2);
+    _Py_CPUID_DECL_FLAG(sse3);
+    _Py_CPUID_DECL_FLAG(ssse3); // Supplemental SSE3 instructions
+    _Py_CPUID_DECL_FLAG(sse41); // SSE4.1
+    _Py_CPUID_DECL_FLAG(sse42); // SSE4.2
 
     // --- Advanced Vector Extensions -----------------------------------------
-    _Py_CPUID_DECL_FEAT(avx);
-    _Py_CPUID_DECL_FEAT(avx_ifma);
-    _Py_CPUID_DECL_FEAT(avx_ne_convert);
+    _Py_CPUID_DECL_FLAG(avx);
+    _Py_CPUID_DECL_FLAG(avx_ifma);
+    _Py_CPUID_DECL_FLAG(avx_ne_convert);
 
-    _Py_CPUID_DECL_FEAT(avx_vnni);
-    _Py_CPUID_DECL_FEAT(avx_vnni_int8);
-    _Py_CPUID_DECL_FEAT(avx_vnni_int16);
+    _Py_CPUID_DECL_FLAG(avx_vnni);
+    _Py_CPUID_DECL_FLAG(avx_vnni_int8);
+    _Py_CPUID_DECL_FLAG(avx_vnni_int16);
 
     // --- Advanced Vector Extensions 2 ---------------------------------------
-    _Py_CPUID_DECL_FEAT(avx2);
+    _Py_CPUID_DECL_FLAG(avx2);
 
     // --- Advanced Vector Extensions (512-bit) -------------------------------
     /*
-     *
      * AVX-512 instruction set are grouped by the processor generation
      * that implements them (see https://en.wikipedia.org/wiki/AVX-512).
      *
@@ -50,51 +46,51 @@ typedef struct py_cpuid_features {
      * See https://en.wikipedia.org/wiki/AVX-512#Instruction_set for
      * the meaning of each suffix (e.g., 'f' stands for 'Foundation').
      */
-    _Py_CPUID_DECL_FEAT(avx512_f);
-    _Py_CPUID_DECL_FEAT(avx512_cd);
+    _Py_CPUID_DECL_FLAG(avx512_f);
+    _Py_CPUID_DECL_FLAG(avx512_cd);
 
-    _Py_CPUID_DECL_FEAT(avx512_er);
-    _Py_CPUID_DECL_FEAT(avx512_pf);
+    _Py_CPUID_DECL_FLAG(avx512_er);
+    _Py_CPUID_DECL_FLAG(avx512_pf);
 
-    _Py_CPUID_DECL_FEAT(avx512_4fmaps);
-    _Py_CPUID_DECL_FEAT(avx512_4vnniw);
+    _Py_CPUID_DECL_FLAG(avx512_4fmaps);
+    _Py_CPUID_DECL_FLAG(avx512_4vnniw);
 
-    _Py_CPUID_DECL_FEAT(avx512_vpopcntdq);
+    _Py_CPUID_DECL_FLAG(avx512_vpopcntdq);
 
-    _Py_CPUID_DECL_FEAT(avx512_vl);
-    _Py_CPUID_DECL_FEAT(avx512_dq);
-    _Py_CPUID_DECL_FEAT(avx512_bw);
+    _Py_CPUID_DECL_FLAG(avx512_vl);
+    _Py_CPUID_DECL_FLAG(avx512_dq);
+    _Py_CPUID_DECL_FLAG(avx512_bw);
 
-    _Py_CPUID_DECL_FEAT(avx512_ifma);
-    _Py_CPUID_DECL_FEAT(avx512_vbmi);
+    _Py_CPUID_DECL_FLAG(avx512_ifma);
+    _Py_CPUID_DECL_FLAG(avx512_vbmi);
 
-    _Py_CPUID_DECL_FEAT(avx512_vnni);
+    _Py_CPUID_DECL_FLAG(avx512_vnni);
 
-    _Py_CPUID_DECL_FEAT(avx512_vbmi2);
-    _Py_CPUID_DECL_FEAT(avx512_bitalg);
+    _Py_CPUID_DECL_FLAG(avx512_vbmi2);
+    _Py_CPUID_DECL_FLAG(avx512_bitalg);
 
-    _Py_CPUID_DECL_FEAT(avx512_vp2intersect);
+    _Py_CPUID_DECL_FLAG(avx512_vp2intersect);
 
     // --- Instructions -------------------------------------------------------
-    _Py_CPUID_DECL_FEAT(cmov);
-    _Py_CPUID_DECL_FEAT(fma);
-    _Py_CPUID_DECL_FEAT(popcnt);
-    _Py_CPUID_DECL_FEAT(pclmulqdq);
+    _Py_CPUID_DECL_FLAG(cmov);
+    _Py_CPUID_DECL_FLAG(fma);
+    _Py_CPUID_DECL_FLAG(popcnt);
+    _Py_CPUID_DECL_FLAG(pclmulqdq);
 
-    _Py_CPUID_DECL_FEAT(xsave);     // XSAVE/XRSTOR/XSETBV/XGETBV
-    _Py_CPUID_DECL_FEAT(os_xsave);  // XSAVE is enabled by the OS
+    _Py_CPUID_DECL_FLAG(xsave);     // XSAVE/XRSTOR/XSETBV/XGETBV
+    _Py_CPUID_DECL_FLAG(os_xsave);  // XSAVE is enabled by the OS
 
     // --- XCR0 register bits -------------------------------------------------
-    _Py_CPUID_DECL_XCR0(xcr0_sse);
+    _Py_CPUID_DECL_FLAG(xcr0_sse);
     // On some Intel CPUs, it is possible for the CPU to support AVX2
     // instructions even though the underlying OS does not know about
     // AVX. In particular, only (SSE) XMM registers will be saved and
     // restored on context-switch, but not (AVX) YMM registers.
-    _Py_CPUID_DECL_XCR0(xcr0_avx);
-    _Py_CPUID_DECL_XCR0(xcr0_avx512_opmask);
-    _Py_CPUID_DECL_XCR0(xcr0_avx512_zmm_hi256);
-    _Py_CPUID_DECL_XCR0(xcr0_avx512_hi16_zmm);
-
+    _Py_CPUID_DECL_FLAG(xcr0_avx);
+    _Py_CPUID_DECL_FLAG(xcr0_avx512_opmask);
+    _Py_CPUID_DECL_FLAG(xcr0_avx512_zmm_hi256);
+    _Py_CPUID_DECL_FLAG(xcr0_avx512_hi16_zmm);
+#undef _Py_CPUID_DECL_FLAG
     // Whenever a field is added or removed above, update the
     // number of fields (40) and adjust the bitsize of 'ready'
     // so that the size of this structure is a multiple of 8.

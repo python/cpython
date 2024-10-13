@@ -515,6 +515,9 @@ int
 _Py_cpuid_has_features(const py_cpuid_features *actual,
                        const py_cpuid_features *expect)
 {
+    if (!actual->ready || !expect->ready) {
+        return 0;
+    }
 #define CPUID_CHECK_FEATURE(FLAG)               \
     do {                                        \
         if (expect->FLAG && !actual->FLAG) {    \
@@ -530,6 +533,9 @@ int
 _Py_cpuid_match_features(const py_cpuid_features *actual,
                          const py_cpuid_features *expect)
 {
+    if (!actual->ready || !expect->ready) {
+        return 0;
+    }
 #define CPUID_MATCH_FEATURE(FLAG)           \
     do {                                    \
         if (expect->FLAG != actual->FLAG) { \
