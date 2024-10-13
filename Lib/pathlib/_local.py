@@ -123,7 +123,7 @@ class PurePath(PurePathBase):
                     paths.extend(arg._raw_paths)
                 elif arg.parser is ntpath:
                     # GH-103631: Convert separators for backwards compatibility.
-                    paths.append(str(arg).replace('\\', '/'))
+                    paths.append(arg.as_posix())
                 else:
                     paths.append(str(arg))
             else:
