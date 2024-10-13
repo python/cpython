@@ -1808,8 +1808,9 @@ FileType objects
 Argument groups
 ^^^^^^^^^^^^^^^
 
-.. method:: ArgumentParser.add_argument_group(title=None, description=None, \
-                                              [argument_default], [conflict_handler])
+.. method:: ArgumentParser.add_argument_group(title, description, \
+                                              [*argument_default], \
+                                              [*conflict_handler])
 
    By default, :class:`ArgumentParser` groups command-line arguments into
    "positional arguments" and "options" when displaying help
