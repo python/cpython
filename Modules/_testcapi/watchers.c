@@ -630,7 +630,7 @@ static int num_context_object_enter_events[NUM_CONTEXT_WATCHERS] = {0, 0};
 static int num_context_object_exit_events[NUM_CONTEXT_WATCHERS] = {0, 0};
 
 static int
-handle_context_watcher_event(int which_watcher, PyContextEvent event, PyContext *ctx) {
+handle_context_watcher_event(int which_watcher, PyContextEvent event, PyObject *ctx) {
     if (event == Py_CONTEXT_EVENT_ENTER) {
         num_context_object_enter_events[which_watcher]++;
     }
@@ -644,22 +644,22 @@ handle_context_watcher_event(int which_watcher, PyContextEvent event, PyContext 
 }
 
 static int
-first_context_watcher_callback(PyContextEvent event, PyContext *ctx) {
+first_context_watcher_callback(PyContextEvent event, PyObject *ctx) {
     return handle_context_watcher_event(0, event, ctx);
 }
 
 static int
-second_context_watcher_callback(PyContextEvent event, PyContext *ctx) {
+second_context_watcher_callback(PyContextEvent event, PyObject *ctx) {
     return handle_context_watcher_event(1, event, ctx);
 }
 
 static int
-noop_context_event_handler(PyContextEvent event, PyContext *ctx) {
+noop_context_event_handler(PyContextEvent event, PyObject *ctx) {
     return 0;
 }
 
 static int
-error_context_event_handler(PyContextEvent event, PyContext *ctx) {
+error_context_event_handler(PyContextEvent event, PyObject *ctx) {
     PyErr_SetString(PyExc_RuntimeError, "boom!");
     return -1;
 }
