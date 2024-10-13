@@ -670,6 +670,7 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         eq(cls.from_number(3.14), 3.14+0j)
         eq(cls.from_number(3.14j), 3.14j)
         eq(cls.from_number(314), 314.0+0j)
+        eq(cls.from_number(-1), -1+0j)
         eq(cls.from_number(OtherComplexSubclass(3.14, 2.72)), 3.14+2.72j)
         eq(cls.from_number(WithComplex(3.14+2.72j)), 3.14+2.72j)
         eq(cls.from_number(WithFloat(3.14)), 3.14+0j)
