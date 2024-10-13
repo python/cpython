@@ -260,7 +260,6 @@ class EagerTaskFactoryLoopTests:
         self.run_coro(run())
 
 
-
 class PyEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase):
     Task = tasks._PyTask
 

@@ -1,0 +1,3 @@
+Skip the ``isatty`` system call during open() when the file is known to not
+be a character device. This provides a slight performance improvement when
+reading whole files.

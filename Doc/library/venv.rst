@@ -215,7 +215,7 @@ containing the virtual environment):
 |             +------------+--------------------------------------------------+
 |             | csh/tcsh   | :samp:`$ source {<venv>}/bin/activate.csh`       |
 |             +------------+--------------------------------------------------+
-|             | PowerShell | :samp:`$ {<venv>}/bin/Activate.ps1`              |
+|             | pwsh       | :samp:`$ {<venv>}/bin/Activate.ps1`              |
 +-------------+------------+--------------------------------------------------+
 | Windows     | cmd.exe    | :samp:`C:\\> {<venv>}\\Scripts\\activate.bat`    |
 |             +------------+--------------------------------------------------+
@@ -288,31 +288,31 @@ creation according to their needs, the :class:`EnvBuilder` class.
     The :class:`EnvBuilder` class accepts the following keyword arguments on
     instantiation:
 
-    * ``system_site_packages`` -- a Boolean value indicating that the system Python
+    * *system_site_packages* -- a boolean value indicating that the system Python
       site-packages should be available to the environment (defaults to ``False``).
 
-    * ``clear`` -- a Boolean value which, if true, will delete the contents of
+    * *clear* -- a boolean value which, if true, will delete the contents of
       any existing target directory, before creating the environment.
 
-    * ``symlinks`` -- a Boolean value indicating whether to attempt to symlink the
+    * *symlinks* -- a boolean value indicating whether to attempt to symlink the
       Python binary rather than copying.
 
-    * ``upgrade`` -- a Boolean value which, if true, will upgrade an existing
+    * *upgrade* -- a boolean value which, if true, will upgrade an existing
       environment with the running Python - for use when that Python has been
       upgraded in-place (defaults to ``False``).
 
-    * ``with_pip`` -- a Boolean value which, if true, ensures pip is
+    * *with_pip* -- a boolean value which, if true, ensures pip is
       installed in the virtual environment. This uses :mod:`ensurepip` with
       the ``--default-pip`` option.
 
-    * ``prompt`` -- a String to be used after virtual environment is activated
+    * *prompt* -- a string to be used after virtual environment is activated
       (defaults to ``None`` which means directory name of the environment would
       be used). If the special string ``"."`` is provided, the basename of the
       current directory is used as the prompt.
 
-    * ``upgrade_deps`` -- Update the base venv modules to the latest on PyPI
+    * *upgrade_deps* -- Update the base venv modules to the latest on PyPI
 
-    * ``scm_ignore_files`` -- Create ignore files based for the specified source
+    * *scm_ignore_files* -- Create ignore files based for the specified source
       control managers (SCM) in the iterable. Support is defined by having a
       method named ``create_{scm}_ignore_file``. The only value supported by
       default is ``"git"`` via :meth:`create_git_ignore_file`.
@@ -330,10 +330,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
     .. versionchanged:: 3.13
        Added the ``scm_ignore_files`` parameter
 
-    Creators of third-party virtual environment tools will be free to use the
-    provided :class:`EnvBuilder` class as a base class.
-
-    The returned env-builder is an object which has a method, ``create``:
+    :class:`EnvBuilder` may be used as a base class.
 
     .. method:: create(env_dir)
 
@@ -433,14 +430,14 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     .. method:: upgrade_dependencies(context)
 
-       Upgrades the core venv dependency packages (currently ``pip``)
+       Upgrades the core venv dependency packages (currently :pypi:`pip`)
        in the environment. This is done by shelling out to the
        ``pip`` executable in the environment.
 
        .. versionadded:: 3.9
        .. versionchanged:: 3.12
 
-          ``setuptools`` is no longer a core venv dependency.
+          :pypi:`setuptools` is no longer a core venv dependency.
 
     .. method:: post_setup(context)
 
@@ -448,21 +445,11 @@ creation according to their needs, the :class:`EnvBuilder` class.
         implementations to pre-install packages in the virtual environment or
         perform other post-creation steps.
 
-    .. versionchanged:: 3.7.2
-       Windows now uses redirector scripts for ``python[w].exe`` instead of
-       copying the actual binaries. In 3.7.2 only :meth:`setup_python` does
-       nothing unless running from a build in the source tree.
-
-    .. versionchanged:: 3.7.3
-       Windows copies the redirector scripts as part of :meth:`setup_python`
-       instead of :meth:`setup_scripts`. This was not the case in 3.7.2.
-       When using symlinks, the original executables will be linked.
-
-    In addition, :class:`EnvBuilder` provides this utility method that can be
-    called from :meth:`setup_scripts` or :meth:`post_setup` in subclasses to
-    assist in installing custom scripts into the virtual environment.
-
     .. method:: install_scripts(context, path)
+
+        This method can be
+        called from :meth:`setup_scripts` or :meth:`post_setup` in subclasses to
+        assist in installing custom scripts into the virtual environment.
 
         *path* is the path to a directory that should contain subdirectories
         ``common``, ``posix``, ``nt``; each containing scripts destined for the
@@ -494,6 +481,16 @@ creation according to their needs, the :class:`EnvBuilder` class.
        the entire directory to be ignored by the Git source control manager.
 
        .. versionadded:: 3.13
+
+    .. versionchanged:: 3.7.2
+       Windows now uses redirector scripts for ``python[w].exe`` instead of
+       copying the actual binaries. In 3.7.2 only :meth:`setup_python` does
+       nothing unless running from a build in the source tree.
+
+    .. versionchanged:: 3.7.3
+       Windows copies the redirector scripts as part of :meth:`setup_python`
+       instead of :meth:`setup_scripts`. This was not the case in 3.7.2.
+       When using symlinks, the original executables will be linked.
 
 There is also a module-level convenience function:
 

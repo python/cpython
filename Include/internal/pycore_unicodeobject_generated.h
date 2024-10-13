@@ -784,6 +784,10 @@ _PyUnicode_InitStaticStrings(PyInterpreterState *interp) {
     _PyUnicode_InternStatic(interp, &string);
     assert(_PyUnicode_CheckConsistency(string, 1));
     assert(PyUnicode_GET_LENGTH(string) != 1);
+    string = &_Py_ID(_isatty_open_only);
+    _PyUnicode_InternStatic(interp, &string);
+    assert(_PyUnicode_CheckConsistency(string, 1));
+    assert(PyUnicode_GET_LENGTH(string) != 1);
     string = &_Py_ID(_length_);
     _PyUnicode_InternStatic(interp, &string);
     assert(_PyUnicode_CheckConsistency(string, 1));
@@ -2929,6 +2933,10 @@ _PyUnicode_InitStaticStrings(PyInterpreterState *interp) {
     assert(_PyUnicode_CheckConsistency(string, 1));
     assert(PyUnicode_GET_LENGTH(string) != 1);
     string = &_Py_STR(type_params);
+    _PyUnicode_InternStatic(interp, &string);
+    assert(_PyUnicode_CheckConsistency(string, 1));
+    assert(PyUnicode_GET_LENGTH(string) != 1);
+    string = &_Py_STR(str_replace_inf);
     _PyUnicode_InternStatic(interp, &string);
     assert(_PyUnicode_CheckConsistency(string, 1));
     assert(PyUnicode_GET_LENGTH(string) != 1);

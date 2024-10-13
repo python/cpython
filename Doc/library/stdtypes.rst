@@ -4505,14 +4505,14 @@ can be used interchangeably to index the same dictionary entry.
      ``dict([('foo', 100), ('bar', 200)])``, ``dict(foo=100, bar=200)``
 
    If no positional argument is given, an empty dictionary is created.
-   If a positional argument is given and it is a mapping object, a dictionary
-   is created with the same key-value pairs as the mapping object.  Otherwise,
-   the positional argument must be an :term:`iterable` object.  Each item in
-   the iterable must itself be an iterable with exactly two objects.  The
-   first object of each item becomes a key in the new dictionary, and the
-   second object the corresponding value.  If a key occurs more than once, the
-   last value for that key becomes the corresponding value in the new
-   dictionary.
+   If a positional argument is given and it defines a ``keys()`` method, a
+   dictionary is created by calling :meth:`~object.__getitem__` on the argument with
+   each returned key from the method.  Otherwise, the positional argument must be an
+   :term:`iterable` object.  Each item in the iterable must itself be an iterable
+   with exactly two elements.  The first element of each item becomes a key in the
+   new dictionary, and the second element the corresponding value.  If a key occurs
+   more than once, the last value for that key becomes the corresponding value in
+   the new dictionary.
 
    If keyword arguments are given, the keyword arguments and their values are
    added to the dictionary created from the positional argument.  If a key
@@ -4669,10 +4669,11 @@ can be used interchangeably to index the same dictionary entry.
       Update the dictionary with the key/value pairs from *other*, overwriting
       existing keys.  Return ``None``.
 
-      :meth:`update` accepts either another dictionary object or an iterable of
-      key/value pairs (as tuples or other iterables of length two).  If keyword
-      arguments are specified, the dictionary is then updated with those
-      key/value pairs: ``d.update(red=1, blue=2)``.
+      :meth:`update` accepts either another object with a ``keys()`` method (in
+      which case :meth:`~object.__getitem__` is called with every key returned from
+      the method). or an iterable of key/value pairs (as tuples or other iterables
+      of length two). If keyword arguments are specified, the dictionary is then
+      updated with those key/value pairs: ``d.update(red=1, blue=2)``.
 
    .. method:: values()
 

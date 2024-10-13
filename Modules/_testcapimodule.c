@@ -1909,25 +1909,6 @@ getitem_with_error(PyObject *self, PyObject *args)
     return PyObject_GetItem(map, key);
 }
 
-static PyObject *
-dict_get_version(PyObject *self, PyObject *args)
-{
-    PyDictObject *dict;
-    uint64_t version;
-
-    if (!PyArg_ParseTuple(args, "O!", &PyDict_Type, &dict))
-        return NULL;
-
-    _Py_COMP_DIAG_PUSH
-    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    version = dict->ma_version_tag;
-    _Py_COMP_DIAG_POP
-
-    static_assert(sizeof(unsigned long long) >= sizeof(version),
-                  "version is larger than unsigned long long");
-    return PyLong_FromUnsignedLongLong((unsigned long long)version);
-}
-
 
 static PyObject *
 raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
@@ -3329,6 +3310,35 @@ test_critical_sections(PyObject *module, PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+// Used by `finalize_thread_hang`.
+#ifdef _POSIX_THREADS
+static void finalize_thread_hang_cleanup_callback(void *Py_UNUSED(arg)) {
+    // Should not reach here.
+    Py_FatalError("pthread thread termination was triggered unexpectedly");
+}
+#endif
+
+// Tests that finalization does not trigger pthread cleanup.
+//
+// Must be called with a single nullary callable function that should block
+// (with GIL released) until finalization is in progress.
+static PyObject *
+finalize_thread_hang(PyObject *self, PyObject *callback)
+{
+    // WASI builds some pthread stuff but doesn't have these APIs today?
+#if defined(_POSIX_THREADS) && !defined(__wasi__)
+    pthread_cleanup_push(finalize_thread_hang_cleanup_callback, NULL);
+#endif
+    PyObject_CallNoArgs(callback);
+    // Should not reach here.
+    Py_FatalError("thread unexpectedly did not hang");
+#if defined(_POSIX_THREADS) && !defined(__wasi__)
+    pthread_cleanup_pop(0);
+#endif
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3407,7 +3417,6 @@ static PyMethodDef TestMethods[] = {
     {"return_result_with_error", return_result_with_error, METH_NOARGS},
     {"getitem_with_error", getitem_with_error, METH_VARARGS},
     {"Py_CompileString",     pycompilestring, METH_O},
-    {"dict_get_version", dict_get_version, METH_VARARGS},
     {"raise_SIGINT_then_send_None", raise_SIGINT_then_send_None, METH_VARARGS},
     {"stack_pointer", stack_pointer, METH_NOARGS},
 #ifdef W_STOPCODE
@@ -3469,6 +3478,7 @@ static PyMethodDef TestMethods[] = {
     {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
     {"function_set_warning", function_set_warning, METH_NOARGS},
     {"test_critical_sections", test_critical_sections, METH_NOARGS},
+    {"finalize_thread_hang", finalize_thread_hang, METH_O, NULL},
     {NULL, NULL} /* sentinel */
 };
 

@@ -39,12 +39,12 @@ Custom_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     CustomObject *self;
     self = (CustomObject *) type->tp_alloc(type, 0);
     if (self != NULL) {
-        self->first = PyUnicode_FromString("");
+        self->first = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
         if (self->first == NULL) {
             Py_DECREF(self);
             return NULL;
         }
-        self->last = PyUnicode_FromString("");
+        self->last = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
         if (self->last == NULL) {
             Py_DECREF(self);
             return NULL;
