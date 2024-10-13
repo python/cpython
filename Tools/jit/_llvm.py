@@ -32,7 +32,7 @@ def _async_cache(f: _C[_P, _R]) -> _C[_P, _R]:
     return wrapper
 
 
-_CORES = asyncio.BoundedSemaphore(os.cpu_count() or 1)
+_CORES = asyncio.BoundedSemaphore(1)
 
 
 async def _run(tool: str, args: typing.Iterable[str], echo: bool = False) -> str | None:
@@ -78,6 +78,7 @@ async def _find_tool(tool: str, *, echo: bool = False) -> str | None:
     prefix = await _get_brew_llvm_prefix(echo=echo)
     if prefix is not None:
         path = os.path.join(prefix, "bin", tool)
+        print(path)
         if await _check_tool_version(path, echo=echo):
             return path
     # Nothing found:
