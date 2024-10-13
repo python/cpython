@@ -461,8 +461,8 @@ Defining Functions
 We can create a function that writes the Fibonacci series to an arbitrary
 boundary::
 
-   >>> def fib(n):    # write Fibonacci series up to n
-   ...     """Print a Fibonacci series up to n."""
+   >>> def fib(n):    # write Fibonacci series less than n
+   ...     """Print a Fibonacci series less than n."""
    ...     a, b = 0, 1
    ...     while a < n:
    ...         print(a, end=' ')
