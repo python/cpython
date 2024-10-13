@@ -823,14 +823,10 @@ zoneinfo_ZoneInfo__unpickle_impl(PyTypeObject *type, PyTypeObject *cls,
 /*[clinic end generated code: output=556712fc709deecb input=6ac8c73eed3de316]*/
 {
     if (from_cache) {
-        PyObject *val_args = PyTuple_Pack(1, key);
-        if (val_args == NULL) {
-            return NULL;
-        }
-
-        PyObject *rv = zoneinfo_ZoneInfo(type, val_args, NULL);
-
-        Py_DECREF(val_args);
+        PyObject *rv;
+        Py_BEGIN_CRITICAL_SECTION(type);
+        rv = zoneinfo_ZoneInfo_impl(type, key);
+        Py_END_CRITICAL_SECTION();
         return rv;
     }
     else {
