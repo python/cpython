@@ -3,6 +3,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_critical_section.h"  // _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED()
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 
@@ -298,15 +299,20 @@ get_weak_cache(zoneinfo_state *state, PyTypeObject *type)
     }
 }
 
-static PyObject *
-zoneinfo_new(PyTypeObject *type, PyObject *args, PyObject *kw)
-{
-    PyObject *key = NULL;
-    static char *kwlist[] = {"key", NULL};
-    if (PyArg_ParseTupleAndKeywords(args, kw, "O", kwlist, &key) == 0) {
-        return NULL;
-    }
+/*[clinic input]
+@critical_section
+@classmethod
+zoneinfo.ZoneInfo.__new__
 
+    key: object
+
+Create a new ZoneInfo instance.
+[clinic start generated code]*/
+
+static PyObject *
+zoneinfo_ZoneInfo_impl(PyTypeObject *type, PyObject *key)
+/*[clinic end generated code: output=95e61dab86bb95c3 input=ef73d7a83bf8790e]*/
+{
     zoneinfo_state *state = zoneinfo_get_state_by_self(type);
     PyObject *instance = zone_from_strong_cache(state, type, key);
     if (instance != NULL || PyErr_Occurred()) {
@@ -467,6 +473,7 @@ zoneinfo_ZoneInfo_no_cache_impl(PyTypeObject *type, PyTypeObject *cls,
 }
 
 /*[clinic input]
+@critical_section
 @classmethod
 zoneinfo.ZoneInfo.clear_cache
 
@@ -481,7 +488,7 @@ Clear the ZoneInfo cache.
 static PyObject *
 zoneinfo_ZoneInfo_clear_cache_impl(PyTypeObject *type, PyTypeObject *cls,
                                    PyObject *only_keys)
-/*[clinic end generated code: output=114d9b7c8a22e660 input=e32ca3bb396788ba]*/
+/*[clinic end generated code: output=114d9b7c8a22e660 input=35944715df26d24e]*/
 {
     zoneinfo_state *state = zoneinfo_get_state_by_cls(cls);
     PyObject *weak_cache = get_weak_cache(state, type);
@@ -816,14 +823,10 @@ zoneinfo_ZoneInfo__unpickle_impl(PyTypeObject *type, PyTypeObject *cls,
 /*[clinic end generated code: output=556712fc709deecb input=6ac8c73eed3de316]*/
 {
     if (from_cache) {
-        PyObject *val_args = PyTuple_Pack(1, key);
-        if (val_args == NULL) {
-            return NULL;
-        }
-
-        PyObject *rv = zoneinfo_new(type, val_args, NULL);
-
-        Py_DECREF(val_args);
+        PyObject *rv;
+        Py_BEGIN_CRITICAL_SECTION(type);
+        rv = zoneinfo_ZoneInfo_impl(type, key);
+        Py_END_CRITICAL_SECTION();
         return rv;
     }
     else {
@@ -858,8 +861,7 @@ load_timedelta(zoneinfo_state *state, long seconds)
             0, seconds, 0, 1, PyDateTimeAPI->DeltaType);
 
         if (tmp != NULL) {
-            rv = PyDict_SetDefault(state->TIMEDELTA_CACHE, pyoffset, tmp);
-            Py_XINCREF(rv);
+            PyDict_SetDefaultRef(state->TIMEDELTA_CACHE, pyoffset, tmp, &rv);
             Py_DECREF(tmp);
         }
     }
@@ -2368,6 +2370,7 @@ strong_cache_free(StrongCacheNode *root)
 static void
 remove_from_strong_cache(zoneinfo_state *state, StrongCacheNode *node)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(state->ZoneInfoType);
     if (state->ZONEINFO_STRONG_CACHE == node) {
         state->ZONEINFO_STRONG_CACHE = node->next;
     }
@@ -2422,6 +2425,7 @@ eject_from_strong_cache(zoneinfo_state *state, const PyTypeObject *const type,
         return 0;
     }
 
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(state->ZoneInfoType);
     StrongCacheNode *cache = state->ZONEINFO_STRONG_CACHE;
     StrongCacheNode *node = find_in_strong_cache(cache, key);
     if (node != NULL) {
@@ -2478,6 +2482,7 @@ zone_from_strong_cache(zoneinfo_state *state, const PyTypeObject *const type,
         return NULL;  // Strong cache currently only implemented for base class
     }
 
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(state->ZoneInfoType);
     StrongCacheNode *cache = state->ZONEINFO_STRONG_CACHE;
     StrongCacheNode *node = find_in_strong_cache(cache, key);
 
@@ -2504,6 +2509,7 @@ update_strong_cache(zoneinfo_state *state, const PyTypeObject *const type,
         return;
     }
 
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(state->ZoneInfoType);
     StrongCacheNode *new_node = strong_cache_node_new(key, zone);
     if (new_node == NULL) {
         return;
@@ -2631,7 +2637,7 @@ static PyType_Slot zoneinfo_slots[] = {
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_methods, zoneinfo_methods},
     {Py_tp_members, zoneinfo_members},
-    {Py_tp_new, zoneinfo_new},
+    {Py_tp_new, zoneinfo_ZoneInfo},
     {Py_tp_dealloc, zoneinfo_dealloc},
     {Py_tp_traverse, zoneinfo_traverse},
     {Py_tp_clear, zoneinfo_clear},
