@@ -882,7 +882,7 @@ process them accordingly::
    parser.add_argument('+a', metavar='<value>', action='append',
                        type=lambda x: ('+', x))
 
-   args = parser.parse_args('-a value1 +a value2'.split())
+   args = parser.parse_args()
    print(args)
 
 Output:
