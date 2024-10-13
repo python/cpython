@@ -32,8 +32,7 @@ def _async_cache(f: _C[_P, _R]) -> _C[_P, _R]:
     return wrapper
 
 
-_CORES = asyncio.BoundedSemaphore(1)
-
+_CORES = asyncio.BoundedSemaphore(os.cpu_count() or 1)
 
 async def _run(tool: str, args: typing.Iterable[str], echo: bool = False) -> str | None:
     command = [tool, *args]
