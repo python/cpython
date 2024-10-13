@@ -283,17 +283,37 @@ Class attributes:
 Note that, because of normalization, ``timedelta.max`` is greater than ``-timedelta.min``.
 ``-timedelta.max`` is not representable as a :class:`timedelta` object.
 
+
 Instance attributes (read-only):
 
-+------------------+--------------------------------------------+
-| Attribute        | Value                                      |
-+==================+============================================+
-| ``days``         | Between -999999999 and 999999999 inclusive |
-+------------------+--------------------------------------------+
-| ``seconds``      | Between 0 and 86399 inclusive              |
-+------------------+--------------------------------------------+
-| ``microseconds`` | Between 0 and 999999 inclusive             |
-+------------------+--------------------------------------------+
+.. attribute:: timedelta.days
+
+   Between -999,999,999 and 999,999,999 inclusive.
+
+
+.. attribute:: timedelta.seconds
+
+   Between 0 and 86,399 inclusive.
+
+   .. caution::
+
+      It is a somewhat common bug for code to unintentionally use this attribute
+      when it is actually intended to get a :meth:`~timedelta.total_seconds`
+      value instead:
+
+      .. doctest::
+
+         >>> from datetime import timedelta
+         >>> duration = timedelta(seconds=11235813)
+         >>> duration.days, duration.seconds
+         (130, 3813)
+         >>> duration.total_seconds()
+         11235813.0
+
+.. attribute:: timedelta.microseconds
+
+   Between 0 and 999,999 inclusive.
+
 
 Supported operations:
 
@@ -345,7 +365,7 @@ Supported operations:
 |                                | same value. (2)                               |
 +--------------------------------+-----------------------------------------------+
 | ``-t1``                        | Equivalent to ``timedelta(-t1.days,           |
-|                                | -t1.seconds*, -t1.microseconds)``,            |
+|                                | -t1.seconds, -t1.microseconds)``,             |
 |                                | and to ``t1 * -1``. (1)(4)                    |
 +--------------------------------+-----------------------------------------------+
 | ``abs(t)``                     | Equivalent to ``+t`` when ``t.days >= 0``,    |
@@ -541,6 +561,39 @@ Other constructors, all class methods:
    year, week and day. This is the inverse of the function :meth:`date.isocalendar`.
 
    .. versionadded:: 3.8
+
+.. classmethod:: date.strptime(date_string, format)
+
+   Return a :class:`.date` corresponding to *date_string*, parsed according to
+   *format*. This is equivalent to::
+
+     date(*(time.strptime(date_string, format)[0:3]))
+
+   :exc:`ValueError` is raised if the date_string and format
+   can't be parsed by :func:`time.strptime` or if it returns a value which isn't a
+   time tuple.  See also :ref:`strftime-strptime-behavior` and
+   :meth:`date.fromisoformat`.
+
+   .. note::
+
+      If *format* specifies a day of month without a year a
+      :exc:`DeprecationWarning` is emitted.  This is to avoid a quadrennial
+      leap year bug in code seeking to parse only a month and day as the
+      default year used in absence of one in the format is not a leap year.
+      Such *format* values may raise an error as of Python 3.15.  The
+      workaround is to always include a year in your *format*.  If parsing
+      *date_string* values that do not have a year, explicitly add a year that
+      is a leap year before parsing:
+
+      .. doctest::
+
+         >>> from datetime import date
+         >>> date_string = "02/29"
+         >>> when = date.strptime(f"{date_string};1984", "%m/%d;%Y")  # Avoids leap year bug.
+         >>> when.strftime("%B %d")  # doctest: +SKIP
+         'February 29'
+
+   .. versionadded:: 3.14
 
 
 Class attributes:
@@ -895,6 +948,10 @@ Other constructors, all class methods:
 
    This function is preferred over :meth:`today` and :meth:`utcnow`.
 
+   .. note::
+
+      Subsequent calls to :meth:`!datetime.now` may return the same
+      instant depending on the precision of the underlying clock.
 
 .. classmethod:: datetime.utcnow()
 
@@ -1053,7 +1110,7 @@ Other constructors, all class methods:
    .. versionadded:: 3.7
    .. versionchanged:: 3.11
       Previously, this method only supported formats that could be emitted by
-      :meth:`date.isoformat()` or :meth:`datetime.isoformat()`.
+      :meth:`date.isoformat` or :meth:`datetime.isoformat`.
 
 
 .. classmethod:: datetime.fromisocalendar(year, week, day)
@@ -1821,7 +1878,7 @@ In Boolean contexts, a :class:`.time` object is always considered to be true.
    details.
 
 
-Other constructor:
+Other constructors:
 
 .. classmethod:: time.fromisoformat(time_string)
 
@@ -1861,7 +1918,23 @@ Other constructor:
    .. versionadded:: 3.7
    .. versionchanged:: 3.11
       Previously, this method only supported formats that could be emitted by
-      :meth:`time.isoformat()`.
+      :meth:`time.isoformat`.
+
+.. classmethod:: time.strptime(date_string, format)
+
+   Return a :class:`.time` corresponding to *date_string*, parsed according to
+   *format*.
+
+   If *format* does not contain microseconds or timezone information, this is equivalent to::
+
+     time(*(time.strptime(date_string, format)[3:6]))
+
+   :exc:`ValueError` is raised if the *date_string* and *format*
+   cannot be parsed by :func:`time.strptime` or if it returns a value which is not a
+   time tuple.  See also :ref:`strftime-strptime-behavior` and
+   :meth:`time.fromisoformat`.
+
+   .. versionadded:: 3.14
 
 
 Instance methods:
@@ -2361,24 +2434,22 @@ Class attributes:
 ``strftime(format)`` method, to create a string representing the time under the
 control of an explicit format string.
 
-Conversely, the :meth:`datetime.strptime` class method creates a
-:class:`.datetime` object from a string representing a date and time and a
-corresponding format string.
+Conversely, the :meth:`date.strptime`, :meth:`datetime.strptime` and
+:meth:`time.strptime` class methods create an object from a string
+representing the time and a corresponding format string.
 
 The table below provides a high-level comparison of :meth:`~.datetime.strftime`
 versus :meth:`~.datetime.strptime`:
 
-+----------------+--------------------------------------------------------+------------------------------------------------------------------------------+
-|                | ``strftime``                                           | ``strptime``                                                                 |
-+================+========================================================+==============================================================================+
-| Usage          | Convert object to a string according to a given format | Parse a string into a :class:`.datetime` object given a corresponding format |
-+----------------+--------------------------------------------------------+------------------------------------------------------------------------------+
-| Type of method | Instance method                                        | Class method                                                                 |
-+----------------+--------------------------------------------------------+------------------------------------------------------------------------------+
-| Method of      | :class:`date`; :class:`.datetime`; :class:`.time`      | :class:`.datetime`                                                           |
-+----------------+--------------------------------------------------------+------------------------------------------------------------------------------+
-| Signature      | ``strftime(format)``                                   | ``strptime(date_string, format)``                                            |
-+----------------+--------------------------------------------------------+------------------------------------------------------------------------------+
++----------------+--------------------------------------------------------+------------------------------------------------------------+
+|                | ``strftime``                                           | ``strptime``                                               |
++================+========================================================+============================================================+
+| Usage          | Convert object to a string according to a given format | Parse a string into an object given a corresponding format |
++----------------+--------------------------------------------------------+------------------------------------------------------------+
+| Type of method | Instance method                                        | Class method                                               |
++----------------+--------------------------------------------------------+------------------------------------------------------------+
+| Signature      | ``strftime(format)``                                   | ``strptime(date_string, format)``                          |
++----------------+--------------------------------------------------------+------------------------------------------------------------+
 
 
    .. _format-codes:

@@ -52,7 +52,7 @@ should probably be refined in the future.)
 
 Extensions are not required to define menu entries for all the events they
 implement.  (They are also not required to create keybindings, but in that
-case there must be empty bindings in cofig-extensions.def)
+case there must be empty bindings in config-extensions.def)
 
 Here is a partial example from zzdummy.py:
 

@@ -200,12 +200,10 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 void
 _PyList_DebugMallocStats(FILE *out)
 {
-#ifdef WITH_FREELISTS
     _PyDebugAllocatorStats(out,
                            "free PyListObject",
                             _Py_FREELIST_SIZE(lists),
                            sizeof(PyListObject));
-#endif
 }
 
 PyObject *
@@ -524,49 +522,48 @@ list_dealloc(PyObject *self)
 static PyObject *
 list_repr_impl(PyListObject *v)
 {
-    PyObject *s;
-    _PyUnicodeWriter writer;
-    Py_ssize_t i = Py_ReprEnter((PyObject*)v);
-    if (i != 0) {
-        return i > 0 ? PyUnicode_FromString("[...]") : NULL;
+    int res = Py_ReprEnter((PyObject*)v);
+    if (res != 0) {
+        return (res > 0 ? PyUnicode_FromString("[...]") : NULL);
     }
 
-    _PyUnicodeWriter_Init(&writer);
-    writer.overallocate = 1;
     /* "[" + "1" + ", 2" * (len - 1) + "]" */
-    writer.min_length = 1 + 1 + (2 + 1) * (Py_SIZE(v) - 1) + 1;
-
-    if (_PyUnicodeWriter_WriteChar(&writer, '[') < 0)
+    Py_ssize_t prealloc = 1 + 1 + (2 + 1) * (Py_SIZE(v) - 1) + 1;
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(prealloc);
+    if (writer == NULL) {
         goto error;
+    }
+
+    if (PyUnicodeWriter_WriteChar(writer, '[') < 0) {
+        goto error;
+    }
 
     /* Do repr() on each element.  Note that this may mutate the list,
        so must refetch the list size on each iteration. */
-    for (i = 0; i < Py_SIZE(v); ++i) {
+    for (Py_ssize_t i = 0; i < Py_SIZE(v); ++i) {
         if (i > 0) {
-            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0)
+            if (PyUnicodeWriter_WriteChar(writer, ',') < 0) {
                 goto error;
+            }
+            if (PyUnicodeWriter_WriteChar(writer, ' ') < 0) {
+                goto error;
+            }
         }
 
-        s = PyObject_Repr(v->ob_item[i]);
-        if (s == NULL)
-            goto error;
-
-        if (_PyUnicodeWriter_WriteStr(&writer, s) < 0) {
-            Py_DECREF(s);
+        if (PyUnicodeWriter_WriteRepr(writer, v->ob_item[i]) < 0) {
             goto error;
         }
-        Py_DECREF(s);
     }
 
-    writer.overallocate = 0;
-    if (_PyUnicodeWriter_WriteChar(&writer, ']') < 0)
+    if (PyUnicodeWriter_WriteChar(writer, ']') < 0) {
         goto error;
+    }
 
     Py_ReprLeave((PyObject *)v);
-    return _PyUnicodeWriter_Finish(&writer);
+    return PyUnicodeWriter_Finish(writer);
 
 error:
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     Py_ReprLeave((PyObject *)v);
     return NULL;
 }
@@ -3142,7 +3139,7 @@ PyList_AsTuple(PyObject *v)
 }
 
 PyObject *
-_PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n)
+_PyList_FromStackRefSteal(const _PyStackRef *src, Py_ssize_t n)
 {
     if (n == 0) {
         return PyList_New(0);
@@ -3151,13 +3148,15 @@ _PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n)
     PyListObject *list = (PyListObject *)PyList_New(n);
     if (list == NULL) {
         for (Py_ssize_t i = 0; i < n; i++) {
-            Py_DECREF(src[i]);
+            PyStackRef_CLOSE(src[i]);
         }
         return NULL;
     }
 
     PyObject **dst = list->ob_item;
-    memcpy(dst, src, n * sizeof(PyObject *));
+    for (Py_ssize_t i = 0; i < n; i++) {
+        dst[i] = PyStackRef_AsPyObjectSteal(src[i]);
+    }
 
     return (PyObject *)list;
 }

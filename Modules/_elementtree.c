@@ -196,7 +196,7 @@ list_join(PyObject* list)
     PyObject* joiner;
     PyObject* result;
 
-    joiner = PyUnicode_FromStringAndSize("", 0);
+    joiner = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     if (!joiner)
         return NULL;
     result = PyUnicode_Join(joiner, list);
@@ -1213,12 +1213,8 @@ _elementtree_Element_extend_impl(ElementObject *self, PyTypeObject *cls,
     PyObject* seq;
     Py_ssize_t i;
 
-    seq = PySequence_Fast(elements, "");
+    seq = PySequence_Fast(elements, "'elements' must be an iterable");
     if (!seq) {
-        PyErr_Format(
-            PyExc_TypeError,
-            "expected sequence, not \"%.200s\"", Py_TYPE(elements)->tp_name
-            );
         return NULL;
     }
 
@@ -1321,7 +1317,7 @@ _elementtree_Element_findtext_impl(ElementObject *self, PyTypeObject *cls,
             PyObject* text = element_get_text((ElementObject*)item);
             if (text == Py_None) {
                 Py_DECREF(item);
-                return PyUnicode_New(0, 0);
+                return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
             }
             Py_XINCREF(text);
             Py_DECREF(item);
@@ -1918,12 +1914,8 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
         }
 
         /* A new slice is actually being assigned */
-        seq = PySequence_Fast(value, "");
+        seq = PySequence_Fast(value, "assignment expects an iterable");
         if (!seq) {
-            PyErr_Format(
-                PyExc_TypeError,
-                "expected sequence, not \"%.200s\"", Py_TYPE(value)->tp_name
-                );
             return -1;
         }
         newlen = PySequence_Fast_GET_SIZE(seq);

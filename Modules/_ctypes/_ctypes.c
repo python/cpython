@@ -320,7 +320,7 @@ _ctypes_alloc_format_string_for_type(char code, int big_endian)
   indicator set.  If called with a suffix of NULL the error indicator must
   already be set.
  */
-char *
+static char *
 _ctypes_alloc_format_string(const char *prefix, const char *suffix)
 {
     size_t len;
@@ -352,7 +352,7 @@ _ctypes_alloc_format_string(const char *prefix, const char *suffix)
   Returns NULL on failure, with the error indicator set.  If called with
   a suffix of NULL the error indicator must already be set.
  */
-char *
+static char *
 _ctypes_alloc_format_string_with_shape(int ndim, const Py_ssize_t *shape,
                                        const char *prefix, const char *suffix)
 {
@@ -500,7 +500,7 @@ CType_Type_dealloc(PyObject *self)
 {
     StgInfo *info = _PyStgInfo_FromType_NoState(self);
     if (!info) {
-        PyErr_WriteUnraisable(self);
+        PyErr_WriteUnraisable(NULL);  // NULL avoids segfault here
     }
     if (info) {
         PyMem_Free(info->ffi_type_pointer.elements);
@@ -560,6 +560,7 @@ static PyMethodDef ctype_methods[] = {
 };
 
 static PyType_Slot ctype_type_slots[] = {
+    {Py_tp_token, Py_TP_USE_SPEC},
     {Py_tp_traverse, CType_Type_traverse},
     {Py_tp_clear, CType_Type_clear},
     {Py_tp_dealloc, CType_Type_dealloc},
@@ -569,7 +570,7 @@ static PyType_Slot ctype_type_slots[] = {
     {0, NULL},
 };
 
-static PyType_Spec pyctype_type_spec = {
+PyType_Spec pyctype_type_spec = {
     .name = "_ctypes.CType_Type",
     .basicsize = -(Py_ssize_t)sizeof(StgInfo),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
@@ -663,9 +664,6 @@ StructUnionType_init(PyObject *self, PyObject *args, PyObject *kwds, int isStruc
     if (!info) {
         Py_DECREF(attrdict);
         return -1;
-    }
-    if (!isStruct) {
-        info->flags |= TYPEFLAG_HASUNION;
     }
 
     info->format = _ctypes_alloc_format_string(NULL, "B");
@@ -1069,32 +1067,31 @@ CType_Type_repeat(PyObject *self, Py_ssize_t length)
     return PyCArrayType_from_ctype(st, self, length);
 }
 
+static int
+_structunion_setattro(PyObject *self, PyObject *key, PyObject *value, int is_struct)
+{
+    /* XXX Should we disallow deleting _fields_? */
+    if (PyUnicode_Check(key)
+            && _PyUnicode_EqualToASCIIString(key, "_fields_"))
+    {
+        if (PyCStructUnionType_update_stginfo(self, value, is_struct) < 0) {
+            return -1;
+        }
+    }
+
+    return PyType_Type.tp_setattro(self, key, value);
+}
 
 static int
 PyCStructType_setattro(PyObject *self, PyObject *key, PyObject *value)
 {
-    /* XXX Should we disallow deleting _fields_? */
-    if (-1 == PyType_Type.tp_setattro(self, key, value))
-        return -1;
-
-    if (value && PyUnicode_Check(key) &&
-        _PyUnicode_EqualToASCIIString(key, "_fields_"))
-        return PyCStructUnionType_update_stginfo(self, value, 1);
-    return 0;
+    return _structunion_setattro(self, key, value, 1);
 }
-
 
 static int
 UnionType_setattro(PyObject *self, PyObject *key, PyObject *value)
 {
-    /* XXX Should we disallow deleting _fields_? */
-    if (-1 == PyType_Type.tp_setattro(self, key, value))
-        return -1;
-
-    if (PyUnicode_Check(key) &&
-        _PyUnicode_EqualToASCIIString(key, "_fields_"))
-        return PyCStructUnionType_update_stginfo(self, value, 0);
-    return 0;
+    return _structunion_setattro(self, key, value, 0);
 }
 
 static PyType_Slot pycstruct_type_slots[] = {
@@ -2534,6 +2531,10 @@ converters_from_argtypes(ctypes_state *st, PyObject *ob)
             return -1;
         }
 
+        // TYPEFLAG_HASUNION and TYPEFLAG_HASBITFIELD used to be set
+        // if there were any unions/bitfields;
+        // if the check is re-enabled we either need to loop here or
+        // restore the flag
         if (stginfo != NULL) {
             if (stginfo->flags & TYPEFLAG_HASUNION) {
                 Py_DECREF(converters);
@@ -4731,7 +4732,7 @@ Array_subscript(PyObject *myself, PyObject *item)
             char *dest;
 
             if (slicelen <= 0)
-                return PyBytes_FromStringAndSize("", 0);
+                return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
             if (step == 1) {
                 return PyBytes_FromStringAndSize(ptr + start,
                                                  slicelen);
@@ -4755,7 +4756,7 @@ Array_subscript(PyObject *myself, PyObject *item)
             wchar_t *dest;
 
             if (slicelen <= 0)
-                return PyUnicode_New(0, 0);
+                return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
             if (step == 1) {
                 return PyUnicode_FromWideChar(ptr + start,
                                               slicelen);
@@ -5417,7 +5418,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             char *dest;
 
             if (len <= 0)
-                return PyBytes_FromStringAndSize("", 0);
+                return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
             if (step == 1) {
                 return PyBytes_FromStringAndSize(ptr + start,
                                                  len);
@@ -5437,7 +5438,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             wchar_t *dest;
 
             if (len <= 0)
-                return PyUnicode_New(0, 0);
+                return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
             if (step == 1) {
                 return PyUnicode_FromWideChar(ptr + start,
                                               len);
@@ -5780,7 +5781,7 @@ _ctypes_add_types(PyObject *mod)
      * Simple classes
      */
 
-    CREATE_TYPE(st->PyCField_Type, &cfield_spec, NULL, NULL);
+    MOD_ADD_TYPE(st->PyCField_Type, &cfield_spec, NULL, NULL);
 
     /*************************************************
      *

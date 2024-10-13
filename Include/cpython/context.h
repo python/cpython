@@ -27,6 +27,48 @@ PyAPI_FUNC(PyObject *) PyContext_CopyCurrent(void);
 PyAPI_FUNC(int) PyContext_Enter(PyObject *);
 PyAPI_FUNC(int) PyContext_Exit(PyObject *);
 
+typedef enum {
+    /*
+     * A context has been entered, causing the "current context" to switch to
+     * it.  The object passed to the watch callback is the now-current
+     * contextvars.Context object.  Each enter event will eventually have a
+     * corresponding exit event for the same context object after any
+     * subsequently entered contexts have themselves been exited.
+     */
+    Py_CONTEXT_EVENT_ENTER,
+    /*
+     * A context is about to be exited, which will cause the "current context"
+     * to switch back to what it was before the context was entered.  The
+     * object passed to the watch callback is the still-current
+     * contextvars.Context object.
+     */
+    Py_CONTEXT_EVENT_EXIT,
+} PyContextEvent;
+
+/*
+ * Context object watcher callback function.  The object passed to the callback
+ * is event-specific; see PyContextEvent for details.
+ *
+ * if the callback returns with an exception set, it must return -1. Otherwise
+ * it should return 0
+ */
+typedef int (*PyContext_WatchCallback)(PyContextEvent, PyObject *);
+
+/*
+ * Register a per-interpreter callback that will be invoked for context object
+ * enter/exit events.
+ *
+ * Returns a handle that may be passed to PyContext_ClearWatcher on success,
+ * or -1 and sets and error if no more handles are available.
+ */
+PyAPI_FUNC(int) PyContext_AddWatcher(PyContext_WatchCallback callback);
+
+/*
+ * Clear the watcher associated with the watcher_id handle.
+ *
+ * Returns 0 on success or -1 if no watcher exists for the provided id.
+ */
+PyAPI_FUNC(int) PyContext_ClearWatcher(int watcher_id);
 
 /* Create a new context variable.
 

@@ -2030,6 +2030,19 @@ parser_clear(struct _PyArg_Parser *parser)
     if (parser->is_kwtuple_owned) {
         Py_CLEAR(parser->kwtuple);
     }
+
+    if (parser->format) {
+        parser->fname = NULL;
+    }
+    else {
+        assert(parser->fname != NULL);
+    }
+    parser->custom_msg = NULL;
+    parser->pos = 0;
+    parser->min = 0;
+    parser->max = 0;
+    parser->is_kwtuple_owned = 0;
+    parser->once.v = 0;
 }
 
 static PyObject*
@@ -2051,7 +2064,7 @@ find_keyword(PyObject *kwnames, PyObject *const *kwstack, PyObject *key)
     for (i = 0; i < nkwargs; i++) {
         PyObject *kwname = PyTuple_GET_ITEM(kwnames, i);
         assert(PyUnicode_Check(kwname));
-        if (_PyUnicode_EQ(kwname, key)) {
+        if (_PyUnicode_Equal(kwname, key)) {
             return Py_NewRef(kwstack[i]);
         }
     }
@@ -2588,7 +2601,7 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
          *
          * Otherwise, we leave a place at `buf[vararg]` for vararg tuple
          * so the index is `i + 1`. */
-        if (nargs < vararg && i != vararg) {
+        if (i < vararg) {
             buf[i] = current_arg;
         }
         else {

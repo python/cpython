@@ -14,6 +14,11 @@
    from turtle import *
    turtle = Turtle()
 
+.. testcleanup::
+
+   import os
+   os.remove("my_drawing.ps")
+
 --------------
 
 Introduction
@@ -427,6 +432,7 @@ Input methods
 Methods specific to Screen
    | :func:`bye`
    | :func:`exitonclick`
+   | :func:`save`
    | :func:`setup`
    | :func:`title`
 
@@ -2268,6 +2274,24 @@ Methods specific to Screen, not inherited from TurtleScreen
    :file:`turtle.cfg`.  In this case IDLE's own mainloop is active also for the
    client script.
 
+
+.. function:: save(filename, overwrite=False)
+
+   Save the current turtle drawing (and turtles) as a PostScript file.
+
+   :param filename: the path of the saved PostScript file
+   :param overwrite: if ``False`` and there already exists a file with the given
+                     filename, then the function will raise a
+                     ``FileExistsError``. If it is ``True``, the file will be
+                     overwritten.
+
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> screen.save("my_drawing.ps")
+      >>> screen.save("my_drawing.ps", overwrite=True)
+
+   .. versionadded:: 3.14
 
 .. function:: setup(width=_CFG["width"], height=_CFG["height"], startx=_CFG["leftright"], starty=_CFG["topbottom"])
 

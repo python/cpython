@@ -81,7 +81,7 @@ whose size is determined when the object is allocated.
 #else
 #define PyObject_HEAD_INIT(type)    \
     {                               \
-        { _Py_IMMORTAL_REFCNT },    \
+        { _Py_IMMORTAL_INITIAL_REFCNT },    \
         (type)                      \
     },
 #endif
@@ -179,6 +179,12 @@ _Py_ThreadId(void)
 #elif defined(_MSC_VER) && defined(_M_IX86)
     tid = __readfsdword(24);
 #elif defined(_MSC_VER) && defined(_M_ARM64)
+    tid = __getReg(18);
+#elif defined(__MINGW32__) && defined(_M_X64)
+    tid = __readgsqword(48);
+#elif defined(__MINGW32__) && defined(_M_IX86)
+    tid = __readfsdword(24);
+#elif defined(__MINGW32__) && defined(_M_ARM64)
     tid = __getReg(18);
 #elif defined(__i386__)
     __asm__("movl %%gs:0, %0" : "=r" (tid));  // 32-bit always uses GS
@@ -390,6 +396,10 @@ PyAPI_FUNC(PyObject *) PyType_GetModuleName(PyTypeObject *type);
 PyAPI_FUNC(PyObject *) PyType_FromMetaclass(PyTypeObject*, PyObject*, PyType_Spec*, PyObject*);
 PyAPI_FUNC(void *) PyObject_GetTypeData(PyObject *obj, PyTypeObject *cls);
 PyAPI_FUNC(Py_ssize_t) PyType_GetTypeDataSize(PyTypeObject *cls);
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030E0000
+PyAPI_FUNC(int) PyType_GetBaseByToken(PyTypeObject *, void *, PyTypeObject **);
+#define Py_TP_USE_SPEC NULL
 #endif
 
 /* Generic type check */

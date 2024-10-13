@@ -843,8 +843,9 @@ typedef struct {
 } AST_object;
 
 static void
-ast_dealloc(AST_object *self)
+ast_dealloc(PyObject *op)
 {
+    AST_object *self = (AST_object*)op;
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
@@ -856,16 +857,18 @@ ast_dealloc(AST_object *self)
 }
 
 static int
-ast_traverse(AST_object *self, visitproc visit, void *arg)
+ast_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    AST_object *self = (AST_object*)op;
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
     return 0;
 }
 
 static int
-ast_clear(AST_object *self)
+ast_clear(PyObject *op)
 {
+    AST_object *self = (AST_object*)op;
     Py_CLEAR(self->dict);
     return 0;
 }
@@ -1435,8 +1438,229 @@ static PyGetSetDef ast_type_getsets[] = {
     {NULL}
 };
 
+static PyObject *
+ast_repr_max_depth(AST_object *self, int depth);
+
+/* Format list and tuple properties of AST nodes.
+   Note that, only the first and last elements are shown.
+   Anything in between is represented with an ellipsis ('...').
+   For example, the list [1, 2, 3] is formatted as
+   'List(elts=[Constant(1), ..., Constant(3)])'. */
+static PyObject *
+ast_repr_list(PyObject *list, int depth)
+{
+    assert(PyList_Check(list) || PyTuple_Check(list));
+
+    struct ast_state *state = get_ast_state();
+    if (state == NULL) {
+        return NULL;
+    }
+
+    Py_ssize_t length = PySequence_Size(list);
+    if (length < 0) {
+        return NULL;
+    }
+    else if (length == 0) {
+        return PyObject_Repr(list);
+    }
+
+    _PyUnicodeWriter writer;
+    _PyUnicodeWriter_Init(&writer);
+    writer.overallocate = 1;
+    PyObject *items[2] = {NULL, NULL};
+
+    items[0] = PySequence_GetItem(list, 0);
+    if (!items[0]) {
+        goto error;
+    }
+    if (length > 1) {
+        items[1] = PySequence_GetItem(list, length - 1);
+        if (!items[1]) {
+            goto error;
+        }
+    }
+
+    bool is_list = PyList_Check(list);
+    if (_PyUnicodeWriter_WriteChar(&writer, is_list ? '[' : '(') < 0) {
+        goto error;
+    }
+
+    for (Py_ssize_t i = 0; i < Py_MIN(length, 2); i++) {
+        PyObject *item = items[i];
+        PyObject *item_repr;
+
+        if (PyType_IsSubtype(Py_TYPE(item), (PyTypeObject *)state->AST_type)) {
+            item_repr = ast_repr_max_depth((AST_object*)item, depth - 1);
+        } else {
+            item_repr = PyObject_Repr(item);
+        }
+        if (!item_repr) {
+            goto error;
+        }
+        if (i > 0) {
+            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0) {
+                goto error;
+            }
+        }
+        if (_PyUnicodeWriter_WriteStr(&writer, item_repr) < 0) {
+            Py_DECREF(item_repr);
+            goto error;
+        }
+        if (i == 0 && length > 2) {
+            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ...", 5) < 0) {
+                Py_DECREF(item_repr);
+                goto error;
+            }
+        }
+        Py_DECREF(item_repr);
+    }
+
+    if (_PyUnicodeWriter_WriteChar(&writer, is_list ? ']' : ')') < 0) {
+        goto error;
+    }
+
+    Py_XDECREF(items[0]);
+    Py_XDECREF(items[1]);
+    return _PyUnicodeWriter_Finish(&writer);
+
+error:
+    Py_XDECREF(items[0]);
+    Py_XDECREF(items[1]);
+    _PyUnicodeWriter_Dealloc(&writer);
+    return NULL;
+}
+
+static PyObject *
+ast_repr_max_depth(AST_object *self, int depth)
+{
+    struct ast_state *state = get_ast_state();
+    if (state == NULL) {
+        return NULL;
+    }
+
+    if (depth <= 0) {
+        return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
+    }
+
+    int status = Py_ReprEnter((PyObject *)self);
+    if (status != 0) {
+        if (status < 0) {
+            return NULL;
+        }
+        return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
+    }
+
+    PyObject *fields;
+    if (PyObject_GetOptionalAttr((PyObject *)Py_TYPE(self), state->_fields, &fields) < 0) {
+        Py_ReprLeave((PyObject *)self);
+        return NULL;
+    }
+
+    Py_ssize_t numfields = PySequence_Size(fields);
+    if (numfields < 0) {
+        Py_ReprLeave((PyObject *)self);
+        Py_DECREF(fields);
+        return NULL;
+    }
+
+    if (numfields == 0) {
+        Py_ReprLeave((PyObject *)self);
+        Py_DECREF(fields);
+        return PyUnicode_FromFormat("%s()", Py_TYPE(self)->tp_name);
+    }
+
+    const char* tp_name = Py_TYPE(self)->tp_name;
+    _PyUnicodeWriter writer;
+    _PyUnicodeWriter_Init(&writer);
+    writer.overallocate = 1;
+
+    if (_PyUnicodeWriter_WriteASCIIString(&writer, tp_name, strlen(tp_name)) < 0) {
+        goto error;
+    }
+    if (_PyUnicodeWriter_WriteChar(&writer, '(') < 0) {
+        goto error;
+    }
+
+    for (Py_ssize_t i = 0; i < numfields; i++) {
+        PyObject *name = PySequence_GetItem(fields, i);
+        if (!name) {
+            goto error;
+        }
+
+        PyObject *value = PyObject_GetAttr((PyObject *)self, name);
+        if (!value) {
+            Py_DECREF(name);
+            goto error;
+        }
+
+        PyObject *value_repr;
+        if (PyList_Check(value) || PyTuple_Check(value)) {
+            value_repr = ast_repr_list(value, depth);
+        }
+        else if (PyType_IsSubtype(Py_TYPE(value), (PyTypeObject *)state->AST_type)) {
+            value_repr = ast_repr_max_depth((AST_object*)value, depth - 1);
+        }
+        else {
+            value_repr = PyObject_Repr(value);
+        }
+
+        Py_DECREF(value);
+
+        if (!value_repr) {
+            Py_DECREF(name);
+            goto error;
+        }
+
+        if (i > 0) {
+            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0) {
+                Py_DECREF(name);
+                Py_DECREF(value_repr);
+                goto error;
+            }
+        }
+        if (_PyUnicodeWriter_WriteStr(&writer, name) < 0) {
+            Py_DECREF(name);
+            Py_DECREF(value_repr);
+            goto error;
+        }
+
+        Py_DECREF(name);
+
+        if (_PyUnicodeWriter_WriteChar(&writer, '=') < 0) {
+            Py_DECREF(value_repr);
+            goto error;
+        }
+        if (_PyUnicodeWriter_WriteStr(&writer, value_repr) < 0) {
+            Py_DECREF(value_repr);
+            goto error;
+        }
+
+        Py_DECREF(value_repr);
+    }
+
+    if (_PyUnicodeWriter_WriteChar(&writer, ')') < 0) {
+        goto error;
+    }
+    Py_ReprLeave((PyObject *)self);
+    Py_DECREF(fields);
+    return _PyUnicodeWriter_Finish(&writer);
+
+error:
+    Py_ReprLeave((PyObject *)self);
+    Py_DECREF(fields);
+    _PyUnicodeWriter_Dealloc(&writer);
+    return NULL;
+}
+
+static PyObject *
+ast_repr(PyObject *self)
+{
+    return ast_repr_max_depth((AST_object*)self, 3);
+}
+
 static PyType_Slot AST_type_slots[] = {
     {Py_tp_dealloc, ast_dealloc},
+    {Py_tp_repr, ast_repr},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_setattro, PyObject_GenericSetAttr},
     {Py_tp_traverse, ast_traverse},
@@ -1625,8 +1849,9 @@ static int add_ast_fields(struct ast_state *state)
 
         self.file.write(textwrap.dedent('''
             static int
-            init_types(struct ast_state *state)
+            init_types(void *arg)
             {
+                struct ast_state *state = arg;
                 if (init_identifiers(state) < 0) {
                     return -1;
                 }
@@ -2017,8 +2242,6 @@ def generate_ast_fini(module_state, f):
     for s in module_state:
         f.write("    Py_CLEAR(state->" + s + ');\n')
     f.write(textwrap.dedent("""
-                Py_CLEAR(_Py_INTERP_CACHED_OBJECT(interp, str_replace_inf));
-
                 state->finalized = 1;
                 state->once = (_PyOnceFlag){0};
             }
@@ -2074,7 +2297,7 @@ def generate_module_def(mod, metadata, f, internal_h):
         };
 
         // Forward declaration
-        static int init_types(struct ast_state *state);
+        static int init_types(void *arg);
 
         static struct ast_state*
         get_ast_state(void)

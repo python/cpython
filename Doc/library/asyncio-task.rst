@@ -158,7 +158,7 @@ other coroutines::
         # Nothing happens if we just call "nested()".
         # A coroutine object is created but not awaited,
         # so it *won't run at all*.
-        nested()
+        nested()  # will raise a "RuntimeWarning".
 
         # Let's do it differently now and await it:
         print(await nested())  # will print "42".
@@ -413,6 +413,53 @@ reported by :meth:`asyncio.Task.cancelling`.
 
    Improved handling of simultaneous internal and external cancellations
    and correct preservation of cancellation counts.
+
+Terminating a Task Group
+------------------------
+
+While terminating a task group is not natively supported by the standard
+library, termination can be achieved by adding an exception-raising task
+to the task group and ignoring the raised exception:
+
+.. code-block:: python
+
+   import asyncio
+   from asyncio import TaskGroup
+
+   class TerminateTaskGroup(Exception):
+       """Exception raised to terminate a task group."""
+
+   async def force_terminate_task_group():
+       """Used to force termination of a task group."""
+       raise TerminateTaskGroup()
+
+   async def job(task_id, sleep_time):
+       print(f'Task {task_id}: start')
+       await asyncio.sleep(sleep_time)
+       print(f'Task {task_id}: done')
+
+   async def main():
+       try:
+           async with TaskGroup() as group:
+               # spawn some tasks
+               group.create_task(job(1, 0.5))
+               group.create_task(job(2, 1.5))
+               # sleep for 1 second
+               await asyncio.sleep(1)
+               # add an exception-raising task to force the group to terminate
+               group.create_task(force_terminate_task_group())
+       except* TerminateTaskGroup:
+           pass
+
+   asyncio.run(main())
+
+Expected output:
+
+.. code-block:: text
+
+   Task 1: start
+   Task 2: start
+   Task 1: done
 
 Sleeping
 ========

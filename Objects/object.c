@@ -536,6 +536,7 @@ int
 PyObject_Print(PyObject *op, FILE *fp, int flags)
 {
     int ret = 0;
+    int write_error = 0;
     if (PyErr_CheckSignals())
         return -1;
 #ifdef USE_STACKCHECK
@@ -574,14 +575,20 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
                     ret = -1;
                 }
                 else {
-                    fwrite(t, 1, len, fp);
+                    /* Versions of Android and OpenBSD from before 2023 fail to
+                       set the `ferror` indicator when writing to a read-only
+                       stream, so we need to check the return value.
+                       (https://github.com/openbsd/src/commit/fc99cf9338942ecd9adc94ea08bf6188f0428c15) */
+                    if (fwrite(t, 1, len, fp) != (size_t)len) {
+                        write_error = 1;
+                    }
                 }
                 Py_DECREF(s);
             }
         }
     }
     if (ret == 0) {
-        if (ferror(fp)) {
+        if (write_error || ferror(fp)) {
             PyErr_SetFromErrno(PyExc_OSError);
             clearerr(fp);
             ret = -1;
@@ -809,7 +816,6 @@ PyObject_Bytes(PyObject *v)
     return PyBytes_FromObject(v);
 }
 
-#ifdef WITH_FREELISTS
 static void
 clear_freelist(struct _Py_freelist *freelist, int is_finalization,
                freefunc dofree)
@@ -834,12 +840,9 @@ free_object(void *obj)
     Py_DECREF(tp);
 }
 
-#endif
-
 void
 _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
 {
-#ifdef WITH_FREELISTS
     // In the free-threaded build, freelists are per-PyThreadState and cleared in PyThreadState_Clear()
     // In the default build, freelists are per-interpreter and cleared in finalize_interp_types()
     clear_freelist(&freelists->floats, is_finalization, free_object);
@@ -859,7 +862,7 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
         // stacks during GC, so emptying the free-list is counterproductive.
         clear_freelist(&freelists->object_stack_chunks, 1, PyMem_RawFree);
     }
-#endif
+    clear_freelist(&freelists->unicode_writers, is_finalization, PyMem_Free);
 }
 
 /*
@@ -1251,9 +1254,9 @@ PyObject_GetOptionalAttr(PyObject *v, PyObject *name, PyObject **result)
         return 0;
     }
     if (tp->tp_getattro == _Py_type_getattro) {
-        int supress_missing_attribute_exception = 0;
-        *result = _Py_type_getattro_impl((PyTypeObject*)v, name, &supress_missing_attribute_exception);
-        if (supress_missing_attribute_exception) {
+        int suppress_missing_attribute_exception = 0;
+        *result = _Py_type_getattro_impl((PyTypeObject*)v, name, &suppress_missing_attribute_exception);
+        if (suppress_missing_attribute_exception) {
             // return 0 without having to clear the exception
             return 0;
         }
@@ -2340,6 +2343,7 @@ static PyTypeObject* static_types[] = {
     &_PyWeakref_ProxyType,
     &_PyWeakref_RefType,
     &_PyTypeAlias_Type,
+    &_PyNoDefault_Type,
 
     // subclasses: _PyTypes_FiniTypes() deallocates them before their base
     // class
@@ -2367,6 +2371,14 @@ _PyTypes_InitTypes(PyInterpreterState *interp)
             assert(PyType_Type.tp_base == &PyBaseObject_Type);
         }
     }
+
+    // Cache __reduce__ from PyBaseObject_Type object
+    PyObject *baseobj_dict = _PyType_GetDict(&PyBaseObject_Type);
+    PyObject *baseobj_reduce = PyDict_GetItemWithError(baseobj_dict, &_Py_ID(__reduce__));
+    if (baseobj_reduce == NULL && PyErr_Occurred()) {
+        return _PyStatus_ERR("Can't get __reduce__ from base object");
+    }
+    _Py_INTERP_CACHED_OBJECT(interp, objreduce) = baseobj_reduce;
 
     // Must be after static types are initialized
     if (_Py_initialize_generic(interp) < 0) {
@@ -2449,7 +2461,7 @@ _Py_SetImmortalUntracked(PyObject *op)
     op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
     op->ob_ref_shared = 0;
 #else
-    op->ob_refcnt = _Py_IMMORTAL_REFCNT;
+    op->ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
 #endif
 }
 
@@ -2470,15 +2482,7 @@ _PyObject_SetDeferredRefcount(PyObject *op)
     assert(_Py_IsOwnedByCurrentThread(op));
     assert(op->ob_ref_shared == 0);
     _PyObject_SET_GC_BITS(op, _PyGC_BITS_DEFERRED);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (_Py_atomic_load_int_relaxed(&interp->gc.immortalize) == 1) {
-        // gh-117696: immortalize objects instead of using deferred reference
-        // counting for now.
-        _Py_SetImmortal(op);
-        return;
-    }
-    op->ob_ref_local += 1;
-    op->ob_ref_shared = _Py_REF_QUEUED;
+    op->ob_ref_shared = _Py_REF_SHARED(_Py_REF_DEFERRED, 0);
 #endif
 }
 
@@ -2496,6 +2500,42 @@ _Py_ResurrectReference(PyObject *op)
 
 
 #ifdef Py_TRACE_REFS
+/* Make sure the ref is associated with the right interpreter.
+ * This only needs special attention for heap-allocated objects
+ * that have been immortalized, and only when the object might
+ * outlive the interpreter where it was created.  That means the
+ * object was necessarily created using a global allocator
+ * (i.e. from the main interpreter).  Thus in that specific case
+ * we move the object over to the main interpreter's refchain.
+ *
+ * This was added for the sake of the immortal interned strings,
+ * where legacy subinterpreters share the main interpreter's
+ * interned dict (and allocator), and therefore the strings can
+ * outlive the subinterpreter.
+ *
+ * It may make sense to fold this into _Py_SetImmortalUntracked(),
+ * but that requires further investigation.  In the meantime, it is
+ * up to the caller to know if this is needed.  There should be
+ * very few cases.
+ */
+void
+_Py_NormalizeImmortalReference(PyObject *op)
+{
+    assert(_Py_IsImmortal(op));
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (!_PyRefchain_IsTraced(interp, op)) {
+        return;
+    }
+    PyInterpreterState *main_interp = _PyInterpreterState_Main();
+    if (interp != main_interp
+           && interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC)
+    {
+        assert(!_PyRefchain_IsTraced(main_interp, op));
+        _PyRefchain_Remove(interp, op);
+        _PyRefchain_Trace(main_interp, op);
+    }
+}
+
 void
 _Py_ForgetReference(PyObject *op)
 {
@@ -3044,7 +3084,17 @@ Py_GetConstantBorrowed(unsigned int constant_id)
 
 // Py_TYPE() implementation for the stable ABI
 #undef Py_TYPE
-PyTypeObject* Py_TYPE(PyObject *ob)
+PyTypeObject*
+Py_TYPE(PyObject *ob)
 {
     return _Py_TYPE(ob);
+}
+
+
+// Py_REFCNT() implementation for the stable ABI
+#undef Py_REFCNT
+Py_ssize_t
+Py_REFCNT(PyObject *ob)
+{
+    return _Py_REFCNT(ob);
 }
