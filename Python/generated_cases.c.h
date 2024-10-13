@@ -4831,26 +4831,20 @@
             // _LOAD_BYTECODE
             {
                 #ifdef Py_GIL_DISABLED
-                // Work around a bug in the cases_generator logic that inserts code
-                // to save and restore the stack pointer. Without splitting these
-                // lines the cases_generator will insert code to save the stack
-                // pointer before the `#ifdef Py_GIL_DISABLED` and will insert code
-                // to clear the stack pointer immediately after the call to
-                // `_PyEval_GetExecutableCode` below. As a result, the stack
-                // pointer won't properly be cleared in default (with-gil)
-                // builds. By putting the declaration and assignment on separate
-                // lines, we cause the cases_generator to correctly insert the code
-                // to save and clear the stack pointer immediately before and after
-                // the call to `_PyEval_GetExecutableCode`.
-                _Py_CODEUNIT *bytecode;
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                bytecode = _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (bytecode == NULL) goto error;
-                if (frame->bytecode != bytecode) {
-                    int off = this_instr - frame->bytecode;
-                    frame->bytecode = bytecode;
-                    frame->instr_ptr = frame->bytecode + off;
+                if (frame->tlbc_index !=
+                    ((_PyThreadStateImpl *)tstate)->tlbc_index) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _Py_CODEUNIT *bytecode =
+                    _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    if (bytecode == NULL) goto error;
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    int off = this_instr - _PyFrame_GetBytecode(frame);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    frame->tlbc_index = ((_PyThreadStateImpl *)tstate)->tlbc_index;
+                    frame->instr_ptr = bytecode + off;
+                    // Make sure this_instr gets reset correctley for any uops that
+                    // follow
                     next_instr = frame->instr_ptr;
                     DISPATCH();
                 }
@@ -6915,26 +6909,20 @@
             // _LOAD_BYTECODE
             {
                 #ifdef Py_GIL_DISABLED
-                // Work around a bug in the cases_generator logic that inserts code
-                // to save and restore the stack pointer. Without splitting these
-                // lines the cases_generator will insert code to save the stack
-                // pointer before the `#ifdef Py_GIL_DISABLED` and will insert code
-                // to clear the stack pointer immediately after the call to
-                // `_PyEval_GetExecutableCode` below. As a result, the stack
-                // pointer won't properly be cleared in default (with-gil)
-                // builds. By putting the declaration and assignment on separate
-                // lines, we cause the cases_generator to correctly insert the code
-                // to save and clear the stack pointer immediately before and after
-                // the call to `_PyEval_GetExecutableCode`.
-                _Py_CODEUNIT *bytecode;
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                bytecode = _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (bytecode == NULL) goto error;
-                if (frame->bytecode != bytecode) {
-                    int off = this_instr - frame->bytecode;
-                    frame->bytecode = bytecode;
-                    frame->instr_ptr = frame->bytecode + off;
+                if (frame->tlbc_index !=
+                    ((_PyThreadStateImpl *)tstate)->tlbc_index) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _Py_CODEUNIT *bytecode =
+                    _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    if (bytecode == NULL) goto error;
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    int off = this_instr - _PyFrame_GetBytecode(frame);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    frame->tlbc_index = ((_PyThreadStateImpl *)tstate)->tlbc_index;
+                    frame->instr_ptr = bytecode + off;
+                    // Make sure this_instr gets reset correctley for any uops that
+                    // follow
                     next_instr = frame->instr_ptr;
                     DISPATCH();
                 }
@@ -6995,31 +6983,8 @@
             assert((version & _PY_EVAL_EVENTS_MASK) == 0);
             DEOPT_IF(eval_breaker != version, RESUME);
             #ifdef Py_GIL_DISABLED
-            // Work around a bug in the cases_generator logic that inserts code
-            // to save and restore the stack pointer. Without splitting these
-            // lines the cases_generator will insert code to save the stack
-            // pointer before the `#ifdef Py_GIL_DISABLED` and will insert code
-            // to clear the stack pointer immediately after the call to
-            // `_PyCode_GetTLBCFast` below. As a result, the stack
-            // pointer won't properly be cleared in default (with-gil)
-            // builds. By putting the declaration and assignment on separate
-            // lines, we cause the cases_generator to correctly insert the code
-            // to save and clear the stack pointer immediately before and after
-            // the call to `_PyCode_GetTLBCFast`.
-            _Py_CODEUNIT *bytecode;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            bytecode = _PyCode_GetTLBCFast(tstate, _PyFrame_GetCode(frame));
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            DEOPT_IF(bytecode == NULL, RESUME);
-            if (frame->bytecode != bytecode) {
-                /* Avoid using this_instr here so that _RESUME_CHECK can be included
-                   in traces.
-                 */
-                int off = frame->instr_ptr - frame->bytecode;
-                frame->bytecode = bytecode;
-                frame->instr_ptr = frame->bytecode + off;
-                next_instr = frame->instr_ptr + 1;
-            }
+            DEOPT_IF(frame->tlbc_index !=
+                    ((_PyThreadStateImpl *)tstate)->tlbc_index, RESUME);
             #endif
             DISPATCH();
         }

@@ -819,15 +819,15 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
          * we need to update instrumentation */
 #ifdef Py_GIL_DISABLED
         /* Load thread-local bytecode */
-        _Py_CODEUNIT *bytecode =
-            _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
-        if (bytecode == NULL) {
-            goto error;
-        }
-        if (frame->bytecode != bytecode) {
-            ptrdiff_t off = frame->instr_ptr - frame->bytecode;
-            frame->bytecode = bytecode;
-            frame->instr_ptr = frame->bytecode + off;
+        if (frame->tlbc_index != ((_PyThreadStateImpl *)tstate)->tlbc_index) {
+            _Py_CODEUNIT *bytecode =
+                _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
+            if (bytecode == NULL) {
+                goto error;
+            }
+            ptrdiff_t off = frame->instr_ptr - _PyFrame_GetBytecode(frame);
+            frame->tlbc_index = ((_PyThreadStateImpl *)tstate)->tlbc_index;
+            frame->instr_ptr = bytecode + off;
         }
 #endif
         _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
@@ -1751,7 +1751,7 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, _PyStackRef func,
     if (frame == NULL) {
         goto fail;
     }
-    _PyFrame_Initialize(frame, func, locals, code, 0, previous);
+    _PyFrame_Initialize(tstate, frame, func, locals, code, 0, previous);
     if (initialize_locals(tstate, func_obj, frame->localsplus, args, argcount, kwnames)) {
         assert(frame->owner == FRAME_OWNED_BY_THREAD);
         clear_thread_frame(tstate, frame);

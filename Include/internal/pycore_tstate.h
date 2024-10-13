@@ -52,7 +52,6 @@ typedef struct _PyThreadStateImpl {
 
 } _PyThreadStateImpl;
 
-
 #ifdef __cplusplus
 }
 #endif
