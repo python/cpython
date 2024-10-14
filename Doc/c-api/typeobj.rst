@@ -1200,20 +1200,6 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       set appropriately, or the code that interacts with such types
       will behave differently depending on what kind of check is used.
 
-
-   .. c:macro:: Py_TPFLAGS_HAVE_FINALIZE
-
-      This bit is set when the :c:member:`~PyTypeObject.tp_finalize` slot is present in the
-      type structure.
-
-      .. versionadded:: 3.4
-
-      .. deprecated:: 3.8
-         This flag isn't necessary anymore, as the interpreter assumes the
-         :c:member:`~PyTypeObject.tp_finalize` slot is always present in the
-         type structure.
-
-
    .. c:macro:: Py_TPFLAGS_HAVE_VECTORCALL
 
       This bit is set when the class implements
@@ -2125,12 +2111,6 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    This field is inherited by subtypes.
 
    .. versionadded:: 3.4
-
-   .. versionchanged:: 3.8
-
-      Before version 3.8 it was necessary to set the
-      :c:macro:`Py_TPFLAGS_HAVE_FINALIZE` flags bit in order for this field to be
-      used.  This is no longer required.
 
    .. seealso:: "Safe object finalization" (:pep:`442`)
 
