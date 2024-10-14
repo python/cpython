@@ -63,7 +63,7 @@ Pending removal in Python 3.15
 
   * The undocumented keyword argument syntax for creating
     :class:`~typing.NamedTuple` classes
-    (e.g. ``Point = NamedTuple("Point", x=int, y=int)``)
+    (for example, ``Point = NamedTuple("Point", x=int, y=int)``)
     has been deprecated since Python 3.13.
     Use the class-based syntax or the functional syntax instead.
 

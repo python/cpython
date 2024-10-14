@@ -177,11 +177,11 @@ Other language changes
 
 * Incorrect usage of :keyword:`await` and asynchronous comprehensions
   is now detected even if the code is optimized away by the :option:`-O`
-  command line option. For example, ``python -O -c 'assert await 1'``
+  command-line option. For example, ``python -O -c 'assert await 1'``
   now produces a :exc:`SyntaxError`. (Contributed by Jelle Zijlstra in :gh:`121637`.)
 
 * Writes to ``__debug__`` are now detected even if the code is optimized
-  away by the :option:`-O` command line option. For example,
+  away by the :option:`-O` command-line option. For example,
   ``python -O -c 'assert (__debug__ := 1)'`` now produces a
   :exc:`SyntaxError`. (Contributed by Irit Katriel in :gh:`122245`.)
 
@@ -260,9 +260,10 @@ dis
   This feature is added to the following interfaces via the *show_positions*
   keyword argument:
 
-  - :class:`dis.Bytecode`,
-  - :func:`dis.dis`, :func:`dis.distb`, and
-  - :func:`dis.disassemble`.
+  - :class:`dis.Bytecode`
+  - :func:`dis.dis`
+  - :func:`dis.distb`
+  - :func:`dis.disassemble`
 
   This feature is also exposed via :option:`dis --show-positions`.
   (Contributed by Bénédikt Tran in :gh:`123165`.)
@@ -316,7 +317,8 @@ json
   of the error.
   (Contributed by Serhiy Storchaka in :gh:`122163`.)
 
-* Enable the :mod:`json` module to work as a script using the :option:`-m` switch: ``python -m json``.
+* Enable the :mod:`json` module to work as a script using the :option:`-m`
+  switch: :program:`python -m json`.
   See the :ref:`JSON command-line interface <json-commandline>` documentation.
   (Contributed by Trey Hunner in :gh:`122873`.)
 
@@ -357,11 +359,11 @@ pathlib
 pdb
 ---
 
-* Hard-coded breakpoints (:func:`breakpoint` and :func:`pdb.set_trace`) now
+* Hardcoded breakpoints (:func:`breakpoint` and :func:`pdb.set_trace`) now
   reuse the most recent :class:`~pdb.Pdb` instance that calls
   :meth:`~pdb.Pdb.set_trace`, instead of creating a new one each time.
   As a result, all the instance specific data like :pdbcmd:`display` and
-  :pdbcmd:`commands` are preserved across hard-coded breakpoints.
+  :pdbcmd:`commands` are preserved across hardcoded breakpoints.
   (Contributed by Tian Gao in :gh:`121450`.)
 
 * Add a new argument *mode* to :class:`pdb.Pdb`. Disable the ``restart``
@@ -391,9 +393,9 @@ symtable
 
 * Expose the following :class:`symtable.Symbol` methods:
 
-  * :meth:`~symtable.Symbol.is_free_class`
-  * :meth:`~symtable.Symbol.is_comp_iter`
   * :meth:`~symtable.Symbol.is_comp_cell`
+  * :meth:`~symtable.Symbol.is_comp_iter`
+  * :meth:`~symtable.Symbol.is_free_class`
 
   (Contributed by Bénédikt Tran in :gh:`120029`.)
 
