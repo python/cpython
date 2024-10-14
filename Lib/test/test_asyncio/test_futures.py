@@ -659,6 +659,28 @@ class BaseFutureTests:
             fut = self._new_future(loop=self.loop)
             fut.set_result(Evil())
 
+    def test_future_cancelled_result_refcycles(self):
+        f = self._new_future(loop=self.loop)
+        f.cancel()
+        exc = None
+        try:
+            f.result()
+        except asyncio.CancelledError as e:
+            exc = e
+        self.assertIsNotNone(exc)
+        self.assertListEqual(gc.get_referrers(exc), [])
+
+    def test_future_cancelled_exception_refcycles(self):
+        f = self._new_future(loop=self.loop)
+        f.cancel()
+        exc = None
+        try:
+            f.exception()
+        except asyncio.CancelledError as e:
+            exc = e
+        self.assertIsNotNone(exc)
+        self.assertListEqual(gc.get_referrers(exc), [])
+
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
                      'requires the C _asyncio module')
