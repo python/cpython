@@ -710,7 +710,7 @@ static PyType_Spec HeapCTypeSubclassWithFinalizer_spec = {
     "_testcapi.HeapCTypeSubclassWithFinalizer",
     sizeof(HeapCTypeSubclassObject),
     0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_FINALIZE,
+    Py_TPFLAGS_DEFAULT,
     HeapCTypeSubclassWithFinalizer_slots
 };
 

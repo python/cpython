@@ -595,7 +595,6 @@ given type object has a specified feature.
  * Note that older extensions using the stable ABI set these flags,
  * so the bits must not be repurposed.
  */
-#define Py_TPFLAGS_HAVE_FINALIZE (1UL << 0)
 #define Py_TPFLAGS_HAVE_VERSION_TAG   (1UL << 18)
 
 

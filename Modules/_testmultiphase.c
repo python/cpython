@@ -289,7 +289,7 @@ static PyType_Spec StateAccessType_spec = {
     "_testimportexec.StateAccessType",
     sizeof(StateAccessTypeObject),
     0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_FINALIZE | Py_TPFLAGS_BASETYPE,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     StateAccessType_Type_slots
 };
 
