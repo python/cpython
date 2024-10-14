@@ -412,7 +412,7 @@ since it is impossible to detect the termination of alien threads.
       timeout occurs.
 
       When the *timeout* argument is present and not ``None``, it should be a
-      floating point number specifying a timeout for the operation in seconds
+      floating-point number specifying a timeout for the operation in seconds
       (or fractions thereof). As :meth:`~Thread.join` always returns ``None``,
       you must call :meth:`~Thread.is_alive` after :meth:`~Thread.join` to
       decide whether a timeout happened -- if the thread is still alive, the
@@ -794,7 +794,7 @@ item to the buffer only needs to wake up one consumer thread.
       occurs.  Once awakened or timed out, it re-acquires the lock and returns.
 
       When the *timeout* argument is present and not ``None``, it should be a
-      floating point number specifying a timeout for the operation in seconds
+      floating-point number specifying a timeout for the operation in seconds
       (or fractions thereof).
 
       When the underlying lock is an :class:`RLock`, it is not released using
@@ -1018,10 +1018,10 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
       has not expired. The return value represents the
       reason that this blocking method returned; ``True`` if returning because
       the internal flag is set to true, or ``False`` if a timeout is given and
-      the the internal flag did not become true within the given wait time.
+      the internal flag did not become true within the given wait time.
 
       When the timeout argument is present and not ``None``, it should be a
-      floating point number specifying a timeout for the operation in seconds,
+      floating-point number specifying a timeout for the operation in seconds,
       or fractions thereof.
 
       .. versionchanged:: 3.1

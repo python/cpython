@@ -111,7 +111,7 @@ PyDoc_STRVAR(_pickle_Pickler___init____doc__,
 "\n"
 "The optional *protocol* argument tells the pickler to use the given\n"
 "protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default\n"
-"protocol is 4. It was introduced in Python 3.4, and is incompatible\n"
+"protocol is 5. It was introduced in Python 3.8, and is incompatible\n"
 "with previous versions.\n"
 "\n"
 "Specifying a negative protocol version selects the highest protocol\n"
@@ -614,7 +614,7 @@ PyDoc_STRVAR(_pickle_dump__doc__,
 "\n"
 "The optional *protocol* argument tells the pickler to use the given\n"
 "protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default\n"
-"protocol is 4. It was introduced in Python 3.4, and is incompatible\n"
+"protocol is 5. It was introduced in Python 3.8, and is incompatible\n"
 "with previous versions.\n"
 "\n"
 "Specifying a negative protocol version selects the highest protocol\n"
@@ -724,7 +724,7 @@ PyDoc_STRVAR(_pickle_dumps__doc__,
 "\n"
 "The optional *protocol* argument tells the pickler to use the given\n"
 "protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default\n"
-"protocol is 4. It was introduced in Python 3.4, and is incompatible\n"
+"protocol is 5. It was introduced in Python 3.8, and is incompatible\n"
 "with previous versions.\n"
 "\n"
 "Specifying a negative protocol version selects the highest protocol\n"
@@ -1077,4 +1077,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c7dd60d20ee4895f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a9452cf1219f2e7a input=a9049054013a1b77]*/

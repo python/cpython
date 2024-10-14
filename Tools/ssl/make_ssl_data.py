@@ -15,7 +15,6 @@ import datetime
 import operator
 import os
 import re
-import sys
 
 
 parser = argparse.ArgumentParser(

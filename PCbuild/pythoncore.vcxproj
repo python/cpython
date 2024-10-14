@@ -135,6 +135,7 @@
     <ClInclude Include="..\Include\codecs.h" />
     <ClInclude Include="..\Include\compile.h" />
     <ClInclude Include="..\Include\complexobject.h" />
+    <ClInclude Include="..\Include\critical_section.h" />
     <ClInclude Include="..\Include\cpython\abstract.h" />
     <ClInclude Include="..\Include\cpython\bytearrayobject.h" />
     <ClInclude Include="..\Include\cpython\bytesobject.h" />
@@ -145,6 +146,7 @@
     <ClInclude Include="..\Include\cpython\compile.h" />
     <ClInclude Include="..\Include\cpython\complexobject.h" />
     <ClInclude Include="..\Include\cpython\context.h" />
+    <ClInclude Include="..\Include\cpython\critical_section.h" />
     <ClInclude Include="..\Include\cpython\descrobject.h" />
     <ClInclude Include="..\Include\cpython\dictobject.h" />
     <ClInclude Include="..\Include\cpython\fileobject.h" />
@@ -156,14 +158,15 @@
     <ClInclude Include="..\Include\cpython\import.h" />
     <ClInclude Include="..\Include\cpython\initconfig.h" />
     <ClInclude Include="..\Include\cpython\listobject.h" />
+    <ClInclude Include="..\Include\cpython\lock.h" />
     <ClInclude Include="..\Include\cpython\longintrepr.h" />
     <ClInclude Include="..\Include\cpython\longobject.h" />
     <ClInclude Include="..\Include\cpython\memoryobject.h" />
     <ClInclude Include="..\Include\cpython\methodobject.h" />
+    <ClInclude Include="..\Include\cpython\modsupport.h" />
     <ClInclude Include="..\Include\cpython\object.h" />
     <ClInclude Include="..\Include\cpython\objimpl.h" />
     <ClInclude Include="..\Include\cpython\odictobject.h" />
-    <ClInclude Include="..\Include\cpython\optimizer.h" />
     <ClInclude Include="..\Include\cpython\parser_interface.h" />
     <ClInclude Include="..\Include\cpython\picklebufobject.h" />
     <ClInclude Include="..\Include\cpython\pyarena.h" />
@@ -236,6 +239,7 @@
     <ClInclude Include="..\Include\internal\pycore_format.h" />
     <ClInclude Include="..\Include\internal\pycore_frame.h" />
     <ClInclude Include="..\Include\internal\pycore_freelist.h" />
+    <ClInclude Include="..\Include\internal\pycore_freelist_state.h" />
     <ClInclude Include="..\Include\internal\pycore_function.h" />
     <ClInclude Include="..\Include\internal\pycore_gc.h" />
     <ClInclude Include="..\Include\internal\pycore_genobject.h" />
@@ -262,6 +266,7 @@
     <ClInclude Include="..\Include\internal\pycore_namespace.h" />
     <ClInclude Include="..\Include\internal\pycore_object.h" />
     <ClInclude Include="..\Include\internal\pycore_object_alloc.h" />
+    <ClInclude Include="..\Include\internal\pycore_object_deferred.h" />
     <ClInclude Include="..\Include\internal\pycore_object_state.h" />
     <ClInclude Include="..\Include\internal\pycore_obmalloc.h" />
     <ClInclude Include="..\Include\internal\pycore_obmalloc_init.h" />
@@ -305,11 +310,13 @@
     <ClInclude Include="..\Include\internal\pycore_unionobject.h" />
     <ClInclude Include="..\Include\internal\pycore_unicodeobject.h" />
     <ClInclude Include="..\Include\internal\pycore_unicodeobject_generated.h" />
+    <ClInclude Include="..\Include\internal\pycore_uniqueid.h" />
     <ClInclude Include="..\Include\internal\pycore_warnings.h" />
     <ClInclude Include="..\Include\internal\pycore_weakref.h" />
     <ClInclude Include="..\Include\intrcheck.h" />
     <ClInclude Include="..\Include\iterobject.h" />
     <ClInclude Include="..\Include\listobject.h" />
+    <ClInclude Include="..\Include\lock.h" />
     <ClInclude Include="..\Include\longobject.h" />
     <ClInclude Include="..\Include\marshal.h" />
     <ClInclude Include="..\Include\memoryobject.h" />
@@ -349,6 +356,7 @@
     <ClInclude Include="..\Include\pythread.h" />
     <ClInclude Include="..\Include\pytypedefs.h" />
     <ClInclude Include="..\Include\rangeobject.h" />
+    <ClInclude Include="..\Include\refcount.h" />
     <ClInclude Include="..\Include\setobject.h" />
     <ClInclude Include="..\Include\sliceobject.h" />
     <ClInclude Include="..\Include\structmember.h" />
@@ -409,9 +417,10 @@
   <ItemGroup>
     <ClCompile Include="..\Modules\_abc.c" />
     <ClCompile Include="..\Modules\_bisectmodule.c" />
-    <ClCompile Include="..\Modules\_blake2\blake2module.c" />
-    <ClCompile Include="..\Modules\_blake2\blake2b_impl.c" />
-    <ClCompile Include="..\Modules\_blake2\blake2s_impl.c" />
+    <ClCompile Include="..\Modules\blake2module.c">
+      <PreprocessorDefinitions Condition="'$(Platform)' == 'x64'">HACL_CAN_COMPILE_SIMD128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Platform)' == 'x64'">HACL_CAN_COMPILE_SIMD256;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
     <ClCompile Include="..\Modules\_codecsmodule.c" />
     <ClCompile Include="..\Modules\_collectionsmodule.c" />
     <ClCompile Include="..\Modules\_contextvarsmodule.c" />
@@ -421,6 +430,17 @@
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA1.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA2.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA3.c" />
+    <ClCompile Include="..\Modules\_hacl\Lib_Memzero0.c" />
+    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_Blake2b.c" />
+    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_Blake2s.c" />
+    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_Blake2b_Simd256.c" Condition="'$(Platform)' == 'x64'">
+      <PreprocessorDefinitions>HACL_CAN_COMPILE_VEC256;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/arch:AVX2</AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_Blake2s_Simd128.c" Condition="'$(Platform)' == 'x64'">
+      <PreprocessorDefinitions>HACL_CAN_COMPILE_VEC128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/arch:AVX</AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="..\Modules\_heapqmodule.c" />
     <ClCompile Include="..\Modules\_json.c" />
     <ClCompile Include="..\Modules\_localemodule.c" />
@@ -561,6 +581,7 @@
     <ClCompile Include="..\Python\brc.c" />
     <ClCompile Include="..\Python\ceval.c" />
     <ClCompile Include="..\Python\codecs.c" />
+    <ClCompile Include="..\Python\codegen.c" />
     <ClCompile Include="..\Python\compile.c" />
     <ClCompile Include="..\Python\context.c" />
     <ClCompile Include="..\Python\critical_section.c" />
@@ -636,6 +657,7 @@
     <ClCompile Include="..\Python\thread.c" />
     <ClCompile Include="..\Python\traceback.c" />
     <ClCompile Include="..\Python\tracemalloc.c" />
+    <ClCompile Include="..\Python\uniqueid.c" />
   </ItemGroup>
   <ItemGroup Condition="$(IncludeExternals)">
     <ClCompile Include="..\Modules\zlibmodule.c" />
@@ -716,7 +738,7 @@
       </ClCompile>
     </ItemGroup>
   </Target>
-  <Target Name="_WarnAboutToolset" BeforeTargets="PrepareForBuild" Condition="$(PlatformToolset) != 'v140' and $(PlatformToolset) != 'v141' and $(PlatformToolset) != 'v142' and $(PlatformToolset) != 'v143'">
+  <Target Name="_WarnAboutToolset" BeforeTargets="PrepareForBuild" Condition="$(PlatformToolset) != 'v141' and $(PlatformToolset) != 'v142' and $(PlatformToolset) != 'v143'">
     <Warning Text="Toolset $(PlatformToolset) is not used for official builds. Your build may have errors or incompatibilities." />
   </Target>
   <Target Name="_WarnAboutZlib" BeforeTargets="PrepareForBuild" Condition="!$(IncludeExternals)">

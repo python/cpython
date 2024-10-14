@@ -589,7 +589,7 @@ def _check_system_limits():
             raise NotImplementedError(_system_limited)
     _system_limits_checked = True
     try:
-        import multiprocessing.synchronize
+        import multiprocessing.synchronize  # noqa: F401
     except ImportError:
         _system_limited = (
             "This Python build lacks multiprocessing.synchronize, usually due "

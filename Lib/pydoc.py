@@ -71,12 +71,16 @@ import time
 import tokenize
 import urllib.parse
 import warnings
+from annotationlib import Format
 from collections import deque
 from reprlib import Repr
 from traceback import format_exception_only
 
-from _pyrepl.pager import (get_pager, plain, escape_less, pipe_pager,
+from _pyrepl.pager import (get_pager, pipe_pager,
                            plain_pager, tempfile_pager, tty_pager)
+
+# Expose plain() as pydoc.plain()
+from _pyrepl.pager import plain  # noqa: F401
 
 
 # --------------------------------------------------------- old names
@@ -209,12 +213,12 @@ def splitdoc(doc):
 
 def _getargspec(object):
     try:
-        signature = inspect.signature(object)
+        signature = inspect.signature(object, annotation_format=Format.STRING)
         if signature:
             name = getattr(object, '__name__', '')
             # <lambda> function are always single-line and should not be formatted
             max_width = (80 - len(name)) if name != '<lambda>' else None
-            return signature.format(max_width=max_width)
+            return signature.format(max_width=max_width, quote_annotation_strings=False)
     except (ValueError, TypeError):
         argspec = getattr(object, '__text_signature__', None)
         if argspec:
@@ -1679,6 +1683,13 @@ def describe(thing):
         return 'function ' + thing.__name__
     if inspect.ismethod(thing):
         return 'method ' + thing.__name__
+    if inspect.ismethodwrapper(thing):
+        return 'method wrapper ' + thing.__name__
+    if inspect.ismethoddescriptor(thing):
+        try:
+            return 'method descriptor ' + thing.__name__
+        except AttributeError:
+            pass
     return type(thing).__name__
 
 def locate(path, forceload=0):
@@ -1752,7 +1763,14 @@ def doc(thing, title='Python Library Documentation: %s', forceload=0,
     """Display text documentation, given an object or a path to an object."""
     if output is None:
         try:
-            what = thing if isinstance(thing, str) else type(thing).__name__
+            if isinstance(thing, str):
+                what = thing
+            else:
+                what = getattr(thing, '__qualname__', None)
+                if not isinstance(what, str):
+                    what = getattr(thing, '__name__', None)
+                    if not isinstance(what, str):
+                        what = type(thing).__name__ + ' object'
             pager(render_doc(thing, title, forceload), f'Help on {what!s}')
         except ImportError as exc:
             if is_cli:
@@ -1853,6 +1871,7 @@ class Helper:
         ':': 'SLICINGS DICTIONARYLITERALS',
         '@': 'def class',
         '\\': 'STRINGS',
+        ':=': 'ASSIGNMENTEXPRESSIONS',
         '_': 'PRIVATENAMES',
         '__': 'PRIVATENAMES SPECIALMETHODS',
         '`': 'BACKQUOTES',
@@ -1946,6 +1965,7 @@ class Helper:
         'ASSERTION': 'assert',
         'ASSIGNMENT': ('assignment', 'AUGMENTEDASSIGNMENT'),
         'AUGMENTEDASSIGNMENT': ('augassign', 'NUMBERMETHODS'),
+        'ASSIGNMENTEXPRESSIONS': ('assignment-expressions', ''),
         'DELETION': 'del',
         'RETURNING': 'return',
         'IMPORTING': 'import',
@@ -2007,7 +2027,7 @@ has the same effect as typing a particular string at the help> prompt.
             if (len(request) > 2 and request[0] == request[-1] in ("'", '"')
                     and request[0] not in request[1:-1]):
                 request = request[1:-1]
-            if request.lower() in ('q', 'quit'): break
+            if request.lower() in ('q', 'quit', 'exit'): break
             if request == 'help':
                 self.intro()
             else:
@@ -2034,7 +2054,7 @@ has the same effect as typing a particular string at the help> prompt.
             elif request in self.symbols: self.showsymbol(request)
             elif request in ['True', 'False', 'None']:
                 # special case these keywords since they are objects too
-                doc(eval(request), 'Help on %s:', is_cli=is_cli)
+                doc(eval(request), 'Help on %s:', output=self._output, is_cli=is_cli)
             elif request in self.keywords: self.showtopic(request)
             elif request in self.topics: self.showtopic(request)
             elif request: doc(request, 'Help on %s:', output=self._output, is_cli=is_cli)
@@ -2059,7 +2079,7 @@ the modules whose name or summary contain a given string such as "spam",
 enter "modules spam".
 
 To quit this help utility and return to the interpreter,
-enter "q" or "quit".
+enter "q", "quit" or "exit".
 '''.format('%d.%d' % sys.version_info[:2]))
 
     def list(self, items, columns=4, width=80):
@@ -2127,7 +2147,11 @@ module "pydoc_data.topics" could not be found.
             text = 'Related help topics: ' + ', '.join(xrefs.split()) + '\n'
             wrapped_text = textwrap.wrap(text, 72)
             doc += '\n%s\n' % '\n'.join(wrapped_text)
-        pager(doc, f'Help on {topic!s}')
+
+        if self._output is None:
+            pager(doc, f'Help on {topic!s}')
+        else:
+            self.output.write(doc)
 
     def _gettopic(self, topic, more_xrefs=''):
         """Return unbuffered tuple of (topic, xrefs).

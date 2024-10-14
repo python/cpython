@@ -1934,7 +1934,8 @@ new_kwtuple(const char * const *keywords, int total, int pos)
             Py_DECREF(kwtuple);
             return NULL;
         }
-        PyUnicode_InternInPlace(&str);
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        _PyUnicode_InternImmortal(interp, &str);
         PyTuple_SET_ITEM(kwtuple, i, str);
     }
     return kwtuple;
@@ -2029,6 +2030,19 @@ parser_clear(struct _PyArg_Parser *parser)
     if (parser->is_kwtuple_owned) {
         Py_CLEAR(parser->kwtuple);
     }
+
+    if (parser->format) {
+        parser->fname = NULL;
+    }
+    else {
+        assert(parser->fname != NULL);
+    }
+    parser->custom_msg = NULL;
+    parser->pos = 0;
+    parser->min = 0;
+    parser->max = 0;
+    parser->is_kwtuple_owned = 0;
+    parser->once.v = 0;
 }
 
 static PyObject*
@@ -2050,7 +2064,7 @@ find_keyword(PyObject *kwnames, PyObject *const *kwstack, PyObject *key)
     for (i = 0; i < nkwargs; i++) {
         PyObject *kwname = PyTuple_GET_ITEM(kwnames, i);
         assert(PyUnicode_Check(kwname));
-        if (_PyUnicode_EQ(kwname, key)) {
+        if (_PyUnicode_Equal(kwname, key)) {
             return Py_NewRef(kwstack[i]);
         }
     }
@@ -2069,7 +2083,8 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
     const char *format;
     const char *msg;
     PyObject *keyword;
-    int i, pos, len;
+    Py_ssize_t i;
+    int pos, len;
     Py_ssize_t nkwargs;
     freelistentry_t static_entries[STATIC_FREELIST_ENTRIES];
     freelist_t freelist;
@@ -2586,7 +2601,7 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
          *
          * Otherwise, we leave a place at `buf[vararg]` for vararg tuple
          * so the index is `i + 1`. */
-        if (nargs < vararg && i != vararg) {
+        if (i < vararg) {
             buf[i] = current_arg;
         }
         else {
@@ -2674,7 +2689,7 @@ skipitem(const char **p_format, va_list *p_va, int flags)
                 goto err;
             format++;
         }
-        /* fall through */
+        _Py_FALLTHROUGH;
 
     case 's': /* string */
     case 'z': /* string or None */

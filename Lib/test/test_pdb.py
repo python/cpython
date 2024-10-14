@@ -258,6 +258,8 @@ def test_pdb_breakpoint_commands():
     ...     'clear 3',
     ...     'break',
     ...     'condition 1',
+    ...     'commands 1',
+    ...     'EOF',       # Simulate Ctrl-D/Ctrl-Z from user, should end input
     ...     'enable 1',
     ...     'clear 1',
     ...     'commands 2',
@@ -313,6 +315,9 @@ def test_pdb_breakpoint_commands():
     2   breakpoint   keep yes   at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
     (Pdb) condition 1
     Breakpoint 1 is now unconditional.
+    (Pdb) commands 1
+    (com) EOF
+    <BLANKLINE>
     (Pdb) enable 1
     Enabled breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:3
     (Pdb) clear 1
@@ -356,6 +361,54 @@ def test_pdb_breakpoint_commands():
     -> print(4)
     (Pdb) continue
     4
+    """
+
+def test_pdb_commands():
+    """Test the commands command of pdb.
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     print(1)
+    ...     print(2)
+    ...     print(3)
+
+    >>> reset_Breakpoint()
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'b 3',
+    ...     'commands',
+    ...     'silent',      # suppress the frame status output
+    ...     'p "hello"',
+    ...     'end',
+    ...     'b 4',
+    ...     'commands',
+    ...     'until 5',     # no output, should stop at line 5
+    ...     'continue',    # hit breakpoint at line 3
+    ...     '',            # repeat continue, hit breakpoint at line 4 then `until` to line 5
+    ...     '',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_commands[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) b 3
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_commands[0]>:3
+    (Pdb) commands
+    (com) silent
+    (com) p "hello"
+    (com) end
+    (Pdb) b 4
+    Breakpoint 2 at <doctest test.test_pdb.test_pdb_commands[0]>:4
+    (Pdb) commands
+    (com) until 5
+    (Pdb) continue
+    'hello'
+    (Pdb)
+    1
+    2
+    > <doctest test.test_pdb.test_pdb_commands[0]>(5)test_function()
+    -> print(3)
+    (Pdb)
+    3
     """
 
 def test_pdb_breakpoint_with_filename():
@@ -465,6 +518,43 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     (Pdb) continue
     """
 
+def test_pdb_break_anywhere():
+    """Test break_anywhere() method of Pdb.
+
+    >>> def outer():
+    ...     def inner():
+    ...         import pdb
+    ...         import sys
+    ...         p = pdb.Pdb(nosigint=True, readrc=False)
+    ...         p.set_trace()
+    ...         frame = sys._getframe()
+    ...         print(p.break_anywhere(frame))  # inner
+    ...         print(p.break_anywhere(frame.f_back))  # outer
+    ...         print(p.break_anywhere(frame.f_back.f_back))  # caller
+    ...     inner()
+
+    >>> def caller():
+    ...     outer()
+
+    >>> def test_function():
+    ...     caller()
+
+    >>> reset_Breakpoint()
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'b 3',
+    ...     'c',
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_break_anywhere[0]>(6)inner()
+    -> p.set_trace()
+    (Pdb) b 3
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_break_anywhere[0]>:3
+    (Pdb) c
+    True
+    False
+    False
+    """
+
 def test_pdb_pp_repr_exc():
     """Test that do_p/do_pp do not swallow exceptions.
 
@@ -491,6 +581,37 @@ def test_pdb_pp_repr_exc():
     (Pdb) continue
     """
 
+def test_pdb_empty_line():
+    """Test that empty line repeats the last command.
+
+    >>> def test_function():
+    ...     x = 1
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     y = 2
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'p x',
+    ...     '',  # Should repeat p x
+    ...     'n ;; p 0 ;; p x',  # Fill cmdqueue with multiple commands
+    ...     '',  # Should still repeat p x
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_empty_line[0]>(3)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) p x
+    1
+    (Pdb)
+    1
+    (Pdb) n ;; p 0 ;; p x
+    0
+    1
+    > <doctest test.test_pdb.test_pdb_empty_line[0]>(4)test_function()
+    -> y = 2
+    (Pdb)
+    1
+    (Pdb) continue
+    """
 
 def do_nothing():
     pass
@@ -781,7 +902,7 @@ def test_pdb_where_command():
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
 
     >>> def f():
-    ...     g();
+    ...     g()
 
     >>> def test_function():
     ...     f()
@@ -789,8 +910,13 @@ def test_pdb_where_command():
     >>> with PdbTestInput([  # doctest: +ELLIPSIS
     ...     'w',
     ...     'where',
+    ...     'w 1',
+    ...     'w invalid',
     ...     'u',
     ...     'w',
+    ...     'w 0',
+    ...     'w 100',
+    ...     'w -100',
     ...     'continue',
     ... ]):
     ...    test_function()
@@ -798,38 +924,98 @@ def test_pdb_where_command():
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) w
     ...
-      <doctest test.test_pdb.test_pdb_where_command[3]>(8)<module>()
+      <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
     -> test_function()
       <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
     -> f()
       <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
-    -> g();
+    -> g()
     > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) where
     ...
-      <doctest test.test_pdb.test_pdb_where_command[3]>(8)<module>()
+      <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
     -> test_function()
       <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
     -> f()
       <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
-    -> g();
+    -> g()
     > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) w 1
+    > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) w invalid
+    *** Invalid count (invalid)
     (Pdb) u
     > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
-    -> g();
+    -> g()
     (Pdb) w
     ...
-      <doctest test.test_pdb.test_pdb_where_command[3]>(8)<module>()
+      <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
     -> test_function()
       <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
     -> f()
     > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
-    -> g();
+    -> g()
+      <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) w 0
+    > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    -> g()
+    (Pdb) w 100
+    ...
+      <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
+    -> test_function()
+      <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
+    -> f()
+    > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    -> g()
+      <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) w -100
+    ...
+      <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
+    -> test_function()
+      <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
+    -> f()
+    > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    -> g()
       <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) continue
+    """
+
+def test_pdb_restart_command():
+    """Test restart command
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False, mode='inline').set_trace()
+    ...     x = 1
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'restart',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_restart_command[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False, mode='inline').set_trace()
+    (Pdb) restart
+    *** run/restart command is disabled when pdb is running in inline mode.
+    Use the command line interface to enable restarting your program
+    e.g. "python -m pdb myscript.py"
+    (Pdb) continue
+    """
+
+def test_pdb_commands_with_set_trace():
+    """Test that commands can be passed to Pdb.set_trace()
+
+    >>> def test_function():
+    ...     x = 1
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace(commands=['p x', 'c'])
+
+    >>> test_function()
+    1
     """
 
 
@@ -1194,7 +1380,7 @@ def test_post_mortem_context_of_the_cause():
 def test_post_mortem_from_none():
     """Test post mortem traceback debugging of chained exception
 
-    In particular that cause from None (which sets __supress_context__ to True)
+    In particular that cause from None (which sets __suppress_context__ to True)
     does not show context.
 
 
@@ -2379,6 +2565,49 @@ def test_pdb_show_attribute_and_item():
     (Pdb) c
     """
 
+# doctest will modify pdb.set_trace during the test, so we need to backup
+# the original function to use it in the test
+original_pdb_settrace = pdb.set_trace
+
+def test_pdb_with_inline_breakpoint():
+    """Hard-coded breakpoint() calls should invoke the same debugger instance
+
+    >>> def test_function():
+    ...     x = 1
+    ...     import pdb; pdb.Pdb().set_trace()
+    ...     original_pdb_settrace()
+    ...     x = 2
+
+    >>> with PdbTestInput(['display x',
+    ...                    'n',
+    ...                    'n',
+    ...                    'n',
+    ...                    'n',
+    ...                    'undisplay',
+    ...                    'c']):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_with_inline_breakpoint[0]>(3)test_function()
+    -> import pdb; pdb.Pdb().set_trace()
+    (Pdb) display x
+    display x: 1
+    (Pdb) n
+    > <doctest test.test_pdb.test_pdb_with_inline_breakpoint[0]>(4)test_function()
+    -> original_pdb_settrace()
+    (Pdb) n
+    > <doctest test.test_pdb.test_pdb_with_inline_breakpoint[0]>(4)test_function()
+    -> original_pdb_settrace()
+    (Pdb) n
+    > <doctest test.test_pdb.test_pdb_with_inline_breakpoint[0]>(5)test_function()
+    -> x = 2
+    (Pdb) n
+    --Return--
+    > <doctest test.test_pdb.test_pdb_with_inline_breakpoint[0]>(5)test_function()->None
+    -> x = 2
+    display x: 2  [old: 1]
+    (Pdb) undisplay
+    (Pdb) c
+    """
+
 def test_pdb_issue_20766():
     """Test for reference leaks when the SIGINT handler is set.
 
@@ -3179,6 +3408,7 @@ def bœr():
         stdout, stderr = self.run_pdb_script(script, 'q\n', pdbrc=pdbrc, remove_home=True)
         self.assertNotIn("SyntaxError", stdout)
         self.assertIn("a+8=9", stdout)
+        self.assertIn("-> b = 2", stdout)
 
     def test_pdbrc_empty_line(self):
         """Test that empty lines in .pdbrc are ignored."""
@@ -3276,7 +3506,12 @@ def bœr():
         header = 'Nobody expects... blah, blah, blah'
         with ExitStack() as resources:
             resources.enter_context(patch('sys.stdout', stdout))
+            # patch pdb.Pdb.set_trace() to avoid entering the debugger
             resources.enter_context(patch.object(pdb.Pdb, 'set_trace'))
+            # We need to manually clear pdb.Pdb._last_pdb_instance so a
+            # new instance with stdout redirected could be created when
+            # pdb.set_trace() is called.
+            pdb.Pdb._last_pdb_instance = None
             pdb.set_trace(header=header)
         self.assertEqual(stdout.getvalue(), header + '\n')
 
@@ -3399,10 +3634,12 @@ def bœr():
             print("hello")
         """
 
+        # the time.sleep is needed for low-resolution filesystems like HFS+
         commands = """
             filename = $_frame.f_code.co_filename
             f = open(filename, "w")
             f.write("print('goodbye')")
+            import time; time.sleep(1)
             f.close()
             ll
         """
@@ -3412,10 +3649,12 @@ def bœr():
         self.assertIn("was edited", stdout)
 
     def test_file_modified_after_execution_with_multiple_instances(self):
+        # the time.sleep is needed for low-resolution filesystems like HFS+
         script = """
             import pdb; pdb.Pdb().set_trace()
             with open(__file__, "w") as f:
                 f.write("print('goodbye')\\n" * 5)
+                import time; time.sleep(1)
             import pdb; pdb.Pdb().set_trace()
         """
 
@@ -3474,6 +3713,23 @@ def bœr():
         # The file was edited, but restart should clear the state and consider
         # the file as up to date
         self.assertNotIn("WARNING:", stdout)
+
+    def test_post_mortem_restart(self):
+        script = """
+            def foo():
+                raise ValueError("foo")
+            foo()
+        """
+
+        commands = """
+            continue
+            restart
+            continue
+            quit
+        """
+
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertIn("Restarting", stdout)
 
     def test_relative_imports(self):
         self.module_name = 't_main'

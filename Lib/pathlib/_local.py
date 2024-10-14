@@ -17,7 +17,9 @@ try:
 except ImportError:
     grp = None
 
-from ._abc import UnsupportedOperation, PurePathBase, PathBase
+from pathlib._os import (copyfile, file_metadata_keys, read_file_metadata,
+                         write_file_metadata)
+from pathlib._abc import UnsupportedOperation, PurePathBase, PathBase
 
 
 __all__ = [
@@ -117,9 +119,9 @@ class PurePath(PurePathBase):
         paths = []
         for arg in args:
             if isinstance(arg, PurePath):
-                if arg.parser is ntpath and self.parser is posixpath:
+                if arg.parser is not self.parser:
                     # GH-103631: Convert separators for backwards compatibility.
-                    paths.extend(path.replace('\\', '/') for path in arg._raw_paths)
+                    paths.append(arg.as_posix())
                 else:
                     paths.extend(arg._raw_paths)
             else:
@@ -270,8 +272,7 @@ class PurePath(PurePathBase):
             elif len(drv_parts) == 6:
                 # e.g. //?/unc/server/share
                 root = sep
-        parsed = [sys.intern(str(x)) for x in rel.split(sep) if x and x != '.']
-        return drv, root, parsed
+        return drv, root, [x for x in rel.split(sep) if x and x != '.']
 
     @property
     def _raw_path(self):
@@ -780,6 +781,24 @@ class Path(PathBase, PurePath):
             if not exist_ok or not self.is_dir():
                 raise
 
+    _readable_metadata = _writable_metadata = file_metadata_keys
+    _read_metadata = read_file_metadata
+    _write_metadata = write_file_metadata
+
+    if copyfile:
+        def _copy_file(self, target):
+            """
+            Copy the contents of this file to the given target.
+            """
+            try:
+                target = os.fspath(target)
+            except TypeError:
+                if not isinstance(target, PathBase):
+                    raise
+                PathBase._copy_file(self, target)
+            else:
+                copyfile(os.fspath(self), target)
+
     def chmod(self, mode, *, follow_symlinks=True):
         """
         Change the permissions of the path, like os.chmod().
@@ -802,6 +821,11 @@ class Path(PathBase, PurePath):
         Remove this directory.  The directory must be empty.
         """
         os.rmdir(self)
+
+    def _rmtree(self):
+        # Lazy import to improve module import time
+        import shutil
+        shutil.rmtree(self)
 
     def rename(self, target):
         """
@@ -836,6 +860,14 @@ class Path(PathBase, PurePath):
             Note the order of arguments (link, target) is the reverse of os.symlink.
             """
             os.symlink(target, self, target_is_directory)
+
+    if os.name == 'nt':
+        def _symlink_to_target_of(self, link):
+            """
+            Make this path a symlink with the same target as the given link.
+            This is used by copy().
+            """
+            self.symlink_to(link.readlink(), link.is_dir())
 
     if hasattr(os, "link"):
         def hardlink_to(self, target):

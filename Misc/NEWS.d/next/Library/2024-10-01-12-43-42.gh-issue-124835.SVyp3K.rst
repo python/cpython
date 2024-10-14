@@ -1,0 +1,3 @@
+Make :func:`tomllib.loads` raise :exc:`TypeError` not :exc:`AttributeError`
+on bad input types that do not have the ``replace`` attribute. Improve error
+message when :class:`bytes` is received.

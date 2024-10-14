@@ -1,0 +1,1 @@
+Remove check for redefined memo entry in :func:`pickletools.dis`.

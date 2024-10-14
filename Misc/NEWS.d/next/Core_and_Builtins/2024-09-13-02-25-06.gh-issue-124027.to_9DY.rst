@@ -1,0 +1,2 @@
+Support ``<page up>``, ``<page down>``, and ``<delete>`` keys in the Python
+REPL when ``$TERM`` is set to ``vt100``.

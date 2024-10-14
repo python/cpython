@@ -1,0 +1,2 @@
+Add a future warning in :meth:`!functools.partial.__get__`. In future Python
+versions :class:`functools.partial` will be a method descriptor.

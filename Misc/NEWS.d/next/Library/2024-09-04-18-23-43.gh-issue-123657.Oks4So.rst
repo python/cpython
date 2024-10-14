@@ -1,0 +1,2 @@
+Fix crash and memory leak in :func:`decimal.getcontext`. It crashed when using
+a thread-local context by ``--with-decimal-contextvar=no``.

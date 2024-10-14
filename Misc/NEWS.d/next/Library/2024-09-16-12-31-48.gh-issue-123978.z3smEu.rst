@@ -1,0 +1,1 @@
+Remove broken :func:`time.thread_time` and :func:`time.thread_time_ns` on NetBSD.

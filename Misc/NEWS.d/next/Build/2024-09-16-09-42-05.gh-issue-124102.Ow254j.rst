@@ -1,0 +1,2 @@
+Update internal documentation under PCbuild, so it now correctly states that
+Windows requires VS2017 or later and Python 3.10 or later

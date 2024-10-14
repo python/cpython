@@ -2015,25 +2015,55 @@ exit:
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os__path_exists__doc__,
-"_path_exists($module, path, /)\n"
+"_path_exists($module, /, path)\n"
 "--\n"
 "\n"
 "Test whether a path exists.  Returns False for broken symbolic links.");
 
 #define OS__PATH_EXISTS_METHODDEF    \
-    {"_path_exists", (PyCFunction)os__path_exists, METH_O, os__path_exists__doc__},
+    {"_path_exists", _PyCFunction_CAST(os__path_exists), METH_FASTCALL|METH_KEYWORDS, os__path_exists__doc__},
 
 static int
 os__path_exists_impl(PyObject *module, path_t *path);
 
 static PyObject *
-os__path_exists(PyObject *module, PyObject *arg)
+os__path_exists(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_path_exists",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE_P("_path_exists", "path", 0, 0, 1, 1);
     int _return_value;
 
-    if (!path_converter(arg, &path)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &path)) {
         goto exit;
     }
     _return_value = os__path_exists_impl(module, &path);
@@ -2054,25 +2084,55 @@ exit:
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os__path_lexists__doc__,
-"_path_lexists($module, path, /)\n"
+"_path_lexists($module, /, path)\n"
 "--\n"
 "\n"
 "Test whether a path exists.  Returns True for broken symbolic links.");
 
 #define OS__PATH_LEXISTS_METHODDEF    \
-    {"_path_lexists", (PyCFunction)os__path_lexists, METH_O, os__path_lexists__doc__},
+    {"_path_lexists", _PyCFunction_CAST(os__path_lexists), METH_FASTCALL|METH_KEYWORDS, os__path_lexists__doc__},
 
 static int
 os__path_lexists_impl(PyObject *module, path_t *path);
 
 static PyObject *
-os__path_lexists(PyObject *module, PyObject *arg)
+os__path_lexists(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_path_lexists",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE_P("_path_lexists", "path", 0, 0, 1, 1);
     int _return_value;
 
-    if (!path_converter(arg, &path)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &path)) {
         goto exit;
     }
     _return_value = os__path_lexists_impl(module, &path);
@@ -2117,7 +2177,7 @@ os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(s), },
+        .ob_item = { _Py_LATIN1_CHR('s'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2367,7 +2427,7 @@ exit:
 #endif /* defined(MS_WINDOWS) */
 
 PyDoc_STRVAR(os__path_splitroot_ex__doc__,
-"_path_splitroot_ex($module, /, path)\n"
+"_path_splitroot_ex($module, /, p)\n"
 "--\n"
 "\n"
 "Split a pathname into drive, root and tail.\n"
@@ -2393,7 +2453,7 @@ os__path_splitroot_ex(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), },
+        .ob_item = { _Py_LATIN1_CHR('p'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2402,7 +2462,7 @@ os__path_splitroot_ex(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"path", NULL};
+    static const char * const _keywords[] = {"p", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "_path_splitroot_ex",
@@ -6025,7 +6085,7 @@ os_wait(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_WAIT) */
 
-#if (defined(__linux__) && defined(__NR_pidfd_open))
+#if (defined(__linux__) && defined(__NR_pidfd_open) && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
 
 PyDoc_STRVAR(os_pidfd_open__doc__,
 "pidfd_open($module, /, pid, flags=0)\n"
@@ -6084,7 +6144,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(__linux__) && defined(__NR_pidfd_open)) */
+#endif /* (defined(__linux__) && defined(__NR_pidfd_open) && !(defined(__ANDROID__) && __ANDROID_API__ < 31)) */
 
 #if defined(HAVE_SETNS)
 
@@ -6419,7 +6479,7 @@ PyDoc_STRVAR(os_times__doc__,
 "\n"
 "The object returned behaves like a named tuple with these fields:\n"
 "  (utime, stime, cutime, cstime, elapsed_time)\n"
-"All fields are floating point numbers.");
+"All fields are floating-point numbers.");
 
 #define OS_TIMES_METHODDEF    \
     {"times", (PyCFunction)os_times, METH_NOARGS, os_times__doc__},
@@ -8756,7 +8816,7 @@ PyDoc_STRVAR(os_major__doc__,
 #define OS_MAJOR_METHODDEF    \
     {"major", (PyCFunction)os_major, METH_O, os_major__doc__},
 
-static unsigned int
+static PyObject *
 os_major_impl(PyObject *module, dev_t device);
 
 static PyObject *
@@ -8764,16 +8824,11 @@ os_major(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     dev_t device;
-    unsigned int _return_value;
 
     if (!_Py_Dev_Converter(arg, &device)) {
         goto exit;
     }
-    _return_value = os_major_impl(module, device);
-    if ((_return_value == (unsigned int)-1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
+    return_value = os_major_impl(module, device);
 
 exit:
     return return_value;
@@ -8792,7 +8847,7 @@ PyDoc_STRVAR(os_minor__doc__,
 #define OS_MINOR_METHODDEF    \
     {"minor", (PyCFunction)os_minor, METH_O, os_minor__doc__},
 
-static unsigned int
+static PyObject *
 os_minor_impl(PyObject *module, dev_t device);
 
 static PyObject *
@@ -8800,16 +8855,11 @@ os_minor(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     dev_t device;
-    unsigned int _return_value;
 
     if (!_Py_Dev_Converter(arg, &device)) {
         goto exit;
     }
-    _return_value = os_minor_impl(module, device);
-    if ((_return_value == (unsigned int)-1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
+    return_value = os_minor_impl(module, device);
 
 exit:
     return return_value;
@@ -8829,25 +8879,23 @@ PyDoc_STRVAR(os_makedev__doc__,
     {"makedev", _PyCFunction_CAST(os_makedev), METH_FASTCALL, os_makedev__doc__},
 
 static dev_t
-os_makedev_impl(PyObject *module, int major, int minor);
+os_makedev_impl(PyObject *module, dev_t major, dev_t minor);
 
 static PyObject *
 os_makedev(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    int major;
-    int minor;
+    dev_t major;
+    dev_t minor;
     dev_t _return_value;
 
     if (!_PyArg_CheckPositional("makedev", nargs, 2, 2)) {
         goto exit;
     }
-    major = PyLong_AsInt(args[0]);
-    if (major == -1 && PyErr_Occurred()) {
+    if (!_Py_Dev_Converter(args[0], &major)) {
         goto exit;
     }
-    minor = PyLong_AsInt(args[1]);
-    if (minor == -1 && PyErr_Occurred()) {
+    if (!_Py_Dev_Converter(args[1], &minor)) {
         goto exit;
     }
     _return_value = os_makedev_impl(module, major, minor);
@@ -12199,6 +12247,60 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(MS_WINDOWS) */
 
+PyDoc_STRVAR(os__inputhook__doc__,
+"_inputhook($module, /)\n"
+"--\n"
+"\n"
+"Calls PyOS_CallInputHook droppong the GIL first");
+
+#define OS__INPUTHOOK_METHODDEF    \
+    {"_inputhook", (PyCFunction)os__inputhook, METH_NOARGS, os__inputhook__doc__},
+
+static PyObject *
+os__inputhook_impl(PyObject *module);
+
+static PyObject *
+os__inputhook(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return os__inputhook_impl(module);
+}
+
+PyDoc_STRVAR(os__is_inputhook_installed__doc__,
+"_is_inputhook_installed($module, /)\n"
+"--\n"
+"\n"
+"Checks if PyOS_CallInputHook is set");
+
+#define OS__IS_INPUTHOOK_INSTALLED_METHODDEF    \
+    {"_is_inputhook_installed", (PyCFunction)os__is_inputhook_installed, METH_NOARGS, os__is_inputhook_installed__doc__},
+
+static PyObject *
+os__is_inputhook_installed_impl(PyObject *module);
+
+static PyObject *
+os__is_inputhook_installed(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return os__is_inputhook_installed_impl(module);
+}
+
+PyDoc_STRVAR(os__create_environ__doc__,
+"_create_environ($module, /)\n"
+"--\n"
+"\n"
+"Create the environment dictionary.");
+
+#define OS__CREATE_ENVIRON_METHODDEF    \
+    {"_create_environ", (PyCFunction)os__create_environ, METH_NOARGS, os__create_environ__doc__},
+
+static PyObject *
+os__create_environ_impl(PyObject *module);
+
+static PyObject *
+os__create_environ(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return os__create_environ_impl(module);
+}
+
 #ifndef OS_TTYNAME_METHODDEF
     #define OS_TTYNAME_METHODDEF
 #endif /* !defined(OS_TTYNAME_METHODDEF) */
@@ -12866,4 +12968,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=41d3b3fd06c77934 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=38665a563e345d52 input=a9049054013a1b77]*/

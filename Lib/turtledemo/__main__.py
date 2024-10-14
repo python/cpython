@@ -216,7 +216,7 @@ class DemoWindow(object):
 
         self.vbar = vbar = Scrollbar(text_frame, name='vbar')
         vbar['command'] = text.yview
-        vbar.pack(side=LEFT, fill=Y)
+        vbar.pack(side=RIGHT, fill=Y)
         self.hbar = hbar = Scrollbar(text_frame, name='hbar', orient=HORIZONTAL)
         hbar['command'] = text.xview
         hbar.pack(side=BOTTOM, fill=X)
@@ -292,7 +292,7 @@ class DemoWindow(object):
         self.output_lbl.config(text=txt, fg=color)
 
     def makeLoadDemoMenu(self, master):
-        menu = Menu(master)
+        menu = Menu(master, tearoff=1)  # TJR: leave this one.
 
         for entry in getExampleEntries():
             def load(entry=entry):
@@ -302,7 +302,7 @@ class DemoWindow(object):
         return menu
 
     def makeFontMenu(self, master):
-        menu = Menu(master)
+        menu = Menu(master, tearoff=0)
         menu.add_command(label="Decrease (C-'-')", command=self.decrease_size,
                          font=menufont)
         menu.add_command(label="Increase (C-'+')", command=self.increase_size,
@@ -317,7 +317,7 @@ class DemoWindow(object):
         return menu
 
     def makeHelpMenu(self, master):
-        menu = Menu(master)
+        menu = Menu(master, tearoff=0)
 
         for help_label, help_file in help_entries:
             def show(help_label=help_label, help_file=help_file):

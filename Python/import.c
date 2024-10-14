@@ -6,6 +6,7 @@
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // struct _import_runtime_state
+#include "pycore_magic_number.h"  // PYC_MAGIC_NUMBER_TOKEN
 #include "pycore_namespace.h"     // _PyNamespace_Type
 #include "pycore_object.h"        // _Py_SetImmortal()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
@@ -94,11 +95,7 @@ static struct _inittab *inittab_copy = NULL;
     (interp)->imports.import_func
 
 #define IMPORT_LOCK(interp) \
-    (interp)->imports.lock.mutex
-#define IMPORT_LOCK_THREAD(interp) \
-    (interp)->imports.lock.thread
-#define IMPORT_LOCK_LEVEL(interp) \
-    (interp)->imports.lock.level
+    (interp)->imports.lock
 
 #define FIND_AND_LOAD(interp) \
     (interp)->imports.find_and_load
@@ -115,74 +112,14 @@ static struct _inittab *inittab_copy = NULL;
 void
 _PyImport_AcquireLock(PyInterpreterState *interp)
 {
-    unsigned long me = PyThread_get_thread_ident();
-    if (me == PYTHREAD_INVALID_THREAD_ID)
-        return; /* Too bad */
-    if (IMPORT_LOCK(interp) == NULL) {
-        IMPORT_LOCK(interp) = PyThread_allocate_lock();
-        if (IMPORT_LOCK(interp) == NULL)
-            return;  /* Nothing much we can do. */
-    }
-    if (IMPORT_LOCK_THREAD(interp) == me) {
-        IMPORT_LOCK_LEVEL(interp)++;
-        return;
-    }
-    if (IMPORT_LOCK_THREAD(interp) != PYTHREAD_INVALID_THREAD_ID ||
-        !PyThread_acquire_lock(IMPORT_LOCK(interp), 0))
-    {
-        PyThreadState *tstate = PyEval_SaveThread();
-        PyThread_acquire_lock(IMPORT_LOCK(interp), WAIT_LOCK);
-        PyEval_RestoreThread(tstate);
-    }
-    assert(IMPORT_LOCK_LEVEL(interp) == 0);
-    IMPORT_LOCK_THREAD(interp) = me;
-    IMPORT_LOCK_LEVEL(interp) = 1;
+    _PyRecursiveMutex_Lock(&IMPORT_LOCK(interp));
 }
 
-int
+void
 _PyImport_ReleaseLock(PyInterpreterState *interp)
 {
-    unsigned long me = PyThread_get_thread_ident();
-    if (me == PYTHREAD_INVALID_THREAD_ID || IMPORT_LOCK(interp) == NULL)
-        return 0; /* Too bad */
-    if (IMPORT_LOCK_THREAD(interp) != me)
-        return -1;
-    IMPORT_LOCK_LEVEL(interp)--;
-    assert(IMPORT_LOCK_LEVEL(interp) >= 0);
-    if (IMPORT_LOCK_LEVEL(interp) == 0) {
-        IMPORT_LOCK_THREAD(interp) = PYTHREAD_INVALID_THREAD_ID;
-        PyThread_release_lock(IMPORT_LOCK(interp));
-    }
-    return 1;
+    _PyRecursiveMutex_Unlock(&IMPORT_LOCK(interp));
 }
-
-#ifdef HAVE_FORK
-/* This function is called from PyOS_AfterFork_Child() to ensure that newly
-   created child processes do not share locks with the parent.
-   We now acquire the import lock around fork() calls but on some platforms
-   (Solaris 9 and earlier? see isue7242) that still left us with problems. */
-PyStatus
-_PyImport_ReInitLock(PyInterpreterState *interp)
-{
-    if (IMPORT_LOCK(interp) != NULL) {
-        if (_PyThread_at_fork_reinit(&IMPORT_LOCK(interp)) < 0) {
-            return _PyStatus_ERR("failed to create a new lock");
-        }
-    }
-
-    if (IMPORT_LOCK_LEVEL(interp) > 1) {
-        /* Forked as a side effect of import */
-        unsigned long me = PyThread_get_thread_ident();
-        PyThread_acquire_lock(IMPORT_LOCK(interp), WAIT_LOCK);
-        IMPORT_LOCK_THREAD(interp) = me;
-        IMPORT_LOCK_LEVEL(interp)--;
-    } else {
-        IMPORT_LOCK_THREAD(interp) = PYTHREAD_INVALID_THREAD_ID;
-        IMPORT_LOCK_LEVEL(interp) = 0;
-    }
-    return _PyStatus_OK();
-}
-#endif
 
 
 /***************/
@@ -878,6 +815,8 @@ static int clear_singlephase_extension(PyInterpreterState *interp,
 
 // Currently, this is only used for testing.
 // (See _testinternalcapi.clear_extension().)
+// If adding another use, be careful about modules that import themselves
+// recursively (see gh-123880).
 int
 _PyImport_ClearExtension(PyObject *name, PyObject *filename)
 {
@@ -1237,7 +1176,7 @@ hashtable_key_from_2_strings(PyObject *str1, PyObject *str2, const char sep)
 static Py_uhash_t
 hashtable_hash_str(const void *key)
 {
-    return _Py_HashBytes(key, strlen((const char *)key));
+    return Py_HashBuffer(key, strlen((const char *)key));
 }
 
 static int
@@ -1385,12 +1324,16 @@ _extensions_cache_set(PyObject *path, PyObject *name,
     value = entry == NULL
         ? NULL
         : (struct extensions_cache_value *)entry->value;
-    /* We should never be updating an existing cache value. */
-    assert(value == NULL);
     if (value != NULL) {
-        PyErr_Format(PyExc_SystemError,
-                     "extension module %R is already cached", name);
-        goto finally;
+        /* gh-123880: If there's an existing cache value, it means a module is
+         * being imported recursively from its PyInit_* or Py_mod_* function.
+         * (That function presumably handles returning a partially
+         *  constructed module in such a case.)
+         * We can reuse the existing cache value; it is owned by the cache.
+         * (Entries get removed from it in exceptional circumstances,
+         *  after interpreter shutdown, and in runtime shutdown.)
+         */
+        goto finally_oldvalue;
     }
     newvalue = alloc_extensions_cache_value();
     if (newvalue == NULL) {
@@ -1455,6 +1398,7 @@ finally:
         cleanup_old_cached_def(&olddefbase);
     }
 
+finally_oldvalue:
     extensions_lock_release();
     if (key != NULL) {
         hashtable_destroy_str(key);
@@ -1582,11 +1526,11 @@ switch_to_main_interpreter(PyThreadState *tstate)
     if (_Py_IsMainInterpreter(tstate->interp)) {
         return tstate;
     }
-    PyThreadState *main_tstate = PyThreadState_New(_PyInterpreterState_Main());
+    PyThreadState *main_tstate = _PyThreadState_NewBound(
+            _PyInterpreterState_Main(), _PyThreadState_WHENCE_EXEC);
     if (main_tstate == NULL) {
         return NULL;
     }
-    main_tstate->_whence = _PyThreadState_WHENCE_EXEC;
 #ifndef NDEBUG
     PyThreadState *old_tstate = PyThreadState_Swap(main_tstate);
     assert(old_tstate == tstate);
@@ -1594,6 +1538,35 @@ switch_to_main_interpreter(PyThreadState *tstate)
     (void)PyThreadState_Swap(main_tstate);
 #endif
     return main_tstate;
+}
+
+static void
+switch_back_from_main_interpreter(PyThreadState *tstate,
+                                  PyThreadState *main_tstate,
+                                  PyObject *tempobj)
+{
+    assert(main_tstate == PyThreadState_GET());
+    assert(_Py_IsMainInterpreter(main_tstate->interp));
+    assert(tstate->interp != main_tstate->interp);
+
+    /* Handle any exceptions, which we cannot propagate directly
+     * to the subinterpreter. */
+    if (PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
+            /* We trust it will be caught again soon. */
+            PyErr_Clear();
+        }
+        else {
+            /* Printing the exception should be sufficient. */
+            PyErr_PrintEx(0);
+        }
+    }
+
+    Py_XDECREF(tempobj);
+
+    PyThreadState_Clear(main_tstate);
+    (void)PyThreadState_Swap(tstate);
+    PyThreadState_Delete(main_tstate);
 }
 
 static PyObject *
@@ -1615,6 +1588,7 @@ get_core_module_dict(PyInterpreterState *interp,
     return NULL;
 }
 
+#ifndef NDEBUG
 static inline int
 is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
 {
@@ -1632,7 +1606,6 @@ is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *path)
 }
 
 
-#ifndef NDEBUG
 static _Py_ext_module_kind
 _get_extension_kind(PyModuleDef *def, bool check_size)
 {
@@ -1961,7 +1934,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
      *
      * However, for single-phase init the module's init function will
      * create the module, create other objects (and allocate other
-     * memory), populate it and its module state, and initialze static
+     * memory), populate it and its module state, and initialize static
      * types.  Some modules store other objects and data in global C
      * variables and register callbacks with the runtime/stdlib or
      * even external libraries (which is part of why we can't just
@@ -2031,10 +2004,22 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
         if (res.kind == _Py_ext_module_kind_SINGLEPHASE) {
             /* Remember the filename as the __file__ attribute */
             if (info->filename != NULL) {
+                PyObject *filename = NULL;
+                if (switched) {
+                    // The original filename may be allocated by subinterpreter's
+                    // obmalloc, so we create a copy here.
+                    filename = _PyUnicode_Copy(info->filename);
+                    if (filename == NULL) {
+                        return NULL;
+                    }
+                } else {
+                    filename = Py_NewRef(info->filename);
+                }
                 // XXX There's a refleak somewhere with the filename.
-                // Until we can track it down, we intern it.
-                PyObject *filename = Py_NewRef(info->filename);
-                PyUnicode_InternInPlace(&filename);
+                // Until we can track it down, we immortalize it.
+                PyInterpreterState *interp = _PyInterpreterState_GET();
+                _PyUnicode_InternImmortal(interp, &filename);
+
                 if (PyModule_AddObjectRef(mod, "__file__", filename) < 0) {
                     PyErr_Clear(); /* Not important enough to report */
                 }
@@ -2067,7 +2052,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
                 singlephase.m_init = p0;
             }
             cached = update_global_state_for_extension(
-                    tstate, info->path, info->name, def, &singlephase);
+                    main_tstate, info->path, info->name, def, &singlephase);
             if (cached == NULL) {
                 assert(PyErr_Occurred());
                 goto main_finally;
@@ -2079,27 +2064,10 @@ main_finally:
     /* Switch back to the subinterpreter. */
     if (switched) {
         assert(main_tstate != tstate);
-
-        /* Handle any exceptions, which we cannot propagate directly
-         * to the subinterpreter. */
-        if (PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
-                /* We trust it will be caught again soon. */
-                PyErr_Clear();
-            }
-            else {
-                /* Printing the exception should be sufficient. */
-                PyErr_PrintEx(0);
-            }
-        }
-
+        switch_back_from_main_interpreter(tstate, main_tstate, mod);
         /* Any module we got from the init function will have to be
          * reloaded in the subinterpreter. */
-        Py_CLEAR(mod);
-
-        PyThreadState_Clear(main_tstate);
-        (void)PyThreadState_Swap(tstate);
-        PyThreadState_Delete(main_tstate);
+        mod = NULL;
     }
 
     /*****************************************************************/
@@ -2167,6 +2135,7 @@ error:
 }
 
 
+// Used in _PyImport_ClearExtension; see notes there.
 static int
 clear_singlephase_extension(PyInterpreterState *interp,
                             PyObject *name, PyObject *path)
@@ -2193,8 +2162,20 @@ clear_singlephase_extension(PyInterpreterState *interp,
         }
     }
 
+    /* We must use the main interpreter to clean up the cache.
+     * See the note in import_run_extension(). */
+    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *main_tstate = switch_to_main_interpreter(tstate);
+    if (main_tstate == NULL) {
+        return -1;
+    }
+
     /* Clear the cached module def. */
     _extensions_cache_delete(path, name);
+
+    if (main_tstate != tstate) {
+        switch_back_from_main_interpreter(tstate, main_tstate, NULL);
+    }
 
     return 0;
 }
@@ -2503,22 +2484,8 @@ _PyImport_GetBuiltinModuleNames(void)
 long
 PyImport_GetMagicNumber(void)
 {
-    long res;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyObject *external, *pyc_magic;
-
-    external = PyObject_GetAttrString(IMPORTLIB(interp), "_bootstrap_external");
-    if (external == NULL)
-        return -1;
-    pyc_magic = PyObject_GetAttrString(external, "_RAW_MAGIC_NUMBER");
-    Py_DECREF(external);
-    if (pyc_magic == NULL)
-        return -1;
-    res = PyLong_AsLong(pyc_magic);
-    Py_DECREF(pyc_magic);
-    return res;
+    return PYC_MAGIC_NUMBER_TOKEN;
 }
-
 
 extern const char * _PySys_ImplCacheTag;
 
@@ -4111,11 +4078,6 @@ _PyImport_FiniCore(PyInterpreterState *interp)
         PyErr_FormatUnraisable("Exception ignored on clearing sys.modules");
     }
 
-    if (IMPORT_LOCK(interp) != NULL) {
-        PyThread_free_lock(IMPORT_LOCK(interp));
-        IMPORT_LOCK(interp) = NULL;
-    }
-
     _PyImport_ClearCore(interp);
 }
 
@@ -4248,8 +4210,7 @@ _imp_lock_held_impl(PyObject *module)
 /*[clinic end generated code: output=8b89384b5e1963fc input=9b088f9b217d9bdf]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return PyBool_FromLong(
-            IMPORT_LOCK_THREAD(interp) != PYTHREAD_INVALID_THREAD_ID);
+    return PyBool_FromLong(PyMutex_IsLocked(&IMPORT_LOCK(interp).mutex));
 }
 
 /*[clinic input]
@@ -4283,11 +4244,12 @@ _imp_release_lock_impl(PyObject *module)
 /*[clinic end generated code: output=7faab6d0be178b0a input=934fb11516dd778b]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (_PyImport_ReleaseLock(interp) < 0) {
+    if (!_PyRecursiveMutex_IsLockedByCurrentThread(&IMPORT_LOCK(interp))) {
         PyErr_SetString(PyExc_RuntimeError,
                         "not holding the import lock");
         return NULL;
     }
+    _PyImport_ReleaseLock(interp);
     Py_RETURN_NONE;
 }
 
@@ -4853,6 +4815,12 @@ imp_module_exec(PyObject *module)
     const wchar_t *mode = _Py_GetConfig()->check_hash_pycs_mode;
     PyObject *pyc_mode = PyUnicode_FromWideChar(mode, -1);
     if (PyModule_Add(module, "check_hash_based_pycs", pyc_mode) < 0) {
+        return -1;
+    }
+
+    if (PyModule_AddIntConstant(
+            module, "pyc_magic_number_token", PYC_MAGIC_NUMBER_TOKEN) < 0)
+    {
         return -1;
     }
 

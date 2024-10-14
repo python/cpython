@@ -1,0 +1,2 @@
+Improve the :exc:`SyntaxError` message if the user tries to use
+:keyword:`yield from <yield>` outside a function.

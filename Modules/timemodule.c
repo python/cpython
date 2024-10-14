@@ -116,7 +116,7 @@ time_time(PyObject *self, PyObject *unused)
 
 
 PyDoc_STRVAR(time_doc,
-"time() -> floating point number\n\
+"time() -> floating-point number\n\
 \n\
 Return the current time in seconds since the Epoch.\n\
 Fractions of a second may be present if the system clock provides them.");
@@ -350,7 +350,7 @@ time_clock_getres(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(clock_getres_doc,
-"clock_getres(clk_id) -> floating point number\n\
+"clock_getres(clk_id) -> floating-point number\n\
 \n\
 Return the resolution (precision) of the specified clock clk_id.");
 
@@ -413,7 +413,7 @@ PyDoc_STRVAR(sleep_doc,
 "sleep(seconds)\n\
 \n\
 Delay execution for a given number of seconds.  The argument may be\n\
-a floating point number for subsecond precision.");
+a floating-point number for subsecond precision.");
 
 static PyStructSequence_Field struct_time_type_fields[] = {
     {"tm_year", "year, for example, 1993"},
@@ -813,7 +813,12 @@ time_strftime(PyObject *module, PyObject *args)
         return NULL;
     }
 
-#if defined(_MSC_VER) || (defined(__sun) && defined(__SVR4)) || defined(_AIX) || defined(__VXWORKS__)
+// Some platforms only support a limited range of years.
+//
+// Android works with negative years on the emulator, but fails on some
+// physical devices (#123017).
+#if defined(_MSC_VER) || (defined(__sun) && defined(__SVR4)) || defined(_AIX) \
+    || defined(__VXWORKS__) || defined(__ANDROID__)
     if (buf.tm_year + 1900 < 1 || 9999 < buf.tm_year + 1900) {
         PyErr_SetString(PyExc_ValueError,
                         "strftime() requires year in [1; 9999]");
@@ -1104,7 +1109,7 @@ time_mktime(PyObject *module, PyObject *tm_tuple)
 }
 
 PyDoc_STRVAR(mktime_doc,
-"mktime(tuple) -> floating point number\n\
+"mktime(tuple) -> floating-point number\n\
 \n\
 Convert a time tuple in local time to seconds since the Epoch.\n\
 Note that mktime(gmtime(0)) will not generally return zero for most\n\
@@ -1288,9 +1293,14 @@ py_process_time(time_module_state *state, PyTime_t *tp,
 
     /* clock_gettime */
 // gh-115714: Don't use CLOCK_PROCESS_CPUTIME_ID on WASI.
+/* CLOCK_PROF is defined on NetBSD, but not supported.
+ * CLOCK_PROCESS_CPUTIME_ID is broken on NetBSD for the same reason as
+ * CLOCK_THREAD_CPUTIME_ID (see comment below).
+ */
 #if defined(HAVE_CLOCK_GETTIME) \
     && (defined(CLOCK_PROCESS_CPUTIME_ID) || defined(CLOCK_PROF)) \
-    && !defined(__wasi__)
+    && !defined(__wasi__) \
+    && !defined(__NetBSD__)
     struct timespec ts;
 
     if (HAVE_CLOCK_GETTIME_RUNTIME) {
@@ -1483,12 +1493,19 @@ _PyTime_GetThreadTimeWithInfo(PyTime_t *tp, _Py_clock_info_t *info)
     return 0;
 }
 
+/* CLOCK_THREAD_CPUTIME_ID is broken on NetBSD: the result of clock_gettime()
+ * includes the sleeping time, that defeats the purpose of the clock.
+ * Also, clock_getres() does not support it.
+ * https://github.com/python/cpython/issues/123978
+ * https://gnats.netbsd.org/57512
+ */
 #elif defined(HAVE_CLOCK_GETTIME) && \
-      defined(CLOCK_PROCESS_CPUTIME_ID) && \
-      !defined(__EMSCRIPTEN__) && !defined(__wasi__)
+      defined(CLOCK_THREAD_CPUTIME_ID) && \
+      !defined(__EMSCRIPTEN__) && !defined(__wasi__) && \
+      !defined(__NetBSD__)
 #define HAVE_THREAD_TIME
 
-#if defined(__APPLE__) && defined(__has_attribute) && __has_attribute(availability)
+#if defined(__APPLE__) && _Py__has_attribute(availability)
 static int
 _PyTime_GetThreadTimeWithInfo(PyTime_t *tp, _Py_clock_info_t *info)
      __attribute__((availability(macos, introduced=10.12)))
@@ -1902,7 +1919,7 @@ PyDoc_STRVAR(module_doc,
 \n\
 There are two standard representations of time.  One is the number\n\
 of seconds since the Epoch, in UTC (a.k.a. GMT).  It may be an integer\n\
-or a floating point number (to represent fractions of seconds).\n\
+or a floating-point number (to represent fractions of seconds).\n\
 The epoch is the point where the time starts, the return value of time.gmtime(0).\n\
 It is January 1, 1970, 00:00:00 (UTC) on all platforms.\n\
 \n\
