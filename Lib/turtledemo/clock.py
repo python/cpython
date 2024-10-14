@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: cp1252 -*-
 """       turtle-example-suite:
 
@@ -109,7 +108,6 @@ def tick():
         writer.write(datum(t),
                      align="center", font=("Courier", 14, "bold"))
         writer.forward(85)
-        tracer(True)
         second_hand.setheading(6*sekunde)  # or here
         minute_hand.setheading(6*minute)
         hour_hand.setheading(30*stunde)

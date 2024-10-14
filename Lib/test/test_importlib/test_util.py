@@ -8,13 +8,28 @@ importlib_util = util.import_importlib('importlib.util')
 import importlib.util
 import os
 import pathlib
+import re
 import string
 import sys
 from test import support
+import textwrap
 import types
 import unittest
 import unittest.mock
 import warnings
+
+try:
+    import _testsinglephase
+except ImportError:
+    _testsinglephase = None
+try:
+    import _testmultiphase
+except ImportError:
+    _testmultiphase = None
+try:
+    import _interpreters
+except ModuleNotFoundError:
+    _interpreters = None
 
 
 class DecodeSourceBytesTests:
@@ -119,247 +134,6 @@ class ModuleFromSpecTests:
  Source_ModuleFromSpecTests
 ) = util.test_both(ModuleFromSpecTests, abc=abc, machinery=machinery,
                    util=importlib_util)
-
-
-class ModuleForLoaderTests:
-
-    """Tests for importlib.util.module_for_loader."""
-
-    @classmethod
-    def module_for_loader(cls, func):
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            return cls.util.module_for_loader(func)
-
-    def test_warning(self):
-        # Should raise a PendingDeprecationWarning when used.
-        with warnings.catch_warnings():
-            warnings.simplefilter('error', DeprecationWarning)
-            with self.assertRaises(DeprecationWarning):
-                func = self.util.module_for_loader(lambda x: x)
-
-    def return_module(self, name):
-        fxn = self.module_for_loader(lambda self, module: module)
-        return fxn(self, name)
-
-    def raise_exception(self, name):
-        def to_wrap(self, module):
-            raise ImportError
-        fxn = self.module_for_loader(to_wrap)
-        try:
-            fxn(self, name)
-        except ImportError:
-            pass
-
-    def test_new_module(self):
-        # Test that when no module exists in sys.modules a new module is
-        # created.
-        module_name = 'a.b.c'
-        with util.uncache(module_name):
-            module = self.return_module(module_name)
-            self.assertIn(module_name, sys.modules)
-        self.assertIsInstance(module, types.ModuleType)
-        self.assertEqual(module.__name__, module_name)
-
-    def test_reload(self):
-        # Test that a module is reused if already in sys.modules.
-        class FakeLoader:
-            def is_package(self, name):
-                return True
-            @self.module_for_loader
-            def load_module(self, module):
-                return module
-        name = 'a.b.c'
-        module = types.ModuleType('a.b.c')
-        module.__loader__ = 42
-        module.__package__ = 42
-        with util.uncache(name):
-            sys.modules[name] = module
-            loader = FakeLoader()
-            returned_module = loader.load_module(name)
-            self.assertIs(returned_module, sys.modules[name])
-            self.assertEqual(module.__loader__, loader)
-            self.assertEqual(module.__package__, name)
-
-    def test_new_module_failure(self):
-        # Test that a module is removed from sys.modules if added but an
-        # exception is raised.
-        name = 'a.b.c'
-        with util.uncache(name):
-            self.raise_exception(name)
-            self.assertNotIn(name, sys.modules)
-
-    def test_reload_failure(self):
-        # Test that a failure on reload leaves the module in-place.
-        name = 'a.b.c'
-        module = types.ModuleType(name)
-        with util.uncache(name):
-            sys.modules[name] = module
-            self.raise_exception(name)
-            self.assertIs(module, sys.modules[name])
-
-    def test_decorator_attrs(self):
-        def fxn(self, module): pass
-        wrapped = self.module_for_loader(fxn)
-        self.assertEqual(wrapped.__name__, fxn.__name__)
-        self.assertEqual(wrapped.__qualname__, fxn.__qualname__)
-
-    def test_false_module(self):
-        # If for some odd reason a module is considered false, still return it
-        # from sys.modules.
-        class FalseModule(types.ModuleType):
-            def __bool__(self): return False
-
-        name = 'mod'
-        module = FalseModule(name)
-        with util.uncache(name):
-            self.assertFalse(module)
-            sys.modules[name] = module
-            given = self.return_module(name)
-            self.assertIs(given, module)
-
-    def test_attributes_set(self):
-        # __name__, __loader__, and __package__ should be set (when
-        # is_package() is defined; undefined implicitly tested elsewhere).
-        class FakeLoader:
-            def __init__(self, is_package):
-                self._pkg = is_package
-            def is_package(self, name):
-                return self._pkg
-            @self.module_for_loader
-            def load_module(self, module):
-                return module
-
-        name = 'pkg.mod'
-        with util.uncache(name):
-            loader = FakeLoader(False)
-            module = loader.load_module(name)
-            self.assertEqual(module.__name__, name)
-            self.assertIs(module.__loader__, loader)
-            self.assertEqual(module.__package__, 'pkg')
-
-        name = 'pkg.sub'
-        with util.uncache(name):
-            loader = FakeLoader(True)
-            module = loader.load_module(name)
-            self.assertEqual(module.__name__, name)
-            self.assertIs(module.__loader__, loader)
-            self.assertEqual(module.__package__, name)
-
-
-(Frozen_ModuleForLoaderTests,
- Source_ModuleForLoaderTests
- ) = util.test_both(ModuleForLoaderTests, util=importlib_util)
-
-
-class SetPackageTests:
-
-    """Tests for importlib.util.set_package."""
-
-    def verify(self, module, expect):
-        """Verify the module has the expected value for __package__ after
-        passing through set_package."""
-        fxn = lambda: module
-        wrapped = self.util.set_package(fxn)
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            wrapped()
-        self.assertTrue(hasattr(module, '__package__'))
-        self.assertEqual(expect, module.__package__)
-
-    def test_top_level(self):
-        # __package__ should be set to the empty string if a top-level module.
-        # Implicitly tests when package is set to None.
-        module = types.ModuleType('module')
-        module.__package__ = None
-        self.verify(module, '')
-
-    def test_package(self):
-        # Test setting __package__ for a package.
-        module = types.ModuleType('pkg')
-        module.__path__ = ['<path>']
-        module.__package__ = None
-        self.verify(module, 'pkg')
-
-    def test_submodule(self):
-        # Test __package__ for a module in a package.
-        module = types.ModuleType('pkg.mod')
-        module.__package__ = None
-        self.verify(module, 'pkg')
-
-    def test_setting_if_missing(self):
-        # __package__ should be set if it is missing.
-        module = types.ModuleType('mod')
-        if hasattr(module, '__package__'):
-            delattr(module, '__package__')
-        self.verify(module, '')
-
-    def test_leaving_alone(self):
-        # If __package__ is set and not None then leave it alone.
-        for value in (True, False):
-            module = types.ModuleType('mod')
-            module.__package__ = value
-            self.verify(module, value)
-
-    def test_decorator_attrs(self):
-        def fxn(module): pass
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            wrapped = self.util.set_package(fxn)
-        self.assertEqual(wrapped.__name__, fxn.__name__)
-        self.assertEqual(wrapped.__qualname__, fxn.__qualname__)
-
-
-(Frozen_SetPackageTests,
- Source_SetPackageTests
- ) = util.test_both(SetPackageTests, util=importlib_util)
-
-
-class SetLoaderTests:
-
-    """Tests importlib.util.set_loader()."""
-
-    @property
-    def DummyLoader(self):
-        # Set DummyLoader on the class lazily.
-        class DummyLoader:
-            @self.util.set_loader
-            def load_module(self, module):
-                return self.module
-        self.__class__.DummyLoader = DummyLoader
-        return DummyLoader
-
-    def test_no_attribute(self):
-        loader = self.DummyLoader()
-        loader.module = types.ModuleType('blah')
-        try:
-            del loader.module.__loader__
-        except AttributeError:
-            pass
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            self.assertEqual(loader, loader.load_module('blah').__loader__)
-
-    def test_attribute_is_None(self):
-        loader = self.DummyLoader()
-        loader.module = types.ModuleType('blah')
-        loader.module.__loader__ = None
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            self.assertEqual(loader, loader.load_module('blah').__loader__)
-
-    def test_not_reset(self):
-        loader = self.DummyLoader()
-        loader.module = types.ModuleType('blah')
-        loader.module.__loader__ = 42
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            self.assertEqual(42, loader.load_module('blah').__loader__)
-
-
-(Frozen_SetLoaderTests,
- Source_SetLoaderTests
- ) = util.test_both(SetLoaderTests, util=importlib_util)
 
 
 class ResolveNameTests:
@@ -803,7 +577,7 @@ class PEP3147Tests:
         with util.temporary_pycache_prefix(pycache_prefix):
             self.assertEqual(
                 self.util.cache_from_source(path, optimization=''),
-                expect)
+                os.path.normpath(expect))
 
     @unittest.skipIf(sys.implementation.cache_tag is None,
                      'requires sys.implementation.cache_tag to not be None')
@@ -876,6 +650,129 @@ class MagicNumberTests(unittest.TestCase):
             "community stakeholders."
         )
         self.assertEqual(EXPECTED_MAGIC_NUMBER, actual, msg)
+
+
+@unittest.skipIf(_interpreters is None, 'subinterpreters required')
+class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
+
+    def run_with_own_gil(self, script):
+        interpid = _interpreters.create('isolated')
+        def ensure_destroyed():
+            try:
+                _interpreters.destroy(interpid)
+            except _interpreters.InterpreterNotFoundError:
+                pass
+        self.addCleanup(ensure_destroyed)
+        excsnap = _interpreters.exec(interpid, script)
+        if excsnap is not None:
+            if excsnap.type.__name__ == 'ImportError':
+                raise ImportError(excsnap.msg)
+
+    def run_with_shared_gil(self, script):
+        interpid = _interpreters.create('legacy')
+        def ensure_destroyed():
+            try:
+                _interpreters.destroy(interpid)
+            except _interpreters.InterpreterNotFoundError:
+                pass
+        self.addCleanup(ensure_destroyed)
+        excsnap = _interpreters.exec(interpid, script)
+        if excsnap is not None:
+            if excsnap.type.__name__ == 'ImportError':
+                raise ImportError(excsnap.msg)
+
+    @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
+    # gh-117649: single-phase init modules are not currently supported in
+    # subinterpreters in the free-threaded build
+    @support.expected_failure_if_gil_disabled()
+    def test_single_phase_init_module(self):
+        script = textwrap.dedent('''
+            from importlib.util import _incompatible_extension_module_restrictions
+            with _incompatible_extension_module_restrictions(disable_check=True):
+                import _testsinglephase
+            ''')
+        with self.subTest('check disabled, shared GIL'):
+            self.run_with_shared_gil(script)
+        with self.subTest('check disabled, per-interpreter GIL'):
+            self.run_with_own_gil(script)
+
+        script = textwrap.dedent(f'''
+            from importlib.util import _incompatible_extension_module_restrictions
+            with _incompatible_extension_module_restrictions(disable_check=False):
+                import _testsinglephase
+            ''')
+        with self.subTest('check enabled, shared GIL'):
+            with self.assertRaises(ImportError):
+                self.run_with_shared_gil(script)
+        with self.subTest('check enabled, per-interpreter GIL'):
+            with self.assertRaises(ImportError):
+                self.run_with_own_gil(script)
+
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    @support.requires_gil_enabled("gh-117649: not supported in free-threaded build")
+    def test_incomplete_multi_phase_init_module(self):
+        # Apple extensions must be distributed as frameworks. This requires
+        # a specialist loader.
+        if support.is_apple_mobile:
+            loader = "AppleFrameworkLoader"
+        else:
+            loader = "ExtensionFileLoader"
+
+        prescript = textwrap.dedent(f'''
+            from importlib.util import spec_from_loader, module_from_spec
+            from importlib.machinery import {loader}
+
+            name = '_test_shared_gil_only'
+            filename = {_testmultiphase.__file__!r}
+            loader = {loader}(name, filename)
+            spec = spec_from_loader(name, loader)
+
+            ''')
+
+        script = prescript + textwrap.dedent('''
+            from importlib.util import _incompatible_extension_module_restrictions
+            with _incompatible_extension_module_restrictions(disable_check=True):
+                module = module_from_spec(spec)
+                loader.exec_module(module)
+            ''')
+        with self.subTest('check disabled, shared GIL'):
+            self.run_with_shared_gil(script)
+        with self.subTest('check disabled, per-interpreter GIL'):
+            self.run_with_own_gil(script)
+
+        script = prescript + textwrap.dedent('''
+            from importlib.util import _incompatible_extension_module_restrictions
+            with _incompatible_extension_module_restrictions(disable_check=False):
+                module = module_from_spec(spec)
+                loader.exec_module(module)
+            ''')
+        with self.subTest('check enabled, shared GIL'):
+            self.run_with_shared_gil(script)
+        with self.subTest('check enabled, per-interpreter GIL'):
+            with self.assertRaises(ImportError):
+                self.run_with_own_gil(script)
+
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    def test_complete_multi_phase_init_module(self):
+        script = textwrap.dedent('''
+            from importlib.util import _incompatible_extension_module_restrictions
+            with _incompatible_extension_module_restrictions(disable_check=True):
+                import _testmultiphase
+            ''')
+        with self.subTest('check disabled, shared GIL'):
+            self.run_with_shared_gil(script)
+        with self.subTest('check disabled, per-interpreter GIL'):
+            self.run_with_own_gil(script)
+
+        script = textwrap.dedent(f'''
+            from importlib.util import _incompatible_extension_module_restrictions
+            with _incompatible_extension_module_restrictions(disable_check=False):
+                import _testmultiphase
+            ''')
+        with self.subTest('check enabled, shared GIL'):
+            self.run_with_shared_gil(script)
+        with self.subTest('check enabled, per-interpreter GIL'):
+            self.run_with_own_gil(script)
 
 
 if __name__ == '__main__':

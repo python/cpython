@@ -1,2 +1,0 @@
-:mod:`sqlite3` now correctly detects DML queries with leading comments.
-Patch by Erlend E. Aasland.

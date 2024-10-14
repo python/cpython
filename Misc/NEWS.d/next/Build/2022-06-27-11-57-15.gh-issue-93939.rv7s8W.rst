@@ -1,2 +1,0 @@
-The ``2to3``, ``idle``, and ``pydoc`` scripts are now generated and installed by
-``Makefile`` instead of ``setup.py``.

@@ -1,2 +1,0 @@
-Compile and run code with unpacking of extremely large sequences (1000s of elements).
-Such code failed to compile. It now compiles and runs correctly.

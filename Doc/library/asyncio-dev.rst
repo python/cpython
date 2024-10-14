@@ -34,7 +34,7 @@ There are several ways to enable asyncio debug mode:
 In addition to enabling the debug mode, consider also:
 
 * setting the log level of the :ref:`asyncio logger <asyncio-logger>` to
-  :py:data:`logging.DEBUG`, for example the following snippet of code
+  :py:const:`logging.DEBUG`, for example the following snippet of code
   can be run at startup of the application::
 
     logging.basicConfig(level=logging.DEBUG)
@@ -99,7 +99,7 @@ To schedule a coroutine object from a different OS thread, the
      # Wait for the result:
      result = future.result()
 
-To handle signals and to execute subprocesses, the event loop must be
+To handle signals the event loop must be
 run in the main thread.
 
 The :meth:`loop.run_in_executor` method can be used with a
@@ -109,7 +109,7 @@ that the event loop runs in.
 
 There is currently no way to schedule coroutines or callbacks directly
 from a different process (such as one started with
-:mod:`multiprocessing`). The :ref:`Event Loop Methods <asyncio-event-loop>`
+:mod:`multiprocessing`). The :ref:`asyncio-event-loop-methods`
 section lists APIs that can read from pipes and watch file descriptors
 without blocking the event loop. In addition, asyncio's
 :ref:`Subprocess <asyncio-subprocess>` APIs provide a way to start a
@@ -142,10 +142,15 @@ Logging
 asyncio uses the :mod:`logging` module and all logging is performed
 via the ``"asyncio"`` logger.
 
-The default log level is :py:data:`logging.INFO`, which can be easily
+The default log level is :py:const:`logging.INFO`, which can be easily
 adjusted::
 
    logging.getLogger("asyncio").setLevel(logging.WARNING)
+
+
+Network logging can block the event loop. It is recommended to use
+a separate thread for handling logs or use non-blocking IO. For example,
+see :ref:`blocking-handlers`.
 
 
 .. _asyncio-coroutine-not-scheduled:

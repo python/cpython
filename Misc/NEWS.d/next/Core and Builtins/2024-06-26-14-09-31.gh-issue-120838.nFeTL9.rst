@@ -1,0 +1,2 @@
+:c:func:`Py_Finalize()` and :c:func:`Py_FinalizeEx()` now always run with
+the main interpreter active.

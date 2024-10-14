@@ -1,1 +1,0 @@
-``LOAD_METHOD`` instruction has been removed. It was merged back into ``LOAD_ATTR``.

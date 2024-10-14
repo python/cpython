@@ -37,8 +37,9 @@ class MockGetPathTests(unittest.TestCase):
             module_search_paths_set=1,
             module_search_paths=[
                 r"C:\Python\python98.zip",
-                r"C:\Python\Lib",
                 r"C:\Python\DLLs",
+                r"C:\Python\Lib",
+                r"C:\Python",
             ],
         )
         actual = getpath(ns, expected)
@@ -63,8 +64,8 @@ class MockGetPathTests(unittest.TestCase):
             module_search_paths_set=1,
             module_search_paths=[
                 r"C:\CPython\PCbuild\amd64\python98.zip",
-                r"C:\CPython\Lib",
                 r"C:\CPython\PCbuild\amd64",
+                r"C:\CPython\Lib",
             ],
         )
         actual = getpath(ns, expected)
@@ -133,8 +134,9 @@ class MockGetPathTests(unittest.TestCase):
                 r"C:\Python\python98.zip",
                 "path1-dir",
                 # should not contain not-subdirs
-                r"C:\Python\Lib",
                 r"C:\Python\DLLs",
+                r"C:\Python\Lib",
+                r"C:\Python",
             ],
         )
         actual = getpath(ns, expected)
@@ -147,8 +149,9 @@ class MockGetPathTests(unittest.TestCase):
             module_search_paths_set=1,
             module_search_paths=[
                 r"C:\Python\python98.zip",
-                r"C:\Python\Lib",
                 r"C:\Python\DLLs",
+                r"C:\Python\Lib",
+                r"C:\Python",
             ],
         )
         actual = getpath(ns, expected)
@@ -173,8 +176,9 @@ class MockGetPathTests(unittest.TestCase):
             module_search_paths_set=1,
             module_search_paths=[
                 r"C:\Python\python98.zip",
-                r"C:\Python\Lib",
                 r"C:\Python\DLLs",
+                r"C:\Python\Lib",
+                r"C:\Python",
             ],
         )
         actual = getpath(ns, expected)
@@ -201,8 +205,8 @@ class MockGetPathTests(unittest.TestCase):
             module_search_paths_set=1,
             module_search_paths=[
                 r"C:\CPython\PCbuild\amd64\python98.zip",
-                r"C:\CPython\Lib",
                 r"C:\CPython\PCbuild\amd64",
+                r"C:\CPython\Lib",
             ],
         )
         actual = getpath(ns, expected)
@@ -231,8 +235,31 @@ class MockGetPathTests(unittest.TestCase):
             module_search_paths_set=1,
             module_search_paths=[
                 r"C:\Out\python98.zip",
-                r"C:\CPython\Lib",
                 r"C:\Out",
+                r"C:\CPython\Lib",
+            ],
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
+    def test_no_dlls_win32(self):
+        "Test a layout on Windows with no DLLs directory."
+        ns = MockNTNamespace(
+            argv0=r"C:\Python\python.exe",
+            real_executable=r"C:\Python\python.exe",
+        )
+        ns.add_known_xfile(r"C:\Python\python.exe")
+        ns.add_known_file(r"C:\Python\Lib\os.py")
+        expected = dict(
+            executable=r"C:\Python\python.exe",
+            base_executable=r"C:\Python\python.exe",
+            prefix=r"C:\Python",
+            exec_prefix=r"C:\Python",
+            module_search_paths_set=1,
+            module_search_paths=[
+                r"C:\Python\python98.zip",
+                r"C:\Python",
+                r"C:\Python\Lib",
             ],
         )
         actual = getpath(ns, expected)
@@ -359,6 +386,70 @@ class MockGetPathTests(unittest.TestCase):
         actual = getpath(ns, expected)
         self.assertEqual(expected, actual)
 
+    def test_venv_non_installed_zip_path_posix(self):
+        "Test a venv created from non-installed python has correct zip path."""
+        ns = MockPosixNamespace(
+            argv0="/venv/bin/python",
+            PREFIX="/usr",
+            ENV_PATH="/venv/bin:/usr/bin",
+        )
+        ns.add_known_xfile("/path/to/non-installed/bin/python")
+        ns.add_known_xfile("/venv/bin/python")
+        ns.add_known_link("/venv/bin/python",
+                          "/path/to/non-installed/bin/python")
+        ns.add_known_file("/path/to/non-installed/lib/python9.8/os.py")
+        ns.add_known_dir("/path/to/non-installed/lib/python9.8/lib-dynload")
+        ns.add_known_file("/venv/pyvenv.cfg", [
+            r"home = /path/to/non-installed"
+        ])
+        expected = dict(
+            executable="/venv/bin/python",
+            prefix="/path/to/non-installed",
+            exec_prefix="/path/to/non-installed",
+            base_executable="/path/to/non-installed/bin/python",
+            base_prefix="/path/to/non-installed",
+            base_exec_prefix="/path/to/non-installed",
+            module_search_paths_set=1,
+            module_search_paths=[
+                "/path/to/non-installed/lib/python98.zip",
+                "/path/to/non-installed/lib/python9.8",
+                "/path/to/non-installed/lib/python9.8/lib-dynload",
+            ],
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
+    def test_venv_changed_name_copy_posix(self):
+        "Test a venv --copies layout on *nix that lacks a distributed 'python'"
+        ns = MockPosixNamespace(
+            argv0="python",
+            PREFIX="/usr",
+            ENV_PATH="/venv/bin:/usr/bin",
+        )
+        ns.add_known_xfile("/usr/bin/python9")
+        ns.add_known_xfile("/venv/bin/python")
+        ns.add_known_file("/usr/lib/python9.8/os.py")
+        ns.add_known_dir("/usr/lib/python9.8/lib-dynload")
+        ns.add_known_file("/venv/pyvenv.cfg", [
+            r"home = /usr/bin"
+        ])
+        expected = dict(
+            executable="/venv/bin/python",
+            prefix="/usr",
+            exec_prefix="/usr",
+            base_executable="/usr/bin/python9",
+            base_prefix="/usr",
+            base_exec_prefix="/usr",
+            module_search_paths_set=1,
+            module_search_paths=[
+                "/usr/lib/python98.zip",
+                "/usr/lib/python9.8",
+                "/usr/lib/python9.8/lib-dynload",
+            ],
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
     def test_symlink_normal_posix(self):
         "Test a 'standard' install layout via symlink on *nix"
         ns = MockPosixNamespace(
@@ -466,7 +557,7 @@ class MockGetPathTests(unittest.TestCase):
         ns.add_known_dir("/Library/Frameworks/Python.framework/Versions/9.8/lib/python9.8/lib-dynload")
         ns.add_known_file("/Library/Frameworks/Python.framework/Versions/9.8/lib/python9.8/os.py")
 
-        # This is definitely not the stdlib (see discusion in bpo-46890)
+        # This is definitely not the stdlib (see discussion in bpo-46890)
         #ns.add_known_file("/Library/Frameworks/lib/python98.zip")
 
         expected = dict(
@@ -514,7 +605,7 @@ class MockGetPathTests(unittest.TestCase):
         ns.add_known_dir("/Library/Frameworks/DebugPython.framework/Versions/9.8/lib/python9.8/lib-dynload")
         ns.add_known_xfile("/Library/Frameworks/DebugPython.framework/Versions/9.8/lib/python9.8/os.py")
 
-        # This is definitely not the stdlib (see discusion in bpo-46890)
+        # This is definitely not the stdlib (see discussion in bpo-46890)
         #ns.add_known_xfile("/Library/lib/python98.zip")
         expected = dict(
             executable="/Library/Frameworks/DebugPython.framework/Versions/9.8/bin/python9.8",
@@ -727,6 +818,20 @@ class MockGetPathTests(unittest.TestCase):
         actual = getpath(ns, expected)
         self.assertEqual(expected, actual)
 
+    def test_explicitly_set_stdlib_dir(self):
+        """Test the explicitly set stdlib_dir in the config is respected."""
+        ns = MockPosixNamespace(
+            PREFIX="/usr",
+            argv0="python",
+            ENV_PATH="/usr/bin",
+        )
+        ns["config"]["stdlib_dir"] = "/custom_stdlib_dir"
+        expected = dict(
+            stdlib_dir="/custom_stdlib_dir",
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
 
 # ******************************************************************************
 
@@ -739,6 +844,7 @@ DEFAULT_NAMESPACE = dict(
     PYDEBUGEXT="",
     VERSION_MAJOR=9,    # fixed version number for ease
     VERSION_MINOR=8,    # of testing
+    ABI_THREAD="",
     PYWINVER=None,
     EXE_SUFFIX=None,
 

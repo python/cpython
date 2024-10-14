@@ -1,0 +1,1 @@
+Fix lack of newline characters in :mod:`trace` module output when line tracing is enabled but source code line for current frame is not available.

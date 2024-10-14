@@ -1,2 +1,0 @@
-Python now detects missing ``dup`` function in WASI and works around some
-missing :mod:`errno`, :mod:`select`, and :mod:`socket` constants.

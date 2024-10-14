@@ -1,4 +1,0 @@
-Changed :class:`argparse.ArgumentParser` to use :term:`filesystem encoding
-and error handler` instead of default text encoding to read arguments from
-file (e.g. ``fromfile_prefix_chars`` option). This change affects Windows;
-argument file should be encoded with UTF-8 instead of ANSI Codepage.

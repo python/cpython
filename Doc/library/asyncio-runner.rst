@@ -22,13 +22,15 @@ to simplify async code usage for common wide-spread scenarios.
 Running an asyncio Program
 ==========================
 
-.. function:: run(coro, *, debug=None)
+.. function:: run(coro, *, debug=None, loop_factory=None)
 
-   Execute the :term:`coroutine` *coro* and return the result.
+   Execute *coro* in an asyncio event loop and return the result.
 
-   This function runs the passed coroutine, taking care of
-   managing the asyncio event loop, *finalizing asynchronous
-   generators*, and closing the threadpool.
+   The argument can be any awaitable object.
+
+   This function runs the awaitable, taking care of managing the
+   asyncio event loop, *finalizing asynchronous generators*, and
+   closing the executor.
 
    This function cannot be called when another asyncio event loop is
    running in the same thread.
@@ -37,9 +39,17 @@ Running an asyncio Program
    debug mode explicitly. ``None`` is used to respect the global
    :ref:`asyncio-debug-mode` settings.
 
-   This function always creates a new event loop and closes it at
-   the end.  It should be used as a main entry point for asyncio
-   programs, and should ideally only be called once.
+   If *loop_factory* is not ``None``, it is used to create a new event loop;
+   otherwise :func:`asyncio.new_event_loop` is used. The loop is closed at the end.
+   This function should be used as a main entry point for asyncio programs,
+   and should ideally only be called once. It is recommended to use
+   *loop_factory* to configure the event loop instead of policies.
+   Passing :class:`asyncio.EventLoop` allows running asyncio without the
+   policy system.
+
+   The executor is given a timeout duration of 5 minutes to shutdown.
+   If the executor hasn't finished within that duration, a warning is
+   emitted and the executor is closed.
 
    Example::
 
@@ -58,6 +68,14 @@ Running an asyncio Program
 
       *debug* is ``None`` by default to respect the global debug mode settings.
 
+   .. versionchanged:: 3.12
+
+      Added *loop_factory* parameter.
+
+   .. versionchanged:: 3.14
+
+      *coro* can be any awaitable object.
+
 
 Runner context manager
 ======================
@@ -75,9 +93,11 @@ Runner context manager
    :ref:`asyncio-debug-mode` settings.
 
    *loop_factory* could be used for overriding the loop creation.
-   :func:`asyncio.new_event_loop` is used if ``None``.
+   It is the responsibility of the *loop_factory* to set the created loop as the
+   current one. By default :func:`asyncio.new_event_loop` is used and set as
+   current event loop with :func:`asyncio.set_event_loop` if *loop_factory* is ``None``.
 
-   Basically, :func:`asyncio.run()` example can be rewritten with the runner usage::
+   Basically, :func:`asyncio.run` example can be rewritten with the runner usage::
 
         async def main():
             await asyncio.sleep(1)
@@ -90,16 +110,24 @@ Runner context manager
 
    .. method:: run(coro, *, context=None)
 
-      Run a :term:`coroutine <coroutine>` *coro* in the embedded loop.
+      Execute *coro* in the embedded event loop.
 
-      Return the coroutine's result or raise its exception.
+      The argument can be any awaitable object.
+
+      If the argument is a coroutine, it is wrapped in a Task.
 
       An optional keyword-only *context* argument allows specifying a
-      custom :class:`contextvars.Context` for the *coro* to run in.
-      The runner's default context is used if ``None``.
+      custom :class:`contextvars.Context` for the code to run in.
+      The runner's default context is used if context is ``None``.
+
+      Returns the awaitable's result or raises an exception.
 
       This function cannot be called when another asyncio event loop is
       running in the same thread.
+
+      .. versionchanged:: 3.14
+
+         *coro* can be any awaitable object.
 
    .. method:: close()
 

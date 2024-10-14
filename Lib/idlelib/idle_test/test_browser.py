@@ -170,8 +170,7 @@ class ModuleBrowserTreeItemTest(unittest.TestCase):
 
         with mock.patch('os.path.exists', return_value=True):
             mbt.OnDoubleClick()
-            fopen.assert_called()
-            fopen.called_with(fname)
+            fopen.assert_called_once_with(fname)
 
 
 class ChildBrowserTreeItemTest(unittest.TestCase):

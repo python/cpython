@@ -1,2 +1,0 @@
-``test_ssl`` is now checking for supported TLS version and protocols in more
-tests.

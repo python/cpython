@@ -64,11 +64,13 @@ class CompatibilityFilesTests(unittest.TestCase):
 
     def test_spec_path_open(self):
         self.assertEqual(self.files.read_bytes(), b'Hello, world!')
-        self.assertEqual(self.files.read_text(), 'Hello, world!')
+        self.assertEqual(self.files.read_text(encoding='utf-8'), 'Hello, world!')
 
     def test_child_path_open(self):
         self.assertEqual((self.files / 'a').read_bytes(), b'Hello, world!')
-        self.assertEqual((self.files / 'a').read_text(), 'Hello, world!')
+        self.assertEqual(
+            (self.files / 'a').read_text(encoding='utf-8'), 'Hello, world!'
+        )
 
     def test_orphan_path_open(self):
         with self.assertRaises(FileNotFoundError):

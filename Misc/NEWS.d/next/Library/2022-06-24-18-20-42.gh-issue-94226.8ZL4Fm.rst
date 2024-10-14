@@ -1,2 +1,0 @@
-Remove the :func:`locale.format` function, deprecated in Python 3.7: use
-:func:`locale.format_string` instead. Patch by Victor Stinner.

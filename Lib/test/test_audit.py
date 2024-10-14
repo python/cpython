@@ -16,37 +16,37 @@ AUDIT_TESTS_PY = support.findfile("audit-tests.py")
 
 
 class AuditTest(unittest.TestCase):
+    maxDiff = None
 
     @support.requires_subprocess()
+    def run_test_in_subprocess(self, *args):
+        with subprocess.Popen(
+            [sys.executable, "-X utf8", AUDIT_TESTS_PY, *args],
+            encoding="utf-8",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        ) as p:
+            p.wait()
+            return p, p.stdout.read(), p.stderr.read()
+
     def do_test(self, *args):
-        with subprocess.Popen(
-            [sys.executable, "-X utf8", AUDIT_TESTS_PY, *args],
-            encoding="utf-8",
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        ) as p:
-            p.wait()
-            sys.stdout.writelines(p.stdout)
-            sys.stderr.writelines(p.stderr)
-            if p.returncode:
-                self.fail("".join(p.stderr))
+        proc, stdout, stderr = self.run_test_in_subprocess(*args)
 
-    @support.requires_subprocess()
-    def run_python(self, *args):
+        sys.stdout.write(stdout)
+        sys.stderr.write(stderr)
+        if proc.returncode:
+            self.fail(stderr)
+
+    def run_python(self, *args, expect_stderr=False):
         events = []
-        with subprocess.Popen(
-            [sys.executable, "-X utf8", AUDIT_TESTS_PY, *args],
-            encoding="utf-8",
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        ) as p:
-            p.wait()
-            sys.stderr.writelines(p.stderr)
-            return (
-                p.returncode,
-                [line.strip().partition(" ") for line in p.stdout],
-                "".join(p.stderr),
-            )
+        proc, stdout, stderr = self.run_test_in_subprocess(*args)
+        if not expect_stderr or support.verbose:
+            sys.stderr.write(stderr)
+        return (
+            proc.returncode,
+            [line.strip().partition(" ") for line in stdout.splitlines()],
+            stderr,
+        )
 
     def test_basic(self):
         self.do_test("test_basic")
@@ -89,6 +89,7 @@ class AuditTest(unittest.TestCase):
         )
 
     def test_unraisablehook(self):
+        import_helper.import_module("_testcapi")
         returncode, events, stderr = self.run_python("test_unraisablehook")
         if returncode:
             self.fail(stderr)
@@ -139,6 +140,7 @@ class AuditTest(unittest.TestCase):
         )
 
 
+    @support.requires_resource('network')
     def test_http(self):
         import_helper.import_module("http.client")
         returncode, events, stderr = self.run_python("test_http_client")
@@ -182,6 +184,126 @@ class AuditTest(unittest.TestCase):
             print(*events, sep='\n')
         actual = [(ev[0], ev[2]) for ev in events]
         expected = [("sys._getframe", "test_sys_getframe")]
+
+        self.assertEqual(actual, expected)
+
+    def test_sys_getframemodulename(self):
+        returncode, events, stderr = self.run_python("test_sys_getframemodulename")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [("sys._getframemodulename", "0")]
+
+        self.assertEqual(actual, expected)
+
+
+    def test_threading(self):
+        returncode, events, stderr = self.run_python("test_threading")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [
+            ("_thread.start_new_thread", "(<test_func>, (), None)"),
+            ("test.test_func", "()"),
+            ("_thread.start_joinable_thread", "(<test_func>, 1, None)"),
+            ("test.test_func", "()"),
+        ]
+
+        self.assertEqual(actual, expected)
+
+
+    def test_wmi_exec_query(self):
+        import_helper.import_module("_wmi")
+        returncode, events, stderr = self.run_python("test_wmi_exec_query")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [("_wmi.exec_query", "SELECT * FROM Win32_OperatingSystem")]
+
+        self.assertEqual(actual, expected)
+
+    def test_syslog(self):
+        syslog = import_helper.import_module("syslog")
+
+        returncode, events, stderr = self.run_python("test_syslog")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print('Events:', *events, sep='\n  ')
+
+        self.assertSequenceEqual(
+            events,
+            [('syslog.openlog', ' ', f'python 0 {syslog.LOG_USER}'),
+            ('syslog.syslog', ' ', f'{syslog.LOG_INFO} test'),
+            ('syslog.setlogmask', ' ', f'{syslog.LOG_DEBUG}'),
+            ('syslog.closelog', '', ''),
+            ('syslog.syslog', ' ', f'{syslog.LOG_INFO} test2'),
+            ('syslog.openlog', ' ', f'audit-tests.py 0 {syslog.LOG_USER}'),
+            ('syslog.openlog', ' ', f'audit-tests.py {syslog.LOG_NDELAY} {syslog.LOG_LOCAL0}'),
+            ('syslog.openlog', ' ', f'None 0 {syslog.LOG_USER}'),
+            ('syslog.closelog', '', '')]
+        )
+
+    def test_not_in_gc(self):
+        returncode, _, stderr = self.run_python("test_not_in_gc")
+        if returncode:
+            self.fail(stderr)
+
+    def test_time(self):
+        returncode, events, stderr = self.run_python("test_time", "print")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [("time.sleep", "0"),
+                    ("time.sleep", "0.0625"),
+                    ("time.sleep", "-1")]
+
+        self.assertEqual(actual, expected)
+
+    def test_time_fail(self):
+        returncode, events, stderr = self.run_python("test_time", "fail",
+                                                     expect_stderr=True)
+        self.assertNotEqual(returncode, 0)
+        self.assertIn('hook failed', stderr.splitlines()[-1])
+
+    def test_sys_monitoring_register_callback(self):
+        returncode, events, stderr = self.run_python("test_sys_monitoring_register_callback")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [("sys.monitoring.register_callback", "(None,)")]
+
+        self.assertEqual(actual, expected)
+
+    def test_winapi_createnamedpipe(self):
+        winapi = import_helper.import_module("_winapi")
+
+        pipe_name = r"\\.\pipe\LOCAL\test_winapi_createnamed_pipe"
+        returncode, events, stderr = self.run_python("test_winapi_createnamedpipe", pipe_name)
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [("_winapi.CreateNamedPipe", f"({pipe_name!r}, 3, 8)")]
 
         self.assertEqual(actual, expected)
 

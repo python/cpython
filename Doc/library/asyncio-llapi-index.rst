@@ -19,7 +19,7 @@ Obtaining the Event Loop
       - The **preferred** function to get the running event loop.
 
     * - :func:`asyncio.get_event_loop`
-      - Get an event loop instance (current or via the policy).
+      - Get an event loop instance (running or current via the current policy).
 
     * - :func:`asyncio.set_event_loop`
       - Set the event loop as current via the current policy.
@@ -37,7 +37,7 @@ Event Loop Methods
 ==================
 
 See also the main documentation section about the
-:ref:`event loop methods <asyncio-event-loop>`.
+:ref:`asyncio-event-loop-methods`.
 
 .. rubric:: Lifecycle
 .. list-table::
@@ -56,10 +56,10 @@ See also the main documentation section about the
     * - :meth:`loop.close`
       - Close the event loop.
 
-    * - :meth:`loop.is_running()`
+    * - :meth:`loop.is_running`
       - Return ``True`` if the event loop is running.
 
-    * - :meth:`loop.is_closed()`
+    * - :meth:`loop.is_closed`
       - Return ``True`` if the event loop is closed.
 
     * - ``await`` :meth:`loop.shutdown_asyncgens`
@@ -267,7 +267,7 @@ See also the main documentation section about the
 
 .. rubric:: Examples
 
-* :ref:`Using asyncio.get_event_loop() and loop.run_forever()
+* :ref:`Using asyncio.new_event_loop() and loop.run_forever()
   <asyncio_example_lowlevel_helloworld>`.
 
 * :ref:`Using loop.call_later() <asyncio_example_call_later>`.
@@ -484,19 +484,19 @@ Protocol classes can implement the following **callback methods**:
     :widths: 50 50
     :class: full-width-table
 
-    * - ``callback`` :meth:`pipe_data_received()
-        <SubprocessProtocol.pipe_data_received>`
+    * - ``callback`` :meth:`~SubprocessProtocol.pipe_data_received`
       - Called when the child process writes data into its
         *stdout* or *stderr* pipe.
 
-    * - ``callback`` :meth:`pipe_connection_lost()
-        <SubprocessProtocol.pipe_connection_lost>`
+    * - ``callback`` :meth:`~SubprocessProtocol.pipe_connection_lost`
       - Called when one of the pipes communicating with
         the child process is closed.
 
     * - ``callback`` :meth:`process_exited()
         <SubprocessProtocol.process_exited>`
-      - Called when the child process has exited.
+      - Called when the child process has exited. It can be called before
+        :meth:`~SubprocessProtocol.pipe_data_received` and
+        :meth:`~SubprocessProtocol.pipe_connection_lost` methods.
 
 
 Event Loop Policies

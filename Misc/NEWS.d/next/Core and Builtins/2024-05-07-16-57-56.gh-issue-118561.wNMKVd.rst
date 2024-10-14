@@ -1,0 +1,2 @@
+Fix race condition in free-threaded build where :meth:`!list.extend` could
+expose uninitialised memory to concurrent readers.

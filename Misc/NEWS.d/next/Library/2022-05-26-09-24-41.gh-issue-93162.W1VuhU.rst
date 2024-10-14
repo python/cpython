@@ -1,4 +1,0 @@
-Add the ability for :func:`logging.config.dictConfig` to usefully configure
-:class:`~logging.handlers.QueueHandler` and :class:`~logging.handlers.QueueListener`
-as a pair, and add :func:`logging.getHandlerByName` and :func:`logging.getHandlerNames`
-APIs to allow access to handlers by name.

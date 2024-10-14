@@ -1,0 +1,2 @@
+Fix handling of classes with custom metaclasses in
+``annotationlib.get_annotations``.

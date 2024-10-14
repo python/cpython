@@ -23,7 +23,6 @@
 
 #ifndef PYSQLITE_CONNECTION_H
 #define PYSQLITE_CONNECTION_H
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pythread.h"
 #include "structmember.h"
@@ -39,6 +38,12 @@ typedef struct _callback_context
     pysqlite_state *state;
 } callback_context;
 
+enum autocommit_mode {
+    AUTOCOMMIT_LEGACY = LEGACY_TRANSACTION_CONTROL,
+    AUTOCOMMIT_ENABLED = 1,
+    AUTOCOMMIT_DISABLED = 0,
+};
+
 typedef struct
 {
     PyObject_HEAD
@@ -51,6 +56,7 @@ typedef struct
 
     /* NULL for autocommit, otherwise a string with the isolation level */
     const char *isolation_level;
+    enum autocommit_mode autocommit;
 
     /* 1 if a check should be performed for each API call if the connection is
      * used from the same thread it was created in */

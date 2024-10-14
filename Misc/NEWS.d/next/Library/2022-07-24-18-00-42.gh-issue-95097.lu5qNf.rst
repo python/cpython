@@ -1,1 +1,0 @@
-Fix :func:`asyncio.run` for :class:`asyncio.Task` implementations without :meth:`~asyncio.Task.uncancel` method. Patch by Kumar Aditya.

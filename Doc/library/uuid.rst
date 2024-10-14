@@ -1,5 +1,5 @@
-:mod:`uuid` --- UUID objects according to :rfc:`4122`
-=====================================================
+:mod:`!uuid` --- UUID objects according to :rfc:`4122`
+======================================================
 
 .. module:: uuid
    :synopsis: UUID objects (universally unique identifiers) according to RFC 4122
@@ -22,7 +22,7 @@ random UUID.
 Depending on support from the underlying platform, :func:`uuid1` may or may
 not return a "safe" UUID.  A safe UUID is one which is generated using
 synchronization methods that ensure no two processes can obtain the same
-UUID.  All instances of :class:`UUID` have an :attr:`is_safe` attribute
+UUID.  All instances of :class:`UUID` have an :attr:`~UUID.is_safe` attribute
 which relays any information about the UUID's safety, using this enumeration:
 
 .. class:: SafeUUID
@@ -95,25 +95,34 @@ which relays any information about the UUID's safety, using this enumeration:
    A tuple of the six integer fields of the UUID, which are also available as six
    individual attributes and two derived attributes:
 
-   +------------------------------+-------------------------------+
-   | Field                        | Meaning                       |
-   +==============================+===============================+
-   | :attr:`time_low`             | the first 32 bits of the UUID |
-   +------------------------------+-------------------------------+
-   | :attr:`time_mid`             | the next 16 bits of the UUID  |
-   +------------------------------+-------------------------------+
-   | :attr:`time_hi_version`      | the next 16 bits of the UUID  |
-   +------------------------------+-------------------------------+
-   | :attr:`clock_seq_hi_variant` | the next 8 bits of the UUID   |
-   +------------------------------+-------------------------------+
-   | :attr:`clock_seq_low`        | the next 8 bits of the UUID   |
-   +------------------------------+-------------------------------+
-   | :attr:`node`                 | the last 48 bits of the UUID  |
-   +------------------------------+-------------------------------+
-   | :attr:`time`                 | the 60-bit timestamp          |
-   +------------------------------+-------------------------------+
-   | :attr:`clock_seq`            | the 14-bit sequence number    |
-   +------------------------------+-------------------------------+
+.. list-table::
+
+   * - Field
+     - Meaning
+
+   * - .. attribute:: UUID.time_low
+     - The first 32 bits of the UUID.
+
+   * - .. attribute:: UUID.time_mid
+     - The next 16 bits of the UUID.
+
+   * - .. attribute:: UUID.time_hi_version
+     - The next 16 bits of the UUID.
+
+   * - .. attribute:: UUID.clock_seq_hi_variant
+     - The next 8 bits of the UUID.
+
+   * - .. attribute:: UUID.clock_seq_low
+     - The next 8 bits of the UUID.
+
+   * - .. attribute:: UUID.node
+     - The last 48 bits of the UUID.
+
+   * - .. attribute:: UUID.time
+     - The 60-bit timestamp.
+
+   * - .. attribute:: UUID.clock_seq
+     - The 14-bit sequence number.
 
 
 .. attribute:: UUID.hex
@@ -186,7 +195,8 @@ The :mod:`uuid` module defines the following functions:
 .. function:: uuid3(namespace, name)
 
    Generate a UUID based on the MD5 hash of a namespace identifier (which is a
-   UUID) and a name (which is a string).
+   UUID) and a name (which is a :class:`bytes` object or a string
+   that will be encoded using UTF-8).
 
 .. index:: single: uuid3
 
@@ -201,7 +211,8 @@ The :mod:`uuid` module defines the following functions:
 .. function:: uuid5(namespace, name)
 
    Generate a UUID based on the SHA-1 hash of a namespace identifier (which is a
-   UUID) and a name (which is a string).
+   UUID) and a name (which is a :class:`bytes` object or a string
+   that will be encoded using UTF-8).
 
 .. index:: single: uuid5
 
@@ -231,7 +242,7 @@ The :mod:`uuid` module defines the following namespace identifiers for use with
    text output format.
 
 The :mod:`uuid` module defines the following constants for the possible values
-of the :attr:`variant` attribute:
+of the :attr:`~UUID.variant` attribute:
 
 
 .. data:: RESERVED_NCS
@@ -259,6 +270,47 @@ of the :attr:`variant` attribute:
    :rfc:`4122` - A Universally Unique IDentifier (UUID) URN Namespace
       This specification defines a Uniform Resource Name namespace for UUIDs, the
       internal format of UUIDs, and methods of generating UUIDs.
+
+
+.. _uuid-cli:
+
+Command-Line Usage
+------------------
+
+.. versionadded:: 3.12
+
+The :mod:`uuid` module can be executed as a script from the command line.
+
+.. code-block:: sh
+
+   python -m uuid [-h] [-u {uuid1,uuid3,uuid4,uuid5}] [-n NAMESPACE] [-N NAME]
+
+The following options are accepted:
+
+.. program:: uuid
+
+.. option:: -h, --help
+
+   Show the help message and exit.
+
+.. option:: -u <uuid>
+            --uuid <uuid>
+
+   Specify the function name to use to generate the uuid. By default :func:`uuid4`
+   is used.
+
+.. option:: -n <namespace>
+            --namespace <namespace>
+
+   The namespace is a ``UUID``, or ``@ns`` where ``ns`` is a well-known predefined UUID
+   addressed by namespace name. Such as ``@dns``, ``@url``, ``@oid``, and ``@x500``.
+   Only required for :func:`uuid3` / :func:`uuid5` functions.
+
+.. option:: -N <name>
+            --name <name>
+
+   The name used as part of generating the uuid. Only required for
+   :func:`uuid3` / :func:`uuid5` functions.
 
 
 .. _uuid-example:
@@ -300,4 +352,23 @@ Here are some examples of typical usage of the :mod:`uuid` module::
    >>> # make a UUID from a 16-byte string
    >>> uuid.UUID(bytes=x.bytes)
    UUID('00010203-0405-0607-0809-0a0b0c0d0e0f')
+
+
+.. _uuid-cli-example:
+
+Command-Line Example
+--------------------
+
+Here are some examples of typical usage of the :mod:`uuid` command line interface:
+
+.. code-block:: shell
+
+   # generate a random uuid - by default uuid4() is used
+   $ python -m uuid
+
+   # generate a uuid using uuid1()
+   $ python -m uuid -u uuid1
+
+   # generate a uuid using uuid5
+   $ python -m uuid -u uuid5 -n @url -N example.com
 

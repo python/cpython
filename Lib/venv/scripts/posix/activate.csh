@@ -1,5 +1,6 @@
 # This file must be used with "source bin/activate.csh" *from csh*.
 # You cannot run it directly.
+
 # Created by Davide Di Blasi <davidedb@gmail.com>.
 # Ported to Python 3.3 venv by Andrew Svetlov <andrew.svetlov@gmail.com>
 
@@ -12,13 +13,13 @@ setenv VIRTUAL_ENV "__VENV_DIR__"
 
 set _OLD_VIRTUAL_PATH="$PATH"
 setenv PATH "$VIRTUAL_ENV/__VENV_BIN_NAME__:$PATH"
+setenv VIRTUAL_ENV_PROMPT "__VENV_PROMPT__"
 
 
 set _OLD_VIRTUAL_PROMPT="$prompt"
 
 if (! "$?VIRTUAL_ENV_DISABLE_PROMPT") then
-    set prompt = "__VENV_PROMPT__$prompt"
-    setenv VIRTUAL_ENV_PROMPT "__VENV_PROMPT__"
+    set prompt = "(__VENV_PROMPT__) $prompt:q"
 endif
 
 alias pydoc python -m pydoc

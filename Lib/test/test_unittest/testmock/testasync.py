@@ -8,10 +8,10 @@ from test import support
 
 support.requires_working_socket(module=True)
 
-from asyncio import run, iscoroutinefunction
+from asyncio import run
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import (ANY, call, AsyncMock, patch, MagicMock, Mock,
-                           create_autospec, sentinel, _CallList)
+                           create_autospec, sentinel, _CallList, seal)
 
 
 def tearDownModule():
@@ -60,7 +60,7 @@ class AsyncPatchDecoratorTest(unittest.TestCase):
     def test_is_coroutine_function_patch(self):
         @patch.object(AsyncClass, 'async_method')
         def test_async(mock_method):
-            self.assertTrue(iscoroutinefunction(mock_method))
+            self.assertTrue(inspect.iscoroutinefunction(mock_method))
         test_async()
 
     def test_is_async_patch(self):
@@ -121,7 +121,7 @@ class AsyncPatchCMTest(unittest.TestCase):
     def test_is_async_function_cm(self):
         def test_async():
             with patch.object(AsyncClass, 'async_method') as mock_method:
-                self.assertTrue(iscoroutinefunction(mock_method))
+                self.assertTrue(inspect.iscoroutinefunction(mock_method))
 
         test_async()
 
@@ -149,16 +149,32 @@ class AsyncPatchCMTest(unittest.TestCase):
 
         run(test_async())
 
+    def test_patch_dict_async_def(self):
+        foo = {'a': 'a'}
+        @patch.dict(foo, {'a': 'b'})
+        async def test_async():
+            self.assertEqual(foo['a'], 'b')
+
+        self.assertTrue(inspect.iscoroutinefunction(test_async))
+        run(test_async())
+
+    def test_patch_dict_async_def_context(self):
+        foo = {'a': 'a'}
+        async def test_async():
+            with patch.dict(foo, {'a': 'b'}):
+                self.assertEqual(foo['a'], 'b')
+
+        run(test_async())
+
 
 class AsyncMockTest(unittest.TestCase):
     def test_iscoroutinefunction_default(self):
         mock = AsyncMock()
-        self.assertTrue(iscoroutinefunction(mock))
+        self.assertTrue(inspect.iscoroutinefunction(mock))
 
     def test_iscoroutinefunction_function(self):
         async def foo(): pass
         mock = AsyncMock(foo)
-        self.assertTrue(iscoroutinefunction(mock))
         self.assertTrue(inspect.iscoroutinefunction(mock))
 
     def test_isawaitable(self):
@@ -171,7 +187,6 @@ class AsyncMockTest(unittest.TestCase):
     def test_iscoroutinefunction_normal_function(self):
         def foo(): pass
         mock = AsyncMock(foo)
-        self.assertTrue(iscoroutinefunction(mock))
         self.assertTrue(inspect.iscoroutinefunction(mock))
 
     def test_future_isfuture(self):
@@ -201,10 +216,6 @@ class AsyncAutospecTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             create_autospec(async_func, instance=True)
 
-    @unittest.skip('Broken test from https://bugs.python.org/issue37251')
-    def test_create_autospec_awaitable_class(self):
-        self.assertIsInstance(create_autospec(AwaitableClass), AsyncMock)
-
     def test_create_autospec(self):
         spec = create_autospec(async_func_args)
         awaitable = spec(1, 2, c=3)
@@ -218,8 +229,9 @@ class AsyncAutospecTest(unittest.TestCase):
 
         run(main())
 
-        self.assertTrue(iscoroutinefunction(spec))
+        self.assertTrue(inspect.iscoroutinefunction(spec))
         self.assertTrue(asyncio.iscoroutine(awaitable))
+        self.assertTrue(inspect.iscoroutine(awaitable))
         self.assertEqual(spec.await_count, 1)
         self.assertEqual(spec.await_args, call(1, 2, c=3))
         self.assertEqual(spec.await_args_list, [call(1, 2, c=3)])
@@ -231,6 +243,25 @@ class AsyncAutospecTest(unittest.TestCase):
         with self.assertRaises(AssertionError):
             spec.assert_any_await(e=1)
 
+    def test_autospec_checks_signature(self):
+        spec = create_autospec(async_func_args)
+        # signature is not checked when called
+        awaitable = spec()
+        self.assertListEqual(spec.mock_calls, [])
+
+        async def main():
+            await awaitable
+
+        # but it is checked when awaited
+        with self.assertRaises(TypeError):
+            run(main())
+
+        # _checksig_ raises before running or awaiting the mock
+        self.assertListEqual(spec.mock_calls, [])
+        self.assertEqual(spec.await_count, 0)
+        self.assertIsNone(spec.await_args)
+        self.assertEqual(spec.await_args_list, [])
+        spec.assert_not_awaited()
 
     def test_patch_with_autospec(self):
 
@@ -239,8 +270,9 @@ class AsyncAutospecTest(unittest.TestCase):
                 awaitable = mock_method(1, 2, c=3)
                 self.assertIsInstance(mock_method.mock, AsyncMock)
 
-                self.assertTrue(iscoroutinefunction(mock_method))
+                self.assertTrue(inspect.iscoroutinefunction(mock_method))
                 self.assertTrue(asyncio.iscoroutine(awaitable))
+                self.assertTrue(inspect.iscoroutine(awaitable))
                 self.assertTrue(inspect.isawaitable(awaitable))
 
                 # Verify the default values during mock setup
@@ -282,6 +314,27 @@ class AsyncSpecTest(unittest.TestCase):
         mock = Mock(AsyncClass)
         self.assertIsInstance(mock.async_method, AsyncMock)
         self.assertIsInstance(mock.normal_method, Mock)
+
+    def test_spec_normal_methods_on_class_with_mock_seal(self):
+        mock = Mock(AsyncClass)
+        seal(mock)
+        with self.assertRaises(AttributeError):
+            mock.normal_method
+        with self.assertRaises(AttributeError):
+            mock.async_method
+
+    def test_spec_async_attributes_instance(self):
+        async_instance = AsyncClass()
+        async_instance.async_func_attr = async_func
+        async_instance.later_async_func_attr = normal_func
+
+        mock_async_instance = Mock(spec_set=async_instance)
+
+        async_instance.later_async_func_attr = async_func
+
+        self.assertIsInstance(mock_async_instance.async_func_attr, AsyncMock)
+        # only the shape of the spec at the time of mock construction matters
+        self.assertNotIsInstance(mock_async_instance.later_async_func_attr, AsyncMock)
 
     def test_spec_mock_type_kw(self):
         def inner_test(mock_type):
@@ -373,13 +426,13 @@ class AsyncSpecSetTest(unittest.TestCase):
 
     def test_is_async_AsyncMock(self):
         mock = AsyncMock(spec_set=AsyncClass.async_method)
-        self.assertTrue(iscoroutinefunction(mock))
+        self.assertTrue(inspect.iscoroutinefunction(mock))
         self.assertIsInstance(mock, AsyncMock)
 
     def test_is_child_AsyncMock(self):
         mock = MagicMock(spec_set=AsyncClass)
-        self.assertTrue(iscoroutinefunction(mock.async_method))
-        self.assertFalse(iscoroutinefunction(mock.normal_method))
+        self.assertTrue(inspect.iscoroutinefunction(mock.async_method))
+        self.assertFalse(inspect.iscoroutinefunction(mock.normal_method))
         self.assertIsInstance(mock.async_method, AsyncMock)
         self.assertIsInstance(mock.normal_method, MagicMock)
         self.assertIsInstance(mock, MagicMock)
@@ -402,9 +455,10 @@ class AsyncArguments(IsolatedAsyncioTestCase):
         self.assertEqual(output, 10)
 
     async def test_add_side_effect_exception(self):
+        class CustomError(Exception): pass
         async def addition(var): pass
-        mock = AsyncMock(addition, side_effect=Exception('err'))
-        with self.assertRaises(Exception):
+        mock = AsyncMock(addition, side_effect=CustomError('side-effect'))
+        with self.assertRaisesRegex(CustomError, 'side-effect'):
             await mock(5)
 
     async def test_add_side_effect_coroutine(self):
@@ -548,8 +602,8 @@ class AsyncMagicMethods(unittest.TestCase):
         self.assertIsInstance(m_mock.__aenter__, AsyncMock)
         self.assertIsInstance(m_mock.__aexit__, AsyncMock)
         # AsyncMocks are also coroutine functions
-        self.assertTrue(iscoroutinefunction(m_mock.__aenter__))
-        self.assertTrue(iscoroutinefunction(m_mock.__aexit__))
+        self.assertTrue(inspect.iscoroutinefunction(m_mock.__aenter__))
+        self.assertTrue(inspect.iscoroutinefunction(m_mock.__aexit__))
 
 class AsyncContextManagerTest(unittest.TestCase):
 
@@ -688,11 +742,11 @@ class AsyncIteratorTest(unittest.TestCase):
             mock_instance = mock_type(instance)
             # Check that the mock and the real thing bahave the same
             # __aiter__ is not actually async, so not a coroutinefunction
-            self.assertFalse(iscoroutinefunction(instance.__aiter__))
-            self.assertFalse(iscoroutinefunction(mock_instance.__aiter__))
+            self.assertFalse(inspect.iscoroutinefunction(instance.__aiter__))
+            self.assertFalse(inspect.iscoroutinefunction(mock_instance.__aiter__))
             # __anext__ is async
-            self.assertTrue(iscoroutinefunction(instance.__anext__))
-            self.assertTrue(iscoroutinefunction(mock_instance.__anext__))
+            self.assertTrue(inspect.iscoroutinefunction(instance.__anext__))
+            self.assertTrue(inspect.iscoroutinefunction(mock_instance.__anext__))
 
         for mock_type in [AsyncMock, MagicMock]:
             with self.subTest(f"test aiter and anext corourtine with {mock_type}"):
@@ -748,7 +802,7 @@ class AsyncMockAssert(unittest.TestCase):
         mock = AsyncMock(AsyncClass)
         with assertNeverAwaited(self):
             mock.async_method()
-        self.assertTrue(iscoroutinefunction(mock.async_method))
+        self.assertTrue(inspect.iscoroutinefunction(mock.async_method))
         mock.async_method.assert_called()
         mock.async_method.assert_called_once()
         mock.async_method.assert_called_once_with()
@@ -1059,3 +1113,7 @@ class AsyncMockAssert(unittest.TestCase):
                         'Actual: [call(1)]'))) as cm:
             self.mock.assert_has_awaits([call(), call(1, 2)])
         self.assertIsInstance(cm.exception.__cause__, TypeError)
+
+
+if __name__ == '__main__':
+    unittest.main()

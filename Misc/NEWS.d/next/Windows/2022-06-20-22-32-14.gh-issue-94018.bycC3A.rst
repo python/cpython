@@ -1,1 +1,0 @@
-:mod:`zipfile` will now remove trailing spaces from path components when extracting files on Windows.

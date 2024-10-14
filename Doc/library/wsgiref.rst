@@ -1,11 +1,13 @@
-:mod:`wsgiref` --- WSGI Utilities and Reference Implementation
-==============================================================
+:mod:`!wsgiref` --- WSGI Utilities and Reference Implementation
+===============================================================
 
 .. module:: wsgiref
    :synopsis: WSGI Utilities and Reference Implementation.
 
 .. moduleauthor:: Phillip J. Eby <pje@telecommunity.com>
 .. sectionauthor:: Phillip J. Eby <pje@telecommunity.com>
+
+**Source code:** :source:`Lib/wsgiref`
 
 --------------
 
@@ -178,7 +180,7 @@ also provides these miscellaneous utilities:
           print(chunk)
 
    .. versionchanged:: 3.11
-      Support for :meth:`__getitem__` method has been removed.
+      Support for :meth:`~object.__getitem__` method has been removed.
 
 
 :mod:`wsgiref.headers` -- WSGI response header tools
@@ -199,8 +201,9 @@ manipulation of WSGI response headers using a mapping-like interface.
    an empty list.
 
    :class:`Headers` objects support typical mapping operations including
-   :meth:`__getitem__`, :meth:`get`, :meth:`__setitem__`, :meth:`setdefault`,
-   :meth:`__delitem__` and :meth:`__contains__`.  For each of
+   :meth:`~object.__getitem__`, :meth:`~dict.get`, :meth:`~object.__setitem__`,
+   :meth:`~dict.setdefault`,
+   :meth:`~object.__delitem__` and :meth:`~object.__contains__`.  For each of
    these methods, the key is the header name (treated case-insensitively), and the
    value is the first value associated with that header name.  Setting a header
    deletes any existing values for that header, then adds a new value at the end of
@@ -518,8 +521,10 @@ input, output, and error streams.
    want to subclass this instead of :class:`BaseCGIHandler`.
 
    This class is a subclass of :class:`BaseHandler`.  It overrides the
-   :meth:`__init__`, :meth:`get_stdin`, :meth:`get_stderr`, :meth:`add_cgi_vars`,
-   :meth:`_write`, and :meth:`_flush` methods to support explicitly setting the
+   :meth:`!__init__`, :meth:`~BaseHandler.get_stdin`,
+   :meth:`~BaseHandler.get_stderr`, :meth:`~BaseHandler.add_cgi_vars`,
+   :meth:`~BaseHandler._write`, and :meth:`~BaseHandler._flush` methods to
+   support explicitly setting the
    environment and streams via the constructor.  The supplied environment and
    streams are stored in the :attr:`stdin`, :attr:`stdout`, :attr:`stderr`, and
    :attr:`environ` attributes.
@@ -672,7 +677,7 @@ input, output, and error streams.
       This method is a WSGI application to generate an error page for the user.  It is
       only invoked if an error occurs before headers are sent to the client.
 
-      This method can access the current error information using ``sys.exc_info()``,
+      This method can access the current error using ``sys.exception()``,
       and should pass that information to *start_response* when calling it (as
       described in the "Error Handling" section of :pep:`3333`).
 
@@ -778,8 +783,8 @@ in :pep:`3333`.
 
 .. class:: StartResponse()
 
-   A :class:`typing.Protocol` describing `start_response()
-   <https://peps.python.org/pep-3333/#the-start-response-callable>`_
+   A :class:`typing.Protocol` describing :pep:`start_response()
+   <3333#the-start-response-callable>`
    callables (:pep:`3333`).
 
 .. data:: WSGIEnvironment
@@ -792,18 +797,18 @@ in :pep:`3333`.
 
 .. class:: InputStream()
 
-   A :class:`typing.Protocol` describing a `WSGI Input Stream
-   <https://peps.python.org/pep-3333/#input-and-error-streams>`_.
+   A :class:`typing.Protocol` describing a :pep:`WSGI Input Stream
+   <3333#input-and-error-streams>`.
 
 .. class:: ErrorStream()
 
-   A :class:`typing.Protocol` describing a `WSGI Error Stream
-   <https://peps.python.org/pep-3333/#input-and-error-streams>`_.
+   A :class:`typing.Protocol` describing a :pep:`WSGI Error Stream
+   <3333#input-and-error-streams>`.
 
 .. class:: FileWrapper()
 
-   A :class:`typing.Protocol` describing a `file wrapper
-   <https://peps.python.org/pep-3333/#optional-platform-specific-file-handling>`_.
+   A :class:`typing.Protocol` describing a :pep:`file wrapper
+   <3333#optional-platform-specific-file-handling>`.
    See :class:`wsgiref.util.FileWrapper` for a concrete implementation of this
    protocol.
 
@@ -860,7 +865,7 @@ directory and port number (default: 8000) on the command line::
         fn = os.path.join(path, environ["PATH_INFO"][1:])
         if "." not in fn.split(os.path.sep)[-1]:
             fn = os.path.join(fn, "index.html")
-        mime_type = mimetypes.guess_type(fn)[0]
+        mime_type = mimetypes.guess_file_type(fn)[0]
 
         # Return 200 OK if file exists, otherwise 404 Not Found
         if os.path.exists(fn):

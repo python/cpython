@@ -1,3 +1,9 @@
+"""A simple SQLite CLI for the sqlite3 module.
+
+Apart from using 'argparse' for the command-line interface,
+this module implements the REPL as a thin wrapper around
+the InteractiveConsole class from the 'code' stdlib module.
+"""
 import sqlite3
 import sys
 
@@ -7,6 +13,14 @@ from textwrap import dedent
 
 
 def execute(c, sql, suppress_errors=True):
+    """Helper that wraps execution of SQL code.
+
+    This is used both by the REPL and by direct execution from the CLI.
+
+    'c' may be a cursor or a connection.
+    'sql' is the SQL string to execute.
+    """
+
     try:
         for row in c.execute(sql):
             print(row)
@@ -21,6 +35,7 @@ def execute(c, sql, suppress_errors=True):
 
 
 class SqliteInteractiveConsole(InteractiveConsole):
+    """A simple SQLite REPL."""
 
     def __init__(self, connection):
         super().__init__()
@@ -28,6 +43,11 @@ class SqliteInteractiveConsole(InteractiveConsole):
         self._cur = connection.cursor()
 
     def runsource(self, source, filename="<input>", symbol="single"):
+        """Override runsource, the core of the InteractiveConsole REPL.
+
+        Return True if more input is needed; buffering is done automatically.
+        Return False is input is a complete statement ready for execution.
+        """
         match source:
             case ".version":
                 print(f"{sqlite3.sqlite_version}")
@@ -42,10 +62,9 @@ class SqliteInteractiveConsole(InteractiveConsole):
         return False
 
 
-def main():
+def main(*args):
     parser = ArgumentParser(
         description="Python sqlite3 CLI",
-        prog="python -m sqlite3",
     )
     parser.add_argument(
         "filename", type=str, default=":memory:", nargs="?",
@@ -66,19 +85,24 @@ def main():
         version=f"SQLite version {sqlite3.sqlite_version}",
         help="Print underlying SQLite library version",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(*args)
 
     if args.filename == ":memory:":
         db_name = "a transient in-memory database"
     else:
         db_name = repr(args.filename)
 
+    # Prepare REPL banner and prompts.
+    if sys.platform == "win32" and "idlelib.run" not in sys.modules:
+        eofkey = "CTRL-Z"
+    else:
+        eofkey = "CTRL-D"
     banner = dedent(f"""
         sqlite3 shell, running on SQLite version {sqlite3.sqlite_version}
         Connected to {db_name}
 
         Each command will be run using execute() on the cursor.
-        Type ".help" for more information; type ".quit" or CTRL-D to quit.
+        Type ".help" for more information; type ".quit" or {eofkey} to quit.
     """).strip()
     sys.ps1 = "sqlite> "
     sys.ps2 = "    ... "
@@ -86,12 +110,21 @@ def main():
     con = sqlite3.connect(args.filename, isolation_level=None)
     try:
         if args.sql:
+            # SQL statement provided on the command-line; execute it directly.
             execute(con, args.sql, suppress_errors=False)
         else:
+            # No SQL provided; start the REPL.
             console = SqliteInteractiveConsole(con)
+            try:
+                import readline  # noqa: F401
+            except ImportError:
+                pass
             console.interact(banner, exitmsg="")
     finally:
         con.close()
 
+    sys.exit(0)
 
-main()
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

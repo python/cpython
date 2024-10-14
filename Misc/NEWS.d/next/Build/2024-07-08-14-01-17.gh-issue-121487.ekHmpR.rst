@@ -1,0 +1,1 @@
+Fix deprecation warning for ATOMIC_VAR_INIT in mimalloc.

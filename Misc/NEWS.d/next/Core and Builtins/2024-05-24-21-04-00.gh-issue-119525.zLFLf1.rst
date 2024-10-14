@@ -1,0 +1,2 @@
+Fix deadlock involving ``_PyType_Lookup()`` cache in the free-threaded build
+when the GIL is dynamically enabled at runtime.

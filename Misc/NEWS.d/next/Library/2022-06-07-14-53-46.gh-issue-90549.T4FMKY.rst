@@ -1,2 +1,0 @@
-Fix a multiprocessing bug where a global named resource (such as a semaphore)
-could leak when a child process is spawned (as opposed to forked).

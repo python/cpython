@@ -10,7 +10,6 @@ extern "C" {
 
 typedef struct {
     PyObject_HEAD
-    long index;
     long start;
     long step;
     long len;

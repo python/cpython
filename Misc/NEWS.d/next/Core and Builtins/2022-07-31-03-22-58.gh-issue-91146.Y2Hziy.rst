@@ -1,2 +1,0 @@
-Reduce allocation size of :class:`list` from :meth:`str.split`
-and :meth:`str.rsplit`. Patch by Dong-hee Na and Inada Naoki.

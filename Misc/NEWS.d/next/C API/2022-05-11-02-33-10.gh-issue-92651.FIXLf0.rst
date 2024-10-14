@@ -1,3 +1,0 @@
-Remove the ``token.h`` header file. There was never any public tokenizer C
-API. The ``token.h`` header file was only designed to be used by Python
-internals. Patch by Victor Stinner.

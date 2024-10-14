@@ -1,0 +1,2 @@
+Remove :data:`!version` and :data:`!version_info` from :mod:`sqlite3`.
+Patch by Hugo van Kemenade.

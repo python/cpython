@@ -1,0 +1,4 @@
+Added ``Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST`` and
+``Py_END_CRITICAL_SECTION_SEQUENCE_FAST`` macros to make it possible to use
+PySequence_Fast APIs safely when free-threaded, and update str.join to work
+without the GIL using them.

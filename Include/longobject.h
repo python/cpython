@@ -7,7 +7,7 @@ extern "C" {
 
 /* Long (arbitrary precision) integer object interface */
 
-PyAPI_DATA(PyTypeObject) PyLong_Type;
+// PyLong_Type is declared by object.h
 
 #define PyLong_Check(op) \
         PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_LONG_SUBCLASS)
@@ -18,12 +18,30 @@ PyAPI_FUNC(PyObject *) PyLong_FromUnsignedLong(unsigned long);
 PyAPI_FUNC(PyObject *) PyLong_FromSize_t(size_t);
 PyAPI_FUNC(PyObject *) PyLong_FromSsize_t(Py_ssize_t);
 PyAPI_FUNC(PyObject *) PyLong_FromDouble(double);
+
 PyAPI_FUNC(long) PyLong_AsLong(PyObject *);
 PyAPI_FUNC(long) PyLong_AsLongAndOverflow(PyObject *, int *);
 PyAPI_FUNC(Py_ssize_t) PyLong_AsSsize_t(PyObject *);
 PyAPI_FUNC(size_t) PyLong_AsSize_t(PyObject *);
 PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLong(PyObject *);
 PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLongMask(PyObject *);
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+PyAPI_FUNC(int) PyLong_AsInt(PyObject *);
+#endif
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+PyAPI_FUNC(PyObject*) PyLong_FromInt32(int32_t value);
+PyAPI_FUNC(PyObject*) PyLong_FromUInt32(uint32_t value);
+PyAPI_FUNC(PyObject*) PyLong_FromInt64(int64_t value);
+PyAPI_FUNC(PyObject*) PyLong_FromUInt64(uint64_t value);
+
+PyAPI_FUNC(int) PyLong_AsInt32(PyObject *obj, int32_t *value);
+PyAPI_FUNC(int) PyLong_AsUInt32(PyObject *obj, uint32_t *value);
+PyAPI_FUNC(int) PyLong_AsInt64(PyObject *obj, int64_t *value);
+PyAPI_FUNC(int) PyLong_AsUInt64(PyObject *obj, uint64_t *value);
+#endif
+
 PyAPI_FUNC(PyObject *) PyLong_GetInfo(void);
 
 /* It may be useful in the future. I've added it in the PyInt -> PyLong
@@ -34,7 +52,24 @@ PyAPI_FUNC(PyObject *) PyLong_GetInfo(void);
 #if !defined(SIZEOF_PID_T) || SIZEOF_PID_T == SIZEOF_INT
 #define _Py_PARSE_PID "i"
 #define PyLong_FromPid PyLong_FromLong
-#define PyLong_AsPid PyLong_AsLong
+# if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+#   define PyLong_AsPid PyLong_AsInt
+# elif SIZEOF_INT == SIZEOF_LONG
+#   define PyLong_AsPid PyLong_AsLong
+# else
+static inline int
+PyLong_AsPid(PyObject *obj)
+{
+    int overflow;
+    long result = PyLong_AsLongAndOverflow(obj, &overflow);
+    if (overflow || result > INT_MAX || result < INT_MIN) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Python int too large to convert to C int");
+        return -1;
+    }
+    return (int)result;
+}
+# endif
 #elif SIZEOF_PID_T == SIZEOF_LONG
 #define _Py_PARSE_PID "l"
 #define PyLong_FromPid PyLong_FromLong

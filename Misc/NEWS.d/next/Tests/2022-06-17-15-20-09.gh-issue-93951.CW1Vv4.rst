@@ -1,1 +1,0 @@
-In test_bdb.StateTestCase.test_skip, avoid including auxiliary importers.

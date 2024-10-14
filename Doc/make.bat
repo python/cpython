@@ -109,7 +109,7 @@ echo.always available include:
 echo.
 echo.   Provided by Sphinx:
 echo.      html, htmlhelp, latex, text
-echo.      suspicious, linkcheck, changes, doctest
+echo.      linkcheck, changes, doctest
 echo.   Provided by this script:
 echo.      clean, check, htmlview
 echo.

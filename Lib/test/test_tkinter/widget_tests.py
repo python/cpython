@@ -1,7 +1,8 @@
 # Common tests for test_tkinter/test_widgets.py and test_ttk/test_widgets.py
 
+import re
 import tkinter
-from test.test_tkinter.support import (AbstractTkTest, tcl_version,
+from test.test_tkinter.support import (AbstractTkTest, requires_tk, tk_version,
                                   pixels_conv, tcl_obj_eq)
 import test.support
 
@@ -9,9 +10,14 @@ import test.support
 _sentinel = object()
 
 class AbstractWidgetTest(AbstractTkTest):
+    _default_pixels = '' if tk_version >= (9, 0) else -1 if tk_version >= (8, 7) else ''
     _conv_pixels = round
     _conv_pad_pixels = None
     _stringify = False
+    _clip_highlightthickness = True
+    _clip_pad = False
+    _clip_borderwidth = False
+    _allow_empty_justify = False
 
     @property
     def scaling(self):
@@ -22,7 +28,7 @@ class AbstractWidgetTest(AbstractTkTest):
             return self._scaling
 
     def _str(self, value):
-        if not self._stringify and self.wantobjects and tcl_version >= (8, 6):
+        if not self._stringify and self.wantobjects and tk_version >= (8, 6):
             return value
         if isinstance(value, tuple):
             return ' '.join(map(self._str, value))
@@ -56,16 +62,13 @@ class AbstractWidgetTest(AbstractTkTest):
     def checkInvalidParam(self, widget, name, value, errmsg=None):
         orig = widget[name]
         if errmsg is not None:
-            errmsg = errmsg.format(value)
-        with self.assertRaises(tkinter.TclError) as cm:
+            errmsg = errmsg.format(re.escape(str(value)))
+            errmsg = fr'\A{errmsg}\Z'
+        with self.assertRaisesRegex(tkinter.TclError, errmsg or ''):
             widget[name] = value
-        if errmsg is not None:
-            self.assertEqual(str(cm.exception), errmsg)
         self.assertEqual(widget[name], orig)
-        with self.assertRaises(tkinter.TclError) as cm:
+        with self.assertRaisesRegex(tkinter.TclError, errmsg or ''):
             widget.configure({name: value})
-        if errmsg is not None:
-            self.assertEqual(str(cm.exception), errmsg)
         self.assertEqual(widget[name], orig)
 
     def checkParams(self, widget, name, *values, **kwargs):
@@ -74,30 +77,26 @@ class AbstractWidgetTest(AbstractTkTest):
 
     def checkIntegerParam(self, widget, name, *values, **kwargs):
         self.checkParams(widget, name, *values, **kwargs)
-        self.checkInvalidParam(widget, name, '',
-                errmsg='expected integer but got ""')
-        self.checkInvalidParam(widget, name, '10p',
-                errmsg='expected integer but got "10p"')
-        self.checkInvalidParam(widget, name, 3.2,
-                errmsg='expected integer but got "3.2"')
+        errmsg = 'expected integer but got "{}"'
+        self.checkInvalidParam(widget, name, '', errmsg=errmsg)
+        self.checkInvalidParam(widget, name, '10p', errmsg=errmsg)
+        self.checkInvalidParam(widget, name, 3.2, errmsg=errmsg)
 
     def checkFloatParam(self, widget, name, *values, conv=float, **kwargs):
         for value in values:
             self.checkParam(widget, name, value, conv=conv, **kwargs)
-        self.checkInvalidParam(widget, name, '',
-                errmsg='expected floating-point number but got ""')
-        self.checkInvalidParam(widget, name, 'spam',
-                errmsg='expected floating-point number but got "spam"')
+        errmsg = 'expected floating-point number but got "{}"'
+        self.checkInvalidParam(widget, name, '', errmsg=errmsg)
+        self.checkInvalidParam(widget, name, 'spam', errmsg=errmsg)
 
     def checkBooleanParam(self, widget, name):
         for value in (False, 0, 'false', 'no', 'off'):
             self.checkParam(widget, name, value, expected=0)
         for value in (True, 1, 'true', 'yes', 'on'):
             self.checkParam(widget, name, value, expected=1)
-        self.checkInvalidParam(widget, name, '',
-                errmsg='expected boolean value but got ""')
-        self.checkInvalidParam(widget, name, 'spam',
-                errmsg='expected boolean value but got "spam"')
+        errmsg = 'expected boolean value but got "{}"'
+        self.checkInvalidParam(widget, name, '', errmsg=errmsg)
+        self.checkInvalidParam(widget, name, 'spam', errmsg=errmsg)
 
     def checkColorParam(self, widget, name, *, allow_empty=None, **kwargs):
         self.checkParams(widget, name,
@@ -120,16 +119,24 @@ class AbstractWidgetTest(AbstractTkTest):
         self.assertTrue(widget[name])
         self.checkParams(widget, name, '')
 
-    def checkEnumParam(self, widget, name, *values, errmsg=None, **kwargs):
+    def checkEnumParam(self, widget, name, *values,
+                       errmsg=None, allow_empty=False, fullname=None,
+                       sort=False, **kwargs):
         self.checkParams(widget, name, *values, **kwargs)
         if errmsg is None:
+            if sort:
+                if values[-1]:
+                    values = tuple(sorted(values))
+                else:
+                    values = tuple(sorted(values[:-1])) + ('',)
             errmsg2 = ' %s "{}": must be %s%s or %s' % (
-                    name,
+                    fullname or name,
                     ', '.join(values[:-1]),
                     ',' if len(values) > 2 else '',
-                    values[-1])
-            self.checkInvalidParam(widget, name, '',
-                                   errmsg='ambiguous' + errmsg2)
+                    values[-1] or '""')
+            if '' not in values and not allow_empty:
+                self.checkInvalidParam(widget, name, '',
+                                       errmsg='ambiguous' + errmsg2)
             errmsg = 'bad' + errmsg2
         self.checkInvalidParam(widget, name, 'spam', errmsg=errmsg)
 
@@ -146,20 +153,21 @@ class AbstractWidgetTest(AbstractTkTest):
                     conv1 = round
             self.checkParam(widget, name, value, expected=expected,
                             conv=conv1, **kwargs)
-        self.checkInvalidParam(widget, name, '6x',
-                errmsg='bad screen distance "6x"')
-        self.checkInvalidParam(widget, name, 'spam',
-                errmsg='bad screen distance "spam"')
+        errmsg = '(bad|expected) screen distance ((or "" )?but got )?"{}"'
+        self.checkInvalidParam(widget, name, '6x', errmsg=errmsg)
+        self.checkInvalidParam(widget, name, 'spam', errmsg=errmsg)
 
-    def checkReliefParam(self, widget, name):
-        self.checkParams(widget, name,
-                         'flat', 'groove', 'raised', 'ridge', 'solid', 'sunken')
-        errmsg='bad relief "spam": must be '\
-               'flat, groove, raised, ridge, solid, or sunken'
-        if tcl_version < (8, 6):
+    def checkReliefParam(self, widget, name, *, allow_empty=False):
+        values = ('flat', 'groove', 'raised', 'ridge', 'solid', 'sunken')
+        if allow_empty:
+            values += ('',)
+        self.checkParams(widget, name, *values)
+        errmsg = 'bad relief "{}": must be %s, or %s' % (
+                ', '.join(values[:-1]),
+                values[-1] or '""')
+        if tk_version < (8, 6):
             errmsg = None
-        self.checkInvalidParam(widget, name, 'spam',
-                errmsg=errmsg)
+        self.checkInvalidParam(widget, name, 'spam', errmsg=errmsg)
 
     def checkImageParam(self, widget, name):
         image = tkinter.PhotoImage(master=self.root, name='image1')
@@ -193,6 +201,7 @@ class AbstractWidgetTest(AbstractTkTest):
             aliases = {
                 'bd': 'borderwidth',
                 'bg': 'background',
+                'bgimg': 'backgroundimage',
                 'fg': 'foreground',
                 'invcmd': 'invalidcommand',
                 'vcmd': 'validatecommand',
@@ -235,6 +244,10 @@ class StandardOptionsTests:
         widget = self.create()
         self.checkColorParam(widget, 'activeforeground')
 
+    def test_configure_activerelief(self):
+        widget = self.create()
+        self.checkReliefParam(widget, 'activerelief')
+
     def test_configure_anchor(self):
         widget = self.create()
         self.checkEnumParam(widget, 'anchor',
@@ -246,11 +259,16 @@ class StandardOptionsTests:
         if 'bg' in self.OPTIONS:
             self.checkColorParam(widget, 'bg')
 
+    @requires_tk(8, 7)
+    def test_configure_backgroundimage(self):
+        widget = self.create()
+        self.checkImageParam(widget, 'backgroundimage')
+
     def test_configure_bitmap(self):
         widget = self.create()
         self.checkParam(widget, 'bitmap', 'questhead')
         self.checkParam(widget, 'bitmap', 'gray50')
-        filename = test.support.findfile('python.xbm', subdir='imghdrdata')
+        filename = test.support.findfile('python.xbm', subdir='tkinterdata')
         self.checkParam(widget, 'bitmap', '@' + filename)
         # Cocoa Tk widgets don't detect invalid -bitmap values
         # See https://core.tcl.tk/tk/info/31cd33dbf0
@@ -262,9 +280,14 @@ class StandardOptionsTests:
     def test_configure_borderwidth(self):
         widget = self.create()
         self.checkPixelsParam(widget, 'borderwidth',
-                              0, 1.3, 2.6, 6, -2, '10p')
+                              0, 1.3, 2.6, 6, '10p')
+        expected = 0 if self._clip_borderwidth else -2
+        self.checkParam(widget, 'borderwidth', -2, expected=expected,
+                        conv=self._conv_pixels)
         if 'bd' in self.OPTIONS:
-            self.checkPixelsParam(widget, 'bd', 0, 1.3, 2.6, 6, -2, '10p')
+            self.checkPixelsParam(widget, 'bd', 0, 1.3, 2.6, 6, '10p')
+            self.checkParam(widget, 'bd', -2, expected=expected,
+                            conv=self._conv_pixels)
 
     def test_configure_compound(self):
         widget = self.create()
@@ -287,8 +310,10 @@ class StandardOptionsTests:
         widget = self.create()
         self.checkParam(widget, 'font',
                         '-Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*')
-        self.checkInvalidParam(widget, 'font', '',
-                               errmsg='font "" doesn\'t exist')
+        is_ttk = widget.__class__.__module__ == 'tkinter.ttk'
+        if not is_ttk:
+            self.checkInvalidParam(widget, 'font', '',
+                                   errmsg='font "" doesn\'t exist')
 
     def test_configure_foreground(self):
         widget = self.create()
@@ -308,7 +333,8 @@ class StandardOptionsTests:
         widget = self.create()
         self.checkPixelsParam(widget, 'highlightthickness',
                               0, 1.3, 2.6, 6, '10p')
-        self.checkParam(widget, 'highlightthickness', -2, expected=0,
+        expected = 0 if self._clip_highlightthickness else -2
+        self.checkParam(widget, 'highlightthickness', -2, expected=expected,
                         conv=self._conv_pixels)
 
     def test_configure_image(self):
@@ -342,12 +368,11 @@ class StandardOptionsTests:
 
     def test_configure_justify(self):
         widget = self.create()
-        self.checkEnumParam(widget, 'justify', 'left', 'right', 'center',
-                errmsg='bad justification "{}": must be '
-                       'left, right, or center')
-        self.checkInvalidParam(widget, 'justify', '',
-                errmsg='ambiguous justification "": must be '
-                       'left, right, or center')
+        values = ('left', 'right', 'center')
+        if self._allow_empty_justify:
+            values += ('',)
+        self.checkEnumParam(widget, 'justify', *values,
+                            fullname='justification')
 
     def test_configure_orient(self):
         widget = self.create()
@@ -356,13 +381,29 @@ class StandardOptionsTests:
 
     def test_configure_padx(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'padx', 3, 4.4, 5.6, -2, '12m',
+        self.checkPixelsParam(widget, 'padx', 3, 4.4, 5.6, '12m',
                               conv=self._conv_pad_pixels)
+        expected = 0 if self._clip_pad else -2
+        self.checkParam(widget, 'padx', -2, expected=expected,
+                        conv=self._conv_pad_pixels)
 
     def test_configure_pady(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'pady', 3, 4.4, 5.6, -2, '12m',
+        self.checkPixelsParam(widget, 'pady', 3, 4.4, 5.6, '12m',
                               conv=self._conv_pad_pixels)
+        expected = 0 if self._clip_pad else -2
+        self.checkParam(widget, 'pady', -2, expected=expected,
+                        conv=self._conv_pad_pixels)
+
+    @requires_tk(8, 7)
+    def test_configure_placeholder(self):
+        widget = self.create()
+        self.checkParam(widget, 'placeholder', 'xxx')
+
+    @requires_tk(8, 7)
+    def test_configure_placeholderforeground(self):
+        widget = self.create()
+        self.checkColorParam(widget, 'placeholderforeground')
 
     def test_configure_relief(self):
         widget = self.create()
@@ -409,13 +450,35 @@ class StandardOptionsTests:
         var = tkinter.StringVar(self.root)
         self.checkVariableParam(widget, 'textvariable', var)
 
+    @requires_tk(8, 7)
+    def test_configure_tile(self):
+        widget = self.create()
+        self.checkBooleanParam(widget, 'tile')
+
     def test_configure_troughcolor(self):
         widget = self.create()
         self.checkColorParam(widget, 'troughcolor')
 
     def test_configure_underline(self):
         widget = self.create()
-        self.checkIntegerParam(widget, 'underline', 0, 1, 10)
+        self.checkParams(widget, 'underline', 0, 1, 10)
+        if tk_version >= (8, 7):
+            is_ttk = widget.__class__.__module__ == 'tkinter.ttk'
+            self.checkParam(widget, 'underline', '',
+                            expected='' if is_ttk else self._default_pixels)
+            self.checkParam(widget, 'underline', '5+2',
+                            expected='5+2' if is_ttk else 7)
+            self.checkParam(widget, 'underline', '5-2',
+                            expected='5-2' if is_ttk else 3)
+            self.checkParam(widget, 'underline', 'end', expected='end')
+            self.checkParam(widget, 'underline', 'end-2', expected='end-2')
+            errmsg = (r'bad index "{}": must be integer\?\[\+-\]integer\?, '
+                      r'end\?\[\+-\]integer\?, or ""')
+        else:
+            errmsg = 'expected integer but got "{}"'
+            self.checkInvalidParam(widget, 'underline', '', errmsg=errmsg)
+        self.checkInvalidParam(widget, 'underline', '10p', errmsg=errmsg)
+        self.checkInvalidParam(widget, 'underline', 3.2, errmsg=errmsg)
 
     def test_configure_wraplength(self):
         widget = self.create()
@@ -445,7 +508,8 @@ class StandardOptionsTests:
 
     def test_configure_overrelief(self):
         widget = self.create()
-        self.checkReliefParam(widget, 'overrelief')
+        self.checkReliefParam(widget, 'overrelief',
+                              allow_empty=(tk_version >= (8, 7)))
 
     def test_configure_selectcolor(self):
         widget = self.create()

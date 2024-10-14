@@ -1,0 +1,1 @@
+Fix invalid variable in :mod:`venv` handling of failed symlink on Windows

@@ -2,18 +2,39 @@ import decimal
 from io import StringIO
 from collections import OrderedDict
 from test.test_json import PyTest, CTest
+from test import support
 
 
 class TestDecode:
     def test_decimal(self):
         rval = self.loads('1.1', parse_float=decimal.Decimal)
-        self.assertTrue(isinstance(rval, decimal.Decimal))
+        self.assertIsInstance(rval, decimal.Decimal)
         self.assertEqual(rval, decimal.Decimal('1.1'))
 
     def test_float(self):
         rval = self.loads('1', parse_int=float)
-        self.assertTrue(isinstance(rval, float))
+        self.assertIsInstance(rval, float)
         self.assertEqual(rval, 1.0)
+
+    def test_bytes(self):
+        self.assertEqual(self.loads(b"1"), 1)
+
+    def test_parse_constant(self):
+        for constant, expected in [
+            ("Infinity", "INFINITY"),
+            ("-Infinity", "-INFINITY"),
+            ("NaN", "NAN"),
+        ]:
+            self.assertEqual(
+                self.loads(constant, parse_constant=str.upper), expected
+            )
+
+    def test_constant_invalid_case(self):
+        for constant in [
+            "nan", "NAN", "naN", "infinity", "INFINITY", "inFiniTy"
+        ]:
+            with self.assertRaises(self.JSONDecodeError):
+                self.loads(constant)
 
     def test_empty_objects(self):
         self.assertEqual(self.loads('{}'), {})
@@ -87,13 +108,22 @@ class TestDecode:
             self.json.load(StringIO(bom_json))
         self.assertIn('BOM', str(cm.exception))
         # make sure that the BOM is not detected in the middle of a string
-        bom_in_str = '"{}"'.format(''.encode('utf-8-sig').decode('utf-8'))
+        bom = ''.encode('utf-8-sig').decode('utf-8')
+        bom_in_str = f'"{bom}"'
         self.assertEqual(self.loads(bom_in_str), '\ufeff')
         self.assertEqual(self.json.load(StringIO(bom_in_str)), '\ufeff')
 
     def test_negative_index(self):
         d = self.json.JSONDecoder()
         self.assertRaises(ValueError, d.raw_decode, 'a'*42, -50000)
+
+    def test_limit_int(self):
+        maxdigits = 5000
+        with support.adjust_int_max_str_digits(maxdigits):
+            self.loads('1' * maxdigits)
+            with self.assertRaises(ValueError):
+                self.loads('1' * (maxdigits + 1))
+
 
 class TestPyDecode(TestDecode, PyTest): pass
 class TestCDecode(TestDecode, CTest): pass

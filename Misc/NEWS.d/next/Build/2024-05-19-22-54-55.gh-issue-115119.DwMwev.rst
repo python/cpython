@@ -1,0 +1,1 @@
+Fall back to the bundled libmpdec if a system version cannot be found.

@@ -1,0 +1,2 @@
+Fix crash when importing modules containing state and single-phase
+initialization in a subinterpreter.

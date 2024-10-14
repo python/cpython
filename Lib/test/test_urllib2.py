@@ -1,11 +1,14 @@
 import unittest
 from test import support
 from test.support import os_helper
+from test.support import requires_subprocess
 from test.support import warnings_helper
 from test import test_urllib
+from unittest import mock
 
 import os
 import io
+import ftplib
 import socket
 import array
 import sys
@@ -13,10 +16,11 @@ import tempfile
 import subprocess
 
 import urllib.request
-# The proxy bypass method imported below has logic specific to the OSX
-# proxy config data structure but is testable on all platforms.
+# The proxy bypass method imported below has logic specific to the
+# corresponding system but is testable on all platforms.
 from urllib.request import (Request, OpenerDirector, HTTPBasicAuthHandler,
                             HTTPPasswordMgrWithPriorAuth, _parse_proxy,
+                            _proxy_bypass_winreg_override,
                             _proxy_bypass_macosx_sysconf,
                             AbstractDigestAuthHandler)
 from urllib.parse import urlparse
@@ -484,7 +488,18 @@ def build_test_opener(*handler_instances):
     return opener
 
 
-class MockHTTPHandler(urllib.request.BaseHandler):
+class MockHTTPHandler(urllib.request.HTTPHandler):
+    # Very simple mock HTTP handler with no special behavior other than using a mock HTTP connection
+
+    def __init__(self, debuglevel=None):
+        super(MockHTTPHandler, self).__init__(debuglevel=debuglevel)
+        self.httpconn = MockHTTPClass()
+
+    def http_open(self, req):
+        return self.do_open(self.httpconn, req)
+
+
+class MockHTTPHandlerRedirect(urllib.request.BaseHandler):
     # useful for testing redirections and auth
     # sends supplied headers and code as first response
     # sends 200 OK as second response
@@ -512,16 +527,17 @@ class MockHTTPHandler(urllib.request.BaseHandler):
             return MockResponse(200, "OK", msg, "", req.get_full_url())
 
 
-class MockHTTPSHandler(urllib.request.AbstractHTTPHandler):
-    # Useful for testing the Proxy-Authorization request by verifying the
-    # properties of httpcon
+if hasattr(http.client, 'HTTPSConnection'):
+    class MockHTTPSHandler(urllib.request.HTTPSHandler):
+        # Useful for testing the Proxy-Authorization request by verifying the
+        # properties of httpcon
 
-    def __init__(self, debuglevel=0):
-        urllib.request.AbstractHTTPHandler.__init__(self, debuglevel=debuglevel)
-        self.httpconn = MockHTTPClass()
+        def __init__(self, debuglevel=None, context=None, check_hostname=None):
+            super(MockHTTPSHandler, self).__init__(debuglevel, context, check_hostname)
+            self.httpconn = MockHTTPClass()
 
-    def https_open(self, req):
-        return self.do_open(self.httpconn, req)
+        def https_open(self, req):
+            return self.do_open(self.httpconn, req)
 
 
 class MockHTTPHandlerCheckAuth(urllib.request.BaseHandler):
@@ -739,7 +755,6 @@ class HandlerTests(unittest.TestCase):
                 self.ftpwrapper = MockFTPWrapper(self.data)
                 return self.ftpwrapper
 
-        import ftplib
         data = "rheum rhaponicum"
         h = NullFTPHandler(data)
         h.parent = MockOpener()
@@ -762,7 +777,7 @@ class HandlerTests(unittest.TestCase):
              ["foo", "bar"], "", None),
             ("ftp://localhost/baz.gif;type=a",
              "localhost", ftplib.FTP_PORT, "", "", "A",
-             [], "baz.gif", None),  # XXX really this should guess image/gif
+             [], "baz.gif", "image/gif"),
             ]:
             req = Request(url)
             req.timeout = None
@@ -778,6 +793,27 @@ class HandlerTests(unittest.TestCase):
             headers = r.info()
             self.assertEqual(headers.get("Content-type"), mimetype)
             self.assertEqual(int(headers["Content-length"]), len(data))
+
+    def test_ftp_error(self):
+        class ErrorFTPHandler(urllib.request.FTPHandler):
+            def __init__(self, exception):
+                self._exception = exception
+
+            def connect_ftp(self, user, passwd, host, port, dirs,
+                            timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+                raise self._exception
+
+        exception = ftplib.error_perm(
+            "500 OOPS: cannot change directory:/nonexistent")
+        h = ErrorFTPHandler(exception)
+        urlopen = urllib.request.build_opener(h).open
+        try:
+            urlopen("ftp://www.pythontest.net/")
+        except urllib.error.URLError as raised:
+            self.assertEqual(raised.reason,
+                             f"ftp error: {exception.args[0]}")
+        else:
+            self.fail("Did not raise ftplib exception")
 
     def test_file(self):
         import email.utils
@@ -985,6 +1021,7 @@ class HandlerTests(unittest.TestCase):
 
         file_obj.close()
 
+    @requires_subprocess()
     def test_http_body_pipe(self):
         # A file reading from a pipe.
         # A pipe cannot be seek'ed.  There is no way to determine the
@@ -1048,12 +1085,37 @@ class HandlerTests(unittest.TestCase):
             newreq = h.do_request_(req)
             self.assertEqual(int(newreq.get_header('Content-length')),16)
 
-    def test_http_handler_debuglevel(self):
+    def test_http_handler_global_debuglevel(self):
+        with mock.patch.object(http.client.HTTPConnection, 'debuglevel', 6):
+            o = OpenerDirector()
+            h = MockHTTPHandler()
+            o.add_handler(h)
+            o.open("http://www.example.com")
+            self.assertEqual(h._debuglevel, 6)
+
+    def test_http_handler_local_debuglevel(self):
         o = OpenerDirector()
-        h = MockHTTPSHandler(debuglevel=1)
+        h = MockHTTPHandler(debuglevel=5)
+        o.add_handler(h)
+        o.open("http://www.example.com")
+        self.assertEqual(h._debuglevel, 5)
+
+    @unittest.skipUnless(hasattr(http.client, 'HTTPSConnection'), 'HTTPSConnection required for HTTPS tests.')
+    def test_https_handler_global_debuglevel(self):
+        with mock.patch.object(http.client.HTTPSConnection, 'debuglevel', 7):
+            o = OpenerDirector()
+            h = MockHTTPSHandler()
+            o.add_handler(h)
+            o.open("https://www.example.com")
+            self.assertEqual(h._debuglevel, 7)
+
+    @unittest.skipUnless(hasattr(http.client, 'HTTPSConnection'), 'HTTPSConnection required for HTTPS tests.')
+    def test_https_handler_local_debuglevel(self):
+        o = OpenerDirector()
+        h = MockHTTPSHandler(debuglevel=4)
         o.add_handler(h)
         o.open("https://www.example.com")
-        self.assertEqual(h._debuglevel, 1)
+        self.assertEqual(h._debuglevel, 4)
 
     def test_http_doubleslash(self):
         # Checks the presence of any unnecessary double slash in url does not
@@ -1289,7 +1351,7 @@ class HandlerTests(unittest.TestCase):
 
         cj = CookieJar()
         interact_netscape(cj, "http://www.example.com/", "spam=eggs")
-        hh = MockHTTPHandler(302, "Location: http://www.cracker.com/\r\n\r\n")
+        hh = MockHTTPHandlerRedirect(302, "Location: http://www.cracker.com/\r\n\r\n")
         hdeh = urllib.request.HTTPDefaultErrorHandler()
         hrh = urllib.request.HTTPRedirectHandler()
         cp = urllib.request.HTTPCookieProcessor(cj)
@@ -1299,7 +1361,7 @@ class HandlerTests(unittest.TestCase):
 
     def test_redirect_fragment(self):
         redirected_url = 'http://www.example.com/index.html#OK\r\n\r\n'
-        hh = MockHTTPHandler(302, 'Location: ' + redirected_url)
+        hh = MockHTTPHandlerRedirect(302, 'Location: ' + redirected_url)
         hdeh = urllib.request.HTTPDefaultErrorHandler()
         hrh = urllib.request.HTTPRedirectHandler()
         o = build_test_opener(hh, hdeh, hrh)
@@ -1361,6 +1423,15 @@ class HandlerTests(unittest.TestCase):
                 request = handler.last_buf
                 self.assertTrue(request.startswith(expected), repr(request))
 
+    def test_redirect_head_request(self):
+        from_url = "http://example.com/a.html"
+        to_url = "http://example.com/b.html"
+        h = urllib.request.HTTPRedirectHandler()
+        req = Request(from_url, method="HEAD")
+        fp = MockFile()
+        new_req = h.redirect_request(req, fp, 302, "Found", {}, to_url)
+        self.assertEqual(new_req.get_method(), "HEAD")
+
     def test_proxy(self):
         u = "proxy.example.com:3128"
         for d in dict(http=u), dict(HTTP=u):
@@ -1421,6 +1492,7 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual([(handlers[0], "https_open")],
                          [tup[0:2] for tup in o.calls])
 
+    @unittest.skipUnless(hasattr(http.client, 'HTTPSConnection'), 'HTTPSConnection required for HTTPS tests.')
     def test_proxy_https_proxy_authorization(self):
         o = OpenerDirector()
         ph = urllib.request.ProxyHandler(dict(https='proxy.example.com:3128'))
@@ -1443,6 +1515,30 @@ class HandlerTests(unittest.TestCase):
         self.assertIsNotNone(req._tunnel_host)
         self.assertEqual(req.host, "proxy.example.com:3128")
         self.assertEqual(req.get_header("Proxy-authorization"), "FooBar")
+
+    @unittest.skipUnless(os.name == "nt", "only relevant for Windows")
+    def test_winreg_proxy_bypass(self):
+        proxy_override = "www.example.com;*.example.net; 192.168.0.1"
+        proxy_bypass = _proxy_bypass_winreg_override
+        for host in ("www.example.com", "www.example.net", "192.168.0.1"):
+            self.assertTrue(proxy_bypass(host, proxy_override),
+                            "expected bypass of %s to be true" % host)
+
+        for host in ("example.com", "www.example.org", "example.net",
+                     "192.168.0.2"):
+            self.assertFalse(proxy_bypass(host, proxy_override),
+                             "expected bypass of %s to be False" % host)
+
+        # check intranet address bypass
+        proxy_override = "example.com; <local>"
+        self.assertTrue(proxy_bypass("example.com", proxy_override),
+                        "expected bypass of %s to be true" % host)
+        self.assertFalse(proxy_bypass("example.net", proxy_override),
+                         "expected bypass of %s to be False" % host)
+        for host in ("test", "localhost"):
+            self.assertTrue(proxy_bypass(host, proxy_override),
+                            "expect <local> to bypass intranet address '%s'"
+                            % host)
 
     @unittest.skipUnless(sys.platform == 'darwin', "only relevant for OSX")
     def test_osx_proxy_bypass(self):
@@ -1484,7 +1580,7 @@ class HandlerTests(unittest.TestCase):
             password_manager = MockPasswordManager()
             auth_handler = urllib.request.HTTPBasicAuthHandler(password_manager)
             body = '\r\n'.join(headers) + '\r\n\r\n'
-            http_handler = MockHTTPHandler(401, body)
+            http_handler = MockHTTPHandlerRedirect(401, body)
             opener.add_handler(auth_handler)
             opener.add_handler(http_handler)
             self._test_basic_auth(opener, auth_handler, "Authorization",
@@ -1544,7 +1640,7 @@ class HandlerTests(unittest.TestCase):
         password_manager = MockPasswordManager()
         auth_handler = urllib.request.ProxyBasicAuthHandler(password_manager)
         realm = "ACME Networks"
-        http_handler = MockHTTPHandler(
+        http_handler = MockHTTPHandlerRedirect(
             407, 'Proxy-Authenticate: Basic realm="%s"\r\n\r\n' % realm)
         opener.add_handler(auth_handler)
         opener.add_handler(http_handler)
@@ -1588,7 +1684,7 @@ class HandlerTests(unittest.TestCase):
         digest_handler = TestDigestAuthHandler(password_manager)
         basic_handler = TestBasicAuthHandler(password_manager)
         realm = "ACME Networks"
-        http_handler = MockHTTPHandler(
+        http_handler = MockHTTPHandlerRedirect(
             401, 'WWW-Authenticate: Basic realm="%s"\r\n\r\n' % realm)
         opener.add_handler(basic_handler)
         opener.add_handler(digest_handler)
@@ -1608,7 +1704,7 @@ class HandlerTests(unittest.TestCase):
         opener = OpenerDirector()
         # While using DigestAuthHandler
         digest_auth_handler = urllib.request.HTTPDigestAuthHandler(None)
-        http_handler = MockHTTPHandler(
+        http_handler = MockHTTPHandlerRedirect(
             401, 'WWW-Authenticate: Kerberos\r\n\r\n')
         opener.add_handler(digest_auth_handler)
         opener.add_handler(http_handler)
@@ -1618,7 +1714,7 @@ class HandlerTests(unittest.TestCase):
         # While using BasicAuthHandler
         opener = OpenerDirector()
         basic_auth_handler = urllib.request.HTTPBasicAuthHandler(None)
-        http_handler = MockHTTPHandler(
+        http_handler = MockHTTPHandlerRedirect(
             401, 'WWW-Authenticate: NTLM\r\n\r\n')
         opener.add_handler(basic_auth_handler)
         opener.add_handler(http_handler)
@@ -1705,7 +1801,7 @@ class HandlerTests(unittest.TestCase):
         opener = OpenerDirector()
         opener.add_handler(auth_prior_handler)
 
-        http_handler = MockHTTPHandler(
+        http_handler = MockHTTPHandlerRedirect(
             401, 'WWW-Authenticate: Basic realm="%s"\r\n\r\n' % None)
         opener.add_handler(http_handler)
 
@@ -1823,6 +1919,11 @@ class MiscTests(unittest.TestCase):
         self.assertEqual(str(err), expected_errmsg)
         expected_errmsg = '<HTTPError %s: %r>' % (err.code, err.msg)
         self.assertEqual(repr(err), expected_errmsg)
+
+    def test_gh_98778(self):
+        x = urllib.error.HTTPError("url", 405, "METHOD NOT ALLOWED", None, None)
+        self.assertEqual(getattr(x, "__notes__", ()), ())
+        self.assertIsInstance(x.fp.read(), bytes)
 
     def test_parse_proxy(self):
         parse_proxy_test_cases = [
