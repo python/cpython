@@ -1796,6 +1796,7 @@ class Decimal(object):
         Decimal('123.46')
         >>> round(Decimal('123.456'), -2)
         Decimal('1E+2')
+        >>> setcontext(ExtendedContext)
         >>> round(Decimal('-Infinity'), 37)
         Decimal('NaN')
         >>> round(Decimal('sNaN123'), 0)
