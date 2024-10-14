@@ -205,7 +205,7 @@ dummy_func(
                 next_instr = frame->instr_ptr;
                 DISPATCH();
             }
-#endif
+            #endif
         }
 
         macro(RESUME) =
@@ -226,7 +226,7 @@ dummy_func(
             #ifdef Py_GIL_DISABLED
             DEOPT_IF(frame->tlbc_index !=
                      ((_PyThreadStateImpl *)tstate)->tlbc_index);
-#endif
+            #endif
         }
 
         op(_MONITOR_RESUME, (--)) {
