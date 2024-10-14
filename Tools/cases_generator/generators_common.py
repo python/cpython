@@ -511,6 +511,7 @@ class Emitter:
             raise analysis_error(ex.args[0], tkn) from None
         raise analysis_error("Expecting closing brace. Reached end of file", tkn)
 
+
     def emit_tokens(
         self,
         uop: Uop,
