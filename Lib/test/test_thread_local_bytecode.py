@@ -192,6 +192,43 @@ class TLBCTests(unittest.TestCase):
         """)
         assert_python_ok("-X", "tlbc=1", "-c", code)
 
+    def test_tlbc_cleanup(self):
+        code = textwrap.dedent("""
+        import gc
+        import sys
+        import threading
+
+        def f(barrier, callee):
+            barrier.wait()
+            return callee()
+
+        # Define callee dynamically so that the module body's constants don't
+        # hold a strong reference to the code object.
+        ns = {}
+        exec('def func(): return 42', globals=ns)
+        callee = ns.pop('func')
+
+        # Create 5 copies of callee's bytecode
+        threads = []
+        barrier = threading.Barrier(5)
+        for _ in range(barrier.parties):
+            t = threading.Thread(target=f, args=(barrier, callee))
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()
+
+        # Destroy the only reference to callee's code object. All the tlbc
+        # copies should be destroyed when the code object is destroyed in the
+        # call to gc.collect below.
+        before = sys._get_tlbc_blocks()
+        callee.__code__ = f.__code__
+        gc.collect()
+        after = sys._get_tlbc_blocks()
+        assert (before - after) == len(threads)
+        """)
+        assert_python_ok("-X", "tlbc=1", "-c", code)
+
 
 if __name__ == "__main__":
     unittest.main()
