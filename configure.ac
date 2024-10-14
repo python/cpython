@@ -7795,8 +7795,8 @@ AC_DEFUN([PY_SIMD_DETECT], [
         [[ac_cv_can_compile_simd_]m4_tolower([$1])],
         [[ac_cv_can_compile_simd_]m4_tolower([$3])])])
     AS_VAR_PUSHDEF([py_define], [m4_ifblank([$3],
-        [[CAN_COMPILE_SIMD_]m4_toupper([$1])[_INSTRUCTIONS]],
-        [[CAN_COMPILE_SIMD_]m4_toupper([$3])[_INSTRUCTIONS]])])
+        [[Py_CAN_COMPILE_SIMD_]m4_toupper([$1])[_INSTRUCTIONS]],
+        [[Py_CAN_COMPILE_SIMD_]m4_toupper([$3])[_INSTRUCTIONS]])])
     AC_MSG_CHECKING([checking SIMD instruction set])
     AX_CHECK_COMPILE_FLAG([$2],
         [AC_DEFINE([py_define], [1], [Define if '$2' is a valid compiler flag.])],

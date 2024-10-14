@@ -30667,7 +30667,7 @@ printf "%s\n" "$ax_cv_check_cflags___msse" >&6; }
 if test "x$ax_cv_check_cflags___msse" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_SSE_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_SSE_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -30715,7 +30715,7 @@ printf "%s\n" "$ax_cv_check_cflags___msse2" >&6; }
 if test "x$ax_cv_check_cflags___msse2" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_SSE2_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_SSE2_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -30763,7 +30763,7 @@ printf "%s\n" "$ax_cv_check_cflags___msse3" >&6; }
 if test "x$ax_cv_check_cflags___msse3" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_SSE3_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_SSE3_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -30811,7 +30811,7 @@ printf "%s\n" "$ax_cv_check_cflags___mssse3" >&6; }
 if test "x$ax_cv_check_cflags___mssse3" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_SSSE3_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_SSSE3_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -30859,7 +30859,7 @@ printf "%s\n" "$ax_cv_check_cflags___msse4_1" >&6; }
 if test "x$ax_cv_check_cflags___msse4_1" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_SSE4_1_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_SSE4_1_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -30907,7 +30907,7 @@ printf "%s\n" "$ax_cv_check_cflags___msse4_2" >&6; }
 if test "x$ax_cv_check_cflags___msse4_2" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_SSE4_2_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_SSE4_2_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -30956,7 +30956,7 @@ printf "%s\n" "$ax_cv_check_cflags___mavx" >&6; }
 if test "x$ax_cv_check_cflags___mavx" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_AVX_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -31004,7 +31004,7 @@ printf "%s\n" "$ax_cv_check_cflags___mavxifma" >&6; }
 if test "x$ax_cv_check_cflags___mavxifma" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_AVX_IFMA_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX_IFMA_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -31052,7 +31052,7 @@ printf "%s\n" "$ax_cv_check_cflags___mavxneconvert" >&6; }
 if test "x$ax_cv_check_cflags___mavxneconvert" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_AVX_NE_CONVERT_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX_NE_CONVERT_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -31101,7 +31101,7 @@ printf "%s\n" "$ax_cv_check_cflags___mavxvnni" >&6; }
 if test "x$ax_cv_check_cflags___mavxvnni" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_AVX_VNNI_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX_VNNI_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -31149,7 +31149,7 @@ printf "%s\n" "$ax_cv_check_cflags___mavxvnniint8" >&6; }
 if test "x$ax_cv_check_cflags___mavxvnniint8" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_AVX_VNNI_INT8_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX_VNNI_INT8_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -31197,7 +31197,7 @@ printf "%s\n" "$ax_cv_check_cflags___mavxvnniint16" >&6; }
 if test "x$ax_cv_check_cflags___mavxvnniint16" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_AVX_VNNI_INT16_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX_VNNI_INT16_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -31246,7 +31246,7 @@ printf "%s\n" "$ax_cv_check_cflags___mavx2" >&6; }
 if test "x$ax_cv_check_cflags___mavx2" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_AVX2_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX2_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -31295,7 +31295,7 @@ printf "%s\n" "$ax_cv_check_cflags___mavx512f" >&6; }
 if test "x$ax_cv_check_cflags___mavx512f" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_AVX512_F_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_F_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -31343,7 +31343,7 @@ printf "%s\n" "$ax_cv_check_cflags___mavx512cd" >&6; }
 if test "x$ax_cv_check_cflags___mavx512cd" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_AVX512_CD_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_CD_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -31391,7 +31391,7 @@ printf "%s\n" "$ax_cv_check_cflags___mavx512er" >&6; }
 if test "x$ax_cv_check_cflags___mavx512er" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_AVX512_ER_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_ER_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -31439,7 +31439,7 @@ printf "%s\n" "$ax_cv_check_cflags___mavx512pf" >&6; }
 if test "x$ax_cv_check_cflags___mavx512pf" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_AVX512_PF_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_PF_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -31488,7 +31488,7 @@ printf "%s\n" "$ax_cv_check_cflags___mavx5124fmaps" >&6; }
 if test "x$ax_cv_check_cflags___mavx5124fmaps" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_AVX512_4FMAPS_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_4FMAPS_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -31536,7 +31536,7 @@ printf "%s\n" "$ax_cv_check_cflags___mavx5124vnniw" >&6; }
 if test "x$ax_cv_check_cflags___mavx5124vnniw" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_AVX512_4VNNIW_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_4VNNIW_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -31585,7 +31585,7 @@ printf "%s\n" "$ax_cv_check_cflags___mavx512vpopcntdq" >&6; }
 if test "x$ax_cv_check_cflags___mavx512vpopcntdq" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_AVX512_VPOPCNTDQ_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_VPOPCNTDQ_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -31634,7 +31634,7 @@ printf "%s\n" "$ax_cv_check_cflags___mavx512vl" >&6; }
 if test "x$ax_cv_check_cflags___mavx512vl" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_AVX512_VL_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_VL_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -31682,7 +31682,7 @@ printf "%s\n" "$ax_cv_check_cflags___mavx512dq" >&6; }
 if test "x$ax_cv_check_cflags___mavx512dq" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_AVX512_DQ_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_DQ_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -31730,7 +31730,7 @@ printf "%s\n" "$ax_cv_check_cflags___mavx512bw" >&6; }
 if test "x$ax_cv_check_cflags___mavx512bw" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_AVX512_BW_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_BW_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -31779,7 +31779,7 @@ printf "%s\n" "$ax_cv_check_cflags___mavx512ifma" >&6; }
 if test "x$ax_cv_check_cflags___mavx512ifma" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_AVX512_IFMA_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_IFMA_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -31827,7 +31827,7 @@ printf "%s\n" "$ax_cv_check_cflags___mavx512vbmi" >&6; }
 if test "x$ax_cv_check_cflags___mavx512vbmi" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_AVX512_VBMI_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_VBMI_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -31876,7 +31876,7 @@ printf "%s\n" "$ax_cv_check_cflags___mavx512vnni" >&6; }
 if test "x$ax_cv_check_cflags___mavx512vnni" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_AVX512_VNNI_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_VNNI_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -31925,7 +31925,7 @@ printf "%s\n" "$ax_cv_check_cflags___mavx512vbmi2" >&6; }
 if test "x$ax_cv_check_cflags___mavx512vbmi2" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_AVX512_VBMI2_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_VBMI2_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -31973,7 +31973,7 @@ printf "%s\n" "$ax_cv_check_cflags___mavx512bitalg" >&6; }
 if test "x$ax_cv_check_cflags___mavx512bitalg" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_AVX512_BITALG_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_BITALG_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
@@ -32022,7 +32022,7 @@ printf "%s\n" "$ax_cv_check_cflags___mavx512vp2intersect" >&6; }
 if test "x$ax_cv_check_cflags___mavx512vp2intersect" = xyes
 then :
 
-printf "%s\n" "#define CAN_COMPILE_SIMD_AVX512_VP2INTERSECT_INSTRUCTIONS 1" >>confdefs.h
+printf "%s\n" "#define Py_CAN_COMPILE_SIMD_AVX512_VP2INTERSECT_INSTRUCTIONS 1" >>confdefs.h
 
 else $as_nop
   :
