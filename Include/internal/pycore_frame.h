@@ -93,8 +93,9 @@ _PyFrame_GetBytecode(_PyInterpreterFrame *f)
 {
 #ifdef Py_GIL_DISABLED
     PyCodeObject *co = _PyFrame_GetCode(f);
-    assert(f->tlbc_index >= 0 && f->tlbc_index < co->co_tlbc->size);
-    return (_Py_CODEUNIT *)co->co_tlbc->entries[f->tlbc_index];
+    _PyCodeArray *tlbc = _Py_atomic_load_ptr_acquire(&co->co_tlbc);
+    assert(f->tlbc_index >= 0 && f->tlbc_index < tlbc->size);
+    return (_Py_CODEUNIT *)tlbc->entries[f->tlbc_index];
 #else
     return _PyCode_CODE(_PyFrame_GetCode(f));
 #endif
