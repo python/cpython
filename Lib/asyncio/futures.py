@@ -191,7 +191,8 @@ class Future:
         the future is done and has an exception set, this exception is raised.
         """
         if self._state == _CANCELLED:
-            raise self._make_cancelled_error()
+            exc = self._make_cancelled_error()
+            raise exc
         if self._state != _FINISHED:
             raise exceptions.InvalidStateError('Result is not ready.')
         self.__log_traceback = False
@@ -208,7 +209,8 @@ class Future:
         InvalidStateError.
         """
         if self._state == _CANCELLED:
-            raise self._make_cancelled_error()
+            exc = self._make_cancelled_error()
+            raise exc
         if self._state != _FINISHED:
             raise exceptions.InvalidStateError('Exception is not set.')
         self.__log_traceback = False
