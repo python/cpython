@@ -1392,6 +1392,7 @@ class time:
     utcoffset()
     tzname()
     dst()
+    total_seconds()
 
     Properties (readonly):
     hour, minute, second, microsecond, tzinfo, fold
@@ -1473,6 +1474,11 @@ class time:
     def fold(self):
         return self._fold
 
+    def total_seconds(self):
+        """Total seconds in the time."""
+        return ((self.hour * 3600 + self.minute * 60 + self.second) * 10**6 +
+                self.microsecond) / 10**6
+    
     # Standard conversions, __hash__ (and helpers)
 
     # Comparisons of time objects with other.
