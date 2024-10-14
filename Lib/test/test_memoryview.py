@@ -64,6 +64,24 @@ class AbstractMemoryTests:
             m = self._view(b)
             self.assertEqual(list(m), [m[i] for i in range(len(m))])
 
+    def test_contains(self):
+        for tp in self._types:
+            b = tp(self._source)
+            m = self._view(b)
+            for c in list(m):
+                with self.subTest(self._source, buffer_type=tp, item=c):
+                    self.assertIn(c, m)
+
+            with self.subTest('empty buffer'):
+                empty = tp(b'')
+                mview = self._view(empty)
+                self.assertNotIn(0, mview)
+
+            with self.subTest('not found'):
+                b = tp(b'abc')
+                m = self._view(b)
+                self.assertNotIn(ord('d'), m)
+
     def test_setitem_readonly(self):
         if not self.ro_type:
             self.skipTest("no read-only type to test")
