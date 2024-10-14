@@ -1,0 +1,2 @@
+Implement :meth:`~object.__contains__` for :class:`memoryview` objects.
+Patch by Bénédikt Tran.
