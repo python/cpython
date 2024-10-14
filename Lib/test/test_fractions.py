@@ -283,6 +283,13 @@ numbers.Complex.register(Rect)
 class RectComplex(Rect, complex):
     pass
 
+class Ratio:
+    def __init__(self, ratio):
+        self._ratio = ratio
+    def as_integer_ratio(self):
+        return self._ratio
+
+
 class FractionTest(unittest.TestCase):
 
     def assertTypedEquals(self, expected, actual):
@@ -355,14 +362,9 @@ class FractionTest(unittest.TestCase):
         self.assertRaises(OverflowError, F, Decimal('-inf'))
 
     def testInitFromIntegerRatio(self):
-        class Ratio:
-            def __init__(self, ratio):
-                self._ratio = ratio
-            def as_integer_ratio(self):
-                return self._ratio
-
         self.assertEqual((7, 3), _components(F(Ratio((7, 3)))))
-        errmsg = "argument should be a string or a number"
+        errmsg = (r"argument should be a string or a Rational instance or "
+                  r"have the as_integer_ratio\(\) method")
         # the type also has an "as_integer_ratio" attribute.
         self.assertRaisesRegex(TypeError, errmsg, F, Ratio)
         # bad ratio
@@ -388,6 +390,8 @@ class FractionTest(unittest.TestCase):
             pass
         self.assertRaisesRegex(TypeError, errmsg, F, B)
         self.assertRaisesRegex(TypeError, errmsg, F, B())
+        self.assertRaises(TypeError, F.from_number, B)
+        self.assertRaises(TypeError, F.from_number, B())
 
     def testFromString(self):
         self.assertEqual((5, 1), _components(F("5")))
@@ -593,6 +597,37 @@ class FractionTest(unittest.TestCase):
         self.assertRaisesMessage(
             ValueError, "cannot convert NaN to integer ratio",
             F.from_decimal, Decimal("snan"))
+
+    def testFromNumber(self, cls=F):
+        def check(arg, numerator, denominator):
+            f = cls.from_number(arg)
+            self.assertIs(type(f), cls)
+            self.assertEqual(f.numerator, numerator)
+            self.assertEqual(f.denominator, denominator)
+
+        check(10, 10, 1)
+        check(2.5, 5, 2)
+        check(Decimal('2.5'), 5, 2)
+        check(F(22, 7), 22, 7)
+        check(DummyFraction(22, 7), 22, 7)
+        check(Rat(22, 7), 22, 7)
+        check(Ratio((22, 7)), 22, 7)
+        self.assertRaises(TypeError, cls.from_number, 3+4j)
+        self.assertRaises(TypeError, cls.from_number, '5/2')
+        self.assertRaises(TypeError, cls.from_number, [])
+        self.assertRaises(OverflowError, cls.from_number, float('inf'))
+        self.assertRaises(OverflowError, cls.from_number, Decimal('inf'))
+
+        # as_integer_ratio not defined in a class
+        class A:
+            pass
+        a = A()
+        a.as_integer_ratio = lambda: (9, 5)
+        check(a, 9, 5)
+
+    def testFromNumber_subclass(self):
+        self.testFromNumber(DummyFraction)
+
 
     def test_is_integer(self):
         self.assertTrue(F(1, 1).is_integer())

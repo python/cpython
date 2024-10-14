@@ -263,6 +263,10 @@ fractions
   :meth:`!as_integer_ratio` method to a :class:`~fractions.Fraction`.
   (Contributed by Serhiy Storchaka in :gh:`82017`.)
 
+* Add alternative :class:`~fractions.Fraction` constructor
+  :meth:`Fraction.from_number() <fractions.Fraction.from_number>`.
+  (Contributed by Serhiy Storchaka in :gh:`121797`.)
+
 
 functools
 ---------
