@@ -290,7 +290,7 @@ class StrptimeTests(unittest.TestCase):
         # additional check for IndexError branch (issue #19545)
         with self.assertRaises(ValueError) as e:
             _strptime._strptime_time('19', '%Y %')
-        self.assertIs(e.exception.__suppress_context__, True)
+        self.assertIsNone(e.exception.__context__)
 
     def test_unconverteddata(self):
         # Check ValueError is raised when there is unconverted data
@@ -483,12 +483,14 @@ class StrptimeTests(unittest.TestCase):
     #   id_ID, ms_MY.
     # * Year is not included: ha_NG.
     # * Use non-Gregorian calendar: lo_LA, thai, th_TH.
+    #   On Windows: ar_IN, ar_SA, fa_IR, ps_AF.
     #
     # BUG: Generates regexp that does not match the current date and time
-    # for az_IR, fa_IR, lzh_TW, my_MM, or_IN, shn_MM.
+    # for lzh_TW.
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
                       'he_IL', 'eu_ES', 'ar_AE', 'mfe_MU', 'yo_NG',
-                      'csb_PL', 'br_FR', 'gez_ET', 'brx_IN')
+                      'csb_PL', 'br_FR', 'gez_ET', 'brx_IN',
+                      'my_MM', 'or_IN', 'shn_MM', 'az_IR')
     def test_date_time_locale(self):
         # Test %c directive
         loc = locale.getlocale(locale.LC_TIME)[0]
@@ -510,20 +512,23 @@ class StrptimeTests(unittest.TestCase):
         self.roundtrip('%c', slice(0, 6), time.localtime(now - 366*24*3600))
 
     # NB: Dates before 1969 do not roundtrip on some locales:
-    # bo_CN, bo_IN, dz_BT, eu_ES, eu_FR.
+    # az_IR, bo_CN, bo_IN, dz_BT, eu_ES, eu_FR, fa_IR, or_IN.
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
                       'he_IL', 'ar_AE', 'mfe_MU', 'yo_NG',
-                      'csb_PL', 'br_FR', 'gez_ET', 'brx_IN')
+                      'csb_PL', 'br_FR', 'gez_ET', 'brx_IN',
+                      'my_MM', 'shn_MM')
     def test_date_time_locale2(self):
         # Test %c directive
         self.roundtrip('%c', slice(0, 6), (1900, 1, 1, 0, 0, 0, 0, 1, 0))
+        self.roundtrip('%c', slice(0, 6), (1800, 1, 1, 0, 0, 0, 0, 1, 0))
 
     # NB: Does not roundtrip because use non-Gregorian calendar:
-    # lo_LA, thai, th_TH.
+    # lo_LA, thai, th_TH. On Windows: ar_IN, ar_SA, fa_IR, ps_AF.
     # BUG: Generates regexp that does not match the current date
-    # for az_IR, fa_IR, lzh_TW, my_MM, or_IN, shn_MM.
+    # for lzh_TW.
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
-                      'he_IL', 'eu_ES', 'ar_AE')
+                      'he_IL', 'eu_ES', 'ar_AE',
+                      'az_IR', 'my_MM', 'or_IN', 'shn_MM')
     def test_date_locale(self):
         # Test %x directive
         now = time.time()
@@ -543,10 +548,11 @@ class StrptimeTests(unittest.TestCase):
         "musl libc issue on Emscripten, bpo-46390"
     )
     @run_with_locales('LC_TIME', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
-                      'eu_ES', 'ar_AE')
+                      'eu_ES', 'ar_AE', 'my_MM', 'shn_MM')
     def test_date_locale2(self):
         # Test %x directive
         self.roundtrip('%x', slice(0, 3), (1900, 1, 1, 0, 0, 0, 0, 1, 0))
+        self.roundtrip('%x', slice(0, 3), (1800, 1, 1, 0, 0, 0, 0, 1, 0))
 
     # NB: Does not roundtrip in some locales due to the ambiguity of
     # the time representation (bugs in locales?):
@@ -554,19 +560,27 @@ class StrptimeTests(unittest.TestCase):
     #   norwegian, nynorsk.
     # * Hours are in 12-hour notation without AM/PM indication: hy_AM,
     #   ms_MY, sm_WS.
-    # BUG: Generates regexp that does not match the current time for
-    # aa_DJ, aa_ER, aa_ET, am_ET, az_IR, byn_ER, fa_IR, gez_ER, gez_ET,
-    # lzh_TW, my_MM, om_ET, om_KE, or_IN, shn_MM, sid_ET, so_DJ, so_ET,
-    # so_SO, ti_ER, ti_ET, tig_ER, wal_ET.
-    @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP')
+    # BUG: Generates regexp that does not match the current time for lzh_TW.
+    @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
+                      'aa_ET', 'am_ET', 'az_IR', 'byn_ER', 'fa_IR', 'gez_ET',
+                      'my_MM', 'om_ET', 'or_IN', 'shn_MM', 'sid_ET', 'so_SO',
+                      'ti_ET', 'tig_ER', 'wal_ET')
     def test_time_locale(self):
         # Test %X directive
+        loc = locale.getlocale(locale.LC_TIME)[0]
+        pos = slice(3, 6)
+        if glibc_ver and glibc_ver < (2, 29) and loc in {
+                'aa_ET', 'am_ET', 'byn_ER', 'gez_ET', 'om_ET',
+                'sid_ET', 'so_SO', 'ti_ET', 'tig_ER', 'wal_ET'}:
+            # Hours are in 12-hour notation without AM/PM indication.
+            # Ignore hours.
+            pos = slice(4, 6)
         now = time.time()
-        self.roundtrip('%X', slice(3, 6), time.localtime(now))
+        self.roundtrip('%X', pos, time.localtime(now))
         # 1 hour 20 minutes 30 seconds ago
-        self.roundtrip('%X', slice(3, 6), time.localtime(now - 4830))
+        self.roundtrip('%X', pos, time.localtime(now - 4830))
         # 12 hours ago
-        self.roundtrip('%X', slice(3, 6), time.localtime(now - 12*3600))
+        self.roundtrip('%X', pos, time.localtime(now - 12*3600))
 
     def test_percent(self):
         # Make sure % signs are handled properly

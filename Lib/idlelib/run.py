@@ -101,11 +101,11 @@ def handle_tk_events(tcl=tcl):
 
 # Thread shared globals: Establish a queue between a subthread (which handles
 # the socket) and the main thread (which runs user code), plus global
-# completion, exit and interruptable (the main thread) flags:
+# completion, exit and interruptible (the main thread) flags:
 
 exit_now = False
 quitting = False
-interruptable = False
+interruptible = False
 
 def main(del_exitfunc=False):
     """Start the Python execution server in a subprocess
@@ -575,14 +575,14 @@ class Executive:
             self.locals = {}
 
     def runcode(self, code):
-        global interruptable
+        global interruptible
         try:
             self.user_exc_info = None
-            interruptable = True
+            interruptible = True
             try:
                 exec(code, self.locals)
             finally:
-                interruptable = False
+                interruptible = False
         except SystemExit as e:
             if e.args:  # SystemExit called with an argument.
                 ob = e.args[0]
@@ -608,7 +608,7 @@ class Executive:
             flush_stdout()
 
     def interrupt_the_server(self):
-        if interruptable:
+        if interruptible:
             thread.interrupt_main()
 
     def start_the_debugger(self, gui_adap_oid):

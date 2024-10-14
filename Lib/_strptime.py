@@ -14,6 +14,7 @@ import time
 import locale
 import calendar
 from re import compile as re_compile
+from re import sub as re_sub
 from re import IGNORECASE
 from re import escape as re_escape
 from datetime import (date as datetime_date,
@@ -128,11 +129,23 @@ class LocaleTime(object):
         time_tuple = time.struct_time((1999,3,17,22,44,55,2,76,0))
         time_tuple2 = time.struct_time((1999,1,3,1,1,1,6,3,0))
         replacement_pairs = [
-                    ('1999', '%Y'), ('99', '%y'), ('22', '%H'),
-                    ('44', '%M'), ('55', '%S'), ('76', '%j'),
-                    ('17', '%d'), ('03', '%m'), ('3', '%m'),
-                    # '3' needed for when no leading zero.
-                    ('2', '%w'), ('10', '%I')]
+            ('1999', '%Y'), ('99', '%y'), ('22', '%H'),
+            ('44', '%M'), ('55', '%S'), ('76', '%j'),
+            ('17', '%d'), ('03', '%m'), ('3', '%m'),
+            # '3' needed for when no leading zero.
+            ('2', '%w'), ('10', '%I'),
+            # Non-ASCII digits
+            ('\u0661\u0669\u0669\u0669', '%Y'),
+            ('\u0669\u0669', '%Oy'),
+            ('\u0662\u0662', '%OH'),
+            ('\u0664\u0664', '%OM'),
+            ('\u0665\u0665', '%OS'),
+            ('\u0661\u0667', '%Od'),
+            ('\u0660\u0663', '%Om'),
+            ('\u0663', '%Om'),
+            ('\u0662', '%Ow'),
+            ('\u0661\u0660', '%OI'),
+        ]
         date_time = []
         for directive in ('%c', '%x', '%X'):
             current_format = time.strftime(directive, time_tuple).lower()
@@ -157,6 +170,10 @@ class LocaleTime(object):
                 for tz in tz_values:
                     if tz:
                         current_format = current_format.replace(tz, "%Z")
+            # Transform all non-ASCII digits to digits in range U+0660 to U+0669.
+            current_format = re_sub(r'\d(?<![0-9])',
+                                    lambda m: chr(0x0660 + int(m[0])),
+                                    current_format)
             for old, new in replacement_pairs:
                 current_format = current_format.replace(old, new)
             # If %W is used, then Sunday, 2005-01-03 will fall on week 0 since
@@ -266,7 +283,7 @@ class TimeRE(dict):
         else:
             self.locale_time = LocaleTime()
         base = super()
-        base.__init__({
+        mapping = {
             # The " [1-9]" part of the regex is to make %c from ANSI C work
             'd': r"(?P<d>3[0-1]|[1-2]\d|0[1-9]|[1-9]| [1-9])",
             'f': r"(?P<f>[0-9]{1,6})",
@@ -295,11 +312,15 @@ class TimeRE(dict):
             'Z': self.__seqToRE((tz for tz_names in self.locale_time.timezone
                                         for tz in tz_names),
                                 'Z'),
-            '%': '%'})
-        base.__setitem__('W', base.__getitem__('U').replace('U', 'W'))
-        base.__setitem__('c', self.pattern(self.locale_time.LC_date_time))
-        base.__setitem__('x', self.pattern(self.locale_time.LC_date))
+            '%': '%'}
+        for d in 'dmyHIMS':
+            mapping['O' + d] = r'(?P<%s>\d\d|\d| \d)' % d
+        mapping['Ow'] = r'(?P<w>\d)'
+        mapping['W'] = mapping['U'].replace('U', 'W')
+        base.__init__(mapping)
         base.__setitem__('X', self.pattern(self.locale_time.LC_time))
+        base.__setitem__('x', self.pattern(self.locale_time.LC_date))
+        base.__setitem__('c', self.pattern(self.locale_time.LC_date_time))
 
     def __seqToRE(self, to_convert, directive):
         """Convert a list to a regex string for matching a directive.
@@ -327,21 +348,16 @@ class TimeRE(dict):
         regex syntax are escaped.
 
         """
-        processed_format = ''
         # The sub() call escapes all characters that might be misconstrued
         # as regex syntax.  Cannot use re.escape since we have to deal with
         # format directives (%m, etc.).
-        regex_chars = re_compile(r"([\\.^$*+?\(\){}\[\]|])")
-        format = regex_chars.sub(r"\\\1", format)
-        whitespace_replacement = re_compile(r'\s+')
-        format = whitespace_replacement.sub(r'\\s+', format)
-        while '%' in format:
-            directive_index = format.index('%')+1
-            processed_format = "%s%s%s" % (processed_format,
-                                           format[:directive_index-1],
-                                           self[format[directive_index]])
-            format = format[directive_index+1:]
-        return "%s%s" % (processed_format, format)
+        format = re_sub(r"([\\.^$*+?\(\){}\[\]|])", r"\\\1", format)
+        format = re_sub(r'\s+', r'\\s+', format)
+        format = re_sub(r"'", "['\u02bc]", format)  # needed for br_FR
+        def repl(m):
+            return self[m[1]]
+        format = re_sub(r'%(O?.)', repl, format)
+        return format
 
     def compile(self, format):
         """Return a compiled re object for the format string."""
@@ -415,8 +431,8 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             _regex_cache[format] = format_regex
     found = format_regex.match(data_string)
     if not found:
-        raise ValueError("time data %r does not match format %r :: /%s/" %
-                         (data_string, format, format_regex.pattern))
+        raise ValueError("time data %r does not match format %r" %
+                         (data_string, format))
     if len(data_string) != found.end():
         raise ValueError("unconverted data remains: %s" %
                           data_string[found.end():])
