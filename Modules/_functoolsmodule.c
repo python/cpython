@@ -144,10 +144,13 @@ typedef struct {
     vectorcallfunc vectorcall;
 } partialobject;
 
+// cast a PyObject pointer PTR to a partialobject pointer (no type checks)
+#define _PyPartialObject_CAST(PTR)  ((partialobject *)(PTR))
+
 static void partial_setvectorcall(partialobject *pto);
 static struct PyModuleDef _functools_module;
 static PyObject *
-partial_call(partialobject *pto, PyObject *args, PyObject *kwargs);
+partial_call(PyObject *pto, PyObject *args, PyObject *kwargs);
 
 static inline _functools_state *
 get_functools_state_by_type(PyTypeObject *type)
@@ -307,8 +310,9 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 }
 
 static int
-partial_clear(partialobject *pto)
+partial_clear(PyObject *self)
 {
+    partialobject *pto = _PyPartialObject_CAST(self);
     Py_CLEAR(pto->fn);
     Py_CLEAR(pto->args);
     Py_CLEAR(pto->kw);
@@ -317,8 +321,9 @@ partial_clear(partialobject *pto)
 }
 
 static int
-partial_traverse(partialobject *pto, visitproc visit, void *arg)
+partial_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    partialobject *pto = _PyPartialObject_CAST(self);
     Py_VISIT(Py_TYPE(pto));
     Py_VISIT(pto->fn);
     Py_VISIT(pto->args);
@@ -328,16 +333,16 @@ partial_traverse(partialobject *pto, visitproc visit, void *arg)
 }
 
 static void
-partial_dealloc(partialobject *pto)
+partial_dealloc(PyObject *self)
 {
-    PyTypeObject *tp = Py_TYPE(pto);
+    PyTypeObject *tp = Py_TYPE(self);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
-    PyObject_GC_UnTrack(pto);
-    if (pto->weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *) pto);
+    PyObject_GC_UnTrack(self);
+    if (_PyPartialObject_CAST(self)->weakreflist != NULL) {
+        PyObject_ClearWeakRefs(self);
     }
-    (void)partial_clear(pto);
-    tp->tp_free(pto);
+    (void)partial_clear(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -360,14 +365,14 @@ partial_vectorcall_fallback(PyThreadState *tstate, partialobject *pto,
 {
     pto->vectorcall = NULL;
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    return _PyObject_MakeTpCall(tstate, (PyObject *)pto,
-                                args, nargs, kwnames);
+    return _PyObject_MakeTpCall(tstate, (PyObject *)pto, args, nargs, kwnames);
 }
 
 static PyObject *
-partial_vectorcall(partialobject *pto, PyObject *const *args,
+partial_vectorcall(PyObject *self, PyObject *const *args,
                    size_t nargsf, PyObject *kwnames)
 {
+    partialobject *pto = _PyPartialObject_CAST(self);;
     PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
 
@@ -468,15 +473,16 @@ partial_setvectorcall(partialobject *pto)
      * but that is unlikely (why use partial without arguments?),
      * so we don't optimize that */
     else {
-        pto->vectorcall = (vectorcallfunc)partial_vectorcall;
+        pto->vectorcall = partial_vectorcall;
     }
 }
 
 
 // Not converted to argument clinic, because of `*args, **kwargs` arguments.
 static PyObject *
-partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
+partial_call(PyObject *self, PyObject *args, PyObject *kwargs)
 {
+    partialobject *pto = _PyPartialObject_CAST(self);
     assert(PyCallable_Check(pto->fn));
     assert(PyTuple_Check(pto->args));
     assert(PyDict_Check(pto->kw));
@@ -587,8 +593,9 @@ static PyGetSetDef partial_getsetlist[] = {
 };
 
 static PyObject *
-partial_repr(partialobject *pto)
+partial_repr(PyObject *self)
 {
+    partialobject *pto = _PyPartialObject_CAST(self);
     PyObject *result = NULL;
     PyObject *arglist;
     PyObject *mod;
@@ -597,7 +604,7 @@ partial_repr(partialobject *pto)
     PyObject *key, *value;
     int status;
 
-    status = Py_ReprEnter((PyObject *)pto);
+    status = Py_ReprEnter(self);
     if (status != 0) {
         if (status < 0)
             return NULL;
@@ -608,7 +615,7 @@ partial_repr(partialobject *pto)
     if (arglist == NULL)
         goto done;
     /* Pack positional arguments */
-    assert (PyTuple_Check(pto->args));
+    assert(PyTuple_Check(pto->args));
     n = PyTuple_GET_SIZE(pto->args);
     for (i = 0; i < n; i++) {
         Py_SETREF(arglist, PyUnicode_FromFormat("%U, %R", arglist,
@@ -643,11 +650,11 @@ partial_repr(partialobject *pto)
     Py_DECREF(arglist);
 
  done:
-    Py_ReprLeave((PyObject *)pto);
+    Py_ReprLeave(self);
     return result;
  error:
     Py_DECREF(arglist);
-    Py_ReprLeave((PyObject *)pto);
+    Py_ReprLeave(self);
     return NULL;
 }
 
@@ -659,16 +666,18 @@ partial_repr(partialobject *pto)
  */
 
 static PyObject *
-partial_reduce(partialobject *pto, PyObject *unused)
+partial_reduce(PyObject *self, PyObject *Py_UNUSED(args))
 {
+    partialobject *pto = _PyPartialObject_CAST(self);
     return Py_BuildValue("O(O)(OOOO)", Py_TYPE(pto), pto->fn, pto->fn,
                          pto->args, pto->kw,
                          pto->dict ? pto->dict : Py_None);
 }
 
 static PyObject *
-partial_setstate(partialobject *pto, PyObject *state)
+partial_setstate(PyObject *self, PyObject *state)
 {
+    partialobject *pto = _PyPartialObject_CAST(self);
     PyObject *fn, *fnargs, *kw, *dict;
 
     if (!PyTuple_Check(state)) {
@@ -730,8 +739,8 @@ partial_setstate(partialobject *pto, PyObject *state)
 }
 
 static PyMethodDef partial_methods[] = {
-    {"__reduce__", (PyCFunction)partial_reduce, METH_NOARGS},
-    {"__setstate__", (PyCFunction)partial_setstate, METH_O},
+    {"__reduce__", partial_reduce, METH_NOARGS},
+    {"__setstate__", partial_setstate, METH_O},
     {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
@@ -749,7 +758,7 @@ static PyType_Slot partial_type_slots[] = {
     {Py_tp_methods, partial_methods},
     {Py_tp_members, partial_memberlist},
     {Py_tp_getset, partial_getsetlist},
-    {Py_tp_descr_get, (descrgetfunc)partial_descr_get},
+    {Py_tp_descr_get, partial_descr_get},
     {Py_tp_new, partial_new},
     {Py_tp_free, PyObject_GC_Del},
     {0, 0}
