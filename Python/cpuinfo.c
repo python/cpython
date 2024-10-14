@@ -530,7 +530,7 @@ _Py_cpuid_has_features(const py_cpuid_features *actual,
 }
 
 int
-_Py_cpuid_match_features(const py_cpuid_features *actual,       
+_Py_cpuid_match_features(const py_cpuid_features *actual,
                          const py_cpuid_features *expect)
 {
     if (!actual->ready || !expect->ready) {

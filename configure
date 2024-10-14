@@ -30619,13 +30619,13 @@ printf "%s\n" "$py_cv_module__blake2" >&6; }
 
 
 
-# Detection of suported SIMD instruction sets for CPython. Since
+# Detection of supported SIMD instruction sets for CPython. Since
 # we do not necessarily know which instruction sets will be used,
 # we disable SIMD support on some older Android platforms.
 #
-# See py_simd_features in pycore_cpuinfo.h for how to order fields
-# and where to put blank lines to separate processor generations
-# for AVX-512 instructions.
+# See py_cpuid_features in pycore_cpuinfo.h for how to order fields
+# and where to put blank lines to separate processor generations for
+# AVX-512 instructions.
 if test "$ac_sys_system" != "Linux-android" || test "$ANDROID_API_LEVEL" -ge 28; then
     # SSE
 
@@ -31206,7 +31206,7 @@ fi
 
 
 
-    # AVX 2
+    # AVX-2
 
 
 
@@ -31255,7 +31255,7 @@ fi
 
 
 
-    #
+    # AVX-512
 
 
 
@@ -31352,6 +31352,7 @@ fi
 
 
 
+    #
 
 
 

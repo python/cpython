@@ -7805,13 +7805,13 @@ AC_DEFUN([PY_SIMD_DETECT], [
     AS_VAR_POPDEF([py_define])
 ])
 
-# Detection of suported SIMD instruction sets for CPython. Since
+# Detection of supported SIMD instruction sets for CPython. Since
 # we do not necessarily know which instruction sets will be used,
 # we disable SIMD support on some older Android platforms.
 #
-# See py_simd_features in pycore_cpuinfo.h for how to order fields
-# and where to put blank lines to separate processor generations
-# for AVX-512 instructions.
+# See py_cpuid_features in pycore_cpuinfo.h for how to order fields
+# and where to put blank lines to separate processor generations for
+# AVX-512 instructions.
 if test "$ac_sys_system" != "Linux-android" || test "$ANDROID_API_LEVEL" -ge 28; then
     # SSE
     PY_SIMD_DETECT([SSE], [-msse])
@@ -7828,11 +7828,12 @@ if test "$ac_sys_system" != "Linux-android" || test "$ANDROID_API_LEVEL" -ge 28;
     PY_SIMD_DETECT([AVX_VNNI], [-mavxvnni])
     PY_SIMD_DETECT([AVX_VNNI_INT8], [-mavxvnniint8])
     PY_SIMD_DETECT([AVX_VNNI_INT16], [-mavxvnniint16])
-    # AVX 2
+    # AVX-2
     PY_SIMD_DETECT([AVX2], [-mavx2])
-    #
+    # AVX-512
     PY_SIMD_DETECT([AVX512_F], [-mavx512f])
     PY_SIMD_DETECT([AVX512_CD], [-mavx512cd])
+    #
     PY_SIMD_DETECT([AVX512_ER], [-mavx512er])
     PY_SIMD_DETECT([AVX512_PF], [-mavx512pf])
     #
