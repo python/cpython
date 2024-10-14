@@ -214,7 +214,7 @@ ast
 ---
 
 * Add :func:`ast.compare` for comparing two ASTs.
-  (Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
+  (Contributed by Batuhan Taskaya and Jeremy Hylton in :gh:`60191`.)
 
 * Add support for :func:`copy.replace` for AST nodes.
   (Contributed by Bénédikt Tran in :gh:`121141`.)
