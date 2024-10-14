@@ -2065,8 +2065,11 @@ class TestAsyncGenReturn(unittest.TestCase):
 
     def test_async_gen_return_value(self):
         async def gen():
+            await asyncio.sleep(0)
             yield 1
+            await asyncio.sleep(0)
             yield 2
+            await asyncio.sleep(0)
             return 3
 
         async def run():
