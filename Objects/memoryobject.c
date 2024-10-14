@@ -2749,6 +2749,77 @@ static PySequenceMethods memory_as_sequence = {
 
 
 /**************************************************************************/
+/*                             Lookup                                     */
+/**************************************************************************/
+
+/*[clinic input]
+memoryview.index
+
+    value: object
+    start: slice_index(accept={int}) = 0
+    stop: slice_index(accept={int}, c_default="PY_SSIZE_T_MAX") = sys.maxsize
+    /
+
+Return the index of the first occurrence of a value.
+
+Raises ValueError if the value is not present.
+[clinic start generated code]*/
+
+static PyObject *
+memoryview_index_impl(PyMemoryViewObject *self, PyObject *value,
+                      Py_ssize_t start, Py_ssize_t stop)
+/*[clinic end generated code: output=e0185e3819e549df input=0697a0165bf90b5a]*/
+{
+    Py_buffer *view = &(self->view);
+    CHECK_RELEASED(self);
+
+    if (view->ndim == 0) {
+        PyErr_SetString(PyExc_TypeError, "invalid indexing of 0-dim memory");
+        return NULL;
+    }
+
+    if (view->ndim == 1) {
+        Py_ssize_t n = view->shape[0];
+
+        if (start < 0) {
+            start = Py_MAX(start + n, 0);
+        }
+
+        if (stop < 0) {
+            stop = Py_MAX(stop + n, 0);
+        }
+
+        stop = Py_MIN(stop, n);
+        start = Py_MIN(start, stop);
+
+        for (Py_ssize_t index = start; index < stop; index++) {
+            PyObject *item = memory_item((PyObject *)self, index);
+            if (item == NULL) {
+                return NULL;
+            }
+            int contained = PyObject_RichCompareBool(item, value, Py_EQ);
+            Py_DECREF(item);
+            if (contained > 0) {
+                return PyLong_FromSsize_t(index);
+            }
+            else if (contained < 0) {
+                return NULL;
+            }
+        }
+
+        PyErr_SetString(PyExc_ValueError,
+                        "memoryview.index(x): x not in list");
+        return NULL;
+    }
+
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "multi-dimensional lookup is not implemented");
+    return NULL;
+
+}
+
+
+/**************************************************************************/
 /*                             Comparisons                                */
 /**************************************************************************/
 
@@ -3284,6 +3355,7 @@ static PyMethodDef memory_methods[] = {
     MEMORYVIEW_CAST_METHODDEF
     MEMORYVIEW_TOREADONLY_METHODDEF
     MEMORYVIEW__FROM_FLAGS_METHODDEF
+    MEMORYVIEW_INDEX_METHODDEF
     {"__enter__",   memory_enter, METH_NOARGS, NULL},
     {"__exit__",    memory_exit, METH_VARARGS, memory_exit_doc},
     {NULL,          NULL}
