@@ -643,8 +643,8 @@
             double dres =
             ((PyFloatObject *)left_o)->ob_fval *
             ((PyFloatObject *)right_o)->ob_fval;
-            PyObject *res_o;
-            DECREF_INPUTS_AND_REUSE_FLOAT(left_o, right_o, dres, res_o);
+            PyObject *res_o = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
+            if (res_o == NULL) JUMP_TO_ERROR();
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -664,8 +664,8 @@
             double dres =
             ((PyFloatObject *)left_o)->ob_fval +
             ((PyFloatObject *)right_o)->ob_fval;
-            PyObject *res_o;
-            DECREF_INPUTS_AND_REUSE_FLOAT(left_o, right_o, dres, res_o);
+            PyObject *res_o = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
+            if (res_o == NULL) JUMP_TO_ERROR();
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -685,8 +685,8 @@
             double dres =
             ((PyFloatObject *)left_o)->ob_fval -
             ((PyFloatObject *)right_o)->ob_fval;
-            PyObject *res_o;
-            DECREF_INPUTS_AND_REUSE_FLOAT(left_o, right_o, dres, res_o);
+            PyObject *res_o = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
+            if (res_o == NULL) JUMP_TO_ERROR();
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-2] = res;
             stack_pointer += -1;
