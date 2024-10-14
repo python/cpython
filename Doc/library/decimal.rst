@@ -598,6 +598,23 @@ Decimal objects
 
       .. versionadded:: 3.1
 
+   .. classmethod:: from_number(number)
+
+      Alternative constructor that only accepts instances of
+      :class:`float`, :class:`int` or :class:`Decimal`, but not strings
+      or tuples.
+
+      .. doctest::
+
+          >>> Decimal.from_number(314)
+          Decimal('314')
+          >>> Decimal.from_number(0.1)
+          Decimal('0.1000000000000000055511151231257827021181583404541015625')
+          >>> Decimal.from_number(Decimal('3.14'))
+          Decimal('3.14')
+
+      .. versionadded:: 3.14
+
    .. method:: fma(other, third, context=None)
 
       Fused multiply-add.  Return self*other+third with no rounding of the

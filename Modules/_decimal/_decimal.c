@@ -2857,6 +2857,51 @@ dec_from_float(PyObject *type, PyObject *pyfloat)
     return result;
 }
 
+/* 'v' can have any numeric type accepted by the Decimal constructor. Attempt
+   an exact conversion. If the result does not meet the restrictions
+   for an mpd_t, fail with InvalidOperation. */
+static PyObject *
+PyDecType_FromNumberExact(PyTypeObject *type, PyObject *v, PyObject *context)
+{
+    decimal_state *state = get_module_state_by_def(type);
+    assert(v != NULL);
+    if (PyDec_Check(state, v)) {
+        return PyDecType_FromDecimalExact(type, v, context);
+    }
+    else if (PyLong_Check(v)) {
+        return PyDecType_FromLongExact(type, v, context);
+    }
+    else if (PyFloat_Check(v)) {
+        if (dec_addstatus(context, MPD_Float_operation)) {
+            return NULL;
+        }
+        return PyDecType_FromFloatExact(type, v, context);
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+            "conversion from %s to Decimal is not supported",
+            Py_TYPE(v)->tp_name);
+        return NULL;
+    }
+}
+
+/* class method */
+static PyObject *
+dec_from_number(PyObject *type, PyObject *number)
+{
+    PyObject *context;
+    PyObject *result;
+
+    decimal_state *state = get_module_state_by_def((PyTypeObject *)type);
+    CURRENT_CONTEXT(state, context);
+    result = PyDecType_FromNumberExact(state->PyDec_Type, number, context);
+    if (type != (PyObject *)state->PyDec_Type && result != NULL) {
+        Py_SETREF(result, PyObject_CallFunctionObjArgs(type, result, NULL));
+    }
+
+    return result;
+}
+
 /* create_decimal_from_float */
 static PyObject *
 ctx_from_float(PyObject *context, PyObject *v)
@@ -5052,6 +5097,7 @@ static PyMethodDef dec_methods [] =
 
   /* Miscellaneous */
   { "from_float", dec_from_float, METH_O|METH_CLASS, doc_from_float },
+  { "from_number", dec_from_number, METH_O|METH_CLASS, doc_from_number },
   { "as_tuple", PyDec_AsTuple, METH_NOARGS, doc_as_tuple },
   { "as_integer_ratio", dec_as_integer_ratio, METH_NOARGS, doc_as_integer_ratio },
 
