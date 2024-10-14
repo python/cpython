@@ -2498,6 +2498,11 @@ memory_contains(PyObject *self, PyObject *value)
             Py_DECREF(iter);
             return -1;
         }
+        if (item == value) {
+            Py_DECREF(item);
+            Py_DECREF(iter);
+            return 1;
+        }
         int contained = PyObject_RichCompareBool(item, value, Py_EQ);
         Py_DECREF(item);
         if (contained != 0) {
