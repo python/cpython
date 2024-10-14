@@ -17,7 +17,7 @@ import struct
 
 from itertools import product
 from test.support import import_helper
-from types import NotImplementedType
+
 
 class MyObject:
     pass
