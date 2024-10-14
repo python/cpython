@@ -167,8 +167,9 @@ _PyFrame_InitializeTLBC(PyThreadState *tstate, _PyInterpreterFrame *frame,
 {
     _Py_CODEUNIT *tlbc = _PyCode_GetTLBCFast(tstate, code);
     if (tlbc == NULL) {
-        // No thread-local bytecode exists for this thread yet, use the main
-        // thread's copy. It will be created on the first RESUME.
+        // No thread-local bytecode exists for this thread yet; use the main
+        // thread's copy, deferring thread-local bytecode creation to the
+        // execution of RESUME.
         frame->instr_ptr = _PyCode_CODE(code);
         frame->tlbc_index = 0;
     }
