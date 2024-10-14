@@ -1,0 +1,1 @@
+Remove :c:func:`PyUnicode_READY` in ``unicodeobjecct.h``.
