@@ -228,6 +228,9 @@ annotations = {
     "tier2",
 }
 
+# An instruction size in the DSL
+INSTRUCTION_SIZE = "INSTRUCTION_SIZE"
+
 __all__ = []
 __all__.extend(kwds)
 
@@ -292,6 +295,8 @@ def tokenize(src: str, line: int = 1, filename: str = "") -> Iterator[Token]:
             kind = keywords[text]
         elif text in annotations:
             kind = ANNOTATION
+        elif text == INSTRUCTION_SIZE:
+            kind = INSTRUCTION_SIZE
         elif letter.match(text):
             kind = IDENTIFIER
         elif text == "...":
