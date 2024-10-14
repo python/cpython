@@ -2921,7 +2921,7 @@ delta_bool(PyDateTime_Delta *self)
 static PyObject *
 delta_repr(PyDateTime_Delta *self)
 {
-    PyObject *args = PyUnicode_FromString("");
+    PyObject *args = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
 
     if (args == NULL) {
         return NULL;

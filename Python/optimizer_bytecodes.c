@@ -182,7 +182,9 @@ dummy_func(void) {
                 res = sym_new_type(ctx, &PyFloat_Type);
             }
         }
-        res = sym_new_unknown(ctx);
+        else {
+            res = sym_new_unknown(ctx);
+        }
     }
 
     op(_BINARY_OP_ADD_INT, (left, right -- res)) {
@@ -448,8 +450,10 @@ dummy_func(void) {
         top = bottom;
     }
 
-    op(_SWAP, (bottom, unused[oparg-2], top --
-        top, unused[oparg-2], bottom)) {
+    op(_SWAP, (bottom_in, unused[oparg-2], top_in --
+        top_out, unused[oparg-2], bottom_out)) {
+        bottom_out = bottom_in;
+        top_out = top_in;
     }
 
     op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr, null if (oparg & 1))) {
@@ -479,9 +483,7 @@ dummy_func(void) {
     op(_LOAD_ATTR, (owner -- attr, self_or_null if (oparg & 1))) {
         (void)owner;
         attr = sym_new_not_null(ctx);
-        if (oparg & 1) {
-            self_or_null = sym_new_unknown(ctx);
-        }
+        self_or_null = sym_new_unknown(ctx);
     }
 
     op(_LOAD_ATTR_MODULE, (index/1, owner -- attr, null if (oparg & 1))) {
@@ -570,7 +572,6 @@ dummy_func(void) {
 
     op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
         int argcount = oparg;
-
         (void)callable;
 
         PyCodeObject *co = NULL;
@@ -647,11 +648,10 @@ dummy_func(void) {
     }
 
     op(_RETURN_VALUE, (retval -- res)) {
-        SYNC_SP();
+        SAVE_STACK();
         ctx->frame->stack_pointer = stack_pointer;
         frame_pop(ctx);
         stack_pointer = ctx->frame->stack_pointer;
-        res = retval;
 
         /* Stack space handling */
         assert(corresponding_check_stack == NULL);
@@ -666,6 +666,8 @@ dummy_func(void) {
             // might be impossible, but bailing is still safe
             ctx->done = true;
         }
+        RELOAD_STACK();
+        res = retval;
     }
 
     op(_RETURN_GENERATOR, ( -- res)) {
@@ -832,6 +834,16 @@ dummy_func(void) {
     op(_EXIT_TRACE, (exit_p/4 --)) {
         (void)exit_p;
         ctx->done = true;
+    }
+
+    op(_GUARD_GLOBALS_VERSION_PUSH_KEYS, (version/1 -- globals_keys)) {
+        globals_keys = sym_new_unknown(ctx);
+        (void)version;
+    }
+
+    op(_GUARD_BUILTINS_VERSION_PUSH_KEYS, (version/1 -- builtins_keys)) {
+        builtins_keys = sym_new_unknown(ctx);
+        (void)version;
     }
 
 // END BYTECODES //

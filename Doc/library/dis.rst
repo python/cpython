@@ -969,7 +969,8 @@ iterations of the loop.
 
 .. opcode:: GET_LEN
 
-   Perform ``STACK.append(len(STACK[-1]))``.
+   Perform ``STACK.append(len(STACK[-1]))``. Used in :keyword:`match` statements where
+   comparison with structure of pattern is needed.
 
    .. versionadded:: 3.10
 
@@ -1434,7 +1435,7 @@ iterations of the loop.
    slot ``i`` of the "fast locals" storage in this mapping.
    If the name is not found there, loads it from the cell contained in
    slot ``i``, similar to :opcode:`LOAD_DEREF`. This is used for loading
-   free variables in class bodies (which previously used
+   :term:`closure variables <closure variable>` in class bodies (which previously used
    :opcode:`!LOAD_CLASSDEREF`) and in
    :ref:`annotation scopes <annotation-scopes>` within class bodies.
 
@@ -1463,8 +1464,8 @@ iterations of the loop.
 
 .. opcode:: COPY_FREE_VARS (n)
 
-   Copies the ``n`` free variables from the closure into the frame.
-   Removes the need for special code on the caller's side when calling
+   Copies the ``n`` :term:`free (closure) variables <closure variable>` from the closure
+   into the frame. Removes the need for special code on the caller's side when calling
    closures.
 
    .. versionadded:: 3.11
@@ -1937,10 +1938,10 @@ instructions:
 
 .. data:: hasfree
 
-   Sequence of bytecodes that access a free variable. 'free' in this
-   context refers to names in the current scope that are referenced by inner
-   scopes or names in outer scopes that are referenced from this scope.  It does
-   *not* include references to global or builtin scopes.
+   Sequence of bytecodes that access a :term:`free (closure) variable <closure variable>`.
+   'free' in this context refers to names in the current scope that are
+   referenced by inner scopes or names in outer scopes that are referenced
+   from this scope.  It does *not* include references to global or builtin scopes.
 
 
 .. data:: hasname

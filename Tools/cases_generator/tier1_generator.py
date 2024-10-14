@@ -22,10 +22,11 @@ from generators_common import (
     write_header,
     type_and_null,
     Emitter,
+    TokenIterator,
 )
 from cwriter import CWriter
 from typing import TextIO
-from stack import Local, Stack, StackError, get_stack_effect
+from stack import Local, Stack, StackError, get_stack_effect, Storage
 
 
 DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"
@@ -47,7 +48,7 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
     try:
         stack = get_stack_effect(inst)
     except StackError as ex:
-        raise analysis_error(ex.args[0], inst.where)
+        raise analysis_error(ex.args[0], inst.where) from None
     required = set(stack.defined)
     required.discard("unused")
     for part in inst.parts:
@@ -70,46 +71,26 @@ def write_uop(
     stack: Stack,
     inst: Instruction,
     braces: bool,
-) -> int:
+) -> tuple[int, Stack]:
     # out.emit(stack.as_comment() + "\n")
     if isinstance(uop, Skip):
         entries = "entries" if uop.size > 1 else "entry"
         emitter.emit(f"/* Skip {uop.size} cache {entries} */\n")
-        return offset + uop.size
+        return (offset + uop.size), stack
     if isinstance(uop, Flush):
         emitter.emit(f"// flush\n")
         stack.flush(emitter.out)
-        return offset
+        return offset, stack
     try:
         locals: dict[str, Local] = {}
         emitter.out.start_line()
         if braces:
             emitter.out.emit(f"// {uop.name}\n")
-        peeks: list[Local] = []
-        for var in reversed(uop.stack.inputs):
-            code, local = stack.pop(var)
-            emitter.emit(code)
-            if var.peek:
-                peeks.append(local)
-            if local.defined:
-                locals[local.name] = local
-        # Push back the peeks, so that they remain on the logical
-        # stack, but their values are cached.
-        while peeks:
-            stack.push(peeks.pop())
-        if braces:
             emitter.emit("{\n")
-        emitter.out.emit(stack.define_output_arrays(uop.stack.outputs))
-        outputs: list[Local] = []
-        for var in uop.stack.outputs:
-            if not var.peek:
-                if var.name in locals:
-                    local = locals[var.name]
-                elif var.name == "unused":
-                    local = Local.unused(var)
-                else:
-                    local = Local.local(var)
-                outputs.append(local)
+        code_list, storage = Storage.for_uop(stack, uop)
+        emitter._print_storage(storage)
+        for code in code_list:
+            emitter.emit(code)
 
         for cache in uop.caches:
             if cache.name != "unused":
@@ -125,17 +106,13 @@ def write_uop(
                 if inst.family is None:
                     emitter.emit(f"(void){cache.name};\n")
             offset += cache.size
-        emitter.emit_tokens(uop, stack, inst)
-        for output in outputs:
-            if output.name in uop.deferred_refs.values():
-                # We've already spilled this when emitting tokens
-                output.cached = False
-            stack.push(output)
+
+        storage = emitter.emit_tokens(uop, storage, inst)
         if braces:
             emitter.out.start_line()
             emitter.emit("}\n")
         # emitter.emit(stack.as_comment() + "\n")
-        return offset
+        return offset, storage.stack
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body[0])
 
@@ -173,9 +150,9 @@ def generate_tier1(
         out.emit(f"TARGET({name}) {{\n")
         unused_guard = "(void)this_instr;\n" if inst.family is None else ""
         if inst.properties.needs_prev:
-            out.emit(f"_Py_CODEUNIT *prev_instr = frame->instr_ptr;\n")
+            out.emit(f"_Py_CODEUNIT* const prev_instr = frame->instr_ptr;\n")
         if needs_this and not inst.is_target:
-            out.emit(f"_Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;\n")
+            out.emit(f"_Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;\n")
             out.emit(unused_guard)
         else:
             out.emit(f"frame->instr_ptr = next_instr;\n")
@@ -184,7 +161,7 @@ def generate_tier1(
         if inst.is_target:
             out.emit(f"PREDICTED({name});\n")
             if needs_this:
-                out.emit(f"_Py_CODEUNIT *this_instr = next_instr - {inst.size};\n")
+                out.emit(f"_Py_CODEUNIT* const this_instr = next_instr - {inst.size};\n")
                 out.emit(unused_guard)
         if inst.family is not None:
             out.emit(
@@ -197,10 +174,11 @@ def generate_tier1(
         for part in inst.parts:
             # Only emit braces if more than one uop
             insert_braces = len([p for p in inst.parts if isinstance(p, Uop)]) > 1
-            offset = write_uop(part, emitter, offset, stack, inst, insert_braces)
+            offset, stack = write_uop(part, emitter, offset, stack, inst, insert_braces)
         out.start_line()
+
+        stack.flush(out)
         if not inst.parts[-1].properties.always_exits:
-            stack.flush(out)
             out.emit("DISPATCH();\n")
         out.start_line()
         out.emit("}")

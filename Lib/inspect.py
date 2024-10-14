@@ -140,6 +140,7 @@ __all__ = [
 
 
 import abc
+from annotationlib import Format
 from annotationlib import get_annotations  # re-exported
 import ast
 import dis
@@ -1319,7 +1320,9 @@ def getargvalues(frame):
     args, varargs, varkw = getargs(frame.f_code)
     return ArgInfo(args, varargs, varkw, frame.f_locals)
 
-def formatannotation(annotation, base_module=None):
+def formatannotation(annotation, base_module=None, *, quote_annotation_strings=True):
+    if not quote_annotation_strings and isinstance(annotation, str):
+        return annotation
     if getattr(annotation, '__module__', None) == 'typing':
         def repl(match):
             text = match.group()
@@ -2270,7 +2273,8 @@ def _signature_from_builtin(cls, func, skip_bound_arg=True):
 
 
 def _signature_from_function(cls, func, skip_bound_arg=True,
-                             globals=None, locals=None, eval_str=False):
+                             globals=None, locals=None, eval_str=False,
+                             *, annotation_format=Format.VALUE):
     """Private helper: constructs Signature for the given python function."""
 
     is_duck_function = False
@@ -2296,7 +2300,8 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
     positional = arg_names[:pos_count]
     keyword_only_count = func_code.co_kwonlyargcount
     keyword_only = arg_names[pos_count:pos_count + keyword_only_count]
-    annotations = get_annotations(func, globals=globals, locals=locals, eval_str=eval_str)
+    annotations = get_annotations(func, globals=globals, locals=locals, eval_str=eval_str,
+                                  format=annotation_format)
     defaults = func.__defaults__
     kwdefaults = func.__kwdefaults__
 
@@ -2379,7 +2384,8 @@ def _signature_from_callable(obj, *,
                              globals=None,
                              locals=None,
                              eval_str=False,
-                             sigcls):
+                             sigcls,
+                             annotation_format=Format.VALUE):
 
     """Private helper function to get signature for arbitrary
     callable objects.
@@ -2391,7 +2397,8 @@ def _signature_from_callable(obj, *,
                                 globals=globals,
                                 locals=locals,
                                 sigcls=sigcls,
-                                eval_str=eval_str)
+                                eval_str=eval_str,
+                                annotation_format=annotation_format)
 
     if not callable(obj):
         raise TypeError('{!r} is not a callable object'.format(obj))
@@ -2424,18 +2431,10 @@ def _signature_from_callable(obj, *,
         pass
     else:
         if sig is not None:
-            # since __text_signature__ is not writable on classes, __signature__
-            # may contain text (or be a callable that returns text);
-            # if so, convert it
-            o_sig = sig
-            if not isinstance(sig, (Signature, str)) and callable(sig):
-                sig = sig()
-            if isinstance(sig, str):
-                sig = _signature_fromstr(sigcls, obj, sig)
             if not isinstance(sig, Signature):
                 raise TypeError(
                     'unexpected object {!r} in __signature__ '
-                    'attribute'.format(o_sig))
+                    'attribute'.format(sig))
             return sig
 
     try:
@@ -2480,7 +2479,8 @@ def _signature_from_callable(obj, *,
         # of a Python function (Cython functions, for instance), then:
         return _signature_from_function(sigcls, obj,
                                         skip_bound_arg=skip_bound_arg,
-                                        globals=globals, locals=locals, eval_str=eval_str)
+                                        globals=globals, locals=locals, eval_str=eval_str,
+                                        annotation_format=annotation_format)
 
     if _signature_is_builtin(obj):
         return _signature_from_builtin(sigcls, obj,
@@ -2715,13 +2715,17 @@ class Parameter:
         return type(self)(name, kind, default=default, annotation=annotation)
 
     def __str__(self):
+        return self._format()
+
+    def _format(self, *, quote_annotation_strings=True):
         kind = self.kind
         formatted = self._name
 
         # Add annotation and default value
         if self._annotation is not _empty:
-            formatted = '{}: {}'.format(formatted,
-                                       formatannotation(self._annotation))
+            annotation = formatannotation(self._annotation,
+                                          quote_annotation_strings=quote_annotation_strings)
+            formatted = '{}: {}'.format(formatted, annotation)
 
         if self._default is not _empty:
             if self._annotation is not _empty:
@@ -2969,11 +2973,13 @@ class Signature:
 
     @classmethod
     def from_callable(cls, obj, *,
-                      follow_wrapped=True, globals=None, locals=None, eval_str=False):
+                      follow_wrapped=True, globals=None, locals=None, eval_str=False,
+                      annotation_format=Format.VALUE):
         """Constructs Signature for the given callable object."""
         return _signature_from_callable(obj, sigcls=cls,
                                         follow_wrapper_chains=follow_wrapped,
-                                        globals=globals, locals=locals, eval_str=eval_str)
+                                        globals=globals, locals=locals, eval_str=eval_str,
+                                        annotation_format=annotation_format)
 
     @property
     def parameters(self):
@@ -3188,19 +3194,24 @@ class Signature:
     def __str__(self):
         return self.format()
 
-    def format(self, *, max_width=None):
+    def format(self, *, max_width=None, quote_annotation_strings=True):
         """Create a string representation of the Signature object.
 
         If *max_width* integer is passed,
         signature will try to fit into the *max_width*.
         If signature is longer than *max_width*,
         all parameters will be on separate lines.
+
+        If *quote_annotation_strings* is False, annotations
+        in the signature are displayed without opening and closing quotation
+        marks. This is useful when the signature was created with the
+        STRING format or when ``from __future__ import annotations`` was used.
         """
         result = []
         render_pos_only_separator = False
         render_kw_only_separator = True
         for param in self.parameters.values():
-            formatted = str(param)
+            formatted = param._format(quote_annotation_strings=quote_annotation_strings)
 
             kind = param.kind
 
@@ -3237,16 +3248,19 @@ class Signature:
             rendered = '(\n    {}\n)'.format(',\n    '.join(result))
 
         if self.return_annotation is not _empty:
-            anno = formatannotation(self.return_annotation)
+            anno = formatannotation(self.return_annotation,
+                                    quote_annotation_strings=quote_annotation_strings)
             rendered += ' -> {}'.format(anno)
 
         return rendered
 
 
-def signature(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False):
+def signature(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False,
+              annotation_format=Format.VALUE):
     """Get a signature object for the passed callable."""
     return Signature.from_callable(obj, follow_wrapped=follow_wrapped,
-                                   globals=globals, locals=locals, eval_str=eval_str)
+                                   globals=globals, locals=locals, eval_str=eval_str,
+                                   annotation_format=annotation_format)
 
 
 class BufferFlags(enum.IntFlag):

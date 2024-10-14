@@ -128,7 +128,7 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
     op->func_annotate = NULL;
     op->func_typeparams = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
-    op->func_version = 0;
+    op->func_version = FUNC_VERSION_UNSET;
     // NOTE: functions created via FrameConstructor do not use deferred
     // reference counting because they are typically not part of cycles
     // nor accessed by multiple threads.
@@ -207,7 +207,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     op->func_annotate = NULL;
     op->func_typeparams = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
-    op->func_version = 0;
+    op->func_version = FUNC_VERSION_UNSET;
     if ((code_obj->co_flags & CO_NESTED) == 0) {
         // Use deferred reference counting for top-level functions, but not
         // nested functions because they are more likely to capture variables,
@@ -287,31 +287,59 @@ functions is running.
 
 */
 
+static inline struct _func_version_cache_item *
+get_cache_item(PyInterpreterState *interp, uint32_t version)
+{
+    return interp->func_state.func_version_cache +
+           (version % FUNC_VERSION_CACHE_SIZE);
+}
+
 void
 _PyFunction_SetVersion(PyFunctionObject *func, uint32_t version)
 {
-#ifndef Py_GIL_DISABLED
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (func->func_version != 0) {
-        struct _func_version_cache_item *slot =
-            interp->func_state.func_version_cache
-            + (func->func_version % FUNC_VERSION_CACHE_SIZE);
-        if (slot->func == func) {
-            slot->func = NULL;
-            // Leave slot->code alone, there may be use for it.
-        }
-    }
-#endif
+    assert(func->func_version == FUNC_VERSION_UNSET);
+    assert(version >= FUNC_VERSION_FIRST_VALID);
+    // This should only be called from MAKE_FUNCTION. No code is specialized
+    // based on the version, so we do not need to stop the world to set it.
     func->func_version = version;
 #ifndef Py_GIL_DISABLED
-    if (version != 0) {
-        struct _func_version_cache_item *slot =
-            interp->func_state.func_version_cache
-            + (version % FUNC_VERSION_CACHE_SIZE);
-        slot->func = func;
-        slot->code = func->func_code;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _func_version_cache_item *slot = get_cache_item(interp, version);
+    slot->func = func;
+    slot->code = func->func_code;
+#endif
+}
+
+static void
+func_clear_version(PyInterpreterState *interp, PyFunctionObject *func)
+{
+    if (func->func_version < FUNC_VERSION_FIRST_VALID) {
+        // Version was never set or has already been cleared.
+        return;
+    }
+#ifndef Py_GIL_DISABLED
+    struct _func_version_cache_item *slot =
+        get_cache_item(interp, func->func_version);
+    if (slot->func == func) {
+        slot->func = NULL;
+        // Leave slot->code alone, there may be use for it.
     }
 #endif
+    func->func_version = FUNC_VERSION_CLEARED;
+}
+
+// Called when any of the critical function attributes are changed
+static void
+_PyFunction_ClearVersion(PyFunctionObject *func)
+{
+    if (func->func_version < FUNC_VERSION_FIRST_VALID) {
+        // Version was never set or has already been cleared.
+        return;
+    }
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    func_clear_version(interp, func);
+    _PyEval_StartTheWorld(interp);
 }
 
 void
@@ -319,9 +347,7 @@ _PyFunction_ClearCodeByVersion(uint32_t version)
 {
 #ifndef Py_GIL_DISABLED
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _func_version_cache_item *slot =
-        interp->func_state.func_version_cache
-        + (version % FUNC_VERSION_CACHE_SIZE);
+    struct _func_version_cache_item *slot = get_cache_item(interp, version);
     if (slot->code) {
         assert(PyCode_Check(slot->code));
         PyCodeObject *code = (PyCodeObject *)slot->code;
@@ -340,9 +366,7 @@ _PyFunction_LookupByVersion(uint32_t version, PyObject **p_code)
     return NULL;
 #else
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _func_version_cache_item *slot =
-        interp->func_state.func_version_cache
-        + (version % FUNC_VERSION_CACHE_SIZE);
+    struct _func_version_cache_item *slot = get_cache_item(interp, version);
     if (slot->code) {
         assert(PyCode_Check(slot->code));
         PyCodeObject *code = (PyCodeObject *)slot->code;
@@ -431,7 +455,7 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
     }
     handle_func_event(PyFunction_EVENT_MODIFY_DEFAULTS,
                       (PyFunctionObject *) op, defaults);
-    _PyFunction_SetVersion((PyFunctionObject *)op, 0);
+    _PyFunction_ClearVersion((PyFunctionObject *)op);
     Py_XSETREF(((PyFunctionObject *)op)->func_defaults, defaults);
     return 0;
 }
@@ -440,7 +464,7 @@ void
 PyFunction_SetVectorcall(PyFunctionObject *func, vectorcallfunc vectorcall)
 {
     assert(func != NULL);
-    _PyFunction_SetVersion(func, 0);
+    _PyFunction_ClearVersion(func);
     func->vectorcall = vectorcall;
 }
 
@@ -473,7 +497,7 @@ PyFunction_SetKwDefaults(PyObject *op, PyObject *defaults)
     }
     handle_func_event(PyFunction_EVENT_MODIFY_KWDEFAULTS,
                       (PyFunctionObject *) op, defaults);
-    _PyFunction_SetVersion((PyFunctionObject *)op, 0);
+    _PyFunction_ClearVersion((PyFunctionObject *)op);
     Py_XSETREF(((PyFunctionObject *)op)->func_kwdefaults, defaults);
     return 0;
 }
@@ -506,7 +530,7 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
                      Py_TYPE(closure)->tp_name);
         return -1;
     }
-    _PyFunction_SetVersion((PyFunctionObject *)op, 0);
+    _PyFunction_ClearVersion((PyFunctionObject *)op);
     Py_XSETREF(((PyFunctionObject *)op)->func_closure, closure);
     return 0;
 }
@@ -658,7 +682,7 @@ func_set_code(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
     }
 
     handle_func_event(PyFunction_EVENT_MODIFY_CODE, op, value);
-    _PyFunction_SetVersion(op, 0);
+    _PyFunction_ClearVersion(op);
     Py_XSETREF(op->func_code, Py_NewRef(value));
     return 0;
 }
@@ -744,7 +768,7 @@ func_set_defaults(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
     }
 
     handle_func_event(PyFunction_EVENT_MODIFY_DEFAULTS, op, value);
-    _PyFunction_SetVersion(op, 0);
+    _PyFunction_ClearVersion(op);
     Py_XSETREF(op->func_defaults, Py_XNewRef(value));
     return 0;
 }
@@ -787,7 +811,7 @@ func_set_kwdefaults(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
     }
 
     handle_func_event(PyFunction_EVENT_MODIFY_KWDEFAULTS, op, value);
-    _PyFunction_SetVersion(op, 0);
+    _PyFunction_ClearVersion(op);
     Py_XSETREF(op->func_kwdefaults, Py_XNewRef(value));
     return 0;
 }
@@ -1030,7 +1054,7 @@ static int
 func_clear(PyObject *self)
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
-    _PyFunction_SetVersion(op, 0);
+    func_clear_version(_PyInterpreterState_GET(), op);
     Py_CLEAR(op->func_globals);
     Py_CLEAR(op->func_builtins);
     Py_CLEAR(op->func_module);
@@ -1068,7 +1092,6 @@ func_dealloc(PyObject *self)
     if (op->func_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) op);
     }
-    _PyFunction_SetVersion(op, 0);
     (void)func_clear((PyObject*)op);
     // These aren't cleared by func_clear().
     Py_DECREF(op->func_code);
