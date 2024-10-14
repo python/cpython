@@ -16,6 +16,7 @@ import unittest
 import argparse
 import warnings
 
+from enum import StrEnum
 from test.support import captured_stderr
 from test.support import import_helper
 from test.support import os_helper
@@ -984,6 +985,34 @@ class TestDisallowLongAbbreviationAllowsShortGroupingPrefix(ParserTestCase):
         ('+ccrcc', NS(r='cc', c=2)),
     ]
 
+
+class TestStrEnumChoices(TestCase):
+    class Color(StrEnum):
+        RED = "red"
+        GREEN = "green"
+        BLUE = "blue"
+
+    def test_parse_enum_value(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--color', choices=self.Color)
+        args = parser.parse_args(['--color', 'red'])
+        self.assertEqual(args.color, self.Color.RED)
+
+    def test_help_message_contains_enum_choices(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--color', choices=self.Color, help='Choose a color')
+        self.assertIn('[--color {red,green,blue}]', parser.format_usage())
+        self.assertIn('  --color {red,green,blue}', parser.format_help())
+
+    def test_invalid_enum_value_raises_error(self):
+        parser = argparse.ArgumentParser(exit_on_error=False)
+        parser.add_argument('--color', choices=self.Color)
+        self.assertRaisesRegex(
+            argparse.ArgumentError,
+            r"invalid choice: 'yellow' \(choose from red, green, blue\)",
+            parser.parse_args,
+            ['--color', 'yellow'],
+        )
 
 # ================
 # Positional tests
@@ -2233,7 +2262,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('bazz',))
         self.assertIn(
-            "maybe you meant 'baz'? (choose from 'bar', 'baz')",
+            "maybe you meant 'baz'? (choose from bar, baz)",
             excinfo.exception.stderr,
         )
 
@@ -2243,7 +2272,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('bazz',))
         self.assertIn(
-            "invalid choice: 'bazz' (choose from 'bar', 'baz')",
+            "invalid choice: 'bazz' (choose from bar, baz)",
             excinfo.exception.stderr,
         )
 
@@ -2255,7 +2284,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('baz',))
         self.assertIn(
-            "maybe you meant 'bar'? (choose from 'foo', 'bar')",
+            "maybe you meant 'bar'? (choose from foo, bar)",
             excinfo.exception.stderr,
         )
 
@@ -2267,7 +2296,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('baz',))
         self.assertIn(
-            "invalid choice: 'baz' (choose from 'foo', 'bar')",
+            "invalid choice: 'baz' (choose from foo, bar)",
             excinfo.exception.stderr,
         )
 
@@ -2277,7 +2306,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('bazz',))
         self.assertIn(
-            "invalid choice: 'bazz' (choose from 'bar', 'baz')",
+            "invalid choice: 'bazz' (choose from bar, baz)",
             excinfo.exception.stderr,
         )
 
@@ -2307,7 +2336,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('3',))
         self.assertIn(
-            "invalid choice: '3' (choose from 1, '2')",
+            "invalid choice: '3' (choose from 1, 2)",
             excinfo.exception.stderr,
         )
 
@@ -2698,6 +2727,29 @@ class TestAddSubparsers(TestCase):
               -h, --help  show this help message and exit
               --foo       foo help
             '''))
+
+    def assert_bad_help(self, context_type, func, *args, **kwargs):
+        with self.assertRaisesRegex(ValueError, 'badly formed help string') as cm:
+            func(*args, **kwargs)
+        self.assertIsInstance(cm.exception.__context__, context_type)
+
+    def test_invalid_subparsers_help(self):
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        self.assert_bad_help(ValueError, parser.add_subparsers, help='%Y-%m-%d')
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        self.assert_bad_help(KeyError, parser.add_subparsers, help='%(spam)s')
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        self.assert_bad_help(TypeError, parser.add_subparsers, help='%(prog)d')
+
+    def test_invalid_subparser_help(self):
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        subparsers = parser.add_subparsers()
+        self.assert_bad_help(ValueError, subparsers.add_parser, '1',
+                             help='%Y-%m-%d')
+        self.assert_bad_help(KeyError, subparsers.add_parser, '1',
+                             help='%(spam)s')
+        self.assert_bad_help(TypeError, subparsers.add_parser, '1',
+                             help='%(prog)d')
 
     def test_subparser_title_help(self):
         parser = ErrorRaisingArgumentParser(prog='PROG',
@@ -5451,12 +5503,21 @@ class TestInvalidArgumentConstructors(TestCase):
         self.assertValueError('--foo', action="store-true",
                               errmsg='unknown action')
 
+    def test_invalid_help(self):
+        self.assertValueError('--foo', help='%Y-%m-%d',
+                              errmsg='badly formed help string')
+        self.assertValueError('--foo', help='%(spam)s',
+                              errmsg='badly formed help string')
+        self.assertValueError('--foo', help='%(prog)d',
+                              errmsg='badly formed help string')
+
     def test_multiple_dest(self):
         parser = argparse.ArgumentParser()
         parser.add_argument(dest='foo')
         with self.assertRaises(ValueError) as cm:
             parser.add_argument('bar', dest='baz')
-        self.assertIn('dest supplied twice for positional argument',
+        self.assertIn('dest supplied twice for positional argument,'
+                      ' did you mean metavar?',
                       str(cm.exception))
 
     def test_no_argument_actions(self):
@@ -5468,8 +5529,11 @@ class TestInvalidArgumentConstructors(TestCase):
                     with self.subTest(attrs=attrs):
                         self.assertTypeError('-x', action=action, **attrs)
                         self.assertTypeError('x', action=action, **attrs)
+                self.assertValueError('x', action=action,
+                    errmsg=f"action '{action}' is not valid for positional arguments")
                 self.assertTypeError('-x', action=action, nargs=0)
-                self.assertTypeError('x', action=action, nargs=0)
+                self.assertValueError('x', action=action, nargs=0,
+                    errmsg='nargs for positionals must be != 0')
 
     def test_no_argument_no_const_actions(self):
         # options with zero arguments
@@ -5489,7 +5553,7 @@ class TestInvalidArgumentConstructors(TestCase):
                 self.assertValueError('-x', nargs=0, action=action,
                     errmsg=f'nargs for {action_name} actions must be != 0')
                 self.assertValueError('spam', nargs=0, action=action,
-                    errmsg=f'nargs for {action_name} actions must be != 0')
+                    errmsg='nargs for positionals must be != 0')
 
                 # const is disallowed with non-optional arguments
                 for nargs in [1, '*', '+']:
@@ -6774,9 +6838,19 @@ class TestExitOnError(TestCase):
     def test_ambiguous_option(self):
         self.parser.add_argument('--foobaz')
         self.parser.add_argument('--fooble', action='store_true')
+        self.parser.add_argument('--foogle')
         self.assertRaisesRegex(argparse.ArgumentError,
-                               "ambiguous option: --foob could match --foobaz, --fooble",
-                               self.parser.parse_args, ['--foob'])
+                "ambiguous option: --foob could match --foobaz, --fooble",
+            self.parser.parse_args, ['--foob'])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                "ambiguous option: --foob=1 could match --foobaz, --fooble$",
+            self.parser.parse_args, ['--foob=1'])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                "ambiguous option: --foob could match --foobaz, --fooble$",
+            self.parser.parse_args, ['--foob', '1', '--foogle', '2'])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                "ambiguous option: --foob=1 could match --foobaz, --fooble$",
+            self.parser.parse_args, ['--foob=1', '--foogle', '2'])
 
     def test_os_error(self):
         self.parser.add_argument('file')

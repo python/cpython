@@ -662,6 +662,25 @@ be positional::
    usage: PROG [-h] [-f FOO] bar
    PROG: error: the following arguments are required: bar
 
+By default, argparse automatically handles the internal naming and
+display names of arguments, simplifying the process without requiring
+additional configuration.
+As such, you do not need to specify the dest_ and metavar_ parameters.
+The dest_ parameter defaults to the argument name with underscores ``_``
+replacing hyphens ``-`` . The metavar_ parameter defaults to the
+upper-cased name. For example::
+
+   >>> parser = argparse.ArgumentParser(prog='PROG')
+   >>> parser.add_argument('--foo-bar')
+   >>> parser.parse_args(['--foo-bar', 'FOO-BAR']
+   Namespace(foo_bar='FOO-BAR')
+   >>> parser.print_help()
+   usage:  [-h] [--foo-bar FOO-BAR]
+
+   optional arguments:
+    -h, --help  show this help message and exit
+    --foo-bar FOO-BAR
+
 
 .. _action:
 
@@ -757,6 +776,9 @@ how the command-line arguments should be handled. The supplied actions are:
     Namespace(foo=['f1', 'f2', 'f3', 'f4'])
 
   .. versionadded:: 3.8
+
+Only actions that consume command-line arguments (e.g. ``'store'``,
+``'append'`` or ``'extend'``) can be used with positional arguments.
 
 You may also specify an arbitrary action by passing an Action subclass or
 other object that implements the same interface. The ``BooleanOptionalAction``
@@ -885,6 +907,8 @@ See also :ref:`specifying-ambiguous-arguments`. The supported values are:
 If the ``nargs`` keyword argument is not provided, the number of arguments consumed
 is determined by the action_.  Generally this means a single command-line argument
 will be consumed and a single item (not a list) will be produced.
+Actions that do not consume command-line arguments (e.g.
+``'store_const'``) set ``nargs=0``.
 
 
 .. _const:
