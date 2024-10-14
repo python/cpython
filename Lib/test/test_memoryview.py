@@ -454,6 +454,18 @@ class BaseMemoryviewTests:
     def _check_contents(self, tp, obj, contents):
         self.assertEqual(obj, tp(contents))
 
+    def test_count(self):
+        super().test_count()
+        for tp in self._types:
+            b = tp((b'a' * 5) + (b'c' * 3))
+            m = self._view(b)  # should not be sliced
+            self.assertEqual(len(b), len(m))
+            with self.subTest('count', buffer=b):
+                self.assertEqual(m.count(ord('a')), 5)
+                self.assertEqual(m.count(ord('b')), 0)
+                self.assertEqual(m.count(ord('c')), 3)
+
+
 class BaseMemorySliceTests:
     source_bytes = b"XabcdefY"
 
