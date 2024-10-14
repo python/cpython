@@ -1,7 +1,7 @@
 # Tooling to generate interpreters
 
 Documentation for the instruction definitions in `Python/bytecodes.c`
-("the DSL") is [here](https://github.com/python/cpython/blob/main/InternalDocs/bytecode_interpreter.md).
+("the DSL") is [here](interpreter_definition.md).
 
 What's currently here:
 

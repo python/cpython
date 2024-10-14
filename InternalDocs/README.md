@@ -19,8 +19,6 @@ List of topics:
 
 [Frames](frames.md)
 
-[Bytecode Interpreter](bytecode_interpreter.md)
-
 [Adaptive Instruction Families](adaptive.md)
 
 [The Source Code Locations Table](locations.md)
