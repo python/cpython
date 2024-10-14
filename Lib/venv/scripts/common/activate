@@ -21,7 +21,6 @@ deactivate () {
 
     if [ -n "${_OLD_VIRTUAL_PS1:-}" ] ; then
         PS1="${_OLD_VIRTUAL_PS1:-}"
-        export PS1
         unset _OLD_VIRTUAL_PS1
     fi
 
@@ -68,7 +67,6 @@ fi
 if [ -z "${VIRTUAL_ENV_DISABLE_PROMPT:-}" ] ; then
     _OLD_VIRTUAL_PS1="${PS1:-}"
     PS1="(__VENV_PROMPT__) ${PS1:-}"
-    export PS1
 fi
 
 # Call hash to forget past commands. Without forgetting
