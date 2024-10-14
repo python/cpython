@@ -588,8 +588,7 @@ class HelpFormatter(object):
         if action.metavar is not None:
             result = action.metavar
         elif action.choices is not None:
-            choice_strs = [str(choice) for choice in action.choices]
-            result = '{%s}' % ','.join(choice_strs)
+            result = '{%s}' % ','.join(map(str, action.choices))
         else:
             result = default_metavar
 
@@ -637,8 +636,7 @@ class HelpFormatter(object):
             if hasattr(params[name], '__name__'):
                 params[name] = params[name].__name__
         if params.get('choices') is not None:
-            choices_str = ', '.join([str(c) for c in params['choices']])
-            params['choices'] = choices_str
+            params['choices'] = ', '.join(map(str, params['choices']))
         return self._get_help_string(action) % params
 
     def _iter_indented_subactions(self, action):
@@ -763,7 +761,7 @@ def _get_action_name(argument):
     elif argument.dest not in (None, SUPPRESS):
         return argument.dest
     elif argument.choices:
-        return '{' + ','.join(argument.choices) + '}'
+        return '{%s}' % ','.join(map(str, argument.choices))
     else:
         return None
 
@@ -2600,8 +2598,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             if isinstance(choices, str):
                 choices = iter(choices)
             if value not in choices:
-                args = {'value': value,
-                        'choices': ', '.join(map(repr, action.choices))}
+                args = {'value': str(value),
+                        'choices': ', '.join(map(str, action.choices))}
                 msg = _('invalid choice: %(value)r (choose from %(choices)s)')
                 raise ArgumentError(action, msg % args)
 
