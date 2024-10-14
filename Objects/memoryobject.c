@@ -2779,7 +2779,7 @@ memoryview_count_impl(PyMemoryViewObject *self, PyObject *value)
         int contained = PyObject_RichCompareBool(item, value, Py_EQ);
         Py_DECREF(item);
         if (contained > 0) { // more likely than contained < 0
-            count += 1;
+            count++;
         }
         else if (contained < 0) {
             Py_DECREF(iter);
