@@ -217,8 +217,37 @@ class Class(SymbolTable):
         """
         if self.__methods is None:
             d = {}
+
+            def is_local_symbol(ident):
+                flags = self._table.symbols.get(ident, 0)
+                return ((flags >> SCOPE_OFF) & SCOPE_MASK) == LOCAL
+
             for st in self._table.children:
-                d[st.name] = 1
+                # pick the function-like symbols that are local identifiers
+                if is_local_symbol(st.name):
+                    match st.type:
+                        case _symtable.TYPE_FUNCTION:
+                            # generators are of type TYPE_FUNCTION with a ".0"
+                            # parameter as a first parameter (which makes them
+                            # distinguishable from a function named 'genexpr')
+                            if st.name == 'genexpr' and '.0' in st.varnames:
+                                continue
+                            d[st.name] = 1
+                        case _symtable.TYPE_TYPE_PARAM:
+                            # Get the function-def block in the annotation
+                            # scope 'st' with the same identifier, if any.
+                            scope_name = st.name
+                            for c in st.children:
+                                if c.name == scope_name and c.type == _symtable.TYPE_FUNCTION:
+                                    # A generic generator of type TYPE_FUNCTION
+                                    # cannot be a direct child of 'st' (but it
+                                    # can be a descendant), e.g.:
+                                    #
+                                    # class A:
+                                    #   type genexpr[genexpr] = (x for x in [])
+                                    assert scope_name != 'genexpr' or '.0' not in c.varnames
+                                    d[scope_name] = 1
+                                    break
             self.__methods = tuple(d)
         return self.__methods
 

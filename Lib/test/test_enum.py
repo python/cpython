@@ -1455,6 +1455,27 @@ class TestSpecial(unittest.TestCase):
             spam = nonmember(SpamEnumIsInner)
         self.assertTrue(SpamEnum.spam is SpamEnumIsInner)
 
+    def test_using_members_as_nonmember(self):
+        class Example(Flag):
+            A = 1
+            B = 2
+            ALL = nonmember(A | B)
+
+        self.assertEqual(Example.A.value, 1)
+        self.assertEqual(Example.B.value, 2)
+        self.assertEqual(Example.ALL, 3)
+        self.assertIs(type(Example.ALL), int)
+
+        class Example(Flag):
+            A = auto()
+            B = auto()
+            ALL = nonmember(A | B)
+
+        self.assertEqual(Example.A.value, 1)
+        self.assertEqual(Example.B.value, 2)
+        self.assertEqual(Example.ALL, 3)
+        self.assertIs(type(Example.ALL), int)
+
     def test_nested_classes_in_enum_with_member(self):
         """Support locally-defined nested classes."""
         class Outer(Enum):
@@ -5136,7 +5157,7 @@ class TestConvert(unittest.TestCase):
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
         # We don't want the reverse lookup value to vary when there are
         # multiple possible names for a given value.  It should always
-        # report the first lexigraphical name in that case.
+        # report the first lexicographical name in that case.
         self.assertEqual(test_type(5).name, 'CONVERT_TEST_NAME_A')
 
     def test_convert_int(self):

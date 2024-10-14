@@ -513,7 +513,7 @@ were defined.
 
 Descriptors are a powerful, general purpose protocol.  They are the mechanism
 behind properties, methods, static methods, class methods, and
-:func:`super()`.  They are used throughout Python itself.  Descriptors
+:func:`super`.  They are used throughout Python itself.  Descriptors
 simplify the underlying C code and offer a flexible set of new tools for
 everyday Python programs.
 
@@ -559,8 +559,8 @@ attribute access.
 
 The expression ``obj.x`` looks up the attribute ``x`` in the chain of
 namespaces for ``obj``.  If the search finds a descriptor outside of the
-instance ``__dict__``, its :meth:`__get__` method is invoked according to the
-precedence rules listed below.
+instance :attr:`~object.__dict__`, its :meth:`~object.__get__` method is
+invoked according to the precedence rules listed below.
 
 The details of invocation depend on whether ``obj`` is an object, class, or
 instance of super.
@@ -787,7 +787,7 @@ Invocation from super
 ---------------------
 
 The logic for super's dotted lookup is in the :meth:`__getattribute__` method for
-object returned by :class:`super()`.
+object returned by :func:`super`.
 
 A dotted lookup such as ``super(A, obj).m`` searches ``obj.__class__.__mro__``
 for the base class ``B`` immediately following ``A`` and then returns
@@ -803,7 +803,7 @@ The full C implementation can be found in :c:func:`!super_getattro` in
 Summary of invocation logic
 ---------------------------
 
-The mechanism for descriptors is embedded in the :meth:`__getattribute__()`
+The mechanism for descriptors is embedded in the :meth:`__getattribute__`
 methods for :class:`object`, :class:`type`, and :func:`super`.
 
 The important points to remember are:

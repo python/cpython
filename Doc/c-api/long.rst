@@ -324,6 +324,17 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Returns ``NULL`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 
+.. c:function:: PyObject* PyLong_GetInfo(void)
+
+   On success, return a read only :term:`named tuple`, that holds
+   information about Python's internal representation of integers.
+   See :data:`sys.int_info` for description of individual fields.
+
+   On failure, return ``NULL`` with an exception set.
+
+   .. versionadded:: 3.1
+
+
 .. c:function:: int PyUnstable_Long_IsCompact(const PyLongObject* op)
 
    Return 1 if *op* is compact, 0 otherwise.
@@ -339,10 +350,15 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Exactly what values are considered compact is an implementation detail
    and is subject to change.
 
+   .. versionadded:: 3.12
+
+
 .. c:function:: Py_ssize_t PyUnstable_Long_CompactValue(const PyLongObject* op)
 
    If *op* is compact, as determined by :c:func:`PyUnstable_Long_IsCompact`,
    return its value.
 
    Otherwise, the return value is undefined.
+
+   .. versionadded:: 3.12
 

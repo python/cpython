@@ -1196,27 +1196,34 @@ dummy_func(
                 }
             }
             if (v == NULL) {
-                v = PyDict_GetItemWithError(GLOBALS(), name);
-                if (v != NULL) {
+                if (PyDict_CheckExact(GLOBALS())
+                    && PyDict_CheckExact(BUILTINS()))
+                {
+                    v = _PyDict_LoadGlobal((PyDictObject *)GLOBALS(),
+                                        (PyDictObject *)BUILTINS(),
+                                        name);
+                    if (v == NULL) {
+                        if (!_PyErr_Occurred(tstate)) {
+                            /* _PyDict_LoadGlobal() returns NULL without raising
+                            * an exception if the key doesn't exist */
+                            format_exc_check_arg(tstate, PyExc_NameError,
+                                                NAME_ERROR_MSG, name);
+                        }
+                        Py_DECREF(mod_or_class_dict);
+                        ERROR_IF(true, error);
+                    }
                     Py_INCREF(v);
                 }
-                else if (_PyErr_Occurred(tstate)) {
-                    goto error;
-                }
                 else {
-                    if (PyDict_CheckExact(BUILTINS())) {
-                        v = PyDict_GetItemWithError(BUILTINS(), name);
-                        if (v == NULL) {
-                            if (!_PyErr_Occurred(tstate)) {
-                                format_exc_check_arg(
-                                        tstate, PyExc_NameError,
-                                        NAME_ERROR_MSG, name);
-                            }
-                            goto error;
-                        }
-                        Py_INCREF(v);
-                    }
-                    else {
+                    /* Slow-path if globals or builtins is not a dict */
+
+                    /* namespace 1: globals */
+                    v = PyObject_GetItem(GLOBALS(), name);
+                    if (v == NULL) {
+                        ERROR_IF(!_PyErr_ExceptionMatches(tstate, PyExc_KeyError), error);
+                        _PyErr_Clear(tstate);
+
+                        /* namespace 2: builtins */
                         v = PyObject_GetItem(BUILTINS(), name);
                         if (v == NULL) {
                             if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
@@ -1224,7 +1231,8 @@ dummy_func(
                                             tstate, PyExc_NameError,
                                             NAME_ERROR_MSG, name);
                             }
-                            goto error;
+                            Py_DECREF(mod_or_class_dict);
+                            ERROR_IF(true, error);
                         }
                     }
                 }
@@ -1991,14 +1999,15 @@ dummy_func(
                 new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, value);
                 ep->me_value = value;
             }
-            Py_DECREF(old_value);
-            STAT_INC(STORE_ATTR, hit);
             /* Ensure dict is GC tracked if it needs to be */
             if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(value)) {
                 _PyObject_GC_TRACK(dict);
             }
-            /* PEP 509 */
-            dict->ma_version_tag = new_version;
+            dict->ma_version_tag = new_version; // PEP 509
+            // old_value should be DECREFed after GC track checking is done, if not, it could raise a segmentation fault,
+            // when dict only holds the strong reference to value in ep->me_value.
+            Py_DECREF(old_value);
+            STAT_INC(STORE_ATTR, hit);
             Py_DECREF(owner);
         }
 

@@ -1176,7 +1176,7 @@ def _get_slots(cls):
             slots = []
             if getattr(cls, '__weakrefoffset__', -1) != 0:
                 slots.append('__weakref__')
-            if getattr(cls, '__dictrefoffset__', -1) != 0:
+            if getattr(cls, '__dictoffset__', -1) != 0:
                 slots.append('__dict__')
             yield from slots
         case str(slot):

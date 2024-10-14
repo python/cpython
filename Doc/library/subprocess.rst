@@ -52,7 +52,7 @@ underlying :class:`Popen` interface can be used directly.
 
    If *capture_output* is true, stdout and stderr will be captured.
    When used, the internal :class:`Popen` object is automatically created with
-   *stdout* and *stdin* both set to :data:`~subprocess.PIPE`.
+   *stdout* and *stderr* both set to :data:`~subprocess.PIPE`.
    The *stdout* and *stderr* arguments may not be supplied at the same time as *capture_output*.
    If you wish to capture and combine both streams into one,
    set *stdout* to :data:`~subprocess.PIPE`
@@ -608,7 +608,7 @@ functions.
 
    If *group* is not ``None``, the setregid() system call will be made in the
    child process prior to the execution of the subprocess. If the provided
-   value is a string, it will be looked up via :func:`grp.getgrnam()` and
+   value is a string, it will be looked up via :func:`grp.getgrnam` and
    the value in ``gr_gid`` will be used. If the value is an integer, it
    will be passed verbatim. (POSIX only)
 
@@ -618,7 +618,7 @@ functions.
    If *extra_groups* is not ``None``, the setgroups() system call will be
    made in the child process prior to the execution of the subprocess.
    Strings provided in *extra_groups* will be looked up via
-   :func:`grp.getgrnam()` and the values in ``gr_gid`` will be used.
+   :func:`grp.getgrnam` and the values in ``gr_gid`` will be used.
    Integer values will be passed verbatim. (POSIX only)
 
    .. availability:: POSIX
@@ -626,7 +626,7 @@ functions.
 
    If *user* is not ``None``, the setreuid() system call will be made in the
    child process prior to the execution of the subprocess. If the provided
-   value is a string, it will be looked up via :func:`pwd.getpwnam()` and
+   value is a string, it will be looked up via :func:`pwd.getpwnam` and
    the value in ``pw_uid`` will be used. If the value is an integer, it will
    be passed verbatim. (POSIX only)
 
@@ -1110,7 +1110,7 @@ The :mod:`subprocess` module exposes the following constants.
 .. data:: NORMAL_PRIORITY_CLASS
 
    A :class:`Popen` ``creationflags`` parameter to specify that a new process
-   will have an normal priority. (default)
+   will have a normal priority. (default)
 
    .. versionadded:: 3.7
 

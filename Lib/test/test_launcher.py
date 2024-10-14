@@ -232,7 +232,7 @@ class RunPyMixin:
             p.stdin.close()
             p.wait(10)
             out = p.stdout.read().decode("utf-8", "replace")
-            err = p.stderr.read().decode("ascii", "replace")
+            err = p.stderr.read().decode("ascii", "replace").replace("\uFFFD", "?")
         if p.returncode != expect_returncode and support.verbose and not allow_fail:
             print("++ COMMAND ++")
             print([self.py_exe, *args])
@@ -717,3 +717,11 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
             f"{expect} arg1 {script}",
             data["stdout"].strip(),
         )
+
+    def test_shebang_executable_extension(self):
+        with self.script('#! /usr/bin/env python3.99') as script:
+            data = self.run_py([script], expect_returncode=103)
+        expect = "# Search PATH for python3.99.exe"
+        actual = [line.strip() for line in data["stderr"].splitlines()
+                  if line.startswith("# Search PATH")]
+        self.assertEqual([expect], actual)

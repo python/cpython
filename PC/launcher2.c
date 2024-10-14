@@ -846,7 +846,7 @@ searchPath(SearchInfo *search, const wchar_t *shebang, int shebangLength)
     }
 
     wchar_t filename[MAXLEN];
-    if (wcsncpy_s(filename, MAXLEN, command, lastDot)) {
+    if (wcsncpy_s(filename, MAXLEN, command, commandLength)) {
         return RC_BAD_VIRTUAL_PATH;
     }
 
@@ -857,6 +857,8 @@ searchPath(SearchInfo *search, const wchar_t *shebang, int shebangLength)
             return RC_BAD_VIRTUAL_PATH;
         }
     }
+
+    debug(L"# Search PATH for %s\n", filename);
 
     wchar_t pathVariable[MAXLEN];
     int n = GetEnvironmentVariableW(L"PATH", pathVariable, MAXLEN);

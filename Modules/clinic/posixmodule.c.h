@@ -1975,25 +1975,55 @@ exit:
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os__path_exists__doc__,
-"_path_exists($module, path, /)\n"
+"_path_exists($module, /, path)\n"
 "--\n"
 "\n"
 "Test whether a path exists.  Returns False for broken symbolic links.");
 
 #define OS__PATH_EXISTS_METHODDEF    \
-    {"_path_exists", (PyCFunction)os__path_exists, METH_O, os__path_exists__doc__},
+    {"_path_exists", _PyCFunction_CAST(os__path_exists), METH_FASTCALL|METH_KEYWORDS, os__path_exists__doc__},
 
 static int
 os__path_exists_impl(PyObject *module, path_t *path);
 
 static PyObject *
-os__path_exists(PyObject *module, PyObject *arg)
+os__path_exists(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_path_exists",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     path_t path = PATH_T_INITIALIZE_P("_path_exists", "path", 0, 0, 1, 1);
     int _return_value;
 
-    if (!path_converter(arg, &path)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &path)) {
         goto exit;
     }
     _return_value = os__path_exists_impl(module, &path);
@@ -2038,7 +2068,7 @@ os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(s), },
+        .ob_item = { _Py_LATIN1_CHR('s'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -6047,7 +6077,7 @@ PyDoc_STRVAR(os_times__doc__,
 "\n"
 "The object returned behaves like a named tuple with these fields:\n"
 "  (utime, stime, cutime, cstime, elapsed_time)\n"
-"All fields are floating point numbers.");
+"All fields are floating-point numbers.");
 
 #define OS_TIMES_METHODDEF    \
     {"times", (PyCFunction)os_times, METH_NOARGS, os_times__doc__},
@@ -8020,7 +8050,7 @@ PyDoc_STRVAR(os_major__doc__,
 #define OS_MAJOR_METHODDEF    \
     {"major", (PyCFunction)os_major, METH_O, os_major__doc__},
 
-static unsigned int
+static PyObject *
 os_major_impl(PyObject *module, dev_t device);
 
 static PyObject *
@@ -8028,16 +8058,11 @@ os_major(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     dev_t device;
-    unsigned int _return_value;
 
     if (!_Py_Dev_Converter(arg, &device)) {
         goto exit;
     }
-    _return_value = os_major_impl(module, device);
-    if ((_return_value == (unsigned int)-1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
+    return_value = os_major_impl(module, device);
 
 exit:
     return return_value;
@@ -8056,7 +8081,7 @@ PyDoc_STRVAR(os_minor__doc__,
 #define OS_MINOR_METHODDEF    \
     {"minor", (PyCFunction)os_minor, METH_O, os_minor__doc__},
 
-static unsigned int
+static PyObject *
 os_minor_impl(PyObject *module, dev_t device);
 
 static PyObject *
@@ -8064,16 +8089,11 @@ os_minor(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     dev_t device;
-    unsigned int _return_value;
 
     if (!_Py_Dev_Converter(arg, &device)) {
         goto exit;
     }
-    _return_value = os_minor_impl(module, device);
-    if ((_return_value == (unsigned int)-1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
+    return_value = os_minor_impl(module, device);
 
 exit:
     return return_value;
@@ -8093,25 +8113,23 @@ PyDoc_STRVAR(os_makedev__doc__,
     {"makedev", _PyCFunction_CAST(os_makedev), METH_FASTCALL, os_makedev__doc__},
 
 static dev_t
-os_makedev_impl(PyObject *module, int major, int minor);
+os_makedev_impl(PyObject *module, dev_t major, dev_t minor);
 
 static PyObject *
 os_makedev(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    int major;
-    int minor;
+    dev_t major;
+    dev_t minor;
     dev_t _return_value;
 
     if (!_PyArg_CheckPositional("makedev", nargs, 2, 2)) {
         goto exit;
     }
-    major = _PyLong_AsInt(args[0]);
-    if (major == -1 && PyErr_Occurred()) {
+    if (!_Py_Dev_Converter(args[0], &major)) {
         goto exit;
     }
-    minor = _PyLong_AsInt(args[1]);
-    if (minor == -1 && PyErr_Occurred()) {
+    if (!_Py_Dev_Converter(args[1], &minor)) {
         goto exit;
     }
     _return_value = os_makedev_impl(module, major, minor);
@@ -12076,4 +12094,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=96bef929fd0eccb4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=89eb0b9b741fd1c4 input=a9049054013a1b77]*/

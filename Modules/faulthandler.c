@@ -70,7 +70,7 @@ static fault_handler_t faulthandler_handlers[] = {
 #ifdef SIGILL
     {SIGILL, 0, "Illegal instruction", },
 #endif
-    {SIGFPE, 0, "Floating point exception", },
+    {SIGFPE, 0, "Floating-point exception", },
     {SIGABRT, 0, "Aborted", },
     /* define SIGSEGV at the end to make it the default choice if searching the
        handler fails in faulthandler_fatal_error() */

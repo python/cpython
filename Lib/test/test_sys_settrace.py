@@ -1634,15 +1634,15 @@ class TraceTestCase(unittest.TestCase):
         EXPECTED_EVENTS = [
             (0, 'call'),
             (2, 'line'),
-            (1, 'line'),
             (-3, 'call'),
             (-2, 'line'),
             (-2, 'return'),
-            (4, 'line'),
             (1, 'line'),
+            (4, 'line'),
+            (2, 'line'),
             (-2, 'call'),
             (-2, 'return'),
-            (1, 'return'),
+            (2, 'return'),
         ]
 
         # C level events should be the same as expected and the same as Python level.

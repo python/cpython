@@ -484,11 +484,18 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
         do_decref = 1;
     }
     if (_PyLong_IsCompact(v)) {
-#if SIZEOF_LONG < SIZEOF_VOID_P
-        intptr_t tmp = _PyLong_CompactValue(v);
-        res = (long)tmp;
-        if (res != tmp) {
-            *overflow = tmp < 0 ? -1 : 1;
+#if SIZEOF_LONG < SIZEOF_SIZE_T
+        Py_ssize_t tmp = _PyLong_CompactValue(v);
+        if (tmp < LONG_MIN) {
+            *overflow = -1;
+            res = -1;
+        }
+        else if (tmp > LONG_MAX) {
+            *overflow = 1;
+            res = -1;
+        }
+        else {
+            res = (long)tmp;
         }
 #else
         res = _PyLong_CompactValue(v);
@@ -633,14 +640,15 @@ PyLong_AsUnsignedLong(PyObject *vv)
 
     v = (PyLongObject *)vv;
     if (_PyLong_IsNonNegativeCompact(v)) {
-#if SIZEOF_LONG < SIZEOF_VOID_P
-        intptr_t tmp = _PyLong_CompactValue(v);
+#if SIZEOF_LONG < SIZEOF_SIZE_T
+        size_t tmp = (size_t)_PyLong_CompactValue(v);
         unsigned long res = (unsigned long)tmp;
         if (res != tmp) {
             goto overflow;
         }
+        return res;
 #else
-        return _PyLong_CompactValue(v);
+        return (unsigned long)(size_t)_PyLong_CompactValue(v);
 #endif
     }
     if (_PyLong_IsNegative(v)) {
@@ -686,7 +694,7 @@ PyLong_AsSize_t(PyObject *vv)
 
     v = (PyLongObject *)vv;
     if (_PyLong_IsNonNegativeCompact(v)) {
-        return _PyLong_CompactValue(v);
+        return (size_t)_PyLong_CompactValue(v);
     }
     if (_PyLong_IsNegative(v)) {
         PyErr_SetString(PyExc_OverflowError,
@@ -723,7 +731,11 @@ _PyLong_AsUnsignedLongMask(PyObject *vv)
     }
     v = (PyLongObject *)vv;
     if (_PyLong_IsCompact(v)) {
-        return (unsigned long)_PyLong_CompactValue(v);
+#if SIZEOF_LONG < SIZEOF_SIZE_T
+        return (unsigned long)(size_t)_PyLong_CompactValue(v);
+#else
+        return (unsigned long)(long)_PyLong_CompactValue(v);
+#endif
     }
     i = _PyLong_DigitCount(v);
     int sign = _PyLong_NonCompactSign(v);
@@ -1267,7 +1279,18 @@ PyLong_AsUnsignedLongLong(PyObject *vv)
     v = (PyLongObject*)vv;
     if (_PyLong_IsNonNegativeCompact(v)) {
         res = 0;
-        bytes = _PyLong_CompactValue(v);
+#if SIZEOF_LONG_LONG < SIZEOF_SIZE_T
+        size_t tmp = (size_t)_PyLong_CompactValue(v);
+        bytes = (unsigned long long)tmp;
+        if (bytes != tmp) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "Python int too large to convert "
+                            "to C unsigned long long");
+            res = -1;
+        }
+#else
+        bytes = (unsigned long long)(size_t)_PyLong_CompactValue(v);
+#endif
     }
     else {
         res = _PyLong_AsByteArray((PyLongObject *)vv, (unsigned char *)&bytes,
@@ -1298,7 +1321,11 @@ _PyLong_AsUnsignedLongLongMask(PyObject *vv)
     }
     v = (PyLongObject *)vv;
     if (_PyLong_IsCompact(v)) {
-        return (unsigned long long)(signed long long)_PyLong_CompactValue(v);
+#if SIZEOF_LONG_LONG < SIZEOF_SIZE_T
+        return (unsigned long long)(size_t)_PyLong_CompactValue(v);
+#else
+        return (unsigned long long)(long long)_PyLong_CompactValue(v);
+#endif
     }
     i = _PyLong_DigitCount(v);
     sign = _PyLong_NonCompactSign(v);
@@ -1370,7 +1397,22 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
         do_decref = 1;
     }
     if (_PyLong_IsCompact(v)) {
+#if SIZEOF_LONG_LONG < SIZEOF_SIZE_T
+        Py_ssize_t tmp = _PyLong_CompactValue(v);
+        if (tmp < LLONG_MIN) {
+            *overflow = -1;
+            res = -1;
+        }
+        else if (tmp > LLONG_MAX) {
+            *overflow = 1;
+            res = -1;
+        }
+        else {
+            res = (long long)tmp;
+        }
+#else
         res = _PyLong_CompactValue(v);
+#endif
     }
     else {
         i = _PyLong_DigitCount(v);
@@ -3308,7 +3350,7 @@ long_hash(PyLongObject *v)
     int sign;
 
     if (_PyLong_IsCompact(v)) {
-        x = _PyLong_CompactValue(v);
+        x = (Py_uhash_t)_PyLong_CompactValue(v);
         if (x == (Py_uhash_t)-1) {
             x = (Py_uhash_t)-2;
         }
@@ -6209,7 +6251,7 @@ PyDoc_STRVAR(long_doc,
 int(x, base=10) -> integer\n\
 \n\
 Convert a number or string to an integer, or return 0 if no arguments\n\
-are given.  If x is a number, return x.__int__().  For floating point\n\
+are given.  If x is a number, return x.__int__().  For floating-point\n\
 numbers, this truncates towards zero.\n\
 \n\
 If x is not a number or if base is given, then x must be a string,\n\

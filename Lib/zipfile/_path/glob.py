@@ -2,6 +2,19 @@ import re
 
 
 def translate(pattern):
+    return match_dirs(translate_core(pattern))
+
+
+def match_dirs(pattern):
+    """
+    Ensure that zipfile.Path directory names are matched.
+
+    zipfile.Path directory names always end in a slash.
+    """
+    return rf'{pattern}[/]?'
+
+
+def translate_core(pattern):
     r"""
     Given a glob pattern, produce a regex that matches it.
 

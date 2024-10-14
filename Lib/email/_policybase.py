@@ -157,6 +157,13 @@ class Policy(_PolicyBase, metaclass=abc.ABCMeta):
     message_factory     -- the class to use to create new message objects.
                            If the value is None, the default is Message.
 
+    verify_generated_headers
+                        -- if true, the generator verifies that each header
+                           they are properly folded, so that a parser won't
+                           treat it as multiple headers, start-of-body, or
+                           part of another header.
+                           This is a check against custom Header & fold()
+                           implementations.
     """
 
     raise_on_defect = False
@@ -165,6 +172,7 @@ class Policy(_PolicyBase, metaclass=abc.ABCMeta):
     max_line_length = 78
     mangle_from_ = False
     message_factory = None
+    verify_generated_headers = True
 
     def handle_defect(self, obj, defect):
         """Based on policy, either raise defect or call register_defect.

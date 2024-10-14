@@ -436,6 +436,9 @@ class StdioFile(io.TextIOBase):
 
     def __init__(self, shell, tags, encoding='utf-8', errors='strict'):
         self.shell = shell
+        # GH-78889: accessing unpickleable attributes freezes Shell.
+        # IDLE only needs methods; allow 'width' for possible use.
+        self.shell._RPCProxy__attributes = {'width': 1}
         self.tags = tags
         self._encoding = encoding
         self._errors = errors

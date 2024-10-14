@@ -106,12 +106,16 @@ that mutable object is changed.
 Types affect almost all aspects of object behavior.  Even the importance of
 object identity is affected in some sense: for immutable types, operations that
 compute new values may actually return a reference to any existing object with
-the same type and value, while for mutable objects this is not allowed.  E.g.,
-after ``a = 1; b = 1``, ``a`` and ``b`` may or may not refer to the same object
-with the value one, depending on the implementation, but after ``c = []; d =
-[]``, ``c`` and ``d`` are guaranteed to refer to two different, unique, newly
-created empty lists. (Note that ``c = d = []`` assigns the same object to both
-``c`` and ``d``.)
+the same type and value, while for mutable objects this is not allowed.
+For example, after ``a = 1; b = 1``, *a* and *b* may or may not refer to
+the same object with the value one, depending on the implementation.
+This is because :class:`int` is an immutable type, so the reference to ``1``
+can be reused. This behaviour depends on the implementation used, so should
+not be relied upon, but is something to be aware of when making use of object
+identity tests.
+However, after ``c = []; d = []``, *c* and *d* are guaranteed to refer to two
+different, unique, newly created empty lists. (Note that ``e = f = []`` assigns
+the *same* object to both *e* and *f*.)
 
 
 .. _types:
@@ -215,7 +219,7 @@ properties:
 
 * A sign is shown only when the number is negative.
 
-Python distinguishes between integers, floating point numbers, and complex
+Python distinguishes between integers, floating-point numbers, and complex
 numbers:
 
 
@@ -259,18 +263,18 @@ Booleans (:class:`bool`)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. index::
-   pair: object; floating point
-   pair: floating point; number
+   pair: object; floating-point
+   pair: floating-point; number
    pair: C; language
    pair: Java; language
 
-These represent machine-level double precision floating point numbers. You are
+These represent machine-level double precision floating-point numbers. You are
 at the mercy of the underlying machine architecture (and C or Java
 implementation) for the accepted range and handling of overflow. Python does not
-support single-precision floating point numbers; the savings in processor and
+support single-precision floating-point numbers; the savings in processor and
 memory usage that are usually the reason for using these are dwarfed by the
 overhead of using objects in Python, so there is no reason to complicate the
-language with two kinds of floating point numbers.
+language with two kinds of floating-point numbers.
 
 
 :class:`numbers.Complex` (:class:`complex`)
@@ -281,7 +285,7 @@ language with two kinds of floating point numbers.
    pair: complex; number
 
 These represent complex numbers as a pair of machine-level double precision
-floating point numbers.  The same caveats apply as for floating point numbers.
+floating-point numbers.  The same caveats apply as for floating-point numbers.
 The real and imaginary parts of a complex number ``z`` can be retrieved through
 the read-only attributes ``z.real`` and ``z.imag``.
 
@@ -373,7 +377,7 @@ Bytes
 
    A bytes object is an immutable array.  The items are 8-bit bytes,
    represented by integers in the range 0 <= x < 256.  Bytes literals
-   (like ``b'abc'``) and the built-in :func:`bytes()` constructor
+   (like ``b'abc'``) and the built-in :func:`bytes` constructor
    can be used to create bytes objects.  Also, bytes objects can be
    decoded to strings via the :meth:`~bytes.decode` method.
 
@@ -492,7 +496,7 @@ in the same order they were added sequentially over the dictionary.
 Replacing an existing key does not change the order, however removing a key
 and re-inserting it will add it to the end instead of keeping its old place.
 
-Dictionaries are mutable; they can be created by the ``{...}`` notation (see
+Dictionaries are mutable; they can be created by the ``{}`` notation (see
 section :ref:`dict`).
 
 .. index::
@@ -587,7 +591,6 @@ Most of these attributes check the type of the assigned value:
 
    * - .. attribute:: function.__doc__
      - The function's documentation string, or ``None`` if unavailable.
-       Not inherited by subclasses.
 
    * - .. attribute:: function.__name__
      - The function's name.
@@ -727,14 +730,7 @@ When an instance method object is derived from a :class:`classmethod` object, th
 itself, so that calling either ``x.f(1)`` or ``C.f(1)`` is equivalent to
 calling ``f(C,1)`` where ``f`` is the underlying function.
 
-Note that the transformation from :ref:`function object <user-defined-funcs>`
-to instance method
-object happens each time the attribute is retrieved from the instance.  In
-some cases, a fruitful optimization is to assign the attribute to a local
-variable and call that local variable. Also notice that this
-transformation only happens for user-defined functions; other callable
-objects (and all non-callable objects) are retrieved without
-transformation.  It is also important to note that user-defined functions
+It is important to note that user-defined functions
 which are attributes of a class instance are not converted to bound
 methods; this *only* happens when the function is an attribute of the
 class.
@@ -853,6 +849,8 @@ Instances of arbitrary classes can be made callable by defining a
 :meth:`~object.__call__` method in their class.
 
 
+.. _module-objects:
+
 Modules
 -------
 
@@ -878,47 +876,225 @@ Attribute assignment updates the module's namespace dictionary, e.g.,
 
 .. index::
    single: __name__ (module attribute)
-   single: __doc__ (module attribute)
+   single: __spec__ (module attribute)
+   single: __package__ (module attribute)
+   single: __loader__ (module attribute)
+   single: __path__ (module attribute)
    single: __file__ (module attribute)
+   single: __cached__ (module attribute)
+   single: __doc__ (module attribute)
    single: __annotations__ (module attribute)
    pair: module; namespace
 
-Predefined (writable) attributes:
+.. _import-mod-attrs:
 
-   :attr:`__name__`
-      The module's name.
+Import-related attributes on module objects
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-   :attr:`__doc__`
-      The module's documentation string, or ``None`` if
-      unavailable.
+Module objects have the following attributes that relate to the
+:ref:`import system <importsystem>`. When a module is created using the machinery associated
+with the import system, these attributes are filled in based on the module's
+:term:`spec <module spec>`, before the :term:`loader` executes and loads the
+module.
 
-   :attr:`__file__`
-      The pathname of the file from which the
-      module was loaded, if it was loaded from a file.
-      The :attr:`__file__`
-      attribute may be missing for certain types of modules, such as C modules
-      that are statically linked into the interpreter.  For extension modules
-      loaded dynamically from a shared library, it's the pathname of the shared
-      library file.
+To create a module dynamically rather than using the import system,
+it's recommended to use :func:`importlib.util.module_from_spec`,
+which will set the various import-controlled attributes to appropriate values.
+It's also possible to use the :class:`types.ModuleType` constructor to create
+modules directly, but this technique is more error-prone, as most attributes
+must be manually set on the module object after it has been created when using
+this approach.
 
-   :attr:`__annotations__`
-      A dictionary containing
-      :term:`variable annotations <variable annotation>` collected during
-      module body execution.  For best practices on working
-      with :attr:`__annotations__`, please see :ref:`annotations-howto`.
+.. caution::
+
+   With the exception of :attr:`~module.__name__`, it is **strongly**
+   recommended that you rely on :attr:`~module.__spec__` and its attributes
+   instead of any of the other individual attributes listed in this subsection.
+   Note that updating an attribute on :attr:`!__spec__` will not update the
+   corresponding attribute on the module itself:
+
+   .. doctest::
+
+     >>> import typing
+     >>> typing.__name__, typing.__spec__.name
+     ('typing', 'typing')
+     >>> typing.__spec__.name = 'spelling'
+     >>> typing.__name__, typing.__spec__.name
+     ('typing', 'spelling')
+     >>> typing.__name__ = 'keyboard_smashing'
+     >>> typing.__name__, typing.__spec__.name
+     ('keyboard_smashing', 'spelling')
+
+.. attribute:: module.__name__
+
+   The name used to uniquely identify the module in the import system.
+   For a directly executed module, this will be set to ``"__main__"``.
+
+   This attribute must be set to the fully qualified name of the module.
+   It is expected to match the value of
+   :attr:`module.__spec__.name <importlib.machinery.ModuleSpec.name>`.
+
+.. attribute:: module.__spec__
+
+   A record of the module's import-system-related state.
+
+   Set to the :class:`module spec <importlib.machinery.ModuleSpec>` that was
+   used when importing the module. See :ref:`module-specs` for more details.
+
+   .. versionadded:: 3.4
+
+.. attribute:: module.__package__
+
+   The :term:`package` a module belongs to.
+
+   If the module is top-level (that is, not a part of any specific package)
+   then the attribute should be set to ``''`` (the empty string). Otherwise,
+   it should be set to the name of the module's package (which can be equal to
+   :attr:`module.__name__` if the module itself is a package). See :pep:`366`
+   for further details.
+
+   This attribute is used instead of :attr:`~module.__name__` to calculate
+   explicit relative imports for main modules. It defaults to ``None`` for
+   modules created dynamically using the :class:`types.ModuleType` constructor;
+   use :func:`importlib.util.module_from_spec` instead to ensure the attribute
+   is set to a :class:`str`.
+
+   It is **strongly** recommended that you use
+   :attr:`module.__spec__.parent <importlib.machinery.ModuleSpec.parent>`
+   instead of :attr:`!module.__package__`. :attr:`__package__` is now only used
+   as a fallback if :attr:`!__spec__.parent` is not set, and this fallback
+   path is deprecated.
+
+   .. versionchanged:: 3.4
+      This attribute now defaults to ``None`` for modules created dynamically
+      using the :class:`types.ModuleType` constructor.
+      Previously the attribute was optional.
+
+   .. versionchanged:: 3.6
+      The value of :attr:`!__package__` is expected to be the same as
+      :attr:`__spec__.parent <importlib.machinery.ModuleSpec.parent>`.
+      :attr:`__package__` is now only used as a fallback during import
+      resolution if :attr:`!__spec__.parent` is not defined.
+
+   .. versionchanged:: 3.10
+      :exc:`ImportWarning` is raised if an import resolution falls back to
+      :attr:`!__package__` instead of
+      :attr:`__spec__.parent <importlib.machinery.ModuleSpec.parent>`.
+
+   .. versionchanged:: 3.12
+      Raise :exc:`DeprecationWarning` instead of :exc:`ImportWarning` when
+      falling back to :attr:`!__package__` during import resolution.
+
+.. attribute:: module.__loader__
+
+   The :term:`loader` object that the import machinery used to load the module.
+
+   This attribute is mostly useful for introspection, but can be used for
+   additional loader-specific functionality, for example getting data
+   associated with a loader.
+
+   :attr:`!__loader__` defaults to ``None`` for modules created dynamically
+   using the :class:`types.ModuleType` constructor;
+   use :func:`importlib.util.module_from_spec` instead to ensure the attribute
+   is set to a :term:`loader` object.
+
+   It is **strongly** recommended that you use
+   :attr:`module.__spec__.loader <importlib.machinery.ModuleSpec.loader>`
+   instead of :attr:`!module.__loader__`.
+
+   .. versionchanged:: 3.4
+      This attribute now defaults to ``None`` for modules created dynamically
+      using the :class:`types.ModuleType` constructor.
+      Previously the attribute was optional.
+
+   .. deprecated-removed:: 3.12 3.14
+      Setting :attr:`!__loader__` on a module while failing to set
+      :attr:`!__spec__.loader` is deprecated. In Python 3.14,
+      :attr:`!__loader__` will cease to be set or taken into consideration by
+      the import system or the standard library.
+
+.. attribute:: module.__path__
+
+   A (possibly empty) :term:`sequence` of strings enumerating the locations
+   where the package's submodules will be found. Non-package modules should
+   not have a :attr:`!__path__` attribute. See :ref:`package-path-rules` for
+   more details.
+
+   It is **strongly** recommended that you use
+   :attr:`module.__spec__.submodule_search_locations <importlib.machinery.ModuleSpec.submodule_search_locations>`
+   instead of :attr:`!module.__path__`.
+
+.. attribute:: module.__file__
+.. attribute:: module.__cached__
+
+   :attr:`!__file__` and :attr:`!__cached__` are both optional attributes that
+   may or may not be set. Both attributes should be a :class:`str` when they
+   are available.
+
+   :attr:`!__file__` indicates the pathname of the file from which the module
+   was loaded (if loaded from a file), or the pathname of the shared library
+   file for extension modules loaded dynamically from a shared library.
+   It might be missing for certain types of modules, such as C modules that are
+   statically linked into the interpreter, and the
+   :ref:`import system <importsystem>` may opt to leave it unset if it
+   has no semantic meaning (for example, a module loaded from a database).
+
+   If :attr:`!__file__` is set then the :attr:`!__cached__` attribute might
+   also be set,  which is the path to any compiled version of
+   the code (for example, a byte-compiled file). The file does not need to exist
+   to set this attribute; the path can simply point to where the
+   compiled file *would* exist (see :pep:`3147`).
+
+   Note that :attr:`!__cached__` may be set even if :attr:`!__file__` is not
+   set.  However, that scenario is quite atypical.  Ultimately, the
+   :term:`loader` is what makes use of the module spec provided by the
+   :term:`finder` (from which :attr:`!__file__` and :attr:`!__cached__` are
+   derived).  So if a loader can load from a cached module but otherwise does
+   not load from a file, that atypical scenario may be appropriate.
+
+   It is **strongly** recommended that you use
+   :attr:`module.__spec__.cached <importlib.machinery.ModuleSpec.cached>`
+   instead of :attr:`!module.__cached__`.
+
+Other writable attributes on module objects
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As well as the import-related attributes listed above, module objects also have
+the following writable attributes:
+
+.. attribute:: module.__doc__
+
+   The module's documentation string, or ``None`` if unavailable.
+   See also: :attr:`__doc__ attributes <definition.__doc__>`.
+
+.. attribute:: module.__annotations__
+
+   A dictionary containing
+   :term:`variable annotations <variable annotation>` collected during module
+   body execution.  For best practices on working with :attr:`__annotations__`,
+   please see :ref:`annotations-howto`.
+
+Module dictionaries
+^^^^^^^^^^^^^^^^^^^
+
+Module objects also have the following special read-only attribute:
 
 .. index:: single: __dict__ (module attribute)
+.. attribute:: module.__dict__
 
-Special read-only attribute: :attr:`~object.__dict__` is the module's
-namespace as a dictionary object.
+   The module's namespace as a dictionary object. Uniquely among the attributes
+   listed here, :attr:`!__dict__` cannot be accessed as a global variable from
+   within a module; it can only be accessed as an attribute on module objects.
 
-.. impl-detail::
+   .. impl-detail::
 
-   Because of the way CPython clears module dictionaries, the module
-   dictionary will be cleared when the module falls out of scope even if the
-   dictionary still has live references.  To avoid this, copy the dictionary
-   or keep the module around while using its dictionary directly.
+      Because of the way CPython clears module dictionaries, the module
+      dictionary will be cleared when the module falls out of scope even if the
+      dictionary still has live references.  To avoid this, copy the dictionary
+      or keep the module around while using its dictionary directly.
 
+
+.. _class-attrs-and-methods:
 
 Custom classes
 --------------
@@ -962,6 +1138,9 @@ of a base class.
 
 A class object can be called (see above) to yield a class instance (see below).
 
+Special attributes
+^^^^^^^^^^^^^^^^^^
+
 .. index::
    single: __name__ (class attribute)
    single: __module__ (class attribute)
@@ -971,35 +1150,86 @@ A class object can be called (see above) to yield a class instance (see below).
    single: __annotations__ (class attribute)
    single: __type_params__ (class attribute)
 
-Special attributes:
+.. list-table::
+   :header-rows: 1
 
-   :attr:`~definition.__name__`
-      The class name.
+   * - Attribute
+     - Meaning
 
-   :attr:`__module__`
-      The name of the module in which the class was defined.
+   * - .. attribute:: type.__name__
+     - The class's name.
+       See also: :attr:`__name__ attributes <definition.__name__>`.
 
-   :attr:`~object.__dict__`
-      The dictionary containing the class's namespace.
+   * - .. attribute:: type.__qualname__
+     - The class's :term:`qualified name`.
+       See also: :attr:`__qualname__ attributes <definition.__qualname__>`.
 
-   :attr:`~class.__bases__`
-      A tuple containing the base classes, in the order of
-      their occurrence in the base class list.
+   * - .. attribute:: type.__module__
+     - The name of the module in which the class was defined.
 
-   :attr:`__doc__`
-      The class's documentation string, or ``None`` if undefined.
+   * - .. attribute:: type.__dict__
+     - A :class:`mapping proxy <types.MappingProxyType>`
+       providing a read-only view of the class's namespace.
+       See also: :attr:`__dict__ attributes <object.__dict__>`.
 
-   :attr:`__annotations__`
-      A dictionary containing
-      :term:`variable annotations <variable annotation>`
-      collected during class body execution.  For best practices on
-      working with :attr:`__annotations__`, please see
-      :ref:`annotations-howto`.
+   * - .. attribute:: type.__bases__
+     - A :class:`tuple` containing the class's bases.
+       In most cases, for a class defined as ``class X(A, B, C)``,
+       ``X.__bases__`` will be exactly equal to ``(A, B, C)``.
 
-   :attr:`__type_params__`
-      A tuple containing the :ref:`type parameters <type-params>` of
-      a :ref:`generic class <generic-classes>`.
+   * - .. attribute:: type.__doc__
+     - The class's documentation string, or ``None`` if undefined.
+       Not inherited by subclasses.
 
+   * - .. attribute:: type.__annotations__
+     - A dictionary containing
+       :term:`variable annotations <variable annotation>`
+       collected during class body execution. For best practices on working
+       with :attr:`!__annotations__`, please see :ref:`annotations-howto`.
+
+       .. caution::
+
+          Accessing the :attr:`!__annotations__` attribute of a class
+          object directly may yield incorrect results in the presence of
+          metaclasses. In addition, the attribute may not exist for
+          some classes. Use :func:`inspect.get_annotations` to
+          retrieve class annotations safely.
+
+   * - .. attribute:: type.__type_params__
+     - A :class:`tuple` containing the :ref:`type parameters <type-params>` of
+       a :ref:`generic class <generic-classes>`.
+
+       .. versionadded:: 3.12
+
+   * - .. attribute:: type.__mro__
+     - The :class:`tuple` of classes that are considered when looking for
+       base classes during method resolution.
+
+
+Special methods
+^^^^^^^^^^^^^^^
+
+In addition to the special attributes described above, all Python classes also
+have the following two methods available:
+
+.. method:: type.mro
+
+   This method can be overridden by a metaclass to customize the method
+   resolution order for its instances.  It is called at class instantiation,
+   and its result is stored in :attr:`~type.__mro__`.
+
+.. method:: type.__subclasses__
+
+   Each class keeps a list of weak references to its immediate subclasses. This
+   method returns a list of all those references still alive. The list is in
+   definition order. Example:
+
+   .. doctest::
+
+      >>> class A: pass
+      >>> class B(A): pass
+      >>> A.__subclasses__()
+      [<class 'B'>]
 
 Class instances
 ---------------
@@ -1039,12 +1269,22 @@ dictionary directly.
 Class instances can pretend to be numbers, sequences, or mappings if they have
 methods with certain special names.  See section :ref:`specialnames`.
 
+Special attributes
+^^^^^^^^^^^^^^^^^^
+
 .. index::
    single: __dict__ (instance attribute)
    single: __class__ (instance attribute)
 
-Special attributes: :attr:`~object.__dict__` is the attribute dictionary;
-:attr:`~instance.__class__` is the instance's class.
+.. attribute:: object.__class__
+
+   The class to which a class instance belongs.
+
+.. attribute:: object.__dict__
+
+   A dictionary or other mapping object used to store an object's (writable)
+   attributes. Not all instances have a :attr:`!__dict__` attribute; see the
+   section on :ref:`slots` for more details.
 
 
 I/O objects (also known as file objects)
@@ -1231,7 +1471,7 @@ Methods on code objects
 
    The iterator returns :class:`tuple`\s containing the ``(start_line, end_line,
    start_column, end_column)``. The *i-th* tuple corresponds to the
-   position of the source code that compiled to the *i-th* instruction.
+   position of the source code that compiled to the *i-th* code unit.
    Column information is 0-indexed utf-8 byte offsets on the given source
    line.
 
@@ -1643,6 +1883,8 @@ Basic customization
 
    It is not guaranteed that :meth:`__del__` methods are called for objects
    that still exist when the interpreter exits.
+   :class:`weakref.finalize` provides a straightforward way to register
+   a cleanup function to be called when an object is garbage collected.
 
    .. note::
 
@@ -2260,9 +2502,9 @@ Notes on using *__slots__*:
 
 * The action of a *__slots__* declaration is not limited to the class
   where it is defined.  *__slots__* declared in parents are available in
-  child classes. However, child subclasses will get a :attr:`~object.__dict__` and
-  *__weakref__* unless they also define *__slots__* (which should only
-  contain names of any *additional* slots).
+  child classes. However, instances of a child subclass will get a
+  :attr:`~object.__dict__` and *__weakref__* unless the subclass also defines
+  *__slots__* (which should only contain names of any *additional* slots).
 
 * If a class defines a slot also defined in a base class, the instance variable
   defined by the base class slot is inaccessible (except by retrieving its
@@ -2281,7 +2523,7 @@ Notes on using *__slots__*:
   to provide per-attribute docstrings that will be recognised by
   :func:`inspect.getdoc` and displayed in the output of :func:`help`.
 
-* :attr:`~instance.__class__` assignment works only if both classes have the
+* :attr:`~object.__class__` assignment works only if both classes have the
   same *__slots__*.
 
 * :ref:`Multiple inheritance <tut-multiple>` with multiple slotted parent
@@ -2547,7 +2789,7 @@ in the local namespace as the defined class.
 When a new class is created by ``type.__new__``, the object provided as the
 namespace parameter is copied to a new ordered mapping and the original
 object is discarded. The new copy is wrapped in a read-only proxy, which
-becomes the :attr:`~object.__dict__` attribute of the class object.
+becomes the :attr:`~type.__dict__` attribute of the class object.
 
 .. seealso::
 
@@ -2575,14 +2817,14 @@ order to allow the addition of Abstract Base Classes (ABCs) as "virtual base
 classes" to any class or type (including built-in types), including other
 ABCs.
 
-.. method:: class.__instancecheck__(self, instance)
+.. method:: type.__instancecheck__(self, instance)
 
    Return true if *instance* should be considered a (direct or indirect)
    instance of *class*. If defined, called to implement ``isinstance(instance,
    class)``.
 
 
-.. method:: class.__subclasscheck__(self, subclass)
+.. method:: type.__subclasscheck__(self, subclass)
 
    Return true if *subclass* should be considered a (direct or indirect)
    subclass of *class*.  If defined, called to implement ``issubclass(subclass,
@@ -2598,8 +2840,8 @@ case the instance is itself a class.
 
    :pep:`3119` - Introducing Abstract Base Classes
       Includes the specification for customizing :func:`isinstance` and
-      :func:`issubclass` behavior through :meth:`~class.__instancecheck__` and
-      :meth:`~class.__subclasscheck__`, with motivation for this functionality
+      :func:`issubclass` behavior through :meth:`~type.__instancecheck__` and
+      :meth:`~type.__subclasscheck__`, with motivation for this functionality
       in the context of adding Abstract Base Classes (see the :mod:`abc`
       module) to the language.
 

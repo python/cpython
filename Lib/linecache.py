@@ -70,7 +70,7 @@ def checkcache(filename=None):
             continue   # no-op for files loaded via a __loader__
         try:
             stat = os.stat(fullname)
-        except OSError:
+        except (OSError, ValueError):
             cache.pop(filename, None)
             continue
         if size != stat.st_size or mtime != stat.st_mtime:
@@ -128,10 +128,12 @@ def updatecache(filename, module_globals=None):
             try:
                 stat = os.stat(fullname)
                 break
-            except OSError:
+            except (OSError, ValueError):
                 pass
         else:
             return []
+    except ValueError:  # may be raised by os.stat()
+        return []
     try:
         with tokenize.open(fullname) as fp:
             lines = fp.readlines()

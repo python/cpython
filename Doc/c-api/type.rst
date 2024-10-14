@@ -53,7 +53,8 @@ Type Objects
 .. c:function:: PyObject* PyType_GetDict(PyTypeObject* type)
 
    Return the type object's internal namespace, which is otherwise only
-   exposed via a read-only proxy (``cls.__dict__``).  This is a
+   exposed via a read-only proxy (:attr:`cls.__dict__ <type.__dict__>`).
+   This is a
    replacement for accessing :c:member:`~PyTypeObject.tp_dict` directly.
    The returned dictionary must be treated as read-only.
 
@@ -140,7 +141,7 @@ Type Objects
    Return true if *a* is a subtype of *b*.
 
    This function only checks for actual subtypes, which means that
-   :meth:`~class.__subclasscheck__` is not called on *b*.  Call
+   :meth:`~type.__subclasscheck__` is not called on *b*.  Call
    :c:func:`PyObject_IsSubclass` to do the same check that :func:`issubclass`
    would do.
 
@@ -174,14 +175,15 @@ Type Objects
 
 .. c:function:: PyObject* PyType_GetName(PyTypeObject *type)
 
-   Return the type's name. Equivalent to getting the type's ``__name__`` attribute.
+   Return the type's name. Equivalent to getting the type's
+   :attr:`~type.__name__` attribute.
 
    .. versionadded:: 3.11
 
 .. c:function:: PyObject* PyType_GetQualName(PyTypeObject *type)
 
    Return the type's qualified name. Equivalent to getting the
-   type's ``__qualname__`` attribute.
+   type's :attr:`~type.__qualname__` attribute.
 
    .. versionadded:: 3.11
 

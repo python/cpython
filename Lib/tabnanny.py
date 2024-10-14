@@ -107,12 +107,12 @@ def check(file):
         errprint("%r: Token Error: %s" % (file, msg))
         return
 
-    except SyntaxError as msg:
-        errprint("%r: Token Error: %s" % (file, msg))
-        return
-
     except IndentationError as msg:
         errprint("%r: Indentation Error: %s" % (file, msg))
+        return
+
+    except SyntaxError as msg:
+        errprint("%r: Syntax Error: %s" % (file, msg))
         return
 
     except NannyNag as nag:

@@ -1,4 +1,5 @@
 import pickle
+import textwrap
 import types
 import unittest
 from test.support import check_syntax_error, run_code
@@ -211,6 +212,19 @@ class TypeAliasConstructorTest(unittest.TestCase):
         self.assertEqual(TA.__value__, list[T])
         self.assertEqual(TA.__type_params__, (T,))
         self.assertEqual(TA.__module__, __name__)
+        self.assertIs(type(TA[int]), types.GenericAlias)
+
+    def test_not_generic(self):
+        TA = TypeAliasType("TA", list[int], type_params=())
+        self.assertEqual(TA.__name__, "TA")
+        self.assertEqual(TA.__value__, list[int])
+        self.assertEqual(TA.__type_params__, ())
+        self.assertEqual(TA.__module__, __name__)
+        with self.assertRaisesRegex(
+            TypeError,
+            "Only generic type aliases are subscriptable",
+        ):
+            TA[int]
 
     def test_keywords(self):
         TA = TypeAliasType(name="TA", value=int)
@@ -328,3 +342,22 @@ class TypeAliasPickleTest(unittest.TestCase):
                 with self.subTest(thing=thing, proto=proto):
                     with self.assertRaises(pickle.PickleError):
                         pickle.dumps(thing, protocol=proto)
+
+
+class TypeParamsExoticGlobalsTest(unittest.TestCase):
+    def test_exec_with_unusual_globals(self):
+        class customdict(dict):
+            def __missing__(self, key):
+                return key
+
+        code = compile("type Alias = undefined", "test", "exec")
+        ns = customdict()
+        exec(code, ns)
+        Alias = ns["Alias"]
+        self.assertEqual(Alias.__value__, "undefined")
+
+        code = compile("class A: type Alias = undefined", "test", "exec")
+        ns = customdict()
+        exec(code, ns)
+        Alias = ns["A"].Alias
+        self.assertEqual(Alias.__value__, "undefined")

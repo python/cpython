@@ -118,6 +118,11 @@ class MockTest(unittest.TestCase):
         # pass kwargs with respect to the parent mock.
         self.assertEqual(class_mock().return_value.meth.side_effect, None)
 
+    def test_create_autospec_correctly_handles_name(self):
+        class X: ...
+        mock = create_autospec(X, spec_set=True, name="Y")
+        self.assertEqual(mock._mock_name, "Y")
+
     def test_repr(self):
         mock = Mock(name='foo')
         self.assertIn('foo', repr(mock))

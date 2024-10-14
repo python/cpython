@@ -275,9 +275,9 @@ Notes:
 (1)
    .. index:: single: ? (question mark); in struct format strings
 
-   The ``'?'`` conversion code corresponds to the :c:expr:`_Bool` type defined by
-   C99. If this type is not available, it is simulated using a :c:expr:`char`. In
-   standard mode, it is always represented by one byte.
+   The ``'?'`` conversion code corresponds to the :c:expr:`_Bool` type
+   defined by C standards since C99.  In standard mode, it is
+   represented by one byte.
 
 (2)
    When attempting to pack a non-integer using any of the integer conversion

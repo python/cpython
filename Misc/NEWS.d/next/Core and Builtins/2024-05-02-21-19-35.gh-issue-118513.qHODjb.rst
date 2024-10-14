@@ -1,1 +1,0 @@
-Fix incorrect :exc:`UnboundLocalError` when two comprehensions in the same function both reference the same name, and in one comprehension the name is bound while in the other it's an implicit global.

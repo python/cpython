@@ -158,7 +158,8 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. function:: nl_langinfo(option)
 
-   Return some locale-specific information as a string.  This function is not
+   Return some locale-specific information as a string (or a tuple for
+   ``ALT_DIGITS``).  This function is not
    available on all systems, and the set of possible options might also vary
    across platforms.  The possible argument values are numbers, for which
    symbolic constants are available in the locale module.
@@ -311,8 +312,7 @@ The :mod:`locale` module defines the following exception and functions:
 
    .. data:: ALT_DIGITS
 
-      Get a representation of up to 100 values used to represent the values
-      0 to 99.
+      Get a tuple of up to 100 strings used to represent the values 0 to 99.
 
 
 .. function:: getdefaultlocale([envvars])
@@ -434,7 +434,7 @@ The :mod:`locale` module defines the following exception and functions:
 .. function:: format_string(format, val, grouping=False, monetary=False)
 
    Formats a number *val* according to the current :const:`LC_NUMERIC` setting.
-   The format follows the conventions of the ``%`` operator.  For floating point
+   The format follows the conventions of the ``%`` operator.  For floating-point
    values, the decimal point is modified if appropriate.  If *grouping* is ``True``,
    also takes the grouping into account.
 
@@ -465,7 +465,7 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. function:: str(float)
 
-   Formats a floating point number using the same format as the built-in function
+   Formats a floating-point number using the same format as the built-in function
    ``str(float)``, but takes the decimal point into account.
 
 

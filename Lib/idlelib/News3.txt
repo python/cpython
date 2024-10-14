@@ -4,6 +4,16 @@ Released after 2023-10-02
 =========================
 
 
+gh-120083: Add explicit black IDLE Hovertip foreground color needed for
+recent macOS. Fixes Sonoma showing unreadable white on pale yellow.
+Patch by John Riggles.
+
+gh-122482: Change About IDLE to direct users to discuss.python.org
+instead of the now unused idle-dev email and mailing list.
+
+gh-78889: Stop Shell freezes by blocking user access to non-method
+sys.stdout.shell attributes, which are all private.
+
 gh-78955: Use user-selected color theme for Help => IDLE Doc.
 
 gh-96905: In idlelib code, stop redefining built-ins 'dict' and 'object'.
@@ -567,14 +577,14 @@ bpo-33679: Enable theme-specific color configuration for Code Context.
 color setting, default or custom, on the extensions tab, that applied
 to all themes.)  For built-in themes, the foreground is the same as
 normal text and the background is a contrasting gray.  Context colors for
-custom themes are set on the Hightlights tab along with other colors.
+custom themes are set on the Highlights tab along with other colors.
 When one starts IDLE from a console and loads a custom theme without
 definitions for 'context', one will see a warning message on the
 console.
 
 bpo-33642: Display up to maxlines non-blank lines for Code Context.
 If there is no current context, show a single blank line.  (Previously,
-the Code Contex had numlines lines, usually with some blank.)  The use
+the Code Context had numlines lines, usually with some blank.)  The use
 of a new option, 'maxlines' (default 15), avoids possible interference
 with user settings of the old option, 'numlines' (default 3).
 
@@ -728,7 +738,7 @@ not affect their keyset-specific customization after 3.6.3. and vice
 versa.
   Initial patch by Charles Wohlganger, revised by Terry Jan Reedy.
 
-bpo-31051:  Rearrange condigdialog General tab.
+bpo-31051:  Rearrange configdialog General tab.
 Sort non-Help options into Window (Shell+Editor) and Editor (only).
 Leave room for the addition of new options.
 Patch by Terry Jan Reedy.

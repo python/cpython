@@ -278,7 +278,7 @@ get_size_t(_structmodulestate *state, PyObject *v, size_t *p)
 #define RANGE_ERROR(state, f, flag) return _range_error(state, f, flag)
 
 
-/* Floating point helpers */
+/* Floating-point helpers */
 
 static PyObject *
 unpack_halffloat(const char *p,  /* start of 2-byte string */
@@ -483,9 +483,8 @@ nu_ulonglong(_structmodulestate *state, const char *p, const formatdef *f)
 static PyObject *
 nu_bool(_structmodulestate *state, const char *p, const formatdef *f)
 {
-    _Bool x;
-    memcpy((char *)&x, p, sizeof x);
-    return PyBool_FromLong(x != 0);
+    const _Bool bool_false = 0;
+    return PyBool_FromLong(memcmp(p, &bool_false, sizeof(_Bool)));
 }
 
 
@@ -1662,9 +1661,16 @@ s_unpack_internal(PyStructObject *soself, const char *startfrom,
             if (e->format == 's') {
                 v = PyBytes_FromStringAndSize(res, code->size);
             } else if (e->format == 'p') {
-                Py_ssize_t n = *(unsigned char*)res;
-                if (n >= code->size)
-                    n = code->size - 1;
+                Py_ssize_t n;
+                if (code->size == 0) {
+                    n = 0;
+                }
+                else {
+                    n = *(unsigned char*)res;
+                    if (n >= code->size) {
+                        n = code->size - 1;
+                    }
+                }
                 v = PyBytes_FromStringAndSize(res + 1, n);
             } else {
                 v = e->unpack(state, res, e);
@@ -1975,8 +1981,12 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
                     n = PyByteArray_GET_SIZE(v);
                     p = PyByteArray_AS_STRING(v);
                 }
-                if (n > (code->size - 1))
+                if (code->size == 0) {
+                    n = 0;
+                }
+                else if (n > (code->size - 1)) {
                     n = code->size - 1;
+                }
                 if (n > 0)
                     memcpy(res + 1, p, n);
                 if (n > 255)

@@ -226,9 +226,14 @@ _PyPegen_parse_string(Parser *p, Token *t)
         PyErr_BadInternalCall();
         return NULL;
     }
+
     /* Skip the leading quote char. */
     s++;
     len = strlen(s);
+    // gh-120155: 's' contains at least the trailing quote,
+    // so the code '--len' below is safe.
+    assert(len >= 1);
+
     if (len > INT_MAX) {
         PyErr_SetString(PyExc_OverflowError, "string to parse is too long");
         return NULL;

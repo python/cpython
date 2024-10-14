@@ -395,7 +395,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     # Called before loop, handles display expressions
     # Set up convenience variable containers
-    def preloop(self):
+    def _show_display(self):
         displaying = self.displaying.get(self.curframe)
         if displaying:
             for expr, oldvalue in displaying.items():
@@ -419,10 +419,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             else:
                 Pdb._previous_sigint_handler = None
         self.setup(frame, traceback)
-        # if we have more commands to process, do not show the stack entry
-        if not self.cmdqueue:
-            self.print_stack_entry(self.stack[self.curindex])
+        # We should print the stack entry if and only if the user input
+        # is expected, and we should print it right before the user input.
+        # We achieve this by appending _pdbcmd_print_frame_status to the
+        # command queue. If cmdqueue is not exausted, the user input is
+        # not expected and we will not print the stack entry.
+        self.cmdqueue.append('_pdbcmd_print_frame_status')
         self._cmdloop()
+        # If _pdbcmd_print_frame_status is not used, pop it out
+        if self.cmdqueue and self.cmdqueue[-1] == '_pdbcmd_print_frame_status':
+            self.cmdqueue.pop()
         self.forget()
 
     def displayhook(self, obj):
@@ -524,6 +530,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         a breakpoint command list definition.
         """
         if not self.commands_defining:
+            if line.startswith('_pdbcmd'):
+                command, arg, line = self.parseline(line)
+                if hasattr(self, command):
+                    return getattr(self, command)(arg)
             return cmd.Cmd.onecmd(self, line)
         else:
             return self.handle_command_def(line)
@@ -622,6 +632,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         else:
             # Complete a simple name.
             return [n for n in ns.keys() if n.startswith(text)]
+
+    # Pdb meta commands, only intended to be used internally by pdb
+
+    def _pdbcmd_print_frame_status(self, arg):
+        self.print_stack_entry(self.stack[self.curindex])
+        self._show_display()
 
     # Command definitions, called by cmdloop()
     # The argument is the remaining string on the command line

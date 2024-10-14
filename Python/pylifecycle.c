@@ -839,6 +839,13 @@ pycore_interp_init(PyThreadState *tstate)
         return _PyStatus_ERR("failed to initialize deep-frozen modules");
     }
 
+    // Per-interpreter interned string dict is created after deep-frozen
+    // modules have interned the global strings.
+    status = _PyUnicode_InitInternDict(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     status = pycore_init_types(interp);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
@@ -1969,6 +1976,13 @@ Py_FinalizeEx(void)
     // XXX Ensure finalizer errors are handled properly.
 
     finalize_interp_clear(tstate);
+
+#ifdef WITH_PYMALLOC
+    if (malloc_stats) {
+        _PyObject_DebugMallocStats(stderr);
+    }
+#endif
+
     finalize_interp_delete(tstate->interp);
 
 #ifdef Py_REF_DEBUG
@@ -1994,11 +2008,6 @@ Py_FinalizeEx(void)
         fclose(dump_refs_fp);
     }
 #endif /* Py_TRACE_REFS */
-#ifdef WITH_PYMALLOC
-    if (malloc_stats) {
-        _PyObject_DebugMallocStats(stderr);
-    }
-#endif
 
     call_ll_exitfuncs(runtime);
 

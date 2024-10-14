@@ -62,6 +62,8 @@ The following functions are defined:
    (note that under many window managers this will occur regardless of the
    setting of this variable).
 
+   Returns ``True`` if a browser was successfully launched, ``False`` otherwise.
+
    Note that on some platforms, trying to open a filename using this function,
    may work and start the operating system's associated program.  However, this
    is neither supported nor portable.
@@ -74,10 +76,15 @@ The following functions are defined:
    Open *url* in a new window of the default browser, if possible, otherwise, open
    *url* in the only browser window.
 
+   Returns ``True`` if a browser was successfully launched, ``False`` otherwise.
+
+
 .. function:: open_new_tab(url)
 
    Open *url* in a new page ("tab") of the default browser, if possible, otherwise
    equivalent to :func:`open_new`.
+
+   Returns ``True`` if a browser was successfully launched, ``False`` otherwise.
 
 
 .. function:: get(using=None)

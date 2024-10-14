@@ -108,7 +108,7 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
 fcntl.ioctl
 
     fd: fildes
-    request as code: unsigned_long(bitwise=True)
+    request as code: unsigned_int(bitwise=True)
     arg as ob_arg: object(c_default='NULL') = 0
     mutate_flag as mutate_arg: bool = True
     /
@@ -144,9 +144,9 @@ code.
 [clinic start generated code]*/
 
 static PyObject *
-fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code,
+fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
                  PyObject *ob_arg, int mutate_arg)
-/*[clinic end generated code: output=3d8eb6828666cea1 input=cee70f6a27311e58]*/
+/*[clinic end generated code: output=7f7f5840c65991be input=967b4a4cbeceb0a8]*/
 {
 #define IOCTL_BUFSZ 1024
     /* We use the unsigned non-checked 'I' format for the 'code' parameter
