@@ -183,8 +183,6 @@
             /* Skip 1 cache entry */
             // _BINARY_OP_INPLACE_ADD_UNICODE
             {
-                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
                 int next_oparg;
                 #if TIER_ONE
                 assert(next_instr->op.code == STORE_FAST);
@@ -206,11 +204,12 @@
                  * only the locals reference, so PyUnicode_Append knows
                  * that the string is safe to mutate.
                  */
-                assert(Py_REFCNT(left_o) >= 2);
-                PyStackRef_CLOSE(left);
-                PyObject *temp = PyStackRef_AsPyObjectBorrow(*target_local);
-                PyUnicode_Append(&temp, right_o);
-                *target_local = PyStackRef_FromPyObjectSteal(temp);
+                PyObject *left_o = PyStackRef_AsPyObjectSteal(left);
+                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+                PyStackRef_CLEAR(*target_local);
+                assert(Py_REFCNT(left_o) >= 1);
+                PyUnicode_Append(&left_o, right_o);
+                *target_local = PyStackRef_FromPyObjectSteal(left_o);
                 PyStackRef_CLOSE_SPECIALIZED(right, _PyUnicode_ExactDealloc);
                 if (PyStackRef_IsNull(*target_local)) goto pop_2_error;
                 #if TIER_ONE
@@ -4899,7 +4898,9 @@
             _PyStackRef res;
             // _LOAD_CONST
             {
-                value = PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                value = _PyStackRef_FromPyObjectWithCount(GETITEM(FRAME_CO_CONSTS, oparg));
+                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             // _RETURN_VALUE_EVENT
             {
@@ -5909,7 +5910,9 @@
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_CONST);
             _PyStackRef value;
-            value = PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            value = _PyStackRef_FromPyObjectWithCount(GETITEM(FRAME_CO_CONSTS, oparg));
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -6967,7 +6970,9 @@
             _PyStackRef res;
             // _LOAD_CONST
             {
-                value = PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                value = _PyStackRef_FromPyObjectWithCount(GETITEM(FRAME_CO_CONSTS, oparg));
+                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             // _RETURN_VALUE
             {

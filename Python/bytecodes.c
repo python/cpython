@@ -256,7 +256,7 @@ dummy_func(
         }
 
         pure inst(LOAD_CONST, (-- value)) {
-            value = PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
+            value = _PyStackRef_FromPyObjectWithCount(GETITEM(FRAME_CO_CONSTS, oparg));
         }
 
         replicate(8) inst(STORE_FAST, (value --)) {
@@ -611,9 +611,6 @@ dummy_func(
         // specializations, but there is no output.
         // At the end we just skip over the STORE_FAST.
         op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
-            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-
             int next_oparg;
         #if TIER_ONE
             assert(next_instr->op.code == STORE_FAST);
@@ -635,12 +632,12 @@ dummy_func(
              * only the locals reference, so PyUnicode_Append knows
              * that the string is safe to mutate.
              */
-            assert(Py_REFCNT(left_o) >= 2);
-            PyStackRef_CLOSE(left);
-            DEAD(left);
-            PyObject *temp = PyStackRef_AsPyObjectBorrow(*target_local);
-            PyUnicode_Append(&temp, right_o);
-            *target_local = PyStackRef_FromPyObjectSteal(temp);
+            PyObject *left_o = PyStackRef_AsPyObjectSteal(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            PyStackRef_CLEAR(*target_local);
+            assert(Py_REFCNT(left_o) >= 1);
+            PyUnicode_Append(&left_o, right_o);
+            *target_local = PyStackRef_FromPyObjectSteal(left_o);
             PyStackRef_CLOSE_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             DEAD(right);
             ERROR_IF(PyStackRef_IsNull(*target_local), error);
