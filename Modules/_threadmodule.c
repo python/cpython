@@ -1070,15 +1070,15 @@ rlock_acquire_restore(PyObject *op, PyObject *args)
 {
     rlockobject *self = (rlockobject*)op;
     PyThread_ident_t owner;
-    unsigned long count;
+    Py_ssize_t count;
 
-    if (!PyArg_ParseTuple(args, "(k" Py_PARSE_THREAD_IDENT_T "):_acquire_restore",
+    if (!PyArg_ParseTuple(args, "(n" Py_PARSE_THREAD_IDENT_T "):_acquire_restore",
             &count, &owner))
         return NULL;
 
     _PyRecursiveMutex_Lock(&self->lock);
     _Py_atomic_store_ullong_relaxed(&self->lock.thread, owner);
-    self->lock.level = count - 1;
+    self->lock.level = (size_t)count - 1;
     Py_RETURN_NONE;
 }
 
@@ -1100,10 +1100,10 @@ rlock_release_save(PyObject *op, PyObject *Py_UNUSED(ignored))
     }
 
     PyThread_ident_t owner = self->lock.thread;
-    size_t count = self->lock.level + 1;
+    Py_ssize_t count = self->lock.level + 1;
     self->lock.level = 0;  // ensure the unlock releases the lock
     _PyRecursiveMutex_Unlock(&self->lock);
-    return Py_BuildValue("k" Py_PARSE_THREAD_IDENT_T, count, owner);
+    return Py_BuildValue("n" Py_PARSE_THREAD_IDENT_T, count, owner);
 }
 
 PyDoc_STRVAR(rlock_release_save_doc,

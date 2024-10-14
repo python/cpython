@@ -398,7 +398,7 @@ _PyRecursiveMutex_Unlock(_PyRecursiveMutex *m)
 {
     if (_PyRecursiveMutex_TryUnlock(m) < 0) {
         Py_FatalError("unlocking a recursive mutex that is not "
-                        "owned by the current thread");
+                      "owned by the current thread");
     }
 }
 
