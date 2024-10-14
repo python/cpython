@@ -2765,9 +2765,6 @@ PyUnicode_WriteChar:PyObject*:unicode:0:
 PyUnicode_WriteChar:Py_ssize_t:index::
 PyUnicode_WriteChar:Py_UCS4:character::
 
-PyUnicode_READY:int:::
-PyUnicode_READY:PyObject*:o:0:
-
 PyUnicode_Substring:PyObject*::+1:
 PyUnicode_Substring:PyObject*:str:0:
 PyUnicode_Substring:Py_ssize_t:start::

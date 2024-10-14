@@ -87,16 +87,6 @@ access to internal read-only data of Unicode objects:
    subtype.  This function always succeeds.
 
 
-.. c:function:: int PyUnicode_READY(PyObject *unicode)
-
-   Returns ``0``. This API is kept only for backward compatibility.
-
-   .. versionadded:: 3.3
-
-   .. deprecated:: 3.10
-      This API does nothing since Python 3.12.
-
-
 .. c:function:: Py_ssize_t PyUnicode_GET_LENGTH(PyObject *unicode)
 
    Return the length of the Unicode string, in code points.  *unicode* has to be a

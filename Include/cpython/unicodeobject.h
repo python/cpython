@@ -388,13 +388,6 @@ PyAPI_FUNC(PyObject*) PyUnicode_New(
     Py_UCS4 maxchar             /* maximum code point value in the string */
     );
 
-/* For backward compatibility */
-static inline int PyUnicode_READY(PyObject* Py_UNUSED(op))
-{
-    return 0;
-}
-#define PyUnicode_READY(op) PyUnicode_READY(_PyObject_CAST(op))
-
 /* Copy character from one unicode object into another, this function performs
    character conversion when necessary and falls back to memcpy() if possible.
 
