@@ -3951,9 +3951,12 @@ def bœr():
     def test_empty_file(self):
         script = ''
         commands = 'q\n'
-        # Anything reasonable is acceptable here, as long as it does not halt
-        _, _ = self.run_pdb_script(script, commands)
-        _, _ = self.run_pdb_module(script, commands)
+        # We check that pdb stopped at line 0, but anything reasonable
+        # is acceptable here, as long as it does not halt
+        stdout, _ = self.run_pdb_script(script, commands)
+        self.assertIn('main.py(0)', stdout)
+        stdout, _ = self.run_pdb_module(script, commands)
+        self.assertIn('__main__.py(0)', stdout)
 
     def test_non_utf8_encoding(self):
         script_dir = os.path.join(os.path.dirname(__file__), 'encoded_modules')
