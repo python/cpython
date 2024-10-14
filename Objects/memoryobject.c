@@ -2756,13 +2756,14 @@ static PySequenceMethods memory_as_sequence = {
 memoryview.count
 
     value: object
+    /
 
 Count the number of occurrences of a value.
 [clinic start generated code]*/
 
 static PyObject *
-memoryview_count_impl(PyMemoryViewObject *self, PyObject *value)
-/*[clinic end generated code: output=a15cb19311985063 input=9015233dd6045385]*/
+memoryview_count(PyMemoryViewObject *self, PyObject *value)
+/*[clinic end generated code: output=e2c255a8d54eaa12 input=e3036ce1ed7d1823]*/
 {
     PyObject *iter = PyObject_GetIter((PyObject *)self);
     if (iter == NULL) {
