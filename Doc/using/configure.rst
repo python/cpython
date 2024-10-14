@@ -56,10 +56,7 @@ Features and minimum versions required to build CPython:
    Tcl/Tk version 8.5.12 is now required for the :mod:`tkinter` module.
 
 .. versionchanged:: 3.13
-   Autoconf 2.71, aclocal 1.16.4 and SQLite 3.15.2 are now required.
-
-.. versionchanged:: 3.13
-   Require aclocal 1.16.5.
+   Autoconf 2.71, aclocal 1.16.5 and SQLite 3.15.2 are now required.
 
 See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
 support".
