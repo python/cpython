@@ -32,8 +32,7 @@ The presence of these macros and the nature of bytecode interpreters means
 that the interpreter is effectively defined in a domain specific language (DSL).
 
 Rather than using an ad-hoc DSL embedded in the C code for the interpreter,
-a custom DSL should be defined and the semantics of the bytecode instructions,
-and the instructions defined in that DSL.
+a custom DSL is defined. This DSL defines the semantics of the bytecode instructions.
 
 Generating the interpreter decouples low-level details of dispatching
 and error handling from the semantics of the instructions, resulting
@@ -53,11 +52,10 @@ to be written. One way to mitigate this is through the use of code generators.
 Code generators decouple the debugging of the code (the generator) from checking
 the correctness (the DSL input).
 
-For example, we are likely to want a new interpreter for the tier 2 optimizer
-to be added in 3.12. That interpreter will have a different API, a different
-set of instructions and potentially different dispatching mechanism.
-But the instructions it will interpret will be built from the same building
-blocks as the instructions for the tier 1 (PEP 659) interpreter.
+New interpreter for the tier 2 optimizer is added in CPython 3.13.
+That interpreter have a different API, a different set of instructions and
+different dispatching mechanism. But the instructions it interpret are built
+from the same building blocks as the instructions for the tier 1 (PEP 659) interpreter.
 
 Rewriting all the instructions is tedious and error-prone, and changing the
 instructions is a maintenance headache as both versions need to be kept in sync.
@@ -74,7 +72,7 @@ We update it as the need arises.
 ### Syntax
 
 Each op definition has a kind, a name, a stack and instruction stream effect,
-and a piece of C code describing its semantics::
+and a piece of C code describing its semantics:
 
 ```
   file:
@@ -245,7 +243,8 @@ The same is true for all members of a pseudo instruction
 
 ## Examples
 
-(Another source of examples can be found in the [tests](test_generator.py).)
+(Another source of examples can be found in the
+[tests](https://github.com/python/cpython/blob/main/Lib/test/test_generated_cases.py).)
 
 Some examples:
 
