@@ -1371,6 +1371,24 @@ class TestGeneratedCases(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             self.run_cases_test(input, output)
 
+    def test_instruction_size_macro(self):
+        input = """
+        inst(OP, (--)) {
+            frame->return_offset = INSTRUCTION_SIZE;
+        }
+        """
+
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            frame->return_offset = 1;
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
 
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:
