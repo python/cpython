@@ -3900,7 +3900,7 @@ listiter_len(PyObject *self, PyObject *Py_UNUSED(ignored))
         if (len >= 0)
             return PyLong_FromSsize_t(len);
     }
-    return _PyLong_GetZero();
+    return Py_NewRef(_PyLong_GetZero());
 }
 
 static PyObject *

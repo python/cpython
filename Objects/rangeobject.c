@@ -32,7 +32,7 @@ validate_step(PyObject *step)
 {
     /* No step specified, use a step of 1. */
     if (!step)
-        return _PyLong_GetOne();
+        return Py_NewRef(_PyLong_GetOne());
 
     step = PyNumber_Index(step);
     if (step && _PyLong_IsZero((PyLongObject *)step)) {
