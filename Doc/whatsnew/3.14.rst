@@ -70,7 +70,7 @@ Summary -- release highlights
 New features
 ============
 
-.. _whatsnew-314-pep649:
+.. _whatsnew314-pep649:
 
 PEP 649: deferred evaluation of annotations
 -------------------------------------------
