@@ -327,7 +327,11 @@ pairwise_traverse(pairwiseobject *po, visitproc visit, void *arg)
 static PyObject *
 pairwise_next(pairwiseobject *po)
 {
+#ifdef Py_GIL_DISABLED
     PyObject *it = Py_XNewRef(po->it);
+#else
+    PyObject *it = po->it;
+#endif
     if (it == NULL) {
         return NULL;
     }
@@ -339,16 +343,21 @@ pairwise_next(pairwiseobject *po)
         old = (*Py_TYPE(it)->tp_iternext)(it);
         if (old == NULL) {
             Py_CLEAR(po->it);
+#ifdef Py_GIL_DISABLED
             Py_DECREF(it);
+#endif
             return NULL;
         }
         Py_XSETREF(po->old, Py_NewRef(old));
         if (po->it == NULL) {
-            // for re-entrant calls to pairwise next. the actual behavior is not important and this does not avoid any bugs (or does it?)
-            // the reason for having it is to make the behaviour equal to the python implementation behavior
+            // gh-109786: special case for re-entrant calls to pairwise next. the actual behavior is not
+            // important and this does not avoid any bugs (or does it?)
+            // the reason for having it is to make the behaviour equal to the python implementation
             Py_CLEAR(po->old);
             Py_DECREF(old);
+#ifdef Py_GIL_DISABLED
             Py_DECREF(it);
+#endif
             return NULL;
         }
     }
@@ -357,7 +366,9 @@ pairwise_next(pairwiseobject *po)
     if (new == NULL) {
         Py_CLEAR(po->it);
         Py_CLEAR(po->old);
+#ifdef Py_GIL_DISABLED
         Py_DECREF(it);
+#endif
         Py_DECREF(old);
         return NULL;
     }
@@ -387,7 +398,9 @@ pairwise_next(pairwiseobject *po)
 
     Py_XSETREF(po->old, new);
     Py_DECREF(old); // instead of the decref here we could borrow the reference above
+#ifdef Py_GIL_DISABLED
     Py_DECREF(it);
+#endif
     return result;
 }
 
