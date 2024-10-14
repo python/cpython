@@ -204,7 +204,7 @@
             _PyStackRef value;
             oparg = CURRENT_OPARG();
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            value = _PyStackRef_FromPyObjectWithCount(GETITEM(FRAME_CO_CONSTS, oparg));
+            value = _PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             stack_pointer[0] = value;
             stack_pointer += 1;

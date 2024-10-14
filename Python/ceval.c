@@ -137,38 +137,53 @@
 
 #ifdef LLTRACE
 static void
+dump_item(_PyStackRef item)
+{
+    if (PyStackRef_IsNull(item)) {
+        printf("<NULL>");
+        return;
+    }
+    PyObject *obj = PyStackRef_AsPyObjectBorrow(item);
+    if (obj == NULL) {
+        printf("<nil>");
+        return;
+    }
+    if (
+        obj == Py_None
+        || PyBool_Check(obj)
+        || PyLong_CheckExact(obj)
+        || PyFloat_CheckExact(obj)
+        || PyUnicode_CheckExact(obj)
+    ) {
+        if (PyObject_Print(obj, stdout, 0) == 0) {
+            return;
+        }
+        PyErr_Clear();
+    }
+    // Don't call __repr__(), it might recurse into the interpreter.
+    printf("<%s at %p>", Py_TYPE(obj)->tp_name, (void *)(item.bits));
+}
+
+static void
 dump_stack(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
 {
+    _PyStackRef *locals_base = _PyFrame_GetLocalsArray(frame);
     _PyStackRef *stack_base = _PyFrame_Stackbase(frame);
     PyObject *exc = PyErr_GetRaisedException();
+    printf("    locals=[");
+    for (_PyStackRef *ptr = locals_base; ptr < stack_base; ptr++) {
+        if (ptr != locals_base) {
+            printf(", ");
+        }
+        dump_item(*ptr);
+    }
+    printf("]\n");
     printf("    stack=[");
     for (_PyStackRef *ptr = stack_base; ptr < stack_pointer; ptr++) {
         if (ptr != stack_base) {
             printf(", ");
         }
-        if (PyStackRef_IsNull(*ptr)) {
-            printf("<NULL>");
-            continue;
-        }
-        PyObject *obj = PyStackRef_AsPyObjectBorrow(*ptr);
-        if (obj == NULL) {
-            printf("<nil>");
-            continue;
-        }
-        if (
-            obj == Py_None
-            || PyBool_Check(obj)
-            || PyLong_CheckExact(obj)
-            || PyFloat_CheckExact(obj)
-            || PyUnicode_CheckExact(obj)
-        ) {
-            if (PyObject_Print(obj, stdout, 0) == 0) {
-                continue;
-            }
-            PyErr_Clear();
-        }
-        // Don't call __repr__(), it might recurse into the interpreter.
-        printf("<%s at %p>", Py_TYPE(obj)->tp_name, (void *)(ptr->bits));
+        dump_item(*ptr);
     }
     printf("]\n");
     fflush(stdout);

@@ -256,7 +256,7 @@ dummy_func(
         }
 
         pure inst(LOAD_CONST, (-- value)) {
-            value = _PyStackRef_FromPyObjectWithCount(GETITEM(FRAME_CO_CONSTS, oparg));
+            value = _PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
         }
 
         replicate(8) inst(STORE_FAST, (value --)) {

@@ -4899,7 +4899,7 @@
             // _LOAD_CONST
             {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                value = _PyStackRef_FromPyObjectWithCount(GETITEM(FRAME_CO_CONSTS, oparg));
+                value = _PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             // _RETURN_VALUE_EVENT
@@ -5911,7 +5911,7 @@
             INSTRUCTION_STATS(LOAD_CONST);
             _PyStackRef value;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            value = _PyStackRef_FromPyObjectWithCount(GETITEM(FRAME_CO_CONSTS, oparg));
+            value = _PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -6971,7 +6971,7 @@
             // _LOAD_CONST
             {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                value = _PyStackRef_FromPyObjectWithCount(GETITEM(FRAME_CO_CONSTS, oparg));
+                value = _PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             // _RETURN_VALUE
