@@ -2435,8 +2435,6 @@ def main():
     parser.add_argument('-c', '--command', action='append', default=[], metavar='command', dest='commands',
                         help='pdb commands to execute as if given in a .pdbrc file')
     parser.add_argument('-m', metavar='module', dest='module')
-    parser.add_argument('args', nargs='*',
-                        help="when -m is not specified, the first arg is the script to debug")
 
     if len(sys.argv) == 1:
         # If no arguments were given (python -m pdb), print the whole help message.
@@ -2444,21 +2442,31 @@ def main():
         parser.print_help()
         sys.exit(2)
 
-    opts = parser.parse_args()
+    opts, args = parser.parse_known_args()
+
+    invalid_args = []
+    for arg in args:
+        if not arg.startswith('-'):
+            break
+        invalid_args.append(arg)
+
+    if invalid_args:
+        parser.error(f"unrecognized arguments: {' '.join(invalid_args)}")
+        sys.exit(2)
 
     if opts.module:
         file = opts.module
         target = _ModuleTarget(file)
     else:
-        if not opts.args:
+        if not args:
             parser.error("no module or script to run")
-        file = opts.args.pop(0)
+        file = args.pop(0)
         if file.endswith('.pyz'):
             target = _ZipTarget(file)
         else:
             target = _ScriptTarget(file)
 
-    sys.argv[:] = [file] + opts.args  # Hide "pdb.py" and pdb options from argument list
+    sys.argv[:] = [file] + args  # Hide "pdb.py" and pdb options from argument list
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
     # modified by the script being debugged. It's a bad idea when it was

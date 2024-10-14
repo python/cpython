@@ -3052,6 +3052,7 @@ class PdbTestCase(unittest.TestCase):
     def run_pdb_script(self, script, commands,
                        expected_returncode=0,
                        extra_env=None,
+                       script_args=None,
                        pdbrc=None,
                        remove_home=False):
         """Run 'script' lines with pdb and the pdb 'commands'."""
@@ -3069,7 +3070,9 @@ class PdbTestCase(unittest.TestCase):
         if remove_home:
             homesave = os.environ.pop('HOME', None)
         try:
-            stdout, stderr = self._run_pdb([filename], commands, expected_returncode, extra_env)
+            if script_args is None:
+                script_args = []
+            stdout, stderr = self._run_pdb([filename] + script_args, commands, expected_returncode, extra_env)
         finally:
             if homesave is not None:
                 os.environ['HOME'] = homesave
@@ -3507,6 +3510,19 @@ def bœr():
 
         stdout, _ = self._run_pdb(["-m", "calendar", "1"], commands)
         self.assertIn("December", stdout)
+
+    def test_run_script_with_args(self):
+        script = """
+            import sys
+            print(sys.argv[1:])
+        """
+        commands = """
+            continue
+            quit
+        """
+
+        stdout, stderr = self.run_pdb_script(script, commands, script_args=["--bar", "foo"])
+        self.assertIn("['--bar', 'foo']", stdout)
 
     def test_breakpoint(self):
         script = """
