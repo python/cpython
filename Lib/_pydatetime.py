@@ -1478,7 +1478,7 @@ class time:
         """Total seconds in the time."""
         return ((self.hour * 3600 + self.minute * 60 + self.second) * 10**6 +
                 self.microsecond) / 10**6
-    
+
     # Standard conversions, __hash__ (and helpers)
 
     # Comparisons of time objects with other.
