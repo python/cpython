@@ -737,7 +737,9 @@
             _PyStackRef left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
+            #ifndef NDEBUG
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            #endif
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             int next_oparg;
             #if TIER_ONE
