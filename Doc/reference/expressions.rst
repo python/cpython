@@ -33,8 +33,7 @@ implementation for built-in types works as follows:
 
 * If both arguments are complex numbers, no conversion is performed;
 
-* otherwise, if either argument is a complex or a floating-point number, the
-  other is converted to a floating-point number;
+* if either argument is a complex or a floating-point number, the other is converted to a floating-point number;
 
 * otherwise, both must be integers and no conversion is necessary.
 
