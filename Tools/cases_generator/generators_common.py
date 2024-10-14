@@ -367,8 +367,8 @@ class Emitter:
         inst: Instruction | None
     ) -> bool:
         """Replace the INSTRUCTION_SIZE macro with the size of the current instruction."""
-        assert inst is not None, "INSTRUCTION_SIZE requires instruction to be passed"
-        params = dataclasses.asdict(tkn) | {"text": str(inst.size)}
+        size = inst.size if inst else 1 + uop.size
+        params = dataclasses.asdict(tkn) | {"text": str(size)}
         self.out.emit(Token(**params))
         return True
 
