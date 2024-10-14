@@ -1,0 +1,1 @@
+Remove :c:macro:`Py_TPFLAGS_HAVE_FINALIZE` macro.
