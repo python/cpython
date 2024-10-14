@@ -1,5 +1,5 @@
-:mod:`socket` --- Low-level networking interface
-================================================
+:mod:`!socket` --- Low-level networking interface
+=================================================
 
 .. module:: socket
    :synopsis: Low-level networking interface.
@@ -413,14 +413,14 @@ Constants
       ``TCP_USER_TIMEOUT``, ``TCP_CONGESTION`` were added.
 
    .. versionchanged:: 3.6.5
-      On Windows, ``TCP_FASTOPEN``, ``TCP_KEEPCNT`` appear if run-time Windows
-      supports.
+      Added support for ``TCP_FASTOPEN``, ``TCP_KEEPCNT`` on Windows platforms
+      when available.
 
    .. versionchanged:: 3.7
       ``TCP_NOTSENT_LOWAT`` was added.
 
-      On Windows, ``TCP_KEEPIDLE``, ``TCP_KEEPINTVL`` appear if run-time Windows
-      supports.
+      Added support for ``TCP_KEEPIDLE``, ``TCP_KEEPINTVL`` on Windows platforms
+      when available.
 
    .. versionchanged:: 3.10
       ``IP_RECVTOS`` was added.
@@ -449,6 +449,14 @@ Constants
       Added ``SO_BINDTOIFINDEX``. On Linux this constant can be used in the
       same way that ``SO_BINDTODEVICE`` is used, but with the index of a
       network interface instead of its name.
+
+   .. versionchanged:: 3.14
+      Added missing ``IP_RECVERR``, ``IP_RECVTTL``, and ``IP_RECVORIGDSTADDR``
+      on Linux.
+
+   .. versionchanged:: 3.14
+      Added support for ``TCP_QUICKACK`` on Windows platforms when available.
+
 
 .. data:: AF_CAN
           PF_CAN
@@ -700,6 +708,13 @@ Constants
 
    .. versionadded:: 3.12
 
+.. data:: SHUT_RD
+          SHUT_WR
+          SHUT_RDWR
+
+   These constants are used by the :meth:`~socket.socket.shutdown` method of socket objects.
+
+   .. availability:: not WASI.
 
 Functions
 ^^^^^^^^^
@@ -729,7 +744,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    of :meth:`socket.getpeername` but not the actual OS resource.  Unlike
    :func:`socket.fromfd`, *fileno* will return the same socket and not a
    duplicate. This may help close a detached socket using
-   :meth:`socket.close()`.
+   :meth:`socket.close`.
 
    The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
 
@@ -1265,7 +1280,7 @@ The :mod:`socket` module also offers various network-related services:
 
    .. audit-event:: socket.sethostname name socket.sethostname
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Android.
 
    .. versionadded:: 3.3
 
@@ -1408,7 +1423,7 @@ to sockets.
 .. method:: socket.close()
 
    Mark the socket closed.  The underlying system resource (e.g. a file
-   descriptor) is also closed when all file objects from :meth:`makefile()`
+   descriptor) is also closed when all file objects from :meth:`makefile`
    are closed.  Once that happens, all future operations on the socket
    object will fail. The remote end will receive no more data (after
    queued data is flushed).
@@ -1423,10 +1438,10 @@ to sockets.
 
    .. note::
 
-      :meth:`close()` releases the resource associated with a connection but
+      :meth:`close` releases the resource associated with a connection but
       does not necessarily close the connection immediately.  If you want
-      to close the connection in a timely fashion, call :meth:`shutdown()`
-      before :meth:`close()`.
+      to close the connection in a timely fashion, call :meth:`shutdown`
+      before :meth:`close`.
 
 
 .. method:: socket.connect(address)
@@ -1589,7 +1604,8 @@ to sockets.
    Return a :term:`file object` associated with the socket.  The exact returned
    type depends on the arguments given to :meth:`makefile`.  These arguments are
    interpreted the same way as by the built-in :func:`open` function, except
-   the only supported *mode* values are ``'r'`` (default), ``'w'`` and ``'b'``.
+   the only supported *mode* values are ``'r'`` (default), ``'w'``, ``'b'``, or
+   a combination of those.
 
    The socket must be in blocking mode; it can have a timeout, but the file
    object's internal buffer may end up in an inconsistent state if a timeout
@@ -1921,7 +1937,7 @@ to sockets.
 .. method:: socket.settimeout(value)
 
    Set a timeout on blocking socket operations.  The *value* argument can be a
-   nonnegative floating point number expressing seconds, or ``None``.
+   nonnegative floating-point number expressing seconds, or ``None``.
    If a non-zero value is given, subsequent socket operations will raise a
    :exc:`timeout` exception if the timeout period *value* has elapsed before
    the operation has completed.  If zero is given, the socket is put in
@@ -2034,7 +2050,7 @@ can be changed by calling :func:`setdefaulttimeout`.
    in non-blocking mode.  Also, the blocking and timeout modes are shared between
    file descriptors and socket objects that refer to the same network endpoint.
    This implementation detail can have visible consequences if e.g. you decide
-   to use the :meth:`~socket.fileno()` of a socket.
+   to use the :meth:`~socket.fileno` of a socket.
 
 Timeouts and the ``connect`` method
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

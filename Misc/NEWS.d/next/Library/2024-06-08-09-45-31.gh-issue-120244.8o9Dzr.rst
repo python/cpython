@@ -1,0 +1,1 @@
+Fix memory leak in :func:`re.sub` when the replacement string contains backreferences.

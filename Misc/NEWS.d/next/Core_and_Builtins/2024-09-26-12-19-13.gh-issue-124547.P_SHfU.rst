@@ -1,0 +1,3 @@
+When deallocating an object with inline values whose ``__dict__`` is still
+live: if memory allocation for the inline values fails, clear the
+dictionary. Prevents an interpreter crash.

@@ -1,5 +1,5 @@
-:mod:`logging` --- Logging facility for Python
-==============================================
+:mod:`!logging` --- Logging facility for Python
+===============================================
 
 .. module:: logging
    :synopsis: Flexible event logging system for applications.
@@ -109,11 +109,11 @@ The ``name`` is potentially a period-separated hierarchical value, like
 Loggers that are further down in the hierarchical list are children of loggers
 higher up in the list.  For example, given a logger with a name of ``foo``,
 loggers with names of ``foo.bar``, ``foo.bar.baz``, and ``foo.bam`` are all
-descendants of ``foo``.  The logger name hierarchy is analogous to the Python
-package hierarchy, and identical to it if you organise your loggers on a
-per-module basis using the recommended construction
-``logging.getLogger(__name__)``.  That's because in a module, ``__name__``
-is the module's name in the Python package namespace.
+descendants of ``foo``.  In addition, all loggers are descendants of the root
+logger. The logger name hierarchy is analogous to the Python package hierarchy,
+and identical to it if you organise your loggers on a per-module basis using
+the recommended construction ``logging.getLogger(__name__)``.  That's because
+in a module, ``__name__`` is the module's name in the Python package namespace.
 
 
 .. class:: Logger
@@ -304,7 +304,8 @@ is the module's name in the Python package namespace.
       parameter mirrors the equivalent one in the :mod:`warnings` module.
 
       The fourth keyword argument is *extra* which can be used to pass a
-      dictionary which is used to populate the __dict__ of the :class:`LogRecord`
+      dictionary which is used to populate the :attr:`~object.__dict__` of the
+      :class:`LogRecord`
       created for the logging event with user-defined attributes. These custom
       attributes can then be used as you like. For example, they could be
       incorporated into logged messages. For example::
@@ -352,10 +353,6 @@ is the module's name in the Python package namespace.
       .. versionchanged:: 3.8
          The *stacklevel* parameter was added.
 
-      .. versionchanged:: 3.13
-         Remove the undocumented ``warn()`` method which was an alias to the
-         :meth:`warning` method.
-
 
    .. method:: Logger.info(msg, *args, **kwargs)
 
@@ -367,6 +364,10 @@ is the module's name in the Python package namespace.
 
       Logs a message with level :const:`WARNING` on this logger. The arguments are
       interpreted as for :meth:`debug`.
+
+      .. note:: There is an obsolete method ``warn`` which is functionally
+         identical to ``warning``. As ``warn`` is deprecated, please do not use
+         it - use ``warning`` instead.
 
    .. method:: Logger.error(msg, *args, **kwargs)
 
@@ -1003,7 +1004,7 @@ the options available to you.
 |                |                         | portion of the time).                         |
 +----------------+-------------------------+-----------------------------------------------+
 | created        | ``%(created)f``         | Time when the :class:`LogRecord` was created  |
-|                |                         | (as returned by :func:`time.time`).           |
+|                |                         | (as returned by :func:`time.time_ns` / 1e9).  |
 +----------------+-------------------------+-----------------------------------------------+
 | exc_info       | You shouldn't need to   | Exception tuple (à la ``sys.exc_info``) or,   |
 |                | format this yourself.   | if no exception has occurred, ``None``.       |
@@ -1098,11 +1099,11 @@ information into logging calls. For a usage example, see the section on
 
    .. attribute:: manager
 
-      Delegates to the underlying :attr:`!manager`` on *logger*.
+      Delegates to the underlying :attr:`!manager` on *logger*.
 
    .. attribute:: _log
 
-      Delegates to the underlying :meth:`!_log`` method on *logger*.
+      Delegates to the underlying :meth:`!_log` method on *logger*.
 
    In addition to the above, :class:`LoggerAdapter` supports the following
    methods of :class:`Logger`: :meth:`~Logger.debug`, :meth:`~Logger.info`,
@@ -1123,11 +1124,6 @@ information into logging calls. For a usage example, see the section on
 
       Attribute :attr:`!manager` and method :meth:`!_log` were added, which
       delegate to the underlying logger and allow adapters to be nested.
-
-   .. versionchanged:: 3.13
-
-      Remove the undocumented :meth:`!warn`` method which was an alias to the
-      :meth:`!warning` method.
 
    .. versionchanged:: 3.13
 
@@ -1157,10 +1153,12 @@ functions.
 
 .. function:: getLogger(name=None)
 
-   Return a logger with the specified name or, if name is ``None``, return a
-   logger which is the root logger of the hierarchy. If specified, the name is
-   typically a dot-separated hierarchical name like *'a'*, *'a.b'* or *'a.b.c.d'*.
-   Choice of these names is entirely up to the developer who is using logging.
+   Return a logger with the specified name or, if name is ``None``, return the
+   root logger of the hierarchy. If specified, the name is typically a
+   dot-separated hierarchical name like *'a'*, *'a.b'* or *'a.b.c.d'*. Choice
+   of these names is entirely up to the developer who is using logging, though
+   it is recommended that ``__name__`` be used unless you have a specific
+   reason for not doing that, as mentioned in :ref:`logger`.
 
    All calls to this function with a given name return the same logger instance.
    This means that logger instances never need to be passed between different parts
@@ -1204,7 +1202,7 @@ functions.
    most programs will want to carefully and explicitly control the logging
    configuration, and should therefore prefer creating a module-level logger and
    calling :meth:`Logger.debug` (or other level-specific methods) on it, as
-   described at the beginnning of this documentation.
+   described at the beginning of this documentation.
 
 
 .. function:: info(msg, *args, **kwargs)
@@ -1221,10 +1219,6 @@ functions.
    .. note:: There is an obsolete function ``warn`` which is functionally
       identical to ``warning``. As ``warn`` is deprecated, please do not use
       it - use ``warning`` instead.
-
-   .. versionchanged:: 3.13
-      Remove the undocumented ``warn()`` function which was an alias to the
-      :func:`warning` function.
 
 
 .. function:: error(msg, *args, **kwargs)

@@ -25,7 +25,6 @@
 #include <stdbool.h>
 #include "Python.h"
 #include "pycore_hashtable.h"
-#include "pycore_pyhash.h"        // _Py_HashBytes()
 #include "pycore_strhex.h"        // _Py_strhex()
 #include "hashlib.h"
 
@@ -186,7 +185,7 @@ static const py_hashentry_t py_hashes[] = {
 
 static Py_uhash_t
 py_hashentry_t_hash_name(const void *key) {
-    return _Py_HashBytes(key, strlen((const char *)key));
+    return Py_HashBuffer(key, strlen((const char *)key));
 }
 
 static int
@@ -2289,6 +2288,7 @@ static PyModuleDef_Slot hashlib_slots[] = {
     {Py_mod_exec, hashlib_init_constructors},
     {Py_mod_exec, hashlib_exception},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

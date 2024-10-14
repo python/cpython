@@ -6,6 +6,7 @@ machinery = test_util.import_importlib('importlib.machinery')
 
 import os.path
 import sys
+from test import support
 from test.support import import_helper
 from test.support import os_helper
 import types
@@ -435,6 +436,45 @@ class StartupTests:
 (Frozen_StartupTests,
  Source_StartupTests
  ) = test_util.test_both(StartupTests, machinery=machinery)
+
+
+class TestModuleAll(unittest.TestCase):
+    def test_machinery(self):
+        extra = (
+            # from importlib._bootstrap and importlib._bootstrap_external
+            'AppleFrameworkLoader',
+            'BYTECODE_SUFFIXES',
+            'BuiltinImporter',
+            'DEBUG_BYTECODE_SUFFIXES',
+            'EXTENSION_SUFFIXES',
+            'ExtensionFileLoader',
+            'FileFinder',
+            'FrozenImporter',
+            'ModuleSpec',
+            'NamespaceLoader',
+            'OPTIMIZED_BYTECODE_SUFFIXES',
+            'PathFinder',
+            'SOURCE_SUFFIXES',
+            'SourceFileLoader',
+            'SourcelessFileLoader',
+            'WindowsRegistryFinder',
+        )
+        support.check__all__(self, machinery['Source'], extra=extra)
+
+    def test_util(self):
+        extra = (
+            # from importlib.abc, importlib._bootstrap
+            # and importlib._bootstrap_external
+            'Loader',
+            'MAGIC_NUMBER',
+            'cache_from_source',
+            'decode_source',
+            'module_from_spec',
+            'source_from_cache',
+            'spec_from_file_location',
+            'spec_from_loader',
+        )
+        support.check__all__(self, util['Source'], extra=extra)
 
 
 if __name__ == '__main__':

@@ -16,8 +16,8 @@ Features and minimum versions required to build CPython:
 
 * On Windows, Microsoft Visual Studio 2017 or later is required.
 
-* Support for `IEEE 754 <https://en.wikipedia.org/wiki/IEEE_754>`_ floating
-  point numbers and `floating point Not-a-Number (NaN)
+* Support for `IEEE 754 <https://en.wikipedia.org/wiki/IEEE_754>`_
+  floating-point numbers and `floating-point Not-a-Number (NaN)
   <https://en.wikipedia.org/wiki/NaN#Floating_point>`_.
 
 * Support for threads.
@@ -29,7 +29,7 @@ Features and minimum versions required to build CPython:
 
 * Tcl/Tk 8.5.12 for the :mod:`tkinter` module.
 
-* Autoconf 2.71 and aclocal 1.16.4 are required to regenerate the
+* Autoconf 2.71 and aclocal 1.16.5 are required to regenerate the
   :file:`configure` script.
 
 .. versionchanged:: 3.1
@@ -56,7 +56,7 @@ Features and minimum versions required to build CPython:
    Tcl/Tk version 8.5.12 is now required for the :mod:`tkinter` module.
 
 .. versionchanged:: 3.13
-   Autoconf 2.71, aclocal 1.16.4 and SQLite 3.15.2 are now required.
+   Autoconf 2.71, aclocal 1.16.5 and SQLite 3.15.2 are now required.
 
 See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
 support".
@@ -183,12 +183,6 @@ General Options
 
    See :envvar:`PYTHONCOERCECLOCALE` and the :pep:`538`.
 
-.. option:: --without-freelists
-
-   Disable all freelists except the empty tuple singleton.
-
-   .. versionadded:: 3.11
-
 .. option:: --with-platlibdir=DIRNAME
 
    Python library directory name (default is ``lib``).
@@ -299,7 +293,7 @@ General Options
    Defines the ``Py_GIL_DISABLED`` macro and adds ``"t"`` to
    :data:`sys.abiflags`.
 
-   See :pep:`703` "Making the Global Interpreter Lock Optional in CPython".
+   See :ref:`whatsnew313-free-threaded-cpython` for more detail.
 
    .. versionadded:: 3.13
 
@@ -389,6 +383,17 @@ Options for third-party dependencies
    C compiler and linker flags for ``libffi``, used by :mod:`ctypes` module,
    overriding ``pkg-config``.
 
+.. option:: LIBMPDEC_CFLAGS
+.. option:: LIBMPDEC_LIBS
+
+   C compiler and linker flags for ``libmpdec``, used by :mod:`decimal` module,
+   overriding ``pkg-config``.
+
+   .. note::
+
+      These environment variables have no effect unless
+      :option:`--with-system-libmpdec` is specified.
+
 .. option:: LIBLZMA_CFLAGS
 .. option:: LIBLZMA_LIBS
 
@@ -416,7 +421,7 @@ Options for third-party dependencies
 .. option:: PANEL_CFLAGS
 .. option:: PANEL_LIBS
 
-   C compiler and Linker flags for PANEL, overriding ``pkg-config``.
+   C compiler and linker flags for PANEL, overriding ``pkg-config``.
 
    C compiler and linker flags for ``libpanel`` or ``libpanelw``, used by
    :mod:`curses.panel` module, overriding ``pkg-config``.
@@ -518,6 +523,15 @@ also be used to improve performance.
    GCC is used: add ``-fno-semantic-interposition`` to the compiler and linker
    flags.
 
+   .. note::
+
+      During the build, you may encounter compiler warnings about
+      profile data not being available for some source files.
+      These warnings are harmless, as only a subset of the code is exercised
+      during profile data acquisition.
+      To disable these warnings on Clang, manually suppress them by adding
+      ``-Wno-profile-instr-unprofiled`` to :envvar:`CFLAGS`.
+
    .. versionadded:: 3.6
 
    .. versionchanged:: 3.10
@@ -595,7 +609,7 @@ also be used to improve performance.
 
 .. option:: --without-mimalloc
 
-   Disable the fast mimalloc allocator :ref:`mimalloc <mimalloc>`
+   Disable the fast :ref:`mimalloc <mimalloc>` allocator
    (enabled by default).
 
    See also :envvar:`PYTHONMALLOC` environment variable.
@@ -784,10 +798,19 @@ Libraries options
 
 .. option:: --with-system-libmpdec
 
-   Build the ``_decimal`` extension module using an installed ``mpdec``
-   library, see the :mod:`decimal` module (default is no).
+   Build the ``_decimal`` extension module using an installed ``mpdecimal``
+   library, see the :mod:`decimal` module (default is yes).
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.13
+      Default to using the installed ``mpdecimal`` library.
+
+   .. deprecated-removed:: 3.13 3.15
+      A copy of the ``mpdecimal`` library sources will no longer be distributed
+      with Python 3.15.
+
+   .. seealso:: :option:`LIBMPDEC_CFLAGS` and :option:`LIBMPDEC_LIBS`.
 
 .. option:: --with-readline=readline|editline
 
@@ -878,6 +901,38 @@ Security Options
       The settings ``python`` and *STRING* also set TLS 1.2 as minimum
       protocol version.
 
+.. option:: --disable-safety
+
+   Disable compiler options that are `recommended by OpenSSF`_ for security reasons with no performance overhead.
+   If this option is not enabled, CPython will be built based on safety compiler options with no slow down.
+   When this option is enabled, CPython will not be built with the compiler options listed below.
+
+   The following compiler options are disabled with :option:`!--disable-safety`:
+
+   * `-fstack-protector-strong`_: Enable run-time checks for stack-based buffer overflows.
+   * `-Wtrampolines`_: Enable warnings about trampolines that require executable stacks.
+
+   .. _recommended by OpenSSF: https://github.com/ossf/wg-best-practices-os-developers/blob/main/docs/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.md
+   .. _-fstack-protector-strong: https://github.com/ossf/wg-best-practices-os-developers/blob/main/docs/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.md#enable-run-time-checks-for-stack-based-buffer-overflows
+   .. _-Wtrampolines: https://github.com/ossf/wg-best-practices-os-developers/blob/main/docs/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.md#enable-warning-about-trampolines-that-require-executable-stacks
+
+   .. versionadded:: 3.14
+
+.. option:: --enable-slower-safety
+
+   Enable compiler options that are `recommended by OpenSSF`_ for security reasons which require overhead.
+   If this option is not enabled, CPython will not be built based on safety compiler options which performance impact.
+   When this option is enabled, CPython will be built with the compiler options listed below.
+
+   The following compiler options are enabled with :option:`!--enable-slower-safety`:
+
+   * `-D_FORTIFY_SOURCE=3`_: Fortify sources with compile- and run-time checks for unsafe libc usage and buffer overflows.
+
+   .. _-D_FORTIFY_SOURCE=3: https://github.com/ossf/wg-best-practices-os-developers/blob/main/docs/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.md#fortify-sources-for-unsafe-libc-usage-and-buffer-overflows
+
+   .. versionadded:: 3.14
+
+
 macOS Options
 -------------
 
@@ -915,6 +970,17 @@ See :source:`Mac/README.rst`.
 
    Specify the name for the python framework on macOS only valid when
    :option:`--enable-framework` is set (default: ``Python``).
+
+.. option:: --with-app-store-compliance
+.. option:: --with-app-store-compliance=PATCH-FILE
+
+   The Python standard library contains strings that are known to trigger
+   automated inspection tool errors when submitted for distribution by
+   the macOS and iOS App Stores. If enabled, this option will apply the list of
+   patches that are known to correct app store compliance. A custom patch
+   file can also be specified. This option is disabled by default.
+
+   .. versionadded:: 3.13
 
 iOS Options
 -----------
@@ -1061,7 +1127,7 @@ Remove built files.
 make distclean
 ^^^^^^^^^^^^^^
 
-In addition to the the work done by ``make clean``, remove files
+In addition to the work done by ``make clean``, remove files
 created by the configure script.  ``configure`` will have to be run
 before building again. [#]_
 

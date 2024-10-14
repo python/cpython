@@ -1,3 +1,3 @@
-from _collections_abc import *
-from _collections_abc import __all__
-from _collections_abc import _CallableGenericAlias
+import _collections_abc
+import sys
+sys.modules[__name__] = _collections_abc

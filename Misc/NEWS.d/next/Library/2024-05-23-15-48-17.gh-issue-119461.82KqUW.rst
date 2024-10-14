@@ -1,0 +1,1 @@
+Add ``socket.VMADDR_CID_LOCAL`` constant. Patch by Victor Stinner.

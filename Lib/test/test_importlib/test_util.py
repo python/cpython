@@ -27,7 +27,7 @@ try:
 except ImportError:
     _testmultiphase = None
 try:
-    import _xxsubinterpreters as _interpreters
+    import _interpreters
 except ModuleNotFoundError:
     _interpreters = None
 

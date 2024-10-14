@@ -1,0 +1,5 @@
+Add three specializations for :opcode:`CALL_KW`:
+
+* :opcode:`!CALL_KW_PY` for calls to Python functions
+* :opcode:`!CALL_KW_BOUND_METHOD` for calls to bound methods
+* :opcode:`!CALL_KW_NON_PY` for all other calls

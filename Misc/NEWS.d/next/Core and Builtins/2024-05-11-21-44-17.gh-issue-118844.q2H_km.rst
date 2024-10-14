@@ -1,0 +1,1 @@
+Fix build failures when configuring with both ``--disable-gil`` and ``--enable-experimental-jit``.

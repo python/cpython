@@ -23,7 +23,8 @@ from test.support import (captured_stdout, captured_stderr,
                           is_emscripten, is_wasi,
                           requires_venv_with_pip, TEST_HOME_DIR,
                           requires_resource, copy_python_src_ignore)
-from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
+from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree,
+                                    TESTFN, FakePath)
 import unittest
 import venv
 from unittest.mock import patch, Mock
@@ -74,7 +75,7 @@ class BaseTest(unittest.TestCase):
             self.include = 'Include'
         else:
             self.bindir = 'bin'
-            self.lib = ('lib', 'python%d.%d' % sys.version_info[:2])
+            self.lib = ('lib', f'python{sysconfig._get_python_version_abi()}')
             self.include = 'include'
         executable = sys._base_executable
         self.exe = os.path.split(executable)[-1]
@@ -124,12 +125,12 @@ class BasicTest(BaseTest):
         self.run_with_capture(venv.create, self.env_dir)
         self._check_output_of_default_create()
 
-    def test_defaults_with_pathlib_path(self):
+    def test_defaults_with_pathlike(self):
         """
-        Test the create function with default arguments and a pathlib.Path path.
+        Test the create function with default arguments and a path-like path.
         """
         rmtree(self.env_dir)
-        self.run_with_capture(venv.create, pathlib.Path(self.env_dir))
+        self.run_with_capture(venv.create, FakePath(self.env_dir))
         self._check_output_of_default_create()
 
     def _check_output_of_default_create(self):
@@ -503,6 +504,21 @@ class BasicTest(BaseTest):
         )
         self.assertEqual(out.strip(), '0')
 
+    @unittest.skipUnless(os.name == 'nt' and can_symlink(),
+                         'symlinks on Windows')
+    def test_failed_symlink(self):
+        """
+        Test handling of failed symlinks on Windows.
+        """
+        rmtree(self.env_dir)
+        env_dir = os.path.join(os.path.realpath(self.env_dir), 'venv')
+        with patch('os.symlink') as mock_symlink:
+            mock_symlink.side_effect = OSError()
+            builder = venv.EnvBuilder(clear=True, symlinks=True)
+            _, err = self.run_with_capture(builder.create, env_dir)
+            filepath_regex = r"'[A-Z]:\\\\(?:[^\\\\]+\\\\)*[^\\\\]+'"
+            self.assertRegex(err, rf"Unable to symlink {filepath_regex} to {filepath_regex}")
+
     @requireVenvCreate
     def test_multiprocessing(self):
         """
@@ -571,7 +587,7 @@ class BasicTest(BaseTest):
         rmtree(self.env_dir)
         bad_itempath = self.env_dir + os.pathsep
         self.assertRaises(ValueError, venv.create, bad_itempath)
-        self.assertRaises(ValueError, venv.create, pathlib.Path(bad_itempath))
+        self.assertRaises(ValueError, venv.create, FakePath(bad_itempath))
 
     @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
     @requireVenvCreate
@@ -592,7 +608,8 @@ class BasicTest(BaseTest):
         libdir = os.path.join(non_installed_dir, platlibdir, self.lib[1])
         os.makedirs(libdir)
         landmark = os.path.join(libdir, "os.py")
-        stdlib_zip = "python%d%d.zip" % sys.version_info[:2]
+        abi_thread = "t" if sysconfig.get_config_var("Py_GIL_DISABLED") else ""
+        stdlib_zip = f"python{sys.version_info.major}{sys.version_info.minor}{abi_thread}"
         zip_landmark = os.path.join(non_installed_dir,
                                     platlibdir,
                                     stdlib_zip)
@@ -744,6 +761,36 @@ class BasicTest(BaseTest):
         with self.assertRaises(FileNotFoundError):
             self.get_text_file_contents('.gitignore')
 
+    def test_venv_same_path(self):
+        same_path = venv.EnvBuilder._same_path
+        if sys.platform == 'win32':
+            # Case-insensitive, and handles short/long names
+            tests = [
+                (True, TESTFN, TESTFN),
+                (True, TESTFN.lower(), TESTFN.upper()),
+            ]
+            import _winapi
+            # ProgramFiles is the most reliable path that will have short/long
+            progfiles = os.getenv('ProgramFiles')
+            if progfiles:
+                tests = [
+                    *tests,
+                    (True, progfiles, progfiles),
+                    (True, _winapi.GetShortPathName(progfiles), _winapi.GetLongPathName(progfiles)),
+                ]
+        else:
+            # Just a simple case-sensitive comparison
+            tests = [
+                (True, TESTFN, TESTFN),
+                (False, TESTFN.lower(), TESTFN.upper()),
+            ]
+        for r, path1, path2 in tests:
+            with self.subTest(f"{path1}-{path2}"):
+                if r:
+                    self.assertTrue(same_path(path1, path2))
+                else:
+                    self.assertFalse(same_path(path1, path2))
+
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
     """Test venv module installation of pip."""
@@ -854,6 +901,14 @@ class EnsurePipTest(BaseTest):
         err = re.sub("^(WARNING: )?The directory .* or its parent directory "
                      "is not owned or is not writable by the current user.*$", "",
                      err, flags=re.MULTILINE)
+        # Ignore warning about missing optional module:
+        try:
+            import ssl
+        except ImportError:
+            err = re.sub(
+                "^WARNING: Disabling truststore since ssl support is missing$",
+                "",
+                err, flags=re.MULTILINE)
         self.assertEqual(err.rstrip(), "")
         # Being fairly specific regarding the expected behaviour for the
         # initial bundling phase in Python 3.4. If the output changes in

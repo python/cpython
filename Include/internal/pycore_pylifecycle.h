@@ -42,7 +42,6 @@ extern PyStatus _Py_HashRandomization_Init(const PyConfig *);
 
 extern PyStatus _PyGC_Init(PyInterpreterState *interp);
 extern PyStatus _PyAtExit_Init(PyInterpreterState *interp);
-extern int _Py_Deepfreeze_Init(void);
 
 /* Various internal finalizers */
 
@@ -58,7 +57,6 @@ extern void _PyWarnings_Fini(PyInterpreterState *interp);
 extern void _PyAST_Fini(PyInterpreterState *interp);
 extern void _PyAtExit_Fini(PyInterpreterState *interp);
 extern void _PyThread_FiniType(PyInterpreterState *interp);
-extern void _Py_Deepfreeze_Fini(void);
 extern void _PyArg_Fini(void);
 extern void _Py_FinalizeAllocatedBlocks(_PyRuntimeState *);
 

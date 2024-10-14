@@ -1,0 +1,2 @@
+Remove copy, deepcopy, and pickle from itertools. These had previously
+raised a DeprecationWarning since Python 3.12.

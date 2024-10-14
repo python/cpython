@@ -1,5 +1,5 @@
-:mod:`configparser` --- Configuration file parser
-=================================================
+:mod:`!configparser` --- Configuration file parser
+==================================================
 
 .. module:: configparser
    :synopsis: Configuration file parser.
@@ -54,6 +54,7 @@ can be customized by end users easily.
 
    import os
    os.remove("example.ini")
+   os.remove("override.ini")
 
 
 Quick Start
@@ -147,23 +148,28 @@ case-insensitive and stored in lowercase [1]_.
 It is possible to read several configurations into a single
 :class:`ConfigParser`, where the most recently added configuration has the
 highest priority. Any conflicting keys are taken from the more recent
-configuration while the previously existing keys are retained.
+configuration while the previously existing keys are retained. The example
+below reads in an ``override.ini`` file, which will override any conflicting
+keys from the ``example.ini`` file.
+
+.. code-block:: ini
+
+   [DEFAULT]
+   ServerAliveInterval = -1
 
 .. doctest::
 
-   >>> another_config = configparser.ConfigParser()
-   >>> another_config.read('example.ini')
-   ['example.ini']
-   >>> another_config['topsecret.server.example']['Port']
-   '50022'
-   >>> another_config.read_string("[topsecret.server.example]\nPort=48484")
-   >>> another_config['topsecret.server.example']['Port']
-   '48484'
-   >>> another_config.read_dict({"topsecret.server.example": {"Port": 21212}})
-   >>> another_config['topsecret.server.example']['Port']
-   '21212'
-   >>> another_config['topsecret.server.example']['ForwardX11']
-   'no'
+   >>> config_override = configparser.ConfigParser()
+   >>> config_override['DEFAULT'] = {'ServerAliveInterval': '-1'}
+   >>> with open('override.ini', 'w') as configfile:
+   ...     config_override.write(configfile)
+   ...
+   >>> config_override = configparser.ConfigParser()
+   >>> config_override.read(['example.ini', 'override.ini'])
+   ['example.ini', 'override.ini']
+   >>> print(config_override.get('DEFAULT', 'ServerAliveInterval'))
+   -1
+
 
 This behaviour is equivalent to a :meth:`ConfigParser.read` call with several
 files passed to the *filenames* parameter.
@@ -981,8 +987,33 @@ ConfigParser Objects
    When *converters* is given, it should be a dictionary where each key
    represents the name of a type converter and each value is a callable
    implementing the conversion from string to the desired datatype.  Every
-   converter gets its own corresponding :meth:`!get*()` method on the parser
+   converter gets its own corresponding :meth:`!get*` method on the parser
    object and section proxies.
+
+   It is possible to read several configurations into a single
+   :class:`ConfigParser`, where the most recently added configuration has the
+   highest priority. Any conflicting keys are taken from the more recent
+   configuration while the previously existing keys are retained. The example
+   below reads in an ``override.ini`` file, which will override any conflicting
+   keys from the ``example.ini`` file.
+
+   .. code-block:: ini
+
+      [DEFAULT]
+      ServerAliveInterval = -1
+
+   .. doctest::
+
+      >>> config_override = configparser.ConfigParser()
+      >>> config_override['DEFAULT'] = {'ServerAliveInterval': '-1'}
+      >>> with open('override.ini', 'w') as configfile:
+      ...     config_override.write(configfile)
+      ...
+      >>> config_override = configparser.ConfigParser()
+      >>> config_override.read(['example.ini', 'override.ini'])
+      ['example.ini', 'override.ini']
+      >>> print(config_override.get('DEFAULT', 'ServerAliveInterval'))
+      -1
 
    .. versionchanged:: 3.1
       The default *dict_type* is :class:`collections.OrderedDict`.
@@ -996,7 +1027,7 @@ ConfigParser Objects
       The *converters* argument was added.
 
    .. versionchanged:: 3.7
-      The *defaults* argument is read with :meth:`read_dict()`,
+      The *defaults* argument is read with :meth:`read_dict`,
       providing consistent behavior across the parser: non-string
       keys and values are implicitly converted to strings.
 
@@ -1153,7 +1184,7 @@ ConfigParser Objects
    .. method:: getfloat(section, option, *, raw=False, vars=None[, fallback])
 
       A convenience method which coerces the *option* in the specified *section*
-      to a floating point number.  See :meth:`get` for explanation of *raw*,
+      to a floating-point number.  See :meth:`get` for explanation of *raw*,
       *vars* and *fallback*.
 
 
@@ -1284,12 +1315,18 @@ RawConfigParser Objects
 
    .. method:: add_section(section)
 
-      Add a section named *section* to the instance.  If a section by the given
-      name already exists, :exc:`DuplicateSectionError` is raised.  If the
-      *default section* name is passed, :exc:`ValueError` is raised.
+      Add a section named *section* or :const:`UNNAMED_SECTION` to the instance.
+
+      If the given section already exists, :exc:`DuplicateSectionError` is
+      raised. If the *default section* name is passed, :exc:`ValueError` is
+      raised. If :const:`UNNAMED_SECTION` is passed and support is disabled,
+      :exc:`UnnamedSectionDisabledError` is raised.
 
       Type of *section* is not checked which lets users create non-string named
       sections.  This behaviour is unsupported and may cause internal errors.
+
+   .. versionchanged:: 3.14
+      Added support for :const:`UNNAMED_SECTION`.
 
 
    .. method:: set(section, option, value)
@@ -1375,7 +1412,6 @@ Exceptions
    Exception raised when attempting to parse a file which has no section
    headers.
 
-
 .. exception:: ParsingError
 
    Exception raised when errors occur attempting to parse a file.
@@ -1390,6 +1426,13 @@ Exceptions
    an indented line.
 
    .. versionadded:: 3.13
+
+.. exception:: UnnamedSectionDisabledError
+
+   Exception raised when attempting to use the
+   :const:`UNNAMED_SECTION` without enabling it.
+
+    .. versionadded:: 3.14
 
 .. rubric:: Footnotes
 

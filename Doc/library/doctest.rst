@@ -1,5 +1,5 @@
-:mod:`doctest` --- Test interactive Python examples
-===================================================
+:mod:`!doctest` --- Test interactive Python examples
+====================================================
 
 .. module:: doctest
    :synopsis: Test pieces of code within docstrings.
@@ -800,18 +800,18 @@ guarantee about output.  For example, when printing a set, Python doesn't
 guarantee that the element is printed in any particular order, so a test like ::
 
    >>> foo()
-   {"Hermione", "Harry"}
+   {"spam", "eggs"}
 
 is vulnerable!  One workaround is to do ::
 
-   >>> foo() == {"Hermione", "Harry"}
+   >>> foo() == {"spam", "eggs"}
    True
 
 instead.  Another is to do ::
 
    >>> d = sorted(foo())
    >>> d
-   ['Harry', 'Hermione']
+   ['eggs', 'spam']
 
 There are others, but you get the idea.
 

@@ -1,0 +1,3 @@
+:func:`os.getloadavg` may throw :exc:`OSError` when running regression tests
+under certain conditions (e.g. chroot). This error is now caught and
+ignored, since reporting load average is optional.

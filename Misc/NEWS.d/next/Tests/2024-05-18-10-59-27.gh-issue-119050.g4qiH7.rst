@@ -1,0 +1,2 @@
+regrtest test runner: Add XML support to the refleak checker (-R option).
+Patch by Victor Stinner.

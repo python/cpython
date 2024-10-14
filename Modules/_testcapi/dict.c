@@ -1,7 +1,6 @@
 #include "parts.h"
 #include "util.h"
 
-
 static PyObject *
 dict_containsstring(PyObject *self, PyObject *args)
 {
@@ -181,7 +180,6 @@ dict_popstring_null(PyObject *self, PyObject *args)
     NULLABLE(dict);
     RETURN_INT(PyDict_PopString(dict, key,  NULL));
 }
-
 
 static PyMethodDef test_methods[] = {
     {"dict_containsstring", dict_containsstring, METH_VARARGS},

@@ -1,0 +1,1 @@
+Ignore warnings on text completion inside REPL.

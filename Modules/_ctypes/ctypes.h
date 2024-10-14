@@ -2,8 +2,14 @@
 #   include <alloca.h>
 #endif
 
+#include <ffi.h>                  // FFI_TARGET_HAS_COMPLEX_TYPE
+
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
+
+#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
+#   include "../_complex.h"       // complex
+#endif
 
 #ifndef MS_WIN32
 #define max(a, b) ((a) > (b) ? (a) : (b))
@@ -101,21 +107,8 @@ get_module_state_by_def(PyTypeObject *cls)
     return get_module_state(mod);
 }
 
-static inline ctypes_state *
-get_module_state_by_def_final(PyTypeObject *cls)
-{
-    if (cls->tp_mro == NULL) {
-        return NULL;
-    }
-    PyObject *mod = PyType_GetModuleByDef(cls, &_ctypesmodule);
-    if (mod == NULL) {
-        PyErr_Clear();
-        return NULL;
-    }
-    return get_module_state(mod);
-}
 
-
+extern PyType_Spec pyctype_type_spec;
 extern PyType_Spec carg_spec;
 extern PyType_Spec cfield_spec;
 extern PyType_Spec cthunk_spec;
@@ -224,13 +217,6 @@ extern int PyObject_stginfo(PyObject *self, Py_ssize_t *psize, Py_ssize_t *palig
 
 extern struct fielddesc *_ctypes_get_fielddesc(const char *fmt);
 
-
-extern PyObject *
-PyCField_FromDesc(ctypes_state *st, PyObject *desc, Py_ssize_t index,
-                Py_ssize_t *pfield_size, int bitsize, int *pbitofs,
-                Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
-                int pack, int is_big_endian);
-
 extern PyObject *PyCData_AtAddress(ctypes_state *st, PyObject *type, void *buf);
 extern PyObject *PyCData_FromBytes(ctypes_state *st, PyObject *type, char *data, Py_ssize_t length);
 
@@ -262,16 +248,18 @@ struct fielddesc {
     GETFUNC getfunc_swapped;
 };
 
-typedef struct {
+typedef struct CFieldObject {
     PyObject_HEAD
     Py_ssize_t offset;
     Py_ssize_t size;
     Py_ssize_t index;                   /* Index into CDataObject's
                                        object array */
-    PyObject *proto;                    /* a type or NULL */
+    PyObject *proto;                    /* underlying ctype; must have StgInfo */
     GETFUNC getfunc;                    /* getter function if proto is NULL */
     SETFUNC setfunc;                    /* setter function if proto is NULL */
     int anonymous;
+
+    PyObject *name;                     /* exact PyUnicode */
 } CFieldObject;
 
 /****************************************************************
@@ -382,8 +370,6 @@ PyObject *_ctypes_callproc(ctypes_state *st,
 
 #define TYPEFLAG_ISPOINTER 0x100
 #define TYPEFLAG_HASPOINTER 0x200
-#define TYPEFLAG_HASUNION 0x400
-#define TYPEFLAG_HASBITFIELD 0x800
 
 #define DICTFLAG_FINAL 0x1000
 
@@ -402,6 +388,11 @@ struct tagPyCArgObject {
         double d;
         float f;
         void *p;
+#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
+        double complex C;
+        float complex E;
+        long double complex F;
+#endif
     } value;
     PyObject *obj;
     Py_ssize_t size; /* for the 'V' tag */
@@ -427,23 +418,13 @@ struct basespec {
     char *adr;
 };
 
-extern char basespec_string[];
-
 extern ffi_type *_ctypes_get_ffi_type(ctypes_state *st, PyObject *obj);
-
-extern char *_ctypes_conversion_encoding;
-extern char *_ctypes_conversion_errors;
-
 
 extern void _ctypes_free_closure(void *);
 extern void *_ctypes_alloc_closure(void);
 
 extern PyObject *PyCData_FromBaseObj(ctypes_state *st, PyObject *type,
                                      PyObject *base, Py_ssize_t index, char *adr);
-extern char *_ctypes_alloc_format_string(const char *prefix, const char *suffix);
-extern char *_ctypes_alloc_format_string_with_shape(int ndim,
-                                                const Py_ssize_t *shape,
-                                                const char *prefix, const char *suffix);
 
 extern int _ctypes_simple_instance(ctypes_state *st, PyObject *obj);
 
@@ -506,6 +487,27 @@ PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result)
         return _stginfo_from_type(state, (PyTypeObject *)obj, result);
     }
     return _stginfo_from_type(state, Py_TYPE(obj), result);
+}
+
+/* A variant of PyStgInfo_FromType that doesn't need the state,
+ * so it can be called from finalization functions when the module
+ * state is torn down.
+ */
+static inline StgInfo *
+_PyStgInfo_FromType_NoState(PyObject *type)
+{
+    PyTypeObject *PyCType_Type;
+    if (PyType_GetBaseByToken(Py_TYPE(type), &pyctype_type_spec, &PyCType_Type) < 0) {
+        return NULL;
+    }
+    if (PyCType_Type == NULL) {
+        PyErr_Format(PyExc_TypeError, "expected a ctypes type, got '%N'", type);
+        return NULL;
+    }
+
+    StgInfo *info = PyObject_GetTypeData(type, PyCType_Type);
+    Py_DECREF(PyCType_Type);
+    return info;
 }
 
 // Initialize StgInfo on a newly created type

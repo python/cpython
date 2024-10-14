@@ -1,0 +1,2 @@
+Fix issue with :func:`shutil.rmtree` where a :exc:`RecursionError` is raised
+on deep directory trees.

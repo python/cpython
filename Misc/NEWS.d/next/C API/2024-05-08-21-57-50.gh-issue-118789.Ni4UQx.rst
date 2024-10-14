@@ -1,0 +1,2 @@
+Add :c:func:`PyUnstable_Object_ClearWeakRefsNoCallbacks`, which clears
+weakrefs without calling their callbacks.

@@ -1,6 +1,7 @@
 "Test the functionality of Python classes implementing operators."
 
 import unittest
+from test.support import cpython_only, import_helper, script_helper
 
 testmeths = [
 
@@ -787,6 +788,19 @@ class ClassTests(unittest.TestCase):
             Type(i)
         self.assertEqual(calls, 100)
 
+    def test_specialization_class_call_doesnt_crash(self):
+        # gh-123185
+
+        class Foo:
+            def __init__(self, arg):
+                pass
+
+        for _ in range(8):
+            try:
+                Foo()
+            except:
+                pass
+
 
 from _testinternalcapi import has_inline_values
 
@@ -862,7 +876,93 @@ class TestInlineValues(unittest.TestCase):
         self.assertFalse(has_inline_values(c))
         self.check_100(c)
 
+    def test_bug_117750(self):
+        "Aborted on 3.13a6"
+        class C:
+            def __init__(self):
+                self.__dict__.clear()
 
+        obj = C()
+        self.assertEqual(obj.__dict__, {})
+        obj.foo = None # Aborted here
+        self.assertEqual(obj.__dict__, {"foo":None})
+
+    def test_store_attr_deleted_dict(self):
+        class Foo:
+            pass
+
+        f = Foo()
+        del f.__dict__
+        f.a = 3
+        self.assertEqual(f.a, 3)
+
+    def test_rematerialize_object_dict(self):
+        # gh-121860: rematerializing an object's managed dictionary after it
+        # had been deleted caused a crash.
+        class Foo: pass
+        f = Foo()
+        f.__dict__["attr"] = 1
+        del f.__dict__
+
+        # Using a str subclass is a way to trigger the re-materialization
+        class StrSubclass(str): pass
+        self.assertFalse(hasattr(f, StrSubclass("attr")))
+
+        # Changing the __class__ also triggers the re-materialization
+        class Bar: pass
+        f.__class__ = Bar
+        self.assertIsInstance(f, Bar)
+        self.assertEqual(f.__dict__, {})
+
+    def test_store_attr_type_cache(self):
+        """Verifies that the type cache doesn't provide a value which  is
+        inconsistent from the dict."""
+        class X:
+            def __del__(inner_self):
+                v = C.a
+                self.assertEqual(v, C.__dict__['a'])
+
+        class C:
+            a = X()
+
+        # prime the cache
+        C.a
+        C.a
+
+        # destructor shouldn't be able to see inconsistent state
+        C.a = X()
+        C.a = X()
+
+    @cpython_only
+    def test_detach_materialized_dict_no_memory(self):
+        # Skip test if _testcapi is not available:
+        import_helper.import_module('_testcapi')
+
+        code = """if 1:
+            import test.support
+            import _testcapi
+
+            class A:
+                def __init__(self):
+                    self.a = 1
+                    self.b = 2
+            a = A()
+            d = a.__dict__
+            with test.support.catch_unraisable_exception() as ex:
+                _testcapi.set_nomemory(0, 1)
+                del a
+                assert ex.unraisable.exc_type is MemoryError
+            try:
+                d["a"]
+            except KeyError:
+                pass
+            else:
+                assert False, "KeyError not raised"
+        """
+        rc, out, err = script_helper.assert_python_ok("-c", code)
+        self.assertEqual(rc, 0)
+        self.assertFalse(out, msg=out.decode('utf-8'))
+        self.assertFalse(err, msg=err.decode('utf-8'))
 
 if __name__ == '__main__':
     unittest.main()

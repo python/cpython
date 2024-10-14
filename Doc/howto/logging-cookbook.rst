@@ -1912,7 +1912,7 @@ Subclassing QueueHandler and QueueListener- a ``pynng`` example
 ---------------------------------------------------------------
 
 In a similar way to the above section, we can implement a listener and handler
-using `pynng <https://pypi.org/project/pynng/>`_, which is a Python binding to
+using :pypi:`pynng`, which is a Python binding to
 `NNG <https://nng.nanomsg.org/>`_, billed as a spiritual successor to ZeroMQ.
 The following snippets illustrate -- you can test them in an environment which has
 ``pynng`` installed. Just for variety, we present the listener first.
@@ -2950,7 +2950,7 @@ When run, this produces a file with exactly two lines:
 .. code-block:: none
 
     28/01/2015 07:21:23|INFO|Sample message|
-    28/01/2015 07:21:23|ERROR|ZeroDivisionError: integer division or modulo by zero|'Traceback (most recent call last):\n  File "logtest7.py", line 30, in main\n    x = 1 / 0\nZeroDivisionError: integer division or modulo by zero'|
+    28/01/2015 07:21:23|ERROR|ZeroDivisionError: division by zero|'Traceback (most recent call last):\n  File "logtest7.py", line 30, in main\n    x = 1 / 0\nZeroDivisionError: division by zero'|
 
 While the above treatment is simplistic, it points the way to how exception
 information can be formatted to your liking. The :mod:`traceback` module may be
@@ -3575,9 +3575,8 @@ A Qt GUI for logging
 
 A question that comes up from time to time is about how to log to a GUI
 application. The `Qt <https://www.qt.io/>`_ framework is a popular
-cross-platform UI framework with Python bindings using `PySide2
-<https://pypi.org/project/PySide2/>`_ or `PyQt5
-<https://pypi.org/project/PyQt5/>`_ libraries.
+cross-platform UI framework with Python bindings using :pypi:`PySide2`
+or :pypi:`PyQt5` libraries.
 
 The following example shows how to log to a Qt GUI. This introduces a simple
 ``QtHandler`` class which takes a callable, which should be a slot in the main
@@ -4023,7 +4022,7 @@ As you can see, this output isn't ideal. That's because the underlying code
 which writes to ``sys.stderr`` makes multiple writes, each of which results in a
 separate logged line (for example, the last three lines above). To get around
 this problem, you need to buffer things and only output log lines when newlines
-are seen. Let's use a slghtly better implementation of ``LoggerWriter``:
+are seen. Let's use a slightly better implementation of ``LoggerWriter``:
 
 .. code-block:: python
 

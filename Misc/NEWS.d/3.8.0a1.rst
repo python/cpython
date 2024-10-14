@@ -4,7 +4,7 @@
 .. release date: 2019-02-03
 .. section: Security
 
-[CVE-2019-5010] Fix a NULL pointer deref in ssl module. The cert parser did
+:cve:`2019-5010`: Fix a NULL pointer deref in ssl module. The cert parser did
 not handle CRL distribution points with empty DP or URI correctly. A
 malicious or buggy certificate can result into segfault. Vulnerability
 (TALOS-2018-0758) reported by Colin Read and Nicolas Edet of Cisco.
@@ -50,7 +50,7 @@ files or create network connections.
 .. nonce: Ua9jMv
 .. section: Security
 
-CVE-2018-14647: The C accelerated _elementtree module now initializes hash
+:cve:`2018-14647`: The C accelerated _elementtree module now initializes hash
 randomization salt from _Py_HashSecret instead of libexpat's default CSPRNG.
 
 ..
@@ -89,7 +89,7 @@ Fixed thread-safety of error handling in _ssl.
 .. nonce: TzSN4x
 .. section: Security
 
-Harden ssl module against LibreSSL CVE-2018-8970.
+Harden ssl module against LibreSSL :cve:`2018-8970`.
 X509_VERIFY_PARAM_set1_host() is called with an explicit namelen. A new test
 ensures that NULL bytes are not allowed.
 
@@ -111,7 +111,7 @@ Minimal fix to prevent buffer overrun in os.symlink on Windows
 
 Regexes in difflib and poplib were vulnerable to catastrophic backtracking.
 These regexes formed potential DOS vectors (REDOS). They have been
-refactored. This resolves CVE-2018-1060 and CVE-2018-1061. Patch by Jamie
+refactored. This resolves :cve:`2018-1060` and :cve:`2018-1061`. Patch by Jamie
 Davis.
 
 ..
@@ -224,7 +224,7 @@ positives from posix, socket, time, test_io, and test_faulthandler.
 .. nonce: 9vMWSP
 .. section: Core and Builtins
 
-Fix an assertion error in :func:`format` in debug build for floating point
+Fix an assertion error in :func:`format` in debug build for floating-point
 formatting with "n" format, zero padding and small width. Release build is
 not impacted. Patch by Karthikeyan Singaravelan.
 
@@ -625,7 +625,7 @@ Spytz.
 
 The C function ``property_descr_get()`` uses a "cached" tuple to optimize
 function calls. But this tuple can be discovered in debug mode with
-:func:`sys.getobjects()`. Remove the optimization, it's not really worth it
+:func:`sys.getobjects`. Remove the optimization, it's not really worth it
 and it causes 3 different crashes last years.
 
 ..
@@ -1406,8 +1406,8 @@ Fix potential memory leak in ``normalizestring()``.
 
 Change dict growth function from
 ``round_up_to_power_2(used*2+hashtable_size/2)`` to
-``round_up_to_power_2(used*3)``.  Previously, dict is shrinked only when
-``used == 0``. Now dict has more chance to be shrinked.
+``round_up_to_power_2(used*3)``.  Previously, dict is shrunk only when
+``used == 0``. Now dict has more chance to be shrunk.
 
 ..
 
@@ -2519,7 +2519,7 @@ non-Windows systems.
 .. nonce: dQS1ng
 .. section: Library
 
-Fix incorrect parsing of :class:`_io.IncrementalNewlineDecoder`'s
+Fix incorrect parsing of :class:`io.IncrementalNewlineDecoder`'s
 *translate* argument.
 
 ..
@@ -2850,8 +2850,8 @@ allow for tweaking of protocols and also to add support by default for
 .. nonce: 37IdsA
 .. section: Library
 
-Fixed integer overflow in the :meth:`~hashlib.shake.digest()` and
-:meth:`~hashlib.shake.hexdigest()` methods for the SHAKE algorithm in the
+Fixed integer overflow in the :meth:`~hashlib.shake.digest` and
+:meth:`~hashlib.shake.hexdigest` methods for the SHAKE algorithm in the
 :mod:`hashlib` module.
 
 ..
@@ -3211,10 +3211,10 @@ bytes objects. (microoptimization)
 .. nonce: i-F_E5
 .. section: Library
 
-Add :func:`~unittest.addModuleCleanup()` and
-:meth:`~unittest.TestCase.addClassCleanup()` to unittest to support cleanups
-for :func:`~unittest.setUpModule()` and
-:meth:`~unittest.TestCase.setUpClass()`. Patch by Lisa Roach.
+Add :func:`~unittest.addModuleCleanup` and
+:meth:`~unittest.TestCase.addClassCleanup` to unittest to support cleanups
+for :func:`~unittest.setUpModule` and
+:meth:`~unittest.TestCase.setUpClass`. Patch by Lisa Roach.
 
 ..
 
@@ -3458,7 +3458,7 @@ Running the :mod:`trace` module no longer creates the ``trace.cover`` file.
 .. section: Library
 
 Fix crash when an ``ABC``-derived class with invalid ``__subclasses__`` is
-passed as the second argument to :func:`issubclass()`. Patch by Alexey
+passed as the second argument to :func:`issubclass`. Patch by Alexey
 Izbyshev.
 
 ..
@@ -3664,7 +3664,7 @@ Add pure Python fallback for functools.reduce. Patch by Robert Wright.
 .. section: Library
 
 The default asyncio task class now always has a name which can be get or set
-using two new methods (:meth:`~asyncio.Task.get_name()` and
+using two new methods (:meth:`~asyncio.Task.get_name` and
 :meth:`~asyncio.Task.set_name`) and is visible in the :func:`repr` output.
 An initial name can also be set using the new ``name`` keyword argument to
 :func:`asyncio.create_task` or the
@@ -4152,12 +4152,12 @@ Convert content length to string before putting to header.
 :func:`~os.path.exists`, :func:`~os.path.lexists`, :func:`~os.path.isdir`,
 :func:`~os.path.isfile`, :func:`~os.path.islink`, and
 :func:`~os.path.ismount`, and :mod:`pathlib.Path` methods that return a
-boolean result like :meth:`~pathlib.Path.exists()`,
-:meth:`~pathlib.Path.is_dir()`, :meth:`~pathlib.Path.is_file()`,
-:meth:`~pathlib.Path.is_mount()`, :meth:`~pathlib.Path.is_symlink()`,
-:meth:`~pathlib.Path.is_block_device()`,
-:meth:`~pathlib.Path.is_char_device()`, :meth:`~pathlib.Path.is_fifo()`,
-:meth:`~pathlib.Path.is_socket()` now return ``False`` instead of raising
+boolean result like :meth:`~pathlib.Path.exists`,
+:meth:`~pathlib.Path.is_dir`, :meth:`~pathlib.Path.is_file`,
+:meth:`~pathlib.Path.is_mount`, :meth:`~pathlib.Path.is_symlink`,
+:meth:`~pathlib.Path.is_block_device`,
+:meth:`~pathlib.Path.is_char_device`, :meth:`~pathlib.Path.is_fifo`,
+:meth:`~pathlib.Path.is_socket` now return ``False`` instead of raising
 :exc:`ValueError` or its subclasses :exc:`UnicodeEncodeError` and
 :exc:`UnicodeDecodeError` for paths that contain characters or bytes
 unrepresentable at the OS level.
@@ -5269,7 +5269,7 @@ performance and smaller size compared to protocol 3 introduced in Python
 .. section: Library
 
 Improved error handling and fixed a reference leak in
-:func:`os.posix_spawn()`.
+:func:`os.posix_spawn`.
 
 ..
 
@@ -5857,7 +5857,7 @@ collections.ChainMap() preserves the order of the underlying mappings.
 .. nonce: -T77_c
 .. section: Library
 
-:func:`fnmatch.translate()` no longer produces patterns which contain set
+:func:`fnmatch.translate` no longer produces patterns which contain set
 operations. Sets starting with '[' or containing '--', '&&', '~~' or '||'
 will be interpreted differently in regular expressions in future versions.
 Currently they emit warnings. fnmatch.translate() now avoids producing
@@ -6282,7 +6282,7 @@ Add documentation about the new command line interface of the gzip module.
 .. nonce: YO9CYm
 .. section: Documentation
 
-chm document displays non-ASCII charaters properly on some MBCS Windows
+chm document displays non-ASCII characters properly on some MBCS Windows
 systems.
 
 ..
@@ -8051,7 +8051,7 @@ Update macOS 10.9+ installer to Tcl/Tk 8.6.8.
 .. nonce: K6jCVG
 .. section: macOS
 
-In :mod:`_scproxy`, drop the GIL when calling into ``SystemConfiguration``
+In :mod:`!_scproxy`, drop the GIL when calling into ``SystemConfiguration``
 to avoid deadlocks.
 
 ..

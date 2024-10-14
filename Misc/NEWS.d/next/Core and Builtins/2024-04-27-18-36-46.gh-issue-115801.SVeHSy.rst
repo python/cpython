@@ -1,0 +1,1 @@
+Raise ``TypeError`` when passing a string to :func:`difflib.unified_diff` and :func:`difflib.context_diff`.

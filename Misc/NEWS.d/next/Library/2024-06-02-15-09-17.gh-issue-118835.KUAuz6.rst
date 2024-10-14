@@ -1,0 +1,1 @@
+Fix _pyrepl crash when using custom prompt with ANSI escape codes.
