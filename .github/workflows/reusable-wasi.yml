@@ -1,3 +1,5 @@
+name: Reusable WASI
+
 on:
   workflow_call:
     inputs:

@@ -1,0 +1,1 @@
+Updated ``test_ttk`` to pass with Tcl/Tk 8.6.15.

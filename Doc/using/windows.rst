@@ -23,8 +23,9 @@ available for application-local distributions.
 
 As specified in :pep:`11`, a Python release only supports a Windows platform
 while Microsoft considers the platform under extended support. This means that
-Python |version| supports Windows 8.1 and newer. If you require Windows 7
-support, please install Python 3.8.
+Python |version| supports Windows 10 and newer. If you require Windows 7
+support, please install Python 3.8. If you require Windows 8.1 support,
+please install Python 3.12.
 
 There are a number of different installers available for Windows, each with
 certain benefits and downsides.
@@ -608,7 +609,7 @@ key features:
     Popular scientific modules (such as numpy, scipy and pandas) and the
     ``conda`` package manager.
 
-`Enthought Deployment Manager <https://www.enthought.com/edm/>`_
+`Enthought Deployment Manager <https://assets.enthought.com/downloads/edm/>`_
     "The Next Generation Python Environment and Package Manager".
 
     Previously Enthought provided Canopy, but it `reached end of life in 2016
@@ -1305,7 +1306,7 @@ shipped with PyWin32.  It is an embeddable IDE with a built-in debugger.
 
 .. seealso::
 
-   `Win32 How Do I...? <http://timgolden.me.uk/python/win32_how_do_i.html>`_
+   `Win32 How Do I...? <https://timgolden.me.uk/python/win32_how_do_i.html>`_
       by Tim Golden
 
    `Python and COM <https://www.boddie.org.uk/python/COM.html>`_

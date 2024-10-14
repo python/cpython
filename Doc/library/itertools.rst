@@ -58,7 +58,7 @@ Iterator                        Arguments                       Results         
 :func:`compress`                data, selectors                 (d[0] if s[0]), (d[1] if s[1]), ...                 ``compress('ABCDEF', [1,0,1,0,1,1]) → A C E F``
 :func:`dropwhile`               predicate, seq                  seq[n], seq[n+1], starting when predicate fails     ``dropwhile(lambda x: x<5, [1,4,6,3,8]) → 6 3 8``
 :func:`filterfalse`             predicate, seq                  elements of seq where predicate(elem) fails         ``filterfalse(lambda x: x<5, [1,4,6,3,8]) → 6 8``
-:func:`groupby`                 iterable[, key]                 sub-iterators grouped by value of key(v)            ``groupby(['A','B','ABC'], len) → (1, A B) (3, ABC)``
+:func:`groupby`                 iterable[, key]                 sub-iterators grouped by value of key(v)            ``groupby(['A','B','DEF'], len) → (1, A B) (3, DEF)``
 :func:`islice`                  seq, [start,] stop [, step]     elements from seq[start:stop:step]                  ``islice('ABCDEFG', 2, None) → C D E F G``
 :func:`pairwise`                iterable                        (p[0], p[1]), (p[1], p[2])                          ``pairwise('ABCDEFG') → AB BC CD DE EF FG``
 :func:`starmap`                 func, seq                       func(\*seq[0]), func(\*seq[1]), ...                 ``starmap(pow, [(2,5), (3,2), (10,3)]) → 32 9 1000``
@@ -93,7 +93,7 @@ Examples                                         Results
 Itertool Functions
 ------------------
 
-The following module functions all construct and return iterators. Some provide
+The following functions all construct and return iterators. Some provide
 streams of infinite length, so they should only be accessed by functions or
 loops that truncate the stream.
 
@@ -131,11 +131,12 @@ loops that truncate the stream.
                 total = function(total, element)
                 yield total
 
-    The *function* argument can be set to :func:`min` for a running
-    minimum, :func:`max` for a running maximum, or :func:`operator.mul`
-    for a running product.  `Amortization tables
-    <https://www.ramseysolutions.com/real-estate/amortization-schedule>`_
-    can be built by accumulating interest and applying payments:
+    To compute a running minimum, set *function* to :func:`min`.
+    For a running maximum, set *function* to :func:`max`.
+    Or for a running product, set *function* to :func:`operator.mul`.
+    To build an `amortization table
+    <https://www.ramseysolutions.com/real-estate/amortization-schedule>`_,
+    accumulate the interest and apply payments:
 
     .. doctest::
 
@@ -202,10 +203,10 @@ loops that truncate the stream.
 
 .. function:: chain(*iterables)
 
-   Make an iterator that returns elements from the first iterable until it is
-   exhausted, then proceeds to the next iterable, until all of the iterables are
-   exhausted.  Used for treating consecutive sequences as a single sequence.
-   Roughly equivalent to::
+   Make an iterator that returns elements from the first iterable until
+   it is exhausted, then proceeds to the next iterable, until all of the
+   iterables are exhausted.  This combines multiple data sources into a
+   single iterator.  Roughly equivalent to::
 
       def chain(*iterables):
           # chain('ABC', 'DEF') → A B C D E F
@@ -353,10 +354,12 @@ loops that truncate the stream.
 
       def cycle(iterable):
           # cycle('ABCD') → A B C D A B C D A B C D ...
+
           saved = []
           for element in iterable:
               yield element
               saved.append(element)
+
           while saved:
               for element in saved:
                   yield element
@@ -396,8 +399,10 @@ loops that truncate the stream.
 
       def filterfalse(predicate, iterable):
           # filterfalse(lambda x: x<5, [1,4,6,3,8]) → 6 8
+
           if predicate is None:
               predicate = bool
+
           for x in iterable:
               if not predicate(x):
                   yield x
@@ -474,7 +479,7 @@ loops that truncate the stream.
    If *start* is zero or ``None``, iteration starts at zero.  Otherwise,
    elements from the iterable are skipped until *start* is reached.
 
-   If *stop* is ``None``, iteration continues until the iterable is
+   If *stop* is ``None``, iteration continues until the input is
    exhausted, if at all.  Otherwise, it stops at the specified position.
 
    If *step* is ``None``, the step defaults to one.  Elements are returned
@@ -520,8 +525,10 @@ loops that truncate the stream.
 
         def pairwise(iterable):
             # pairwise('ABCDEFG') → AB BC CD DE EF FG
+
             iterator = iter(iterable)
             a = next(iterator, None)
+
             for b in iterator:
                 yield a, b
                 a = b
@@ -584,7 +591,8 @@ loops that truncate the stream.
 
 .. function:: product(*iterables, repeat=1)
 
-   Cartesian product of input iterables.
+   `Cartesian product <https://en.wikipedia.org/wiki/Cartesian_product>`_
+   of the input iterables.
 
    Roughly equivalent to nested for-loops in a generator expression. For example,
    ``product(A, B)`` returns the same as ``((x,y) for x in A for y in B)``.
@@ -691,31 +699,62 @@ loops that truncate the stream.
 
         def tee(iterable, n=2):
             if n < 0:
-                raise ValueError('n must be >= 0')
-            iterator = iter(iterable)
-            shared_link = [None, None]
-            return tuple(_tee(iterator, shared_link) for _ in range(n))
+                raise ValueError
+            if n == 0:
+                return ()
+            iterator = _tee(iterable)
+            result = [iterator]
+            for _ in range(n - 1):
+                result.append(_tee(iterator))
+            return tuple(result)
 
-        def _tee(iterator, link):
-            try:
-                while True:
-                    if link[1] is None:
-                        link[0] = next(iterator)
-                        link[1] = [None, None]
-                    value, link = link
-                    yield value
-            except StopIteration:
-                return
+        class _tee:
 
-   Once a :func:`tee` has been created, the original *iterable* should not be
-   used anywhere else; otherwise, the *iterable* could get advanced without
-   the tee objects being informed.
+            def __init__(self, iterable):
+                it = iter(iterable)
+                if isinstance(it, _tee):
+                    self.iterator = it.iterator
+                    self.link = it.link
+                else:
+                    self.iterator = it
+                    self.link = [None, None]
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                link = self.link
+                if link[1] is None:
+                    link[0] = next(self.iterator)
+                    link[1] = [None, None]
+                value, self.link = link
+                return value
 
    When the input *iterable* is already a tee iterator object, all
    members of the return tuple are constructed as if they had been
    produced by the upstream :func:`tee` call.  This "flattening step"
    allows nested :func:`tee` calls to share the same underlying data
    chain and to have a single update step rather than a chain of calls.
+
+   The flattening property makes tee iterators efficiently peekable:
+
+   .. testcode::
+
+      def lookahead(tee_iterator):
+           "Return the next value without moving the input forward"
+           [forked_iterator] = tee(tee_iterator, 1)
+           return next(forked_iterator)
+
+   .. doctest::
+
+      >>> iterator = iter('abcdef')
+      >>> [iterator] = tee(iterator, 1)   # Make the input peekable
+      >>> next(iterator)                  # Move the iterator forward
+      'a'
+      >>> lookahead(iterator)             # Check next value
+      'b'
+      >>> next(iterator)                  # Continue moving forward
+      'b'
 
    ``tee`` iterators are not threadsafe. A :exc:`RuntimeError` may be
    raised when simultaneously using iterators returned by the same :func:`tee`
@@ -932,15 +971,6 @@ and :term:`generators <generator>` which incur interpreter overhead.
        for num_active in range(len(iterables), 0, -1):
            iterators = cycle(islice(iterators, num_active))
            yield from map(next, iterators)
-
-   def partition(predicate, iterable):
-       """Partition entries into false entries and true entries.
-
-       If *predicate* is slow, consider wrapping it with functools.lru_cache().
-       """
-       # partition(is_odd, range(10)) → 0 2 4 6 8   and  1 3 5 7 9
-       t1, t2 = tee(iterable)
-       return filterfalse(predicate, t1), filter(predicate, t2)
 
    def subslices(seq):
        "Return all contiguous non-empty subslices of a sequence."
@@ -1159,14 +1189,18 @@ The following recipes have a more mathematical flavor:
     >>> list(it)
     ['d', 'e', 'f']
 
+
     >>> list(prepend(1, [2, 3, 4]))
     [1, 2, 3, 4]
+
 
     >>> list(enumerate('abc'))
     [(0, 'a'), (1, 'b'), (2, 'c')]
 
+
     >>> list(islice(tabulate(lambda x: 2*x), 4))
     [0, 2, 4, 6]
+
 
     >>> list(tail(3, 'ABCDEFG'))
     ['E', 'F', 'G']
@@ -1175,6 +1209,7 @@ The following recipes have a more mathematical flavor:
     >>> output_iterator = tail(3, input_iterator)
     >>> list(input_iterator)
     []
+
 
     >>> it = iter(range(10))
     >>> consume(it, 3)
@@ -1186,6 +1221,7 @@ The following recipes have a more mathematical flavor:
     >>> next(it, 'Done')
     'Done'
 
+
     >>> nth('abcde', 3)
     'd'
     >>> nth('abcde', 9) is None
@@ -1196,6 +1232,7 @@ The following recipes have a more mathematical flavor:
     'c'
     >>> list(it)
     ['d', 'e']
+
 
     >>> [all_equal(s) for s in ('', 'A', 'AAAA', 'AAAB', 'AAABA')]
     [True, True, True, False, False]
@@ -1210,24 +1247,19 @@ The following recipes have a more mathematical flavor:
     >>> ''.join(it)
     'bbccc'
 
+
     >>> quantify(range(99), lambda x: x%2==0)
     50
-
     >>> quantify([True, False, False, True, True])
     3
-
     >>> quantify(range(12), predicate=lambda x: x%2==1)
     6
+
 
     >>> a = [[1, 2, 3], [4, 5, 6]]
     >>> list(flatten(a))
     [1, 2, 3, 4, 5, 6]
 
-    >>> list(repeatfunc(pow, 5, 2, 3))
-    [8, 8, 8, 8, 8]
-
-    >>> take(5, map(int, repeatfunc(random.random)))
-    [0, 0, 0, 0, 0]
 
     >>> list(ncycles('abc', 3))
     ['a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c']
@@ -1237,8 +1269,10 @@ The following recipes have a more mathematical flavor:
     >>> list(input_iterator)
     []
 
+
     >>> sum_of_squares([10, 20, 30])
     1400
+
 
     >>> list(reshape([(0, 1), (2, 3), (4, 5)], 3))
     [(0, 1, 2), (3, 4, 5)]
@@ -1260,6 +1294,7 @@ The following recipes have a more mathematical flavor:
     >>> list(reshape(M, 12))
     [(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)]
 
+
     >>> list(transpose([(1, 2, 3), (11, 22, 33)]))
     [(1, 11), (2, 22), (3, 33)]
     >>> # Verify that the inputs are consumed lazily
@@ -1271,10 +1306,12 @@ The following recipes have a more mathematical flavor:
     >>> list(zip(input1, input2))
     [(2, 22), (3, 33)]
 
+
     >>> list(matmul([(7, 5), (3, 5)], [[2, 5], [7, 9]]))
     [(49, 80), (41, 60)]
     >>> list(matmul([[2, 5], [7, 9], [3, 4]], [[7, 11, 5, 4, 9], [3, 5, 2, 6, 3]]))
     [(29, 47, 20, 38, 33), (76, 122, 53, 82, 90), (33, 53, 23, 36, 39)]
+
 
     >>> list(convolve([1, -1, -20], [1, -3])) == [1, -4, -17, 60]
     True
@@ -1297,6 +1334,7 @@ The following recipes have a more mathematical flavor:
     40
     >>> list(signal_iterator)
     [30, 40, 50]
+
 
     >>> from fractions import Fraction
     >>> from decimal import Decimal
@@ -1329,6 +1367,7 @@ The following recipes have a more mathematical flavor:
     >>> polynomial_eval([11, 2], 7) == 11 * 7 + 2
     True
 
+
     >>> polynomial_from_roots([5, -4, 3])
     [1, -4, -17, 60]
     >>> factored = lambda x: (x - 5) * (x + 4) * (x - 3)
@@ -1336,8 +1375,10 @@ The following recipes have a more mathematical flavor:
     >>> all(factored(x) == expanded(x) for x in range(-10, 11))
     True
 
+
     >>> polynomial_derivative([1, -4, -17, 60])
     [3, -8, -17]
+
 
     >>> list(iter_index('AABCADEAF', 'A'))
     [0, 1, 4, 7]
@@ -1396,11 +1437,13 @@ The following recipes have a more mathematical flavor:
     >>> ''.join(input_iterator)
     'DEAF'
 
+
     >>> # Verify that the target value can be a sequence.
     >>> seq = [[10, 20], [30, 40], 30, 40, [30, 40], 50]
     >>> target = [30, 40]
     >>> list(iter_index(seq, target))
     [1, 4]
+
 
     >>> # Verify faithfulness to type specific index() method behaviors.
     >>> # For example, bytes and str perform continuous-subsequence searches
@@ -1430,6 +1473,7 @@ The following recipes have a more mathematical flavor:
     >>> carmichael = {561, 1105, 1729, 2465, 2821, 6601, 8911}  # https://oeis.org/A002997
     >>> set(sieve(10_000)).isdisjoint(carmichael)
     True
+
 
     >>> list(factor(99))                    # Code example 1
     [3, 3, 11]
@@ -1476,6 +1520,7 @@ The following recipes have a more mathematical flavor:
     >>> all(list(factor(n)) == sorted(factor(n)) for n in range(2_000))
     True
 
+
     >>> totient(0)  # https://www.wolframalpha.com/input?i=totient+0
     0
     >>> first_totients = [1, 1, 2, 2, 4, 2, 6, 4, 6, 4, 10, 4, 12, 6, 8, 8, 16, 6,
@@ -1495,9 +1540,15 @@ The following recipes have a more mathematical flavor:
     >>> totient(6 ** 20) == 1 * 2**19 * 2 * 3**19    # repeated primes
     True
 
+
     >>> list(flatten([('a', 'b'), (), ('c', 'd', 'e'), ('f',), ('g', 'h', 'i')]))
     ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
 
+
+    >>> list(repeatfunc(pow, 5, 2, 3))
+    [8, 8, 8, 8, 8]
+    >>> take(5, map(int, repeatfunc(random.random)))
+    [0, 0, 0, 0, 0]
     >>> random.seed(85753098575309)
     >>> list(repeatfunc(random.random, 3))
     [0.16370491282496968, 0.45889608687313455, 0.3747076837820118]
@@ -1506,8 +1557,10 @@ The following recipes have a more mathematical flavor:
     >>> list(repeatfunc(pow, 3, 2, 5))
     [32, 32, 32]
 
+
     >>> list(grouper('abcdefg', 3, fillvalue='x'))
     [('a', 'b', 'c'), ('d', 'e', 'f'), ('g', 'x', 'x')]
+
 
     >>> it = grouper('abcdefg', 3, incomplete='strict')
     >>> next(it)
@@ -1521,6 +1574,7 @@ The following recipes have a more mathematical flavor:
 
     >>> list(grouper('abcdefg', n=3, incomplete='ignore'))
     [('a', 'b', 'c'), ('d', 'e', 'f')]
+
 
     >>> list(sliding_window('ABCDEFG', 1))
     [('A',), ('B',), ('C',), ('D',), ('E',), ('F',), ('G',)]
@@ -1551,6 +1605,7 @@ The following recipes have a more mathematical flavor:
     ...
     'zero or negative n not supported'
 
+
     >>> list(roundrobin('abc', 'd', 'ef'))
     ['a', 'd', 'e', 'b', 'f', 'c']
     >>> ranges = [range(5, 1000), range(4, 3000), range(0), range(3, 2000), range(2, 5000), range(1, 3500)]
@@ -1564,37 +1619,18 @@ The following recipes have a more mathematical flavor:
     >>> ''.join(chain(*input_iterators))
     'dijkopqr'
 
-    >>> def is_odd(x):
-    ...     return x % 2 == 1
-
-    >>> evens, odds = partition(is_odd, range(10))
-    >>> list(evens)
-    [0, 2, 4, 6, 8]
-    >>> list(odds)
-    [1, 3, 5, 7, 9]
-    >>> # Verify that the input is consumed lazily
-    >>> input_iterator = iter(range(10))
-    >>> evens, odds = partition(is_odd, input_iterator)
-    >>> next(odds)
-    1
-    >>> next(odds)
-    3
-    >>> next(evens)
-    0
-    >>> list(input_iterator)
-    [4, 5, 6, 7, 8, 9]
 
     >>> list(subslices('ABCD'))
     ['A', 'AB', 'ABC', 'ABCD', 'B', 'BC', 'BCD', 'C', 'CD', 'D']
 
+
     >>> list(powerset([1,2,3]))
     [(), (1,), (2,), (3,), (1, 2), (1, 3), (2, 3), (1, 2, 3)]
-
     >>> all(len(list(powerset(range(n)))) == 2**n for n in range(18))
     True
-
     >>> list(powerset('abcde')) == sorted(sorted(set(powerset('abcde'))), key=len)
     True
+
 
     >>> list(unique_everseen('AAAABBBCCDAABBB'))
     ['A', 'B', 'C', 'D']
@@ -1610,6 +1646,7 @@ The following recipes have a more mathematical flavor:
     >>> ''.join(input_iterator)
     'AAABBBCCDAABBB'
 
+
     >>> list(unique_justseen('AAAABBBCCDAABBB'))
     ['A', 'B', 'C', 'D', 'A', 'B']
     >>> list(unique_justseen('ABBCcAD', str.casefold))
@@ -1624,12 +1661,14 @@ The following recipes have a more mathematical flavor:
     >>> ''.join(input_iterator)
     'AAABBBCCDAABBB'
 
+
     >>> list(unique([[1, 2], [3, 4], [1, 2]]))
     [[1, 2], [3, 4]]
     >>> list(unique('ABBcCAD', str.casefold))
     ['A', 'B', 'c', 'D']
     >>> list(unique('ABBcCAD', str.casefold, reverse=True))
     ['D', 'c', 'B', 'A']
+
 
     >>> d = dict(a=1, b=2, c=3)
     >>> it = iter_except(d.popitem, KeyError)
@@ -1647,6 +1686,7 @@ The following recipes have a more mathematical flavor:
     ('a', 1)
     >>> next(it, 'empty')
     'empty'
+
 
     >>> first_true('ABC0DEF1', '9', str.isdigit)
     '0'
@@ -1728,20 +1768,35 @@ The following recipes have a more mathematical flavor:
 
        return true_iterator(), chain(transition, it)
 
+    def partition(predicate, iterable):
+        """Partition entries into false entries and true entries.
+
+        If *predicate* is slow, consider wrapping it with functools.lru_cache().
+        """
+        # partition(is_odd, range(10)) → 0 2 4 6 8   and  1 3 5 7 9
+        t1, t2 = tee(iterable)
+        return filterfalse(predicate, t1), filter(predicate, t2)
+
+
+
 .. doctest::
     :hide:
 
     >>> dotproduct([1,2,3], [4,5,6])
     32
 
+
     >>> sumprod([1,2,3], [4,5,6])
     32
+
 
     >>> list(islice(pad_none('abc'), 0, 6))
     ['a', 'b', 'c', None, None, None]
 
+
     >>> list(triplewise('ABCDEFG'))
     [('A', 'B', 'C'), ('B', 'C', 'D'), ('C', 'D', 'E'), ('D', 'E', 'F'), ('E', 'F', 'G')]
+
 
     >>> population = 'ABCDEFGH'
     >>> for r in range(len(population) + 1):
@@ -1750,12 +1805,13 @@ The following recipes have a more mathematical flavor:
     ...         assert nth_combination(population, r, i) == seq[i]
     ...     for i in range(-len(seq), 0):
     ...         assert nth_combination(population, r, i) == seq[i]
-
+    ...
     >>> iterable = 'abcde'
     >>> r = 3
     >>> combos = list(combinations(iterable, r))
     >>> all(nth_combination(iterable, r, i) == comb for i, comb in enumerate(combos))
     True
+
 
     >>> it = iter('ABCdEfGhI')
     >>> all_upper, remainder = before_and_after(str.isupper, it)
@@ -1763,3 +1819,24 @@ The following recipes have a more mathematical flavor:
     'ABC'
     >>> ''.join(remainder)
     'dEfGhI'
+
+
+    >>> def is_odd(x):
+    ...     return x % 2 == 1
+    ...
+    >>> evens, odds = partition(is_odd, range(10))
+    >>> list(evens)
+    [0, 2, 4, 6, 8]
+    >>> list(odds)
+    [1, 3, 5, 7, 9]
+    >>> # Verify that the input is consumed lazily
+    >>> input_iterator = iter(range(10))
+    >>> evens, odds = partition(is_odd, input_iterator)
+    >>> next(odds)
+    1
+    >>> next(odds)
+    3
+    >>> next(evens)
+    0
+    >>> list(input_iterator)
+    [4, 5, 6, 7, 8, 9]
