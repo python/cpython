@@ -119,7 +119,8 @@ class Emitter:
             "PyStackRef_CLOSE": self.stackref_close,
             "PyStackRef_CLOSE_SPECIALIZED": self.stackref_close,
             "PyStackRef_AsPyObjectSteal": self.stackref_steal,
-            "DISPATCH": self.dispatch
+            "DISPATCH": self.dispatch,
+            "INSTRUCTION_SIZE": self.instruction_size,
         }
         self.out = out
 
@@ -358,6 +359,19 @@ class Emitter:
         self.emit_reload(storage)
         return True
 
+    def instruction_size(self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None
+    ) -> bool:
+        """Replace the INSTRUCTION_SIZE macro with the size of the current instruction."""
+        assert inst is not None, "INSTRUCTION_SIZE requires instruction to be passed"
+        params = dataclasses.asdict(tkn) | {"text": str(inst.size)}
+        self.out.emit(Token(**params))
+        return True
+
     def _print_storage(self, storage: Storage) -> None:
         if PRINT_STACKS:
             self.out.start_line()
@@ -491,19 +505,11 @@ class Emitter:
                     if reachable:
                         reachable = if_reachable
                     self.out.emit(rbrace)
-                elif tkn.kind == "INSTRUCTION_SIZE":
-                    self._emit_instruction_size(tkn, inst)
                 else:
                     self.out.emit(tkn)
         except StackError as ex:
             raise analysis_error(ex.args[0], tkn) from None
         raise analysis_error("Expecting closing brace. Reached end of file", tkn)
-
-    def _emit_instruction_size(self, tkn: Token, inst: Instruction | None) -> None:
-        """Replace the INSTRUCTION_SIZE macro with the size of the current instruction."""
-        assert inst is not None, "INSTRUCTION_SIZE requires instruction to be passed"
-        params = dataclasses.asdict(tkn) | {"text": str(inst.size)}
-        self.out.emit(Token(**params))
 
     def emit_tokens(
         self,
