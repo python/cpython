@@ -1159,7 +1159,8 @@ hamt_node_bitmap_dump(PyHamtNode_Bitmap *node,
         goto error;
     }
     if (PyUnicodeWriter_Format(writer, "bitmap=%S id=%p):\n",
-                               tmp2, node) < 0) {
+                               tmp2, node) < 0)
+    {
         Py_DECREF(tmp2);
         goto error;
     }
@@ -1537,7 +1538,7 @@ hamt_node_collision_dump(PyHamtNode_Collision *node,
     }
 
     if (PyUnicodeWriter_Format(writer, "CollisionNode(size=%zd id=%p):\n",
-                          Py_SIZE(node), node) < 0)
+                          	   Py_SIZE(node), node) < 0)
     {
         goto error;
     }
