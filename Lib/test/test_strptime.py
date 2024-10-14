@@ -485,13 +485,14 @@ class StrptimeTests(unittest.TestCase):
     #   id_ID, ms_MY.
     # * Year is not included: ha_NG.
     # * Use non-Gregorian calendar: lo_LA, thai, th_TH.
+    #   On Windows: ar_IN, ar_SA, fa_IR, ps_AF.
     #
     # BUG: Generates regexp that does not match the current date and time
     # for lzh_TW.
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
                       'he_IL', 'eu_ES', 'ar_AE', 'mfe_MU', 'yo_NG',
                       'csb_PL', 'br_FR', 'gez_ET', 'brx_IN',
-                      'fa_IR', 'my_MM', 'or_IN', 'shn_MM', 'az_IR')
+                      'my_MM', 'or_IN', 'shn_MM', 'az_IR')
     def test_date_time_locale(self):
         # Test %c directive
         loc = locale.getlocale(locale.LC_TIME)[0]
@@ -524,12 +525,12 @@ class StrptimeTests(unittest.TestCase):
         self.roundtrip('%c', slice(0, 6), (1800, 1, 1, 0, 0, 0, 0, 1, 0))
 
     # NB: Does not roundtrip because use non-Gregorian calendar:
-    # lo_LA, thai, th_TH.
+    # lo_LA, thai, th_TH. On Windows: ar_IN, ar_SA, fa_IR, ps_AF.
     # BUG: Generates regexp that does not match the current date
     # for lzh_TW.
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
                       'he_IL', 'eu_ES', 'ar_AE',
-                      'az_IR', 'fa_IR', 'my_MM', 'or_IN', 'shn_MM')
+                      'az_IR', 'my_MM', 'or_IN', 'shn_MM')
     def test_date_locale(self):
         # Test %x directive
         now = time.time()
