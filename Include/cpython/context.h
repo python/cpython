@@ -52,8 +52,9 @@ typedef enum {
  * Any pending exception is cleared before the callback is called and restored
  * after the callback returns.
  *
- * if the callback returns with an exception set, it must return -1. Otherwise
- * it should return 0
+ * If the callback raises an exception it must return -1; the exception will be
+ * printed as an unraisable exception using PyErr_FormatUnraisable and
+ * discarded.  Otherwise it must return 0.
  */
 typedef int (*PyContext_WatchCallback)(PyContextEvent, PyObject *);
 
