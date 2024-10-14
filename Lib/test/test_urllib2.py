@@ -8,6 +8,7 @@ from unittest import mock
 
 import os
 import io
+import ftplib
 import socket
 import array
 import sys
@@ -754,7 +755,6 @@ class HandlerTests(unittest.TestCase):
                 self.ftpwrapper = MockFTPWrapper(self.data)
                 return self.ftpwrapper
 
-        import ftplib
         data = "rheum rhaponicum"
         h = NullFTPHandler(data)
         h.parent = MockOpener()
@@ -793,6 +793,27 @@ class HandlerTests(unittest.TestCase):
             headers = r.info()
             self.assertEqual(headers.get("Content-type"), mimetype)
             self.assertEqual(int(headers["Content-length"]), len(data))
+
+    def test_ftp_error(self):
+        class ErrorFTPHandler(urllib.request.FTPHandler):
+            def __init__(self, exception):
+                self._exception = exception
+
+            def connect_ftp(self, user, passwd, host, port, dirs,
+                            timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+                raise self._exception
+
+        exception = ftplib.error_perm(
+            "500 OOPS: cannot change directory:/nonexistent")
+        h = ErrorFTPHandler(exception)
+        urlopen = urllib.request.build_opener(h).open
+        try:
+            urlopen("ftp://www.pythontest.net/")
+        except urllib.error.URLError as raised:
+            self.assertEqual(raised.reason,
+                             f"ftp error: {exception.args[0]}")
+        else:
+            self.fail("Did not raise ftplib exception")
 
     def test_file(self):
         import email.utils

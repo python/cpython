@@ -25,6 +25,8 @@ class _functools._lru_cache_wrapper "PyObject *" "&lru_cache_type_spec"
 typedef struct _functools_state {
     /* this object is used delimit args and keywords in the cache keys */
     PyObject *kwd_mark;
+    PyTypeObject *placeholder_type;
+    PyObject *placeholder;  // strong reference (singleton)
     PyTypeObject *partial_type;
     PyTypeObject *keyobject_type;
     PyTypeObject *lru_list_elem_type;
@@ -41,6 +43,95 @@ get_functools_state(PyObject *module)
 
 /* partial object **********************************************************/
 
+
+// The 'Placeholder' singleton indicates which formal positional
+// parameters are to be bound first when using a 'partial' object.
+
+typedef struct {
+    PyObject_HEAD
+} placeholderobject;
+
+static inline _functools_state *
+get_functools_state_by_type(PyTypeObject *type);
+
+PyDoc_STRVAR(placeholder_doc,
+"The type of the Placeholder singleton.\n\n"
+"Used as a placeholder for partial arguments.");
+
+static PyObject *
+placeholder_repr(PyObject *op)
+{
+    return PyUnicode_FromString("Placeholder");
+}
+
+static PyObject *
+placeholder_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
+{
+    return PyUnicode_FromString("Placeholder");
+}
+
+static PyMethodDef placeholder_methods[] = {
+    {"__reduce__", placeholder_reduce, METH_NOARGS, NULL},
+    {NULL, NULL}
+};
+
+static void
+placeholder_dealloc(PyObject* self)
+{
+    PyObject_GC_UnTrack(self);
+    PyTypeObject *tp = Py_TYPE(self);
+    tp->tp_free((PyObject*)self);
+    Py_DECREF(tp);
+}
+
+static PyObject *
+placeholder_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    if (PyTuple_GET_SIZE(args) || (kwargs && PyDict_GET_SIZE(kwargs))) {
+        PyErr_SetString(PyExc_TypeError, "PlaceholderType takes no arguments");
+        return NULL;
+    }
+    _functools_state *state = get_functools_state_by_type(type);
+    if (state->placeholder != NULL) {
+        return Py_NewRef(state->placeholder);
+    }
+
+    PyObject *placeholder = PyType_GenericNew(type, NULL, NULL);
+    if (placeholder == NULL) {
+        return NULL;
+    }
+
+    if (state->placeholder == NULL) {
+        state->placeholder = Py_NewRef(placeholder);
+    }
+    return placeholder;
+}
+
+static int
+placeholder_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
+static PyType_Slot placeholder_type_slots[] = {
+    {Py_tp_dealloc, placeholder_dealloc},
+    {Py_tp_repr, placeholder_repr},
+    {Py_tp_doc, (void *)placeholder_doc},
+    {Py_tp_methods, placeholder_methods},
+    {Py_tp_new, placeholder_new},
+    {Py_tp_traverse, placeholder_traverse},
+    {0, 0}
+};
+
+static PyType_Spec placeholder_type_spec = {
+    .name = "functools._PlaceholderType",
+    .basicsize = sizeof(placeholderobject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC,
+    .slots = placeholder_type_slots
+};
+
+
 typedef struct {
     PyObject_HEAD
     PyObject *fn;
@@ -48,6 +139,8 @@ typedef struct {
     PyObject *kw;
     PyObject *dict;        /* __dict__ */
     PyObject *weakreflist; /* List of weak references */
+    PyObject *placeholder; /* Placeholder for positional arguments */
+    Py_ssize_t phcount;    /* Number of placeholders */
     vectorcallfunc vectorcall;
 } partialobject;
 
@@ -70,12 +163,20 @@ get_functools_state_by_type(PyTypeObject *type)
 static PyObject *
 partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
-    PyObject *func, *pargs, *nargs, *pkw;
+    PyObject *func, *pto_args, *new_args, *pto_kw, *phold;
     partialobject *pto;
+    Py_ssize_t pto_phcount = 0;
+    Py_ssize_t new_nargs = PyTuple_GET_SIZE(args) - 1;
 
-    if (PyTuple_GET_SIZE(args) < 1) {
+    if (new_nargs < 0) {
         PyErr_SetString(PyExc_TypeError,
                         "type 'partial' takes at least one argument");
+        return NULL;
+    }
+    func = PyTuple_GET_ITEM(args, 0);
+    if (!PyCallable_Check(func)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "the first argument must be callable");
         return NULL;
     }
 
@@ -83,10 +184,17 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (state == NULL) {
         return NULL;
     }
+    phold = state->placeholder;
 
-    pargs = pkw = NULL;
-    func = PyTuple_GET_ITEM(args, 0);
+    /* Placeholder restrictions */
+    if (new_nargs && PyTuple_GET_ITEM(args, new_nargs) == phold) {
+        PyErr_SetString(PyExc_TypeError,
+                        "trailing Placeholders are not allowed");
+        return NULL;
+    }
 
+    /* check wrapped function / object */
+    pto_args = pto_kw = NULL;
     int res = PyObject_TypeCheck(func, state->partial_type);
     if (res == -1) {
         return NULL;
@@ -95,17 +203,13 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         // We can use its underlying function directly and merge the arguments.
         partialobject *part = (partialobject *)func;
         if (part->dict == NULL) {
-            pargs = part->args;
-            pkw = part->kw;
+            pto_args = part->args;
+            pto_kw = part->kw;
             func = part->fn;
-            assert(PyTuple_Check(pargs));
-            assert(PyDict_Check(pkw));
+            pto_phcount = part->phcount;
+            assert(PyTuple_Check(pto_args));
+            assert(PyDict_Check(pto_kw));
         }
-    }
-    if (!PyCallable_Check(func)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "the first argument must be callable");
-        return NULL;
     }
 
     /* create partialobject structure */
@@ -114,18 +218,58 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
 
     pto->fn = Py_NewRef(func);
+    pto->placeholder = phold;
 
-    nargs = PyTuple_GetSlice(args, 1, PY_SSIZE_T_MAX);
-    if (nargs == NULL) {
+    new_args = PyTuple_GetSlice(args, 1, new_nargs + 1);
+    if (new_args == NULL) {
         Py_DECREF(pto);
         return NULL;
     }
-    if (pargs == NULL) {
-        pto->args = nargs;
+
+    /* Count placeholders */
+    Py_ssize_t phcount = 0;
+    for (Py_ssize_t i = 0; i < new_nargs - 1; i++) {
+        if (PyTuple_GET_ITEM(new_args, i) == phold) {
+            phcount++;
+        }
+    }
+    /* merge args with args of `func` which is `partial` */
+    if (pto_phcount > 0 && new_nargs > 0) {
+        Py_ssize_t npargs = PyTuple_GET_SIZE(pto_args);
+        Py_ssize_t tot_nargs = npargs;
+        if (new_nargs > pto_phcount) {
+            tot_nargs += new_nargs - pto_phcount;
+        }
+        PyObject *item;
+        PyObject *tot_args = PyTuple_New(tot_nargs);
+        for (Py_ssize_t i = 0, j = 0; i < tot_nargs; i++) {
+            if (i < npargs) {
+                item = PyTuple_GET_ITEM(pto_args, i);
+                if (j < new_nargs && item == phold) {
+                    item = PyTuple_GET_ITEM(new_args, j);
+                    j++;
+                    pto_phcount--;
+                }
+            }
+            else {
+                item = PyTuple_GET_ITEM(new_args, j);
+                j++;
+            }
+            Py_INCREF(item);
+            PyTuple_SET_ITEM(tot_args, i, item);
+        }
+        pto->args = tot_args;
+        pto->phcount = pto_phcount + phcount;
+        Py_DECREF(new_args);
+    }
+    else if (pto_args == NULL) {
+        pto->args = new_args;
+        pto->phcount = phcount;
     }
     else {
-        pto->args = PySequence_Concat(pargs, nargs);
-        Py_DECREF(nargs);
+        pto->args = PySequence_Concat(pto_args, new_args);
+        pto->phcount = pto_phcount + phcount;
+        Py_DECREF(new_args);
         if (pto->args == NULL) {
             Py_DECREF(pto);
             return NULL;
@@ -133,7 +277,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         assert(PyTuple_Check(pto->args));
     }
 
-    if (pkw == NULL || PyDict_GET_SIZE(pkw) == 0) {
+    if (pto_kw == NULL || PyDict_GET_SIZE(pto_kw) == 0) {
         if (kw == NULL) {
             pto->kw = PyDict_New();
         }
@@ -145,7 +289,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         }
     }
     else {
-        pto->kw = PyDict_Copy(pkw);
+        pto->kw = PyDict_Copy(pto_kw);
         if (kw != NULL && pto->kw != NULL) {
             if (PyDict_Merge(pto->kw, kw, 1) != 0) {
                 Py_DECREF(pto);
@@ -225,23 +369,30 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
                    size_t nargsf, PyObject *kwnames)
 {
     PyThreadState *tstate = _PyThreadState_GET();
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
 
     /* pto->kw is mutable, so need to check every time */
     if (PyDict_GET_SIZE(pto->kw)) {
         return partial_vectorcall_fallback(tstate, pto, args, nargsf, kwnames);
     }
+    Py_ssize_t pto_phcount = pto->phcount;
+    if (nargs < pto_phcount) {
+        PyErr_Format(PyExc_TypeError,
+                     "missing positional arguments in 'partial' call; "
+                     "expected at least %zd, got %zd", pto_phcount, nargs);
+        return NULL;
+    }
 
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    Py_ssize_t nargs_total = nargs;
+    Py_ssize_t nargskw = nargs;
     if (kwnames != NULL) {
-        nargs_total += PyTuple_GET_SIZE(kwnames);
+        nargskw += PyTuple_GET_SIZE(kwnames);
     }
 
     PyObject **pto_args = _PyTuple_ITEMS(pto->args);
     Py_ssize_t pto_nargs = PyTuple_GET_SIZE(pto->args);
 
     /* Fast path if we're called without arguments */
-    if (nargs_total == 0) {
+    if (nargskw == 0) {
         return _PyObject_VectorcallTstate(tstate, pto->fn,
                                           pto_args, pto_nargs, NULL);
     }
@@ -258,29 +409,47 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
         return ret;
     }
 
-    Py_ssize_t newnargs_total = pto_nargs + nargs_total;
-
     PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
-    PyObject *ret;
     PyObject **stack;
 
-    if (newnargs_total <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) {
+    Py_ssize_t tot_nargskw = pto_nargs + nargskw - pto_phcount;
+    if (tot_nargskw <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) {
         stack = small_stack;
     }
     else {
-        stack = PyMem_Malloc(newnargs_total * sizeof(PyObject *));
+        stack = PyMem_Malloc(tot_nargskw * sizeof(PyObject *));
         if (stack == NULL) {
             PyErr_NoMemory();
             return NULL;
         }
     }
 
-    /* Copy to new stack, using borrowed references */
-    memcpy(stack, pto_args, pto_nargs * sizeof(PyObject*));
-    memcpy(stack + pto_nargs, args, nargs_total * sizeof(PyObject*));
-
-    ret = _PyObject_VectorcallTstate(tstate, pto->fn,
-                                     stack, pto_nargs + nargs, kwnames);
+    Py_ssize_t tot_nargs;
+    if (pto_phcount) {
+        tot_nargs = pto_nargs + nargs - pto_phcount;
+        Py_ssize_t j = 0;       // New args index
+        for (Py_ssize_t i = 0; i < pto_nargs; i++) {
+            if (pto_args[i] == pto->placeholder) {
+                stack[i] = args[j];
+                j += 1;
+            }
+            else {
+                stack[i] = pto_args[i];
+            }
+        }
+        assert(j == pto_phcount);
+        if (nargskw > pto_phcount) {
+            memcpy(stack + pto_nargs, args + j, (nargskw - j) * sizeof(PyObject*));
+        }
+    }
+    else {
+        tot_nargs = pto_nargs + nargs;
+        /* Copy to new stack, using borrowed references */
+        memcpy(stack, pto_args, pto_nargs * sizeof(PyObject*));
+        memcpy(stack + pto_nargs, args, nargskw * sizeof(PyObject*));
+    }
+    PyObject *ret = _PyObject_VectorcallTstate(tstate, pto->fn,
+                                               stack, tot_nargs, kwnames);
     if (stack != small_stack) {
         PyMem_Free(stack);
     }
@@ -312,40 +481,81 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
     assert(PyTuple_Check(pto->args));
     assert(PyDict_Check(pto->kw));
 
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t pto_phcount = pto->phcount;
+    if (nargs < pto_phcount) {
+        PyErr_Format(PyExc_TypeError,
+                     "missing positional arguments in 'partial' call; "
+                     "expected at least %zd, got %zd", pto_phcount, nargs);
+        return NULL;
+    }
+
     /* Merge keywords */
-    PyObject *kwargs2;
+    PyObject *tot_kw;
     if (PyDict_GET_SIZE(pto->kw) == 0) {
         /* kwargs can be NULL */
-        kwargs2 = Py_XNewRef(kwargs);
+        tot_kw = Py_XNewRef(kwargs);
     }
     else {
         /* bpo-27840, bpo-29318: dictionary of keyword parameters must be
            copied, because a function using "**kwargs" can modify the
            dictionary. */
-        kwargs2 = PyDict_Copy(pto->kw);
-        if (kwargs2 == NULL) {
+        tot_kw = PyDict_Copy(pto->kw);
+        if (tot_kw == NULL) {
             return NULL;
         }
 
         if (kwargs != NULL) {
-            if (PyDict_Merge(kwargs2, kwargs, 1) != 0) {
-                Py_DECREF(kwargs2);
+            if (PyDict_Merge(tot_kw, kwargs, 1) != 0) {
+                Py_DECREF(tot_kw);
                 return NULL;
             }
         }
     }
 
     /* Merge positional arguments */
-    /* Note: tupleconcat() is optimized for empty tuples */
-    PyObject *args2 = PySequence_Concat(pto->args, args);
-    if (args2 == NULL) {
-        Py_XDECREF(kwargs2);
-        return NULL;
+    PyObject *tot_args;
+    if (pto_phcount) {
+        Py_ssize_t pto_nargs = PyTuple_GET_SIZE(pto->args);
+        Py_ssize_t tot_nargs = pto_nargs + nargs - pto_phcount;
+        assert(tot_nargs >= 0);
+        tot_args = PyTuple_New(tot_nargs);
+        if (tot_args == NULL) {
+            Py_XDECREF(tot_kw);
+            return NULL;
+        }
+        PyObject *pto_args = pto->args;
+        PyObject *item;
+        Py_ssize_t j = 0;   // New args index
+        for (Py_ssize_t i = 0; i < pto_nargs; i++) {
+            item = PyTuple_GET_ITEM(pto_args, i);
+            if (item == pto->placeholder) {
+                item = PyTuple_GET_ITEM(args, j);
+                j += 1;
+            }
+            Py_INCREF(item);
+            PyTuple_SET_ITEM(tot_args, i, item);
+        }
+        assert(j == pto_phcount);
+        for (Py_ssize_t i = pto_nargs; i < tot_nargs; i++) {
+            item = PyTuple_GET_ITEM(args, j);
+            Py_INCREF(item);
+            PyTuple_SET_ITEM(tot_args, i, item);
+            j += 1;
+        }
+    }
+    else {
+        /* Note: tupleconcat() is optimized for empty tuples */
+        tot_args = PySequence_Concat(pto->args, args);
+        if (tot_args == NULL) {
+            Py_XDECREF(tot_kw);
+            return NULL;
+        }
     }
 
-    PyObject *res = PyObject_Call(pto->fn, args2, kwargs2);
-    Py_DECREF(args2);
-    Py_XDECREF(kwargs2);
+    PyObject *res = PyObject_Call(pto->fn, tot_args, tot_kw);
+    Py_DECREF(tot_args);
+    Py_XDECREF(tot_kw);
     return res;
 }
 
@@ -394,7 +604,7 @@ partial_repr(partialobject *pto)
         return PyUnicode_FromString("...");
     }
 
-    arglist = PyUnicode_FromString("");
+    arglist = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     if (arglist == NULL)
         goto done;
     /* Pack positional arguments */
@@ -461,14 +671,31 @@ partial_setstate(partialobject *pto, PyObject *state)
 {
     PyObject *fn, *fnargs, *kw, *dict;
 
-    if (!PyTuple_Check(state) ||
-        !PyArg_ParseTuple(state, "OOOO", &fn, &fnargs, &kw, &dict) ||
+    if (!PyTuple_Check(state)) {
+        PyErr_SetString(PyExc_TypeError, "invalid partial state");
+        return NULL;
+    }
+    if (!PyArg_ParseTuple(state, "OOOO", &fn, &fnargs, &kw, &dict) ||
         !PyCallable_Check(fn) ||
         !PyTuple_Check(fnargs) ||
         (kw != Py_None && !PyDict_Check(kw)))
     {
         PyErr_SetString(PyExc_TypeError, "invalid partial state");
         return NULL;
+    }
+
+    Py_ssize_t nargs = PyTuple_GET_SIZE(fnargs);
+    if (nargs && PyTuple_GET_ITEM(fnargs, nargs - 1) == pto->placeholder) {
+        PyErr_SetString(PyExc_TypeError,
+                        "trailing Placeholders are not allowed");
+        return NULL;
+    }
+    /* Count placeholders */
+    Py_ssize_t phcount = 0;
+    for (Py_ssize_t i = 0; i < nargs - 1; i++) {
+        if (PyTuple_GET_ITEM(fnargs, i) == pto->placeholder) {
+            phcount++;
+        }
     }
 
     if(!PyTuple_CheckExact(fnargs))
@@ -493,10 +720,10 @@ partial_setstate(partialobject *pto, PyObject *state)
         dict = NULL;
     else
         Py_INCREF(dict);
-
     Py_SETREF(pto->fn, Py_NewRef(fn));
     Py_SETREF(pto->args, fnargs);
     Py_SETREF(pto->kw, kw);
+    pto->phcount = phcount;
     Py_XSETREF(pto->dict, dict);
     partial_setvectorcall(pto);
     Py_RETURN_NONE;
@@ -1498,6 +1725,25 @@ _functools_exec(PyObject *module)
         return -1;
     }
 
+    state->placeholder_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
+        &placeholder_type_spec, NULL);
+    if (state->placeholder_type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, state->placeholder_type) < 0) {
+        return -1;
+    }
+
+    PyObject *placeholder = PyObject_CallNoArgs((PyObject *)state->placeholder_type);
+    if (placeholder == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(module, "Placeholder", placeholder) < 0) {
+        Py_DECREF(placeholder);
+        return -1;
+    }
+    Py_DECREF(placeholder);
+
     state->partial_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
         &partial_type_spec, NULL);
     if (state->partial_type == NULL) {
@@ -1542,6 +1788,8 @@ _functools_traverse(PyObject *module, visitproc visit, void *arg)
 {
     _functools_state *state = get_functools_state(module);
     Py_VISIT(state->kwd_mark);
+    Py_VISIT(state->placeholder_type);
+    Py_VISIT(state->placeholder);
     Py_VISIT(state->partial_type);
     Py_VISIT(state->keyobject_type);
     Py_VISIT(state->lru_list_elem_type);
@@ -1553,6 +1801,8 @@ _functools_clear(PyObject *module)
 {
     _functools_state *state = get_functools_state(module);
     Py_CLEAR(state->kwd_mark);
+    Py_CLEAR(state->placeholder_type);
+    Py_CLEAR(state->placeholder);
     Py_CLEAR(state->partial_type);
     Py_CLEAR(state->keyobject_type);
     Py_CLEAR(state->lru_list_elem_type);

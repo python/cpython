@@ -1,0 +1,1 @@
+Fix ``_Py_ThreadId`` for Windows builds using MinGW. Patch by Tony Roberts.

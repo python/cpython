@@ -120,11 +120,14 @@ glob	dirname
 Modules/_decimal/**/*.c	Modules/_decimal/libmpdec
 Modules/_elementtree.c	Modules/expat
 Modules/_hacl/*.c	Modules/_hacl/include
+Modules/_hacl/*.c	Modules/_hacl/
 Modules/_hacl/*.h	Modules/_hacl/include
+Modules/_hacl/*.h	Modules/_hacl/
 Modules/md5module.c	Modules/_hacl/include
 Modules/sha1module.c	Modules/_hacl/include
 Modules/sha2module.c	Modules/_hacl/include
 Modules/sha3module.c	Modules/_hacl/include
+Modules/blake2module.c	Modules/_hacl/include
 Objects/stringlib/*.h	Objects
 
 # possible system-installed headers, just in case
@@ -326,6 +329,7 @@ MAX_SIZES = {
     _abs('Python/parking_lot.c'): (40_000, 1000),
     _abs('Python/pylifecycle.c'): (500_000, 5000),
     _abs('Python/pystate.c'): (500_000, 5000),
+    _abs('Python/initconfig.c'): (50_000, 500),
 
     # Generated files:
     _abs('Include/internal/pycore_opcode.h'): (10_000, 1000),

@@ -553,7 +553,6 @@ def collect_sysconfig(info_add):
     for name in (
         'WITH_DOC_STRINGS',
         'WITH_DTRACE',
-        'WITH_FREELISTS',
         'WITH_MIMALLOC',
         'WITH_PYMALLOC',
         'WITH_VALGRIND',

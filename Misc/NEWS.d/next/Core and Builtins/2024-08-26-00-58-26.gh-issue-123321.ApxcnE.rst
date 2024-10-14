@@ -1,0 +1,2 @@
+Prevent Parser/myreadline race condition from segfaulting on multi-threaded
+use. Patch by Bar Harel and Amit Wienner.

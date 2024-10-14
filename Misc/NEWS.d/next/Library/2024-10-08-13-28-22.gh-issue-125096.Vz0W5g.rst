@@ -1,0 +1,5 @@
+If the :envvar:`PYTHON_BASIC_REPL` environment variable is set, the
+:mod:`site` module no longer imports the :mod:`!_pyrepl` module. Moreover,
+the :mod:`site` module now respects :option:`-E` and :option:`-I` command
+line options: ignore :envvar:`PYTHON_BASIC_REPL` in this case. Patch by
+Victor Stinner.

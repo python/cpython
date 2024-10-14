@@ -171,6 +171,7 @@ extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 */
 #define SCOPE_OFFSET 12
 #define SCOPE_MASK (DEF_GLOBAL | DEF_LOCAL | DEF_PARAM | DEF_NONLOCAL)
+#define SYMBOL_TO_SCOPE(S) (((S) >> SCOPE_OFFSET) & SCOPE_MASK)
 
 #define LOCAL 1
 #define GLOBAL_EXPLICIT 2

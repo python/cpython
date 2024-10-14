@@ -300,28 +300,77 @@ def get_build_info():
 
     config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
     cflags = sysconfig.get_config_var('PY_CFLAGS') or ''
-    cflags_nodist = sysconfig.get_config_var('PY_CFLAGS_NODIST') or ''
+    cflags += ' ' + (sysconfig.get_config_var('PY_CFLAGS_NODIST') or '')
     ldflags_nodist = sysconfig.get_config_var('PY_LDFLAGS_NODIST') or ''
 
     build = []
 
     # --disable-gil
     if sysconfig.get_config_var('Py_GIL_DISABLED'):
-        build.append("free_threading")
+        if not sys.flags.ignore_environment:
+            PYTHON_GIL = os.environ.get('PYTHON_GIL', None)
+            if PYTHON_GIL:
+                PYTHON_GIL = (PYTHON_GIL == '1')
+        else:
+            PYTHON_GIL = None
+
+        free_threading = "free_threading"
+        if PYTHON_GIL is not None:
+            free_threading = f"{free_threading} GIL={int(PYTHON_GIL)}"
+        build.append(free_threading)
 
     if hasattr(sys, 'gettotalrefcount'):
         # --with-pydebug
         build.append('debug')
 
-        if '-DNDEBUG' in (cflags + cflags_nodist):
+        if '-DNDEBUG' in cflags:
             build.append('without_assert')
     else:
         build.append('release')
 
         if '--with-assertions' in config_args:
             build.append('with_assert')
-        elif '-DNDEBUG' not in (cflags + cflags_nodist):
+        elif '-DNDEBUG' not in cflags:
             build.append('with_assert')
+
+    # --enable-experimental-jit
+    tier2 = re.search('-D_Py_TIER2=([0-9]+)', cflags)
+    if tier2:
+        tier2 = int(tier2.group(1))
+
+    if not sys.flags.ignore_environment:
+        PYTHON_JIT = os.environ.get('PYTHON_JIT', None)
+        if PYTHON_JIT:
+            PYTHON_JIT = (PYTHON_JIT != '0')
+    else:
+        PYTHON_JIT = None
+
+    if tier2 == 1:  # =yes
+        if PYTHON_JIT == False:
+            jit = 'JIT=off'
+        else:
+            jit = 'JIT'
+    elif tier2 == 3:  # =yes-off
+        if PYTHON_JIT:
+            jit = 'JIT'
+        else:
+            jit = 'JIT=off'
+    elif tier2 == 4:  # =interpreter
+        if PYTHON_JIT == False:
+            jit = 'JIT-interpreter=off'
+        else:
+            jit = 'JIT-interpreter'
+    elif tier2 == 6:  # =interpreter-off (Secret option!)
+        if PYTHON_JIT:
+            jit = 'JIT-interpreter'
+        else:
+            jit = 'JIT-interpreter=off'
+    elif '-D_Py_JIT' in cflags:
+        jit = 'JIT'
+    else:
+        jit = None
+    if jit:
+        build.append(jit)
 
     # --enable-framework=name
     framework = sysconfig.get_config_var('PYTHONFRAMEWORK')
@@ -343,6 +392,11 @@ def get_build_info():
     if support.check_cflags_pgo():
         # PGO (--enable-optimizations)
         optimizations.append('PGO')
+
+    if support.check_bolt_optimized():
+        # BOLT (--enable-bolt)
+        optimizations.append('BOLT')
+
     if optimizations:
         build.append('+'.join(optimizations))
 
@@ -701,7 +755,7 @@ ILLEGAL_XML_CHARS_RE = re.compile(
     # Special Unicode characters
     '\uFFFE'
     '\uFFFF'
-    # Match multiple sequential invalid characters for better effiency
+    # Match multiple sequential invalid characters for better efficiency
     ']+')
 
 def _sanitize_xml_replace(regs):

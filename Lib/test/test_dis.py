@@ -1,5 +1,6 @@
 # Minimal tests for dis module
 
+import ast
 import contextlib
 import dis
 import functools
@@ -127,6 +128,16 @@ dis_f_with_offsets = """\
        _f.__code__.co_firstlineno + 1,
        _f.__code__.co_firstlineno + 2)
 
+dis_f_with_positions_format = f"""\
+%-14s           RESUME                   0
+
+%-14s           LOAD_GLOBAL              1 (print + NULL)
+%-14s           LOAD_FAST                0 (a)
+%-14s           CALL                     1
+%-14s           POP_TOP
+
+%-14s           RETURN_CONST             1 (1)
+"""
 
 dis_f_co_code = """\
           RESUME                   0
@@ -367,6 +378,23 @@ dis_annot_stmt_str = """\
               MAKE_FUNCTION
               STORE_NAME               3 (__annotate__)
               RETURN_CONST             3 (None)
+"""
+
+fn_with_annotate_str = """
+def foo(a: int, b: str) -> str:
+    return a * b
+"""
+
+dis_fn_with_annotate_str = """\
+  0           RESUME                   0
+
+  2           LOAD_CONST               0 (<code object __annotate__ at 0x..., file "<dis>", line 2>)
+              MAKE_FUNCTION
+              LOAD_CONST               1 (<code object foo at 0x..., file "<dis>", line 2>)
+              MAKE_FUNCTION
+              SET_FUNCTION_ATTRIBUTE  16 (annotate)
+              STORE_NAME               0 (foo)
+              RETURN_CONST             2 (None)
 """
 
 compound_stmt_str = """\
@@ -950,6 +978,79 @@ class DisTests(DisTestBase):
     def test_dis_with_offsets(self):
         self.do_disassembly_test(_f, dis_f_with_offsets, show_offsets=True)
 
+    @requires_debug_ranges()
+    def test_dis_with_all_positions(self):
+        def format_instr_positions(instr):
+            values = tuple('?' if p is None else p for p in instr.positions)
+            return '%s:%s-%s:%s' % (values[0], values[2], values[1], values[3])
+
+        instrs = list(dis.get_instructions(_f))
+        for instr in instrs:
+            with self.subTest(instr=instr):
+                self.assertTrue(all(p is not None for p in instr.positions))
+        positions = tuple(map(format_instr_positions, instrs))
+        expected = dis_f_with_positions_format % positions
+        self.do_disassembly_test(_f, expected, show_positions=True)
+
+    @requires_debug_ranges()
+    def test_dis_with_some_positions(self):
+        code = ("def f():\n"
+                "   try: pass\n"
+                "   finally:pass")
+        f = compile(ast.parse(code), "?", "exec").co_consts[0]
+
+        expect = '\n'.join([
+            '1:0-1:0              RESUME                   0',
+            '',
+            '2:3-3:15             NOP',
+            '',
+            '3:11-3:15            RETURN_CONST             0 (None)',
+            '',
+            '  --         L1:     PUSH_EXC_INFO',
+            '',
+            '3:11-3:15            RERAISE                  0',
+            '',
+            '  --         L2:     COPY                     3',
+            '  --                 POP_EXCEPT',
+            '  --                 RERAISE                  1',
+            'ExceptionTable:',
+            '  L1 to L2 -> L2 [1] lasti',
+            '',
+        ])
+        self.do_disassembly_test(f, expect, show_positions=True)
+
+    @requires_debug_ranges()
+    def test_dis_with_linenos_but_no_columns(self):
+        code = "def f():\n\tx = 1"
+        tree = ast.parse(code)
+        func = tree.body[0]
+        ass_x = func.body[0].targets[0]
+        # remove columns information but keep line information
+        ass_x.col_offset = ass_x.end_col_offset = -1
+        f = compile(tree, "?", "exec").co_consts[0]
+
+        expect = '\n'.join([
+            '1:0-1:0            RESUME                   0',
+            '',
+            '2:5-2:6            LOAD_CONST               1 (1)',
+            '2:?-2:?            STORE_FAST               0 (x)',
+            '2:?-2:?            RETURN_CONST             0 (None)',
+            '',
+        ])
+        self.do_disassembly_test(f, expect, show_positions=True)
+
+    def test_dis_with_no_positions(self):
+        def f():
+            pass
+
+        f.__code__ = f.__code__.replace(co_linetable=b'')
+        expect = '\n'.join([
+            '          RESUME                   0',
+            '          RETURN_CONST             0 (None)',
+            '',
+        ])
+        self.do_disassembly_test(f, expect, show_positions=True)
+
     def test_bug_708901(self):
         self.do_disassembly_test(bug708901, dis_bug708901)
 
@@ -1014,6 +1115,7 @@ class DisTests(DisTestBase):
         self.do_disassembly_test(expr_str, dis_expr_str)
         self.do_disassembly_test(simple_stmt_str, dis_simple_stmt_str)
         self.do_disassembly_test(annot_stmt_str, dis_annot_stmt_str)
+        self.do_disassembly_test(fn_with_annotate_str, dis_fn_with_annotate_str)
         self.do_disassembly_test(compound_stmt_str, dis_compound_stmt_str)
 
     def test_disassemble_bytes(self):
@@ -1943,6 +2045,24 @@ class InstructionTests(InstructionTestCase):
         output = io.StringIO()
         dis.dis(f.__code__, file=output, show_caches=True)
         self.assertIn("L1:", output.getvalue())
+
+    def test_is_op_format(self):
+        output = io.StringIO()
+        dis.dis("a is b", file=output, show_caches=True)
+        self.assertIn("IS_OP                    0 (is)", output.getvalue())
+
+        output = io.StringIO()
+        dis.dis("a is not b", file=output, show_caches=True)
+        self.assertIn("IS_OP                    1 (is not)", output.getvalue())
+
+    def test_contains_op_format(self):
+        output = io.StringIO()
+        dis.dis("a in b", file=output, show_caches=True)
+        self.assertIn("CONTAINS_OP              0 (in)", output.getvalue())
+
+        output = io.StringIO()
+        dis.dis("a not in b", file=output, show_caches=True)
+        self.assertIn("CONTAINS_OP              1 (not in)", output.getvalue())
 
     def test_baseopname_and_baseopcode(self):
         # Standard instructions

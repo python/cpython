@@ -1,0 +1,3 @@
+Building with ``HAVE_DYNAMIC_LOADING`` now works as well as it did in 3.12.
+Existing deficiences will be addressed separately.
+(See https://github.com/python/cpython/issues/122950.)
