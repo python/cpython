@@ -150,7 +150,7 @@ In Python 3.7, :pep:`563` introduced the ``from __future__ import annotations``
 directive, which turns all annotations into strings. This directive is now
 considered deprecated and it is expected to be removed in a future version of Python.
 However, this removal will not happen until after Python 3.13, the last version of
-Python without deferred evaluation of annotations, reaches its end of life.
+Python without deferred evaluation of annotations, reaches its end of life in 2029.
 In Python 3.14, the behavior of code using ``from __future__ import annotations``
 is unchanged.
 
