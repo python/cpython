@@ -22,4 +22,6 @@ it is not, please report that through the
 
 [The Source Code Locations Table](locations.md)
 
+[Garbage collector design](garbage_collector.md)
+
 [Exception Handling](exception_handling.md)

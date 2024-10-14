@@ -266,6 +266,14 @@ PyStackRef_CLOSE(_PyStackRef ref)
     }
 }
 
+static inline void PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct)
+{
+    assert(!PyStackRef_IsNull(ref));
+    if (!PyStackRef_HasCount(ref)) {
+        Py_DECREF_MORTAL_SPECIALIZED(BITS_TO_PTR(ref), destruct);
+    }
+}
+
 static inline void
 PyStackRef_XCLOSE(_PyStackRef ref)
 {
