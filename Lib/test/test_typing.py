@@ -7472,7 +7472,7 @@ class CollectionsAbcTests(BaseTestCase):
 
     def test_async_generator(self):
         async def f():
-             yield 42
+            yield 42
         g = f()
         self.assertIsSubclass(type(g), typing.AsyncGenerator)
 

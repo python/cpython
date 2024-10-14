@@ -539,10 +539,10 @@ class TestSpecifics(unittest.TestCase):
         # make all instruction locations the same to create redundancies
         for node in ast.walk(tree):
             if hasattr(node,"lineno"):
-                 del node.lineno
-                 del node.end_lineno
-                 del node.col_offset
-                 del node.end_col_offset
+                del node.lineno
+                del node.end_lineno
+                del node.col_offset
+                del node.end_col_offset
 
         compile(ast.fix_missing_locations(tree), "<file>", "exec")
 
@@ -564,10 +564,10 @@ class TestSpecifics(unittest.TestCase):
         # make all instruction locations the same to create redundancies
         for node in ast.walk(tree):
             if hasattr(node,"lineno"):
-                 del node.lineno
-                 del node.end_lineno
-                 del node.col_offset
-                 del node.end_col_offset
+                del node.lineno
+                del node.end_lineno
+                del node.col_offset
+                del node.end_col_offset
 
         compile(ast.fix_missing_locations(tree), "<file>", "exec")
 

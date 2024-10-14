@@ -288,15 +288,15 @@ class CEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase)
         self.assertFalse(err)
 
     def test_issue122332(self):
-       async def coro():
-           pass
+        async def coro():
+            pass
 
-       async def run():
-           task = self.loop.create_task(coro())
-           await task
-           self.assertIsNone(task.get_coro())
+        async def run():
+            task = self.loop.create_task(coro())
+            await task
+            self.assertIsNone(task.get_coro())
 
-       self.run_coro(run())
+        self.run_coro(run())
 
 
 class AsyncTaskCounter:

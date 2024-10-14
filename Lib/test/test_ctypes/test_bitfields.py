@@ -153,7 +153,7 @@ class BitFieldTest(unittest.TestCase):
         for c_typ in signed_int_types:
             with self.subTest(c_typ):
                 if sizeof(c_typ) != alignment(c_typ):
-                     self.skipTest('assumes size=alignment')
+                    self.skipTest('assumes size=alignment')
                 class X(Structure):
                     _fields_ = [("dummy", c_typ),
                                 ("a", c_typ, 3),
@@ -173,7 +173,7 @@ class BitFieldTest(unittest.TestCase):
         for c_typ in unsigned_int_types:
             with self.subTest(c_typ):
                 if sizeof(c_typ) != alignment(c_typ):
-                     self.skipTest('assumes size=alignment')
+                    self.skipTest('assumes size=alignment')
                 class X(Structure):
                     _fields_ = [("a", c_typ, 3),
                                 ("b", c_typ, 3),
@@ -229,7 +229,7 @@ class BitFieldTest(unittest.TestCase):
         for c_typ in int_types:
             with self.subTest(c_typ):
                 if sizeof(c_typ) != alignment(c_typ):
-                     self.skipTest('assumes size=alignment')
+                    self.skipTest('assumes size=alignment')
                 result = self.fail_fields(("a", c_typ, -1))
                 self.assertEqual(result, (ValueError,
                     "number of bits invalid for bit field 'a'"))

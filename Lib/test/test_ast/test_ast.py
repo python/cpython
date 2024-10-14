@@ -3115,7 +3115,7 @@ class ASTOptimiziationTests(unittest.TestCase):
         )
 
     def create_binop(self, operand, left=ast.Constant(1), right=ast.Constant(1)):
-            return ast.BinOp(left=left, op=self.binop[operand], right=right)
+        return ast.BinOp(left=left, op=self.binop[operand], right=right)
 
     def test_folding_binop(self):
         code = "1 %s 1"

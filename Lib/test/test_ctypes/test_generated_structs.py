@@ -533,7 +533,7 @@ def dump_ctype(tp, struct_or_union_tag='', variable_name='', semi=''):
 
 def struct_or_union(cls):
     if issubclass(cls, Structure):
-         return 'struct'
+        return 'struct'
     if issubclass(cls, Union):
         return 'union'
     raise TypeError(cls)

@@ -37,7 +37,7 @@ def openpty():
     try:
         from fcntl import ioctl, I_PUSH
     except ImportError:
-         return master_fd, slave_fd
+        return master_fd, slave_fd
     try:
         ioctl(slave_fd, I_PUSH, "ptem")
         ioctl(slave_fd, I_PUSH, "ldterm")
