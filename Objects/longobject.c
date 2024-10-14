@@ -5003,9 +5003,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     /* At this point a, b, and c are guaranteed non-negative UNLESS
        c is NULL, in which case a may be negative. */
 
-    z = (PyLongObject *)PyLong_FromLong(1L);
-    if (z == NULL)
-        goto Error;
+    z = (PyLongObject *)Py_NewRef(_PyLong_GetOne());
 
     /* Perform a modular reduction, X = X % c, but leave X alone if c
      * is NULL.
