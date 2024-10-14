@@ -1,0 +1,1 @@
+:attr:`frame.f_locals` now supports arbitrary hashable objects as keys.

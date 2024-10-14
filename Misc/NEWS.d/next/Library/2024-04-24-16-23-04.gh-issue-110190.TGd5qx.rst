@@ -1,0 +1,2 @@
+Fix ctypes structs with array on SPARC by setting ``MAX_STRUCT_SIZE`` to 32
+in stgdict. Patch by Jakub Kulik

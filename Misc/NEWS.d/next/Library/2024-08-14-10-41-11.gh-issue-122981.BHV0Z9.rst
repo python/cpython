@@ -1,0 +1,2 @@
+Fix :func:`inspect.getsource` for generated classes with Python base classes
+(e.g. enums).

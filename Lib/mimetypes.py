@@ -151,7 +151,7 @@ class MimeTypes:
     def guess_file_type(self, path, *, strict=True):
         """Guess the type of a file based on its path.
 
-        Similar to guess_type(), but takes file path istead of URL.
+        Similar to guess_type(), but takes file path instead of URL.
         """
         path = os.fsdecode(path)
         path = os.path.splitdrive(path)[1]
@@ -325,7 +325,7 @@ def guess_type(url, strict=True):
 def guess_file_type(path, *, strict=True):
     """Guess the type of a file based on its path.
 
-    Similar to guess_type(), but takes file path istead of URL.
+    Similar to guess_type(), but takes file path instead of URL.
     """
     if _db is None:
         init()

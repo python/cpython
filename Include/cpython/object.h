@@ -269,7 +269,11 @@ typedef struct _heaptypeobject {
     struct _dictkeysobject *ht_cached_keys;
     PyObject *ht_module;
     char *_ht_tpname;  // Storage for "tp_name"; see PyType_FromModuleAndSpec
+    void *ht_token;  // Storage for the "Py_tp_token" slot
     struct _specialization_cache _spec_cache; // For use by the specializer.
+#ifdef Py_GIL_DISABLED
+    Py_ssize_t unique_id;  // ID used for thread-local refcounting
+#endif
     /* here are optional user slots, followed by the members. */
 } PyHeapTypeObject;
 

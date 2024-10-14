@@ -1,0 +1,3 @@
+Make :any:`PyObject_Print` work around a bug in Android and OpenBSD which
+prevented it from throwing an exception when trying to write to a read-only
+stream.

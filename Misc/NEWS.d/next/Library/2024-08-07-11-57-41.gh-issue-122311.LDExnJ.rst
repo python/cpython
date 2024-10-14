@@ -1,0 +1,5 @@
+Improve errors in the :mod:`pickle` module. :exc:`~pickle.PicklingError` is
+now raised more often instead of :exc:`UnicodeEncodeError`,
+:exc:`ValueError` and :exc:`AttributeError`, and the original exception is
+chained to it. Improve and unify error messages in Python and C
+implementations.

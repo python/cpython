@@ -176,7 +176,7 @@ class TestExecutorInvalidation(unittest.TestCase):
             self.assertTrue(exe.is_valid())
         # Assert that the correct executors are invalidated
         # and check that nothing crashes when we invalidate
-        # an executor mutliple times.
+        # an executor multiple times.
         for i in (4,3,2,1,0):
             _testinternalcapi.invalidate_executors(objects[i])
             for exe in executors[i:]:
@@ -274,6 +274,7 @@ class TestUops(unittest.TestCase):
                 z0 = z1 = z2 = z3 = z4 = z5 = z6 = z7 = z8 = z9 = 42
                 while z9 > 0:
                     z9 = z9 - 1
+                    +z9
         """), ns, ns)
         many_vars = ns["many_vars"]
 
