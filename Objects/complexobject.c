@@ -606,12 +606,12 @@ real_to_complex(PyObject **pobj, Py_complex *pc)
     return real_to_double(pobj, &(pc->real));
 }
 
-/* Complex arithmetic rules implement special mixed-mode case: combining
-   a pure-real (float's or int's) value and a complex value is performed directly, not
-   by first coercing the real value to complex.
+/* Complex arithmetic rules implement special mixed-mode case where combining
+   a pure-real (float or int) value and a complex value is performed directly
+   without first coercing the real value to a complex value.
 
-   Let us consider the addition as an example, assuming that int's are implicitly
-   converted to float's.  We have the following rules (up to variants with changed
+   Let us consider the addition as an example, assuming that ints are implicitly
+   converted to floats.  We have the following rules (up to variants with changed
    order of operands):
 
        complex(x, y) + complex(u, v) = complex(x + u, y + v)
