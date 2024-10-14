@@ -2777,6 +2777,11 @@ memoryview_count(PyMemoryViewObject *self, PyObject *value)
             Py_DECREF(iter);
             return NULL;
         }
+        if (item == value) {
+            Py_DECREF(item);
+            count++;
+            continue;
+        }
         int contained = PyObject_RichCompareBool(item, value, Py_EQ);
         Py_DECREF(item);
         if (contained > 0) { // more likely than contained < 0
