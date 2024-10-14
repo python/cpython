@@ -1,0 +1,2 @@
+Fix a bug where pattern matching code could emit a :opcode:`JUMP_FORWARD`
+with no source location.

@@ -1,0 +1,3 @@
+In the limited C API 3.14 and newer, :c:func:`Py_REFCNT` is now implemented
+as an opaque function call to hide implementation details. Patch by Victor
+Stinner.

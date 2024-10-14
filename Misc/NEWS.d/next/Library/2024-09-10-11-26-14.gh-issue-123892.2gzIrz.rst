@@ -1,0 +1,1 @@
+Add ``"_wmi"`` to :data:`sys.stdlib_module_names`. Patch by Victor Stinner.

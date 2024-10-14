@@ -33,7 +33,6 @@ struct _types_runtime_state {
     struct {
         struct {
             PyTypeObject *type;
-            PyTypeObject def;
             int64_t interp_count;
         } types[_Py_MAX_MANAGED_STATIC_TYPES];
     } managed_static;
@@ -210,7 +209,6 @@ extern PyObject * _PyType_GetBases(PyTypeObject *type);
 extern PyObject * _PyType_GetMRO(PyTypeObject *type);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
 extern int _PyType_HasSubclasses(PyTypeObject *);
-PyAPI_FUNC(PyObject *) _PyType_GetModuleByDef2(PyTypeObject *, PyTypeObject *, PyModuleDef *);
 
 // Export for _testinternalcapi extension.
 PyAPI_FUNC(PyObject *) _PyType_GetSlotWrapperNames(void);

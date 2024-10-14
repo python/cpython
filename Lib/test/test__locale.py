@@ -1,4 +1,4 @@
-from _locale import (setlocale, LC_ALL, LC_CTYPE, LC_NUMERIC, localeconv, Error)
+from _locale import (setlocale, LC_ALL, LC_CTYPE, LC_NUMERIC, LC_TIME, localeconv, Error)
 try:
     from _locale import (RADIXCHAR, THOUSEP, nl_langinfo)
 except ImportError:
@@ -74,6 +74,17 @@ known_numerics = {
     'ps_AF': ('\u066b', '\u066c'),
 }
 
+known_alt_digits = {
+    'C': (0, {}),
+    'en_US': (0, {}),
+    'fa_IR': (100, {0: '\u06f0\u06f0', 10: '\u06f1\u06f0', 99: '\u06f9\u06f9'}),
+    'ja_JP': (100, {0: '\u3007', 10: '\u5341', 99: '\u4e5d\u5341\u4e5d'}),
+    'lzh_TW': (32, {0: '\u3007', 10: '\u5341', 31: '\u5345\u4e00'}),
+    'my_MM': (100, {0: '\u1040\u1040', 10: '\u1041\u1040', 99: '\u1049\u1049'}),
+    'or_IN': (100, {0: '\u0b66', 10: '\u0b67\u0b66', 99: '\u0b6f\u0b6f'}),
+    'shn_MM': (100, {0: '\u1090\u1090', 10: '\u1091\u1090', 99: '\u1099\u1099'}),
+}
+
 if sys.platform == 'win32':
     # ps_AF doesn't work on Windows: see bpo-38324 (msg361830)
     del known_numerics['ps_AF']
@@ -115,16 +126,17 @@ class _LocaleTests(unittest.TestCase):
     def test_lc_numeric_nl_langinfo(self):
         # Test nl_langinfo against known values
         tested = False
+        oldloc = setlocale(LC_CTYPE)
         for loc in candidate_locales:
             try:
                 setlocale(LC_NUMERIC, loc)
-                setlocale(LC_CTYPE, loc)
             except Error:
                 continue
             for li, lc in ((RADIXCHAR, "decimal_point"),
                             (THOUSEP, "thousands_sep")):
                 if self.numeric_tester('nl_langinfo', nl_langinfo(li), lc, loc):
                     tested = True
+            self.assertEqual(setlocale(LC_CTYPE), oldloc)
         if not tested:
             self.skipTest('no suitable locales')
 
@@ -135,10 +147,10 @@ class _LocaleTests(unittest.TestCase):
     def test_lc_numeric_localeconv(self):
         # Test localeconv against known values
         tested = False
+        oldloc = setlocale(LC_CTYPE)
         for loc in candidate_locales:
             try:
                 setlocale(LC_NUMERIC, loc)
-                setlocale(LC_CTYPE, loc)
             except Error:
                 continue
             formatting = localeconv()
@@ -146,6 +158,7 @@ class _LocaleTests(unittest.TestCase):
                         "thousands_sep"):
                 if self.numeric_tester('localeconv', formatting[lc], lc, loc):
                     tested = True
+            self.assertEqual(setlocale(LC_CTYPE), oldloc)
         if not tested:
             self.skipTest('no suitable locales')
 
@@ -153,10 +166,10 @@ class _LocaleTests(unittest.TestCase):
     def test_lc_numeric_basic(self):
         # Test nl_langinfo against localeconv
         tested = False
+        oldloc = setlocale(LC_CTYPE)
         for loc in candidate_locales:
             try:
                 setlocale(LC_NUMERIC, loc)
-                setlocale(LC_CTYPE, loc)
             except Error:
                 continue
             for li, lc in ((RADIXCHAR, "decimal_point"),
@@ -173,6 +186,35 @@ class _LocaleTests(unittest.TestCase):
                                                 nl_radixchar, li_radixchar,
                                                 loc, set_locale))
                 tested = True
+            self.assertEqual(setlocale(LC_CTYPE), oldloc)
+        if not tested:
+            self.skipTest('no suitable locales')
+
+    @unittest.skipUnless(nl_langinfo, "nl_langinfo is not available")
+    @unittest.skipUnless(hasattr(locale, 'ALT_DIGITS'), "requires locale.ALT_DIGITS")
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "musl libc issue on Emscripten, bpo-46390"
+    )
+    def test_alt_digits_nl_langinfo(self):
+        # Test nl_langinfo(ALT_DIGITS)
+        tested = False
+        for loc, (count, samples) in known_alt_digits.items():
+            with self.subTest(locale=loc):
+                try:
+                    setlocale(LC_TIME, loc)
+                except Error:
+                    self.skipTest(f'no locale {loc!r}')
+                    continue
+                with self.subTest(locale=loc):
+                    alt_digits = nl_langinfo(locale.ALT_DIGITS)
+                    self.assertIsInstance(alt_digits, tuple)
+                    if count and not alt_digits and support.is_apple:
+                        self.skipTest(f'ALT_DIGITS is not set for locale {loc!r} on Apple platforms')
+                    self.assertEqual(len(alt_digits), count)
+                    for i in samples:
+                        self.assertEqual(alt_digits[i], samples[i])
+                    tested = True
         if not tested:
             self.skipTest('no suitable locales')
 
@@ -180,10 +222,10 @@ class _LocaleTests(unittest.TestCase):
         # Bug #1391872: Test whether float parsing is okay on European
         # locales.
         tested = False
+        oldloc = setlocale(LC_CTYPE)
         for loc in candidate_locales:
             try:
                 setlocale(LC_NUMERIC, loc)
-                setlocale(LC_CTYPE, loc)
             except Error:
                 continue
 
@@ -199,6 +241,7 @@ class _LocaleTests(unittest.TestCase):
                 self.assertRaises(ValueError, float,
                                   localeconv()['decimal_point'].join(['1', '23']))
             tested = True
+            self.assertEqual(setlocale(LC_CTYPE), oldloc)
         if not tested:
             self.skipTest('no suitable locales')
 

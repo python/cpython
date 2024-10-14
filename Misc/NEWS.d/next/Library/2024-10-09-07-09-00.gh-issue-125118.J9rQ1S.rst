@@ -1,0 +1,1 @@
+Don't copy arbitrary values to :c:expr:`_Bool` in the :mod:`struct` module.

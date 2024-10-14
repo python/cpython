@@ -1,0 +1,1 @@
+Support :option:`-X gil=1 <-X>` and :envvar:`PYTHON_GIL=1 <PYTHON_GIL>` on non-free-threaded builds.
