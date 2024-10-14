@@ -540,6 +540,9 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
         for c in [b'\x01', b'\x7f', b'\xff', b'\x0f', b'\xf0']:
             self.assertTrue(struct.unpack('>?', c)[0])
+            self.assertTrue(struct.unpack('<?', c)[0])
+            self.assertTrue(struct.unpack('=?', c)[0])
+            self.assertTrue(struct.unpack('@?', c)[0])
 
     def test_count_overflow(self):
         hugecount = '{}b'.format(sys.maxsize+1)
