@@ -996,6 +996,13 @@ ConfigParser Objects
    converter gets its own corresponding :meth:`!get*` method on the parser
    object and section proxies.
 
+   When *allow_unnamed_section* is ``True`` (default: ``False``),
+   the first section name can be omitted, options with no section name
+   specified ahead (often called ``"Global Options"`` or
+   ``options in "Default Section"``) are allowed. See
+   `"Supported INI File Structure" section<#supported-ini-file-structure>`_
+   for details.
+
    It is possible to read several configurations into a single
    :class:`ConfigParser`, where the most recently added configuration has the
    highest priority. Any conflicting keys are taken from the more recent
@@ -1044,6 +1051,9 @@ ConfigParser Objects
    .. versionchanged:: 3.13
       Raise a :exc:`MultilineContinuationError` when *allow_no_value* is
       ``True``, and a key without a value is continued with an indented line.
+
+   .. versionchanged:: 3.13
+      The *allow_unnamed_section* argument was added.
 
    .. method:: defaults()
 
