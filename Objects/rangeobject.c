@@ -3,7 +3,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
-#include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_long.h"          // _PyLong_GetZero(), _PyLong_GetOne()
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_range.h"
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
@@ -32,7 +32,7 @@ validate_step(PyObject *step)
 {
     /* No step specified, use a step of 1. */
     if (!step)
-        return PyLong_FromLong(1);
+        return _PyLong_GetOne();
 
     step = PyNumber_Index(step);
     if (step && _PyLong_IsZero((PyLongObject *)step)) {

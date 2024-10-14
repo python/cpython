@@ -854,7 +854,7 @@ _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
     Py_ssize_t idigit = 0;              /* next free index in v->long_value.ob_digit */
 
     if (n == 0)
-        return PyLong_FromLong(0L);
+        return _PyLong_GetZero();
 
     if (little_endian) {
         pstartbyte = bytes;
@@ -3715,7 +3715,7 @@ x_sub(PyLongObject *a, PyLongObject *b)
         while (--i >= 0 && a->long_value.ob_digit[i] == b->long_value.ob_digit[i])
             ;
         if (i < 0)
-            return (PyLongObject *)PyLong_FromLong(0);
+            return (PyLongObject *)_PyLong_GetZero();
         if (a->long_value.ob_digit[i] < b->long_value.ob_digit[i]) {
             sign = -1;
             { PyLongObject *temp = a; a = b; b = temp; }
@@ -4017,7 +4017,7 @@ k_mul(PyLongObject *a, PyLongObject *b)
     i = a == b ? KARATSUBA_SQUARE_CUTOFF : KARATSUBA_CUTOFF;
     if (asize <= i) {
         if (asize == 0)
-            return (PyLongObject *)PyLong_FromLong(0);
+            return (PyLongObject *)_PyLong_GetZero();
         else
             return x_mul(a, b);
     }
@@ -4960,7 +4960,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
         /* if modulus == 1:
                return 0 */
         if (_PyLong_IsNonNegativeCompact(c) && (c->long_value.ob_digit[0] == 1)) {
-            z = (PyLongObject *)PyLong_FromLong(0L);
+            z = (PyLongObject *)_PyLong_GetZero();
             goto Done;
         }
 
@@ -5003,7 +5003,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     /* At this point a, b, and c are guaranteed non-negative UNLESS
        c is NULL, in which case a may be negative. */
 
-    z = (PyLongObject *)Py_NewRef(_PyLong_GetOne());
+    z = (PyLongObject *)_PyLong_GetOne();
 
     /* Perform a modular reduction, X = X % c, but leave X alone if c
      * is NULL.
@@ -5326,7 +5326,7 @@ long_rshift(PyObject *a, PyObject *b)
         return NULL;
     }
     if (_PyLong_IsZero((PyLongObject *)a)) {
-        return PyLong_FromLong(0);
+        return _PyLong_GetZero();
     }
     if (PyLong_AsInt64(b, &shiftby) < 0) {
         if (!PyErr_ExceptionMatches(PyExc_OverflowError)) {
@@ -5337,7 +5337,7 @@ long_rshift(PyObject *a, PyObject *b)
             return PyLong_FromLong(-1);
         }
         else {
-            return PyLong_FromLong(0);
+            return _PyLong_GetZero();
         }
     }
     return _PyLong_Rshift(a, shiftby);
@@ -5353,7 +5353,7 @@ _PyLong_Rshift(PyObject *a, int64_t shiftby)
     assert(PyLong_Check(a));
     assert(shiftby >= 0);
     if (_PyLong_IsZero((PyLongObject *)a)) {
-        return PyLong_FromLong(0);
+        return _PyLong_GetZero();
     }
 #if PY_SSIZE_T_MAX <= INT64_MAX / PyLong_SHIFT
     if (shiftby > (int64_t)PY_SSIZE_T_MAX * PyLong_SHIFT) {
@@ -5361,7 +5361,7 @@ _PyLong_Rshift(PyObject *a, int64_t shiftby)
             return PyLong_FromLong(-1);
         }
         else {
-            return PyLong_FromLong(0);
+            return _PyLong_GetZero();
         }
     }
 #endif
@@ -5424,7 +5424,7 @@ long_lshift_method(PyObject *aa, PyObject *bb)
         return NULL;
     }
     if (_PyLong_IsZero(a)) {
-        return PyLong_FromLong(0);
+        return _PyLong_GetZero();
     }
 
     int64_t shiftby;
@@ -5445,7 +5445,7 @@ long_lshift_int64(PyLongObject *a, int64_t shiftby)
     assert(shiftby >= 0);
 
     if (_PyLong_IsZero(a)) {
-        return PyLong_FromLong(0);
+        return _PyLong_GetZero();
     }
 #if PY_SSIZE_T_MAX <= INT64_MAX / PyLong_SHIFT
     if (shiftby > (int64_t)PY_SSIZE_T_MAX * PyLong_SHIFT) {
@@ -5895,7 +5895,7 @@ long_new_impl(PyTypeObject *type, PyObject *x, PyObject *obase)
                             "int() missing string argument");
             return NULL;
         }
-        return PyLong_FromLong(0L);
+        return _PyLong_GetZero();
     }
     /* default base and limit, forward to standard implementation */
     if (obase == NULL)
@@ -5977,13 +5977,13 @@ int___getnewargs___impl(PyObject *self)
 static PyObject *
 long_get0(PyObject *Py_UNUSED(self), void *Py_UNUSED(context))
 {
-    return PyLong_FromLong(0L);
+    return _PyLong_GetZero();
 }
 
 static PyObject *
 long_get1(PyObject *Py_UNUSED(self), void *Py_UNUSED(ignored))
 {
-    return PyLong_FromLong(1L);
+    return _PyLong_GetOne();
 }
 
 /*[clinic input]

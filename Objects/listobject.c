@@ -8,7 +8,7 @@
 #include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_interp.h"        // PyInterpreterState.list
 #include "pycore_list.h"          // struct _Py_list_freelist, _PyListIterObject
-#include "pycore_long.h"          // _PyLong_DigitCount
+#include "pycore_long.h"          // _PyLong_DigitCount, _PyLong_GetZero()
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
@@ -3900,7 +3900,7 @@ listiter_len(PyObject *self, PyObject *Py_UNUSED(ignored))
         if (len >= 0)
             return PyLong_FromSsize_t(len);
     }
-    return PyLong_FromLong(0);
+    return _PyLong_GetZero();
 }
 
 static PyObject *

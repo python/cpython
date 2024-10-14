@@ -1526,9 +1526,7 @@ float_as_integer_ratio_impl(PyObject *self)
     numerator = PyLong_FromDouble(float_part);
     if (numerator == NULL)
         goto error;
-    denominator = PyLong_FromLong(1);
-    if (denominator == NULL)
-        goto error;
+    denominator = _PyLong_GetOne();
     py_exponent = PyLong_FromLong(Py_ABS(exponent));
     if (py_exponent == NULL)
         goto error;

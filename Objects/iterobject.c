@@ -96,7 +96,7 @@ iter_len(seqiterobject *it, PyObject *Py_UNUSED(ignored))
         if (len >= 0)
             return PyLong_FromSsize_t(len);
     }
-    return PyLong_FromLong(0);
+    return _PyLong_GetZero();
 }
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
