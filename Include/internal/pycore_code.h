@@ -156,6 +156,7 @@ typedef struct {
 } _PyCallCache;
 
 #define INLINE_CACHE_ENTRIES_CALL CACHE_ENTRIES(_PyCallCache)
+#define INLINE_CACHE_ENTRIES_CALL_KW CACHE_ENTRIES(_PyCallCache)
 
 typedef struct {
     _Py_BackoffCounter counter;
@@ -335,6 +336,8 @@ extern void _Py_Specialize_StoreSubscr(_PyStackRef container, _PyStackRef sub,
                                        _Py_CODEUNIT *instr);
 extern void _Py_Specialize_Call(_PyStackRef callable, _Py_CODEUNIT *instr,
                                 int nargs);
+extern void _Py_Specialize_CallKw(_PyStackRef callable, _Py_CODEUNIT *instr,
+                                  int nargs);
 extern void _Py_Specialize_BinaryOp(_PyStackRef lhs, _PyStackRef rhs, _Py_CODEUNIT *instr,
                                     int oparg, _PyStackRef *locals);
 extern void _Py_Specialize_CompareOp(_PyStackRef lhs, _PyStackRef rhs,
@@ -381,6 +384,7 @@ extern void _Py_Specialize_ContainsOp(_PyStackRef value, _Py_CODEUNIT *instr);
         } \
     } while (0)
 #define RARE_EVENT_STAT_INC(name) do { if (_Py_stats) _Py_stats->rare_event_stats.name++; } while (0)
+#define OPCODE_DEFERRED_INC(opname) do { if (_Py_stats && opcode == opname) _Py_stats->opcode_stats[opname].specialization.deferred++; } while (0)
 
 // Export for '_opcode' shared extension
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
@@ -402,6 +406,7 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define OPT_ERROR_IN_OPCODE(opname) ((void)0)
 #define OPT_HIST(length, name) ((void)0)
 #define RARE_EVENT_STAT_INC(name) ((void)0)
+#define OPCODE_DEFERRED_INC(opname) ((void)0)
 #endif  // !Py_STATS
 
 // Utility functions for reading/writing 32/64-bit values in the inline caches.
@@ -538,8 +543,9 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
 #define ADAPTIVE_COOLDOWN_BACKOFF 0
 
 // Can't assert this in pycore_backoff.h because of header order dependencies
-static_assert(SIDE_EXIT_INITIAL_VALUE > ADAPTIVE_COOLDOWN_VALUE,
-    "Cold exit value should be larger than adaptive cooldown value");
+#if SIDE_EXIT_INITIAL_VALUE <= ADAPTIVE_COOLDOWN_VALUE
+#  error  "Cold exit value should be larger than adaptive cooldown value"
+#endif
 
 static inline _Py_BackoffCounter
 adaptive_counter_bits(uint16_t value, uint16_t backoff) {
@@ -586,9 +592,13 @@ adaptive_counter_backoff(_Py_BackoffCounter counter) {
 
 extern int _Py_Instrument(PyCodeObject *co, PyInterpreterState *interp);
 
-extern int _Py_GetBaseOpcode(PyCodeObject *code, int offset);
+extern _Py_CODEUNIT _Py_GetBaseCodeUnit(PyCodeObject *code, int offset);
 
 extern int _PyInstruction_GetLength(PyCodeObject *code, int offset);
+
+struct _PyCode8 _PyCode_DEF(8);
+
+PyAPI_DATA(const struct _PyCode8) _Py_InitCleanup;
 
 #ifdef __cplusplus
 }

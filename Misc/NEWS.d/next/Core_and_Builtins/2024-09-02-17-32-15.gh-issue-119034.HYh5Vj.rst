@@ -1,0 +1,2 @@
+Change ``<page up>`` and ``<page down>`` keys of the Python REPL to history
+search forward/backward. Patch by Victor Stinner.

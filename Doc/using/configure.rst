@@ -183,12 +183,6 @@ General Options
 
    See :envvar:`PYTHONCOERCECLOCALE` and the :pep:`538`.
 
-.. option:: --without-freelists
-
-   Disable all freelists except the empty tuple singleton.
-
-   .. versionadded:: 3.11
-
 .. option:: --with-platlibdir=DIRNAME
 
    Python library directory name (default is ``lib``).
@@ -299,7 +293,7 @@ General Options
    Defines the ``Py_GIL_DISABLED`` macro and adds ``"t"`` to
    :data:`sys.abiflags`.
 
-   See :ref:`free-threaded-cpython` for more detail.
+   See :ref:`whatsnew313-free-threaded-cpython` for more detail.
 
    .. versionadded:: 3.13
 
