@@ -425,6 +425,8 @@ class Test_Csv(unittest.TestCase):
                           quoting=csv.QUOTE_NONNUMERIC)
         self._read_test(['1,@,3,@,5'], [['1', ',3,', '5']], quotechar='@')
         self._read_test(['1,\0,3,\0,5'], [['1', ',3,', '5']], quotechar='\0')
+        self._read_test(['1\\.5,\\.5,.5'], [[1.5, 0.5, 0.5]],
+                        quoting=csv.QUOTE_NONNUMERIC, escapechar='\\')
 
     def test_read_skipinitialspace(self):
         self._read_test(['no space, space,  spaces,\ttab'],
@@ -1068,6 +1070,12 @@ class TestDialectValidity(unittest.TestCase):
 
         mydialect.quoting = None
         self.assertRaises(csv.Error, mydialect)
+
+        mydialect.quoting = 42
+        with self.assertRaises(csv.Error) as cm:
+            mydialect()
+        self.assertEqual(str(cm.exception),
+                         'bad "quoting" value')
 
         mydialect.doublequote = True
         mydialect.quoting = csv.QUOTE_ALL

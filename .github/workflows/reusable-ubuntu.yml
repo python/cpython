@@ -1,20 +1,28 @@
+name: Reusable Ubuntu
+
 on:
   workflow_call:
     inputs:
       config_hash:
         required: true
         type: string
-      options:
-        required: true
-        type: string
+      free-threading:
+        description: Whether to use free-threaded mode
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   build_ubuntu_reusable:
     name: 'build and test'
     timeout-minutes: 60
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04]
     env:
-      OPENSSL_VER: 3.0.13
+      OPENSSL_VER: 3.0.15
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v4
@@ -32,7 +40,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
-        key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
+        key: ${{ matrix.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $MULTISSL_DIR --openssl $OPENSSL_VER --system Linux
@@ -61,7 +69,12 @@ jobs:
         key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ inputs.config_hash }}
     - name: Configure CPython out-of-tree
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: ${{ inputs.options }}
+      run: >-
+        ../cpython-ro-srcdir/configure
+        --config-cache
+        --with-pydebug
+        --with-openssl=$OPENSSL_DIR
+        ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
     - name: Build CPython out-of-tree
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: make -j4

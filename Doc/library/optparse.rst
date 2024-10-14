@@ -1351,7 +1351,7 @@ The whole point of creating and populating an OptionParser is to call its
       the list of arguments to process (default: ``sys.argv[1:]``)
 
    ``values``
-      an :class:`Values` object to store option arguments in (default: a
+      a :class:`Values` object to store option arguments in (default: a
       new instance of :class:`Values`) -- if you give an existing object, the
       option defaults will not be initialized on it
 

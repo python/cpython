@@ -589,12 +589,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    For :ref:`statically allocated type objects <static-types>`,
    the *tp_name* field should contain a dot.
-   Everything before the last dot is made accessible as the :attr:`__module__`
+   Everything before the last dot is made accessible as the :attr:`~type.__module__`
    attribute, and everything after the last dot is made accessible as the
-   :attr:`~definition.__name__` attribute.
+   :attr:`~type.__name__` attribute.
 
    If no dot is present, the entire :c:member:`~PyTypeObject.tp_name` field is made accessible as the
-   :attr:`~definition.__name__` attribute, and the :attr:`__module__` attribute is undefined
+   :attr:`~type.__name__` attribute, and the :attr:`~type.__module__` attribute is undefined
    (unless explicitly set in the dictionary, as explained above).  This means your
    type will be impossible to pickle.  Additionally, it will not be listed in
    module documentations created with pydoc.
@@ -1149,7 +1149,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    .. c:macro:: Py_TPFLAGS_MANAGED_DICT
 
-      This bit indicates that instances of the class have a ``__dict__``
+      This bit indicates that instances of the class have a `~object.__dict__`
       attribute, and that the space for the dictionary is managed by the VM.
 
       If this flag is set, :c:macro:`Py_TPFLAGS_HAVE_GC` should also be set.
@@ -1350,8 +1350,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 .. c:member:: const char* PyTypeObject.tp_doc
 
    An optional pointer to a NUL-terminated C string giving the docstring for this
-   type object.  This is exposed as the :attr:`__doc__` attribute on the type and
-   instances of the type.
+   type object.  This is exposed as the :attr:`~type.__doc__` attribute on the
+   type and instances of the type.
 
    **Inheritance:**
 
@@ -1584,7 +1584,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    weak references to the type object itself.
 
    It is an error to set both the :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` bit and
-   :c:member:`~PyTypeObject.tp_weaklist`.
+   :c:member:`~PyTypeObject.tp_weaklistoffset`.
 
    **Inheritance:**
 
@@ -1596,7 +1596,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    **Default:**
 
    If the :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` bit is set in the
-   :c:member:`~PyTypeObject.tp_dict` field, then
+   :c:member:`~PyTypeObject.tp_flags` field, then
    :c:member:`~PyTypeObject.tp_weaklistoffset` will be set to a negative value,
    to indicate that it is unsafe to use this field.
 
@@ -2028,7 +2028,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    A collection of subclasses.  Internal use only.  May be an invalid pointer.
 
    To get a list of subclasses, call the Python method
-   :py:meth:`~class.__subclasses__`.
+   :py:meth:`~type.__subclasses__`.
 
    .. versionchanged:: 3.12
 

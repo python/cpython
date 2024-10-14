@@ -70,7 +70,7 @@ Fix bug where compiler crashes on an if expression with an empty body block.
 .. nonce: DcKoBJ
 .. section: Core and Builtins
 
-Fix a reference bug in :func:`_imp.create_builtin()` after the creation of
+Fix a reference bug in :func:`!_imp.create_builtin` after the creation of
 the first sub-interpreter for modules ``builtins`` and ``sys``. Patch by
 Victor Stinner.
 
@@ -399,7 +399,7 @@ Fix refcount error when arguments are packed to tuple in Argument Clinic.
 .. nonce: 7uCiIB
 .. section: Library
 
-:meth:`pathlib.PurePath.relative_to()` now treats naked Windows drive paths
+:meth:`pathlib.PurePath.relative_to` now treats naked Windows drive paths
 as relative. This brings its behaviour in line with other parts of pathlib.
 
 ..

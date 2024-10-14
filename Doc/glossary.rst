@@ -350,7 +350,7 @@ Glossary
    docstring
       A string literal which appears as the first expression in a class,
       function or module.  While ignored when the suite is executed, it is
-      recognized by the compiler and put into the :attr:`!__doc__` attribute
+      recognized by the compiler and put into the :attr:`~definition.__doc__` attribute
       of the enclosing class, function or module.  Since it is available via
       introspection, it is the canonical place for documentation of the
       object.
@@ -437,7 +437,7 @@ Glossary
       <meta path finder>` for use with :data:`sys.meta_path`, and :term:`path
       entry finders <path entry finder>` for use with :data:`sys.path_hooks`.
 
-      See :ref:`importsystem` and :mod:`importlib` for much more detail.
+      See :ref:`finders-and-loaders` and :mod:`importlib` for much more detail.
 
    floor division
       Mathematical division that rounds down to nearest integer.  The floor
@@ -591,6 +591,14 @@ Glossary
       :ref:`idle` is a basic editor and interpreter environment
       which ships with the standard distribution of Python.
 
+   immortal
+      *Immortal objects* are a CPython implementation detail introduced
+      in :pep:`683`.
+
+      If an object is immortal, its :term:`reference count` is never modified,
+      and therefore it is never deallocated while the interpreter is running.
+      For example, :const:`True` and :const:`None` are immortal in CPython.
+
    immutable
       An object with a fixed value.  Immutable objects include numbers, strings and
       tuples.  Such an object cannot be altered.  A new object has to
@@ -742,8 +750,11 @@ Glossary
    loader
       An object that loads a module. It must define a method named
       :meth:`load_module`. A loader is typically returned by a
-      :term:`finder`. See :pep:`302` for details and
-      :class:`importlib.abc.Loader` for an :term:`abstract base class`.
+      :term:`finder`. See also:
+
+      * :ref:`finders-and-loaders`
+      * :class:`importlib.abc.Loader`
+      * :pep:`302`
 
    locale encoding
       On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
@@ -812,6 +823,8 @@ Glossary
    module spec
       A namespace containing the import-related information used to load a
       module. An instance of :class:`importlib.machinery.ModuleSpec`.
+
+      See also :ref:`module-specs`.
 
    MRO
       See :term:`method resolution order`.
@@ -1098,7 +1111,7 @@ Glossary
       :class:`tuple`, and :class:`bytes`. Note that :class:`dict` also
       supports :meth:`~object.__getitem__` and :meth:`!__len__`, but is considered a
       mapping rather than a sequence because the lookups use arbitrary
-      :term:`immutable` keys rather than integers.
+      :term:`hashable` keys rather than integers.
 
       The :class:`collections.abc.Sequence` abstract base class
       defines a much richer interface that goes beyond just
@@ -1125,6 +1138,17 @@ Glossary
       created using the subscript notation, ``[]`` with colons between numbers
       when several are given, such as in ``variable_name[1:3:5]``.  The bracket
       (subscript) notation uses :class:`slice` objects internally.
+
+   soft deprecated
+      A soft deprecated API should not be used in new code,
+      but it is safe for already existing code to use it.
+      The API remains documented and tested, but will not be enhanced further.
+
+      Soft deprecation, unlike normal deprecation, does not plan on removing the API
+      and will not emit warnings.
+
+      See `PEP 387: Soft Deprecation
+      <https://peps.python.org/pep-0387/#soft-deprecation>`_.
 
    special method
       .. index:: pair: special; method
@@ -1193,7 +1217,7 @@ Glossary
    type
       The type of a Python object determines what kind of object it is; every
       object has a type.  An object's type is accessible as its
-      :attr:`~instance.__class__` attribute or can be retrieved with
+      :attr:`~object.__class__` attribute or can be retrieved with
       ``type(obj)``.
 
    type alias

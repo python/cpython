@@ -90,7 +90,7 @@ compile Python sources.
 .. option:: -j N
 
    Use *N* workers to compile the files within the given directory.
-   If ``0`` is used, then the result of :func:`os.cpu_count()`
+   If ``0`` is used, then the result of :func:`os.cpu_count`
    will be used.
 
 .. option:: --invalidation-mode [timestamp|checked-hash|unchecked-hash]

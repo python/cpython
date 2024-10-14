@@ -484,14 +484,14 @@ tuples or objects that the method normally returns will be empty.
 
 .. method:: NNTP.head(message_spec=None, *, file=None)
 
-   Same as :meth:`article()`, but sends a ``HEAD`` command.  The *lines*
+   Same as :meth:`article`, but sends a ``HEAD`` command.  The *lines*
    returned (or written to *file*) will only contain the message headers, not
    the body.
 
 
 .. method:: NNTP.body(message_spec=None, *, file=None)
 
-   Same as :meth:`article()`, but sends a ``BODY`` command.  The *lines*
+   Same as :meth:`article`, but sends a ``BODY`` command.  The *lines*
    returned (or written to *file*) will only contain the message body, not the
    headers.
 
@@ -513,7 +513,7 @@ tuples or objects that the method normally returns will be empty.
 
    Send an ``IHAVE`` command. *message_id* is the id of the message to send
    to the server (enclosed in  ``'<'`` and ``'>'``).  The *data* parameter
-   and the return value are the same as for :meth:`post()`.
+   and the return value are the same as for :meth:`post`.
 
 
 .. method:: NNTP.date()
@@ -560,7 +560,7 @@ them have been superseded by newer commands in :rfc:`3977`.
 
    Send an ``XOVER`` command.  *start* and *end* are article numbers
    delimiting the range of articles to select.  The return value is the
-   same of for :meth:`over()`.  It is recommended to use :meth:`over()`
+   same of for :meth:`over`.  It is recommended to use :meth:`over`
    instead, since it will automatically use the newer ``OVER`` command
    if available.
 

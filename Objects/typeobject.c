@@ -116,6 +116,7 @@ static_builtin_index_clear(PyTypeObject *self)
     self->tp_subclasses = NULL;
 }
 
+
 static inline static_builtin_state *
 static_builtin_state_get(PyInterpreterState *interp, PyTypeObject *self)
 {
@@ -1079,8 +1080,10 @@ type_module(PyTypeObject *type, void *context)
         if (s != NULL) {
             mod = PyUnicode_FromStringAndSize(
                 type->tp_name, (Py_ssize_t)(s - type->tp_name));
-            if (mod != NULL)
-                PyUnicode_InternInPlace(&mod);
+            if (mod != NULL) {
+                PyInterpreterState *interp = _PyInterpreterState_GET();
+                _PyUnicode_InternMortal(interp, &mod);
+            }
         }
         else {
             mod = Py_NewRef(&_Py_ID(builtins));
@@ -4917,7 +4920,8 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
         }
         /* bpo-40521: Interned strings are shared by all subinterpreters */
         if (!PyUnicode_CHECK_INTERNED(name)) {
-            PyUnicode_InternInPlace(&name);
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            _PyUnicode_InternMortal(interp, &name);
             if (!PyUnicode_CHECK_INTERNED(name)) {
                 PyErr_SetString(PyExc_MemoryError,
                                 "Out of memory interning an attribute name");
@@ -5709,7 +5713,6 @@ differs:
 static int
 object_set_class(PyObject *self, PyObject *value, void *closure)
 {
-    PyTypeObject *oldto = Py_TYPE(self);
 
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
@@ -5728,6 +5731,8 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
                     self, "__class__", value) < 0) {
         return -1;
     }
+
+    PyTypeObject *oldto = Py_TYPE(self);
 
     /* In versions of CPython prior to 3.5, the code in
        compatible_for_assignment was not set up to correctly check for memory
@@ -7584,6 +7589,7 @@ _PyStaticType_InitBuiltin(PyInterpreterState *interp, PyTypeObject *self)
     if (res < 0) {
         static_builtin_state_clear(interp, self);
     }
+
     return res;
 }
 
@@ -10076,6 +10082,84 @@ recurse_down_subclasses(PyTypeObject *type, PyObject *attr_name,
     return 0;
 }
 
+static int
+expect_manually_inherited(PyTypeObject *type, void **slot)
+{
+    PyObject *typeobj = (PyObject *)type;
+    if (slot == (void *)&type->tp_init) {
+        /* This is a best-effort list of builtin exception types
+           that have their own tp_init function. */
+        if (typeobj != PyExc_BaseException
+            && typeobj != PyExc_BaseExceptionGroup
+            && typeobj != PyExc_ImportError
+            && typeobj != PyExc_NameError
+            && typeobj != PyExc_OSError
+            && typeobj != PyExc_StopIteration
+            && typeobj != PyExc_SyntaxError
+            && typeobj != PyExc_UnicodeDecodeError
+            && typeobj != PyExc_UnicodeEncodeError
+
+            && type != &PyBool_Type
+            && type != &PyBytes_Type
+            && type != &PyMemoryView_Type
+            && type != &PyComplex_Type
+            && type != &PyEnum_Type
+            && type != &PyFilter_Type
+            && type != &PyFloat_Type
+            && type != &PyFrozenSet_Type
+            && type != &PyLong_Type
+            && type != &PyMap_Type
+            && type != &PyRange_Type
+            && type != &PyReversed_Type
+            && type != &PySlice_Type
+            && type != &PyTuple_Type
+            && type != &PyUnicode_Type
+            && type != &PyZip_Type)
+
+        {
+            return 1;
+        }
+    }
+    else if (slot == (void *)&type->tp_str) {
+        /* This is a best-effort list of builtin exception types
+           that have their own tp_str function. */
+        if (typeobj == PyExc_AttributeError || typeobj == PyExc_NameError) {
+            return 1;
+        }
+    }
+    else if (slot == (void *)&type->tp_getattr
+             || slot == (void *)&type->tp_getattro)
+    {
+        /* This is a best-effort list of builtin types
+           that have their own tp_getattr function. */
+        if (typeobj == PyExc_BaseException
+            || type == &PyByteArray_Type
+            || type == &PyBytes_Type
+            || type == &PyComplex_Type
+            || type == &PyDict_Type
+            || type == &PyEnum_Type
+            || type == &PyFilter_Type
+            || type == &PyLong_Type
+            || type == &PyList_Type
+            || type == &PyMap_Type
+            || type == &PyMemoryView_Type
+            || type == &PyProperty_Type
+            || type == &PyRange_Type
+            || type == &PyReversed_Type
+            || type == &PySet_Type
+            || type == &PySlice_Type
+            || type == &PySuper_Type
+            || type == &PyTuple_Type
+            || type == &PyZip_Type)
+        {
+            return 1;
+        }
+    }
+
+    /* It must be inherited (see type_ready_inherit()).. */
+    return 0;
+}
+
 /* This function is called by PyType_Ready() to populate the type's
    dictionary with method descriptors for function slots.  For each
    function slot (like tp_repr) that's defined in the type, one or more
@@ -10120,6 +10204,26 @@ add_operators(PyTypeObject *type)
         ptr = slotptr(type, p->offset);
         if (!ptr || !*ptr)
             continue;
+        if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN
+            && type->tp_base != NULL)
+        {
+            /* Also ignore when the type slot has been inherited. */
+            void **ptr_base = slotptr(type->tp_base, p->offset);
+            if (ptr_base && *ptr == *ptr_base) {
+                /* Ideally we would always ignore any manually inherited
+                   slots, Which would mean inheriting the slot wrapper
+                   using normal attribute lookup rather than keeping
+                   a distinct copy.  However, that would introduce
+                   a slight change in behavior that could break
+                   existing code.
+
+                   In the meantime, look the other way when the definition
+                   explicitly inherits the slot. */
+                if (!expect_manually_inherited(type, ptr)) {
+                    continue;
+                }
+            }
+        }
         int r = PyDict_Contains(dict, p->name_strobj);
         if (r > 0)
             continue;

@@ -2224,6 +2224,17 @@ PySSL_dealloc(PySSLSocket *self)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     if (self->ssl) {
+        // If we free the SSL socket object without having called SSL_shutdown,
+        // OpenSSL will invalidate the linked SSL session object. While this
+        // behavior is strictly RFC-compliant, it makes session reuse less
+        // likely and it would also break compatibility with older stdlib
+        // versions (which used an ugly workaround of duplicating the
+        // SSL_SESSION object).
+        // Therefore, we ensure the socket is marked as shutdown in any case.
+        //
+        // See elaborate explanation at
+        // https://github.com/python/cpython/pull/123249#discussion_r1766164530
+        SSL_set_shutdown(self->ssl, SSL_SENT_SHUTDOWN | SSL_get_shutdown(self->ssl));
         SSL_free(self->ssl);
     }
     Py_XDECREF(self->Socket);
@@ -2768,48 +2779,6 @@ _ssl__SSLSocket_verify_client_post_handshake_impl(PySSLSocket *self)
 #endif
 }
 
-static SSL_SESSION*
-_ssl_session_dup(SSL_SESSION *session) {
-    SSL_SESSION *newsession = NULL;
-    int slen;
-    unsigned char *senc = NULL, *p;
-    const unsigned char *const_p;
-
-    if (session == NULL) {
-        PyErr_SetString(PyExc_ValueError, "Invalid session");
-        goto error;
-    }
-
-    /* get length */
-    slen = i2d_SSL_SESSION(session, NULL);
-    if (slen == 0 || slen > 0xFF00) {
-        PyErr_SetString(PyExc_ValueError, "i2d() failed");
-        goto error;
-    }
-    if ((senc = PyMem_Malloc(slen)) == NULL) {
-        PyErr_NoMemory();
-        goto error;
-    }
-    p = senc;
-    if (!i2d_SSL_SESSION(session, &p)) {
-        PyErr_SetString(PyExc_ValueError, "i2d() failed");
-        goto error;
-    }
-    const_p = senc;
-    newsession = d2i_SSL_SESSION(NULL, &const_p, slen);
-    if (newsession == NULL) {
-        PyErr_SetString(PyExc_ValueError, "d2i() failed");
-        goto error;
-    }
-    PyMem_Free(senc);
-    return newsession;
-  error:
-    if (senc != NULL) {
-        PyMem_Free(senc);
-    }
-    return NULL;
-}
-
 static PyObject *
 PySSL_get_session(PySSLSocket *self, void *closure) {
     /* get_session can return sessions from a server-side connection,
@@ -2817,15 +2786,6 @@ PySSL_get_session(PySSLSocket *self, void *closure) {
     PySSLSession *pysess;
     SSL_SESSION *session;
 
-    /* duplicate session as workaround for session bug in OpenSSL 1.1.0,
-     * https://github.com/openssl/openssl/issues/1550 */
-    session = SSL_get0_session(self->ssl);  /* borrowed reference */
-    if (session == NULL) {
-        Py_RETURN_NONE;
-    }
-    if ((session = _ssl_session_dup(session)) == NULL) {
-        return NULL;
-    }
     session = SSL_get1_session(self->ssl);
     if (session == NULL) {
         Py_RETURN_NONE;
@@ -2844,11 +2804,8 @@ PySSL_get_session(PySSLSocket *self, void *closure) {
 }
 
 static int PySSL_set_session(PySSLSocket *self, PyObject *value,
-                             void *closure)
-                              {
+                             void *closure) {
     PySSLSession *pysess;
-    SSL_SESSION *session;
-    int result;
 
     if (!Py_IS_TYPE(value, get_state_sock(self)->PySSLSession_Type)) {
         PyErr_SetString(PyExc_TypeError, "Value is not a SSLSession.");
@@ -2871,14 +2828,7 @@ static int PySSL_set_session(PySSLSocket *self, PyObject *value,
                         "Cannot set session after handshake.");
         return -1;
     }
-    /* duplicate session */
-    if ((session = _ssl_session_dup(pysess->session)) == NULL) {
-        return -1;
-    }
-    result = SSL_set_session(self->ssl, session);
-    /* free duplicate, SSL_set_session() bumps ref count */
-    SSL_SESSION_free(session);
-    if (result == 0) {
+    if (SSL_set_session(self->ssl, pysess->session) == 0) {
         _setSSLError(get_state_sock(self), NULL, 0, __FILE__, __LINE__);
         return -1;
     }

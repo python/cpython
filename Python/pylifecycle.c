@@ -839,6 +839,13 @@ pycore_interp_init(PyThreadState *tstate)
         return _PyStatus_ERR("failed to initialize deep-frozen modules");
     }
 
+    // Per-interpreter interned string dict is created after deep-frozen
+    // modules have interned the global strings.
+    status = _PyUnicode_InitInternDict(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     status = pycore_init_types(interp);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;

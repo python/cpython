@@ -226,9 +226,9 @@ def gen_python3dll(manifest, args, outfile):
             key=sort_key):
         write(f'EXPORT_DATA({item.name})')
 
-REST_ROLES = {
-    'function': 'function',
-    'data': 'var',
+ITEM_KIND_TO_DOC_ROLE = {
+    'function': 'func',
+    'data': 'data',
     'struct': 'type',
     'macro': 'macro',
     # 'const': 'const',  # all undocumented
@@ -237,22 +237,28 @@ REST_ROLES = {
 
 @generator("doc_list", 'Doc/data/stable_abi.dat')
 def gen_doc_annotations(manifest, args, outfile):
-    """Generate/check the stable ABI list for documentation annotations"""
+    """Generate/check the stable ABI list for documentation annotations
+
+    See ``StableABIEntry`` in ``Doc/tools/extensions/c_annotations.py``
+    for a description of each field.
+    """
     writer = csv.DictWriter(
         outfile,
         ['role', 'name', 'added', 'ifdef_note', 'struct_abi_kind'],
         lineterminator='\n')
     writer.writeheader()
-    for item in manifest.select(REST_ROLES.keys(), include_abi_only=False):
+    kinds = set(ITEM_KIND_TO_DOC_ROLE)
+    for item in manifest.select(kinds, include_abi_only=False):
         if item.ifdef:
             ifdef_note = manifest.contents[item.ifdef].doc
         else:
             ifdef_note = None
         row = {
-            'role': REST_ROLES[item.kind],
+            'role': ITEM_KIND_TO_DOC_ROLE[item.kind],
             'name': item.name,
             'added': item.added,
-            'ifdef_note': ifdef_note}
+            'ifdef_note': ifdef_note,
+        }
         rows = [row]
         if item.kind == 'struct':
             row['struct_abi_kind'] = item.struct_abi_kind
@@ -260,7 +266,8 @@ def gen_doc_annotations(manifest, args, outfile):
                 rows.append({
                     'role': 'member',
                     'name': f'{item.name}.{member_name}',
-                    'added': item.added})
+                    'added': item.added,
+                })
         writer.writerows(rows)
 
 @generator("ctypes_test", 'Lib/test/test_stable_abi_ctypes.py')

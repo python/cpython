@@ -41,15 +41,6 @@ when ``globals`` is set to a non-dict. Patch by Jelle Zijlstra.
 
 ..
 
-.. date: 2024-05-27-15-22-41
-.. gh-issue: 118263
-.. nonce: QfcDja
-.. section: Core and Builtins
-
-Speed up :func:`os.path.normpath` with a direct C call.
-
-..
-
 .. date: 2024-05-23-06-34-45
 .. gh-issue: 119311
 .. nonce: 2DBwKR
@@ -67,15 +58,6 @@ classes.
 
 Fix bug where names appearing after a generic class are mangled as if they
 are in the generic class.
-
-..
-
-.. date: 2024-05-22-13-51-40
-.. gh-issue: 118507
-.. nonce: xkIQ3v
-.. section: Core and Builtins
-
-Fix :func:`os.path.isfile` on Windows for pipes.
 
 ..
 
@@ -235,6 +217,15 @@ of recursive.
 
 ..
 
+.. date: 2024-05-27-15-22-41
+.. gh-issue: 118263
+.. nonce: QfcDja
+.. section: Library
+
+Speed up :func:`os.path.normpath` with a direct C call.
+
+..
+
 .. date: 2024-05-24-21-54-55
 .. gh-issue: 113892
 .. nonce: JKDFqq
@@ -243,6 +234,15 @@ of recursive.
 Now, the method ``sock_connect`` of :class:`asyncio.ProactorEventLoop`
 raises a :exc:`ValueError` if given socket is not in non-blocking mode, as
 well as in other loop implementations.
+
+..
+
+.. date: 2024-05-22-13-51-40
+.. gh-issue: 118507
+.. nonce: xkIQ3v
+.. section: Library
+
+Fix :func:`os.path.isfile` on Windows for pipes.
 
 ..
 
