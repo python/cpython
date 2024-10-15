@@ -518,11 +518,10 @@ Functions
    | ``%Z``    | Time zone name (no characters if no time zone  |       |
    |           | exists). Deprecated. [1]_                      |       |
    +-----------+------------------------------------------------+-------+
-   | ``%G``    | ISO 8601 year (similar to %Y but follows       |       |
+   | ``%G``    | ISO 8601 year (similar to ``%Y`` but follows   |       |
    |           | the rules for the ISO 8601 calendar year).     |       |
-   |           | The ISO year starts with the week that         |       |
-   |           | contains the first Thursday of the calendar    |       |
-   |           | year.                                          |       |
+   |           | The year starts with the week that contains    |       |
+   |           | the first Thursday of the calendar year.       |       |
    +-----------+------------------------------------------------+-------+
    | ``%V``    | ISO 8601 week number (as a decimal number      |       |
    |           | [01,53]). The first week of the year is the    |       |
