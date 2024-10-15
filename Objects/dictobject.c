@@ -416,6 +416,8 @@ _PyDict_DebugMallocStats(FILE *out)
 
 #define DK_MASK(dk) (DK_SIZE(dk)-1)
 
+#define _Py_DICT_IMMORTAL_INITIAL_REFCNT PY_SSIZE_T_MIN
+
 static void free_keys_object(PyDictKeysObject *keys, bool use_qsbr);
 
 /* PyDictKeysObject has refcounts like PyObject does, so we have the
@@ -428,7 +430,8 @@ static void free_keys_object(PyDictKeysObject *keys, bool use_qsbr);
 static inline void
 dictkeys_incref(PyDictKeysObject *dk)
 {
-    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(dk->dk_refcnt) == _Py_IMMORTAL_REFCNT) {
+    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(dk->dk_refcnt) < 0) {
+        assert(FT_ATOMIC_LOAD_SSIZE_RELAXED(dk->dk_refcnt) == _Py_DICT_IMMORTAL_INITIAL_REFCNT);
         return;
     }
 #ifdef Py_REF_DEBUG
@@ -440,7 +443,8 @@ dictkeys_incref(PyDictKeysObject *dk)
 static inline void
 dictkeys_decref(PyInterpreterState *interp, PyDictKeysObject *dk, bool use_qsbr)
 {
-    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(dk->dk_refcnt) == _Py_IMMORTAL_REFCNT) {
+    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(dk->dk_refcnt) < 0) {
+        assert(FT_ATOMIC_LOAD_SSIZE_RELAXED(dk->dk_refcnt) == _Py_DICT_IMMORTAL_INITIAL_REFCNT);
         return;
     }
     assert(FT_ATOMIC_LOAD_SSIZE(dk->dk_refcnt) > 0);
@@ -586,7 +590,7 @@ estimate_log2_keysize(Py_ssize_t n)
  * (which cannot fail and thus can do no allocation).
  */
 static PyDictKeysObject empty_keys_struct = {
-        _Py_IMMORTAL_REFCNT, /* dk_refcnt */
+        _Py_DICT_IMMORTAL_INITIAL_REFCNT, /* dk_refcnt */
         0, /* dk_log2_size */
         0, /* dk_log2_index_bytes */
         DICT_KEYS_UNICODE, /* dk_kind */
@@ -3196,16 +3200,12 @@ static PyObject *
 dict_repr_lock_held(PyObject *self)
 {
     PyDictObject *mp = (PyDictObject *)self;
-    Py_ssize_t i;
     PyObject *key = NULL, *value = NULL;
-    _PyUnicodeWriter writer;
-    int first;
-
     ASSERT_DICT_LOCKED(mp);
 
-    i = Py_ReprEnter((PyObject *)mp);
-    if (i != 0) {
-        return i > 0 ? PyUnicode_FromString("{...}") : NULL;
+    int res = Py_ReprEnter((PyObject *)mp);
+    if (res != 0) {
+        return (res > 0 ? PyUnicode_FromString("{...}") : NULL);
     }
 
     if (mp->ma_used == 0) {
@@ -3213,66 +3213,70 @@ dict_repr_lock_held(PyObject *self)
         return PyUnicode_FromString("{}");
     }
 
-    _PyUnicodeWriter_Init(&writer);
-    writer.overallocate = 1;
-    /* "{" + "1: 2" + ", 3: 4" * (len - 1) + "}" */
-    writer.min_length = 1 + 4 + (2 + 4) * (mp->ma_used - 1) + 1;
-
-    if (_PyUnicodeWriter_WriteChar(&writer, '{') < 0)
+    // "{" + "1: 2" + ", 3: 4" * (len - 1) + "}"
+    Py_ssize_t prealloc = 1 + 4 + 6 * (mp->ma_used - 1) + 1;
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(prealloc);
+    if (writer == NULL) {
         goto error;
+    }
+
+    if (PyUnicodeWriter_WriteChar(writer, '{') < 0) {
+        goto error;
+    }
 
     /* Do repr() on each key+value pair, and insert ": " between them.
        Note that repr may mutate the dict. */
-    i = 0;
-    first = 1;
+    Py_ssize_t i = 0;
+    int first = 1;
     while (_PyDict_Next((PyObject *)mp, &i, &key, &value, NULL)) {
-        PyObject *s;
-        int res;
-
-        /* Prevent repr from deleting key or value during key format. */
+        // Prevent repr from deleting key or value during key format.
         Py_INCREF(key);
         Py_INCREF(value);
 
         if (!first) {
-            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0)
+            // Write ", "
+            if (PyUnicodeWriter_WriteChar(writer, ',') < 0) {
                 goto error;
+            }
+            if (PyUnicodeWriter_WriteChar(writer, ' ') < 0) {
+                goto error;
+            }
         }
         first = 0;
 
-        s = PyObject_Repr(key);
-        if (s == NULL)
+        // Write repr(key)
+        if (PyUnicodeWriter_WriteRepr(writer, key) < 0) {
             goto error;
-        res = _PyUnicodeWriter_WriteStr(&writer, s);
-        Py_DECREF(s);
-        if (res < 0)
-            goto error;
+        }
 
-        if (_PyUnicodeWriter_WriteASCIIString(&writer, ": ", 2) < 0)
+        // Write ": "
+        if (PyUnicodeWriter_WriteChar(writer, ':') < 0) {
             goto error;
+        }
+        if (PyUnicodeWriter_WriteChar(writer, ' ') < 0) {
+            goto error;
+        }
 
-        s = PyObject_Repr(value);
-        if (s == NULL)
+        // Write repr(value)
+        if (PyUnicodeWriter_WriteRepr(writer, value) < 0) {
             goto error;
-        res = _PyUnicodeWriter_WriteStr(&writer, s);
-        Py_DECREF(s);
-        if (res < 0)
-            goto error;
+        }
 
         Py_CLEAR(key);
         Py_CLEAR(value);
     }
 
-    writer.overallocate = 0;
-    if (_PyUnicodeWriter_WriteChar(&writer, '}') < 0)
+    if (PyUnicodeWriter_WriteChar(writer, '}') < 0) {
         goto error;
+    }
 
     Py_ReprLeave((PyObject *)mp);
 
-    return _PyUnicodeWriter_Finish(&writer);
+    return PyUnicodeWriter_Finish(writer);
 
 error:
     Py_ReprLeave((PyObject *)mp);
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     Py_XDECREF(key);
     Py_XDECREF(value);
     return NULL;

@@ -298,7 +298,7 @@ class TimeTestCase(unittest.TestCase):
         # additional check for IndexError branch (issue #19545)
         with self.assertRaises(ValueError) as e:
             time.strptime('19', '%Y %')
-        self.assertIs(e.exception.__suppress_context__, True)
+        self.assertIsNone(e.exception.__context__)
 
     def test_strptime_leap_year(self):
         # GH-70647: warns if parsing a format with a day and no year.

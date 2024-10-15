@@ -11093,6 +11093,12 @@ then :
   printf "%s\n" "#define HAVE_LINUX_MEMFD_H 1" >>confdefs.h
 
 fi
+ac_fn_c_check_header_compile "$LINENO" "linux/netfilter_ipv4.h" "ac_cv_header_linux_netfilter_ipv4_h" "$ac_includes_default"
+if test "x$ac_cv_header_linux_netfilter_ipv4_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_LINUX_NETFILTER_IPV4_H 1" >>confdefs.h
+
+fi
 ac_fn_c_check_header_compile "$LINENO" "linux/random.h" "ac_cv_header_linux_random_h" "$ac_includes_default"
 if test "x$ac_cv_header_linux_random_h" = xyes
 then :
@@ -28994,10 +29000,6 @@ if test ${ac_cv_libatomic_needed+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
-  if test "$cross_compiling" = yes
-then :
-    ac_cv_libatomic_needed=no
-else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -29038,16 +29040,14 @@ int main()
 }
 
 _ACEOF
-if ac_fn_c_try_run "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_libatomic_needed=no
 else $as_nop
     ac_cv_libatomic_needed=yes
 fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_libatomic_needed" >&5
 printf "%s\n" "$ac_cv_libatomic_needed" >&6; }

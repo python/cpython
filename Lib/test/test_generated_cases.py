@@ -450,7 +450,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
             (void)this_instr;
             next_instr += 4;
             INSTRUCTION_STATS(OP);
@@ -503,7 +503,7 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 6;
             INSTRUCTION_STATS(OP);
             PREDICTED(OP);
-            _Py_CODEUNIT *this_instr = next_instr - 6;
+            _Py_CODEUNIT* const this_instr = next_instr - 6;
             (void)this_instr;
             _PyStackRef left;
             _PyStackRef right;
@@ -536,7 +536,7 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP1) {
-            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
             (void)this_instr;
             next_instr += 2;
             INSTRUCTION_STATS(OP1);
