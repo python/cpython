@@ -28619,10 +28619,6 @@ if test ${ac_cv_libatomic_needed+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
-  if test "$cross_compiling" = yes
-then :
-    ac_cv_libatomic_needed=no
-else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -28663,16 +28659,14 @@ int main()
 }
 
 _ACEOF
-if ac_fn_c_try_run "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_libatomic_needed=no
 else $as_nop
     ac_cv_libatomic_needed=yes
 fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_libatomic_needed" >&5
 printf "%s\n" "$ac_cv_libatomic_needed" >&6; }
