@@ -5738,6 +5738,9 @@
                         tstate->previous_executor = (PyObject *)current_executor;
                         GOTO_TIER_ONE(target);
                     }
+                    else {
+                        exit->temperature = initial_temperature_backoff_counter();
+                    }
                 }
                 exit->executor = executor;
             }

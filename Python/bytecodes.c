@@ -2624,14 +2624,15 @@ dummy_func(
                 }
                 _PyExecutorObject *executor;
                 int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor, 0);
-                ERROR_IF(optimized < 0, error);
-                if (optimized) {
+                if (optimized <= 0) {
+                    this_instr[1].counter = restart_backoff_counter(counter);
+                    ERROR_IF(optimized < 0, error);
+                }
+                else {
+                    this_instr[1].counter = initial_jump_backoff_counter();
                     assert(tstate->previous_executor == NULL);
                     tstate->previous_executor = Py_None;
                     GOTO_TIER_TWO(executor);
-                }
-                else {
-                    this_instr[1].counter = restart_backoff_counter(counter);
                 }
             }
             else {
@@ -4868,6 +4869,9 @@ dummy_func(
                         }
                         tstate->previous_executor = (PyObject *)current_executor;
                         GOTO_TIER_ONE(target);
+                    }
+                    else {
+                        exit->temperature = initial_temperature_backoff_counter();
                     }
                 }
                 exit->executor = executor;
