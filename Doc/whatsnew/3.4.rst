@@ -2271,7 +2271,8 @@ Changes in the Python API
   :func:`super` and falling through all the way to the ABCs. For compatibility,
   catch both :exc:`NotImplementedError` or the appropriate exception as needed.
 
-* The module type now initializes the :attr:`__package__` and :attr:`__loader__`
+* The module type now initializes the :attr:`~module.__package__` and
+  :attr:`~module.__loader__`
   attributes to ``None`` by default. To determine if these attributes were set
   in a backwards-compatible fashion, use e.g.
   ``getattr(module, '__loader__', None) is not None``.  (:issue:`17115`.)

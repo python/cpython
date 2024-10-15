@@ -312,8 +312,8 @@ cluttering source directories, the *pyc* files are now collected in a
 Aside from the filenames and target directories, the new scheme has a few
 aspects that are visible to the programmer:
 
-* Imported modules now have a :attr:`__cached__` attribute which stores the name
-  of the actual file that was imported:
+* Imported modules now have a :attr:`~module.__cached__` attribute which stores
+  the name of the actual file that was imported:
 
    >>> import collections
    >>> collections.__cached__ # doctest: +SKIP

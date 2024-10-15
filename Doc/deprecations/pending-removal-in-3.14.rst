@@ -1,6 +1,13 @@
 Pending Removal in Python 3.14
 ------------------------------
 
+* The import system:
+
+  * Setting :attr:`~module.__loader__` on a module while
+    failing to set :attr:`__spec__.loader <importlib.machinery.ModuleSpec.loader>`
+    is deprecated. In Python 3.14, :attr:`!__loader__` will cease to be set or
+    taken into consideration by the import system or the standard library.
+
 * :mod:`argparse`: The *type*, *choices*, and *metavar* parameters
   of :class:`!argparse.BooleanOptionalAction` are deprecated
   and will be removed in 3.14.

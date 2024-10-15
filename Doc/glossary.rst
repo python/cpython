@@ -437,7 +437,7 @@ Glossary
       <meta path finder>` for use with :data:`sys.meta_path`, and :term:`path
       entry finders <path entry finder>` for use with :data:`sys.path_hooks`.
 
-      See :ref:`importsystem` and :mod:`importlib` for much more detail.
+      See :ref:`finders-and-loaders` and :mod:`importlib` for much more detail.
 
    floor division
       Mathematical division that rounds down to nearest integer.  The floor
@@ -750,8 +750,11 @@ Glossary
    loader
       An object that loads a module. It must define a method named
       :meth:`load_module`. A loader is typically returned by a
-      :term:`finder`. See :pep:`302` for details and
-      :class:`importlib.abc.Loader` for an :term:`abstract base class`.
+      :term:`finder`. See also:
+
+      * :ref:`finders-and-loaders`
+      * :class:`importlib.abc.Loader`
+      * :pep:`302`
 
    locale encoding
       On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
@@ -820,6 +823,8 @@ Glossary
    module spec
       A namespace containing the import-related information used to load a
       module. An instance of :class:`importlib.machinery.ModuleSpec`.
+
+      See also :ref:`module-specs`.
 
    MRO
       See :term:`method resolution order`.
@@ -1133,6 +1138,17 @@ Glossary
       created using the subscript notation, ``[]`` with colons between numbers
       when several are given, such as in ``variable_name[1:3:5]``.  The bracket
       (subscript) notation uses :class:`slice` objects internally.
+
+   soft deprecated
+      A soft deprecated API should not be used in new code,
+      but it is safe for already existing code to use it.
+      The API remains documented and tested, but will not be enhanced further.
+
+      Soft deprecation, unlike normal deprecation, does not plan on removing the API
+      and will not emit warnings.
+
+      See `PEP 387: Soft Deprecation
+      <https://peps.python.org/pep-0387/#soft-deprecation>`_.
 
    special method
       .. index:: pair: special; method
