@@ -1,2 +1,0 @@
-Workaround for old libffi versions is added. Module ctypes supports
-:c:expr:`double complex` only with libffi >= 3.3.0. Patch by Mikhail Efimov.

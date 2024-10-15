@@ -2491,7 +2491,7 @@ effects on the compilation of a program:
    differ in whitespace or similar details. Attributes include line numbers
    and column offsets.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. _ast-cli:

@@ -2303,7 +2303,7 @@ These are the fundamental ctypes data types:
    Represents the C :c:expr:`double complex` datatype, if available.  The
    constructor accepts an optional :class:`complex` initializer.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. class:: c_float_complex
