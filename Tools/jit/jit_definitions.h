@@ -22,3 +22,4 @@ typedef _Py_CODEUNIT *(*jit_func_preserve_none)(_PyInterpreterFrame *frame, _PyS
 #endif
 
 #endif // JIT_DEFINITIONS_H
+
