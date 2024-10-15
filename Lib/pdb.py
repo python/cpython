@@ -429,8 +429,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def user_line(self, frame):
         """This function is called when we stop or break at this line."""
         if self._wait_for_mainpyfile:
-            if (self.mainpyfile != self.canonic(frame.f_code.co_filename)
-                or frame.f_lineno <= 0):
+            if (self.mainpyfile != self.canonic(frame.f_code.co_filename)):
                 return
             self._wait_for_mainpyfile = False
         if self.bp_commands(frame):
