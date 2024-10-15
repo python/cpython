@@ -1,4 +1,4 @@
-Pending Removal in Python 3.15
+Pending removal in Python 3.15
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * The bundled copy of ``libmpdecimal``.
