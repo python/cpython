@@ -709,59 +709,80 @@ signal_active_thread(PyInterpreterState *interp, uintptr_t bit)
 
 /* Push one item onto the queue while holding the lock. */
 static int
-_push_pending_call(struct _pending_calls *pending,
+push_pending_call(struct _pending_calls *pending,
                    _Py_pending_call_func func, void *arg, int flags)
 {
-    if (pending->npending == pending->max) {
-        return _Py_ADD_PENDING_FULL;
+    assert(PyMutex_IsLocked(&pending->mutex));
+    _pending_call *call = NULL;
+    if (pending->freelist_num) {
+        call = pending->freelist;
+        assert(call != NULL);
+        pending->freelist = call->next;
+        pending->freelist_num--;
     }
-    assert(pending->npending < pending->max);
-
-    int i = pending->next;
-    assert(pending->calls[i].func == NULL);
-
-    pending->calls[i].func = func;
-    pending->calls[i].arg = arg;
-    pending->calls[i].flags = flags;
-
-    assert(pending->npending < PENDINGCALLSARRAYSIZE);
+    else {
+        call = PyMem_RawMalloc(sizeof(*call));
+        if (call == NULL) {
+            return -1;
+        }
+    }
+    call->arg = arg;
+    call->func = func;
+    call->flags = flags;
+    call->next = pending->head;
+    pending->head = call;
     _Py_atomic_add_int32(&pending->npending, 1);
-
-    pending->next = (i + 1) % PENDINGCALLSARRAYSIZE;
-    assert(pending->next != pending->first
-            || pending->npending == pending->max);
-
-    return _Py_ADD_PENDING_SUCCESS;
-}
-
-static int
-_next_pending_call(struct _pending_calls *pending,
-                   int (**func)(void *), void **arg, int *flags)
-{
-    int i = pending->first;
-    if (pending->npending == 0) {
-        /* Queue empty */
-        assert(i == pending->next);
-        assert(pending->calls[i].func == NULL);
-        return -1;
-    }
-    *func = pending->calls[i].func;
-    *arg = pending->calls[i].arg;
-    *flags = pending->calls[i].flags;
-    return i;
+    return 0;
 }
 
 /* Pop one item off the queue while holding the lock. */
 static void
-_pop_pending_call(struct _pending_calls *pending,
+pop_pending_call(struct _pending_calls *pending,
                   int (**func)(void *), void **arg, int *flags)
 {
-    int i = _next_pending_call(pending, func, arg, flags);
-    if (i >= 0) {
-        pending->calls[i] = (struct _pending_call){0};
-        pending->first = (i + 1) % PENDINGCALLSARRAYSIZE;
+    assert(PyMutex_IsLocked(&pending->mutex));
+    _pending_call *call = pending->head;
+    if (call) {
         assert(pending->npending > 0);
+        pending->head = call->next;
+        *func = call->func;
+        *arg = call->arg;
+        *flags = call->flags;
+        if (pending->freelist_num <= _Py_PENDING_CALLS_FREELIST_SIZE) {
+            call->next = pending->freelist;
+            pending->freelist = call;
+            pending->freelist_num++;
+        }
+        else {
+            PyMem_RawFree(call);
+        }
         _Py_atomic_add_int32(&pending->npending, -1);
+    }
+}
+
+static void
+clear_pending_freelist(struct _pending_calls *pending)
+{
+    _pending_call *call = pending->freelist;
+    while (call) {
+        _pending_call *next = call->next;
+        PyMem_RawFree(call);
+        call = next;
+    }
+    pending->freelist = NULL;
+}
+
+static void
+fill_pending_freelist(struct _pending_calls *pending)
+{
+    assert(pending->freelist == NULL);
+    for (int i = 0; i < _Py_PENDING_CALLS_FREELIST_SIZE; i++) {
+        _pending_call *call = PyMem_RawMalloc(sizeof(*call));
+        if (call == NULL) {
+            return;
+        }
+        call->next = pending->freelist;
+        pending->freelist = call;
     }
 }
 
@@ -770,7 +791,7 @@ _pop_pending_call(struct _pending_calls *pending,
    callback.
  */
 
-_Py_add_pending_call_result
+int
 _PyEval_AddPendingCall(PyInterpreterState *interp,
                        _Py_pending_call_func func, void *arg, int flags)
 {
@@ -783,8 +804,7 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
     }
 
     PyMutex_Lock(&pending->mutex);
-    _Py_add_pending_call_result result =
-        _push_pending_call(pending, func, arg, flags);
+    int result = push_pending_call(pending, func, arg, flags);
     PyMutex_Unlock(&pending->mutex);
 
     if (main_only) {
@@ -807,15 +827,7 @@ Py_AddPendingCall(_Py_pending_call_func func, void *arg)
     /* Legacy users of this API will continue to target the main thread
        (of the main interpreter). */
     PyInterpreterState *interp = _PyInterpreterState_Main();
-    _Py_add_pending_call_result r =
-        _PyEval_AddPendingCall(interp, func, arg, _Py_PENDING_MAINTHREADONLY);
-    if (r == _Py_ADD_PENDING_FULL) {
-        return -1;
-    }
-    else {
-        assert(r == _Py_ADD_PENDING_SUCCESS);
-        return 0;
-    }
+    return _PyEval_AddPendingCall(interp, func, arg, _Py_PENDING_MAINTHREADONLY);
 }
 
 static int
@@ -839,15 +851,9 @@ _make_pending_calls(struct _pending_calls *pending, int32_t *p_npending)
 {
     int res = 0;
     int32_t npending = -1;
-
-    assert(sizeof(pending->max) <= sizeof(size_t)
-            && ((size_t)pending->max) <= Py_ARRAY_LENGTH(pending->calls));
     int32_t maxloop = pending->maxloop;
-    if (maxloop == 0) {
-        maxloop = pending->max;
-    }
-    assert(maxloop > 0 && maxloop <= pending->max);
 
+    assert(maxloop == MAXPENDINGCALLSLOOP || maxloop == MAXPENDINGCALLSLOOP_MAIN);
     /* perform a bounded number of calls, in case of recursion */
     for (int i=0; i<maxloop; i++) {
         _Py_pending_call_func func = NULL;
@@ -856,7 +862,7 @@ _make_pending_calls(struct _pending_calls *pending, int32_t *p_npending)
 
         /* pop one item off the queue while holding the lock */
         PyMutex_Lock(&pending->mutex);
-        _pop_pending_call(pending, &func, &arg, &flags);
+        pop_pending_call(pending, &func, &arg, &flags);
         npending = pending->npending;
         PyMutex_Unlock(&pending->mutex);
 
@@ -1032,6 +1038,8 @@ _Py_FinishPendingCalls(PyThreadState *tstate)
         npending_prev = npending;
 #endif
     } while (npending > 0);
+
+    clear_pending_freelist(pending);
 }
 
 int
@@ -1077,6 +1085,13 @@ Py_MakePendingCalls(void)
 void
 _PyEval_InitState(PyInterpreterState *interp)
 {
+    // Fill the pending freelist so that signal handlers can safely
+    // add pending calls without needing to allocate memory.
+    struct _pending_calls *pending = &interp->ceval.pending;
+    PyMutex_Lock(&pending->mutex);
+    fill_pending_freelist(pending);
+    PyMutex_Unlock(&pending->mutex);
+
     _gil_initialize(&interp->_gil);
 }
 

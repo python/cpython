@@ -14,49 +14,38 @@ extern "C" {
 
 typedef int (*_Py_pending_call_func)(void *);
 
-struct _pending_call {
+typedef struct _pending_call {
     _Py_pending_call_func func;
     void *arg;
     int flags;
-};
+    struct _pending_call *next;
+} _pending_call;
 
-#define PENDINGCALLSARRAYSIZE 300
-
-#define MAXPENDINGCALLS PENDINGCALLSARRAYSIZE
 /* For interpreter-level pending calls, we want to avoid spending too
    much time on pending calls in any one thread, so we apply a limit. */
-#if MAXPENDINGCALLS > 100
-#  define MAXPENDINGCALLSLOOP 100
-#else
-#  define MAXPENDINGCALLSLOOP MAXPENDINGCALLS
-#endif
+#define MAXPENDINGCALLSLOOP 100
 
-/* We keep the number small to preserve as much compatibility
-   as possible with earlier versions. */
-#define MAXPENDINGCALLS_MAIN 32
 /* For the main thread, we want to make sure all pending calls are
    run at once, for the sake of prompt signal handling.  This is
    unlikely to cause any problems since there should be very few
    pending calls for the main thread. */
-#define MAXPENDINGCALLSLOOP_MAIN 0
+#define MAXPENDINGCALLSLOOP_MAIN INT32_MAX
 
 struct _pending_calls {
     PyThreadState *handling_thread;
     PyMutex mutex;
-    /* Request for running pending calls. */
+    /* The number of pending calls. */
     int32_t npending;
-    /* The maximum allowed number of pending calls.
-       If the queue fills up to this point then _PyEval_AddPendingCall()
-       will return _Py_ADD_PENDING_FULL. */
-    int32_t max;
     /* We don't want a flood of pending calls to interrupt any one thread
        for too long, so we keep a limit on the number handled per pass.
        A value of 0 means there is no limit (other than the maximum
        size of the list of pending calls). */
     int32_t maxloop;
-    struct _pending_call calls[PENDINGCALLSARRAYSIZE];
-    int first;
-    int next;
+    _pending_call *head;
+
+#define _Py_PENDING_CALLS_FREELIST_SIZE 100
+    _pending_call *freelist;
+    size_t freelist_num;
 };
 
 
@@ -97,8 +86,6 @@ struct _ceval_runtime_state {
     /* Pending calls to be made only on the main thread. */
     // The signal machinery falls back on this
     // so it must be especially stable and efficient.
-    // For example, we use a preallocated array
-    // for the list of pending calls.
     struct _pending_calls pending_mainthread;
     PyMutex sys_trace_profile_mutex;
 };

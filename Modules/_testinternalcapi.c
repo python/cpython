@@ -1072,18 +1072,17 @@ pending_threadfunc(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *callable;
     unsigned int num = 1;
     int blocking = 0;
-    int ensure_added = 0;
     static char *kwlist[] = {"callback", "num",
-                             "blocking", "ensure_added", NULL};
+                             "blocking", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                     "O|I$pp:pending_threadfunc", kwlist,
-                                     &callable, &num, &blocking, &ensure_added))
+                                     "O|I$p:pending_threadfunc", kwlist,
+                                     &callable, &num, &blocking))
     {
         return NULL;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
-    /* create the reference for the callbackwhile we hold the lock */
+    /* create the reference for the callback while we hold the lock */
     for (unsigned int i = 0; i < num; i++) {
         Py_INCREF(callable);
     }
@@ -1095,18 +1094,9 @@ pending_threadfunc(PyObject *self, PyObject *args, PyObject *kwargs)
 
     unsigned int num_added = 0;
     for (; num_added < num; num_added++) {
-        if (ensure_added) {
-            _Py_add_pending_call_result r;
-            do {
-                r = _PyEval_AddPendingCall(interp, &_pending_callback, callable, 0);
-                assert(r == _Py_ADD_PENDING_SUCCESS
-                       || r == _Py_ADD_PENDING_FULL);
-            } while (r == _Py_ADD_PENDING_FULL);
-        }
-        else {
-            if (_PyEval_AddPendingCall(interp, &_pending_callback, callable, 0) < 0) {
-                break;
-            }
+        if (_PyEval_AddPendingCall(interp, &_pending_callback, callable, 0) < 0) {
+            // out of memory and freelist is empty
+            break;
         }
     }
 
@@ -1162,16 +1152,14 @@ pending_identify(PyObject *self, PyObject *args)
     PyThread_acquire_lock(mutex, WAIT_LOCK);
     /* It gets released in _pending_identify_callback(). */
 
-    _Py_add_pending_call_result r;
-    do {
-        Py_BEGIN_ALLOW_THREADS
-        r = _PyEval_AddPendingCall(interp,
-                                   &_pending_identify_callback, (void *)mutex,
-                                   0);
-        Py_END_ALLOW_THREADS
-        assert(r == _Py_ADD_PENDING_SUCCESS
-               || r == _Py_ADD_PENDING_FULL);
-    } while (r == _Py_ADD_PENDING_FULL);
+
+    Py_BEGIN_ALLOW_THREADS
+    int r = _PyEval_AddPendingCall(interp,
+                               &_pending_identify_callback, (void *)mutex,
+                               0);
+    (void)r;
+    assert(r == 0);
+    Py_END_ALLOW_THREADS
 
     /* Wait for the pending call to complete. */
     PyThread_acquire_lock(mutex, WAIT_LOCK);
