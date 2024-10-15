@@ -33,6 +33,7 @@ class Bdb:
         self.breaks = {}
         self.fncache = {}
         self.frame_returning = None
+        self.enterframe = None
 
         self._load_breaks()
 
@@ -84,6 +85,9 @@ class Bdb:
 
         The arg parameter depends on the previous event.
         """
+
+        self.enterframe = frame
+
         if self.quitting:
             return # None
         if event == 'line':
@@ -335,6 +339,7 @@ class Bdb:
         if frame is None:
             frame = sys._getframe().f_back
         self.reset()
+        self.enterframe = frame
         while frame:
             frame.f_trace = self.trace_dispatch
             self.botframe = frame
