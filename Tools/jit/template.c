@@ -48,7 +48,7 @@
 #define GOTO_TIER_TWO(EXECUTOR) \
 do {  \
     OPT_STAT_INC(traces_executed);                \
-    __attribute__((musttail))                      \
+    __attribute__((musttail))                     \
     return ((jit_func_preserve_none)((EXECUTOR)->jit_side_entry))(frame, stack_pointer, tstate); \
 } while (0)
 
