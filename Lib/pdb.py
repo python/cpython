@@ -82,6 +82,7 @@ import signal
 import inspect
 import textwrap
 import tokenize
+import itertools
 import traceback
 import linecache
 import _colorize
@@ -2458,12 +2459,7 @@ def main():
         # If a script is being debugged, then pdb expects the script name as the first argument.
         # Anything before the script is considered an argument to pdb itself, which would
         # be invalid because it's not parsed by argparse.
-        invalid_args = []
-        for arg in args:
-            if not arg.startswith('-'):
-                break
-            invalid_args.append(arg)
-
+        invalid_args = list(itertools.takewhile(lambda a: a.startswith('-'), args))
         if invalid_args:
             parser.error(f"unrecognized arguments: {' '.join(invalid_args)}")
             sys.exit(2)
