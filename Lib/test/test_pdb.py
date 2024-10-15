@@ -3181,6 +3181,20 @@ def bœr():
         self.assertRegex(res, "Restarting .* with arguments:\na b c")
         self.assertRegex(res, "Restarting .* with arguments:\nd e f")
 
+    def test_step_into_botframe(self):
+        # gh-125422
+        # pdb should not be able to step into the botframe (bdb.py)
+        script = "x = 1"
+        commands = """
+            step
+            step
+            step
+            quit
+        """
+        stdout, _ = self.run_pdb_script(script, commands)
+        self.assertIn("The program finished", stdout)
+        self.assertNotIn("bdb.py", stdout)
+
     def test_pdbrc_basic(self):
         script = textwrap.dedent("""
             a = 1
