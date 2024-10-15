@@ -3,6 +3,7 @@ from test import support
 from test.support import import_helper
 import binascii
 import copy
+import os
 import pickle
 import random
 import sys
@@ -30,6 +31,16 @@ def _zlib_runtime_version_tuple(zlib_version=zlib.ZLIB_RUNTIME_VERSION):
 
 
 ZLIB_RUNTIME_VERSION_TUPLE = _zlib_runtime_version_tuple()
+
+
+# bpo-46623: When a hardware accelerator is used (currently only on s390x),
+# using different ways to compress data with zlib can produce different
+# compressed data.
+#
+# To simplify the skip condition, make the assumption that s390x always has an
+# accelerator, and nothing else has it.
+# Windows doesn't have os.uname() but it doesn't support s390x.
+HW_ACCELERATED = hasattr(os, 'uname') and os.uname().machine == 's390x'
 
 
 class VersionTestCase(unittest.TestCase):
@@ -199,7 +210,10 @@ class CompressTestCase(BaseCompressTestCase, unittest.TestCase):
         # compress more data
         data = HAMLET_SCENE * 128
         x = zlib.compress(data)
-        self.assertEqual(zlib.compress(bytearray(data)), x)
+        # With hardware acceleration, the compressed bytes
+        # might not be identical.
+        if not HW_ACCELERATED:
+            self.assertEqual(zlib.compress(bytearray(data)), x)
         for ob in x, bytearray(x):
             self.assertEqual(zlib.decompress(ob), data)
 
@@ -256,7 +270,10 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
             x1 = co.compress(data)
             x2 = co.flush()
             self.assertRaises(zlib.error, co.flush) # second flush should not work
-            self.assertEqual(x1 + x2, datazip)
+            # With hardware acceleration, the compressed bytes might not
+            # be identical.
+            if not HW_ACCELERATED:
+                self.assertEqual(x1 + x2, datazip)
         for v1, v2 in ((x1, x2), (bytearray(x1), bytearray(x2))):
             dco = zlib.decompressobj()
             y1 = dco.decompress(v1 + v2)
