@@ -518,6 +518,43 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     (Pdb) continue
     """
 
+def test_pdb_break_anywhere():
+    """Test break_anywhere() method of Pdb.
+
+    >>> def outer():
+    ...     def inner():
+    ...         import pdb
+    ...         import sys
+    ...         p = pdb.Pdb(nosigint=True, readrc=False)
+    ...         p.set_trace()
+    ...         frame = sys._getframe()
+    ...         print(p.break_anywhere(frame))  # inner
+    ...         print(p.break_anywhere(frame.f_back))  # outer
+    ...         print(p.break_anywhere(frame.f_back.f_back))  # caller
+    ...     inner()
+
+    >>> def caller():
+    ...     outer()
+
+    >>> def test_function():
+    ...     caller()
+
+    >>> reset_Breakpoint()
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'b 3',
+    ...     'c',
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_break_anywhere[0]>(6)inner()
+    -> p.set_trace()
+    (Pdb) b 3
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_break_anywhere[0]>:3
+    (Pdb) c
+    True
+    False
+    False
+    """
+
 def test_pdb_pp_repr_exc():
     """Test that do_p/do_pp do not swallow exceptions.
 

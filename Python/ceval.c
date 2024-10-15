@@ -274,7 +274,6 @@ static void monitor_throw(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr);
 
-static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg);
 static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
 static  _PyInterpreterFrame *
 _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
@@ -394,6 +393,13 @@ const _Py_SpecialMethod _Py_SpecialMethods[] = {
     }
 };
 
+const size_t _Py_FunctionAttributeOffsets[] = {
+    [MAKE_FUNCTION_CLOSURE] = offsetof(PyFunctionObject, func_closure),
+    [MAKE_FUNCTION_ANNOTATIONS] = offsetof(PyFunctionObject, func_annotations),
+    [MAKE_FUNCTION_KWDEFAULTS] = offsetof(PyFunctionObject, func_kwdefaults),
+    [MAKE_FUNCTION_DEFAULTS] = offsetof(PyFunctionObject, func_defaults),
+    [MAKE_FUNCTION_ANNOTATE] = offsetof(PyFunctionObject, func_annotate),
+};
 
 // PEP 634: Structural Pattern Matching
 
@@ -1036,6 +1042,7 @@ tier2_dispatch:
         uopcode = next_uop->opcode;
 #ifdef Py_DEBUG
         if (lltrace >= 3) {
+            dump_stack(frame, stack_pointer);
             if (next_uop->opcode == _START_EXECUTOR) {
                 printf("%4d uop: ", 0);
             }
@@ -1043,8 +1050,7 @@ tier2_dispatch:
                 printf("%4d uop: ", (int)(next_uop - current_executor->trace));
             }
             _PyUOpPrint(next_uop);
-            printf(" stack_level=%d\n",
-                (int)(stack_pointer - _PyFrame_Stackbase(frame)));
+            printf("\n");
         }
 #endif
         next_uop++;
@@ -1281,7 +1287,7 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
     }
     else {
         /* This will not fail. */
-        kwonly_sig = PyUnicode_FromString("");
+        kwonly_sig = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
         assert(kwonly_sig != NULL);
     }
     _PyErr_Format(tstate, PyExc_TypeError,
@@ -2920,11 +2926,11 @@ _PyEval_CheckExceptStarTypeValid(PyThreadState *tstate, PyObject* right)
     return 0;
 }
 
-static int
-check_args_iterable(PyThreadState *tstate, PyObject *func, PyObject *args)
+int
+_Py_Check_ArgsIterable(PyThreadState *tstate, PyObject *func, PyObject *args)
 {
     if (Py_TYPE(args)->tp_iter == NULL && !PySequence_Check(args)) {
-        /* check_args_iterable() may be called with a live exception:
+        /* _Py_Check_ArgsIterable() may be called with a live exception:
          * clear it to prevent calling _PyObject_FunctionStr() with an
          * exception set. */
         _PyErr_Clear(tstate);

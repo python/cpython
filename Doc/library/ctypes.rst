@@ -2589,6 +2589,8 @@ fields, or any other data types containing pointer type fields.
       the structure when being packed or unpacked to/from memory.
       Setting this attribute to 0 is the same as not setting it at all.
 
+      .. versionadded:: 3.13
+
    .. attribute:: _layout_
 
       An optional string naming the struct/union layout. It can currently

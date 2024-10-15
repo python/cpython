@@ -200,7 +200,7 @@ class Untokenizer:
                         characters[-2::-1]
                     )
                 )
-                if n_backslashes % 2 == 0:
+                if n_backslashes % 2 == 0 or characters[-1] != "N":
                     characters.append(character)
                 else:
                     consume_until_next_bracket = True
@@ -510,7 +510,7 @@ def main():
         sys.exit(1)
 
     # Parse the arguments and options
-    parser = argparse.ArgumentParser(prog='python -m tokenize')
+    parser = argparse.ArgumentParser()
     parser.add_argument(dest='filename', nargs='?',
                         metavar='filename.py',
                         help='the file to tokenize; defaults to stdin')
