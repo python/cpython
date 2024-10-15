@@ -10,18 +10,14 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-typedef void (*_Py_dynarray_deallocator)(void *);
+typedef void (*_PyDynArray_Deallocator)(void *);
 
 typedef struct {
-    _Py_dynarray_deallocator deallocator;
-    void *contents;
-} _Py_dynarray_item;
-
-typedef struct {
-    _Py_dynarray_item **items;
+    void **items;
     Py_ssize_t capacity;
     Py_ssize_t length;
-} _Py_dynarray_t;
+    _PyDynArray_Deallocator deallocator;
+} _PyDynArray;
 
 #ifdef __cplusplus
 }
