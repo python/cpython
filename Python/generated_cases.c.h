@@ -84,8 +84,8 @@
                 double dres =
                 ((PyFloatObject *)left_o)->ob_fval +
                 ((PyFloatObject *)right_o)->ob_fval;
-                PyObject *res_o;
-                DECREF_INPUTS_AND_REUSE_FLOAT(left_o, right_o, dres, res_o);
+                PyObject *res_o = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
+                if (res_o == NULL) goto pop_2_error;
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[-2] = res;
@@ -183,7 +183,9 @@
             /* Skip 1 cache entry */
             // _BINARY_OP_INPLACE_ADD_UNICODE
             {
+                #ifndef NDEBUG
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+                #endif
                 PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
                 int next_oparg;
                 #if TIER_ONE
@@ -251,8 +253,8 @@
                 double dres =
                 ((PyFloatObject *)left_o)->ob_fval *
                 ((PyFloatObject *)right_o)->ob_fval;
-                PyObject *res_o;
-                DECREF_INPUTS_AND_REUSE_FLOAT(left_o, right_o, dres, res_o);
+                PyObject *res_o = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
+                if (res_o == NULL) goto pop_2_error;
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[-2] = res;
@@ -322,8 +324,8 @@
                 double dres =
                 ((PyFloatObject *)left_o)->ob_fval -
                 ((PyFloatObject *)right_o)->ob_fval;
-                PyObject *res_o;
-                DECREF_INPUTS_AND_REUSE_FLOAT(left_o, right_o, dres, res_o);
+                PyObject *res_o = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
+                if (res_o == NULL) goto pop_2_error;
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[-2] = res;

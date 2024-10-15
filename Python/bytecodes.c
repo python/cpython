@@ -539,9 +539,9 @@ dummy_func(
             double dres =
                 ((PyFloatObject *)left_o)->ob_fval *
                 ((PyFloatObject *)right_o)->ob_fval;
-            PyObject *res_o;
-            DECREF_INPUTS_AND_REUSE_FLOAT(left_o, right_o, dres, res_o);
+            PyObject *res_o = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
             INPUTS_DEAD();
+            ERROR_IF(res_o == NULL, error);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
@@ -553,9 +553,9 @@ dummy_func(
             double dres =
                 ((PyFloatObject *)left_o)->ob_fval +
                 ((PyFloatObject *)right_o)->ob_fval;
-            PyObject *res_o;
-            DECREF_INPUTS_AND_REUSE_FLOAT(left_o, right_o, dres, res_o);
+            PyObject *res_o = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
             INPUTS_DEAD();
+            ERROR_IF(res_o == NULL, error);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
@@ -567,9 +567,9 @@ dummy_func(
             double dres =
                 ((PyFloatObject *)left_o)->ob_fval -
                 ((PyFloatObject *)right_o)->ob_fval;
-            PyObject *res_o;
-            DECREF_INPUTS_AND_REUSE_FLOAT(left_o, right_o, dres, res_o);
+            PyObject *res_o = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
             INPUTS_DEAD();
+            ERROR_IF(res_o == NULL, error);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
@@ -611,7 +611,9 @@ dummy_func(
         // specializations, but there is no output.
         // At the end we just skip over the STORE_FAST.
         op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
+        #ifndef NDEBUG
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+        #endif
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
 
             int next_oparg;
