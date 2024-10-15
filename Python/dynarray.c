@@ -4,18 +4,17 @@
 
 #include "pycore_dynarray.h"
 
-_PyDynArray *
+int
 _PyDynArray_InitWithSize(_PyDynArray *array,
-                         Py_ssize_t initial,
-                         _PyDynArray_Deallocator deallocator)
+                         _PyDynArray_Deallocator deallocator,
+                         Py_ssize_t initial)
 {
     assert(array != NULL);
     assert(initial > 0);
     void **items = PyMem_RawCalloc(sizeof(void *), initial);
     if (items == NULL)
     {
-        PyMem_RawFree(array);
-        return NULL;
+        return -1;
     }
 
     array->capacity = initial;
@@ -23,7 +22,7 @@ _PyDynArray_InitWithSize(_PyDynArray *array,
     array->length = 0;
     array->deallocator = deallocator;
 
-    return array;
+    return 0;
 }
 
 int
@@ -56,7 +55,10 @@ _PyDynArray_Clear(_PyDynArray *array)
     assert(array->deallocator != NULL);
     for (Py_ssize_t i = 0; i < array->length; ++i)
     {
-        array->deallocator(array->items[i]);
+        if (array->deallocator != NULL)
+        {
+            array->deallocator(array->items[i]);
+        }
     }
     PyMem_RawFree(array->items);
 
