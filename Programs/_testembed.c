@@ -1858,8 +1858,6 @@ static int test_initconfig_api(void)
         return 1;
     }
 
-    const char *err_msg;
-
     if (PyInitConfig_SetInt(config, "configure_locale", 1) < 0) {
         goto error;
     }
@@ -1904,9 +1902,12 @@ static int test_initconfig_api(void)
     return 0;
 
 error:
-    (void)PyInitConfig_GetError(config, &err_msg);
-    printf("Python init failed: %s\n", err_msg);
-    exit(1);
+    {
+        const char *err_msg;
+        (void)PyInitConfig_GetError(config, &err_msg);
+        printf("Python init failed: %s\n", err_msg);
+        exit(1);
+    }
 }
 
 
@@ -2028,8 +2029,6 @@ static int test_initconfig_module(void)
         return 1;
     }
 
-    const char *err_msg;
-
     if (PyInitConfig_SetStr(config, "program_name", PROGRAM_NAME_UTF8) < 0) {
         goto error;
     }
@@ -2053,9 +2052,12 @@ static int test_initconfig_module(void)
     return 0;
 
 error:
-    (void)PyInitConfig_GetError(config, &err_msg);
-    printf("Python init failed: %s\n", err_msg);
-    exit(1);
+    {
+        const char *err_msg;
+        (void)PyInitConfig_GetError(config, &err_msg);
+        printf("Python init failed: %s\n", err_msg);
+        exit(1);
+    }
 }
 
 
