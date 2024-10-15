@@ -1899,13 +1899,21 @@ class MathTests(unittest.TestCase):
         self.ftest('tan(0)', math.tan(0), 0)
         self.ftest('tan(pi/4)', math.tan(math.pi/4), 1)
         self.ftest('tan(-pi/4)', math.tan(-math.pi/4), -1)
-        try:
-            self.assertTrue(math.isnan(math.tan(INF)))
-            self.assertTrue(math.isnan(math.tan(NINF)))
-        except:
-            self.assertRaises(ValueError, math.tan, INF)
-            self.assertRaises(ValueError, math.tan, NINF)
         self.assertTrue(math.isnan(math.tan(NAN)))
+
+        try:
+            tan = math.tan(INF)
+        except ValueError:
+            pass
+        else:
+            self.assertTrue(math.isnan(tan))
+
+        try:
+            ntan = math.tan(NINF)
+        except ValueError:
+            pass
+        else:
+            self.assertTrue(math.isnan(ntan))
 
     def testTanh(self):
         self.assertRaises(TypeError, math.tanh)
