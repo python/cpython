@@ -2495,9 +2495,9 @@ Build Changes
 * Building CPython now requires a compiler with support for the C11 atomic
   library, GCC built-in atomic functions, or MSVC interlocked intrinsics.
 
-* Autoconf 2.71 and aclocal 1.16.4 are now required to regenerate
+* Autoconf 2.71 and aclocal 1.16.5 are now required to regenerate
   the :file:`configure` script.
-  (Contributed by Christian Heimes in :gh:`89886`.)
+  (Contributed by Christian Heimes in :gh:`89886` and by Victor Stinner in :gh:`112090`.)
 
 * SQLite 3.15.2 or newer is required to build
   the :mod:`sqlite3` extension module.

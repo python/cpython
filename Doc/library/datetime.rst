@@ -180,19 +180,19 @@ Objects of the :class:`date` type are always naive.
 
 An object of type :class:`.time` or :class:`.datetime` may be aware or naive.
 
-A :class:`.datetime` object *d* is aware if both of the following hold:
+A :class:`.datetime` object ``d`` is aware if both of the following hold:
 
 1. ``d.tzinfo`` is not ``None``
 2. ``d.tzinfo.utcoffset(d)`` does not return ``None``
 
-Otherwise, *d* is naive.
+Otherwise, ``d`` is naive.
 
-A :class:`.time` object *t* is aware if both of the following hold:
+A :class:`.time` object ``t`` is aware if both of the following hold:
 
 1. ``t.tzinfo`` is not ``None``
 2. ``t.tzinfo.utcoffset(None)`` does not return ``None``.
 
-Otherwise, *t* is naive.
+Otherwise, ``t`` is naive.
 
 The distinction between aware and naive doesn't apply to :class:`timedelta`
 objects.
@@ -358,8 +358,8 @@ Supported operations:
 +--------------------------------+-----------------------------------------------+
 | ``q, r = divmod(t1, t2)``      | Computes the quotient and the remainder:      |
 |                                | ``q = t1 // t2`` (3) and ``r = t1 % t2``.     |
-|                                | q is an integer and r is a :class:`timedelta` |
-|                                | object.                                       |
+|                                | ``q`` is an integer and ``r`` is a            |
+|                                | :class:`timedelta` object.                    |
 +--------------------------------+-----------------------------------------------+
 | ``+t1``                        | Returns a :class:`timedelta` object with the  |
 |                                | same value. (2)                               |
@@ -526,7 +526,7 @@ Other constructors, all class methods:
    January 1 of year 1 has ordinal 1.
 
    :exc:`ValueError` is raised unless ``1 <= ordinal <=
-   date.max.toordinal()``. For any date *d*,
+   date.max.toordinal()``. For any date ``d``,
    ``date.fromordinal(d.toordinal()) == d``.
 
 
@@ -730,7 +730,7 @@ Instance methods:
 .. method:: date.toordinal()
 
    Return the proleptic Gregorian ordinal of the date, where January 1 of year 1
-   has ordinal 1. For any :class:`date` object *d*,
+   has ordinal 1. For any :class:`date` object ``d``,
    ``date.fromordinal(d.toordinal()) == d``.
 
 
@@ -782,7 +782,7 @@ Instance methods:
 
 .. method:: date.__str__()
 
-   For a date *d*, ``str(d)`` is equivalent to ``d.isoformat()``.
+   For a date ``d``, ``str(d)`` is equivalent to ``d.isoformat()``.
 
 
 .. method:: date.ctime()
@@ -1063,7 +1063,7 @@ Other constructors, all class methods:
    is used.  If the *date* argument is a :class:`.datetime` object, its time components
    and :attr:`.tzinfo` attributes are ignored.
 
-   For any :class:`.datetime` object *d*,
+   For any :class:`.datetime` object ``d``,
    ``d == datetime.combine(d.date(), d.time(), d.tzinfo)``.
 
    .. versionchanged:: 3.6
@@ -1270,11 +1270,11 @@ Supported operations:
 
    If both are naive, or both are aware and have the same :attr:`~.datetime.tzinfo` attribute,
    the :attr:`~.datetime.tzinfo` attributes are ignored, and the result is a :class:`timedelta`
-   object *t* such that ``datetime2 + t == datetime1``. No time zone adjustments
+   object ``t`` such that ``datetime2 + t == datetime1``. No time zone adjustments
    are done in this case.
 
    If both are aware and have different :attr:`~.datetime.tzinfo` attributes, ``a-b`` acts
-   as if *a* and *b* were first converted to naive UTC datetimes. The
+   as if ``a`` and ``b`` were first converted to naive UTC datetimes. The
    result is ``(a.replace(tzinfo=None) - a.utcoffset()) - (b.replace(tzinfo=None)
    - b.utcoffset())`` except that the implementation never overflows.
 
@@ -1454,11 +1454,11 @@ Instance methods:
 
 .. method:: datetime.utctimetuple()
 
-   If :class:`.datetime` instance *d* is naive, this is the same as
+   If :class:`.datetime` instance ``d`` is naive, this is the same as
    ``d.timetuple()`` except that :attr:`~.time.struct_time.tm_isdst` is forced to 0 regardless of what
    ``d.dst()`` returns. DST is never in effect for a UTC time.
 
-   If *d* is aware, *d* is normalized to UTC time, by subtracting
+   If ``d`` is aware, ``d`` is normalized to UTC time, by subtracting
    ``d.utcoffset()``, and a :class:`time.struct_time` for the
    normalized time is returned. :attr:`!tm_isdst` is forced to 0. Note
    that an :exc:`OverflowError` may be raised if ``d.year`` was
@@ -1606,7 +1606,7 @@ Instance methods:
 
 .. method:: datetime.__str__()
 
-   For a :class:`.datetime` instance *d*, ``str(d)`` is equivalent to
+   For a :class:`.datetime` instance ``d``, ``str(d)`` is equivalent to
    ``d.isoformat(' ')``.
 
 
@@ -1853,7 +1853,7 @@ Instance attributes (read-only):
    .. versionadded:: 3.6
 
 :class:`.time` objects support equality and order comparisons,
-where *a* is considered less than *b* when *a* precedes *b* in time.
+where ``a`` is considered less than ``b`` when ``a`` precedes ``b`` in time.
 
 Naive and aware :class:`!time` objects are never equal.
 Order comparison between naive and aware :class:`!time` objects raises
@@ -2000,7 +2000,7 @@ Instance methods:
 
 .. method:: time.__str__()
 
-   For a time *t*, ``str(t)`` is equivalent to ``t.isoformat()``.
+   For a time ``t``, ``str(t)`` is equivalent to ``t.isoformat()``.
 
 
 .. method:: time.strftime(format)
