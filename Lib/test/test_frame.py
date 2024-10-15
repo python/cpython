@@ -515,61 +515,6 @@ class TestFrameLocals(unittest.TestCase):
         with self.assertRaises(TypeError):
             FrameLocalsProxy(frame=sys._getframe())  # no keyword arguments
 
-    def test_generator_f_locals(self):
-        def get_generator_genexpr(new_value):
-            g = (x for x in range(10))
-            g.gi_frame.f_locals['.0'] = new_value
-            return g
-
-        def get_generator_fn_call(new_value):
-            def gen(it):
-                for x in it:
-                    yield x
-
-            g = gen(range(10))
-            g.gi_frame.f_locals['it'] = new_value
-            return g
-
-        err_msg_pattern_genexpr = "'%s' object is not an iterator"
-        err_msg_pattern_fn_call = "'%s' object is not iterable"
-
-        sequences = [
-            range(0),
-            range(20),
-            [1, 2, 3],
-            (2,),
-            set((13, 48, 211)),
-            frozenset((15, 8, 6)),
-            dict([(1, 2), (3, 4)]),
-        ]
-
-        for seq in sequences:
-            err_msg_genexpr = err_msg_pattern_genexpr % type(seq).__name__
-            with self.assertRaisesRegex(TypeError, err_msg_genexpr):
-                list(get_generator_genexpr(seq))
-            self.assertListEqual(list(get_generator_genexpr(iter(seq))),
-                                 list(seq))
-
-            self.assertListEqual(list(get_generator_fn_call(seq)),
-                                 list(seq))
-            self.assertListEqual(list(get_generator_fn_call(iter(seq))),
-                                 list(seq))
-
-        non_sequences = [
-            None,
-            42,
-            3.0,
-            2j,
-        ]
-
-        for obj in non_sequences:
-            err_msg_genexpr = err_msg_pattern_genexpr % type(obj).__name__
-            with self.assertRaisesRegex(TypeError, err_msg_genexpr):
-                list(get_generator_genexpr(obj))
-            err_msg_fn_call = err_msg_pattern_fn_call % type(obj).__name__
-            with self.assertRaisesRegex(TypeError, err_msg_fn_call):
-                list(get_generator_fn_call(obj))
-
 
 class FrameLocalsProxyMappingTests(mapping_tests.TestHashMappingProtocol):
     """Test that FrameLocalsProxy behaves like a Mapping (with exceptions)"""

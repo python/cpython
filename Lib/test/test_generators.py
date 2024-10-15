@@ -268,6 +268,84 @@ class GeneratorTest(unittest.TestCase):
         #This should not raise
         loop()
 
+
+class ModifyTest(unittest.TestCase):
+    sequences = [
+        range(0),
+        range(20),
+        [1, 2, 3],
+        (2,),
+        set((13, 48, 211)),
+        frozenset((15, 8, 6)),
+        dict([(1, 2), (3, 4)]),
+    ]
+
+    non_sequences = [
+        None,
+        42,
+        3.0,
+        2j,
+    ]
+
+    def modify_f_locals(self, g, local, new_iter):
+        g.gi_frame.f_locals[local] = new_iter
+        return g
+
+    def new_gen_from_gi_code(self, g, new_iter):
+        generator_func = types.FunctionType(g.gi_code, {})
+        return generator_func(new_iter)
+
+    def test_modify_genexpr(self):
+        def genexpr():
+            return (x for x in range(10))
+
+        def get_genexpr_f_locals(self, new_iter):
+            return self.modify_f_locals(genexpr(), '.0', new_iter)
+
+        def get_genexpr_gi_code(self, new_iter):
+            return self.new_gen_from_gi_code(genexpr(), new_iter)
+
+        err_msg_pattern_genexpr = "'%s' object is not an iterator"
+
+        for get_genexpr in [get_genexpr_f_locals, get_genexpr_gi_code]:
+            for seq in self.sequences:
+                err_msg_genexpr = err_msg_pattern_genexpr % type(seq).__name__
+                with self.assertRaisesRegex(TypeError, err_msg_genexpr):
+                    list(get_genexpr(self, seq))
+                self.assertListEqual(list(get_genexpr(self, iter(seq))),
+                                     list(seq))
+            for obj in self.non_sequences:
+                err_msg_genexpr = err_msg_pattern_genexpr % type(obj).__name__
+                with self.assertRaisesRegex(TypeError, err_msg_genexpr):
+                    list(get_genexpr(self, obj))
+
+    def test_modify_genfunc(self):
+        def genfunc():
+            def gen(it):
+                for x in it:
+                    yield x
+            return gen(range(10))
+
+        def get_genfunc_f_locals(self, new_iter):
+            return self.modify_f_locals(genfunc(), 'it', new_iter)
+
+        def get_genfunc_gi_code(self, new_iter):
+            return self.new_gen_from_gi_code(genfunc(), new_iter)
+
+        err_msg_pattern_fn_call = "'%s' object is not iterable"
+
+        for get_genfunc in [get_genfunc_f_locals, get_genfunc_gi_code]:
+            for seq in self.sequences:
+                self.assertListEqual(list(get_genfunc(self, seq)),
+                                     list(seq))
+                self.assertListEqual(list(get_genfunc(self, iter(seq))),
+                                     list(seq))
+            for obj in self.non_sequences:
+                err_msg_fn_call = err_msg_pattern_fn_call % type(obj).__name__
+                with self.assertRaisesRegex(TypeError, err_msg_fn_call):
+                    list(get_genfunc(self, obj))
+
+
 class ExceptionTest(unittest.TestCase):
     # Tests for the issue #23353: check that the currently handled exception
     # is correctly saved/restored in PyEval_EvalFrameEx().
