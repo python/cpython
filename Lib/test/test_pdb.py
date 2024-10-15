@@ -1081,7 +1081,7 @@ def test_convenience_variables():
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     try:
     ...         raise Exception('test')
-    ...     except:
+    ...     except Exception:
     ...         pass
     ...     return 1
 
@@ -1153,7 +1153,7 @@ def test_convenience_variables():
     Exception('test')
     (Pdb) next
     > <doctest test.test_pdb.test_convenience_variables[0]>(5)util_function()
-    -> except:
+    -> except Exception:
     (Pdb) $_exception
     *** KeyError: '_exception'
     (Pdb) return
@@ -3998,6 +3998,16 @@ def bœr():
         stdout, stderr = self._run_pdb(["gh93696_host.py"], commands)
         # verify that pdb found the source of the "frozen" function
         self.assertIn('x = "Sentinel string for gh-93696"', stdout, "Sentinel statement not found")
+
+    def test_empty_file(self):
+        script = ''
+        commands = 'q\n'
+        # We check that pdb stopped at line 0, but anything reasonable
+        # is acceptable here, as long as it does not halt
+        stdout, _ = self.run_pdb_script(script, commands)
+        self.assertIn('main.py(0)', stdout)
+        stdout, _ = self.run_pdb_module(script, commands)
+        self.assertIn('__main__.py(0)', stdout)
 
     def test_non_utf8_encoding(self):
         script_dir = os.path.join(os.path.dirname(__file__), 'encoded_modules')
