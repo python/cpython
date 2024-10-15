@@ -569,12 +569,20 @@ class StrptimeTests(unittest.TestCase):
                       'ti_ET', 'tig_ER', 'wal_ET')
     def test_time_locale(self):
         # Test %X directive
+        loc = locale.getlocale(locale.LC_TIME)[0]
+        pos = slice(3, 6)
+        if glibc_ver and glibc_ver < (2, 29) and loc in {
+                'aa_ET', 'am_ET', 'byn_ER', 'gez_ET', 'om_ET',
+                'sid_ET', 'so_SO', 'ti_ET', 'tig_ER', 'wal_ET'}:
+            # Hours are in 12-hour notation without AM/PM indication.
+            # Ignore hours.
+            pos = slice(4, 6)
         now = time.time()
-        self.roundtrip('%X', slice(3, 6), time.localtime(now))
+        self.roundtrip('%X', pos, time.localtime(now))
         # 1 hour 20 minutes 30 seconds ago
-        self.roundtrip('%X', slice(3, 6), time.localtime(now - 4830))
+        self.roundtrip('%X', pos, time.localtime(now - 4830))
         # 12 hours ago
-        self.roundtrip('%X', slice(3, 6), time.localtime(now - 12*3600))
+        self.roundtrip('%X', pos, time.localtime(now - 12*3600))
 
     def test_percent(self):
         # Make sure % signs are handled properly
