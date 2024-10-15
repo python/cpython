@@ -240,7 +240,7 @@ allowing the use of multiple cores.  Interpreters mostly can't share
 objects between them, which means that, in most cases, only picklable
 objects can be executed and returned.
 
-.. class:: InterpreterPoolExecutor(max_workers=None, mp_context=None, initializer=None, initargs=(), shared=None)
+.. class:: InterpreterPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=(), shared=None)
 
    A :class:`ThreadPoolExecutor` subclass that executes calls asynchronously
    using a pool of at most *max_workers* threads.  Each thread runs
