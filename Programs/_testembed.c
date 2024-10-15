@@ -1849,6 +1849,7 @@ static int test_initconfig_api(void)
         goto error;
     }
     PyInitConfig_Free(config);
+    PyInitConfig_Free(NULL);
 
     dump_config();
     Py_Finalize();
