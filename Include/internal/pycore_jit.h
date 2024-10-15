@@ -13,9 +13,6 @@ extern "C" {
 
 typedef _Py_CODEUNIT *(*jit_func_native)(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate);
 
-// To use preserve_none in JIT builds, we need to declare a separate function pointer with __attribute__((preserve_none)) since this attribute is not supported in < clang 19.
-typedef _Py_CODEUNIT *(*jit_func_preserve_none)(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate) __attribute__((preserve_none));
-
 int _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size_t length);
 void _PyJIT_Free(_PyExecutorObject *executor);
 
