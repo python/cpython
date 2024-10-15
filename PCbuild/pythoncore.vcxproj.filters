@@ -615,6 +615,9 @@
     <ClInclude Include="..\Include\internal\pycore_dtoa.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal/pycore_dynarray.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_exceptions.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -1314,6 +1317,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\dynload_win.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\dynarray.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\errors.c">
