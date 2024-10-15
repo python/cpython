@@ -28,7 +28,7 @@ _PyDynArray_InitWithSize(_PyDynArray *array,
 int
 _PyDynArray_Append(_PyDynArray *array, void *item)
 {
-    assert(array != NULL);
+    _PyDynArray_ASSERT_VALID(array);
     array->items[array->length++] = item;
     if (array->length == array->capacity)
     {
@@ -51,8 +51,7 @@ _PyDynArray_Append(_PyDynArray *array, void *item)
 void
 _PyDynArray_Clear(_PyDynArray *array)
 {
-    assert(array != NULL);
-    assert(array->deallocator != NULL);
+    _PyDynArray_ASSERT_VALID(array);
     for (Py_ssize_t i = 0; i < array->length; ++i)
     {
         if (array->deallocator != NULL)
