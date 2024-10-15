@@ -2452,10 +2452,10 @@ def main():
         #      "python -m pdb --spam -m foo" means passing "--spam" to "pdb" and is invalid
         idx = sys.argv.index('-m')
         args_to_pdb = sys.argv[1:idx]
-        # This will automatically raise an error if there are invalid arguments
+        # This will raise an error if there are invalid arguments
         parser.parse_args(args_to_pdb)
     else:
-        # If a script is being debugged, then pdb expects a script as the first argument.
+        # If a script is being debugged, then pdb expects the script name as the first argument.
         # Anything before the script is considered an argument to pdb itself, which would
         # be invalid because it's not parsed by argparse.
         invalid_args = []
