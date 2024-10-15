@@ -611,7 +611,9 @@ dummy_func(
         // specializations, but there is no output.
         // At the end we just skip over the STORE_FAST.
         op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
+        #ifndef NDEBUG
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+        #endif
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
 
             int next_oparg;
