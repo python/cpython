@@ -1,1 +1,1 @@
-Add ``SO_REUSEPORT_LB`` constant to :mod:`socket` for FreeBSD.
+Add :data:`~socket.SO_REUSEPORT_LB` constant to :mod:`socket` for FreeBSD.
