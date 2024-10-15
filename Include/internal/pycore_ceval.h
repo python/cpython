@@ -251,6 +251,7 @@ typedef struct _special_method {
 } _Py_SpecialMethod;
 
 PyAPI_DATA(const _Py_SpecialMethod) _Py_SpecialMethods[];
+PyAPI_DATA(const size_t) _Py_FunctionAttributeOffsets[];
 
 PyAPI_FUNC(int) _PyEval_CheckExceptStarTypeValid(PyThreadState *tstate, PyObject* right);
 PyAPI_FUNC(int) _PyEval_CheckExceptTypeValid(PyThreadState *tstate, PyObject* right);
@@ -274,6 +275,8 @@ PyAPI_FUNC(PyObject *) _PyEval_GetANext(PyObject *aiter);
 PyAPI_FUNC(void) _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name, _PyStackRef *writeto);
 PyAPI_FUNC(PyObject *) _PyEval_GetAwaitable(PyObject *iterable, int oparg);
 PyAPI_FUNC(PyObject *) _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *name);
+PyAPI_FUNC(int)
+_Py_Check_ArgsIterable(PyThreadState *tstate, PyObject *func, PyObject *args);
 
 /* Bits that can be set in PyThreadState.eval_breaker */
 #define _PY_GIL_DROP_REQUEST_BIT (1U << 0)
@@ -283,6 +286,7 @@ PyAPI_FUNC(PyObject *) _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFra
 #define _PY_GC_SCHEDULED_BIT (1U << 4)
 #define _PY_EVAL_PLEASE_STOP_BIT (1U << 5)
 #define _PY_EVAL_EXPLICIT_MERGE_BIT (1U << 6)
+#define _PY_EVAL_JIT_INVALIDATE_COLD_BIT (1U << 7)
 
 /* Reserve a few bits for future use */
 #define _PY_EVAL_EVENTS_BITS 8
@@ -311,6 +315,8 @@ _Py_eval_breaker_bit_is_set(PyThreadState *tstate, uintptr_t bit)
 // threads in the given interpreter.
 void _Py_set_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
 void _Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
+
+PyAPI_FUNC(PyObject *) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value);
 
 
 #ifdef __cplusplus

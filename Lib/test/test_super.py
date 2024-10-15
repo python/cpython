@@ -4,7 +4,6 @@ import textwrap
 import threading
 import unittest
 from unittest.mock import patch
-from test import support
 from test.support import import_helper, threading_helper
 
 
@@ -515,10 +514,6 @@ class TestSuper(unittest.TestCase):
         an audit hook.
         """
 
-        if support.Py_GIL_DISABLED:
-            # gh-124402: On a Free Threaded build, the test takes a few minutes
-            support.requires('cpu')
-
         class Foo:
             pass
 
@@ -528,7 +523,7 @@ class TestSuper(unittest.TestCase):
         thing = Foo()
         def work():
             foo = thing
-            for _ in range(5000):
+            for _ in range(200):
                 foo.__class__ = Bar
                 type(foo)
                 foo.__class__ = Foo

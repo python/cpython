@@ -207,7 +207,6 @@ Doc/c-api/stable.rst          @encukou
 **/*bisect*                   @rhettinger
 **/*heapq*                    @rhettinger
 **/*functools*                @rhettinger
-**/*decimal*                  @rhettinger
 
 **/*dataclasses*              @ericvsmith
 
@@ -281,3 +280,5 @@ Lib/test/test_configparser.py @jaraco
 
 # Doc sections
 Doc/reference/                @willingc
+
+**/*weakref*                  @kumaraditya303

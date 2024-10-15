@@ -6,6 +6,7 @@ import copy
 from itertools import permutations
 import pickle
 from random import choice
+import re
 import sys
 from test import support
 import threading
@@ -210,6 +211,51 @@ class TestPartial:
         p2.new_attr = 'spam'
         self.assertEqual(p2.new_attr, 'spam')
 
+    def test_placeholders_trailing_raise(self):
+        PH = self.module.Placeholder
+        for args in [(PH,), (0, PH), (0, PH, 1, PH, PH, PH)]:
+            with self.assertRaises(TypeError):
+                self.partial(capture, *args)
+
+    def test_placeholders(self):
+        PH = self.module.Placeholder
+        # 1 Placeholder
+        args = (PH, 0)
+        p = self.partial(capture, *args)
+        actual_args, actual_kwds = p('x')
+        self.assertEqual(actual_args, ('x', 0))
+        self.assertEqual(actual_kwds, {})
+        # 2 Placeholders
+        args = (PH, 0, PH, 1)
+        p = self.partial(capture, *args)
+        with self.assertRaises(TypeError):
+            p('x')
+        actual_args, actual_kwds = p('x', 'y')
+        self.assertEqual(actual_args, ('x', 0, 'y', 1))
+        self.assertEqual(actual_kwds, {})
+
+    def test_placeholders_optimization(self):
+        PH = self.module.Placeholder
+        p = self.partial(capture, PH, 0)
+        p2 = self.partial(p, PH, 1, 2, 3)
+        self.assertEqual(p2.args, (PH, 0, 1, 2, 3))
+        p3 = self.partial(p2, -1, 4)
+        actual_args, actual_kwds = p3(5)
+        self.assertEqual(actual_args, (-1, 0, 1, 2, 3, 4, 5))
+        self.assertEqual(actual_kwds, {})
+        # inner partial has placeholders and outer partial has no args case
+        p = self.partial(capture, PH, 0)
+        p2 = self.partial(p)
+        self.assertEqual(p2.args, (PH, 0))
+        self.assertEqual(p2(1), ((1, 0), {}))
+
+    def test_construct_placeholder_singleton(self):
+        PH = self.module.Placeholder
+        tp = type(PH)
+        self.assertIs(tp(), PH)
+        self.assertRaises(TypeError, tp, 1, 2)
+        self.assertRaises(TypeError, tp, a=1, b=2)
+
     def test_repr(self):
         args = (object(), object())
         args_repr = ', '.join(repr(a) for a in args)
@@ -310,6 +356,23 @@ class TestPartial:
         self.assertEqual(f(2, b=20), ((2,), {'b': 20}))
         self.assertEqual(f(2), ((2,), {}))
         self.assertEqual(f(), ((), {}))
+
+        # Set State with placeholders
+        PH = self.module.Placeholder
+        f = self.partial(signature)
+        f.__setstate__((capture, (PH, 1), dict(a=10), dict(attr=[])))
+        self.assertEqual(signature(f), (capture, (PH, 1), dict(a=10), dict(attr=[])))
+        msg_regex = re.escape("missing positional arguments in 'partial' call; "
+                              "expected at least 1, got 0")
+        with self.assertRaisesRegex(TypeError, f'^{msg_regex}$') as cm:
+            f()
+        self.assertEqual(f(2), ((2, 1), dict(a=10)))
+
+        # Trailing Placeholder error
+        f = self.partial(signature)
+        msg_regex = re.escape("trailing Placeholders are not allowed")
+        with self.assertRaisesRegex(TypeError, f'^{msg_regex}$') as cm:
+            f.__setstate__((capture, (1, PH), dict(a=10), dict(attr=[])))
 
     def test_setstate_errors(self):
         f = self.partial(signature)
@@ -456,6 +519,19 @@ class TestPartialC(TestPartial, unittest.TestCase):
         self.assertIn('astr', r)
         self.assertIn("['sth']", r)
 
+    def test_placeholders_refcount_smoke(self):
+        PH = self.module.Placeholder
+        # sum supports vector call
+        lst1, start = [], []
+        sum_lists = self.partial(sum, PH, start)
+        for i in range(10):
+            sum_lists([lst1, lst1])
+        # collections.ChainMap initializer does not support vectorcall
+        map1, map2 = {}, {}
+        partial_cm = self.partial(collections.ChainMap, PH, map1)
+        for i in range(10):
+            partial_cm(map2, map2)
+
 
 class TestPartialPy(TestPartial, unittest.TestCase):
     module = py_functools
@@ -479,6 +555,19 @@ class TestPartialCSubclass(TestPartialC):
 
 class TestPartialPySubclass(TestPartialPy):
     partial = PyPartialSubclass
+
+    def test_subclass_optimization(self):
+        # `partial` input to `partial` subclass
+        p = py_functools.partial(min, 2)
+        p2 = self.partial(p, 1)
+        self.assertIs(p2.func, min)
+        self.assertEqual(p2(0), 0)
+        # `partial` subclass input to `partial` subclass
+        p = self.partial(min, 2)
+        p2 = self.partial(p, 1)
+        self.assertIs(p2.func, min)
+        self.assertEqual(p2(0), 0)
+
 
 class TestPartialMethod(unittest.TestCase):
 
@@ -616,6 +705,20 @@ class TestPartialMethod(unittest.TestCase):
 
         p = functools.partial(f, 1)
         self.assertEqual(p(2), f(1, 2))
+
+    def test_subclass_optimization(self):
+        class PartialMethodSubclass(functools.partialmethod):
+            pass
+        # `partialmethod` input to `partialmethod` subclass
+        p = functools.partialmethod(min, 2)
+        p2 = PartialMethodSubclass(p, 1)
+        self.assertIs(p2.func, min)
+        self.assertEqual(p2.__get__(0)(), 0)
+        # `partialmethod` subclass input to `partialmethod` subclass
+        p = PartialMethodSubclass(min, 2)
+        p2 = PartialMethodSubclass(p, 1)
+        self.assertIs(p2.func, min)
+        self.assertEqual(p2.__get__(0)(), 0)
 
 
 class TestUpdateWrapper(unittest.TestCase):
