@@ -154,6 +154,18 @@ PyStackRef_DUP(_PyStackRef stackref)
     return stackref;
 }
 
+static inline int
+PyStackRef_IsHeapSafe(_PyStackRef ref)
+{
+    return 1;
+}
+
+static inline _PyStackRef
+PyStackRef_HeapSafe(_PyStackRef ref)
+{
+    return ref;
+}
+
 // Convert a possibly deferred reference to a strong reference.
 static inline _PyStackRef
 PyStackRef_AsStrongReference(_PyStackRef stackref)
@@ -260,6 +272,29 @@ PyStackRef_DUP(_PyStackRef ref)
     assert(!PyStackRef_IsNull(ref));
     if (!PyStackRef_HasCount(ref)) {
         Py_INCREF_MORTAL(BITS_TO_PTR(ref));
+    }
+    return ref;
+}
+
+static inline int
+PyStackRef_IsHeapSafe(_PyStackRef ref)
+{
+    return (
+        PyStackRef_IsNull(ref) ||
+        !PyStackRef_HasCount(ref) ||
+        _Py_IsImmortal(PyStackRef_AsPyObjectBorrow(ref))
+    );
+}
+
+static inline _PyStackRef
+PyStackRef_HeapSafe(_PyStackRef ref)
+{
+    if (PyStackRef_HasCount(ref)) {
+        PyObject *obj = BITS_TO_PTR_MASKED(ref);
+        if (obj != NULL && !_Py_IsImmortal(obj)) {
+            Py_INCREF_MORTAL(obj);
+            ref.bits = (uintptr_t)obj;
+        }
     }
     return ref;
 }

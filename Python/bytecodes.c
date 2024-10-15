@@ -260,6 +260,10 @@ dummy_func(
         }
 
         replicate(8) inst(STORE_FAST, (value --)) {
+            assert(
+                ((_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_GENERATOR)) == 0) ||
+                PyStackRef_IsHeapSafe(value)
+            );
             SETLOCAL(oparg, value);
             DEAD(value);
         }
@@ -269,6 +273,10 @@ dummy_func(
         };
 
         inst(STORE_FAST_LOAD_FAST, (value1 -- value2)) {
+            assert(
+                ((_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_GENERATOR)) == 0) ||
+                PyStackRef_IsHeapSafe(value1)
+            );
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             SETLOCAL(oparg1, value1);
@@ -277,6 +285,14 @@ dummy_func(
         }
 
         inst(STORE_FAST_STORE_FAST, (value2, value1 --)) {
+            assert(
+                ((_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_GENERATOR)) == 0) ||
+                PyStackRef_IsHeapSafe(value1)
+            );
+            assert(
+                ((_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_GENERATOR)) == 0) ||
+                PyStackRef_IsHeapSafe(value2)
+            );
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             SETLOCAL(oparg1, value1);
@@ -981,6 +997,7 @@ dummy_func(
             assert(frame != &entry_frame);
             #endif
             _PyStackRef temp = retval;
+            assert(PyStackRef_IsHeapSafe(temp));
             DEAD(retval);
             SAVE_STACK();
             assert(EMPTY());

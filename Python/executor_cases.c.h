@@ -217,6 +217,10 @@
             oparg = 0;
             assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
+            assert(
+                   ((_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_GENERATOR)) == 0) ||
+                   PyStackRef_IsHeapSafe(value)
+            );
             SETLOCAL(oparg, value);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -228,6 +232,10 @@
             oparg = 1;
             assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
+            assert(
+                   ((_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_GENERATOR)) == 0) ||
+                   PyStackRef_IsHeapSafe(value)
+            );
             SETLOCAL(oparg, value);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -239,6 +247,10 @@
             oparg = 2;
             assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
+            assert(
+                   ((_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_GENERATOR)) == 0) ||
+                   PyStackRef_IsHeapSafe(value)
+            );
             SETLOCAL(oparg, value);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -250,6 +262,10 @@
             oparg = 3;
             assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
+            assert(
+                   ((_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_GENERATOR)) == 0) ||
+                   PyStackRef_IsHeapSafe(value)
+            );
             SETLOCAL(oparg, value);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -261,6 +277,10 @@
             oparg = 4;
             assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
+            assert(
+                   ((_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_GENERATOR)) == 0) ||
+                   PyStackRef_IsHeapSafe(value)
+            );
             SETLOCAL(oparg, value);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -272,6 +292,10 @@
             oparg = 5;
             assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
+            assert(
+                   ((_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_GENERATOR)) == 0) ||
+                   PyStackRef_IsHeapSafe(value)
+            );
             SETLOCAL(oparg, value);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -283,6 +307,10 @@
             oparg = 6;
             assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
+            assert(
+                   ((_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_GENERATOR)) == 0) ||
+                   PyStackRef_IsHeapSafe(value)
+            );
             SETLOCAL(oparg, value);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -294,6 +322,10 @@
             oparg = 7;
             assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
+            assert(
+                   ((_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_GENERATOR)) == 0) ||
+                   PyStackRef_IsHeapSafe(value)
+            );
             SETLOCAL(oparg, value);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -304,6 +336,10 @@
             _PyStackRef value;
             oparg = CURRENT_OPARG();
             value = stack_pointer[-1];
+            assert(
+                   ((_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_GENERATOR)) == 0) ||
+                   PyStackRef_IsHeapSafe(value)
+            );
             SETLOCAL(oparg, value);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1258,6 +1294,7 @@
             assert(frame != &entry_frame);
             #endif
             _PyStackRef temp = retval;
+            assert(PyStackRef_IsHeapSafe(temp));
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             _PyFrame_SetStackPointer(frame, stack_pointer);

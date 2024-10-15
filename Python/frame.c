@@ -52,23 +52,19 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     assert(frame->owner != FRAME_OWNED_BY_CSTACK);
     assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
     assert(frame->owner != FRAME_CLEARED);
-    Py_ssize_t size = ((char*)frame->stackpointer) - (char *)frame;
-    memcpy((_PyInterpreterFrame *)f->_f_frame_data, frame, size);
-    frame = (_PyInterpreterFrame *)f->_f_frame_data;
-    frame->stackpointer = (_PyStackRef *)(((char *)frame) + size);
-    frame->f_executable = PyStackRef_DUP(frame->f_executable);
-    f->f_frame = frame;
-    frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
-    if (_PyFrame_IsIncomplete(frame)) {
+    _PyInterpreterFrame *new_frame = (_PyInterpreterFrame *)f->_f_frame_data;
+    _PyFrame_Copy(frame, new_frame);
+    f->f_frame = new_frame;
+    new_frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
+    if (_PyFrame_IsIncomplete(new_frame)) {
         // This may be a newly-created generator or coroutine frame. Since it's
         // dead anyways, just pretend that the first RESUME ran:
-        PyCodeObject *code = _PyFrame_GetCode(frame);
-        frame->instr_ptr = _PyCode_CODE(code) + code->_co_firsttraceable + 1;
+        PyCodeObject *code = _PyFrame_GetCode(new_frame);
+        new_frame->instr_ptr = _PyCode_CODE(code) + code->_co_firsttraceable + 1;
     }
-    assert(!_PyFrame_IsIncomplete(frame));
+    assert(!_PyFrame_IsIncomplete(new_frame));
     assert(f->f_back == NULL);
     _PyInterpreterFrame *prev = _PyFrame_GetFirstComplete(frame->previous);
-    frame->previous = NULL;
     if (prev) {
         assert(prev->owner != FRAME_OWNED_BY_CSTACK);
         /* Link PyFrameObjects.f_back and remove link through _PyInterpreterFrame.previous */
@@ -116,6 +112,9 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
         PyFrameObject *f = frame->frame_obj;
         frame->frame_obj = NULL;
         if (Py_REFCNT(f) > 1) {
+            // Take ownership takes the reference to the executable,
+            // so we need to incref it.
+            PyStackRef_AsPyObjectNew(frame->f_executable);
             take_ownership(f, frame);
             Py_DECREF(f);
             return;

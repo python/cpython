@@ -4922,6 +4922,7 @@
                 assert(frame != &entry_frame);
                 #endif
                 _PyStackRef temp = retval;
+                assert(PyStackRef_IsHeapSafe(temp));
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -4967,6 +4968,7 @@
                 assert(frame != &entry_frame);
                 #endif
                 _PyStackRef temp = retval;
+                assert(PyStackRef_IsHeapSafe(temp));
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -6981,6 +6983,7 @@
                 assert(frame != &entry_frame);
                 #endif
                 _PyStackRef temp = retval;
+                assert(PyStackRef_IsHeapSafe(temp));
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 assert(EMPTY());
                 _Py_LeaveRecursiveCallPy(tstate);
@@ -7043,6 +7046,7 @@
             assert(frame != &entry_frame);
             #endif
             _PyStackRef temp = retval;
+            assert(PyStackRef_IsHeapSafe(temp));
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -7501,6 +7505,10 @@
             INSTRUCTION_STATS(STORE_FAST);
             _PyStackRef value;
             value = stack_pointer[-1];
+            assert(
+                   ((_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_GENERATOR)) == 0) ||
+                   PyStackRef_IsHeapSafe(value)
+            );
             SETLOCAL(oparg, value);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -7514,6 +7522,10 @@
             _PyStackRef value1;
             _PyStackRef value2;
             value1 = stack_pointer[-1];
+            assert(
+                   ((_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_GENERATOR)) == 0) ||
+                   PyStackRef_IsHeapSafe(value1)
+            );
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             SETLOCAL(oparg1, value1);
@@ -7530,6 +7542,14 @@
             _PyStackRef value1;
             value1 = stack_pointer[-1];
             value2 = stack_pointer[-2];
+            assert(
+                   ((_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_GENERATOR)) == 0) ||
+                   PyStackRef_IsHeapSafe(value1)
+            );
+            assert(
+                   ((_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_GENERATOR)) == 0) ||
+                   PyStackRef_IsHeapSafe(value2)
+            );
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             SETLOCAL(oparg1, value1);
