@@ -942,7 +942,7 @@ interpolation if an option used is not defined elsewhere. ::
 ConfigParser Objects
 --------------------
 
-.. class:: ConfigParser(defaults=None, dict_type=dict, allow_no_value=False, \
+.. class:: ConfigParser(defaults=None, dict_type=dict, allow_no_value=False, *, \
                         delimiters=('=', ':'), comment_prefixes=('#', ';'), \
                         inline_comment_prefixes=None, strict=True, \
                         empty_lines_in_values=True, \
@@ -997,11 +997,8 @@ ConfigParser Objects
    object and section proxies.
 
    When *allow_unnamed_section* is ``True`` (default: ``False``),
-   the first section name can be omitted, options with no section name
-   specified ahead (often called ``"Global Options"`` or
-   ``options in "Default Section"``) are allowed. See
-   `"Supported INI File Structure" section<#supported-ini-file-structure>`_
-   for details.
+   the first section name can be omitted. See the
+   `"Unnamed Sections" section <#unnamed-sections>`_.
 
    It is possible to read several configurations into a single
    :class:`ConfigParser`, where the most recently added configuration has the
