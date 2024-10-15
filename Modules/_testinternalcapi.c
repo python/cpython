@@ -2052,12 +2052,12 @@ identify_type_slot_wrappers(PyObject *self, PyObject *Py_UNUSED(ignored))
 static int
 test_dynarray_common(_PyDynArray *array)
 {
-    #define APPEND(ptr) do {                    \
-        if (_PyDynArray_Append(array, ptr) < 0) \
-        {                                       \
-            return -1;                          \
-        }                                       \
-    } while (0);
+#define APPEND(ptr) do {                    \
+    if (_PyDynArray_Append(array, ptr) < 0) \
+    {                                       \
+        return -1;                          \
+    }                                       \
+} while (0);
 
     // Some dummy pointers
     APPEND(Py_None);
@@ -2074,6 +2074,8 @@ test_dynarray_common(_PyDynArray *array)
     {
         APPEND(NULL);
     }
+
+#undef APPEND
 
     // Make sure that nothing got corrupted
     assert(_PyDynArray_GET_ITEM(array, 0) == Py_None);
@@ -2106,7 +2108,12 @@ test_dynarray(PyObject *self, PyObject *unused)
     }
 
     _PyDynArray *heap_array = _PyDynArray_New(NULL);
-    test_dynarray_common(heap_array);
+    if (test_dynarray_common(heap_array) < 0)
+    {
+        _PyDynArray_Free(heap_array);
+        PyErr_NoMemory();
+        return NULL;
+    }
     _PyDynArray_Free(heap_array);
     Py_RETURN_NONE;
 }
