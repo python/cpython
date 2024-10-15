@@ -3511,6 +3511,9 @@ def bœr():
         stdout, _ = self._run_pdb(["-m", "calendar", "1"], commands)
         self.assertIn("December", stdout)
 
+        stdout, _ = self._run_pdb(["-m", "calendar", "--type", "text"], commands)
+        self.assertIn("December", stdout)
+
     def test_run_script_with_args(self):
         script = """
             import sys

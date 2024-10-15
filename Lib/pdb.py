@@ -2444,15 +2444,29 @@ def main():
 
     opts, args = parser.parse_known_args()
 
-    invalid_args = []
-    for arg in args:
-        if not arg.startswith('-'):
-            break
-        invalid_args.append(arg)
+    if opts.module:
+        # If a module is being debugged, we consider the arguments after "-m module" to
+        # be potential arguments to the module itself. We need to parse the arguments
+        # before "-m" to check if there is any invalid argument.
+        # e.g. "python -m pdb -m foo --spam" means passing "--spam" to "foo"
+        #      "python -m pdb --spam -m foo" means passing "--spam" to "pdb" and is invalid
+        idx = sys.argv.index('-m')
+        args_to_pdb = sys.argv[1:idx]
+        # This will automatically raise an error if there are invalid arguments
+        parser.parse_args(args_to_pdb)
+    else:
+        # If a script is being debugged, then pdb expects a script as the first argument.
+        # Anything before the script is considered an argument to pdb itself, which would
+        # be invalid because it's not parsed by argparse.
+        invalid_args = []
+        for arg in args:
+            if not arg.startswith('-'):
+                break
+            invalid_args.append(arg)
 
-    if invalid_args:
-        parser.error(f"unrecognized arguments: {' '.join(invalid_args)}")
-        sys.exit(2)
+        if invalid_args:
+            parser.error(f"unrecognized arguments: {' '.join(invalid_args)}")
+            sys.exit(2)
 
     if opts.module:
         file = opts.module
