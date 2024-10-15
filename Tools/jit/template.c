@@ -48,8 +48,8 @@
 #define GOTO_TIER_TWO(EXECUTOR) \
 do {  \
     OPT_STAT_INC(traces_executed);                \
-    __attribute__((musttail))                     \
-    return ((jit_func)((EXECUTOR)->jit_side_entry))(frame, stack_pointer, tstate); \
+    __attribute__((musttail))                      \
+    return ((jit_func_native)((EXECUTOR)->jit_side_entry))(frame, stack_pointer, tstate); \
 } while (0)
 
 #undef GOTO_TIER_ONE
@@ -72,7 +72,7 @@ do {  \
 do {                                                         \
     PyAPI_DATA(void) ALIAS;                                  \
     __attribute__((musttail))                                \
-    return ((jit_func)&ALIAS)(frame, stack_pointer, tstate); \
+    return ((jit_func_native)&ALIAS)(frame, stack_pointer, tstate); \
 } while (0)
 
 #undef JUMP_TO_JUMP_TARGET

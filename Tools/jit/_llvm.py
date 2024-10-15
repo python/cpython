@@ -78,7 +78,6 @@ async def _find_tool(tool: str, *, echo: bool = False) -> str | None:
     prefix = await _get_brew_llvm_prefix(echo=echo)
     if prefix is not None:
         path = os.path.join(prefix, "bin", tool)
-        print(path)
         if await _check_tool_version(path, echo=echo):
             return path
     # Nothing found:
