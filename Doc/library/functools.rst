@@ -347,8 +347,7 @@ The :mod:`functools` module defines the following functions:
 
       def partial(func, /, *args, **keywords):
           def newfunc(*more_args, **more_keywords):
-              keywords_union = {**keywords, **more_keywords}
-              return func(*args, *more_args, **keywords_union)
+              return func(*args, *more_args, **(keywords | more_keywords))
           newfunc.func = func
           newfunc.args = args
           newfunc.keywords = keywords
@@ -543,6 +542,25 @@ The :mod:`functools` module defines the following functions:
      ...     print(arg.real, arg.imag)
      ...
 
+   For code that dispatches on a collections type (e.g., ``list``), but wants
+   to typehint the items of the collection (e.g., ``list[int]``), the
+   dispatch type should be passed explicitly to the decorator itself with the
+   typehint going into the function definition::
+
+     >>> @fun.register(list)
+     ... def _(arg: list[int], verbose=False):
+     ...     if verbose:
+     ...         print("Enumerate this:")
+     ...     for i, elem in enumerate(arg):
+     ...         print(i, elem)
+
+   .. note::
+
+      At runtime the function will dispatch on an instance of a list regardless
+      of the type contained within the list i.e. ``[1,2,3]`` will be
+      dispatched the same as ``["foo", "bar", "baz"]``. The annotation
+      provided in this example is for static type checkers only and has no
+      runtime impact.
 
    To enable registering :term:`lambdas<lambda>` and pre-existing functions,
    the :func:`register` attribute can also be used in a functional form::

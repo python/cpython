@@ -295,6 +295,20 @@ Instance attributes (read-only):
 
    Between 0 and 86,399 inclusive.
 
+   .. caution::
+
+      It is a somewhat common bug for code to unintentionally use this attribute
+      when it is actually intended to get a :meth:`~timedelta.total_seconds`
+      value instead:
+
+      .. doctest::
+
+         >>> from datetime import timedelta
+         >>> duration = timedelta(seconds=11235813)
+         >>> duration.days, duration.seconds
+         (130, 3813)
+         >>> duration.total_seconds()
+         11235813.0
 
 .. attribute:: timedelta.microseconds
 
@@ -351,7 +365,7 @@ Supported operations:
 |                                | same value. (2)                               |
 +--------------------------------+-----------------------------------------------+
 | ``-t1``                        | Equivalent to ``timedelta(-t1.days,           |
-|                                | -t1.seconds*, -t1.microseconds)``,            |
+|                                | -t1.seconds, -t1.microseconds)``,             |
 |                                | and to ``t1 * -1``. (1)(4)                    |
 +--------------------------------+-----------------------------------------------+
 | ``abs(t)``                     | Equivalent to ``+t`` when ``t.days >= 0``,    |
@@ -934,6 +948,10 @@ Other constructors, all class methods:
 
    This function is preferred over :meth:`today` and :meth:`utcnow`.
 
+   .. note::
+
+      Subsequent calls to :meth:`!datetime.now` may return the same
+      instant depending on the precision of the underlying clock.
 
 .. classmethod:: datetime.utcnow()
 

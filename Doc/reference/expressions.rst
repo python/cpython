@@ -1807,6 +1807,9 @@ returns a boolean value regardless of the type of its argument
    single: assignment expression
    single: walrus operator
    single: named expression
+   pair: assignment; expression
+
+.. _assignment-expressions:
 
 Assignment expressions
 ======================

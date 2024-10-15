@@ -112,7 +112,8 @@ context_event_name(PyContextEvent event) {
     Py_UNREACHABLE();
 }
 
-static void notify_context_watchers(PyContextEvent event, PyContext *ctx, PyThreadState *ts)
+static void
+notify_context_watchers(PyThreadState *ts, PyContextEvent event, PyObject *ctx)
 {
     assert(Py_REFCNT(ctx) > 0);
     PyInterpreterState *interp = ts->interp;
@@ -192,7 +193,7 @@ _PyContext_Enter(PyThreadState *ts, PyObject *octx)
     ts->context = Py_NewRef(ctx);
     ts->context_ver++;
 
-    notify_context_watchers(Py_CONTEXT_EVENT_ENTER, ctx, ts);
+    notify_context_watchers(ts, Py_CONTEXT_EVENT_ENTER, octx);
     return 0;
 }
 
@@ -226,7 +227,7 @@ _PyContext_Exit(PyThreadState *ts, PyObject *octx)
         return -1;
     }
 
-    notify_context_watchers(Py_CONTEXT_EVENT_EXIT, ctx, ts);
+    notify_context_watchers(ts, Py_CONTEXT_EVENT_EXIT, octx);
     Py_SETREF(ts->context, (PyObject *)ctx->ctx_prev);
     ts->context_ver++;
 
@@ -1154,48 +1155,31 @@ token_tp_dealloc(PyContextToken *self)
 static PyObject *
 token_tp_repr(PyContextToken *self)
 {
-    _PyUnicodeWriter writer;
-
-    _PyUnicodeWriter_Init(&writer);
-
-    if (_PyUnicodeWriter_WriteASCIIString(&writer, "<Token", 6) < 0) {
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        return NULL;
+    }
+    if (PyUnicodeWriter_WriteUTF8(writer, "<Token", 6) < 0) {
         goto error;
     }
-
     if (self->tok_used) {
-        if (_PyUnicodeWriter_WriteASCIIString(&writer, " used", 5) < 0) {
+        if (PyUnicodeWriter_WriteUTF8(writer, " used", 5) < 0) {
             goto error;
         }
     }
-
-    if (_PyUnicodeWriter_WriteASCIIString(&writer, " var=", 5) < 0) {
+    if (PyUnicodeWriter_WriteUTF8(writer, " var=", 5) < 0) {
         goto error;
     }
-
-    PyObject *var = PyObject_Repr((PyObject *)self->tok_var);
-    if (var == NULL) {
+    if (PyUnicodeWriter_WriteRepr(writer, (PyObject *)self->tok_var) < 0) {
         goto error;
     }
-    if (_PyUnicodeWriter_WriteStr(&writer, var) < 0) {
-        Py_DECREF(var);
+    if (PyUnicodeWriter_Format(writer, " at %p>", self) < 0) {
         goto error;
     }
-    Py_DECREF(var);
-
-    PyObject *addr = PyUnicode_FromFormat(" at %p>", self);
-    if (addr == NULL) {
-        goto error;
-    }
-    if (_PyUnicodeWriter_WriteStr(&writer, addr) < 0) {
-        Py_DECREF(addr);
-        goto error;
-    }
-    Py_DECREF(addr);
-
-    return _PyUnicodeWriter_Finish(&writer);
+    return PyUnicodeWriter_Finish(writer);
 
 error:
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     return NULL;
 }
 

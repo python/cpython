@@ -350,10 +350,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 pass
 
         self.commands = {} # associates a command list to breakpoint numbers
-        self.commands_doprompt = {} # for each bp num, tells if the prompt
-                                    # must be disp. after execing the cmd list
-        self.commands_silent = {} # for each bp num, tells if the stack trace
-                                  # must be disp. after execing the cmd list
         self.commands_defining = False # True while in the process of defining
                                        # a command list
         self.commands_bnum = None # The breakpoint number for which we are
@@ -437,8 +433,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 or frame.f_lineno <= 0):
                 return
             self._wait_for_mainpyfile = False
-        if self.bp_commands(frame):
-            self.interaction(frame, None)
+        self.bp_commands(frame)
+        self.interaction(frame, None)
 
     user_opcode = user_line
 
@@ -453,18 +449,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                self.currentbp in self.commands:
             currentbp = self.currentbp
             self.currentbp = 0
-            lastcmd_back = self.lastcmd
-            self.setup(frame, None)
             for line in self.commands[currentbp]:
-                self.onecmd(line)
-            self.lastcmd = lastcmd_back
-            if not self.commands_silent[currentbp]:
-                self.print_stack_entry(self.stack[self.curindex])
-            if self.commands_doprompt[currentbp]:
-                self._cmdloop()
-            self.forget()
-            return
-        return 1
+                self.cmdqueue.append(line)
+            self.cmdqueue.append(f'_pdbcmd_restore_lastcmd {self.lastcmd}')
 
     def user_return(self, frame, return_value):
         """This function is called when a return trap is set here."""
@@ -863,15 +850,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         cmd, arg, line = self.parseline(line)
         if not cmd:
             return False
-        if cmd == 'silent':
-            self.commands_silent[self.commands_bnum] = True
-            return False  # continue to handle other cmd def in the cmd list
-        elif cmd == 'end':
+        if cmd == 'end':
             return True  # end of cmd list
         elif cmd == 'EOF':
             print('')
             return True  # end of cmd list
         cmdlist = self.commands[self.commands_bnum]
+        if cmd == 'silent':
+            cmdlist.append('_pdbcmd_silence_frame_status')
+            return False  # continue to handle other cmd def in the cmd list
         if arg:
             cmdlist.append(cmd+' '+arg)
         else:
@@ -883,7 +870,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             func = self.default
         # one of the resuming commands
         if func.__name__ in self.commands_resuming:
-            self.commands_doprompt[self.commands_bnum] = False
             return True
         return False
 
@@ -996,6 +982,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.print_stack_trace(0)
         self._show_display()
 
+    def _pdbcmd_silence_frame_status(self, arg):
+        if self.cmdqueue and self.cmdqueue[-1] == '_pdbcmd_print_frame_status':
+            self.cmdqueue.pop()
+
+    def _pdbcmd_restore_lastcmd(self, arg):
+        self.lastcmd = arg
+
     # Command definitions, called by cmdloop()
     # The argument is the remaining string on the command line
     # Return true to exit from the command loop
@@ -1054,14 +1047,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.commands_bnum = bnum
         # Save old definitions for the case of a keyboard interrupt.
         if bnum in self.commands:
-            old_command_defs = (self.commands[bnum],
-                                self.commands_doprompt[bnum],
-                                self.commands_silent[bnum])
+            old_commands = self.commands[bnum]
         else:
-            old_command_defs = None
+            old_commands = None
         self.commands[bnum] = []
-        self.commands_doprompt[bnum] = True
-        self.commands_silent[bnum] = False
 
         prompt_back = self.prompt
         self.prompt = '(com) '
@@ -1070,14 +1059,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.cmdloop()
         except KeyboardInterrupt:
             # Restore old definitions.
-            if old_command_defs:
-                self.commands[bnum] = old_command_defs[0]
-                self.commands_doprompt[bnum] = old_command_defs[1]
-                self.commands_silent[bnum] = old_command_defs[2]
+            if old_commands:
+                self.commands[bnum] = old_commands
             else:
                 del self.commands[bnum]
-                del self.commands_doprompt[bnum]
-                del self.commands_silent[bnum]
             self.error('command definition aborted, old commands restored')
         finally:
             self.commands_defining = False
@@ -2093,7 +2078,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     # List of all the commands making the program resume execution.
     commands_resuming = ['do_continue', 'do_step', 'do_next', 'do_return',
-                         'do_quit', 'do_jump']
+                         'do_until', 'do_quit', 'do_jump']
 
     # Print a traceback starting at the top stack frame.
     # The most recently entered frame is printed last;
@@ -2438,8 +2423,7 @@ To let the script run up to a given line X in the debugged file, use
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(prog="pdb",
-                                     usage="%(prog)s [-h] [-c command] (-m module | pyfile) [args ...]",
+    parser = argparse.ArgumentParser(usage="%(prog)s [-h] [-c command] (-m module | pyfile) [args ...]",
                                      description=_usage,
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      allow_abbrev=False)

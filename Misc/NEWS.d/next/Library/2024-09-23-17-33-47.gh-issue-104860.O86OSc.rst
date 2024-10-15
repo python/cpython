@@ -1,0 +1,2 @@
+Fix disallowing abbreviation of single-dash long options in :mod:`argparse`
+with ``allow_abbrev=False``.

@@ -862,7 +862,7 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
 
     /* If no format_spec is provided, use an empty string */
     if (format_spec == NULL) {
-        empty = PyUnicode_New(0, 0);
+        empty = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
         format_spec = empty;
     }
 

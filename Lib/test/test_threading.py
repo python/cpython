@@ -1171,6 +1171,76 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(out.strip(), b"OK")
         self.assertIn(b"can't create new thread at interpreter shutdown", err)
 
+    @cpython_only
+    def test_finalize_daemon_thread_hang(self):
+        if support.check_sanitizer(thread=True, memory=True):
+            # the thread running `time.sleep(100)` below will still be alive
+            # at process exit
+            self.skipTest(
+                    "https://github.com/python/cpython/issues/124878 - Known"
+                    " race condition that TSAN identifies.")
+        # gh-87135: tests that daemon threads hang during finalization
+        script = textwrap.dedent('''
+            import os
+            import sys
+            import threading
+            import time
+            import _testcapi
+
+            lock = threading.Lock()
+            lock.acquire()
+            thread_started_event = threading.Event()
+            def thread_func():
+                try:
+                    thread_started_event.set()
+                    _testcapi.finalize_thread_hang(lock.acquire)
+                finally:
+                    # Control must not reach here.
+                    os._exit(2)
+
+            t = threading.Thread(target=thread_func)
+            t.daemon = True
+            t.start()
+            thread_started_event.wait()
+            # Sleep to ensure daemon thread is blocked on `lock.acquire`
+            #
+            # Note: This test is designed so that in the unlikely case that
+            # `0.1` seconds is not sufficient time for the thread to become
+            # blocked on `lock.acquire`, the test will still pass, it just
+            # won't be properly testing the thread behavior during
+            # finalization.
+            time.sleep(0.1)
+
+            def run_during_finalization():
+                # Wake up daemon thread
+                lock.release()
+                # Sleep to give the daemon thread time to crash if it is going
+                # to.
+                #
+                # Note: If due to an exceptionally slow execution this delay is
+                # insufficient, the test will still pass but will simply be
+                # ineffective as a test.
+                time.sleep(0.1)
+                # If control reaches here, the test succeeded.
+                os._exit(0)
+
+            # Replace sys.stderr.flush as a way to run code during finalization
+            orig_flush = sys.stderr.flush
+            def do_flush(*args, **kwargs):
+                orig_flush(*args, **kwargs)
+                if not sys.is_finalizing:
+                    return
+                sys.stderr.flush = orig_flush
+                run_during_finalization()
+
+            sys.stderr.flush = do_flush
+
+            # If the follow exit code is retained, `run_during_finalization`
+            # did not run.
+            sys.exit(1)
+        ''')
+        assert_python_ok("-c", script)
+
 class ThreadJoinOnShutdown(BaseTestCase):
 
     def _run_and_join(self, script):
