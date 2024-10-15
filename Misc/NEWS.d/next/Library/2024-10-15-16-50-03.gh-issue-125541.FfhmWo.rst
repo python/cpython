@@ -1,0 +1,3 @@
+Pressing :kbd:`Ctrl-C` while blocked in :meth:`threading.Lock.acquire` now
+interrupts the function and raises a :exc:`KeyboardInterrupt` exception on
+Windows, similar to how it behaves on macOS and Linux.
