@@ -1,0 +1,4 @@
+Using ``from __future__ import barry_as_FLUFL`` works now when using
+multiple statements on the same line. Additionally the effect is respected
+even if the import is used even if the flags are not passed to
+:func:`compile`. Patch by Pablo Galindo

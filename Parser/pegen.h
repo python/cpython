@@ -346,6 +346,8 @@ mod_ty _PyPegen_make_module(Parser *, asdl_stmt_seq *);
 void *_PyPegen_arguments_parsing_error(Parser *, expr_ty);
 expr_ty _PyPegen_get_last_comprehension_item(comprehension_ty comprehension);
 void *_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args, asdl_comprehension_seq *comprehensions);
+stmt_ty _PyPegen_checked_future_import(Parser *p, identifier module, asdl_alias_seq *,
+                                       int , int, int , int , int , PyArena *);
 
 // Parser API
 
@@ -360,8 +362,6 @@ asdl_stmt_seq *_PyPegen_interactive_exit(Parser *);
 
 // TODO: move to the correct place in this file
 expr_ty _PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* expr, Token*b);
-
-stmt_ty _PyPegen_check_future_import(Parser *p, stmt_ty importfrom);
 
 // Generated function in parse.c - function definition in python.gram
 void *_PyPegen_parse(Parser *);
