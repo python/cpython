@@ -203,7 +203,7 @@ _PyObject_FinalizeUniqueIdPool(PyInterpreterState *interp)
         pool->freelist = next;
     }
 
-    // Now everything non-NULL is a object. Clear their unique ids case the
+    // Now everything non-NULL is a object. Clear their unique ids as the
     // object outlives the interpreter.
     for (Py_ssize_t i = 0; i < pool->size; i++) {
         PyObject *obj = pool->table[i].obj;
