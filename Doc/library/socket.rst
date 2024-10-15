@@ -680,7 +680,7 @@ Constants
 
   .. versionadded:: 3.14
 
-  .. availability:: FreeBSD.
+  .. availability:: FreeBSD >= 12.0
 
 .. data:: AF_HYPERV
           HV_PROTOCOL_RAW
