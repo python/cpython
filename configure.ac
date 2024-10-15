@@ -3013,7 +3013,7 @@ AC_DEFINE([STDC_HEADERS], [1],
 AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
   io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/limits.h linux/memfd.h \
-  linux/random.h linux/soundcard.h \
+  linux/netfilter_ipv4.h linux/random.h linux/soundcard.h \
   linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
@@ -7497,7 +7497,7 @@ CPPFLAGS="${BASECPPFLAGS} -I. -I${srcdir}/Include ${CPPFLAGS}"
 
 AC_CACHE_CHECK([whether libatomic is needed by <pyatomic.h>],
                [ac_cv_libatomic_needed],
-[AC_RUN_IFELSE([AC_LANG_SOURCE([[
+[AC_LINK_IFELSE([AC_LANG_SOURCE([[
 // pyatomic.h needs uint64_t and Py_ssize_t types
 #include <stdint.h>  // int64_t, intptr_t
 #ifdef HAVE_SYS_TYPES_H
@@ -7534,9 +7534,8 @@ int main()
     return 0; // all good
 }
 ]])],
-  [ac_cv_libatomic_needed=no],  dnl build succeeded
-  [ac_cv_libatomic_needed=yes], dnl build failed
-  [ac_cv_libatomic_needed=no])  dnl cross compilation
+  [ac_cv_libatomic_needed=no],  dnl build and link succeeded
+  [ac_cv_libatomic_needed=yes]) dnl build and link failed
 ])
 
 AS_VAR_IF([ac_cv_libatomic_needed], [yes],
