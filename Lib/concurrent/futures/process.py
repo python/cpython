@@ -89,7 +89,8 @@ class _ThreadWakeup:
                 self._writer.send_bytes(b"")
 
     def clear(self):
-        assert not self._closed
+        if self._closed:
+            raise RuntimeError('operation on closed _ThreadWakeup')
         while self._reader.poll():
             self._reader.recv_bytes()
 
@@ -714,10 +715,9 @@ class ProcessPoolExecutor(_base.Executor):
         # as it could result in a deadlock if a worker process dies with the
         # _result_queue write lock still acquired.
         #
-        # _shutdown_lock must be locked to access _ThreadWakeup.close() and
-        # .wakeup(). Care must also be taken to not call clear or close from
-        # more than one thread since _ThreadWakeup.clear() is not protected by
-        # the _shutdown_lock
+        # Care must be taken to only call clear and close from the
+        # executor_manager_thread, since _ThreadWakeup.clear() is not protected
+        # by a lock.
         self._executor_manager_thread_wakeup = _ThreadWakeup()
 
         # Create communication channels for the executor
