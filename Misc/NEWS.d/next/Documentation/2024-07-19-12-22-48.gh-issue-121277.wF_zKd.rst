@@ -1,0 +1,2 @@
+Writers of CPython's documentation can now use ``next`` as the version for
+the ``versionchanged``, ``versionadded``, ``deprecated`` directives.

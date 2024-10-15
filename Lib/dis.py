@@ -32,7 +32,7 @@ _have_code = (types.MethodType, types.FunctionType, types.CodeType,
 CONVERT_VALUE = opmap['CONVERT_VALUE']
 
 SET_FUNCTION_ATTRIBUTE = opmap['SET_FUNCTION_ATTRIBUTE']
-FUNCTION_ATTR_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure')
+FUNCTION_ATTR_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure', 'annotate')
 
 ENTER_EXECUTOR = opmap['ENTER_EXECUTOR']
 LOAD_CONST = opmap['LOAD_CONST']
@@ -51,6 +51,8 @@ LOAD_SPECIAL = opmap['LOAD_SPECIAL']
 LOAD_FAST_LOAD_FAST = opmap['LOAD_FAST_LOAD_FAST']
 STORE_FAST_LOAD_FAST = opmap['STORE_FAST_LOAD_FAST']
 STORE_FAST_STORE_FAST = opmap['STORE_FAST_STORE_FAST']
+IS_OP = opmap['IS_OP']
+CONTAINS_OP = opmap['CONTAINS_OP']
 
 CACHE = opmap["CACHE"]
 
@@ -629,6 +631,10 @@ class ArgResolver:
                     argrepr = repr(obj)
             elif deop == LOAD_SPECIAL:
                 argrepr = _special_method_names[arg]
+            elif deop == IS_OP:
+                argrepr = 'is not' if argval else 'is'
+            elif deop == CONTAINS_OP:
+                argrepr = 'not in' if argval else 'in'
         return argval, argrepr
 
 def get_instructions(x, *, first_line=None, show_caches=None, adaptive=False):

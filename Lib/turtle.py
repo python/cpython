@@ -106,6 +106,7 @@ import inspect
 import sys
 
 from os.path import isfile, split, join
+from pathlib import Path
 from copy import deepcopy
 from tkinter import simpledialog
 
@@ -115,7 +116,7 @@ _tg_screen_functions = ['addshape', 'bgcolor', 'bgpic', 'bye',
         'clearscreen', 'colormode', 'delay', 'exitonclick', 'getcanvas',
         'getshapes', 'listen', 'mainloop', 'mode', 'numinput',
         'onkey', 'onkeypress', 'onkeyrelease', 'onscreenclick', 'ontimer',
-        'register_shape', 'resetscreen', 'screensize', 'setup',
+        'register_shape', 'resetscreen', 'screensize', 'save', 'setup',
         'setworldcoordinates', 'textinput', 'title', 'tracer', 'turtles', 'update',
         'window_height', 'window_width']
 _tg_turtle_functions = ['back', 'backward', 'begin_fill', 'begin_poly', 'bk',
@@ -1491,6 +1492,39 @@ class TurtleScreen(TurtleScreenBase):
         >>> # e.g. to search for an erroneously escaped turtle ;-)
         """
         return self._resize(canvwidth, canvheight, bg)
+
+    def save(self, filename, *, overwrite=False):
+        """Save the drawing as a PostScript file
+
+        Arguments:
+        filename -- a string, the path of the created file.
+                    Must end with '.ps' or '.eps'.
+
+        Optional arguments:
+        overwrite -- boolean, if true, then existing files will be overwritten
+
+        Example (for a TurtleScreen instance named screen):
+        >>> screen.save('my_drawing.eps')
+        """
+        filename = Path(filename)
+        if not filename.parent.exists():
+            raise FileNotFoundError(
+                f"The directory '{filename.parent}' does not exist."
+                " Cannot save to it."
+            )
+        if not overwrite and filename.exists():
+            raise FileExistsError(
+                f"The file '{filename}' already exists. To overwrite it use"
+                " the 'overwrite=True' argument of the save function."
+            )
+        if (ext := filename.suffix) not in {".ps", ".eps"}:
+            raise ValueError(
+                f"Unknown file extension: '{ext}',"
+                 " must be one of {'.ps', '.eps'}"
+            )
+
+        postscript = self.cv.postscript()
+        filename.write_text(postscript)
 
     onscreenclick = onclick
     resetscreen = reset

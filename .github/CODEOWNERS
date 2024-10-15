@@ -33,11 +33,11 @@ Objects/frameobject.c         @markshannon
 Objects/call.c                @markshannon
 Python/ceval*.c               @markshannon
 Python/ceval*.h               @markshannon
+Python/codegen.c              @markshannon @iritkatriel
 Python/compile.c              @markshannon @iritkatriel
 Python/assemble.c             @markshannon @iritkatriel
 Python/flowgraph.c            @markshannon @iritkatriel
 Python/instruction_sequence.c @iritkatriel
-Python/ast_opt.c              @isidentical
 Python/bytecodes.c            @markshannon
 Python/optimizer*.c           @markshannon
 Python/optimizer_analysis.c   @Fidget-Spinner
@@ -157,10 +157,12 @@ Include/internal/pycore_time.h  @pganssle @abalkin
 /Tools/cases_generator/        @markshannon
 
 # AST
-Python/ast.c                  @isidentical @JelleZijlstra
-Parser/asdl.py                @isidentical @JelleZijlstra
-Parser/asdl_c.py              @isidentical @JelleZijlstra
-Lib/ast.py                    @isidentical @JelleZijlstra
+Python/ast.c                  @isidentical @JelleZijlstra @eclips4
+Python/ast_opt.c              @isidentical @eclips4
+Parser/asdl.py                @isidentical @JelleZijlstra @eclips4
+Parser/asdl_c.py              @isidentical @JelleZijlstra @eclips4
+Lib/ast.py                    @isidentical @JelleZijlstra @eclips4
+Lib/test/test_ast/            @eclips4
 
 # Mock
 /Lib/unittest/mock.py         @cjw296
@@ -205,14 +207,14 @@ Doc/c-api/stable.rst          @encukou
 **/*bisect*                   @rhettinger
 **/*heapq*                    @rhettinger
 **/*functools*                @rhettinger
-**/*decimal*                  @rhettinger
 
 **/*dataclasses*              @ericvsmith
 
 **/*ensurepip*                @pfmoore @pradyunsg
 
-**/*idlelib*                  @terryjreedy
 /Doc/library/idle.rst         @terryjreedy
+**/*idlelib*                  @terryjreedy
+**/*turtledemo*               @terryjreedy
 
 **/*annotationlib*            @JelleZijlstra
 **/*typing*                   @JelleZijlstra @AlexWaygood
@@ -275,3 +277,8 @@ Lib/test/test_interpreters/   @ericsnowcurrently
 # Config Parser
 Lib/configparser.py           @jaraco
 Lib/test/test_configparser.py @jaraco
+
+# Doc sections
+Doc/reference/                @willingc
+
+**/*weakref*                  @kumaraditya303

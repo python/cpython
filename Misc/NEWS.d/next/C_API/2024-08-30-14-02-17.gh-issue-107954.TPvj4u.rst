@@ -1,0 +1,18 @@
+Add functions to configure the Python initialization (:pep:`741`):
+
+* :c:func:`PyInitConfig_Create`
+* :c:func:`PyInitConfig_Free`
+* :c:func:`PyInitConfig_GetError`
+* :c:func:`PyInitConfig_GetExitCode`
+* :c:func:`PyInitConfig_HasOption`
+* :c:func:`PyInitConfig_GetInt`
+* :c:func:`PyInitConfig_GetStr`
+* :c:func:`PyInitConfig_GetStrList`
+* :c:func:`PyInitConfig_FreeStrList`
+* :c:func:`PyInitConfig_SetInt`
+* :c:func:`PyInitConfig_SetStr`
+* :c:func:`PyInitConfig_SetStrList`
+* :c:func:`PyInitConfig_AddModule`
+* :c:func:`Py_InitializeFromInitConfig`
+
+Patch by Victor Stinner.

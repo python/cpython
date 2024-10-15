@@ -1541,7 +1541,7 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
     }
 
     if (bytes_found) {
-        PyObject* res = PyBytes_FromString("");
+        PyObject* res = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
 
         /* Bytes literals never get a kind, but just for consistency
            since they are represented as Constant nodes, we'll mirror
@@ -1615,7 +1615,6 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
     }
 
     /* build folded list */
-    _PyUnicodeWriter writer;
     current_pos = 0;
     for (i = 0; i < n_flattened_elements; i++) {
         expr_ty elem = asdl_seq_GET(flattened, i);
@@ -1635,14 +1634,17 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
                    "abc" u"abc" ->  "abcabc" */
                 PyObject *kind = elem->v.Constant.kind;
 
-                _PyUnicodeWriter_Init(&writer);
+                PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+                if (writer == NULL) {
+                    return NULL;
+                }
                 expr_ty last_elem = elem;
                 for (j = i; j < n_flattened_elements; j++) {
                     expr_ty current_elem = asdl_seq_GET(flattened, j);
                     if (current_elem->kind == Constant_kind) {
-                        if (_PyUnicodeWriter_WriteStr(
-                                &writer, current_elem->v.Constant.value)) {
-                            _PyUnicodeWriter_Dealloc(&writer);
+                        if (PyUnicodeWriter_WriteStr(writer,
+                                                     current_elem->v.Constant.value)) {
+                            PyUnicodeWriter_Discard(writer);
                             return NULL;
                         }
                         last_elem = current_elem;
@@ -1652,9 +1654,8 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
                 }
                 i = j - 1;
 
-                PyObject *concat_str = _PyUnicodeWriter_Finish(&writer);
+                PyObject *concat_str = PyUnicodeWriter_Finish(writer);
                 if (concat_str == NULL) {
-                    _PyUnicodeWriter_Dealloc(&writer);
                     return NULL;
                 }
                 if (_PyArena_AddPyObject(p->arena, concat_str) < 0) {
