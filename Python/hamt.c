@@ -349,7 +349,7 @@ hamt_node_find(PyHamtNode *node,
 #ifdef Py_DEBUG
 static int
 hamt_node_dump(PyHamtNode *node,
-               _PyUnicodeWriter *writer, int level);
+               PyUnicodeWriter *writer, int level);
 #endif
 
 static PyHamtNode *
@@ -444,7 +444,7 @@ hamt_bitindex(uint32_t bitmap, uint32_t bit)
 #ifdef Py_DEBUG
 
 static int
-_hamt_dump_ident(_PyUnicodeWriter *writer, int level)
+_hamt_dump_ident(PyUnicodeWriter *writer, int level)
 {
     /* Write `'    ' * level` to the `writer` */
     PyObject *str = NULL;
@@ -467,35 +467,12 @@ _hamt_dump_ident(_PyUnicodeWriter *writer, int level)
         goto error;
     }
 
-    ret = _PyUnicodeWriter_WriteStr(writer, res);
+    ret = PyUnicodeWriter_WriteStr(writer, res);
 
 error:
     Py_XDECREF(res);
     Py_XDECREF(str);
     Py_XDECREF(num);
-    return ret;
-}
-
-static int
-_hamt_dump_format(_PyUnicodeWriter *writer, const char *format, ...)
-{
-    /* A convenient helper combining _PyUnicodeWriter_WriteStr and
-       PyUnicode_FromFormatV.
-    */
-    PyObject* msg;
-    int ret;
-
-    va_list vargs;
-    va_start(vargs, format);
-    msg = PyUnicode_FromFormatV(format, vargs);
-    va_end(vargs);
-
-    if (msg == NULL) {
-        return -1;
-    }
-
-    ret = _PyUnicodeWriter_WriteStr(writer, msg);
-    Py_DECREF(msg);
     return ret;
 }
 
@@ -1154,7 +1131,7 @@ hamt_node_bitmap_dealloc(PyHamtNode_Bitmap *self)
 #ifdef Py_DEBUG
 static int
 hamt_node_bitmap_dump(PyHamtNode_Bitmap *node,
-                      _PyUnicodeWriter *writer, int level)
+                      PyUnicodeWriter *writer, int level)
 {
     /* Debug build: __dump__() method implementation for Bitmap nodes. */
 
@@ -1166,8 +1143,8 @@ hamt_node_bitmap_dump(PyHamtNode_Bitmap *node,
         goto error;
     }
 
-    if (_hamt_dump_format(writer, "BitmapNode(size=%zd count=%zd ",
-                          Py_SIZE(node), Py_SIZE(node) / 2))
+    if (PyUnicodeWriter_Format(writer, "BitmapNode(size=%zd count=%zd ",
+                               Py_SIZE(node), Py_SIZE(node) / 2) < 0)
     {
         goto error;
     }
@@ -1181,7 +1158,9 @@ hamt_node_bitmap_dump(PyHamtNode_Bitmap *node,
     if (tmp2 == NULL) {
         goto error;
     }
-    if (_hamt_dump_format(writer, "bitmap=%S id=%p):\n", tmp2, node)) {
+    if (PyUnicodeWriter_Format(writer, "bitmap=%S id=%p):\n",
+                               tmp2, node) < 0)
+    {
         Py_DECREF(tmp2);
         goto error;
     }
@@ -1196,7 +1175,7 @@ hamt_node_bitmap_dump(PyHamtNode_Bitmap *node,
         }
 
         if (key_or_null == NULL) {
-            if (_hamt_dump_format(writer, "NULL:\n")) {
+            if (PyUnicodeWriter_WriteUTF8(writer, "NULL:\n", -1) < 0) {
                 goto error;
             }
 
@@ -1207,14 +1186,14 @@ hamt_node_bitmap_dump(PyHamtNode_Bitmap *node,
             }
         }
         else {
-            if (_hamt_dump_format(writer, "%R: %R", key_or_null,
-                                  val_or_node))
+            if (PyUnicodeWriter_Format(writer, "%R: %R",
+                                       key_or_null, val_or_node) < 0)
             {
                 goto error;
             }
         }
 
-        if (_hamt_dump_format(writer, "\n")) {
+        if (PyUnicodeWriter_WriteUTF8(writer, "\n", 1) < 0) {
             goto error;
         }
     }
@@ -1548,7 +1527,7 @@ hamt_node_collision_dealloc(PyHamtNode_Collision *self)
 #ifdef Py_DEBUG
 static int
 hamt_node_collision_dump(PyHamtNode_Collision *node,
-                         _PyUnicodeWriter *writer, int level)
+                         PyUnicodeWriter *writer, int level)
 {
     /* Debug build: __dump__() method implementation for Collision nodes. */
 
@@ -1558,8 +1537,8 @@ hamt_node_collision_dump(PyHamtNode_Collision *node,
         goto error;
     }
 
-    if (_hamt_dump_format(writer, "CollisionNode(size=%zd id=%p):\n",
-                          Py_SIZE(node), node))
+    if (PyUnicodeWriter_Format(writer, "CollisionNode(size=%zd id=%p):\n",
+                          	   Py_SIZE(node), node) < 0)
     {
         goto error;
     }
@@ -1572,7 +1551,7 @@ hamt_node_collision_dump(PyHamtNode_Collision *node,
             goto error;
         }
 
-        if (_hamt_dump_format(writer, "%R: %R\n", key, val)) {
+        if (PyUnicodeWriter_Format(writer, "%R: %R\n", key, val) < 0) {
             goto error;
         }
     }
@@ -1924,7 +1903,7 @@ hamt_node_array_dealloc(PyHamtNode_Array *self)
 #ifdef Py_DEBUG
 static int
 hamt_node_array_dump(PyHamtNode_Array *node,
-                     _PyUnicodeWriter *writer, int level)
+                     PyUnicodeWriter *writer, int level)
 {
     /* Debug build: __dump__() method implementation for Array nodes. */
 
@@ -1934,7 +1913,7 @@ hamt_node_array_dump(PyHamtNode_Array *node,
         goto error;
     }
 
-    if (_hamt_dump_format(writer, "ArrayNode(id=%p):\n", node)) {
+    if (PyUnicodeWriter_Format(writer, "ArrayNode(id=%p):\n", node) < 0) {
         goto error;
     }
 
@@ -1947,7 +1926,7 @@ hamt_node_array_dump(PyHamtNode_Array *node,
             goto error;
         }
 
-        if (_hamt_dump_format(writer, "%zd::\n", i)) {
+        if (PyUnicodeWriter_Format(writer, "%zd::\n", i) < 0) {
             goto error;
         }
 
@@ -1955,7 +1934,7 @@ hamt_node_array_dump(PyHamtNode_Array *node,
             goto error;
         }
 
-        if (_hamt_dump_format(writer, "\n")) {
+        if (PyUnicodeWriter_WriteUTF8(writer, "\n", 1) < 0) {
             goto error;
         }
     }
@@ -2071,7 +2050,7 @@ hamt_node_find(PyHamtNode *node,
 #ifdef Py_DEBUG
 static int
 hamt_node_dump(PyHamtNode *node,
-               _PyUnicodeWriter *writer, int level)
+               PyUnicodeWriter *writer, int level)
 {
     /* Debug build: __dump__() method implementation for a node.
 
@@ -2440,22 +2419,24 @@ _PyHamt_New(void)
 static PyObject *
 hamt_dump(PyHamtObject *self)
 {
-    _PyUnicodeWriter writer;
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        return NULL;
+    }
 
-    _PyUnicodeWriter_Init(&writer);
-
-    if (_hamt_dump_format(&writer, "HAMT(len=%zd):\n", self->h_count)) {
+    if (PyUnicodeWriter_Format(writer, "HAMT(len=%zd):\n",
+                               self->h_count) < 0) {
         goto error;
     }
 
-    if (hamt_node_dump(self->h_root, &writer, 0)) {
+    if (hamt_node_dump(self->h_root, writer, 0)) {
         goto error;
     }
 
-    return _PyUnicodeWriter_Finish(&writer);
+    return PyUnicodeWriter_Finish(writer);
 
 error:
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     return NULL;
 }
 #endif  /* Py_DEBUG */
