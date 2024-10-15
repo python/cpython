@@ -2107,6 +2107,7 @@ test_dynarray(PyObject *self, PyObject *unused)
         _PyDynArray_Clear(&array);
     }
 
+    // Array allocated on the heap
     _PyDynArray *heap_array = _PyDynArray_New(NULL);
     if (test_dynarray_common(heap_array) < 0)
     {
@@ -2115,6 +2116,35 @@ test_dynarray(PyObject *self, PyObject *unused)
         return NULL;
     }
     _PyDynArray_Free(heap_array);
+
+    // Still on the heap, but now the fields are too
+    _PyDynArray *array_with_deallocator = _PyDynArray_New(PyMem_Free);
+    if (array_with_deallocator == NULL)
+    {
+        PyErr_NoMemory();
+        return NULL;
+    }
+#define SILLY_STRING "My hovercraft is full of eels"
+    char *my_string = PyMem_Malloc(sizeof(SILLY_STRING));
+    if (my_string == NULL)
+    {
+        _PyDynArray_Free(array_with_deallocator);
+        PyErr_NoMemory();
+        return NULL;
+    }
+    strcpy(my_string, SILLY_STRING);
+    if (_PyDynArray_Append(array_with_deallocator, my_string) < 0)
+    {
+        PyMem_Free(my_string);
+        _PyDynArray_Free(array_with_deallocator);
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    assert(!strcmp(_PyDynArray_GET_ITEM(array_with_deallocator, 0), SILLY_STRING));
+    _PyDynArray_Free(array_with_deallocator);
+#undef SILLY_STRING
+
     Py_RETURN_NONE;
 }
 
