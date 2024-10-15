@@ -138,7 +138,7 @@ class TracebackCases(unittest.TestCase):
             import traceback
             try:
                 x = 1 / 0
-            except:
+            except ZeroDivisionError:
                 traceback.print_exc()
             """)
         try:
@@ -386,9 +386,10 @@ class PurePythonExceptionFormattingMixin:
     def get_exception(self, callable, slice_start=0, slice_end=-1):
         try:
             callable()
-            self.fail("No exception thrown.")
-        except:
+        except BaseException:
             return traceback.format_exc().splitlines()[slice_start:slice_end]
+        else:
+            self.fail("No exception thrown.")
 
     callable_line = get_exception.__code__.co_firstlineno + 2
 
@@ -1490,7 +1491,7 @@ class BaseExceptionReportingTests:
         try:
             try:
                 raise Exception
-            except:
+            except Exception:
                 raise ZeroDivisionError from None
         except ZeroDivisionError as _:
             e = _
@@ -1838,9 +1839,9 @@ class BaseExceptionReportingTests:
             try:
                 try:
                     raise EG("eg1", [ValueError(1), TypeError(2)])
-                except:
+                except EG:
                     raise EG("eg2", [ValueError(3), TypeError(4)])
-            except:
+            except EG:
                 raise ImportError(5)
 
         expected = (
@@ -1889,7 +1890,7 @@ class BaseExceptionReportingTests:
                 except Exception as e:
                     exc = e
                 raise EG("eg", [VE(1), exc, VE(4)])
-            except:
+            except EG:
                 raise EG("top", [VE(5)])
 
         expected = (f'  + Exception Group Traceback (most recent call last):\n'
@@ -2642,7 +2643,7 @@ class TestTracebackException(unittest.TestCase):
         def f():
             try:
                 1/0
-            except:
+            except ZeroDivisionError:
                 f()
 
         try:
@@ -2731,7 +2732,7 @@ class TestTracebackException(unittest.TestCase):
         def raise_exc():
             try:
                 raise ValueError('bad value')
-            except:
+            except ValueError:
                 raise
 
         def raise_with_locals():
