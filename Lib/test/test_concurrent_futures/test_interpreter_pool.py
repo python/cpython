@@ -1,13 +1,17 @@
+import asyncio
 import contextlib
 import io
 import os
 import pickle
 import sys
+import time
 import unittest
 from concurrent.futures.interpreter import (
     ExecutionFailed, BrokenInterpreterPool,
 )
+import _interpreters
 from test import support
+import test.test_asyncio.utils as testasyncio_utils
 from test.support.interpreters import queues
 
 from .executor import ExecutorTest, mul
@@ -34,13 +38,22 @@ def fail(exctype, msg=None):
     raise exctype(msg)
 
 
-class InterpreterPoolExecutorTest(InterpreterPoolMixin, ExecutorTest, BaseTestCase):
+def get_current_interpid(*extra):
+    interpid, _ = _interpreters.get_current()
+    return (interpid, *extra)
+
+
+class InterpretersMixin(InterpreterPoolMixin):
 
     def pipe(self):
         r, w = os.pipe()
         self.addCleanup(lambda: os.close(r))
         self.addCleanup(lambda: os.close(w))
         return r, w
+
+
+class InterpreterPoolExecutorTest(
+            InterpretersMixin, ExecutorTest, BaseTestCase):
 
     def test_init_script(self):
         msg1 = b'step: init'
@@ -254,6 +267,64 @@ class InterpreterPoolExecutorTest(InterpreterPoolMixin, ExecutorTest, BaseTestCa
         executor.submit(mul, 3, 14).result()
         self.assertEqual(len(executor._threads), 1)
         executor.shutdown(wait=True)
+
+
+class AsyncioTest(InterpretersMixin, testasyncio_utils.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.loop = asyncio.new_event_loop()
+        self.set_event_loop(self.loop)
+
+        self.executor = self.executor_type()
+        self.addCleanup(lambda: self.executor.shutdown())
+
+    def tearDown(self):
+        if not self.loop.is_closed():
+            testasyncio_utils.run_briefly(self.loop)
+
+        self.doCleanups()
+        support.gc_collect()
+        super().tearDown()
+
+    def test_run_in_executor(self):
+        unexpected, _ = _interpreters.get_current()
+
+        func = get_current_interpid
+        fut = self.loop.run_in_executor(self.executor, func, 'yo')
+        interpid, res = self.loop.run_until_complete(fut)
+
+        self.assertEqual(res, 'yo')
+        self.assertNotEqual(interpid, unexpected)
+
+    def test_run_in_executor_cancel(self):
+        executor = self.executor_type()
+
+        called = False
+
+        def patched_call_soon(*args):
+            nonlocal called
+            called = True
+
+        func = time.sleep
+        fut = self.loop.run_in_executor(self.executor, func, 0.05)
+        fut.cancel()
+        self.loop.run_until_complete(
+                self.loop.shutdown_default_executor())
+        self.loop.close()
+        self.loop.call_soon = patched_call_soon
+        self.loop.call_soon_threadsafe = patched_call_soon
+        time.sleep(0.4)
+        self.assertFalse(called)
+
+    def test_default_executor(self):
+        unexpected, _ = _interpreters.get_current()
+
+        self.loop.set_default_executor(self.executor)
+        fut = self.loop.run_in_executor(None, get_current_interpid)
+        interpid, = self.loop.run_until_complete(fut)
+
+        self.assertNotEqual(interpid, unexpected)
 
 
 def setUpModule():
