@@ -1,0 +1,3 @@
+Re-enable skipped tests for :mod:`zlib` on the s390x architecture: only skip
+checks of the compressed bytes, which can be different between zlib's
+software implementation and the hardware-accelerated implementation.
