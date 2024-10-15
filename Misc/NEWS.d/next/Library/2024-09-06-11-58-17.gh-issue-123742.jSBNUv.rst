@@ -1,2 +1,2 @@
-Fix :meth:`email.Message.get_payload` couldn't parse headers
-with extra spaces. Patch by RUANG.
+Fix :meth:`email.Message.get_payload` cannot parse
+``content-transfer-encoding`` field with extra spaces. Patch by RUANG.
