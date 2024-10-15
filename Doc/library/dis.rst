@@ -1370,6 +1370,10 @@ iterations of the loop.
    .. versionchanged:: 3.12
       Up until 3.11 the iterator was popped when it was exhausted.
 
+.. opcode:: CHECK_ITER
+
+   Check that ``STACK[-1]`` is an :term:`iterator`.
+
 .. opcode:: LOAD_GLOBAL (namei)
 
    Loads the global named ``co_names[namei>>1]`` onto the stack.

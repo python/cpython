@@ -3337,18 +3337,8 @@
             iter = stack_pointer[-1];
             /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            PyTypeObject *type = Py_TYPE(iter_o);
-            iternextfunc iternext = type->tp_iternext;
-            if (iternext == NULL) {
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyErr_Format(PyExc_TypeError,
-                             "'%.200s' object is not an iterator",
-                             type->tp_name);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                JUMP_TO_ERROR();
-            }
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *next_o = (*iternext)(iter_o);
+            PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (next_o == NULL) {
                 if (_PyErr_Occurred(tstate)) {
@@ -5830,6 +5820,23 @@
                 JUMP_TO_JUMP_TARGET();
             }
             assert(tstate->tracing || eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
+            break;
+        }
+
+        case _CHECK_ITER: {
+            _PyStackRef iter;
+            iter = stack_pointer[-1];
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            PyTypeObject *type = Py_TYPE(iter_o);
+            iternextfunc iternext = type->tp_iternext;
+            if (iternext == NULL) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyErr_Format(PyExc_TypeError,
+                             "'%.200s' object is not an iterator",
+                             type->tp_name);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                JUMP_TO_ERROR();
+            }
             break;
         }
 
