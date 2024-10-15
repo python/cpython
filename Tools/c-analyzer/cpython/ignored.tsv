@@ -684,6 +684,7 @@ Modules/posixmodule.c	-	_Py_open_cloexec_works	-
 Modules/posixmodule.c	-	environ	-
 Objects/object.c	-	_Py_GenericAliasIterType	-
 Objects/object.c	-	_PyMemoryIter_Type	-
+Objects/object.c	-	_PyMemoryRevIter_Type	-
 Objects/object.c	-	_PyLineIterator	-
 Objects/object.c	-	_PyPositionsIterator	-
 Python/perf_trampoline.c	-	_Py_trampoline_func_start	-
