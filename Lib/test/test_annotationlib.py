@@ -80,6 +80,20 @@ class TestForwardRefFormat(unittest.TestCase):
             fwdref.evaluate()
         self.assertEqual(fwdref.evaluate(globals={"doesntexist": 1}), 1)
 
+    def test_custom_annotate(self):
+        def __annotate__(format):
+            return {"a": Format(format).name}
+
+        class C:
+            pass
+
+        C.__annotate__ = __annotate__
+
+        for format in Format:
+            with self.subTest(format=format):
+                anno = annotationlib.get_annotations(C, format=format)
+                self.assertEqual(anno, {"a": format.name})
+
 
 class TestSourceFormat(unittest.TestCase):
     def test_closure(self):
@@ -809,7 +823,11 @@ class TestGetAnnotations(unittest.TestCase):
 
             @property
             def __annotate__(self):
-                return lambda format: {"x": str}
+                def anno(format):
+                    if format == Format.FORWARDREF:
+                        raise NotImplementedError
+                    return {"x": str}
+                return anno
 
         hb = HasBoth()
         self.assertEqual(
