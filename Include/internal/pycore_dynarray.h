@@ -125,7 +125,7 @@ static inline void *
 _PyDynArray_GET_ITEM(_PyDynArray *array, Py_ssize_t index)
 {
     _PyDynArray_ASSERT_VALID(array);
-    assert(index > 0);
+    assert(index >= 0);
     assert(index < array->length);
     return array->items[index];
 }
