@@ -1617,6 +1617,8 @@ Create Config
 
    Free memory of the initialization configuration *config*.
 
+   If *config* is ``NULL``, no operation is performed.
+
 
 Error Handling
 --------------
