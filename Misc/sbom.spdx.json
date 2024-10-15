@@ -804,11 +804,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "d5d85ee8f0bd52781fe470d0bf73ec388ddb3999"
+          "checksumValue": "f4a33ad535768b860362ab0bd033a70da0b524b7"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "9a421b998add98fe366374641c4edb27617ff539a59f0963879f345065d3d39d"
+          "checksumValue": "433cdf4ba80bc72e0cea5d4b420ff18676baeafdb5ba19adf5b7fb33e90b424b"
         }
       ],
       "fileName": "Modules/_hacl/libintvector.h"
