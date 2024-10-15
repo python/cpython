@@ -51,6 +51,9 @@ PyAPI_FUNC(int) _PyDynArray_Append(_PyDynArray *array, void *item);
  *
  * Note that this does *not* free the actual dynamic array
  * structure--use _PyDynArray_Free() for that.
+ *
+ * It's safe to call _PyDynArray_Init() or InitWithSize() again
+ * on the array after calling this.
  */
 PyAPI_FUNC(void) _PyDynArray_Clear(_PyDynArray *array);
 

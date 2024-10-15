@@ -17,6 +17,7 @@
 #include "pycore_compile.h"       // _PyCompile_CodeGen()
 #include "pycore_context.h"       // _PyContext_NewHamtForTests()
 #include "pycore_dict.h"          // _PyManagedDictPointer_GetValues()
+#include "pycore_dynarray.h"      // _PyDynArray
 #include "pycore_fileutils.h"     // _Py_normpath()
 #include "pycore_flowgraph.h"     // _PyCompile_OptimizeCfg()
 #include "pycore_frame.h"         // _PyInterpreterFrame
@@ -2048,6 +2049,67 @@ identify_type_slot_wrappers(PyObject *self, PyObject *Py_UNUSED(ignored))
     return _PyType_GetSlotWrapperNames();
 }
 
+static int
+test_dynarray_common(_PyDynArray *array)
+{
+    #define APPEND(ptr) do {                    \
+        if (_PyDynArray_Append(array, ptr) < 0) \
+        {                                       \
+            return -1;                          \
+        }                                       \
+    } while (0);
+
+    // Some dummy pointers
+    APPEND(Py_None);
+    APPEND(Py_True);
+    APPEND(Py_False);
+
+    // Make sure that indexes work
+    assert(_PyDynArray_GET_ITEM(array, 0) == Py_None);
+    assert(_PyDynArray_GET_ITEM(array, 1) == Py_True);
+    assert(_PyDynArray_GET_ITEM(array, 2) == Py_False);
+
+    // Now, let's make sure that resizing works.
+    for (int i = 0; i < (_PyDynArray_DEFAULT_SIZE * 2); ++i)
+    {
+        APPEND(NULL);
+    }
+
+    // Make sure that nothing got corrupted
+    assert(_PyDynArray_GET_ITEM(array, 0) == Py_None);
+    assert(_PyDynArray_GET_ITEM(array, 1) == Py_True);
+    assert(_PyDynArray_GET_ITEM(array, 2) == Py_False);
+    return 0;
+}
+
+static PyObject *
+test_dynarray(PyObject *self, PyObject *unused)
+{
+    _PyDynArray array;
+    // In a loop to make sure that reinitialization works
+    for (int i = 0; i < 3; ++i)
+    {
+        if (_PyDynArray_Init(&array, NULL) < 0)
+        {
+            PyErr_NoMemory();
+            return NULL;
+        }
+
+        if (test_dynarray_common(&array) < 0)
+        {
+            PyErr_NoMemory();
+            _PyDynArray_Clear(&array);
+            return NULL;
+        }
+
+        _PyDynArray_Clear(&array);
+    }
+
+    _PyDynArray *heap_array = _PyDynArray_New(NULL);
+    test_dynarray_common(heap_array);
+    _PyDynArray_Free(heap_array);
+    Py_RETURN_NONE;
+}
 
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
@@ -2145,6 +2207,7 @@ static PyMethodDef module_functions[] = {
     GH_119213_GETARGS_METHODDEF
     {"get_static_builtin_types", get_static_builtin_types, METH_NOARGS},
     {"identify_type_slot_wrappers", identify_type_slot_wrappers, METH_NOARGS},
+    {"test_dynarray", test_dynarray, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
