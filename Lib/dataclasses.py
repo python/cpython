@@ -1620,13 +1620,13 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
                 for ann, t in annotations.items()
             }
 
-        from typing import Any, _convert_to_source
+        from typing import Any
         ann_dict = {
             ann: Any if t is _ANY_MARKER else t
             for ann, t in annotations.items()
         }
-        if format == annotationlib.Format.SOURCE:
-            return _convert_to_source(ann_dict)
+        if format == annotationlib.Format.STRING:
+            return annotationlib.annotations_to_string(ann_dict)
         return ann_dict
 
     # Update 'ns' with the user-supplied namespace plus our calculated values.

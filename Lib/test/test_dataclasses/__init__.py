@@ -13,6 +13,7 @@ import builtins
 import types
 import weakref
 import traceback
+import sys
 import unittest
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol, DefaultDict
@@ -4247,16 +4248,16 @@ class TestMakeDataclass(unittest.TestCase):
         )
         self.assertEqual(
             annotationlib.get_annotations(
-                C, format=annotationlib.Format.SOURCE),
+                C, format=annotationlib.Format.STRING),
             {'x': 'typing.Any', 'y': 'int', 'z': 'typing.Any'},
         )
 
     def test_no_types_no_typing_import(self):
-        import sys
-
-        C = make_dataclass('C', ['x', ('y', int)])
-
         with import_helper.CleanImport('typing'):
+            self.assertNotIn('typing', sys.modules)
+            C = make_dataclass('C', ['x', ('y', int)])
+
+            self.assertNotIn('typing', sys.modules)
             self.assertEqual(
                 annotationlib.get_annotations(
                     C, format=annotationlib.Format.FORWARDREF),
