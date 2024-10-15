@@ -1,0 +1,2 @@
+Fix :class:`typing.TypeAliasType` not to be generic, when ``type_params`` is
+an empty tuple.

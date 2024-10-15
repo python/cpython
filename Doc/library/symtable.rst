@@ -167,11 +167,12 @@ Examining Symbol Tables
 
    .. method:: get_nonlocals()
 
-      Return a tuple containing names of nonlocals in this function.
+      Return a tuple containing names of explicitly declared nonlocals in this function.
 
    .. method:: get_frees()
 
-      Return a tuple containing names of free variables in this function.
+      Return a tuple containing names of :term:`free (closure) variables <closure variable>`
+      in this function.
 
 
 .. class:: Class
@@ -255,7 +256,7 @@ Examining Symbol Tables
 
       Return ``True`` if the symbol is a type parameter.
 
-      .. versionadded:: 3.14
+      .. versionadded:: next
 
    .. method:: is_global()
 
@@ -302,7 +303,7 @@ Examining Symbol Tables
       be free from the perspective of ``C.method``, thereby allowing
       the latter to return *1* at runtime and not *2*.
 
-      .. versionadded:: 3.14
+      .. versionadded:: next
 
    .. method:: is_assigned()
 
@@ -312,13 +313,13 @@ Examining Symbol Tables
 
       Return ``True`` if the symbol is a comprehension iteration variable.
 
-      .. versionadded:: 3.14
+      .. versionadded:: next
 
    .. method:: is_comp_cell()
 
       Return ``True`` if the symbol is a cell in an inlined comprehension.
 
-      .. versionadded:: 3.14
+      .. versionadded:: next
 
    .. method:: is_namespace()
 

@@ -380,6 +380,23 @@ dis_annot_stmt_str = """\
               RETURN_CONST             3 (None)
 """
 
+fn_with_annotate_str = """
+def foo(a: int, b: str) -> str:
+    return a * b
+"""
+
+dis_fn_with_annotate_str = """\
+  0           RESUME                   0
+
+  2           LOAD_CONST               0 (<code object __annotate__ at 0x..., file "<dis>", line 2>)
+              MAKE_FUNCTION
+              LOAD_CONST               1 (<code object foo at 0x..., file "<dis>", line 2>)
+              MAKE_FUNCTION
+              SET_FUNCTION_ATTRIBUTE  16 (annotate)
+              STORE_NAME               0 (foo)
+              RETURN_CONST             2 (None)
+"""
+
 compound_stmt_str = """\
 x = 0
 while 1:
@@ -1098,6 +1115,7 @@ class DisTests(DisTestBase):
         self.do_disassembly_test(expr_str, dis_expr_str)
         self.do_disassembly_test(simple_stmt_str, dis_simple_stmt_str)
         self.do_disassembly_test(annot_stmt_str, dis_annot_stmt_str)
+        self.do_disassembly_test(fn_with_annotate_str, dis_fn_with_annotate_str)
         self.do_disassembly_test(compound_stmt_str, dis_compound_stmt_str)
 
     def test_disassemble_bytes(self):
