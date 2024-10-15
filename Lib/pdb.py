@@ -84,6 +84,7 @@ import signal
 import inspect
 import textwrap
 import tokenize
+import itertools
 import traceback
 import linecache
 import _colorize
@@ -2414,8 +2415,6 @@ def main():
     parser.add_argument('-c', '--command', action='append', default=[], metavar='command', dest='commands',
                         help='pdb commands to execute as if given in a .pdbrc file')
     parser.add_argument('-m', metavar='module', dest='module')
-    parser.add_argument('args', nargs='*',
-                        help="when -m is not specified, the first arg is the script to debug")
 
     if len(sys.argv) == 1:
         # If no arguments were given (python -m pdb), print the whole help message.
@@ -2423,21 +2422,40 @@ def main():
         parser.print_help()
         sys.exit(2)
 
-    opts = parser.parse_args()
+    opts, args = parser.parse_known_args()
+
+    if opts.module:
+        # If a module is being debugged, we consider the arguments after "-m module" to
+        # be potential arguments to the module itself. We need to parse the arguments
+        # before "-m" to check if there is any invalid argument.
+        # e.g. "python -m pdb -m foo --spam" means passing "--spam" to "foo"
+        #      "python -m pdb --spam -m foo" means passing "--spam" to "pdb" and is invalid
+        idx = sys.argv.index('-m')
+        args_to_pdb = sys.argv[1:idx]
+        # This will raise an error if there are invalid arguments
+        parser.parse_args(args_to_pdb)
+    else:
+        # If a script is being debugged, then pdb expects the script name as the first argument.
+        # Anything before the script is considered an argument to pdb itself, which would
+        # be invalid because it's not parsed by argparse.
+        invalid_args = list(itertools.takewhile(lambda a: a.startswith('-'), args))
+        if invalid_args:
+            parser.error(f"unrecognized arguments: {' '.join(invalid_args)}")
+            sys.exit(2)
 
     if opts.module:
         file = opts.module
         target = _ModuleTarget(file)
     else:
-        if not opts.args:
+        if not args:
             parser.error("no module or script to run")
-        file = opts.args.pop(0)
+        file = args.pop(0)
         if file.endswith('.pyz'):
             target = _ZipTarget(file)
         else:
             target = _ScriptTarget(file)
 
-    sys.argv[:] = [file] + opts.args  # Hide "pdb.py" and pdb options from argument list
+    sys.argv[:] = [file] + args  # Hide "pdb.py" and pdb options from argument list
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
     # modified by the script being debugged. It's a bad idea when it was
