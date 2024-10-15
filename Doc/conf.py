@@ -614,7 +614,7 @@ if sphinx.version_info[:2] < (8, 1):
     # Sphinx 8.1 has in-built CVE and CWE roles.
     extlinks |= {
         "cve": (
-            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-%s",
+            "https://www.cve.org/CVERecord?id=CVE-%s",
             "CVE-%s",
         ),
         "cwe": ("https://cwe.mitre.org/data/definitions/%s.html", "CWE-%s"),
