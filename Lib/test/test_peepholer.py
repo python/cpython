@@ -766,7 +766,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         def f():
             try:
                 1 / 0
-            except:
+            except ZeroDivisionError:
                 print(a, b, c, d, e, f, g)
             a = b = c = d = e = f = g = 1
         self.assertInBytecode(f, 'LOAD_FAST_CHECK')

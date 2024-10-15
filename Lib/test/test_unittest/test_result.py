@@ -186,7 +186,7 @@ class Test_TestResult(unittest.TestCase):
         test = Foo('test_1')
         try:
             test.fail("foo")
-        except:
+        except AssertionError:
             exc_info_tuple = sys.exc_info()
 
         result = unittest.TestResult()
@@ -214,7 +214,7 @@ class Test_TestResult(unittest.TestCase):
         def get_exc_info():
             try:
                 test.fail("foo")
-            except:
+            except AssertionError:
                 return sys.exc_info()
 
         exc_info_tuple = get_exc_info()
@@ -241,9 +241,9 @@ class Test_TestResult(unittest.TestCase):
             try:
                 try:
                     test.fail("foo")
-                except:
+                except AssertionError:
                     raise ValueError(42)
-            except:
+            except ValueError:
                 return sys.exc_info()
 
         exc_info_tuple = get_exc_info()
@@ -271,7 +271,7 @@ class Test_TestResult(unittest.TestCase):
                 loop.__cause__ = loop
                 loop.__context__ = loop
                 raise loop
-            except:
+            except Exception:
                 return sys.exc_info()
 
         exc_info_tuple = get_exc_info()
@@ -300,7 +300,7 @@ class Test_TestResult(unittest.TestCase):
                     ex1.__cause__ = ex2
                     ex2.__context__ = ex1
                 raise C
-            except:
+            except Exception:
                 return sys.exc_info()
 
         exc_info_tuple = get_exc_info()
@@ -345,7 +345,7 @@ class Test_TestResult(unittest.TestCase):
         test = Foo('test_1')
         try:
             raise TypeError()
-        except:
+        except TypeError:
             exc_info_tuple = sys.exc_info()
 
         result = unittest.TestResult()

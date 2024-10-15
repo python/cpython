@@ -1081,7 +1081,7 @@ def test_convenience_variables():
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     try:
     ...         raise Exception('test')
-    ...     except:
+    ...     except Exception:
     ...         pass
     ...     return 1
 
@@ -1153,7 +1153,7 @@ def test_convenience_variables():
     Exception('test')
     (Pdb) next
     > <doctest test.test_pdb.test_convenience_variables[0]>(5)util_function()
-    -> except:
+    -> except Exception:
     (Pdb) $_exception
     *** KeyError: '_exception'
     (Pdb) return
