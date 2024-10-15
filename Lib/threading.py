@@ -1342,6 +1342,12 @@ class Timer(Thread):
             self.function(*self.args, **self.kwargs)
         self.finished.set()
 
+    def __enter__(self):
+        self.start()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.cancel()
+
 
 # Special thread class to represent the main thread
 
