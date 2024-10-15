@@ -1808,9 +1808,8 @@ FileType objects
 Argument groups
 ^^^^^^^^^^^^^^^
 
-.. method:: ArgumentParser.add_argument_group(title, description, \
-                                              [*argument_default], \
-                                              [*conflict_handler])
+.. method:: ArgumentParser.add_argument_group(title=None, description=None, *, \
+                                              [argument_default], [conflict_handler])
 
    By default, :class:`ArgumentParser` groups command-line arguments into
    "positional arguments" and "options" when displaying help
@@ -1855,12 +1854,11 @@ Argument groups
 
        --bar BAR  bar help
 
-   The optional parameters *argument_default* and *conflict_handler* allow
-   for finer-grained control of the behavior of the argument group. Both
-   of these parameters behave similarly to *argument_default* and
-   *conflict_handler* parameters of :meth:`~ArgumentParser.add_argument`.
-   However, when passes into :meth:`add_argument_group`, these parameters apply
-   to all arguments added to the group.
+   The optional keyword-only parameters argument_default_ and conflict_handler_ allow
+   for finer-grained control of the behavior of the argument group. These
+   parameters have the same meaning as in the :class:`~ArgumentParser` constructor,
+   but apply specifically to the argument group rather than the entire parser.
+
 
    Note that any arguments not in your user-defined groups will end up back
    in the usual "positional arguments" and "optional arguments" sections.
