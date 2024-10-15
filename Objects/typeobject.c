@@ -5025,7 +5025,7 @@ PyType_FromMetaclass(
     type->tp_dictoffset = dictoffset;
 
 #ifdef Py_GIL_DISABLED
-    // Assign a type id to enable thread-local refcounting
+    // Assign a unique id to enable per-thread refcounting
     res->unique_id = _PyObject_AssignUniqueId((PyObject *)res);
 #endif
 
@@ -6043,7 +6043,7 @@ type_dealloc(PyObject *self)
     Py_XDECREF(et->ht_module);
     PyMem_Free(et->_ht_tpname);
 #ifdef Py_GIL_DISABLED
-    _PyObject_ReleaseUniqueId(et->unique_id);
+    assert(et->unique_id == -1);
 #endif
     et->ht_token = NULL;
     Py_TYPE(type)->tp_free((PyObject *)type);
