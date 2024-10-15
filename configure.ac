@@ -1650,7 +1650,7 @@ then
       AS_VAR_IF([host_cpu], [wasm64], [AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-memory64"])])
     ],
     dnl TODO: support other WASI runtimes
-    dnl wasmtime starts the proces with "/" as CWD. For OOT builds add the
+    dnl wasmtime starts the process with "/" as CWD. For OOT builds add the
     dnl directory containing _sysconfigdata to PYTHONPATH.
     [WASI/*], [HOSTRUNNER='wasmtime run --wasm max-wasm-stack=8388608 --wasi preview2 --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/'],
     [HOSTRUNNER='']
@@ -3513,7 +3513,7 @@ then
 		LDCXXSHARED='$(CXX) -Wl,-G,-Bexport';;
 	WASI*)
 		AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
-			dnl not iplemented yet
+			dnl not implemented yet
 		]);;
 	CYGWIN*)
 		LDSHARED="gcc -shared -Wl,--enable-auto-image-base"
@@ -3686,7 +3686,7 @@ esac
 AC_MSG_RESULT([$SHLIBS])
 
 dnl perf trampoline is Linux specific and requires an arch-specific
-dnl trampoline in asssembly.
+dnl trampoline in assembly.
 AC_MSG_CHECKING([perf trampoline])
 AS_CASE([$PLATFORM_TRIPLET],
   [x86_64-linux-gnu], [perf_trampoline=yes],
@@ -5869,7 +5869,7 @@ else
   # While Python doesn't currently have full support for these platforms
   # (see e.g., issue 1762561), we can at least make sure that float <-> string
   # conversions work.
-  # FLOAT_WORDS_BIGENDIAN doesnt actually detect this case, but if it's not big
+  # FLOAT_WORDS_BIGENDIAN doesn't actually detect this case, but if it's not big
   # or little, then it must be this?
   AC_DEFINE([DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754], [1],
   [Define if C doubles are 64-bit IEEE 754 binary format, stored
@@ -7397,7 +7397,7 @@ CPPFLAGS="${BASECPPFLAGS} -I. -I${srcdir}/Include ${CPPFLAGS}"
 
 AC_CACHE_CHECK([whether libatomic is needed by <pyatomic.h>],
                [ac_cv_libatomic_needed],
-[AC_RUN_IFELSE([AC_LANG_SOURCE([[
+[AC_LINK_IFELSE([AC_LANG_SOURCE([[
 // pyatomic.h needs uint64_t and Py_ssize_t types
 #include <stdint.h>  // int64_t, intptr_t
 #ifdef HAVE_SYS_TYPES_H
@@ -7434,9 +7434,8 @@ int main()
     return 0; // all good
 }
 ]])],
-  [ac_cv_libatomic_needed=no],  dnl build succeeded
-  [ac_cv_libatomic_needed=yes], dnl build failed
-  [ac_cv_libatomic_needed=no])  dnl cross compilation
+  [ac_cv_libatomic_needed=no],  dnl build and link succeeded
+  [ac_cv_libatomic_needed=yes]) dnl build and link failed
 ])
 
 AS_VAR_IF([ac_cv_libatomic_needed], [yes],

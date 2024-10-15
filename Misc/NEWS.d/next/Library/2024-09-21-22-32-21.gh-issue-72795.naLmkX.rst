@@ -1,0 +1,4 @@
+Positional arguments with :ref:`nargs` equal to ``'*'`` or
+:data:`!argparse.REMAINDER` are no longer required. This allows to use
+positional argument with ``nargs='*'`` and without ``default`` in mutually
+exclusive group and improves error message about required arguments.

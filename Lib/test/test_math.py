@@ -1402,7 +1402,7 @@ class MathTests(unittest.TestCase):
                 return f'Flt({int(self)})'
 
         def baseline_sumprod(p, q):
-            """This defines the target behavior including expections and special values.
+            """This defines the target behavior including exceptions and special values.
             However, it is subject to rounding errors, so float inputs should be exactly
             representable with only a few bits.
             """
@@ -2706,7 +2706,7 @@ class FMATests(unittest.TestCase):
     # gh-73468: On some platforms, libc fma() doesn't implement IEE 754-2008
     # properly: it doesn't use the right sign when the result is zero.
     @unittest.skipIf(
-        sys.platform.startswith(("freebsd", "wasi"))
+        sys.platform.startswith(("freebsd", "wasi", "netbsd"))
         or (sys.platform == "android" and platform.machine() == "x86_64"),
         f"this platform doesn't implement IEE 754-2008 properly")
     def test_fma_zero_result(self):

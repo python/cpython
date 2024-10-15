@@ -5391,7 +5391,6 @@ _testFileType(path_t *path, int testedType)
 os._path_exists -> bool
 
     path: path_t(allow_fd=True, suppress_value_error=True)
-    /
 
 Test whether a path exists.  Returns False for broken symbolic links.
 
@@ -5399,7 +5398,7 @@ Test whether a path exists.  Returns False for broken symbolic links.
 
 static int
 os__path_exists_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=8da13acf666e16ba input=29198507a6082a57]*/
+/*[clinic end generated code: output=8da13acf666e16ba input=142beabfc66783eb]*/
 {
     return _testFileExists(path, TRUE);
 }
@@ -5409,7 +5408,6 @@ os__path_exists_impl(PyObject *module, path_t *path)
 os._path_lexists -> bool
 
     path: path_t(allow_fd=True, suppress_value_error=True)
-    /
 
 Test whether a path exists.  Returns True for broken symbolic links.
 
@@ -5417,7 +5415,7 @@ Test whether a path exists.  Returns True for broken symbolic links.
 
 static int
 os__path_lexists_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=e7240ed5fc45bff3 input=03d9fed8bc6ce96f]*/
+/*[clinic end generated code: output=e7240ed5fc45bff3 input=208205112a3cc1ed]*/
 {
     return _testFileExists(path, FALSE);
 }
@@ -5503,7 +5501,7 @@ os__path_isjunction_impl(PyObject *module, path_t *path)
 /*[clinic input]
 os._path_splitroot_ex
 
-    path: path_t(make_wide=True, nonstrict=True)
+    p as path: path_t(make_wide=True, nonstrict=True)
 
 Split a pathname into drive, root and tail.
 
@@ -5512,7 +5510,7 @@ The tail contains anything after the root.
 
 static PyObject *
 os__path_splitroot_ex_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=4b0072b6cdf4b611 input=6eb76e9173412c92]*/
+/*[clinic end generated code: output=4b0072b6cdf4b611 input=4556b615c7cc13f2]*/
 {
     Py_ssize_t drvsize, rootsize;
     PyObject *drv = NULL, *root = NULL, *tail = NULL, *result = NULL;

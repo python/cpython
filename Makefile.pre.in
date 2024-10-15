@@ -962,7 +962,7 @@ $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): \
 	$(LN) -fsn Versions/Current/$(PYTHONFRAMEWORK) $(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)
 	$(LN) -fsn Versions/Current/Resources $(PYTHONFRAMEWORKDIR)/Resources
 
-# This rule is for iOS, which requires an annoyingly just slighly different
+# This rule is for iOS, which requires an annoyingly just slightly different
 # format for frameworks to macOS. It *doesn't* use a versioned framework, and
 # the Info.plist must be in the root of the framework.
 $(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK): \

@@ -42,7 +42,7 @@ jobs:
 
   check_abi:
     name: 'Check if the ABI has changed'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
