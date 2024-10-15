@@ -3358,8 +3358,8 @@ make_impl_info(PyObject *version_info)
     if (res < 0)
         goto error;
 
-#ifdef VPLATFORM
-    value = PyUnicode_FromString(VPLATFORM);
+#ifdef VARCH_NAME
+    value = PyUnicode_FromString(VARCH_NAME);
     if (value == NULL)
         goto error;
     res = PyDict_SetItemString(impl_info, "arch", value);
