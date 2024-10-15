@@ -117,7 +117,8 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, PyTime_t timeout)
     // Py_PARK_INTR result.
     HANDLE sigint_event = _PyOS_SigintEvent();
     HANDLE handles[2] = { sema->platform_sem, sigint_event };
-    wait = WaitForMultipleObjectsEx(2, handles, FALSE, millis, FALSE);
+    DWORD count = sigint_event != NULL ? 2 : 1;
+    wait = WaitForMultipleObjectsEx(count, handles, FALSE, millis, FALSE);
     if (wait == WAIT_OBJECT_0) {
         res = Py_PARK_OK;
     }
