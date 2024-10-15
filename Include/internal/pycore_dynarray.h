@@ -19,6 +19,17 @@ typedef struct {
     _PyDynArray_Deallocator deallocator;
 } _PyDynArray;
 
+PyAPI_FUNC(_PyDynArray *)
+_PyDynArray_InitWithSize(_PyDynArray *array,
+                         Py_ssize_t initial,
+                         _PyDynArray_Deallocator deallocator);
+
+int
+_PyDynArray_Append(_PyDynArray *array, void *item);
+
+void
+_PyDynArray_Clear(_PyDynArray *array);
+
 #ifdef __cplusplus
 }
 #endif
