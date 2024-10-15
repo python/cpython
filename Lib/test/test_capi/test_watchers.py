@@ -626,13 +626,17 @@ class TestContextObjectWatchers(unittest.TestCase):
                     ctx_inner.run(lambda: unraisables.append(cm.unraisable))
                     unraisables.append(cm.unraisable)
 
-        ctx_outer.run(_in_outer)
-        self.assertEqual([x.err_msg for x in unraisables],
-                         ["Exception ignored in Py_CONTEXT_SWITCHED "
-                          f"watcher callback for {ctx!r}"
-                          for ctx in [ctx_inner, ctx_outer]])
-        self.assertEqual([str(x.exc_value) for x in unraisables],
-                         ["boom!", "boom!"])
+            try:
+                ctx_outer.run(_in_outer)
+                self.assertEqual([x.err_msg for x in unraisables],
+                                ["Exception ignored in Py_CONTEXT_SWITCHED "
+                                f"watcher callback for {ctx!r}"
+                                for ctx in [ctx_inner, ctx_outer]])
+                self.assertEqual([str(x.exc_value) for x in unraisables],
+                                ["boom!", "boom!"])
+            finally:
+                # Break reference cycle
+                unraisables = None
 
     def test_clear_out_of_range_watcher_id(self):
         with self.assertRaisesRegex(ValueError, r"Invalid context watcher ID -1"):
