@@ -1854,11 +1854,10 @@ Argument groups
 
        --bar BAR  bar help
 
-   The optional keyword-only parameters argument_default_ and conflict_handler_ allow
-   for finer-grained control of the behavior of the argument group. These
+   The optional, keyword-only parameters argument_default_ and conflict_handler_ 
+   allow for finer-grained control of the behavior of the argument group. These 
    parameters have the same meaning as in the :class:`~ArgumentParser` constructor,
    but apply specifically to the argument group rather than the entire parser.
-
 
    Note that any arguments not in your user-defined groups will end up back
    in the usual "positional arguments" and "optional arguments" sections.
