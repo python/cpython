@@ -1,1 +1,1 @@
-Add translation tests to the mod:`argparse` module.
+Add translation tests to the :mod:`argparse` module.
