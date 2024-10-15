@@ -1,3 +1,5 @@
+name: Reusable Ubuntu
+
 on:
   workflow_call:
     inputs:
@@ -14,7 +16,11 @@ jobs:
   build_ubuntu_reusable:
     name: 'build and test'
     timeout-minutes: 60
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04]
     env:
       FORCE_COLOR: 1
       OPENSSL_VER: 3.0.15
@@ -36,7 +42,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
-        key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
+        key: ${{ matrix.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $MULTISSL_DIR --openssl $OPENSSL_VER --system Linux
