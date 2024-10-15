@@ -537,7 +537,7 @@
                 new_frame = _PyFrame_PushUnchecked(tstate, PyStackRef_FromPyObjectNew(getitem), 2, frame);
                 new_frame->localsplus[0] = container;
                 new_frame->localsplus[1] = sub;
-                frame->return_offset = 2;
+                frame->return_offset = 2 ;
             }
             // _PUSH_FRAME
             {
@@ -933,7 +933,7 @@
                     if (new_frame == NULL) {
                         goto error;
                     }
-                    frame->return_offset = 4;
+                    frame->return_offset = 4 ;
                     DISPATCH_INLINED(new_frame);
                 }
                 /* Callable is not a normal Python function */
@@ -1183,7 +1183,7 @@
             // _SAVE_RETURN_OFFSET
             {
                 #if TIER_ONE
-                frame->return_offset = 4;
+                frame->return_offset = 4 ;
                 #endif
                 #if TIER_TWO
                 frame->return_offset = oparg;
@@ -1284,7 +1284,7 @@
             // _SAVE_RETURN_OFFSET
             {
                 #if TIER_ONE
-                frame->return_offset = 4;
+                frame->return_offset = 4 ;
                 #endif
                 #if TIER_TWO
                 frame->return_offset = oparg;
@@ -1735,7 +1735,7 @@
                         if (new_frame == NULL) {
                             goto error;
                         }
-                        assert(1 == 1);
+                        assert( 1 == 1);
                         frame->return_offset = 1;
                         DISPATCH_INLINED(new_frame);
                     }
@@ -1956,8 +1956,8 @@
                     if (new_frame == NULL) {
                         goto error;
                     }
-                    assert(4 == 1 + INLINE_CACHE_ENTRIES_CALL_KW);
-                    frame->return_offset = 4;
+                    assert( 4 == 1 + INLINE_CACHE_ENTRIES_CALL_KW);
+                    frame->return_offset = 4 ;
                     DISPATCH_INLINED(new_frame);
                 }
                 /* Callable is not a normal Python function */
@@ -2104,7 +2104,7 @@
             // _SAVE_RETURN_OFFSET
             {
                 #if TIER_ONE
-                frame->return_offset = 4;
+                frame->return_offset = 4 ;
                 #endif
                 #if TIER_TWO
                 frame->return_offset = oparg;
@@ -2282,7 +2282,7 @@
             // _SAVE_RETURN_OFFSET
             {
                 #if TIER_ONE
-                frame->return_offset = 4;
+                frame->return_offset = 4 ;
                 #endif
                 #if TIER_TWO
                 frame->return_offset = oparg;
@@ -2849,7 +2849,7 @@
             // _SAVE_RETURN_OFFSET
             {
                 #if TIER_ONE
-                frame->return_offset = 4;
+                frame->return_offset = 4 ;
                 #endif
                 #if TIER_TWO
                 frame->return_offset = oparg;
@@ -2929,7 +2929,7 @@
             // _SAVE_RETURN_OFFSET
             {
                 #if TIER_ONE
-                frame->return_offset = 4;
+                frame->return_offset = 4 ;
                 #endif
                 #if TIER_TWO
                 frame->return_offset = oparg;
@@ -3982,7 +3982,7 @@
                 tstate->exc_info = &gen->gi_exc_state;
                 gen_frame->previous = frame;
                 // oparg is the return offset from the next instruction.
-                frame->return_offset = (uint16_t)(2 + oparg);
+                frame->return_offset = (uint16_t)( 2 + oparg);
             }
             // _PUSH_FRAME
             {
@@ -4444,7 +4444,7 @@
                     if (new_frame == NULL) {
                         goto error;
                     }
-                    frame->return_offset = 4;
+                    frame->return_offset = 4 ;
                     DISPATCH_INLINED(new_frame);
                 }
                 /* Callable is not a normal Python function */
@@ -5401,7 +5401,7 @@
             STACK_SHRINK(1);
             new_frame->localsplus[0] = owner;
             new_frame->localsplus[1] = PyStackRef_FromPyObjectNew(name);
-            frame->return_offset = 10;
+            frame->return_offset = 10 ;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -5732,7 +5732,7 @@
             // _SAVE_RETURN_OFFSET
             {
                 #if TIER_ONE
-                frame->return_offset = 10;
+                frame->return_offset = 10 ;
                 #endif
                 #if TIER_TWO
                 frame->return_offset = oparg;
@@ -7090,8 +7090,8 @@
                     gen->gi_frame_state = FRAME_EXECUTING;
                     gen->gi_exc_state.previous_item = tstate->exc_info;
                     tstate->exc_info = &gen->gi_exc_state;
-                    assert(2 + oparg <= UINT16_MAX);
-                    frame->return_offset = (uint16_t)(2 + oparg);
+                    assert( 2 + oparg <= UINT16_MAX);
+                    frame->return_offset = (uint16_t)( 2 + oparg);
                     assert(gen_frame->previous == NULL);
                     gen_frame->previous = frame;
                     DISPATCH_INLINED(gen_frame);
@@ -7163,8 +7163,8 @@
                 gen->gi_frame_state = FRAME_EXECUTING;
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
-                assert(2 + oparg <= UINT16_MAX);
-                frame->return_offset = (uint16_t)(2 + oparg);
+                assert( 2 + oparg <= UINT16_MAX);
+                frame->return_offset = (uint16_t)( 2 + oparg);
                 gen_frame->previous = frame;
             }
             // _PUSH_FRAME

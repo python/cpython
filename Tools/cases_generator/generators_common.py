@@ -368,7 +368,7 @@ class Emitter:
     ) -> bool:
         """Replace the INSTRUCTION_SIZE macro with the size of the current instruction."""
         size = inst.size if inst else 1 + uop.size
-        self.out.emit(tkn.replaceText(str(size)))
+        self.out.emit(f" {size} ")
         return True
 
     def _print_storage(self, storage: Storage) -> None:
