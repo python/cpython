@@ -46,7 +46,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.13, compared to 3.12.
-Python 3.13 will be released on October 1, 2024.
+Python 3.13 was released on October 7, 2024.
 For full details, see the :ref:`changelog <changelog>`.
 
 .. seealso::
@@ -60,7 +60,7 @@ Summary -- Release Highlights
 .. This section singles out the most important changes in Python 3.13.
    Brevity is key.
 
-Python 3.13 will be the latest stable release of the Python programming
+Python 3.13 is the latest stable release of the Python programming
 language, with a mix of changes to the language, the implementation
 and the standard library.
 The biggest changes include a new `interactive interpreter
@@ -121,9 +121,10 @@ Interpreter improvements:
 
 Python data model improvements:
 
-* :attr:`~class.__static_attributes__` stores the names of attributes accessed
+* :attr:`~type.__static_attributes__` stores the names of attributes accessed
   through ``self.X`` in any function in a class body.
-* :attr:`!__firstlineno__` records the first line number of a class definition.
+* :attr:`~type.__firstlineno__` records the first line number of a class
+  definition.
 
 Significant improvements in the standard library:
 
@@ -319,11 +320,8 @@ The free-threaded mode requires a different executable,
 usually called ``python3.13t`` or ``python3.13t.exe``.
 Pre-built binaries marked as *free-threaded* can be installed as part of
 the official :ref:`Windows <install-freethreaded-windows>`
-and :ref:`macOS <getting-and-installing-macpython>` installers,
+and :ref:`macOS <install-freethreaded-macos>` installers,
 or CPython can be built from source with the :option:`--disable-gil` option.
-
-.. better macOS link pending
-   https://github.com/python/cpython/issues/109975#issuecomment-2286391179
 
 Free-threaded execution allows for full utilization of the available
 processing power by running threads in parallel on available CPU cores.
@@ -500,30 +498,6 @@ are not tier 3 supported platforms, but will have best-effort support.
 .. seealso:: :pep:`730`, :pep:`738`
 
 
-.. _whatsnew313-incremental-gc:
-
-Incremental garbage collection
-------------------------------
-
-The cycle garbage collector is now incremental.
-This means that maximum pause times are reduced
-by an order of magnitude or more for larger heaps.
-
-There are now only two generations: young and old.
-When :func:`gc.collect` is not called directly, the
-GC is invoked a little less frequently. When invoked, it
-collects the young generation and an increment of the
-old generation, instead of collecting one or more generations.
-
-The behavior of :func:`!gc.collect` changes slightly:
-
-* ``gc.collect(1)``: Performs an increment of garbage collection,
-  rather than collecting generation 1.
-* Other calls to :func:`!gc.collect` are unchanged.
-
-(Contributed by Mark Shannon in :gh:`108362`.)
-
-
 Other Language Changes
 ======================
 
@@ -588,7 +562,7 @@ Other Language Changes
   (Contributed by Levi Sabah, Zackery Spytz and Hugo van Kemenade
   in :gh:`73965`.)
 
-* Classes have a new :attr:`~class.__static_attributes__` attribute.
+* Classes have a new :attr:`~type.__static_attributes__` attribute.
   This is populated by the compiler with a tuple of the class's attribute names
   which are assigned through ``self.<name>`` from any function in its body.
   (Contributed by Irit Katriel in :gh:`115775`.)
@@ -823,6 +797,28 @@ copy
   (Contributed by Serhiy Storchaka in :gh:`108751`.)
 
 
+ctypes
+------
+
+* As a consequence of necessary internal refactoring, initialization of
+  internal metaclasses now happens in ``__init__`` rather
+  than in ``__new__``. This affects projects that subclass these internal
+  metaclasses to provide custom initialization.
+  Generally:
+
+  - Custom logic that was done in ``__new__`` after calling ``super().__new__``
+    should be moved to ``__init__``.
+  - To create a class, call the metaclass, not only the metaclass's
+    ``__new__`` method.
+
+  See :gh:`124520` for discussion and links to changes in some affected
+  projects.
+
+* :class:`ctypes.Structure` objects have a new :attr:`~ctypes.Structure._align_`
+  attribute which allows the alignment of the structure being packed to/from
+  memory to be specified explicitly.
+  (Contributed by Matt Sanderson in :gh:`112433`)
+
 dbm
 ---
 
@@ -902,36 +898,6 @@ fractions
   (Contributed by Mark Dickinson in :gh:`111320`.)
 
 
-gc
---
-
-The cyclic garbage collector is now incremental,
-which changes the meaning of the results of
-:meth:`~gc.get_threshold` and :meth:`~gc.set_threshold`
-as well as :meth:`~gc.get_count` and :meth:`~gc.get_stats`.
-
-* For backwards compatibility, :meth:`~gc.get_threshold` continues to return
-  a three-item tuple.
-  The first value is the threshold for young collections, as before;
-  the second value determines the rate at which the old collection is scanned
-  (the default is 10, and higher values mean that the old collection
-  is scanned more slowly).
-  The third value is meaningless and is always zero.
-
-* :meth:`~gc.set_threshold` ignores any items after the second.
-
-* :meth:`~gc.get_count` and :meth:`~gc.get_stats` continue to return
-  the same format of results.
-  The only difference is that instead of the results referring to
-  the young, aging and old generations,
-  the results refer to the young generation
-  and the aging and collecting spaces of the old generation.
-
-In summary, code that attempted to manipulate the behavior of the cycle GC
-may not work exactly as intended, but it is very unlikely to be harmful.
-All other code will work just fine.
-
-
 glob
 ----
 
@@ -956,12 +922,12 @@ importlib
   * :func:`~importlib.resources.read_text`
 
   These functions are no longer deprecated and are not scheduled for removal.
-  (Contributed by Petr Viktorin in :gh:`106532`.)
+  (Contributed by Petr Viktorin in :gh:`116608`.)
 
 * :func:`~importlib.resources.contents` remains deprecated in favor of
   the fully-featured :class:`~importlib.resources.abc.Traversable` API.
   However, there is now no plan to remove it.
-  (Contributed by Petr Viktorin in :gh:`106532`.)
+  (Contributed by Petr Viktorin in :gh:`116608`.)
 
 
 io
@@ -1496,11 +1462,6 @@ zipimport
 Optimizations
 =============
 
-* The new :ref:`incremental garbage collector <whatsnew313-incremental-gc>`
-  means that maximum pause times are reduced
-  by an order of magnitude or more for larger heaps.
-  (Contributed by Mark Shannon in :gh:`108362`.)
-
 * Several standard library modules have had
   their import times significantly improved.
   For example, the import time of the :mod:`typing` module
@@ -1602,7 +1563,7 @@ and are now removed:
 * :mod:`!msilib`
 * :mod:`!nis`
 * :mod:`!nntplib`:
-  Use the :pypi:`nntplib` library from PyPI instead.
+  Use the :pypi:`pynntp` library from PyPI instead.
 * :mod:`!ossaudiodev`:
   For audio playback, use the :pypi:`pygame` library from PyPI instead.
 * :mod:`!pipes`:
@@ -2191,13 +2152,13 @@ New Features
 
 * Add the :c:func:`PyType_GetFullyQualifiedName` function
   to get the type's fully qualified name.
-  The module name is prepended if ``type.__module__`` is a string
-  and is not equal to either ``'builtins'`` or ``'__main__'``.
+  The module name is prepended if :attr:`type.__module__` is
+  a string and is not equal to either ``'builtins'`` or ``'__main__'``.
   (Contributed by Victor Stinner in :gh:`111696`.)
 
 * Add the :c:func:`PyType_GetModuleName` function
-  to get the type's module name.
-  This is equivalent to getting the ``type.__module__`` attribute.
+  to get the type's module name. This is equivalent to getting the
+  :attr:`type.__module__` attribute.
   (Contributed by Eric Snow and Victor Stinner in :gh:`111696`.)
 
 * Add the :c:func:`PyUnicode_EqualToUTF8AndSize`
@@ -2534,9 +2495,9 @@ Build Changes
 * Building CPython now requires a compiler with support for the C11 atomic
   library, GCC built-in atomic functions, or MSVC interlocked intrinsics.
 
-* Autoconf 2.71 and aclocal 1.16.4 are now required to regenerate
+* Autoconf 2.71 and aclocal 1.16.5 are now required to regenerate
   the :file:`configure` script.
-  (Contributed by Christian Heimes in :gh:`89886`.)
+  (Contributed by Christian Heimes in :gh:`89886` and by Victor Stinner in :gh:`112090`.)
 
 * SQLite 3.15.2 or newer is required to build
   the :mod:`sqlite3` extension module.
@@ -2612,13 +2573,6 @@ Changes in the Python API
   The behavior will change in future Python versions.
   Wrap it in :func:`staticmethod` if you want to preserve the old behavior.
   (Contributed by Serhiy Storchaka in :gh:`121027`.)
-
-* The :ref:`garbage collector is now incremental <whatsnew313-incremental-gc>`,
-  which means that the behavior of :func:`gc.collect` changes slightly:
-
-  * ``gc.collect(1)``: Performs an increment of garbage collection,
-    rather than collecting generation 1.
-  * Other calls to :func:`!gc.collect` are unchanged.
 
 * An :exc:`OSError` is now raised by :func:`getpass.getuser`
   for any failure to retrieve a username,

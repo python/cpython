@@ -2,7 +2,6 @@ from test import support
 from test.support import warnings_helper
 import decimal
 import enum
-import locale
 import math
 import platform
 import sys
@@ -299,7 +298,7 @@ class TimeTestCase(unittest.TestCase):
         # additional check for IndexError branch (issue #19545)
         with self.assertRaises(ValueError) as e:
             time.strptime('19', '%Y %')
-        self.assertIs(e.exception.__suppress_context__, True)
+        self.assertIsNone(e.exception.__context__)
 
     def test_strptime_leap_year(self):
         # GH-70647: warns if parsing a format with a day and no year.
@@ -600,17 +599,8 @@ class TimeTestCase(unittest.TestCase):
 
 
 class TestLocale(unittest.TestCase):
-    def setUp(self):
-        self.oldloc = locale.setlocale(locale.LC_ALL)
-
-    def tearDown(self):
-        locale.setlocale(locale.LC_ALL, self.oldloc)
-
+    @support.run_with_locale('LC_ALL', 'fr_FR', '')
     def test_bug_3061(self):
-        try:
-            tmp = locale.setlocale(locale.LC_ALL, "fr_FR")
-        except locale.Error:
-            self.skipTest('could not set locale.LC_ALL to fr_FR')
         # This should not cause an exception
         time.strftime("%B", (2009,2,1,0,0,0,0,0,0))
 
@@ -654,8 +644,7 @@ class _TestStrftimeYear:
             self.test_year('%04d', func=year4d)
 
     def skip_if_not_supported(y):
-        msg = "strftime() is limited to [1; 9999] with Visual Studio"
-        # Check that it doesn't crash for year > 9999
+        msg = f"strftime() does not support year {y} on this platform"
         try:
             time.strftime('%Y', (y,) + (0,) * 8)
         except ValueError:

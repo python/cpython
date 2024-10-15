@@ -363,6 +363,54 @@ def test_pdb_breakpoint_commands():
     4
     """
 
+def test_pdb_commands():
+    """Test the commands command of pdb.
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     print(1)
+    ...     print(2)
+    ...     print(3)
+
+    >>> reset_Breakpoint()
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'b 3',
+    ...     'commands',
+    ...     'silent',      # suppress the frame status output
+    ...     'p "hello"',
+    ...     'end',
+    ...     'b 4',
+    ...     'commands',
+    ...     'until 5',     # no output, should stop at line 5
+    ...     'continue',    # hit breakpoint at line 3
+    ...     '',            # repeat continue, hit breakpoint at line 4 then `until` to line 5
+    ...     '',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_commands[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) b 3
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_commands[0]>:3
+    (Pdb) commands
+    (com) silent
+    (com) p "hello"
+    (com) end
+    (Pdb) b 4
+    Breakpoint 2 at <doctest test.test_pdb.test_pdb_commands[0]>:4
+    (Pdb) commands
+    (com) until 5
+    (Pdb) continue
+    'hello'
+    (Pdb)
+    1
+    2
+    > <doctest test.test_pdb.test_pdb_commands[0]>(5)test_function()
+    -> print(3)
+    (Pdb)
+    3
+    """
+
 def test_pdb_breakpoint_with_filename():
     """Breakpoints with filename:lineno
 
@@ -468,6 +516,43 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     (Pdb) clear 3
     Deleted breakpoint 3 at ...pdb.py:...
     (Pdb) continue
+    """
+
+def test_pdb_break_anywhere():
+    """Test break_anywhere() method of Pdb.
+
+    >>> def outer():
+    ...     def inner():
+    ...         import pdb
+    ...         import sys
+    ...         p = pdb.Pdb(nosigint=True, readrc=False)
+    ...         p.set_trace()
+    ...         frame = sys._getframe()
+    ...         print(p.break_anywhere(frame))  # inner
+    ...         print(p.break_anywhere(frame.f_back))  # outer
+    ...         print(p.break_anywhere(frame.f_back.f_back))  # caller
+    ...     inner()
+
+    >>> def caller():
+    ...     outer()
+
+    >>> def test_function():
+    ...     caller()
+
+    >>> reset_Breakpoint()
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'b 3',
+    ...     'c',
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_break_anywhere[0]>(6)inner()
+    -> p.set_trace()
+    (Pdb) b 3
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_break_anywhere[0]>:3
+    (Pdb) c
+    True
+    False
+    False
     """
 
 def test_pdb_pp_repr_exc():
@@ -899,6 +984,38 @@ def test_pdb_where_command():
       <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) continue
+    """
+
+def test_pdb_restart_command():
+    """Test restart command
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False, mode='inline').set_trace()
+    ...     x = 1
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'restart',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_restart_command[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False, mode='inline').set_trace()
+    (Pdb) restart
+    *** run/restart command is disabled when pdb is running in inline mode.
+    Use the command line interface to enable restarting your program
+    e.g. "python -m pdb myscript.py"
+    (Pdb) continue
+    """
+
+def test_pdb_commands_with_set_trace():
+    """Test that commands can be passed to Pdb.set_trace()
+
+    >>> def test_function():
+    ...     x = 1
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace(commands=['p x', 'c'])
+
+    >>> test_function()
+    1
     """
 
 
@@ -3275,6 +3392,20 @@ def bœr():
         res = '\n'.join([x.strip() for x in stdout.splitlines()])
         self.assertRegex(res, "Restarting .* with arguments:\na b c")
         self.assertRegex(res, "Restarting .* with arguments:\nd e f")
+
+    def test_step_into_botframe(self):
+        # gh-125422
+        # pdb should not be able to step into the botframe (bdb.py)
+        script = "x = 1"
+        commands = """
+            step
+            step
+            step
+            quit
+        """
+        stdout, _ = self.run_pdb_script(script, commands)
+        self.assertIn("The program finished", stdout)
+        self.assertNotIn("bdb.py", stdout)
 
     def test_pdbrc_basic(self):
         script = textwrap.dedent("""

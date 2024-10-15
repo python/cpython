@@ -213,23 +213,20 @@ In addition to these methods, lock objects can also be used via the
 
 .. index:: pair: module; signal
 
-* Threads interact strangely with interrupts: the :exc:`KeyboardInterrupt`
-  exception will be received by an arbitrary thread.  (When the :mod:`signal`
-  module is available, interrupts always go to the main thread.)
+* Interrupts always go to the main thread (the :exc:`KeyboardInterrupt`
+  exception will be received by that thread.)
 
 * Calling :func:`sys.exit` or raising the :exc:`SystemExit` exception is
   equivalent to calling :func:`_thread.exit`.
 
-* It is not possible to interrupt the :meth:`~threading.Lock.acquire` method on
-  a lock --- the :exc:`KeyboardInterrupt` exception will happen after the lock
-  has been acquired.
+* It is platform-dependent whether the :meth:`~threading.Lock.acquire` method
+  on a lock can be interrupted (so that the :exc:`KeyboardInterrupt` exception
+  will happen immediately, rather than only after the lock has been acquired or
+  the operation has timed out). It can be interrupted on POSIX, but not on
+  Windows.
 
 * When the main thread exits, it is system defined whether the other threads
   survive.  On most systems, they are killed without executing
   :keyword:`try` ... :keyword:`finally` clauses or executing object
   destructors.
-
-* When the main thread exits, it does not do any of its usual cleanup (except
-  that :keyword:`try` ... :keyword:`finally` clauses are honored), and the
-  standard I/O files are not flushed.
 
