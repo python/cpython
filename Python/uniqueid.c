@@ -145,7 +145,7 @@ _PyObject_ThreadIncrefSlow(PyObject *obj, Py_ssize_t unique_id)
 {
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
     if (unique_id < 0 || resize_local_refcounts(tstate) < 0) {
-        // just incref the type directly.
+        // just incref the object directly.
         Py_INCREF(obj);
         return;
     }

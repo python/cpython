@@ -330,7 +330,7 @@ _Py_THREAD_INCREF_OBJECT(PyObject *obj, Py_ssize_t unique_id)
         tstate->refcounts.values[unique_id]++;
     }
     else {
-        // The slow path resizes the thread-local refcount array if necessary.
+        // The slow path resizes the per-thread refcount array if necessary.
         // It handles the unique_id=-1 case to keep the inlinable function smaller.
         _PyObject_ThreadIncrefSlow(obj, unique_id);
     }
@@ -380,8 +380,8 @@ _Py_THREAD_DECREF_OBJECT(PyObject *obj, Py_ssize_t unique_id)
         tstate->refcounts.values[unique_id]--;
     }
     else {
-        // Directly decref the type if the type id is not assigned or if
-        // per-thread refcounting has been disabled on this type.
+        // Directly decref the object if the id is not assigned or if
+        // per-thread refcounting has been disabled on this object.
         Py_DECREF(obj);
     }
 }
