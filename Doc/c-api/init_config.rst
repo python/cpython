@@ -1826,6 +1826,8 @@ return ``-1`` on error:
     error:
         {
             // Display the error message
+            // This uncommon braces style is used, because you cannot make
+            // goto targets point to variable declarations.
             const char *err_msg;
             (void)PyInitConfig_GetError(config, &err_msg);
             printf("PYTHON INIT ERROR: %s\n", err_msg);
