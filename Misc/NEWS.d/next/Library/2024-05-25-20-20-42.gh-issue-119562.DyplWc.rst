@@ -1,3 +1,0 @@
-Remove :class:`!ast.Num`, :class:`!ast.Str`, :class:`!ast.Bytes`,
-:class:`!ast.NameConstant` and :class:`!ast.Ellipsis`. They had all emitted
-deprecation warnings since Python 3.12. Patch by Alex Waygood.

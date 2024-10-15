@@ -1195,7 +1195,7 @@ code, or when embedding the Python interpreter:
       created by Python.  Refer to
       :ref:`cautions-regarding-runtime-finalization` for more details.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Hangs the current thread, rather than terminating it, if called while the
       interpreter is finalizing.
 
@@ -1257,7 +1257,7 @@ with sub-interpreters:
       created by Python.  Refer to
       :ref:`cautions-regarding-runtime-finalization` for more details.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Hangs the current thread, rather than terminating it, if called while the
       interpreter is finalizing.
 
@@ -1547,7 +1547,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
       :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`,
       and terminate the current thread if called while the interpreter is finalizing.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Hangs the current thread, rather than terminating it, if called while the
       interpreter is finalizing.
 
