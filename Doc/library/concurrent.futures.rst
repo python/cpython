@@ -261,7 +261,7 @@ objects can be executed and returned.
    the builtin singletons, :class:`str` and :class:`bytes`,
    and :class:`memoryview`.  See :pep:`734` for more info.
 
-   You can also pass a script (:class:`str`) for *initiazer* or to
+   You can also pass a script (:class:`str`) for *initializer* or to
    :meth:`~Executor.submit` (but not to :meth:`~Executor.map`).
    In both cases, the script will be executed in the interpreter's
    ``__main__`` module.  The executor will automatically apply
