@@ -1,2 +1,2 @@
-Added ``.strip()`` to the :meth:`email.Message.get_payload`
-to remove spaces in ``content-transfer-encoding``.
+Fix :meth:`email.Message.get_payload` couldn't parse headers
+with extra spaces. Patch by RUANG.
