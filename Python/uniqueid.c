@@ -1,5 +1,6 @@
 #include "Python.h"
 
+#include "pycore_dict.h"        // DICT_UNIQUE_ID_MAX
 #include "pycore_lock.h"        // PyMutex_LockFlags()
 #include "pycore_pystate.h"     // _PyThreadState_GET()
 #include "pycore_object.h"      // _Py_IncRefTotal
@@ -90,10 +91,15 @@ _PyObject_AssignUniqueId(PyObject *obj)
     }
 
     _Py_unique_id_entry *entry = pool->freelist;
+    Py_ssize_t unique_id = (entry - pool->table);
+    if ((uint64_t)unique_id >= DICT_UNIQUE_ID_MAX) {
+        UNLOCK_POOL(pool);
+        return -1;
+    }
+
     pool->freelist = entry->next;
     entry->obj = obj;
     _PyObject_SetDeferredRefcount(obj);
-    Py_ssize_t unique_id = (entry - pool->table);
     UNLOCK_POOL(pool);
     return unique_id;
 }
@@ -127,6 +133,11 @@ clear_unique_id(PyObject *obj)
         PyCodeObject *co = (PyCodeObject *)obj;
         id = co->_co_unique_id;
         co->_co_unique_id = -1;
+    }
+    else if (PyDict_Check(obj)) {
+        PyDictObject *mp = (PyDictObject *)obj;
+        id = _PyDict_UniqueId(mp);
+        mp->_ma_watcher_tag &= ~(UINT64_MAX << DICT_UNIQUE_ID_SHIFT);
     }
     return id;
 }

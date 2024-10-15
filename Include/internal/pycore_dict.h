@@ -229,6 +229,8 @@ static inline PyDictUnicodeEntry* DK_UNICODE_ENTRIES(PyDictKeysObject *dk) {
 #define DICT_VERSION_INCREMENT (1 << (DICT_MAX_WATCHERS + DICT_WATCHED_MUTATION_BITS))
 #define DICT_WATCHER_MASK ((1 << DICT_MAX_WATCHERS) - 1)
 #define DICT_WATCHER_AND_MODIFICATION_MASK ((1 << (DICT_MAX_WATCHERS + DICT_WATCHED_MUTATION_BITS)) - 1)
+#define DICT_UNIQUE_ID_SHIFT (DICT_MAX_WATCHERS + DICT_WATCHED_MUTATION_BITS)
+#define DICT_UNIQUE_ID_MAX (UINT64_MAX >> DICT_UNIQUE_ID_SHIFT)
 
 
 PyAPI_FUNC(void)
@@ -307,7 +309,38 @@ _PyInlineValuesSize(PyTypeObject *tp)
 int
 _PyDict_DetachFromObject(PyDictObject *dict, PyObject *obj);
 
+// Enables per-thread ref counting on this dict in the free threading build
+extern void _PyDict_EnablePerThreadRefcounting(PyObject *op);
+
 PyDictObject *_PyObject_MaterializeManagedDict_LockHeld(PyObject *);
+
+#ifndef Py_GIL_DISABLED
+#  define _Py_INCREF_DICT Py_INCREF
+#  define _Py_DECREF_DICT Py_DECREF
+#else
+static inline Py_ssize_t
+_PyDict_UniqueId(PyDictObject *mp)
+{
+    // Offset by on so that _ma_watcher_tag=0 represents an unassigned id
+    return (Py_ssize_t)(mp->_ma_watcher_tag >> DICT_UNIQUE_ID_SHIFT) - 1;
+}
+
+static inline void
+_Py_INCREF_DICT(PyObject *op)
+{
+    assert(PyDict_Check(op));
+    Py_ssize_t id = _PyDict_UniqueId((PyDictObject *)op);
+    _Py_THREAD_INCREF_OBJECT(op, id);
+}
+
+static inline void
+_Py_DECREF_DICT(PyObject *op)
+{
+    assert(PyDict_Check(op));
+    Py_ssize_t id = _PyDict_UniqueId((PyDictObject *)op);
+    _Py_THREAD_DECREF_OBJECT(op, id);
+}
+#endif
 
 #ifdef __cplusplus
 }
