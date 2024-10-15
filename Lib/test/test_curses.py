@@ -129,6 +129,41 @@ class TestCurses(unittest.TestCase):
         curses.use_env(False)
         curses.use_env(True)
 
+    def test_error(self):
+        self.assertTrue(issubclass(curses.error, Exception))
+
+        def raise_curses_error(*args):
+            raise curses.error(*args)
+
+        with self.assertRaisesRegex(curses.error, "test") as cm:
+            raise_curses_error('test')
+        self.assertSequenceEqual(cm.exception.args, ('test',))
+
+        with self.assertRaisesRegex(curses.error, "test") as cm:
+            raise_curses_error('test', '1', '2')
+        self.assertSequenceEqual(cm.exception.args, ('test', '1', '2'))
+
+    def test_error_attributes(self):
+        error = curses.error()
+        self.assertSequenceEqual(error.args, ())
+        self.assertIsNone(error.funcname)
+
+        error = curses.error('test')
+        self.assertSequenceEqual(error.args, ('test',))
+        self.assertIsNone(error.funcname)
+
+        error = curses.error('test with curses function')
+        error.funcname = 'curses function'
+        self.assertSequenceEqual(error.args, ('test with curses function',))
+        self.assertEqual(error.funcname, 'curses function')
+
+        error = curses.error('unset attributes')
+        error.funcname = 'a'
+        error.funcname = None
+        self.assertIsNone(error.funcname)
+
+        self.assertRaises(TypeError, setattr, error, 'funcname', 1)
+
     def test_create_windows(self):
         win = curses.newwin(5, 10)
         self.assertEqual(win.getbegyx(), (0, 0))

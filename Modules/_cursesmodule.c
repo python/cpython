@@ -190,8 +190,9 @@ get_cursesmodule_state_by_win(PyCursesWindowObject *win)
 /*[clinic input]
 module _curses
 class _curses.window "PyCursesWindowObject *" "clinic_state()->window_type"
+class _curses.error "PyCursesErrorObject *" "clinic_state()->error"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ae6cb623018f2cbc]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a6b4ac3824e7c5c3]*/
 
 /* Indicate whether the module has already been loaded or not. */
 static int curses_module_loaded = 0;
@@ -206,6 +207,174 @@ static int curses_initscr_called = FALSE;
 static int curses_start_color_called = FALSE;
 
 static const char *curses_screen_encoding = NULL;
+
+/* Error type */
+
+#define CURSES_ERROR_FORMAT         "%s() returned ERR"
+#define CURSES_ERROR_NULL_FORMAT    "%s() returned NULL"
+
+typedef struct {
+    PyException_HEAD
+    PyObject *funcname; // the curses function responsible for the error
+} PyCursesErrorObject;
+
+#define _PyCursesErrorObject_CAST(PTR)  ((PyCursesErrorObject *)(PTR))
+
+static int
+PyCursesError_clear(PyObject *self)
+{
+    PyCursesErrorObject *exc = _PyCursesErrorObject_CAST(self);
+    Py_CLEAR(exc->funcname);
+    return _PyType_CAST(PyExc_Exception)->tp_clear(self);
+}
+
+static void
+PyCursesError_dealloc(PyObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+    (void)PyCursesError_clear(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static int
+PyCursesError_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    PyCursesErrorObject *exc = _PyCursesErrorObject_CAST(self);
+    Py_VISIT(exc->funcname);
+    return _PyType_CAST(PyExc_Exception)->tp_traverse(self, visit, arg);
+}
+
+/*[clinic input]
+@getter
+_curses.error.funcname
+[clinic start generated code]*/
+
+static PyObject *
+_curses_error_funcname_get_impl(PyCursesErrorObject *self)
+/*[clinic end generated code: output=bddac78d045d9e92 input=a0ed7b814bba25e9]*/
+{
+    PyObject *res = self->funcname;
+    return res == NULL ? Py_None : Py_NewRef(res);
+}
+
+/*[clinic input]
+@setter
+_curses.error.funcname
+[clinic start generated code]*/
+
+static int
+_curses_error_funcname_set_impl(PyCursesErrorObject *self, PyObject *value)
+/*[clinic end generated code: output=1320e03bf8c27ca8 input=e7ad8f11456a402e]*/
+{
+    if (PyUnicode_Check(value) || Py_IsNone(value)) {
+        Py_XSETREF(self->funcname, Py_NewRef(value));
+        return 0;
+    }
+    PyErr_Format(PyExc_TypeError, "expecting a str or None, got %T", value);
+    return -1;
+}
+
+/* Utility Error Procedures */
+
+static inline void
+PyCursesError_SetImplementation(
+#ifndef NDEBUG
+    cursesmodule_state *state,
+#else
+    cursesmodule_state *Py_UNUSED(state),
+#endif
+    const char *funcname)
+{
+    assert(funcname != NULL);
+    PyObject *exc = PyErr_GetRaisedException();
+    assert(PyErr_GivenExceptionMatches(exc, state->error));
+    PyObject *p_funcname = PyUnicode_FromString(funcname);
+    if (p_funcname == NULL) {
+        goto error;
+    }
+    int rc = PyObject_SetAttrString(exc, "funcname", p_funcname);
+    Py_DECREF(p_funcname);
+    if (rc < 0) {
+        goto error;
+    }
+
+restore:
+    PyErr_SetRaisedException(exc);
+    return;
+
+error:
+    // The curses exception is likely more important than the
+    // exceptions that we get if we fail to set the attribute.
+    PyErr_Clear();
+    goto restore;
+}
+
+/*
+ * Format a curses error.
+ *
+ * The function name in the error message is 'simple_funcname'.
+ * If 'simple_funcname' is NULL, it falls back 'curses_funcname'.
+ */
+static void
+_PyCursesSetError(cursesmodule_state *state,
+                  const char *simple_funcname,
+                  const char *curses_funcname)
+{
+    assert(!PyErr_Occurred());
+    if (simple_funcname == NULL && curses_funcname == NULL) {
+        PyErr_SetString(state->error, catchall_ERR);
+        return;
+    }
+    if (simple_funcname == NULL) {
+        simple_funcname = curses_funcname;
+    }
+    PyErr_Format(state->error, CURSES_ERROR_FORMAT, simple_funcname);
+    PyCursesError_SetImplementation(state, curses_funcname);
+}
+
+static void
+PyCursesSetError_From(PyObject *, const char *, const char *);
+
+/*
+ * Format a curses error using 'funcname' as the displayed
+ * function name and underlying curses function name.
+ */
+static inline void
+PyCursesSetError(PyObject *module, const char *funcname)
+{
+    PyCursesSetError_From(module, funcname, funcname);
+}
+
+static void
+PyCursesSetError_From(PyObject *module,
+                      const char *simple_funcname,
+                      const char *curses_funcname)
+{
+    cursesmodule_state *state = get_cursesmodule_state(module);
+    _PyCursesSetError(state, simple_funcname, curses_funcname);
+}
+
+static void
+PyCursesSetError_ForWin_From(PyCursesWindowObject *,
+                             const char *, const char *);
+
+static inline void
+PyCursesSetError_ForWin(PyCursesWindowObject *win, const char *funcname)
+{
+    PyCursesSetError_ForWin_From(win, funcname, funcname);
+}
+
+static void
+PyCursesSetError_ForWin_From(PyCursesWindowObject *win,
+                             const char *simple_funcname,
+                             const char *curses_funcname)
+{
+    cursesmodule_state *state = get_cursesmodule_state_by_win(win);
+    _PyCursesSetError(state, simple_funcname, curses_funcname);
+}
 
 /* Utility Checking Procedures */
 
@@ -283,44 +452,52 @@ _PyCursesStatefulCheckFunction(PyObject *module, int called, const char *funcnam
 
 /* Utility Functions */
 
-static inline void
-_PyCursesSetError(cursesmodule_state *state, const char *funcname)
-{
-    if (funcname == NULL) {
-        PyErr_SetString(state->error, catchall_ERR);
-    }
-    else {
-        PyErr_Format(state->error, "%s() returned ERR", funcname);
-    }
-}
-
 /*
- * Check the return code from a curses function and return None
- * or raise an exception as appropriate.
+ * Check the return code from a curses function, returning None
+ * on success and setting an exception on error.
  */
 
-static PyObject *
-PyCursesCheckERR(PyObject *module, int code, const char *fname)
+static PyObject *PyCursesCheckERR_From(PyObject *, int,
+                                       const char *, const char *);
+
+static inline PyObject *
+PyCursesCheckERR(PyObject *module, int code, const char *funcname)
 {
-    if (code != ERR) {
-        Py_RETURN_NONE;
-    } else {
-        cursesmodule_state *state = get_cursesmodule_state(module);
-        _PyCursesSetError(state, fname);
-        return NULL;
-    }
+    return PyCursesCheckERR_From(module, code, funcname, funcname);
 }
 
 static PyObject *
-PyCursesCheckERR_ForWin(PyCursesWindowObject *win, int code, const char *fname)
+PyCursesCheckERR_From(PyObject *module, int code,
+                      const char *simple_funcname,
+                      const char *curses_funcname)
 {
     if (code != ERR) {
         Py_RETURN_NONE;
-    } else {
-        cursesmodule_state *state = get_cursesmodule_state_by_win(win);
-        _PyCursesSetError(state, fname);
-        return NULL;
     }
+    PyCursesSetError_From(module, simple_funcname, curses_funcname);
+    return NULL;
+}
+
+static PyObject *PyCursesCheckERR_ForWin_From(PyCursesWindowObject *, int,
+                                              const char *, const char *);
+
+static inline PyObject *
+PyCursesCheckERR_ForWin(PyCursesWindowObject *win, int code,
+                        const char *funcname)
+{
+    return PyCursesCheckERR_ForWin_From(win, code, funcname, funcname);
+}
+
+static PyObject *
+PyCursesCheckERR_ForWin_From(PyCursesWindowObject *win, int code,
+                             const char *simple_funcname,
+                             const char *curses_funcname)
+{
+    if (code != ERR) {
+        Py_RETURN_NONE;
+    }
+    PyCursesSetError_ForWin_From(win, simple_funcname, curses_funcname);
+    return NULL;
 }
 
 /* Convert an object to a byte (an integer of type chtype):
@@ -2597,6 +2774,29 @@ PyCursesWindow_set_encoding(PyCursesWindowObject *self, PyObject *value, void *P
 #define clinic_state()  (get_cursesmodule_state_by_cls(Py_TYPE(self)))
 #include "clinic/_cursesmodule.c.h"
 #undef clinic_state
+
+static PyGetSetDef PyCursesError_Type_getsets[] = {
+    _CURSES_ERROR_FUNCNAME_GETSETDEF
+    {NULL}
+};
+
+static PyType_Slot PyCursesError_Type_slots[] = {
+    {Py_tp_getset, PyCursesError_Type_getsets},
+    {Py_tp_dealloc, PyCursesError_dealloc},
+    {Py_tp_traverse, PyCursesError_traverse},
+    {Py_tp_clear, PyCursesError_clear},
+    {0, NULL},
+};
+
+static PyType_Spec PyCursesError_Type_spec = {
+    .name = "_curses.error",
+    .basicsize = sizeof(PyCursesErrorObject),
+    .flags = Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_BASETYPE
+        | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_HAVE_GC,
+    .slots = PyCursesError_Type_slots,
+};
 
 static PyMethodDef PyCursesWindow_methods[] = {
     _CURSES_WINDOW_ADDCH_METHODDEF
@@ -4990,7 +5190,22 @@ cursesmodule_exec(PyObject *module)
     curses_module_loaded = 1;
 
     cursesmodule_state *state = get_cursesmodule_state(module);
-    /* Initialize object type */
+    /* Initialize error type */
+    PyObject *bases = PyTuple_Pack(1, PyExc_Exception);
+    if (bases == NULL) {
+        return -1;
+    }
+    state->error = PyType_FromModuleAndSpec(module, &PyCursesError_Type_spec,
+                                            bases);
+    Py_DECREF(bases);
+    if (state->error == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, _PyType_CAST(state->error)) < 0) {
+        return -1;
+    }
+
+    /* Initialize window type */
     state->window_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         module, &PyCursesWindow_Type_spec, NULL);
     if (state->window_type == NULL) {
@@ -5019,16 +5234,6 @@ cursesmodule_exec(PyObject *module)
     }
     int rc = PyDict_SetItemString(module_dict, "_C_API", capi_capsule);
     Py_DECREF(capi_capsule);
-    if (rc < 0) {
-        return -1;
-    }
-
-    /* For exception curses.error */
-    state->error = PyErr_NewException("_curses.error", NULL, NULL);
-    if (state->error == NULL) {
-        return -1;
-    }
-    rc = PyDict_SetItemString(module_dict, "error", state->error);
     if (rc < 0) {
         return -1;
     }
