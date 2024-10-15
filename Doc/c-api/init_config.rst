@@ -1825,14 +1825,18 @@ return ``-1`` on error:
         PyInitConfig_Free(config);
         return 0;
 
-        // Display the error message
-        const char *err_msg;
     error:
-        (void)PyInitConfig_GetError(config, &err_msg);
-        printf("PYTHON INIT ERROR: %s\n", err_msg);
-        PyInitConfig_Free(config);
+        {
+            // Display the error message
+            // This uncommon braces style is used, because you cannot make
+            // goto targets point to variable declarations.
+            const char *err_msg;
+            (void)PyInitConfig_GetError(config, &err_msg);
+            printf("PYTHON INIT ERROR: %s\n", err_msg);
+            PyInitConfig_Free(config);
 
-        return -1;
+            return -1;
+        }
     }
 
 

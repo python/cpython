@@ -1902,11 +1902,13 @@ static int test_initconfig_api(void)
     Py_Finalize();
     return 0;
 
-    const char *err_msg;
 error:
-    (void)PyInitConfig_GetError(config, &err_msg);
-    printf("Python init failed: %s\n", err_msg);
-    exit(1);
+    {
+        const char *err_msg;
+        (void)PyInitConfig_GetError(config, &err_msg);
+        printf("Python init failed: %s\n", err_msg);
+        exit(1);
+    }
 }
 
 
@@ -2050,11 +2052,13 @@ static int test_initconfig_module(void)
     Py_Finalize();
     return 0;
 
-    const char *err_msg;
 error:
-    (void)PyInitConfig_GetError(config, &err_msg);
-    printf("Python init failed: %s\n", err_msg);
-    exit(1);
+    {
+        const char *err_msg;
+        (void)PyInitConfig_GetError(config, &err_msg);
+        printf("Python init failed: %s\n", err_msg);
+        exit(1);
+    }
 }
 
 
