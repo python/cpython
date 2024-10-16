@@ -155,11 +155,11 @@ layout_to_dict(const PyLongLayout *layout)
         goto error;
     }
 
-    value = PyLong_FromLong(layout->endian);
+    value = PyLong_FromLong(layout->endianness);
     if (value == NULL) {
         goto error;
     }
-    res = PyDict_SetItemString(dict, "endian", value);
+    res = PyDict_SetItemString(dict, "endianness", value);
     Py_DECREF(value);
     if (res < 0) {
         goto error;

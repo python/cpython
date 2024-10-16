@@ -678,7 +678,7 @@ class LongTests(unittest.TestCase):
             'bits_per_digit': int_info.bits_per_digit,
             'digit_size': int_info.sizeof_digit,
             'digits_order': -1,
-            'endian': -1 if sys.byteorder == 'little' else 1,
+            'endianness': -1 if sys.byteorder == 'little' else 1,
         }
         self.assertEqual(layout, expected)
 

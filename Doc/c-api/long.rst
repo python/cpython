@@ -619,10 +619,12 @@ Export API
 
 .. c:struct:: PyLongLayout
 
-   Layout of an array of digits, used by Python :class:`int` object.
+   Layout of an array of "digits" ("limbs" in the GMP terminology), used to
+   represent absolute value for arbitrary precision integers.
 
    Use :c:func:`PyLong_GetNativeLayout` to get the native layout of Python
-   :class:`int` objects.
+   :class:`int` objects, used internally for integers with "big enough"
+   absolute value.
 
    See also :data:`sys.int_info` which exposes similar information to Python.
 
@@ -654,6 +656,11 @@ Export API
    Get the native layout of Python :class:`int` objects.
 
    See the :c:struct:`PyLongLayout` structure.
+
+   The function must not be called before Python initialization nor after
+   Python finalization. The returned layout is valid until Python is
+   finalized. The layout is the same for all Python sub-interpreters and
+   so it can be cached.
 
 
 .. c:struct:: PyLongExport
@@ -695,9 +702,6 @@ Export API
    On success, set *\*export_long* and return 0.
    On error, set an exception and return -1.
 
-   This function always succeeds if *obj* is a Python :class:`int` object or a
-   subclass.
-
    If *export_long.digits* is not ``NULL``, :c:func:`PyLong_FreeExport` must be
    called when the export is no longer needed.
 
@@ -718,7 +722,8 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
 
    A Python :class:`int` writer instance.
 
-   The instance must be destroyed by :c:func:`PyLongWriter_Finish`.
+   The instance must be destroyed by :c:func:`PyLongWriter_Finish` or
+   :c:func:`PyLongWriter_Discard`.
 
 
 .. c:function:: PyLongWriter* PyLongWriter_Create(int negative, Py_ssize_t ndigits, void **digits)
@@ -733,10 +738,11 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
    *ndigits* is the number of digits in the *digits* array. It must be
    greater than or equal to 0.
 
-   The caller must initialize the array of digits *digits* and then call
-   :c:func:`PyLongWriter_Finish` to get a Python :class:`int`. Digits must be
-   in the range [``0``; ``PyLong_BASE - 1``]. Unused digits must be set to
-   ``0``.
+   The caller can either initialize the array of digits *digits* and then call
+   :c:func:`PyLongWriter_Finish` to get a Python :class:`int`, or call
+   :c:func:`PyLongWriter_Discard` to destroy the writer instance.  Digits must
+   be in the range [``0``; ``(1 << sys.int_info.bits_per_digit) - 1``].  Unused
+   digits must be set to ``0``.
 
 
 .. c:function:: PyObject* PyLongWriter_Finish(PyLongWriter *writer)
@@ -749,4 +755,4 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
 
 .. c:function:: void PyLongWriter_Discard(PyLongWriter *writer)
 
-   Discard the internal object and destroy the writer instance.
+   Discard a :c:type:`PyLongWriter` created by :c:func:`PyLongWriter_Create`.
