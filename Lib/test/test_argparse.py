@@ -2837,7 +2837,6 @@ class TestGroupConstructor(TestCase):
             "ArgumentParser.add_argument_group is deprecated."
         )
 
-        # The parser uses a default of '-' if prefix_chars is not set
         with self.assertWarnsRegex(DeprecationWarning, msg):
             parser.add_argument_group(prefix_chars='-')
 
