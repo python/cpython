@@ -1868,6 +1868,10 @@ Argument groups
     The function exists on the API by accident through inheritance and
     will be removed in the future.
 
+   .. versionchanged:: 3.14
+   Passing the prefix_chars_ parameter to :meth:`ArgumentParser.add_argument_group`
+   is now deprecated.
+
 
 Mutual exclusion
 ^^^^^^^^^^^^^^^^

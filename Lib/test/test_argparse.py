@@ -2816,6 +2816,37 @@ class TestPositionalsGroups(TestCase):
         result = parser.parse_args('1 2 3 4'.split())
         self.assertEqual(expected, result)
 
+class TestGroupConstructor(TestCase):
+    def test_group_prefix_chars(self):
+        parser = ErrorRaisingArgumentParser()
+
+        msg = (
+            "The use of the undocumented 'prefix_chars' parameter in "
+            "ArgumentParser.add_argument_group is deprecated."
+        )
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            parser.add_argument_group(prefix_chars='-+')
+
+    def test_group_prefix_chars_default(self):
+        # "default" isn't quite the right word here, but it's the same as
+        # the parser's default prefix so it's a good test
+        parser = ErrorRaisingArgumentParser()
+
+        msg = (
+            "The use of the undocumented 'prefix_chars' parameter in "
+            "ArgumentParser.add_argument_group is deprecated."
+        )
+
+        # The parser uses a default of '-' if prefix_chars is not set
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            parser.add_argument_group(prefix_chars='-')
+
+    def test_group_without_prefix_chars(self):
+        parser = ErrorRaisingArgumentParser()
+        group = parser.add_argument_group()
+        group.add_argument('--foo')
+        self.assertEqual(parser.parse_args(['--foo', 'bar']), NS(foo='bar'))
+
 # ===================
 # Parent parser tests
 # ===================

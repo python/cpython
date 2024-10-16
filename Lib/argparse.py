@@ -1662,6 +1662,15 @@ class _ActionsContainer(object):
 class _ArgumentGroup(_ActionsContainer):
 
     def __init__(self, container, title=None, description=None, **kwargs):
+
+        if 'prefix_chars' in kwargs:
+            import warnings
+            depr_msg = (
+                "The use of the undocumented 'prefix_chars' parameter in "
+                "ArgumentParser.add_argument_group is deprecated."
+            )
+            warnings.warn(depr_msg, DeprecationWarning, stacklevel=3)
+
         # add any missing keyword arguments by checking the container
         update = kwargs.setdefault
         update('conflict_handler', container.conflict_handler)
