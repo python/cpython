@@ -1202,10 +1202,7 @@ def parse(source, parser=None):
     """
     if getattr(source, 'encoding', None) == 'ISO-8859-1' and source.mode == 'r':
         import warnings
-        warnings.warn(
-            "For file objects containing XML data "
-            "with non-ASCII and non-UTF-8 encoding (for example. ISO 8859-1), "
-            "the file must have been opened in binary mode.", category=RuntimeWarning)
+        warnings.warn("ISO-8859-1 encoding should be read using 'rb' mode.", category=RuntimeWarning)
     tree = ElementTree()
     tree.parse(source, parser)
     return tree
