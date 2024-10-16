@@ -33,12 +33,16 @@ class _MonitoringTracer:
         E.INSTRUCTION: 'opcode',
     }
 
+    GLOBAL_EVENTS = E.PY_START | E.PY_RESUME | E.PY_THROW | E.PY_UNWIND | E.RAISE
+    LOCAL_EVENTS = E.LINE | E.JUMP | E.PY_RETURN | E.PY_YIELD | E.STOP_ITERATION
+
     def __init__(self):
         self._tool_id = sys.monitoring.DEBUGGER_ID
         self._name = 'bdbtracer'
         self._tracefunc = None
         self._disable_current_event = False
         self._tracing_thread = None
+        self._enabled = False
 
     def start_trace(self, tracefunc):
         self._tracefunc = tracefunc
@@ -47,7 +51,7 @@ class _MonitoringTracer:
         if curr_tool is None:
             sys.monitoring.use_tool_id(self._tool_id, self._name)
         elif curr_tool == self._name:
-            sys.monitoring.set_events(self._tool_id, 0)
+            sys.monitoring.clear_tool_id(self._tool_id)
         else:
             raise ValueError('Another debugger is using the monitoring tool')
         E = sys.monitoring.events
@@ -57,17 +61,18 @@ class _MonitoringTracer:
             sys.monitoring.register_callback(self._tool_id, event, callback)
             if event != E.INSTRUCTION:
                 all_events |= event
+        self.check_trace_func()
         self.check_trace_opcodes()
-        sys.monitoring.set_events(self._tool_id, all_events)
+        sys.monitoring.set_events(self._tool_id, self.GLOBAL_EVENTS)
+        self._enabled = True
 
     def stop_trace(self):
+        self._enabled = False
         self._tracing_thread = None
         curr_tool = sys.monitoring.get_tool(self._tool_id)
         if curr_tool != self._name:
             return
-        for event in self.EVENT_CALLBACK_MAP.keys():
-            sys.monitoring.register_callback(self._tool_id, event, None)
-        sys.monitoring.set_events(self._tool_id, 0)
+        sys.monitoring.clear_tool_id(self._tool_id)
         self.check_trace_opcodes()
         sys.monitoring.free_tool_id(self._tool_id)
 
@@ -88,6 +93,8 @@ class _MonitoringTracer:
             try:
                 frame = sys._getframe().f_back
                 ret = func(self, frame, *args)
+                if self._enabled and frame.f_trace:
+                    self.check_trace_func()
                 if self._disable_current_event:
                     return sys.monitoring.DISABLE
                 else:
@@ -105,6 +112,8 @@ class _MonitoringTracer:
         local_tracefunc = self._tracefunc(frame, 'call', None)
         if local_tracefunc is not None:
             frame.f_trace = local_tracefunc
+            if self._enabled:
+                sys.monitoring.set_local_events(self._tool_id, code, self.LOCAL_EVENTS)
 
     @callback_wrapper
     def return_callback(self, frame, code, offset, retval):
@@ -162,6 +171,14 @@ class _MonitoringTracer:
             sys.monitoring.set_local_events(self._tool_id, frame.f_code, E.INSTRUCTION)
         else:
             sys.monitoring.set_local_events(self._tool_id, frame.f_code, 0)
+
+    def check_trace_func(self, frame=None):
+        if frame is None:
+            frame = sys._getframe().f_back
+        while frame is not None:
+            if frame.f_trace is not None:
+                sys.monitoring.set_local_events(self._tool_id, frame.f_code, self.LOCAL_EVENTS)
+            frame = frame.f_back
 
     def _get_lineno(self, code, offset):
         import dis
