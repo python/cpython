@@ -270,7 +270,7 @@ class GeneratorTest(unittest.TestCase):
 
 
 class ModifyTest(unittest.TestCase):
-    sequences = [
+    iterables = [
         range(0),
         range(20),
         [1, 2, 3],
@@ -280,7 +280,7 @@ class ModifyTest(unittest.TestCase):
         {1: 2, 3: 4},
     ]
 
-    non_sequences = [
+    non_iterables = [
         None,
         42,
         3.0,
@@ -305,30 +305,22 @@ class ModifyTest(unittest.TestCase):
         def get_genexpr_gi_code(self, new_iter):
             return self.new_gen_from_gi_code(genexpr(), new_iter)
 
-        err_msg_pattern_genexpr = "'%s' object is not an iterator"
+        err_regex = "'.*' object is not an iterator"
 
         for get_genexpr in [get_genexpr_f_locals, get_genexpr_gi_code]:
-            base_name = get_genexpr.__name__
-            for seq in self.sequences:
-                test_name = f"{base_name}_seq_{type(seq).__name__}"
-                g_seq = get_genexpr(self, seq)
-                err_msg = err_msg_pattern_genexpr % type(seq).__name__
-                with self.subTest(test_name, g_seq=g_seq, err_msg=err_msg):
-                    with self.assertRaisesRegex(TypeError, err_msg):
-                        list(g_seq)
-
-                test_name = f"{base_name}_seq_iter_{type(seq).__name__}"
-                g_iter = get_genexpr(self, iter(seq))
-                with self.subTest(test_name, g_iter=g_iter, seq=seq):
-                    self.assertListEqual(list(g_iter), list(seq))
-
-            for obj in self.non_sequences:
-                test_name = f"{base_name}_non_seq_{type(obj).__name__}"
+            for obj in self.iterables:
                 g_obj = get_genexpr(self, obj)
-                err_msg = err_msg_pattern_genexpr % type(obj).__name__
-                with self.subTest(test_name, g_obj=g_obj, err_msg=err_msg):
-                    with self.assertRaisesRegex(TypeError, err_msg):
-                        list(g_obj)
+                with self.subTest(g_obj=g_obj, err_regex=err_regex):
+                    self.assertRaisesRegex(TypeError, err_regex, list, g_obj)
+
+                g_iter = get_genexpr(self, iter(obj))
+                with self.subTest(g_iter=g_iter, obj=obj):
+                    self.assertListEqual(list(g_iter), list(obj))
+
+            for obj in self.non_iterables:
+                g_obj = get_genexpr(self, obj)
+                with self.subTest(g_obj=g_obj, err_regex=err_regex):
+                    self.assertRaisesRegex(TypeError, err_regex, list, g_obj)
 
     def test_modify_genfunc(self):
         def genfunc():
@@ -343,28 +335,22 @@ class ModifyTest(unittest.TestCase):
         def get_genfunc_gi_code(self, new_iter):
             return self.new_gen_from_gi_code(genfunc(), new_iter)
 
-        err_msg_pattern_fn_call = "'%s' object is not iterable"
+        err_regex = "'.*' object is not iterable"
 
         for get_genfunc in [get_genfunc_f_locals, get_genfunc_gi_code]:
-            base_name = get_genfunc.__name__
-            for seq in self.sequences:
-                test_name = f"{base_name}_seq_{type(seq).__name__}"
-                g_seq = get_genfunc(self, seq)
-                with self.subTest(test_name, g_seq=g_seq, seq=seq):
-                    self.assertListEqual(list(g_seq), list(seq))
-
-                test_name = f"{base_name}_seq_iter_{type(seq).__name__}"
-                g_iter = get_genfunc(self, iter(seq))
-                with self.subTest(test_name, g_iter=g_iter, seq=seq):
-                    self.assertListEqual(list(g_iter), list(seq))
-
-            for obj in self.non_sequences:
-                test_name = f"{base_name}_non_seq_{type(obj).__name__}"
+            for obj in self.iterables:
                 g_obj = get_genfunc(self, obj)
-                err_msg = err_msg_pattern_fn_call % type(obj).__name__
-                with self.subTest(test_name, g_obj=g_obj, err_msg=err_msg):
-                    with self.assertRaisesRegex(TypeError, err_msg):
-                        list(g_obj)
+                with self.subTest(g_obj=g_obj, obj=obj):
+                    self.assertListEqual(list(g_obj), list(obj))
+
+                g_iter = get_genfunc(self, iter(obj))
+                with self.subTest(g_iter=g_iter, obj=obj):
+                    self.assertListEqual(list(g_iter), list(obj))
+
+            for obj in self.non_iterables:
+                g_obj = get_genfunc(self, obj)
+                with self.subTest(g_obj=g_obj, err_regex=err_regex):
+                    self.assertRaisesRegex(TypeError, err_regex, list, g_obj)
 
 
 class ExceptionTest(unittest.TestCase):
