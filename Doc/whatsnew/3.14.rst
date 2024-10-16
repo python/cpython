@@ -225,6 +225,14 @@ ast
 * The ``repr()`` output for AST nodes now includes more information.
   (Contributed by Tomas R in :gh:`116022`.)
 
+concurrent.futures
+------------------
+
+* Add :class:`~concurrent.futures.InterpreterPoolExecutor`,
+  which exposes "subinterpreters (multiple Python interpreters in the
+  same process) to Python code.  This is separate from the proposed API
+  in :pep:`734`.
+  (Contributed by Eric Snow in :gh:`124548`.)
 
 ctypes
 ------
