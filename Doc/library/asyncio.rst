@@ -58,6 +58,52 @@ Additionally, there are **low-level** APIs for
 
 .. include:: ../includes/wasm-notavail.rst
 
+.. _asyncio-intro:
+
+As the **Hello World!** example shows, you can start an asynchronous program by
+defining a ``async`` function and execute it with :func:`asyncio.run`.
+
+
+Alternatively, you can start currently asynchronous tasks with
+:class:`asyncio.TaskGroup`::
+
+    import asyncio
+
+    async def say_after(delay, what):
+        await asyncio.sleep(delay)
+        print(what)
+
+    async def main():
+        async with asyncio.TaskGroup() as tg:
+            task1 = tg.create_task(
+                say_after(1, 'hello'))
+
+            task2 = tg.create_task(
+                say_after(2, 'world'))
+
+    asyncio.run(main())
+
+In this case, the asynchronous function ``main`` will invoke another two
+*current* tasks via :func:`TaskGroup.create_task`.
+All the tasks are awaited before the context manager ``tg`` exits.
+
+``asyncio`` schedules the asynchronous tasks in the :ref:`asyncio-event-loop`.
+You can explicitly create one and append tasks into it::
+
+    import asyncio
+
+    loop = asyncio.get_event_loop()
+    tasks = [
+        loop.create_task(say_after(1, "hello")),
+        loop.create_task(say_after(2, "world"))
+    ]
+    loop.run_until_complete(asyncio.gather(*tasks))
+    loop.close()
+
+Here, we use :func:`get_event_loop` to obtain the event loop for cunrret thread.
+After appending two asynchronous tasks into the loop, we make the loop wait
+until both tasks finish.
+
 .. _asyncio-cli:
 
 .. rubric:: asyncio REPL
