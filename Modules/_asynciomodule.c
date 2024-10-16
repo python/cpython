@@ -651,7 +651,7 @@ future_awaited_by_discard_lock_held(asyncio_state *state, PyObject *fut, PyObjec
     if (_fut->fut_awaited_by_is_set) {
         assert(PySet_CheckExact(_fut->fut_awaited_by));
         int err = PySet_Discard(_fut->fut_awaited_by, thing);
-        if (err < 0 && PyErr_Occurred()) {
+        if (err < 0) {
             return -1;
         } else {
             return 0;
