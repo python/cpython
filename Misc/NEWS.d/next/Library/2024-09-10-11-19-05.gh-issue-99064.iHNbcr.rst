@@ -1,2 +1,2 @@
 Added a warning in the :func:`xml.etree.ElementTree.parse` for
-``'ISO-8859-1'`` encoding files opened in ``r`` mode. Patch by RUANG.
+files opened in ``r`` mode with ``'ISO-8859-1'`` encoding. Patch by RUANG.
