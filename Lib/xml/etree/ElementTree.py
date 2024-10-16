@@ -1205,7 +1205,7 @@ def parse(source, parser=None):
         import warnings
         warnings.warn(
             "For file objects containing XML data "
-            "with non-ASCII and non-UTF-8 encoding (e.g. ISO 8859-1), "
+            "with non-ASCII and non-UTF-8 encoding (for example. ISO 8859-1), "
             "the file must have been opened in binary mode.", category=RuntimeWarning)
     tree = ElementTree()
     tree.parse(source, parser)
