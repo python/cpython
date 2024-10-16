@@ -22,10 +22,11 @@ module _heapq
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=d7cca0a2e4c0ceb3]*/
 
 static int
-siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
+siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t *ppos)
 {
     PyObject *newitem, *parent, **arr;
     Py_ssize_t parentpos, size;
+    Py_ssize_t pos = *ppos;
     int cmp;
 
     assert(PyList_Check(heap));
@@ -63,6 +64,7 @@ siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
         arr[pos] = parent;
         pos = parentpos;
     }
+    *ppos = pos;
     return 0;
 }
 
@@ -113,7 +115,7 @@ siftup(PyListObject *heap, Py_ssize_t pos)
         pos = childpos;
     }
     /* Bubble it up to its final resting place (by sifting its parents down). */
-    return siftdown(heap, startpos, pos);
+    return siftdown(heap, startpos, &pos);
 }
 
 /*[clinic input]
@@ -132,8 +134,8 @@ _heapq_heappush_impl(PyObject *module, PyObject *heap, PyObject *item)
 {
     if (PyList_Append(heap, item))
         return NULL;
-
-    if (siftdown((PyListObject *)heap, 0, PyList_GET_SIZE(heap)-1))
+    Py_ssize_t pos = PyList_GET_SIZE(heap)-1;
+    if (siftdown((PyListObject *)heap, 0, &pos))
         return NULL;
     Py_RETURN_NONE;
 }
@@ -275,6 +277,81 @@ _heapq_heappushpop_impl(PyObject *module, PyObject *heap, PyObject *item)
     if (siftup((PyListObject *)heap, 0)) {
         Py_DECREF(returnitem);
         return NULL;
+    }
+    return returnitem;
+}
+
+
+/*[clinic input]
+_heapq.heapremove
+
+    heap: object(subclass_of='&PyList_Type')
+    index: Py_ssize_t
+    item: object = NULL
+    /
+
+Remove the element at the given index maintaining the heap invariant.
+
+An optional item can be provided to replace the removed item. The removed
+item is returned.
+This can be used to efficiently remove an item from the heap or
+to readjust the heap when the comparative "value" of
+an item changes by removing and re-inserting the same item, e.g:
+
+    item.value=new_value
+    idx = heap.index(item)
+    heapq.heapremove(heap, idx, item)
+[clinic start generated code]*/
+
+static PyObject *
+_heapq_heapremove_impl(PyObject *module, PyObject *heap, Py_ssize_t index,
+                       PyObject *item)
+/*[clinic end generated code: output=2d84b49ff0255276 input=13bbd40fb4dee29e]*/
+{
+    PyObject *returnitem;
+    Py_ssize_t n = PyList_GET_SIZE(heap);
+    if (index < 0)
+        index += n;
+    if (index < 0 || index >= n) {
+        PyErr_SetString(PyExc_IndexError, "index out of range");
+        return NULL;
+    }
+    returnitem = PyList_GET_ITEM(heap, index);
+    if (index < n - 1) {
+        /* common case */
+        if (item) {
+            PyList_SET_ITEM(heap, index, item);
+            Py_INCREF(item);
+        } else {
+            /* replace with the last value */
+            item = PyList_GET_ITEM(heap, n-1);
+            Py_INCREF(item);
+            if (PyList_SetSlice(heap, n-1, n, NULL)) {
+                Py_DECREF(item);
+                return NULL;
+            }
+            PyList_SET_ITEM(heap, index, item);
+        }
+        if (siftdown((PyListObject *)heap, 0, &index) || siftup((PyListObject *)heap, index)) {
+            Py_DECREF(returnitem);
+            return NULL;
+        }
+    } else {
+        /* the tail case */
+        if (item) {
+            PyList_SET_ITEM(heap, index, item);
+            Py_INCREF(item);
+            if (siftdown((PyListObject *)heap, 0, &index)) {
+                Py_DECREF(returnitem);
+                return NULL;
+            }
+        } else {
+            Py_INCREF(returnitem);
+            if (PyList_SetSlice(heap, index, n, NULL)) {
+                Py_DECREF(returnitem);
+                return NULL;
+            }
+        }
     }
     return returnitem;
 }
@@ -540,6 +617,7 @@ static PyMethodDef heapq_methods[] = {
     _HEAPQ__HEAPPOP_MAX_METHODDEF
     _HEAPQ__HEAPIFY_MAX_METHODDEF
     _HEAPQ__HEAPREPLACE_MAX_METHODDEF
+    _HEAPQ_HEAPREMOVE_METHODDEF
     {NULL, NULL}           /* sentinel */
 };
 
