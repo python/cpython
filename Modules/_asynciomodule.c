@@ -594,7 +594,7 @@ future_awaited_by_add_lock_held(asyncio_state *state, PyObject *fut, PyObject *t
     }
 
     if (_fut->fut_awaited_by_is_set) {
-        assert(PySet_Check(_fut->fut_awaited_by));
+        assert(PySet_CheckExact(_fut->fut_awaited_by));
         return PySet_Add(_fut->fut_awaited_by, thing);
     }
 
