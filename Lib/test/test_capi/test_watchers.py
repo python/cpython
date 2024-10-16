@@ -1,10 +1,11 @@
+import threading
 import unittest
 import contextvars
 
 from contextlib import contextmanager, ExitStack
 from test.support import (
     catch_unraisable_exception, import_helper,
-    gc_collect, suppress_immortalization)
+    gc_collect, suppress_immortalization, threading_helper)
 
 
 # Skip this test if the _testcapi module isn't available.
@@ -658,6 +659,76 @@ class TestContextObjectWatchers(unittest.TestCase):
         with self.context_watcher(0) as switches:
             ctx.run(lambda: None)
         self.assertEqual(switches, [ctx, None])
+
+    def test_reenter_default_context(self):
+        _testcapi.clear_context_stack()
+        # contextvars.copy_context() creates the thread's default context (via
+        # the context_get C function).
+        ctx = contextvars.copy_context()
+        with self.context_watcher(0) as switches:
+            ctx.run(lambda: None)
+        self.assertEqual(len(switches), 2)
+        self.assertEqual(switches[0], ctx)
+        base_ctx = switches[1]
+        self.assertIsNotNone(base_ctx)
+        self.assertIsNot(base_ctx, ctx)
+        with self.assertRaisesRegex(RuntimeError, 'already entered'):
+            base_ctx.run(lambda: None)
+
+    def test_default_context_enter(self):
+        _testcapi.clear_context_stack()
+        with self.context_watcher(0) as switches:
+            ctx = contextvars.copy_context()
+            ctx.run(lambda: None)
+        self.assertEqual(len(switches), 3)
+        base_ctx = switches[0]
+        self.assertIsNotNone(base_ctx)
+        self.assertEqual(switches, [base_ctx, ctx, base_ctx])
+
+    @threading_helper.requires_working_threading()
+    def test_default_context_exit_during_thread_cleanup(self):
+        # Context watchers are per-interpreter, not per-thread.
+        with self.context_watcher(0) as switches:
+            def _thread_main():
+                _testcapi.clear_context_stack()
+                # contextvars.copy_context() creates the thread's default
+                # context (via the context_get C function).
+                contextvars.copy_context()
+                # This test only cares about the final switch that happens when
+                # exiting the thread's default context during thread cleanup.
+                switches.clear()
+
+            thread = threading.Thread(target=_thread_main)
+            thread.start()
+            threading_helper.join_thread(thread)
+        self.assertEqual(switches, [None])
+
+    @threading_helper.requires_working_threading()
+    def test_thread_cleanup_with_entered_context(self):
+        unraisables = []
+        try:
+            with catch_unraisable_exception() as cm:
+                with self.context_watcher(0) as switches:
+                    def _thread_main():
+                        _testcapi.clear_context_stack()
+                        ctx = contextvars.copy_context()
+                        _testcapi.context_enter(ctx)
+                        switches.clear()
+
+                    thread = threading.Thread(target=_thread_main)
+                    thread.start()
+                    threading_helper.join_thread(thread)
+                unraisables.append(cm.unraisable)
+            self.assertEqual(switches, [])
+            self.assertEqual(len(unraisables), 1)
+            self.assertIsNotNone(unraisables[0])
+            self.assertRegex(unraisables[0].err_msg,
+                             r'^Exception ignored during reset of thread state')
+            self.assertRegex(str(unraisables[0].exc_value), r'still entered')
+        finally:
+            # Break reference cycle
+            unraisables = None
+
 
 if __name__ == "__main__":
     unittest.main()

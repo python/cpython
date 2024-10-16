@@ -725,6 +725,15 @@ clear_context_stack(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
 }
 
 static PyObject *
+context_enter(PyObject *self, PyObject *ctx)
+{
+    if (PyContext_Enter(ctx)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 get_context_switches(PyObject *Py_UNUSED(self), PyObject *watcher_id)
 {
     assert(PyLong_Check(watcher_id));
@@ -841,6 +850,7 @@ static PyMethodDef test_methods[] = {
     {"add_context_watcher",         add_context_watcher,        METH_O,       NULL},
     {"clear_context_watcher",       clear_context_watcher,      METH_O,       NULL},
     {"clear_context_stack",      clear_context_stack,     METH_NOARGS,  NULL},
+    {"context_enter",            context_enter,           METH_O,       NULL},
     {"get_context_switches",     get_context_switches,    METH_O,       NULL},
     {"allocate_too_many_context_watchers",
      (PyCFunction) allocate_too_many_context_watchers,       METH_NOARGS,  NULL},

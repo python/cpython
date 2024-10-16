@@ -113,6 +113,10 @@ context_event_name(PyContextEvent event) {
 static void
 notify_context_watchers(PyThreadState *ts, PyContextEvent event, PyObject *ctx)
 {
+    // The callbacks are registered on the interpreter, not on the thread, so
+    // the only way callbacks can know which thread changed is by calling the
+    // callbacks from the affected thread.
+    assert(ts == _PyThreadState_GET());
     if (ctx == NULL) {
         // This will happen after exiting the last context in the stack, which
         // can occur if context_get was never called before entering a context
@@ -184,8 +188,9 @@ static inline void
 context_switched(PyThreadState *ts)
 {
     ts->context_ver++;
-    // ts->context is used instead of context_get() because context_get() might
-    // throw if ts->context is NULL.
+    // ts->context is used instead of context_get() because if ts->context is
+    // NULL, context_get() will either call context_switched -- causing a
+    // double notification -- or throw.
     notify_context_watchers(ts, Py_CONTEXT_SWITCHED, ts->context);
 }
 
@@ -244,6 +249,7 @@ _PyContext_Exit(PyThreadState *ts, PyObject *octx)
 
     ctx->ctx_prev = NULL;
     ctx->ctx_entered = 0;
+    ctx->ctx_owned_by_thread = 0;
     context_switched(ts);
     return 0;
 }
@@ -254,6 +260,37 @@ PyContext_Exit(PyObject *octx)
     PyThreadState *ts = _PyThreadState_GET();
     assert(ts != NULL);
     return _PyContext_Exit(ts, octx);
+}
+
+
+void
+_PyContext_ExitThreadOwned(PyThreadState *ts)
+{
+    assert(ts != NULL);
+    // notify_context_watchers requires the notification to come from the
+    // affected thread, so we can only exit the context(s) if ts belongs to the
+    // current thread.
+    _Bool on_thread = ts == _PyThreadState_GET();
+    while (ts->context != NULL
+           && PyContext_CheckExact(ts->context)
+           && ((PyContext *)ts->context)->ctx_owned_by_thread
+           && on_thread) {
+        if (_PyContext_Exit(ts, ts->context)) {
+            Py_UNREACHABLE();
+        }
+    }
+    if (ts->context != NULL) {
+        // This intentionally does not use tstate variants of these functions
+        // (e.g., _PyErr_GetRaisedException(ts)) because ts might not belong to
+        // the current thread.
+        PyObject *exc = PyErr_GetRaisedException();
+        PyErr_SetString(PyExc_RuntimeError,
+                        "contextvars.Context object(s) still entered during "
+                        "thread state reset");
+        PyErr_FormatUnraisable(
+            "Exception ignored during reset of thread state %p", ts);
+        PyErr_SetRaisedException(exc);
+    }
 }
 
 
@@ -433,6 +470,7 @@ _context_alloc(void)
     ctx->ctx_vars = NULL;
     ctx->ctx_prev = NULL;
     ctx->ctx_entered = 0;
+    ctx->ctx_owned_by_thread = 0;
     ctx->ctx_weakreflist = NULL;
 
     return ctx;
@@ -478,15 +516,21 @@ context_get(void)
 {
     PyThreadState *ts = _PyThreadState_GET();
     assert(ts != NULL);
-    PyContext *current_ctx = (PyContext *)ts->context;
-    if (current_ctx == NULL) {
-        current_ctx = context_new_empty();
-        if (current_ctx == NULL) {
-            return NULL;
+    if (ts->context == NULL) {
+        PyContext *ctx = context_new_empty();
+        if (ctx != NULL) {
+            if (_PyContext_Enter(ts, (PyObject *)ctx)) {
+                Py_UNREACHABLE();
+            }
+            ctx->ctx_owned_by_thread = 1;
         }
-        ts->context = (PyObject *)current_ctx;
+        assert(ts->context == (PyObject *)ctx);
+        Py_CLEAR(ctx);  // _PyContext_Enter created its own ref.
     }
-    return current_ctx;
+    // The current context may be NULL if the above context_new_empty() call
+    // failed.
+    assert(ts->context == NULL || PyContext_CheckExact(ts->context));
+    return (PyContext *)ts->context;
 }
 
 static int

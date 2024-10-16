@@ -126,7 +126,8 @@ Context object management functions:
    - ``Py_CONTEXT_SWITCHED``: The :term:`current context` has switched to a
      different context.  The object passed to the watch callback is the
      now-current :class:`contextvars.Context` object, or None if no context is
-     current.
+     current.  The thread executing the callback is guaranteed to be the thread
+     that experienced the context switch.
 
    .. versionadded:: 3.14
 
