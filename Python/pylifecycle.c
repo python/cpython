@@ -6,6 +6,7 @@
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
 #include "pycore_codecs.h"        // _PyCodec_Lookup()
 #include "pycore_context.h"       // _PyContext_Init()
+#include "pycore_debugger_utils.h"  // GENERATE_DEBUG_SECTION
 #include "pycore_dict.h"          // _PyDict_Fini()
 #include "pycore_exceptions.h"    // _PyExc_InitTypes()
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
@@ -41,10 +42,6 @@
 #include <stdlib.h>               // getenv()
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // isatty()
-#endif
-
-#if defined(__APPLE__)
-#  include <mach-o/loader.h>
 #endif
 
 #ifdef HAVE_SIGNAL_H
@@ -86,24 +83,9 @@ static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 /* Suppress deprecation warning for PyBytesObject.ob_shash */
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-
-#if defined(MS_WINDOWS)
-
-#pragma section("PyRuntime", read, write)
-__declspec(allocate("PyRuntime"))
-
-#elif defined(__APPLE__)
-
-__attribute__((
-    section(SEG_DATA ",PyRuntime")
-))
-
-#endif
-
+GENERATE_DEBUG_SECTION(PyRuntime,
 _PyRuntimeState _PyRuntime
-#if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
-__attribute__ ((section (".PyRuntime")))
-#endif
+)
 = _PyRuntimeState_INIT(_PyRuntime, _Py_Debug_Cookie);
 _Py_COMP_DIAG_POP
 
