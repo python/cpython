@@ -426,7 +426,7 @@ def wrap_future(future, *, loop=None):
 def future_add_to_awaited_by(fut, waiter, /):
     """Record that `fut` is awaited on by `waiter`."""
     # For the sake of keeping the implementation minimal and assuming
-    # that 99.9% of asyncio users use the built-in Futures and Tasks
+    # that most of asyncio users use the built-in Futures and Tasks
     # (or their subclasses), we only support native Future objects
     # and their subclasses.
     #

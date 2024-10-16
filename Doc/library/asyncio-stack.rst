@@ -28,7 +28,7 @@ a suspended *future*.
    current task, the function returns ``None``.
 
    If the function is called on *the current task*, the optional
-   keyword-only ``depth`` argument can be used to skip the specified
+   keyword-only *depth* argument can be used to skip the specified
    number of frames from top of the stack.
 
    If *file* is not specified the function will print to :data:`sys.stdout`.
