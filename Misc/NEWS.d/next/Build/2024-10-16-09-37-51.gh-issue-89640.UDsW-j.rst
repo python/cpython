@@ -1,0 +1,1 @@
+Improved detection of float word ordering on Linux.
