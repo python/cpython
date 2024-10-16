@@ -649,7 +649,7 @@ future_awaited_by_discard_lock_held(asyncio_state *state, PyObject *fut, PyObjec
         return 0;
     }
     if (_fut->fut_awaited_by_is_set) {
-        assert(PySet_Check(_fut->fut_awaited_by));
+        assert(PySet_CheckExact(_fut->fut_awaited_by));
         int err = PySet_Discard(_fut->fut_awaited_by, thing);
         if (err < 0 && PyErr_Occurred()) {
             return -1;
@@ -686,7 +686,7 @@ FutureObj_get_awaited_by(FutureObj *fut, void *Py_UNUSED(ignored))
     }
     if (fut->fut_awaited_by_is_set) {
         /* Already a set, just wrap it into a frozen set and return. */
-        assert(PySet_Check(fut->fut_awaited_by));
+        assert(PySet_CheckExact(fut->fut_awaited_by));
         return PyFrozenSet_New(fut->fut_awaited_by);
     }
 
