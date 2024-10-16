@@ -306,7 +306,11 @@ def wait(fs, timeout=None, return_when=ALL_COMPLETED):
 def _result_or_cancel(fut, timeout=None):
     try:
         try:
-            return fut.result(timeout)
+            return (fut.result(timeout), None)
+        except TimeoutError:
+            raise
+        except BaseException as exc:
+            return (None, exc)
         finally:
             fut.cancel()
     finally:
@@ -558,6 +562,7 @@ class Future(object):
 
     __class_getitem__ = classmethod(types.GenericAlias)
 
+
 class Executor(object):
     """This is an abstract base class for concrete asynchronous executors."""
 
@@ -594,6 +599,9 @@ class Executor(object):
                 before the given timeout.
             Exception: If fn(*args) raises for any values.
         """
+        return _MapResultIterator(self._map(fn, *iterables, timeout=timeout))
+
+    def _map(self, fn, *iterables, timeout=None):
         if timeout is not None:
             end_time = timeout + time.monotonic()
 
@@ -638,6 +646,24 @@ class Executor(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.shutdown(wait=True)
         return False
+
+
+class _MapResultIterator:
+    """The iterator returned by map()."""
+    def __init__(self, gen):
+        self.gen = gen
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        value, exc = next(self.gen)
+        if exc is not None:
+            raise exc
+        return value
+
+    def close(self):
+        self.gen.close()
 
 
 class BrokenExecutor(RuntimeError):

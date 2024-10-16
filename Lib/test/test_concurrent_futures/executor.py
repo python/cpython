@@ -49,25 +49,43 @@ class ExecutorTest:
                 list(map(pow, range(10), range(10))))
 
     def test_map_exception(self):
-        i = self.executor.map(divmod, [1, 1, 1, 1], [2, 3, 0, 5])
-        self.assertEqual(i.__next__(), (0, 1))
-        self.assertEqual(i.__next__(), (0, 1))
-        self.assertRaises(ZeroDivisionError, i.__next__)
+        i = self.executor.map(divmod, [5, 5, 5, 5], [2, 3, 0, 5])
+        self.assertEqual(next(i), (2, 1))
+        self.assertEqual(next(i), (1, 2))
+        self.assertRaises(ZeroDivisionError, next, i)
+        self.assertEqual(next(i), (1, 0))
+        self.assertRaises(StopIteration, next, i)
+        self.assertRaises(StopIteration, next, i)
+
+        i = self.executor.map(divmod, [5, 5, 5, 5], [2, 0, 3, 5], chunksize=3)
+        self.assertEqual(next(i), (2, 1))
+        self.assertRaises(ZeroDivisionError, next, i)
+        self.assertEqual(next(i), (1, 2))
+        self.assertEqual(next(i), (1, 0))
+        self.assertRaises(StopIteration, next, i)
+        self.assertRaises(StopIteration, next, i)
 
     @support.requires_resource('walltime')
     def test_map_timeout(self):
-        results = []
-        try:
-            for i in self.executor.map(time.sleep,
-                                       [0, 0, 6],
-                                       timeout=5):
-                results.append(i)
-        except futures.TimeoutError:
-            pass
-        else:
-            self.fail('expected TimeoutError')
+        i = self.executor.map(time.sleep, [0, 0, 6, 0], timeout=5)
+        next(i)
+        next(i)
+        self.assertRaises(futures.TimeoutError, next, i)
+        self.assertRaises(StopIteration, next, i)
+        self.assertRaises(StopIteration, next, i)
 
-        self.assertEqual([None, None], results)
+    def test_map_close(self):
+        i = self.executor.map(divmod, [5, 5, 5, 5], [2, 0, 3, 5])
+        self.assertEqual(next(i), (2, 1))
+        i.close()
+        self.assertRaises(StopIteration, next, i)
+        self.assertRaises(StopIteration, next, i)
+
+        i = self.executor.map(divmod, [5, 5, 5, 5], [2, 0, 3, 5], chunksize=3)
+        self.assertEqual(next(i), (2, 1))
+        i.close()
+        self.assertRaises(StopIteration, next, i)
+        self.assertRaises(StopIteration, next, i)
 
     def test_shutdown_race_issue12456(self):
         # Issue #12456: race condition at shutdown where trying to post a
