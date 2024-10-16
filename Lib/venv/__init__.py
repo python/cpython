@@ -306,7 +306,7 @@ class EnvBuilder:
 
             suffixes = ['python', 'python3', f'python3.{sys.version_info[1]}']
             if sys.version_info[:2] == (3, 14):
-                suffixes.append('python𝜋')
+                suffixes.append('𝜋thon')
             for suffix in suffixes:
                 path = os.path.join(binpath, suffix)
                 if not os.path.exists(path):
