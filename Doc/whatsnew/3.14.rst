@@ -423,7 +423,7 @@ Deprecated
 * :mod:`argparse`:
   Passing the prefix_chars_ parameter to :meth:`ArgumentParser.add_argument_group`
   is now deprecated.
-  (Contributed by Savannah Ostrowski in :gh:`xxxx`.)
+  (Contributed by Savannah Ostrowski in :gh:`125563`.)
 
 * :mod:`asyncio`:
   :func:`!asyncio.iscoroutinefunction` is deprecated
