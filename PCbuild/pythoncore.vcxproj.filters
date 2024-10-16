@@ -519,9 +519,6 @@
     <ClInclude Include="..\Include\cpython\setobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\cpython\sysmodule.h">
-      <Filter>Include\cpython</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\cpython\pystate.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>

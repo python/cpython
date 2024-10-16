@@ -21,12 +21,6 @@ Py_DEPRECATED(3.13) PyAPI_FUNC(void) PySys_ResetWarnOptions(void);
 
 PyAPI_FUNC(PyObject *) PySys_GetXOptions(void);
 
-#ifndef Py_LIMITED_API
-#  define Py_CPYTHON_SYSMODULE_H
-#  include "cpython/sysmodule.h"
-#  undef Py_CPYTHON_SYSMODULE_H
-#endif
-
 #ifdef __cplusplus
 }
 #endif
