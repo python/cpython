@@ -2,6 +2,7 @@
 
 import fnmatch
 import sys
+import threading
 import os
 import weakref
 from inspect import CO_GENERATOR, CO_COROUTINE, CO_ASYNC_GENERATOR
@@ -37,9 +38,11 @@ class _MonitoringTracer:
         self._name = 'bdbtracer'
         self._tracefunc = None
         self._disable_current_event = False
+        self._tracing_thread = None
 
     def start_trace(self, tracefunc):
         self._tracefunc = tracefunc
+        self._tracing_thread = threading.current_thread()
         curr_tool = sys.monitoring.get_tool(self._tool_id)
         if curr_tool is None:
             sys.monitoring.use_tool_id(self._tool_id, self._name)
@@ -58,6 +61,7 @@ class _MonitoringTracer:
         sys.monitoring.set_events(self._tool_id, all_events)
 
     def stop_trace(self):
+        self._tracing_thread = None
         curr_tool = sys.monitoring.get_tool(self._tool_id)
         if curr_tool != self._name:
             return
@@ -79,6 +83,8 @@ class _MonitoringTracer:
 
         @functools.wraps(func)
         def wrapper(self, *args):
+            if self._tracing_thread != threading.current_thread():
+                return
             try:
                 frame = sys._getframe().f_back
                 ret = func(self, frame, *args)
