@@ -493,6 +493,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             except KeyboardInterrupt:
                 self.message('--KeyboardInterrupt--')
 
+    def _update_file_mtime(self):
+        """update the file mtime table with the current frame's file"""
+        try:
+            filename = self.curframe.f_code.co_filename
+            mtime = os.path.getmtime(filename)
+            self._file_mtime_table.setdefault(filename, mtime)
+        except Exception:
+            return
+
     def _validate_file_mtime(self):
         """Check if the source file of the current frame has been modified since
         the last time we saw it. If so, give a warning."""
@@ -505,7 +514,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             mtime != self._file_mtime_table[filename]):
             self.message(f"*** WARNING: file '{filename}' was edited, "
                          "running stale code until the program is rerun")
-        self._file_mtime_table[filename] = mtime
+            self._file_mtime_table[filename] = mtime
 
     # Called before loop, handles display expressions
     # Set up convenience variable containers
@@ -835,7 +844,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         a breakpoint command list definition.
         """
         if not self.commands_defining:
-            self._validate_file_mtime()
+            self._update_file_mtime()
             if line.startswith('_pdbcmd'):
                 command, arg, line = self.parseline(line)
                 if hasattr(self, command):
@@ -979,6 +988,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def _pdbcmd_print_frame_status(self, arg):
         self.print_stack_trace(0)
+        self._validate_file_mtime()
         self._show_display()
 
     def _pdbcmd_silence_frame_status(self, arg):
@@ -1860,6 +1870,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.message('[EOF]')
         except KeyboardInterrupt:
             pass
+        self._validate_file_mtime()
     do_l = do_list
 
     def do_longlist(self, arg):
@@ -1878,6 +1889,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.error(err)
             return
         self._print_lines(lines, lineno, breaklist, self.curframe)
+        self._validate_file_mtime()
     do_ll = do_longlist
 
     def do_source(self, arg):

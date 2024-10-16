@@ -3662,6 +3662,25 @@ def bœr():
         self.assertIn("WARNING:", stdout)
         self.assertIn("was edited", stdout)
 
+    def test_file_modified_and_immediately_restarted(self):
+        script = """
+            print("hello")
+        """
+
+        # the time.sleep is needed for low-resolution filesystems like HFS+
+        commands = """
+            filename = $_frame.f_code.co_filename
+            f = open(filename, "w")
+            f.write("print('goodbye')")
+            import time; time.sleep(1)
+            f.close()
+            restart
+        """
+
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertNotIn("WARNING:", stdout)
+        self.assertNotIn("was edited", stdout)
+
     def test_file_modified_after_execution_with_multiple_instances(self):
         # the time.sleep is needed for low-resolution filesystems like HFS+
         script = """
