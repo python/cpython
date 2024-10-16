@@ -794,6 +794,7 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(headers.get("Content-type"), mimetype)
             self.assertEqual(int(headers["Content-length"]), len(data))
 
+    @support.requires_resource("network")
     def test_ftp_error(self):
         class ErrorFTPHandler(urllib.request.FTPHandler):
             def __init__(self, exception):
