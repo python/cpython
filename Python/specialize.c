@@ -2001,7 +2001,7 @@ generic:
     specialize(instr, CALL_NON_PY_GENERAL);
 }
 
-static int
+static void
 specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
                              int nargs)
 {
@@ -2010,16 +2010,16 @@ specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
         METH_KEYWORDS | METH_METHOD)) {
         case METH_NOARGS: {
             if (nargs != 1) {
-                SPECIALIZATION_FAIL(CALL, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
-                return -1;
+                unspecialize(instr, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
+                return;
             }
-            instr->op.code = CALL_METHOD_DESCRIPTOR_NOARGS;
-            return 0;
+            specialize(instr, CALL_METHOD_DESCRIPTOR_NOARGS);
+            return;
         }
         case METH_O: {
             if (nargs != 2) {
-                SPECIALIZATION_FAIL(CALL, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
-                return -1;
+                unspecialize(instr, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
+                return;
             }
             PyInterpreterState *interp = _PyInterpreterState_GET();
             PyObject *list_append = interp->callable_cache.list_append;
@@ -2027,23 +2027,22 @@ specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
             bool pop = (next.op.code == POP_TOP);
             int oparg = instr->op.arg;
             if ((PyObject *)descr == list_append && oparg == 1 && pop) {
-                instr->op.code = CALL_LIST_APPEND;
-                return 0;
+                specialize(instr, CALL_LIST_APPEND);
+                return;
             }
-            instr->op.code = CALL_METHOD_DESCRIPTOR_O;
-            return 0;
+            specialize(instr, CALL_METHOD_DESCRIPTOR_O);
+            return;
         }
         case METH_FASTCALL: {
-            instr->op.code = CALL_METHOD_DESCRIPTOR_FAST;
-            return 0;
+            specialize(instr, CALL_METHOD_DESCRIPTOR_FAST);
+            return;
         }
         case METH_FASTCALL | METH_KEYWORDS: {
-            instr->op.code = CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS;
-            return 0;
+            specialize(instr, CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS);
+            return;
         }
     }
-    instr->op.code = CALL_NON_PY_GENERAL;
-    return 0;
+    specialize(instr, CALL_NON_PY_GENERAL);
 }
 
 static void
@@ -2178,7 +2177,8 @@ _Py_Specialize_Call(_PyStackRef callable_st, _Py_CODEUNIT *instr, int nargs)
         return;
     }
     else if (Py_IS_TYPE(callable, &PyMethodDescr_Type)) {
-        fail = specialize_method_descriptor((PyMethodDescrObject *)callable, instr, nargs);
+        specialize_method_descriptor((PyMethodDescrObject *)callable, instr, nargs);
+        return;
     }
     else if (PyMethod_Check(callable)) {
         PyObject *func = ((PyMethodObject *)callable)->im_func;
