@@ -1200,9 +1200,7 @@ def parse(source, parser=None):
     Return an ElementTree instance.
 
     """
-
-    if (hasattr(source, 'encoding') and
-        source.encoding == 'ISO-8859-1' and
+    if (getattr(source, 'encoding', None) == 'ISO-8859-1' and
         source.mode == 'r'):
         import warnings
         warnings.warn(
