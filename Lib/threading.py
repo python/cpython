@@ -411,10 +411,7 @@ class Condition:
         while waiters and n > 0:
             waiter = waiters[0]
             try:
-                if timeout:
-                    waiter.release(timeout)
-                else:
-                    waiter.release()
+                waiter.release()
             except RuntimeError:
                 # gh-92530: The previous call of notify() released the lock,
                 # but was interrupted before removing it from the queue.
