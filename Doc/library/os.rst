@@ -4260,6 +4260,10 @@ These functions may be used to create and manage processes.
               execvp(file, args)
               execvpe(file, args, env)
 
+   (Note that the :mod:`subprocess` module provides more powerful facilities for
+   spawning new processes and retrieving their results; using that module is
+   preferable to using these functions.)
+
    These functions all execute a new program, replacing the current process; they
    do not return.  On Unix, the new executable is loaded into the current process,
    and will have the same process id as the caller.  Errors will be reported as
@@ -4333,6 +4337,11 @@ These functions may be used to create and manage processes.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. seealso::
+      The :mod:`subprocess` module.
+
+      The :func:`system` and :func:`spawnl` functions also execute a system command.
 
 .. function:: _exit(n)
 
@@ -4839,12 +4848,13 @@ written in Python, such as a mail server's external command delivery program.
               spawnvp(mode, file, args)
               spawnvpe(mode, file, args, env)
 
-   Execute the program *path* in a new process.
 
    (Note that the :mod:`subprocess` module provides more powerful facilities for
    spawning new processes and retrieving their results; using that module is
    preferable to using these functions.  Check especially the
    :ref:`subprocess-replacements` section.)
+
+   Execute the program *path* in a new process.
 
    If *mode* is :const:`P_NOWAIT`, this function returns the process id of the new
    process; if *mode* is :const:`P_WAIT`, returns the process's exit code if it
@@ -4908,6 +4918,10 @@ written in Python, such as a mail server's external command delivery program.
       These functions are :term:`soft deprecated` and should no longer be used
       to write new code. The :mod:`subprocess` module is recommended instead.
 
+   .. seealso::
+      The :mod:`subprocess` module.
+
+      The :func:`system` and :func:`execl` functions also execute a system command.
 
 .. data:: P_NOWAIT
           P_NOWAITO
@@ -4994,6 +5008,10 @@ written in Python, such as a mail server's external command delivery program.
 
 .. function:: system(command)
 
+   (Note that the :mod:`subprocess` module provides more powerful facilities for
+   executing programs; using that module is preferable to using these functions.
+   Refer to the :ref:`subprocess-replacements` section for some helpful recipes.)
+
    Execute the command (a string) in a subshell.  This is implemented by calling
    the Standard C function :c:func:`system`, and has the same limitations.
    Changes to :data:`sys.stdin`, etc. are not reflected in the environment of
@@ -5011,11 +5029,6 @@ written in Python, such as a mail server's external command delivery program.
    status of the command run; on systems using a non-native shell, consult your
    shell documentation.
 
-   The :mod:`subprocess` module provides more powerful facilities for spawning
-   new processes and retrieving their results; using that module is recommended
-   to using this function.  See the :ref:`subprocess-replacements` section in
-   the :mod:`subprocess` documentation for some helpful recipes.
-
    On Unix, :func:`waitstatus_to_exitcode` can be used to convert the result
    (exit status) into an exit code. On Windows, the result is directly the exit
    code.
@@ -5024,6 +5037,10 @@ written in Python, such as a mail server's external command delivery program.
 
    .. availability:: Unix, Windows, not WASI, not Android, not iOS.
 
+   .. seealso::
+      The :mod:`subprocess` module.
+
+      The :func:`execl` and :func:`spawnl` functions also execute a system command.
 
 .. function:: times()
 
