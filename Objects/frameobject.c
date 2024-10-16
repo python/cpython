@@ -158,16 +158,16 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
     _PyStackRef *fast = _PyFrame_GetLocalsArray(frame->f_frame);
     PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
 
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError, "cannot remove variables from FrameLocalsProxy");
-        return -1;
-    }
-
     int i = framelocalsproxy_getkeyindex(frame, key, false);
     if (i == -2) {
         return -1;
     }
     if (i >= 0) {
+        if (value == NULL) {
+            PyErr_SetString(PyExc_KeyError, "cannot remove local variables from FrameLocalsProxy");
+            return -1;
+        }
+
         _Py_Executors_InvalidateDependency(PyInterpreterState_Get(), co, 1);
 
         _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
@@ -202,6 +202,10 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
     PyObject *extra = frame->f_extra_locals;
 
     if (extra == NULL) {
+        if (value == NULL) {
+            PyErr_Format(PyExc_KeyError, "'%R'", key);
+            return -1;
+        }
         extra = PyDict_New();
         if (extra == NULL) {
             return -1;
@@ -211,7 +215,11 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
 
     assert(PyDict_Check(extra));
 
-    return PyDict_SetItem(extra, key, value);
+    if (value == NULL) {
+        return PyDict_DelItem(extra, key);
+    } else {
+        return PyDict_SetItem(extra, key, value);
+    }
 }
 
 static int
@@ -677,6 +685,60 @@ framelocalsproxy_setdefault(PyObject* self, PyObject *const *args, Py_ssize_t na
 }
 
 static PyObject*
+framelocalsproxy_pop(PyObject* self, PyObject *const *args, Py_ssize_t nargs)
+{
+    if (nargs < 1 || nargs > 2) {
+        PyErr_SetString(PyExc_TypeError, "pop expected 1 or 2 arguments");
+        return NULL;
+    }
+
+    PyObject *key = args[0];
+    PyObject *default_value = NULL;
+
+    if (nargs == 2) {
+        default_value = args[1];
+    }
+
+    PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
+
+    int i = framelocalsproxy_getkeyindex(frame, key, false);
+    if (i == -2) {
+        return NULL;
+    }
+
+    if (i >= 0) {
+        PyErr_SetString(PyExc_KeyError, "cannot remove local variables from FrameLocalsProxy");
+        return NULL;
+    }
+
+    PyObject* result = NULL;
+
+    if (frame->f_extra_locals == NULL) {
+        if (default_value != NULL) {
+            return Py_XNewRef(default_value);
+        } else {
+            PyErr_Format(PyExc_KeyError, "'%R'", key);
+            return NULL;
+        }
+    }
+
+    if (PyDict_Pop(frame->f_extra_locals, key, &result) < 0) {
+        return NULL;
+    }
+
+    if (result == NULL) {
+        if (default_value != NULL) {
+            return Py_XNewRef(default_value);
+        } else {
+            PyErr_Format(PyExc_KeyError, "'%R'", key);
+            return NULL;
+        }
+    }
+
+    return result;
+}
+
+static PyObject*
 framelocalsproxy_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject* result = PyDict_New();
@@ -742,6 +804,8 @@ static PyMethodDef framelocalsproxy_methods[] = {
     {"items",        _PyCFunction_CAST(framelocalsproxy_items),          METH_NOARGS,
      NULL},
     {"get",          _PyCFunction_CAST(framelocalsproxy_get),            METH_FASTCALL,
+     NULL},
+    {"pop",          _PyCFunction_CAST(framelocalsproxy_pop),            METH_FASTCALL,
      NULL},
     {"setdefault",   _PyCFunction_CAST(framelocalsproxy_setdefault),     METH_FASTCALL,
      NULL},
