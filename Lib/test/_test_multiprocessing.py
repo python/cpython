@@ -5730,7 +5730,10 @@ class TestResourceTracker(unittest.TestCase):
         pid = _resource_tracker._pid
 
         os.kill(pid, signum)
-        time.sleep(1.0)  # give it time to die
+        if sys.platform.startswith("netbsd") and should_die:
+            time.sleep(60.0 * 3)  # give it more time to die on netbsd
+        else:
+            time.sleep(1.0)  # give it more time to die
 
         ctx = multiprocessing.get_context("spawn")
         with warnings.catch_warnings(record=True) as all_warn:
