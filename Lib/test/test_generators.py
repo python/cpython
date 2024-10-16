@@ -275,9 +275,9 @@ class ModifyTest(unittest.TestCase):
         range(20),
         [1, 2, 3],
         (2,),
-        set((13, 48, 211)),
+        {13, 48, 211},
         frozenset((15, 8, 6)),
-        dict([(1, 2), (3, 4)]),
+        {1: 2, 3: 4},
     ]
 
     non_sequences = [
@@ -308,16 +308,27 @@ class ModifyTest(unittest.TestCase):
         err_msg_pattern_genexpr = "'%s' object is not an iterator"
 
         for get_genexpr in [get_genexpr_f_locals, get_genexpr_gi_code]:
+            base_name = get_genexpr.__name__
             for seq in self.sequences:
-                err_msg_genexpr = err_msg_pattern_genexpr % type(seq).__name__
-                with self.assertRaisesRegex(TypeError, err_msg_genexpr):
-                    list(get_genexpr(self, seq))
-                self.assertListEqual(list(get_genexpr(self, iter(seq))),
-                                     list(seq))
+                test_name = f"{base_name}_seq_{type(seq).__name__}"
+                g_seq = get_genexpr(self, seq)
+                err_msg = err_msg_pattern_genexpr % type(seq).__name__
+                with self.subTest(test_name, g_seq=g_seq, err_msg=err_msg):
+                    with self.assertRaisesRegex(TypeError, err_msg):
+                        list(g_seq)
+
+                test_name = f"{base_name}_seq_iter_{type(seq).__name__}"
+                g_iter = get_genexpr(self, iter(seq))
+                with self.subTest(test_name, g_iter=g_iter, seq=seq):
+                    self.assertListEqual(list(g_iter), list(seq))
+
             for obj in self.non_sequences:
-                err_msg_genexpr = err_msg_pattern_genexpr % type(obj).__name__
-                with self.assertRaisesRegex(TypeError, err_msg_genexpr):
-                    list(get_genexpr(self, obj))
+                test_name = f"{base_name}_non_seq_{type(obj).__name__}"
+                g_obj = get_genexpr(self, obj)
+                err_msg = err_msg_pattern_genexpr % type(obj).__name__
+                with self.subTest(test_name, g_obj=g_obj, err_msg=err_msg):
+                    with self.assertRaisesRegex(TypeError, err_msg):
+                        list(g_obj)
 
     def test_modify_genfunc(self):
         def genfunc():
@@ -335,15 +346,25 @@ class ModifyTest(unittest.TestCase):
         err_msg_pattern_fn_call = "'%s' object is not iterable"
 
         for get_genfunc in [get_genfunc_f_locals, get_genfunc_gi_code]:
+            base_name = get_genfunc.__name__
             for seq in self.sequences:
-                self.assertListEqual(list(get_genfunc(self, seq)),
-                                     list(seq))
-                self.assertListEqual(list(get_genfunc(self, iter(seq))),
-                                     list(seq))
+                test_name = f"{base_name}_seq_{type(seq).__name__}"
+                g_seq = get_genfunc(self, seq)
+                with self.subTest(test_name, g_seq=g_seq, seq=seq):
+                    self.assertListEqual(list(g_seq), list(seq))
+
+                test_name = f"{base_name}_seq_iter_{type(seq).__name__}"
+                g_iter = get_genfunc(self, iter(seq))
+                with self.subTest(test_name, g_iter=g_iter, seq=seq):
+                    self.assertListEqual(list(g_iter), list(seq))
+
             for obj in self.non_sequences:
-                err_msg_fn_call = err_msg_pattern_fn_call % type(obj).__name__
-                with self.assertRaisesRegex(TypeError, err_msg_fn_call):
-                    list(get_genfunc(self, obj))
+                test_name = f"{base_name}_non_seq_{type(obj).__name__}"
+                g_obj = get_genfunc(self, obj)
+                err_msg = err_msg_pattern_fn_call % type(obj).__name__
+                with self.subTest(test_name, g_obj=g_obj, err_msg=err_msg):
+                    with self.assertRaisesRegex(TypeError, err_msg):
+                        list(g_obj)
 
 
 class ExceptionTest(unittest.TestCase):
