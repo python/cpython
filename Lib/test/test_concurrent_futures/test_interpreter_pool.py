@@ -18,6 +18,10 @@ from .executor import ExecutorTest, mul
 from .util import BaseTestCase, InterpreterPoolMixin, setup_module
 
 
+def noop():
+    pass
+
+
 def write_msg(fd, msg):
     os.write(fd, msg + b'\0')
 
@@ -55,6 +59,7 @@ class InterpretersMixin(InterpreterPoolMixin):
 class InterpreterPoolExecutorTest(
             InterpretersMixin, ExecutorTest, BaseTestCase):
 
+    @unittest.expectedFailure
     def test_init_script(self):
         msg1 = b'step: init'
         msg2 = b'step: run'
@@ -80,6 +85,7 @@ class InterpreterPoolExecutorTest(
         self.assertEqual(after_init, msg1)
         self.assertEqual(after_run, msg2)
 
+    @unittest.expectedFailure
     def test_init_script_args(self):
         with self.assertRaises(ValueError):
             self.executor_type(initializer='pass', initargs=('spam',))
@@ -123,46 +129,50 @@ class InterpreterPoolExecutorTest(
     def test_init_shared(self):
         msg = b'eggs'
         r, w = self.pipe()
-        script = f"""
+        script = f"""if True:
             import os
+            if __name__ != '__main__':
+                import __main__
+                spam = __main__.spam
             os.write({w}, spam + b'\\0')
             """
 
         executor = self.executor_type(shared={'spam': msg})
-        fut = executor.submit(script)
+        fut = executor.submit(exec, script)
         fut.result()
         after = read_msg(r)
 
         self.assertEqual(after, msg)
 
-    def test_init_exception(self):
-        with self.subTest('script'):
-            executor = self.executor_type(initializer='raise Exception("spam")')
-            with executor:
-                with contextlib.redirect_stderr(io.StringIO()) as stderr:
-                    fut = executor.submit('pass')
-                    with self.assertRaises(BrokenInterpreterPool):
-                        fut.result()
-            stderr = stderr.getvalue()
-            self.assertIn('ExecutionFailed: Exception: spam', stderr)
-            self.assertIn('Uncaught in the interpreter:', stderr)
-            self.assertIn('The above exception was the direct cause of the following exception:',
-                          stderr)
+    @unittest.expectedFailure
+    def test_init_exception_in_script(self):
+        executor = self.executor_type(initializer='raise Exception("spam")')
+        with executor:
+            with contextlib.redirect_stderr(io.StringIO()) as stderr:
+                fut = executor.submit('pass')
+                with self.assertRaises(BrokenInterpreterPool):
+                    fut.result()
+        stderr = stderr.getvalue()
+        self.assertIn('ExecutionFailed: Exception: spam', stderr)
+        self.assertIn('Uncaught in the interpreter:', stderr)
+        self.assertIn('The above exception was the direct cause of the following exception:',
+                      stderr)
 
-        with self.subTest('func'):
-            executor = self.executor_type(initializer=fail,
-                                          initargs=(Exception, 'spam'))
-            with executor:
-                with contextlib.redirect_stderr(io.StringIO()) as stderr:
-                    fut = executor.submit('pass')
-                    with self.assertRaises(BrokenInterpreterPool):
-                        fut.result()
-            stderr = stderr.getvalue()
-            self.assertIn('ExecutionFailed: Exception: spam', stderr)
-            self.assertIn('Uncaught in the interpreter:', stderr)
-            self.assertIn('The above exception was the direct cause of the following exception:',
-                          stderr)
+    def test_init_exception_in_func(self):
+        executor = self.executor_type(initializer=fail,
+                                      initargs=(Exception, 'spam'))
+        with executor:
+            with contextlib.redirect_stderr(io.StringIO()) as stderr:
+                fut = executor.submit(noop)
+                with self.assertRaises(BrokenInterpreterPool):
+                    fut.result()
+        stderr = stderr.getvalue()
+        self.assertIn('ExecutionFailed: Exception: spam', stderr)
+        self.assertIn('Uncaught in the interpreter:', stderr)
+        self.assertIn('The above exception was the direct cause of the following exception:',
+                      stderr)
 
+    @unittest.expectedFailure
     def test_submit_script(self):
         msg = b'spam'
         r, w = self.pipe()
@@ -221,39 +231,40 @@ class InterpreterPoolExecutorTest(
         self.assertEqual(name, __name__)
         self.assertNotEqual(name, '__main__')
 
-    def test_submit_exception(self):
-        with self.subTest('script'):
-            fut = self.executor.submit('raise Exception("spam")')
-            with self.assertRaises(Exception) as captured:
-                fut.result()
-            self.assertIs(type(captured.exception), Exception)
-            self.assertEqual(str(captured.exception), 'spam')
-            cause = captured.exception.__cause__
-            self.assertIs(type(cause), ExecutionFailed)
-            for attr in ('__name__', '__qualname__', '__module__'):
-                self.assertEqual(getattr(cause.excinfo.type, attr),
-                                 getattr(Exception, attr))
-            self.assertEqual(cause.excinfo.msg, 'spam')
+    @unittest.expectedFailure
+    def test_submit_exception_in_script(self):
+        fut = self.executor.submit('raise Exception("spam")')
+        with self.assertRaises(Exception) as captured:
+            fut.result()
+        self.assertIs(type(captured.exception), Exception)
+        self.assertEqual(str(captured.exception), 'spam')
+        cause = captured.exception.__cause__
+        self.assertIs(type(cause), ExecutionFailed)
+        for attr in ('__name__', '__qualname__', '__module__'):
+            self.assertEqual(getattr(cause.excinfo.type, attr),
+                             getattr(Exception, attr))
+        self.assertEqual(cause.excinfo.msg, 'spam')
 
-        with self.subTest('func'):
-            fut = self.executor.submit(fail, Exception, 'spam')
-            with self.assertRaises(Exception) as captured:
-                fut.result()
-            self.assertIs(type(captured.exception), Exception)
-            self.assertEqual(str(captured.exception), 'spam')
-            cause = captured.exception.__cause__
-            self.assertIs(type(cause), ExecutionFailed)
-            for attr in ('__name__', '__qualname__', '__module__'):
-                self.assertEqual(getattr(cause.excinfo.type, attr),
-                                 getattr(Exception, attr))
-            self.assertEqual(cause.excinfo.msg, 'spam')
+    def test_submit_exception_in_func(self):
+        fut = self.executor.submit(fail, Exception, 'spam')
+        with self.assertRaises(Exception) as captured:
+            fut.result()
+        self.assertIs(type(captured.exception), Exception)
+        self.assertEqual(str(captured.exception), 'spam')
+        cause = captured.exception.__cause__
+        self.assertIs(type(cause), ExecutionFailed)
+        for attr in ('__name__', '__qualname__', '__module__'):
+            self.assertEqual(getattr(cause.excinfo.type, attr),
+                             getattr(Exception, attr))
+        self.assertEqual(cause.excinfo.msg, 'spam')
 
     def test_saturation(self):
         blocker = queues.create()
         executor = self.executor_type(4, shared=dict(blocker=blocker))
 
         for i in range(15 * executor._max_workers):
-            executor.submit('blocker.get()')
+            executor.submit(exec, 'import __main__; __main__.blocker.get()')
+            #executor.submit('blocker.get()')
         self.assertEqual(len(executor._threads), executor._max_workers)
         for i in range(15 * executor._max_workers):
             blocker.put_nowait(None)

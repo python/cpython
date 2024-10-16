@@ -305,11 +305,6 @@ the bytes over a shared :mod:`socket <socket>` or
       The executor may replace uncaught exceptions from *initializer*
       with :class:`~concurrent.futures.interpreter.ExecutionFailed`.
 
-   The *initializer* argument may also be a script (:class:`str`),
-   The script will be executed in the interpreter's ``__main__`` module.
-   The executor automatically applies :func:`textwrap.dedent` to the script.
-   *initargs* must not be passed in in this case.
-
    The optional *shared* argument is a :class:`dict` of objects that all
    interpreters in the pool share.  The *shared* items are added to each
    interpreter's ``__main__`` module.  Not all objects are shareable.
@@ -327,13 +322,6 @@ likewise serializes the return value when sending it back.
 .. note::
    Functions defined in the ``__main__`` module cannot be pickled
    and thus cannot be used.
-
-For :meth:`~Executor.submit`, but *not* :meth:`~Executor.map`,
-you can also pass a script (:class:`str`) instead of a callable.
-The script will be executed in the interpreter's ``__main__`` module.
-The executor will automatically apply :func:`textwrap.dedent` to the
-script, so you don't have to do so.  With a script, arguments must
-not be passed in.  The return value for a script is always ``None``.
 
 When a worker's current task raises an uncaught exception, the worker
 always tries to preserve the exception as-is.  If that is successful

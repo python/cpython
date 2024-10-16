@@ -45,6 +45,8 @@ class WorkerContext(_thread.WorkerContext):
     def prepare(cls, initializer, initargs, shared):
         def resolve_task(fn, args, kwargs):
             if isinstance(fn, str):
+                # XXX Circle back to this later.
+                raise TypeError('scripts not supported')
                 if args or kwargs:
                     raise ValueError(f'a script does not take args or kwargs, got {args!r} and {kwargs!r}')
                 data = textwrap.dedent(fn)
@@ -60,11 +62,13 @@ class WorkerContext(_thread.WorkerContext):
                 kind = 'function'
             return (data, kind)
 
-        if isinstance(initializer, str):
-            if initargs:
-                raise ValueError(f'an initializer script does not take args, got {initargs!r}')
         if initializer is not None:
-            initdata = resolve_task(initializer, initargs, {})
+            try:
+                initdata = resolve_task(initializer, initargs, {})
+            except ValueError:
+                if isinstance(initializer, str) and initargs:
+                    raise ValueError(f'an initializer script does not take args, got {initargs!r}')
+                raise  # re-raise
         else:
             initdata = None
         def create_context():
@@ -160,6 +164,7 @@ class WorkerContext(_thread.WorkerContext):
     def run(self, task):
         data, kind = task
         if kind == 'script':
+            raise NotImplementedError('script kind disabled')
             script = f"""
 with WorkerContext._capture_exc({self.resultsid}):
 {textwrap.indent(data, '    ')}
