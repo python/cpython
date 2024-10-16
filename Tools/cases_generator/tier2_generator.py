@@ -167,7 +167,7 @@ class Tier2Emitter(Emitter):
         return True
 
 
-def write_uop(uop: Uop, emitter: Emitter, stack: Stack, inst: Instruction) -> Stack:
+def write_uop(uop: Uop, emitter: Emitter, stack: Stack, inst: Instruction | None) -> Stack:
     locals: dict[str, Local] = {}
     try:
         emitter.out.start_line()
@@ -198,6 +198,7 @@ def get_instruction_for_uop(instructions: dict[str, Instruction], uop: Uop) -> I
     for inst in instructions.values():
         if uop in inst.parts:
             return inst
+    return None
 
 
 SKIPS = ("_EXTENDED_ARG",)
