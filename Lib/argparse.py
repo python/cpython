@@ -1662,7 +1662,6 @@ class _ActionsContainer(object):
 class _ArgumentGroup(_ActionsContainer):
 
     def __init__(self, container, title=None, description=None, **kwargs):
-
         if 'prefix_chars' in kwargs:
             import warnings
             depr_msg = (
