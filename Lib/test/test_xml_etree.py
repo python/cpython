@@ -468,11 +468,8 @@ class ElementTreeTest(unittest.TestCase):
         with self.assertWarns(RuntimeWarning) as cm:
             with open(SIMPLE_XMLFILE, 'r', encoding='ISO-8859-1') as fp:
                 ET.parse(fp)
-                self.assertIn(
-                    "For file objects containing XML data "
-                    "with non-ASCII and non-UTF-8 encoding (for example. ISO 8859-1), "
-                    "the file must have been opened in binary mode.",
-                    str(cm.warnings[0].message))
+                self.assertIn("ISO-8859-1 encoding should be read using 'rb' mode.",
+                              str(cm.warnings[0].message))
 
     def test_parsefile(self):
         # Test parsing from file.
