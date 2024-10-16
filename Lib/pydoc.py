@@ -71,6 +71,7 @@ import time
 import tokenize
 import urllib.parse
 import warnings
+from annotationlib import Format
 from collections import deque
 from reprlib import Repr
 from traceback import format_exception_only
@@ -212,12 +213,12 @@ def splitdoc(doc):
 
 def _getargspec(object):
     try:
-        signature = inspect.signature(object)
+        signature = inspect.signature(object, annotation_format=Format.STRING)
         if signature:
             name = getattr(object, '__name__', '')
             # <lambda> function are always single-line and should not be formatted
             max_width = (80 - len(name)) if name != '<lambda>' else None
-            return signature.format(max_width=max_width)
+            return signature.format(max_width=max_width, quote_annotation_strings=False)
     except (ValueError, TypeError):
         argspec = getattr(object, '__text_signature__', None)
         if argspec:

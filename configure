@@ -11093,6 +11093,12 @@ then :
   printf "%s\n" "#define HAVE_LINUX_MEMFD_H 1" >>confdefs.h
 
 fi
+ac_fn_c_check_header_compile "$LINENO" "linux/netfilter_ipv4.h" "ac_cv_header_linux_netfilter_ipv4_h" "$ac_includes_default"
+if test "x$ac_cv_header_linux_netfilter_ipv4_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_LINUX_NETFILTER_IPV4_H 1" >>confdefs.h
+
+fi
 ac_fn_c_check_header_compile "$LINENO" "linux/random.h" "ac_cv_header_linux_random_h" "$ac_includes_default"
 if test "x$ac_cv_header_linux_random_h" = xyes
 then :
@@ -15043,6 +15049,70 @@ LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
 
 
+
+fi
+
+# Check for libffi with real complex double support.
+# This is a workaround, since FFI_TARGET_HAS_COMPLEX_TYPE was defined in libffi v3.2.1,
+# but real support was provided only in libffi v3.3.0.
+# See https://github.com/python/cpython/issues/125206 for more details.
+#
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking libffi has complex type support" >&5
+printf %s "checking libffi has complex type support... " >&6; }
+if test ${ac_cv_ffi_complex_double_supported+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_save_cc="$CC"
+CC="$CC -lffi"
+if test "$cross_compiling" = yes
+then :
+  ac_cv_ffi_complex_double_supported=no
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <complex.h>
+#include <ffi.h>
+int z_is_expected(double complex z)
+{
+    const double complex expected = CMPLX(1.25, -0.5);
+    return z == expected;
+}
+int main(void)
+{
+    double complex z = 1.25 - 0.5 * I;
+    ffi_type *args[1] = {&ffi_type_complex_double};
+    void *values[1] = {&z};
+    ffi_cif cif;
+    if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1,
+        &ffi_type_sint, args) != FFI_OK)
+    {
+        return 2;
+    }
+    ffi_arg rc;
+    ffi_call(&cif, FFI_FN(z_is_expected), &rc, values);
+    return !rc;
+}
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"
+then :
+  ac_cv_ffi_complex_double_supported=yes
+else $as_nop
+  ac_cv_ffi_complex_double_supported=no
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+CC="$ac_save_cc"
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_ffi_complex_double_supported" >&5
+printf "%s\n" "$ac_cv_ffi_complex_double_supported" >&6; }
+if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
+
+printf "%s\n" "#define Py_FFI_SUPPORT_C_COMPLEX 1" >>confdefs.h
 
 fi
 
@@ -28994,10 +29064,6 @@ if test ${ac_cv_libatomic_needed+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
-  if test "$cross_compiling" = yes
-then :
-    ac_cv_libatomic_needed=no
-else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -29038,16 +29104,14 @@ int main()
 }
 
 _ACEOF
-if ac_fn_c_try_run "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_libatomic_needed=no
 else $as_nop
     ac_cv_libatomic_needed=yes
 fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_libatomic_needed" >&5
 printf "%s\n" "$ac_cv_libatomic_needed" >&6; }

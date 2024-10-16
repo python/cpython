@@ -272,7 +272,7 @@ typedef struct _heaptypeobject {
     void *ht_token;  // Storage for the "Py_tp_token" slot
     struct _specialization_cache _spec_cache; // For use by the specializer.
 #ifdef Py_GIL_DISABLED
-    Py_ssize_t unique_id;  // ID used for thread-local refcounting
+    Py_ssize_t unique_id;  // ID used for per-thread refcounting
 #endif
     /* here are optional user slots, followed by the members. */
 } PyHeapTypeObject;

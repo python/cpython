@@ -704,7 +704,7 @@ and its return annotation. To retrieve a :class:`!Signature` object,
 use the :func:`!signature`
 function.
 
-.. function:: signature(callable, *, follow_wrapped=True, globals=None, locals=None, eval_str=False)
+.. function:: signature(callable, *, follow_wrapped=True, globals=None, locals=None, eval_str=False, annotation_format=Format.VALUE)
 
    Return a :class:`Signature` object for the given *callable*:
 
@@ -735,7 +735,12 @@ function.
    *globals*, *locals*, and *eval_str* parameters are passed
    into :func:`!annotationlib.get_annotations` when resolving the
    annotations; see the documentation for :func:`!annotationlib.get_annotations`
-   for instructions on how to use these parameters.
+   for instructions on how to use these parameters. A member of the
+   :class:`annotationlib.Format` enum can be passed to the
+   *annotation_format* parameter to control the format of the returned
+   annotations. For example, use
+   ``annotation_format=annotationlib.Format.STRING`` to return annotations in string
+   format.
 
    Raises :exc:`ValueError` if no signature can be provided, and
    :exc:`TypeError` if that type of object is not supported.  Also,
@@ -743,7 +748,7 @@ function.
    the ``eval()`` call(s) to un-stringize the annotations in :func:`annotationlib.get_annotations`
    could potentially raise any kind of exception.
 
-   A slash(/) in the signature of a function denotes that the parameters prior
+   A slash (/) in the signature of a function denotes that the parameters prior
    to it are positional-only. For more info, see
    :ref:`the FAQ entry on positional-only parameters <faq-positional-only-arguments>`.
 
@@ -755,6 +760,9 @@ function.
 
    .. versionchanged:: 3.10
       The *globals*, *locals*, and *eval_str* parameters were added.
+
+   .. versionchanged:: 3.14
+      The *annotation_format* parameter was added.
 
    .. note::
 
@@ -848,7 +856,7 @@ function.
       :class:`Signature` objects are also supported by the generic function
       :func:`copy.replace`.
 
-   .. method:: format(*, max_width=None)
+   .. method:: format(*, max_width=None, quote_annotation_strings=True)
 
       Create a string representation of the :class:`Signature` object.
 
@@ -857,7 +865,16 @@ function.
       If the signature is longer than *max_width*,
       all parameters will be on separate lines.
 
+      If *quote_annotation_strings* is False, :term:`annotations <annotation>`
+      in the signature are displayed without opening and closing quotation
+      marks if they are strings. This is useful if the signature was created with the
+      :attr:`~annotationlib.Format.STRING` format or if
+      ``from __future__ import annotations`` was used.
+
       .. versionadded:: 3.13
+
+      .. versionchanged:: 3.14
+         The *unquote_annotations* parameter was added.
 
    .. classmethod:: Signature.from_callable(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False)
 
