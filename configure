@@ -26416,7 +26416,7 @@ else $as_nop
 
 if test "$cross_compiling" = yes
 then :
-  ac_cv_strftime_c99_support=no
+  ac_cv_strftime_c99_support=yes
 else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
