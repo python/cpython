@@ -1030,7 +1030,7 @@ _io__Buffered_read1_impl(buffered *self, Py_ssize_t n)
     CHECK_CLOSED(self, "read of closed file")
 
     if (n == 0)
-        return PyBytes_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
 
     /* Return up to n bytes.  If at least one byte is buffered, we
        only return buffered bytes.  Otherwise, we do one raw read. */

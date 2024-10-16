@@ -990,7 +990,7 @@ zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode)
     /* Flushing with Z_NO_FLUSH is a no-op, so there's no point in
        doing any work at all; just return an empty string. */
     if (mode == Z_NO_FLUSH) {
-        return PyBytes_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
 
     ENTER_ZLIB(self);
@@ -1739,7 +1739,7 @@ ZlibDecompressor__new__(PyTypeObject *cls,
     self->zst.zfree = PyZlib_Free;
     self->zst.next_in = NULL;
     self->zst.avail_in = 0;
-    self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
+    self->unused_data = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     if (self->unused_data == NULL) {
         Py_CLEAR(self);
         return NULL;

@@ -191,7 +191,7 @@ blob_read_impl(pysqlite_Blob *self, int length)
 
     assert(length >= 0);
     if (length == 0) {
-        return PyBytes_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
 
     PyObject *buffer = read_multiple(self, length, self->offset);

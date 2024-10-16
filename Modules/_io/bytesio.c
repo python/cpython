@@ -913,7 +913,7 @@ bytesio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     /* tp_alloc initializes all the fields to zero. So we don't have to
        initialize them here. */
 
-    self->buf = PyBytes_FromStringAndSize(NULL, 0);
+    self->buf = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     if (self->buf == NULL) {
         Py_DECREF(self);
         return PyErr_NoMemory();

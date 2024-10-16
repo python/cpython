@@ -1255,7 +1255,7 @@ _lzma_LZMADecompressor_impl(PyTypeObject *type, int format,
     self->needs_input = 1;
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
-    Py_XSETREF(self->unused_data, PyBytes_FromStringAndSize(NULL, 0));
+    Py_XSETREF(self->unused_data, Py_GetConstant(Py_CONSTANT_EMPTY_BYTES));
     if (self->unused_data == NULL) {
         goto error;
     }
