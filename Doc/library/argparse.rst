@@ -1869,7 +1869,7 @@ Argument groups
     will be removed in the future.
 
    .. versionchanged:: 3.14
-    Passing the prefix_chars_ parameter to :meth:`add_argument_group`
+    Passing prefix_chars_ to :meth:`add_argument_group`
     is now deprecated.
 
 
