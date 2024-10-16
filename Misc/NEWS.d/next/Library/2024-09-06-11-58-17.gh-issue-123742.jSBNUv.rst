@@ -1,0 +1,2 @@
+Fix :meth:`email.Message.get_payload` cannot parse
+``content-transfer-encoding`` field with extra spaces. Patch by RUANG.
