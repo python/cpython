@@ -2284,16 +2284,17 @@ class TestAddSubparsers(TestCase):
         self.assertRaises(ArgumentParserError, *args, **kwargs)
 
     def _get_parser(self, subparser_help=False, prefix_chars=None,
-                    aliases=False):
+                    aliases=False, usage=None):
         # create a parser with a subparsers argument
         if prefix_chars:
             parser = ErrorRaisingArgumentParser(
-                prog='PROG', description='main description', prefix_chars=prefix_chars)
+                prog='PROG', description='main description', usage=usage,
+                prefix_chars=prefix_chars)
             parser.add_argument(
                 prefix_chars[0] * 2 + 'foo', action='store_true', help='foo help')
         else:
             parser = ErrorRaisingArgumentParser(
-                prog='PROG', description='main description')
+                prog='PROG', description='main description', usage=usage)
             parser.add_argument(
                 '--foo', action='store_true', help='foo help')
         parser.add_argument(
@@ -2330,7 +2331,8 @@ class TestAddSubparsers(TestCase):
         parser2.add_argument('z', type=complex, nargs='*', help='z help')
 
         # add third sub-parser
-        parser3_kwargs = dict(description='3 description')
+        parser3_kwargs = dict(description='3 description',
+                              usage='PROG --foo bar 3 t ...')
         if subparser_help:
             parser3_kwargs['help'] = '3 help'
         parser3 = subparsers.add_parser('3', **parser3_kwargs)
@@ -2351,6 +2353,47 @@ class TestAddSubparsers(TestCase):
                          '0.5 1 -y', '0.5 2 -w']:
             args = args_str.split()
             self.assertArgumentParserError(self.parser.parse_args, args)
+
+    def test_parse_args_failures_details(self):
+        for args_str, usage_str, error_str in [
+            ('',
+             'usage: PROG [-h] [--foo] bar {1,2,3} ...',
+             'PROG: error: the following arguments are required: bar'),
+            ('0.5 1 -y',
+             'usage: PROG bar 1 [-h] [-w W] {a,b,c}',
+             'PROG bar 1: error: the following arguments are required: x'),
+            ('0.5 3',
+             'usage: PROG --foo bar 3 t ...',
+             'PROG bar 3: error: the following arguments are required: t'),
+        ]:
+            with self.subTest(args_str):
+                args = args_str.split()
+                with self.assertRaises(ArgumentParserError) as cm:
+                    self.parser.parse_args(args)
+                self.assertEqual(cm.exception.args[0], 'SystemExit')
+                self.assertEqual(cm.exception.args[2], f'{usage_str}\n{error_str}\n')
+
+    def test_parse_args_failures_details_custom_usage(self):
+        parser = self._get_parser(usage='PROG [--foo] bar 1 [-w W] {a,b,c}\n'
+                                 '       PROG --foo bar 3 t ...')
+        for args_str, usage_str, error_str in [
+            ('',
+             'usage: PROG [--foo] bar 1 [-w W] {a,b,c}\n'
+             '       PROG --foo bar 3 t ...',
+             'PROG: error: the following arguments are required: bar'),
+            ('0.5 1 -y',
+             'usage: ... 1 [-h] [-w W] {a,b,c}',
+             '... 1: error: the following arguments are required: x'),
+            ('0.5 3',
+             'usage: PROG --foo bar 3 t ...',
+             '... 3: error: the following arguments are required: t'),
+        ]:
+            with self.subTest(args_str):
+                args = args_str.split()
+                with self.assertRaises(ArgumentParserError) as cm:
+                    parser.parse_args(args)
+                self.assertEqual(cm.exception.args[0], 'SystemExit')
+                self.assertEqual(cm.exception.args[2], f'{usage_str}\n{error_str}\n')
 
     def test_parse_args(self):
         # check some non-failure cases:
