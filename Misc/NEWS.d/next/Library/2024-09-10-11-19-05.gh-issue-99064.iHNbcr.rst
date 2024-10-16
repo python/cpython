@@ -1,2 +1,2 @@
-added a warning in the :mod:`xml.etree.ElementTree` :func:`xml.etree.ElementTree.parse` for
-non-UTF8 files opened in ``r`` mode.
+Added a warning in the :func:`xml.etree.ElementTree.parse` for
+``'ISO-8859-1'`` encoding files opened in ``r`` mode. Patch by RUANG.
