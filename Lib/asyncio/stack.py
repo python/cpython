@@ -1,8 +1,8 @@
 """Introspection utils for tasks call stacks."""
 
+import dataclasses
 import sys
 import types
-import typing
 
 from . import events
 from . import futures
@@ -23,11 +23,13 @@ __all__ = (
 # top level asyncio namespace, and want to avoid future name clashes.
 
 
-class FrameCallGraphEntry(typing.NamedTuple):
+@dataclasses.dataclass(frozen=True)
+class FrameCallGraphEntry:
     frame: types.FrameType
 
 
-class FutureCallGraph(typing.NamedTuple):
+@dataclasses.dataclass(frozen=True)
+class FutureCallGraph:
     future: futures.Future
     call_stack: list[FrameCallGraphEntry]
     awaited_by: list[FutureCallGraph]

@@ -88,7 +88,7 @@ a suspended *future*.
    keyword-only ``depth`` argument can be used to skip the specified
    number of frames from top of the stack.
 
-   Returns a ``FutureCallGraph`` named tuple:
+   Returns a ``FutureCallGraph`` data class object:
 
    * ``FutureCallGraph(future, call_stack, awaited_by)``
 
@@ -97,7 +97,7 @@ a suspended *future*.
 
       ``call_stack`` is a list of ``FrameCallGraphEntry`` objects.
 
-      ``awaited_by`` is a list of ``FutureCallGraph`` tuples.
+      ``awaited_by`` is a list of ``FutureCallGraph`` objects.
 
    * ``FrameCallGraphEntry(frame)``
 
