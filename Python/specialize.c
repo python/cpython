@@ -2162,49 +2162,29 @@ _Py_Specialize_Call(_PyStackRef callable_st, _Py_CODEUNIT *instr, int nargs)
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[CALL] == INLINE_CACHE_ENTRIES_CALL);
     assert(_Py_OPCODE(*instr) != INSTRUMENTED_CALL);
-    _PyCallCache *cache = (_PyCallCache *)(instr + 1);
-    int fail;
     if (PyCFunction_CheckExact(callable)) {
         specialize_c_call(callable, instr, nargs);
-        return;
     }
     else if (PyFunction_Check(callable)) {
         specialize_py_call((PyFunctionObject *)callable, instr, nargs, false);
-        return;
     }
     else if (PyType_Check(callable)) {
         specialize_class_call(callable, instr, nargs);
-        return;
     }
     else if (Py_IS_TYPE(callable, &PyMethodDescr_Type)) {
         specialize_method_descriptor((PyMethodDescrObject *)callable, instr, nargs);
-        return;
     }
     else if (PyMethod_Check(callable)) {
         PyObject *func = ((PyMethodObject *)callable)->im_func;
         if (PyFunction_Check(func)) {
             specialize_py_call((PyFunctionObject *)func, instr, nargs, true);
-            return;
         }
         else {
-            SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_BOUND_METHOD);
-            fail = -1;
+            unspecialize(instr, SPEC_FAIL_CALL_BOUND_METHOD);
         }
     }
     else {
-        instr->op.code = CALL_NON_PY_GENERAL;
-        fail = 0;
-    }
-    if (fail) {
-        STAT_INC(CALL, failure);
-        assert(!PyErr_Occurred());
-        instr->op.code = CALL;
-        cache->counter = adaptive_counter_backoff(cache->counter);
-    }
-    else {
-        STAT_INC(CALL, success);
-        assert(!PyErr_Occurred());
-        cache->counter = adaptive_counter_cooldown();
+        specialize(instr, CALL_NON_PY_GENERAL, NULL);
     }
 }
 
