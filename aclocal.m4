@@ -112,10 +112,10 @@ int main (int argc, char *argv[])
 
 ]])], [
 
-if grep noonsees conftest$EXEEXT >/dev/null ; then
+if grep noonsees conftest.$ac_objext >/dev/null ; then
   ax_cv_c_float_words_bigendian=yes
 fi
-if grep seesnoon conftest$EXEEXT >/dev/null ; then
+if grep seesnoon conftest.$ac_objext >/dev/null ; then
   if test "$ax_cv_c_float_words_bigendian" = unknown; then
     ax_cv_c_float_words_bigendian=no
   else
