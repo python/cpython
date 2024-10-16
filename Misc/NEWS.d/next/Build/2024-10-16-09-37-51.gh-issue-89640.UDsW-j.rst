@@ -1,1 +1,2 @@
-Improved detection of float word ordering on Linux.
+Improve detection of float word ordering on Linux when link-time optimizations
+are enabled.
