@@ -1200,8 +1200,7 @@ def parse(source, parser=None):
     Return an ElementTree instance.
 
     """
-    if (getattr(source, 'encoding', None) == 'ISO-8859-1' and
-        source.mode == 'r'):
+    if getattr(source, 'encoding', None) == 'ISO-8859-1' and source.mode == 'r':
         import warnings
         warnings.warn(
             "For file objects containing XML data "
