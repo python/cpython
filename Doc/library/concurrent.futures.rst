@@ -232,54 +232,118 @@ ThreadPoolExecutor Example
 InterpreterPoolExecutor
 -----------------------
 
-The :class:`InterpreterPoolExecutor` class, a :class:`ThreadPoolExecutor`
-subclass, uses a pool of isolated interpreters to execute calls
-asynchronously.  Since each interpreter is isolated from the others,
-side-stepping the :term:`Global Interpreter Lock <global interpreter lock>` ,
-multiple cores can be used.  Since Interpreters do not share
-objects between them, in most cases, only picklable
-objects can be executed and returned.
+The :class:`InterpreterPoolExecutor` class uses a pool of interpreters
+to execute calls asynchronously.  It is a :class:`ThreadPoolExecutor`
+subclass, which means each worker is running in its own thread.
+The difference here is that each worker has its own interpreter,
+and runs each task using that interpreter.
+
+The biggest benefit to using interpreters instead of only threads
+is true multi-core parallelism.  Each interpreter has its own
+:term:`Global Interpreter Lock <global interpreter lock>`, so code
+running in one interpreter can run on one CPU core, while code in
+another interpreter runs unblocked on a different core.
+
+The tradeoff is that writing concurrent code for use with multiple
+interpreters can take extra effort.  However, this is because it
+forces you to be deliberate about how and when interpreters interact,
+and to be explicit about what data is shared between interpreters.
+This results in several benefits that help balance the extra effort,
+including true multi-core parallelism,  For example, code written
+this way can make it easier to reason about concurrency.  Another
+major benefit is that you don't have to deal with several of the
+big pain points of using threads, like nrace conditions.
+
+Each worker's interpreter is isolated from all the other interpreters.
+"Isolated" means each interpreter has its own runtime state and
+operates completely independently.  For example, if you redirect
+:data:`sys.stdout` in one interpreter, it will not be automatically
+redirected any other interpreter.  If you import a module in one
+interpreter, it is not automatically imported in any other.  You
+would need to import the module separately in interpreter where
+you need it.  In fact, each module imported in an interpreter is
+a completely separate object from the same module in a different
+interpreter, including :module:`sys`, :module:`builtins`,
+and even ``__main__``.
+
+Isolation means a mutable object, or other data, cannot be used
+by more than one interpreter at the same time.  That effectively means
+interpreters cannot actually share such objects or data.  Instead,
+each interpreter must have its own copy, and you will have to
+synchronize any changes between the copies manually.  Immutable
+objects and data, like the builtin singletons, strings, and tuples
+of immutable objects, don't have these limitations.
+
+Communicating and synchronizing between interpreters is most effectively
+done using dedicated tools, like those proposed in :pep:`734`.  One less
+efficient alternative is to serialize with :mod:`pickle` and then send
+the bytes over a shared :mod:`socket <socket>` or
+:func:`pipe <os.pipe>`.
 
 .. class:: InterpreterPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=(), shared=None)
 
    A :class:`ThreadPoolExecutor` subclass that executes calls asynchronously
    using a pool of at most *max_workers* threads.  Each thread runs
-   tasks in its own interpreter.
+   tasks in its own interpreter.  The worker interpreters are isolated
+   from each other, which means each has its own runtime state and that
+   they can't share any mutable objects or other data.  Each interpreter
+   has its own :term:`Global Interpreter Lock <global interpreter lock>`,
+   which means code run with this executor has true multi-core parallelism.
 
-   *initializer* may be a callable and *initargs* a tuple of arguments,
-   just like with :class:`ThreadPoolExecutor`.  However, they are pickled
-   like with :class:`ProcessPoolExecutor`.  Likewise, functions (and
-   arguments) passed to :meth:`~Executor.submit` are pickled.
+   The optional *initializer* and *initargs* arguments have the same
+   meaning as for :class:`!ThreadPoolExecutor`: the initializer is run
+   when each worker is created, though in this case it is run.in
+   the worker's interpreter.  The executor serializes the *initializer*
+   and *initargs* using :mod:`pickle` when sending them to the worker's
+   interpreter.
 
    .. note::
-      functions defined in the ``__main__`` module cannot be pickled
+      Functions defined in the ``__main__`` module cannot be pickled
       and thus cannot be used.
 
-   *shared* is an optional dict of objects shared by all interpreters
-   in the pool.  The items are added to each interpreter's ``__main__``
-   module.  Not all objects are shareable.  Those that are include
-   the builtin singletons, :class:`str` and :class:`bytes`,
-   and :class:`memoryview`.  See :pep:`734` for more info.
+   .. note::
+      The executor may replace uncaught exceptions from *initializer*
+      with :class:`~concurrent.futures.interpreter.ExecutionFailed`.
 
-   You can also pass a script (:class:`str`) for *initializer* or to
-   :meth:`~Executor.submit` (but not to :meth:`~Executor.map`).
-   In both cases, the script will be executed in the interpreter's
-   ``__main__`` module.  The executor will automatically apply
-   :func:`textwrap.dedent` to the script, so you don't have to do so.
-   With a script, arguments must not be passed in.
-   For :meth:`!Executor.submit`, the return value for a script
-   is always ``None``.
+   The *initializer* argument may also be a script (:class:`str`),
+   The script will be executed in the interpreter's ``__main__`` module.
+   The executor automatically applies :func:`textwrap.dedent` to the script.
+   *initargs* must not be passed in in this case.
 
-   Normally an uncaught exception from *initializer* or from a submitted
-   task will be sent back to be raised as is.
-   However, in some situations the exception might not be suitable to be
-   sent back.  In that case, the executor raises an
-   :class:`~concurrent.futures.interpreter.ExecutionFailed` exception
-   instead, which contains a summary of the original exception.
+   The optional *shared* argument is a :class:`dict` of objects that all
+   interpreters in the pool share.  The *shared* items are added to each
+   interpreter's ``__main__`` module.  Not all objects are shareable.
+   Shareable objects include the builtin singletons, :class:`str`
+   and :class:`bytes`, and :class:`memoryview`.  See :pep:`734`
+   for more info.
 
    Other caveats from parent :class:`ThreadPoolExecutor` apply here.
 
-   .. versionadded:: next
+:meth:`~Executor.submit` and :meth:`~Executor.map` work like normal,
+except the worker serializes the callable and arguments using
+:mod:`pickle` when sending them to its interpreter.  The worker
+likewise serializes the return value when sending it back.
+
+.. note::
+   Functions defined in the ``__main__`` module cannot be pickled
+   and thus cannot be used.
+
+For :meth:`~Executor.submit`, but *not* :meth:`~Executor.map`,
+you can also pass a script (:class:`str`) instead of a callable.
+The script will be executed in the interpreter's ``__main__`` module.
+The executor will automatically apply :func:`textwrap.dedent` to the
+script, so you don't have to do so.  With a script, arguments must
+not be passed in.  The return value for a script is always ``None``.
+
+When a worker's current task raises an uncaught exception, the worker
+always tries to preserve the exception as-is.  If that is successful
+then it also sets the ``__cause__`` to a corresponding
+:class:`~concurrent.futures.interpreter.ExecutionFailed`
+instance, which contains a summary of the original exception.
+In the uncommon case that the worker is not able to preserve the
+original as-is then it directly preserves the corresponding
+:class:`~concurrent.futures.interpreter.ExecutionFailed`
+instance instead.
 
 
 ProcessPoolExecutor
