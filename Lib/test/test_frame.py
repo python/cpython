@@ -423,7 +423,7 @@ class TestFrameLocals(unittest.TestCase):
 
         with self.assertRaises(KeyError):
             d.pop('non_exist')
-        
+
         del d['m']
         self.assertEqual(d.pop('n'), 1)
 
