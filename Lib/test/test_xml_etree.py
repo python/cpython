@@ -464,6 +464,16 @@ class ElementTreeTest(unittest.TestCase):
         elem[:] = tuple([subelem])
         self.serialize_check(elem, '<tag><subtag key="value" /></tag>')
 
+    def test_parse_encoding_warn(self):
+        with self.assertWarns(RuntimeWarning) as cm:
+            with open(SIMPLE_XMLFILE, 'r', encoding='ISO-8859-1') as fp:
+                ET.parse(fp)
+                self.assertIn(
+                    "For file objects containing XML data"
+                    "with non-ASCII and non-UTF-8 encoding (e.g. ISO 8859-1), "
+                    "the file must have been opened in binary mode.", 
+                    str(cm.warnings[0].message))
+
     def test_parsefile(self):
         # Test parsing from file.
 
