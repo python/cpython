@@ -4210,15 +4210,6 @@ Process Management
 
 These functions may be used to create and manage processes.
 
-The various :func:`exec\* <execl>` functions take a list of arguments for the new
-program loaded into the process.  In each case, the first of these arguments is
-passed to the new program as its own name rather than as an argument a user may
-have typed on a command line.  For the C programmer, this is the ``argv[0]``
-passed to a program's :c:func:`main`.  For example, ``os.execv('/bin/echo',
-['foo', 'bar'])`` will only print ``bar`` on standard output; ``foo`` will seem
-to be ignored.
-
-
 .. function:: abort()
 
    Generate a :const:`SIGABRT` signal to the current process.  On Unix, the default
@@ -4280,6 +4271,20 @@ to be ignored.
    :func:`sys.stdout.flush` or :func:`os.fsync` before calling an
    :func:`exec\* <execl>` function.
 
+   *Arguments*
+
+   The various :func:`exec\* <execl>` functions take a list of arguments for the new
+   program loaded into the process.  In each case, the first of these arguments must
+   be the name of the program itself, and not an argument that a user may
+   have typed on a command line.
+
+   For the C programmer, this is the ``argv[0]``
+   passed to a program's :c:func:`main`.  For example, ``os.execv('/bin/echo',
+   ['foo', 'bar'])`` will only print ``bar`` on standard output; ``foo`` will seem
+   to be ignored.
+
+   *Fixed and variable numbers of arguments*
+
    The "l" and "v" variants of the :func:`exec\* <execl>` functions differ in how
    command-line arguments are passed.  The "l" variants are perhaps the easiest
    to work with if the number of parameters is fixed when the code is written; the
@@ -4289,16 +4294,27 @@ to be ignored.
    parameter.  In either case, the arguments to the child process should start with
    the name of the command being run, but this is not enforced.
 
+   *The location of the executable*
+
    The variants which include a "p" near the end (:func:`execlp`,
    :func:`execlpe`, :func:`execvp`, and :func:`execvpe`) will use the
    :envvar:`PATH` environment variable to locate the program *file*.  When the
    environment is being replaced (using one of the :func:`exec\*e <execl>` variants,
    discussed in the next paragraph), the new environment is used as the source of
-   the :envvar:`PATH` variable. The other variants, :func:`execl`, :func:`execle`,
+   the :envvar:`PATH` variable.
+
+   The other variants, :func:`execl`, :func:`execle`,
    :func:`execv`, and :func:`execve`, will not use the :envvar:`PATH` variable to
    locate the executable; *path* must contain an appropriate absolute or relative
    path. Relative paths must include at least one slash, even on Windows, as
    plain names will not be resolved.
+
+   For :func:`execve` on some platforms, *path* may also be specified as an open
+   file descriptor.  This functionality may not be supported on your platform;
+   you can check whether or not it is available using :data:`os.supports_fd`.
+   If it is unavailable, using it will raise a :exc:`NotImplementedError`.
+
+   *Environment variables*
 
    For :func:`execle`, :func:`execlpe`, :func:`execve`, and :func:`execvpe` (note
    that these all end in "e"), the *env* parameter must be a mapping which is
@@ -4306,11 +4322,6 @@ to be ignored.
    instead of the current process' environment); the functions :func:`execl`,
    :func:`execlp`, :func:`execv`, and :func:`execvp` all cause the new process to
    inherit the environment of the current process.
-
-   For :func:`execve` on some platforms, *path* may also be specified as an open
-   file descriptor.  This functionality may not be supported on your platform;
-   you can check whether or not it is available using :data:`os.supports_fd`.
-   If it is unavailable, using it will raise a :exc:`NotImplementedError`.
 
    .. audit-event:: os.exec path,args,env os.execl
 
