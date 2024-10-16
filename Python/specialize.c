@@ -2107,49 +2107,49 @@ specialize_py_call_kw(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
     return 0;
 }
 
-static int
+static void
 specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
 {
     if (PyCFunction_GET_FUNCTION(callable) == NULL) {
-        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OTHER);
-        return 1;
+        unspecialize(instr, SPEC_FAIL_OTHER);
+        return;
     }
     switch (PyCFunction_GET_FLAGS(callable) &
         (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O |
         METH_KEYWORDS | METH_METHOD)) {
         case METH_O: {
             if (nargs != 1) {
-                SPECIALIZATION_FAIL(CALL, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
-                return 1;
+                unspecialize(instr, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
+                return;
             }
             /* len(o) */
             PyInterpreterState *interp = _PyInterpreterState_GET();
             if (callable == interp->callable_cache.len) {
-                instr->op.code = CALL_LEN;
-                return 0;
+                specialize(instr, CALL_LEN);
+                return;
             }
-            instr->op.code = CALL_BUILTIN_O;
-            return 0;
+            specialize(instr, CALL_BUILTIN_O);
+            return;
         }
         case METH_FASTCALL: {
             if (nargs == 2) {
                 /* isinstance(o1, o2) */
                 PyInterpreterState *interp = _PyInterpreterState_GET();
                 if (callable == interp->callable_cache.isinstance) {
-                    instr->op.code = CALL_ISINSTANCE;
-                    return 0;
+                    specialize(instr, CALL_ISINSTANCE);
+                    return;
                 }
             }
-            instr->op.code = CALL_BUILTIN_FAST;
-            return 0;
+            specialize(instr, CALL_BUILTIN_FAST);
+            return;
         }
         case METH_FASTCALL | METH_KEYWORDS: {
-            instr->op.code = CALL_BUILTIN_FAST_WITH_KEYWORDS;
-            return 0;
+            specialize(instr, CALL_BUILTIN_FAST_WITH_KEYWORDS);
+            return;
         }
         default:
-            instr->op.code = CALL_NON_PY_GENERAL;
-            return 0;
+            specialize(instr, CALL_NON_PY_GENERAL);
+            return;
     }
 }
 
@@ -2164,7 +2164,8 @@ _Py_Specialize_Call(_PyStackRef callable_st, _Py_CODEUNIT *instr, int nargs)
     _PyCallCache *cache = (_PyCallCache *)(instr + 1);
     int fail;
     if (PyCFunction_CheckExact(callable)) {
-        fail = specialize_c_call(callable, instr, nargs);
+        specialize_c_call(callable, instr, nargs);
+        return;
     }
     else if (PyFunction_Check(callable)) {
         fail = specialize_py_call((PyFunctionObject *)callable, instr, nargs, false);
