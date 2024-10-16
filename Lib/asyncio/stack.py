@@ -3,6 +3,7 @@
 import dataclasses
 import sys
 import types
+import typing
 
 from . import events
 from . import futures
@@ -35,18 +36,15 @@ class FutureCallGraph:
     awaited_by: list[FutureCallGraph]
 
 
-def _build_stack_for_future(future: any) -> FutureCallGraph:
+def _build_stack_for_future(future: futures.Future) -> FutureCallGraph:
     if not isinstance(future, futures.Future):
         raise TypeError(
             f"{future!r} object does not appear to be compatible "
             f"with asyncio.Future"
         )
 
-    try:
-        get_coro = future.get_coro
-    except AttributeError:
-        coro = None
-    else:
+    coro = None
+    if get_coro := getattr(future, 'get_coro', None):
         coro = get_coro()
 
     st: list[FrameCallGraphEntry] = []
@@ -74,7 +72,7 @@ def _build_stack_for_future(future: any) -> FutureCallGraph:
 
 def capture_call_graph(
     *,
-    future: any = None,
+    future: futures.Future | None = None,
     depth: int = 1,
 ) -> FutureCallGraph | None:
     """Capture async call stack for the current task or the provided Future.
@@ -158,11 +156,16 @@ def capture_call_graph(
     return FutureCallGraph(future, call_stack, awaited_by)
 
 
-def print_call_graph(*, future: any = None, file=None, depth: int = 1) -> None:
+def print_call_graph(
+    *,
+    future: futures.Future | None = None,
+    file: typing.TextIO | None = None,
+    depth: int = 1,
+) -> None:
     """Print async call stack for the current task or the provided Future."""
 
-    def render_level(st: FutureCallGraph, buf: list[str], level: int):
-        def add_line(line: str):
+    def render_level(st: FutureCallGraph, buf: list[str], level: int) -> None:
+        def add_line(line: str) -> None:
             buf.append(level * '    ' + line)
 
         if isinstance(st.future, tasks.Task):
@@ -223,7 +226,7 @@ def print_call_graph(*, future: any = None, file=None, depth: int = 1) -> None:
         return
 
     try:
-        buf = []
+        buf: list[str] = []
         render_level(stack, buf, 0)
         rendered = '\n'.join(buf)
         print(rendered, file=file)
