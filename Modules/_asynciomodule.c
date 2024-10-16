@@ -580,8 +580,15 @@ future_init(FutureObj *fut, PyObject *loop)
 }
 
 static int
-future_awaited_by_add_lock_held(asyncio_state *state, PyObject *fut, PyObject *thing)
+future_awaited_by_add(asyncio_state *state, PyObject *fut, PyObject *thing)
 {
+    if (!TaskOrFuture_Check(state, fut) || !TaskOrFuture_Check(state, thing)) {
+        // We only want to support native asyncio Futures.
+        // For further insight see the comment in the Python
+        // implementation of "future_add_to_awaited_by()".
+        return 0;
+    }
+
     FutureObj *_fut = (FutureObj *)fut;
 
     /* Most futures/task are only awaited by one entity, so we want
@@ -617,7 +624,7 @@ future_awaited_by_add_lock_held(asyncio_state *state, PyObject *fut, PyObject *t
 }
 
 static int
-future_awaited_by_add(asyncio_state *state, PyObject *fut, PyObject *thing)
+future_awaited_by_discard(asyncio_state *state, PyObject *fut, PyObject *thing)
 {
     if (!TaskOrFuture_Check(state, fut) || !TaskOrFuture_Check(state, thing)) {
         // We only want to support native asyncio Futures.
@@ -625,17 +632,6 @@ future_awaited_by_add(asyncio_state *state, PyObject *fut, PyObject *thing)
         // implementation of "future_add_to_awaited_by()".
         return 0;
     }
-
-    int result;
-    Py_BEGIN_CRITICAL_SECTION(fut);
-    result = future_awaited_by_add_lock_held(state, fut, thing);
-    Py_END_CRITICAL_SECTION();
-    return result;
-}
-
-static int
-future_awaited_by_discard_lock_held(asyncio_state *state, PyObject *fut, PyObject *thing)
-{
 
     FutureObj *_fut = (FutureObj *)fut;
 
@@ -659,23 +655,6 @@ future_awaited_by_discard_lock_held(asyncio_state *state, PyObject *fut, PyObjec
         }
     }
     return 0;
-}
-
-static int
-future_awaited_by_discard(asyncio_state *state, PyObject *fut, PyObject *thing)
-{
-    if (!TaskOrFuture_Check(state, fut) || !TaskOrFuture_Check(state, thing)) {
-        // We only want to support native asyncio Futures.
-        // For further insight see the comment in the Python
-        // implementation of "future_add_to_awaited_by()".
-        return 0;
-    }
-
-    int result;
-    Py_BEGIN_CRITICAL_SECTION(fut);
-    result = future_awaited_by_discard_lock_held(state, fut, thing);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 static PyObject *
