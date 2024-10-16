@@ -263,7 +263,7 @@ interpreter, it is not automatically imported in any other.  You
 would need to import the module separately in interpreter where
 you need it.  In fact, each module imported in an interpreter is
 a completely separate object from the same module in a different
-interpreter, including :module:`sys`, :module:`builtins`,
+interpreter, including :mod:`sys`, :mod:`builtins`,
 and even ``__main__``.
 
 Isolation means a mutable object, or other data, cannot be used
