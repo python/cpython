@@ -192,7 +192,7 @@ _Py_ThreadId(void)
     __asm__("movq %%gs:0, %0" : "=r" (tid));  // x86_64 macOSX uses GS
 #elif defined(__x86_64__)
    __asm__("movq %%fs:0, %0" : "=r" (tid));  // x86_64 Linux, BSD uses FS
-#elif defined(__arm__)
+#elif defined(__arm__) && __ARM_ARCH >= 7
     __asm__ ("mrc p15, 0, %0, c13, c0, 3\nbic %0, %0, #3" : "=r" (tid));
 #elif defined(__aarch64__) && defined(__APPLE__)
     __asm__ ("mrs %0, tpidrro_el0" : "=r" (tid));
