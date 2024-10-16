@@ -7,7 +7,7 @@
 #include "jit.h"
 
 _Py_CODEUNIT *
-_ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate)
+_JIT_ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate)
 {
     // This is subtle. The actual trace will return to us once it exits, so we
     // need to make sure that we stay alive until then. If our trace side-exits

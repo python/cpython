@@ -86,11 +86,7 @@ class _Target(typing.Generic[_S, _R]):
         sections: list[dict[typing.Literal["Section"], _S]] = json.loads(output)
         for wrapped_section in sections:
             self._handle_section(wrapped_section["Section"], group)
-        # The trampoline's entry point is just named "_ENTRY", since on some
-        # platforms we later assume that any function starting with "_JIT_" uses
-        # the GHC calling convention:
-        entry_symbol = "_JIT_ENTRY" if "_JIT_ENTRY" in group.symbols else "_ENTRY"
-        assert group.symbols[entry_symbol] == (_stencils.HoleValue.CODE, 0)
+        assert group.symbols["_JIT_ENTRY"] == (_stencils.HoleValue.CODE, 0)
         if group.data.body:
             line = f"0: {str(bytes(group.data.body)).removeprefix('b')}"
             group.data.disassembly.append(line)
