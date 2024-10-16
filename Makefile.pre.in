@@ -2531,6 +2531,10 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_tools \
 		test/test_ttk \
 		test/test_unittest \
+		test/test_unittest/namespace_test_pkg \
+		test/test_unittest/namespace_test_pkg/bar \
+		test/test_unittest/namespace_test_pkg/noop \
+		test/test_unittest/namespace_test_pkg/noop/no2 \
 		test/test_unittest/testmock \
 		test/test_warnings \
 		test/test_warnings/data \
