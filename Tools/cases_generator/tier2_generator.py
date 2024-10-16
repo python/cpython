@@ -167,7 +167,7 @@ class Tier2Emitter(Emitter):
         return True
 
 
-def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
+def write_uop(uop: Uop, emitter: Emitter, stack: Stack, inst: Instruction) -> Stack:
     locals: dict[str, Local] = {}
     try:
         emitter.out.start_line()
@@ -188,10 +188,17 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
                     type = f"uint{cache.size*16}_t "
                     cast = f"uint{cache.size*16}_t"
                 emitter.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND();\n")
-        storage = emitter.emit_tokens(uop, storage, None)
+        storage = emitter.emit_tokens(uop, storage, inst)
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body[0]) from None
     return storage.stack
+
+
+def get_instruction_for_uop(instructions: dict[str, Instruction], uop: Uop) -> Instruction | None:
+    for inst in instructions.values():
+        if uop in inst.parts:
+            return inst
+
 
 SKIPS = ("_EXTENDED_ARG",)
 
@@ -227,8 +234,9 @@ def generate_tier2(
             continue
         out.emit(f"case {uop.name}: {{\n")
         declare_variables(uop, out)
+        inst = get_instruction_for_uop(analysis.instructions, uop)
         stack = Stack()
-        stack = write_uop(uop, emitter, stack)
+        stack = write_uop(uop, emitter, stack, inst)
         out.start_line()
         if not uop.properties.always_exits:
             stack.flush(out)
