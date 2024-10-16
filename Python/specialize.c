@@ -2045,7 +2045,7 @@ specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
     return 0;
 }
 
-static int
+static void
 specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
                    bool bound_method)
 {
@@ -2054,32 +2054,33 @@ specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
     int kind = function_kind(code);
     /* Don't specialize if PEP 523 is active */
     if (_PyInterpreterState_GET()->eval_frame) {
-        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_PEP_523);
-        return -1;
+        unspecialize(instr, SPEC_FAIL_CALL_PEP_523);
+        return;
     }
     int argcount = -1;
     if (kind == SPEC_FAIL_CODE_NOT_OPTIMIZED) {
-        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CODE_NOT_OPTIMIZED);
-        return -1;
+        unspecialize(instr, SPEC_FAIL_CODE_NOT_OPTIMIZED);
+        return;
     }
     if (kind == SIMPLE_FUNCTION) {
         argcount = code->co_argcount;
     }
     int version = _PyFunction_GetVersionForCurrentState(func);
     if (!_PyFunction_IsVersionValid(version)) {
-        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OUT_OF_VERSIONS);
-        return -1;
+        unspecialize(instr, SPEC_FAIL_OUT_OF_VERSIONS);
+        return;
     }
     write_u32(cache->func_version, version);
+    uint8_t opcode;
     if (argcount == nargs + bound_method) {
-        instr->op.code = bound_method ? CALL_BOUND_METHOD_EXACT_ARGS : CALL_PY_EXACT_ARGS;
+        opcode =
+            bound_method ? CALL_BOUND_METHOD_EXACT_ARGS : CALL_PY_EXACT_ARGS;
     }
     else {
-        instr->op.code = bound_method ? CALL_BOUND_METHOD_GENERAL : CALL_PY_GENERAL;
+        opcode = bound_method ? CALL_BOUND_METHOD_GENERAL : CALL_PY_GENERAL;
     }
-    return 0;
+    specialize(instr, opcode);
 }
-
 
 static int
 specialize_py_call_kw(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
@@ -2168,7 +2169,8 @@ _Py_Specialize_Call(_PyStackRef callable_st, _Py_CODEUNIT *instr, int nargs)
         return;
     }
     else if (PyFunction_Check(callable)) {
-        fail = specialize_py_call((PyFunctionObject *)callable, instr, nargs, false);
+        specialize_py_call((PyFunctionObject *)callable, instr, nargs, false);
+        return;
     }
     else if (PyType_Check(callable)) {
         fail = specialize_class_call(callable, instr, nargs);
@@ -2179,7 +2181,8 @@ _Py_Specialize_Call(_PyStackRef callable_st, _Py_CODEUNIT *instr, int nargs)
     else if (PyMethod_Check(callable)) {
         PyObject *func = ((PyMethodObject *)callable)->im_func;
         if (PyFunction_Check(func)) {
-            fail = specialize_py_call((PyFunctionObject *)func, instr, nargs, true);
+            specialize_py_call((PyFunctionObject *)func, instr, nargs, true);
+            return;
         }
         else {
             SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_BOUND_METHOD);
