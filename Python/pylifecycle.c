@@ -28,7 +28,7 @@
 #include "pycore_sliceobject.h"   // _PySlice_Fini()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
-#include "pycore_typeid.h"        // _PyType_FinalizeIdPool()
+#include "pycore_uniqueid.h"      // _PyObject_FinalizeUniqueIdPool()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
@@ -1834,7 +1834,7 @@ finalize_interp_types(PyInterpreterState *interp)
 
     _PyTypes_Fini(interp);
 #ifdef Py_GIL_DISABLED
-    _PyType_FinalizeIdPool(interp);
+    _PyObject_FinalizeUniqueIdPool(interp);
 #endif
 
     _PyCode_Fini(interp);
@@ -2020,7 +2020,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
     /* Ensure that remaining threads are detached */
     _PyEval_StopTheWorldAll(runtime);
 
-    /* Remaining daemon threads will automatically exit
+    /* Remaining daemon threads will be trapped in PyThread_hang_thread
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
     _PyInterpreterState_SetFinalizing(tstate->interp, tstate);
     _PyRuntimeState_SetFinalizing(runtime, tstate);

@@ -15,7 +15,7 @@
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
 #include "pydtrace.h"
-#include "pycore_typeid.h"        // _PyType_MergeThreadLocalRefcounts
+#include "pycore_uniqueid.h"      // _PyObject_MergeThreadLocalRefcounts()
 
 #ifdef Py_GIL_DISABLED
 
@@ -215,15 +215,10 @@ disable_deferred_refcounting(PyObject *op)
         op->ob_gc_bits &= ~_PyGC_BITS_DEFERRED;
         op->ob_ref_shared -= _Py_REF_SHARED(_Py_REF_DEFERRED, 0);
         merge_refcount(op, 0);
-    }
 
-    // Heap types also use thread-local refcounting -- disable it here.
-    if (PyType_Check(op)) {
-        // Disable thread-local refcounting for heap types
-        PyTypeObject *type = (PyTypeObject *)op;
-        if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-            _PyType_ReleaseId((PyHeapTypeObject *)op);
-        }
+        // Heap types and code objects also use per-thread refcounting, which
+        // should also be disabled when we turn off deferred refcounting.
+        _PyObject_DisablePerThreadRefcounting(op);
     }
 
     // Generators and frame objects may contain deferred references to other
@@ -420,18 +415,24 @@ merge_queued_objects(_PyThreadStateImpl *tstate, struct collection_state *state)
 static void
 process_delayed_frees(PyInterpreterState *interp)
 {
-    // In STW status, we can observe the latest write sequence by
-    // advancing the write sequence immediately.
+    // While we are in a "stop the world" pause, we can observe the latest
+    // write sequence by advancing the write sequence immediately.
     _Py_qsbr_advance(&interp->qsbr);
     _PyThreadStateImpl *current_tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
     _Py_qsbr_quiescent_state(current_tstate->qsbr);
+
+    // Merge the queues from other threads into our own queue so that we can
+    // process all of the pending delayed free requests at once.
     HEAD_LOCK(&_PyRuntime);
-    PyThreadState *tstate = interp->threads.head;
-    while (tstate != NULL) {
-        _PyMem_ProcessDelayed(tstate);
-        tstate = (PyThreadState *)tstate->next;
+    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
+        _PyThreadStateImpl *other = (_PyThreadStateImpl *)p;
+        if (other != current_tstate) {
+            llist_concat(&current_tstate->mem_free_queue, &other->mem_free_queue);
+        }
     }
     HEAD_UNLOCK(&_PyRuntime);
+
+    _PyMem_ProcessDelayed((PyThreadState *)current_tstate);
 }
 
 // Subtract an incoming reference from the computed "gc_refs" refcount.
@@ -1221,7 +1222,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
         _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)p;
 
         // merge per-thread refcount for types into the type's actual refcount
-        _PyType_MergeThreadLocalRefcounts(tstate);
+        _PyObject_MergePerThreadRefcounts(tstate);
 
         // merge refcounts for all queued objects
         merge_queued_objects(tstate, state);

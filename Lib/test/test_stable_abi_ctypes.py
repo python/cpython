@@ -806,6 +806,7 @@ SYMBOL_NAMES = (
     "PyUnicode_DecodeUnicodeEscape",
     "PyUnicode_EncodeFSDefault",
     "PyUnicode_EncodeLocale",
+    "PyUnicode_Equal",
     "PyUnicode_EqualToUTF8",
     "PyUnicode_EqualToUTF8AndSize",
     "PyUnicode_FSConverter",
