@@ -471,7 +471,7 @@ class ElementTreeTest(unittest.TestCase):
                 self.assertIn(
                     "For file objects containing XML data"
                     "with non-ASCII and non-UTF-8 encoding (e.g. ISO 8859-1), "
-                    "the file must have been opened in binary mode.", 
+                    "the file must have been opened in binary mode.",
                     str(cm.warnings[0].message))
 
     def test_parsefile(self):
