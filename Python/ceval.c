@@ -767,13 +767,14 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
    this function only. If this is fixed upstream, we should gate this on the
    version of MSVC.
  */
-#define DO_NOT_OPTIMIZE_INTERP_LOOP ( \
-    (defined(_MSC_VER) && \
+#if (defined(_MSC_VER) && \
      defined(_Py_USING_PGO) && \
      (defined(_Py_JIT) || \
-      defined(Py_GIL_DISABLED))))
+      defined(Py_GIL_DISABLED)))
+#define DO_NOT_OPTIMIZE_INTERP_LOOP
+#endif
 
-#if DO_NOT_OPTIMIZE_INTERP_LOOP
+#ifdef DO_NOT_OPTIMIZE_INTERP_LOOP
 #  pragma optimize("t", off)
 /* This setting is reversed below following _PyEval_EvalFrameDefault */
 #endif
@@ -1153,7 +1154,7 @@ goto_to_tier1:
 
 }
 
-#if DO_NOT_OPTIMIZE_INTERP_LOOP
+#ifdef DO_NOT_OPTIMIZE_INTERP_LOOP
 #  pragma optimize("", on)
 #endif
 
