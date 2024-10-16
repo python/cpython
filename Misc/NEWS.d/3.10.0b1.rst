@@ -161,7 +161,7 @@ Restore proper validation of complex literal value patterns when parsing
 .. nonce: TueFdQ
 .. section: Core and Builtins
 
-Set frame.f_lineno to the line number of the 'with' kweyword when executing
+Set frame.f_lineno to the line number of the 'with' keyword when executing
 the call to ``__exit__``.
 
 ..

@@ -241,7 +241,7 @@ fly. Their original relative order is restored "by magic" via the final
 This makes processing descending runs a little more costly. We only use
 `__lt__` comparisons, so that `x == y` has to be deduced from
 `not x < y and not y < x`. But so long as a run remains strictly decreasing,
-only one of those compares needs to be done per loop iteration. So the primsry
+only one of those compares needs to be done per loop iteration. So the primary
 extra cost is paid only when there are equal elements, and they get some
 compensating benefit by not needing to end the descending run.
 

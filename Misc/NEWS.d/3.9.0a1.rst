@@ -5717,7 +5717,7 @@ The :c:macro:`METH_FASTCALL` calling convention has been documented.
 
 The new function :c:func:`!PyCode_NewWithPosOnlyArgs` allows to create code
 objects like :c:func:`!PyCode_New`, but with an extra *posonlyargcount*
-parameter for indicating the number of positonal-only arguments.
+parameter for indicating the number of positional-only arguments.
 
 ..
 

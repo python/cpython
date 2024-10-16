@@ -4,7 +4,7 @@
 #
 # reference: https://github.com/google/sanitizers/wiki/ThreadSanitizerSuppressions
 
-## Default build suppresssions
+## Default build suppressions
 
 race:get_allocator_unlocked
 race:set_allocator_unlocked

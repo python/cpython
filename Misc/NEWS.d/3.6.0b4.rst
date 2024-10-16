@@ -314,7 +314,7 @@ Haubenwallner.
 .. nonce: CLz6qy
 .. section: Build
 
-Rename --with-optimiations to --enable-optimizations.
+Rename --with-optimizations to --enable-optimizations.
 
 ..
 

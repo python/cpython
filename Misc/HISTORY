@@ -1714,7 +1714,7 @@ IDLE
   move version to end.
 
 - Issue #14105: Idle debugger breakpoints no longer disappear
-  when inseting or deleting lines.
+  when inserting or deleting lines.
 
 - Issue #17172: Turtledemo can now be run from Idle.
   Currently, the entry is on the Help menu, but it may move to Run.
@@ -11919,7 +11919,7 @@ Core and Builtins
   with a non-empty format string.  This is an effort to future-proof user
   code. If a derived class does not currently implement __format__ but later
   adds its own __format__, it would most likely break user code that had
-  supplied a format string.  This will be changed to a DeprecationWaring in
+  supplied a format string.  This will be changed to a DeprecationWarning in
   Python 3.3 and it will be an error in Python 3.4.
 
 - Issue #9828: Destroy the GIL in Py_Finalize(), so that it gets properly
@@ -14964,7 +14964,7 @@ Library
   whitespace.
 
 - Issue #5940: distutils.command.build_clib.check_library_list was not doing
-  the right type checkings anymore.
+  the right type checks anymore.
 
 - Issue #4875: On win32, ctypes.util.find_library does no longer
   return directories.
@@ -16950,7 +16950,7 @@ Core and Builtins
 
 - Patch #1953: Added ``sys._compact_freelists()`` and the C API
   functions ``PyInt_CompactFreeList`` and ``PyFloat_CompactFreeList``
-  to compact the internal free lists of pre-allocted ints and floats.
+  to compact the internal free lists of pre-allocated ints and floats.
 
 - Bug #1983: Fixed return type of fork(), fork1() and forkpty() calls.
   Python expected the return type int but the fork familie returns
@@ -32457,7 +32457,7 @@ you can have a single shared library that defines multiple modules.
 (SunOS / SVR4 style shared libraries only.)
 
 Jim Fulton's ``abstract object interface'' has been incorporated into
-the run-time API.  For more detailes, read the files
+the run-time API.  For more details, read the files
 "Include/abstract.h" and "Objects/abstract.c".
 
 The Macintosh version is much more robust now.
@@ -33372,7 +33372,7 @@ manner.
 when deallocated.
 
 * There is a compile-time option to cache a string's hash function,
-but this appeared to have a negligeable effect, and as it costs 4
+but this appeared to have a negligible effect, and as it costs 4
 bytes per string it is disabled by default.
 
 

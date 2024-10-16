@@ -905,7 +905,7 @@ with :envvar:`PYTHONUOPS` or :option:`-X uops <-X>` enabled.
 
 Fix potential unaligned memory access on C APIs involving returned sequences
 of ``char *`` pointers within the :mod:`grp` and :mod:`socket` modules.
-These were revealed using a ``-fsaniziter=alignment`` build on ARM macOS.
+These were revealed using a ``-fsanitizer=alignment`` build on ARM macOS.
 Patch by Christopher Chavez.
 
 ..
