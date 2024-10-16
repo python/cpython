@@ -1305,6 +1305,12 @@ Executing code in thread or process pools
                   pool, cpu_bound)
               print('custom process pool', result)
 
+          # 4. Run in a custom interpreter pool:
+          with concurrent.futures.InterpreterPoolExecutor() as pool:
+              result = await loop.run_in_executor(
+                  pool, cpu_bound)
+              print('custom interpreter pool', result)
+
       if __name__ == '__main__':
           asyncio.run(main())
 
@@ -1329,7 +1335,8 @@ Executing code in thread or process pools
 
    Set *executor* as the default executor used by :meth:`run_in_executor`.
    *executor* must be an instance of
-   :class:`~concurrent.futures.ThreadPoolExecutor`.
+   :class:`~concurrent.futures.ThreadPoolExecutor`, which includes
+   :class:`~concurrent.futures.InterpreterPoolExecutor`.
 
    .. versionchanged:: 3.11
       *executor* must be an instance of
