@@ -60,7 +60,8 @@ struct _reftracer_runtime_state {
 /* Full Python runtime state */
 
 /* _PyRuntimeState holds the global state for the CPython runtime.
-   That data is exposed in the internal API as a static variable (_PyRuntime).
+   That data is exported by the internal API as a global variable
+   (_PyRuntime, defined near the top of pylifecycle.c).
    */
 typedef struct pyruntimestate {
     /* This field must be first to facilitate locating it by out of process

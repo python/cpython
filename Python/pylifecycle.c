@@ -75,6 +75,7 @@ static void wait_for_thread_shutdown(PyThreadState *tstate);
 static void finalize_subinterpreters(void);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 
+
 /* The following places the `_PyRuntime` structure in a location that can be
  * found without any external information. This is meant to ease access to the
  * interpreter state for various runtime debugging tools, but is *not* an
@@ -88,6 +89,7 @@ _PyRuntimeState _PyRuntime
 )
 = _PyRuntimeState_INIT(_PyRuntime, _Py_Debug_Cookie);
 _Py_COMP_DIAG_POP
+
 
 static int runtime_initialized = 0;
 
