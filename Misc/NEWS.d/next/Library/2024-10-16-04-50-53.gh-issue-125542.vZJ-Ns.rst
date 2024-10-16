@@ -1,0 +1,1 @@
+Deprecate passing prefix_chars_ parameter to :meth:`ArgumentParser.add_argument_group`.
