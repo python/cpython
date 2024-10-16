@@ -26,9 +26,6 @@ extern "C" {
 #include "pycore_typeobject.h"      // struct _types_runtime_state
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_state
 
-struct _getargs_runtime_state {
-    struct _PyArg_Parser *static_parsers;
-};
 
 /* Runtime audit hook state */
 
@@ -148,7 +145,9 @@ typedef struct pyruntimestate {
         /* TODO: Given interp_main, it may be possible to kill this ref */
         PyInterpreterState *autoInterpreterState;
     } gilstate;
-    struct _getargs_runtime_state getargs;
+    struct _getargs_runtime_state {
+        struct _PyArg_Parser *static_parsers;
+    } getargs;
     struct _fileutils_state fileutils;
     struct _faulthandler_runtime_state faulthandler;
     struct _tracemalloc_runtime_state tracemalloc;
@@ -251,6 +250,7 @@ _PyRuntimeState_SetFinalizing(_PyRuntimeState *runtime, PyThreadState *tstate) {
                                        tstate->thread_id);
     }
 }
+
 
 #ifdef __cplusplus
 }
