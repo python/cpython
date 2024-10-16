@@ -85,13 +85,13 @@ class TestCallStack(unittest.IsolatedAsyncioTestCase):
             # awaited by
             [
                 ['T<anon>',
-                     ['a __aexit__', 'a main', 'a test_stack_tgroup'], []
+                     ['a _aexit', 'a __aexit__', 'a main', 'a test_stack_tgroup'], []
                 ],
                 ['T<sub_main_1>',
                     ['a c1'],
                     [
                         ['T<anon>',
-                            ['a __aexit__', 'a main', 'a test_stack_tgroup'], []
+                            ['a _aexit', 'a __aexit__', 'a main', 'a test_stack_tgroup'], []
                         ]
                     ]
                 ],
@@ -99,7 +99,7 @@ class TestCallStack(unittest.IsolatedAsyncioTestCase):
                     ['a c1'],
                     [
                         ['T<anon>',
-                            ['a __aexit__', 'a main', 'a test_stack_tgroup'], []
+                            ['a _aexit', 'a __aexit__', 'a main', 'a test_stack_tgroup'], []
                         ]
                     ]
                 ]
