@@ -742,11 +742,20 @@ Porting to Python 3.14
 Deprecated
 ----------
 
+* The :c:macro:`!Py_HUGE_VAL` macro is :term:`soft deprecated`,
+  use :c:macro:`!Py_INFINITY` instead.
+  (Contributed by Sergey B Kirpichev in :gh:`120026`.)
+
 * Macros :c:macro:`!Py_IS_NAN`, :c:macro:`!Py_IS_INFINITY`
   and :c:macro:`!Py_IS_FINITE` are :term:`soft deprecated`,
   use instead :c:macro:`!isnan`, :c:macro:`!isinf` and
   :c:macro:`!isfinite` available from :file:`math.h`
   since C99.  (Contributed by Sergey B Kirpichev in :gh:`119613`.)
+
+* :func:`!asyncio.iscoroutinefunction` is deprecated
+  and will be removed in Python 3.16,
+  use :func:`inspect.iscoroutinefunction` instead.
+  (Contributed by Jiahao Li and Kumar Aditya in :gh:`122875`.)
 
 .. Add C API deprecations above alphabetically, not here at the end.
 
