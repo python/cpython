@@ -864,7 +864,10 @@ specialize_dict_access(
         return 0;
     }
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
-    if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES && _PyObject_InlineValues(owner)->valid) {
+    if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES &&
+        _PyObject_InlineValues(owner)->valid &&
+        (base_op == LOAD_ATTR || _PyObject_GetManagedDict(owner) == NULL))
+    {
         PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
         assert(PyUnicode_CheckExact(name));
         Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
