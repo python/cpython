@@ -4,7 +4,7 @@
 #include "pycore_frame.h"
 #include "pycore_jit.h"
 
-#include "jit_definitions.h"
+#include "jit.h"
 
 _Py_CODEUNIT *
 _ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate)

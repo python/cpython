@@ -496,7 +496,11 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
         ]
         target = _ELF(host, alignment=8, args=args)
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
-        args = ["-DPy_NO_ENABLE_SHARED"]
+        args = [
+            "-DPy_NO_ENABLE_SHARED", 
+            # __attribute__((preserve_none)) is not supported 
+            "-Wno-ignored-attributes"
+        ]
         target = _COFF(host, args=args, prefix="_")
     elif re.fullmatch(r"x86_64-apple-darwin.*", host):
         target = _MachO(host, prefix="_")

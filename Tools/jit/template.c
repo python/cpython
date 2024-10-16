@@ -21,7 +21,7 @@
 
 #include "ceval_macros.h"
 
-#include "jit_definitions.h"
+#include "jit.h"
 
 #undef CURRENT_OPARG
 #define CURRENT_OPARG() (_oparg)
