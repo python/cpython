@@ -249,7 +249,7 @@ _PyStackRef_FromPyObjectNew(PyObject *obj)
     if (_Py_IsDeferrable(obj)) {
         return (_PyStackRef){ .bits = ((uintptr_t)obj) | Py_TAG_REFCNT};
     }
-    Py_INCREF(obj);
+    Py_INCREF_MORTAL(obj);
     _PyStackRef ref = (_PyStackRef){ .bits = (uintptr_t)obj };
     return ref;
 }
