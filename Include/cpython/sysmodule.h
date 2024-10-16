@@ -2,10 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-typedef int(*Py_AuditHookFunction)(const char *, PyObject *, void *);
-
-PyAPI_FUNC(int) PySys_AddAuditHook(Py_AuditHookFunction, void*);
-
 typedef struct {
     FILE* perf_map;
     PyThread_type_lock map_lock;

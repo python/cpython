@@ -48,6 +48,9 @@
     <ClInclude Include="..\Include\abstract.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\audit.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\boolobject.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -354,6 +357,9 @@
     <ClInclude Include="..\Include\cpython\abstract.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\audit.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\bytearrayobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
@@ -550,6 +556,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_atexit.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_audit.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_bitutils.h">

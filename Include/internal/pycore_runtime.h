@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_atexit.h"          // struct _atexit_runtime_state
+#include "pycore_audit.h"           // _Py_AuditHookEntry
 #include "pycore_ceval_state.h"     // struct _ceval_runtime_state
 #include "pycore_crossinterp.h"     // struct _xidregistry
 #include "pycore_debugger_utils.h"  // _Py_DebugOffsets
@@ -26,14 +27,6 @@ extern "C" {
 #include "pycore_typeobject.h"      // struct _types_runtime_state
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_state
 
-
-/* Runtime audit hook state */
-
-typedef struct _Py_AuditHookEntry {
-    struct _Py_AuditHookEntry *next;
-    Py_AuditHookFunction hookCFunction;
-    void *userData;
-} _Py_AuditHookEntry;
 
 /* Full Python runtime state */
 

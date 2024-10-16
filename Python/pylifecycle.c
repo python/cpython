@@ -2,6 +2,7 @@
 
 #include "Python.h"
 
+#include "pycore_audit.h"         // _PySys_ClearAuditHooks()
 #include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
 #include "pycore_codecs.h"        // _PyCodec_Lookup()
@@ -27,7 +28,7 @@
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_sliceobject.h"   // _PySlice_Fini()
-#include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 #include "pycore_uniqueid.h"      // _PyType_FinalizeIdPool()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()

@@ -128,6 +128,7 @@
   <ItemGroup>
     <ClInclude Include="..\Include\Python.h" />
     <ClInclude Include="..\Include\abstract.h" />
+    <ClInclude Include="..\Include\audit.h" />
     <ClInclude Include="..\Include\boolobject.h" />
     <ClInclude Include="..\Include\bytearrayobject.h" />
     <ClInclude Include="..\Include\bytesobject.h" />
@@ -137,6 +138,7 @@
     <ClInclude Include="..\Include\complexobject.h" />
     <ClInclude Include="..\Include\critical_section.h" />
     <ClInclude Include="..\Include\cpython\abstract.h" />
+    <ClInclude Include="..\Include\cpython\audit.h" />
     <ClInclude Include="..\Include\cpython\bytearrayobject.h" />
     <ClInclude Include="..\Include\cpython\bytesobject.h" />
     <ClInclude Include="..\Include\cpython\cellobject.h" />
@@ -208,6 +210,7 @@
     <ClInclude Include="..\Include\internal\pycore_ast.h" />
     <ClInclude Include="..\Include\internal\pycore_ast_state.h" />
     <ClInclude Include="..\Include\internal\pycore_atexit.h" />
+    <ClInclude Include="..\Include\internal\pycore_audit.h" />
     <ClInclude Include="..\Include\internal\pycore_backoff.h" />
     <ClInclude Include="..\Include\internal\pycore_bitutils.h" />
     <ClInclude Include="..\Include\internal\pycore_brc.h" />
