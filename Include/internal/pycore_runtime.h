@@ -30,8 +30,6 @@ struct _getargs_runtime_state {
     struct _PyArg_Parser *static_parsers;
 };
 
-/* GIL state */
-
 /* Runtime audit hook state */
 
 typedef struct _Py_AuditHookEntry {
@@ -39,12 +37,6 @@ typedef struct _Py_AuditHookEntry {
     Py_AuditHookFunction hookCFunction;
     void *userData;
 } _Py_AuditHookEntry;
-
-/* Reference tracer state */
-struct _reftracer_runtime_state {
-    PyRefTracer tracer_func;
-    void* tracer_data;
-};
 
 /* Full Python runtime state */
 
