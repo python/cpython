@@ -54,7 +54,7 @@ class WorkerContext(_thread.WorkerContext):
                 compile(data, '<string>', 'exec')
             else:
                 # Functions defined in the __main__ module can't be pickled,
-                # so they can't be used here (for now).  We could possibly
+                # so they can't be used here.  In the future, we could possibly
                 # borrow from multiprocessing to work around this.
                 data = pickle.dumps((fn, args, kwargs))
                 kind = 'function'

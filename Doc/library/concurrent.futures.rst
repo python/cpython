@@ -232,12 +232,12 @@ ThreadPoolExecutor Example
 InterpreterPoolExecutor
 -----------------------
 
-The :class:`InterpreterPoolExecutor` class is a :class:`ThreadPoolExecutor`
-subclass that uses a pool of isolated interpreters to execute calls
-asynchronously.  Each interpreter is isolated from the others and thus
-can side-step the :term:`Global Interpreter Lock <global interpreter lock>`,
-allowing the use of multiple cores.  Interpreters mostly can't share
-objects between them, which means that, in most cases, only picklable
+The :class:`InterpreterPoolExecutor` class, a :class:`ThreadPoolExecutor`
+subclass, uses a pool of isolated interpreters to execute calls
+asynchronously.  Since each interpreter is isolated from the others,
+side-stepping the :term:`Global Interpreter Lock <global interpreter lock>` ,
+multiple cores can be used.  Since Interpreters do not share
+objects between them, in most cases, only picklable
 objects can be executed and returned.
 
 .. class:: InterpreterPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=(), shared=None)
@@ -271,13 +271,13 @@ objects can be executed and returned.
    is always ``None``.
 
    Normally an uncaught exception from *initializer* or from a submitted
-   task will be sent back between interpreters to be raised as is.
+   task will be sent back to be raised as is.
    However, in some situations the exception might not be suitable to be
    sent back.  In that case, the executor raises an
    :class:`~concurrent.futures.interpreter.ExecutionFailed` exception
    instead, which contains a summary of the original exception.
 
-   The other caveats that apply to :class:`ThreadPoolExecutor` apply here.
+   Other caveats from parent :class:`ThreadPoolExecutor` apply here.
 
    .. versionadded:: next
 
