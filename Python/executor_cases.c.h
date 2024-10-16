@@ -1071,7 +1071,7 @@
             new_frame = _PyFrame_PushUnchecked(tstate, PyStackRef_FromPyObjectNew(getitem), 2, frame);
             new_frame->localsplus[0] = container;
             new_frame->localsplus[1] = sub;
-            frame->return_offset = 1 ;
+            frame->return_offset = 2 ;
             stack_pointer[-2].bits = (uintptr_t)new_frame;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1378,8 +1378,8 @@
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
-            assert( 1 + oparg <= UINT16_MAX);
-            frame->return_offset = (uint16_t)( 1 + oparg);
+            assert( 2 + oparg <= UINT16_MAX);
+            frame->return_offset = (uint16_t)( 2 + oparg);
             gen_frame->previous = frame;
             stack_pointer[-1].bits = (uintptr_t)gen_frame;
             break;
@@ -3566,7 +3566,7 @@
             tstate->exc_info = &gen->gi_exc_state;
             gen_frame->previous = frame;
             // oparg is the return offset from the next instruction.
-            frame->return_offset = (uint16_t)( 1 + oparg);
+            frame->return_offset = (uint16_t)( 2 + oparg);
             stack_pointer[0].bits = (uintptr_t)gen_frame;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -5591,7 +5591,7 @@
         case _SAVE_RETURN_OFFSET: {
             oparg = CURRENT_OPARG();
             #if TIER_ONE
-            frame->return_offset = 1 ;
+            frame->return_offset = 10 ;
             #endif
             #if TIER_TWO
             frame->return_offset = oparg;

@@ -367,8 +367,8 @@ class Emitter:
         inst: Instruction | None
     ) -> bool:
         """Replace the INSTRUCTION_SIZE macro with the size of the current instruction."""
-        size = inst.size if inst else 1 + uop.size
-        self.out.emit(f" {size} ")
+        assert inst is not None, "INSTRUCTION_SIZE macro requires instruction"
+        self.out.emit(f" {inst.size} ")
         return True
 
     def _print_storage(self, storage: Storage) -> None:
