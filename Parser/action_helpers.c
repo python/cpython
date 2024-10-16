@@ -1671,7 +1671,7 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
                 }
             }
 
-            /* Drop all empty contanst strings */
+            /* Drop all empty constant strings */
             if (f_string_found &&
                 PyUnicode_CheckExact(elem->v.Constant.value) &&
                 PyUnicode_GET_LENGTH(elem->v.Constant.value) == 0) {

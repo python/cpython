@@ -3624,7 +3624,7 @@ storeAtts(XML_Parser parser, const ENCODING *enc, const char *attStr,
            * has to have passed through the hash table lookup once
            * already.  That implies that an entry for it already
            * exists, so the lookup above will return a pointer to
-           * already allocated memory.  There is no opportunaity for
+           * already allocated memory.  There is no opportunity for
            * the allocator to fail, so the condition above cannot be
            * fulfilled.
            *

@@ -361,7 +361,7 @@ _testcapi_unstable_exc_prep_reraise_star_impl(PyObject *module,
 
 
 /*
- * Define the PyRecurdingInfinitelyError_Type
+ * Define the PyRecurringInfinitelyError_Type
  */
 
 static PyTypeObject PyRecursingInfinitelyError_Type;

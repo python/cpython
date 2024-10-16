@@ -492,7 +492,7 @@ pymem_api_misuse(PyObject *self, PyObject *args)
     char *buffer;
 
     /* Deliberate misusage of Python allocators:
-       allococate with PyMem but release with PyMem_Raw. */
+       allocate with PyMem but release with PyMem_Raw. */
     buffer = PyMem_Malloc(16);
     PyMem_RawFree(buffer);
 

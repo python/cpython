@@ -2029,7 +2029,7 @@ static PyObject *
 gh_119213_getargs_impl(PyObject *module, PyObject *spam)
 /*[clinic end generated code: output=d8d9c95d5b446802 input=65ef47511da80fc2]*/
 {
-    // It must never have been called in the main interprer
+    // It must never have been called in the main interpreter
     assert(!_Py_IsMainInterpreter(PyInterpreterState_Get()));
     return Py_NewRef(spam);
 }

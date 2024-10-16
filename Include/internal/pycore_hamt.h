@@ -15,7 +15,7 @@ cell in the 7th level of the tree -- so we'd put them in a "collision" node.
 Which brings the total possible tree depth to 8. Read more about the actual
 layout of the HAMT tree in `hamt.c`.
 
-This constant is used to define a datastucture for storing iteration state.
+This constant is used to define a datastructure for storing iteration state.
 */
 #define _Py_HAMT_MAX_TREE_DEPTH 8
 

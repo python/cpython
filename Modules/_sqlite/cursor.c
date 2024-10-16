@@ -318,7 +318,7 @@ _pysqlite_build_column_name(pysqlite_Cursor *self, const char *colname)
 /*
  * Returns a row from the currently active SQLite statement
  *
- * Precondidition:
+ * Precondition:
  * - sqlite3_step() has been called before and it returned SQLITE_ROW.
  */
 static PyObject *

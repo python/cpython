@@ -1357,7 +1357,7 @@ maybe_handle_shebang(wchar_t ** argv, wchar_t * cmdline)
             /*
              * Found line terminator - parse the shebang.
              *
-             * Strictly, we don't need to handle UTF-16 anf UTF-32,
+             * Strictly, we don't need to handle UTF-16 and UTF-32,
              * since Python itself doesn't.
              * Never mind, one day it might.
              */

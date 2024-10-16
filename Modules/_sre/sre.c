@@ -2989,7 +2989,7 @@ pattern_richcompare(PyObject *lefto, PyObject *righto, int op)
         /* Compare the code and the pattern because the same pattern can
            produce different codes depending on the locale used to compile the
            pattern when the re.LOCALE flag is used. Don't compare groups,
-           indexgroup nor groupindex: they are derivated from the pattern. */
+           indexgroup nor groupindex: they are derived from the pattern. */
         cmp = (memcmp(left->code, right->code,
                       sizeof(left->code[0]) * left->codesize) == 0);
     }

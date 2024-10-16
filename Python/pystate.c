@@ -599,7 +599,7 @@ static inline int check_interpreter_whence(long);
    For subinterpreters we memcpy() the main interpreter in
    PyInterpreterState_New(), leaving it in the same mostly-initialized
    state.  The only difference is that the interpreter has some
-   self-referential state that is statically initializexd to the
+   self-referential state that is statically initialized to the
    main interpreter.  We fix those fields here, in addition
    to the other dynamically initialized fields.
   */
@@ -1590,7 +1590,7 @@ _PyThreadState_New(PyInterpreterState *interp, int whence)
     return new_threadstate(interp, whence);
 }
 
-// We keep this for stable ABI compabibility.
+// We keep this for stable ABI compatibility.
 PyAPI_FUNC(PyThreadState*)
 _PyThreadState_Prealloc(PyInterpreterState *interp)
 {
@@ -2963,7 +2963,7 @@ _PyThreadState_CheckConsistency(PyThreadState *tstate)
 // called, the GIL does no longer exist.
 //
 // tstate can be a dangling pointer (point to freed memory): only tstate value
-// is used, the pointer is not deferenced.
+// is used, the pointer is not dereferenced.
 //
 // tstate must be non-NULL.
 int
