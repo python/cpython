@@ -32,17 +32,6 @@ struct _getargs_runtime_state {
 
 /* GIL state */
 
-struct _gilstate_runtime_state {
-    /* bpo-26558: Flag to disable PyGILState_Check().
-       If set to non-zero, PyGILState_Check() always return 1. */
-    int check_enabled;
-    /* The single PyInterpreterState used by this process'
-       GILState implementation
-    */
-    /* TODO: Given interp_main, it may be possible to kill this ref */
-    PyInterpreterState *autoInterpreterState;
-};
-
 /* Runtime audit hook state */
 
 typedef struct _Py_AuditHookEntry {
@@ -157,7 +146,16 @@ typedef struct pyruntimestate {
 
     struct _import_runtime_state imports;
     struct _ceval_runtime_state ceval;
-    struct _gilstate_runtime_state gilstate;
+    struct _gilstate_runtime_state {
+        /* bpo-26558: Flag to disable PyGILState_Check().
+           If set to non-zero, PyGILState_Check() always return 1. */
+        int check_enabled;
+        /* The single PyInterpreterState used by this process'
+           GILState implementation
+        */
+        /* TODO: Given interp_main, it may be possible to kill this ref */
+        PyInterpreterState *autoInterpreterState;
+    } gilstate;
     struct _getargs_runtime_state getargs;
     struct _fileutils_state fileutils;
     struct _faulthandler_runtime_state faulthandler;
