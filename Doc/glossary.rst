@@ -1183,8 +1183,8 @@ Glossary
       An :term:`iterable` which supports efficient element access using integer
       indices via the :meth:`~object.__getitem__` special method and defines a
       :meth:`~object.__len__` method that returns the length of the sequence.
-      Some built-in sequence types are :class:`list`, :class:`str`,
-      :class:`tuple`, and :class:`bytes`. Note that :class:`dict` also
+      Some built-in sequence types are :class:`list`, :class:`tuple`,
+      :class:`str`, and :class:`bytes`. Note that :class:`dict` also
       supports :meth:`~object.__getitem__` and :meth:`!__len__`, but is considered a
       mapping rather than a sequence because the lookups use arbitrary
       :term:`hashable` keys rather than integers.
