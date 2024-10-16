@@ -1869,8 +1869,8 @@ Argument groups
     will be removed in the future.
 
    .. versionchanged:: 3.14
-   Passing the prefix_chars_ parameter to :meth:`ArgumentParser.add_argument_group`
-   is now deprecated.
+    Passing the prefix_chars_ parameter to :meth:`add_argument_group`
+    is now deprecated.
 
 
 Mutual exclusion

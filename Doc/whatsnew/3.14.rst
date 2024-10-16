@@ -421,7 +421,7 @@ Deprecated
 ==========
 
 * :mod:`argparse`:
-  Passing the prefix_chars_ parameter to :meth:`ArgumentParser.add_argument_group`
+  Passing the prefix_chars_ parameter to :meth:`add_argument_group`
   is now deprecated.
   (Contributed by Savannah Ostrowski in :gh:`125563`.)
 
