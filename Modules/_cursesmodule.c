@@ -390,7 +390,7 @@ PyCursesSetError_ForWin_From(PyCursesWindowObject *win,
  * is imported on demand.
  */
 static inline int
-_PyCursesCheckFunction(int called, const char *funcname)
+_PyCursesStatelessCheckFunction(int called, const char *funcname)
 {
     if (called == TRUE) {
         return 1;
@@ -412,7 +412,7 @@ _PyCursesCheckFunction(int called, const char *funcname)
  * The exception type is obtained from the 'module' state.
  */
 static inline int
-_PyCursesStatefulCheckFunction(PyObject *module, int called, const char *funcname)
+_PyCursesCheckFunction(PyObject *module, int called, const char *funcname)
 {
     if (called == TRUE) {
         return 1;
@@ -422,34 +422,34 @@ _PyCursesStatefulCheckFunction(PyObject *module, int called, const char *funcnam
     return 0;
 }
 
-#define PyCursesStatefulSetupTermCalled(MODULE)                         \
-    do {                                                                \
-        if (!_PyCursesStatefulCheckFunction(MODULE,                     \
-                                            curses_setupterm_called,    \
-                                            "setupterm"))               \
-        {                                                               \
-            return 0;                                                   \
-        }                                                               \
+#define PyCursesCheckSetupTermCalled(MODULE)                    \
+    do {                                                        \
+        if (!_PyCursesCheckFunction(MODULE,                     \
+                                    curses_setupterm_called,    \
+                                    "setupterm"))               \
+        {                                                       \
+            return 0;                                           \
+        }                                                       \
     } while (0)
 
-#define PyCursesStatefulInitialised(MODULE)                         \
-    do {                                                            \
-        if (!_PyCursesStatefulCheckFunction(MODULE,                 \
-                                            curses_initscr_called,  \
-                                            "initscr"))             \
-        {                                                           \
-            return 0;                                               \
-        }                                                           \
+#define PyCursesCheckInitialised(MODULE)                    \
+    do {                                                    \
+        if (!_PyCursesCheckFunction(MODULE,                 \
+                                    curses_initscr_called,  \
+                                    "initscr"))             \
+        {                                                   \
+            return 0;                                       \
+        }                                                   \
     } while (0)
 
-#define PyCursesStatefulInitialisedColor(MODULE)                        \
-    do {                                                                \
-        if (!_PyCursesStatefulCheckFunction(MODULE,                     \
-                                            curses_start_color_called,  \
-                                            "start_color"))             \
-        {                                                               \
-            return 0;                                                   \
-        }                                                               \
+#define PyCursesCheckInitialisedColor(MODULE)                   \
+    do {                                                        \
+        if (!_PyCursesCheckFunction(MODULE,                     \
+                                    curses_start_color_called,  \
+                                    "start_color"))             \
+        {                                                       \
+            return 0;                                           \
+        }                                                       \
     } while (0)
 
 /* Utility Functions */
@@ -825,61 +825,84 @@ class component_converter(CConverter):
  The Window Object
 ******************************************************************************/
 
-/* Function prototype macros for Window object
+/*
+ * Macros for creating a PyCursesWindowObject object's method.
+ *
+ * Parameters
+ *
+ *  X           The name of the curses C function or macro to invoke.
+ *  TYPE        The function parameter(s) type.
+ *  ERGSTR      The format string for construction of the return value.
+ *  PARSESTR    The format string for argument parsing.
+ */
 
-   X - function name
-   TYPE - parameter Type
-   ERGSTR - format string for construction of the return value
-   PARSESTR - format string for argument parsing
-*/
+#define Window_NoArgNoReturnFunction(X)                     \
+    static PyObject *PyCursesWindow_ ## X                   \
+    (PyCursesWindowObject *self, PyObject *Py_UNUSED(args)) \
+    {                                                       \
+        int rtn = X(self->win);                             \
+        return PyCursesCheckERR_ForWin(self, rtn, # X);     \
+    }
 
-#define Window_NoArgNoReturnFunction(X)                         \
-    static PyObject *PyCursesWindow_ ## X                       \
-    (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))  \
-    { return PyCursesCheckERR_ForWin(self, X(self->win), # X); }
+#define Window_NoArgTrueFalseFunction(X)                    \
+    static PyObject * PyCursesWindow_ ## X                  \
+    (PyCursesWindowObject *self, PyObject *Py_UNUSED(args)) \
+    {                                                       \
+        return PyBool_FromLong(X(self->win));               \
+    }
 
-#define Window_NoArgTrueFalseFunction(X)                                \
-    static PyObject * PyCursesWindow_ ## X                              \
-    (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))          \
-    {                                                                   \
-        return PyBool_FromLong(X(self->win)); }
+#define Window_NoArgNoReturnVoidFunction(X)                 \
+    static PyObject * PyCursesWindow_ ## X                  \
+    (PyCursesWindowObject *self, PyObject *Py_UNUSED(args)) \
+    {                                                       \
+        X(self->win);                                       \
+        Py_RETURN_NONE;                                     \
+    }
 
-#define Window_NoArgNoReturnVoidFunction(X)                     \
+#define Window_NoArg2TupleReturnFunction(X, TYPE, ERGSTR)   \
+    static PyObject * PyCursesWindow_ ## X                  \
+    (PyCursesWindowObject *self, PyObject *Py_UNUSED(args)) \
+    {                                                       \
+        TYPE arg1, arg2;                                    \
+        X(self->win, arg1, arg2);                           \
+        return Py_BuildValue(ERGSTR, arg1, arg2);           \
+    }
+
+#define Window_OneArgNoReturnVoidFunction(X, TYPE, PARSESTR)    \
     static PyObject * PyCursesWindow_ ## X                      \
-    (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))  \
+    (PyCursesWindowObject *self, PyObject *args)                \
     {                                                           \
-        X(self->win); Py_RETURN_NONE; }
+        TYPE arg;                                               \
+        if (!PyArg_ParseTuple(args, PARSESTR, &arg)) {          \
+            return NULL;                                        \
+        }                                                       \
+        X(self->win, arg);                                      \
+        Py_RETURN_NONE;                                         \
+    }
 
-#define Window_NoArg2TupleReturnFunction(X, TYPE, ERGSTR)               \
-    static PyObject * PyCursesWindow_ ## X                              \
-    (PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))          \
-    {                                                                   \
-        TYPE arg1, arg2;                                                \
-        X(self->win,arg1,arg2); return Py_BuildValue(ERGSTR, arg1, arg2); }
+#define Window_OneArgNoReturnFunction(X, TYPE, PARSESTR)    \
+    static PyObject * PyCursesWindow_ ## X                  \
+    (PyCursesWindowObject *self, PyObject *args)            \
+    {                                                       \
+        TYPE arg;                                           \
+        if (!PyArg_ParseTuple(args, PARSESTR, &arg)) {      \
+            return NULL;                                    \
+        }                                                   \
+        int rtn = X(self->win, arg);                        \
+        return PyCursesCheckERR_ForWin(self, rtn, # X);     \
+    }
 
-#define Window_OneArgNoReturnVoidFunction(X, TYPE, PARSESTR)            \
-    static PyObject * PyCursesWindow_ ## X                              \
-    (PyCursesWindowObject *self, PyObject *args)                        \
-    {                                                                   \
-        TYPE arg1;                                                      \
-        if (!PyArg_ParseTuple(args, PARSESTR, &arg1)) return NULL;      \
-        X(self->win,arg1); Py_RETURN_NONE; }
-
-#define Window_OneArgNoReturnFunction(X, TYPE, PARSESTR)                \
-    static PyObject * PyCursesWindow_ ## X                              \
-    (PyCursesWindowObject *self, PyObject *args)                        \
-    {                                                                   \
-        TYPE arg1;                                                      \
-        if (!PyArg_ParseTuple(args,PARSESTR, &arg1)) return NULL;       \
-        return PyCursesCheckERR_ForWin(self, X(self->win, arg1), # X); }
-
-#define Window_TwoArgNoReturnFunction(X, TYPE, PARSESTR)                \
-    static PyObject * PyCursesWindow_ ## X                              \
-    (PyCursesWindowObject *self, PyObject *args)                        \
-    {                                                                   \
-        TYPE arg1, arg2;                                                \
-        if (!PyArg_ParseTuple(args,PARSESTR, &arg1, &arg2)) return NULL; \
-        return PyCursesCheckERR_ForWin(self, X(self->win, arg1, arg2), # X); }
+#define Window_TwoArgNoReturnFunction(X, TYPE, PARSESTR)        \
+    static PyObject * PyCursesWindow_ ## X                      \
+    (PyCursesWindowObject *self, PyObject *args)                \
+    {                                                           \
+        TYPE arg1, arg2;                                        \
+        if (!PyArg_ParseTuple(args, PARSESTR, &arg1, &arg2)) {  \
+            return NULL;                                        \
+        }                                                       \
+        int rtn = X(self->win, arg1, arg2);                     \
+        return PyCursesCheckERR_ForWin(self, rtn, # X);         \
+    }
 
 /* ------------- WINDOW routines --------------- */
 
@@ -3027,49 +3050,67 @@ static PyType_Spec PyCursesWindow_Type_spec = {
 
 /* -------------------------------------------------------*/
 
-/* Function Body Macros - They are ugly but very, very useful. ;-)
+/*
+ * Macros for implementing simple module's methods.
+ *
+ * Parameters
+ *
+ *  X       The name of the curses C function or macro to invoke.
+ *  FLAG    When false, prefixes the function name with 'no' at runtime,
+ *          This parameter is present in the signature and auto-generated
+ *          by Argument Clinic.
+ *
+ * These macros should only be used for generating the body of
+ * the module's methods since they need a module reference.
+ */
 
-   X - function name
-   TYPE - parameter Type
-   ERGSTR - format string for construction of the return value
-   PARSESTR - format string for argument parsing
-   */
-
-#define NoArgNoReturnFunctionBody(X) \
-{ \
-  PyCursesStatefulInitialised(module); \
-  return PyCursesCheckERR(module, X(), # X); }
-
-#define NoArgOrFlagNoReturnFunctionBody(X, flag) \
-{ \
-    PyCursesStatefulInitialised(module); \
-    if (flag) \
-        return PyCursesCheckERR(module, X(), # X); \
-    else \
-        return PyCursesCheckERR(module, no ## X(), # X); \
+#define NoArgNoReturnFunctionBody(X)            \
+{                                               \
+    PyCursesCheckInitialised(module);           \
+    return PyCursesCheckERR(module, X(), # X);  \
 }
 
-#define NoArgReturnIntFunctionBody(X) \
-{ \
- PyCursesStatefulInitialised(module); \
- return PyLong_FromLong((long) X()); }
+#define NoArgOrFlagNoReturnFunctionBody(X, FLAG)    \
+{                                                   \
+    PyCursesCheckInitialised(module);               \
+    int rtn;                                        \
+    const char *funcname;                           \
+    if (FLAG) {                                     \
+        rtn = X();                                  \
+        funcname = # X;                             \
+    }                                               \
+    else {                                          \
+        rtn = no ## X();                            \
+        funcname = "no" # X;                        \
+    }                                               \
+    return PyCursesCheckERR_From(module, rtn,       \
+                                 # X, funcname);    \
+}
 
+#define NoArgReturnIntFunctionBody(X)   \
+{                                       \
+    PyCursesCheckInitialised(module);   \
+    return PyLong_FromLong((long) X()); \
+}
 
-#define NoArgReturnStringFunctionBody(X) \
-{ \
-  PyCursesStatefulInitialised(module); \
-  return PyBytes_FromString(X()); }
+#define NoArgReturnStringFunctionBody(X)    \
+{                                           \
+    PyCursesCheckInitialised(module);       \
+    return PyBytes_FromString(X());         \
+}
 
-#define NoArgTrueFalseFunctionBody(X) \
-{ \
-  PyCursesStatefulInitialised(module); \
-  return PyBool_FromLong(X()); }
+#define NoArgTrueFalseFunctionBody(X)   \
+{                                       \
+    PyCursesCheckInitialised(module);   \
+    return PyBool_FromLong(X());        \
+}
 
-#define NoArgNoReturnVoidFunctionBody(X) \
-{ \
-  PyCursesStatefulInitialised(module); \
-  X(); \
-  Py_RETURN_NONE; }
+#define NoArgNoReturnVoidFunctionBody(X)    \
+{                                           \
+    PyCursesCheckInitialised(module);       \
+    X();                                    \
+    Py_RETURN_NONE;                         \
+}
 
 /*********************************************************************
  Global Functions
@@ -3165,8 +3206,8 @@ _curses_color_content_impl(PyObject *module, int color_number)
 {
     _CURSES_COLOR_VAL_TYPE r,g,b;
 
-    PyCursesStatefulInitialised(module);
-    PyCursesStatefulInitialisedColor(module);
+    PyCursesCheckInitialised(module);
+    PyCursesCheckInitialisedColor(module);
 
     if (_COLOR_CONTENT_FUNC(color_number, &r, &g, &b) == ERR) {
         PyCursesSetError(module, Py_STRINGIFY(_COLOR_CONTENT_FUNC));
@@ -3193,8 +3234,8 @@ static PyObject *
 _curses_color_pair_impl(PyObject *module, int pair_number)
 /*[clinic end generated code: output=60718abb10ce9feb input=6034e9146f343802]*/
 {
-    PyCursesStatefulInitialised(module);
-    PyCursesStatefulInitialisedColor(module);
+    PyCursesCheckInitialised(module);
+    PyCursesCheckInitialisedColor(module);
 
     return PyLong_FromLong(COLOR_PAIR(pair_number));
 }
@@ -3220,7 +3261,7 @@ _curses_curs_set_impl(PyObject *module, int visibility)
 {
     int erg;
 
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     erg = curs_set(visibility);
     if (erg == ERR) {
@@ -3275,7 +3316,7 @@ static PyObject *
 _curses_delay_output_impl(PyObject *module, int ms)
 /*[clinic end generated code: output=b6613a67f17fa4f4 input=5316457f5f59196c]*/
 {
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     return PyCursesCheckERR(module, delay_output(ms), "delay_output");
 }
@@ -3331,7 +3372,7 @@ _curses_erasechar_impl(PyObject *module)
 {
     char ch;
 
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     ch = erasechar();
 
@@ -3381,7 +3422,7 @@ _curses_getsyx_impl(PyObject *module)
     int x = 0;
     int y = 0;
 
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     getsyx(y, x);
 
@@ -3406,7 +3447,7 @@ _curses_getmouse_impl(PyObject *module)
     int rtn;
     MEVENT event;
 
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     rtn = getmouse(&event);
     if (rtn == ERR) {
@@ -3441,7 +3482,7 @@ _curses_ungetmouse_impl(PyObject *module, short id, int x, int y, int z,
 {
     MEVENT event;
 
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     event.id = id;
     event.x = x;
@@ -3474,7 +3515,7 @@ _curses_getwin(PyObject *module, PyObject *file)
     WINDOW *win;
     PyObject *res = NULL;
 
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     fp = tmpfile();
     if (fp == NULL)
@@ -3533,7 +3574,7 @@ static PyObject *
 _curses_halfdelay_impl(PyObject *module, unsigned char tenths)
 /*[clinic end generated code: output=e92cdf0ef33c0663 input=e42dce7259c15100]*/
 {
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     return PyCursesCheckERR(module, halfdelay(tenths), "halfdelay");
 }
@@ -3586,7 +3627,7 @@ static PyObject *
 _curses_has_key_impl(PyObject *module, int key)
 /*[clinic end generated code: output=19ad48319414d0b1 input=78bd44acf1a4997c]*/
 {
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     return PyBool_FromLong(has_key(key));
 }
@@ -3617,8 +3658,8 @@ _curses_init_color_impl(PyObject *module, int color_number, short r, short g,
                         short b)
 /*[clinic end generated code: output=d7ed71b2d818cdf2 input=ae2b8bea0f152c80]*/
 {
-    PyCursesStatefulInitialised(module);
-    PyCursesStatefulInitialisedColor(module);
+    PyCursesCheckInitialised(module);
+    PyCursesCheckInitialisedColor(module);
 
     return PyCursesCheckERR(module,
                             _CURSES_INIT_COLOR_FUNC(color_number, r, g, b),
@@ -3646,8 +3687,8 @@ static PyObject *
 _curses_init_pair_impl(PyObject *module, int pair_number, int fg, int bg)
 /*[clinic end generated code: output=a0bba03d2bbc3ee6 input=54b421b44c12c389]*/
 {
-    PyCursesStatefulInitialised(module);
-    PyCursesStatefulInitialisedColor(module);
+    PyCursesCheckInitialised(module);
+    PyCursesCheckInitialisedColor(module);
 
     if (_CURSES_INIT_PAIR_FUNC(pair_number, fg, bg) == ERR) {
         if (pair_number >= COLOR_PAIRS) {
@@ -3951,7 +3992,7 @@ static PyObject *
 _curses_intrflush_impl(PyObject *module, int flag)
 /*[clinic end generated code: output=c1986df35e999a0f input=c65fe2ef973fe40a]*/
 {
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     return PyCursesCheckERR(module, intrflush(NULL, flag), "intrflush");
 }
@@ -3984,7 +4025,7 @@ static PyObject *
 _curses_is_term_resized_impl(PyObject *module, int nlines, int ncols)
 /*[clinic end generated code: output=aafe04afe50f1288 input=ca9c0bd0fb8ab444]*/
 {
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     return PyBool_FromLong(is_term_resized(nlines, ncols));
 }
@@ -4006,7 +4047,7 @@ _curses_keyname_impl(PyObject *module, int key)
 {
     const char *knp;
 
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     if (key < 0) {
         PyErr_SetString(PyExc_ValueError, "invalid key number");
@@ -4064,7 +4105,7 @@ static PyObject *
 _curses_meta_impl(PyObject *module, int yes)
 /*[clinic end generated code: output=22f5abda46a605d8 input=cfe7da79f51d0e30]*/
 {
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     return PyCursesCheckERR(module, meta(stdscr, yes), "meta");
 }
@@ -4088,7 +4129,7 @@ static PyObject *
 _curses_mouseinterval_impl(PyObject *module, int interval)
 /*[clinic end generated code: output=c4f5ff04354634c5 input=75aaa3f0db10ac4e]*/
 {
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     return PyCursesCheckERR(module, mouseinterval(interval), "mouseinterval");
 }
@@ -4113,7 +4154,7 @@ _curses_mousemask_impl(PyObject *module, unsigned long newmask)
 {
     mmask_t oldmask, availmask;
 
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
     availmask = mousemask((mmask_t)newmask, &oldmask);
     return Py_BuildValue("(kk)",
                          (unsigned long)availmask, (unsigned long)oldmask);
@@ -4134,7 +4175,7 @@ static int
 _curses_napms_impl(PyObject *module, int ms)
 /*[clinic end generated code: output=5f292a6a724491bd input=c6d6e01f2f1df9f7]*/
 {
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     return napms(ms);
 }
@@ -4158,7 +4199,7 @@ _curses_newpad_impl(PyObject *module, int nlines, int ncols)
 {
     WINDOW *win;
 
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     win = newpad(nlines, ncols);
 
@@ -4201,7 +4242,7 @@ _curses_newwin_impl(PyObject *module, int nlines, int ncols,
 {
     WINDOW *win;
 
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     win = newwin(nlines, ncols, begin_y, begin_x);
     if (win == NULL) {
@@ -4316,8 +4357,8 @@ _curses_pair_content_impl(PyObject *module, int pair_number)
 {
     _CURSES_COLOR_NUM_TYPE f, b;
 
-    PyCursesStatefulInitialised(module);
-    PyCursesStatefulInitialisedColor(module);
+    PyCursesCheckInitialised(module);
+    PyCursesCheckInitialisedColor(module);
 
     if (_CURSES_PAIR_CONTENT_FUNC(pair_number, &f, &b) == ERR) {
         if (pair_number >= COLOR_PAIRS) {
@@ -4349,8 +4390,8 @@ static PyObject *
 _curses_pair_number_impl(PyObject *module, int attr)
 /*[clinic end generated code: output=85bce7d65c0aa3f4 input=d478548e33f5e61a]*/
 {
-    PyCursesStatefulInitialised(module);
-    PyCursesStatefulInitialisedColor(module);
+    PyCursesCheckInitialised(module);
+    PyCursesCheckInitialisedColor(module);
 
     return PyLong_FromLong(PAIR_NUMBER(attr));
 }
@@ -4390,7 +4431,7 @@ static PyObject *
 _curses_qiflush_impl(PyObject *module, int flag)
 /*[clinic end generated code: output=9167e862f760ea30 input=6ec8b3e2b717ec40]*/
 {
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     if (flag) {
         qiflush();
@@ -4545,7 +4586,7 @@ _curses_resizeterm_impl(PyObject *module, short nlines, short ncols)
 {
     PyObject *result;
 
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     result = PyCursesCheckERR(module, resizeterm(nlines, ncols), "resizeterm");
     if (!result)
@@ -4584,7 +4625,7 @@ _curses_resize_term_impl(PyObject *module, short nlines, short ncols)
 {
     PyObject *result;
 
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     result = PyCursesCheckERR(module, resize_term(nlines, ncols), "resize_term");
     if (!result)
@@ -4627,7 +4668,7 @@ static PyObject *
 _curses_setsyx_impl(PyObject *module, int y, int x)
 /*[clinic end generated code: output=23dcf753511a2464 input=fa7f2b208e10a557]*/
 {
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     setsyx(y,x);
 
@@ -4652,7 +4693,7 @@ static PyObject *
 _curses_start_color_impl(PyObject *module)
 /*[clinic end generated code: output=8b772b41d8090ede input=0ca0ecb2b77e1a12]*/
 {
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     if (start_color() == ERR) {
         PyCursesSetError(module, "start_color");
@@ -4724,7 +4765,7 @@ static PyObject *
 _curses_tigetflag_impl(PyObject *module, const char *capname)
 /*[clinic end generated code: output=8853c0e55542195b input=b0787af9e3e9a6ce]*/
 {
-    PyCursesStatefulSetupTermCalled(module);
+    PyCursesCheckSetupTermCalled(module);
 
     return PyLong_FromLong( (long) tigetflag( (char *)capname ) );
 }
@@ -4746,7 +4787,7 @@ static PyObject *
 _curses_tigetnum_impl(PyObject *module, const char *capname)
 /*[clinic end generated code: output=46f8b0a1b5dff42f input=5cdf2f410b109720]*/
 {
-    PyCursesStatefulSetupTermCalled(module);
+    PyCursesCheckSetupTermCalled(module);
 
     return PyLong_FromLong( (long) tigetnum( (char *)capname ) );
 }
@@ -4768,7 +4809,7 @@ static PyObject *
 _curses_tigetstr_impl(PyObject *module, const char *capname)
 /*[clinic end generated code: output=f22b576ad60248f3 input=36644df25c73c0a7]*/
 {
-    PyCursesStatefulSetupTermCalled(module);
+    PyCursesCheckSetupTermCalled(module);
 
     capname = tigetstr( (char *)capname );
     if (capname == NULL || capname == (char*) -1) {
@@ -4801,7 +4842,7 @@ _curses_tparm_impl(PyObject *module, const char *str, int i1, int i2, int i3,
                    int i4, int i5, int i6, int i7, int i8, int i9)
 /*[clinic end generated code: output=599f62b615c667ff input=5e30b15786f032aa]*/
 {
-    PyCursesStatefulSetupTermCalled(module);
+    PyCursesCheckSetupTermCalled(module);
 
     const char *result = tparm((char *)str, i1, i2, i3, i4, i5, i6, i7, i8, i9);
     if (result == NULL) {
@@ -4831,7 +4872,7 @@ static PyObject *
 _curses_typeahead_impl(PyObject *module, int fd)
 /*[clinic end generated code: output=084bb649d7066583 input=f2968d8e1805051b]*/
 {
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     return PyCursesCheckERR(module, typeahead( fd ), "typeahead");
 }
@@ -4855,7 +4896,7 @@ _curses_unctrl(PyObject *module, PyObject *ch)
 {
     chtype ch_;
 
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     if (!PyCurses_ConvertToChtype(NULL, ch, &ch_))
         return NULL;
@@ -4878,7 +4919,7 @@ _curses_ungetch(PyObject *module, PyObject *ch)
 {
     chtype ch_;
 
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     if (!PyCurses_ConvertToChtype(NULL, ch, &ch_))
         return NULL;
@@ -4949,7 +4990,7 @@ _curses_unget_wch(PyObject *module, PyObject *ch)
 {
     wchar_t wch;
 
-    PyCursesStatefulInitialised(module);
+    PyCursesCheckInitialised(module);
 
     if (!PyCurses_ConvertToWchar_t(ch, &wch))
         return NULL;
@@ -4999,8 +5040,8 @@ static PyObject *
 _curses_use_default_colors_impl(PyObject *module)
 /*[clinic end generated code: output=a3b81ff71dd901be input=656844367470e8fc]*/
 {
-    PyCursesStatefulInitialised(module);
-    PyCursesStatefulInitialisedColor(module);
+    PyCursesCheckInitialised(module);
+    PyCursesCheckInitialisedColor(module);
 
     return PyCursesCheckERR(module, use_default_colors(), "use_default_colors");
 }
@@ -5173,19 +5214,19 @@ static PyMethodDef cursesmodule_methods[] = {
 static inline int
 curses_capi_setupterm_called(void)
 {
-    return _PyCursesCheckFunction(curses_setupterm_called, "setupterm");
+    return _PyCursesStatelessCheckFunction(curses_setupterm_called, "setupterm");
 }
 
 static inline int
 curses_capi_initscr_called(void)
 {
-    return _PyCursesCheckFunction(curses_initscr_called, "initscr");
+    return _PyCursesStatelessCheckFunction(curses_initscr_called, "initscr");
 }
 
 static inline int
 curses_capi_start_color_called(void)
 {
-    return _PyCursesCheckFunction(curses_start_color_called, "start_color");
+    return _PyCursesStatelessCheckFunction(curses_start_color_called, "start_color");
 }
 
 static void *
