@@ -87,6 +87,8 @@ typedef struct {
     (Task_CheckExact(state, obj)                        \
      || PyObject_TypeCheck(obj, state->TaskType))
 
+// This macro is optimized to quickly return for native Future *or* Task
+// objects by inlining fast "exact" checks to be called first.
 #define TaskOrFuture_Check(state, obj)                  \
     (Task_CheckExact(state, obj)                        \
      || Future_CheckExact(state, obj)                   \
