@@ -4294,7 +4294,7 @@ These functions may be used to create and manage processes.
    parameter.  In either case, the arguments to the child process should start with
    the name of the command being run, but this is not enforced.
 
-   *The location of the executable*
+   *Location of the executable*
 
    The variants which include a "p" near the end (:func:`execlp`,
    :func:`execlpe`, :func:`execvp`, and :func:`execvpe`) will use the
