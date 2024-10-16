@@ -1,0 +1,2 @@
+Added the :c:member:`PyInterpreterState.threads.mutex` to
+:c:type:`PyInterpreterState`. Patch by RUANG.
