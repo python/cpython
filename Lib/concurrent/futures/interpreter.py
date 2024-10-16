@@ -52,7 +52,10 @@ class WorkerContext(_thread.WorkerContext):
                 data = textwrap.dedent(fn)
                 kind = 'script'
                 # Make sure the script compiles.
-                # XXX Keep the compiled code object?
+                # Ideally we wouldn't throw away the resulting code
+                # object.  However, there isn't much to be done until
+                # code objects are shareable and/or we do a better job
+                # of supporting code objects in _interpreters.exec().
                 compile(data, '<string>', 'exec')
             else:
                 # Functions defined in the __main__ module can't be pickled,
