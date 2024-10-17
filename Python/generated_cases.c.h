@@ -1185,7 +1185,7 @@
             // _SAVE_RETURN_OFFSET
             {
                 #if TIER_ONE
-                frame->return_offset = 4 ;
+                frame->return_offset = (uint16_t)(next_instr - this_instr);
                 #endif
                 #if TIER_TWO
                 frame->return_offset = oparg;
@@ -1286,7 +1286,7 @@
             // _SAVE_RETURN_OFFSET
             {
                 #if TIER_ONE
-                frame->return_offset = 4 ;
+                frame->return_offset = (uint16_t)(next_instr - this_instr);
                 #endif
                 #if TIER_TWO
                 frame->return_offset = oparg;
@@ -2106,7 +2106,7 @@
             // _SAVE_RETURN_OFFSET
             {
                 #if TIER_ONE
-                frame->return_offset = 4 ;
+                frame->return_offset = (uint16_t)(next_instr - this_instr);
                 #endif
                 #if TIER_TWO
                 frame->return_offset = oparg;
@@ -2284,7 +2284,7 @@
             // _SAVE_RETURN_OFFSET
             {
                 #if TIER_ONE
-                frame->return_offset = 4 ;
+                frame->return_offset = (uint16_t)(next_instr - this_instr);
                 #endif
                 #if TIER_TWO
                 frame->return_offset = oparg;
@@ -2851,7 +2851,7 @@
             // _SAVE_RETURN_OFFSET
             {
                 #if TIER_ONE
-                frame->return_offset = 4 ;
+                frame->return_offset = (uint16_t)(next_instr - this_instr);
                 #endif
                 #if TIER_TWO
                 frame->return_offset = oparg;
@@ -2931,7 +2931,7 @@
             // _SAVE_RETURN_OFFSET
             {
                 #if TIER_ONE
-                frame->return_offset = 4 ;
+                frame->return_offset = (uint16_t)(next_instr - this_instr);
                 #endif
                 #if TIER_TWO
                 frame->return_offset = oparg;
@@ -5734,7 +5734,7 @@
             // _SAVE_RETURN_OFFSET
             {
                 #if TIER_ONE
-                frame->return_offset = 10 ;
+                frame->return_offset = (uint16_t)(next_instr - this_instr);
                 #endif
                 #if TIER_TWO
                 frame->return_offset = oparg;
