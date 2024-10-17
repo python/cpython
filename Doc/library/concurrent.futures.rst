@@ -40,11 +40,13 @@ Executor Objects
              future = executor.submit(pow, 323, 1235)
              print(future.result())
 
-   .. method:: map(fn, *iterables, timeout=None, chunksize=1)
+   .. method:: map(fn, *iterables, timeout=None, chunksize=1, buffersize=None)
 
       Similar to :func:`map(fn, *iterables) <map>` except:
 
-      * the *iterables* are collected immediately rather than lazily;
+      * the *iterables* are collected immediately rather than lazily, unless a
+        *buffersize* is specified: If the buffer is full, then the iteration
+        over *iterables* is paused until a result is yielded from the buffer.
 
       * *fn* is executed asynchronously and several calls to
         *fn* may be made concurrently.
@@ -53,7 +55,8 @@ Executor Objects
       if :meth:`~iterator.__next__` is called and the result isn't available
       after *timeout* seconds from the original call to :meth:`Executor.map`.
       *timeout* can be an int or a float.  If *timeout* is not specified or
-      ``None``, there is no limit to the wait time.
+      ``None``, there is no limit to the wait time. Incompatible with
+      *buffersize*.
 
       If a *fn* call raises an exception, then that exception will be
       raised when its value is retrieved from the iterator.
@@ -69,6 +72,9 @@ Executor Objects
 
       .. versionchanged:: 3.5
          Added the *chunksize* argument.
+
+      .. versionchanged:: 3.15
+         Added the *buffersize* argument.
 
    .. method:: shutdown(wait=True, *, cancel_futures=False)
 
