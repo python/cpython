@@ -3443,6 +3443,13 @@ static PyObject *
 memoryview___reversed___impl(PyMemoryViewObject *self)
 /*[clinic end generated code: output=25f9b4345f4720ad input=3c35e9267ad7fcc6]*/
 {
+    // NOTE(picnixz): generic implementation via reversed(...) is faster
+    // if the iterator is not used or if zero or few items are iterated.
+    //
+    // When the number of items is sufficiently large (>= 2^5), benchmarks
+    // show that this implementation improves for-loop performances. Note
+    // that materializing the specialized reversed iterator is likely to
+    // be slower than materializing a generic reversed object instance.
     return memoryiter_new((PyObject *)self, 1);
 }
 
@@ -3458,6 +3465,7 @@ PyTypeObject _PyMemoryRevIter_Type = {
     .tp_iter = PyObject_SelfIter,
     .tp_iternext = memorview_reverse_iternext,
 };
+
 
 PyTypeObject PyMemoryView_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
