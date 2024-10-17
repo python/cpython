@@ -849,34 +849,12 @@ your command-line arguments. This allows you to modify user input before it's
 stored in the :class:`argparse.Namespace`. This can be useful when you need to
 pre-process the input before it is used in your program.
 
-For example, let's say that you want to accept a string that represents a
-fraction, and you want to convert it to a :class:`fractions.Fraction` object.
-
-Here is how you can do it::
-
-   import argparse
-   import fractions
-
-   parser = argparse.ArgumentParser()
-   parser.add_argument("x", type=lambda s: fractions.Fraction(s))
-   args = parser.parse_args()
-   print(type(args.x))
-
-Output:
-
-.. code-block:: shell-session
-
-   $ python prog.py 1/2
-   <class 'fractions.Fraction'>
-
-
 When using a custom type converter, you can use any callable that takes a
 single string argument (the argument value) and returns the converted value.
 However, if you need to handle more complex scenarios, you can use a custom
 action class with the **action** parameter instead.
 
-You can also use custom type converters to handle more complex scenarios. For
-example, let's say you want to handle arguments with different prefixes and
+For example, let's say you want to handle arguments with different prefixes and
 process them accordingly::
 
    import argparse
