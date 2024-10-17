@@ -312,9 +312,10 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     } while (0);
 
 #ifdef ENABLE_SPECIALIZATION_FT
-/* Multiple threads may execute these concurrently if the thread-local bytecode
- * limit is reached and they all execute the main copy of the bytecode. This is
- * approximate, we do not need the RMW cycle to be atomic.
+/* Multiple threads may execute these concurrently if thread-local bytecode is
+ * disabled and they all execute the main copy of the bytecode. Specialization
+ * is disabled in that case so the value is unused, but the RMW cycle should be
+ * free of data races.
  */
 #define RECORD_BRANCH_TAKEN(bitset, flag) \
     FT_ATOMIC_STORE_UINT16_RELAXED(       \
