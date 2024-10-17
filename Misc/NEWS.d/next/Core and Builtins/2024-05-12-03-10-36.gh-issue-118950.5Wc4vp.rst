@@ -1,0 +1,3 @@
+Let _SSLProtocolTransport.is_closing reflect SSLProtocol internal transport
+closing state so that StreamWriter.drain will invoke sleep(0) which calls
+connection_lost and correctly notifies waiters of connection lost.
