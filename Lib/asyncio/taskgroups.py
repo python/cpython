@@ -66,6 +66,20 @@ class TaskGroup:
         return self
 
     async def __aexit__(self, et, exc, tb):
+        tb = None
+        try:
+            return await self._aexit(et, exc)
+        finally:
+            # Exceptions are heavy objects that can have object
+            # cycles (bad for GC); let's not keep a reference to
+            # a bunch of them. It would be nicer to use a try/finally
+            # in __aexit__ directly but that introduced some diff noise
+            self._parent_task = None
+            self._errors = None
+            self._base_error = None
+            exc = None
+
+    async def _aexit(self, et, exc):
         self._exiting = True
 
         if (exc is not None and
@@ -126,25 +140,34 @@ class TaskGroup:
         assert not self._tasks
 
         if self._base_error is not None:
-            raise self._base_error
+            try:
+                raise self._base_error
+            finally:
+                exc = None
 
         # Propagate CancelledError if there is one, except if there
         # are other errors -- those have priority.
-        if propagate_cancellation_error and not self._errors:
-            raise propagate_cancellation_error
+        try:
+            if propagate_cancellation_error and not self._errors:
+                try:
+                    raise propagate_cancellation_error
+                finally:
+                    exc = None
+        finally:
+            propagate_cancellation_error = None
 
         if et is not None and et is not exceptions.CancelledError:
             self._errors.append(exc)
 
         if self._errors:
-            # Exceptions are heavy objects that can have object
-            # cycles (bad for GC); let's not keep a reference to
-            # a bunch of them.
             try:
-                me = BaseExceptionGroup('unhandled errors in a TaskGroup', self._errors)
-                raise me from None
+                raise BaseExceptionGroup(
+                    'unhandled errors in a TaskGroup',
+                    self._errors,
+                ) from None
             finally:
-                self._errors = None
+                exc = None
+
 
     def create_task(self, coro, *, name=None, context=None):
         """Create a new task in this group and return it.
