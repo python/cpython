@@ -35,6 +35,17 @@ def recursive_repr(fillvalue='...'):
     return decorating_function
 
 class Repr:
+    _lookup = {
+        'tuple': 'builtins',
+        'list': 'builtins',
+        'array': 'array',
+        'set': 'builtins',
+        'frozenset': 'builtins',
+        'deque': 'collections',
+        'dict': 'builtins',
+        'str': 'builtins',
+        'int': 'builtins'
+    }
 
     def __init__(
         self, *, maxlevel=6, maxtuple=6, maxlist=6, maxarray=5, maxdict=4,
@@ -59,14 +70,24 @@ class Repr:
         return self.repr1(x, self.maxlevel)
 
     def repr1(self, x, level):
-        typename = type(x).__name__
+        cls = type(x)
+        typename = cls.__name__
+
         if ' ' in typename:
             parts = typename.split()
             typename = '_'.join(parts)
-        if hasattr(self, 'repr_' + typename):
-            return getattr(self, 'repr_' + typename)(x, level)
-        else:
-            return self.repr_instance(x, level)
+
+        method = getattr(self, 'repr_' + typename, None)
+        if method:
+            # not defined in this class
+            if typename not in self._lookup:
+                return method(x, level)
+            module = getattr(cls, '__module__', None)
+            # defined in this class and is the module intended
+            if module == self._lookup[typename]:
+                return method(x, level)
+
+        return self.repr_instance(x, level)
 
     def _join(self, pieces, level):
         if self.indent is None:
