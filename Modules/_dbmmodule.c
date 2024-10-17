@@ -394,7 +394,7 @@ _dbm_dbm_setdefault_impl(dbmobject *self, PyTypeObject *cls, const char *key,
         return PyBytes_FromStringAndSize(val.dptr, val.dsize);
     }
     if (default_value == NULL) {
-        default_value = PyBytes_FromStringAndSize(NULL, 0);
+        default_value = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
         if (default_value == NULL) {
             return NULL;
         }

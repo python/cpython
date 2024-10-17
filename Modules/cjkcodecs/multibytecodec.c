@@ -498,7 +498,7 @@ multibytecodec_encode(const MultibyteCodec *codec,
     datalen = PyUnicode_GET_LENGTH(text);
 
     if (datalen == 0 && !(flags & MBENC_RESET))
-        return PyBytes_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
 
     buf.excobj = NULL;
     buf.outobj = NULL;

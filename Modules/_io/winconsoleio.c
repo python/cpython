@@ -874,7 +874,7 @@ _io__WindowsConsoleIO_readall_impl(winconsoleio *self)
     if (len == 0 && _buflen(self) == 0) {
         /* when the result starts with ^Z we return an empty buffer */
         PyMem_Free(buf);
-        return PyBytes_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
 
     if (len) {

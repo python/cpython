@@ -1747,7 +1747,7 @@ make_somezreplacement(PyObject *object, char *sep, PyObject *tzinfoarg)
     PyObject *tzinfo = get_tzinfo_member(object);
 
     if (tzinfo == Py_None || tzinfo == NULL) {
-        return PyBytes_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
 
     assert(tzinfoarg != NULL);
