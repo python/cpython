@@ -547,8 +547,7 @@ class HelpFormatter(object):
         if action.metavar is not None:
             result = action.metavar
         elif action.choices is not None:
-            choice_strs = [str(choice) for choice in action.choices]
-            result = '{%s}' % ','.join(choice_strs)
+            result = '{%s}' % ','.join(map(str, action.choices))
         else:
             result = default_metavar
 
@@ -588,17 +587,19 @@ class HelpFormatter(object):
         return result
 
     def _expand_help(self, action):
+        help_string = self._get_help_string(action)
+        if '%' not in help_string:
+            return help_string
         params = dict(vars(action), prog=self._prog)
         for name in list(params):
-            if params[name] is SUPPRESS:
+            value = params[name]
+            if value is SUPPRESS:
                 del params[name]
-        for name in list(params):
-            if hasattr(params[name], '__name__'):
-                params[name] = params[name].__name__
+            elif hasattr(value, '__name__'):
+                params[name] = value.__name__
         if params.get('choices') is not None:
-            choices_str = ', '.join([str(c) for c in params['choices']])
-            params['choices'] = choices_str
-        return self._get_help_string(action) % params
+            params['choices'] = ', '.join(map(str, params['choices']))
+        return help_string % params
 
     def _iter_indented_subactions(self, action):
         try:
@@ -714,7 +715,7 @@ def _get_action_name(argument):
     elif argument.dest not in (None, SUPPRESS):
         return argument.dest
     elif argument.choices:
-        return '{' + ','.join(argument.choices) + '}'
+        return '{%s}' % ','.join(map(str, argument.choices))
     else:
         return None
 
@@ -1180,9 +1181,13 @@ class _SubParsersAction(Action):
             help = kwargs.pop('help')
             choice_action = self._ChoicesPseudoAction(name, aliases, help)
             self._choices_actions.append(choice_action)
+        else:
+            choice_action = None
 
         # create the parser and add it to the map
         parser = self._parser_class(**kwargs)
+        if choice_action is not None:
+            parser._check_help(choice_action)
         self._name_parser_map[name] = parser
 
         # make parser available under aliases also
@@ -1417,7 +1422,8 @@ class _ActionsContainer(object):
         chars = self.prefix_chars
         if not args or len(args) == 1 and args[0][0] not in chars:
             if args and 'dest' in kwargs:
-                raise ValueError('dest supplied twice for positional argument')
+                raise ValueError('dest supplied twice for positional argument,'
+                                 ' did you mean metavar?')
             kwargs = self._get_positional_kwargs(*args, **kwargs)
 
         # otherwise, we're adding an optional argument
@@ -1433,10 +1439,16 @@ class _ActionsContainer(object):
                 kwargs['default'] = self.argument_default
 
         # create the action object, and add it to the parser
+        action_name = kwargs.get('action')
         action_class = self._pop_action_class(kwargs)
         if not callable(action_class):
             raise ValueError('unknown action "%s"' % (action_class,))
         action = action_class(**kwargs)
+
+        # raise an error if action for positional argument does not
+        # consume arguments
+        if not action.option_strings and action.nargs == 0:
+            raise ValueError(f'action {action_name!r} is not valid for positional arguments')
 
         # raise an error if the action type is not callable
         type_func = self._registry_get('type', action.type, action.type)
@@ -1449,11 +1461,12 @@ class _ActionsContainer(object):
 
         # raise an error if the metavar does not match the type
         if hasattr(self, "_get_formatter"):
+            formatter = self._get_formatter()
             try:
-                self._get_formatter()._format_args(action, None)
+                formatter._format_args(action, None)
             except TypeError:
                 raise ValueError("length of metavar tuple does not match nargs")
-
+        self._check_help(action)
         return self._add_action(action)
 
     def add_argument_group(self, *args, **kwargs):
@@ -1521,7 +1534,11 @@ class _ActionsContainer(object):
         # NOTE: if add_mutually_exclusive_group ever gains title= and
         # description= then this code will need to be expanded as above
         for group in container._mutually_exclusive_groups:
-            mutex_group = self.add_mutually_exclusive_group(
+            if group._container is container:
+                cont = self
+            else:
+                cont = title_group_map[group._container.title]
+            mutex_group = cont.add_mutually_exclusive_group(
                 required=group.required)
 
             # map the actions to their new mutex group
@@ -1541,7 +1558,9 @@ class _ActionsContainer(object):
         # mark positional arguments as required if at least one is
         # always required
         nargs = kwargs.get('nargs')
-        if nargs not in [OPTIONAL, ZERO_OR_MORE, REMAINDER, SUPPRESS, 0]:
+        if nargs == 0:
+            raise ValueError('nargs for positionals must be != 0')
+        if nargs not in [OPTIONAL, ZERO_OR_MORE, REMAINDER, SUPPRESS]:
             kwargs['required'] = True
 
         # return the keyword arguments with no option strings
@@ -1630,6 +1649,14 @@ class _ActionsContainer(object):
             # container holding it
             if not action.option_strings:
                 action.container._remove_action(action)
+
+    def _check_help(self, action):
+        if action.help and hasattr(self, "_get_formatter"):
+            formatter = self._get_formatter()
+            try:
+                formatter._expand_help(action)
+            except (ValueError, TypeError, KeyError) as exc:
+                raise ValueError('badly formed help string') from exc
 
 
 class _ArgumentGroup(_ActionsContainer):
@@ -1848,6 +1875,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # create the parsers action and add it to the positionals list
         parsers_class = self._pop_action_class(kwargs, 'parsers')
         action = parsers_class(option_strings=[], **kwargs)
+        self._check_help(action)
         self._subparsers._add_action(action)
 
         # return the created parsers action
@@ -1997,7 +2025,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             if len(option_tuples) > 1:
                 options = ', '.join([option_string
                     for action, option_string, sep, explicit_arg in option_tuples])
-                args = {'option': arg_string, 'matches': options}
+                args = {'option': arg_strings[start_index], 'matches': options}
                 msg = _('ambiguous option: %(option)s could match %(matches)s')
                 raise ArgumentError(None, msg % args)
 
@@ -2577,8 +2605,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             if isinstance(choices, str):
                 choices = iter(choices)
             if value not in choices:
-                args = {'value': value,
-                        'choices': ', '.join(map(repr, action.choices))}
+                args = {'value': str(value),
+                        'choices': ', '.join(map(str, action.choices))}
                 msg = _('invalid choice: %(value)r (choose from %(choices)s)')
                 raise ArgumentError(action, msg % args)
 
