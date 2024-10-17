@@ -1904,9 +1904,8 @@ class TestSpecial(unittest.TestCase):
                 INVALID = (256, 0, 0)
 
                 def __init__(self, r, g, b):
-                    rgb = (r, g, b)
-                    if not all(0 <= val <= 255 for val in rgb):
-                        raise InvalidRgbColorError(*rgb)
+                    if not all(0 <= val <= 255 for val in (r, g, b)):
+                        raise InvalidRgbColorError(r, g, b)
 
     def test_intenum_transitivity(self):
         class number(IntEnum):
