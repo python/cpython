@@ -41,25 +41,74 @@ m4_ifndef([AC_CONFIG_MACRO_DIRS], [m4_defun([_AM_CONFIG_MACRO_DIRS], [])m4_defun
 #   If neither value is found, the user is instructed to specify the
 #   ordering.
 #
+#   Early versions of this macro (i.e., before serial 12) would not work
+#   when interprocedural optimization (via link-time optimization) was
+#   enabled. This would happen when, say, the GCC/clang "-flto" flag, or the
+#   ICC "-ipo" flag was used, for example. The problem was that under
+#   these conditions, the compiler did not allocate for and write the special
+#   float value in the data segment of the object file, since doing so might
+#   not prove optimal once more context was available. Thus, the special value
+#   (in platform-dependent binary form) could not be found in the object file,
+#   and the macro would fail.
+#
+#   The solution to the above problem was to:
+#
+#     1) Compile and link a whole test program rather than just compile an
+#        object file. This ensures that we reach the point where even an
+#        interprocedural optimizing compiler writes values to the data segment.
+#
+#     2) Add code that requires the compiler to write the special value to
+#        the data segment, as opposed to "optimizing away" the variable's
+#        allocation. This could be done via compiler keywords or options, but
+#        it's tricky to make this work for all versions of all compilers with
+#        all optimization settings. The chosen solution was to make the exit
+#        code of the test program depend on the storing of the special value
+#        in memory (in the data segment). Because the exit code can be
+#        verified, any compiler that aspires to be correct will produce a
+#        program binary that contains the value, which the macro can then find.
+#
+#   How does the exit code depend on the special value residing in memory?
+#   Memory, unlike variables and registers, can be addressed indirectly at run
+#   time. The exit code of this test program is a result of indirectly reading
+#   and writing to the memory region where the special value is supposed to
+#   reside. The actual memory addresses used and the values to be written are
+#   derived from the the program input ("argv") and are therefore not known at
+#   compile or link time. The compiler has no choice but to defer the
+#   computation to run time, and to prepare by allocating and populating the
+#   data segment with the special value. For further details, refer to the
+#   source code of the test program.
+#
+#   Note that the test program is never meant to be run. It only exists to host
+#   a double float value in a given platform's binary format. Thus, error
+#   handling is not included.
+#
 # LICENSE
 #
-#   Copyright (c) 2008 Daniel Amelang <dan@amelang.net>
+#   Copyright (c) 2008, 2023 Daniel Amelang <dan@amelang.net>
 #
 #   Copying and distribution of this file, with or without modification, are
 #   permitted in any medium without royalty provided the copyright notice
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 11
+#serial 12
 
 AC_DEFUN([AX_C_FLOAT_WORDS_BIGENDIAN],
   [AC_CACHE_CHECK(whether float word ordering is bigendian,
                   ax_cv_c_float_words_bigendian, [
 
 ax_cv_c_float_words_bigendian=unknown
-AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+AC_LINK_IFELSE([AC_LANG_SOURCE([[
 
-double d = 90904234967036810337470478905505011476211692735615632014797120844053488865816695273723469097858056257517020191247487429516932130503560650002327564517570778480236724525140520121371739201496540132640109977779420565776568942592.0;
+#include <stdlib.h>
+
+static double m[] = {9.090423496703681e+223, 0.0};
+
+int main (int argc, char *argv[])
+{
+    m[atoi (argv[1])] += atof (argv[2]);
+    return m[atoi (argv[3])] > 0.0;
+}
 
 ]])], [
 
