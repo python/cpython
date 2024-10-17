@@ -303,8 +303,11 @@ class EnvBuilder:
             copier(context.executable, path)
             if not os.path.islink(path):
                 os.chmod(path, 0o755)
-            for suffix in ('python', 'python3',
-                           f'python3.{sys.version_info[1]}'):
+
+            suffixes = ['python', 'python3', f'python3.{sys.version_info[1]}']
+            if sys.version_info[:2] == (3, 14):
+                suffixes.append('𝜋thon')
+            for suffix in suffixes:
                 path = os.path.join(binpath, suffix)
                 if not os.path.exists(path):
                     # Issue 18807: make copies if
@@ -572,8 +575,7 @@ def create(env_dir, system_site_packages=False, clear=False,
 def main(args=None):
     import argparse
 
-    parser = argparse.ArgumentParser(prog=__name__,
-                                     description='Creates virtual Python '
+    parser = argparse.ArgumentParser(description='Creates virtual Python '
                                                  'environments in one or '
                                                  'more target '
                                                  'directories.',

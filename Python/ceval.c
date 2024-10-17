@@ -274,7 +274,6 @@ static void monitor_throw(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr);
 
-static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg);
 static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
 static  _PyInterpreterFrame *
 _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
@@ -394,6 +393,13 @@ const _Py_SpecialMethod _Py_SpecialMethods[] = {
     }
 };
 
+const size_t _Py_FunctionAttributeOffsets[] = {
+    [MAKE_FUNCTION_CLOSURE] = offsetof(PyFunctionObject, func_closure),
+    [MAKE_FUNCTION_ANNOTATIONS] = offsetof(PyFunctionObject, func_annotations),
+    [MAKE_FUNCTION_KWDEFAULTS] = offsetof(PyFunctionObject, func_kwdefaults),
+    [MAKE_FUNCTION_DEFAULTS] = offsetof(PyFunctionObject, func_defaults),
+    [MAKE_FUNCTION_ANNOTATE] = offsetof(PyFunctionObject, func_annotate),
+};
 
 // PEP 634: Structural Pattern Matching
 
@@ -755,6 +761,16 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
  * so consume 3 units of C stack */
 #define PY_EVAL_C_STACK_UNITS 2
 
+#if defined(_MSC_VER) && defined(_Py_USING_PGO) && defined(_Py_JIT)
+/* _PyEval_EvalFrameDefault is too large to optimize for speed with
+   PGO on MSVC when the JIT is enabled. Disable that optimization
+   around this function only. If this is fixed upstream, we should
+   gate this on the version of MSVC.
+ */
+#  pragma optimize("t", off)
+/* This setting is reversed below following _PyEval_EvalFrameDefault */
+#endif
+
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
@@ -1036,6 +1052,7 @@ tier2_dispatch:
         uopcode = next_uop->opcode;
 #ifdef Py_DEBUG
         if (lltrace >= 3) {
+            dump_stack(frame, stack_pointer);
             if (next_uop->opcode == _START_EXECUTOR) {
                 printf("%4d uop: ", 0);
             }
@@ -1043,8 +1060,7 @@ tier2_dispatch:
                 printf("%4d uop: ", (int)(next_uop - current_executor->trace));
             }
             _PyUOpPrint(next_uop);
-            printf(" stack_level=%d\n",
-                (int)(stack_pointer - _PyFrame_Stackbase(frame)));
+            printf("\n");
         }
 #endif
         next_uop++;
@@ -1129,6 +1145,10 @@ goto_to_tier1:
 #endif // _Py_TIER2
 
 }
+
+#if defined(_MSC_VER) && defined(_Py_USING_PGO) && defined(_Py_JIT)
+#  pragma optimize("", on)
+#endif
 
 #if defined(__GNUC__)
 #  pragma GCC diagnostic pop
@@ -1281,7 +1301,7 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
     }
     else {
         /* This will not fail. */
-        kwonly_sig = PyUnicode_FromString("");
+        kwonly_sig = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
         assert(kwonly_sig != NULL);
     }
     _PyErr_Format(tstate, PyExc_TypeError,
@@ -2920,11 +2940,11 @@ _PyEval_CheckExceptStarTypeValid(PyThreadState *tstate, PyObject* right)
     return 0;
 }
 
-static int
-check_args_iterable(PyThreadState *tstate, PyObject *func, PyObject *args)
+int
+_Py_Check_ArgsIterable(PyThreadState *tstate, PyObject *func, PyObject *args)
 {
     if (Py_TYPE(args)->tp_iter == NULL && !PySequence_Check(args)) {
-        /* check_args_iterable() may be called with a live exception:
+        /* _Py_Check_ArgsIterable() may be called with a live exception:
          * clear it to prevent calling _PyObject_FunctionStr() with an
          * exception set. */
         _PyErr_Clear(tstate);

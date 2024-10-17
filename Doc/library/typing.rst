@@ -2349,7 +2349,9 @@ types.
 
    Backward-compatible usage::
 
-       # For creating a generic NamedTuple on Python 3.11 or lower
+       # For creating a generic NamedTuple on Python 3.11
+       T = TypeVar("T")
+
        class Group(NamedTuple, Generic[T]):
            key: T
            group: list[T]
@@ -3427,7 +3429,7 @@ Introspection helpers
    * Replaces type hints that evaluate to :const:`!None` with
      :class:`types.NoneType`.
    * Supports the :attr:`~annotationlib.Format.FORWARDREF` and
-     :attr:`~annotationlib.Format.SOURCE` formats.
+     :attr:`~annotationlib.Format.STRING` formats.
 
    *forward_ref* must be an instance of :class:`~annotationlib.ForwardRef`.
    *owner*, if given, should be the object that holds the annotations that

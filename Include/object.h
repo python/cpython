@@ -81,7 +81,7 @@ whose size is determined when the object is allocated.
 #else
 #define PyObject_HEAD_INIT(type)    \
     {                               \
-        { _Py_IMMORTAL_REFCNT },    \
+        { _Py_IMMORTAL_INITIAL_REFCNT },    \
         (type)                      \
     },
 #endif
@@ -180,13 +180,19 @@ _Py_ThreadId(void)
     tid = __readfsdword(24);
 #elif defined(_MSC_VER) && defined(_M_ARM64)
     tid = __getReg(18);
+#elif defined(__MINGW32__) && defined(_M_X64)
+    tid = __readgsqword(48);
+#elif defined(__MINGW32__) && defined(_M_IX86)
+    tid = __readfsdword(24);
+#elif defined(__MINGW32__) && defined(_M_ARM64)
+    tid = __getReg(18);
 #elif defined(__i386__)
     __asm__("movl %%gs:0, %0" : "=r" (tid));  // 32-bit always uses GS
 #elif defined(__MACH__) && defined(__x86_64__)
     __asm__("movq %%gs:0, %0" : "=r" (tid));  // x86_64 macOSX uses GS
 #elif defined(__x86_64__)
    __asm__("movq %%fs:0, %0" : "=r" (tid));  // x86_64 Linux, BSD uses FS
-#elif defined(__arm__)
+#elif defined(__arm__) && __ARM_ARCH >= 7
     __asm__ ("mrc p15, 0, %0, c13, c0, 3\nbic %0, %0, #3" : "=r" (tid));
 #elif defined(__aarch64__) && defined(__APPLE__)
     __asm__ ("mrs %0, tpidrro_el0" : "=r" (tid));

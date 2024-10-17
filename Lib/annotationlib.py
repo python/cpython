@@ -15,15 +15,15 @@ __all__ = [
     "call_evaluate_function",
     "get_annotate_function",
     "get_annotations",
-    "annotations_to_source",
-    "value_to_source",
+    "annotations_to_string",
+    "value_to_string",
 ]
 
 
 class Format(enum.IntEnum):
     VALUE = 1
     FORWARDREF = 2
-    SOURCE = 3
+    STRING = 3
 
 
 _Union = None
@@ -291,9 +291,21 @@ class _Stringifier:
             return other.__ast_node__
         elif isinstance(other, slice):
             return ast.Slice(
-                lower=self.__convert_to_ast(other.start) if other.start is not None else None,
-                upper=self.__convert_to_ast(other.stop) if other.stop is not None else None,
-                step=self.__convert_to_ast(other.step) if other.step is not None else None,
+                lower=(
+                    self.__convert_to_ast(other.start)
+                    if other.start is not None
+                    else None
+                ),
+                upper=(
+                    self.__convert_to_ast(other.stop)
+                    if other.stop is not None
+                    else None
+                ),
+                step=(
+                    self.__convert_to_ast(other.step)
+                    if other.step is not None
+                    else None
+                ),
             )
         else:
             return ast.Constant(value=other)
@@ -469,7 +481,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
     can be called with any of the format arguments in the Format enum, but
     compiler-generated __annotate__ functions only support the VALUE format.
     This function provides additional functionality to call __annotate__
-    functions with the FORWARDREF and SOURCE formats.
+    functions with the FORWARDREF and STRING formats.
 
     *annotate* must be an __annotate__ function, which takes a single argument
     and returns a dict of annotations.
@@ -487,8 +499,8 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         return annotate(format)
     except NotImplementedError:
         pass
-    if format == Format.SOURCE:
-        # SOURCE is implemented by calling the annotate function in a special
+    if format == Format.STRING:
+        # STRING is implemented by calling the annotate function in a special
         # environment where every name lookup results in an instance of _Stringifier.
         # _Stringifier supports every dunder operation and returns a new _Stringifier.
         # At the end, we get a dictionary that mostly contains _Stringifier objects (or
@@ -524,9 +536,9 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             for key, val in annos.items()
         }
     elif format == Format.FORWARDREF:
-        # FORWARDREF is implemented similarly to SOURCE, but there are two changes,
+        # FORWARDREF is implemented similarly to STRING, but there are two changes,
         # at the beginning and the end of the process.
-        # First, while SOURCE uses an empty dictionary as the namespace, so that all
+        # First, while STRING uses an empty dictionary as the namespace, so that all
         # name lookups result in _Stringifier objects, FORWARDREF uses the globals
         # and builtins, so that defined names map to their real values.
         # Second, instead of returning strings, we want to return either real values
@@ -673,11 +685,9 @@ def get_annotations(
         case Format.FORWARDREF:
             # For FORWARDREF, we use __annotations__ if it exists
             try:
-                ann = _get_dunder_annotations(obj)
+                return dict(_get_dunder_annotations(obj))
             except NameError:
                 pass
-            else:
-                return dict(ann)
 
             # But if __annotations__ threw a NameError, we try calling __annotate__
             ann = _get_and_call_annotate(obj, format)
@@ -688,14 +698,14 @@ def get_annotations(
             # __annotations__ threw NameError and there is no __annotate__. In that case,
             # we fall back to trying __annotations__ again.
             return dict(_get_dunder_annotations(obj))
-        case Format.SOURCE:
-            # For SOURCE, we try to call __annotate__
+        case Format.STRING:
+            # For STRING, we try to call __annotate__
             ann = _get_and_call_annotate(obj, format)
             if ann is not None:
                 return ann
             # But if we didn't get it, we use __annotations__ instead.
             ann = _get_dunder_annotations(obj)
-            return annotations_to_source(ann)
+            return annotations_to_string(ann)
         case _:
             raise ValueError(f"Unsupported format {format!r}")
 
@@ -764,10 +774,10 @@ def get_annotations(
     return return_value
 
 
-def value_to_source(value):
-    """Convert a Python value to a format suitable for use with the SOURCE format.
+def value_to_string(value):
+    """Convert a Python value to a format suitable for use with the STRING format.
 
-    This is inteded as a helper for tools that support the SOURCE format but do
+    This is inteded as a helper for tools that support the STRING format but do
     not have access to the code that originally produced the annotations. It uses
     repr() for most objects.
 
@@ -783,10 +793,10 @@ def value_to_source(value):
     return repr(value)
 
 
-def annotations_to_source(annotations):
-    """Convert an annotation dict containing values to approximately the SOURCE format."""
+def annotations_to_string(annotations):
+    """Convert an annotation dict containing values to approximately the STRING format."""
     return {
-        n: t if isinstance(t, str) else value_to_source(t)
+        n: t if isinstance(t, str) else value_to_string(t)
         for n, t in annotations.items()
     }
 

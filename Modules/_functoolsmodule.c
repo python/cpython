@@ -26,7 +26,7 @@ typedef struct _functools_state {
     /* this object is used delimit args and keywords in the cache keys */
     PyObject *kwd_mark;
     PyTypeObject *placeholder_type;
-    PyObject *placeholder;
+    PyObject *placeholder;  // strong reference (singleton)
     PyTypeObject *partial_type;
     PyTypeObject *keyobject_type;
     PyTypeObject *lru_list_elem_type;
@@ -76,13 +76,12 @@ static PyMethodDef placeholder_methods[] = {
 };
 
 static void
-placeholder_dealloc(PyObject* placeholder)
+placeholder_dealloc(PyObject* self)
 {
-    /* This should never get called, but we also don't want to SEGV if
-     * we accidentally decref Placeholder out of existence. Instead,
-     * since Placeholder is an immortal object, re-set the reference count.
-     */
-    _Py_SetImmortal(placeholder);
+    PyObject_GC_UnTrack(self);
+    PyTypeObject *tp = Py_TYPE(self);
+    tp->tp_free((PyObject*)self);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -93,10 +92,26 @@ placeholder_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         return NULL;
     }
     _functools_state *state = get_functools_state_by_type(type);
-    if (state->placeholder == NULL) {
-        state->placeholder = PyType_GenericNew(type, NULL, NULL);
+    if (state->placeholder != NULL) {
+        return Py_NewRef(state->placeholder);
     }
-    return state->placeholder;
+
+    PyObject *placeholder = PyType_GenericNew(type, NULL, NULL);
+    if (placeholder == NULL) {
+        return NULL;
+    }
+
+    if (state->placeholder == NULL) {
+        state->placeholder = Py_NewRef(placeholder);
+    }
+    return placeholder;
+}
+
+static int
+placeholder_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
 }
 
 static PyType_Slot placeholder_type_slots[] = {
@@ -105,13 +120,14 @@ static PyType_Slot placeholder_type_slots[] = {
     {Py_tp_doc, (void *)placeholder_doc},
     {Py_tp_methods, placeholder_methods},
     {Py_tp_new, placeholder_new},
+    {Py_tp_traverse, placeholder_traverse},
     {0, 0}
 };
 
 static PyType_Spec placeholder_type_spec = {
     .name = "functools._PlaceholderType",
     .basicsize = sizeof(placeholderobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC,
     .slots = placeholder_type_slots
 };
 
@@ -128,10 +144,13 @@ typedef struct {
     vectorcallfunc vectorcall;
 } partialobject;
 
+// cast a PyObject pointer PTR to a partialobject pointer (no type checks)
+#define _PyPartialObject_CAST(PTR)  ((partialobject *)(PTR))
+
 static void partial_setvectorcall(partialobject *pto);
 static struct PyModuleDef _functools_module;
 static PyObject *
-partial_call(partialobject *pto, PyObject *args, PyObject *kwargs);
+partial_call(PyObject *pto, PyObject *args, PyObject *kwargs);
 
 static inline _functools_state *
 get_functools_state_by_type(PyTypeObject *type)
@@ -291,8 +310,9 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 }
 
 static int
-partial_clear(partialobject *pto)
+partial_clear(PyObject *self)
 {
+    partialobject *pto = _PyPartialObject_CAST(self);
     Py_CLEAR(pto->fn);
     Py_CLEAR(pto->args);
     Py_CLEAR(pto->kw);
@@ -301,8 +321,9 @@ partial_clear(partialobject *pto)
 }
 
 static int
-partial_traverse(partialobject *pto, visitproc visit, void *arg)
+partial_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    partialobject *pto = _PyPartialObject_CAST(self);
     Py_VISIT(Py_TYPE(pto));
     Py_VISIT(pto->fn);
     Py_VISIT(pto->args);
@@ -312,16 +333,16 @@ partial_traverse(partialobject *pto, visitproc visit, void *arg)
 }
 
 static void
-partial_dealloc(partialobject *pto)
+partial_dealloc(PyObject *self)
 {
-    PyTypeObject *tp = Py_TYPE(pto);
+    PyTypeObject *tp = Py_TYPE(self);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
-    PyObject_GC_UnTrack(pto);
-    if (pto->weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *) pto);
+    PyObject_GC_UnTrack(self);
+    if (_PyPartialObject_CAST(self)->weakreflist != NULL) {
+        PyObject_ClearWeakRefs(self);
     }
-    (void)partial_clear(pto);
-    tp->tp_free(pto);
+    (void)partial_clear(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -356,9 +377,10 @@ partial_descr_get(PyObject *self, PyObject *obj, PyObject *type)
     } while (0)
 
 static PyObject *
-partial_vectorcall(partialobject *pto, PyObject *const *args,
+partial_vectorcall(PyObject *self, PyObject *const *args,
                    size_t nargsf, PyObject *kwnames)
 {
+    partialobject *pto = _PyPartialObject_CAST(self);;
     PyThreadState *tstate = _PyThreadState_GET();
     /* Sizes */
     Py_ssize_t pto_nargs = PyTuple_GET_SIZE(pto->args);
@@ -539,14 +561,15 @@ partial_setvectorcall(partialobject *pto)
      * but that is unlikely (why use partial without arguments?),
      * so we don't optimize that */
     else {
-        pto->vectorcall = (vectorcallfunc)partial_vectorcall;
+        pto->vectorcall = partial_vectorcall;
     }
 }
 
 // Not converted to argument clinic, because of `*args, **kwargs` arguments.
 static PyObject *
-partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
+partial_call(PyObject *self, PyObject *args, PyObject *kwargs)
 {
+    partialobject *pto = _PyPartialObject_CAST(self);
     assert(PyCallable_Check(pto->fn));
     assert(PyTuple_Check(pto->args));
     assert(PyDict_Check(pto->kw));
@@ -657,8 +680,9 @@ static PyGetSetDef partial_getsetlist[] = {
 };
 
 static PyObject *
-partial_repr(partialobject *pto)
+partial_repr(PyObject *self)
 {
+    partialobject *pto = _PyPartialObject_CAST(self);
     PyObject *result = NULL;
     PyObject *arglist;
     PyObject *mod;
@@ -667,18 +691,18 @@ partial_repr(partialobject *pto)
     PyObject *key, *value;
     int status;
 
-    status = Py_ReprEnter((PyObject *)pto);
+    status = Py_ReprEnter(self);
     if (status != 0) {
         if (status < 0)
             return NULL;
         return PyUnicode_FromString("...");
     }
 
-    arglist = PyUnicode_FromString("");
+    arglist = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     if (arglist == NULL)
         goto done;
     /* Pack positional arguments */
-    assert (PyTuple_Check(pto->args));
+    assert(PyTuple_Check(pto->args));
     n = PyTuple_GET_SIZE(pto->args);
     for (i = 0; i < n; i++) {
         Py_SETREF(arglist, PyUnicode_FromFormat("%U, %R", arglist,
@@ -713,11 +737,11 @@ partial_repr(partialobject *pto)
     Py_DECREF(arglist);
 
  done:
-    Py_ReprLeave((PyObject *)pto);
+    Py_ReprLeave(self);
     return result;
  error:
     Py_DECREF(arglist);
-    Py_ReprLeave((PyObject *)pto);
+    Py_ReprLeave(self);
     return NULL;
 }
 
@@ -729,16 +753,18 @@ partial_repr(partialobject *pto)
  */
 
 static PyObject *
-partial_reduce(partialobject *pto, PyObject *unused)
+partial_reduce(PyObject *self, PyObject *Py_UNUSED(args))
 {
+    partialobject *pto = _PyPartialObject_CAST(self);
     return Py_BuildValue("O(O)(OOOO)", Py_TYPE(pto), pto->fn, pto->fn,
                          pto->args, pto->kw,
                          pto->dict ? pto->dict : Py_None);
 }
 
 static PyObject *
-partial_setstate(partialobject *pto, PyObject *state)
+partial_setstate(PyObject *self, PyObject *state)
 {
+    partialobject *pto = _PyPartialObject_CAST(self);
     PyObject *fn, *fnargs, *kw, *dict;
 
     if (!PyTuple_Check(state)) {
@@ -800,8 +826,8 @@ partial_setstate(partialobject *pto, PyObject *state)
 }
 
 static PyMethodDef partial_methods[] = {
-    {"__reduce__", (PyCFunction)partial_reduce, METH_NOARGS},
-    {"__setstate__", (PyCFunction)partial_setstate, METH_O},
+    {"__reduce__", partial_reduce, METH_NOARGS},
+    {"__setstate__", partial_setstate, METH_O},
     {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
@@ -819,7 +845,7 @@ static PyType_Slot partial_type_slots[] = {
     {Py_tp_methods, partial_methods},
     {Py_tp_members, partial_memberlist},
     {Py_tp_getset, partial_getsetlist},
-    {Py_tp_descr_get, (descrgetfunc)partial_descr_get},
+    {Py_tp_descr_get, partial_descr_get},
     {Py_tp_new, partial_new},
     {Py_tp_free, PyObject_GC_Del},
     {0, 0}
@@ -1803,13 +1829,17 @@ _functools_exec(PyObject *module)
     if (PyModule_AddType(module, state->placeholder_type) < 0) {
         return -1;
     }
-    state->placeholder = PyObject_CallNoArgs((PyObject *)state->placeholder_type);
-    if (state->placeholder == NULL) {
+
+    PyObject *placeholder = PyObject_CallNoArgs((PyObject *)state->placeholder_type);
+    if (placeholder == NULL) {
         return -1;
     }
-    if (PyModule_AddObject(module, "Placeholder", state->placeholder) < 0) {
+    if (PyModule_AddObjectRef(module, "Placeholder", placeholder) < 0) {
+        Py_DECREF(placeholder);
         return -1;
     }
+    Py_DECREF(placeholder);
+
     state->partial_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
         &partial_type_spec, NULL);
     if (state->partial_type == NULL) {
@@ -1855,6 +1885,7 @@ _functools_traverse(PyObject *module, visitproc visit, void *arg)
     _functools_state *state = get_functools_state(module);
     Py_VISIT(state->kwd_mark);
     Py_VISIT(state->placeholder_type);
+    Py_VISIT(state->placeholder);
     Py_VISIT(state->partial_type);
     Py_VISIT(state->keyobject_type);
     Py_VISIT(state->lru_list_elem_type);
@@ -1867,6 +1898,7 @@ _functools_clear(PyObject *module)
     _functools_state *state = get_functools_state(module);
     Py_CLEAR(state->kwd_mark);
     Py_CLEAR(state->placeholder_type);
+    Py_CLEAR(state->placeholder);
     Py_CLEAR(state->partial_type);
     Py_CLEAR(state->keyobject_type);
     Py_CLEAR(state->lru_list_elem_type);

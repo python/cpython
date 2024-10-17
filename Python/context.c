@@ -102,20 +102,26 @@ PyContext_CopyCurrent(void)
 static const char *
 context_event_name(PyContextEvent event) {
     switch (event) {
-        case Py_CONTEXT_EVENT_ENTER:
-            return "Py_CONTEXT_EVENT_ENTER";
-        case Py_CONTEXT_EVENT_EXIT:
-            return "Py_CONTEXT_EVENT_EXIT";
+        case Py_CONTEXT_SWITCHED:
+            return "Py_CONTEXT_SWITCHED";
         default:
             return "?";
     }
     Py_UNREACHABLE();
 }
 
-static void notify_context_watchers(PyContextEvent event, PyContext *ctx)
+static void
+notify_context_watchers(PyThreadState *ts, PyContextEvent event, PyObject *ctx)
 {
+    if (ctx == NULL) {
+        // This will happen after exiting the last context in the stack, which
+        // can occur if context_get was never called before entering a context
+        // (e.g., called `contextvars.Context().run()` on a fresh thread, as
+        // PyContext_Enter doesn't call context_get).
+        ctx = Py_None;
+    }
     assert(Py_REFCNT(ctx) > 0);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyInterpreterState *interp = ts->interp;
     assert(interp->_initialized);
     uint8_t bits = interp->active_context_watchers;
     int i = 0;
@@ -174,6 +180,16 @@ PyContext_ClearWatcher(int watcher_id)
 }
 
 
+static inline void
+context_switched(PyThreadState *ts)
+{
+    ts->context_ver++;
+    // ts->context is used instead of context_get() because context_get() might
+    // throw if ts->context is NULL.
+    notify_context_watchers(ts, Py_CONTEXT_SWITCHED, ts->context);
+}
+
+
 static int
 _PyContext_Enter(PyThreadState *ts, PyObject *octx)
 {
@@ -190,9 +206,7 @@ _PyContext_Enter(PyThreadState *ts, PyObject *octx)
     ctx->ctx_entered = 1;
 
     ts->context = Py_NewRef(ctx);
-    ts->context_ver++;
-
-    notify_context_watchers(Py_CONTEXT_EVENT_ENTER, ctx);
+    context_switched(ts);
     return 0;
 }
 
@@ -226,13 +240,11 @@ _PyContext_Exit(PyThreadState *ts, PyObject *octx)
         return -1;
     }
 
-    notify_context_watchers(Py_CONTEXT_EVENT_EXIT, ctx);
     Py_SETREF(ts->context, (PyObject *)ctx->ctx_prev);
-    ts->context_ver++;
 
     ctx->ctx_prev = NULL;
     ctx->ctx_entered = 0;
-
+    context_switched(ts);
     return 0;
 }
 
@@ -1154,48 +1166,31 @@ token_tp_dealloc(PyContextToken *self)
 static PyObject *
 token_tp_repr(PyContextToken *self)
 {
-    _PyUnicodeWriter writer;
-
-    _PyUnicodeWriter_Init(&writer);
-
-    if (_PyUnicodeWriter_WriteASCIIString(&writer, "<Token", 6) < 0) {
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        return NULL;
+    }
+    if (PyUnicodeWriter_WriteUTF8(writer, "<Token", 6) < 0) {
         goto error;
     }
-
     if (self->tok_used) {
-        if (_PyUnicodeWriter_WriteASCIIString(&writer, " used", 5) < 0) {
+        if (PyUnicodeWriter_WriteUTF8(writer, " used", 5) < 0) {
             goto error;
         }
     }
-
-    if (_PyUnicodeWriter_WriteASCIIString(&writer, " var=", 5) < 0) {
+    if (PyUnicodeWriter_WriteUTF8(writer, " var=", 5) < 0) {
         goto error;
     }
-
-    PyObject *var = PyObject_Repr((PyObject *)self->tok_var);
-    if (var == NULL) {
+    if (PyUnicodeWriter_WriteRepr(writer, (PyObject *)self->tok_var) < 0) {
         goto error;
     }
-    if (_PyUnicodeWriter_WriteStr(&writer, var) < 0) {
-        Py_DECREF(var);
+    if (PyUnicodeWriter_Format(writer, " at %p>", self) < 0) {
         goto error;
     }
-    Py_DECREF(var);
-
-    PyObject *addr = PyUnicode_FromFormat(" at %p>", self);
-    if (addr == NULL) {
-        goto error;
-    }
-    if (_PyUnicodeWriter_WriteStr(&writer, addr) < 0) {
-        Py_DECREF(addr);
-        goto error;
-    }
-    Py_DECREF(addr);
-
-    return _PyUnicodeWriter_Finish(&writer);
+    return PyUnicodeWriter_Finish(writer);
 
 error:
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     return NULL;
 }
 
