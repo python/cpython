@@ -547,8 +547,7 @@ class HelpFormatter(object):
         if action.metavar is not None:
             result = action.metavar
         elif action.choices is not None:
-            choice_strs = [str(choice) for choice in action.choices]
-            result = '{%s}' % ','.join(choice_strs)
+            result = '{%s}' % ','.join(map(str, action.choices))
         else:
             result = default_metavar
 
@@ -599,8 +598,7 @@ class HelpFormatter(object):
             elif hasattr(value, '__name__'):
                 params[name] = value.__name__
         if params.get('choices') is not None:
-            choices_str = ', '.join([str(c) for c in params['choices']])
-            params['choices'] = choices_str
+            params['choices'] = ', '.join(map(str, params['choices']))
         return help_string % params
 
     def _iter_indented_subactions(self, action):
@@ -717,7 +715,7 @@ def _get_action_name(argument):
     elif argument.dest not in (None, SUPPRESS):
         return argument.dest
     elif argument.choices:
-        return '{' + ','.join(argument.choices) + '}'
+        return '{%s}' % ','.join(map(str, argument.choices))
     else:
         return None
 
@@ -1664,6 +1662,14 @@ class _ActionsContainer(object):
 class _ArgumentGroup(_ActionsContainer):
 
     def __init__(self, container, title=None, description=None, **kwargs):
+        if 'prefix_chars' in kwargs:
+            import warnings
+            depr_msg = (
+                "The use of the undocumented 'prefix_chars' parameter in "
+                "ArgumentParser.add_argument_group() is deprecated."
+            )
+            warnings.warn(depr_msg, DeprecationWarning, stacklevel=3)
+
         # add any missing keyword arguments by checking the container
         update = kwargs.setdefault
         update('conflict_handler', container.conflict_handler)
@@ -1775,6 +1781,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         - allow_abbrev -- Allow long options to be abbreviated unambiguously
         - exit_on_error -- Determines whether or not ArgumentParser exits with
             error info when an error occurs
+        - suggest_on_error - Enables suggestions for mistyped argument choices
+            and subparser names. (default: ``False``)
     """
 
     def __init__(self,
@@ -1790,7 +1798,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                  conflict_handler='error',
                  add_help=True,
                  allow_abbrev=True,
-                 exit_on_error=True):
+                 exit_on_error=True,
+                 suggest_on_error=False):
 
         superinit = super(ArgumentParser, self).__init__
         superinit(description=description,
@@ -1806,6 +1815,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self.add_help = add_help
         self.allow_abbrev = allow_abbrev
         self.exit_on_error = exit_on_error
+        self.suggest_on_error = suggest_on_error
 
         add_group = self.add_argument_group
         self._positionals = add_group(_('positional arguments'))
@@ -2603,14 +2613,27 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     def _check_value(self, action, value):
         # converted value must be one of the choices (if specified)
         choices = action.choices
-        if choices is not None:
-            if isinstance(choices, str):
-                choices = iter(choices)
-            if value not in choices:
-                args = {'value': value,
-                        'choices': ', '.join(map(repr, action.choices))}
-                msg = _('invalid choice: %(value)r (choose from %(choices)s)')
-                raise ArgumentError(action, msg % args)
+        if choices is None:
+            return
+
+        if isinstance(choices, str):
+            choices = iter(choices)
+
+        if value not in choices:
+            args = {'value': str(value),
+                    'choices': ', '.join(map(str, action.choices))}
+            msg = _('invalid choice: %(value)r (choose from %(choices)s)')
+
+            if self.suggest_on_error and isinstance(value, str):
+                if all(isinstance(choice, str) for choice in action.choices):
+                    import difflib
+                    suggestions = difflib.get_close_matches(value, action.choices, 1)
+                    if suggestions:
+                        args['closest'] = suggestions[0]
+                        msg = _('invalid choice: %(value)r, maybe you meant %(closest)r? '
+                                '(choose from %(choices)s)')
+
+            raise ArgumentError(action, msg % args)
 
     # =======================
     # Help-formatting methods

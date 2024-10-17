@@ -16,6 +16,7 @@ import unittest
 import argparse
 import warnings
 
+from enum import StrEnum
 from test.support import captured_stderr
 from test.support import import_helper
 from test.support import os_helper
@@ -984,6 +985,34 @@ class TestDisallowLongAbbreviationAllowsShortGroupingPrefix(ParserTestCase):
         ('+ccrcc', NS(r='cc', c=2)),
     ]
 
+
+class TestStrEnumChoices(TestCase):
+    class Color(StrEnum):
+        RED = "red"
+        GREEN = "green"
+        BLUE = "blue"
+
+    def test_parse_enum_value(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--color', choices=self.Color)
+        args = parser.parse_args(['--color', 'red'])
+        self.assertEqual(args.color, self.Color.RED)
+
+    def test_help_message_contains_enum_choices(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--color', choices=self.Color, help='Choose a color')
+        self.assertIn('[--color {red,green,blue}]', parser.format_usage())
+        self.assertIn('  --color {red,green,blue}', parser.format_help())
+
+    def test_invalid_enum_value_raises_error(self):
+        parser = argparse.ArgumentParser(exit_on_error=False)
+        parser.add_argument('--color', choices=self.Color)
+        self.assertRaisesRegex(
+            argparse.ArgumentError,
+            r"invalid choice: 'yellow' \(choose from red, green, blue\)",
+            parser.parse_args,
+            ['--color', 'yellow'],
+        )
 
 # ================
 # Positional tests
@@ -2224,6 +2253,95 @@ class TestNegativeNumber(ParserTestCase):
         ('--complex -1e-3j', NS(int=None, float=None, complex=-0.001j)),
     ]
 
+class TestArgumentAndSubparserSuggestions(TestCase):
+    """Test error handling and suggestion when a user makes a typo"""
+
+    def test_wrong_argument_error_with_suggestions(self):
+        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser.add_argument('foo', choices=['bar', 'baz'])
+        with self.assertRaises(ArgumentParserError) as excinfo:
+            parser.parse_args(('bazz',))
+        self.assertIn(
+            "error: argument foo: invalid choice: 'bazz', maybe you meant 'baz'? (choose from bar, baz)",
+            excinfo.exception.stderr
+        )
+
+    def test_wrong_argument_error_no_suggestions(self):
+        parser = ErrorRaisingArgumentParser(suggest_on_error=False)
+        parser.add_argument('foo', choices=['bar', 'baz'])
+        with self.assertRaises(ArgumentParserError) as excinfo:
+            parser.parse_args(('bazz',))
+        self.assertIn(
+            "error: argument foo: invalid choice: 'bazz' (choose from bar, baz)",
+            excinfo.exception.stderr,
+        )
+
+    def test_wrong_argument_subparsers_with_suggestions(self):
+        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        subparsers = parser.add_subparsers(required=True)
+        subparsers.add_parser('foo')
+        subparsers.add_parser('bar')
+        with self.assertRaises(ArgumentParserError) as excinfo:
+            parser.parse_args(('baz',))
+        self.assertIn(
+            "error: argument {foo,bar}: invalid choice: 'baz', maybe you meant"
+             " 'bar'? (choose from foo, bar)",
+            excinfo.exception.stderr,
+        )
+
+    def test_wrong_argument_subparsers_no_suggestions(self):
+        parser = ErrorRaisingArgumentParser(suggest_on_error=False)
+        subparsers = parser.add_subparsers(required=True)
+        subparsers.add_parser('foo')
+        subparsers.add_parser('bar')
+        with self.assertRaises(ArgumentParserError) as excinfo:
+            parser.parse_args(('baz',))
+        self.assertIn(
+            "error: argument {foo,bar}: invalid choice: 'baz' (choose from foo, bar)",
+            excinfo.exception.stderr,
+        )
+
+    def test_wrong_argument_no_suggestion_implicit(self):
+        parser = ErrorRaisingArgumentParser()
+        parser.add_argument('foo', choices=['bar', 'baz'])
+        with self.assertRaises(ArgumentParserError) as excinfo:
+            parser.parse_args(('bazz',))
+        self.assertIn(
+            "error: argument foo: invalid choice: 'bazz' (choose from bar, baz)",
+            excinfo.exception.stderr,
+        )
+
+    def test_suggestions_choices_empty(self):
+        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser.add_argument('foo', choices=[])
+        with self.assertRaises(ArgumentParserError) as excinfo:
+            parser.parse_args(('bazz',))
+        self.assertIn(
+            "error: argument foo: invalid choice: 'bazz' (choose from )",
+            excinfo.exception.stderr,
+        )
+
+    def test_suggestions_choices_int(self):
+        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser.add_argument('foo', choices=[1, 2])
+        with self.assertRaises(ArgumentParserError) as excinfo:
+            parser.parse_args(('3',))
+        self.assertIn(
+            "error: argument foo: invalid choice: '3' (choose from 1, 2)",
+            excinfo.exception.stderr,
+        )
+
+    def test_suggestions_choices_mixed_types(self):
+        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser.add_argument('foo', choices=[1, '2'])
+        with self.assertRaises(ArgumentParserError) as excinfo:
+            parser.parse_args(('3',))
+        self.assertIn(
+            "error: argument foo: invalid choice: '3' (choose from 1, 2)",
+            excinfo.exception.stderr,
+        )
+
+
 class TestInvalidAction(TestCase):
     """Test invalid user defined Action"""
 
@@ -2474,18 +2592,6 @@ class TestAddSubparsers(TestCase):
         self.assertRegex(
             excinfo.exception.stderr,
             'error: the following arguments are required: {foo,bar}\n$'
-        )
-
-    def test_wrong_argument_subparsers_no_destination_error(self):
-        parser = ErrorRaisingArgumentParser()
-        subparsers = parser.add_subparsers(required=True)
-        subparsers.add_parser('foo')
-        subparsers.add_parser('bar')
-        with self.assertRaises(ArgumentParserError) as excinfo:
-            parser.parse_args(('baz',))
-        self.assertRegex(
-            excinfo.exception.stderr,
-            r"error: argument {foo,bar}: invalid choice: 'baz' \(choose from 'foo', 'bar'\)\n$"
         )
 
     def test_optional_subparsers(self):
@@ -2787,6 +2893,31 @@ class TestPositionalsGroups(TestCase):
         result = parser.parse_args('1 2 3 4'.split())
         self.assertEqual(expected, result)
 
+class TestGroupConstructor(TestCase):
+    def test_group_prefix_chars(self):
+        parser = ErrorRaisingArgumentParser()
+        msg = (
+            "The use of the undocumented 'prefix_chars' parameter in "
+            "ArgumentParser.add_argument_group() is deprecated."
+        )
+        with self.assertWarns(DeprecationWarning) as cm:
+            parser.add_argument_group(prefix_chars='-+')
+        self.assertEqual(msg, str(cm.warning))
+        self.assertEqual(cm.filename, __file__)
+
+    def test_group_prefix_chars_default(self):
+        # "default" isn't quite the right word here, but it's the same as
+        # the parser's default prefix so it's a good test
+        parser = ErrorRaisingArgumentParser()
+        msg = (
+            "The use of the undocumented 'prefix_chars' parameter in "
+            "ArgumentParser.add_argument_group() is deprecated."
+        )
+        with self.assertWarns(DeprecationWarning) as cm:
+            parser.add_argument_group(prefix_chars='-')
+        self.assertEqual(msg, str(cm.warning))
+        self.assertEqual(cm.filename, __file__)
+
 # ===================
 # Parent parser tests
 # ===================
@@ -2833,7 +2964,7 @@ class TestParentParsers(TestCase):
         parser = ErrorRaisingArgumentParser(parents=[self.ab_mutex_parent])
         self._test_mutex_ab(parser.parse_args)
 
-    def test_single_granparent_mutex(self):
+    def test_single_grandparent_mutex(self):
         parents = [self.ab_mutex_parent]
         parser = ErrorRaisingArgumentParser(add_help=False, parents=parents)
         parser = ErrorRaisingArgumentParser(parents=[parser])

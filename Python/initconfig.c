@@ -3502,6 +3502,9 @@ PyInitConfig_Create(void)
 void
 PyInitConfig_Free(PyInitConfig *config)
 {
+    if (config == NULL) {
+        return;
+    }
     free(config->err_msg);
     free(config);
 }
