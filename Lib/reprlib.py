@@ -37,16 +37,16 @@ def recursive_repr(fillvalue='...'):
 
 class Repr:
     _lookup = {
-        "repr_tuple": ("builtins", "tuple"),
-        "repr_list": ("builtins", "list"),
-        "repr_array": ("array", "array"),
-        "repr_set": ("builtins", "set"),
-        "repr_frozenset": ("builtins", "frozenset"),
-        "repr_deque": ("collections", "deque"),
-        "repr_dict": ("builtins", "dict"),
-        "repr_str": ("builtins", "str"),
-        "repr_int": ("builtins", "int"),
-        }
+        'tuple': 'builtins', 
+        'list': 'builtins', 
+        'array': 'array', 
+        'set': 'builtins', 
+        'frozenset': 'builtins', 
+        'deque': 'collections', 
+        'dict': 'builtins', 
+        'str': 'builtins', 
+        'int': 'builtins'
+    }
 
     def __init__(
         self, *, maxlevel=6, maxtuple=6, maxlist=6, maxarray=5, maxdict=4,
@@ -71,32 +71,24 @@ class Repr:
         return self.repr1(x, self.maxlevel)
 
     def repr1(self, x, level):
-        _type = type(x)
-        typename = _type.__name__
+        cls = type(x)
+        typename = cls.__name__
+
         if ' ' in typename:
             parts = typename.split()
             typename = '_'.join(parts)
 
-        method_name = "repr_" + typename
-
-        _method = getattr(self, method_name, None)
-        if not _method:
-            return self.repr_instance(x, level)
-
-        # we have a predefined method for this type,
-        # but it has been set in a subclass
-        if method_name not in self._lookup:
-            return _method(x, level)
-
-        module = getattr(_type, "__module__", None)
-        is_shadowed = (module, typename) != self._lookup[method_name]
-
-        if is_shadowed:
-            # we have a predefined method for a class with
-            # the same name as x, but it is not x
-            return self.repr_instance(x, level)
-
-        return _method(x, level)
+        method = getattr(self, 'repr_' + typename, None)
+        if method:
+            # not defined in this class
+            if typename not in self._lookup:
+                return method(x, level)
+            module = getattr(cls, '__module__', None)
+            # defined in this class and is the module intended
+            if module == self._lookup.get(typename):
+                return method(x, level)
+            
+        return self.repr_instance(x, level)
 
     def _join(self, pieces, level):
         if self.indent is None:
