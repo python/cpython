@@ -130,13 +130,11 @@ The standard type hierarchy
    pair: extension; module
    pair: C; language
 
-Below is a list of the types that are built into Python. The fundamental type
-is :class:`object`; all other types, whether built-in or not, are derived
-from it. Extension modules (written in C, Java, or other languages,
-depending on the implementation) can define additional types.  Future versions
-of Python may add types to the type hierarchy (e.g., rational numbers,
-efficiently stored arrays of integers, etc.), although such additions will
-often be provided via the standard library instead.
+Below is a list of the types that are built into Python.  Extension modules
+(written in C, Java, or other languages, depending on the implementation) can
+define additional types.  Future versions of Python may add types to the type
+hierarchy (e.g., rational numbers, efficiently stored arrays of integers, etc.),
+although such additions will often be provided via the standard library instead.
 
 .. index::
    single: attribute
