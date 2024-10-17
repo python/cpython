@@ -2498,6 +2498,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_importlib/resources \
 		test/test_importlib/source \
 		test/test_inspect \
+		test/test_inspect/inspect_simple_pkg \
 		test/test_interpreters \
 		test/test_json \
 		test/test_module \
