@@ -776,9 +776,9 @@ the C library strftime function.\n"
 #endif
 
 static PyObject *
-strftime1(time_char **outbuf, size_t *bufsize,
-          time_char *format, size_t fmtlen,
-          struct tm *tm)
+time_strftime1(time_char **outbuf, size_t *bufsize,
+               time_char *format, size_t fmtlen,
+               struct tm *tm)
 {
     size_t buflen;
 #if defined(MS_WINDOWS) && !defined(HAVE_WCSFTIME)
@@ -823,7 +823,7 @@ strftime1(time_char **outbuf, size_t *bufsize,
             return NULL;
         }
         *outbuf = (time_char *)PyMem_Realloc(*outbuf,
-                                                *bufsize*sizeof(time_char));
+                                             *bufsize*sizeof(time_char));
         if (*outbuf == NULL) {
             PyErr_NoMemory();
             return NULL;
@@ -932,7 +932,8 @@ time_strftime(PyObject *module, PyObject *args)
         }
         if (fmtlen) {
             format[fmtlen] = 0;
-            PyObject *unicode = strftime1(&outbuf, &bufsize, format, fmtlen, &buf);
+            PyObject *unicode = time_strftime1(&outbuf, &bufsize,
+                                               format, fmtlen, &buf);
             if (unicode == NULL) {
                 goto error;
             }
