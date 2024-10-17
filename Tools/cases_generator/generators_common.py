@@ -1,4 +1,3 @@
-import dataclasses
 from pathlib import Path
 from typing import TextIO
 
@@ -10,9 +9,9 @@ from analyzer import (
     analysis_error,
 )
 from cwriter import CWriter
-from typing import Callable, Mapping, TextIO, Iterator, Iterable
+from typing import Callable, TextIO, Iterator, Iterable
 from lexer import Token
-from stack import Stack, Local, Storage, StackError
+from stack import Storage, StackError
 
 # Set this to true for voluminous output showing state of stack and locals
 PRINT_STACKS = False
