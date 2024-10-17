@@ -376,7 +376,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
 .. function:: ispackage(object)
 
-   Return ``True`` if the object is a package.
+   Return ``True`` if the object is a :term:`package`.
 
    .. versionadded:: 3.14
 
