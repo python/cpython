@@ -15,8 +15,6 @@
         _PyAST_Name(Py_BuildValue("s", "CLOSE"), Load, __VA_ARGS__), \
         _PyAST_Slice(a, b, c, __VA_ARGS__), \
         Load, __VA_ARGS__)
-
-#define NONE1(...) _PyAST_Constant(Py_None, NULL, __VA_ARGS__)
 '''
 
 @trailer '''
@@ -852,10 +850,8 @@ slices[expr_ty]:
     | a[asdl_expr_seq*]=','.(slice | starred_expression)+ [','] { _PyAST_Tuple(a, Load, EXTRA) }
 
 slice[expr_ty]:
-    | a=[expression] ':' b=[expression] ':' ':' c=expression { _PyAST_Slice1(a, b, c, EXTRA) }
-    | a=[expression] ':' b=[expression] ':' c=expression { _PyAST_Slice(a, b, c, EXTRA) }
-    | a=[expression] ':' b=[expression] ':' { _PyAST_Slice1(a, b, NONE1(EXTRA), EXTRA) }
-    | a=[expression] ':' b=[expression] { _PyAST_Slice(a, b, NONE1(EXTRA), EXTRA) }
+    | a=[expression] ':' b=[expression] ':' ':' c=[expression] { _PyAST_Slice1(a, b, c, EXTRA) }
+    | a=[expression] ':' b=[expression] c=[':' d=[expression] { d }] { _PyAST_Slice(a, b, c, EXTRA) }
     | a=named_expression { a }
 
 atom[expr_ty]:
