@@ -189,9 +189,7 @@ def ismethod(object):
 
 def ispackage(object):
     """Return true if the object is a package."""
-    if ismodule(object) and object.__spec__ is not None:
-        return object.__spec__.parent == object.__spec__.name
-    return False
+    return ismodule(object) and hasattr(object, "__path__")
 
 def ismethoddescriptor(object):
     """Return true if the object is a method descriptor.
