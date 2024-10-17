@@ -401,6 +401,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.curframe = self.stack[self.curindex][0]
         self.set_convenience_variable(self.curframe, '_frame', self.curframe)
 
+        self._save_initial_file_mtime(self.curframe)
+
         if self._chained_exceptions:
             self.set_convenience_variable(
                 self.curframe,
@@ -493,15 +495,17 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             except KeyboardInterrupt:
                 self.message('--KeyboardInterrupt--')
 
-    def _init_file_mtime(self):
-        """initialize the file mtime table with the current frame's file if it
-        hasn't been seen yet."""
-        filename = self.curframe.f_code.co_filename
-        if filename not in self._file_mtime_table:
-            try:
-                self._file_mtime_table[filename] = os.path.getmtime(filename)
-            except Exception:
-                pass
+    def _save_initial_file_mtime(self, frame):
+        """save the mtile of the all the files in the frame stack in the file mtime table
+        if it hasn't been saved yet."""
+        while frame:
+            filename = frame.f_code.co_filename
+            if filename not in self._file_mtime_table:
+                try:
+                    self._file_mtime_table[filename] = os.path.getmtime(filename)
+                except Exception:
+                    pass
+            frame = frame.f_back
 
     def _validate_file_mtime(self):
         """Check if the source file of the current frame has been modified.
@@ -845,7 +849,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         a breakpoint command list definition.
         """
         if not self.commands_defining:
-            self._init_file_mtime()
             if line.startswith('_pdbcmd'):
                 command, arg, line = self.parseline(line)
                 if hasattr(self, command):
