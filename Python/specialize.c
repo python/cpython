@@ -1984,6 +1984,7 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
     if (Py_TYPE(tp) != &PyType_Type) {
         goto generic;
     }
+    #ifndef Py_GIL_DISABLED
     if (tp->tp_new == PyBaseObject_Type.tp_new) {
         PyFunctionObject *init = get_init_for_simple_managed_python_class(tp);
         if (type_get_version(tp, CALL) == 0) {
@@ -1997,6 +1998,7 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
             return;
         }
     }
+    #endif
 generic:
     specialize(instr, CALL_NON_PY_GENERAL);
 }
@@ -2159,7 +2161,7 @@ _Py_Specialize_Call(_PyStackRef callable_st, _Py_CODEUNIT *instr, int nargs)
 {
     PyObject *callable = PyStackRef_AsPyObjectBorrow(callable_st);
 
-    assert(ENABLE_SPECIALIZATION);
+    assert(ENABLE_SPECIALIZATION_FT);
     assert(_PyOpcode_Caches[CALL] == INLINE_CACHE_ENTRIES_CALL);
     assert(_Py_OPCODE(*instr) != INSTRUMENTED_CALL);
     if (PyCFunction_CheckExact(callable)) {
