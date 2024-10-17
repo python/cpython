@@ -1766,7 +1766,7 @@ make_Zreplacement(PyObject *object, PyObject *tzinfoarg)
 {
     PyObject *temp;
     PyObject *tzinfo = get_tzinfo_member(object);
-    PyObject *Zreplacement = PyUnicode_FromStringAndSize(NULL, 0);
+    PyObject *Zreplacement = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
 
     if (Zreplacement == NULL)
         return NULL;
