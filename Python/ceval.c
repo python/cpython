@@ -761,6 +761,16 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
  * so consume 3 units of C stack */
 #define PY_EVAL_C_STACK_UNITS 2
 
+#if defined(_MSC_VER) && defined(_Py_USING_PGO) && defined(_Py_JIT)
+/* _PyEval_EvalFrameDefault is too large to optimize for speed with
+   PGO on MSVC when the JIT is enabled. Disable that optimization
+   around this function only. If this is fixed upstream, we should
+   gate this on the version of MSVC.
+ */
+#  pragma optimize("t", off)
+/* This setting is reversed below following _PyEval_EvalFrameDefault */
+#endif
+
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
@@ -1136,6 +1146,10 @@ goto_to_tier1:
 
 }
 
+#if defined(_MSC_VER) && defined(_Py_USING_PGO) && defined(_Py_JIT)
+#  pragma optimize("", on)
+#endif
+
 #if defined(__GNUC__)
 #  pragma GCC diagnostic pop
 #elif defined(_MSC_VER) /* MS_WINDOWS */
@@ -1287,7 +1301,7 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
     }
     else {
         /* This will not fail. */
-        kwonly_sig = PyUnicode_FromString("");
+        kwonly_sig = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
         assert(kwonly_sig != NULL);
     }
     _PyErr_Format(tstate, PyExc_TypeError,

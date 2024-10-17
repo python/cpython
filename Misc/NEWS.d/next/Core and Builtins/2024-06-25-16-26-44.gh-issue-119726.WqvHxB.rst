@@ -1,2 +1,0 @@
-Improve the speed and memory use of C function calls from JIT code on AArch64.
-Patch by Diego Russo

@@ -281,8 +281,6 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->vararg);
     Py_CLEAR(state->withitem_type);
 
-    Py_CLEAR(_Py_INTERP_CACHED_OBJECT(interp, str_replace_inf));
-
     state->finalized = 1;
     state->once = (_PyOnceFlag){0};
 }
