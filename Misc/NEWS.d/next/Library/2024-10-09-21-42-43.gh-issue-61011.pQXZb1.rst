@@ -1,4 +1,0 @@
-Fix inheritance of nested mutually exclusive groups from parent parser in
-:class:`argparse.ArgumentParser`. Previously, all nested mutually exclusive
-groups lost their connection to the group containing them and were displayed
-as belonging directly to the parser.

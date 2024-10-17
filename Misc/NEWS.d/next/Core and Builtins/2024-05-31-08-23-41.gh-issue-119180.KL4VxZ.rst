@@ -1,3 +1,0 @@
-:func:`classmethod` and :func:`staticmethod` now wrap the
-:attr:`~object.__annotations__` and :attr:`~object.__annotate__` attributes of
-their underlying callable lazily. See :pep:`649`. Patch by Jelle Zijlstra.

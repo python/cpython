@@ -20,7 +20,7 @@
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
-#include "pycore_uniqueid.h"      // _PyType_FinalizeThreadLocalRefcounts()
+#include "pycore_uniqueid.h"      // _PyObject_FinalizePerThreadRefcounts()
 
 /* --------------------------------------------------------------------------
 CAUTION
