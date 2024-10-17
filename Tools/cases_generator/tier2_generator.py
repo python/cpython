@@ -212,7 +212,7 @@ def get_instruction_size_for_uop(instructions: dict[str, Instruction], uop: Uop)
         if uop in inst.parts:
             if size is None:
                 size = inst.size
-            elif size != inst.size:
+            if size != inst.size:
                 assert size == inst.size, f"All instructions must have the same size: {size} != {inst.size}"
     assert size is not None
     return size
