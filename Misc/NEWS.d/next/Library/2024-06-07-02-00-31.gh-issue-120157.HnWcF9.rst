@@ -1,1 +1,0 @@
-Remove unused constant ``concurrent.futures._base._FUTURE_STATES`` in :mod:`concurrent.futures`. Patch by Clinton Christian (pygeek).
