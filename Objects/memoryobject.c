@@ -2770,11 +2770,11 @@ memoryview_index_impl(PyMemoryViewObject *self, PyObject *value,
                       Py_ssize_t start, Py_ssize_t stop)
 /*[clinic end generated code: output=e0185e3819e549df input=0697a0165bf90b5a]*/
 {
-    Py_buffer *view = &(self->view);
+    const Py_buffer *view = &self->view;
     CHECK_RELEASED(self);
 
     if (view->ndim == 0) {
-        PyErr_SetString(PyExc_TypeError, "invalid indexing of 0-dim memory");
+        PyErr_SetString(PyExc_TypeError, "invalid lookup on 0-dim memory");
         return NULL;
     }
 
@@ -2790,16 +2790,32 @@ memoryview_index_impl(PyMemoryViewObject *self, PyObject *value,
         }
 
         stop = Py_MIN(stop, n);
-        start = Py_MIN(start, stop);
+        assert(stop >= 0);
+        assert(stop <= n);
 
+        start = Py_MIN(start, stop);
+        assert(0 <= start);
+        assert(start <= stop);
+
+        PyObject *obj = _PyObject_CAST(self);
         for (Py_ssize_t index = start; index < stop; index++) {
-            PyObject *item = memory_item((PyObject *)self, index);
+            // Note: while memoryviews can be mutated during iterations
+            // when calling the == operator, their shape cannot. As such,
+            // it is safe to assume that the index remains valid for the
+            // entire loop.
+            assert(index < Py_SIZE(obj));
+
+            PyObject *item = memory_item(obj, index);
             if (item == NULL) {
                 return NULL;
             }
+            if (item == value) {
+                Py_DECREF(item);
+                return PyLong_FromSsize_t(index);
+            }
             int contained = PyObject_RichCompareBool(item, value, Py_EQ);
             Py_DECREF(item);
-            if (contained > 0) {
+            if (contained > 0) {  // more likely than 'contained < 0'
                 return PyLong_FromSsize_t(index);
             }
             else if (contained < 0) {
@@ -2807,8 +2823,7 @@ memoryview_index_impl(PyMemoryViewObject *self, PyObject *value,
             }
         }
 
-        PyErr_SetString(PyExc_ValueError,
-                        "memoryview.index(x): x not in list");
+        PyErr_SetString(PyExc_ValueError, "memoryview.index(x): x not found");
         return NULL;
     }
 
