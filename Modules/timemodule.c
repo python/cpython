@@ -951,8 +951,10 @@ time_strftime(PyObject *module, PyObject *args)
                 break;
             }
         }
-        if (_PyUnicodeWriter_WriteSubstring(&writer, format_arg, start, i) < 0) {
-            goto error;
+        if (start < i) {
+            if (_PyUnicodeWriter_WriteSubstring(&writer, format_arg, start, i) < 0) {
+                goto error;
+            }
         }
     }
 
