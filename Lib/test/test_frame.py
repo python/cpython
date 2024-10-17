@@ -399,22 +399,22 @@ class TestFrameLocals(unittest.TestCase):
         d = sys._getframe().f_locals
 
         # This needs to be tested before f_extra_locals is created
-        with self.assertRaises(KeyError):
+        with self.assertRaisesRegex(KeyError, 'non_exist'):
             del d['non_exist']
 
         with self.assertRaises(KeyError):
             d.pop('non_exist')
 
-        with self.assertRaises(KeyError):
+        with self.assertRaisesRegex(RuntimeError, 'local variables'):
             del d['x']
 
         with self.assertRaises(AttributeError):
             d.clear()
 
-        with self.assertRaises(KeyError):
+        with self.assertRaises(RuntimeError):
             d.pop('x')
 
-        with self.assertRaises(KeyError):
+        with self.assertRaises(RuntimeError):
             d.pop('x', None)
 
         # 'm', 'n' is stored in f_extra_locals

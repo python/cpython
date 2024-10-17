@@ -5,6 +5,7 @@
 #include "pycore_code.h"          // CO_FAST_LOCAL, etc.
 #include "pycore_function.h"      // _PyFunction_FromConstructor()
 #include "pycore_moduleobject.h"  // _PyModule_GetDict()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_metadata.h" // _PyOpcode_Deopt, _PyOpcode_Caches
 
@@ -164,7 +165,7 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
     }
     if (i >= 0) {
         if (value == NULL) {
-            PyErr_SetString(PyExc_KeyError, "cannot remove local variables from FrameLocalsProxy");
+            PyErr_SetString(PyExc_RuntimeError, "cannot remove local variables from FrameLocalsProxy");
             return -1;
         }
 
@@ -203,7 +204,7 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
 
     if (extra == NULL) {
         if (value == NULL) {
-            PyErr_Format(PyExc_KeyError, "'%R'", key);
+            _PyErr_SetKeyError(key);
             return -1;
         }
         extra = PyDict_New();
@@ -687,8 +688,7 @@ framelocalsproxy_setdefault(PyObject* self, PyObject *const *args, Py_ssize_t na
 static PyObject*
 framelocalsproxy_pop(PyObject* self, PyObject *const *args, Py_ssize_t nargs)
 {
-    if (nargs < 1 || nargs > 2) {
-        PyErr_SetString(PyExc_TypeError, "pop expected 1 or 2 arguments");
+    if (!_PyArg_CheckPositional("pop", nargs, 1, 2)) {
         return NULL;
     }
 
@@ -707,17 +707,17 @@ framelocalsproxy_pop(PyObject* self, PyObject *const *args, Py_ssize_t nargs)
     }
 
     if (i >= 0) {
-        PyErr_SetString(PyExc_KeyError, "cannot remove local variables from FrameLocalsProxy");
+        PyErr_SetString(PyExc_RuntimeError, "cannot remove local variables from FrameLocalsProxy");
         return NULL;
     }
 
-    PyObject* result = NULL;
+    PyObject *result = NULL;
 
     if (frame->f_extra_locals == NULL) {
         if (default_value != NULL) {
             return Py_XNewRef(default_value);
         } else {
-            PyErr_Format(PyExc_KeyError, "'%R'", key);
+            _PyErr_SetKeyError(key);
             return NULL;
         }
     }
@@ -730,7 +730,7 @@ framelocalsproxy_pop(PyObject* self, PyObject *const *args, Py_ssize_t nargs)
         if (default_value != NULL) {
             return Py_XNewRef(default_value);
         } else {
-            PyErr_Format(PyExc_KeyError, "'%R'", key);
+            _PyErr_SetKeyError(key);
             return NULL;
         }
     }
