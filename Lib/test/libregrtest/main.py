@@ -594,6 +594,7 @@ class Regrtest:
                 '_PYTHON_PROJECT_BASE',
                 '_PYTHON_HOST_PLATFORM',
                 '_PYTHON_SYSCONFIGDATA_NAME',
+                "_PYTHON_SYSCONFIGDATA_PATH",
                 'PYTHONPATH'
             }
             old_environ = os.environ

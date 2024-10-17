@@ -685,11 +685,9 @@ def get_annotations(
         case Format.FORWARDREF:
             # For FORWARDREF, we use __annotations__ if it exists
             try:
-                ann = _get_dunder_annotations(obj)
+                return dict(_get_dunder_annotations(obj))
             except NameError:
                 pass
-            else:
-                return dict(ann)
 
             # But if __annotations__ threw a NameError, we try calling __annotate__
             ann = _get_and_call_annotate(obj, format)
