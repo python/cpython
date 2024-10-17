@@ -494,11 +494,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.message('--KeyboardInterrupt--')
 
     def _update_file_mtime(self):
-        """update the file mtime table with the current frame's file"""
+        """update the file mtime table with the current frame's file if it
+        hasn't been seen yet."""
         try:
             filename = self.curframe.f_code.co_filename
-            mtime = os.path.getmtime(filename)
-            self._file_mtime_table.setdefault(filename, mtime)
+            if filename not in self._file_mtime_table:
+                self._file_mtime_table[filename] = os.path.getmtime(filename)
         except Exception:
             return
 
