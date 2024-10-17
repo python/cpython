@@ -577,7 +577,7 @@ read_py_long(
     }
     bytes_read = read_memory(pid, address + offsets->long_object.ob_digit, sizeof(digit) * size, digits);
     if (bytes_read < 0) {
-        return -1;
+        goto error;
     }
 
     long value = 0;
@@ -585,17 +585,20 @@ read_py_long(
     for (ssize_t i = 0; i < size; ++i) {
         long long factor;
         if (__builtin_mul_overflow(digits[i], (1Lu << (ssize_t)(shift * i)), &factor)) {
-            return -1;
+            goto error;
         }
         if (__builtin_add_overflow(value, factor, &value)) {
-            return -1;
+            goto error;
         }
     }
+    PyMem_RawFree(digits);
     if (negative) {
         value = -1 * value;
     }
-
     return value;
+error:
+    PyMem_RawFree(digits);
+    return -1;
 }
 
 static PyObject *
