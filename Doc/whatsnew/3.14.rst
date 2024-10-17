@@ -318,7 +318,7 @@ inspect
   (Contributed by Jelle Zijlstra in :gh:`101552`.)
 
 * Add function :func:`inspect.ispackage` to determine whether an object is a
-  package or not.
+  :term:`package` or not.
   (Contributed by Zhikang Yan in :gh:`125634`.)
 
 
