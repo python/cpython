@@ -24,12 +24,12 @@ __all__ = (
 # top level asyncio namespace, and want to avoid future name clashes.
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class FrameCallGraphEntry:
     frame: types.FrameType
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class FutureCallGraph:
     future: futures.Future
     call_stack: list[FrameCallGraphEntry]
@@ -62,8 +62,8 @@ def _build_stack_for_future(future: futures.Future) -> FutureCallGraph:
         else:
             break
 
-    if fut_waiters := getattr(future, '_asyncio_awaited_by', None):
-        for parent in fut_waiters:
+    if future._asyncio_awaited_by:
+        for parent in future._asyncio_awaited_by:
             awaited_by.append(_build_stack_for_future(parent))
 
     st.reverse()
@@ -149,8 +149,8 @@ def capture_call_graph(
         del f
 
     awaited_by = []
-    if fut_waiters := getattr(future, '_asyncio_awaited_by', None):
-        for parent in fut_waiters:
+    if future._asyncio_awaited_by:
+        for parent in future._asyncio_awaited_by:
             awaited_by.append(_build_stack_for_future(parent))
 
     return FutureCallGraph(future, call_stack, awaited_by)
@@ -170,11 +170,11 @@ def print_call_graph(
 
         if isinstance(st.future, tasks.Task):
             add_line(
-                f'* Task(name={st.future.get_name()!r}, id=0x{id(st.future):x})'
+                f'* Task(name={st.future.get_name()!r}, id={id(st.future):#x})'
             )
         else:
             add_line(
-                f'* Future(id=0x{id(st.future):x})'
+                f'* Future(id={id(st.future):#x})'
             )
 
         if st.call_stack:

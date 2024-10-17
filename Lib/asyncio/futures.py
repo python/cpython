@@ -46,8 +46,6 @@ class Future:
 
     """
 
-    _awaited_by = None
-
     # Class variables serving as defaults for instance variables.
     _state = _PENDING
     _result = None
