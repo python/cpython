@@ -455,11 +455,20 @@ do { \
 #  define SPECIALIZATION_FAIL(opcode, kind) ((void)0)
 #endif
 
-// Initialize warmup counters and insert superinstructions. This cannot fail.
+// Initialize warmup counters. This cannot fail.
 void
-_PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size)
+_PyCode_InitCounters(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable)
 {
     #if ENABLE_SPECIALIZATION_FT
+    _Py_BackoffCounter jump_counter, adaptive_counter;
+    if (enable) {
+        jump_counter = initial_jump_backoff_counter();
+        adaptive_counter = adaptive_counter_warmup();
+    }
+    else {
+        jump_counter = initial_unreachable_backoff_counter();
+        adaptive_counter = initial_unreachable_backoff_counter();
+    }
     int opcode = 0;
     /* The last code unit cannot have a cache, so we don't need to check it */
     for (Py_ssize_t i = 0; i < size-1; i++) {
@@ -469,7 +478,7 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size)
             // The initial value depends on the opcode
             switch (opcode) {
                 case JUMP_BACKWARD:
-                    instructions[i + 1].counter = initial_jump_backoff_counter();
+                    instructions[i + 1].counter = jump_counter;
                     break;
                 case POP_JUMP_IF_FALSE:
                 case POP_JUMP_IF_TRUE:
@@ -478,7 +487,7 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size)
                     instructions[i + 1].cache = 0x5555;  // Alternating 0, 1 bits
                     break;
                 default:
-                    instructions[i + 1].counter = adaptive_counter_warmup();
+                    instructions[i + 1].counter = adaptive_counter;
                     break;
             }
             i += caches;
@@ -486,25 +495,6 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size)
     }
     #endif /* ENABLE_SPECIALIZATION_FT */
 }
-
-#ifdef Py_GIL_DISABLED
-
-void
-_PyCode_DisableSpecialization(_Py_CODEUNIT *instructions, Py_ssize_t size)
-{
-    /* The last code unit cannot have a cache, so we don't need to check it */
-    for (Py_ssize_t i = 0; i < size - 1; i++) {
-        int opcode = instructions[i].op.code;
-        int caches = _PyOpcode_Caches[opcode];
-        if (caches) {
-            instructions[i + 1].counter =
-                initial_unreachable_backoff_counter();
-            i += caches;
-        }
-    }
-}
-
-#endif
 
 #define SIMPLE_FUNCTION 0
 
