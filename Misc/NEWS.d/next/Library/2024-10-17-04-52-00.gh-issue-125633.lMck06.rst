@@ -1,0 +1,1 @@
+Adding function `ispackage` to determine whether an object is a package or not.
