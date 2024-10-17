@@ -732,6 +732,9 @@ void _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *, ULONG,
                                 struct _Py_stat_struct *);
 void _Py_stat_basic_info_to_stat(FILE_STAT_BASIC_INFORMATION *,
                                  struct _Py_stat_struct *);
+void LARGE_INTEGER_to_time_t_nsec(LARGE_INTEGER *in_ptr, time_t *time_out, int* nsec_out);
+int attributes_to_mode(DWORD attr);
+
 #endif
 
 
@@ -15917,36 +15920,53 @@ static PyType_Spec DirEntryType_spec = {
 #ifdef MS_WINDOWS
 
 static wchar_t *
-join_path_filenameW(const wchar_t *path_wide, const wchar_t *filename)
+join_path_filenameW_n(const wchar_t *path_wide, const wchar_t *filename, size_t filename_length)
 {
     Py_ssize_t path_len;
     Py_ssize_t size;
     wchar_t *result;
     wchar_t ch;
 
-    if (!path_wide) { /* Default arg: "." */
+    if (!path_wide)
+    {
+        /* Default arg: "." */
         path_wide = L".";
         path_len = 1;
     }
-    else {
+    else
+    {
         path_len = wcslen(path_wide);
     }
 
     /* The +1's are for the path separator and the NUL */
-    size = path_len + 1 + wcslen(filename) + 1;
+    size = path_len + 1 + filename_length + 1;
     result = PyMem_New(wchar_t, size);
-    if (!result) {
+    if (!result)
+    {
         PyErr_NoMemory();
         return NULL;
     }
+
     wcscpy(result, path_wide);
-    if (path_len > 0) {
+    if (path_len > 0)
+    {
         ch = result[path_len - 1];
         if (ch != SEP && ch != ALTSEP && ch != L':')
+        {
             result[path_len++] = SEP;
-        wcscpy(result + path_len, filename);
+        }
+        wcsncpy(result + path_len, filename, filename_length);
+
     }
+    /* Forcefully null terminate the string. */
+    result[size - 1] = (wchar_t)'\x0';
     return result;
+}
+
+static wchar_t *
+join_path_filenameW(const wchar_t *path_wide, const wchar_t *filename)
+{
+    return join_path_filenameW_n(path_wide, filename, wcslen(filename));
 }
 
 static PyObject *
@@ -15993,6 +16013,109 @@ DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
 
     find_data_to_file_info(dataW, &file_info, &reparse_tag);
     _Py_attribute_data_to_stat(&file_info, reparse_tag, NULL, NULL, &entry->win32_lstat);
+
+    /* ctime is only deprecated from 3.12, so we copy birthtime across */
+    entry->win32_lstat.st_ctime = entry->win32_lstat.st_birthtime;
+    entry->win32_lstat.st_ctime_nsec = entry->win32_lstat.st_birthtime_nsec;
+
+    return (PyObject *)entry;
+
+error:
+    Py_DECREF(entry);
+    return NULL;
+}
+
+
+static PyObject *
+DirEntry_from_file_directory_information(PyObject *module, path_t *path, FILE_DIRECTORY_INFORMATION *fileDirectoryInformation)
+{
+    DirEntry *entry;
+    wchar_t *joined_path;
+    struct _Py_stat_struct *result;
+
+    PyObject *DirEntryType = get_posix_state(module)->DirEntryType;
+    entry = PyObject_New(DirEntry, (PyTypeObject *)DirEntryType);
+    if (!entry)
+    {
+        return NULL;
+    }
+    entry->name = NULL;
+    entry->path = NULL;
+    entry->stat = NULL;
+    entry->lstat = NULL;
+    entry->got_file_index = 0;
+
+    entry->name = PyUnicode_FromWideChar(fileDirectoryInformation->FileName, fileDirectoryInformation->FileNameLength / sizeof(wchar_t));
+    if (!entry->name)
+    {
+        goto error;
+    }
+
+    int return_bytes = path->wide && PyBytes_Check(path->object);
+    if (return_bytes)
+    {
+        Py_SETREF(entry->name, PyUnicode_EncodeFSDefault(entry->name));
+        if (!entry->name)
+        {
+            goto error;
+        }
+    }
+
+    joined_path = join_path_filenameW_n(path->wide, fileDirectoryInformation->FileName, fileDirectoryInformation->FileNameLength / sizeof(wchar_t));
+    if (!joined_path)
+    {
+        goto error;
+    }
+
+    entry->path = PyUnicode_FromWideChar(joined_path, -1);
+    PyMem_Free(joined_path);
+    if (!entry->path)
+    {
+        goto error;
+    }
+    if (return_bytes)
+    {
+        Py_SETREF(entry->path, PyUnicode_EncodeFSDefault(entry->path));
+        if (!entry->path)
+        {
+            goto error;
+        }
+    }
+
+
+    result = &entry->win32_lstat;
+    memset(result, 0, sizeof(*result));
+    result->st_mode = attributes_to_mode(fileDirectoryInformation->FileAttributes);
+
+    result->st_size = (((long long)(fileDirectoryInformation->EndOfFile.HighPart)) << 32) + fileDirectoryInformation->EndOfFile.LowPart;
+    result->st_dev = 0; /* Not returned from NtQueryDirectoryFile */
+    result->st_rdev = 0;
+
+    LARGE_INTEGER_to_time_t_nsec(&fileDirectoryInformation->CreationTime, &result->st_birthtime, &result->st_birthtime_nsec);
+    LARGE_INTEGER_to_time_t_nsec(&fileDirectoryInformation->ChangeTime, &result->st_ctime, &result->st_ctime_nsec);
+    LARGE_INTEGER_to_time_t_nsec(&fileDirectoryInformation->LastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
+    LARGE_INTEGER_to_time_t_nsec(&fileDirectoryInformation->LastAccessTime, &result->st_atime, &result->st_atime_nsec);
+
+    result->st_nlink = 0; /* Not returned from NtQueryDirectoryFile */
+
+    if (!result->st_ino && !result->st_ino_high) {
+        /* This really should always be zero (According to MS-Docs it should actually be completely ignored) */
+        result->st_ino = fileDirectoryInformation->FileIndex;
+    }
+
+#if 0 /* TODO: Fix this */
+    /* bpo-37834: Only actual symlinks set the S_IFLNK flag. But lstat() will
+    open other name surrogate reparse points without traversing them. To
+    detect/handle these, check st_file_attributes and st_reparse_tag. */
+    result->st_reparse_tag = reparse_tag;
+    if (info->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
+        reparse_tag == IO_REPARSE_TAG_SYMLINK) {
+        /* set the bits that make this a symlink */
+        result->st_mode = (result->st_mode & ~S_IFMT) | S_IFLNK;
+    }
+#endif
+    result->st_file_attributes = fileDirectoryInformation->FileAttributes;
+
 
     /* ctime is only deprecated from 3.12, so we copy birthtime across */
     entry->win32_lstat.st_ctime = entry->win32_lstat.st_birthtime;
@@ -16109,9 +16232,10 @@ typedef struct {
     PyObject_HEAD
     path_t path;
 #ifdef MS_WINDOWS
-    HANDLE handle;
-    WIN32_FIND_DATAW file_data;
-    int first_time;
+    HANDLE directoryHandle;
+    UNICODE_STRING fullyQualifiedDirectoryName;
+    FILE_DIRECTORY_INFORMATION *fileDirectoryInformation; /* Re-use the dynamically allocated buffer to reduce redundant mallocs */
+    ULONG fileDirectoryInformationSize; /* The currently allocated size of fileDirectoryInformation. Windows does not support this buffer being larger than ULONG_MAX. */
 #else /* POSIX */
     DIR *dirp;
 #endif
@@ -16125,61 +16249,152 @@ typedef struct {
 static int
 ScandirIterator_is_closed(ScandirIterator *iterator)
 {
-    return iterator->handle == INVALID_HANDLE_VALUE;
+    return NULL == iterator->directoryHandle;
 }
 
 static void
 ScandirIterator_closedir(ScandirIterator *iterator)
 {
-    HANDLE handle = iterator->handle;
+    HANDLE directoryHandle = iterator->directoryHandle;
+    iterator->directoryHandle = NULL;
 
-    if (handle == INVALID_HANDLE_VALUE)
+    if (NULL == directoryHandle)
+    {
         return;
+    }
 
-    iterator->handle = INVALID_HANDLE_VALUE;
     Py_BEGIN_ALLOW_THREADS
-    FindClose(handle);
+    _Py_NtClose(directoryHandle);
     Py_END_ALLOW_THREADS
+
+    if (iterator->fullyQualifiedDirectoryName.Buffer)
+    {
+        /* The buffer will never again be used, it must be freed */
+        /* Notice that it was allocated by RtlDosPathNameToNtPathName_U_WithStatus from ntdll, so it must be freed accordingly. */
+        _Py_RtlFreeUnicodeString(&iterator->fullyQualifiedDirectoryName);
+    }
+    /* De-init the UNICODE_STRING struct (notice that this is not the Buffer we just freed) */
+    memset(&iterator->fullyQualifiedDirectoryName, 0, sizeof(iterator->fullyQualifiedDirectoryName));
+
+    if (iterator->fileDirectoryInformation)
+    {
+        PyMem_Free(iterator->fileDirectoryInformation);
+        iterator->fileDirectoryInformation = NULL;
+        iterator->fileDirectoryInformationSize = 0;
+    }
 }
 
 static PyObject *
 ScandirIterator_iternext(ScandirIterator *iterator)
 {
-    WIN32_FIND_DATAW *file_data = &iterator->file_data;
-    BOOL success;
+    NTSTATUS ntstatus;
+    FILE_DIRECTORY_INFORMATION directoryEntry;
+    IO_STATUS_BLOCK ioStatusBlock;
     PyObject *entry;
+    ULONG dosErrorCode;
 
     /* Happens if the iterator is iterated twice, or closed explicitly */
-    if (iterator->handle == INVALID_HANDLE_VALUE)
+    if (NULL == iterator->directoryHandle || 0 == iterator->fileDirectoryInformationSize)
+    {
         return NULL;
+    }
 
-    while (1) {
-        if (!iterator->first_time) {
-            Py_BEGIN_ALLOW_THREADS
-            success = FindNextFileW(iterator->handle, file_data);
-            Py_END_ALLOW_THREADS
-            if (!success) {
-                /* Error or no more files */
-                if (GetLastError() != ERROR_NO_MORE_FILES)
-                    path_error(&iterator->path);
+    ntstatus = STATUS_NO_MORE_FILES;
+    memset(&directoryEntry, 0, sizeof(directoryEntry));
+    memset(&ioStatusBlock, 0, sizeof(ioStatusBlock));
+
+    do
+    {
+        Py_BEGIN_ALLOW_THREADS
+        ntstatus = _Py_NtQueryDirectoryFile(
+            iterator->directoryHandle, /* FileHandle */
+            NULL, /* Event */
+            NULL, /* ApcRoutine (callback) */
+            NULL, /* ApcContext (for callback routine) */
+            &ioStatusBlock, /* IoStatusBlock */
+            iterator->fileDirectoryInformation, /* FileInformation (output) */
+            iterator->fileDirectoryInformationSize, /* Length (maximum length of output buffer) */
+            FileDirectoryInformation, /* FileInformationClass */
+            TRUE, /* ReturnSingleEntry */
+            NULL, /* FileName */
+            FALSE /* RestartScan */
+        );
+        Py_END_ALLOW_THREADS
+
+        /* TODO: Debug assert ioStatusBlock.Information LEQ iterator->fileDirectoryInformationSize */
+        /* TODO: Should ioStatusBlock.Status be equal to ntstatus since this is a synchronous call? */
+
+        /* Check for specific ntstatus-es which do not merit an actual error. */
+        if (STATUS_NO_MORE_FILES == ntstatus)
+        {
+            /* We have successfully finished the iteration. */
+            break;
+        }
+
+        if (STATUS_BUFFER_OVERFLOW == ntstatus || 0 == ioStatusBlock.Information)
+        {
+            /* Contrary to the name, this means that fileDirectoryInformationSize was not sufficient to hold the entry(ies) we requested. */
+            /* Re-allocate fileDirectoryInformation to be larger and try again. */
+            /* On each attempt, try to double the size of the buffer. This should really only ever happen once or twice. */
+            iterator->fileDirectoryInformationSize = iterator->fileDirectoryInformationSize << 1;
+            iterator->fileDirectoryInformation = PyMem_Realloc(iterator->fileDirectoryInformation, iterator->fileDirectoryInformationSize);
+            if (NULL == iterator->fileDirectoryInformation)
+            {
+                /* Mark the size down to avoid accidentally writing to this NULL buffer */
+                iterator->fileDirectoryInformationSize = 0;
+                PyErr_NoMemory();
                 break;
             }
+            /* Try the query again with this resized buffer. */
+            continue;
         }
-        iterator->first_time = 0;
+
+        _STATIC_ASSERT(!NT_SUCCESS(STATUS_NO_MORE_FILES));
+        _STATIC_ASSERT(!NT_SUCCESS(STATUS_BUFFER_OVERFLOW));
+        _STATIC_ASSERT(!NT_SUCCESS(STATUS_BUFFER_TOO_SMALL));
+        _STATIC_ASSERT(!NT_SUCCESS(STATUS_INVALID_INFO_CLASS));
+        _STATIC_ASSERT(!NT_SUCCESS(STATUS_INVALID_PARAMETER));
+        _STATIC_ASSERT(!NT_SUCCESS(STATUS_INFO_LENGTH_MISMATCH));
+        if (!NT_SUCCESS(ntstatus))
+        {
+            /* TODO: Debug assert (STATUS_BUFFER_TOO_SMALL != ntstatus). */
+            /* This error happens if-and-only-if the buffer is LT the minimal information structure size. */
+
+            /* TODO: Debug assert (STATUS_INFO_LENGTH_MISMATCH != ntstatus). */
+            /* Not sure in what case this is plausible (subject to this flow). */
+
+            /* TODO: Debug assert (STATUS_INVALID_INFO_CLASS != ntstatus). */
+            /* This should be deterministic considering we are using a valid Windows NTOS version. (Windows XP (5.1.2600) according to MS-Docs). */
+
+            /* Unexpected error. */
+            /* TODO: STATUS_INVALID_PARAMETER is a FileSystem incompatibility issue, this might be worth treating differently. */
+            path_error(&iterator->path);
+            dosErrorCode = _Py_RtlNtStatusToDosError(ntstatus);
+            SetLastError(dosErrorCode);
+            break;
+        }
 
         /* Skip over . and .. */
-        if (wcscmp(file_data->cFileName, L".") != 0 &&
-            wcscmp(file_data->cFileName, L"..") != 0)
-        {
+        /* According to MS-Docs, you may NOT assume that the FileName buffer is null terminated. */
+        /* TODO: Debug assert iterator->fileDirectoryInformation is not NULL. */
+        /* TODO: Debug assert iterator->fileDirectoryInformation->FileName is not NULL. */
+        /* TODO: Debug assert iterator->fileDirectoryInformation->FileNameLength is not 0. */
+        if (
+            /* These checks still relevant, even with NtQueryDirectoryFile */
+            0 != wcsncmp(iterator->fileDirectoryInformation->FileName, L".", iterator->fileDirectoryInformation->FileNameLength / sizeof(wchar_t)) &&
+            0 != wcsncmp(iterator->fileDirectoryInformation->FileName, L"..", iterator->fileDirectoryInformation->FileNameLength / sizeof(wchar_t))
+        ) {
             PyObject *module = PyType_GetModule(Py_TYPE(iterator));
-            entry = DirEntry_from_find_data(module, &iterator->path, file_data);
+            entry = DirEntry_from_file_directory_information(module, &iterator->path, iterator->fileDirectoryInformation);
             if (!entry)
+            {
                 break;
+            }
             return entry;
         }
 
         /* Loop till we get a non-dot directory or finish iterating */
-    }
+    } while (TRUE);
 
     /* Error or no more files */
     ScandirIterator_closedir(iterator);
@@ -16370,7 +16585,11 @@ os_scandir_impl(PyObject *module, path_t *path)
 {
     ScandirIterator *iterator;
 #ifdef MS_WINDOWS
-    wchar_t *path_strW;
+    HANDLE directoryHandle;
+    OBJECT_ATTRIBUTES directoryObjectAttributes;
+    NTSTATUS ntstatus;
+    IO_STATUS_BLOCK ioStatusBlock;
+    ULONG dosErrorCode;
 #else
     const char *path_str;
 #ifdef HAVE_FDOPENDIR
@@ -16389,7 +16608,12 @@ os_scandir_impl(PyObject *module, path_t *path)
         return NULL;
 
 #ifdef MS_WINDOWS
-    iterator->handle = INVALID_HANDLE_VALUE;
+    iterator->directoryHandle = NULL;
+    iterator->fileDirectoryInformation = NULL;
+    iterator->fileDirectoryInformationSize = 0;
+    ntstatus = STATUS_SUCCESS;
+    memset(&iterator->fullyQualifiedDirectoryName, 0, sizeof(iterator->fullyQualifiedDirectoryName));
+    memset(&ioStatusBlock, 0, sizeof(ioStatusBlock));
 #else
     iterator->dirp = NULL;
 #endif
@@ -16399,22 +16623,58 @@ os_scandir_impl(PyObject *module, path_t *path)
     memset(path, 0, sizeof(path_t));
 
 #ifdef MS_WINDOWS
-    iterator->first_time = 1;
 
-    path_strW = join_path_filenameW(iterator->path.wide, L"*.*");
-    if (!path_strW)
-        goto error;
-
-    Py_BEGIN_ALLOW_THREADS
-    iterator->handle = FindFirstFileW(path_strW, &iterator->file_data);
-    Py_END_ALLOW_THREADS
-
-    if (iterator->handle == INVALID_HANDLE_VALUE) {
+    ntstatus = _Py_RtlDosPathNameToNtPathName_U_WithStatus(iterator->path.wide, &iterator->fullyQualifiedDirectoryName, NULL, NULL);
+    if (!NT_SUCCESS(ntstatus))
+    {
         path_error(&iterator->path);
-        PyMem_Free(path_strW);
+        SetLastError(ERROR_PATH_NOT_FOUND);
         goto error;
     }
-    PyMem_Free(path_strW);
+
+    InitializeObjectAttributes(
+        &directoryObjectAttributes, /* Out parameter */
+        &iterator->fullyQualifiedDirectoryName, /* Object name */
+        0, /* Attributes, use default */
+        NULL, /* Root directory, irrelevant for fully qualified object names */
+        NULL /* SecurityDescriptor, use default object's security */
+    );
+
+    Py_BEGIN_ALLOW_THREADS
+    ntstatus = _Py_NtCreateFile(
+        &directoryHandle, /* FileHandle, output handle */
+        FILE_LIST_DIRECTORY | FILE_TRAVERSE | SYNCHRONIZE | FILE_READ_ATTRIBUTES | FILE_READ_EA | READ_CONTROL, /* DesiredAccess, read access and directory listing */
+        &directoryObjectAttributes, /* ObjectAttributes */
+        &ioStatusBlock, /* IoStatusBlock */
+        NULL, /* AllocationSize, irrelevant when openning a directory */
+        FILE_ATTRIBUTE_NORMAL, /* FileAttributes, irrelevant when openning a directory */
+        FILE_SHARE_READ, /* ShareAccess */
+        FILE_OPEN, /* CreateDisposition, only open the directory, never create it */
+        FILE_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_ALERT, /* CreateOptions */
+        NULL, /* EaBuffer */
+        0 /* EaLength */
+    );
+    Py_END_ALLOW_THREADS
+
+    if (!NT_SUCCESS(ntstatus))
+    {
+        path_error(&iterator->path);
+        dosErrorCode = _Py_RtlNtStatusToDosError(ntstatus);
+        SetLastError(dosErrorCode);
+        goto error;
+    }
+
+    iterator->directoryHandle = directoryHandle;
+    /* Premptively allocate a buffer suitable for a file's information, taking into account the variable length of a file name. */
+    /* Although a file name _may_ be longer than MAX_PATH, in most flows this malloc will suffice. Otherwise, we will lazily re-allocate. */
+    iterator->fileDirectoryInformation = (FILE_DIRECTORY_INFORMATION*)PyMem_Malloc(INITIAL_FILE_DIRECTORY_INFORMATION_ENTRY_SIE);
+    if (!iterator->fileDirectoryInformation)
+    {
+        PyErr_NoMemory();
+        goto error;
+    }
+    iterator->fileDirectoryInformationSize = INITIAL_FILE_DIRECTORY_INFORMATION_ENTRY_SIE;
+
 #else /* POSIX */
     errno = 0;
 #ifdef HAVE_FDOPENDIR
