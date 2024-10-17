@@ -1,0 +1,2 @@
+Retain strong references for pending :class:`asyncio.Task` objects to avoid rare crashes due
+to background tasks. Patch by Alexander Hartl.
