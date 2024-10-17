@@ -105,7 +105,8 @@ On Windows, extensions that use the Stable ABI should be linked against
 ``python39.dll``.
 
 On some platforms, Python will look for and load shared library files named
-with the ``abi3`` tag (e.g. ``mymodule.abi3.so``).
+with the ``abi3`` tag (e.g. ``mymodule.abi3.so`` or
+``mymodule.abi3-x86-64-linux-gnu.so``).
 It does not check if such extensions conform to a Stable ABI.
 The user (or their packaging tools) need to ensure that, for example,
 extensions built with the 3.10+ Limited API are not installed for lower
