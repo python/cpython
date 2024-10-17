@@ -95,6 +95,14 @@ static void _testembed_Py_Initialize(void)
 }
 
 
+static int test_import_in_subinterpreters(void)
+{
+    _testembed_Py_InitializeFromConfig();
+    PyThreadState_Swap(Py_NewInterpreter());
+    return PyRun_SimpleString("import readline"); // gh-124160
+}
+
+
 /*****************************************************
  * Test repeated initialisation and subinterpreters
  *****************************************************/
@@ -303,13 +311,35 @@ static int test_pre_initialization_api(void)
     _Py_EMBED_PREINIT_CHECK("Checking Py_SetProgramName\n");
     Py_SetProgramName(program);
 
+    _Py_EMBED_PREINIT_CHECK("Checking !Py_IsInitialized pre-initialization\n");
+    if (Py_IsInitialized()) {
+        fprintf(stderr, "Fatal error: initialized before initialization!\n");
+        return 1;
+    }
+
     _Py_EMBED_PREINIT_CHECK("Initializing interpreter\n");
     Py_Initialize();
+
+    _Py_EMBED_PREINIT_CHECK("Checking Py_IsInitialized post-initialization\n");
+    if (!Py_IsInitialized()) {
+        fprintf(stderr, "Fatal error: not initialized after initialization!\n");
+        return 1;
+    }
+
     _Py_EMBED_PREINIT_CHECK("Check sys module contents\n");
-    PyRun_SimpleString("import sys; "
-                       "print('sys.executable:', sys.executable)");
+    PyRun_SimpleString(
+        "import sys; "
+        "print('sys.executable:', sys.executable); "
+        "sys.stdout.flush(); "
+    );
     _Py_EMBED_PREINIT_CHECK("Finalizing interpreter\n");
     Py_Finalize();
+
+    _Py_EMBED_PREINIT_CHECK("Checking !Py_IsInitialized post-finalization\n");
+    if (Py_IsInitialized()) {
+        fprintf(stderr, "Fatal error: still initialized after finalization!\n");
+        return 1;
+    }
 
     _Py_EMBED_PREINIT_CHECK("Freeing memory allocated by Py_DecodeLocale\n");
     PyMem_RawFree(program);
@@ -356,12 +386,15 @@ static int test_pre_initialization_sys_options(void)
     _Py_EMBED_PREINIT_CHECK("Initializing interpreter\n");
     _testembed_Py_InitializeFromConfig();
     _Py_EMBED_PREINIT_CHECK("Check sys module contents\n");
-    PyRun_SimpleString("import sys; "
-                       "print('sys.warnoptions:', sys.warnoptions); "
-                       "print('sys._xoptions:', sys._xoptions); "
-                       "warnings = sys.modules['warnings']; "
-                       "latest_filters = [f[0] for f in warnings.filters[:3]]; "
-                       "print('warnings.filters[:3]:', latest_filters)");
+    PyRun_SimpleString(
+        "import sys; "
+        "print('sys.warnoptions:', sys.warnoptions); "
+        "print('sys._xoptions:', sys._xoptions); "
+        "warnings = sys.modules['warnings']; "
+        "latest_filters = [f[0] for f in warnings.filters[:3]]; "
+        "print('warnings.filters[:3]:', latest_filters); "
+        "sys.stdout.flush(); "
+    );
     _Py_EMBED_PREINIT_CHECK("Finalizing interpreter\n");
     Py_Finalize();
 
@@ -802,6 +835,7 @@ static void set_most_env_vars(void)
 #ifdef Py_STATS
     putenv("PYTHONSTATS=1");
 #endif
+    putenv("PYTHONPERFSUPPORT=1");
 }
 
 
@@ -1806,6 +1840,16 @@ static int test_init_set_config(void)
 }
 
 
+static int initconfig_getint(PyInitConfig *config, const char *name)
+{
+    int64_t value;
+    int res = PyInitConfig_GetInt(config, name, &value);
+    assert(res == 0);
+    assert(INT_MIN <= value && value <= INT_MAX);
+    return (int)value;
+}
+
+
 static int test_initconfig_api(void)
 {
     PyInitConfig *config = PyInitConfig_Create();
@@ -1823,6 +1867,10 @@ static int test_initconfig_api(void)
     }
 
     if (PyInitConfig_SetInt(config, "hash_seed", 10) < 0) {
+        goto error;
+    }
+
+    if (PyInitConfig_SetInt(config, "perf_profiling", 2) < 0) {
         goto error;
     }
 
@@ -1844,21 +1892,23 @@ static int test_initconfig_api(void)
         goto error;
     }
 
-
     if (Py_InitializeFromInitConfig(config) < 0) {
         goto error;
     }
     PyInitConfig_Free(config);
+    PyInitConfig_Free(NULL);
 
     dump_config();
     Py_Finalize();
     return 0;
 
-    const char *err_msg;
 error:
-    (void)PyInitConfig_GetError(config, &err_msg);
-    printf("Python init failed: %s\n", err_msg);
-    exit(1);
+    {
+        const char *err_msg;
+        (void)PyInitConfig_GetError(config, &err_msg);
+        printf("Python init failed: %s\n", err_msg);
+        exit(1);
+    }
 }
 
 
@@ -1876,37 +1926,50 @@ static int test_initconfig_get_api(void)
     assert(PyInitConfig_HasOption(config, "non-existent") == 0);
 
     // test PyInitConfig_GetInt()
-    int64_t value;
-    assert(PyInitConfig_GetInt(config, "dev_mode", &value) == 0);
-    assert(value == 0);
+    assert(initconfig_getint(config, "dev_mode") == 0);
     assert(PyInitConfig_SetInt(config, "dev_mode", 1) == 0);
-    assert(PyInitConfig_GetInt(config, "dev_mode", &value) == 0);
-    assert(value == 1);
+    assert(initconfig_getint(config, "dev_mode") == 1);
 
     // test PyInitConfig_GetInt() on a PyPreConfig option
-    assert(PyInitConfig_GetInt(config, "utf8_mode", &value) == 0);
-    assert(value == 0);
+    assert(initconfig_getint(config, "utf8_mode") == 0);
     assert(PyInitConfig_SetInt(config, "utf8_mode", 1) == 0);
-    assert(PyInitConfig_GetInt(config, "utf8_mode", &value) == 0);
-    assert(value == 1);
+    assert(initconfig_getint(config, "utf8_mode") == 1);
 
     // test PyInitConfig_GetStr()
     char *str;
+    assert(PyInitConfig_GetStr(config, "program_name", &str) == 0);
+    assert(str == NULL);
     assert(PyInitConfig_SetStr(config, "program_name", PROGRAM_NAME_UTF8) == 0);
     assert(PyInitConfig_GetStr(config, "program_name", &str) == 0);
     assert(strcmp(str, PROGRAM_NAME_UTF8) == 0);
     free(str);
 
     // test PyInitConfig_GetStrList() and PyInitConfig_FreeStrList()
+    size_t length;
+    char **items;
+    assert(PyInitConfig_GetStrList(config, "xoptions", &length, &items) == 0);
+    assert(length == 0);
+
     char* xoptions[] = {"faulthandler"};
     assert(PyInitConfig_SetStrList(config, "xoptions",
                                    Py_ARRAY_LENGTH(xoptions), xoptions) == 0);
-    size_t length;
-    char **items;
+
     assert(PyInitConfig_GetStrList(config, "xoptions", &length, &items) == 0);
     assert(length == 1);
     assert(strcmp(items[0], "faulthandler") == 0);
     PyInitConfig_FreeStrList(length, items);
+
+    // Setting hash_seed sets use_hash_seed
+    assert(initconfig_getint(config, "use_hash_seed") == 0);
+    assert(PyInitConfig_SetInt(config, "hash_seed", 123) == 0);
+    assert(initconfig_getint(config, "use_hash_seed") == 1);
+
+    // Setting module_search_paths sets module_search_paths_set
+    assert(initconfig_getint(config, "module_search_paths_set") == 0);
+    char* paths[] = {"search", "path"};
+    assert(PyInitConfig_SetStrList(config, "module_search_paths",
+                                   Py_ARRAY_LENGTH(paths), paths) == 0);
+    assert(initconfig_getint(config, "module_search_paths_set") == 1);
 
     return 0;
 }
@@ -1938,6 +2001,64 @@ static int test_initconfig_exit(void)
 
     PyInitConfig_Free(config);
     return 0;
+}
+
+
+static PyModuleDef_Slot extension_slots[] = {
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL}
+};
+
+static struct PyModuleDef extension_module = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "my_test_extension",
+    .m_size = 0,
+    .m_slots = extension_slots,
+};
+
+static PyObject* init_my_test_extension(void)
+{
+    return PyModuleDef_Init(&extension_module);
+}
+
+
+static int test_initconfig_module(void)
+{
+    PyInitConfig *config = PyInitConfig_Create();
+    if (config == NULL) {
+        printf("Init allocation error\n");
+        return 1;
+    }
+
+    if (PyInitConfig_SetStr(config, "program_name", PROGRAM_NAME_UTF8) < 0) {
+        goto error;
+    }
+
+    if (PyInitConfig_AddModule(config, "my_test_extension",
+                               init_my_test_extension) < 0) {
+        goto error;
+    }
+
+    if (Py_InitializeFromInitConfig(config) < 0) {
+        goto error;
+    }
+    PyInitConfig_Free(config);
+
+    if (PyRun_SimpleString("import my_test_extension") < 0) {
+        fprintf(stderr, "unable to import my_test_extension\n");
+        exit(1);
+    }
+
+    Py_Finalize();
+    return 0;
+
+error:
+    {
+        const char *err_msg;
+        (void)PyInitConfig_GetError(config, &err_msg);
+        printf("Python init failed: %s\n", err_msg);
+        exit(1);
+    }
 }
 
 
@@ -2320,6 +2441,7 @@ static struct TestCase TestCases[] = {
     {"test_repeated_init_exec", test_repeated_init_exec},
     {"test_repeated_simple_init", test_repeated_simple_init},
     {"test_forced_io_encoding", test_forced_io_encoding},
+    {"test_import_in_subinterpreters", test_import_in_subinterpreters},
     {"test_repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters},
     {"test_repeated_init_and_inittab", test_repeated_init_and_inittab},
     {"test_pre_initialization_api", test_pre_initialization_api},
@@ -2362,6 +2484,7 @@ static struct TestCase TestCases[] = {
     {"test_initconfig_api", test_initconfig_api},
     {"test_initconfig_get_api", test_initconfig_get_api},
     {"test_initconfig_exit", test_initconfig_exit},
+    {"test_initconfig_module", test_initconfig_module},
     {"test_run_main", test_run_main},
     {"test_run_main_loop", test_run_main_loop},
     {"test_get_argc_argv", test_get_argc_argv},

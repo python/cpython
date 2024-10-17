@@ -193,7 +193,7 @@ Functions
    Use :func:`clock_settime_ns` to avoid the precision loss caused by the
    :class:`float` type.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Android, not iOS.
 
    .. versionadded:: 3.3
 
@@ -202,7 +202,7 @@ Functions
 
    Similar to :func:`clock_settime` but set time with nanoseconds.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Android, not iOS.
 
    .. versionadded:: 3.7
 

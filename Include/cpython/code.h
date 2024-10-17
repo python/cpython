@@ -8,6 +8,8 @@
 extern "C" {
 #endif
 
+/* Total tool ids available */
+#define  _PY_MONITORING_TOOL_IDS 8
 /* Count of all local monitoring events */
 #define  _PY_MONITORING_LOCAL_EVENTS 10
 /* Count of all "real" monitoring events (not derived from other events) */
@@ -57,6 +59,8 @@ typedef struct {
     _Py_LocalMonitors active_monitors;
     /* The tools that are to be notified for events for the matching code unit */
     uint8_t *tools;
+    /* The version of tools when they instrument the code */
+    uintptr_t tool_versions[_PY_MONITORING_TOOL_IDS];
     /* Information to support line events */
     _PyCoLineInstrumentationData *lines;
     /* The tools that are to be notified for line events for the matching code unit */
@@ -128,6 +132,7 @@ typedef struct {
     _PyCoCached *_co_cached;      /* cached co_* attributes */                 \
     uintptr_t _co_instrumentation_version; /* current instrumentation version */ \
     _PyCoMonitoringData *_co_monitoring; /* Monitoring data */                 \
+    Py_ssize_t _co_unique_id;     /* ID used for per-thread refcounting */   \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
     /* Scratch space for extra data relating to the code object.               \
        Type is a void* to keep the format private in codeobject.c to force     \

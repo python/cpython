@@ -1,5 +1,0 @@
-In PyREPL, updated ``maybe-accept``'s logic so that if the user hits
-:kbd:`Enter` twice, they are able to terminate the block even if there's
-trailing whitespace. Also, now when the user hits arrow up, the cursor
-is on the last functional line. This matches IPython's behavior.
-Patch by Aya Elsayed.
