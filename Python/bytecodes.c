@@ -3629,11 +3629,12 @@ dummy_func(
             DEOPT_IF(!PyStackRef_IsNull(null));
             DEOPT_IF(callable_o != (PyObject *)&PyUnicode_Type);
             STAT_INC(CALL, hit);
-            res = PyStackRef_FromPyObjectSteal(PyObject_Str(arg_o));
+            PyObject *res_o = PyObject_Str(arg_o);
             DEAD(null);
             DEAD(callable);
             PyStackRef_CLOSE(arg);
-            ERROR_IF(PyStackRef_IsNull(res), error);
+            ERROR_IF(res_o == NULL, error);
+            res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
         macro(CALL_STR_1) =
