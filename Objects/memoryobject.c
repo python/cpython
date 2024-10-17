@@ -11,11 +11,13 @@
  */
 
 #include "Python.h"
-#include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
-#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "pycore_strhex.h"        // _Py_strhex_with_sep()
-#include <stddef.h>               // offsetof()
+#include "pycore_abstract.h"        // _PyIndex_Check()
+#include "pycore_memoryobject.h"    // _PyManagedBuffer_Type
+#include "pycore_object.h"          // _PyObject_GC_UNTRACK()
+#include "pycore_strhex.h"          // _Py_strhex_with_sep()
+
+#include <stdbool.h>                // bool
+#include <stddef.h>                 // offsetof()
 
 /*[clinic input]
 class memoryview "PyMemoryViewObject *" "&PyMemoryView_Type"
@@ -3308,7 +3310,7 @@ typedef struct {
 #define _PyMemoryViewIter_CAST(PTR) ((memoryiterobject *)(PTR))
 
 static PyObject *
-memoryiter_new(PyObject *self, int reversed)
+memoryiter_new(PyObject *self, bool reversed)
 {
     if (!PyMemoryView_Check(self)) {
         PyErr_BadInternalCall();
@@ -3343,7 +3345,7 @@ memoryiter_new(PyObject *self, int reversed)
     it->it_index = reversed ? (it->it_length - 1) : 0;
     it->it_seq = _PyMemoryView_CAST(Py_NewRef(self));
     _PyObject_GC_TRACK(it);
-    return (PyObject *)it;
+    return _PyObject_CAST(it);
 }
 
 static void
@@ -3450,7 +3452,7 @@ memoryview___reversed___impl(PyMemoryViewObject *self)
     // show that this implementation improves for-loop performances. Note
     // that materializing the specialized reversed iterator is likely to
     // be slower than materializing a generic reversed object instance.
-    return memoryiter_new((PyObject *)self, 1);
+    return memoryiter_new(_PyObject_CAST(self), 1);
 }
 
 
