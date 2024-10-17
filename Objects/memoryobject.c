@@ -2765,7 +2765,7 @@ static PyObject *
 memoryview_count(PyMemoryViewObject *self, PyObject *value)
 /*[clinic end generated code: output=e2c255a8d54eaa12 input=e3036ce1ed7d1823]*/
 {
-    PyObject *iter = PyObject_GetIter((PyObject *)self);
+    PyObject *iter = PyObject_GetIter(_PyObject_CAST(self));
     if (iter == NULL) {
         return NULL;
     }
@@ -2779,13 +2779,13 @@ memoryview_count(PyMemoryViewObject *self, PyObject *value)
         }
         if (item == value) {
             Py_DECREF(item);
-            count++;
+            count++;  // no overflow since count <= len(mv) <= PY_SSIZE_T_MAX
             continue;
         }
         int contained = PyObject_RichCompareBool(item, value, Py_EQ);
         Py_DECREF(item);
-        if (contained > 0) { // more likely than contained < 0
-            count++;
+        if (contained > 0) { // more likely than 'contained < 0'
+            count++;  // no overflow since count <= len(mv) <= PY_SSIZE_T_MAX
         }
         else if (contained < 0) {
             Py_DECREF(iter);
