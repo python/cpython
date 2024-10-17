@@ -1,0 +1,1 @@
+make WSGIRequestHandler can use an easy way to replace the ServerHandler
