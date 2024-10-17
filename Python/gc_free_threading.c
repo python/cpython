@@ -323,9 +323,9 @@ gc_visit_heaps(PyInterpreterState *interp, mi_block_visit_fun *visitor,
     assert(interp->stoptheworld.world_stopped);
 
     int err;
-    HEAD_LOCK(&_PyRuntime);
+    INTERP_THREAD_LOCK(interp);
     err = gc_visit_heaps_lock_held(interp, visitor, arg);
-    HEAD_UNLOCK(&_PyRuntime);
+    INTERP_THREAD_UNLOCK(interp);
     return err;
 }
 
@@ -347,7 +347,7 @@ gc_visit_stackref(_PyStackRef stackref)
 static void
 gc_visit_thread_stacks(PyInterpreterState *interp)
 {
-    HEAD_LOCK(&_PyRuntime);
+    INTERP_THREAD_LOCK(interp);
     for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
         _PyInterpreterFrame *f = p->current_frame;
         while (f != NULL) {
@@ -361,7 +361,7 @@ gc_visit_thread_stacks(PyInterpreterState *interp)
             f = f->previous;
         }
     }
-    HEAD_UNLOCK(&_PyRuntime);
+    INTERP_THREAD_UNLOCK(interp);
 }
 
 static void
@@ -397,13 +397,13 @@ process_delayed_frees(PyInterpreterState *interp)
     _Py_qsbr_advance(&interp->qsbr);
     _PyThreadStateImpl *current_tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
     _Py_qsbr_quiescent_state(current_tstate->qsbr);
-    HEAD_LOCK(&_PyRuntime);
+    INTERP_THREAD_LOCK(interp);
     PyThreadState *tstate = interp->threads.head;
     while (tstate != NULL) {
         _PyMem_ProcessDelayed(tstate);
         tstate = (PyThreadState *)tstate->next;
     }
-    HEAD_UNLOCK(&_PyRuntime);
+    INTERP_THREAD_UNLOCK(interp);
 }
 
 // Subtract an incoming reference from the computed "gc_refs" refcount.
@@ -1185,7 +1185,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
         state->gcstate->old[i-1].count = 0;
     }
 
-    HEAD_LOCK(&_PyRuntime);
+    INTERP_THREAD_LOCK(interp);
     for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
         _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)p;
 
@@ -1195,7 +1195,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
         // merge refcounts for all queued objects
         merge_queued_objects(tstate, state);
     }
-    HEAD_UNLOCK(&_PyRuntime);
+    INTERP_THREAD_UNLOCK(interp);
 
     process_delayed_frees(interp);
 
@@ -1953,13 +1953,13 @@ PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void *arg)
 void
 _PyGC_ClearAllFreeLists(PyInterpreterState *interp)
 {
-    HEAD_LOCK(&_PyRuntime);
+    INTERP_THREAD_LOCK(interp);
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)interp->threads.head;
     while (tstate != NULL) {
         _PyObject_ClearFreeLists(&tstate->freelists, 0);
         tstate = (_PyThreadStateImpl *)tstate->base.next;
     }
-    HEAD_UNLOCK(&_PyRuntime);
+    INTERP_THREAD_UNLOCK(interp);
 }
 
 #endif  // Py_GIL_DISABLED
