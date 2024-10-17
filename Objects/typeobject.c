@@ -11618,8 +11618,8 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyTypeObject **type_p,
         if (_PyInterpreterFrame_LASTI(cframe) >= 0) {
             // MAKE_CELL and COPY_FREE_VARS have no quickened forms, so no need
             // to use _PyOpcode_Deopt here:
-            assert(_PyFrame_GetBytecode(cframe)[0].op.code == MAKE_CELL ||
-                   _PyFrame_GetBytecode(cframe)[0].op.code == COPY_FREE_VARS);
+            assert(_PyCode_CODE(co)[0].op.code == MAKE_CELL ||
+                   _PyCode_CODE(co)[0].op.code == COPY_FREE_VARS);
             assert(PyCell_Check(firstarg));
             firstarg = PyCell_GET(firstarg);
         }
