@@ -2819,32 +2819,27 @@ class TestPositionalsGroups(TestCase):
 class TestGroupConstructor(TestCase):
     def test_group_prefix_chars(self):
         parser = ErrorRaisingArgumentParser()
-
         msg = (
             "The use of the undocumented 'prefix_chars' parameter in "
-            "ArgumentParser.add_argument_group is deprecated."
+            "ArgumentParser.add_argument_group() is deprecated."
         )
-        with self.assertWarnsRegex(DeprecationWarning, msg):
+        with self.assertWarns(DeprecationWarning) as cm:
             parser.add_argument_group(prefix_chars='-+')
+        self.assertEqual(msg, str(cm.warning))
+        self.assertEqual(cm.filename, __file__)
 
     def test_group_prefix_chars_default(self):
         # "default" isn't quite the right word here, but it's the same as
         # the parser's default prefix so it's a good test
         parser = ErrorRaisingArgumentParser()
-
         msg = (
             "The use of the undocumented 'prefix_chars' parameter in "
-            "ArgumentParser.add_argument_group is deprecated."
+            "ArgumentParser.add_argument_group() is deprecated."
         )
-
-        with self.assertWarnsRegex(DeprecationWarning, msg):
+        with self.assertWarns(DeprecationWarning) as cm:
             parser.add_argument_group(prefix_chars='-')
-
-    def test_group_without_prefix_chars(self):
-        parser = ErrorRaisingArgumentParser()
-        group = parser.add_argument_group()
-        group.add_argument('--foo')
-        self.assertEqual(parser.parse_args(['--foo', 'bar']), NS(foo='bar'))
+        self.assertEqual(msg, str(cm.warning))
+        self.assertEqual(cm.filename, __file__)
 
 # ===================
 # Parent parser tests

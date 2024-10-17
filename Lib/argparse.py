@@ -1666,7 +1666,7 @@ class _ArgumentGroup(_ActionsContainer):
             import warnings
             depr_msg = (
                 "The use of the undocumented 'prefix_chars' parameter in "
-                "ArgumentParser.add_argument_group is deprecated."
+                "ArgumentParser.add_argument_group() is deprecated."
             )
             warnings.warn(depr_msg, DeprecationWarning, stacklevel=3)
 

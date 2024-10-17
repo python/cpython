@@ -1,1 +1,2 @@
-Deprecate passing prefix_chars_ parameter to :meth:`ArgumentParser.add_argument_group`.
+Deprecate passing keyword-only :ref:`prefix_chars` argument to
+:meth:`argparse.ArgumentParser.add_argument_group`.

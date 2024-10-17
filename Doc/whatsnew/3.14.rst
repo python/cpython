@@ -421,8 +421,9 @@ Deprecated
 ==========
 
 * :mod:`argparse`:
-  Passing *prefix_chars* to :func:`argparse.add_argument_group`
-  is now deprecated.
+  Passing the undocumented keyword argument *prefix_chars* to
+  :meth:`~argparse.ArgumentParser.add_argument_group` is now
+  deprecated.
   (Contributed by Savannah Ostrowski in :gh:`125563`.)
 
 * :mod:`asyncio`:
