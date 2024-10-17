@@ -187,6 +187,9 @@ def result_check(expected, got, ulp_tol=5, abs_tol=0.0):
 
     # Check exactly equal (applies also to strings representing exceptions)
     if got == expected:
+        if not got and not expected:
+            if math.copysign(1, got) != math.copysign(1, expected):
+                return f"expected {expected}, got {got} (zero has wrong sign)"
         return None
 
     failure = "not equal"
@@ -809,11 +812,13 @@ class MathTests(unittest.TestCase):
         # Test allowable types (those with __float__)
         self.assertEqual(hypot(12.0, 5.0), 13.0)
         self.assertEqual(hypot(12, 5), 13)
-        self.assertEqual(hypot(1, -1), math.sqrt(2))
-        self.assertEqual(hypot(1, FloatLike(-1.)), math.sqrt(2))
+        self.assertEqual(hypot(0.75, -1), 1.25)
+        self.assertEqual(hypot(-1, 0.75), 1.25)
+        self.assertEqual(hypot(0.75, FloatLike(-1.)), 1.25)
+        self.assertEqual(hypot(FloatLike(-1.), 0.75), 1.25)
         self.assertEqual(hypot(Decimal(12), Decimal(5)), 13)
         self.assertEqual(hypot(Fraction(12, 32), Fraction(5, 32)), Fraction(13, 32))
-        self.assertEqual(hypot(bool(1), bool(0), bool(1), bool(1)), math.sqrt(3))
+        self.assertEqual(hypot(True, False, True, True, True), 2.0)
 
         # Test corner cases
         self.assertEqual(hypot(0.0, 0.0), 0.0)     # Max input is zero
@@ -969,9 +974,9 @@ class MathTests(unittest.TestCase):
         self.assertEqual(dist((D(14), D(1)), (D(2), D(-4))), D(13))
         self.assertEqual(dist((F(14, 32), F(1, 32)), (F(2, 32), F(-4, 32))),
                          F(13, 32))
-        self.assertEqual(dist((True, True, False, True, False),
-                              (True, False, True, True, False)),
-                         sqrt(2.0))
+        self.assertEqual(dist((True, True, False, False, True, True),
+                              (True, False, True, False, False, False)),
+                         2.0)
 
         # Test corner cases
         self.assertEqual(dist((13.25, 12.5, -3.25),
@@ -1120,6 +1125,15 @@ class MathTests(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     math.isqrt(value)
 
+    @support.bigmemtest(2**32, memuse=0.85)
+    def test_isqrt_huge(self, size):
+        if size & 1:
+            size += 1
+        v = 1 << size
+        w = math.isqrt(v)
+        self.assertEqual(w.bit_length(), size // 2 + 1)
+        self.assertEqual(w.bit_count(), 1)
+
     def test_lcm(self):
         lcm = math.lcm
         self.assertEqual(lcm(0, 0), 0)
@@ -1261,6 +1275,13 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.log(INF), INF)
         self.assertTrue(math.isnan(math.log10(NAN)))
 
+    @support.bigmemtest(2**32, memuse=0.2)
+    def test_log_huge_integer(self, size):
+        v = 1 << size
+        self.assertAlmostEqual(math.log2(v), size)
+        self.assertAlmostEqual(math.log(v), size * 0.6931471805599453)
+        self.assertAlmostEqual(math.log10(v), size * 0.3010299956639812)
+
     def testSumProd(self):
         sumprod = math.sumprod
         Decimal = decimal.Decimal
@@ -1397,7 +1418,7 @@ class MathTests(unittest.TestCase):
                 return f'Flt({int(self)})'
 
         def baseline_sumprod(p, q):
-            """This defines the target behavior including expections and special values.
+            """This defines the target behavior including exceptions and special values.
             However, it is subject to rounding errors, so float inputs should be exactly
             representable with only a few bits.
             """
@@ -2051,6 +2072,13 @@ class MathTests(unittest.TestCase):
             except OverflowError:
                 result = 'OverflowError'
 
+            # C99+ says for math.h's sqrt: If the argument is +∞ or ±0, it is
+            # returned, unmodified.  On another hand, for csqrt: If z is ±0+0i,
+            # the result is +0+0i.  Lets correct zero sign of er to follow
+            # first convention.
+            if id in ['sqrt0002', 'sqrt0003', 'sqrt1001', 'sqrt1023']:
+                er = math.copysign(er, ar)
+
             # Default tolerances
             ulp_tol, abs_tol = 5, 0.0
 
@@ -2694,7 +2722,7 @@ class FMATests(unittest.TestCase):
     # gh-73468: On some platforms, libc fma() doesn't implement IEE 754-2008
     # properly: it doesn't use the right sign when the result is zero.
     @unittest.skipIf(
-        sys.platform.startswith(("freebsd", "wasi"))
+        sys.platform.startswith(("freebsd", "wasi", "netbsd"))
         or (sys.platform == "android" and platform.machine() == "x86_64"),
         f"this platform doesn't implement IEE 754-2008 properly")
     def test_fma_zero_result(self):

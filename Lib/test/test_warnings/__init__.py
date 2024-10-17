@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 import linecache
 import os
+import importlib
 import inspect
 from io import StringIO
 import re
@@ -639,6 +640,97 @@ class WarnTests(BaseTest):
                 self.module.warn('good warning category', MyWarningClass)
             self.assertIsInstance(cm.warning, Warning)
 
+    def check_module_globals(self, module_globals):
+        with original_warnings.catch_warnings(module=self.module, record=True) as w:
+            self.module.filterwarnings('default')
+            self.module.warn_explicit(
+                'eggs', UserWarning, 'bar', 1,
+                module_globals=module_globals)
+        self.assertEqual(len(w), 1)
+        self.assertEqual(w[0].category, UserWarning)
+        self.assertEqual(str(w[0].message), 'eggs')
+
+    def check_module_globals_error(self, module_globals, errmsg, errtype=ValueError):
+        if self.module is py_warnings:
+            self.check_module_globals(module_globals)
+            return
+        with original_warnings.catch_warnings(module=self.module, record=True) as w:
+            self.module.filterwarnings('always')
+            with self.assertRaisesRegex(errtype, re.escape(errmsg)):
+                self.module.warn_explicit(
+                    'eggs', UserWarning, 'bar', 1,
+                    module_globals=module_globals)
+        self.assertEqual(len(w), 0)
+
+    def check_module_globals_deprecated(self, module_globals, msg):
+        if self.module is py_warnings:
+            self.check_module_globals(module_globals)
+            return
+        with original_warnings.catch_warnings(module=self.module, record=True) as w:
+            self.module.filterwarnings('always')
+            self.module.warn_explicit(
+                'eggs', UserWarning, 'bar', 1,
+                module_globals=module_globals)
+        self.assertEqual(len(w), 2)
+        self.assertEqual(w[0].category, DeprecationWarning)
+        self.assertEqual(str(w[0].message), msg)
+        self.assertEqual(w[1].category, UserWarning)
+        self.assertEqual(str(w[1].message), 'eggs')
+
+    def test_gh86298_no_loader_and_no_spec(self):
+        self.check_module_globals({'__name__': 'bar'})
+
+    def test_gh86298_loader_is_none_and_no_spec(self):
+        self.check_module_globals({'__name__': 'bar', '__loader__': None})
+
+    def test_gh86298_no_loader_and_spec_is_none(self):
+        self.check_module_globals_error(
+            {'__name__': 'bar', '__spec__': None},
+            'Module globals is missing a __spec__.loader')
+
+    def test_gh86298_loader_is_none_and_spec_is_none(self):
+        self.check_module_globals_error(
+            {'__name__': 'bar', '__loader__': None, '__spec__': None},
+            'Module globals is missing a __spec__.loader')
+
+    def test_gh86298_loader_is_none_and_spec_loader_is_none(self):
+        self.check_module_globals_error(
+            {'__name__': 'bar', '__loader__': None,
+             '__spec__': types.SimpleNamespace(loader=None)},
+            'Module globals is missing a __spec__.loader')
+
+    def test_gh86298_no_spec(self):
+        self.check_module_globals_deprecated(
+            {'__name__': 'bar', '__loader__': object()},
+            'Module globals is missing a __spec__.loader')
+
+    def test_gh86298_spec_is_none(self):
+        self.check_module_globals_deprecated(
+            {'__name__': 'bar', '__loader__': object(), '__spec__': None},
+            'Module globals is missing a __spec__.loader')
+
+    def test_gh86298_no_spec_loader(self):
+        self.check_module_globals_deprecated(
+            {'__name__': 'bar', '__loader__': object(),
+             '__spec__': types.SimpleNamespace()},
+            'Module globals is missing a __spec__.loader')
+
+    def test_gh86298_loader_and_spec_loader_disagree(self):
+        self.check_module_globals_deprecated(
+            {'__name__': 'bar', '__loader__': object(),
+             '__spec__': types.SimpleNamespace(loader=object())},
+            'Module globals; __loader__ != __spec__.loader')
+
+    def test_gh86298_no_loader_and_no_spec_loader(self):
+        self.check_module_globals_error(
+            {'__name__': 'bar', '__spec__': types.SimpleNamespace()},
+            'Module globals is missing a __spec__.loader', AttributeError)
+
+    def test_gh86298_no_loader_with_spec_loader_okay(self):
+        self.check_module_globals(
+            {'__name__': 'bar',
+             '__spec__': types.SimpleNamespace(loader=object())})
+
 class CWarnTests(WarnTests, unittest.TestCase):
     module = c_warnings
 
@@ -887,37 +979,46 @@ class _WarningsTests(BaseTest, unittest.TestCase):
         # warn_explicit() should neither raise a SystemError nor cause an
         # assertion failure, in case the return value of get_source() has a
         # bad splitlines() method.
-        def get_bad_loader(splitlines_ret_val):
+        get_source_called = []
+        def get_module_globals(*, splitlines_ret_val):
+            class BadSource(str):
+                def splitlines(self):
+                    return splitlines_ret_val
+
             class BadLoader:
                 def get_source(self, fullname):
-                    class BadSource(str):
-                        def splitlines(self):
-                            return splitlines_ret_val
+                    get_source_called.append(splitlines_ret_val)
                     return BadSource('spam')
-            return BadLoader()
+
+            loader = BadLoader()
+            spec = importlib.machinery.ModuleSpec('foobar', loader)
+            return {'__loader__': loader,
+                    '__spec__': spec,
+                    '__name__': 'foobar'}
+
 
         wmod = self.module
         with original_warnings.catch_warnings(module=wmod):
             wmod.filterwarnings('default', category=UserWarning)
 
+            linecache.clearcache()
             with support.captured_stderr() as stderr:
                 wmod.warn_explicit(
                     'foo', UserWarning, 'bar', 1,
-                    module_globals={'__loader__': get_bad_loader(42),
-                                    '__name__': 'foobar'})
+                    module_globals=get_module_globals(splitlines_ret_val=42))
             self.assertIn('UserWarning: foo', stderr.getvalue())
+            self.assertEqual(get_source_called, [42])
 
-            show = wmod._showwarnmsg
-            try:
+            linecache.clearcache()
+            with support.swap_attr(wmod, '_showwarnmsg', None):
                 del wmod._showwarnmsg
                 with support.captured_stderr() as stderr:
                     wmod.warn_explicit(
                         'eggs', UserWarning, 'bar', 1,
-                        module_globals={'__loader__': get_bad_loader([42]),
-                                        '__name__': 'foobar'})
+                        module_globals=get_module_globals(splitlines_ret_val=[42]))
                 self.assertIn('UserWarning: eggs', stderr.getvalue())
-            finally:
-                wmod._showwarnmsg = show
+            self.assertEqual(get_source_called, [42, [42]])
+            linecache.clearcache()
 
     @support.cpython_only
     def test_issue31411(self):

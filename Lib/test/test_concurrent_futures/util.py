@@ -74,6 +74,10 @@ class ThreadPoolMixin(ExecutorMixin):
     executor_type = futures.ThreadPoolExecutor
 
 
+class InterpreterPoolMixin(ExecutorMixin):
+    executor_type = futures.InterpreterPoolExecutor
+
+
 class ProcessPoolForkMixin(ExecutorMixin):
     executor_type = futures.ProcessPoolExecutor
     ctx = "fork"
@@ -120,6 +124,7 @@ class ProcessPoolForkserverMixin(ExecutorMixin):
 
 def create_executor_tests(remote_globals, mixin, bases=(BaseTestCase,),
                           executor_mixins=(ThreadPoolMixin,
+                                           InterpreterPoolMixin,
                                            ProcessPoolForkMixin,
                                            ProcessPoolForkserverMixin,
                                            ProcessPoolSpawnMixin)):

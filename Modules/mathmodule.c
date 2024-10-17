@@ -535,43 +535,6 @@ m_lgamma(double x)
     return r;
 }
 
-/*
-   wrapper for atan2 that deals directly with special cases before
-   delegating to the platform libm for the remaining cases.  This
-   is necessary to get consistent behaviour across platforms.
-   Windows, FreeBSD and alpha Tru64 are amongst platforms that don't
-   always follow C99.
-*/
-
-static double
-m_atan2(double y, double x)
-{
-    if (isnan(x) || isnan(y))
-        return Py_NAN;
-    if (isinf(y)) {
-        if (isinf(x)) {
-            if (copysign(1., x) == 1.)
-                /* atan2(+-inf, +inf) == +-pi/4 */
-                return copysign(0.25*Py_MATH_PI, y);
-            else
-                /* atan2(+-inf, -inf) == +-pi*3/4 */
-                return copysign(0.75*Py_MATH_PI, y);
-        }
-        /* atan2(+-inf, x) == +-pi/2 for finite x */
-        return copysign(0.5*Py_MATH_PI, y);
-    }
-    if (isinf(x) || y == 0.) {
-        if (copysign(1., x) == 1.)
-            /* atan2(+-y, +inf) = atan2(+-0, +x) = +-0. */
-            return copysign(0., y);
-        else
-            /* atan2(+-y, -inf) = atan2(+-0., -x) = +-pi. */
-            return copysign(Py_MATH_PI, y);
-    }
-    return atan2(y, x);
-}
-
-
 /* IEEE 754-style remainder operation: x - n*y where n*y is the nearest
    multiple of y to x, taking n even in the case of a tie. Assuming an IEEE 754
    binary floating-point format, the result is always exact. */
@@ -1103,7 +1066,7 @@ FUNC1(atan, atan, 0,
       "atan($module, x, /)\n--\n\n"
       "Return the arc tangent (measured in radians) of x.\n\n"
       "The result is between -pi/2 and pi/2.")
-FUNC2(atan2, m_atan2,
+FUNC2(atan2, atan2,
       "atan2($module, y, x, /)\n--\n\n"
       "Return the arc tangent (measured in radians) of y/x.\n\n"
       "Unlike atan(y/x), the signs of both x and y are considered.")
@@ -1694,7 +1657,7 @@ math_isqrt(PyObject *module, PyObject *n)
 /*[clinic end generated code: output=35a6f7f980beab26 input=5b6e7ae4fa6c43d6]*/
 {
     int a_too_large, c_bit_length;
-    size_t c, d;
+    int64_t c, d;
     uint64_t m;
     uint32_t u;
     PyObject *a = NULL, *b;
@@ -1717,14 +1680,13 @@ math_isqrt(PyObject *module, PyObject *n)
 
     /* c = (n.bit_length() - 1) // 2 */
     c = _PyLong_NumBits(n);
-    if (c == (size_t)(-1)) {
-        goto error;
-    }
-    c = (c - 1U) / 2U;
+    assert(c > 0);
+    assert(!PyErr_Occurred());
+    c = (c - 1) / 2;
 
     /* Fast path: if c <= 31 then n < 2**64 and we can compute directly with a
        fast, almost branch-free algorithm. */
-    if (c <= 31U) {
+    if (c <= 31) {
         int shift = 31 - (int)c;
         m = (uint64_t)PyLong_AsUnsignedLongLong(n);
         Py_DECREF(n);
@@ -1741,13 +1703,13 @@ math_isqrt(PyObject *module, PyObject *n)
 
     /* From n >= 2**64 it follows that c.bit_length() >= 6. */
     c_bit_length = 6;
-    while ((c >> c_bit_length) > 0U) {
+    while ((c >> c_bit_length) > 0) {
         ++c_bit_length;
     }
 
     /* Initialise d and a. */
     d = c >> (c_bit_length - 5);
-    b = _PyLong_Rshift(n, 2U*c - 62U);
+    b = _PyLong_Rshift(n, 2*c - 62);
     if (b == NULL) {
         goto error;
     }
@@ -1764,12 +1726,12 @@ math_isqrt(PyObject *module, PyObject *n)
 
     for (int s = c_bit_length - 6; s >= 0; --s) {
         PyObject *q;
-        size_t e = d;
+        int64_t e = d;
 
         d = c >> s;
 
         /* q = (n >> 2*c - e - d + 1) // a */
-        q = _PyLong_Rshift(n, 2U*c - d - e + 1U);
+        q = _PyLong_Rshift(n, 2*c - d - e + 1);
         if (q == NULL) {
             goto error;
         }
@@ -1779,7 +1741,7 @@ math_isqrt(PyObject *module, PyObject *n)
         }
 
         /* a = (a << d - 1 - e) + q */
-        Py_SETREF(a, _PyLong_Lshift(a, d - 1U - e));
+        Py_SETREF(a, _PyLong_Lshift(a, d - 1 - e));
         if (a == NULL) {
             Py_DECREF(q);
             goto error;
@@ -2222,7 +2184,7 @@ loghelper(PyObject* arg, double (*func)(double))
     /* If it is int, do it ourselves. */
     if (PyLong_Check(arg)) {
         double x, result;
-        Py_ssize_t e;
+        int64_t e;
 
         /* Negative or zero inputs give a ValueError. */
         if (!_PyLong_IsPositive((PyLongObject *)arg)) {
@@ -2239,8 +2201,8 @@ loghelper(PyObject* arg, double (*func)(double))
                to compute the log anyway.  Clear the exception and continue. */
             PyErr_Clear();
             x = _PyLong_Frexp((PyLongObject *)arg, &e);
-            if (x == -1.0 && PyErr_Occurred())
-                return NULL;
+            assert(e >= 0);
+            assert(!PyErr_Occurred());
             /* Value is ~= x * 2**e, so the log ~= log(x) + log(2) * e. */
             result = func(x) + func(2.0) * e;
         }
@@ -2385,6 +2347,15 @@ math_fmod_impl(PyObject *module, double x, double y)
         return PyFloat_FromDouble(x);
     errno = 0;
     r = fmod(x, y);
+#ifdef _MSC_VER
+    /* Windows (e.g. Windows 10 with MSC v.1916) loose sign
+       for zero result.  But C99+ says: "if y is nonzero, the result
+       has the same sign as x".
+     */
+    if (r == 0.0 && y != 0.0) {
+        r = copysign(r, x);
+    }
+#endif
     if (isnan(r)) {
         if (!isnan(x) && !isnan(y))
             errno = EDOM;

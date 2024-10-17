@@ -444,7 +444,7 @@ And the output:
 
    options:
      -h, --help            show this help message and exit
-     -v {0,1,2}, --verbosity {0,1,2}
+     -v, --verbosity {0,1,2}
                            increase output verbosity
 
 Note that the change also reflects both in the error message as well as the

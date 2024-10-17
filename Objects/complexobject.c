@@ -173,6 +173,8 @@ _Py_c_pow(Py_complex a, Py_complex b)
         }
         r.real = len*cos(phase);
         r.imag = len*sin(phase);
+
+        _Py_ADJUST_ERANGE2(r.real, r.imag);
     }
     return r;
 }
@@ -567,12 +569,12 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
     // a faster and more accurate algorithm.
     if (b.imag == 0.0 && b.real == floor(b.real) && fabs(b.real) <= 100.0) {
         p = c_powi(a, (long)b.real);
+        _Py_ADJUST_ERANGE2(p.real, p.imag);
     }
     else {
         p = _Py_c_pow(a, b);
     }
 
-    _Py_ADJUST_ERANGE2(p.real, p.imag);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ZeroDivisionError,
                         "zero to a negative or complex power");
@@ -1247,5 +1249,5 @@ PyTypeObject PyComplex_Type = {
     0,                                          /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     actual_complex_new,                         /* tp_new */
-    PyObject_Del,                               /* tp_free */
+    PyObject_Free,                              /* tp_free */
 };

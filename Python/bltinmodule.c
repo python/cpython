@@ -2687,13 +2687,16 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 continue;
             }
             if (PyLong_Check(item)) {
-                long value;
-                int overflow;
-                value = PyLong_AsLongAndOverflow(item, &overflow);
-                if (!overflow) {
-                    re_sum.hi += (double)value;
+                double value = PyLong_AsDouble(item);
+                if (value != -1.0 || !PyErr_Occurred()) {
+                    re_sum = cs_add(re_sum, value);
                     Py_DECREF(item);
                     continue;
+                }
+                else {
+                    Py_DECREF(item);
+                    Py_DECREF(iter);
+                    return NULL;
                 }
             }
             result = PyFloat_FromDouble(cs_to_double(re_sum));
@@ -2736,19 +2739,22 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 continue;
             }
             if (PyLong_Check(item)) {
-                long value;
-                int overflow;
-                value = PyLong_AsLongAndOverflow(item, &overflow);
-                if (!overflow) {
-                    re_sum.hi += (double)value;
+                double value = PyLong_AsDouble(item);
+                if (value != -1.0 || !PyErr_Occurred()) {
+                    re_sum = cs_add(re_sum, value);
                     im_sum.hi += 0.0;
                     Py_DECREF(item);
                     continue;
                 }
+                else {
+                    Py_DECREF(item);
+                    Py_DECREF(iter);
+                    return NULL;
+                }
             }
             if (PyFloat_Check(item)) {
                 double value = PyFloat_AS_DOUBLE(item);
-                re_sum.hi += value;
+                re_sum = cs_add(re_sum, value);
                 im_sum.hi += 0.0;
                 _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
                 continue;
@@ -2965,7 +2971,8 @@ zip_next(zipobject *lz)
 
     if (tuplesize == 0)
         return NULL;
-    if (Py_REFCNT(result) == 1) {
+
+    if (_PyObject_IsUniquelyReferenced(result)) {
         Py_INCREF(result);
         for (i=0 ; i < tuplesize ; i++) {
             it = PyTuple_GET_ITEM(lz->ittuple, i);

@@ -111,6 +111,24 @@ def require_frozen(module, *, skip=True):
 def require_pure_python(module, *, skip=False):
     _require_loader(module, SourceFileLoader, skip)
 
+def create_extension_loader(modname, filename):
+    # Apple extensions must be distributed as frameworks. This requires
+    # a specialist loader.
+    if is_apple_mobile:
+        return AppleFrameworkLoader(modname, filename)
+    else:
+        return ExtensionFileLoader(modname, filename)
+
+def import_extension_from_file(modname, filename, *, put_in_sys_modules=True):
+    loader = create_extension_loader(modname, filename)
+    spec = importlib.util.spec_from_loader(modname, loader)
+    module = importlib.util.module_from_spec(spec)
+    loader.exec_module(module)
+    if put_in_sys_modules:
+        sys.modules[modname] = module
+    return module
+
+
 def remove_files(name):
     for f in (name + ".py",
               name + ".pyc",
@@ -405,7 +423,7 @@ class ImportTests(unittest.TestCase):
 
     def test_double_const(self):
         # Importing double_const checks that float constants
-        # serialiazed by marshal as PYC files don't lose precision
+        # serialized by marshal as PYC files don't lose precision
         # (SF bug 422177).
         from test.test_import.data import double_const
         unload('test.test_import.data.double_const')
@@ -1894,6 +1912,37 @@ class CircularImportTests(unittest.TestCase):
             str(cm.exception),
         )
 
+    @requires_singlephase_init
+    @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
+    def test_singlephase_circular(self):
+        """Regression test for gh-123950
+
+        Import a single-phase-init module that imports itself
+        from the PyInit_* function (before it's added to sys.modules).
+        Manages its own cache (which is `static`, and so incompatible
+        with multiple interpreters or interpreter reset).
+        """
+        name = '_testsinglephase_circular'
+        helper_name = 'test.test_import.data.circular_imports.singlephase'
+        with uncache(name, helper_name):
+            filename = _testsinglephase.__file__
+            # We don't put the module in sys.modules: that the *inner*
+            # import should do that.
+            mod = import_extension_from_file(name, filename,
+                                             put_in_sys_modules=False)
+
+            self.assertEqual(mod.helper_mod_name, helper_name)
+            self.assertIn(name, sys.modules)
+            self.assertIn(helper_name, sys.modules)
+
+            self.assertIn(name, sys.modules)
+            self.assertIn(helper_name, sys.modules)
+        self.assertNotIn(name, sys.modules)
+        self.assertNotIn(helper_name, sys.modules)
+        self.assertIs(mod.clear_static_var(), mod)
+        _testinternalcapi.clear_extension('_testsinglephase_circular',
+                                          mod.__spec__.origin)
+
     def test_unwritable_module(self):
         self.addCleanup(unload, "test.test_import.data.unwritable")
         self.addCleanup(unload, "test.test_import.data.unwritable.x")
@@ -1932,14 +1981,6 @@ class SubinterpImportTests(unittest.TestCase):
         if hasattr(os, 'set_blocking'):
             os.set_blocking(r, False)
         return (r, w)
-
-    def create_extension_loader(self, modname, filename):
-        # Apple extensions must be distributed as frameworks. This requires
-        # a specialist loader.
-        if is_apple_mobile:
-            return AppleFrameworkLoader(modname, filename)
-        else:
-            return ExtensionFileLoader(modname, filename)
 
     def import_script(self, name, fd, filename=None, check_override=None):
         override_text = ''
@@ -2157,11 +2198,7 @@ class SubinterpImportTests(unittest.TestCase):
     def test_multi_init_extension_non_isolated_compat(self):
         modname = '_test_non_isolated'
         filename = _testmultiphase.__file__
-        loader = self.create_extension_loader(modname, filename)
-        spec = importlib.util.spec_from_loader(modname, loader)
-        module = importlib.util.module_from_spec(spec)
-        loader.exec_module(module)
-        sys.modules[modname] = module
+        module = import_extension_from_file(modname, filename)
 
         require_extension(module)
         with self.subTest(f'{modname}: isolated'):
@@ -2176,11 +2213,7 @@ class SubinterpImportTests(unittest.TestCase):
     def test_multi_init_extension_per_interpreter_gil_compat(self):
         modname = '_test_shared_gil_only'
         filename = _testmultiphase.__file__
-        loader = self.create_extension_loader(modname, filename)
-        spec = importlib.util.spec_from_loader(modname, loader)
-        module = importlib.util.module_from_spec(spec)
-        loader.exec_module(module)
-        sys.modules[modname] = module
+        module = import_extension_from_file(modname, filename)
 
         require_extension(module)
         with self.subTest(f'{modname}: isolated, strict'):
@@ -2926,7 +2959,7 @@ class SinglephaseInitTests(unittest.TestCase):
         #  * alive in 1 interpreter (main)
         #  * module def still in _PyRuntime.imports.extensions
         #  * mod init func ran again
-        #  * m_copy is NULL (claered when the interpreter was destroyed)
+        #  * m_copy is NULL (cleared when the interpreter was destroyed)
         #    (was from main interpreter)
         #  * module's global state was updated, not reset
 
@@ -3061,7 +3094,7 @@ class SinglephaseInitTests(unittest.TestCase):
         #  * alive in 0 interpreters
         #  * module def in _PyRuntime.imports.extensions
         #  * mod init func ran for the first time (since reset, at least)
-        #  * m_copy is NULL (claered when the interpreter was destroyed)
+        #  * m_copy is NULL (cleared when the interpreter was destroyed)
         #  * module's global state was initialized, not reset
 
         # Use a subinterpreter that sticks around.
@@ -3111,6 +3144,17 @@ class CAPITests(unittest.TestCase):
 
         mod = _testcapi.check_pyimport_addmodule(name)
         self.assertIs(mod, sys.modules[name])
+
+
+@cpython_only
+class TestMagicNumber(unittest.TestCase):
+    def test_magic_number_endianness(self):
+        magic_number_bytes = _imp.pyc_magic_number_token.to_bytes(4, 'little')
+        self.assertEqual(magic_number_bytes[2:], b'\r\n')
+        # Starting with Python 3.11, Python 3.n starts with magic number 2900+50n.
+        magic_number = int.from_bytes(magic_number_bytes[:2], 'little')
+        start = 2900 + sys.version_info.minor * 50
+        self.assertIn(magic_number, range(start, start + 50))
 
 
 if __name__ == '__main__':

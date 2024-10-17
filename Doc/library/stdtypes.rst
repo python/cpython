@@ -868,7 +868,7 @@ over ``&``, ``|`` and ``^``.
 .. deprecated:: 3.12
 
    The use of the bitwise inversion operator ``~`` is deprecated and will
-   raise an error in Python 3.14.
+   raise an error in Python 3.16.
 
 :class:`bool` is a subclass of :class:`int` (see :ref:`typesnumeric`). In
 many numeric contexts, ``False`` and ``True`` behave like the integers 0 and 1, respectively.
@@ -1245,8 +1245,9 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 | ``s.pop()`` or ``s.pop(i)``  | retrieves the item at *i* and  | \(2)                |
 |                              | also removes it from *s*       |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.remove(x)``              | remove the first item from *s* | \(3)                |
-|                              | where ``s[i]`` is equal to *x* |                     |
+| ``s.remove(x)``              | removes the first item from    | \(3)                |
+|                              | *s* where ``s[i]`` is equal to |                     |
+|                              | *x*                            |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s.reverse()``              | reverses the items of *s* in   | \(4)                |
 |                              | place                          |                     |
@@ -1678,7 +1679,7 @@ expression support in the :mod:`re` module).
 
    The casefolding algorithm is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.1.0/ch03.pdf>`__.
+   <https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/#G33992>`__.
 
    .. versionadded:: 3.3
 
@@ -1842,7 +1843,7 @@ expression support in the :mod:`re` module).
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
    from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
    Ideographic' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.1.0/ch04.pdf>`_.
+   <https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-4/#G91002>`_.
 
 
 .. method:: str.isascii()
@@ -1978,7 +1979,7 @@ expression support in the :mod:`re` module).
 
    The lowercasing algorithm used is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.1.0/ch03.pdf>`__.
+   <https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/#G33992>`__.
 
 
 .. method:: str.lstrip([chars])
@@ -2330,7 +2331,7 @@ expression support in the :mod:`re` module).
 
    The uppercasing algorithm used is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.1.0/ch03.pdf>`__.
+   <https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/#G33992>`__.
 
 
 .. method:: str.zfill(width)
@@ -3476,7 +3477,7 @@ place, and instead produce new objects.
    ``b'abcdefghijklmnopqrstuvwxyz'``. Uppercase ASCII characters
    are those byte values in the sequence ``b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'``.
 
-   Unlike :func:`str.swapcase()`, it is always the case that
+   Unlike :func:`str.swapcase`, it is always the case that
    ``bin.swapcase().swapcase() == bin`` for the binary versions. Case
    conversions are symmetrical in ASCII, even though that is not generally
    true for arbitrary Unicode code points.
@@ -4022,7 +4023,7 @@ copying.
       dangling resources) as soon as possible.
 
       After this method has been called, any further operation on the view
-      raises a :class:`ValueError` (except :meth:`release()` itself which can
+      raises a :class:`ValueError` (except :meth:`release` itself which can
       be called multiple times)::
 
          >>> m = memoryview(b'abc')
@@ -4504,14 +4505,14 @@ can be used interchangeably to index the same dictionary entry.
      ``dict([('foo', 100), ('bar', 200)])``, ``dict(foo=100, bar=200)``
 
    If no positional argument is given, an empty dictionary is created.
-   If a positional argument is given and it is a mapping object, a dictionary
-   is created with the same key-value pairs as the mapping object.  Otherwise,
-   the positional argument must be an :term:`iterable` object.  Each item in
-   the iterable must itself be an iterable with exactly two objects.  The
-   first object of each item becomes a key in the new dictionary, and the
-   second object the corresponding value.  If a key occurs more than once, the
-   last value for that key becomes the corresponding value in the new
-   dictionary.
+   If a positional argument is given and it defines a ``keys()`` method, a
+   dictionary is created by calling :meth:`~object.__getitem__` on the argument with
+   each returned key from the method.  Otherwise, the positional argument must be an
+   :term:`iterable` object.  Each item in the iterable must itself be an iterable
+   with exactly two elements.  The first element of each item becomes a key in the
+   new dictionary, and the second element the corresponding value.  If a key occurs
+   more than once, the last value for that key becomes the corresponding value in
+   the new dictionary.
 
    If keyword arguments are given, the keyword arguments and their values are
    added to the dictionary created from the positional argument.  If a key
@@ -4668,10 +4669,11 @@ can be used interchangeably to index the same dictionary entry.
       Update the dictionary with the key/value pairs from *other*, overwriting
       existing keys.  Return ``None``.
 
-      :meth:`update` accepts either another dictionary object or an iterable of
-      key/value pairs (as tuples or other iterables of length two).  If keyword
-      arguments are specified, the dictionary is then updated with those
-      key/value pairs: ``d.update(red=1, blue=2)``.
+      :meth:`update` accepts either another object with a ``keys()`` method (in
+      which case :meth:`~object.__getitem__` is called with every key returned from
+      the method). or an iterable of key/value pairs (as tuples or other iterables
+      of length two). If keyword arguments are specified, the dictionary is then
+      updated with those key/value pairs: ``d.update(red=1, blue=2)``.
 
    .. method:: values()
 
@@ -5520,22 +5522,6 @@ types, where they are relevant.  Some of these are not reported by the
 :func:`dir` built-in function.
 
 
-.. attribute:: object.__dict__
-
-   A dictionary or other mapping object used to store an object's (writable)
-   attributes.
-
-
-.. attribute:: instance.__class__
-
-   The class to which a class instance belongs.
-
-
-.. attribute:: class.__bases__
-
-   The tuple of base classes of a class object.
-
-
 .. attribute:: definition.__name__
 
    The name of the class, function, method, descriptor, or
@@ -5550,43 +5536,24 @@ types, where they are relevant.  Some of these are not reported by the
    .. versionadded:: 3.3
 
 
+.. attribute:: definition.__module__
+
+   The name of the module in which a class or function was defined.
+
+
+.. attribute:: definition.__doc__
+
+   The documentation string of a class or function, or ``None`` if undefined.
+
+
 .. attribute:: definition.__type_params__
 
    The :ref:`type parameters <type-params>` of generic classes, functions,
-   and :ref:`type aliases <type-aliases>`.
+   and :ref:`type aliases <type-aliases>`. For classes and functions that
+   are not generic, this will be an empty tuple.
 
    .. versionadded:: 3.12
 
-
-.. attribute:: class.__mro__
-
-   This attribute is a tuple of classes that are considered when looking for
-   base classes during method resolution.
-
-
-.. method:: class.mro()
-
-   This method can be overridden by a metaclass to customize the method
-   resolution order for its instances.  It is called at class instantiation, and
-   its result is stored in :attr:`~class.__mro__`.
-
-
-.. method:: class.__subclasses__
-
-   Each class keeps a list of weak references to its immediate subclasses.  This
-   method returns a list of all those references still alive.  The list is in
-   definition order.  Example::
-
-      >>> int.__subclasses__()
-      [<class 'bool'>, <enum 'IntEnum'>, <flag 'IntFlag'>, <class 're._constants._NamedIntConstant'>]
-
-
-.. attribute:: class.__static_attributes__
-
-      A tuple containing names of attributes of this class which are accessed
-      through ``self.X`` from any function in its body.
-
-      .. versionadded:: 3.13
 
 .. _int_max_str_digits:
 
