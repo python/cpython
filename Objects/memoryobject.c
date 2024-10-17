@@ -3405,9 +3405,7 @@ PyTypeObject _PyMemoryIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "memory_iterator",
     .tp_basicsize = sizeof(memoryiterobject),
-    // methods
     .tp_dealloc = memoryiter_dealloc,
-    .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = memoryiter_traverse,
     .tp_iter = PyObject_SelfIter,
@@ -3458,10 +3456,9 @@ memoryview___reversed___impl(PyMemoryViewObject *self)
 
 PyTypeObject _PyMemoryRevIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "memory_reverseiterator",
-    sizeof(memoryiterobject),
+    .tp_name = "memory_reverseiterator",
+    .tp_basicsize = sizeof(memoryiterobject),
     .tp_dealloc = memoryiter_dealloc,
-    .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = memoryiter_traverse,
     .tp_iter = PyObject_SelfIter,
