@@ -7,6 +7,8 @@
 
 #include <Python.h>
 #include "pycore_initconfig.h"    // _PyConfig_InitCompatConfig()
+#include "pycore_pylifecycle.h"   // _Py_Finalize()
+#include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_pythread.h"      // PyThread_start_joinable_thread()
 #include "pycore_import.h"        // _PyImport_FrozenBootstrap
@@ -221,6 +223,193 @@ static int test_repeated_simple_init(void)
         Py_Finalize();
         printf("Finalized\n"); // Give test_embed some output to check
     }
+    return 0;
+}
+
+
+/****************************************************************************
+ * Test discarding the initial main tstate
+ ***************************************************************************/
+
+static int test_replace_main_tstate(void)
+{
+    int err = 0;
+
+    int reuse = 0;
+    int hascode = 0;
+    for (int i = 2; i < main_argc; i++) {
+        if (strcmp(main_argv[i], "--reuse") == 0) {
+            reuse = 1;
+        }
+        else if (strncmp(main_argv[i], "--", 2) == 0) {
+            fprintf(stderr, "ERROR: unsupported arg %s\n", main_argv[i]);
+            err = 1;
+        }
+        else {
+            hascode = 1;
+        }
+        if (err) {
+            fprintf(stderr,
+                    "usage: %s test_replace_main_tstate --reuse [CODE ...]\n",
+                    PROGRAM);
+            return 1;
+        }
+    }
+
+    _testembed_Py_InitializeFromConfig();
+    PyThreadState *main_tstate = PyThreadState_Get();
+    PyInterpreterState *main_interp = main_tstate->interp;
+    assert(_Py_IsMainInterpreter(main_interp));
+
+    // If the initial tstate is reused then there are slightly
+    // different possible failure paths through the code than if we got
+    // a completely new one.
+
+    PyThreadState *tstate = NULL;
+    if (!reuse) {
+        // The initial thread state is still alive,
+        // so this will create a completely new one,
+        // with its own distinct pointer.
+        tstate = PyThreadState_New(main_interp);
+        assert(tstate != NULL);
+        assert(tstate != main_tstate);
+    }
+    PyThreadState_Clear(main_tstate);
+    PyThreadState_DeleteCurrent();
+    assert(reuse == (PyInterpreterState_ThreadHead(main_interp) == NULL));
+    if (reuse) {
+        // The initial thread state has already been "destroyed",
+        // so this will re-use the statically allocated tstate
+        // (along with reinitializing it).
+        tstate = PyThreadState_New(main_interp);
+        assert(tstate != NULL);
+        assert(tstate == main_tstate);
+    }
+    assert(_PyThreadState_GET() == NULL);
+
+    (void)PyThreadState_Swap(tstate);
+
+    if (hascode) {
+        for (int i = 2; i < main_argc; i++) {
+            const char *code = main_argv[i];
+            if (PyRun_SimpleString(code) != 0) {
+                err = 1;
+                break;
+            }
+        }
+    }
+
+    assert(PyThreadState_Get() == tstate);
+    struct pyfinalize_args args = {
+        .caller = "_testembed.test_replace_main_tstate",
+        .verbose = 1,
+    };
+    if (_Py_Finalize(&_PyRuntime, &args) != 0 && !err) {
+        err = 1;
+    }
+
+    return err;
+}
+
+
+/****************************************************************************
+ * Test (mostly) unsupported Py_Finalize() scenarios
+ ***************************************************************************/
+
+struct fini_subthread_args {
+    struct pyfinalize_args *fini_args;
+    PyThreadState *main_tstate;
+    PyInterpreterState *interp;
+    PyMutex done;
+    int rc;
+};
+
+static void fini_with_new_tstate(void *arg)
+{
+    struct fini_subthread_args *args = (struct fini_subthread_args *)arg;
+
+    assert(!_Py_IsMainThread());
+    assert(_PyThreadState_GET() == NULL);
+
+    PyThreadState *tstate = PyThreadState_New(args->interp);
+    assert(tstate != NULL);
+    assert(tstate != args->main_tstate);
+    (void)PyThreadState_Swap(tstate);
+
+    assert(PyThreadState_Get() != args->main_tstate);
+    if (_Py_Finalize(&_PyRuntime, args->fini_args) != 0) {
+        args->rc = 1;
+    }
+
+    PyMutex_Unlock(&args->done);
+}
+
+static int test_fini_in_subthread(void)
+{
+    _testembed_Py_InitializeFromConfig();
+    PyThreadState *main_tstate = PyThreadState_Get();
+
+    struct pyfinalize_args fini_args = {
+        .caller = "_testembed.test_fini_in_subthread",
+        .verbose = 1,
+    };
+    struct fini_subthread_args args = {
+        .fini_args = &fini_args,
+        .main_tstate = main_tstate,
+        .interp = main_tstate->interp,
+    };
+    PyMutex_Lock(&args.done);
+    (void)PyThread_start_new_thread(fini_with_new_tstate, &args);
+
+    // Wait for fini to finish.
+    PyMutex_Lock(&args.done);
+    PyMutex_Unlock(&args.done);
+
+    return args.rc;
+}
+
+static int test_fini_in_main_thread_with_other_tstate(void)
+{
+    _testembed_Py_InitializeFromConfig();
+    PyThreadState *main_tstate = PyThreadState_Get();
+
+    PyThreadState *tstate = PyThreadState_New(main_tstate->interp);
+    (void)PyThreadState_Swap(tstate);
+
+    assert(PyThreadState_Get() != main_tstate);
+    struct pyfinalize_args args = {
+        .caller = "_testembed.test_fini_in_main_thread_with_other_tstate",
+        .verbose = 1,
+    };
+    if (_Py_Finalize(&_PyRuntime, &args) != 0) {
+        return 1;
+    }
+
+    return 0;
+}
+
+static int test_fini_in_main_thread_with_subinterpreter(void)
+{
+    _testembed_Py_InitializeFromConfig();
+    PyThreadState *main_tstate = PyThreadState_Get();
+
+    PyThreadState *substate = Py_NewInterpreter();
+    assert(substate != main_tstate);
+#ifndef NDEBUG
+    (void)main_tstate;
+    (void)substate;
+#endif
+
+    // The subinterpreter's tstate is still current.
+    assert(PyThreadState_Get() == substate);
+    struct pyfinalize_args args = {
+        .caller = "_testembed.test_fini_in_main_thread_with_subinterpreter",
+        .verbose = 1,
+    };
+    if (_Py_Finalize(&_PyRuntime, &args) != 0) {
+        return 1;
+    }
+
     return 0;
 }
 
@@ -1423,11 +1612,20 @@ static int test_audit_subinterpreter(void)
     Py_IgnoreEnvironmentFlag = 0;
     PySys_AddAuditHook(_audit_subinterpreter_hook, NULL);
     _testembed_Py_InitializeFromConfig();
+    PyThreadState *save_tstate = PyThreadState_Get();
 
-    Py_NewInterpreter();
-    Py_NewInterpreter();
-    Py_NewInterpreter();
+    PyThreadState *substate1 = Py_NewInterpreter();
+    PyThreadState *substate2 = Py_NewInterpreter();
+    PyThreadState *substate3 = Py_NewInterpreter();
 
+    (void)PyThreadState_Swap(substate3);
+    Py_EndInterpreter(substate3);
+    (void)PyThreadState_Swap(substate2);
+    Py_EndInterpreter(substate2);
+    (void)PyThreadState_Swap(substate1);
+    Py_EndInterpreter(substate1);
+
+    (void)PyThreadState_Swap(save_tstate);
     Py_Finalize();
 
     switch (_audit_subinterpreter_interpreter_count) {
@@ -2444,6 +2642,12 @@ static struct TestCase TestCases[] = {
     {"test_import_in_subinterpreters", test_import_in_subinterpreters},
     {"test_repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters},
     {"test_repeated_init_and_inittab", test_repeated_init_and_inittab},
+    {"test_replace_main_tstate", test_replace_main_tstate},
+    {"test_fini_in_subthread", test_fini_in_subthread},
+    {"test_fini_in_main_thread_with_other_tstate",
+     test_fini_in_main_thread_with_other_tstate},
+    {"test_fini_in_main_thread_with_subinterpreter",
+     test_fini_in_main_thread_with_subinterpreter},
     {"test_pre_initialization_api", test_pre_initialization_api},
     {"test_pre_initialization_sys_options", test_pre_initialization_sys_options},
     {"test_bpo20891", test_bpo20891},
