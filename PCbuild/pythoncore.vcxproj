@@ -652,7 +652,7 @@
     <ClCompile Include="..\Python\symtable.c" />
     <ClCompile Include="..\Python\sysmodule.c">
       <PreprocessorDefinitions>
-        VARCH_NAME="$(ArchName)";
+        ARCH_NAME="$(ArchName)";
         VPATH="$(PyVPath)";
         %(PreprocessorDefinitions)
       </PreprocessorDefinitions>

@@ -3358,8 +3358,8 @@ make_impl_info(PyObject *version_info)
     if (res < 0)
         goto error;
 
-#ifdef VARCH_NAME
-    value = PyUnicode_FromString(VARCH_NAME);
+#ifdef ARCH_NAME
+    value = PyUnicode_FromString(ARCH_NAME);
     if (value == NULL) {
         goto error;
     }
