@@ -182,7 +182,7 @@ slightly different way:
 .. function:: post_mortem(traceback=None)
 
    Enter post-mortem debugging of the given *traceback* object.  If no
-   *traceback* is given, it uses the one of the exception that is currently
+   *traceback* is given, it uses one of the exceptions that is currently
    being handled (an exception must be being handled if the default is to be
    used).
 
