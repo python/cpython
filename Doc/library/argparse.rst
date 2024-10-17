@@ -1894,6 +1894,10 @@ Argument groups
     The function exists on the API by accident through inheritance and
     will be removed in the future.
 
+   .. deprecated:: 3.14
+    Passing prefix_chars_ to :meth:`add_argument_group`
+    is now deprecated.
+
 
 Mutual exclusion
 ^^^^^^^^^^^^^^^^
