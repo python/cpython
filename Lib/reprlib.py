@@ -37,14 +37,14 @@ def recursive_repr(fillvalue='...'):
 
 class Repr:
     _lookup = {
-        'tuple': 'builtins', 
-        'list': 'builtins', 
-        'array': 'array', 
-        'set': 'builtins', 
-        'frozenset': 'builtins', 
-        'deque': 'collections', 
-        'dict': 'builtins', 
-        'str': 'builtins', 
+        'tuple': 'builtins',
+        'list': 'builtins',
+        'array': 'array',
+        'set': 'builtins',
+        'frozenset': 'builtins',
+        'deque': 'collections',
+        'dict': 'builtins',
+        'str': 'builtins',
         'int': 'builtins'
     }
 
@@ -87,7 +87,7 @@ class Repr:
             # defined in this class and is the module intended
             if module == self._lookup.get(typename):
                 return method(x, level)
-            
+
         return self.repr_instance(x, level)
 
     def _join(self, pieces, level):
