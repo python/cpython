@@ -2284,7 +2284,8 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('baz',))
         self.assertIn(
-            "error: argument {foo,bar}: invalid choice: 'baz', maybe you meant 'bar'? (choose from foo, bar)",
+            "error: argument {foo,bar}: invalid choice: 'baz', maybe you meant"
+             " 'bar'? (choose from foo, bar)",
             excinfo.exception.stderr,
         )
 
