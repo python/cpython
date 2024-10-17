@@ -190,6 +190,12 @@ Other language changes
   They raise an error if the argument is a string.
   (Contributed by Serhiy Storchaka in :gh:`84978`.)
 
+* :option:`-X importtime <-X>` now accepts value ``2``, which indicates that
+  an ``importtime`` entry should also be printed if an imported module has
+  already been loaded. The ``self`` and ``cumulative`` times for such entries
+  are replaced by the string ``cached``.
+  (Contributed by Noah Kim in :gh:`118655`.)
+
 
 New modules
 ===========

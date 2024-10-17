@@ -539,7 +539,15 @@ Miscellaneous options
      application.  Typical usage is ``python3 -X importtime -c 'import
      asyncio'``.  See also :envvar:`PYTHONPROFILEIMPORTTIME`.
 
+     ``-X importtime=2`` enables additional output that indicates when an
+     imported module has already been loaded.  In such cases, the string
+     ``cached`` will be printed in the self time and cumulative time columns.
+     All other values (``1``, no value, etc.) invoke the original behavior.
+
      .. versionadded:: 3.7
+
+     .. versionchanged:: 3.14
+         Added ``-X importtime=2`` to also trace imports of loaded modules.
 
    * ``-X dev``: enable :ref:`Python Development Mode <devmode>`, introducing
      additional runtime checks that are too expensive to be enabled by
@@ -961,11 +969,15 @@ conflict.
 
 .. envvar:: PYTHONPROFILEIMPORTTIME
 
-   If this environment variable is set to a non-empty string, Python will
-   show how long each import takes.
+   If this environment variable is set to a non-empty string, Python will show
+   how long each import takes. If set to ``2``, Python will include output for
+   imported modules that have already been loaded.
    This is equivalent to setting the :option:`-X` ``importtime`` option.
 
    .. versionadded:: 3.7
+
+   .. versionchanged:: 3.14
+      Added ``PYTHONPROFILEIMPORTTIME=2`` to also trace imports of loaded modules.
 
 
 .. envvar:: PYTHONASYNCIODEBUG
