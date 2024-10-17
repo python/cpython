@@ -61,7 +61,8 @@ ArgumentParser objects
                           formatter_class=argparse.HelpFormatter, \
                           prefix_chars='-', fromfile_prefix_chars=None, \
                           argument_default=None, conflict_handler='error', \
-                          add_help=True, allow_abbrev=True, exit_on_error=True)
+                          add_help=True, allow_abbrev=True, exit_on_error=True, \
+                          suggest_on_error=False)
 
    Create a new :class:`ArgumentParser` object. All parameters should be passed
    as keyword arguments. Each parameter has its own more detailed description
@@ -102,6 +103,10 @@ ArgumentParser objects
 
    * exit_on_error_ - Determines whether or not ArgumentParser exits with
      error info when an error occurs. (default: ``True``)
+
+   * suggest_on_error_ - Enables suggestions for mistyped argument choices
+     and subparser names (default: ``False``)
+
 
    .. versionchanged:: 3.5
       *allow_abbrev* parameter was added.
@@ -558,6 +563,27 @@ If the user would like to catch errors manually, the feature can be enabled by s
    Catching an argumentError
 
 .. versionadded:: 3.9
+
+suggest_on_error
+^^^^^^^^^^^^^^^^
+
+By default, when a user passes an invalid argument choice or subparser name,
+:class:`ArgumentParser` will exit with error info and list the permissible
+argument choices (if specified) or subparser names as part of the error message.
+
+If the user would like to enable suggestions for mistyped argument choices and
+subparser names, the feature can be enabled by setting ``suggest_on_error`` to
+``True``. Note that this only applies for arguments when the choices specified
+are strings::
+
+   >>> parser = argparse.ArgumentParser(description='Process some integers.', suggest_on_error=True)
+   >>> parser.add_argument('--action', choices=['sum', 'max'])
+   >>> parser.add_argument('integers', metavar='N', type=int, nargs='+',
+   ...                     help='an integer for the accumulator')
+   >>> parser.parse_args(['--action', 'sumn', 1, 2, 3])
+   tester.py: error: argument --action: invalid choice: 'sumn', maybe you meant 'sum'? (choose from 'sum', 'max')
+
+.. versionadded:: 3.14
 
 
 The add_argument() method
