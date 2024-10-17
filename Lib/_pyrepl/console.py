@@ -160,6 +160,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
     ) -> None:
         super().__init__(locals=locals, filename=filename, local_exit=local_exit)  # type: ignore[call-arg]
         self.can_colorize = _colorize.can_colorize()
+        self.multi_statement = True
 
     def showsyntaxerror(self, filename=None, **kwargs):
         super().showsyntaxerror(filename=filename, **kwargs)

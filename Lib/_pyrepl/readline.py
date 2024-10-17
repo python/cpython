@@ -39,6 +39,7 @@ from rlcompleter import Completer as RLCompleter
 from . import commands, historical_reader
 from .completing_reader import CompletingReader
 from .console import Console as ConsoleType
+from code import InteractiveConsole as InteractiveConsoleType
 
 Console: type[ConsoleType]
 _error: tuple[type[Exception], ...] | type[Exception]
@@ -129,7 +130,7 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
         completer_delims = self.config.completer_delims
         while p >= 0 and b[p] not in completer_delims:
             p -= 1
-        return "".join(b[p + 1 : self.pos])
+        return "".join(b[i] for i in range(p + 1, self.pos))
 
     def get_completions(self, stem: str) -> list[str]:
         if len(stem) == 0 and self.more_lines is not None:
@@ -149,7 +150,7 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
             state = 0
             while True:
                 try:
-                    next = function(stem, state)
+                    next = function(stem, state, self.buffer)
                 except Exception:
                     break
                 if not isinstance(next, str):
@@ -566,7 +567,7 @@ for _name, _ret in [
 # ____________________________________________________________
 
 
-def _setup(namespace: Mapping[str, Any]) -> None:
+def _setup(console: InteractiveConsoleType) -> None:
     global raw_input
     if raw_input is not None:
         return  # don't run _setup twice
@@ -583,9 +584,11 @@ def _setup(namespace: Mapping[str, Any]) -> None:
     _wrapper.f_out = f_out
 
     # set up namespace in rlcompleter, which requires it to be a bona fide dict
+    namespace = console.locals
     if not isinstance(namespace, dict):
         namespace = dict(namespace)
-    _wrapper.config.readline_completer = RLCompleter(namespace).complete
+    mode = "exec" if getattr(console, "multi_statement", False) else "single"
+    _wrapper.config.readline_completer = RLCompleter(namespace, mode).complete
 
     # this is not really what readline.c does.  Better than nothing I guess
     import builtins

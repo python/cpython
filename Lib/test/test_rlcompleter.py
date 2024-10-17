@@ -133,18 +133,27 @@ class TestRlcompleter(unittest.TestCase):
     def test_complete(self):
         completer = rlcompleter.Completer()
         self.assertEqual(completer.complete('', 0), '\t')
-        self.assertEqual(completer.complete('a', 0), 'and ')
-        self.assertEqual(completer.complete('a', 1), 'as ')
-        self.assertEqual(completer.complete('as', 2), 'assert ')
-        self.assertEqual(completer.complete('an', 0), 'and ')
+        self.assertEqual(completer.complete('as', 0), 'assert ')
+        self.assertEqual(completer.complete('an', 0), 'any(')
         self.assertEqual(completer.complete('pa', 0), 'pass')
         self.assertEqual(completer.complete('Fa', 0), 'False')
-        self.assertEqual(completer.complete('el', 0), 'elif ')
-        self.assertEqual(completer.complete('el', 1), 'else')
         self.assertEqual(completer.complete('tr', 0), 'try:')
         self.assertEqual(completer.complete('_', 0), '_')
         self.assertEqual(completer.complete('match', 0), 'match ')
         self.assertEqual(completer.complete('case', 0), 'case ')
+
+    @unittest.mock.patch('rlcompleter._readline_available', False)
+    def test_complete_with_buffer(self):
+        completer = rlcompleter.Completer()
+        buffer = list('if ...:\n    ...\nel')
+        self.assertEqual(completer.complete('el', 0, buffer), 'elif ')
+        self.assertEqual(completer.complete('el', 1, buffer), 'else')
+        buffer = list('match foo:\n    c')
+        self.assertEqual(completer.complete('c', 0, buffer), 'case ')
+        buffer = list('True a')
+        self.assertEqual(completer.complete('a', 0, buffer), 'and ')
+        buffer = list('a if True e')
+        self.assertEqual(completer.complete('e', 0, buffer), 'else')
 
     def test_duplicate_globals(self):
         namespace = {
