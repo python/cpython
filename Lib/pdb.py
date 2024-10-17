@@ -496,7 +496,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.message('--KeyboardInterrupt--')
 
     def _save_initial_file_mtime(self, frame):
-        """save the mtile of the all the files in the frame stack in the file mtime table
+        """save the mtime of the all the files in the frame stack in the file mtime table
         if it hasn't been saved yet."""
         while frame:
             filename = frame.f_code.co_filename
