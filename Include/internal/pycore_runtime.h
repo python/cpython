@@ -25,6 +25,10 @@ extern "C" {
 #include "pycore_typeobject.h"      // struct _types_runtime_state
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_state
 
+#if defined(__APPLE__)
+#  include <mach-o/loader.h>
+#endif
+
 struct _getargs_runtime_state {
     struct _PyArg_Parser *static_parsers;
 };
@@ -58,6 +62,37 @@ typedef struct _Py_AuditHookEntry {
     Py_AuditHookFunction hookCFunction;
     void *userData;
 } _Py_AuditHookEntry;
+
+// Macros to burn global values in custom sections so out-of-process
+// profilers can locate them easily
+
+#define GENERATE_DEBUG_SECTION(name, declaration) \
+    _GENERATE_DEBUG_SECTION_WINDOWS(name)         \
+    _GENERATE_DEBUG_SECTION_APPLE(name)           \
+    declaration                                   \
+    _GENERATE_DEBUG_SECTION_LINUX(name)
+
+#if defined(MS_WINDOWS)
+#define _GENERATE_DEBUG_SECTION_WINDOWS(name)                       \
+    _Pragma(Py_STRINGIFY(section(Py_STRINGIFY(name), read, write))) \
+    __declspec(allocate(Py_STRINGIFY(name)))
+#else
+#define _GENERATE_DEBUG_SECTION_WINDOWS(name)
+#endif
+
+#if defined(__APPLE__)
+#define _GENERATE_DEBUG_SECTION_APPLE(name) \
+    __attribute__((section(SEG_DATA "," Py_STRINGIFY(name))))
+#else
+#define _GENERATE_DEBUG_SECTION_APPLE(name)
+#endif
+
+#if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
+#define _GENERATE_DEBUG_SECTION_LINUX(name) \
+    __attribute__((section("." Py_STRINGIFY(name))))
+#else
+#define _GENERATE_DEBUG_SECTION_LINUX(name)
+#endif
 
 typedef struct _Py_DebugOffsets {
     char cookie[8];
@@ -108,6 +143,7 @@ typedef struct _Py_DebugOffsets {
         uint64_t instr_ptr;
         uint64_t localsplus;
         uint64_t owner;
+        uint64_t stackpointer;
     } interpreter_frame;
 
     // Code object offset;
@@ -152,6 +188,14 @@ typedef struct _Py_DebugOffsets {
         uint64_t ob_size;
     } list_object;
 
+    // PySet object offset;
+    struct _set_object {
+        uint64_t size;
+        uint64_t used;
+        uint64_t table;
+        uint64_t mask;
+    } set_object;
+
     // PyDict object offset;
     struct _dict_object {
         uint64_t size;
@@ -192,6 +236,14 @@ typedef struct _Py_DebugOffsets {
         uint64_t size;
         uint64_t collecting;
     } gc;
+
+    struct _gen_object {
+        uint64_t size;
+        uint64_t gi_name;
+        uint64_t gi_iframe;
+        uint64_t gi_task;
+        uint64_t gi_frame_state;
+    } gen_object;
 } _Py_DebugOffsets;
 
 /* Reference tracer state */

@@ -32,6 +32,8 @@ PyAPI_DATA(PyTypeObject) PyCoro_Type;
 PyAPI_FUNC(PyObject *) PyCoro_New(PyFrameObject *,
     PyObject *name, PyObject *qualname);
 
+PyAPI_FUNC(void) _PyCoro_SetTask(PyObject *coro, PyObject *task);
+
 
 /* --- Asynchronous Generators -------------------------------------------- */
 
