@@ -493,8 +493,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             except KeyboardInterrupt:
                 self.message('--KeyboardInterrupt--')
 
-    def _update_file_mtime(self):
-        """update the file mtime table with the current frame's file if it
+    def _init_file_mtime(self):
+        """initialize the file mtime table with the current frame's file if it
         hasn't been seen yet."""
         filename = self.curframe.f_code.co_filename
         if filename not in self._file_mtime_table:
@@ -504,8 +504,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 pass
 
     def _validate_file_mtime(self):
-        """Check if the source file of the current frame has been modified since
-        the last time we saw it. If so, give a warning."""
+        """Check if the source file of the current frame has been modified.
+        If so, give a warning and reset the modify time to current."""
         try:
             filename = self.curframe.f_code.co_filename
             mtime = os.path.getmtime(filename)
@@ -845,7 +845,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         a breakpoint command list definition.
         """
         if not self.commands_defining:
-            self._update_file_mtime()
+            self._init_file_mtime()
             if line.startswith('_pdbcmd'):
                 command, arg, line = self.parseline(line)
                 if hasattr(self, command):
