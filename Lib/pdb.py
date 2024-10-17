@@ -496,12 +496,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def _update_file_mtime(self):
         """update the file mtime table with the current frame's file if it
         hasn't been seen yet."""
-        try:
-            filename = self.curframe.f_code.co_filename
-            if filename not in self._file_mtime_table:
+        filename = self.curframe.f_code.co_filename
+        if filename not in self._file_mtime_table:
+            try:
                 self._file_mtime_table[filename] = os.path.getmtime(filename)
-        except Exception:
-            return
+            except Exception:
+                pass
 
     def _validate_file_mtime(self):
         """Check if the source file of the current frame has been modified since
