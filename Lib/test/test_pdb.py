@@ -4126,6 +4126,62 @@ class ChecklineTests(unittest.TestCase):
 
 
 @support.requires_subprocess()
+class PdbTestInline(unittest.TestCase):
+    @unittest.skipIf(sys.flags.safe_path,
+                     'PYTHONSAFEPATH changes default sys.path')
+    def _run_script(self, script, commands,
+                    expected_returncode=0,
+                    extra_env=None):
+        self.addCleanup(os_helper.rmtree, '__pycache__')
+        filename = 'main.py'
+        with open(filename, 'w') as f:
+            f.write(textwrap.dedent(script))
+        self.addCleanup(os_helper.unlink, filename)
+
+        commands = textwrap.dedent(commands)
+
+        cmd = [sys.executable, 'main.py']
+        if extra_env is not None:
+            env = os.environ | extra_env
+        else:
+            env = os.environ
+        with subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stdin=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                env = {**env, 'PYTHONIOENCODING': 'utf-8'}
+        ) as proc:
+            stdout, stderr = proc.communicate(str.encode(commands))
+        stdout = bytes.decode(stdout) if isinstance(stdout, bytes) else stdout
+        stderr = bytes.decode(stderr) if isinstance(stderr, bytes) else stderr
+        self.assertEqual(
+            proc.returncode,
+            expected_returncode,
+            f"Unexpected return code\nstdout: {stdout}\nstderr: {stderr}"
+        )
+        return stdout, stderr
+
+    def test_quit(self):
+        script = """
+            x = 1
+            breakpoint()
+        """
+
+        commands = """
+            quit
+            n
+            p x + 1
+            quit
+            y
+        """
+
+        stdout, stderr = self._run_script(script, commands)
+        self.assertIn("2", stdout)
+        self.assertIn("Quit anyway", stdout)
+
+
+@support.requires_subprocess()
 class PdbTestReadline(unittest.TestCase):
     def setUpClass():
         # Ensure that the readline module is loaded
