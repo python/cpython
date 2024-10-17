@@ -474,6 +474,52 @@ class BaseTest(unittest.TestCase):
         iter_x = iter(t)
         del iter_x
 
+    def test_paramspec_specialization(self):
+        # gh-124445
+        T = TypeVar("T")
+        U = TypeVar("U")
+        type X[**P] = Callable[P, int]
+
+        generic = X[[T]]
+        self.assertEqual(generic.__args__, ([T],))
+        self.assertEqual(generic.__parameters__, (T,))
+        specialized = generic[str]
+        self.assertEqual(specialized.__args__, ([str],))
+        self.assertEqual(specialized.__parameters__, ())
+
+        generic = X[(T,)]
+        self.assertEqual(generic.__args__, (T,))
+        self.assertEqual(generic.__parameters__, (T,))
+        specialized = generic[str]
+        self.assertEqual(specialized.__args__, (str,))
+        self.assertEqual(specialized.__parameters__, ())
+
+        generic = X[[T, U]]
+        self.assertEqual(generic.__args__, ([T, U],))
+        self.assertEqual(generic.__parameters__, (T, U))
+        specialized = generic[str, int]
+        self.assertEqual(specialized.__args__, ([str, int],))
+        self.assertEqual(specialized.__parameters__, ())
+
+        generic = X[(T, U)]
+        self.assertEqual(generic.__args__, (T, U))
+        self.assertEqual(generic.__parameters__, (T, U))
+        specialized = generic[str, int]
+        self.assertEqual(specialized.__args__, (str, int))
+        self.assertEqual(specialized.__parameters__, ())
+
+    def test_nested_paramspec_specialization(self):
+        # gh-124445
+        type X[**P, T] = Callable[P, T]
+
+        x_list = X[[int, str], float]
+        self.assertEqual(x_list.__args__, ([int, str], float))
+        self.assertEqual(x_list.__parameters__, ())
+
+        x_tuple = X[(int, str), float]
+        self.assertEqual(x_tuple.__args__, ((int, str), float))
+        self.assertEqual(x_tuple.__parameters__, ())
+
 
 class TypeIterationTests(unittest.TestCase):
     _UNITERABLE_TYPES = (list, tuple)
