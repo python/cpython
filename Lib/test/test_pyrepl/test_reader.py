@@ -217,6 +217,75 @@ class TestReader(TestCase):
         self.assert_screen_equals(reader, expected)
         self.assertTrue(reader.finished)
 
+    def test_single_comment_character_after_colon(self):
+        code = (
+            "def foo(): #"
+        )
+        events = itertools.chain(
+            code_to_events(code),
+            [
+                # go to the end of the first line
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="\x05", raw=bytearray(b"\x1bO5")),
+                # new line after single comment character
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                # go to end of second line
+                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
+                Event(evt="key", data="\x05", raw=bytearray(b"\x1bO5")),
+                # write an "a"
+                Event(evt="key", data="a", raw=bytearray(b"a"))
+            ],
+        )
+        no_paste_reader = functools.partial(prepare_reader, paste_mode=False)
+        reader, _ = handle_all_events(events, prepare_reader=no_paste_reader)
+        expected = (
+            "def foo(): #\n"
+            "    a"
+        )
+        self.assert_screen_equals(reader, expected)
+
+    def test_no_code_only_comment_on_single_line(self):
+        code = (
+            "def foo():"
+        )
+        events = itertools.chain(
+            code_to_events(code),
+            [
+                # go to the end of the first line
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="\x05", raw=bytearray(b"\x1bO5")),
+                # new line at end of first line and write "# foo" on next line
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                Event(evt="key", data="#", raw=bytearray(b"#")),
+                Event(evt="key", data=" ", raw=bytearray(b" ")),
+                Event(evt="key", data="f", raw=bytearray(b"f")),
+                Event(evt="key", data="o", raw=bytearray(b"o")),
+                Event(evt="key", data="o", raw=bytearray(b"o")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                # go to end of second line
+                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
+                Event(evt="key", data="\x05", raw=bytearray(b"\x1bO5")),
+                # write an "a"
+                Event(evt="key", data="a", raw=bytearray(b"a")),
+                Event(evt="key", data=" ", raw=bytearray(b" ")),
+                Event(evt="key", data="#", raw=bytearray(b"#")),
+                Event(evt="key", data=" ", raw=bytearray(b" ")),
+                Event(evt="key", data="f", raw=bytearray(b"f")),
+                Event(evt="key", data="o", raw=bytearray(b"o")),
+                Event(evt="key", data="o", raw=bytearray(b"o")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ],
+        )
+        no_paste_reader = functools.partial(prepare_reader, paste_mode=False)
+        reader, _ = handle_all_events(events, prepare_reader=no_paste_reader)
+        expected = (
+            "def foo():\n"
+            "    # foo\n"
+            "    a # foo\n"
+            "    "
+        )
+        self.assert_screen_equals(reader, expected)
+
     def test_input_hook_is_called_if_set(self):
         input_hook = MagicMock()
         def _prepare_console(events):
