@@ -1501,7 +1501,7 @@ make_somezreplacement(PyObject *object, char *sep, PyObject *tzinfoarg)
     PyObject *tzinfo = get_tzinfo_member(object);
 
     if (tzinfo == Py_None || tzinfo == NULL) {
-        return PyBytes_FromStringAndSize(NULL, 0);
+        return PyUnicode_FromStringAndSize(NULL, 0);
     }
 
     assert(tzinfoarg != NULL);
@@ -1512,7 +1512,7 @@ make_somezreplacement(PyObject *object, char *sep, PyObject *tzinfoarg)
                          tzinfoarg) < 0)
         return NULL;
 
-    return PyBytes_FromStringAndSize(buf, strlen(buf));
+    return PyUnicode_FromString(buf);
 }
 
 static PyObject *
@@ -1569,7 +1569,7 @@ make_freplacement(PyObject *object)
     else
         sprintf(freplacement, "%06d", 0);
 
-    return PyBytes_FromStringAndSize(freplacement, strlen(freplacement));
+    return PyUnicode_FromString(freplacement);
 }
 
 /* I sure don't want to reproduce the strftime code from the time module,
@@ -1590,79 +1590,60 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     PyObject *Zreplacement = NULL;      /* py string, replacement for %Z */
     PyObject *freplacement = NULL;      /* py string, replacement for %f */
 
-    const char *pin;            /* pointer to next char in input format */
-    Py_ssize_t flen;            /* length of input format */
-    char ch;                    /* next char in input format */
-
-    PyObject *newfmt = NULL;            /* py string, the output format */
-    char *pnew;         /* pointer to available byte in output format */
-    size_t totalnew;            /* number bytes total in output format buffer,
-                               exclusive of trailing \0 */
-    size_t usednew;     /* number bytes used so far in output format buffer */
-
-    const char *ptoappend;      /* ptr to string to append to output buffer */
-    Py_ssize_t ntoappend;       /* # of bytes to append to output buffer */
-
     assert(object && format && timetuple);
     assert(PyUnicode_Check(format));
-    /* Convert the input format to a C string and size */
-    pin = PyUnicode_AsUTF8AndSize(format, &flen);
-    if (!pin)
+
+    PyObject *strftime = _PyImport_GetModuleAttrString("time", "strftime");
+    if (strftime == NULL) {
         return NULL;
+    }
 
     /* Scan the input format, looking for %z/%Z/%f escapes, building
      * a new format.  Since computing the replacements for those codes
      * is expensive, don't unless they're actually used.
      */
-    if (flen > INT_MAX - 1) {
-        PyErr_NoMemory();
-        goto Done;
-    }
 
-    totalnew = flen + 1;        /* realistic if no %z/%Z */
-    newfmt = PyBytes_FromStringAndSize(NULL, totalnew);
-    if (newfmt == NULL) goto Done;
-    pnew = PyBytes_AsString(newfmt);
-    usednew = 0;
+    _PyUnicodeWriter writer;
+    _PyUnicodeWriter_Init(&writer);
+    writer.overallocate = 1;
 
-    while ((ch = *pin++) != '\0') {
-        if (ch != '%') {
-            ptoappend = pin - 1;
-            ntoappend = 1;
+    Py_ssize_t flen = PyUnicode_GET_LENGTH(format);
+    Py_ssize_t i = 0;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = 0;
+    while (i != flen) {
+        i = PyUnicode_FindChar(format, '%', i, flen, 1);
+        if (i < 0) {
+            assert(!PyErr_Occurred());
+            break;
         }
-        else if ((ch = *pin++) == '\0') {
-        /* Null byte follows %, copy only '%'.
-         *
-         * Back the pin up one char so that we catch the null check
-         * the next time through the loop.*/
-            pin--;
-            ptoappend = pin - 1;
-            ntoappend = 1;
+        end = i;
+        i++;
+        if (i == flen) {
+            break;
         }
+        Py_UCS4 ch = PyUnicode_READ_CHAR(format, i);
+        i++;
         /* A % has been seen and ch is the character after it. */
-        else if (ch == 'z') {
+        PyObject *replacement = NULL;
+        if (ch == 'z') {
             /* %z -> +HHMM */
             if (zreplacement == NULL) {
                 zreplacement = make_somezreplacement(object, "", tzinfoarg);
                 if (zreplacement == NULL)
-                    goto Done;
+                    goto Error;
             }
-            assert(zreplacement != NULL);
-            assert(PyBytes_Check(zreplacement));
-            ptoappend = PyBytes_AS_STRING(zreplacement);
-            ntoappend = PyBytes_GET_SIZE(zreplacement);
+            replacement = zreplacement;
         }
-        else if (ch == ':' && *pin == 'z' && pin++) {
+        else if (ch == ':' && i < flen && PyUnicode_READ_CHAR(format, i) == 'z') {
             /* %:z -> +HH:MM */
+            i++;
             if (colonzreplacement == NULL) {
                 colonzreplacement = make_somezreplacement(object, ":", tzinfoarg);
                 if (colonzreplacement == NULL)
-                    goto Done;
+                    goto Error;
             }
-            assert(colonzreplacement != NULL);
-            assert(PyBytes_Check(colonzreplacement));
-            ptoappend = PyBytes_AS_STRING(colonzreplacement);
-            ntoappend = PyBytes_GET_SIZE(colonzreplacement);
+            replacement = colonzreplacement;
         }
         else if (ch == 'Z') {
             /* format tzname */
@@ -1670,79 +1651,63 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                 Zreplacement = make_Zreplacement(object,
                                                  tzinfoarg);
                 if (Zreplacement == NULL)
-                    goto Done;
+                    goto Error;
             }
-            assert(Zreplacement != NULL);
-            assert(PyUnicode_Check(Zreplacement));
-            ptoappend = PyUnicode_AsUTF8AndSize(Zreplacement,
-                                                  &ntoappend);
-            if (ptoappend == NULL)
-                goto Done;
+            replacement = Zreplacement;
         }
         else if (ch == 'f') {
             /* format microseconds */
             if (freplacement == NULL) {
                 freplacement = make_freplacement(object);
                 if (freplacement == NULL)
-                    goto Done;
+                    goto Error;
             }
-            assert(freplacement != NULL);
-            assert(PyBytes_Check(freplacement));
-            ptoappend = PyBytes_AS_STRING(freplacement);
-            ntoappend = PyBytes_GET_SIZE(freplacement);
+            replacement = freplacement;
         }
         else {
             /* percent followed by something else */
-            ptoappend = pin - 2;
-            ntoappend = 2;
-        }
-
-        /* Append the ntoappend chars starting at ptoappend to
-         * the new format.
-         */
-        if (ntoappend == 0)
             continue;
-        assert(ptoappend != NULL);
-        assert(ntoappend > 0);
-        while (usednew + ntoappend > totalnew) {
-            if (totalnew > (PY_SSIZE_T_MAX >> 1)) { /* overflow */
-                PyErr_NoMemory();
-                goto Done;
-            }
-            totalnew <<= 1;
-            if (_PyBytes_Resize(&newfmt, totalnew) < 0)
-                goto Done;
-            pnew = PyBytes_AsString(newfmt) + usednew;
         }
-        memcpy(pnew, ptoappend, ntoappend);
-        pnew += ntoappend;
-        usednew += ntoappend;
-        assert(usednew <= totalnew);
+        assert(replacement != NULL);
+        assert(PyUnicode_Check(replacement));
+        if (_PyUnicodeWriter_WriteSubstring(&writer, format, start, end) < 0) {
+            goto Error;
+        }
+        start = i;
+        if (_PyUnicodeWriter_WriteStr(&writer, replacement) < 0) {
+            goto Error;
+        }
     }  /* end while() */
 
-    if (_PyBytes_Resize(&newfmt, usednew) < 0)
-        goto Done;
-    {
-        PyObject *format;
-        PyObject *strftime = _PyImport_GetModuleAttrString("time", "strftime");
-
-        if (strftime == NULL)
-            goto Done;
-        format = PyUnicode_FromString(PyBytes_AS_STRING(newfmt));
-        if (format != NULL) {
-            result = PyObject_CallFunctionObjArgs(strftime,
-                                                   format, timetuple, NULL);
-            Py_DECREF(format);
-        }
-        Py_DECREF(strftime);
+    PyObject *newformat;
+    if (start == 0) {
+        _PyUnicodeWriter_Dealloc(&writer);
+        newformat = Py_NewRef(format);
     }
+    else {
+        if (_PyUnicodeWriter_WriteSubstring(&writer, format, start, flen) < 0) {
+            goto Error;
+        }
+        newformat = _PyUnicodeWriter_Finish(&writer);
+        if (newformat == NULL) {
+            goto Done;
+        }
+    }
+    result = PyObject_CallFunctionObjArgs(strftime,
+                                          newformat, timetuple, NULL);
+    Py_DECREF(newformat);
+
  Done:
     Py_XDECREF(freplacement);
     Py_XDECREF(zreplacement);
     Py_XDECREF(colonzreplacement);
     Py_XDECREF(Zreplacement);
-    Py_XDECREF(newfmt);
+    Py_XDECREF(strftime);
     return result;
+
+ Error:
+    _PyUnicodeWriter_Dealloc(&writer);
+    goto Done;
 }
 
 /* ---------------------------------------------------------------------------
