@@ -2721,7 +2721,7 @@ _PyCode_Fini(PyInterpreterState *interp)
 // interpreter and instrumentation use atomics, with specialization taking care
 // not to overwrite an instruction that was instrumented concurrently.
 
-Py_ssize_t
+int32_t
 _Py_ReserveTLBCIndex(PyInterpreterState *interp)
 {
     return _PyIndexPool_AllocIndex(&interp->tlbc_indices);
@@ -2804,7 +2804,7 @@ get_tlbc_lock_held(PyCodeObject *co)
 {
     _PyCodeArray *tlbc = co->co_tlbc;
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)PyThreadState_GET();
-    Py_ssize_t idx = tstate->tlbc_index;
+    int32_t idx = tstate->tlbc_index;
     if (idx < tlbc->size && tlbc->entries[idx] != NULL) {
         return (_Py_CODEUNIT *)tlbc->entries[idx];
     }

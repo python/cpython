@@ -70,7 +70,7 @@ typedef struct _PyInterpreterFrame {
     _Py_CODEUNIT *instr_ptr; /* Instruction currently executing (or about to begin) */
 #ifdef Py_GIL_DISABLED
     /* Index of thread-local bytecode containing instr_ptr. */
-    Py_ssize_t tlbc_index;
+    int32_t tlbc_index;
 #endif
     _PyStackRef *stackpointer;
     uint16_t return_offset;  /* Only relevant during a function call */

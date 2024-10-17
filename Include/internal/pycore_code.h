@@ -615,7 +615,7 @@ static inline _Py_CODEUNIT *
 _PyCode_GetTLBCFast(PyThreadState *tstate, PyCodeObject *co)
 {
     _PyCodeArray *code = _Py_atomic_load_ptr_acquire(&co->co_tlbc);
-    Py_ssize_t idx = ((_PyThreadStateImpl*) tstate)->tlbc_index;
+    int32_t idx = ((_PyThreadStateImpl*) tstate)->tlbc_index;
     if (idx < code->size && code->entries[idx] != NULL) {
         return (_Py_CODEUNIT *) code->entries[idx];
     }
@@ -630,7 +630,7 @@ extern _Py_CODEUNIT *_PyCode_GetTLBC(PyCodeObject *co);
 // arrays
 //
 // Returns the reserved index or -1 on error.
-extern Py_ssize_t _Py_ReserveTLBCIndex(PyInterpreterState *interp);
+extern int32_t _Py_ReserveTLBCIndex(PyInterpreterState *interp);
 
 // Release the current thread's index into thread-local bytecode arrays
 extern void _Py_ClearTLBCIndex(_PyThreadStateImpl *tstate);

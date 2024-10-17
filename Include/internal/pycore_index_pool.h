@@ -19,7 +19,7 @@ extern "C" {
 
 // A min-heap of indices
 typedef struct _PyIndexHeap {
-    Py_ssize_t *values;
+    int32_t *values;
 
     // Number of items stored in values
     Py_ssize_t size;
@@ -37,14 +37,14 @@ typedef struct _PyIndexPool {
     _PyIndexHeap free_indices;
 
     // Next index to allocate if no free indices are available
-    Py_ssize_t next_index;
+    int32_t next_index;
 } _PyIndexPool;
 
 // Allocate the smallest available index. Returns -1 on error.
-extern Py_ssize_t _PyIndexPool_AllocIndex(_PyIndexPool *indices);
+extern int32_t _PyIndexPool_AllocIndex(_PyIndexPool *indices);
 
 // Release `index` back to the pool
-extern void _PyIndexPool_FreeIndex(_PyIndexPool *indices, Py_ssize_t index);
+extern void _PyIndexPool_FreeIndex(_PyIndexPool *indices, int32_t index);
 
 extern void _PyIndexPool_Fini(_PyIndexPool *indices);
 

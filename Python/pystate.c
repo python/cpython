@@ -1515,7 +1515,7 @@ new_threadstate(PyInterpreterState *interp, int whence)
         PyMem_RawFree(new_tstate);
         return NULL;
     }
-    Py_ssize_t tlbc_idx = _Py_ReserveTLBCIndex(interp);
+    int32_t tlbc_idx = _Py_ReserveTLBCIndex(interp);
     if (tlbc_idx < 0) {
         PyMem_RawFree(new_tstate);
         return NULL;

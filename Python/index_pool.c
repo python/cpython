@@ -8,9 +8,9 @@
 #ifdef Py_GIL_DISABLED
 
 static inline void
-swap(Py_ssize_t *values, Py_ssize_t i, Py_ssize_t j)
+swap(int32_t *values, Py_ssize_t i, Py_ssize_t j)
 {
-    Py_ssize_t tmp = values[i];
+    int32_t tmp = values[i];
     values[i] = values[j];
     values[j] = tmp;
 }
@@ -43,19 +43,19 @@ parent(Py_ssize_t i)
 }
 
 static inline Py_ssize_t
-left_child(Py_ssize_t i)
+left_child(int32_t i)
 {
     return 2 * i + 1;
 }
 
 static inline Py_ssize_t
-right_child(Py_ssize_t i)
+right_child(int32_t i)
 {
     return 2 * i + 2;
 }
 
 static void
-heap_add(_PyIndexHeap *heap, Py_ssize_t val)
+heap_add(_PyIndexHeap *heap, int32_t val)
 {
     assert(heap->size < heap->capacity);
     // Add val to end
@@ -86,12 +86,12 @@ heap_min_child(_PyIndexHeap *heap, Py_ssize_t i)
     return -1;
 }
 
-static Py_ssize_t
+static int32_t
 heap_pop(_PyIndexHeap *heap)
 {
     assert(heap->size > 0);
     // Pop smallest and replace with the last element
-    Py_ssize_t result = heap->values[0];
+    int32_t result = heap->values[0];
     heap->values[0] = heap->values[heap->size - 1];
     heap->size--;
     // Sift down
@@ -148,11 +148,11 @@ heap_fini(_PyIndexHeap *heap)
 #define LOCK_POOL(pool) PyMutex_LockFlags(&pool->mutex, _Py_LOCK_DONT_DETACH)
 #define UNLOCK_POOL(pool) PyMutex_Unlock(&pool->mutex)
 
-Py_ssize_t
+int32_t
 _PyIndexPool_AllocIndex(_PyIndexPool *pool)
 {
     LOCK_POOL(pool);
-    Py_ssize_t index;
+    int32_t index;
     _PyIndexHeap *free_indices = &pool->free_indices;
     if (free_indices->size == 0) {
         // No free indices. Make sure the heap can always store all of the
@@ -177,7 +177,7 @@ _PyIndexPool_AllocIndex(_PyIndexPool *pool)
 }
 
 void
-_PyIndexPool_FreeIndex(_PyIndexPool *pool, Py_ssize_t index)
+_PyIndexPool_FreeIndex(_PyIndexPool *pool, int32_t index)
 {
     LOCK_POOL(pool);
     heap_add(&pool->free_indices, index);

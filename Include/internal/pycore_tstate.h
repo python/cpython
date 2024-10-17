@@ -43,7 +43,7 @@ typedef struct _PyThreadStateImpl {
     } refcounts;
 
     // Index to use to retrieve thread-local bytecode for this thread
-    Py_ssize_t tlbc_index;
+    int32_t tlbc_index;
 #endif
 
 #if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
