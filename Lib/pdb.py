@@ -497,7 +497,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def _save_initial_file_mtime(self, frame):
         """save the mtime of the all the files in the frame stack in the file mtime table
-        if it hasn't been saved yet."""
+        if they haven't been saved yet."""
         while frame:
             filename = frame.f_code.co_filename
             if filename not in self._file_mtime_table:
