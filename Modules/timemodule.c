@@ -825,6 +825,10 @@ time_strftime(PyObject *module, PyObject *args)
         buf.tm_isdst = 1;
 
     format_size = PyUnicode_GET_LENGTH(format_arg);
+    if ((size_t)format_size > PY_SSIZE_T_MAX/sizeof(time_char) - 1) {
+        PyErr_NoMemory();
+        return NULL;
+    }
     format = PyMem_Malloc((format_size + 1)*sizeof(time_char));
     if (format == NULL) {
         PyErr_NoMemory();
@@ -833,7 +837,7 @@ time_strftime(PyObject *module, PyObject *args)
     _PyUnicodeWriter writer;
     _PyUnicodeWriter_Init(&writer);
     writer.overallocate = 1;
-    Py_ssize_t i = 0, j;
+    Py_ssize_t i = 0;
     while (i < format_size) {
         fmtlen = 0;
         for (; i < format_size; i++) {
@@ -883,24 +887,29 @@ time_strftime(PyObject *module, PyObject *args)
              * will be ahead of time...
              */
             while (1) {
-                outbuf = (time_char *)PyMem_Realloc(outbuf, bufsize*sizeof(time_char));
+                if ((size_t)bufsize > PY_SSIZE_T_MAX/sizeof(time_char)) {
+                    PyErr_NoMemory();
+                    goto error;
+                }
+                outbuf = (time_char *)PyMem_Realloc(outbuf,
+                                                    bufsize*sizeof(time_char));
                 if (outbuf == NULL) {
                     PyErr_NoMemory();
                     goto error;
                 }
-    #if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
+#if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
                 errno = 0;
-    #endif
+#endif
                 _Py_BEGIN_SUPPRESS_IPH
                 buflen = format_time(outbuf, bufsize, format, &buf);
                 _Py_END_SUPPRESS_IPH
-    #if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
+#if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
                 /* VisualStudio .NET 2005 does this properly */
                 if (buflen == 0 && errno == EINVAL) {
                     PyErr_SetString(PyExc_ValueError, "Invalid format string");
                     goto error;
                 }
-    #endif
+#endif
                 if (buflen == 0 && bufsize < 256 * fmtlen) {
                     bufsize += bufsize;
                     continue;
@@ -925,14 +934,14 @@ time_strftime(PyObject *module, PyObject *args)
             Py_DECREF(unicode);
         }
 
-        j = i;
+        Py_ssize_t start = i;
         for (; i < format_size; i++) {
             Py_UCS4 c = PyUnicode_READ_CHAR(format_arg, i);
             if (c == '%') {
                 break;
             }
         }
-        if (_PyUnicodeWriter_WriteSubstring(&writer, format_arg, j, i) < 0) {
+        if (_PyUnicodeWriter_WriteSubstring(&writer, format_arg, start, i) < 0) {
             goto error;
         }
     }

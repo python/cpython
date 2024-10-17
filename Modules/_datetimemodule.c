@@ -1877,7 +1877,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             if (zreplacement == NULL) {
                 zreplacement = make_somezreplacement(object, "", tzinfoarg);
                 if (zreplacement == NULL)
-                    goto Done;
+                    goto Error;
             }
             replacement = zreplacement;
         }
@@ -1887,7 +1887,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             if (colonzreplacement == NULL) {
                 colonzreplacement = make_somezreplacement(object, ":", tzinfoarg);
                 if (colonzreplacement == NULL)
-                    goto Done;
+                    goto Error;
             }
             replacement = colonzreplacement;
         }
@@ -1897,7 +1897,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                 Zreplacement = make_Zreplacement(object,
                                                  tzinfoarg);
                 if (Zreplacement == NULL)
-                    goto Done;
+                    goto Error;
             }
             replacement = Zreplacement;
         }
@@ -1906,7 +1906,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             if (freplacement == NULL) {
                 freplacement = make_freplacement(object);
                 if (freplacement == NULL)
-                    goto Done;
+                    goto Error;
             }
             replacement = freplacement;
         }
@@ -1919,12 +1919,12 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             /* 0-pad year with century as necessary */
             PyObject *item = PySequence_GetItem(timetuple, 0);
             if (item == NULL) {
-                goto Done;
+                goto Error;
             }
             long year_long = PyLong_AsLong(item);
             Py_DECREF(item);
             if (year_long == -1 && PyErr_Occurred()) {
-                goto Done;
+                goto Error;
             }
             /* Note that datetime(1000, 1, 1).strftime('%G') == '1000' so year
                1000 for %G can go on the fast path. */
@@ -1935,17 +1935,17 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                 PyObject *year_str = PyObject_CallFunction(strftime, "sO",
                                                            "%G", timetuple);
                 if (year_str == NULL) {
-                    goto Done;
+                    goto Error;
                 }
                 PyObject *year = PyNumber_Long(year_str);
                 Py_DECREF(year_str);
                 if (year == NULL) {
-                    goto Done;
+                    goto Error;
                 }
                 year_long = PyLong_AsLong(year);
                 Py_DECREF(year);
                 if (year_long == -1 && PyErr_Occurred()) {
-                    goto Done;
+                    goto Error;
                 }
             }
             /* Buffer of maximum size of formatted year permitted by long.
@@ -1962,11 +1962,11 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             }
 #endif
             if (_PyUnicodeWriter_WriteSubstring(&writer, format, start, end) < 0) {
-                goto Done;
+                goto Error;
             }
             start = i;
             if (_PyUnicodeWriter_WriteASCIIString(&writer, buf, n) < 0) {
-                goto Done;
+                goto Error;
             }
             continue;
         }
@@ -1978,11 +1978,11 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         assert(replacement != NULL);
         assert(PyUnicode_Check(replacement));
         if (_PyUnicodeWriter_WriteSubstring(&writer, format, start, end) < 0) {
-            goto Done;
+            goto Error;
         }
         start = i;
         if (_PyUnicodeWriter_WriteStr(&writer, replacement) < 0) {
-            goto Done;
+            goto Error;
         }
     }  /* end while() */
 
@@ -1993,25 +1993,28 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     }
     else {
         if (_PyUnicodeWriter_WriteSubstring(&writer, format, start, flen) < 0) {
-            goto Done;
+            goto Error;
         }
         newformat = _PyUnicodeWriter_Finish(&writer);
+        if (newformat == NULL) {
+            goto Done;
+        }
     }
-    if (newformat != NULL) {
-        result = PyObject_CallFunctionObjArgs(strftime,
-                                                newformat, timetuple, NULL);
-        Py_DECREF(newformat);
-    }
-    if (0) {
+    result = PyObject_CallFunctionObjArgs(strftime,
+                                          newformat, timetuple, NULL);
+    Py_DECREF(newformat);
+
  Done:
-        _PyUnicodeWriter_Dealloc(&writer);
-    }
     Py_XDECREF(freplacement);
     Py_XDECREF(zreplacement);
     Py_XDECREF(colonzreplacement);
     Py_XDECREF(Zreplacement);
     Py_XDECREF(strftime);
     return result;
+
+ Error:
+    _PyUnicodeWriter_Dealloc(&writer);
+    goto Done;
 }
 
 /* ---------------------------------------------------------------------------
