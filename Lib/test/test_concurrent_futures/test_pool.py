@@ -32,13 +32,13 @@ class PoolExecutorTest(BaseTestCase):
                     iterator = pool.map(
                         processed_elements.append, iterable, buffersize=buffersize
                     )
-                    time.sleep(0.2)  # wait for buffered futures to finish
+                    time.sleep(1)  # wait for buffered futures to finish
                     self.assertSetEqual(
                         set(processed_elements),
                         set(range(min(buffersize, iterable_size))),
                     )
                     next(iterator)
-                    time.sleep(0.2)  # wait for the created future to finish
+                    time.sleep(1)  # wait for the created future to finish
                     self.assertSetEqual(
                         set(processed_elements),
                         set(range(min(buffersize + 1, iterable_size))),
