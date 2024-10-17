@@ -73,10 +73,9 @@ class Repr:
     def repr1(self, x, level):
         _type = type(x)
         typename = _type.__name__
-
-        if " " in typename:
+        if ' ' in typename:
             parts = typename.split()
-            typename = "_".join(parts)
+            typename = '_'.join(parts)
 
         method_name = "repr_" + typename
 
