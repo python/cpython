@@ -2343,7 +2343,6 @@ PyEval_SetProfileAllThreads(Py_tracefunc func, PyObject *arg)
     PyThreadState *this_tstate = _PyThreadState_GET();
     PyInterpreterState *interp = this_tstate->interp;
 
-    _PyRuntimeState *runtime = &_PyRuntime;
     INTERP_THREAD_LOCK(interp);
     PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
     INTERP_THREAD_UNLOCK(interp);
@@ -2374,7 +2373,6 @@ PyEval_SetTraceAllThreads(Py_tracefunc func, PyObject *arg)
     PyThreadState *this_tstate = _PyThreadState_GET();
     PyInterpreterState *interp = this_tstate->interp;
 
-    _PyRuntimeState *runtime = &_PyRuntime;
     INTERP_THREAD_LOCK(interp);
     PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
     INTERP_THREAD_UNLOCK(interp);
