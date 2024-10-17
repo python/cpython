@@ -85,7 +85,7 @@ class Repr:
                 return method(x, level)
             module = getattr(cls, '__module__', None)
             # defined in this class and is the module intended
-            if module == self._lookup.get(typename):
+            if module == self._lookup[typename]:
                 return method(x, level)
 
         return self.repr_instance(x, level)
