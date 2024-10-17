@@ -637,14 +637,14 @@ class StatAttributeTests(unittest.TestCase):
 
         # Make sure all the attributes are there.
         members = ('bsize', 'frsize', 'blocks', 'bfree', 'bavail', 'files',
-                    'ffree', 'favail', 'flag', 'namemax')
+                    'ffree', 'favail', 'flag', 'namemax', 'fsid')
         for value, member in enumerate(members):
             self.assertEqual(getattr(result, 'f_' + member), result[value])
 
         self.assertTrue(isinstance(result.f_fsid, int))
 
         # Test that the size of the tuple doesn't change
-        self.assertEqual(len(result), 10)
+        self.assertEqual(len(result), 11)
 
         # Make sure that assignment really fails
         try:
