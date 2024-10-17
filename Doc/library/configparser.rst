@@ -1308,17 +1308,29 @@ RawConfigParser Objects
                            comment_prefixes=('#', ';'), \
                            inline_comment_prefixes=None, strict=True, \
                            empty_lines_in_values=True, \
-                           default_section=configparser.DEFAULTSECT[, \
-                           interpolation])
+                           default_section=configparser.DEFAULTSECT, \
+                           interpolation=BasicInterpolation(), converters={}, \
+                           allow_unnamed_section=False)
 
    Legacy variant of the :class:`ConfigParser`.  It has interpolation
    disabled by default and allows for non-string section names, option
    names, and values via its unsafe ``add_section`` and ``set`` methods,
    as well as the legacy ``defaults=`` keyword argument handling.
 
+   .. versionchanged:: 3.2
+      *allow_no_value*, *delimiters*, *comment_prefixes*, *strict*,
+      *empty_lines_in_values*, *default_section* and *interpolation* were
+      added.
+
+   .. versionchanged:: 3.5
+      The *converters* argument was added.
+
    .. versionchanged:: 3.8
       The default *dict_type* is :class:`dict`, since it now preserves
       insertion order.
+
+   .. versionchanged:: 3.13
+      The *allow_unnamed_section* argument was added.
 
    .. note::
       Consider using :class:`ConfigParser` instead which checks types of
