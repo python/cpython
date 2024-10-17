@@ -776,8 +776,13 @@ class SMTP:
                 raise RuntimeError("No SSL support included in this Python")
             if context is None:
                 context = ssl._create_stdlib_context()
+            if self._host[-1] is ".":
+                context_host = self._host[:-1]
+            else:
+                context_host = self._host
             self.sock = context.wrap_socket(self.sock,
-                                            server_hostname=self._host)
+                                            server_hostname=context_host)
+            
             self.file = None
             # RFC 3207:
             # The client MUST discard any knowledge obtained from
