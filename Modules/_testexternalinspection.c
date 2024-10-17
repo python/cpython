@@ -51,7 +51,7 @@
 #    define Py_BUILD_CORE_MODULE 1
 #endif
 #include "Python.h"
-#include <internal/pycore_debugger_utils.h> // _Py_DebugOffsets
+#include <internal/pycore_debug_offsets.h>  // _Py_DebugOffsets
 #include <internal/pycore_frame.h>          // FRAME_OWNED_BY_CSTACK
 #include <internal/pycore_stackref.h>       // Py_TAG_BITS
 

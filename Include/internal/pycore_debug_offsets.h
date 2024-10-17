@@ -1,5 +1,5 @@
-#ifndef Py_INTERNAL_DEBUGGER_UTILS_H
-#define Py_INTERNAL_DEBUGGER_UTILS_H
+#ifndef Py_INTERNAL_DEBUG_OFFSETS_H
+#define Py_INTERNAL_DEBUG_OFFSETS_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -266,4 +266,4 @@ typedef struct _Py_DebugOffsets {
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_INTERNAL_DEBUGGER_UTILS_H */
+#endif /* !Py_INTERNAL_DEBUG_OFFSETS_H */

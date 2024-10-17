@@ -609,7 +609,7 @@
     <ClInclude Include="..\Include\internal\pycore_crossinterp.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\pycore_debugger_utils.h">
+    <ClInclude Include="..\Include\internal\pycore_debug_offsets.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_descrobject.h">

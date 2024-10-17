@@ -229,7 +229,7 @@
     <ClInclude Include="..\Include\internal\pycore_context.h" />
     <ClInclude Include="..\Include\internal\pycore_critical_section.h" />
     <ClInclude Include="..\Include\internal\pycore_crossinterp.h" />
-    <ClInclude Include="..\Include\internal\pycore_debugger_utils.h" />
+    <ClInclude Include="..\Include\internal\pycore_debug_offsets.h" />
     <ClInclude Include="..\Include\internal\pycore_descrobject.h" />
     <ClInclude Include="..\Include\internal\pycore_dict.h" />
     <ClInclude Include="..\Include\internal\pycore_dict_state.h" />

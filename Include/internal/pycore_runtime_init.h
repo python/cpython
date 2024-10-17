@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_ceval_state.h"   // _PyEval_RUNTIME_PERF_INIT
-#include "pycore_debugger_utils.h"  // _Py_DebugOffsets_INIT()
+#include "pycore_debug_offsets.h"  // _Py_DebugOffsets_INIT()
 #include "pycore_faulthandler.h"  // _faulthandler_runtime_state_INIT
 #include "pycore_floatobject.h"   // _py_float_format_unknown
 #include "pycore_function.h"
