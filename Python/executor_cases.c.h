@@ -5591,7 +5591,7 @@
         case _SAVE_RETURN_OFFSET: {
             oparg = CURRENT_OPARG();
             #if TIER_ONE
-            frame->return_offset = 10 ;
+            frame->return_offset = (uint16_t)(next_instr - this_instr);
             #endif
             #if TIER_TWO
             frame->return_offset = oparg;

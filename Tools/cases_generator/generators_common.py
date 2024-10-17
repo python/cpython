@@ -90,7 +90,7 @@ def emit_to(out: CWriter, tkn_iter: TokenIterator, end: str) -> Token:
 
 
 ReplacementFunctionType = Callable[
-    [Token, TokenIterator, Uop, Storage, Instruction | None], bool
+    [Token, TokenIterator, Uop, Storage, Instruction | None, int | None], bool
 ]
 
 def always_true(tkn: Token | None) -> bool:
@@ -130,6 +130,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         self.emit(tkn)
         return False
@@ -141,6 +142,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         self.out.emit_at("DEOPT_IF", tkn)
         lparen = next(tkn_iter)
@@ -165,6 +167,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         self.out.emit_at("if ", tkn)
         lparen = next(tkn_iter)
@@ -206,6 +209,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         next(tkn_iter)  # LPAREN
         next(tkn_iter)  # RPAREN
@@ -220,6 +224,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         next(tkn_iter)
         next(tkn_iter)
@@ -253,6 +258,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         next(tkn_iter)
         next(tkn_iter)
@@ -268,6 +274,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         next(tkn_iter)
         name_tkn = next(tkn_iter)
@@ -289,6 +296,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         self.out.emit(tkn)
         tkn = next(tkn_iter)
@@ -313,6 +321,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         next(tkn_iter)
         next(tkn_iter)
@@ -333,6 +342,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         next(tkn_iter)
         next(tkn_iter)
@@ -351,6 +361,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         next(tkn_iter)
         next(tkn_iter)
@@ -363,11 +374,15 @@ class Emitter:
         tkn_iter: TokenIterator,
         uop: Uop,
         storage: Storage,
-        inst: Instruction | None
+        inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         """Replace the INSTRUCTION_SIZE macro with the size of the current instruction."""
-        assert inst is not None, "INSTRUCTION_SIZE macro requires instruction"
-        self.out.emit(f" {inst.size} ")
+        assert inst or inst_size is not None, "INSTRUCTION_SIZE macro requires instruction or size"
+        if inst:
+            self.out.emit(f" {inst.size} ")
+        elif inst_size is not None:
+            self.out.emit(f" {inst_size} ")
         return True
 
     def _print_storage(self, storage: Storage) -> None:
@@ -382,6 +397,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> tuple[bool, Token, Storage]:
         """Returns (reachable?, closing '}', stack)."""
         tkn = next(tkn_iter)
@@ -390,7 +406,7 @@ class Emitter:
         rparen = emit_to(self.out, tkn_iter, "RPAREN")
         self.emit(rparen)
         if_storage = storage.copy()
-        reachable, rbrace, if_storage = self._emit_block(tkn_iter, uop, if_storage, inst, True)
+        reachable, rbrace, if_storage = self._emit_block(tkn_iter, uop, if_storage, inst, inst_size, True)
         try:
             maybe_else = tkn_iter.peek()
             if maybe_else and maybe_else.kind == "ELSE":
@@ -406,7 +422,7 @@ class Emitter:
                     self.out.start_line()
                     self.emit("}\n")
                 else:
-                    else_reachable, rbrace, else_storage = self._emit_block(tkn_iter, uop, storage, inst, True)
+                    else_reachable, rbrace, else_storage = self._emit_block(tkn_iter, uop, storage, inst, inst_size, True)
                 if not reachable:
                     # Discard the if storage
                     reachable = else_reachable
@@ -442,6 +458,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None,
         emit_first_brace: bool
     ) -> tuple[bool, Token, Storage]:
         """ Returns (reachable?, closing '}', stack)."""
@@ -484,7 +501,7 @@ class Emitter:
                     self.out.emit(tkn)
                 elif tkn.kind == "IDENTIFIER":
                     if tkn.text in self._replacers:
-                        if not self._replacers[tkn.text](tkn, tkn_iter, uop, storage, inst):
+                        if not self._replacers[tkn.text](tkn, tkn_iter, uop, storage, inst, inst_size):
                             reachable = False
                     else:
                         if tkn in out_stores:
@@ -515,10 +532,11 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None
     ) -> Storage:
         tkn_iter = TokenIterator(uop.body)
         self.out.start_line()
-        _, rbrace, storage = self._emit_block(tkn_iter, uop, storage, inst, False)
+        _, rbrace, storage = self._emit_block(tkn_iter, uop, storage, inst, inst_size, False)
         try:
             self._print_storage(storage)
             storage.push_outputs()

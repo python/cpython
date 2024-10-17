@@ -75,6 +75,7 @@ class Tier2Emitter(Emitter):
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         self.out.emit_at("if ", tkn)
         lparen = next(tkn_iter)
@@ -97,6 +98,7 @@ class Tier2Emitter(Emitter):
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         next(tkn_iter)  # LPAREN
         next(tkn_iter)  # RPAREN
@@ -111,6 +113,7 @@ class Tier2Emitter(Emitter):
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         self.out.emit_at("if ", tkn)
         lparen = next(tkn_iter)
@@ -132,6 +135,7 @@ class Tier2Emitter(Emitter):
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         self.out.emit_at("if ", tkn)
         lparen = next(tkn_iter)
@@ -152,6 +156,7 @@ class Tier2Emitter(Emitter):
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         if not uop.name.endswith("_0") and not uop.name.endswith("_1"):
             self.emit(tkn)
@@ -167,7 +172,7 @@ class Tier2Emitter(Emitter):
         return True
 
 
-def write_uop(uop: Uop, emitter: Emitter, stack: Stack, inst: Instruction | None) -> Stack:
+def write_uop(uop: Uop, emitter: Emitter, stack: Stack, inst_size: int | None = None) -> Stack:
     locals: dict[str, Local] = {}
     try:
         emitter.out.start_line()
@@ -188,17 +193,29 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack, inst: Instruction | None
                     type = f"uint{cache.size*16}_t "
                     cast = f"uint{cache.size*16}_t"
                 emitter.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND();\n")
-        storage = emitter.emit_tokens(uop, storage, inst)
+        storage = emitter.emit_tokens(uop, storage, None, inst_size)
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body[0]) from None
     return storage.stack
 
 
-def get_instruction_for_uop(instructions: dict[str, Instruction], uop: Uop) -> Instruction | None:
+def contains_instruction_size_macro(uop: Uop) -> bool:
+    for token in uop.body:
+        if token.kind == "IDENTIFIER" and token.text in 'INSTRUCTION_SIZE':
+            return True
+    return False
+
+
+def get_instruction_size_for_uop(instructions: dict[str, Instruction], uop: Uop) -> int:
+    size = None
     for inst in instructions.values():
         if uop in inst.parts:
-            return inst
-    return None
+            if size is None:
+                size = inst.size
+            elif size != inst.size:
+                assert size == inst.size, f"All instructions must have the same size: {size} != {inst.size}"
+    assert size is not None
+    return size
 
 
 SKIPS = ("_EXTENDED_ARG",)
@@ -235,9 +252,11 @@ def generate_tier2(
             continue
         out.emit(f"case {uop.name}: {{\n")
         declare_variables(uop, out)
-        inst = get_instruction_for_uop(analysis.instructions, uop)
+        inst_size = None
+        if contains_instruction_size_macro(uop):
+            inst_size = get_instruction_size_for_uop(analysis.instructions, uop)
         stack = Stack()
-        stack = write_uop(uop, emitter, stack, inst)
+        stack = write_uop(uop, emitter, stack, inst_size)
         out.start_line()
         if not uop.properties.always_exits:
             stack.flush(out)
