@@ -3,9 +3,9 @@
  */
 
 #include "Python.h"
+#include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_ceval.h"         // export _PyEval_SetProfile()
 #include "pycore_object.h"
-#include "pycore_sysmodule.h"     // _PySys_Audit()
 
 #include "opcode.h"
 #include <stddef.h>
