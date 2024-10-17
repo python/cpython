@@ -347,6 +347,7 @@ class TestNtpath(NtpathTestCase):
 
         tester("ntpath.normpath('..')", r'..')
         tester("ntpath.normpath('.')", r'.')
+        tester("ntpath.normpath('c:.')", 'c:')
         tester("ntpath.normpath('')", r'.')
         tester("ntpath.normpath('/')", '\\')
         tester("ntpath.normpath('c:/')", 'c:\\')
@@ -354,6 +355,7 @@ class TestNtpath(NtpathTestCase):
         tester("ntpath.normpath('c:/../../..')", 'c:\\')
         tester("ntpath.normpath('../.././..')", r'..\..\..')
         tester("ntpath.normpath('K:../.././..')", r'K:..\..\..')
+        tester("ntpath.normpath('./a/b')", r'a\b')
         tester("ntpath.normpath('C:////a/b')", r'C:\a\b')
         tester("ntpath.normpath('//machine/share//a/b')", r'\\machine\share\a\b')
 
@@ -836,6 +838,20 @@ class TestNtpath(NtpathTestCase):
             tester('ntpath.abspath("")', cwd_dir)
             tester('ntpath.abspath(" ")', cwd_dir + "\\ ")
             tester('ntpath.abspath("?")', cwd_dir + "\\?")
+            tester('ntpath.abspath("con")', r"\\.\con")
+            # bpo-45354: Windows 11 changed MS-DOS device name handling
+            if sys.getwindowsversion()[:3] < (10, 0, 22000):
+                tester('ntpath.abspath("./con")', r"\\.\con")
+                tester('ntpath.abspath("foo/../con")', r"\\.\con")
+                tester('ntpath.abspath("con/foo/..")', r"\\.\con")
+                tester('ntpath.abspath("con/.")', r"\\.\con")
+            else:
+                tester('ntpath.abspath("./con")', cwd_dir + r"\con")
+                tester('ntpath.abspath("foo/../con")', cwd_dir + r"\con")
+                tester('ntpath.abspath("con/foo/..")', cwd_dir + r"\con")
+                tester('ntpath.abspath("con/.")', cwd_dir + r"\con")
+            tester('ntpath.abspath("./Z:spam")', cwd_dir + r"\Z:spam")
+            tester('ntpath.abspath("spam/../Z:eggs")', cwd_dir + r"\Z:eggs")
             drive, _ = ntpath.splitdrive(cwd_dir)
             tester('ntpath.abspath("/abc/")', drive + "\\abc")
 
