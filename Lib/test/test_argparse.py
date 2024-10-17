@@ -1773,27 +1773,43 @@ class TestArgumentsFromFileConverter(TempDirMixin, ParserTestCase):
 # Type conversion tests
 # =====================
 
+def FileType(*args, **kwargs):
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', 'FileType is deprecated',
+                                PendingDeprecationWarning, __name__)
+        return argparse.FileType(*args, **kwargs)
+
+
+class TestFileTypeDeprecation(TestCase):
+
+    def test(self):
+        with self.assertWarns(PendingDeprecationWarning) as cm:
+            argparse.FileType()
+        self.assertIn('FileType is deprecated', str(cm.warning))
+        self.assertEqual(cm.filename, __file__)
+
+
 class TestFileTypeRepr(TestCase):
 
     def test_r(self):
-        type = argparse.FileType('r')
+        type = FileType('r')
         self.assertEqual("FileType('r')", repr(type))
 
     def test_wb_1(self):
-        type = argparse.FileType('wb', 1)
+        type = FileType('wb', 1)
         self.assertEqual("FileType('wb', 1)", repr(type))
 
     def test_r_latin(self):
-        type = argparse.FileType('r', encoding='latin_1')
+        type = FileType('r', encoding='latin_1')
         self.assertEqual("FileType('r', encoding='latin_1')", repr(type))
 
     def test_w_big5_ignore(self):
-        type = argparse.FileType('w', encoding='big5', errors='ignore')
+        type = FileType('w', encoding='big5', errors='ignore')
         self.assertEqual("FileType('w', encoding='big5', errors='ignore')",
                          repr(type))
 
     def test_r_1_replace(self):
-        type = argparse.FileType('r', 1, errors='replace')
+        type = FileType('r', 1, errors='replace')
         self.assertEqual("FileType('r', 1, errors='replace')", repr(type))
 
 
@@ -1847,7 +1863,6 @@ class RFile(object):
             text = text.decode('ascii')
         return self.name == other.name == text
 
-
 class TestFileTypeR(TempDirMixin, ParserTestCase):
     """Test the FileType option/argument type for reading files"""
 
@@ -1860,8 +1875,8 @@ class TestFileTypeR(TempDirMixin, ParserTestCase):
         self.create_readonly_file('readonly')
 
     argument_signatures = [
-        Sig('-x', type=argparse.FileType()),
-        Sig('spam', type=argparse.FileType('r')),
+        Sig('-x', type=FileType()),
+        Sig('spam', type=FileType('r')),
     ]
     failures = ['-x', '', 'non-existent-file.txt']
     successes = [
@@ -1881,7 +1896,7 @@ class TestFileTypeDefaults(TempDirMixin, ParserTestCase):
         file.close()
 
     argument_signatures = [
-        Sig('-c', type=argparse.FileType('r'), default='no-file.txt'),
+        Sig('-c', type=FileType('r'), default='no-file.txt'),
     ]
     # should provoke no such file error
     failures = ['']
@@ -1900,8 +1915,8 @@ class TestFileTypeRB(TempDirMixin, ParserTestCase):
                 file.write(file_name)
 
     argument_signatures = [
-        Sig('-x', type=argparse.FileType('rb')),
-        Sig('spam', type=argparse.FileType('rb')),
+        Sig('-x', type=FileType('rb')),
+        Sig('spam', type=FileType('rb')),
     ]
     failures = ['-x', '']
     successes = [
@@ -1939,8 +1954,8 @@ class TestFileTypeW(TempDirMixin, ParserTestCase):
         self.create_writable_file('writable')
 
     argument_signatures = [
-        Sig('-x', type=argparse.FileType('w')),
-        Sig('spam', type=argparse.FileType('w')),
+        Sig('-x', type=FileType('w')),
+        Sig('spam', type=FileType('w')),
     ]
     failures = ['-x', '', 'readonly']
     successes = [
@@ -1962,8 +1977,8 @@ class TestFileTypeX(TempDirMixin, ParserTestCase):
         self.create_writable_file('writable')
 
     argument_signatures = [
-        Sig('-x', type=argparse.FileType('x')),
-        Sig('spam', type=argparse.FileType('x')),
+        Sig('-x', type=FileType('x')),
+        Sig('spam', type=FileType('x')),
     ]
     failures = ['-x', '', 'readonly', 'writable']
     successes = [
@@ -1977,8 +1992,8 @@ class TestFileTypeWB(TempDirMixin, ParserTestCase):
     """Test the FileType option/argument type for writing binary files"""
 
     argument_signatures = [
-        Sig('-x', type=argparse.FileType('wb')),
-        Sig('spam', type=argparse.FileType('wb')),
+        Sig('-x', type=FileType('wb')),
+        Sig('spam', type=FileType('wb')),
     ]
     failures = ['-x', '']
     successes = [
@@ -1994,8 +2009,8 @@ class TestFileTypeXB(TestFileTypeX):
     "Test the FileType option/argument type for writing new binary files only"
 
     argument_signatures = [
-        Sig('-x', type=argparse.FileType('xb')),
-        Sig('spam', type=argparse.FileType('xb')),
+        Sig('-x', type=FileType('xb')),
+        Sig('spam', type=FileType('xb')),
     ]
     successes = [
         ('-x foo bar', NS(x=WFile('foo'), spam=WFile('bar'))),
@@ -2007,7 +2022,7 @@ class TestFileTypeOpenArgs(TestCase):
     """Test that open (the builtin) is correctly called"""
 
     def test_open_args(self):
-        FT = argparse.FileType
+        FT = FileType
         cases = [
             (FT('rb'), ('rb', -1, None, None)),
             (FT('w', 1), ('w', 1, None, None)),
@@ -2022,7 +2037,7 @@ class TestFileTypeOpenArgs(TestCase):
 
     def test_invalid_file_type(self):
         with self.assertRaises(ValueError):
-            argparse.FileType('b')('-test')
+            FileType('b')('-test')
 
 
 class TestFileTypeMissingInitialization(TestCase):
