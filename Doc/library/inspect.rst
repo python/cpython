@@ -378,6 +378,8 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    Return ``True`` if the object is a package.
 
+   .. versionadded:: 3.14
+
 
 .. function:: isfunction(object)
 
