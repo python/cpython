@@ -1390,6 +1390,34 @@ class TestGeneratedCases(unittest.TestCase):
         self.run_cases_test(input, output)
 
 
+        input = """
+        inst(OP, (--)) {
+            frame->return_offset = INSTRUCTION_SIZE;
+        }
+        macro(OP2) = unused/1 + OP;
+        """
+
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            frame->return_offset = 1 ;
+            DISPATCH();
+        }
+
+        TARGET(OP2) {
+            frame->instr_ptr = next_instr;
+            next_instr += 2;
+            INSTRUCTION_STATS(OP2);
+            /* Skip 1 cache entry */
+            frame->return_offset = 2 ;
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
