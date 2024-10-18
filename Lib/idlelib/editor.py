@@ -3,7 +3,6 @@ import importlib.util
 import os
 import platform
 import re
-import string
 import sys
 import tokenize
 import traceback
@@ -856,14 +855,12 @@ class EditorWindow:
         if self.line_numbers is not None:
             self.line_numbers.update_colors()
 
-    IDENTCHARS = string.ascii_letters + string.digits + "_"
-
     def colorize_syntax_error(self, text, pos):
         text.tag_add("ERROR", pos)
         char = text.get(pos)
-        if char and char in self.IDENTCHARS:
+        if char and ('a' + char).isidentifier():
             text.tag_add("ERROR", pos + " wordstart", pos)
-        if '\n' == text.get(pos):   # error at line end
+        if char == '\n':   # error at line end
             text.mark_set("insert", pos)
         else:
             text.mark_set("insert", pos + "+1c")
