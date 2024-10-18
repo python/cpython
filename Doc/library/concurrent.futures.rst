@@ -55,8 +55,7 @@ Executor Objects
       if :meth:`~iterator.__next__` is called and the result isn't available
       after *timeout* seconds from the original call to :meth:`Executor.map`.
       *timeout* can be an int or a float.  If *timeout* is not specified or
-      ``None``, there is no limit to the wait time. Incompatible with
-      *buffersize*.
+      ``None``, there is no limit to the wait time.
 
       If a *fn* call raises an exception, then that exception will be
       raised when its value is retrieved from the iterator.

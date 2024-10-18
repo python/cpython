@@ -76,16 +76,18 @@ class ExecutorTest:
     def test_map_with_buffersize(self):
         with self.assertRaisesRegex(ValueError, "buffersize must be None or >= 1."):
             self.executor.map(bool, [], buffersize=0)
-        with self.assertRaisesRegex(
-            ValueError, "cannot specify both buffersize and timeout."
-        ):
-            self.executor.map(bool, [], timeout=1, buffersize=1)
 
         it = range(4)
         self.assertEqual(
             list(self.executor.map(str, it, buffersize=1)),
             list(map(str, it)),
         )
+
+    def test_map_with_buffersize_and_timeout(self):
+        it = self.executor.map(time.sleep, (0, 1), timeout=0.5)
+        next(it)
+        with self.assertRaises(TimeoutError):
+            next(it)
 
     def test_map_with_buffersize_on_infinite_iterable(self):
         results = self.executor.map(str, itertools.count(1), buffersize=1)

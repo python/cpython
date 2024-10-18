@@ -812,7 +812,7 @@ class ProcessPoolExecutor(_base.Executor):
             fn: A callable that will take as many arguments as there are
                 passed iterables.
             timeout: The maximum number of seconds to wait. If None, then there
-                is no limit on the wait time. Incompatible with buffersize.
+                is no limit on the wait time.
             chunksize: If greater than one, the iterables will be chopped into
                 chunks of size chunksize and submitted to the process pool.
                 If set to one, the items in the list will be sent one at a time.
