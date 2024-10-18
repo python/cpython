@@ -760,7 +760,8 @@ are always available.  They are listed here in alphabetical order.
       >>> float('-Infinity')
       -inf
 
-   If the argument is a string, it should contain a decimal number, optionally
+   If the argument is a string, it should contain a decimal number
+   or a hexadecimal number, optionally
    preceded by a sign, and optionally embedded in whitespace.  The optional
    sign may be ``'+'`` or ``'-'``; a ``'+'`` sign has no effect on the value
    produced.  The argument may also be a string representing a NaN
@@ -776,13 +777,17 @@ are always available.  They are listed here in alphabetical order.
       digit: <a Unicode decimal digit, i.e. characters in Unicode general category Nd>
       digitpart: `digit` (["_"] `digit`)*
       number: [`digitpart`] "." `digitpart` | `digitpart` ["."]
-      exponent: ("e" | "E") [`sign`] `digitpart`
-      floatnumber: `number` [`exponent`]
+      exponent: ("e" | "E") ["+" | "-"] `digitpart`
+      hexfloatnumber: `~python-grammar:hexinteger` | `~python-grammar:hexfraction` | `~python-grammar:hexfloat`
+      floatnumber: (`number` [`exponent`]) | `hexfloatnumber`
       absfloatvalue: `floatnumber` | `infinity` | `nan`
       floatvalue: [`sign`] `absfloatvalue`
 
    Case is not significant, so, for example, "inf", "Inf", "INFINITY", and
-   "iNfINity" are all acceptable spellings for positive infinity.
+   "iNfINity" are all acceptable spellings for positive infinity.  Note also
+   that the exponent of a hexadecimal floating point number is written in
+   decimal, and that it gives the power of 2 by which to multiply the
+   coefficient.
 
    Otherwise, if the argument is an integer or a floating-point number, a
    floating-point number with the same value (within Python's floating-point
@@ -807,6 +812,9 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.8
       Falls back to :meth:`~object.__index__` if :meth:`~object.__float__` is not defined.
+
+   .. versionchanged:: 3.14
+      Added support for hexadecimal floating-point numbers.
 
 
 .. index::
