@@ -162,6 +162,12 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 |                   | per-opcode events are     |
 |                 |                   | requested                 |
 +-----------------+-------------------+---------------------------+
+|                 | f_generator       | returns the generator or  |
+|                 |                   | coroutine object that     |
+|                 |                   | owns this frame, or       |
+|                 |                   | ``None`` if the frame is  |
+|                 |                   | of a regular function     |
++-----------------+-------------------+---------------------------+
 |                 | clear()           | used to clear all         |
 |                 |                   | references to local       |
 |                 |                   | variables                 |
@@ -309,6 +315,10 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 .. versionchanged:: 3.10
 
    Add ``__builtins__`` attribute to functions.
+
+.. versionchanged:: 3.14
+
+   Add ``f_generator`` attribute to frames.
 
 .. function:: getmembers(object[, predicate])
 

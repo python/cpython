@@ -22,6 +22,7 @@ extern "C" {
 #include "pycore_runtime_init_generated.h"  // _Py_bytes_characters_INIT
 #include "pycore_signal.h"        // _signals_RUNTIME_INIT
 #include "pycore_tracemalloc.h"   // _tracemalloc_runtime_state_INIT
+#include "pycore_genobject.h"
 
 
 extern PyTypeObject _PyExc_MemoryError;
@@ -74,6 +75,7 @@ extern PyTypeObject _PyExc_MemoryError;
                 .instr_ptr = offsetof(_PyInterpreterFrame, instr_ptr), \
                 .localsplus = offsetof(_PyInterpreterFrame, localsplus), \
                 .owner = offsetof(_PyInterpreterFrame, owner), \
+                .stackpointer = offsetof(_PyInterpreterFrame, stackpointer), \
             }, \
             .code_object = { \
                 .size = sizeof(PyCodeObject), \
@@ -107,6 +109,12 @@ extern PyTypeObject _PyExc_MemoryError;
                 .ob_item = offsetof(PyListObject, ob_item), \
                 .ob_size = offsetof(PyListObject, ob_base.ob_size), \
             }, \
+            .set_object = { \
+                .size = sizeof(PySetObject), \
+                .used = offsetof(PySetObject, used), \
+                .table = offsetof(PySetObject, table), \
+                .mask = offsetof(PySetObject, mask), \
+            }, \
             .dict_object = { \
                 .size = sizeof(PyDictObject), \
                 .ma_keys = offsetof(PyDictObject, ma_keys), \
@@ -135,6 +143,13 @@ extern PyTypeObject _PyExc_MemoryError;
             .gc = { \
                 .size = sizeof(struct _gc_runtime_state), \
                 .collecting = offsetof(struct _gc_runtime_state, collecting), \
+            }, \
+            .gen_object = { \
+                .size = sizeof(PyGenObject), \
+                .gi_name = offsetof(PyGenObject, gi_name), \
+                .gi_iframe = offsetof(PyGenObject, gi_iframe), \
+                .gi_task = offsetof(PyGenObject, gi_task), \
+                .gi_frame_state = offsetof(PyGenObject, gi_frame_state), \
             }, \
         }, \
         .allocators = { \
