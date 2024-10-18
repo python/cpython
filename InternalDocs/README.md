@@ -27,3 +27,5 @@ Index:
 [Garbage collector design](garbage_collector.md)
 
 [Exception Handling](exception_handling.md)
+
+[The Virtual Machine](vm-state.md)
