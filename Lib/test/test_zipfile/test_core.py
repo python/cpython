@@ -2503,12 +2503,11 @@ class LzmaBadCrcTests(AbstractBadCrcTests, unittest.TestCase):
         b'\x00>\x00\x00\x00\x00\x00')
 
 
-class DecryptionTests(unittest.TestCase):
-    """Check that ZIP decryption works. Since the library does not
-    support encryption at the moment, we use a pre-generated encrypted
-    ZIP file."""
+class EncryptedFiles:
+    """ Since the library does not support encryption at the moment,
+    we use pre-generated encrypted ZIP files."""
 
-    data = (
+    encrypted_zip1_data = (
         b'PK\x03\x04\x14\x00\x01\x00\x00\x00n\x92i.#y\xef?&\x00\x00\x00\x1a\x00'
         b'\x00\x00\x08\x00\x00\x00test.txt\xfa\x10\xa0gly|\xfa-\xc5\xc0=\xf9y'
         b'\x18\xe0\xa8r\xb3Z}Lg\xbc\xae\xf9|\x9b\x19\xe4\x8b\xba\xbb)\x8c\xb0\xdbl'
@@ -2516,7 +2515,10 @@ class DecryptionTests(unittest.TestCase):
         b'\x1a\x00\x00\x00\x08\x00\x00\x00\x00\x00\x00\x00\x01\x00 \x00\xb6\x81'
         b'\x00\x00\x00\x00test.txtPK\x05\x06\x00\x00\x00\x00\x01\x00\x01\x006\x00'
         b'\x00\x00L\x00\x00\x00\x00\x00' )
-    data2 = (
+
+    zip1_filename = "test.txt"
+
+    encrypted_zip2_data = (
         b'PK\x03\x04\x14\x00\t\x00\x08\x00\xcf}38xu\xaa\xb2\x14\x00\x00\x00\x00\x02'
         b'\x00\x00\x04\x00\x15\x00zeroUT\t\x00\x03\xd6\x8b\x92G\xda\x8b\x92GUx\x04'
         b'\x00\xe8\x03\xe8\x03\xc7<M\xb5a\xceX\xa3Y&\x8b{oE\xd7\x9d\x8c\x98\x02\xc0'
@@ -2526,15 +2528,19 @@ class DecryptionTests(unittest.TestCase):
         b'roUT\x05\x00\x03\xd6\x8b\x92GUx\x00\x00PK\x05\x06\x00\x00\x00\x00\x01'
         b'\x00\x01\x00?\x00\x00\x00[\x00\x00\x00\x00\x00' )
 
+
+class DecryptionTests(EncryptedFiles, unittest.TestCase):
+    """Check that ZIP decryption works."""
+
     plain = b'zipfile.py encryption test'
     plain2 = b'\x00'*512
 
     def setUp(self):
         with open(TESTFN, "wb") as fp:
-            fp.write(self.data)
+            fp.write(self.encrypted_zip1_data)
         self.zip = zipfile.ZipFile(TESTFN, "r")
         with open(TESTFN2, "wb") as fp:
-            fp.write(self.data2)
+            fp.write(self.encrypted_zip2_data)
         self.zip2 = zipfile.ZipFile(TESTFN2, "r")
 
     def tearDown(self):
