@@ -1,0 +1,1 @@
+Reject invalid unicode escapes for Python implementation of :func:`json.loads`.
