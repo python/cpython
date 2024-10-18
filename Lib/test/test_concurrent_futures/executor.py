@@ -73,7 +73,7 @@ class ExecutorTest:
 
         self.assertEqual([None, None], results)
 
-    def test_map_args(self):
+    def test_map_with_buffersize(self):
         with self.assertRaisesRegex(ValueError, "buffersize must be None or >= 1."):
             self.executor.map(bool, [], buffersize=0)
         with self.assertRaisesRegex(
@@ -81,35 +81,33 @@ class ExecutorTest:
         ):
             self.executor.map(bool, [], timeout=1, buffersize=1)
 
-    def test_map_infinite_iterable(self):
+        it = range(4)
+        self.assertEqual(
+            list(self.executor.map(str, it, buffersize=1)),
+            list(map(str, it)),
+        )
+
+    def test_map_with_buffersize_on_infinite_iterable(self):
         results = self.executor.map(str, itertools.count(1), buffersize=1)
         self.assertEqual(next(iter(results)), "1")
 
-    def test_map_buffersize(self):
+    def test_map_with_buffersize_on_iterable_smaller_than_buffer(self):
+        it = range(2)
+        results = self.executor.map(str, it, buffersize=10)
+        self.assertListEqual(list(results), list(map(str, it)))
+
+    def test_map_with_buffersize_when_buffer_becomes_full(self):
         manager = Manager()
-
-        for buffersize, iterable_size in [
-            (1, 5),
-            (5, 5),
-            (10, 5),
-        ]:
-            iterable = range(iterable_size)
-            processed_elements = manager.list()
-
-            iterator = self.executor.map(
-                processed_elements.append, iterable, buffersize=buffersize
-            )
-            time.sleep(1)  # wait for buffered futures to finish
-            self.assertSetEqual(
-                set(processed_elements),
-                set(range(min(buffersize, iterable_size))),
-            )
-            next(iterator)
-            time.sleep(1)  # wait for the created future to finish
-            self.assertSetEqual(
-                set(processed_elements),
-                set(range(min(buffersize + 1, iterable_size))),
-            )
+        iterable = range(8)
+        buffersize = 4
+        buffered_results = manager.list()
+        self.executor.map(buffered_results.append, iterable, buffersize=buffersize)
+        self.executor.shutdown(wait=True)
+        self.assertSetEqual(
+            set(buffered_results),
+            set(itertools.islice(iterable, buffersize)),
+            msg="only the first `buffersize` elements should be processed",
+        )
 
     def test_shutdown_race_issue12456(self):
         # Issue #12456: race condition at shutdown where trying to post a
