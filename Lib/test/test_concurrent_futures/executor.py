@@ -1,5 +1,5 @@
 import itertools
-from multiprocessing import Manager
+import multiprocessing
 import threading
 import time
 import weakref
@@ -104,7 +104,7 @@ class ExecutorTest:
         self.assertListEqual(list(results), [])
 
     def test_map_with_buffersize_when_buffer_becomes_full(self):
-        manager = Manager()
+        manager = multiprocessing.Manager()
         iterable = range(8)
         buffersize = 4
         buffered_results = manager.list()
