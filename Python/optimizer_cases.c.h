@@ -2501,3 +2501,7 @@
             break;
         }
 
+        case _CHECK_ITER: {
+            break;
+        }
+
