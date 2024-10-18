@@ -48,8 +48,9 @@ typedef struct {
  *    uint16_t error_target;
  */
 typedef struct {
-    uint16_t opcode:15;
+    uint16_t opcode:14;
     uint16_t format:1;
+    uint16_t is_virtual:1;   // Used for tier2 optimization.
     uint16_t oparg;
     union {
         uint32_t target;
@@ -146,6 +147,15 @@ int _Py_uop_analyze_and_optimize(struct _PyInterpreterFrame *frame,
     _PyUOpInstruction *trace, int trace_len, int curr_stackentries,
     _PyBloomFilter *dependencies);
 
+int
+_Py_uop_partial_evaluate(
+    _PyInterpreterFrame *frame,
+    _PyUOpInstruction *buffer,
+    int length,
+    int curr_stacklen,
+    _PyBloomFilter *dependencies
+);
+
 extern PyTypeObject _PyCounterExecutor_Type;
 extern PyTypeObject _PyCounterOptimizer_Type;
 extern PyTypeObject _PyDefaultOptimizer_Type;
@@ -154,6 +164,8 @@ extern PyTypeObject _PyUOpOptimizer_Type;
 
 /* Symbols */
 /* See explanation in optimizer_symbols.c */
+
+// Specializer.
 
 struct _Py_UopsSymbol {
     int flags;  // 0 bits: Top; 2 or more bits: Bottom
@@ -283,6 +295,88 @@ static inline int is_terminator(const _PyUOpInstruction *uop)
         opcode == _DYNAMIC_EXIT
     );
 }
+
+// Partial evaluator.
+struct _Py_UopsPESymbol {
+    int flags;  // 0 bits: Top; 2 or more bits: Bottom
+    PyObject *const_val;  // Owned reference (!)
+};
+
+typedef struct _Py_UopsPESymbol _Py_UopsPESymbol;
+
+typedef struct _Py_UopsPESlot {
+    _Py_UopsPESymbol *sym;
+    _PyUOpInstruction *origin_inst; // The instruction this symbol originates from.
+} _Py_UopsPESlot;
+
+struct _Py_UOpsPEAbstractFrame {
+    // Max stacklen
+    int stack_len;
+    int locals_len;
+
+    _Py_UopsPESlot *stack_pointer;
+    _Py_UopsPESlot *stack;
+    _Py_UopsPESlot *locals;
+};
+
+typedef struct _Py_UOpsPEAbstractFrame _Py_UOpsPEAbstractFrame;
+
+typedef struct pe_arena {
+    int sym_curr_number;
+    int sym_max_number;
+    _Py_UopsPESymbol arena[TY_ARENA_SIZE];
+} pe_arena;
+
+struct _Py_UOpsPEContext {
+    char done;
+    char out_of_space;
+    bool contradiction;
+    // The current "executing" frame.
+    _Py_UOpsPEAbstractFrame *frame;
+    _Py_UOpsPEAbstractFrame frames[MAX_ABSTRACT_FRAME_DEPTH];
+    int curr_frame_depth;
+
+    // Arena for the symbolic information.
+    pe_arena sym_arena;
+
+    _Py_UopsPESlot *n_consumed;
+    _Py_UopsPESlot *limit;
+    _Py_UopsPESlot locals_and_stack[MAX_ABSTRACT_INTERP_SIZE];
+};
+
+typedef struct _Py_UOpsPEContext _Py_UOpsPEContext;
+
+extern bool _Py_uop_pe_sym_is_null(_Py_UopsPESlot *sym);
+extern bool _Py_uop_pe_sym_is_not_null(_Py_UopsPESlot *sym);
+extern bool _Py_uop_pe_sym_is_const(_Py_UopsPESlot *sym);
+extern PyObject *_Py_uop_pe_sym_get_const(_Py_UopsPESlot *sym);
+extern _Py_UopsPESlot _Py_uop_pe_sym_new_unknown(_Py_UOpsPEContext *ctx);
+extern _Py_UopsPESlot _Py_uop_pe_sym_new_not_null(_Py_UOpsPEContext *ctx);
+extern _Py_UopsPESlot _Py_uop_pe_sym_new_const(_Py_UOpsPEContext *ctx, PyObject *const_val);
+extern _Py_UopsPESlot _Py_uop_pe_sym_new_null(_Py_UOpsPEContext *ctx);
+extern void _Py_uop_pe_sym_set_null(_Py_UOpsPEContext *ctx, _Py_UopsPESlot *sym);
+extern void _Py_uop_pe_sym_set_non_null(_Py_UOpsPEContext *ctx, _Py_UopsPESlot *sym);
+extern void _Py_uop_pe_sym_set_const(_Py_UOpsPEContext *ctx, _Py_UopsPESlot *sym, PyObject *const_val);
+extern bool _Py_uop_pe_sym_is_bottom(_Py_UopsPESlot *sym);
+extern int _Py_uop_pe_sym_truthiness(_Py_UopsPESlot *sym);
+extern void _Py_uop_sym_set_origin_inst_override(_Py_UopsPESlot *sym, _PyUOpInstruction *origin);
+extern _PyUOpInstruction *_Py_uop_sym_get_origin(_Py_UopsPESlot *sym);
+extern bool _Py_uop_sym_is_virtual(_Py_UopsPESlot *sym);
+
+
+extern _Py_UOpsPEAbstractFrame *
+_Py_uop_pe_frame_new(
+    _Py_UOpsPEContext *ctx,
+    PyCodeObject *co,
+    int curr_stackentries,
+    _Py_UopsPESlot *args,
+    int arg_len);
+
+int _Py_uop_pe_frame_pop(_Py_UOpsPEContext *ctx);
+
+extern void _Py_uop_pe_abstractcontext_init(_Py_UOpsPEContext *ctx);
+extern void _Py_uop_pe_abstractcontext_fini(_Py_UOpsPEContext *ctx);
+
 
 #ifdef __cplusplus
 }

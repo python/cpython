@@ -1481,6 +1481,33 @@ class TestUopsOptimization(unittest.TestCase):
 
         fn(A())
 
+    def test_pe_load_fast_pop_top(self):
+        def thing(a):
+            x = 0
+            for i in range(20):
+                i
+            return i
+
+
+        res, ex = self._run_with_optimizer(thing, 1)
+        self.assertEqual(res, 19)
+        self.assertIsNotNone(ex)
+        self.assertEqual(list(iter_opnames(ex)).count("_POP_TOP"), 0)
+        self.assertTrue(ex.is_valid())
+
+    def test_pe_dead_store_elimination(self):
+        def thing(a):
+            x = 0
+            for i in range(20):
+                x = x
+            return i
+
+
+        res, ex = self._run_with_optimizer(thing, 1)
+        self.assertEqual(res, 19)
+        self.assertIsNotNone(ex)
+        self.assertEqual(list(iter_opnames(ex)).count("_LOAD_FAST_1"), 0)
+        self.assertTrue(ex.is_valid())
 
 if __name__ == "__main__":
     unittest.main()
