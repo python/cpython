@@ -215,7 +215,6 @@ argparse
   and subparser names if mistyped by the user.
   (Contributed by Savannah Ostrowski in :gh:`124456`)
 
-
 ast
 ---
 
