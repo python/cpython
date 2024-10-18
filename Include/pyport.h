@@ -554,9 +554,14 @@ extern "C" {
 //
 // Example: _Py_TYPEOF(x) x_copy = (x);
 //
-// The macro is only defined if GCC or clang compiler is used.
-#if defined(__GNUC__) || defined(__clang__)
+// Defined if __typeof__ or its equivalents are available.
+#if defined(__GNUC__) || defined(__clang__) || defined(HAVE_TYPEOF) || \
+    (defined(_MSC_VER) && _MSC_VER >= 1939)
 #  define _Py_TYPEOF(expr) __typeof__(expr)
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+#  define _Py_TYPEOF(expr) typeof(expr)
+#elif defined(__cplusplus) && __cplusplus >= 201103
+#  define _Py_TYPEOF(expr) decltype(expr)
 #endif
 
 
