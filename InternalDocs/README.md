@@ -11,8 +11,6 @@ The core dev team attempts to keep this documentation up to date. If
 it is not, please report that through the
 [issue tracker](https://github.com/python/cpython/issues).
 
-Index:
------
 
 Compiling Python Source Code
 ---
