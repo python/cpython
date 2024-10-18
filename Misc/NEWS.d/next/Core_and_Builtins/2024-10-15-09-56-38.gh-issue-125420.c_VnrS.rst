@@ -1,0 +1,2 @@
+Add :meth:`~object.__reversed__` to :class:`memoryview` objects. Patch by
+Bénédikt Tran.
