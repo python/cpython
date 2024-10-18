@@ -1624,7 +1624,10 @@ class ZipFile:
 
         if mode == 'w':
             return self._open_to_write(name, force_zip64=force_zip64)
+        if mode == "r":
+            return self._open_to_read(name, pwd)
 
+    def _open_to_read(self, name, pwd=None):
         if isinstance(name, ZipInfo):
             zinfo = name
         else:
@@ -1688,7 +1691,7 @@ class ZipFile:
             else:
                 pwd = None
 
-            return ZipExtFile(zef_file, mode + 'b', zinfo, pwd, True)
+            return ZipExtFile(zef_file, 'rb', zinfo, pwd, True)
         except:
             zef_file.close()
             raise
