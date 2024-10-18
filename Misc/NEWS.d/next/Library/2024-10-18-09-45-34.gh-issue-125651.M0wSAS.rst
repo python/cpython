@@ -1,0 +1,1 @@
+Fix parsing of HEX encoded UUID string
