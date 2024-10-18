@@ -15,6 +15,7 @@ import copy
 import pickle
 import struct
 
+from itertools import product
 from test.support import import_helper
 
 
@@ -57,6 +58,31 @@ class AbstractMemoryTests:
     def test_getitem(self):
         for tp in self._types:
             self.check_getitem_with_type(tp)
+
+    def test_index(self):
+        for tp in self._types:
+            b = tp(self._source)
+            m = self._view(b)  # may be a sub-view
+            l = m.tolist()
+            k = 2 * len(self._source)
+
+            for chi in self._source:
+                if chi in l:
+                    self.assertEqual(m.index(chi), l.index(chi))
+                else:
+                    self.assertRaises(ValueError, m.index, chi)
+
+                for start, stop in product(range(-k, k), range(-k, k)):
+                    index = -1
+                    try:
+                        index = l.index(chi, start, stop)
+                    except ValueError:
+                        pass
+
+                    if index == -1:
+                        self.assertRaises(ValueError, m.index, chi, start, stop)
+                    else:
+                        self.assertEqual(m.index(chi, start, stop), index)
 
     def test_iter(self):
         for tp in self._types:
