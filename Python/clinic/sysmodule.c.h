@@ -1571,6 +1571,38 @@ exit:
     return return_value;
 }
 
+#if defined(Py_GIL_DISABLED)
+
+PyDoc_STRVAR(sys__get_tlbc_blocks__doc__,
+"_get_tlbc_blocks($module, /)\n"
+"--\n"
+"\n"
+"Return the total number of thread-local bytecode copies, excluding the copies that are embedded in the code object.");
+
+#define SYS__GET_TLBC_BLOCKS_METHODDEF    \
+    {"_get_tlbc_blocks", (PyCFunction)sys__get_tlbc_blocks, METH_NOARGS, sys__get_tlbc_blocks__doc__},
+
+static Py_ssize_t
+sys__get_tlbc_blocks_impl(PyObject *module);
+
+static PyObject *
+sys__get_tlbc_blocks(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t _return_value;
+
+    _return_value = sys__get_tlbc_blocks_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(Py_GIL_DISABLED) */
+
 #ifndef SYS_GETWINDOWSVERSION_METHODDEF
     #define SYS_GETWINDOWSVERSION_METHODDEF
 #endif /* !defined(SYS_GETWINDOWSVERSION_METHODDEF) */
@@ -1614,4 +1646,8 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=9cc9069aef1482bc input=a9049054013a1b77]*/
+
+#ifndef SYS__GET_TLBC_BLOCKS_METHODDEF
+    #define SYS__GET_TLBC_BLOCKS_METHODDEF
+#endif /* !defined(SYS__GET_TLBC_BLOCKS_METHODDEF) */
+/*[clinic end generated code: output=fca6c27bfc0c17ac input=a9049054013a1b77]*/

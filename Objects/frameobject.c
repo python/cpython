@@ -1588,7 +1588,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     }
     /* Finally set the new lasti and return OK. */
     f->f_lineno = 0;
-    f->f_frame->instr_ptr = _PyCode_CODE(code) + best_addr;
+    f->f_frame->instr_ptr = _PyFrame_GetBytecode(f->f_frame) + best_addr;
     return 0;
 }
 
@@ -1804,10 +1804,11 @@ PyTypeObject PyFrame_Type = {
 };
 
 static void
-init_frame(_PyInterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
+init_frame(PyThreadState *tstate, _PyInterpreterFrame *frame,
+           PyFunctionObject *func, PyObject *locals)
 {
     PyCodeObject *code = (PyCodeObject *)func->func_code;
-    _PyFrame_Initialize(frame, PyStackRef_FromPyObjectNew(func),
+    _PyFrame_Initialize(tstate, frame, PyStackRef_FromPyObjectNew(func),
                         Py_XNewRef(locals), code, 0, NULL);
 }
 
@@ -1858,7 +1859,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
         Py_DECREF(func);
         return NULL;
     }
-    init_frame((_PyInterpreterFrame *)f->_f_frame_data, func, locals);
+    init_frame(tstate, (_PyInterpreterFrame *)f->_f_frame_data, func, locals);
     f->f_frame = (_PyInterpreterFrame *)f->_f_frame_data;
     f->f_frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
     // This frame needs to be "complete", so pretend that the first RESUME ran:
@@ -1877,7 +1878,8 @@ frame_init_get_vars(_PyInterpreterFrame *frame)
     // here:
     PyCodeObject *co = _PyFrame_GetCode(frame);
     int lasti = _PyInterpreterFrame_LASTI(frame);
-    if (!(lasti < 0 && _PyCode_CODE(co)->op.code == COPY_FREE_VARS
+    if (!(lasti < 0
+          && _PyFrame_GetBytecode(frame)->op.code == COPY_FREE_VARS
           && PyStackRef_FunctionCheck(frame->f_funcobj)))
     {
         /* Free vars are initialized */
@@ -1893,7 +1895,7 @@ frame_init_get_vars(_PyInterpreterFrame *frame)
         frame->localsplus[offset + i] = PyStackRef_FromPyObjectNew(o);
     }
     // COPY_FREE_VARS doesn't have inline CACHEs, either:
-    frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame));
+    frame->instr_ptr = _PyFrame_GetBytecode(frame);
 }
 
 
