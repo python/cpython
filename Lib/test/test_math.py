@@ -1902,19 +1902,11 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(math.tan(NAN)))
 
         try:
-            tan = math.tan(INF)
+            self.assertTrue(math.isnan(math.tan(INF)))
+            self.assertTrue(math.isnan(math.tan(NINF)))
         except ValueError:
-            pass
-        else:
-            self.assertTrue(math.isnan(tan))
-
-        try:
-            ntan = math.tan(NINF)
-        except ValueError:
-            pass
-        else:
-            self.assertTrue(math.isnan(ntan))
-
+            self.assertRaises(ValueError, math.tan, INF)
+            self.assertRaises(ValueError, math.tan, NINF)
     def testTanh(self):
         self.assertRaises(TypeError, math.tanh)
         self.ftest('tanh(0)', math.tanh(0), 0)
