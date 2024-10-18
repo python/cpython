@@ -2308,6 +2308,45 @@ class ISOTPTest(unittest.TestCase):
         socket.CAN_ISOTP
         socket.SOCK_DGRAM
 
+    @unittest.skipUnless(hasattr(socket, "SOL_CAN_ISOTP"),
+    					 "missing <linux/can/isotp.h>")
+    def testISOTP(self):
+        socket.SOL_CAN_ISOTP
+
+        socket.CAN_ISOTP_OPTS
+        socket.CAN_ISOTP_RECV_FC
+
+        socket.CAN_ISOTP_TX_STMIN
+        socket.CAN_ISOTP_RX_STMIN
+        socket.CAN_ISOTP_LL_OPTS
+
+        socket.CAN_ISOTP_LISTEN_MODE
+        socket.CAN_ISOTP_EXTEND_ADDR
+        socket.CAN_ISOTP_TX_PADDING
+        socket.CAN_ISOTP_RX_PADDING
+        socket.CAN_ISOTP_CHK_PAD_LEN
+        socket.CAN_ISOTP_CHK_PAD_DATA
+        socket.CAN_ISOTP_HALF_DUPLEX
+        socket.CAN_ISOTP_FORCE_TXSTMIN
+        socket.CAN_ISOTP_FORCE_RXSTMIN
+        socket.CAN_ISOTP_RX_EXT_ADDR
+        socket.CAN_ISOTP_WAIT_TX_DONE
+        # This constant is and not always available
+        # socket.CAN_ISOTP_SF_BROADCAST
+
+        socket.CAN_ISOTP_DEFAULT_FLAGS
+        socket.CAN_ISOTP_DEFAULT_EXT_ADDRESS
+        socket.CAN_ISOTP_DEFAULT_PAD_CONTENT
+        socket.CAN_ISOTP_DEFAULT_FRAME_TXTIME
+        socket.CAN_ISOTP_DEFAULT_RECV_BS
+        socket.CAN_ISOTP_DEFAULT_EXT_ADDRESS
+        socket.CAN_ISOTP_DEFAULT_RECV_STMIN
+        socket.CAN_ISOTP_DEFAULT_RECV_WFTMAX
+
+        socket.CAN_ISOTP_DEFAULT_LL_MTU
+        socket.CAN_ISOTP_DEFAULT_LL_TX_DL
+        socket.CAN_ISOTP_DEFAULT_LL_TX_FLAGS
+
     def testCreateSocket(self):
         with socket.socket(socket.PF_CAN, socket.SOCK_RAW, socket.CAN_RAW) as s:
             pass

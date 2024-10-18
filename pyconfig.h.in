@@ -718,6 +718,9 @@
 /* Define to 1 if you have the <linux/can.h> header file. */
 #undef HAVE_LINUX_CAN_H
 
+/* Define to 1 if you have the <linux/can/isotp.h> header file. */
+#undef HAVE_LINUX_CAN_ISOTP_H
+
 /* Define to 1 if you have the <linux/can/j1939.h> header file. */
 #undef HAVE_LINUX_CAN_J1939_H
 

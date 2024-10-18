@@ -11757,7 +11757,7 @@ then :
 fi
 
 
-# On Linux, can.h, can/bcm.h, can/j1939.h, can/raw.h require sys/socket.h
+# On Linux, can.h, can/bcm.h, can/isotp.h, can/j1939.h, can/raw.h require sys/socket.h
 # On NetBSD, netcan/can.h requires sys/socket.h
 ac_fn_c_check_header_compile "$LINENO" "linux/can.h" "ac_cv_header_linux_can_h" "
 #ifdef HAVE_SYS_SOCKET_H
@@ -11779,6 +11779,17 @@ ac_fn_c_check_header_compile "$LINENO" "linux/can/bcm.h" "ac_cv_header_linux_can
 if test "x$ac_cv_header_linux_can_bcm_h" = xyes
 then :
   printf "%s\n" "#define HAVE_LINUX_CAN_BCM_H 1" >>confdefs.h
+
+fi
+ac_fn_c_check_header_compile "$LINENO" "linux/can/isotp.h" "ac_cv_header_linux_can_isotp_h" "
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+
+"
+if test "x$ac_cv_header_linux_can_isotp_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_LINUX_CAN_ISOTP_H 1" >>confdefs.h
 
 fi
 ac_fn_c_check_header_compile "$LINENO" "linux/can/j1939.h" "ac_cv_header_linux_can_j1939_h" "
