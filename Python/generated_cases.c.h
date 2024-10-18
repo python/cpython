@@ -3158,6 +3158,26 @@
             DISPATCH();
         }
 
+        TARGET(CHECK_ITER) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(CHECK_ITER);
+            _PyStackRef iter;
+            iter = stack_pointer[-1];
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            PyTypeObject *type = Py_TYPE(iter_o);
+            iternextfunc iternext = type->tp_iternext;
+            if (iternext == NULL) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyErr_Format(PyExc_TypeError,
+                             "'%.200s' object is not an iterator",
+                             type->tp_name);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                goto error;
+            }
+            DISPATCH();
+        }
+
         TARGET(CLEANUP_THROW) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
             (void)this_instr;

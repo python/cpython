@@ -5900,4 +5900,21 @@
             break;
         }
 
+        case _CHECK_ITER: {
+            _PyStackRef iter;
+            iter = stack_pointer[-1];
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            PyTypeObject *type = Py_TYPE(iter_o);
+            iternextfunc iternext = type->tp_iternext;
+            if (iternext == NULL) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyErr_Format(PyExc_TypeError,
+                             "'%.200s' object is not an iterator",
+                             type->tp_name);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                JUMP_TO_ERROR();
+            }
+            break;
+        }
+
 #undef TIER_TWO

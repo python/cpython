@@ -5003,6 +5003,18 @@ dummy_func(
             assert(tstate->tracing || eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
         }
 
+        inst(CHECK_ITER, (iter -- iter)) {
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            PyTypeObject *type = Py_TYPE(iter_o);
+            iternextfunc iternext = type->tp_iternext;
+            if (iternext == NULL) {
+                PyErr_Format(PyExc_TypeError,
+                    "'%.200s' object is not an iterator",
+                    type->tp_name);
+                ERROR_NO_POP();
+            }
+        }
+
 // END BYTECODES //
 
     }
