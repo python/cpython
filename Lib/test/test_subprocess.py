@@ -1214,7 +1214,9 @@ class ProcessTestCase(BaseTestCase):
 
     def test_no_leaking(self):
         # Make sure we leak no resources
-        if not mswindows:
+        if sys.platform.startswith("netbsd"):
+            max_handles = 512
+        elif not mswindows:
             max_handles = 1026 # too much for most UNIX systems
         else:
             max_handles = 2050 # too much for (at least some) Windows setups
