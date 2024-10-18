@@ -165,7 +165,7 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
     }
     if (i >= 0) {
         if (value == NULL) {
-            PyErr_SetString(PyExc_RuntimeError, "cannot remove local variables from FrameLocalsProxy");
+            PyErr_SetString(PyExc_ValueError, "cannot remove local variables from FrameLocalsProxy");
             return -1;
         }
 
@@ -707,7 +707,7 @@ framelocalsproxy_pop(PyObject* self, PyObject *const *args, Py_ssize_t nargs)
     }
 
     if (i >= 0) {
-        PyErr_SetString(PyExc_RuntimeError, "cannot remove local variables from FrameLocalsProxy");
+        PyErr_SetString(PyExc_ValueError, "cannot remove local variables from FrameLocalsProxy");
         return NULL;
     }
 

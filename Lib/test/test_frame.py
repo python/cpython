@@ -405,16 +405,16 @@ class TestFrameLocals(unittest.TestCase):
         with self.assertRaises(KeyError):
             d.pop('non_exist')
 
-        with self.assertRaisesRegex(RuntimeError, 'local variables'):
+        with self.assertRaisesRegex(ValueError, 'local variables'):
             del d['x']
 
         with self.assertRaises(AttributeError):
             d.clear()
 
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(ValueError):
             d.pop('x')
 
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(ValueError):
             d.pop('x', None)
 
         # 'm', 'n' is stored in f_extra_locals
