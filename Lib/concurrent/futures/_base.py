@@ -581,7 +581,7 @@ class Executor(object):
             fn: A callable that will take as many arguments as there are
                 passed iterables.
             timeout: The maximum number of seconds to wait. If None, then there
-                is no limit on the wait time. Incompatible with buffersize.
+                is no limit on the wait time.
             chunksize: The size of the chunks the iterable will be broken into
                 before being passed to a child process. This argument is only
                 used by ProcessPoolExecutor; it is ignored by
@@ -602,9 +602,6 @@ class Executor(object):
         """
         if buffersize is not None and buffersize < 1:
             raise ValueError("buffersize must be None or >= 1.")
-
-        if buffersize is not None and timeout is not None:
-            raise ValueError("cannot specify both buffersize and timeout.")
 
         if timeout is not None:
             end_time = timeout + time.monotonic()
