@@ -96,6 +96,11 @@ class ExecutorTest:
         results = self.executor.map(str, it, buffersize=10)
         self.assertListEqual(list(results), list(map(str, it)))
 
+    def test_map_with_buffersize_on_empty_iterable(self):
+        it = iter([])
+        results = self.executor.map(str, it, buffersize=10)
+        self.assertListEqual(list(results), [])
+
     def test_map_with_buffersize_when_buffer_becomes_full(self):
         manager = Manager()
         iterable = range(8)
