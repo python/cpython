@@ -130,6 +130,9 @@
     <ClCompile Include="..\Python\dynamic_annotations.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\dynarray.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\dynload_win.c">
       <Filter>Source Files</Filter>
     </ClCompile>
