@@ -58,7 +58,7 @@ BACKSLASH = {
 }
 
 def _decode_uXXXX(s, pos, _m=HEXDIGITS.match):
-    if match := _m(s, end):
+    if match := _m(s, pos):
         try:
             return int(match.group(), 16)
         except ValueError:
