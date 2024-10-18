@@ -448,6 +448,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         # Set to True when `loop.shutdown_default_executor` is called.
         self._executor_shutdown_called = False
 
+        # Holds references to all pending tasks to avoid garbage
+        # collection (see #91887)
+        self._pending_tasks = set()
+
     def __repr__(self):
         return (
             f'<{self.__class__.__name__} running={self.is_running()} '
@@ -2047,6 +2051,16 @@ class BaseEventLoop(events.AbstractEventLoop):
                 self._coroutine_origin_tracking_saved_depth)
 
         self._coroutine_origin_tracking_enabled = enabled
+
+    def _add_pending_task(self, task):
+        """Add task to the _pending_tasks set.
+
+        This avoids garbage collection as long as the loop is alive.
+        """
+        self._pending_tasks.add(task)
+
+    def _del_pending_task(self, task):
+        self._pending_tasks.discard(task)
 
     def get_debug(self):
         return self._debug
