@@ -2378,7 +2378,14 @@
             assert(self_o != NULL);
             DEOPT_IF(!PyList_Check(self_o), CALL);
             STAT_INC(CALL, hit);
+            #ifdef Py_GIL_DISABLED
+            int err;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            err = _PyList_AppendTakeRefAndLock((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            #else
             int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
+            #endif
             PyStackRef_CLOSE(self);
             PyStackRef_CLOSE(callable);
             if (err) goto pop_3_error;
