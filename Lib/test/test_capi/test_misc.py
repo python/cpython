@@ -1557,14 +1557,9 @@ class TestPendingCalls(unittest.TestCase):
 
         for i in range(n):
             time.sleep(random.random()*0.02) #0.01 secs on average
-            #try submitting callback until successful.
-            #rely on regular interrupt to flush queue if we are
-            #unsuccessful.
-            while True:
-                if _testcapi._pending_threadfunc(callback):
-                    break
+            self.assertTrue(_testcapi._pending_threadfunc(callback))
 
-    def pendingcalls_submit(self, l, n, *, main=True, ensure=False):
+    def pendingcalls_submit(self, l, n, *, main=True):
         def callback():
             #this function can be interrupted by thread switching so let's
             #use an atomic operation
@@ -1572,12 +1567,10 @@ class TestPendingCalls(unittest.TestCase):
 
         if main:
             return _testcapi._pending_threadfunc(callback, n,
-                                                 blocking=False,
-                                                 ensure_added=ensure)
+                                                 blocking=False)
         else:
             return _testinternalcapi.pending_threadfunc(callback, n,
-                                                        blocking=False,
-                                                        ensure_added=ensure)
+                                                        blocking=False)
 
     def pendingcalls_wait(self, l, numadded, context = None):
         #now, stick around until l[0] has grown to 10
@@ -1635,50 +1628,10 @@ class TestPendingCalls(unittest.TestCase):
         #again, just using the main thread, likely they will all be dispatched at
         #once.  It is ok to ask for too many, because we loop until we find a slot.
         #the loop can be interrupted to dispatch.
-        #there are only 32 dispatch slots, so we go for twice that!
         l = []
         n = 64
         self.main_pendingcalls_submit(l, n)
         self.pendingcalls_wait(l, n)
-
-    def test_max_pending(self):
-        with self.subTest('main-only'):
-            maxpending = 32
-
-            l = []
-            added = self.pendingcalls_submit(l, 1, main=True)
-            self.pendingcalls_wait(l, added)
-            self.assertEqual(added, 1)
-
-            l = []
-            added = self.pendingcalls_submit(l, maxpending, main=True)
-            self.pendingcalls_wait(l, added)
-            self.assertEqual(added, maxpending)
-
-            l = []
-            added = self.pendingcalls_submit(l, maxpending+1, main=True)
-            self.pendingcalls_wait(l, added)
-            self.assertEqual(added, maxpending)
-
-        with self.subTest('not main-only'):
-            # Per-interpreter pending calls has a much higher limit
-            # on how many may be pending at a time.
-            maxpending = 300
-
-            l = []
-            added = self.pendingcalls_submit(l, 1, main=False)
-            self.pendingcalls_wait(l, added)
-            self.assertEqual(added, 1)
-
-            l = []
-            added = self.pendingcalls_submit(l, maxpending, main=False)
-            self.pendingcalls_wait(l, added)
-            self.assertEqual(added, maxpending)
-
-            l = []
-            added = self.pendingcalls_submit(l, maxpending+1, main=False)
-            self.pendingcalls_wait(l, added)
-            self.assertEqual(added, maxpending)
 
     class PendingTask(types.SimpleNamespace):
 
@@ -1713,10 +1666,10 @@ class TestPendingCalls(unittest.TestCase):
                 # the eval breaker, so we take a naive approach to
                 # make sure.
                 if threading.get_ident() not in worker_tids:
-                    self._add_pending(callback, ensure_added=True)
+                    self._add_pending(callback)
                     return
                 self.run()
-            self._add_pending(callback, ensure_added=True)
+            self._add_pending(callback)
 
         def create_thread(self, worker_tids):
             return threading.Thread(
