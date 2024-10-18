@@ -111,6 +111,8 @@ jobs:
       run: ./configure --with-pydebug
     - name: 'Build CPython'
       run: make -j4
+    - name: 'Remove PyStemmer from requirements.txt'
+      run: sed -i '/PyStemmer.*/d' Doc/requirements.txt
     - name: 'Install build dependencies'
       run: make -C Doc/ PYTHON=../python venv
     # Use "xvfb-run" since some doctest tests open GUI windows
