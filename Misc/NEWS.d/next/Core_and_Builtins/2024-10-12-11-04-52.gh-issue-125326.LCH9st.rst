@@ -1,0 +1,2 @@
+Improve :exc:`SyntaxError` messages when reporting invalid
+:ref:`type parameters <type-params>` definitions.
