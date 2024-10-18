@@ -183,10 +183,6 @@ extern PyTypeObject _PyExc_MemoryError;
         .stoptheworld = { \
             .is_global = 1, \
         }, \
-        .float_state = { \
-            .float_format = _py_float_format_unknown, \
-            .double_format = _py_float_format_unknown, \
-        }, \
         .types = { \
             .next_version_tag = 1, \
         }, \
