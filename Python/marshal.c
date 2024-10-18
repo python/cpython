@@ -200,7 +200,7 @@ w_long(long x, WFILE *p)
         if ((n) > SIZE32_MAX) {                 \
             (p)->depth--;                       \
             (p)->error = WFERR_UNMARSHALLABLE;  \
-            return;                             \
+            return -1;                          \
         }                                       \
         w_long((long)(n), p);                   \
     } while(0)
@@ -208,11 +208,12 @@ w_long(long x, WFILE *p)
 # define W_SIZE  w_long
 #endif
 
-static void
+static int
 w_pstring(const void *s, Py_ssize_t n, WFILE *p)
 {
         W_SIZE(n, p);
         w_string(s, n, p);
+        return 0;
 }
 
 static void
@@ -355,10 +356,10 @@ err:
     return 1;
 }
 
-static void
+static int
 w_complex_object(PyObject *v, char flag, WFILE *p);
 
-static void
+static int
 w_object(PyObject *v, WFILE *p)
 {
     char flag = '\0';
@@ -367,6 +368,7 @@ w_object(PyObject *v, WFILE *p)
 
     if (p->depth > MAX_MARSHAL_STACK_DEPTH) {
         p->error = WFERR_NESTEDTOODEEP;
+        return -1;
     }
     else if (v == NULL) {
         w_byte(TYPE_NULL, p);
@@ -389,10 +391,22 @@ w_object(PyObject *v, WFILE *p)
     else if (!w_ref(v, &flag, p))
         w_complex_object(v, flag, p);
 
+    if (p->error != WFERR_OK) {
+        return -1;
+    }
+
     p->depth--;
+    return 0;
 }
 
-static void
+#define W_OBJECT(v, p) \
+    do { \
+        if (w_object(v, p) < 0) { \
+            return -1; \
+        } \
+    } while (0)
+
+static int
 w_complex_object(PyObject *v, char flag, WFILE *p)
 {
     Py_ssize_t i, n;
@@ -470,7 +484,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             if (utf8 == NULL) {
                 p->depth--;
                 p->error = WFERR_UNMARSHALLABLE;
-                return;
+                return -1;
             }
             if (p->version >= 3 &&  PyUnicode_CHECK_INTERNED(v))
                 W_TYPE(TYPE_INTERNED, p);
@@ -491,7 +505,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             W_SIZE(n, p);
         }
         for (i = 0; i < n; i++) {
-            w_object(PyTuple_GET_ITEM(v, i), p);
+            W_OBJECT(PyTuple_GET_ITEM(v, i), p);
         }
     }
     else if (PyList_CheckExact(v)) {
@@ -499,7 +513,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         n = PyList_GET_SIZE(v);
         W_SIZE(n, p);
         for (i = 0; i < n; i++) {
-            w_object(PyList_GET_ITEM(v, i), p);
+            W_OBJECT(PyList_GET_ITEM(v, i), p);
         }
     }
     else if (PyDict_CheckExact(v)) {
@@ -509,10 +523,10 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         /* This one is NULL object terminated! */
         pos = 0;
         while (PyDict_Next(v, &pos, &key, &value)) {
-            w_object(key, p);
-            w_object(value, p);
+            W_OBJECT(key, p);
+            W_OBJECT(value, p);
         }
-        w_object((PyObject *)NULL, p);
+        w_byte(TYPE_NULL, p);
     }
     else if (PyAnySet_CheckExact(v)) {
         PyObject *value;
@@ -532,7 +546,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         PyObject *pairs = PyList_New(n);
         if (pairs == NULL) {
             p->error = WFERR_NOMEMORY;
-            return;
+            return -1;
         }
         Py_ssize_t i = 0;
         Py_BEGIN_CRITICAL_SECTION(v);
@@ -556,31 +570,34 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         Py_END_CRITICAL_SECTION();
         if (p->error == WFERR_UNMARSHALLABLE || p->error == WFERR_NOMEMORY) {
             Py_DECREF(pairs);
-            return;
+            return -1;
         }
         assert(i == n);
         if (PyList_Sort(pairs)) {
             p->error = WFERR_NOMEMORY;
             Py_DECREF(pairs);
-            return;
+            return -1;
         }
         for (Py_ssize_t i = 0; i < n; i++) {
             PyObject *pair = PyList_GET_ITEM(pairs, i);
             value = PyTuple_GET_ITEM(pair, 1);
-            w_object(value, p);
+            if (w_object(value, p) < 0) {
+                Py_DECREF(pairs);
+                return -1;
+            }
         }
         Py_DECREF(pairs);
     }
     else if (PyCode_Check(v)) {
         if (!p->allow_code) {
             p->error = WFERR_CODE_NOT_ALLOWED;
-            return;
+            return -1;
         }
         PyCodeObject *co = (PyCodeObject *)v;
         PyObject *co_code = _PyCode_GetCode(co);
         if (co_code == NULL) {
             p->error = WFERR_NOMEMORY;
-            return;
+            return -1;
         }
         W_TYPE(TYPE_CODE, p);
         w_long(co->co_argcount, p);
@@ -600,6 +617,10 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_linetable, p);
         w_object(co->co_exceptiontable, p);
         Py_DECREF(co_code);
+
+        if (p->error != WFERR_OK) {
+            return -1;
+        }
     }
     else if (PyObject_CheckBuffer(v)) {
         /* Write unknown bytes-like objects as a bytes object */
@@ -608,7 +629,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             w_byte(TYPE_UNKNOWN, p);
             p->depth--;
             p->error = WFERR_UNMARSHALLABLE;
-            return;
+            return -1;
         }
         W_TYPE(TYPE_STRING, p);
         w_pstring(view.buf, view.len, p);
@@ -624,7 +645,10 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
     else {
         W_TYPE(TYPE_UNKNOWN, p);
         p->error = WFERR_UNMARSHALLABLE;
+        return -1;
     }
+
+    return 0;
 }
 
 static void
