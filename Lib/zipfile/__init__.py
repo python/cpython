@@ -1641,6 +1641,18 @@ class ZipFile:
                              "another write handle open on it. "
                              "Close the first handle before opening another.")
 
+    def _setup_for_writing(self, zinfo, is_zip64):
+        if self._seekable:
+            self.fp.seek(self.start_dir)
+        zinfo.header_offset = self.fp.tell()
+
+        self._writecheck(zinfo)
+        self._didModify = True
+
+        self.fp.write(zinfo.FileHeader(is_zip64))
+
+        self._writing = True
+
     def _open_to_read(self, name, pwd=None):
         if isinstance(name, ZipInfo):
             zinfo = name
@@ -1739,16 +1751,7 @@ class ZipFile:
         if not self._allowZip64 and zip64:
             raise LargeZipFile("Filesize would require ZIP64 extensions")
 
-        if self._seekable:
-            self.fp.seek(self.start_dir)
-        zinfo.header_offset = self.fp.tell()
-
-        self._writecheck(zinfo)
-        self._didModify = True
-
-        self.fp.write(zinfo.FileHeader(zip64))
-
-        self._writing = True
+        self._setup_for_writing(zinfo, zip64)
         return _ZipWriteFile(self, zinfo, zip64)
 
     def extract(self, member, path=None, pwd=None):
