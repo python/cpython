@@ -29,9 +29,12 @@
  */
 
 // Flags for below.
-#define IS_NULL    1 << 0
-#define NOT_NULL   1 << 1
-#define NO_SPACE   1 << 2
+#define IS_NULL          1 << 0
+#define NOT_NULL         1 << 1
+#define NO_SPACE         1 << 2
+#define IS_TYPE_SUBCLASS 1 << 3
+#define HAS_TYPE_VERSION_GUARD 1 << 4
+#define HAS_CLASS_VERSION_GUARD 1 << 5
 
 #ifdef Py_DEBUG
 static inline int get_lltrace(void) {
@@ -122,6 +125,12 @@ _Py_uop_sym_is_null(_Py_UopsSymbol *sym)
 }
 
 bool
+_Py_uop_sym_is_a_class(_Py_UopsSymbol *sym, unsigned int type_version)
+{
+    return (sym->flags & IS_TYPE_SUBCLASS) && (sym->type_version == type_version);
+}
+
+bool
 _Py_uop_sym_is_const(_Py_UopsSymbol *sym)
 {
     return sym->const_val != NULL;
@@ -207,6 +216,15 @@ _Py_uop_sym_set_non_null(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym)
     sym_set_flag(sym, NOT_NULL);
 }
 
+void
+_Py_uop_sym_set_is_a_class(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, unsigned int type_version)
+{
+    if (sym->typ != NULL && !PyType_Check(sym->typ)) {
+        sym_set_bottom(ctx, sym);
+    }
+    sym_set_flag(sym, IS_TYPE_SUBCLASS);
+    _Py_uop_sym_set_type_version(ctx, sym, type_version);
+}
 
 _Py_UopsSymbol *
 _Py_uop_sym_new_unknown(_Py_UOpsContext *ctx)
