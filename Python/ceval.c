@@ -99,6 +99,11 @@
         } \
         _Py_DECREF_STAT_INC(); \
         if (--op->ob_refcnt == 0) { \
+            struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer; \
+            if (tracer->tracer_func != NULL) { \
+                void* data = tracer->tracer_data; \
+                tracer->tracer_func(op, PyRefTracer_DESTROY, data); \
+            } \
             destructor d = (destructor)(dealloc); \
             d(op); \
         } \
