@@ -1,3 +1,5 @@
+import itertools
+from multiprocessing import Manager
 import threading
 import time
 import weakref
@@ -70,6 +72,44 @@ class ExecutorTest:
             self.fail('expected TimeoutError')
 
         self.assertEqual([None, None], results)
+
+    def test_map_args(self):
+        with self.assertRaisesRegex(ValueError, "buffersize must be None or >= 1."):
+            self.executor.map(bool, [], buffersize=0)
+        with self.assertRaisesRegex(
+            ValueError, "cannot specify both buffersize and timeout."
+        ):
+            self.executor.map(bool, [], timeout=1, buffersize=1)
+
+    def test_map_infinite_iterable(self):
+        results = self.executor.map(str, itertools.count(1), buffersize=1)
+        self.assertEqual(next(iter(results)), "1")
+
+    def test_map_buffersize(self):
+        manager = Manager()
+
+        for buffersize, iterable_size in [
+            (1, 5),
+            (5, 5),
+            (10, 5),
+        ]:
+            iterable = range(iterable_size)
+            processed_elements = manager.list()
+
+            iterator = self.executor.map(
+                processed_elements.append, iterable, buffersize=buffersize
+            )
+            time.sleep(1)  # wait for buffered futures to finish
+            self.assertSetEqual(
+                set(processed_elements),
+                set(range(min(buffersize, iterable_size))),
+            )
+            next(iterator)
+            time.sleep(1)  # wait for the created future to finish
+            self.assertSetEqual(
+                set(processed_elements),
+                set(range(min(buffersize + 1, iterable_size))),
+            )
 
     def test_shutdown_race_issue12456(self):
         # Issue #12456: race condition at shutdown where trying to post a
