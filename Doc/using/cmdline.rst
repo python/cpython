@@ -628,6 +628,11 @@ Miscellaneous options
 
      .. versionadded:: 3.13
 
+   * :samp:`-X gc_preset={preset}` Tune the cyclic garbage collector
+     according to the specified preset.  See :envvar:`PYTHON_GC_PRESET`.
+
+     .. versionadded:: 3.14
+
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
 
@@ -974,6 +979,34 @@ conflict.
    :ref:`debug mode <asyncio-debug-mode>` of the :mod:`asyncio` module.
 
    .. versionadded:: 3.4
+
+
+.. envvar:: PYTHON_GC_PRESET
+
+   Tune the cyclic garbage collector (GC) according to the specificed
+   high-level preset objective.  Possible preset values are:
+
+   * ``min-memory``: prioritize freeing resources quickly in exchange for
+     higher GC cost and lower overall throughput.
+
+   * ``min-overhead``: prioritize throughput (lowest runtime cost) in exchange
+     for higher peak memory usage and potentially delayed freeing.  File
+     descriptiors and sockets, for example, should be cleaned by context
+     handlers rather than relying on the GC if this preset is used.
+
+   * ``min-latency``: prioritize keeping GC pauses low, in exchange for higher
+     GC cost.  This preset is not yet implemented and is equivalent to the
+     ``balanced`` preset at this time.
+
+   * ``balanced``: a combination of the above three presets, with tuning that
+     is intended to work well for most programs.
+
+   The default preset in version 3.14 is ``min-memory``.  In future Python
+   versions, the default may be changed to ``balanced``.  If the stategy is set
+   to something not recognized as a valid preset, the default preset will be
+   used and an error will not be raised.
+
+   .. versionadded:: 3.14
 
 
 .. envvar:: PYTHONMALLOC
