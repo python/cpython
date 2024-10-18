@@ -2500,40 +2500,47 @@ _Py_ResurrectReference(PyObject *op)
 
 
 #ifdef Py_TRACE_REFS
-/* Make sure the ref is associated with the right interpreter.
- * This only needs special attention for heap-allocated objects
- * that have been immortalized, and only when the object might
- * outlive the interpreter where it was created.  That means the
- * object was necessarily created using a global allocator
- * (i.e. from the main interpreter).  Thus in that specific case
- * we move the object over to the main interpreter's refchain.
- *
- * This was added for the sake of the immortal interned strings,
- * where legacy subinterpreters share the main interpreter's
- * interned dict (and allocator), and therefore the strings can
- * outlive the subinterpreter.
- *
- * It may make sense to fold this into _Py_SetImmortalUntracked(),
- * but that requires further investigation.  In the meantime, it is
- * up to the caller to know if this is needed.  There should be
- * very few cases.
+/* Make sure the ref is traced in the main interpreter. This is used only by
+ * _PyUnicode_ClearInterned() to ensure interned strings are traced. Since
+ * interned strings can be shared between interpreters, the interpreter that
+ * created the string might not be the main interpreter. We trace it here so
+ * that _Py_ForgetReference() will handle it without error.
  */
 void
-_Py_NormalizeImmortalReference(PyObject *op)
+_Py_NormalizeReference(PyObject *op)
 {
-    assert(_Py_IsImmortal(op));
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (!_PyRefchain_IsTraced(interp, op)) {
+    if (_PyRefchain_IsTraced(interp, op)) {
         return;
     }
-    PyInterpreterState *main_interp = _PyInterpreterState_Main();
-    if (interp != main_interp
-           && interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC)
-    {
-        assert(!_PyRefchain_IsTraced(main_interp, op));
-        _PyRefchain_Remove(interp, op);
-        _PyRefchain_Trace(main_interp, op);
+    if (_Py_IsMainInterpreter(interp)) {
+        _PyRefchain_Trace(interp, op);
     }
+}
+
+/* Find the interpreter that is tracing 'op' and trace it in 'this_interp'
+ * instead.  This is only used in the case that non-isolated sub-interpreters
+ * are used and in that case objects can be shared between interpreters.
+ */
+void
+_PyRefchain_FindAndTake(PyInterpreterState *this_interp, PyObject *op)
+{
+    _PyRuntimeState *runtime = &_PyRuntime;
+    HEAD_LOCK(runtime);
+    PyInterpreterState *interp = runtime->interpreters.head;
+    for (; interp != NULL; interp = interp->next) {
+        if (_PyRefchain_IsTraced(interp, op)) {
+            _PyRefchain_Remove(interp, op);
+            break;
+        }
+    }
+    // It's possible the loop above didn't find the interpreter tracing
+    // the object. That can happen if the interpreter was finalized
+    // before the object (i.e. the shared object outlived the interpreter
+    // that created it). We assume that's the case and trace it in this
+    // interpreter.
+    HEAD_UNLOCK(runtime);
+    _PyRefchain_Trace(this_interp, op);
 }
 
 void
@@ -2544,6 +2551,55 @@ _Py_ForgetReference(PyObject *op)
     }
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
+
+    if (!_PyRefchain_IsTraced(interp, op)) {
+        // If the object is not traced, it might be because the object
+        // was created in a different interpreter and then shared to
+        // this one.  Then, the interpreter that created it dropped all
+        // references to it (possibly the whole interpreter finalized
+        // but not necessarily) and this interpreter is the one that will
+        // dealloc it.  There are two ways the object sharing can happen
+        // and we check those two cases below. This is unfortunately not a
+        // 100% bulletproof check.  An untraced object could also occur
+        // because there is some bug that caused the object to not be
+        // traced and that bug could be masked here.
+
+        if (PyUnicode_CHECK_INTERNED(op)) {
+            // interned strings can be shared between the main interpreter
+            // and between sub-interpreters due to the shared interp dict.
+            // See init_interned_dict().  In this case, the string was
+            // likely created and traced by a different interpreter.  This
+            // block handles mortal interned strings, the immortal case
+            // is handled by _Py_NormalizeReference().  For immortal interned
+            // strings, they are always freed by the main interpreter.  For
+            // mortal interned strings, the last reference could be dropped
+            // from any interpreter that shares the interned string (could be
+            // the main or a sub-interpreter).  We don't know up-front which
+            // interpreter will be the last one holding a reference so we
+            // can't trace in the right one and we have to fix it here.
+            _PyRefchain_FindAndTake(interp, op);
+        }
+#if 0
+        // This case seems possible in theory but it seems it can't
+        // actually happen in practice.  Therefore it's disabled with
+        // the "#if 0".  When module dicts are copied for single-phase
+        // init extensions, a copy of the module dict is stored in the
+        // Python runtime, using _PyRuntime.imports.extensions.  Those
+        // extra reference counts (from the m_copy dict) ensure that
+        // sub-interpreters sharing those objects are never the one to drop
+        // the last reference to the shared object.
+        if (!_Py_IsMainInterpreter(interp) &&
+                (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC)) {
+            // objects stored in the globals of basic single-phase init
+            // (m_size == -1) extension modules can be shared between
+            // sub-interpreters.  In this case, the object was created and
+            // traced by a different sub-interpreter.  That sub-interpreter
+            // dropped all references to it already and now it's being
+            // deallocated in a different sub-interpreter.
+            _PyRefchain_FindAndTake(interp, op);
+        }
+#endif
+    }
 
 #ifdef SLOW_UNREF_CHECK
     if (!_PyRefchain_Get(interp, op)) {

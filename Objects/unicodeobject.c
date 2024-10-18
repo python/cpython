@@ -15445,7 +15445,7 @@ _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **p)
 }
 
 #ifdef Py_TRACE_REFS
-extern void _Py_NormalizeImmortalReference(PyObject *);
+extern void _Py_NormalizeReference(PyObject *);
 #endif
 
 static void
@@ -15463,10 +15463,6 @@ immortalize_interned(PyObject *s)
 #endif
     _PyUnicode_STATE(s).interned = SSTATE_INTERNED_IMMORTAL;
     _Py_SetImmortal(s);
-#ifdef Py_TRACE_REFS
-    /* Make sure the ref is associated with the right interpreter. */
-    _Py_NormalizeImmortalReference(s);
-#endif
 }
 
 static /* non-null */ PyObject*
@@ -15678,6 +15674,12 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
     while (PyDict_Next(interned, &pos, &s, &ignored_value)) {
         assert(PyUnicode_IS_READY(s));
         int shared = 0;
+#ifdef Py_TRACE_REFS
+        /* Make sure the ref is associated with the right interpreter.
+         * _Py_ForgetReference() will fail if the string is traced by the
+         * different interpreter. */
+        _Py_NormalizeReference(s);
+#endif
         switch (PyUnicode_CHECK_INTERNED(s)) {
         case SSTATE_INTERNED_IMMORTAL:
             /* Make immortal interned strings mortal again. */
