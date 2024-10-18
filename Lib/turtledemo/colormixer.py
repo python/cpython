@@ -1,5 +1,7 @@
-# colormixer
+"""     turtle-example-suite:
 
+       turtledemo/colormixer.py
+"""
 from turtle import Screen, Turtle, mainloop
 
 class ColorTurtle(Turtle):

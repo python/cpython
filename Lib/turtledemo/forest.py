@@ -1,6 +1,6 @@
-"""     turtlegraphics-example-suite:
+"""     turtle-example-suite:
 
-             tdemo_forest.py
+        turtledemo/forest.py
 
 Displays a 'forest' of 3 breadth-first-trees
 similar to the one in tree.
@@ -8,7 +8,7 @@ For further remarks see tree.py
 
 This example is a 'breadth-first'-rewrite of
 a Logo program written by Erich Neuwirth. See
-http://homepage.univie.ac.at/erich.neuwirth/
+https://homepage.univie.ac.at/erich.neuwirth/
 """
 from turtle import Turtle, colormode, tracer, mainloop
 from random import randrange

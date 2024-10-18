@@ -4,9 +4,6 @@
 
 Enhanced clock-program, showing date
 and time
-  ------------------------------------
-   Press STOP to exit the program!
-  ------------------------------------
 """
 from turtle import *
 from datetime import datetime

@@ -2778,7 +2778,7 @@ Changes since Python 3.0
   :func:`Screen.numinput <numinput>`. These pop up input dialogs and return
   strings and numbers respectively.
 
-- Two example scripts :file:`tdemo_nim.py` and :file:`tdemo_round_dance.py`
+- Two example scripts :file:`nim.py` and :file:`round_dance.py`
   have been added to the :file:`Lib/turtledemo` directory.
 
 
