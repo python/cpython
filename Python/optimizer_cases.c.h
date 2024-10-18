@@ -940,8 +940,8 @@
         case _BUILD_INTERPOLATION: {
             _Py_UopsSymbol *interpolation;
             interpolation = sym_new_not_null(ctx);
-            stack_pointer[-(2 + ((oparg >> 1) & 1) + (oparg & 1))] = interpolation;
-            stack_pointer += 1 - (2 + ((oparg >> 1) & 1) + (oparg & 1));
+            stack_pointer[-4] = interpolation;
+            stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }

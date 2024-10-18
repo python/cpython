@@ -2038,15 +2038,14 @@
         case _BUILD_INTERPOLATION: {
             _PyStackRef *values;
             _PyStackRef interpolation;
-            oparg = CURRENT_OPARG();
-            values = &stack_pointer[-(2 + ((oparg >> 1) & 1) + (oparg & 1))];
+            values = &stack_pointer[-4];
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *interpolation_o = _PyInterpolation_FromStackRefSteal(values, oparg);
+            PyObject *interpolation_o = _PyInterpolation_FromStackRefSteal(values);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (interpolation_o == NULL) JUMP_TO_ERROR();
             interpolation = PyStackRef_FromPyObjectSteal(interpolation_o);
-            stack_pointer[-(2 + ((oparg >> 1) & 1) + (oparg & 1))] = interpolation;
-            stack_pointer += 1 - (2 + ((oparg >> 1) & 1) + (oparg & 1));
+            stack_pointer[-4] = interpolation;
+            stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }

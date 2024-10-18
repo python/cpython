@@ -128,7 +128,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_STORE_DEREF] = HAS_ARG_FLAG | HAS_FREE_FLAG | HAS_ESCAPES_FLAG,
     [_COPY_FREE_VARS] = HAS_ARG_FLAG,
     [_BUILD_STRING] = HAS_ARG_FLAG | HAS_ERROR_FLAG,
-    [_BUILD_INTERPOLATION] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_BUILD_INTERPOLATION] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BUILD_TEMPLATE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BUILD_TUPLE] = HAS_ARG_FLAG | HAS_ERROR_FLAG,
     [_BUILD_LIST] = HAS_ARG_FLAG | HAS_ERROR_FLAG,
@@ -787,7 +787,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _BUILD_STRING:
             return oparg;
         case _BUILD_INTERPOLATION:
-            return (2 + ((oparg >> 1) & 1) + (oparg & 1));
+            return 4;
         case _BUILD_TEMPLATE:
             return oparg;
         case _BUILD_TUPLE:

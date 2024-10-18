@@ -95,11 +95,9 @@ _PyInterpolation_FiniTypes(PyInterpreterState *interp)
 }
 
 PyObject *
-_PyInterpolation_FromStackRefSteal(_PyStackRef *values, Py_ssize_t oparg)
+_PyInterpolation_FromStackRefSteal(_PyStackRef *values)
 {
-    Py_ssize_t index = 2;
-
-    PyObject *args = PyTuple_New(oparg + ((oparg >> 1) & 1) + (oparg & 1));
+    PyObject *args = PyTuple_New(4);
     if (!args) {
         goto error;
     }
@@ -107,20 +105,11 @@ _PyInterpolation_FromStackRefSteal(_PyStackRef *values, Py_ssize_t oparg)
     PyTuple_SET_ITEM(args, 0, PyStackRef_AsPyObjectSteal(values[0]));
     PyTuple_SET_ITEM(args, 1, PyStackRef_AsPyObjectSteal(values[1]));
 
-    if ((oparg >> 1) & 1) {
-        PyTuple_SET_ITEM(args, 2, PyStackRef_AsPyObjectSteal(values[index]));
-        index++;
-    }
-    else {
-        PyTuple_SET_ITEM(args, 2, Py_NewRef(Py_None));
-    }
+    PyObject *conv = PyStackRef_AsPyObjectSteal(values[2]);
+    PyTuple_SET_ITEM(args, 2, conv ? conv : Py_NewRef(Py_None));
 
-    if (oparg & 1) {
-        PyTuple_SET_ITEM(args, 3, PyStackRef_AsPyObjectSteal(values[index]));
-    }
-    else {
-        PyTuple_SET_ITEM(args, 3, &_Py_STR(empty));
-    }
+    PyObject *format_spec = PyStackRef_AsPyObjectSteal(values[3]);
+    PyTuple_SET_ITEM(args, 3, format_spec ? format_spec : &_Py_STR(empty));
 
     PyObject *interpolation = PyObject_CallObject((PyObject *) &PyInterpolation_Type, args);
     if (!interpolation) {
@@ -132,13 +121,7 @@ _PyInterpolation_FromStackRefSteal(_PyStackRef *values, Py_ssize_t oparg)
 error:
     PyStackRef_CLOSE(values[0]);
     PyStackRef_CLOSE(values[1]);
-    index = 2;
-    if ((oparg >> 1) & 1) {
-        PyStackRef_XCLOSE(values[index]);
-        index++;
-    }
-    if (oparg & 1) {
-        PyStackRef_XCLOSE(values[index]);
-    }
+    PyStackRef_XCLOSE(values[2]);
+    PyStackRef_XCLOSE(values[3]);
     return NULL;
 }

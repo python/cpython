@@ -3912,20 +3912,26 @@ codegen_interpolation(compiler *c, expr_ty e)
        - (oparg >> 1) & 1 == 1, if conversion is not NULL
        - oparg & 1 == 1, if format_spec is not NULL
     */
-    int oparg = 0b100;
     location loc = LOC(e);
 
     VISIT(c, expr, e->v.Interpolation.value);
     ADDOP_LOAD_CONST(c, loc, e->v.Interpolation.str);
+
     if (e->v.Interpolation.conversion) {
         ADDOP_LOAD_CONST(c, loc, e->v.Interpolation.conversion);
-        oparg |= 0b10;
     }
+    else {
+        ADDOP(c, loc, PUSH_NULL);
+    }
+
     if (e->v.Interpolation.format_spec) {
         VISIT(c, expr, e->v.Interpolation.format_spec);
-        oparg |= 1;
     }
-    ADDOP_I(c, loc, BUILD_INTERPOLATION, oparg);
+    else {
+        ADDOP(c, loc, PUSH_NULL);
+    }
+
+    ADDOP(c, loc, BUILD_INTERPOLATION);
     return SUCCESS;
 }
 

@@ -68,7 +68,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case BINARY_SUBSCR_TUPLE_INT:
             return 2;
         case BUILD_INTERPOLATION:
-            return (2 + ((oparg >> 1) & 1) + (oparg & 1));
+            return 4;
         case BUILD_LIST:
             return oparg;
         case BUILD_MAP:
@@ -1038,7 +1038,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[266] = {
     [BINARY_SUBSCR_LIST_INT] = { true, INSTR_FMT_IXC, HAS_DEOPT_FLAG },
     [BINARY_SUBSCR_STR_INT] = { true, INSTR_FMT_IXC, HAS_DEOPT_FLAG },
     [BINARY_SUBSCR_TUPLE_INT] = { true, INSTR_FMT_IXC, HAS_DEOPT_FLAG },
-    [BUILD_INTERPOLATION] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
+    [BUILD_INTERPOLATION] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BUILD_LIST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG },
     [BUILD_MAP] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BUILD_SET] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },

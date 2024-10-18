@@ -1726,8 +1726,8 @@ dummy_func(
             str = PyStackRef_FromPyObjectSteal(str_o);
         }
 
-        inst(BUILD_INTERPOLATION, (values[2 + ((oparg >> 1) & 1) + (oparg & 1)] -- interpolation)) {
-            PyObject *interpolation_o = _PyInterpolation_FromStackRefSteal(values, oparg);
+        inst(BUILD_INTERPOLATION, (values[4] -- interpolation)) {
+            PyObject *interpolation_o = _PyInterpolation_FromStackRefSteal(values);
             ERROR_IF(interpolation_o == NULL, error);
             interpolation = PyStackRef_FromPyObjectSteal(interpolation_o);
         }

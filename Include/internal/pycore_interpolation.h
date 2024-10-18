@@ -19,7 +19,7 @@ typedef struct {
 
 extern PyTypeObject PyInterpolation_Type;
 
-PyAPI_FUNC(PyObject *) _PyInterpolation_FromStackRefSteal(_PyStackRef *values, Py_ssize_t n);
+PyAPI_FUNC(PyObject *) _PyInterpolation_FromStackRefSteal(_PyStackRef *values);
 
 extern PyStatus _PyInterpolation_InitTypes(PyInterpreterState *);
 extern void _PyInterpolation_FiniTypes(PyInterpreterState *);
