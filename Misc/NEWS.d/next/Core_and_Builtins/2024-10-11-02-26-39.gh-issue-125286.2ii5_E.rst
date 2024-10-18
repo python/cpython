@@ -1,0 +1,2 @@
+Fix the TraceRefs build to handle interned strings shared between
+interpreters.
