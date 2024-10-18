@@ -4666,7 +4666,7 @@ class TestColorizedTraceback(unittest.TestCase):
                    f'  |     {red}~~~{reset}{boldr}^^{reset}',
                    f"  |     e = ExceptionGroup('test', [ZeroDivisionError('division by zero')])",
                    f'  |     foo = <function TestColorizedTraceback.test_colorized_traceback_from_exception_group.<locals>.foo at {hex(id(foo))}>',
-                   f'  |     self = <__main__.TestColorizedTraceback testMethod=test_colorized_traceback_from_exception_group>',
+                   f'  |     self = <{__name__}.TestColorizedTraceback testMethod=test_colorized_traceback_from_exception_group>',
                    f'  |   File {magenta}"{__file__}"{reset}, line {magenta}{lno_foo+6}{reset}, in {magenta}foo{reset}',
                    f'  |     raise ExceptionGroup("test", exceptions)',
                    f"  |     exceptions = [ZeroDivisionError('division by zero')]",
