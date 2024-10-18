@@ -161,14 +161,23 @@ def _build_struct_time(y, m, d, hh, mm, ss, dstflag):
     dnum = _days_before_month(y, m) + d
     return _time.struct_time((y, m, d, hh, mm, ss, wday, dnum, dstflag))
 
-def _format_time(hh, mm, ss, us, timespec='auto'):
-    specs = {
-        'hours': '{:02d}',
-        'minutes': '{:02d}:{:02d}',
-        'seconds': '{:02d}:{:02d}:{:02d}',
-        'milliseconds': '{:02d}:{:02d}:{:02d}.{:03d}',
-        'microseconds': '{:02d}:{:02d}:{:02d}.{:06d}'
-    }
+def _format_time(hh, mm, ss, us, timespec='auto', basic=False):
+    if basic:
+        specs = {
+            'hours': '{:02d}',
+            'minutes': '{:02d}{:02d}',
+            'seconds': '{:02d}{:02d}{:02d}',
+            'milliseconds': '{:02d}{:02d}{:02d}.{:03d}',
+            'microseconds': '{:02d}{:02d}{:02d}.{:06d}'
+        }
+    else:
+        specs = {
+            'hours': '{:02d}',
+            'minutes': '{:02d}:{:02d}',
+            'seconds': '{:02d}:{:02d}:{:02d}',
+            'milliseconds': '{:02d}:{:02d}:{:02d}.{:03d}',
+            'microseconds': '{:02d}:{:02d}:{:02d}.{:06d}'
+        }
 
     if timespec == 'auto':
         # Skip trailing microseconds when us==0.
@@ -1101,16 +1110,18 @@ class date:
             return self.strftime(fmt)
         return str(self)
 
-    def isoformat(self):
+    def isoformat(self, basic=False):
         """Return the date formatted according to ISO.
 
-        This is 'YYYY-MM-DD'.
+        This is 'YYYY-MM-DD' or 'YYYYMMDD' if *basic* is true.
 
         References:
         - http://www.w3.org/TR/NOTE-datetime
         - http://www.cl.cam.ac.uk/~mgk25/iso-time.html
         """
-        return "%04d-%02d-%02d" % (self._year, self._month, self._day)
+        if basic:
+            return f"{self._year:04d}{self._month:02d}{self._day:02d}"
+        return f"{self._year:04d}-{self._month:02d}-{self._day:02d}"
 
     __str__ = isoformat
 
@@ -1558,10 +1569,11 @@ class time:
 
     # Conversion to string
 
-    def _tzstr(self):
+    def _tzstr(self, basic):
         """Return formatted timezone offset (+xx:xx) or an empty string."""
         off = self.utcoffset()
-        return _format_offset(off)
+        sep = '' if basic else ':'
+        return _format_offset(off, sep)
 
     def __repr__(self):
         """Convert to formal string, for repr()."""
@@ -1582,19 +1594,21 @@ class time:
             s = s[:-1] + ", fold=1)"
         return s
 
-    def isoformat(self, timespec='auto'):
+    def isoformat(self, timespec='auto', basic=False):
         """Return the time formatted according to ISO.
 
         The full format is 'HH:MM:SS.mmmmmm+zz:zz'. By default, the fractional
         part is omitted if self.microsecond == 0.
+
+        If *basic* is true, separators ':' are removed from the output.
 
         The optional argument timespec specifies the number of additional
         terms of the time to include. Valid options are 'auto', 'hours',
         'minutes', 'seconds', 'milliseconds' and 'microseconds'.
         """
         s = _format_time(self._hour, self._minute, self._second,
-                          self._microsecond, timespec)
-        tz = self._tzstr()
+                         self._microsecond, timespec, basic)
+        tz = self._tzstr(basic)
         if tz:
             s += tz
         return s
@@ -2102,6 +2116,12 @@ class datetime(date):
 
     # Ways to produce a string.
 
+    def _tzstr(self, basic):
+        """Return formatted timezone offset (+xx:xx) or an empty string."""
+        off = self.utcoffset()
+        sep = '' if basic else ':'
+        return _format_offset(off, sep)
+
     def ctime(self):
         "Return ctime() style string."
         weekday = self.toordinal() % 7 or 7
@@ -2112,11 +2132,13 @@ class datetime(date):
             self._hour, self._minute, self._second,
             self._year)
 
-    def isoformat(self, sep='T', timespec='auto'):
+    def isoformat(self, sep='T', timespec='auto', basic=False):
         """Return the time formatted according to ISO.
 
         The full format looks like 'YYYY-MM-DD HH:MM:SS.mmmmmm'.
         By default, the fractional part is omitted if self.microsecond == 0.
+
+        If *basic* is true, separators ':' and '-' are removed from the output.
 
         If self.tzinfo is not None, the UTC offset is also attached, giving
         giving a full format of 'YYYY-MM-DD HH:MM:SS.mmmmmm+HH:MM'.
@@ -2128,12 +2150,12 @@ class datetime(date):
         terms of the time to include. Valid options are 'auto', 'hours',
         'minutes', 'seconds', 'milliseconds' and 'microseconds'.
         """
-        s = ("%04d-%02d-%02d%c" % (self._year, self._month, self._day, sep) +
+        fmt = "%04d%02d%02d%c" if basic else "%04d-%02d-%02d%c"
+        s = (fmt % (self._year, self._month, self._day, sep) +
              _format_time(self._hour, self._minute, self._second,
-                          self._microsecond, timespec))
+                          self._microsecond, timespec, basic))
 
-        off = self.utcoffset()
-        tz = _format_offset(off)
+        tz = self._tzstr(basic)
         if tz:
             s += tz
 
