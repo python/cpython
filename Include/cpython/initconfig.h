@@ -142,6 +142,7 @@ typedef struct PyConfig {
     unsigned long hash_seed;
     int faulthandler;
     int tracemalloc;
+    wchar_t *gc_preset;
     int perf_profiling;
     int import_time;
     int code_debug_ranges;
