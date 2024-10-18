@@ -1264,6 +1264,7 @@ descriptor_set_wrapped_attribute(PyObject *oobj, PyObject *name, PyObject *value
                 PyErr_Format(PyExc_AttributeError,
                              "'%.200s' object has no attribute '%U'",
                              type_name, name);
+                Py_DECREF(dict);
                 return -1;
             }
             else {
