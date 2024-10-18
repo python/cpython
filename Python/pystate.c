@@ -1847,13 +1847,6 @@ _PyThreadState_RemoveExcept(PyThreadState *tstate)
 {
     assert(tstate != NULL);
     PyInterpreterState *interp = tstate->interp;
-    _PyRuntimeState *runtime = interp->runtime;
-
-#ifdef Py_GIL_DISABLED
-    assert(runtime->stoptheworld.world_stopped);
-#else
-    assert(runtime != NULL);
-#endif
 
     INTERP_THREAD_LOCK(interp);
     /* Remove all thread states, except tstate, from the linked list of
