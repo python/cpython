@@ -1,0 +1,2 @@
+Added manipulation of ``ARMv7`` coprocessor control/status words to
+:source:`Python/pymath.c`. Patch by RUANG.
