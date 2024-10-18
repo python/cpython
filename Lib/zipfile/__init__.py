@@ -1627,6 +1627,20 @@ class ZipFile:
         if mode == "r":
             return self._open_to_read(name, pwd)
 
+    def _raise_if_cannot_write(self, force_zip64):
+        if not self.fp:
+            raise ValueError(
+                "Attempt to use ZIP archive that was already closed")
+        if force_zip64 and not self._allowZip64:
+            raise ValueError(
+                "force_zip64 is True, but allowZip64 was False when opening "
+                "the ZIP file."
+            )
+        if self._writing:
+            raise ValueError("Can't write to the ZIP file while there is "
+                             "another write handle open on it. "
+                             "Close the first handle before opening another.")
+
     def _open_to_read(self, name, pwd=None):
         if isinstance(name, ZipInfo):
             zinfo = name
@@ -1697,15 +1711,7 @@ class ZipFile:
             raise
 
     def _open_to_write(self, name, force_zip64=False):
-        if force_zip64 and not self._allowZip64:
-            raise ValueError(
-                "force_zip64 is True, but allowZip64 was False when opening "
-                "the ZIP file."
-            )
-        if self._writing:
-            raise ValueError("Can't write to the ZIP file while there is "
-                             "another write handle open on it. "
-                             "Close the first handle before opening another.")
+        self._raise_if_cannot_write(force_zip64)
 
         if isinstance(name, ZipInfo):
             zinfo = name
