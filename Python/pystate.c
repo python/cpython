@@ -774,7 +774,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 {
     assert(interp != NULL);
     assert(tstate != NULL);
-    _PyRuntimeState *runtime = interp->runtime;
 
     /* XXX Conditions we need to enforce:
 
@@ -1852,6 +1851,8 @@ _PyThreadState_RemoveExcept(PyThreadState *tstate)
 
 #ifdef Py_GIL_DISABLED
     assert(runtime->stoptheworld.world_stopped);
+#else
+    assert(runtime != NULL);
 #endif
 
     INTERP_THREAD_LOCK(interp);
@@ -2336,7 +2337,6 @@ _PyEval_StartTheWorld(PyInterpreterState *interp)
 int
 PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
     /* Although the GIL is held, a few C API functions can be called
