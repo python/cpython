@@ -31,7 +31,7 @@ def _dump_footer(
         yield f"    [{opname}] = {group.as_c(opname)},"
     yield "};"
     yield ""
-    yield "static const void * const symbols_map[] = {"
+    yield f"static const void * const symbols_map[{max(len(symbols), 1)}] = {{"
     if symbols:
         for symbol, ordinal in symbols.items():
             yield f"    [{ordinal}] = &{symbol},"
