@@ -32,12 +32,15 @@ from .log import logger
 
 _HAS_SENDMSG = hasattr(socket.socket, 'sendmsg')
 
-if _HAS_SENDMSG:
+if _HAS_SENDMSG and os.name == 'posix':
     try:
         SC_IOV_MAX = os.sysconf('SC_IOV_MAX')
     except OSError:
         # Fallback to send
         _HAS_SENDMSG = False
+else:
+    # XXX Will it be too big?
+    SC_IOV_MAX = 1024
 
 def _test_selector_event(selector, fd, event):
     # Test if the selector is monitoring 'event' events

@@ -461,7 +461,18 @@ remove_unusable_flags(PyObject *m)
 #endif // HAVE_GETNAMEINFO
 
 #ifdef MS_WINDOWS
-#define SOCKETCLOSE closesocket
+typedef SSIZE_T         ssize_t;
+# undef CMSG_LEN
+#define CMSG_LEN        WSA_CMSG_LEN
+# undef CMSG_DATA
+#define CMSG_DATA       WSA_CMSG_DATA
+# undef CMSG_SPACE
+#define CMSG_SPACE      WSA_CMSG_SPACE
+# undef CMSG_FIRSTHDR
+#define CMSG_FIRSTHDR   WSA_CMSG_FIRSTHDR
+# undef CMSG_NXTHDR
+#define CMSG_NXTHDR     WSA_CMSG_NXTHDR
+#define SOCKETCLOSE     closesocket
 #endif
 
 #ifdef MS_WIN32
@@ -2755,14 +2766,22 @@ get_CMSG_SPACE(size_t length, size_t *result)
    pointer in msg->msg_control with at least "space" bytes after it,
    and its cmsg_len member inside the buffer. */
 static int
+#ifdef MS_WINDOWS
+cmsg_min_space(WSAMSG *msg, WSACMSGHDR *cmsgh, size_t space)
+#else
 cmsg_min_space(struct msghdr *msg, struct cmsghdr *cmsgh, size_t space)
+#endif /* !MS_WINDOWS */
 {
     size_t cmsg_offset;
     static const size_t cmsg_len_end = (offsetof(struct cmsghdr, cmsg_len) +
                                         sizeof(cmsgh->cmsg_len));
 
     /* Note that POSIX allows msg_controllen to be of signed type. */
+#ifdef MS_WINDOWS
+    if (cmsgh == NULL || &msg->Control == NULL)
+#else
     if (cmsgh == NULL || msg->msg_control == NULL)
+#endif /* !MS_WINDOWS */
         return 0;
     /* Note that POSIX allows msg_controllen to be of a signed type. This is
        annoying under OS X as it's unsigned there and so it triggers a
@@ -2777,7 +2796,11 @@ cmsg_min_space(struct msghdr *msg, struct cmsghdr *cmsgh, size_t space)
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wtype-limits"
     #endif
+#ifdef MS_WINDOWS
+    if (msg->Control.len < 0)
+#else
     if (msg->msg_controllen < 0)
+#endif /* !MS_WINDOWS */
         return 0;
     #if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
     #pragma GCC diagnostic pop
@@ -2787,9 +2810,15 @@ cmsg_min_space(struct msghdr *msg, struct cmsghdr *cmsgh, size_t space)
     #endif
     if (space < cmsg_len_end)
         space = cmsg_len_end;
+#ifdef MS_WINDOWS
+    cmsg_offset = (char*)cmsgh - (char*)msg->Control.buf;
+    return (cmsg_offset <= (size_t)-1 - space &&
+        cmsg_offset + space <= msg->Control.len);
+#else
     cmsg_offset = (char *)cmsgh - (char *)msg->msg_control;
     return (cmsg_offset <= (size_t)-1 - space &&
             cmsg_offset + space <= msg->msg_controllen);
+#endif /* !MS_WINDOWS */
 }
 
 /* If pointer CMSG_DATA(cmsgh) is in buffer msg->msg_control, set
@@ -2797,17 +2826,28 @@ cmsg_min_space(struct msghdr *msg, struct cmsghdr *cmsgh, size_t space)
    true; otherwise, return false.  Assumes cmsgh, msg->msg_control and
    msg->msg_controllen are valid. */
 static int
+#ifdef MS_WINDOWS
+get_cmsg_data_space(WSAMSG *msg, WSACMSGHDR *cmsgh, size_t *space)
+#else
 get_cmsg_data_space(struct msghdr *msg, struct cmsghdr *cmsgh, size_t *space)
+#endif /* !MS_WINDOWS */
 {
     size_t data_offset;
     char *data_ptr;
 
     if ((data_ptr = (char *)CMSG_DATA(cmsgh)) == NULL)
         return 0;
+#ifdef MS_WINDOWS
+    data_offset = data_ptr - (char *)msg->Control.buf;
+    if (data_offset > msg->Control.len)
+        return 0;
+    *space = msg->Control.len - data_offset;
+#else
     data_offset = data_ptr - (char *)msg->msg_control;
     if (data_offset > msg->msg_controllen)
         return 0;
     *space = msg->msg_controllen - data_offset;
+#endif /* !MS_WINDOWS */
     return 1;
 }
 
@@ -2819,7 +2859,11 @@ get_cmsg_data_space(struct msghdr *msg, struct cmsghdr *cmsgh, size_t *space)
    valid, set *data_len to the length contained in the buffer and
    return 1. */
 static int
+#ifdef MS_WINDOWS
+get_cmsg_data_len(WSAMSG *msg, WSACMSGHDR *cmsgh, size_t *data_len)
+#else
 get_cmsg_data_len(struct msghdr *msg, struct cmsghdr *cmsgh, size_t *data_len)
+#endif /* !MS_WINDOWS */
 {
     size_t space, cmsg_data_len;
 
@@ -4031,7 +4075,11 @@ Like recv_into(buffer[, nbytes[, flags]]) but also return the sender's address i
    CMSG_LEN().  See the comment near get_CMSG_LEN(). */
 #ifdef CMSG_LEN
 struct sock_recvmsg {
+#ifdef MS_WINDOWS
+    WSAMSG *msg;
+#else
     struct msghdr *msg;
+#endif /* !MS_WINDOWS */
     int flags;
     ssize_t result;
 };
@@ -4041,7 +4089,17 @@ sock_recvmsg_impl(PySocketSockObject *s, void *data)
 {
     struct sock_recvmsg *ctx = data;
 
+#ifdef MS_WINDOWS
+    DWORD ret;
+    LPFN_WSARECVMSG recvmsg;
+    int status = WSAIoctl(s->sock_fd, SIO_GET_EXTENSION_FUNCTION_POINTER,
+                          &(GUID)WSAID_WSARECVMSG, sizeof((GUID)WSAID_WSARECVMSG),
+                          &recvmsg, sizeof(recvmsg),
+                          &ret, NULL, NULL);
+    ctx->result = recvmsg(s->sock_fd, ctx->msg, &ret, NULL, NULL);
+#else
     ctx->result = recvmsg(s->sock_fd, ctx->msg, ctx->flags);
+#endif /* !MS_WINDOWS */
     return  (ctx->result >= 0);
 }
 
@@ -4056,13 +4114,23 @@ sock_recvmsg_impl(PySocketSockObject *s, void *data)
  * SCM_RIGHTS.
  */
 static PyObject *
+#ifdef MS_WINDOWS
+sock_recvmsg_guts(PySocketSockObject *s, WSABUF *iov, int iovlen,
+                  int flags, Py_ssize_t controllen,
+                  PyObject *(*makeval)(ssize_t, void *), void *makeval_data)
+#else
 sock_recvmsg_guts(PySocketSockObject *s, struct iovec *iov, int iovlen,
                   int flags, Py_ssize_t controllen,
                   PyObject *(*makeval)(ssize_t, void *), void *makeval_data)
+#endif /* !MS_WINDOWS */
 {
     sock_addr_t addrbuf;
     socklen_t addrbuflen;
+#ifdef MS_WINDOWS
+    WSAMSG msg = {0};
+#else
     struct msghdr msg = {0};
+#endif /* !MS_WINDWS */
     PyObject *cmsg_list = NULL, *retval = NULL;
     void *controlbuf = NULL;
     struct cmsghdr *cmsgh;
@@ -4095,12 +4163,21 @@ sock_recvmsg_guts(PySocketSockObject *s, struct iovec *iov, int iovlen,
         goto finally;
     }
 
+#ifdef MS_WINDOWS
+    msg.name = SAS2SA(&addrbuf);
+    msg.namelen = addrbuflen;
+    msg.lpBuffers = iov;
+    msg.dwBufferCount = iovlen;
+    msg.Control.buf = controlbuf;
+    msg.Control.len = controllen;
+#else
     msg.msg_name = SAS2SA(&addrbuf);
     msg.msg_namelen = addrbuflen;
     msg.msg_iov = iov;
     msg.msg_iovlen = iovlen;
     msg.msg_control = controlbuf;
     msg.msg_controllen = controllen;
+#endif /* !MS_WINDOWS */
 
     ctx.msg = &msg;
     ctx.flags = flags;
@@ -4112,7 +4189,11 @@ sock_recvmsg_guts(PySocketSockObject *s, struct iovec *iov, int iovlen,
         goto err_closefds;
     /* Check for empty ancillary data as old CMSG_FIRSTHDR()
        implementations didn't do so. */
+#ifdef MS_WINDOWS
+    for (cmsgh = ((msg.Control.len > 0) ? CMSG_FIRSTHDR(&msg) : NULL);
+#else
     for (cmsgh = ((msg.msg_controllen > 0) ? CMSG_FIRSTHDR(&msg) : NULL);
+#endif /* !MS_WINDOWS */
          cmsgh != NULL; cmsgh = CMSG_NXTHDR(&msg, cmsgh)) {
         PyObject *bytes, *tuple;
         int tmp;
@@ -4149,10 +4230,17 @@ sock_recvmsg_guts(PySocketSockObject *s, struct iovec *iov, int iovlen,
     retval = Py_BuildValue("NOiN",
                            (*makeval)(ctx.result, makeval_data),
                            cmsg_list,
+#ifdef MS_WINDOWS
+                           (int)msg.dwFlags,
+                           makesockaddr(s->sock_fd, SAS2SA(&addrbuf),
+                                        ((msg.namelen > addrbuflen) ?
+                                         addrbuflen : msg.namelen),
+#else
                            (int)msg.msg_flags,
                            makesockaddr(s->sock_fd, SAS2SA(&addrbuf),
                                         ((msg.msg_namelen > addrbuflen) ?
                                          addrbuflen : msg.msg_namelen),
+#endif /* !MS_WINDOWS */
                                         s->sock_proto));
     if (retval == NULL)
         goto err_closefds;
@@ -4205,7 +4293,11 @@ sock_recvmsg(PySocketSockObject *s, PyObject *args)
 {
     Py_ssize_t bufsize, ancbufsize = 0;
     int flags = 0;
+#ifdef MS_WINDOWS
+    WSABUF iov;
+#else
     struct iovec iov;
+#endif /* !MS_WINDOWS */
     PyObject *buf = NULL, *retval = NULL;
 
     if (!PyArg_ParseTuple(args, "n|ni:recvmsg", &bufsize, &ancbufsize, &flags))
@@ -4217,8 +4309,13 @@ sock_recvmsg(PySocketSockObject *s, PyObject *args)
     }
     if ((buf = PyBytes_FromStringAndSize(NULL, bufsize)) == NULL)
         return NULL;
+#ifdef MS_WINDOWS
+    iov.buf = PyBytes_AS_STRING(buf);
+    iov.len = bufsize;
+#else
     iov.iov_base = PyBytes_AS_STRING(buf);
     iov.iov_len = bufsize;
+#endif /* !MS_WINDOWS */
 
     /* Note that we're passing a pointer to *our pointer* to the bytes
        object here (&buf); makeval_recvmsg() may incref the object, or
@@ -4272,7 +4369,11 @@ sock_recvmsg_into(PySocketSockObject *s, PyObject *args)
 {
     Py_ssize_t ancbufsize = 0;
     int flags = 0;
+#ifdef MS_WINDOWS
+    WSABUF *iovs = NULL;
+#else
     struct iovec *iovs = NULL;
+#endif /* !MS_WINDOWS */
     Py_ssize_t i, nitems, nbufs = 0;
     Py_buffer *bufs = NULL;
     PyObject *buffers_arg, *fast, *retval = NULL;
@@ -4293,8 +4394,13 @@ sock_recvmsg_into(PySocketSockObject *s, PyObject *args)
 
     /* Fill in an iovec for each item, and save the Py_buffer
        structs to release afterwards. */
+#ifdef MS_WINDOWS
+    if (nitems > 0 && ((iovs = PyMem_New(WSABUF, nitems)) == NULL ||
+                       (bufs = PyMem_New(Py_buffer, nitems)) == NULL)) {
+#else
     if (nitems > 0 && ((iovs = PyMem_New(struct iovec, nitems)) == NULL ||
                        (bufs = PyMem_New(Py_buffer, nitems)) == NULL)) {
+#endif /* !MS_WINDOWS */
         PyErr_NoMemory();
         goto finally;
     }
@@ -4304,8 +4410,13 @@ sock_recvmsg_into(PySocketSockObject *s, PyObject *args)
                          "of single-segment read-write buffers",
                          &bufs[nbufs]))
             goto finally;
+#ifdef MS_WINDOWS
+        iovs[nbufs].buf = bufs[nbufs].buf;
+        iovs[nbufs].len = bufs[nbufs].len;
+#else
         iovs[nbufs].iov_base = bufs[nbufs].buf;
         iovs[nbufs].iov_len = bufs[nbufs].len;
+#endif /* !MS_WINDOWS */
     }
 
     retval = sock_recvmsg_guts(s, iovs, nitems, flags, ancbufsize,
@@ -4590,18 +4701,33 @@ For IP sockets, the address is a pair (hostaddr, port).");
    CMSG_LEN().  See the comment near get_CMSG_LEN(). */
 #ifdef CMSG_LEN
 struct sock_sendmsg {
+#ifdef MS_WINDOWS
+    WSAMSG *msg;
+#else
     struct msghdr *msg;
+#endif /* !MS_WINDOWS */
     int flags;
     ssize_t result;
 };
 
 static int
+#ifdef MS_WINDOWS
+sock_sendmsg_iovec(PySocketSockObject *s, PyObject *data_arg,
+                   WSAMSG *msg,
+                   Py_buffer **databufsout, Py_ssize_t *ndatabufsout)
+#else
 sock_sendmsg_iovec(PySocketSockObject *s, PyObject *data_arg,
                    struct msghdr *msg,
-                   Py_buffer **databufsout, Py_ssize_t *ndatabufsout) {
+                   Py_buffer **databufsout, Py_ssize_t *ndatabufsout)
+#endif /* !MS_WINDOWS */
+{
     Py_ssize_t ndataparts, ndatabufs = 0;
     int result = -1;
+#ifdef MS_WINDOWS
+    WSABUF *iovs = NULL;
+#else
     struct iovec *iovs = NULL;
+#endif /* !MS_WINDOWS */
     PyObject *data_fast = NULL;
     Py_buffer *databufs = NULL;
 
@@ -4620,14 +4746,27 @@ sock_sendmsg_iovec(PySocketSockObject *s, PyObject *data_arg,
         goto finally;
     }
 
+#ifdef MS_WINDOWS
+    msg->dwBufferCount = ndataparts;
+#else
     msg->msg_iovlen = ndataparts;
+#endif /* !MS_WINDOWS */
     if (ndataparts > 0) {
+#ifdef MS_WINDOWS
+        iovs = PyMem_New(WSABUF, ndataparts);
+        if (iovs == NULL) {
+            PyErr_NoMemory();
+            goto finally;
+        }
+        msg->lpBuffers = iovs;
+#else
         iovs = PyMem_New(struct iovec, ndataparts);
         if (iovs == NULL) {
             PyErr_NoMemory();
             goto finally;
         }
         msg->msg_iov = iovs;
+#endif /* !MS_WINDOWS */
 
         databufs = PyMem_New(Py_buffer, ndataparts);
         if (databufs == NULL) {
@@ -4641,8 +4780,13 @@ sock_sendmsg_iovec(PySocketSockObject *s, PyObject *data_arg,
                          "bytes-like objects",
                          &databufs[ndatabufs]))
             goto finally;
+#ifdef MS_WINDOWS
+        iovs[ndatabufs].buf = databufs[ndatabufs].buf;
+        iovs[ndatabufs].len = databufs[ndatabufs].len;
+#else
         iovs[ndatabufs].iov_base = databufs[ndatabufs].buf;
         iovs[ndatabufs].iov_len = databufs[ndatabufs].len;
+#endif /* !MS_WINDOWS */
     }
     result = 0;
   finally:
@@ -4657,7 +4801,18 @@ sock_sendmsg_impl(PySocketSockObject *s, void *data)
 {
     struct sock_sendmsg *ctx = data;
 
+#ifdef MS_WINDOWS
+    DWORD ret;
+    LPFN_WSASENDMSG sendmsg;
+    int status = WSAIoctl(s->sock_fd, SIO_GET_EXTENSION_FUNCTION_POINTER,
+                          &(GUID)WSAID_WSASENDMSG, sizeof((GUID)WSAID_WSASENDMSG),
+                          &sendmsg, sizeof(sendmsg),
+                          &ret, NULL, NULL);
+    ctx->result = sendmsg(s->sock_fd, ctx->msg, ctx->flags, &ret,
+                          NULL, NULL);
+#else
     ctx->result = sendmsg(s->sock_fd, ctx->msg, ctx->flags);
+#endif /* !MS_WINDOWS */
     return (ctx->result >= 0);
 }
 
@@ -4669,7 +4824,11 @@ sock_sendmsg(PySocketSockObject *s, PyObject *args)
     Py_ssize_t i, ndatabufs = 0, ncmsgs, ncmsgbufs = 0;
     Py_buffer *databufs = NULL;
     sock_addr_t addrbuf;
+#ifdef MS_WINDOWS
+    WSAMSG msg;
+#else
     struct msghdr msg;
+#endif /* !MS_WINDOWS */
     struct cmsginfo {
         int level;
         int type;
@@ -4699,8 +4858,13 @@ sock_sendmsg(PySocketSockObject *s, PyObject *args)
         if (PySys_Audit("socket.sendmsg", "OO", s, addr_arg) < 0) {
             return NULL;
         }
+#ifdef MS_WINDOWS
+        msg.name = &addrbuf;
+        msg.namelen = addrlen;
+#else
         msg.msg_name = &addrbuf;
         msg.msg_namelen = addrlen;
+#endif /* !MS_WINDOWS */
     } else {
         if (PySys_Audit("socket.sendmsg", "OO", s, Py_None) < 0) {
             return NULL;
@@ -4733,7 +4897,11 @@ sock_sendmsg(PySocketSockObject *s, PyObject *args)
 #endif
     /* Save level, type and Py_buffer for each control message,
        and calculate total size. */
+#ifdef MS_WINDOWS
+    if (ncmsgs > 0 && (cmsgs = PyMem_New(WSACMSGHDR, ncmsgs)) == NULL) {
+#else
     if (ncmsgs > 0 && (cmsgs = PyMem_New(struct cmsginfo, ncmsgs)) == NULL) {
+#endif /* !MS_WINDOWS */
         PyErr_NoMemory();
         goto finally;
     }
@@ -4767,16 +4935,24 @@ sock_sendmsg(PySocketSockObject *s, PyObject *args)
 
     /* Construct ancillary data block from control message info. */
     if (ncmsgbufs > 0) {
+#ifdef MS_WINDOWS
+        WSACMSGHDR *cmsgh = NULL;
+#else
         struct cmsghdr *cmsgh = NULL;
+#endif /* !MS_WINDOWS */
 
         controlbuf = PyMem_Malloc(controllen);
         if (controlbuf == NULL) {
             PyErr_NoMemory();
             goto finally;
         }
+#ifdef MS_WINDOWS
+        msg.Control.buf = controlbuf;
+        msg.Control.len = controllen;
+#else
         msg.msg_control = controlbuf;
-
         msg.msg_controllen = controllen;
+#endif /* MS_WINDOWS */
 
         /* Need to zero out the buffer as a workaround for glibc's
            CMSG_NXTHDR() implementation.  After getting the pointer to
@@ -4840,7 +5016,11 @@ finally:
         PyBuffer_Release(&cmsgs[i].data);
     PyMem_Free(cmsgs);
     Py_XDECREF(cmsg_fast);
+#ifdef MS_WINDOWS
+    PyMem_Free(msg.lpBuffers);
+#else
     PyMem_Free(msg.msg_iov);
+#endif /* !MS_WINDOWS */
     for (i = 0; i < ndatabufs; i++) {
         PyBuffer_Release(&databufs[i]);
     }
