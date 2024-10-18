@@ -73,7 +73,7 @@ Executor Objects
       .. versionchanged:: 3.5
          Added the *chunksize* argument.
 
-      .. versionchanged:: 3.15
+      .. versionchanged:: 3.14
          Added the *buffersize* argument.
 
    .. method:: shutdown(wait=True, *, cancel_futures=False)
