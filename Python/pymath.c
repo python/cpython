@@ -24,13 +24,13 @@ void _Py_set_387controlword(unsigned short cw) {
 #ifdef _Py_MEMORY_SANITIZER
 __attribute__((no_sanitize_memory))
 #endif
-int32_t _Py_get_fpscr(void) {
-    int32_t fpscr;
+uint32_t _Py_get_fpscr(void) {
+    uint32_t fpscr;
     __asm__ __volatile__ ("vmrs %0, fpscr" : "=m" (cw));
     return fpscr;
 }
 
-void _Py_set_fpscr(int32_t cw) {
+void _Py_set_fpscr(uint32_t cw) {
     __asm__ __volatile__ ("vmsr fpscr, %0" : : "m" (cw));
 }
 #endif // HAVE_GCC_ASM_FOR_ARMV7
