@@ -1623,15 +1623,18 @@ hash as builtin_hash
     obj: object
     /
 
-Return the hash value for the given object.
+Return the integer hash value for the given object within this process.
 
 Two objects that compare equal must also have the same hash value, but the
-reverse is not necessarily true.
+reverse is not necessarily true.  Hash values may vary between Python
+processes.
+
+This hash value is used internally by Python dict and set hash tables.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_hash(PyObject *module, PyObject *obj)
-/*[clinic end generated code: output=237668e9d7688db7 input=58c48be822bf9c54]*/
+/*[clinic end generated code: output=237668e9d7688db7 input=587834cbab541b99]*/
 {
     Py_hash_t x;
 
