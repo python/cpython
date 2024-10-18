@@ -145,6 +145,11 @@ def runtest_refleak(test_name, test_func,
             # Use an internal-only keyword argument that mypy doesn't know yet
             _only_immortal=True)  # type: ignore[call-arg]
         alloc_after = getallocatedblocks() - interned_immortal_after
+        if _get_tlbc_blocks := getattr(sys, "_get_tlbc_blocks", None):
+            # Ignore any thread-local bytecode that was allocated. These will be
+            # released when the code object is destroyed, typically at runtime
+            # shutdown
+            alloc_after -= _get_tlbc_blocks()
         rc_after = gettotalrefcount()
         fd_after = fd_count()
 

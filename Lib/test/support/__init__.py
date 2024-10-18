@@ -1296,6 +1296,11 @@ def requires_specialization(test):
         _opcode.ENABLE_SPECIALIZATION, "requires specialization")(test)
 
 
+def requires_specialization_ft(test):
+    return unittest.skipUnless(
+        _opcode.ENABLE_SPECIALIZATION_FT, "requires specialization")(test)
+
+
 #=======================================================================
 # Check for the presence of docstrings.
 

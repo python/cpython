@@ -177,6 +177,21 @@ _PyEval_IsGILEnabled(PyThreadState *tstate)
 extern int _PyEval_EnableGILTransient(PyThreadState *tstate);
 extern int _PyEval_EnableGILPermanent(PyThreadState *tstate);
 extern int _PyEval_DisableGIL(PyThreadState *state);
+
+
+static inline _Py_CODEUNIT *
+_PyEval_GetExecutableCode(PyThreadState *tstate, PyCodeObject *co)
+{
+    _Py_CODEUNIT *bc = _PyCode_GetTLBCFast(tstate, co);
+    if (bc != NULL) {
+        return bc;
+    }
+    if (!_PyInterpreterState_GET()->config.tlbc_enabled) {
+        return _PyCode_CODE(co);
+    }
+    return _PyCode_GetTLBC(co);
+}
+
 #endif
 
 extern void _PyEval_DeactivateOpCache(void);

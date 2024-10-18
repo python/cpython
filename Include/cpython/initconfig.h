@@ -183,6 +183,7 @@ typedef struct PyConfig {
     int cpu_count;
 #ifdef Py_GIL_DISABLED
     int enable_gil;
+    int tlbc_enabled;
 #endif
 
     /* --- Path configuration inputs ------------ */
