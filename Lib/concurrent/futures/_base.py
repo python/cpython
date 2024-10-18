@@ -588,7 +588,7 @@ class Executor(object):
                 ThreadPoolExecutor.
             buffersize: The maximum number of results that can be buffered
                 before being yielded. If the buffer is full, the iteration over
-                iterables is paused until an element is yielded from the
+                iterables is paused until a result is yielded from the
                 buffer.
 
         Returns:
