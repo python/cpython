@@ -16,6 +16,11 @@ class TestDecode:
         self.assertIsInstance(rval, float)
         self.assertEqual(rval, 1.0)
 
+    def test_unicode_digits(self):
+        for num in ["1\uff10", "0.\uff10", "0e\uff10"]:
+            with self.assertRaises(self.JSONDecodeError):
+                self.loads(num)
+
     def test_bytes(self):
         self.assertEqual(self.loads(b"1"), 1)
 
