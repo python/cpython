@@ -590,7 +590,7 @@ except ImportError:
     # realpath is a no-op on systems without _getfinalpathname support.
     realpath = abspath
 else:
-    def _readlink_deep(path):
+    def _readlink_deep(path, seen):
         # These error codes indicate that we should stop reading links and
         # return the path we currently have.
         # 1: ERROR_INVALID_FUNCTION
@@ -607,7 +607,6 @@ else:
         # 4393: ERROR_REPARSE_TAG_INVALID
         allowed_winerror = 1, 2, 3, 5, 21, 32, 50, 67, 87, 4390, 4392, 4393
 
-        seen = set()
         while normcase(path) not in seen:
             seen.add(normcase(path))
             try:
@@ -655,6 +654,7 @@ else:
         # Non-strict algorithm is to find as much of the target directory
         # as we can and join the rest.
         tail = path[:0]
+        seen = set()
         while path:
             try:
                 path = _getfinalpathname(path)
@@ -664,11 +664,14 @@ else:
                     raise
                 try:
                     # The OS could not resolve this path fully, so we attempt
-                    # to follow the link ourselves. If we succeed, join the tail
-                    # and return.
-                    new_path = _readlink_deep(path)
-                    if new_path != path:
+                    # to follow the link ourselves. If we succeed, keep running the loop.
+                    new_path = _readlink_deep(path, seen)
+                    new_path_normcase = normcase(new_path)
+                    if new_path_normcase in seen:
                         return join(new_path, tail) if tail else new_path
+                    else:
+                        seen.add(new_path_normcase)
+                        path = new_path
                 except OSError:
                     # If we fail to readlink(), let's keep traversing
                     pass
