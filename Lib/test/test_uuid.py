@@ -287,6 +287,7 @@ class BaseTestUUID:
         badvalue(lambda: self.uuid.UUID('+123456781234567812345678z234567'))
         badvalue(lambda: self.uuid.UUID(' 123456781234567812345678z23456 '))
         badvalue(lambda: self.uuid.UUID('  123456781234567812345678z2345  '))
+        badvalue(lambda: self.uuid.UUID('\uff10123456781234567812345678z234567'))
 
         # Badly formed bytes.
         badvalue(lambda: self.uuid.UUID(bytes='abc'))
