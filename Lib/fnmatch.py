@@ -77,8 +77,8 @@ def translate(pat):
     There is no way to quote meta-characters.
     """
 
-    parts, indices = _translate(pat, '*', '.')
-    return _join_translated_parts(parts, indices)
+    parts, star_indices = _translate(pat, '*', '.')
+    return _join_translated_parts(parts, star_indices)
 
 _re_setops_sub = re.compile(r'([&~|])').sub
 _re_escape = functools.lru_cache(maxsize=512)(re.escape)
