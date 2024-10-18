@@ -4638,7 +4638,6 @@ class TestColorizedTraceback(unittest.TestCase):
         self.assertEqual(actual, expected)
 
     def test_colorized_traceback_from_exception_group(self):
-        self.maxDiff = None
         def foo():
             exceptions = []
             try:
@@ -4660,7 +4659,6 @@ class TestColorizedTraceback(unittest.TestCase):
         boldm = _colorize.ANSIColors.BOLD_MAGENTA
         reset = _colorize.ANSIColors.RESET
         lno_foo = foo.__code__.co_firstlineno
-        
         actual = "".join(exc.format(colorize=True)).splitlines()
         expected = [f"  + Exception Group Traceback (most recent call last):",
                    f'  |   File {magenta}"{__file__}"{reset}, line {magenta}{lno_foo+9}{reset}, in {magenta}test_colorized_traceback_from_exception_group{reset}',
