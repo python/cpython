@@ -44,6 +44,11 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 #ifdef Py_TRACE_REFS
         _Py_ForgetReference(op);
 #endif
+        struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer;
+        if (tracer->tracer_func != NULL) {
+            void* data = tracer->tracer_data;
+            tracer->tracer_func(op, PyRefTracer_DESTROY, data);
+        }
         destruct(op);
     }
 }
