@@ -287,7 +287,7 @@ class Message:
             raise TypeError('Expected list, got %s' % type(self._payload))
         payload = self._payload
         # cte might be a Header, so for now stringify it.
-        cte = str(self.get('content-transfer-encoding', '')).lower()
+        cte = str(self.get('content-transfer-encoding', '')).lower().strip(' ')
         # payload may be bytes here.
         if not decode:
             if isinstance(payload, str) and utils._has_surrogates(payload):
