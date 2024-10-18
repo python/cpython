@@ -754,6 +754,18 @@ class FormatTestCase(unittest.TestCase):
         self.assertEqual(format(INF, 'f'), 'inf')
         self.assertEqual(format(INF, 'F'), 'INF')
 
+        # underscores
+        x = 123_456.123_456
+        self.assertEqual(format(x, '_f'), '123_456.123456')
+        self.assertEqual(format(x, '._f'), '123456.123_456')
+        self.assertEqual(format(x, '_._f'), '123_456.123_456')
+        self.assertEqual(format(x, '.10_f'), '123456.123_456_000_0')
+        self.assertEqual(format(x, '>21._f'), '       123456.123_456')
+        self.assertEqual(format(x, '<21._f'), '123456.123_456       ')
+        self.assertEqual(format(x, '+.11_e'), '+1.234_561_234_56e+05')
+
+        self.assertRaises(ValueError, format, x , '._6f')
+
     @support.requires_IEEE_754
     def test_format_testfile(self):
         with open(format_testfile, encoding="utf-8") as testfile:

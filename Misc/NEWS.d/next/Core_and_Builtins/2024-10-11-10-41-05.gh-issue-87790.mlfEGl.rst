@@ -1,0 +1,3 @@
+Support underscore as a thousands separator in the fractional part for
+floating-point presentation types of the new-style string formatting (with
+:func:`format` or :ref:`f-strings`).  Patch by Sergey B Kirpichev.
