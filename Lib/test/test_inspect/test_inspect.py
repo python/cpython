@@ -3669,8 +3669,10 @@ class TestSignatureObject(unittest.TestCase):
                 pass
             ham = partialmethod(test)
 
-        with self.assertRaisesRegex(ValueError, "has incorrect arguments"):
-            inspect.signature(Spam.ham)
+        self.assertEqual(self.signature(Spam.ham, eval_str=False),
+                         ((), Ellipsis))
+        with self.assertRaisesRegex(ValueError, "invalid method signature"):
+            inspect.signature(Spam().ham)
 
         class Spam:
             def test(it, a, b, *, c) -> 'spam':
@@ -3709,13 +3711,8 @@ class TestSignatureObject(unittest.TestCase):
             g = partialmethod(test, 1)
 
         self.assertEqual(self.signature(Spam.g, eval_str=False),
-                         ((('self', ..., 'anno', 'positional_or_keyword'),),
+                         ((('self', ..., 'anno', 'positional_only'),),
                           ...))
-
-    def test_signature_on_fake_partialmethod(self):
-        def foo(a): pass
-        foo.__partialmethod__ = 'spam'
-        self.assertEqual(str(inspect.signature(foo)), '(a)')
 
     def test_signature_on_decorated(self):
         def decorator(func):
