@@ -17,3 +17,20 @@ void _Py_set_387controlword(unsigned short cw) {
     __asm__ __volatile__ ("fldcw %0" : : "m" (cw));
 }
 #endif  // HAVE_GCC_ASM_FOR_X87
+
+#ifdef HAVE_GCC_ASM_FOR_ARMV7
+// Inline assembly for getting and setting the ARMv7-FPSCR control/status word on
+// GCC/arm.
+#ifdef _Py_MEMORY_SANITIZER
+__attribute__((no_sanitize_memory))
+#endif
+int32_t _Py_get_fpscr(void) {
+    int32_t fpscr;
+    __asm__ __volatile__ ("vmrs %0, fpscr" : "=m" (cw));
+    return fpscr;
+}
+
+void _Py_set_fpscr(int32_t cw) {
+    __asm__ __volatile__ ("vmsr fpscr, %0" : : "m" (cw));
+}
+#endif // HAVE_GCC_ASM_FOR_ARMV7

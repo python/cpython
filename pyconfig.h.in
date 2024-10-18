@@ -443,6 +443,10 @@
 /* Define to 1 if you have the `gai_strerror' function. */
 #undef HAVE_GAI_STRERROR
 
+/* Define if we can use gcc inline assembler to get and set fpscr
+   control/status word */
+#undef HAVE_GCC_ASM_FOR_ARMV7
+
 /* Define if we can use gcc inline assembler to get and set mc68881 fpcr */
 #undef HAVE_GCC_ASM_FOR_MC68881
 

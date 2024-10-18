@@ -5954,6 +5954,18 @@ AS_VAR_IF([ac_cv_gcc_asm_for_x87], [yes], [
     [Define if we can use gcc inline assembler to get and set x87 control word])
 ])
 
+AC_CACHE_CHECK([whether we can use gcc inline assembler to get and set armv7-fpscr control/status word], [ac_cv_gcc_asm_for_armv7], [
+AC_LINK_IFELSE(   [AC_LANG_PROGRAM([[]], [[
+  unsigned int cw;
+  __asm__ __volatile__ ("vmrs %0, fpscr" : "=m" (cw));
+  __asm__ __volatile__ ("vmsr fpscr, %0" : : "m" (cw));
+]])],[ac_cv_gcc_asm_for_armv7=yes],[ac_cv_gcc_asm_for_armv7=no])
+])
+AS_VAR_IF([ac_cv_gcc_asm_for_armv7], [yes], [
+    AC_DEFINE([HAVE_GCC_ASM_FOR_ARMV7], [1],
+    [Define if we can use gcc inline assembler to get and set fpscr control/status word])
+])
+
 AC_CACHE_CHECK([whether we can use gcc inline assembler to get and set mc68881 fpcr], [ac_cv_gcc_asm_for_mc68881], [
 AC_LINK_IFELSE(   [AC_LANG_PROGRAM([[]], [[
   unsigned int fpcr;
