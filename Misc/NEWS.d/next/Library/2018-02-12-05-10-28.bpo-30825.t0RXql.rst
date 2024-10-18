@@ -1,0 +1,1 @@
+:class:`csv.Sniffer` now detects line terminator instead of defaulting to '\r\n'
