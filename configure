@@ -24027,6 +24027,7 @@ then :
 
 printf "%s\n" "#define HAVE_GCC_ASM_FOR_X87 1" >>confdefs.h
 
+
 fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether we can use gcc inline assembler to get and set armv7-fpscr control/status word" >&5
@@ -24068,6 +24069,7 @@ then :
 
 
 printf "%s\n" "#define HAVE_GCC_ASM_FOR_ARMV7 1" >>confdefs.h
+
 
 fi
 
