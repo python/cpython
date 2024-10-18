@@ -11,6 +11,7 @@ import typing
 import builtins as bltns
 from collections import OrderedDict
 from datetime import date
+from functools import partial
 from enum import Enum, EnumMeta, IntEnum, StrEnum, EnumType, Flag, IntFlag, unique, auto
 from enum import STRICT, CONFORM, EJECT, KEEP, _simple_enum, _test_simple_enum
 from enum import verify, UNIQUE, CONTINUOUS, NAMED_FLAGS, ReprEnum
@@ -1536,6 +1537,19 @@ class TestSpecial(unittest.TestCase):
             list(Outer),
             [Outer.a, Outer.b, Outer.Inner],
             )
+
+    def test_partial(self):
+        def func(a, b=5):
+            return a, b
+        with self.assertWarnsRegex(FutureWarning, r'partial.*enum\.member') as cm:
+            class E(Enum):
+                a = 1
+                b = partial(func)
+        self.assertEqual(cm.filename, __file__)
+        self.assertIsInstance(E.b, partial)
+        self.assertEqual(E.b(2), (2, 5))
+        with self.assertWarnsRegex(FutureWarning, 'partial'):
+            self.assertEqual(E.a.b(2), (2, 5))
 
     def test_enum_with_value_name(self):
         class Huh(Enum):
