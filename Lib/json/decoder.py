@@ -58,10 +58,10 @@ BACKSLASH = {
 }
 
 def _decode_uXXXX(s, pos, _m=HEXDIGITS.match):
-    esc = _m(s, pos)
+    esc = _m(s, pos + 1)
     if esc is not None:
         try:
-            return int(match.group(), 16)
+            return int(esc.group(), 16)
         except ValueError:
             pass
     msg = "Invalid \\uXXXX escape"
