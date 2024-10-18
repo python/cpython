@@ -23,8 +23,6 @@ class complex "PyComplexObject *" "&PyComplex_Type"
 
 /* elementary operations on complex numbers */
 
-static Py_complex c_1 = {1., 0.};
-
 Py_complex
 _Py_c_sum(Py_complex a, Py_complex b)
 {
@@ -177,32 +175,6 @@ _Py_c_pow(Py_complex a, Py_complex b)
         _Py_ADJUST_ERANGE2(r.real, r.imag);
     }
     return r;
-}
-
-static Py_complex
-c_powu(Py_complex x, long n)
-{
-    Py_complex r, p;
-    long mask = 1;
-    r = c_1;
-    p = x;
-    while (mask > 0 && n >= mask) {
-        if (n & mask)
-            r = _Py_c_prod(r,p);
-        mask <<= 1;
-        p = _Py_c_prod(p,p);
-    }
-    return r;
-}
-
-static Py_complex
-c_powi(Py_complex x, long n)
-{
-    if (n > 0)
-        return c_powu(x,n);
-    else
-        return _Py_c_quot(c_1, c_powu(x,-n));
-
 }
 
 double
@@ -565,16 +537,7 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
         return NULL;
     }
     errno = 0;
-    // Check whether the exponent has a small integer value, and if so use
-    // a faster and more accurate algorithm.
-    if (b.imag == 0.0 && b.real == floor(b.real) && fabs(b.real) <= 100.0) {
-        p = c_powi(a, (long)b.real);
-        _Py_ADJUST_ERANGE2(p.real, p.imag);
-    }
-    else {
-        p = _Py_c_pow(a, b);
-    }
-
+    p = _Py_c_pow(a, b);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ZeroDivisionError,
                         "zero to a negative or complex power");
