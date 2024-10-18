@@ -12,6 +12,7 @@ import time
 import unittest
 import unittest.mock as mock
 import zipfile
+import filecmp
 
 
 from tempfile import TemporaryFile
@@ -2623,6 +2624,152 @@ class DecryptionTests(EncryptedFiles, unittest.TestCase):
             # Read the file completely to definitely call any eof integrity
             # checks (crc) and make sure they still pass.
             fp.read()
+
+
+class AbstractCopyFileTests(EncryptedFiles):
+    @classmethod
+    def write_small_file(cls, destination):
+        destination.writestr(cls.small_file, cls.small_data,
+                             compress_type=cls.compression)
+
+    @classmethod
+    def write_large_file(cls, destination):
+        destination.writestr(cls.large_file, cls.large_data,
+                             compress_type=cls.compression)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.small_zip = TESTFN + "_small.zip"
+        cls.large_zip = TESTFN + "_large.zip"
+        cls.small_large_zip = TESTFN + "_small_large.zip"
+        cls.emtpy_dir_zip = TESTFN + "_empty_dir.zip"
+        cls.encrypted_zip = TESTFN + "_encrypted.zip"
+
+        # compressed size is larger than the source contents
+        cls.small_data = "a"
+        # compressed size is smaller than the source contents
+        cls.large_data = "b" * 400
+
+        cls.small_file = "small.txt"
+        cls.large_file = "large.txt"
+        cls.emtpy_dir_name = "directory/"
+
+        # create zipfiles to compare against
+        # these zipfiles should never be written to outside of this method
+        with zipfile.ZipFile(cls.small_zip, "w") as destination:
+            cls.write_small_file(destination)
+
+        with zipfile.ZipFile(cls.large_zip, "w") as destination:
+            cls.write_large_file(destination)
+
+        with zipfile.ZipFile(cls.small_large_zip, "w") as destination:
+            cls.write_small_file(destination)
+            cls.write_large_file(destination)
+
+        with zipfile.ZipFile(cls.emtpy_dir_zip, "w") as destination:
+            # use mode other than default to check that mode is copied
+            destination.mkdir(cls.emtpy_dir_name, mode=123)
+
+        with open(cls.encrypted_zip, "wb") as destination:
+            destination.write(cls.encrypted_zip1_data)
+
+    def tearDown(cls):
+        if os.path.exists(TESTFN):
+            unlink(TESTFN)
+
+    @classmethod
+    def tearDownClass(cls):
+        unlink(cls.small_zip)
+        unlink(cls.large_zip)
+        unlink(cls.small_large_zip)
+        unlink(cls.emtpy_dir_zip)
+        unlink(cls.encrypted_zip)
+
+    def assertIdentical(self, file1, file2):
+        self.assertTrue(filecmp.cmp(file1, file2, shallow=False))
+
+    def _test_copy_file(self, source_zipfile, source_filename):
+        with zipfile.ZipFile(TESTFN, 'w') as destination:
+            destination.copy_file(source_zipfile, source_filename)
+        self.assertIdentical(TESTFN, source_zipfile)
+
+    # A compressed file can be larger than its uncompressed form,
+    # which are two different states we need to test
+
+    # Copying tests with one small file
+    def test_copy_file__copy_one_small_file_to_new_ZipFile(self):
+        self._test_copy_file(self.small_zip, self.small_file)
+
+    # Copying tests with one large file
+    def test_copy_file__copy_one_large_file_to_new_ZipFile(self):
+        self._test_copy_file(self.large_zip, self.large_file)
+
+    # Copying tests with empty directory
+    def test_copy_file__copy_directory(self):
+        self._test_copy_file(self.emtpy_dir_zip, self.emtpy_dir_name)
+
+    # Copying tests with encrypted file
+    def test_copy_file__copy_encrypted_file(self):
+        self._test_copy_file(self.encrypted_zip, self.zip1_filename)
+
+    # Copying tests with nonempty destination zipfile
+    def _test_nonempty_zipfile(self, method_to_copy_large_file):
+        with zipfile.ZipFile(TESTFN, 'w') as destination:
+            self.write_small_file(destination)
+            method_to_copy_large_file(destination)
+        self.assertIdentical(TESTFN, self.small_large_zip)
+
+    def test_copy_file__copy_to_nonempty_ZipFile(self):
+        copy_file = lambda x: x.copy_file(self.large_zip, self.large_file)
+        self._test_nonempty_zipfile(copy_file)
+
+class StoredCopyFileTests(AbstractCopyFileTests, unittest.TestCase):
+    compression = zipfile.ZIP_STORED
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.exceptions_zip = TESTFN + "_exception"
+
+        with zipfile.ZipFile(cls.exceptions_zip,
+                             "w") as destination:
+            cls.write_small_file(destination)
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        unlink(cls.exceptions_zip)
+
+    def copy_file(self, destination):
+        destination.copy_file(self.small_zip, self.small_file)
+
+    def test_copy_methods_issue_exception_when_zipfile_not_open_for_write(self):
+        with zipfile.ZipFile(self.exceptions_zip, 'r') as destination:
+            self.assertRaises(ValueError, self.copy_file, destination)
+
+    def test_copy_file__issues_exception_when_already_writing(self):
+        with zipfile.ZipFile(self.exceptions_zip, 'w') as destination:
+            with destination.open('foo', mode='w') as open_file:
+                self.assertRaises(ValueError, self.copy_file, destination)
+
+    def test_copy_file__issues_exception_when_file_closed(self):
+        with zipfile.ZipFile(self.exceptions_zip, 'w') as destination:
+            # write a file to create the zipfile
+            destination.writestr("filename.txt", "file contents")
+
+        self.assertRaises(ValueError, self.copy_file, destination)
+
+@requires_zlib()
+class DeflateCopyFileTests(AbstractCopyFileTests, unittest.TestCase):
+    compression = zipfile.ZIP_DEFLATED
+
+@requires_bz2()
+class Bzip2CopyFileTests(AbstractCopyFileTests, unittest.TestCase):
+    compression = zipfile.ZIP_BZIP2
+
+@requires_lzma()
+class LzmaCopyFileTests(AbstractCopyFileTests, unittest.TestCase):
+    compression = zipfile.ZIP_LZMA
 
 
 class AbstractTestsWithRandomBinaryFiles:
