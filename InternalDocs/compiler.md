@@ -447,7 +447,7 @@ bytecode. This includes transforming pseudo instructions into actual instruction
 converting jump targets from logical labels to relative offsets, and
 construction of the
 [exception table](exception_handling.md) and
-[locations table](https://github.com/python/cpython/blob/main/Objects/locations.md).
+[locations table](https://github.com/python/cpython/blob/main/InternalDocs/locations.md).
 The bytecode and tables are then wrapped into a ``PyCodeObject`` along with additional
 metadata, including the ``consts`` and ``names`` arrays, information about function
 reference to the source code (filename, etc). All of this is implemented by
