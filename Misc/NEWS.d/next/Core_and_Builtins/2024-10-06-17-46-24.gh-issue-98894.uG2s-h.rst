@@ -1,0 +1,1 @@
+Fix ``function__return`` and ``function__entry`` dtrace probe missing after :gh:`103083`.
