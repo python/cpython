@@ -1707,6 +1707,20 @@
         }
 
         case _CHECK_FUNCTION_VERSION: {
+            _Py_UopsSymbol *callable;
+            callable = stack_pointer[-2 - oparg];
+            uint32_t func_version = (uint32_t)this_instr->operand;
+            if (sym_matches_function_version(callable, func_version)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            } else {
+                PyFunctionObject *function = _PyFunction_LookupByVersion(func_version, NULL);
+                // if the type is null, it was not found in the cache (there was a conflict)
+                // with the key, in which case we can't trust the version
+                if (function) {
+                    sym_set_function_version(callable, func_version);
+                    _Py_BloomFilter_Add(dependencies, function);
+                }
+            }
             break;
         }
 

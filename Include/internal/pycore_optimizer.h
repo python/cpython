@@ -160,6 +160,7 @@ struct _Py_UopsSymbol {
     PyTypeObject *typ;  // Borrowed reference
     PyObject *const_val;  // Owned reference (!)
     unsigned int type_version; // currently stores type version
+    uint32_t function_version;
 };
 
 #define UOP_FORMAT_TARGET 0
@@ -249,10 +250,12 @@ extern _Py_UopsSymbol *_Py_uop_sym_new_null(_Py_UOpsContext *ctx);
 extern bool _Py_uop_sym_has_type(_Py_UopsSymbol *sym);
 extern bool _Py_uop_sym_matches_type(_Py_UopsSymbol *sym, PyTypeObject *typ);
 extern bool _Py_uop_sym_matches_type_version(_Py_UopsSymbol *sym, unsigned int version);
+extern bool _Py_uop_sym_matches_function_version(_Py_UopsSymbol *sym, uint32_t version);
 extern void _Py_uop_sym_set_null(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym);
 extern void _Py_uop_sym_set_non_null(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym);
 extern void _Py_uop_sym_set_type(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyTypeObject *typ);
 extern bool _Py_uop_sym_set_type_version(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, unsigned int version);
+extern void _Py_uop_sym_set_function_version(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, uint32_t version);
 extern void _Py_uop_sym_set_const(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyObject *const_val);
 extern bool _Py_uop_sym_is_bottom(_Py_UopsSymbol *sym);
 extern int _Py_uop_sym_truthiness(_Py_UopsSymbol *sym);
