@@ -70,7 +70,7 @@ PyFunction_AddWatcher(PyFunction_WatchCallback callback)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(interp->_initialized);
-    for (int i = 0; i < FUNC_MAX_WATCHERS; i++) {
+    for (int i = 1; i < FUNC_MAX_WATCHERS; i++) {
         if (interp->func_watchers[i] == NULL) {
             interp->func_watchers[i] = callback;
             interp->active_func_watchers |= (1 << i);
@@ -372,11 +372,11 @@ _PyFunction_LookupByVersion(uint32_t version, PyObject **p_code)
     if (slot->code) {
         assert(PyCode_Check(slot->code));
         PyCodeObject *code = (PyCodeObject *)slot->code;
-        if (code->co_version == version) {
+        if (code->co_version == version && p_code) {
             *p_code = slot->code;
         }
     }
-    else {
+    else if (p_code) {
         *p_code = NULL;
     }
     if (slot->func && slot->func->func_version == version) {
