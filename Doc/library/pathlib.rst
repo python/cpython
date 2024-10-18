@@ -1291,7 +1291,7 @@ Reading directories
 
 .. attribute:: Path.dir_entry
 
-   In a path yielded from :meth:`Path.iterdir`, this attribute stores a
+   In a path yielded from :meth:`Path.iterdir`, this attribute stores an
    :class:`os.DirEntry` object corresponding to the path; in other cases it is
    ``None``. This can be used to retrieve the file type and attributes of
    directory children without necessarily incurring further system calls::
@@ -1300,7 +1300,7 @@ Reading directories
       >>> for child in p.iterdir():
       ...     entry = child.dir_entry
       ...     if entry.is_dir():
-      ...         child
+      ...         print(child)
       ...
       PosixPath('docs/_templates')
       PosixPath('docs/_build')
