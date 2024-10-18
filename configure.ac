@@ -7828,6 +7828,74 @@ PY_STDLIB_MOD([_sha2], [test "$with_builtin_sha2" = yes])
 PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
 PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
 
+dnl PY_SIMD_DETECT(INSTRUCTION_SET_NAME, COMPILER_FLAG, NORMALIZED_NAME)
+AC_DEFUN([PY_SIMD_DETECT], [
+    AS_VAR_PUSHDEF([py_var], [m4_ifblank([$3],
+        [[ac_cv_can_compile_simd_]m4_tolower([$1])],
+        [[ac_cv_can_compile_simd_]m4_tolower([$3])])])
+    AS_VAR_PUSHDEF([py_define], [m4_ifblank([$3],
+        [[Py_CAN_COMPILE_SIMD_]m4_toupper([$1])[_INSTRUCTIONS]],
+        [[Py_CAN_COMPILE_SIMD_]m4_toupper([$3])[_INSTRUCTIONS]])])
+    AC_MSG_CHECKING([checking SIMD instruction set])
+    AX_CHECK_COMPILE_FLAG([$2],
+        [AC_DEFINE([py_define], [1], [Define if '$2' is a valid compiler flag.])],
+        [], [])
+    AS_VAR_POPDEF([py_var])
+    AS_VAR_POPDEF([py_define])
+])
+
+# Detection of supported SIMD instruction sets for CPython. Since
+# we do not necessarily know which instruction sets will be used,
+# we disable SIMD support on some older Android platforms.
+#
+# See py_cpuid_features in pycore_cpuinfo.h for how to order fields
+# and where to put blank lines to separate processor generations for
+# AVX-512 instructions.
+if test "$ac_sys_system" != "Linux-android" || test "$ANDROID_API_LEVEL" -ge 28; then
+    # SSE
+    PY_SIMD_DETECT([SSE], [-msse])
+    PY_SIMD_DETECT([SSE2], [-msse2])
+    PY_SIMD_DETECT([SSE3], [-msse3])
+    PY_SIMD_DETECT([SSSE3], [-mssse3])
+    PY_SIMD_DETECT([SSE4.1], [-msse4.1], [SSE4_1])
+    PY_SIMD_DETECT([SSE4.2], [-msse4.2], [SSE4_2])
+    # AVX
+    PY_SIMD_DETECT([AVX], [-mavx])
+    PY_SIMD_DETECT([AVX_IFMA], [-mavxifma])
+    PY_SIMD_DETECT([AVX_NE_CONVERT], [-mavxneconvert])
+    #
+    PY_SIMD_DETECT([AVX_VNNI], [-mavxvnni])
+    PY_SIMD_DETECT([AVX_VNNI_INT8], [-mavxvnniint8])
+    PY_SIMD_DETECT([AVX_VNNI_INT16], [-mavxvnniint16])
+    # AVX-2
+    PY_SIMD_DETECT([AVX2], [-mavx2])
+    # AVX-512
+    PY_SIMD_DETECT([AVX512_F], [-mavx512f])
+    PY_SIMD_DETECT([AVX512_CD], [-mavx512cd])
+    #
+    PY_SIMD_DETECT([AVX512_ER], [-mavx512er])
+    PY_SIMD_DETECT([AVX512_PF], [-mavx512pf])
+    #
+    PY_SIMD_DETECT([AVX512_4FMAPS], [-mavx5124fmaps])
+    PY_SIMD_DETECT([AVX512_4VNNIW], [-mavx5124vnniw])
+    #
+    PY_SIMD_DETECT([AVX512_VPOPCNTDQ], [-mavx512vpopcntdq])
+    #
+    PY_SIMD_DETECT([AVX512_VL], [-mavx512vl])
+    PY_SIMD_DETECT([AVX512_DQ], [-mavx512dq])
+    PY_SIMD_DETECT([AVX512_BW], [-mavx512bw])
+    #
+    PY_SIMD_DETECT([AVX512_IFMA], [-mavx512ifma])
+    PY_SIMD_DETECT([AVX512_VBMI], [-mavx512vbmi])
+    #
+    PY_SIMD_DETECT([AVX512_VNNI], [-mavx512vnni])
+    #
+    PY_SIMD_DETECT([AVX512_VBMI2], [-mavx512vbmi2])
+    PY_SIMD_DETECT([AVX512_BITALG], [-mavx512bitalg])
+    #
+    PY_SIMD_DETECT([AVX512_VP2INTERSECT], [-mavx512vp2intersect])
+fi
+
 LIBHACL_CFLAGS='-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)'
 case "$ac_sys_system" in
   Linux*)
