@@ -1,0 +1,2 @@
+Fixed incorrect documented type for the first parameter of the
+:c:type:`newfunc` C function type.
