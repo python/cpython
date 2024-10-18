@@ -1,6 +1,6 @@
 """      turtle-example-suite:
 
-        tdemo_bytedesign.py
+        turtledemo/bytedesign.py
 
 An example adapted from the example-suite
 of PythonCard's turtle graphics.

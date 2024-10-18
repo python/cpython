@@ -1,6 +1,6 @@
 """       turtle-example-suite:
 
-            tdemo_paint.py
+          turtledemo/paint.py
 
 A simple  event-driven paint program
 
@@ -14,8 +14,6 @@ includes the starting point is filled.
  -------------------------------------------
  Play around by clicking into the canvas
  using all three mouse buttons.
- -------------------------------------------
-          To exit press STOP button
  -------------------------------------------
 """
 from turtle import *
