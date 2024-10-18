@@ -29,6 +29,7 @@
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
+#include "pycore_unionobject.h"   // _PyUnion_Check()
 #include "pycore_uop_ids.h"       // Uops
 #include "pycore_pyerrors.h"
 
@@ -514,9 +515,27 @@ PyObject*
 _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
                    Py_ssize_t nargs, PyObject *kwargs)
 {
+    // Recurse on unions.
+    if (_PyUnion_Check(type)) {
+        // get union members
+        PyObject *members = _Py_union_args(type);
+        const Py_ssize_t n = PyTuple_GET_SIZE(members);
+
+        // iterate over union members and return first match
+        for (Py_ssize_t i = 0; i < n; i++) {
+            PyObject *member = PyTuple_GET_ITEM(members, i);
+            PyObject *attrs = _PyEval_MatchClass(tstate, subject, member, nargs, kwargs);
+            // match found
+            if (attrs != NULL) {
+                return attrs;
+            }
+        }
+        // no match found
+        return NULL;
+    }
     if (!PyType_Check(type)) {
-        const char *e = "called match pattern must be a class";
-        _PyErr_Format(tstate, PyExc_TypeError, e);
+        const char *e = "called match pattern must be a class or types.UnionType (got %s)";
+        _PyErr_Format(tstate, PyExc_TypeError, e, Py_TYPE(type)->tp_name);
         return NULL;
     }
     assert(PyTuple_CheckExact(kwargs));
