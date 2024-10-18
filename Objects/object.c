@@ -171,14 +171,21 @@ _PyDebug_PrintTotalRefs(void) {
 #define REFCHAIN(interp) interp->object_state.refchain
 #define REFCHAIN_VALUE ((void*)(uintptr_t)1)
 
+static inline int
+has_own_refchain(PyInterpreterState *interp)
+{
+    if (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC) {
+        return _Py_IsMainInterpreter(interp);
+    }
+    return 1;
+}
+
 static int
 refchain_init(PyInterpreterState *interp)
 {
-    PyInterpreterState *main_interp = _PyInterpreterState_Main();
-    if (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC
-            && interp != main_interp)
-    {
-        REFCHAIN(interp) = REFCHAIN(main_interp);
+    if (!has_own_refchain(interp)) {
+        // Legacy subinterpreters share a refchain with the main interpreter.
+        REFCHAIN(interp) = REFCHAIN(_PyInterpreterState_Main());
         return 0;
     }
     _Py_hashtable_allocator_t alloc = {
@@ -199,9 +206,7 @@ refchain_init(PyInterpreterState *interp)
 static void
 refchain_fini(PyInterpreterState *interp)
 {
-    if (!(interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC)
-            ||_Py_IsMainInterpreter(interp))
-    {
+    if (has_own_refchain(interp)) {
         _Py_hashtable_destroy(REFCHAIN(interp));
     }
     REFCHAIN(interp) = NULL;
@@ -210,7 +215,7 @@ refchain_fini(PyInterpreterState *interp)
 bool
 _PyRefchain_IsTraced(PyInterpreterState *interp, PyObject *obj)
 {
-    if (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC) {
+    if (!has_own_refchain(interp)) {
         interp = _PyInterpreterState_Main();
     }
     return (_Py_hashtable_get(REFCHAIN(interp), obj) == REFCHAIN_VALUE);
@@ -220,7 +225,7 @@ _PyRefchain_IsTraced(PyInterpreterState *interp, PyObject *obj)
 static void
 _PyRefchain_Trace(PyInterpreterState *interp, PyObject *obj)
 {
-    if (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC) {
+    if (!has_own_refchain(interp)) {
         interp = _PyInterpreterState_Main();
     }
     if (_Py_hashtable_set(REFCHAIN(interp), obj, REFCHAIN_VALUE) < 0) {
@@ -234,7 +239,7 @@ _PyRefchain_Trace(PyInterpreterState *interp, PyObject *obj)
 static void
 _PyRefchain_Remove(PyInterpreterState *interp, PyObject *obj)
 {
-    if (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC) {
+    if (!has_own_refchain(interp)) {
         interp = _PyInterpreterState_Main();
     }
     void *value = _Py_hashtable_steal(REFCHAIN(interp), obj);
@@ -2562,12 +2567,10 @@ _Py_NormalizeImmortalReference(PyObject *op)
     if (!_PyRefchain_IsTraced(interp, op)) {
         return;
     }
-    PyInterpreterState *main_interp = _PyInterpreterState_Main();
-    if (interp != main_interp
-           && interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC)
-    {
-        assert(_PyRefchain_IsTraced(main_interp, op));
+    if (!has_own_refchain(interp)) {
+        interp = _PyInterpreterState_Main();
     }
+    assert(_PyRefchain_IsTraced(interp, op));
 }
 
 void
@@ -2616,7 +2619,7 @@ _Py_PrintReferences(PyInterpreterState *interp, FILE *fp)
         interp = _PyInterpreterState_Main();
     }
     fprintf(fp, "Remaining objects:\n");
-    if (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC) {
+    if (!has_own_refchain(interp)) {
         interp = _PyInterpreterState_Main();
     }
     _Py_hashtable_foreach(REFCHAIN(interp), _Py_PrintReference, fp);
@@ -2647,7 +2650,7 @@ void
 _Py_PrintReferenceAddresses(PyInterpreterState *interp, FILE *fp)
 {
     fprintf(fp, "Remaining object addresses:\n");
-    if (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC) {
+    if (!has_own_refchain(interp)) {
         interp = _PyInterpreterState_Main();
     }
     _Py_hashtable_foreach(REFCHAIN(interp), _Py_PrintReferenceAddress, fp);
@@ -2729,7 +2732,7 @@ _Py_GetObjects(PyObject *self, PyObject *args)
         .limit = limit,
     };
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC) {
+    if (!has_own_refchain(interp)) {
         interp = _PyInterpreterState_Main();
     }
     int res = _Py_hashtable_foreach(REFCHAIN(interp), _Py_GetObject, &data);
