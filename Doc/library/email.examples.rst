@@ -4,7 +4,9 @@
 ----------------------
 
 Here are a few examples of how to use the :mod:`email` package to read, write,
-and send simple email messages, as well as more complex MIME messages.
+and send simple email messages, as well as more complex MIME messages. Including
+the ``Date`` header may be necessary to get a message past spam filters if not
+using a mail server that would handle it for you.
 
 First, let's see how to create and send a simple text message (both the
 text content and the addresses may contain unicode characters):
