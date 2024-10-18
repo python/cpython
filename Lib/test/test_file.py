@@ -216,6 +216,22 @@ class OtherFileTests:
         with self.assertWarnsRegex(RuntimeWarning, 'line buffering'):
             self._checkBufferSize(1)
 
+    def testDefaultBufferSize(self):
+        # a larger block size can have preference over the default buffer size,
+        # so we have to verify the block size and skip the test.
+        f = self.open(TESTFN, 'wb')#), buffering=0)
+        blksize = getattr(f, '_blksize', 0)
+        f.write(bytes([0] * 1_000_000))
+        f.close()
+
+        if blksize <= io.DEFAULT_BUFFER_SIZE:
+            # ensure the default buffer size is used.
+            f = self.open(TESTFN, 'rb')
+            data = f.read1()
+            self.assertEqual(len(data), io.DEFAULT_BUFFER_SIZE)
+        else:
+            self.skipTest("device block size greater than io.DEFAULT_BUFFER_SIZE")
+
     def testTruncateOnWindows(self):
         # SF bug <https://bugs.python.org/issue801631>
         # "file.truncate fault on windows"

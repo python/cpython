@@ -492,6 +492,10 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
             goto error;
         }
 #endif /* defined(S_ISDIR) */
+#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
+        if (fdfstat.st_blksize > DEFAULT_BUFFER_SIZE)
+            self->blksize = fdfstat.st_blksize;
+#endif /* HAVE_STRUCT_STAT_ST_BLKSIZE */
     }
 
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
