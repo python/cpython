@@ -351,7 +351,7 @@ class StencilGroup:
             word = bitmask & ((1 << 32) - 1)
             trampoline_mask.append(f"{word:#04x}")
             bitmask >>= 32
-        return "{" + ", ".join(trampoline_mask) + "}"
+        return "{" + (", ".join(trampoline_mask) or "0") + "}"
 
     def as_c(self, opname: str) -> str:
         """Dump this hole as a StencilGroup initializer."""
