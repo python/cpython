@@ -1,1 +1,1 @@
-Reject unicode digits for Python implementation of :func:`json.loads`.
+Reject non-ASCII digits in the Python implementation of :func:`json.loads`.
