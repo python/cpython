@@ -74,40 +74,41 @@ class ExecutorTest:
         self.assertEqual([None, None], results)
 
     def test_map_with_buffersize(self):
+        iterable = range(4)
         with self.assertRaisesRegex(ValueError, "buffersize must be None or >= 1."):
-            self.executor.map(bool, [], buffersize=0)
-
-        it = range(4)
+            self.executor.map(bool, iterable, buffersize=0)
         self.assertEqual(
-            list(self.executor.map(str, it, buffersize=1)),
-            list(map(str, it)),
+            list(self.executor.map(str, iterable, buffersize=1)),
+            list(map(str, iterable)),
+        )
+        self.assertEqual(
+            list(self.executor.map(str, iterable, buffersize=2)),
+            list(map(str, iterable)),
         )
 
     def test_map_with_buffersize_and_timeout(self):
-        it = self.executor.map(time.sleep, (0, 1), timeout=0.5)
-        next(it)
+        results = self.executor.map(time.sleep, (0, 1), timeout=0.5)
+        next(results)
         with self.assertRaises(TimeoutError):
-            next(it)
+            next(results)
 
     def test_map_with_buffersize_on_infinite_iterable(self):
         results = self.executor.map(str, itertools.count(1), buffersize=1)
         self.assertEqual(next(iter(results)), "1")
 
     def test_map_with_buffersize_on_iterable_smaller_than_buffer(self):
-        it = range(2)
-        results = self.executor.map(str, it, buffersize=10)
-        self.assertListEqual(list(results), list(map(str, it)))
+        iterable = range(2)
+        results = self.executor.map(str, iterable, buffersize=8)
+        self.assertListEqual(list(results), list(map(str, iterable)))
 
     def test_map_with_buffersize_on_empty_iterable(self):
-        it = iter([])
-        results = self.executor.map(str, it, buffersize=10)
+        results = self.executor.map(str, [], buffersize=8)
         self.assertListEqual(list(results), [])
 
     def test_map_with_buffersize_when_buffer_becomes_full(self):
-        manager = multiprocessing.Manager()
         iterable = range(8)
         buffersize = 4
-        buffered_results = manager.list()
+        buffered_results = multiprocessing.Manager().list()
         self.executor.map(buffered_results.append, iterable, buffersize=buffersize)
         self.executor.shutdown(wait=True)
         self.assertSetEqual(
