@@ -371,7 +371,7 @@ validate_expr(struct validator *state, expr_ty exp, expr_context_ty ctx)
     case Interpolation_kind:
         if (validate_expr(state, exp->v.Interpolation.value, Load) == 0)
             return 0;
-        if (exp->v.FormattedValue.format_spec) {
+        if (exp->v.Interpolation.format_spec) {
             ret = validate_expr(state, exp->v.Interpolation.format_spec, Load);
             break;
         }

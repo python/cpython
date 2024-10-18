@@ -1491,7 +1491,7 @@ expr_ty _PyPegen_interpolation(Parser *p, expr_ty expression, Token *debug, Resu
     int conversion_val = _get_interpolation_conversion(p, debug, conversion, format);
     if (conversion_val >= 0) {
         expr_ty conv = (expr_ty) conversion->result;
-        constant convstr = PyUnicode_FromObject(conv->v.Name.id);
+        convstr = PyUnicode_FromObject(conv->v.Name.id);
         if (convstr == NULL) {
             return NULL;
         }
