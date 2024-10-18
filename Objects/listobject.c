@@ -490,6 +490,16 @@ PyList_Append(PyObject *op, PyObject *newitem)
     return -1;
 }
 
+int
+_PyList_AppendTakeRefAndLock(PyListObject *self, PyObject *newitem)
+{
+    int ret;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    ret = _PyList_AppendTakeRef((PyListObject *)self, newitem);
+    Py_END_CRITICAL_SECTION();
+    return ret;
+}
+
 /* Methods */
 
 static void
