@@ -2978,10 +2978,11 @@
                 DEOPT_IF(callable_o != (PyObject *)&PyUnicode_Type, CALL);
                 STAT_INC(CALL, hit);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                res = PyStackRef_FromPyObjectSteal(PyObject_Str(arg_o));
+                PyObject *res_o = PyObject_Str(arg_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(arg);
-                if (PyStackRef_IsNull(res)) goto pop_3_error;
+                if (res_o == NULL) goto pop_3_error;
+                res = PyStackRef_FromPyObjectSteal(res_o);
             }
             // _CHECK_PERIODIC
             {
@@ -3028,10 +3029,11 @@
                 DEOPT_IF(callable_o != (PyObject *)&PyTuple_Type, CALL);
                 STAT_INC(CALL, hit);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                res = PyStackRef_FromPyObjectSteal(PySequence_Tuple(arg_o));
+                PyObject *res_o = PySequence_Tuple(arg_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(arg);
-                if (PyStackRef_IsNull(res)) goto pop_3_error;
+                if (res_o == NULL) goto pop_3_error;
+                res = PyStackRef_FromPyObjectSteal(res_o);
             }
             // _CHECK_PERIODIC
             {
