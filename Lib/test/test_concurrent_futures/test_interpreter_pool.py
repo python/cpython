@@ -290,6 +290,9 @@ class AsyncioTest(InterpretersMixin, testasyncio_utils.TestCase):
         self.executor = self.executor_type()
         self.addCleanup(lambda: self.executor.shutdown())
 
+        if support.maybe_get_event_loop_policy() is None:
+            self.addCleanup(lambda: asyncio.set_event_loop_policy(None))
+
     def tearDown(self):
         if not self.loop.is_closed():
             testasyncio_utils.run_briefly(self.loop)
