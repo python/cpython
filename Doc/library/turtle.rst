@@ -18,6 +18,9 @@
 
    import os
    os.remove("my_drawing.ps")
+   # Destroy the turtle window after tests are complete
+   # Imported via star import in testsetup
+   bye()
 
 --------------
 
