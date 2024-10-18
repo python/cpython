@@ -40,6 +40,7 @@ __all__ = [
     ]
 
 import re
+import sys
 
 from string import ascii_letters, digits, hexdigits
 
@@ -168,6 +169,9 @@ def body_encode(body, maxlinelen=76, eol=NL):
     ValueError.
 
     """
+
+    if not maxlinelen:
+        maxlinelen = sys.maxsize
 
     if maxlinelen < 4:
         raise ValueError("maxlinelen must be at least 4")
