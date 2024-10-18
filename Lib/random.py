@@ -356,7 +356,7 @@ class Random(_random.Random):
 
         randbelow = self._randbelow
         # Iterate over the list x in reverse order
-        for i in range(len(x)-1,0,-1):
+        for i in range(len(x) - 1, 0, -1):
             # pick an element in x[:i+1] with which to exchange x[i]
             j = randbelow(i + 1)
             x[i], x[j] = x[j], x[i]
