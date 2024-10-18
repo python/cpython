@@ -14,7 +14,7 @@ try:
 except ImportError:
     _testcapi = None
 
-from test.support import skip_if_buggy_ucrt_strfptime
+from test.support import skip_if_buggy_ucrt_strfptime, SuppressCrashReport
 
 # Max year is only limited by the size of C int.
 SIZEOF_INT = sysconfig.get_config_var('SIZEOF_INT') or 4
@@ -177,6 +177,17 @@ class TimeTestCase(unittest.TestCase):
                 self.fail('conversion specifier: %r failed.' % format)
 
         self.assertRaises(TypeError, time.strftime, b'%S', tt)
+
+    def test_strftime_invalid_format(self):
+        tt = time.gmtime(self.t)
+        with SuppressCrashReport():
+            for i in range(1, 128):
+                format = ' %' + chr(i)
+                with self.subTest(format=format):
+                    try:
+                        time.strftime(format, tt)
+                    except ValueError as exc:
+                        self.assertEqual(str(exc), 'Invalid format string')
 
     def test_strftime_special(self):
         tt = time.gmtime(self.t)
