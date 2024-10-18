@@ -608,14 +608,15 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
                 self.assertRaises(ValueError, fid.seek, 0)
                 self.assertRaises(ValueError, fid.tell)
 
-    def test_write_to_readonly(self):
-        """Check that trying to call write() on a readonly ZipFile object
+    def test_writing_to_readonly(self):
+        """Check that trying to write to a readonly ZipFile object
         raises a ValueError."""
         with zipfile.ZipFile(TESTFN2, mode="w") as zipfp:
             zipfp.writestr("somefile.txt", "bogus")
 
         with zipfile.ZipFile(TESTFN2, mode="r") as zipfp:
             self.assertRaises(ValueError, zipfp.write, TESTFN)
+            self.assertRaises(ValueError, zipfp.writestr, TESTFN, "data")
 
         with zipfile.ZipFile(TESTFN2, mode="r") as zipfp:
             with self.assertRaises(ValueError):
@@ -2020,6 +2021,7 @@ class OtherTests(unittest.TestCase):
         # and report that the first file in the archive was corrupt.
         self.assertRaises(ValueError, zipf.read, "foo.txt")
         self.assertRaises(ValueError, zipf.open, "foo.txt")
+        self.assertRaises(ValueError, zipf.open, "foo.txt", "w")
         self.assertRaises(ValueError, zipf.testzip)
         self.assertRaises(ValueError, zipf.writestr, "bogus.txt", "bogus")
         with open(TESTFN, 'w', encoding='utf-8') as f:
@@ -2242,6 +2244,16 @@ class OtherTests(unittest.TestCase):
             # testzip returns the name of the first corrupt file, or None
             self.assertIsNone(zipf.testzip())
 
+    def test_open_for_write_issues_exception_when_pwd_provided(self):
+        with zipfile.ZipFile(TESTFN2, 'w') as zipf:
+            with self.assertRaises(ValueError):
+                zipf.open("foo.txt", mode='w', pwd="password")
+
+    def test_open_for_write_issues_exception_when_force_zip_not_allowed(self):
+        with zipfile.ZipFile(TESTFN2, 'w', allowZip64=False) as zipf:
+            with self.assertRaises(ValueError):
+                zipf.open("foo.txt", mode='w', force_zip64=True)
+
     def test_open_conflicting_handles(self):
         # It's only possible to open one writable file handle at a time
         msg1 = b"It's fun to charter an accountant!"
@@ -2255,6 +2267,8 @@ class OtherTests(unittest.TestCase):
                     zipf.open('handle', mode='w')
                 with self.assertRaises(ValueError):
                     zipf.open('foo', mode='r')
+                with self.assertRaises(ValueError):
+                    zipf.read('foo')
                 with self.assertRaises(ValueError):
                     zipf.writestr('str', 'abcde')
                 with self.assertRaises(ValueError):
