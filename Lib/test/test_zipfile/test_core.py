@@ -2693,6 +2693,11 @@ class AbstractCopyFileTests(EncryptedFiles):
             destination.copy_file(source_zipfile, source_filename)
         self.assertIdentical(TESTFN, source_zipfile)
 
+    def _test_copy_files(self, source_zipfile, source_filenames):
+        with zipfile.ZipFile(TESTFN, 'w') as destination:
+            destination.copy_files(source_zipfile, source_filenames)
+        self.assertIdentical(TESTFN, source_zipfile)
+
     # A compressed file can be larger than its uncompressed form,
     # which are two different states we need to test
 
@@ -2700,17 +2705,29 @@ class AbstractCopyFileTests(EncryptedFiles):
     def test_copy_file__copy_one_small_file_to_new_ZipFile(self):
         self._test_copy_file(self.small_zip, self.small_file)
 
+    def test_copy_files__copy_one_small_file_to_new_ZipFile(self):
+        self._test_copy_files(self.small_zip, [self.small_file])
+
     # Copying tests with one large file
     def test_copy_file__copy_one_large_file_to_new_ZipFile(self):
         self._test_copy_file(self.large_zip, self.large_file)
+
+    def test_copy_files__copy_one_large_file_to_new_ZipFile(self):
+        self._test_copy_files(self.large_zip, [self.large_file])
 
     # Copying tests with empty directory
     def test_copy_file__copy_directory(self):
         self._test_copy_file(self.emtpy_dir_zip, self.emtpy_dir_name)
 
+    def test_copy_files__copy_directory(self):
+        self._test_copy_files(self.emtpy_dir_zip, [self.emtpy_dir_name])
+
     # Copying tests with encrypted file
     def test_copy_file__copy_encrypted_file(self):
         self._test_copy_file(self.encrypted_zip, self.zip1_filename)
+
+    def test_copy_files__copy_encrypted_file(self):
+        self._test_copy_files(self.encrypted_zip, [self.zip1_filename])
 
     # Copying tests with nonempty destination zipfile
     def _test_nonempty_zipfile(self, method_to_copy_large_file):
@@ -2722,6 +2739,15 @@ class AbstractCopyFileTests(EncryptedFiles):
     def test_copy_file__copy_to_nonempty_ZipFile(self):
         copy_file = lambda x: x.copy_file(self.large_zip, self.large_file)
         self._test_nonempty_zipfile(copy_file)
+
+    def test_copy_files__copy_to_nonempty_ZipFile(self):
+        copy_files = lambda x: x.copy_files(self.large_zip, [self.large_file])
+        self._test_nonempty_zipfile(copy_files)
+
+    # Copying tests with two files
+    def test_copy_files__copy_two_files(self):
+        self._test_copy_files(self.small_large_zip,
+                              [self.small_file, self.large_file])
 
 class StoredCopyFileTests(AbstractCopyFileTests, unittest.TestCase):
     compression = zipfile.ZIP_STORED
@@ -2743,14 +2769,19 @@ class StoredCopyFileTests(AbstractCopyFileTests, unittest.TestCase):
     def copy_file(self, destination):
         destination.copy_file(self.small_zip, self.small_file)
 
+    def copy_files(self, destination):
+        destination.copy_files(self.small_zip, [self.small_file])
+
     def test_copy_methods_issue_exception_when_zipfile_not_open_for_write(self):
         with zipfile.ZipFile(self.exceptions_zip, 'r') as destination:
             self.assertRaises(ValueError, self.copy_file, destination)
+            self.assertRaises(ValueError, self.copy_files, destination)
 
     def test_copy_file__issues_exception_when_already_writing(self):
         with zipfile.ZipFile(self.exceptions_zip, 'w') as destination:
             with destination.open('foo', mode='w') as open_file:
                 self.assertRaises(ValueError, self.copy_file, destination)
+                self.assertRaises(ValueError, self.copy_files, destination)
 
     def test_copy_file__issues_exception_when_file_closed(self):
         with zipfile.ZipFile(self.exceptions_zip, 'w') as destination:
@@ -2758,6 +2789,7 @@ class StoredCopyFileTests(AbstractCopyFileTests, unittest.TestCase):
             destination.writestr("filename.txt", "file contents")
 
         self.assertRaises(ValueError, self.copy_file, destination)
+        self.assertRaises(ValueError, self.copy_files, destination)
 
 @requires_zlib()
 class DeflateCopyFileTests(AbstractCopyFileTests, unittest.TestCase):

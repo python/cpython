@@ -2050,6 +2050,13 @@ class ZipFile:
             source_zinfo = source.getinfo(file)
             self._copy_file(source, source_zinfo)
 
+    def copy_files(self, source_zipfile, files):
+        self._raise_if_archive_not_in_writing_mode("copy_files")
+        with ZipFile(source_zipfile, 'r') as source:
+            for file in files:
+                source_zinfo = source.getinfo(file)
+                self._copy_file(source, source_zinfo)
+
     def __del__(self):
         """Call the "close()" method in case the user forgot."""
         self.close()
