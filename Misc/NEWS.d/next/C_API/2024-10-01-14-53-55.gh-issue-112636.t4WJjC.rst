@@ -1,0 +1,4 @@
+:c:func:`PyNumber_Float` doesn't fallback anymore to
+``PyFloat_FromDouble(PyFloat_AS_DOUBLE(obj))`` if a :class:`float` subtype resets
+:c:member:`~PyNumberMethods.nb_float` to ``NULL``.  A :exc:`TypeError`
+exception is raised instead.
