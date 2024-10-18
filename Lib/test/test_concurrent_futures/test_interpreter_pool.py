@@ -284,12 +284,16 @@ class AsyncioTest(InterpretersMixin, testasyncio_utils.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        # Most uses of asyncio will implicitly call set_event_loop_policy()
+        # with the default policy if a policy hasn't been set already.
+        # If that happens in a test, likw here, we'll end up with a failure
+        # when --fail-env-changed is used.  That's why the other tests that
+        # use asyncio are careful to set the policy back to None and why
+        # we're careful to do so here.  We also validate that no other
+        # tests left a policy in place, just in case.
         policy = support.maybe_get_event_loop_policy()
         assert policy is None, policy
-
-    @classmethod
-    def tearDownClass(cls):
-        asyncio.set_event_loop_policy(None)
+        cls.addClassCleanup(lambda: asyncio.set_event_loop_policy(None))
 
     def setUp(self):
         super().setUp()
