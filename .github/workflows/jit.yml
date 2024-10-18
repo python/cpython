@@ -61,7 +61,7 @@ jobs:
           - true
           - false
         llvm:
-          - 18
+          - 19
         include:
           - target: i686-pc-windows-msvc/msvc
             architecture: Win32
@@ -165,6 +165,10 @@ jobs:
     name: Free-Threaded (Debug)
     needs: interpreter
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        llvm:
+          - 19
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -172,8 +176,8 @@ jobs:
           python-version: '3.11'
       - name: Build with JIT enabled and GIL disabled
         run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh 18
-          export PATH="$(llvm-config-18 --bindir):$PATH"
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
+          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
           ./configure --enable-experimental-jit --with-pydebug --disable-gil
           make all --jobs 4
       - name: Run tests
