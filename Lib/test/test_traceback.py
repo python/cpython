@@ -4637,6 +4637,27 @@ class TestColorizedTraceback(unittest.TestCase):
             f'{boldm}ZeroDivisionError{reset}: {magenta}division by zero{reset}']
         self.assertEqual(actual, expected)
 
+    def test_colorized_traceback_from_exception_group(self):
+        try:
+            exceptions = []
+            try:
+                1 / 0
+            except ZeroDivisionError as inner_exc:
+                exceptions.append(inner_exc)
+            raise ExceptionGroup("test", exceptions)
+        except Exception as e:
+            exc = traceback.TracebackException.from_exception(
+                e, capture_locals=True
+            )
+
+        actual = "".join(exc.format(colorize=True))
+        red = _colorize.ANSIColors.RED
+        boldr = _colorize.ANSIColors.BOLD_RED
+        reset = _colorize.ANSIColors.RESET
+
+        self.assertIn(f"{red}1 {reset+boldr}/{reset+red} 0{reset}", actual)
+        self.assertIn(f"{red}~~{reset+boldr}^{reset+red}~~{reset}", actual)
+
 
 if __name__ == "__main__":
     unittest.main()
