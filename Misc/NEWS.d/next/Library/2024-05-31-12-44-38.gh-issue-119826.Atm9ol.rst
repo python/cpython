@@ -1,0 +1,1 @@
+Improve accuracy of :func:`os.path.normpath` and support qualified referencing for :func:`os.path.abspath` on Windows.
