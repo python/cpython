@@ -21,6 +21,7 @@ from test import support
 from test.support import ALWAYS_EQ, REPO_ROOT
 from test.support import threading_helper
 from datetime import timedelta
+from abc import ABC, abstractmethod
 
 python_version = sys.version_info[:2]
 
@@ -3931,6 +3932,23 @@ class OldTestFlag(unittest.TestCase):
         self.assertEqual(Color.ALL.value, 7)
         self.assertEqual(str(Color.BLUE), 'blue')
 
+    def test_abstract_mixin(self):
+        class HasColor(ABC):
+            @abstractmethod
+            def color(self):
+                ...
+        class Flowers(HasColor, Enum):
+            ROSES = 1
+            VIOLETS = 2
+            def color(self):
+                match self:
+                    case self.ROSES:
+                        return 'red'
+                    case self.VIOLETS:
+                        return 'blue'
+        self.assertEqual(Flowers.ROSES.color(), 'red')
+        self.assertEqual(Flowers.VIOLETS.color(), 'blue')
+
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
     def test_unique_composite(self):
@@ -5242,6 +5260,33 @@ class TestStdLib(unittest.TestCase):
             VEST = 1, 'uppert half'
             PANTS = 2, 'lower half'
         _test_simple_enum(CheckedComplexFlag, ComplexFlag)
+        #
+        #
+        class HasColor(ABC):
+            @abstractmethod
+            def color(self):
+                ...
+        class CheckedABCMixin(HasColor, Enum):
+            ROSES = 1
+            VIOLETS = 2
+            def color(self):
+                match self:
+                    case self.ROSES:
+                        return 'red'
+                    case self.VIOLETS:
+                        return 'blue'
+        #
+        @_simple_enum(Enum)
+        class ABCMixin(HasColor):
+            ROSES = 1
+            VIOLETS = 2
+            def color(self):
+                match self:
+                    case self.ROSES:
+                        return 'red'
+                    case self.VIOLETS:
+                        return 'blue'
+        _test_simple_enum(CheckedABCMixin, ABCMixin)
 
 
 class MiscTestCase(unittest.TestCase):
