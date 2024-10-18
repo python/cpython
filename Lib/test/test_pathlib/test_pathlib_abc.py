@@ -1424,6 +1424,21 @@ DummyPathStatResult = collections.namedtuple(
     'st_mode st_ino st_dev st_nlink st_uid st_gid st_size st_atime st_mtime st_ctime')
 
 
+class DummyDirEntry:
+    __slots__ = ('name', '_is_symlink', '_is_dir')
+
+    def __init__(self, name, is_symlink, is_dir):
+        self.name = name
+        self._is_symlink = is_symlink
+        self._is_dir = is_dir
+
+    def is_symlink(self):
+        return self._is_symlink
+
+    def is_dir(self, *, follow_symlinks=True):
+        return self._is_dir and (follow_symlinks or not self._is_symlink)
+
+
 class DummyPath(PathBase):
     """
     Simple implementation of PathBase that keeps files and directories in
@@ -1492,13 +1507,22 @@ class DummyPath(PathBase):
         return stream
 
     def iterdir(self):
-        path = str(self.resolve())
-        if path in self._files:
-            raise NotADirectoryError(errno.ENOTDIR, "Not a directory", path)
-        elif path in self._directories:
-            return iter([self / name for name in self._directories[path]])
+        path = self.resolve()
+        path_str = str(path)
+        if path_str in self._files:
+            raise NotADirectoryError(errno.ENOTDIR, "Not a directory", path_str)
+        elif path_str in self._directories:
+            return iter([self._make_dir_child(path, name) for name in self._directories[path_str]])
         else:
-            raise FileNotFoundError(errno.ENOENT, "File not found", path)
+            raise FileNotFoundError(errno.ENOENT, "File not found", path_str)
+
+    def _make_dir_child(self, resolved_self, name):
+        path = self.joinpath(name)
+        path_str = str(resolved_self.joinpath(name))
+        is_symlink = path_str in self._symlinks
+        is_directory = path_str in self._directories if not is_symlink else path.is_dir()
+        path.dir_entry = DummyDirEntry(name, is_symlink, is_directory)
+        return path
 
     def mkdir(self, mode=0o777, parents=False, exist_ok=False):
         path = str(self.parent.resolve() / self.name)
@@ -2186,6 +2210,20 @@ class DummyPathTest(DummyPurePathTest):
         # (see issue #12802).
         self.assertIn(cm.exception.errno, (errno.ENOTDIR,
                                            errno.ENOENT, errno.EINVAL))
+
+    def test_dir_entry(self):
+        p = self.cls(self.base)
+        self.assertIsNone(p.dir_entry)
+        for child in p.iterdir():
+            entry = child.dir_entry
+            self.assertIsNotNone(entry)
+            self.assertEqual(entry.name, child.name)
+            self.assertEqual(entry.is_symlink(),
+                             child.is_symlink())
+            self.assertEqual(entry.is_dir(follow_symlinks=False),
+                             child.is_dir(follow_symlinks=False))
+            if entry.name != 'brokenLinkLoop':
+                self.assertEqual(entry.is_dir(), child.is_dir())
 
     def test_glob_common(self):
         def _check(glob, expected):
