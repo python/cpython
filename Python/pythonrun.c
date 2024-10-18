@@ -13,6 +13,7 @@
 #include "Python.h"
 
 #include "pycore_ast.h"           // PyAST_mod2obj()
+#include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_compile.h"       // _PyAST_Compile()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
@@ -22,7 +23,7 @@
 #include "pycore_pylifecycle.h"   // _Py_FdIsInteractive()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_pythonrun.h"     // export _PyRun_InteractiveLoopObject()
-#include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_traceback.h"     // _PyTraceBack_Print()
 
 #include "errcode.h"              // E_EOF

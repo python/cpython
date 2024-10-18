@@ -15,6 +15,7 @@ Data members:
 */
 
 #include "Python.h"
+#include "pycore_audit.h"         // _Py_AuditHookEntry
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_SetAsyncGenFinalizer()
 #include "pycore_dict.h"          // _PyDict_GetItemWithError()
