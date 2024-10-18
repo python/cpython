@@ -5314,8 +5314,9 @@ instantiated from the type::
 Other Built-in Types
 ====================
 
-The interpreter supports several other kinds of objects. Most of these support
-only one or two operations.
+The interpreter supports several other kinds of objects, including instances
+of the :class:`object` class itself. Most of these support only one or two
+operations.
 
 
 .. _typesmodules:
