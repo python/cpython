@@ -43,13 +43,13 @@ parent(Py_ssize_t i)
 }
 
 static inline Py_ssize_t
-left_child(int32_t i)
+left_child(Py_ssize_t i)
 {
     return 2 * i + 1;
 }
 
 static inline Py_ssize_t
-right_child(int32_t i)
+right_child(Py_ssize_t i)
 {
     return 2 * i + 2;
 }
@@ -121,7 +121,7 @@ heap_ensure_capacity(_PyIndexHeap *heap, Py_ssize_t limit)
     if (!new_capacity) {
         return -1;
     }
-    Py_ssize_t *new_values = PyMem_RawCalloc(new_capacity, sizeof(Py_ssize_t));
+    int32_t *new_values = PyMem_RawCalloc(new_capacity, sizeof(int32_t));
     if (new_values == NULL) {
         return -1;
     }
