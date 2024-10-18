@@ -4745,8 +4745,6 @@
             // don't want to specialize instrumented instructions
             PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
             GO_TO_INSTRUCTION(LOAD_SUPER_ATTR);
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
         }
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_FALSE) {
@@ -5058,9 +5056,11 @@
             tstate->current_frame = frame->previous;
             assert(!_PyErr_Occurred(tstate));
             tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
-            return PyStackRef_AsPyObjectSteal(retval);
+            PyObject *result = PyStackRef_AsPyObjectSteal(retval);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
+            /* Not strictly necessary, but prevents warnings */
+            return result;
         }
 
         TARGET(IS_OP) {
