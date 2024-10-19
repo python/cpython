@@ -65,7 +65,7 @@ understand and to work with, at the cost of ignoring some aspects of reality.
 
 For applications requiring aware objects, :class:`.datetime` and :class:`.time`
 objects have an optional time zone information attribute, :attr:`!tzinfo`, that
-can be set to an instance of a subclass of the abstract :class:`tzinfo` class.
+can be set to an instance of a subclass of the abstract :class:`!tzinfo` class.
 These :class:`tzinfo` objects capture information about the offset from UTC
 time, the time zone name, and whether daylight saving time is in effect.
 
@@ -1282,7 +1282,7 @@ Supported operations:
    :class:`.datetime` objects are equal if they represent the same date
    and time, taking into account the time zone.
 
-   Naive and aware :class:`!datetime` objects are never equal.
+   Naive and aware :class:`.datetime` objects are never equal.
 
    If both comparands are aware, and have the same :attr:`!tzinfo` attribute,
    the :attr:`!tzinfo` and :attr:`~.datetime.fold` attributes are ignored and
@@ -1290,7 +1290,7 @@ Supported operations:
    If both comparands are aware and have different :attr:`~.datetime.tzinfo`
    attributes, the comparison acts as comparands were first converted to UTC
    datetimes except that the implementation never overflows.
-   :class:`!datetime` instances in a repeated interval are never equal to
+   :class:`.datetime` instances in a repeated interval are never equal to
    :class:`!datetime` instances in other time zone.
 
 (5)
@@ -2086,14 +2086,14 @@ Examples of working with a :class:`.time` object::
 
    An instance of (a concrete subclass of) :class:`tzinfo` can be passed to the
    constructors for :class:`.datetime` and :class:`.time` objects. The latter objects
-   view their attributes as being in local time, and the :class:`tzinfo` object
+   view their attributes as being in local time, and the :class:`!tzinfo` object
    supports methods revealing offset of local time from UTC, the name of the time
    zone, and DST offset, all relative to a date or time object passed to them.
 
    You need to derive a concrete subclass, and (at least)
    supply implementations of the standard :class:`tzinfo` methods needed by the
    :class:`.datetime` methods you use. The :mod:`!datetime` module provides
-   :class:`timezone`, a simple concrete subclass of :class:`tzinfo` which can
+   :class:`timezone`, a simple concrete subclass of :class:`!tzinfo` which can
    represent time zones with fixed offset from UTC such as UTC itself or North
    American EST and EDT.
 
@@ -2156,11 +2156,11 @@ Examples of working with a :class:`.time` object::
    ``tz.utcoffset(dt) - tz.dst(dt)``
 
    must return the same result for every :class:`.datetime` *dt* with ``dt.tzinfo ==
-   tz``. For sane :class:`tzinfo` subclasses, this expression yields the time
+   tz``. For sane :class:`!tzinfo` subclasses, this expression yields the time
    zone's "standard offset", which should not depend on the date or the time, but
    only on geographic location. The implementation of :meth:`datetime.astimezone`
    relies on this, but cannot detect violations; it's the programmer's
-   responsibility to ensure it. If a :class:`tzinfo` subclass cannot guarantee
+   responsibility to ensure it. If a :class:`!tzinfo` subclass cannot guarantee
    this, it may be able to override the default implementation of
    :meth:`tzinfo.fromutc` to work correctly with :meth:`~.datetime.astimezone` regardless.
 
@@ -2197,7 +2197,7 @@ Examples of working with a :class:`.time` object::
    valid replies. Return ``None`` if a string name isn't known. Note that this is
    a method rather than a fixed string primarily because some :class:`tzinfo`
    subclasses will wish to return different names depending on the specific value
-   of *dt* passed, especially if the :class:`tzinfo` class is accounting for
+   of *dt* passed, especially if the :class:`!tzinfo` class is accounting for
    daylight time.
 
    The default implementation of :meth:`tzname` raises :exc:`NotImplementedError`.
@@ -2217,8 +2217,8 @@ there is no other convention for discovering the standard offset.
 
 When a :class:`.datetime` object is passed in response to a :class:`!datetime`
 method, ``dt.tzinfo`` is the same object as *self*. :class:`tzinfo` methods can
-rely on this, unless user code calls :class:`tzinfo` methods directly. The
-intent is that the :class:`tzinfo` methods interpret *dt* as being in local
+rely on this, unless user code calls :class:`!tzinfo` methods directly. The
+intent is that the :class:`!tzinfo` methods interpret *dt* as being in local
 time, and not need worry about objects in other time zones.
 
 There is one more :class:`tzinfo` method that a subclass may wish to override:
@@ -2328,7 +2328,7 @@ Note that the :class:`.datetime` instances that differ only by the value of the
 Applications that can't bear wall-time ambiguities should explicitly check the
 value of the :attr:`~.datetime.fold` attribute or avoid using hybrid
 :class:`tzinfo` subclasses; there are no ambiguities when using :class:`timezone`,
-or any other fixed-offset :class:`tzinfo` subclass (such as a class representing
+or any other fixed-offset :class:`!tzinfo` subclass (such as a class representing
 only EST (fixed offset -5 hours), or only EDT (fixed offset -4 hours)).
 
 .. seealso::
