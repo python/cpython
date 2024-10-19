@@ -1622,20 +1622,13 @@ class ZipFile:
             raise ValueError(
                 "Attempt to use ZIP archive that was already closed")
 
-        # Make sure we have an info object
-        if isinstance(name, ZipInfo):
-            # 'name' is already an info object
-            zinfo = name
-        elif mode == 'w':
-            zinfo = ZipInfo(name)
-            zinfo.compress_type = self.compression
-            zinfo.compress_level = self.compresslevel
-        else:
-            # Get info object for name
-            zinfo = self.getinfo(name)
-
         if mode == 'w':
-            return self._open_to_write(zinfo, force_zip64=force_zip64)
+            return self._open_to_write(name, force_zip64=force_zip64)
+
+        if isinstance(name, ZipInfo):
+            zinfo = name
+        else:
+            zinfo = self.getinfo(name)
 
         if self._writing:
             raise ValueError("Can't read from the ZIP file while there "
@@ -1700,7 +1693,7 @@ class ZipFile:
             zef_file.close()
             raise
 
-    def _open_to_write(self, zinfo, force_zip64=False):
+    def _open_to_write(self, name, force_zip64=False):
         if force_zip64 and not self._allowZip64:
             raise ValueError(
                 "force_zip64 is True, but allowZip64 was False when opening "
@@ -1710,6 +1703,13 @@ class ZipFile:
             raise ValueError("Can't write to the ZIP file while there is "
                              "another write handle open on it. "
                              "Close the first handle before opening another.")
+
+        if isinstance(name, ZipInfo):
+            zinfo = name
+        else:
+            zinfo = ZipInfo(name)
+            zinfo.compress_type = self.compression
+            zinfo._compresslevel = self.compresslevel
 
         # Size and CRC are overwritten with correct data after processing the file
         zinfo.compress_size = 0
