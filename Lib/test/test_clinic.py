@@ -3393,6 +3393,15 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(fn(1, 2), (1, 2, ()))
         self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
 
+    def test_posonly_req_opt_varpos(self):
+        # fn(a, b=False, /, *args)
+        fn = ac_tester.posonly_req_opt_varpos
+        self.assertRaises(TypeError, fn)
+        self.assertRaises(TypeError, fn, a=1)
+        self.assertEqual(fn(1), (1, False, ()))
+        self.assertEqual(fn(1, 2), (1, 2, ()))
+        self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
+
     def test_posonly_poskw_varpos(self):
         # fn(a, /, b, *args)
         fn = ac_tester.posonly_poskw_varpos
@@ -3401,7 +3410,8 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(fn(1, b=2), (1, 2, ()))
         self.assertEqual(fn(1, 2, 3, 4), (1, 2, (3, 4)))
         self.assertRaises(TypeError, fn, b=4)
-        self.assertRaises(TypeError, fn, 1, 2, 3, b=4)
+        errmsg = re.escape("given by name ('b') and position (2)")
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, 2, 3, b=4)
 
     def test_poskw_varpos(self):
         # fn(a, *args)
@@ -3409,7 +3419,8 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertRaises(TypeError, fn)
         self.assertRaises(TypeError, fn, 1, b=2)
         self.assertEqual(fn(a=1), (1, ()))
-        self.assertRaises(TypeError, fn, 1, a=2)
+        errmsg = re.escape("given by name ('a') and position (1)")
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, a=2)
         self.assertEqual(fn(1), (1, ()))
         self.assertEqual(fn(1, 2, 3, 4), (1, (2, 3, 4)))
 
@@ -3417,7 +3428,8 @@ class ClinicFunctionalTest(unittest.TestCase):
         # fn(a, *args, b=False)
         fn = ac_tester.poskw_varpos_kwonly_opt
         self.assertRaises(TypeError, fn)
-        self.assertRaises(TypeError, fn, 1, a=2)
+        errmsg = re.escape("given by name ('a') and position (1)")
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, a=2)
         self.assertEqual(fn(1, b=2), (1, (), True))
         self.assertEqual(fn(1, 2, 3, 4), (1, (2, 3, 4), False))
         self.assertEqual(fn(1, 2, 3, 4, b=5), (1, (2, 3, 4), True))
@@ -3428,7 +3440,8 @@ class ClinicFunctionalTest(unittest.TestCase):
         # fn(a, *args, b=False, c=False)
         fn = ac_tester.poskw_varpos_kwonly_opt2
         self.assertRaises(TypeError, fn)
-        self.assertRaises(TypeError, fn, 1, a=2)
+        errmsg = re.escape("given by name ('a') and position (1)")
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, a=2)
         self.assertEqual(fn(1, b=2), (1, (), 2, False))
         self.assertEqual(fn(1, b=2, c=3), (1, (), 2, 3))
         self.assertEqual(fn(1, 2, 3), (1, (2, 3), False, False))
@@ -3490,9 +3503,10 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(fn(covariant=True, name='a'), ('a', (), True))
 
         self.assertRaises(TypeError, fn, covariant=True)
-        self.assertRaises(TypeError, fn, 1, name='a')
-        self.assertRaises(TypeError, fn, 1, 2, 3, name='a', covariant=True)
-        self.assertRaises(TypeError, fn, 1, 2, 3, covariant=True, name='a')
+        errmsg = re.escape("given by name ('name') and position (1)")
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, name='a')
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, 2, 3, name='a', covariant=True)
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1, 2, 3, covariant=True, name='a')
 
     def test_cloned_func_exception_message(self):
         incorrect_arg = -1  # f1() and f2() accept a single str
@@ -3568,14 +3582,15 @@ class ClinicFunctionalTest(unittest.TestCase):
         cls = ac_tester.TestClass
         obj = cls()
         fn = obj.defclass_posonly_varpos
-        self.assertRaises(TypeError, fn)
-        self.assertRaises(TypeError, fn, 1)
+        errmsg = 'takes at least 2 positional arguments'
+        self.assertRaisesRegex(TypeError, errmsg, fn)
+        self.assertRaisesRegex(TypeError, errmsg, fn, 1)
         self.assertEqual(fn(1, 2), (cls, 1, 2, ()))
         self.assertEqual(fn(1, 2, 3, 4), (cls, 1, 2, (3, 4)))
         fn = cls.defclass_posonly_varpos
         self.assertRaises(TypeError, fn)
-        self.assertRaises(TypeError, fn, obj)
-        self.assertRaises(TypeError, fn, obj, 1)
+        self.assertRaisesRegex(TypeError, errmsg, fn, obj)
+        self.assertRaisesRegex(TypeError, errmsg, fn, obj, 1)
         self.assertEqual(fn(obj, 1, 2), (cls, 1, 2, ()))
         self.assertEqual(fn(obj, 1, 2, 3, 4), (cls, 1, 2, (3, 4)))
 

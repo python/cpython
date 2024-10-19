@@ -3,7 +3,7 @@ preserve
 [clinic start generated code]*/
 
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 PyDoc_STRVAR(set_pop__doc__,
 "pop($self, /)\n"
@@ -49,20 +49,16 @@ set_update(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *__clinic_args = NULL;
 
-    if (!_PyArg_CheckPositional("update", nargs, 0, PY_SSIZE_T_MAX)) {
+    __clinic_args = _PyTuple_FromArray(args, nargs);
+    if (__clinic_args == NULL) {
         goto exit;
-    }
-    __clinic_args = PyTuple_New(nargs - 0);
-    if (!__clinic_args) {
-        goto exit;
-    }
-    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
-        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
     }
     return_value = set_update_impl(so, __clinic_args);
 
 exit:
+    /* Cleanup for args */
     Py_XDECREF(__clinic_args);
+
     return return_value;
 }
 
@@ -156,20 +152,16 @@ set_union(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *__clinic_args = NULL;
 
-    if (!_PyArg_CheckPositional("union", nargs, 0, PY_SSIZE_T_MAX)) {
+    __clinic_args = _PyTuple_FromArray(args, nargs);
+    if (__clinic_args == NULL) {
         goto exit;
-    }
-    __clinic_args = PyTuple_New(nargs - 0);
-    if (!__clinic_args) {
-        goto exit;
-    }
-    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
-        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
     }
     return_value = set_union_impl(so, __clinic_args);
 
 exit:
+    /* Cleanup for args */
     Py_XDECREF(__clinic_args);
+
     return return_value;
 }
 
@@ -191,20 +183,16 @@ set_intersection_multi(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *__clinic_args = NULL;
 
-    if (!_PyArg_CheckPositional("intersection", nargs, 0, PY_SSIZE_T_MAX)) {
+    __clinic_args = _PyTuple_FromArray(args, nargs);
+    if (__clinic_args == NULL) {
         goto exit;
-    }
-    __clinic_args = PyTuple_New(nargs - 0);
-    if (!__clinic_args) {
-        goto exit;
-    }
-    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
-        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
     }
     return_value = set_intersection_multi_impl(so, __clinic_args);
 
 exit:
+    /* Cleanup for args */
     Py_XDECREF(__clinic_args);
+
     return return_value;
 }
 
@@ -226,20 +214,16 @@ set_intersection_update_multi(PySetObject *so, PyObject *const *args, Py_ssize_t
     PyObject *return_value = NULL;
     PyObject *__clinic_args = NULL;
 
-    if (!_PyArg_CheckPositional("intersection_update", nargs, 0, PY_SSIZE_T_MAX)) {
+    __clinic_args = _PyTuple_FromArray(args, nargs);
+    if (__clinic_args == NULL) {
         goto exit;
-    }
-    __clinic_args = PyTuple_New(nargs - 0);
-    if (!__clinic_args) {
-        goto exit;
-    }
-    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
-        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
     }
     return_value = set_intersection_update_multi_impl(so, __clinic_args);
 
 exit:
+    /* Cleanup for args */
     Py_XDECREF(__clinic_args);
+
     return return_value;
 }
 
@@ -285,20 +269,16 @@ set_difference_update(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *__clinic_args = NULL;
 
-    if (!_PyArg_CheckPositional("difference_update", nargs, 0, PY_SSIZE_T_MAX)) {
+    __clinic_args = _PyTuple_FromArray(args, nargs);
+    if (__clinic_args == NULL) {
         goto exit;
-    }
-    __clinic_args = PyTuple_New(nargs - 0);
-    if (!__clinic_args) {
-        goto exit;
-    }
-    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
-        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
     }
     return_value = set_difference_update_impl(so, __clinic_args);
 
 exit:
+    /* Cleanup for args */
     Py_XDECREF(__clinic_args);
+
     return return_value;
 }
 
@@ -320,20 +300,16 @@ set_difference_multi(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *__clinic_args = NULL;
 
-    if (!_PyArg_CheckPositional("difference", nargs, 0, PY_SSIZE_T_MAX)) {
+    __clinic_args = _PyTuple_FromArray(args, nargs);
+    if (__clinic_args == NULL) {
         goto exit;
-    }
-    __clinic_args = PyTuple_New(nargs - 0);
-    if (!__clinic_args) {
-        goto exit;
-    }
-    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
-        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
     }
     return_value = set_difference_multi_impl(so, __clinic_args);
 
 exit:
+    /* Cleanup for args */
     Py_XDECREF(__clinic_args);
+
     return return_value;
 }
 
@@ -568,4 +544,4 @@ set___sizeof__(PySetObject *so, PyObject *Py_UNUSED(ignored))
 
     return return_value;
 }
-/*[clinic end generated code: output=de4ee725bd29f758 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=83ffa2b5a786e53d input=a9049054013a1b77]*/
