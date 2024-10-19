@@ -12,14 +12,38 @@ extern "C" {
 
 #define _PyDynArray_DEFAULT_SIZE 16
 
+/*
+ * Deallocator for items on a _PyDynArray structure. A NULL pointer
+ * will never be given to the deallocator.
+ */
 typedef void (*_PyDynArray_Deallocator)(void *);
 
+/*
+ * Internal only dynamic array for CPython.
+ */
 typedef struct {
+    /*
+     * The actual items in the dynamic array.
+     * Don't access this field publicly to get
+     * items--use _PyDynArray_GET_ITEM() instead.
+     */
     void **items;
+    /*
+     * The length of the actual items array allocation.
+     */
     Py_ssize_t capacity;
+    /*
+     * The number of items in the array.
+     * Don't use this field publicly--use _PyDynArray_LENGTH()
+     */
     Py_ssize_t length;
+    /*
+     * The deallocator, set by one of the initializer functions.
+     * This may be NULL.
+     */
     _PyDynArray_Deallocator deallocator;
 } _PyDynArray;
+
 
 static inline void
 _PyDynArray_ASSERT_VALID(_PyDynArray *array)
@@ -37,7 +61,10 @@ _PyDynArray_ASSERT_INDEX(_PyDynArray *array, Py_ssize_t index)
 }
 
 /*
- * Initialize a dynamic array with an initial size.
+ * Initialize a dynamic array with an initial size and deallocator.
+ *
+ * If the deallocator is NULL, then nothing happens to items upon
+ * removal and upon array clearing.
  *
  * Returns -1 upon failure, 0 otherwise.
  */
@@ -69,13 +96,14 @@ PyAPI_FUNC(void) _PyDynArray_Clear(_PyDynArray *array);
  * Set a value at index in the array.
  *
  * If an item already exists at the target index, the deallocator
- * is called on it.
+ * is called on it, if the array has one set.
  */
 PyAPI_FUNC(void)
 _PyDynArray_Set(_PyDynArray *array, Py_ssize_t index, void *item);
 
 /*
- * Remove the item at the index, and call the deallocator on it.
+ * Remove the item at the index, and call the deallocator on it (if the array
+ * has one set).
  */
 PyAPI_FUNC(void)
 _PyDynArray_Remove(_PyDynArray *array, Py_ssize_t index);
@@ -84,7 +112,7 @@ _PyDynArray_Remove(_PyDynArray *array, Py_ssize_t index);
  * Clear all the fields on a dynamic array, and then
  * free the dynamic array structure itself.
  *
- * The passed array must have been created by _PyDynArray_New()
+ * The array must have been created by _PyDynArray_New()
  */
 static inline void
 _PyDynArray_Free(_PyDynArray *array)
@@ -95,7 +123,7 @@ _PyDynArray_Free(_PyDynArray *array)
 }
 
 /*
- * Equivalent to _PyDynArray_InitWithSize() with a size of 16.
+ * Equivalent to _PyDynArray_InitWithSize() with a default size of 16.
  *
  * Returns -1 upon failure, 0 otherwise.
  */
@@ -132,6 +160,9 @@ _PyDynArray_NewWithSize(_PyDynArray_Deallocator deallocator, Py_ssize_t initial)
 
 /*
  * Equivalent to _PyDynArray_NewWithSize() with a size of 16.
+ *
+ * The returned array must be freed with _PyDynArray_Free().
+ * Returns NULL on failure.
  */
 static inline _PyDynArray *
 _PyDynArray_New(_PyDynArray_Deallocator deallocator)
@@ -140,7 +171,7 @@ _PyDynArray_New(_PyDynArray_Deallocator deallocator)
 }
 
 /*
- * Get an item from the array.
+ * Get an item from the array. This cannot fail.
  *
  * If the index is not valid, this is undefined behavior.
  */
@@ -152,6 +183,9 @@ _PyDynArray_GET_ITEM(_PyDynArray *array, Py_ssize_t index)
     return array->items[index];
 }
 
+/*
+ * Get the length of the array. This cannot fail.
+ */
 static inline Py_ssize_t
 _PyDynArray_LENGTH(_PyDynArray *array)
 {
