@@ -50,7 +50,6 @@ resize_if_needed(_PyDynArray *array)
             return -1;
         }
 
-        // XXX Zero-out the new capacity?
         array->items = new_items;
     }
 
