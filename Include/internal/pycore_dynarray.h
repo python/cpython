@@ -97,6 +97,8 @@ PyAPI_FUNC(void) _PyDynArray_Clear(_PyDynArray *array);
  *
  * If an item already exists at the target index, the deallocator
  * is called on it, if the array has one set.
+ *
+ * This cannot fail.
  */
 PyAPI_FUNC(void)
 _PyDynArray_Set(_PyDynArray *array, Py_ssize_t index, void *item);
@@ -104,9 +106,20 @@ _PyDynArray_Set(_PyDynArray *array, Py_ssize_t index, void *item);
 /*
  * Remove the item at the index, and call the deallocator on it (if the array
  * has one set).
+ *
+ * This cannot fail.
  */
 PyAPI_FUNC(void)
 _PyDynArray_Remove(_PyDynArray *array, Py_ssize_t index);
+
+/*
+ * Remove the item at the index *without* deallocating it, and
+ * return the item.
+ *
+ * This cannot fail.
+ */
+PyAPI_FUNC(void *)
+_PyDynArray_Pop(_PyDynArray *array, Py_ssize_t index);
 
 /*
  * Clear all the fields on a dynamic array, and then
@@ -191,6 +204,16 @@ _PyDynArray_LENGTH(_PyDynArray *array)
 {
     _PyDynArray_ASSERT_VALID(array);
     return array->length;
+}
+
+/*
+ * Pop the item at the end the array.
+ * This function cannot fail.
+ */
+static inline void *
+_PyDynArray_PopTop(_PyDynArray *array, Py_ssize_t index)
+{
+    return _PyDynArray_PopTop(array, _PyDynArray_LENGTH(array) - 1);
 }
 
 #ifdef __cplusplus

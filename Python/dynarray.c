@@ -67,18 +67,33 @@ _PyDynArray_Set(_PyDynArray *array, Py_ssize_t index, void *item)
     array->items[index] = item;
 }
 
+static void
+remove_no_dealloc(_PyDynArray *array, Py_ssize_t index)
+{
+    for (Py_ssize_t i = index; i < array->length - 1; ++i)
+    {
+        array->items[i] = array->items[i + 1];
+    }
+    --array->length;
+}
+
 void
 _PyDynArray_Remove(_PyDynArray *array, Py_ssize_t index)
 {
     _PyDynArray_ASSERT_VALID(array);
     _PyDynArray_ASSERT_INDEX(array, index);
     call_deallocator_maybe(array, index);
+    remove_no_dealloc(array, index);
+}
 
-    for (Py_ssize_t i = index; i < array->length - 1; ++i)
-    {
-        array->items[i] = array->items[i + 1];
-    }
-    --array->length;
+void *
+_PyDynArray_Pop(_PyDynArray *array, Py_ssize_t index)
+{
+    _PyDynArray_ASSERT_VALID(array);
+    _PyDynArray_ASSERT_INDEX(array, index);
+    void *item = array->items[index];
+    remove_no_dealloc(array, index);
+    return item;
 }
 
 void
