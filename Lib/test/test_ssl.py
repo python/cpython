@@ -2844,7 +2844,10 @@ class ThreadedTests(unittest.TestCase):
                 for thread in threads:
                     with self.subTest(thread=thread):
                         thread.join()
-                self.assertIsNone(cm.exc_value)
+                if cm.exc_value is not None:
+                    # Some threads can skip their test
+                    if not isinstance(cm.exc_value, unittest.SkipTest):
+                        raise cm.exc_value
         finally:
             USE_SAME_TEST_CONTEXT = False
 
