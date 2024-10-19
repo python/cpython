@@ -3278,7 +3278,7 @@ class POSIXProcessTestCase(BaseTestCase):
                         1, 2, 3, 4,
                         True, True, 0,
                         None, None, None, -1,
-                        None, True)
+                        None)
                 self.assertIn('fds_to_keep', str(c.exception))
         finally:
             if not gc_enabled:
@@ -3415,25 +3415,6 @@ class POSIXProcessTestCase(BaseTestCase):
 
     @unittest.skipIf(not sysconfig.get_config_var("HAVE_VFORK"),
                      "vfork() not enabled by configure.")
-    @mock.patch("subprocess._fork_exec")
-    @mock.patch("subprocess._USE_POSIX_SPAWN", new=False)
-    def test__use_vfork(self, mock_fork_exec):
-        self.assertTrue(subprocess._USE_VFORK)  # The default value regardless.
-        mock_fork_exec.side_effect = RuntimeError("just testing args")
-        with self.assertRaises(RuntimeError):
-            subprocess.run([sys.executable, "-c", "pass"])
-        mock_fork_exec.assert_called_once()
-        # NOTE: These assertions are *ugly* as they require the last arg
-        # to remain the have_vfork boolean. We really need to refactor away
-        # from the giant "wall of args" internal C extension API.
-        self.assertTrue(mock_fork_exec.call_args.args[-1])
-        with mock.patch.object(subprocess, '_USE_VFORK', False):
-            with self.assertRaises(RuntimeError):
-                subprocess.run([sys.executable, "-c", "pass"])
-            self.assertFalse(mock_fork_exec.call_args_list[-1].args[-1])
-
-    @unittest.skipIf(not sysconfig.get_config_var("HAVE_VFORK"),
-                     "vfork() not enabled by configure.")
     @unittest.skipIf(sys.platform != "linux", "Linux only, requires strace.")
     @mock.patch("subprocess._USE_POSIX_SPAWN", new=False)
     def test_vfork_used_when_expected(self):
@@ -3478,7 +3459,6 @@ class POSIXProcessTestCase(BaseTestCase):
         # Test that each individual thing that would disable the use of vfork
         # actually disables it.
         for sub_name, preamble, sp_kwarg, expect_permission_error in (
-                ("!use_vfork", "subprocess._USE_VFORK = False", "", False),
                 ("preexec", "", "preexec_fn=lambda: None", False),
                 ("setgid", "", f"group={os.getgid()}", True),
                 ("setuid", "", f"user={os.getuid()}", True),

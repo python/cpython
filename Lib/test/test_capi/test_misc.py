@@ -120,7 +120,7 @@ class CAPITest(unittest.TestCase):
                 return 1
         with self.assertRaisesRegex(TypeError, 'indexing'):
             _posixsubprocess.fork_exec(
-                          1,Z(),True,(1, 2),5,6,7,8,9,10,11,12,13,14,True,True,17,False,19,20,21,22,False)
+                          1,Z(),True,(1, 2),5,6,7,8,9,10,11,12,13,14,True,True,17,False,19,20,21,22)
         # Issue #15736: overflow in _PySequence_BytesToCharpArray()
         class Z(object):
             def __len__(self):
@@ -128,7 +128,7 @@ class CAPITest(unittest.TestCase):
             def __getitem__(self, i):
                 return b'x'
         self.assertRaises(MemoryError, _posixsubprocess.fork_exec,
-                          1,Z(),True,(1, 2),5,6,7,8,9,10,11,12,13,14,True,True,17,False,19,20,21,22,False)
+                          1,Z(),True,(1, 2),5,6,7,8,9,10,11,12,13,14,True,True,17,False,19,20,21,22)
 
     @unittest.skipUnless(_posixsubprocess, '_posixsubprocess required for this test.')
     def test_subprocess_fork_exec(self):
@@ -138,7 +138,7 @@ class CAPITest(unittest.TestCase):
 
         # Issue #15738: crash in subprocess_fork_exec()
         self.assertRaises(TypeError, _posixsubprocess.fork_exec,
-                          Z(),[b'1'],True,(1, 2),5,6,7,8,9,10,11,12,13,14,True,True,17,False,19,20,21,22,False)
+                          Z(),[b'1'],True,(1, 2),5,6,7,8,9,10,11,12,13,14,True,True,17,False,19,20,21,22)
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
@@ -541,14 +541,19 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(new_type_refcnt, sys.getrefcount(A))
 
     def test_heaptype_with_dict(self):
-        inst = _testcapi.HeapCTypeWithDict()
-        inst.foo = 42
-        self.assertEqual(inst.foo, 42)
-        self.assertEqual(inst.dictobj, inst.__dict__)
-        self.assertEqual(inst.dictobj, {"foo": 42})
+        for cls in (
+            _testcapi.HeapCTypeWithDict,
+            _testlimitedcapi.HeapCTypeWithRelativeDict,
+        ):
+            with self.subTest(cls=cls):
+                inst = cls()
+                inst.foo = 42
+                self.assertEqual(inst.foo, 42)
+                self.assertEqual(inst.dictobj, inst.__dict__)
+                self.assertEqual(inst.dictobj, {"foo": 42})
 
-        inst = _testcapi.HeapCTypeWithDict()
-        self.assertEqual({}, inst.__dict__)
+                inst = cls()
+                self.assertEqual({}, inst.__dict__)
 
     def test_heaptype_with_managed_dict(self):
         inst = _testcapi.HeapCTypeWithManagedDict()
@@ -585,10 +590,15 @@ class CAPITest(unittest.TestCase):
         self.assertEqual({}, inst.__dict__)
 
     def test_heaptype_with_weakref(self):
-        inst = _testcapi.HeapCTypeWithWeakref()
-        ref = weakref.ref(inst)
-        self.assertEqual(ref(), inst)
-        self.assertEqual(inst.weakreflist, ref)
+        for cls in (
+            _testcapi.HeapCTypeWithWeakref,
+            _testlimitedcapi.HeapCTypeWithRelativeWeakref,
+        ):
+            with self.subTest(cls=cls):
+                inst = cls()
+                ref = weakref.ref(inst)
+                self.assertEqual(ref(), inst)
+                self.assertEqual(inst.weakreflist, ref)
 
     def test_heaptype_with_managed_weakref(self):
         inst = _testcapi.HeapCTypeWithManagedWeakref()
@@ -712,63 +722,76 @@ class CAPITest(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, msg):
             t = _testcapi.pytype_fromspec_meta(metaclass)
 
-    def test_heaptype_with_custom_metaclass_deprecation(self):
+    def test_heaptype_base_with_custom_metaclass(self):
         metaclass = _testcapi.HeapCTypeMetaclassCustomNew
 
-        # gh-103968: a metaclass with custom tp_new is deprecated, but still
-        # allowed for functions that existed in 3.11
-        # (PyType_FromSpecWithBases is used here).
         class Base(metaclass=metaclass):
             pass
 
         # Class creation from C
-        with warnings_helper.check_warnings(
-                ('.* _testcapi.Subclass .* custom tp_new.*in Python 3.14.*', DeprecationWarning),
-                ):
+        msg = "Metaclasses with custom tp_new are not supported."
+        with self.assertRaisesRegex(TypeError, msg):
             sub = _testcapi.make_type_with_base(Base)
-        self.assertTrue(issubclass(sub, Base))
-        self.assertIsInstance(sub, metaclass)
+
+    def test_heaptype_with_tp_vectorcall(self):
+        tp = _testcapi.HeapCTypeVectorcall
+        v0 = tp.__new__(tp)
+        v0.__init__()
+        v1 = tp()
+        self.assertEqual(v0.value, 2)
+        self.assertEqual(v1.value, 1)
 
     def test_multiple_inheritance_ctypes_with_weakref_or_dict(self):
+        for weakref_cls in (_testcapi.HeapCTypeWithWeakref,
+                            _testlimitedcapi.HeapCTypeWithRelativeWeakref):
+            for dict_cls in (_testcapi.HeapCTypeWithDict,
+                             _testlimitedcapi.HeapCTypeWithRelativeDict):
+                with self.subTest(weakref_cls=weakref_cls, dict_cls=dict_cls):
 
-        with self.assertRaises(TypeError):
-            class Both1(_testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithDict):
-                pass
-        with self.assertRaises(TypeError):
-            class Both2(_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithWeakref):
-                pass
+                    with self.assertRaises(TypeError):
+                        class Both1(weakref_cls, dict_cls):
+                            pass
+                    with self.assertRaises(TypeError):
+                        class Both2(dict_cls, weakref_cls):
+                            pass
 
     def test_multiple_inheritance_ctypes_with_weakref_or_dict_and_other_builtin(self):
+        for dict_cls in (_testcapi.HeapCTypeWithDict,
+                         _testlimitedcapi.HeapCTypeWithRelativeDict):
+            for weakref_cls in (_testcapi.HeapCTypeWithWeakref,
+                                _testlimitedcapi.HeapCTypeWithRelativeWeakref):
+                with self.subTest(dict_cls=dict_cls, weakref_cls=weakref_cls):
 
-        with self.assertRaises(TypeError):
-            class C1(_testcapi.HeapCTypeWithDict, list):
-                pass
+                    with self.assertRaises(TypeError):
+                        class C1(dict_cls, list):
+                            pass
 
-        with self.assertRaises(TypeError):
-            class C2(_testcapi.HeapCTypeWithWeakref, list):
-                pass
+                    with self.assertRaises(TypeError):
+                        class C2(weakref_cls, list):
+                            pass
 
-        class C3(_testcapi.HeapCTypeWithManagedDict, list):
-            pass
-        class C4(_testcapi.HeapCTypeWithManagedWeakref, list):
-            pass
+                    class C3(_testcapi.HeapCTypeWithManagedDict, list):
+                        pass
+                    class C4(_testcapi.HeapCTypeWithManagedWeakref, list):
+                        pass
 
-        inst = C3()
-        inst.append(0)
-        str(inst.__dict__)
+                    inst = C3()
+                    inst.append(0)
+                    str(inst.__dict__)
 
-        inst = C4()
-        inst.append(0)
-        str(inst.__weakref__)
+                    inst = C4()
+                    inst.append(0)
+                    str(inst.__weakref__)
 
-        for cls in (_testcapi.HeapCTypeWithManagedDict, _testcapi.HeapCTypeWithManagedWeakref):
-            for cls2 in (_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithWeakref):
-                class S(cls, cls2):
-                    pass
-            class B1(C3, cls):
-                pass
-            class B2(C4, cls):
-                pass
+                    for cls in (_testcapi.HeapCTypeWithManagedDict,
+                                _testcapi.HeapCTypeWithManagedWeakref):
+                        for cls2 in (dict_cls, weakref_cls):
+                            class S(cls, cls2):
+                                pass
+                        class B1(C3, cls):
+                            pass
+                        class B2(C4, cls):
+                            pass
 
     def test_pytype_fromspec_with_repeated_slots(self):
         for variant in range(2):
@@ -868,36 +891,6 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(c.__dict__, {'a':1})
         _testcapi.clear_managed_dict(c)
         self.assertEqual(c.__dict__, {})
-
-    def test_eval_get_func_name(self):
-        def function_example(): ...
-
-        class A:
-            def method_example(self): ...
-
-        self.assertEqual(_testcapi.eval_get_func_name(function_example),
-                         "function_example")
-        self.assertEqual(_testcapi.eval_get_func_name(A.method_example),
-                         "method_example")
-        self.assertEqual(_testcapi.eval_get_func_name(A().method_example),
-                         "method_example")
-        self.assertEqual(_testcapi.eval_get_func_name(sum), "sum")  # c function
-        self.assertEqual(_testcapi.eval_get_func_name(A), "type")
-
-    def test_eval_get_func_desc(self):
-        def function_example(): ...
-
-        class A:
-            def method_example(self): ...
-
-        self.assertEqual(_testcapi.eval_get_func_desc(function_example),
-                         "()")
-        self.assertEqual(_testcapi.eval_get_func_desc(A.method_example),
-                         "()")
-        self.assertEqual(_testcapi.eval_get_func_desc(A().method_example),
-                         "()")
-        self.assertEqual(_testcapi.eval_get_func_desc(sum), "()")  # c function
-        self.assertEqual(_testcapi.eval_get_func_desc(A), " object")
 
     def test_function_get_code(self):
         import types
@@ -1151,6 +1144,77 @@ class CAPITest(unittest.TestCase):
         MyType.__module__ = 123
         self.assertEqual(get_type_fullyqualname(MyType), 'my_qualname')
 
+    def test_get_base_by_token(self):
+        def get_base_by_token(src, key, comparable=True):
+            def run(use_mro):
+                find_first = _testcapi.pytype_getbasebytoken
+                ret1, result = find_first(src, key, use_mro, True)
+                ret2, no_result = find_first(src, key, use_mro, False)
+                self.assertIn(ret1, (0, 1))
+                self.assertEqual(ret1, result is not None)
+                self.assertEqual(ret1, ret2)
+                self.assertIsNone(no_result)
+                return result
+
+            found_in_mro = run(True)
+            found_in_bases = run(False)
+            if comparable:
+                self.assertIs(found_in_mro, found_in_bases)
+                return found_in_mro
+            return found_in_mro, found_in_bases
+
+        create_type = _testcapi.create_type_with_token
+        get_token = _testcapi.get_tp_token
+
+        Py_TP_USE_SPEC = _testcapi.Py_TP_USE_SPEC
+        self.assertEqual(Py_TP_USE_SPEC, 0)
+
+        A1 = create_type('_testcapi.A1', Py_TP_USE_SPEC)
+        self.assertTrue(get_token(A1) != Py_TP_USE_SPEC)
+
+        B1 = create_type('_testcapi.B1', id(self))
+        self.assertTrue(get_token(B1) == id(self))
+
+        tokenA1 = get_token(A1)
+        # find A1 from A1
+        found = get_base_by_token(A1, tokenA1)
+        self.assertIs(found, A1)
+
+        # no token in static types
+        STATIC = type(1)
+        self.assertEqual(get_token(STATIC), 0)
+        found = get_base_by_token(STATIC, tokenA1)
+        self.assertIs(found, None)
+
+        # no token in pure subtypes
+        class A2(A1): pass
+        self.assertEqual(get_token(A2), 0)
+        # find A1
+        class Z(STATIC, B1, A2): pass
+        found = get_base_by_token(Z, tokenA1)
+        self.assertIs(found, A1)
+
+        # searching for NULL token is an error
+        with self.assertRaises(SystemError):
+            get_base_by_token(Z, 0)
+        with self.assertRaises(SystemError):
+            get_base_by_token(STATIC, 0)
+
+        # share the token with A1
+        C1 = create_type('_testcapi.C1', tokenA1)
+        self.assertTrue(get_token(C1) == tokenA1)
+
+        # find C1 first by shared token
+        class Z(C1, A2): pass
+        found = get_base_by_token(Z, tokenA1)
+        self.assertIs(found, C1)
+        # B1 not found
+        found = get_base_by_token(Z, get_token(B1))
+        self.assertIs(found, None)
+
+        with self.assertRaises(TypeError):
+            _testcapi.pytype_getbasebytoken(
+                'not a type', id(self), True, False)
 
     def test_gen_get_code(self):
         def genf(): yield
@@ -1301,6 +1365,53 @@ class TestHeapTypeRelative(unittest.TestCase):
         with self.assertRaisesRegex(
                 SystemError, r"PyMember_SetOne used with Py_RELATIVE_OFFSET"):
             instance.set_memb_relative(0)
+
+    def test_heaptype_relative_special_members_errors(self):
+        for member_name in "__vectorcalloffset__", "__dictoffset__", "__weaklistoffset__":
+            with self.subTest(member_name=member_name):
+                with self.assertRaisesRegex(
+                        SystemError,
+                        r"With Py_RELATIVE_OFFSET, basicsize must be negative."):
+                    _testlimitedcapi.make_heaptype_with_member(
+                        basicsize=sys.getsizeof(object()) + 100,
+                        add_relative_flag=True,
+                        member_name=member_name,
+                        member_offset=0,
+                        member_type=_testlimitedcapi.Py_T_PYSSIZET,
+                        member_flags=_testlimitedcapi.Py_READONLY,
+                        )
+                with self.assertRaisesRegex(
+                        SystemError,
+                        r"Member offset out of range \(0\.\.-basicsize\)"):
+                    _testlimitedcapi.make_heaptype_with_member(
+                        basicsize=-8,
+                        add_relative_flag=True,
+                        member_name=member_name,
+                        member_offset=-1,
+                        member_type=_testlimitedcapi.Py_T_PYSSIZET,
+                        member_flags=_testlimitedcapi.Py_READONLY,
+                        )
+                with self.assertRaisesRegex(
+                        SystemError,
+                        r"type of %s must be Py_T_PYSSIZET" % member_name):
+                    _testlimitedcapi.make_heaptype_with_member(
+                        basicsize=-100,
+                        add_relative_flag=True,
+                        member_name=member_name,
+                        member_offset=0,
+                        member_flags=_testlimitedcapi.Py_READONLY,
+                        )
+                with self.assertRaisesRegex(
+                        SystemError,
+                        r"flags for %s must be " % member_name):
+                    _testlimitedcapi.make_heaptype_with_member(
+                        basicsize=-100,
+                        add_relative_flag=True,
+                        member_name=member_name,
+                        member_offset=0,
+                        member_type=_testlimitedcapi.Py_T_PYSSIZET,
+                        member_flags=0,
+                        )
 
     def test_pyobject_getitemdata_error(self):
         """Test PyObject_GetItemData fails on unsupported types"""

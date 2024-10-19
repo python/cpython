@@ -1618,6 +1618,9 @@ class ClassPropertiesAndMethods(unittest.TestCase):
 
             for method in (annotated, unannotated):
                 with self.subTest(deco=deco, method=method):
+                    with self.assertRaises(AttributeError):
+                        del unannotated.__annotations__
+
                     original_annotations = dict(method.__wrapped__.__annotations__)
                     self.assertNotIn('__annotations__', method.__dict__)
                     self.assertEqual(method.__annotations__, original_annotations)
@@ -1643,6 +1646,17 @@ class ClassPropertiesAndMethods(unittest.TestCase):
 
                     del method.__annotate__
                     self.assertIs(method.__annotate__, original_annotate)
+
+    def test_staticmethod_annotations_without_dict_access(self):
+        # gh-125017: this used to crash
+        class Spam:
+            def __new__(cls, x, y):
+                pass
+
+        self.assertEqual(Spam.__new__.__annotations__, {})
+        obj = Spam.__dict__['__new__']
+        self.assertIsInstance(obj, staticmethod)
+        self.assertEqual(obj.__annotations__, {})
 
     @support.refcount_test
     def test_refleaks_in_classmethod___init__(self):
@@ -4020,6 +4034,20 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         with self.assertRaises(TypeError) as cm:
             y = x ** 2
         self.assertIn('unsupported operand type(s) for **', str(cm.exception))
+
+    def test_pow_wrapper_error_messages(self):
+        self.assertRaisesRegex(TypeError,
+                               'expected 1 or 2 arguments, got 0',
+                               int().__pow__)
+        self.assertRaisesRegex(TypeError,
+                               'expected 1 or 2 arguments, got 3',
+                               int().__pow__, 1, 2, 3)
+        self.assertRaisesRegex(TypeError,
+                               'expected 1 or 2 arguments, got 0',
+                               int().__rpow__)
+        self.assertRaisesRegex(TypeError,
+                               'expected 1 or 2 arguments, got 3',
+                               int().__rpow__, 1, 2, 3)
 
     def test_mutable_bases(self):
         # Testing mutable bases...

@@ -528,6 +528,27 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(repr(self.top._table), expected)
 
 
+class ComprehensionTests(unittest.TestCase):
+    def get_identifiers_recursive(self, st, res):
+        res.extend(st.get_identifiers())
+        for ch in st.get_children():
+            self.get_identifiers_recursive(ch, res)
+
+    def test_loopvar_in_only_one_scope(self):
+        # ensure that the loop variable appears only once in the symtable
+        comps = [
+            "[x for x in [1]]",
+            "{x for x in [1]}",
+            "{x:x*x for x in [1]}",
+        ]
+        for comp in comps:
+            with self.subTest(comp=comp):
+                st = symtable.symtable(comp, "?", "exec")
+                ids = []
+                self.get_identifiers_recursive(st, ids)
+                self.assertEqual(len([x for x in ids if x == 'x']), 1)
+
+
 class CommandLineTest(unittest.TestCase):
     maxDiff = None
 

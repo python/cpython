@@ -1241,7 +1241,6 @@ def _find_spec(name, path, target=None):
     """Find a module's spec."""
     meta_path = sys.meta_path
     if meta_path is None:
-        # PyImport_Cleanup() is running or has been called.
         raise ImportError("sys.meta_path is None, Python is likely "
                           "shutting down")
 

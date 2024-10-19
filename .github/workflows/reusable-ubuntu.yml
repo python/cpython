@@ -1,3 +1,5 @@
+name: Reusable Ubuntu
+
 on:
   workflow_call:
     inputs:
@@ -14,10 +16,14 @@ jobs:
   build_ubuntu_reusable:
     name: 'build and test'
     timeout-minutes: 60
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04]
     env:
       FORCE_COLOR: 1
-      OPENSSL_VER: 3.0.13
+      OPENSSL_VER: 3.0.15
       PYTHONSTRICTEXTENSIONBUILD: 1
       TERM: linux
     steps:
@@ -36,7 +42,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
-        key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
+        key: ${{ matrix.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $MULTISSL_DIR --openssl $OPENSSL_VER --system Linux
@@ -67,20 +73,33 @@ jobs:
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: >-
         ../cpython-ro-srcdir/configure
-        CFLAGS="-fdiagnostics-format=json"
         --config-cache
         --with-pydebug
         --enable-slower-safety
+        --enable-safety
         --with-openssl=$OPENSSL_DIR
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
     - name: Build CPython out-of-tree
+      if: ${{ inputs.free-threading }}
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: make -j4 &> compiler_output.txt
+      run: make -j4
+    - name: Build CPython out-of-tree (for compiler warning check)
+      if: ${{ !inputs.free-threading}}
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      run: set -o pipefail; make -j4 --output-sync 2>&1 | tee compiler_output_ubuntu.txt
     - name: Display build info
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: make pythoninfo
     - name: Check compiler warnings
-      run: python Tools/build/check_warnings.py --compiler-output-file-path=${{ env.CPYTHON_BUILDDIR }}/compiler_output.txt --warning-ignore-file-path ${GITHUB_WORKSPACE}/Tools/build/.warningignore_ubuntu
+      if: ${{ !inputs.free-threading }}
+      run: >-
+        python Tools/build/check_warnings.py
+        --compiler-output-file-path=${{ env.CPYTHON_BUILDDIR }}/compiler_output_ubuntu.txt
+        --warning-ignore-file-path ${GITHUB_WORKSPACE}/Tools/build/.warningignore_ubuntu
+        --compiler-output-type=gcc
+        --fail-on-regression
+        --fail-on-improvement
+        --path-prefix="../cpython-ro-srcdir/"
     - name: Remount sources writable for tests
       # some tests write to srcdir, lack of pyc files slows down testing
       run: sudo mount $CPYTHON_RO_SRCDIR -oremount,rw
