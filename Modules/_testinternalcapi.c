@@ -2104,10 +2104,10 @@ test_dynarray_common(_PyDynArray *array)
     assert(_PyDynArray_GET_ITEM(array, 1) == (void *) 99);
 
     // Resizing with insertion
-    for (void *i = 0; i < (void *) 20; ++i)
+    for (Py_ssize_t i = 0; i < 20; ++i)
     {
-        _PyDynArray_Insert(array, 2, i);
-        assert(_PyDynArray_GET_ITEM(array, 2) == i);
+        _PyDynArray_Insert(array, 2, (void *) i);
+        assert(_PyDynArray_GET_ITEM(array, 2) == (void *) i);
     }
 
     assert(_PyDynArray_GET_ITEM(array, 5) == (void *) 16);
