@@ -179,10 +179,6 @@ class TestPredicates(IsTestBase):
         self.istest(inspect.ismethod, 'git.argue')
         self.istest(inspect.ismethod, 'mod.custom_method')
         self.istest(inspect.ismodule, 'mod')
-        self.istest(inspect.ispackage, 'asyncio')
-        self.istest(inspect.ispackage, 'importlib')
-        self.assertFalse(inspect.ispackage(mod))
-        self.assertFalse(inspect.ispackage(':)'))
         self.istest(inspect.ismethoddescriptor, 'int.__add__')
         self.istest(inspect.isdatadescriptor, 'collections.defaultdict.default_factory')
         self.istest(inspect.isgenerator, '(x for x in range(2))')
@@ -208,7 +204,17 @@ class TestPredicates(IsTestBase):
         self.assertFalse(inspect.ismethodwrapper(int))
         self.assertFalse(inspect.ismethodwrapper(type("AnyClass", (), {})))
 
+    def test_ispackage(self):
+        self.istest(inspect.ispackage, 'asyncio')
+        self.istest(inspect.ispackage, 'importlib')
+        self.assertFalse(inspect.ispackage(inspect))
+        self.assertFalse(inspect.ispackage(mod))
+        self.assertFalse(inspect.ispackage(':)'))
 
+        class FakePackage:
+            __path__ = None
+
+        self.assertFalse(inspect.ispackage(FakePackage()))
 
     def test_iscoroutine(self):
         async_gen_coro = async_generator_function_example(1)
