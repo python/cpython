@@ -611,6 +611,10 @@ urllib
 * Remove deprecated :class:`!Quoter` class from :mod:`urllib.parse`.
   It had previously raised a :exc:`DeprecationWarning` since Python 3.11.
   (Contributed by Nikita Sobolev in :gh:`118827`.)
+* Remove deprecated :class:`!URLopener` and :class:`!FancyURLopener` classes
+  from :mod:`urllib.request`. They had previously raised a
+  :exc:`DeprecationWarning` since Python 3.3.
+  (Contributed by Barney Gale in gh:`84850`.)
 
 Others
 ------
