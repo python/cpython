@@ -750,6 +750,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                             else:
                                 line = line.rstrip('\r\n')
                         buffer += '\n' + line
+                    self.lastcmd = buffer
             save_stdout = sys.stdout
             save_stdin = sys.stdin
             save_displayhook = sys.displayhook
