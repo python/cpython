@@ -28,6 +28,14 @@ _PyDynArray_ASSERT_VALID(_PyDynArray *array)
     assert(array->items != NULL);
 }
 
+static inline void
+_PyDynArray_ASSERT_INDEX(_PyDynArray *array, Py_ssize_t index)
+{
+    // Ensure the index is valid
+    assert(index >= 0);
+    assert(index < array->length);
+}
+
 /*
  * Initialize a dynamic array with an initial size.
  *
@@ -56,6 +64,21 @@ PyAPI_FUNC(int) _PyDynArray_Append(_PyDynArray *array, void *item);
  * on the array after calling this.
  */
 PyAPI_FUNC(void) _PyDynArray_Clear(_PyDynArray *array);
+
+/*
+ * Set a value at index in the array.
+ *
+ * If an item already exists at the target index, the deallocator
+ * is called on it.
+ */
+PyAPI_FUNC(void)
+_PyDynArray_Set(_PyDynArray *array, Py_ssize_t index, void *item);
+
+/*
+ * Remove the item at the index, and call the deallocator on it.
+ */
+PyAPI_FUNC(void)
+_PyDynArray_Remove(_PyDynArray *array, Py_ssize_t index);
 
 /*
  * Clear all the fields on a dynamic array, and then
@@ -125,8 +148,7 @@ static inline void *
 _PyDynArray_GET_ITEM(_PyDynArray *array, Py_ssize_t index)
 {
     _PyDynArray_ASSERT_VALID(array);
-    assert(index >= 0);
-    assert(index < array->length);
+    _PyDynArray_ASSERT_INDEX(array, index);
     return array->items[index];
 }
 

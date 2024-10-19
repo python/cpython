@@ -1,5 +1,5 @@
 /*
- * Dynamic array implementation
+ * Dynamic array implementation.
  */
 
 #include "pycore_dynarray.h"
@@ -43,9 +43,37 @@ _PyDynArray_Append(_PyDynArray *array, void *item)
             return -1;
         }
 
+        // XXX Zero-out the new capacity?
         array->items = new_items;
     }
     return 0;
+}
+
+void
+_PyDynArray_Set(_PyDynArray *array, Py_ssize_t index, void *item)
+{
+    _PyDynArray_ASSERT_VALID(array);
+    _PyDynArray_ASSERT_INDEX(array, index);
+    if (array->items[index] != NULL)
+    {
+        array->deallocator(array->items[index]);
+    }
+    array->items[index] = item;
+}
+
+void
+_PyDynArray_Remove(_PyDynArray *array, Py_ssize_t index)
+{
+    _PyDynArray_ASSERT_VALID(array);
+    _PyDynArray_ASSERT_INDEX(array, index);
+    assert(array->items[index] != NULL);
+    array->deallocator(array->items[index]);
+
+    for (Py_ssize_t i = array->length; i >= index; --i)
+    {
+        array->items[i] = array->items[i - 1];
+    }
+    --array->length;
 }
 
 void
