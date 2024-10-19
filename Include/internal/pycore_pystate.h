@@ -263,9 +263,9 @@ extern int _PyOS_InterruptOccurred(PyThreadState *tstate);
 #define HEAD_UNLOCK(runtime) \
     PyMutex_Unlock(&(runtime)->interpreters.mutex)
 
-#define INTERP_THREAD_LOCK(interpstate) \
+#define INTERP_HEAD_LOCK(interpstate) \
     PyMutex_LockFlags(&(interpstate)->threads.mutex, _Py_LOCK_DONT_DETACH)
-#define INTERP_THREAD_UNLOCK(interpstate) \
+#define INTERP_HEAD_UNLOCK(interpstate) \
     PyMutex_Unlock(&(interpstate)->threads.mutex)
 
 // Get the configuration of the current interpreter.
