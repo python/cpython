@@ -122,8 +122,10 @@ SyntaxError: duplicate argument 'x' in function definition"""
         source = "\x00\n"
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
-            result = console.runsource(source)
+            with contextlib.redirect_stderr(f):
+                result = console.runsource(source)
         self.assertFalse(result)
+        self.assertIn("source code string cannot contain null bytes", f.getvalue())
 
     def test_no_active_future(self):
         console = InteractiveColoredConsole()
