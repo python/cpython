@@ -521,8 +521,17 @@ class StrptimeTests(unittest.TestCase):
                       'my_MM', 'shn_MM')
     def test_date_time_locale2(self):
         # Test %c directive
+        loc = locale.getlocale(locale.LC_TIME)[0]
+        if sys.platform.startswith(('sunos', 'solaris')):
+            if loc in ('ar_AE',):
+                self.skipTest(f'locale {loc!r} may not work on this platform')
         self.roundtrip('%c', slice(0, 6), (1900, 1, 1, 0, 0, 0, 0, 1, 0))
-        self.roundtrip('%c', slice(0, 6), (1800, 1, 1, 0, 0, 0, 0, 1, 0))
+        try:
+            self.roundtrip('%c', slice(0, 6), (1800, 1, 1, 0, 0, 0, 0, 1, 0))
+        except ValueError:
+            if 'LMT' in time.strftime('%c', (1800, 1, 1, 0, 0, 0, 0, 1, 0)):
+                self.skipTest('different timezone in the past is not supported')
+            raise
 
     # NB: Does not roundtrip because use non-Gregorian calendar:
     # lo_LA, thai, th_TH. On Windows: ar_IN, ar_SA, fa_IR, ps_AF.
@@ -553,6 +562,10 @@ class StrptimeTests(unittest.TestCase):
                       'eu_ES', 'ar_AE', 'my_MM', 'shn_MM')
     def test_date_locale2(self):
         # Test %x directive
+        loc = locale.getlocale(locale.LC_TIME)[0]
+        if sys.platform.startswith(('sunos', 'solaris')):
+            if loc in ('en_US', 'de_DE', 'ar_AE'):
+                self.skipTest(f'locale {loc!r} may not work on this platform')
         self.roundtrip('%x', slice(0, 3), (1900, 1, 1, 0, 0, 0, 0, 1, 0))
         self.roundtrip('%x', slice(0, 3), (1800, 1, 1, 0, 0, 0, 0, 1, 0))
 
