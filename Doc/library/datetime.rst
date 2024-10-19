@@ -416,9 +416,9 @@ objects (see below).
 
 .. versionchanged:: 3.2
    Floor division and true division of a :class:`timedelta` object by another
-   :class:`timedelta` object are now supported, as are remainder operations and
+   :class:`!timedelta` object are now supported, as are remainder operations and
    the :func:`divmod` function. True division and multiplication of a
-   :class:`timedelta` object by a :class:`float` object are now supported.
+   :class:`!timedelta` object by a :class:`float` object are now supported.
 
 :class:`timedelta` objects support equality and order comparisons.
 
@@ -564,7 +564,7 @@ Other constructors, all class methods:
 
 .. classmethod:: date.strptime(date_string, format)
 
-   Return a :class:`.date` corresponding to *date_string*, parsed according to
+   Return a :class:`date` corresponding to *date_string*, parsed according to
    *format*. This is equivalent to::
 
      date(*(time.strptime(date_string, format)[0:3]))
@@ -681,7 +681,7 @@ Notes:
    In other words, ``date1 < date2`` if and only if ``date1.toordinal() <
    date2.toordinal()``.
 
-   Order comparison between a :class:`!date` object that is not also a
+   Order comparison between a :class:`date` object that is not also a
    :class:`.datetime` instance and a :class:`!datetime` object raises
    :exc:`TypeError`.
 
