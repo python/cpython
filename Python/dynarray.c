@@ -3,6 +3,7 @@
  */
 
 #include "pycore_dynarray.h"
+#include "pycore_pymem.h" // _PyMem_RawStrdup
 
 static inline void
 call_deallocator_maybe(_PyDynArray *array, Py_ssize_t index)
@@ -75,12 +76,12 @@ _PyDynArray_Insert(_PyDynArray *array, Py_ssize_t index, void *item)
     _PyDynArray_ASSERT_VALID(array);
     _PyDynArray_ASSERT_INDEX(array, index);
     ++array->length;
-    array->items[index] = item;
-
-    for (Py_ssize_t i = index + 1; i < array->length; ++i)
+    for (Py_ssize_t i = array->length - 1; i >= index; --i)
     {
-        array->items[i] = array->items[i + 1];
+        array->items[i] = array->items[i - 1];
     }
+
+    array->items[index] = item;
 
     if (resize_if_needed(array) < 0)
     {

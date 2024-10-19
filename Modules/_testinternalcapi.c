@@ -2109,7 +2109,69 @@ test_dynarray_common(_PyDynArray *array)
         _PyDynArray_Insert(array, 2, i);
         assert(_PyDynArray_GET_ITEM(array, 2) == i);
     }
+
+    assert(_PyDynArray_GET_ITEM(array, 5) == (void *) 16);
+    assert(_PyDynArray_GET_ITEM(array, 4) == (void *) 17);
+    assert(_PyDynArray_GET_ITEM(array, 3) == (void *) 18);
     assert(_PyDynArray_GET_ITEM(array, 2) == (void *) 19);
+
+    return 0;
+}
+
+static int
+test_heap_array(_PyDynArray *array)
+{
+#define DO(item, operation)          \
+    do {                             \
+        if (item == NULL)            \
+        {                            \
+            _PyDynArray_Free(array); \
+            PyErr_NoMemory();        \
+            return -1;               \
+        }                            \
+        if (operation < 0)           \
+        {                            \
+            PyMem_Free(item);        \
+            _PyDynArray_Free(array); \
+            PyErr_NoMemory();        \
+            return -1;               \
+        };                           \
+    } while (0)
+
+#define SILLY_STRING "My hovercraft is full of eels"
+    // Heap append
+    char *my_string = PyMem_Malloc(sizeof(SILLY_STRING));
+    DO(my_string, _PyDynArray_Append(array, my_string));
+    strcpy(my_string, SILLY_STRING);
+
+    // Heap insertion
+    int *other_ptr = PyMem_Malloc(sizeof(int));
+    DO(other_ptr, _PyDynArray_Insert(array, 0, other_ptr));
+    *other_ptr = 42;
+    assert(_PyDynArray_GET_ITEM(array, 0) == other_ptr);
+
+    // Make sure our other allocation is still alive
+    assert(!strcmp(_PyDynArray_GET_ITEM(array, 1), SILLY_STRING));
+
+    // Heap pop
+    char *popped = _PyDynArray_PopTop(array);
+    assert(!strcmp(popped, my_string));
+    PyMem_Free(popped);
+
+    // A lot of heap appends. This is mainly
+    // so leak tests pick this up if deallocation
+    // wasn't happening.
+    for (int i = 0; i < 15; ++i)
+    {
+        int *ptr = PyMem_Malloc(sizeof(int));
+        DO(ptr, _PyDynArray_Append(array, ptr));
+        *ptr = i;
+    }
+
+    // Heap removal
+    _PyDynArray_Remove(array, 10);
+#undef SILLY_STRING
+#undef DO
 
     return 0;
 }
@@ -2154,45 +2216,8 @@ test_dynarray(PyObject *self, PyObject *unused)
         PyErr_NoMemory();
         return NULL;
     }
-#define SILLY_STRING "My hovercraft is full of eels"
-    char *my_string = PyMem_Malloc(sizeof(SILLY_STRING));
-    if (my_string == NULL)
-    {
-        _PyDynArray_Free(array_with_deallocator);
-        PyErr_NoMemory();
-        return NULL;
-    }
-    strcpy(my_string, SILLY_STRING);
-    if (_PyDynArray_Append(array_with_deallocator, my_string) < 0)
-    {
-        PyMem_Free(my_string);
-        _PyDynArray_Free(array_with_deallocator);
-        PyErr_NoMemory();
-        return NULL;
-    }
 
-    assert(!strcmp(_PyDynArray_GET_ITEM(array_with_deallocator, 0), SILLY_STRING));
-
-    int *other_ptr = PyMem_Malloc(sizeof(int));
-    if (other_ptr == NULL)
-    {
-        _PyDynArray_Free(array_with_deallocator);
-        PyErr_NoMemory();
-        return NULL;
-    }
-    *other_ptr = 42;
-    if (_PyDynArray_Append(array_with_deallocator, other_ptr) < 0)
-    {
-        _PyDynArray_Free(array_with_deallocator);
-        PyMem_Free(other_ptr);
-        PyErr_NoMemory();
-    }
-    assert(_PyDynArray_GET_ITEM(array_with_deallocator, 1) == other_ptr);
-    _PyDynArray_Remove(array_with_deallocator, 1);
-    _PyDynArray_Free(array_with_deallocator);
-#undef SILLY_STRING
-
-    Py_RETURN_NONE;
+    return test_heap_array(array_with_deallocator) < 0 ? NULL : Py_None;
 }
 
 static PyMethodDef module_functions[] = {
