@@ -76,7 +76,7 @@ _PyDynArray_Insert(_PyDynArray *array, Py_ssize_t index, void *item)
     _PyDynArray_ASSERT_VALID(array);
     _PyDynArray_ASSERT_INDEX(array, index);
     ++array->length;
-    for (Py_ssize_t i = array->length - 1; i >= index; --i)
+    for (Py_ssize_t i = array->length - 1; i > index; --i)
     {
         array->items[i] = array->items[i - 1];
     }
