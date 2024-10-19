@@ -305,13 +305,13 @@ class ModifyTest(unittest.TestCase):
         def get_genexpr_gi_code(self, new_iter):
             return self.new_gen_from_gi_code(genexpr(), new_iter)
 
-        err_regex = "'.*' object is not an iterator"
+        err_regex = "'.*' object is not iterable"
 
         for get_genexpr in [get_genexpr_f_locals, get_genexpr_gi_code]:
             for obj in self.iterables:
                 g_obj = get_genexpr(self, obj)
                 with self.subTest(g_obj=g_obj, err_regex=err_regex):
-                    self.assertRaisesRegex(TypeError, err_regex, list, g_obj)
+                    self.assertListEqual(list(g_obj), list(obj))
 
                 g_iter = get_genexpr(self, iter(obj))
                 with self.subTest(g_iter=g_iter, obj=obj):
