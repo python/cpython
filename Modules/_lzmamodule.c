@@ -10,9 +10,11 @@
 #endif
 
 #include "Python.h"
+#include "pycore_runtime.h"         // _PyRuntime
+#include "pycore_tuple.h"           // _Py_EMPTY_TUPLE
 
 
-#include <stdlib.h>               // free()
+#include <stdlib.h>                 // free()
 #include <string.h>
 
 #include <lzma.h>
@@ -83,7 +85,6 @@ typedef struct {
     PyTypeObject *lzma_compressor_type;
     PyTypeObject *lzma_decompressor_type;
     PyObject *error;
-    PyObject *empty_tuple;
 } _lzma_state;
 
 static inline _lzma_state*
@@ -266,7 +267,7 @@ parse_filter_spec_lzma(_lzma_state *state, PyObject *spec)
         return NULL;
     }
 
-    if (!PyArg_ParseTupleAndKeywords(state->empty_tuple, spec,
+    if (!PyArg_ParseTupleAndKeywords(_Py_EMPTY_TUPLE, spec,
                                      "|OOO&O&O&O&O&O&O&O&", optnames,
                                      &id, &preset_obj,
                                      uint32_converter, &options->dict_size,
@@ -294,7 +295,7 @@ parse_filter_spec_delta(_lzma_state *state, PyObject *spec)
     uint32_t dist = 1;
     lzma_options_delta *options;
 
-    if (!PyArg_ParseTupleAndKeywords(state->empty_tuple, spec, "|OO&", optnames,
+    if (!PyArg_ParseTupleAndKeywords(_Py_EMPTY_TUPLE, spec, "|OO&", optnames,
                                      &id, uint32_converter, &dist)) {
         PyErr_SetString(PyExc_ValueError,
                         "Invalid filter specifier for delta filter");
@@ -318,7 +319,7 @@ parse_filter_spec_bcj(_lzma_state *state, PyObject *spec)
     uint32_t start_offset = 0;
     lzma_options_bcj *options;
 
-    if (!PyArg_ParseTupleAndKeywords(state->empty_tuple, spec, "|OO&", optnames,
+    if (!PyArg_ParseTupleAndKeywords(_Py_EMPTY_TUPLE, spec, "|OO&", optnames,
                                      &id, uint32_converter, &start_offset)) {
         PyErr_SetString(PyExc_ValueError,
                         "Invalid filter specifier for BCJ filter");
@@ -1527,11 +1528,6 @@ lzma_exec(PyObject *module)
 
     _lzma_state *state = get_lzma_state(module);
 
-    state->empty_tuple = PyTuple_New(0);
-    if (state->empty_tuple == NULL) {
-        return -1;
-    }
-
     ADD_INT_MACRO(module, FORMAT_AUTO);
     ADD_INT_MACRO(module, FORMAT_XZ);
     ADD_INT_MACRO(module, FORMAT_ALONE);
@@ -1615,7 +1611,6 @@ lzma_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->lzma_compressor_type);
     Py_VISIT(state->lzma_decompressor_type);
     Py_VISIT(state->error);
-    Py_VISIT(state->empty_tuple);
     return 0;
 }
 
@@ -1626,7 +1621,6 @@ lzma_clear(PyObject *module)
     Py_CLEAR(state->lzma_compressor_type);
     Py_CLEAR(state->lzma_decompressor_type);
     Py_CLEAR(state->error);
-    Py_CLEAR(state->empty_tuple);
     return 0;
 }
 

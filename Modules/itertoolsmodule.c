@@ -1899,15 +1899,10 @@ product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (kwds != NULL) {
         char *kwlist[] = {"repeat", 0};
-        PyObject *tmpargs = PyTuple_New(0);
-        if (tmpargs == NULL)
-            return NULL;
-        if (!PyArg_ParseTupleAndKeywords(tmpargs, kwds, "|n:product",
+        if (!PyArg_ParseTupleAndKeywords(_Py_EMPTY_TUPLE, kwds, "|n:product",
                                          kwlist, &repeat)) {
-            Py_DECREF(tmpargs);
             return NULL;
         }
-        Py_DECREF(tmpargs);
         if (repeat < 0) {
             PyErr_SetString(PyExc_ValueError,
                             "repeat argument cannot be negative");
