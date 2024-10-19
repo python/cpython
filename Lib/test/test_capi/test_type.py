@@ -15,7 +15,8 @@ class TypeTests(unittest.TestCase):
         MyType.attr = "mutable"
 
         type_freeze(MyType)
-        with self.assertRaises(TypeError):
+        err_msg = "cannot set 'attr' attribute of immutable type 'MyType'"
+        with self.assertRaisesRegex(TypeError, err_msg):
             # the class is now immutable
             MyType.attr = "immutable"
 
@@ -35,7 +36,6 @@ class TypeTests(unittest.TestCase):
         # all parent classes are now immutable, so D can be made immutable
         # as well
         type_freeze(D)
-
 
     def test_freeze_meta(self):
         """test PyType_Freeze() with overridden MRO"""
