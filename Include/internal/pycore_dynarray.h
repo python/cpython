@@ -82,7 +82,8 @@ _PyDynArray_InitWithSize(_PyDynArray *array,
 PyAPI_FUNC(int) _PyDynArray_Append(_PyDynArray *array, void *item);
 
 /*
- * Insert an item at the target index.
+ * Insert an item at the target index. The index
+ * must currently be a valid index in the array.
  *
  * Returns -1 upon failure, 0 otherwise.
  * If this fails, the deallocator is not ran on the item.

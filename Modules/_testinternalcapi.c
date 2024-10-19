@@ -2086,14 +2086,31 @@ test_dynarray_common(_PyDynArray *array)
     assert(_PyDynArray_GET_ITEM(array, 1) == Py_True);
     assert(_PyDynArray_GET_ITEM(array, 2) == Py_False);
 
+    // Test removal
     _PyDynArray_Remove(array, 0);
     assert(_PyDynArray_GET_ITEM(array, 0) == Py_True);
     assert(_PyDynArray_GET_ITEM(array, 1) == Py_False);
 
     Py_ssize_t index = _PyDynArray_DEFAULT_SIZE;
+    // Test setting values
     _PyDynArray_Set(array, index, (void *) 1);
     assert(_PyDynArray_GET_ITEM(array, index) == (void *) 1);
+
+    // We already tested PopTop, but it doesn't hurt to test this one.
     assert(_PyDynArray_Pop(array, 0) == Py_True);
+
+    // Test insertion
+    _PyDynArray_Insert(array, 1, (void *) 99);
+    assert(_PyDynArray_GET_ITEM(array, 1) == (void *) 99);
+
+    // Resizing with insertion
+    for (void *i = 0; i < (void *) 20; ++i)
+    {
+        _PyDynArray_Insert(array, 2, i);
+        assert(_PyDynArray_GET_ITEM(array, 2) == i);
+    }
+    assert(_PyDynArray_GET_ITEM(array, 2) == (void *) 19);
+
     return 0;
 }
 
