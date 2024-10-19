@@ -2711,7 +2711,8 @@ _PyCode_Fini(PyInterpreterState *interp)
 //
 // Thread-local bytecode can be disabled at runtime by providing either `-X
 // tlbc=0` or `PYTHON_TLBC=0`. Disabling thread-local bytecode also disables
-// specialization.
+// specialization. All threads share the main copy of the bytecode when
+// thread-local bytecode is disabled.
 //
 // Concurrent modifications to the bytecode made by the specializing
 // interpreter and instrumentation use atomics, with specialization taking care
@@ -2720,14 +2721,20 @@ _PyCode_Fini(PyInterpreterState *interp)
 int32_t
 _Py_ReserveTLBCIndex(PyInterpreterState *interp)
 {
-    return _PyIndexPool_AllocIndex(&interp->tlbc_indices);
+    if (interp->config.tlbc_enabled) {
+        return _PyIndexPool_AllocIndex(&interp->tlbc_indices);
+    }
+    // All threads share the main copy of the bytecode when TLBC is disabled
+    return 0;
 }
 
 void
 _Py_ClearTLBCIndex(_PyThreadStateImpl *tstate)
 {
     PyInterpreterState *interp = ((PyThreadState *)tstate)->interp;
-    _PyIndexPool_FreeIndex(&interp->tlbc_indices, tstate->tlbc_index);
+    if (interp->config.tlbc_enabled) {
+        _PyIndexPool_FreeIndex(&interp->tlbc_indices, tstate->tlbc_index);
+    }
 }
 
 static _PyCodeArray *

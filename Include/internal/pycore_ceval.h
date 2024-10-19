@@ -186,9 +186,6 @@ _PyEval_GetExecutableCode(PyThreadState *tstate, PyCodeObject *co)
     if (bc != NULL) {
         return bc;
     }
-    if (!_PyInterpreterState_GET()->config.tlbc_enabled) {
-        return _PyCode_CODE(co);
-    }
     return _PyCode_GetTLBC(co);
 }
 

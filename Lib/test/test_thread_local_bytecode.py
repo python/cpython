@@ -109,16 +109,16 @@ class TLBCTests(unittest.TestCase):
         """)
         assert_python_ok("-X", "tlbc=1", "-c", code)
 
-    def test_no_tlbc_if_tlbc_disabled(self):
+    def test_no_copies_if_tlbc_disabled(self):
         code = textwrap.dedent("""
         import queue
         import threading
 
-        from _testinternalcapi import get_tlbc
+        from _testinternalcapi import get_tlbc_id
 
         def f(a, b, q=None):
             if q is not None:
-                q.put(get_tlbc(f))
+                q.put(get_tlbc_id(f))
             return a + b
 
         q = queue.Queue()
@@ -128,15 +128,16 @@ class TLBCTests(unittest.TestCase):
             t.start()
             threads.append(t)
 
-        tlbcs = []
+        tlbc_ids = []
         for t in threads:
             t.join()
-            tlbcs.append(q.get())
+            tlbc_ids.append(q.get())
 
-        assert get_tlbc(f) is not None
-        assert tlbcs[0] is None
-        assert tlbcs[1] is None
-        assert tlbcs[2] is None
+        main_tlbc_id = get_tlbc_id(f)
+        assert main_tlbc_id is not None
+        assert tlbc_ids[0] == main_tlbc_id
+        assert tlbc_ids[1] == main_tlbc_id
+        assert tlbc_ids[2] == main_tlbc_id
         """)
         assert_python_ok("-X", "tlbc=0", "-c", code)
 
