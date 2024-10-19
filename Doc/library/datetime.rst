@@ -894,7 +894,7 @@ from a :class:`date` object and a :class:`.time` object.
 
 Like a :class:`date` object, :class:`.datetime` assumes the current Gregorian
 calendar extended in both directions; like a :class:`.time` object,
-:class:`.datetime` assumes there are exactly 3600\*24 seconds in every day.
+:class:`!datetime` assumes there are exactly 3600\*24 seconds in every day.
 
 Constructor:
 
@@ -1060,7 +1060,7 @@ Other constructors, all class methods:
    are equal to the given :class:`.time` object's. If the *tzinfo*
    argument is provided, its value is used to set the :attr:`.tzinfo` attribute
    of the result, otherwise the :attr:`~.time.tzinfo` attribute of the *time* argument
-   is used.  If the *date* argument is a :class:`.datetime` object, its time components
+   is used. If the *date* argument is a :class:`!datetime` object, its time components
    and :attr:`.tzinfo` attributes are ignored.
 
    For any :class:`.datetime` object ``d``,
@@ -1487,7 +1487,7 @@ Instance methods:
 
    Naive :class:`.datetime` instances are assumed to represent local
    time and this method relies on the platform C :c:func:`mktime`
-   function to perform the conversion. Since :class:`.datetime`
+   function to perform the conversion. Since :class:`!datetime`
    supports wider range of values than :c:func:`mktime` on many
    platforms, this method may raise :exc:`OverflowError` or :exc:`OSError`
    for times far in the past or far in the future.
@@ -1944,8 +1944,8 @@ Instance methods:
 
    Return a :class:`.time` with the same value, except for those attributes given
    new values by whichever keyword arguments are specified. Note that
-   ``tzinfo=None`` can be specified to create a naive :class:`.time` from an
-   aware :class:`.time`, without conversion of the time data.
+   ``tzinfo=None`` can be specified to create a naive :class:`!time` from an
+   aware :class:`!time`, without conversion of the time data.
 
    :class:`.time` objects are also supported by generic function
    :func:`copy.replace`.
@@ -2204,10 +2204,10 @@ Examples of working with a :class:`.time` object::
 
 
 These methods are called by a :class:`.datetime` or :class:`.time` object, in
-response to their methods of the same names. A :class:`.datetime` object passes
-itself as the argument, and a :class:`.time` object passes ``None`` as the
+response to their methods of the same names. A :class:`!datetime` object passes
+itself as the argument, and a :class:`!time` object passes ``None`` as the
 argument. A :class:`tzinfo` subclass's methods should therefore be prepared to
-accept a *dt* argument of ``None``, or of class :class:`.datetime`.
+accept a *dt* argument of ``None``, or of class :class:`!datetime`.
 
 When ``None`` is passed, it's up to the class designer to decide the best
 response. For example, returning ``None`` is appropriate if the class wishes to
@@ -2215,7 +2215,7 @@ say that time objects don't participate in the :class:`tzinfo` protocols. It
 may be more useful for ``utcoffset(None)`` to return the standard UTC offset, as
 there is no other convention for discovering the standard offset.
 
-When a :class:`.datetime` object is passed in response to a :class:`.datetime`
+When a :class:`.datetime` object is passed in response to a :class:`!datetime`
 method, ``dt.tzinfo`` is the same object as *self*. :class:`tzinfo` methods can
 rely on this, unless user code calls :class:`tzinfo` methods directly. The
 intent is that the :class:`tzinfo` methods interpret *dt* as being in local
