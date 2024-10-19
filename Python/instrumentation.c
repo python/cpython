@@ -988,12 +988,12 @@ set_global_version(PyThreadState *tstate, uint32_t version)
 
 #ifdef Py_GIL_DISABLED
     // Set the version on all threads in free-threaded builds.
-    INTERP_THREAD_LOCK(interp);
+    INTERP_HEAD_LOCK(interp);
     for (tstate = interp->threads.head; tstate;
          tstate = PyThreadState_Next(tstate)) {
         set_version_raw(&tstate->eval_breaker, version);
     };
-    INTERP_THREAD_UNLOCK(interp);
+    INTERP_HEAD_UNLOCK(interp);
 #else
     // Normal builds take the current version from instrumentation_version when
     // attaching a thread, so we only have to set the current thread's version.
