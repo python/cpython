@@ -792,16 +792,14 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     // Clear the current/main thread state last.
     INTERP_HEAD_LOCK(interp);
     PyThreadState *p = interp->threads.head;
-    INTERP_HEAD_UNLOCK(interp);
     while (p != NULL) {
         // See https://github.com/python/cpython/issues/102126
         // Must be called without HEAD_LOCK held as it can deadlock
         // if any finalizer tries to acquire that lock.
         PyThreadState_Clear(p);
-        INTERP_HEAD_LOCK(interp);
         p = p->next;
-        INTERP_HEAD_UNLOCK(interp);
     }
+    INTERP_HEAD_UNLOCK(interp);
     if (tstate->interp == interp) {
         /* We fix tstate->_status below when we for sure aren't using it
            (e.g. no longer need the GIL). */
