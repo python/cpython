@@ -45,7 +45,6 @@ from test import support
 
 from test.test_inspect import inspect_fodder as mod
 from test.test_inspect import inspect_fodder2 as mod2
-from test.test_inspect import inspect_simple_pkg as pkg
 from test.test_inspect import inspect_stringized_annotations
 from test.test_inspect import inspect_deferred_annotations
 
@@ -123,8 +122,9 @@ class IsTestBase(unittest.TestCase):
                other == inspect.isfunction:
                 continue
             if predicate == inspect.ispackage and other == inspect.ismodule:
-                continue
-            self.assertFalse(other(obj), 'not %s(%s)' % (other.__name__, exp))
+                self.assertTrue(predicate(obj), '%s(%s)' % (predicate.__name__, exp))
+            else:
+                self.assertFalse(other(obj), 'not %s(%s)' % (other.__name__, exp))
 
     def test__all__(self):
         support.check__all__(self, inspect, not_exported=("modulesbyfile",), extra=("get_annotations",))
@@ -179,7 +179,10 @@ class TestPredicates(IsTestBase):
         self.istest(inspect.ismethod, 'git.argue')
         self.istest(inspect.ismethod, 'mod.custom_method')
         self.istest(inspect.ismodule, 'mod')
-        self.istest(inspect.ispackage, 'pkg')
+        self.istest(inspect.ispackage, 'asyncio')
+        self.istest(inspect.ispackage, 'importlib')
+        self.assertFalse(inspect.ispackage(mod))
+        self.assertFalse(inspect.ispackage(':)'))
         self.istest(inspect.ismethoddescriptor, 'int.__add__')
         self.istest(inspect.isdatadescriptor, 'collections.defaultdict.default_factory')
         self.istest(inspect.isgenerator, '(x for x in range(2))')
