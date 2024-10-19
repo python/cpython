@@ -2448,7 +2448,12 @@ def test_pdb_multiline_statement():
     ...     'def f(x):',
     ...     '  return x * 2',
     ...     '',
-    ...     'f(2)',
+    ...     'val = 2',
+    ...     'if val > 0:',
+    ...     '  val = f(val)',
+    ...     '',
+    ...     '',  # empty line should repeat the multi-line statement
+    ...     'val',
     ...     'c'
     ... ]):
     ...     test_function()
@@ -2457,8 +2462,13 @@ def test_pdb_multiline_statement():
     (Pdb) def f(x):
     ...     return x * 2
     ...
-    (Pdb) f(2)
-    4
+    (Pdb) val = 2
+    (Pdb) if val > 0:
+    ...     val = f(val)
+    ...
+    (Pdb)
+    (Pdb) val
+    8
     (Pdb) c
     """
 
