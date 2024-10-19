@@ -145,8 +145,11 @@ static inline void _PyObject_GC_SET_SHARED_INLINE(PyObject *op) {
 #define _PyGC_PREV_MASK_FINALIZED  (1)
 /* Bit 1 is set when the object is in generation which is GCed currently. */
 #define _PyGC_PREV_MASK_COLLECTING (2)
-/* The (N-2) most significant bits contain the real address. */
-#define _PyGC_PREV_SHIFT           (2)
+/* Bit 2 is to mark the object as alive due to being reachable from a root
+ * object.  This is used when the incremental mark process is running. */
+#define _PyGC_PREV_MASK_OLD (4)
+/* The number of least least significant bits used for flags. */
+#define _PyGC_PREV_SHIFT (3)
 #define _PyGC_PREV_MASK            (((uintptr_t) -1) << _PyGC_PREV_SHIFT)
 
 /* set for debugging information */
@@ -301,6 +304,8 @@ struct _gc_runtime_state {
     PyObject *garbage;
     /* a list of callbacks to be invoked when collection is performed */
     PyObject *callbacks;
+    /* Marker object for incremental mark alive process */
+    PyObject *thumb;
 
     /* This is the number of objects that survived the last full
        collection. It approximates the number of long lived objects

@@ -53,6 +53,18 @@ typedef struct _gc_runtime_state GCState;
 // Automatically choose the generation that needs collecting.
 #define GENERATION_AUTO (-1)
 
+static inline int gc_is_old(PyGC_Head *gc) {
+    return ((gc->_gc_prev & _PyGC_PREV_MASK_OLD) != 0);
+}
+
+static inline void gc_set_old(PyGC_Head *gc) {
+    gc->_gc_prev |= _PyGC_PREV_MASK_OLD;
+}
+
+static inline void gc_clear_old(PyGC_Head *gc) {
+    gc->_gc_prev &= ~_PyGC_PREV_MASK_OLD;
+}
+
 static inline int
 gc_is_collecting(PyGC_Head *g)
 {
@@ -139,6 +151,11 @@ _PyGC_Init(PyInterpreterState *interp)
 
     gcstate->callbacks = PyList_New(0);
     if (gcstate->callbacks == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
+
+    gcstate->thumb = PyList_New(0);
+    if (gcstate->thumb == NULL) {
         return _PyStatus_NO_MEMORY();
     }
 
@@ -1048,6 +1065,74 @@ show_stats_each_generations(GCState *gcstate)
         buf, gc_list_size(&gcstate->permanent_generation.head));
 }
 
+static void
+mark_old(PyGC_Head *head) {
+    for (PyGC_Head *gc = GC_NEXT(head); gc != head; gc = GC_NEXT(gc)) {
+        gc_set_old(gc);
+    }
+}
+
+struct mark_state {
+    PyGC_Head todo;
+    Py_ssize_t alive; // number of objects found alive
+};
+
+static int visit_reachable_old(PyObject *op, struct mark_state *state);
+
+static void
+propogate_old_reachable(PyObject *op, struct mark_state *state)
+{
+    PyGC_Head *gc = AS_GC(op);
+    /* mark it black as it is proven reachable and we don't have
+     * to look at it anymore.  Note that every loop in
+     * mark_reachable() must at least turn some GREY to BLACK in
+     * order for us to make progress. */
+    gc_clear_old(gc);
+    state->alive++;
+    traverseproc traverse = Py_TYPE(op)->tp_traverse;
+    traverse(op, (visitproc)visit_reachable_old, state);
+}
+
+/* A traversal callback for visit_reachable_grey. */
+static int
+visit_reachable_old(PyObject *op, struct mark_state *state)
+{
+    if (!(_PyObject_IS_GC(op) && _PyObject_GC_IS_TRACKED(op))) {
+        return 0;
+    }
+    PyGC_Head *gc = AS_GC(op);
+    if (gc_is_old(gc)) {
+        gc_list_move(gc, &state->todo);
+    }
+    return 0;
+}
+
+static void
+deduce_old_alive(PyThreadState *tstate, PyGC_Head *head) {
+    PyObject *root = tstate->interp->sysdict;
+
+    struct mark_state mstate;
+    mstate.alive = 0;
+    gc_list_init(&mstate.todo);
+
+    PyGC_Head old_alive;
+    gc_list_init(&old_alive);
+
+    unsigned long n = gc_list_size(head);
+    unsigned long alive = 0;
+
+    propogate_old_reachable(root, &mstate);
+    while (! gc_list_is_empty(&mstate.todo)) {
+        PyGC_Head *gc = GC_NEXT(&mstate.todo);
+        alive++;
+        propogate_old_reachable(FROM_GC(gc), &mstate);
+        gc_list_move(gc, &old_alive);
+    }
+    fprintf(stderr, "gc mark n=%lu alive=%lu\n", n, alive);
+    gc_list_merge(&old_alive, head);
+}
+
+
 /* Deduce which objects among "base" are unreachable from outside the list
    and move them to 'unreachable'. The process consist in the following steps:
 
@@ -1356,6 +1441,9 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         old = young;
     }
     validate_list(old, collecting_clear_unreachable_clear);
+
+    mark_old(old);
+    deduce_old_alive(tstate, old);
 
     deduce_unreachable(young, &unreachable);
 
