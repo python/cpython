@@ -244,6 +244,30 @@ class PyIdPersPicklerTests(AbstractIdentityPersistentPicklerTests,
             unpickler = PersUnpickler(io.BytesIO(self.dumps('abc', proto)))
             self.assertEqual(unpickler.load(), 'abc')
 
+    def test_pickler_instance_attribute(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            f = io.BytesIO()
+            pickler = self.pickler(f, proto)
+            called = []
+            def persistent_id(obj):
+                called.append(obj)
+                return obj
+            pickler.persistent_id = persistent_id
+            pickler.dump('abc')
+            self.assertEqual(called, ['abc'])
+            self.assertEqual(self.loads(f.getvalue()), 'abc')
+
+    def test_unpickler_instance_attribute(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            unpickler = self.unpickler(io.BytesIO(self.dumps('abc', proto)))
+            called = []
+            def persistent_load(pid):
+                called.append(pid)
+                return pid
+            unpickler.persistent_load = persistent_load
+            self.assertEqual(unpickler.load(), 'abc')
+            self.assertEqual(called, ['abc'])
+
 class PyPicklerUnpicklerObjectTests(AbstractPicklerUnpicklerObjectTests, unittest.TestCase):
 
     pickler_class = pickle._Pickler
@@ -368,17 +392,20 @@ if has_c_implementation:
 
         def test_pickler(self):
             basesize = support.calcobjsize('6P2n3i2n3i2P')
+            P = struct.calcsize('P')
             p = _pickle.Pickler(io.BytesIO())
             self.assertEqual(object.__sizeof__(p), basesize)
             MT_size = struct.calcsize('3nP0n')
             ME_size = struct.calcsize('Pn0P')
             check = self.check_sizeof
             check(p, basesize +
+                2 * P +  # Managed dict
                 MT_size + 8 * ME_size +  # Minimal memo table size.
                 sys.getsizeof(b'x'*4096))  # Minimal write buffer size.
             for i in range(6):
                 p.dump(chr(i))
             check(p, basesize +
+                2 * P +  # Managed dict
                 MT_size + 32 * ME_size +  # Size of memo table required to
                                           # save references to 6 objects.
                 0)  # Write buffer is cleared after every dump().
@@ -395,6 +422,7 @@ if has_c_implementation:
                                   encoding=encoding, errors=errors)
                     self.assertEqual(object.__sizeof__(u), basesize)
                     check(u, basesize +
+                             2 * P +  # Managed dict
                              32 * P +  # Minimal memo table size.
                              len(encoding) + 1 + len(errors) + 1)
 
@@ -404,7 +432,7 @@ if has_c_implementation:
                 u = unpickler(io.BytesIO(dump),
                               encoding='ASCII', errors='strict')
                 u.load()
-                check(u, stdsize + memo_size * P + marks_size * n)
+                check(u, stdsize + 2 * P + memo_size * P + marks_size * n)
 
             check_unpickler(0, 32, 0)
             # 20 is minimal non-empty mark stack size.
@@ -427,7 +455,7 @@ if has_c_implementation:
             u = unpickler(io.BytesIO(pickle.dumps('a', 0)),
                           encoding='ASCII', errors='strict')
             u.load()
-            check(u, stdsize + 32 * P + 2 + 1)
+            check(u, stdsize + 2 * P + 32 * P + 2 + 1)
 
 
 ALT_IMPORT_MAPPING = {
