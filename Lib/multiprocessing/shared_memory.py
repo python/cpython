@@ -305,15 +305,22 @@ class ShareableList:
         else:
             return 3  # NoneType
 
+    def _get_str_or_bytes_format(self, item):
+        """Used to ensure the correct length is inserted into the
+        the formatted _types_mapping for multibyte utf-8 characters."""
+        length = len(
+            item if isinstance(item, bytes) else item.encode(_encoding)
+        )
+        aligned_length = self._alignment * (length // self._alignment + 1)
+        return self._types_mapping[type(item)] % aligned_length
+
     def __init__(self, sequence=None, *, name=None):
         if name is None or sequence is not None:
             sequence = sequence or ()
             _formats = [
                 self._types_mapping[type(item)]
                     if not isinstance(item, (str, bytes))
-                    else self._types_mapping[type(item)] % (
-                        self._alignment * (len(item) // self._alignment + 1),
-                    )
+                    else self._get_str_or_bytes_format(item)
                 for item in sequence
             ]
             self._list_len = len(_formats)
