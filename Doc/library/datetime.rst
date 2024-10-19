@@ -63,7 +63,7 @@ purely up to the program, just like it is up to the program whether a
 particular number represents metres, miles, or mass. Naive objects are easy to
 understand and to work with, at the cost of ignoring some aspects of reality.
 
-For applications requiring aware objects, :class:`datetime` and :class:`time`
+For applications requiring aware objects, :class:`.datetime` and :class:`.time`
 objects have an optional time zone information attribute, :attr:`!tzinfo`, that
 can be set to an instance of a subclass of the abstract :class:`tzinfo` class.
 These :class:`tzinfo` objects capture information about the offset from UTC
@@ -1264,7 +1264,7 @@ Supported operations:
    datetime, and no time zone adjustments are done even if the input is aware.
 
 (3)
-   Subtraction of a :class:`.datetime` from a :class:`.datetime` is defined only if
+   Subtraction of a :class:`.datetime` from a :class:`!datetime` is defined only if
    both operands are naive, or if both are aware. If one is aware and the other is
    naive, :exc:`TypeError` is raised.
 
