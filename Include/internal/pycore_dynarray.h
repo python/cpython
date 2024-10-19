@@ -74,15 +74,25 @@ _PyDynArray_InitWithSize(_PyDynArray *array,
                          Py_ssize_t initial);
 
 /*
- * Append to a dynamic array.
+ * Append to the array.
  *
  * Returns -1 upon failure, 0 otherwise.
- * If this fails, the deallocator is not ran on *item*.
+ * If this fails, the deallocator is not ran on the item.
  */
 PyAPI_FUNC(int) _PyDynArray_Append(_PyDynArray *array, void *item);
 
 /*
- * Clear all the fields on a dynamic array.
+ * Insert an item at the target index.
+ *
+ * Returns -1 upon failure, 0 otherwise.
+ * If this fails, the deallocator is not ran on the item.
+ */
+PyAPI_FUNC(int)
+_PyDynArray_Insert(_PyDynArray *array, Py_ssize_t index, void *item);
+
+
+/*
+ * Clear all the fields on the array.
  *
  * Note that this does *not* free the actual dynamic array
  * structure--use _PyDynArray_Free() for that.

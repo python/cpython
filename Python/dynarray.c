@@ -34,11 +34,9 @@ _PyDynArray_InitWithSize(_PyDynArray *array,
     return 0;
 }
 
-int
-_PyDynArray_Append(_PyDynArray *array, void *item)
+static int
+resize_if_needed(_PyDynArray *array)
 {
-    _PyDynArray_ASSERT_VALID(array);
-    array->items[array->length++] = item;
     if (array->length == array->capacity)
     {
         // Need to resize
@@ -54,6 +52,39 @@ _PyDynArray_Append(_PyDynArray *array, void *item)
 
         // XXX Zero-out the new capacity?
         array->items = new_items;
+    }
+
+    return 0;
+}
+
+int
+_PyDynArray_Append(_PyDynArray *array, void *item)
+{
+    _PyDynArray_ASSERT_VALID(array);
+    array->items[array->length++] = item;
+    if (resize_if_needed(array) < 0)
+    {
+        return -1;
+    }
+    return 0;
+}
+
+int
+_PyDynArray_Insert(_PyDynArray *array, Py_ssize_t index, void *item)
+{
+    _PyDynArray_ASSERT_VALID(array);
+    _PyDynArray_ASSERT_INDEX(array, index);
+    ++array->length;
+    array->items[index] = item;
+
+    for (Py_ssize_t i = index + 1; i < array->length; ++i)
+    {
+        array->items[i] = array->items[i + 1];
+    }
+
+    if (resize_if_needed(array) < 0)
+    {
+        return -1;
     }
     return 0;
 }
