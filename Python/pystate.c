@@ -790,17 +790,17 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     }
 
     // Clear the current/main thread state last.
-    INTERP_THREAD_LOCK(interp);
-    PyThreadState *p = PyInterpreterState_ThreadHead(interp);
-    INTERP_THREAD_UNLOCK(interp);
+    INTERP_HEAD_LOCK(interp);
+    PyThreadState *p = interp->threads.head;
+    INTERP_HEAD_UNLOCK(interp);
     while (p != NULL) {
         // See https://github.com/python/cpython/issues/102126
         // Must be called without HEAD_LOCK held as it can deadlock
         // if any finalizer tries to acquire that lock.
         PyThreadState_Clear(p);
-        INTERP_THREAD_LOCK(interp);
+        INTERP_HEAD_LOCK(interp);
         p = p->next;
-        INTERP_THREAD_UNLOCK(interp);
+        INTERP_HEAD_UNLOCK(interp);
     }
     if (tstate->interp == interp) {
         /* We fix tstate->_status below when we for sure aren't using it
@@ -1848,10 +1848,10 @@ _PyThreadState_RemoveExcept(PyThreadState *tstate)
     assert(tstate != NULL);
     PyInterpreterState *interp = tstate->interp;
 
-    INTERP_THREAD_LOCK(interp);
+    INTERP_HEAD_LOCK(interp);
     /* Remove all thread states, except tstate, from the linked list of
        thread states. */
-    PyThreadState *list = PyInterpreterState_ThreadHead(interp);
+    PyThreadState *list = interp->threads.head;
     if (list == tstate) {
         list = tstate->next;
     }
@@ -1863,7 +1863,7 @@ _PyThreadState_RemoveExcept(PyThreadState *tstate)
     }
     tstate->prev = tstate->next = NULL;
     interp->threads.head = tstate;
-    INTERP_THREAD_UNLOCK(interp);
+    INTERP_HEAD_UNLOCK(interp);
 
     return list;
 }
@@ -2338,9 +2338,8 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
      * list of thread states we're traversing, so to prevent that we lock
      * head_mutex for the duration.
      */
-    INTERP_THREAD_LOCK(interp);
-    PyThreadState *list = PyInterpreterState_ThreadHead(interp);
-    for (PyThreadState *tstate = list; tstate != NULL; tstate = tstate->next) {
+    INTERP_HEAD_LOCK(interp);
+    for (PyThreadState *tstate = interp->threads.head; tstate != NULL; tstate = tstate->next) {
         if (tstate->thread_id != id) {
             continue;
         }
@@ -2354,13 +2353,13 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
          */
         Py_XINCREF(exc);
         PyObject *old_exc = _Py_atomic_exchange_ptr(&tstate->async_exc, exc);
-        INTERP_THREAD_UNLOCK(interp);
+        INTERP_HEAD_UNLOCK(interp);
 
         Py_XDECREF(old_exc);
         _Py_set_eval_breaker_bit(tstate, _PY_ASYNC_EXCEPTION_BIT);
         return 1;
     }
-    INTERP_THREAD_UNLOCK(interp);
+    INTERP_HEAD_UNLOCK(interp);
     return 0;
 }
 
