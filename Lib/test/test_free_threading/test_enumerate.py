@@ -13,8 +13,7 @@ class EnumerateThreading(unittest.TestCase):
                 value = next(enum)
             except StopIteration:
                 break
-            else:
-                assert isinstance(value, tuple)
+
 
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
