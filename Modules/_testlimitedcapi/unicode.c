@@ -1418,25 +1418,28 @@ test_string_from_format(PyObject *self, PyObject *Py_UNUSED(ignored))
     PyObject *result;
     PyObject *unicode = PyUnicode_FromString("None");
 
-#define CHECK_FORMAT_2(FORMAT, EXPECTED, ARG1, ARG2)                \
-    result = PyUnicode_FromFormat(FORMAT, ARG1, ARG2);              \
-    if (EXPECTED == NULL) {                                         \
-        if (!check_raised_systemerror(result, FORMAT)) {            \
-            goto Fail;                                              \
-        }                                                           \
-    }                                                               \
-    else if (result == NULL)                                        \
-        return NULL;                                                \
-    else if (PyUnicode_CompareWithASCIIString(result, EXPECTED) != 0) { \
-        PyObject *utf8 = PyUnicode_AsUTF8String(result);            \
-        PyErr_Format(PyExc_AssertionError,                          \
-                     "test_string_from_format: failed at \"%s\" "   \
-                     "expected \"%s\" got \"%s\"",                  \
-                     FORMAT, EXPECTED, utf8);                       \
-        Py_XDECREF(utf8);                                           \
-        goto Fail;                                                  \
-    }                                                               \
-    Py_XDECREF(result)
+#define CHECK_FORMAT_2(FORMAT, EXPECTED, ARG1, ARG2)                        \
+    do {                                                                    \
+        result = PyUnicode_FromFormat(FORMAT, ARG1, ARG2);                  \
+        if (EXPECTED == NULL) {                                             \
+            if (!check_raised_systemerror(result, FORMAT)) {                \
+                goto Fail;                                                  \
+            }                                                               \
+        }                                                                   \
+        else if (result == NULL) {                                          \
+            return NULL;                                                    \
+        }                                                                   \
+        else if (PyUnicode_CompareWithASCIIString(result, EXPECTED) != 0) { \
+            PyObject *utf8 = PyUnicode_AsUTF8String(result);                \
+            PyErr_Format(PyExc_AssertionError,                              \
+                         "test_string_from_format: failed at \"%s\" "       \
+                         "expected \"%s\" got \"%s\"",                      \
+                         FORMAT, EXPECTED, utf8);                           \
+            Py_XDECREF(utf8);                                               \
+            goto Fail;                                                      \
+        }                                                                   \
+        Py_XDECREF(result);                                                 \
+    } while (0)
 
 #define CHECK_FORMAT_1(FORMAT, EXPECTED, ARG)                       \
     CHECK_FORMAT_2(FORMAT, EXPECTED, ARG, 0)

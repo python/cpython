@@ -5492,14 +5492,20 @@ _ssl_get_default_verify_paths_impl(PyObject *module)
     PyObject *odir_env = NULL;
     PyObject *odir = NULL;
 
-#define CONVERT(info, target) { \
-        const char *tmp = (info); \
-        target = NULL; \
-        if (!tmp) { target = Py_NewRef(Py_None); } \
-        else if ((target = PyUnicode_DecodeFSDefault(tmp)) == NULL) { \
-            target = PyBytes_FromString(tmp); } \
-        if (!target) goto error; \
-    }
+#define CONVERT(INFO, TARGET)                                           \
+    do {                                                                \
+        const char *tmp = (INFO);                                       \
+        TARGET = NULL;                                                  \
+        if (!tmp) {                                                     \
+            TARGET = Py_NewRef(Py_None);                                \
+        }                                                               \
+        else if ((TARGET = PyUnicode_DecodeFSDefault(tmp)) == NULL) {   \
+            TARGET = PyBytes_FromString(tmp);                           \
+        }                                                               \
+        if (!TARGET) {                                                  \
+            goto error;                                                 \
+        }                                                               \
+    } while (0)
 
     CONVERT(X509_get_default_cert_file_env(), ofile_env);
     CONVERT(X509_get_default_cert_file(), ofile);

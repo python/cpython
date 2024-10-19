@@ -305,12 +305,14 @@ check_decoded(PyObject *decoded)
     return 0;
 }
 
-#define CHECK_INITIALIZED_DECODER(self) \
-    if (self->errors == NULL) { \
-        PyErr_SetString(PyExc_ValueError, \
-                        "IncrementalNewlineDecoder.__init__() not called"); \
-        return NULL; \
-    }
+#define CHECK_INITIALIZED_DECODER(self)                                         \
+    do {                                                                        \
+        if (self->errors == NULL) {                                             \
+            PyErr_SetString(PyExc_ValueError,                                   \
+                            "IncrementalNewlineDecoder.__init__() not called"); \
+            return NULL;                                                        \
+        }                                                                       \
+    } while (0)
 
 #define SEEN_CR   1
 #define SEEN_LF   2
@@ -1516,31 +1518,37 @@ _io_TextIOWrapper_closed_get_impl(textio *self);
             return NULL; \
     } while (0)
 
-#define CHECK_INITIALIZED(self) \
-    if (self->ok <= 0) { \
-        PyErr_SetString(PyExc_ValueError, \
-            "I/O operation on uninitialized object"); \
-        return NULL; \
-    }
+#define CHECK_INITIALIZED(self)                             \
+    do {                                                    \
+        if (self->ok <= 0) {                                \
+            PyErr_SetString(PyExc_ValueError,               \
+                "I/O operation on uninitialized object");   \
+            return NULL;                                    \
+        }                                                   \
+    } while (0)
 
-#define CHECK_ATTACHED(self) \
-    CHECK_INITIALIZED(self); \
-    if (self->detached) { \
-        PyErr_SetString(PyExc_ValueError, \
-             "underlying buffer has been detached"); \
-        return NULL; \
-    }
+#define CHECK_ATTACHED(self)                                \
+    do {                                                    \
+        CHECK_INITIALIZED(self);                            \
+        if (self->detached) {                               \
+            PyErr_SetString(PyExc_ValueError,               \
+                 "underlying buffer has been detached");    \
+            return NULL;                                    \
+        }                                                   \
+    } while (0)
 
-#define CHECK_ATTACHED_INT(self) \
-    if (self->ok <= 0) { \
-        PyErr_SetString(PyExc_ValueError, \
-            "I/O operation on uninitialized object"); \
-        return -1; \
-    } else if (self->detached) { \
-        PyErr_SetString(PyExc_ValueError, \
-             "underlying buffer has been detached"); \
-        return -1; \
-    }
+#define CHECK_ATTACHED_INT(self)                            \
+    do {                                                    \
+        if (self->ok <= 0) {                                \
+            PyErr_SetString(PyExc_ValueError,               \
+                "I/O operation on uninitialized object");   \
+            return -1;                                      \
+        } else if (self->detached) {                        \
+            PyErr_SetString(PyExc_ValueError,               \
+                 "underlying buffer has been detached");    \
+            return -1;                                      \
+        }                                                   \
+    } while (0)
 
 
 /*[clinic input]
@@ -2947,7 +2955,7 @@ static PyObject *
 _io_TextIOWrapper_truncate_impl(textio *self, PyObject *pos)
 /*[clinic end generated code: output=90ec2afb9bb7745f input=8bddb320834c93ee]*/
 {
-    CHECK_ATTACHED(self)
+    CHECK_ATTACHED(self);
 
     if (_PyFile_Flush((PyObject *)self) < 0) {
         return NULL;
