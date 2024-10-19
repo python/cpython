@@ -177,6 +177,7 @@ enum_next_long(enumobject *en, PyObject* next_item)
     PyObject *old_index;
     PyObject *old_item;
 
+    Py_BEGIN_CRITICAL_SECTION(en);
     if (en->en_longindex == NULL) {
         en->en_longindex = PyLong_FromSsize_t(PY_SSIZE_T_MAX);
         if (en->en_longindex == NULL) {
@@ -192,8 +193,9 @@ enum_next_long(enumobject *en, PyObject* next_item)
         return NULL;
     }
     en->en_longindex = stepped_up;
+    Py_END_CRITICAL_SECTION();
 
-    if (Py_REFCNT(result) == 1) {
+    if (_PyObject_IsUniquelyReferenced(result)) {
         Py_INCREF(result);
         old_index = PyTuple_GET_ITEM(result, 0);
         old_item = PyTuple_GET_ITEM(result, 1);
@@ -233,17 +235,18 @@ enum_next(enumobject *en)
     if (next_item == NULL)
         return NULL;
 
-    if (en->en_index == PY_SSIZE_T_MAX)
+    Py_ssize_t en_index = FT_ATOMIC_LOAD_SSIZE_RELAXED(en->en_index);
+    if (en_index == PY_SSIZE_T_MAX)
         return enum_next_long(en, next_item);
 
-    next_index = PyLong_FromSsize_t(en->en_index);
+    next_index = PyLong_FromSsize_t(en_index);
     if (next_index == NULL) {
         Py_DECREF(next_item);
         return NULL;
     }
-    en->en_index++;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(en->en_index, en_index + 1);
 
-    if (Py_REFCNT(result) == 1) {
+    if (_PyObject_IsUniquelyReferenced(result)) {
         Py_INCREF(result);
         old_index = PyTuple_GET_ITEM(result, 0);
         old_item = PyTuple_GET_ITEM(result, 1);
@@ -272,10 +275,12 @@ enum_next(enumobject *en)
 static PyObject *
 enum_reduce(enumobject *en, PyObject *Py_UNUSED(ignored))
 {
+    Py_BEGIN_CRITICAL_SECTION(en);
     if (en->en_longindex != NULL)
         return Py_BuildValue("O(OO)", Py_TYPE(en), en->en_sit, en->en_longindex);
     else
         return Py_BuildValue("O(On)", Py_TYPE(en), en->en_sit, en->en_index);
+    Py_END_CRITICAL_SECTION();
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
