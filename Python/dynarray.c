@@ -47,7 +47,6 @@ resize_if_needed(_PyDynArray *array)
                                             sizeof(void *) * array->capacity);
         if (new_items == NULL)
         {
-            --array->length;
             return -1;
         }
 
@@ -65,6 +64,7 @@ _PyDynArray_Append(_PyDynArray *array, void *item)
     array->items[array->length++] = item;
     if (resize_if_needed(array) < 0)
     {
+        array->items[--array->length] = NULL;
         return -1;
     }
     return 0;
@@ -76,17 +76,21 @@ _PyDynArray_Insert(_PyDynArray *array, Py_ssize_t index, void *item)
     _PyDynArray_ASSERT_VALID(array);
     _PyDynArray_ASSERT_INDEX(array, index);
     ++array->length;
+    if (resize_if_needed(array) < 0)
+    {
+        // Grow the array beforehand, otherwise it's
+        // going to be a mess putting it back together if
+        // allocation fails.
+        --array->length;
+        return -1;
+    }
+
     for (Py_ssize_t i = array->length - 1; i > index; --i)
     {
         array->items[i] = array->items[i - 1];
     }
 
     array->items[index] = item;
-
-    if (resize_if_needed(array) < 0)
-    {
-        return -1;
-    }
     return 0;
 }
 
