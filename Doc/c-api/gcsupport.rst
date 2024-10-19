@@ -57,10 +57,16 @@ rules:
    Analogous to :c:macro:`PyObject_New` but for container objects with the
    :c:macro:`Py_TPFLAGS_HAVE_GC` flag set.
 
+   Memory allocated by this function must be freed with
+   :c:func:`PyObject_GC_Del`.
+
 .. c:macro:: PyObject_GC_NewVar(TYPE, typeobj, size)
 
    Analogous to :c:macro:`PyObject_NewVar` but for container objects with the
    :c:macro:`Py_TPFLAGS_HAVE_GC` flag set.
+
+   Memory allocated by this function must be freed with
+   :c:func:`PyObject_GC_Del`.
 
 .. c:function:: PyObject* PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *type, size_t extra_size)
 
@@ -72,6 +78,9 @@ rules:
 
    The extra data will be deallocated with the object, but otherwise it is
    not managed by Python.
+
+   Memory allocated by this function must be freed with
+   :c:func:`PyObject_GC_Del`.
 
    .. warning::
       The function is marked as unstable because the final mechanism
