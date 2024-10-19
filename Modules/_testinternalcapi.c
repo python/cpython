@@ -2081,6 +2081,14 @@ test_dynarray_common(_PyDynArray *array)
     assert(_PyDynArray_GET_ITEM(array, 0) == Py_None);
     assert(_PyDynArray_GET_ITEM(array, 1) == Py_True);
     assert(_PyDynArray_GET_ITEM(array, 2) == Py_False);
+
+    _PyDynArray_Remove(array, 0);
+    assert(_PyDynArray_GET_ITEM(array, 0) == Py_True);
+    assert(_PyDynArray_GET_ITEM(array, 1) == Py_False);
+
+    Py_ssize_t index = _PyDynArray_DEFAULT_SIZE;
+    _PyDynArray_Set(array, index, (void *) 1);
+    assert(_PyDynArray_GET_ITEM(array, index) == (void *) 1);
     return 0;
 }
 
@@ -2142,6 +2150,23 @@ test_dynarray(PyObject *self, PyObject *unused)
     }
 
     assert(!strcmp(_PyDynArray_GET_ITEM(array_with_deallocator, 0), SILLY_STRING));
+
+    int *other_ptr = PyMem_Malloc(sizeof(int));
+    if (other_ptr == NULL)
+    {
+        _PyDynArray_Free(array_with_deallocator);
+        PyErr_NoMemory();
+        return NULL;
+    }
+    *other_ptr = 42;
+    if (_PyDynArray_Append(array_with_deallocator, other_ptr) < 0)
+    {
+        _PyDynArray_Free(array_with_deallocator);
+        PyMem_Free(other_ptr);
+        PyErr_NoMemory();
+    }
+    assert(_PyDynArray_GET_ITEM(array_with_deallocator, 1) == other_ptr);
+    _PyDynArray_Remove(array_with_deallocator, 1);
     _PyDynArray_Free(array_with_deallocator);
 #undef SILLY_STRING
 
