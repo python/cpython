@@ -2075,6 +2075,10 @@ test_dynarray_common(_PyDynArray *array)
         APPEND(NULL);
     }
 
+    assert(_PyDynArray_PopTop(array) == NULL);
+    APPEND((void *) 42);
+    assert(_PyDynArray_PopTop(array) == (void *) 42);
+
 #undef APPEND
 
     // Make sure that nothing got corrupted
@@ -2089,6 +2093,7 @@ test_dynarray_common(_PyDynArray *array)
     Py_ssize_t index = _PyDynArray_DEFAULT_SIZE;
     _PyDynArray_Set(array, index, (void *) 1);
     assert(_PyDynArray_GET_ITEM(array, index) == (void *) 1);
+    assert(_PyDynArray_Pop(array, 0) == Py_True);
     return 0;
 }
 

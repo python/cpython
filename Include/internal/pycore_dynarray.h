@@ -211,9 +211,9 @@ _PyDynArray_LENGTH(_PyDynArray *array)
  * This function cannot fail.
  */
 static inline void *
-_PyDynArray_PopTop(_PyDynArray *array, Py_ssize_t index)
+_PyDynArray_PopTop(_PyDynArray *array)
 {
-    return _PyDynArray_PopTop(array, _PyDynArray_LENGTH(array) - 1);
+    return _PyDynArray_Pop(array, _PyDynArray_LENGTH(array) - 1);
 }
 
 #ifdef __cplusplus
