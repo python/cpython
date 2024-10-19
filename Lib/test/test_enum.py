@@ -3466,7 +3466,7 @@ class TestSpecial(unittest.TestCase):
             UP_ONLY = frozenset({"cs"})
             UNRESTRICTED = frozenset({"sc", "cs"})
         self.assertIs(Directions({"sc"}), Directions.DOWN_ONLY)
-                
+
 
 class TestOrder(unittest.TestCase):
     "test usage of the `_order_` attribute"
