@@ -296,7 +296,13 @@ struct _gc_runtime_state {
     struct gc_generation generations[NUM_GENERATIONS];
     PyGC_Head *generation0;
     /* Objects in oldest generation that have be determined to be alive */
-    struct gc_generation old_alive;
+    PyGC_Head old_alive;
+    /* Size of oldest generation, on start of incremental mark process */
+    Py_ssize_t old_size;
+    /* Number of alive objects found in oldest generation */
+    Py_ssize_t old_alive_size;
+    int mark_steps;
+    int mark_steps_total;
     /* a permanent generation which won't be collected */
     struct gc_generation permanent_generation;
     struct gc_generation_stats generation_stats[NUM_GENERATIONS];
@@ -308,6 +314,7 @@ struct _gc_runtime_state {
     PyObject *callbacks;
     /* Marker object for incremental mark alive process */
     PyObject *thumb;
+    int mark_phase;
 
     /* This is the number of objects that survived the last full
        collection. It approximates the number of long lived objects

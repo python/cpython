@@ -53,6 +53,11 @@ typedef struct _gc_runtime_state GCState;
 // Automatically choose the generation that needs collecting.
 #define GENERATION_AUTO (-1)
 
+// phases of incremental mark alive process
+#define MARK_PHASE_INIT 1
+#define MARK_PHASE_STEP 2
+#define MARK_PHASE_DONE 3
+
 static inline int gc_is_old(PyGC_Head *gc) {
     return ((gc->_gc_prev & _PyGC_PREV_MASK_OLD) != 0);
 }
@@ -122,21 +127,21 @@ get_gc_state(void)
 void
 _PyGC_InitState(GCState *gcstate)
 {
-#define INIT_HEAD(GEN) \
+#define INIT_GC_LIST(HEAD) \
     do { \
-        GEN.head._gc_next = (uintptr_t)&GEN.head; \
-        GEN.head._gc_prev = (uintptr_t)&GEN.head; \
+        HEAD._gc_next = (uintptr_t)&HEAD; \
+        HEAD._gc_prev = (uintptr_t)&HEAD; \
     } while (0)
 
     for (int i = 0; i < NUM_GENERATIONS; i++) {
         assert(gcstate->generations[i].count == 0);
-        INIT_HEAD(gcstate->generations[i]);
+        INIT_GC_LIST(gcstate->generations[i].head);
     };
     gcstate->generation0 = GEN_HEAD(gcstate, 0);
-    INIT_HEAD(gcstate->old_alive);
-    INIT_HEAD(gcstate->permanent_generation);
+    INIT_GC_LIST(gcstate->permanent_generation.head);
+    INIT_GC_LIST(gcstate->old_alive);
 
-#undef INIT_HEAD
+#undef INIT_GC_LIST
 }
 
 
@@ -159,6 +164,9 @@ _PyGC_Init(PyInterpreterState *interp)
     if (gcstate->thumb == NULL) {
         return _PyStatus_NO_MEMORY();
     }
+    gcstate->mark_phase = MARK_PHASE_DONE;
+    gcstate->old_alive_size = 0;
+    gcstate->old_size = 0;
 
     return _PyStatus_OK();
 }
@@ -1066,11 +1074,14 @@ show_stats_each_generations(GCState *gcstate)
         buf, gc_list_size(&gcstate->permanent_generation.head));
 }
 
-static void
+static Py_ssize_t
 mark_old(PyGC_Head *head) {
+    Py_ssize_t n = 0;
     for (PyGC_Head *gc = GC_NEXT(head); gc != head; gc = GC_NEXT(gc)) {
         gc_set_old(gc);
+        n++;
     }
+    return n;
 }
 
 struct mark_state {
@@ -1078,19 +1089,18 @@ struct mark_state {
     Py_ssize_t alive; // number of objects found alive
 };
 
-static int visit_reachable_old(PyObject *op, struct mark_state *state);
+static int visit_reachable_old(PyObject *op, PyGC_Head *todo);
 
 static void
-propogate_old_reachable(PyObject *op, struct mark_state *state)
+propogate_old_reachable(PyObject *op, PyGC_Head *todo)
 {
-    state->alive++;
     traverseproc traverse = Py_TYPE(op)->tp_traverse;
-    traverse(op, (visitproc)visit_reachable_old, state);
+    traverse(op, (visitproc)visit_reachable_old, todo);
 }
 
-/* A traversal callback for visit_reachable_grey. */
+/* A traversal callback for propogate_old_reachable. */
 static int
-visit_reachable_old(PyObject *op, struct mark_state *state)
+visit_reachable_old(PyObject *op, PyGC_Head *todo)
 {
     if (!(_PyObject_IS_GC(op) && _PyObject_GC_IS_TRACKED(op))) {
         return 0;
@@ -1098,48 +1108,100 @@ visit_reachable_old(PyObject *op, struct mark_state *state)
     PyGC_Head *gc = AS_GC(op);
     if (gc_is_old(gc)) {
         gc_clear_old(gc);
-        gc_list_move(gc, &state->todo);
+        gc_list_move(gc, todo);
     }
     return 0;
 }
 
 static void
-deduce_old_alive(PyThreadState *tstate, PyGC_Head *head) {
+mark_alive_step(PyThreadState *tstate, PyGC_Head *old_head)
+{
 
     GCState *gcstate = &tstate->interp->gc;
-    struct mark_state mstate;
-    mstate.alive = 0;
-    gc_list_init(&mstate.todo);
-
-    gc_list_merge(&gcstate->old_alive.head, head);
-
-    mark_old(head);
-
-    unsigned long n = gc_list_size(head);
-    unsigned long alive = 0;
-
-    PyObject *root = tstate->interp->sysdict;
-    propogate_old_reachable(root, &mstate);
-    PyObject *modules = _PyImport_GetModules(tstate->interp);
-    if (modules != NULL) {
-        propogate_old_reachable(modules, &mstate);
+    PyGC_Head *alive_head = &gcstate->old_alive;
+    if (gcstate->mark_phase == MARK_PHASE_INIT) {
+        gc_list_merge(alive_head, old_head);
+        gcstate->mark_steps = 0;
+        gcstate->mark_steps_total = 0;
+        gcstate->old_alive_size = 0;
+        gcstate->old_size = mark_old(old_head);
+        fprintf(stderr, "gc init mark head %lu\n", gcstate->old_size);
+        PyObject *root = tstate->interp->sysdict;
+        gc_list_move(AS_GC(gcstate->thumb), alive_head);
+        propogate_old_reachable(root, alive_head);
+        gcstate->mark_phase = MARK_PHASE_STEP;
     }
-#if 0
-    _PyInterpreterFrame *frame = tstate->current_frame;
-    if (frame != NULL) {
-        propogate_old_reachable(_PyFrame_GetFrameObject(frame), &mstate);
+    if (gcstate->mark_phase == MARK_PHASE_STEP) {
+        Py_ssize_t n = gcstate->old_size;
+        Py_ssize_t alive = 0;
+        PyGC_Head *gc = GC_NEXT(AS_GC(gcstate->thumb));
+        unsigned long step_count = n / 100;
+        if (step_count < 10) {
+            step_count = 10;
+        }
+        gcstate->mark_steps++;
+        unsigned long total_steps = 0;
+        for (;;) {
+            total_steps++;
+            PyGC_Head *next = GC_NEXT(gc);
+            if (gc == alive_head) {
+                gcstate->mark_phase = MARK_PHASE_DONE;
+                alive = gcstate->old_alive_size;
+                fprintf(stderr, "gc mark done n=%lu old=%lu alive=%lu\n", n, n-alive, alive);
+                break;
+            }
+            if (--step_count == 0) {
+                alive = gcstate->old_alive_size;
+                fprintf(stderr, "gc mark step n=%lu old=%lu alive=%lu\n", n, n-alive, alive);
+                // remember our position in old_alive list with thumb object
+                gc_list_move(AS_GC(gcstate->thumb), next);
+                break;
+            }
+            alive++; // count for this step
+            gcstate->old_alive_size++; // count for all steps
+            propogate_old_reachable(FROM_GC(gc), alive_head);
+            gc = next;
+        }
     }
-#endif
-
-    while (! gc_list_is_empty(&mstate.todo)) {
-        PyGC_Head *gc = GC_NEXT(&mstate.todo);
-        alive++;
-        propogate_old_reachable(FROM_GC(gc), &mstate);
-        gc_list_move(gc, &gcstate->old_alive.head);
+    else {
+        //fprintf(stderr, "gc mark is done, nothing to do\n");
     }
-    fprintf(stderr, "gc mark n=%lu old=%lu alive=%lu\n", n, n-alive, alive);
+    gcstate->mark_steps_total++;
 }
 
+#define OLD_GENERATION (NUM_GENERATIONS-1)
+
+static void
+maybe_mark_alive(PyThreadState *tstate, int generation, _PyGC_Reason reason)
+{
+    GCState *gcstate = &tstate->interp->gc;
+    PyGC_Head *old = GEN_HEAD(gcstate, OLD_GENERATION);
+    if (generation == 0) {
+        // Do one step of "mark alive" incremental work.  This will look at
+        // a fraction of 'old' to determine what is definitely alive, due
+        // to being reachable from a known root object.  Those objects will
+        // be moved out of 'old' and into the 'old_alive' list.
+        mark_alive_step(tstate, old);
+    }
+    else {
+        if (reason != _Py_GC_REASON_HEAP) {
+            if (generation == OLD_GENERATION) {
+                // if doing full, non-heap collection, merge old_alive list so
+                // everything gets examined
+                gc_list_merge(&gcstate->old_alive, old);
+                gcstate->mark_phase = MARK_PHASE_INIT;
+            }
+        }
+        else {
+            if (generation == OLD_GENERATION) {
+                float f = ((float)gcstate->old_alive_size) / gcstate->old_size;
+                fprintf(stderr, "doing full auto collection %.2f\n", f);
+                fprintf(stderr, "steps %d %d\n", gcstate->mark_steps, gcstate->mark_steps_total);
+                gcstate->mark_phase = MARK_PHASE_INIT;
+            }
+        }
+    }
+}
 
 /* Deduce which objects among "base" are unreachable from outside the list
    and move them to 'unreachable'. The process consist in the following steps:
@@ -1450,7 +1512,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     }
     validate_list(old, collecting_clear_unreachable_clear);
 
-    deduce_old_alive(tstate, old);
+    maybe_mark_alive(tstate, generation, reason);
 
     deduce_unreachable(young, &unreachable);
 
@@ -1659,7 +1721,7 @@ _PyGC_GetObjects(PyInterpreterState *interp, int generation)
     }
     if (generation == -1 || generation == (NUM_GENERATIONS - 1)) {
         // include the "old_alive" set of objects as well
-        if (append_objects(result, &gcstate->old_alive.head)) {
+        if (append_objects(result, &gcstate->old_alive)) {
             goto error;
         }
     }
@@ -1680,7 +1742,7 @@ _PyGC_GetOldAliveObjects(PyInterpreterState *interp)
         return NULL;
     }
 
-    if (append_objects(result, &gcstate->old_alive.head)) {
+    if (append_objects(result, &gcstate->old_alive)) {
         Py_DECREF(result);
         return NULL;
     }
@@ -1851,8 +1913,8 @@ _PyGC_Fini(PyInterpreterState *interp)
     for (int i = 0; i < NUM_GENERATIONS; i++) {
         finalize_unlink_gc_head(&gcstate->generations[i].head);
     }
-    finalize_unlink_gc_head(&gcstate->old_alive.head);
     finalize_unlink_gc_head(&gcstate->permanent_generation.head);
+    finalize_unlink_gc_head(&gcstate->old_alive);
 }
 
 /* for debugging */

@@ -1342,7 +1342,7 @@ init_interp_main(PyThreadState *tstate)
         return _PyStatus_ERR("failed to set builtin dict watcher");
     }
 
-#if 1
+#if 0
     fprintf(stderr, "freezing\n");
     _PyGC_Freeze(interp);
 #endif
