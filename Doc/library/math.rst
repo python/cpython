@@ -39,7 +39,7 @@ Number-theoretic and representation functions
 :func:`factorial`        *n* factorial.
 :func:`floor`            Floor of *x*, the largest integer less than or equal to *x*.
 :func:`fma`              Fused multiply-add operation.
-:func:`fmod`             XXX.
+:func:`fmod`             Remainder of division.
 :func:`frexp`            Mantissa and exponent.
 :func:`fsum`             Accurate floating-point sum of values.
 :func:`gcd`              Greatest common divisor.
