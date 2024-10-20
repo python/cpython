@@ -175,6 +175,10 @@ Improved error messages
 Other language changes
 ======================
 
+* The :func:`map` function now has an optional ``strict`` flag like
+  :func:`zip`, used to require that all the iterables have an equal length.
+  (Contributed by Wannes Boeykens in :gh:`119793`.)
+
 * Incorrect usage of :keyword:`await` and asynchronous comprehensions
   is now detected even if the code is optimized away by the :option:`-O`
   command-line option. For example, ``python -O -c 'assert await 1'``
