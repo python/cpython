@@ -1530,7 +1530,6 @@ init_extended_context(PyObject *v)
     CtxCaps(v) = 1;
 }
 
-#ifdef EXTRA_FUNCTIONALITY
 /* Factory function for creating IEEE interchange format contexts */
 static PyObject *
 ieee_context(PyObject *module, PyObject *v)
@@ -1566,7 +1565,6 @@ error:
 
     return NULL;
 }
-#endif
 
 static PyObject *
 context_copy(PyObject *self, PyObject *Py_UNUSED(dummy))
@@ -5835,9 +5833,7 @@ static PyMethodDef _decimal_methods [] =
   { "getcontext", PyDec_GetCurrentContext, METH_NOARGS, doc_getcontext},
   { "setcontext", PyDec_SetCurrentContext, METH_O, doc_setcontext},
   { "localcontext", _PyCFunction_CAST(ctxmanager_new), METH_VARARGS|METH_KEYWORDS, doc_localcontext},
-#ifdef EXTRA_FUNCTIONALITY
   { "IEEEContext", ieee_context, METH_O, doc_ieee_context},
-#endif
   { NULL, NULL, 1, NULL }
 };
 
@@ -5854,11 +5850,8 @@ static struct ssize_constmap ssize_constants [] = {
 struct int_constmap { const char *name; int val; };
 static struct int_constmap int_constants [] = {
     /* int constants */
-#ifdef EXTRA_FUNCTIONALITY
-    {"DECIMAL32", MPD_DECIMAL32},
-    {"DECIMAL64", MPD_DECIMAL64},
-    {"DECIMAL128", MPD_DECIMAL128},
     {"IEEE_CONTEXT_MAX_BITS", MPD_IEEE_CONTEXT_MAX_BITS},
+#ifdef EXTRA_FUNCTIONALITY
     /* int condition flags */
     {"DecClamped", MPD_Clamped},
     {"DecConversionSyntax", MPD_Conversion_syntax},
