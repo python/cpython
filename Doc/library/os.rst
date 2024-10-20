@@ -4278,8 +4278,8 @@ These functions may be used to create and manage processes.
    be the name of the program itself, and not an argument that a user may
    have typed on a command line.
 
-   For the C programmer, this is the ``argv[0]``
-   passed to a program's :c:func:`main`.  For example, ``os.execv('/bin/echo',
+   This first argument is equivalent to the ``argv[0]``
+   passed to a program's :c:func:`main` in a C program.  For example, ``os.execv('/bin/echo',
    ['foo', 'bar'])`` will only print ``bar`` on standard output; ``foo`` will seem
    to be ignored.
 
