@@ -56,7 +56,7 @@ class FROM1CONVERTER(object):
 
 FROM1 = FROM1CONVERTER()
 
-def tests(*args):
+def test(*args):
     import ast
     for code in args:
         print(code, '->', end=' ')
@@ -65,17 +65,27 @@ def tests(*args):
         except Exception as e:
             print(e.__class__.__name__)
 
-def tests1():
-    tests(
+def tests():
+    brackets = [
         "a[i]",
+        "a[i:]",
         "a[i:j]",
         "a[i:j:k]",
-        "a[i:j::k]",
-        "a{i}",
-        "a{i:j}",
-        "a{i:j:k}",
-        "a{i:j::k}",
-    )
+        "a[i::k]",
+        "a[:j]",
+        "a[:j:k]",
+        "a[::k]",
+        "a[:]",
+        "a[::]",
+        "a[i:j:]",
+        "a[i:j:k:]",
+        "a[:j:]",
+        "a[:j:k:]",
+    ]
+    test(*brackets)
+    print()
+    braces = [code.replace("[", "{").replace("]", "}") for code in brackets]
+    test(*braces)
 
 ########################################
 

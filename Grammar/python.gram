@@ -871,7 +871,9 @@ slices0[expr_ty]:
     | a[asdl_expr_seq*]=','.(slice0 | starred_expression)+ [','] { _PyAST_Tuple(a, Load, EXTRA) }
 
 slice0[expr_ty]:
-    | a=[expression] ':' b=[expression] ':' ':' c=[expression] { _PyAST_ClosedSlice(a, b, c, EXTRA) }
+    | a=[expression] ':' b=[expression] ':' c=expression ':' { _PyAST_ClosedSlice(a, b, c, EXTRA) }
+    | a=[expression] ':' b=[expression] ':' c=expression { _PyAST_Slice(a, b, c, EXTRA) }
+    | a=[expression] ':' b=expression ':' { _PyAST_ClosedSlice(a, b, NULL, EXTRA) }
     | a=[expression] ':' b=[expression] c=[':' d=[expression] { d }] { _PyAST_Slice(a, b, c, EXTRA) }
     | a=named_expression { a }
 
@@ -883,7 +885,9 @@ starred_expression1[expr_ty]:
     | a=starred_expression { _PyAST_From1(a, EXTRA) }
 
 slice1[expr_ty]:
-    | a=[expression] ':' b=[expression] ':' ':' c=[expression] { _PyAST_ClosedSlice1(a, b, c, EXTRA) }
+    | a=[expression] ':' b=[expression] ':' c=expression ':' { _PyAST_ClosedSlice1(a, b, c, EXTRA) }
+    | a=[expression] ':' b=[expression] ':' c=expression { _PyAST_Slice1(a, b, c, EXTRA) }
+    | a=[expression] ':' b=expression ':' { _PyAST_ClosedSlice1(a, b, NULL, EXTRA) }
     | a=[expression] ':' b=[expression] c=[':' d=[expression] { d }] { _PyAST_Slice1(a, b, c, EXTRA) }
     | a=named_expression { _PyAST_From1(a, EXTRA) }
 

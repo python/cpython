@@ -14640,7 +14640,9 @@ slices0_rule(Parser *p)
 }
 
 // slice0:
-//     | expression? ':' expression? ':' ':' expression?
+//     | expression? ':' expression? ':' expression ':'
+//     | expression? ':' expression? ':' expression
+//     | expression? ':' expression ':'
 //     | expression? ':' expression? [':' expression?]
 //     | named_expression
 static expr_ty
@@ -14664,18 +14666,18 @@ slice0_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    { // expression? ':' expression? ':' ':' expression?
+    { // expression? ':' expression? ':' expression ':'
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> slice0[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression? ':' expression? ':' ':' expression?"));
+        D(fprintf(stderr, "%*c> slice0[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression? ':' expression? ':' expression ':'"));
         Token * _literal;
         Token * _literal_1;
         Token * _literal_2;
         void *a;
         void *b;
-        void *c;
+        expr_ty c;
         if (
             (a = expression_rule(p), !p->error_indicator)  // expression?
             &&
@@ -14685,12 +14687,12 @@ slice0_rule(Parser *p)
             &&
             (_literal_1 = _PyPegen_expect_token(p, 11))  // token=':'
             &&
-            (_literal_2 = _PyPegen_expect_token(p, 11))  // token=':'
+            (c = expression_rule(p))  // expression
             &&
-            (c = expression_rule(p), !p->error_indicator)  // expression?
+            (_literal_2 = _PyPegen_expect_token(p, 11))  // token=':'
         )
         {
-            D(fprintf(stderr, "%*c+ slice0[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression? ':' expression? ':' ':' expression?"));
+            D(fprintf(stderr, "%*c+ slice0[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression? ':' expression? ':' expression ':'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 p->level--;
@@ -14710,7 +14712,94 @@ slice0_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s slice0[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression? ':' expression? ':' ':' expression?"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression? ':' expression? ':' expression ':'"));
+    }
+    { // expression? ':' expression? ':' expression
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> slice0[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression? ':' expression? ':' expression"));
+        Token * _literal;
+        Token * _literal_1;
+        void *a;
+        void *b;
+        expr_ty c;
+        if (
+            (a = expression_rule(p), !p->error_indicator)  // expression?
+            &&
+            (_literal = _PyPegen_expect_token(p, 11))  // token=':'
+            &&
+            (b = expression_rule(p), !p->error_indicator)  // expression?
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 11))  // token=':'
+            &&
+            (c = expression_rule(p))  // expression
+        )
+        {
+            D(fprintf(stderr, "%*c+ slice0[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression? ':' expression? ':' expression"));
+            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+            if (_token == NULL) {
+                p->level--;
+                return NULL;
+            }
+            int _end_lineno = _token->end_lineno;
+            UNUSED(_end_lineno); // Only used by EXTRA macro
+            int _end_col_offset = _token->end_col_offset;
+            UNUSED(_end_col_offset); // Only used by EXTRA macro
+            _res = _PyAST_Slice ( a , b , c , EXTRA );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s slice0[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression? ':' expression? ':' expression"));
+    }
+    { // expression? ':' expression ':'
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> slice0[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression? ':' expression ':'"));
+        Token * _literal;
+        Token * _literal_1;
+        void *a;
+        expr_ty b;
+        if (
+            (a = expression_rule(p), !p->error_indicator)  // expression?
+            &&
+            (_literal = _PyPegen_expect_token(p, 11))  // token=':'
+            &&
+            (b = expression_rule(p))  // expression
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 11))  // token=':'
+        )
+        {
+            D(fprintf(stderr, "%*c+ slice0[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression? ':' expression ':'"));
+            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+            if (_token == NULL) {
+                p->level--;
+                return NULL;
+            }
+            int _end_lineno = _token->end_lineno;
+            UNUSED(_end_lineno); // Only used by EXTRA macro
+            int _end_col_offset = _token->end_col_offset;
+            UNUSED(_end_col_offset); // Only used by EXTRA macro
+            _res = _PyAST_ClosedSlice ( a , b , NULL , EXTRA );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s slice0[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression? ':' expression ':'"));
     }
     { // expression? ':' expression? [':' expression?]
         if (p->error_indicator) {
@@ -14937,7 +15026,9 @@ starred_expression1_rule(Parser *p)
 }
 
 // slice1:
-//     | expression? ':' expression? ':' ':' expression?
+//     | expression? ':' expression? ':' expression ':'
+//     | expression? ':' expression? ':' expression
+//     | expression? ':' expression ':'
 //     | expression? ':' expression? [':' expression?]
 //     | named_expression
 static expr_ty
@@ -14961,18 +15052,18 @@ slice1_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    { // expression? ':' expression? ':' ':' expression?
+    { // expression? ':' expression? ':' expression ':'
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> slice1[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression? ':' expression? ':' ':' expression?"));
+        D(fprintf(stderr, "%*c> slice1[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression? ':' expression? ':' expression ':'"));
         Token * _literal;
         Token * _literal_1;
         Token * _literal_2;
         void *a;
         void *b;
-        void *c;
+        expr_ty c;
         if (
             (a = expression_rule(p), !p->error_indicator)  // expression?
             &&
@@ -14982,12 +15073,12 @@ slice1_rule(Parser *p)
             &&
             (_literal_1 = _PyPegen_expect_token(p, 11))  // token=':'
             &&
-            (_literal_2 = _PyPegen_expect_token(p, 11))  // token=':'
+            (c = expression_rule(p))  // expression
             &&
-            (c = expression_rule(p), !p->error_indicator)  // expression?
+            (_literal_2 = _PyPegen_expect_token(p, 11))  // token=':'
         )
         {
-            D(fprintf(stderr, "%*c+ slice1[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression? ':' expression? ':' ':' expression?"));
+            D(fprintf(stderr, "%*c+ slice1[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression? ':' expression? ':' expression ':'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 p->level--;
@@ -15007,7 +15098,94 @@ slice1_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s slice1[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression? ':' expression? ':' ':' expression?"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression? ':' expression? ':' expression ':'"));
+    }
+    { // expression? ':' expression? ':' expression
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> slice1[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression? ':' expression? ':' expression"));
+        Token * _literal;
+        Token * _literal_1;
+        void *a;
+        void *b;
+        expr_ty c;
+        if (
+            (a = expression_rule(p), !p->error_indicator)  // expression?
+            &&
+            (_literal = _PyPegen_expect_token(p, 11))  // token=':'
+            &&
+            (b = expression_rule(p), !p->error_indicator)  // expression?
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 11))  // token=':'
+            &&
+            (c = expression_rule(p))  // expression
+        )
+        {
+            D(fprintf(stderr, "%*c+ slice1[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression? ':' expression? ':' expression"));
+            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+            if (_token == NULL) {
+                p->level--;
+                return NULL;
+            }
+            int _end_lineno = _token->end_lineno;
+            UNUSED(_end_lineno); // Only used by EXTRA macro
+            int _end_col_offset = _token->end_col_offset;
+            UNUSED(_end_col_offset); // Only used by EXTRA macro
+            _res = _PyAST_Slice1 ( a , b , c , EXTRA );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s slice1[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression? ':' expression? ':' expression"));
+    }
+    { // expression? ':' expression ':'
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> slice1[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression? ':' expression ':'"));
+        Token * _literal;
+        Token * _literal_1;
+        void *a;
+        expr_ty b;
+        if (
+            (a = expression_rule(p), !p->error_indicator)  // expression?
+            &&
+            (_literal = _PyPegen_expect_token(p, 11))  // token=':'
+            &&
+            (b = expression_rule(p))  // expression
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 11))  // token=':'
+        )
+        {
+            D(fprintf(stderr, "%*c+ slice1[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression? ':' expression ':'"));
+            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+            if (_token == NULL) {
+                p->level--;
+                return NULL;
+            }
+            int _end_lineno = _token->end_lineno;
+            UNUSED(_end_lineno); // Only used by EXTRA macro
+            int _end_col_offset = _token->end_col_offset;
+            UNUSED(_end_col_offset); // Only used by EXTRA macro
+            _res = _PyAST_ClosedSlice1 ( a , b , NULL , EXTRA );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s slice1[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression? ':' expression ':'"));
     }
     { // expression? ':' expression? [':' expression?]
         if (p->error_indicator) {
