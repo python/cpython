@@ -4307,8 +4307,8 @@ These functions may be used to create and manage processes.
    discussed in the next paragraph), the new environment is used as the source of
    the :envvar:`PATH` variable.
 
-   The other variants, :func:`execl`, :func:`execle`,
-   :func:`execv`, and :func:`execve`, will not use the :envvar:`PATH` variable to
+   The variants without "p" (:func:`execl`, :func:`execle`,
+   :func:`execv`, and :func:`execve`) will not use the :envvar:`PATH` variable to
    locate the executable; *path* must contain an appropriate absolute or relative
    path. Relative paths must include at least one slash, even on Windows, as
    plain names will not be resolved.
@@ -4341,7 +4341,7 @@ These functions may be used to create and manage processes.
    .. seealso::
       The :mod:`subprocess` module.
 
-      The :func:`system` and :func:`spawnl` functions also execute a system command.
+      The :func:`system` and :func:`spawn <spawnl>` functions also execute a new program.
 
 .. function:: _exit(n)
 
@@ -4921,7 +4921,7 @@ written in Python, such as a mail server's external command delivery program.
    .. seealso::
       The :mod:`subprocess` module.
 
-      The :func:`system` and :func:`execl` functions also execute a system command.
+      The :func:`system` and :func:`exec <execl>` functions also execute a new program.
 
 .. data:: P_NOWAIT
           P_NOWAITO
@@ -5040,7 +5040,7 @@ written in Python, such as a mail server's external command delivery program.
    .. seealso::
       The :mod:`subprocess` module.
 
-      The :func:`execl` and :func:`spawnl` functions also execute a system command.
+      The :func:`exec <execl>` and :func:`spawn <spawnl>` functions also execute a system command.
 
 .. function:: times()
 
