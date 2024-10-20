@@ -328,7 +328,7 @@ The special characters are:
 .. _re_extension_notation:
 
 Extension notation
-^^^^^^^^^^^^^^^^^^
+""""""""""""""""""
 
 .. index:: single: (?; in regular expressions
 
@@ -530,7 +530,7 @@ Extension notation
 .. _re-special-sequences:
 
 Special sequences
-^^^^^^^^^^^^^^^^^
+"""""""""""""""""
 
 The special sequences consist of ``'\'`` and a character from the list below.
 If the ordinary character is not an ASCII digit or an ASCII letter, then the
@@ -682,7 +682,7 @@ character ``'$'``.
 .. _re-escape-sequences:
 
 Escape sequences
-^^^^^^^^^^^^^^^^^
+""""""""""""""""
 
 .. index::
    single: \a; in regular expressions
