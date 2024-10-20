@@ -190,6 +190,10 @@ Other language changes
   They raise an error if the argument is a string.
   (Contributed by Serhiy Storchaka in :gh:`84978`.)
 
+* Implement mixed-mode arithmetic rules combining real and complex numbers as
+  specified by C standards since C99.
+  (Contributed by Sergey B Kirpichev in :gh:`69639`.)
+
 
 New modules
 ===========
