@@ -9771,6 +9771,45 @@ else $as_nop
 printf "%s\n" "$as_me: WARNING: -Wtrampolines not supported" >&2;}
 fi
 
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wformat -Wformat=2" >&5
+printf %s "checking whether C compiler accepts -Wformat -Wformat=2... " >&6; }
+if test ${ax_cv_check_cflags__Werror__Wformat__Wformat_2+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS -Werror -Wformat -Wformat=2"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags__Werror__Wformat__Wformat_2=yes
+else $as_nop
+  ax_cv_check_cflags__Werror__Wformat__Wformat_2=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__Wformat__Wformat_2" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__Wformat__Wformat_2" >&6; }
+if test "x$ax_cv_check_cflags__Werror__Wformat__Wformat_2" = xyes
+then :
+  CFLAGS_NODIST="$CFLAGS_NODIST -Wformat -Wformat=2"
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: -Wformat and -Wformat=2 not supported" >&5
+printf "%s\n" "$as_me: WARNING: -Wformat and -Wformat=2 not supported" >&2;}
+fi
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wimplicit-fallthrough" >&5
 printf %s "checking whether C compiler accepts -Wimplicit-fallthrough... " >&6; }
 if test ${ax_cv_check_cflags__Werror__Wimplicit_fallthrough+y}
