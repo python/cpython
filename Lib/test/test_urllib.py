@@ -1691,5 +1691,17 @@ class PathName2URLTests(unittest.TestCase):
         for path in list_of_paths:
             self.assertEqual(pathname2url(url2pathname(path)), path)
 
+class URLCleanUpFileTests(unittest.TestCase):
+    """Test urllib.urlcleanup() on cache files"""
+
+    def test_urlcleanup(self):
+        result = urllib.request.urlretrieve('http://example.com')
+        self.assertIsInstance(result[1], email.message.Message,
+                              "did not get a email.message.Message instance ",
+                              "as second returned value")
+        self.assertTrue(result[0] in urllib.request._url_tempfiles)
+        urllib.request.urlcleanup()
+        self.assertFalse(result[0] in urllib.request._url_tempfiles)
+
 if __name__ == '__main__':
     unittest.main()
