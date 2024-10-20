@@ -1003,6 +1003,8 @@ LIPO_INTEL64_FLAGS
 LIPO_32BIT_FLAGS
 ARCH_RUN_32BIT
 UNIVERSALSDK
+host_exec_prefix
+host_prefix
 MACHDEP
 PKG_CONFIG_LIBDIR
 PKG_CONFIG_PATH
@@ -4104,6 +4106,29 @@ printf "%s\n" "#define Py_SUNOS_VERSION $SUNOS_VERSION" >>confdefs.h
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: \"$MACHDEP\"" >&5
 printf "%s\n" "\"$MACHDEP\"" >&6; }
+
+
+if test -z "$host_prefix"; then
+  case $ac_sys_system in #(
+  Emscripten) :
+    host_prefix=/ ;; #(
+  *) :
+    host_prefix=$prefix
+   ;;
+esac
+fi
+
+
+if test -z "$host_exec_prefix"; then
+  case $ac_sys_system in #(
+  Emscripten) :
+    host_exec_prefix=$host_prefix ;; #(
+  *) :
+    host_exec_prefix=$exec_prefix
+   ;;
+esac
+fi
+
 
 # On cross-compile builds, configure will look for a host-specific compiler by
 # prepending the user-provided host triple to the required binary name.
