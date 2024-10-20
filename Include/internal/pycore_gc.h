@@ -295,6 +295,8 @@ struct _gc_runtime_state {
     /* linked lists of container objects */
     struct gc_generation generations[NUM_GENERATIONS];
     PyGC_Head *generation0;
+    /* Objects in oldest generation that have be determined to be alive */
+    struct gc_generation old_alive;
     /* a permanent generation which won't be collected */
     struct gc_generation permanent_generation;
     struct gc_generation_stats generation_stats[NUM_GENERATIONS];
