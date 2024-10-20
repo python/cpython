@@ -518,6 +518,43 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     (Pdb) continue
     """
 
+def test_pdb_break_anywhere():
+    """Test break_anywhere() method of Pdb.
+
+    >>> def outer():
+    ...     def inner():
+    ...         import pdb
+    ...         import sys
+    ...         p = pdb.Pdb(nosigint=True, readrc=False)
+    ...         p.set_trace()
+    ...         frame = sys._getframe()
+    ...         print(p.break_anywhere(frame))  # inner
+    ...         print(p.break_anywhere(frame.f_back))  # outer
+    ...         print(p.break_anywhere(frame.f_back.f_back))  # caller
+    ...     inner()
+
+    >>> def caller():
+    ...     outer()
+
+    >>> def test_function():
+    ...     caller()
+
+    >>> reset_Breakpoint()
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'b 3',
+    ...     'c',
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_break_anywhere[0]>(6)inner()
+    -> p.set_trace()
+    (Pdb) b 3
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_break_anywhere[0]>:3
+    (Pdb) c
+    True
+    False
+    False
+    """
+
 def test_pdb_pp_repr_exc():
     """Test that do_p/do_pp do not swallow exceptions.
 
@@ -1044,7 +1081,7 @@ def test_convenience_variables():
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     try:
     ...         raise Exception('test')
-    ...     except:
+    ...     except Exception:
     ...         pass
     ...     return 1
 
@@ -1116,7 +1153,7 @@ def test_convenience_variables():
     Exception('test')
     (Pdb) next
     > <doctest test.test_pdb.test_convenience_variables[0]>(5)util_function()
-    -> except:
+    -> except Exception:
     (Pdb) $_exception
     *** KeyError: '_exception'
     (Pdb) return
@@ -2411,7 +2448,12 @@ def test_pdb_multiline_statement():
     ...     'def f(x):',
     ...     '  return x * 2',
     ...     '',
-    ...     'f(2)',
+    ...     'val = 2',
+    ...     'if val > 0:',
+    ...     '  val = f(val)',
+    ...     '',
+    ...     '',  # empty line should repeat the multi-line statement
+    ...     'val',
     ...     'c'
     ... ]):
     ...     test_function()
@@ -2420,8 +2462,13 @@ def test_pdb_multiline_statement():
     (Pdb) def f(x):
     ...     return x * 2
     ...
-    (Pdb) f(2)
-    4
+    (Pdb) val = 2
+    (Pdb) if val > 0:
+    ...     val = f(val)
+    ...
+    (Pdb)
+    (Pdb) val
+    8
     (Pdb) c
     """
 
@@ -3052,6 +3099,7 @@ class PdbTestCase(unittest.TestCase):
     def run_pdb_script(self, script, commands,
                        expected_returncode=0,
                        extra_env=None,
+                       script_args=None,
                        pdbrc=None,
                        remove_home=False):
         """Run 'script' lines with pdb and the pdb 'commands'."""
@@ -3069,7 +3117,9 @@ class PdbTestCase(unittest.TestCase):
         if remove_home:
             homesave = os.environ.pop('HOME', None)
         try:
-            stdout, stderr = self._run_pdb([filename], commands, expected_returncode, extra_env)
+            if script_args is None:
+                script_args = []
+            stdout, stderr = self._run_pdb([filename] + script_args, commands, expected_returncode, extra_env)
         finally:
             if homesave is not None:
                 os.environ['HOME'] = homesave
@@ -3356,6 +3406,50 @@ def bœr():
         self.assertRegex(res, "Restarting .* with arguments:\na b c")
         self.assertRegex(res, "Restarting .* with arguments:\nd e f")
 
+    def test_issue58956(self):
+        # Set a breakpoint in a function that already exists on the call stack
+        # should enable the trace function for the frame.
+        script = """
+            import bar
+            def foo():
+                ret = bar.bar()
+                pass
+            foo()
+        """
+        commands = """
+            b bar.bar
+            c
+            b main.py:5
+            c
+            p ret
+            quit
+        """
+        bar = """
+            def bar():
+                return 42
+        """
+        with open('bar.py', 'w') as f:
+            f.write(textwrap.dedent(bar))
+        self.addCleanup(os_helper.unlink, 'bar.py')
+        stdout, stderr = self.run_pdb_script(script, commands)
+        lines = stdout.splitlines()
+        self.assertIn('-> pass', lines)
+        self.assertIn('(Pdb) 42', lines)
+
+    def test_step_into_botframe(self):
+        # gh-125422
+        # pdb should not be able to step into the botframe (bdb.py)
+        script = "x = 1"
+        commands = """
+            step
+            step
+            step
+            quit
+        """
+        stdout, _ = self.run_pdb_script(script, commands)
+        self.assertIn("The program finished", stdout)
+        self.assertNotIn("bdb.py", stdout)
+
     def test_pdbrc_basic(self):
         script = textwrap.dedent("""
             a = 1
@@ -3508,6 +3602,22 @@ def bœr():
         stdout, _ = self._run_pdb(["-m", "calendar", "1"], commands)
         self.assertIn("December", stdout)
 
+        stdout, _ = self._run_pdb(["-m", "calendar", "--type", "text"], commands)
+        self.assertIn("December", stdout)
+
+    def test_run_script_with_args(self):
+        script = """
+            import sys
+            print(sys.argv[1:])
+        """
+        commands = """
+            continue
+            quit
+        """
+
+        stdout, stderr = self.run_pdb_script(script, commands, script_args=["--bar", "foo"])
+        self.assertIn("['--bar', 'foo']", stdout)
+
     def test_breakpoint(self):
         script = """
             if __name__ == '__main__':
@@ -3610,6 +3720,25 @@ def bœr():
         stdout, stderr = self.run_pdb_script(script, commands)
         self.assertIn("WARNING:", stdout)
         self.assertIn("was edited", stdout)
+
+    def test_file_modified_and_immediately_restarted(self):
+        script = """
+            print("hello")
+        """
+
+        # the time.sleep is needed for low-resolution filesystems like HFS+
+        commands = """
+            filename = $_frame.f_code.co_filename
+            f = open(filename, "w")
+            f.write("print('goodbye')")
+            import time; time.sleep(1)
+            f.close()
+            restart
+        """
+
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertNotIn("WARNING:", stdout)
+        self.assertNotIn("was edited", stdout)
 
     def test_file_modified_after_execution_with_multiple_instances(self):
         # the time.sleep is needed for low-resolution filesystems like HFS+
@@ -3947,6 +4076,16 @@ def bœr():
         stdout, stderr = self._run_pdb(["gh93696_host.py"], commands)
         # verify that pdb found the source of the "frozen" function
         self.assertIn('x = "Sentinel string for gh-93696"', stdout, "Sentinel statement not found")
+
+    def test_empty_file(self):
+        script = ''
+        commands = 'q\n'
+        # We check that pdb stopped at line 0, but anything reasonable
+        # is acceptable here, as long as it does not halt
+        stdout, _ = self.run_pdb_script(script, commands)
+        self.assertIn('main.py(0)', stdout)
+        stdout, _ = self.run_pdb_module(script, commands)
+        self.assertIn('__main__.py(0)', stdout)
 
     def test_non_utf8_encoding(self):
         script_dir = os.path.join(os.path.dirname(__file__), 'encoded_modules')

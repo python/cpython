@@ -527,8 +527,7 @@ class HelpFormatter(object):
     def _format_action_invocation(self, action):
         if not action.option_strings:
             default = self._get_default_metavar_for_positional(action)
-            metavar, = self._metavar_formatter(action, default)(1)
-            return metavar
+            return ' '.join(self._metavar_formatter(action, default)(1))
 
         else:
 
@@ -548,8 +547,7 @@ class HelpFormatter(object):
         if action.metavar is not None:
             result = action.metavar
         elif action.choices is not None:
-            choice_strs = [str(choice) for choice in action.choices]
-            result = '{%s}' % ','.join(choice_strs)
+            result = '{%s}' % ','.join(map(str, action.choices))
         else:
             result = default_metavar
 
@@ -589,17 +587,19 @@ class HelpFormatter(object):
         return result
 
     def _expand_help(self, action):
+        help_string = self._get_help_string(action)
+        if '%' not in help_string:
+            return help_string
         params = dict(vars(action), prog=self._prog)
         for name in list(params):
-            if params[name] is SUPPRESS:
+            value = params[name]
+            if value is SUPPRESS:
                 del params[name]
-        for name in list(params):
-            if hasattr(params[name], '__name__'):
-                params[name] = params[name].__name__
+            elif hasattr(value, '__name__'):
+                params[name] = value.__name__
         if params.get('choices') is not None:
-            choices_str = ', '.join([str(c) for c in params['choices']])
-            params['choices'] = choices_str
-        return self._get_help_string(action) % params
+            params['choices'] = ', '.join(map(str, params['choices']))
+        return help_string % params
 
     def _iter_indented_subactions(self, action):
         try:
@@ -703,11 +703,19 @@ def _get_action_name(argument):
     elif argument.option_strings:
         return '/'.join(argument.option_strings)
     elif argument.metavar not in (None, SUPPRESS):
-        return argument.metavar
+        metavar = argument.metavar
+        if not isinstance(metavar, tuple):
+            return metavar
+        if argument.nargs == ZERO_OR_MORE and len(metavar) == 2:
+            return '%s[, %s]' % metavar
+        elif argument.nargs == ONE_OR_MORE:
+            return '%s[, %s]' % metavar
+        else:
+            return ', '.join(metavar)
     elif argument.dest not in (None, SUPPRESS):
         return argument.dest
     elif argument.choices:
-        return '{' + ','.join(argument.choices) + '}'
+        return '{%s}' % ','.join(map(str, argument.choices))
     else:
         return None
 
@@ -1173,9 +1181,13 @@ class _SubParsersAction(Action):
             help = kwargs.pop('help')
             choice_action = self._ChoicesPseudoAction(name, aliases, help)
             self._choices_actions.append(choice_action)
+        else:
+            choice_action = None
 
         # create the parser and add it to the map
         parser = self._parser_class(**kwargs)
+        if choice_action is not None:
+            parser._check_help(choice_action)
         self._name_parser_map[name] = parser
 
         # make parser available under aliases also
@@ -1360,7 +1372,7 @@ class _ActionsContainer(object):
         self._defaults = {}
 
         # determines whether an "option" looks like a negative number
-        self._negative_number_matcher = _re.compile(r'^-(?:\d+(?:_\d+)*(?:\.\d+(?:_\d+)*)?|\.\d+(?:_\d+)*)$')
+        self._negative_number_matcher = _re.compile(r'-\.?\d')
 
         # whether or not there are any optionals that look like negative
         # numbers -- uses a list so it can be shared and edited
@@ -1410,7 +1422,8 @@ class _ActionsContainer(object):
         chars = self.prefix_chars
         if not args or len(args) == 1 and args[0][0] not in chars:
             if args and 'dest' in kwargs:
-                raise ValueError('dest supplied twice for positional argument')
+                raise ValueError('dest supplied twice for positional argument,'
+                                 ' did you mean metavar?')
             kwargs = self._get_positional_kwargs(*args, **kwargs)
 
         # otherwise, we're adding an optional argument
@@ -1426,10 +1439,16 @@ class _ActionsContainer(object):
                 kwargs['default'] = self.argument_default
 
         # create the action object, and add it to the parser
+        action_name = kwargs.get('action')
         action_class = self._pop_action_class(kwargs)
         if not callable(action_class):
             raise ValueError('unknown action "%s"' % (action_class,))
         action = action_class(**kwargs)
+
+        # raise an error if action for positional argument does not
+        # consume arguments
+        if not action.option_strings and action.nargs == 0:
+            raise ValueError(f'action {action_name!r} is not valid for positional arguments')
 
         # raise an error if the action type is not callable
         type_func = self._registry_get('type', action.type, action.type)
@@ -1442,11 +1461,12 @@ class _ActionsContainer(object):
 
         # raise an error if the metavar does not match the type
         if hasattr(self, "_get_formatter"):
+            formatter = self._get_formatter()
             try:
-                self._get_formatter()._format_args(action, None)
+                formatter._format_args(action, None)
             except TypeError:
                 raise ValueError("length of metavar tuple does not match nargs")
-
+        self._check_help(action)
         return self._add_action(action)
 
     def add_argument_group(self, *args, **kwargs):
@@ -1514,7 +1534,11 @@ class _ActionsContainer(object):
         # NOTE: if add_mutually_exclusive_group ever gains title= and
         # description= then this code will need to be expanded as above
         for group in container._mutually_exclusive_groups:
-            mutex_group = self.add_mutually_exclusive_group(
+            if group._container is container:
+                cont = self
+            else:
+                cont = title_group_map[group._container.title]
+            mutex_group = cont.add_mutually_exclusive_group(
                 required=group.required)
 
             # map the actions to their new mutex group
@@ -1534,7 +1558,9 @@ class _ActionsContainer(object):
         # mark positional arguments as required if at least one is
         # always required
         nargs = kwargs.get('nargs')
-        if nargs not in [OPTIONAL, ZERO_OR_MORE, REMAINDER, SUPPRESS, 0]:
+        if nargs == 0:
+            raise ValueError('nargs for positionals must be != 0')
+        if nargs not in [OPTIONAL, ZERO_OR_MORE, REMAINDER, SUPPRESS]:
             kwargs['required'] = True
 
         # return the keyword arguments with no option strings
@@ -1624,10 +1650,26 @@ class _ActionsContainer(object):
             if not action.option_strings:
                 action.container._remove_action(action)
 
+    def _check_help(self, action):
+        if action.help and hasattr(self, "_get_formatter"):
+            formatter = self._get_formatter()
+            try:
+                formatter._expand_help(action)
+            except (ValueError, TypeError, KeyError) as exc:
+                raise ValueError('badly formed help string') from exc
+
 
 class _ArgumentGroup(_ActionsContainer):
 
     def __init__(self, container, title=None, description=None, **kwargs):
+        if 'prefix_chars' in kwargs:
+            import warnings
+            depr_msg = (
+                "The use of the undocumented 'prefix_chars' parameter in "
+                "ArgumentParser.add_argument_group() is deprecated."
+            )
+            warnings.warn(depr_msg, DeprecationWarning, stacklevel=3)
+
         # add any missing keyword arguments by checking the container
         update = kwargs.setdefault
         update('conflict_handler', container.conflict_handler)
@@ -1697,6 +1739,28 @@ class _MutuallyExclusiveGroup(_ArgumentGroup):
         return super().add_mutually_exclusive_group(*args, **kwargs)
 
 
+def _prog_name(prog=None):
+    if prog is not None:
+        return prog
+    arg0 = _sys.argv[0]
+    try:
+        modspec = _sys.modules['__main__'].__spec__
+    except (KeyError, AttributeError):
+        # possibly PYTHONSTARTUP or -X presite or other weird edge case
+        # no good answer here, so fall back to the default
+        modspec = None
+    if modspec is None:
+        # simple script
+        return _os.path.basename(arg0)
+    py = _os.path.basename(_sys.executable)
+    if modspec.name != '__main__':
+        # imported module or package
+        modname = modspec.name.removesuffix('.__main__')
+        return f'{py} -m {modname}'
+    # directory or ZIP file
+    return f'{py} {arg0}'
+
+
 class ArgumentParser(_AttributeHolder, _ActionsContainer):
     """Object for parsing command line strings into Python objects.
 
@@ -1717,6 +1781,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         - allow_abbrev -- Allow long options to be abbreviated unambiguously
         - exit_on_error -- Determines whether or not ArgumentParser exits with
             error info when an error occurs
+        - suggest_on_error - Enables suggestions for mistyped argument choices
+            and subparser names. (default: ``False``)
     """
 
     def __init__(self,
@@ -1732,7 +1798,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                  conflict_handler='error',
                  add_help=True,
                  allow_abbrev=True,
-                 exit_on_error=True):
+                 exit_on_error=True,
+                 suggest_on_error=False):
 
         superinit = super(ArgumentParser, self).__init__
         superinit(description=description,
@@ -1740,11 +1807,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                   argument_default=argument_default,
                   conflict_handler=conflict_handler)
 
-        # default setting for prog
-        if prog is None:
-            prog = _os.path.basename(_sys.argv[0])
-
-        self.prog = prog
+        self.prog = _prog_name(prog)
         self.usage = usage
         self.epilog = epilog
         self.formatter_class = formatter_class
@@ -1752,6 +1815,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self.add_help = add_help
         self.allow_abbrev = allow_abbrev
         self.exit_on_error = exit_on_error
+        self.suggest_on_error = suggest_on_error
 
         add_group = self.add_argument_group
         self._positionals = add_group(_('positional arguments'))
@@ -1823,6 +1887,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # create the parsers action and add it to the positionals list
         parsers_class = self._pop_action_class(kwargs, 'parsers')
         action = parsers_class(option_strings=[], **kwargs)
+        self._check_help(action)
         self._subparsers._add_action(action)
 
         # return the created parsers action
@@ -1972,7 +2037,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             if len(option_tuples) > 1:
                 options = ', '.join([option_string
                     for action, option_string, sep, explicit_arg in option_tuples])
-                args = {'option': arg_string, 'matches': options}
+                args = {'option': arg_strings[start_index], 'matches': options}
                 msg = _('ambiguous option: %(option)s could match %(matches)s')
                 raise ArgumentError(None, msg % args)
 
@@ -2548,14 +2613,27 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     def _check_value(self, action, value):
         # converted value must be one of the choices (if specified)
         choices = action.choices
-        if choices is not None:
-            if isinstance(choices, str):
-                choices = iter(choices)
-            if value not in choices:
-                args = {'value': value,
-                        'choices': ', '.join(map(repr, action.choices))}
-                msg = _('invalid choice: %(value)r (choose from %(choices)s)')
-                raise ArgumentError(action, msg % args)
+        if choices is None:
+            return
+
+        if isinstance(choices, str):
+            choices = iter(choices)
+
+        if value not in choices:
+            args = {'value': str(value),
+                    'choices': ', '.join(map(str, action.choices))}
+            msg = _('invalid choice: %(value)r (choose from %(choices)s)')
+
+            if self.suggest_on_error and isinstance(value, str):
+                if all(isinstance(choice, str) for choice in action.choices):
+                    import difflib
+                    suggestions = difflib.get_close_matches(value, action.choices, 1)
+                    if suggestions:
+                        args['closest'] = suggestions[0]
+                        msg = _('invalid choice: %(value)r, maybe you meant %(closest)r? '
+                                '(choose from %(choices)s)')
+
+            raise ArgumentError(action, msg % args)
 
     # =======================
     # Help-formatting methods

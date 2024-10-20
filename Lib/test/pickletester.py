@@ -26,7 +26,7 @@ except ImportError:
 from test import support
 from test.support import os_helper
 from test.support import (
-    TestFailed, run_with_locale, no_tracing,
+    TestFailed, run_with_locales, no_tracing,
     _2G, _4G, bigmemtest
     )
 from test.support.import_helper import forget
@@ -2895,7 +2895,7 @@ class AbstractPickleTests:
                 got = self.loads(pickle)
                 self.assert_is_copy(value, got)
 
-    @run_with_locale('LC_ALL', 'de_DE', 'fr_FR')
+    @run_with_locales('LC_ALL', 'de_DE', 'fr_FR', '')
     def test_float_format(self):
         # make sure that floats are formatted locale independent with proto 0
         self.assertEqual(self.dumps(1.2, 0)[0:3], b'F1.')

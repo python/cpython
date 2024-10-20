@@ -1747,7 +1747,7 @@ class _ctypes.c_void_p "PyObject *" "clinic_state_sub()->PyCSimpleType_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=dd4d9646c56f43a9]*/
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
+#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
 static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdCEFfuzZqQPXOv?g";
 #else
 static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdfuzZqQPXOv?g";
@@ -4732,7 +4732,7 @@ Array_subscript(PyObject *myself, PyObject *item)
             char *dest;
 
             if (slicelen <= 0)
-                return PyBytes_FromStringAndSize("", 0);
+                return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
             if (step == 1) {
                 return PyBytes_FromStringAndSize(ptr + start,
                                                  slicelen);
@@ -4756,7 +4756,7 @@ Array_subscript(PyObject *myself, PyObject *item)
             wchar_t *dest;
 
             if (slicelen <= 0)
-                return PyUnicode_New(0, 0);
+                return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
             if (step == 1) {
                 return PyUnicode_FromWideChar(ptr + start,
                                               slicelen);
@@ -5418,7 +5418,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             char *dest;
 
             if (len <= 0)
-                return PyBytes_FromStringAndSize("", 0);
+                return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
             if (step == 1) {
                 return PyBytes_FromStringAndSize(ptr + start,
                                                  len);
@@ -5438,7 +5438,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             wchar_t *dest;
 
             if (len <= 0)
-                return PyUnicode_New(0, 0);
+                return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
             if (step == 1) {
                 return PyUnicode_FromWideChar(ptr + start,
                                               len);

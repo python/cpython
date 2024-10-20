@@ -1,6 +1,7 @@
 /* Module definition and import implementation */
 
 #include "Python.h"
+#include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_ceval.h"
 #include "pycore_hashtable.h"     // _Py_hashtable_new_full()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
@@ -14,7 +15,7 @@
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_sysmodule.h"     // _PySys_ClearAttrString()
 #include "pycore_time.h"          // _PyTime_AsMicroseconds()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
@@ -1051,7 +1052,7 @@ del_cached_def(struct extensions_cache_value *value)
        However, this decref would be problematic if the module def were
        dynamically allocated, it were the last ref, and this function
        were called with an interpreter other than the def's owner. */
-    assert(value->def == NULL || _Py_IsImmortalLoose(value->def));
+    assert(value->def == NULL || _Py_IsImmortal(value->def));
 
     Py_XDECREF(value->def->m_base.m_copy);
     value->def->m_base.m_copy = NULL;
