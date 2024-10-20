@@ -1389,7 +1389,8 @@ class TestGeneratedCases(unittest.TestCase):
         """
         self.run_cases_test(input, output)
 
-
+        # Two instructions of different sizes referencing the same
+        # uop containing the `INSTRUCTION_SIZE` macro is not allowed.
         input = """
         inst(OP, (--)) {
             frame->return_offset = INSTRUCTION_SIZE;
@@ -1415,7 +1416,8 @@ class TestGeneratedCases(unittest.TestCase):
             DISPATCH();
         }
         """
-        self.run_cases_test(input, output)
+        with self.assertRaisesRegex(AssertionError, "All instructions containing a uop"):
+            self.run_cases_test(input, output)
 
 
 class TestGeneratedAbstractCases(unittest.TestCase):

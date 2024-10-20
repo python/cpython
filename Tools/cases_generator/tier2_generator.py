@@ -22,6 +22,8 @@ from generators_common import (
     Emitter,
     TokenIterator,
     always_true,
+    contains_instruction_size_macro,
+    get_instruction_size_for_uop,
 )
 from cwriter import CWriter
 from typing import TextIO, Iterator
@@ -197,25 +199,6 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack, inst_size: int | None = 
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body[0]) from None
     return storage.stack
-
-
-def contains_instruction_size_macro(uop: Uop) -> bool:
-    for token in uop.body:
-        if token.kind == "IDENTIFIER" and token.text in 'INSTRUCTION_SIZE':
-            return True
-    return False
-
-
-def get_instruction_size_for_uop(instructions: dict[str, Instruction], uop: Uop) -> int:
-    size = None
-    for inst in instructions.values():
-        if uop in inst.parts:
-            if size is None:
-                size = inst.size
-            if size != inst.size:
-                assert size == inst.size, f"All instructions must have the same size: {size} != {inst.size}"
-    assert size is not None
-    return size
 
 
 SKIPS = ("_EXTENDED_ARG",)

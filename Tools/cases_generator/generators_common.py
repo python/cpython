@@ -583,3 +583,35 @@ def cflags(p: Properties) -> str:
         return " | ".join(flags)
     else:
         return "0"
+
+
+def contains_instruction_size_macro(uop: Uop) -> bool:
+    """Return True if the uop contains the INSTRUCTION_SIZE macro."""
+    for token in uop.body:
+        if token.kind == "IDENTIFIER" and token.text in 'INSTRUCTION_SIZE':
+            return True
+    return False
+
+
+def get_instruction_size_for_uop(instructions: dict[str, Instruction], uop: Uop) -> int:
+    """Return the size of the instruction that contains the given uop.
+
+    If there is more than one instruction that contains the uop,
+    ensure that they all have the same size.
+    """
+    size = None
+    for inst in instructions.values():
+        if uop in inst.parts:
+            if size is None:
+                size = inst.size
+            if size != inst.size:
+                assert size == inst.size, (
+                    "All instructions containing a uop with the `INSTRUCTION_SIZE` macro "
+                    f"must have the same size: {size} != {inst.size}"
+                )
+    assert size is not None
+    return size
+
+
+def assert_same_instruction_size(instructions: dict[str, Instruction], uop: Uop) -> None:
+    get_instruction_size_for_uop(instructions, uop)
