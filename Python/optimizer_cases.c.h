@@ -1050,6 +1050,12 @@
             owner = stack_pointer[-1];
             uint32_t type_version = (uint32_t)this_instr->operand;
             assert(type_version);
+            // This is a contradiction.
+            if (sym_is_a_class(owner, type_version)) {
+                ctx->done = true;
+                ctx->contradiction = true;
+                break;
+            }
             if (sym_matches_type_version(owner, type_version)) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             } else {
@@ -1190,6 +1196,21 @@
         }
 
         case _CHECK_ATTR_CLASS: {
+            _Py_UopsSymbol *owner;
+            owner = stack_pointer[-1];
+            uint32_t type_version = (uint32_t)this_instr->operand;
+            assert(type_version);
+            if (sym_is_a_class(owner, type_version) &&
+                sym_matches_type_version(owner, type_version)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            } else {
+                PyTypeObject *type = _PyType_LookupByVersion(type_version);
+                if (type) {
+                    sym_set_is_a_class(owner, type_version);
+                    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                    _Py_BloomFilter_Add(dependencies, type);
+                }
+            }
             break;
         }
 
