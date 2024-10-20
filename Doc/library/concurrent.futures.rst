@@ -412,7 +412,8 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    .. versionchanged:: 3.14
       The default process start method (see
       :ref:`multiprocessing-start-methods`) changed away from *fork*. If you
-      require the *fork* start method for :class:`ProcessPoolExecutor` you must
+      require the *fork* start method for :class:`ProcessPoolExecutor` or need to run
+      :ref:`unpicklable functions <pickle-picklable>`, you must
       explicitly pass ``mp_context=multiprocessing.get_context("fork")``.
 
 .. _processpoolexecutor-example:

@@ -451,14 +451,6 @@ Deprecated
   as a single positional argument.
   (Contributed by Serhiy Storchaka in :gh:`109218`.)
 
-* :mod:`multiprocessing` and :mod:`concurrent.futures`:
-  The default start method (see :ref:`multiprocessing-start-methods`) changed
-  away from *fork* to *forkserver* on platforms where it was not already
-  *spawn* (Windows & macOS). If you require the threading incompatible *fork*
-  start method you must explicitly specify it when using :mod:`multiprocessing`
-  or :mod:`concurrent.futures` APIs.
-  (Contributed by Gregory P. Smith in :gh:`84559`.)
-
 * :mod:`os`:
   :term:`Soft deprecate <soft deprecated>` :func:`os.popen` and
   :func:`os.spawn* <os.spawnl>` functions. They should no longer be used to
@@ -625,6 +617,8 @@ Others
   :meth:`~object.__index__`. (Contributed by Mark Dickinson in :gh:`119743`.)
 
 
+.. _whatsnew314-porting-to-python314:
+
 Porting to Python 3.14
 ======================
 
@@ -642,6 +636,17 @@ Changes in the Python API
   locale in some cases.
   This temporary change affects other threads.
   (Contributed by Serhiy Storchaka in :gh:`69998`.)
+
+* :mod:`multiprocessing` and :mod:`concurrent.futures`:
+  The default start method (see :ref:`multiprocessing-start-methods`) changed
+  away from *fork* to *forkserver* on platforms where it was not already
+  *spawn* (Windows & macOS). If you require the threading incompatible *fork*,
+  which can run :ref:`unpicklable functions <pickle-picklable>`,
+  start method you must explicitly specify it when using :mod:`multiprocessing`
+  or :mod:`concurrent.futures` APIs.
+  Code running pickable functions on these platforms without explicitly opting
+  into the *fork* method will now raise :exc:`pickle.PicklingError`.
+  (Contributed by Gregory P. Smith in :gh:`84559`.)
 
 
 Build changes
