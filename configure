@@ -7755,61 +7755,6 @@ else
 fi
 
       HOSTRUNNER="$NODE"
-      # bigint for ctypes c_longlong, c_longdouble
-      # no longer available in Node 16
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for node --experimental-wasm-bigint" >&5
-printf %s "checking for node --experimental-wasm-bigint... " >&6; }
-if test ${ac_cv_tool_node_wasm_bigint+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-
-        if $NODE -v --experimental-wasm-bigint > /dev/null 2>&1; then
-          ac_cv_tool_node_wasm_bigint=yes
-        else
-          ac_cv_tool_node_wasm_bigint=no
-        fi
-
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_tool_node_wasm_bigint" >&5
-printf "%s\n" "$ac_cv_tool_node_wasm_bigint" >&6; }
-      if test "x$ac_cv_tool_node_wasm_bigint" = xyes
-then :
-
-        as_fn_append HOSTRUNNER " --experimental-wasm-bigint"
-
-fi
-
-      if test "x$enable_wasm_pthreads" = xyes
-then :
-
-        as_fn_append HOSTRUNNER " --experimental-wasm-threads"
-        # no longer available in Node 16
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for node --experimental-wasm-bulk-memory" >&5
-printf %s "checking for node --experimental-wasm-bulk-memory... " >&6; }
-if test ${ac_cv_tool_node_wasm_bulk_memory+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-
-          if $NODE -v --experimental-wasm-bulk-memory > /dev/null 2>&1; then
-            ac_cv_tool_node_wasm_bulk_memory=yes
-          else
-            ac_cv_tool_node_wasm_bulk_memory=no
-          fi
-
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_tool_node_wasm_bulk_memory" >&5
-printf "%s\n" "$ac_cv_tool_node_wasm_bulk_memory" >&6; }
-        if test "x$ac_cv_tool_node_wasm_bulk_memory" = xyes
-then :
-
-          as_fn_append HOSTRUNNER " --experimental-wasm-bulk-memory"
-
-fi
-
-fi
-
       if test "x$host_cpu" = xwasm64
 then :
   as_fn_append HOSTRUNNER " --experimental-wasm-memory64"
@@ -9575,6 +9520,7 @@ fi
 then :
   wasm_debug=yes
 fi
+        as_fn_append LDFLAGS_NODIST " --pre-js=\$(srcdir)/Tools/wasm/emscripten/node_pre.js"
         as_fn_append LDFLAGS_NODIST " -sALLOW_MEMORY_GROWTH -sNODERAWFS"
         as_fn_append LINKFORSHARED " -sEXIT_RUNTIME"
         WASM_LINKFORSHARED_DEBUG="-gseparate-dwarf --emit-symbol-map"
