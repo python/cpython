@@ -1017,12 +1017,12 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
         else if (rc > 0) {
             if (is_possibly_shadowing) {
                 assert(origin);
-                // For third-party modules, only mention the possibility of
+                // For non-stdlib modules, only mention the possibility of
                 // shadowing if the module is being initialized.
                 PyErr_Format(PyExc_AttributeError,
                             "module '%U' has no attribute '%U' "
                             "(consider renaming '%U' if it has the same name "
-                            "as a third-party module you intended to import)",
+                            "as a library you intended to import)",
                             mod_name, name, origin);
             }
             else if (origin) {

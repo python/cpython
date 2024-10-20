@@ -899,7 +899,7 @@ class ImportTests(unittest.TestCase):
 
                 expected_error = error + (
                     rb" \(consider renaming '.*numpy.py' if it has the "
-                    rb"same name as a third-party module you intended to import\)\s+\Z"
+                    rb"same name as a library you intended to import\)\s+\Z"
                 )
 
                 popen = script_helper.spawn_python(os.path.join(tmp, "numpy.py"))
