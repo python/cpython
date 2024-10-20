@@ -55,6 +55,7 @@ build:
 # Look first for a Misc/NEWS file (building from a source release tarball
 # or old repo) and use that, otherwise look for a Misc/NEWS.d directory
 # (building from a newer repo) and use blurb to generate the NEWS file.
+	$(BLURB) help
 	@if [ -f  ../Misc/NEWS ] ; then \
 		echo "Using existing Misc/NEWS file"; \
 		cp ../Misc/NEWS build/NEWS; \
