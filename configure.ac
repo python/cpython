@@ -164,7 +164,7 @@ AC_ARG_WITH([build-python],
     dnl Build Python interpreter is used for regeneration and freezing.
     ac_cv_prog_PYTHON_FOR_REGEN=$with_build_python
     PYTHON_FOR_FREEZE="$with_build_python"
-    PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) '$with_build_python
+    PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) _PYTHON_SYSCONFIGDATA_PATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`) '$with_build_python
     AC_MSG_RESULT([$with_build_python])
   ], [
     AS_VAR_IF([cross_compiling], [yes],
@@ -1325,19 +1325,19 @@ AC_ARG_WITH([suffix],
             [AS_HELP_STRING([--with-suffix=SUFFIX], [set executable suffix to SUFFIX (default is empty, yes is mapped to '.exe')])],
 [
 	AS_CASE([$with_suffix],
-    [no], [EXEEXT=],
-    [yes], [EXEEXT=.exe],
-    [EXEEXT=$with_suffix]
+    [no], [EXE_SUFFIX=],
+    [yes], [EXE_SUFFIX=.exe],
+    [EXE_SUFFIX=$with_suffix]
   )
 ], [
   AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
-    [Emscripten/browser*], [EXEEXT=.js],
-    [Emscripten/node*], [EXEEXT=.js],
-    [WASI/*], [EXEEXT=.wasm],
-    [EXEEXT=]
+    [Emscripten/browser*], [EXE_SUFFIX=.js],
+    [Emscripten/node*], [EXE_SUFFIX=.js],
+    [WASI/*], [EXE_SUFFIX=.wasm],
+    [EXE_SUFFIX=]
   )
 ])
-AC_MSG_RESULT([$EXEEXT])
+AC_MSG_RESULT([$EXE_SUFFIX])
 
 # Test whether we're running on a non-case-sensitive system, in which
 # case we give a warning if no ext is given
@@ -1347,13 +1347,13 @@ if test ! -d CaseSensitiveTestDir; then
 mkdir CaseSensitiveTestDir
 fi
 
-if test -d casesensitivetestdir && test -z "$EXEEXT"
+if test -d casesensitivetestdir && test -z "$EXE_SUFFIX"
 then
     AC_MSG_RESULT([yes])
     BUILDEXEEXT=.exe
 else
 	AC_MSG_RESULT([no])
-	BUILDEXEEXT=$EXEEXT
+	BUILDEXEEXT=$EXE_SUFFIX
 fi
 rmdir CaseSensitiveTestDir
 

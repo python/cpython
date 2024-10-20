@@ -5603,7 +5603,7 @@ Miscellaneous System Information
    If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHON_CPU_COUNT` is set,
    :func:`process_cpu_count` returns the overridden value *n*.
 
-   See also the :func:`sched_getaffinity` functions.
+   See also the :func:`sched_getaffinity` function.
 
    .. versionadded:: 3.13
 
