@@ -1,11 +1,16 @@
 """Subset of importlib.abc used to reduce importlib.util imports."""
 from . import _bootstrap
 import abc
+import warnings
 
 
 class Loader(metaclass=abc.ABCMeta):
 
     """Abstract base class for import loaders."""
+    def __init__(self):
+        warnings.warn(f"Loader is deprecated.",
+                      DeprecationWarning, stacklevel=2)
+        super().__init__()
 
     def create_module(self, spec):
         """Return a module to initialize and into which to load.
