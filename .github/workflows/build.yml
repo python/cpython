@@ -46,7 +46,7 @@ jobs:
     # reproducible: to get the same tools versions (autoconf, aclocal, ...)
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/python/autoconf:2024.10.19.11417401087
+      image: ghcr.io/python/autoconf:2024.10.11.11293396815
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
