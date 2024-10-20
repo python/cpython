@@ -1,0 +1,1 @@
+Rename IDLE stackviewer module to stackbrowser.
