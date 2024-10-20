@@ -1650,6 +1650,11 @@ PyThreadState_Clear(PyThreadState *tstate)
           "PyThreadState_Clear: warning: thread still has a frame\n");
     }
 
+    if (verbose && tstate->current_exception != NULL) {
+        fprintf(stderr, "PyThreadState_Clear: warning: thread has an exception set\n");
+        _PyErr_Print(tstate);
+    }
+
     /* At this point tstate shouldn't be used any more,
        neither to run Python code nor for other uses.
 
