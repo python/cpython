@@ -63,7 +63,7 @@ jobs:
           # Include env.pythonLocation in key to avoid changes in environment when setup-python updates Python
           key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.check_source.outputs.config_hash }}-${{ env.pythonLocation }}
       - name: Install Dependencies
-        run: sudo ./.github/workflows/posix-deps-apt.sh
+        run: ./.github/workflows/posix-deps-apt.sh
       - name: Add ccache to PATH
         run: echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
       - name: Configure ccache action
