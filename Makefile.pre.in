@@ -176,7 +176,7 @@ EXPORTSYMS=	@EXPORTSYMS@
 EXPORTSFROM=	@EXPORTSFROM@
 
 # Executable suffix (.exe on Windows and Mac OS X)
-EXE=		@EXEEXT@
+EXE=		@EXE_SUFFIX@
 BUILDEXE=	@BUILDEXEEXT@
 
 # Name of the patch file to apply for app store compliance
