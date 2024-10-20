@@ -4275,7 +4275,7 @@ These functions may be used to create and manage processes.
    :func:`sys.stdout.flush` or :func:`os.fsync` before calling an
    :func:`exec\* <execl>` function.
 
-   *Arguments*
+   *Program arguments*
 
    The various :func:`exec\* <execl>` functions take a list of arguments for the new
    program loaded into the process.  In each case, the first of these arguments must
