@@ -639,8 +639,10 @@ Changes in the Python API
 
 * :mod:`multiprocessing` and :mod:`concurrent.futures`:
   The default start method (see :ref:`multiprocessing-start-methods`) changed
-  away from *fork* to *forkserver* on platforms where it was not already
-  *spawn* (Windows & macOS). If you require the threading incompatible *fork*,
+  away from *fork* to *forkserver* on POSIX platforms which support passing file
+  descriptors over Unix pipes such as Linux. Windows and macOS are keep *spawn*
+  as their default method.
+  If you require the threading incompatible *fork*,
   which can run :ref:`unpicklable functions <pickle-picklable>`,
   start method you must explicitly specify it when using :mod:`multiprocessing`
   or :mod:`concurrent.futures` APIs.
