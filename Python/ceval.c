@@ -2378,16 +2378,18 @@ PyEval_SetProfileAllThreads(Py_tracefunc func, PyObject *arg)
     PyThreadState *this_tstate = _PyThreadState_GET();
     PyInterpreterState *interp = this_tstate->interp;
 
-    HEAD_LOCK(&_PyRuntime);
+    _PyRuntimeState *runtime = &_PyRuntime;
+    HEAD_LOCK(runtime);
     PyThreadState *ts = PyInterpreterState_ThreadHead(interp);
-    HEAD_UNLOCK(&_PyRuntime);
+    HEAD_UNLOCK(runtime);
+
     while (ts) {
         if (_PyEval_SetProfile(ts, func, arg) < 0) {
             PyErr_FormatUnraisable("Exception ignored in PyEval_SetProfileAllThreads");
         }
-        HEAD_LOCK(&_PyRuntime);
+        HEAD_LOCK(runtime);
         ts = PyThreadState_Next(ts);
-        HEAD_UNLOCK(&_PyRuntime);
+        HEAD_UNLOCK(runtime);
     }
 }
 
@@ -2407,16 +2409,18 @@ PyEval_SetTraceAllThreads(Py_tracefunc func, PyObject *arg)
     PyThreadState *this_tstate = _PyThreadState_GET();
     PyInterpreterState *interp = this_tstate->interp;
 
-    HEAD_LOCK(&_PyRuntime);
+    _PyRuntimeState *runtime = &_PyRuntime;
+    HEAD_LOCK(runtime);
     PyThreadState *ts = PyInterpreterState_ThreadHead(interp);
-    HEAD_UNLOCK(&_PyRuntime);
+    HEAD_UNLOCK(runtime);
+
     while (ts) {
         if (_PyEval_SetTrace(ts, func, arg) < 0) {
             PyErr_FormatUnraisable("Exception ignored in PyEval_SetTraceAllThreads");
         }
-        HEAD_LOCK(&_PyRuntime);
+        HEAD_LOCK(runtime);
         ts = PyThreadState_Next(ts);
-        HEAD_UNLOCK(&_PyRuntime);
+        HEAD_UNLOCK(runtime);
     }
 }
 
