@@ -438,7 +438,7 @@ m_tgamma(double x)
         }
         else {
             errno = ERANGE;
-            return Py_HUGE_VAL;
+            return Py_INFINITY;
         }
     }
 
@@ -502,14 +502,14 @@ m_lgamma(double x)
         if (isnan(x))
             return x;  /* lgamma(nan) = nan */
         else
-            return Py_HUGE_VAL; /* lgamma(+-inf) = +inf */
+            return Py_INFINITY; /* lgamma(+-inf) = +inf */
     }
 
     /* integer arguments */
     if (x == floor(x) && x <= 2.0) {
         if (x <= 0.0) {
             errno = EDOM;  /* lgamma(n) = inf, divide-by-zero for */
-            return Py_HUGE_VAL; /* integers n <= 0 */
+            return Py_INFINITY; /* integers n <= 0 */
         }
         else {
             return 0.0; /* lgamma(1) = lgamma(2) = 0.0 */
@@ -645,7 +645,7 @@ m_log(double x)
             return log(x);
         errno = EDOM;
         if (x == 0.0)
-            return -Py_HUGE_VAL; /* log(0) = -inf */
+            return -Py_INFINITY; /* log(0) = -inf */
         else
             return Py_NAN; /* log(-ve) = nan */
     }
@@ -688,7 +688,7 @@ m_log2(double x)
     }
     else if (x == 0.0) {
         errno = EDOM;
-        return -Py_HUGE_VAL; /* log2(0) = -inf, divide-by-zero */
+        return -Py_INFINITY; /* log2(0) = -inf, divide-by-zero */
     }
     else {
         errno = EDOM;
@@ -704,7 +704,7 @@ m_log10(double x)
             return log10(x);
         errno = EDOM;
         if (x == 0.0)
-            return -Py_HUGE_VAL; /* log10(0) = -inf */
+            return -Py_INFINITY; /* log10(0) = -inf */
         else
             return Py_NAN; /* log10(-ve) = nan */
     }
@@ -2121,7 +2121,7 @@ math_ldexp_impl(PyObject *module, double x, PyObject *i)
         errno = 0;
     } else if (exp > INT_MAX) {
         /* overflow */
-        r = copysign(Py_HUGE_VAL, x);
+        r = copysign(Py_INFINITY, x);
         errno = ERANGE;
     } else if (exp < INT_MIN) {
         /* underflow to +-0 */
