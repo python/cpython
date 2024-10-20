@@ -26,7 +26,7 @@ except ImportError:
 from test import support
 from test.support import os_helper
 from test.support import (
-    TestFailed, run_with_locale, no_tracing,
+    TestFailed, run_with_locales, no_tracing,
     _2G, _4G, bigmemtest
     )
 from test.support.import_helper import forget
@@ -2323,12 +2323,10 @@ class AbstractPicklingErrorTests:
                     'PickleBuffer can only be pickled with protocol >= 5')
 
     def test_non_continuous_buffer(self):
-        if self.pickler is pickle._Pickler:
-            self.skipTest('CRASHES (see gh-122306)')
         for proto in protocols[5:]:
             with self.subTest(proto=proto):
                 pb = pickle.PickleBuffer(memoryview(b"foobar")[::2])
-                with self.assertRaises(pickle.PicklingError):
+                with self.assertRaises((pickle.PicklingError, BufferError)):
                     self.dumps(pb, proto)
 
     def test_buffer_callback_error(self):
@@ -2897,7 +2895,7 @@ class AbstractPickleTests:
                 got = self.loads(pickle)
                 self.assert_is_copy(value, got)
 
-    @run_with_locale('LC_ALL', 'de_DE', 'fr_FR')
+    @run_with_locales('LC_ALL', 'de_DE', 'fr_FR', '')
     def test_float_format(self):
         # make sure that floats are formatted locale independent with proto 0
         self.assertEqual(self.dumps(1.2, 0)[0:3], b'F1.')
@@ -4347,7 +4345,9 @@ class MyIntWithNew2(MyIntWithNew):
 class SlotList(MyList):
     __slots__ = ["foo"]
 
-class SimpleNewObj(int):
+# Ruff "redefined while unused" false positive here due to `global` variables
+# being assigned (and then restored) from within test methods earlier in the file
+class SimpleNewObj(int):  # noqa: F811
     def __init__(self, *args, **kwargs):
         # raise an error, to make sure this isn't called
         raise TypeError("SimpleNewObj.__init__() didn't expect to get called")
