@@ -1609,9 +1609,8 @@ Basic customization
 
    Typical custom implementations create a new instance of the class by invoking the
    superclass's :meth:`__new__` method using ``super().__new__(cls[, ...])``
-   with appropriate arguments and then modify the newly created instance as necessary
-   before returning it. The base implementation in :class:`object` should only be
-   passed the *cls* argument, and returns an uninitialized instance of that class.
+   with appropriate arguments and then modifying the newly created instance
+   as necessary before returning it.
 
    If :meth:`__new__` is invoked during object construction and it returns an
    instance of *cls*, then the new instance’s :meth:`__init__` method
@@ -1633,14 +1632,9 @@ Basic customization
    Called after the instance has been created (by :meth:`__new__`), but before
    it is returned to the caller.  The arguments are those passed to the
    class constructor expression.  If a base class has an :meth:`__init__`
-   method, the derived class's :meth:`__init__` method, if any, may need to
+   method, the derived class's :meth:`__init__` method, if any, must explicitly
    call it to ensure proper initialization of the base class part of the
    instance; for example: ``super().__init__([args...])``.
-   Any :meth:`__init__` method that is overridden is not implicitly called.
-
-   A base implementation in :class:`object` is provided, but it does not
-   need to be called.  If it is only passed the *self* argument, it has
-   no effect.
 
    Because :meth:`__new__` and :meth:`__init__` work together in constructing
    objects (:meth:`__new__` to create it, and :meth:`__init__` to customize it),
@@ -1659,8 +1653,7 @@ Basic customization
    finalizer or (improperly) a destructor.  If a base class has a
    :meth:`__del__` method, the derived class's :meth:`__del__` method,
    if any, must explicitly call it to ensure proper deletion of the base
-   class part of the instance. The :class:`object` class itself does not have a
-   :meth:`__del__` method.
+   class part of the instance.
 
    It is possible (though not recommended!) for the :meth:`__del__` method
    to postpone destruction of the instance by creating a new reference to
@@ -2037,9 +2030,7 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
 .. method:: object.__dir__(self)
 
    Called when :func:`dir` is called on the object. An iterable must be
-   returned. The :func:`dir` function converts the returned iterable to a list
-   and sorts it. The :class:`object` class itself provides an implementation
-   consistent with the :func:`dir` behaviour for arbitrary objects.
+   returned. :func:`dir` converts the returned iterable to a list and sorts it.
 
 
 Customizing module attribute access
