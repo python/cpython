@@ -1711,8 +1711,9 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertEqual(P.from_uri('file:////foo/bar'), P('//foo/bar'))
         self.assertEqual(P.from_uri('file://localhost/foo/bar'), P('/foo/bar'))
         self.assertEqual(P.from_uri('file://localhost//foo/bar'), P('//foo/bar'))
-        self.assertEqual(P.from_uri('file://127.0.0.1/foo/bar'), P('/foo/bar'))
-        self.assertEqual(P.from_uri('file://127.0.0.1//foo/bar'), P('//foo/bar'))
+        if not is_wasi:
+            self.assertEqual(P.from_uri('file://127.0.0.1/foo/bar'), P('/foo/bar'))
+            self.assertEqual(P.from_uri('file://127.0.0.1//foo/bar'), P('//foo/bar'))
         self.assertRaises(ValueError, P.from_uri, 'foo/bar')
         self.assertRaises(ValueError, P.from_uri, '/foo/bar')
         self.assertRaises(ValueError, P.from_uri, '//foo/bar')

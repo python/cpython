@@ -273,6 +273,8 @@ def is_local_authority(authority):
         authority = socket.gethostbyname(authority)
     except socket.gaierror:
         return False
+    except AttributeError:
+        return False  # WASI doesn't have gethostbyname()
 
     if _local_authorities is None:
         try:
