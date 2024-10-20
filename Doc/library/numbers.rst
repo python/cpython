@@ -84,10 +84,10 @@ The numeric tower
    ``~``.
 
 
-Notes for type implementors
+Notes for type implementers
 ---------------------------
 
-Implementors should be careful to make equal numbers equal and hash
+Implementers should be careful to make equal numbers equal and hash
 them to the same values. This may be subtle if there are two different
 extensions of the real numbers. For example, :class:`fractions.Fraction`
 implements :func:`hash` as follows::

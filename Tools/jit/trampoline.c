@@ -8,7 +8,7 @@
 // The actual change is patched in while the JIT compiler is being built, in
 // Tools/jit/_targets.py. On other platforms, this function compiles to nothing.
 _Py_CODEUNIT *
-_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *tstate)
+_ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate)
 {
     // This is subtle. The actual trace will return to us once it exits, so we
     // need to make sure that we stay alive until then. If our trace side-exits

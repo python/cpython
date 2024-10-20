@@ -74,7 +74,7 @@ We update it as the need arises.
 ### Syntax
 
 Each op definition has a kind, a name, a stack and instruction stream effect,
-and a piece of C code describing its semantics::
+and a piece of C code describing its semantics:
 
 ```
   file:
@@ -124,7 +124,13 @@ and a piece of C code describing its semantics::
     "family" "(" NAME ")" = "{" NAME ("," NAME)+ [","] "}" ";"
 
   pseudo:
-    "pseudo" "(" NAME ")" = "{" NAME ("," NAME)+ [","] "}" ";"
+    "pseudo" "(" NAME "," stack_effect ["," "(" flags ")"]")" = "{" NAME ("," NAME)+ [","] "}" ";"
+
+  flags:
+    flag ("|" flag)*
+
+  flag:
+    HAS_ARG | HAS_DEOPT | etc..
 ```
 
 The following definitions may occur:
@@ -239,7 +245,8 @@ The same is true for all members of a pseudo instruction
 
 ## Examples
 
-(Another source of examples can be found in the [tests](test_generator.py).)
+(Another source of examples can be found in the
+[tests](https://github.com/python/cpython/blob/main/Lib/test/test_generated_cases.py).)
 
 Some examples:
 

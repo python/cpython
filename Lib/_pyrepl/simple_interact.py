@@ -25,23 +25,35 @@ allowing multiline input and multiline history entries.
 
 from __future__ import annotations
 
-import _colorize  # type: ignore[import-not-found]
 import _sitebuiltins
 import linecache
+import functools
+import os
 import sys
 import code
-from types import ModuleType
 
 from .readline import _get_reader, multiline_input
-from .unix_console import _error
 
+TYPE_CHECKING = False
+
+if TYPE_CHECKING:
+    from typing import Any
+
+
+_error: tuple[type[Exception], ...] | type[Exception]
+try:
+    from .unix_console import _error
+except ModuleNotFoundError:
+    from .windows_console import _error
 
 def check() -> str:
     """Returns the error message if there is a problem initializing the state."""
     try:
         _get_reader()
     except _error as e:
-        return str(e) or repr(e) or "unknown error"
+        if term := os.environ.get("TERM", ""):
+            term = f"; TERM={term}"
+        return str(str(e) or repr(e) or "unknown error") + term
     return ""
 
 
@@ -56,40 +68,51 @@ def _strip_final_indent(text: str) -> str:
     return text
 
 
+def _clear_screen():
+    reader = _get_reader()
+    reader.scheduled_commands.append("clear_screen")
+
+
 REPL_COMMANDS = {
     "exit": _sitebuiltins.Quitter('exit', ''),
     "quit": _sitebuiltins.Quitter('quit' ,''),
     "copyright": _sitebuiltins._Printer('copyright', sys.copyright),
     "help": "help",
+    "clear": _clear_screen,
+    "\x1a": _sitebuiltins.Quitter('\x1a', ''),
 }
 
-class InteractiveColoredConsole(code.InteractiveConsole):
-    def __init__(
-        self,
-        locals: dict[str, object] | None = None,
-        filename: str = "<console>",
-        *,
-        local_exit: bool = False,
-    ) -> None:
-        super().__init__(locals=locals, filename=filename, local_exit=local_exit)  # type: ignore[call-arg]
-        self.can_colorize = _colorize.can_colorize()
 
-    def showtraceback(self):
-        super().showtraceback(colorize=self.can_colorize)
+def _more_lines(console: code.InteractiveConsole, unicodetext: str) -> bool:
+    # ooh, look at the hack:
+    src = _strip_final_indent(unicodetext)
+    try:
+        code = console.compile(src, "<stdin>", "single")
+    except (OverflowError, SyntaxError, ValueError):
+        lines = src.splitlines(keepends=True)
+        if len(lines) == 1:
+            return False
+
+        last_line = lines[-1]
+        was_indented = last_line.startswith((" ", "\t"))
+        not_empty = last_line.strip() != ""
+        incomplete = not last_line.endswith("\n")
+        return (was_indented or not_empty) and incomplete
+    else:
+        return code is None
 
 
 def run_multiline_interactive_console(
-    mainmodule: ModuleType | None= None, future_flags: int = 0
+    console: code.InteractiveConsole,
+    *,
+    future_flags: int = 0,
 ) -> None:
-    import __main__
     from .readline import _setup
-    _setup()
-
-    mainmodule = mainmodule or __main__
-    console = InteractiveColoredConsole(mainmodule.__dict__, filename="<stdin>")
+    _setup(console.locals)
     if future_flags:
         console.compile.compiler.flags |= future_flags
 
+    more_lines = functools.partial(_more_lines, console)
     input_n = 0
 
     def maybe_run_command(statement: str) -> bool:
@@ -115,16 +138,6 @@ def run_multiline_interactive_console(
 
         return False
 
-    def more_lines(unicodetext: str) -> bool:
-        # ooh, look at the hack:
-        src = _strip_final_indent(unicodetext)
-        try:
-            code = console.compile(src, "<stdin>", "single")
-        except (OverflowError, SyntaxError, ValueError):
-            return False
-        else:
-            return code is None
-
     while 1:
         try:
             try:
@@ -135,7 +148,7 @@ def run_multiline_interactive_console(
             ps1 = getattr(sys, "ps1", ">>> ")
             ps2 = getattr(sys, "ps2", "... ")
             try:
-                statement, contains_pasted_code = multiline_input(more_lines, ps1, ps2)
+                statement = multiline_input(more_lines, ps1, ps2)
             except EOFError:
                 break
 
@@ -144,13 +157,17 @@ def run_multiline_interactive_console(
 
             input_name = f"<python-input-{input_n}>"
             linecache._register_code(input_name, statement, "<stdin>")  # type: ignore[attr-defined]
-            symbol = "single" if not contains_pasted_code else "exec"
-            more = console.push(_strip_final_indent(statement), filename=input_name, _symbol=symbol)  # type: ignore[call-arg]
-            if contains_pasted_code and more:
-                more = console.push(_strip_final_indent(statement), filename=input_name, _symbol="single")  # type: ignore[call-arg]
+            more = console.push(_strip_final_indent(statement), filename=input_name, _symbol="single")  # type: ignore[call-arg]
             assert not more
             input_n += 1
         except KeyboardInterrupt:
+            r = _get_reader()
+            if r.input_trans is r.isearch_trans:
+                r.do_cmd(("isearch-end", [""]))
+            r.pos = len(r.get_unicode())
+            r.dirty = True
+            r.refresh()
+            r.in_bracketed_paste = False
             console.write("\nKeyboardInterrupt\n")
             console.resetbuffer()
         except MemoryError:

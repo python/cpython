@@ -418,7 +418,7 @@ instead.
 .. index:: single: _ (underscore); in string formatting
 
 The ``'_'`` option signals the use of an underscore for a thousands
-separator for floating point presentation types and for integer
+separator for floating-point presentation types and for integer
 presentation type ``'d'``.  For integer presentation types ``'b'``,
 ``'o'``, ``'x'``, and ``'X'``, underscores will be inserted every 4
 digits.  For other presentation types, specifying this option is an
@@ -491,9 +491,9 @@ The available integer presentation types are:
    +---------+----------------------------------------------------------+
 
 In addition to the above presentation types, integers can be formatted
-with the floating point presentation types listed below (except
+with the floating-point presentation types listed below (except
 ``'n'`` and ``None``). When doing so, :func:`float` is used to convert the
-integer to a floating point number before formatting.
+integer to a floating-point number before formatting.
 
 The available presentation types for :class:`float` and
 :class:`~decimal.Decimal` values are:
@@ -509,9 +509,8 @@ The available presentation types for :class:`float` and
    |         | significant digits. With no precision given, uses a      |
    |         | precision of ``6`` digits after the decimal point for    |
    |         | :class:`float`, and shows all coefficient digits         |
-   |         | for :class:`~decimal.Decimal`. If no digits follow the   |
-   |         | decimal point, the decimal point is also removed unless  |
-   |         | the ``#`` option is used.                                |
+   |         | for :class:`~decimal.Decimal`.  If ``p=0``, the decimal  |
+   |         | point is omitted unless the ``#`` option is used.        |
    +---------+----------------------------------------------------------+
    | ``'E'`` | Scientific notation. Same as ``'e'`` except it uses      |
    |         | an upper case 'E' as the separator character.            |
@@ -522,9 +521,8 @@ The available presentation types for :class:`float` and
    |         | precision given, uses a precision of ``6`` digits after  |
    |         | the decimal point for :class:`float`, and uses a         |
    |         | precision large enough to show all coefficient digits    |
-   |         | for :class:`~decimal.Decimal`. If no digits follow the   |
-   |         | decimal point, the decimal point is also removed unless  |
-   |         | the ``#`` option is used.                                |
+   |         | for :class:`~decimal.Decimal`.  If ``p=0``, the decimal  |
+   |         | point is omitted unless the ``#`` option is used.        |
    +---------+----------------------------------------------------------+
    | ``'F'`` | Fixed-point notation. Same as ``'f'``, but converts      |
    |         | ``nan`` to  ``NAN`` and ``inf`` to ``INF``.              |
@@ -574,11 +572,13 @@ The available presentation types for :class:`float` and
    | ``'%'`` | Percentage. Multiplies the number by 100 and displays    |
    |         | in fixed (``'f'``) format, followed by a percent sign.   |
    +---------+----------------------------------------------------------+
-   | None    | For :class:`float` this is the same as ``'g'``, except   |
+   | None    | For :class:`float` this is like the ``'g'`` type, except |
    |         | that when fixed-point notation is used to format the     |
    |         | result, it always includes at least one digit past the   |
-   |         | decimal point. The precision used is as large as needed  |
-   |         | to represent the given value faithfully.                 |
+   |         | decimal point, and switches to the scientific notation   |
+   |         | when ``exp >= p - 1``.  When the precision is not        |
+   |         | specified, the latter will be as large as needed to      |
+   |         | represent the given value faithfully.                    |
    |         |                                                          |
    |         | For :class:`~decimal.Decimal`, this is the same as       |
    |         | either ``'g'`` or ``'G'`` depending on the value of      |

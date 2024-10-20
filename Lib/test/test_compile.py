@@ -1,6 +1,7 @@
 import contextlib
 import dis
 import io
+import itertools
 import math
 import opcode
 import os
@@ -12,10 +13,13 @@ import tempfile
 import types
 import textwrap
 import warnings
-import _testinternalcapi
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 
 from test import support
-from test.support import (script_helper, requires_debug_ranges,
+from test.support import (script_helper, requires_debug_ranges, run_code,
                           requires_specialization, get_c_recursion_limit)
 from test.support.bytecode_helper import instructions_with_positions
 from test.support.os_helper import FakePath
@@ -441,8 +445,8 @@ class TestSpecifics(unittest.TestCase):
             def f():
                 __mangled = 1
                 __not_mangled__ = 2
-                import __mangled_mod
-                import __package__.module
+                import __mangled_mod       # noqa: F401
+                import __package__.module  # noqa: F401
 
         self.assertIn("_A__mangled", A.f.__code__.co_varnames)
         self.assertIn("__not_mangled__", A.f.__code__.co_varnames)
@@ -475,6 +479,19 @@ class TestSpecifics(unittest.TestCase):
                     x = 2
                """), '<eval>', 'exec')
 
+    def test_try_except_in_while_with_chained_condition_compiles(self):
+        # see gh-124871
+        compile(textwrap.dedent("""
+            name_1, name_2, name_3 = 1, 2, 3
+            while name_3 <= name_2 > name_1:
+                try:
+                    raise
+                except:
+                    pass
+                finally:
+                    pass
+            """), '<eval>', 'exec')
+
     def test_compile_invalid_namedexpr(self):
         # gh-109351
         m = ast.Module(
@@ -501,6 +518,58 @@ class TestSpecifics(unittest.TestCase):
 
         with self.assertRaisesRegex(TypeError, "NamedExpr target must be a Name"):
             compile(ast.fix_missing_locations(m), "<file>", "exec")
+
+    def test_compile_redundant_jumps_and_nops_after_moving_cold_blocks(self):
+        # See gh-120367
+        code=textwrap.dedent("""
+            try:
+                pass
+            except:
+                pass
+            else:
+                match name_2:
+                    case b'':
+                        pass
+            finally:
+                something
+            """)
+
+        tree = ast.parse(code)
+
+        # make all instruction locations the same to create redundancies
+        for node in ast.walk(tree):
+            if hasattr(node,"lineno"):
+                 del node.lineno
+                 del node.end_lineno
+                 del node.col_offset
+                 del node.end_col_offset
+
+        compile(ast.fix_missing_locations(tree), "<file>", "exec")
+
+    def test_compile_redundant_jump_after_convert_pseudo_ops(self):
+        # See gh-120367
+        code=textwrap.dedent("""
+            if name_2:
+                pass
+            else:
+                try:
+                    pass
+                except:
+                    pass
+            ~name_5
+            """)
+
+        tree = ast.parse(code)
+
+        # make all instruction locations the same to create redundancies
+        for node in ast.walk(tree):
+            if hasattr(node,"lineno"):
+                 del node.lineno
+                 del node.end_lineno
+                 del node.col_offset
+                 del node.end_col_offset
+
+        compile(ast.fix_missing_locations(tree), "<file>", "exec")
 
     def test_compile_ast(self):
         fname = __file__
@@ -819,6 +888,60 @@ class TestSpecifics(unittest.TestCase):
             list(dis.get_instructions(unused_code_at_end))[-1].opname)
 
     @support.cpython_only
+    def test_docstring(self):
+        src = textwrap.dedent("""
+            def with_docstring():
+                "docstring"
+
+            def two_strings():
+                "docstring"
+                "not docstring"
+
+            def with_fstring():
+                f"not docstring"
+
+            def with_const_expression():
+                "also" + " not docstring"
+            """)
+
+        for opt in [0, 1, 2]:
+            with self.subTest(opt=opt):
+                code = compile(src, "<test>", "exec", optimize=opt)
+                ns = {}
+                exec(code, ns)
+
+                if opt < 2:
+                    self.assertEqual(ns['with_docstring'].__doc__, "docstring")
+                    self.assertEqual(ns['two_strings'].__doc__, "docstring")
+                else:
+                    self.assertIsNone(ns['with_docstring'].__doc__)
+                    self.assertIsNone(ns['two_strings'].__doc__)
+                self.assertIsNone(ns['with_fstring'].__doc__)
+                self.assertIsNone(ns['with_const_expression'].__doc__)
+
+    @support.cpython_only
+    def test_docstring_interactive_mode(self):
+        srcs = [
+            """def with_docstring():
+                "docstring"
+            """,
+            """class with_docstring:
+                "docstring"
+            """,
+        ]
+
+        for opt in [0, 1, 2]:
+            for src in srcs:
+                with self.subTest(opt=opt, src=src):
+                    code = compile(textwrap.dedent(src), "<test>", "single", optimize=opt)
+                    ns = {}
+                    exec(code, ns)
+                    if opt < 2:
+                        self.assertEqual(ns['with_docstring'].__doc__, "docstring")
+                    else:
+                        self.assertIsNone(ns['with_docstring'].__doc__)
+
+    @support.cpython_only
     def test_docstring_omitted(self):
         # See gh-115347
         src = textwrap.dedent("""
@@ -835,12 +958,13 @@ class TestSpecifics(unittest.TestCase):
                 return h
         """)
         for opt in [-1, 0, 1, 2]:
-            with self.subTest(opt=opt):
-                code = compile(src, "<test>", "exec", optimize=opt)
-                output = io.StringIO()
-                with contextlib.redirect_stdout(output):
-                    dis.dis(code)
-                self.assertNotIn('NOP' , output.getvalue())
+            for mode in ["exec", "single"]:
+                with self.subTest(opt=opt, mode=mode):
+                    code = compile(src, "<test>", mode, optimize=opt)
+                    output = io.StringIO()
+                    with contextlib.redirect_stdout(output):
+                        dis.dis(code)
+                    self.assertNotIn('NOP', output.getvalue())
 
     def test_dont_merge_constants(self):
         # Issue #25843: compile() must not merge constants which are equal
@@ -1120,7 +1244,7 @@ class TestSpecifics(unittest.TestCase):
                     x
                     in
                     y)
-        genexp_lines = [0, 2, 0]
+        genexp_lines = [0, 4, 2, 0, 4]
 
         genexp_code = return_genexp.__code__.co_consts[1]
         code_lines = self.get_code_lines(genexp_code)
@@ -1262,6 +1386,14 @@ class TestSpecifics(unittest.TestCase):
                     actual += 1
             self.assertEqual(actual, expected)
 
+        def check_consts(func, typ, expected):
+            slice_consts = 0
+            consts = func.__code__.co_consts
+            for instr in dis.Bytecode(func):
+                if instr.opname == "LOAD_CONST" and isinstance(consts[instr.oparg], typ):
+                    slice_consts += 1
+            self.assertEqual(slice_consts, expected)
+
         def load():
             return x[a:b] + x [a:] + x[:b] + x[:]
 
@@ -1277,15 +1409,30 @@ class TestSpecifics(unittest.TestCase):
         def aug():
             x[a:b] += y
 
-        check_op_count(load, "BINARY_SLICE", 4)
+        def aug_const():
+            x[1:2] += y
+
+        def compound_const_slice():
+            x[1:2:3, 4:5:6] = y
+
+        check_op_count(load, "BINARY_SLICE", 3)
         check_op_count(load, "BUILD_SLICE", 0)
-        check_op_count(store, "STORE_SLICE", 4)
+        check_consts(load, slice, 1)
+        check_op_count(store, "STORE_SLICE", 3)
         check_op_count(store, "BUILD_SLICE", 0)
+        check_consts(store, slice, 1)
         check_op_count(long_slice, "BUILD_SLICE", 1)
         check_op_count(long_slice, "BINARY_SLICE", 0)
         check_op_count(aug, "BINARY_SLICE", 1)
         check_op_count(aug, "STORE_SLICE", 1)
         check_op_count(aug, "BUILD_SLICE", 0)
+        check_op_count(aug_const, "BINARY_SLICE", 0)
+        check_op_count(aug_const, "STORE_SLICE", 0)
+        check_consts(aug_const, slice, 1)
+        check_op_count(compound_const_slice, "BINARY_SLICE", 0)
+        check_op_count(compound_const_slice, "BUILD_SLICE", 0)
+        check_consts(compound_const_slice, slice, 0)
+        check_consts(compound_const_slice, tuple, 1)
 
     def test_compare_positions(self):
         for opname_prefix, op in [
@@ -1409,6 +1556,55 @@ class TestSpecifics(unittest.TestCase):
         for kw in ("except", "except*"):
             exec(code % kw, g, l);
 
+    def test_regression_gh_120225(self):
+        async def name_4():
+            match b'':
+                case True:
+                    pass
+                case name_5 if f'e':
+                    {name_3: name_4 async for name_2 in name_5}
+                case []:
+                    pass
+            [[]]
+
+class TestBooleanExpression(unittest.TestCase):
+    class Value:
+        def __init__(self):
+            self.called = 0
+
+        def __bool__(self):
+            self.called += 1
+            return self.value
+
+    class Yes(Value):
+        value = True
+
+    class No(Value):
+        value = False
+
+    def test_short_circuit_and(self):
+        v = [self.Yes(), self.No(), self.Yes()]
+        res = v[0] and v[1] and v[0]
+        self.assertIs(res, v[1])
+        self.assertEqual([e.called for e in v], [1, 1, 0])
+
+    def test_short_circuit_or(self):
+        v = [self.No(), self.Yes(), self.No()]
+        res = v[0] or v[1] or v[0]
+        self.assertIs(res, v[1])
+        self.assertEqual([e.called for e in v], [1, 1, 0])
+
+    def test_compound(self):
+        # See gh-124285
+        v = [self.No(), self.Yes(), self.Yes(), self.Yes()]
+        res = v[0] and v[1] or v[2] or v[3]
+        self.assertIs(res, v[2])
+        self.assertEqual([e.called for e in v], [1, 0, 1, 0])
+
+        v = [self.No(), self.No(), self.Yes(), self.Yes(), self.No()]
+        res = v[0] or v[1] and v[2] or v[3] or v[4]
+        self.assertIs(res, v[3])
+        self.assertEqual([e.called for e in v], [1, 1, 0, 1, 0])
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
@@ -1538,7 +1734,7 @@ class TestSourcePositions(unittest.TestCase):
                     ccc == 1000000), "error msg"
             """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_ASSERTION_ERROR',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_COMMON_CONSTANT',
             line=1, end_line=3, column=0, end_column=36, occurrence=1)
         #  The "error msg":
         self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_CONST',
@@ -1565,7 +1761,7 @@ class TestSourcePositions(unittest.TestCase):
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
             line=1, end_line=2, column=1, end_column=8, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_CONST',
-            line=1, end_line=6, column=0, end_column=32, occurrence=1)
+            line=4, end_line=4, column=7, end_column=14, occurrence=1)
 
     def test_multiline_async_generator_expression(self):
         snippet = textwrap.dedent("""\
@@ -1966,13 +2162,76 @@ class TestSourcePositions(unittest.TestCase):
             code, "LOAD_GLOBAL", line=3, end_line=3, column=4, end_column=9
         )
 
+    def test_lambda_return_position(self):
+        snippets = [
+            "f = lambda: x",
+            "f = lambda: 42",
+            "f = lambda: 1 + 2",
+            "f = lambda: a + b",
+        ]
+        for snippet in snippets:
+            with self.subTest(snippet=snippet):
+                lamb = run_code(snippet)["f"]
+                positions = lamb.__code__.co_positions()
+                # assert that all positions are within the lambda
+                for i, pos in enumerate(positions):
+                    with self.subTest(i=i, pos=pos):
+                        start_line, end_line, start_col, end_col = pos
+                        if i == 0 and start_col == end_col == 0:
+                            # ignore the RESUME in the beginning
+                            continue
+                        self.assertEqual(start_line, 1)
+                        self.assertEqual(end_line, 1)
+                        code_start = snippet.find(":") + 2
+                        code_end = len(snippet)
+                        self.assertGreaterEqual(start_col, code_start)
+                        self.assertLessEqual(end_col, code_end)
+                        self.assertGreaterEqual(end_col, start_col)
+                        self.assertLessEqual(end_col, code_end)
 
-class TestExpectedAttributes(unittest.TestCase):
+    def test_return_in_with_positions(self):
+        # See gh-98442
+        def f():
+            with xyz:
+                1
+                2
+                3
+                4
+                return R
+
+        # All instructions should have locations on a single line
+        for instr in dis.get_instructions(f):
+            start_line, end_line, _, _ = instr.positions
+            self.assertEqual(start_line, end_line)
+
+        # Expect three load None instructions for the no-exception __exit__ call,
+        # and one RETURN_VALUE.
+        # They should all have the locations of the context manager ('xyz').
+
+        load_none = [instr for instr in dis.get_instructions(f) if
+                     instr.opname == 'LOAD_CONST' and instr.argval is None]
+        return_value = [instr for instr in dis.get_instructions(f) if
+                        instr.opname == 'RETURN_VALUE']
+
+        self.assertEqual(len(load_none), 3)
+        self.assertEqual(len(return_value), 1)
+        for instr in load_none + return_value:
+            start_line, end_line, start_col, end_col = instr.positions
+            self.assertEqual(start_line, f.__code__.co_firstlineno + 1)
+            self.assertEqual(end_line, f.__code__.co_firstlineno + 1)
+            self.assertEqual(start_col, 17)
+            self.assertEqual(end_col, 20)
+
+
+class TestStaticAttributes(unittest.TestCase):
 
     def test_basic(self):
         class C:
             def f(self):
                 self.a = self.b = 42
+                # read fields are not included
+                self.f()
+                self.arr[3]
 
         self.assertIsInstance(C.__static_attributes__, tuple)
         self.assertEqual(sorted(C.__static_attributes__), ['a', 'b'])
@@ -2425,6 +2684,8 @@ class TestStackSizeStability(unittest.TestCase):
             """
         self.check_stack_size(snippet, async_=True)
 
+@support.cpython_only
+@unittest.skipIf(_testinternalcapi is None, 'need _testinternalcapi module')
 class TestInstructionSequence(unittest.TestCase):
     def compare_instructions(self, seq, expected):
         self.assertEqual([(opcode.opname[i[0]],) + i[1:] for i in seq.get_instructions()],
@@ -2467,6 +2728,22 @@ class TestInstructionSequence(unittest.TestCase):
         seq.add_nested(nested)
         self.compare_instructions(seq, [('LOAD_CONST', 1, 1, 0, 0, 0)])
         self.compare_instructions(seq.get_nested()[0], [('LOAD_CONST', 2, 2, 0, 0, 0)])
+
+    def test_static_attributes_are_sorted(self):
+        code = (
+            'class T:\n'
+            '    def __init__(self):\n'
+            '        self.{V1} = 10\n'
+            '        self.{V2} = 10\n'
+            '    def foo(self):\n'
+            '        self.{V3} = 10\n'
+        )
+        attributes = ("a", "b", "c")
+        for perm in itertools.permutations(attributes):
+            var_names = {f'V{i + 1}': name for i, name in enumerate(perm)}
+            ns = run_code(code.format(**var_names))
+            t = ns['T']
+            self.assertEqual(t.__static_attributes__, attributes)
 
 
 if __name__ == "__main__":

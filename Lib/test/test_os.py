@@ -828,7 +828,7 @@ class UtimeTests(unittest.TestCase):
         return (ns * 1e-9) + 0.5e-9
 
     def test_utime_by_indexed(self):
-        # pass times as floating point seconds as the second indexed parameter
+        # pass times as floating-point seconds as the second indexed parameter
         def set_time(filename, ns):
             atime_ns, mtime_ns = ns
             atime = self.ns_to_sec(atime_ns)
@@ -1298,6 +1298,52 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         self._test_underlying_process_env('_A_', '')
         self._test_underlying_process_env(overridden_key, original_value)
 
+    def test_refresh(self):
+        # Test os.environ.refresh()
+        has_environb = hasattr(os, 'environb')
+
+        # Test with putenv() which doesn't update os.environ
+        os.environ['test_env'] = 'python_value'
+        os.putenv("test_env", "new_value")
+        self.assertEqual(os.environ['test_env'], 'python_value')
+        if has_environb:
+            self.assertEqual(os.environb[b'test_env'], b'python_value')
+
+        os.environ.refresh()
+        self.assertEqual(os.environ['test_env'], 'new_value')
+        if has_environb:
+            self.assertEqual(os.environb[b'test_env'], b'new_value')
+
+        # Test with unsetenv() which doesn't update os.environ
+        os.unsetenv('test_env')
+        self.assertEqual(os.environ['test_env'], 'new_value')
+        if has_environb:
+            self.assertEqual(os.environb[b'test_env'], b'new_value')
+
+        os.environ.refresh()
+        self.assertNotIn('test_env', os.environ)
+        if has_environb:
+            self.assertNotIn(b'test_env', os.environb)
+
+        if has_environb:
+            # test os.environb.refresh() with putenv()
+            os.environb[b'test_env'] = b'python_value2'
+            os.putenv("test_env", "new_value2")
+            self.assertEqual(os.environb[b'test_env'], b'python_value2')
+            self.assertEqual(os.environ['test_env'], 'python_value2')
+
+            os.environb.refresh()
+            self.assertEqual(os.environb[b'test_env'], b'new_value2')
+            self.assertEqual(os.environ['test_env'], 'new_value2')
+
+            # test os.environb.refresh() with unsetenv()
+            os.unsetenv('test_env')
+            self.assertEqual(os.environb[b'test_env'], b'new_value2')
+            self.assertEqual(os.environ['test_env'], 'new_value2')
+
+            os.environb.refresh()
+            self.assertNotIn(b'test_env', os.environb)
+            self.assertNotIn('test_env', os.environ)
 
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
@@ -1685,10 +1731,29 @@ class FwalkTests(WalkTests):
         self.addCleanup(os.close, newfd)
         self.assertEqual(newfd, minfd)
 
+    @unittest.skipIf(
+        support.is_emscripten, "Cannot dup stdout on Emscripten"
+    )
+    @unittest.skipIf(
+        support.is_android, "dup return value is unpredictable on Android"
+    )
+    def test_fd_finalization(self):
+        # Check that close()ing the fwalk() generator closes FDs
+        def getfd():
+            fd = os.dup(1)
+            os.close(fd)
+            return fd
+        for topdown in (False, True):
+            old_fd = getfd()
+            it = self.fwalk(os_helper.TESTFN, topdown=topdown)
+            self.assertEqual(getfd(), old_fd)
+            next(it)
+            self.assertGreater(getfd(), old_fd)
+            it.close()
+            self.assertEqual(getfd(), old_fd)
+
     # fwalk() keeps file descriptors open
     test_walk_many_open_files = None
-    # fwalk() still uses recursion
-    test_walk_above_recursion_limit = None
 
 
 class BytesWalkTests(WalkTests):
@@ -1818,9 +1883,10 @@ class MakedirTests(unittest.TestCase):
         os.mkdir(path, mode=0o700)
         out = subprocess.check_output(["cacls.exe", path, "/s"], encoding="oem")
         os.rmdir(path)
+        out = out.strip().rsplit(" ", 1)[1]
         self.assertEqual(
-            out.strip(),
-            f'{path} "D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FA;;;OW)"',
+            out,
+            '"D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FA;;;OW)"',
         )
 
     def tearDown(self):
@@ -2285,9 +2351,13 @@ class Win32ErrorTests(unittest.TestCase):
 
 @unittest.skipIf(support.is_wasi, "Cannot create invalid FD on WASI.")
 class TestInvalidFD(unittest.TestCase):
-    singles = ["fchdir", "dup", "fdatasync", "fstat",
-               "fstatvfs", "fsync", "tcgetpgrp", "ttyname"]
-    singles_fildes = {"fchdir", "fdatasync", "fsync"}
+    singles = ["fchdir", "dup", "fstat", "fstatvfs", "tcgetpgrp", "ttyname"]
+    singles_fildes = {"fchdir"}
+    # systemd-nspawn --suppress-sync=true does not verify fd passed
+    # fdatasync() and fsync(), and always returns success
+    if not support.in_systemd_nspawn_sync_suppressed():
+        singles += ["fdatasync", "fsync"]
+        singles_fildes |= {"fdatasync", "fsync"}
     #singles.append("close")
     #We omit close because it doesn't raise an exception on some platforms
     def get_single(f):
@@ -3107,7 +3177,8 @@ class Win32NtTests(unittest.TestCase):
     def test_getfinalpathname_handles(self):
         nt = import_helper.import_module('nt')
         ctypes = import_helper.import_module('ctypes')
-        import ctypes.wintypes
+        # Ruff false positive -- it thinks we're redefining `ctypes` here
+        import ctypes.wintypes  # noqa: F811
 
         kernel = ctypes.WinDLL('Kernel32.dll', use_last_error=True)
         kernel.GetCurrentProcess.restype = ctypes.wintypes.HANDLE

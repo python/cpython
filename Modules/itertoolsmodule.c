@@ -1,13 +1,14 @@
 #include "Python.h"
-#include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
-#include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "pycore_typeobject.h"    // _PyType_GetModuleState()
-#include "pycore_object.h"        // _PyObject_GC_TRACK()
-#include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_call.h"              // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"             // _PyEval_GetBuiltin()
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_long.h"              // _PyLong_GetZero()
+#include "pycore_moduleobject.h"      // _PyModule_GetState()
+#include "pycore_typeobject.h"        // _PyType_GetModuleState()
+#include "pycore_object.h"            // _PyObject_GC_TRACK()
+#include "pycore_tuple.h"             // _PyTuple_ITEMS()
 
-#include <stddef.h>               // offsetof()
+#include <stddef.h>                   // offsetof()
 
 /* Itertools module written and maintained
    by Raymond D. Hettinger <python@rcn.com>
@@ -1035,7 +1036,7 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
 /*[clinic end generated code: output=1c64519cd859c2f0 input=c99a1472c425d66d]*/
 {
     Py_ssize_t i;
-    PyObject *it, *copyable, *copyfunc, *result;
+    PyObject *it, *to, *result;
 
     if (n < 0) {
         PyErr_SetString(PyExc_ValueError, "n must be >= 0");
@@ -1052,41 +1053,23 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
         return NULL;
     }
 
-    if (PyObject_GetOptionalAttr(it, &_Py_ID(__copy__), &copyfunc) < 0) {
-        Py_DECREF(it);
+    itertools_state *state = get_module_state(module);
+    to = tee_fromiterable(state, it);
+    Py_DECREF(it);
+    if (to == NULL) {
         Py_DECREF(result);
         return NULL;
     }
-    if (copyfunc != NULL) {
-        copyable = it;
-    }
-    else {
-        itertools_state *state = get_module_state(module);
-        copyable = tee_fromiterable(state, it);
-        Py_DECREF(it);
-        if (copyable == NULL) {
-            Py_DECREF(result);
-            return NULL;
-        }
-        copyfunc = PyObject_GetAttr(copyable, &_Py_ID(__copy__));
-        if (copyfunc == NULL) {
-            Py_DECREF(copyable);
-            Py_DECREF(result);
-            return NULL;
-        }
-    }
 
-    PyTuple_SET_ITEM(result, 0, copyable);
+    PyTuple_SET_ITEM(result, 0, to);
     for (i = 1; i < n; i++) {
-        copyable = _PyObject_CallNoArgs(copyfunc);
-        if (copyable == NULL) {
-            Py_DECREF(copyfunc);
+        to = tee_copy((teeobject *)to, NULL);
+        if (to == NULL) {
             Py_DECREF(result);
             return NULL;
         }
-        PyTuple_SET_ITEM(result, i, copyable);
+        PyTuple_SET_ITEM(result, i, to);
     }
-    Py_DECREF(copyfunc);
     return result;
 }
 
@@ -3254,7 +3237,7 @@ fast_mode:  when cnt an integer < PY_SSIZE_T_MAX and no step is specified.
 
     assert(cnt != PY_SSIZE_T_MAX && long_cnt == NULL && long_step==PyLong(1));
     Advances with:  cnt += 1
-    When count hits Y_SSIZE_T_MAX, switch to slow_mode.
+    When count hits PY_SSIZE_T_MAX, switch to slow_mode.
 
 slow_mode:  when cnt == PY_SSIZE_T_MAX, step is not int(1), or cnt is a float.
 
@@ -3403,9 +3386,30 @@ count_nextlong(countobject *lz)
 static PyObject *
 count_next(countobject *lz)
 {
+#ifndef Py_GIL_DISABLED
     if (lz->cnt == PY_SSIZE_T_MAX)
         return count_nextlong(lz);
     return PyLong_FromSsize_t(lz->cnt++);
+#else
+    // free-threading version
+    // fast mode uses compare-exchange loop
+    // slow mode uses a critical section
+    PyObject *returned;
+    Py_ssize_t cnt;
+
+    cnt = _Py_atomic_load_ssize_relaxed(&lz->cnt);
+    for (;;) {
+        if (cnt == PY_SSIZE_T_MAX) {
+            Py_BEGIN_CRITICAL_SECTION(lz);
+            returned = count_nextlong(lz);
+            Py_END_CRITICAL_SECTION();
+            return returned;
+        }
+        if (_Py_atomic_compare_exchange_ssize(&lz->cnt, &cnt, cnt + 1)) {
+            return PyLong_FromSsize_t(cnt);
+        }
+    }
+#endif
 }
 
 static PyObject *

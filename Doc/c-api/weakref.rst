@@ -35,7 +35,7 @@ as much as it can.
    callable object that receives notification when *ob* is garbage collected; it
    should accept a single parameter, which will be the weak reference object
    itself. *callback* may also be ``None`` or ``NULL``.  If *ob* is not a
-   weakly referencable object, or if *callback* is not callable, ``None``, or
+   weakly referenceable object, or if *callback* is not callable, ``None``, or
    ``NULL``, this will return ``NULL`` and raise :exc:`TypeError`.
 
 
@@ -47,7 +47,7 @@ as much as it can.
    be a callable object that receives notification when *ob* is garbage
    collected; it should accept a single parameter, which will be the weak
    reference object itself. *callback* may also be ``None`` or ``NULL``.  If *ob*
-   is not a weakly referencable object, or if *callback* is not callable,
+   is not a weakly referenceable object, or if *callback* is not callable,
    ``None``, or ``NULL``, this will return ``NULL`` and raise :exc:`TypeError`.
 
 
@@ -96,3 +96,19 @@ as much as it can.
    This iterates through the weak references for *object* and calls callbacks
    for those references which have one. It returns when all callbacks have
    been attempted.
+
+
+.. c:function:: void PyUnstable_Object_ClearWeakRefsNoCallbacks(PyObject *object)
+
+   Clears the weakrefs for *object* without calling the callbacks.
+
+   This function is called by the :c:member:`~PyTypeObject.tp_dealloc` handler
+   for types with finalizers (i.e., :meth:`~object.__del__`).  The handler for
+   those objects first calls :c:func:`PyObject_ClearWeakRefs` to clear weakrefs
+   and call their callbacks, then the finalizer, and finally this function to
+   clear any weakrefs that may have been created by the finalizer.
+
+   In most circumstances, it's more appropriate to use
+   :c:func:`PyObject_ClearWeakRefs` to clear weakrefs instead of this function.
+
+   .. versionadded:: 3.13

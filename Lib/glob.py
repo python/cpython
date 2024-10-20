@@ -328,8 +328,8 @@ def _compile_pattern(pat, sep, case_sensitive, recursive=True):
     return re.compile(regex, flags=flags).match
 
 
-class _Globber:
-    """Class providing shell-style pattern matching and globbing.
+class _GlobberBase:
+    """Abstract class providing shell-style pattern matching and globbing.
     """
 
     def __init__(self, sep, case_sensitive, case_pedantic=False, recursive=False):
@@ -338,29 +338,37 @@ class _Globber:
         self.case_pedantic = case_pedantic
         self.recursive = recursive
 
-    # Low-level methods
+    # Abstract methods
 
-    lexists = operator.methodcaller('exists', follow_symlinks=False)
-    add_slash = operator.methodcaller('joinpath', '')
+    @staticmethod
+    def lexists(path):
+        """Implements os.path.lexists().
+        """
+        raise NotImplementedError
 
     @staticmethod
     def scandir(path):
-        """Emulates os.scandir(), which returns an object that can be used as
-        a context manager. This method is called by walk() and glob().
+        """Implements os.scandir().
         """
-        return contextlib.nullcontext(path.iterdir())
+        raise NotImplementedError
+
+    @staticmethod
+    def add_slash(path):
+        """Returns a path with a trailing slash added.
+        """
+        raise NotImplementedError
 
     @staticmethod
     def concat_path(path, text):
-        """Appends text to the given path.
+        """Implements path concatenation.
         """
-        return path.with_segments(path._raw_path + text)
+        raise NotImplementedError
 
     @staticmethod
     def parse_entry(entry):
         """Returns the path of an entry yielded from scandir().
         """
-        return entry
+        raise NotImplementedError
 
     # High-level methods
 
@@ -519,45 +527,10 @@ class _Globber:
         elif self.lexists(path):
             yield path
 
-    @classmethod
-    def walk(cls, root, top_down, on_error, follow_symlinks):
-        """Walk the directory tree from the given root, similar to os.walk().
-        """
-        paths = [root]
-        while paths:
-            path = paths.pop()
-            if isinstance(path, tuple):
-                yield path
-                continue
-            try:
-                with cls.scandir(path) as scandir_it:
-                    dirnames = []
-                    filenames = []
-                    if not top_down:
-                        paths.append((path, dirnames, filenames))
-                    for entry in scandir_it:
-                        name = entry.name
-                        try:
-                            if entry.is_dir(follow_symlinks=follow_symlinks):
-                                if not top_down:
-                                    paths.append(cls.parse_entry(entry))
-                                dirnames.append(name)
-                            else:
-                                filenames.append(name)
-                        except OSError:
-                            filenames.append(name)
-            except OSError as error:
-                if on_error is not None:
-                    on_error(error)
-            else:
-                if top_down:
-                    yield path, dirnames, filenames
-                    if dirnames:
-                        prefix = cls.add_slash(path)
-                        paths += [cls.concat_path(prefix, d) for d in reversed(dirnames)]
 
-
-class _StringGlobber(_Globber):
+class _StringGlobber(_GlobberBase):
+    """Provides shell-style pattern matching and globbing for string paths.
+    """
     lexists = staticmethod(os.path.lexists)
     scandir = staticmethod(os.scandir)
     parse_entry = operator.attrgetter('path')

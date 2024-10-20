@@ -94,7 +94,7 @@ class TestFunctions(unittest.TestCase):
         try:
             termios.tcsendbreak(self.fd, 1)
         except termios.error as exc:
-            if exc.args[0] == errno.ENOTTY and sys.platform.startswith('freebsd'):
+            if exc.args[0] == errno.ENOTTY and sys.platform.startswith(('freebsd', "netbsd")):
                 self.skipTest('termios.tcsendbreak() is not supported '
                               'with pseudo-terminals (?) on this platform')
             raise
@@ -210,6 +210,15 @@ class TestModule(unittest.TestCase):
         self.assertIsInstance(termios.NCCS, int)
         self.assertLess(termios.VTIME, termios.NCCS)
         self.assertLess(termios.VMIN, termios.NCCS)
+
+    def test_ioctl_constants(self):
+        # gh-119770: ioctl() constants must be positive
+        for name in dir(termios):
+            if not name.startswith('TIO'):
+                continue
+            value = getattr(termios, name)
+            with self.subTest(name=name):
+                self.assertGreaterEqual(value, 0)
 
     def test_exception(self):
         self.assertTrue(issubclass(termios.error, Exception))

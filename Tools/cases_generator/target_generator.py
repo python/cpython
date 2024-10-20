@@ -14,7 +14,6 @@ from generators_common import (
     ROOT,
 )
 from cwriter import CWriter
-from typing import TextIO
 
 
 DEFAULT_OUTPUT = ROOT / "Python/opcode_targets.h"
@@ -30,6 +29,7 @@ def write_opcode_targets(analysis: Analysis, out: CWriter) -> None:
     for target in targets:
         out.emit(target)
     out.emit("};\n")
+
 
 arg_parser = argparse.ArgumentParser(
     description="Generate the file with dispatch targets.",

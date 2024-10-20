@@ -558,25 +558,23 @@ class TestRmTree(BaseTest, unittest.TestCase):
                              os.listdir in os.supports_fd and
                              os.stat in os.supports_follow_symlinks)
         if _use_fd_functions:
-            self.assertTrue(shutil._use_fd_functions)
             self.assertTrue(shutil.rmtree.avoids_symlink_attacks)
             tmp_dir = self.mkdtemp()
             d = os.path.join(tmp_dir, 'a')
             os.mkdir(d)
             try:
-                real_rmtree = shutil._rmtree_safe_fd
+                real_open = os.open
                 class Called(Exception): pass
                 def _raiser(*args, **kwargs):
                     raise Called
-                shutil._rmtree_safe_fd = _raiser
+                os.open = _raiser
                 self.assertRaises(Called, shutil.rmtree, d)
             finally:
-                shutil._rmtree_safe_fd = real_rmtree
+                os.open = real_open
         else:
-            self.assertFalse(shutil._use_fd_functions)
             self.assertFalse(shutil.rmtree.avoids_symlink_attacks)
 
-    @unittest.skipUnless(shutil._use_fd_functions, "requires safe rmtree")
+    @unittest.skipUnless(shutil.rmtree.avoids_symlink_attacks, "requires safe rmtree")
     def test_rmtree_fails_on_close(self):
         # Test that the error handler is called for failed os.close() and that
         # os.close() is only called once for a file descriptor.
@@ -611,7 +609,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         self.assertEqual(errors[1][1], dir1)
         self.assertEqual(close_count, 2)
 
-    @unittest.skipUnless(shutil._use_fd_functions, "dir_fd is not supported")
+    @unittest.skipUnless(shutil.rmtree.avoids_symlink_attacks, "dir_fd is not supported")
     def test_rmtree_with_dir_fd(self):
         tmp_dir = self.mkdtemp()
         victim = 'killme'
@@ -625,7 +623,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         shutil.rmtree(victim, dir_fd=dir_fd)
         self.assertFalse(os.path.exists(fullname))
 
-    @unittest.skipIf(shutil._use_fd_functions, "dir_fd is supported")
+    @unittest.skipIf(shutil.rmtree.avoids_symlink_attacks, "dir_fd is supported")
     def test_rmtree_with_dir_fd_unsupported(self):
         tmp_dir = self.mkdtemp()
         with self.assertRaises(NotImplementedError):
@@ -740,6 +738,16 @@ class TestRmTree(BaseTest, unittest.TestCase):
                     pass
             shutil.rmtree(TESTFN)
             raise
+
+    def test_rmtree_above_recursion_limit(self):
+        recursion_limit = 40
+        # directory_depth > recursion_limit
+        directory_depth = recursion_limit + 10
+        base = os.path.join(TESTFN, *(['d'] * directory_depth))
+        os.makedirs(base)
+
+        with support.infinite_recursion(recursion_limit):
+            shutil.rmtree(TESTFN)
 
 
 class TestCopyTree(BaseTest, unittest.TestCase):
@@ -897,10 +905,10 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         os.mkdir(os.path.join(src_dir, 'test_dir', 'subdir'))
         write_file((src_dir, 'test_dir', 'subdir', 'test.txt'), '456')
 
-        invokations = []
+        invocations = []
 
         def _ignore(src, names):
-            invokations.append(src)
+            invocations.append(src)
             self.assertIsInstance(src, str)
             self.assertIsInstance(names, list)
             self.assertEqual(len(names), len(set(names)))
@@ -925,7 +933,7 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         self.assertTrue(exists(join(dst_dir, 'test_dir', 'subdir',
                                     'test.txt')))
 
-        self.assertEqual(len(invokations), 9)
+        self.assertEqual(len(invocations), 9)
 
     def test_copytree_retains_permissions(self):
         tmp_dir = self.mkdtemp()
@@ -1901,7 +1909,10 @@ class TestArchives(BaseTest, unittest.TestCase):
                 subprocess.check_output(zip_cmd, stderr=subprocess.STDOUT)
             except subprocess.CalledProcessError as exc:
                 details = exc.output.decode(errors="replace")
-                if 'unrecognized option: t' in details:
+                if any(message in details for message in [
+                    'unrecognized option: t',  # BusyBox
+                    'invalid option -- t',  # Android
+                ]):
                     self.skipTest("unzip doesn't support -t")
                 msg = "{}\n\n**Unzip Output**\n{}"
                 self.fail(msg.format(exc, details))
@@ -2137,9 +2148,6 @@ class TestArchives(BaseTest, unittest.TestCase):
     def check_unpack_tarball(self, format):
         self.check_unpack_archive(format, filter='fully_trusted')
         self.check_unpack_archive(format, filter='data')
-        with warnings_helper.check_warnings(
-                ('Python 3.14', DeprecationWarning)):
-            self.check_unpack_archive(format)
 
     def test_unpack_archive_tar(self):
         self.check_unpack_tarball('tar')
@@ -3388,7 +3396,7 @@ class PublicAPITests(unittest.TestCase):
         self.assertTrue(hasattr(shutil, '__all__'))
         target_api = ['copyfileobj', 'copyfile', 'copymode', 'copystat',
                       'copy', 'copy2', 'copytree', 'move', 'rmtree', 'Error',
-                      'SpecialFileError', 'ExecError', 'make_archive',
+                      'SpecialFileError', 'make_archive',
                       'get_archive_formats', 'register_archive_format',
                       'unregister_archive_format', 'get_unpack_formats',
                       'register_unpack_format', 'unregister_unpack_format',
@@ -3397,6 +3405,8 @@ class PublicAPITests(unittest.TestCase):
         if hasattr(os, 'statvfs') or os.name == 'nt':
             target_api.append('disk_usage')
         self.assertEqual(set(shutil.__all__), set(target_api))
+        with self.assertWarns(DeprecationWarning):
+            from shutil import ExecError
 
 
 if __name__ == '__main__':
