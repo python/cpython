@@ -1217,8 +1217,10 @@ A function definition defines a user-defined function object (see section
                  :   | `parameter_list_no_posonly`
    parameter_list_no_posonly: `defparameter` ("," `defparameter`)* ["," [`parameter_list_starargs`]]
                             : | `parameter_list_starargs`
-   parameter_list_starargs: "*" [`star_parameter`] ("," `defparameter`)* ["," ["**" `parameter` [","]]]
-                          : | "**" `parameter` [","]
+   parameter_list_starargs: "*" [`star_parameter`] ("," `defparameter`)* ["," [`parameter_star_kwargs`]]
+                          : "*" ("," `defparameter`)+ ["," [`parameter_star_kwargs`]]
+                          : | `parameter_star_kwargs`
+   parameter_star_kwargs: "**" `parameter` [","]
    parameter: `identifier` [":" `expression`]
    star_parameter: `identifier` [":" ["*"] `expression`]
    defparameter: `parameter` ["=" `expression`]
