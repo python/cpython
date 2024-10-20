@@ -8,7 +8,7 @@ import os
 import sys
 
 from tkinter import StringVar, BooleanVar
-from tkinter.ttk import Checkbutton  # Frame imported in ...Base
+from tkinter.ttk import Checkbutton, Frame
 
 from idlelib.searchbase import SearchDialogBase
 from idlelib import searchengine
@@ -64,7 +64,7 @@ def findfiles(folder, pattern, recursive):
 class GrepDialog(SearchDialogBase):
     "Dialog for searching multiple files."
 
-    title = "Find in Files Dialog"
+    title = "Find in Files"
     icon = "Grep"
     needwrapbutton = 0
 
@@ -112,7 +112,7 @@ class GrepDialog(SearchDialogBase):
     def create_entries(self):
         "Create base entry widgets and add widget for search path."
         SearchDialogBase.create_entries(self)
-        self.globent = self.make_entry("In files:", self.globvar)[0]
+        self.globent = self.make_entry("In files", self.globvar)[0]
 
     def create_other_buttons(self):
         "Add check button to recurse down subdirectories."
@@ -122,9 +122,10 @@ class GrepDialog(SearchDialogBase):
         btn.pack(side="top", fill="both")
 
     def create_command_buttons(self):
-        "Create base command buttons and add button for Search Files."
-        SearchDialogBase.create_command_buttons(self)
-        self.make_button("Search Files", self.default_command, isdef=True)
+        """Create base command buttons and add button for Search Files."""
+        f = self.buttonframe = Frame(self.frame)
+        f.grid(row=3, column=2, padx=4, pady=4)
+        self.make_button("Search", self.default_command, isdef=True)
 
     def default_command(self, event=None):
         """Grep for search pattern in file path. The default command is bound
