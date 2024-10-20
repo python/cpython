@@ -83,6 +83,7 @@ f = urllib.request.urlopen('https://www.python.org/')
 
 import base64
 import bisect
+import contextlib
 import email
 import hashlib
 import http.client
@@ -94,8 +95,6 @@ import string
 import sys
 import time
 import tempfile
-import contextlib
-import warnings
 
 
 from urllib.error import URLError, HTTPError, ContentTooShortError
@@ -939,6 +938,7 @@ class AbstractBasicAuthHandler:
         for mo in AbstractBasicAuthHandler.rx.finditer(header):
             scheme, quote, realm = mo.groups()
             if quote not in ['"', "'"]:
+                import warnings
                 warnings.warn("Basic Auth Realm was unquoted",
                               UserWarning, 3)
 
