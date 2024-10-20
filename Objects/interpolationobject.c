@@ -11,10 +11,18 @@
 
 #include "pycore_interpolation.h"
 
-static PyInterpolationObject *
+typedef struct {
+    PyObject_HEAD
+    PyObject *value;
+    PyObject *expr;
+    PyObject *conv;
+    PyObject *format_spec;
+} interpolationobject;
+
+static interpolationobject *
 interpolation_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyInterpolationObject *self = (PyInterpolationObject *) type->tp_alloc(type, 0);
+    interpolationobject *self = (interpolationobject *) type->tp_alloc(type, 0);
     if (!self) {
         return NULL;
     }
@@ -40,7 +48,7 @@ interpolation_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static void
-interpolation_dealloc(PyInterpolationObject *self)
+interpolation_dealloc(interpolationobject *self)
 {
     Py_CLEAR(self->value);
     Py_CLEAR(self->expr);
@@ -50,7 +58,7 @@ interpolation_dealloc(PyInterpolationObject *self)
 }
 
 static PyObject *
-interpolation_repr(PyInterpolationObject *self)
+interpolation_repr(interpolationobject *self)
 {
     return PyUnicode_FromFormat("%s(%R, %R, %R, %R)",
                                 _PyType_Name(Py_TYPE(self)),
@@ -59,18 +67,18 @@ interpolation_repr(PyInterpolationObject *self)
 }
 
 static PyMemberDef interpolation_members[] = {
-    {"value", Py_T_OBJECT_EX, offsetof(PyInterpolationObject, value), Py_READONLY, "Value"},
-    {"expr", Py_T_OBJECT_EX, offsetof(PyInterpolationObject, expr), Py_READONLY, "Expr"},
-    {"conv", Py_T_OBJECT_EX, offsetof(PyInterpolationObject, conv), Py_READONLY, "Conversion"},
-    {"format_spec", Py_T_OBJECT_EX, offsetof(PyInterpolationObject, format_spec), Py_READONLY, "Format specifier"},
+    {"value", Py_T_OBJECT_EX, offsetof(interpolationobject, value), Py_READONLY, "Value"},
+    {"expr", Py_T_OBJECT_EX, offsetof(interpolationobject, expr), Py_READONLY, "Expr"},
+    {"conv", Py_T_OBJECT_EX, offsetof(interpolationobject, conv), Py_READONLY, "Conversion"},
+    {"format_spec", Py_T_OBJECT_EX, offsetof(interpolationobject, format_spec), Py_READONLY, "Format specifier"},
     {NULL}
 };
 
-PyTypeObject PyInterpolation_Type = {
+PyTypeObject _PyInterpolation_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "Interpolation",
+    .tp_name = "templatelib.Interpolation",
     .tp_doc = PyDoc_STR("Interpolation object"),
-    .tp_basicsize = sizeof(PyInterpolationObject),
+    .tp_basicsize = sizeof(interpolationobject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | _Py_TPFLAGS_MATCH_SELF,
     .tp_new = (newfunc) interpolation_new,
@@ -78,21 +86,6 @@ PyTypeObject PyInterpolation_Type = {
     .tp_repr = (reprfunc) interpolation_repr,
     .tp_members = interpolation_members,
 };
-
-PyStatus
-_PyInterpolation_InitTypes(PyInterpreterState *interp)
-{
-    if (_PyStaticType_InitBuiltin(interp, &PyInterpolation_Type) < 0) {
-        return _PyStatus_ERR("Can't initialize builtin type");
-    }
-    return _PyStatus_OK();
-}
-
-void
-_PyInterpolation_FiniTypes(PyInterpreterState *interp)
-{
-    _PyStaticType_FiniBuiltin(interp, &PyInterpolation_Type);
-}
 
 PyObject *
 _PyInterpolation_FromStackRefSteal(_PyStackRef *values)
@@ -111,7 +104,7 @@ _PyInterpolation_FromStackRefSteal(_PyStackRef *values)
     PyObject *format_spec = PyStackRef_AsPyObjectSteal(values[3]);
     PyTuple_SET_ITEM(args, 3, format_spec ? format_spec : &_Py_STR(empty));
 
-    PyObject *interpolation = PyObject_CallObject((PyObject *) &PyInterpolation_Type, args);
+    PyObject *interpolation = PyObject_CallObject((PyObject *) &_PyInterpolation_Type, args);
     if (!interpolation) {
         Py_DECREF(args);
         goto error;

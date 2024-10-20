@@ -9,17 +9,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-typedef struct {
-    PyObject_HEAD
-    PyObject *args;
-} PyTemplateObject;
-
-extern PyTypeObject PyTemplate_Type;
+extern PyTypeObject _PyTemplate_Type;
 
 PyAPI_FUNC(PyObject *) _PyTemplate_Create(PyObject **values, Py_ssize_t n);
-
-extern PyStatus _PyTemplate_InitTypes(PyInterpreterState *);
-extern void _PyTemplate_FiniTypes(PyInterpreterState *);
 
 #ifdef __cplusplus
 }

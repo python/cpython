@@ -9,20 +9,11 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-typedef struct {
-    PyObject_HEAD
-    PyObject *value;
-    PyObject *expr;
-    PyObject *conv;
-    PyObject *format_spec;
-} PyInterpolationObject;
+#include "pycore_stackref.h"    // _PyStackRef
 
-extern PyTypeObject PyInterpolation_Type;
+extern PyTypeObject _PyInterpolation_Type;
 
 PyAPI_FUNC(PyObject *) _PyInterpolation_FromStackRefSteal(_PyStackRef *values);
-
-extern PyStatus _PyInterpolation_InitTypes(PyInterpreterState *);
-extern void _PyInterpolation_FiniTypes(PyInterpreterState *);
 
 #ifdef __cplusplus
 }

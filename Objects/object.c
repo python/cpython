@@ -13,6 +13,7 @@
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_instruction_sequence.h" // _PyInstructionSequence_Type
+#include "pycore_interpolation.h" // _PyInterpolation_Type
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
 #include "pycore_namespace.h"     // _PyNamespace_Type
@@ -24,6 +25,7 @@
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntry_Type
+#include "pycore_template.h"      // _PyTemplate_Type
 #include "pycore_typeobject.h"    // _PyBufferWrapper_Type
 #include "pycore_typevarobject.h" // _PyTypeAlias_Type, _Py_initialize_generic
 #include "pycore_unionobject.h"   // _PyUnion_Type
@@ -2345,6 +2347,8 @@ static PyTypeObject* static_types[] = {
     &_PyWeakref_RefType,
     &_PyTypeAlias_Type,
     &_PyNoDefault_Type,
+    &_PyInterpolation_Type,
+    &_PyTemplate_Type,
 
     // subclasses: _PyTypes_FiniTypes() deallocates them before their base
     // class

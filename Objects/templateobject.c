@@ -9,10 +9,15 @@
 
 #include "pycore_template.h"
 
-static PyTemplateObject *
+typedef struct {
+    PyObject_HEAD
+    PyObject *args;
+} templateobject;
+
+static templateobject *
 template_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyTemplateObject *self = (PyTemplateObject *) type->tp_alloc(type, 0);
+    templateobject *self = (templateobject *) type->tp_alloc(type, 0);
     if (!self) {
         return NULL;
     }
@@ -31,14 +36,14 @@ template_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static void
-template_dealloc(PyTemplateObject *self)
+template_dealloc(templateobject *self)
 {
     Py_CLEAR(self->args);
     Py_TYPE(self)->tp_free(self);
 }
 
 static PyObject *
-template_repr(PyTemplateObject *self)
+template_repr(templateobject *self)
 {
     return PyUnicode_FromFormat("%s(%R)",
                                 _PyType_Name(Py_TYPE(self)),
@@ -46,15 +51,15 @@ template_repr(PyTemplateObject *self)
 }
 
 static PyMemberDef template_members[] = {
-    {"args", Py_T_OBJECT_EX, offsetof(PyTemplateObject, args), Py_READONLY, "Args"},
+    {"args", Py_T_OBJECT_EX, offsetof(templateobject, args), Py_READONLY, "Args"},
     {NULL}
 };
 
-PyTypeObject PyTemplate_Type = {
+PyTypeObject _PyTemplate_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "Template",
+    .tp_name = "templatelib.Template",
     .tp_doc = PyDoc_STR("Template object"),
-    .tp_basicsize = sizeof(PyTemplateObject),
+    .tp_basicsize = sizeof(templateobject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | _Py_TPFLAGS_MATCH_SELF,
     .tp_new = (newfunc) template_new,
@@ -62,21 +67,6 @@ PyTypeObject PyTemplate_Type = {
     .tp_repr = (reprfunc) template_repr,
     .tp_members = template_members,
 };
-
-PyStatus
-_PyTemplate_InitTypes(PyInterpreterState *interp)
-{
-    if (_PyStaticType_InitBuiltin(interp, &PyTemplate_Type) < 0) {
-        return _PyStatus_ERR("Can't initialize builtin type");
-    }
-    return _PyStatus_OK();
-}
-
-void
-_PyTemplate_FiniTypes(PyInterpreterState *interp)
-{
-    _PyStaticType_FiniBuiltin(interp, &PyTemplate_Type);
-}
 
 PyObject *
 _PyTemplate_Create(PyObject **values, Py_ssize_t oparg)
@@ -90,7 +80,7 @@ _PyTemplate_Create(PyObject **values, Py_ssize_t oparg)
         PyTuple_SET_ITEM(tuple, i, Py_NewRef(values[i]));
     }
 
-    PyObject *template = PyObject_CallOneArg((PyObject *) &PyTemplate_Type, tuple);
+    PyObject *template = PyObject_CallOneArg((PyObject *) &_PyTemplate_Type, tuple);
     Py_DECREF(tuple);
     return template;
 }
