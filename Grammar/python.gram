@@ -1,19 +1,40 @@
 # PEG grammar for Python
 
 @subheader '''
-// replace a{b} with a[SHIFT[b]]
-#define _PyAST_Subscript1(a, b, context, ...) \
+#define XXXXXXXXXXXXX_PyAST_Subscript0 _PyAST_Subscript
+
+#define XXXXXXXXXXXXX_PyAST_Subscript1(a, b, context, ...) \
     _PyAST_Subscript( \
         a, \
         _PyAST_Subscript( \
-            _PyAST_Name(Py_BuildValue("s", "SHIFT"), Load, __VA_ARGS__), \
+            _PyAST_Name(Py_BuildValue("s", "FROM1"), Load, __VA_ARGS__), \
             b, Load, __VA_ARGS__), \
         context, __VA_ARGS__)
 
+#define _PyAST_From1(a, ...) \
+    _PyAST_Subscript( \
+        _PyAST_Name(Py_BuildValue("s", "FROM1"), Load, __VA_ARGS__), \
+        a, Load, __VA_ARGS__)
+
 #define _PyAST_Slice1(a, b, c, ...) \
     _PyAST_Subscript( \
-        _PyAST_Name(Py_BuildValue("s", "CLOSE"), Load, __VA_ARGS__), \
+        _PyAST_Name(Py_BuildValue("s", "FROM1"), Load, __VA_ARGS__), \
         _PyAST_Slice(a, b, c, __VA_ARGS__), \
+        Load, __VA_ARGS__)
+
+#define _PyAST_ClosedSlice(a, b, c, ...) \
+    _PyAST_Subscript( \
+        _PyAST_Name(Py_BuildValue("s", "CLOSED0"), Load, __VA_ARGS__), \
+        _PyAST_Slice(a, b, c, __VA_ARGS__), \
+        Load, __VA_ARGS__)
+
+#define _PyAST_ClosedSlice1(a, b, c, ...) \
+    _PyAST_Subscript( \
+        _PyAST_Name(Py_BuildValue("s", "CLOSED0"), Load, __VA_ARGS__), \
+        _PyAST_Subscript( \
+            _PyAST_Name(Py_BuildValue("s", "FROM1"), Load, __VA_ARGS__), \
+            _PyAST_Slice(a, b, c, __VA_ARGS__), \
+            Load, __VA_ARGS__), \
         Load, __VA_ARGS__)
 '''
 
@@ -841,18 +862,31 @@ primary[expr_ty]:
                  (b) ? ((expr_ty) b)->v.Call.args : NULL,
                  (b) ? ((expr_ty) b)->v.Call.keywords : NULL,
                  EXTRA) }
-    | a=primary '[' b=slices ']' { _PyAST_Subscript(a, b, Load, EXTRA) }
-    | a=primary '{' b=slices '}' { _PyAST_Subscript1(a, b, Load, EXTRA) }
+    | a=primary '[' b=slices0 ']' { _PyAST_Subscript(a, b, Load, EXTRA) }
+    | a=primary '{' b=slices1 '}' { _PyAST_Subscript(a, b, Load, EXTRA) }
     | atom
 
-slices[expr_ty]:
-    | a=slice !',' { a }
-    | a[asdl_expr_seq*]=','.(slice | starred_expression)+ [','] { _PyAST_Tuple(a, Load, EXTRA) }
+slices0[expr_ty]:
+    | a=slice0 !',' { a }
+    | a[asdl_expr_seq*]=','.(slice0 | starred_expression)+ [','] { _PyAST_Tuple(a, Load, EXTRA) }
 
-slice[expr_ty]:
-    | a=[expression] ':' b=[expression] ':' ':' c=[expression] { _PyAST_Slice1(a, b, c, EXTRA) }
+slice0[expr_ty]:
+    | a=[expression] ':' b=[expression] ':' ':' c=[expression] { _PyAST_ClosedSlice(a, b, c, EXTRA) }
     | a=[expression] ':' b=[expression] c=[':' d=[expression] { d }] { _PyAST_Slice(a, b, c, EXTRA) }
     | a=named_expression { a }
+
+slices1[expr_ty]:
+    | a=slice1 !',' { a }
+    | a[asdl_expr_seq*]=','.(slice1 | starred_expression1)+ [','] { _PyAST_Tuple(a, Load, EXTRA) }
+
+starred_expression1[expr_ty]:
+    | a=starred_expression { _PyAST_From1(a, EXTRA) }
+
+slice1[expr_ty]:
+    | a=[expression] ':' b=[expression] ':' ':' c=[expression] { _PyAST_ClosedSlice1(a, b, c, EXTRA) }
+    | a=[expression] ':' b=[expression] c=[':' d=[expression] { d }] { _PyAST_Slice1(a, b, c, EXTRA) }
+    | a=named_expression { _PyAST_From1(a, EXTRA) }
+
 
 atom[expr_ty]:
     | NAME
@@ -1069,8 +1103,8 @@ star_target[expr_ty] (memo):
 
 target_with_star_atom[expr_ty] (memo):
     | a=t_primary '.' b=NAME !t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Store, EXTRA) }
-    | a=t_primary '[' b=slices ']' !t_lookahead { _PyAST_Subscript(a, b, Store, EXTRA) }
-    | a=t_primary '{' b=slices '}' !t_lookahead { _PyAST_Subscript1(a, b, Store, EXTRA) }
+    | a=t_primary '[' b=slices0 ']' !t_lookahead { _PyAST_Subscript(a, b, Store, EXTRA) }
+    | a=t_primary '{' b=slices1 '}' !t_lookahead { _PyAST_Subscript(a, b, Store, EXTRA) }
     | star_atom
 
 star_atom[expr_ty]:
@@ -1086,13 +1120,13 @@ single_target[expr_ty]:
 
 single_subscript_attribute_target[expr_ty]:
     | a=t_primary '.' b=NAME !t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Store, EXTRA) }
-    | a=t_primary '[' b=slices ']' !t_lookahead { _PyAST_Subscript(a, b, Store, EXTRA) }
-    | a=t_primary '{' b=slices '}' !t_lookahead { _PyAST_Subscript1(a, b, Store, EXTRA) }
+    | a=t_primary '[' b=slices0 ']' !t_lookahead { _PyAST_Subscript(a, b, Store, EXTRA) }
+    | a=t_primary '{' b=slices1 '}' !t_lookahead { _PyAST_Subscript(a, b, Store, EXTRA) }
 
 t_primary[expr_ty]:
     | a=t_primary '.' b=NAME &t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Load, EXTRA) }
-    | a=t_primary '[' b=slices ']' &t_lookahead { _PyAST_Subscript(a, b, Load, EXTRA) }
-    | a=t_primary '{' b=slices '}' &t_lookahead { _PyAST_Subscript1(a, b, Load, EXTRA) }
+    | a=t_primary '[' b=slices0 ']' &t_lookahead { _PyAST_Subscript(a, b, Load, EXTRA) }
+    | a=t_primary '{' b=slices1 '}' &t_lookahead { _PyAST_Subscript(a, b, Load, EXTRA) }
     | a=t_primary b=genexp &t_lookahead {
         _PyAST_Call(a, CHECK(asdl_expr_seq*, (asdl_expr_seq*)_PyPegen_singleton_seq(p, b)), NULL, EXTRA) }
     | a=t_primary '(' b=[arguments] ')' &t_lookahead {
@@ -1111,8 +1145,8 @@ del_targets[asdl_expr_seq*]: a[asdl_expr_seq*]=','.del_target+ [','] { a }
 
 del_target[expr_ty] (memo):
     | a=t_primary '.' b=NAME !t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Del, EXTRA) }
-    | a=t_primary '[' b=slices ']' !t_lookahead { _PyAST_Subscript(a, b, Del, EXTRA) }
-    | a=t_primary '{' b=slices '}' !t_lookahead { _PyAST_Subscript1(a, b, Del, EXTRA) }
+    | a=t_primary '[' b=slices0 ']' !t_lookahead { _PyAST_Subscript(a, b, Del, EXTRA) }
+    | a=t_primary '{' b=slices1 '}' !t_lookahead { _PyAST_Subscript(a, b, Del, EXTRA) }
     | del_t_atom
 
 del_t_atom[expr_ty]:
