@@ -329,6 +329,11 @@ extern int _Py_GetTicksPerSecond(long *ticks_per_second);
 // Export for '_testcapi' shared extension
 PyAPI_FUNC(int) _Py_IsValidFD(int fd);
 
+#ifdef MS_WINDOWS
+size_t _Py_LimitConsoleWriteSize(const void *buf, size_t requested_size,
+                                 size_t cap_size);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
