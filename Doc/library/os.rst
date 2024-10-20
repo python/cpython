@@ -4260,10 +4260,6 @@ These functions may be used to create and manage processes.
               execvp(file, args)
               execvpe(file, args, env)
 
-   (Note that the :mod:`subprocess` module provides more powerful facilities for
-   spawning new processes and retrieving their results; using that module is
-   preferable to using these functions.)
-
    These functions all execute a new program, replacing the current process; they
    do not return.  On Unix, the new executable is loaded into the current process,
    and will have the same process id as the caller.  Errors will be reported as
