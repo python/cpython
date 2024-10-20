@@ -642,9 +642,9 @@ Changes in the Python API
   away from *fork* to *forkserver* on POSIX platforms which support passing file
   descriptors over Unix pipes such as Linux. Windows and macOS are keep *spawn*
   as their default method.
-  If you require the threading incompatible *fork*,
+  If you require the threading incompatible *fork* start method,
   which can run :ref:`unpicklable functions <pickle-picklable>`,
-  start method you must explicitly specify it when using :mod:`multiprocessing`
+  you must explicitly specify it when using :mod:`multiprocessing`
   or :mod:`concurrent.futures` APIs.
   Code running pickable functions on these platforms without explicitly opting
   into the *fork* method will now raise :exc:`pickle.PicklingError`.
