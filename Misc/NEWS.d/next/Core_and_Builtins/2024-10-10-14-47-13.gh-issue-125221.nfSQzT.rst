@@ -1,2 +1,0 @@
-Fix possible race condition when calling :meth:`~object.__reduce_ex__` for the
-first time in the free threading build.
