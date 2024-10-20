@@ -210,6 +210,11 @@ argparse
   interpreter was instructed to find the ``__main__`` module code.
   (Contributed by Serhiy Storchaka and Alyssa Coghlan in :gh:`66436`.)
 
+* Introduced the optional *suggest_on_error* parameter to
+  :class:`argparse.ArgumentParser`, enabling suggestions for argument choices
+  and subparser names if mistyped by the user.
+  (Contributed by Savannah Ostrowski in :gh:`124456`)
+
 ast
 ---
 
@@ -427,6 +432,12 @@ asyncio
 
 Deprecated
 ==========
+
+* :mod:`argparse`:
+  Passing the undocumented keyword argument *prefix_chars* to
+  :meth:`~argparse.ArgumentParser.add_argument_group` is now
+  deprecated.
+  (Contributed by Savannah Ostrowski in :gh:`125563`.)
 
 * :mod:`asyncio`:
   :func:`!asyncio.iscoroutinefunction` is deprecated
