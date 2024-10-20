@@ -29,7 +29,7 @@ Features and minimum versions required to build CPython:
 
 * Tcl/Tk 8.5.12 for the :mod:`tkinter` module.
 
-* Autoconf 2.71 and aclocal 1.16.4 are required to regenerate the
+* Autoconf 2.71 and aclocal 1.16.5 are required to regenerate the
   :file:`configure` script.
 
 .. versionchanged:: 3.1
@@ -56,7 +56,7 @@ Features and minimum versions required to build CPython:
    Tcl/Tk version 8.5.12 is now required for the :mod:`tkinter` module.
 
 .. versionchanged:: 3.13
-   Autoconf 2.71, aclocal 1.16.4 and SQLite 3.15.2 are now required.
+   Autoconf 2.71, aclocal 1.16.5 and SQLite 3.15.2 are now required.
 
 See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
 support".
@@ -183,12 +183,6 @@ General Options
 
    See :envvar:`PYTHONCOERCECLOCALE` and the :pep:`538`.
 
-.. option:: --without-freelists
-
-   Disable all freelists except the empty tuple singleton.
-
-   .. versionadded:: 3.11
-
 .. option:: --with-platlibdir=DIRNAME
 
    Python library directory name (default is ``lib``).
@@ -299,7 +293,7 @@ General Options
    Defines the ``Py_GIL_DISABLED`` macro and adds ``"t"`` to
    :data:`sys.abiflags`.
 
-   See :ref:`free-threaded-cpython` for more detail.
+   See :ref:`whatsnew313-free-threaded-cpython` for more detail.
 
    .. versionadded:: 3.13
 

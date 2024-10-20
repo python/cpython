@@ -310,13 +310,30 @@ framelocalsproxy_dealloc(PyObject *self)
 static PyObject *
 framelocalsproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+    if (PyTuple_GET_SIZE(args) != 1) {
+        PyErr_Format(PyExc_TypeError,
+                     "FrameLocalsProxy expected 1 argument, got %zd",
+                     PyTuple_GET_SIZE(args));
+        return NULL;
+    }
+    PyObject *item = PyTuple_GET_ITEM(args, 0);
+
+    if (!PyFrame_Check(item)) {
+        PyErr_Format(PyExc_TypeError, "expect frame, not %T", item);
+        return NULL;
+    }
+    PyFrameObject *frame = (PyFrameObject*)item;
+
+    if (kwds != NULL && PyDict_Size(kwds) != 0) {
+        PyErr_SetString(PyExc_TypeError,
+                        "FrameLocalsProxy takes no keyword arguments");
+        return 0;
+    }
+
     PyFrameLocalsProxyObject *self = (PyFrameLocalsProxyObject *)type->tp_alloc(type, 0);
     if (self == NULL) {
         return NULL;
     }
-
-    PyFrameObject *frame = (PyFrameObject*)PyTuple_GET_ITEM(args, 0);
-    assert(PyFrame_Check(frame));
 
     ((PyFrameLocalsProxyObject*)self)->frame = (PyFrameObject*)Py_NewRef(frame);
 
@@ -1060,9 +1077,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
     if (co_code == NULL) {
         return NULL;
     }
-    _Py_CODEUNIT *code = (_Py_CODEUNIT *)PyBytes_AS_STRING(co_code);
     int64_t *stacks = PyMem_New(int64_t, len+1);
-    int i, j, opcode;
 
     if (stacks == NULL) {
         PyErr_NoMemory();
@@ -1077,22 +1092,25 @@ mark_stacks(PyCodeObject *code_obj, int len)
     while (todo) {
         todo = 0;
         /* Scan instructions */
-        for (i = 0; i < len;) {
+        for (int i = 0; i < len;) {
+            int j;
             int64_t next_stack = stacks[i];
-            opcode = _Py_GetBaseOpcode(code_obj, i);
+            _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(code_obj, i);
+            int opcode = inst.op.code;
             int oparg = 0;
             while (opcode == EXTENDED_ARG) {
-                oparg = (oparg << 8) | code[i].op.arg;
+                oparg = (oparg << 8) | inst.op.arg;
                 i++;
-                opcode = _Py_GetBaseOpcode(code_obj, i);
+                inst = _Py_GetBaseCodeUnit(code_obj, i);
+                opcode = inst.op.code;
                 stacks[i] = next_stack;
             }
+            oparg = (oparg << 8) | inst.op.arg;
             int next_i = i + _PyOpcode_Caches[opcode] + 1;
             if (next_stack == UNINITIALIZED) {
                 i = next_i;
                 continue;
             }
-            oparg = (oparg << 8) | code[i].op.arg;
             switch (opcode) {
                 case POP_JUMP_IF_FALSE:
                 case POP_JUMP_IF_TRUE:
@@ -1100,7 +1118,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 case POP_JUMP_IF_NOT_NONE:
                 {
                     int64_t target_stack;
-                    int j = next_i + oparg;
+                    j = next_i + oparg;
                     assert(j < len);
                     next_stack = pop_value(next_stack);
                     target_stack = next_stack;
@@ -1624,8 +1642,6 @@ frame_dealloc(PyFrameObject *f)
     }
 
     Py_TRASHCAN_BEGIN(f, frame_dealloc);
-    PyObject *co = NULL;
-
     /* GH-106092: If f->f_frame was on the stack and we reached the maximum
      * nesting depth for deallocations, the trashcan may have delayed this
      * deallocation until after f->f_frame is freed. Avoid dereferencing
@@ -1634,10 +1650,8 @@ frame_dealloc(PyFrameObject *f)
 
     /* Kill all local variables including specials, if we own them */
     if (f->f_frame == frame && frame->owner == FRAME_OWNED_BY_FRAME_OBJECT) {
-        /* Don't clear code object until the end */
-        co = frame->f_executable;
-        frame->f_executable = NULL;
-        Py_CLEAR(frame->f_funcobj);
+        PyStackRef_CLEAR(frame->f_executable);
+        PyStackRef_CLEAR(frame->f_funcobj);
         Py_CLEAR(frame->f_locals);
         _PyStackRef *locals = _PyFrame_GetLocalsArray(frame);
         _PyStackRef *sp = frame->stackpointer;
@@ -1651,7 +1665,6 @@ frame_dealloc(PyFrameObject *f)
     Py_CLEAR(f->f_extra_locals);
     Py_CLEAR(f->f_locals_cache);
     PyObject_GC_Del(f);
-    Py_XDECREF(co);
     Py_TRASHCAN_END;
 }
 
@@ -1794,9 +1807,8 @@ static void
 init_frame(_PyInterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
 {
     PyCodeObject *code = (PyCodeObject *)func->func_code;
-    _PyFrame_Initialize(frame, (PyFunctionObject*)Py_NewRef(func),
-                        Py_XNewRef(locals), code, 0);
-    frame->previous = NULL;
+    _PyFrame_Initialize(frame, PyStackRef_FromPyObjectNew(func),
+                        Py_XNewRef(locals), code, 0, NULL);
 }
 
 PyFrameObject*
@@ -1866,14 +1878,15 @@ frame_init_get_vars(_PyInterpreterFrame *frame)
     PyCodeObject *co = _PyFrame_GetCode(frame);
     int lasti = _PyInterpreterFrame_LASTI(frame);
     if (!(lasti < 0 && _PyCode_CODE(co)->op.code == COPY_FREE_VARS
-          && PyFunction_Check(frame->f_funcobj)))
+          && PyStackRef_FunctionCheck(frame->f_funcobj)))
     {
         /* Free vars are initialized */
         return;
     }
 
     /* Free vars have not been initialized -- Do that */
-    PyObject *closure = ((PyFunctionObject *)frame->f_funcobj)->func_closure;
+    PyFunctionObject *func = _PyFrame_GetFunction(frame);
+    PyObject *closure = func->func_closure;
     int offset = PyUnstable_Code_GetFirstFree(co);
     for (int i = 0; i < co->co_nfreevars; ++i) {
         PyObject *o = PyTuple_GET_ITEM(closure, i);

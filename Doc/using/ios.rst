@@ -53,17 +53,17 @@ the simulator or a physical device.
 
 Information about the specific runtime environment, including the iOS version,
 device model, and whether the device is a simulator, can be obtained using
-:func:`platform.ios_ver()`. :func:`platform.system()` will report ``iOS`` or
+:func:`platform.ios_ver`. :func:`platform.system` will report ``iOS`` or
 ``iPadOS``, depending on the device.
 
-:func:`os.uname()` reports kernel-level details; it will report a name of
+:func:`os.uname` reports kernel-level details; it will report a name of
 ``Darwin``.
 
 Standard library availability
 -----------------------------
 
 The Python standard library has some notable omissions and restrictions on
-iOS. See the :ref:`API availability guide for iOS <iOS-availability>` for
+iOS. See the :ref:`API availability guide for iOS <mobile-availability>` for
 details.
 
 Binary extension modules

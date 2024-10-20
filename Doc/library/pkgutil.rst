@@ -26,7 +26,8 @@ support.
       __path__ = extend_path(__path__, __name__)
 
    For each directory on :data:`sys.path` that has a subdirectory that matches the
-   package name, add the subdirectory to the package's :attr:`__path__`.  This is useful
+   package name, add the subdirectory to the package's
+   :attr:`~module.__path__`. This is useful
    if one wants to distribute different parts of a single logical package as multiple
    directories.
 
