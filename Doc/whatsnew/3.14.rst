@@ -1,6 +1,6 @@
 
 ****************************
-  What's New In Python 3.14
+  What's new in Python 3.14
 ****************************
 
 :Editor: TBD
@@ -56,7 +56,7 @@ For full details, see the :ref:`changelog <changelog>`.
    so it's worth checking back even after reading earlier versions.
 
 
-Summary -- Release highlights
+Summary -- release highlights
 =============================
 
 .. This section singles out the most important changes in Python 3.14.
@@ -67,12 +67,12 @@ Summary -- Release highlights
 
 
 
-New Features
+New features
 ============
 
-.. _whatsnew-314-pep649:
+.. _whatsnew314-pep649:
 
-PEP 649: Deferred Evaluation of Annotations
+PEP 649: deferred evaluation of annotations
 -------------------------------------------
 
 The :term:`annotations <annotation>` on functions, classes, and modules are no
@@ -150,12 +150,12 @@ In Python 3.7, :pep:`563` introduced the ``from __future__ import annotations``
 directive, which turns all annotations into strings. This directive is now
 considered deprecated and it is expected to be removed in a future version of Python.
 However, this removal will not happen until after Python 3.13, the last version of
-Python without deferred evaluation of annotations, reaches its end of life.
+Python without deferred evaluation of annotations, reaches its end of life in 2029.
 In Python 3.14, the behavior of code using ``from __future__ import annotations``
 is unchanged.
 
 
-Improved Error Messages
+Improved error messages
 -----------------------
 
 * When unpacking assignment fails due to incorrect number of variables, the
@@ -172,16 +172,16 @@ Improved Error Messages
      ValueError: too many values to unpack (expected 3, got 4)
 
 
-Other Language Changes
+Other language changes
 ======================
 
 * Incorrect usage of :keyword:`await` and asynchronous comprehensions
   is now detected even if the code is optimized away by the :option:`-O`
-  command line option. For example, ``python -O -c 'assert await 1'``
+  command-line option. For example, ``python -O -c 'assert await 1'``
   now produces a :exc:`SyntaxError`. (Contributed by Jelle Zijlstra in :gh:`121637`.)
 
 * Writes to ``__debug__`` are now detected even if the code is optimized
-  away by the :option:`-O` command line option. For example,
+  away by the :option:`-O` command-line option. For example,
   ``python -O -c 'assert (__debug__ := 1)'`` now produces a
   :exc:`SyntaxError`. (Contributed by Irit Katriel in :gh:`122245`.)
 
@@ -191,7 +191,7 @@ Other Language Changes
   (Contributed by Serhiy Storchaka in :gh:`84978`.)
 
 
-New Modules
+New modules
 ===========
 
 * :mod:`annotationlib`: For introspecting :term:`annotations <annotation>`.
@@ -199,7 +199,7 @@ New Modules
   (Contributed by Jelle Zijlstra in :gh:`119180`.)
 
 
-Improved Modules
+Improved modules
 ================
 
 argparse
@@ -210,11 +210,16 @@ argparse
   interpreter was instructed to find the ``__main__`` module code.
   (Contributed by Serhiy Storchaka and Alyssa Coghlan in :gh:`66436`.)
 
+* Introduced the optional *suggest_on_error* parameter to
+  :class:`argparse.ArgumentParser`, enabling suggestions for argument choices
+  and subparser names if mistyped by the user.
+  (Contributed by Savannah Ostrowski in :gh:`124456`)
+
 ast
 ---
 
 * Add :func:`ast.compare` for comparing two ASTs.
-  (Contributed by Batuhan Taskaya and Jeremy Hylton in :issue:`15987`.)
+  (Contributed by Batuhan Taskaya and Jeremy Hylton in :gh:`60191`.)
 
 * Add support for :func:`copy.replace` for AST nodes.
   (Contributed by Bénédikt Tran in :gh:`121141`.)
@@ -225,6 +230,14 @@ ast
 * The ``repr()`` output for AST nodes now includes more information.
   (Contributed by Tomas R in :gh:`116022`.)
 
+concurrent.futures
+------------------
+
+* Add :class:`~concurrent.futures.InterpreterPoolExecutor`,
+  which exposes "subinterpreters (multiple Python interpreters in the
+  same process) to Python code.  This is separate from the proposed API
+  in :pep:`734`.
+  (Contributed by Eric Snow in :gh:`124548`.)
 
 ctypes
 ------
@@ -239,6 +252,18 @@ ctypes
   to help match a non-default ABI.
   (Contributed by Petr Viktorin in :gh:`97702`.)
 
+decimal
+-------
+
+* Add alternative :class:`~decimal.Decimal` constructor
+  :meth:`Decimal.from_number() <decimal.Decimal.from_number>`.
+  (Contributed by Serhiy Storchaka in :gh:`121798`.)
+
+datetime
+--------
+
+* Add :meth:`datetime.time.strptime` and :meth:`datetime.date.strptime`.
+  (Contributed by Wannes Boeykens in :gh:`41431`.)
 
 dis
 ---
@@ -248,9 +273,10 @@ dis
   This feature is added to the following interfaces via the *show_positions*
   keyword argument:
 
-  - :class:`dis.Bytecode`,
-  - :func:`dis.dis`, :func:`dis.distb`, and
-  - :func:`dis.disassemble`.
+  - :class:`dis.Bytecode`
+  - :func:`dis.dis`
+  - :func:`dis.distb`
+  - :func:`dis.disassemble`
 
   This feature is also exposed via :option:`dis --show-positions`.
   (Contributed by Bénédikt Tran in :gh:`123165`.)
@@ -262,6 +288,10 @@ fractions
 * Add support for converting any objects that have the
   :meth:`!as_integer_ratio` method to a :class:`~fractions.Fraction`.
   (Contributed by Serhiy Storchaka in :gh:`82017`.)
+
+* Add alternative :class:`~fractions.Fraction` constructor
+  :meth:`Fraction.from_number() <fractions.Fraction.from_number>`.
+  (Contributed by Serhiy Storchaka in :gh:`121797`.)
 
 
 functools
@@ -281,6 +311,18 @@ http
   (Contributed by Yorik Hansen in :gh:`123430`.)
 
 
+inspect
+-------
+
+* :func:`inspect.signature` takes a new argument *annotation_format* to control
+  the :class:`annotationlib.Format` used for representing annotations.
+  (Contributed by Jelle Zijlstra in :gh:`101552`.)
+
+* :meth:`inspect.Signature.format` takes a new argument *unquote_annotations*.
+  If true, string :term:`annotations <annotation>` are displayed without surrounding quotes.
+  (Contributed by Jelle Zijlstra in :gh:`101552`.)
+
+
 json
 ----
 
@@ -288,7 +330,8 @@ json
   of the error.
   (Contributed by Serhiy Storchaka in :gh:`122163`.)
 
-* Enable the :mod:`json` module to work as a script using the :option:`-m` switch: ``python -m json``.
+* Enable the :mod:`json` module to work as a script using the :option:`-m`
+  switch: :program:`python -m json`.
   See the :ref:`JSON command-line interface <json-commandline>` documentation.
   (Contributed by Trey Hunner in :gh:`122873`.)
 
@@ -302,12 +345,6 @@ operator
   to ``obj is not None``.
   (Contributed by Raymond Hettinger and Nico Mexis in :gh:`115808`.)
 
-
-datetime
---------
-
-* Add :meth:`datetime.time.strptime` and :meth:`datetime.date.strptime`.
-  (Contributed by Wannes Boeykens in :gh:`41431`.)
 
 os
 --
@@ -335,11 +372,11 @@ pathlib
 pdb
 ---
 
-* Hard-coded breakpoints (:func:`breakpoint` and :func:`pdb.set_trace`) now
+* Hardcoded breakpoints (:func:`breakpoint` and :func:`pdb.set_trace`) now
   reuse the most recent :class:`~pdb.Pdb` instance that calls
   :meth:`~pdb.Pdb.set_trace`, instead of creating a new one each time.
   As a result, all the instance specific data like :pdbcmd:`display` and
-  :pdbcmd:`commands` are preserved across hard-coded breakpoints.
+  :pdbcmd:`commands` are preserved across hardcoded breakpoints.
   (Contributed by Tian Gao in :gh:`121450`.)
 
 * Add a new argument *mode* to :class:`pdb.Pdb`. Disable the ``restart``
@@ -356,14 +393,22 @@ pickle
   of the error.
   (Contributed by Serhiy Storchaka in :gh:`122213`.)
 
+pydoc
+-----
+
+* :term:`Annotations <annotation>` in help output are now usually
+  displayed in a format closer to that in the original source.
+  (Contributed by Jelle Zijlstra in :gh:`101552`.)
+
+
 symtable
 --------
 
 * Expose the following :class:`symtable.Symbol` methods:
 
-  * :meth:`~symtable.Symbol.is_free_class`
-  * :meth:`~symtable.Symbol.is_comp_iter`
   * :meth:`~symtable.Symbol.is_comp_cell`
+  * :meth:`~symtable.Symbol.is_comp_iter`
+  * :meth:`~symtable.Symbol.is_free_class`
 
   (Contributed by Bénédikt Tran in :gh:`120029`.)
 
@@ -387,6 +432,12 @@ asyncio
 
 Deprecated
 ==========
+
+* :mod:`argparse`:
+  Passing the undocumented keyword argument *prefix_chars* to
+  :meth:`~argparse.ArgumentParser.add_argument_group` is now
+  deprecated.
+  (Contributed by Savannah Ostrowski in :gh:`125563`.)
 
 * :mod:`asyncio`:
   :func:`!asyncio.iscoroutinefunction` is deprecated
@@ -442,11 +493,11 @@ ast
 * Remove the following classes. They were all deprecated since Python 3.8,
   and have emitted deprecation warnings since Python 3.12:
 
+  * :class:`!ast.Bytes`
+  * :class:`!ast.Ellipsis`
+  * :class:`!ast.NameConstant`
   * :class:`!ast.Num`
   * :class:`!ast.Str`
-  * :class:`!ast.Bytes`
-  * :class:`!ast.NameConstant`
-  * :class:`!ast.Ellipsis`
 
   Use :class:`ast.Constant` instead. As a consequence of these removals,
   user-defined ``visit_Num``, ``visit_Str``, ``visit_Bytes``,
@@ -471,16 +522,16 @@ asyncio
 * Remove the following classes and functions. They were all deprecated and
   emitted deprecation warnings since Python 3.12:
 
-  * :class:`!asyncio.AbstractChildWatcher`
-  * :class:`!asyncio.SafeChildWatcher`
-  * :class:`!asyncio.MultiLoopChildWatcher`
-  * :class:`!asyncio.FastChildWatcher`
-  * :class:`!asyncio.ThreadedChildWatcher`
-  * :class:`!asyncio.PidfdChildWatcher`
-  * :meth:`!asyncio.AbstractEventLoopPolicy.get_child_watcher`
-  * :meth:`!asyncio.AbstractEventLoopPolicy.set_child_watcher`
   * :func:`!asyncio.get_child_watcher`
   * :func:`!asyncio.set_child_watcher`
+  * :meth:`!asyncio.AbstractEventLoopPolicy.get_child_watcher`
+  * :meth:`!asyncio.AbstractEventLoopPolicy.set_child_watcher`
+  * :class:`!asyncio.AbstractChildWatcher`
+  * :class:`!asyncio.FastChildWatcher`
+  * :class:`!asyncio.MultiLoopChildWatcher`
+  * :class:`!asyncio.PidfdChildWatcher`
+  * :class:`!asyncio.SafeChildWatcher`
+  * :class:`!asyncio.ThreadedChildWatcher`
 
   (Contributed by Kumar Aditya in :gh:`120804`.)
 
@@ -587,14 +638,20 @@ Changes in the Python API
   Wrap it in :func:`staticmethod` if you want to preserve the old behavior.
   (Contributed by Serhiy Storchaka and Dominykas Grigonis in :gh:`121027`.)
 
-Build Changes
+* The :func:`locale.nl_langinfo` function now sets temporarily the ``LC_CTYPE``
+  locale in some cases.
+  This temporary change affects other threads.
+  (Contributed by Serhiy Storchaka in :gh:`69998`.)
+
+
+Build changes
 =============
 
 
-C API Changes
+C API changes
 =============
 
-New Features
+New features
 ------------
 
 * Add :c:func:`PyLong_GetSign` function to get the sign of :class:`int` objects.
@@ -604,17 +661,17 @@ New Features
   object:
 
   * :c:func:`PyUnicodeWriter_Create`
+  * :c:func:`PyUnicodeWriter_DecodeUTF8Stateful`
   * :c:func:`PyUnicodeWriter_Discard`
   * :c:func:`PyUnicodeWriter_Finish`
-  * :c:func:`PyUnicodeWriter_WriteChar`
-  * :c:func:`PyUnicodeWriter_WriteUTF8`
-  * :c:func:`PyUnicodeWriter_WriteUCS4`
-  * :c:func:`PyUnicodeWriter_WriteWideChar`
-  * :c:func:`PyUnicodeWriter_WriteStr`
-  * :c:func:`PyUnicodeWriter_WriteRepr`
-  * :c:func:`PyUnicodeWriter_WriteSubstring`
   * :c:func:`PyUnicodeWriter_Format`
-  * :c:func:`PyUnicodeWriter_DecodeUTF8Stateful`
+  * :c:func:`PyUnicodeWriter_WriteChar`
+  * :c:func:`PyUnicodeWriter_WriteRepr`
+  * :c:func:`PyUnicodeWriter_WriteStr`
+  * :c:func:`PyUnicodeWriter_WriteSubstring`
+  * :c:func:`PyUnicodeWriter_WriteUCS4`
+  * :c:func:`PyUnicodeWriter_WriteUTF8`
+  * :c:func:`PyUnicodeWriter_WriteWideChar`
 
   (Contributed by Victor Stinner in :gh:`119182`.)
 
@@ -635,14 +692,14 @@ New Features
 * Add new functions to convert C ``<stdint.h>`` numbers from/to Python
   :class:`int`:
 
-  * :c:func:`PyLong_FromInt32`
-  * :c:func:`PyLong_FromInt64`
-  * :c:func:`PyLong_FromUInt32`
-  * :c:func:`PyLong_FromUInt64`
   * :c:func:`PyLong_AsInt32`
   * :c:func:`PyLong_AsInt64`
   * :c:func:`PyLong_AsUInt32`
   * :c:func:`PyLong_AsUInt64`
+  * :c:func:`PyLong_FromInt32`
+  * :c:func:`PyLong_FromInt64`
+  * :c:func:`PyLong_FromUInt32`
+  * :c:func:`PyLong_FromUInt64`
 
   (Contributed by Victor Stinner in :gh:`120389`.)
 
@@ -665,20 +722,20 @@ New Features
 
 * Add functions to configure the Python initialization (:pep:`741`):
 
+  * :c:func:`Py_InitializeFromInitConfig`
+  * :c:func:`PyInitConfig_AddModule`
   * :c:func:`PyInitConfig_Create`
   * :c:func:`PyInitConfig_Free`
+  * :c:func:`PyInitConfig_FreeStrList`
   * :c:func:`PyInitConfig_GetError`
   * :c:func:`PyInitConfig_GetExitCode`
-  * :c:func:`PyInitConfig_HasOption`
   * :c:func:`PyInitConfig_GetInt`
   * :c:func:`PyInitConfig_GetStr`
   * :c:func:`PyInitConfig_GetStrList`
-  * :c:func:`PyInitConfig_FreeStrList`
+  * :c:func:`PyInitConfig_HasOption`
   * :c:func:`PyInitConfig_SetInt`
   * :c:func:`PyInitConfig_SetStr`
   * :c:func:`PyInitConfig_SetStrList`
-  * :c:func:`PyInitConfig_AddModule`
-  * :c:func:`Py_InitializeFromInitConfig`
 
   (Contributed by Victor Stinner in :gh:`107954`.)
 
@@ -686,6 +743,10 @@ New Features
   superclass identification, which attempts to resolve the `type checking issue
   <https://peps.python.org/pep-0630/#type-checking>`__ mentioned in :pep:`630`
   (:gh:`124153`).
+
+* Add :c:func:`PyUnicode_Equal` function to the limited C API:
+  test if two strings are equal.
+  (Contributed by Victor Stinner in :gh:`124502`.)
 
 
 Porting to Python 3.14
