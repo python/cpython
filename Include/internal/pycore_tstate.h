@@ -41,6 +41,10 @@ typedef struct _PyThreadStateImpl {
         // If set, don't use per-thread refcounts
         int is_finalized;
     } refcounts;
+
+    // When >1, code objects do not immortalize and intern their non-string
+    // constants.
+    int suppress_immortalization;
 #endif
 
 #if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
