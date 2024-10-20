@@ -26,6 +26,119 @@ The following functions are provided by this module.  Except when explicitly
 noted otherwise, all return values are floats.
 
 
+Summary
+-------
+
+Number-theoretic and representation functions
++++++++++++++++++++++++++++++++++++++++++++++
+=======================  ===============================================================
+:func:`ceil`             Ceiling of *x*, the smallest integer greater than or equal to *x*.
+:func:`comb`             Number of ways to choose *k* items from *n* items without repetition and without order.
+:func:`copysign`         Magnitude (absolute value) of *x* with the sign of *y*.
+:func:`fabs`             Absolute value.
+:func:`factorial`        *n* factorial.
+:func:`floor`            Floor of *x*, the largest integer less than or equal to *x*.
+:func:`fma`              Fused multiply-add operation.
+:func:`fmod`             XXX.
+:func:`frexp`            Mantissa and exponent.
+:func:`fsum`             Accurate floating-point sum of values.
+:func:`gcd`              Greatest common divisor.
+:func:`isclose`          Check if the values *a* and *b* are close to each other.
+:func:`isfinite`         Check if *x* is neither an infinity nor a NaN.
+:func:`isinf`            Check if if *x* is a positive or negative infinity.
+:func:`isnan`            Check if if *x* is a NaN  (not a number).
+:func:`isqrt`            Integer square root of a nonnegative integer.
+:func:`lcm`              Least common multiple.
+:func:`ldexp`            inverse of function :func:`frexp`.
+:func:`modf`             Fractional and integer parts.
+:func:`nextafter`        Floating-point value *steps* steps after *x* towards *y*.
+:func:`perm`             Number of ways to choose *k* items from *n* items without repetition and with order.
+:func:`prod`             Product of all the elements.
+:func:`remainder`        Remainder of *x* with respect to *y*.
+:func:`sumprod`          Sum of products from two iterables.
+:func:`trunc`            Integer part.
+:func:`ulp`              Value of the least significant bit.
+=======================  ===============================================================
+
+
+Power and logarithmic functions
++++++++++++++++++++++++++++++++
+
+=======================  ===============================================================
+:func:`cbrt`             Cube root.
+:func:`exp`              *e* raised to the power *x*.
+:func:`exp2`             *2* raised to the power *x*.
+:func:`expm1`            *e* raised to the power *x*, minus 1.
+:func:`log`              Logarithm of *x* to the given base (*e* by default).
+:func:`log1p`            Natural logarithm of *1+x* (base *e*).
+:func:`log2`             Base-2 logarithm.
+:func:`log10`            Base-10 logarithm.
+:func:`pow`              ``x`` raised to the power ``y``.
+:func:`sqrt`             Square root.
+=======================  ===============================================================
+
+
+Trigonometric functions
++++++++++++++++++++++++
+
+=======================  ===============================================================
+:func:`acos`             Arc cosine.
+:func:`asin`             Arc sine.
+:func:`atan`             Arc tangent.
+:func:`atan2`            ``atan(y / x)``.
+:func:`cos`              Cosine.
+:func:`dist`             Euclidean distance.
+:func:`hypot`            Euclidean norm.
+:func:`sin`              Sine.
+:func:`tan`              Tangent.
+=======================  ===============================================================
+
+
+Angular conversion
+++++++++++++++++++
+
+=======================  ===============================================================
+:func:`degrees`          Convert angle from radians to degrees.
+:func:`radians`          Convert angle from degrees to radians.
+=======================  ===============================================================
+
+
+Hyperbolic functions
+++++++++++++++++++++
+
+=======================  ===============================================================
+:func:`acosh`            Inverse hyperbolic cosine.
+:func:`asinh`            Inverse hyperbolic sine.
+:func:`atanh`            Inverse hyperbolic tangent.
+:func:`cosh`             Hyperbolic cosine.
+:func:`sinh`             Hyperbolic sine.
+:func:`tanh`             Hyperbolic tangent.
+=======================  ===============================================================
+
+
+Special functions
++++++++++++++++++
+
+=======================  ===============================================================
+:func:`erf`              `Error function <https://en.wikipedia.org/wiki/Error_function>`_.
+:func:`erfc`             `Complementary error function <https://en.wikipedia.org/wiki/Error_function>`_.
+:func:`gamma`            `Gamma function <https://en.wikipedia.org/wiki/Gamma_function>`_.
+:func:`lgamma`           Natural logarithm of the absolute value of the `Gamma function <https://en.wikipedia.org/wiki/Gamma_function>`_.
+=======================  ===============================================================
+
+
+Constants
++++++++++
+
+=======================  ===============================================================
+:data:`pi`               *π* = 3.141592...
+:func:`e`                *e* = 2.718281...
+:func:`tau`              *τ* = 2\ *π* = 6.283185....
+:func:`inf`              Positive infinity.
+:func:`nan`              "Not a number" (NaN).
+=======================  ===============================================================
+
+
 Number-theoretic and representation functions
 ---------------------------------------------
 
