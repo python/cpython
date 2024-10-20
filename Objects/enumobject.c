@@ -275,12 +275,14 @@ enum_next(enumobject *en)
 static PyObject *
 enum_reduce(enumobject *en, PyObject *Py_UNUSED(ignored))
 {
+    PyObject * result;
     Py_BEGIN_CRITICAL_SECTION(en);
     if (en->en_longindex != NULL)
-        return Py_BuildValue("O(OO)", Py_TYPE(en), en->en_sit, en->en_longindex);
+        result = Py_BuildValue("O(OO)", Py_TYPE(en), en->en_sit, en->en_longindex);
     else
-        return Py_BuildValue("O(On)", Py_TYPE(en), en->en_sit, en->en_index);
+        result = Py_BuildValue("O(On)", Py_TYPE(en), en->en_sit, en->en_index);
     Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
