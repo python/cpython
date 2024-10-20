@@ -1864,24 +1864,16 @@ thread_PyThread_start_joinable_thread(PyObject *module, PyObject *fargs,
     PyObject *func = NULL;
     int daemon = 1;
     thread_module_state *state = get_thread_state(module);
-    PyObject *hobj = NULL;
+    PyObject *hobj = Py_None;
     if (!PyArg_ParseTupleAndKeywords(fargs, fkwargs,
-                                     "O|Op:start_joinable_thread", keywords,
-                                     &func, &hobj, &daemon)) {
+                                     "O|O!?p:start_joinable_thread", keywords,
+                                     &func, state->thread_handle_type, &hobj, &daemon)) {
         return NULL;
     }
 
     if (!PyCallable_Check(func)) {
         PyErr_SetString(PyExc_TypeError,
                         "thread function must be callable");
-        return NULL;
-    }
-
-    if (hobj == NULL) {
-        hobj = Py_None;
-    }
-    else if (hobj != Py_None && !Py_IS_TYPE(hobj, state->thread_handle_type)) {
-        PyErr_SetString(PyExc_TypeError, "'handle' must be a _ThreadHandle");
         return NULL;
     }
 
