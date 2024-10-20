@@ -51,7 +51,7 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
-      - name: Install git
+      - name: Install Git
         run: |
           apt install git -yq
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
