@@ -94,7 +94,7 @@ needs_sphinx = '7.2.6'
 
 # Create table of contents entries for domain objects (e.g. functions, classes,
 # attributes, etc.). Default is True.
-toc_object_entries = False
+toc_object_entries = True
 
 # Ignore any .rst files in the includes/ directory;
 # they're embedded in pages but not rendered individually.
@@ -332,7 +332,7 @@ gettext_additional_targets = [
 html_theme = 'python_docs_theme'
 html_theme_path = ['tools']
 html_theme_options = {
-    'collapsiblesidebar': True,
+    'collapsiblesidebar': False,
     'issues_url': '/bugs.html',
     'license_url': '/license.html',
     'root_include_title': False,  # We use the version switcher instead.
