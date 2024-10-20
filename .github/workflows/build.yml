@@ -45,7 +45,10 @@ jobs:
     # Don't use ubuntu-latest but a specific version to make the job
     # reproducible: to get the same tools versions (autoconf, aclocal, ...)
     runs-on: ubuntu-24.04
-    container: ghcr.io/python/autoconf:2024.10.11.11293396815
+    container:
+      image: ghcr.io/python/autoconf:2024.10.11.11293396815
+      env:
+        DEBIAN_FRONTEND: noninteractive
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
