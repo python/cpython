@@ -3386,6 +3386,18 @@ class RawTurtle(TPen, TNavigator):
 
     @contextmanager
     def fill(self):
+        """Create a filled shape
+
+        No argument.
+
+        This function sets up a context manager that will automatically end
+        filling once exited.
+
+        Example (for a Turtle instance named turtle):
+        >>> turtle.color("black", "red")
+        >>> with turtle.poly():
+        ...     turtle.circle(60)
+        """
         self.begin_fill()
         try:
             yield
@@ -3517,6 +3529,22 @@ class RawTurtle(TPen, TNavigator):
 
     @contextmanager
     def poly(self):
+        """Record the vertices of a polygon.
+
+        No argument.
+
+        Record the vertices of a polygon. Current turtle position is first point
+        of polygon. This function sets up a context manager that will
+        automatically end recording once exited.
+
+        Example (for a Turtle instance named turtle) where we create a
+        triangle as the polygon and move the turtle 100 steps forward:
+        >>> with turtle.poly():
+        ...     for side in range(3)
+        ...         turtle.forward(50)
+        ...         turtle.right(60)
+        >>> turtle.forward(100)
+        """
         self.begin_poly()
         try:
             yield
