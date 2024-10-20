@@ -4,6 +4,7 @@ Low-level OS functionality wrappers used by pathlib.
 
 from errno import *
 import os
+import socket
 import stat
 import sys
 try:
@@ -260,3 +261,25 @@ def write_file_metadata(path, metadata, *, follow_symlinks=True):
         except OSError as why:
             if why.errno not in (EOPNOTSUPP, ENOTSUP):
                 raise
+
+
+_local_authorities = None
+
+
+def is_local_authority(authority):
+    global _local_authorities
+
+    try:
+        authority = socket.gethostbyname(authority)
+    except socket.gaierror:
+        return False
+
+    if _local_authorities is None:
+        try:
+            _local_authorities = tuple(
+                socket.gethostbyname_ex('localhost')[2] +
+                socket.gethostbyname_ex(socket.gethostname())[2])
+        except socket.gaierror:
+            _local_authorities = (socket.gethostbyname('localhost'),)
+
+    return authority in _local_authorities

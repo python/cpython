@@ -18,7 +18,7 @@ except ImportError:
     grp = None
 
 from pathlib._os import (copyfile, file_metadata_keys, read_file_metadata,
-                         write_file_metadata)
+                         write_file_metadata, is_local_authority)
 from pathlib._abc import UnsupportedOperation, PurePathBase, PathBase
 
 
@@ -895,25 +895,22 @@ class Path(PathBase, PurePath):
     @classmethod
     def from_uri(cls, uri):
         """Return a new path from the given 'file' URI."""
-        if not uri.startswith('file:'):
+        from urllib.parse import urlparse, unquote_to_bytes
+        scheme, authority, path = urlparse(uri)[:3]
+        if scheme != 'file':
             raise ValueError(f"URI does not start with 'file:': {uri!r}")
-        path = uri[5:]
-        if path[:3] == '///':
-            # Remove empty authority
-            path = path[2:]
-        elif path[:12] == '//localhost/':
-            # Remove 'localhost' authority
-            path = path[11:]
-        elif path[:2] == '//' and os.name != 'nt':
-            # UNC paths aren't supported on POSIX
-            raise ValueError(f"URI is not local: {uri!r}")
+        if authority and authority != 'localhost':
+            # Handle non-local authority
+            if os.name == 'nt':
+                path = f'//{authority}{path}'
+            elif not is_local_authority(authority):
+                raise ValueError(f"URI is not local: {uri!r}")
         if path[:3] == '///' or (path[:1] == '/' and path[2:3] in ':|'):
             # Remove slash before DOS device/UNC path
             path = path[1:]
         if path[1:2] == '|':
             # Replace bar with colon in DOS drive
             path = path[:1] + ':' + path[2:]
-        from urllib.parse import unquote_to_bytes
         path = cls(os.fsdecode(unquote_to_bytes(path)))
         if not path.is_absolute():
             raise ValueError(f"URI is not absolute: {uri!r}")
