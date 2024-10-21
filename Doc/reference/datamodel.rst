@@ -3104,6 +3104,7 @@ Emulating callable objects
    ``x(arg1, arg2, ...)`` roughly translates to ``type(x).__call__(x, arg1, ...)``.
    The :class:`object` class itself does not provide this method.
 
+
 .. _sequence-types:
 
 Emulating container types
