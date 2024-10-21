@@ -367,7 +367,7 @@ class Emitter:
     ) -> bool:
         """Replace the INSTRUCTION_SIZE macro with the size of the current instruction."""
         if uop.instruction_size is None:
-            raise analysis_error("INSTRUCTION_SIZE macro requires uop.instruction_size to be set", tkn)
+            raise analysis_error("The INSTRUCTION_SIZE macro requires uop.instruction_size to be set", tkn)
         self.out.emit(f" {uop.instruction_size} ")
         return True
 
