@@ -584,9 +584,9 @@ Object Protocol
    which may improve multi-threaded performance.  The tradeoff is
    that *obj* will only be deallocated by the tracing garbage collector.
 
-   The function returns ``1`` if deferred reference counting was enabled on *obj*,
+   This function returns ``1`` if deferred reference counting was enabled on *obj*,
    and ``0`` if deferred reference counting is not supported or if the hint was
-   ignored by the runtime. This function cannot fail.
+   ignored by the runtime. This function is thread-safe, and cannot fail.
 
    This function is a no-op on builds with the :term:`GIL` enabled, which do
    not support deferred reference counting. This also no-ops if *obj* is not
