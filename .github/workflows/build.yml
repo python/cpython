@@ -166,7 +166,7 @@ jobs:
             free-threading: true
           - os: windows-aarch64
             arch: arm64
-            free-threading: ture
+            free-threading: true
     uses: ./.github/workflows/reusable-windows.yml
     with:
       arch: ${{ matrix.arch }}
