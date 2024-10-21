@@ -151,13 +151,22 @@ jobs:
     if: fromJSON(needs.check_source.outputs.run_tests)
     strategy:
       matrix:
-        arch:
-        - Win32
-        - x64
-        - arm64
-        free-threading:
-        - false
-        - true
+        include:
+          - os: windows-latest
+            arch: Win32
+            free-threading: false
+          - os: windows-latest
+            arch: x64
+            free-threading: false
+          - os: windows-aarch64
+            arch: arm64
+            free-threading: false
+          - os: windows-latest
+            arch: x64
+            free-threading: true
+          - os: windows-aarch64
+            arch: arm64
+            free-threading: ture
     uses: ./.github/workflows/reusable-windows.yml
     with:
       arch: ${{ matrix.arch }}

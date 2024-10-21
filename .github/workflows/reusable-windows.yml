@@ -19,10 +19,8 @@ env:
 
 jobs:
   build:
-    name: >-
-      build${{ inputs.arch != 'arm64' && ' and test' || '' }}
-      (${{ inputs.arch }})
-    runs-on: windows-latest
+    name: 'build and test'
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@v4
@@ -36,10 +34,8 @@ jobs:
         -p ${{ inputs.arch }}
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
     - name: Display build info
-      if: inputs.arch != 'arm64'
       run: .\python.bat -m test.pythoninfo
     - name: Tests
-      if: inputs.arch != 'arm64'
       run: >-
         .\PCbuild\rt.bat
         -p ${{ inputs.arch }}
