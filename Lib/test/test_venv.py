@@ -17,6 +17,7 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
+import shlex
 from test.support import (captured_stdout, captured_stderr,
                           skip_if_broken_multiprocessing_synchronize, verbose,
                           requires_subprocess, is_android, is_apple_mobile,
@@ -109,6 +110,10 @@ class BaseTest(unittest.TestCase):
         with open(self.get_env_file(*args), 'r', encoding=encoding) as f:
             result = f.read()
         return result
+
+    def assertEndsWith(self, string, tail):
+        if not string.endswith(tail):
+            self.fail(f"String {string!r} does not end with {tail!r}")
 
 class BasicTest(BaseTest):
     """Test venv module functionality."""
@@ -487,6 +492,54 @@ class BasicTest(BaseTest):
         out, err = check_output([envpy, '-c',
             'import sys; print(sys.executable)'])
         self.assertEqual(out.strip(), envpy.encode())
+
+    # gh-124651: test quoted strings
+    @unittest.skipIf(os.name == 'nt', 'contains invalid characters on Windows')
+    def test_special_chars(self):
+        """
+        Test that the template strings are quoted properly
+        """
+        rmtree(self.env_dir)
+        bash = shutil.which("bash")
+        env_name = '"\';&&$e|\'"'
+        env_dir = os.path.join(os.path.realpath(self.env_dir), env_name)
+        builder = venv.EnvBuilder(clear=True)
+        builder.create(env_dir)
+        activate = os.path.join(env_dir, self.bindir, 'activate')
+        test_script = os.path.join(self.env_dir, 'test_special_chars.sh')
+        with open(test_script, "w") as f:
+            f.write(f'source {shlex.quote(activate)}\n'
+                    'python -c \'import sys; print(sys.executable)\'\n'
+                    'python -c \'import os; print(os.environ["VIRTUAL_ENV"])\'\n'
+                    'deactivate\n')
+        out, err = check_output([bash, test_script])
+        lines = out.splitlines()
+        self.assertTrue(env_name.encode() in lines[0])
+        self.assertEndsWith(lines[1], env_name.encode())
+
+    # gh-124651: test quoted strings on Windows
+    @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
+    def test_special_chars_windows(self):
+        """
+        Test that the template strings are quoted properly on Windows
+        """
+        rmtree(self.env_dir)
+        env_name = "'&&^$e"
+        env_dir = os.path.join(os.path.realpath(self.env_dir), env_name)
+        builder = venv.EnvBuilder(clear=True)
+        builder.create(env_dir)
+        activate = os.path.join(env_dir, self.bindir, 'activate.bat')
+        test_batch = os.path.join(self.env_dir, 'test_special_chars.bat')
+        with open(test_batch, "w") as f:
+            f.write('@echo off\n'
+                    f'"{activate}" & '
+                    f'{self.exe} -c "import sys; print(sys.executable)" & '
+                    f'{self.exe} -c "import os; print(os.environ[\'VIRTUAL_ENV\'])" & '
+                    'deactivate')
+        out, err = check_output([test_batch])
+        lines = out.splitlines()
+        self.assertTrue(env_name.encode() in lines[0])
+        self.assertEndsWith(lines[1], env_name.encode())
 
     @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
     def test_unicode_in_batch_file(self):
