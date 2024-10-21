@@ -282,6 +282,24 @@ struct gc_generation_stats {
     Py_ssize_t uncollectable;
 };
 
+struct gc_mark_state {
+    /* Objects in oldest generation that have be determined to be alive */
+    PyGC_Head old_alive;
+    /* Marker object for incremental mark alive process */
+    PyObject *thumb;
+    /* Size of oldest generation, on start of incremental mark process */
+    Py_ssize_t old_size;
+    /* Number of alive objects found in oldest generation */
+    Py_ssize_t old_alive_size;
+    int mark_phase;
+    int mark_steps;
+    int mark_steps_total;
+    PyTime_t gc_total_time;
+    PyTime_t gc_mark_time;
+    PyTime_t gc_max_pause;
+    PyTime_t gc_runs;
+};
+
 struct _gc_runtime_state {
     /* List of objects that still need to be cleaned up, singly linked
      * via their gc headers' gc_prev pointers.  */
@@ -295,14 +313,6 @@ struct _gc_runtime_state {
     /* linked lists of container objects */
     struct gc_generation generations[NUM_GENERATIONS];
     PyGC_Head *generation0;
-    /* Objects in oldest generation that have be determined to be alive */
-    PyGC_Head old_alive;
-    /* Size of oldest generation, on start of incremental mark process */
-    Py_ssize_t old_size;
-    /* Number of alive objects found in oldest generation */
-    Py_ssize_t old_alive_size;
-    int mark_steps;
-    int mark_steps_total;
     /* a permanent generation which won't be collected */
     struct gc_generation permanent_generation;
     struct gc_generation_stats generation_stats[NUM_GENERATIONS];
@@ -312,9 +322,7 @@ struct _gc_runtime_state {
     PyObject *garbage;
     /* a list of callbacks to be invoked when collection is performed */
     PyObject *callbacks;
-    /* Marker object for incremental mark alive process */
-    PyObject *thumb;
-    int mark_phase;
+    struct gc_mark_state mark_state;
 
     /* This is the number of objects that survived the last full
        collection. It approximates the number of long lived objects
