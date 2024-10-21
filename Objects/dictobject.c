@@ -1636,6 +1636,24 @@ _PyDict_MaybeUntrack(PyObject *op)
     _PyObject_GC_UNTRACK(op);
 }
 
+void
+_PyDict_EnablePerThreadRefcounting(PyObject *op)
+{
+    assert(PyDict_Check(op));
+#ifdef Py_GIL_DISABLED
+    Py_ssize_t id = _PyObject_AssignUniqueId(op);
+    if ((uint64_t)id >= (uint64_t)DICT_UNIQUE_ID_MAX) {
+        _PyObject_ReleaseUniqueId(id);
+        return;
+    }
+
+    PyDictObject *mp = (PyDictObject *)op;
+    assert((mp->_ma_watcher_tag >> DICT_UNIQUE_ID_SHIFT) == 0);
+    // Plus 1 so that _ma_watcher_tag=0 represents an unassigned id
+    mp->_ma_watcher_tag += ((uint64_t)id + 1) << DICT_UNIQUE_ID_SHIFT;
+#endif
+}
+
 static inline int
 is_unusable_slot(Py_ssize_t ix)
 {
@@ -6835,15 +6853,24 @@ store_instance_attr_lock_held(PyObject *obj, PyDictValues *values,
     }
 
     PyObject *old_value = values->values[ix];
+    if (old_value == NULL && value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                        "'%.100s' object has no attribute '%U'",
+                        Py_TYPE(obj)->tp_name, name);
+        return -1;
+    }
+
+    if (dict) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        PyDict_WatchEvent event = (old_value == NULL ? PyDict_EVENT_ADDED :
+                                   value == NULL ? PyDict_EVENT_DELETED :
+                                   PyDict_EVENT_MODIFIED);
+        _PyDict_NotifyEvent(interp, event, dict, name, value);
+    }
+
     FT_ATOMIC_STORE_PTR_RELEASE(values->values[ix], Py_XNewRef(value));
 
     if (old_value == NULL) {
-        if (value == NULL) {
-            PyErr_Format(PyExc_AttributeError,
-                         "'%.100s' object has no attribute '%U'",
-                         Py_TYPE(obj)->tp_name, name);
-            return -1;
-        }
         _PyDictValues_AddToInsertionOrder(values, ix);
         if (dict) {
             assert(dict->ma_values == values);

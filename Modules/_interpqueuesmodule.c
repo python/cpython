@@ -1312,7 +1312,7 @@ _queueid_xid_new(int64_t qid)
 
     struct _queueid_xid *data = PyMem_RawMalloc(sizeof(struct _queueid_xid));
     if (data == NULL) {
-        _queues_incref(queues, qid);
+        _queues_decref(queues, qid);
         return NULL;
     }
     data->qid = qid;
@@ -1894,7 +1894,8 @@ The 'interpreters' module provides a more convenient interface.");
 static int
 module_exec(PyObject *mod)
 {
-    if (_globals_init() != 0) {
+    int err = _globals_init();
+    if (handle_queue_error(err, mod, -1)) {
         return -1;
     }
 
