@@ -8,6 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+/* Maximum number of error tracebacks to print */
+#define PyTraceBack_LIMIT 1000
+
 // Export for '_ctypes' shared extension
 PyAPI_FUNC(int) _Py_DisplaySourceLine(PyObject *, PyObject *, int, int, int *, PyObject **);
 

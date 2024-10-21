@@ -35,6 +35,7 @@ Data members:
 #include "pycore_structseq.h"     // _PyStructSequence_InitBuiltinWithFlags()
 #include "pycore_sysmodule.h"     // export _PySys_GetSizeOf()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_traceback.h"     // PyTraceBack_LIMIT
 
 #include "pydtrace.h"             // PyDTrace_AUDIT()
 #include "osdefs.h"               // DELIM
@@ -3665,6 +3666,8 @@ _PySys_UpdateConfig(PyThreadState *tstate)
     if (config->module_search_paths_set) {
         COPY_LIST("path", config->module_search_paths);
     }
+
+    SET_SYS("tracebacklimit", PyLong_FromLong(PyTraceBack_LIMIT));
 
     COPY_WSTR("executable", config->executable);
     COPY_WSTR("_base_executable", config->base_executable);

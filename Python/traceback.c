@@ -704,8 +704,6 @@ error:
     return -1;
 }
 
-#define PyTraceBack_LIMIT 1000
-
 int
 _PyTraceBack_Print(PyObject *v, const char *header, PyObject *f)
 {
