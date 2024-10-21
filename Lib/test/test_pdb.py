@@ -2283,6 +2283,36 @@ def bœr():
         self.assertRegex(res, "Restarting .* with arguments:\na b c")
         self.assertRegex(res, "Restarting .* with arguments:\nd e f")
 
+    def test_issue58956(self):
+        # Set a breakpoint in a function that already exists on the call stack
+        # should enable the trace function for the frame.
+        script = """
+            import bar
+            def foo():
+                ret = bar.bar()
+                pass
+            foo()
+        """
+        commands = """
+            b bar.bar
+            c
+            b main.py:5
+            c
+            p ret
+            quit
+        """
+        bar = """
+            def bar():
+                return 42
+        """
+        with open('bar.py', 'w') as f:
+            f.write(textwrap.dedent(bar))
+        self.addCleanup(os_helper.unlink, 'bar.py')
+        stdout, stderr = self.run_pdb_script(script, commands)
+        lines = stdout.splitlines()
+        self.assertIn('-> pass', lines)
+        self.assertIn('(Pdb) 42', lines)
+
     def test_step_into_botframe(self):
         # gh-125422
         # pdb should not be able to step into the botframe (bdb.py)
