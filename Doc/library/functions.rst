@@ -1283,9 +1283,10 @@ are always available.  They are listed here in alphabetical order.
 
 .. class:: object()
 
-   Return a new featureless object.  :class:`object` is a base for all classes.
-   It has methods that are common to all instances of Python classes.  This
-   function does not accept any arguments.
+   This is the ultimate base class of all other classes. It has methods
+   that are common to all instances of Python classes. When the constructor
+   is called, it returns a new featureless object. The constructor does not
+   accept any arguments.
 
    .. note::
 
