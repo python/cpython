@@ -221,7 +221,7 @@ class zipimporter(_bootstrap_external._LoaderBasics):
 
         Deprecated since Python 3.10. Use exec_module() instead.
         """
-       warnings._deprecated("zipimport.zipimporter.load_module",
+        warnings._deprecated("zipimport.zipimporter.load_module",
                          f"{warnings._DEPRECATED_MSG}; "
                          "use zipimport.zipimporter.exec_module() instead",
                          remove=(3, 15))
