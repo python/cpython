@@ -64,6 +64,7 @@ def declare_variables(uop: Uop, out: CWriter) -> None:
 
 
 class Tier2Emitter(Emitter):
+
     def __init__(self, out: CWriter):
         super().__init__(out)
         self._replacers["oparg"] = self.oparg
