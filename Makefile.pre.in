@@ -2099,6 +2099,12 @@ cleantest: all
 test: all
 	$(TESTRUNNER) --fast-ci -u-gui --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
+# Run a basic set of regression tests inside the CI.
+# This excludes some tests that are particularly resource-intensive.
+# Similar to test, but also runs GUI tests.
+ci: all
+	$(MAKE) test TESTOPTS="-ugui" 
+
 # Run the test suite for both architectures in a Universal build on OSX.
 # Must be run on an Intel box.
 .PHONY: testuniversal
