@@ -215,9 +215,6 @@ refchain_fini(PyInterpreterState *interp)
 bool
 _PyRefchain_IsTraced(PyInterpreterState *interp, PyObject *obj)
 {
-    if (!has_own_refchain(interp)) {
-        interp = _PyInterpreterState_Main();
-    }
     return (_Py_hashtable_get(REFCHAIN(interp), obj) == REFCHAIN_VALUE);
 }
 
@@ -225,9 +222,6 @@ _PyRefchain_IsTraced(PyInterpreterState *interp, PyObject *obj)
 static void
 _PyRefchain_Trace(PyInterpreterState *interp, PyObject *obj)
 {
-    if (!has_own_refchain(interp)) {
-        interp = _PyInterpreterState_Main();
-    }
     if (_Py_hashtable_set(REFCHAIN(interp), obj, REFCHAIN_VALUE) < 0) {
         // Use a fatal error because _Py_NewReference() cannot report
         // the error to the caller.
@@ -239,9 +233,6 @@ _PyRefchain_Trace(PyInterpreterState *interp, PyObject *obj)
 static void
 _PyRefchain_Remove(PyInterpreterState *interp, PyObject *obj)
 {
-    if (!has_own_refchain(interp)) {
-        interp = _PyInterpreterState_Main();
-    }
     void *value = _Py_hashtable_steal(REFCHAIN(interp), obj);
 #ifndef NDEBUG
     assert(value == REFCHAIN_VALUE);
@@ -2587,9 +2578,6 @@ _Py_PrintReferences(PyInterpreterState *interp, FILE *fp)
         interp = _PyInterpreterState_Main();
     }
     fprintf(fp, "Remaining objects:\n");
-    if (!has_own_refchain(interp)) {
-        interp = _PyInterpreterState_Main();
-    }
     _Py_hashtable_foreach(REFCHAIN(interp), _Py_PrintReference, fp);
 }
 
@@ -2618,9 +2606,6 @@ void
 _Py_PrintReferenceAddresses(PyInterpreterState *interp, FILE *fp)
 {
     fprintf(fp, "Remaining object addresses:\n");
-    if (!has_own_refchain(interp)) {
-        interp = _PyInterpreterState_Main();
-    }
     _Py_hashtable_foreach(REFCHAIN(interp), _Py_PrintReferenceAddress, fp);
 }
 
@@ -2700,9 +2685,6 @@ _Py_GetObjects(PyObject *self, PyObject *args)
         .limit = limit,
     };
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (!has_own_refchain(interp)) {
-        interp = _PyInterpreterState_Main();
-    }
     int res = _Py_hashtable_foreach(REFCHAIN(interp), _Py_GetObject, &data);
     if (res == _PY_GETOBJECTS_ERROR) {
         Py_DECREF(list);
