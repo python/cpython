@@ -322,6 +322,11 @@ inspect
   If true, string :term:`annotations <annotation>` are displayed without surrounding quotes.
   (Contributed by Jelle Zijlstra in :gh:`101552`.)
 
+imaplib
+-------
+
+* Add :meth:`~imaplib.IMAP4.idle`, implementing the ``IDLE`` command
+  as defined in :rfc:`2177`.  (Contributed by Forest in :gh:`55454`.)
 
 json
 ----
