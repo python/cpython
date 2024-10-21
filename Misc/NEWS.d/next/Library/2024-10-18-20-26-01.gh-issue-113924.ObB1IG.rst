@@ -1,3 +1,0 @@
-Add ``copy_file``, ``copy_files``, and ``copy_all_files`` to the ZipFile
-class. These methods allow copying from a zipfile without the overhead of
-decompressing and recompressing the data.
