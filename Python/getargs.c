@@ -2064,7 +2064,7 @@ find_keyword(PyObject *kwnames, PyObject *const *kwstack, PyObject *key)
     for (i = 0; i < nkwargs; i++) {
         PyObject *kwname = PyTuple_GET_ITEM(kwnames, i);
         assert(PyUnicode_Check(kwname));
-        if (_PyUnicode_EQ(kwname, key)) {
+        if (_PyUnicode_Equal(kwname, key)) {
             return Py_NewRef(kwstack[i]);
         }
     }
@@ -2601,7 +2601,7 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
          *
          * Otherwise, we leave a place at `buf[vararg]` for vararg tuple
          * so the index is `i + 1`. */
-        if (nargs < vararg && i != vararg) {
+        if (i < vararg) {
             buf[i] = current_arg;
         }
         else {

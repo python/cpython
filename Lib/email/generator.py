@@ -227,7 +227,7 @@ class Generator:
             folded = self.policy.fold(h, v)
             if self.policy.verify_generated_headers:
                 linesep = self.policy.linesep
-                if not folded.endswith(self.policy.linesep):
+                if not folded.endswith(linesep):
                     raise HeaderWriteError(
                         f'folded header does not end with {linesep!r}: {folded!r}')
                 if NEWLINE_WITHOUT_FWSP.search(folded.removesuffix(linesep)):

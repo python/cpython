@@ -1,6 +1,7 @@
 "Test the functionality of Python classes implementing operators."
 
 import unittest
+from test.support import cpython_only, import_helper, script_helper
 
 testmeths = [
 
@@ -787,6 +788,19 @@ class ClassTests(unittest.TestCase):
             Type(i)
         self.assertEqual(calls, 100)
 
+    def test_specialization_class_call_doesnt_crash(self):
+        # gh-123185
+
+        class Foo:
+            def __init__(self, arg):
+                pass
+
+        for _ in range(8):
+            try:
+                Foo()
+            except:
+                pass
+
 
 from _testinternalcapi import has_inline_values
 
@@ -915,10 +929,40 @@ class TestInlineValues(unittest.TestCase):
         C.a
         C.a
 
-        # destructor shouldn't be able to see inconsisent state
+        # destructor shouldn't be able to see inconsistent state
         C.a = X()
         C.a = X()
 
+    @cpython_only
+    def test_detach_materialized_dict_no_memory(self):
+        # Skip test if _testcapi is not available:
+        import_helper.import_module('_testcapi')
+
+        code = """if 1:
+            import test.support
+            import _testcapi
+
+            class A:
+                def __init__(self):
+                    self.a = 1
+                    self.b = 2
+            a = A()
+            d = a.__dict__
+            with test.support.catch_unraisable_exception() as ex:
+                _testcapi.set_nomemory(0, 1)
+                del a
+                assert ex.unraisable.exc_type is MemoryError
+            try:
+                d["a"]
+            except KeyError:
+                pass
+            else:
+                assert False, "KeyError not raised"
+        """
+        rc, out, err = script_helper.assert_python_ok("-c", code)
+        self.assertEqual(rc, 0)
+        self.assertFalse(out, msg=out.decode('utf-8'))
+        self.assertFalse(err, msg=err.decode('utf-8'))
 
 if __name__ == '__main__':
     unittest.main()

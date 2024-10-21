@@ -161,17 +161,28 @@ class InteractiveColoredConsole(code.InteractiveConsole):
         super().__init__(locals=locals, filename=filename, local_exit=local_exit)  # type: ignore[call-arg]
         self.can_colorize = _colorize.can_colorize()
 
-    def showsyntaxerror(self, filename=None):
-        super().showsyntaxerror(colorize=self.can_colorize)
+    def showsyntaxerror(self, filename=None, **kwargs):
+        super().showsyntaxerror(filename=filename, **kwargs)
 
-    def showtraceback(self):
-        super().showtraceback(colorize=self.can_colorize)
+    def _excepthook(self, typ, value, tb):
+        import traceback
+        lines = traceback.format_exception(
+                typ, value, tb,
+                colorize=self.can_colorize,
+                limit=traceback.BUILTIN_EXCEPTION_LIMIT)
+        self.write(''.join(lines))
 
     def runsource(self, source, filename="<input>", symbol="single"):
         try:
-            tree = ast.parse(source)
+            tree = self.compile.compiler(
+                source,
+                filename,
+                "exec",
+                ast.PyCF_ONLY_AST,
+                incomplete_input=False,
+            )
         except (SyntaxError, OverflowError, ValueError):
-            self.showsyntaxerror(filename)
+            self.showsyntaxerror(filename, source=source)
             return False
         if tree.body:
             *_, last_stmt = tree.body
@@ -180,7 +191,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
             the_symbol = symbol if stmt is last_stmt else "exec"
             item = wrapper([stmt])
             try:
-                code = self.compile.compiler(item, filename, the_symbol, dont_inherit=True)
+                code = self.compile.compiler(item, filename, the_symbol)
             except SyntaxError as e:
                 if e.args[0] == "'await' outside function":
                     python = os.path.basename(sys.executable)
@@ -188,10 +199,10 @@ class InteractiveColoredConsole(code.InteractiveConsole):
                         f"Try the asyncio REPL ({python} -m asyncio) to use"
                         f" top-level 'await' and run background asyncio tasks."
                     )
-                self.showsyntaxerror(filename)
+                self.showsyntaxerror(filename, source=source)
                 return False
             except (OverflowError, ValueError):
-                self.showsyntaxerror(filename)
+                self.showsyntaxerror(filename, source=source)
                 return False
 
             if code is None:
