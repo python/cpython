@@ -2488,6 +2488,77 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(os__path_normpath_ex__doc__,
+"_path_normpath_ex($module, /, path, *, explicit_curdir=False)\n"
+"--\n"
+"\n"
+"Normalize path, eliminating double slashes, etc.");
+
+#define OS__PATH_NORMPATH_EX_METHODDEF    \
+    {"_path_normpath_ex", _PyCFunction_CAST(os__path_normpath_ex), METH_FASTCALL|METH_KEYWORDS, os__path_normpath_ex__doc__},
+
+static PyObject *
+os__path_normpath_ex_impl(PyObject *module, path_t *path,
+                          int explicit_curdir);
+
+static PyObject *
+os__path_normpath_ex(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), &_Py_ID(explicit_curdir), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", "explicit_curdir", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_path_normpath_ex",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    path_t path = PATH_T_INITIALIZE("_path_normpath_ex", "path", 0, 1, 1, 0, 0);
+    int explicit_curdir = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    explicit_curdir = PyObject_IsTrue(args[1]);
+    if (explicit_curdir < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = os__path_normpath_ex_impl(module, &path, explicit_curdir);
+
+exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(os__path_normpath__doc__,
 "_path_normpath($module, /, path)\n"
 "--\n"
@@ -12897,4 +12968,4 @@ os__create_environ(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=18d75b737513dae6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=38665a563e345d52 input=a9049054013a1b77]*/

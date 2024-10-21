@@ -571,6 +571,7 @@ def _abspath_fallback(path):
 
 # Return an absolute path.
 try:
+    from nt import _path_normpath_ex as _normpath
     from nt import _getfullpathname
 
 except ImportError: # not running on Windows - mock up something sensible
@@ -580,7 +581,7 @@ else:  # use native Windows method on Windows
     def abspath(path):
         """Return the absolute version of a path."""
         try:
-            return _getfullpathname(normpath(path))
+            return _getfullpathname(_normpath(path, explicit_curdir=True))
         except (OSError, ValueError):
             return _abspath_fallback(path)
 

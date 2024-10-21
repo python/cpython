@@ -5554,6 +5554,39 @@ exit:
 
 
 /*[clinic input]
+os._path_normpath_ex
+
+    path: path_t(make_wide=True, nonstrict=True)
+    *
+    explicit_curdir: bool = False
+
+Normalize path, eliminating double slashes, etc.
+[clinic start generated code]*/
+
+static PyObject *
+os__path_normpath_ex_impl(PyObject *module, path_t *path,
+                          int explicit_curdir)
+/*[clinic end generated code: output=4c4c3bf33a70fe57 input=90fe0dfc4b3a751b]*/
+{
+    PyObject *result;
+    Py_ssize_t norm_len;
+    wchar_t *norm_path = _Py_normpath_and_size((wchar_t *)path->wide,
+                                               path->length, &norm_len,
+                                               explicit_curdir);
+    if (!norm_len) {
+        result = PyUnicode_FromOrdinal('.');
+    }
+    else {
+        result = PyUnicode_FromWideChar(norm_path, norm_len);
+    }
+    if (PyBytes_Check(path->object)) {
+        Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
+    }
+    return result;
+}
+
+
+/*[clinic input]
 os._path_normpath
 
     path: path_t(make_wide=True, nonstrict=True)
@@ -5565,20 +5598,8 @@ static PyObject *
 os__path_normpath_impl(PyObject *module, path_t *path)
 /*[clinic end generated code: output=d353e7ed9410c044 input=3d4ac23b06332dcb]*/
 {
-    PyObject *result;
-    Py_ssize_t norm_len;
-    wchar_t *norm_path = _Py_normpath_and_size((wchar_t *)path->wide,
-                                               path->length, &norm_len);
-    if (!norm_len) {
-        result = PyUnicode_FromOrdinal('.');
-    }
-    else {
-        result = PyUnicode_FromWideChar(norm_path, norm_len);
-    }
-    if (PyBytes_Check(path->object)) {
-        Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
-    }
-    return result;
+
+    return os__path_normpath_ex_impl(module, path, 0);
 }
 
 /*[clinic input]
@@ -17009,6 +17030,7 @@ static PyMethodDef posix_methods[] = {
     OS__GETVOLUMEPATHNAME_METHODDEF
     OS__PATH_SPLITROOT_METHODDEF
     OS__PATH_SPLITROOT_EX_METHODDEF
+    OS__PATH_NORMPATH_EX_METHODDEF
     OS__PATH_NORMPATH_METHODDEF
     OS_GETLOADAVG_METHODDEF
     OS_URANDOM_METHODDEF

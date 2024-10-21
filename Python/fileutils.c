@@ -2483,9 +2483,12 @@ _Py_find_basename(const wchar_t *filename)
    make the path longer, and will not fail. 'size' is the length of
    the path, if known. If -1, the first null character will be assumed
    to be the end of the path. 'normsize' will be set to contain the
-   length of the resulting normalized path. */
+   length of the resulting normalized path. If 'explicit_curdir' is
+   set, an explicit curdir will be used for qualified referencing in
+   the cwd. */
 wchar_t *
-_Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t *normsize)
+_Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t *normsize,
+                      int explicit_curdir)
 {
     assert(path != NULL);
     if ((size < 0 && !path[0]) || size == 0) {
@@ -2497,6 +2500,7 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t *normsize)
     wchar_t *p2 = path;     // destination of a scanned character to be ljusted
     wchar_t *minP2 = path;  // the beginning of the destination range
     wchar_t lastC = L'\0';  // the last ljusted character, p2[-1] in most cases
+    int explicit = 0;       // uses qualified referencing in the cwd
 
 #define IS_END(x) (pEnd ? (x) == pEnd : !*(x))
 #ifdef ALTSEP
@@ -2506,38 +2510,40 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t *normsize)
 #endif
 #define SEP_OR_END(x) (IS_SEP(x) || IS_END(x))
 
-    if (p1[0] == L'.' && IS_SEP(&p1[1])) {
-        // Skip leading '.\'
-        path = &path[2];
-        while (IS_SEP(path)) {
-            path++;
-        }
-        p1 = p2 = minP2 = path;
-        lastC = SEP;
-    }
-    else {
-        Py_ssize_t drvsize, rootsize;
-        _Py_skiproot(path, size, &drvsize, &rootsize);
-        if (drvsize || rootsize) {
-            // Skip past root and update minP2
-            p1 = &path[drvsize + rootsize];
+    Py_ssize_t drvsize, rootsize;
+    _Py_skiproot(path, size, &drvsize, &rootsize);
+    if (drvsize || rootsize) {
+        // Skip past root and update minP2
+        p1 = &path[drvsize + rootsize];
 #ifndef ALTSEP
-            p2 = p1;
+        p2 = p1;
 #else
-            for (; p2 < p1; ++p2) {
-                if (*p2 == ALTSEP) {
-                    *p2 = SEP;
-                }
+        for (; p2 < p1; ++p2) {
+            if (*p2 == ALTSEP) {
+                *p2 = SEP;
             }
-#endif
-            minP2 = p2 - 1;
-            lastC = *minP2;
-#ifdef MS_WINDOWS
-            if (lastC != SEP) {
-                minP2++;
-            }
-#endif
         }
+#endif
+        minP2 = p2 - 1;
+        lastC = *minP2;
+#ifdef MS_WINDOWS
+        if (lastC != SEP) {
+            minP2++;
+        }
+#endif
+    }
+    if (p1[0] == L'.' && SEP_OR_END(&p1[1])) {
+        // Skip leading '.\'
+        lastC = *++p1;
+#ifdef ALTSEP
+        if (lastC == ALTSEP) {
+            lastC = SEP;
+        }
+#endif
+        while (IS_SEP(p1)) {
+            p1++;
+        }
+        explicit = 1;
     }
 
     /* if pEnd is specified, check that. Else, check for null terminator */
@@ -2569,9 +2575,11 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t *normsize)
                         p2 = p3 + 1;
                     } else {
                         p2 = p3;
+                        explicit = 1;
                     }
                     p1 += 1;
                 } else if (sep_at_1) {
+                    explicit = 1;
                 } else {
                     *p2++ = lastC = c;
                 }
@@ -2591,6 +2599,31 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t *normsize)
     } else {
         --p2;
     }
+    if (explicit_curdir && !rootsize && explicit) {
+        // Add explicit curdir
+        if (p2 == minP2 - 1) {
+            // Set to '.'
+            p2++;
+            assert(p2 < p1);
+            *p2 = L'.';
+        }
+        else if (minP2[0] != L'.' || minP2[1] != L'.' ||
+                 !SEP_OR_END(&minP2[2]))
+        {
+            // Add leading '.\'
+            wchar_t *p3 = p2;
+            p2 += 2;
+            assert(p2 < p1);
+            while (p3 != minP2) {
+                p3[2] = *p3;
+                p3--;
+            }
+            p3[2] = p3[0];
+            p3[1] = SEP;
+            p3[0] = L'.';
+        }
+        p2[1] = L'\0';
+    }
     *normsize = p2 - path + 1;
 #undef SEP_OR_END
 #undef IS_SEP
@@ -2607,7 +2640,7 @@ wchar_t *
 _Py_normpath(wchar_t *path, Py_ssize_t size)
 {
     Py_ssize_t norm_length;
-    return _Py_normpath_and_size(path, size, &norm_length);
+    return _Py_normpath_and_size(path, size, &norm_length, 0);
 }
 
 
