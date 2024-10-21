@@ -889,6 +889,14 @@ email
   the :cve:`2023-27043` fix.)
 
 
+enum
+----
+
+* :class:`enum.EnumDict` has been made public, in order to allow subclasses
+  of :class:`~enum.EnumType` with advanced behavior like having multiple values
+  per member.
+
+
 fractions
 ---------
 
