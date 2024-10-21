@@ -846,6 +846,7 @@ static void
 _queues_init(_queues *queues, PyThread_type_lock mutex)
 {
     assert(mutex != NULL);
+    assert(queues->mutex == NULL);
     queues->mutex = mutex;
     queues->head = NULL;
     queues->count = 0;
@@ -1410,7 +1411,6 @@ _globals_init(void)
         return 0;
     }
 
-    assert(_globals.queues.mutex == NULL);
     PyThread_type_lock mutex = PyThread_allocate_lock();
     if (mutex == NULL) {
         return ERR_QUEUES_ALLOC;

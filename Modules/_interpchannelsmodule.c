@@ -1350,6 +1350,7 @@ static void
 _channels_init(_channels *channels, PyThread_type_lock mutex)
 {
     assert(mutex != NULL);
+    assert(channels->mutex == NULL);
     channels->mutex = mutex;
     channels->head = NULL;
     channels->numopen = 0;
@@ -2823,7 +2824,6 @@ _globals_init(void)
         return 0;
     }
 
-    assert(_globals.channels.mutex == NULL);
     PyThread_type_lock mutex = PyThread_allocate_lock();
     if (mutex == NULL) {
         return ERR_CHANNELS_MUTEX_INIT;
