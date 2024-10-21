@@ -19,17 +19,14 @@ which are written in
 [a DSL](https://github.com/python/cpython/blob/main/Tools/cases_generator/interpreter_definition.md)
 developed for this purpose.
 
-Recall that the [Python Compiler](https://github.com/python/cpython/blob/main/InternalDocs/compiler.md)
-produces a [`CodeObject`](https://github.com/python/cpython/blob/main/InternalDocs/code_object.md),
+Recall that the [Python Compiler](compiler.md) produces a [`CodeObject`](code_object.md),
 which contains the bytecode instructions along with static data that is required to execute them,
 such as the consts list, variable names,
-[exception table](https://github.com/python/cpython/blob/main/InternalDocs/exception_handling.md#format-of-the-exception-table),
-and so on.
+[exception table](exception_handling.md#format-of-the-exception-table), and so on.
 
 When the interpreter's
 [`PyEval_EvalCode()`](https://docs.python.org/3.14/c-api/veryhigh.html#c.PyEval_EvalCode)
-function is called to execute a `CodeObject`, it constructs a
-[`Frame`](https://github.com/python/cpython/blob/main/InternalDocs/frames.md) and calls
+function is called to execute a `CodeObject`, it constructs a [`Frame`](frames.md) and calls
 [`_PyEval_EvalFrame()`](https://docs.python.org/3.14/c-api/veryhigh.html#c.PyEval_EvalCode)
 to execute the code object in this frame. The frame hold the dynamic state of the
 `CodeObject`'s execution, including the instruction pointer, the globals and builtins.
