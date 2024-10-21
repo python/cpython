@@ -430,7 +430,7 @@ jobs:
     - name: Display build info
       run: make pythoninfo
     - name: Tests
-      run: xvfb-run make test
+      run: xvfb-run make test TESTOPTS="-ugui"
 
   build_tsan:
     name: 'Thread sanitizer'

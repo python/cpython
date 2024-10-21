@@ -69,4 +69,4 @@ jobs:
         --fail-on-improvement
         --path-prefix="./"
     - name: Tests
-      run: make test
+      run: make test TESTOPTS="-ugui"

@@ -43,5 +43,5 @@ jobs:
       run: >-
         .\PCbuild\rt.bat
         -p ${{ inputs.arch }}
-        -d -q --fast-ci
+        -d -q --fast-ci -ugui
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}

@@ -34,7 +34,7 @@ set pyname=python
 set suffix=
 set qmode=
 set dashO=
-set regrtestargs=--fast-ci
+set regrtestargs=--fast-ci -u-gui
 set exe=
 
 :CheckOpts
