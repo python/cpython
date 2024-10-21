@@ -498,7 +498,12 @@ def register_readline():
 
     import atexit
     try:
-        import readline
+        try:
+            import readline
+            real_readline = True
+        except ImportError:
+            readline = None
+            real_readline = False
         import rlcompleter  # noqa: F401
         if PYTHON_BASIC_REPL:
             CAN_USE_PYREPL = False
@@ -506,9 +511,15 @@ def register_readline():
             original_path = sys.path
             sys.path = [p for p in original_path if p != '']
             try:
-                import _pyrepl.readline
-                import _pyrepl.unix_console
+                if not readline:
+                    import _pyrepl.readline as readline
                 from _pyrepl.main import CAN_USE_PYREPL
+                if real_readline:
+                    import _pyrepl.unix_console
+                    console_error = _pyrepl.unix_console._error
+                else:
+                    import _pyrepl.windows_console
+                    console_error = [_pyrepl.windows_console._error]
             finally:
                 sys.path = original_path
     except ImportError:
@@ -516,13 +527,15 @@ def register_readline():
 
     # Reading the initialization (config) file may not be enough to set a
     # completion key, so we set one first and then read the file.
-    if readline.backend == 'editline':
+    backend = getattr(readline, "backend", None)
+    if backend == 'editline':
         readline.parse_and_bind('bind ^I rl_complete')
-    else:
+    elif backend:
         readline.parse_and_bind('tab: complete')
 
     try:
-        readline.read_init_file()
+        if real_readline:
+            readline.read_init_file()
     except OSError:
         # An OSError here could have many causes, but the most likely one
         # is that there's no .inputrc file (or .editrc file in the case of
@@ -530,7 +543,7 @@ def register_readline():
         # want to ignore the exception.
         pass
 
-    if readline.get_current_history_length() == 0:
+    if readline and readline.get_current_history_length() == 0:
         # If no history was loaded, default to .python_history,
         # or PYTHON_HISTORY.
         # The guard is necessary to avoid doubling history size at
@@ -541,19 +554,21 @@ def register_readline():
 
         if CAN_USE_PYREPL:
             readline_module = _pyrepl.readline
-            exceptions = (OSError, *_pyrepl.unix_console._error)
+            exceptions = (OSError, *console_error)
         else:
             readline_module = readline
             exceptions = OSError
 
         try:
-            readline_module.read_history_file(history)
+            if readline:
+                readline_module.read_history_file(history)
         except exceptions:
             pass
 
         def write_history():
             try:
-                readline_module.write_history_file(history)
+                if readline:
+                    readline_module.write_history_file(history)
             except (FileNotFoundError, PermissionError):
                 # home directory does not exist or is not writable
                 # https://bugs.python.org/issue19891
