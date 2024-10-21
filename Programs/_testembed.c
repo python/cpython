@@ -2077,6 +2077,31 @@ static void configure_init_main(PyConfig *config)
 }
 
 
+static int test_subinterpreter_finalize(void)
+{
+    // Create a legacy subinterpreter (with the interned dict shared
+    // with the main interpreter).  This checks that interned strings are
+    // freed correctly.
+    _testembed_Py_InitializeFromConfig();
+
+    PyThreadState *tstate1 = Py_NewInterpreter();
+    PyThreadState_Swap(tstate1);
+    PyRun_SimpleString(
+        "import test.support.import_helper\n"
+    );
+
+    PyThreadState *main_tstate = _PyRuntime.main_tstate;
+    PyThreadState_Swap(main_tstate);
+    PyRun_SimpleString(
+        "import test.support.import_helper\n"
+    );
+
+    Py_Finalize();
+
+    return 0;
+}
+
+
 static int test_init_run_main(void)
 {
     PyConfig config;
@@ -2485,6 +2510,7 @@ static struct TestCase TestCases[] = {
     {"test_initconfig_get_api", test_initconfig_get_api},
     {"test_initconfig_exit", test_initconfig_exit},
     {"test_initconfig_module", test_initconfig_module},
+    {"test_subinterpreter_finalize", test_subinterpreter_finalize},
     {"test_run_main", test_run_main},
     {"test_run_main_loop", test_run_main_loop},
     {"test_get_argc_argv", test_get_argc_argv},
