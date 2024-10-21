@@ -3482,7 +3482,8 @@ The 'interpreters' module provides a more convenient interface.");
 static int
 module_exec(PyObject *mod)
 {
-    if (_globals_init() != 0) {
+    int err = _globals_init();
+    if (handle_channel_error(err, mod, -1)) {
         return -1;
     }
 
