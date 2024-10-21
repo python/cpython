@@ -128,10 +128,6 @@ static PyObject *
 pyobject_enable_deferred_refcount(PyObject *self, PyObject *obj)
 {
     int result = PyUnstable_Object_EnableDeferredRefcount(obj);
-    if (result < 0) {
-        return NULL;
-    }
-
     return PyLong_FromLong(result);
 }
 

@@ -2487,14 +2487,15 @@ PyUnstable_Object_EnableDeferredRefcount(PyObject *op)
 {
 #ifdef Py_GIL_DISABLED
     if (!PyType_IS_GC(Py_TYPE(op))) {
-        PyErr_SetString(PyExc_TypeError,
-                        "object is not tracked by the garbage collector");
-        return -1;
+        // Deferred reference counting doesn't work
+        // on untracked types.
+        return 0;
     }
 
-    if (_PyObject_HasDeferredRefcount(op))
+    if (_PyObject_HasDeferredRefcount(op)) {
         // Nothing to do
         return 0;
+    }
 
     _PyObject_SET_GC_BITS(op, _PyGC_BITS_DEFERRED);
     _Py_atomic_store_ssize_relaxed(&op->ob_ref_shared, _Py_REF_SHARED(_Py_REF_DEFERRED, 0));
