@@ -26,7 +26,6 @@ CPYTHON = TOOLS.parent
 PYTHON_EXECUTOR_CASES_C_H = CPYTHON / "Python" / "executor_cases.c.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
 
-
 _S = typing.TypeVar("_S", _schema.COFFSection, _schema.ELFSection, _schema.MachOSection)
 _R = typing.TypeVar(
     "_R", _schema.COFFRelocation, _schema.ELFRelocation, _schema.MachORelocation
@@ -39,7 +38,6 @@ class _Target(typing.Generic[_S, _R]):
     _: dataclasses.KW_ONLY
     alignment: int = 1
     args: typing.Sequence[str] = ()
-    ghccc: bool = False
     prefix: str = ""
     stable: bool = False
     debug: bool = False
@@ -88,11 +86,7 @@ class _Target(typing.Generic[_S, _R]):
         sections: list[dict[typing.Literal["Section"], _S]] = json.loads(output)
         for wrapped_section in sections:
             self._handle_section(wrapped_section["Section"], group)
-        # The trampoline's entry point is just named "_ENTRY", since on some
-        # platforms we later assume that any function starting with "_JIT_" uses
-        # the GHC calling convention:
-        entry_symbol = "_JIT_ENTRY" if "_JIT_ENTRY" in group.symbols else "_ENTRY"
-        assert group.symbols[entry_symbol] == (_stencils.HoleValue.CODE, 0)
+        assert group.symbols["_JIT_ENTRY"] == (_stencils.HoleValue.CODE, 0)
         if group.data.body:
             line = f"0: {str(bytes(group.data.body)).removeprefix('b')}"
             group.data.disassembly.append(line)
@@ -112,9 +106,6 @@ class _Target(typing.Generic[_S, _R]):
     async def _compile(
         self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
     ) -> _stencils.StencilGroup:
-        # "Compile" the trampoline to an empty stencil group if it's not needed:
-        if opname == "trampoline" and not self.ghccc:
-            return _stencils.StencilGroup()
         o = tempdir / f"{opname}.o"
         args = [
             f"--target={self.triple}",
@@ -128,6 +119,7 @@ class _Target(typing.Generic[_S, _R]):
             f"-I{CPYTHON / 'Include' / 'internal'}",
             f"-I{CPYTHON / 'Include' / 'internal' / 'mimalloc'}",
             f"-I{CPYTHON / 'Python'}",
+            f"-I{CPYTHON / 'Tools' / 'jit'}",
             "-O3",
             "-c",
             # This debug info isn't necessary, and bloats out the JIT'ed code.
@@ -145,41 +137,7 @@ class _Target(typing.Generic[_S, _R]):
             "-std=c11",
             *self.args,
         ]
-        if self.ghccc:
-            # This is a bit of an ugly workaround, but it makes the code much
-            # smaller and faster, so it's worth it. We want to use the GHC
-            # calling convention, but Clang doesn't support it. So, we *first*
-            # compile the code to LLVM IR, perform some text replacements on the
-            # IR to change the calling convention(!), and then compile *that*.
-            # Once we have access to Clang 19, we can get rid of this and use
-            # __attribute__((preserve_none)) directly in the C code instead:
-            ll = tempdir / f"{opname}.ll"
-            args_ll = args + [
-                # -fomit-frame-pointer is necessary because the GHC calling
-                # convention uses RBP to pass arguments:
-                "-S",
-                "-emit-llvm",
-                "-fomit-frame-pointer",
-                "-o",
-                f"{ll}",
-                f"{c}",
-            ]
-            await _llvm.run("clang", args_ll, echo=self.verbose)
-            ir = ll.read_text()
-            # This handles declarations, definitions, and calls to named symbols
-            # starting with "_JIT_":
-            ir = re.sub(
-                r"(((noalias|nonnull|noundef) )*ptr @_JIT_\w+\()", r"ghccc \1", ir
-            )
-            # This handles calls to anonymous callees, since anything with
-            # "musttail" needs to use the same calling convention:
-            ir = ir.replace("musttail call", "musttail call ghccc")
-            # Sometimes *both* replacements happen at the same site, so fix it:
-            ir = ir.replace("ghccc ghccc", "ghccc")
-            ll.write_text(ir)
-            args_o = args + ["-Wno-unused-command-line-argument", "-o", f"{o}", f"{ll}"]
-        else:
-            args_o = args + ["-o", f"{o}", f"{c}"]
+        args_o = args + ["-o", f"{o}", f"{c}"]
         await _llvm.run("clang", args_o, echo=self.verbose)
         return await self._parse(o)
 
@@ -519,7 +477,6 @@ class _MachO(
 
 def get_target(host: str) -> _COFF | _ELF | _MachO:
     """Build a _Target for the given host "triple" and options."""
-    # ghccc currently crashes Clang when combined with musttail on aarch64. :(
     target: _COFF | _ELF | _MachO
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
         target = _MachO(host, alignment=8, prefix="_")
@@ -535,16 +492,20 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
         ]
         target = _ELF(host, alignment=8, args=args)
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
-        args = ["-DPy_NO_ENABLE_SHARED"]
-        target = _COFF(host, args=args, ghccc=True, prefix="_")
+        args = [
+            "-DPy_NO_ENABLE_SHARED",
+            # __attribute__((preserve_none)) is not supported
+            "-Wno-ignored-attributes",
+        ]
+        target = _COFF(host, args=args, prefix="_")
     elif re.fullmatch(r"x86_64-apple-darwin.*", host):
-        target = _MachO(host, ghccc=True, prefix="_")
+        target = _MachO(host, prefix="_")
     elif re.fullmatch(r"x86_64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll"]
-        target = _COFF(host, args=args, ghccc=True)
+        target = _COFF(host, args=args)
     elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
         args = ["-fpic"]
-        target = _ELF(host, args=args, ghccc=True)
+        target = _ELF(host, args=args)
     else:
         raise ValueError(host)
     return target

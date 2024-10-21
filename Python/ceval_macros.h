@@ -378,7 +378,7 @@ _PyFrame_SetStackPointer(frame, stack_pointer)
 #define GOTO_TIER_TWO(EXECUTOR)                        \
 do {                                                   \
     OPT_STAT_INC(traces_executed);                     \
-    jit_func jitted = (EXECUTOR)->jit_code;            \
+    jit_func_native jitted = (EXECUTOR)->jit_code;     \
     next_instr = jitted(frame, stack_pointer, tstate); \
     Py_DECREF(tstate->previous_executor);              \
     tstate->previous_executor = NULL;                  \
