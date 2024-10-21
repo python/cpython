@@ -192,7 +192,8 @@ def read_file_metadata(path, keys=None, *, follow_symlinks=True):
                 if err.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
                     raise
             continue
-        st = os.stat(path, follow_symlinks=follow_symlinks)
+        entry = path.dir_entry or path
+        st = entry.stat(follow_symlinks=follow_symlinks)
         if key == 'mode':
             result['mode'] = stat.S_IMODE(st.st_mode)
         elif key == 'times_ns':
