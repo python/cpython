@@ -1187,6 +1187,9 @@ class SysModuleTest(unittest.TestCase):
             b'    ~~^~~',
             b'ZeroDivisionError: division by zero'
         ]
+        self.assertTrue(hasattr(sys, "tracebacklimit"),
+                        'tracebacklimit attribute does not exist')
+        self.assertEqual(getattr(sys, 'tracebacklimit', 1_000), 1_000)
         check(10, traceback)
         check(3, traceback)
         check(2, traceback[:1] + traceback[4:])
