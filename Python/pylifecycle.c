@@ -674,6 +674,16 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return status;
     }
 
+    // Ideally we would call this in _PyInterpreterState_New(), but it
+    // requires interp->feature_flags to be correctly set already.
+    // That mwans we'd have to compute the feature flags before
+    // creating the interpreter and passing them in there, which we
+    // should probably be doing anyway.
+    status = _PyObject_InitState(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     // initialize the interp->obmalloc state.  This must be done after
     // the settings are loaded (so that feature_flags are set) but before
     // any calls are made to obmalloc functions.
