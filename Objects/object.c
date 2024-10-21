@@ -175,7 +175,8 @@ static inline int
 has_own_refchain(PyInterpreterState *interp)
 {
     if (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC) {
-        return _Py_IsMainInterpreter(interp);
+        return (_Py_IsMainInterpreter(interp)
+            || _PyInterpreterState_Main() == NULL);
     }
     return 1;
 }
