@@ -1,0 +1,3 @@
+Fix issue where :meth:`pathlib.Path.from_uri` accepted URIs with non-local
+authorities on POSIX. This method now raises :exc:`ValueError` when given
+a URI like ``file://server/share`` on a non-Windows system.
