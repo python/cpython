@@ -1650,7 +1650,7 @@ _PyDict_EnablePerThreadRefcounting(PyObject *op)
     PyDictObject *mp = (PyDictObject *)op;
     assert((mp->_ma_watcher_tag >> DICT_UNIQUE_ID_SHIFT) == 0);
     // Plus 1 so that _ma_watcher_tag=0 represents an unassigned id
-    mp->_ma_watcher_tag += (id + 1) << DICT_UNIQUE_ID_SHIFT;
+    mp->_ma_watcher_tag += ((uint64_t)id + 1) << DICT_UNIQUE_ID_SHIFT;
 #endif
 }
 
