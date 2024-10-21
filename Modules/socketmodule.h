@@ -12,6 +12,8 @@
 
 #else /* MS_WINDOWS */
 # include <winsock2.h>
+# include <ws2def.h>
+# include <mswsock.h>
 
 /*
  * If Windows has bluetooth support, include bluetooth constants.
