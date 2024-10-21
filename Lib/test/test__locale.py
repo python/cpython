@@ -27,8 +27,8 @@ candidate_locales = ['es_UY', 'fr_FR', 'fi_FI', 'es_CO', 'pt_PT', 'it_IT',
     'eu_ES', 'vi_VN', 'af_ZA', 'nb_NO', 'en_DK', 'tg_TJ', 'ps_AF', 'en_US',
     'fr_FR.ISO8859-1', 'fr_FR.UTF-8', 'fr_FR.ISO8859-15@euro',
     'ru_RU.KOI8-R', 'ko_KR.eucKR',
-    'ja_JP', 'lzh_TW', 'my_MM', 'or_IN', 'shn_MM',
-    'ar_AE', 'bn_IN', 'ks_IN', 'mr_IN', 'th_TH',
+    'ja_JP.UTF-8', 'lzh_TW.UTF-8', 'my_MM.UTF-8', 'or_IN.UTF-8', 'shn_MM.UTF-8',
+    'ar_AE.UTF-8', 'bn_IN.UTF-8', 'ja_JP.PCK', 'mr_IN.UTF-8', 'th_TH.TIS620',
 ]
 
 def setUpModule():
@@ -86,6 +86,8 @@ known_alt_digits = {
     'my_MM': (100, {0: '\u1040\u1040', 10: '\u1041\u1040', 99: '\u1049\u1049'}),
     'or_IN': (100, {0: '\u0b66', 10: '\u0b67\u0b66', 99: '\u0b6f\u0b6f'}),
     'shn_MM': (100, {0: '\u1090\u1090', 10: '\u1091\u1090', 99: '\u1099\u1099'}),
+    'ar_AE': (100, {0: '\u0660', 10: '\u0661\u0660', 99: '\u0669\u0669'}),
+    'bn_IN': (100, {0: '\u09e6', 10: '\u09e7\u09e6', 99: '\u09ef\u09ef'}),
 }
 
 if sys.platform == 'win32':
@@ -216,8 +218,9 @@ class _LocaleTests(unittest.TestCase):
                     alt_digits = alt_digits.split(';') if alt_digits else []
                     if alt_digits:
                         self.assertGreaterEqual(len(alt_digits), 10, alt_digits)
-                    if loc in known_alt_digits:
-                        count, samples = known_alt_digits[loc]
+                    loc1 = loc.split('.', 1)[0]
+                    if loc1 in known_alt_digits:
+                        count, samples = known_alt_digits[loc1]
                         if count and not alt_digits:
                             self.skipTest(f'ALT_DIGITS is not set for locale {loc!r} on this platform')
                         self.assertEqual(len(alt_digits), count, alt_digits)
