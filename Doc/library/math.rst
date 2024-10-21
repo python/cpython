@@ -26,12 +26,9 @@ The following functions are provided by this module.  Except when explicitly
 noted otherwise, all return values are floats.
 
 
-Summary
--------
-
-Number-theoretic and representation functions
-+++++++++++++++++++++++++++++++++++++++++++++
 =======================  ===============================================================
+**Number-theoretic and representation functions**
+----------------------------------------------------------------------------------------
 :func:`ceil`             Ceiling of *x*, the smallest integer greater than or equal to *x*.
 :func:`comb`             Number of ways to choose *k* items from *n* items without repetition and without order.
 :func:`copysign`         Magnitude (absolute value) of *x* with the sign of *y*.
@@ -58,13 +55,9 @@ Number-theoretic and representation functions
 :func:`sumprod`          Sum of products from two iterables.
 :func:`trunc`            Integer part.
 :func:`ulp`              Value of the least significant bit.
-=======================  ===============================================================
 
-
-Power and logarithmic functions
-+++++++++++++++++++++++++++++++
-
-=======================  ===============================================================
+**Power and logarithmic functions**
+----------------------------------------------------------------------------------------
 :func:`cbrt`             Cube root.
 :func:`exp`              *e* raised to the power *x*.
 :func:`exp2`             *2* raised to the power *x*.
@@ -75,13 +68,9 @@ Power and logarithmic functions
 :func:`log10`            Base-10 logarithm.
 :func:`pow`              ``x`` raised to the power ``y``.
 :func:`sqrt`             Square root.
-=======================  ===============================================================
 
-
-Trigonometric functions
-+++++++++++++++++++++++
-
-=======================  ===============================================================
+**Trigonometric functions**
+----------------------------------------------------------------------------------------
 :func:`acos`             Arc cosine.
 :func:`asin`             Arc sine.
 :func:`atan`             Arc tangent.
@@ -91,46 +80,30 @@ Trigonometric functions
 :func:`hypot`            Euclidean norm.
 :func:`sin`              Sine.
 :func:`tan`              Tangent.
-=======================  ===============================================================
 
-
-Angular conversion
-++++++++++++++++++
-
-=======================  ===============================================================
+**Angular conversion**
+----------------------------------------------------------------------------------------
 :func:`degrees`          Convert angle from radians to degrees.
 :func:`radians`          Convert angle from degrees to radians.
-=======================  ===============================================================
 
-
-Hyperbolic functions
-++++++++++++++++++++
-
-=======================  ===============================================================
+**Hyperbolic functions**
+----------------------------------------------------------------------------------------
 :func:`acosh`            Inverse hyperbolic cosine.
 :func:`asinh`            Inverse hyperbolic sine.
 :func:`atanh`            Inverse hyperbolic tangent.
 :func:`cosh`             Hyperbolic cosine.
 :func:`sinh`             Hyperbolic sine.
 :func:`tanh`             Hyperbolic tangent.
-=======================  ===============================================================
 
-
-Special functions
-+++++++++++++++++
-
-=======================  ===============================================================
+**Special functions**
+----------------------------------------------------------------------------------------
 :func:`erf`              `Error function <https://en.wikipedia.org/wiki/Error_function>`_.
 :func:`erfc`             `Complementary error function <https://en.wikipedia.org/wiki/Error_function>`_.
 :func:`gamma`            `Gamma function <https://en.wikipedia.org/wiki/Gamma_function>`_.
 :func:`lgamma`           Natural logarithm of the absolute value of the `Gamma function <https://en.wikipedia.org/wiki/Gamma_function>`_.
-=======================  ===============================================================
 
-
-Constants
-+++++++++
-
-=======================  ===============================================================
+**Constants**
+----------------------------------------------------------------------------------------
 :data:`pi`               *π* = 3.141592...
 :func:`e`                *e* = 2.718281...
 :func:`tau`              *τ* = 2\ *π* = 6.283185....
