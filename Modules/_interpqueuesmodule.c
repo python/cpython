@@ -845,6 +845,7 @@ typedef struct _queues {
 static void
 _queues_init(_queues *queues, PyThread_type_lock mutex)
 {
+    assert(mutex != NULL);
     queues->mutex = mutex;
     queues->head = NULL;
     queues->count = 0;
@@ -852,8 +853,9 @@ _queues_init(_queues *queues, PyThread_type_lock mutex)
 }
 
 static void
-_queues_fini(_queues *queues)
+_queues_fini(_queues *queues, PyThread_type_lock *p_mutex)
 {
+    assert(queues->mutex != NULL);
     if (queues->count > 0) {
         PyThread_acquire_lock(queues->mutex, WAIT_LOCK);
         assert((queues->count == 0) != (queues->head != NULL));
@@ -863,10 +865,8 @@ _queues_fini(_queues *queues)
         PyThread_release_lock(queues->mutex);
         _queuerefs_clear(head);
     }
-    if (queues->mutex != NULL) {
-        PyThread_free_lock(queues->mutex);
-        queues->mutex = NULL;
-    }
+    *p_mutex = queues->mutex;
+    queues->mutex = NULL;
 }
 
 static int64_t
@@ -1430,7 +1430,11 @@ _globals_fini(void)
         return;
     }
 
-    _queues_fini(&_globals.queues);
+    PyThread_type_lock mutex;
+    _queues_fini(&_globals.queues, &mutex);
+    if (mutex != NULL) {
+        PyThread_free_lock(mutex);
+    }
 }
 
 static _queues *

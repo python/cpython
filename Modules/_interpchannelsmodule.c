@@ -1349,6 +1349,7 @@ typedef struct _channels {
 static void
 _channels_init(_channels *channels, PyThread_type_lock mutex)
 {
+    assert(mutex != NULL);
     channels->mutex = mutex;
     channels->head = NULL;
     channels->numopen = 0;
@@ -1356,14 +1357,12 @@ _channels_init(_channels *channels, PyThread_type_lock mutex)
 }
 
 static void
-_channels_fini(_channels *channels)
+_channels_fini(_channels *channels, PyThread_type_lock *p_mutex)
 {
     assert(channels->numopen == 0);
     assert(channels->head == NULL);
-    if (channels->mutex != NULL) {
-        PyThread_free_lock(channels->mutex);
-        channels->mutex = NULL;
-    }
+    *p_mutex = channels->mutex;
+    channels->mutex = NULL;
 }
 
 static int64_t
@@ -2844,7 +2843,11 @@ _globals_fini(void)
         return;
     }
 
-    _channels_fini(&_globals.channels);
+    PyThread_type_lock mutex;
+    _channels_fini(&_globals.channels, &mutex);
+    if (mutex != NULL) {
+        PyThread_free_lock(mutex);
+    }
 }
 
 static _channels *
