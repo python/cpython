@@ -293,6 +293,20 @@ extern PyStatus _PyObject_InitState(PyInterpreterState *interp);
 extern void _PyObject_FiniState(PyInterpreterState *interp);
 extern bool _PyRefchain_IsTraced(PyInterpreterState *interp, PyObject *obj);
 
+// Macros used for per-thread reference counting in the free threading build.
+// They resolve to normal Py_INCREF/DECREF calls in the default build.
+//
+// The macros are used for only a few references that would otherwise cause
+// scaling bottlenecks in the free threading build:
+// - The reference from an object to `ob_type`.
+// - The reference from a function to `func_code`.
+// - The reference from a function to `func_globals` and `func_builtins`.
+//
+// It's safe, but not performant or necessary, to use these macros for other
+// references to code, type, or dict objects. It's also safe to mix their
+// usage with normal Py_INCREF/DECREF calls.
+//
+// See also Include/internal/pycore_dict.h for _Py_INCREF_DICT/_Py_DECREF_DICT.
 #ifndef Py_GIL_DISABLED
 #  define _Py_INCREF_TYPE Py_INCREF
 #  define _Py_DECREF_TYPE Py_DECREF

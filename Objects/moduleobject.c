@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_dict.h"          // _PyDict_EnablePerThreadRefcounting()
 #include "pycore_fileutils.h"     // _Py_wgetcwd
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_long.h"          // _PyLong_GetOne()
@@ -105,7 +106,7 @@ new_module_notrack(PyTypeObject *mt)
 static void
 track_module(PyModuleObject *m)
 {
-    _PyObject_SetDeferredRefcount(m->md_dict);
+    _PyDict_EnablePerThreadRefcounting(m->md_dict);
     PyObject_GC_Track(m->md_dict);
 
     _PyObject_SetDeferredRefcount((PyObject *)m);

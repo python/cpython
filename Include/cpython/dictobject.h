@@ -17,7 +17,9 @@ typedef struct {
     /* This is a private field for CPython's internal use.
      * Bits 0-7 are for dict watchers.
      * Bits 8-11 are for the watched mutation counter (used by tier2 optimization)
-     * The remaining bits are not currently used. */
+     * Bits 12-31 are currently unused
+     * Bits 32-63 are a unique id in the free threading build (used for per-thread refcounting)
+     */
     uint64_t _ma_watcher_tag;
 
     PyDictKeysObject *ma_keys;
