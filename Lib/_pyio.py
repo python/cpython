@@ -23,8 +23,8 @@ if hasattr(os, 'SEEK_HOLE') :
     valid_seek_flags.add(os.SEEK_HOLE)
     valid_seek_flags.add(os.SEEK_DATA)
 
-# open() uses st_blksize whenever we can
-DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
+# open() uses max(st_blksize, io.DEFAULT_BUFFER_SIZE) when st_blksize is available
+DEFAULT_BUFFER_SIZE = 128 * 1024  # bytes
 
 # NOTE: Base classes defined here are registered with the "official" ABCs
 # defined in io.py. We don't use real inheritance though, because we don't want
@@ -123,10 +123,11 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     the size of a fixed-size chunk buffer.  When no buffering argument is
     given, the default buffering policy works as follows:
 
-    * Binary files are buffered in fixed-size chunks; the size of the buffer
-      is chosen using a heuristic trying to determine the underlying device's
-      "block size" and falling back on `io.DEFAULT_BUFFER_SIZE`.
-      On many systems, the buffer will typically be 4096 or 8192 bytes long.
+   * Binary files are buffered in fixed-size chunks; the size of the buffer
+     is set to `max(io.DEFAULT_BUFFER_SIZE, st_blksize)` using a heuristic
+     trying to determine the underlying device's "block size" when available
+     and falling back on `io.DEFAULT_BUFFER_SIZE`.
+     On most systems, the buffer will typically be 131072 bytes long.
 
     * "Interactive" text files (files for which isatty() returns True)
       use line buffering.  Other text files use the policy described above
@@ -242,7 +243,7 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
             buffering = -1
             line_buffering = True
         if buffering < 0:
-            buffering = raw._blksize
+            buffering = max(raw._blksize, DEFAULT_BUFFER_SIZE)
         if buffering < 0:
             raise ValueError("invalid buffering size")
         if buffering == 0:
@@ -1558,15 +1559,18 @@ class FileIO(RawIOBase):
                     os.set_inheritable(fd, False)
 
             self._closefd = closefd
-            self._stat_atopen = os.fstat(fd)
+            fdfstat = os.fstat(fd)
             try:
-                if stat.S_ISDIR(self._stat_atopen.st_mode):
+                if stat.S_ISDIR(fdfstat.st_mode):
                     raise IsADirectoryError(errno.EISDIR,
                                             os.strerror(errno.EISDIR), file)
             except AttributeError:
                 # Ignore the AttributeError if stat.S_ISDIR or errno.EISDIR
                 # don't exist.
                 pass
+            self._blksize = getattr(fdfstat, 'st_blksize', 0)
+            if self._blksize < DEFAULT_BUFFER_SIZE:
+                self._blksize = DEFAULT_BUFFER_SIZE
 
             if _setmode:
                 # don't translate newlines (\r\n <=> \n)
@@ -1612,17 +1616,6 @@ class FileIO(RawIOBase):
             return ('<%s name=%r mode=%r closefd=%r>' %
                     (class_name, name, self.mode, self._closefd))
 
-    @property
-    def _blksize(self):
-        if self._stat_atopen is None:
-            return DEFAULT_BUFFER_SIZE
-
-        blksize = getattr(self._stat_atopen, "st_blksize", 0)
-        # WASI sets blsize to 0
-        if not blksize:
-            return DEFAULT_BUFFER_SIZE
-        return blksize
-
     def _checkReadable(self):
         if not self._readable:
             raise UnsupportedOperation('File not open for reading')
@@ -1655,22 +1648,14 @@ class FileIO(RawIOBase):
         """
         self._checkClosed()
         self._checkReadable()
-        if self._stat_atopen is None or self._stat_atopen.st_size <= 0:
-            bufsize = DEFAULT_BUFFER_SIZE
-        else:
-            # In order to detect end of file, need a read() of at least 1
-            # byte which returns size 0. Oversize the buffer by 1 byte so the
-            # I/O can be completed with two read() calls (one for all data, one
-            # for EOF) without needing to resize the buffer.
-            bufsize = self._stat_atopen.st_size + 1
-
-            if self._stat_atopen.st_size > 65536:
-                try:
-                    pos = os.lseek(self._fd, 0, SEEK_CUR)
-                    if self._stat_atopen.st_size >= pos:
-                        bufsize = self._stat_atopen.st_size - pos + 1
-                except OSError:
-                    pass
+        bufsize = DEFAULT_BUFFER_SIZE
+        try:
+            pos = os.lseek(self._fd, 0, SEEK_CUR)
+            end = os.fstat(self._fd).st_size
+            if end >= pos:
+                bufsize = end - pos + 1
+        except OSError:
+            pass
 
         result = bytearray()
         while True:
@@ -1746,7 +1731,6 @@ class FileIO(RawIOBase):
         if size is None:
             size = self.tell()
         os.ftruncate(self._fd, size)
-        self._stat_atopen = None
         return size
 
     def close(self):
