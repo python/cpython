@@ -559,7 +559,7 @@ path.
 
 ``DatabaseDistribution``, then, would look something like::
 
-    class DatabaseDistribution(importlib.metadata.Distributon):
+    class DatabaseDistribution(importlib.metadata.Distribution):
         def __init__(self, record):
             self.record = record
 
