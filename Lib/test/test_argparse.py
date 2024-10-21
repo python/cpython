@@ -15,6 +15,7 @@ import unittest
 import argparse
 import warnings
 
+from enum import StrEnum
 from test.support import os_helper
 from unittest import mock
 
@@ -1020,6 +1021,34 @@ class TestDisallowLongAbbreviationAllowsShortGroupingPrefix(ParserTestCase):
         ('+ccrcc', NS(r='cc', c=2)),
     ]
 
+
+class TestStrEnumChoices(TestCase):
+    class Color(StrEnum):
+        RED = "red"
+        GREEN = "green"
+        BLUE = "blue"
+
+    def test_parse_enum_value(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--color', choices=self.Color)
+        args = parser.parse_args(['--color', 'red'])
+        self.assertEqual(args.color, self.Color.RED)
+
+    def test_help_message_contains_enum_choices(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--color', choices=self.Color, help='Choose a color')
+        self.assertIn('[--color {red,green,blue}]', parser.format_usage())
+        self.assertIn('  --color {red,green,blue}', parser.format_help())
+
+    def test_invalid_enum_value_raises_error(self):
+        parser = argparse.ArgumentParser(exit_on_error=False)
+        parser.add_argument('--color', choices=self.Color)
+        self.assertRaisesRegex(
+            argparse.ArgumentError,
+            r"invalid choice: 'yellow' \(choose from red, green, blue\)",
+            parser.parse_args,
+            ['--color', 'yellow'],
+        )
 
 # ================
 # Positional tests
@@ -2422,7 +2451,7 @@ class TestAddSubparsers(TestCase):
             parser.parse_args(('baz',))
         self.assertRegex(
             excinfo.exception.stderr,
-            r"error: argument {foo,bar}: invalid choice: 'baz' \(choose from 'foo', 'bar'\)\n$"
+            r"error: argument {foo,bar}: invalid choice: 'baz' \(choose from foo, bar\)\n$"
         )
 
     def test_optional_subparsers(self):
@@ -2879,6 +2908,35 @@ class TestParentParsers(TestCase):
               -w W
               -x X
         '''.format(progname, ' ' if progname else '' )))
+
+    def test_mutex_groups_parents(self):
+        parent = ErrorRaisingArgumentParser(add_help=False)
+        g = parent.add_argument_group(title='g', description='gd')
+        g.add_argument('-w')
+        g.add_argument('-x')
+        m = g.add_mutually_exclusive_group()
+        m.add_argument('-y')
+        m.add_argument('-z')
+        parser = ErrorRaisingArgumentParser(prog='PROG', parents=[parent])
+
+        self.assertRaises(ArgumentParserError, parser.parse_args,
+            ['-y', 'Y', '-z', 'Z'])
+
+        parser_help = parser.format_help()
+        self.assertEqual(parser_help, textwrap.dedent('''\
+            usage: PROG [-h] [-w W] [-x X] [-y Y | -z Z]
+
+            options:
+              -h, --help  show this help message and exit
+
+            g:
+              gd
+
+              -w W
+              -x X
+              -y Y
+              -z Z
+        '''))
 
 # ==============================
 # Mutually exclusive group tests
@@ -6281,9 +6339,19 @@ class TestExitOnError(TestCase):
     def test_ambiguous_option(self):
         self.parser.add_argument('--foobaz')
         self.parser.add_argument('--fooble', action='store_true')
+        self.parser.add_argument('--foogle')
         self.assertRaisesRegex(argparse.ArgumentError,
-                               "ambiguous option: --foob could match --foobaz, --fooble",
-                               self.parser.parse_args, ['--foob'])
+                "ambiguous option: --foob could match --foobaz, --fooble",
+            self.parser.parse_args, ['--foob'])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                "ambiguous option: --foob=1 could match --foobaz, --fooble$",
+            self.parser.parse_args, ['--foob=1'])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                "ambiguous option: --foob could match --foobaz, --fooble$",
+            self.parser.parse_args, ['--foob', '1', '--foogle', '2'])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                "ambiguous option: --foob=1 could match --foobaz, --fooble$",
+            self.parser.parse_args, ['--foob=1', '--foogle', '2'])
 
     def test_os_error(self):
         self.parser.add_argument('file')

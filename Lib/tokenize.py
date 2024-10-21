@@ -202,7 +202,7 @@ class Untokenizer:
                         characters[-2::-1]
                     )
                 )
-                if n_backslashes % 2 == 0:
+                if n_backslashes % 2 == 0 or characters[-1] != "N":
                     characters.append(character)
                 else:
                     consume_until_next_bracket = True

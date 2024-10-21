@@ -618,7 +618,42 @@ _locale_nl_langinfo_impl(PyObject *module, int item)
                instead of an empty string for nl_langinfo(ERA).  */
             const char *result = nl_langinfo(item);
             result = result != NULL ? result : "";
-            return PyUnicode_DecodeLocale(result, NULL);
+            PyObject *pyresult;
+#ifdef __GLIBC__
+#ifdef ALT_DIGITS
+            if (item == ALT_DIGITS && *result) {
+                /* According to the POSIX specification the result must be
+                 * a sequence of up to 100 semicolon-separated strings.
+                 * But in Glibc they are NUL-separated. */
+                Py_ssize_t i = 0;
+                int count = 0;
+                for (; count < 100 && result[i]; count++) {
+                    i += strlen(result + i) + 1;
+                }
+                char *buf = PyMem_Malloc(i);
+                if (buf == NULL) {
+                    PyErr_NoMemory();
+                    pyresult = NULL;
+                }
+                else {
+                    memcpy(buf, result, i);
+                    /* Replace all NULs with semicolons. */
+                    i = 0;
+                    while (--count) {
+                        i += strlen(buf + i);
+                        buf[i++] = ';';
+                    }
+                    pyresult = PyUnicode_DecodeLocale(buf, NULL);
+                    PyMem_Free(buf);
+                }
+            }
+            else
+#endif
+#endif
+            {
+                pyresult = PyUnicode_DecodeLocale(result, NULL);
+            }
+            return pyresult;
         }
     PyErr_SetString(PyExc_ValueError, "unsupported langinfo constant");
     return NULL;

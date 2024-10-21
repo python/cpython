@@ -1242,7 +1242,7 @@ class FormatTest:
         self.assertEqual(get_fmt(Decimal('-1.5'), dotsep_wide, '020n'),
                          '-0\u00b4000\u00b4000\u00b4000\u00b4001\u00bf5')
 
-    @run_with_locale('LC_ALL', 'ps_AF')
+    @run_with_locale('LC_ALL', 'ps_AF', '')
     def test_wide_char_separator_decimal_point(self):
         # locale with wide char separator and decimal point
         Decimal = self.decimal.Decimal

@@ -588,8 +588,7 @@ class HelpFormatter(object):
         if action.metavar is not None:
             result = action.metavar
         elif action.choices is not None:
-            choice_strs = [str(choice) for choice in action.choices]
-            result = '{%s}' % ','.join(choice_strs)
+            result = '{%s}' % ','.join(map(str, action.choices))
         else:
             result = default_metavar
 
@@ -637,8 +636,7 @@ class HelpFormatter(object):
             if hasattr(params[name], '__name__'):
                 params[name] = params[name].__name__
         if params.get('choices') is not None:
-            choices_str = ', '.join([str(c) for c in params['choices']])
-            params['choices'] = choices_str
+            params['choices'] = ', '.join(map(str, params['choices']))
         return self._get_help_string(action) % params
 
     def _iter_indented_subactions(self, action):
@@ -763,7 +761,7 @@ def _get_action_name(argument):
     elif argument.dest not in (None, SUPPRESS):
         return argument.dest
     elif argument.choices:
-        return '{' + ','.join(argument.choices) + '}'
+        return '{%s}' % ','.join(map(str, argument.choices))
     else:
         return None
 
@@ -1564,7 +1562,11 @@ class _ActionsContainer(object):
         # NOTE: if add_mutually_exclusive_group ever gains title= and
         # description= then this code will need to be expanded as above
         for group in container._mutually_exclusive_groups:
-            mutex_group = self.add_mutually_exclusive_group(
+            if group._container is container:
+                cont = self
+            else:
+                cont = title_group_map[group._container.title]
+            mutex_group = cont.add_mutually_exclusive_group(
                 required=group.required)
 
             # map the actions to their new mutex group
@@ -2021,7 +2023,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             if len(option_tuples) > 1:
                 options = ', '.join([option_string
                     for action, option_string, sep, explicit_arg in option_tuples])
-                args = {'option': arg_string, 'matches': options}
+                args = {'option': arg_strings[start_index], 'matches': options}
                 msg = _('ambiguous option: %(option)s could match %(matches)s')
                 raise ArgumentError(None, msg % args)
 
@@ -2596,8 +2598,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             if isinstance(choices, str):
                 choices = iter(choices)
             if value not in choices:
-                args = {'value': value,
-                        'choices': ', '.join(map(repr, action.choices))}
+                args = {'value': str(value),
+                        'choices': ', '.join(map(str, action.choices))}
                 msg = _('invalid choice: %(value)r (choose from %(choices)s)')
                 raise ArgumentError(action, msg % args)
 
