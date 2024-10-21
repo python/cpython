@@ -269,7 +269,7 @@ class GeneratorTest(unittest.TestCase):
         loop()
 
 
-class ModifyTest(unittest.TestCase):
+class ModifyUnderlyingIterableTest(unittest.TestCase):
     iterables = [
         range(0),
         range(20),
