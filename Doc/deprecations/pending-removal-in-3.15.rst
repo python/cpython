@@ -78,3 +78,8 @@ Pending removal in Python 3.15
     and :meth:`~wave.Wave_read.getmarkers` methods of
     the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes
     have been deprecated since Python 3.13.
+
+* :mod:`zipimport`:
+
+* :meth:`~zipimport.zipimporter.load_module` have been deprecated since
+  Python 3.10. Use :meth:`~zipimport.zipimporter.exec_module` instead.
