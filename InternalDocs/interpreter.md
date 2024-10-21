@@ -7,16 +7,13 @@ Overview
 
 This document describes the workings and implementation of the bytecode
 interpreter, the part of python that executes compiled Python code. Its
-entry point is in
-[Python/ceval.c](https://github.com/python/cpython/blob/main/Python/ceval.c).
+entry point is in [Python/ceval.c](../Python/ceval.c).
 
 At a high level, the interpreter consists of a loop that iterates over the
 bytecode instructions, executing each of them via a switch statement that
 has a case implementing each opcode. This switch statement is generated
-from the instruction definitions in
-[Python/bytecodes.c](https://github.com/python/cpython/blob/main/Python/bytecodes.c)
-which are written in
-[a DSL](https://github.com/python/cpython/blob/main/Tools/cases_generator/interpreter_definition.md)
+from the instruction definitions in [Python/bytecodes.c](../Python/bytecodes.c)
+which are written in [a DSL](../Tools/cases_generator/interpreter_definition.md)
 developed for this purpose.
 
 Recall that the [Python Compiler](compiler.md) produces a [`CodeObject`](code_object.md),
@@ -139,8 +136,7 @@ Although they are represented by code units, cache entries do not conform to the
 `opcode` / `oparg` format.
 
 If an instruction has an inline cache, the layout of its cache is described by
-a `struct` definition in
-(`pycore_code.h`)[https://github.com/python/cpython/blob/main/Include/internal/pycore_code.h].
+a `struct` definition in (`pycore_code.h`)[../Include/internal/pycore_code.h].
 This allows us to access the cache by casting `next_instr` to a pointer to this `struct`.
 The size of such a `struct` must be independent of the machine architecture, word size
 and alignment requirements.  For a 32-bit field, the `struct` should use `_Py_CODEUNIT field[2]`.
@@ -170,8 +166,8 @@ stack can be pre-allocated is a contiguous array of `PyObject*` pointers, when t
 is created.
 
 The stack effects of each instruction are also exposed through the
-[opcode metadata](https://github.com/python/cpython/blob/main/Include/internal/pycore_opcode_metadata.h)
-through two functions that report how many stack elements the instructions consumes,
+[opcode metadata](../Include/internal/pycore_opcode_metadata.h) through two
+functions that report how many stack elements the instructions consumes,
 and how many it produces (`_PyOpcode_num_popped` and `_PyOpcode_num_pushed`).
 For example, the `BINARY_OP` instruction pops two objects from the stack and pushes the
 result back onto the stack.
@@ -202,8 +198,7 @@ Error handling
 --------------
 
 When the implementation of an opcode raises an exception, it jumps to the
-`exception_unwind` label in
-[Python/ceval.c](https://github.com/python/cpython/blob/main/Python/ceval.c).
+`exception_unwind` label in [Python/ceval.c](../Python/ceval.c).
 The exception is then handled as described in the
 [`exception handling documentation`](exception_handling.md#handling-exceptions).
 
@@ -311,29 +306,27 @@ a new feature or change the way that existing features are compiled.
 This section describes the changes required to do this.
 
 First, you must choose a name for the bytecode, implement it in
-[`Python/bytecodes.c`](https://github.com/python/cpython/blob/main/Python/bytecodes.c)
-and add a documentation entry in
-[`Doc/library/dis.rst`](https://github.com/python/cpython/blob/main/Doc/library/dis.rst).
+[`Python/bytecodes.c`](../Python/bytecodes.c) and add a documentation
+entry in [`Doc/library/dis.rst`](../Doc/library/dis.rst).
 Then run `make regen-cases` to assign a number for it (see
-[`Include/opcode_ids.h`](https://github.com/python/cpython/blob/main/Include/opcode_ids.h))
-and regenerate a number of files with the actual implementation of the bytecode in
-[`Python/generated_cases.c.h`](https://github.com/python/cpython/blob/main/Python/generated_cases.c.h)
-and metadata about it in additional files.
+[`Include/opcode_ids.h`](../Include/opcode_ids.h)) and regenerate a
+number of files with the actual implementation of the bytecode in
+[`Python/generated_cases.c.h`](../Python/generated_cases.c.h) and
+metadata about it in additional files.
 
 With a new bytecode you must also change what is called the "magic number" for
 .pyc files: bump the value of the variable `MAGIC_NUMBER` in
-[`Lib/importlib/_bootstrap_external.py`](https://github.com/python/cpython/blob/main/Lib/importlib/_bootstrap_external.py).
+[`Lib/importlib/_bootstrap_external.py`](../Lib/importlib/_bootstrap_external.py).
 Changing this number will lead to all .pyc files with the old `MAGIC_NUMBER`
 to be recompiled by the interpreter on import.  Whenever `MAGIC_NUMBER` is
 changed, the ranges in the `magic_values` array in
-[`PC/launcher.c`](https://github.com/python/cpython/blob/main/PC/launcher.c)
-may also need to be updated.  Changes to
-[`Lib/importlib/_bootstrap_external.py`](https://github.com/python/cpython/blob/main/Lib/importlib/_bootstrap_external.py)
+[`PC/launcher.c`](../PC/launcher.c) may also need to be updated.  Changes to
+[`Lib/importlib/_bootstrap_external.py`](../Lib/importlib/_bootstrap_external.py)
 will take effect only after running `make regen-importlib`.
 
 > [!NOTE]
 > Running `make regen-importlib` before adding the new bytecode target to
-> [`Python/bytecodes.c`](https://github.com/python/cpython/blob/main/Python/bytecodes.c)
+> [`Python/bytecodes.c`](../Python/bytecodes.c)
 > (followed by `make regen-cases`) will result in an error. You should only run
 > `make regen-importlib` after the new bytecode target has been added.
 
@@ -342,15 +335,13 @@ will take effect only after running `make regen-importlib`.
 > regenerate the required files without requiring additional arguments.
 
 Finally, you need to introduce the use of the new bytecode.  Update
-[`Python/codegen.c`](https://github.com/python/cpython/blob/main/Python/codegen.c)
-to emit code with this bytecode. Optimizations in :cpy-file:`Python/flowgraph.c`
-may also need to be updated.  If the new opcode affects a control flow or the
-block stack, you may have to update the `frame_setlineno()` function in
-[`Objects/frameobject.c`](https://github.com/python/cpython/blob/main/Objects/frameobject.c).
-It may also be necessary to update
-[`Lib/dis.py`](https://github.com/python/cpython/blob/main/Lib/dis.py)
-if the new opcode interprets its argument in a special way (like `FORMAT_VALUE`
-or `MAKE_FUNCTION`).
+[`Python/codegen.c`](../Python/codegen.c) to emit code with this bytecode.
+Optimizations in :cpy-file:`Python/flowgraph.c` may also need to be updated.
+If the new opcode affects a control flow or the block stack, you may have to
+update the `frame_setlineno()` function in
+[`Objects/frameobject.c`](../Objects/frameobject.c).  It may also be necessary
+to update [`Lib/dis.py`](../Lib/dis.py) if the new opcode interprets its
+argument in a special way (like `FORMAT_VALUE` or `MAKE_FUNCTION`).
 
 If you make a change here that can affect the output of bytecode that
 is already in existence and you do not change the magic number, make
