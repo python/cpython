@@ -20,18 +20,20 @@ from generators_common import (
     DEFAULT_INPUT,
     ROOT,
     write_header,
-    emit_tokens,
     type_and_null,
+    Emitter,
+    TokenIterator,
 )
 from cwriter import CWriter
 from typing import TextIO
-from stack import Stack, StackError
+from stack import Local, Stack, StackError, get_stack_effect, Storage
 
 
 DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"
 
 
 FOOTER = "#undef TIER_ONE\n"
+
 
 def declare_variable(var: StackItem, out: CWriter) -> None:
     type, null = type_and_null(var)
@@ -43,18 +45,12 @@ def declare_variable(var: StackItem, out: CWriter) -> None:
 
 
 def declare_variables(inst: Instruction, out: CWriter) -> None:
-    stack = Stack()
-    for part in inst.parts:
-        if not isinstance(part, Uop):
-            continue
-        try:
-            for var in reversed(part.stack.inputs):
-                stack.pop(var)
-            for var in part.stack.outputs:
-                 stack.push(var)
-        except StackError as ex:
-            raise analysis_error(ex.args[0], part.body[0]) from None
+    try:
+        stack = get_stack_effect(inst)
+    except StackError as ex:
+        raise analysis_error(ex.args[0], inst.where) from None
     required = set(stack.defined)
+    required.discard("unused")
     for part in inst.parts:
         if not isinstance(part, Uop):
             continue
@@ -67,29 +63,35 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
                 required.remove(var.name)
                 declare_variable(var, out)
 
+
 def write_uop(
-    uop: Part, out: CWriter, offset: int, stack: Stack, inst: Instruction, braces: bool
-) -> int:
+    uop: Part,
+    emitter: Emitter,
+    offset: int,
+    stack: Stack,
+    inst: Instruction,
+    braces: bool,
+) -> tuple[int, Stack]:
     # out.emit(stack.as_comment() + "\n")
     if isinstance(uop, Skip):
         entries = "entries" if uop.size > 1 else "entry"
-        out.emit(f"/* Skip {uop.size} cache {entries} */\n")
-        return offset + uop.size
+        emitter.emit(f"/* Skip {uop.size} cache {entries} */\n")
+        return (offset + uop.size), stack
     if isinstance(uop, Flush):
-        out.emit(f"// flush\n")
-        stack.flush(out)
-        return offset
+        emitter.emit(f"// flush\n")
+        stack.flush(emitter.out)
+        return offset, stack
     try:
-        out.start_line()
+        locals: dict[str, Local] = {}
+        emitter.out.start_line()
         if braces:
-            out.emit(f"// {uop.name}\n")
-        for var in reversed(uop.stack.inputs):
-            out.emit(stack.pop(var))
-        if braces:
-            out.emit("{\n")
-        if not uop.properties.stores_sp:
-            for i, var in enumerate(uop.stack.outputs):
-                out.emit(stack.push(var))
+            emitter.out.emit(f"// {uop.name}\n")
+            emitter.emit("{\n")
+        code_list, storage = Storage.for_uop(stack, uop)
+        emitter._print_storage(storage)
+        for code in code_list:
+            emitter.emit(code)
+
         for cache in uop.caches:
             if cache.name != "unused":
                 if cache.size == 4:
@@ -98,23 +100,21 @@ def write_uop(
                 else:
                     type = f"uint{cache.size*16}_t "
                     reader = f"read_u{cache.size*16}"
-                out.emit(
+                emitter.emit(
                     f"{type}{cache.name} = {reader}(&this_instr[{offset}].cache);\n"
                 )
                 if inst.family is None:
-                    out.emit(f"(void){cache.name};\n")
+                    emitter.emit(f"(void){cache.name};\n")
             offset += cache.size
-        emit_tokens(out, uop, stack, inst)
-        if uop.properties.stores_sp:
-            for i, var in enumerate(uop.stack.outputs):
-                out.emit(stack.push(var))
+
+        storage = emitter.emit_tokens(uop, storage, inst)
         if braces:
-            out.start_line()
-            out.emit("}\n")
-        # out.emit(stack.as_comment() + "\n")
-        return offset
+            emitter.out.start_line()
+            emitter.emit("}\n")
+        # emitter.emit(stack.as_comment() + "\n")
+        return offset, storage.stack
     except StackError as ex:
-        raise analysis_error(ex.args[0], uop.body[0]) from None
+        raise analysis_error(ex.args[0], uop.body[0])
 
 
 def uses_this(inst: Instruction) -> bool:
@@ -142,6 +142,7 @@ def generate_tier1(
 """
     )
     out = CWriter(outfile, 2, lines)
+    emitter = Emitter(out)
     out.emit("\n")
     for name, inst in sorted(analysis.instructions.items()):
         needs_this = uses_this(inst)
@@ -149,9 +150,9 @@ def generate_tier1(
         out.emit(f"TARGET({name}) {{\n")
         unused_guard = "(void)this_instr;\n" if inst.family is None else ""
         if inst.properties.needs_prev:
-            out.emit(f"_Py_CODEUNIT *prev_instr = frame->instr_ptr;\n")
+            out.emit(f"_Py_CODEUNIT* const prev_instr = frame->instr_ptr;\n")
         if needs_this and not inst.is_target:
-            out.emit(f"_Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;\n")
+            out.emit(f"_Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;\n")
             out.emit(unused_guard)
         else:
             out.emit(f"frame->instr_ptr = next_instr;\n")
@@ -160,7 +161,7 @@ def generate_tier1(
         if inst.is_target:
             out.emit(f"PREDICTED({name});\n")
             if needs_this:
-                out.emit(f"_Py_CODEUNIT *this_instr = next_instr - {inst.size};\n")
+                out.emit(f"_Py_CODEUNIT* const this_instr = next_instr - {inst.size};\n")
                 out.emit(unused_guard)
         if inst.family is not None:
             out.emit(
@@ -173,12 +174,11 @@ def generate_tier1(
         for part in inst.parts:
             # Only emit braces if more than one uop
             insert_braces = len([p for p in inst.parts if isinstance(p, Uop)]) > 1
-            offset = write_uop(part, out, offset, stack, inst, insert_braces)
+            offset, stack = write_uop(part, emitter, offset, stack, inst, insert_braces)
         out.start_line()
+
+        stack.flush(out)
         if not inst.parts[-1].properties.always_exits:
-            stack.flush(out)
-            if inst.parts[-1].properties.ends_with_eval_breaker:
-                out.emit("CHECK_EVAL_BREAKER();\n")
             out.emit("DISPATCH();\n")
         out.start_line()
         out.emit("}")

@@ -108,6 +108,7 @@ do { \
 /* Do interpreter dispatch accounting for tracing and instrumentation */
 #define DISPATCH() \
     { \
+        assert(frame->stackpointer == NULL); \
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
         DISPATCH_GOTO(); \
@@ -124,7 +125,7 @@ do { \
     do {                                                \
         assert(tstate->interp->eval_frame == NULL);     \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
-        (NEW_FRAME)->previous = frame;                  \
+        assert((NEW_FRAME)->previous == frame);         \
         frame = tstate->current_frame = (NEW_FRAME);     \
         CALL_STAT_INC(inlined_py_calls);                \
         goto start_frame;                               \
@@ -132,16 +133,6 @@ do { \
 
 // Use this instead of 'goto error' so Tier 2 can go to a different label
 #define GOTO_ERROR(LABEL) goto LABEL
-
-#define CHECK_EVAL_BREAKER() \
-    _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
-    QSBR_QUIESCENT_STATE(tstate); \
-    if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) { \
-        if (_Py_HandlePending(tstate) != 0) { \
-            GOTO_ERROR(error); \
-        } \
-    }
-
 
 /* Tuple access macros */
 
@@ -336,26 +327,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     " in enclosing scope"
 #define NAME_ERROR_MSG "name '%.200s' is not defined"
 
-#define DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dval, result) \
-do { \
-    if (Py_REFCNT(left) == 1) { \
-        ((PyFloatObject *)left)->ob_fval = (dval); \
-        _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);\
-        result = (left); \
-    } \
-    else if (Py_REFCNT(right) == 1)  {\
-        ((PyFloatObject *)right)->ob_fval = (dval); \
-        _Py_DECREF_NO_DEALLOC(left); \
-        result = (right); \
-    }\
-    else { \
-        result = PyFloat_FromDouble(dval); \
-        if ((result) == NULL) GOTO_ERROR(error); \
-        _Py_DECREF_NO_DEALLOC(left); \
-        _Py_DECREF_NO_DEALLOC(right); \
-    } \
-} while (0)
-
 // If a trace function sets a new f_lineno and
 // *then* raises, we use the destination when searching
 // for an exception handler, displaying the traceback, and so on
@@ -374,13 +345,6 @@ do { \
     } \
 } while (0);
 
-
-// GH-89279: Force inlining by using a macro.
-#if defined(_MSC_VER) && SIZEOF_INT == 4
-#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) (assert(sizeof((ATOMIC_VAL)->_value) == 4), *((volatile int*)&((ATOMIC_VAL)->_value)))
-#else
-#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) _Py_atomic_load_relaxed(ATOMIC_VAL)
-#endif
 
 static inline int _Py_EnterRecursivePy(PyThreadState *tstate) {
     return (tstate->py_recursion_remaining-- <= 0) &&

@@ -46,10 +46,14 @@ def nth_line(func, offset):
 
 class MonitoringBasicTest(unittest.TestCase):
 
+    def tearDown(self):
+        sys.monitoring.free_tool_id(TEST_TOOL)
+
     def test_has_objects(self):
         m = sys.monitoring
         m.events
         m.use_tool_id
+        m.clear_tool_id
         m.free_tool_id
         m.get_tool
         m.get_events
@@ -76,6 +80,43 @@ class MonitoringBasicTest(unittest.TestCase):
         self.assertEqual(sys.monitoring.get_tool(TEST_TOOL), None)
         with self.assertRaises(ValueError):
             sys.monitoring.set_events(TEST_TOOL, sys.monitoring.events.CALL)
+
+    def test_clear(self):
+        events = []
+        sys.monitoring.use_tool_id(TEST_TOOL, "MonitoringTest.Tool")
+        sys.monitoring.register_callback(TEST_TOOL, E.PY_START, lambda *args: events.append(args))
+        sys.monitoring.register_callback(TEST_TOOL, E.LINE, lambda *args: events.append(args))
+        def f():
+            a = 1
+        sys.monitoring.set_local_events(TEST_TOOL, f.__code__, E.LINE)
+        sys.monitoring.set_events(TEST_TOOL, E.PY_START)
+
+        f()
+        sys.monitoring.clear_tool_id(TEST_TOOL)
+        f()
+
+        # the first f() should trigger a PY_START and a LINE event
+        # the second f() after clear_tool_id should not trigger any event
+        # the callback function should be cleared as well
+        self.assertEqual(len(events), 2)
+        callback = sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
+        self.assertIs(callback, None)
+
+        sys.monitoring.free_tool_id(TEST_TOOL)
+
+        events = []
+        sys.monitoring.use_tool_id(TEST_TOOL, "MonitoringTest.Tool")
+        sys.monitoring.register_callback(TEST_TOOL, E.LINE, lambda *args: events.append(args))
+        sys.monitoring.set_local_events(TEST_TOOL, f.__code__, E.LINE)
+        f()
+        sys.monitoring.free_tool_id(TEST_TOOL)
+        sys.monitoring.use_tool_id(TEST_TOOL, "MonitoringTest.Tool")
+        f()
+        # the first f() should trigger a LINE event, and even if we use the
+        # tool id immediately after freeing it, the second f() should not
+        # trigger any event
+        self.assertEqual(len(events), 1)
+        sys.monitoring.free_tool_id(TEST_TOOL)
 
 
 class MonitoringTestBase:
@@ -744,8 +785,6 @@ class CheckEvents(MonitoringTestBase, unittest.TestCase):
 
     def check_events(self, func, expected, tool=TEST_TOOL, recorders=(ExceptionRecorder,)):
         events = self.get_events(func, tool, recorders)
-        if events != expected:
-            print(events, file = sys.stderr)
         self.assertEqual(events, expected)
 
     def check_balanced(self, func, recorders):
@@ -1446,9 +1485,27 @@ class BranchRecorder(JumpRecorder):
 
 
 
+class JumpOffsetRecorder:
+
+    event_type = E.JUMP
+    name = "jump"
+
+    def __init__(self, events, offsets=False):
+        self.events = events
+
+    def __call__(self, code, from_, to):
+        self.events.append((self.name, code.co_name, from_, to))
+
+class BranchOffsetRecorder(JumpOffsetRecorder):
+
+    event_type = E.BRANCH
+    name = "branch"
+
+
 JUMP_AND_BRANCH_RECORDERS = JumpRecorder, BranchRecorder
 JUMP_BRANCH_AND_LINE_RECORDERS = JumpRecorder, BranchRecorder, LineRecorder
 FLOW_AND_LINE_RECORDERS = JumpRecorder, BranchRecorder, LineRecorder, ExceptionRecorder, ReturnRecorder
+BRANCH_OFFSET_RECORDERS = BranchOffsetRecorder,
 
 class TestBranchAndJumpEvents(CheckEvents):
     maxDiff = None
@@ -1537,6 +1594,24 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch', 'func', '[offset=122]', '[offset=126]'),
             ('return', 'func', None),
             ('line', 'get_events', 11)])
+
+    def test_while_offset_consistency(self):
+
+        def foo(n=0):
+            while n<4:
+                pass
+                n += 1
+            return None
+
+        in_loop = ('branch', 'foo', 10, 14)
+        exit_loop = ('branch', 'foo', 10, 30)
+        self.check_events(foo, recorders = BRANCH_OFFSET_RECORDERS, expected = [
+            in_loop,
+            in_loop,
+            in_loop,
+            in_loop,
+            exit_loop])
+
 
 class TestLoadSuperAttr(CheckEvents):
     RECORDERS = CallRecorder, LineRecorder, CRaiseRecorder, CReturnRecorder
@@ -1862,6 +1937,21 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
         sys.monitoring.set_events(0, 0)
         self.assertEqual(call_data[0], (f, 1))
         self.assertEqual(call_data[1], (f, sys.monitoring.MISSING))
+
+    def test_instruction_explicit_callback(self):
+        # gh-122247
+        # Calling the instruction event callback explicitly should not
+        # crash CPython
+        def callback(code, instruction_offset):
+            pass
+
+        sys.monitoring.use_tool_id(0, "test")
+        self.addCleanup(sys.monitoring.free_tool_id, 0)
+        sys.monitoring.register_callback(0, sys.monitoring.events.INSTRUCTION, callback)
+        sys.monitoring.set_events(0, sys.monitoring.events.INSTRUCTION)
+        callback(None, 0)  # call the *same* handler while it is registered
+        sys.monitoring.restart_events()
+        sys.monitoring.set_events(0, 0)
 
 
 class TestOptimizer(MonitoringTestBase, unittest.TestCase):

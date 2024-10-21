@@ -851,8 +851,13 @@ class TestPEP590(unittest.TestCase):
     @requires_limited_api
     def test_vectorcall_limited_incoming(self):
         from _testcapi import pyobject_vectorcall
-        obj = _testlimitedcapi.LimitedVectorCallClass()
-        self.assertEqual(pyobject_vectorcall(obj, (), ()), "vectorcall called")
+        for cls in (_testlimitedcapi.LimitedVectorCallClass,
+                    _testlimitedcapi.LimitedRelativeVectorCallClass):
+            with self.subTest(cls=cls):
+                obj = cls()
+                self.assertEqual(
+                    pyobject_vectorcall(obj, (), ()),
+                    "vectorcall called")
 
     @requires_limited_api
     def test_vectorcall_limited_outgoing(self):

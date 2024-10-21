@@ -8,8 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#ifdef WITH_FREELISTS
-// with freelists
 #  define PyTuple_MAXSAVESIZE 20     // Largest tuple to save on freelist
 #  define Py_tuple_MAXFREELIST 2000  // Maximum number of tuples of each size to save
 #  define Py_lists_MAXFREELIST 80
@@ -22,13 +20,11 @@ extern "C" {
 #  define Py_async_gen_asends_MAXFREELIST 80
 #  define Py_futureiters_MAXFREELIST 255
 #  define Py_object_stack_chunks_MAXFREELIST 4
-#else
-#  define PyTuple_MAXSAVESIZE 0
-#endif
+#  define Py_unicode_writers_MAXFREELIST 1
 
 // A generic freelist of either PyObjects or other data structures.
 struct _Py_freelist {
-    // Entries are linked together using the first word of the the object.
+    // Entries are linked together using the first word of the object.
     // For PyObjects, this overlaps with the `ob_refcnt` field or the `ob_tid`
     // field.
     void *freelist;
@@ -38,7 +34,6 @@ struct _Py_freelist {
 };
 
 struct _Py_freelists {
-#ifdef WITH_FREELISTS
     struct _Py_freelist floats;
     struct _Py_freelist tuples[PyTuple_MAXSAVESIZE];
     struct _Py_freelist lists;
@@ -50,9 +45,7 @@ struct _Py_freelists {
     struct _Py_freelist async_gen_asends;
     struct _Py_freelist futureiters;
     struct _Py_freelist object_stack_chunks;
-#else
-    char _unused;  // Empty structs are not allowed.
-#endif
+    struct _Py_freelist unicode_writers;
 };
 
 #ifdef __cplusplus

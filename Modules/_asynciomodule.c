@@ -3,6 +3,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION_MUT()
 #include "pycore_dict.h"          // _PyDict_GetItem_KnownHash()
 #include "pycore_freelist.h"      // _Py_FREELIST_POP()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
@@ -77,8 +78,8 @@ typedef struct {
 #define Task_Check(state, obj) PyObject_TypeCheck(obj, state->TaskType)
 
 #ifdef Py_GIL_DISABLED
-#   define ASYNCIO_STATE_LOCK(state) PyMutex_Lock(&state->mutex)
-#   define ASYNCIO_STATE_UNLOCK(state) PyMutex_Unlock(&state->mutex)
+#   define ASYNCIO_STATE_LOCK(state) Py_BEGIN_CRITICAL_SECTION_MUT(&state->mutex)
+#   define ASYNCIO_STATE_UNLOCK(state) Py_END_CRITICAL_SECTION()
 #else
 #   define ASYNCIO_STATE_LOCK(state) ((void)state)
 #   define ASYNCIO_STATE_UNLOCK(state) ((void)state)
@@ -1923,8 +1924,7 @@ register_task(asyncio_state *state, TaskObj *task)
     assert(task != &state->asyncio_tasks.tail);
     if (task->next != NULL) {
         // already registered
-        ASYNCIO_STATE_UNLOCK(state);
-        return;
+        goto exit;
     }
     assert(task->prev == NULL);
     assert(state->asyncio_tasks.head != NULL);
@@ -1932,6 +1932,7 @@ register_task(asyncio_state *state, TaskObj *task)
     task->next = state->asyncio_tasks.head;
     state->asyncio_tasks.head->prev = task;
     state->asyncio_tasks.head = task;
+exit:
     ASYNCIO_STATE_UNLOCK(state);
 }
 
@@ -1951,8 +1952,7 @@ unregister_task(asyncio_state *state, TaskObj *task)
         // not registered
         assert(task->prev == NULL);
         assert(state->asyncio_tasks.head != task);
-        ASYNCIO_STATE_UNLOCK(state);
-        return;
+        goto exit;
     }
     task->next->prev = task->prev;
     if (task->prev == NULL) {
@@ -1964,6 +1964,7 @@ unregister_task(asyncio_state *state, TaskObj *task)
     task->next = NULL;
     task->prev = NULL;
     assert(state->asyncio_tasks.head != task);
+exit:
     ASYNCIO_STATE_UNLOCK(state);
 }
 
@@ -2027,6 +2028,24 @@ leave_task(asyncio_state *state, PyObject *loop, PyObject *task)
 }
 
 static PyObject *
+swap_current_task_lock_held(PyDictObject *current_tasks, PyObject *loop,
+                            Py_hash_t hash, PyObject *task)
+{
+    PyObject *prev_task;
+    if (_PyDict_GetItemRef_KnownHash_LockHeld(current_tasks, loop, hash, &prev_task) < 0) {
+        return NULL;
+    }
+    if (_PyDict_SetItem_KnownHash_LockHeld(current_tasks, loop, task, hash) < 0) {
+        Py_XDECREF(prev_task);
+        return NULL;
+    }
+    if (prev_task == NULL) {
+        Py_RETURN_NONE;
+    }
+    return prev_task;
+}
+
+static PyObject *
 swap_current_task(asyncio_state *state, PyObject *loop, PyObject *task)
 {
     PyObject *prev_task;
@@ -2041,24 +2060,15 @@ swap_current_task(asyncio_state *state, PyObject *loop, PyObject *task)
         return prev_task;
     }
 
-    Py_hash_t hash;
-    hash = PyObject_Hash(loop);
+    Py_hash_t hash = PyObject_Hash(loop);
     if (hash == -1) {
         return NULL;
     }
-    prev_task = _PyDict_GetItem_KnownHash(state->current_tasks, loop, hash);
-    if (prev_task == NULL) {
-        if (PyErr_Occurred()) {
-            return NULL;
-        }
-        prev_task = Py_None;
-    }
-    Py_INCREF(prev_task);
-    if (_PyDict_SetItem_KnownHash(state->current_tasks, loop, task, hash) == -1) {
-        Py_DECREF(prev_task);
-        return NULL;
-    }
 
+    PyDictObject *current_tasks = (PyDictObject *)state->current_tasks;
+    Py_BEGIN_CRITICAL_SECTION(current_tasks);
+    prev_task = swap_current_task_lock_held(current_tasks, loop, hash, task);
+    Py_END_CRITICAL_SECTION();
     return prev_task;
 }
 
@@ -3619,6 +3629,8 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
         Py_DECREF(item);
     }
     Py_DECREF(eager_iter);
+    int err = 0;
+    ASYNCIO_STATE_LOCK(state);
     TaskObj *head = state->asyncio_tasks.head;
     Py_INCREF(head);
     assert(head != NULL);
@@ -3630,10 +3642,15 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
             Py_DECREF(tasks);
             Py_DECREF(loop);
             Py_DECREF(head);
-            return NULL;
+            err = 1;
+            break;
         }
         Py_INCREF(head->next);
         Py_SETREF(head, head->next);
+    }
+    ASYNCIO_STATE_UNLOCK(state);
+    if (err) {
+        return NULL;
     }
     PyObject *scheduled_iter = PyObject_GetIter(state->non_asyncio_tasks);
     if (scheduled_iter == NULL) {
