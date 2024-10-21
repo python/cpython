@@ -23,7 +23,7 @@ env:
 
 jobs:
   build:
-    name: 'build and test'
+    name: 'build and test (${{ inputs.arch }})'
     runs-on: ${{ inputs.os }}
     timeout-minutes: 60
     steps:
