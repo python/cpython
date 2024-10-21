@@ -150,6 +150,7 @@ jobs:
     needs: check_source
     if: fromJSON(needs.check_source.outputs.run_tests)
     strategy:
+      fail-fast: false
       matrix:
         os:
           - windows-latest
