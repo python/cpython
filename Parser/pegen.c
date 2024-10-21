@@ -977,7 +977,9 @@ mod_ty
 _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filename_ob,
                        PyCompilerFlags *flags, PyArena *arena)
 {
-    int exec_input = start_rule == Py_file_input;
+    int exec_input = start_rule == Py_file_input &&
+        (flags == NULL || !(flags->cf_flags & PyCF_ALLOW_INCOMPLETE_INPUT) ||
+         flags->cf_flags & PyCF_DONT_IMPLY_DEDENT);
 
     struct tok_state *tok;
     if (flags != NULL && flags->cf_flags & PyCF_IGNORE_COOKIE) {
