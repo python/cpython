@@ -244,7 +244,9 @@ int main() {
 }
 #endif
 
-P2Engine gc_timing;
+// timings for automatic collections
+P2Engine gc_timing; // all automatic collections
+P2Engine gc_timing_full; // full (gen2) automatic collections
 
 #endif // gc timing
 
@@ -363,6 +365,7 @@ _PyGC_Init(PyInterpreterState *interp)
     }
 
     p2engine_init(&gc_timing, gc_timing_quantiles);
+    p2engine_init(&gc_timing_full, gc_timing_quantiles);
 
     return _PyStatus_OK();
 }
@@ -1408,7 +1411,7 @@ maybe_mark_alive(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         else {
             if (generation == OLD_GENERATION) {
                 float f = ((float)gcstate->mark_state.old_alive_size) / gcstate->mark_state.old_size;
-                fprintf(stderr, "gc full auto collection %.2f\n", f);
+                fprintf(stderr, "gc full auto collection, alive fraction=%.2f\n", f);
                 fprintf(stderr, "gc steps needed=%d available=%d\n", gcstate->mark_state.mark_steps, gcstate->mark_state.mark_steps_total);
                 print_gc_times(gcstate);
                 gcstate->mark_state.mark_phase = MARK_PHASE_INIT;
@@ -1853,6 +1856,9 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     dt = t3 - t1;
     if (reason == _Py_GC_REASON_HEAP) {
         p2engine_add(&gc_timing, (double)_PyTime_AsMicroseconds(dt, _PyTime_ROUND_HALF_EVEN));
+        if (generation == OLD_GENERATION) {
+            p2engine_add(&gc_timing_full, (double)_PyTime_AsMicroseconds(dt, _PyTime_ROUND_HALF_EVEN));
+        }
         if (dt > gcstate->mark_state.gc_max_pause) {
             gcstate->mark_state.gc_max_pause = dt;
         }
@@ -2149,9 +2155,12 @@ _PyGC_Fini(PyInterpreterState *interp)
     print_gc_times(gcstate);
     for (int i = 0; i < QUANTILE_COUNT; i++) {
         double result = p2engine_result(&gc_timing, gc_timing_quantiles[i]);
-        fprintf(stderr, "gc timing Q%.0f: %.2f\n", gc_timing_quantiles[i]*100, result);
+        fprintf(stderr, "gc timing all Q%.0f: %.2f\n", gc_timing_quantiles[i]*100, result);
     }
-    fprintf(stderr, "gc timing max: %.2f\n", gc_timing.max);
+    for (int i = 0; i < QUANTILE_COUNT; i++) {
+        double result = p2engine_result(&gc_timing_full, gc_timing_quantiles[i]);
+        fprintf(stderr, "gc timing full Q%.0f: %.2f\n", gc_timing_quantiles[i]*100, result);
+    }
 
 }
 
