@@ -2033,12 +2033,6 @@ class ZipFile:
             self.fp.write(zinfo.FileHeader(False))
             self.start_dir = self.fp.tell()
 
-    def _raise_if_archive_not_in_writing_mode(self, caller_name):
-        if self.mode not in ('w', 'x', 'a'):
-            raise ValueError(
-                f"{caller_name}() requires mode 'w', 'x', or 'a', but "
-                f"mode is '{self.mode}'")
-
     def _copy_file(self, source_zipfile, source_zinfo):
         with source_zipfile._open_to_read(source_zinfo, 'r',
                 decompress=False) as source_file_contents:
