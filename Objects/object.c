@@ -171,9 +171,48 @@ _PyDebug_PrintTotalRefs(void) {
 #define REFCHAIN(interp) interp->object_state.refchain
 #define REFCHAIN_VALUE ((void*)(uintptr_t)1)
 
+static int
+refchain_init(PyInterpreterState *interp)
+{
+    PyInterpreterState *main_interp = _PyInterpreterState_Main();
+    if (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC
+            && interp != main_interp)
+    {
+        REFCHAIN(interp) = REFCHAIN(main_interp);
+        return 0;
+    }
+    _Py_hashtable_allocator_t alloc = {
+        // Don't use default PyMem_Malloc() and PyMem_Free() which
+        // require the caller to hold the GIL.
+        .malloc = PyMem_RawMalloc,
+        .free = PyMem_RawFree,
+    };
+    REFCHAIN(interp) = _Py_hashtable_new_full(
+        _Py_hashtable_hash_ptr, _Py_hashtable_compare_direct,
+        NULL, NULL, &alloc);
+    if (REFCHAIN(interp) == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
+static void
+refchain_fini(PyInterpreterState *interp)
+{
+    if (!(interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC)
+            ||_Py_IsMainInterpreter(interp))
+    {
+        _Py_hashtable_destroy(REFCHAIN(interp));
+    }
+    REFCHAIN(interp) = NULL;
+}
+
 bool
 _PyRefchain_IsTraced(PyInterpreterState *interp, PyObject *obj)
 {
+    if (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC) {
+        interp = _PyInterpreterState_Main();
+    }
     return (_Py_hashtable_get(REFCHAIN(interp), obj) == REFCHAIN_VALUE);
 }
 
@@ -181,6 +220,9 @@ _PyRefchain_IsTraced(PyInterpreterState *interp, PyObject *obj)
 static void
 _PyRefchain_Trace(PyInterpreterState *interp, PyObject *obj)
 {
+    if (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC) {
+        interp = _PyInterpreterState_Main();
+    }
     if (_Py_hashtable_set(REFCHAIN(interp), obj, REFCHAIN_VALUE) < 0) {
         // Use a fatal error because _Py_NewReference() cannot report
         // the error to the caller.
@@ -192,6 +234,9 @@ _PyRefchain_Trace(PyInterpreterState *interp, PyObject *obj)
 static void
 _PyRefchain_Remove(PyInterpreterState *interp, PyObject *obj)
 {
+    if (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC) {
+        interp = _PyInterpreterState_Main();
+    }
     void *value = _Py_hashtable_steal(REFCHAIN(interp), obj);
 #ifndef NDEBUG
     assert(value == REFCHAIN_VALUE);
@@ -2191,16 +2236,7 @@ PyStatus
 _PyObject_InitState(PyInterpreterState *interp)
 {
 #ifdef Py_TRACE_REFS
-    _Py_hashtable_allocator_t alloc = {
-        // Don't use default PyMem_Malloc() and PyMem_Free() which
-        // require the caller to hold the GIL.
-        .malloc = PyMem_RawMalloc,
-        .free = PyMem_RawFree,
-    };
-    REFCHAIN(interp) = _Py_hashtable_new_full(
-        _Py_hashtable_hash_ptr, _Py_hashtable_compare_direct,
-        NULL, NULL, &alloc);
-    if (REFCHAIN(interp) == NULL) {
+    if (refchain_init(interp) < 0) {
         return _PyStatus_NO_MEMORY();
     }
 #endif
@@ -2211,8 +2247,7 @@ void
 _PyObject_FiniState(PyInterpreterState *interp)
 {
 #ifdef Py_TRACE_REFS
-    _Py_hashtable_destroy(REFCHAIN(interp));
-    REFCHAIN(interp) = NULL;
+    refchain_fini(interp);
 #endif
 }
 
@@ -2531,9 +2566,7 @@ _Py_NormalizeImmortalReference(PyObject *op)
     if (interp != main_interp
            && interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC)
     {
-        assert(!_PyRefchain_IsTraced(main_interp, op));
-        _PyRefchain_Remove(interp, op);
-        _PyRefchain_Trace(main_interp, op);
+        assert(_PyRefchain_IsTraced(main_interp, op));
     }
 }
 
@@ -2583,6 +2616,9 @@ _Py_PrintReferences(PyInterpreterState *interp, FILE *fp)
         interp = _PyInterpreterState_Main();
     }
     fprintf(fp, "Remaining objects:\n");
+    if (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC) {
+        interp = _PyInterpreterState_Main();
+    }
     _Py_hashtable_foreach(REFCHAIN(interp), _Py_PrintReference, fp);
 }
 
@@ -2611,6 +2647,9 @@ void
 _Py_PrintReferenceAddresses(PyInterpreterState *interp, FILE *fp)
 {
     fprintf(fp, "Remaining object addresses:\n");
+    if (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC) {
+        interp = _PyInterpreterState_Main();
+    }
     _Py_hashtable_foreach(REFCHAIN(interp), _Py_PrintReferenceAddress, fp);
 }
 
@@ -2690,6 +2729,9 @@ _Py_GetObjects(PyObject *self, PyObject *args)
         .limit = limit,
     };
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC) {
+        interp = _PyInterpreterState_Main();
+    }
     int res = _Py_hashtable_foreach(REFCHAIN(interp), _Py_GetObject, &data);
     if (res == _PY_GETOBJECTS_ERROR) {
         Py_DECREF(list);
