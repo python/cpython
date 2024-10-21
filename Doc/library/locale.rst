@@ -158,8 +158,7 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. function:: nl_langinfo(option)
 
-   Return some locale-specific information as a string (or a tuple for
-   ``ALT_DIGITS``).  This function is not
+   Return some locale-specific information as a string.  This function is not
    available on all systems, and the set of possible options might also vary
    across platforms.  The possible argument values are numbers, for which
    symbolic constants are available in the locale module.
@@ -312,7 +311,9 @@ The :mod:`locale` module defines the following exception and functions:
 
    .. data:: ALT_DIGITS
 
-      Get a tuple of up to 100 strings used to represent the values 0 to 99.
+      Get a string consisting of up to 100 semicolon-separated symbols used
+      to represent the values 0 to 99 in a locale-specific way.
+      In most locales this is an empty string.
 
    The function temporarily sets the ``LC_CTYPE`` locale to the locale
    of the category that determines the requested value (``LC_TIME``,
