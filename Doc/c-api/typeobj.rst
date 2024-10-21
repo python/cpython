@@ -704,6 +704,19 @@ and :c:data:`PyType_Type` effectively act as defaults.)
          Py_DECREF(tp);
      }
 
+   .. warning::
+
+      In a garbage collected Python, :c:member:`!tp_dealloc` may be called from
+      any Python thread, not just the thread which created the object (if the
+      object becomes part of a refcount cycle, that cycle might be collected by
+      a garbage collection on any thread).  This is not a problem for Python
+      API calls, since the thread on which :c:member:`!tp_dealloc` is called
+      will own the Global Interpreter Lock (GIL).  However, if the object being
+      destroyed in turn destroys objects from some other C or C++ library, care
+      should be taken to ensure that destroying those objects on the thread
+      which called :c:member:`!tp_dealloc` will not violate any assumptions of
+      the library.
+
 
    **Inheritance:**
 
@@ -2100,17 +2113,6 @@ and :c:data:`PyType_Type` effectively act as defaults.)
           /* Restore the saved exception. */
           PyErr_Restore(error_type, error_value, error_traceback);
       }
-
-   Also, note that, in a garbage collected Python,
-   :c:member:`~PyTypeObject.tp_dealloc` may be called from
-   any Python thread, not just the thread which created the object (if the object
-   becomes part of a refcount cycle, that cycle might be collected by a garbage
-   collection on any thread).  This is not a problem for Python API calls, since
-   the thread on which tp_dealloc is called will own the Global Interpreter Lock
-   (GIL). However, if the object being destroyed in turn destroys objects from some
-   other C or C++ library, care should be taken to ensure that destroying those
-   objects on the thread which called tp_dealloc will not violate any assumptions
-   of the library.
 
    **Inheritance:**
 
