@@ -2836,6 +2836,7 @@ _globals_init(void)
         // Called for the first time.
         PyThread_type_lock mutex = PyThread_allocate_lock();
         if (mutex == NULL) {
+            _globals.module_count--;
             PyMutex_Unlock(&_globals.mutex);
             return ERR_CHANNELS_MUTEX_INIT;
         }
