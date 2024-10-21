@@ -22,8 +22,6 @@ from generators_common import (
     write_header,
     type_and_null,
     Emitter,
-    contains_instruction_size_macro,
-    assert_same_instruction_size,
 )
 from cwriter import CWriter
 from typing import TextIO
@@ -173,8 +171,6 @@ def generate_tier1(
         offset = 1  # The instruction itself
         stack = Stack()
         for part in inst.parts:
-            if isinstance(part, Uop) and contains_instruction_size_macro(part):
-                assert_same_instruction_size(analysis.instructions, part)
             # Only emit braces if more than one uop
             insert_braces = len([p for p in inst.parts if isinstance(p, Uop)]) > 1
             offset, stack = write_uop(part, emitter, offset, stack, inst, insert_braces)

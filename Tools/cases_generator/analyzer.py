@@ -173,6 +173,8 @@ class Uop:
     implicitly_created: bool = False
     replicated = 0
     replicates: "Uop | None" = None
+    # Size of the instruction(s), only set for uops containing the INSTRUCTION_SIZE macro
+    instruction_size: int | None = None
 
     def dump(self, indent: str) -> None:
         print(
@@ -1079,6 +1081,35 @@ def assign_opcodes(
     return instmap, len(no_arg), min_instrumented
 
 
+def contains_instruction_size_macro(uop: Uop) -> bool:
+    """Return True if the uop contains the INSTRUCTION_SIZE macro."""
+    for token in uop.body:
+        if token.kind == "IDENTIFIER" and token.text in 'INSTRUCTION_SIZE':
+            return True
+    return False
+
+
+def get_instruction_size_for_uop(instructions: dict[str, Instruction], uop: Uop) -> int:
+    """Return the size of the instruction that contains the given uop.
+
+    If there is more than one instruction that contains the uop,
+    ensure that they all have the same size.
+    """
+    size = None
+    for inst in instructions.values():
+        if uop in inst.parts:
+            if size is None:
+                size = inst.size
+            assert size == inst.size, (
+                "All instructions containing a uop with the `INSTRUCTION_SIZE` macro "
+                f"must have the same size: {size} != {inst.size}"
+            )
+    if size is None:
+        msg = f"No instruction containing the uop '{uop.name}' was found"
+        raise ValueError(msg)
+    return size
+
+
 def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
     instructions: dict[str, Instruction] = {}
     uops: dict[str, Uop] = {}
@@ -1122,6 +1153,10 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                     continue
                 if target.text in instructions:
                     instructions[target.text].is_target = True
+    for uop in uops.values():
+        if not contains_instruction_size_macro(uop):
+            continue
+        uop.instruction_size = get_instruction_size_for_uop(instructions, uop)
     # Special case BINARY_OP_INPLACE_ADD_UNICODE
     # BINARY_OP_INPLACE_ADD_UNICODE is not a normal family member,
     # as it is the wrong size, but we need it to maintain an
