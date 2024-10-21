@@ -3,6 +3,10 @@ name: Reusable Windows
 on:
   workflow_call:
     inputs:
+      os:
+        description: OS to run on
+        required: true
+        type: string
       arch:
         description: CPU architecture
         required: true
