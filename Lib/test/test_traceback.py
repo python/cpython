@@ -4659,12 +4659,13 @@ class TestColorizedTraceback(unittest.TestCase):
         boldm = _colorize.ANSIColors.BOLD_MAGENTA
         reset = _colorize.ANSIColors.RESET
         lno_foo = foo.__code__.co_firstlineno
-        actual = "".join(exc.format(colorize=True))
+        actual = "".join(exc.format(colorize=True)).splitlines()
         expected = [f"  + Exception Group Traceback (most recent call last):",
                    f'  |   File {magenta}"{__file__}"{reset}, line {magenta}{lno_foo+9}{reset}, in {magenta}test_colorized_traceback_from_exception_group{reset}',
                    f'  |     {red}foo{reset}{boldr}(){reset}',
                    f'  |     {red}~~~{reset}{boldr}^^{reset}',
                    f"  |     e = ExceptionGroup('test', [ZeroDivisionError('division by zero')])",
+                   f"  |     foo = {foo}",
                    f'  |     self = <{__name__}.TestColorizedTraceback testMethod=test_colorized_traceback_from_exception_group>',
                    f'  |   File {magenta}"{__file__}"{reset}, line {magenta}{lno_foo+6}{reset}, in {magenta}foo{reset}',
                    f'  |     raise ExceptionGroup("test", exceptions)',
@@ -4678,11 +4679,7 @@ class TestColorizedTraceback(unittest.TestCase):
                    f"    |     exceptions = [ZeroDivisionError('division by zero')]",
                    f'    | {boldm}ZeroDivisionError{reset}: {magenta}division by zero{reset}',
                    f'    +------------------------------------']
-        string_with_address = r'  |     foo = <function TestColorizedTraceback.test_colorized_traceback_from_exception_group.<locals>.foo at 0x[0-9a-fA-F]+>'
-        for line in expected:
-            self.assertIn(line, actual)
-        self.assertRegex(actual, string_with_address)
-
+        self.assertEqual(actual, expected)
 
 if __name__ == "__main__":
     unittest.main()
