@@ -4561,8 +4561,7 @@ written in Python, such as a mail server's external command delivery program.
    only be sent to console processes which share a common console window,
    e.g., some subprocesses. Any other value for *sig* will cause the process
    to be unconditionally killed by the TerminateProcess API, and the exit code
-   will be set to *sig*. The Windows version of :func:`kill` additionally takes
-   process handles to be killed.
+   will be set to *sig*.
 
    See also :func:`signal.pthread_kill`.
 
