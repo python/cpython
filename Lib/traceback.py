@@ -455,7 +455,7 @@ class StackSummary(list):
         # information is not available.
         builtin_limit = limit is BUILTIN_EXCEPTION_LIMIT
         if limit is None or builtin_limit:
-            limit = getattr(sys, 'tracebacklimit', None)
+            limit = getattr(sys, 'tracebacklimit', 1_000)
             if limit is not None and limit < 0:
                 limit = 0
         if limit is not None:
