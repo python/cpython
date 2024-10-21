@@ -1401,38 +1401,43 @@ _queueobj_shared(PyThreadState *tstate, PyObject *queueobj,
    the data that we need to share between interpreters, so it cannot
    hold PyObject values. */
 static struct globals {
-    uint8_t module_count;
+    PyMutex mutex;
+    int module_count;
     _queues queues;
 } _globals = {0};
 
 static int
 _globals_init(void)
 {
-    if (_Py_atomic_add_uint8(&_globals.module_count, 1) > 0) {
-        // Already initialized.
-        return 0;
+    PyMutex_Lock(&_globals.mutex);
+    assert(_globals.module_count >= 0);
+    _globals.module_count++;
+    if (_globals.module_count == 1) {
+        // Called for the first time.
+        PyThread_type_lock mutex = PyThread_allocate_lock();
+        if (mutex == NULL) {
+            PyMutex_Unlock(&_globals.mutex);
+            return ERR_QUEUES_ALLOC;
+        }
+        _queues_init(&_globals.queues, mutex);
     }
-
-    PyThread_type_lock mutex = PyThread_allocate_lock();
-    if (mutex == NULL) {
-        return ERR_QUEUES_ALLOC;
-    }
-    _queues_init(&_globals.queues, mutex);
+    PyMutex_Unlock(&_globals.mutex);
     return 0;
 }
 
 static void
 _globals_fini(void)
 {
-    if (_Py_atomic_add_uint8(&_globals.module_count, -1) > 1) {
-        return;
-    }
-
-    PyThread_type_lock mutex;
-    _queues_fini(&_globals.queues, &mutex);
-    if (mutex != NULL) {
+    PyMutex_Lock(&_globals.mutex);
+    assert(_globals.module_count > 0);
+    _globals.module_count--;
+    if (_globals.module_count == 0) {
+        PyThread_type_lock mutex;
+        _queues_fini(&_globals.queues, &mutex);
+        assert(mutex != NULL);
         PyThread_free_lock(mutex);
     }
+    PyMutex_Unlock(&_globals.mutex);
 }
 
 static _queues *
