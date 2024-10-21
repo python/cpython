@@ -3,9 +3,6 @@
          turtledemo/chaos.py
 
 A demonstration of chaos
-
-Author: Gregor Lingl
-2009-06-24
 """
 from turtle import *
 
