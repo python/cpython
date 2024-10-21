@@ -1,3 +1,0 @@
-Several C declarations with names that didn't start with the ``Py`` or ``_Py``
-prefixes, which were added by mistake in 3.13 alpha and beta releases, were
-moved to internal headers.

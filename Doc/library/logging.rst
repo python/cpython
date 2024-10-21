@@ -304,7 +304,8 @@ in a module, ``__name__`` is the module's name in the Python package namespace.
       parameter mirrors the equivalent one in the :mod:`warnings` module.
 
       The fourth keyword argument is *extra* which can be used to pass a
-      dictionary which is used to populate the __dict__ of the :class:`LogRecord`
+      dictionary which is used to populate the :attr:`~object.__dict__` of the
+      :class:`LogRecord`
       created for the logging event with user-defined attributes. These custom
       attributes can then be used as you like. For example, they could be
       incorporated into logged messages. For example::
@@ -1098,11 +1099,11 @@ information into logging calls. For a usage example, see the section on
 
    .. attribute:: manager
 
-      Delegates to the underlying :attr:`!manager`` on *logger*.
+      Delegates to the underlying :attr:`!manager` on *logger*.
 
    .. attribute:: _log
 
-      Delegates to the underlying :meth:`!_log`` method on *logger*.
+      Delegates to the underlying :meth:`!_log` method on *logger*.
 
    In addition to the above, :class:`LoggerAdapter` supports the following
    methods of :class:`Logger`: :meth:`~Logger.debug`, :meth:`~Logger.info`,

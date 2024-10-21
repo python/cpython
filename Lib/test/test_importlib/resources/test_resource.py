@@ -1,8 +1,5 @@
-import sys
 import unittest
-import pathlib
 
-from . import data01
 from . import util
 from importlib import resources, import_module
 
@@ -24,9 +21,8 @@ class ResourceTests:
         self.assertTrue(target.is_dir())
 
 
-class ResourceDiskTests(ResourceTests, unittest.TestCase):
-    def setUp(self):
-        self.data = data01
+class ResourceDiskTests(ResourceTests, util.DiskSetup, unittest.TestCase):
+    pass
 
 
 class ResourceZipTests(ResourceTests, util.ZipSetup, unittest.TestCase):
@@ -37,33 +33,39 @@ def names(traversable):
     return {item.name for item in traversable.iterdir()}
 
 
-class ResourceLoaderTests(unittest.TestCase):
+class ResourceLoaderTests(util.DiskSetup, unittest.TestCase):
     def test_resource_contents(self):
         package = util.create_package(
-            file=data01, path=data01.__file__, contents=['A', 'B', 'C']
+            file=self.data, path=self.data.__file__, contents=['A', 'B', 'C']
         )
         self.assertEqual(names(resources.files(package)), {'A', 'B', 'C'})
 
     def test_is_file(self):
         package = util.create_package(
-            file=data01, path=data01.__file__, contents=['A', 'B', 'C', 'D/E', 'D/F']
+            file=self.data,
+            path=self.data.__file__,
+            contents=['A', 'B', 'C', 'D/E', 'D/F'],
         )
         self.assertTrue(resources.files(package).joinpath('B').is_file())
 
     def test_is_dir(self):
         package = util.create_package(
-            file=data01, path=data01.__file__, contents=['A', 'B', 'C', 'D/E', 'D/F']
+            file=self.data,
+            path=self.data.__file__,
+            contents=['A', 'B', 'C', 'D/E', 'D/F'],
         )
         self.assertTrue(resources.files(package).joinpath('D').is_dir())
 
     def test_resource_missing(self):
         package = util.create_package(
-            file=data01, path=data01.__file__, contents=['A', 'B', 'C', 'D/E', 'D/F']
+            file=self.data,
+            path=self.data.__file__,
+            contents=['A', 'B', 'C', 'D/E', 'D/F'],
         )
         self.assertFalse(resources.files(package).joinpath('Z').is_file())
 
 
-class ResourceCornerCaseTests(unittest.TestCase):
+class ResourceCornerCaseTests(util.DiskSetup, unittest.TestCase):
     def test_package_has_no_reader_fallback(self):
         """
         Test odd ball packages which:
@@ -72,7 +74,7 @@ class ResourceCornerCaseTests(unittest.TestCase):
         # 3. Are not in a zip file
         """
         module = util.create_package(
-            file=data01, path=data01.__file__, contents=['A', 'B', 'C']
+            file=self.data, path=self.data.__file__, contents=['A', 'B', 'C']
         )
         # Give the module a dummy loader.
         module.__loader__ = object()
@@ -83,9 +85,7 @@ class ResourceCornerCaseTests(unittest.TestCase):
         self.assertFalse(resources.files(module).joinpath('A').is_file())
 
 
-class ResourceFromZipsTest01(util.ZipSetupBase, unittest.TestCase):
-    ZIP_MODULE = 'data01'
-
+class ResourceFromZipsTest01(util.ZipSetup, unittest.TestCase):
     def test_is_submodule_resource(self):
         submodule = import_module('data01.subdirectory')
         self.assertTrue(resources.files(submodule).joinpath('binary.file').is_file())
@@ -116,8 +116,8 @@ class ResourceFromZipsTest01(util.ZipSetupBase, unittest.TestCase):
         assert not data.parent.exists()
 
 
-class ResourceFromZipsTest02(util.ZipSetupBase, unittest.TestCase):
-    ZIP_MODULE = 'data02'
+class ResourceFromZipsTest02(util.ZipSetup, unittest.TestCase):
+    MODULE = 'data02'
 
     def test_unrelated_contents(self):
         """
@@ -134,7 +134,7 @@ class ResourceFromZipsTest02(util.ZipSetupBase, unittest.TestCase):
         )
 
 
-class DeletingZipsTest(util.ZipSetupBase, unittest.TestCase):
+class DeletingZipsTest(util.ZipSetup, unittest.TestCase):
     """Having accessed resources in a zip file should not keep an open
     reference to the zip.
     """
@@ -216,24 +216,20 @@ class ResourceFromNamespaceTests:
         self.assertEqual(contents, {'binary.file'})
 
 
-class ResourceFromNamespaceDiskTests(ResourceFromNamespaceTests, unittest.TestCase):
-    site_dir = str(pathlib.Path(__file__).parent)
-
-    @classmethod
-    def setUpClass(cls):
-        sys.path.append(cls.site_dir)
-
-    @classmethod
-    def tearDownClass(cls):
-        sys.path.remove(cls.site_dir)
-
-
-class ResourceFromNamespaceZipTests(
-    util.ZipSetupBase,
+class ResourceFromNamespaceDiskTests(
+    util.DiskSetup,
     ResourceFromNamespaceTests,
     unittest.TestCase,
 ):
-    ZIP_MODULE = 'namespacedata01'
+    MODULE = 'namespacedata01'
+
+
+class ResourceFromNamespaceZipTests(
+    util.ZipSetup,
+    ResourceFromNamespaceTests,
+    unittest.TestCase,
+):
+    MODULE = 'namespacedata01'
 
 
 if __name__ == '__main__':

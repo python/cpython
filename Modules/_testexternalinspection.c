@@ -51,7 +51,9 @@
 #    define Py_BUILD_CORE_MODULE 1
 #endif
 #include "Python.h"
-#include <internal/pycore_runtime.h>
+#include <internal/pycore_debug_offsets.h>  // _Py_DebugOffsets
+#include <internal/pycore_frame.h>          // FRAME_OWNED_BY_CSTACK
+#include <internal/pycore_stackref.h>       // Py_TAG_BITS
 
 #ifndef HAVE_PROCESS_VM_READV
 #    define HAVE_PROCESS_VM_READV 0
@@ -510,7 +512,7 @@ parse_frame_object(
         return 0;
     }
 
-    void* address_of_code_object;
+    uintptr_t address_of_code_object;
     bytes_read = read_memory(
             pid,
             (void*)(address + offsets->interpreter_frame.executable),
@@ -520,10 +522,11 @@ parse_frame_object(
         return -1;
     }
 
-    if (address_of_code_object == NULL) {
+    if (address_of_code_object == 0) {
         return 0;
     }
-    return parse_code_object(pid, result, offsets, address_of_code_object, previous_frame);
+    address_of_code_object &= ~Py_TAG_BITS;
+    return parse_code_object(pid, result, offsets, (void *)address_of_code_object, previous_frame);
 }
 
 static PyObject*

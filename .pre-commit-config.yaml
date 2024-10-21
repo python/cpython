@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.4
+    rev: v0.6.7
     hooks:
       - id: ruff
         name: Run Ruff (lint) on Doc/
@@ -11,6 +11,10 @@ repos:
         args: [--exit-non-zero-on-fix]
         files: ^Lib/test/
       - id: ruff
+        name: Run Ruff (lint) on Tools/build/check_warnings.py
+        args: [--exit-non-zero-on-fix, --config=Tools/build/.ruff.toml]
+        files: ^Tools/build/check_warnings.py
+      - id: ruff
         name: Run Ruff (lint) on Argument Clinic
         args: [--exit-non-zero-on-fix, --config=Tools/clinic/.ruff.toml]
         files: ^Tools/clinic/|Lib/test/test_clinic.py
@@ -20,15 +24,20 @@ repos:
         files: ^Doc/
 
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 24.4.2
+    rev: 24.8.0
     hooks:
+      - id: black
+        name: Run Black on Tools/build/check_warnings.py
+        files: ^Tools/build/check_warnings.py
+        language_version: python3.12
+        args: [--line-length=79]
       - id: black
         name: Run Black on Tools/jit/
         files: ^Tools/jit/
         language_version: python3.12
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: check-case-conflict
       - id: check-merge-conflict
@@ -42,7 +51,7 @@ repos:
         types_or: [c, inc, python, rst]
 
   - repo: https://github.com/sphinx-contrib/sphinx-lint
-    rev: v0.9.1
+    rev: v1.0.0
     hooks:
       - id: sphinx-lint
         args: [--enable=default-role]

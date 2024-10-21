@@ -413,14 +413,14 @@ Constants
       ``TCP_USER_TIMEOUT``, ``TCP_CONGESTION`` were added.
 
    .. versionchanged:: 3.6.5
-      On Windows, ``TCP_FASTOPEN``, ``TCP_KEEPCNT`` appear if run-time Windows
-      supports.
+      Added support for ``TCP_FASTOPEN``, ``TCP_KEEPCNT`` on Windows platforms
+      when available.
 
    .. versionchanged:: 3.7
       ``TCP_NOTSENT_LOWAT`` was added.
 
-      On Windows, ``TCP_KEEPIDLE``, ``TCP_KEEPINTVL`` appear if run-time Windows
-      supports.
+      Added support for ``TCP_KEEPIDLE``, ``TCP_KEEPINTVL`` on Windows platforms
+      when available.
 
    .. versionchanged:: 3.10
       ``IP_RECVTOS`` was added.
@@ -451,8 +451,12 @@ Constants
       network interface instead of its name.
 
    .. versionchanged:: 3.14
-      Added missing ``IP_RECVERR``, ``IP_RECVTTL``, and ``IP_RECVORIGDSTADDR``
-      on Linux.
+      Added missing ``IP_RECVERR``, ``IPV6_RECVERR``, ``IP_RECVTTL``, and
+      ``IP_RECVORIGDSTADDR`` on Linux.
+
+   .. versionchanged:: 3.14
+      Added support for ``TCP_QUICKACK`` on Windows platforms when available.
+
 
 .. data:: AF_CAN
           PF_CAN
@@ -1276,7 +1280,7 @@ The :mod:`socket` module also offers various network-related services:
 
    .. audit-event:: socket.sethostname name socket.sethostname
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Android.
 
    .. versionadded:: 3.3
 
