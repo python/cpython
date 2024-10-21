@@ -4671,7 +4671,7 @@ can be used interchangeably to index the same dictionary entry.
 
       :meth:`update` accepts either another object with a ``keys()`` method (in
       which case :meth:`~object.__getitem__` is called with every key returned from
-      the method). or an iterable of key/value pairs (as tuples or other iterables
+      the method) or an iterable of key/value pairs (as tuples or other iterables
       of length two). If keyword arguments are specified, the dictionary is then
       updated with those key/value pairs: ``d.update(red=1, blue=2)``.
 
