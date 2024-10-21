@@ -10,8 +10,10 @@ sphinx~=8.1.0
 
 blurb
 
+# Optional packages, used if installed
 sphinxext-opengraph~=0.9.0
 sphinx-notfound-page~=1.0.0
+PyStemmer~=2.2.0
 
 # The theme used by the documentation is stored separately, so we need
 # to install that as well.
