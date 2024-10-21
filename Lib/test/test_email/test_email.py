@@ -5757,6 +5757,16 @@ Content-Transfer-Encoding: 8bit
             with self.subTest(m=m):
                 msg = email.message_from_string(m)
 
+    def test_rfc2231_invalid_parameter_continuation(self):
+        # gh-125648: should raise a ValueError for invalid parameter continuation
+        m = """\
+Content-Type: application/x-foo;
+\tname*0="foo";
+\tname*="bar"
+"""
+        msg = email.message_from_string(m)
+        with self.assertRaisesRegex(ValueError, "Invalid RFC 2231 parameter continuation for 'name'"):
+            msg.get_params()
 
 # Tests to ensure that signed parts of an email are completely preserved, as
 # required by RFC1847 section 2.1.  Note that these are incomplete, because the

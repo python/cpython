@@ -1,0 +1,2 @@
+Use a more descriptive error message when encountering invalid parameter
+continuations in :meth:`email.message.Message.get_params`.
