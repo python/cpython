@@ -8,6 +8,7 @@ import os.path
 import sys
 from test.support import import_helper
 from test.support import os_helper
+from test import support
 import traceback
 import types
 import unittest
