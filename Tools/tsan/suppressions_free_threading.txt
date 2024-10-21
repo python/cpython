@@ -15,8 +15,6 @@ race:set_allocator_unlocked
 # These entries are for warnings that trigger in a library function, as called
 # by a CPython function.
 
-# https://gist.github.com/swtaarrs/8e0e365e1d9cecece3269a2fb2f2b8b8
-race:sock_recv_impl
 # https://gist.github.com/swtaarrs/08dfe7883b4c975c31ecb39388987a67
 race:free_threadstate
 

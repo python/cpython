@@ -15,6 +15,8 @@
     const char *argv[] = {
         "iOSTestbed", // argv[0] is the process that is running.
         "-uall",  // Enable all resources
+        "--single-process",  // always run all tests sequentially in a single process
+        "--rerun",  // Re-run failed tests in verbose mode
         "-W",  // Display test output on failure
         // To run a subset of tests, add the test names below; e.g.,
         // "test_os",
