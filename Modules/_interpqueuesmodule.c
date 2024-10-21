@@ -1315,7 +1315,7 @@ _queueid_xid_new(int64_t qid)
 
     struct _queueid_xid *data = PyMem_RawMalloc(sizeof(struct _queueid_xid));
     if (data == NULL) {
-        _queues_incref(queues, qid);
+        _queues_decref(queues, qid);
         return NULL;
     }
     data->qid = qid;
