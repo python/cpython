@@ -423,7 +423,7 @@ unittest
 --------
 
 * Restore support for unittest discovery of
-  :term:`namespace packages <namespace packages>`. It was removed in Python
+  :term:`namespace packages <namespace package>`. It was removed in Python
   3.11.
   (Contributed by Jacob Walls in :gh:`80958`.)
 
