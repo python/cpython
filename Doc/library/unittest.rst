@@ -345,24 +345,6 @@ the `load_tests protocol`_.
    directory too (e.g.
    ``python -m unittest discover -s root/namespace -t root``).
 
-.. versionchanged:: 3.11
-   :mod:`unittest` dropped the :term:`namespace packages <namespace package>`
-   support in Python 3.11. It has been broken since Python 3.7. Start directory and
-   subdirectories containing tests must be regular package that have
-   ``__init__.py`` file.
-
-   Directories containing start directory still can be a namespace package.
-   In this case, you need to specify start directory as dotted package name,
-   and target directory explicitly. For example::
-
-      # proj/  <-- current directory
-      #   namespace/
-      #     mypkg/
-      #       __init__.py
-      #       test_mypkg.py
-
-      python -m unittest discover -s namespace.mypkg -t .
-
 
 .. _organizing-tests:
 
@@ -1930,11 +1912,13 @@ Loading and running tests
 
       .. versionchanged:: 3.11
          *start_dir* can not be a :term:`namespace packages <namespace package>`.
-         It has been broken since Python 3.7 and Python 3.11 officially remove it.
+         It has been broken since Python 3.7, and Python 3.11 officially removes it.
 
       .. versionchanged:: 3.13
          *top_level_dir* is only stored for the duration of *discover* call.
 
+      .. versionchanged:: 3.14
+         *start_dir* can once again be a :term:`namespace packages <namespace package>`.
 
    The following attributes of a :class:`TestLoader` can be configured either by
    subclassing or assignment on an instance:
