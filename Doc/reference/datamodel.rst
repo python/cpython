@@ -1917,7 +1917,7 @@ Basic customization
    class).  The return value of :meth:`__new__` should be the new object instance
    (usually an instance of *cls*).
 
-   Typical custom implementations create a new instance of the class by invoking the
+   Typical implementations create a new instance of the class by invoking the
    superclass's :meth:`__new__` method using ``super().__new__(cls[, ...])``
    with appropriate arguments and then modifying the newly created instance
    as necessary before returning it.
