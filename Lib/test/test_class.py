@@ -916,7 +916,7 @@ class TestInlineValues(unittest.TestCase):
         C.a
         C.a
 
-        # destructor shouldn't be able to see inconsisent state
+        # destructor shouldn't be able to see inconsistent state
         C.a = X()
         C.a = X()
 

@@ -74,7 +74,7 @@ PyObject *PyLong_FromSsize_t(Py_ssize_t ival)
 
 /* tainted sinks
  *
- * Coverity considers argv, environ, read() data etc as tained.
+ * Coverity considers argv, environ, read() data etc as tainted.
  */
 
 PyObject *PyErr_SetFromErrnoWithFilename(PyObject *exc, const char *filename)

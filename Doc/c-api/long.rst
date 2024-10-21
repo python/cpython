@@ -454,7 +454,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
       free(bignum);
 
    *flags* is either ``-1`` (``Py_ASNATIVEBYTES_DEFAULTS``) to select defaults
-   that behave most like a C cast, or a combintation of the other flags in
+   that behave most like a C cast, or a combination of the other flags in
    the table below.
    Note that ``-1`` cannot be combined with other flags.
 
@@ -538,10 +538,15 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Exactly what values are considered compact is an implementation detail
    and is subject to change.
 
+   .. versionadded:: 3.12
+
+
 .. c:function:: Py_ssize_t PyUnstable_Long_CompactValue(const PyLongObject* op)
 
    If *op* is compact, as determined by :c:func:`PyUnstable_Long_IsCompact`,
    return its value.
 
    Otherwise, the return value is undefined.
+
+   .. versionadded:: 3.12
 
