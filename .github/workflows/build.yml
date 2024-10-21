@@ -536,6 +536,7 @@ jobs:
     needs:
     - check_source  # Transitive dependency, needed to access `run_tests` value
     - check-docs
+    - check_autoconf_regen
     - check_generated_files
     - build_macos
     - build_ubuntu
@@ -571,6 +572,7 @@ jobs:
           ${{
             needs.check_source.outputs.run_tests != 'true'
             && '
+            check_autoconf_regen,
             check_generated_files,
             build_macos,
             build_ubuntu,
