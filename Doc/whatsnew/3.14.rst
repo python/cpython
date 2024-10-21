@@ -233,6 +233,15 @@ symtable
 
   (Contributed by Bénédikt Tran in :gh:`120029`.)
 
+
+unittest
+--------
+
+* Restore support for unittest discovery of
+  :term:`namespace packages <namespace packages>`. It was removed in Python
+  3.11.
+  (Contributed by Jacob Walls in :gh:`80958`.)
+
 .. Add improved modules above alphabetically, not here at the end.
 
 Optimizations

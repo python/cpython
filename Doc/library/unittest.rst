@@ -272,8 +272,7 @@ Test Discovery
 
 Unittest supports simple test discovery. In order to be compatible with test
 discovery, all of the test files must be :ref:`modules <tut-modules>` or
-:ref:`packages <tut-packages>` (including :term:`namespace packages
-<namespace package>`) importable from the top-level directory of
+:ref:`packages <tut-packages>` importable from the top-level directory of
 the project (this means that their filenames must be valid :ref:`identifiers
 <identifiers>`).
 
@@ -1911,9 +1910,15 @@ Loading and running tests
          whether their path matches *pattern*, because it is impossible for
          a package name to match the default pattern.
 
+      .. versionchanged:: 3.11
+         *start_dir* can not be a :term:`namespace packages <namespace package>`.
+         It has been broken since Python 3.7, and Python 3.11 officially removes it.
+
       .. versionchanged:: 3.13
          *top_level_dir* is only stored for the duration of *discover* call.
 
+      .. versionchanged:: 3.14
+         *start_dir* can once again be a :term:`namespace packages <namespace package>`.
 
    The following attributes of a :class:`TestLoader` can be configured either by
    subclassing or assignment on an instance:
