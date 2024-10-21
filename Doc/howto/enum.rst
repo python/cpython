@@ -9,7 +9,7 @@ Enum HOWTO
 .. currentmodule:: enum
 
 An :class:`Enum` is a set of symbolic names bound to unique values.  They are
-similar to global variables, but they offer a more useful :func:`repr()`,
+similar to global variables, but they offer a more useful :func:`repr`,
 grouping, type-safety, and a few other features.
 
 They are most useful when you have a variable that can take one of a limited
@@ -167,7 +167,7 @@ And a function to display the chores for a given day::
     answer SO questions
 
 In cases where the actual values of the members do not matter, you can save
-yourself some work and use :func:`auto()` for the values::
+yourself some work and use :func:`auto` for the values::
 
     >>> from enum import auto
     >>> class Weekday(Flag):
@@ -608,7 +608,7 @@ The solution is to specify the module name explicitly as follows::
     the source, pickling will be disabled.
 
 The new pickle protocol 4 also, in some circumstances, relies on
-:attr:`~definition.__qualname__` being set to the location where pickle will be able
+:attr:`~type.__qualname__` being set to the location where pickle will be able
 to find the class.  For example, if the class was made available in class
 SomeData in the global scope::
 

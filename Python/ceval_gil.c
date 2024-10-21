@@ -7,6 +7,7 @@
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
+#include "pycore_pythread.h"      // PyThread_hang_thread()
 
 /*
    Notes about the implementation:
@@ -48,13 +49,6 @@
      much longer than expected.
      (Note: this mechanism is enabled with FORCE_SWITCHING above)
 */
-
-// GH-89279: Force inlining by using a macro.
-#if defined(_MSC_VER) && SIZEOF_INT == 4
-#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) (assert(sizeof((ATOMIC_VAL)->_value) == 4), *((volatile int*)&((ATOMIC_VAL)->_value)))
-#else
-#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) _Py_atomic_load_relaxed(ATOMIC_VAL)
-#endif
 
 // Atomically copy the bits indicated by mask between two values.
 static inline void
@@ -284,10 +278,9 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate, int final_release)
 /* Take the GIL.
 
    The function saves errno at entry and restores its value at exit.
+   It may hang rather than return if the interpreter has been finalized.
 
-   tstate must be non-NULL.
-
-   Returns 1 if the GIL was acquired, or 0 if not. */
+   tstate must be non-NULL. */
 static void
 take_gil(PyThreadState *tstate)
 {
@@ -300,12 +293,18 @@ take_gil(PyThreadState *tstate)
 
     if (_PyThreadState_MustExit(tstate)) {
         /* bpo-39877: If Py_Finalize() has been called and tstate is not the
-           thread which called Py_Finalize(), exit immediately the thread.
+           thread which called Py_Finalize(), this thread cannot continue.
 
            This code path can be reached by a daemon thread after Py_Finalize()
            completes. In this case, tstate is a dangling pointer: points to
-           PyThreadState freed memory. */
-        PyThread_exit_thread();
+           PyThreadState freed memory.
+
+           This used to call a *thread_exit API, but that was not safe as it
+           lacks stack unwinding and local variable destruction important to
+           C++. gh-87135: The best that can be done is to hang the thread as
+           the public APIs calling this have no error reporting mechanism (!).
+         */
+        PyThread_hang_thread();
     }
 
     assert(_PyThreadState_CheckConsistency(tstate));
@@ -349,7 +348,9 @@ take_gil(PyThreadState *tstate)
                 if (drop_requested) {
                     _Py_unset_eval_breaker_bit(holder_tstate, _PY_GIL_DROP_REQUEST_BIT);
                 }
-                PyThread_exit_thread();
+                // gh-87135: hang the thread as *thread_exit() is not a safe
+                // API. It lacks stack unwind and local variable destruction.
+                PyThread_hang_thread();
             }
             assert(_PyThreadState_CheckConsistency(tstate));
 
@@ -390,7 +391,7 @@ take_gil(PyThreadState *tstate)
 
     if (_PyThreadState_MustExit(tstate)) {
         /* bpo-36475: If Py_Finalize() has been called and tstate is not
-           the thread which called Py_Finalize(), exit immediately the
+           the thread which called Py_Finalize(), gh-87135: hang the
            thread.
 
            This code path can be reached by a daemon thread which was waiting
@@ -400,7 +401,7 @@ take_gil(PyThreadState *tstate)
         /* tstate could be a dangling pointer, so don't pass it to
            drop_gil(). */
         drop_gil(interp, NULL, 1);
-        PyThread_exit_thread();
+        PyThread_hang_thread();
     }
     assert(_PyThreadState_CheckConsistency(tstate));
 
@@ -1294,6 +1295,12 @@ _Py_HandlePending(PyThreadState *tstate)
     if ((breaker & _PY_GC_SCHEDULED_BIT) != 0) {
         _Py_unset_eval_breaker_bit(tstate, _PY_GC_SCHEDULED_BIT);
         _Py_RunGC(tstate);
+    }
+
+    if ((breaker & _PY_EVAL_JIT_INVALIDATE_COLD_BIT) != 0) {
+        _Py_unset_eval_breaker_bit(tstate, _PY_EVAL_JIT_INVALIDATE_COLD_BIT);
+        _Py_Executors_InvalidateCold(tstate->interp);
+        tstate->interp->trace_run_counter = JIT_CLEANUP_THRESHOLD;
     }
 
     /* GIL drop request */
