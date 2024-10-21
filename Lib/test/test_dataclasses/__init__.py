@@ -2313,7 +2313,7 @@ class TestDocString(unittest.TestCase):
         class C:
             x: Union[int, type(None)] = None
 
-        self.assertDocStrEqual(C.__doc__, "C(x:Optional[int]=None)")
+        self.assertDocStrEqual(C.__doc__, "C(x:int|None=None)")
 
     def test_docstring_list_field(self):
         @dataclass

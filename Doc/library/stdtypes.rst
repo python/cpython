@@ -5208,7 +5208,7 @@ Union Type
 A union object holds the value of the ``|`` (bitwise or) operation on
 multiple :ref:`type objects <bltin-type-objects>`.  These types are intended
 primarily for :term:`type annotations <annotation>`. The union type expression
-enables cleaner type hinting syntax compared to :data:`typing.Union`.
+enables cleaner type hinting syntax compared to subscripting :class:`typing.Union`.
 
 .. describe:: X | Y | ...
 
@@ -5244,9 +5244,10 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
 
       int | str == str | int
 
-   * It is compatible with :data:`typing.Union`::
+   * It creates instances of :class:`typing.Union`::
 
       int | str == typing.Union[int, str]
+      type(int | str) is typing.Union
 
    * Optional types can be spelled as a union with ``None``::
 
@@ -5272,16 +5273,15 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
       TypeError: isinstance() argument 2 cannot be a parameterized generic
 
 The user-exposed type for the union object can be accessed from
-:data:`types.UnionType` and used for :func:`isinstance` checks.  An object cannot be
-instantiated from the type::
+:class:`typing.Union` and used for :func:`isinstance` checks::
 
-   >>> import types
-   >>> isinstance(int | str, types.UnionType)
+   >>> import typing
+   >>> isinstance(int | str, typing.Union)
    True
-   >>> types.UnionType()
+   >>> typing.Union()
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: cannot create 'types.UnionType' instances
+   TypeError: cannot create 'typing.Union' instances
 
 .. note::
    The :meth:`!__or__` method for type objects was added to support the syntax

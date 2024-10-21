@@ -3034,7 +3034,7 @@ class TestSingleDispatch(unittest.TestCase):
             "Invalid annotation for 'arg'."
         ))
         self.assertTrue(str(exc.exception).endswith(
-            'typing.Union[int, typing.Iterable[str]] not all arguments are classes.'
+            'int | typing.Iterable[str] not all arguments are classes.'
         ))
 
     def test_invalid_positional_argument(self):
