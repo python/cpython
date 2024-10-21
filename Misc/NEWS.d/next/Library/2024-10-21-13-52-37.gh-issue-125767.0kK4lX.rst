@@ -1,0 +1,2 @@
+The :class:`super` objects are now :mod:`pickleable <pickle>` and
+:mod:`copyable <copy>`.
