@@ -20,7 +20,7 @@ env:
 jobs:
   build:
     name: 'build and test'
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ inputs.os }}
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@v4

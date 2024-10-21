@@ -170,6 +170,7 @@ jobs:
             free-threading: false
     uses: ./.github/workflows/reusable-windows.yml
     with:
+      os: ${{ matrix.os }}
       arch: ${{ matrix.arch }}
       free-threading: ${{ matrix.free-threading }}
 
