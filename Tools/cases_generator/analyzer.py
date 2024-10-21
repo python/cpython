@@ -1081,12 +1081,12 @@ def assign_opcodes(
     return instmap, len(no_arg), min_instrumented
 
 
+def is_instruction_size_macro(token: lexer.Token) -> bool:
+    return token.kind == "IDENTIFIER" and token.text == "INSTRUCTION_SIZE"
+
+
 def contains_instruction_size_macro(uop: Uop) -> bool:
-    """Return True if the uop contains the INSTRUCTION_SIZE macro."""
-    for token in uop.body:
-        if token.kind == "IDENTIFIER" and token.text in 'INSTRUCTION_SIZE':
-            return True
-    return False
+    return any(is_instruction_size_macro(token) for token in uop.body)
 
 
 def get_instruction_size_for_uop(instructions: dict[str, Instruction], uop: Uop) -> int:
@@ -1105,7 +1105,8 @@ def get_instruction_size_for_uop(instructions: dict[str, Instruction], uop: Uop)
                 f"must have the same size: {size} != {inst.size}"
             )
     if size is None:
-        raise analysis_error(f"No instruction containing the uop '{uop.name}' was found")
+        token = next(t for t in uop.body if is_instruction_size_macro(t))
+        raise analysis_error(f"No instruction containing the uop '{uop.name}' was found", token)
     return size
 
 
