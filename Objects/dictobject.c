@@ -34,7 +34,7 @@ layout:
 
 dk_indices is actual hashtable.  It holds index in entries, or DKIX_EMPTY(-1)
 or DKIX_DUMMY(-2).
-Size of indices is dk_size.  Type of each index in indices is vary on dk_size:
+Size of indices is dk_size.  Type of each index in indices varies with dk_size:
 
 * int8  for          dk_size <= 128
 * int16 for 256   <= dk_size <= 2**15
