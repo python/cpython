@@ -609,7 +609,9 @@ def get_instruction_size_for_uop(instructions: dict[str, Instruction], uop: Uop)
                     "All instructions containing a uop with the `INSTRUCTION_SIZE` macro "
                     f"must have the same size: {size} != {inst.size}"
                 )
-    assert size is not None
+    if size is None:
+        msg = f"No instruction containing the uop '{uop.name}' was found"
+        raise ValueError(msg)
     return size
 
 
