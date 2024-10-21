@@ -3018,6 +3018,7 @@ class LimitTests(unittest.TestCase):
             assertEqualExcept(extract(limit=100), nolim[-100:], -5-1)
             self.assertEqual(extract(limit=-2), nolim[:2])
             assertEqualExcept(extract(limit=-100), nolim[:100], len(nolim)-5-1)
+            assertEqualExcept(extract(limit=1000), nolim[-1000:], -5-1)
             self.assertEqual(extract(limit=0), [])
             del sys.tracebacklimit
             assertEqualExcept(extract(), nolim, -5-1)
