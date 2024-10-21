@@ -1122,6 +1122,12 @@ always available.
    ``cache_tag`` is set to ``None``, it indicates that module caching should
    be disabled.
 
+   *arch* describes the architecture of the current interpreter runtime system.
+
+   .. versionadded:: 3.14
+
+   .. availability:: Windows.
+
    :data:`sys.implementation` may contain additional attributes specific to
    the Python implementation.  These non-standard attributes must start with
    an underscore, and are not described here.  Regardless of its contents,
