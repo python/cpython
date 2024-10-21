@@ -584,21 +584,14 @@ Object Protocol
    which may improve multi-threaded performance.  The tradeoff is
    that *obj* will only be deallocated by the tracing garbage collector.
 
-   *obj* must be an object tracked by the garbage collector (see :func:`gc.is_tracked`).
-   The function returns ``-1`` with an error if *obj* is not tracked.
-
-   This function is a no-op on builds with the :term:`GIL` enabled, which do
-   not support deferred reference counting.
-
    The function returns ``1`` if deferred reference counting was enabled on *obj*,
    and ``0`` if deferred reference counting is not supported or if the hint was
-   ignored by the runtime.
+   ignored by the runtime. This function cannot fail.
 
-   *obj* must be an object tracked by the garbage collector (see :func:`gc.is_tracked`), must have been
-   created by the calling thread, and must not be in use by any existing threads.
+   This function is a no-op on builds with the :term:`GIL` enabled, which do
+   not support deferred reference counting. This also no-ops if *obj* is not
+   an object tracked by the garbage collector (see :func:`gc.is_tracked` and
+   :c:func:`PyObject_GC_IsTracked`).
 
-   If any of the above conditions are not met, this function returns a negative value
-   and sets an exception.
-
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
