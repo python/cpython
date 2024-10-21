@@ -64,6 +64,22 @@ class AbstractMemoryTests:
             m = self._view(b)
             self.assertEqual(list(m), [m[i] for i in range(len(m))])
 
+    def test_count(self):
+        for tp in self._types:
+            b = tp(self._source)
+            m = self._view(b)
+            l = m.tolist()
+            for ch in list(m):
+                self.assertEqual(m.count(ch), l.count(ch))
+
+            b = tp((b'a' * 5) + (b'c' * 3))
+            m = self._view(b)  # may be sliced
+            l = m.tolist()
+            with self.subTest('count', buffer=b):
+                self.assertEqual(m.count(ord('a')), l.count(ord('a')))
+                self.assertEqual(m.count(ord('b')), l.count(ord('b')))
+                self.assertEqual(m.count(ord('c')), l.count(ord('c')))
+
     def test_setitem_readonly(self):
         if not self.ro_type:
             self.skipTest("no read-only type to test")
@@ -437,6 +453,18 @@ class BaseMemoryviewTests:
 
     def _check_contents(self, tp, obj, contents):
         self.assertEqual(obj, tp(contents))
+
+    def test_count(self):
+        super().test_count()
+        for tp in self._types:
+            b = tp((b'a' * 5) + (b'c' * 3))
+            m = self._view(b)  # should not be sliced
+            self.assertEqual(len(b), len(m))
+            with self.subTest('count', buffer=b):
+                self.assertEqual(m.count(ord('a')), 5)
+                self.assertEqual(m.count(ord('b')), 0)
+                self.assertEqual(m.count(ord('c')), 3)
+
 
 class BaseMemorySliceTests:
     source_bytes = b"XabcdefY"
