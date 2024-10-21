@@ -10,7 +10,8 @@ import sys
 import types
 import unittest
 from test.support import (captured_stdout, requires_debug_ranges,
-                          requires_specialization, cpython_only)
+                          requires_specialization, requires_specialization_ft,
+                          cpython_only)
 from test.support.bytecode_helper import BytecodeTestCase
 
 import opcode
@@ -1230,7 +1231,7 @@ class DisTests(DisTestBase):
         self.do_disassembly_compare(got, dis_load_test_quickened_code)
 
     @cpython_only
-    @requires_specialization
+    @requires_specialization_ft
     def test_binary_specialize(self):
         binary_op_quicken = """\
   0           RESUME_CHECK             0
@@ -1250,6 +1251,9 @@ class DisTests(DisTestBase):
         got = self.get_disassembly(co_unicode, adaptive=True)
         self.do_disassembly_compare(got, binary_op_quicken % "BINARY_OP_ADD_UNICODE    0 (+)")
 
+    @cpython_only
+    @requires_specialization
+    def test_binary_subscr_specialize(self):
         binary_subscr_quicken = """\
   0           RESUME_CHECK             0
 

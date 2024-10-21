@@ -283,7 +283,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_FATAL_ERROR] = 0,
     [_CHECK_VALIDITY_AND_SET_IP] = HAS_DEOPT_FLAG,
     [_DEOPT] = 0,
-    [_ERROR_POP_N] = HAS_ARG_FLAG,
+    [_ERROR_POP_N] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_TIER2_RESUME_CHECK] = HAS_DEOPT_FLAG,
 };
 
