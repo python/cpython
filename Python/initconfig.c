@@ -150,7 +150,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(orig_argv, WSTR_LIST, READ_ONLY, SYS_ATTR("orig_argv")),
     SPEC(parse_argv, BOOL, READ_ONLY, NO_SYS),
     SPEC(pathconfig_warnings, BOOL, READ_ONLY, NO_SYS),
-    SPEC(perf_profiling, BOOL, READ_ONLY, NO_SYS),
+    SPEC(perf_profiling, UINT, READ_ONLY, NO_SYS),
     SPEC(program_name, WSTR, READ_ONLY, NO_SYS),
     SPEC(run_command, WSTR_OPT, READ_ONLY, NO_SYS),
     SPEC(run_filename, WSTR_OPT, READ_ONLY, NO_SYS),
@@ -3457,6 +3457,9 @@ PyInitConfig_Create(void)
 void
 PyInitConfig_Free(PyInitConfig *config)
 {
+    if (config == NULL) {
+        return;
+    }
     free(config->err_msg);
     free(config);
 }

@@ -389,7 +389,9 @@ Here are three practical data validation utilities:
 
         def validate(self, value):
             if value not in self.options:
-                raise ValueError(f'Expected {value!r} to be one of {self.options!r}')
+                raise ValueError(
+                    f'Expected {value!r} to be one of {self.options!r}'
+                )
 
     class Number(Validator):
 
@@ -469,6 +471,7 @@ The descriptors prevent invalid instances from being created:
     Traceback (most recent call last):
         ...
     ValueError: Expected -5 to be at least 0
+
     >>> Component('WIDGET', 'metal', 'V')    # Blocked: 'V' isn't a number
     Traceback (most recent call last):
         ...
@@ -559,8 +562,8 @@ attribute access.
 
 The expression ``obj.x`` looks up the attribute ``x`` in the chain of
 namespaces for ``obj``.  If the search finds a descriptor outside of the
-instance ``__dict__``, its :meth:`__get__` method is invoked according to the
-precedence rules listed below.
+instance :attr:`~object.__dict__`, its :meth:`~object.__get__` method is
+invoked according to the precedence rules listed below.
 
 The details of invocation depend on whether ``obj`` is an object, class, or
 instance of super.
@@ -1004,7 +1007,6 @@ here is a pure Python equivalent that implements most of the core functionality:
             if doc is None and fget is not None:
                 doc = fget.__doc__
             self.__doc__ = doc
-            self.__name__ = ''
 
         def __set_name__(self, owner, name):
             self.__name__ = name
@@ -1303,8 +1305,8 @@ mean, median, and other descriptive statistics that depend on the data. However,
 there may be useful functions which are conceptually related but do not depend
 on the data.  For instance, ``erf(x)`` is handy conversion routine that comes up
 in statistical work but does not directly depend on a particular dataset.
-It can be called either from an object or the class:  ``s.erf(1.5) --> .9332`` or
-``Sample.erf(1.5) --> .9332``.
+It can be called either from an object or the class:  ``s.erf(1.5) --> 0.9332``
+or ``Sample.erf(1.5) --> 0.9332``.
 
 Since static methods return the underlying function with no changes, the
 example calls are unexciting:
