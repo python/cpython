@@ -2033,7 +2033,7 @@ are always available.  They are listed here in alphabetical order.
    <https://rhettinger.wordpress.com/2011/05/26/super-considered-super/>`_.
 
    .. versionchanged:: 3.14
-      The :class:`super` objects are now :mod:`pickleable <pickle>` and
+     :class:`super` objects are now :mod:`pickleable <pickle>` and
       :mod:`copyable <copy>`.
 
 
