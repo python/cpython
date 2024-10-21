@@ -847,27 +847,29 @@ _queues_init(_queues *queues, PyThread_type_lock mutex)
 {
     assert(mutex != NULL);
     assert(queues->mutex == NULL);
-    queues->mutex = mutex;
-    queues->head = NULL;
-    queues->count = 0;
-    queues->next_id = 1;
+    *queues = (_queues){
+        .mutex = mutex,
+        .head = NULL,
+        .count = 0,
+        .next_id = 1,
+    };
 }
 
 static void
 _queues_fini(_queues *queues, PyThread_type_lock *p_mutex)
 {
-    assert(queues->mutex != NULL);
+    PyThread_type_lock mutex = queues->mutex;
+    assert(mutex != NULL);
+
+    PyThread_acquire_lock(mutex, WAIT_LOCK);
     if (queues->count > 0) {
-        PyThread_acquire_lock(queues->mutex, WAIT_LOCK);
-        assert((queues->count == 0) != (queues->head != NULL));
-        _queueref *head = queues->head;
-        queues->head = NULL;
-        queues->count = 0;
-        PyThread_release_lock(queues->mutex);
-        _queuerefs_clear(head);
+        assert(queues->head != NULL);
+        _queuerefs_clear(queues->head);
     }
-    *p_mutex = queues->mutex;
-    queues->mutex = NULL;
+    *queues = (_queues){0};
+    PyThread_release_lock(mutex);
+
+    *p_mutex = mutex;
 }
 
 static int64_t

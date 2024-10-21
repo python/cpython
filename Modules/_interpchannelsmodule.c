@@ -1351,19 +1351,27 @@ _channels_init(_channels *channels, PyThread_type_lock mutex)
 {
     assert(mutex != NULL);
     assert(channels->mutex == NULL);
-    channels->mutex = mutex;
-    channels->head = NULL;
-    channels->numopen = 0;
-    channels->next_id = 0;
+    *channels = (_channels){
+        .mutex = mutex,
+        .head = NULL,
+        .numopen = 0,
+        .next_id = 0,
+    };
 }
 
 static void
 _channels_fini(_channels *channels, PyThread_type_lock *p_mutex)
 {
+    PyThread_type_lock mutex = channels->mutex;
+    assert(mutex != NULL);
+
+    PyThread_acquire_lock(mutex, WAIT_LOCK);
     assert(channels->numopen == 0);
     assert(channels->head == NULL);
-    *p_mutex = channels->mutex;
-    channels->mutex = NULL;
+    *channels = (_channels){0};
+    PyThread_release_lock(mutex);
+
+    *p_mutex = mutex;
 }
 
 static int64_t
