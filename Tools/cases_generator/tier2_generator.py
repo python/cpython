@@ -193,7 +193,6 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
         raise analysis_error(ex.args[0], uop.body[0]) from None
     return storage.stack
 
-
 SKIPS = ("_EXTENDED_ARG",)
 
 
