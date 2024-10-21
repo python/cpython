@@ -2418,7 +2418,7 @@ Example usage::
 
 In the above example, :c:macro:`Py_SETREF` calls :c:macro:`Py_DECREF`, which
 can call arbitrary code through an object's deallocation function.  The critical
-section API avoids potentital deadlocks due to reentrancy and lock ordering
+section API avoids potential deadlocks due to reentrancy and lock ordering
 by allowing the runtime to temporarily suspend the critical section if the
 code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
