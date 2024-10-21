@@ -69,7 +69,7 @@ we ignore `oparg`.
 
 A simplified version of the interpreter's main loop looks like this:
 
-```
+```c
     _Py_CODEUNIT *first_instr = code->co_code_adaptive;
     _Py_CODEUNIT *next_instr = first_instr;
     while (1) {
@@ -89,7 +89,7 @@ The instruction format supports 256 different opcodes, which is sufficient.
 However, it also limits `oparg` to 8-bit values, which is too restrictive.
 To overcome this, the `EXTENDED_ARG` opcode allows us to prefix any instruction
 with one or more additional data bytes, which combine into a larger oparg.
-For example, this sequence of code units::
+For example, this sequence of code units:
 
     EXTENDED_ARG  1
     EXTENDED_ARG  0
@@ -106,7 +106,7 @@ a primary opcode.
 The following loop, to be inserted just above the `switch` statement, will make the above
 snippet decode a complete instruction:
 
-```
+```c
     while (opcode == EXTENDED_ARG) {
         word = *next_instr++;
         opcode = _Py_OPCODE(word);
@@ -132,7 +132,7 @@ Inline cache entries
 
 Some (specialized or specializable) instructions have an associated "inline cache".
 The inline cache consists of one or more two-byte entries included in the bytecode
-array as additional words following the `opcode` /`oparg` pair.
+array as additional words following the `opcode`/`oparg` pair.
 The size of the inline cache for a particular instruction is fixed by its `opcode`.
 Moreover, the inline cache size for all instructions in a
 [family of specialized/specializable instructions](adaptive.md)
@@ -190,9 +190,9 @@ that may be `NULL` are known.
 A few other instructions (`GET_ITER`, `FOR_ITER`) push or pop an object that is known to
 be an iterator.
 
-Instruction sequences that do not allow statically knowing the stack depth are deemed illegal
-and the bytecode compiler never generates such sequences.
-For example, the following sequence is illegal, because it keeps pushing items on the stack::
+Instruction sequences that do not allow statically knowing the stack depth are deemed illegal;
+the bytecode compiler never generates such sequences.
+For example, the following sequence is illegal, because it keeps pushing items on the stack:
 
     LOAD_FAST 0
     JUMP_BACKWARD 2
@@ -318,12 +318,12 @@ First, you must choose a name for the bytecode, implement it in
 and add a documentation entry in
 [`Doc/library/dis.rst`](https://github.com/python/cpython/blob/main/Doc/library/dis.rst).
 Then run `make regen-cases` to assign a number for it (see
-[`Include/opcode_ids.h`](https://github.com/python/cpython/blob/main/Include/opcode_ids.h)
+[`Include/opcode_ids.h`](https://github.com/python/cpython/blob/main/Include/opcode_ids.h))
 and regenerate a number of files with the actual implementation of the bytecode in
 [`Python/generated_cases.c.h`](https://github.com/python/cpython/blob/main/Python/generated_cases.c.h)
 and metadata about it in additional files.
 
-With a new bytecode you must also change what is called the magic number for
+With a new bytecode you must also change what is called the "magic number" for
 .pyc files: bump the value of the variable `MAGIC_NUMBER` in
 [`Lib/importlib/_bootstrap_external.py`](https://github.com/python/cpython/blob/main/Lib/importlib/_bootstrap_external.py).
 Changing this number will lead to all .pyc files with the old `MAGIC_NUMBER`

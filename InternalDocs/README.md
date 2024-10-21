@@ -37,6 +37,6 @@ Program Execution
 
 - [Adaptive Instruction Families](adaptive.md)
 
-- [Garbage collector design](garbage_collector.md)
+- [Garbage Collector Design](garbage_collector.md)
 
 - [Exception Handling](exception_handling.md)
