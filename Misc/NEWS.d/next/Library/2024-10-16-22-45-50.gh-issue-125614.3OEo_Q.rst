@@ -1,0 +1,3 @@
+In the :data:`~annotationlib.Format.FORWARDREF` format of
+:mod:`annotationlib`, fix bug where nested expressions were not returned as
+:class:`annotationlib.ForwardRef` format.
