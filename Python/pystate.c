@@ -629,6 +629,9 @@ init_interpreter(PyInterpreterState *interp,
     assert(next != NULL || (interp == runtime->interpreters.main));
     interp->next = next;
 
+    // This relies on interp->feature_flags being set already,
+    // but currently we don't set that by this point.
+    // That's something to fix.
     PyStatus status = _PyObject_InitState(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
