@@ -7,6 +7,7 @@ from test.support import threading_helper
 
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 _testcapi = import_helper.import_module('_testcapi')
+_testinternalcapi = import_helper.import_module('_testinternalcapi')
 
 
 class Constant(enum.IntEnum):
@@ -139,13 +140,19 @@ class EnableDeferredRefcountingTest(unittest.TestCase):
         from threading import Thread
 
         self.assertEqual(_testcapi.pyobject_enable_deferred_refcount("not tracked"), 0)
-        self.assertEqual(_testcapi.pyobject_enable_deferred_refcount([]), int(support.Py_GIL_DISABLED))
+        foo = []
+        self.assertEqual(_testcapi.pyobject_enable_deferred_refcount(foo), int(support.Py_GIL_DISABLED))
+
+        # Make sure reference counting works on foo now
+        self.assertEqual(foo, [])
+        if support.Py_GIL_DISABLED:
+            self.assertTrue(_testinternalcapi.has_deferred_refcount(foo))
 
         # Make sure that PyUnstable_Object_EnableDeferredRefcount is thread safe
         def silly_func(obj):
-            self.assertEqual(
+            self.assertIn(
                 _testcapi.pyobject_enable_deferred_refcount(obj),
-                int(support.Py_GIL_DISABLED)
+                (0, 1)
             )
 
         silly_list = [1, 2, 3]
@@ -162,6 +169,9 @@ class EnableDeferredRefcountingTest(unittest.TestCase):
                 t.join()
 
             self.assertIsNone(cm.exc_value)
+
+        if support.Py_GIL_DISABLED:
+            self.assertTrue(_testinternalcapi.has_deferred_refcount(silly_list))
 
 
 

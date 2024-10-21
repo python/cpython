@@ -2049,6 +2049,12 @@ identify_type_slot_wrappers(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 
+static PyObject *
+has_deferred_refcount(PyObject *self, PyObject *op)
+{
+    return PyBool_FromLong(_PyObject_HasDeferredRefcount(op));
+}
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -2145,6 +2151,7 @@ static PyMethodDef module_functions[] = {
     GH_119213_GETARGS_METHODDEF
     {"get_static_builtin_types", get_static_builtin_types, METH_NOARGS},
     {"identify_type_slot_wrappers", identify_type_slot_wrappers, METH_NOARGS},
+    {"has_deferred_refcount", has_deferred_refcount, METH_O},
     {NULL, NULL} /* sentinel */
 };
 

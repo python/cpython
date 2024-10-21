@@ -2497,8 +2497,12 @@ PyUnstable_Object_EnableDeferredRefcount(PyObject *op)
         return 0;
     }
 
-    _PyObject_SET_GC_BITS(op, _PyGC_BITS_DEFERRED);
-    _Py_atomic_store_ssize_relaxed(&op->ob_ref_shared, _Py_REF_SHARED(_Py_REF_DEFERRED, 0));
+    uint8_t bits = _Py_atomic_load_uint8(&op->ob_gc_bits);
+    if (_Py_atomic_compare_exchange_uint8(&op->ob_gc_bits, &bits, bits | _Py_REF_DEFERRED) == 0)
+    {
+        return 0;
+    }
+    _Py_atomic_store_ssize(&op->ob_ref_shared, _Py_REF_SHARED(_Py_REF_DEFERRED, 0));
     return 1;
 #else
     return 0;
