@@ -23,6 +23,8 @@
 
 #define _PyAST_From1(a, ...)     _PyAST_Subscript(         _PyAST_Name(Py_BuildValue("s", "FROM1"), Load, __VA_ARGS__),         a, Load, __VA_ARGS__)
 
+#define _PyAST_Star1(a, ...)     _PyAST_Subscript(         _PyAST_Name(Py_BuildValue("s", "STAR1"), Load, __VA_ARGS__),         _PyAST_Tuple(             CHECK(asdl_expr_seq*, _PyPegen_singleton_seq(p, a)),             Load, __VA_ARGS__),         Load, __VA_ARGS__)
+
 #define _PyAST_Slice1(a, b, c, ...)     _PyAST_Subscript(         _PyAST_Name(Py_BuildValue("s", "FROM1"), Load, __VA_ARGS__),         _PyAST_Slice(a, b, c, __VA_ARGS__),         Load, __VA_ARGS__)
 
 #define _PyAST_ClosedSlice(a, b, c, ...)     _PyAST_Subscript(         _PyAST_Name(Py_BuildValue("s", "CLOSED0"), Load, __VA_ARGS__),         _PyAST_Slice(a, b, c, __VA_ARGS__),         Load, __VA_ARGS__)
@@ -15007,7 +15009,7 @@ starred_expression1_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyAST_From1 ( a , EXTRA );
+            _res = _PyAST_Starred ( _PyAST_Star1 ( a , EXTRA ) , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;

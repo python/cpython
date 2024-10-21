@@ -49,12 +49,21 @@ class FROM1CONVERTER(object):
             if isinstance(start, int): start -= 1
             if isinstance(stop, int): stop -= 1
             return slice(start, stop, step)
-        elif isinstance(arg, tuple):
-            return tuple(self[x] for x in arg) # useful or not ?
         else:
             return arg
 
 FROM1 = FROM1CONVERTER()
+
+class STAR1CONVERTER(object):
+    """
+    class of STAR1, anf STAR1[*args] applies FROM1 on each arg
+    """
+    def __getitem__(self, arg):
+        assert isinstance(arg, tuple)
+        return tuple(FROM1[x] for x in arg)
+
+STAR1 = STAR1CONVERTER()
+
 
 def test(*args):
     import ast
