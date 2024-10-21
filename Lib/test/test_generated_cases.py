@@ -1371,6 +1371,54 @@ class TestGeneratedCases(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             self.run_cases_test(input, output)
 
+    def test_instruction_size_macro(self):
+        input = """
+        inst(OP, (--)) {
+            frame->return_offset = INSTRUCTION_SIZE;
+        }
+        """
+
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            frame->return_offset = 1 ;
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+        # Two instructions of different sizes referencing the same
+        # uop containing the `INSTRUCTION_SIZE` macro is not allowed.
+        input = """
+        inst(OP, (--)) {
+            frame->return_offset = INSTRUCTION_SIZE;
+        }
+        macro(OP2) = unused/1 + OP;
+        """
+
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            frame->return_offset = 1 ;
+            DISPATCH();
+        }
+
+        TARGET(OP2) {
+            frame->instr_ptr = next_instr;
+            next_instr += 2;
+            INSTRUCTION_STATS(OP2);
+            /* Skip 1 cache entry */
+            frame->return_offset = 2 ;
+            DISPATCH();
+        }
+        """
+        with self.assertRaisesRegex(AssertionError, "All instructions containing a uop"):
+            self.run_cases_test(input, output)
+
 
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:

@@ -9,9 +9,9 @@ from analyzer import (
     analysis_error,
 )
 from cwriter import CWriter
-from typing import Callable, Mapping, TextIO, Iterator, Iterable
+from typing import Callable, TextIO, Iterator, Iterable
 from lexer import Token
-from stack import Stack, Local, Storage, StackError
+from stack import Storage, StackError
 
 # Set this to true for voluminous output showing state of stack and locals
 PRINT_STACKS = False
@@ -90,7 +90,7 @@ def emit_to(out: CWriter, tkn_iter: TokenIterator, end: str) -> Token:
 
 
 ReplacementFunctionType = Callable[
-    [Token, TokenIterator, Uop, Storage, Instruction | None], bool
+    [Token, TokenIterator, Uop, Storage, Instruction | None, int | None], bool
 ]
 
 def always_true(tkn: Token | None) -> bool:
@@ -118,7 +118,8 @@ class Emitter:
             "PyStackRef_CLOSE": self.stackref_close,
             "PyStackRef_CLOSE_SPECIALIZED": self.stackref_close,
             "PyStackRef_AsPyObjectSteal": self.stackref_steal,
-            "DISPATCH": self.dispatch
+            "DISPATCH": self.dispatch,
+            "INSTRUCTION_SIZE": self.instruction_size,
         }
         self.out = out
 
@@ -129,6 +130,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         self.emit(tkn)
         return False
@@ -140,6 +142,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         self.out.emit_at("DEOPT_IF", tkn)
         lparen = next(tkn_iter)
@@ -164,6 +167,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         self.out.emit_at("if ", tkn)
         lparen = next(tkn_iter)
@@ -205,6 +209,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         next(tkn_iter)  # LPAREN
         next(tkn_iter)  # RPAREN
@@ -219,6 +224,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         next(tkn_iter)
         next(tkn_iter)
@@ -252,6 +258,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         next(tkn_iter)
         next(tkn_iter)
@@ -267,6 +274,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         next(tkn_iter)
         name_tkn = next(tkn_iter)
@@ -288,6 +296,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         self.out.emit(tkn)
         tkn = next(tkn_iter)
@@ -312,6 +321,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         next(tkn_iter)
         next(tkn_iter)
@@ -332,6 +342,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         next(tkn_iter)
         next(tkn_iter)
@@ -350,11 +361,28 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         next(tkn_iter)
         next(tkn_iter)
         next(tkn_iter)
         self.emit_reload(storage)
+        return True
+
+    def instruction_size(self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+        inst_size: int | None = None,
+    ) -> bool:
+        """Replace the INSTRUCTION_SIZE macro with the size of the current instruction."""
+        assert inst or inst_size is not None, "INSTRUCTION_SIZE macro requires instruction or size"
+        if inst:
+            self.out.emit(f" {inst.size} ")
+        elif inst_size is not None:
+            self.out.emit(f" {inst_size} ")
         return True
 
     def _print_storage(self, storage: Storage) -> None:
@@ -369,6 +397,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> tuple[bool, Token, Storage]:
         """Returns (reachable?, closing '}', stack)."""
         tkn = next(tkn_iter)
@@ -377,7 +406,7 @@ class Emitter:
         rparen = emit_to(self.out, tkn_iter, "RPAREN")
         self.emit(rparen)
         if_storage = storage.copy()
-        reachable, rbrace, if_storage = self._emit_block(tkn_iter, uop, if_storage, inst, True)
+        reachable, rbrace, if_storage = self._emit_block(tkn_iter, uop, if_storage, inst, inst_size, True)
         try:
             maybe_else = tkn_iter.peek()
             if maybe_else and maybe_else.kind == "ELSE":
@@ -393,7 +422,7 @@ class Emitter:
                     self.out.start_line()
                     self.emit("}\n")
                 else:
-                    else_reachable, rbrace, else_storage = self._emit_block(tkn_iter, uop, storage, inst, True)
+                    else_reachable, rbrace, else_storage = self._emit_block(tkn_iter, uop, storage, inst, inst_size, True)
                 if not reachable:
                     # Discard the if storage
                     reachable = else_reachable
@@ -429,6 +458,7 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None,
         emit_first_brace: bool
     ) -> tuple[bool, Token, Storage]:
         """ Returns (reachable?, closing '}', stack)."""
@@ -471,7 +501,7 @@ class Emitter:
                     self.out.emit(tkn)
                 elif tkn.kind == "IDENTIFIER":
                     if tkn.text in self._replacers:
-                        if not self._replacers[tkn.text](tkn, tkn_iter, uop, storage, inst):
+                        if not self._replacers[tkn.text](tkn, tkn_iter, uop, storage, inst, inst_size):
                             reachable = False
                     else:
                         if tkn in out_stores:
@@ -502,10 +532,11 @@ class Emitter:
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None
     ) -> Storage:
         tkn_iter = TokenIterator(uop.body)
         self.out.start_line()
-        _, rbrace, storage = self._emit_block(tkn_iter, uop, storage, inst, False)
+        _, rbrace, storage = self._emit_block(tkn_iter, uop, storage, inst, inst_size, False)
         try:
             self._print_storage(storage)
             storage.push_outputs()
@@ -552,3 +583,35 @@ def cflags(p: Properties) -> str:
         return " | ".join(flags)
     else:
         return "0"
+
+
+def contains_instruction_size_macro(uop: Uop) -> bool:
+    """Return True if the uop contains the INSTRUCTION_SIZE macro."""
+    for token in uop.body:
+        if token.kind == "IDENTIFIER" and token.text in 'INSTRUCTION_SIZE':
+            return True
+    return False
+
+
+def get_instruction_size_for_uop(instructions: dict[str, Instruction], uop: Uop) -> int:
+    """Return the size of the instruction that contains the given uop.
+
+    If there is more than one instruction that contains the uop,
+    ensure that they all have the same size.
+    """
+    size = None
+    for inst in instructions.values():
+        if uop in inst.parts:
+            if size is None:
+                size = inst.size
+            if size != inst.size:
+                assert size == inst.size, (
+                    "All instructions containing a uop with the `INSTRUCTION_SIZE` macro "
+                    f"must have the same size: {size} != {inst.size}"
+                )
+    assert size is not None
+    return size
+
+
+def assert_same_instruction_size(instructions: dict[str, Instruction], uop: Uop) -> None:
+    get_instruction_size_for_uop(instructions, uop)

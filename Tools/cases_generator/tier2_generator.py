@@ -22,6 +22,8 @@ from generators_common import (
     Emitter,
     TokenIterator,
     always_true,
+    contains_instruction_size_macro,
+    get_instruction_size_for_uop,
 )
 from cwriter import CWriter
 from typing import TextIO, Iterator
@@ -75,6 +77,7 @@ class Tier2Emitter(Emitter):
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         self.out.emit_at("if ", tkn)
         lparen = next(tkn_iter)
@@ -97,6 +100,7 @@ class Tier2Emitter(Emitter):
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         next(tkn_iter)  # LPAREN
         next(tkn_iter)  # RPAREN
@@ -111,6 +115,7 @@ class Tier2Emitter(Emitter):
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         self.out.emit_at("if ", tkn)
         lparen = next(tkn_iter)
@@ -132,6 +137,7 @@ class Tier2Emitter(Emitter):
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         self.out.emit_at("if ", tkn)
         lparen = next(tkn_iter)
@@ -152,6 +158,7 @@ class Tier2Emitter(Emitter):
         uop: Uop,
         storage: Storage,
         inst: Instruction | None,
+        inst_size: int | None = None,
     ) -> bool:
         if not uop.name.endswith("_0") and not uop.name.endswith("_1"):
             self.emit(tkn)
@@ -167,7 +174,7 @@ class Tier2Emitter(Emitter):
         return True
 
 
-def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
+def write_uop(uop: Uop, emitter: Emitter, stack: Stack, inst_size: int | None = None) -> Stack:
     locals: dict[str, Local] = {}
     try:
         emitter.out.start_line()
@@ -188,10 +195,11 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
                     type = f"uint{cache.size*16}_t "
                     cast = f"uint{cache.size*16}_t"
                 emitter.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND();\n")
-        storage = emitter.emit_tokens(uop, storage, None)
+        storage = emitter.emit_tokens(uop, storage, None, inst_size)
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body[0]) from None
     return storage.stack
+
 
 SKIPS = ("_EXTENDED_ARG",)
 
@@ -227,8 +235,11 @@ def generate_tier2(
             continue
         out.emit(f"case {uop.name}: {{\n")
         declare_variables(uop, out)
+        inst_size = None
+        if contains_instruction_size_macro(uop):
+            inst_size = get_instruction_size_for_uop(analysis.instructions, uop)
         stack = Stack()
-        stack = write_uop(uop, emitter, stack)
+        stack = write_uop(uop, emitter, stack, inst_size)
         out.start_line()
         if not uop.properties.always_exits:
             stack.flush(out)
