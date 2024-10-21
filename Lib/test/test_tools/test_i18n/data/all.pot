@@ -1,0 +1,164 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2023-05-11 00:37+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+#: pypkg/docstrings.py:2
+#, docstring
+msgid ""
+"multiline\n"
+"module docstring"
+msgstr ""
+
+#: pypkg/docstrings.py:9 pypkg/docstrings.py:74 pypkg/messages.py:35
+#: pypkg/mixed.py:11 pypkg/mixed.py:15
+msgid "foo"
+msgstr ""
+
+#: pypkg/docstrings.py:16
+#, docstring
+msgid "docstring with some blank lines in front"
+msgstr ""
+
+#: pypkg/docstrings.py:21
+#, docstring
+msgid ""
+"multiline\n"
+"docstring with some more content"
+msgstr ""
+
+#: pypkg/docstrings.py:27
+#, docstring
+msgid "outer docstring"
+msgstr ""
+
+#: pypkg/docstrings.py:29
+#, docstring
+msgid "nested docstring"
+msgstr ""
+
+#: pypkg/docstrings.py:33
+#, docstring
+msgid "some docstring"
+msgstr ""
+
+#: pypkg/docstrings.py:39
+#, docstring
+msgid ""
+"A very long docstring which should be correctly wrapped into multiple lines\n"
+"in the output po file according to the maximum line width setting."
+msgstr ""
+
+#: pypkg/docstrings.py:46
+#, docstring
+msgid "Raw docstrings are ok"
+msgstr ""
+
+#: pypkg/docstrings.py:50
+#, docstring
+msgid "Unicode docstrings are ok"
+msgstr ""
+
+#: pypkg/docstrings.py:66
+#, docstring
+msgid "\"Some non-ascii dosctring: ěščř αβγδ"
+msgstr ""
+
+#: pypkg/docstrings.py:78
+#, docstring
+msgid "outer class docstring"
+msgstr ""
+
+#: pypkg/docstrings.py:80
+#, docstring
+msgid "inner class docstring"
+msgstr ""
+
+#: pypkg/docstrings.py:83 pypkg/docstrings.py:86
+#, docstring
+msgid "method docstring"
+msgstr ""
+
+#: pypkg/docstrings.py:90
+#, docstring
+msgid "Async function docstring"
+msgstr ""
+
+#: pypkg/docstrings.py:92
+#, docstring
+msgid "async function nested docstring"
+msgstr ""
+
+#: pypkg/messages.py:5 pypkg/messages.py:7 pypkg/mixed.py:6 pypkg/mixed.py:8
+msgid "Hello, world!"
+msgstr ""
+
+#: pypkg/messages.py:10
+msgid ""
+"Hello,\n"
+"    multiline!\n"
+msgstr ""
+
+#: pypkg/messages.py:14
+msgid "parentheses"
+msgstr ""
+
+#: pypkg/messages.py:16
+msgid "Raw string \\ \\n \\t"
+msgstr ""
+
+#: pypkg/messages.py:18
+msgid "unicode string"
+msgstr ""
+
+#: pypkg/messages.py:20
+msgid "rawdocunicodestandard"
+msgstr ""
+
+#: pypkg/messages.py:31
+msgid "Some non-ascii text: ěščř αβγδ"
+msgstr ""
+
+#: pypkg/messages.py:33
+msgid "Some very long text which should wrap correctly into multiple lines while respecting the maximum line length"
+msgstr ""
+
+#: pypkg/messages.py:35
+msgid "bar"
+msgstr ""
+
+#: pypkg/messages.py:37 pypkg/messages.py:73
+msgid "baz"
+msgstr ""
+
+#: pypkg/messages.py:55
+msgid "Hello, {}!"
+msgstr ""
+
+#: pypkg/messages.py:59 pypkg/messages.py:60
+msgid "A"
+msgstr ""
+
+#: pypkg/messages.py:59 pypkg/messages.py:60
+msgid "B"
+msgstr ""
+
+#: pypkg/messages.py:64
+msgid "nested"
+msgstr ""
+
+#: pypkg/messages.py:67
+msgid "param"
+msgstr ""
+
