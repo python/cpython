@@ -28,6 +28,7 @@
 This module has the following process-global state:
 
 _globals (static struct globals):
+    mutex (PyMutex)
     module_count (int)
     channels (struct _channels):
         numopen (int64_t)
