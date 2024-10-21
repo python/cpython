@@ -151,9 +151,13 @@ jobs:
     if: fromJSON(needs.check_source.outputs.run_tests)
     strategy:
       matrix:
-        os: [windows-latest]
-        arch: [x64]
-        free-threading: [false, true]
+        os:
+          - windows-latest
+        arch:
+          - x64
+        free-threading:
+          - false
+          - true
         include:
           - os: windows-aarch64
             arch: arm64
