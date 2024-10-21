@@ -401,7 +401,7 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
 
       Use :func:`pickletools.optimize` if you need more compact pickles.
 
-   .. method:: clear_memo(obj)
+   .. method:: clear_memo()
 
       Clears the pickler's "memo".
 
