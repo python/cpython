@@ -1,6 +1,6 @@
-"""
+"""      turtle-example-suite:
 
-         sorting_animation.py
+    turtledemo/sorting_animation.py
 
 A minimal sorting algorithm animation:
 Sorts a shelf of 10 blocks using insertion
@@ -10,9 +10,6 @@ Shelves are implemented using builtin lists.
 
 Blocks are turtles with shape "square", but
 stretched to rectangles by shapesize()
- ---------------------------------------
-       To exit press space button
- ---------------------------------------
 """
 from turtle import *
 import random
