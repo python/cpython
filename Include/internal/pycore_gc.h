@@ -291,12 +291,19 @@ struct gc_mark_state {
     Py_ssize_t old_size;
     /* Number of alive objects found in oldest generation */
     Py_ssize_t old_alive_size;
+    /* The phase of the mark process */
     int mark_phase;
+    /* Number of incremental mark steps done */
     int mark_steps;
+    /* Number of steps available before full collection */
     int mark_steps_total;
+    /* Total time spent inside cyclic GC */
     PyTime_t gc_total_time;
+    /* Time spent inside incremental mark part of cyclic GC */
     PyTime_t gc_mark_time;
+    /* Maximum GC pause time */
     PyTime_t gc_max_pause;
+    /* Total number of times GC was run */
     PyTime_t gc_runs;
 };
 
@@ -322,6 +329,7 @@ struct _gc_runtime_state {
     PyObject *garbage;
     /* a list of callbacks to be invoked when collection is performed */
     PyObject *callbacks;
+    /* state for the incremental "mark alive" logic */
     struct gc_mark_state mark_state;
 
     /* This is the number of objects that survived the last full

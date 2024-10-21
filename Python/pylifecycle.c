@@ -1151,6 +1151,7 @@ run_presite(PyThreadState *tstate)
 }
 #endif
 
+extern void _PyGC_Freeze(PyInterpreterState *interp);
 
 static PyStatus
 init_interp_main(PyThreadState *tstate)
@@ -2216,8 +2217,6 @@ Py_Finalize(void)
 {
     (void)_Py_Finalize(&_PyRuntime);
 }
-
-extern void _PyGC_Freeze(PyInterpreterState *interp);
 
 /* Create and initialize a new interpreter and thread, and return the
    new thread.  This requires that Py_Initialize() has been called

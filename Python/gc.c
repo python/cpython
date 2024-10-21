@@ -57,11 +57,11 @@ typedef struct _gc_runtime_state GCState;
 #define GENERATION_AUTO (-1)
 
 // phases of incremental mark alive process
-#define MARK_PHASE_INIT 1
-#define MARK_PHASE_STEP 2
-#define MARK_PHASE_DONE 3
+#define MARK_PHASE_INIT 1 // start of new marking pass
+#define MARK_PHASE_STEP 2 // incremental marking steps (done on each gen 0 collection)
+#define MARK_PHASE_DONE 3 // marking has finished, wait for next full collection
 
-#if 1 // gc timing
+#if 1 // gc timing statistics (needs cleanup)
 //
 #define QUANTILE_COUNT 5
 #define MARKER_COUNT (QUANTILE_COUNT * 3 + 2)
@@ -248,6 +248,7 @@ P2Engine gc_timing;
 
 #endif // gc timing
 
+// return True if object is part of the old (gen2) set
 static inline int gc_is_old(PyGC_Head *gc) {
     return ((gc->_gc_prev & _PyGC_PREV_MASK_OLD) != 0);
 }
@@ -1269,6 +1270,7 @@ show_stats_each_generations(GCState *gcstate)
         buf, gc_list_size(&gcstate->permanent_generation.head));
 }
 
+// set the "old" flag on all objects in the old (gen 2) list
 static Py_ssize_t
 mark_old(PyGC_Head *head) {
     Py_ssize_t n = 0;
@@ -1279,13 +1281,11 @@ mark_old(PyGC_Head *head) {
     return n;
 }
 
-struct mark_state {
-    PyGC_Head todo;
-    Py_ssize_t alive; // number of objects found alive
-};
-
 static int visit_reachable_old(PyObject *op, PyGC_Head *todo);
 
+// Called on objects known to be alive (due to being reachable from known
+// roots).  Move objects to the 'old_alive' list.  They will be excluded
+// from the next full collection of old.
 static void
 propogate_old_reachable(PyObject *op, PyGC_Head *todo)
 {
@@ -1308,6 +1308,7 @@ visit_reachable_old(PyObject *op, PyGC_Head *todo)
     return 0;
 }
 
+// do one step of incremental "mark alive" processing
 static void
 mark_alive_step(PyThreadState *tstate, PyGC_Head *old_head)
 {
@@ -1377,6 +1378,7 @@ print_gc_times(GCState *gcstate)
             );
 }
 
+// Run incremental "mark alive" process, as required.
 static void
 maybe_mark_alive(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 {
@@ -1406,8 +1408,8 @@ maybe_mark_alive(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         else {
             if (generation == OLD_GENERATION) {
                 float f = ((float)gcstate->mark_state.old_alive_size) / gcstate->mark_state.old_size;
-                fprintf(stderr, "doing full auto collection %.2f\n", f);
-                fprintf(stderr, "steps %d %d\n", gcstate->mark_state.mark_steps, gcstate->mark_state.mark_steps_total);
+                fprintf(stderr, "gc full auto collection %.2f\n", f);
+                fprintf(stderr, "gc steps needed=%d available=%d\n", gcstate->mark_state.mark_steps, gcstate->mark_state.mark_steps_total);
                 print_gc_times(gcstate);
                 gcstate->mark_state.mark_phase = MARK_PHASE_INIT;
             }
