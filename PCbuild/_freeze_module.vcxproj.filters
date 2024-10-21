@@ -326,6 +326,12 @@
     <ClCompile Include="..\Python\parking_lot.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\partial_evaluator.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\partial_evaluator_symbols.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\pathconfig.c">
       <Filter>Source Files</Filter>
     </ClCompile>

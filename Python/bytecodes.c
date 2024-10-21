@@ -259,7 +259,7 @@ dummy_func(
             value = PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
         }
 
-        replicate(8) inst(STORE_FAST, (value --)) {
+        replicate(8) pure inst(STORE_FAST, (value --)) {
             SETLOCAL(oparg, value);
             DEAD(value);
         }
@@ -4812,7 +4812,7 @@ dummy_func(
             if (lltrace >= 2) {
                 printf("SIDE EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
-                printf(", exit %u, temp %d, target %d -> %s]\n",
+                printf(", exit %ld, temp %d, target %d -> %s]\n",
                     exit - current_executor->exits, exit->temperature.value_and_backoff,
                     (int)(target - _PyCode_CODE(code)),
                     _PyOpcode_OpName[target->op.code]);
@@ -4922,7 +4922,7 @@ dummy_func(
             if (lltrace >= 2) {
                 printf("DYNAMIC EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
-                printf(", exit %u, temp %d, target %d -> %s]\n",
+                printf(", exit %ld, temp %d, target %d -> %s]\n",
                     exit - current_executor->exits, exit->temperature.value_and_backoff,
                     (int)(target - _PyCode_CODE(_PyFrame_GetCode(frame))),
                     _PyOpcode_OpName[target->op.code]);
