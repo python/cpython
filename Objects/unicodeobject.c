@@ -46,6 +46,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_codecs.h"        // _PyCodec_Lookup()
 #include "pycore_critical_section.h" // Py_*_CRITICAL_SECTION_SEQUENCE_FAST
 #include "pycore_format.h"        // F_LJUST
+#include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // PyInterpreterState.fs_codec
 #include "pycore_long.h"          // _PyLong_FormatWriter()
@@ -13436,9 +13437,13 @@ PyUnicodeWriter_Create(Py_ssize_t length)
     }
 
     const size_t size = sizeof(_PyUnicodeWriter);
-    PyUnicodeWriter *pub_writer = (PyUnicodeWriter *)PyMem_Malloc(size);
+    PyUnicodeWriter *pub_writer;
+    pub_writer = _Py_FREELIST_POP_MEM(unicode_writers);
     if (pub_writer == NULL) {
-        return (PyUnicodeWriter *)PyErr_NoMemory();
+        pub_writer = (PyUnicodeWriter *)PyMem_Malloc(size);
+        if (pub_writer == NULL) {
+            return (PyUnicodeWriter *)PyErr_NoMemory();
+        }
     }
     _PyUnicodeWriter *writer = (_PyUnicodeWriter *)pub_writer;
 
@@ -13459,7 +13464,7 @@ void PyUnicodeWriter_Discard(PyUnicodeWriter *writer)
         return;
     }
     _PyUnicodeWriter_Dealloc((_PyUnicodeWriter*)writer);
-    PyMem_Free(writer);
+    _Py_FREELIST_FREE(unicode_writers, writer, PyMem_Free);
 }
 
 
@@ -13881,7 +13886,7 @@ PyUnicodeWriter_Finish(PyUnicodeWriter *writer)
 {
     PyObject *str = _PyUnicodeWriter_Finish((_PyUnicodeWriter*)writer);
     assert(((_PyUnicodeWriter*)writer)->buffer == NULL);
-    PyMem_Free(writer);
+    _Py_FREELIST_FREE(unicode_writers, writer, PyMem_Free);
     return str;
 }
 

@@ -1312,7 +1312,7 @@ _queueid_xid_new(int64_t qid)
 
     struct _queueid_xid *data = PyMem_RawMalloc(sizeof(struct _queueid_xid));
     if (data == NULL) {
-        _queues_incref(queues, qid);
+        _queues_decref(queues, qid);
         return NULL;
     }
     data->qid = qid;
@@ -1518,7 +1518,7 @@ static PyObject *
 queuesmod_destroy(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:destroy", kwlist,
                                      qidarg_converter, &qidarg)) {
         return NULL;
@@ -1579,7 +1579,7 @@ static PyObject *
 queuesmod_put(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", "obj", "fmt", "unboundop", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     PyObject *obj;
     int fmt;
     int unboundop;
@@ -1615,7 +1615,7 @@ static PyObject *
 queuesmod_get(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:get", kwlist,
                                      qidarg_converter, &qidarg)) {
         return NULL;
@@ -1651,7 +1651,7 @@ static PyObject *
 queuesmod_bind(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:bind", kwlist,
                                      qidarg_converter, &qidarg)) {
         return NULL;
@@ -1681,7 +1681,7 @@ queuesmod_release(PyObject *self, PyObject *args, PyObject *kwds)
 {
     // Note that only the current interpreter is affected.
     static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O&:release", kwlist,
                                      qidarg_converter, &qidarg)) {
@@ -1710,7 +1710,7 @@ static PyObject *
 queuesmod_get_maxsize(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O&:get_maxsize", kwlist,
                                      qidarg_converter, &qidarg)) {
@@ -1735,7 +1735,7 @@ static PyObject *
 queuesmod_get_queue_defaults(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O&:get_queue_defaults", kwlist,
                                      qidarg_converter, &qidarg)) {
@@ -1765,7 +1765,7 @@ static PyObject *
 queuesmod_is_full(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O&:is_full", kwlist,
                                      qidarg_converter, &qidarg)) {
@@ -1793,7 +1793,7 @@ static PyObject *
 queuesmod_get_count(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O&:get_count", kwlist,
                                      qidarg_converter, &qidarg)) {
@@ -1894,7 +1894,8 @@ The 'interpreters' module provides a more convenient interface.");
 static int
 module_exec(PyObject *mod)
 {
-    if (_globals_init() != 0) {
+    int err = _globals_init();
+    if (handle_queue_error(err, mod, -1)) {
         return -1;
     }
 
