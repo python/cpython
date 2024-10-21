@@ -1398,16 +1398,14 @@ _queueobj_shared(PyThreadState *tstate, PyObject *queueobj,
    the data that we need to share between interpreters, so it cannot
    hold PyObject values. */
 static struct globals {
-    int module_count;
+    uint8_t module_count;
     _queues queues;
 } _globals = {0};
 
 static int
 _globals_init(void)
 {
-    // XXX This isn't thread-safe.
-    _globals.module_count++;
-    if (_globals.module_count > 1) {
+    if (_Py_atomic_add_uint8(&_globals.module_count, 1) > 0) {
         // Already initialized.
         return 0;
     }
@@ -1424,9 +1422,7 @@ _globals_init(void)
 static void
 _globals_fini(void)
 {
-    // XXX This isn't thread-safe.
-    _globals.module_count--;
-    if (_globals.module_count > 0) {
+    if (_Py_atomic_add_uint8(&_globals.module_count, -1) > 1) {
         return;
     }
 
