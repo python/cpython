@@ -515,12 +515,17 @@ class StrptimeTests(unittest.TestCase):
 
     # NB: Dates before 1969 do not roundtrip on some locales:
     # az_IR, bo_CN, bo_IN, dz_BT, eu_ES, eu_FR, fa_IR, or_IN.
+    @support.run_with_tz('STD-1DST,M4.1.0,M10.1.0')
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
                       'he_IL', 'ar_AE', 'mfe_MU', 'yo_NG',
                       'csb_PL', 'br_FR', 'gez_ET', 'brx_IN',
                       'my_MM', 'shn_MM')
     def test_date_time_locale2(self):
         # Test %c directive
+        loc = locale.getlocale(locale.LC_TIME)[0]
+        if sys.platform.startswith('sunos'):
+            if loc in ('ar_AE',):
+                self.skipTest(f'locale {loc!r} may not work on this platform')
         self.roundtrip('%c', slice(0, 6), (1900, 1, 1, 0, 0, 0, 0, 1, 0))
         self.roundtrip('%c', slice(0, 6), (1800, 1, 1, 0, 0, 0, 0, 1, 0))
 
@@ -553,6 +558,10 @@ class StrptimeTests(unittest.TestCase):
                       'eu_ES', 'ar_AE', 'my_MM', 'shn_MM')
     def test_date_locale2(self):
         # Test %x directive
+        loc = locale.getlocale(locale.LC_TIME)[0]
+        if sys.platform.startswith('sunos'):
+            if loc in ('en_US', 'de_DE', 'ar_AE'):
+                self.skipTest(f'locale {loc!r} may not work on this platform')
         self.roundtrip('%x', slice(0, 3), (1900, 1, 1, 0, 0, 0, 0, 1, 0))
         self.roundtrip('%x', slice(0, 3), (1800, 1, 1, 0, 0, 0, 0, 1, 0))
 
