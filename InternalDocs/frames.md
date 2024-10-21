@@ -11,19 +11,18 @@ of three conceptual sections:
   previous frame, etc.
 
 The definition of the `_PyInterpreterFrame` struct is in
-[Include/internal/pycore_frame.h](https://github.com/python/cpython/blob/main/Include/internal/pycore_frame.h).
+[Include/internal/pycore_frame.h](../Include/internal/pycore_frame.h).
 
 # Allocation
 
 Python semantics allows frames to outlive the activation, so they need to
 be allocated outside the C call stack. To reduce overhead and improve locality
 of reference, most frames are allocated contiguously in a per-thread stack
-(see `_PyThreadState_PushFrame` in
-[Python/pystate.c](https://github.com/python/cpython/blob/main/Python/pystate.c)).
+(see `_PyThreadState_PushFrame` in [Python/pystate.c](../Python/pystate.c)).
 
 Frames of generators and coroutines are embedded in the generator and coroutine
 objects, so are not allocated in the per-thread stack. See `PyGenObject` in
-[Include/internal/pycore_genobject.h](https://github.com/python/cpython/blob/main/Include/internal/pycore_genobject.h).
+[Include/internal/pycore_genobject.h](../Include/internal/pycore_genobject.h).
 
 ## Layout
 
@@ -90,8 +89,7 @@ frames on the per-thread stack via the linkage fields.
 
 If a frame object associated with a generator outlives the generator, then
 the embedded `_PyInterpreterFrame` is copied into the frame object (see
-`take_ownership()` in
-[Python/frame.c](https://github.com/python/cpython/blob/main/Python/frame.c)).
+`take_ownership()` in [Python/frame.c](../Python/frame.c)).
 
 ### Field names
 

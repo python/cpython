@@ -14,7 +14,7 @@ the original [`LL(1)`](https://en.wikipedia.org/wiki/LL_parser) parser.
 The code implementing the parser is generated from a grammar definition by a
 [parser generator](https://en.wikipedia.org/wiki/Compiler-compiler).
 Therefore, changes to the Python language are made by modifying the
-[grammar file](https://github.com/python/cpython/blob/main/Grammar/python.gram).
+[grammar file](../Grammar/python.gram).
 Developers rarely need to modify the generator itself.
 
 See the devguide's [Changing CPython's grammar](https://devguide.python.org/developer-workflow/grammar/#grammar)
@@ -422,21 +422,19 @@ Pegen
 
 Pegen is the parser generator used in CPython to produce the final PEG parser
 used by the interpreter. It is the program that can be used to read the python
-grammar located in
-[`Grammar/python.gram`](https://github.com/python/cpython/blob/main/Grammar/python.gram)
-and produce the final C parser. It contains the following pieces:
+grammar located in [`Grammar/python.gram`](../Grammar/python.gram) and produce
+the final C parser. It contains the following pieces:
 
 - A parser generator that can read a grammar file and produce a PEG parser
   written in Python or C that can parse said grammar. The generator is located at
-  [`Tools/peg_generator/pegen`](https://github.com/python/cpython/blob/main/Tools/peg_generator/pegen).
+  [`Tools/peg_generator/pegen`](../Tools/peg_generator/pegen).
 - A PEG meta-grammar that automatically generates a Python parser which is used
   for the parser generator itself (this means that there are no manually-written
   parsers). The meta-grammar is located at
-  [`Tools/peg_generator/pegen/metagrammar.gram`](https://github.com/python/cpython/blob/main/Tools/peg_generator/pegen/metagrammar.gram).
+  [`Tools/peg_generator/pegen/metagrammar.gram`](../Tools/peg_generator/pegen/metagrammar.gram).
 - A generated parser (using the parser generator) that can directly produce C and Python AST objects.
 
-The source code for Pegen lives at
-[`Tools/peg_generator/pegen`](https://github.com/python/cpython/blob/main/Tools/peg_generator/pegen)
+The source code for Pegen lives at [`Tools/peg_generator/pegen`](../Tools/peg_generator/pegen)
 but normally all typical commands to interact with the parser generator are executed from
 the main makefile.
 
@@ -457,15 +455,14 @@ use the Visual Studio project files to regenerate the parser or to execute:
     ./PCbuild/build.bat --regen
 ```
 
-The generated parser file is located at
-[`Parser/parser.c`](https://github.com/python/cpython/blob/main/Parser/parser.c).
+The generated parser file is located at [`Parser/parser.c`](../Parser/parser.c).
 
 How to regenerate the meta-parser
 ---------------------------------
 
 The meta-grammar (the grammar that describes the grammar for the grammar files
 themselves) is located at
-[`Tools/peg_generator/pegen/metagrammar.gram`](https://github.com/python/cpython/blob/main/Tools/peg_generator/pegen/metagrammar.gram).
+[`Tools/peg_generator/pegen/metagrammar.gram`](../Tools/peg_generator/pegen/metagrammar.gram).
 Although it is very unlikely that you will ever need to modify it, if you make
 any modifications to this file (in order to implement new Pegen features) you will
 need to regenerate the meta-parser (the parser that parses the grammar files).
@@ -491,7 +488,7 @@ Pegen has some special grammatical elements and rules:
 - Strings with single quotes (') (for example, `'class'`) denote KEYWORDS.
 - Strings with double quotes (") (for example, `"match"`) denote SOFT KEYWORDS.
 - Uppercase names (for example, `NAME`) denote tokens in the
-  [`Grammar/Tokens`](https://github.com/python/cpython/blob/main/Grammar/Tokens) file.
+  [`Grammar/Tokens`](../Grammar/Tokens) file.
 - Rule names starting with `invalid_` are used for specialized syntax errors.
 
   - These rules are NOT used in the first pass of the parser.
@@ -515,8 +512,7 @@ dealing with encoding, interactive mode and much more. Some of these reasons
 are also there for historical purposes, and some others are useful even today.
 
 The list of tokens (all uppercase names in the grammar) that you can use can
-be found in thei
-[`Grammar/Tokens`](https://github.com/python/cpython/blob/main/Grammar/Tokens)
+be found in the [`Grammar/Tokens`](../Grammar/Tokens)
 file. If you change this file to add new tokens, make sure to regenerate the
 files by executing:
 
@@ -532,9 +528,7 @@ the tokens or to execute:
 ```
 
 How tokens are generated and the rules governing this are completely up to the tokenizer
-([`Parser/lexer`](https://github.com/python/cpython/blob/main/Parser/lexer)
-and
-[`Parser/tokenizer`](https://github.com/python/cpython/blob/main/Parser/tokenizer));
+([`Parser/lexer`](../Parser/lexer) and [`Parser/tokenizer`](../Parser/tokenizer));
 the parser just receives tokens from it.
 
 Memoization
@@ -567,8 +561,7 @@ To determine whether a new rule needs memoization or not, benchmarking is requir
 (comparing execution times and memory usage of some considerably large files with
 and without memoization). There is a very simple instrumentation API available
 in the generated C parse code that allows to measure how much each rule uses
-memoization (check the
-[`Parser/pegen.c`](https://github.com/python/cpython/blob/main/Parser/pegen.c)
+memoization (check the [`Parser/pegen.c`](../Parser/pegen.c)
 file for more information) but it needs to be manually activated.
 
 Automatic variables
@@ -731,7 +724,7 @@ acts in two phases:
 >   (see the [how PEG parsers work](#how-peg-parsers-work) section for more information).
 
 You can find a collection of macros to raise specialized syntax errors in the
-[`Parser/pegen.h`](https://github.com/python/cpython/blob/main/Parser/pegen.h)
+[`Parser/pegen.h`](../Parser/pegen.h)
 header file. These macros allow also to report ranges for
 the custom errors, which will be highlighted in the tracebacks that will be
 displayed when the error is reported.
@@ -764,17 +757,15 @@ Generating AST objects
 ----------------------
 
 The output of the C parser used by CPython,  which is generated from the
-[grammar file](https://github.com/python/cpython/blob/main/Grammar/python.gram),
-is a Python AST object (using C structures). This means that the actions in the
-grammar file generate AST objects when they succeed. Constructing these objects
-can be quite cumbersome (see the [AST compiler section](compiler.md#abstract-syntax-trees-ast)
+[grammar file](../Grammar/python.gram), is a Python AST object (using C
+structures). This means that the actions in the grammar file generate AST
+objects when they succeed. Constructing these objects can be quite cumbersome
+(see the [AST compiler section](compiler.md#abstract-syntax-trees-ast)
 for more information on how these objects are constructed and how they are used
 by the compiler), so special helper functions are used. These functions are
-declared in the
-[`Parser/pegen.h`](https://github.com/python/cpython/blob/main/Parser/pegen.h)
-header file and defined in the
-[`Parser/action_helpers.c`](https://github.com/python/cpython/blob/main/Parser/action_helpers.c)
-file. The helpers include functions that join AST sequences, get specific elements
+declared in the [`Parser/pegen.h`](../Parser/pegen.h) header file and defined
+in the [`Parser/action_helpers.c`](../Parser/action_helpers.c) file. The
+helpers include functions that join AST sequences, get specific elements
 from them or to perform extra processing on the generated tree.
 
 
@@ -788,11 +779,9 @@ from them or to perform extra processing on the generated tree.
 
 As a general rule, if an action spawns multiple lines or requires something more
 complicated than a single expression of C code, is normally better to create a
-custom helper in
-[`Parser/action_helpers.c`](https://github.com/python/cpython/blob/main/Parser/action_helpers.c)
-and expose it in the
-[`Parser/pegen.h`](https://github.com/python/cpython/blob/main/Parser/pegen.h)
-header file so that it can be used from the grammar.
+custom helper in [`Parser/action_helpers.c`](../Parser/action_helpers.c)
+and expose it in the [`Parser/pegen.h`](../Parser/pegen.h) header file so that
+it can be used from the grammar.
 
 When parsing succeeds, the parser **must** return a **valid** AST object.
 
@@ -801,16 +790,15 @@ Testing
 
 There are three files that contain tests for the grammar and the parser:
 
-- [test_grammar.py](https://github.com/python/cpython/blob/main/Lib/test/test_grammar.py)
-- [test_syntax.py](https://github.com/python/cpython/blob/main/Lib/test/test_syntax.py)
-- [test_exceptions.py](https://github.com/python/cpython/blob/main/Lib/test/test_exceptions.py)
+- [test_grammar.py](../Lib/test/test_grammar.py)
+- [test_syntax.py](../Lib/test/test_syntax.py)
+- [test_exceptions.py](../Lib/test/test_exceptions.py)
 
-Check the contents of these files to know which is the best place for new tests, depending
-on the nature of the new feature you are adding.
+Check the contents of these files to know which is the best place for new
+tests, depending on the nature of the new feature you are adding.
 
 Tests for the parser generator itself can be found in the
-[test_peg_generator](https://github.com/python/cpython/blob/main/Lib/test_peg_generator)
-directory.
+[test_peg_generator](../Lib/test_peg_generator) directory.
 
 
 Debugging generated parsers
@@ -825,8 +813,7 @@ correctly compile and execute Python anymore. This makes it a bit challenging
 to debug when something goes wrong, especially when experimenting.
 
 For this reason it is a good idea to experiment first by generating a Python
-parser. To do this, you can go to the
-[Tools/peg_generator](https://github.com/python/cpython/blob/main/Tools/peg_generator)
+parser. To do this, you can go to the [Tools/peg_generator](../Tools/peg_generator)
 directory on the CPython repository and manually call the parser generator by executing:
 
 ```
@@ -849,9 +836,9 @@ Verbose mode
 
 When Python is compiled in debug mode (by adding `--with-pydebug` when
 running the configure step in Linux or by adding `-d` when calling the
-[PCbuild/build.bat](https://github.com/python/cpython/blob/main/PCbuild/build.bat)),
-it is possible to activate a **very** verbose mode in the generated parser. This
-is very useful to debug the generated parser and to understand how it works, but it
+[PCbuild/build.bat](../PCbuild/build.bat)), it is possible to activate a
+**very** verbose mode in the generated parser. This is very useful to
+debug the generated parser and to understand how it works, but it
 can be a bit hard to understand at first.
 
 > [!NOTE]
@@ -891,4 +878,5 @@ is being attempted.
 > **Document history**
 >
 >   Pablo Galindo Salgado - Original author
+>
 >   Irit Katriel and Jacob Coffee - Convert to Markdown
