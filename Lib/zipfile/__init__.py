@@ -2044,25 +2044,20 @@ class ZipFile:
                 decompress=False) as source_file_contents:
             self._write_precompressed(source_zinfo, source_file_contents)
 
-    def copy_file(self, source_zipfile, file):
-        self._raise_if_archive_not_in_writing_mode("copy_file")
-        with ZipFile(source_zipfile, 'r') as source:
-            source_zinfo = source.getinfo(file)
-            self._copy_file(source, source_zinfo)
+    def copy_files(self, source_zipfile, files=None):
+        if self.mode not in ('w', 'x', 'a'):
+            raise ValueError(
+                "copy_files() requires mode 'w', 'x', or 'a', but "
+                f"mode is '{self.mode}'")
 
-    def copy_files(self, source_zipfile, files):
-        self._raise_if_archive_not_in_writing_mode("copy_files")
         with ZipFile(source_zipfile, 'r') as source:
-            for file in files:
-                source_zinfo = source.getinfo(file)
-                self._copy_file(source, source_zinfo)
+            if files is None:
+                zinfos = source.infolist()
+            else:
+                zinfos = [source.getinfo(file) for file in files]
 
-    def copy_all_files(self, source_zipfile):
-        self._raise_if_archive_not_in_writing_mode("copy_all_files")
-        with ZipFile(source_zipfile, 'r') as source:
-            source_zinfos = source.infolist()
-            for source_zinfo in source_zinfos:
-                self._copy_file(source, source_zinfo)
+            for zinfo in zinfos:
+                self._copy_file(source, zinfo)
 
     def __del__(self):
         """Call the "close()" method in case the user forgot."""
