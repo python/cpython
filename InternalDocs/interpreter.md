@@ -336,9 +336,9 @@ will take effect only after running `make regen-importlib`.
 
 Finally, you need to introduce the use of the new bytecode.  Update
 [`Python/codegen.c`](../Python/codegen.c) to emit code with this bytecode.
-Optimizations in :cpy-file:`Python/flowgraph.c` may also need to be updated.
-If the new opcode affects a control flow or the block stack, you may have to
-update the `frame_setlineno()` function in
+Optimizations in [`Python/flowgraph.c`](../Python/flowgraph.c) may also
+need to be updated.  If the new opcode affects a control flow or the block
+stack, you may have to update the `frame_setlineno()` function in
 [`Objects/frameobject.c`](../Objects/frameobject.c).  It may also be necessary
 to update [`Lib/dis.py`](../Lib/dis.py) if the new opcode interprets its
 argument in a special way (like `FORMAT_VALUE` or `MAKE_FUNCTION`).
