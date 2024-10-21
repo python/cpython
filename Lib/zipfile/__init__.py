@@ -1904,8 +1904,11 @@ class ZipFile:
         if isinstance(data, str):
             data = data.encode("utf-8")
         if not isinstance(zinfo_or_arcname, ZipInfo):
+            # gh-91279: Set the SOURCE_DATE_EPOCH to a specific timestamp
+            epoch = os.environ.get('SOURCE_DATE_EPOCH')
+            get_time = int(epoch) if epoch else time.time()
             zinfo = ZipInfo(filename=zinfo_or_arcname,
-                            date_time=time.localtime(time.time())[:6])
+                            date_time=time.gmtime(get_time)[:6])
             zinfo.compress_type = self.compression
             zinfo.compress_level = self.compresslevel
             if zinfo.filename.endswith('/'):
