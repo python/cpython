@@ -28,7 +28,7 @@ candidate_locales = ['es_UY', 'fr_FR', 'fi_FI', 'es_CO', 'pt_PT', 'it_IT',
     'fr_FR.ISO8859-1', 'fr_FR.UTF-8', 'fr_FR.ISO8859-15@euro',
     'ru_RU.KOI8-R', 'ko_KR.eucKR',
     'ja_JP.UTF-8', 'lzh_TW.UTF-8', 'my_MM.UTF-8', 'or_IN.UTF-8', 'shn_MM.UTF-8',
-    'ar_AE.UTF-8', 'bn_IN.UTF-8', 'ja_JP.PCK', 'mr_IN.UTF-8', 'th_TH.TIS620',
+    'ar_AE.UTF-8', 'bn_IN.UTF-8', 'mr_IN.UTF-8', 'th_TH.TIS620',
 ]
 
 def setUpModule():
