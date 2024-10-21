@@ -93,7 +93,7 @@ class InvalidNodeVisitor(GrammarVisitor):
 class PythonCallMakerVisitor(GrammarVisitor):
     def __init__(self, parser_generator: ParserGenerator):
         self.gen = parser_generator
-        self.cache: Dict[str, str] = {}
+        self.cache: Dict[str, Tuple[str, str]] = {}
 
     def visit_NameLeaf(self, node: NameLeaf) -> Tuple[Optional[str], str]:
         name = node.value
