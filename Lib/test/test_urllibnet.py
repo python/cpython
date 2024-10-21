@@ -5,6 +5,7 @@ from test.support import socket_helper
 
 import contextlib
 import socket
+import urllib.error
 import urllib.parse
 import urllib.request
 import os
@@ -101,13 +102,10 @@ class urlopenNetworkTests(unittest.TestCase):
         # test getcode() with the fancy opener to get 404 error codes
         URL = self.url + "XXXinvalidXXX"
         with socket_helper.transient_internet(URL):
-            with self.assertWarns(DeprecationWarning):
-                open_url = urllib.request.FancyURLopener().open(URL)
-            try:
-                code = open_url.getcode()
-            finally:
-                open_url.close()
-            self.assertEqual(code, 404)
+            with self.assertRaises(urllib.error.URLError) as e:
+                with urllib.request.urlopen(URL):
+                    pass
+            self.assertEqual(e.exception.code, 404)
 
     @support.requires_resource('walltime')
     def test_bad_address(self):
