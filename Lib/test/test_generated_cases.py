@@ -1270,6 +1270,33 @@ class TestGeneratedCases(unittest.TestCase):
         """
         self.run_cases_test(input, output)
 
+    def test_error_if_true(self):
+
+        input = """
+        inst(OP1, ( --)) {
+            ERROR_IF(true, here);
+        }
+        inst(OP2, ( --)) {
+            ERROR_IF(1, there);
+        }
+        """
+        output = """
+        TARGET(OP1) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP1);
+            goto here;
+        }
+
+        TARGET(OP2) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP2);
+            goto there;
+        }
+        """
+        self.run_cases_test(input, output)
+
     def test_scalar_array_inconsistency(self):
 
         input = """
