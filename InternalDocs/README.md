@@ -11,19 +11,32 @@ The core dev team attempts to keep this documentation up to date. If
 it is not, please report that through the
 [issue tracker](https://github.com/python/cpython/issues).
 
-Index:
------
 
-[Guide to the parser](parser.md)
+Compiling Python Source Code
+---
 
-[Compiler Design](compiler.md)
+- [Guide to the parser](parser.md)
 
-[Frames](frames.md)
+- [Compiler Design](compiler.md)
 
-[Adaptive Instruction Families](adaptive.md)
+Runtime Objects
+---
 
-[The Source Code Locations Table](locations.md)
+- [Code Objects (coming soon)](code_objects.md)
 
-[Garbage collector design](garbage_collector.md)
+- [The Source Code Locations Table](locations.md)
 
-[Exception Handling](exception_handling.md)
+- [Generators (coming soon)](generators.md)
+
+- [Frames](frames.md)
+
+Program Execution
+---
+
+- [The Interpreter](interpreter.md)
+
+- [Adaptive Instruction Families](adaptive.md)
+
+- [Garbage Collector Design](garbage_collector.md)
+
+- [Exception Handling](exception_handling.md)
