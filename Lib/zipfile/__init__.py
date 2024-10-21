@@ -2045,6 +2045,17 @@ class ZipFile:
             self._write_precompressed(source_zinfo, source_file_contents)
 
     def copy_files(self, source_zipfile, files=None):
+        """
+        copy files from the source_zipfile to the ZIP archive. This method
+        copies the files as is, avoiding the overhead of decompressing and
+        compressing the data again.
+
+        source_zipfile is a string of the path of the ZIP archive to copy from.
+
+        files is an iterable of strings, where each string is a file name found
+        within the source_zipfile. If files=None, all files from source_zipfile
+        are copied.
+        """
         if self.mode not in ('w', 'x', 'a'):
             raise ValueError(
                 "copy_files() requires mode 'w', 'x', or 'a', but "
