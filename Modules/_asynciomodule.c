@@ -434,6 +434,11 @@ future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
         return 0;
     }
 
+    if (!PyList_Check(fut->fut_callbacks)) {
+        PyErr_SetString(PyExc_RuntimeError, "corrupted future state");
+        return -1;
+    }
+
     len = PyList_GET_SIZE(fut->fut_callbacks);
     if (len == 0) {
         /* The list of callbacks was empty; clear it and return. */
@@ -441,8 +446,21 @@ future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
         return 0;
     }
 
-    for (i = 0; i < len; i++) {
+    // Beware: 'call_soon' below may change fut_callbacks or its items
+    // (see https://github.com/python/cpython/issues/125789 for details).
+    for (i = 0; fut->fut_callbacks != NULL; i++) {
+        if (!PyList_Check(fut->fut_callbacks)) {
+            PyErr_SetString(PyExc_RuntimeError, "corrupted future state");
+            return -1;
+        }
+        if (i >= PyList_GET_SIZE(fut->fut_callbacks)) {
+            break; // done
+        }
         PyObject *cb_tup = PyList_GET_ITEM(fut->fut_callbacks, i);
+        if (!PyTuple_Check(cb_tup) || PyTuple_GET_SIZE(cb_tup) < 2) {
+            PyErr_SetString(PyExc_RuntimeError, "corrupted future state");
+            return -1;
+        }
         PyObject *cb = PyTuple_GET_ITEM(cb_tup, 0);
         PyObject *ctx = PyTuple_GET_ITEM(cb_tup, 1);
 
@@ -1033,6 +1051,11 @@ _asyncio_Future_remove_done_callback_impl(FutureObj *self, PyTypeObject *cls,
         return PyLong_FromSsize_t(cleared_callback0);
     }
 
+    if (!PyList_Check(self->fut_callbacks)) {
+        PyErr_SetString(PyExc_RuntimeError, "corrupted future state");
+        return NULL;
+    }
+
     len = PyList_GET_SIZE(self->fut_callbacks);
     if (len == 0) {
         Py_CLEAR(self->fut_callbacks);
@@ -1041,8 +1064,15 @@ _asyncio_Future_remove_done_callback_impl(FutureObj *self, PyTypeObject *cls,
 
     if (len == 1) {
         PyObject *cb_tup = PyList_GET_ITEM(self->fut_callbacks, 0);
-        int cmp = PyObject_RichCompareBool(
-            PyTuple_GET_ITEM(cb_tup, 0), fn, Py_EQ);
+        // Beware: PyObject_RichCompareBool below may change fut_callbacks or
+        // its items (see https://github.com/python/cpython/issues/97592 and
+        // https://github.com/python/cpython/issues/125789 for details).
+        if (!PyTuple_Check(cb_tup) || PyTuple_GET_SIZE(cb_tup) < 1) {
+            PyErr_SetString(PyExc_RuntimeError, "corrupted future state");
+            return NULL;
+        }
+        PyObject *cb = PyTuple_GET_ITEM(cb_tup, 0);
+        int cmp = PyObject_RichCompareBool(cb, fn, Py_EQ);
         if (cmp == -1) {
             return NULL;
         }
@@ -1060,24 +1090,34 @@ _asyncio_Future_remove_done_callback_impl(FutureObj *self, PyTypeObject *cls,
         return NULL;
     }
 
-    // Beware: PyObject_RichCompareBool below may change fut_callbacks.
-    // See GH-97592.
-    for (i = 0;
-         self->fut_callbacks != NULL && i < PyList_GET_SIZE(self->fut_callbacks);
-         i++) {
-        int ret;
-        PyObject *item = PyList_GET_ITEM(self->fut_callbacks, i);
-        Py_INCREF(item);
-        ret = PyObject_RichCompareBool(PyTuple_GET_ITEM(item, 0), fn, Py_EQ);
+    // Beware: PyObject_RichCompareBool below may change fut_callbacks or
+    // its items (see https://github.com/python/cpython/issues/97592 and
+    // https://github.com/python/cpython/issues/125789 for details).
+    for (i = 0; self->fut_callbacks != NULL; i++) {
+        if (!PyList_Check(self->fut_callbacks)) {
+            PyErr_SetString(PyExc_RuntimeError, "corrupted future state");
+            goto fail;
+        }
+        if (i >= PyList_GET_SIZE(self->fut_callbacks)) {
+            break; // done
+        }
+        PyObject *cb_tup = PyList_GET_ITEM(self->fut_callbacks, i);
+        if (!PyTuple_Check(cb_tup) || PyTuple_GET_SIZE(cb_tup) < 1) {
+            PyErr_SetString(PyExc_RuntimeError, "corrupted future state");
+            goto fail;
+        }
+        Py_INCREF(cb_tup);
+        PyObject *cb = PyTuple_GET_ITEM(cb_tup, 0);
+        int ret = PyObject_RichCompareBool(cb, fn, Py_EQ);
         if (ret == 0) {
             if (j < len) {
-                PyList_SET_ITEM(newlist, j, item);
+                PyList_SET_ITEM(newlist, j, cb_tup);
                 j++;
                 continue;
             }
-            ret = PyList_Append(newlist, item);
+            ret = PyList_Append(newlist, cb_tup);
         }
-        Py_DECREF(item);
+        Py_DECREF(cb_tup);
         if (ret < 0) {
             goto fail;
         }

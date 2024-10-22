@@ -929,6 +929,47 @@ class BaseFutureDoneCallbackTests():
 
         fut.remove_done_callback(evil())
 
+    def test_schedule_callbacks_list_mutation_3(self):
+        raise NotImplemented
+
+    def _test_schedule_callbacks_list_mutation_3(self, exc_type, exc_text=None):
+        # see https://github.com/python/cpython/issues/125789 for details
+        fut = self._new_future()
+
+        class evil:
+            def __eq__(self, other):
+                global mem
+                mem = other
+                return False
+
+        cb_pad = lambda: ...
+        fut.add_done_callback(cb_pad)  # sets fut->fut_callback0
+        fut.add_done_callback(evil())  # sets first item in fut->fut_callbacks
+        # Consume fut->fut_callback0 callback but checks the remaining callbacks,
+        # thereby invoking evil.__eq__().
+        fut.remove_done_callback(cb_pad)
+        self.assertIs(mem, cb_pad)
+
+        fake = (
+            (0).to_bytes(8, 'little') +
+            id(bytearray).to_bytes(8, 'little') +
+            (2 ** 63 - 1).to_bytes(8, 'little') +
+            (0).to_bytes(24, 'little')
+        )
+
+        i2f = lambda num: 5e-324 * num
+        fut._callbacks[0] = complex(0, i2f(id(fake) + bytes.__basicsize__ - 1))
+
+        # We want to call once again evil.__eq__() to set 'mem' to our
+        # malicious bytearray. However, since we manually modified the
+        # callbacks list, we will not be able to by-pass the checks.
+        if exc_text is None:
+            self.assertRaises(exc_type, fut.remove_done_callback, evil())
+        else:
+            self.assertRaisesRegex(exc_type, exc_text, fut.remove_done_callback, evil())
+
+        self.assertIs(mem, cb_pad)
+
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
                      'requires the C _asyncio module')
@@ -937,6 +978,9 @@ class CFutureDoneCallbackTests(BaseFutureDoneCallbackTests,
 
     def _new_future(self):
         return futures._CFuture(loop=self.loop)
+
+    def test_schedule_callbacks_list_mutation_3(self):
+        super()._test_schedule_callbacks_list_mutation_3(RuntimeError, 'corrupted')
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
@@ -949,12 +993,18 @@ class CSubFutureDoneCallbackTests(BaseFutureDoneCallbackTests,
             pass
         return CSubFuture(loop=self.loop)
 
+    def test_schedule_callbacks_list_mutation_3(self):
+        super()._test_schedule_callbacks_list_mutation_3(RuntimeError, 'corrupted')
+
 
 class PyFutureDoneCallbackTests(BaseFutureDoneCallbackTests,
                                 test_utils.TestCase):
 
     def _new_future(self):
         return futures._PyFuture(loop=self.loop)
+
+    def test_schedule_callbacks_list_mutation_3(self):
+        super()._test_schedule_callbacks_list_mutation_3(TypeError)
 
 
 class BaseFutureInheritanceTests:
