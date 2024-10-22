@@ -35,7 +35,7 @@ CLOSED0 = CLOSED0CONVERTER()
 
 class FROM1CONVERTER(object):
     """
-    class of FROM1, anf FROM1[slice] converts
+    class of FROM1, and FROM1[slice] converts
     a 1-based semi-open slice into an equivalent 0-based semi-open slice.
     Also works for integers. Objects of other types are returned unchanged.
     """
@@ -56,10 +56,11 @@ FROM1 = FROM1CONVERTER()
 
 class STAR1CONVERTER(object):
     """
-    class of STAR1, anf STAR1[*args] applies FROM1 on each arg
+    Class of STAR1, and STAR1[args] applies FROM1 on each arg
+    Used in a transformation object{*args} -> object[*STAR1(args)]
+    So, args can be any iterable
     """
     def __getitem__(self, arg):
-        assert isinstance(arg, tuple)
         return tuple(FROM1[x] for x in arg)
 
 STAR1 = STAR1CONVERTER()

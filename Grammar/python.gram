@@ -1,28 +1,24 @@
 # PEG grammar for Python
 
 @subheader '''
-#define XXXXXXXXXXXXX_PyAST_Subscript0 _PyAST_Subscript
-
-#define XXXXXXXXXXXXX_PyAST_Subscript1(a, b, context, ...) \
-    _PyAST_Subscript( \
-        a, \
-        _PyAST_Subscript( \
-            _PyAST_Name(Py_BuildValue("s", "FROM1"), Load, __VA_ARGS__), \
-            b, Load, __VA_ARGS__), \
-        context, __VA_ARGS__)
 
 #define _PyAST_From1(a, ...) \
     _PyAST_Subscript( \
         _PyAST_Name(Py_BuildValue("s", "FROM1"), Load, __VA_ARGS__), \
         a, Load, __VA_ARGS__)
 
-#define _PyAST_Star1(a, ...) \
+#define OLD_PyAST_Star1(a, ...) \
     _PyAST_Subscript( \
         _PyAST_Name(Py_BuildValue("s", "STAR1"), Load, __VA_ARGS__), \
         _PyAST_Tuple( \
             CHECK(asdl_expr_seq*, _PyPegen_singleton_seq(p, a)), \
             Load, __VA_ARGS__), \
         Load, __VA_ARGS__)
+
+#define _PyAST_Star1(a, ...) \
+    _PyAST_Subscript( \
+        _PyAST_Name(Py_BuildValue("s", "STAR1"), Load, __VA_ARGS__), \
+        a, Load, __VA_ARGS__)
 
 #define _PyAST_Slice1(a, b, c, ...) \
     _PyAST_Subscript( \
@@ -890,7 +886,7 @@ slices1[expr_ty]:
     | a[asdl_expr_seq*]=','.(slice1 | starred_expression1)+ [','] { _PyAST_Tuple(a, Load, EXTRA) }
 
 starred_expression1[expr_ty]:
-    | a=starred_expression { _PyAST_Starred(_PyAST_Star1(a, EXTRA), Load, EXTRA) }
+    | a=starred_expression_contents { _PyAST_Starred(_PyAST_Star1(a, EXTRA), Load, EXTRA) }
 
 slice1[expr_ty]:
     | a=[expression] ':' b=[expression] ':' c=expression ':' { _PyAST_ClosedSlice1(a, b, c, EXTRA) }
@@ -1076,6 +1072,11 @@ kwargs[asdl_seq*]:
 starred_expression[expr_ty]:
     | invalid_starred_expression_unpacking
     | '*' a=expression { _PyAST_Starred(a, Load, EXTRA) }
+    | invalid_starred_expression
+
+starred_expression_contents[expr_ty]:
+    | invalid_starred_expression_unpacking
+    | '*' a=expression { a }
     | invalid_starred_expression
 
 kwarg_or_starred[KeywordOrStarred*]:
