@@ -210,61 +210,12 @@ refchain_fini(PyInterpreterState *interp)
     if (has_own_refchain(interp)) {
         _Py_hashtable_destroy(REFCHAIN(interp));
     }
-    // This extra branch can be removed once we start setting
-    // interp->feature_flags *before* refchain_init() gets called.
-    else if (REFCHAIN(interp) != REFCHAIN(_PyInterpreterState_Main())) {
-        _Py_hashtable_destroy(REFCHAIN(interp));
-    }
     REFCHAIN(interp) = NULL;
-}
-
-/* Currently refchain_init() is called during interpreter initialization,
-   via _PyObject_InitState(), before interp->feature_flags is set,
-   so an interpreter may have its own refchain even though it shouldn't.
-   Until that gets fixed, we patch it all up wherever apprpriate.
-  maybe_fix_refchain() and move_refchain_item() can be dropped
-  once we sort out the init order problem. */
-
-static int
-copy_refchain_item(_Py_hashtable_t *ht,
-                   const void *key, const void *value,
-                   void *user_data)
-{
-    if (value != REFCHAIN_VALUE) {
-        assert(value == NULL);
-        return 0;
-    }
-    _Py_hashtable_t *new_chain = (_Py_hashtable_t *)user_data;
-    if (_Py_hashtable_set(new_chain, key, REFCHAIN_VALUE) < 0) {
-        Py_FatalError("_Py_hashtable_set() memory allocation failed");
-    }
-    return 0;
-}
-
-static void
-maybe_fix_refchain(PyInterpreterState *interp)
-{
-    if (has_own_refchain(interp)) {
-        // It's okay or we haven't set the feature flags correctly yet.
-        return;
-    }
-
-    _Py_hashtable_t *cur_chain = REFCHAIN(interp);
-    _Py_hashtable_t *main_chain = REFCHAIN(_PyInterpreterState_Main());
-    if (cur_chain == main_chain) {
-        // It was already fixed.
-        return;
-    }
-    REFCHAIN(interp) = main_chain;
-
-    (void)_Py_hashtable_foreach(cur_chain, copy_refchain_item, main_chain);
-    _Py_hashtable_destroy(cur_chain);
 }
 
 bool
 _PyRefchain_IsTraced(PyInterpreterState *interp, PyObject *obj)
 {
-    maybe_fix_refchain(interp);
     return (_Py_hashtable_get(REFCHAIN(interp), obj) == REFCHAIN_VALUE);
 }
 
@@ -272,7 +223,6 @@ _PyRefchain_IsTraced(PyInterpreterState *interp, PyObject *obj)
 static void
 _PyRefchain_Trace(PyInterpreterState *interp, PyObject *obj)
 {
-    maybe_fix_refchain(interp);
     if (_Py_hashtable_set(REFCHAIN(interp), obj, REFCHAIN_VALUE) < 0) {
         // Use a fatal error because _Py_NewReference() cannot report
         // the error to the caller.
@@ -284,7 +234,6 @@ _PyRefchain_Trace(PyInterpreterState *interp, PyObject *obj)
 static void
 _PyRefchain_Remove(PyInterpreterState *interp, PyObject *obj)
 {
-    maybe_fix_refchain(interp);
     void *value = _Py_hashtable_steal(REFCHAIN(interp), obj);
 #ifndef NDEBUG
     assert(value == REFCHAIN_VALUE);
@@ -2630,7 +2579,6 @@ _Py_PrintReferences(PyInterpreterState *interp, FILE *fp)
         interp = _PyInterpreterState_Main();
     }
     fprintf(fp, "Remaining objects:\n");
-    maybe_fix_refchain(interp);
     _Py_hashtable_foreach(REFCHAIN(interp), _Py_PrintReference, fp);
 }
 
@@ -2659,7 +2607,6 @@ void
 _Py_PrintReferenceAddresses(PyInterpreterState *interp, FILE *fp)
 {
     fprintf(fp, "Remaining object addresses:\n");
-    maybe_fix_refchain(interp);
     _Py_hashtable_foreach(REFCHAIN(interp), _Py_PrintReferenceAddress, fp);
 }
 
@@ -2739,7 +2686,6 @@ _Py_GetObjects(PyObject *self, PyObject *args)
         .limit = limit,
     };
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    maybe_fix_refchain(interp);
     int res = _Py_hashtable_foreach(REFCHAIN(interp), _Py_GetObject, &data);
     if (res == _PY_GETOBJECTS_ERROR) {
         Py_DECREF(list);
