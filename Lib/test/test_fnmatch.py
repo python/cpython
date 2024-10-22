@@ -307,16 +307,16 @@ class TranslateTestCase(unittest.TestCase):
                 translated = translate(pattern)
                 self.assertEqual(translated, expect, pattern)
 
-    def test_indices_locations(self):
+    def test_star_indices_locations(self):
         from fnmatch import _translate
 
         blocks = ['a^b', '***', '?', '?', '[a-z]', '[1-9]', '*', '++', '[[a']
-        parts, indices = _translate(''.join(blocks), '*', '.')
+        parts, star_indices = _translate(''.join(blocks), '*', '.')
         expect_parts = ['a', r'\^', 'b', '*',
                         '.', '.', '[a-z]', '[1-9]', '*',
                         r'\+', r'\+', r'\[', r'\[', 'a']
         self.assertListEqual(parts, expect_parts)
-        self.assertListEqual(indices, [3, 8])
+        self.assertListEqual(star_indices, [3, 8])
 
 
 class FilterTestCase(unittest.TestCase):
