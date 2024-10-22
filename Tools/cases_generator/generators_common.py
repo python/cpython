@@ -165,16 +165,24 @@ class Emitter:
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
-        self.out.emit_at("if ", tkn)
         lparen = next(tkn_iter)
-        self.emit(lparen)
         assert lparen.kind == "LPAREN"
         first_tkn = tkn_iter.peek()
-        emit_to(self.out, tkn_iter, "COMMA")
+        unconditional = always_true(first_tkn)
+        if unconditional:
+            next(tkn_iter)
+            comma = next(tkn_iter)
+            if comma.kind != "COMMA":
+                raise analysis_error(f"Expected comma, got '{comma.text}'", comma)
+            self.out.start_line()
+        else:
+            self.out.emit_at("if ", tkn)
+            self.emit(lparen)
+            emit_to(self.out, tkn_iter, "COMMA")
+            self.out.emit(") ")
         label = next(tkn_iter).text
         next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
-        self.out.emit(") ")
         storage.clear_inputs("at ERROR_IF")
         c_offset = storage.stack.peek_offset()
         try:
@@ -196,7 +204,7 @@ class Emitter:
             self.out.emit(label)
             self.out.emit(";\n")
             self.out.emit("}\n")
-        return not always_true(first_tkn)
+        return not unconditional
 
     def error_no_pop(
         self,
