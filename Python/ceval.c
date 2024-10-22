@@ -4,6 +4,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_backoff.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_cell.h"          // PyCell_GetRef()
@@ -26,7 +27,6 @@
 #include "pycore_range.h"         // _PyRangeIterObject
 #include "pycore_setobject.h"     // _PySet_Update()
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
-#include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
 #include "pycore_uop_ids.h"       // Uops
@@ -99,6 +99,11 @@
         } \
         _Py_DECREF_STAT_INC(); \
         if (--op->ob_refcnt == 0) { \
+            struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer; \
+            if (tracer->tracer_func != NULL) { \
+                void* data = tracer->tracer_data; \
+                tracer->tracer_func(op, PyRefTracer_DESTROY, data); \
+            } \
             destructor d = (destructor)(dealloc); \
             d(op); \
         } \
@@ -761,6 +766,24 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
  * so consume 3 units of C stack */
 #define PY_EVAL_C_STACK_UNITS 2
 
+
+/* _PyEval_EvalFrameDefault is too large to optimize for speed with PGO on MSVC
+   when the JIT is enabled or GIL is disabled. Disable that optimization around
+   this function only. If this is fixed upstream, we should gate this on the
+   version of MSVC.
+ */
+#if (defined(_MSC_VER) && \
+     defined(_Py_USING_PGO) && \
+     (defined(_Py_JIT) || \
+      defined(Py_GIL_DISABLED)))
+#define DO_NOT_OPTIMIZE_INTERP_LOOP
+#endif
+
+#ifdef DO_NOT_OPTIMIZE_INTERP_LOOP
+#  pragma optimize("t", off)
+/* This setting is reversed below following _PyEval_EvalFrameDefault */
+#endif
+
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
@@ -1135,6 +1158,10 @@ goto_to_tier1:
 #endif // _Py_TIER2
 
 }
+
+#ifdef DO_NOT_OPTIMIZE_INTERP_LOOP
+#  pragma optimize("", on)
+#endif
 
 #if defined(__GNUC__)
 #  pragma GCC diagnostic pop
