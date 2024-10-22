@@ -180,6 +180,8 @@ _io_FileIO_close_impl(fileio *self, PyTypeObject *cls)
             PyErr_Clear();
         }
     }
+    PyMem_Free(self->stat_atopen);
+    self->stat_atopen = NULL;
     rc = internal_close(self);
     if (res == NULL) {
         _PyErr_ChainExceptions1(exc);
@@ -268,6 +270,8 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
     assert(PyFileIO_Check(state, self));
 #endif
     if (self->fd >= 0) {
+        PyMem_Free(self->stat_atopen);
+        self->stat_atopen = NULL;
         if (self->closefd) {
             /* Have to close the existing file first. */
             if (internal_close(self) < 0) {
