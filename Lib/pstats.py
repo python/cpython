@@ -232,10 +232,7 @@ class Stats:
                 del dict[word]
         return self.sort_arg_dict
 
-    def sort_stats(self, *field):
-        if not field:
-            self.fcn_list = 0
-            return self
+    def get_sort_tuple_and_type(self, *field):
         if len(field) == 1 and isinstance(field[0], int):
             # Be compatible with old profiler
             field = [ {-1: "stdname",
@@ -249,26 +246,35 @@ class Stats:
 
         sort_arg_defs = self.get_sort_arg_defs()
 
-        sort_tuple = ()
-        self.sort_type = ""
-        connector = ""
+        sort_fields = []
+        sort_field_types = []
         for word in field:
             if isinstance(word, SortKey):
                 word = word.value
-            sort_tuple = sort_tuple + sort_arg_defs[word][0]
-            self.sort_type += connector + sort_arg_defs[word][1]
-            connector = ", "
+            sort_fields.extend(sort_arg_defs[word][0])
+            sort_field_types.append(sort_arg_defs[word][1])
+
+        return (tuple(sort_fields), ", ".join(sort_field_types))
+
+    def sort_stats(self, *field):
+        if not field:
+            self.fcn_list = 0
+            return self
+
+        sort_tuple, self.sort_type = self.get_sort_tuple_and_type(*field)
 
         stats_list = []
         for func, (cc, nc, tt, ct, callers) in self.stats.items():
+            # matches sort_arg_defs: cc, nc, tt, ct, module, line, name, stdname
             stats_list.append((cc, nc, tt, ct) + func +
-                              (func_std_string(func), func))
+                              (func_std_string(func),))
 
         stats_list.sort(key=cmp_to_key(TupleComp(sort_tuple).compare))
 
+        # store only the order of the funcs
         self.fcn_list = fcn_list = []
         for tuple in stats_list:
-            fcn_list.append(tuple[-1])
+            fcn_list.append(tuple[4:7])
         return self
 
     def reverse_order(self):
@@ -432,28 +438,48 @@ class Stats:
             print(file=self.stream)
         return self
 
-    def print_callees(self, *amount):
+    def print_callees(self, *amount, callees_sort_key=None, callees_filter=()):
         width, list = self.get_print_list(amount)
         if list:
             self.calc_callees()
 
+            sort_tuple = None
+            sort_type = None
+            if callees_sort_key:
+                if isinstance(callees_sort_key, str):
+                    callees_sort_key = (callees_sort_key,)
+                sort_tuple, sort_type = self.get_sort_tuple_and_type(*callees_sort_key)
+                print("   Callees ordered by: " + sort_type + "\n")
+            if not isinstance(callees_filter, tuple):
+                callees_filter = (callees_filter,)
             self.print_call_heading(width, "called...")
             for func in list:
                 if func in self.all_callees:
-                    self.print_call_line(width, func, self.all_callees[func])
+                    self.print_call_line(width, func, self.all_callees[func],
+                                         sort_tuple=sort_tuple, sort_type=sort_type, sel_list=callees_filter)
                 else:
                     self.print_call_line(width, func, {})
             print(file=self.stream)
             print(file=self.stream)
         return self
 
-    def print_callers(self, *amount):
+    def print_callers(self, *amount, callers_sort_key=None, callers_filter=()):
         width, list = self.get_print_list(amount)
         if list:
+            sort_tuple = None
+            sort_type = None
+            if callers_sort_key:
+                if isinstance(callers_sort_key, str):
+                    callers_sort_key = (callers_sort_key,)
+                sort_tuple, sort_type = self.get_sort_tuple_and_type(*callers_sort_key)
+                print("   Callers ordered by: " + sort_type + "\n")
+            if not isinstance(callers_filter, tuple):
+                callers_filter = (callers_filter,)
             self.print_call_heading(width, "was called by...")
             for func in list:
                 cc, nc, tt, ct, callers = self.stats[func]
-                self.print_call_line(width, func, callers, "<-")
+                self.print_call_line(width, func, callers, arrow="<-",
+                                     sort_tuple=sort_tuple, sort_type=sort_type, sel_list=callers_filter)
             print(file=self.stream)
             print(file=self.stream)
         return self
@@ -470,14 +496,42 @@ class Stats:
         if subheader:
             print(" "*name_size + "    ncalls  tottime  cumtime", file=self.stream)
 
-    def print_call_line(self, name_size, source, call_dict, arrow="->"):
+    def print_call_line(self, name_size, source, call_dict, arrow="->", sort_tuple=None, sort_type=None, sel_list=()):
         print(func_std_string(source).ljust(name_size) + arrow, end=' ', file=self.stream)
         if not call_dict:
             print(file=self.stream)
             return
-        clist = sorted(call_dict.keys())
+
+        if sort_tuple:
+            stats_list = []
+            calls_only = False
+            for func, value in call_dict.items():
+                if isinstance(value, tuple):
+                    nc, cc, tt, ct = value  # cProfile orders it this way
+                    # matches sort_arg_defs: cc, nc, tt, ct, module, line, name, stdname
+                    stats_list.append((cc, nc, tt, ct) + func +
+                                      (func_std_string(func),))
+                else:
+                    if not calls_only:
+                        if "time" in sort_type:
+                            raise TypeError("Caller/callee stats for %s do not have time information. "
+                                            "Try using cProfile instead of profile if you wish to record time by caller/callee."
+                                            % func_std_string(func))
+                        calls_only = True
+                    stats_list.append((None, value, None, None) + func +
+                                      (func_std_string(func),))
+
+            stats_list.sort(key=cmp_to_key(TupleComp(sort_tuple).compare))
+            funclist = [t[4:7] for t in stats_list]
+        else:
+            funclist = list(sorted(call_dict.keys()))
+
+        msg = ""
+        for selection in sel_list:
+            funclist, msg = self.eval_print_amount(selection, funclist, msg)
+
         indent = ""
-        for func in clist:
+        for func in funclist:
             name = func_std_string(func)
             value = call_dict[func]
             if isinstance(value, tuple):
@@ -494,6 +548,8 @@ class Stats:
                 left_width = name_size + 3
             print(indent*left_width + substats, file=self.stream)
             indent = " "
+        if msg:
+            print(msg, file=self.stream)
 
     def print_title(self):
         print('   ncalls  tottime  percall  cumtime  percall', end=' ', file=self.stream)

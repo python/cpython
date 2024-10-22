@@ -196,7 +196,13 @@ is still sorted according to the last criteria) do::
 
    p.print_callers(.5, 'init')
 
-and you would get a list of callers for each of the listed functions.
+and you would get a list of all the callers for each of the listed functions.
+That may be a very long list, so if you want to sort or limit each function's
+list of callers, you might put::
+
+   p.print_callers(.5, 'init', callers_sort=SortKey.TIME, callers_filter=5)
+
+to get the top 5 callers by time of each ``init`` function in the top 50%.
 
 If you want more functionality, you're going to have to read the manual, or
 guess what the following functions do::
@@ -507,7 +513,8 @@ Analysis of the profiler data is done using the :class:`~pstats.Stats` class.
       and then proceed to only print the first 10% of them.
 
 
-   .. method:: print_callers(*restrictions)
+   .. method:: print_callers(*restrictions, callers_sort_key=(),
+      callers_filter=())
 
       This method for the :class:`Stats` class prints a list of all functions
       that called each function in the profiled database.  The ordering is
@@ -526,13 +533,23 @@ Analysis of the profiler data is done using the :class:`~pstats.Stats` class.
         cumulative times spent in the current function while it was invoked by
         this specific caller.
 
+      By default, all callers of a function are printed in lexicographic order.
+      To sort them differently, you can supply sort criteria in the keyword
+      argument ``callers_sort_key``. These use exactly the same format as in
+      :meth:`~pstats.Stats.sort_stats`, though you must supply them each time
+      you call this method. And to limit the number of callers printed per
+      function, you can supply restrictions in the keyword argument
+      ``callers_filter``, as you would in :meth:`~pstats.Stats.print_stats`.
 
-   .. method:: print_callees(*restrictions)
+
+   .. method:: print_callees(*restrictions, callees_sort_key=(),
+      callees_filter=())
 
       This method for the :class:`Stats` class prints a list of all function
       that were called by the indicated function.  Aside from this reversal of
-      direction of calls (re: called vs was called by), the arguments and
-      ordering are identical to the :meth:`~pstats.Stats.print_callers` method.
+      direction of calls (re: called vs was called by), and names of the
+      keyword arguments, the arguments and ordering are identical to the
+      :meth:`~pstats.Stats.print_callers` method.
 
 
    .. method:: get_stats_profile()
