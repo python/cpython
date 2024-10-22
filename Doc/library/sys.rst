@@ -933,7 +933,7 @@ always available.
    Objects from the list are not safe to use.
    Specifically, the result will include objects from all interpreters that
    share their object allocator state (that is, ones created with
-   :c:member:`PyInterpreterConfig.use_main_obmalloc` set to 0
+   :c:member:`PyInterpreterConfig.use_main_obmalloc` set to 1
    or using :c:func:`Py_NewInterpreter`, and the
    :ref:`main interpreter <sub-interpreter-support>`).
    Mixing objects from different interpreters may lead to crashes

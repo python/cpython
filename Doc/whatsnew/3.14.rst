@@ -413,7 +413,7 @@ sys
 
 * The previously undocumented special function :func:`sys.getobjects`,
   which only exists in specialized builds of Python, may now return objects
-  from other interpreters that the one it's called in.
+  from other interpreters than the one it's called in.
 
 
 unicodedata
