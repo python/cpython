@@ -1,0 +1,3 @@
+Adjusted the regex used in :class:`doctest.DocTestParser` to also consider
+triple backticks ``````` to signify the end of an example block
+(in addition to a blank line and ``>>>``).
