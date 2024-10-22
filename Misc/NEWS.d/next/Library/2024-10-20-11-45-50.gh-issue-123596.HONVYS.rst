@@ -1,1 +1,1 @@
-Fix non-existent :attr:`sys.tracebacklimit` in :mod:`sys`. Patch by RUANG.
+Fix missing :attr:`sys.tracebacklimit` in :mod:`sys`. Patch by RUANG.
