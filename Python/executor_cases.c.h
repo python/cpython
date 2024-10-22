@@ -775,6 +775,8 @@
             _PyStackRef left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
+            #ifndef NDEBUG
+            #endif
             int next_oparg;
             #if TIER_ONE
             assert(next_instr->op.code == STORE_FAST);
@@ -4335,11 +4337,11 @@
             }
             STAT_INC(CALL, hit);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *str = PyObject_Str(arg_o);
+            PyObject *res_o = PyObject_Str(arg_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(arg);
-            if (str == NULL) JUMP_TO_ERROR();
-            res = PyStackRef_FromPyObjectSteal(str);
+            if (res_o == NULL) JUMP_TO_ERROR();
+            res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-3] = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
@@ -4368,11 +4370,11 @@
             }
             STAT_INC(CALL, hit);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *tuple = PySequence_Tuple(arg_o);
+            PyObject *res_o = PySequence_Tuple(arg_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(arg);
-            if (tuple == NULL) JUMP_TO_ERROR();
-            res = PyStackRef_FromPyObjectSteal(tuple);
+            if (res_o == NULL) JUMP_TO_ERROR();
+            res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-3] = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
