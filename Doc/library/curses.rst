@@ -59,6 +59,12 @@ The module :mod:`curses` defines the following exception:
 
    Exception raised when a curses library function returns an error.
 
+   .. attribute:: funcname
+
+      Attribute storing the name of the curses C function or macro
+      responsible for this exception, possibly ``None`` if no such
+      information is available.
+
 .. note::
 
    Whenever *x* or *y* arguments to a function or a method are optional, they
