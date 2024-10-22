@@ -513,8 +513,7 @@ Analysis of the profiler data is done using the :class:`~pstats.Stats` class.
       and then proceed to only print the first 10% of them.
 
 
-   .. method:: print_callers(*restrictions, callers_sort_key=(),
-      callers_filter=())
+   .. method:: print_callers(*restrictions, callers_sort_key=(), callers_filter=())
 
       This method for the :class:`Stats` class prints a list of all functions
       that called each function in the profiled database.  The ordering is
@@ -542,8 +541,7 @@ Analysis of the profiler data is done using the :class:`~pstats.Stats` class.
       ``callers_filter``, as you would in :meth:`~pstats.Stats.print_stats`.
 
 
-   .. method:: print_callees(*restrictions, callees_sort_key=(),
-      callees_filter=())
+   .. method:: print_callees(*restrictions, callees_sort_key=(), callees_filter=())
 
       This method for the :class:`Stats` class prints a list of all function
       that were called by the indicated function.  Aside from this reversal of
