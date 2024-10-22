@@ -1189,7 +1189,7 @@ class SysModuleTest(unittest.TestCase):
         ]
         self.assertTrue(hasattr(sys, "tracebacklimit"),
                         'tracebacklimit attribute does not exist')
-        self.assertEqual(getattr(sys, 'tracebacklimit', 1_000), 1_000)
+        self.assertEqual(sys.tracebacklimit, 1_000)
         check(10, traceback)
         check(3, traceback)
         check(2, traceback[:1] + traceback[4:])
