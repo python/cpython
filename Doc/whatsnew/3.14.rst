@@ -412,7 +412,6 @@ symtable
 
   (Contributed by Bénédikt Tran in :gh:`120029`.)
 
-
 unicodedata
 -----------
 
@@ -422,9 +421,8 @@ unicodedata
 unittest
 --------
 
-* Restore support for unittest discovery of
-  :term:`namespace packages <namespace package>`. It was removed in Python
-  3.11.
+* unittest discovery supports :term:`namespace package` as start
+  directory again. It was removed in Python 3.11.
   (Contributed by Jacob Walls in :gh:`80958`.)
 
 

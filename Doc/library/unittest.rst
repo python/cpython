@@ -340,10 +340,32 @@ Test modules and packages can customize test loading and discovery by through
 the `load_tests protocol`_.
 
 .. versionchanged:: 3.4
-   Test discovery supports :term:`namespace packages <namespace package>`
-   for the start directory. Note that you need to specify the top level
-   directory too (e.g.
-   ``python -m unittest discover -s root/namespace -t root``).
+   Test discovery supports :term:`namespace packages <namespace package>`.
+
+.. versionchanged:: 3.11
+   Test discovery dropped the :term:`namespace packages <namespace package>`
+   support in Python 3.11. It has been broken since Python 3.7. Start directory and
+   subdirectories containing tests must be regular package that have
+   ``__init__.py`` file.
+
+   If the start directory is the dotted name of the package, the ancestor packages
+   can be namespace packages.
+
+.. versionchanged:: 3.14
+   Test discovery supports :term:`namespace package` as start directory again.
+   See following example::
+
+      # Directory tree:
+      #   proj/
+      #     namespace/
+      #       mypkg/
+      #         __init__.py
+      #         test_mypkg.py
+
+      # Supported since Python 3.4
+      python -m unittest discover -s namespace.mypkg -t proj
+      # Supported since Python 3.14. mypkg must not be namespace package.
+      python -m unittest discover -s namespace -t proj
 
 
 .. _organizing-tests:
@@ -1897,10 +1919,8 @@ Loading and running tests
          Modules that raise :exc:`SkipTest` on import are recorded as skips,
          not errors.
 
-      .. versionchanged:: 3.4
          *start_dir* can be a :term:`namespace packages <namespace package>`.
 
-      .. versionchanged:: 3.4
          Paths are sorted before being imported so that execution order is the
          same even if the underlying file system's ordering is not dependent
          on file name.
@@ -1918,7 +1938,7 @@ Loading and running tests
          *top_level_dir* is only stored for the duration of *discover* call.
 
       .. versionchanged:: 3.14
-         *start_dir* can once again be a :term:`namespace packages <namespace package>`.
+         *start_dir* can once again be a :term:`namespace package`.
 
    The following attributes of a :class:`TestLoader` can be configured either by
    subclassing or assignment on an instance:
