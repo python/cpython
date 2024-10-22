@@ -654,7 +654,7 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
         .fc_closure = NULL
     };
     PyFunctionObject *func = _PyFunction_FromConstructor(&desc);
-    _Py_DECREF_BUILITNS(builtins);
+    _Py_DECREF_BUILTINS(builtins);
     if (func == NULL) {
         return NULL;
     }
@@ -1955,7 +1955,7 @@ fail:
     Py_XDECREF(func);
     Py_XDECREF(kwnames);
     PyMem_Free(newargs);
-    _Py_DECREF_BUILITNS(builtins);
+    _Py_DECREF_BUILTINS(builtins);
     Py_DECREF(defaults);
     return res;
 }

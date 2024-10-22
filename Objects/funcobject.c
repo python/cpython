@@ -1064,7 +1064,7 @@ func_clear(PyObject *self)
     PyObject *builtins = op->func_builtins;
     op->func_builtins = NULL;
     if (builtins != NULL) {
-        _Py_DECREF_BUILITNS(builtins);
+        _Py_DECREF_BUILTINS(builtins);
     }
     Py_CLEAR(op->func_module);
     Py_CLEAR(op->func_defaults);

@@ -361,7 +361,7 @@ _Py_INCREF_BUILTINS(PyObject *op)
 }
 
 static inline void
-_Py_DECREF_BUILITNS(PyObject *op)
+_Py_DECREF_BUILTINS(PyObject *op)
 {
     if (PyDict_CheckExact(op)) {
         _Py_DECREF_DICT(op);
