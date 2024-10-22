@@ -169,6 +169,7 @@ class BaseProcess(object):
             _children.discard(self)
             return False
 
+    @property
     def is_closed(self):
         '''
         Return whether process is closed
