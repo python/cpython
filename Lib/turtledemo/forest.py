@@ -2,9 +2,12 @@
 
         turtledemo/forest.py
 
-Displays a 'forest' of 3 breadth-first-trees
-similar to the one in tree.
-For further remarks see tree.py
+Displays a 'forest' of 3 breadth-first trees,
+similar to the one in tree.py.
+For further details, see tree.py.
+
+This example is a breadth-first rewrite of
+a Logo program by Erich Neuwirth.
 """
 from turtle import Turtle, colormode, tracer, mainloop
 from random import randrange
