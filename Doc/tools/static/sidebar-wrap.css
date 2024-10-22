@@ -1,0 +1,6 @@
+div.sphinxsidebarwrapper {
+    overflow-x: scroll;
+}
+div.sphinxsidebarwrapper li code {
+    overflow-wrap: normal;
+}

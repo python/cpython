@@ -434,5 +434,6 @@ def setup(app):
     app.add_directive_to_domain('py', 'awaitablemethod', PyAwaitableMethod)
     app.add_directive_to_domain('py', 'abstractmethod', PyAbstractMethod)
     app.add_directive('miscnews', MiscNews)
+    app.add_css_file('sidebar-wrap.css')
     app.connect('env-check-consistency', patch_pairindextypes)
     return {'version': '1.0', 'parallel_read_safe': True}
