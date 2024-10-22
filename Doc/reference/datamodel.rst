@@ -2194,8 +2194,8 @@ Basic customization
    immutable (if the object's hash value changes, it will be in the wrong hash
    bucket).
 
-   User-defined classes (and the :class:`object` class itself) have :meth:`__eq__`
-   and :meth:`__hash__` methods by default; with them, all objects compare
+   User-defined classes have :meth:`__eq__` and :meth:`__hash__` methods
+   by default (inherited from the :class:`object` class); with them, all objects compare
    unequal (except with themselves) and ``x.__hash__()`` returns an appropriate
    value such that ``x == y`` implies both that ``x is y`` and ``hash(x) == hash(y)``.
 
