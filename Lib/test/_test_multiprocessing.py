@@ -652,8 +652,9 @@ class _TestProcess(BaseTestCase):
     def test_is_close(self):
         if self.TYPE == "threads":
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
-        q = self.Queue()
-        p = self.Process(target=self._test_close, kwargs={'q': q})
+        def _test_task():
+            pass
+        p = self.Process(target=_test_task)
         self.assertFalse(p.is_closed())
         p.close()
         self.assertTrue(p.is_closed())
@@ -662,7 +663,6 @@ class _TestProcess(BaseTestCase):
         del p
         gc.collect()
         self.assertIs(wr(), None)
-        close_queue(q)
 
     def test_close(self):
         if self.TYPE == "threads":
