@@ -344,28 +344,17 @@ the `load_tests protocol`_.
 
 .. versionchanged:: 3.11
    Test discovery dropped the :term:`namespace packages <namespace package>`
-   support in Python 3.11. It has been broken since Python 3.7. Start directory and
-   subdirectories containing tests must be regular package that have
-   ``__init__.py`` file.
+   support. It has been broken since Python 3.7.
+   Start directory and its subdirectories containing tests must be regular
+   package that have ``__init__.py`` file.
 
    If the start directory is the dotted name of the package, the ancestor packages
    can be namespace packages.
 
 .. versionchanged:: 3.14
    Test discovery supports :term:`namespace package` as start directory again.
-   See following example::
-
-      # Directory tree:
-      #   proj/
-      #     namespace/
-      #       mypkg/
-      #         __init__.py
-      #         test_mypkg.py
-
-      # Supported since Python 3.4
-      python -m unittest discover -s namespace.mypkg -t proj
-      # Supported since Python 3.14. mypkg must not be a namespace package.
-      python -m unittest discover -s namespace -t proj
+   To avoid scanning directories unrelated to Python,
+   tests are not searched in subdirectories that do not contain ``__init__.py``.
 
 
 .. _organizing-tests:
