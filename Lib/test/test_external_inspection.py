@@ -38,8 +38,8 @@ class TestGetStackTrace(unittest.TestCase):
                 foo()
 
             def foo():
-                fifo = sys.argv[1]
-                with open(sys.argv[1], "w") as fifo:
+                fifo_path = sys.argv[1]
+                with open(fifo_path, "w") as fifo:
                     fifo.write("ready")
                 time.sleep(1000)
 
@@ -87,8 +87,8 @@ class TestGetStackTrace(unittest.TestCase):
             import test.test_asyncio.test_stack as ts
 
             def c5():
-                fifo = sys.argv[1]
-                with open(sys.argv[1], "w") as fifo:
+                fifo_path = sys.argv[1]
+                with open(fifo_path, "w") as fifo:
                     fifo.write("ready")
                 time.sleep(10000)
 
@@ -128,6 +128,8 @@ class TestGetStackTrace(unittest.TestCase):
                 stack_trace = get_async_stack_trace(p.pid)
             except PermissionError:
                 self.skipTest("Insufficient permissions to read the stack trace")
+            except RuntimeError:
+                breakpoint()
             finally:
                 os.remove(fifo)
                 p.kill()
@@ -160,8 +162,8 @@ class TestGetStackTrace(unittest.TestCase):
             import test.test_asyncio.test_stack as ts
 
             async def gen_nested_call():
-                fifo = sys.argv[1]
-                with open(sys.argv[1], "w") as fifo:
+                fifo_path = sys.argv[1]
+                with open(fifo_path, "w") as fifo:
                     fifo.write("ready")
                 time.sleep(10000)
 
@@ -217,8 +219,8 @@ class TestGetStackTrace(unittest.TestCase):
 
             async def deep():
                 await asyncio.sleep(0)
-                fifo = sys.argv[1]
-                with open(sys.argv[1], "w") as fifo:
+                fifo_path = sys.argv[1]
+                with open(fifo_path, "w") as fifo:
                     fifo.write("ready")
                 time.sleep(10000)
 

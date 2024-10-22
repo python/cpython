@@ -218,6 +218,12 @@ search_map_for_section(pid_t pid, const char* secname, const char* substr) {
             continue;
         }
 
+        if ((region_info.protection & VM_PROT_READ) == 0
+            || (region_info.protection & VM_PROT_EXECUTE) == 0) {
+            address += size;
+            continue;
+        }
+
         char* filename = strrchr(map_filename, '/');
         if (filename != NULL) {
             filename++;  // Move past the '/'
@@ -1222,7 +1228,7 @@ read_async_debug(
     struct _Py_AsyncioModuleDebugOffsets* async_debug
 ) {
     uintptr_t async_debug_addr = get_async_debug(pid);
-    if (!async_debug) {
+    if (!async_debug_addr) {
         return -1;
     }
     size_t size = sizeof(struct _Py_AsyncioModuleDebugOffsets);
