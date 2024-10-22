@@ -1,92 +1,212 @@
 #if defined(PY_CALL_TRAMPOLINE)
 
-#include <emscripten.h>             // EM_JS
+#include <emscripten.h>             // EM_JS, EM_JS_DEPS
 #include <Python.h>
 #include "pycore_runtime.h"         // _PyRuntime
 
 
-/**
- * This is the GoogleChromeLabs approved way to feature detect type-reflection:
- * https://github.com/GoogleChromeLabs/wasm-feature-detect/blob/main/src/detectors/type-reflection/index.js
- */
-EM_JS(int, _PyEM_detect_type_reflection, (), {
-    if (!("Function" in WebAssembly)) {
-        return false;
-    }
-    if (WebAssembly.Function.type) {
-        // Node v20
-        Module.PyEM_CountArgs = (func) => WebAssembly.Function.type(wasmTable.get(func)).parameters.length;
-    } else {
-        // Node >= 22, v8-based browsers
-        Module.PyEM_CountArgs = (func) => wasmTable.get(func).type().parameters.length;
-    }
-    return true;
-});
-
-void
-_Py_EmscriptenTrampoline_Init(_PyRuntimeState *runtime)
-{
-    runtime->wasm_type_reflection_available = _PyEM_detect_type_reflection();
-}
+typedef int (*CountArgsFunc)(PyCFunctionWithKeywords func);
+// We have to be careful to work correctly with memory snapshots. Even if we are
+// loading a memory snapshot, we need to perform the JS initialization work.
+// That means we can't call the initialization code from C. Instead, we export
+// this function pointer to JS and then fill it in a preRun function which runs
+// unconditionally.
+EMSCRIPTEN_KEEPALIVE CountArgsFunc _PyEM_CountFuncParams = NULL;
 
 /**
  * Backwards compatible trampoline works with all JS runtimes
  */
-EM_JS(PyObject*,
-_PyEM_TrampolineCall_JavaScript, (PyCFunctionWithKeywords func,
-                                  PyObject *arg1,
-                                  PyObject *arg2,
-                                  PyObject *arg3),
-{
+EM_JS(PyObject*, _PyEM_TrampolineCall_JS, (PyCFunctionWithKeywords func, PyObject *arg1, PyObject *arg2, PyObject *arg3), {
     return wasmTable.get(func)(arg1, arg2, arg3);
 }
+
+// Binary module for the checks. It has to be done in web assembly because
+// clang/llvm have no support yet for the reference types yet. In fact, the wasm
+// binary toolkit doesn't yet support the ref.test instruction either. To
+// convert the following module to the binary, my approach is to find and
+// replace "ref.test $type" -> "drop i32.const n" on the source text. This
+// results in the bytes "0x1a, 0x41, n" where we need the bytes "0xfb, 0x14, n"
+// so doing a find and replace on the output from "0x1a, 0x41" -> "0xfb, 0x14"
+// gets us the output we need.
+//
+// (module
+//     (type $type0 (func (param) (result i32)))
+//     (type $type1 (func (param i32) (result i32)))
+//     (type $type2 (func (param i32 i32) (result i32)))
+//     (type $type3 (func (param i32 i32 i32) (result i32)))
+//     (type $type4 (func (param i32 i32 i32 i32) (result i32)))
+//     (type $blocktype (func (param i32) (result)))
+//     (table $funcs (import "e" "t") 0 funcref)
+//     (export "f" (func $f))
+//     (func $f (param $fptr i32) (result i32)
+//              (local $fref funcref)
+//         local.get $fptr
+//         table.get $funcs
+//         local.tee $fref
+//         ref.test $type4
+//         (block $b (type $blocktype)
+//             i32.eqz
+//             br_if $b
+//             i32.const 4
+//             return
+//         )
+//         local.get $fref
+//         ref.test $type3
+//         (block $b (type $blocktype)
+//             i32.eqz
+//             br_if $b
+//             i32.const 3
+//             return
+//         )
+//         local.get $fref
+//         ref.test $type2
+//         (block $b (type $blocktype)
+//             i32.eqz
+//             br_if $b
+//             i32.const 2
+//             return
+//         )
+//         ref.test $type1
+//         i32.const 1
+//         (block $b (type $blocktype)
+//             i32.eqz
+//             br_if $b
+//             i32.const 1
+//             return
+//         )
+//         ref.test $type0
+//         i32.const 0
+//         (block $b (type $blocktype)
+//             i32.eqz
+//             br_if $b
+//             i32.const 0
+//             return
+//         )
+//         i32.const -1
+//     )
+// )
+addOnPreRun(() => {
+  // Try to initialize countArgsFunc
+  const code = new Uint8Array([
+    0x00, 0x61, 0x73, 0x6d, // \0asm magic number
+    0x01, 0x00, 0x00, 0x00, // version 1
+    0x01, 0x23, // Type section, body is 0x23 bytes
+      0x06, // 6 entries
+      0x60, 0x00, 0x01, 0x7f,                         // (type $type0 (func (param) (result i32)))
+      0x60, 0x01, 0x7f, 0x01, 0x7f,                   // (type $type1 (func (param i32) (result i32)))
+      0x60, 0x02, 0x7f, 0x7f, 0x01, 0x7f,             // (type $type2 (func (param i32 i32) (result i32)))
+      0x60, 0x03, 0x7f, 0x7f, 0x7f, 0x01, 0x7f,       // (type $type3 (func (param i32 i32 i32) (result i32)))
+      0x60, 0x04, 0x7f, 0x7f, 0x7f, 0x7f, 0x01, 0x7f, // (type $type4 (func (param i32 i32 i32 i32) (result i32)))
+      0x60, 0x01, 0x7f, 0x00,                         // (type $blocktype (func (param i32) (result)))
+    0x02, 0x09, // Import section, 0x9 byte body
+      0x01, // 1 import (table $funcs (import "e" "t") 0 funcref)
+      0x01, 0x65, // "e"
+      0x01, 0x74, // "t"
+      0x01,       // importing a table
+      0x70,       // of entry type funcref
+      0x00, 0x00, // table limits: no max, min of 0
+    0x03, 0x02,   // Function section
+      0x01, 0x01, // We're going to define one function of type 1 (func (param i32) (result i32))
+    0x07, 0x05, // export section
+      0x01, // 1 export
+        0x01, 0x66, // called "f"
+        0x00, // a function
+        0x00, // at index 0
+
+    0x0a, 0x52,  // Code section,
+      0x01, 0x50, // one entry of length 50
+      0x01, 0x01, 0x70, // one local of type funcref
+      // Body of the function
+      0x20, 0x00,       // local.get $fptr
+      0x25, 0x00,       // table.get $funcs
+      0x22, 0x01,       // local.tee $fref
+      0xfb, 0x14, 0x04, // ref.test $type4
+      0x02, 0x05,       // block $b (type $blocktype)
+        0x45,           //   i32.eqz
+        0x0d, 0x00,     //   br_if $b
+        0x41, 0x04,     //   i32.const 4
+        0x0f,           //   return
+      0x0b,             // end block
+
+      0x20, 0x01,       // local.get $fref
+      0xfb, 0x14, 0x03, // ref.test $type3
+      0x02, 0x05,       // block $b (type $blocktype)
+        0x45,           //   i32.eqz
+        0x0d, 0x00,     //   br_if $b
+        0x41, 0x03,     //   i32.const 3
+        0x0f,           //   return
+      0x0b,             // end block
+
+      0x20, 0x01,       // local.get $fref
+      0xfb, 0x14, 0x02, // ref.test $type2
+      0x02, 0x05,       // block $b (type $blocktype)
+        0x45,           //   i32.eqz
+        0x0d, 0x00,     //   br_if $b
+        0x41, 0x02,     //   i32.const 2
+        0x0f,           //   return
+      0x0b,             // end block
+
+      0x20, 0x01,       // local.get $fref
+      0xfb, 0x14, 0x01, // ref.test $type1
+      0x02, 0x05,       // block $b (type $blocktype)
+        0x45,           //   i32.eqz
+        0x0d, 0x00,     //   br_if $b
+        0x41, 0x01,     //   i32.const 1
+        0x0f,           //   return
+      0x0b,             // end block
+
+      0x20, 0x01,       // local.get $fref
+      0xfb, 0x14, 0x00, // ref.test $type0
+      0x02, 0x05,       // block $b (type $blocktype)
+        0x45,           //   i32.eqz
+        0x0d, 0x00,     //   br_if $b
+        0x41, 0x00,     //   i32.const 0
+        0x0f,           //   return
+      0x0b,             // end block
+
+      0x41, 0x7f,       // i32.const -1
+      0x0b // end function
+  ]);
+  let ptr = 0;
+  try {
+    const mod = new WebAssembly.Module(code);
+    const inst = new WebAssembly.Instance(mod, {e: {t: wasmTable}});
+    ptr = addFunction(inst.exports.f);
+  } catch(e) {
+    // If something goes wrong, we'll null out _PyEM_CountFuncParams and fall
+    // back to the JS trampoline.
+  }
+  HEAP32[__PyEM_CountFuncParams/4] = ptr;
+});
 );
-
-/**
- * In runtimes with WebAssembly type reflection, count the number of parameters
- * and cast to the appropriate signature
- */
-EM_JS(int, _PyEM_CountFuncParams, (PyCFunctionWithKeywords func),
-{
-    let n = _PyEM_CountFuncParams.cache.get(func);
-
-    if (n !== undefined) {
-        return n;
-    }
-    n = Module.PyEM_CountArgs(func);
-    _PyEM_CountFuncParams.cache.set(func, n);
-    return n;
-}
-_PyEM_CountFuncParams.cache = new Map();
-)
-
 
 typedef PyObject* (*zero_arg)(void);
 typedef PyObject* (*one_arg)(PyObject*);
 typedef PyObject* (*two_arg)(PyObject*, PyObject*);
 typedef PyObject* (*three_arg)(PyObject*, PyObject*, PyObject*);
 
-
 PyObject*
-_PyEM_TrampolineCall_Reflection(PyCFunctionWithKeywords func,
-                                PyObject* self,
-                                PyObject* args,
-                                PyObject* kw)
+_PyEM_TrampolineCall(PyCFunctionWithKeywords func,
+              PyObject* self,
+              PyObject* args,
+              PyObject* kw)
 {
-    switch (_PyEM_CountFuncParams(func)) {
-        case 0:
-            return ((zero_arg)func)();
-        case 1:
-            return ((one_arg)func)(self);
-        case 2:
-            return ((two_arg)func)(self, args);
-        case 3:
-            return ((three_arg)func)(self, args, kw);
-        default:
-            PyErr_SetString(PyExc_SystemError,
-                            "Handler takes too many arguments");
-            return NULL;
-    }
+  if (_PyEM_CountFuncParams == 0) {
+    return _PyEM_TrampolineCall_JS(func, self, args, kw);
+  }
+  switch (_PyEM_CountFuncParams(func)) {
+    case 0:
+      return ((zero_arg)func)();
+    case 1:
+      return ((one_arg)func)(self);
+    case 2:
+      return ((two_arg)func)(self, args);
+    case 3:
+      return ((three_arg)func)(self, args, kw);
+    default:
+      PyErr_SetString(PyExc_SystemError, "Handler takes too many arguments");
+      return NULL;
+  }
 }
 
 #endif
