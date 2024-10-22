@@ -1,0 +1,2 @@
+Add the :meth:`.is_closed()` in the :class:`multiprocessing.Process` to
+determine whether the process is closed.
