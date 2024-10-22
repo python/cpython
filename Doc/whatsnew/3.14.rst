@@ -190,6 +190,10 @@ Other language changes
   They raise an error if the argument is a string.
   (Contributed by Serhiy Storchaka in :gh:`84978`.)
 
+* :class:`super` objects are now :mod:`pickleable <pickle>` and
+  :mod:`copyable <copy>`.
+  (Contributed by Serhiy Storchaka in :gh:`125767`.)
+
 
 New modules
 ===========
@@ -210,6 +214,11 @@ argparse
   interpreter was instructed to find the ``__main__`` module code.
   (Contributed by Serhiy Storchaka and Alyssa Coghlan in :gh:`66436`.)
 
+* Introduced the optional *suggest_on_error* parameter to
+  :class:`argparse.ArgumentParser`, enabling suggestions for argument choices
+  and subparser names if mistyped by the user.
+  (Contributed by Savannah Ostrowski in :gh:`124456`)
+
 ast
 ---
 
@@ -225,6 +234,14 @@ ast
 * The ``repr()`` output for AST nodes now includes more information.
   (Contributed by Tomas R in :gh:`116022`.)
 
+concurrent.futures
+------------------
+
+* Add :class:`~concurrent.futures.InterpreterPoolExecutor`,
+  which exposes "subinterpreters (multiple Python interpreters in the
+  same process) to Python code.  This is separate from the proposed API
+  in :pep:`734`.
+  (Contributed by Eric Snow in :gh:`124548`.)
 
 ctypes
 ------
@@ -425,6 +442,12 @@ asyncio
 
 Deprecated
 ==========
+
+* :mod:`argparse`:
+  Passing the undocumented keyword argument *prefix_chars* to
+  :meth:`~argparse.ArgumentParser.add_argument_group` is now
+  deprecated.
+  (Contributed by Savannah Ostrowski in :gh:`125563`.)
 
 * :mod:`asyncio`:
   :func:`!asyncio.iscoroutinefunction` is deprecated
