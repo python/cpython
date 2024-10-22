@@ -364,7 +364,7 @@ the `load_tests protocol`_.
 
       # Supported since Python 3.4
       python -m unittest discover -s namespace.mypkg -t proj
-      # Supported since Python 3.14. mypkg must not be namespace package.
+      # Supported since Python 3.14. mypkg must not be a namespace package.
       python -m unittest discover -s namespace -t proj
 
 
