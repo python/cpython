@@ -1,0 +1,3 @@
+Mitigate interpreter's crashes and state corruption due to side-effects in
+:meth:`asyncio.Future.remove_done_callback` or others callback scheduling
+methods. Patch by Bénédikt Tran.
