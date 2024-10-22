@@ -170,7 +170,7 @@ class BaseProcess(object):
             return False
 
     @property
-    def is_closed(self):
+    def closed(self):
         '''
         Return whether process is closed
         '''

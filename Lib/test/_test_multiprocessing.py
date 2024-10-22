@@ -655,9 +655,9 @@ class _TestProcess(BaseTestCase):
         def _test_task():
             pass
         p = self.Process(target=_test_task)
-        self.assertFalse(p.is_closed)
+        self.assertFalse(p.closed)
         p.close()
-        self.assertTrue(p.is_closed)
+        self.assertTrue(p.closed)
 
         wr = weakref.ref(p)
         del p
