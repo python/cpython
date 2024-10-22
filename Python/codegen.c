@@ -3864,13 +3864,7 @@ codegen_template_str(compiler *c, expr_ty e)
     }
     else {
         VISIT_SEQ(c, expr, e->v.TemplateStr.values);
-        if (value_count > 1) {
-            ADDOP_I(c, loc, BUILD_TEMPLATE, value_count);
-        }
-        else if (value_count == 0) {
-            _Py_DECLARE_STR(empty, "");
-            ADDOP_LOAD_CONST_NEW(c, loc, Py_NewRef(&_Py_STR(empty)));
-        }
+        ADDOP_I(c, loc, BUILD_TEMPLATE, value_count);
     }
     return SUCCESS;
 }
