@@ -245,41 +245,15 @@ class Fault(Error):
 
 ##
 # Backwards compatibility
-
 boolean = Boolean = bool
 
-##
-# Wrapper for XML-RPC DateTime values.  This converts a time value to
-# the format used by XML-RPC.
-# <p>
-# The value can be given as a datetime object, as a string in the
-# format "yyyymmddThh:mm:ss", as a 9-item time tuple (as returned by
-# time.localtime()), or an integer value (as returned by time.time()).
-# The wrapper uses time.localtime() to convert an integer to a time
-# tuple.
-#
-# @param value The time, given as a datetime object, an ISO 8601 string,
-#              a time tuple, or an integer time value.
 
-
-# Issue #13305: different format codes across platforms
-_day0 = datetime(1, 1, 1)
-def _try(fmt):
-    try:
-        return _day0.strftime(fmt) == '0001'
-    except ValueError:
-        return False
-if _try('%Y'):      # Mac OS X
-    def _iso8601_format(value):
-        return value.strftime("%Y%m%dT%H:%M:%S")
-elif _try('%4Y'):   # Linux
-    def _iso8601_format(value):
-        return value.strftime("%4Y%m%dT%H:%M:%S")
-else:
-    def _iso8601_format(value):
-        return value.strftime("%Y%m%dT%H:%M:%S").zfill(17)
-del _day0
-del _try
+def _iso8601_format(value):
+    if value.tzinfo is not None:
+        # XML-RPC only uses the naive portion of the datetime
+        value = value.replace(tzinfo=None)
+    # XML-RPC doesn't use '-' separator in the date part
+    return value.isoformat(timespec='seconds').replace('-', '')
 
 
 def _strftime(value):

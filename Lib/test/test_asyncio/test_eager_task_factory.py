@@ -2,17 +2,12 @@
 
 import asyncio
 import contextvars
-import gc
-import time
 import unittest
 
-from types import GenericAlias
 from unittest import mock
-from asyncio import base_events
 from asyncio import tasks
 from test.test_asyncio import utils as test_utils
-from test.test_asyncio.test_tasks import get_innermost_context
-from test import support
+from test.support.script_helper import assert_python_ok
 
 MOCK_ANY = mock.ANY
 
@@ -218,6 +213,52 @@ class EagerTaskFactoryLoopTests:
 
         self.run_coro(run())
 
+    def test_staggered_race_with_eager_tasks(self):
+        # See https://github.com/python/cpython/issues/124309
+
+        async def fail():
+            await asyncio.sleep(0)
+            raise ValueError("no good")
+
+        async def run():
+            winner, index, excs = await asyncio.staggered.staggered_race(
+                [
+                    lambda: asyncio.sleep(2, result="sleep2"),
+                    lambda: asyncio.sleep(1, result="sleep1"),
+                    lambda: fail()
+                ],
+                delay=0.25
+            )
+            self.assertEqual(winner, 'sleep1')
+            self.assertEqual(index, 1)
+            self.assertIsNone(excs[index])
+            self.assertIsInstance(excs[0], asyncio.CancelledError)
+            self.assertIsInstance(excs[2], ValueError)
+
+        self.run_coro(run())
+
+    def test_staggered_race_with_eager_tasks_no_delay(self):
+        # See https://github.com/python/cpython/issues/124309
+        async def fail():
+            raise ValueError("no good")
+
+        async def run():
+            winner, index, excs = await asyncio.staggered.staggered_race(
+                [
+                    lambda: fail(),
+                    lambda: asyncio.sleep(1, result="sleep1"),
+                    lambda: asyncio.sleep(0, result="sleep0"),
+                ],
+                delay=None
+            )
+            self.assertEqual(winner, 'sleep1')
+            self.assertEqual(index, 1)
+            self.assertIsNone(excs[index])
+            self.assertIsInstance(excs[0], ValueError)
+            self.assertEqual(len(excs), 2)
+
+        self.run_coro(run())
+
 
 class PyEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase):
     Task = tasks._PyTask
@@ -227,6 +268,35 @@ class PyEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase
                      'requires the C _asyncio module')
 class CEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase):
     Task = getattr(tasks, '_CTask', None)
+
+    def test_issue105987(self):
+        code = """if 1:
+        from _asyncio import _swap_current_task
+
+        class DummyTask:
+            pass
+
+        class DummyLoop:
+            pass
+
+        l = DummyLoop()
+        _swap_current_task(l, DummyTask())
+        t = _swap_current_task(l, None)
+        """
+
+        _, out, err = assert_python_ok("-c", code)
+        self.assertFalse(err)
+
+    def test_issue122332(self):
+       async def coro():
+           pass
+
+       async def run():
+           task = self.loop.create_task(coro())
+           await task
+           self.assertIsNone(task.get_coro())
+
+       self.run_coro(run())
 
 
 class AsyncTaskCounter:

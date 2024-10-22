@@ -33,7 +33,7 @@ Hash objects have these methods:
  - hexdigest():  Like digest() except the digest is returned as a string
                  of double length, containing only hexadecimal digits.
  - copy():       Return a copy (clone) of the hash object. This can be used to
-                 efficiently compute the digests of datas that share a common
+                 efficiently compute the digests of data that share a common
                  initial substring.
 
 For example, to obtain the digest of the byte string 'Nobody inspects the
@@ -187,7 +187,7 @@ except ImportError:
 
 try:
     # OpenSSL's scrypt requires OpenSSL 1.1+
-    from _hashlib import scrypt
+    from _hashlib import scrypt  # noqa: F401
 except ImportError:
     pass
 

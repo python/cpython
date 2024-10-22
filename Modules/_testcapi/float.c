@@ -1,6 +1,8 @@
-#define PY_SSIZE_T_CLEAN
+// clinic/float.c.h uses internal pycore_modsupport.h API
+#define PYTESTCAPI_NEED_INTERNAL_API
 
 #include "parts.h"
+#include "util.h"
 #include "clinic/float.c.h"
 
 

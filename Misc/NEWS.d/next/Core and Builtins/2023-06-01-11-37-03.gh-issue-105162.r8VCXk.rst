@@ -1,2 +1,0 @@
-Fixed bug in generator.close()/throw() where an inner iterator would be
-ignored when the outer iterator was instrumented.

@@ -597,15 +597,6 @@ Connection: close
         with warnings_helper.check_warnings(('',DeprecationWarning)):
             urllib.request.URLopener()
 
-    @unittest.skipUnless(ssl, "ssl module required")
-    def test_cafile_and_context(self):
-        context = ssl.create_default_context()
-        with warnings_helper.check_warnings(('', DeprecationWarning)):
-            with self.assertRaises(ValueError):
-                urllib.request.urlopen(
-                    "https://localhost", cafile="/nonexistent/path", context=context
-                )
-
 
 class urlopen_DataTests(unittest.TestCase):
     """Test urlopen() opening a data URL."""

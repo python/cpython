@@ -29,6 +29,7 @@ class DynOptionMenu(OptionMenu):
         if value:
             self.variable.set(value)
 
+
 def _dyn_option_menu(parent):  # htest #
     from tkinter import Toplevel # + StringVar, Button
 
@@ -48,6 +49,7 @@ def _dyn_option_menu(parent):  # htest #
         dyn.SetMenu(["new1","new2","new3","new4"], value="new option set")
     button = Button(top, text="Change option set", command=update)
     button.pack()
+
 
 if __name__ == '__main__':
     # Only module without unittests because of intention to replace.

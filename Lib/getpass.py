@@ -18,7 +18,6 @@ import contextlib
 import io
 import os
 import sys
-import warnings
 
 __all__ = ["getpass","getuser","GetPassWarning"]
 
@@ -118,6 +117,7 @@ def win_getpass(prompt='Password: ', stream=None):
 
 
 def fallback_getpass(prompt='Password: ', stream=None):
+    import warnings
     warnings.warn("Can not control echo on the terminal.", GetPassWarning,
                   stacklevel=2)
     if not stream:
@@ -156,7 +156,11 @@ def getuser():
 
     First try various environment variables, then the password
     database.  This works on Windows as long as USERNAME is set.
+    Any failure to find a username raises OSError.
 
+    .. versionchanged:: 3.13
+        Previously, various exceptions beyond just :exc:`OSError`
+        were raised.
     """
 
     for name in ('LOGNAME', 'USER', 'LNAME', 'USERNAME'):
@@ -164,9 +168,12 @@ def getuser():
         if user:
             return user
 
-    # If this fails, the exception will "explain" why
-    import pwd
-    return pwd.getpwuid(os.getuid())[0]
+    try:
+        import pwd
+        return pwd.getpwuid(os.getuid())[0]
+    except (ImportError, KeyError) as e:
+        raise OSError('No username set in the environment') from e
+
 
 # Bind the name getpass to the appropriate function
 try:
