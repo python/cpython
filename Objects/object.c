@@ -207,7 +207,7 @@ refchain_init(PyInterpreterState *interp)
 static void
 refchain_fini(PyInterpreterState *interp)
 {
-    if (has_own_refchain(interp)) {
+    if (has_own_refchain(interp) && REFCHAIN(interp) != NULL) {
         _Py_hashtable_destroy(REFCHAIN(interp));
     }
     REFCHAIN(interp) = NULL;
