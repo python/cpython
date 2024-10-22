@@ -1,6 +1,6 @@
-The JIT has been updated to leverage LLVM 19’s preserve_none attribute, which 
-adds native support for the Glasgow Haskell Compiler Calling Convention (ghccc) 
-for both x86-64 and AArch64 targets. This removes the need to manually patch 
-the calling convention in LLVM IR, simplifying the JIT compilation process. 
-Additionally, this update enables the optimization across all platforms, except 
+The JIT has been updated to leverage LLVM 19’s preserve_none attribute, which
+adds native support for the Glasgow Haskell Compiler Calling Convention (ghccc)
+for both x86-64 and AArch64 targets. This removes the need to manually patch
+the calling convention in LLVM IR, simplifying the JIT compilation process.
+Additionally, this update enables the optimization across all platforms, except
 for i686-pc-windows-msvc where the attribute not supported.
