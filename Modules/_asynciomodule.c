@@ -1071,8 +1071,10 @@ _asyncio_Future_remove_done_callback_impl(FutureObj *self, PyTypeObject *cls,
             PyErr_SetString(PyExc_RuntimeError, "corrupted future state");
             return NULL;
         }
+        Py_INCREF(cb_tup);
         PyObject *cb = PyTuple_GET_ITEM(cb_tup, 0);
         int cmp = PyObject_RichCompareBool(cb, fn, Py_EQ);
+        Py_DECREF(cb_tup);
         if (cmp == -1) {
             return NULL;
         }
