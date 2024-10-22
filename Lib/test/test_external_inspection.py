@@ -128,8 +128,6 @@ class TestGetStackTrace(unittest.TestCase):
                 stack_trace = get_async_stack_trace(p.pid)
             except PermissionError:
                 self.skipTest("Insufficient permissions to read the stack trace")
-            except RuntimeError:
-                breakpoint()
             finally:
                 os.remove(fifo)
                 p.kill()
