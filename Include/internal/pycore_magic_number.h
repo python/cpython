@@ -251,6 +251,7 @@ Known values:
     Python 3.13a1 3568 (Change semantics of END_FOR)
     Python 3.13a5 3569 (Specialize CONTAINS_OP)
     Python 3.13a6 3570 (Add __firstlineno__ class attribute)
+    Python 3.13b1 3571 (Fix miscompilation of private names in generic classes)
     Python 3.14a1 3600 (Add LOAD_COMMON_CONSTANT)
     Python 3.14a1 3601 (Fix miscompilation of private names in generic classes)
     Python 3.14a1 3602 (Add LOAD_SPECIAL. Remove BEFORE_WITH and BEFORE_ASYNC_WITH)

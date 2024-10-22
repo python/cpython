@@ -3479,6 +3479,13 @@ class TestSpecial(unittest.TestCase):
         self.assertRaisesRegex(TypeError, '.int. object is not iterable', Enum, 'bad_enum', names=0)
         self.assertRaisesRegex(TypeError, '.int. object is not iterable', Enum, 'bad_enum', 0, type=int)
 
+    def test_nonhashable_matches_hashable(self):    # issue 125710
+        class Directions(Enum):
+            DOWN_ONLY = frozenset({"sc"})
+            UP_ONLY = frozenset({"cs"})
+            UNRESTRICTED = frozenset({"sc", "cs"})
+        self.assertIs(Directions({"sc"}), Directions.DOWN_ONLY)
+
 
 class TestOrder(unittest.TestCase):
     "test usage of the `_order_` attribute"

@@ -2448,7 +2448,12 @@ def test_pdb_multiline_statement():
     ...     'def f(x):',
     ...     '  return x * 2',
     ...     '',
-    ...     'f(2)',
+    ...     'val = 2',
+    ...     'if val > 0:',
+    ...     '  val = f(val)',
+    ...     '',
+    ...     '',  # empty line should repeat the multi-line statement
+    ...     'val',
     ...     'c'
     ... ]):
     ...     test_function()
@@ -2457,8 +2462,13 @@ def test_pdb_multiline_statement():
     (Pdb) def f(x):
     ...     return x * 2
     ...
-    (Pdb) f(2)
-    4
+    (Pdb) val = 2
+    (Pdb) if val > 0:
+    ...     val = f(val)
+    ...
+    (Pdb)
+    (Pdb) val
+    8
     (Pdb) c
     """
 
@@ -3710,6 +3720,25 @@ def bœr():
         stdout, stderr = self.run_pdb_script(script, commands)
         self.assertIn("WARNING:", stdout)
         self.assertIn("was edited", stdout)
+
+    def test_file_modified_and_immediately_restarted(self):
+        script = """
+            print("hello")
+        """
+
+        # the time.sleep is needed for low-resolution filesystems like HFS+
+        commands = """
+            filename = $_frame.f_code.co_filename
+            f = open(filename, "w")
+            f.write("print('goodbye')")
+            import time; time.sleep(1)
+            f.close()
+            restart
+        """
+
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertNotIn("WARNING:", stdout)
+        self.assertNotIn("was edited", stdout)
 
     def test_file_modified_after_execution_with_multiple_instances(self):
         # the time.sleep is needed for low-resolution filesystems like HFS+

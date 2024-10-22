@@ -402,6 +402,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.curframe = self.stack[self.curindex][0]
         self.set_convenience_variable(self.curframe, '_frame', self.curframe)
 
+        self._save_initial_file_mtime(self.curframe)
+
         if self._chained_exceptions:
             self.set_convenience_variable(
                 self.curframe,
@@ -494,9 +496,21 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             except KeyboardInterrupt:
                 self.message('--KeyboardInterrupt--')
 
+    def _save_initial_file_mtime(self, frame):
+        """save the mtime of the all the files in the frame stack in the file mtime table
+        if they haven't been saved yet."""
+        while frame:
+            filename = frame.f_code.co_filename
+            if filename not in self._file_mtime_table:
+                try:
+                    self._file_mtime_table[filename] = os.path.getmtime(filename)
+                except Exception:
+                    pass
+            frame = frame.f_back
+
     def _validate_file_mtime(self):
-        """Check if the source file of the current frame has been modified since
-        the last time we saw it. If so, give a warning."""
+        """Check if the source file of the current frame has been modified.
+        If so, give a warning and reset the modify time to current."""
         try:
             filename = self.curframe.f_code.co_filename
             mtime = os.path.getmtime(filename)
@@ -506,7 +520,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             mtime != self._file_mtime_table[filename]):
             self.message(f"*** WARNING: file '{filename}' was edited, "
                          "running stale code until the program is rerun")
-        self._file_mtime_table[filename] = mtime
+            self._file_mtime_table[filename] = mtime
 
     # Called before loop, handles display expressions
     # Set up convenience variable containers
@@ -741,6 +755,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                             else:
                                 line = line.rstrip('\r\n')
                         buffer += '\n' + line
+                    self.lastcmd = buffer
             save_stdout = sys.stdout
             save_stdin = sys.stdin
             save_displayhook = sys.displayhook
@@ -836,7 +851,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         a breakpoint command list definition.
         """
         if not self.commands_defining:
-            self._validate_file_mtime()
             if line.startswith('_pdbcmd'):
                 command, arg, line = self.parseline(line)
                 if hasattr(self, command):
@@ -980,6 +994,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def _pdbcmd_print_frame_status(self, arg):
         self.print_stack_trace(0)
+        self._validate_file_mtime()
         self._show_display()
 
     def _pdbcmd_silence_frame_status(self, arg):
@@ -1861,6 +1876,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.message('[EOF]')
         except KeyboardInterrupt:
             pass
+        self._validate_file_mtime()
     do_l = do_list
 
     def do_longlist(self, arg):
@@ -1879,6 +1895,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.error(err)
             return
         self._print_lines(lines, lineno, breaklist, self.curframe)
+        self._validate_file_mtime()
     do_ll = do_longlist
 
     def do_source(self, arg):

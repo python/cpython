@@ -667,28 +667,36 @@ _locale_nl_langinfo_impl(PyObject *module, int item)
                 return NULL;
             }
             PyObject *pyresult;
+#ifdef __GLIBC__
 #ifdef ALT_DIGITS
-            if (item == ALT_DIGITS) {
-                /* The result is a sequence of up to 100 NUL-separated strings. */
-                const char *s = result;
+            if (item == ALT_DIGITS && *result) {
+                /* According to the POSIX specification the result must be
+                 * a sequence of up to 100 semicolon-separated strings.
+                 * But in Glibc they are NUL-separated. */
+                Py_ssize_t i = 0;
                 int count = 0;
-                for (; count < 100 && *s; count++) {
-                    s += strlen(s) + 1;
+                for (; count < 100 && result[i]; count++) {
+                    i += strlen(result + i) + 1;
                 }
-                pyresult = PyTuple_New(count);
-                if (pyresult != NULL) {
-                    for (int i = 0; i < count; i++) {
-                        PyObject *unicode = PyUnicode_DecodeLocale(result, NULL);
-                        if (unicode == NULL) {
-                            Py_CLEAR(pyresult);
-                            break;
-                        }
-                        PyTuple_SET_ITEM(pyresult, i, unicode);
-                        result += strlen(result) + 1;
+                char *buf = PyMem_Malloc(i);
+                if (buf == NULL) {
+                    PyErr_NoMemory();
+                    pyresult = NULL;
+                }
+                else {
+                    memcpy(buf, result, i);
+                    /* Replace all NULs with semicolons. */
+                    i = 0;
+                    while (--count) {
+                        i += strlen(buf + i);
+                        buf[i++] = ';';
                     }
+                    pyresult = PyUnicode_DecodeLocale(buf, NULL);
+                    PyMem_Free(buf);
                 }
             }
             else
+#endif
 #endif
             {
                 pyresult = PyUnicode_DecodeLocale(result, NULL);
