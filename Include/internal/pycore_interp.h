@@ -399,6 +399,7 @@ extern int _PyInterpreterState_HasFeature(PyInterpreterState *interp,
 
 PyAPI_FUNC(PyStatus) _PyInterpreterState_New(
     PyThreadState *tstate,
+    const PyInterpreterConfig *config,
     PyInterpreterState **pinterp);
 
 
