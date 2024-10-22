@@ -1706,8 +1706,8 @@ fail_post_args:
     return -1;
 }
 
-static void
-clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
+void
+_PyEval_ClearThreadFrame(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
     assert(frame->owner == FRAME_OWNED_BY_THREAD);
     // Make sure that this is, indeed, the top frame. We can't check this in
@@ -1722,8 +1722,8 @@ clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     _PyThreadState_PopFrame(tstate, frame);
 }
 
-static void
-clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
+void
+_PyEval_ClearGenFrame(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
     assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
     PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
@@ -1743,10 +1743,10 @@ void
 _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
     if (frame->owner == FRAME_OWNED_BY_THREAD) {
-        clear_thread_frame(tstate, frame);
+        _PyEval_ClearThreadFrame(tstate, frame);
     }
     else {
-        clear_gen_frame(tstate, frame);
+        _PyEval_ClearGenFrame(tstate, frame);
     }
 }
 
@@ -1766,7 +1766,7 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, _PyStackRef func,
     _PyFrame_Initialize(frame, func, locals, code, 0, previous);
     if (initialize_locals(tstate, func_obj, frame->localsplus, args, argcount, kwnames)) {
         assert(frame->owner == FRAME_OWNED_BY_THREAD);
-        clear_thread_frame(tstate, frame);
+        _PyEval_ClearThreadFrame(tstate, frame);
         return NULL;
     }
     return frame;

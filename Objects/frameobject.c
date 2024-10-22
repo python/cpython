@@ -1243,11 +1243,10 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     next_stack = pop_value(next_stack);
                     stacks[next_i] = next_stack;
                     break;
-                case RETURN_VALUE:
+                case RETURN_VALUE_FUNC:
+                case RETURN_VALUE_GEN:
                     assert(pop_value(next_stack) == EMPTY_STACK);
                     assert(top_of_stack(next_stack) == Object);
-                    break;
-                case RETURN_CONST:
                     break;
                 case RAISE_VARARGS:
                     break;

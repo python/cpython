@@ -647,7 +647,30 @@ dummy_func(void) {
         ctx->done = true;
     }
 
-    op(_RETURN_VALUE, (retval -- res)) {
+    op(_RETURN_VALUE_FUNC, (retval -- res)) {
+        SAVE_STACK();
+        ctx->frame->stack_pointer = stack_pointer;
+        frame_pop(ctx);
+        stack_pointer = ctx->frame->stack_pointer;
+
+        /* Stack space handling */
+        assert(corresponding_check_stack == NULL);
+        assert(co != NULL);
+        int framesize = co->co_framesize;
+        assert(framesize > 0);
+        assert(framesize <= curr_space);
+        curr_space -= framesize;
+
+        co = get_code(this_instr);
+        if (co == NULL) {
+            // might be impossible, but bailing is still safe
+            ctx->done = true;
+        }
+        RELOAD_STACK();
+        res = retval;
+    }
+
+    op(_RETURN_VALUE_GEN, (retval -- res)) {
         SAVE_STACK();
         ctx->frame->stack_pointer = stack_pointer;
         frame_pop(ctx);

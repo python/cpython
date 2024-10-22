@@ -47,7 +47,8 @@ extern "C" {
 
 #define IS_SCOPE_EXIT_OPCODE(opcode) \
         ((opcode) == RETURN_VALUE || \
-         (opcode) == RETURN_CONST || \
+         (opcode) == RETURN_VALUE_FUNC || \
+         (opcode) == RETURN_VALUE_GEN || \
          (opcode) == RAISE_VARARGS || \
          (opcode) == RERAISE)
 

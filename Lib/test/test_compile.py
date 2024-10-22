@@ -884,7 +884,7 @@ class TestSpecifics(unittest.TestCase):
         # RETURN_VALUE opcode.  This does not always crash an interpreter.
         # When you build with the clang memory sanitizer it reliably aborts.
         self.assertEqual(
-            'RETURN_CONST',
+            'RETURN_VALUE_FUNC',
             list(dis.get_instructions(unused_code_at_end))[-1].opname)
 
     @support.cpython_only
@@ -1046,7 +1046,7 @@ class TestSpecifics(unittest.TestCase):
         for func in funcs:
             opcodes = list(dis.get_instructions(func))
             self.assertLessEqual(len(opcodes), 3)
-            self.assertEqual('RETURN_CONST', opcodes[-1].opname)
+            self.assertEqual('RETURN_VALUE_FUNC', opcodes[-1].opname)
             self.assertEqual(None, opcodes[-1].argval)
 
     def test_false_while_loop(self):
@@ -1064,7 +1064,7 @@ class TestSpecifics(unittest.TestCase):
         for func in funcs:
             opcodes = list(dis.get_instructions(func))
             self.assertEqual(2, len(opcodes))
-            self.assertEqual('RETURN_CONST', opcodes[1].opname)
+            self.assertEqual('RETURN_VALUE_FUNC', opcodes[1].opname)
             self.assertEqual(None, opcodes[1].argval)
 
     def test_consts_in_conditionals(self):
@@ -1760,7 +1760,7 @@ class TestSourcePositions(unittest.TestCase):
             line=1, end_line=2, column=1, end_column=8, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
             line=1, end_line=2, column=1, end_column=8, occurrence=1)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_CONST',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE_FUNC',
             line=4, end_line=4, column=7, end_column=14, occurrence=1)
 
     def test_multiline_async_generator_expression(self):
@@ -1777,7 +1777,7 @@ class TestSourcePositions(unittest.TestCase):
         self.assertIsInstance(compiled_code, types.CodeType)
         self.assertOpcodeSourcePositionIs(compiled_code, 'YIELD_VALUE',
             line=1, end_line=2, column=1, end_column=8, occurrence=2)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_CONST',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE_FUNC',
             line=1, end_line=6, column=0, end_column=32, occurrence=1)
 
     def test_multiline_list_comprehension(self):
@@ -1815,7 +1815,7 @@ class TestSourcePositions(unittest.TestCase):
             line=2, end_line=3, column=5, end_column=12, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
             line=2, end_line=3, column=5, end_column=12, occurrence=1)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_CONST',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE_FUNC',
             line=2, end_line=7, column=4, end_column=36, occurrence=1)
 
     def test_multiline_set_comprehension(self):
@@ -1853,7 +1853,7 @@ class TestSourcePositions(unittest.TestCase):
             line=2, end_line=3, column=5, end_column=12, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
             line=2, end_line=3, column=5, end_column=12, occurrence=1)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_CONST',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE_GEN',
             line=2, end_line=7, column=4, end_column=36, occurrence=1)
 
     def test_multiline_dict_comprehension(self):
@@ -1891,7 +1891,7 @@ class TestSourcePositions(unittest.TestCase):
             line=2, end_line=3, column=5, end_column=11, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
             line=2, end_line=3, column=5, end_column=11, occurrence=1)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_CONST',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE_FUNC',
             line=2, end_line=7, column=4, end_column=36, occurrence=1)
 
     def test_matchcase_sequence(self):

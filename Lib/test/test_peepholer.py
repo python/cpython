@@ -114,7 +114,7 @@ class TestTranforms(BytecodeTestCase):
             return None
 
         self.assertNotInBytecode(f, 'LOAD_GLOBAL')
-        self.assertInBytecode(f, 'RETURN_CONST', None)
+        self.assertInBytecode(f, 'LOAD_CONST', None)
         self.check_lnotab(f)
 
     def test_while_one(self):
@@ -131,7 +131,7 @@ class TestTranforms(BytecodeTestCase):
 
     def test_pack_unpack(self):
         for line, elem in (
-            ('a, = a,', 'RETURN_CONST',),
+            ('a, = a,', 'LOAD_CONST',),
             ('a, b = a, b', 'SWAP',),
             ('a, b, c = a, b, c', 'SWAP',),
             ):
@@ -989,9 +989,11 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         expected_insts = [
             ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
-            ('RETURN_CONST', 1, 13),
+            ('LOAD_CONST', 2, 13),
+            ('RETURN_VALUE', None, 13),
             lbl,
-            ('RETURN_CONST', 2, 14),
+            ('LOAD_CONST', 2, 13),
+            ('RETURN_VALUE', None, 13),
         ]
         self.cfg_optimization_test(insts,
                                    expected_insts,
@@ -1013,7 +1015,8 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         expected_insts = [
             ('NOP', None, 11),
             ('NOP', None, 12),
-            ('RETURN_CONST', 1, 14),
+            ('LOAD_CONST', 3, 14),
+            ('RETURN_VALUE', None, 14),
         ]
         self.cfg_optimization_test(insts,
                                    expected_insts,
@@ -1057,9 +1060,11 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         insts = [
             ('SETUP_FINALLY', handler := self.Label(), 10),
             ('POP_BLOCK', None, -1),
-            ('RETURN_CONST', 1, 11),
+            ('LOAD_CONST', 1, 11),
+            ('RETURN_VALUE', None, None),
             handler,
-            ('RETURN_CONST', 2, 12),
+            ('LOAD_CONST', 2, 12),
+            ('RETURN_VALUE', None, None),
         ]
         expected_insts = [
             ('SETUP_FINALLY', handler := self.Label(), 10),

@@ -1251,12 +1251,13 @@
             break;
         }
 
-        case _RETURN_VALUE: {
+        case _RETURN_VALUE_FUNC: {
             _PyStackRef retval;
             _PyStackRef res;
             retval = stack_pointer[-1];
             #if TIER_ONE
             assert(frame != &entry_frame);
+            assert(frame->owner != FRAME_OWNED_BY_GENERATOR);
             #endif
             _PyStackRef temp = retval;
             stack_pointer += -1;
@@ -1267,7 +1268,35 @@
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
-            _PyEval_FrameClearAndPop(tstate, dying);
+            _PyEval_ClearThreadFrame(tstate, dying);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            LOAD_IP(frame->return_offset);
+            res = temp;
+            LLTRACE_RESUME_FRAME();
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _RETURN_VALUE_GEN: {
+            _PyStackRef retval;
+            _PyStackRef res;
+            retval = stack_pointer[-1];
+            #if TIER_ONE
+            assert(frame != &entry_frame);
+            assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
+            #endif
+            _PyStackRef temp = retval;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            assert(EMPTY());
+            _Py_LeaveRecursiveCallPy(tstate);
+            // GH-99729: We need to unlink the frame *before* clearing it:
+            _PyInterpreterFrame *dying = frame;
+            frame = tstate->current_frame = dying->previous;
+            _PyEval_ClearGenFrame(tstate, dying);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             LOAD_IP(frame->return_offset);
             res = temp;

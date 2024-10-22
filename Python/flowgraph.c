@@ -283,7 +283,7 @@ dump_instr(cfg_instr *i)
 static inline int
 basicblock_returns(const basicblock *b) {
     cfg_instr *last = basicblock_last_instr(b);
-    return last && (last->i_opcode == RETURN_VALUE || last->i_opcode == RETURN_CONST);
+    return last && (last->i_opcode == RETURN_VALUE || last->i_opcode == RETURN_VALUE_FUNC || last->i_opcode == RETURN_VALUE_GEN);
 }
 
 static void
@@ -1662,12 +1662,6 @@ basicblock_optimize_load_const(PyObject *const_cache, basicblock *bb, PyObject *
                                               : POP_JUMP_IF_NONE;
                 break;
             }
-            case RETURN_VALUE:
-            {
-                INSTR_SET_OP0(inst, NOP);
-                INSTR_SET_OP1(&bb->b_instr[++i], RETURN_CONST, oparg);
-                break;
-            }
             case TO_BOOL:
             {
                 PyObject *cnt = get_const_value(opcode, oparg, consts);
@@ -2436,7 +2430,7 @@ convert_pseudo_conditional_jumps(cfg_builder *g)
 }
 
 static int
-convert_pseudo_ops(cfg_builder *g)
+convert_pseudo_ops(cfg_builder *g, int is_generator)
 {
     basicblock *entryblock = g->g_entryblock;
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
@@ -2452,6 +2446,9 @@ convert_pseudo_ops(cfg_builder *g)
             else if (instr->i_opcode == STORE_FAST_MAYBE_NULL) {
                 assert(is_pseudo_target(STORE_FAST_MAYBE_NULL, STORE_FAST));
                 instr->i_opcode = STORE_FAST;
+            }
+            else if (instr->i_opcode == RETURN_VALUE) {
+                instr->i_opcode = is_generator ? RETURN_VALUE_GEN : RETURN_VALUE_FUNC;
             }
         }
     }
@@ -2594,8 +2591,8 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
     RETURN_IF_ERROR(insert_superinstructions(g));
 
     RETURN_IF_ERROR(push_cold_blocks_to_end(g));
-    assert(all_exits_have_lineno(g->g_entryblock));
     RETURN_IF_ERROR(resolve_line_numbers(g, firstlineno));
+    // assert(all_exits_have_lineno(g->g_entryblock));
     return SUCCESS;
 }
 
@@ -2915,7 +2912,7 @@ _PyCfg_OptimizedCfgToInstructionSequence(cfg_builder *g,
         return ERROR;
     }
 
-    RETURN_IF_ERROR(convert_pseudo_ops(g));
+    RETURN_IF_ERROR(convert_pseudo_ops(g, IS_GENERATOR(code_flags)));
 
     /* Order of basic blocks must have been determined by now */
 

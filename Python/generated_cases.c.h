@@ -4881,64 +4881,11 @@
             DISPATCH();
         }
 
-        TARGET(INSTRUMENTED_RETURN_CONST) {
+        TARGET(INSTRUMENTED_RETURN_VALUE_FUNC) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
             (void)this_instr;
             next_instr += 1;
-            INSTRUCTION_STATS(INSTRUMENTED_RETURN_CONST);
-            _PyStackRef value;
-            _PyStackRef val;
-            _PyStackRef retval;
-            _PyStackRef res;
-            // _LOAD_CONST
-            {
-                value = PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
-            }
-            // _RETURN_VALUE_EVENT
-            {
-                val = value;
-                stack_pointer[0] = val;
-                stack_pointer += 1;
-                assert(WITHIN_STACK_BOUNDS());
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                int err = _Py_call_instrumentation_arg(
-                    tstate, PY_MONITORING_EVENT_PY_RETURN,
-                    frame, this_instr, PyStackRef_AsPyObjectBorrow(val));
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (err) goto error;
-            }
-            // _RETURN_VALUE
-            {
-                retval = val;
-                #if TIER_ONE
-                assert(frame != &entry_frame);
-                #endif
-                _PyStackRef temp = retval;
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                assert(EMPTY());
-                _Py_LeaveRecursiveCallPy(tstate);
-                // GH-99729: We need to unlink the frame *before* clearing it:
-                _PyInterpreterFrame *dying = frame;
-                frame = tstate->current_frame = dying->previous;
-                _PyEval_FrameClearAndPop(tstate, dying);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                LOAD_IP(frame->return_offset);
-                res = temp;
-                LLTRACE_RESUME_FRAME();
-            }
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            DISPATCH();
-        }
-
-        TARGET(INSTRUMENTED_RETURN_VALUE) {
-            _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
-            (void)this_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(INSTRUMENTED_RETURN_VALUE);
+            INSTRUCTION_STATS(INSTRUMENTED_RETURN_VALUE_FUNC);
             _PyStackRef val;
             _PyStackRef retval;
             _PyStackRef res;
@@ -4952,11 +4899,12 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err) goto error;
             }
-            // _RETURN_VALUE
+            // _RETURN_VALUE_FUNC
             {
                 retval = val;
                 #if TIER_ONE
                 assert(frame != &entry_frame);
+                assert(frame->owner != FRAME_OWNED_BY_GENERATOR);
                 #endif
                 _PyStackRef temp = retval;
                 stack_pointer += -1;
@@ -4967,7 +4915,53 @@
                 // GH-99729: We need to unlink the frame *before* clearing it:
                 _PyInterpreterFrame *dying = frame;
                 frame = tstate->current_frame = dying->previous;
-                _PyEval_FrameClearAndPop(tstate, dying);
+                _PyEval_ClearThreadFrame(tstate, dying);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                LOAD_IP(frame->return_offset);
+                res = temp;
+                LLTRACE_RESUME_FRAME();
+            }
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+
+        TARGET(INSTRUMENTED_RETURN_VALUE_GEN) {
+            _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(INSTRUMENTED_RETURN_VALUE_GEN);
+            _PyStackRef val;
+            _PyStackRef retval;
+            _PyStackRef res;
+            // _RETURN_VALUE_EVENT
+            {
+                val = stack_pointer[-1];
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                int err = _Py_call_instrumentation_arg(
+                    tstate, PY_MONITORING_EVENT_PY_RETURN,
+                    frame, this_instr, PyStackRef_AsPyObjectBorrow(val));
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (err) goto error;
+            }
+            // _RETURN_VALUE_GEN
+            {
+                retval = val;
+                #if TIER_ONE
+                assert(frame != &entry_frame);
+                assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
+                #endif
+                _PyStackRef temp = retval;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                assert(EMPTY());
+                _Py_LeaveRecursiveCallPy(tstate);
+                // GH-99729: We need to unlink the frame *before* clearing it:
+                _PyInterpreterFrame *dying = frame;
+                frame = tstate->current_frame = dying->previous;
+                _PyEval_ClearGenFrame(tstate, dying);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 LOAD_IP(frame->return_offset);
                 res = temp;
@@ -6951,42 +6945,6 @@
             DISPATCH();
         }
 
-        TARGET(RETURN_CONST) {
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(RETURN_CONST);
-            _PyStackRef value;
-            _PyStackRef retval;
-            _PyStackRef res;
-            // _LOAD_CONST
-            {
-                value = PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
-            }
-            // _RETURN_VALUE
-            {
-                retval = value;
-                #if TIER_ONE
-                assert(frame != &entry_frame);
-                #endif
-                _PyStackRef temp = retval;
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                assert(EMPTY());
-                _Py_LeaveRecursiveCallPy(tstate);
-                // GH-99729: We need to unlink the frame *before* clearing it:
-                _PyInterpreterFrame *dying = frame;
-                frame = tstate->current_frame = dying->previous;
-                _PyEval_FrameClearAndPop(tstate, dying);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                LOAD_IP(frame->return_offset);
-                res = temp;
-                LLTRACE_RESUME_FRAME();
-            }
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            DISPATCH();
-        }
-
         TARGET(RETURN_GENERATOR) {
             frame->instr_ptr = next_instr;
             next_instr += 1;
@@ -7020,15 +6978,16 @@
             DISPATCH();
         }
 
-        TARGET(RETURN_VALUE) {
+        TARGET(RETURN_VALUE_FUNC) {
             frame->instr_ptr = next_instr;
             next_instr += 1;
-            INSTRUCTION_STATS(RETURN_VALUE);
+            INSTRUCTION_STATS(RETURN_VALUE_FUNC);
             _PyStackRef retval;
             _PyStackRef res;
             retval = stack_pointer[-1];
             #if TIER_ONE
             assert(frame != &entry_frame);
+            assert(frame->owner != FRAME_OWNED_BY_GENERATOR);
             #endif
             _PyStackRef temp = retval;
             stack_pointer += -1;
@@ -7039,7 +6998,38 @@
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
-            _PyEval_FrameClearAndPop(tstate, dying);
+            _PyEval_ClearThreadFrame(tstate, dying);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            LOAD_IP(frame->return_offset);
+            res = temp;
+            LLTRACE_RESUME_FRAME();
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+
+        TARGET(RETURN_VALUE_GEN) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(RETURN_VALUE_GEN);
+            _PyStackRef retval;
+            _PyStackRef res;
+            retval = stack_pointer[-1];
+            #if TIER_ONE
+            assert(frame != &entry_frame);
+            assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
+            #endif
+            _PyStackRef temp = retval;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            assert(EMPTY());
+            _Py_LeaveRecursiveCallPy(tstate);
+            // GH-99729: We need to unlink the frame *before* clearing it:
+            _PyInterpreterFrame *dying = frame;
+            frame = tstate->current_frame = dying->previous;
+            _PyEval_ClearGenFrame(tstate, dying);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             LOAD_IP(frame->return_offset);
             res = temp;
