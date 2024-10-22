@@ -1,2 +1,2 @@
-Add the ``is_closed()`` in the :class:`multiprocessing.Process` to
+Add the ``closed()`` in the :class:`multiprocessing.Process` to
 determine whether the process is closed.
