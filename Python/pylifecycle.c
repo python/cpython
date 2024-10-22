@@ -551,6 +551,62 @@ pycore_init_runtime(_PyRuntimeState *runtime,
 }
 
 
+static PyStatus
+init_interp_settings(PyInterpreterState *interp,
+                     const PyInterpreterConfig *config)
+{
+    assert(interp->feature_flags == 0);
+
+    if (config->use_main_obmalloc) {
+        interp->feature_flags |= Py_RTFLAGS_USE_MAIN_OBMALLOC;
+    }
+    else if (!config->check_multi_interp_extensions) {
+        /* The reason: PyModuleDef.m_base.m_copy leaks objects between
+           interpreters. */
+        return _PyStatus_ERR("per-interpreter obmalloc does not support "
+                             "single-phase init extension modules");
+    }
+#ifdef Py_GIL_DISABLED
+    if (!_Py_IsMainInterpreter(interp) &&
+        !config->check_multi_interp_extensions)
+    {
+        return _PyStatus_ERR("The free-threaded build does not support "
+                             "single-phase init extension modules in "
+                             "subinterpreters");
+    }
+#endif
+
+    if (config->allow_fork) {
+        interp->feature_flags |= Py_RTFLAGS_FORK;
+    }
+    if (config->allow_exec) {
+        interp->feature_flags |= Py_RTFLAGS_EXEC;
+    }
+    // Note that fork+exec is always allowed.
+
+    if (config->allow_threads) {
+        interp->feature_flags |= Py_RTFLAGS_THREADS;
+    }
+    if (config->allow_daemon_threads) {
+        interp->feature_flags |= Py_RTFLAGS_DAEMON_THREADS;
+    }
+
+    if (config->check_multi_interp_extensions) {
+        interp->feature_flags |= Py_RTFLAGS_MULTI_INTERP_EXTENSIONS;
+    }
+
+    switch (config->gil) {
+    case PyInterpreterConfig_DEFAULT_GIL: break;
+    case PyInterpreterConfig_SHARED_GIL: break;
+    case PyInterpreterConfig_OWN_GIL: break;
+    default:
+        return _PyStatus_ERR("invalid interpreter config 'gil' value");
+    }
+
+    return _PyStatus_OK();
+}
+
+
 static void
 init_interp_create_gil(PyThreadState *tstate, int gil)
 {
@@ -587,15 +643,8 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
                           PyThreadState **tstate_p)
 {
     PyStatus status;
-
-    PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
-    // The main interpreter always has its own GIL and supports single-phase
-    // init extensions.
-    config.gil = PyInterpreterConfig_OWN_GIL;
-    config.check_multi_interp_extensions = 0;
-
     PyInterpreterState *interp;
-    status = _PyInterpreterState_New(NULL, &config, &interp);
+    status = _PyInterpreterState_New(NULL, &interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -611,6 +660,16 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
 
     /* Auto-thread-state API */
     status = _PyGILState_Init(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
+    // The main interpreter always has its own GIL and supports single-phase
+    // init extensions.
+    config.gil = PyInterpreterConfig_OWN_GIL;
+    config.check_multi_interp_extensions = 0;
+    status = init_interp_settings(interp, &config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -2194,18 +2253,17 @@ new_interpreter(PyThreadState **tstate_p,
        interpreters: disable PyGILState_Check(). */
     runtime->gilstate.check_enabled = 0;
 
+    PyInterpreterState *interp = PyInterpreterState_New();
+    if (interp == NULL) {
+        *tstate_p = NULL;
+        return _PyStatus_OK();
+    }
+    _PyInterpreterState_SetWhence(interp, whence);
+    interp->_ready = 1;
 
     // XXX Might new_interpreter() have been called without the GIL held?
     PyThreadState *save_tstate = _PyThreadState_GET();
     PyThreadState *tstate = NULL;
-
-    PyInterpreterState *interp;
-    status = _PyInterpreterState_New(save_tstate, config, &interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-    _PyInterpreterState_SetWhence(interp, whence);
-    interp->_ready = 1;
 
     /* From this point until the init_interp_create_gil() call,
        we must not do anything that requires that the GIL be held
@@ -2229,6 +2287,12 @@ new_interpreter(PyThreadState **tstate_p,
 
     /* This does not require that the GIL be held. */
     status = _PyConfig_Copy(&interp->config, src_config);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto error;
+    }
+
+    /* This does not require that the GIL be held. */
+    status = init_interp_settings(interp, config);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
     }

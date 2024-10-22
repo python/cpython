@@ -581,66 +581,9 @@ free_interpreter(PyInterpreterState *interp)
         PyMem_RawFree(interp);
     }
 }
-
-static PyStatus
-init_interp_settings(PyInterpreterState *interp,
-                     const PyInterpreterConfig *config)
-{
-    assert(interp->feature_flags == 0);
-
-    if (config->use_main_obmalloc) {
-        interp->feature_flags |= Py_RTFLAGS_USE_MAIN_OBMALLOC;
-    }
-    else if (!config->check_multi_interp_extensions) {
-        /* The reason: PyModuleDef.m_base.m_copy leaks objects between
-           interpreters. */
-        return _PyStatus_ERR("per-interpreter obmalloc does not support "
-                             "single-phase init extension modules");
-    }
-#ifdef Py_GIL_DISABLED
-    if (!_Py_IsMainInterpreter(interp) &&
-        !config->check_multi_interp_extensions)
-    {
-        return _PyStatus_ERR("The free-threaded build does not support "
-                             "single-phase init extension modules in "
-                             "subinterpreters");
-    }
-#endif
-
-    if (config->allow_fork) {
-        interp->feature_flags |= Py_RTFLAGS_FORK;
-    }
-    if (config->allow_exec) {
-        interp->feature_flags |= Py_RTFLAGS_EXEC;
-    }
-    // Note that fork+exec is always allowed.
-
-    if (config->allow_threads) {
-        interp->feature_flags |= Py_RTFLAGS_THREADS;
-    }
-    if (config->allow_daemon_threads) {
-        interp->feature_flags |= Py_RTFLAGS_DAEMON_THREADS;
-    }
-
-    if (config->check_multi_interp_extensions) {
-        interp->feature_flags |= Py_RTFLAGS_MULTI_INTERP_EXTENSIONS;
-    }
-
-    switch (config->gil) {
-    case PyInterpreterConfig_DEFAULT_GIL: break;
-    case PyInterpreterConfig_SHARED_GIL: break;
-    case PyInterpreterConfig_OWN_GIL: break;
-    default:
-        return _PyStatus_ERR("invalid interpreter config 'gil' value");
-    }
-
-    return _PyStatus_OK();
-}
-
 #ifndef NDEBUG
 static inline int check_interpreter_whence(long);
 #endif
-
 /* Get the interpreter state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
    All fields not initialized here are expected to be zeroed out,
@@ -664,8 +607,7 @@ static PyStatus
 init_interpreter(PyInterpreterState *interp,
                  _PyRuntimeState *runtime, int64_t id,
                  PyInterpreterState *next,
-                 long whence,
-                 const PyInterpreterConfig *config)
+                 long whence)
 {
     if (interp->_initialized) {
         return _PyStatus_ERR("interpreter already initialized");
@@ -687,15 +629,10 @@ init_interpreter(PyInterpreterState *interp,
     assert(next != NULL || (interp == runtime->interpreters.main));
     interp->next = next;
 
-    PyStatus status = init_interp_settings(interp, config);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
     // This relies on interp->feature_flags being set already,
     // but currently we don't set that by this point.
     // That's something to fix.
-    status = _PyObject_InitState(interp);
+    PyStatus status = _PyObject_InitState(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -736,9 +673,7 @@ init_interpreter(PyInterpreterState *interp,
 
 
 PyStatus
-_PyInterpreterState_New(PyThreadState *tstate,
-                        const PyInterpreterConfig *config,
-                        PyInterpreterState **pinterp)
+_PyInterpreterState_New(PyThreadState *tstate, PyInterpreterState **pinterp)
 {
     *pinterp = NULL;
 
@@ -800,7 +735,7 @@ _PyInterpreterState_New(PyThreadState *tstate,
 
     long whence = _PyInterpreterState_WHENCE_UNKNOWN;
     status = init_interpreter(interp, runtime,
-                              id, old_head, whence, config);
+                              id, old_head, whence);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
     }
@@ -827,10 +762,8 @@ PyInterpreterState_New(void)
     // tstate can be NULL
     PyThreadState *tstate = current_fast_get();
 
-    const PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
-
     PyInterpreterState *interp;
-    PyStatus status = _PyInterpreterState_New(tstate, &config, &interp);
+    PyStatus status = _PyInterpreterState_New(tstate, &interp);
     if (_PyStatus_EXCEPTION(status)) {
         Py_ExitStatusException(status);
     }
