@@ -639,7 +639,7 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
     if (locals == NULL) {
         locals = globals;
     }
-    PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
+    PyObject *builtins = _PyDict_LoadBuiltinsFromGlobals(globals);
     if (builtins == NULL) {
         return NULL;
     }
@@ -654,6 +654,7 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
         .fc_closure = NULL
     };
     PyFunctionObject *func = _PyFunction_FromConstructor(&desc);
+    _Py_DECREF_BUILITNS(builtins);
     if (func == NULL) {
         return NULL;
     }
@@ -1899,7 +1900,7 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
     if (defaults == NULL) {
         return NULL;
     }
-    PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
+    PyObject *builtins = _PyDict_LoadBuiltinsFromGlobals(globals);
     if (builtins == NULL) {
         Py_DECREF(defaults);
         return NULL;
@@ -1954,6 +1955,7 @@ fail:
     Py_XDECREF(func);
     Py_XDECREF(kwnames);
     PyMem_Free(newargs);
+    _Py_DECREF_BUILITNS(builtins);
     Py_DECREF(defaults);
     return res;
 }
