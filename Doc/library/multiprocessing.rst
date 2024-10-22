@@ -673,7 +673,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
       .. versionadded:: 3.7
 
-   .. method:: is_closed()
+   .. method:: closed()
 
       Return whether the process is closed.
 
