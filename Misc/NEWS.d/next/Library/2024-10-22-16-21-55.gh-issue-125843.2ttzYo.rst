@@ -1,0 +1,3 @@
+Add :attr:`~curses.error.funcname` to :exc:`curses.error` objects to indicate
+which :mod:`curses` C function or macro was responsible for the exception.
+Patch by Bénédikt Tran.
