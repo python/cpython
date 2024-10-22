@@ -58,7 +58,7 @@ gen_traverse(PyObject *self, visitproc visit, void *arg)
     PyGenObject *gen = _PyGen_CAST(self);
     Py_VISIT(gen->gi_name);
     Py_VISIT(gen->gi_qualname);
-    if (gen->gi_frame_state < FRAME_EXECUTING) {
+    if (gen->gi_frame_state < FRAME_EXECUTING || gen->gi_frame_state == FRAME_ZOMBIE) {
         _PyInterpreterFrame *frame = &gen->gi_iframe;
         assert(frame->frame_obj == NULL ||
                frame->frame_obj->f_frame->owner == FRAME_OWNED_BY_GENERATOR);
