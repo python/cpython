@@ -673,6 +673,15 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
       .. versionadded:: 3.7
 
+   .. method:: is_closed()
+
+      Return whether the process is closed.
+
+      Roughly, a process object is considered closed when :meth:`close`
+      is called on it.
+
+      .. versionadded:: 3.14
+
    .. method:: close()
 
       Close the :class:`Process` object, releasing all resources associated
