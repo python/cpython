@@ -1,6 +1,4 @@
-"""      turtle-example-suite:
-
-        turtledemo/round_dance.py
+"""turtledemo/round_dance.py
 
 Dancing turtles have a compound shape
 consisting of a series of triangles of

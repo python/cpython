@@ -1,6 +1,4 @@
-"""     turtle-example-suite:
-
-     turtledemo/fractalcurves.py
+"""turtledemo/fractalcurves.py
 
 This program draws two fractal-curve-designs:
 (1) A hilbert curve (in a box)

@@ -1,6 +1,4 @@
-"""       turtle-example-suite:
-
-           turtledemo/clock.py
+"""turtledemo/clock.py
 
 Enhanced clock-program, showing date
 and time

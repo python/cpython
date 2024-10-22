@@ -1,6 +1,4 @@
-"""      turtle-example-suite:
-
-         turtledemo/penrose.py
+"""turtledemo/penrose.py
 
 Constructs two aperiodic penrose-tilings,
 consisting of kites and darts, by the method

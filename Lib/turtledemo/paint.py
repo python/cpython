@@ -1,6 +1,4 @@
-"""       turtle-example-suite:
-
-          turtledemo/paint.py
+"""turtledemo/paint.py
 
 A simple  event-driven paint program
 

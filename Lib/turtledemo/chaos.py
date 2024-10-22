@@ -1,6 +1,4 @@
-"""      turtle-example-suite:
-
-         turtledemo/chaos.py
+"""turtledemo/chaos.py
 
 A demonstration of chaos
 """

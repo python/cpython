@@ -1,6 +1,4 @@
-"""      turtle-example-suite:
-
-         turtledemo/yinyang.py
+"""turtledemo/yinyang.py
 
 Another drawing suitable as a beginner's
 programming example.

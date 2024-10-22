@@ -1,6 +1,4 @@
-"""      turtle-example-suite:
-
-          turtledemo/tree.py
+"""turtledemo/tree.py
 
 Displays a 'breadth-first-tree' - in contrast
 to the classical Logo tree drawing programs,

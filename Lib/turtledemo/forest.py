@@ -1,6 +1,4 @@
-"""     turtle-example-suite:
-
-        turtledemo/forest.py
+"""turtledemo/forest.py
 
 Displays a 'forest' of 3 breadth-first trees,
 similar to the one in tree.py.

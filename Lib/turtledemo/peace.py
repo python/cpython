@@ -1,6 +1,4 @@
-"""       turtle-example-suite:
-
-          turtledemo/peace.py
+"""turtledemo/peace.py
 
 A simple drawing suitable as a beginner's
 programming example. Aside from the

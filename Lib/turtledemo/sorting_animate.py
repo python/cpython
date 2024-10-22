@@ -1,6 +1,4 @@
-"""      turtle-example-suite:
-
-    turtledemo/sorting_animation.py
+"""turtledemo/sorting_animation.py
 
 A minimal sorting algorithm animation:
 Sorts a shelf of 10 blocks using insertion

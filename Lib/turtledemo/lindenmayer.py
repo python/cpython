@@ -1,6 +1,4 @@
-"""       turtle-example-suite:
-
-        turtledemo/lindenmayer.py
+"""turtledemo/lindenmayer.py
 
 Each morning women in Tamil Nadu, in southern
 India, place designs, created by using rice

@@ -1,6 +1,4 @@
-"""       turtle-example-suite:
-
-        turtledemo/minimal_hanoi.py
+"""turtledemo/minimal_hanoi.py
 
 A minimal 'Towers of Hanoi' animation:
 A tower of 6 discs is transferred from the
