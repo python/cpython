@@ -253,9 +253,6 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
 
 
 class ProcessPoolShutdownTest(ExecutorShutdownTest):
-    # gh-125451: 'lock' cannot be serialized, the test is broken
-    # and hangs randomly
-    @unittest.skipIf(True, "broken test")
     def test_processes_terminate(self):
         def acquire_lock(lock):
             lock.acquire()
