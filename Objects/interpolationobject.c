@@ -124,6 +124,7 @@ static PyObject *
 _get_match_args(void)
 {
     PyObject *value = NULL, *expr = NULL, *conv = NULL, *format_spec = NULL;
+    PyObject *tuple = NULL;
 
     value = PyUnicode_FromString("value");
     if (!value) {
@@ -142,18 +143,14 @@ _get_match_args(void)
         goto error;
     }
 
-    PyObject *tuple = PyTuple_Pack(4, value, expr, conv, format_spec);
-    if (!tuple) {
-        goto error;
-    }
-    return tuple;
+    tuple = PyTuple_Pack(4, value, expr, conv, format_spec);
 
 error:
     Py_XDECREF(value);
     Py_XDECREF(expr);
     Py_XDECREF(conv);
     Py_XDECREF(format_spec);
-    return NULL;
+    return tuple;
 
 }
 
