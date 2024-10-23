@@ -6761,7 +6761,7 @@ int main(void)
 ]])],
 [ac_cv_strftime_c99_support=yes],
 [ac_cv_strftime_c99_support=no],
-[ac_cv_strftime_c99_support=no])])
+[ac_cv_strftime_c99_support=yes])])
 if test "$ac_cv_strftime_c99_support" = yes
 then
   AC_DEFINE([Py_STRFTIME_C99_SUPPORT], [1],
