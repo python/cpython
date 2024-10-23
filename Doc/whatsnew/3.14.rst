@@ -194,6 +194,12 @@ Other language changes
   :mod:`copyable <copy>`.
   (Contributed by Serhiy Storchaka in :gh:`125767`.)
 
+* Add the :meth:`~BaseException.subgroup` and :meth:`~BaseException.split`
+  methods for matching and splitting leaf exceptions respectively. This is
+  roughly equivalent to wrapping the exception in an exception group and
+  calling the :exc:`BaseExceptionGroup` homonymous methods.
+  (Contributed by Bénédikt Tran in :gh:`125825`.)
+
 
 New modules
 ===========
