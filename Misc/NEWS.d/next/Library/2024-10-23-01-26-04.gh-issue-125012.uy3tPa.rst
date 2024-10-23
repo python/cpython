@@ -1,0 +1,6 @@
+``pathlib.PurePosixPath(pathlib.PureWindowsPath(...))`` now emits a
+:exc:`FutureWarning` indicating that implicit conversion of backward slashes
+to forward slashes will cease in a future Python release. Use
+``PurePosixPath(PureWindowsPath(...).as_posix())`` to explicitly convert
+Windows path separators to POSIX path separators when converting between
+path flavours.

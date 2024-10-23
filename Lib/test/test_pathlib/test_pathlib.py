@@ -388,7 +388,8 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
     def test_parse_windows_path(self):
         P = self.cls
         p = P('c:', 'a', 'b')
-        pp = P(pathlib.PureWindowsPath('c:\\a\\b'))
+        with self.assertWarns(FutureWarning):
+            pp = P(pathlib.PureWindowsPath('c:\\a\\b'))
         self.assertEqual(p, pp)
 
     windows_equivalences = {
