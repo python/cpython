@@ -1,0 +1,1 @@
+Add musl support to ``platform.libc_ver`` function.

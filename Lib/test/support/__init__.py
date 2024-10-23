@@ -376,6 +376,27 @@ def requires_mac_ver(*min_version):
         return wrapper
     return decorator
 
+def requires_musl():
+    """Decorator raising SkipTest if the musl is not available."""
+    import subprocess
+    if sys.platform == "darwin":
+        _cmd = "otool -L"
+    elif sys.platform == "linux":
+        _cmd = "ldd"
+    else:
+        return False
+
+    proc = subprocess.run(_cmd.split(), stderr=subprocess.PIPE, universal_newlines=True)
+
+    if "musl" in proc.stderr:
+        skip = False
+    else:
+        skip = True
+
+    return unittest.skipIf(
+        skip,
+        f"musl is not available in this platform",
+    )
 
 def skip_if_buildbot(reason=None):
     """Decorator raising SkipTest if running on a buildbot."""
