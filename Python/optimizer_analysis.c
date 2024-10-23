@@ -296,7 +296,8 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 }
                 break;
             }
-            case _RETURN_VALUE:
+            case _RETURN_VALUE_FUNC:
+            case _RETURN_VALUE_GEN:
             {
                 builtins_watched >>= 1;
                 globals_watched >>= 1;
