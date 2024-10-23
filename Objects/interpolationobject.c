@@ -66,6 +66,40 @@ interpolation_repr(interpolationobject *self)
                                 self->conv, self->format_spec);
 }
 
+static PyObject *
+interpolation_compare(interpolationobject *self, PyObject *other, int op)
+{
+    if (op == Py_LT || op == Py_LE || op == Py_GT || op == Py_GE) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    if (!PyObject_TypeCheck(other, &_PyInterpolation_Type)) {
+        return (op == Py_EQ) ? Py_False : Py_True;
+    }
+
+    interpolationobject *other_i = (interpolationobject *) other;
+
+    int valueeq = PyObject_RichCompareBool(self->value, other_i->value, Py_EQ);
+    if (valueeq == -1) {
+        return NULL;
+    }
+    int expreq = PyUnicode_Compare(self->expr, other_i->expr);
+    if (expreq == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    int conveq = PyObject_RichCompareBool(self->conv, other_i->conv, Py_EQ); // conv might be Py_None
+    if (conveq == -1) {
+        return NULL;
+    }
+    int formatspeceq = PyUnicode_Compare(self->format_spec, other_i->format_spec);
+    if (formatspeceq == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+
+    int eq = valueeq && expreq == 0 && conveq && formatspeceq == 0;
+    return PyBool_FromLong(op == Py_EQ ? eq : !eq);
+}
+
 static PyMemberDef interpolation_members[] = {
     {"value", Py_T_OBJECT_EX, offsetof(interpolationobject, value), Py_READONLY, "Value"},
     {"expr", Py_T_OBJECT_EX, offsetof(interpolationobject, expr), Py_READONLY, "Expr"},
@@ -84,6 +118,7 @@ PyTypeObject _PyInterpolation_Type = {
     .tp_new = (newfunc) interpolation_new,
     .tp_dealloc = (destructor) interpolation_dealloc,
     .tp_repr = (reprfunc) interpolation_repr,
+    .tp_richcompare = (richcmpfunc) interpolation_compare,
     .tp_members = interpolation_members,
 };
 

@@ -51,6 +51,20 @@ template_repr(templateobject *self)
 }
 
 static PyObject *
+template_compare(templateobject *self, PyObject *other, int op)
+{
+    if (op == Py_LT || op == Py_LE || op == Py_GT || op == Py_GE) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    if (!PyObject_TypeCheck(other, &_PyTemplate_Type)) {
+        return (op == Py_EQ) ? Py_False : Py_True;
+    }
+
+    return PyObject_RichCompare(self->args, ((templateobject *) other)->args, op);
+}
+
+static PyObject *
 template_add_template_str(templateobject *template, PyUnicodeObject *str, int templateleft)
 {
     Py_ssize_t templatesize = PyTuple_GET_SIZE(template->args);
@@ -125,7 +139,7 @@ static PyMemberDef template_members[] = {
 };
 
 static PyNumberMethods template_as_number = {
-    .nb_add = template_add
+    .nb_add = template_add,
 };
 
 PyTypeObject _PyTemplate_Type = {
@@ -139,6 +153,7 @@ PyTypeObject _PyTemplate_Type = {
     .tp_new = (newfunc) template_new,
     .tp_dealloc = (destructor) template_dealloc,
     .tp_repr = (reprfunc) template_repr,
+    .tp_richcompare = (richcmpfunc) template_compare,
     .tp_members = template_members,
 };
 
