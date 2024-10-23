@@ -121,10 +121,15 @@ jobs:
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
           ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
 
+        # The `find` line is required as a result of https://github.com/actions/runner-images/issues/9966.
+        # This is a bug in the macOS runner image where the pre-installed Python is installed in the same
+        # directory as the Homebrew Python, which causes the build to fail for macos-13. This line removes 
+        # the symlink to the pre-installed Python so that the Homebrew Python is used instead.
       - name: Native macOS
         if: runner.os == 'macOS'
         run: |
           brew update
+          find /usr/local/bin -lname '*/Library/Frameworks/Python.framework/*' -delete
           brew install llvm@${{ matrix.llvm }}
           SDKROOT="$(xcrun --show-sdk-path)" \
             ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
