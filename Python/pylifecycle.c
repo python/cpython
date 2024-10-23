@@ -35,7 +35,6 @@
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 #include "pycore_obmalloc.h"      // _PyMem_init_obmalloc()
-#include "pycore_template.h"      // _PyTemplate_InitTypes()
 #include "pycore_interpolation.h" // _PyInterpolation_InitTypes()
 
 #include "opcode.h"
@@ -770,6 +769,11 @@ pycore_init_types(PyInterpreterState *interp)
     }
 
     status = _PyXI_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyInterpolation_InitTypes(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }

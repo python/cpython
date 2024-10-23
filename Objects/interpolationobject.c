@@ -3,11 +3,9 @@
 #include <stddef.h>
 
 #include "pycore_initconfig.h"      // _PyStatus_OK
-#include "pycore_typeobject.h"      // _PyStaticType_InitBuiltin
 #include "pycore_stackref.h"        // _PyStackRef
 #include "pycore_global_objects.h"  // _Py_STR
 #include "pycore_runtime.h"         // _Py_STR
-#include "pycore_object.h"          // _PyObject_GC_TRACK
 
 #include "pycore_interpolation.h"
 
@@ -121,6 +119,65 @@ PyTypeObject _PyInterpolation_Type = {
     .tp_richcompare = (richcmpfunc) interpolation_compare,
     .tp_members = interpolation_members,
 };
+
+static PyObject *
+_get_match_args(void)
+{
+    PyObject *value = NULL, *expr = NULL, *conv = NULL, *format_spec = NULL;
+
+    value = PyUnicode_FromString("value");
+    if (!value) {
+        goto error;
+    }
+    expr = PyUnicode_FromString("expr");
+    if (!expr) {
+        goto error;
+    }
+    conv = PyUnicode_FromString("conv");
+    if (!conv) {
+        goto error;
+    }
+    format_spec = PyUnicode_FromString("format_spec");
+    if (!format_spec) {
+        goto error;
+    }
+
+    PyObject *tuple = PyTuple_Pack(4, value, expr, conv, format_spec);
+    if (!tuple) {
+        goto error;
+    }
+    return tuple;
+
+error:
+    Py_XDECREF(value);
+    Py_XDECREF(expr);
+    Py_XDECREF(conv);
+    Py_XDECREF(format_spec);
+    return NULL;
+
+}
+
+PyStatus
+_PyInterpolation_InitTypes(PyInterpreterState *interp)
+{
+    PyObject *tuple = _get_match_args();
+    if (!tuple) {
+        goto error;
+    }
+
+    int status = PyDict_SetItemString(_PyType_GetDict(&_PyInterpolation_Type),
+        "__match_args__",
+        tuple);
+    Py_DECREF(tuple);
+
+    if (status < 0) {
+        goto error;
+    }
+    return _PyStatus_OK();
+
+error:
+    return _PyStatus_ERR("Can't initialize interpolation types");
+}
 
 PyObject *
 _PyInterpolation_FromStackRefSteal(_PyStackRef *values)

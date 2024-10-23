@@ -2,11 +2,6 @@
 #include "Python.h"
 #include <stddef.h>
 
-#include "pycore_initconfig.h"  // _PyStatus_OK
-#include "pycore_typeobject.h"  // _PyStaticType_InitBuiltin
-#include "pycore_stackref.h"    // _PyStackRef
-#include "pycore_object.h"      // _PyObject_GC_TRACK
-
 #include "pycore_template.h"
 
 typedef struct {
