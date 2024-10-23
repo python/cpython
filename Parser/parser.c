@@ -25400,7 +25400,7 @@ invalid_conversion_character_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_conversion_character[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'!' &(':' | '}')"));
-            _res = RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN ( "%c-string: missing conversion character" );
+            _res = RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN ( "%c-string: missing conversion character" , TOK_GET_MODE ( p -> tok ) -> tstring ? 't' : 'f' );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -25426,7 +25426,7 @@ invalid_conversion_character_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_conversion_character[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'!' !NAME"));
-            _res = RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN ( "%c-string: invalid conversion character" );
+            _res = RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN ( "%c-string: invalid conversion character" , TOK_GET_MODE ( p -> tok ) -> tstring ? 't' : 'f' );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;

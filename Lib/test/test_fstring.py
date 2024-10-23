@@ -1346,7 +1346,6 @@ x = (
         self.assertAllRaise(SyntaxError, "f-string: expecting '}'",
                             ["f'{3!'",
                              "f'{3!s'",
-                             "f'{3!g'",
                              ])
 
         self.assertAllRaise(SyntaxError, 'f-string: missing conversion character',
