@@ -447,10 +447,15 @@ Deprecated
 ==========
 
 * :mod:`argparse`:
-  Passing the undocumented keyword argument *prefix_chars* to
-  :meth:`~argparse.ArgumentParser.add_argument_group` is now
-  deprecated.
-  (Contributed by Savannah Ostrowski in :gh:`125563`.)
+
+  * Passing the undocumented keyword argument *prefix_chars* to
+    :meth:`~argparse.ArgumentParser.add_argument_group` is now
+    deprecated.
+    (Contributed by Savannah Ostrowski in :gh:`125563`.)
+  * Deprecated the :class:`argparse.FileType` type converter.
+    Anything with resource management should be done downstream after the
+    arguments are parsed.
+    (Contributed by Serhiy Storchaka in :gh:`58032`.)
 
 * :mod:`asyncio`:
   :func:`!asyncio.iscoroutinefunction` is deprecated
@@ -463,12 +468,6 @@ Deprecated
   :func:`complex` constructor is now deprecated; it should only be passed
   as a single positional argument.
   (Contributed by Serhiy Storchaka in :gh:`109218`.)
-
-* :mod:`argparse`:
-  Deprecated the :class:`argparse.FileType` type converter.
-  Anything with resource management should be done downstream after the
-  arguments are parsed.
-  (Contributed by Serhiy Storchaka in :gh:`58032`.)
 
 * :mod:`multiprocessing` and :mod:`concurrent.futures`:
   The default start method (see :ref:`multiprocessing-start-methods`) changed
