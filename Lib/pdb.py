@@ -105,24 +105,7 @@ def find_function(funcname, filename):
     with fp:
         for lineno, line in enumerate(fp, start=1):
             if cre.match(line):
-<<<<<<< HEAD
                 return funcname, filename, lineno
-=======
-                funcstart, funcdef = lineno, line
-            elif funcdef:
-                funcdef += line
-
-            if funcdef:
-                try:
-                    code = compile(funcdef, filename, 'exec')
-                except SyntaxError:
-                    continue
-                # We should always be able to find the code object here
-                funccode = next(c for c in code.co_consts if
-                                isinstance(c, CodeType) and c.co_name == funcname)
-                lineno_offset = find_first_executable_line(funccode)
-                return funcname, filename, funcstart + lineno_offset - 1
->>>>>>> 8f2c0f7a03b... gh-125884: Support breakpoint on functions with annotations (#125892)
     return None
 
 def lasti2lineno(code, lasti):
