@@ -421,6 +421,15 @@ unicodedata
 
 * The Unicode database has been updated to Unicode 16.0.0.
 
+
+unittest
+--------
+
+* unittest discovery supports :term:`namespace package` as start
+  directory again. It was removed in Python 3.11.
+  (Contributed by Jacob Walls in :gh:`80958`.)
+
+
 .. Add improved modules above alphabetically, not here at the end.
 
 Optimizations
