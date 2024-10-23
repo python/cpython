@@ -56,7 +56,7 @@ class InterpretersMixin(InterpreterPoolMixin):
         return r, w
 
 
-class Shenanigans:
+class PickleShenanigans:
     """Succeeds with pickle.dumps(), but fails with pickle.loads()"""
     def __init__(self, value):
         if value == 1:
@@ -293,7 +293,7 @@ class InterpreterPoolExecutorTest(
         # GH-125864: Pickle errors happen before the script tries to execute, so the
         # queue used to wait infinitely.
 
-        fut = self.executor.submit(Shenanigans(0))
+        fut = self.executor.submit(PickleShenanigans(0))
         with self.assertRaisesRegex(RuntimeError, "gotcha"):
             fut.result()
 
