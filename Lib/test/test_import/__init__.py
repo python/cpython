@@ -815,7 +815,7 @@ class ImportTests(unittest.TestCase):
             )
         ]
         for script, error in script_errors:
-            with os_helper.temp_dir() as tmp:
+            with self.subTest(script=script), os_helper.temp_dir() as tmp:
                 with open(os.path.join(tmp, "fractions.py"), "w", encoding='utf-8') as f:
                     f.write(script)
 
@@ -870,7 +870,7 @@ class ImportTests(unittest.TestCase):
             )
         ]
         for script, error in script_errors:
-            with os_helper.temp_dir() as tmp:
+            with self.subTest(script=script), os_helper.temp_dir() as tmp:
                 os.mkdir(os.path.join(tmp, "fractions"))
                 with open(
                     os.path.join(tmp, "fractions", "__init__.py"), "w", encoding='utf-8'
@@ -910,8 +910,8 @@ class ImportTests(unittest.TestCase):
                 rb"ImportError: cannot import name 'array' from 'numpy'"
             )
         ]
-        with os_helper.temp_dir() as tmp:
-            for script, error in script_errors:
+        for script, error in script_errors:
+            with self.subTest(script=script), os_helper.temp_dir() as tmp:
                 with open(os.path.join(tmp, "numpy.py"), "w", encoding='utf-8') as f:
                     f.write(script)
 
@@ -1113,7 +1113,7 @@ except ImportError as e:
             )
         ]
         for script, error in script_errors:
-            with os_helper.temp_dir() as tmp:
+            with self.subTest(script=script), os_helper.temp_dir() as tmp:
                 with open(os.path.join(tmp, "fractions.py"), "w", encoding='utf-8') as f:
                     f.write("shadowing_module = True")
                 with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
