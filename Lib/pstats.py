@@ -449,7 +449,8 @@ class Stats:
                 if isinstance(callees_sort_key, str):
                     callees_sort_key = (callees_sort_key,)
                 sort_tuple, sort_type = self.get_sort_tuple_and_type(*callees_sort_key)
-                print("   Callees ordered by: " + sort_type + "\n")
+                print(f"   Callees ordered by: {sort_type}", file=self.stream)
+                print(file=self.stream)
             if not isinstance(callees_filter, tuple):
                 callees_filter = (callees_filter,)
             self.print_call_heading(width, "called...")
@@ -472,7 +473,8 @@ class Stats:
                 if isinstance(callers_sort_key, str):
                     callers_sort_key = (callers_sort_key,)
                 sort_tuple, sort_type = self.get_sort_tuple_and_type(*callers_sort_key)
-                print("   Callers ordered by: " + sort_type + "\n")
+                print(f"   Callers ordered by: {sort_type}", file=self.stream)
+                print(file=self.stream)
             if not isinstance(callers_filter, tuple):
                 callers_filter = (callers_filter,)
             self.print_call_heading(width, "was called by...")
@@ -512,12 +514,11 @@ class Stats:
                     stats_list.append((cc, nc, tt, ct) + func +
                                       (func_std_string(func),))
                 else:
-                    if not calls_only:
-                        if "time" in sort_type:
-                            raise TypeError("Caller/callee stats for %s do not have time information. "
-                                            "Try using cProfile instead of profile if you wish to record time by caller/callee."
-                                            % func_std_string(func))
-                        calls_only = True
+                    if not calls_only and "time" in sort_type:
+                        raise TypeError("Caller/callee stats for %s do not have time information. "
+                                        "Try using cProfile instead of profile if you wish to record time by caller/callee."
+                                        % func_std_string(func))
+                    calls_only = True
                     stats_list.append((None, value, None, None) + func +
                                       (func_std_string(func),))
 
