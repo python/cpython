@@ -762,7 +762,8 @@ def _check_compression(compression):
             raise RuntimeError(
                 "Compression requires the (missing) lzma module")
     else:
-        raise NotImplementedError("That compression method is not supported")
+        raise NotImplementedError("That compression method is not supported. (got compression type"
+                                  f"= {compression}, expected one of {ZIP_STORED}, {ZIP_DEFLATED}, {ZIP_BZIP2}, or {ZIP_LZMA}")
 
 
 def _get_compressor(compress_type, compresslevel=None):
