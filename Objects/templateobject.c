@@ -2,7 +2,11 @@
 #include "Python.h"
 #include <stddef.h>
 
+#include "pycore_global_objects.h"  // _Py_STR
+#include "pycore_runtime.h"         // _Py_STR
+
 #include "pycore_template.h"
+#include "pycore_interpolation.h"
 
 typedef struct {
     PyObject_HEAD
@@ -17,16 +21,71 @@ template_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    static char *kwlist[] = {"args", NULL};
-    PyObject *selfargs;
+    Py_ssize_t argslen = PyTuple_GET_SIZE(args);
+    Py_ssize_t interleaved_len = 0;
+    int last_was_str = 0;
 
-    if (PyArg_ParseTupleAndKeywords(args, kwds, "O", kwlist,
-                                    &selfargs) < 0) {
-        Py_DECREF(self);
+    for (Py_ssize_t i = 0; i < argslen; i++) {
+        PyObject *item = PyTuple_GET_ITEM(args, i);
+        if (PyUnicode_Check(item)) {
+            if (!last_was_str) {
+                interleaved_len++;
+            }
+            last_was_str = 1;
+        }
+        else if (PyObject_TypeCheck(item, &_PyInterpolation_Type)) {
+            if (!last_was_str) {
+                interleaved_len++;
+            }
+            interleaved_len++;
+            last_was_str = 0;
+        }
+        else {
+            PyErr_SetString(PyExc_TypeError, "Template items need to be of type 'str' or 'Interpolation'");
+            return NULL;
+        }
+    }
+    if (!last_was_str) {
+        interleaved_len++;
+    }
+
+    PyObject *interleaved = PyTuple_New(interleaved_len);
+    if (!interleaved) {
         return NULL;
     }
 
-    Py_XSETREF(self->args, Py_NewRef(selfargs));
+    last_was_str = 0;
+    Py_ssize_t j = 0;
+    for (Py_ssize_t i = 0; i < argslen; i++) {
+        PyObject *item = PyTuple_GET_ITEM(args, i);
+        if (PyUnicode_Check(item)) {
+            if (last_was_str) {
+                PyObject *concat = PyUnicode_Concat(PyTuple_GET_ITEM(interleaved, j - 1), item);
+                if (!concat) {
+                    Py_DECREF(interleaved);
+                    return NULL;
+                }
+                PyTuple_SetItem(interleaved, j - 1, concat);
+            }
+            else {
+                PyTuple_SET_ITEM(interleaved, j++, Py_NewRef(item));
+            }
+            last_was_str = 1;
+        }
+        else if (PyObject_TypeCheck(item, &_PyInterpolation_Type)) {
+            if (!last_was_str) {
+                PyTuple_SET_ITEM(interleaved, j++, &_Py_STR(empty));
+            }
+            PyTuple_SET_ITEM(interleaved, j++, Py_NewRef(item));
+            last_was_str = 0;
+        }
+    }
+    if (!last_was_str) {
+        PyTuple_SET_ITEM(interleaved, j++, &_Py_STR(empty));
+    }
+
+    assert(j == interleaved_len);
+    Py_XSETREF(self->args, interleaved);
     return self;
 }
 
@@ -59,6 +118,12 @@ template_compare(templateobject *self, PyObject *other, int op)
     return PyObject_RichCompare(self->args, ((templateobject *) other)->args, op);
 }
 
+static Py_hash_t
+template_hash(templateobject *self)
+{
+    return PyObject_Hash(self->args);
+}
+
 static PyObject *
 template_add_template_str(templateobject *template, PyUnicodeObject *str, int templateleft)
 {
@@ -81,7 +146,7 @@ template_add_template_str(templateobject *template, PyUnicodeObject *str, int te
         PyTuple_SET_ITEM(tuple, i + j, Py_NewRef(str));
     }
 
-    PyObject *newtemplate = PyObject_CallOneArg((PyObject *) &_PyTemplate_Type, tuple);
+    PyObject *newtemplate = PyObject_CallObject((PyObject *) &_PyTemplate_Type, tuple);
     Py_DECREF(tuple);
     return newtemplate;
 }
@@ -105,7 +170,7 @@ template_add_templates(templateobject *self, templateobject *other)
         PyTuple_SET_ITEM(tuple, i + j, Py_NewRef(PyTuple_GET_ITEM(other->args, j)));
     }
 
-    PyObject *newtemplate = PyObject_CallOneArg((PyObject *) &_PyTemplate_Type, tuple);
+    PyObject *newtemplate = PyObject_CallObject((PyObject *) &_PyTemplate_Type, tuple);
     Py_DECREF(tuple);
     return newtemplate;
 }
@@ -149,6 +214,7 @@ PyTypeObject _PyTemplate_Type = {
     .tp_dealloc = (destructor) template_dealloc,
     .tp_repr = (reprfunc) template_repr,
     .tp_richcompare = (richcmpfunc) template_compare,
+    .tp_hash = (hashfunc) template_hash,
     .tp_members = template_members,
 };
 
@@ -164,7 +230,7 @@ _PyTemplate_Create(PyObject **values, Py_ssize_t oparg)
         PyTuple_SET_ITEM(tuple, i, Py_NewRef(values[i]));
     }
 
-    PyObject *template = PyObject_CallOneArg((PyObject *) &_PyTemplate_Type, tuple);
+    PyObject *template = PyObject_CallObject((PyObject *) &_PyTemplate_Type, tuple);
     Py_DECREF(tuple);
     return template;
 }

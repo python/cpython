@@ -98,6 +98,19 @@ interpolation_compare(interpolationobject *self, PyObject *other, int op)
     return PyBool_FromLong(op == Py_EQ ? eq : !eq);
 }
 
+static Py_hash_t
+interpolation_hash(interpolationobject *self)
+{
+    PyObject *tuple = PyTuple_Pack(4, self->value, self->expr, self->conv, self->format_spec);
+    if (!tuple) {
+        return -1;
+    }
+
+    Py_hash_t hash = PyObject_Hash(tuple);
+    Py_DECREF(tuple);
+    return hash;
+}
+
 static PyMemberDef interpolation_members[] = {
     {"value", Py_T_OBJECT_EX, offsetof(interpolationobject, value), Py_READONLY, "Value"},
     {"expr", Py_T_OBJECT_EX, offsetof(interpolationobject, expr), Py_READONLY, "Expr"},
@@ -117,6 +130,7 @@ PyTypeObject _PyInterpolation_Type = {
     .tp_dealloc = (destructor) interpolation_dealloc,
     .tp_repr = (reprfunc) interpolation_repr,
     .tp_richcompare = (richcmpfunc) interpolation_compare,
+    .tp_hash = (hashfunc) interpolation_hash,
     .tp_members = interpolation_members,
 };
 
