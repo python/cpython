@@ -11,8 +11,9 @@ The core dev team attempts to keep this documentation up to date. If
 it is not, please report that through the
 [issue tracker](https://github.com/python/cpython/issues).
 
+- [Structure of the CPython Repository](repo_structure.md)
 
-Compiling Python Source Code
+Compilation
 ---
 
 - [Guide to the parser](parser.md)
@@ -42,3 +43,7 @@ Program Execution
 - [Garbage Collector Design](garbage_collector.md)
 
 - [Exception Handling](exception_handling.md)
+
+---
+
+- [External Resources](external_resources.md)
