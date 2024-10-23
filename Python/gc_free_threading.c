@@ -340,18 +340,24 @@ merge_all_queued_objects(PyInterpreterState *interp, struct collection_state *st
 static void
 process_delayed_frees(PyInterpreterState *interp)
 {
-    // In STW status, we can observe the latest write sequence by
-    // advancing the write sequence immediately.
+    // While we are in a "stop the world" pause, we can observe the latest
+    // write sequence by advancing the write sequence immediately.
     _Py_qsbr_advance(&interp->qsbr);
     _PyThreadStateImpl *current_tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
     _Py_qsbr_quiescent_state(current_tstate->qsbr);
+
+    // Merge the queues from other threads into our own queue so that we can
+    // process all of the pending delayed free requests at once.
     HEAD_LOCK(&_PyRuntime);
-    PyThreadState *tstate = interp->threads.head;
-    while (tstate != NULL) {
-        _PyMem_ProcessDelayed(tstate);
-        tstate = (PyThreadState *)tstate->next;
+    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
+        _PyThreadStateImpl *other = (_PyThreadStateImpl *)p;
+        if (other != current_tstate) {
+            llist_concat(&current_tstate->mem_free_queue, &other->mem_free_queue);
+        }
     }
     HEAD_UNLOCK(&_PyRuntime);
+
+    _PyMem_ProcessDelayed((PyThreadState *)current_tstate);
 }
 
 // Subtract an incoming reference from the computed "gc_refs" refcount.
@@ -744,7 +750,7 @@ void
 _PyGC_InitState(GCState *gcstate)
 {
     // TODO: move to pycore_runtime_init.h once the incremental GC lands.
-    gcstate->young.threshold = 2000;
+    gcstate->generations[0].threshold = 2000;
 }
 
 
@@ -1042,8 +1048,8 @@ cleanup_worklist(struct worklist *worklist)
 static bool
 gc_should_collect(GCState *gcstate)
 {
-    int count = _Py_atomic_load_int_relaxed(&gcstate->young.count);
-    int threshold = gcstate->young.threshold;
+    int count = _Py_atomic_load_int_relaxed(&gcstate->generations[0].count);
+    int threshold = gcstate->generations[0].threshold;
     if (count <= threshold || threshold == 0 || !gcstate->enabled) {
         return false;
     }
@@ -1051,7 +1057,7 @@ gc_should_collect(GCState *gcstate)
     // objects. A few tests rely on immediate scheduling of the GC so we ignore
     // the scaled threshold if generations[1].threshold is set to zero.
     return (count > gcstate->long_lived_total / 4 ||
-            gcstate->old[0].threshold == 0);
+            gcstate->generations[1].threshold == 0);
 }
 
 static void
@@ -1065,7 +1071,7 @@ record_allocation(PyThreadState *tstate)
     if (gc->alloc_count >= LOCAL_ALLOC_COUNT_THRESHOLD) {
         // TODO: Use Py_ssize_t for the generation count.
         GCState *gcstate = &tstate->interp->gc;
-        _Py_atomic_add_int(&gcstate->young.count, (int)gc->alloc_count);
+        _Py_atomic_add_int(&gcstate->generations[0].count, (int)gc->alloc_count);
         gc->alloc_count = 0;
 
         if (gc_should_collect(gcstate) &&
@@ -1084,7 +1090,7 @@ record_deallocation(PyThreadState *tstate)
     gc->alloc_count--;
     if (gc->alloc_count <= -LOCAL_ALLOC_COUNT_THRESHOLD) {
         GCState *gcstate = &tstate->interp->gc;
-        _Py_atomic_add_int(&gcstate->young.count, (int)gc->alloc_count);
+        _Py_atomic_add_int(&gcstate->generations[0].count, (int)gc->alloc_count);
         gc->alloc_count = 0;
     }
 }
@@ -1096,12 +1102,10 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
 
     // update collection and allocation counters
     if (generation+1 < NUM_GENERATIONS) {
-        state->gcstate->old[generation].count += 1;
+        state->gcstate->generations[generation+1].count += 1;
     }
-
-    state->gcstate->young.count = 0;
-    for (int i = 1; i <= generation; ++i) {
-        state->gcstate->old[i-1].count = 0;
+    for (int i = 0; i <= generation; i++) {
+        state->gcstate->generations[i].count = 0;
     }
 
     // merge refcounts for all queued objects

@@ -1,0 +1,397 @@
+.. date: 2024-09-07-12-14-54
+.. gh-issue: 123797
+.. nonce: yFDeug
+.. release date: 2024-10-01
+.. section: macOS
+
+Check for runtime availability of ``ptsname_r`` function on macos.
+
+..
+
+.. date: 2024-09-27-13-40-25
+.. gh-issue: 124609
+.. nonce: WaKk8G
+.. section: Windows
+
+Fix ``_Py_ThreadId`` for Windows builds using MinGW. Patch by Tony Roberts.
+
+..
+
+.. date: 2024-09-20-11-18-50
+.. gh-issue: 124254
+.. nonce: iPin-L
+.. section: Windows
+
+Ensures experimental free-threaded binaries remain installed when updating.
+
+..
+
+.. date: 2024-09-10-19-23-00
+.. gh-issue: 123915
+.. nonce: yZMEDO
+.. section: Windows
+
+Ensure that ``Tools\msi\buildrelease.bat`` uses different directories for
+AMD64 and ARM64 builds.
+
+..
+
+.. date: 2024-09-25-12-39-34
+.. gh-issue: 124378
+.. nonce: Ywwgia
+.. section: Tests
+
+Updated ``test_ttk`` to pass with Tcl/Tk 8.6.15.
+
+..
+
+.. date: 2024-09-25-18-34-48
+.. gh-issue: 124538
+.. nonce: nXZk4R
+.. section: Library
+
+Fixed crash when using :func:`gc.get_referents` on a capsule object.
+
+..
+
+.. date: 2024-09-25-12-14-58
+.. gh-issue: 124498
+.. nonce: Ozxs55
+.. section: Library
+
+Fix :class:`typing.TypeAliasType` not to be generic, when ``type_params`` is
+an empty tuple.
+
+..
+
+.. date: 2024-09-24-21-15-27
+.. gh-issue: 123017
+.. nonce: dSAr2f
+.. section: Library
+
+Due to unreliable results on some devices, :func:`time.strftime` no longer
+accepts negative years on Android.
+
+..
+
+.. date: 2024-09-24-19-32-14
+.. gh-issue: 123014
+.. nonce: zVcfkZ
+.. section: Library
+
+:func:`os.pidfd_open` and :func:`signal.pidfd_send_signal` are now
+unavailable when building against Android API levels older than 31, since
+the underlying system calls may cause a crash.
+
+..
+
+.. date: 2024-09-19-11-47-39
+.. gh-issue: 124248
+.. nonce: g7rufd
+.. section: Library
+
+Fixed potential crash when using :mod:`struct` to process zero-width 'Pascal
+string' fields (``0p``).
+
+..
+
+.. date: 2024-09-19-03-46-59
+.. gh-issue: 87041
+.. nonce: 9Ox7Bv
+.. section: Library
+
+Fix a bug in :mod:`argparse` where lengthy subparser argument help is
+incorrectly indented.
+
+..
+
+.. date: 2024-09-18-17-45-52
+.. gh-issue: 124212
+.. nonce: n6kIby
+.. section: Library
+
+Fix invalid variable in :mod:`venv` handling of failed symlink on Windows
+
+..
+
+.. date: 2024-09-17-18-06-42
+.. gh-issue: 124171
+.. nonce: PHCvRJ
+.. section: Library
+
+Add workaround for broken :c:func:`!fmod()` implementations on Windows, that
+loose zero sign (e.g. ``fmod(-10, 1)`` returns ``0.0``).  Patch by Sergey B
+Kirpichev.
+
+..
+
+.. date: 2024-09-13-10-34-19
+.. gh-issue: 123934
+.. nonce: yMe7mL
+.. section: Library
+
+Fix :class:`unittest.mock.MagicMock` reseting magic methods return values
+after ``.reset_mock(return_value=True)`` was called.
+
+..
+
+.. date: 2024-09-11-19-12-23
+.. gh-issue: 123968
+.. nonce: OwHON_
+.. section: Library
+
+Fix the command-line interface for the :mod:`random` module to select floats
+between 0 and N, not 1 and N.
+
+..
+
+.. date: 2024-09-10-11-26-14
+.. gh-issue: 123892
+.. nonce: 2gzIrz
+.. section: Library
+
+Add ``"_wmi"`` to :data:`sys.stdlib_module_names`. Patch by Victor Stinner.
+
+..
+
+.. date: 2024-09-02-20-34-04
+.. gh-issue: 123339
+.. nonce: czgcSu
+.. section: Library
+
+Fix :func:`inspect.getsource` for classes in :mod:`collections.abc` and
+:mod:`decimal` (for pure Python implementation) modules.
+:func:`inspect.getcomments` now raises OSError instead of IndexError if the
+``__firstlineno__`` value for a class is out of bound.
+
+..
+
+.. date: 2024-08-15-09-45-34
+.. gh-issue: 121735
+.. nonce: _1q0qf
+.. section: Library
+
+When working with zip archives, importlib.resources now properly honors
+module-adjacent references (e.g. ``files(pkg.mod)`` and not just
+``files(pkg)``).
+
+..
+
+.. date: 2024-07-23-12-38-14
+.. gh-issue: 122145
+.. nonce: sTO8nX
+.. section: Library
+
+Fix an issue when reporting tracebacks corresponding to Python code emitting
+an empty AST body. Patch by Nikita Sobolev and Bénédikt Tran.
+
+..
+
+.. date: 2024-07-03-14-23-04
+.. gh-issue: 119004
+.. nonce: L5MoUu
+.. section: Library
+
+Fix a crash in :ref:`OrderedDict.__eq__ <collections_OrderedDict__eq__>`
+when operands are mutated during the check. Patch by Bénédikt Tran.
+
+..
+
+.. bpo: 44864
+.. date: 2021-08-24-19-37-46
+.. nonce: KzxaDh
+.. section: Library
+
+Do not translate user-provided strings in :class:`argparse.ArgumentParser`.
+
+..
+
+.. date: 2024-09-21-23-12-18
+.. gh-issue: 112938
+.. nonce: OeiDru
+.. section: IDLE
+
+Fix uninteruptable hang when Shell gets rapid continuous output.
+
+..
+
+.. date: 2024-06-05-14-54-24
+.. gh-issue: 120104
+.. nonce: j_thj4
+.. section: IDLE
+
+Fix padding in config and search dialog windows in IDLE.
+
+..
+
+.. date: 2024-09-27-16-47-48
+.. gh-issue: 124720
+.. nonce: nVSTVb
+.. section: Documentation
+
+Update "Using Python on a Mac" section of the "Python Setup and Usage"
+document and include information on installing free-threading support.
+
+..
+
+.. date: 2024-09-19-19-33-25
+.. gh-issue: 116622
+.. nonce: M65UZ6
+.. section: Documentation
+
+Add an Android platform guide, and flag modules not available on Android.
+
+..
+
+.. date: 2024-09-30-21-02-10
+.. gh-issue: 124567
+.. nonce: tv_B_C
+.. section: Core and Builtins
+
+Revert the incremental GC (in 3.13), since it's not clear the benefits
+outweigh the costs at this point.
+
+..
+
+.. date: 2024-09-27-17-18-53
+.. gh-issue: 124642
+.. nonce: OCjhBJ
+.. section: Core and Builtins
+
+Fixed scalability issue in free-threaded builds for lock-free reads from
+dictionaries in multi-threaded scenarios
+
+..
+
+.. date: 2024-09-26-17-55-34
+.. gh-issue: 116510
+.. nonce: dhn8w8
+.. section: Core and Builtins
+
+Fix a bug that can cause a crash when sub-interpreters use "basic"
+single-phase extension modules.  Shared objects could refer to PyGC_Head
+nodes that had been freed as part of interpreter cleanup.
+
+..
+
+.. date: 2024-09-26-12-19-13
+.. gh-issue: 124547
+.. nonce: P_SHfU
+.. section: Core and Builtins
+
+When deallocating an object with inline values whose ``__dict__`` is still
+live: if memory allocation for the inline values fails, clear the
+dictionary. Prevents an interpreter crash.
+
+..
+
+.. date: 2024-09-25-14-45-56
+.. gh-issue: 124513
+.. nonce: ywiXtr
+.. section: Core and Builtins
+
+Fix a crash in FrameLocalsProxy constructor: check the number of arguments.
+Patch by Victor Stinner.
+
+..
+
+.. date: 2024-09-25-11-53-22
+.. gh-issue: 124442
+.. nonce: EXC1Ve
+.. section: Core and Builtins
+
+Fix nondeterminism in compilation by sorting the value of
+:attr:`~type.__static_attributes__`. Patch by kp2pml30.
+
+..
+
+.. date: 2024-09-23-15-23-14
+.. gh-issue: 123856
+.. nonce: yrgJ9m
+.. section: Core and Builtins
+
+Fix PyREPL failure when a keyboard interrupt is triggered after using a
+history search
+
+..
+
+.. date: 2024-09-23-13-25-27
+.. gh-issue: 65961
+.. nonce: LDqXV2
+.. section: Core and Builtins
+
+Document the deprecation of setting and using ``__package__`` and
+``__cached__``.
+
+..
+
+.. date: 2024-09-13-02-25-06
+.. gh-issue: 124027
+.. nonce: to_9DY
+.. section: Core and Builtins
+
+Support ``<page up>``, ``<page down>``, and ``<delete>`` keys in the Python
+REPL when ``$TERM`` is set to ``vt100``.
+
+..
+
+.. date: 2024-09-10-13-27-16
+.. gh-issue: 77894
+.. nonce: ZC-Olu
+.. section: Core and Builtins
+
+Fix possible crash in the garbage collector when it tries to break a
+reference loop containing a :class:`memoryview` object. Now a
+:class:`!memoryview` object can only be cleared if there are no buffers that
+refer it.
+
+..
+
+.. date: 2024-09-02-20-36-45
+.. gh-issue: 123339
+.. nonce: QcmpSs
+.. section: Core and Builtins
+
+Setting the :attr:`!__module__` attribute for a class now removes the
+``__firstlineno__`` item from the type's dict, so they will no longer be
+inconsistent.
+
+..
+
+.. date: 2024-09-18-18-40-30
+.. gh-issue: 124160
+.. nonce: Zy-VKi
+.. section: C API
+
+Fix crash when importing modules containing state and single-phase
+initialization in a subinterpreter.
+
+..
+
+.. date: 2024-09-12-16-16-24
+.. gh-issue: 123880
+.. nonce: 2-8vcj
+.. section: C API
+
+Fixed a bug that prevented circular imports of extension modules that use
+single-phase initialization.
+
+..
+
+.. date: 2024-09-27-15-58-10
+.. gh-issue: 124487
+.. nonce: PAZTQf
+.. section: Build
+
+Windows builds now use Windows 8.1 as their API baseline (installation
+already required Windows 8.1).
+
+..
+
+.. date: 2024-09-13-17-48-37
+.. gh-issue: 124043
+.. nonce: Bruxpq
+.. section: Build
+
+Building using :option:`--with-trace-refs` is (temporarily) disallowed when
+the GIL is disabled.

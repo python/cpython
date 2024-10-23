@@ -1549,7 +1549,7 @@ read_failed:
     *value_addr = value;
     if (value != NULL) {
         assert(ix >= 0);
-        Py_INCREF(value);
+        _Py_NewRefWithLock(value);
     }
     Py_END_CRITICAL_SECTION();
     return ix;
@@ -6988,7 +6988,7 @@ _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name, PyObject **attr
             // Still no dict, we can read from the values
             assert(values->valid);
             value = values->values[ix];
-            *attr = Py_XNewRef(value);
+            *attr = _Py_XNewRefWithLock(value);
             success = true;
         }
 
@@ -7008,7 +7008,7 @@ _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name, PyObject **attr
 
     if (dict->ma_values == values && FT_ATOMIC_LOAD_UINT8(values->valid)) {
         value = _Py_atomic_load_ptr_relaxed(&values->values[ix]);
-        *attr = Py_XNewRef(value);
+        *attr = _Py_XNewRefWithLock(value);
         success = true;
     } else {
         // Caller needs to lookup from the dictionary

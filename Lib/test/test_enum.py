@@ -11,6 +11,7 @@ import typing
 import builtins as bltns
 from collections import OrderedDict
 from datetime import date
+from functools import partial
 from enum import Enum, EnumMeta, IntEnum, StrEnum, EnumType, Flag, IntFlag, unique, auto
 from enum import STRICT, CONFORM, EJECT, KEEP, _simple_enum, _test_simple_enum
 from enum import verify, UNIQUE, CONTINUOUS, NAMED_FLAGS, ReprEnum
@@ -1536,6 +1537,19 @@ class TestSpecial(unittest.TestCase):
             list(Outer),
             [Outer.a, Outer.b, Outer.Inner],
             )
+
+    def test_partial(self):
+        def func(a, b=5):
+            return a, b
+        with self.assertWarnsRegex(FutureWarning, r'partial.*enum\.member') as cm:
+            class E(Enum):
+                a = 1
+                b = partial(func)
+        self.assertEqual(cm.filename, __file__)
+        self.assertIsInstance(E.b, partial)
+        self.assertEqual(E.b(2), (2, 5))
+        with self.assertWarnsRegex(FutureWarning, 'partial'):
+            self.assertEqual(E.a.b(2), (2, 5))
 
     def test_enum_with_value_name(self):
         class Huh(Enum):
@@ -3460,6 +3474,13 @@ class TestSpecial(unittest.TestCase):
         self.assertRaisesRegex(TypeError, '.int. object is not iterable', Enum, 'bad_enum', names=0)
         self.assertRaisesRegex(TypeError, '.int. object is not iterable', Enum, 'bad_enum', 0, type=int)
 
+    def test_nonhashable_matches_hashable(self):    # issue 125710
+        class Directions(Enum):
+            DOWN_ONLY = frozenset({"sc"})
+            UP_ONLY = frozenset({"cs"})
+            UNRESTRICTED = frozenset({"sc", "cs"})
+        self.assertIs(Directions({"sc"}), Directions.DOWN_ONLY)
+
 
 class TestOrder(unittest.TestCase):
     "test usage of the `_order_` attribute"
@@ -5328,7 +5349,7 @@ class TestConvert(unittest.TestCase):
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
         # We don't want the reverse lookup value to vary when there are
         # multiple possible names for a given value.  It should always
-        # report the first lexigraphical name in that case.
+        # report the first lexicographical name in that case.
         self.assertEqual(test_type(5).name, 'CONVERT_TEST_NAME_A')
 
     def test_convert_int(self):

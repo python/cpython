@@ -962,7 +962,7 @@ $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): \
 	$(LN) -fsn Versions/Current/$(PYTHONFRAMEWORK) $(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)
 	$(LN) -fsn Versions/Current/Resources $(PYTHONFRAMEWORKDIR)/Resources
 
-# This rule is for iOS, which requires an annoyingly just slighly different
+# This rule is for iOS, which requires an annoyingly just slightly different
 # format for frameworks to macOS. It *doesn't* use a versioned framework, and
 # the Info.plist must be in the root of the framework.
 $(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK): \
@@ -2443,21 +2443,6 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_importlib/namespace_pkgs/project3/parent/child \
 		test/test_importlib/partial \
 		test/test_importlib/resources \
-		test/test_importlib/resources/data01 \
-		test/test_importlib/resources/data01/subdirectory \
-		test/test_importlib/resources/data02 \
-		test/test_importlib/resources/data02/one \
-		test/test_importlib/resources/data02/subdirectory \
-		test/test_importlib/resources/data02/subdirectory/subsubdir \
-		test/test_importlib/resources/data02/two \
-		test/test_importlib/resources/data03 \
-		test/test_importlib/resources/data03/namespace \
-		test/test_importlib/resources/data03/namespace/portion1 \
-		test/test_importlib/resources/data03/namespace/portion2 \
-		test/test_importlib/resources/namespacedata01 \
-		test/test_importlib/resources/namespacedata01/subdirectory \
-		test/test_importlib/resources/zipdata01 \
-		test/test_importlib/resources/zipdata02 \
 		test/test_importlib/source \
 		test/test_inspect \
 		test/test_interpreters \

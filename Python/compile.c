@@ -2544,7 +2544,18 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
         return ERROR;
     }
     assert(c->u->u_static_attributes);
-    PyObject *static_attributes = PySequence_Tuple(c->u->u_static_attributes);
+    PyObject *static_attributes_unsorted = PySequence_List(c->u->u_static_attributes);
+    if (static_attributes_unsorted == NULL) {
+        compiler_exit_scope(c);
+        return ERROR;
+    }
+    if (PyList_Sort(static_attributes_unsorted) != 0) {
+        compiler_exit_scope(c);
+        Py_DECREF(static_attributes_unsorted);
+        return ERROR;
+    }
+    PyObject *static_attributes = PySequence_Tuple(static_attributes_unsorted);
+    Py_DECREF(static_attributes_unsorted);
     if (static_attributes == NULL) {
         compiler_exit_scope(c);
         return ERROR;

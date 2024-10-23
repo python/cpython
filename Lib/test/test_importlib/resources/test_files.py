@@ -6,11 +6,7 @@ import contextlib
 
 from importlib import resources
 from importlib.resources.abc import Traversable
-from . import data01
 from . import util
-from . import _path
-from test.support import os_helper
-from test.support import import_helper
 
 
 @contextlib.contextmanager
@@ -48,69 +44,95 @@ class FilesTests:
             resources.files(package=self.data)
 
 
-class OpenDiskTests(FilesTests, unittest.TestCase):
-    def setUp(self):
-        self.data = data01
+class OpenDiskTests(FilesTests, util.DiskSetup, unittest.TestCase):
+    pass
 
 
 class OpenZipTests(FilesTests, util.ZipSetup, unittest.TestCase):
     pass
 
 
-class OpenNamespaceTests(FilesTests, unittest.TestCase):
-    def setUp(self):
-        from . import namespacedata01
-
-        self.data = namespacedata01
+class OpenNamespaceTests(FilesTests, util.DiskSetup, unittest.TestCase):
+    MODULE = 'namespacedata01'
 
 
 class OpenNamespaceZipTests(FilesTests, util.ZipSetup, unittest.TestCase):
     ZIP_MODULE = 'namespacedata01'
 
 
-class SiteDir:
-    def setUp(self):
-        self.fixtures = contextlib.ExitStack()
-        self.addCleanup(self.fixtures.close)
-        self.site_dir = self.fixtures.enter_context(os_helper.temp_dir())
-        self.fixtures.enter_context(import_helper.DirsOnSysPath(self.site_dir))
-        self.fixtures.enter_context(import_helper.isolated_modules())
+class DirectSpec:
+    """
+    Override behavior of ModuleSetup to write a full spec directly.
+    """
+
+    MODULE = 'unused'
+
+    def load_fixture(self, name):
+        self.tree_on_path(self.spec)
 
 
-class ModulesFilesTests(SiteDir, unittest.TestCase):
+class ModulesFiles:
+    spec = {
+        'mod.py': '',
+        'res.txt': 'resources are the best',
+    }
+
     def test_module_resources(self):
         """
         A module can have resources found adjacent to the module.
         """
-        spec = {
-            'mod.py': '',
-            'res.txt': 'resources are the best',
-        }
-        _path.build(spec, self.site_dir)
         import mod
 
         actual = resources.files(mod).joinpath('res.txt').read_text(encoding='utf-8')
-        assert actual == spec['res.txt']
+        assert actual == self.spec['res.txt']
 
 
-class ImplicitContextFilesTests(SiteDir, unittest.TestCase):
-    def test_implicit_files(self):
+class ModuleFilesDiskTests(DirectSpec, util.DiskSetup, ModulesFiles, unittest.TestCase):
+    pass
+
+
+class ModuleFilesZipTests(DirectSpec, util.ZipSetup, ModulesFiles, unittest.TestCase):
+    pass
+
+
+class ImplicitContextFiles:
+    set_val = textwrap.dedent(
+        """
+        import importlib.resources as res
+        val = res.files().joinpath('res.txt').read_text(encoding='utf-8')
+        """
+    )
+    spec = {
+        'somepkg': {
+            '__init__.py': set_val,
+            'submod.py': set_val,
+            'res.txt': 'resources are the best',
+        },
+    }
+
+    def test_implicit_files_package(self):
         """
         Without any parameter, files() will infer the location as the caller.
         """
-        spec = {
-            'somepkg': {
-                '__init__.py': textwrap.dedent(
-                    """
-                    import importlib.resources as res
-                    val = res.files().joinpath('res.txt').read_text(encoding='utf-8')
-                    """
-                ),
-                'res.txt': 'resources are the best',
-            },
-        }
-        _path.build(spec, self.site_dir)
         assert importlib.import_module('somepkg').val == 'resources are the best'
+
+    def test_implicit_files_submodule(self):
+        """
+        Without any parameter, files() will infer the location as the caller.
+        """
+        assert importlib.import_module('somepkg.submod').val == 'resources are the best'
+
+
+class ImplicitContextFilesDiskTests(
+    DirectSpec, util.DiskSetup, ImplicitContextFiles, unittest.TestCase
+):
+    pass
+
+
+class ImplicitContextFilesZipTests(
+    DirectSpec, util.ZipSetup, ImplicitContextFiles, unittest.TestCase
+):
+    pass
 
 
 if __name__ == '__main__':

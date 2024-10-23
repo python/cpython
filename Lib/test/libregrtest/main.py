@@ -523,7 +523,7 @@ class Regrtest:
         setup_process()
 
         if (runtests.hunt_refleak is not None) and (not self.num_workers):
-            # gh-109739: WindowsLoadTracker thread interfers with refleak check
+            # gh-109739: WindowsLoadTracker thread interferes with refleak check
             use_load_tracker = False
         else:
             # WindowsLoadTracker is only needed on Windows
@@ -594,6 +594,7 @@ class Regrtest:
                 '_PYTHON_PROJECT_BASE',
                 '_PYTHON_HOST_PLATFORM',
                 '_PYTHON_SYSCONFIGDATA_NAME',
+                "_PYTHON_SYSCONFIGDATA_PATH",
                 'PYTHONPATH'
             }
             old_environ = os.environ
