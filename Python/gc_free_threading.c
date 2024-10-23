@@ -1401,6 +1401,28 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     return n + m;
 }
 
+static PyObject *
+list_from_object_stack(_PyObjectStack *stack)
+{
+    PyObject *list = PyList_New(_PyObjectStack_Size(stack));
+    if (list == NULL) {
+        PyObject *op;
+        while ((op = _PyObjectStack_Pop(stack)) != NULL) {
+            Py_DECREF(op);
+        }
+        return NULL;
+    }
+
+    PyObject *op;
+    Py_ssize_t idx = 0;
+    while ((op = _PyObjectStack_Pop(stack)) != NULL) {
+        assert(idx < PyList_GET_SIZE(list));
+        PyList_SET_ITEM(list, idx++, op);
+    }
+    assert(idx == PyList_GET_SIZE(list));
+    return list;
+}
+
 struct get_referrers_args {
     struct visitor_args base;
     PyObject *objs;
@@ -1435,8 +1457,12 @@ visit_get_referrers(const mi_heap_t *heap, const mi_heap_area_t *area,
     }
 
     struct get_referrers_args *arg = (struct get_referrers_args *)args;
+    if (op == arg->objs) {
+        // Don't include the tuple itself in the referrers list.
+        return true;
+    }
     if (Py_TYPE(op)->tp_traverse(op, referrersvisit, arg->objs)) {
-        if (_PyObjectStack_Push(&arg->results, op) < 0) {
+        if (_PyObjectStack_Push(&arg->results, Py_NewRef(op)) < 0) {
             return false;
         }
     }
@@ -1447,11 +1473,6 @@ visit_get_referrers(const mi_heap_t *heap, const mi_heap_area_t *area,
 PyObject *
 _PyGC_GetReferrers(PyInterpreterState *interp, PyObject *objs)
 {
-    PyObject *result = PyList_New(0);
-    if (!result) {
-        return NULL;
-    }
-
     // NOTE: We can't append to the PyListObject during gc_visit_heaps()
     // because PyList_Append() may reclaim an abandoned mimalloc segments
     // while we are traversing them.
@@ -1460,23 +1481,12 @@ _PyGC_GetReferrers(PyInterpreterState *interp, PyObject *objs)
     int err = gc_visit_heaps(interp, &visit_get_referrers, &args.base);
     _PyEval_StartTheWorld(interp);
 
+    PyObject *list = list_from_object_stack(&args.results);
     if (err < 0) {
         PyErr_NoMemory();
-        goto error;
+        Py_CLEAR(list);
     }
-
-    PyObject *op;
-    while ((op = _PyObjectStack_Pop(&args.results)) != NULL) {
-        if (op != objs && PyList_Append(result, op) < 0) {
-            goto error;
-        }
-    }
-    return result;
-
-error:
-    Py_DECREF(result);
-    _PyObjectStack_Clear(&args.results);
-    return NULL;
+    return list;
 }
 
 struct get_objects_args {
@@ -1499,7 +1509,7 @@ visit_get_objects(const mi_heap_t *heap, const mi_heap_area_t *area,
     }
 
     struct get_objects_args *arg = (struct get_objects_args *)args;
-    if (_PyObjectStack_Push(&arg->objects, op) < 0) {
+    if (_PyObjectStack_Push(&arg->objects, Py_NewRef(op)) < 0) {
         return false;
     }
     return true;
@@ -1508,11 +1518,6 @@ visit_get_objects(const mi_heap_t *heap, const mi_heap_area_t *area,
 PyObject *
 _PyGC_GetObjects(PyInterpreterState *interp, int generation)
 {
-    PyObject *result = PyList_New(0);
-    if (!result) {
-        return NULL;
-    }
-
     // NOTE: We can't append to the PyListObject during gc_visit_heaps()
     // because PyList_Append() may reclaim an abandoned mimalloc segments
     // while we are traversing them.
@@ -1521,23 +1526,12 @@ _PyGC_GetObjects(PyInterpreterState *interp, int generation)
     int err = gc_visit_heaps(interp, &visit_get_objects, &args.base);
     _PyEval_StartTheWorld(interp);
 
+    PyObject *list = list_from_object_stack(&args.objects);
     if (err < 0) {
         PyErr_NoMemory();
-        goto error;
+        Py_CLEAR(list);
     }
-
-    PyObject *op;
-    while ((op = _PyObjectStack_Pop(&args.objects)) != NULL) {
-        if (op != result && PyList_Append(result, op) < 0) {
-            goto error;
-        }
-    }
-    return result;
-
-error:
-    Py_DECREF(result);
-    _PyObjectStack_Clear(&args.objects);
-    return NULL;
+    return list;
 }
 
 static bool
