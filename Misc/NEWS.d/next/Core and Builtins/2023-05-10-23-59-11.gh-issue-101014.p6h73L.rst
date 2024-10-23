@@ -1,0 +1,3 @@
+Support named :class:`~multiprocessing.shared_memory.SharedMemory` and
+:class:`~multiprocessing.shared_memory.ShareableList` in SharedMemory.
+Patch by Ed Wang.
