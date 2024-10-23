@@ -1798,9 +1798,10 @@ class FileCookieJar(CookieJar):
             if self.filename is not None: filename = self.filename
             else: raise ValueError(MISSING_FILENAME_TEXT)
 
-        # We use latin-1 here because WSGI uses latin-1 for HTTP headers too.
-        # See gh-87888 for more info.
-        with open(filename, encoding="latin1") as f:
+        # cookie value should be ASCII, but cookiejar file may contain
+        # non-ASCII comments or invalid cookies.
+        # We use "surrogateescape" error handler to read them.
+        with open(filename, encoding="ascii", errors="surrogateescape") as f:
             self._really_load(f, filename, ignore_discard, ignore_expires)
 
     def revert(self, filename=None,
@@ -1894,7 +1895,7 @@ class LWPCookieJar(FileCookieJar):
 
         with os.fdopen(
             os.open(filename, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600),
-            'w', encoding="latin1",
+            'w', encoding="ascii", errors="surrogateescape",
         ) as f:
             # There really isn't an LWP Cookies 2.0 format, but this indicates
             # that there is extra information in here (domain_dot and
@@ -2088,7 +2089,7 @@ class MozillaCookieJar(FileCookieJar):
 
         with os.fdopen(
             os.open(filename, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600),
-            'w', encoding="latin1",
+            'w', encoding="ascii", errors="surrogateescape",
         ) as f:
             f.write(NETSCAPE_HEADER_TEXT)
             now = time.time()
