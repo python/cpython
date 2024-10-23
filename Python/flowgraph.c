@@ -2592,6 +2592,7 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
 
     RETURN_IF_ERROR(push_cold_blocks_to_end(g));
     RETURN_IF_ERROR(resolve_line_numbers(g, firstlineno));
+    // temporarily remove assert. See https://github.com/python/cpython/issues/125845
     // assert(all_exits_have_lineno(g->g_entryblock));
     return SUCCESS;
 }
