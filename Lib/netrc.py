@@ -2,7 +2,8 @@
 
 # Module and documentation by Eric S. Raymond, 21 Dec 1998
 
-import os, stat
+import os
+import stat
 
 __all__ = ["netrc", "NetrcParseError"]
 
@@ -22,6 +23,7 @@ class NetrcParseError(Exception):
 class _netrclex:
     def __init__(self, fp):
         self.lineno = 1
+        self.dontskip = False
         self.instream = fp
         self.whitespace = "\n\t\r "
         self.pushback = []
@@ -33,30 +35,29 @@ class _netrclex:
         return ch
 
     def get_token(self):
+        self.dontskip = False
         if self.pushback:
             return self.pushback.pop(0)
         token = ""
-        fiter = iter(self._read_char, "")
-        for ch in fiter:
-            if ch in self.whitespace:
-                continue
-            if ch == '"':
-                for ch in fiter:
-                    if ch == '"':
-                        return token
-                    elif ch == "\\":
-                        ch = self._read_char()
-                    token += ch
-            else:
-                if ch == "\\":
-                    ch = self._read_char()
+        enquoted = False
+        while ch := self._read_char():
+            if ch == '\\':
+                ch = self._read_char()
                 token += ch
-                for ch in fiter:
-                    if ch in self.whitespace:
-                        return token
-                    elif ch == "\\":
-                        ch = self._read_char()
-                    token += ch
+                continue
+            if ch in self.whitespace and not enquoted:
+                if token == "":
+                    continue
+                if ch == '\n':
+                    self.dontskip = True
+                return token
+            if ch == '"':
+                if enquoted:
+                    return token
+                enquoted = True
+                continue
+            else:
+                token += ch
         return token
 
     def push_token(self, token):
@@ -66,7 +67,7 @@ class _netrclex:
 class netrc:
     def __init__(self, file=None):
         default_netrc = file is None
-        if file is None:
+        if default_netrc:
             file = os.path.join(os.path.expanduser("~"), ".netrc")
         self.hosts = {}
         self.macros = {}
@@ -81,13 +82,15 @@ class netrc:
         lexer = _netrclex(fp)
         while 1:
             # Look for a machine, default, or macdef top-level keyword
-            saved_lineno = lexer.lineno
-            toplevel = tt = lexer.get_token()
+            tt = lexer.get_token()
             if not tt:
                 break
             elif tt[0] == '#':
-                if lexer.lineno == saved_lineno and len(tt) == 1:
+                # For top level tokens, we skip line if the # is followed
+                # by a space / newline. Otherwise, we only skip the token.
+                if tt == '#' and not lexer.dontskip:
                     lexer.instream.readline()
+                    lexer.lineno += 1
                 continue
             elif tt == 'machine':
                 entryname = lexer.get_token()
@@ -98,6 +101,7 @@ class netrc:
                 self.macros[entryname] = []
                 while 1:
                     line = lexer.instream.readline()
+                    lexer.lineno += 1
                     if not line:
                         raise NetrcParseError(
                             "Macro definition missing null line terminator.",
@@ -114,17 +118,18 @@ class netrc:
                     "bad toplevel token %r" % tt, file, lexer.lineno)
 
             if not entryname:
-                raise NetrcParseError("missing %r name" % tt, file, lexer.lineno)
+                raise NetrcParseError(
+                    "missing %r name" % tt, file, lexer.lineno)
 
             # We're looking at start of an entry for a named machine or default.
             login = account = password = ''
             self.hosts[entryname] = {}
             while 1:
-                prev_lineno = lexer.lineno
                 tt = lexer.get_token()
                 if tt.startswith('#'):
-                    if lexer.lineno == prev_lineno:
+                    if not lexer.dontskip:
                         lexer.instream.readline()
+                        lexer.lineno += 1
                     continue
                 if tt in {'', 'machine', 'default', 'macdef'}:
                     self.hosts[entryname] = (login, account, password)
@@ -165,12 +170,7 @@ class netrc:
 
     def authenticators(self, host):
         """Return a (user, account, password) tuple for given host."""
-        if host in self.hosts:
-            return self.hosts[host]
-        elif 'default' in self.hosts:
-            return self.hosts['default']
-        else:
-            return None
+        return self.hosts.get(host, self.hosts.get('default'))
 
     def __repr__(self):
         """Dump the class data in the format of a .netrc file."""
@@ -187,6 +187,7 @@ class netrc:
                 rep += line
             rep += "\n"
         return rep
+
 
 if __name__ == '__main__':
     print(netrc())
