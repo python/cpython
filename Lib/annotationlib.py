@@ -536,6 +536,13 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             for key, val in annos.items()
         }
     elif format == Format.FORWARDREF:
+        # In FORWARDREF format, try returning the owner's __annotations__ first,
+        # if they exist.
+        if owner is not None:
+            try:
+                return _get_dunder_annotations(owner)
+            except NameError:
+                pass
         # FORWARDREF is implemented similarly to STRING, but there are two changes,
         # at the beginning and the end of the process.
         # First, while STRING uses an empty dictionary as the namespace, so that all
@@ -683,13 +690,8 @@ def get_annotations(
             # For VALUE, we only look at __annotations__
             ann = _get_dunder_annotations(obj)
         case Format.FORWARDREF:
-            # For FORWARDREF, we use __annotations__ if it exists
-            try:
-                return dict(_get_dunder_annotations(obj))
-            except NameError:
-                pass
-
-            # But if __annotations__ threw a NameError, we try calling __annotate__
+            # First we use call_annotate_function(), which will internally also
+            # try __annotations__ if the FORWARDREF format is passed.
             ann = _get_and_call_annotate(obj, format)
             if ann is not None:
                 return ann
