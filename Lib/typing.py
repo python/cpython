@@ -126,6 +126,7 @@ __all__ = [
     'assert_never',
     'cast',
     'clear_overloads',
+    'copy_kwargs',
     'dataclass_transform',
     'evaluate_forward_ref',
     'final',
@@ -3801,6 +3802,44 @@ def get_protocol_members(tp: type, /) -> frozenset[str]:
     if not is_protocol(tp):
         raise TypeError(f'{tp!r} is not a Protocol')
     return frozenset(tp.__protocol_attrs__)
+
+
+_P = ParamSpec("_P")
+
+
+def copy_kwargs(
+    source_func: Callable[_P, Any]
+) -> Callable[[Callable[..., T]], Callable[_P, T]]:
+    """Cast the decorated function's call signature to the source_func's.
+
+    Use this decorator enhancing an upstream function while keeping its
+    call signature.
+    Returns the original function with the source_func's call signature.
+
+    Usage::
+
+        from typing import copy_kwargs, Any
+
+        def upstream_func(a: int, b: float, *, double: bool = False) -> float:
+            ...
+
+        @copy_kwargs(upstream_func)
+        def enhanced(
+            a: int, b: float, *args: Any, double: bool = False, **kwargs: Any
+        ) -> str:
+            ...
+
+    .. note::
+
+       Include ``*args`` and ``**kwargs`` in the signature of the decorated
+       function in order to avoid TypeErrors when the call signature of
+       *source_func* changes.
+    """
+
+    def return_func(func: Callable[..., T]) -> Callable[_P, T]:
+        return cast(Callable[_P, T], func)
+
+    return return_func
 
 
 def __getattr__(attr):
