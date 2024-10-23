@@ -52,6 +52,17 @@ int _Py_open_cloexec_works = -1;
 // The value must be the same in unicodeobject.c.
 #define MAX_UNICODE 0x10ffff
 
+/* Limit write size on terminals in Windows to keep the interpreter
+   feeling responsive.
+
+   This is higher than WRITE_LIMIT_CONSOLE because `.write()`
+   is targeted at non-console I/O (but may happen to touch a tty). Use
+   WinConsoleIO for best console interactivity.
+
+   This should ideally be bigger than DEFAULT_BUFFER_SIZE so common
+   case write to file on disk is quick. */
+#define WRITE_LIMIT_INTERACTIVE (5 * 1024 * 1024)
+
 // mbstowcs() and mbrtowc() errors
 static const size_t DECODE_ERROR = ((size_t)-1);
 static const size_t INCOMPLETE_CHARACTER = (size_t)-2;
@@ -1923,20 +1934,18 @@ _Py_write_impl(int fd, const void *buf, size_t count, int gil_held)
 
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
-    if (count > 32767) {
-        /* Issue #11395: the Windows console returns an error (12: not
-           enough space error) on writing into stdout if stdout mode is
-           binary and the length is greater than 66,000 bytes (or less,
-           depending on heap usage). */
+    /* isatty is guarded because don't want it in common case of
+       writing DEFAULT_BUFFER_SIZE to regular files (gh-121940). */
+    if (count > WRITE_LIMIT_INTERACTIVE) {
         if (gil_held) {
             Py_BEGIN_ALLOW_THREADS
             if (isatty(fd)) {
-                count = 32767;
+                count = _Py_LimitConsoleWriteSize(buf, count, WRITE_LIMIT_INTERACTIVE);
             }
             Py_END_ALLOW_THREADS
         } else {
             if (isatty(fd)) {
-                count = 32767;
+                count = _Py_LimitConsoleWriteSize(buf, count, WRITE_LIMIT_INTERACTIVE);
             }
         }
     }
@@ -3101,3 +3110,52 @@ _Py_IsValidFD(int fd)
     return (fstat(fd, &st) == 0);
 #endif
 }
+
+#ifdef MS_WINDOWS
+static size_t
+_find_last_utf8_boundary(const char *buf, size_t len)
+{
+    /* This function never returns 0, returns the original len instead */
+    DWORD count = 1;
+    if (len == 0 || (buf[len - 1] & 0x80) == 0) {
+        return len;
+    }
+    for (;; count++) {
+        if (count > 3 || count >= len) {
+            return len;
+        }
+        if ((buf[len - count] & 0xc0) != 0x80) {
+            return len - count;
+        }
+    }
+}
+
+/* Put a soft limit on the number of bytes to be written.
+
+   In older versions of Windows a hard limit was necessary because
+   there was a hard limit to the number of bytes (bpo-11395), but that
+   is not the case in Windows 8+.
+
+   For Windows 8+ the console host synchronizes I/O operations which
+   means a Ctrl-C doesn't generate an interrupt until after the write
+   is completed. That means large writes which take multiple seconds
+   will reduce responsiveness to interrupts.
+
+   This does a "soft cap" (not exact number of utf-16 bytes, but close
+   enough) to maintain responsiveness of consoles on
+   Windows (gh-121940). */
+size_t _Py_LimitConsoleWriteSize(const void *buf, size_t requested_size,
+                                 size_t cap_size) {
+    if (requested_size <= cap_size) {
+        return requested_size;
+    }
+
+    /* Fix for github issues gh-110913 and gh-82052.
+
+       Splitting utf-8 can't be done at arbitrary byte boundaries
+       because that results in broken utf-8 byte sequences being
+       presented to the user. */
+    return _find_last_utf8_boundary(buf, cap_size);
+}
+
+#endif
