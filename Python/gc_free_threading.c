@@ -1962,16 +1962,22 @@ custom_visitor_wrapper(const mi_heap_t *heap, const mi_heap_area_t *area,
 }
 
 void
-PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void *arg)
+_PyGC_VisitObjectsWorldStopped(PyInterpreterState *interp,
+                               gcvisitobjects_t callback, void *arg)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
     struct custom_visitor_args wrapper = {
         .callback = callback,
         .arg = arg,
     };
-
-    _PyEval_StopTheWorld(interp);
     gc_visit_heaps(interp, &custom_visitor_wrapper, &wrapper.base);
+}
+
+void
+PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void *arg)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    _PyGC_VisitObjectsWorldStopped(interp, callback, arg);
     _PyEval_StartTheWorld(interp);
 }
 

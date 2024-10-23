@@ -10,6 +10,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
 #include "pycore_object.h"        // _PyObject_SetDeferredRefcount
+#include "pycore_object_stack.h"
 #include "pycore_opcode_metadata.h" // _PyOpcode_Deopt, _PyOpcode_Caches
 #include "pycore_opcode_utils.h"  // RESUME_AT_FUNC_START
 #include "pycore_pymem.h"         // _PyMem_FreeDelayed
@@ -2822,6 +2823,140 @@ _PyCode_GetTLBC(PyCodeObject *co)
     result = get_tlbc_lock_held(co);
     Py_END_CRITICAL_SECTION();
     return result;
+}
+
+// My kingdom for a bitset
+struct flag_set {
+    uint8_t *flags;
+    Py_ssize_t size;
+};
+
+static inline int
+flag_is_set(struct flag_set *flags, Py_ssize_t idx)
+{
+    assert(idx >= 0);
+    return (idx < flags->size) && flags->flags[idx];
+}
+
+// Set the flag for each tlbc index in use
+static int
+get_indices_in_use(PyInterpreterState *interp, struct flag_set *in_use)
+{
+    assert(interp->stoptheworld.world_stopped);
+    assert(in_use->flags == NULL);
+    int32_t max_index = 0;
+    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
+        int32_t idx = ((_PyThreadStateImpl *) p)->tlbc_index;
+        if (idx > max_index) {
+            max_index = idx;
+        }
+    }
+    in_use->size = (size_t) max_index + 1;
+    in_use->flags = PyMem_Calloc(in_use->size, sizeof(*in_use->flags));
+    if (in_use->flags == NULL) {
+        return -1;
+    }
+    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
+        in_use->flags[((_PyThreadStateImpl *) p)->tlbc_index] = 1;
+    }
+    return 0;
+}
+
+struct get_code_args {
+    _PyObjectStack code_objs;
+    struct flag_set indices_in_use;
+    int err;
+};
+
+static void
+clear_get_code_args(struct get_code_args *args)
+{
+    if (args->indices_in_use.flags != NULL) {
+        PyMem_Free(args->indices_in_use.flags);
+        args->indices_in_use.flags = NULL;
+    }
+    _PyObjectStack_Clear(&args->code_objs);
+}
+
+static inline int
+is_bytecode_unused(_PyCodeArray *tlbc, Py_ssize_t idx,
+                   struct flag_set *indices_in_use)
+{
+    assert(idx > 0 && idx < tlbc->size);
+    return tlbc->entries[idx] != NULL && !flag_is_set(indices_in_use, idx);
+}
+
+static int
+get_code_with_unused_tlbc(PyObject *obj, struct get_code_args *args)
+{
+    if (!PyCode_Check(obj)) {
+        return 1;
+    }
+    PyCodeObject *co = (PyCodeObject *) obj;
+    _PyCodeArray *tlbc = co->co_tlbc;
+    // The first index always points at the main copy of the bytecode embedded
+    // in the code object.
+    for (Py_ssize_t i = 1; i < tlbc->size; i++) {
+        if (is_bytecode_unused(tlbc, i, &args->indices_in_use)) {
+            if (_PyObjectStack_Push(&args->code_objs, obj) < 0) {
+                args->err = -1;
+                return 0;
+            }
+            return 1;
+        }
+    }
+    return 1;
+}
+
+static void
+free_unused_bytecode(PyCodeObject *co, struct flag_set *indices_in_use)
+{
+    _PyCodeArray *tlbc = co->co_tlbc;
+    // The first index always points at the main copy of the bytecode embedded
+    // in the code object.
+    for (Py_ssize_t i = 1; i < tlbc->size; i++) {
+        if (is_bytecode_unused(tlbc, i, indices_in_use)) {
+            PyMem_Free(tlbc->entries[i]);
+            tlbc->entries[i] = NULL;
+        }
+    }
+}
+
+int
+_Py_ClearUnusedTLBC(PyInterpreterState *interp)
+{
+    struct get_code_args args = {
+        .code_objs = {NULL},
+        .indices_in_use = {NULL, 0},
+        .err = 0,
+    };
+    _PyEval_StopTheWorld(interp);
+    // Collect in-use tlbc indices
+    if (get_indices_in_use(interp, &args.indices_in_use) < 0) {
+        goto err;
+    }
+    // Collect code objects that have bytecode not in use by any thread
+    _PyGC_VisitObjectsWorldStopped(
+        interp, (gcvisitobjects_t)get_code_with_unused_tlbc, &args);
+    if (args.err < 0) {
+        goto err;
+    }
+    // Free unused bytecode. This must happen outside of gc_visit_heaps; it is
+    // unsafe to allocate or free any mimalloc managed memory when it's
+    // running.
+    PyObject *obj;
+    while ((obj = _PyObjectStack_Pop(&args.code_objs)) != NULL) {
+        free_unused_bytecode((PyCodeObject*) obj, &args.indices_in_use);
+    }
+    _PyEval_StartTheWorld(interp);
+    clear_get_code_args(&args);
+    return 0;
+
+err:
+    _PyEval_StartTheWorld(interp);
+    clear_get_code_args(&args);
+    PyErr_NoMemory();
+    return -1;
 }
 
 #endif

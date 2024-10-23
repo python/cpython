@@ -634,6 +634,11 @@ extern int32_t _Py_ReserveTLBCIndex(PyInterpreterState *interp);
 
 // Release the current thread's index into thread-local bytecode arrays
 extern void _Py_ClearTLBCIndex(_PyThreadStateImpl *tstate);
+
+// Free all TLBC copies not associated with live threads.
+//
+// Returns 0 on success or -1 on error.
+extern int _Py_ClearUnusedTLBC(PyInterpreterState *interp);
 #endif
 
 #ifdef __cplusplus
