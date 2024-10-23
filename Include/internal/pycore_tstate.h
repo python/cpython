@@ -42,8 +42,7 @@ typedef struct _PyThreadStateImpl {
         int is_finalized;
     } refcounts;
 
-    // When >1, code objects do not immortalize and intern their non-string
-    // constants.
+    // When >1, code objects do not immortalize their non-string constants.
     int suppress_immortalization;
 #endif
 

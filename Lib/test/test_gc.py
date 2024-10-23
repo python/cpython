@@ -599,9 +599,7 @@ class GCTests(unittest.TestCase):
         class UserIntSlots(int):
             __slots__ = ()
 
-        if not Py_GIL_DISABLED:
-            # gh-117783: modules may be immortalized in free-threaded build
-            self.assertTrue(gc.is_tracked(gc))
+        self.assertTrue(gc.is_tracked(gc))
         self.assertTrue(gc.is_tracked(UserClass))
         self.assertTrue(gc.is_tracked(UserClass()))
         self.assertTrue(gc.is_tracked(UserInt()))
