@@ -1,0 +1,2 @@
+Fix possible crash (in debug build), incorrect output or returning incorrect
+value from raw binary ``write()`` when writing to console on Windows.
