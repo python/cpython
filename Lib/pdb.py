@@ -139,14 +139,11 @@ def find_function(funcname, filename):
             if funcdef:
                 try:
                     code = compile(funcdef, filename, 'exec')
-                    for const in code.co_consts:
-                        if isinstance(const, CodeType) and const.co_name == funcname:
-                            funccode = const
-                            break
-                    else:
-                        continue
                 except SyntaxError:
                     continue
+                # We should always be able to find the code object here
+                funccode = next(const for const in code.co_consts if
+                                isinstance(const, CodeType) and const.co_name == funcname)
                 lineno_offset = find_first_executable_line(funccode)
                 return funcname, filename, funcstart + lineno_offset - 1
     return None
