@@ -13984,6 +13984,147 @@ unicode_getnewargs(PyObject *v, PyObject *Py_UNUSED(ignored))
     return Py_BuildValue("(N)", copy);
 }
 
+/* Dedent a string.
+   Behaviour is expected to be an exact match of `textwrap.dedent`.
+   Return a new reference on success, NULL with exception set on error.
+   */
+PyAPI_FUNC(PyObject *)
+_PyUnicode_Dedent(PyObject *unicode)
+{
+    Py_ssize_t src_len = 0;
+    const char *src = PyUnicode_AsUTF8AndSize(unicode, &src_len);
+    if (!src) {
+        return NULL;
+    }
+    if (src_len <= 0) {
+        Py_INCREF(unicode);
+        return unicode;
+    }
+
+    const char *end = src + src_len;
+
+    // [candidate_start, candidate_start + candidate_len)
+    // describes the current longest common leading whitespace
+    const char *candidate_start = NULL;
+    Py_ssize_t candidate_len = 0;
+
+    for (const char *iter = src; iter < end; ++iter) {
+        const char *line_start = iter;
+        const char *leading_whitespace_end = NULL;
+
+        // scan the whole line
+        while (iter < end && *iter != '\n') {
+            if (!leading_whitespace_end && *iter != ' ' && *iter != '\t') {
+                /* `iter` points to the first non-whitespace character
+                   in this line */
+                if (iter == line_start) {
+                    // some line has no indent, fast exit!
+                    Py_INCREF(unicode);
+                    return unicode;
+                }
+                leading_whitespace_end = iter;
+            }
+            ++iter;
+        }
+
+        // if this line has all white space, skip it
+        if (!leading_whitespace_end) {
+            continue;
+        }
+
+        if (!candidate_start) {
+            // update the first leading whitespace
+            candidate_start = line_start;
+            candidate_len = leading_whitespace_end - line_start;
+            assert(candidate_len > 0);
+        } else {
+            /* We then compare with the current longest leading whitespace.
+
+               [line_start, leading_whitespace_end) is the leading whitespace of
+               this line,
+
+               [candidate_start, candidate_start + candidate_len)
+               is the leading whitespace of the current longest leading
+               whitespace. */
+            Py_ssize_t new_candidate_len = 0;
+
+            for (const char *candidate_iter = candidate_start,
+                            *line_iter = line_start;
+                 candidate_iter < candidate_start + candidate_len &&
+                 line_iter < leading_whitespace_end;
+                 ++candidate_iter, ++line_iter) {
+                if (*candidate_iter != *line_iter) {
+                    break;
+                }
+                ++new_candidate_len;
+            }
+
+            candidate_len = new_candidate_len;
+            if (candidate_len == 0) {
+                // No common things now, fast exit!
+                Py_INCREF(unicode);
+                return unicode;
+            }
+        }
+    }
+
+    assert(candidate_len >= 0);
+    /* Final check for strings that contain nothing but whitespace. */
+    if (candidate_len == 0) {
+        Py_INCREF(unicode);
+        return unicode;
+    }
+
+    // now we should trigger a dedent
+    char *dest = PyMem_Malloc(src_len);
+    if (!dest) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    char *dest_iter = dest;
+
+    for (const char *iter = src; iter < end; ++iter) {
+        const char *line_start = iter;
+        bool in_leading_space = true;
+
+        // iterate over a line to find the end of a line
+        while (iter < end && *iter != '\n') {
+            if (in_leading_space && *iter != ' ' && *iter != '\t') {
+                in_leading_space = false;
+            }
+            ++iter;
+        }
+
+        // invariant: *iter == '\n' or iter == end
+        bool append_newline = iter < end;
+
+        // if this line has all white space, write '\n' and continue
+        if (in_leading_space && append_newline) {
+            *dest_iter++ = '\n';
+            continue;
+        }
+
+        /* copy [new_line_start + candidate_len, iter) to buffer, then
+            conditionally append '\n' */
+
+        Py_ssize_t new_line_len = iter - line_start - candidate_len;
+        assert(new_line_len >= 0);
+        memcpy(dest_iter, line_start + candidate_len, new_line_len);
+
+        dest_iter += new_line_len;
+
+        if (append_newline) {
+            *dest_iter++ = '\n';
+        }
+    }
+
+    Py_ssize_t dest_len = dest_iter - dest;
+
+    PyObject *res = PyUnicode_FromStringAndSize(dest, dest_len);
+    PyMem_Free(dest);
+    return res;
+}
+
 static PyMethodDef unicode_methods[] = {
     UNICODE_ENCODE_METHODDEF
     UNICODE_REPLACE_METHODDEF
