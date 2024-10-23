@@ -206,6 +206,18 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
+        # gh-125842: Windows uses 32-bit unsigned integers for exit codes
+        # so a -1 exit code is sometimes interpreted as 4294967295.
+        rc, out, err = assert_python_failure('-c', 'import sys; sys.exit(4294967295)')
+        self.assertIn(rc, (-1, 255, 4294967295))
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
+        rc, out, err = assert_python_failure('-c', 'import sys; sys.exit(2**128)')
+        self.assertIn(rc, (-1, 255))
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
         # call with integer argument
         with self.assertRaises(SystemExit) as cm:
             sys.exit(42)
