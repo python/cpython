@@ -109,139 +109,69 @@ _PyToken_OneChar(int c1)
     return OP;
 }
 
+#define NOTEQUAL_CODE (int)('!' << 8 | '=')
+#define PERCENTEQUAL_CODE (int)('%' << 8 | '=')
+#define AMPEREQUAL_CODE (int)('&' << 8 | '=')
+#define DOUBLESTAR_CODE (int)('*' << 8 | '*')
+#define STAREQUAL_CODE (int)('*' << 8 | '=')
+#define PLUSEQUAL_CODE (int)('+' << 8 | '=')
+#define MINEQUAL_CODE (int)('-' << 8 | '=')
+#define RARROW_CODE (int)('-' << 8 | '>')
+#define DOUBLESLASH_CODE (int)('/' << 8 | '/')
+#define SLASHEQUAL_CODE (int)('/' << 8 | '=')
+#define COLONEQUAL_CODE (int)(':' << 8 | '=')
+#define LEFTSHIFT_CODE (int)('<' << 8 | '<')
+#define LESSEQUAL_CODE (int)('<' << 8 | '=')
+#define EQEQUAL_CODE (int)('=' << 8 | '=')
+#define GREATEREQUAL_CODE (int)('>' << 8 | '=')
+#define RIGHTSHIFT_CODE (int)('>' << 8 | '>')
+#define ATEQUAL_CODE (int)('@' << 8 | '=')
+#define CIRCUMFLEXEQUAL_CODE (int)('^' << 8 | '=')
+#define VBAREQUAL_CODE (int)('|' << 8 | '=')
+
 int
 _PyToken_TwoChars(int c1, int c2)
 {
-    switch (c1) {
-    case '!':
-        switch (c2) {
-        case '=': return NOTEQUAL;
-        }
-        break;
-    case '%':
-        switch (c2) {
-        case '=': return PERCENTEQUAL;
-        }
-        break;
-    case '&':
-        switch (c2) {
-        case '=': return AMPEREQUAL;
-        }
-        break;
-    case '*':
-        switch (c2) {
-        case '*': return DOUBLESTAR;
-        case '=': return STAREQUAL;
-        }
-        break;
-    case '+':
-        switch (c2) {
-        case '=': return PLUSEQUAL;
-        }
-        break;
-    case '-':
-        switch (c2) {
-        case '=': return MINEQUAL;
-        case '>': return RARROW;
-        }
-        break;
-    case '/':
-        switch (c2) {
-        case '/': return DOUBLESLASH;
-        case '=': return SLASHEQUAL;
-        }
-        break;
-    case ':':
-        switch (c2) {
-        case '=': return COLONEQUAL;
-        }
-        break;
-    case '<':
-        switch (c2) {
-        case '<': return LEFTSHIFT;
-        case '=': return LESSEQUAL;
-        case '>': return NOTEQUAL;
-        }
-        break;
-    case '=':
-        switch (c2) {
-        case '=': return EQEQUAL;
-        }
-        break;
-    case '>':
-        switch (c2) {
-        case '=': return GREATEREQUAL;
-        case '>': return RIGHTSHIFT;
-        }
-        break;
-    case '@':
-        switch (c2) {
-        case '=': return ATEQUAL;
-        }
-        break;
-    case '^':
-        switch (c2) {
-        case '=': return CIRCUMFLEXEQUAL;
-        }
-        break;
-    case '|':
-        switch (c2) {
-        case '=': return VBAREQUAL;
-        }
-        break;
+    switch (c1 << 8 | c2) {
+    case NOTEQUAL_CODE: return NOTEQUAL;
+    case PERCENTEQUAL_CODE: return PERCENTEQUAL;
+    case AMPEREQUAL_CODE: return AMPEREQUAL;
+    case DOUBLESTAR_CODE: return DOUBLESTAR;
+    case STAREQUAL_CODE: return STAREQUAL;
+    case PLUSEQUAL_CODE: return PLUSEQUAL;
+    case MINEQUAL_CODE: return MINEQUAL;
+    case RARROW_CODE: return RARROW;
+    case DOUBLESLASH_CODE: return DOUBLESLASH;
+    case SLASHEQUAL_CODE: return SLASHEQUAL;
+    case COLONEQUAL_CODE: return COLONEQUAL;
+    case LEFTSHIFT_CODE: return LEFTSHIFT;
+    case LESSEQUAL_CODE: return LESSEQUAL;
+    case EQEQUAL_CODE: return EQEQUAL;
+    case GREATEREQUAL_CODE: return GREATEREQUAL;
+    case RIGHTSHIFT_CODE: return RIGHTSHIFT;
+    case ATEQUAL_CODE: return ATEQUAL;
+    case CIRCUMFLEXEQUAL_CODE: return CIRCUMFLEXEQUAL;
+    case VBAREQUAL_CODE: return VBAREQUAL;
     }
     return OP;
 }
 
+#define DOUBLESTAREQUAL_CODE (int)('*' << 16 | '*' << 8 | '=')
+#define ELLIPSIS_CODE (int)('.' << 16 | '.' << 8 | '.')
+#define DOUBLESLASHEQUAL_CODE (int)('/' << 16 | '/' << 8 | '=')
+#define LEFTSHIFTEQUAL_CODE (int)('<' << 16 | '<' << 8 | '=')
+#define RIGHTSHIFTEQUAL_CODE (int)('>' << 16 | '>' << 8 | '=')
+
+
 int
 _PyToken_ThreeChars(int c1, int c2, int c3)
 {
-    switch (c1) {
-    case '*':
-        switch (c2) {
-        case '*':
-            switch (c3) {
-            case '=': return DOUBLESTAREQUAL;
-            }
-            break;
-        }
-        break;
-    case '.':
-        switch (c2) {
-        case '.':
-            switch (c3) {
-            case '.': return ELLIPSIS;
-            }
-            break;
-        }
-        break;
-    case '/':
-        switch (c2) {
-        case '/':
-            switch (c3) {
-            case '=': return DOUBLESLASHEQUAL;
-            }
-            break;
-        }
-        break;
-    case '<':
-        switch (c2) {
-        case '<':
-            switch (c3) {
-            case '=': return LEFTSHIFTEQUAL;
-            }
-            break;
-        }
-        break;
-    case '>':
-        switch (c2) {
-        case '>':
-            switch (c3) {
-            case '=': return RIGHTSHIFTEQUAL;
-            }
-            break;
-        }
-        break;
+    switch (c1 << 16 | c2 << 8 | c3) {
+        case DOUBLESTAREQUAL_CODE: return DOUBLESTAREQUAL;
+        case ELLIPSIS_CODE: return ELLIPSIS;
+        case DOUBLESLASHEQUAL_CODE: return DOUBLESLASHEQUAL;
+        case LEFTSHIFTEQUAL_CODE: return LEFTSHIFTEQUAL;
+        case RIGHTSHIFTEQUAL_CODE: return RIGHTSHIFTEQUAL;
     }
     return OP;
 }
