@@ -56,6 +56,7 @@ import io
 import os
 import sys
 from enum import IntEnum, IntFlag
+from math import floor
 
 try:
     import errno
@@ -841,15 +842,23 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
     and an ExceptionGroup of all errors if *all_errors* is True.
     """
 
+    MIN_TIMEOUT_PER_ADDR = 2
+    MIN_TIMEOUT_THRESHOLD = 2
+
     host, port = address
     exceptions = []
-    for res in getaddrinfo(host, port, 0, SOCK_STREAM):
+    addrs = getaddrinfo(host, port, 0, SOCK_STREAM)
+    if timeout is not _GLOBAL_DEFAULT_TIMEOUT:
+        per_addr_timeout = max(timeout / len(addrs), MIN_TIMEOUT_PER_ADDR) if timeout >= MIN_TIMEOUT_THRESHOLD else timeout
+    sum_timeouts_so_far = 0
+    for res in addrs:
         af, socktype, proto, canonname, sa = res
         sock = None
         try:
             sock = socket(af, socktype, proto)
             if timeout is not _GLOBAL_DEFAULT_TIMEOUT:
-                sock.settimeout(timeout)
+                sock.settimeout(per_addr_timeout)
+                sum_timeouts_so_far += per_addr_timeout
             if source_address:
                 sock.bind(source_address)
             sock.connect(sa)
@@ -863,6 +872,9 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
             exceptions.append(exc)
             if sock is not None:
                 sock.close()
+
+        if sum_timeouts_so_far >= timeout:
+            break
 
     if len(exceptions):
         try:
