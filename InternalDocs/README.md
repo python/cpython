@@ -19,6 +19,8 @@ Compiling Python Source Code
 
 - [Compiler Design](compiler.md)
 
+- [Changing Python's Grammar](changing_grammar.md)
+
 Runtime Objects
 ---
 
