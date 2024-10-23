@@ -822,7 +822,7 @@ class ImportTests(unittest.TestCase):
                 expected_error = error + (
                     rb" \(consider renaming '.*fractions.py' since it has the "
                     rb"same name as the standard library module named 'fractions' "
-                    rb"and the import system gives it precedence\)"
+                    rb"and prevents importing that standard library module\)"
                 )
 
                 popen = script_helper.spawn_python(os.path.join(tmp, "fractions.py"), cwd=tmp)
@@ -883,7 +883,7 @@ class ImportTests(unittest.TestCase):
                 expected_error = error + (
                     rb" \(consider renaming '.*[\\/]fractions[\\/]+__init__.py' since it has the "
                     rb"same name as the standard library module named 'fractions' "
-                    rb"and the import system gives it precedence\)"
+                    rb"and prevents importing that standard library module\)"
                 )
 
                 popen = script_helper.spawn_python(os.path.join(tmp, "main.py"), cwd=tmp)
@@ -1122,7 +1122,7 @@ except ImportError as e:
                 expected_error = error + (
                     rb" \(consider renaming '.*fractions.py' since it has the "
                     rb"same name as the standard library module named 'fractions' "
-                    rb"and the import system gives it precedence\)"
+                    rb"and prevents importing that standard library module\)"
                 )
 
                 popen = script_helper.spawn_python("main.py", cwd=tmp)

@@ -2873,7 +2873,7 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
             "cannot import name %R from %R "
             "(consider renaming %R since it has the same "
             "name as the standard library module named %R "
-            "and the import system gives it precedence)",
+            "and prevents importing that standard library module)",
             name, mod_name_or_unknown, origin, mod_name_or_unknown
         );
     }
