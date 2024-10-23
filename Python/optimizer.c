@@ -443,8 +443,12 @@ BRANCH_TO_GUARD[4][2] = {
 #define CONFIDENCE_CUTOFF 333
 
 #ifdef Py_DEBUG
-#define DPRINTF(level, ...) \
-    if (lltrace >= (level)) { printf(__VA_ARGS__); }
+#define DPRINTF(level, ...)         \
+    do {                            \
+        if (lltrace >= (level)) {   \
+            printf(__VA_ARGS__);    \
+        }                           \
+    } while (0)
 #else
 #define DPRINTF(level, ...)
 #endif
@@ -468,56 +472,70 @@ add_to_trace(
 }
 
 #ifdef Py_DEBUG
-#define ADD_TO_TRACE(OPCODE, OPARG, OPERAND, TARGET) \
-    assert(trace_length < max_length); \
-    trace_length = add_to_trace(trace, trace_length, (OPCODE), (OPARG), (OPERAND), (TARGET)); \
-    if (lltrace >= 2) { \
-        printf("%4d ADD_TO_TRACE: ", trace_length); \
-        _PyUOpPrint(&trace[trace_length-1]); \
-        printf("\n"); \
-    }
+#define ADD_TO_TRACE(OPCODE, OPARG, OPERAND, TARGET)        \
+    do {                                                    \
+        assert(trace_length < max_length);                  \
+        trace_length = add_to_trace(trace, trace_length,    \
+                                    (OPCODE), (OPARG),      \
+                                    (OPERAND), (TARGET));   \
+        if (lltrace >= 2) {                                 \
+            printf("%4d ADD_TO_TRACE: ", trace_length);     \
+            _PyUOpPrint(&trace[trace_length-1]);            \
+            printf("\n");                                   \
+        }                                                   \
+    } while (0)
 #else
-#define ADD_TO_TRACE(OPCODE, OPARG, OPERAND, TARGET) \
-    assert(trace_length < max_length); \
-    trace_length = add_to_trace(trace, trace_length, (OPCODE), (OPARG), (OPERAND), (TARGET));
+#define ADD_TO_TRACE(OPCODE, OPARG, OPERAND, TARGET)        \
+    do {                                                    \
+        assert(trace_length < max_length);                  \
+        trace_length = add_to_trace(trace, trace_length,    \
+                                    (OPCODE), (OPARG),      \
+                                    (OPERAND), (TARGET));   \
+    } while (0)
 #endif
 
 #define INSTR_IP(INSTR, CODE) \
     ((uint32_t)((INSTR) - ((_Py_CODEUNIT *)(CODE)->co_code_adaptive)))
 
 // Reserve space for n uops
-#define RESERVE_RAW(n, opname) \
-    if (trace_length + (n) > max_length) { \
-        DPRINTF(2, "No room for %s (need %d, got %d)\n", \
-                (opname), (n), max_length - trace_length); \
-        OPT_STAT_INC(trace_too_long); \
-        goto done; \
-    }
+#define RESERVE_RAW(N, OPNAME)                                  \
+    do {                                                        \
+        if (trace_length + (N) > max_length) {                  \
+            DPRINTF(2, "No room for %s (need %d, got %d)\n",    \
+                    (OPNAME), (N), max_length - trace_length);  \
+            OPT_STAT_INC(trace_too_long);                       \
+            goto done;                                          \
+        }                                                       \
+    } while (0)
 
 // Reserve space for N uops, plus 3 for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
 #define RESERVE(needed) RESERVE_RAW((needed) + 3, _PyUOpName(opcode))
 
 // Trace stack operations (used by _PUSH_FRAME, _RETURN_VALUE)
-#define TRACE_STACK_PUSH() \
-    if (trace_stack_depth >= TRACE_STACK_SIZE) { \
-        DPRINTF(2, "Trace stack overflow\n"); \
-        OPT_STAT_INC(trace_stack_overflow); \
-        return 0; \
-    } \
-    assert(func == NULL || func->func_code == (PyObject *)code); \
-    trace_stack[trace_stack_depth].func = func; \
-    trace_stack[trace_stack_depth].code = code; \
-    trace_stack[trace_stack_depth].instr = instr; \
-    trace_stack_depth++;
-#define TRACE_STACK_POP() \
-    if (trace_stack_depth <= 0) { \
-        Py_FatalError("Trace stack underflow\n"); \
-    } \
-    trace_stack_depth--; \
-    func = trace_stack[trace_stack_depth].func; \
-    code = trace_stack[trace_stack_depth].code; \
-    assert(func == NULL || func->func_code == (PyObject *)code); \
-    instr = trace_stack[trace_stack_depth].instr;
+#define TRACE_STACK_PUSH()                                              \
+    do {                                                                \
+        if (trace_stack_depth >= TRACE_STACK_SIZE) {                    \
+            DPRINTF(2, "Trace stack overflow\n");                       \
+            OPT_STAT_INC(trace_stack_overflow);                         \
+            return 0;                                                   \
+        }                                                               \
+        assert(func == NULL || func->func_code == (PyObject *)code);    \
+        trace_stack[trace_stack_depth].func = func;                     \
+        trace_stack[trace_stack_depth].code = code;                     \
+        trace_stack[trace_stack_depth].instr = instr;                   \
+        trace_stack_depth++;                                            \
+    } while (0)
+#define TRACE_STACK_POP()                                               \
+    do {                                                                \
+        if (trace_stack_depth <= 0) {                                   \
+            Py_FatalError("Trace stack underflow\n");                   \
+        }                                                               \
+        trace_stack_depth--;                                            \
+        func = trace_stack[trace_stack_depth].func;                     \
+        code = trace_stack[trace_stack_depth].code;                     \
+        assert(func == NULL || func->func_code == (PyObject *)code);    \
+        instr = trace_stack[trace_stack_depth].instr;                   \
+    } while (0)
 
 /* Returns the length of the trace on success,
  * 0 if it failed to produce a worthwhile trace,
@@ -1069,11 +1087,13 @@ allocate_executor(int exit_count, int length)
 
 #ifdef Py_DEBUG
 
-#define CHECK(PRED) \
-if (!(PRED)) { \
-    printf(#PRED " at %d\n", i); \
-    assert(0); \
-}
+#define CHECK(PRED)                         \
+    do {                                    \
+        if (!(PRED)) {                      \
+            printf(#PRED " at %d\n", i);    \
+            assert(0);                      \
+        }                                   \
+    } while (0)
 
 static int
 target_unused(int opcode)

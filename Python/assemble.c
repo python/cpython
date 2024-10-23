@@ -19,9 +19,11 @@
 #define ERROR -1
 
 #define RETURN_IF_ERROR(X)  \
-    if ((X) < 0) {          \
-        return ERROR;       \
-    }
+    do {                    \
+        if ((X) < 0) {      \
+            return ERROR;   \
+        }                   \
+    } while (0)             \
 
 typedef _Py_SourceLocation location;
 typedef _PyInstruction instruction;

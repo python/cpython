@@ -6228,15 +6228,15 @@ os_uname_impl(PyObject *module)
     if (value == NULL)
         return NULL;
 
-#define SET(i, field) \
-    { \
-    PyObject *o = PyUnicode_DecodeFSDefault(field); \
-    if (!o) { \
-        Py_DECREF(value); \
-        return NULL; \
-    } \
-    PyStructSequence_SET_ITEM(value, i, o); \
-    } \
+#define SET(INDEX, FIELD)                               \
+    do {                                                \
+        PyObject *o = PyUnicode_DecodeFSDefault(FIELD); \
+        if (!o) {                                       \
+            Py_DECREF(value);                           \
+            return NULL;                                \
+        }                                               \
+        PyStructSequence_SET_ITEM(value, INDEX, o);     \
+    } while (0)
 
     SET(0, u.sysname);
     SET(1, u.nodename);
@@ -10576,15 +10576,15 @@ build_times_result(PyObject *module, double user, double system,
     if (value == NULL)
         return NULL;
 
-#define SET(i, field) \
-    { \
-    PyObject *o = PyFloat_FromDouble(field); \
-    if (!o) { \
-        Py_DECREF(value); \
-        return NULL; \
-    } \
-    PyStructSequence_SET_ITEM(value, i, o); \
-    } \
+#define SET(INDEX, FIELD)                           \
+    do {                                            \
+        PyObject *o = PyFloat_FromDouble(FIELD);    \
+        if (!o) {                                   \
+            Py_DECREF(value);                       \
+            return NULL;                            \
+        }                                           \
+        PyStructSequence_SET_ITEM(value, INDEX, o); \
+    } while (0)
 
     SET(0, user);
     SET(1, system);
