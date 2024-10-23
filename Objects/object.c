@@ -159,11 +159,27 @@ _PyDebug_PrintTotalRefs(void) {
 
 #ifdef Py_TRACE_REFS
 
-#define REFCHAIN(interp) &interp->object_state.refchain
+#define REFCHAIN(interp) interp->object_state.refchain
+
+static inline int
+has_own_refchain(PyInterpreterState *interp)
+{
+    if (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC) {
+        return (_Py_IsMainInterpreter(interp)
+            || _PyInterpreterState_Main() == NULL);
+    }
+    return 1;
+}
 
 static inline void
 init_refchain(PyInterpreterState *interp)
 {
+    if (!has_own_refchain(interp)) {
+        // Legacy subinterpreters share a refchain with the main interpreter.
+        REFCHAIN(interp) = REFCHAIN(_PyInterpreterState_Main());
+        return;
+    }
+    REFCHAIN(interp) = &interp->object_state._refchain_obj;
     PyObject *refchain = REFCHAIN(interp);
     refchain->_ob_prev = refchain;
     refchain->_ob_next = refchain;
@@ -2010,9 +2026,7 @@ void
 _PyObject_InitState(PyInterpreterState *interp)
 {
 #ifdef Py_TRACE_REFS
-    if (!_Py_IsMainInterpreter(interp)) {
-        init_refchain(interp);
-    }
+    init_refchain(interp);
 #endif
 }
 
@@ -2218,42 +2232,6 @@ _Py_NewReferenceNoTotal(PyObject *op)
 
 
 #ifdef Py_TRACE_REFS
-/* Make sure the ref is associated with the right interpreter.
- * This only needs special attention for heap-allocated objects
- * that have been immortalized, and only when the object might
- * outlive the interpreter where it was created.  That means the
- * object was necessarily created using a global allocator
- * (i.e. from the main interpreter).  Thus in that specific case
- * we move the object over to the main interpreter's refchain.
- *
- * This was added for the sake of the immortal interned strings,
- * where legacy subinterpreters share the main interpreter's
- * interned dict (and allocator), and therefore the strings can
- * outlive the subinterpreter.
- *
- * It may make sense to fold this into _Py_SetImmortalUntracked(),
- * but that requires further investigation.  In the meantime, it is
- * up to the caller to know if this is needed.  There should be
- * very few cases.
- */
-void
-_Py_NormalizeImmortalReference(PyObject *op)
-{
-    assert(_Py_IsImmortal(op));
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (!_PyRefchain_IsTraced(interp, op)) {
-        return;
-    }
-    PyInterpreterState *main_interp = _PyInterpreterState_Main();
-    if (interp != main_interp
-           && interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC)
-    {
-        assert(!_PyRefchain_IsTraced(main_interp, op));
-        _PyRefchain_Remove(interp, op);
-        _PyRefchain_Trace(main_interp, op);
-    }
-}
-
 void
 _Py_ForgetReference(PyObject *op)
 {

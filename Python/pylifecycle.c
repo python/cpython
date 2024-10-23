@@ -650,6 +650,10 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return status;
     }
 
+    // This could be done in init_interpreter() (in pystate.c) if it
+    // didn't depend on interp->feature_flags being set already.
+    _PyObject_InitState(interp);
+
     PyThreadState *tstate = _PyThreadState_New(interp);
     if (tstate == NULL) {
         return _PyStatus_ERR("can't make first thread");
@@ -2102,6 +2106,10 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
     }
+
+    // This could be done in init_interpreter() (in pystate.c) if it
+    // didn't depend on interp->feature_flags being set already.
+    _PyObject_InitState(interp);
 
     status = init_interp_create_gil(tstate, config->gil);
     if (_PyStatus_EXCEPTION(status)) {

@@ -2294,3 +2294,14 @@ email
   check if the *strict* paramater is available.
   (Contributed by Thomas Dwyer and Victor Stinner for :gh:`102988` to improve
   the CVE-2023-27043 fix.)
+
+
+Notable changes in 3.12.8
+=========================
+
+sys
+---
+
+* The previously undocumented special function :func:`sys.getobjects`,
+  which only exists in specialized builds of Python, may now return objects
+  from other interpreters than the one it's called in.
