@@ -324,6 +324,7 @@ root_doc = 'contents'
 gettext_additional_targets = [
     'index',
     'literal-block',
+    'doctest-block',
 ]
 
 # Options for HTML output
