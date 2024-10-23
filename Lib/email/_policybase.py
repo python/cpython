@@ -307,8 +307,8 @@ class Compat32(Policy):
 
         """
         name, value = sourcelines[0].split(':', 1)
-        value = value.lstrip(' \t') + ''.join(sourcelines[1:])
-        return (name, value.rstrip('\r\n'))
+        value = value + ''.join(sourcelines[1:])
+        return (name, value.lstrip(' \r\n\t').rstrip('\r\n'))
 
     def header_store_parse(self, name, value):
         """+
