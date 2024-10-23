@@ -464,6 +464,12 @@ Deprecated
   as a single positional argument.
   (Contributed by Serhiy Storchaka in :gh:`109218`.)
 
+* :mod:`argparse`:
+  Deprecated the :class:`argparse.FileType` type converter.
+  Anything with resource management should be done downstream after the
+  arguments are parsed.
+  (Contributed by Serhiy Storchaka in :gh:`58032`.)
+
 * :mod:`multiprocessing` and :mod:`concurrent.futures`:
   The default start method (see :ref:`multiprocessing-start-methods`) changed
   away from *fork* to *forkserver* on platforms where it was not already

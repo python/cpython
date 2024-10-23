@@ -18,11 +18,12 @@ command-line and writes the result to a file::
         'integers', metavar='int', nargs='+', type=int,
         help='an integer to be summed')
     parser.add_argument(
-        '--log', default=sys.stdout, type=argparse.FileType('w'),
+        '--log',
         help='the file where the sum should be written')
     args = parser.parse_args()
-    args.log.write('%s' % sum(args.integers))
-    args.log.close()
+    with (open(args.log, 'w') if args.log is not None
+          else contextlib.nullcontext(sys.stdout)) as log:
+        log.write('%s' % sum(args.integers))
 
 The module contains the following public classes:
 
@@ -39,7 +40,8 @@ The module contains the following public classes:
 
     - FileType -- A factory for defining types of files to be created. As the
         example above shows, instances of FileType are typically passed as
-        the type= argument of add_argument() calls.
+        the type= argument of add_argument() calls. Deprecated since
+        Python 3.14.
 
     - Action -- The base class for parser actions. Typically actions are
         selected by passing strings like 'store_true' or 'append_const' to
@@ -1252,7 +1254,7 @@ class _ExtendAction(_AppendAction):
 # ==============
 
 class FileType(object):
-    """Factory for creating file object types
+    """Deprecated factory for creating file object types
 
     Instances of FileType are typically passed as type= arguments to the
     ArgumentParser add_argument() method.
@@ -1269,6 +1271,12 @@ class FileType(object):
     """
 
     def __init__(self, mode='r', bufsize=-1, encoding=None, errors=None):
+        import warnings
+        warnings.warn(
+            "FileType is deprecated. Simply open files after parsing arguments.",
+            category=PendingDeprecationWarning,
+            stacklevel=2
+        )
         self._mode = mode
         self._bufsize = bufsize
         self._encoding = encoding
