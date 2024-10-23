@@ -50,6 +50,12 @@ repos:
       - id: trailing-whitespace
         types_or: [c, inc, python, rst]
 
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.29.4
+    hooks:
+      - id: check-dependabot
+      - id: check-github-workflows
+
   - repo: https://github.com/sphinx-contrib/sphinx-lint
     rev: v1.0.0
     hooks:
