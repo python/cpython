@@ -1950,6 +1950,22 @@ source:
     ValueError: line 0 of the doctest for s has an option directive on a line with no example: '# doctest: +ELLIPSIS'
 
     >>> _colorize.COLORIZE = save_colorize
+
+You can skip following examples via `raise SkipTest`:
+
+    >>> def f(x):
+    ...     r'''
+    ...     >>> print(1) # first success
+    ...     1
+    ...     >>> raise doctest.SkipTest("All tests after this line will be skipped")
+    ...     >>> print(4) # second skipped success
+    ...     4
+    ...     >>> print(5) # first skipped failure
+    ...     500
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    TestResults(failed=0, attempted=4, skipped=3)
 """
 
 def test_testsource(): r"""
@@ -2474,12 +2490,13 @@ def test_DocFileSuite():
 
          >>> suite = doctest.DocFileSuite('test_doctest.txt',
          ...                              'test_doctest4.txt',
-         ...                              'test_doctest_skip.txt')
+         ...                              'test_doctest_skip.txt',
+         ...                              'test_doctest_skip2.txt')
          >>> result = suite.run(unittest.TestResult())
          >>> result
-         <unittest.result.TestResult run=3 errors=0 failures=1>
-        >>> len(result.skipped)
-        1
+         <unittest.result.TestResult run=4 errors=0 failures=1>
+         >>> len(result.skipped)  # not all examples in test_doctest_skip2 are skipped
+         1
 
        You can specify initial global variables:
 

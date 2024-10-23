@@ -524,6 +524,41 @@ Some details you should read once, but won't need to remember:
      TypeError: unsupported operand type(s) for +: 'int' and 'NoneType'
 
 
+Skipping Tests
+^^^^^^^^^^^^^^
+
+You can skip all or some test examples with :exc:`SkipTest` exception.
+
+Let's say that you have some Python-version-specific API:
+
+.. doctest::
+
+   >>> import sys
+
+   >>> if sys.version_info >= (3, 14):
+   ...    def process_data():
+   ...       return 'processed data'
+
+And you want to mention it in the doctest and only run it
+for the appropriate Python versions:
+
+.. doctest::
+
+   >>> if sys.version_info < (3, 14):
+   ...     import doctest
+   ...     raise doctest.SkipTest('This test is only for 3.14+')
+
+   >>> # This line and below will only be executed by doctest on 3.14+
+   >>> process_data()
+   'processed data'
+
+.. exception:: SkipTest
+
+   Special exception after raising it, all test examples will be skipped.
+
+   .. versionadded:: 3.14
+
+
 .. _option-flags-and-directives:
 .. _doctest-options:
 
@@ -630,6 +665,8 @@ doctest decides whether actual output matches an example's expected output:
    depend on resources which would be unavailable to the test driver.
 
    The SKIP flag can also be used for temporarily "commenting out" examples.
+
+   See also: :exc:`~SkipTest`.
 
 
 .. data:: COMPARISON_FLAGS
