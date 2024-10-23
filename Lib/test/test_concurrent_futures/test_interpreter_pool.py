@@ -369,7 +369,6 @@ class AsyncioTest(InterpretersMixin, testasyncio_utils.TestCase):
         self.assertNotEqual(interpid, unexpected)
 
 
-
 def setUpModule():
     setup_module()
 
