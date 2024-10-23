@@ -980,7 +980,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         p_start = tok->start;
         p_end = tok->cur;
         if (tok->tok_mode_stack_index + 1 >= MAXFSTRINGLEVEL) {
-            return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "too many nested f-strings"));
+            return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "too many nested f-strings or t-strings"));
         }
         tokenizer_mode *the_current_tok = TOK_NEXT_MODE(tok);
         the_current_tok->kind = TOK_FSTRING_MODE;
@@ -1082,7 +1082,8 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     tokenizer_mode *the_current_tok = TOK_GET_MODE(tok);
                     if (the_current_tok->f_string_quote == quote &&
                         the_current_tok->f_string_quote_size == quote_size) {
-                        return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "f-string: expecting '}'", start));
+                        return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
+                            "%c-string: expecting '}'", TOK_GET_MODE(tok)->tstring ? 't' : 'f'));
                     }
                 }
 
@@ -1211,7 +1212,8 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     case ']':
     case '}':
         if (INSIDE_FSTRING(tok) && !current_tok->curly_bracket_depth && c == '}') {
-            return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "f-string: single '}' is not allowed"));
+            return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
+                "%c-string: single '}' is not allowed", TOK_GET_MODE(tok)->tstring ? 't' : 'f'));
         }
         if (!tok->tok_extra_tokens && !tok->level) {
             return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "unmatched '%c'", c));
@@ -1231,7 +1233,8 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     assert(current_tok->curly_bracket_depth >= 0);
                     int previous_bracket = current_tok->curly_bracket_depth - 1;
                     if (previous_bracket == current_tok->curly_bracket_expr_start_depth) {
-                        return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "f-string: unmatched '%c'", c));
+                        return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
+                            "%c-string: unmatched '%c'", TOK_GET_MODE(tok)->tstring ? 't' : 'f', c));
                     }
                 }
                 if (tok->parenlinenostack[tok->level] != tok->lineno) {
@@ -1252,7 +1255,8 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         if (INSIDE_FSTRING(tok)) {
             current_tok->curly_bracket_depth--;
             if (current_tok->curly_bracket_depth < 0) {
-                return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "f-string: unmatched '%c'", c));
+                return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "%c-string: unmatched '%c'",
+                    TOK_GET_MODE(tok)->tstring ? 't' : 'f', c));
             }
             if (c == '}' && current_tok->curly_bracket_depth == current_tok->curly_bracket_expr_start_depth) {
                 current_tok->curly_bracket_expr_start_depth--;
@@ -1302,7 +1306,8 @@ tok_get_fstring_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct 
         if (peek1 != '{') {
             current_tok->curly_bracket_expr_start_depth++;
             if (current_tok->curly_bracket_expr_start_depth >= MAX_EXPR_NESTING) {
-                return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "f-string: expressions nested too deeply"));
+                return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
+                    "%c-string: expressions nested too deeply", TOK_GET_MODE(tok)->tstring ? 't' : 'f'));
             }
             TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
             return tok_get_normal_mode(tok, current_tok, token);
@@ -1380,8 +1385,9 @@ f_string_middle:
 
             if (current_tok->f_string_quote_size == 3) {
                 _PyTokenizer_syntaxerror(tok,
-                                    "unterminated triple-quoted f-string literal"
-                                    " (detected at line %d)", start);
+                                    "unterminated triple-quoted %c-string literal"
+                                    " (detected at line %d)",
+                                    TOK_GET_MODE(tok)->tstring ? 't' : 'f', start);
                 if (c != '\n') {
                     tok->done = E_EOFS;
                 }
@@ -1389,8 +1395,8 @@ f_string_middle:
             }
             else {
                 return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
-                                    "unterminated f-string literal (detected at"
-                                    " line %d)", start));
+                                    "unterminated %c-string literal (detected at"
+                                    " line %d)", TOK_GET_MODE(tok)->tstring ? 't' : 'f', start));
             }
         }
 
@@ -1411,7 +1417,8 @@ f_string_middle:
                 tok_backup(tok, c);
                 current_tok->curly_bracket_expr_start_depth++;
                 if (current_tok->curly_bracket_expr_start_depth >= MAX_EXPR_NESTING) {
-                    return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "f-string: expressions nested too deeply"));
+                    return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
+                        "%c-string: expressions nested too deeply", TOK_GET_MODE(tok)->tstring ? 't' : 'f'));
                 }
                 TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
                 current_tok->in_format_spec = 0;

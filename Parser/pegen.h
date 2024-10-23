@@ -5,6 +5,8 @@
 #include <pycore_ast.h>
 #include <pycore_token.h>
 
+#include "lexer/state.h"
+
 #if 0
 #define PyPARSE_YIELD_IS_KEYWORD        0x0001
 #endif
@@ -23,6 +25,8 @@
 #define PyPARSE_ALLOW_INCOMPLETE_INPUT 0x0100
 
 #define CURRENT_POS (-5)
+
+#define TOK_GET_MODE(tok) (&(tok->tok_mode_stack[tok->tok_mode_stack_index]))
 
 typedef struct _memo {
     int type;

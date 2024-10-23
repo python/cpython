@@ -617,7 +617,7 @@ append_fstring_element(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
         return append_interpolation(writer, e);
     default:
         PyErr_SetString(PyExc_SystemError,
-                        "unknown expression kind inside f-string");
+                        "unknown expression kind inside f-string or t-string");
         return -1;
     }
 }
