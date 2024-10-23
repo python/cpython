@@ -450,7 +450,7 @@ def future_add_to_awaited_by(fut, waiter, /):
 def future_discard_from_awaited_by(fut, waiter, /):
     """Record that `fut` is no longer awaited on by `waiter`."""
     # See the comment in "future_add_to_awaited_by()" body for
-    # details on implemntation.
+    # details on implementation.
     #
     # Note that there's an accelerated version of this function
     # shadowing this implementation later in this file.
