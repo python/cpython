@@ -569,10 +569,10 @@ pymain_run_stdin(PyConfig *config)
         || _Py_GetEnv(config->use_environment, "PYTHON_BASIC_REPL")) {
         PyCompilerFlags cf = _PyCompilerFlags_INIT;
         int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
-        return (run != 0);
+        return run;
     }
     int run = pymain_run_module(L"_pyrepl", 0);
-    return (run != 0);
+    return run;
 }
 
 
