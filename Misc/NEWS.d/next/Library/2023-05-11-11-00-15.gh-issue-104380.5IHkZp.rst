@@ -1,0 +1,1 @@
+Improved the heuristics for :func:`csv.Sniffer.has_header()` by checking more possible types for the data
