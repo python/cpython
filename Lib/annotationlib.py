@@ -45,6 +45,7 @@ _SLOTS = (
     "__globals__",
     "__owner__",
     "__cell__",
+    "__stringifier_dict__",
 )
 
 
@@ -268,7 +269,16 @@ class _Stringifier:
     # instance of the other in place.
     __slots__ = _SLOTS
 
-    def __init__(self, node, globals=None, owner=None, is_class=False, cell=None):
+    def __init__(
+        self,
+        node,
+        globals=None,
+        owner=None,
+        is_class=False,
+        cell=None,
+        *,
+        stringifier_dict,
+    ):
         # Either an AST node or a simple str (for the common case where a ForwardRef
         # represent a single name).
         assert isinstance(node, (ast.AST, str))
@@ -283,6 +293,7 @@ class _Stringifier:
         self.__globals__ = globals
         self.__cell__ = cell
         self.__owner__ = owner
+        self.__stringifier_dict__ = stringifier_dict
 
     def __convert_to_ast(self, other):
         if isinstance(other, _Stringifier):
@@ -317,9 +328,15 @@ class _Stringifier:
         return node
 
     def __make_new(self, node):
-        return _Stringifier(
-            node, self.__globals__, self.__owner__, self.__forward_is_class__
+        stringifier = _Stringifier(
+            node,
+            self.__globals__,
+            self.__owner__,
+            self.__forward_is_class__,
+            stringifier_dict=self.__stringifier_dict__,
         )
+        self.__stringifier_dict__.stringifiers.append(stringifier)
+        return stringifier
 
     # Must implement this since we set __eq__. We hash by identity so that
     # stringifiers in dict keys are kept separate.
@@ -462,6 +479,7 @@ class _StringifierDict(dict):
             globals=self.globals,
             owner=self.owner,
             is_class=self.is_class,
+            stringifier_dict=self,
         )
         self.stringifiers.append(fwdref)
         return fwdref
@@ -516,7 +534,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
                     name = freevars[i]
                 else:
                     name = "__cell__"
-                fwdref = _Stringifier(name)
+                fwdref = _Stringifier(name, stringifier_dict=globals)
                 new_closure.append(types.CellType(fwdref))
             closure = tuple(new_closure)
         else:
@@ -573,6 +591,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
                         owner=owner,
                         globals=annotate.__globals__,
                         is_class=is_class,
+                        stringifier_dict=globals,
                     )
                     globals.stringifiers.append(fwdref)
                     new_closure.append(types.CellType(fwdref))
@@ -591,6 +610,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         result = func(Format.VALUE)
         for obj in globals.stringifiers:
             obj.__class__ = ForwardRef
+            obj.__stringifier_dict__ = None  # not needed for ForwardRef
             if isinstance(obj.__ast_node__, str):
                 obj.__arg__ = obj.__ast_node__
                 obj.__ast_node__ = None

@@ -80,10 +80,56 @@ class TestForwardRefFormat(unittest.TestCase):
             fwdref.evaluate()
         self.assertEqual(fwdref.evaluate(globals={"doesntexist": 1}), 1)
 
+    def test_nonexistent_attribute(self):
+        def f(
+            x: some.module,
+            y: some[module],
+            z: some(module),
+            alpha: some | obj,
+            beta: +some,
+            gamma: some < obj,
+        ):
+            pass
+
+        anno = annotationlib.get_annotations(f, format=Format.FORWARDREF)
+        x_anno = anno["x"]
+        self.assertIsInstance(x_anno, ForwardRef)
+        self.assertEqual(x_anno, ForwardRef("some.module"))
+
+        y_anno = anno["y"]
+        self.assertIsInstance(y_anno, ForwardRef)
+        self.assertEqual(y_anno, ForwardRef("some[module]"))
+
+        z_anno = anno["z"]
+        self.assertIsInstance(z_anno, ForwardRef)
+        self.assertEqual(z_anno, ForwardRef("some(module)"))
+
+        alpha_anno = anno["alpha"]
+        self.assertIsInstance(alpha_anno, ForwardRef)
+        self.assertEqual(alpha_anno, ForwardRef("some | obj"))
+
+        beta_anno = anno["beta"]
+        self.assertIsInstance(beta_anno, ForwardRef)
+        self.assertEqual(beta_anno, ForwardRef("+some"))
+
+        gamma_anno = anno["gamma"]
+        self.assertIsInstance(gamma_anno, ForwardRef)
+        self.assertEqual(gamma_anno, ForwardRef("some < obj"))
+
 
 class TestSourceFormat(unittest.TestCase):
     def test_closure(self):
         x = 0
+
+        def inner(arg: x):
+            pass
+
+        anno = annotationlib.get_annotations(inner, format=Format.STRING)
+        self.assertEqual(anno, {"arg": "x"})
+
+    def test_closure_undefined(self):
+        if False:
+            x = 0
 
         def inner(arg: x):
             pass
