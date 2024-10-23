@@ -241,7 +241,7 @@ class StackViewerTest(unittest.TestCase):
         del cls.root
 
     def setUp(self):
-        self.code = compile(TEST_CODE, 'test_stackviewer.py', 'exec')
+        self.code = compile(TEST_CODE, 'test_stackbrowser.py', 'exec')
         self.stack = [
             (MockFrame(self.code, 1), 1),
             (MockFrame(self.code, 2), 2)
@@ -272,8 +272,8 @@ class StackViewerTest(unittest.TestCase):
         # Patch out isfile to pretend file exists.
         with patch('idlelib.debugger.os.path.isfile', return_value=True) as isfile:
             self.sv.show_source(1)
-            isfile.assert_called_once_with('test_stackviewer.py')
-            self.sv.flist.open.assert_called_once_with('test_stackviewer.py')
+            isfile.assert_called_once_with('test_stackbrowser.py')
+            self.sv.flist.open.assert_called_once_with('test_stackbrowser.py')
 
 
 class NameSpaceTest(unittest.TestCase):

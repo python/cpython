@@ -24,7 +24,7 @@ from idlelib import debugger_r  # start_debugger
 from idlelib import debugobj_r  # remote_object_tree_item
 from idlelib import iomenu  # encoding
 from idlelib import rpc  # multiple objects
-from idlelib import stackviewer  # StackTreeItem
+from idlelib import stackbrowser  # StackTreeItem
 import __main__
 
 import tkinter  # Use tcl and, if startup fails, messagebox.
@@ -642,7 +642,7 @@ class Executive:
         while tb and tb.tb_frame.f_globals["__name__"] in ["rpc", "run"]:
             tb = tb.tb_next
         exc.__traceback__ = tb
-        item = stackviewer.StackTreeItem(exc, flist)
+        item = stackbrowser.StackTreeItem(exc, flist)
         return debugobj_r.remote_object_tree_item(item)
 
 
