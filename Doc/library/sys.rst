@@ -1122,7 +1122,8 @@ always available.
    ``cache_tag`` is set to ``None``, it indicates that module caching should
    be disabled.
 
-   *arch* describes the architecture of the current interpreter runtime system.
+   *arch* The build architecture of the current interpreter is determined by the
+   platform on which it was built (independent of the current platform).
 
    .. versionadded:: 3.14
 
