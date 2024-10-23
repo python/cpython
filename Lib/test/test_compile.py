@@ -1045,7 +1045,7 @@ class TestSpecifics(unittest.TestCase):
 
         for func in funcs:
             opcodes = list(dis.get_instructions(func))
-            self.assertLessEqual(len(opcodes), 3)
+            self.assertLessEqual(len(opcodes), 4)
             self.assertEqual('RETURN_VALUE_FUNC', opcodes[-1].opname)
             self.assertEqual(None, opcodes[-1].argval)
 
@@ -1063,8 +1063,8 @@ class TestSpecifics(unittest.TestCase):
         # Check that we did not raise but we also don't generate bytecode
         for func in funcs:
             opcodes = list(dis.get_instructions(func))
-            self.assertEqual(2, len(opcodes))
-            self.assertEqual('RETURN_VALUE_FUNC', opcodes[1].opname)
+            self.assertEqual(3, len(opcodes))
+            self.assertEqual('RETURN_VALUE_FUNC', opcodes[-1].opname)
             self.assertEqual(None, opcodes[1].argval)
 
     def test_consts_in_conditionals(self):
@@ -1088,7 +1088,7 @@ class TestSpecifics(unittest.TestCase):
                 opcodes = list(dis.get_instructions(func))
                 self.assertLessEqual(len(opcodes), 3)
                 self.assertIn('LOAD_', opcodes[-2].opname)
-                self.assertEqual('RETURN_VALUE', opcodes[-1].opname)
+                self.assertEqual('RETURN_VALUE_FUNC', opcodes[-1].opname)
 
     def test_imported_load_method(self):
         sources = [
@@ -1760,7 +1760,7 @@ class TestSourcePositions(unittest.TestCase):
             line=1, end_line=2, column=1, end_column=8, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
             line=1, end_line=2, column=1, end_column=8, occurrence=1)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE_FUNC',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE_GEN',
             line=4, end_line=4, column=7, end_column=14, occurrence=1)
 
     def test_multiline_async_generator_expression(self):
@@ -1777,7 +1777,7 @@ class TestSourcePositions(unittest.TestCase):
         self.assertIsInstance(compiled_code, types.CodeType)
         self.assertOpcodeSourcePositionIs(compiled_code, 'YIELD_VALUE',
             line=1, end_line=2, column=1, end_column=8, occurrence=2)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE_FUNC',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE_GEN',
             line=1, end_line=6, column=0, end_column=32, occurrence=1)
 
     def test_multiline_list_comprehension(self):
@@ -1815,7 +1815,7 @@ class TestSourcePositions(unittest.TestCase):
             line=2, end_line=3, column=5, end_column=12, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
             line=2, end_line=3, column=5, end_column=12, occurrence=1)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE_FUNC',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE_GEN',
             line=2, end_line=7, column=4, end_column=36, occurrence=1)
 
     def test_multiline_set_comprehension(self):
@@ -1891,7 +1891,7 @@ class TestSourcePositions(unittest.TestCase):
             line=2, end_line=3, column=5, end_column=11, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
             line=2, end_line=3, column=5, end_column=11, occurrence=1)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE_FUNC',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE_GEN',
             line=2, end_line=7, column=4, end_column=36, occurrence=1)
 
     def test_matchcase_sequence(self):
@@ -2204,17 +2204,17 @@ class TestSourcePositions(unittest.TestCase):
             start_line, end_line, _, _ = instr.positions
             self.assertEqual(start_line, end_line)
 
-        # Expect three load None instructions for the no-exception __exit__ call,
-        # and one RETURN_VALUE.
+        # Expect three `LOAD_CONST None` instructions for the no-exception __exit__ call,
+        # and one for the RETURN_VALUE.
         # They should all have the locations of the context manager ('xyz').
 
         load_none = [instr for instr in dis.get_instructions(f) if
                      instr.opname == 'LOAD_CONST' and instr.argval is None]
         return_value = [instr for instr in dis.get_instructions(f) if
-                        instr.opname == 'RETURN_VALUE']
+                        instr.opname == 'RETURN_VALUE_FUNC']
 
-        self.assertEqual(len(load_none), 3)
-        self.assertEqual(len(return_value), 1)
+        self.assertEqual(len(load_none), 4)
+        self.assertEqual(len(return_value), 2)
         for instr in load_none + return_value:
             start_line, end_line, start_col, end_col = instr.positions
             self.assertEqual(start_line, f.__code__.co_firstlineno + 1)

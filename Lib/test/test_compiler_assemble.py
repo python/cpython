@@ -125,10 +125,10 @@ class IsolatedAssembleTests(AssemblerTestCase):
         # code for "try: pass\n except: pass"
         insts = [
             ('RESUME', 0),
-            ('SETUP_FINALLY', 3),
+            ('SETUP_FINALLY', 4),
             ('LOAD_CONST', 0),
             ('RETURN_VALUE_FUNC', None),
-            ('SETUP_CLEANUP', 8),
+            ('SETUP_CLEANUP', 10),
             ('PUSH_EXC_INFO', None),
             ('POP_TOP', None),
             ('POP_EXCEPT', None),

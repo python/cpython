@@ -222,11 +222,11 @@ dis_bug42562 = """\
 
 # Extended arg followed by NOP
 code_bug_45757 = bytes([
-        opcode.opmap['EXTENDED_ARG'], 0x01,  # EXTENDED_ARG 0x01
-        opcode.opmap['NOP'],          0xFF,  # NOP 0xFF
-        opcode.opmap['EXTENDED_ARG'], 0x01,  # EXTENDED_ARG 0x01
-        opcode.opmap['LOAD_CONST'],   0x29,  # LOAD_CONST 0x29
-        opcode.opmap['RETURN_VALUE'], 0x00,  # RETURN_VALUE 0x00
+        opcode.opmap['EXTENDED_ARG'], 0x01,
+        opcode.opmap['NOP'],          0xFF,
+        opcode.opmap['EXTENDED_ARG'], 0x01,
+        opcode.opmap['LOAD_CONST'],   0x29,
+        opcode.opmap['RETURN_VALUE_FUNC'], 0x00,
     ])
 
 dis_bug_45757 = """\

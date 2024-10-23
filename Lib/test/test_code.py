@@ -256,10 +256,11 @@ class CodeTest(unittest.TestCase):
             return x
         code = func.__code__
 
-        # different co_name, co_varnames, co_consts
+        # Different co_name, co_varnames, co_consts.
+        # Must have the same number of constants and
+        # variables or we get crashes.
         def func2():
             y = 2
-            z = 3
             return y
         code2 = func2.__code__
 
@@ -408,7 +409,7 @@ class CodeTest(unittest.TestCase):
             ],
             [
                 ("PUSH_EXC_INFO", None),
-                ("LOAD_CONST_IMMORTAL", None), # artificial 'None'
+                ("LOAD_CONST", None), # artificial 'None'
                 ("STORE_NAME", "e"),  # XX: we know the location for this
                 ("DELETE_NAME", "e"),
                 ("RERAISE", 1),
