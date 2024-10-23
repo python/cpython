@@ -269,77 +269,87 @@ class BaseXYTestCase(unittest.TestCase):
         self.assertEqual(base64.urlsafe_b64decode(b'++--//__'), res)
 
     def test_b32encode(self):
-        eq = self.assertEqual
-        eq(base64.b32encode(b''), b'')
-        eq(base64.b32encode(b'\x00'), b'AA======')
-        eq(base64.b32encode(b'a'), b'ME======')
-        eq(base64.b32encode(b'ab'), b'MFRA====')
-        eq(base64.b32encode(b'abc'), b'MFRGG===')
-        eq(base64.b32encode(b'abcd'), b'MFRGGZA=')
-        eq(base64.b32encode(b'abcde'), b'MFRGGZDF')
-        # Non-bytes
+        test_cases = [
+            # to_encode, expected
+            (b'',      b''),
+            (b'\x00',  b'AA======'),
+            (b'a',     b'ME======'),
+            (b'ab',    b'MFRA===='),
+            (b'abc',   b'MFRGG==='),
+            (b'abcd',  b'MFRGGZA='),
+            (b'abcde', b'MFRGGZDF'),
+        ]
+        for to_encode, expected in test_cases:
+            with self.subTest(to_decode=to_encode):
+                self.assertEqual(base64.b32encode(to_encode), expected)
+
+    def test_b32encode_other_types(self):
         self.check_other_types(base64.b32encode, b'abcd', b'MFRGGZA=')
         self.check_encode_type_errors(base64.b32encode)
 
-    def test_b32decode(self):
-        eq = self.assertEqual
-        tests = {b'': b'',
-                 b'AA======': b'\x00',
-                 b'ME======': b'a',
-                 b'MFRA====': b'ab',
-                 b'MFRGG===': b'abc',
-                 b'MFRGGZA=': b'abcd',
-                 b'MFRGGZDF': b'abcde',
-                 }
-        for data, res in tests.items():
-            eq(base64.b32decode(data), res)
-            eq(base64.b32decode(data.decode('ascii')), res)
-        # Non-bytes
-        self.check_other_types(base64.b32decode, b'MFRGG===', b"abc")
+    def test_b32hexdecode(self):
+        test_cases = [
+            # to_decode, expected, casefold
+            (b'',         b'',      False),
+            (b'AA======', b'\x00',  False),
+            (b'ME======', b'a',     False),
+            (b'MFRA====', b'ab',    False),
+            (b'MFRGG===', b'abc',   False),
+            (b'MFRGGZA=', b'abcd',  False),
+            (b'MFRGGZDF', b'abcde', False),
+            (b'',         b'',      True),
+            (b'AA======', b'\x00',  True),
+            (b'ME======', b'a',     True),
+            (b'MFRA====', b'ab',    True),
+            (b'MFRGG===', b'abc',   True),
+            (b'MFRGGZA=', b'abcd',  True),
+            (b'MFRGGZDF', b'abcde', True),
+            (b'me======', b'a',     True),
+            (b'mfra====', b'ab',    True),
+            (b'mfrgg===', b'abc',   True),
+            (b'mfrggza=', b'abcd',  True),
+            (b'mfrggzdf', b'abcde', True),
+        ]
+        for to_decode, expected, casefold in test_cases:
+            with self.subTest(to_decode=to_decode, casefold=casefold):
+                self.assertEqual(base64.b32hexdecode(to_decode, casefold),
+                                 expected)
+                self.assertEqual(base64.b32hexdecode(to_decode.decode('ascii'),
+                                 casefold), expected)
+
+    def test_b32decode_other_types(self):
+        self.check_other_types(base64.b32decode, b'MFRGG===', b'abc')
         self.check_decode_type_errors(base64.b32decode)
 
-    def test_b32decode_casefold(self):
-        eq = self.assertEqual
-        tests = {b'': b'',
-                 b'ME======': b'a',
-                 b'MFRA====': b'ab',
-                 b'MFRGG===': b'abc',
-                 b'MFRGGZA=': b'abcd',
-                 b'MFRGGZDF': b'abcde',
-                 # Lower cases
-                 b'me======': b'a',
-                 b'mfra====': b'ab',
-                 b'mfrgg===': b'abc',
-                 b'mfrggza=': b'abcd',
-                 b'mfrggzdf': b'abcde',
-                 }
+    def test_b32decode_map01(self):
+        test_cases = [
+            # to_decode, expected
+            (b'MLO23456', b'b\xdd\xad\xf3\xbe'),
+            ('MLO23456',  b'b\xdd\xad\xf3\xbe'),
+        ]
+        for to_decode, expected in test_cases:
+            with self.subTest(to_decode=to_decode):
+                self.assertEqual(base64.b32decode(to_decode), expected)
 
-        for data, res in tests.items():
-            eq(base64.b32decode(data, True), res)
-            eq(base64.b32decode(data.decode('ascii'), True), res)
-
-        self.assertRaises(binascii.Error, base64.b32decode, b'me======')
-        self.assertRaises(binascii.Error, base64.b32decode, 'me======')
-
-        # Mapping zero and one
-        eq(base64.b32decode(b'MLO23456'), b'b\xdd\xad\xf3\xbe')
-        eq(base64.b32decode('MLO23456'), b'b\xdd\xad\xf3\xbe')
-
-        map_tests = {(b'M1023456', b'L'): b'b\xdd\xad\xf3\xbe',
-                     (b'M1023456', b'I'): b'b\x1d\xad\xf3\xbe',
-                     }
-        for (data, map01), res in map_tests.items():
+        map_tests = [
+            (b'M1023456', b'L', b'b\xdd\xad\xf3\xbe'),
+            (b'M1023456', b'I', b'b\x1d\xad\xf3\xbe'),
+        ]
+        for data, map01, res in map_tests:
             data_str = data.decode('ascii')
             map01_str = map01.decode('ascii')
 
-            eq(base64.b32decode(data, map01=map01), res)
-            eq(base64.b32decode(data_str, map01=map01), res)
-            eq(base64.b32decode(data, map01=map01_str), res)
-            eq(base64.b32decode(data_str, map01=map01_str), res)
+            self.assertEqual(base64.b32decode(data, map01=map01), res)
+            self.assertEqual(base64.b32decode(data_str, map01=map01), res)
+            self.assertEqual(base64.b32decode(data, map01=map01_str), res)
+            self.assertEqual(base64.b32decode(data_str, map01=map01_str), res)
             self.assertRaises(binascii.Error, base64.b32decode, data)
             self.assertRaises(binascii.Error, base64.b32decode, data_str)
 
     def test_b32decode_error(self):
+        self.assertRaises(binascii.Error, base64.b32decode, b'me======')
+        self.assertRaises(binascii.Error, base64.b32decode, 'me======')
+
         tests = [b'abc', b'ABCDEF==', b'==ABCDEF']
         prefixes = [b'M', b'ME', b'MFRA', b'MFRGG', b'MFRGGZA', b'MFRGGZDF']
         for i in range(0, 17):
