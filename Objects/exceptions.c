@@ -269,18 +269,77 @@ BaseException_add_note(PyObject *self, PyObject *note)
     Py_RETURN_NONE;
 }
 
+/*
+ * Return an exception group wrapping 'self'.
+ *
+ * If 'self' is an exception group, a strong
+ * reference to 'self' is returned instead.
+ */
+static PyObject *
+base_exception_as_group(PyObject *self)
+{
+    if (!PyExceptionInstance_Check(self)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    if (_PyBaseExceptionGroup_Check(self)) {
+        return Py_NewRef(self);
+    }
+
+    PyObject *message = PyObject_Str(self);
+    if (message == NULL) {
+        return NULL;
+    }
+    PyObject *wrapped = PyTuple_New(1);
+    if (wrapped == NULL) {
+        Py_DECREF(message);
+        return NULL;
+    }
+    PyTuple_SET_ITEM(wrapped, 0, Py_NewRef(self));
+    PyObject *group = PyObject_CallFunctionObjArgs(PyExc_BaseExceptionGroup,
+                                                   message, wrapped, NULL);
+    Py_DECREF(wrapped);
+    Py_DECREF(message);
+    return group;
+}
+
+static PyObject *
+BaseException_subgroup(PyObject *self, PyObject *matcher)
+{
+    PyObject *group = base_exception_as_group(self);
+    if (group == NULL) {
+        return NULL;
+    }
+    PyObject *res = PyObject_CallMethodOneArg(group, &_Py_ID(subgroup), matcher);
+    Py_DECREF(group);
+    return res;
+}
+
+static PyObject *
+BaseException_split(PyObject *self, PyObject *matcher)
+{
+    PyObject *group = base_exception_as_group(self);
+    if (group == NULL) {
+        return NULL;
+    }
+    PyObject *res = PyObject_CallMethodOneArg(group, &_Py_ID(split), matcher);
+    Py_DECREF(group);
+    return res;
+}
+
 PyDoc_STRVAR(add_note_doc,
 "Exception.add_note(note) --\n\
     add a note to the exception");
 
 static PyMethodDef BaseException_methods[] = {
-   {"__reduce__", (PyCFunction)BaseException_reduce, METH_NOARGS },
-   {"__setstate__", (PyCFunction)BaseException_setstate, METH_O },
-   {"with_traceback", (PyCFunction)BaseException_with_traceback, METH_O,
-    with_traceback_doc},
-   {"add_note", (PyCFunction)BaseException_add_note, METH_O,
-    add_note_doc},
-   {NULL, NULL, 0, NULL},
+    {"__reduce__", (PyCFunction)BaseException_reduce, METH_NOARGS, NULL},
+    {"__setstate__", BaseException_setstate, METH_O, NULL},
+    {"with_traceback", BaseException_with_traceback, METH_O, with_traceback_doc},
+    {"add_note", BaseException_add_note, METH_O, add_note_doc},
+    {"split", BaseException_split, METH_O, NULL},
+    {"subgroup", BaseException_subgroup, METH_O, NULL},
+    {NULL, NULL, 0, NULL},
 };
 
 static PyObject *
