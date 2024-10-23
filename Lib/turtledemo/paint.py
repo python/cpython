@@ -1,10 +1,9 @@
 """turtledemo/paint.py
 
-A simple  event-driven paint program
-
-- left mouse button moves turtle
-- middle mouse button changes color
-- right mouse button toggles between pen up
+A simple  event-driven paint program.
+- Left mouse button moves turtle.
+- Middle mouse button changes color.
+- Right mouse button toggles between pen up
 (no line drawn when the turtle moves) and
 pen down (line is drawn). If pen up follows
 at least two pen-down moves, the polygon that
