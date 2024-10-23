@@ -1292,6 +1292,7 @@ class PathFinder:
                 # can create the namespace package.
                 spec.origin = None
                 spec.submodule_search_locations = _NamespacePath(fullname, namespace_path, cls._get_spec)
+                spec.loader = NamespaceLoader(fullname, namespace_path, cls._get_spec)
                 return spec
             else:
                 return None
