@@ -89,7 +89,8 @@ extern PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);
 
 /* Gets a version number unique to the current state of the keys of dict, if possible.
  * Returns the version number, or zero if it was not possible to get a version number. */
-extern uint32_t _PyDictKeys_GetVersionForCurrentState(
+// Export for '_testinternalcapi' extension
+ PyAPI_FUNC(uint32_t) _PyDictKeys_GetVersionForCurrentState(
         PyInterpreterState *interp, PyDictKeysObject *dictkeys);
 
 extern size_t _PyDict_KeysSize(PyDictKeysObject *keys);
