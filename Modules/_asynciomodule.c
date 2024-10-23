@@ -1036,8 +1036,12 @@ _asyncio_Future_remove_done_callback_impl(FutureObj *self, PyTypeObject *cls,
 
     if (self->fut_callback0 != NULL) {
         // Beware: An evil PyObject_RichCompareBool could change fut_callback0
-        // (see https://github.com/python/cpython/issues/125789 for details).
-        int cmp = PyObject_RichCompareBool(self->fut_callback0, fn, Py_EQ);
+        // (see https://github.com/python/cpython/issues/125789 for details)
+        // In addition, the reference to self->fut_callback0 may be cleared,
+        // so we need to temporarily hold it explicitly.
+        PyObject *fut_callback0 = Py_NewRef(self->fut_callback0);
+        int cmp = PyObject_RichCompareBool(fut_callback0, fn, Py_EQ);
+        Py_DECREF(fut_callback0);
         if (cmp == -1) {
             return NULL;
         }
@@ -1076,7 +1080,7 @@ _asyncio_Future_remove_done_callback_impl(FutureObj *self, PyTypeObject *cls,
         Py_INCREF(cb_tup);
         PyObject *cb = PyTuple_GET_ITEM(cb_tup, 0);
         int cmp = PyObject_RichCompareBool(cb, fn, Py_EQ);
-        Py_DECREF(cb_tup);
+        Py_XDECREF(cb_tup);
         if (cmp == -1) {
             return NULL;
         }

@@ -970,6 +970,45 @@ class BaseFutureDoneCallbackTests():
 
         self.assertIs(mem, cb_pad)
 
+    # Use-After-Free sanity checks.
+    # Credits to Nico-Posada for the PoCs.
+    # See https://github.com/python/cpython/pull/125833.
+
+    def test_use_after_free_fixed_1(self):
+        fut = self._new_future()
+
+        class setup:
+            def __eq__(self, other):
+                return False
+
+        # evil MUST be a subclass of setup for __eq__ to get called first
+        class evil(setup):
+            def __eq__(self, value):
+                fut._callbacks.clear()
+                return NotImplemented
+
+        cb_pad = lambda: ...
+        fut.add_done_callback(cb_pad)  # sets fut->fut_callback0
+        fut.add_done_callback(setup())  # sets fut->fut_callbacks[0]
+        # removes callback from fut->fut_callback0 setting it to NULL
+        fut.remove_done_callback(cb_pad)
+        fut.remove_done_callback(evil())
+
+    def test_use_after_free_fixed_2(self):
+        fut = self._new_future()
+
+        class cb_pad:
+            def __eq__(self, other):
+                return True
+
+        class evil(cb_pad):
+            def __eq__(self, other):
+                fut.remove_done_callback(None)
+                return NotImplemented
+
+        fut.add_done_callback(cb_pad())
+        fut.remove_done_callback(evil())
+
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
                      'requires the C _asyncio module')
