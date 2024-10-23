@@ -16,8 +16,6 @@
 #include "pycore_time.h"          // _PyTime_AsMicroseconds()
 #include "pydtrace.h"
 
-static bool gc_mark_disabled;
-
 #ifndef Py_GIL_DISABLED
 
 typedef struct _gc_runtime_state GCState;
@@ -56,26 +54,9 @@ typedef struct _gc_runtime_state GCState;
 // Automatically choose the generation that needs collecting.
 #define GENERATION_AUTO (-1)
 
-// phases of incremental mark alive process
-#define MARK_PHASE_INIT 1 // start of new marking pass
-#define MARK_PHASE_STEP 2 // incremental marking steps (done on each gen 0 collection)
-#define MARK_PHASE_DONE 3 // marking has finished, wait for next full collection
+#if WITH_GC_TIMING_STATS
 
-#if 1 // gc timing statistics (needs cleanup)
-//
-#define QUANTILE_COUNT 5
-#define MARKER_COUNT (QUANTILE_COUNT * 3 + 2)
-
-typedef struct {
-    double q[MARKER_COUNT];
-    double dn[MARKER_COUNT];
-    double np[MARKER_COUNT];
-    int n[MARKER_COUNT];
-    int count;
-    double max;
-} P2Engine;
-
-static void p2engine_init(P2Engine* engine, const double quantiles[QUANTILE_COUNT]) {
+static void p2engine_init(p2_engine* engine, const double quantiles[QUANTILE_COUNT]) {
     engine->count = 0;
     engine->max = 0.0;
 
@@ -111,17 +92,17 @@ static int sign(double d) {
     return (d >= 0) ? 1 : -1;
 }
 
-static double parabolic(P2Engine* engine, int i, int d) {
+static double parabolic(p2_engine* engine, int i, int d) {
     return engine->q[i] + d / ((engine->n[i + 1] - engine->n[i - 1]) *
         ((engine->n[i] - engine->n[i - 1] + d) * ((engine->q[i + 1] - engine->q[i]) / (engine->n[i + 1] - engine->n[i])) +
         (engine->n[i + 1] - (engine->n[i] - d)) * ((engine->q[i] - engine->q[i - 1]) / (engine->n[i] - engine->n[i - 1]))));
 }
 
-static double linear(P2Engine* engine, int i, int d) {
+static double linear(p2_engine* engine, int i, int d) {
     return engine->q[i] + d * ((engine->q[i + d] - engine->q[i]) / (engine->n[i + d] - engine->n[i]));
 }
 
-static void p2engine_add(P2Engine* engine, double data) {
+static void p2engine_add(p2_engine* engine, double data) {
     int i, k = 0;
     if (data > engine->max) {
         engine->max = data;
@@ -189,7 +170,7 @@ static void p2engine_add(P2Engine* engine, double data) {
     }
 }
 
-static double p2engine_result(P2Engine* engine, double quantile) {
+static double p2engine_result(p2_engine* engine, double quantile) {
     if (engine->count < MARKER_COUNT) {
         int closest = 1;
         for (int i = 0; i < engine->count; i++) {
@@ -221,34 +202,16 @@ static double p2engine_result(P2Engine* engine, double quantile) {
 
 static double gc_timing_quantiles[QUANTILE_COUNT] = {0.5, 0.75, 0.9, 0.95, 0.99};
 
-#if 0
-// Example usage
-int main() {
-    P2Engine engine;
-    double quantiles[QUANTILE_COUNT] = {0.25, 0.5, 0.75, 0.9}; // quartiles and 90th percentile
-    p2engine_init(&engine, quantiles);
+#endif // WITH_GC_TIMING_STATS
 
-    // Generate random data and add to engine
-    for (int i = 0; i < 1000000; i++) {
-        double value = (double)rand() / RAND_MAX;
-        p2engine_add(&engine, value);
-    }
+#if WITH_GC_MARK_ALIVE
 
-    printf("Approximate results:\n");
-    for (int i = 0; i < QUANTILE_COUNT; i++) {
-        double result = p2engine_result(&engine, quantiles[i]);
-        printf("Q%.2f: %f\n", quantiles[i], result);
-    }
+// phases of incremental mark alive process
+#define MARK_PHASE_INIT 0 // start of new marking pass
+#define MARK_PHASE_STEP 1 // incremental marking steps (done on each gen 0 collection)
+#define MARK_PHASE_DONE 2 // marking has finished, wait for next full collection
 
-    return 0;
-}
-#endif
-
-// timings for automatic collections
-P2Engine gc_timing; // all automatic collections
-P2Engine gc_timing_full; // full (gen2) automatic collections
-
-#endif // gc timing
+static bool gc_mark_disabled;
 
 // return True if object is part of the old (gen2) set
 static inline int gc_is_old(PyGC_Head *gc) {
@@ -262,6 +225,8 @@ static inline void gc_set_old(PyGC_Head *gc) {
 static inline void gc_clear_old(PyGC_Head *gc) {
     gc->_gc_prev &= ~_PyGC_PREV_MASK_OLD;
 }
+
+#endif // WITH_GC_MARK_ALIVE
 
 static inline int
 gc_is_collecting(PyGC_Head *g)
@@ -332,7 +297,9 @@ _PyGC_InitState(GCState *gcstate)
     };
     gcstate->generation0 = GEN_HEAD(gcstate, 0);
     INIT_GC_LIST(gcstate->permanent_generation.head);
+#if WITH_GC_MARK_ALIVE
     INIT_GC_LIST(gcstate->mark_state.old_alive);
+#endif
 
 #undef INIT_GC_LIST
 }
@@ -353,6 +320,7 @@ _PyGC_Init(PyInterpreterState *interp)
         return _PyStatus_NO_MEMORY();
     }
 
+#if WITH_GC_MARK_ALIVE
     gcstate->mark_state.thumb = PyList_New(0);
     if (gcstate->mark_state.thumb == NULL) {
         return _PyStatus_NO_MEMORY();
@@ -363,9 +331,12 @@ _PyGC_Init(PyInterpreterState *interp)
     if (getenv("GC_MARK_DISABLED")) {
         gc_mark_disabled = 1;
     }
+#endif // WITH_GC_MARK_ALIVE
 
-    p2engine_init(&gc_timing, gc_timing_quantiles);
-    p2engine_init(&gc_timing_full, gc_timing_quantiles);
+#if WITH_GC_TIMING_STATS
+    p2engine_init(&gcstate->timing_state.auto_all, gc_timing_quantiles);
+    p2engine_init(&gcstate->timing_state.auto_full, gc_timing_quantiles);
+#endif
 
     return _PyStatus_OK();
 }
@@ -1273,6 +1244,8 @@ show_stats_each_generations(GCState *gcstate)
         buf, gc_list_size(&gcstate->permanent_generation.head));
 }
 
+#if WITH_GC_MARK_ALIVE
+
 // set the "old" flag on all objects in the old (gen 2) list
 static Py_ssize_t
 mark_old(PyGC_Head *head) {
@@ -1339,9 +1312,7 @@ mark_alive_step(PyThreadState *tstate, PyGC_Head *old_head)
             step_count = 10;
         }
         gcstate->mark_state.mark_steps++;
-        unsigned long total_steps = 0;
         for (;;) {
-            total_steps++;
             PyGC_Head *next = GC_NEXT(gc);
             if (gc == alive_head) {
                 gcstate->mark_state.mark_phase = MARK_PHASE_DONE;
@@ -1368,23 +1339,28 @@ mark_alive_step(PyThreadState *tstate, PyGC_Head *old_head)
     gcstate->mark_state.mark_steps_total++;
 }
 
+#endif // WITH_GC_MARK_ALIVE
+
 #define OLD_GENERATION (NUM_GENERATIONS-1)
 
 static void
 print_gc_times(GCState *gcstate)
 {
+#if WITH_GC_TIMING_STATS
     fprintf(stderr, "gc times: total %.3fs mark %.3fs max %ldus avg %ldus\n",
-            PyTime_AsSecondsDouble(gcstate->mark_state.gc_total_time),
-            PyTime_AsSecondsDouble(gcstate->mark_state.gc_mark_time),
-            _PyTime_AsMicroseconds(gcstate->mark_state.gc_max_pause, _PyTime_ROUND_HALF_EVEN),
-            _PyTime_AsMicroseconds(gcstate->mark_state.gc_total_time / gcstate->mark_state.gc_runs, _PyTime_ROUND_HALF_EVEN)
+            PyTime_AsSecondsDouble(gcstate->timing_state.gc_total_time),
+            PyTime_AsSecondsDouble(gcstate->timing_state.gc_mark_time),
+            (long)_PyTime_AsMicroseconds(gcstate->timing_state.gc_max_pause, _PyTime_ROUND_HALF_EVEN),
+            (long)_PyTime_AsMicroseconds(gcstate->timing_state.gc_total_time / gcstate->timing_state.gc_runs, _PyTime_ROUND_HALF_EVEN)
             );
+#endif // WITH_GC_TIMING_STATS
 }
 
 // Run incremental "mark alive" process, as required.
 static void
 maybe_mark_alive(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 {
+#if WITH_GC_MARK_ALIVE
     GCState *gcstate = &tstate->interp->gc;
     PyGC_Head *old = GEN_HEAD(gcstate, OLD_GENERATION);
     PyTime_t t1;
@@ -1419,9 +1395,13 @@ maybe_mark_alive(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         }
     }
 
+#if WITH_GC_TIMING_STATS
     PyTime_t t2;
     (void)PyTime_PerfCounterRaw(&t2);
-    gcstate->mark_state.gc_mark_time += t2 - t1;
+    gcstate->timing_state.gc_mark_time += t2 - t1;
+#endif
+
+#endif // WITH_GC_MARK_ALIVE
 }
 
 /* Deduce which objects among "base" are unreachable from outside the list
@@ -1598,7 +1578,7 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
 static int
 gc_select_generation(GCState *gcstate)
 {
-    for (int i = NUM_GENERATIONS-1; i >= 0; i--) {
+    for (int i = OLD_GENERATION; i >= 0; i--) {
         if (gcstate->generations[i].count > gcstate->generations[i].threshold) {
             /* Avoid quadratic performance degradation in number
                of tracked objects (see also issue #4074):
@@ -1636,7 +1616,7 @@ gc_select_generation(GCState *gcstate)
                June 2008. His original analysis and proposal can be found at:
                http://mail.python.org/pipermail/python-dev/2008-June/080579.html
             */
-            if (i == NUM_GENERATIONS - 1
+            if (i == OLD_GENERATION
                 && gcstate->long_lived_pending < gcstate->long_lived_total / 4)
             {
                 continue;
@@ -1725,7 +1705,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 
     /* handy references */
     young = GEN_HEAD(gcstate, generation);
-    if (generation < NUM_GENERATIONS-1) {
+    if (generation < OLD_GENERATION) {
         old = GEN_HEAD(gcstate, generation+1);
     }
     else {
@@ -1823,7 +1803,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 
     /* Clear free list only during the collection of the highest
      * generation */
-    if (generation == NUM_GENERATIONS-1) {
+    if (generation == OLD_GENERATION) {
         _PyGC_ClearAllFreeLists(tstate->interp);
     }
 
@@ -1851,20 +1831,26 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     }
 #endif
 
+#if WITH_GC_TIMING_STATS
     PyTime_t t3, dt;
     (void)PyTime_PerfCounterRaw(&t3);
     dt = t3 - t1;
     if (reason == _Py_GC_REASON_HEAP) {
-        p2engine_add(&gc_timing, (double)_PyTime_AsMicroseconds(dt, _PyTime_ROUND_HALF_EVEN));
+	p2engine_add(&gcstate->timing_state.auto_all,
+		     (double)_PyTime_AsMicroseconds(dt,
+						    _PyTime_ROUND_HALF_EVEN));
         if (generation == OLD_GENERATION) {
-            p2engine_add(&gc_timing_full, (double)_PyTime_AsMicroseconds(dt, _PyTime_ROUND_HALF_EVEN));
+	    p2engine_add(&gcstate->timing_state.auto_full,
+			 (double)_PyTime_AsMicroseconds(dt,
+							_PyTime_ROUND_HALF_EVEN));
         }
-        if (dt > gcstate->mark_state.gc_max_pause) {
-            gcstate->mark_state.gc_max_pause = dt;
+        if (dt > gcstate->timing_state.gc_max_pause) {
+            gcstate->timing_state.gc_max_pause = dt;
         }
     }
-    gcstate->mark_state.gc_total_time += dt;
-    gcstate->mark_state.gc_runs++;
+    gcstate->timing_state.gc_total_time += dt;
+    gcstate->timing_state.gc_runs++;
+#endif // WITH_GC_TIMING_STATS
 
     if (PyDTrace_GC_DONE_ENABLED()) {
         PyDTrace_GC_DONE(n + m);
@@ -1955,12 +1941,14 @@ _PyGC_GetObjects(PyInterpreterState *interp, int generation)
             goto error;
         }
     }
-    if (generation == -1 || generation == (NUM_GENERATIONS - 1)) {
+#if WITH_GC_MARK_ALIVE
+    if (generation == -1 || generation == (OLD_GENERATION)) {
         // include the "old_alive" set of objects as well
         if (append_objects(result, &gcstate->mark_state.old_alive)) {
             goto error;
         }
     }
+#endif
 
     return result;
 error:
@@ -1971,17 +1959,18 @@ error:
 PyObject *
 _PyGC_GetOldAliveObjects(PyInterpreterState *interp)
 {
-    GCState *gcstate = &interp->gc;
-
     PyObject *result = PyList_New(0);
     if (result == NULL) {
         return NULL;
     }
 
+#if WITH_GC_MARK_ALIVE
+    GCState *gcstate = &interp->gc;
     if (append_objects(result, &gcstate->mark_state.old_alive)) {
         Py_DECREF(result);
         return NULL;
     }
+#endif
 
     return result;
 }
@@ -2002,7 +1991,7 @@ _PyGC_Unfreeze(PyInterpreterState *interp)
 {
     GCState *gcstate = &interp->gc;
     gc_list_merge(&gcstate->permanent_generation.head,
-                  GEN_HEAD(gcstate, NUM_GENERATIONS-1));
+                  GEN_HEAD(gcstate, OLD_GENERATION));
 }
 
 Py_ssize_t
@@ -2051,7 +2040,7 @@ PyGC_Collect(void)
 
     Py_ssize_t n;
     PyObject *exc = _PyErr_GetRaisedException(tstate);
-    n = gc_collect_main(tstate, NUM_GENERATIONS - 1, _Py_GC_REASON_MANUAL);
+    n = gc_collect_main(tstate, OLD_GENERATION, _Py_GC_REASON_MANUAL);
     _PyErr_SetRaisedException(tstate, exc);
 
     return n;
@@ -2072,7 +2061,7 @@ _PyGC_CollectNoFail(PyThreadState *tstate)
        during interpreter shutdown (and then never finish it).
        See http://bugs.python.org/issue8713#msg195178 for an example.
        */
-    gc_collect_main(tstate, NUM_GENERATIONS - 1, _Py_GC_REASON_SHUTDOWN);
+    gc_collect_main(tstate, OLD_GENERATION, _Py_GC_REASON_SHUTDOWN);
 }
 
 void
@@ -2150,17 +2139,21 @@ _PyGC_Fini(PyInterpreterState *interp)
         finalize_unlink_gc_head(&gcstate->generations[i].head);
     }
     finalize_unlink_gc_head(&gcstate->permanent_generation.head);
+#if WITH_GC_MARK_ALIVE
     finalize_unlink_gc_head(&gcstate->mark_state.old_alive);
+#endif
 
     print_gc_times(gcstate);
+#if WITH_GC_TIMING_STATS
     for (int i = 0; i < QUANTILE_COUNT; i++) {
-        double result = p2engine_result(&gc_timing, gc_timing_quantiles[i]);
+        double result = p2engine_result(&gcstate->timing_state.auto_all, gc_timing_quantiles[i]);
         fprintf(stderr, "gc timing all Q%.0f: %.2f\n", gc_timing_quantiles[i]*100, result);
     }
     for (int i = 0; i < QUANTILE_COUNT; i++) {
-        double result = p2engine_result(&gc_timing_full, gc_timing_quantiles[i]);
+        double result = p2engine_result(&gcstate->timing_state.auto_full, gc_timing_quantiles[i]);
         fprintf(stderr, "gc timing full Q%.0f: %.2f\n", gc_timing_quantiles[i]*100, result);
     }
+#endif // WITH_GC_TIMING_STATS
 
 }
 

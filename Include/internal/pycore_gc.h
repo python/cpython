@@ -282,6 +282,43 @@ struct gc_generation_stats {
     Py_ssize_t uncollectable;
 };
 
+// if true, enable GC timing statistics
+#define WITH_GC_TIMING_STATS 1
+
+#if WITH_GC_TIMING_STATS
+
+#define QUANTILE_COUNT 5
+#define MARKER_COUNT (QUANTILE_COUNT * 3 + 2)
+
+typedef struct {
+    double q[MARKER_COUNT];
+    double dn[MARKER_COUNT];
+    double np[MARKER_COUNT];
+    int n[MARKER_COUNT];
+    int count;
+    double max;
+} p2_engine;
+
+struct gc_timing_state {
+    /* timing statistics computed by P^2 algorithm */
+    p2_engine auto_all; // timing for all automatic collections
+    p2_engine auto_full; // timing for full (gen2) automatic collections
+    /* Total time spent inside cyclic GC */
+    PyTime_t gc_total_time;
+    /* Time spent inside incremental mark part of cyclic GC */
+    PyTime_t gc_mark_time;
+    /* Maximum GC pause time */
+    PyTime_t gc_max_pause;
+    /* Total number of times GC was run */
+    PyTime_t gc_runs;
+};
+#endif // WITH_GC_TIMING_STATS
+
+
+// if true, enable the GC mark alive feature
+#define WITH_GC_MARK_ALIVE 1
+
+#if WITH_GC_MARK_ALIVE
 struct gc_mark_state {
     /* Objects in oldest generation that have be determined to be alive */
     PyGC_Head old_alive;
@@ -297,15 +334,9 @@ struct gc_mark_state {
     int mark_steps;
     /* Number of steps available before full collection */
     int mark_steps_total;
-    /* Total time spent inside cyclic GC */
-    PyTime_t gc_total_time;
-    /* Time spent inside incremental mark part of cyclic GC */
-    PyTime_t gc_mark_time;
-    /* Maximum GC pause time */
-    PyTime_t gc_max_pause;
-    /* Total number of times GC was run */
-    PyTime_t gc_runs;
 };
+#endif // WITH_GC_MARK_ALIVE
+
 
 struct _gc_runtime_state {
     /* List of objects that still need to be cleaned up, singly linked
@@ -329,8 +360,14 @@ struct _gc_runtime_state {
     PyObject *garbage;
     /* a list of callbacks to be invoked when collection is performed */
     PyObject *callbacks;
+#if WITH_GC_MARK_ALIVE
     /* state for the incremental "mark alive" logic */
     struct gc_mark_state mark_state;
+#endif
+#if WITH_GC_TIMING_STATS
+    /* state for GC timing statistics */
+    struct gc_timing_state timing_state;
+#endif
 
     /* This is the number of objects that survived the last full
        collection. It approximates the number of long lived objects
