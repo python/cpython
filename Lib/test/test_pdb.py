@@ -380,11 +380,11 @@ def test_pdb_breakpoint_on_annotated_function_def():
     > <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[4]>(3)test_function()
     -> pass
     (Pdb) break foo
-    Breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[0]>:2
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[0]>:1
     (Pdb) break bar
-    Breakpoint 2 at <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[1]>:2
+    Breakpoint 2 at <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[1]>:1
     (Pdb) break foobar
-    Breakpoint 3 at <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[2]>:2
+    Breakpoint 3 at <doctest test.test_pdb.test_pdb_breakpoint_on_annotated_function_def[2]>:1
     (Pdb) continue
     """
 
