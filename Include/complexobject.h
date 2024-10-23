@@ -10,8 +10,8 @@ extern "C" {
 
 PyAPI_DATA(PyTypeObject) PyComplex_Type;
 
-#define PyComplex_Check(op) PyObject_TypeCheck(op, &PyComplex_Type)
-#define PyComplex_CheckExact(op) Py_IS_TYPE(op, &PyComplex_Type)
+#define PyComplex_Check(op) PyObject_TypeCheck((op), &PyComplex_Type)
+#define PyComplex_CheckExact(op) Py_IS_TYPE((op), &PyComplex_Type)
 
 PyAPI_FUNC(PyObject *) PyComplex_FromDoubles(double real, double imag);
 

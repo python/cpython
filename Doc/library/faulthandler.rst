@@ -1,5 +1,5 @@
-:mod:`faulthandler` --- Dump the Python traceback
-=================================================
+:mod:`!faulthandler` --- Dump the Python traceback
+==================================================
 
 .. module:: faulthandler
    :synopsis: Dump the Python traceback.
@@ -10,14 +10,15 @@
 
 This module contains functions to dump Python tracebacks explicitly, on a fault,
 after a timeout, or on a user signal. Call :func:`faulthandler.enable` to
-install fault handlers for the :const:`SIGSEGV`, :const:`SIGFPE`,
-:const:`SIGABRT`, :const:`SIGBUS`, and :const:`SIGILL` signals. You can also
+install fault handlers for the :const:`~signal.SIGSEGV`,
+:const:`~signal.SIGFPE`, :const:`~signal.SIGABRT`, :const:`~signal.SIGBUS`, and
+:const:`~signal.SIGILL` signals. You can also
 enable them at startup by setting the :envvar:`PYTHONFAULTHANDLER` environment
 variable or by using the :option:`-X` ``faulthandler`` command line option.
 
 The fault handler is compatible with system fault handlers like Apport or the
 Windows fault handler. The module uses an alternative stack for signal handlers
-if the :c:func:`sigaltstack` function is available. This allows it to dump the
+if the :c:func:`!sigaltstack` function is available. This allows it to dump the
 traceback even on a stack overflow.
 
 The fault handler is called on catastrophic cases and therefore can only use
@@ -43,6 +44,13 @@ Python is deadlocked.
 The :ref:`Python Development Mode <devmode>` calls :func:`faulthandler.enable`
 at Python startup.
 
+.. seealso::
+
+   Module :mod:`pdb`
+      Interactive source code debugger for Python programs.
+
+   Module :mod:`traceback`
+      Standard interface to extract, format and print stack traces of Python programs.
 
 Dumping the traceback
 ---------------------
@@ -51,6 +59,8 @@ Dumping the traceback
 
    Dump the tracebacks of all threads into *file*. If *all_threads* is
    ``False``, dump only the current thread.
+
+   .. seealso:: :func:`traceback.print_tb`, which can be used to print a traceback object.
 
    .. versionchanged:: 3.5
       Added support for passing file descriptor to this function.
@@ -61,8 +71,9 @@ Fault handler state
 
 .. function:: enable(file=sys.stderr, all_threads=True)
 
-   Enable the fault handler: install handlers for the :const:`SIGSEGV`,
-   :const:`SIGFPE`, :const:`SIGABRT`, :const:`SIGBUS` and :const:`SIGILL`
+   Enable the fault handler: install handlers for the :const:`~signal.SIGSEGV`,
+   :const:`~signal.SIGFPE`, :const:`~signal.SIGABRT`, :const:`~signal.SIGBUS`
+   and :const:`~signal.SIGILL`
    signals to dump the Python traceback. If *all_threads* is ``True``,
    produce tracebacks for every running thread. Otherwise, dump only the current
    thread.
@@ -97,8 +108,8 @@ Dumping the tracebacks after a timeout
 
    Dump the tracebacks of all threads, after a timeout of *timeout* seconds, or
    every *timeout* seconds if *repeat* is ``True``.  If *exit* is ``True``, call
-   :c:func:`_exit` with status=1 after dumping the tracebacks.  (Note
-   :c:func:`_exit` exits the process immediately, which means it doesn't do any
+   :c:func:`!_exit` with status=1 after dumping the tracebacks.  (Note
+   :c:func:`!_exit` exits the process immediately, which means it doesn't do any
    cleanup like flushing file buffers.) If the function is called twice, the new
    call replaces previous parameters and resets the timeout. The timer has a
    sub-second resolution.
@@ -109,11 +120,11 @@ Dumping the tracebacks after a timeout
 
    This function is implemented using a watchdog thread.
 
-   .. versionchanged:: 3.7
-      This function is now always available.
-
    .. versionchanged:: 3.5
       Added support for passing file descriptor to this function.
+
+   .. versionchanged:: 3.7
+      This function is now always available.
 
 .. function:: cancel_dump_traceback_later()
 
@@ -166,10 +177,10 @@ handler:
 
 .. code-block:: shell-session
 
-    $ python3 -c "import ctypes; ctypes.string_at(0)"
+    $ python -c "import ctypes; ctypes.string_at(0)"
     Segmentation fault
 
-    $ python3 -q -X faulthandler
+    $ python -q -X faulthandler
     >>> import ctypes
     >>> ctypes.string_at(0)
     Fatal Python error: Segmentation fault
@@ -178,4 +189,3 @@ handler:
       File "/home/python/cpython/Lib/ctypes/__init__.py", line 486 in string_at
       File "<stdin>", line 1 in <module>
     Segmentation fault
-

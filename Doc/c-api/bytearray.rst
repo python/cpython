@@ -5,7 +5,7 @@
 Byte Array Objects
 ------------------
 
-.. index:: object: bytearray
+.. index:: pair: object; bytearray
 
 
 .. c:type:: PyByteArrayObject
@@ -42,16 +42,21 @@ Direct API functions
    Return a new bytearray object from any object, *o*, that implements the
    :ref:`buffer protocol <bufferobjects>`.
 
+   On failure, return ``NULL`` with an exception set.
+
 
 .. c:function:: PyObject* PyByteArray_FromStringAndSize(const char *string, Py_ssize_t len)
 
-   Create a new bytearray object from *string* and its length, *len*.  On
-   failure, ``NULL`` is returned.
+   Create a new bytearray object from *string* and its length, *len*.
+
+   On failure, return ``NULL`` with an exception set.
 
 
 .. c:function:: PyObject* PyByteArray_Concat(PyObject *a, PyObject *b)
 
    Concat bytearrays *a* and *b* and return a new bytearray with the result.
+
+   On failure, return ``NULL`` with an exception set.
 
 
 .. c:function:: Py_ssize_t PyByteArray_Size(PyObject *bytearray)
@@ -77,9 +82,9 @@ These macros trade safety for speed and they don't check pointers.
 
 .. c:function:: char* PyByteArray_AS_STRING(PyObject *bytearray)
 
-   Macro version of :c:func:`PyByteArray_AsString`.
+   Similar to :c:func:`PyByteArray_AsString`, but without error checking.
 
 
 .. c:function:: Py_ssize_t PyByteArray_GET_SIZE(PyObject *bytearray)
 
-   Macro version of :c:func:`PyByteArray_Size`.
+   Similar to :c:func:`PyByteArray_Size`, but without error checking.

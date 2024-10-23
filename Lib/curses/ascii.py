@@ -46,7 +46,7 @@ controlnames = [
 ]
 
 def _ctoi(c):
-    if type(c) == type(""):
+    if isinstance(c, str):
         return ord(c)
     else:
         return c
@@ -69,19 +69,19 @@ def isctrl(c): return 0 <= _ctoi(c) < 32
 def ismeta(c): return _ctoi(c) > 127
 
 def ascii(c):
-    if type(c) == type(""):
+    if isinstance(c, str):
         return chr(_ctoi(c) & 0x7f)
     else:
         return _ctoi(c) & 0x7f
 
 def ctrl(c):
-    if type(c) == type(""):
+    if isinstance(c, str):
         return chr(_ctoi(c) & 0x1f)
     else:
         return _ctoi(c) & 0x1f
 
 def alt(c):
-    if type(c) == type(""):
+    if isinstance(c, str):
         return chr(_ctoi(c) | 0x80)
     else:
         return _ctoi(c) | 0x80

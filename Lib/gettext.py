@@ -46,6 +46,7 @@ internationalized, to the local language and cultural habits.
 #   find this format documented anywhere.
 
 
+import operator
 import os
 import re
 import sys
@@ -166,14 +167,28 @@ def _parse(tokens, priority=-1):
 
 def _as_int(n):
     try:
-        i = round(n)
+        round(n)
     except TypeError:
         raise TypeError('Plural value must be an integer, got %s' %
                         (n.__class__.__name__,)) from None
+    return _as_int2(n)
+
+def _as_int2(n):
+    try:
+        return operator.index(n)
+    except TypeError:
+        pass
+
     import warnings
+    frame = sys._getframe(1)
+    stacklevel = 2
+    while frame.f_back is not None and frame.f_globals.get('__name__') == __name__:
+        stacklevel += 1
+        frame = frame.f_back
     warnings.warn('Plural value must be an integer, got %s' %
                   (n.__class__.__name__,),
-                  DeprecationWarning, 4)
+                  DeprecationWarning,
+                  stacklevel)
     return n
 
 
@@ -200,7 +215,7 @@ def c2py(plural):
             elif c == ')':
                 depth -= 1
 
-        ns = {'_as_int': _as_int}
+        ns = {'_as_int': _as_int, '__name__': __name__}
         exec('''if True:
             def func(n):
                 if not isinstance(n, int):
@@ -280,6 +295,7 @@ class NullTranslations:
     def ngettext(self, msgid1, msgid2, n):
         if self._fallback:
             return self._fallback.ngettext(msgid1, msgid2, n)
+        n = _as_int2(n)
         if n == 1:
             return msgid1
         else:
@@ -293,6 +309,7 @@ class NullTranslations:
     def npgettext(self, context, msgid1, msgid2, n):
         if self._fallback:
             return self._fallback.npgettext(context, msgid1, msgid2, n)
+        n = _as_int2(n)
         if n == 1:
             return msgid1
         else:
@@ -422,10 +439,12 @@ class GNUTranslations(NullTranslations):
         missing = object()
         tmsg = self._catalog.get(message, missing)
         if tmsg is missing:
-            if self._fallback:
-                return self._fallback.gettext(message)
-            return message
-        return tmsg
+            tmsg = self._catalog.get((message, self.plural(1)), missing)
+        if tmsg is not missing:
+            return tmsg
+        if self._fallback:
+            return self._fallback.gettext(message)
+        return message
 
     def ngettext(self, msgid1, msgid2, n):
         try:
@@ -444,10 +463,12 @@ class GNUTranslations(NullTranslations):
         missing = object()
         tmsg = self._catalog.get(ctxt_msg_id, missing)
         if tmsg is missing:
-            if self._fallback:
-                return self._fallback.pgettext(context, message)
-            return message
-        return tmsg
+            tmsg = self._catalog.get((ctxt_msg_id, self.plural(1)), missing)
+        if tmsg is not missing:
+            return tmsg
+        if self._fallback:
+            return self._fallback.pgettext(context, message)
+        return message
 
     def npgettext(self, context, msgid1, msgid2, n):
         ctxt_msg_id = self.CONTEXT % (context, msgid1)
@@ -575,6 +596,7 @@ def dngettext(domain, msgid1, msgid2, n):
     try:
         t = translation(domain, _localedirs.get(domain, None))
     except OSError:
+        n = _as_int2(n)
         if n == 1:
             return msgid1
         else:
@@ -594,6 +616,7 @@ def dnpgettext(domain, context, msgid1, msgid2, n):
     try:
         t = translation(domain, _localedirs.get(domain, None))
     except OSError:
+        n = _as_int2(n)
         if n == 1:
             return msgid1
         else:
@@ -625,7 +648,7 @@ def npgettext(context, msgid1, msgid2, n):
 #    import gettext
 #    cat = gettext.Catalog(PACKAGE, localedir=LOCALEDIR)
 #    _ = cat.gettext
-#    print _('Hello World')
+#    print(_('Hello World'))
 
 # The resulting catalog object currently don't support access through a
 # dictionary API, which was supported (but apparently unused) in GNOME
