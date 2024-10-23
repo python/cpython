@@ -1,6 +1,6 @@
 """turtledemo/chaos.py
 
-A demonstration of chaos
+A demonstration of chaos.
 """
 from turtle import *
 
