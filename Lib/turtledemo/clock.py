@@ -1,7 +1,7 @@
 """turtledemo/clock.py
 
 Enhanced clock-program, showing date
-and time
+and time.
 """
 from turtle import *
 from datetime import datetime
