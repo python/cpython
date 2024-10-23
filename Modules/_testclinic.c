@@ -997,6 +997,25 @@ posonly_varpos_impl(PyObject *module, PyObject *a, PyObject *b,
 
 
 /*[clinic input]
+posonly_req_opt_varpos
+
+    a: object
+    b: object = False
+    /
+    *args: object
+
+[clinic start generated code]*/
+
+static PyObject *
+posonly_req_opt_varpos_impl(PyObject *module, PyObject *a, PyObject *b,
+                            PyObject *args)
+/*[clinic end generated code: output=67f82f90838e166a input=a49bd64740171e1c]*/
+{
+    return pack_arguments_newref(3, a, b, args);
+}
+
+
+/*[clinic input]
 posonly_poskw_varpos
 
     a: object
@@ -1996,6 +2015,7 @@ static PyMethodDef tester_methods[] = {
 
     VARPOS_METHODDEF
     POSONLY_VARPOS_METHODDEF
+    POSONLY_REQ_OPT_VARPOS_METHODDEF
     POSONLY_POSKW_VARPOS_METHODDEF
     POSKW_VARPOS_METHODDEF
     POSKW_VARPOS_KWONLY_OPT_METHODDEF
