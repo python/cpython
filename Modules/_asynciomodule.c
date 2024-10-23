@@ -457,7 +457,7 @@ future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
             break; // done
         }
         PyObject *cb_tup = PyList_GET_ITEM(fut->fut_callbacks, i);
-        if (!PyTuple_CheckExact(cb_tup) || PyTuple_GET_SIZE(cb_tup) < 2) {
+        if (!PyTuple_CheckExact(cb_tup) || PyTuple_GET_SIZE(cb_tup) != 2) {
             PyErr_SetString(PyExc_RuntimeError, "corrupted callback tuple");
             return -1;
         }
@@ -1073,7 +1073,7 @@ _asyncio_Future_remove_done_callback_impl(FutureObj *self, PyTypeObject *cls,
         // Beware: An evil PyObject_RichCompareBool could change fut_callbacks
         // or its items (see https://github.com/python/cpython/issues/97592 or
         // https://github.com/python/cpython/issues/125789 for details).
-        if (!PyTuple_CheckExact(cb_tup) || PyTuple_GET_SIZE(cb_tup) < 1) {
+        if (!PyTuple_CheckExact(cb_tup) || PyTuple_GET_SIZE(cb_tup) != 2) {
             PyErr_SetString(PyExc_RuntimeError, "corrupted callback tuple");
             return NULL;
         }
@@ -1110,7 +1110,7 @@ _asyncio_Future_remove_done_callback_impl(FutureObj *self, PyTypeObject *cls,
             break; // done
         }
         PyObject *cb_tup = PyList_GET_ITEM(self->fut_callbacks, i);
-        if (!PyTuple_CheckExact(cb_tup) || PyTuple_GET_SIZE(cb_tup) < 1) {
+        if (!PyTuple_CheckExact(cb_tup) || PyTuple_GET_SIZE(cb_tup) != 2) {
             PyErr_SetString(PyExc_RuntimeError, "corrupted callback tuple");
             goto fail;
         }
