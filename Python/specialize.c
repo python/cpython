@@ -442,6 +442,7 @@ _PyCode_Quicken(PyCodeObject *code)
 {
     #if ENABLE_SPECIALIZATION
     int opcode = 0;
+    int oparg = 0;
     _Py_CODEUNIT *instructions = _PyCode_CODE(code);
     /* The last code unit cannot have a cache, so we don't need to check it */
     for (int i = 0; i < Py_SIZE(code)-1; i++) {
@@ -464,6 +465,21 @@ _PyCode_Quicken(PyCodeObject *code)
                     break;
             }
             i += caches;
+        }
+        else if (opcode == LOAD_CONST) {
+            /* We can't do this in the bytecode compiler as
+             * can intern strings and make them immortal. */
+            oparg = (oparg << 8) | instructions[i].op.arg;
+            PyObject *obj = PyTuple_GET_ITEM(code->co_consts, oparg);
+            if (_Py_IsImmortal(obj)) {
+                instructions[i].op.code = LOAD_CONST_IMMORTAL;
+            }
+        }
+        if (opcode == EXTENDED_ARG) {
+            oparg = (oparg << 8) | instructions[i].op.arg;
+        }
+        else {
+            oparg = 0;
         }
     }
     #endif /* ENABLE_SPECIALIZATION */

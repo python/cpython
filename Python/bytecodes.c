@@ -255,8 +255,18 @@ dummy_func(
             value2 = PyStackRef_DUP(GETLOCAL(oparg2));
         }
 
+        family(LOAD_CONST, 0) = {
+            LOAD_CONST_IMMORTAL,
+        };
+
         pure inst(LOAD_CONST, (-- value)) {
             value = PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
+        }
+
+        inst(LOAD_CONST_IMMORTAL, (-- value)) {
+            PyObject *obj = GETITEM(FRAME_CO_CONSTS, oparg);
+            assert(_Py_IsImmortal(obj));
+            value = PyStackRef_FromPyObjectImmortal(obj);
         }
 
         replicate(8) inst(STORE_FAST, (value --)) {
