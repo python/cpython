@@ -629,10 +629,8 @@ init_interpreter(PyInterpreterState *interp,
     assert(next != NULL || (interp == runtime->interpreters.main));
     interp->next = next;
 
-    PyStatus status = _PyObject_InitState(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
+    // We would call _PyObject_InitState() at this point
+    // if interp->feature_flags were alredy set.
 
     _PyEval_InitState(interp);
     _PyGC_InitState(&interp->gc);

@@ -15444,10 +15444,6 @@ _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **p)
     assert(*p);
 }
 
-#ifdef Py_TRACE_REFS
-extern void _Py_NormalizeImmortalReference(PyObject *);
-#endif
-
 static void
 immortalize_interned(PyObject *s)
 {
@@ -15463,10 +15459,6 @@ immortalize_interned(PyObject *s)
 #endif
     _PyUnicode_STATE(s).interned = SSTATE_INTERNED_IMMORTAL;
     _Py_SetImmortal(s);
-#ifdef Py_TRACE_REFS
-    /* Make sure the ref is associated with the right interpreter. */
-    _Py_NormalizeImmortalReference(s);
-#endif
 }
 
 static /* non-null */ PyObject*

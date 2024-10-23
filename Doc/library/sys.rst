@@ -920,6 +920,35 @@ always available.
       It is not guaranteed to exist in all implementations of Python.
 
 
+.. function:: getobjects(limit[, type])
+
+   This function only exists if CPython was built using the
+   specialized configure option :option:`--with-trace-refs`.
+   It is intended only for debugging garbage-collection issues.
+
+   Return a list of up to *limit* dynamically allocated Python objects.
+   If *type* is given, only objects of that exact type (not subtypes)
+   are included.
+
+   Objects from the list are not safe to use.
+   Specifically, the result will include objects from all interpreters that
+   share their object allocator state (that is, ones created with
+   :c:member:`PyInterpreterConfig.use_main_obmalloc` set to 1
+   or using :c:func:`Py_NewInterpreter`, and the
+   :ref:`main interpreter <sub-interpreter-support>`).
+   Mixing objects from different interpreters may lead to crashes
+   or other unexpected behavior.
+
+   .. impl-detail::
+
+      This function should be used for specialized purposes only.
+      It is not guaranteed to exist in all implementations of Python.
+
+   .. versionchanged:: next
+
+      The result may include objects from other interpreters.
+
+
 .. function:: getprofile()
 
    .. index::
