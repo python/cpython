@@ -1213,6 +1213,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(source));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(source_traceback));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(spam));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(split));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(src));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(src_dir_fd));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(stacklevel));
@@ -1231,6 +1232,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(strict_mode));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(string));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sub_key));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(subgroup));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(symmetric_difference_update));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(tabsize));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(tag));

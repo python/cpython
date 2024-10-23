@@ -1211,6 +1211,7 @@ extern "C" {
     INIT_ID(source), \
     INIT_ID(source_traceback), \
     INIT_ID(spam), \
+    INIT_ID(split), \
     INIT_ID(src), \
     INIT_ID(src_dir_fd), \
     INIT_ID(stacklevel), \
@@ -1229,6 +1230,7 @@ extern "C" {
     INIT_ID(strict_mode), \
     INIT_ID(string), \
     INIT_ID(sub_key), \
+    INIT_ID(subgroup), \
     INIT_ID(symmetric_difference_update), \
     INIT_ID(tabsize), \
     INIT_ID(tag), \
