@@ -796,6 +796,10 @@ static inline int PyType_CheckExact(PyObject *op) {
 PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
 #endif
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+PyAPI_FUNC(int) PyType_Freeze(PyTypeObject *type);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

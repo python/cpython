@@ -777,6 +777,9 @@ New features
   (Contributed by Victor Stinner in :gh:`124502`.)
 
 
+* Add :c:func:`PyType_Freeze` function to make a type immutable.
+  (Contributed by Victor Stinner in :gh:`121654`.)
+
 Porting to Python 3.14
 ----------------------
 
