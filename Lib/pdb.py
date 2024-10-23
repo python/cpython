@@ -118,7 +118,7 @@ def find_first_executable_line(code):
     return code.co_firstlineno
 
 def find_function(funcname, filename):
-    cre = re.compile(r'def\s+%s\s*[(]' % re.escape(funcname))
+    cre = re.compile(r'def\s+%s(\s*\[.+\])?\s*[(]' % re.escape(funcname))
     try:
         fp = tokenize.open(filename)
     except OSError:
@@ -138,7 +138,13 @@ def find_function(funcname, filename):
 
             if funcdef:
                 try:
-                    funccode = compile(funcdef, filename, 'exec').co_consts[0]
+                    code = compile(funcdef, filename, 'exec')
+                    for const in code.co_consts:
+                        if isinstance(const, CodeType) and const.co_name == funcname:
+                            funccode = const
+                            break
+                    else:
+                        continue
                 except SyntaxError:
                     continue
                 lineno_offset = find_first_executable_line(funccode)
