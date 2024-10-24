@@ -628,7 +628,8 @@ _Py_HandleSystemExit(int *exitcode_p)
         if (PyFile_WriteObject(exc, sys_stderr, Py_PRINT_RAW) < 0) {
             PyErr_Clear();
         }
-    } else {
+    }
+    else {
         if (PyObject_Print(exc, stderr, Py_PRINT_RAW) < 0) {
             PyErr_Clear();
         }
