@@ -12,7 +12,7 @@ from test.support import (os_helper, MS_WINDOWS, flush_std_streams,
 
 from .cmdline import _parse_args, Namespace
 from .findtests import findtests, split_test_packages, list_cases
-from .logger import Logger
+from .logger import create_logger
 from .pgo import setup_pgo_tests
 from .result import State, TestResult
 from .results import TestResults, EXITCODE_INTERRUPTED
@@ -65,7 +65,7 @@ class Regrtest:
         self.first_state: str | None = None
 
         # Logger
-        self.logger = Logger(self.results, self.quiet, self.pgo)
+        self.logger = create_logger(self.results, ns)
 
         # Actions
         self.want_header: bool = ns.header
