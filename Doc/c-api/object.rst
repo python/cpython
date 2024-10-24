@@ -111,7 +111,8 @@ Object Protocol
    .. note::
 
       Exceptions that occur when this calls :meth:`~object.__getattr__` and
-      :meth:`~object.__getattribute__` methods are silently ignored.
+      :meth:`~object.__getattribute__` methods aren't propagated,
+      but instead given to :func:`sys.unraisablehook`.
       For proper error handling, use :c:func:`PyObject_HasAttrWithError`,
       :c:func:`PyObject_GetOptionalAttr` or :c:func:`PyObject_GetAttr` instead.
 
