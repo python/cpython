@@ -179,7 +179,7 @@ class IOBinding:
         self.updaterecentfileslist(filename)
         return True
 
-    def maybesave(self):
+    def maybesave(self, force=False):
         """Return 'yes', 'no', 'cancel' as appropriate.
 
         Tkinter messagebox.askyesnocancel converts these tk responses
@@ -190,15 +190,19 @@ class IOBinding:
         message = ("Do you want to save "
                    f"{self.filename or 'this untitled document'}"
                    " before closing?")
-        confirm = messagebox.askyesnocancel(
+        makemsgbox = messagebox.askyesno if force else messagebox.askyesnocancel
+        confirm = makemsgbox(
                   title="Save On Close",
                   message=message,
                   default=messagebox.YES,
                   parent=self.text)
+        reply = "no" if force else "cancel"
         if confirm:
             self.save(None)
-            reply = "yes" if self.get_saved() else "cancel"
-        else:  reply = "cancel" if confirm is None else "no"
+            if self.get_saved():
+                reply = "yes"
+        elif confirm is not None:
+            reply = "no"
         self.text.focus_set()
         return reply
 
