@@ -66,7 +66,7 @@ noted otherwise, all return values are floats.
 :func:`log1p(x) <log1p>`                              Natural logarithm of *1+x* (base *e*)
 :func:`log2(x) <log2>`                                Base-2 logarithm of *x*
 :func:`log10(x) <log10>`                              Base-10 logarithm of *x*
-:func:`pow(x, y) <pow>`                               *x* raised to the power *y*
+:func:`pow(x, y) <math.pow>`                               *x* raised to the power *y*
 :func:`sqrt(x) <sqrt>`                                Square root of *x*
 
 **Trigonometric functions**
