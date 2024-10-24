@@ -866,7 +866,7 @@ specialize_dict_access(
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
     if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES &&
         _PyObject_InlineValues(owner)->valid &&
-        (base_op == LOAD_ATTR || _PyObject_GetManagedDict(owner) == NULL))
+        !(base_op == STORE_ATTR && _PyObject_GetManagedDict(owner) != NULL))
     {
         PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
         assert(PyUnicode_CheckExact(name));
