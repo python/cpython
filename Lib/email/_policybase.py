@@ -316,7 +316,7 @@ class Compat32(Policy):
         # there is a WSP after '<HeaderName>:', the WSP will be moved to the front
         # of the value according to RFC5322, section 2.2.3.
         #
-        # However, the WSP is not part of the value; therefore, we must 
+        # However, the WSP is not part of the value; therefore, we must
         # remove it.
 
         no_first_value = value.strip() == '' and len(sourcelines) > 1

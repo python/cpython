@@ -957,7 +957,7 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
                          b'123456789 123456789 123456789 123456789 '
                          b'123456789-123456789\n 123456789 Hello '
                          b'=?utf-8?q?W=C3=B6rld!?= 123456789 123456789\n\n')
-        
+
 
     def test_folding_with_short_nospace_1(self):
         # bpo-36520
@@ -969,12 +969,12 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         m['Message-ID'] = '12345678912345678123456789123456789123456789'
         parsed_msg = message_from_bytes(m.as_bytes(), policy=policy.default)
         self.assertEqual(parsed_msg['Message-ID'], m['Message-ID'])
-    
+
     def test_folding_with_long_nospace_default_policy_1(self):
         # Fixed: https://github.com/python/cpython/issues/124452
-        # 
-        # When the value is too long, it should be converted back 
-        # to its original form without any modifications. 
+        #
+        # When the value is too long, it should be converted back
+        # to its original form without any modifications.
 
         m = EmailMessage(policy.default)
         m['Message-ID'] = '12345678912345678123456789123456789123456789'\
@@ -988,16 +988,15 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
 
     def test_folding_with_long_nospace_compat32_policy_1(self):
         # Fixed: https://github.com/python/cpython/issues/124452
-        # 
-        # When the value is too long, it should be converted back 
-        # to its original form without any modifications. 
+        #
+        # When the value is too long, it should be converted back
+        # to its original form without any modifications.
 
         m = EmailMessage(policy.compat32)
         m['Message-ID'] = '12345678912345678123456789123456789123456789'\
                         '12345678912345678123456789123456789123456789'
         parsed_msg = message_from_bytes(m.as_bytes(), policy=policy.default)
         self.assertEqual(parsed_msg['Message-ID'], m['Message-ID'])
-
 
     def test_get_body_malformed(self):
         """test for bpo-42892"""
