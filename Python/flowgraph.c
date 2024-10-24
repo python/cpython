@@ -515,22 +515,6 @@ no_redundant_jumps(cfg_builder *g) {
     }
     return true;
 }
-
-static bool
-all_exits_have_lineno(basicblock *entryblock) {
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        for (int i = 0; i < b->b_iused; i++) {
-            cfg_instr *instr = &b->b_instr[i];
-            if (instr->i_opcode == RETURN_VALUE) {
-                if (instr->i_loc.lineno < 0) {
-                    assert(0);
-                    return false;
-                }
-            }
-        }
-    }
-    return true;
-}
 #endif
 
 /***** CFG preprocessing (jump targets and exceptions) *****/
