@@ -7,7 +7,7 @@
  document.addEventListener("readthedocs-addons-data-ready", function(event) {
    const config = event.detail.data()
    const versionSelect = `
-   <select id="version_select" aria-label="Python Version">
+   <select id="version_select" aria-label="Python version">
    ${ config.versions.active.map(
        (version) => `
        <option
