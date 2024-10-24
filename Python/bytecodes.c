@@ -8,6 +8,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_backoff.h"
 #include "pycore_cell.h"          // PyCell_GetRef()
 #include "pycore_ceval.h"
@@ -27,7 +28,6 @@
 #include "pycore_range.h"         // _PyRangeIterObject
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
-#include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
 
@@ -3629,11 +3629,12 @@ dummy_func(
             DEOPT_IF(!PyStackRef_IsNull(null));
             DEOPT_IF(callable_o != (PyObject *)&PyUnicode_Type);
             STAT_INC(CALL, hit);
-            res = PyStackRef_FromPyObjectSteal(PyObject_Str(arg_o));
+            PyObject *res_o = PyObject_Str(arg_o);
             DEAD(null);
             DEAD(callable);
             PyStackRef_CLOSE(arg);
-            ERROR_IF(PyStackRef_IsNull(res), error);
+            ERROR_IF(res_o == NULL, error);
+            res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
         macro(CALL_STR_1) =
@@ -3650,11 +3651,12 @@ dummy_func(
             DEOPT_IF(!PyStackRef_IsNull(null));
             DEOPT_IF(callable_o != (PyObject *)&PyTuple_Type);
             STAT_INC(CALL, hit);
-            res = PyStackRef_FromPyObjectSteal(PySequence_Tuple(arg_o));
+            PyObject *res_o = PySequence_Tuple(arg_o);
             DEAD(null);
             DEAD(callable);
             PyStackRef_CLOSE(arg);
-            ERROR_IF(PyStackRef_IsNull(res), error);
+            ERROR_IF(res_o == NULL, error);
+            res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
         macro(CALL_TUPLE_1) =

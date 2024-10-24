@@ -702,7 +702,7 @@ Debug options
    Effects:
 
    * Define the ``Py_TRACE_REFS`` macro.
-   * Add :func:`!sys.getobjects` function.
+   * Add :func:`sys.getobjects` function.
    * Add :envvar:`PYTHONDUMPREFS` environment variable.
 
    The :envvar:`PYTHONDUMPREFS` environment variable can be used to dump

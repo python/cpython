@@ -1,0 +1,1 @@
+unittest discovery supports PEP 420 namespace packages as start directory again.

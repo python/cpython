@@ -1,0 +1,2 @@
+Enable the :ref:`launcher` to detect Python 3.14 installs from the Windows
+Store.

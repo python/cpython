@@ -97,6 +97,23 @@ class TestDictWatchers(unittest.TestCase):
             del d
             self.assert_events(["dealloc"])
 
+    def test_object_dict(self):
+        class MyObj: pass
+        o = MyObj()
+
+        with self.watcher() as wid:
+            self.watch(wid, o.__dict__)
+            o.foo = "bar"
+            o.foo = "baz"
+            del o.foo
+            self.assert_events(["new:foo:bar", "mod:foo:baz", "del:foo"])
+
+        with self.watcher() as wid:
+            self.watch(wid, o.__dict__)
+            for _ in range(100):
+                o.foo = "bar"
+            self.assert_events(["new:foo:bar"] + ["mod:foo:bar"] * 99)
+
     def test_unwatch(self):
         d = {}
         with self.watcher() as wid:
@@ -626,13 +643,17 @@ class TestContextObjectWatchers(unittest.TestCase):
                     ctx_inner.run(lambda: unraisables.append(cm.unraisable))
                     unraisables.append(cm.unraisable)
 
-        ctx_outer.run(_in_outer)
-        self.assertEqual([x.err_msg for x in unraisables],
-                         ["Exception ignored in Py_CONTEXT_SWITCHED "
-                          f"watcher callback for {ctx!r}"
-                          for ctx in [ctx_inner, ctx_outer]])
-        self.assertEqual([str(x.exc_value) for x in unraisables],
-                         ["boom!", "boom!"])
+        try:
+            ctx_outer.run(_in_outer)
+            self.assertEqual([x.err_msg for x in unraisables],
+                             ["Exception ignored in Py_CONTEXT_SWITCHED "
+                              f"watcher callback for {ctx!r}"
+                              for ctx in [ctx_inner, ctx_outer]])
+            self.assertEqual([str(x.exc_value) for x in unraisables],
+                             ["boom!", "boom!"])
+        finally:
+            # Break reference cycle
+            unraisables = None
 
     def test_clear_out_of_range_watcher_id(self):
         with self.assertRaisesRegex(ValueError, r"Invalid context watcher ID -1"):

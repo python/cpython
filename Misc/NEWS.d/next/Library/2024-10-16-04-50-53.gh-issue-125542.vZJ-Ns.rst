@@ -1,0 +1,2 @@
+Deprecate passing keyword-only *prefix_chars* argument to
+:meth:`argparse.ArgumentParser.add_argument_group`.

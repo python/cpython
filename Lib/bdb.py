@@ -350,9 +350,10 @@ class Bdb:
         # Issue #13183: pdb skips frames after hitting a breakpoint and running
         # step commands.
         # Restore the trace function in the caller (that may not have been set
-        # for performance reasons) when returning from the current frame.
+        # for performance reasons) when returning from the current frame, unless
+        # the caller is the botframe.
         caller_frame = current_frame.f_back
-        if caller_frame and not caller_frame.f_trace:
+        if caller_frame and not caller_frame.f_trace and caller_frame is not self.botframe:
             caller_frame.f_trace = self.trace_dispatch
 
     # Derived classes and clients can call the following methods
@@ -460,6 +461,14 @@ class Bdb:
             return 'Line %s:%d does not exist' % (filename, lineno)
         self._add_to_breaks(filename, lineno)
         bp = Breakpoint(filename, lineno, temporary, cond, funcname)
+        # After we set a new breakpoint, we need to search through all frames
+        # and set f_trace to trace_dispatch if there could be a breakpoint in
+        # that frame.
+        frame = self.enterframe
+        while frame:
+            if self.break_anywhere(frame):
+                frame.f_trace = self.trace_dispatch
+            frame = frame.f_back
         return None
 
     def _load_breaks(self):

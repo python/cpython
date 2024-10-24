@@ -1,2 +1,0 @@
-Fix data race when creating :class:`zoneinfo.ZoneInfo` objects in the free
-threading build.

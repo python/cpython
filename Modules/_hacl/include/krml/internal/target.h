@@ -1,5 +1,5 @@
 /* Copyright (c) INRIA and Microsoft Corporation. All rights reserved.
-   Licensed under the Apache 2.0 License. */
+   Licensed under the Apache 2.0 and MIT Licenses. */
 
 #ifndef __KRML_TARGET_H
 #define __KRML_TARGET_H
@@ -82,6 +82,8 @@
 #    define KRML_NOINLINE __declspec(noinline)
 #  elif defined (__GNUC__)
 #    define KRML_NOINLINE __attribute__((noinline,unused))
+#  elif defined (__SUNPRO_C)
+#    define KRML_NOINLINE __attribute__((noinline))
 #  else
 #    define KRML_NOINLINE
 #    warning "The KRML_NOINLINE macro is not defined for this toolchain!"
@@ -94,6 +96,8 @@
 #  if defined(_MSC_VER)
 #    define KRML_MUSTINLINE inline __forceinline
 #  elif defined (__GNUC__)
+#    define KRML_MUSTINLINE inline __attribute__((always_inline))
+#  elif defined (__SUNPRO_C)
 #    define KRML_MUSTINLINE inline __attribute__((always_inline))
 #  else
 #    define KRML_MUSTINLINE inline

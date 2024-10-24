@@ -31,8 +31,7 @@ although these are not fundamental and may change:
 
 ## Example family
 
-The `LOAD_GLOBAL` instruction (in
-[Python/bytecodes.c](https://github.com/python/cpython/blob/main/Python/bytecodes.c))
+The `LOAD_GLOBAL` instruction (in [Python/bytecodes.c](../Python/bytecodes.c))
 already has an adaptive family that serves as a relatively simple example.
 
 The `LOAD_GLOBAL` instruction performs adaptive specialization,

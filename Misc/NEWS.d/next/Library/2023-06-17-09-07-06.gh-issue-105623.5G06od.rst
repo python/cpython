@@ -1,2 +1,0 @@
-Fix performance degradation in
-:class:`logging.handlers.RotatingFileHandler`. Patch by Craig Robson.

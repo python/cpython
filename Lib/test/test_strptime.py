@@ -515,12 +515,17 @@ class StrptimeTests(unittest.TestCase):
 
     # NB: Dates before 1969 do not roundtrip on some locales:
     # az_IR, bo_CN, bo_IN, dz_BT, eu_ES, eu_FR, fa_IR, or_IN.
+    @support.run_with_tz('STD-1DST,M4.1.0,M10.1.0')
     @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
                       'he_IL', 'ar_AE', 'mfe_MU', 'yo_NG',
                       'csb_PL', 'br_FR', 'gez_ET', 'brx_IN',
                       'my_MM', 'shn_MM')
     def test_date_time_locale2(self):
         # Test %c directive
+        loc = locale.getlocale(locale.LC_TIME)[0]
+        if sys.platform.startswith('sunos'):
+            if loc in ('ar_AE',):
+                self.skipTest(f'locale {loc!r} may not work on this platform')
         self.roundtrip('%c', slice(0, 6), (1900, 1, 1, 0, 0, 0, 0, 1, 0))
         self.roundtrip('%c', slice(0, 6), (1800, 1, 1, 0, 0, 0, 0, 1, 0))
 
@@ -553,6 +558,10 @@ class StrptimeTests(unittest.TestCase):
                       'eu_ES', 'ar_AE', 'my_MM', 'shn_MM')
     def test_date_locale2(self):
         # Test %x directive
+        loc = locale.getlocale(locale.LC_TIME)[0]
+        if sys.platform.startswith('sunos'):
+            if loc in ('en_US', 'de_DE', 'ar_AE'):
+                self.skipTest(f'locale {loc!r} may not work on this platform')
         self.roundtrip('%x', slice(0, 3), (1900, 1, 1, 0, 0, 0, 0, 1, 0))
         self.roundtrip('%x', slice(0, 3), (1800, 1, 1, 0, 0, 0, 0, 1, 0))
 
@@ -569,12 +578,20 @@ class StrptimeTests(unittest.TestCase):
                       'ti_ET', 'tig_ER', 'wal_ET')
     def test_time_locale(self):
         # Test %X directive
+        loc = locale.getlocale(locale.LC_TIME)[0]
+        pos = slice(3, 6)
+        if glibc_ver and glibc_ver < (2, 29) and loc in {
+                'aa_ET', 'am_ET', 'byn_ER', 'gez_ET', 'om_ET',
+                'sid_ET', 'so_SO', 'ti_ET', 'tig_ER', 'wal_ET'}:
+            # Hours are in 12-hour notation without AM/PM indication.
+            # Ignore hours.
+            pos = slice(4, 6)
         now = time.time()
-        self.roundtrip('%X', slice(3, 6), time.localtime(now))
+        self.roundtrip('%X', pos, time.localtime(now))
         # 1 hour 20 minutes 30 seconds ago
-        self.roundtrip('%X', slice(3, 6), time.localtime(now - 4830))
+        self.roundtrip('%X', pos, time.localtime(now - 4830))
         # 12 hours ago
-        self.roundtrip('%X', slice(3, 6), time.localtime(now - 12*3600))
+        self.roundtrip('%X', pos, time.localtime(now - 12*3600))
 
     def test_percent(self):
         # Make sure % signs are handled properly

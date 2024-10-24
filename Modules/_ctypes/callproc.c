@@ -105,7 +105,7 @@ module _ctypes
 #include "pycore_global_objects.h"// _Py_ID()
 #include "pycore_traceback.h"     // _PyTraceback_Add()
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
+#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
 #include "../_complex.h"          // complex
 #endif
 
@@ -655,7 +655,7 @@ union result {
     double d;
     float f;
     void *p;
-#if defined(Py_HAVE_C_COMPLEX) && defined(FFI_TARGET_HAS_COMPLEX_TYPE)
+#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
     double complex C;
     float complex E;
     long double complex F;

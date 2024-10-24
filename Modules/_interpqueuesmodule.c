@@ -845,28 +845,31 @@ typedef struct _queues {
 static void
 _queues_init(_queues *queues, PyThread_type_lock mutex)
 {
-    queues->mutex = mutex;
-    queues->head = NULL;
-    queues->count = 0;
-    queues->next_id = 1;
+    assert(mutex != NULL);
+    assert(queues->mutex == NULL);
+    *queues = (_queues){
+        .mutex = mutex,
+        .head = NULL,
+        .count = 0,
+        .next_id = 1,
+    };
 }
 
 static void
-_queues_fini(_queues *queues)
+_queues_fini(_queues *queues, PyThread_type_lock *p_mutex)
 {
+    PyThread_type_lock mutex = queues->mutex;
+    assert(mutex != NULL);
+
+    PyThread_acquire_lock(mutex, WAIT_LOCK);
     if (queues->count > 0) {
-        PyThread_acquire_lock(queues->mutex, WAIT_LOCK);
-        assert((queues->count == 0) != (queues->head != NULL));
-        _queueref *head = queues->head;
-        queues->head = NULL;
-        queues->count = 0;
-        PyThread_release_lock(queues->mutex);
-        _queuerefs_clear(head);
+        assert(queues->head != NULL);
+        _queuerefs_clear(queues->head);
     }
-    if (queues->mutex != NULL) {
-        PyThread_free_lock(queues->mutex);
-        queues->mutex = NULL;
-    }
+    *queues = (_queues){0};
+    PyThread_release_lock(mutex);
+
+    *p_mutex = mutex;
 }
 
 static int64_t
@@ -1312,7 +1315,7 @@ _queueid_xid_new(int64_t qid)
 
     struct _queueid_xid *data = PyMem_RawMalloc(sizeof(struct _queueid_xid));
     if (data == NULL) {
-        _queues_incref(queues, qid);
+        _queues_decref(queues, qid);
         return NULL;
     }
     data->qid = qid;
@@ -1398,6 +1401,7 @@ _queueobj_shared(PyThreadState *tstate, PyObject *queueobj,
    the data that we need to share between interpreters, so it cannot
    hold PyObject values. */
 static struct globals {
+    PyMutex mutex;
     int module_count;
     _queues queues;
 } _globals = {0};
@@ -1405,32 +1409,36 @@ static struct globals {
 static int
 _globals_init(void)
 {
-    // XXX This isn't thread-safe.
+    PyMutex_Lock(&_globals.mutex);
+    assert(_globals.module_count >= 0);
     _globals.module_count++;
-    if (_globals.module_count > 1) {
-        // Already initialized.
-        return 0;
+    if (_globals.module_count == 1) {
+        // Called for the first time.
+        PyThread_type_lock mutex = PyThread_allocate_lock();
+        if (mutex == NULL) {
+            _globals.module_count--;
+            PyMutex_Unlock(&_globals.mutex);
+            return ERR_QUEUES_ALLOC;
+        }
+        _queues_init(&_globals.queues, mutex);
     }
-
-    assert(_globals.queues.mutex == NULL);
-    PyThread_type_lock mutex = PyThread_allocate_lock();
-    if (mutex == NULL) {
-        return ERR_QUEUES_ALLOC;
-    }
-    _queues_init(&_globals.queues, mutex);
+    PyMutex_Unlock(&_globals.mutex);
     return 0;
 }
 
 static void
 _globals_fini(void)
 {
-    // XXX This isn't thread-safe.
+    PyMutex_Lock(&_globals.mutex);
+    assert(_globals.module_count > 0);
     _globals.module_count--;
-    if (_globals.module_count > 0) {
-        return;
+    if (_globals.module_count == 0) {
+        PyThread_type_lock mutex;
+        _queues_fini(&_globals.queues, &mutex);
+        assert(mutex != NULL);
+        PyThread_free_lock(mutex);
     }
-
-    _queues_fini(&_globals.queues);
+    PyMutex_Unlock(&_globals.mutex);
 }
 
 static _queues *
@@ -1518,7 +1526,7 @@ static PyObject *
 queuesmod_destroy(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:destroy", kwlist,
                                      qidarg_converter, &qidarg)) {
         return NULL;
@@ -1579,7 +1587,7 @@ static PyObject *
 queuesmod_put(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", "obj", "fmt", "unboundop", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     PyObject *obj;
     int fmt;
     int unboundop;
@@ -1615,7 +1623,7 @@ static PyObject *
 queuesmod_get(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:get", kwlist,
                                      qidarg_converter, &qidarg)) {
         return NULL;
@@ -1651,7 +1659,7 @@ static PyObject *
 queuesmod_bind(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:bind", kwlist,
                                      qidarg_converter, &qidarg)) {
         return NULL;
@@ -1681,7 +1689,7 @@ queuesmod_release(PyObject *self, PyObject *args, PyObject *kwds)
 {
     // Note that only the current interpreter is affected.
     static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O&:release", kwlist,
                                      qidarg_converter, &qidarg)) {
@@ -1710,7 +1718,7 @@ static PyObject *
 queuesmod_get_maxsize(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O&:get_maxsize", kwlist,
                                      qidarg_converter, &qidarg)) {
@@ -1735,7 +1743,7 @@ static PyObject *
 queuesmod_get_queue_defaults(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O&:get_queue_defaults", kwlist,
                                      qidarg_converter, &qidarg)) {
@@ -1765,7 +1773,7 @@ static PyObject *
 queuesmod_is_full(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O&:is_full", kwlist,
                                      qidarg_converter, &qidarg)) {
@@ -1793,7 +1801,7 @@ static PyObject *
 queuesmod_get_count(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg;
+    qidarg_converter_data qidarg = {0};
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O&:get_count", kwlist,
                                      qidarg_converter, &qidarg)) {
@@ -1894,7 +1902,8 @@ The 'interpreters' module provides a more convenient interface.");
 static int
 module_exec(PyObject *mod)
 {
-    if (_globals_init() != 0) {
+    int err = _globals_init();
+    if (handle_queue_error(err, mod, -1)) {
         return -1;
     }
 

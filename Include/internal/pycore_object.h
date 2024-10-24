@@ -14,7 +14,7 @@ extern "C" {
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_STORE_PTR_RELAXED
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_uniqueid.h"      // _PyType_IncrefSlow
+#include "pycore_uniqueid.h"      // _PyObject_ThreadIncrefSlow()
 
 // This value is added to `ob_ref_shared` for objects that use deferred
 // reference counting so that they are not immediately deallocated when the
@@ -208,6 +208,11 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 #ifdef Py_TRACE_REFS
         _Py_ForgetReference(op);
 #endif
+        struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer;
+        if (tracer->tracer_func != NULL) {
+            void* data = tracer->tracer_data;
+            tracer->tracer_func(op, PyRefTracer_DESTROY, data);
+        }
         destruct(op);
     }
 }
@@ -288,10 +293,48 @@ extern PyStatus _PyObject_InitState(PyInterpreterState *interp);
 extern void _PyObject_FiniState(PyInterpreterState *interp);
 extern bool _PyRefchain_IsTraced(PyInterpreterState *interp, PyObject *obj);
 
+// Macros used for per-thread reference counting in the free threading build.
+// They resolve to normal Py_INCREF/DECREF calls in the default build.
+//
+// The macros are used for only a few references that would otherwise cause
+// scaling bottlenecks in the free threading build:
+// - The reference from an object to `ob_type`.
+// - The reference from a function to `func_code`.
+// - The reference from a function to `func_globals` and `func_builtins`.
+//
+// It's safe, but not performant or necessary, to use these macros for other
+// references to code, type, or dict objects. It's also safe to mix their
+// usage with normal Py_INCREF/DECREF calls.
+//
+// See also Include/internal/pycore_dict.h for _Py_INCREF_DICT/_Py_DECREF_DICT.
 #ifndef Py_GIL_DISABLED
 #  define _Py_INCREF_TYPE Py_INCREF
 #  define _Py_DECREF_TYPE Py_DECREF
+#  define _Py_INCREF_CODE Py_INCREF
+#  define _Py_DECREF_CODE Py_DECREF
 #else
+static inline void
+_Py_THREAD_INCREF_OBJECT(PyObject *obj, Py_ssize_t unique_id)
+{
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+
+    // Unsigned comparison so that `unique_id=-1`, which indicates that
+    // per-thread refcounting has been disabled on this object, is handled by
+    // the "else".
+    if ((size_t)unique_id < (size_t)tstate->refcounts.size) {
+#  ifdef Py_REF_DEBUG
+        _Py_INCREF_IncRefTotal();
+#  endif
+        _Py_INCREF_STAT_INC();
+        tstate->refcounts.values[unique_id]++;
+    }
+    else {
+        // The slow path resizes the per-thread refcount array if necessary.
+        // It handles the unique_id=-1 case to keep the inlinable function smaller.
+        _PyObject_ThreadIncrefSlow(obj, unique_id);
+    }
+}
+
 static inline void
 _Py_INCREF_TYPE(PyTypeObject *type)
 {
@@ -308,29 +351,38 @@ _Py_INCREF_TYPE(PyTypeObject *type)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Warray-bounds"
 #endif
-
-    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
-    PyHeapTypeObject *ht = (PyHeapTypeObject *)type;
-
-    // Unsigned comparison so that `unique_id=-1`, which indicates that
-    // per-thread refcounting has been disabled on this type, is handled by
-    // the "else".
-    if ((size_t)ht->unique_id < (size_t)tstate->refcounts.size) {
-#  ifdef Py_REF_DEBUG
-        _Py_INCREF_IncRefTotal();
-#  endif
-        _Py_INCREF_STAT_INC();
-        tstate->refcounts.values[ht->unique_id]++;
-    }
-    else {
-        // The slow path resizes the thread-local refcount array if necessary.
-        // It handles the unique_id=-1 case to keep the inlinable function smaller.
-        _PyType_IncrefSlow(ht);
-    }
-
+    _Py_THREAD_INCREF_OBJECT((PyObject *)type, ((PyHeapTypeObject *)type)->unique_id);
 #if defined(__GNUC__) && __GNUC__ >= 11
 #  pragma GCC diagnostic pop
 #endif
+}
+
+static inline void
+_Py_INCREF_CODE(PyCodeObject *co)
+{
+    _Py_THREAD_INCREF_OBJECT((PyObject *)co, co->_co_unique_id);
+}
+
+static inline void
+_Py_THREAD_DECREF_OBJECT(PyObject *obj, Py_ssize_t unique_id)
+{
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+
+    // Unsigned comparison so that `unique_id=-1`, which indicates that
+    // per-thread refcounting has been disabled on this object, is handled by
+    // the "else".
+    if ((size_t)unique_id < (size_t)tstate->refcounts.size) {
+#  ifdef Py_REF_DEBUG
+        _Py_DECREF_DecRefTotal();
+#  endif
+        _Py_DECREF_STAT_INC();
+        tstate->refcounts.values[unique_id]--;
+    }
+    else {
+        // Directly decref the object if the id is not assigned or if
+        // per-thread refcounting has been disabled on this object.
+        Py_DECREF(obj);
+    }
 }
 
 static inline void
@@ -341,25 +393,14 @@ _Py_DECREF_TYPE(PyTypeObject *type)
         _Py_DECREF_IMMORTAL_STAT_INC();
         return;
     }
-
-    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
     PyHeapTypeObject *ht = (PyHeapTypeObject *)type;
+    _Py_THREAD_DECREF_OBJECT((PyObject *)type, ht->unique_id);
+}
 
-    // Unsigned comparison so that `unique_id=-1`, which indicates that
-    // per-thread refcounting has been disabled on this type, is handled by
-    // the "else".
-    if ((size_t)ht->unique_id < (size_t)tstate->refcounts.size) {
-#  ifdef Py_REF_DEBUG
-        _Py_DECREF_DecRefTotal();
-#  endif
-        _Py_DECREF_STAT_INC();
-        tstate->refcounts.values[ht->unique_id]--;
-    }
-    else {
-        // Directly decref the type if the type id is not assigned or if
-        // per-thread refcounting has been disabled on this type.
-        Py_DECREF(type);
-    }
+static inline void
+_Py_DECREF_CODE(PyCodeObject *co)
+{
+    _Py_THREAD_DECREF_OBJECT((PyObject *)co, co->_co_unique_id);
 }
 #endif
 

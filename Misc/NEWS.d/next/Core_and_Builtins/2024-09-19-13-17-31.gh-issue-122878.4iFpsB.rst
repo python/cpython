@@ -1,1 +1,0 @@
-Use the ``pager`` binary, if available (e.g. on Debian and derivatives), to display REPL ``help()``.

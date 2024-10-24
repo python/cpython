@@ -1,4 +1,4 @@
-Pending Removal in Python 3.14
+Pending removal in Python 3.14
 ------------------------------
 
 * The import system:

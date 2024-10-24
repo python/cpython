@@ -1575,7 +1575,7 @@ PyUnicodeWriter
 The :c:type:`PyUnicodeWriter` API can be used to create a Python :class:`str`
 object.
 
-.. versionadded:: next
+.. versionadded:: 3.14
 
 .. c:type:: PyUnicodeWriter
 

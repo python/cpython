@@ -2949,11 +2949,32 @@ class TestDateTime(TestDate):
             self.assertEqual(t.strftime("%z"), "-0200" + z)
             self.assertEqual(t.strftime("%:z"), "-02:00:" + z)
 
-        # bpo-34482: Check that surrogates don't cause a crash.
-        try:
-            t.strftime('%y\ud800%m %H\ud800%M')
-        except UnicodeEncodeError:
-            pass
+    def test_strftime_special(self):
+        t = self.theclass(2004, 12, 31, 6, 22, 33, 47)
+        s1 = t.strftime('%c')
+        s2 = t.strftime('%B')
+        # gh-52551, gh-78662: Unicode strings should pass through strftime,
+        # independently from locale.
+        self.assertEqual(t.strftime('\U0001f40d'), '\U0001f40d')
+        self.assertEqual(t.strftime('\U0001f4bb%c\U0001f40d%B'), f'\U0001f4bb{s1}\U0001f40d{s2}')
+        self.assertEqual(t.strftime('%c\U0001f4bb%B\U0001f40d'), f'{s1}\U0001f4bb{s2}\U0001f40d')
+        # Lone surrogates should pass through.
+        self.assertEqual(t.strftime('\ud83d'), '\ud83d')
+        self.assertEqual(t.strftime('\udc0d'), '\udc0d')
+        self.assertEqual(t.strftime('\ud83d%c\udc0d%B'), f'\ud83d{s1}\udc0d{s2}')
+        self.assertEqual(t.strftime('%c\ud83d%B\udc0d'), f'{s1}\ud83d{s2}\udc0d')
+        self.assertEqual(t.strftime('%c\udc0d%B\ud83d'), f'{s1}\udc0d{s2}\ud83d')
+        # Surrogate pairs should not recombine.
+        self.assertEqual(t.strftime('\ud83d\udc0d'), '\ud83d\udc0d')
+        self.assertEqual(t.strftime('%c\ud83d\udc0d%B'), f'{s1}\ud83d\udc0d{s2}')
+        # Surrogate-escaped bytes should not recombine.
+        self.assertEqual(t.strftime('\udcf0\udc9f\udc90\udc8d'), '\udcf0\udc9f\udc90\udc8d')
+        self.assertEqual(t.strftime('%c\udcf0\udc9f\udc90\udc8d%B'), f'{s1}\udcf0\udc9f\udc90\udc8d{s2}')
+        # gh-124531: The null character should not terminate the format string.
+        self.assertEqual(t.strftime('\0'), '\0')
+        self.assertEqual(t.strftime('\0'*1000), '\0'*1000)
+        self.assertEqual(t.strftime('\0%c\0%B'), f'\0{s1}\0{s2}')
+        self.assertEqual(t.strftime('%c\0%B\0'), f'{s1}\0{s2}\0')
 
     def test_extract(self):
         dt = self.theclass(2002, 3, 4, 18, 45, 3, 1234)
@@ -3736,6 +3757,33 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         # gh-85432: The parameter was named "fmt" in the pure-Python impl.
         t.strftime(format="%f")
 
+    def test_strftime_special(self):
+        t = self.theclass(1, 2, 3, 4)
+        s1 = t.strftime('%I%p%Z')
+        s2 = t.strftime('%X')
+        # gh-52551, gh-78662: Unicode strings should pass through strftime,
+        # independently from locale.
+        self.assertEqual(t.strftime('\U0001f40d'), '\U0001f40d')
+        self.assertEqual(t.strftime('\U0001f4bb%I%p%Z\U0001f40d%X'), f'\U0001f4bb{s1}\U0001f40d{s2}')
+        self.assertEqual(t.strftime('%I%p%Z\U0001f4bb%X\U0001f40d'), f'{s1}\U0001f4bb{s2}\U0001f40d')
+        # Lone surrogates should pass through.
+        self.assertEqual(t.strftime('\ud83d'), '\ud83d')
+        self.assertEqual(t.strftime('\udc0d'), '\udc0d')
+        self.assertEqual(t.strftime('\ud83d%I%p%Z\udc0d%X'), f'\ud83d{s1}\udc0d{s2}')
+        self.assertEqual(t.strftime('%I%p%Z\ud83d%X\udc0d'), f'{s1}\ud83d{s2}\udc0d')
+        self.assertEqual(t.strftime('%I%p%Z\udc0d%X\ud83d'), f'{s1}\udc0d{s2}\ud83d')
+        # Surrogate pairs should not recombine.
+        self.assertEqual(t.strftime('\ud83d\udc0d'), '\ud83d\udc0d')
+        self.assertEqual(t.strftime('%I%p%Z\ud83d\udc0d%X'), f'{s1}\ud83d\udc0d{s2}')
+        # Surrogate-escaped bytes should not recombine.
+        self.assertEqual(t.strftime('\udcf0\udc9f\udc90\udc8d'), '\udcf0\udc9f\udc90\udc8d')
+        self.assertEqual(t.strftime('%I%p%Z\udcf0\udc9f\udc90\udc8d%X'), f'{s1}\udcf0\udc9f\udc90\udc8d{s2}')
+        # gh-124531: The null character should not terminate the format string.
+        self.assertEqual(t.strftime('\0'), '\0')
+        self.assertEqual(t.strftime('\0'*1000), '\0'*1000)
+        self.assertEqual(t.strftime('\0%I%p%Z\0%X'), f'\0{s1}\0{s2}')
+        self.assertEqual(t.strftime('%I%p%Z\0%X\0'), f'{s1}\0{s2}\0')
+
     def test_format(self):
         t = self.theclass(1, 2, 3, 4)
         self.assertEqual(t.__format__(''), str(t))
@@ -4259,9 +4307,8 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         self.assertRaises(TypeError, t.strftime, "%Z")
 
         # Issue #6697:
-        if '_Fast' in self.__class__.__name__:
-            Badtzname.tz = '\ud800'
-            self.assertRaises(ValueError, t.strftime, "%Z")
+        Badtzname.tz = '\ud800'
+        self.assertEqual(t.strftime("%Z"), '\ud800')
 
     def test_hash_edge_cases(self):
         # Offsets that overflow a basic time.

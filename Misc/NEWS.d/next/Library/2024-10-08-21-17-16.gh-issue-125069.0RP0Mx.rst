@@ -1,4 +1,0 @@
-Fix an issue where providing a :class:`pathlib.PurePath` object as an
-initializer argument to a second :class:`~pathlib.PurePath` object with a
-different :attr:`~pathlib.PurePath.parser` resulted in arguments to the
-former object's initializer being joined by the latter object's parser.

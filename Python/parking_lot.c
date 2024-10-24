@@ -111,15 +111,28 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, PyTime_t timeout)
             millis = (DWORD) div;
         }
     }
-    wait = WaitForSingleObjectEx(sema->platform_sem, millis, FALSE);
+
+    // NOTE: we wait on the sigint event even in non-main threads to match the
+    // behavior of the other platforms. Non-main threads will ignore the
+    // Py_PARK_INTR result.
+    HANDLE sigint_event = _PyOS_SigintEvent();
+    HANDLE handles[2] = { sema->platform_sem, sigint_event };
+    DWORD count = sigint_event != NULL ? 2 : 1;
+    wait = WaitForMultipleObjects(count, handles, FALSE, millis);
     if (wait == WAIT_OBJECT_0) {
         res = Py_PARK_OK;
+    }
+    else if (wait == WAIT_OBJECT_0 + 1) {
+        ResetEvent(sigint_event);
+        res = Py_PARK_INTR;
     }
     else if (wait == WAIT_TIMEOUT) {
         res = Py_PARK_TIMEOUT;
     }
     else {
-        res = Py_PARK_INTR;
+        _Py_FatalErrorFormat(__func__,
+            "unexpected error from semaphore: %u (error: %u)",
+            wait, GetLastError());
     }
 #elif defined(_Py_USE_SEMAPHORES)
     int err;

@@ -451,8 +451,8 @@ Constants
       network interface instead of its name.
 
    .. versionchanged:: 3.14
-      Added missing ``IP_RECVERR``, ``IP_RECVTTL``, and ``IP_RECVORIGDSTADDR``
-      on Linux.
+      Added missing ``IP_RECVERR``, ``IPV6_RECVERR``, ``IP_RECVTTL``, and
+      ``IP_RECVORIGDSTADDR`` on Linux.
 
    .. versionchanged:: 3.14
       Added support for ``TCP_QUICKACK`` on Windows platforms when available.
