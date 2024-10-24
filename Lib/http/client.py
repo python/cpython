@@ -1546,3 +1546,47 @@ class RemoteDisconnected(ConnectionResetError, BadStatusLine):
 
 # for backwards compatibility
 error = HTTPException
+
+def _get_http_version(response_version):
+    if response.version == 10:
+        return '1.0'
+    if response.version == 11:
+        return '1.1'
+    return 'unknown'
+
+
+if __name__ == '__main__':
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--method', '-m', default='GET',
+                        help='HTTP method used in the request'
+                        '[default:current directory]')
+    parser.add_argument('--output', '-o', default='',
+                        nargs='?',
+                        help='File to save the response body')
+    parser.add_argument('url', help='URL to make the request to')
+    args = parser.parse_args()
+
+    from urllib.parse import urlparse
+    parsed_url = urlparse(args.url)
+
+    http_connection = HTTPConnection(parsed_url.netloc)
+    http_connection.request(method=args.method, url=parsed_url.path)
+    try:
+        response = http_connection.getresponse()
+        response_body = response.read()
+        if args.output:
+            with open(args.output, 'wb+') as output_file:
+                output_file.write(response_body)
+        http_version = _get_http_version(response.version)
+        print('HTTP/%s %d %s' % (http_version, response.status, response.reason))
+        print(response.headers.as_string().strip())
+        print()
+        try:
+            print(response_body.decode('utf-8'))
+        except UnicodeDecodeError:
+            print(response_body.hex())
+    finally:
+        http_connection.close()
+
