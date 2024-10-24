@@ -3271,6 +3271,24 @@ class ConfigDictTest(BaseTest):
         }
     }
 
+    # "fmt" is an invalid key that is often incorrectly used
+    # Do not let it silently pass
+    config_invalid_key = {
+        "version": 1,
+        "formatters": {
+            "default": { "fmt": "%(levelname)s %(message)s" }
+        },
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                "formatter": "default"
+            }
+        },
+        "loggers": {
+            "log": { "handlers": ["console"] }
+        }
+    }
+
     def apply_config(self, conf):
         logging.config.dictConfig(conf)
 
@@ -3719,6 +3737,10 @@ class ConfigDictTest(BaseTest):
                               logging.StringTemplateStyle)
         self.assertEqual(sorted(logging.getHandlerNames()),
                          ['bufferGlobal', 'fileGlobal'])
+
+    def test_invalid_key(self):
+        with self.assertRaises(ValueError):
+            self.apply_config(self.config_invalid_key)
 
     def test_custom_formatter_class_with_validate(self):
         self.apply_config(self.custom_formatter_class_validate)
