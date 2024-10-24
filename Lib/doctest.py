@@ -925,7 +925,7 @@ class DocTestFinder:
         # given object's docstring.
         try:
             file = inspect.getsourcefile(obj)
-        except TypeError:
+        except (TypeError, OSError):
             source_lines = None
         else:
             if not file:
