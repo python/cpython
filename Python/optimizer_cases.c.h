@@ -79,6 +79,15 @@
             break;
         }
 
+        case _LOAD_INT: {
+            _Py_UopsSymbol *value;
+            value = sym_new_not_null(ctx);
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _STORE_FAST: {
             _Py_UopsSymbol *value;
             value = stack_pointer[-1];

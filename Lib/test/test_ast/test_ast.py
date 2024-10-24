@@ -2311,7 +2311,6 @@ class ConstantTests(unittest.TestCase):
     def test_load_const(self):
         consts = [None,
                   True, False,
-                  124,
                   2.0,
                   3j,
                   "unicode",

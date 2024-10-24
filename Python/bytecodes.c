@@ -269,6 +269,14 @@ dummy_func(
             value = PyStackRef_FromPyObjectImmortal(obj);
         }
 
+        replicate(4) inst(LOAD_INT, (-- value)) {
+            /* Tell code generator that this is a const load */
+            (void)FRAME_CO_CONSTS;
+            assert(oparg < 256);
+            PyObject *obj = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + oparg];
+            value = PyStackRef_FromPyObjectImmortal(obj);
+        }
+
         replicate(8) inst(STORE_FAST, (value --)) {
             SETLOCAL(oparg, value);
             DEAD(value);

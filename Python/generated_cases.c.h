@@ -6189,6 +6189,22 @@
             DISPATCH();
         }
 
+        TARGET(LOAD_INT) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(LOAD_INT);
+            _PyStackRef value;
+            /* Tell code generator that this is a const load */
+            (void)FRAME_CO_CONSTS;
+            assert(oparg < 256);
+            PyObject *obj = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + oparg];
+            value = PyStackRef_FromPyObjectImmortal(obj);
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+
         TARGET(LOAD_LOCALS) {
             frame->instr_ptr = next_instr;
             next_instr += 1;

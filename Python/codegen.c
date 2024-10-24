@@ -280,6 +280,14 @@ codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 static int
 codegen_addop_load_const(compiler *c, location loc, PyObject *o)
 {
+    if (PyLong_CheckExact(o)) {
+        int overflow;
+        long val = PyLong_AsLongAndOverflow(o, &overflow);
+        if (!overflow && val >= 0 && val < 256) {
+            ADDOP_I(c, loc, LOAD_INT, val);
+            return SUCCESS;
+        }
+    }
     Py_ssize_t arg = _PyCompile_AddConst(c, o);
     if (arg < 0) {
         return ERROR;
