@@ -1,0 +1,1 @@
+Use an AST parser instead of a tokenizer in pygettext
