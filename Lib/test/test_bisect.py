@@ -130,7 +130,11 @@ class TestBisect:
         # Issue 125889
         def assertNoRiases(f, *arg, **kwargs):
             try:
-                f(*arg, **kwargs)
+                res = f(*arg, **kwargs)
+                if f.__name__ in ('bisect_left', 'bisect_right'):
+                    self.assertEqual(res, 3)
+                else:
+                    self.assertIn(res, (3, None))
             except Exception:
                 self.fail('Unable to work negative hi argument')
         mod = self.module
