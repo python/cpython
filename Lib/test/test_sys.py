@@ -1094,7 +1094,14 @@ class SysModuleTest(unittest.TestCase):
             # While we could imagine a Python session where the number of
             # multiple buffer objects would exceed the sharing of references,
             # it is unlikely to happen in a normal test run.
-            self.assertLess(a, sys.gettotalrefcount())
+            #
+            # In free-threaded builds each code object owns an array of
+            # pointers to copies of the bytecode. When the number of
+            # code objects is a large fraction of the total number of
+            # references, this can cause the total number of allocated
+            # blocks to exceed the total number of references.
+            if not support.Py_GIL_DISABLED:
+                self.assertLess(a, sys.gettotalrefcount())
         except AttributeError:
             # gettotalrefcount() not available
             pass
@@ -1613,7 +1620,10 @@ class SizeofTest(unittest.TestCase):
         def func():
             return sys._getframe()
         x = func()
-        INTERPRETER_FRAME = '9PhcP'
+        if support.Py_GIL_DISABLED:
+            INTERPRETER_FRAME = '10PhcP'
+        else:
+            INTERPRETER_FRAME = '9PhcP'
         check(x, size('3PiccPP' + INTERPRETER_FRAME + 'P'))
         # function
         def func(): pass
