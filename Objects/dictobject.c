@@ -2511,6 +2511,40 @@ _PyDict_LoadGlobalStackRef(PyDictObject *globals, PyDictObject *builtins, PyObje
     assert(ix >= 0 || PyStackRef_IsNull(*res));
 }
 
+PyObject *
+_PyDict_LoadBuiltinsFromGlobals(PyObject *globals)
+{
+    if (!PyDict_Check(globals)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    PyDictObject *mp = (PyDictObject *)globals;
+    PyObject *key = &_Py_ID(__builtins__);
+    Py_hash_t hash = unicode_get_hash(key);
+
+    // Use the stackref variant to avoid reference count contention on the
+    // builtins module in the free threading build. It's important not to
+    // make any escaping calls between the lookup and the `PyStackRef_CLOSE()`
+    // because the `ref` is not visible to the GC.
+    _PyStackRef ref;
+    Py_ssize_t ix = _Py_dict_lookup_threadsafe_stackref(mp, key, hash, &ref);
+    if (ix == DKIX_ERROR) {
+        return NULL;
+    }
+    if (PyStackRef_IsNull(ref)) {
+        return Py_NewRef(PyEval_GetBuiltins());
+    }
+    PyObject *builtins = PyStackRef_AsPyObjectBorrow(ref);
+    if (PyModule_Check(builtins)) {
+        builtins = _PyModule_GetDict(builtins);
+        assert(builtins != NULL);
+    }
+    _Py_INCREF_BUILTINS(builtins);
+    PyStackRef_CLOSE(ref);
+    return builtins;
+}
+
 /* Consumes references to key and value */
 static int
 setitem_take2_lock_held(PyDictObject *mp, PyObject *key, PyObject *value)
