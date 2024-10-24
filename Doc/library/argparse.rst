@@ -598,7 +598,7 @@ The add_argument() method
 The following sections describe how each of these are used.
 
 
-.. _name_or_flags:
+.. _`name or flags`:
 
 name or flags
 ^^^^^^^^^^^^^
@@ -728,6 +728,9 @@ how the command-line arguments should be handled. The supplied actions are:
 
   .. versionadded:: 3.8
 
+Only actions that consume command-line arguments (e.g. ``'store'``,
+``'append'`` or ``'extend'``) can be used with positional arguments.
+
 You may also specify an arbitrary action by passing an Action subclass or
 other object that implements the same interface. The ``BooleanOptionalAction``
 is available in ``argparse`` and adds support for boolean actions such as
@@ -855,6 +858,8 @@ See also :ref:`specifying-ambiguous-arguments`. The supported values are:
 If the ``nargs`` keyword argument is not provided, the number of arguments consumed
 is determined by the action_.  Generally this means a single command-line argument
 will be consumed and a single item (not a list) will be produced.
+Actions that do not consume command-line arguments (e.g.
+``'store_const'``) set ``nargs=0``.
 
 
 .. _const:
@@ -1780,7 +1785,8 @@ FileType objects
 Argument groups
 ^^^^^^^^^^^^^^^
 
-.. method:: ArgumentParser.add_argument_group(title=None, description=None)
+.. method:: ArgumentParser.add_argument_group(title=None, description=None, *, \
+                                              [argument_default], [conflict_handler])
 
    By default, :class:`ArgumentParser` groups command-line arguments into
    "positional arguments" and "options" when displaying help
@@ -1824,6 +1830,11 @@ Argument groups
        group2 description
 
        --bar BAR  bar help
+
+   The optional, keyword-only parameters argument_default_ and conflict_handler_
+   allow for finer-grained control of the behavior of the argument group. These
+   parameters have the same meaning as in the :class:`ArgumentParser` constructor,
+   but apply specifically to the argument group rather than the entire parser.
 
    Note that any arguments not in your user-defined groups will end up back
    in the usual "positional arguments" and "optional arguments" sections.

@@ -15,6 +15,7 @@ import unittest
 import argparse
 import warnings
 
+from enum import StrEnum
 from test.support import os_helper, captured_stderr
 from unittest import mock
 
@@ -1020,6 +1021,34 @@ class TestDisallowLongAbbreviationAllowsShortGroupingPrefix(ParserTestCase):
         ('+ccrcc', NS(r='cc', c=2)),
     ]
 
+
+class TestStrEnumChoices(TestCase):
+    class Color(StrEnum):
+        RED = "red"
+        GREEN = "green"
+        BLUE = "blue"
+
+    def test_parse_enum_value(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--color', choices=self.Color)
+        args = parser.parse_args(['--color', 'red'])
+        self.assertEqual(args.color, self.Color.RED)
+
+    def test_help_message_contains_enum_choices(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--color', choices=self.Color, help='Choose a color')
+        self.assertIn('[--color {red,green,blue}]', parser.format_usage())
+        self.assertIn('  --color {red,green,blue}', parser.format_help())
+
+    def test_invalid_enum_value_raises_error(self):
+        parser = argparse.ArgumentParser(exit_on_error=False)
+        parser.add_argument('--color', choices=self.Color)
+        self.assertRaisesRegex(
+            argparse.ArgumentError,
+            r"invalid choice: 'yellow' \(choose from red, green, blue\)",
+            parser.parse_args,
+            ['--color', 'yellow'],
+        )
 
 # ================
 # Positional tests
@@ -2486,7 +2515,7 @@ class TestAddSubparsers(TestCase):
             parser.parse_args(('baz',))
         self.assertRegex(
             excinfo.exception.stderr,
-            r"error: argument {foo,bar}: invalid choice: 'baz' \(choose from 'foo', 'bar'\)\n$"
+            r"error: argument {foo,bar}: invalid choice: 'baz' \(choose from foo, bar\)\n$"
         )
 
     def test_optional_subparsers(self):
@@ -2946,6 +2975,35 @@ class TestParentParsers(TestCase):
 
     def test_wrong_type_parents(self):
         self.assertRaises(TypeError, ErrorRaisingArgumentParser, parents=[1])
+
+    def test_mutex_groups_parents(self):
+        parent = ErrorRaisingArgumentParser(add_help=False)
+        g = parent.add_argument_group(title='g', description='gd')
+        g.add_argument('-w')
+        g.add_argument('-x')
+        m = g.add_mutually_exclusive_group()
+        m.add_argument('-y')
+        m.add_argument('-z')
+        parser = ErrorRaisingArgumentParser(prog='PROG', parents=[parent])
+
+        self.assertRaises(ArgumentParserError, parser.parse_args,
+            ['-y', 'Y', '-z', 'Z'])
+
+        parser_help = parser.format_help()
+        self.assertEqual(parser_help, textwrap.dedent('''\
+            usage: PROG [-h] [-w W] [-x X] [-y Y | -z Z]
+
+            options:
+              -h, --help  show this help message and exit
+
+            g:
+              gd
+
+              -w W
+              -x X
+              -y Y
+              -z Z
+        '''))
 
 # ==============================
 # Mutually exclusive group tests
@@ -6199,12 +6257,23 @@ class TestIntermixedArgs(TestCase):
         # cannot parse the '1,2,3'
         self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1]), args)
         self.assertEqual(["2", "3"], extras)
+        args, extras = parser.parse_known_intermixed_args(argv)
+        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1, 2, 3]), args)
+        self.assertEqual([], extras)
 
+        # unknown optionals go into extras
+        argv = 'cmd --foo x --error 1 2 --bar y 3'.split()
+        args, extras = parser.parse_known_intermixed_args(argv)
+        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1, 2, 3]), args)
+        self.assertEqual(['--error'], extras)
         argv = 'cmd --foo x 1 --error 2 --bar y 3'.split()
         args, extras = parser.parse_known_intermixed_args(argv)
-        # unknown optionals go into extras
-        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1]), args)
-        self.assertEqual(['--error', '2', '3'], extras)
+        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1, 2, 3]), args)
+        self.assertEqual(['--error'], extras)
+        argv = 'cmd --foo x 1 2 --error --bar y 3'.split()
+        args, extras = parser.parse_known_intermixed_args(argv)
+        self.assertEqual(NS(bar='y', cmd='cmd', foo='x', rest=[1, 2, 3]), args)
+        self.assertEqual(['--error'], extras)
 
         # restores attributes that were temporarily changed
         self.assertIsNone(parser.usage)
@@ -6223,37 +6292,48 @@ class TestIntermixedArgs(TestCase):
             parser.parse_intermixed_args(argv)
         self.assertRegex(str(cm.exception), r'\.\.\.')
 
-    def test_exclusive(self):
-        # mutually exclusive group; intermixed works fine
-        parser = ErrorRaisingArgumentParser(prog='PROG')
+    def test_required_exclusive(self):
+        # required mutually exclusive group; intermixed works fine
+        parser = argparse.ArgumentParser(prog='PROG', exit_on_error=False)
         group = parser.add_mutually_exclusive_group(required=True)
         group.add_argument('--foo', action='store_true', help='FOO')
         group.add_argument('--spam', help='SPAM')
         parser.add_argument('badger', nargs='*', default='X', help='BADGER')
+        args = parser.parse_intermixed_args('--foo 1 2'.split())
+        self.assertEqual(NS(badger=['1', '2'], foo=True, spam=None), args)
         args = parser.parse_intermixed_args('1 --foo 2'.split())
         self.assertEqual(NS(badger=['1', '2'], foo=True, spam=None), args)
-        self.assertRaises(ArgumentParserError, parser.parse_intermixed_args, '1 2'.split())
+        self.assertRaisesRegex(argparse.ArgumentError,
+                'one of the arguments --foo --spam is required',
+                parser.parse_intermixed_args, '1 2'.split())
         self.assertEqual(group.required, True)
 
-    def test_exclusive_incompatible(self):
-        # mutually exclusive group including positional - fail
-        parser = ErrorRaisingArgumentParser(prog='PROG')
+    def test_required_exclusive_with_positional(self):
+        # required mutually exclusive group with positional argument
+        parser = argparse.ArgumentParser(prog='PROG', exit_on_error=False)
         group = parser.add_mutually_exclusive_group(required=True)
         group.add_argument('--foo', action='store_true', help='FOO')
         group.add_argument('--spam', help='SPAM')
         group.add_argument('badger', nargs='*', default='X', help='BADGER')
-        self.assertRaises(TypeError, parser.parse_intermixed_args, [])
+        args = parser.parse_intermixed_args(['--foo'])
+        self.assertEqual(NS(foo=True, spam=None, badger='X'), args)
+        args = parser.parse_intermixed_args(['a', 'b'])
+        self.assertEqual(NS(foo=False, spam=None, badger=['a', 'b']), args)
+        self.assertRaisesRegex(argparse.ArgumentError,
+                'one of the arguments --foo --spam badger is required',
+                parser.parse_intermixed_args, [])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                'argument badger: not allowed with argument --foo',
+                parser.parse_intermixed_args, ['--foo', 'a', 'b'])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                'argument badger: not allowed with argument --foo',
+                parser.parse_intermixed_args, ['a', '--foo', 'b'])
         self.assertEqual(group.required, True)
 
     def test_invalid_args(self):
         parser = ErrorRaisingArgumentParser(prog='PROG')
         self.assertRaises(ArgumentParserError, parser.parse_intermixed_args, ['a'])
 
-        parser = ErrorRaisingArgumentParser(prog='PROG')
-        parser.add_argument('--foo', nargs="*")
-        parser.add_argument('foo')
-        with self.assertWarns(UserWarning):
-            parser.parse_intermixed_args(['hello', '--foo'])
 
 class TestIntermixedMessageContentError(TestCase):
     # case where Intermixed gives different error message
@@ -6272,7 +6352,7 @@ class TestIntermixedMessageContentError(TestCase):
         with self.assertRaises(ArgumentParserError) as cm:
             parser.parse_intermixed_args([])
         msg = str(cm.exception)
-        self.assertNotRegex(msg, 'req_pos')
+        self.assertRegex(msg, 'req_pos')
         self.assertRegex(msg, 'req_opt')
 
 # ==========================
@@ -6651,9 +6731,19 @@ class TestExitOnError(TestCase):
     def test_ambiguous_option(self):
         self.parser.add_argument('--foobaz')
         self.parser.add_argument('--fooble', action='store_true')
+        self.parser.add_argument('--foogle')
         self.assertRaisesRegex(argparse.ArgumentError,
-                               "ambiguous option: --foob could match --foobaz, --fooble",
-                               self.parser.parse_args, ['--foob'])
+                "ambiguous option: --foob could match --foobaz, --fooble",
+            self.parser.parse_args, ['--foob'])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                "ambiguous option: --foob=1 could match --foobaz, --fooble$",
+            self.parser.parse_args, ['--foob=1'])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                "ambiguous option: --foob could match --foobaz, --fooble$",
+            self.parser.parse_args, ['--foob', '1', '--foogle', '2'])
+        self.assertRaisesRegex(argparse.ArgumentError,
+                "ambiguous option: --foob=1 could match --foobaz, --fooble$",
+            self.parser.parse_args, ['--foob=1', '--foogle', '2'])
 
     def test_os_error(self):
         self.parser.add_argument('file')
