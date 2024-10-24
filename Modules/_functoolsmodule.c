@@ -941,7 +941,8 @@ functools_reduce(PyObject *self, PyObject *args, PyObject *kwargs)
     static char *keywords[] = {"", "", "initial", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|O:reduce", keywords,
-                                     &func, &seq, &result)) {
+                                     &func, &seq, &result))
+    {
         return NULL;
     }
 
@@ -1724,7 +1725,7 @@ PyDoc_STRVAR(_functools_doc,
 "Tools that operate on functions.");
 
 static PyMethodDef _functools_methods[] = {
-    {"reduce", functools_reduce, METH_VARARGS|METH_KEYWORDS,
+    {"reduce", _PyCFunction_CAST(functools_reduce), METH_VARARGS|METH_KEYWORDS,
         functools_reduce_doc},
     _FUNCTOOLS_CMP_TO_KEY_METHODDEF
     {NULL,              NULL}           /* sentinel */

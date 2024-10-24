@@ -480,6 +480,7 @@ The :mod:`functools` module defines the following functions:
 
    See :func:`itertools.accumulate` for an iterator that yields all intermediate
    values.
+
    .. versionchanged:: 3.14
       *initial* is now supported as a keyword argument.
 
