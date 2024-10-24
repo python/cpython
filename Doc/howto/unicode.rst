@@ -336,20 +336,22 @@ Python supports writing source code in UTF-8 by default, but you can use almost
 any encoding if you declare the encoding being used.  This is done by including
 a special comment as either the first or second line of the source file::
 
-    #!/usr/bin/env python
-    # -*- coding: latin-1 -*-
+    # coding: latin-1
 
     u = 'abcdé'
     print(ord(u[-1]))
 
-The syntax is inspired by Emacs's notation for specifying variables local to a
-file.  Emacs supports many different variables, but Python only supports
-'coding'.  The ``-*-`` symbols indicate to Emacs that the comment is special;
-they have no significance to Python but are a convention.  Python looks for
-``coding: name`` or ``coding=name`` in the comment.
+Python looks for patterns such like ``coding: latin-1``, ``coding=latin-1`` or
+``-*- coding: latin-1 -*-`` in the comment. See :ref:`encodings` for detailed
+explanation.
 
 If you don't include such a comment, the default encoding used will be UTF-8 as
-already mentioned.  See also :pep:`263` for more information.
+already mentioned.
+
+The syntax ``-*- coding: name -*-`` is inspired by Emacs's notation for
+specifying variables local to a file.  Emacs supports many different variables,
+but Python only supports 'coding'.  The ``-*-`` symbols indicate to Emacs that
+the comment is special; they have no significance to Python but are a convention.
 
 
 Unicode Properties
@@ -531,7 +533,8 @@ Marc-André Lemburg gave `a presentation titled "Python and Unicode" (PDF slides
 <https://downloads.egenix.com/python/Unicode-EPC2002-Talk.pdf>`_ at
 EuroPython 2002.  The slides are an excellent overview of the design of Python
 2's Unicode features (where the Unicode string type is called ``unicode`` and
-literals start with ``u``).
+literals start with ``u``). (Notice: Python 2 is no longer supported, just keep it
+here for historical interest.)
 
 
 Reading and Writing Unicode Data
