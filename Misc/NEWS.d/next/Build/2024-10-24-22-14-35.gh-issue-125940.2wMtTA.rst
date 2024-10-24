@@ -1,0 +1,2 @@
+The Android build now supports `16 KB page sizes
+<https://developer.android.com/guide/practices/page-sizes>`__.
