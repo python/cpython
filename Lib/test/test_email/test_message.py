@@ -984,12 +984,21 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         self.assertEqual(parsed_msg['Message-ID'], m['Message-ID'])
 
     def test_folding_with_long_nospace_compat32_policy_1(self):
-        # Fixed: https://github.com/python/cpython/issues/124452
-        #
-        # When the value is too long, it should be converted back
-        # to its original form without any modifications.
-
         m = EmailMessage(policy.compat32)
+        message = '123456789' * 10
+        m['Message-ID'] = message
+        parsed_msg = message_from_bytes(m.as_bytes(), policy=policy.default)
+        self.assertEqual(parsed_msg['Message-ID'], m['Message-ID'])
+
+    def test_folding_with_long_nospace_smtp_policy_1(self):
+        m = EmailMessage(policy.SMTP)
+        message = '123456789' * 10
+        m['Message-ID'] = message
+        parsed_msg = message_from_bytes(m.as_bytes(), policy=policy.default)
+        self.assertEqual(parsed_msg['Message-ID'], m['Message-ID'])
+
+    def test_folding_with_long_nospace_http_policy_1(self):
+        m = EmailMessage(policy.HTTP)
         message = '123456789' * 10
         m['Message-ID'] = message
         parsed_msg = message_from_bytes(m.as_bytes(), policy=policy.default)
