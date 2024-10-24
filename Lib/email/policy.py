@@ -125,14 +125,7 @@ class EmailPolicy(Policy):
 
         """
         name, value = sourcelines[0].split(':', 1)
-        no_first_value = not value.strip() and len(sourcelines) > 1
-
-        value = '' if no_first_value else value.lstrip(' \t')
-
-        if no_first_value and sourcelines[1][0] in ' \t':
-            sourcelines[1] = sourcelines[1][1:]
-
-        value += ''.join(sourcelines[1:])
+        value = ''.join((value, *sourcelines[1:])).lstrip(' \t\r\n')
         return (name, value.rstrip('\r\n'))
 
     def header_store_parse(self, name, value):

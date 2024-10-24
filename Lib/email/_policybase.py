@@ -307,29 +307,7 @@ class Compat32(Policy):
 
         """
         name, value = sourcelines[0].split(':', 1)
-
-        # Fixed: https://github.com/python/cpython/issues/124452
-        #
-        # Root cause: The function '_refold_parse_tree' in '_header_value_parse.py'.
-        # If there is no WSP, it can't figure out how to wrap the text.
-        # Therefore, it places the entire value directly after '\n', and because
-        # there is a WSP after '<HeaderName>:', the WSP will be moved to the front
-        # of the value according to RFC5322, section 2.2.3.
-        #
-        # However, the WSP is not part of the value; therefore, we must
-        # remove it.
-
-        no_first_value = value.strip() == '' and len(sourcelines) > 1
-
-        # When using the compat32 policy, the value is '\n'. Therefore,
-        # use an empty string if there is no value (without WSP and CRLF)
-        # on the first line
-        value = '' if no_first_value else value.lstrip(' \t')
-
-        if no_first_value and sourcelines[1][0] in ' \t':
-            sourcelines[1] = sourcelines[1][1:]
-
-        value += ''.join(sourcelines[1:])
+        value = ''.join((value, *sourcelines[1:])).lstrip(' \t\r\n')
         return (name, value.rstrip('\r\n'))
 
     def header_store_parse(self, name, value):

@@ -958,7 +958,6 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
                          b'123456789-123456789\n 123456789 Hello '
                          b'=?utf-8?q?W=C3=B6rld!?= 123456789 123456789\n\n')
 
-
     def test_folding_with_short_nospace_1(self):
         # bpo-36520
         #
@@ -966,7 +965,7 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         # the fold point.
 
         m = EmailMessage(policy.default)
-        m['Message-ID'] = '12345678912345678123456789123456789123456789'
+        m['Message-ID'] = '123456789'*3
         parsed_msg = message_from_bytes(m.as_bytes(), policy=policy.default)
         self.assertEqual(parsed_msg['Message-ID'], m['Message-ID'])
 
@@ -977,12 +976,10 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         # to its original form without any modifications.
 
         m = EmailMessage(policy.default)
-        m['Message-ID'] = '12345678912345678123456789123456789123456789'\
-                        '12345678912345678123456789123456789123456789'
+        message = '123456789' * 10
+        m['Message-ID'] = message
         self.assertEqual(m.as_bytes(),
-                         b'Message-ID:\n 12345678912345678123456789123456'\
-                         b'78912345678912345678912345678123456789123456789'\
-                         b'123456789\n\n')
+                         f'Message-ID:\n {message}\n\n'.encode())
         parsed_msg = message_from_bytes(m.as_bytes(), policy=policy.default)
         self.assertEqual(parsed_msg['Message-ID'], m['Message-ID'])
 
@@ -993,8 +990,8 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         # to its original form without any modifications.
 
         m = EmailMessage(policy.compat32)
-        m['Message-ID'] = '12345678912345678123456789123456789123456789'\
-                        '12345678912345678123456789123456789123456789'
+        message = '123456789' * 10
+        m['Message-ID'] = message
         parsed_msg = message_from_bytes(m.as_bytes(), policy=policy.default)
         self.assertEqual(parsed_msg['Message-ID'], m['Message-ID'])
 
