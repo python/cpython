@@ -386,7 +386,7 @@ class PurePathBase:
             return False
         if len(path_parts) > len(pattern_parts) and path_pattern.anchor:
             return False
-        globber = self._globber(sep, case_sensitive)
+        globber = self._globber(sep, case_sensitive, include_hidden=True)
         for path_part, pattern_part in zip(path_parts, pattern_parts):
             match = globber.compile(pattern_part)
             if match(path_part) is None:
@@ -402,7 +402,8 @@ class PurePathBase:
             pattern = self.with_segments(pattern)
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self.parser)
-        globber = self._globber(pattern.parser.sep, case_sensitive, recursive=True)
+        globber = self._globber(pattern.parser.sep, case_sensitive,
+                                recursive=True, include_hidden=True)
         match = globber.compile(pattern._pattern_str)
         return match(self._pattern_str) is not None
 
@@ -657,7 +658,8 @@ class PathBase(PurePathBase):
             # must use scandir() for everything, including non-wildcard parts.
             case_pedantic = True
         recursive = True if recurse_symlinks else _no_recurse_symlinks
-        globber = self._globber(self.parser.sep, case_sensitive, case_pedantic, recursive)
+        globber = self._globber(self.parser.sep, case_sensitive,
+                                case_pedantic, recursive, include_hidden=True)
         return globber.selector(parts)
 
     def glob(self, pattern, *, case_sensitive=None, recurse_symlinks=True):
