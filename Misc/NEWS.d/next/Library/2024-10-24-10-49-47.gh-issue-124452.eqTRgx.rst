@@ -1,3 +1,1 @@
-Fix the mismatched email headers after converting them to bytes and parsing them into an email message.
-This issue only occurs with long text without any spaces.
-Root cause: The email library doesn't know how to wrap long text without spaces, but it wraps it anyway with a leading WSP, which is not removed when converting bytes to EmailMessage.
+Fix email parsing bug that introduced spurious leading whitespace into header values when the header includes a newline character after the ';' and before the value.
