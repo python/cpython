@@ -91,9 +91,6 @@ class _Target(typing.Generic[_S, _R]):
         if group.data.body:
             line = f"0: {str(bytes(group.data.body)).removeprefix('b')}"
             group.data.disassembly.append(line)
-        group.process_relocations(
-            known_symbols=self.known_symbols, alignment=self.alignment
-        )
         return group
 
     def _handle_section(self, section: _S, group: _stencils.StencilGroup) -> None:
@@ -172,7 +169,17 @@ class _Target(typing.Generic[_S, _R]):
                     c.write_text(template.replace("CASE", case))
                     coro = self._compile(opname, c, work)
                     tasks.append(group.create_task(coro, name=opname))
-        return {task.get_name(): task.result() for task in tasks}
+        stencil_groups = {task.get_name(): task.result() for task in tasks}
+        for stencil_group in stencil_groups.values():
+            # TODO: Get rid of this once we always have a trampoline (LLVM 19):
+            if not stencil_group.code.body:
+                continue
+            # TODO: Make this (and the other method it calls) a method on _Target:
+            stencil_group.process_relocations(
+                known_symbols=self.known_symbols, alignment=self.alignment
+            )
+        return stencil_groups
+
 
     def build(
         self, out: pathlib.Path, *, comment: str = "", force: bool = False
