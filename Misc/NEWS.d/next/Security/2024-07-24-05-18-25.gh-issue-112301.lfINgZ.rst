@@ -1,2 +1,0 @@
-Add macOS warning tracking to warning check tooling.
-Patch by Nate Ohlson.

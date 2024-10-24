@@ -108,6 +108,7 @@ do { \
 /* Do interpreter dispatch accounting for tracing and instrumentation */
 #define DISPATCH() \
     { \
+        assert(frame->stackpointer == NULL); \
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
         DISPATCH_GOTO(); \
@@ -124,7 +125,7 @@ do { \
     do {                                                \
         assert(tstate->interp->eval_frame == NULL);     \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
-        (NEW_FRAME)->previous = frame;                  \
+        assert((NEW_FRAME)->previous == frame);         \
         frame = tstate->current_frame = (NEW_FRAME);     \
         CALL_STAT_INC(inlined_py_calls);                \
         goto start_frame;                               \
@@ -325,26 +326,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     "cannot access free variable '%s' where it is not associated with a value" \
     " in enclosing scope"
 #define NAME_ERROR_MSG "name '%.200s' is not defined"
-
-#define DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dval, result) \
-do { \
-    if (Py_REFCNT(left) == 1) { \
-        ((PyFloatObject *)left)->ob_fval = (dval); \
-        _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);\
-        result = (left); \
-    } \
-    else if (Py_REFCNT(right) == 1)  {\
-        ((PyFloatObject *)right)->ob_fval = (dval); \
-        _Py_DECREF_NO_DEALLOC(left); \
-        result = (right); \
-    }\
-    else { \
-        result = PyFloat_FromDouble(dval); \
-        if ((result) == NULL) GOTO_ERROR(error); \
-        _Py_DECREF_NO_DEALLOC(left); \
-        _Py_DECREF_NO_DEALLOC(right); \
-    } \
-} while (0)
 
 // If a trace function sets a new f_lineno and
 // *then* raises, we use the destination when searching

@@ -108,16 +108,8 @@ class InteractiveInterpreter:
         """
         try:
             typ, value, tb = sys.exc_info()
-            if filename and typ is SyntaxError:
-                # Work hard to stuff the correct filename in the exception
-                try:
-                    msg, (dummy_filename, lineno, offset, line) = value.args
-                except ValueError:
-                    # Not the format we expect; leave it alone
-                    pass
-                else:
-                    # Stuff in the right filename
-                    value = SyntaxError(msg, (filename, lineno, offset, line))
+            if filename and issubclass(typ, SyntaxError):
+                value.filename = filename
             source = kwargs.pop('source', "")
             self._showtraceback(typ, value, None, source)
         finally:

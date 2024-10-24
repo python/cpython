@@ -165,7 +165,10 @@ class Logcat:
             now = time()
             self._bucket_level += (
                 (now - self._prev_write_time) * MAX_BYTES_PER_SECOND)
-            self._bucket_level = min(self._bucket_level, BUCKET_SIZE)
+
+            # If the bucket level is still below zero, the clock must have gone
+            # backwards, so reset it to zero and continue.
+            self._bucket_level = max(0, min(self._bucket_level, BUCKET_SIZE))
             self._prev_write_time = now
 
             self._bucket_level -= PER_MESSAGE_OVERHEAD + len(tag) + len(message)
