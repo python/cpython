@@ -915,21 +915,21 @@ wire).
 
    :param args: Variable data to merge into the *msg* argument
       to obtain the event description.
-   :type args: tuple | dict[str, typing.Any]
+   :type args: tuple or dict[str, typing.Any]
 
    :param exc_info: An exception tuple with the current exception information,
       as returned by :func:`sys.exc_info`,
       or ``None`` if no exception information is available.
-   :type exc_info: tuple[type[BaseException], BaseException, types.TracebackType] | None
+   :type exc_info: tuple[type[BaseException], BaseException, types.TracebackType] or None
 
    :param func: The name of the function or method
       from which the logging call was invoked.
-   :type func: str | None
+   :type func: str or None
 
    :param sinfo: A text string representing stack information
       from the base of the stack in the current thread,
       up to the logging call.
-   :type sinfo: str | None
+   :type sinfo: str or None
 
    .. method:: getMessage()
 

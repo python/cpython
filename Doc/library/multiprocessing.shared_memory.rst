@@ -56,7 +56,7 @@ copying of data.
       The unique name for the requested shared memory, specified as a string.
       When creating a new shared memory block, if ``None`` (the default)
       is supplied for the name, a novel name will be generated.
-   :type name: str | None
+   :type name: str or None
 
    :param bool create:
       Control whether a new shared memory block is created (``True``)
