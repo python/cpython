@@ -234,10 +234,11 @@ class Future:
 
         Returns the number of callbacks removed.
         """
+        count = len(self._callbacks)
         filtered_callbacks = [(f, ctx)
                               for (f, ctx) in self._callbacks
                               if f != fn]
-        removed_count = len(self._callbacks) - len(filtered_callbacks)
+        removed_count = count - len(filtered_callbacks)
         if removed_count:
             self._callbacks[:] = filtered_callbacks
         return removed_count

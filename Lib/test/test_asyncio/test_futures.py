@@ -929,13 +929,14 @@ class BaseFutureDoneCallbackTests():
 
         fut.remove_done_callback(evil())
 
+    # Sanity checks for callback tuples corruption and Use-After-Free.
+    # Special thanks to Nico-Posada for the original PoCs and ideas.
+    # See https://github.com/python/cpython/issues/125789.
+
     def test_schedule_callbacks_list_mutation_3(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def _test_schedule_callbacks_list_mutation_3(self, exc_type, exc_text=None):
-        # see https://github.com/python/cpython/issues/125789 for details
-        fut = self._new_future()
-
         class evil:
             def __eq__(self, other):
                 global mem
@@ -943,36 +944,77 @@ class BaseFutureDoneCallbackTests():
                 return False
 
         cb_pad = lambda: ...
+
+        fut = self._new_future()
         fut.add_done_callback(cb_pad)  # sets fut->fut_callback0
-        fut.add_done_callback(evil())  # sets first item in fut->fut_callbacks
-        # Consume fut->fut_callback0 callback but checks the remaining callbacks,
-        # thereby invoking evil.__eq__().
-        fut.remove_done_callback(cb_pad)
+        fut.add_done_callback(evil())  # sets fut->fut_callbacks[0]
+        # Consume fut->fut_callback0 callback and set it to NULL before
+        # checking fut->fut_callbacks, thereby invoking evil.__eq__().
+        removed = fut.remove_done_callback(cb_pad)
+        self.assertEqual(removed, 1)
         self.assertIs(mem, cb_pad)
-
-        fake = (
-            (0).to_bytes(8, 'little') +
-            id(bytearray).to_bytes(8, 'little') +
-            (2 ** 63 - 1).to_bytes(8, 'little') +
-            (0).to_bytes(24, 'little')
-        )
-
-        i2f = lambda num: 5e-324 * num
-        fut._callbacks[0] = complex(0, i2f(id(fake) + bytes.__basicsize__ - 1))
-
-        # We want to call once again evil.__eq__() to set 'mem' to our
-        # malicious bytearray. However, since we manually modified the
-        # callbacks list, we will not be able to by-pass the checks.
+        # Set the malicious callback tuple and trigger a type check on it
+        # by re-invoking evil.__eq__() through remove_done_callback().
+        fut._callbacks[0] = complex(0, 0)
         if exc_text is None:
             self.assertRaises(exc_type, fut.remove_done_callback, evil())
         else:
-            self.assertRaisesRegex(exc_type, exc_text, fut.remove_done_callback, evil())
-
+            self.assertRaisesRegex(exc_type, exc_text,
+                                   fut.remove_done_callback, evil())
         self.assertIs(mem, cb_pad)
 
-    # Use-After-Free sanity checks.
-    # Credits to Nico-Posada for the PoCs.
-    # See https://github.com/python/cpython/pull/125833.
+    def _evil_call_soon_event_loop(self, evil_call_soon):
+        fake_event_loop = lambda: ...
+        fake_event_loop.call_soon = evil_call_soon
+        fake_event_loop.get_debug = lambda: False  # suppress traceback
+        return fake_event_loop
+
+    def test_evil_call_soon_list_mutation_1(self):
+        def evil_call_soon(*args, **kwargs):
+            fut._callbacks.clear()
+
+        loop = self._evil_call_soon_event_loop(evil_call_soon)
+        with mock.patch.object(self, 'loop', loop):
+            fut = self._new_future()
+            self.assertIs(fut.get_loop(), loop)
+
+            cb_pad = lambda: ...
+            fut.add_done_callback(cb_pad)
+            fut.add_done_callback(None)
+            fut.add_done_callback(None)
+
+            removed = fut.remove_done_callback(cb_pad)
+            self.assertEqual(removed, 1)
+            self.assertEqual(len(fut._callbacks), 2)
+            fut.set_result("boom")
+            # When there are no more callbacks, the Python implementation
+            # returns an empty list but the C implementation returns None.
+            self.assertIn(fut._callbacks, (None, []))
+
+    def test_evil_call_soon_list_mutation_2(self):
+        raise NotImplementedError
+
+    def _test_evil_call_soon_list_mutation_2(self, exc_type, exc_text=None):
+        def evil_call_soon(*args, **kwargs):
+            fut._callbacks[1] = complex(0, 0)
+
+        loop = self._evil_call_soon_event_loop(evil_call_soon)
+        with mock.patch.object(self, 'loop', loop):
+            fut = self._new_future()
+            self.assertIs(fut.get_loop(), loop)
+
+            cb_pad = lambda: ...
+            fut.add_done_callback(cb_pad)
+            fut.add_done_callback(None)
+            fut.add_done_callback(None)
+            removed = fut.remove_done_callback(cb_pad)
+            self.assertEqual(removed, 1)
+            self.assertEqual(len(fut._callbacks), 2)
+            # The evil 'call_soon' is executed by calling set_result().
+            if exc_text is None:
+                self.assertRaises(exc_type, fut.set_result, "boom")
+            else:
+                self.assertRaisesRegex(exc_type, exc_text, fut.set_result, "boom")
 
     def test_use_after_free_fixed_1(self):
         fut = self._new_future()
@@ -990,11 +1032,17 @@ class BaseFutureDoneCallbackTests():
         cb_pad = lambda: ...
         fut.add_done_callback(cb_pad)  # sets fut->fut_callback0
         fut.add_done_callback(setup())  # sets fut->fut_callbacks[0]
-        # removes callback from fut->fut_callback0 setting it to NULL
-        fut.remove_done_callback(cb_pad)
-        fut.remove_done_callback(evil())
+        removed = fut.remove_done_callback(cb_pad)
+        self.assertEqual(removed, 1)
+
+        # This triggers evil.__eq__(), thereby clearing fut->fut_callbacks
+        # but we will still hold a reference to fut->fut_callbacks[0] until
+        # it is no more needed.
+        removed = fut.remove_done_callback(evil())
+        self.assertEqual(removed, 0)
 
     def test_use_after_free_fixed_2(self):
+        asserter = self
         fut = self._new_future()
 
         class cb_pad:
@@ -1003,11 +1051,13 @@ class BaseFutureDoneCallbackTests():
 
         class evil(cb_pad):
             def __eq__(self, other):
-                fut.remove_done_callback(None)
+                removed = fut.remove_done_callback(None)
+                asserter.assertEqual(removed, 1)
                 return NotImplemented
 
         fut.add_done_callback(cb_pad())
-        fut.remove_done_callback(evil())
+        removed = fut.remove_done_callback(evil())
+        self.assertEqual(removed, 1)
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
@@ -1019,7 +1069,12 @@ class CFutureDoneCallbackTests(BaseFutureDoneCallbackTests,
         return futures._CFuture(loop=self.loop)
 
     def test_schedule_callbacks_list_mutation_3(self):
-        super()._test_schedule_callbacks_list_mutation_3(RuntimeError, 'corrupted')
+        errmsg = 'corrupted callback tuple'
+        super()._test_schedule_callbacks_list_mutation_3(RuntimeError, errmsg)
+
+    def test_evil_call_soon_list_mutation_2(self):
+        errmsg = 'corrupted callback tuple'
+        super()._test_evil_call_soon_list_mutation_2(RuntimeError, errmsg)
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
@@ -1033,7 +1088,12 @@ class CSubFutureDoneCallbackTests(BaseFutureDoneCallbackTests,
         return CSubFuture(loop=self.loop)
 
     def test_schedule_callbacks_list_mutation_3(self):
-        super()._test_schedule_callbacks_list_mutation_3(RuntimeError, 'corrupted')
+        errmsg = 'corrupted callback tuple'
+        super()._test_schedule_callbacks_list_mutation_3(RuntimeError, errmsg)
+
+    def test_evil_call_soon_list_mutation_2(self):
+        errmsg = 'corrupted callback tuple'
+        super()._test_evil_call_soon_list_mutation_2(RuntimeError, errmsg)
 
 
 class PyFutureDoneCallbackTests(BaseFutureDoneCallbackTests,
@@ -1044,6 +1104,13 @@ class PyFutureDoneCallbackTests(BaseFutureDoneCallbackTests,
 
     def test_schedule_callbacks_list_mutation_3(self):
         super()._test_schedule_callbacks_list_mutation_3(TypeError)
+
+    def test_evil_call_soon_list_mutation_2(self):
+        # For this test, the Python implementation raises an IndexError
+        # because the attribute fut._callbacks is set to an empty list
+        # *before* invoking the callbacks, while the C implementation
+        # does not make a temporary copy of the list of callbacks.
+        super()._test_evil_call_soon_list_mutation_2(IndexError)
 
 
 class BaseFutureInheritanceTests:
