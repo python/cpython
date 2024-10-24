@@ -165,7 +165,16 @@ class EnvBuilder:
                              'Python interpreter. Provide an explicit path or '
                              'check that your PATH environment variable is '
                              'correctly set.')
-        dirname, exename = os.path.split(os.path.abspath(executable))
+        # only resolve executable symlinks, not the full chain, see gh-106045
+        # we don't want to overwrite the executable used in context
+        executable_ = os.path.abspath(executable)
+        while os.path.islink(executable_):
+            link = os.readlink(executable_)
+            if os.path.isabs(link):
+                executable_ = link
+            else:
+                executable_ = os.path.join(os.path.dirname(executable_), link)
+        dirname, exename = os.path.split(executable_)
         if sys.platform == 'win32':
             # Always create the simplest name in the venv. It will either be a
             # link back to executable, or a copy of the appropriate launcher
