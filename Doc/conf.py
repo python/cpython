@@ -28,6 +28,7 @@ extensions = [
     'glossary_search',
     'lexers',
     'pyspecific',
+    'refwarn',
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
     'sphinx.ext.extlinks',
