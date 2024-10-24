@@ -659,20 +659,22 @@ class _TestProcess(BaseTestCase):
         self.assertEqual(p.is_alive(), True)
         # Child is still alive, cannot close
         with self.assertRaises(ValueError):
+            self.assertFalse(p.closed)
             p.close()
+            self.assertTrue(p.closed)
 
         q.put(None)
         p.join()
         self.assertEqual(p.is_alive(), False)
         self.assertEqual(p.exitcode, 0)
         p.close()
+        self.assertTrue(p.closed)
         with self.assertRaises(ValueError):
             p.is_alive()
         with self.assertRaises(ValueError):
             p.join()
         with self.assertRaises(ValueError):
             p.terminate()
-        self.assertFalse(p.closed)
         p.close()
         self.assertTrue(p.closed)
 
