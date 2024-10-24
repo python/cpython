@@ -2369,10 +2369,14 @@ class TarFile(object):
         unfiltered = tarinfo
         try:
             tarinfo = filter_function(tarinfo, path)
-        except (OSError, FilterError) as e:
+        except FilterError as e:
+            tarinfo = None
+            self._handle_fatal_error(e)
+        except OSError as e:
             self._handle_fatal_error(e)
         except ExtractError as e:
             self._handle_nonfatal_error(e)
+
         if tarinfo is None:
             self._dbg(2, "tarfile: Excluded %r" % unfiltered.name)
             return None
