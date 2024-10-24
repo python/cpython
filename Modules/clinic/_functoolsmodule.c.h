@@ -67,6 +67,51 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_functools_reduce__doc__,
+"reduce($module, function, iterable,\n"
+"       initial=_functools._initial_missing, /)\n"
+"--\n"
+"\n"
+"Apply a function of two arguments cumulatively to an iterable, from left to right.\n"
+"\n"
+"This efficiently reduces the iterable to a single value.  If initial is present,\n"
+"it is placed before the items of the iterable in the calculation, and serves as\n"
+"a default when the iterable is empty.\n"
+"\n"
+"For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])\n"
+"calculates ((((1 + 2) + 3) + 4) + 5).");
+
+#define _FUNCTOOLS_REDUCE_METHODDEF    \
+    {"reduce", _PyCFunction_CAST(_functools_reduce), METH_FASTCALL, _functools_reduce__doc__},
+
+static PyObject *
+_functools_reduce_impl(PyObject *module, PyObject *func, PyObject *seq,
+                       PyObject *result);
+
+static PyObject *
+_functools_reduce(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *func;
+    PyObject *seq;
+    PyObject *result = NULL;
+
+    if (!_PyArg_CheckPositional("reduce", nargs, 2, 3)) {
+        goto exit;
+    }
+    func = args[0];
+    seq = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    result = args[2];
+skip_optional:
+    return_value = _functools_reduce_impl(module, func, seq, result);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_functools__lru_cache_wrapper_cache_info__doc__,
 "cache_info($self, /)\n"
 "--\n"
@@ -114,4 +159,4 @@ _functools__lru_cache_wrapper_cache_clear(PyObject *self, PyObject *Py_UNUSED(ig
 
     return return_value;
 }
-/*[clinic end generated code: output=755265bb6d5ea751 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2721ebc446e68d0f input=a9049054013a1b77]*/
