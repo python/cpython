@@ -1,2 +1,1 @@
-Modify the check of the ``hi`` argument in ``internal_bisect_left`` and ``internal_bisect_right``
-so that when ``hi`` is negative, it's calculated based on the list length.
+Allow negative values ​​for ``hi`` argument of ``bisect_left/right`` and ``insort_left/right``.
