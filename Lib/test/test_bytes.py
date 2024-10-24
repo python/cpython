@@ -1062,7 +1062,7 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(BytesSubclass(StrWithBytes(OtherBytesSubclass(b'abc'))),
                          BytesSubclass(b'abc'))
         # Issue #24731
-        self.assertTypedEqual(bytes(WithBytes(BytesSubclass(b'abc'))), BytesSubclass(b'abc'))
+        self.assertTypedEqual(bytes(WithBytes(BytesSubclass(b'abc'))), b'abc')
         self.assertTypedEqual(BytesSubclass(WithBytes(BytesSubclass(b'abc'))),
                               BytesSubclass(b'abc'))
         self.assertTypedEqual(BytesSubclass(WithBytes(OtherBytesSubclass(b'abc'))),
@@ -1078,8 +1078,7 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
         self.assertTypedEqual(bytes(BytesWithBytes(b'abc')), b'abc')
         self.assertTypedEqual(BytesSubclass(BytesWithBytes(b'abc')),
                               BytesSubclass(b'abc'))
-        self.assertTypedEqual(bytes(BytesWithBytes(BytesSubclass(b'abc'))),
-                              BytesSubclass(b'abc'))
+        self.assertTypedEqual(bytes(BytesWithBytes(BytesSubclass(b'abc'))), b'abc')
         self.assertTypedEqual(BytesSubclass(BytesWithBytes(BytesSubclass(b'abc'))),
                               BytesSubclass(b'abc'))
         self.assertTypedEqual(BytesSubclass(BytesWithBytes(OtherBytesSubclass(b'abc'))),
