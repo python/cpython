@@ -109,30 +109,36 @@ _PyToken_OneChar(int c1)
     return OP;
 }
 
-#define NOTEQUAL_CODE (int)('!' << 8 | '=')
-#define PERCENTEQUAL_CODE (int)('%' << 8 | '=')
-#define AMPEREQUAL_CODE (int)('&' << 8 | '=')
-#define DOUBLESTAR_CODE (int)('*' << 8 | '*')
-#define STAREQUAL_CODE (int)('*' << 8 | '=')
-#define PLUSEQUAL_CODE (int)('+' << 8 | '=')
-#define MINEQUAL_CODE (int)('-' << 8 | '=')
-#define RARROW_CODE (int)('-' << 8 | '>')
-#define DOUBLESLASH_CODE (int)('/' << 8 | '/')
-#define SLASHEQUAL_CODE (int)('/' << 8 | '=')
-#define COLONEQUAL_CODE (int)(':' << 8 | '=')
-#define LEFTSHIFT_CODE (int)('<' << 8 | '<')
-#define LESSEQUAL_CODE (int)('<' << 8 | '=')
-#define EQEQUAL_CODE (int)('=' << 8 | '=')
-#define GREATEREQUAL_CODE (int)('>' << 8 | '=')
-#define RIGHTSHIFT_CODE (int)('>' << 8 | '>')
-#define ATEQUAL_CODE (int)('@' << 8 | '=')
-#define CIRCUMFLEXEQUAL_CODE (int)('^' << 8 | '=')
-#define VBAREQUAL_CODE (int)('|' << 8 | '=')
+// Return the token corresponding to two tokens
+// The code is a 16-bit integer with the first character in the high byte and the second character in the low byte.
+#define NOTEQUAL_CODE (int)('!' << 8 | '=') // !=
+#define PERCENTEQUAL_CODE (int)('%' << 8 | '=') // %=
+#define AMPEREQUAL_CODE (int)('&' << 8 | '=') // &=
+#define DOUBLESTAR_CODE (int)('*' << 8 | '*') // **
+#define STAREQUAL_CODE (int)('*' << 8 | '=') // *=
+#define PLUSEQUAL_CODE (int)('+' << 8 | '=') // +=
+#define MINEQUAL_CODE (int)('-' << 8 | '=') // -=
+#define RARROW_CODE (int)('-' << 8 | '>') // ->
+#define DOUBLESLASH_CODE (int)('/' << 8 | '/') // //
+#define SLASHEQUAL_CODE (int)('/' << 8 | '=') // /=
+#define COLONEQUAL_CODE (int)(':' << 8 | '=') // :=
+#define LEFTSHIFT_CODE (int)('<' << 8 | '<') // <<
+#define LESSEQUAL_CODE (int)('<' << 8 | '=') // <=
+#define EQEQUAL_CODE (int)('=' << 8 | '=') // ==
+#define GREATEREQUAL_CODE (int)('>' << 8 | '=') // >=
+#define RIGHTSHIFT_CODE (int)('>' << 8 | '>') // >>
+#define ATEQUAL_CODE (int)('@' << 8 | '=') // @=
+#define CIRCUMFLEXEQUAL_CODE (int)('^' << 8 | '=') // ^=
+#define VBAREQUAL_CODE (int)('|' << 8 | '=') // |=
 
 int
 _PyToken_TwoChars(int c1, int c2)
 {
-    switch (c1 << 8 | c2) {
+    if(c1 > 255 || c2 > 255) { // handle to see if tokens are out of range
+        return OP;
+    }
+
+    switch (c1 << 8 | c2) { // Combine the two tokens into a 16-bit integer
     case NOTEQUAL_CODE: return NOTEQUAL;
     case PERCENTEQUAL_CODE: return PERCENTEQUAL;
     case AMPEREQUAL_CODE: return AMPEREQUAL;
@@ -156,17 +162,23 @@ _PyToken_TwoChars(int c1, int c2)
     return OP;
 }
 
-#define DOUBLESTAREQUAL_CODE (int)('*' << 16 | '*' << 8 | '=')
-#define ELLIPSIS_CODE (int)('.' << 16 | '.' << 8 | '.')
-#define DOUBLESLASHEQUAL_CODE (int)('/' << 16 | '/' << 8 | '=')
-#define LEFTSHIFTEQUAL_CODE (int)('<' << 16 | '<' << 8 | '=')
-#define RIGHTSHIFTEQUAL_CODE (int)('>' << 16 | '>' << 8 | '=')
+// Return the token corresponding to three tokens
+// The code is a 24-bit integer with the first character in the high byte, the second character in the middle byte, and the third character in the low byte.
+#define DOUBLESTAREQUAL_CODE (int)('*' << 16 | '*' << 8 | '=') // **=
+#define ELLIPSIS_CODE (int)('.' << 16 | '.' << 8 | '.') // ...
+#define DOUBLESLASHEQUAL_CODE (int)('/' << 16 | '/' << 8 | '=') // //=
+#define LEFTSHIFTEQUAL_CODE (int)('<' << 16 | '<' << 8 | '=') // <<=
+#define RIGHTSHIFTEQUAL_CODE (int)('>' << 16 | '>' << 8 | '=') // >>=
 
 
 int
 _PyToken_ThreeChars(int c1, int c2, int c3)
 {
-    switch (c1 << 16 | c2 << 8 | c3) {
+    if(c1 > 255 || c2 > 255 || c3 > 255) { // handle to see if tokens are out of range
+        return OP;
+    }
+
+    switch (c1 << 16 | c2 << 8 | c3) { // Combine the three tokens into a 24-bit integer
         case DOUBLESTAREQUAL_CODE: return DOUBLESTAREQUAL;
         case ELLIPSIS_CODE: return ELLIPSIS;
         case DOUBLESLASHEQUAL_CODE: return DOUBLESLASHEQUAL;
