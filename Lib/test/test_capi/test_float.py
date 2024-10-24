@@ -3,10 +3,8 @@ import sys
 import unittest
 import warnings
 
-from test.test_capi.test_getargs import (Float, FloatSubclass, FloatSubclass2,
-                                         BadIndex2, BadFloat2, Index, BadIndex,
-                                         BadFloat)
 from test.support import import_helper
+from test.support.classes import FloatSubclass, WithIndex, WithFloat
 
 _testcapi = import_helper.import_module('_testcapi')
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
@@ -27,6 +25,10 @@ INF = float("inf")
 NAN = float("nan")
 
 
+class FloatSubclass2(WithFloat, FloatSubclass):
+    pass
+
+
 class CAPIFloatTest(unittest.TestCase):
     def test_check(self):
         # Test PyFloat_Check()
@@ -34,7 +36,7 @@ class CAPIFloatTest(unittest.TestCase):
 
         self.assertTrue(check(4.25))
         self.assertTrue(check(FloatSubclass(4.25)))
-        self.assertFalse(check(Float()))
+        self.assertFalse(check(WithFloat(4.25)))
         self.assertFalse(check(3))
         self.assertFalse(check(object()))
 
@@ -46,7 +48,7 @@ class CAPIFloatTest(unittest.TestCase):
 
         self.assertTrue(checkexact(4.25))
         self.assertFalse(checkexact(FloatSubclass(4.25)))
-        self.assertFalse(checkexact(Float()))
+        self.assertFalse(checkexact(WithFloat(4.25)))
         self.assertFalse(checkexact(3))
         self.assertFalse(checkexact(object()))
 
@@ -93,18 +95,18 @@ class CAPIFloatTest(unittest.TestCase):
 
         self.assertEqual(asdouble(FloatSubclass(4.25)), 4.25)
         self.assertEqual(asdouble(FloatSubclass2(4.25)), 4.25)
-        self.assertEqual(asdouble(Index()), 99.)
+        self.assertEqual(asdouble(WithIndex(99)), 99.)
 
-        self.assertRaises(TypeError, asdouble, BadIndex())
-        self.assertRaises(TypeError, asdouble, BadFloat())
+        self.assertRaises(TypeError, asdouble, WithIndex(1.0))
+        self.assertRaises(TypeError, asdouble, WithFloat(687))
         self.assertRaises(RuntimeError, asdouble, BadFloat3())
         with self.assertWarns(DeprecationWarning):
-            self.assertEqual(asdouble(BadIndex2()), 1.)
+            self.assertEqual(asdouble(WithIndex(True)), 1.)
         with self.assertWarns(DeprecationWarning):
-            self.assertEqual(asdouble(BadFloat2()), 4.25)
+            self.assertEqual(asdouble(WithFloat(FloatSubclass(4.25))), 4.25)
         with warnings.catch_warnings():
             warnings.simplefilter("error", DeprecationWarning)
-            self.assertRaises(DeprecationWarning, asdouble, BadFloat2())
+            self.assertRaises(DeprecationWarning, asdouble, WithFloat(FloatSubclass(4.25)))
         self.assertRaises(TypeError, asdouble, object())
         self.assertRaises(TypeError, asdouble, NULL)
 

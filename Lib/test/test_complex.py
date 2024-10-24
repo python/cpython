@@ -4,6 +4,9 @@ from test import support
 from test.support.testcase import ComplexesAreIdenticalMixin
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
+from test.support.classes import (ComplexSubclass, WithComplex,
+                                  WithFloat, WithIndex, WithInt,
+                                  OtherComplexSubclass)
 
 from random import random
 from math import isnan, copysign
@@ -22,36 +25,6 @@ ZERO_DIVISION = (
     (1, 0+0j),
 )
 
-class WithIndex:
-    def __init__(self, value):
-        self.value = value
-    def __index__(self):
-        return self.value
-
-class WithFloat:
-    def __init__(self, value):
-        self.value = value
-    def __float__(self):
-        return self.value
-
-class ComplexSubclass(complex):
-    pass
-
-class OtherComplexSubclass(complex):
-    pass
-
-class MyInt:
-    def __init__(self, value):
-        self.value = value
-
-    def __int__(self):
-        return self.value
-
-class WithComplex:
-    def __init__(self, value):
-        self.value = value
-    def __complex__(self):
-        return self.value
 
 class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
@@ -518,13 +491,9 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertRaises(TypeError, complex, WithIndex(None), 1.5)
         self.assertRaises(TypeError, complex, 1.5, WithIndex(None))
 
-        class MyInt:
-            def __int__(self):
-                return 42
-
-        self.assertRaises(TypeError, complex, MyInt())
-        self.assertRaises(TypeError, complex, MyInt(), 1.5)
-        self.assertRaises(TypeError, complex, 1.5, MyInt())
+        self.assertRaises(TypeError, complex, WithInt(42))
+        self.assertRaises(TypeError, complex, WithInt(42), 1.5)
+        self.assertRaises(TypeError, complex, 1.5, WithInt(42))
 
         class complex0(complex):
             """Test usage of __complex__() when inheriting from 'complex'"""
@@ -681,7 +650,7 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
         self.assertRaises(TypeError, cls.from_number, '3.14')
         self.assertRaises(TypeError, cls.from_number, b'3.14')
-        self.assertRaises(TypeError, cls.from_number, MyInt(314))
+        self.assertRaises(TypeError, cls.from_number, WithInt(314))
         self.assertRaises(TypeError, cls.from_number, {})
         self.assertRaises(TypeError, cls.from_number)
 
