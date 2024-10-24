@@ -1123,7 +1123,7 @@ always available.
    be disabled.
 
    *arch* The build architecture of the current interpreter is determined by the
-   platform on which it was built (independent of the current platform).
+   platform for which it was built (which may be different from the current hardware).
 
    .. versionadded:: 3.14
 
