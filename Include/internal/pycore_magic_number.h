@@ -261,7 +261,7 @@ Known values:
     Python 3.14a1 3606 (Specialize CALL_KW)
     Python 3.14a1 3607 (Add pseudo instructions JUMP_IF_TRUE/FALSE)
     Python 3.14a1 3608 (Add support for slices)
-    Python 3.14a1 3609 (Break up RETURN_VALUE)
+    Python 3.14a2 3609 (Break up RETURN_VALUE)
 
     Python 3.15 will start with 3650
 

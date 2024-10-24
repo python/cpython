@@ -468,7 +468,7 @@ _PyCode_Quicken(PyCodeObject *code)
         }
         else if (opcode == LOAD_CONST) {
             /* We can't do this in the bytecode compiler as
-             * marhsalling can intern strings and make them immortal. */
+             * marshalling can intern strings and make them immortal. */
             oparg = (oparg << 8) | instructions[i].op.arg;
             PyObject *obj = PyTuple_GET_ITEM(code->co_consts, oparg);
             if (_Py_IsImmortal(obj)) {
