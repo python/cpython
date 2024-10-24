@@ -1,0 +1,2 @@
+Fix multiprocessing.Process exiting with code 1 even on successful run when
+threads are used in the same application too.
