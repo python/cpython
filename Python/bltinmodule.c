@@ -2010,7 +2010,7 @@ builtin_ord(PyObject *module, PyObject *c)
     }
 
     PyErr_Format(PyExc_TypeError,
-                 "ord() expected a character, "
+                 "ord() expected string of length 1, "
                  "but string of length %zd found",
                  size);
     return NULL;
