@@ -458,6 +458,17 @@ future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
     return 0;
 }
 
+static inline int
+future_finish_execution(FutureObj *fut)
+{
+    PyObject *res = PyObject_CallMethodNoArgs((PyObject *)fut,
+                                              &_Py_ID(_finish_execution));
+    if (res == NULL) {
+        return -1;
+    }
+    Py_DECREF(res);
+    return 0;
+}
 
 static int
 future_init(FutureObj *fut, PyObject *loop)
@@ -534,7 +545,7 @@ future_set_result(asyncio_state *state, FutureObj *fut, PyObject *res)
     fut->fut_result = Py_NewRef(res);
     fut->fut_state = STATE_FINISHED;
 
-    if (future_schedule_callbacks(state, fut) == -1) {
+    if (future_finish_execution(fut) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -598,7 +609,7 @@ future_set_exception(asyncio_state *state, FutureObj *fut, PyObject *exc)
     fut->fut_exception_tb = PyException_GetTraceback(exc_val);
     fut->fut_state = STATE_FINISHED;
 
-    if (future_schedule_callbacks(state, fut) == -1) {
+    if (future_finish_execution(fut) < 0) {
         return NULL;
     }
 
@@ -756,10 +767,9 @@ future_cancel(asyncio_state *state, FutureObj *fut, PyObject *msg)
     Py_XINCREF(msg);
     Py_XSETREF(fut->fut_cancel_msg, msg);
 
-    if (future_schedule_callbacks(state, fut) == -1) {
+    if (future_finish_execution(fut) < 0) {
         return NULL;
     }
-
     Py_RETURN_TRUE;
 }
 
@@ -1416,6 +1426,26 @@ _asyncio_Future__make_cancelled_error_impl(FutureObj *self)
     return create_cancelled_error(state, self);
 }
 
+/*[clinic input]
+_asyncio.Future._finish_execution
+
+Ask the event loop to call all callbacks.
+
+The callbacks are scheduled to be called as soon as possible. Also
+clears the callback list.
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_Future__finish_execution_impl(FutureObj *self)
+/*[clinic end generated code: output=77354407293553bb input=c18b4c42a7810aa9]*/
+{
+    asyncio_state *state = get_asyncio_state_by_def((PyObject *)self);
+    if (future_schedule_callbacks(state, self) == -1) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 static void
 FutureObj_finalize(FutureObj *fut)
 {
@@ -1487,6 +1517,7 @@ static PyMethodDef FutureType_methods[] = {
     _ASYNCIO_FUTURE_DONE_METHODDEF
     _ASYNCIO_FUTURE_GET_LOOP_METHODDEF
     _ASYNCIO_FUTURE__MAKE_CANCELLED_ERROR_METHODDEF
+    _ASYNCIO_FUTURE__FINISH_EXECUTION_METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
 };
@@ -1917,21 +1948,59 @@ static  PyMethodDef TaskWakeupDef = {
 /* ----- Task introspection helpers */
 
 static void
-register_task(asyncio_state *state, TaskObj *task)
+register_task(asyncio_state *state, PyObject *pytask)
 {
-    ASYNCIO_STATE_LOCK(state);
-    assert(Task_Check(state, task));
-    assert(task != &state->asyncio_tasks.tail);
-    if (task->next != NULL) {
-        // already registered
-        goto exit;
-    }
-    assert(task->prev == NULL);
-    assert(state->asyncio_tasks.head != NULL);
+    PyObject *res;
 
-    task->next = state->asyncio_tasks.head;
-    state->asyncio_tasks.head->prev = task;
-    state->asyncio_tasks.head = task;
+    ASYNCIO_STATE_LOCK(state);
+    if (Task_Check(state, pytask)) {
+        // If task is an asyncio.Task instance or subclass, use efficient
+        // linked-list implementation.
+        TaskObj *task = (TaskObj *) pytask;
+        assert(task != &state->asyncio_tasks.tail);
+        if (task->next != NULL) {
+            // already registered
+            goto exit;
+        }
+        assert(task->prev == NULL);
+        assert(state->asyncio_tasks.head != NULL);
+
+        task->next = state->asyncio_tasks.head;
+        state->asyncio_tasks.head->prev = task;
+        state->asyncio_tasks.head = task;
+
+        // Ensure there is a persistent reference to the pending task
+        res = PyObject_CallMethodOneArg(task->task_loop,
+                                        &_Py_ID(_add_pending_task), pytask);
+        if (res == NULL) {
+            goto exit;
+        }
+        Py_DECREF(res);
+    } else {
+        // As task does not inherit from asyncio.Task, fallback to less efficient
+        // weakset implementation.
+        res = PyObject_CallMethodOneArg(state->non_asyncio_tasks, &_Py_ID(add), pytask);
+        if (res == NULL) {
+            goto exit;
+        }
+        Py_DECREF(res);
+
+        // Ensure there is a persistent reference to the pending task
+        // Get a reference to the task loop
+        PyObject *task_loop = get_future_loop(state, pytask);
+        if (task_loop == NULL) {
+            goto exit;
+        }
+
+        res = PyObject_CallMethodOneArg(task_loop,
+                                        &_Py_ID(_add_pending_task), pytask);
+        Py_DECREF(task_loop);
+        if (res == NULL) {
+            goto exit;
+        }
+        Py_DECREF(res);
+    }
+
 exit:
     ASYNCIO_STATE_UNLOCK(state);
 }
@@ -1943,27 +2012,62 @@ register_eager_task(asyncio_state *state, PyObject *task)
 }
 
 static void
-unregister_task(asyncio_state *state, TaskObj *task)
+unregister_task(asyncio_state *state, PyObject *pytask)
 {
+    PyObject *res;
+
     ASYNCIO_STATE_LOCK(state);
-    assert(Task_Check(state, task));
-    assert(task != &state->asyncio_tasks.tail);
-    if (task->next == NULL) {
-        // not registered
-        assert(task->prev == NULL);
+    if (Task_Check(state, pytask)) {
+        TaskObj *task = (TaskObj *) pytask;
+
+        assert(task != &state->asyncio_tasks.tail);
+        if (task->next == NULL) {
+            // not registered
+            assert(task->prev == NULL);
+            assert(state->asyncio_tasks.head != task);
+            goto exit;
+        }
+        task->next->prev = task->prev;
+        if (task->prev == NULL) {
+            assert(state->asyncio_tasks.head == task);
+            state->asyncio_tasks.head = task->next;
+        } else {
+            task->prev->next = task->next;
+        }
+        task->next = NULL;
+        task->prev = NULL;
         assert(state->asyncio_tasks.head != task);
-        goto exit;
-    }
-    task->next->prev = task->prev;
-    if (task->prev == NULL) {
-        assert(state->asyncio_tasks.head == task);
-        state->asyncio_tasks.head = task->next;
+
+        // Delete the persistent reference to the pending task
+        res = PyObject_CallMethodOneArg(task->task_loop,
+                                        &_Py_ID(_del_pending_task), pytask);
+        if (res == NULL) {
+            goto exit;
+        }
+        Py_DECREF(res);
     } else {
-        task->prev->next = task->next;
+        res = PyObject_CallMethodOneArg(state->non_asyncio_tasks,
+                                        &_Py_ID(discard), pytask);
+        if (res == NULL) {
+            goto exit;
+        }
+        Py_DECREF(res);
+
+        // Delete the persistent reference to the pending task
+        // Get a reference to the task loop
+        PyObject *task_loop = get_future_loop(state, pytask);
+        if (task_loop == NULL) {
+            goto exit;
+        }
+
+        res = PyObject_CallMethodOneArg(task_loop, &_Py_ID(_del_pending_task), pytask);
+        Py_DECREF(task_loop);
+        if (res == NULL) {
+            goto exit;
+        }
+        Py_DECREF(res);
     }
-    task->next = NULL;
-    task->prev = NULL;
-    assert(state->asyncio_tasks.head != task);
+
 exit:
     ASYNCIO_STATE_UNLOCK(state);
 }
@@ -2164,7 +2268,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     if (task_call_step_soon(state, self, NULL)) {
         return -1;
     }
-    register_task(state, self);
+    register_task(state, (PyObject *)self);
     return 0;
 }
 
@@ -2574,6 +2678,25 @@ _asyncio_Task_set_name(TaskObj *self, PyObject *value)
     Py_RETURN_NONE;
 }
 
+
+
+/*[clinic input]
+_asyncio.Task._finish_execution
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_Task__finish_execution_impl(TaskObj *self)
+/*[clinic end generated code: output=9d218be34fb814b7 input=783199407feedc8a]*/
+{
+    asyncio_state *state = get_asyncio_state_by_def((PyObject *)self);
+    if (future_schedule_callbacks(state, (FutureObj *)self) < 0) {
+        return NULL;
+    }
+    unregister_task(state, (PyObject*)self);
+    Py_RETURN_NONE;
+}
+
+
 static void
 TaskObj_finalize(TaskObj *task)
 {
@@ -2584,7 +2707,7 @@ TaskObj_finalize(TaskObj *task)
     // should use the asyncio._unregister_task function.
     // See https://docs.python.org/3/library/asyncio-extending.html#task-lifetime-support
 
-    unregister_task(state, task);
+    unregister_task(state, (PyObject *)task);
 
     PyObject *context;
     PyObject *message = NULL;
@@ -2665,6 +2788,7 @@ static PyMethodDef TaskType_methods[] = {
     _ASYNCIO_TASK_SET_NAME_METHODDEF
     _ASYNCIO_TASK_GET_CORO_METHODDEF
     _ASYNCIO_TASK_GET_CONTEXT_METHODDEF
+    _ASYNCIO_TASK__FINISH_EXECUTION_METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
 };
@@ -3197,7 +3321,7 @@ task_eager_start(asyncio_state *state, TaskObj *task)
     }
 
     if (task->task_state == STATE_PENDING) {
-        register_task(state, task);
+        register_task(state, (PyObject *)task);
     } else {
         // This seems to really help performance on pyperformance benchmarks
         Py_CLEAR(task->task_coro);
@@ -3360,20 +3484,7 @@ _asyncio__register_task_impl(PyObject *module, PyObject *task)
 /*[clinic end generated code: output=8672dadd69a7d4e2 input=21075aaea14dfbad]*/
 {
     asyncio_state *state = get_asyncio_state(module);
-    if (Task_Check(state, task)) {
-        // task is an asyncio.Task instance or subclass, use efficient
-        // linked-list implementation.
-        register_task(state, (TaskObj *)task);
-        Py_RETURN_NONE;
-    }
-    // As task does not inherit from asyncio.Task, fallback to less efficient
-    // weakset implementation.
-    PyObject *res = PyObject_CallMethodOneArg(state->non_asyncio_tasks,
-                                              &_Py_ID(add), task);
-    if (res == NULL) {
-        return NULL;
-    }
-    Py_DECREF(res);
+    register_task(state, task);
     Py_RETURN_NONE;
 }
 
@@ -3414,16 +3525,7 @@ _asyncio__unregister_task_impl(PyObject *module, PyObject *task)
 /*[clinic end generated code: output=6e5585706d568a46 input=28fb98c3975f7bdc]*/
 {
     asyncio_state *state = get_asyncio_state(module);
-    if (Task_Check(state, task)) {
-        unregister_task(state, (TaskObj *)task);
-        Py_RETURN_NONE;
-    }
-    PyObject *res = PyObject_CallMethodOneArg(state->non_asyncio_tasks,
-                                              &_Py_ID(discard), task);
-    if (res == NULL) {
-        return NULL;
-    }
-    Py_DECREF(res);
+    unregister_task(state, task);
     Py_RETURN_NONE;
 }
 
