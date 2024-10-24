@@ -7,7 +7,7 @@ import sysconfig
 import time
 import trace
 
-from test.support import (os_helper, MS_WINDOWS, flush_std_streams)
+from test.support import os_helper, MS_WINDOWS, flush_std_streams
 
 from .cmdline import _parse_args, Namespace
 from .findtests import findtests, split_test_packages, list_cases
