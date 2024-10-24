@@ -867,18 +867,17 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
         goto error;
 
 #ifdef Py_GIL_DISABLED
-    // gh-118527: Disable immortalization of code constants for explicit
+    // Disable immortalization of code constants for explicit
     // compile() calls to get consistent frozen outputs between the default
     // and free-threaded builds.
-    // Subtract two to suppress immortalization (so that 1 -> -1)
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _Py_atomic_add_int(&interp->gc.immortalize, -2);
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    tstate->suppress_co_const_immortalization++;
 #endif
 
     result = Py_CompileStringObject(str, filename, start[compile_mode], &cf, optimize);
 
 #ifdef Py_GIL_DISABLED
-    _Py_atomic_add_int(&interp->gc.immortalize, 2);
+    tstate->suppress_co_const_immortalization--;
 #endif
 
     Py_XDECREF(source_copy);
@@ -1024,7 +1023,16 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
             str++;
 
         (void)PyEval_MergeCompilerFlags(&cf);
+#ifdef Py_GIL_DISABLED
+        // Don't immortalize code constants for explicit eval() calls
+        // to avoid memory leaks.
+        _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+        tstate->suppress_co_const_immortalization++;
+#endif
         result = PyRun_StringFlags(str, Py_eval_input, globals, locals, &cf);
+#ifdef Py_GIL_DISABLED
+        tstate->suppress_co_const_immortalization--;
+#endif
         Py_XDECREF(source_copy);
     }
 

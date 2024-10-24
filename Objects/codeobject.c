@@ -108,14 +108,8 @@ should_intern_string(PyObject *o)
 {
 #ifdef Py_GIL_DISABLED
     // The free-threaded build interns (and immortalizes) all string constants
-    // unless we've disabled immortalizing objects that use deferred reference
-    // counting.
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (_Py_atomic_load_int(&interp->gc.immortalize) < 0) {
-        return 1;
-    }
-#endif
-
+    return 1;
+#else
     // compute if s matches [a-zA-Z0-9_]
     const unsigned char *s, *e;
 
@@ -129,6 +123,7 @@ should_intern_string(PyObject *o)
             return 0;
     }
     return 1;
+#endif
 }
 
 #ifdef Py_GIL_DISABLED
@@ -237,13 +232,10 @@ intern_constants(PyObject *tuple, int *modified)
             Py_DECREF(tmp);
         }
 
-        // Intern non-string constants in the free-threaded build, but only if
-        // we are also immortalizing objects that use deferred reference
-        // counting.
-        PyThreadState *tstate = PyThreadState_GET();
+        // Intern non-string constants in the free-threaded build
+        _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
         if (!_Py_IsImmortal(v) && !PyCode_Check(v) &&
-            !PyUnicode_CheckExact(v) &&
-            _Py_atomic_load_int(&tstate->interp->gc.immortalize) >= 0)
+            !PyUnicode_CheckExact(v) && !tstate->suppress_co_const_immortalization)
         {
             PyObject *interned = intern_one_constant(v);
             if (interned == NULL) {
