@@ -56,7 +56,7 @@ Starting in version 3.13, CPython contains two GC implementations:
   performing a collection for thread safety.
 
 Both implementations use the same basic algorithms, but operate on different
-data structures.  The the section on
+data structures.  See the section on
 [Differences between GC implementations](#Differences-between-GC-implementations)
 for the details.
 
