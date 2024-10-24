@@ -119,11 +119,23 @@ class PurePath(PurePathBase):
         paths = []
         for arg in args:
             if isinstance(arg, PurePath):
-                if arg.parser is not self.parser:
+                if arg.parser is self.parser:
+                    paths.extend(arg._raw_paths)
+                elif arg.parser is ntpath:
                     # GH-103631: Convert separators for backwards compatibility.
+                    # GH-125012: This emits FutureWarning as of Python 3.14.
+                    import warnings
+                    msg = ("pathlib.PurePosixPath(pathlib.PureWindowsPath(...)): "
+                           "converting backward slashes to forward slashes. "
+                           "This will cease in a future Python release. Use "
+                           "PurePosixPath(PureWindowsPath(...).as_posix()) to "
+                           "explicitly convert Windows separators to POSIX "
+                           "separators when 'casting' a Windows-flavoured "
+                           "path object to a POSIX-flavoured path object.")
+                    warnings.warn(msg, FutureWarning, stacklevel=2)
                     paths.append(arg.as_posix())
                 else:
-                    paths.extend(arg._raw_paths)
+                    paths.append(str(arg))
             else:
                 try:
                     path = os.fspath(arg)
