@@ -124,6 +124,7 @@ _PyToken_OneChar(int c1)
 #define COLONEQUAL_CODE (int)(':' << 8 | '=') // :=
 #define LEFTSHIFT_CODE (int)('<' << 8 | '<') // <<
 #define LESSEQUAL_CODE (int)('<' << 8 | '=') // <=
+#define NOTEQUAL_OTHER_CODE (int)('<' << 8 | '>') // <>
 #define EQEQUAL_CODE (int)('=' << 8 | '=') // ==
 #define GREATEREQUAL_CODE (int)('>' << 8 | '=') // >=
 #define RIGHTSHIFT_CODE (int)('>' << 8 | '>') // >>
@@ -134,30 +135,27 @@ _PyToken_OneChar(int c1)
 int
 _PyToken_TwoChars(int c1, int c2)
 {
-    if(c1 > 255 || c2 > 255) { // handle to see if tokens are out of range
-        return OP;
-    }
-
     switch (c1 << 8 | c2) { // Combine the two tokens into a 16-bit integer
-    case NOTEQUAL_CODE: return NOTEQUAL;
-    case PERCENTEQUAL_CODE: return PERCENTEQUAL;
-    case AMPEREQUAL_CODE: return AMPEREQUAL;
-    case DOUBLESTAR_CODE: return DOUBLESTAR;
-    case STAREQUAL_CODE: return STAREQUAL;
-    case PLUSEQUAL_CODE: return PLUSEQUAL;
-    case MINEQUAL_CODE: return MINEQUAL;
-    case RARROW_CODE: return RARROW;
-    case DOUBLESLASH_CODE: return DOUBLESLASH;
-    case SLASHEQUAL_CODE: return SLASHEQUAL;
-    case COLONEQUAL_CODE: return COLONEQUAL;
-    case LEFTSHIFT_CODE: return LEFTSHIFT;
-    case LESSEQUAL_CODE: return LESSEQUAL;
-    case EQEQUAL_CODE: return EQEQUAL;
-    case GREATEREQUAL_CODE: return GREATEREQUAL;
-    case RIGHTSHIFT_CODE: return RIGHTSHIFT;
-    case ATEQUAL_CODE: return ATEQUAL;
-    case CIRCUMFLEXEQUAL_CODE: return CIRCUMFLEXEQUAL;
-    case VBAREQUAL_CODE: return VBAREQUAL;
+        case NOTEQUAL_CODE: 
+        case NOTEQUAL_OTHER_CODE: return NOTEQUAL;
+        case PERCENTEQUAL_CODE: return PERCENTEQUAL;
+        case AMPEREQUAL_CODE: return AMPEREQUAL;
+        case DOUBLESTAR_CODE: return DOUBLESTAR;
+        case STAREQUAL_CODE: return STAREQUAL;
+        case PLUSEQUAL_CODE: return PLUSEQUAL;
+        case MINEQUAL_CODE: return MINEQUAL;
+        case RARROW_CODE: return RARROW;
+        case DOUBLESLASH_CODE: return DOUBLESLASH;
+        case SLASHEQUAL_CODE: return SLASHEQUAL;
+        case COLONEQUAL_CODE: return COLONEQUAL;
+        case LEFTSHIFT_CODE: return LEFTSHIFT;
+        case LESSEQUAL_CODE: return LESSEQUAL;
+        case EQEQUAL_CODE: return EQEQUAL;
+        case GREATEREQUAL_CODE: return GREATEREQUAL;
+        case RIGHTSHIFT_CODE: return RIGHTSHIFT;
+        case ATEQUAL_CODE: return ATEQUAL;
+        case CIRCUMFLEXEQUAL_CODE: return CIRCUMFLEXEQUAL;
+        case VBAREQUAL_CODE: return VBAREQUAL;
     }
     return OP;
 }
@@ -174,10 +172,6 @@ _PyToken_TwoChars(int c1, int c2)
 int
 _PyToken_ThreeChars(int c1, int c2, int c3)
 {
-    if(c1 > 255 || c2 > 255 || c3 > 255) { // handle to see if tokens are out of range
-        return OP;
-    }
-
     switch (c1 << 16 | c2 << 8 | c3) { // Combine the three tokens into a 24-bit integer
         case DOUBLESTAREQUAL_CODE: return DOUBLESTAREQUAL;
         case ELLIPSIS_CODE: return ELLIPSIS;
