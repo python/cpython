@@ -13,66 +13,64 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
     def test_early_return_in_dunder_new_1(self):
         # Such an implementation is used in `IUnknown` of `comtypes`.
 
-        class _ct_meta(type):
+        class ct_meta(type):
             def __new__(cls, name, bases, namespace):
                 self = super().__new__(cls, name, bases, namespace)
                 if bases == (c_void_p,):
                     return self
-                if issubclass(self, _PtrBase):
+                if issubclass(self, PtrBase):
                     return self
                 if bases == (object,):
-                    _ptr_bases = (self, _PtrBase)
+                    ptr_bases = (self, PtrBase)
                 else:
-                    _ptr_bases = (self, POINTER(bases[0]))
-                p = _p_meta(f"POINTER({self.__name__})", _ptr_bases, {})
+                    ptr_bases = (self, POINTER(bases[0]))
+                p = p_meta(f"POINTER({self.__name__})", ptr_bases, {})
                 ctypes._pointer_type_cache[self] = p
                 return self
 
-        class _p_meta(PyCSimpleType, _ct_meta):
+        class p_meta(PyCSimpleType, ct_meta):
             pass
 
-        class _PtrBase(c_void_p, metaclass=_p_meta):
+        class PtrBase(c_void_p, metaclass=p_meta):
             pass
 
-        class _CtBase(object, metaclass=_ct_meta):
+        class CtBase(object, metaclass=ct_meta):
             pass
 
-        class _Sub(_CtBase):
+        class Sub(CtBase):
             pass
 
-        class _Sub2(_Sub):
+        class Sub2(Sub):
             pass
 
-        self.assertIsInstance(POINTER(_Sub2), _p_meta)
-        self.assertTrue(issubclass(POINTER(_Sub2), _Sub2))
-        self.assertTrue(issubclass(POINTER(_Sub2), POINTER(_Sub)))
-        self.assertTrue(issubclass(POINTER(_Sub), POINTER(_CtBase)))
+        self.assertIsInstance(POINTER(Sub2), p_meta)
+        self.assertTrue(issubclass(POINTER(Sub2), Sub2))
+        self.assertTrue(issubclass(POINTER(Sub2), POINTER(Sub)))
+        self.assertTrue(issubclass(POINTER(Sub), POINTER(CtBase)))
 
     def test_early_return_in_dunder_new_2(self):
         # Such an implementation is used in `CoClass` of `comtypes`.
 
-        class _ct_meta(type):
+        class ct_meta(type):
             def __new__(cls, name, bases, namespace):
                 self = super().__new__(cls, name, bases, namespace)
-                if isinstance(self, _p_meta):
+                if isinstance(self, p_meta):
                     return self
-                p = _p_meta(
-                    f"POINTER({self.__name__})", (self, c_void_p), {}
-                )
+                p = p_meta(f"POINTER({self.__name__})", (self, c_void_p), {})
                 ctypes._pointer_type_cache[self] = p
                 return self
 
-        class _p_meta(PyCSimpleType, _ct_meta):
+        class p_meta(PyCSimpleType, ct_meta):
             pass
 
-        class _Core(object):
+        class Core(object):
             pass
 
-        class _CtBase(_Core, metaclass=_ct_meta):
+        class CtBase(Core, metaclass=ct_meta):
             pass
 
-        class _Sub(_CtBase):
+        class Sub(CtBase):
             pass
 
-        self.assertIsInstance(POINTER(_Sub), _p_meta)
-        self.assertTrue(issubclass(POINTER(_Sub), _Sub))
+        self.assertIsInstance(POINTER(Sub), p_meta)
+        self.assertTrue(issubclass(POINTER(Sub), Sub))
