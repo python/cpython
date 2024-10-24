@@ -241,29 +241,20 @@ class Morsel(dict):
     This class also includes a coded_value attribute, which is used to hold
     the network representation of the value.
     """
-    # RFC 2109 lists these attributes as reserved:
-    #   path       comment         domain
-    #   max-age    secure      version
-    #
-    # For historical reasons, these attributes are also reserved:
-    #   expires
-    #
-    # This is an extension from Microsoft:
-    #   httponly
-    #
+    # RFC 6265 lists these attributes as reserved:
+    #   expires max-age domain
+    #   path secure httponly 
+    
     # This dictionary provides a mapping from the lowercase
     # variant on the left to the appropriate traditional
     # formatting on the right.
     _reserved = {
         "expires"  : "expires",
-        "path"     : "Path",
-        "comment"  : "Comment",
-        "domain"   : "Domain",
         "max-age"  : "Max-Age",
+        "domain"   : "Domain",
+        "path"     : "Path",       
         "secure"   : "Secure",
         "httponly" : "HttpOnly",
-        "version"  : "Version",
-        "samesite" : "SameSite",
     }
 
     _flags = {'secure', 'httponly'}
