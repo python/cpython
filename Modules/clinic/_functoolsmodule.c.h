@@ -67,6 +67,77 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_functools_reduce__doc__,
+"reduce($module, function, iterable, /, initial=None)\n"
+"--\n"
+"\n"
+"Apply a function of two arguments cumulatively.\n"
+"\n"
+"Apply it to the items of a sequence or iterable, from left to right, so as to\n"
+"reduce the iterable to a single value.  For example, reduce(lambda x, y: x+y,\n"
+"[1, 2, 3, 4, 5]) calculates ((((1+2)+3)+4)+5).  If initial is present, it is\n"
+"placed before the items of the iterable in the calculation, and serves as a\n"
+"default when the iterable is empty.");
+
+#define _FUNCTOOLS_REDUCE_METHODDEF    \
+    {"reduce", _PyCFunction_CAST(_functools_reduce), METH_FASTCALL|METH_KEYWORDS, _functools_reduce__doc__},
+
+static PyObject *
+_functools_reduce_impl(PyObject *module, PyObject *func, PyObject *seq,
+                       PyObject *result);
+
+static PyObject *
+_functools_reduce(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(initial), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "", "initial", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "reduce",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
+    PyObject *func;
+    PyObject *seq;
+    PyObject *result = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    func = args[0];
+    seq = args[1];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    result = args[2];
+skip_optional_pos:
+    return_value = _functools_reduce_impl(module, func, seq, result);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_functools__lru_cache_wrapper_cache_info__doc__,
 "cache_info($self, /)\n"
 "--\n"
@@ -114,4 +185,4 @@ _functools__lru_cache_wrapper_cache_clear(PyObject *self, PyObject *Py_UNUSED(ig
 
     return return_value;
 }
-/*[clinic end generated code: output=755265bb6d5ea751 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=58c9875c57cbdf51 input=a9049054013a1b77]*/
