@@ -851,12 +851,15 @@ PyDoc_STRVAR(math_lcm_doc,
  * true (1), but may return false (0) without setting up an exception.
  */
 static int
-is_error(double x)
+is_error(double x, int raise_edom)
 {
     int result = 1;     /* presumption of guilt */
     assert(errno);      /* non-zero errno is a precondition for calling */
-    if (errno == EDOM)
-        PyErr_SetString(PyExc_ValueError, "math domain error");
+    if (errno == EDOM) {
+        if (raise_edom) {
+            PyErr_SetString(PyExc_ValueError, "math domain error");
+        }
+    }
 
     else if (errno == ERANGE) {
         /* ANSI C generally requires libm functions to set ERANGE
@@ -921,7 +924,8 @@ is_error(double x)
 */
 
 static PyObject *
-math_1(PyObject *arg, double (*func) (double), int can_overflow)
+math_1(PyObject *arg, double (*func) (double), int can_overflow,
+       const char *err_msg)
 {
     double x, r;
     x = PyFloat_AsDouble(arg);
@@ -929,25 +933,34 @@ math_1(PyObject *arg, double (*func) (double), int can_overflow)
         return NULL;
     errno = 0;
     r = (*func)(x);
-    if (isnan(r) && !isnan(x)) {
-        PyErr_SetString(PyExc_ValueError,
-                        "math domain error"); /* invalid arg */
-        return NULL;
-    }
+    if (isnan(r) && !isnan(x))
+        goto domain_err; /* domain error */
     if (isinf(r) && isfinite(x)) {
         if (can_overflow)
             PyErr_SetString(PyExc_OverflowError,
                             "math range error"); /* overflow */
         else
-            PyErr_SetString(PyExc_ValueError,
-                            "math domain error"); /* singularity */
+            goto domain_err; /* singularity */
         return NULL;
     }
-    if (isfinite(r) && errno && is_error(r))
+    if (isfinite(r) && errno && is_error(r, 1))
         /* this branch unnecessary on most platforms */
         return NULL;
 
     return PyFloat_FromDouble(r);
+
+domain_err:
+    if (err_msg) {
+        char *buf = PyOS_double_to_string(x, 'r', 0, Py_DTSF_ADD_DOT_0, NULL);
+        if (buf) {
+	        PyErr_Format(PyExc_ValueError, err_msg, buf);
+	        PyMem_Free(buf);
+        }
+	}
+	else {
+		PyErr_SetString(PyExc_ValueError, "math domain error");
+	}
+    return NULL;
 }
 
 /* variant of math_1, to be used when the function being wrapped is known to
@@ -955,7 +968,7 @@ math_1(PyObject *arg, double (*func) (double), int can_overflow)
    errno = ERANGE for overflow). */
 
 static PyObject *
-math_1a(PyObject *arg, double (*func) (double))
+math_1a(PyObject *arg, double (*func) (double), const char *err_msg)
 {
     double x, r;
     x = PyFloat_AsDouble(arg);
@@ -963,8 +976,17 @@ math_1a(PyObject *arg, double (*func) (double))
         return NULL;
     errno = 0;
     r = (*func)(x);
-    if (errno && is_error(r))
+    if (errno && is_error(r, err_msg ? 0 : 1)) {
+        if (err_msg && errno == EDOM) {
+            assert(!PyErr_Occurred()); /* exception is not set by is_error() */
+            char *buf = PyOS_double_to_string(x, 'r', 0, Py_DTSF_ADD_DOT_0, NULL);
+            if (buf) {
+                PyErr_Format(PyExc_ValueError, err_msg, buf);
+                PyMem_Free(buf);
+            }
+        }
         return NULL;
+    }
     return PyFloat_FromDouble(r);
 }
 
@@ -1024,7 +1046,7 @@ math_2(PyObject *const *args, Py_ssize_t nargs,
         else
             errno = 0;
     }
-    if (errno && is_error(r))
+    if (errno && is_error(r, 1))
         return NULL;
     else
         return PyFloat_FromDouble(r);
@@ -1032,13 +1054,25 @@ math_2(PyObject *const *args, Py_ssize_t nargs,
 
 #define FUNC1(funcname, func, can_overflow, docstring)                  \
     static PyObject * math_##funcname(PyObject *self, PyObject *args) { \
-        return math_1(args, func, can_overflow);                            \
+        return math_1(args, func, can_overflow, NULL);                  \
+    }\
+    PyDoc_STRVAR(math_##funcname##_doc, docstring);
+
+#define FUNC1D(funcname, func, can_overflow, docstring, err_msg)        \
+    static PyObject * math_##funcname(PyObject *self, PyObject *args) { \
+        return math_1(args, func, can_overflow, err_msg);               \
     }\
     PyDoc_STRVAR(math_##funcname##_doc, docstring);
 
 #define FUNC1A(funcname, func, docstring)                               \
     static PyObject * math_##funcname(PyObject *self, PyObject *args) { \
-        return math_1a(args, func);                                     \
+        return math_1a(args, func, NULL);                               \
+    }\
+    PyDoc_STRVAR(math_##funcname##_doc, docstring);
+
+#define FUNC1AD(funcname, func, docstring, err_msg)                     \
+    static PyObject * math_##funcname(PyObject *self, PyObject *args) { \
+        return math_1a(args, func, err_msg);                            \
     }\
     PyDoc_STRVAR(math_##funcname##_doc, docstring);
 
@@ -1070,9 +1104,10 @@ FUNC2(atan2, atan2,
       "atan2($module, y, x, /)\n--\n\n"
       "Return the arc tangent (measured in radians) of y/x.\n\n"
       "Unlike atan(y/x), the signs of both x and y are considered.")
-FUNC1(atanh, atanh, 0,
+FUNC1D(atanh, atanh, 0,
       "atanh($module, x, /)\n--\n\n"
-      "Return the inverse hyperbolic tangent of x.")
+      "Return the inverse hyperbolic tangent of x.",
+      "expected a number between -1 and 1, got %s")
 FUNC1(cbrt, cbrt, 0,
       "cbrt($module, x, /)\n--\n\n"
       "Return the cube root of x.")
@@ -1183,9 +1218,10 @@ math_floor(PyObject *module, PyObject *number)
     return PyLong_FromDouble(floor(x));
 }
 
-FUNC1A(gamma, m_tgamma,
+FUNC1AD(gamma, m_tgamma,
       "gamma($module, x, /)\n--\n\n"
-      "Gamma function at x.")
+      "Gamma function at x.",
+      "expected a float or nonnegative integer, got %s")
 FUNC1A(lgamma, m_lgamma,
       "lgamma($module, x, /)\n--\n\n"
       "Natural logarithm of absolute value of Gamma function at x.")
@@ -1205,9 +1241,10 @@ FUNC1(sin, sin, 0,
 FUNC1(sinh, sinh, 1,
       "sinh($module, x, /)\n--\n\n"
       "Return the hyperbolic sine of x.")
-FUNC1(sqrt, sqrt, 0,
+FUNC1D(sqrt, sqrt, 0,
       "sqrt($module, x, /)\n--\n\n"
-      "Return the square root of x.")
+      "Return the square root of x.",
+      "expected a nonnegative input, got %s")
 FUNC1(tan, tan, 0,
       "tan($module, x, /)\n--\n\n"
       "Return the tangent of x (measured in radians).")
@@ -2134,7 +2171,7 @@ math_ldexp_impl(PyObject *module, double x, PyObject *i)
             errno = ERANGE;
     }
 
-    if (errno && is_error(r))
+    if (errno && is_error(r, 1))
         return NULL;
     return PyFloat_FromDouble(r);
 }
@@ -2189,7 +2226,7 @@ loghelper(PyObject* arg, double (*func)(double))
         /* Negative or zero inputs give a ValueError. */
         if (!_PyLong_IsPositive((PyLongObject *)arg)) {
             PyErr_SetString(PyExc_ValueError,
-                            "math domain error");
+                            "expected a positive input");
             return NULL;
         }
 
@@ -2213,7 +2250,7 @@ loghelper(PyObject* arg, double (*func)(double))
     }
 
     /* Else let libm handle it by itself. */
-    return math_1(arg, func, 0);
+    return math_1(arg, func, 0, "expected a positive input, got %s");
 }
 
 
@@ -2362,7 +2399,7 @@ math_fmod_impl(PyObject *module, double x, double y)
         else
             errno = 0;
     }
-    if (errno && is_error(r))
+    if (errno && is_error(r, 1))
         return NULL;
     else
         return PyFloat_FromDouble(r);
@@ -2999,7 +3036,7 @@ math_pow_impl(PyObject *module, double x, double y)
         }
     }
 
-    if (errno && is_error(r))
+    if (errno && is_error(r, 1))
         return NULL;
     else
         return PyFloat_FromDouble(r);
