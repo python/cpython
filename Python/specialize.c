@@ -1920,38 +1920,38 @@ success:
     cache->counter = adaptive_counter_cooldown();
 }
 
-/* Returns a borrowed reference.
- * The reference is only valid if guarded by a type version check.
- */
-static PyFunctionObject *
-get_init_for_simple_managed_python_class(PyTypeObject *tp)
+/* Returns a strong reference. */
+static PyObject *
+get_init_for_simple_managed_python_class(PyTypeObject *tp, unsigned int *tp_version)
 {
     assert(tp->tp_new == PyBaseObject_Type.tp_new);
     if (tp->tp_alloc != PyType_GenericAlloc) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OVERRIDDEN);
         return NULL;
     }
-    if ((tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) == 0) {
+    unsigned long tp_flags = PyType_GetFlags(tp);
+    if ((tp_flags & Py_TPFLAGS_INLINE_VALUES) == 0) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_INIT_NOT_INLINE_VALUES);
         return NULL;
     }
-    if (!(tp->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+    if (!(tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         /* Is this possible? */
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_EXPECTED_ERROR);
         return NULL;
     }
-    PyObject *init = _PyType_Lookup(tp, &_Py_ID(__init__));
+    PyObject *init = _PyType_LookupRefAndVersion(tp, &_Py_ID(__init__), tp_version);
     if (init == NULL || !PyFunction_Check(init)) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_INIT_NOT_PYTHON);
+        Py_XDECREF(init);
         return NULL;
     }
     int kind = function_kind((PyCodeObject *)PyFunction_GET_CODE(init));
     if (kind != SIMPLE_FUNCTION) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_INIT_NOT_SIMPLE);
+        Py_DECREF(init);
         return NULL;
     }
-    ((PyHeapTypeObject *)tp)->_spec_cache.init = init;
-    return (PyFunctionObject *)init;
+    return init;
 }
 
 static void
@@ -1984,21 +1984,23 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
     if (Py_TYPE(tp) != &PyType_Type) {
         goto generic;
     }
-    #ifndef Py_GIL_DISABLED
     if (tp->tp_new == PyBaseObject_Type.tp_new) {
-        PyFunctionObject *init = get_init_for_simple_managed_python_class(tp);
-        if (type_get_version(tp, CALL) == 0) {
-            unspecialize(instr, SPEC_FAIL_CALL_NO_TYPE_VERSION);
+        unsigned int tp_version = 0;
+        PyObject *init = get_init_for_simple_managed_python_class(tp, &tp_version);
+        if (!tp_version) {
+            unspecialize(instr, SPEC_FAIL_OUT_OF_VERSIONS);
+            Py_XDECREF(init);
             return;
         }
-        if (init != NULL) {
+        if (init != NULL && _PyType_CacheInitForSpecialization(tp, init, tp_version)) {
             _PyCallCache *cache = (_PyCallCache *)(instr + 1);
-            write_u32(cache->func_version, tp->tp_version_tag);
+            write_u32(cache->func_version, tp_version);
             specialize(instr, CALL_ALLOC_AND_ENTER_INIT);
+            Py_DECREF(init);
             return;
         }
+        Py_XDECREF(init);
     }
-    #endif
 generic:
     specialize(instr, CALL_NON_PY_GENERAL);
 }
@@ -2186,7 +2188,7 @@ _Py_Specialize_Call(_PyStackRef callable_st, _Py_CODEUNIT *instr, int nargs)
         }
     }
     else {
-        specialize(instr, CALL_NON_PY_GENERAL, NULL);
+        specialize(instr, CALL_NON_PY_GENERAL);
     }
 }
 
@@ -2806,6 +2808,13 @@ static const PyBytesObject no_location = {
     .ob_sval = { NO_LOC_4 }
 };
 
+#ifdef Py_GIL_DISABLED
+static _PyCodeArray init_cleanup_tlbc = {
+    .size = 1,
+    .entries = {(char*) &_Py_InitCleanup.co_code_adaptive},
+};
+#endif
+
 const struct _PyCode8 _Py_InitCleanup = {
     _PyVarObject_HEAD_INIT(&PyCode_Type, 3),
     .co_consts = (PyObject *)&_Py_SINGLETON(tuple_empty),
@@ -2821,6 +2830,9 @@ const struct _PyCode8 _Py_InitCleanup = {
     ._co_firsttraceable = 4,
     .co_stacksize = 2,
     .co_framesize = 2 + FRAME_SPECIALS_SIZE,
+#ifdef Py_GIL_DISABLED
+    .co_tlbc = &init_cleanup_tlbc,
+#endif
     .co_code_adaptive = {
         EXIT_INIT_CHECK, 0,
         RETURN_VALUE, 0,
