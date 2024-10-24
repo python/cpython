@@ -1,0 +1,2 @@
+:func:`map` now supports :pep:`618`'s ``strict`` parameter, which raises a :exc:`ValueError` if the arguments are exhausted at different lengths.
+Contributed by Wannes Boeykens.
