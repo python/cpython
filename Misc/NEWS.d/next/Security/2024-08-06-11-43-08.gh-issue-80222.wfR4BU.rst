@@ -1,0 +1,3 @@
+Fix a problem where email.policy.default header refolding could incorrectly
+omit quotes from structured email headers, enabling sender or recipient
+spoofing via a carefully crafted display-name.
