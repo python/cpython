@@ -2204,8 +2204,8 @@ class TestSourcePositions(unittest.TestCase):
             start_line, end_line, _, _ = instr.positions
             self.assertEqual(start_line, end_line)
 
-        # Expect three `LOAD_CONST None` instructions for the no-exception __exit__ call,
-        # and one for the RETURN_VALUE.
+        # Expect four `LOAD_CONST None` instructions:
+        # three for the no-exception __exit__ call, and one for the return.
         # They should all have the locations of the context manager ('xyz').
 
         load_none = [instr for instr in dis.get_instructions(f) if
