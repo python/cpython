@@ -142,17 +142,20 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         transport = ssl_proto._app_transport
         writer = asyncio.StreamWriter(transport, protocol, reader, self.loop)
 
-        # Write data to the transport n times in a task that blocks the
-        # asyncio event loop from a user perspective.
-        async def _write_loop(n):
-            for i in range(n):
+        async def main():
+            # writes data to transport
+            async def write():
                 writer.write(data)
                 await writer.drain()
 
-        # The test is successful if we raise the error the next time
-        # we try to write to the transport.
-        with self.assertRaises(ConnectionResetError):
-            self.loop.run_until_complete(_write_loop(2))
+            # try to write for the first time
+            await write()
+            # try to write for the second time, this raises as the connection_lost
+            # callback should be done with error
+            with self.assertRaises(ConnectionResetError):
+                await write()
+
+        self.loop.run_until_complete(main())
 
     def test_close_during_handshake(self):
         # bpo-29743 Closing transport during handshake process leaks socket
