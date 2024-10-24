@@ -515,7 +515,7 @@ The :mod:`functools` module defines the following functions:
      ...     for i, elem in enumerate(arg):
      ...         print(i, elem)
 
-   :data:`types.UnionType` and :data:`typing.Union` can also be used::
+   :class:`typing.Union` can also be used::
 
     >>> @fun.register
     ... def _(arg: int | float, verbose=False):
@@ -651,8 +651,8 @@ The :mod:`functools` module defines the following functions:
       The :func:`register` attribute now supports using type annotations.
 
    .. versionchanged:: 3.11
-      The :func:`register` attribute now supports :data:`types.UnionType`
-      and :data:`typing.Union` as type annotations.
+      The :func:`register` attribute now supports
+      :class:`typing.Union` as a type annotation.
 
 
 .. class:: singledispatchmethod(func)
