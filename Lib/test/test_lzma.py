@@ -281,6 +281,18 @@ class CompressorDecompressorTestCase(unittest.TestCase):
         lzd = LZMADecompressor()
         self._test_decompressor(lzd, cdata, lzma.CHECK_CRC64)
 
+    def test_roundtrip_xz_mt(self):
+        lzc = LZMACompressor(threads=0)
+        cdata = lzc.compress(INPUT) + lzc.flush()
+        lzd = LZMADecompressor()
+        self._test_decompressor(lzd, cdata, lzma.CHECK_CRC64)
+
+    def test_roundtrip_xz_mt_preset_6(self):
+        lzc = LZMACompressor(preset=6, threads=8)
+        cdata = lzc.compress(INPUT) + lzc.flush()
+        lzd = LZMADecompressor()
+        self._test_decompressor(lzd, cdata, lzma.CHECK_CRC64)
+
     def test_roundtrip_alone(self):
         lzc = LZMACompressor(lzma.FORMAT_ALONE)
         cdata = lzc.compress(INPUT) + lzc.flush()
@@ -539,6 +551,8 @@ class FileTestCase(unittest.TestCase):
     def test_init(self):
         with LZMAFile(BytesIO(COMPRESSED_XZ)) as f:
             pass
+        with LZMAFile(BytesIO(COMPRESSED_XZ), threads=4) as f:
+            pass
         with LZMAFile(BytesIO(), "w") as f:
             pass
         with LZMAFile(BytesIO(), "x") as f:
@@ -663,6 +677,8 @@ class FileTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             LZMAFile(BytesIO(), "w", filters=[{"xyzzy": 3}])
         with self.assertRaises(ValueError):
+            LZMAFile(BytesIO(), "w", filters=[{"xyzzy": 3}], threads=4)
+        with self.assertRaises(ValueError):
             LZMAFile(BytesIO(), "w", filters=[{"id": 98765}])
         with self.assertRaises(ValueError):
             LZMAFile(BytesIO(), "w",
@@ -673,6 +689,10 @@ class FileTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             LZMAFile(BytesIO(), "w",
                      filters=[{"id": lzma.FILTER_X86, "foo": 0}])
+
+    def test_init_bad_threads(self):
+        with self.assertRaises(ValueError):
+            LZMAFile(BytesIO(), "w", threads=-1)
 
     def test_init_with_preset_and_filters(self):
         with self.assertRaises(ValueError):
