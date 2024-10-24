@@ -1,0 +1,4 @@
+Add :mod:`mimetypes` support for `video/3gpp`_ and `video/3gpp2`_.
+
+.. _video/3gpp: https://www.iana.org/assignments/media-types/video/3gpp
+.. _video/3gpp2: https://www.iana.org/assignments/media-types/video/3gpp2
