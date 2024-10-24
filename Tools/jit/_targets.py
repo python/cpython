@@ -61,10 +61,11 @@ class _Target(typing.Generic[_S, _R]):
         args = ["--disassemble", "--reloc", f"{path}"]
         output = await _llvm.maybe_run("llvm-objdump", args, echo=self.verbose)
         if output is not None:
+            # Make sure that full paths don't leak out (for reproducibility):
+            long, short = str(path), str(path.name)
             group.code.disassembly.extend(
-                line.expandtabs().strip()
+                line.expandtabs().strip().replace(long, short)
                 for line in output.splitlines()
-                if not line.isspace()
             )
         args = [
             "--elf-output-style=JSON",
@@ -122,6 +123,10 @@ class _Target(typing.Generic[_S, _R]):
             f"-I{CPYTHON / 'Tools' / 'jit'}",
             "-O3",
             "-c",
+            # Shorten full absolute file paths in the generated code (like the
+            # __FILE__ macro and assert failure messages) for reproducibility:
+            f"-ffile-prefix-map={CPYTHON}=.",
+            f"-ffile-prefix-map={tempdir}=.",
             # This debug info isn't necessary, and bloats out the JIT'ed code.
             # We *may* be able to re-enable this, process it, and JIT it for a
             # nicer debugging experience... but that needs a lot more research:
