@@ -775,7 +775,6 @@ class TestSpecifics(unittest.TestCase):
             self.assertEqual(repr(f1()), repr(const))
 
         check_same_constant(None)
-        check_same_constant(0)
         check_same_constant(0.0)
         check_same_constant(b'abc')
         check_same_constant('abc')
@@ -853,9 +852,9 @@ class TestSpecifics(unittest.TestCase):
         eval(compile(code, "file.py", "exec"), g)
         exec(code, g)
         f = g['f']
-        expected = tuple([None, '', 1] + [f't{i}' for i in range(N)])
+        expected = tuple([None, ''] + [f't{i}' for i in range(N)])
         self.assertEqual(f.__code__.co_consts, expected)
-        expected = "".join(expected[3:])
+        expected = "".join(expected[2:])
         self.assertEqual(expected, f())
 
     # Stripping unused constants is not a strict requirement for the
@@ -982,7 +981,6 @@ class TestSpecifics(unittest.TestCase):
             self.assertEqual(repr(f1()), repr(const1))
             self.assertEqual(repr(f2()), repr(const2))
 
-        check_different_constants(0, 0.0)
         check_different_constants(+0.0, -0.0)
         check_different_constants((0,), (0.0,))
         check_different_constants('a', b'a')
