@@ -96,6 +96,8 @@ class EmbeddingTestsMixin:
     def tearDown(self):
         os.chdir(self.oldcwd)
 
+    ANY_FAILURE = object()
+
     def run_embedded_interpreter(self, *args, env=None,
                                  timeout=None, returncode=0, input=None,
                                  cwd=None):
@@ -120,6 +122,8 @@ class EmbeddingTestsMixin:
             p.terminate()
             p.wait()
             raise
+        if returncode is self.ANY_FAILURE:
+            returncode = 1 if p.returncode == 0 else p.returncode
         if p.returncode != returncode and support.verbose:
             print(f"--- {cmd} failed ---")
             print(f"stdout:\n{out}")
@@ -229,6 +233,46 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         lines = [f"--- Pass {i} ---" for i in range(1, INIT_LOOPS+1)]
         lines = "\n".join(lines) + "\n"
         self.assertEqual(out, lines)
+
+    def test_replace_main_tstate(self):
+        for reuse in (True, False):
+            with self.subTest(reuse=reuse, exec=False):
+                self.run_embedded_interpreter(
+                    'test_replace_main_tstate',
+                    # At the moment, this fails because main_tstate gets broken.
+                    returncode=self.ANY_FAILURE,
+                )
+            with self.subTest(reuse=reuse, exec=True):
+                out, rc = self.run_embedded_interpreter(
+                    'test_replace_main_tstate',
+                    'print("spam!")',
+                    # At the moment, this fails because main_tstate gets broken.
+                    returncode=self.ANY_FAILURE,
+                )
+                if rc == 0:
+                    self.assertEqual(out.strip(), 'spam!')
+
+    def test_fini_in_subthread(self):
+        self.run_embedded_interpreter(
+            'test_fini_in_subthread',
+            # At the moment, this actually succeeds on all platforms,
+            # except for Windows (STATUS_ACCESS_VIOLATION).
+            returncode=self.ANY_FAILURE if MS_WINDOWS else 0,
+        )
+
+    def test_fini_in_main_thread_with_other_tstate(self):
+        self.run_embedded_interpreter(
+            'test_fini_in_main_thread_with_other_tstate',
+            # At the moment, this actually succeeds on all platforms.
+            returncode=0,
+        )
+
+    def test_fini_in_main_thread_with_subinterpreter(self):
+        self.run_embedded_interpreter(
+            'test_fini_in_main_thread_with_subinterpreter',
+            # At the moment, this actually succeeds on all platforms.
+            returncode=0,
+        )
 
     def test_forced_io_encoding(self):
         # Checks forced configuration of embedded interpreter IO streams
