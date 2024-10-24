@@ -74,12 +74,12 @@ PyDoc_STRVAR(_functools_reduce__doc__,
 "\n"
 "Apply a function of two arguments cumulatively to an iterable, from left to right.\n"
 "\n"
-"This efficiently reduce the iterable to a single value.  If initial is present,\n"
+"This efficiently reduces the iterable to a single value.  If initial is present,\n"
 "it is placed before the items of the iterable in the calculation, and serves as\n"
 "a default when the iterable is empty.\n"
 "\n"
 "For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])\n"
-"calculates ((((1+2)+3)+4)+5).");
+"calculates ((((1 + 2) + 3) + 4) + 5).");
 
 #define _FUNCTOOLS_REDUCE_METHODDEF    \
     {"reduce", _PyCFunction_CAST(_functools_reduce), METH_FASTCALL|METH_KEYWORDS, _functools_reduce__doc__},
@@ -187,4 +187,4 @@ _functools__lru_cache_wrapper_cache_clear(PyObject *self, PyObject *Py_UNUSED(ig
 
     return return_value;
 }
-/*[clinic end generated code: output=f9b9bd6b7e605cb2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9344464df09b2e41 input=a9049054013a1b77]*/

@@ -953,7 +953,7 @@ calculates ((((1 + 2) + 3) + 4) + 5).
 static PyObject *
 _functools_reduce_impl(PyObject *module, PyObject *func, PyObject *seq,
                        PyObject *result)
-/*[clinic end generated code: output=30d898fe1267c79d input=40be8069bcbc1a75]*/
+/*[clinic end generated code: output=30d898fe1267c79d input=968b8e45b819c0da]*/
 {
     PyObject *args, *it;
 
@@ -1795,7 +1795,9 @@ _functools_exec(PyObject *module)
     // lru_list_elem is used only in _lru_cache_wrapper.
     // So we don't expose it in module namespace.
 
-    if (PyModule_Add(module, "_initial_missing", _PyObject_New(&PyBaseObject_Type)) < 0) {
+    if (PyModule_Add(module, "_initial_missing",
+                     PyObject_New(PyObject, &PyBaseObject_Type)) < 0)
+    {
         return -1;
     }
 
