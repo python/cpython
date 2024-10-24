@@ -125,7 +125,7 @@ class EmailPolicy(Policy):
 
         """
         name, value = sourcelines[0].split(':', 1)
-        no_first_value = value.strip() == '' and len(sourcelines) > 1
+        no_first_value = not value.strip() and len(sourcelines) > 1
 
         value = '' if no_first_value else value.lstrip(' \t')
 
