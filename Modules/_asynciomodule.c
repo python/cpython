@@ -448,7 +448,7 @@ future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
          i++) {
         PyObject *cb_tup = PyList_GET_ITEM(fut->fut_callbacks, i);
         if (!PyTuple_CheckExact(cb_tup) || PyTuple_GET_SIZE(cb_tup) != 2) {
-            PyErr_SetString(PyExc_RuntimeError, "corrupted callback tuple?");
+            PyErr_SetString(PyExc_RuntimeError, "corrupted callback tuple");
             return -1;
         }
         PyObject *cb = PyTuple_GET_ITEM(cb_tup, 0);
