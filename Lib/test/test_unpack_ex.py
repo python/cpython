@@ -99,7 +99,7 @@ Set display element unpacking
     >>> {1, *1, 0, 4}
     Traceback (most recent call last):
       ...
-    TypeError: 'int' object is not iterable
+    TypeError: 'int' object is not iterable. Did you mean: 'range('int')'?
 
 Dict display element unpacking
 

@@ -4213,6 +4213,14 @@ class SuggestionFormattingTestBase:
         )
         self.assertNotIn("?", result_lines[-1])
 
+    def test_type_error_suggestions(self):
+        def func():
+            count = 10
+            for _ in count:
+                pass
+        actual = self.get_suggestion(func)
+        self.assertIn("range('int')", actual)
+
     def test_name_error_suggestions(self):
         def Substitution():
             noise = more_noise = a = bc = None
