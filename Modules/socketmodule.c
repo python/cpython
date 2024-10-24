@@ -7929,6 +7929,9 @@ socket_exec(PyObject *m)
     ADD_INT_MACRO(m, SO_REUSEPORT);
 #endif
 #endif
+#ifdef  SO_REUSEPORT_LB
+    ADD_INT_MACRO(m, SO_REUSEPORT_LB);
+#endif
 #ifdef  SO_SNDBUF
     ADD_INT_MACRO(m, SO_SNDBUF);
 #endif
