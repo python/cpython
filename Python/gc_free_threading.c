@@ -1401,10 +1401,32 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     return n + m;
 }
 
+static PyObject *
+list_from_object_stack(_PyObjectStack *stack)
+{
+    PyObject *list = PyList_New(_PyObjectStack_Size(stack));
+    if (list == NULL) {
+        PyObject *op;
+        while ((op = _PyObjectStack_Pop(stack)) != NULL) {
+            Py_DECREF(op);
+        }
+        return NULL;
+    }
+
+    PyObject *op;
+    Py_ssize_t idx = 0;
+    while ((op = _PyObjectStack_Pop(stack)) != NULL) {
+        assert(idx < PyList_GET_SIZE(list));
+        PyList_SET_ITEM(list, idx++, op);
+    }
+    assert(idx == PyList_GET_SIZE(list));
+    return list;
+}
+
 struct get_referrers_args {
     struct visitor_args base;
     PyObject *objs;
-    struct worklist results;
+    _PyObjectStack results;
 };
 
 static int
@@ -1428,11 +1450,21 @@ visit_get_referrers(const mi_heap_t *heap, const mi_heap_area_t *area,
     if (op == NULL) {
         return true;
     }
+    if (op->ob_gc_bits & (_PyGC_BITS_UNREACHABLE | _PyGC_BITS_FROZEN)) {
+        // Exclude unreachable objects (in-progress GC) and frozen
+        // objects from gc.get_objects() to match the default build.
+        return true;
+    }
 
     struct get_referrers_args *arg = (struct get_referrers_args *)args;
+    if (op == arg->objs) {
+        // Don't include the tuple itself in the referrers list.
+        return true;
+    }
     if (Py_TYPE(op)->tp_traverse(op, referrersvisit, arg->objs)) {
-        op->ob_tid = 0;  // we will restore the refcount later
-        worklist_push(&arg->results, op);
+        if (_PyObjectStack_Push(&arg->results, Py_NewRef(op)) < 0) {
+            return false;
+        }
     }
 
     return true;
@@ -1441,48 +1473,25 @@ visit_get_referrers(const mi_heap_t *heap, const mi_heap_area_t *area,
 PyObject *
 _PyGC_GetReferrers(PyInterpreterState *interp, PyObject *objs)
 {
-    PyObject *result = PyList_New(0);
-    if (!result) {
-        return NULL;
-    }
-
-    _PyEval_StopTheWorld(interp);
-
-    // Append all objects to a worklist. This abuses ob_tid. We will restore
-    // it later. NOTE: We can't append to the PyListObject during
-    // gc_visit_heaps() because PyList_Append() may reclaim an abandoned
-    // mimalloc segments while we are traversing them.
+    // NOTE: We can't append to the PyListObject during gc_visit_heaps()
+    // because PyList_Append() may reclaim an abandoned mimalloc segments
+    // while we are traversing them.
     struct get_referrers_args args = { .objs = objs };
-    gc_visit_heaps(interp, &visit_get_referrers, &args.base);
-
-    bool error = false;
-    PyObject *op;
-    while ((op = worklist_pop(&args.results)) != NULL) {
-        gc_restore_tid(op);
-        if (op != objs && PyList_Append(result, op) < 0) {
-            error = true;
-            break;
-        }
-    }
-
-    // In case of error, clear the remaining worklist
-    while ((op = worklist_pop(&args.results)) != NULL) {
-        gc_restore_tid(op);
-    }
-
+    _PyEval_StopTheWorld(interp);
+    int err = gc_visit_heaps(interp, &visit_get_referrers, &args.base);
     _PyEval_StartTheWorld(interp);
 
-    if (error) {
-        Py_DECREF(result);
-        return NULL;
+    PyObject *list = list_from_object_stack(&args.results);
+    if (err < 0) {
+        PyErr_NoMemory();
+        Py_CLEAR(list);
     }
-
-    return result;
+    return list;
 }
 
 struct get_objects_args {
     struct visitor_args base;
-    struct worklist objects;
+    _PyObjectStack objects;
 };
 
 static bool
@@ -1493,54 +1502,36 @@ visit_get_objects(const mi_heap_t *heap, const mi_heap_area_t *area,
     if (op == NULL) {
         return true;
     }
+    if (op->ob_gc_bits & (_PyGC_BITS_UNREACHABLE | _PyGC_BITS_FROZEN)) {
+        // Exclude unreachable objects (in-progress GC) and frozen
+        // objects from gc.get_objects() to match the default build.
+        return true;
+    }
 
     struct get_objects_args *arg = (struct get_objects_args *)args;
-    op->ob_tid = 0;  // we will restore the refcount later
-    worklist_push(&arg->objects, op);
-
+    if (_PyObjectStack_Push(&arg->objects, Py_NewRef(op)) < 0) {
+        return false;
+    }
     return true;
 }
 
 PyObject *
 _PyGC_GetObjects(PyInterpreterState *interp, int generation)
 {
-    PyObject *result = PyList_New(0);
-    if (!result) {
-        return NULL;
-    }
-
-    _PyEval_StopTheWorld(interp);
-
-    // Append all objects to a worklist. This abuses ob_tid. We will restore
-    // it later. NOTE: We can't append to the list during gc_visit_heaps()
-    // because PyList_Append() may reclaim an abandoned mimalloc segment
-    // while we are traversing it.
+    // NOTE: We can't append to the PyListObject during gc_visit_heaps()
+    // because PyList_Append() may reclaim an abandoned mimalloc segments
+    // while we are traversing them.
     struct get_objects_args args = { 0 };
-    gc_visit_heaps(interp, &visit_get_objects, &args.base);
-
-    bool error = false;
-    PyObject *op;
-    while ((op = worklist_pop(&args.objects)) != NULL) {
-        gc_restore_tid(op);
-        if (op != result && PyList_Append(result, op) < 0) {
-            error = true;
-            break;
-        }
-    }
-
-    // In case of error, clear the remaining worklist
-    while ((op = worklist_pop(&args.objects)) != NULL) {
-        gc_restore_tid(op);
-    }
-
+    _PyEval_StopTheWorld(interp);
+    int err = gc_visit_heaps(interp, &visit_get_objects, &args.base);
     _PyEval_StartTheWorld(interp);
 
-    if (error) {
-        Py_DECREF(result);
-        return NULL;
+    PyObject *list = list_from_object_stack(&args.objects);
+    if (err < 0) {
+        PyErr_NoMemory();
+        Py_CLEAR(list);
     }
-
-    return result;
+    return list;
 }
 
 static bool
