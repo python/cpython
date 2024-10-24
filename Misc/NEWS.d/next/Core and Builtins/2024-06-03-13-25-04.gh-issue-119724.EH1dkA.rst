@@ -1,3 +1,0 @@
-Reverted improvements to error messages for ``elif``/``else`` statements not
-matching any valid statements, which made in hard to locate the syntax
-errors inside those ``elif``/``else`` blocks.

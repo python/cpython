@@ -13,6 +13,7 @@
 #include "Python.h"
 
 #include "pycore_ast.h"           // PyAST_mod2obj()
+#include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_compile.h"       // _PyAST_Compile()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
@@ -22,7 +23,7 @@
 #include "pycore_pylifecycle.h"   // _Py_FdIsInteractive()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_pythonrun.h"     // export _PyRun_InteractiveLoopObject()
-#include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_traceback.h"     // _PyTraceBack_Print()
 
 #include "errcode.h"              // E_EOF
@@ -280,11 +281,42 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
     PyObject *main_dict = PyModule_GetDict(main_module);  // borrowed ref
 
     PyObject *res = run_mod(mod, filename, main_dict, main_dict, flags, arena, interactive_src, 1);
+    Py_INCREF(interactive_src);
     _PyArena_Free(arena);
     Py_DECREF(main_module);
     if (res == NULL) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        PyObject *exc = _PyErr_GetRaisedException(tstate);
+        if (PyType_IsSubtype(Py_TYPE(exc),
+                             (PyTypeObject *) PyExc_SyntaxError))
+        {
+            /* fix "text" attribute */
+            assert(interactive_src != NULL);
+            PyObject *xs = PyUnicode_Splitlines(interactive_src, 1);
+            if (xs == NULL) {
+                goto error;
+            }
+            PyObject *exc_lineno = PyObject_GetAttr(exc, &_Py_ID(lineno));
+            if (exc_lineno == NULL) {
+                Py_DECREF(xs);
+                goto error;
+            }
+            int n = PyLong_AsInt(exc_lineno);
+            Py_DECREF(exc_lineno);
+            if (n <= 0 || n > PyList_GET_SIZE(xs)) {
+                Py_DECREF(xs);
+                goto error;
+            }
+            PyObject *line = PyList_GET_ITEM(xs, n - 1);
+            PyObject_SetAttr(exc, &_Py_ID(text), line);
+            Py_DECREF(xs);
+        }
+error:
+        Py_DECREF(interactive_src);
+        _PyErr_SetRaisedException(tstate, exc);
         return -1;
     }
+    Py_DECREF(interactive_src);
     Py_DECREF(res);
 
     flush_io();

@@ -41,6 +41,16 @@
 
 #include <stdbool.h>
 
+// SIMD256 can't be compiled on macOS ARM64, and performance of SIMD128 isn't
+// great; but when compiling a universal2 binary, autoconf will set
+// HACL_CAN_COMPILE_SIMD128 and HACL_CAN_COMPILE_SIMD256 because they *can* be
+// compiled on x86_64. If we're on macOS ARM64, disable these preprocessor
+// symbols.
+#if defined(__APPLE__) && defined(__arm64__)
+#  undef HACL_CAN_COMPILE_SIMD128
+#  undef HACL_CAN_COMPILE_SIMD256
+#endif
+
 // ECX
 #define ECX_SSE3 (1 << 0)
 #define ECX_SSSE3 (1 << 9)
@@ -104,15 +114,19 @@ void detect_cpu_features(cpu_flags *flags) {
   }
 }
 
+#ifdef HACL_CAN_COMPILE_SIMD128
 static inline bool has_simd128(cpu_flags *flags) {
   // For now this is Intel-only, could conceivably be #ifdef'd to something
   // else.
   return flags->sse && flags->sse2 && flags->sse3 && flags->sse41 && flags->sse42 && flags->cmov;
 }
+#endif
 
+#ifdef HACL_CAN_COMPILE_SIMD256
 static inline bool has_simd256(cpu_flags *flags) {
   return flags->avx && flags->avx2;
 }
+#endif
 
 // Small mismatch between the variable names Python defines as part of configure
 // at the ones HACL* expects to be set in order to enable those headers.
@@ -151,6 +165,7 @@ blake2_get_state(PyObject *module)
     return (Blake2State *)state;
 }
 
+#if defined(HACL_CAN_COMPILE_SIMD128) || defined(HACL_CAN_COMPILE_SIMD256)
 static inline Blake2State*
 blake2_get_state_from_type(PyTypeObject *module)
 {
@@ -158,6 +173,7 @@ blake2_get_state_from_type(PyTypeObject *module)
     assert(state != NULL);
     return (Blake2State *)state;
 }
+#endif
 
 static struct PyMethodDef blake2mod_functions[] = {
     {NULL, NULL}
@@ -311,7 +327,9 @@ static inline bool is_blake2s(blake2_impl impl) {
 }
 
 static inline blake2_impl type_to_impl(PyTypeObject *type) {
+#if defined(HACL_CAN_COMPILE_SIMD128) || defined(HACL_CAN_COMPILE_SIMD256)
     Blake2State* st = blake2_get_state_from_type(type);
+#endif
     if (!strcmp(type->tp_name, blake2b_type_spec.name)) {
 #ifdef HACL_CAN_COMPILE_SIMD256
       if (has_simd256(&st->flags))
