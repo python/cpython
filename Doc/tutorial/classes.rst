@@ -638,7 +638,7 @@ multiple base classes looks like this::
        <statement-N>
 
 For most purposes, in the simplest cases, you can think of the search for
-attributes inherited from a parent class as depth-first, left-to-right, not
+attributes inherited from a parent class as breadth-first, left-to-right, not
 searching twice in the same class where there is an overlap in the hierarchy.
 Thus, if an attribute is not found in :class:`!DerivedClassName`, it is searched
 for in :class:`!Base1`, then (recursively) in the base classes of :class:`!Base1`,
