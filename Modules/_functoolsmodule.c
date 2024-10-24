@@ -938,21 +938,22 @@ _functools.reduce
     function as func: object
     iterable as seq: object
     /
-    initial as result: object(c_default="NULL") = None
+    initial as result: object(c_default="NULL") = _functools._initial_missing
 
-Apply a function of two arguments cumulatively.
+Apply a function of two arguments cumulatively to an iterable, from left to right.
 
-Apply it to the items of a sequence or iterable, from left to right, so as to
-reduce the iterable to a single value.  For example, reduce(lambda x, y: x+y,
-[1, 2, 3, 4, 5]) calculates ((((1+2)+3)+4)+5).  If initial is present, it is
-placed before the items of the iterable in the calculation, and serves as a
-default when the iterable is empty.
+This efficiently reduces the iterable to a single value.  If initial is present,
+it is placed before the items of the iterable in the calculation, and serves as
+a default when the iterable is empty.
+
+For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])
+calculates ((((1+2)+3)+4)+5).
 [clinic start generated code]*/
 
 static PyObject *
 _functools_reduce_impl(PyObject *module, PyObject *func, PyObject *seq,
                        PyObject *result)
-/*[clinic end generated code: output=30d898fe1267c79d input=b7082b8b1473fdc2]*/
+/*[clinic end generated code: output=30d898fe1267c79d input=40be8069bcbc1a75]*/
 {
     PyObject *args, *it;
 
@@ -1793,6 +1794,10 @@ _functools_exec(PyObject *module)
     }
     // lru_list_elem is used only in _lru_cache_wrapper.
     // So we don't expose it in module namespace.
+
+    if (PyModule_Add(module, "_initial_missing", _PyObject_New(&PyBaseObject_Type)) < 0) {
+        return -1;
+    }
 
     return 0;
 }
