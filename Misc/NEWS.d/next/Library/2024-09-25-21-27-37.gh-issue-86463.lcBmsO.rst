@@ -1,0 +1,3 @@
+:mod:`argparse` now uses the placeholder ``'...'`` as the ``prog`` prefix in
+subparsers if a custom ``usage`` is specified in the parent parser and
+``prog`` is not specified in the subparser.
