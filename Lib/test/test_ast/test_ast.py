@@ -2277,6 +2277,7 @@ class ConstantTests(unittest.TestCase):
         for value in values:
             with self.subTest(value=value):
                 result = self.compile_constant(value)
+                self.assertIs(result, value)
                 self.assertEqual(result, value)
 
     def test_assign_to_constant(self):

@@ -871,13 +871,13 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     // compile() calls to get consistent frozen outputs between the default
     // and free-threaded builds.
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
-    tstate->suppress_immortalization++;
+    tstate->suppress_co_const_immortalization++;
 #endif
 
     result = Py_CompileStringObject(str, filename, start[compile_mode], &cf, optimize);
 
 #ifdef Py_GIL_DISABLED
-    tstate->suppress_immortalization--;
+    tstate->suppress_co_const_immortalization--;
 #endif
 
     Py_XDECREF(source_copy);
@@ -1027,11 +1027,11 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
         // Don't immortalize code constants for explicit eval() calls
         // to avoid memory leaks.
         _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
-        tstate->suppress_immortalization++;
+        tstate->suppress_co_const_immortalization++;
 #endif
         result = PyRun_StringFlags(str, Py_eval_input, globals, locals, &cf);
 #ifdef Py_GIL_DISABLED
-        tstate->suppress_immortalization--;
+        tstate->suppress_co_const_immortalization--;
 #endif
         Py_XDECREF(source_copy);
     }

@@ -235,7 +235,7 @@ intern_constants(PyObject *tuple, int *modified)
         // Intern non-string constants in the free-threaded build
         _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
         if (!_Py_IsImmortal(v) && !PyCode_Check(v) &&
-            !PyUnicode_CheckExact(v) && !tstate->suppress_immortalization)
+            !PyUnicode_CheckExact(v) && !tstate->suppress_co_const_immortalization)
         {
             PyObject *interned = intern_one_constant(v);
             if (interned == NULL) {
