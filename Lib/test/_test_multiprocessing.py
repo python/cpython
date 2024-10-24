@@ -649,21 +649,6 @@ class _TestProcess(BaseTestCase):
             q.get()
         sys.exit(rc)
 
-    def test_is_close(self):
-        if self.TYPE == "threads":
-            self.skipTest('test not appropriate for {}'.format(self.TYPE))
-        def _test_task():
-            pass
-        p = self.Process(target=_test_task)
-        self.assertFalse(p.closed)
-        p.close()
-        self.assertTrue(p.closed)
-
-        wr = weakref.ref(p)
-        del p
-        gc.collect()
-        self.assertIs(wr(), None)
-
     def test_close(self):
         if self.TYPE == "threads":
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
@@ -687,7 +672,9 @@ class _TestProcess(BaseTestCase):
             p.join()
         with self.assertRaises(ValueError):
             p.terminate()
+        self.assertFalse(p.closed)
         p.close()
+        self.assertTrue(p.closed)
 
         wr = weakref.ref(p)
         del p
