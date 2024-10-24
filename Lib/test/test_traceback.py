@@ -4574,15 +4574,15 @@ class TestColorizedTraceback(unittest.TestCase):
                 e, capture_locals=True
             )
         lines = "".join(exc.format(colorize=True))
-        red = _colorize.ANSIColors.RED
+        boldb = _colorize.ANSIColors.BOLD_BLUE
         boldr = _colorize.ANSIColors.BOLD_RED
         reset = _colorize.ANSIColors.RESET
-        self.assertIn("y = " + red + "x['a']['b']" + reset + boldr + "['c']" + reset, lines)
-        self.assertIn("return " + red + "(lambda *args: foo(*args))" + reset + boldr + "(1,2,3,4)" + reset, lines)
-        self.assertIn("return (lambda *args: " + red + "foo" + reset + boldr + "(*args)" + reset + ")(1,2,3,4)", lines)
+        self.assertIn("y = " + boldb + "x['a']['b']" + reset + boldr + "['c']" + reset, lines)
+        self.assertIn("return " + boldb + "(lambda *args: foo(*args))" + reset + boldr + "(1,2,3,4)" + reset, lines)
+        self.assertIn("return (lambda *args: " + boldb + "foo" + reset + boldr + "(*args)" + reset + ")(1,2,3,4)", lines)
         self.assertIn("return baz2(1,2,3,4)", lines)
         self.assertIn("return baz1(1,\n            2,3\n            ,4)", lines)
-        self.assertIn(red + "bar" + reset + boldr + "()" + reset, lines)
+        self.assertIn(boldb + "bar" + reset + boldr + "()" + reset, lines)
 
     def test_colorized_syntax_error(self):
         try:
@@ -4592,16 +4592,15 @@ class TestColorizedTraceback(unittest.TestCase):
                 e, capture_locals=True
             )
         actual = "".join(exc.format(colorize=True))
-        red = _colorize.ANSIColors.RED
-        magenta = _colorize.ANSIColors.MAGENTA
+        boldb = _colorize.ANSIColors.BOLD_BLUE
         boldm = _colorize.ANSIColors.BOLD_MAGENTA
         boldr = _colorize.ANSIColors.BOLD_RED
         reset = _colorize.ANSIColors.RESET
         expected = "".join([
-        f'  File {magenta}"<string>"{reset}, line {magenta}1{reset}\n',
-        f'    a {boldr}${reset} b\n',
-        f'      {boldr}^{reset}\n',
-        f'{boldm}SyntaxError{reset}: {magenta}invalid syntax{reset}\n']
+            f'  File {boldb}"<string>"{reset}, line {boldb}1{reset}\n',
+            f'    a {boldr}${reset} b\n',
+            f'      {boldr}^{reset}\n',
+            f'{boldm}SyntaxError{reset}: {boldb}invalid syntax{reset}\n']
         )
         self.assertIn(expected, actual)
 
@@ -4619,22 +4618,22 @@ class TestColorizedTraceback(unittest.TestCase):
                     exception_print(e)
             actual = tbstderr.getvalue().splitlines()
 
-        red = _colorize.ANSIColors.RED
+        boldb = _colorize.ANSIColors.BOLD_BLUE
         boldr = _colorize.ANSIColors.BOLD_RED
         magenta = _colorize.ANSIColors.MAGENTA
         boldm = _colorize.ANSIColors.BOLD_MAGENTA
         reset = _colorize.ANSIColors.RESET
         lno_foo = foo.__code__.co_firstlineno
         expected = ['Traceback (most recent call last):',
-            f'  File {magenta}"{__file__}"{reset}, '
-            f'line {magenta}{lno_foo+5}{reset}, in {magenta}test_colorized_traceback_is_the_default{reset}',
-            f'    {red}foo{reset+boldr}(){reset}',
-            f'    {red}~~~{reset+boldr}^^{reset}',
-            f'  File {magenta}"{__file__}"{reset}, '
-            f'line {magenta}{lno_foo+1}{reset}, in {magenta}foo{reset}',
-            f'    {red}1{reset+boldr}/{reset+red}0{reset}',
-            f'    {red}~{reset+boldr}^{reset+red}~{reset}',
-            f'{boldm}ZeroDivisionError{reset}: {magenta}division by zero{reset}']
+            f'  File {boldb}"{__file__}"{reset}, '
+            f'line {boldb}{lno_foo+5}{reset}, in {magenta}test_colorized_traceback_is_the_default{reset}',
+            f'    {boldb}foo{reset+boldr}(){reset}',
+            f'    {boldr}~~~{reset+boldr}^^{reset}',
+            f'  File {boldb}"{__file__}"{reset}, '
+            f'line {boldb}{lno_foo+1}{reset}, in {magenta}foo{reset}',
+            f'    {boldb}1{reset+boldr}/{reset+boldb}0{reset}',
+            f'    {boldr}~{reset+boldr}^{reset+boldr}~{reset}',
+            f'{boldm}ZeroDivisionError{reset}: {boldb}division by zero{reset}']
         self.assertEqual(actual, expected)
 
 

@@ -186,7 +186,7 @@ def _format_final_exc_line(etype, value, *, insert_final_newline=True, colorize=
         if value is None or not valuestr:
             line = f"{ANSIColors.BOLD_MAGENTA}{etype}{ANSIColors.RESET}{end_char}"
         else:
-            line = f"{ANSIColors.BOLD_MAGENTA}{etype}{ANSIColors.RESET}: {ANSIColors.MAGENTA}{valuestr}{ANSIColors.RESET}{end_char}"
+            line = f"{ANSIColors.BOLD_MAGENTA}{etype}{ANSIColors.RESET}: {ANSIColors.BOLD_BLUE}{valuestr}{ANSIColors.RESET}{end_char}"
     else:
         if value is None or not valuestr:
             line = f"{etype}{end_char}"
@@ -524,10 +524,10 @@ class StackSummary(list):
             filename = "<stdin>"
         if colorize:
             row.append('  File {}"{}"{}, line {}{}{}, in {}{}{}\n'.format(
-                    ANSIColors.MAGENTA,
+                    ANSIColors.BOLD_BLUE,
                     filename,
                     ANSIColors.RESET,
-                    ANSIColors.MAGENTA,
+                    ANSIColors.BOLD_BLUE,
                     frame_summary.lineno,
                     ANSIColors.RESET,
                     ANSIColors.MAGENTA,
@@ -659,8 +659,8 @@ class StackSummary(list):
                                 colorized_line_parts.append(ANSIColors.BOLD_RED + "".join(char for char, _ in caret_group) + ANSIColors.RESET)
                                 colorized_carets_parts.append(ANSIColors.BOLD_RED + "".join(caret for _, caret in caret_group) + ANSIColors.RESET)
                             elif color == "~":
-                                colorized_line_parts.append(ANSIColors.RED + "".join(char for char, _ in caret_group) + ANSIColors.RESET)
-                                colorized_carets_parts.append(ANSIColors.RED + "".join(caret for _, caret in caret_group) + ANSIColors.RESET)
+                                colorized_line_parts.append(ANSIColors.BOLD_BLUE + "".join(char for char, _ in caret_group) + ANSIColors.RESET)
+                                colorized_carets_parts.append(ANSIColors.BOLD_RED + "".join(caret for _, caret in caret_group) + ANSIColors.RESET)
                             else:
                                 colorized_line_parts.append("".join(char for char, _ in caret_group))
                                 colorized_carets_parts.append("".join(caret for _, caret in caret_group))
@@ -1269,10 +1269,10 @@ class TracebackException:
         if self.lineno is not None:
             if colorize:
                 yield '  File {}"{}"{}, line {}{}{}\n'.format(
-                    ANSIColors.MAGENTA,
+                    ANSIColors.BOLD_BLUE,
                     self.filename or "<string>",
                     ANSIColors.RESET,
-                    ANSIColors.MAGENTA,
+                    ANSIColors.BOLD_BLUE,
                     self.lineno,
                     ANSIColors.RESET,
                     )
@@ -1338,7 +1338,7 @@ class TracebackException:
                 ANSIColors.BOLD_MAGENTA,
                 stype,
                 ANSIColors.RESET,
-                ANSIColors.MAGENTA,
+                ANSIColors.BOLD_BLUE,
                 msg,
                 ANSIColors.RESET,
                 filename_suffix)
