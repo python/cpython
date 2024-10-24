@@ -79,8 +79,7 @@ def add_flowcontrol_defaults(high, low, kb):
     return hi, lo
 
 
-class _SSLProtocolTransport(transports._FlowControlMixin,
-                            transports.Transport):
+class _SSLProtocolTransport(transports.Transport):
 
     _start_tls_compatible = True
     _sendfile_compatible = constants._SendfileMode.FALLBACK
@@ -162,16 +161,14 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         reduces opportunities for doing I/O and computation
         concurrently.
         """
-        self._ssl_protocol._set_write_buffer_limits(high, low)
-        self._ssl_protocol._control_app_writing()
+        self._ssl_protocol._transport.set_write_buffer_limits(high, low)
 
     def get_write_buffer_limits(self):
-        return (self._ssl_protocol._outgoing_low_water,
-                self._ssl_protocol._outgoing_high_water)
+        return self._ssl_protocol._transport.get_write_buffer_limits()
 
     def get_write_buffer_size(self):
         """Return the current size of the write buffers."""
-        return self._ssl_protocol._get_write_buffer_size()
+        return self._ssl_protocol._transport.get_write_buffer_size()
 
     def set_read_buffer_limits(self, high=None, low=None):
         """Set the high- and low-water limits for read flow control.
@@ -202,11 +199,6 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
     def get_read_buffer_size(self):
         """Return the current size of the read buffer."""
         return self._ssl_protocol._get_read_buffer_size()
-
-    @property
-    def _protocol_paused(self):
-        # Required for sendfile fallback pause_writing/resume_writing logic
-        return self._ssl_protocol._app_writing_paused
 
     def write(self, data):
         """Write some data bytes to the transport.
@@ -254,11 +246,6 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         if self._ssl_protocol is not None:
             self._ssl_protocol._abort(exc)
 
-    def _test__append_write_backlog(self, data):
-        # for test only
-        self._ssl_protocol._write_backlog.append(data)
-        self._ssl_protocol._write_buffer_size += len(data)
-
 
 class SSLProtocol(protocols.BufferedProtocol):
     max_size = 256 * 1024   # Buffer size passed to read()
@@ -305,10 +292,6 @@ class SSLProtocol(protocols.BufferedProtocol):
         # completes.
         self._extra = dict(sslcontext=sslcontext)
 
-        # App data write buffering
-        self._write_backlog = collections.deque()
-        self._write_buffer_size = 0
-
         self._waiter = waiter
         self._loop = loop
         self._set_app_protocol(app_protocol)
@@ -334,8 +317,6 @@ class SSLProtocol(protocols.BufferedProtocol):
 
         # Flow Control
 
-        self._ssl_writing_paused = False
-
         self._app_reading_paused = False
 
         self._ssl_reading_paused = False
@@ -344,10 +325,6 @@ class SSLProtocol(protocols.BufferedProtocol):
         self._set_read_buffer_limits()
         self._eof_received = False
 
-        self._app_writing_paused = False
-        self._outgoing_high_water = 0
-        self._outgoing_low_water = 0
-        self._set_write_buffer_limits()
         self._get_app_transport()
 
     def _set_app_protocol(self, app_protocol):
@@ -394,7 +371,6 @@ class SSLProtocol(protocols.BufferedProtocol):
         meaning a regular EOF is received or the connection was
         aborted or closed).
         """
-        self._write_backlog.clear()
         self._outgoing.read()
         self._conn_lost += 1
 
@@ -471,7 +447,6 @@ class SSLProtocol(protocols.BufferedProtocol):
                     self._do_flush()
 
             elif self._state == SSLProtocolState.FLUSHING:
-                self._do_write()
                 self._set_state(SSLProtocolState.SHUTDOWN)
                 self._do_shutdown()
 
@@ -686,38 +661,19 @@ class SSLProtocol(protocols.BufferedProtocol):
             return
 
         for data in list_of_data:
-            self._write_backlog.append(data)
-            self._write_buffer_size += len(data)
+            self._sslobj.write(data)
 
         try:
             if self._state == SSLProtocolState.WRAPPED:
-                self._do_write()
+                self._process_outgoing()
 
         except Exception as ex:
             self._fatal_error(ex, 'Fatal error on SSL protocol')
 
-    def _do_write(self):
-        try:
-            while self._write_backlog:
-                data = self._write_backlog[0]
-                count = self._sslobj.write(data)
-                data_len = len(data)
-                if count < data_len:
-                    self._write_backlog[0] = data[count:]
-                    self._write_buffer_size -= count
-                else:
-                    del self._write_backlog[0]
-                    self._write_buffer_size -= data_len
-        except SSLAgainErrors:
-            pass
-        self._process_outgoing()
-
     def _process_outgoing(self):
-        if not self._ssl_writing_paused:
-            data = self._outgoing.read()
-            if len(data):
-                self._transport.write(data)
-        self._control_app_writing()
+        data = self._outgoing.read()
+        if len(data):
+            self._transport.write(data)
 
     # Incoming flow
 
@@ -735,10 +691,7 @@ class SSLProtocol(protocols.BufferedProtocol):
                     self._do_read__buffered()
                 else:
                     self._do_read__copied()
-                if self._write_backlog:
-                    self._do_write()
-                else:
-                    self._process_outgoing()
+                self._process_outgoing()
             self._control_ssl_reading()
         except Exception as ex:
             self._fatal_error(ex, 'Fatal error on SSL protocol')
@@ -815,46 +768,6 @@ class SSLProtocol(protocols.BufferedProtocol):
         except BaseException as ex:
             self._fatal_error(ex, 'Error calling eof_received()')
 
-    # Flow control for writes from APP socket
-
-    def _control_app_writing(self):
-        size = self._get_write_buffer_size()
-        if size >= self._outgoing_high_water and not self._app_writing_paused:
-            self._app_writing_paused = True
-            try:
-                self._app_protocol.pause_writing()
-            except (KeyboardInterrupt, SystemExit):
-                raise
-            except BaseException as exc:
-                self._loop.call_exception_handler({
-                    'message': 'protocol.pause_writing() failed',
-                    'exception': exc,
-                    'transport': self._app_transport,
-                    'protocol': self,
-                })
-        elif size <= self._outgoing_low_water and self._app_writing_paused:
-            self._app_writing_paused = False
-            try:
-                self._app_protocol.resume_writing()
-            except (KeyboardInterrupt, SystemExit):
-                raise
-            except BaseException as exc:
-                self._loop.call_exception_handler({
-                    'message': 'protocol.resume_writing() failed',
-                    'exception': exc,
-                    'transport': self._app_transport,
-                    'protocol': self,
-                })
-
-    def _get_write_buffer_size(self):
-        return self._outgoing.pending + self._write_buffer_size
-
-    def _set_write_buffer_limits(self, high=None, low=None):
-        high, low = add_flowcontrol_defaults(
-            high, low, constants.FLOW_CONTROL_HIGH_WATER_SSL_WRITE)
-        self._outgoing_high_water = high
-        self._outgoing_low_water = low
-
     # Flow control for reads to APP socket
 
     def _pause_reading(self):
@@ -899,16 +812,13 @@ class SSLProtocol(protocols.BufferedProtocol):
         """Called when the low-level transport's buffer goes over
         the high-water mark.
         """
-        assert not self._ssl_writing_paused
-        self._ssl_writing_paused = True
+        self._app_protocol.pause_writing()
 
     def resume_writing(self):
         """Called when the low-level transport's buffer drains below
         the low-water mark.
         """
-        assert self._ssl_writing_paused
-        self._ssl_writing_paused = False
-        self._process_outgoing()
+        self._app_protocol.resume_writing()
 
     def _fatal_error(self, exc, message='Fatal error on transport'):
         if self._transport:
