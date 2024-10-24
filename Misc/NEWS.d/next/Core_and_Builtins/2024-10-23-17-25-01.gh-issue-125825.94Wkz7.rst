@@ -1,0 +1,4 @@
+Add :meth:`~BaseException.split` and :meth:`~BaseException.subgroup` to
+allow splitting and matching simple exceptions as if they were
+:ref:`exception groups <lib-exception-groups>` of one exception. Patch by
+Bénédikt Tran.

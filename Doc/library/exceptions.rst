@@ -159,6 +159,35 @@ The following exceptions are used mostly as base classes for other exceptions.
 
       .. versionadded:: 3.11
 
+   .. method:: subgroup(condition)
+
+      Return an :class:`BaseExceptionGroup` or :class:`ExceptionGroup` that
+      contains this exception if it matches a *condition*, or ``None`` if
+      the result is empty.
+
+      The condition can be an exception type or tuple of exception types, in
+      which case the exception is checked for a match using the same check
+      that is used in an ``except`` clause.
+
+      The condition can also be a callable (other than a type object) that
+      accepts an exception as its single argument and returns true if the
+      exception should be matched.
+
+      .. seealso:: :meth:`BaseExceptionGroup.subgroup`
+
+      .. versionadded:: 3.14
+
+   .. method:: split(condition)
+
+      Like :meth:`subgroup`, but returns the pair ``(match, rest)`` where
+      ``match`` is ``subgroup(condition)`` and ``rest`` is the remaining
+      non-matching part (either ``None`` or an exception group wrapping
+      this exception).
+
+      .. seealso:: :meth:`BaseExceptionGroup.split`
+
+      .. versionadded:: 3.14
+
 
 .. exception:: Exception
 
@@ -975,6 +1004,8 @@ their subgroups based on the types of the contained exceptions.
       including the top-level and any nested exception groups. If the condition is
       true for such an exception group, it is included in the result in full.
 
+      .. seealso:: :meth:`BaseException.subgroup`
+
       .. versionadded:: 3.13
          ``condition`` can be any callable which is not a type object.
 
@@ -983,6 +1014,8 @@ their subgroups based on the types of the contained exceptions.
       Like :meth:`subgroup`, but returns the pair ``(match, rest)`` where ``match``
       is ``subgroup(condition)`` and ``rest`` is the remaining non-matching
       part.
+
+      .. seealso:: :meth:`BaseException.split`
 
    .. method:: derive(excs)
 
