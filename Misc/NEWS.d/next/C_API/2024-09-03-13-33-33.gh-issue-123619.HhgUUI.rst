@@ -1,0 +1,2 @@
+Added the :c:func:`PyUnstable_Object_EnableDeferredRefcount` function for
+enabling :pep:`703` deferred reference counting.

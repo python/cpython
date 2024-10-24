@@ -2519,6 +2519,35 @@ _PyObject_SetDeferredRefcount(PyObject *op)
 #endif
 }
 
+int
+PyUnstable_Object_EnableDeferredRefcount(PyObject *op)
+{
+#ifdef Py_GIL_DISABLED
+    if (!PyType_IS_GC(Py_TYPE(op))) {
+        // Deferred reference counting doesn't work
+        // on untracked types.
+        return 0;
+    }
+
+    if (_PyObject_HasDeferredRefcount(op)) {
+        // Nothing to do
+        return 0;
+    }
+
+    uint8_t bits = _Py_atomic_load_uint8(&op->ob_gc_bits);
+    if (_Py_atomic_compare_exchange_uint8(&op->ob_gc_bits, &bits, bits | _PyGC_BITS_DEFERRED) == 0)
+    {
+        // Someone beat us to it!
+        return 0;
+    }
+    Py_ssize_t shared = _Py_atomic_load_ssize(&op->ob_ref_shared);
+    _Py_atomic_store_ssize(&op->ob_ref_shared, _Py_REF_SHARED(_Py_REF_DEFERRED, shared));
+    return 1;
+#else
+    return 0;
+#endif
+}
+
 void
 _Py_ResurrectReference(PyObject *op)
 {
