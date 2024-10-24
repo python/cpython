@@ -110,6 +110,11 @@ Module Contents
       ``KEEP`` which allows for more fine-grained control over how invalid values
       are dealt with in an enumeration.
 
+   :class:`EnumDict`
+
+      A subclass of :class:`dict` that tracks order and enforces unique
+      member names.
+
    :class:`auto`
 
       Instances are replaced with an appropriate value for Enum members.
@@ -821,7 +826,27 @@ Data Types
          >>> KeepFlag(2**2 + 2**4)
          <KeepFlag.BLUE|16: 20>
 
-.. versionadded:: 3.11
+   .. versionadded:: 3.11
+
+.. class:: EnumDict
+
+   *EnumDict* is a subclass of :class:`dict` that is used as the namespace
+   for defining enum classes (see :ref:`prepare`).
+   It is exposed to allow subclasses of :class:`EnumType` with advanced
+   behavior like having multiple values per member.
+   It prevents reusing member names, with special behavior for names that
+   start with an underscore.
+
+   Note that only the :class:`~collections.abc.MutableMapping` interface
+   (:meth:`~object.__setitem__` and :meth:`~dict.update`) is overridden.
+   It may be possible to bypass the checks using other :class:`!dict`
+   operations like :meth:`|= <object.__ior__>`.
+
+   .. attribute:: EnumDict.member_names
+
+      A list of member names.
+
+   .. versionadded:: 3.13
 
 ---------------
 
