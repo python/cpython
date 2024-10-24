@@ -1,0 +1,3 @@
+Modify the check of ``hi`` argument in ``internal_bisect_left`` and
+``internal_bisect_right`` so that negative numbers are not allowed
+to be passed.
