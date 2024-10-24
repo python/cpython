@@ -935,12 +935,16 @@ _functools_cmp_to_key_impl(PyObject *module, PyObject *mycmp)
 // Not converted to argument clinic, because of `args` in-place modification.
 // AC will affect performance.
 static PyObject *
-functools_reduce(PyObject *self, PyObject *args)
+functools_reduce(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *seq, *func, *result = NULL, *it;
+    static char *keywords[] = {"", "", "initial", NULL};
 
-    if (!PyArg_UnpackTuple(args, "reduce", 2, 3, &func, &seq, &result))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|O:reduce", keywords,
+                                     &func, &seq, &result)) {
         return NULL;
+    }
+
     if (result != NULL)
         Py_INCREF(result);
 
@@ -1007,7 +1011,7 @@ Fail:
 }
 
 PyDoc_STRVAR(functools_reduce_doc,
-"reduce(function, iterable[, initial], /) -> value\n\
+"reduce(function, iterable, /[, initial]) -> value\n\
 \n\
 Apply a function of two arguments cumulatively to the items of a sequence\n\
 or iterable, from left to right, so as to reduce the iterable to a single\n\
@@ -1720,7 +1724,8 @@ PyDoc_STRVAR(_functools_doc,
 "Tools that operate on functions.");
 
 static PyMethodDef _functools_methods[] = {
-    {"reduce",          functools_reduce,     METH_VARARGS, functools_reduce_doc},
+    {"reduce", functools_reduce, METH_VARARGS|METH_KEYWORDS,
+        functools_reduce_doc},
     _FUNCTOOLS_CMP_TO_KEY_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
