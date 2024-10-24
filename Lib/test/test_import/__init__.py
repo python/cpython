@@ -23,6 +23,7 @@ import textwrap
 import threading
 import time
 import types
+import unicodedata
 import unittest
 from unittest import mock
 import _imp
@@ -3145,6 +3146,47 @@ class CAPITests(unittest.TestCase):
         mod = _testcapi.check_pyimport_addmodule(name)
         self.assertIs(mod, sys.modules[name])
 
+class TestImportAccented(unittest.TestCase):
+    # XXX: There should be tests with PYTHONCASEOK as well
+    #      (for those platforms where this is relevant)
+    dir_name = os.path.abspath(TESTFN)
+
+    def setUp(self):
+        self.sys_path = sys.path[:]
+        os.mkdir(self.dir_name)
+        sys.path.insert(0, self.dir_name)
+        importlib.invalidate_caches()
+
+    def tearDown(self):
+        sys.path[:] = self.sys_path
+        importlib.invalidate_caches()
+        rmtree(self.dir_name)
+
+    def assert_importing_possible(self, name):
+        normalized = unicodedata.normalize('NFKC', name)
+        filename = os.path.join(self.dir_name, f"{name}.py")
+        with open(filename, "w") as stream:
+            stream.write("SPAM = 'spam'\n")
+
+        values = {}
+        exec(f"from {name} import SPAM", values, values)
+        try:
+            self.assertEqual(values["SPAM"], "spam")
+            self.assertIn(normalized, sys.modules)
+        finally:
+            del sys.modules[normalized]
+
+    def test_import_precomposed(self):
+        name = 'M\u00E4dchen'
+        self.assert_importing_possible(name)
+
+    def test_import_normalized(self):
+        name = 'M\u0061\u0308dchen'
+        self.assert_importing_possible(name)
+
+    def test_import_macos_input(self):
+        name = 'Mädchen'
+        self.assert_importing_possible(name)
 
 @cpython_only
 class TestMagicNumber(unittest.TestCase):

@@ -1,0 +1,3 @@
+It is now possible to import modules from the filesystem regardless of how
+the name is normalized in the filesystem. This in particular affects
+importing modules with a name that contains accented latin characters.
