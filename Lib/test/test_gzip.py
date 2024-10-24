@@ -332,7 +332,7 @@ class TestGzip(BaseTest):
             self.assertEqual(cmByte, b'\x08') # deflate
 
             try:
-                expectedname = self.filename.encode('Latin-1') + b'\x00'
+                expectedname = os.path.basename(self.filename).encode('Latin-1') + b'\x00'
                 expectedflags = b'\x08' # only the FNAME flag is set
             except UnicodeEncodeError:
                 expectedname = b''
