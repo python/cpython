@@ -60,6 +60,7 @@ __all__ = ['NullTranslations', 'GNUTranslations', 'Catalog',
            ]
 
 _default_localedir = os.path.join(sys.base_prefix, 'share', 'locale')
+_default_localebundledir = os.path.join(sys.prefix, 'share', 'locale-bundle')
 
 # Expression parsing for plural form selection.
 #
@@ -486,6 +487,10 @@ class GNUTranslations(NullTranslations):
 
 # Locate a .mo file using the gettext strategy
 def find(domain, localedir=None, languages=None, all=False):
+    if localedir in [None, _default_localebundledir]:
+        bundle = find(domain, localedir=_default_localebundledir, languages=languages, all=all)
+        if len(bundle):
+            return bundle
     # Get some reasonable defaults for arguments that were not supplied
     if localedir is None:
         localedir = _default_localedir
