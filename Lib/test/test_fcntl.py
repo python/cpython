@@ -27,17 +27,28 @@ class BadFile:
 def try_lockf_on_other_process_fail(fname, cmd):
     f = open(fname, 'wb+')
     try:
+        lockinfo = fcntl.getlk(f, cmd & ~fcntl.LOCK_NB)
         fcntl.lockf(f, cmd)
     except BlockingIOError:
         pass
     finally:
         f.close()
 
+    ppid = os.getppid()
+    if lockinfo is None or lockinfo[0] not in {ppid, -1}:
+        sys.stderr.write(f"getlk: {lockinfo}, expected pid={ppid}\n")
+        sys.exit(1)
+
 def try_lockf_on_other_process(fname, cmd):
     f = open(fname, 'wb+')
     fcntl.lockf(f, cmd)
     fcntl.lockf(f, fcntl.LOCK_UN)
+    lockinfo = fcntl.getlk(f, cmd & ~fcntl.LOCK_NB)
     f.close()
+
+    if lockinfo is not None:
+        sys.stderr.write(f"getlk: {lockinfo}, expected: None\n")
+        sys.exit(1)
 
 class TestFcntl(unittest.TestCase):
 
