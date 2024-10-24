@@ -126,6 +126,20 @@ class TestBisect:
         self.assertRaises(ValueError, mod.insort_left, [1, 2, 3], 5, -1, 3)
         self.assertRaises(ValueError, mod.insort_right, [1, 2, 3], 5, -1, 3)
 
+    def test_negative_hi(self):
+        # Issue 125889
+        def assertNoRiases(f, *arg, **kwargs):
+            try:
+                f(*arg, **kwargs)
+            except Exception:
+                self.fail('Unable to work negative hi argument')
+        mod = self.module
+        # It can work negative values
+        assertNoRiases(mod.bisect_left, [1, 2, 3], 5, 3, -2)
+        assertNoRiases(mod.bisect_right, [1, 2, 3], 5, 3, -2)
+        assertNoRiases(mod.insort_left, [1, 2, 3], 5, 3, -2)
+        assertNoRiases(mod.insort_right, [1, 2, 3], 5, 3, -2)
+
     def test_large_range(self):
         # Issue 13496
         mod = self.module
