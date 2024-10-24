@@ -883,31 +883,137 @@ class ReTests(unittest.TestCase):
         self.checkPatternError(br'\N{LESS-THAN SIGN}', r'bad escape \N', 0)
         self.checkPatternError(br'[\N{LESS-THAN SIGN}]', r'bad escape \N', 1)
 
-    def test_string_boundaries(self):
+    def test_word_boundaries(self):
         # See http://bugs.python.org/issue10713
-        self.assertEqual(re.search(r"\b(abc)\b", "abc").group(1),
-                         "abc")
+        self.assertEqual(re.search(r"\b(abc)\b", "abc").group(1), "abc")
+        self.assertEqual(re.search(r"\b(abc)\b", "abc", re.ASCII).group(1), "abc")
+        self.assertEqual(re.search(br"\b(abc)\b", b"abc").group(1), b"abc")
+        self.assertEqual(re.search(br"\b(abc)\b", b"abc", re.LOCALE).group(1), b"abc")
+        self.assertEqual(re.search(r"\b(ьюя)\b", "ьюя").group(1), "ьюя")
+        self.assertIsNone(re.search(r"\b(ьюя)\b", "ьюя", re.ASCII))
+        # There's a word boundary between a word and a non-word.
+        self.assertTrue(re.match(r".\b", "a="))
+        self.assertTrue(re.match(r".\b", "a=", re.ASCII))
+        self.assertTrue(re.match(br".\b", b"a="))
+        self.assertTrue(re.match(br".\b", b"a=", re.LOCALE))
+        self.assertTrue(re.match(r".\b", "я="))
+        self.assertIsNone(re.match(r".\b", "я=", re.ASCII))
+        # There's a word boundary between a non-word and a word.
+        self.assertTrue(re.match(r".\b", "=a"))
+        self.assertTrue(re.match(r".\b", "=a", re.ASCII))
+        self.assertTrue(re.match(br".\b", b"=a"))
+        self.assertTrue(re.match(br".\b", b"=a", re.LOCALE))
+        self.assertTrue(re.match(r".\b", "=я"))
+        self.assertIsNone(re.match(r".\b", "=я", re.ASCII))
+        # There is no word boundary inside a word.
+        self.assertIsNone(re.match(r".\b", "ab"))
+        self.assertIsNone(re.match(r".\b", "ab", re.ASCII))
+        self.assertIsNone(re.match(br".\b", b"ab"))
+        self.assertIsNone(re.match(br".\b", b"ab", re.LOCALE))
+        self.assertIsNone(re.match(r".\b", "юя"))
+        self.assertIsNone(re.match(r".\b", "юя", re.ASCII))
+        # There is no word boundary between a non-word characters.
+        self.assertIsNone(re.match(r".\b", "=-"))
+        self.assertIsNone(re.match(r".\b", "=-", re.ASCII))
+        self.assertIsNone(re.match(br".\b", b"=-"))
+        self.assertIsNone(re.match(br".\b", b"=-", re.LOCALE))
+        # There is no non-boundary match between a word and a non-word.
+        self.assertIsNone(re.match(r".\B", "a="))
+        self.assertIsNone(re.match(r".\B", "a=", re.ASCII))
+        self.assertIsNone(re.match(br".\B", b"a="))
+        self.assertIsNone(re.match(br".\B", b"a=", re.LOCALE))
+        self.assertIsNone(re.match(r".\B", "я="))
+        self.assertTrue(re.match(r".\B", "я=", re.ASCII))
+        # There is no non-boundary match between a non-word and a word.
+        self.assertIsNone(re.match(r".\B", "=a"))
+        self.assertIsNone(re.match(r".\B", "=a", re.ASCII))
+        self.assertIsNone(re.match(br".\B", b"=a"))
+        self.assertIsNone(re.match(br".\B", b"=a", re.LOCALE))
+        self.assertIsNone(re.match(r".\B", "=я"))
+        self.assertTrue(re.match(r".\B", "=я", re.ASCII))
+        # There's a non-boundary match inside a word.
+        self.assertTrue(re.match(r".\B", "ab"))
+        self.assertTrue(re.match(r".\B", "ab", re.ASCII))
+        self.assertTrue(re.match(br".\B", b"ab"))
+        self.assertTrue(re.match(br".\B", b"ab", re.LOCALE))
+        self.assertTrue(re.match(r".\B", "юя"))
+        self.assertTrue(re.match(r".\B", "юя", re.ASCII))
+        # There's a non-boundary match between a non-word characters.
+        self.assertTrue(re.match(r".\B", "=-"))
+        self.assertTrue(re.match(r".\B", "=-", re.ASCII))
+        self.assertTrue(re.match(br".\B", b"=-"))
+        self.assertTrue(re.match(br".\B", b"=-", re.LOCALE))
         # There's a word boundary at the start of a string.
         self.assertTrue(re.match(r"\b", "abc"))
+        self.assertTrue(re.match(r"\b", "abc", re.ASCII))
+        self.assertTrue(re.match(br"\b", b"abc"))
+        self.assertTrue(re.match(br"\b", b"abc", re.LOCALE))
+        self.assertTrue(re.match(r"\b", "ьюя"))
+        self.assertIsNone(re.match(r"\b", "ьюя", re.ASCII))
+        # There's a word boundary at the end of a string.
+        self.assertTrue(re.fullmatch(r".+\b", "abc"))
+        self.assertTrue(re.fullmatch(r".+\b", "abc", re.ASCII))
+        self.assertTrue(re.fullmatch(br".+\b", b"abc"))
+        self.assertTrue(re.fullmatch(br".+\b", b"abc", re.LOCALE))
+        self.assertTrue(re.fullmatch(r".+\b", "ьюя"))
+        self.assertIsNone(re.search(r"\b", "ьюя", re.ASCII))
         # A non-empty string includes a non-boundary zero-length match.
-        self.assertTrue(re.search(r"\B", "abc"))
+        self.assertEqual(re.search(r"\B", "abc").span(), (1, 1))
+        self.assertEqual(re.search(r"\B", "abc", re.ASCII).span(), (1, 1))
+        self.assertEqual(re.search(br"\B", b"abc").span(), (1, 1))
+        self.assertEqual(re.search(br"\B", b"abc", re.LOCALE).span(), (1, 1))
+        self.assertEqual(re.search(r"\B", "ьюя").span(), (1, 1))
+        self.assertEqual(re.search(r"\B", "ьюя", re.ASCII).span(), (0, 0))
         # There is no non-boundary match at the start of a string.
-        self.assertFalse(re.match(r"\B", "abc"))
+        self.assertIsNone(re.match(r"\B", "abc"))
+        self.assertIsNone(re.match(r"\B", "abc", re.ASCII))
+        self.assertIsNone(re.match(br"\B", b"abc"))
+        self.assertIsNone(re.match(br"\B", b"abc", re.LOCALE))
+        self.assertIsNone(re.match(r"\B", "ьюя"))
+        self.assertTrue(re.match(r"\B", "ьюя", re.ASCII))
+        # There is no non-boundary match at the end of a string.
+        self.assertIsNone(re.fullmatch(r".+\B", "abc"))
+        self.assertIsNone(re.fullmatch(r".+\B", "abc", re.ASCII))
+        self.assertIsNone(re.fullmatch(br".+\B", b"abc"))
+        self.assertIsNone(re.fullmatch(br".+\B", b"abc", re.LOCALE))
+        self.assertIsNone(re.fullmatch(r".+\B", "ьюя"))
+        self.assertTrue(re.fullmatch(r".+\B", "ьюя", re.ASCII))
         # However, an empty string contains no word boundaries, and also no
         # non-boundaries.
-        self.assertIsNone(re.search(r"\B", ""))
+        self.assertIsNone(re.search(r"\b", ""))
+        self.assertIsNone(re.search(r"\b", "", re.ASCII))
+        self.assertIsNone(re.search(br"\b", b""))
+        self.assertIsNone(re.search(br"\b", b"", re.LOCALE))
         # This one is questionable and different from the perlre behaviour,
         # but describes current behavior.
-        self.assertIsNone(re.search(r"\b", ""))
+        self.assertIsNone(re.search(r"\B", ""))
+        self.assertIsNone(re.search(r"\B", "", re.ASCII))
+        self.assertIsNone(re.search(br"\B", b""))
+        self.assertIsNone(re.search(br"\B", b"", re.LOCALE))
         # A single word-character string has two boundaries, but no
         # non-boundary gaps.
         self.assertEqual(len(re.findall(r"\b", "a")), 2)
+        self.assertEqual(len(re.findall(r"\b", "a", re.ASCII)), 2)
+        self.assertEqual(len(re.findall(br"\b", b"a")), 2)
+        self.assertEqual(len(re.findall(br"\b", b"a", re.LOCALE)), 2)
         self.assertEqual(len(re.findall(r"\B", "a")), 0)
+        self.assertEqual(len(re.findall(r"\B", "a", re.ASCII)), 0)
+        self.assertEqual(len(re.findall(br"\B", b"a")), 0)
+        self.assertEqual(len(re.findall(br"\B", b"a", re.LOCALE)), 0)
         # If there are no words, there are no boundaries
         self.assertEqual(len(re.findall(r"\b", " ")), 0)
+        self.assertEqual(len(re.findall(r"\b", " ", re.ASCII)), 0)
+        self.assertEqual(len(re.findall(br"\b", b" ")), 0)
+        self.assertEqual(len(re.findall(br"\b", b" ", re.LOCALE)), 0)
         self.assertEqual(len(re.findall(r"\b", "   ")), 0)
+        self.assertEqual(len(re.findall(r"\b", "   ", re.ASCII)), 0)
+        self.assertEqual(len(re.findall(br"\b", b"   ")), 0)
+        self.assertEqual(len(re.findall(br"\b", b"   ", re.LOCALE)), 0)
         # Can match around the whitespace.
         self.assertEqual(len(re.findall(r"\B", " ")), 2)
+        self.assertEqual(len(re.findall(r"\B", " ", re.ASCII)), 2)
+        self.assertEqual(len(re.findall(br"\B", b" ")), 2)
+        self.assertEqual(len(re.findall(br"\B", b" ", re.LOCALE)), 2)
 
     def test_bigcharset(self):
         self.assertEqual(re.match("([\u2222\u2223])",
@@ -2503,7 +2609,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search(r'12(?!)|3', '123')[0], '3')
 
     def test_character_set_any(self):
-        # The union of complementary character sets mathes any character
+        # The union of complementary character sets matches any character
         # and is equivalent to "(?s:.)".
         s = '1x\n'
         for p in r'[\s\S]', r'[\d\D]', r'[\w\W]', r'[\S\s]', r'\s|\S':

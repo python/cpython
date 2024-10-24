@@ -1359,6 +1359,36 @@ Custom error message for try block mixing except and except*
    Traceback (most recent call last):
    SyntaxError: cannot have both 'except' and 'except*' on the same 'try'
 
+Better error message for using `except as` with not a name:
+
+   >>> try:
+   ...    pass
+   ... except TypeError as obj.attr:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot use except statement with attribute
+
+   >>> try:
+   ...    pass
+   ... except TypeError as obj[1]:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot use except statement with subscript
+
+   >>> try:
+   ...    pass
+   ... except* TypeError as (obj, name):
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot use except* statement with tuple
+
+   >>> try:
+   ...    pass
+   ... except* TypeError as 1:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot use except* statement with literal
+
 Ensure that early = are not matched by the parser as invalid comparisons
    >>> f(2, 4, x=34); 1 $ 2
    Traceback (most recent call last):
@@ -1902,7 +1932,31 @@ Corner-cases that used to crash:
     ...   case 42 as 1+2+4:
     ...     ...
     Traceback (most recent call last):
-    SyntaxError: invalid pattern target
+    SyntaxError: cannot use expression as pattern target
+
+    >>> match ...:
+    ...   case 42 as a.b:
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: cannot use attribute as pattern target
+
+    >>> match ...:
+    ...   case 42 as (a, b):
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: cannot use tuple as pattern target
+
+    >>> match ...:
+    ...   case 42 as (a + 1):
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: cannot use expression as pattern target
+
+    >>> match ...:
+    ...   case (32 as x) | (42 as a()):
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: cannot use function call as pattern target
 
     >>> match ...:
     ...   case Foo(z=1, y=2, x):
@@ -2769,6 +2823,39 @@ while 1:
         source = "d{{{{{{{{{{{{{{{{{{{{{{{{{```{{{{{{{ef f():y"
         with self.assertRaises(SyntaxError):
             compile(source, "<string>", "exec")
+
+    def test_except_stmt_invalid_as_expr(self):
+        self._check_error(
+            textwrap.dedent(
+                """
+                try:
+                    pass
+                except ValueError as obj.attr:
+                    pass
+                """
+            ),
+            errtext="cannot use except statement with attribute",
+            lineno=4,
+            end_lineno=4,
+            offset=22,
+            end_offset=22 + len("obj.attr"),
+        )
+
+    def test_match_stmt_invalid_as_expr(self):
+        self._check_error(
+            textwrap.dedent(
+                """
+                match 1:
+                    case x as obj.attr:
+                        ...
+                """
+            ),
+            errtext="cannot use attribute as pattern target",
+            lineno=3,
+            end_lineno=3,
+            offset=15,
+            end_offset=15 + len("obj.attr"),
+        )
 
 
 def load_tests(loader, tests, pattern):

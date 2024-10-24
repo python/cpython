@@ -559,7 +559,7 @@ _io_IncrementalNewlineDecoder_getstate_impl(nldecoder_object *self)
         Py_DECREF(state);
     }
     else {
-        buffer = PyBytes_FromString("");
+        buffer = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
         flag = 0;
     }
     flag <<= 1;
@@ -1719,7 +1719,7 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         bytes_len = PyBytes_GET_SIZE(b);
     }
 
-    // We should avoid concatinating huge data.
+    // We should avoid concatenating huge data.
     // Flush the buffer before adding b to the buffer if b is not small.
     // https://github.com/python/cpython/issues/87426
     if (bytes_len >= self->chunk_size) {

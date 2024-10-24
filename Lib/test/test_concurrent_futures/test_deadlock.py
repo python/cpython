@@ -145,7 +145,7 @@ class ExecutorDeadlockTest:
         self._check_crash(BrokenProcessPool, id, ExitAtUnpickle())
 
     def test_error_at_task_unpickle(self):
-        # gh-109832: Restore stderr overriden by _raise_error_ignore_stderr()
+        # gh-109832: Restore stderr overridden by _raise_error_ignore_stderr()
         self.addCleanup(setattr, sys, 'stderr', sys.stderr)
 
         # Check problem occurring while unpickling a task on workers
@@ -183,7 +183,7 @@ class ExecutorDeadlockTest:
         self._check_crash(PicklingError, _return_instance, ErrorAtPickle)
 
     def test_error_during_result_unpickle_in_result_handler(self):
-        # gh-109832: Restore stderr overriden by _raise_error_ignore_stderr()
+        # gh-109832: Restore stderr overridden by _raise_error_ignore_stderr()
         self.addCleanup(setattr, sys, 'stderr', sys.stderr)
 
         # Check problem occurring while unpickling a task in
