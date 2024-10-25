@@ -586,10 +586,9 @@ class Executor(object):
                 before being passed to a child process. This argument is only
                 used by ProcessPoolExecutor; it is ignored by
                 ThreadPoolExecutor.
-            buffersize: The maximum number of results that can be buffered
-                before being yielded. If the buffer is full, the iteration over
-                iterables is paused until a result is yielded from the
-                buffer.
+            buffersize: The number of results that can be buffered before being
+                yielded. If the buffer is full, the iteration over iterables
+                is paused until a result is yielded from the buffer.
 
         Returns:
             An iterator equivalent to: map(func, *iterables) but the calls may
