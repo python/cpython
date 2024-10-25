@@ -1,1 +1,1 @@
-Fix email parsing bug that introduced spurious leading whitespace into header values when the header includes a newline character after the ';' and before the value.
+Fix :mod:`email` parsing bug that introduced spurious leading whitespace into header values when the header includes a newline character after the ';' and before the value.
