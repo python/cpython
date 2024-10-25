@@ -962,6 +962,7 @@ class BaseFutureDoneCallbackTests():
             # returns an empty list but the C implementation returns None.
             self.assertIn(fut._callbacks, (None, []))
 
+
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
                      'requires the C _asyncio module')
 class CFutureDoneCallbackTests(BaseFutureDoneCallbackTests,
