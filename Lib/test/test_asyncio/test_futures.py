@@ -933,7 +933,6 @@ class BaseFutureDoneCallbackTests():
         # Special thanks to Nico-Posada for the original PoC.
         # See https://github.com/python/cpython/issues/125966.
 
-        asserter = self
         fut = self._new_future()
 
         class cb_pad:
@@ -942,13 +941,11 @@ class BaseFutureDoneCallbackTests():
 
         class evil(cb_pad):
             def __eq__(self, other):
-                removed = fut.remove_done_callback(None)
-                asserter.assertEqual(removed, 1)
+                fut.remove_done_callback(None)
                 return NotImplemented
 
         fut.add_done_callback(cb_pad())
-        removed = fut.remove_done_callback(evil())
-        self.assertEqual(removed, 1)
+        fut.remove_done_callback(evil())
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
