@@ -1405,6 +1405,7 @@ get_mimalloc_allocated_blocks(PyInterpreterState *interp)
 {
     size_t allocated_blocks = 0;
 #ifdef Py_GIL_DISABLED
+    INTERP_HEAD_LOCK(interp);
     for (PyThreadState *t = interp->threads.head; t != NULL; t = t->next) {
         _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)t;
         for (int i = 0; i < _Py_MIMALLOC_HEAP_COUNT; i++) {
@@ -1418,6 +1419,7 @@ get_mimalloc_allocated_blocks(PyInterpreterState *interp)
         _mi_abandoned_pool_visit_blocks(pool, tag, false, &count_blocks,
                                         &allocated_blocks);
     }
+    INTERP_HEAD_UNLOCK(interp);
 #else
     // TODO(sgross): this only counts the current thread's blocks.
     mi_heap_t *heap = mi_heap_get_default();

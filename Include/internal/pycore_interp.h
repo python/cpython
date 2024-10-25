@@ -138,6 +138,8 @@ struct _is {
            or the size specified by the THREAD_STACK_SIZE macro. */
         /* Used in Python/thread.c. */
         size_t stacksize;
+        /* The lock that protects this struct. */
+        PyMutex mutex;
     } threads;
 
     /* Reference to the _PyRuntime global variable. This field exists
