@@ -955,6 +955,39 @@ class BaseFutureDoneCallbackTests():
 
         fut.remove_done_callback(evil())
 
+    def test_evil_call_soon_list_mutation(self):
+        called_on_fut_callback0 = False
+
+        pad = lambda: ...
+
+        def evil_call_soon(*args, **kwargs):
+            nonlocal called_on_fut_callback0
+            if called_on_fut_callback0:
+                # Called when handling fut->fut_callbacks[0]
+                # and mutates the length fut->fut_callbacks.
+                fut.remove_done_callback(int)
+                fut.remove_done_callback(pad)
+            else:
+                called_on_fut_callback0 = True
+
+        fake_event_loop = lambda: ...
+        fake_event_loop.call_soon = evil_call_soon
+        fake_event_loop.get_debug = lambda: False  # suppress traceback
+
+        with mock.patch.object(self, 'loop', fake_event_loop):
+            fut = self._new_future()
+            self.assertIs(fut.get_loop(), fake_event_loop)
+
+            fut.add_done_callback(str)  # sets fut->fut_callback0
+            fut.add_done_callback(int)  # sets fut->fut_callbacks[0]
+            fut.add_done_callback(pad)  # sets fut->fut_callbacks[1]
+            fut.add_done_callback(pad)  # sets fut->fut_callbacks[2]
+            fut.set_result("boom")
+
+            # When there are no more callbacks, the Python implementation
+            # returns an empty list but the C implementation returns None.
+            self.assertIn(fut._callbacks, (None, []))
+
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
                      'requires the C _asyncio module')
