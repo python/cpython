@@ -283,7 +283,7 @@ codegen_addop_load_const(compiler *c, location loc, PyObject *o)
     if (PyLong_CheckExact(o)) {
         int overflow;
         long val = PyLong_AsLongAndOverflow(o, &overflow);
-        if (!overflow && val >= 0 && val < 256) {
+        if (!overflow && val >= 0 && val < 256 && val < _PY_NSMALLPOSINTS) {
             ADDOP_I(c, loc, LOAD_INT, val);
             return SUCCESS;
         }

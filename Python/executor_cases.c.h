@@ -228,7 +228,7 @@
             assert(oparg == CURRENT_OPARG());
             /* Tell code generator that this is a const load */
             (void)FRAME_CO_CONSTS;
-            assert(oparg < 256);
+            assert(oparg < _PY_NSMALLPOSINTS);
             PyObject *obj = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + oparg];
             value = PyStackRef_FromPyObjectImmortal(obj);
             stack_pointer[0] = value;
@@ -243,7 +243,7 @@
             assert(oparg == CURRENT_OPARG());
             /* Tell code generator that this is a const load */
             (void)FRAME_CO_CONSTS;
-            assert(oparg < 256);
+            assert(oparg < _PY_NSMALLPOSINTS);
             PyObject *obj = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + oparg];
             value = PyStackRef_FromPyObjectImmortal(obj);
             stack_pointer[0] = value;
@@ -258,7 +258,7 @@
             assert(oparg == CURRENT_OPARG());
             /* Tell code generator that this is a const load */
             (void)FRAME_CO_CONSTS;
-            assert(oparg < 256);
+            assert(oparg < _PY_NSMALLPOSINTS);
             PyObject *obj = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + oparg];
             value = PyStackRef_FromPyObjectImmortal(obj);
             stack_pointer[0] = value;
@@ -273,7 +273,7 @@
             assert(oparg == CURRENT_OPARG());
             /* Tell code generator that this is a const load */
             (void)FRAME_CO_CONSTS;
-            assert(oparg < 256);
+            assert(oparg < _PY_NSMALLPOSINTS);
             PyObject *obj = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + oparg];
             value = PyStackRef_FromPyObjectImmortal(obj);
             stack_pointer[0] = value;
@@ -287,7 +287,7 @@
             oparg = CURRENT_OPARG();
             /* Tell code generator that this is a const load */
             (void)FRAME_CO_CONSTS;
-            assert(oparg < 256);
+            assert(oparg < _PY_NSMALLPOSINTS);
             PyObject *obj = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + oparg];
             value = PyStackRef_FromPyObjectImmortal(obj);
             stack_pointer[0] = value;

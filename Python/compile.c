@@ -447,8 +447,6 @@ _PyCompile_DictAddObj(PyObject *dict, PyObject *o)
 Py_ssize_t
 _PyCompile_AddConst(compiler *c, PyObject *o)
 {
-
-
     PyObject *key = merge_consts_recursive(c->c_const_cache, o);
     if (key == NULL) {
         return ERROR;

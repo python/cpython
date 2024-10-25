@@ -283,7 +283,7 @@ dump_instr(cfg_instr *i)
 static inline int
 basicblock_returns(const basicblock *b) {
     cfg_instr *last = basicblock_last_instr(b);
-    return last && last->i_opcode == RETURN_VALUE);
+    return last && last->i_opcode == RETURN_VALUE;
 }
 
 static void
