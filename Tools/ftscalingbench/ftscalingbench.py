@@ -199,14 +199,15 @@ def benchmark(func):
         direction = "slower"
 
     use_color = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
-    color = ""
+    color = reset_color = ""
     if use_color:
         if speedup <= 1.1:
             color = "\x1b[31m"  # red
         elif speedup < len(threads)/2:
             color = "\x1b[33m"  # yellow
+        reset_color = "\x1b[0m"
 
-    print(f"{color}{func.__name__:<18} {round(factor, 1):>4}x {direction}{color and '\x1b[0m'}")
+    print(f"{color}{func.__name__:<18} {round(factor, 1):>4}x {direction}{reset_color}")
 
 def determine_num_threads_and_affinity():
     if sys.platform != "linux":
