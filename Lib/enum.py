@@ -598,7 +598,6 @@ class EnumType(type):
             # is tacked on to the error instead of raising a RuntimeError, so discard it
             if hasattr(e, '__notes__'):
                 del e.__notes__
-            del e
             raise
         # update classdict with any changes made by __init_subclass__
         classdict.update(enum_class.__dict__)
