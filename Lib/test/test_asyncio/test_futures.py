@@ -931,7 +931,7 @@ class BaseFutureDoneCallbackTests():
 
     def test_use_after_free_fixed(self):
         # Special thanks to Nico-Posada for the original PoC.
-        # See https://github.com/python/cpython/issues/125789.
+        # See https://github.com/python/cpython/issues/125966.
 
         asserter = self
         fut = self._new_future()
