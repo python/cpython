@@ -929,6 +929,24 @@ class BaseFutureDoneCallbackTests():
 
         fut.remove_done_callback(evil())
 
+    def test_use_after_free_fixed(self):
+        # Special thanks to Nico-Posada for the original PoC.
+        # See https://github.com/python/cpython/issues/125789.
+
+        fut = self._new_future()
+
+        class cb_pad:
+            def __eq__(self, other):
+                return True
+
+        class evil(cb_pad):
+            def __eq__(self, other):
+                fut.remove_done_callback(None)
+                return NotImplemented
+
+        fut.add_done_callback(cb_pad())
+        fut.remove_done_callback(evil())
+
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
                      'requires the C _asyncio module')
