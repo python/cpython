@@ -374,6 +374,13 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    Return ``True`` if the object is a bound method written in Python.
 
 
+.. function:: ispackage(object)
+
+   Return ``True`` if the object is a :term:`package`.
+
+   .. versionadded:: 3.14
+
+
 .. function:: isfunction(object)
 
    Return ``True`` if the object is a Python function, which includes functions
