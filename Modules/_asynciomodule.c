@@ -441,8 +441,16 @@ future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
         return 0;
     }
 
-    for (i = 0; i < len; i++) {
+    // Beware: An evil 'call_soon' could change fut_callbacks or its items
+    // (see https://github.com/python/cpython/issues/125789 for details).
+    for (i = 0;
+         fut->fut_callbacks != NULL && i < PyList_GET_SIZE(fut->fut_callbacks);
+         i++) {
         PyObject *cb_tup = PyList_GET_ITEM(fut->fut_callbacks, i);
+        if (!PyTuple_CheckExact(cb_tup) || PyTuple_GET_SIZE(cb_tup) != 2) {
+            PyErr_SetString(PyExc_RuntimeError, "corrupted callback tuple");
+            return -1;
+        }
         PyObject *cb = PyTuple_GET_ITEM(cb_tup, 0);
         PyObject *ctx = PyTuple_GET_ITEM(cb_tup, 1);
 
@@ -1017,7 +1025,13 @@ _asyncio_Future_remove_done_callback_impl(FutureObj *self, PyTypeObject *cls,
     ENSURE_FUTURE_ALIVE(state, self)
 
     if (self->fut_callback0 != NULL) {
-        int cmp = PyObject_RichCompareBool(self->fut_callback0, fn, Py_EQ);
+        // Beware: An evil PyObject_RichCompareBool could change fut_callback0
+        // (see https://github.com/python/cpython/issues/125789 for details)
+        // In addition, the reference to self->fut_callback0 may be cleared,
+        // so we need to temporarily hold it explicitly.
+        PyObject *fut_callback0 = Py_NewRef(self->fut_callback0);
+        int cmp = PyObject_RichCompareBool(fut_callback0, fn, Py_EQ);
+        Py_DECREF(fut_callback0);
         if (cmp == -1) {
             return NULL;
         }
@@ -1041,8 +1055,17 @@ _asyncio_Future_remove_done_callback_impl(FutureObj *self, PyTypeObject *cls,
 
     if (len == 1) {
         PyObject *cb_tup = PyList_GET_ITEM(self->fut_callbacks, 0);
-        int cmp = PyObject_RichCompareBool(
-            PyTuple_GET_ITEM(cb_tup, 0), fn, Py_EQ);
+        // Beware: An evil PyObject_RichCompareBool could change fut_callbacks
+        // or its items (see https://github.com/python/cpython/issues/97592 or
+        // https://github.com/python/cpython/issues/125789 for details).
+        if (!PyTuple_CheckExact(cb_tup) || PyTuple_GET_SIZE(cb_tup) != 2) {
+            PyErr_SetString(PyExc_RuntimeError, "corrupted callback tuple");
+            return NULL;
+        }
+        Py_INCREF(cb_tup);
+        PyObject *cb = PyTuple_GET_ITEM(cb_tup, 0);
+        int cmp = PyObject_RichCompareBool(cb, fn, Py_EQ);
+        Py_DECREF(cb_tup);
         if (cmp == -1) {
             return NULL;
         }
@@ -1060,24 +1083,29 @@ _asyncio_Future_remove_done_callback_impl(FutureObj *self, PyTypeObject *cls,
         return NULL;
     }
 
-    // Beware: PyObject_RichCompareBool below may change fut_callbacks.
-    // See GH-97592.
+    // Beware: An evil PyObject_RichCompareBool could change fut_callbacks
+    // or its items (see https://github.com/python/cpython/issues/97592 or
+    // https://github.com/python/cpython/issues/125789 for details).
     for (i = 0;
          self->fut_callbacks != NULL && i < PyList_GET_SIZE(self->fut_callbacks);
          i++) {
-        int ret;
-        PyObject *item = PyList_GET_ITEM(self->fut_callbacks, i);
-        Py_INCREF(item);
-        ret = PyObject_RichCompareBool(PyTuple_GET_ITEM(item, 0), fn, Py_EQ);
+        PyObject *cb_tup = PyList_GET_ITEM(self->fut_callbacks, i);
+        if (!PyTuple_CheckExact(cb_tup) || PyTuple_GET_SIZE(cb_tup) != 2) {
+            PyErr_SetString(PyExc_RuntimeError, "corrupted callback tuple");
+            goto fail;
+        }
+        Py_INCREF(cb_tup);
+        PyObject *cb = PyTuple_GET_ITEM(cb_tup, 0);
+        int ret = PyObject_RichCompareBool(cb, fn, Py_EQ);
         if (ret == 0) {
             if (j < len) {
-                PyList_SET_ITEM(newlist, j, item);
+                PyList_SET_ITEM(newlist, j, cb_tup);
                 j++;
                 continue;
             }
-            ret = PyList_Append(newlist, item);
+            ret = PyList_Append(newlist, cb_tup);
         }
-        Py_DECREF(item);
+        Py_DECREF(cb_tup);
         if (ret < 0) {
             goto fail;
         }
