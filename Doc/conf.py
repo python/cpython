@@ -6,27 +6,42 @@
 # The contents of this file are pickled, so don't put values in the namespace
 # that aren't pickleable (module imports are okay, they're removed automatically).
 
-import sys, os, time
+import importlib
+import os
+import sys
+import time
+
+import sphinx
+
 sys.path.append(os.path.abspath('tools/extensions'))
 sys.path.append(os.path.abspath('includes'))
+
+from pyspecific import SOURCE_URI
 
 # General configuration
 # ---------------------
 
 extensions = [
-    'asdl_highlight',
+    'audit_events',
+    'availability',
     'c_annotations',
-    'escape4chm',
     'glossary_search',
-    'peg_highlight',
+    'lexers',
     'pyspecific',
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
+    'sphinx.ext.extlinks',
 ]
 
-# Skip if downstream redistributors haven't installed it
+# Skip if downstream redistributors haven't installed them
 try:
-    import sphinxext.opengraph
+    import notfound.extension  # noqa: F401
+except ImportError:
+    pass
+else:
+    extensions.append('notfound.extension')
+try:
+    import sphinxext.opengraph  # noqa: F401
 except ImportError:
     pass
 else:
@@ -49,12 +64,21 @@ manpages_url = 'https://manpages.debian.org/{path}'
 
 # General substitutions.
 project = 'Python'
-copyright = '2001-%s, Python Software Foundation' % time.strftime('%Y')
+if sphinx.version_info[:2] >= (8, 1):
+    copyright = "2001-%Y, Python Software Foundation"
+else:
+    copyright = f"2001-{time.strftime('%Y')}, Python Software Foundation"
 
 # We look for the Include/patchlevel.h file in the current Python source tree
 # and replace the values accordingly.
-import patchlevel
-version, release = patchlevel.get_version_info()
+# See Doc/tools/extensions/patchlevel.py
+version, release = importlib.import_module('patchlevel').get_version_info()
+
+rst_epilog = f"""
+.. |python_version_literal| replace:: ``Python {version}``
+.. |python_x_dot_y_literal| replace:: ``python{version}``
+.. |usr_local_bin_python_x_dot_y_literal| replace:: ``/usr/local/bin/python{version}``
+"""
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -66,7 +90,12 @@ today_fmt = '%B %d, %Y'
 highlight_language = 'python3'
 
 # Minimum version of sphinx required
-needs_sphinx = '3.2'
+needs_sphinx = '7.2.6'
+
+# Create table of contents entries for domain objects (e.g. functions, classes,
+# attributes, etc.). Default is True.
+toc_object_entries = True
+toc_object_entries_show_parents = 'hide'
 
 # Ignore any .rst files in the includes/ directory;
 # they're embedded in pages but not rendered individually.
@@ -79,25 +108,40 @@ if venvdir is not None:
 nitpick_ignore = [
     # Standard C functions
     ('c:func', 'calloc'),
+    ('c:func', 'ctime'),
     ('c:func', 'dlopen'),
     ('c:func', 'exec'),
     ('c:func', 'fcntl'),
+    ('c:func', 'flock'),
     ('c:func', 'fork'),
     ('c:func', 'free'),
+    ('c:func', 'gettimeofday'),
     ('c:func', 'gmtime'),
+    ('c:func', 'grantpt'),
+    ('c:func', 'ioctl'),
+    ('c:func', 'localeconv'),
     ('c:func', 'localtime'),
     ('c:func', 'main'),
     ('c:func', 'malloc'),
+    ('c:func', 'mktime'),
+    ('c:func', 'posix_openpt'),
     ('c:func', 'printf'),
+    ('c:func', 'ptsname'),
+    ('c:func', 'ptsname_r'),
     ('c:func', 'realloc'),
     ('c:func', 'snprintf'),
     ('c:func', 'sprintf'),
     ('c:func', 'stat'),
+    ('c:func', 'strftime'),
     ('c:func', 'system'),
     ('c:func', 'time'),
+    ('c:func', 'unlockpt'),
     ('c:func', 'vsnprintf'),
     # Standard C types
     ('c:type', 'FILE'),
+    ('c:type', 'int8_t'),
+    ('c:type', 'int16_t'),
+    ('c:type', 'int32_t'),
     ('c:type', 'int64_t'),
     ('c:type', 'intmax_t'),
     ('c:type', 'off_t'),
@@ -106,6 +150,9 @@ nitpick_ignore = [
     ('c:type', 'size_t'),
     ('c:type', 'ssize_t'),
     ('c:type', 'time_t'),
+    ('c:type', 'uint8_t'),
+    ('c:type', 'uint16_t'),
+    ('c:type', 'uint32_t'),
     ('c:type', 'uint64_t'),
     ('c:type', 'uintmax_t'),
     ('c:type', 'uintptr_t'),
@@ -113,11 +160,14 @@ nitpick_ignore = [
     ('c:type', 'wchar_t'),
     ('c:type', '__int64'),
     ('c:type', 'unsigned __int64'),
+    ('c:type', 'double'),
     # Standard C structures
     ('c:struct', 'in6_addr'),
     ('c:struct', 'in_addr'),
     ('c:struct', 'stat'),
     ('c:struct', 'statvfs'),
+    ('c:struct', 'timeval'),
+    ('c:struct', 'timespec'),
     # Standard C macros
     ('c:macro', 'LLONG_MAX'),
     ('c:macro', 'LLONG_MIN'),
@@ -157,6 +207,13 @@ nitpick_ignore = [
     ('envvar', 'USER'),
     ('envvar', 'USERNAME'),
     ('envvar', 'USERPROFILE'),
+    # Deprecated function that was never documented:
+    ('py:func', 'getargspec'),
+    ('py:func', 'inspect.getargspec'),
+    # Undocumented modules that users shouldn't have to worry about
+    # (implementation details of `os.path`):
+    ('py:mod', 'ntpath'),
+    ('py:mod', 'posixpath'),
 ]
 
 # Temporary undocumented names.
@@ -198,6 +255,7 @@ nitpick_ignore += [
     ('c:data', 'PyExc_OverflowError'),
     ('c:data', 'PyExc_PermissionError'),
     ('c:data', 'PyExc_ProcessLookupError'),
+    ('c:data', 'PyExc_PythonFinalizationError'),
     ('c:data', 'PyExc_RecursionError'),
     ('c:data', 'PyExc_ReferenceError'),
     ('c:data', 'PyExc_RuntimeError'),
@@ -228,32 +286,44 @@ nitpick_ignore += [
     ('c:data', 'PyExc_UnicodeWarning'),
     ('c:data', 'PyExc_UserWarning'),
     ('c:data', 'PyExc_Warning'),
+    # Undocumented public C macros
+    ('c:macro', 'Py_BUILD_ASSERT'),
+    ('c:macro', 'Py_BUILD_ASSERT_EXPR'),
     # Do not error nit-picky mode builds when _SubParsersAction.add_parser cannot
     # be resolved, as the method is currently undocumented. For context, see
     # https://github.com/python/cpython/pull/103289.
     ('py:meth', '_SubParsersAction.add_parser'),
+    # Attributes/methods/etc. that definitely should be documented better,
+    # but are deferred for now:
+    ('py:attr', '__annotations__'),
+    ('py:meth', '__missing__'),
+    ('py:attr', '__wrapped__'),
+    ('py:attr', 'decimal.Context.clamp'),
+    ('py:meth', 'index'),  # list.index, tuple.index, etc.
 ]
 
-# gh-106948: Copy standard C types declared in the "c:type" domain to the
-# "c:identifier" domain, since "c:function" markup looks for types in the
-# "c:identifier" domain. Use list() to not iterate on items which are being
-# added
+# gh-106948: Copy standard C types declared in the "c:type" domain and C
+# structures declared in the "c:struct" domain to the "c:identifier" domain,
+# since "c:function" markup looks for types in the "c:identifier" domain. Use
+# list() to not iterate on items which are being added
 for role, name in list(nitpick_ignore):
-    if role == 'c:type':
+    if role in ('c:type', 'c:struct'):
         nitpick_ignore.append(('c:identifier', name))
 del role, name
 
 # Disable Docutils smartquotes for several translations
 smartquotes_excludes = {
-    'languages': ['ja', 'fr', 'zh_TW', 'zh_CN'], 'builders': ['man', 'text'],
+    'languages': ['ja', 'fr', 'zh_TW', 'zh_CN'],
+    'builders': ['man', 'text'],
 }
 
-# Avoid a warning with Sphinx >= 2.0
-master_doc = 'contents'
+# Avoid a warning with Sphinx >= 4.0
+root_doc = 'contents'
 
 # Allow translation of index directives
 gettext_additional_targets = [
     'index',
+    'literal-block',
 ]
 
 # Options for HTML output
@@ -266,8 +336,13 @@ html_theme_options = {
     'collapsiblesidebar': True,
     'issues_url': '/bugs.html',
     'license_url': '/license.html',
-    'root_include_title': False   # We use the version switcher instead.
+    'root_include_title': False,  # We use the version switcher instead.
 }
+
+if os.getenv("READTHEDOCS"):
+    html_theme_options["hosted_on"] = (
+        '<a href="https://about.readthedocs.com/">Read the Docs</a>'
+    )
 
 # Override stylesheet fingerprinting for Windows CHM htmlhelp to fix GH-91207
 # https://github.com/python/cpython/issues/91207
@@ -277,20 +352,29 @@ if any('htmlhelp' in arg for arg in sys.argv):
     print("It may be removed in the future\n")
 
 # Short title used e.g. for <title> HTML tags.
-html_short_title = '%s Documentation' % release
+html_short_title = f'{release} Documentation'
 
 # Deployment preview information
 # (See .readthedocs.yml and https://docs.readthedocs.io/en/stable/reference/environment-variables.html)
-repository_url = os.getenv("READTHEDOCS_GIT_CLONE_URL")
+is_deployment_preview = os.getenv("READTHEDOCS_VERSION_TYPE") == "external"
+repository_url = os.getenv("READTHEDOCS_GIT_CLONE_URL", "")
+repository_url = repository_url.removesuffix(".git")
 html_context = {
-    "is_deployment_preview": os.getenv("READTHEDOCS_VERSION_TYPE") == "external",
-    "repository_url": repository_url.removesuffix(".git") if repository_url else None,
-    "pr_id": os.getenv("READTHEDOCS_VERSION")
+    "is_deployment_preview": is_deployment_preview,
+    "repository_url": repository_url or None,
+    "pr_id": os.getenv("READTHEDOCS_VERSION"),
+    "enable_analytics": os.getenv("PYTHON_DOCS_ENABLE_ANALYTICS"),
 }
 
-# If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
-# using the given strftime format.
-html_last_updated_fmt = '%b %d, %Y'
+# This 'Last updated on:' timestamp is inserted at the bottom of every page.
+html_last_updated_fmt = '%b %d, %Y (%H:%M UTC)'
+if sphinx.version_info[:2] >= (8, 1):
+    html_last_updated_use_utc = True
+else:
+    html_time = int(os.environ.get('SOURCE_DATE_EPOCH', time.time()))
+    html_last_updated_fmt = time.strftime(
+        html_last_updated_fmt, time.gmtime(html_time)
+    )
 
 # Path to find HTML templates.
 templates_path = ['tools/templates']
@@ -321,18 +405,17 @@ htmlhelp_basename = 'python' + release.replace('.', '')
 # Split the index
 html_split_index = True
 
+# Split pot files one per reST file
+gettext_compact = False
 
 # Options for LaTeX output
 # ------------------------
 
 latex_engine = 'xelatex'
 
-# Get LaTeX to handle Unicode correctly
 latex_elements = {
-}
-
-# Additional stuff for the LaTeX preamble.
-latex_elements['preamble'] = r'''
+    # For the LaTeX preamble.
+    'preamble': r'''
 \authoraddress{
   \sphinxstrong{Python Software Foundation}\\
   Email: \sphinxemail{docs@python.org}
@@ -340,42 +423,81 @@ latex_elements['preamble'] = r'''
 \let\Verbatim=\OriginalVerbatim
 \let\endVerbatim=\endOriginalVerbatim
 \setcounter{tocdepth}{2}
-'''
-
-# The paper size ('letter' or 'a4').
-latex_elements['papersize'] = 'a4'
-
-# The font size ('10pt', '11pt' or '12pt').
-latex_elements['pointsize'] = '10pt'
+''',
+    # The paper size ('letterpaper' or 'a4paper').
+    'papersize': 'a4paper',
+    # The font size ('10pt', '11pt' or '12pt').
+    'pointsize': '10pt',
+}
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
 _stdauthor = 'Guido van Rossum and the Python development team'
 latex_documents = [
-    ('c-api/index', 'c-api.tex',
-     'The Python/C API', _stdauthor, 'manual'),
-    ('extending/index', 'extending.tex',
-     'Extending and Embedding Python', _stdauthor, 'manual'),
-    ('installing/index', 'installing.tex',
-     'Installing Python Modules', _stdauthor, 'manual'),
-    ('library/index', 'library.tex',
-     'The Python Library Reference', _stdauthor, 'manual'),
-    ('reference/index', 'reference.tex',
-     'The Python Language Reference', _stdauthor, 'manual'),
-    ('tutorial/index', 'tutorial.tex',
-     'Python Tutorial', _stdauthor, 'manual'),
-    ('using/index', 'using.tex',
-     'Python Setup and Usage', _stdauthor, 'manual'),
-    ('faq/index', 'faq.tex',
-     'Python Frequently Asked Questions', _stdauthor, 'manual'),
-    ('whatsnew/' + version, 'whatsnew.tex',
-     'What\'s New in Python', 'A. M. Kuchling', 'howto'),
+    ('c-api/index', 'c-api.tex', 'The Python/C API', _stdauthor, 'manual'),
+    (
+        'extending/index',
+        'extending.tex',
+        'Extending and Embedding Python',
+        _stdauthor,
+        'manual',
+    ),
+    (
+        'installing/index',
+        'installing.tex',
+        'Installing Python Modules',
+        _stdauthor,
+        'manual',
+    ),
+    (
+        'library/index',
+        'library.tex',
+        'The Python Library Reference',
+        _stdauthor,
+        'manual',
+    ),
+    (
+        'reference/index',
+        'reference.tex',
+        'The Python Language Reference',
+        _stdauthor,
+        'manual',
+    ),
+    (
+        'tutorial/index',
+        'tutorial.tex',
+        'Python Tutorial',
+        _stdauthor,
+        'manual',
+    ),
+    (
+        'using/index',
+        'using.tex',
+        'Python Setup and Usage',
+        _stdauthor,
+        'manual',
+    ),
+    (
+        'faq/index',
+        'faq.tex',
+        'Python Frequently Asked Questions',
+        _stdauthor,
+        'manual',
+    ),
+    (
+        'whatsnew/' + version,
+        'whatsnew.tex',
+        'What\'s New in Python',
+        'A. M. Kuchling',
+        'howto',
+    ),
 ]
 # Collect all HOWTOs individually
-latex_documents.extend(('howto/' + fn[:-4], 'howto-' + fn[:-4] + '.tex',
-                        '', _stdauthor, 'howto')
-                       for fn in os.listdir('howto')
-                       if fn.endswith('.rst') and fn != 'index.rst')
+latex_documents.extend(
+    ('howto/' + fn[:-4], 'howto-' + fn[:-4] + '.tex', '', _stdauthor, 'howto')
+    for fn in os.listdir('howto')
+    if fn.endswith('.rst') and fn != 'index.rst'
+)
 
 # Documents to append as an appendix to all manuals.
 latex_appendices = ['glossary', 'about', 'license', 'copyright']
@@ -385,6 +507,10 @@ latex_appendices = ['glossary', 'about', 'license', 'copyright']
 
 epub_author = 'Python Documentation Authors'
 epub_publisher = 'Python Software Foundation'
+
+# index pages are not valid xhtml
+# https://github.com/sphinx-doc/sphinx/issues/12359
+epub_use_index = False
 
 # Options for the coverage checker
 # --------------------------------
@@ -399,8 +525,7 @@ coverage_ignore_functions = [
     'test($|_)',
 ]
 
-coverage_ignore_classes = [
-]
+coverage_ignore_classes = []
 
 # Glob patterns for C source files for C API coverage, relative to this directory.
 coverage_c_path = [
@@ -409,15 +534,15 @@ coverage_c_path = [
 
 # Regexes to find C items in the source files.
 coverage_c_regexes = {
-    'cfunction': (r'^PyAPI_FUNC\(.*\)\s+([^_][\w_]+)'),
-    'data': (r'^PyAPI_DATA\(.*\)\s+([^_][\w_]+)'),
-    'macro': (r'^#define ([^_][\w_]+)\(.*\)[\s|\\]'),
+    'cfunction': r'^PyAPI_FUNC\(.*\)\s+([^_][\w_]+)',
+    'data': r'^PyAPI_DATA\(.*\)\s+([^_][\w_]+)',
+    'macro': r'^#define ([^_][\w_]+)\(.*\)[\s|\\]',
 }
 
 # The coverage checker will ignore all C items whose names match these regexes
 # (using re.match) -- the keys must be the same as in coverage_c_regexes.
 coverage_ignore_c_items = {
-#    'cfunction': [...]
+    # 'cfunction': [...]
 }
 
 
@@ -439,9 +564,15 @@ linkcheck_allowed_redirects = {
     r'https://msdn.microsoft.com/.*': 'https://learn.microsoft.com/.*',
     r'https://docs.microsoft.com/.*': 'https://learn.microsoft.com/.*',
     r'https://go.microsoft.com/fwlink/\?LinkID=\d+': 'https://learn.microsoft.com/.*',
+    # Debian's man page redirects to its current stable version
+    r'https://manpages.debian.org/\w+\(\d(\w+)?\)': r'https://manpages.debian.org/\w+/[\w/\-\.]*\.\d(\w+)?\.en\.html',
     # Language redirects
     r'https://toml.io': 'https://toml.io/en/',
     r'https://www.redhat.com': 'https://www.redhat.com/en',
+    # pypi.org project name normalization (upper to lowercase, underscore to hyphen)
+    r'https://pypi.org/project/[A-Za-z\d_\-\.]+/': r'https://pypi.org/project/[a-z\d\-\.]+/',
+    # Discourse title name expansion (text changes when title is edited)
+    r'https://discuss\.python\.org/t/\d+': r'https://discuss\.python\.org/t/.*/\d+',
     # Other redirects
     r'https://www.boost.org/libs/.+': r'https://www.boost.org/doc/libs/\d_\d+_\d/.+',
     r'https://support.microsoft.com/en-us/help/\d+': 'https://support.microsoft.com/en-us/topic/.+',
@@ -468,15 +599,38 @@ linkcheck_ignore = [
     r'https://unix.org/version2/whatsnew/lp64_wp.html',
 ]
 
+# Options for sphinx.ext.extlinks
+# -------------------------------
 
-# Options for extensions
-# ----------------------
+# This config is a dictionary of external sites,
+# mapping unique short aliases to a base URL and a prefix.
+# https://www.sphinx-doc.org/en/master/usage/extensions/extlinks.html
+extlinks = {
+    "pypi": ("https://pypi.org/project/%s/", "%s"),
+    "source": (SOURCE_URI, "%s"),
+}
+extlinks_detect_hardcoded_links = True
+
+if sphinx.version_info[:2] < (8, 1):
+    # Sphinx 8.1 has in-built CVE and CWE roles.
+    extlinks |= {
+        "cve": (
+            "https://www.cve.org/CVERecord?id=CVE-%s",
+            "CVE-%s",
+        ),
+        "cwe": ("https://cwe.mitre.org/data/definitions/%s.html", "CWE-%s"),
+    }
+
+# Options for c_annotations
+# -------------------------
 
 # Relative filename of the data files
 refcount_file = 'data/refcounts.dat'
 stable_abi_file = 'data/stable_abi.dat'
 
-# sphinxext-opengraph config
+# Options for sphinxext-opengraph
+# -------------------------------
+
 ogp_site_url = 'https://docs.python.org/3/'
 ogp_site_name = 'Python documentation'
 ogp_image = '_static/og-image.png'

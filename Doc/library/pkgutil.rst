@@ -1,5 +1,5 @@
-:mod:`pkgutil` --- Package extension utility
-============================================
+:mod:`!pkgutil` --- Package extension utility
+=============================================
 
 .. module:: pkgutil
    :synopsis: Utilities for the import system.
@@ -26,7 +26,8 @@ support.
       __path__ = extend_path(__path__, __name__)
 
    For each directory on :data:`sys.path` that has a subdirectory that matches the
-   package name, add the subdirectory to the package's :attr:`__path__`.  This is useful
+   package name, add the subdirectory to the package's
+   :attr:`~module.__path__`. This is useful
    if one wants to distribute different parts of a single logical package as multiple
    directories.
 
@@ -34,9 +35,9 @@ support.
    *name* argument.  This feature is similar to :file:`\*.pth` files (see the
    :mod:`site` module for more information), except that it doesn't special-case
    lines starting with ``import``.  A :file:`\*.pkg` file is trusted at face
-   value: apart from checking for duplicates, all entries found in a
-   :file:`\*.pkg` file are added to the path, regardless of whether they exist
-   on the filesystem.  (This is a feature.)
+   value: apart from skipping blank lines and ignoring comments, all entries
+   found in a :file:`\*.pkg` file are added to the path, regardless of whether
+   they exist on the filesystem (this is a feature).
 
    If the input path is not a list (as is the case for frozen packages) it is
    returned unchanged.  The input path is not modified; an extended copy is

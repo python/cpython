@@ -1,5 +1,5 @@
-:mod:`json` --- JSON encoder and decoder
-========================================
+:mod:`!json` --- JSON encoder and decoder
+=========================================
 
 .. module:: json
    :synopsis: Encode and decode the JSON format.
@@ -13,7 +13,7 @@
 
 `JSON (JavaScript Object Notation) <https://json.org>`_, specified by
 :rfc:`7159` (which obsoletes :rfc:`4627`) and by
-`ECMA-404 <https://www.ecma-international.org/publications-and-standards/standards/ecma-404/>`_,
+`ECMA-404 <https://ecma-international.org/publications-and-standards/standards/ecma-404/>`_,
 is a lightweight data interchange format inspired by
 `JavaScript <https://en.wikipedia.org/wiki/JavaScript>`_ object literal syntax
 (although it is not a strict subset of JavaScript [#rfc-errata]_ ).
@@ -106,7 +106,7 @@ Extending :class:`JSONEncoder`::
     ...         if isinstance(obj, complex):
     ...             return [obj.real, obj.imag]
     ...         # Let the base class default method raise the TypeError
-    ...         return json.JSONEncoder.default(self, obj)
+    ...         return super().default(obj)
     ...
     >>> json.dumps(2 + 1j, cls=ComplexEncoder)
     '[2.0, 1.0]'
@@ -116,15 +116,15 @@ Extending :class:`JSONEncoder`::
     ['[2.0', ', 1.0', ']']
 
 
-Using :mod:`json.tool` from the shell to validate and pretty-print:
+Using :mod:`json` from the shell to validate and pretty-print:
 
 .. code-block:: shell-session
 
-    $ echo '{"json":"obj"}' | python -m json.tool
+    $ echo '{"json":"obj"}' | python -m json
     {
         "json": "obj"
     }
-    $ echo '{1.2:3.4}' | python -m json.tool
+    $ echo '{1.2:3.4}' | python -m json
     Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
 
 See :ref:`json-commandline` for detailed documentation.
@@ -241,28 +241,28 @@ Basic Usage
 
    *object_hook* is an optional function that will be called with the result of
    any object literal decoded (a :class:`dict`).  The return value of
-   *object_hook* will be used instead of the :class:`dict`.  This feature can be used
-   to implement custom decoders (e.g. `JSON-RPC <https://www.jsonrpc.org>`_
-   class hinting).
+   *object_hook* will be used instead of the :class:`dict`.  This feature can
+   be used to implement custom decoders (e.g. `JSON-RPC
+   <https://www.jsonrpc.org>`_ class hinting).
 
    *object_pairs_hook* is an optional function that will be called with the
    result of any object literal decoded with an ordered list of pairs.  The
    return value of *object_pairs_hook* will be used instead of the
-   :class:`dict`.  This feature can be used to implement custom decoders.
-   If *object_hook* is also defined, the *object_pairs_hook* takes priority.
+   :class:`dict`.  This feature can be used to implement custom decoders.  If
+   *object_hook* is also defined, the *object_pairs_hook* takes priority.
 
    .. versionchanged:: 3.1
       Added support for *object_pairs_hook*.
 
-   *parse_float*, if specified, will be called with the string of every JSON
-   float to be decoded.  By default, this is equivalent to ``float(num_str)``.
-   This can be used to use another datatype or parser for JSON floats
-   (e.g. :class:`decimal.Decimal`).
+   *parse_float* is an optional function that will be called with the string of
+   every JSON float to be decoded.  By default, this is equivalent to
+   ``float(num_str)``.  This can be used to use another datatype or parser for
+   JSON floats (e.g. :class:`decimal.Decimal`).
 
-   *parse_int*, if specified, will be called with the string of every JSON int
-   to be decoded.  By default, this is equivalent to ``int(num_str)``.  This can
-   be used to use another datatype or parser for JSON integers
-   (e.g. :class:`float`).
+   *parse_int* is an optional function that will be called with the string of
+   every JSON int to be decoded.  By default, this is equivalent to
+   ``int(num_str)``.  This can be used to use another datatype or parser for
+   JSON integers (e.g. :class:`float`).
 
    .. versionchanged:: 3.11
       The default *parse_int* of :func:`int` now limits the maximum length of
@@ -270,10 +270,9 @@ Basic Usage
       conversion length limitation <int_max_str_digits>` to help avoid denial
       of service attacks.
 
-   *parse_constant*, if specified, will be called with one of the following
-   strings: ``'-Infinity'``, ``'Infinity'``, ``'NaN'``.
-   This can be used to raise an exception if invalid JSON numbers
-   are encountered.
+   *parse_constant* is an optional function that will be called with one of the
+   following strings: ``'-Infinity'``, ``'Infinity'``, ``'NaN'``.  This can be
+   used to raise an exception if invalid JSON numbers are encountered.
 
    .. versionchanged:: 3.1
       *parse_constant* doesn't get called on 'null', 'true', 'false' anymore.
@@ -345,34 +344,33 @@ Encoders and Decoders
    It also understands ``NaN``, ``Infinity``, and ``-Infinity`` as their
    corresponding ``float`` values, which is outside the JSON spec.
 
-   *object_hook*, if specified, will be called with the result of every JSON
-   object decoded and its return value will be used in place of the given
-   :class:`dict`.  This can be used to provide custom deserializations (e.g. to
-   support `JSON-RPC <https://www.jsonrpc.org>`_ class hinting).
+   *object_hook* is an optional function that will be called with the result of
+   every JSON object decoded and its return value will be used in place of the
+   given :class:`dict`.  This can be used to provide custom deserializations
+   (e.g. to support `JSON-RPC <https://www.jsonrpc.org>`_ class hinting).
 
-   *object_pairs_hook*, if specified will be called with the result of every
-   JSON object decoded with an ordered list of pairs.  The return value of
-   *object_pairs_hook* will be used instead of the :class:`dict`.  This
-   feature can be used to implement custom decoders.  If *object_hook* is also
-   defined, the *object_pairs_hook* takes priority.
+   *object_pairs_hook* is an optional function that will be called with the
+   result of every JSON object decoded with an ordered list of pairs.  The
+   return value of *object_pairs_hook* will be used instead of the
+   :class:`dict`.  This feature can be used to implement custom decoders.  If
+   *object_hook* is also defined, the *object_pairs_hook* takes priority.
 
    .. versionchanged:: 3.1
       Added support for *object_pairs_hook*.
 
-   *parse_float*, if specified, will be called with the string of every JSON
-   float to be decoded.  By default, this is equivalent to ``float(num_str)``.
-   This can be used to use another datatype or parser for JSON floats
-   (e.g. :class:`decimal.Decimal`).
+   *parse_float* is an optional function that will be called with the string of
+   every JSON float to be decoded.  By default, this is equivalent to
+   ``float(num_str)``.  This can be used to use another datatype or parser for
+   JSON floats (e.g. :class:`decimal.Decimal`).
 
-   *parse_int*, if specified, will be called with the string of every JSON int
-   to be decoded.  By default, this is equivalent to ``int(num_str)``.  This can
-   be used to use another datatype or parser for JSON integers
-   (e.g. :class:`float`).
+   *parse_int* is an optional function that will be called with the string of
+   every JSON int to be decoded.  By default, this is equivalent to
+   ``int(num_str)``.  This can be used to use another datatype or parser for
+   JSON integers (e.g. :class:`float`).
 
-   *parse_constant*, if specified, will be called with one of the following
-   strings: ``'-Infinity'``, ``'Infinity'``, ``'NaN'``.
-   This can be used to raise an exception if invalid JSON numbers
-   are encountered.
+   *parse_constant* is an optional function that will be called with one of the
+   following strings: ``'-Infinity'``, ``'Infinity'``, ``'NaN'``.  This can be
+   used to raise an exception if invalid JSON numbers are encountered.
 
    If *strict* is false (``True`` is the default), then control characters
    will be allowed inside strings.  Control characters in this context are
@@ -504,7 +502,7 @@ Encoders and Decoders
             else:
                 return list(iterable)
             # Let the base class default method raise the TypeError
-            return json.JSONEncoder.default(self, o)
+            return super().default(o)
 
 
    .. method:: encode(o)
@@ -559,7 +557,7 @@ Standard Compliance and Interoperability
 ----------------------------------------
 
 The JSON format is specified by :rfc:`7159` and by
-`ECMA-404 <https://www.ecma-international.org/publications-and-standards/standards/ecma-404/>`_.
+`ECMA-404 <https://ecma-international.org/publications-and-standards/standards/ecma-404/>`_.
 This section details this module's level of compliance with the RFC.
 For simplicity, :class:`JSONEncoder` and :class:`JSONDecoder` subclasses, and
 parameters other than those explicitly mentioned, are not considered.
@@ -678,31 +676,32 @@ when serializing instances of "exotic" numerical types such as
 
 
 .. _json-commandline:
-.. program:: json.tool
+.. program:: json
 
-Command Line Interface
+Command-line interface
 ----------------------
 
 .. module:: json.tool
-    :synopsis: A command line to validate and pretty-print JSON.
+    :synopsis: A command-line interface to validate and pretty-print JSON.
 
 **Source code:** :source:`Lib/json/tool.py`
 
 --------------
 
-The :mod:`json.tool` module provides a simple command line interface to validate
-and pretty-print JSON objects.
+The :mod:`json` module can be invoked as a script via ``python -m json``
+to validate and pretty-print JSON objects. The :mod:`json.tool` submodule
+implements this interface.
 
 If the optional ``infile`` and ``outfile`` arguments are not
 specified, :data:`sys.stdin` and :data:`sys.stdout` will be used respectively:
 
 .. code-block:: shell-session
 
-    $ echo '{"json": "obj"}' | python -m json.tool
+    $ echo '{"json": "obj"}' | python -m json
     {
         "json": "obj"
     }
-    $ echo '{1.2:3.4}' | python -m json.tool
+    $ echo '{1.2:3.4}' | python -m json
     Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
 
 .. versionchanged:: 3.5
@@ -710,17 +709,22 @@ specified, :data:`sys.stdin` and :data:`sys.stdout` will be used respectively:
    :option:`--sort-keys` option to sort the output of dictionaries
    alphabetically by key.
 
+.. versionchanged:: 3.14
+   The :mod:`json` module may now be directly executed as
+   ``python -m json``. For backwards compatibility, invoking
+   the CLI as ``python -m json.tool`` remains supported.
 
-Command line options
+
+Command-line options
 ^^^^^^^^^^^^^^^^^^^^
 
-.. cmdoption:: infile
+.. option:: infile
 
    The JSON file to be validated or pretty-printed:
 
    .. code-block:: shell-session
 
-      $ python -m json.tool mp_films.json
+      $ python -m json mp_films.json
       [
           {
               "title": "And Now for Something Completely Different",
@@ -734,36 +738,36 @@ Command line options
 
    If *infile* is not specified, read from :data:`sys.stdin`.
 
-.. cmdoption:: outfile
+.. option:: outfile
 
    Write the output of the *infile* to the given *outfile*. Otherwise, write it
    to :data:`sys.stdout`.
 
-.. cmdoption:: --sort-keys
+.. option:: --sort-keys
 
    Sort the output of dictionaries alphabetically by key.
 
    .. versionadded:: 3.5
 
-.. cmdoption:: --no-ensure-ascii
+.. option:: --no-ensure-ascii
 
    Disable escaping of non-ascii characters, see :func:`json.dumps` for more information.
 
    .. versionadded:: 3.9
 
-.. cmdoption:: --json-lines
+.. option:: --json-lines
 
    Parse every input line as separate JSON object.
 
    .. versionadded:: 3.8
 
-.. cmdoption:: --indent, --tab, --no-indent, --compact
+.. option:: --indent, --tab, --no-indent, --compact
 
    Mutually exclusive options for whitespace control.
 
    .. versionadded:: 3.9
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    Show the help message.
 

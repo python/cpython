@@ -1,2 +1,0 @@
-Fix a bug that causes wrong matches for regular expressions with possessive
-qualifier.

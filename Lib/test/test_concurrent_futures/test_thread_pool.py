@@ -25,7 +25,7 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
 
     def test_default_workers(self):
         executor = self.executor_type()
-        expected = min(32, (os.cpu_count() or 1) + 4)
+        expected = min(32, (os.process_cpu_count() or 1) + 4)
         self.assertEqual(executor._max_workers, expected)
 
     def test_saturation(self):
@@ -41,6 +41,7 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
             sem.release()
         executor.shutdown(wait=True)
 
+    @support.requires_gil_enabled("gh-117344: test is flaky without the GIL")
     def test_idle_thread_reuse(self):
         executor = self.executor_type()
         executor.submit(mul, 21, 2).result()
@@ -49,6 +50,7 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
         self.assertEqual(len(executor._threads), 1)
         executor.shutdown(wait=True)
 
+    @support.requires_fork()
     @unittest.skipUnless(hasattr(os, 'register_at_fork'), 'need os.register_at_fork')
     @support.requires_resource('cpu')
     def test_hang_global_shutdown_lock(self):

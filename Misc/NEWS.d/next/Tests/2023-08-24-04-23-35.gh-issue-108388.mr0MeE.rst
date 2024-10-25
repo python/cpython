@@ -1,4 +1,0 @@
-Split test_multiprocessing_fork, test_multiprocessing_forkserver and
-test_multiprocessing_spawn into test packages. Each package is made of 4
-sub-tests: processes, threads, manager and misc. It allows running more tests
-in parallel and so reduce the total test duration. Patch by Victor Stinner.

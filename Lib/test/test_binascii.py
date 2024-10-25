@@ -139,13 +139,21 @@ class BinASCIITest(unittest.TestCase):
         def assertDiscontinuousPadding(data, non_strict_mode_expected_result: bytes):
             _assertRegexTemplate(r'(?i)Discontinuous padding', data, non_strict_mode_expected_result)
 
+        def assertExcessPadding(data, non_strict_mode_expected_result: bytes):
+            _assertRegexTemplate(r'(?i)Excess padding', data, non_strict_mode_expected_result)
+
         # Test excess data exceptions
         assertExcessData(b'ab==a', b'i')
         assertExcessData(b'ab===', b'i')
+        assertExcessData(b'ab====', b'i')
         assertExcessData(b'ab==:', b'i')
         assertExcessData(b'abc=a', b'i\xb7')
         assertExcessData(b'abc=:', b'i\xb7')
         assertExcessData(b'ab==\n', b'i')
+        assertExcessData(b'abc==', b'i\xb7')
+        assertExcessData(b'abc===', b'i\xb7')
+        assertExcessData(b'abc====', b'i\xb7')
+        assertExcessData(b'abc=====', b'i\xb7')
 
         # Test non-base64 data exceptions
         assertNonBase64Data(b'\nab==', b'i')
@@ -157,8 +165,15 @@ class BinASCIITest(unittest.TestCase):
         assertLeadingPadding(b'=', b'')
         assertLeadingPadding(b'==', b'')
         assertLeadingPadding(b'===', b'')
+        assertLeadingPadding(b'====', b'')
+        assertLeadingPadding(b'=====', b'')
         assertDiscontinuousPadding(b'ab=c=', b'i\xb7')
         assertDiscontinuousPadding(b'ab=ab==', b'i\xb6\x9b')
+        assertExcessPadding(b'abcd=', b'i\xb7\x1d')
+        assertExcessPadding(b'abcd==', b'i\xb7\x1d')
+        assertExcessPadding(b'abcd===', b'i\xb7\x1d')
+        assertExcessPadding(b'abcd====', b'i\xb7\x1d')
+        assertExcessPadding(b'abcd=====', b'i\xb7\x1d')
 
 
     def test_base64errors(self):
@@ -230,10 +245,10 @@ class BinASCIITest(unittest.TestCase):
             binascii.b2a_uu(b"", True)
 
     @hypothesis.given(
-        binary=hypothesis.strategies.binary(),
+        binary=hypothesis.strategies.binary(max_size=45),
         backtick=hypothesis.strategies.booleans(),
     )
-    def test_hex_roundtrip(self, binary, backtick):
+    def test_b2a_roundtrip(self, binary, backtick):
         converted = binascii.b2a_uu(self.type2test(binary), backtick=backtick)
         restored = binascii.a2b_uu(self.type2test(converted))
         self.assertConversion(binary, converted, restored, backtick=backtick)
@@ -473,6 +488,12 @@ class BinASCIITest(unittest.TestCase):
         converted = binascii.b2a_base64(self.type2test(binary), newline=newline)
         restored = binascii.a2b_base64(self.type2test(converted))
         self.assertConversion(binary, converted, restored, newline=newline)
+
+    def test_c_contiguity(self):
+        m = memoryview(bytearray(b'noncontig'))
+        noncontig_writable = m[::-2]
+        with self.assertRaises(BufferError):
+            binascii.b2a_hex(noncontig_writable)
 
 
 class ArrayBinASCIITest(BinASCIITest):

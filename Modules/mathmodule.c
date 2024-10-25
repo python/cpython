@@ -107,7 +107,7 @@ typedef struct{ double hi; double lo; } DoubleLength;
 static DoubleLength
 dl_fast_sum(double a, double b)
 {
-    /* Algorithm 1.1. Compensated summation of two floating point numbers. */
+    /* Algorithm 1.1. Compensated summation of two floating-point numbers. */
     assert(fabs(a) >= fabs(b));
     double x = a + b;
     double y = (a - x) + b;
@@ -237,7 +237,7 @@ m_sinpi(double x)
     double y, r;
     int n;
     /* this function should only ever be called for finite arguments */
-    assert(Py_IS_FINITE(x));
+    assert(isfinite(x));
     y = fmod(fabs(x), 2.0);
     n = (int)round(2.0*y);
     assert(0 <= n && n <= 4);
@@ -396,8 +396,8 @@ m_tgamma(double x)
     double absx, r, y, z, sqrtpow;
 
     /* special cases */
-    if (!Py_IS_FINITE(x)) {
-        if (Py_IS_NAN(x) || x > 0.0)
+    if (!isfinite(x)) {
+        if (isnan(x) || x > 0.0)
             return x;  /* tgamma(nan) = nan, tgamma(inf) = inf */
         else {
             errno = EDOM;
@@ -424,7 +424,7 @@ m_tgamma(double x)
     /* tiny arguments:  tgamma(x) ~ 1/x for x near 0 */
     if (absx < 1e-20) {
         r = 1.0/x;
-        if (Py_IS_INFINITY(r))
+        if (isinf(r))
             errno = ERANGE;
         return r;
     }
@@ -481,7 +481,7 @@ m_tgamma(double x)
             r *= sqrtpow;
         }
     }
-    if (Py_IS_INFINITY(r))
+    if (isinf(r))
         errno = ERANGE;
     return r;
 }
@@ -498,8 +498,8 @@ m_lgamma(double x)
     double absx;
 
     /* special cases */
-    if (!Py_IS_FINITE(x)) {
-        if (Py_IS_NAN(x))
+    if (!isfinite(x)) {
+        if (isnan(x))
             return x;  /* lgamma(nan) = nan */
         else
             return Py_HUGE_VAL; /* lgamma(+-inf) = +inf */
@@ -530,47 +530,10 @@ m_lgamma(double x)
     if (x < 0.0)
         /* Use reflection formula to get value for negative x. */
         r = logpi - log(fabs(m_sinpi(absx))) - log(absx) - r;
-    if (Py_IS_INFINITY(r))
+    if (isinf(r))
         errno = ERANGE;
     return r;
 }
-
-/*
-   wrapper for atan2 that deals directly with special cases before
-   delegating to the platform libm for the remaining cases.  This
-   is necessary to get consistent behaviour across platforms.
-   Windows, FreeBSD and alpha Tru64 are amongst platforms that don't
-   always follow C99.
-*/
-
-static double
-m_atan2(double y, double x)
-{
-    if (Py_IS_NAN(x) || Py_IS_NAN(y))
-        return Py_NAN;
-    if (Py_IS_INFINITY(y)) {
-        if (Py_IS_INFINITY(x)) {
-            if (copysign(1., x) == 1.)
-                /* atan2(+-inf, +inf) == +-pi/4 */
-                return copysign(0.25*Py_MATH_PI, y);
-            else
-                /* atan2(+-inf, -inf) == +-pi*3/4 */
-                return copysign(0.75*Py_MATH_PI, y);
-        }
-        /* atan2(+-inf, x) == +-pi/2 for finite x */
-        return copysign(0.5*Py_MATH_PI, y);
-    }
-    if (Py_IS_INFINITY(x) || y == 0.) {
-        if (copysign(1., x) == 1.)
-            /* atan2(+-y, +inf) = atan2(+-0, +x) = +-0. */
-            return copysign(0., y);
-        else
-            /* atan2(+-y, -inf) = atan2(+-0., -x) = +-pi. */
-            return copysign(Py_MATH_PI, y);
-    }
-    return atan2(y, x);
-}
-
 
 /* IEEE 754-style remainder operation: x - n*y where n*y is the nearest
    multiple of y to x, taking n even in the case of a tie. Assuming an IEEE 754
@@ -580,7 +543,7 @@ static double
 m_remainder(double x, double y)
 {
     /* Deal with most common case first. */
-    if (Py_IS_FINITE(x) && Py_IS_FINITE(y)) {
+    if (isfinite(x) && isfinite(y)) {
         double absx, absy, c, m, r;
 
         if (y == 0.0) {
@@ -653,16 +616,16 @@ m_remainder(double x, double y)
     }
 
     /* Special values. */
-    if (Py_IS_NAN(x)) {
+    if (isnan(x)) {
         return x;
     }
-    if (Py_IS_NAN(y)) {
+    if (isnan(y)) {
         return y;
     }
-    if (Py_IS_INFINITY(x)) {
+    if (isinf(x)) {
         return Py_NAN;
     }
-    assert(Py_IS_INFINITY(y));
+    assert(isinf(y));
     return x;
 }
 
@@ -677,7 +640,7 @@ m_remainder(double x, double y)
 static double
 m_log(double x)
 {
-    if (Py_IS_FINITE(x)) {
+    if (isfinite(x)) {
         if (x > 0.0)
             return log(x);
         errno = EDOM;
@@ -686,7 +649,7 @@ m_log(double x)
         else
             return Py_NAN; /* log(-ve) = nan */
     }
-    else if (Py_IS_NAN(x))
+    else if (isnan(x))
         return x; /* log(nan) = nan */
     else if (x > 0.0)
         return x; /* log(inf) = inf */
@@ -709,8 +672,8 @@ m_log(double x)
 static double
 m_log2(double x)
 {
-    if (!Py_IS_FINITE(x)) {
-        if (Py_IS_NAN(x))
+    if (!isfinite(x)) {
+        if (isnan(x))
             return x; /* log2(nan) = nan */
         else if (x > 0.0)
             return x; /* log2(+inf) = +inf */
@@ -736,7 +699,7 @@ m_log2(double x)
 static double
 m_log10(double x)
 {
-    if (Py_IS_FINITE(x)) {
+    if (isfinite(x)) {
         if (x > 0.0)
             return log10(x);
         errno = EDOM;
@@ -745,7 +708,7 @@ m_log10(double x)
         else
             return Py_NAN; /* log10(-ve) = nan */
     }
-    else if (Py_IS_NAN(x))
+    else if (isnan(x))
         return x; /* log10(nan) = nan */
     else if (x > 0.0)
         return x; /* log10(inf) = inf */
@@ -759,13 +722,17 @@ m_log10(double x)
 static PyObject *
 math_gcd(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
 {
-    PyObject *res, *x;
-    Py_ssize_t i;
+    // Fast-path for the common case: gcd(int, int)
+    if (nargs == 2 && PyLong_CheckExact(args[0]) && PyLong_CheckExact(args[1]))
+    {
+        return _PyLong_GCD(args[0], args[1]);
+    }
 
     if (nargs == 0) {
         return PyLong_FromLong(0);
     }
-    res = PyNumber_Index(args[0]);
+
+    PyObject *res = PyNumber_Index(args[0]);
     if (res == NULL) {
         return NULL;
     }
@@ -775,8 +742,8 @@ math_gcd(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
     }
 
     PyObject *one = _PyLong_GetOne();  // borrowed ref
-    for (i = 1; i < nargs; i++) {
-        x = _PyNumber_Index(args[i]);
+    for (Py_ssize_t i = 1; i < nargs; i++) {
+        PyObject *x = _PyNumber_Index(args[i]);
         if (x == NULL) {
             Py_DECREF(res);
             return NULL;
@@ -962,12 +929,12 @@ math_1(PyObject *arg, double (*func) (double), int can_overflow)
         return NULL;
     errno = 0;
     r = (*func)(x);
-    if (Py_IS_NAN(r) && !Py_IS_NAN(x)) {
+    if (isnan(r) && !isnan(x)) {
         PyErr_SetString(PyExc_ValueError,
                         "math domain error"); /* invalid arg */
         return NULL;
     }
-    if (Py_IS_INFINITY(r) && Py_IS_FINITE(x)) {
+    if (isinf(r) && isfinite(x)) {
         if (can_overflow)
             PyErr_SetString(PyExc_OverflowError,
                             "math range error"); /* overflow */
@@ -976,7 +943,7 @@ math_1(PyObject *arg, double (*func) (double), int can_overflow)
                             "math domain error"); /* singularity */
         return NULL;
     }
-    if (Py_IS_FINITE(r) && errno && is_error(r))
+    if (isfinite(r) && errno && is_error(r))
         /* this branch unnecessary on most platforms */
         return NULL;
 
@@ -1045,14 +1012,14 @@ math_2(PyObject *const *args, Py_ssize_t nargs,
     }
     errno = 0;
     r = (*func)(x, y);
-    if (Py_IS_NAN(r)) {
-        if (!Py_IS_NAN(x) && !Py_IS_NAN(y))
+    if (isnan(r)) {
+        if (!isnan(x) && !isnan(y))
             errno = EDOM;
         else
             errno = 0;
     }
-    else if (Py_IS_INFINITY(r)) {
-        if (Py_IS_FINITE(x) && Py_IS_FINITE(y))
+    else if (isinf(r)) {
+        if (isfinite(x) && isfinite(y))
             errno = ERANGE;
         else
             errno = 0;
@@ -1099,7 +1066,7 @@ FUNC1(atan, atan, 0,
       "atan($module, x, /)\n--\n\n"
       "Return the arc tangent (measured in radians) of x.\n\n"
       "The result is between -pi/2 and pi/2.")
-FUNC2(atan2, m_atan2,
+FUNC2(atan2, atan2,
       "atan2($module, y, x, /)\n--\n\n"
       "Return the arc tangent (measured in radians) of y/x.\n\n"
       "Unlike atan(y/x), the signs of both x and y are considered.")
@@ -1125,8 +1092,12 @@ static PyObject *
 math_ceil(PyObject *module, PyObject *number)
 /*[clinic end generated code: output=6c3b8a78bc201c67 input=2725352806399cab]*/
 {
+    double x;
 
-    if (!PyFloat_CheckExact(number)) {
+    if (PyFloat_CheckExact(number)) {
+        x = PyFloat_AS_DOUBLE(number);
+    }
+    else {
         math_module_state *state = get_math_module_state(module);
         PyObject *method = _PyObject_LookupSpecial(number, state->str___ceil__);
         if (method != NULL) {
@@ -1136,11 +1107,10 @@ math_ceil(PyObject *module, PyObject *number)
         }
         if (PyErr_Occurred())
             return NULL;
+        x = PyFloat_AsDouble(number);
+        if (x == -1.0 && PyErr_Occurred())
+            return NULL;
     }
-    double x = PyFloat_AsDouble(number);
-    if (x == -1.0 && PyErr_Occurred())
-        return NULL;
-
     return PyLong_FromDouble(ceil(x));
 }
 
@@ -1196,8 +1166,7 @@ math_floor(PyObject *module, PyObject *number)
     if (PyFloat_CheckExact(number)) {
         x = PyFloat_AS_DOUBLE(number);
     }
-    else
-    {
+    else {
         math_module_state *state = get_math_module_state(module);
         PyObject *method = _PyObject_LookupSpecial(number, state->str___floor__);
         if (method != NULL) {
@@ -1247,7 +1216,7 @@ FUNC1(tanh, tanh, 0,
       "Return the hyperbolic tangent of x.")
 
 /* Precision summation function as msum() by Raymond Hettinger in
-   <http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/393090>,
+   <https://code.activestate.com/recipes/393090-binary-floating-point-summation-accurate-to-full-p/>,
    enhanced with the exact partials sum and roundoff from Mark
    Dickinson's post at <http://bugs.python.org/file10357/msum4.py>.
    See those links for more details, proofs and other references.
@@ -1348,14 +1317,14 @@ math.fsum
     seq: object
     /
 
-Return an accurate floating point sum of values in the iterable seq.
+Return an accurate floating-point sum of values in the iterable seq.
 
-Assumes IEEE-754 floating point arithmetic.
+Assumes IEEE-754 floating-point arithmetic.
 [clinic start generated code]*/
 
 static PyObject *
 math_fsum(PyObject *module, PyObject *seq)
-/*[clinic end generated code: output=ba5c672b87fe34fc input=c51b7d8caf6f6e82]*/
+/*[clinic end generated code: output=ba5c672b87fe34fc input=4506244ded6057dc]*/
 {
     PyObject *item, *iter, *sum = NULL;
     Py_ssize_t i, j, n = 0, m = NUM_PARTIALS;
@@ -1397,17 +1366,17 @@ math_fsum(PyObject *module, PyObject *seq)
 
         n = i;                              /* ps[i:] = [x] */
         if (x != 0.0) {
-            if (! Py_IS_FINITE(x)) {
+            if (! isfinite(x)) {
                 /* a nonfinite x could arise either as
                    a result of intermediate overflow, or
                    as a result of a nan or inf in the
                    summands */
-                if (Py_IS_FINITE(xsave)) {
+                if (isfinite(xsave)) {
                     PyErr_SetString(PyExc_OverflowError,
                           "intermediate overflow in fsum");
                     goto _fsum_error;
                 }
-                if (Py_IS_INFINITY(xsave))
+                if (isinf(xsave))
                     inf_sum += xsave;
                 special_sum += xsave;
                 /* reset partials */
@@ -1421,7 +1390,7 @@ math_fsum(PyObject *module, PyObject *seq)
     }
 
     if (special_sum != 0.0) {
-        if (Py_IS_NAN(inf_sum))
+        if (isnan(inf_sum))
             PyErr_SetString(PyExc_ValueError,
                             "-inf + inf in fsum");
         else
@@ -1688,7 +1657,7 @@ math_isqrt(PyObject *module, PyObject *n)
 /*[clinic end generated code: output=35a6f7f980beab26 input=5b6e7ae4fa6c43d6]*/
 {
     int a_too_large, c_bit_length;
-    size_t c, d;
+    int64_t c, d;
     uint64_t m;
     uint32_t u;
     PyObject *a = NULL, *b;
@@ -1711,14 +1680,13 @@ math_isqrt(PyObject *module, PyObject *n)
 
     /* c = (n.bit_length() - 1) // 2 */
     c = _PyLong_NumBits(n);
-    if (c == (size_t)(-1)) {
-        goto error;
-    }
-    c = (c - 1U) / 2U;
+    assert(c > 0);
+    assert(!PyErr_Occurred());
+    c = (c - 1) / 2;
 
     /* Fast path: if c <= 31 then n < 2**64 and we can compute directly with a
        fast, almost branch-free algorithm. */
-    if (c <= 31U) {
+    if (c <= 31) {
         int shift = 31 - (int)c;
         m = (uint64_t)PyLong_AsUnsignedLongLong(n);
         Py_DECREF(n);
@@ -1735,13 +1703,13 @@ math_isqrt(PyObject *module, PyObject *n)
 
     /* From n >= 2**64 it follows that c.bit_length() >= 6. */
     c_bit_length = 6;
-    while ((c >> c_bit_length) > 0U) {
+    while ((c >> c_bit_length) > 0) {
         ++c_bit_length;
     }
 
     /* Initialise d and a. */
     d = c >> (c_bit_length - 5);
-    b = _PyLong_Rshift(n, 2U*c - 62U);
+    b = _PyLong_Rshift(n, 2*c - 62);
     if (b == NULL) {
         goto error;
     }
@@ -1758,12 +1726,12 @@ math_isqrt(PyObject *module, PyObject *n)
 
     for (int s = c_bit_length - 6; s >= 0; --s) {
         PyObject *q;
-        size_t e = d;
+        int64_t e = d;
 
         d = c >> s;
 
         /* q = (n >> 2*c - e - d + 1) // a */
-        q = _PyLong_Rshift(n, 2U*c - d - e + 1U);
+        q = _PyLong_Rshift(n, 2*c - d - e + 1);
         if (q == NULL) {
             goto error;
         }
@@ -1773,7 +1741,7 @@ math_isqrt(PyObject *module, PyObject *n)
         }
 
         /* a = (a << d - 1 - e) + q */
-        Py_SETREF(a, _PyLong_Lshift(a, d - 1U - e));
+        Py_SETREF(a, _PyLong_Lshift(a, d - 1 - e));
         if (a == NULL) {
             Py_DECREF(q);
             goto error;
@@ -2068,11 +2036,6 @@ math_trunc(PyObject *module, PyObject *x)
         return PyFloat_Type.tp_as_number->nb_int(x);
     }
 
-    if (!_PyType_IsReady(Py_TYPE(x))) {
-        if (PyType_Ready(Py_TYPE(x)) < 0)
-            return NULL;
-    }
-
     math_module_state *state = get_math_module_state(module);
     trunc = _PyObject_LookupSpecial(x, state->str___trunc__);
     if (trunc == NULL) {
@@ -2107,7 +2070,7 @@ math_frexp_impl(PyObject *module, double x)
     int i;
     /* deal with special cases directly, to sidestep platform
        differences */
-    if (Py_IS_NAN(x) || Py_IS_INFINITY(x) || !x) {
+    if (isnan(x) || isinf(x) || !x) {
         i = 0;
     }
     else {
@@ -2152,7 +2115,7 @@ math_ldexp_impl(PyObject *module, double x, PyObject *i)
         return NULL;
     }
 
-    if (x == 0. || !Py_IS_FINITE(x)) {
+    if (x == 0. || !isfinite(x)) {
         /* NaNs, zeros and infinities are returned unchanged */
         r = x;
         errno = 0;
@@ -2167,7 +2130,7 @@ math_ldexp_impl(PyObject *module, double x, PyObject *i)
     } else {
         errno = 0;
         r = ldexp(x, (int)exp);
-        if (Py_IS_INFINITY(r))
+        if (isinf(r))
             errno = ERANGE;
     }
 
@@ -2195,9 +2158,9 @@ math_modf_impl(PyObject *module, double x)
     double y;
     /* some platforms don't do the right thing for NaNs and
        infinities, so we take care of special cases directly. */
-    if (Py_IS_INFINITY(x))
+    if (isinf(x))
         return Py_BuildValue("(dd)", copysign(0., x), x);
-    else if (Py_IS_NAN(x))
+    else if (isnan(x))
         return Py_BuildValue("(dd)", x, x);
 
     errno = 0;
@@ -2221,7 +2184,7 @@ loghelper(PyObject* arg, double (*func)(double))
     /* If it is int, do it ourselves. */
     if (PyLong_Check(arg)) {
         double x, result;
-        Py_ssize_t e;
+        int64_t e;
 
         /* Negative or zero inputs give a ValueError. */
         if (!_PyLong_IsPositive((PyLongObject *)arg)) {
@@ -2238,8 +2201,8 @@ loghelper(PyObject* arg, double (*func)(double))
                to compute the log anyway.  Clear the exception and continue. */
             PyErr_Clear();
             x = _PyLong_Frexp((PyLongObject *)arg, &e);
-            if (x == -1.0 && PyErr_Occurred())
-                return NULL;
+            assert(e >= 0);
+            assert(!PyErr_Occurred());
             /* Value is ~= x * 2**e, so the log ~= log(x) + log(2) * e. */
             result = func(x) + func(2.0) * e;
         }
@@ -2321,6 +2284,48 @@ math_log10(PyObject *module, PyObject *x)
 
 
 /*[clinic input]
+math.fma
+
+    x: double
+    y: double
+    z: double
+    /
+
+Fused multiply-add operation.
+
+Compute (x * y) + z with a single round.
+[clinic start generated code]*/
+
+static PyObject *
+math_fma_impl(PyObject *module, double x, double y, double z)
+/*[clinic end generated code: output=4fc8626dbc278d17 input=e3ad1f4a4c89626e]*/
+{
+    double r = fma(x, y, z);
+
+    /* Fast path: if we got a finite result, we're done. */
+    if (isfinite(r)) {
+        return PyFloat_FromDouble(r);
+    }
+
+    /* Non-finite result. Raise an exception if appropriate, else return r. */
+    if (isnan(r)) {
+        if (!isnan(x) && !isnan(y) && !isnan(z)) {
+            /* NaN result from non-NaN inputs. */
+            PyErr_SetString(PyExc_ValueError, "invalid operation in fma");
+            return NULL;
+        }
+    }
+    else if (isfinite(x) && isfinite(y) && isfinite(z)) {
+        /* Infinite result from finite inputs. */
+        PyErr_SetString(PyExc_OverflowError, "overflow in fma");
+        return NULL;
+    }
+
+    return PyFloat_FromDouble(r);
+}
+
+
+/*[clinic input]
 math.fmod
 
     x: double
@@ -2338,12 +2343,21 @@ math_fmod_impl(PyObject *module, double x, double y)
 {
     double r;
     /* fmod(x, +/-Inf) returns x for finite x. */
-    if (Py_IS_INFINITY(y) && Py_IS_FINITE(x))
+    if (isinf(y) && isfinite(x))
         return PyFloat_FromDouble(x);
     errno = 0;
     r = fmod(x, y);
-    if (Py_IS_NAN(r)) {
-        if (!Py_IS_NAN(x) && !Py_IS_NAN(y))
+#ifdef _MSC_VER
+    /* Windows (e.g. Windows 10 with MSC v.1916) loose sign
+       for zero result.  But C99+ says: "if y is nonzero, the result
+       has the same sign as x".
+     */
+    if (r == 0.0 && y != 0.0) {
+        r = copysign(r, x);
+    }
+#endif
+    if (isnan(r)) {
+        if (!isnan(x) && !isnan(y))
             errno = EDOM;
         else
             errno = 0;
@@ -2410,7 +2424,7 @@ Since lo**2 is less than 1/2 ulp(csum), we have csum+lo*lo == csum.
 To minimize loss of information during the accumulation of fractional
 values, each term has a separate accumulator.  This also breaks up
 sequential dependencies in the inner loop so the CPU can maximize
-floating point throughput. [4]  On an Apple M1 Max, hypot(*vec)
+floating-point throughput. [4]  On an Apple M1 Max, hypot(*vec)
 takes only 3.33 µsec when len(vec) == 1000.
 
 The square root differential correction is needed because a
@@ -2465,7 +2479,7 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
     int max_e;
     Py_ssize_t i;
 
-    if (Py_IS_INFINITY(max)) {
+    if (isinf(max)) {
         return max;
     }
     if (found_nan) {
@@ -2487,7 +2501,7 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
     assert(max * scale < 1.0);
     for (i=0 ; i < n ; i++) {
         x = vec[i];
-        assert(Py_IS_FINITE(x) && fabs(x) <= max);
+        assert(isfinite(x) && fabs(x) <= max);
         x *= scale;                     // lossless scaling
         assert(fabs(x) < 1.0);
         pr = dl_mul(x, x);              // lossless squaring
@@ -2564,7 +2578,7 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
         goto error_exit;
     }
     if (n > NUM_STACK_ELEMS) {
-        diffs = (double *) PyObject_Malloc(n * sizeof(double));
+        diffs = (double *) PyMem_Malloc(n * sizeof(double));
         if (diffs == NULL) {
             PyErr_NoMemory();
             goto error_exit;
@@ -2577,14 +2591,14 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
         ASSIGN_DOUBLE(qx, item, error_exit);
         x = fabs(px - qx);
         diffs[i] = x;
-        found_nan |= Py_IS_NAN(x);
+        found_nan |= isnan(x);
         if (x > max) {
             max = x;
         }
     }
     result = vector_norm(n, diffs, max, found_nan);
     if (diffs != diffs_on_stack) {
-        PyObject_Free(diffs);
+        PyMem_Free(diffs);
     }
     if (p_allocated) {
         Py_DECREF(p);
@@ -2596,7 +2610,7 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
 
   error_exit:
     if (diffs != diffs_on_stack) {
-        PyObject_Free(diffs);
+        PyMem_Free(diffs);
     }
     if (p_allocated) {
         Py_DECREF(p);
@@ -2620,7 +2634,7 @@ math_hypot(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     double *coordinates = coord_on_stack;
 
     if (nargs > NUM_STACK_ELEMS) {
-        coordinates = (double *) PyObject_Malloc(nargs * sizeof(double));
+        coordinates = (double *) PyMem_Malloc(nargs * sizeof(double));
         if (coordinates == NULL) {
             return PyErr_NoMemory();
         }
@@ -2630,20 +2644,20 @@ math_hypot(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         ASSIGN_DOUBLE(x, item, error_exit);
         x = fabs(x);
         coordinates[i] = x;
-        found_nan |= Py_IS_NAN(x);
+        found_nan |= isnan(x);
         if (x > max) {
             max = x;
         }
     }
     result = vector_norm(nargs, coordinates, max, found_nan);
     if (coordinates != coord_on_stack) {
-        PyObject_Free(coordinates);
+        PyMem_Free(coordinates);
     }
     return PyFloat_FromDouble(result);
 
   error_exit:
     if (coordinates != coord_on_stack) {
-        PyObject_Free(coordinates);
+        PyMem_Free(coordinates);
     }
     return NULL;
 }
@@ -2830,7 +2844,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                         PyErr_Clear();
                         goto finalize_flt_path;
                     }
-                } else if (q_type_float && (PyLong_CheckExact(p_i) || PyBool_Check(q_i))) {
+                } else if (q_type_float && (PyLong_CheckExact(p_i) || PyBool_Check(p_i))) {
                     flt_q = PyFloat_AS_DOUBLE(q_i);
                     flt_p = PyLong_AsDouble(p_i);
                     if (flt_p == -1.0 && PyErr_Occurred()) {
@@ -2933,14 +2947,14 @@ math_pow_impl(PyObject *module, double x, double y)
     /* deal directly with IEEE specials, to cope with problems on various
        platforms whose semantics don't exactly match C99 */
     r = 0.; /* silence compiler warning */
-    if (!Py_IS_FINITE(x) || !Py_IS_FINITE(y)) {
+    if (!isfinite(x) || !isfinite(y)) {
         errno = 0;
-        if (Py_IS_NAN(x))
+        if (isnan(x))
             r = y == 0. ? 1. : x; /* NaN**0 = 1 */
-        else if (Py_IS_NAN(y))
+        else if (isnan(y))
             r = x == 1. ? 1. : y; /* 1**NaN = 1 */
-        else if (Py_IS_INFINITY(x)) {
-            odd_y = Py_IS_FINITE(y) && fmod(fabs(y), 2.0) == 1.0;
+        else if (isinf(x)) {
+            odd_y = isfinite(y) && fmod(fabs(y), 2.0) == 1.0;
             if (y > 0.)
                 r = odd_y ? x : fabs(x);
             else if (y == 0.)
@@ -2949,7 +2963,7 @@ math_pow_impl(PyObject *module, double x, double y)
                 r = odd_y ? copysign(0., x) : 0.;
         }
         else {
-            assert(Py_IS_INFINITY(y));
+            assert(isinf(y));
             if (fabs(x) == 1.0)
                 r = 1.;
             else if (y > 0. && fabs(x) > 1.0)
@@ -2967,8 +2981,8 @@ math_pow_impl(PyObject *module, double x, double y)
         r = pow(x, y);
         /* a NaN result should arise only from (-ve)**(finite
            non-integer); in this case we want to raise ValueError. */
-        if (!Py_IS_FINITE(r)) {
-            if (Py_IS_NAN(r)) {
+        if (!isfinite(r)) {
+            if (isnan(r)) {
                 errno = EDOM;
             }
             /*
@@ -2976,7 +2990,7 @@ math_pow_impl(PyObject *module, double x, double y)
                (A) (+/-0.)**negative (-> divide-by-zero)
                (B) overflow of x**y with x and y finite
             */
-            else if (Py_IS_INFINITY(r)) {
+            else if (isinf(r)) {
                 if (x == 0.)
                     errno = EDOM;
                 else
@@ -3042,7 +3056,7 @@ static PyObject *
 math_isfinite_impl(PyObject *module, double x)
 /*[clinic end generated code: output=8ba1f396440c9901 input=46967d254812e54a]*/
 {
-    return PyBool_FromLong((long)Py_IS_FINITE(x));
+    return PyBool_FromLong((long)isfinite(x));
 }
 
 
@@ -3059,7 +3073,7 @@ static PyObject *
 math_isnan_impl(PyObject *module, double x)
 /*[clinic end generated code: output=f537b4d6df878c3e input=935891e66083f46a]*/
 {
-    return PyBool_FromLong((long)Py_IS_NAN(x));
+    return PyBool_FromLong((long)isnan(x));
 }
 
 
@@ -3076,7 +3090,7 @@ static PyObject *
 math_isinf_impl(PyObject *module, double x)
 /*[clinic end generated code: output=9f00cbec4de7b06b input=32630e4212cf961f]*/
 {
-    return PyBool_FromLong((long)Py_IS_INFINITY(x));
+    return PyBool_FromLong((long)isinf(x));
 }
 
 
@@ -3093,7 +3107,7 @@ math.isclose -> bool
         maximum difference for being considered "close", regardless of the
         magnitude of the input values
 
-Determine whether two floating point numbers are close in value.
+Determine whether two floating-point numbers are close in value.
 
 Return True if a is close in value to b, and False otherwise.
 
@@ -3108,7 +3122,7 @@ only close to themselves.
 static int
 math_isclose_impl(PyObject *module, double a, double b, double rel_tol,
                   double abs_tol)
-/*[clinic end generated code: output=b73070207511952d input=f28671871ea5bfba]*/
+/*[clinic end generated code: output=b73070207511952d input=12d41764468bfdb8]*/
 {
     double diff = 0.0;
 
@@ -3133,7 +3147,7 @@ math_isclose_impl(PyObject *module, double a, double b, double rel_tol,
        above.
     */
 
-    if (Py_IS_INFINITY(a) || Py_IS_INFINITY(b)) {
+    if (isinf(a) || isinf(b)) {
         return 0;
     }
 
@@ -3883,10 +3897,10 @@ math_nextafter_impl(PyObject *module, double x, double y, PyObject *steps)
            Bug fixed in bos.adt.libm 7.2.2.0 by APAR IV95512. */
         return PyFloat_FromDouble(y);
     }
-    if (Py_IS_NAN(x)) {
+    if (isnan(x)) {
         return PyFloat_FromDouble(x);
     }
-    if (Py_IS_NAN(y)) {
+    if (isnan(y)) {
         return PyFloat_FromDouble(y);
     }
 #endif
@@ -3932,10 +3946,10 @@ math_nextafter_impl(PyObject *module, double x, double y, PyObject *steps)
     if (usteps == 0) {
         return PyFloat_FromDouble(x);
     }
-    if (Py_IS_NAN(x)) {
+    if (isnan(x)) {
         return PyFloat_FromDouble(x);
     }
-    if (Py_IS_NAN(y)) {
+    if (isnan(y)) {
         return PyFloat_FromDouble(y);
     }
 
@@ -4001,16 +4015,16 @@ static double
 math_ulp_impl(PyObject *module, double x)
 /*[clinic end generated code: output=f5207867a9384dd4 input=31f9bfbbe373fcaa]*/
 {
-    if (Py_IS_NAN(x)) {
+    if (isnan(x)) {
         return x;
     }
     x = fabs(x);
-    if (Py_IS_INFINITY(x)) {
+    if (isinf(x)) {
         return x;
     }
     double inf = Py_INFINITY;
     double x2 = nextafter(x, inf);
-    if (Py_IS_INFINITY(x2)) {
+    if (isinf(x2)) {
         /* special case: x is the largest positive representable float */
         x2 = nextafter(x, -inf);
         return x - x2;
@@ -4093,6 +4107,7 @@ static PyMethodDef math_methods[] = {
     {"fabs",            math_fabs,      METH_O,         math_fabs_doc},
     MATH_FACTORIAL_METHODDEF
     MATH_FLOOR_METHODDEF
+    MATH_FMA_METHODDEF
     MATH_FMOD_METHODDEF
     MATH_FREXP_METHODDEF
     MATH_FSUM_METHODDEF
@@ -4133,6 +4148,7 @@ static PyMethodDef math_methods[] = {
 static PyModuleDef_Slot math_slots[] = {
     {Py_mod_exec, math_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

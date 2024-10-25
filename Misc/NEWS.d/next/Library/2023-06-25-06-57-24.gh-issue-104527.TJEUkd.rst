@@ -1,1 +1,0 @@
-Zipapp will now skip over apending an archive to itself.

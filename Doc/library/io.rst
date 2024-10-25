@@ -1,5 +1,5 @@
-:mod:`io` --- Core tools for working with streams
-=================================================
+:mod:`!io` --- Core tools for working with streams
+==================================================
 
 .. module:: io
    :synopsis: Core tools for working with streams.
@@ -55,7 +55,7 @@ the backing store is natively made of bytes (such as in the case of a file),
 encoding and decoding of data is made transparently as well as optional
 translation of platform-specific newline characters.
 
-The easiest way to create a text stream is with :meth:`open()`, optionally
+The easiest way to create a text stream is with :meth:`open`, optionally
 specifying an encoding::
 
    f = open("myfile.txt", "r", encoding="utf-8")
@@ -77,7 +77,7 @@ objects.  No encoding, decoding, or newline translation is performed.  This
 category of streams can be used for all kinds of non-text data, and also when
 manual control over the handling of text data is desired.
 
-The easiest way to create a binary stream is with :meth:`open()` with ``'b'`` in
+The easiest way to create a binary stream is with :meth:`open` with ``'b'`` in
 the mode string::
 
    f = open("myfile.jpg", "rb")
@@ -253,12 +253,12 @@ The implementation of I/O streams is organized as a hierarchy of classes.  First
 specify the various categories of streams, then concrete classes providing the
 standard stream implementations.
 
-   .. note::
+.. note::
 
-      The abstract base classes also provide default implementations of some
-      methods in order to help implementation of concrete stream classes.  For
-      example, :class:`BufferedIOBase` provides unoptimized implementations of
-      :meth:`!readinto` and :meth:`!readline`.
+   The abstract base classes also provide default implementations of some
+   methods in order to help implementation of concrete stream classes.  For
+   example, :class:`BufferedIOBase` provides unoptimized implementations of
+   :meth:`!readinto` and :meth:`!readline`.
 
 At the top of the I/O hierarchy is the abstract base class :class:`IOBase`.  It
 defines the basic interface to a stream.  Note, however, that there is no
@@ -466,7 +466,7 @@ I/O Base Classes
 
 .. class:: RawIOBase
 
-   Base class for raw binary streams.  It inherits :class:`IOBase`.
+   Base class for raw binary streams.  It inherits from :class:`IOBase`.
 
    Raw binary streams typically provide low-level access to an underlying OS
    device or API, and do not try to encapsulate it in high-level primitives
@@ -519,7 +519,7 @@ I/O Base Classes
 .. class:: BufferedIOBase
 
    Base class for binary streams that support some kind of buffering.
-   It inherits :class:`IOBase`.
+   It inherits from :class:`IOBase`.
 
    The main difference with :class:`RawIOBase` is that methods :meth:`read`,
    :meth:`readinto` and :meth:`write` will try (respectively) to read as much
@@ -633,7 +633,7 @@ Raw File I/O
 .. class:: FileIO(name, mode='r', closefd=True, opener=None)
 
    A raw binary stream representing an OS-level file containing bytes data.  It
-   inherits :class:`RawIOBase`.
+   inherits from :class:`RawIOBase`.
 
    The *name* can be one of two things:
 
@@ -696,7 +696,7 @@ than raw I/O does.
 
 .. class:: BytesIO(initial_bytes=b'')
 
-   A binary stream using an in-memory bytes buffer.  It inherits
+   A binary stream using an in-memory bytes buffer.  It inherits from
    :class:`BufferedIOBase`.  The buffer is discarded when the
    :meth:`~IOBase.close` method is called.
 
@@ -745,7 +745,7 @@ than raw I/O does.
 .. class:: BufferedReader(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
    A buffered binary stream providing higher-level access to a readable, non
-   seekable :class:`RawIOBase` raw binary stream.  It inherits
+   seekable :class:`RawIOBase` raw binary stream.  It inherits from
    :class:`BufferedIOBase`.
 
    When reading data from this object, a larger amount of data may be
@@ -783,7 +783,7 @@ than raw I/O does.
 .. class:: BufferedWriter(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
    A buffered binary stream providing higher-level access to a writeable, non
-   seekable :class:`RawIOBase` raw binary stream.  It inherits
+   seekable :class:`RawIOBase` raw binary stream.  It inherits from
    :class:`BufferedIOBase`.
 
    When writing to this object, data is normally placed into an internal
@@ -818,7 +818,7 @@ than raw I/O does.
 .. class:: BufferedRandom(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
    A buffered binary stream providing higher-level access to a seekable
-   :class:`RawIOBase` raw binary stream.  It inherits :class:`BufferedReader`
+   :class:`RawIOBase` raw binary stream.  It inherits from :class:`BufferedReader`
    and :class:`BufferedWriter`.
 
    The constructor creates a reader and writer for a seekable raw stream, given
@@ -834,7 +834,7 @@ than raw I/O does.
 
    A buffered binary stream providing higher-level access to two non seekable
    :class:`RawIOBase` raw binary streams---one readable, the other writeable.
-   It inherits :class:`BufferedIOBase`.
+   It inherits from :class:`BufferedIOBase`.
 
    *reader* and *writer* are :class:`RawIOBase` objects that are readable and
    writeable respectively.  If the *buffer_size* is omitted it defaults to
@@ -857,7 +857,7 @@ Text I/O
 .. class:: TextIOBase
 
    Base class for text streams.  This class provides a character and line based
-   interface to stream I/O.  It inherits :class:`IOBase`.
+   interface to stream I/O.  It inherits from :class:`IOBase`.
 
    :class:`TextIOBase` provides or overrides these data attributes and
    methods in addition to those from :class:`IOBase`:
@@ -946,11 +946,11 @@ Text I/O
                          line_buffering=False, write_through=False)
 
    A buffered text stream providing higher-level access to a
-   :class:`BufferedIOBase` buffered binary stream.  It inherits
+   :class:`BufferedIOBase` buffered binary stream.  It inherits from
    :class:`TextIOBase`.
 
    *encoding* gives the name of the encoding that the stream will be decoded or
-   encoded with.  It defaults to :func:`locale.getencoding()`.
+   encoded with.  It defaults to :func:`locale.getencoding`.
    ``encoding="locale"`` can be used to specify the current locale's encoding
    explicitly. See :ref:`io-text-encoding` for more information.
 
@@ -1073,7 +1073,7 @@ Text I/O
 
 .. class:: StringIO(initial_value='', newline='\n')
 
-   A text stream using an in-memory text buffer.  It inherits
+   A text stream using an in-memory text buffer.  It inherits from
    :class:`TextIOBase`.
 
    The text buffer is discarded when the :meth:`~IOBase.close` method is
@@ -1124,7 +1124,7 @@ Text I/O
 .. class:: IncrementalNewlineDecoder
 
    A helper codec that decodes newlines for :term:`universal newlines` mode.
-   It inherits :class:`codecs.IncrementalDecoder`.
+   It inherits from :class:`codecs.IncrementalDecoder`.
 
 
 Performance
@@ -1182,7 +1182,7 @@ re-enter a buffered object which it is already accessing, a :exc:`RuntimeError`
 is raised.  Note this doesn't prohibit a different thread from entering the
 buffered object.
 
-The above implicitly extends to text files, since the :func:`open()` function
+The above implicitly extends to text files, since the :func:`open` function
 will wrap a buffered object inside a :class:`TextIOWrapper`.  This includes
-standard streams and therefore affects the built-in :func:`print()` function as
+standard streams and therefore affects the built-in :func:`print` function as
 well.

@@ -3,6 +3,7 @@ preserve
 [clinic start generated code]*/
 
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_operator_truth__doc__,
 "truth($module, a, /)\n"
@@ -1392,6 +1393,24 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_operator_is_none__doc__,
+"is_none($module, a, /)\n"
+"--\n"
+"\n"
+"Same as a is None.");
+
+#define _OPERATOR_IS_NONE_METHODDEF    \
+    {"is_none", (PyCFunction)_operator_is_none, METH_O, _operator_is_none__doc__},
+
+PyDoc_STRVAR(_operator_is_not_none__doc__,
+"is_not_none($module, a, /)\n"
+"--\n"
+"\n"
+"Same as a is not None.");
+
+#define _OPERATOR_IS_NOT_NONE_METHODDEF    \
+    {"is_not_none", (PyCFunction)_operator_is_not_none, METH_O, _operator_is_not_none__doc__},
+
 PyDoc_STRVAR(_operator_length_hint__doc__,
 "length_hint($module, obj, default=0, /)\n"
 "--\n"
@@ -1488,4 +1507,4 @@ _operator__compare_digest(PyObject *module, PyObject *const *args, Py_ssize_t na
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9658aca50a9ad991 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=972e2543c4fcf1ba input=a9049054013a1b77]*/

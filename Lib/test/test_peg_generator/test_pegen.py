@@ -42,6 +42,15 @@ class TestPegen(unittest.TestCase):
         )
         self.assertEqual(repr(rules["term"]), expected_repr)
 
+    def test_repeated_rules(self) -> None:
+        grammar_source = """
+        start: the_rule NEWLINE
+        the_rule: 'b' NEWLINE
+        the_rule: 'a' NEWLINE
+        """
+        with self.assertRaisesRegex(GrammarError, "Repeated rule 'the_rule'"):
+            parse_string(grammar_source, GrammarParser)
+
     def test_long_rule_str(self) -> None:
         grammar_source = """
         start: zero | one | one zero | one one | one zero zero | one zero one | one one zero | one one one
@@ -475,7 +484,7 @@ class TestPegen(unittest.TestCase):
 
     def test_python_expr(self) -> None:
         grammar = """
-        start: expr NEWLINE? $ { ast.Expression(expr, lineno=1, col_offset=0) }
+        start: expr NEWLINE? $ { ast.Expression(expr) }
         expr: ( expr '+' term { ast.BinOp(expr, ast.Add(), term, lineno=expr.lineno, col_offset=expr.col_offset, end_lineno=term.end_lineno, end_col_offset=term.end_col_offset) }
             | expr '-' term { ast.BinOp(expr, ast.Sub(), term, lineno=expr.lineno, col_offset=expr.col_offset, end_lineno=term.end_lineno, end_col_offset=term.end_col_offset) }
             | term { term }
@@ -884,7 +893,7 @@ class TestPegen(unittest.TestCase):
 
     def test_locations_in_alt_action_and_group(self) -> None:
         grammar = """
-        start: t=term NEWLINE? $ { ast.Expression(t, LOCATIONS) }
+        start: t=term NEWLINE? $ { ast.Expression(t) }
         term:
             | l=term '*' r=factor { ast.BinOp(l, ast.Mult(), r, LOCATIONS) }
             | l=term '/' r=factor { ast.BinOp(l, ast.Div(), r, LOCATIONS) }

@@ -1,1 +1,0 @@
-Fix rare concurrency bug in lock acquisition by the logging package.

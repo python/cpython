@@ -1,2 +1,0 @@
-:c:func:`PyType_FromMetaclass` now allows metaclasses with ``tp_new``
-set to ``NULL``.

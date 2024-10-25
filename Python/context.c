@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_VectorcallTstate()
 #include "pycore_context.h"
+#include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
 #include "pycore_gc.h"            // _PyObject_GC_MAY_BE_TRACKED()
 #include "pycore_hamt.h"
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -64,16 +65,6 @@ static int
 contextvar_del(PyContextVar *var);
 
 
-#if PyContext_MAXFREELIST > 0
-static struct _Py_context_state *
-get_context_state(void)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return &interp->context;
-}
-#endif
-
-
 PyObject *
 _PyContext_NewHamtForTests(void)
 {
@@ -108,6 +99,96 @@ PyContext_CopyCurrent(void)
     return (PyObject *)context_new_from_vars(ctx->ctx_vars);
 }
 
+static const char *
+context_event_name(PyContextEvent event) {
+    switch (event) {
+        case Py_CONTEXT_SWITCHED:
+            return "Py_CONTEXT_SWITCHED";
+        default:
+            return "?";
+    }
+    Py_UNREACHABLE();
+}
+
+static void
+notify_context_watchers(PyThreadState *ts, PyContextEvent event, PyObject *ctx)
+{
+    if (ctx == NULL) {
+        // This will happen after exiting the last context in the stack, which
+        // can occur if context_get was never called before entering a context
+        // (e.g., called `contextvars.Context().run()` on a fresh thread, as
+        // PyContext_Enter doesn't call context_get).
+        ctx = Py_None;
+    }
+    assert(Py_REFCNT(ctx) > 0);
+    PyInterpreterState *interp = ts->interp;
+    assert(interp->_initialized);
+    uint8_t bits = interp->active_context_watchers;
+    int i = 0;
+    while (bits) {
+        assert(i < CONTEXT_MAX_WATCHERS);
+        if (bits & 1) {
+            PyContext_WatchCallback cb = interp->context_watchers[i];
+            assert(cb != NULL);
+            if (cb(event, ctx) < 0) {
+                PyErr_FormatUnraisable(
+                    "Exception ignored in %s watcher callback for %R",
+                    context_event_name(event), ctx);
+            }
+        }
+        i++;
+        bits >>= 1;
+    }
+}
+
+
+int
+PyContext_AddWatcher(PyContext_WatchCallback callback)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp->_initialized);
+
+    for (int i = 0; i < CONTEXT_MAX_WATCHERS; i++) {
+        if (!interp->context_watchers[i]) {
+            interp->context_watchers[i] = callback;
+            interp->active_context_watchers |= (1 << i);
+            return i;
+        }
+    }
+
+    PyErr_SetString(PyExc_RuntimeError, "no more context watcher IDs available");
+    return -1;
+}
+
+
+int
+PyContext_ClearWatcher(int watcher_id)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp->_initialized);
+    if (watcher_id < 0 || watcher_id >= CONTEXT_MAX_WATCHERS) {
+        PyErr_Format(PyExc_ValueError, "Invalid context watcher ID %d", watcher_id);
+        return -1;
+    }
+    if (!interp->context_watchers[watcher_id]) {
+        PyErr_Format(PyExc_ValueError, "No context watcher set for ID %d", watcher_id);
+        return -1;
+    }
+    interp->context_watchers[watcher_id] = NULL;
+    interp->active_context_watchers &= ~(1 << watcher_id);
+    return 0;
+}
+
+
+static inline void
+context_switched(PyThreadState *ts)
+{
+    ts->context_ver++;
+    // ts->context is used instead of context_get() because context_get() might
+    // throw if ts->context is NULL.
+    notify_context_watchers(ts, Py_CONTEXT_SWITCHED, ts->context);
+}
+
 
 static int
 _PyContext_Enter(PyThreadState *ts, PyObject *octx)
@@ -125,8 +206,7 @@ _PyContext_Enter(PyThreadState *ts, PyObject *octx)
     ctx->ctx_entered = 1;
 
     ts->context = Py_NewRef(ctx);
-    ts->context_ver++;
-
+    context_switched(ts);
     return 0;
 }
 
@@ -161,11 +241,10 @@ _PyContext_Exit(PyThreadState *ts, PyObject *octx)
     }
 
     Py_SETREF(ts->context, (PyObject *)ctx->ctx_prev);
-    ts->context_ver++;
 
     ctx->ctx_prev = NULL;
     ctx->ctx_entered = 0;
-
+    context_switched(ts);
     return 0;
 }
 
@@ -203,6 +282,7 @@ PyContextVar_Get(PyObject *ovar, PyObject *def, PyObject **val)
         goto not_found;
     }
 
+#ifndef Py_GIL_DISABLED
     if (var->var_cached != NULL &&
             var->var_cached_tsid == ts->id &&
             var->var_cached_tsver == ts->context_ver)
@@ -210,6 +290,7 @@ PyContextVar_Get(PyObject *ovar, PyObject *def, PyObject **val)
         *val = var->var_cached;
         goto found;
     }
+#endif
 
     assert(PyContext_CheckExact(ts->context));
     PyHamtObject *vars = ((PyContext *)ts->context)->ctx_vars;
@@ -221,9 +302,11 @@ PyContextVar_Get(PyObject *ovar, PyObject *def, PyObject **val)
     }
     if (res == 1) {
         assert(found != NULL);
+#ifndef Py_GIL_DISABLED
         var->var_cached = found;  /* borrow */
         var->var_cached_tsid = ts->id;
         var->var_cached_tsver = ts->context_ver;
+#endif
 
         *val = found;
         goto found;
@@ -339,24 +422,8 @@ class _contextvars.Context "PyContext *" "&PyContext_Type"
 static inline PyContext *
 _context_alloc(void)
 {
-    PyContext *ctx;
-#if PyContext_MAXFREELIST > 0
-    struct _Py_context_state *state = get_context_state();
-#ifdef Py_DEBUG
-    // _context_alloc() must not be called after _PyContext_Fini()
-    assert(state->numfree != -1);
-#endif
-    if (state->numfree) {
-        state->numfree--;
-        ctx = state->freelist;
-        state->freelist = (PyContext *)ctx->ctx_weakreflist;
-        OBJECT_STAT_INC(from_freelist);
-        ctx->ctx_weakreflist = NULL;
-        _Py_NewReference((PyObject *)ctx);
-    }
-    else
-#endif
-    {
+    PyContext *ctx = _Py_FREELIST_POP(PyContext, contexts);
+    if (ctx == NULL) {
         ctx = PyObject_GC_New(PyContext, &PyContext_Type);
         if (ctx == NULL) {
             return NULL;
@@ -471,23 +538,7 @@ context_tp_dealloc(PyContext *self)
     }
     (void)context_tp_clear(self);
 
-#if PyContext_MAXFREELIST > 0
-    struct _Py_context_state *state = get_context_state();
-#ifdef Py_DEBUG
-    // _context_alloc() must not be called after _PyContext_Fini()
-    assert(state->numfree != -1);
-#endif
-    if (state->numfree < PyContext_MAXFREELIST) {
-        state->numfree++;
-        self->ctx_weakreflist = (PyObject *)state->freelist;
-        state->freelist = self;
-        OBJECT_STAT_INC(to_freelist);
-    }
-    else
-#endif
-    {
-        Py_TYPE(self)->tp_free(self);
-    }
+    _Py_FREELIST_FREE(contexts, self, Py_TYPE(self)->tp_free);
 }
 
 static PyObject *
@@ -669,6 +720,7 @@ context_run(PyContext *self, PyObject *const *args,
         ts, args[0], args + 1, nargs - 1, kwnames);
 
     if (_PyContext_Exit(ts, (PyObject *)self)) {
+        Py_XDECREF(call_result);
         return NULL;
     }
 
@@ -730,8 +782,10 @@ PyTypeObject PyContext_Type = {
 static int
 contextvar_set(PyContextVar *var, PyObject *val)
 {
+#ifndef Py_GIL_DISABLED
     var->var_cached = NULL;
     PyThreadState *ts = _PyThreadState_GET();
+#endif
 
     PyContext *ctx = context_get();
     if (ctx == NULL) {
@@ -746,16 +800,20 @@ contextvar_set(PyContextVar *var, PyObject *val)
 
     Py_SETREF(ctx->ctx_vars, new_vars);
 
+#ifndef Py_GIL_DISABLED
     var->var_cached = val;  /* borrow */
     var->var_cached_tsid = ts->id;
     var->var_cached_tsver = ts->context_ver;
+#endif
     return 0;
 }
 
 static int
 contextvar_del(PyContextVar *var)
 {
+#ifndef Py_GIL_DISABLED
     var->var_cached = NULL;
+#endif
 
     PyContext *ctx = context_get();
     if (ctx == NULL) {
@@ -830,9 +888,11 @@ contextvar_new(PyObject *name, PyObject *def)
 
     var->var_default = Py_XNewRef(def);
 
+#ifndef Py_GIL_DISABLED
     var->var_cached = NULL;
     var->var_cached_tsid = 0;
     var->var_cached_tsver = 0;
+#endif
 
     if (_PyObject_GC_MAY_BE_TRACKED(name) ||
             (def != NULL && _PyObject_GC_MAY_BE_TRACKED(def)))
@@ -870,9 +930,11 @@ contextvar_tp_clear(PyContextVar *self)
 {
     Py_CLEAR(self->var_name);
     Py_CLEAR(self->var_default);
+#ifndef Py_GIL_DISABLED
     self->var_cached = NULL;
     self->var_cached_tsid = 0;
     self->var_cached_tsver = 0;
+#endif
     return 0;
 }
 
@@ -901,56 +963,39 @@ contextvar_tp_hash(PyContextVar *self)
 static PyObject *
 contextvar_tp_repr(PyContextVar *self)
 {
-    _PyUnicodeWriter writer;
-
-    _PyUnicodeWriter_Init(&writer);
-
-    if (_PyUnicodeWriter_WriteASCIIString(
-            &writer, "<ContextVar name=", 17) < 0)
-    {
-        goto error;
+    // Estimation based on the shortest name and default value,
+    // but maximize the pointer size.
+    // "<ContextVar name='a' at 0x1234567812345678>"
+    // "<ContextVar name='a' default=1 at 0x1234567812345678>"
+    Py_ssize_t estimate = self->var_default ? 53 : 43;
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(estimate);
+    if (writer == NULL) {
+        return NULL;
     }
 
-    PyObject *name = PyObject_Repr(self->var_name);
-    if (name == NULL) {
+    if (PyUnicodeWriter_WriteUTF8(writer, "<ContextVar name=", 17) < 0) {
         goto error;
     }
-    if (_PyUnicodeWriter_WriteStr(&writer, name) < 0) {
-        Py_DECREF(name);
+    if (PyUnicodeWriter_WriteRepr(writer, self->var_name) < 0) {
         goto error;
     }
-    Py_DECREF(name);
 
     if (self->var_default != NULL) {
-        if (_PyUnicodeWriter_WriteASCIIString(&writer, " default=", 9) < 0) {
+        if (PyUnicodeWriter_WriteUTF8(writer, " default=", 9) < 0) {
             goto error;
         }
-
-        PyObject *def = PyObject_Repr(self->var_default);
-        if (def == NULL) {
+        if (PyUnicodeWriter_WriteRepr(writer, self->var_default) < 0) {
             goto error;
         }
-        if (_PyUnicodeWriter_WriteStr(&writer, def) < 0) {
-            Py_DECREF(def);
-            goto error;
-        }
-        Py_DECREF(def);
     }
 
-    PyObject *addr = PyUnicode_FromFormat(" at %p>", self);
-    if (addr == NULL) {
+    if (PyUnicodeWriter_Format(writer, " at %p>", self) < 0) {
         goto error;
     }
-    if (_PyUnicodeWriter_WriteStr(&writer, addr) < 0) {
-        Py_DECREF(addr);
-        goto error;
-    }
-    Py_DECREF(addr);
-
-    return _PyUnicodeWriter_Finish(&writer);
+    return PyUnicodeWriter_Finish(writer);
 
 error:
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     return NULL;
 }
 
@@ -1121,48 +1166,31 @@ token_tp_dealloc(PyContextToken *self)
 static PyObject *
 token_tp_repr(PyContextToken *self)
 {
-    _PyUnicodeWriter writer;
-
-    _PyUnicodeWriter_Init(&writer);
-
-    if (_PyUnicodeWriter_WriteASCIIString(&writer, "<Token", 6) < 0) {
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        return NULL;
+    }
+    if (PyUnicodeWriter_WriteUTF8(writer, "<Token", 6) < 0) {
         goto error;
     }
-
     if (self->tok_used) {
-        if (_PyUnicodeWriter_WriteASCIIString(&writer, " used", 5) < 0) {
+        if (PyUnicodeWriter_WriteUTF8(writer, " used", 5) < 0) {
             goto error;
         }
     }
-
-    if (_PyUnicodeWriter_WriteASCIIString(&writer, " var=", 5) < 0) {
+    if (PyUnicodeWriter_WriteUTF8(writer, " var=", 5) < 0) {
         goto error;
     }
-
-    PyObject *var = PyObject_Repr((PyObject *)self->tok_var);
-    if (var == NULL) {
+    if (PyUnicodeWriter_WriteRepr(writer, (PyObject *)self->tok_var) < 0) {
         goto error;
     }
-    if (_PyUnicodeWriter_WriteStr(&writer, var) < 0) {
-        Py_DECREF(var);
+    if (PyUnicodeWriter_Format(writer, " at %p>", self) < 0) {
         goto error;
     }
-    Py_DECREF(var);
-
-    PyObject *addr = PyUnicode_FromFormat(" at %p>", self);
-    if (addr == NULL) {
-        goto error;
-    }
-    if (_PyUnicodeWriter_WriteStr(&writer, addr) < 0) {
-        Py_DECREF(addr);
-        goto error;
-    }
-    Py_DECREF(addr);
-
-    return _PyUnicodeWriter_Finish(&writer);
+    return PyUnicodeWriter_Finish(writer);
 
 error:
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     return NULL;
 }
 
@@ -1272,32 +1300,6 @@ get_token_missing(void)
 
 
 ///////////////////////////
-
-
-void
-_PyContext_ClearFreeList(PyInterpreterState *interp)
-{
-#if PyContext_MAXFREELIST > 0
-    struct _Py_context_state *state = &interp->context;
-    for (; state->numfree; state->numfree--) {
-        PyContext *ctx = state->freelist;
-        state->freelist = (PyContext *)ctx->ctx_weakreflist;
-        ctx->ctx_weakreflist = NULL;
-        PyObject_GC_Del(ctx);
-    }
-#endif
-}
-
-
-void
-_PyContext_Fini(PyInterpreterState *interp)
-{
-    _PyContext_ClearFreeList(interp);
-#if defined(Py_DEBUG) && PyContext_MAXFREELIST > 0
-    struct _Py_context_state *state = &interp->context;
-    state->numfree = -1;
-#endif
-}
 
 
 PyStatus

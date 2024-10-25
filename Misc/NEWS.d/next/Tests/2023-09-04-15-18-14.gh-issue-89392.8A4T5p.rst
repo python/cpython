@@ -1,2 +1,0 @@
-Removed support of ``test_main()`` function in tests. They now always use
-normal unittest test runner.

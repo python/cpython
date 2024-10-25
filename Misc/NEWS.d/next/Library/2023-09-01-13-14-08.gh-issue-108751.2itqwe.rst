@@ -1,2 +1,0 @@
-Add :func:`copy.replace` function which allows to create a modified copy of
-an object. It supports named tuples, dataclasses, and many other objects.

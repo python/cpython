@@ -261,7 +261,7 @@ allowed.
 
 The :ref:`string formatting <formatspec>` language also now has support
 for the ``'_'`` option to signal the use of an underscore for a thousands
-separator for floating point presentation types and for integer
+separator for floating-point presentation types and for integer
 presentation type ``'d'``.  For integer presentation types ``'b'``,
 ``'o'``, ``'x'``, and ``'X'``, underscores will be inserted every 4
 digits::
@@ -511,10 +511,10 @@ correct.
 Prior to Python 3.6, data loss could result when using bytes paths on Windows.
 With this change, using bytes to represent paths is now supported on Windows,
 provided those bytes are encoded with the encoding returned by
-:func:`sys.getfilesystemencoding()`, which now defaults to ``'utf-8'``.
+:func:`sys.getfilesystemencoding`, which now defaults to ``'utf-8'``.
 
 Applications that do not use str to represent paths should use
-:func:`os.fsencode()` and :func:`os.fsdecode()` to ensure their bytes are
+:func:`os.fsencode` and :func:`os.fsdecode` to ensure their bytes are
 correctly encoded. To revert to the previous behaviour, set
 :envvar:`PYTHONLEGACYWINDOWSFSENCODING` or call
 :func:`sys._enablelegacywindowsfsencoding`.
@@ -549,7 +549,7 @@ PEP 520: Preserving Class Attribute Definition Order
 
 Attributes in a class definition body have a natural ordering: the same
 order in which the names appear in the source.  This order is now
-preserved in the new class's :attr:`~object.__dict__` attribute.
+preserved in the new class's :attr:`~type.__dict__` attribute.
 
 Also, the effective default class *execution* namespace (returned from
 :ref:`type.__prepare__() <prepare>`) is now an insertion-order-preserving
@@ -780,7 +780,7 @@ for managing secrets, such as account authentication, tokens, and similar.
 
   Note that the pseudo-random generators in the :mod:`random` module
   should *NOT* be used for security purposes.  Use :mod:`secrets`
-  on Python 3.6+ and :func:`os.urandom()` on Python 3.5 and earlier.
+  on Python 3.6+ and :func:`os.urandom` on Python 3.5 and earlier.
 
 .. seealso::
 
@@ -934,7 +934,7 @@ asynchronous generators.
 
 The :func:`~collections.namedtuple` function now accepts an optional
 keyword argument *module*, which, when specified, is used for
-the ``__module__`` attribute of the returned named tuple class.
+the :attr:`~type.__module__` attribute of the returned named tuple class.
 (Contributed by Raymond Hettinger in :issue:`17941`.)
 
 The *verbose* and *rename* arguments for
@@ -1316,7 +1316,7 @@ Storchaka in :issue:`24164`.)
 pickletools
 -----------
 
-:func:`pickletools.dis()` now outputs the implicit memo index for the
+:func:`pickletools.dis` now outputs the implicit memo index for the
 ``MEMOIZE`` opcode.
 (Contributed by Serhiy Storchaka in :issue:`25382`.)
 
@@ -1472,6 +1472,10 @@ Server and client-side specific TLS protocols for :class:`~ssl.SSLContext`
 were added.
 (Contributed by Christian Heimes in :issue:`28085`.)
 
+Added :attr:`ssl.SSLContext.post_handshake_auth` to enable and
+:meth:`ssl.SSLSocket.verify_client_post_handshake` to initiate TLS 1.3
+post-handshake authentication.
+(Contributed by Christian Heimes in :gh:`78851`.)
 
 statistics
 ----------
@@ -1961,14 +1965,14 @@ Deprecated Python modules, functions and methods
 asynchat
 ~~~~~~~~
 
-The :mod:`asynchat` has been deprecated in favor of :mod:`asyncio`.
+The :mod:`!asynchat` has been deprecated in favor of :mod:`asyncio`.
 (Contributed by Mariatta in :issue:`25002`.)
 
 
 asyncore
 ~~~~~~~~
 
-The :mod:`asyncore` has been deprecated in favor of :mod:`asyncio`.
+The :mod:`!asyncore` has been deprecated in favor of :mod:`asyncio`.
 (Contributed by Mariatta in :issue:`25002`.)
 
 
@@ -2061,6 +2065,15 @@ The ``pyvenv`` script has been deprecated in favour of ``python3 -m venv``.
 This prevents confusion as to what Python interpreter ``pyvenv`` is
 connected to and thus what Python interpreter will be used by the virtual
 environment.  (Contributed by Brett Cannon in :issue:`25154`.)
+
+
+xml
+---
+
+* As mitigation against DTD and external entity retrieval, the
+  :mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
+  external entities by default.
+  (Contributed by Christian Heimes in :gh:`61441`.)
 
 
 Deprecated functions and types of the C API
@@ -2160,14 +2173,15 @@ Changes in the Python API
 * :c:func:`PyErr_SetImportError` now sets :exc:`TypeError` when its **msg**
   argument is not set. Previously only ``NULL`` was returned.
 
-* The format of the ``co_lnotab`` attribute of code objects changed to support
+* The format of the :attr:`~codeobject.co_lnotab` attribute of code objects
+  changed to support
   a negative line number delta. By default, Python does not emit bytecode with
-  a negative line number delta. Functions using ``frame.f_lineno``,
+  a negative line number delta. Functions using :attr:`frame.f_lineno`,
   ``PyFrame_GetLineNumber()`` or ``PyCode_Addr2Line()`` are not affected.
-  Functions directly decoding ``co_lnotab`` should be updated to use a signed
+  Functions directly decoding :attr:`!co_lnotab` should be updated to use a signed
   8-bit integer type for the line number delta, but this is only required to
   support applications using a negative line number delta. See
-  ``Objects/lnotab_notes.txt`` for the ``co_lnotab`` format and how to decode
+  ``Objects/lnotab_notes.txt`` for the :attr:`!co_lnotab` format and how to decode
   it, and see the :pep:`511` for the rationale.
 
 * The functions in the :mod:`compileall` module now return booleans instead
@@ -2188,7 +2202,7 @@ Changes in the Python API
   :mod:`calendar`, :mod:`!cgi`, :mod:`csv`,
   :mod:`~xml.etree.ElementTree`, :mod:`enum`,
   :mod:`fileinput`, :mod:`ftplib`, :mod:`logging`, :mod:`mailbox`,
-  :mod:`mimetypes`, :mod:`optparse`, :mod:`plistlib`, :mod:`smtpd`,
+  :mod:`mimetypes`, :mod:`optparse`, :mod:`plistlib`, :mod:`!smtpd`,
   :mod:`subprocess`, :mod:`tarfile`, :mod:`threading` and
   :mod:`wave`.  This means they will export new symbols when ``import *``
   is used.
@@ -2218,11 +2232,11 @@ Changes in the Python API
   an error (e.g. ``EBADF``) was reported by the underlying system call.
   (Contributed by Martin Panter in :issue:`26685`.)
 
-* The *decode_data* argument for the :class:`smtpd.SMTPChannel` and
-  :class:`smtpd.SMTPServer` constructors is now ``False`` by default.
+* The *decode_data* argument for the :class:`!smtpd.SMTPChannel` and
+  :class:`!smtpd.SMTPServer` constructors is now ``False`` by default.
   This means that the argument passed to
-  :meth:`~smtpd.SMTPServer.process_message` is now a bytes object by
-  default, and ``process_message()`` will be passed keyword arguments.
+  :meth:`!process_message` is now a bytes object by
+  default, and :meth:`!process_message` will be passed keyword arguments.
   Code that has already been updated in accordance with the deprecation
   warning generated by 3.5 will not be affected.
 
@@ -2322,10 +2336,10 @@ Changes in the Python API
 * With the introduction of :exc:`ModuleNotFoundError`, import system consumers
   may start expecting import system replacements to raise that more specific
   exception when appropriate, rather than the less-specific :exc:`ImportError`.
-  To provide future compatibility with such consumers, implementors of
+  To provide future compatibility with such consumers, implementers of
   alternative import systems that completely replace :func:`__import__` will
   need to update their implementations to raise the new subclass when a module
-  can't be found at all. Implementors of compliant plugins to the default
+  can't be found at all. Implementers of compliant plugins to the default
   import system shouldn't need to make any changes, as the default import
   system will raise the new subclass when appropriate.
 
@@ -2429,8 +2443,12 @@ The :func:`locale.localeconv` function now sets temporarily the ``LC_CTYPE``
 locale to the ``LC_NUMERIC`` locale in some cases.
 (Contributed by Victor Stinner in :issue:`31900`.)
 
+
 Notable changes in Python 3.6.7
 ===============================
+
+:mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
+external entities by default. See also :gh:`61441`.
 
 In 3.6.7 the :mod:`tokenize` module now implicitly emits a ``NEWLINE`` token
 when provided with input that does not have a trailing new line.  This behavior
@@ -2459,3 +2477,19 @@ separator key, with ``&`` as the default.  This change also affects
 functions internally. For more details, please see their respective
 documentation.
 (Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)
+
+Notable changes in Python 3.6.14
+================================
+
+A security fix alters the :class:`ftplib.FTP` behavior to not trust the
+IPv4 address sent from the remote server when setting up a passive data
+channel.  We reuse the ftp server IP address instead.  For unusual code
+requiring the old behavior, set a ``trust_server_pasv_ipv4_address``
+attribute on your FTP instance to ``True``.  (See :gh:`87451`)
+
+The presence of newline or tab characters in parts of a URL allows for some
+forms of attacks. Following the WHATWG specification that updates RFC 3986,
+ASCII newline ``\n``, ``\r`` and tab ``\t`` characters are stripped from the
+URL by the parser :func:`urllib.parse` preventing such attacks. The removal
+characters are controlled by a new module level variable
+``urllib.parse._UNSAFE_URL_BYTES_TO_REMOVE``. (See :gh:`88048`)

@@ -1,2 +1,0 @@
-Make timeit doc command lines compatible with Windows by using double quotes
-for arguments.  This works on linux and macOS also.

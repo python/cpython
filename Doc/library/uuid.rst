@@ -1,5 +1,5 @@
-:mod:`uuid` --- UUID objects according to :rfc:`4122`
-=====================================================
+:mod:`!uuid` --- UUID objects according to :rfc:`4122`
+======================================================
 
 .. module:: uuid
    :synopsis: UUID objects (universally unique identifiers) according to RFC 4122
@@ -289,25 +289,25 @@ The following options are accepted:
 
 .. program:: uuid
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    Show the help message and exit.
 
-.. cmdoption:: -u <uuid>
-               --uuid <uuid>
+.. option:: -u <uuid>
+            --uuid <uuid>
 
    Specify the function name to use to generate the uuid. By default :func:`uuid4`
    is used.
 
-.. cmdoption:: -n <namespace>
-               --namespace <namespace>
+.. option:: -n <namespace>
+            --namespace <namespace>
 
    The namespace is a ``UUID``, or ``@ns`` where ``ns`` is a well-known predefined UUID
    addressed by namespace name. Such as ``@dns``, ``@url``, ``@oid``, and ``@x500``.
    Only required for :func:`uuid3` / :func:`uuid5` functions.
 
-.. cmdoption:: -N <name>
-               --name <name>
+.. option:: -N <name>
+            --name <name>
 
    The name used as part of generating the uuid. Only required for
    :func:`uuid3` / :func:`uuid5` functions.

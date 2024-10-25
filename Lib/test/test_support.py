@@ -3,10 +3,12 @@ import importlib
 import io
 import os
 import shutil
+import signal
 import socket
 import stat
 import subprocess
 import sys
+import sysconfig
 import tempfile
 import textwrap
 import unittest
@@ -69,7 +71,7 @@ class TestSupport(unittest.TestCase):
         self.assertEqual(support.get_original_stdout(), sys.stdout)
 
     def test_unload(self):
-        import sched
+        import sched  # noqa: F401
         self.assertIn("sched", sys.modules)
         import_helper.unload("sched")
         self.assertNotIn("sched", sys.modules)
@@ -546,118 +548,14 @@ class TestSupport(unittest.TestCase):
             with self.subTest(opts=opts):
                 self.check_options(opts, 'optim_args_from_interpreter_flags')
 
-    def test_match_test(self):
-        class Test:
-            def __init__(self, test_id):
-                self.test_id = test_id
-
-            def id(self):
-                return self.test_id
-
-        test_access = Test('test.test_os.FileTests.test_access')
-        test_chdir = Test('test.test_os.Win32ErrorTests.test_chdir')
-
-        # Test acceptance
-        with support.swap_attr(support, '_match_test_func', None):
-            # match all
-            support.set_match_tests([])
-            self.assertTrue(support.match_test(test_access))
-            self.assertTrue(support.match_test(test_chdir))
-
-            # match all using None
-            support.set_match_tests(None, None)
-            self.assertTrue(support.match_test(test_access))
-            self.assertTrue(support.match_test(test_chdir))
-
-            # match the full test identifier
-            support.set_match_tests([test_access.id()], None)
-            self.assertTrue(support.match_test(test_access))
-            self.assertFalse(support.match_test(test_chdir))
-
-            # match the module name
-            support.set_match_tests(['test_os'], None)
-            self.assertTrue(support.match_test(test_access))
-            self.assertTrue(support.match_test(test_chdir))
-
-            # Test '*' pattern
-            support.set_match_tests(['test_*'], None)
-            self.assertTrue(support.match_test(test_access))
-            self.assertTrue(support.match_test(test_chdir))
-
-            # Test case sensitivity
-            support.set_match_tests(['filetests'], None)
-            self.assertFalse(support.match_test(test_access))
-            support.set_match_tests(['FileTests'], None)
-            self.assertTrue(support.match_test(test_access))
-
-            # Test pattern containing '.' and a '*' metacharacter
-            support.set_match_tests(['*test_os.*.test_*'], None)
-            self.assertTrue(support.match_test(test_access))
-            self.assertTrue(support.match_test(test_chdir))
-
-            # Multiple patterns
-            support.set_match_tests([test_access.id(), test_chdir.id()], None)
-            self.assertTrue(support.match_test(test_access))
-            self.assertTrue(support.match_test(test_chdir))
-
-            support.set_match_tests(['test_access', 'DONTMATCH'], None)
-            self.assertTrue(support.match_test(test_access))
-            self.assertFalse(support.match_test(test_chdir))
-
-        # Test rejection
-        with support.swap_attr(support, '_match_test_func', None):
-            # match all
-            support.set_match_tests(ignore_patterns=[])
-            self.assertTrue(support.match_test(test_access))
-            self.assertTrue(support.match_test(test_chdir))
-
-            # match all using None
-            support.set_match_tests(None, None)
-            self.assertTrue(support.match_test(test_access))
-            self.assertTrue(support.match_test(test_chdir))
-
-            # match the full test identifier
-            support.set_match_tests(None, [test_access.id()])
-            self.assertFalse(support.match_test(test_access))
-            self.assertTrue(support.match_test(test_chdir))
-
-            # match the module name
-            support.set_match_tests(None, ['test_os'])
-            self.assertFalse(support.match_test(test_access))
-            self.assertFalse(support.match_test(test_chdir))
-
-            # Test '*' pattern
-            support.set_match_tests(None, ['test_*'])
-            self.assertFalse(support.match_test(test_access))
-            self.assertFalse(support.match_test(test_chdir))
-
-            # Test case sensitivity
-            support.set_match_tests(None, ['filetests'])
-            self.assertTrue(support.match_test(test_access))
-            support.set_match_tests(None, ['FileTests'])
-            self.assertFalse(support.match_test(test_access))
-
-            # Test pattern containing '.' and a '*' metacharacter
-            support.set_match_tests(None, ['*test_os.*.test_*'])
-            self.assertFalse(support.match_test(test_access))
-            self.assertFalse(support.match_test(test_chdir))
-
-            # Multiple patterns
-            support.set_match_tests(None, [test_access.id(), test_chdir.id()])
-            self.assertFalse(support.match_test(test_access))
-            self.assertFalse(support.match_test(test_chdir))
-
-            support.set_match_tests(None, ['test_access', 'DONTMATCH'])
-            self.assertFalse(support.match_test(test_access))
-            self.assertTrue(support.match_test(test_chdir))
-
+    @unittest.skipIf(support.is_apple_mobile, "Unstable on Apple Mobile")
     @unittest.skipIf(support.is_emscripten, "Unstable in Emscripten")
     @unittest.skipIf(support.is_wasi, "Unavailable on WASI")
     def test_fd_count(self):
-        # We cannot test the absolute value of fd_count(): on old Linux
-        # kernel or glibc versions, os.urandom() keeps a FD open on
-        # /dev/urandom device and Python has 4 FD opens instead of 3.
-        # Test is unstable on Emscripten. The platform starts and stops
+        # We cannot test the absolute value of fd_count(): on old Linux kernel
+        # or glibc versions, os.urandom() keeps a FD open on /dev/urandom
+        # device and Python has 4 FD opens instead of 3. Test is unstable on
+        # Emscripten and Apple Mobile platforms; these platforms start and stop
         # background threads that use pipes and epoll fds.
         start = os_helper.fd_count()
         fd = os.open(__file__, os.O_RDONLY)
@@ -734,7 +632,7 @@ class TestSupport(unittest.TestCase):
             if depth:
                 recursive_function(depth - 1)
 
-        for max_depth in (5, 25, 250):
+        for max_depth in (5, 25, 250, 2500):
             with support.infinite_recursion(max_depth):
                 available = support.get_recursion_available()
 
@@ -760,7 +658,92 @@ class TestSupport(unittest.TestCase):
             else:
                 self.fail("RecursionError was not raised")
 
-        #self.assertEqual(available, 2)
+    def test_parse_memlimit(self):
+        parse = support._parse_memlimit
+        KiB = 1024
+        MiB = KiB * 1024
+        GiB = MiB * 1024
+        TiB = GiB * 1024
+        self.assertEqual(parse('0k'), 0)
+        self.assertEqual(parse('3k'), 3 * KiB)
+        self.assertEqual(parse('2.4m'), int(2.4 * MiB))
+        self.assertEqual(parse('4g'), int(4 * GiB))
+        self.assertEqual(parse('1t'), TiB)
+
+        for limit in ('', '3', '3.5.10k', '10x'):
+            with self.subTest(limit=limit):
+                with self.assertRaises(ValueError):
+                    parse(limit)
+
+    def test_set_memlimit(self):
+        _4GiB = 4 * 1024 ** 3
+        TiB = 1024 ** 4
+        old_max_memuse = support.max_memuse
+        old_real_max_memuse = support.real_max_memuse
+        try:
+            if sys.maxsize > 2**32:
+                support.set_memlimit('4g')
+                self.assertEqual(support.max_memuse, _4GiB)
+                self.assertEqual(support.real_max_memuse, _4GiB)
+
+                big = 2**100 // TiB
+                support.set_memlimit(f'{big}t')
+                self.assertEqual(support.max_memuse, sys.maxsize)
+                self.assertEqual(support.real_max_memuse, big * TiB)
+            else:
+                support.set_memlimit('4g')
+                self.assertEqual(support.max_memuse, sys.maxsize)
+                self.assertEqual(support.real_max_memuse, _4GiB)
+        finally:
+            support.max_memuse = old_max_memuse
+            support.real_max_memuse = old_real_max_memuse
+
+    def test_copy_python_src_ignore(self):
+        # Get source directory
+        src_dir = sysconfig.get_config_var('abs_srcdir')
+        if not src_dir:
+            src_dir = sysconfig.get_config_var('srcdir')
+        src_dir = os.path.abspath(src_dir)
+
+        # Check that the source code is available
+        if not os.path.exists(src_dir):
+            self.skipTest(f"cannot access Python source code directory:"
+                          f" {src_dir!r}")
+        # Check that the landmark copy_python_src_ignore() expects is available
+        # (Previously we looked for 'Lib\os.py', which is always present on Windows.)
+        landmark = os.path.join(src_dir, 'Modules')
+        if not os.path.exists(landmark):
+            self.skipTest(f"cannot access Python source code directory:"
+                          f" {landmark!r} landmark is missing")
+
+        # Test support.copy_python_src_ignore()
+
+        # Source code directory
+        ignored = {'.git', '__pycache__'}
+        names = os.listdir(src_dir)
+        self.assertEqual(support.copy_python_src_ignore(src_dir, names),
+                         ignored | {'build'})
+
+        # Doc/ directory
+        path = os.path.join(src_dir, 'Doc')
+        self.assertEqual(support.copy_python_src_ignore(path, os.listdir(path)),
+                         ignored | {'build', 'venv'})
+
+        # Another directory
+        path = os.path.join(src_dir, 'Objects')
+        self.assertEqual(support.copy_python_src_ignore(path, os.listdir(path)),
+                         ignored)
+
+    def test_get_signal_name(self):
+        for exitcode, expected in (
+            (-int(signal.SIGINT), 'SIGINT'),
+            (-int(signal.SIGSEGV), 'SIGSEGV'),
+            (128 + int(signal.SIGABRT), 'SIGABRT'),
+            (3221225477, "STATUS_ACCESS_VIOLATION"),
+            (0xC00000FD, "STATUS_STACK_OVERFLOW"),
+        ):
+            self.assertEqual(support.get_signal_name(exitcode), expected,
+                             exitcode)
 
     # XXX -follows a list of untested API
     # make_legacy_pyc
@@ -773,12 +756,10 @@ class TestSupport(unittest.TestCase):
     # EnvironmentVarGuard
     # transient_internet
     # run_with_locale
-    # set_memlimit
     # bigmemtest
     # precisionbigmemtest
     # bigaddrspacetest
     # requires_resource
-    # run_doctest
     # threading_cleanup
     # reap_threads
     # can_symlink

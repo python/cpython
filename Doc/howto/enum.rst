@@ -1,3 +1,5 @@
+.. _enum-howto:
+
 ==========
 Enum HOWTO
 ==========
@@ -7,7 +9,7 @@ Enum HOWTO
 .. currentmodule:: enum
 
 An :class:`Enum` is a set of symbolic names bound to unique values.  They are
-similar to global variables, but they offer a more useful :func:`repr()`,
+similar to global variables, but they offer a more useful :func:`repr`,
 grouping, type-safety, and a few other features.
 
 They are most useful when you have a variable that can take one of a limited
@@ -165,7 +167,7 @@ And a function to display the chores for a given day::
     answer SO questions
 
 In cases where the actual values of the members do not matter, you can save
-yourself some work and use :func:`auto()` for the values::
+yourself some work and use :func:`auto` for the values::
 
     >>> from enum import auto
     >>> class Weekday(Flag):
@@ -483,6 +485,7 @@ Dataclass support
 When inheriting from a :class:`~dataclasses.dataclass`,
 the :meth:`~Enum.__repr__` omits the inherited class' name.  For example::
 
+    >>> from dataclasses import dataclass, field
     >>> @dataclass
     ... class CreatureDataMixin:
     ...     size: str
@@ -496,12 +499,29 @@ the :meth:`~Enum.__repr__` omits the inherited class' name.  For example::
     >>> Creature.DOG
     <Creature.DOG: size='medium', legs=4>
 
-Use the :func:`!dataclass` argument ``repr=False``
+Use the :func:`~dataclasses.dataclass` argument ``repr=False``
 to use the standard :func:`repr`.
 
 .. versionchanged:: 3.12
    Only the dataclass fields are shown in the value area, not the dataclass'
    name.
+
+.. note::
+
+   Adding :func:`~dataclasses.dataclass` decorator to :class:`Enum`
+   and its subclasses is not supported. It will not raise any errors,
+   but it will produce very strange results at runtime, such as members
+   being equal to each other::
+
+      >>> @dataclass               # don't do this: it does not make any sense
+      ... class Color(Enum):
+      ...    RED = 1
+      ...    BLUE = 2
+      ...
+      >>> Color.RED is Color.BLUE
+      False
+      >>> Color.RED == Color.BLUE  # problem is here: they should not be equal
+      True
 
 
 Pickling
@@ -527,7 +547,8 @@ It is possible to modify how enum members are pickled/unpickled by defining
 :meth:`__reduce_ex__` in the enumeration class.  The default method is by-value,
 but enums with complicated values may want to use by-name::
 
-    >>> class MyEnum(Enum):
+    >>> import enum
+    >>> class MyEnum(enum.Enum):
     ...     __reduce_ex__ = enum.pickle_by_enum_name
 
 .. note::
@@ -587,7 +608,7 @@ The solution is to specify the module name explicitly as follows::
     the source, pickling will be disabled.
 
 The new pickle protocol 4 also, in some circumstances, relies on
-:attr:`~definition.__qualname__` being set to the location where pickle will be able
+:attr:`~type.__qualname__` being set to the location where pickle will be able
 to find the class.  For example, if the class was made available in class
 SomeData in the global scope::
 
@@ -605,9 +626,9 @@ The complete signature is::
         start=1,
         )
 
-:value: What the new enum class will record as its name.
+* *value*: What the new enum class will record as its name.
 
-:names: The enum members.  This can be a whitespace- or comma-separated string
+* *names*: The enum members.  This can be a whitespace- or comma-separated string
   (values will start at 1 unless otherwise specified)::
 
     'RED GREEN BLUE' | 'RED,GREEN,BLUE' | 'RED, GREEN, BLUE'
@@ -624,13 +645,13 @@ The complete signature is::
 
     {'CHARTREUSE': 7, 'SEA_GREEN': 11, 'ROSEMARY': 42}
 
-:module: name of module where new enum class can be found.
+* *module*: name of module where new enum class can be found.
 
-:qualname: where in module new enum class can be found.
+* *qualname*: where in module new enum class can be found.
 
-:type: type to mix in to new enum class.
+* *type*: type to mix in to new enum class.
 
-:start: number to start counting at if only names are passed in.
+* *start*: number to start counting at if only names are passed in.
 
 .. versionchanged:: 3.5
    The *start* parameter was added.
@@ -770,7 +791,7 @@ be combined with them (but may lose :class:`IntFlag` membership::
     >>> Perm.X | 4
     <Perm.R|X: 5>
 
-    >>> Perm.X | 8
+    >>> Perm.X + 8
     9
 
 .. note::
@@ -866,7 +887,7 @@ Others
 While :class:`IntEnum` is part of the :mod:`enum` module, it would be very
 simple to implement independently::
 
-    class IntEnum(int, Enum):
+    class IntEnum(int, ReprEnum):   # or Enum instead of ReprEnum
         pass
 
 This demonstrates how similar derived enumerations can be defined; for example
@@ -874,8 +895,8 @@ a :class:`FloatEnum` that mixes in :class:`float` instead of :class:`int`.
 
 Some rules:
 
-1. When subclassing :class:`Enum`, mix-in types must appear before
-   :class:`Enum` itself in the sequence of bases, as in the :class:`IntEnum`
+1. When subclassing :class:`Enum`, mix-in types must appear before the
+   :class:`Enum` class itself in the sequence of bases, as in the :class:`IntEnum`
    example above.
 2. Mix-in types must be subclassable. For example, :class:`bool` and
    :class:`range` are not subclassable and will throw an error during Enum
@@ -959,30 +980,34 @@ all the members are created it is no longer used.
 Supported ``_sunder_`` names
 """"""""""""""""""""""""""""
 
-- ``_name_`` -- name of the member
-- ``_value_`` -- value of the member; can be set / modified in ``__new__``
+- :attr:`~Enum._name_` -- name of the member
+- :attr:`~Enum._value_` -- value of the member; can be set in ``__new__``
+- :meth:`~Enum._missing_` -- a lookup function used when a value is not found;
+  may be overridden
+- :attr:`~Enum._ignore_` -- a list of names, either as a :class:`list` or a
+  :class:`str`, that will not be transformed into members, and will be removed
+  from the final class
+- :meth:`~Enum._generate_next_value_` -- used to get an appropriate value for
+  an enum member; may be overridden
+- :meth:`~Enum._add_alias_` -- adds a new name as an alias to an existing
+  member.
+- :meth:`~Enum._add_value_alias_` -- adds a new value as an alias to an
+  existing member.  See `MultiValueEnum`_ for an example.
 
-- ``_missing_`` -- a lookup function used when a value is not found; may be
-  overridden
-- ``_ignore_`` -- a list of names, either as a :class:`list` or a :class:`str`,
-  that will not be transformed into members, and will be removed from the final
-  class
-- ``_order_`` -- used in Python 2/3 code to ensure member order is consistent
-  (class attribute, removed during class creation)
-- ``_generate_next_value_`` -- used by the `Functional API`_ and by
-  :class:`auto` to get an appropriate value for an enum member; may be
-  overridden
+  .. note::
 
-.. note::
+     For standard :class:`Enum` classes the next value chosen is the highest
+     value seen incremented by one.
 
-    For standard :class:`Enum` classes the next value chosen is the last value seen
-    incremented by one.
+     For :class:`Flag` classes the next value chosen will be the next highest
+     power-of-two.
 
-    For :class:`Flag` classes the next value chosen will be the next highest
-    power-of-two, regardless of the last value seen.
+  .. versionchanged:: 3.13
+     Prior versions would use the last seen value instead of the highest value.
 
 .. versionadded:: 3.6 ``_missing_``, ``_order_``, ``_generate_next_value_``
 .. versionadded:: 3.7 ``_ignore_``
+.. versionadded:: 3.13 ``_add_alias_``, ``_add_value_alias_``
 
 To help keep Python 2 / Python 3 code in sync an :attr:`_order_` attribute can
 be provided.  It will be checked against the actual order of the enumeration
@@ -1127,6 +1152,14 @@ the following are true:
     >>> (Color.RED | Color.GREEN).name
     'RED|GREEN'
 
+    >>> class Perm(IntFlag):
+    ...     R = 4
+    ...     W = 2
+    ...     X = 1
+    ...
+    >>> (Perm.R & Perm.W).name is None  # effectively Perm(0)
+    True
+
 - multi-bit flags, aka aliases, can be returned from operations::
 
     >>> Color.RED | Color.BLUE
@@ -1156,13 +1189,14 @@ the following are true:
 There is a new boundary mechanism that controls how out-of-range / invalid
 bits are handled: ``STRICT``, ``CONFORM``, ``EJECT``, and ``KEEP``:
 
-  * STRICT --> raises an exception when presented with invalid values
-  * CONFORM --> discards any invalid bits
-  * EJECT --> lose Flag status and become a normal int with the given value
-  * KEEP --> keep the extra bits
-           - keeps Flag status and extra bits
-           - extra bits do not show up in iteration
-           - extra bits do show up in repr() and str()
+* STRICT --> raises an exception when presented with invalid values
+* CONFORM --> discards any invalid bits
+* EJECT --> lose Flag status and become a normal int with the given value
+* KEEP --> keep the extra bits
+
+  - keeps Flag status and extra bits
+  - extra bits do not show up in iteration
+  - extra bits do show up in repr() and str()
 
 The default for Flag is ``STRICT``, the default for ``IntFlag`` is ``EJECT``,
 and the default for ``_convert_`` is ``KEEP`` (see ``ssl.Options`` for an
@@ -1434,7 +1468,7 @@ alias::
     ...     GRENE = 2
     ...
     Traceback (most recent call last):
-    ...
+      ...
     ValueError: aliases not allowed in DuplicateFreeEnum:  'GRENE' --> 'GREEN'
 
 .. note::
@@ -1442,6 +1476,29 @@ alias::
     This is a useful example for subclassing Enum to add or change other
     behaviors as well as disallowing aliases.  If the only desired change is
     disallowing aliases, the :func:`unique` decorator can be used instead.
+
+
+MultiValueEnum
+^^^^^^^^^^^^^^^^^
+
+Supports having more than one value per member::
+
+    >>> class MultiValueEnum(Enum):
+    ...     def __new__(cls, value, *values):
+    ...         self = object.__new__(cls)
+    ...         self._value_ = value
+    ...         for v in values:
+    ...             self._add_value_alias_(v)
+    ...         return self
+    ...
+    >>> class DType(MultiValueEnum):
+    ...     float32 = 'f', 8
+    ...     double64 = 'd', 9
+    ...
+    >>> DType('f')
+    <DType.float32: 'f'>
+    >>> DType(9)
+    <DType.double64: 'd'>
 
 
 Planet

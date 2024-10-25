@@ -53,7 +53,8 @@ Type Objects
 .. c:function:: PyObject* PyType_GetDict(PyTypeObject* type)
 
    Return the type object's internal namespace, which is otherwise only
-   exposed via a read-only proxy (``cls.__dict__``).  This is a
+   exposed via a read-only proxy (:attr:`cls.__dict__ <type.__dict__>`).
+   This is a
    replacement for accessing :c:member:`~PyTypeObject.tp_dict` directly.
    The returned dictionary must be treated as read-only.
 
@@ -140,7 +141,7 @@ Type Objects
    Return true if *a* is a subtype of *b*.
 
    This function only checks for actual subtypes, which means that
-   :meth:`~class.__subclasscheck__` is not called on *b*.  Call
+   :meth:`~type.__subclasscheck__` is not called on *b*.  Call
    :c:func:`PyObject_IsSubclass` to do the same check that :func:`issubclass`
    would do.
 
@@ -174,16 +175,32 @@ Type Objects
 
 .. c:function:: PyObject* PyType_GetName(PyTypeObject *type)
 
-   Return the type's name. Equivalent to getting the type's ``__name__`` attribute.
+   Return the type's name. Equivalent to getting the type's
+   :attr:`~type.__name__` attribute.
 
    .. versionadded:: 3.11
 
 .. c:function:: PyObject* PyType_GetQualName(PyTypeObject *type)
 
    Return the type's qualified name. Equivalent to getting the
-   type's ``__qualname__`` attribute.
+   type's :attr:`~type.__qualname__` attribute.
 
    .. versionadded:: 3.11
+
+.. c:function:: PyObject* PyType_GetFullyQualifiedName(PyTypeObject *type)
+
+   Return the type's fully qualified name. Equivalent to
+   ``f"{type.__module__}.{type.__qualname__}"``, or :attr:`type.__qualname__`
+   if :attr:`type.__module__` is not a string or is equal to ``"builtins"``.
+
+   .. versionadded:: 3.13
+
+.. c:function:: PyObject* PyType_GetModuleName(PyTypeObject *type)
+
+   Return the type's module name. Equivalent to getting the
+   :attr:`type.__module__` attribute.
+
+   .. versionadded:: 3.13
 
 .. c:function:: void* PyType_GetSlot(PyTypeObject *type, int slot)
 
@@ -248,6 +265,24 @@ Type Objects
    :c:type:`PyCMethod` calling convention.
 
    .. versionadded:: 3.11
+
+.. c:function:: int PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
+
+   Find the first superclass in *type*'s :term:`method resolution order` whose
+   :c:macro:`Py_tp_token` token is equal to the given one.
+
+   * If found, set *\*result* to a new :term:`strong reference`
+     to it and return ``1``.
+   * If not found, set *\*result* to ``NULL`` and return ``0``.
+   * On error, set *\*result* to ``NULL`` and return ``-1`` with an
+     exception set.
+
+   The *result* argument may be ``NULL``, in which case *\*result* is not set.
+   Use this if you need only the return value.
+
+   The *token* argument may not be ``NULL``.
+
+   .. versionadded:: 3.14
 
 .. c:function:: int PyUnstable_Type_AssignVersionTag(PyTypeObject *type)
 
@@ -330,8 +365,12 @@ The following functions and structs are used to create
       The :c:member:`~PyTypeObject.tp_new` of the metaclass is *ignored*.
       which may result in incomplete initialization.
       Creating classes whose metaclass overrides
-      :c:member:`~PyTypeObject.tp_new` is deprecated and in Python 3.14+ it
-      will be no longer allowed.
+      :c:member:`~PyTypeObject.tp_new` is deprecated.
+
+   .. versionchanged:: 3.14
+
+      Creating classes whose metaclass overrides
+      :c:member:`~PyTypeObject.tp_new` is no longer allowed.
 
 .. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
@@ -347,8 +386,12 @@ The following functions and structs are used to create
       The :c:member:`~PyTypeObject.tp_new` of the metaclass is *ignored*.
       which may result in incomplete initialization.
       Creating classes whose metaclass overrides
-      :c:member:`~PyTypeObject.tp_new` is deprecated and in Python 3.14+ it
-      will be no longer allowed.
+      :c:member:`~PyTypeObject.tp_new` is deprecated.
+
+   .. versionchanged:: 3.14
+
+      Creating classes whose metaclass overrides
+      :c:member:`~PyTypeObject.tp_new` is no longer allowed.
 
 .. c:function:: PyObject* PyType_FromSpec(PyType_Spec *spec)
 
@@ -363,8 +406,12 @@ The following functions and structs are used to create
       The :c:member:`~PyTypeObject.tp_new` of the metaclass is *ignored*.
       which may result in incomplete initialization.
       Creating classes whose metaclass overrides
-      :c:member:`~PyTypeObject.tp_new` is deprecated and in Python 3.14+ it
-      will be no longer allowed.
+      :c:member:`~PyTypeObject.tp_new` is deprecated.
+
+   .. versionchanged:: 3.14
+
+      Creating classes whose metaclass overrides
+      :c:member:`~PyTypeObject.tp_new` is no longer allowed.
 
 .. raw:: html
 
@@ -461,21 +508,35 @@ The following functions and structs are used to create
       * ``Py_nb_add`` to set :c:member:`PyNumberMethods.nb_add`
       * ``Py_sq_length`` to set :c:member:`PySequenceMethods.sq_length`
 
-      The following fields cannot be set at all using :c:type:`PyType_Spec` and
-      :c:type:`PyType_Slot`:
+      An additional slot is supported that does not correspond to a
+      :c:type:`!PyTypeObject` struct field:
 
-      * :c:member:`~PyTypeObject.tp_dict`
-      * :c:member:`~PyTypeObject.tp_mro`
-      * :c:member:`~PyTypeObject.tp_cache`
-      * :c:member:`~PyTypeObject.tp_subclasses`
-      * :c:member:`~PyTypeObject.tp_weaklist`
-      * :c:member:`~PyTypeObject.tp_vectorcall`
-      * :c:member:`~PyTypeObject.tp_weaklistoffset`
-        (use :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` instead)
-      * :c:member:`~PyTypeObject.tp_dictoffset`
-        (use :c:macro:`Py_TPFLAGS_MANAGED_DICT` instead)
-      * :c:member:`~PyTypeObject.tp_vectorcall_offset`
-        (see :ref:`PyMemberDef <pymemberdef-offsets>`)
+      * :c:data:`Py_tp_token`
+
+      The following “offset” fields cannot be set using :c:type:`PyType_Slot`:
+
+         * :c:member:`~PyTypeObject.tp_weaklistoffset`
+           (use :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` instead if possible)
+         * :c:member:`~PyTypeObject.tp_dictoffset`
+           (use :c:macro:`Py_TPFLAGS_MANAGED_DICT` instead if possible)
+         * :c:member:`~PyTypeObject.tp_vectorcall_offset`
+           (use ``"__vectorcalloffset__"`` in
+           :ref:`PyMemberDef <pymemberdef-offsets>`)
+
+         If it is not possible to switch to a ``MANAGED`` flag (for example,
+         for vectorcall or to support Python older than 3.12), specify the
+         offset in :c:member:`Py_tp_members <PyTypeObject.tp_members>`.
+         See :ref:`PyMemberDef documentation <pymemberdef-offsets>`
+         for details.
+
+      The following internal fields cannot be set at all when creating a heap
+      type:
+
+      * :c:member:`~PyTypeObject.tp_dict`,
+        :c:member:`~PyTypeObject.tp_mro`,
+        :c:member:`~PyTypeObject.tp_cache`,
+        :c:member:`~PyTypeObject.tp_subclasses`, and
+        :c:member:`~PyTypeObject.tp_weaklist`.
 
       Setting :c:data:`Py_tp_bases` or :c:data:`Py_tp_base` may be
       problematic on some platforms.
@@ -491,9 +552,58 @@ The following functions and structs are used to create
         :c:member:`~PyBufferProcs.bf_releasebuffer` are now available
         under the :ref:`limited API <limited-c-api>`.
 
+     .. versionchanged:: 3.14
+
+        The field :c:member:`~PyTypeObject.tp_vectorcall` can now set
+        using ``Py_tp_vectorcall``.  See the field's documentation
+        for details.
+
    .. c:member:: void *pfunc
 
       The desired value of the slot. In most cases, this is a pointer
       to a function.
 
-      Slots other than ``Py_tp_doc`` may not be ``NULL``.
+      *pfunc* values may not be ``NULL``, except for the following slots:
+
+      * ``Py_tp_doc``
+      * :c:data:`Py_tp_token` (for clarity, prefer :c:data:`Py_TP_USE_SPEC`
+        rather than ``NULL``)
+
+.. c:macro:: Py_tp_token
+
+   A :c:member:`~PyType_Slot.slot` that records a static memory layout ID
+   for a class.
+
+   If the :c:type:`PyType_Spec` of the class is statically
+   allocated, the token can be set to the spec using the special value
+   :c:data:`Py_TP_USE_SPEC`:
+
+   .. code-block:: c
+
+      static PyType_Slot foo_slots[] = {
+         {Py_tp_token, Py_TP_USE_SPEC},
+
+   It can also be set to an arbitrary pointer, but you must ensure that:
+
+   * The pointer outlives the class, so it's not reused for something else
+     while the class exists.
+   * It "belongs" to the extension module where the class lives, so it will not
+     clash with other extensions.
+
+   Use :c:func:`PyType_GetBaseByToken` to check if a class's superclass has
+   a given token -- that is, check whether the memory layout is compatible.
+
+   To get the token for a given class (without considering superclasses),
+   use :c:func:`PyType_GetSlot` with ``Py_tp_token``.
+
+   .. versionadded:: 3.14
+
+   .. c:namespace:: NULL
+
+   .. c:macro:: Py_TP_USE_SPEC
+
+      Used as a value with :c:data:`Py_tp_token` to set the token to the
+      class's :c:type:`PyType_Spec`.
+      Expands to ``NULL``.
+
+      .. versionadded:: 3.14

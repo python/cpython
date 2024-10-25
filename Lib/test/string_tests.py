@@ -327,11 +327,12 @@ class BaseTest:
             for i in range(len(s)):
                 if s.startswith(p, i):
                     return i
+            if p == '' and s == '':
+                return 0
             return -1
 
-        rr = random.randrange
-        choices = random.choices
-        for _ in range(1000):
+        def check_pattern(rr):
+            choices = random.choices
             p0 = ''.join(choices('abcde', k=rr(10))) * rr(10, 20)
             p = p0[:len(p0) - rr(10)] # pop off some characters
             left = ''.join(choices('abcdef', k=rr(2000)))
@@ -340,6 +341,13 @@ class BaseTest:
             with self.subTest(p=p, text=text):
                 self.checkequal(reference_find(p, text),
                                 text, 'find', p)
+
+        rr = random.randrange
+        for _ in range(1000):
+            check_pattern(rr)
+
+        # Test that empty string always work:
+        check_pattern(lambda *args: 0)
 
     def test_find_many_lengths(self):
         haystack_repeats = [a * 10**e for e in range(6) for a in (1,2,5)]
@@ -1124,8 +1132,8 @@ class StringLikeTest(BaseTest):
         self.checkequal('\u2160\u2171\u2172',
                         '\u2170\u2171\u2172', 'capitalize')
         # check with Ll chars with no upper - nothing changes here
-        self.checkequal('\u019b\u1d00\u1d86\u0221\u1fb7',
-                        '\u019b\u1d00\u1d86\u0221\u1fb7', 'capitalize')
+        self.checkequal('\u1d00\u1d86\u0221\u1fb7',
+                        '\u1d00\u1d86\u0221\u1fb7', 'capitalize')
 
     def test_startswith(self):
         self.checkequal(True, 'hello', 'startswith', 'he')
@@ -1495,19 +1503,19 @@ class StringLikeTest(BaseTest):
         # issue 11828
         s = 'hello'
         x = 'x'
-        self.assertRaisesRegex(TypeError, r'^find\(', s.find,
+        self.assertRaisesRegex(TypeError, r'^find\b', s.find,
                                 x, None, None, None)
-        self.assertRaisesRegex(TypeError, r'^rfind\(', s.rfind,
+        self.assertRaisesRegex(TypeError, r'^rfind\b', s.rfind,
                                 x, None, None, None)
-        self.assertRaisesRegex(TypeError, r'^index\(', s.index,
+        self.assertRaisesRegex(TypeError, r'^index\b', s.index,
                                 x, None, None, None)
-        self.assertRaisesRegex(TypeError, r'^rindex\(', s.rindex,
+        self.assertRaisesRegex(TypeError, r'^rindex\b', s.rindex,
                                 x, None, None, None)
-        self.assertRaisesRegex(TypeError, r'^count\(', s.count,
+        self.assertRaisesRegex(TypeError, r'^count\b', s.count,
                                 x, None, None, None)
-        self.assertRaisesRegex(TypeError, r'^startswith\(', s.startswith,
+        self.assertRaisesRegex(TypeError, r'^startswith\b', s.startswith,
                                 x, None, None, None)
-        self.assertRaisesRegex(TypeError, r'^endswith\(', s.endswith,
+        self.assertRaisesRegex(TypeError, r'^endswith\b', s.endswith,
                                 x, None, None, None)
 
         # issue #15534
