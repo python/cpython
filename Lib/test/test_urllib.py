@@ -91,26 +91,6 @@ class FakeHTTPMixin(object):
         http.client.HTTPConnection = self._connection_class
 
 
-class FakeFTPMixin(object):
-    def fakeftp(self):
-        class FakeFtpWrapper(object):
-            def __init__(self,  user, passwd, host, port, dirs, timeout=None,
-                     persistent=True):
-                pass
-
-            def retrfile(self, file, type):
-                return io.BytesIO(), 0
-
-            def close(self):
-                pass
-
-        self._ftpwrapper_class = urllib.request.ftpwrapper
-        urllib.request.ftpwrapper = FakeFtpWrapper
-
-    def unfakeftp(self):
-        urllib.request.ftpwrapper = self._ftpwrapper_class
-
-
 class urlopen_FileTests(unittest.TestCase):
     """Test urlopen() opening a temporary file.
 
@@ -311,7 +291,7 @@ class ProxyTests_withOrderedEnv(unittest.TestCase):
         self.assertEqual('http://somewhere:3128', proxies['http'])
 
 
-class urlopen_HttpTests(unittest.TestCase, FakeHTTPMixin, FakeFTPMixin):
+class urlopen_HttpTests(unittest.TestCase, FakeHTTPMixin):
     """Test urlopen() opening a fake http connection."""
 
     def check_read(self, ver):
