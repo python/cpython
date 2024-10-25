@@ -860,7 +860,6 @@ iterations of the loop.
 .. opcode:: RETURN_VALUE
 
    Returns with ``STACK[-1]`` to the caller of the function.
-   Used in normal functions.
 
    .. versionadded:: 3.14
 
