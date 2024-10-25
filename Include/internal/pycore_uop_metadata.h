@@ -93,8 +93,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_DELETE_SUBSCR] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_CALL_INTRINSIC_1] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_CALL_INTRINSIC_2] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
-    [_RETURN_VALUE_FUNC] = HAS_ESCAPES_FLAG,
-    [_RETURN_VALUE_GEN] = HAS_ESCAPES_FLAG,
+    [_RETURN_VALUE] = 0,
     [_GET_AITER] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GET_ANEXT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GET_AWAITABLE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -514,8 +513,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_REPLACE_WITH_TRUE] = "_REPLACE_WITH_TRUE",
     [_RESUME_CHECK] = "_RESUME_CHECK",
     [_RETURN_GENERATOR] = "_RETURN_GENERATOR",
-    [_RETURN_VALUE_FUNC] = "_RETURN_VALUE_FUNC",
-    [_RETURN_VALUE_GEN] = "_RETURN_VALUE_GEN",
+    [_RETURN_VALUE] = "_RETURN_VALUE",
     [_SAVE_RETURN_OFFSET] = "_SAVE_RETURN_OFFSET",
     [_SEND_GEN_FRAME] = "_SEND_GEN_FRAME",
     [_SETUP_ANNOTATIONS] = "_SETUP_ANNOTATIONS",
@@ -716,9 +714,7 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _CALL_INTRINSIC_2:
             return 2;
-        case _RETURN_VALUE_FUNC:
-            return 1;
-        case _RETURN_VALUE_GEN:
+        case _RETURN_VALUE:
             return 1;
         case _GET_AITER:
             return 1;

@@ -283,7 +283,7 @@ dump_instr(cfg_instr *i)
 static inline int
 basicblock_returns(const basicblock *b) {
     cfg_instr *last = basicblock_last_instr(b);
-    return last && (last->i_opcode == RETURN_VALUE || last->i_opcode == RETURN_VALUE_FUNC || last->i_opcode == RETURN_VALUE_GEN);
+    return last && last->i_opcode == RETURN_VALUE);
 }
 
 static void
@@ -2430,9 +2430,6 @@ convert_pseudo_ops(cfg_builder *g, int is_generator)
             else if (instr->i_opcode == STORE_FAST_MAYBE_NULL) {
                 assert(is_pseudo_target(STORE_FAST_MAYBE_NULL, STORE_FAST));
                 instr->i_opcode = STORE_FAST;
-            }
-            else if (instr->i_opcode == RETURN_VALUE) {
-                instr->i_opcode = is_generator ? RETURN_VALUE_GEN : RETURN_VALUE_FUNC;
             }
         }
     }

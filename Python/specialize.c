@@ -2774,7 +2774,7 @@ const struct _PyCode8 _Py_InitCleanup = {
     .co_framesize = 2 + FRAME_SPECIALS_SIZE,
     .co_code_adaptive = {
         EXIT_INIT_CHECK, 0,
-        RETURN_VALUE_FUNC, 0,
+        RETURN_VALUE, 0,
         RESUME, RESUME_AT_FUNC_START,
     }
 };

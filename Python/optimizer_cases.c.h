@@ -632,35 +632,7 @@
             break;
         }
 
-        case _RETURN_VALUE_FUNC: {
-            _Py_UopsSymbol *retval;
-            _Py_UopsSymbol *res;
-            retval = stack_pointer[-1];
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            ctx->frame->stack_pointer = stack_pointer;
-            frame_pop(ctx);
-            stack_pointer = ctx->frame->stack_pointer;
-            /* Stack space handling */
-            assert(corresponding_check_stack == NULL);
-            assert(co != NULL);
-            int framesize = co->co_framesize;
-            assert(framesize > 0);
-            assert(framesize <= curr_space);
-            curr_space -= framesize;
-            co = get_code(this_instr);
-            if (co == NULL) {
-                // might be impossible, but bailing is still safe
-                ctx->done = true;
-            }
-            res = retval;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _RETURN_VALUE_GEN: {
+        case _RETURN_VALUE: {
             _Py_UopsSymbol *retval;
             _Py_UopsSymbol *res;
             retval = stack_pointer[-1];

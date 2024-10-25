@@ -337,7 +337,7 @@ class TestTranforms(BytecodeTestCase):
             return x
         self.assertNotInBytecode(f, 'LOAD_CONST', None)
         returns = [instr for instr in dis.get_instructions(f)
-                          if instr.opname == 'RETURN_VALUE_FUNC']
+                          if instr.opname == 'RETURN_VALUE']
         self.assertEqual(len(returns), 1)
         self.check_lnotab(f)
 
@@ -351,7 +351,7 @@ class TestTranforms(BytecodeTestCase):
         self.assertNotInBytecode(f, 'JUMP_FORWARD')
         self.assertNotInBytecode(f, 'JUMP_BACKWARD')
         returns = [instr for instr in dis.get_instructions(f)
-                          if instr.opname == 'RETURN_VALUE_FUNC']
+                          if instr.opname == 'RETURN_VALUE']
         self.assertEqual(len(returns), 2)
         self.check_lnotab(f)
 
@@ -981,19 +981,19 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
             ('LOAD_CONST', 2, 13),
-            ('RETURN_VALUE_FUNC', None, 13),
+            ('RETURN_VALUE', None, 13),
             lbl,
             ('LOAD_CONST', 3, 14),
-            ('RETURN_VALUE_FUNC', None, 14),
+            ('RETURN_VALUE', None, 14),
         ]
         expected_insts = [
             ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
             ('LOAD_CONST', 1, 13),
-            ('RETURN_VALUE_FUNC', None, 13),
+            ('RETURN_VALUE', None, 13),
             lbl,
             ('LOAD_CONST', 2, 14),
-            ('RETURN_VALUE_FUNC', None, 14),
+            ('RETURN_VALUE', None, 14),
         ]
         self.cfg_optimization_test(insts,
                                    expected_insts,
@@ -1010,13 +1010,13 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_CONST', 2, 13),
             lbl,
             ('LOAD_CONST', 3, 14),
-            ('RETURN_VALUE_FUNC', None, 14),
+            ('RETURN_VALUE', None, 14),
         ]
         expected_insts = [
             ('NOP', None, 11),
             ('NOP', None, 12),
             ('LOAD_CONST', 1, 14),
-            ('RETURN_VALUE_FUNC', None, 14),
+            ('RETURN_VALUE', None, 14),
         ]
         self.cfg_optimization_test(insts,
                                    expected_insts,
@@ -1061,18 +1061,18 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('SETUP_FINALLY', handler := self.Label(), 10),
             ('POP_BLOCK', None, -1),
             ('LOAD_CONST', 1, 11),
-            ('RETURN_VALUE_FUNC', None, 11),
+            ('RETURN_VALUE', None, 11),
             handler,
             ('LOAD_CONST', 2, 12),
-            ('RETURN_VALUE_FUNC', None, 12),
+            ('RETURN_VALUE', None, 12),
         ]
         expected_insts = [
             ('SETUP_FINALLY', handler := self.Label(), 10),
             ('LOAD_CONST', 1, 11),
-            ('RETURN_VALUE_FUNC', None, 11),
+            ('RETURN_VALUE', None, 11),
             handler,
             ('LOAD_CONST', 2, 12),
-            ('RETURN_VALUE_FUNC', None, 12),
+            ('RETURN_VALUE', None, 12),
         ]
         self.cfg_optimization_test(insts, expected_insts, consts=list(range(5)))
 

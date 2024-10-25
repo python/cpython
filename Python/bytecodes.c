@@ -990,10 +990,9 @@ dummy_func(
         // The stack effect here is a bit misleading.
         // retval is popped from the stack, but res
         // is pushed to a different frame, the callers' frame.
-        inst(RETURN_VALUE_FUNC, (retval -- res)) {
+        inst(RETURN_VALUE, (retval -- res)) {
             #if TIER_ONE
             assert(frame != &entry_frame);
-            assert(frame->owner != FRAME_OWNED_BY_GENERATOR);
             #endif
             _PyStackRef temp = retval;
             DEAD(retval);
@@ -1003,27 +1002,7 @@ dummy_func(
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
-            _PyEval_ClearThreadFrame(tstate, dying);
-            RELOAD_STACK();
-            LOAD_IP(frame->return_offset);
-            res = temp;
-            LLTRACE_RESUME_FRAME();
-        }
-
-        inst(RETURN_VALUE_GEN, (retval -- res)) {
-            #if TIER_ONE
-            assert(frame != &entry_frame);
-            assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
-            #endif
-            _PyStackRef temp = retval;
-            DEAD(retval);
-            SAVE_STACK();
-            assert(EMPTY());
-            _Py_LeaveRecursiveCallPy(tstate);
-            // GH-99729: We need to unlink the frame *before* clearing it:
-            _PyInterpreterFrame *dying = frame;
-            frame = tstate->current_frame = dying->previous;
-            _PyEval_ClearGenFrame(tstate, dying);
+            _PyEval_FrameClearAndPop(tstate, dying);
             RELOAD_STACK();
             LOAD_IP(frame->return_offset);
             res = temp;
@@ -1037,13 +1016,9 @@ dummy_func(
             ERROR_IF(err, error);
         }
 
-        macro(INSTRUMENTED_RETURN_VALUE_FUNC) =
+        macro(INSTRUMENTED_RETURN_VALUE) =
             _RETURN_VALUE_EVENT +
-            RETURN_VALUE_FUNC;
-
-        macro(INSTRUMENTED_RETURN_VALUE_GEN) =
-            _RETURN_VALUE_EVENT +
-            RETURN_VALUE_GEN;
+            RETURN_VALUE;
 
         inst(GET_AITER, (obj -- iter)) {
             unaryfunc getter = NULL;
@@ -2656,11 +2631,6 @@ dummy_func(
         pseudo(JUMP_IF_TRUE, (cond -- cond)) = [
             COPY, TO_BOOL, POP_JUMP_IF_TRUE,
         ];
-
-        pseudo(RETURN_VALUE, (--)) = {
-            RETURN_VALUE_FUNC,
-            RETURN_VALUE_GEN,
-        };
 
         tier1 inst(ENTER_EXECUTOR, (--)) {
             #ifdef _Py_TIER2
