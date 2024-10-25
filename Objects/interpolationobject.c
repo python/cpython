@@ -22,7 +22,7 @@ class templatelib.Interpolation "interpolationobject *" "&_PyInterpolation_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=5b183514b4d7e5af]*/
 
 int
-_conversion_converter(PyObject *arg, PyObject **Py_UNUSED(unused))
+_conversion_converter(PyObject *arg, PyObject **conv)
 {
     if (arg == Py_None) {
         return 1;
@@ -34,13 +34,14 @@ _conversion_converter(PyObject *arg, PyObject **Py_UNUSED(unused))
     }
 
     Py_ssize_t len;
-    const char *conv = PyUnicode_AsUTF8AndSize(arg, &len);
-    if (len != 1 || !(conv[0] == 'a' || conv[0] == 'r' || conv[0] == 's')) {
+    const char *conv_str = PyUnicode_AsUTF8AndSize(arg, &len);
+    if (len != 1 || !(conv_str[0] == 'a' || conv_str[0] == 'r' || conv_str[0] == 's')) {
         PyErr_SetString(PyExc_ValueError,
             "Interpolation() argument 'conv' must be one of 's', 'a' or 'r'");
         return 0;
     }
 
+    *conv = arg;
     return 1;
 }
 

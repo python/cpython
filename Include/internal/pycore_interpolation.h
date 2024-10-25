@@ -11,7 +11,7 @@ extern "C" {
 
 #include "pycore_stackref.h"    // _PyStackRef
 
-extern int _conversion_converter(PyObject *arg, PyObject **Py_UNUSED(unused));
+extern int _conversion_converter(PyObject *arg, PyObject **conv);
 
 extern PyTypeObject _PyInterpolation_Type;
 
