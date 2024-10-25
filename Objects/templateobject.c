@@ -100,7 +100,7 @@ template_dealloc(templateobject *self)
 static PyObject *
 template_repr(templateobject *self)
 {
-    return PyUnicode_FromFormat("%s(%R)",
+    return PyUnicode_FromFormat("%s%R",
                                 _PyType_Name(Py_TYPE(self)),
                                 self->args);
 }
