@@ -1706,7 +1706,7 @@ fail_post_args:
     return -1;
 }
 
-void
+static void
 clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
     assert(frame->owner == FRAME_OWNED_BY_THREAD);
@@ -1722,7 +1722,7 @@ clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     _PyThreadState_PopFrame(tstate, frame);
 }
 
-void
+static void
 clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
     assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
