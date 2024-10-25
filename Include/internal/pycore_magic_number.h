@@ -262,6 +262,8 @@ Known values:
     Python 3.14a1 3607 (Add pseudo instructions JUMP_IF_TRUE/FALSE)
     Python 3.14a1 3608 (Add support for slices)
 
+    Python 3.14a1 3609 (LOAD_FAST_TEMP)
+
     Python 3.15 will start with 3650
 
     Please don't copy-paste the same pre-release tag for new entries above!!!
@@ -273,7 +275,7 @@ PC/launcher.c must also be updated.
 
 */
 
-#define PYC_MAGIC_NUMBER 3608
+#define PYC_MAGIC_NUMBER 3609
 /* This is equivalent to converting PYC_MAGIC_NUMBER to 2 bytes
    (little-endian) and then appending b'\r\n'. */
 #define PYC_MAGIC_NUMBER_TOKEN \

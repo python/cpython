@@ -186,11 +186,16 @@ typedef struct {
     Py_ssize_t on_top;
 } pattern_context;
 
-static int codegen_nameop(compiler *, location, identifier, expr_context_ty);
+static int codegen_nameop2(compiler *, location, identifier, expr_context_ty, bool);
+
+static inline int codegen_nameop(compiler *c, location l, identifier i, expr_context_ty e)
+{
+    return codegen_nameop2(c, l, i, e, false);
+}
 
 static int codegen_visit_stmt(compiler *, stmt_ty);
 static int codegen_visit_keyword(compiler *, keyword_ty);
-static int codegen_visit_expr(compiler *, expr_ty);
+static int codegen_visit_expr(compiler *, expr_ty, bool);
 static int codegen_augassign(compiler *, stmt_ty);
 static int codegen_annassign(compiler *, stmt_ty);
 static int codegen_subscript(compiler *, expr_ty);
@@ -420,8 +425,20 @@ codegen_addop_j(instr_sequence *seq, location loc,
 #define VISIT(C, TYPE, V) \
     RETURN_IF_ERROR(codegen_visit_ ## TYPE((C), (V)));
 
+#define VISIT_EXPR(C, V) \
+    RETURN_IF_ERROR(codegen_visit_expr((C), (V), false));
+
+#define VISIT_EXPR_CONSUMED(C, V) \
+    RETURN_IF_ERROR(codegen_visit_expr((C), (V), true));
+
+#define VISIT_EXPR2(C, V, B) \
+    RETURN_IF_ERROR(codegen_visit_expr((C), (V), (B)));
+
 #define VISIT_IN_SCOPE(C, TYPE, V) \
     RETURN_IF_ERROR_IN_SCOPE((C), codegen_visit_ ## TYPE((C), (V)))
+
+#define VISIT_EXPR_IN_SCOPE(C, V) \
+    RETURN_IF_ERROR_IN_SCOPE((C), codegen_visit_expr((C), (V), false))
 
 #define VISIT_SEQ(C, TYPE, SEQ) { \
     int _i; \
@@ -429,6 +446,15 @@ codegen_addop_j(instr_sequence *seq, location loc,
     for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
         TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i); \
         RETURN_IF_ERROR(codegen_visit_ ## TYPE((C), elt)); \
+    } \
+}
+
+#define VISIT_EXPR_SEQ(C, SEQ, B) { \
+    int _i; \
+    asdl_expr_seq *seq = (SEQ); /* avoid variable capture */ \
+    for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
+        expr_ty elt = (expr_ty)asdl_seq_GET(seq, _i); \
+        RETURN_IF_ERROR(codegen_visit_expr((C), elt, (B))); \
     } \
 }
 
@@ -724,7 +750,7 @@ codegen_process_deferred_annotations(compiler *c, location loc)
             return ERROR;
         }
         ADDOP_LOAD_CONST_NEW(c, LOC(st), mangled);
-        VISIT(c, expr, st->v.AnnAssign.annotation);
+        VISIT_EXPR(c, st->v.AnnAssign.annotation);
     }
     Py_DECREF(deferred_anno);
 
@@ -738,7 +764,7 @@ codegen_process_deferred_annotations(compiler *c, location loc)
 int
 _PyCodegen_Expression(compiler *c, expr_ty e)
 {
-    VISIT(c, expr, e);
+    VISIT_EXPR(c, e);
     return SUCCESS;
 }
 
@@ -846,7 +872,7 @@ codegen_decorators(compiler *c, asdl_expr_seq* decos)
     }
 
     for (Py_ssize_t i = 0; i < asdl_seq_LEN(decos); i++) {
-        VISIT(c, expr, (expr_ty)asdl_seq_GET(decos, i));
+        VISIT_EXPR_CONSUMED(c, (expr_ty)asdl_seq_GET(decos, i));
     }
     return SUCCESS;
 }
@@ -884,7 +910,7 @@ codegen_kwonlydefaults(compiler *c, location loc,
                 return ERROR;
             }
             ADDOP_LOAD_CONST_NEW(c, loc, mangled);
-            VISIT(c, expr, default_);
+            VISIT_EXPR(c, default_);
         }
     }
     if (default_count) {
@@ -927,11 +953,11 @@ codegen_argannotation(compiler *c, identifier id,
             // Do [annotation_value] = [*Ts].
             // (Note that in theory we could end up here even for an argument
             // other than *args, but in practice the grammar doesn't allow it.)
-            VISIT(c, expr, annotation->v.Starred.value);
+            VISIT_EXPR(c, annotation->v.Starred.value);
             ADDOP_I(c, loc, UNPACK_SEQUENCE, (Py_ssize_t) 1);
         }
         else {
-            VISIT(c, expr, annotation);
+            VISIT_EXPR(c, annotation);
         }
     }
     *annotations_len += 1;
@@ -1026,7 +1052,7 @@ static int
 codegen_defaults(compiler *c, arguments_ty args,
                         location loc)
 {
-    VISIT_SEQ(c, expr, args->defaults);
+    VISIT_EXPR_SEQ(c, args->defaults, false);
     ADDOP_I(c, loc, BUILD_TUPLE, asdl_seq_LEN(args->defaults));
     return SUCCESS;
 }
@@ -1080,11 +1106,11 @@ codegen_type_param_bound_or_default(compiler *c, expr_ty e,
     ADDOP_LOAD_CONST_NEW(c, LOC(e), defaults);
     RETURN_IF_ERROR(codegen_setup_annotations_scope(c, LOC(e), key, name));
     if (allow_starred && e->kind == Starred_kind) {
-        VISIT(c, expr, e->v.Starred.value);
+        VISIT_EXPR(c, e->v.Starred.value);
         ADDOP_I(c, LOC(e), UNPACK_SEQUENCE, (Py_ssize_t)1);
     }
     else {
-        VISIT(c, expr, e);
+        VISIT_EXPR(c, e);
     }
     ADDOP_IN_SCOPE(c, LOC(e), RETURN_VALUE);
     PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 1);
@@ -1584,7 +1610,7 @@ codegen_typealias_body(compiler *c, stmt_ty s)
     /* Make None the first constant, so the evaluate function can't have a
         docstring. */
     RETURN_IF_ERROR(_PyCompile_AddConst(c, Py_None));
-    VISIT_IN_SCOPE(c, expr, s->v.TypeAlias.value);
+    VISIT_EXPR_IN_SCOPE(c, s->v.TypeAlias.value);
     ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
     PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 0);
     _PyCompile_ExitScope(c);
@@ -1796,17 +1822,16 @@ codegen_jump_if(compiler *c, location loc,
         if (n > 0) {
             RETURN_IF_ERROR(codegen_check_compare(c, e));
             NEW_JUMP_TARGET_LABEL(c, cleanup);
-            VISIT(c, expr, e->v.Compare.left);
+            VISIT_EXPR_CONSUMED(c, e->v.Compare.left);
             for (Py_ssize_t i = 0; i < n; i++) {
-                VISIT(c, expr,
-                    (expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
+                VISIT_EXPR_CONSUMED(c, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
                 ADDOP_I(c, LOC(e), SWAP, 2);
                 ADDOP_I(c, LOC(e), COPY, 2);
                 ADDOP_COMPARE(c, LOC(e), asdl_seq_GET(e->v.Compare.ops, i));
                 ADDOP(c, LOC(e), TO_BOOL);
                 ADDOP_JUMP(c, LOC(e), POP_JUMP_IF_FALSE, cleanup);
             }
-            VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
+            VISIT_EXPR_CONSUMED(c, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
             ADDOP_COMPARE(c, LOC(e), asdl_seq_GET(e->v.Compare.ops, n));
             ADDOP(c, LOC(e), TO_BOOL);
             ADDOP_JUMP(c, LOC(e), cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
@@ -1831,14 +1856,14 @@ codegen_jump_if(compiler *c, location loc,
     }
 
     /* general implementation */
-    VISIT(c, expr, e);
+    VISIT_EXPR_CONSUMED(c, e);
     ADDOP(c, LOC(e), TO_BOOL);
     ADDOP_JUMP(c, LOC(e), cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
     return SUCCESS;
 }
 
 static int
-codegen_ifexp(compiler *c, expr_ty e)
+codegen_ifexp(compiler *c, expr_ty e, bool ref_consumed)
 {
     assert(e->kind == IfExp_kind);
     NEW_JUMP_TARGET_LABEL(c, end);
@@ -1847,11 +1872,11 @@ codegen_ifexp(compiler *c, expr_ty e)
     RETURN_IF_ERROR(
         codegen_jump_if(c, LOC(e), e->v.IfExp.test, next, 0));
 
-    VISIT(c, expr, e->v.IfExp.body);
+    VISIT_EXPR2(c, e->v.IfExp.body, ref_consumed);
     ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, end);
 
     USE_LABEL(c, next);
-    VISIT(c, expr, e->v.IfExp.orelse);
+    VISIT_EXPR2(c, e->v.IfExp.orelse, ref_consumed);
 
     USE_LABEL(c, end);
     return SUCCESS;
@@ -1883,7 +1908,7 @@ codegen_lambda(compiler *c, expr_ty e)
        docstring. */
     RETURN_IF_ERROR(_PyCompile_AddConst(c, Py_None));
 
-    VISIT_IN_SCOPE(c, expr, e->v.Lambda.body);
+    VISIT_EXPR_IN_SCOPE(c, e->v.Lambda.body);
     if (SYMTABLE_ENTRY(c)->ste_generator) {
         co = _PyCompile_OptimizeAndAssemble(c, 0);
     }
@@ -1942,7 +1967,7 @@ codegen_for(compiler *c, stmt_ty s)
 
     RETURN_IF_ERROR(_PyCompile_PushFBlock(c, loc, COMPILE_FBLOCK_FOR_LOOP, start, end, NULL));
 
-    VISIT(c, expr, s->v.For.iter);
+    VISIT_EXPR_CONSUMED(c, s->v.For.iter);
 
     loc = LOC(s->v.For.iter);
     ADDOP(c, loc, GET_ITER);
@@ -1956,7 +1981,7 @@ codegen_for(compiler *c, stmt_ty s)
     ADDOP(c, LOC(s->v.For.target), NOP);
 
     USE_LABEL(c, body);
-    VISIT(c, expr, s->v.For.target);
+    VISIT_EXPR(c, s->v.For.target);
     VISIT_SEQ(c, stmt, s->v.For.body);
     /* Mark jump as artificial */
     ADDOP_JUMP(c, NO_LOCATION, JUMP, start);
@@ -1987,7 +2012,7 @@ codegen_async_for(compiler *c, stmt_ty s)
     NEW_JUMP_TARGET_LABEL(c, except);
     NEW_JUMP_TARGET_LABEL(c, end);
 
-    VISIT(c, expr, s->v.AsyncFor.iter);
+    VISIT_EXPR_CONSUMED(c, s->v.AsyncFor.iter);
     ADDOP(c, LOC(s->v.AsyncFor.iter), GET_AITER);
 
     USE_LABEL(c, start);
@@ -2001,7 +2026,7 @@ codegen_async_for(compiler *c, stmt_ty s)
     ADDOP(c, loc, POP_BLOCK);  /* for SETUP_FINALLY */
 
     /* Success block for __anext__ */
-    VISIT(c, expr, s->v.AsyncFor.target);
+    VISIT_EXPR(c, s->v.AsyncFor.target);
     VISIT_SEQ(c, stmt, s->v.AsyncFor.body);
     /* Mark jump as artificial */
     ADDOP_JUMP(c, NO_LOCATION, JUMP, start);
@@ -2065,7 +2090,7 @@ codegen_return(compiler *c, stmt_ty s)
     }
 
     if (preserve_tos) {
-        VISIT(c, expr, s->v.Return.value);
+        VISIT_EXPR(c, s->v.Return.value);
     } else {
         /* Emit instruction with line number for return value */
         if (s->v.Return.value != NULL) {
@@ -2327,7 +2352,7 @@ codegen_try_except(compiler *c, stmt_ty s)
         NEW_JUMP_TARGET_LABEL(c, next_except);
         except = next_except;
         if (handler->v.ExceptHandler.type) {
-            VISIT(c, expr, handler->v.ExceptHandler.type);
+            VISIT_EXPR_CONSUMED(c, handler->v.ExceptHandler.type);
             ADDOP(c, loc, CHECK_EXC_MATCH);
             ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, except);
         }
@@ -2520,7 +2545,7 @@ codegen_try_star_except(compiler *c, stmt_ty s)
             ADDOP_I(c, loc, COPY, 2);
         }
         if (handler->v.ExceptHandler.type) {
-            VISIT(c, expr, handler->v.ExceptHandler.type);
+            VISIT_EXPR_CONSUMED(c, handler->v.ExceptHandler.type);
             ADDOP(c, loc, CHECK_EG_MATCH);
             ADDOP_I(c, loc, COPY, 1);
             ADDOP_JUMP(c, loc, POP_JUMP_IF_NONE, no_match);
@@ -2811,7 +2836,7 @@ codegen_assert(compiler *c, stmt_ty s)
     RETURN_IF_ERROR(codegen_jump_if(c, LOC(s), s->v.Assert.test, end, 1));
     ADDOP_I(c, LOC(s), LOAD_COMMON_CONSTANT, CONSTANT_ASSERTIONERROR);
     if (s->v.Assert.msg) {
-        VISIT(c, expr, s->v.Assert.msg);
+        VISIT_EXPR(c, s->v.Assert.msg);
         ADDOP_I(c, LOC(s), CALL, 0);
     }
     ADDOP_I(c, LOC(s->v.Assert.test), RAISE_VARARGS, 1);
@@ -2824,7 +2849,7 @@ static int
 codegen_stmt_expr(compiler *c, location loc, expr_ty value)
 {
     if (IS_INTERACTIVE_TOP_LEVEL(c)) {
-        VISIT(c, expr, value);
+        VISIT_EXPR_CONSUMED(c, value);
         ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_PRINT);
         ADDOP(c, NO_LOCATION, POP_TOP);
         return SUCCESS;
@@ -2836,7 +2861,7 @@ codegen_stmt_expr(compiler *c, location loc, expr_ty value)
         return SUCCESS;
     }
 
-    VISIT(c, expr, value);
+    VISIT_EXPR_CONSUMED(c, value);
     ADDOP(c, NO_LOCATION, POP_TOP); /* artificial */
     return SUCCESS;
 }
@@ -2855,18 +2880,17 @@ codegen_visit_stmt(compiler *c, stmt_ty s)
     case Return_kind:
         return codegen_return(c, s);
     case Delete_kind:
-        VISIT_SEQ(c, expr, s->v.Delete.targets)
+        VISIT_EXPR_SEQ(c, s->v.Delete.targets, false);
         break;
     case Assign_kind:
     {
         Py_ssize_t n = asdl_seq_LEN(s->v.Assign.targets);
-        VISIT(c, expr, s->v.Assign.value);
+        VISIT_EXPR(c, s->v.Assign.value);
         for (Py_ssize_t i = 0; i < n; i++) {
             if (i < n - 1) {
                 ADDOP_I(c, LOC(s), COPY, 1);
             }
-            VISIT(c, expr,
-                  (expr_ty)asdl_seq_GET(s->v.Assign.targets, i));
+            VISIT_EXPR(c, (expr_ty)asdl_seq_GET(s->v.Assign.targets, i));
         }
         break;
     }
@@ -2886,10 +2910,10 @@ codegen_visit_stmt(compiler *c, stmt_ty s)
     {
         Py_ssize_t n = 0;
         if (s->v.Raise.exc) {
-            VISIT(c, expr, s->v.Raise.exc);
+            VISIT_EXPR(c, s->v.Raise.exc);
             n++;
             if (s->v.Raise.cause) {
-                VISIT(c, expr, s->v.Raise.cause);
+                VISIT_EXPR(c, s->v.Raise.cause);
                 n++;
             }
         }
@@ -3028,8 +3052,8 @@ codegen_load_classdict_freevar(compiler *c, location loc)
 }
 
 static int
-codegen_nameop(compiler *c, location loc,
-               identifier name, expr_context_ty ctx)
+codegen_nameop2(compiler *c, location loc,
+               identifier name, expr_context_ty ctx, bool ref_consumed)
 {
     assert(!_PyUnicode_EqualToASCIIString(name, "None") &&
            !_PyUnicode_EqualToASCIIString(name, "True") &&
@@ -3081,9 +3105,15 @@ codegen_nameop(compiler *c, location loc,
         break;
     case COMPILE_OP_FAST:
         switch (ctx) {
-        case Load: op = LOAD_FAST; break;
-        case Store: op = STORE_FAST; break;
-        case Del: op = DELETE_FAST; break;
+        case Load:
+            op = ref_consumed ? LOAD_FAST_TEMP : LOAD_FAST;
+            break;
+        case Store:
+            op = STORE_FAST;
+            break;
+        case Del:
+            op = DELETE_FAST;
+            break;
         }
         ADDOP_N(c, loc, op, mangled, varnames);
         return SUCCESS;
@@ -3132,7 +3162,7 @@ error:
 }
 
 static int
-codegen_boolop(compiler *c, expr_ty e)
+codegen_boolop(compiler *c, expr_ty e, bool ref_consumed)
 {
     int jumpi;
     Py_ssize_t i, n;
@@ -3149,11 +3179,11 @@ codegen_boolop(compiler *c, expr_ty e)
     n = asdl_seq_LEN(s) - 1;
     assert(n >= 0);
     for (i = 0; i < n; ++i) {
-        VISIT(c, expr, (expr_ty)asdl_seq_GET(s, i));
+        VISIT_EXPR2(c, (expr_ty)asdl_seq_GET(s, i), ref_consumed);
         ADDOP_JUMP(c, loc, jumpi, end);
         ADDOP(c, loc, POP_TOP);
     }
-    VISIT(c, expr, (expr_ty)asdl_seq_GET(s, n));
+    VISIT_EXPR2(c, (expr_ty)asdl_seq_GET(s, n), ref_consumed);
 
     USE_LABEL(c, end);
     return SUCCESS;
@@ -3205,7 +3235,7 @@ starunpack_helper_impl(compiler *c, location loc,
     if (!seen_star && !big) {
         for (Py_ssize_t i = 0; i < n; i++) {
             expr_ty elt = asdl_seq_GET(elts, i);
-            VISIT(c, expr, elt);
+            VISIT_EXPR(c, elt);
         }
         if (injected_arg) {
             RETURN_IF_ERROR(codegen_nameop(c, loc, injected_arg, Load));
@@ -3230,11 +3260,11 @@ starunpack_helper_impl(compiler *c, location loc,
                 ADDOP_I(c, loc, build, i+pushed);
                 sequence_built = 1;
             }
-            VISIT(c, expr, elt->v.Starred.value);
+            VISIT_EXPR(c, elt->v.Starred.value);
             ADDOP_I(c, loc, extend, 1);
         }
         else {
-            VISIT(c, expr, elt);
+            VISIT_EXPR(c, elt);
             if (sequence_built) {
                 ADDOP_I(c, loc, add, 1);
             }
@@ -3295,7 +3325,7 @@ assignment_helper(compiler *c, location loc, asdl_expr_seq *elts)
     RETURN_IF_ERROR(unpack_helper(c, loc, elts));
     for (Py_ssize_t i = 0; i < n; i++) {
         expr_ty elt = asdl_seq_GET(elts, i);
-        VISIT(c, expr, elt->kind != Starred_kind ? elt : elt->v.Starred.value);
+        VISIT_EXPR(c, elt->kind != Starred_kind ? elt : elt->v.Starred.value);
     }
     return SUCCESS;
 }
@@ -3313,7 +3343,7 @@ codegen_list(compiler *c, expr_ty e)
                                  BUILD_LIST, LIST_APPEND, LIST_EXTEND, 0);
     }
     else {
-        VISIT_SEQ(c, expr, elts);
+        VISIT_EXPR_SEQ(c, elts, true);
     }
     return SUCCESS;
 }
@@ -3331,7 +3361,7 @@ codegen_tuple(compiler *c, expr_ty e)
                                  BUILD_LIST, LIST_APPEND, LIST_EXTEND, 1);
     }
     else {
-        VISIT_SEQ(c, expr, elts);
+        VISIT_EXPR_SEQ(c, elts, true);
     }
     return SUCCESS;
 }
@@ -3366,8 +3396,8 @@ codegen_subdict(compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end)
         ADDOP_I(c, loc, BUILD_MAP, 0);
     }
     for (i = begin; i < end; i++) {
-        VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
-        VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
+        VISIT_EXPR_CONSUMED(c, (expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
+        VISIT_EXPR_CONSUMED(c, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
         if (big) {
             ADDOP_I(c, loc, MAP_ADD, 1);
         }
@@ -3403,7 +3433,7 @@ codegen_dict(compiler *c, expr_ty e)
                 ADDOP_I(c, loc, BUILD_MAP, 0);
                 have_dict = 1;
             }
-            VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
+            VISIT_EXPR_CONSUMED(c, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
             ADDOP_I(c, loc, DICT_UPDATE, 1);
         }
         else {
@@ -3440,18 +3470,17 @@ codegen_compare(compiler *c, expr_ty e)
     Py_ssize_t i, n;
 
     RETURN_IF_ERROR(codegen_check_compare(c, e));
-    VISIT(c, expr, e->v.Compare.left);
+    VISIT_EXPR_CONSUMED(c, e->v.Compare.left);
     assert(asdl_seq_LEN(e->v.Compare.ops) > 0);
     n = asdl_seq_LEN(e->v.Compare.ops) - 1;
     if (n == 0) {
-        VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, 0));
+        VISIT_EXPR_CONSUMED(c, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, 0));
         ADDOP_COMPARE(c, loc, asdl_seq_GET(e->v.Compare.ops, 0));
     }
     else {
         NEW_JUMP_TARGET_LABEL(c, cleanup);
         for (i = 0; i < n; i++) {
-            VISIT(c, expr,
-                (expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
+            VISIT_EXPR_CONSUMED(c, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
             ADDOP_I(c, loc, SWAP, 2);
             ADDOP_I(c, loc, COPY, 2);
             ADDOP_COMPARE(c, loc, asdl_seq_GET(e->v.Compare.ops, i));
@@ -3460,7 +3489,7 @@ codegen_compare(compiler *c, expr_ty e)
             ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, cleanup);
             ADDOP(c, loc, POP_TOP);
         }
-        VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
+        VISIT_EXPR_CONSUMED(c, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
         ADDOP_COMPARE(c, loc, asdl_seq_GET(e->v.Compare.ops, n));
         NEW_JUMP_TARGET_LABEL(c, end);
         ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, end);
@@ -3675,8 +3704,8 @@ load_args_for_super(compiler *c, expr_ty e) {
     RETURN_IF_ERROR(codegen_nameop(c, LOC(e->v.Call.func), super_name, Load));
 
     if (asdl_seq_LEN(e->v.Call.args) == 2) {
-        VISIT(c, expr, asdl_seq_GET(e->v.Call.args, 0));
-        VISIT(c, expr, asdl_seq_GET(e->v.Call.args, 1));
+        VISIT_EXPR_CONSUMED(c, asdl_seq_GET(e->v.Call.args, 0));
+        VISIT_EXPR_CONSUMED(c, asdl_seq_GET(e->v.Call.args, 1));
         return SUCCESS;
     }
 
@@ -3779,12 +3808,12 @@ maybe_optimize_method_call(compiler *c, expr_ty e)
         loc = update_start_location_to_match_attr(c, loc, meth);
         ADDOP(c, loc, NOP);
     } else {
-        VISIT(c, expr, meth->v.Attribute.value);
+        VISIT_EXPR_CONSUMED(c, meth->v.Attribute.value);
         loc = update_start_location_to_match_attr(c, loc, meth);
         ADDOP_NAME(c, loc, LOAD_METHOD, meth->v.Attribute.attr, names);
     }
 
-    VISIT_SEQ(c, expr, e->v.Call.args);
+    VISIT_EXPR_SEQ(c, e->v.Call.args, true);
 
     if (kwdsl) {
         VISIT_SEQ(c, keyword, kwds);
@@ -3831,7 +3860,7 @@ codegen_call(compiler *c, expr_ty e)
         return SUCCESS;
     }
     RETURN_IF_ERROR(check_caller(c, e->v.Call.func));
-    VISIT(c, expr, e->v.Call.func);
+    VISIT_EXPR_CONSUMED(c, e->v.Call.func);
     location loc = LOC(e->v.Call.func);
     ADDOP(c, loc, PUSH_NULL);
     loc = LOC(e);
@@ -3851,13 +3880,13 @@ codegen_joined_str(compiler *c, expr_ty e)
         ADDOP_NAME(c, loc, LOAD_METHOD, &_Py_ID(join), names);
         ADDOP_I(c, loc, BUILD_LIST, 0);
         for (Py_ssize_t i = 0; i < asdl_seq_LEN(e->v.JoinedStr.values); i++) {
-            VISIT(c, expr, asdl_seq_GET(e->v.JoinedStr.values, i));
+            VISIT_EXPR_CONSUMED(c, asdl_seq_GET(e->v.JoinedStr.values, i));
             ADDOP_I(c, loc, LIST_APPEND, 1);
         }
         ADDOP_I(c, loc, CALL, 1);
     }
     else {
-        VISIT_SEQ(c, expr, e->v.JoinedStr.values);
+        VISIT_EXPR_SEQ(c, e->v.JoinedStr.values, true);
         if (value_count > 1) {
             ADDOP_I(c, loc, BUILD_STRING, value_count);
         }
@@ -3891,7 +3920,7 @@ codegen_formatted_value(compiler *c, expr_ty e)
     int oparg;
 
     /* The expression to be formatted. */
-    VISIT(c, expr, e->v.FormattedValue.value);
+    VISIT_EXPR_CONSUMED(c, e->v.FormattedValue.value);
 
     location loc = LOC(e);
     if (conversion != -1) {
@@ -3908,7 +3937,7 @@ codegen_formatted_value(compiler *c, expr_ty e)
     }
     if (e->v.FormattedValue.format_spec) {
         /* Evaluate the format spec, and update our opcode arg. */
-        VISIT(c, expr, e->v.FormattedValue.format_spec);
+        VISIT_EXPR_CONSUMED(c, e->v.FormattedValue.format_spec);
         ADDOP(c, loc, FORMAT_WITH_SPEC);
     } else {
         ADDOP(c, loc, FORMAT_SIMPLE);
@@ -3931,7 +3960,7 @@ codegen_subkwargs(compiler *c, location loc,
     for (i = begin; i < end; i++) {
         kw = asdl_seq_GET(keywords, i);
         ADDOP_LOAD_CONST(c, loc, kw->arg);
-        VISIT(c, expr, kw->value);
+        VISIT_EXPR_CONSUMED(c, kw->value);
         if (big) {
             ADDOP_I(c, NO_LOCATION, MAP_ADD, 1);
         }
@@ -3997,7 +4026,7 @@ codegen_call_helper_impl(compiler *c, location loc,
     for (i = 0; i < nelts; i++) {
         expr_ty elt = asdl_seq_GET(args, i);
         assert(elt->kind != Starred_kind);
-        VISIT(c, expr, elt);
+        VISIT_EXPR_CONSUMED(c, elt);
     }
     if (injected_arg) {
         RETURN_IF_ERROR(codegen_nameop(c, loc, injected_arg, Load));
@@ -4018,7 +4047,7 @@ ex_call:
 
     /* Do positional arguments. */
     if (n == 0 && nelts == 1 && ((expr_ty)asdl_seq_GET(args, 0))->kind == Starred_kind) {
-        VISIT(c, expr, ((expr_ty)asdl_seq_GET(args, 0))->v.Starred.value);
+        VISIT_EXPR_CONSUMED(c, ((expr_ty)asdl_seq_GET(args, 0))->v.Starred.value);
     }
     else {
         RETURN_IF_ERROR(starunpack_helper_impl(c, loc, args, injected_arg, n,
@@ -4046,7 +4075,7 @@ ex_call:
                     ADDOP_I(c, loc, BUILD_MAP, 0);
                     have_dict = 1;
                 }
-                VISIT(c, expr, kw->value);
+                VISIT_EXPR(c, kw->value);
                 ADDOP_I(c, loc, DICT_MERGE, 1);
             }
             else {
@@ -4151,12 +4180,12 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
             if (asdl_seq_LEN(elts) == 1) {
                 expr_ty elt = asdl_seq_GET(elts, 0);
                 if (elt->kind != Starred_kind) {
-                    VISIT(c, expr, elt);
+                    VISIT_EXPR(c, elt);
                     start = NO_LABEL;
                 }
             }
             if (IS_JUMP_TARGET_LABEL(start)) {
-                VISIT(c, expr, gen->iter);
+                VISIT_EXPR(c, gen->iter);
                 ADDOP(c, LOC(gen->iter), GET_ITER);
             }
         }
@@ -4168,7 +4197,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
         USE_LABEL(c, start);
         ADDOP_JUMP(c, LOC(gen->iter), FOR_ITER, anchor);
     }
-    VISIT(c, expr, gen->target);
+    VISIT_EXPR(c, gen->target);
 
     /* XXX this needs to be cleaned up...a lot! */
     Py_ssize_t n = asdl_seq_LEN(gen->ifs);
@@ -4191,23 +4220,23 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
         /* comprehension specific code */
         switch (type) {
         case COMP_GENEXP:
-            VISIT(c, expr, elt);
+            VISIT_EXPR(c, elt);
             ADDOP_YIELD(c, elt_loc);
             ADDOP(c, elt_loc, POP_TOP);
             break;
         case COMP_LISTCOMP:
-            VISIT(c, expr, elt);
+            VISIT_EXPR_CONSUMED(c, elt);
             ADDOP_I(c, elt_loc, LIST_APPEND, depth + 1);
             break;
         case COMP_SETCOMP:
-            VISIT(c, expr, elt);
+            VISIT_EXPR_CONSUMED(c, elt);
             ADDOP_I(c, elt_loc, SET_ADD, depth + 1);
             break;
         case COMP_DICTCOMP:
             /* With '{k: v}', k is evaluated before v, so we do
                the same. */
-            VISIT(c, expr, elt);
-            VISIT(c, expr, val);
+            VISIT_EXPR_CONSUMED(c, elt);
+            VISIT_EXPR_CONSUMED(c, val);
             elt_loc = LOCATION(elt->lineno,
                                val->end_lineno,
                                elt->col_offset,
@@ -4256,7 +4285,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
         }
         else {
             /* Sub-iter - calculate on the fly */
-            VISIT(c, expr, gen->iter);
+            VISIT_EXPR_CONSUMED(c, gen->iter);
             ADDOP(c, LOC(gen->iter), GET_AITER);
         }
     }
@@ -4272,7 +4301,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADD_YIELD_FROM(c, loc, 1);
     ADDOP(c, loc, POP_BLOCK);
-    VISIT(c, expr, gen->target);
+    VISIT_EXPR(c, gen->target);
 
     Py_ssize_t n = asdl_seq_LEN(gen->ifs);
     for (Py_ssize_t i = 0; i < n; i++) {
@@ -4294,23 +4323,23 @@ codegen_async_comprehension_generator(compiler *c, location loc,
         /* comprehension specific code */
         switch (type) {
         case COMP_GENEXP:
-            VISIT(c, expr, elt);
+            VISIT_EXPR(c, elt);
             ADDOP_YIELD(c, elt_loc);
             ADDOP(c, elt_loc, POP_TOP);
             break;
         case COMP_LISTCOMP:
-            VISIT(c, expr, elt);
+            VISIT_EXPR_CONSUMED(c, elt);
             ADDOP_I(c, elt_loc, LIST_APPEND, depth + 1);
             break;
         case COMP_SETCOMP:
-            VISIT(c, expr, elt);
+            VISIT_EXPR_CONSUMED(c, elt);
             ADDOP_I(c, elt_loc, SET_ADD, depth + 1);
             break;
         case COMP_DICTCOMP:
             /* With '{k: v}', k is evaluated before v, so we do
                the same. */
-            VISIT(c, expr, elt);
-            VISIT(c, expr, val);
+            VISIT_EXPR_CONSUMED(c, elt);
+            VISIT_EXPR_CONSUMED(c, val);
             elt_loc = LOCATION(elt->lineno,
                                val->end_lineno,
                                elt->col_offset,
@@ -4473,7 +4502,7 @@ pop_inlined_comprehension_state(compiler *c, location loc,
 static inline int
 codegen_comprehension_iter(compiler *c, comprehension_ty comp)
 {
-    VISIT(c, expr, comp->iter);
+    VISIT_EXPR_CONSUMED(c, comp->iter);
     if (comp->is_async) {
         ADDOP(c, LOC(comp->iter), GET_AITER);
     }
@@ -4649,7 +4678,7 @@ codegen_dictcomp(compiler *c, expr_ty e)
 static int
 codegen_visit_keyword(compiler *c, keyword_ty k)
 {
-    VISIT(c, expr, k->value);
+    VISIT_EXPR(c, k->value);
     return SUCCESS;
 }
 
@@ -4716,7 +4745,7 @@ codegen_async_with(compiler *c, stmt_ty s, int pos)
     NEW_JUMP_TARGET_LABEL(c, cleanup);
 
     /* Evaluate EXPR */
-    VISIT(c, expr, item->context_expr);
+    VISIT_EXPR_CONSUMED(c, item->context_expr);
     loc = LOC(item->context_expr);
     ADDOP_I(c, loc, COPY, 1);
     ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___AEXIT__);
@@ -4735,7 +4764,7 @@ codegen_async_with(compiler *c, stmt_ty s, int pos)
     RETURN_IF_ERROR(_PyCompile_PushFBlock(c, loc, COMPILE_FBLOCK_ASYNC_WITH, block, final, s));
 
     if (item->optional_vars) {
-        VISIT(c, expr, item->optional_vars);
+        VISIT_EXPR(c, item->optional_vars);
     }
     else {
         /* Discard result from context.__aenter__() */
@@ -4818,7 +4847,7 @@ codegen_with(compiler *c, stmt_ty s, int pos)
     NEW_JUMP_TARGET_LABEL(c, cleanup);
 
     /* Evaluate EXPR */
-    VISIT(c, expr, item->context_expr);
+    VISIT_EXPR_CONSUMED(c, item->context_expr);
     /* Will push bound __exit__ */
     location loc = LOC(item->context_expr);
     ADDOP_I(c, loc, COPY, 1);
@@ -4834,7 +4863,7 @@ codegen_with(compiler *c, stmt_ty s, int pos)
     RETURN_IF_ERROR(_PyCompile_PushFBlock(c, loc, COMPILE_FBLOCK_WITH, block, final, s));
 
     if (item->optional_vars) {
-        VISIT(c, expr, item->optional_vars);
+        VISIT_EXPR(c, item->optional_vars);
     }
     else {
     /* Discard result from context.__enter__() */
@@ -4875,24 +4904,24 @@ codegen_with(compiler *c, stmt_ty s, int pos)
 }
 
 static int
-codegen_visit_expr(compiler *c, expr_ty e)
+codegen_visit_expr(compiler *c, expr_ty e, bool ref_consumed)
 {
     location loc = LOC(e);
     switch (e->kind) {
     case NamedExpr_kind:
-        VISIT(c, expr, e->v.NamedExpr.value);
+        VISIT_EXPR2(c, e->v.NamedExpr.value, ref_consumed);
         ADDOP_I(c, loc, COPY, 1);
-        VISIT(c, expr, e->v.NamedExpr.target);
+        VISIT_EXPR(c, e->v.NamedExpr.target);
         break;
     case BoolOp_kind:
-        return codegen_boolop(c, e);
+        return codegen_boolop(c, e, ref_consumed);
     case BinOp_kind:
-        VISIT(c, expr, e->v.BinOp.left);
-        VISIT(c, expr, e->v.BinOp.right);
+        VISIT_EXPR_CONSUMED(c, e->v.BinOp.left);
+        VISIT_EXPR_CONSUMED(c, e->v.BinOp.right);
         ADDOP_BINARY(c, loc, e->v.BinOp.op);
         break;
     case UnaryOp_kind:
-        VISIT(c, expr, e->v.UnaryOp.operand);
+        VISIT_EXPR_CONSUMED(c, e->v.UnaryOp.operand);
         if (e->v.UnaryOp.op == UAdd) {
             ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_UNARY_POSITIVE);
         }
@@ -4907,7 +4936,7 @@ codegen_visit_expr(compiler *c, expr_ty e)
     case Lambda_kind:
         return codegen_lambda(c, e);
     case IfExp_kind:
-        return codegen_ifexp(c, e);
+        return codegen_ifexp(c, e, ref_consumed);
     case Dict_kind:
         return codegen_dict(c, e);
     case Set_kind:
@@ -4925,7 +4954,7 @@ codegen_visit_expr(compiler *c, expr_ty e)
             return _PyCompile_Error(c, loc, "'yield' outside function");
         }
         if (e->v.Yield.value) {
-            VISIT(c, expr, e->v.Yield.value);
+            VISIT_EXPR(c, e->v.Yield.value);
         }
         else {
             ADDOP_LOAD_CONST(c, loc, Py_None);
@@ -4939,13 +4968,13 @@ codegen_visit_expr(compiler *c, expr_ty e)
         if (SCOPE_TYPE(c) == COMPILE_SCOPE_ASYNC_FUNCTION) {
             return _PyCompile_Error(c, loc, "'yield from' inside async function");
         }
-        VISIT(c, expr, e->v.YieldFrom.value);
+        VISIT_EXPR(c, e->v.YieldFrom.value);
         ADDOP(c, loc, GET_YIELD_FROM_ITER);
         ADDOP_LOAD_CONST(c, loc, Py_None);
         ADD_YIELD_FROM(c, loc, 0);
         break;
     case Await_kind:
-        VISIT(c, expr, e->v.Await.value);
+        VISIT_EXPR_CONSUMED(c, e->v.Await.value);
         ADDOP_I(c, loc, GET_AWAITABLE, 0);
         ADDOP_LOAD_CONST(c, loc, Py_None);
         ADD_YIELD_FROM(c, loc, 1);
@@ -4977,7 +5006,7 @@ codegen_visit_expr(compiler *c, expr_ty e)
             }
         }
         RETURN_IF_ERROR(_PyCompile_MaybeAddStaticAttributeToClass(c, e));
-        VISIT(c, expr, e->v.Attribute.value);
+        VISIT_EXPR_CONSUMED(c, e->v.Attribute.value);
         loc = LOC(e);
         loc = update_start_location_to_match_attr(c, loc, e);
         switch (e->v.Attribute.ctx) {
@@ -5010,7 +5039,7 @@ codegen_visit_expr(compiler *c, expr_ty e)
         RETURN_IF_ERROR(codegen_slice(c, e));
         break;
     case Name_kind:
-        return codegen_nameop(c, loc, e->v.Name.id, e->v.Name.ctx);
+        return codegen_nameop2(c, loc, e->v.Name.id, e->v.Name.ctx, ref_consumed);
     /* child nodes of List and Tuple will have expr_context set */
     case List_kind:
         return codegen_list(c, e);
@@ -5050,13 +5079,13 @@ codegen_augassign(compiler *c, stmt_ty s)
 
     switch (e->kind) {
     case Attribute_kind:
-        VISIT(c, expr, e->v.Attribute.value);
+        VISIT_EXPR_CONSUMED(c, e->v.Attribute.value);
         ADDOP_I(c, loc, COPY, 1);
         loc = update_start_location_to_match_attr(c, loc, e);
         ADDOP_NAME(c, loc, LOAD_ATTR, e->v.Attribute.attr, names);
         break;
     case Subscript_kind:
-        VISIT(c, expr, e->v.Subscript.value);
+        VISIT_EXPR_CONSUMED(c, e->v.Subscript.value);
         if (should_apply_two_element_slice_optimization(e->v.Subscript.slice)) {
             RETURN_IF_ERROR(codegen_slice_two_parts(c, e->v.Subscript.slice));
             ADDOP_I(c, loc, COPY, 3);
@@ -5065,14 +5094,14 @@ codegen_augassign(compiler *c, stmt_ty s)
             ADDOP(c, loc, BINARY_SLICE);
         }
         else {
-            VISIT(c, expr, e->v.Subscript.slice);
+            VISIT_EXPR_CONSUMED(c, e->v.Subscript.slice);
             ADDOP_I(c, loc, COPY, 2);
             ADDOP_I(c, loc, COPY, 2);
             ADDOP(c, loc, BINARY_SUBSCR);
         }
         break;
     case Name_kind:
-        RETURN_IF_ERROR(codegen_nameop(c, loc, e->v.Name.id, Load));
+        RETURN_IF_ERROR(codegen_nameop2(c, loc, e->v.Name.id, Load, true));
         break;
     default:
         PyErr_Format(PyExc_SystemError,
@@ -5083,7 +5112,7 @@ codegen_augassign(compiler *c, stmt_ty s)
 
     loc = LOC(s);
 
-    VISIT(c, expr, s->v.AugAssign.value);
+    VISIT_EXPR_CONSUMED(c, s->v.AugAssign.value);
     ADDOP_INPLACE(c, loc, s->v.AugAssign.op);
 
     loc = LOC(e);
@@ -5118,7 +5147,7 @@ codegen_augassign(compiler *c, stmt_ty s)
 static int
 codegen_check_ann_expr(compiler *c, expr_ty e)
 {
-    VISIT(c, expr, e);
+    VISIT_EXPR_CONSUMED(c, e);
     ADDOP(c, LOC(e), POP_TOP);
     return SUCCESS;
 }
@@ -5182,8 +5211,8 @@ codegen_annassign(compiler *c, stmt_ty s)
 
     /* We perform the actual assignment first. */
     if (s->v.AnnAssign.value) {
-        VISIT(c, expr, s->v.AnnAssign.value);
-        VISIT(c, expr, targ);
+        VISIT_EXPR(c, s->v.AnnAssign.value);
+        VISIT_EXPR(c, targ);
     }
     switch (targ->kind) {
     case Name_kind:
@@ -5241,7 +5270,7 @@ codegen_subscript(compiler *c, expr_ty e)
         RETURN_IF_ERROR(check_index(c, e->v.Subscript.value, e->v.Subscript.slice));
     }
 
-    VISIT(c, expr, e->v.Subscript.value);
+    VISIT_EXPR(c, e->v.Subscript.value);
     if (should_apply_two_element_slice_optimization(e->v.Subscript.slice) &&
         ctx != Del
     ) {
@@ -5255,7 +5284,7 @@ codegen_subscript(compiler *c, expr_ty e)
         }
     }
     else {
-        VISIT(c, expr, e->v.Subscript.slice);
+        VISIT_EXPR(c, e->v.Subscript.slice);
         switch (ctx) {
             case Load:    op = BINARY_SUBSCR; break;
             case Store:   op = STORE_SUBSCR; break;
@@ -5271,14 +5300,14 @@ static int
 codegen_slice_two_parts(compiler *c, expr_ty s)
 {
     if (s->v.Slice.lower) {
-        VISIT(c, expr, s->v.Slice.lower);
+        VISIT_EXPR(c, s->v.Slice.lower);
     }
     else {
         ADDOP_LOAD_CONST(c, LOC(s), Py_None);
     }
 
     if (s->v.Slice.upper) {
-        VISIT(c, expr, s->v.Slice.upper);
+        VISIT_EXPR(c, s->v.Slice.upper);
     }
     else {
         ADDOP_LOAD_CONST(c, LOC(s), Py_None);
@@ -5318,7 +5347,7 @@ codegen_slice(compiler *c, expr_ty s)
 
     if (s->v.Slice.step) {
         n++;
-        VISIT(c, expr, s->v.Slice.step);
+        VISIT_EXPR(c, s->v.Slice.step);
     }
 
     ADDOP_I(c, LOC(s), BUILD_SLICE, n);
@@ -5624,7 +5653,7 @@ codegen_pattern_class(compiler *c, pattern_ty p, pattern_context *pc)
     if (nattrs) {
         RETURN_IF_ERROR(validate_kwd_attrs(c, kwd_attrs, kwd_patterns));
     }
-    VISIT(c, expr, p->v.MatchClass.cls);
+    VISIT_EXPR(c, p->v.MatchClass.cls);
     PyObject *attr_names = PyTuple_New(nattrs);
     if (attr_names == NULL) {
         return ERROR;
@@ -5691,7 +5720,7 @@ codegen_pattern_mapping_key(compiler *c, PyObject *seen, pattern_ty p, Py_ssize_
         const char *e = "mapping pattern keys may only match literals and attribute lookups";
         return _PyCompile_Error(c, LOC(p), e);
     }
-    VISIT(c, expr, key);
+    VISIT_EXPR(c, key);
     return SUCCESS;
 }
 
@@ -6015,7 +6044,7 @@ codegen_pattern_value(compiler *c, pattern_ty p, pattern_context *pc)
         const char *e = "patterns may only match literals and attribute lookups";
         return _PyCompile_Error(c, LOC(p), e);
     }
-    VISIT(c, expr, value);
+    VISIT_EXPR(c, value);
     ADDOP_COMPARE(c, LOC(p), Eq);
     ADDOP(c, LOC(p), TO_BOOL);
     RETURN_IF_ERROR(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
@@ -6062,7 +6091,7 @@ codegen_pattern(compiler *c, pattern_ty p, pattern_context *pc)
 static int
 codegen_match_inner(compiler *c, stmt_ty s, pattern_context *pc)
 {
-    VISIT(c, expr, s->v.Match.subject);
+    VISIT_EXPR(c, s->v.Match.subject);
     NEW_JUMP_TARGET_LABEL(c, end);
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
     assert(cases > 0);

@@ -709,27 +709,27 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
     def test_load_fast_known_because_parameter(self):
         def f1(x):
             print(x)
-        self.assertInBytecode(f1, 'LOAD_FAST')
+        self.assertInBytecode(f1, 'LOAD_FAST_TEMP')
         self.assertNotInBytecode(f1, 'LOAD_FAST_CHECK')
 
         def f2(*, x):
             print(x)
-        self.assertInBytecode(f2, 'LOAD_FAST')
+        self.assertInBytecode(f2, 'LOAD_FAST_TEMP')
         self.assertNotInBytecode(f2, 'LOAD_FAST_CHECK')
 
         def f3(*args):
             print(args)
-        self.assertInBytecode(f3, 'LOAD_FAST')
+        self.assertInBytecode(f3, 'LOAD_FAST_TEMP')
         self.assertNotInBytecode(f3, 'LOAD_FAST_CHECK')
 
         def f4(**kwargs):
             print(kwargs)
-        self.assertInBytecode(f4, 'LOAD_FAST')
+        self.assertInBytecode(f4, 'LOAD_FAST_TEMP')
         self.assertNotInBytecode(f4, 'LOAD_FAST_CHECK')
 
         def f5(x=0):
             print(x)
-        self.assertInBytecode(f5, 'LOAD_FAST')
+        self.assertInBytecode(f5, 'LOAD_FAST_TEMP')
         self.assertNotInBytecode(f5, 'LOAD_FAST_CHECK')
 
     def test_load_fast_known_because_already_loaded(self):
@@ -739,7 +739,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
             print(x)
             print(x)
         self.assertInBytecode(f, 'LOAD_FAST_CHECK')
-        self.assertInBytecode(f, 'LOAD_FAST')
+        self.assertInBytecode(f, 'LOAD_FAST_TEMP')
 
     def test_load_fast_known_multiple_branches(self):
         def f():
@@ -748,7 +748,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
             else:
                 x = 2
             print(x)
-        self.assertInBytecode(f, 'LOAD_FAST')
+        self.assertInBytecode(f, 'LOAD_FAST_TEMP')
         self.assertNotInBytecode(f, 'LOAD_FAST_CHECK')
 
     def test_load_fast_unknown_after_error(self):
@@ -792,27 +792,27 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
                 print(a00, a01, a62, a63)
                 print(a64, a65, a78, a79)
 
-        self.assertInBytecode(f, 'LOAD_FAST_LOAD_FAST', ("a00", "a01"))
+        self.assertInBytecode(f, 'LOAD_FAST_TEMP', "a00")
         self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', "a00")
         self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', "a01")
         for i in 62, 63:
             # First 64 locals: analyze completely
-            self.assertInBytecode(f, 'LOAD_FAST', f"a{i:02}")
+            self.assertInBytecode(f, 'LOAD_FAST_TEMP', f"a{i:02}")
             self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', f"a{i:02}")
         for i in 64, 65, 78, 79:
             # Locals >=64 not in the same basicblock
             self.assertInBytecode(f, 'LOAD_FAST_CHECK', f"a{i:02}")
-            self.assertNotInBytecode(f, 'LOAD_FAST', f"a{i:02}")
+            self.assertNotInBytecode(f, 'LOAD_FAST_TEMP', f"a{i:02}")
         for i in 70, 71:
             # Locals >=64 in the same basicblock
-            self.assertInBytecode(f, 'LOAD_FAST', f"a{i:02}")
+            self.assertInBytecode(f, 'LOAD_FAST_TEMP', f"a{i:02}")
             self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', f"a{i:02}")
         # del statements should invalidate within basicblocks.
         self.assertInBytecode(f, 'LOAD_FAST_CHECK', "a72")
-        self.assertNotInBytecode(f, 'LOAD_FAST', "a72")
+        self.assertNotInBytecode(f, 'LOAD_FAST_TEMP', "a72")
         # previous checked loads within a basicblock enable unchecked loads
         self.assertInBytecode(f, 'LOAD_FAST_CHECK', "a73")
-        self.assertInBytecode(f, 'LOAD_FAST', "a73")
+        self.assertInBytecode(f, 'LOAD_FAST_TEMP', "a73")
 
     def test_setting_lineno_no_undefined(self):
         code = textwrap.dedent("""\
@@ -830,7 +830,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         ns = {}
         exec(code, ns)
         f = ns['f']
-        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertInBytecode(f, "LOAD_FAST_TEMP")
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
         co_code = f.__code__.co_code
         def trace(frame, event, arg):
@@ -842,7 +842,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         sys.settrace(trace)
         result = f()
         self.assertIsNone(result)
-        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertInBytecode(f, "LOAD_FAST_TEMP")
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
         self.assertEqual(f.__code__.co_code, co_code)
 
@@ -862,7 +862,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         ns = {}
         exec(code, ns)
         f = ns['f']
-        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertInBytecode(f, "LOAD_FAST_TEMP")
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
         co_code = f.__code__.co_code
         def trace(frame, event, arg):
@@ -876,7 +876,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
             sys.settrace(trace)
             result = f()
         self.assertEqual(result, 4)
-        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertInBytecode(f, "LOAD_FAST_TEMP")
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
         self.assertEqual(f.__code__.co_code, co_code)
 
@@ -896,7 +896,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         ns = {}
         exec(code, ns)
         f = ns['f']
-        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertInBytecode(f, "LOAD_FAST_TEMP")
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
         co_code = f.__code__.co_code
         def trace(frame, event, arg):
@@ -910,7 +910,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
             sys.settrace(trace)
             result = f()
         self.assertEqual(result, 4)
-        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertInBytecode(f, "LOAD_FAST_TEMP")
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
         self.assertEqual(f.__code__.co_code, co_code)
 
@@ -928,7 +928,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         ns = {}
         exec(code, ns)
         f = ns['f']
-        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertInBytecode(f, "LOAD_FAST_TEMP")
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
         return f
 
@@ -942,7 +942,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
             return trace
         sys.settrace(trace)
         f()
-        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertInBytecode(f, "LOAD_FAST_TEMP")
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
 
     def test_initializing_local_does_not_add_check(self):
@@ -955,7 +955,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
             return trace
         sys.settrace(trace)
         f()
-        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertInBytecode(f, "LOAD_FAST_TEMP")
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
 
 
