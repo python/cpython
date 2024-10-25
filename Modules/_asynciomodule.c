@@ -426,23 +426,30 @@ future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
            callbacks from the 'fut_callbacks' list. */
     }
 
+    if (fut->fut_callbacks == NULL) {
+        /* No more callbacks, return. */
+        return 0;
+    }
+
     // Beware: An evil call_soon could change fut->fut_callbacks.
-    for (Py_ssize_t i = 0;
-         fut->fut_callbacks != NULL && i < PyList_GET_SIZE(fut->fut_callbacks);
-         i++) {
-        PyObject *cb_tup = PyList_GET_ITEM(fut->fut_callbacks, i);
+    // The idea is to store the callbacks list before clearing it
+    // on the future object. In particular, external code is not
+    // able to mutate the list during the iteration.
+    PyObject *callbacks = Py_NewRef(fut->fut_callbacks);
+    Py_ssize_t n = PyList_GET_SIZE(callbacks);
+    Py_CLEAR(fut->fut_callbacks);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        assert(PyList_GET_SIZE(callbacks) == n);
+        PyObject *cb_tup = PyList_GET_ITEM(callbacks, i);
         PyObject *cb = PyTuple_GET_ITEM(cb_tup, 0);
         PyObject *ctx = PyTuple_GET_ITEM(cb_tup, 1);
 
         if (call_soon(state, fut->fut_loop, cb, (PyObject *)fut, ctx)) {
-            /* If an error occurs in pure-Python implementation,
-               all callbacks are cleared. */
-            Py_CLEAR(fut->fut_callbacks);
+            Py_DECREF(callbacks);
             return -1;
         }
     }
-
-    Py_CLEAR(fut->fut_callbacks);
+    Py_DECREF(callbacks);
     return 0;
 }
 
