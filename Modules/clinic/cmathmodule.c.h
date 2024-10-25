@@ -6,28 +6,58 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(cmath_acos__doc__,
-"acos($module, z, /)\n"
+"acos($module, /, z)\n"
 "--\n"
 "\n"
 "Return the arc cosine of z.");
 
 #define CMATH_ACOS_METHODDEF    \
-    {"acos", (PyCFunction)cmath_acos, METH_O, cmath_acos__doc__},
+    {"acos", _PyCFunction_CAST(cmath_acos), METH_FASTCALL|METH_KEYWORDS, cmath_acos__doc__},
 
 static Py_complex
 cmath_acos_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_acos(PyObject *module, PyObject *arg)
+cmath_acos(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { _Py_LATIN1_CHR('z'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"z", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "acos",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     Py_complex z;
     Py_complex _return_value;
 
-    z = PyComplex_AsCComplex(arg);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    z = PyComplex_AsCComplex(args[0]);
     if (PyErr_Occurred()) {
         goto exit;
     }
@@ -51,25 +81,55 @@ exit:
 }
 
 PyDoc_STRVAR(cmath_acosh__doc__,
-"acosh($module, z, /)\n"
+"acosh($module, /, z)\n"
 "--\n"
 "\n"
 "Return the inverse hyperbolic cosine of z.");
 
 #define CMATH_ACOSH_METHODDEF    \
-    {"acosh", (PyCFunction)cmath_acosh, METH_O, cmath_acosh__doc__},
+    {"acosh", _PyCFunction_CAST(cmath_acosh), METH_FASTCALL|METH_KEYWORDS, cmath_acosh__doc__},
 
 static Py_complex
 cmath_acosh_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_acosh(PyObject *module, PyObject *arg)
+cmath_acosh(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { _Py_LATIN1_CHR('z'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"z", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "acosh",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     Py_complex z;
     Py_complex _return_value;
 
-    z = PyComplex_AsCComplex(arg);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    z = PyComplex_AsCComplex(args[0]);
     if (PyErr_Occurred()) {
         goto exit;
     }
@@ -93,25 +153,55 @@ exit:
 }
 
 PyDoc_STRVAR(cmath_asin__doc__,
-"asin($module, z, /)\n"
+"asin($module, /, z)\n"
 "--\n"
 "\n"
 "Return the arc sine of z.");
 
 #define CMATH_ASIN_METHODDEF    \
-    {"asin", (PyCFunction)cmath_asin, METH_O, cmath_asin__doc__},
+    {"asin", _PyCFunction_CAST(cmath_asin), METH_FASTCALL|METH_KEYWORDS, cmath_asin__doc__},
 
 static Py_complex
 cmath_asin_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_asin(PyObject *module, PyObject *arg)
+cmath_asin(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { _Py_LATIN1_CHR('z'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"z", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "asin",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     Py_complex z;
     Py_complex _return_value;
 
-    z = PyComplex_AsCComplex(arg);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    z = PyComplex_AsCComplex(args[0]);
     if (PyErr_Occurred()) {
         goto exit;
     }
@@ -135,25 +225,55 @@ exit:
 }
 
 PyDoc_STRVAR(cmath_asinh__doc__,
-"asinh($module, z, /)\n"
+"asinh($module, /, z)\n"
 "--\n"
 "\n"
 "Return the inverse hyperbolic sine of z.");
 
 #define CMATH_ASINH_METHODDEF    \
-    {"asinh", (PyCFunction)cmath_asinh, METH_O, cmath_asinh__doc__},
+    {"asinh", _PyCFunction_CAST(cmath_asinh), METH_FASTCALL|METH_KEYWORDS, cmath_asinh__doc__},
 
 static Py_complex
 cmath_asinh_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_asinh(PyObject *module, PyObject *arg)
+cmath_asinh(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { _Py_LATIN1_CHR('z'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"z", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "asinh",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     Py_complex z;
     Py_complex _return_value;
 
-    z = PyComplex_AsCComplex(arg);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    z = PyComplex_AsCComplex(args[0]);
     if (PyErr_Occurred()) {
         goto exit;
     }
@@ -177,25 +297,55 @@ exit:
 }
 
 PyDoc_STRVAR(cmath_atan__doc__,
-"atan($module, z, /)\n"
+"atan($module, /, z)\n"
 "--\n"
 "\n"
 "Return the arc tangent of z.");
 
 #define CMATH_ATAN_METHODDEF    \
-    {"atan", (PyCFunction)cmath_atan, METH_O, cmath_atan__doc__},
+    {"atan", _PyCFunction_CAST(cmath_atan), METH_FASTCALL|METH_KEYWORDS, cmath_atan__doc__},
 
 static Py_complex
 cmath_atan_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_atan(PyObject *module, PyObject *arg)
+cmath_atan(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { _Py_LATIN1_CHR('z'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"z", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "atan",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     Py_complex z;
     Py_complex _return_value;
 
-    z = PyComplex_AsCComplex(arg);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    z = PyComplex_AsCComplex(args[0]);
     if (PyErr_Occurred()) {
         goto exit;
     }
@@ -219,25 +369,55 @@ exit:
 }
 
 PyDoc_STRVAR(cmath_atanh__doc__,
-"atanh($module, z, /)\n"
+"atanh($module, /, z)\n"
 "--\n"
 "\n"
 "Return the inverse hyperbolic tangent of z.");
 
 #define CMATH_ATANH_METHODDEF    \
-    {"atanh", (PyCFunction)cmath_atanh, METH_O, cmath_atanh__doc__},
+    {"atanh", _PyCFunction_CAST(cmath_atanh), METH_FASTCALL|METH_KEYWORDS, cmath_atanh__doc__},
 
 static Py_complex
 cmath_atanh_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_atanh(PyObject *module, PyObject *arg)
+cmath_atanh(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { _Py_LATIN1_CHR('z'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"z", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "atanh",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     Py_complex z;
     Py_complex _return_value;
 
-    z = PyComplex_AsCComplex(arg);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    z = PyComplex_AsCComplex(args[0]);
     if (PyErr_Occurred()) {
         goto exit;
     }
@@ -261,25 +441,55 @@ exit:
 }
 
 PyDoc_STRVAR(cmath_cos__doc__,
-"cos($module, z, /)\n"
+"cos($module, /, z)\n"
 "--\n"
 "\n"
 "Return the cosine of z.");
 
 #define CMATH_COS_METHODDEF    \
-    {"cos", (PyCFunction)cmath_cos, METH_O, cmath_cos__doc__},
+    {"cos", _PyCFunction_CAST(cmath_cos), METH_FASTCALL|METH_KEYWORDS, cmath_cos__doc__},
 
 static Py_complex
 cmath_cos_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_cos(PyObject *module, PyObject *arg)
+cmath_cos(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { _Py_LATIN1_CHR('z'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"z", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "cos",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     Py_complex z;
     Py_complex _return_value;
 
-    z = PyComplex_AsCComplex(arg);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    z = PyComplex_AsCComplex(args[0]);
     if (PyErr_Occurred()) {
         goto exit;
     }
@@ -303,25 +513,55 @@ exit:
 }
 
 PyDoc_STRVAR(cmath_cosh__doc__,
-"cosh($module, z, /)\n"
+"cosh($module, /, z)\n"
 "--\n"
 "\n"
 "Return the hyperbolic cosine of z.");
 
 #define CMATH_COSH_METHODDEF    \
-    {"cosh", (PyCFunction)cmath_cosh, METH_O, cmath_cosh__doc__},
+    {"cosh", _PyCFunction_CAST(cmath_cosh), METH_FASTCALL|METH_KEYWORDS, cmath_cosh__doc__},
 
 static Py_complex
 cmath_cosh_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_cosh(PyObject *module, PyObject *arg)
+cmath_cosh(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { _Py_LATIN1_CHR('z'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"z", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "cosh",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     Py_complex z;
     Py_complex _return_value;
 
-    z = PyComplex_AsCComplex(arg);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    z = PyComplex_AsCComplex(args[0]);
     if (PyErr_Occurred()) {
         goto exit;
     }
@@ -345,25 +585,55 @@ exit:
 }
 
 PyDoc_STRVAR(cmath_exp__doc__,
-"exp($module, z, /)\n"
+"exp($module, /, z)\n"
 "--\n"
 "\n"
 "Return the exponential value e**z.");
 
 #define CMATH_EXP_METHODDEF    \
-    {"exp", (PyCFunction)cmath_exp, METH_O, cmath_exp__doc__},
+    {"exp", _PyCFunction_CAST(cmath_exp), METH_FASTCALL|METH_KEYWORDS, cmath_exp__doc__},
 
 static Py_complex
 cmath_exp_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_exp(PyObject *module, PyObject *arg)
+cmath_exp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { _Py_LATIN1_CHR('z'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"z", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "exp",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     Py_complex z;
     Py_complex _return_value;
 
-    z = PyComplex_AsCComplex(arg);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    z = PyComplex_AsCComplex(args[0]);
     if (PyErr_Occurred()) {
         goto exit;
     }
@@ -387,25 +657,55 @@ exit:
 }
 
 PyDoc_STRVAR(cmath_log10__doc__,
-"log10($module, z, /)\n"
+"log10($module, /, z)\n"
 "--\n"
 "\n"
 "Return the base-10 logarithm of z.");
 
 #define CMATH_LOG10_METHODDEF    \
-    {"log10", (PyCFunction)cmath_log10, METH_O, cmath_log10__doc__},
+    {"log10", _PyCFunction_CAST(cmath_log10), METH_FASTCALL|METH_KEYWORDS, cmath_log10__doc__},
 
 static Py_complex
 cmath_log10_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_log10(PyObject *module, PyObject *arg)
+cmath_log10(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { _Py_LATIN1_CHR('z'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"z", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "log10",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     Py_complex z;
     Py_complex _return_value;
 
-    z = PyComplex_AsCComplex(arg);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    z = PyComplex_AsCComplex(args[0]);
     if (PyErr_Occurred()) {
         goto exit;
     }
@@ -429,25 +729,55 @@ exit:
 }
 
 PyDoc_STRVAR(cmath_sin__doc__,
-"sin($module, z, /)\n"
+"sin($module, /, z)\n"
 "--\n"
 "\n"
 "Return the sine of z.");
 
 #define CMATH_SIN_METHODDEF    \
-    {"sin", (PyCFunction)cmath_sin, METH_O, cmath_sin__doc__},
+    {"sin", _PyCFunction_CAST(cmath_sin), METH_FASTCALL|METH_KEYWORDS, cmath_sin__doc__},
 
 static Py_complex
 cmath_sin_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_sin(PyObject *module, PyObject *arg)
+cmath_sin(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { _Py_LATIN1_CHR('z'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"z", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "sin",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     Py_complex z;
     Py_complex _return_value;
 
-    z = PyComplex_AsCComplex(arg);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    z = PyComplex_AsCComplex(args[0]);
     if (PyErr_Occurred()) {
         goto exit;
     }
@@ -471,25 +801,55 @@ exit:
 }
 
 PyDoc_STRVAR(cmath_sinh__doc__,
-"sinh($module, z, /)\n"
+"sinh($module, /, z)\n"
 "--\n"
 "\n"
 "Return the hyperbolic sine of z.");
 
 #define CMATH_SINH_METHODDEF    \
-    {"sinh", (PyCFunction)cmath_sinh, METH_O, cmath_sinh__doc__},
+    {"sinh", _PyCFunction_CAST(cmath_sinh), METH_FASTCALL|METH_KEYWORDS, cmath_sinh__doc__},
 
 static Py_complex
 cmath_sinh_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_sinh(PyObject *module, PyObject *arg)
+cmath_sinh(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { _Py_LATIN1_CHR('z'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"z", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "sinh",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     Py_complex z;
     Py_complex _return_value;
 
-    z = PyComplex_AsCComplex(arg);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    z = PyComplex_AsCComplex(args[0]);
     if (PyErr_Occurred()) {
         goto exit;
     }
@@ -513,25 +873,55 @@ exit:
 }
 
 PyDoc_STRVAR(cmath_sqrt__doc__,
-"sqrt($module, z, /)\n"
+"sqrt($module, /, z)\n"
 "--\n"
 "\n"
 "Return the square root of z.");
 
 #define CMATH_SQRT_METHODDEF    \
-    {"sqrt", (PyCFunction)cmath_sqrt, METH_O, cmath_sqrt__doc__},
+    {"sqrt", _PyCFunction_CAST(cmath_sqrt), METH_FASTCALL|METH_KEYWORDS, cmath_sqrt__doc__},
 
 static Py_complex
 cmath_sqrt_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_sqrt(PyObject *module, PyObject *arg)
+cmath_sqrt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { _Py_LATIN1_CHR('z'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"z", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "sqrt",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     Py_complex z;
     Py_complex _return_value;
 
-    z = PyComplex_AsCComplex(arg);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    z = PyComplex_AsCComplex(args[0]);
     if (PyErr_Occurred()) {
         goto exit;
     }
@@ -555,25 +945,55 @@ exit:
 }
 
 PyDoc_STRVAR(cmath_tan__doc__,
-"tan($module, z, /)\n"
+"tan($module, /, z)\n"
 "--\n"
 "\n"
 "Return the tangent of z.");
 
 #define CMATH_TAN_METHODDEF    \
-    {"tan", (PyCFunction)cmath_tan, METH_O, cmath_tan__doc__},
+    {"tan", _PyCFunction_CAST(cmath_tan), METH_FASTCALL|METH_KEYWORDS, cmath_tan__doc__},
 
 static Py_complex
 cmath_tan_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_tan(PyObject *module, PyObject *arg)
+cmath_tan(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { _Py_LATIN1_CHR('z'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"z", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "tan",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     Py_complex z;
     Py_complex _return_value;
 
-    z = PyComplex_AsCComplex(arg);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    z = PyComplex_AsCComplex(args[0]);
     if (PyErr_Occurred()) {
         goto exit;
     }
@@ -597,25 +1017,55 @@ exit:
 }
 
 PyDoc_STRVAR(cmath_tanh__doc__,
-"tanh($module, z, /)\n"
+"tanh($module, /, z)\n"
 "--\n"
 "\n"
 "Return the hyperbolic tangent of z.");
 
 #define CMATH_TANH_METHODDEF    \
-    {"tanh", (PyCFunction)cmath_tanh, METH_O, cmath_tanh__doc__},
+    {"tanh", _PyCFunction_CAST(cmath_tanh), METH_FASTCALL|METH_KEYWORDS, cmath_tanh__doc__},
 
 static Py_complex
 cmath_tanh_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_tanh(PyObject *module, PyObject *arg)
+cmath_tanh(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { _Py_LATIN1_CHR('z'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"z", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "tanh",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     Py_complex z;
     Py_complex _return_value;
 
-    z = PyComplex_AsCComplex(arg);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    z = PyComplex_AsCComplex(args[0]);
     if (PyErr_Occurred()) {
         goto exit;
     }
@@ -639,7 +1089,7 @@ exit:
 }
 
 PyDoc_STRVAR(cmath_log__doc__,
-"log($module, z, base=<unrepresentable>, /)\n"
+"log($module, /, z, base=<unrepresentable>)\n"
 "--\n"
 "\n"
 "log(z[, base]) -> the logarithm of z to the given base.\n"
@@ -647,30 +1097,58 @@ PyDoc_STRVAR(cmath_log__doc__,
 "If the base is not specified, returns the natural logarithm (base e) of z.");
 
 #define CMATH_LOG_METHODDEF    \
-    {"log", _PyCFunction_CAST(cmath_log), METH_FASTCALL, cmath_log__doc__},
+    {"log", _PyCFunction_CAST(cmath_log), METH_FASTCALL|METH_KEYWORDS, cmath_log__doc__},
 
 static PyObject *
 cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj);
 
 static PyObject *
-cmath_log(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+cmath_log(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { _Py_LATIN1_CHR('z'), &_Py_ID(base), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"z", "base", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "log",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_complex x;
     PyObject *y_obj = NULL;
 
-    if (!_PyArg_CheckPositional("log", nargs, 1, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     x = PyComplex_AsCComplex(args[0]);
     if (PyErr_Occurred()) {
         goto exit;
     }
-    if (nargs < 2) {
-        goto skip_optional;
+    if (!noptargs) {
+        goto skip_optional_pos;
     }
     y_obj = args[1];
-skip_optional:
+skip_optional_pos:
     return_value = cmath_log_impl(module, x, y_obj);
 
 exit:
@@ -982,4 +1460,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=454309b21cfa9bf6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bc927b0141508062 input=a9049054013a1b77]*/

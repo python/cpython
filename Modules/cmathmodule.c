@@ -169,14 +169,13 @@ static Py_complex acos_special_values[7][7];
 cmath.acos -> Py_complex_protected
 
     z: Py_complex_protected
-    /
 
 Return the arc cosine of z.
 [clinic start generated code]*/
 
 static Py_complex
 cmath_acos_impl(PyObject *module, Py_complex z)
-/*[clinic end generated code: output=40bd42853fd460ae input=bd6cbd78ae851927]*/
+/*[clinic end generated code: output=40bd42853fd460ae input=825ee8128f5c21e2]*/
 {
     Py_complex s1, s2, r;
 
@@ -865,7 +864,6 @@ cmath.log
 
     z as x: Py_complex
     base as y_obj: object = NULL
-    /
 
 log(z[, base]) -> the logarithm of z to the given base.
 
@@ -874,7 +872,7 @@ If the base is not specified, returns the natural logarithm (base e) of z.
 
 static PyObject *
 cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj)
-/*[clinic end generated code: output=4effdb7d258e0d94 input=e1f81d4fcfd26497]*/
+/*[clinic end generated code: output=4effdb7d258e0d94 input=62e46be565758323]*/
 {
     Py_complex y;
 
