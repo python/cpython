@@ -1299,7 +1299,7 @@ FutureObj_get_callbacks(FutureObj *fut, void *Py_UNUSED(ignored))
     }
 
     if (fut->fut_callbacks != NULL) {
-        for (int j = 0; j < PyList_GET_SIZE(fut->fut_callbacks); j++) {
+        for (Py_ssize_t j = 0; j < PyList_GET_SIZE(fut->fut_callbacks); j++) {
             PyObject *cb = PyList_GET_ITEM(fut->fut_callbacks, j);
             Py_INCREF(cb);
             PyList_SET_ITEM(callbacks, i, cb);

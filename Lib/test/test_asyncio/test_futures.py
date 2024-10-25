@@ -712,6 +712,8 @@ class CFutureTests(BaseFutureTests, test_utils.TestCase):
         fut.remove_done_callback(f1)
         callbacks = fut._callbacks
         self.assertIsNot(callbacks, fut._callbacks)
+        fut.remove_done_callback(f2)
+        self.assertIsNone(fut._callbacks)
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
