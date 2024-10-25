@@ -31,6 +31,7 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
     'sphinx.ext.extlinks',
+    'sphinx.ext.graphviz',
 ]
 
 # Skip if downstream redistributors haven't installed them
@@ -639,3 +640,8 @@ ogp_custom_meta_tags = [
     '<meta property="og:image:height" content="200" />',
     '<meta name="theme-color" content="#3776ab" />',
 ]
+
+# Options for sphinx.ext.graphviz
+# -------------------------------
+
+graphviz_output_format = 'svg'

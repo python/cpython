@@ -80,6 +80,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
+    - name: 'Install Dependencies'
+      run: |
+        sudo apt-get update &&
+        sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            graphviz \
+            ;
     - uses: actions/checkout@v4
     - name: 'Set up Python'
       uses: actions/setup-python@v5
