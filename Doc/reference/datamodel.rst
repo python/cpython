@@ -3336,7 +3336,7 @@ left undefined.
    :func:`pow`, ``**``, ``<<``, ``>>``, ``&``, ``^``, ``|``) with reflected
    (swapped) operands.  These functions are only called if the operands
    are of different types, when the left operand does not support the corresponding
-   operation [#]_ or the right operand's class is derived from the left operand's
+   operation [#]_, or the right operand's class is derived from the left operand's
    class. [#]_ For instance, to evaluate the expression ``x - y``, where *y* is
    an instance of a class that has an :meth:`__rsub__` method, ``type(y).__rsub__(y, x)``
    is called if ``type(x).__sub__(x, y)`` returns :data:`NotImplemented` or ``type(y)``
