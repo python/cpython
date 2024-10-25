@@ -741,12 +741,12 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args('--str --int'.split())
     Namespace(types=[<class 'str'>, <class 'int'>])
 
-* ``'extend'`` - This stores a list, and appends each item from the multi-value
-  argument list to the list.
+* ``'extend'`` - This stores a list and appends each item from the multi-value
+  argument list to it.
   The ``'extend'`` action is typically used with the nargs_ keyword argument
-  value ``'+'`` or ``'*'``;
-  note that when nargs_ is ``None`` (by default) or ``'?'``, separate
-  characters of the argument string will be appended to the list.
+  value ``'+'`` or ``'*'``.
+  Note that when nargs_ is ``None`` (the default) or ``'?'``, each
+  character of the argument string will be appended to the list.
   Example usage::
 
     >>> parser = argparse.ArgumentParser()
