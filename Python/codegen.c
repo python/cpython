@@ -3901,11 +3901,6 @@ codegen_joined_str(compiler *c, expr_ty e)
 static int
 codegen_interpolation(compiler *c, expr_ty e)
 {
-    /* The oparg encodes which values are there:
-       - (oparg >> 2) & 1 == 1, always true, value and str are always there
-       - (oparg >> 1) & 1 == 1, if conversion is not NULL
-       - oparg & 1 == 1, if format_spec is not NULL
-    */
     location loc = LOC(e);
 
     VISIT(c, expr, e->v.Interpolation.value);
