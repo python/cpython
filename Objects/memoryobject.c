@@ -3345,7 +3345,7 @@ memoryiter_new(PyObject *self, int reversed)
     it->it_index = reversed ? (it->it_length - 1) : 0;
     it->it_seq = _PyMemoryView_CAST(Py_NewRef(self));
     _PyObject_GC_TRACK(it);
-    return _PyObject_CAST(it);
+    return (PyObject *)(it);
 }
 
 static void
