@@ -10,16 +10,26 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
         # to not leak references, we must clean _pointer_type_cache
         ctypes._reset_cache()
 
-    def test_early_return_in_dunder_new_1(self):
-        # Such an implementation is used in `IUnknown` of `comtypes`.
+    def test_creating_pointer_in_dunder_new_1(self):
+        # Test metaclass whose instances are C types; when the type is
+        # created it automatically creates a pointer type for itself.
+        # The pointer type is also an instance of the metaclass.
+        # Such an implementation is used in `IUnknown` of the `comtypes`
+        # project. See gh-124520.
 
         class ct_meta(type):
             def __new__(cls, name, bases, namespace):
                 self = super().__new__(cls, name, bases, namespace)
+
+                # Avoid recursion: don't set up a pointer to
+                # a pointer (to a pointer...)
                 if bases == (c_void_p,):
+                    # When creating PtrBase itself, the name
+                    # is not yet available
                     return self
                 if issubclass(self, PtrBase):
                     return self
+
                 if bases == (object,):
                     ptr_bases = (self, PtrBase)
                 else:
@@ -48,8 +58,8 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
         self.assertTrue(issubclass(POINTER(Sub2), POINTER(Sub)))
         self.assertTrue(issubclass(POINTER(Sub), POINTER(CtBase)))
 
-    def test_early_return_in_dunder_new_2(self):
-        # Such an implementation is used in `CoClass` of `comtypes`.
+    def test_creating_pointer_in_dunder_new_2(self):
+        # A simpler variant of the above, used in `CoClass` of `comtypes`.
 
         class ct_meta(type):
             def __new__(cls, name, bases, namespace):
