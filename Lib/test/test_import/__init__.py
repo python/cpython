@@ -377,7 +377,7 @@ class ImportTests(unittest.TestCase):
             self.assertEqual(cm.exception.path, _testcapi.__spec__.origin)
             self.assertRegex(
                 str(cm.exception),
-                r"cannot import name 'i_dont_exist' from '_testcapi' \(.*\.(so|pyd)?\)"
+                r"cannot import name 'i_dont_exist' from '_testcapi' \(.*(\.(so|pyd))?\)"
             )
         else:
             self.assertEqual(
