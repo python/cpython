@@ -7323,6 +7323,9 @@ fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $EXEEXT" >&5
 printf "%s\n" "$EXEEXT" >&6; }
 
+# Make sure we keep EXEEXT and ac_exeext sync'ed.
+ac_exeext=$EXEEXT
+
 # Test whether we're running on a non-case-sensitive system, in which
 # case we give a warning if no ext is given
 
