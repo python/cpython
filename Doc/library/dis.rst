@@ -861,8 +861,6 @@ iterations of the loop.
 
    Returns with ``STACK[-1]`` to the caller of the function.
 
-   .. versionadded:: 3.14
-
 
 .. opcode:: YIELD_VALUE
 
