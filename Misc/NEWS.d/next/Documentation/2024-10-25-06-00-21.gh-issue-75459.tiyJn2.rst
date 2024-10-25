@@ -1,0 +1,2 @@
+`Graphviz <https://graphviz.org/>`_ is now required to build the
+documentation.
