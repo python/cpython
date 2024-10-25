@@ -432,12 +432,12 @@ future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
     }
 
     // Beware: An evil call_soon could change fut->fut_callbacks.
-    // The idea is to store the callbacks list before clearing it
-    // on the future object. In particular, external code is not
-    // able to mutate the list during the iteration.
-    PyObject *callbacks = Py_NewRef(fut->fut_callbacks);
+    // The idea is to transfer the ownership of the callbacks list
+    // so that external code is not able to mutate the list during
+    // the iteration.
+    PyObject *callbacks = fut->fut_callbacks;
+    fut->fut_callbacks = NULL;
     Py_ssize_t n = PyList_GET_SIZE(callbacks);
-    Py_CLEAR(fut->fut_callbacks);
     for (Py_ssize_t i = 0; i < n; i++) {
         assert(PyList_GET_SIZE(callbacks) == n);
         PyObject *cb_tup = PyList_GET_ITEM(callbacks, i);
