@@ -2,7 +2,6 @@
 /* Function object implementation */
 
 #include "Python.h"
-#include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
 #include "pycore_dict.h"          // _Py_INCREF_DICT()
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
@@ -115,12 +114,7 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
     }
     _Py_INCREF_DICT(constr->fc_globals);
     op->func_globals = constr->fc_globals;
-    if (PyDict_Check(constr->fc_builtins)) {
-        _Py_INCREF_DICT(constr->fc_builtins);
-    }
-    else {
-        Py_INCREF(constr->fc_builtins);
-    }
+    _Py_INCREF_BUILTINS(constr->fc_builtins);
     op->func_builtins = constr->fc_builtins;
     op->func_name = Py_NewRef(constr->fc_name);
     op->func_qualname = Py_NewRef(constr->fc_qualname);
@@ -152,8 +146,6 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     assert(globals != NULL);
     assert(PyDict_Check(globals));
     _Py_INCREF_DICT(globals);
-
-    PyThreadState *tstate = _PyThreadState_GET();
 
     PyCodeObject *code_obj = (PyCodeObject *)code;
     _Py_INCREF_CODE(code_obj);
@@ -188,15 +180,9 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
         goto error;
     }
 
-    builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
+    builtins = _PyDict_LoadBuiltinsFromGlobals(globals);
     if (builtins == NULL) {
         goto error;
-    }
-    if (PyDict_Check(builtins)) {
-        _Py_INCREF_DICT(builtins);
-    }
-    else {
-        Py_INCREF(builtins);
     }
 
     PyFunctionObject *op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);
@@ -1078,12 +1064,7 @@ func_clear(PyObject *self)
     PyObject *builtins = op->func_builtins;
     op->func_builtins = NULL;
     if (builtins != NULL) {
-        if (PyDict_Check(builtins)) {
-            _Py_DECREF_DICT(builtins);
-        }
-        else {
-            Py_DECREF(builtins);
-        }
+        _Py_DECREF_BUILTINS(builtins);
     }
     Py_CLEAR(op->func_module);
     Py_CLEAR(op->func_defaults);

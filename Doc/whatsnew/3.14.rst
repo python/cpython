@@ -416,10 +416,28 @@ symtable
 
   (Contributed by Bénédikt Tran in :gh:`120029`.)
 
+
+sys
+---
+
+* The previously undocumented special function :func:`sys.getobjects`,
+  which only exists in specialized builds of Python, may now return objects
+  from other interpreters than the one it's called in.
+
+
 unicodedata
 -----------
 
 * The Unicode database has been updated to Unicode 16.0.0.
+
+
+unittest
+--------
+
+* unittest discovery supports :term:`namespace package` as start
+  directory again. It was removed in Python 3.11.
+  (Contributed by Jacob Walls in :gh:`80958`.)
+
 
 .. Add improved modules above alphabetically, not here at the end.
 
@@ -454,6 +472,12 @@ Deprecated
   :func:`complex` constructor is now deprecated; it should only be passed
   as a single positional argument.
   (Contributed by Serhiy Storchaka in :gh:`109218`.)
+
+* :mod:`argparse`:
+  Deprecated the :class:`argparse.FileType` type converter.
+  Anything with resource management should be done downstream after the
+  arguments are parsed.
+  (Contributed by Serhiy Storchaka in :gh:`58032`.)
 
 * :mod:`multiprocessing` and :mod:`concurrent.futures`:
   The default start method (see :ref:`multiprocessing-start-methods`) changed
