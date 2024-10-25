@@ -118,31 +118,18 @@ class TestBisect:
             self.assertEqual(func(data, elem), expected)
             self.assertEqual(func(UserList(data), elem), expected)
 
-    def test_negative_lo(self):
+    def test_negative_hi_lo(self):
         # Issue 3301
         mod = self.module
         self.assertRaises(ValueError, mod.bisect_left, [1, 2, 3], 5, -1, 3)
         self.assertRaises(ValueError, mod.bisect_right, [1, 2, 3], 5, -1, 3)
         self.assertRaises(ValueError, mod.insort_left, [1, 2, 3], 5, -1, 3)
         self.assertRaises(ValueError, mod.insort_right, [1, 2, 3], 5, -1, 3)
-
-    def test_negative_hi(self):
-        # Issue 125889
-        def assertNoRiases(f, *arg, **kwargs):
-            try:
-                res = f(*arg, **kwargs)
-                if f.__name__ in ('bisect_left', 'bisect_right'):
-                    self.assertEqual(res, 3)
-                else:
-                    self.assertIn(res, (3, None))
-            except Exception:
-                self.fail('Unable to work negative hi argument')
-        mod = self.module
-        # It can work negative values
-        assertNoRiases(mod.bisect_left, [1, 2, 3], 5, 3, -2)
-        assertNoRiases(mod.bisect_right, [1, 2, 3], 5, 3, -2)
-        assertNoRiases(mod.insort_left, [1, 2, 3], 5, 3, -2)
-        assertNoRiases(mod.insort_right, [1, 2, 3], 5, 3, -2)
+        # Test c implementation
+        self.assertRaises(ValueError, c_bisect.bisect_left, [1, 2, 3], 5, 3, -2)
+        self.assertRaises(ValueError, c_bisect.bisect_right, [1, 2, 3], 5, 3, -2)
+        self.assertRaises(ValueError, c_bisect.insort_left, [1, 2, 3], 5, 3, -2)
+        self.assertRaises(ValueError, c_bisect.insort_right, [1, 2, 3], 5, 3, -2)
 
     def test_large_range(self):
         # Issue 13496
