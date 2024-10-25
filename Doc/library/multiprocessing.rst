@@ -115,6 +115,8 @@ to start a process.  These *start methods* are
     will not be inherited.  Starting a process using this method is
     rather slow compared to using *fork* or *forkserver*.
 
+    Functions run with this method must be :ref:`picklable <pickle-picklable>`.
+
     Available on POSIX and Windows platforms.  The default on Windows and macOS.
 
   *fork*
@@ -123,6 +125,9 @@ to start a process.  These *start methods* are
     identical to the parent process.  All resources of the parent are
     inherited by the child process.  Note that safely forking a
     multithreaded process is problematic.
+
+    Functions run with this method do *not* need to be
+    :ref:`picklable <pickle-picklable>`.
 
     Available on POSIX systems.
 
@@ -145,6 +150,8 @@ to start a process.  These *start methods* are
     unless system libraries or preloaded imports spawn threads as a
     side-effect so it is generally safe for it to use :func:`os.fork`.
     No unnecessary resources are inherited.
+
+    Functions run with this method must be :ref:`picklable <pickle-picklable>`.
 
     Available on POSIX platforms which support passing file descriptors over
     Unix pipes such as Linux.  The default on those.
