@@ -107,7 +107,8 @@ class WorkerContext(_thread.WorkerContext):
 
     @classmethod
     def _call_pickled(cls, pickled, resultsid):
-        fn, args, kwargs = pickle.loads(pickled)
+        with cls._capture_exc(resultsid):
+            fn, args, kwargs = pickle.loads(pickled)
         cls._call(fn, args, kwargs, resultsid)
 
     def __init__(self, initdata, shared=None):

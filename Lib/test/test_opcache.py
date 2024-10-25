@@ -1155,6 +1155,50 @@ class TestInstanceDict(unittest.TestCase):
             {'a':1, 'b':2}
         )
 
+    def test_125868(self):
+
+        def make_special_dict():
+            """Create a dictionary an object with a this table:
+            index | key | value
+            ----- | --- | -----
+              0   | 'b' | 'value'
+              1   | 'b' | NULL
+            """
+            class A:
+                pass
+            a = A()
+            a.a = 1
+            a.b = 2
+            d = a.__dict__.copy()
+            del d['a']
+            del d['b']
+            d['b'] = "value"
+            return d
+
+        class NoInlineAorB:
+            pass
+        for i in range(ord('c'), ord('z')):
+            setattr(NoInlineAorB(), chr(i), i)
+
+        c = NoInlineAorB()
+        c.a = 0
+        c.b = 1
+        self.assertFalse(_testinternalcapi.has_inline_values(c))
+
+        def f(o, n):
+            for i in range(n):
+                o.b = i
+        # Prime f to store to dict slot 1
+        f(c, 100)
+
+        test_obj = NoInlineAorB()
+        test_obj.__dict__ = make_special_dict()
+        self.assertEqual(test_obj.b, "value")
+
+        #This should set x.b = 0
+        f(test_obj, 1)
+        self.assertEqual(test_obj.b, 0)
+
 
 if __name__ == "__main__":
     unittest.main()
