@@ -577,7 +577,7 @@ def urljoin(base, url, allow_fragments=True):
 
     if scheme is None:
         scheme = bscheme
-    if scheme != bscheme or scheme not in uses_relative:
+    if scheme != bscheme or (scheme and scheme not in uses_relative):
         return _coerce_result(url)
     if scheme in uses_netloc:
         if netloc:
