@@ -837,16 +837,6 @@ class PathBase(PurePathBase):
         """
         raise UnsupportedOperation(self._unsupported_msg('_write_metadata()'))
 
-    def _copy_metadata(self, target, *, follow_symlinks=True):
-        """
-        Copies metadata (permissions, timestamps, etc) from this path to target.
-        """
-        # Metadata types supported by both source and target.
-        keys = self._readable_metadata & target._writable_metadata
-        if keys:
-            metadata = self._read_metadata(keys, follow_symlinks=follow_symlinks)
-            target._write_metadata(metadata, follow_symlinks=follow_symlinks)
-
     def _copy_file(self, target):
         """
         Copy the contents of this file to the given target.
@@ -872,24 +862,32 @@ class PathBase(PurePathBase):
         if not isinstance(target, PathBase):
             target = self.with_segments(target)
         self._ensure_distinct_path(target)
+        if preserve_metadata:
+            # Metadata types supported by both source and target.
+            metadata_keys = self._readable_metadata & target._writable_metadata
+        else:
+            metadata_keys = None
         stack = [(self, target)]
         while stack:
             src, dst = stack.pop()
             if not follow_symlinks and src.is_symlink():
                 dst._symlink_to_target_of(src)
-                if preserve_metadata:
-                    src._copy_metadata(dst, follow_symlinks=False)
+                if metadata_keys:
+                    metadata = src._read_metadata(metadata_keys, follow_symlinks=False)
+                    dst._write_metadata(metadata, follow_symlinks=False)
             elif src.is_dir():
                 children = src.iterdir()
                 dst.mkdir(exist_ok=dirs_exist_ok)
                 stack.extend((child, dst.joinpath(child.name))
                              for child in children)
-                if preserve_metadata:
-                    src._copy_metadata(dst)
+                if metadata_keys:
+                    metadata = src._read_metadata(metadata_keys)
+                    dst._write_metadata(metadata)
             else:
                 src._copy_file(dst)
-                if preserve_metadata:
-                    src._copy_metadata(dst)
+                if metadata_keys:
+                    metadata = src._read_metadata(metadata_keys)
+                    dst._write_metadata(metadata)
         return target
 
     def copy_into(self, target_dir, *, follow_symlinks=True,
