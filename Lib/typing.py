@@ -3788,6 +3788,26 @@ def copy_func_params[**Param, RV](
     return return_func
 
 
+def copy_method_params[**Param, Arg1, RV](
+    source_method: Callable[Concatenate[Any, Param], Any]
+) -> Callable[
+    [Callable[Concatenate[Arg1, ...], RV]],
+    Callable[Concatenate[Arg1, Param], RV]
+]:
+    """Cast the decorated method's call signature to the source_method's.
+
+    Same as :func:`copy_func_params` but intended to be used with methods.
+    It keeps the first argument (``self``/``cls``) of the decorated method.
+    """
+
+    def return_func(
+        func: Callable[Concatenate[Arg1, ...], RV]
+    ) -> Callable[Concatenate[Arg1, Param], RV]:
+        return cast(Callable[Concatenate[Arg1, Param], RV], func)
+
+    return return_func
+
+
 def __getattr__(attr):
     """Improve the import time of the typing module.
 

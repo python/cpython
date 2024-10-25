@@ -2894,6 +2894,16 @@ Functions and decorators
 
    .. versionadded:: 3.14
 
+
+.. decorator:: copy_method_params(source_method)
+
+   Cast the decorated method's call signature to the source_method's
+
+   Same as :py:func:`copy_func_params` but intended to be used with methods.
+   It keeps the first argument (``self``/``cls``) of the decorated method.
+
+   .. versionadded:: 3.14
+
 .. function:: assert_type(val, typ, /)
 
    Ask a static type checker to confirm that *val* has an inferred type of *typ*.
