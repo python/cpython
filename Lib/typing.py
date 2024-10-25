@@ -3753,12 +3753,9 @@ def get_protocol_members(tp: type, /) -> frozenset[str]:
     return frozenset(tp.__protocol_attrs__)
 
 
-_P = ParamSpec("_P")
-
-
-def copy_func_params(
-    source_func: Callable[_P, Any]
-) -> Callable[[Callable[..., T]], Callable[_P, T]]:
+def copy_func_params[**Param, RV](
+    source_func: Callable[Param, Any]
+) -> Callable[[Callable[..., RV]], Callable[Param, RV]]:
     """Cast the decorated function's call signature to the source_func's.
 
     Use this decorator enhancing an upstream function while keeping its
@@ -3785,8 +3782,8 @@ def copy_func_params(
        *source_func* changes.
     """
 
-    def return_func(func: Callable[..., T]) -> Callable[_P, T]:
-        return cast(Callable[_P, T], func)
+    def return_func(func: Callable[..., RV]) -> Callable[Param, RV]:
+        return cast(Callable[Param, RV], func)
 
     return return_func
 
