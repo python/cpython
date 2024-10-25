@@ -81,30 +81,30 @@ int
 _PyToken_OneChar(int c1)
 {
     switch (c1) {
-    case '!': return EXCLAMATION;
-    case '%': return PERCENT;
-    case '&': return AMPER;
-    case '(': return LPAR;
-    case ')': return RPAR;
-    case '*': return STAR;
-    case '+': return PLUS;
-    case ',': return COMMA;
-    case '-': return MINUS;
-    case '.': return DOT;
-    case '/': return SLASH;
-    case ':': return COLON;
-    case ';': return SEMI;
-    case '<': return LESS;
-    case '=': return EQUAL;
-    case '>': return GREATER;
-    case '@': return AT;
-    case '[': return LSQB;
-    case ']': return RSQB;
-    case '^': return CIRCUMFLEX;
-    case '{': return LBRACE;
-    case '|': return VBAR;
-    case '}': return RBRACE;
-    case '~': return TILDE;
+        case '!': return EXCLAMATION;
+        case '%': return PERCENT;
+        case '&': return AMPER;
+        case '(': return LPAR;
+        case ')': return RPAR;
+        case '*': return STAR;
+        case '+': return PLUS;
+        case ',': return COMMA;
+        case '-': return MINUS;
+        case '.': return DOT;
+        case '/': return SLASH;
+        case ':': return COLON;
+        case ';': return SEMI;
+        case '<': return LESS;
+        case '=': return EQUAL;
+        case '>': return GREATER;
+        case '@': return AT;
+        case '[': return LSQB;
+        case ']': return RSQB;
+        case '^': return CIRCUMFLEX;
+        case '{': return LBRACE;
+        case '|': return VBAR;
+        case '}': return RBRACE;
+        case '~': return TILDE;
     }
     return OP;
 }

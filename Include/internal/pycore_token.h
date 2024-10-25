@@ -93,8 +93,8 @@ extern "C" {
 #define ISSTRINGLIT(x)          ((x) == STRING           || \
                                  (x) == FSTRING_MIDDLE)
 
-#define GENERATE_2CHAR_CODE(x, y) ((int)((x) << 8 | (y)))
-#define GENERATE_3CHAR_CODE(x, y, z) ((int)((x) << 16 | (y) << 8 | (z)))
+#define GENERATE_2CHAR_CODE(x, y) ((int)((x) << 8 | (y))) // Generate a 16-bit integer from 2 8-bit characters
+#define GENERATE_3CHAR_CODE(x, y, z) ((int)((x) << 16 | (y) << 8 | (z))) // Generate a 24-bit integer from 3 8-bit characters
 
 // Export these 4 symbols for 'test_peg_generator'
 PyAPI_DATA(const char * const) _PyParser_TokenNames[]; /* Token names */
