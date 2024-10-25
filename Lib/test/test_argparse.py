@@ -782,6 +782,13 @@ class TestBooleanOptionalAction(ParserTestCase):
 
         self.assertIn("got an unexpected keyword argument 'const'", str(cm.exception))
 
+    def test_invalid_name(self):
+        parser = argparse.ArgumentParser()
+        with self.assertRaises(ValueError) as cm:
+            parser.add_argument('--no-foo', action=argparse.BooleanOptionalAction)
+        self.assertEqual(str(cm.exception),
+                         "invalid option name '--no-foo' for BooleanOptionalAction")
+
 class TestBooleanOptionalActionRequired(ParserTestCase):
     """Tests BooleanOptionalAction required"""
 

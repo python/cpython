@@ -863,6 +863,9 @@ class BooleanOptionalAction(Action):
             _option_strings.append(option_string)
 
             if option_string.startswith('--'):
+                if option_string.startswith('--no-'):
+                    raise ValueError(f'invalid option name {option_string!r} '
+                                     f'for BooleanOptionalAction')
                 option_string = '--no-' + option_string[2:]
                 _option_strings.append(option_string)
 
