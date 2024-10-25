@@ -1541,11 +1541,11 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('\\\\some\\share\\a\\b.c'), '////some/share/a/b.c')
         self.assertEqual(fn('\\\\some\\share\\a\\b%#c\xe9'), '////some/share/a/b%25%23c%C3%A9')
         # Round-tripping
-        list_of_paths = ['///C:',
-                         '/////folder/test/',
-                         '///C:/foo/bar/spam.foo']
-        for path in list_of_paths:
-            self.assertEqual(fn(urllib.request.url2pathname(path)), path)
+        urls = ['///C:',
+                '/////folder/test/',
+                '///C:/foo/bar/spam.foo']
+        for url in urls:
+            self.assertEqual(fn(urllib.request.url2pathname(url)), url)
 
     @unittest.skipIf(sys.platform == 'win32',
                      'test specific to POSIX pathnames')
@@ -1584,11 +1584,10 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('//localhost/C:/path/to/file'), 'C:\\path\\to\\file')
         self.assertEqual(fn('//localhost/C|/path/to/file'), 'C:\\path\\to\\file')
         # Round-tripping
-        list_of_paths = ['C:',
-                         r'\\\C\test\\',
-                         r'C:\foo\bar\spam.foo'
-                         ]
-        for path in list_of_paths:
+        paths = ['C:',
+                 r'\\\C\test\\',
+                 r'C:\foo\bar\spam.foo']
+        for path in paths:
             self.assertEqual(fn(urllib.request.pathname2url(path)), path)
 
     @unittest.skipIf(sys.platform == 'win32',
