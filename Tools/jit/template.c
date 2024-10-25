@@ -18,6 +18,7 @@
 #include "pycore_sliceobject.h"
 #include "pycore_descrobject.h"
 #include "pycore_stackref.h"
+#include "pydtrace.h"
 
 #include "ceval_macros.h"
 

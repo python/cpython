@@ -844,6 +844,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
         monitor_throw(tstate, frame, frame->instr_ptr);
         /* TO DO -- Monitor throw entry. */
+        DTRACE_FUNCTION_ENTRY();
         goto resume_with_error;
     }
 
@@ -864,6 +865,7 @@ start_frame:
     }
 
     next_instr = frame->instr_ptr;
+    DTRACE_FUNCTION_ENTRY();
 resume_frame:
     stack_pointer = _PyFrame_GetStackPointer(frame);
 
@@ -3153,6 +3155,37 @@ PyUnstable_Eval_RequestCodeExtraIndex(freefunc free)
     new_index = interp->co_extra_user_count++;
     interp->co_extra_freefuncs[new_index] = free;
     return new_index;
+}
+
+
+static void
+dtrace_function_entry(_PyInterpreterFrame *frame)
+{
+    const char *filename;
+    const char *funcname;
+    int lineno;
+
+    PyCodeObject *code = _PyFrame_GetCode(frame);
+    filename = PyUnicode_AsUTF8(code->co_filename);
+    funcname = PyUnicode_AsUTF8(code->co_name);
+    lineno = PyUnstable_InterpreterFrame_GetLine(frame);
+
+    PyDTrace_FUNCTION_ENTRY(filename, funcname, lineno);
+}
+
+static void
+dtrace_function_return(_PyInterpreterFrame *frame)
+{
+    const char *filename;
+    const char *funcname;
+    int lineno;
+
+    PyCodeObject *code = _PyFrame_GetCode(frame);
+    filename = PyUnicode_AsUTF8(code->co_filename);
+    funcname = PyUnicode_AsUTF8(code->co_name);
+    lineno = PyUnstable_InterpreterFrame_GetLine(frame);
+
+    PyDTrace_FUNCTION_RETURN(filename, funcname, lineno);
 }
 
 /* Implement Py_EnterRecursiveCall() and Py_LeaveRecursiveCall() as functions
