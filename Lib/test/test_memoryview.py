@@ -364,8 +364,10 @@ class AbstractMemoryTests:
             b = tp(self._source)
             m = self._view(b)
             aslist = list(reversed(m.tolist()))
-            self.assertEqual(list(reversed(m)), aslist)
-            self.assertEqual(list(reversed(m)), list(m[::-1]))
+            with self.subTest(view_type=type(m)):
+                self.assertTrue(hasattr(m, '__reversed__'))
+                self.assertEqual(list(reversed(m)), aslist)
+                self.assertEqual(list(reversed(m)), list(m[::-1]))
 
     def test_toreadonly(self):
         for tp in self._types:
