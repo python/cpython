@@ -21,6 +21,8 @@
 
 #include "ceval_macros.h"
 
+#include "jit.h"
+
 #undef CURRENT_OPARG
 #define CURRENT_OPARG() (_oparg)
 
@@ -49,7 +51,7 @@
 do {  \
     OPT_STAT_INC(traces_executed);                \
     __attribute__((musttail))                     \
-    return ((jit_func)((EXECUTOR)->jit_side_entry))(frame, stack_pointer, tstate); \
+    return ((jit_func_preserve_none)((EXECUTOR)->jit_side_entry))(frame, stack_pointer, tstate); \
 } while (0)
 
 #undef GOTO_TIER_ONE
@@ -72,7 +74,7 @@ do {  \
 do {                                                         \
     PyAPI_DATA(void) ALIAS;                                  \
     __attribute__((musttail))                                \
-    return ((jit_func)&ALIAS)(frame, stack_pointer, tstate); \
+    return ((jit_func_preserve_none)&ALIAS)(frame, stack_pointer, tstate); \
 } while (0)
 
 #undef JUMP_TO_JUMP_TARGET
@@ -86,7 +88,7 @@ do {                                                         \
 
 #define TIER_TWO 2
 
-_Py_CODEUNIT *
+__attribute__((preserve_none)) _Py_CODEUNIT *
 _JIT_ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate)
 {
     // Locals that the instruction implementations expect to exist:
