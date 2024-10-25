@@ -76,7 +76,7 @@ the following command can be used to display the disassembly of
      3           LOAD_GLOBAL              1 (len + NULL)
                  LOAD_FAST                0 (alist)
                  CALL                     1
-                 RETURN_VALUE_FUNC
+                 RETURN_VALUE
 
 (The "2" is a line number).
 
@@ -203,7 +203,7 @@ Example:
     LOAD_GLOBAL
     LOAD_FAST
     CALL
-    RETURN_VALUE_FUNC
+    RETURN_VALUE
 
 
 Analysis functions
@@ -857,18 +857,10 @@ container object remains on the stack so that it is available for further
 iterations of the loop.
 
 
-.. opcode:: RETURN_VALUE_FUNC
+.. opcode:: RETURN_VALUE
 
    Returns with ``STACK[-1]`` to the caller of the function.
    Used in normal functions.
-
-   .. versionadded:: 3.14
-
-
-.. opcode:: RETURN_VALUE_GEN
-
-   Returns with ``STACK[-1]`` to the caller of the generator.
-   Used in generator functions.
 
    .. versionadded:: 3.14
 
