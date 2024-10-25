@@ -96,36 +96,6 @@ extern "C" {
 #define GENERATE_2CHAR_CODE(x, y) ((int)((x) << 8 | (y)))
 #define GENERATE_3CHAR_CODE(x, y, z) ((int)((x) << 16 | (y) << 8 | (z)))
 
-
-// The code is a 16-bit integer with the first character in the high byte and the second character in the low byte.
-#define NOTEQUAL_CODE GENERATE_2CHAR_CODE('!', '=')
-#define PERCENTEQUAL_CODE GENERATE_2CHAR_CODE('%', '=')
-#define AMPEREQUAL_CODE GENERATE_2CHAR_CODE('&', '=')
-#define DOUBLESTAR_CODE GENERATE_2CHAR_CODE('*', '*')
-#define STAREQUAL_CODE GENERATE_2CHAR_CODE('*', '=')
-#define PLUSEQUAL_CODE GENERATE_2CHAR_CODE('+', '=')
-#define MINEQUAL_CODE GENERATE_2CHAR_CODE('-', '=')
-#define RARROW_CODE GENERATE_2CHAR_CODE('-', '>')
-#define DOUBLESLASH_CODE GENERATE_2CHAR_CODE('/', '/')
-#define SLASHEQUAL_CODE GENERATE_2CHAR_CODE('/', '=')
-#define COLONEQUAL_CODE GENERATE_2CHAR_CODE(':', '=')
-#define LEFTSHIFT_CODE GENERATE_2CHAR_CODE('<', '<')
-#define LESSEQUAL_CODE GENERATE_2CHAR_CODE('<', '=')
-#define NOTEQUAL_2_CODE GENERATE_2CHAR_CODE('<', '>')
-#define EQEQUAL_CODE GENERATE_2CHAR_CODE('=', '=')
-#define GREATEREQUAL_CODE GENERATE_2CHAR_CODE('>', '=')
-#define RIGHTSHIFT_CODE GENERATE_2CHAR_CODE('>', '>')
-#define ATEQUAL_CODE GENERATE_2CHAR_CODE('@', '=')
-#define CIRCUMFLEXEQUAL_CODE GENERATE_2CHAR_CODE('^', '=')
-#define VBAREQUAL_CODE GENERATE_2CHAR_CODE('|', '=')
-
-// The code is a 24-bit integer with the first character in the high byte, the second character in the middle byte, and the third character in the low byte.
-#define DOUBLESTAREQUAL_CODE GENERATE_3CHAR_CODE('*', '*', '=')
-#define ELLIPSIS_CODE GENERATE_3CHAR_CODE('.', '.', '.')
-#define DOUBLESLASHEQUAL_CODE GENERATE_3CHAR_CODE('/', '/', '=')
-#define LEFTSHIFTEQUAL_CODE GENERATE_3CHAR_CODE('<', '<', '=')
-#define RIGHTSHIFTEQUAL_CODE GENERATE_3CHAR_CODE('>', '>', '=')
-
 // Export these 4 symbols for 'test_peg_generator'
 PyAPI_DATA(const char * const) _PyParser_TokenNames[]; /* Token names */
 PyAPI_FUNC(int) _PyToken_OneChar(int);
