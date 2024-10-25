@@ -59,7 +59,8 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
         self.assertTrue(issubclass(POINTER(Sub), POINTER(CtBase)))
 
     def test_creating_pointer_in_dunder_new_2(self):
-        # A simpler variant of the above, used in `CoClass` of `comtypes`.
+        # A simpler variant of the above, used in `CoClass` of the `comtypes`
+        # project.
 
         class ct_meta(type):
             def __new__(cls, name, bases, namespace):
