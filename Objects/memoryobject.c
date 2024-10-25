@@ -2748,6 +2748,55 @@ static PySequenceMethods memory_as_sequence = {
 };
 
 
+/****************************************************************************/
+/*                              Counting                                    */
+/****************************************************************************/
+
+/*[clinic input]
+memoryview.count
+
+    value: object
+    /
+
+Count the number of occurrences of a value.
+[clinic start generated code]*/
+
+static PyObject *
+memoryview_count(PyMemoryViewObject *self, PyObject *value)
+/*[clinic end generated code: output=e2c255a8d54eaa12 input=e3036ce1ed7d1823]*/
+{
+    PyObject *iter = PyObject_GetIter((PyObject *)self);
+    if (iter == NULL) {
+        return NULL;
+    }
+
+    Py_ssize_t count = 0;
+    PyObject *item = NULL;
+    while (PyIter_NextItem(iter, &item)) {
+        if (item == NULL) {
+            Py_DECREF(iter);
+            return NULL;
+        }
+        if (item == value) {
+            Py_DECREF(item);
+            count++;
+            continue;
+        }
+        int contained = PyObject_RichCompareBool(item, value, Py_EQ);
+        Py_DECREF(item);
+        if (contained > 0) { // more likely than contained < 0
+            count++;
+        }
+        else if (contained < 0) {
+            Py_DECREF(iter);
+            return NULL;
+        }
+    }
+    Py_DECREF(iter);
+    return PyLong_FromSsize_t(count);
+}
+
+
 /**************************************************************************/
 /*                             Comparisons                                */
 /**************************************************************************/
@@ -3284,6 +3333,7 @@ static PyMethodDef memory_methods[] = {
     MEMORYVIEW_CAST_METHODDEF
     MEMORYVIEW_TOREADONLY_METHODDEF
     MEMORYVIEW__FROM_FLAGS_METHODDEF
+    MEMORYVIEW_COUNT_METHODDEF
     {"__enter__",   memory_enter, METH_NOARGS, NULL},
     {"__exit__",    memory_exit, METH_VARARGS, memory_exit_doc},
     {NULL,          NULL}
