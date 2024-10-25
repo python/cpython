@@ -23,6 +23,7 @@ extern "C" {
 #include "pycore_runtime_init_generated.h"  // _Py_bytes_characters_INIT
 #include "pycore_signal.h"        // _signals_RUNTIME_INIT
 #include "pycore_tracemalloc.h"   // _tracemalloc_runtime_state_INIT
+#include "pycore_genobject.h"
 
 
 extern PyTypeObject _PyExc_MemoryError;
