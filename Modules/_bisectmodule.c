@@ -61,7 +61,7 @@ internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t 
         PyErr_SetString(PyExc_ValueError, "lo must be non-negative");
         return -1;
     }
-    if (hi == -1) {
+    if (hi < 0) {
         hi = PySequence_Size(list);
         if (hi < 0)
             return -1;
@@ -245,7 +245,7 @@ internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t h
         PyErr_SetString(PyExc_ValueError, "lo must be non-negative");
         return -1;
     }
-    if (hi == -1) {
+    if (hi < 0) {
         hi = PySequence_Size(list);
         if (hi < 0)
             return -1;
