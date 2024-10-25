@@ -697,6 +697,24 @@ class CFutureTests(BaseFutureTests, test_utils.TestCase):
         with self.assertRaises(AttributeError):
             del fut._log_traceback
 
+    def test_callbacks_copy(self):
+        # See https://github.com/python/cpython/issues/125789
+        # In C implementation, the `_callbacks` attribute
+        # always returns a new list to avoid mutations of internal state
+
+        fut = self._new_future(loop=self.loop)
+        f1 = lambda _: 1
+        f2 = lambda _: 2
+        fut.add_done_callback(f1)
+        fut.add_done_callback(f2)
+        callbacks = fut._callbacks
+        self.assertIsNot(callbacks, fut._callbacks)
+        fut.remove_done_callback(f1)
+        callbacks = fut._callbacks
+        self.assertIsNot(callbacks, fut._callbacks)
+        fut.remove_done_callback(f2)
+        self.assertIsNone(fut._callbacks)
+
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
                      'requires the C _asyncio module')
