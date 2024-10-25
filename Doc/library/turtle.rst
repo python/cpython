@@ -10,6 +10,7 @@
 **Source code:** :source:`Lib/turtle.py`
 
 .. testsetup:: default
+   :skipif: _tkinter is None
 
    from turtle import *
    turtle = Turtle()
@@ -477,6 +478,7 @@ Turtle motion
    turtle is headed.  Do not change the turtle's heading.
 
    .. doctest::
+      :skipif: _tkinter is None
       :hide:
 
       >>> turtle.goto(0, 0)
@@ -815,6 +817,7 @@ Turtle motion
    last *n* stamps.
 
    .. doctest::
+      :skipif: _tkinter is None
 
       >>> for i in range(8):
       ...     unused_stamp_id = turtle.stamp()
@@ -1342,8 +1345,11 @@ More drawing control
    font.  If *move* is true, the pen is moved to the bottom-right corner of the
    text.  By default, *move* is ``False``.
 
-   >>> turtle.write("Home = ", True, align="center")
-   >>> turtle.write((0,0), True)
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> turtle.write("Home = ", True, align="center")
+      >>> turtle.write((0,0), True)
 
 
 Turtle state
@@ -1380,12 +1386,15 @@ Visibility
 
    Return ``True`` if the Turtle is shown, ``False`` if it's hidden.
 
-   >>> turtle.hideturtle()
-   >>> turtle.isvisible()
-   False
-   >>> turtle.showturtle()
-   >>> turtle.isvisible()
-   True
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> turtle.hideturtle()
+      >>> turtle.isvisible()
+      False
+      >>> turtle.showturtle()
+      >>> turtle.isvisible()
+      True
 
 
 Appearance
@@ -1828,7 +1837,10 @@ Window control
    Set background image or return name of current backgroundimage.  If *picname*
    is a filename, set the corresponding image as background.  If *picname* is
    ``"nopic"``, delete background image, if present.  If *picname* is ``None``,
-   return the filename of the current backgroundimage. ::
+   return the filename of the current backgroundimage.
+
+   .. doctest::
+      :skipif: True
 
       >>> screen.bgpic()
       'nopic'
@@ -1878,6 +1890,9 @@ Window control
    window.  To observe hidden parts of the canvas, use the scrollbars. With this
    method, one can make visible those parts of a drawing which were outside the
    canvas before.
+
+   .. doctest::
+      :skipif: _tkinter is None
 
       >>> screen.screensize()
       (400, 300)
@@ -2095,7 +2110,10 @@ Input methods
    Pop up a dialog window for input of a string. Parameter title is
    the title of the dialog window, prompt is a text mostly describing
    what information to input.
-   Return the string input. If the dialog is canceled, return ``None``. ::
+   Return the string input. If the dialog is canceled, return ``None``.
+
+   .. doctest::
+      :skipif: True
 
       >>> screen.textinput("NIM", "Name of first player:")
 
@@ -2115,7 +2133,10 @@ Input methods
    The number input must be in the range minval .. maxval if these are
    given. If not, a hint is issued and the dialog remains open for
    correction.
-   Return the number input. If the dialog is canceled,  return ``None``. ::
+   Return the number input. If the dialog is canceled,  return ``None``.
+
+   .. doctest::
+      :skipif: True
 
       >>> screen.numinput("Poker", "Your stakes:", 1000, minval=10, maxval=10000)
 
@@ -2203,9 +2224,12 @@ Settings and special methods
    There are three different ways to call this function:
 
    (1) *name* is the name of a gif-file and *shape* is ``None``: Install the
-       corresponding image shape. ::
+       corresponding image shape.
 
-       >>> screen.register_shape("turtle.gif")
+       .. doctest::
+         :skipif: True
+
+         >>> screen.register_shape("turtle.gif")
 
        .. note::
           Image shapes *do not* rotate when turning the turtle, so they do not
@@ -2239,7 +2263,10 @@ Settings and special methods
 
 .. function:: window_height()
 
-   Return the height of the turtle window. ::
+   Return the height of the turtle window.
+
+   .. doctest::
+      :skipif: True
 
       >>> screen.window_height()
       480
@@ -2247,7 +2274,10 @@ Settings and special methods
 
 .. function:: window_width()
 
-   Return the width of the turtle window. ::
+   Return the width of the turtle window.
+
+   .. doctest::
+      :skipif: True
 
       >>> screen.window_width()
       640
@@ -2472,7 +2502,10 @@ facilities:
 - When using IDLE, tooltips show the signatures and first lines of the
   docstrings of typed in function-/method calls.
 
-- Calling :func:`help` on methods or functions displays the docstrings::
+- Calling :func:`help` on methods or functions displays the docstrings:
+
+.. doctest::
+   :skipif: True
 
      >>> help(Screen.bgcolor)
      Help on method bgcolor in module turtle:
@@ -2504,7 +2537,10 @@ facilities:
          >>> turtle.penup()
 
 - The docstrings of the functions which are derived from methods have a modified
-  form::
+  form:
+
+.. doctest::
+   :skipif: True
 
      >>> help(bgcolor)
      Help on function bgcolor in module turtle:
