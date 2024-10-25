@@ -32,13 +32,24 @@ val PYTHON_VERSION = file("$PYTHON_DIR/Include/patchlevel.h").useLines {
 
 
 android {
+    val androidEnvFile = file("../../android-env.sh").absoluteFile
+
     namespace = "org.python.testbed"
     compileSdk = 34
 
     defaultConfig {
         applicationId = "org.python.testbed"
-        minSdk = 21
+
+        minSdk = androidEnvFile.useLines {
+            for (line in it) {
+                """api_level:=(\d+)""".toRegex().find(line)?.let {
+                    return@useLines it.groupValues[1].toInt()
+                }
+            }
+            throw GradleException("Failed to find API level in $androidEnvFile")
+        }
         targetSdk = 34
+
         versionCode = 1
         versionName = "1.0"
 
@@ -52,7 +63,6 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    val androidEnvFile = file("../../android-env.sh").absoluteFile
     ndkVersion = androidEnvFile.useLines {
         for (line in it) {
             """ndk_version=(\S+)""".toRegex().find(line)?.let {

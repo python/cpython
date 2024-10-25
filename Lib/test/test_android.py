@@ -24,10 +24,6 @@ STREAM_INFO = [("stdout", "I", 1), ("stderr", "W", 2)]
 
 
 # Test redirection of stdout and stderr to the Android log.
-@unittest.skipIf(
-    api_level < 23 and platform.machine() == "aarch64",
-    "SELinux blocks reading logs on older ARM64 emulators"
-)
 class TestAndroidOutput(unittest.TestCase):
     maxDiff = None
 

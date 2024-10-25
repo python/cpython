@@ -3,7 +3,7 @@
 : ${HOST:?}  # GNU target triplet
 
 # You may also override the following:
-: ${api_level:=21}  # Minimum Android API level the build will run on
+: ${api_level:=24}  # Minimum Android API level the build will run on
 : ${PREFIX:-}  # Path in which to find required libraries
 
 
