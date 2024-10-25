@@ -81,7 +81,8 @@
 
         case _LOAD_INT: {
             _Py_UopsSymbol *value;
-            value = sym_new_not_null(ctx);
+            PyObject *val = PyLong_FromLong(this_instr->oparg);
+            value = sym_new_const(ctx, val);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
