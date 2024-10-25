@@ -109,13 +109,11 @@ _PyToken_OneChar(int c1)
     return OP;
 }
 
-
 int
 _PyToken_TwoChars(int c1, int c2)
 {
-    switch (GENERATE_2CHAR_CODE(c1, c2)) { // Combine the two tokens into a 16-bit integer
-        case GENERATE_2CHAR_CODE('!', '='): 
-        case GENERATE_2CHAR_CODE('<', '>'): return NOTEQUAL;
+    switch (GENERATE_2CHAR_CODE(c1, c2)) {
+        case GENERATE_2CHAR_CODE('!', '='): return NOTEQUAL;
         case GENERATE_2CHAR_CODE('%', '='): return PERCENTEQUAL;
         case GENERATE_2CHAR_CODE('&', '='): return AMPEREQUAL;
         case GENERATE_2CHAR_CODE('*', '*'): return DOUBLESTAR;
@@ -128,6 +126,7 @@ _PyToken_TwoChars(int c1, int c2)
         case GENERATE_2CHAR_CODE(':', '='): return COLONEQUAL;
         case GENERATE_2CHAR_CODE('<', '<'): return LEFTSHIFT;
         case GENERATE_2CHAR_CODE('<', '='): return LESSEQUAL;
+        case GENERATE_2CHAR_CODE('<', '>'): return NOTEQUAL;
         case GENERATE_2CHAR_CODE('=', '='): return EQEQUAL;
         case GENERATE_2CHAR_CODE('>', '='): return GREATEREQUAL;
         case GENERATE_2CHAR_CODE('>', '>'): return RIGHTSHIFT;
@@ -138,13 +137,10 @@ _PyToken_TwoChars(int c1, int c2)
     return OP;
 }
 
-
-
-
 int
 _PyToken_ThreeChars(int c1, int c2, int c3)
 {
-    switch (GENERATE_3CHAR_CODE(c1, c2, c3)) { // Combine the three tokens into a 24-bit integer
+    switch (GENERATE_3CHAR_CODE(c1, c2, c3)) {
         case GENERATE_3CHAR_CODE('*', '*', '='): return DOUBLESTAREQUAL;
         case GENERATE_3CHAR_CODE('.', '.', '.'): return ELLIPSIS;
         case GENERATE_3CHAR_CODE('/', '/', '='): return DOUBLESLASHEQUAL;
