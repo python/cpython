@@ -1,0 +1,2 @@
+Allow the *initial* argument of :func:`functools.reduce` to be a keyword.
+Patch by Sayandip Dutta.
