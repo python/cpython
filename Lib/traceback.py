@@ -698,6 +698,8 @@ class StackSummary(list):
         with suppress(SyntaxError, ImportError):
             import ast
             tree = ast.parse('\n'.join(all_lines))
+            if not tree.body:
+                return False
             statement = tree.body[0]
             value = None
             def _spawns_full_line(value):

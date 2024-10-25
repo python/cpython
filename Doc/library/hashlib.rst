@@ -655,7 +655,7 @@ on the hash function used in digital signatures.
     by the signer.
 
     (`NIST SP-800-106 "Randomized Hashing for Digital Signatures"
-    <https://csrc.nist.gov/publications/detail/sp/800-106/archive/2009-02-25>`_)
+    <https://csrc.nist.gov/pubs/sp/800/106/final>`_)
 
 In BLAKE2 the salt is processed as a one-time input to the hash function during
 initialization, rather than as an input to each compression function.
@@ -809,8 +809,8 @@ Domain Dedication 1.0 Universal:
 .. _NIST-SP-800-132: https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf
 .. _stackexchange pbkdf2 iterations question: https://security.stackexchange.com/questions/3959/recommended-of-iterations-when-using-pbkdf2-sha256/
 .. _Attacks on cryptographic hash algorithms: https://en.wikipedia.org/wiki/Cryptographic_hash_function#Attacks_on_cryptographic_hash_algorithms
-.. _the FIPS 180-4 standard: https://csrc.nist.gov/publications/detail/fips/180/4/final
-.. _the FIPS 202 standard: https://csrc.nist.gov/publications/detail/fips/202/final
+.. _the FIPS 180-4 standard: https://csrc.nist.gov/pubs/fips/180-4/upd1/final
+.. _the FIPS 202 standard: https://csrc.nist.gov/pubs/fips/202/final
 .. _HACL\* project: https://github.com/hacl-star/hacl-star
 
 
@@ -827,7 +827,7 @@ Domain Dedication 1.0 Universal:
    https://nvlpubs.nist.gov/nistpubs/fips/nist.fips.180-4.pdf
       The FIPS 180-4 publication on Secure Hash Algorithms.
 
-   https://csrc.nist.gov/publications/detail/fips/202/final
+   https://csrc.nist.gov/pubs/fips/202/final
       The FIPS 202 publication on the SHA-3 Standard.
 
    https://www.blake2.net/
