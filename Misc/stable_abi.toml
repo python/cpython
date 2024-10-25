@@ -2536,3 +2536,5 @@
     added = '3.14'
 [const.Py_TP_USE_SPEC]
     added = '3.14'
+[function.PyUnicode_Equal]
+    added = '3.14'

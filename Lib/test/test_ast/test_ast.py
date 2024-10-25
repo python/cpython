@@ -789,6 +789,13 @@ class AST_Tests(unittest.TestCase):
             with self.subTest(test_input=test):
                 self.assertEqual(repr(ast.parse(test)), snapshot)
 
+    def test_repr_large_input_crash(self):
+        # gh-125010: Fix use-after-free in ast repr()
+        source = "0x0" + "e" * 10_000
+        with self.assertRaisesRegex(ValueError,
+                                    r"Exceeds the limit \(\d+ digits\)"):
+            repr(ast.Constant(value=eval(source)))
+
 
 class CopyTests(unittest.TestCase):
     """Test copying and pickling AST nodes."""
@@ -2252,7 +2259,7 @@ class ConstantTests(unittest.TestCase):
                          "got an invalid type in Constant: list")
 
     def test_singletons(self):
-        for const in (None, False, True, Ellipsis, b'', frozenset()):
+        for const in (None, False, True, Ellipsis, b''):
             with self.subTest(const=const):
                 value = self.compile_constant(const)
                 self.assertIs(value, const)

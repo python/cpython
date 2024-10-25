@@ -643,14 +643,12 @@ translate_bytecode_to_trace(
                 int bitcount = _Py_popcount32(counter);
                 int jump_likely = bitcount > 8;
                 /* If bitcount is 8 (half the jumps were taken), adjust confidence by 50%.
-                   If it's 16 or 0 (all or none were taken), adjust by 10%
-                   (since the future is still somewhat uncertain).
                    For values in between, adjust proportionally. */
                 if (jump_likely) {
-                    confidence = confidence * (bitcount + 2) / 20;
+                    confidence = confidence * bitcount / 16;
                 }
                 else {
-                    confidence = confidence * (18 - bitcount) / 20;
+                    confidence = confidence * (16 - bitcount) / 16;
                 }
                 uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_likely];
                 DPRINTF(2, "%d: %s(%d): counter=%04x, bitcount=%d, likely=%d, confidence=%d, uopcode=%s\n",
