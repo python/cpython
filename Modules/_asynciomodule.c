@@ -409,8 +409,9 @@ future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
     if (fut->fut_callback0 != NULL) {
         /* There's a 1st callback */
 
-        int ret = call_soon(state, fut->fut_loop, fut->fut_callback0,
-                            (PyObject *)fut, fut->fut_context0);
+        int ret = call_soon(state,
+            fut->fut_loop, fut->fut_callback0,
+            (PyObject *)fut, fut->fut_context0);
 
         Py_CLEAR(fut->fut_callback0);
         Py_CLEAR(fut->fut_context0);
