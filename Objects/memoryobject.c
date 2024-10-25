@@ -3311,11 +3311,7 @@ static PyObject *
 memoryiter_new(PyObject *self, int reversed)
 {
     assert(reversed == 0 || reversed == 1);
-
-    if (!PyMemoryView_Check(self)) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
+    assert(PyMemoryView_Check(self));
 
     PyMemoryViewObject *sequence = _PyMemoryView_CAST(self);
     const Py_buffer *view = &sequence->view;
@@ -3343,9 +3339,9 @@ memoryiter_new(PyObject *self, int reversed)
     it->it_fmt = fmt;
     it->it_length = memory_length(self);
     it->it_index = reversed ? (it->it_length - 1) : 0;
-    it->it_seq = _PyMemoryView_CAST(Py_NewRef(self));
+    it->it_seq = (PyMemoryViewObject *)Py_NewRef(self);
     _PyObject_GC_TRACK(it);
-    return (PyObject *)(it);
+    return (PyObject *)it;
 }
 
 static void
@@ -3390,8 +3386,7 @@ memoryiter_next(PyObject *self)
     if (it->it_index < it->it_length) {
         return memoryiter_iter_nth(seq, it->it_index++, it->it_fmt);
     }
-    it->it_seq = NULL;
-    Py_DECREF(seq);
+    Py_CLEAR(it->it_seq);
     return NULL;
 }
 
@@ -3428,8 +3423,7 @@ memorview_reverse_iternext(PyObject *self)
         // FEAT(picnixz): can we omit "it->it_index < it->it_length"?
         return memoryiter_iter_nth(seq, it->it_index--, it->it_fmt);
     }
-    it->it_seq = NULL;
-    Py_DECREF(seq);
+    Py_CLEAR(it->it_seq);
     return NULL;
 }
 
@@ -3450,7 +3444,7 @@ memoryview___reversed___impl(PyMemoryViewObject *self)
     // show that this implementation improves for-loop performances. Note
     // that materializing the specialized reversed iterator is likely to
     // be slower than materializing a generic reversed object instance.
-    return memoryiter_new(_PyObject_CAST(self), 1);
+    return memoryiter_new((PyObject *)self, 1);
 }
 
 
