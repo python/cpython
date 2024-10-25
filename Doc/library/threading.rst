@@ -365,9 +365,11 @@ since it is impossible to detect the termination of alien threads.
 
    .. note::
 
-      Threads are non-daemon by default, meaning they block the program
-      from exiting until they complete. By setting *daemon*=True, a thread
-      becomes a daemon and will be forcibly terminated when the main program exits.
+      Threads are non-daemon by default, meaning they block the program from
+      exiting until they complete. By setting *daemon*=True, thread becomes
+      daemon and will be forcibly terminated when the main program exits. use
+      an explicit call to ``.join()`` on the daemon thread, which will block
+      the main program until the thread completes.
 
    .. versionchanged:: 3.3
       Added the *daemon* parameter.
