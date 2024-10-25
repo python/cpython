@@ -81,6 +81,8 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return oparg;
         case BUILD_TEMPLATE:
             return oparg;
+        case BUILD_TEMPLATE_FROM_LIST:
+            return 1;
         case BUILD_TUPLE:
             return oparg;
         case CACHE:
@@ -543,6 +545,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case BUILD_STRING:
             return 1;
         case BUILD_TEMPLATE:
+            return 1;
+        case BUILD_TEMPLATE_FROM_LIST:
             return 1;
         case BUILD_TUPLE:
             return 1;
@@ -1045,6 +1049,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[266] = {
     [BUILD_SLICE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG },
     [BUILD_STRING] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG },
     [BUILD_TEMPLATE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
+    [BUILD_TEMPLATE_FROM_LIST] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BUILD_TUPLE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG },
     [CACHE] = { true, INSTR_FMT_IX, 0 },
     [CALL] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
@@ -1284,6 +1289,7 @@ _PyOpcode_macro_expansion[256] = {
     [BUILD_SLICE] = { .nuops = 1, .uops = { { _BUILD_SLICE, 0, 0 } } },
     [BUILD_STRING] = { .nuops = 1, .uops = { { _BUILD_STRING, 0, 0 } } },
     [BUILD_TEMPLATE] = { .nuops = 1, .uops = { { _BUILD_TEMPLATE, 0, 0 } } },
+    [BUILD_TEMPLATE_FROM_LIST] = { .nuops = 1, .uops = { { _BUILD_TEMPLATE_FROM_LIST, 0, 0 } } },
     [BUILD_TUPLE] = { .nuops = 1, .uops = { { _BUILD_TUPLE, 0, 0 } } },
     [CALL_ALLOC_AND_ENTER_INIT] = { .nuops = 4, .uops = { { _CHECK_PEP_523, 0, 0 }, { _CHECK_AND_ALLOCATE_OBJECT, 2, 1 }, { _CREATE_INIT_FRAME, 0, 0 }, { _PUSH_FRAME, 0, 0 } } },
     [CALL_BOUND_METHOD_EXACT_ARGS] = { .nuops = 9, .uops = { { _CHECK_PEP_523, 0, 0 }, { _CHECK_CALL_BOUND_METHOD_EXACT_ARGS, 0, 0 }, { _INIT_CALL_BOUND_METHOD_EXACT_ARGS, 0, 0 }, { _CHECK_FUNCTION_VERSION, 2, 1 }, { _CHECK_FUNCTION_EXACT_ARGS, 0, 0 }, { _CHECK_STACK_SPACE, 0, 0 }, { _INIT_CALL_PY_EXACT_ARGS, 0, 0 }, { _SAVE_RETURN_OFFSET, 7, 3 }, { _PUSH_FRAME, 0, 0 } } },
@@ -1467,6 +1473,7 @@ const char *_PyOpcode_OpName[266] = {
     [BUILD_SLICE] = "BUILD_SLICE",
     [BUILD_STRING] = "BUILD_STRING",
     [BUILD_TEMPLATE] = "BUILD_TEMPLATE",
+    [BUILD_TEMPLATE_FROM_LIST] = "BUILD_TEMPLATE_FROM_LIST",
     [BUILD_TUPLE] = "BUILD_TUPLE",
     [CACHE] = "CACHE",
     [CALL] = "CALL",
@@ -1725,6 +1732,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [BUILD_SLICE] = BUILD_SLICE,
     [BUILD_STRING] = BUILD_STRING,
     [BUILD_TEMPLATE] = BUILD_TEMPLATE,
+    [BUILD_TEMPLATE_FROM_LIST] = BUILD_TEMPLATE_FROM_LIST,
     [BUILD_TUPLE] = BUILD_TUPLE,
     [CACHE] = CACHE,
     [CALL] = CALL,
@@ -1923,7 +1931,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif // NEED_OPCODE_METADATA
 
 #define EXTRA_CASES \
-    case 118: \
     case 119: \
     case 120: \
     case 121: \

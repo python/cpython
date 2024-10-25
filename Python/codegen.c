@@ -3852,15 +3852,12 @@ codegen_template_str(compiler *c, expr_ty e)
     location loc = LOC(e);
     Py_ssize_t value_count = asdl_seq_LEN(e->v.TemplateStr.values);
     if (value_count > STACK_USE_GUIDELINE) {
-        _Py_DECLARE_STR(empty, "");
-        ADDOP_LOAD_CONST_NEW(c, loc, Py_NewRef(&_Py_STR(empty)));
-        ADDOP_NAME(c, loc, LOAD_METHOD, &_Py_ID(join), names);
         ADDOP_I(c, loc, BUILD_LIST, 0);
         for (Py_ssize_t i = 0; i < asdl_seq_LEN(e->v.TemplateStr.values); i++) {
             VISIT(c, expr, asdl_seq_GET(e->v.TemplateStr.values, i));
             ADDOP_I(c, loc, LIST_APPEND, 1);
         }
-        ADDOP_I(c, loc, CALL, 1);
+        ADDOP(c, loc, BUILD_TEMPLATE_FROM_LIST);
     }
     else {
         VISIT_SEQ(c, expr, e->v.TemplateStr.values);

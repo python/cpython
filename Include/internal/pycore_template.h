@@ -9,9 +9,12 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_stackref.h"    // _PyStackRef
+
 extern PyTypeObject _PyTemplate_Type;
 
-PyAPI_FUNC(PyObject *) _PyTemplate_Create(PyObject **values, Py_ssize_t n);
+PyAPI_FUNC(PyObject *) _PyTemplate_FromValues(PyObject **values, Py_ssize_t n);
+PyAPI_FUNC(PyObject *) _PyTemplate_FromListStackRef(_PyStackRef ref);
 
 #ifdef __cplusplus
 }

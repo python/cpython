@@ -1728,6 +1728,7 @@ dummy_func(
 
         inst(BUILD_INTERPOLATION, (values[4] -- interpolation)) {
             PyObject *interpolation_o = _PyInterpolation_FromStackRefSteal(values);
+            INPUTS_DEAD();
             ERROR_IF(interpolation_o == NULL, error);
             interpolation = PyStackRef_FromPyObjectSteal(interpolation_o);
         }
@@ -1738,8 +1739,15 @@ dummy_func(
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
-            PyObject *template_o = _PyTemplate_Create(pieces_o, oparg);
+            PyObject *template_o = _PyTemplate_FromValues(pieces_o, oparg);
             STACKREFS_TO_PYOBJECTS_CLEANUP(pieces_o);
+            DECREF_INPUTS();
+            ERROR_IF(template_o == NULL, error);
+            template = PyStackRef_FromPyObjectSteal(template_o);
+        }
+
+        inst(BUILD_TEMPLATE_FROM_LIST, (list -- template)) {
+            PyObject *template_o = _PyTemplate_FromListStackRef(list);
             DECREF_INPUTS();
             ERROR_IF(template_o == NULL, error);
             template = PyStackRef_FromPyObjectSteal(template_o);

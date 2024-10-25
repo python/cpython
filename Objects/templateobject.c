@@ -2,6 +2,7 @@
 #include "Python.h"
 #include <stddef.h>
 
+#include "pycore_stackref.h"        // _PyStackRef
 #include "pycore_global_objects.h"  // _Py_STR
 #include "pycore_runtime.h"         // _Py_STR
 
@@ -219,7 +220,7 @@ PyTypeObject _PyTemplate_Type = {
 };
 
 PyObject *
-_PyTemplate_Create(PyObject **values, Py_ssize_t oparg)
+_PyTemplate_FromValues(PyObject **values, Py_ssize_t oparg)
 {
     PyObject *tuple = PyTuple_New(oparg);
     if (!tuple) {
@@ -228,6 +229,22 @@ _PyTemplate_Create(PyObject **values, Py_ssize_t oparg)
 
     for (Py_ssize_t i = 0; i < oparg; i++) {
         PyTuple_SET_ITEM(tuple, i, Py_NewRef(values[i]));
+    }
+
+    PyObject *template = PyObject_CallObject((PyObject *) &_PyTemplate_Type, tuple);
+    Py_DECREF(tuple);
+    return template;
+}
+
+PyObject *
+_PyTemplate_FromListStackRef(_PyStackRef ref)
+{
+    PyObject *list = PyStackRef_AsPyObjectSteal(ref);
+
+    PyObject *tuple = PySequence_Tuple(list);
+    if (!tuple) {
+        PyStackRef_CLOSE(ref);
+        return NULL;
     }
 
     PyObject *template = PyObject_CallObject((PyObject *) &_PyTemplate_Type, tuple);

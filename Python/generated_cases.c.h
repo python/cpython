@@ -863,7 +863,7 @@
                 }
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *template_o = _PyTemplate_Create(pieces_o, oparg);
+            PyObject *template_o = _PyTemplate_FromValues(pieces_o, oparg);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             STACKREFS_TO_PYOBJECTS_CLEANUP(pieces_o);
             for (int _i = oparg; --_i >= 0;) {
@@ -878,6 +878,23 @@
             stack_pointer[-oparg] = template;
             stack_pointer += 1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+
+        TARGET(BUILD_TEMPLATE_FROM_LIST) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(BUILD_TEMPLATE_FROM_LIST);
+            _PyStackRef list;
+            _PyStackRef template;
+            list = stack_pointer[-1];
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyObject *template_o = _PyTemplate_FromListStackRef(list);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            PyStackRef_CLOSE(list);
+            if (template_o == NULL) goto pop_1_error;
+            template = PyStackRef_FromPyObjectSteal(template_o);
+            stack_pointer[-1] = template;
             DISPATCH();
         }
 
