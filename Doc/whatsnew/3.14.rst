@@ -1086,7 +1086,7 @@ symtable
 
 typing
 ------
-* Add :func:`~typing.copy_kwargs` that copies/applies
+* Add :func:`~typing.copy_func_params` that copies/applies
   the :class:`~typing.ParamSpec` from one function to another.
 
 sys

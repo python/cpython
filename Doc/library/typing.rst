@@ -281,7 +281,7 @@ callables, the :data:`Concatenate` operator may be used.  They
 take the form ``Callable[ParamSpecVariable, ReturnType]`` and
 ``Callable[Concatenate[Arg1Type, Arg2Type, ..., ParamSpecVariable], ReturnType]``
 respectively.
-To copy the call from one function to another use :func:`copy_kwargs`.
+To copy the call from one function to another use :func:`copy_func_params`.
 
 .. versionchanged:: 3.10
    ``Callable`` now supports :class:`ParamSpec` and :data:`Concatenate`.
@@ -2865,7 +2865,7 @@ Functions and decorators
    runtime we intentionally don't check anything (we want this
    to be as fast as possible).
 
-.. decorator:: copy_kwargs(source_func)
+.. decorator:: copy_func_params(source_func)
 
    Cast the decorated function's call signature to the *source_func*'s.
 
@@ -2875,12 +2875,12 @@ Functions and decorators
 
    Usage::
 
-      from typing import copy_kwargs, Any
+      from typing import copy_func_params, Any
 
       def upstream_func(a: int, b: float, *, double: bool = False) -> float:
          ...
 
-      @copy_kwargs(upstream_func)
+      @copy_func_params(upstream_func)
       def enhanced(
          a: int, b: float, *args: Any, double: bool = False, **kwargs: Any
       ) -> str:

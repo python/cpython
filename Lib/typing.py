@@ -125,7 +125,7 @@ __all__ = [
     'assert_never',
     'cast',
     'clear_overloads',
-    'copy_kwargs',
+    'copy_func_params',
     'dataclass_transform',
     'evaluate_forward_ref',
     'final',
@@ -3756,7 +3756,7 @@ def get_protocol_members(tp: type, /) -> frozenset[str]:
 _P = ParamSpec("_P")
 
 
-def copy_kwargs(
+def copy_func_params(
     source_func: Callable[_P, Any]
 ) -> Callable[[Callable[..., T]], Callable[_P, T]]:
     """Cast the decorated function's call signature to the source_func's.
@@ -3767,12 +3767,12 @@ def copy_kwargs(
 
     Usage::
 
-        from typing import copy_kwargs, Any
+        from typing import copy_func_params, Any
 
         def upstream_func(a: int, b: float, *, double: bool = False) -> float:
             ...
 
-        @copy_kwargs(upstream_func)
+        @copy_func_params(upstream_func)
         def enhanced(
             a: int, b: float, *args: Any, double: bool = False, **kwargs: Any
         ) -> str:
