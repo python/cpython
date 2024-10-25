@@ -11,11 +11,13 @@ extern "C" {
 
 #include "pycore_stackref.h"    // _PyStackRef
 
+extern int _conversion_converter(PyObject *arg, PyObject **Py_UNUSED(unused));
+
 extern PyTypeObject _PyInterpolation_Type;
 
 PyAPI_FUNC(PyObject *) _PyInterpolation_FromStackRefSteal(_PyStackRef *values);
 
-extern PyStatus _PyInterpolation_InitTypes(PyInterpreterState *);
+extern PyStatus _PyInterpolation_InitTypes(PyInterpreterState *interp);
 
 #ifdef __cplusplus
 }

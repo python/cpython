@@ -9,6 +9,41 @@
 
 #include "pycore_interpolation.h"
 
+/*[clinic input]
+module templatelib
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=dbb2236a3de68808]*/
+
+#include "clinic/interpolationobject.c.h"
+
+/*[clinic input]
+class templatelib.Interpolation "interpolationobject *" "&_PyInterpolation_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=5b183514b4d7e5af]*/
+
+int
+_conversion_converter(PyObject *arg, PyObject **Py_UNUSED(unused))
+{
+    if (arg == Py_None) {
+        return 1;
+    }
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("Interpolation", "argument 'conv'", "str", arg);
+        return 0;
+    }
+
+    Py_ssize_t len;
+    const char *conv = PyUnicode_AsUTF8AndSize(arg, &len);
+    if (len != 1 || !(conv[0] == 'a' || conv[0] == 'r' || conv[0] == 's')) {
+        PyErr_SetString(PyExc_ValueError,
+            "Interpolation() argument 'conv' must be one of 's', 'a' or 'r'");
+        return 0;
+    }
+
+    return 1;
+}
+
 typedef struct {
     PyObject_HEAD
     PyObject *value;
@@ -17,32 +52,31 @@ typedef struct {
     PyObject *format_spec;
 } interpolationobject;
 
-static interpolationobject *
-interpolation_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+/*[clinic input]
+@classmethod
+templatelib.Interpolation.__new__ as interpolation_new
+
+    value: object
+    expr: object(subclass_of='&PyUnicode_Type')
+    conv: object(converter='_conversion_converter') = None
+    format_spec: object(subclass_of='&PyUnicode_Type', c_default='&_Py_STR(empty)') = ""
+[clinic start generated code]*/
+
+static PyObject *
+interpolation_new_impl(PyTypeObject *type, PyObject *value, PyObject *expr,
+                       PyObject *conv, PyObject *format_spec)
+/*[clinic end generated code: output=417d59bccab99648 input=348d81ee06c4be20]*/
 {
     interpolationobject *self = (interpolationobject *) type->tp_alloc(type, 0);
     if (!self) {
         return NULL;
     }
 
-    static char *kwlist[] = {"value", "expr", "conv", "format_spec", NULL};
-
-    PyObject *value, *expr;
-    PyObject *conv = NULL;
-    PyObject *format_spec = NULL;
-
-    if (PyArg_ParseTupleAndKeywords(args, kwds, "OO|OO", kwlist,
-                                    &value, &expr,
-                                    &conv, &format_spec) < 0) {
-        Py_DECREF(self);
-        return NULL;
-    }
-
     Py_XSETREF(self->value, Py_NewRef(value));
     Py_XSETREF(self->expr, Py_NewRef(expr));
-    Py_XSETREF(self->conv, Py_NewRef(conv ? conv : Py_None));
-    Py_XSETREF(self->format_spec, format_spec ? Py_NewRef(format_spec) : &_Py_STR(empty));
-    return self;
+    Py_XSETREF(self->conv, Py_NewRef(conv));
+    Py_XSETREF(self->format_spec, Py_NewRef(format_spec));
+    return (PyObject *) self;
 }
 
 static void

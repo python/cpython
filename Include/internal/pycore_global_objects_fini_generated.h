@@ -867,6 +867,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(consts));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(context));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(contravariant));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(conv));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(cookie));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(copy));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(copyreg));
@@ -924,6 +925,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(exception));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(existing_file_name));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(exp));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(expr));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(extend));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(extra_tokens));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(facility));
