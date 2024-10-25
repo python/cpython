@@ -1,0 +1,2 @@
+On Android, the ``errors`` setting of :any:`sys.stdout` was changed from
+``surrogateescape`` to ``backslashreplace``.
