@@ -627,7 +627,7 @@ class UrlParseTestCase(unittest.TestCase):
         # According to RFC 3986, Section 5.1, a base URI must conform to
         # the absolute-URI syntax rule (Section 4.3). But urljoin() lacks
         # a context to establish missed components of the relative base URI.
-        # It still has to return a sensitible result for backward compatibility.
+        # It still has to return a sensible result for backwards compatibility.
         # The following tests are figments of the imagination and artifacts
         # of the current implementation that are not based on any standard.
         self.checkJoin('', '', '')
