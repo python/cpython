@@ -3310,6 +3310,7 @@ test_critical_sections(PyObject *module, PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+
 // Used by `finalize_thread_hang`.
 #ifdef _POSIX_THREADS
 static void finalize_thread_hang_cleanup_callback(void *Py_UNUSED(arg)) {
@@ -3335,6 +3336,20 @@ finalize_thread_hang(PyObject *self, PyObject *callback)
 #if defined(_POSIX_THREADS) && !defined(__wasi__)
     pthread_cleanup_pop(0);
 #endif
+    Py_RETURN_NONE;
+}
+
+
+static PyObject *
+type_freeze(PyObject *module, PyObject *args)
+{
+    PyTypeObject *type;
+    if (!PyArg_ParseTuple(args, "O!", &PyType_Type, &type)) {
+        return NULL;
+    }
+    if (PyType_Freeze(type) < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -3479,6 +3494,7 @@ static PyMethodDef TestMethods[] = {
     {"function_set_warning", function_set_warning, METH_NOARGS},
     {"test_critical_sections", test_critical_sections, METH_NOARGS},
     {"finalize_thread_hang", finalize_thread_hang, METH_O, NULL},
+    {"type_freeze", type_freeze, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 

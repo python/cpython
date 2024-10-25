@@ -713,6 +713,7 @@ SYMBOL_NAMES = (
     "PyTuple_Size",
     "PyTuple_Type",
     "PyType_ClearCache",
+    "PyType_Freeze",
     "PyType_FromMetaclass",
     "PyType_FromModuleAndSpec",
     "PyType_FromSpec",

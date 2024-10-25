@@ -413,6 +413,20 @@ The following functions and structs are used to create
       Creating classes whose metaclass overrides
       :c:member:`~PyTypeObject.tp_new` is no longer allowed.
 
+.. c:function:: int PyType_Freeze(PyTypeObject *type)
+
+   Make a type immutable: set the :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` flag.
+
+   All base classes of *type* must be immutable.
+
+   On success, return ``0``.
+   On error, set an exception and return ``-1``.
+
+   The type must not be used before it's made immutable. For example, type
+   instances must not be created before the type is made immutable.
+
+   .. versionadded:: 3.14
+
 .. raw:: html
 
    <!-- Keep old URL fragments working (see gh-97908) -->
