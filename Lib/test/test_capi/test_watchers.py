@@ -4,7 +4,7 @@ import contextvars
 from contextlib import contextmanager, ExitStack
 from test.support import (
     catch_unraisable_exception, import_helper,
-    gc_collect, suppress_immortalization)
+    gc_collect)
 
 
 # Skip this test if the _testcapi module isn't available.
@@ -96,6 +96,23 @@ class TestDictWatchers(unittest.TestCase):
             self.watch(wid, d)
             del d
             self.assert_events(["dealloc"])
+
+    def test_object_dict(self):
+        class MyObj: pass
+        o = MyObj()
+
+        with self.watcher() as wid:
+            self.watch(wid, o.__dict__)
+            o.foo = "bar"
+            o.foo = "baz"
+            del o.foo
+            self.assert_events(["new:foo:bar", "mod:foo:baz", "del:foo"])
+
+        with self.watcher() as wid:
+            self.watch(wid, o.__dict__)
+            for _ in range(100):
+                o.foo = "bar"
+            self.assert_events(["new:foo:bar"] + ["mod:foo:bar"] * 99)
 
     def test_unwatch(self):
         d = {}
@@ -387,7 +404,6 @@ class TestCodeObjectWatchers(unittest.TestCase):
         self.assertEqual(
             exp_destroyed_1, _testcapi.get_code_watcher_num_destroyed_events(1))
 
-    @suppress_immortalization()
     def test_code_object_events_dispatched(self):
         # verify that all counts are zero before any watchers are registered
         self.assert_event_counts(0, 0, 0, 0)
@@ -434,7 +450,6 @@ class TestCodeObjectWatchers(unittest.TestCase):
                 self.assertIsNone(cm.unraisable.object)
                 self.assertEqual(str(cm.unraisable.exc_value), "boom!")
 
-    @suppress_immortalization()
     def test_dealloc_error(self):
         co = _testcapi.code_newempty("test_watchers", "dummy0", 0)
         with self.code_watcher(2):
