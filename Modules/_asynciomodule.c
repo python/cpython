@@ -406,15 +406,11 @@ future_ensure_alive(FutureObj *fut)
 static int
 future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
 {
-    Py_ssize_t len;
-    Py_ssize_t i;
-
     if (fut->fut_callback0 != NULL) {
         /* There's a 1st callback */
 
-        int ret = call_soon(state,
-            fut->fut_loop, fut->fut_callback0,
-            (PyObject *)fut, fut->fut_context0);
+        int ret = call_soon(state, fut->fut_loop, fut->fut_callback0,
+                            (PyObject *)fut, fut->fut_context0);
 
         Py_CLEAR(fut->fut_callback0);
         Py_CLEAR(fut->fut_context0);
@@ -429,19 +425,10 @@ future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
            callbacks from the 'fut_callbacks' list. */
     }
 
-    if (fut->fut_callbacks == NULL) {
-        /* No more callbacks, return. */
-        return 0;
-    }
-
-    len = PyList_GET_SIZE(fut->fut_callbacks);
-    if (len == 0) {
-        /* The list of callbacks was empty; clear it and return. */
-        Py_CLEAR(fut->fut_callbacks);
-        return 0;
-    }
-
-    for (i = 0; i < len; i++) {
+    // Beware: An evil call_soon could change fut->fut_callbacks.
+    for (Py_ssize_t i = 0;
+         fut->fut_callbacks != NULL && i < PyList_GET_SIZE(fut->fut_callbacks);
+         i++) {
         PyObject *cb_tup = PyList_GET_ITEM(fut->fut_callbacks, i);
         PyObject *cb = PyTuple_GET_ITEM(cb_tup, 0);
         PyObject *ctx = PyTuple_GET_ITEM(cb_tup, 1);
