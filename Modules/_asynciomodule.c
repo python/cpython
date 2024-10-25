@@ -406,9 +406,6 @@ future_ensure_alive(FutureObj *fut)
 static int
 future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
 {
-    Py_ssize_t len;
-    Py_ssize_t i;
-
     if (fut->fut_callback0 != NULL) {
         /* There's a 1st callback */
 
@@ -434,27 +431,25 @@ future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
         return 0;
     }
 
-    len = PyList_GET_SIZE(fut->fut_callbacks);
-    if (len == 0) {
-        /* The list of callbacks was empty; clear it and return. */
-        Py_CLEAR(fut->fut_callbacks);
-        return 0;
-    }
-
-    for (i = 0; i < len; i++) {
-        PyObject *cb_tup = PyList_GET_ITEM(fut->fut_callbacks, i);
+    // Beware: An evil call_soon could change fut->fut_callbacks.
+    // The idea is to transfer the ownership of the callbacks list
+    // so that external code is not able to mutate the list during
+    // the iteration.
+    PyObject *callbacks = fut->fut_callbacks;
+    fut->fut_callbacks = NULL;
+    Py_ssize_t n = PyList_GET_SIZE(callbacks);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        assert(PyList_GET_SIZE(callbacks) == n);
+        PyObject *cb_tup = PyList_GET_ITEM(callbacks, i);
         PyObject *cb = PyTuple_GET_ITEM(cb_tup, 0);
         PyObject *ctx = PyTuple_GET_ITEM(cb_tup, 1);
 
         if (call_soon(state, fut->fut_loop, cb, (PyObject *)fut, ctx)) {
-            /* If an error occurs in pure-Python implementation,
-               all callbacks are cleared. */
-            Py_CLEAR(fut->fut_callbacks);
+            Py_DECREF(callbacks);
             return -1;
         }
     }
-
-    Py_CLEAR(fut->fut_callbacks);
+    Py_DECREF(callbacks);
     return 0;
 }
 
