@@ -664,6 +664,9 @@ codegen_setup_annotations_scope(compiler *c, location loc,
         codegen_enter_scope(c, name, COMPILE_SCOPE_ANNOTATIONS,
                             key, loc.lineno, NULL, &umd));
 
+    // Insert None into consts to prevent an annotation
+    // apperaing to be a docstring
+    _PyCompile_AddConst(c, Py_None);
     // if .format != 1: raise NotImplementedError
     _Py_DECLARE_STR(format, ".format");
     ADDOP_I(c, loc, LOAD_FAST, 0);
