@@ -76,7 +76,7 @@ the following command can be used to display the disassembly of
      3           LOAD_GLOBAL              1 (len + NULL)
                  LOAD_FAST                0 (alist)
                  CALL                     1
-                 RETURN_VALUE
+                 RETURN_VALUE_FUNC
 
 (The "2" is a line number).
 
@@ -203,7 +203,7 @@ Example:
     LOAD_GLOBAL
     LOAD_FAST
     CALL
-    RETURN_VALUE
+    RETURN_VALUE_FUNC
 
 
 Analysis functions
@@ -857,16 +857,20 @@ container object remains on the stack so that it is available for further
 iterations of the loop.
 
 
-.. opcode:: RETURN_VALUE
+.. opcode:: RETURN_VALUE_FUNC
 
    Returns with ``STACK[-1]`` to the caller of the function.
+   Used in normal functions.
+
+   .. versionadded:: 3.14
 
 
-.. opcode:: RETURN_CONST (consti)
+.. opcode:: RETURN_VALUE_GEN
 
-   Returns with ``co_consts[consti]`` to the caller of the function.
+   Returns with ``STACK[-1]`` to the caller of the generator.
+   Used in generator functions.
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.14
 
 
 .. opcode:: YIELD_VALUE
@@ -1084,6 +1088,14 @@ iterations of the loop.
 .. opcode:: LOAD_CONST (consti)
 
    Pushes ``co_consts[consti]`` onto the stack.
+
+
+.. opcode:: LOAD_CONST_IMMORTAL (consti)
+
+   Pushes ``co_consts[consti]`` onto the stack.
+   Can be used when the constant value is known to be immortal.
+
+   .. versionadded:: 3.14
 
 
 .. opcode:: LOAD_NAME (namei)

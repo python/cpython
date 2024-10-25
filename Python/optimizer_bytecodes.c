@@ -427,6 +427,13 @@ dummy_func(void) {
         value = sym_new_const(ctx, val);
     }
 
+
+    op(_LOAD_CONST_IMMORTAL, (-- value)) {
+        PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
+        REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
+        value = sym_new_const(ctx, val);
+    }
+
     op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
         value = sym_new_const(ctx, ptr);
     }
@@ -647,7 +654,30 @@ dummy_func(void) {
         ctx->done = true;
     }
 
-    op(_RETURN_VALUE, (retval -- res)) {
+    op(_RETURN_VALUE_FUNC, (retval -- res)) {
+        SAVE_STACK();
+        ctx->frame->stack_pointer = stack_pointer;
+        frame_pop(ctx);
+        stack_pointer = ctx->frame->stack_pointer;
+
+        /* Stack space handling */
+        assert(corresponding_check_stack == NULL);
+        assert(co != NULL);
+        int framesize = co->co_framesize;
+        assert(framesize > 0);
+        assert(framesize <= curr_space);
+        curr_space -= framesize;
+
+        co = get_code(this_instr);
+        if (co == NULL) {
+            // might be impossible, but bailing is still safe
+            ctx->done = true;
+        }
+        RELOAD_STACK();
+        res = retval;
+    }
+
+    op(_RETURN_VALUE_GEN, (retval -- res)) {
         SAVE_STACK();
         ctx->frame->stack_pointer = stack_pointer;
         frame_pop(ctx);

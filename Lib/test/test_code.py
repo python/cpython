@@ -254,10 +254,11 @@ class CodeTest(unittest.TestCase):
             return x
         code = func.__code__
 
-        # different co_name, co_varnames, co_consts
+        # Different co_name, co_varnames, co_consts.
+        # Must have the same number of constants and
+        # variables or we get crashes.
         def func2():
             y = 2
-            z = 3
             return y
         code2 = func2.__code__
 

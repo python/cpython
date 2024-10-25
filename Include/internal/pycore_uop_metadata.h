@@ -36,6 +36,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_FAST_AND_CLEAR] = HAS_ARG_FLAG | HAS_LOCAL_FLAG,
     [_LOAD_FAST_LOAD_FAST] = HAS_ARG_FLAG | HAS_LOCAL_FLAG,
     [_LOAD_CONST] = HAS_ARG_FLAG | HAS_CONST_FLAG | HAS_PURE_FLAG,
+    [_LOAD_CONST_IMMORTAL] = HAS_ARG_FLAG | HAS_CONST_FLAG,
     [_STORE_FAST_0] = HAS_LOCAL_FLAG,
     [_STORE_FAST_1] = HAS_LOCAL_FLAG,
     [_STORE_FAST_2] = HAS_LOCAL_FLAG,
@@ -92,7 +93,8 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_DELETE_SUBSCR] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_CALL_INTRINSIC_1] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_CALL_INTRINSIC_2] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
-    [_RETURN_VALUE] = 0,
+    [_RETURN_VALUE_FUNC] = HAS_ESCAPES_FLAG,
+    [_RETURN_VALUE_GEN] = HAS_ESCAPES_FLAG,
     [_GET_AITER] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GET_ANEXT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GET_AWAITABLE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -460,6 +462,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_LOAD_BUILD_CLASS] = "_LOAD_BUILD_CLASS",
     [_LOAD_COMMON_CONSTANT] = "_LOAD_COMMON_CONSTANT",
     [_LOAD_CONST] = "_LOAD_CONST",
+    [_LOAD_CONST_IMMORTAL] = "_LOAD_CONST_IMMORTAL",
     [_LOAD_CONST_INLINE] = "_LOAD_CONST_INLINE",
     [_LOAD_CONST_INLINE_BORROW] = "_LOAD_CONST_INLINE_BORROW",
     [_LOAD_CONST_INLINE_BORROW_WITH_NULL] = "_LOAD_CONST_INLINE_BORROW_WITH_NULL",
@@ -511,7 +514,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_REPLACE_WITH_TRUE] = "_REPLACE_WITH_TRUE",
     [_RESUME_CHECK] = "_RESUME_CHECK",
     [_RETURN_GENERATOR] = "_RETURN_GENERATOR",
-    [_RETURN_VALUE] = "_RETURN_VALUE",
+    [_RETURN_VALUE_FUNC] = "_RETURN_VALUE_FUNC",
+    [_RETURN_VALUE_GEN] = "_RETURN_VALUE_GEN",
     [_SAVE_RETURN_OFFSET] = "_SAVE_RETURN_OFFSET",
     [_SEND_GEN_FRAME] = "_SEND_GEN_FRAME",
     [_SETUP_ANNOTATIONS] = "_SETUP_ANNOTATIONS",
@@ -597,6 +601,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _LOAD_FAST_LOAD_FAST:
             return 0;
         case _LOAD_CONST:
+            return 0;
+        case _LOAD_CONST_IMMORTAL:
             return 0;
         case _STORE_FAST_0:
             return 1;
@@ -710,7 +716,9 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _CALL_INTRINSIC_2:
             return 2;
-        case _RETURN_VALUE:
+        case _RETURN_VALUE_FUNC:
+            return 1;
+        case _RETURN_VALUE_GEN:
             return 1;
         case _GET_AITER:
             return 1;

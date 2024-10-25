@@ -33,7 +33,7 @@ class OpListTests(unittest.TestCase):
             'POP_TOP',
             'IMPORT_NAME',
             'JUMP',
-            'INSTRUMENTED_RETURN_VALUE',
+            'INSTRUMENTED_RETURN_VALUE_FUNC',
         ]
         opcodes = [dis.opmap[opname] for opname in names]
         self.check_bool_function_result(_opcode.is_valid, opcodes, True)

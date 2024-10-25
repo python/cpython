@@ -709,7 +709,7 @@ translate_bytecode_to_trace(
                     int nuops = expansion->nuops;
                     RESERVE(nuops + 1); /* One extra for exit */
                     int16_t last_op = expansion->uops[nuops-1].uop;
-                    if (last_op == _RETURN_VALUE || last_op == _RETURN_GENERATOR || last_op == _YIELD_VALUE) {
+                    if (last_op == _RETURN_VALUE_FUNC || last_op == _RETURN_VALUE_GEN || last_op == _RETURN_GENERATOR || last_op == _YIELD_VALUE) {
                         // Check for trace stack underflow now:
                         // We can't bail e.g. in the middle of
                         // LOAD_CONST + _RETURN_VALUE.
@@ -770,7 +770,7 @@ translate_bytecode_to_trace(
                                 Py_FatalError("garbled expansion");
                         }
 
-                        if (uop == _RETURN_VALUE || uop == _RETURN_GENERATOR || uop == _YIELD_VALUE) {
+                        if (uop == _RETURN_VALUE_FUNC || uop == _RETURN_VALUE_GEN || uop == _RETURN_GENERATOR || uop == _YIELD_VALUE) {
                             TRACE_STACK_POP();
                             /* Set the operand to the function or code object returned to,
                              * to assist optimization passes. (See _PUSH_FRAME below.)
