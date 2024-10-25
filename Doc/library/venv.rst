@@ -215,7 +215,7 @@ containing the virtual environment):
 |             +------------+--------------------------------------------------+
 |             | csh/tcsh   | :samp:`$ source {<venv>}/bin/activate.csh`       |
 |             +------------+--------------------------------------------------+
-|             | PowerShell | :samp:`$ {<venv>}/bin/Activate.ps1`              |
+|             | pwsh       | :samp:`$ {<venv>}/bin/Activate.ps1`              |
 +-------------+------------+--------------------------------------------------+
 | Windows     | cmd.exe    | :samp:`C:\\> {<venv>}\\Scripts\\activate.bat`    |
 |             +------------+--------------------------------------------------+

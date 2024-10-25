@@ -844,30 +844,48 @@
             break;
         }
 
-        case _GUARD_BUILTINS_VERSION: {
-            break;
-        }
-
-        case _LOAD_GLOBAL_MODULE: {
-            _Py_UopsSymbol *res;
-            _Py_UopsSymbol *null = NULL;
-            res = sym_new_not_null(ctx);
-            null = sym_new_null(ctx);
-            stack_pointer[0] = res;
-            if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + (oparg & 1);
+        case _GUARD_GLOBALS_VERSION_PUSH_KEYS: {
+            _Py_UopsSymbol *globals_keys;
+            uint16_t version = (uint16_t)this_instr->operand;
+            globals_keys = sym_new_unknown(ctx);
+            (void)version;
+            stack_pointer[0] = globals_keys;
+            stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
-        case _LOAD_GLOBAL_BUILTINS: {
+        case _GUARD_BUILTINS_VERSION_PUSH_KEYS: {
+            _Py_UopsSymbol *builtins_keys;
+            uint16_t version = (uint16_t)this_instr->operand;
+            builtins_keys = sym_new_unknown(ctx);
+            (void)version;
+            stack_pointer[0] = builtins_keys;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_GLOBAL_MODULE_FROM_KEYS: {
             _Py_UopsSymbol *res;
             _Py_UopsSymbol *null = NULL;
             res = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
-            stack_pointer[0] = res;
-            if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + (oparg & 1);
+            stack_pointer[-1] = res;
+            if (oparg & 1) stack_pointer[0] = null;
+            stack_pointer += (oparg & 1);
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_GLOBAL_BUILTINS_FROM_KEYS: {
+            _Py_UopsSymbol *res;
+            _Py_UopsSymbol *null = NULL;
+            res = sym_new_not_null(ctx);
+            null = sym_new_null(ctx);
+            stack_pointer[-1] = res;
+            if (oparg & 1) stack_pointer[0] = null;
+            stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -2416,6 +2434,30 @@
         }
 
         case _CHECK_FUNCTION: {
+            break;
+        }
+
+        case _LOAD_GLOBAL_MODULE: {
+            _Py_UopsSymbol *res;
+            _Py_UopsSymbol *null = NULL;
+            res = sym_new_not_null(ctx);
+            null = sym_new_null(ctx);
+            stack_pointer[0] = res;
+            if (oparg & 1) stack_pointer[1] = null;
+            stack_pointer += 1 + (oparg & 1);
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_GLOBAL_BUILTINS: {
+            _Py_UopsSymbol *res;
+            _Py_UopsSymbol *null = NULL;
+            res = sym_new_not_null(ctx);
+            null = sym_new_null(ctx);
+            stack_pointer[0] = res;
+            if (oparg & 1) stack_pointer[1] = null;
+            stack_pointer += 1 + (oparg & 1);
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 

@@ -686,7 +686,7 @@ are always available.  They are listed here in alphabetical order.
    The *closure* argument specifies a closure--a tuple of cellvars.
    It's only valid when the *object* is a code object containing
    :term:`free (closure) variables <closure variable>`.
-   The length of the tuple must exactly match the length of the code object'S
+   The length of the tuple must exactly match the length of the code object's
    :attr:`~codeobject.co_freevars` attribute.
 
    .. audit-event:: exec code_object exec
@@ -2031,6 +2031,10 @@ are always available.  They are listed here in alphabetical order.
    For practical suggestions on how to design cooperative classes using
    :func:`super`, see `guide to using super()
    <https://rhettinger.wordpress.com/2011/05/26/super-considered-super/>`_.
+
+   .. versionchanged:: 3.14
+     :class:`super` objects are now :mod:`pickleable <pickle>` and
+      :mod:`copyable <copy>`.
 
 
 .. _func-tuple:

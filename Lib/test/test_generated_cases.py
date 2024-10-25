@@ -450,7 +450,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
             (void)this_instr;
             next_instr += 4;
             INSTRUCTION_STATS(OP);
@@ -503,7 +503,7 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 6;
             INSTRUCTION_STATS(OP);
             PREDICTED(OP);
-            _Py_CODEUNIT *this_instr = next_instr - 6;
+            _Py_CODEUNIT* const this_instr = next_instr - 6;
             (void)this_instr;
             _PyStackRef left;
             _PyStackRef right;
@@ -536,7 +536,7 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP1) {
-            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
             (void)this_instr;
             next_instr += 2;
             INSTRUCTION_STATS(OP1);
@@ -1266,6 +1266,33 @@ class TestGeneratedCases(unittest.TestCase):
             stack_pointer += 2;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_error_if_true(self):
+
+        input = """
+        inst(OP1, ( --)) {
+            ERROR_IF(true, here);
+        }
+        inst(OP2, ( --)) {
+            ERROR_IF(1, there);
+        }
+        """
+        output = """
+        TARGET(OP1) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP1);
+            goto here;
+        }
+
+        TARGET(OP2) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP2);
+            goto there;
         }
         """
         self.run_cases_test(input, output)

@@ -540,6 +540,7 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_AsPyObjectSteal",
     "PyStackRef_CLEAR",
     "PyStackRef_CLOSE",
+    "PyStackRef_CLOSE_SPECIALIZED",
     "PyStackRef_DUP",
     "PyStackRef_False",
     "PyStackRef_FromPyObjectImmortal",
@@ -574,6 +575,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyDictValues_AddToInsertionOrder",
     "_PyErr_Occurred",
     "_PyEval_FrameClearAndPop",
+    "_PyFloat_FromDouble_ConsumeInputs",
     "_PyFrame_GetCode",
     "_PyFrame_IsIncomplete",
     "_PyFrame_PushUnchecked",
@@ -614,7 +616,6 @@ NON_ESCAPING_FUNCTIONS = (
     "_Py_EnterRecursiveCallTstateUnchecked",
     "_Py_ID",
     "_Py_IsImmortal",
-    "_Py_IsImmortalLoose",
     "_Py_LeaveRecursiveCallPy",
     "_Py_LeaveRecursiveCallTstate",
     "_Py_NewRef",
@@ -743,7 +744,7 @@ def always_exits(op: parser.InstDef) -> bool:
             if tkn.text == "DEOPT_IF" or tkn.text == "ERROR_IF":
                 next(tkn_iter)  # '('
                 t = next(tkn_iter)
-                if t.text == "true":
+                if t.text in ("true", "1"):
                     return True
     return False
 

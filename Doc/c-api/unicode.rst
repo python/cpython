@@ -1575,7 +1575,7 @@ PyUnicodeWriter
 The :c:type:`PyUnicodeWriter` API can be used to create a Python :class:`str`
 object.
 
-.. versionadded:: next
+.. versionadded:: 3.14
 
 .. c:type:: PyUnicodeWriter
 
@@ -1599,6 +1599,8 @@ object.
 .. c:function:: void PyUnicodeWriter_Discard(PyUnicodeWriter *writer)
 
    Discard the internal Unicode buffer and destroy the writer instance.
+
+   If *writer* is ``NULL``, no operation is performed.
 
 .. c:function:: int PyUnicodeWriter_WriteChar(PyUnicodeWriter *writer, Py_UCS4 ch)
 
