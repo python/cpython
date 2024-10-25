@@ -6825,15 +6825,24 @@ store_instance_attr_lock_held(PyObject *obj, PyDictValues *values,
     }
 
     PyObject *old_value = values->values[ix];
+    if (old_value == NULL && value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                        "'%.100s' object has no attribute '%U'",
+                        Py_TYPE(obj)->tp_name, name);
+        return -1;
+    }
+
+    if (dict) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        PyDict_WatchEvent event = (old_value == NULL ? PyDict_EVENT_ADDED :
+                                   value == NULL ? PyDict_EVENT_DELETED :
+                                   PyDict_EVENT_MODIFIED);
+        _PyDict_NotifyEvent(interp, event, dict, name, value);
+    }
+
     FT_ATOMIC_STORE_PTR_RELEASE(values->values[ix], Py_XNewRef(value));
 
     if (old_value == NULL) {
-        if (value == NULL) {
-            PyErr_Format(PyExc_AttributeError,
-                         "'%.100s' object has no attribute '%U'",
-                         Py_TYPE(obj)->tp_name, name);
-            return -1;
-        }
         _PyDictValues_AddToInsertionOrder(values, ix);
         if (dict) {
             assert(dict->ma_values == values);

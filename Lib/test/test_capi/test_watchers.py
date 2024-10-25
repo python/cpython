@@ -96,6 +96,23 @@ class TestDictWatchers(unittest.TestCase):
             del d
             self.assert_events(["dealloc"])
 
+    def test_object_dict(self):
+        class MyObj: pass
+        o = MyObj()
+
+        with self.watcher() as wid:
+            self.watch(wid, o.__dict__)
+            o.foo = "bar"
+            o.foo = "baz"
+            del o.foo
+            self.assert_events(["new:foo:bar", "mod:foo:baz", "del:foo"])
+
+        with self.watcher() as wid:
+            self.watch(wid, o.__dict__)
+            for _ in range(100):
+                o.foo = "bar"
+            self.assert_events(["new:foo:bar"] + ["mod:foo:bar"] * 99)
+
     def test_unwatch(self):
         d = {}
         with self.watcher() as wid:
