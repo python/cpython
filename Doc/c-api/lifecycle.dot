@@ -41,13 +41,11 @@ digraph G {
      shape=octagon
      target="_top"
    ]
-   "ref0" [
-     fontname="Times-Italic"
-     label=<ref count == 0>
+   "tp_dealloc" [
+     href="typeobj.html#c.PyTypeObject.tp_dealloc"
      ordering="in"
-     shape=box
+     target="_top"
    ]
-   "tp_dealloc" [href="typeobj.html#c.PyTypeObject.tp_dealloc" target="_top"]
    "tp_free" [href="typeobj.html#c.PyTypeObject.tp_free" target="_top"]
 
    "start" -> "tp_alloc"
@@ -63,14 +61,6 @@ digraph G {
    ]
    "alive" -> "tp_finalize" [label=<  cyclic    <br/>isolate    >]
    "tp_finalize" -> "tp_clear"
-   "tp_finalize" -> "ref0"
-   "tp_clear" -> "ref0"
-   "tp_clear" -> "tp_dealloc" [
-     dir="back"
-     label=<  optional<br/>direct call  >
-   ]
-   "alive" -> "ref0"
-   "ref0" -> "tp_dealloc"
    "tp_finalize" -> "tp_dealloc" [
      dir="back"
      href="lifecycle.html#c.PyObject_CallFinalizerFromDealloc"
@@ -92,5 +82,12 @@ digraph G {
      >
      target="_top"
    ]
+   "tp_finalize" -> "tp_dealloc" [label=<  ref count  <br/>  == 0  >]
+   "tp_clear" -> "tp_dealloc" [label=<  ref count  <br/>  == 0  >]
+   "tp_clear" -> "tp_dealloc" [
+     dir="back"
+     label=<  optional<br/>direct call  >
+   ]
+   "alive" -> "tp_dealloc" [label=<  ref count  <br/>  == 0  >]
    "tp_dealloc" -> "tp_free" [label=<  directly calls  >]
 }
