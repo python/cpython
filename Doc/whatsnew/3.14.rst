@@ -171,6 +171,14 @@ See the :ref:`JSON command-line interface <json-commandline>` documentation.
 (Contributed by Trey Hunner in :gh:`122873`.)
 
 
+multiprocessing
+---------------
+
+* Add the :attr:`~multiprocessing.Process.closed` property to
+  :class:`multiprocessing.Process` objects to determine whether
+  they have been closed or not.
+
+
 operator
 --------
 
@@ -220,14 +228,6 @@ pickle
 
 * Set the default protocol version on the :mod:`pickle` module to 5.
   For more details, please see :ref:`pickle protocols <pickle-protocols>`.
-
-
-multiprocessing
----------------
-
-* Add attribute :attr:`!closed` to :class:`multiprocessing.Process`,
-  It is used to check whether the process is closed.
-  (Contributed by James Roy in :gh:`87063`.)
 
 
 symtable
