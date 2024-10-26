@@ -572,7 +572,7 @@ def test_assert_unicode():
     sys.addaudithook(lambda *args: None)
     try:
         sys.audit(9)
-    except:
+    except TypeError:
         pass
 
 

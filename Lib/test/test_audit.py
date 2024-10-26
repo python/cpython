@@ -308,7 +308,7 @@ class AuditTest(unittest.TestCase):
         self.assertEqual(actual, expected)
 
     def test_assert_unicode(self):
-        returncode, events, stderr = self.run_python("test_assert_unicode")
+        returncode, _, stderr = self.run_python("test_assert_unicode")
         if returncode:
             self.fail(stderr)
 
