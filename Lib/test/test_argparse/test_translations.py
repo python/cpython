@@ -5,7 +5,11 @@ import sys
 import unittest
 
 from pathlib import Path
+from test import support
 
+
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
 
 i18n_tools = Path(__file__).parents[3] / 'Tools' / 'i18n'
 pygettext = i18n_tools / 'pygettext.py'
