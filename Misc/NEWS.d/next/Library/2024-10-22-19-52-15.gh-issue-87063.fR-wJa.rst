@@ -1,2 +1,2 @@
 Allow to determine whether a :class:`multiprocessing.Process` has been closed
-via the :attr:`!closed` attribute.
+via the :attr:`~multiprocessing.Process.closed` property.
