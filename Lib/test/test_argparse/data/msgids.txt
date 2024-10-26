@@ -22,6 +22,7 @@ expected one argument
 ignored explicit argument %r
 invalid %(type)s value: %(value)r
 invalid choice: %(value)r (choose from %(choices)s)
+invalid choice: %(value)r, maybe you meant %(closest)r? (choose from %(choices)s)
 invalid conflict_resolution value: %r
 invalid option string %(option)r: must start with a character %(prefix_chars)r
 mutually exclusive arguments must be optional
