@@ -3889,7 +3889,7 @@ copying.
    .. versionchanged:: 3.5
       memoryviews can now be indexed with tuple of integers.
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: next
       memoryview is now a :term:`generic type`.
 
    :class:`memoryview` has several methods:
