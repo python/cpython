@@ -1550,6 +1550,19 @@ dir_fd_and_follow_symlinks_invalid(const char *function_name, int dir_fd,
     return 0;
 }
 
+#if defined(HAVE_WAITID)
+static int
+idtype_t_converter(PyObject *arg, void *addr)
+{
+    int value = PyLong_AsInt(arg);
+    if (value == -1 && PyErr_Occurred()) {
+        return 0;
+    }
+    *((idtype_t *)addr) = (idtype_t)(value);
+    return 1;
+}
+#endif
+
 #ifdef MS_WINDOWS
     typedef long long Py_off_t;
 #else
@@ -3054,16 +3067,41 @@ class pid_t_converter(CConverter):
     type = 'pid_t'
     format_unit = '" _Py_PARSE_PID "'
 
-class idtype_t_converter(int_converter):
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
+            {paramname} = PyLong_AsPid({argname});
+            if ({paramname} == (pid_t)(-1) && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """, argname=argname)
+
+class idtype_t_converter(CConverter):
     type = 'idtype_t'
+    converter = 'idtype_t_converter'
 
 class id_t_converter(CConverter):
     type = 'id_t'
     format_unit = '" _Py_PARSE_PID "'
 
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
+            {paramname} = (id_t)PyLong_AsPid({argname});
+            if ({paramname} == (id_t)(-1) && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """, argname=argname)
+
 class intptr_t_converter(CConverter):
     type = 'intptr_t'
     format_unit = '" _Py_PARSE_INTPTR "'
+
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
+            {paramname} = (intptr_t)PyLong_AsVoidPtr({argname});
+            if (!{paramname} && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """, argname=argname)
 
 class Py_off_t_converter(CConverter):
     type = 'Py_off_t'
@@ -3084,7 +3122,7 @@ class sysconf_confname_converter(path_confname_converter):
     converter="conv_sysconf_confname"
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=577cb476e5d64960]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=1860d32584c2a539]*/
 
 /*[clinic input]
 
