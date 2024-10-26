@@ -169,6 +169,7 @@ class Untokenizer:
         self.prev_row = 1
         self.prev_col = 0
         self.prev_type = None
+        self.prev_line = ""
         self.encoding = None
 
     def add_whitespace(self, start):
@@ -176,13 +177,26 @@ class Untokenizer:
         if row < self.prev_row or row == self.prev_row and col < self.prev_col:
             raise ValueError("start ({},{}) precedes previous end ({},{})"
                              .format(row, col, self.prev_row, self.prev_col))
-        row_offset = row - self.prev_row
-        if row_offset:
-            self.tokens.append("\\\n" * row_offset)
-            self.prev_col = 0
+        self.add_backslash_continuation(start)
         col_offset = col - self.prev_col
         if col_offset:
             self.tokens.append(" " * col_offset)
+
+    def add_backslash_continuation(self, start):
+        """Add backslash continuation characters if the row has increased
+        without encountering a newline token.
+
+        This also inserts the correct amount of whitespace before the backslash.
+        """
+        row = start[0]
+        row_offset = row - self.prev_row
+        if row_offset == 0:
+            return
+
+        line = self.prev_line.rstrip('\\\r\n')
+        ws = ''.join(_itertools.takewhile(str.isspace, reversed(line)))
+        self.tokens.append(ws + "\\\n" * row_offset)
+        self.prev_col = 0
 
     def escape_brackets(self, token):
         characters = []
@@ -243,8 +257,6 @@ class Untokenizer:
                     end_line, end_col = end
                     extra_chars = last_line.count("{{") + last_line.count("}}")
                     end = (end_line, end_col + extra_chars)
-            elif tok_type in (STRING, FSTRING_START) and self.prev_type in (STRING, FSTRING_END):
-                self.tokens.append(" ")
 
             self.add_whitespace(start)
             self.tokens.append(token)
@@ -253,6 +265,7 @@ class Untokenizer:
                 self.prev_row += 1
                 self.prev_col = 0
             self.prev_type = tok_type
+            self.prev_line = line
         return "".join(self.tokens)
 
     def compat(self, token, iterable):

@@ -1803,7 +1803,7 @@ class UntokenizeTest(TestCase):
         u.prev_row = 2
         u.add_whitespace((4, 4))
         self.assertEqual(u.tokens, ['\\\n', '\\\n\\\n', '    '])
-        TestRoundtrip.check_roundtrip(self, 'a\n  b\n    c\n  \\\n  c\n')
+        TestRoundtrip.check_roundtrip(self, 'a\n  b\n    c\n  \\\n  c\n', compare_tokens_only=True)
 
     def test_iter_compat(self):
         u = tokenize.Untokenizer()
@@ -1821,13 +1821,16 @@ class UntokenizeTest(TestCase):
 
 class TestRoundtrip(TestCase):
 
-    def check_roundtrip(self, f):
+    def check_roundtrip(self, f, *, compare_tokens_only=False):
         """
         Test roundtrip for `untokenize`. `f` is an open file or a string.
         The source code in f is tokenized to both 5- and 2-tuples.
         Both sequences are converted back to source code via
         tokenize.untokenize(), and the latter tokenized again to 2-tuples.
         The test fails if the 3 pair tokenizations do not match.
+
+        If `compare_tokens_only` is False, the exact output of `untokenize`
+        is compared against the original source code.
 
         When untokenize bugs are fixed, untokenize with 5-tuples should
         reproduce code that does not contain a backslash continuation
@@ -1851,6 +1854,13 @@ class TestRoundtrip(TestCase):
         readline5 = iter(bytes_from5.splitlines(keepends=True)).__next__
         tokens2_from5 = [tok[:2] for tok in tokenize.tokenize(readline5)]
         self.assertEqual(tokens2_from5, tokens2)
+
+        # Compare the exact output
+        if not compare_tokens_only:
+            readline = iter(code.splitlines(keepends=True)).__next__
+            # The BOM does not produce a token so there is no way to preserve it
+            code_without_bom = code.removeprefix(b'\xef\xbb\xbf')
+            self.assertEqual(code_without_bom, tokenize.untokenize(tokenize.tokenize(readline)))
 
     def check_line_extraction(self, f):
         if isinstance(f, str):
