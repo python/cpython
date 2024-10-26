@@ -222,6 +222,14 @@ pickle
   For more details, please see :ref:`pickle protocols <pickle-protocols>`.
 
 
+multiprocessing
+---------------
+
+* Add attribute :attr:`!closed` to :class:`multiprocessing.Process`,
+  It is used to check whether the process is closed.
+  (Contributed by James Roy in :gh:`87063`.)
+
+
 symtable
 --------
 

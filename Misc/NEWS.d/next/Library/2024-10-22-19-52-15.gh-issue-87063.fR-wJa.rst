@@ -1,3 +1,2 @@
-Add attribute :attr:`!closed` to :class:`multiprocessing.Process`,
-It is used to check whether the process is closed.
-(Contributed by James Roy in :gh:`87063`.)
+Allow to determine whether a :class:`multiprocessing.Process` has been closed
+via the :attr:`!closed` attribute.
