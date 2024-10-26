@@ -194,8 +194,9 @@ Other language changes
   :mod:`copyable <copy>`.
   (Contributed by Serhiy Storchaka in :gh:`125767`.)
 
-* The :class:`memoryview` type now supports subscripting, making it a
-  :term:`generic type`. (Contributed by Brian Schubert in :gh:`126012`.)
+* The :class:`memoryview` type now supports subscription,
+  making it a :term:`generic type`.
+  (Contributed by Brian Schubert in :gh:`126012`.)
 
 
 New modules
