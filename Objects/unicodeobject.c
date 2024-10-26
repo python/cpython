@@ -5043,6 +5043,49 @@ ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
     return p - start;
 }
 
+static Py_ssize_t
+find_first_nonascii(const char *start, const char *end)
+{
+    const char *p = start;
+
+    while (p < end) {
+        /* Fast path, see in STRINGLIB(utf8_decode) in stringlib/codecs.h
+           for an explanation. */
+        if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
+            const char *e = end - SIZEOF_SIZE_T;
+            while (p <= e) {
+                size_t value = (*(const size_t *)p) & ASCII_CHAR_MASK;
+                if (value) {
+                    // Optimization only for major platforms we have CI.
+#if PY_LITTLE_ENDIAN && (defined(__clang__) || defined(__GNUC__))
+#if SIZEOF_SIZE_T == SIZEOF_LONG
+                    return p - start + (__builtin_ctzl(value)-7) / 8;
+#elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG
+                    return p - start + (__builtin_ctzll(value)-7) / 8;
+#endif
+#elif PY_LITTLE_ENDIAN && defined(_MSC_VER)
+                    unsigned long bitpos;
+#if SIZEOF_SIZE_T == 4
+                    _BitScanForward(&bitpos, value);
+#else
+                    _BitScanForward64(&bitpos, value);
+#endif
+                    return p - start + (bitpos-7) / 8;
+#endif
+                    break;
+                }
+                p += SIZEOF_SIZE_T;
+            }
+            if (p == end)
+                break;
+        }
+        if ((unsigned char)*p & 0x80)
+            break;
+        ++p;
+    }
+    return p - start;
+}
+
 
 static int
 unicode_decode_utf8_impl(_PyUnicodeWriter *writer,
@@ -5187,27 +5230,50 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
         return get_latin1_char((unsigned char)s[0]);
     }
 
-    // fast path: try ASCII string.
     const char *starts = s;
     const char *end = s + size;
-    PyObject *u = PyUnicode_New(size, 127);
-    if (u == NULL) {
-        return NULL;
-    }
-    Py_ssize_t decoded = ascii_decode(s, end, PyUnicode_1BYTE_DATA(u));
-    if (decoded == size) {
+
+    Py_ssize_t pos = find_first_nonascii(starts, end);
+    if (pos == size) {
+        // fast path: ASCII
+        PyObject *u = PyUnicode_New(size, 127);
+        if (u == NULL) {
+            return NULL;
+        }
+        memcpy(PyUnicode_1BYTE_DATA(u), s, size);
         if (consumed) {
             *consumed = size;
         }
         return u;
     }
-    s += decoded;
-    size -= decoded;
+
+    int maxchr = 127;
+    unsigned char ch = (unsigned char)s[pos];
+    if (error_handler == _Py_ERROR_STRICT && ch >= 0xc2) {
+        if (ch < 0xc4) { // latin1
+            maxchr = 255;
+        }
+        else if (ch < 0xf0) { // ucs2
+            maxchr = 65535;
+        }
+        else { // ucs4
+            maxchr = 0x10ffff;
+        }
+    }
+    PyObject *u = PyUnicode_New(size, maxchr);
+    if (!u) {
+        return NULL;
+    }
 
     // Use _PyUnicodeWriter after fast path is failed.
     _PyUnicodeWriter writer;
     _PyUnicodeWriter_InitWithBuffer(&writer, u);
-    writer.pos = decoded;
+    if (maxchr <= 255) {
+        memcpy(PyUnicode_1BYTE_DATA(u), s, pos);
+        s += pos;
+        size -= pos;
+        writer.pos = pos;
+    }
 
     if (unicode_decode_utf8_impl(&writer, starts, s, end,
                                  error_handler, errors,
@@ -5267,7 +5333,9 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
                              const char *errors,
                              Py_ssize_t *consumed)
 {
-    return unicode_decode_utf8(s, size, _Py_ERROR_UNKNOWN, errors, consumed);
+    return unicode_decode_utf8(s, size,
+            errors ? _Py_ERROR_UNKNOWN : _Py_ERROR_STRICT,
+            errors, consumed);
 }
 
 
