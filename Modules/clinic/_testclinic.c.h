@@ -2530,28 +2530,22 @@ PyDoc_STRVAR(varpos__doc__,
     {"varpos", _PyCFunction_CAST(varpos), METH_FASTCALL, varpos__doc__},
 
 static PyObject *
-varpos_impl(PyObject *module, PyObject *args);
+varpos_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args);
 
 static PyObject *
 varpos(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *__clinic_args = NULL;
+    Py_ssize_t nvararg = nargs;
+    PyObject *const *__clinic_args = NULL;
 
     if (!_PyArg_CheckPositional("varpos", nargs, 0, PY_SSIZE_T_MAX)) {
         goto exit;
     }
-    __clinic_args = PyTuple_New(nargs - 0);
-    if (!__clinic_args) {
-        goto exit;
-    }
-    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
-        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
-    }
-    return_value = varpos_impl(module, __clinic_args);
+    __clinic_args = args + 0;
+    return_value = varpos_impl(module, nvararg, __clinic_args);
 
 exit:
-    Py_XDECREF(__clinic_args);
     return return_value;
 }
 
@@ -2565,32 +2559,26 @@ PyDoc_STRVAR(posonly_varpos__doc__,
 
 static PyObject *
 posonly_varpos_impl(PyObject *module, PyObject *a, PyObject *b,
-                    PyObject *args);
+                    Py_ssize_t nargs, PyObject *const *args);
 
 static PyObject *
 posonly_varpos(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
+    Py_ssize_t nvararg = Py_MAX(nargs - 2, 0);
     PyObject *a;
     PyObject *b;
-    PyObject *__clinic_args = NULL;
+    PyObject *const *__clinic_args = NULL;
 
     if (!_PyArg_CheckPositional("posonly_varpos", nargs, 2, PY_SSIZE_T_MAX)) {
         goto exit;
     }
     a = args[0];
     b = args[1];
-    __clinic_args = PyTuple_New(nargs - 2);
-    if (!__clinic_args) {
-        goto exit;
-    }
-    for (Py_ssize_t i = 0; i < nargs - 2; ++i) {
-        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[2 + i]));
-    }
-    return_value = posonly_varpos_impl(module, a, b, __clinic_args);
+    __clinic_args = args + 2;
+    return_value = posonly_varpos_impl(module, a, b, nvararg, __clinic_args);
 
 exit:
-    Py_XDECREF(__clinic_args);
     return return_value;
 }
 
@@ -3136,28 +3124,23 @@ PyDoc_STRVAR(gh_99233_refcount__doc__,
     {"gh_99233_refcount", _PyCFunction_CAST(gh_99233_refcount), METH_FASTCALL, gh_99233_refcount__doc__},
 
 static PyObject *
-gh_99233_refcount_impl(PyObject *module, PyObject *args);
+gh_99233_refcount_impl(PyObject *module, Py_ssize_t nargs,
+                       PyObject *const *args);
 
 static PyObject *
 gh_99233_refcount(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *__clinic_args = NULL;
+    Py_ssize_t nvararg = nargs;
+    PyObject *const *__clinic_args = NULL;
 
     if (!_PyArg_CheckPositional("gh_99233_refcount", nargs, 0, PY_SSIZE_T_MAX)) {
         goto exit;
     }
-    __clinic_args = PyTuple_New(nargs - 0);
-    if (!__clinic_args) {
-        goto exit;
-    }
-    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
-        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
-    }
-    return_value = gh_99233_refcount_impl(module, __clinic_args);
+    __clinic_args = args + 0;
+    return_value = gh_99233_refcount_impl(module, nvararg, __clinic_args);
 
 exit:
-    Py_XDECREF(__clinic_args);
     return return_value;
 }
 
@@ -3693,4 +3676,4 @@ exit:
     Py_XDECREF(__clinic_args);
     return return_value;
 }
-/*[clinic end generated code: output=76ecbb38c632bde8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c3ed3d007eb394f1 input=a9049054013a1b77]*/

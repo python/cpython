@@ -469,6 +469,14 @@ class ParseArgsCodeGen:
                 nargs = 'PyTuple_GET_SIZE(args)'
                 argname_fmt = 'PyTuple_GET_ITEM(args, %d)'
 
+        if self.vararg != NO_VARARG:
+            if self.max_pos == 0:
+                self.declarations = "Py_ssize_t nvararg = %s;" % nargs
+            else:
+                self.declarations = "Py_ssize_t nvararg = Py_MAX(%s - %d, 0);" % (nargs, self.max_pos)
+        else:
+            self.declarations = ""
+
         left_args = f"{nargs} - {self.max_pos}"
         max_args = NO_VARARG if (self.vararg != NO_VARARG) else self.max_pos
         if self.limited_capi:
@@ -520,28 +528,15 @@ class ParseArgsCodeGen:
             if p.is_vararg():
                 if self.fastcall:
                     parser_code.append(libclinic.normalize_snippet("""
-                        %s = PyTuple_New(%s);
-                        if (!%s) {{
-                            goto exit;
-                        }}
-                        for (Py_ssize_t i = 0; i < %s; ++i) {{
-                            PyTuple_SET_ITEM(%s, i, Py_NewRef(args[%d + i]));
-                        }}
+                        %s = args + %d;
                         """ % (
                             p.converter.parser_name,
-                            left_args,
-                            p.converter.parser_name,
-                            left_args,
-                            p.converter.parser_name,
-                            self.max_pos
+                            self.vararg
                         ), indent=4))
                 else:
                     parser_code.append(libclinic.normalize_snippet("""
-                        %s = PyTuple_GetSlice(%d, -1);
-                        """ % (
-                            p.converter.parser_name,
-                            self.max_pos
-                        ), indent=4))
+                        %s = _PyTuple_CAST(args)->ob_item;
+                        """ % p.converter.parser_name, indent=4))
                 continue
 
             displayname = p.get_displayname(i+1)
@@ -588,7 +583,7 @@ class ParseArgsCodeGen:
                         goto exit;
                     }}
                     """, indent=4)]
-        self.parser_body(*parser_code)
+        self.parser_body(*parser_code, declarations=self.declarations)
 
     def parse_general(self, clang: CLanguage) -> None:
         parsearg: str | None

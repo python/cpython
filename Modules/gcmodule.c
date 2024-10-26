@@ -221,15 +221,29 @@ Return the list of objects that directly refer to any of 'objs'.
 [clinic start generated code]*/
 
 static PyObject *
-gc_get_referrers_impl(PyObject *module, PyObject *args)
-/*[clinic end generated code: output=296a09587f6a86b5 input=bae96961b14a0922]*/
+gc_get_referrers_impl(PyObject *module, Py_ssize_t nargs,
+                      PyObject *const *args)
+/*[clinic end generated code: output=1d44a7695ea25c40 input=bae96961b14a0922]*/
 {
-    if (PySys_Audit("gc.get_referrers", "(O)", args) < 0) {
+    PyObject *varargs = PyTuple_New(nargs);
+
+    if (!varargs) {
+        return NULL;
+    }
+    for (Py_ssize_t i = 0; i < nargs; i++) {
+        PyTuple_SET_ITEM(varargs, i, Py_NewRef(args[i]));
+    }
+
+    if (PySys_Audit("gc.get_referrers", "(O)", varargs) < 0) {
+        Py_DECREF(varargs);
         return NULL;
     }
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return _PyGC_GetReferrers(interp, args);
+    PyObject *result = _PyGC_GetReferrers(interp, varargs);
+
+    Py_DECREF(varargs);
+    return result;
 }
 
 /* Append obj to list; return true if error (out of memory), false if OK. */
@@ -269,27 +283,41 @@ Return the list of objects that are directly referred to by 'objs'.
 [clinic start generated code]*/
 
 static PyObject *
-gc_get_referents_impl(PyObject *module, PyObject *args)
-/*[clinic end generated code: output=d47dc02cefd06fe8 input=b3ceab0c34038cbf]*/
+gc_get_referents_impl(PyObject *module, Py_ssize_t nargs,
+                      PyObject *const *args)
+/*[clinic end generated code: output=e459f3e8c0d19311 input=b3ceab0c34038cbf]*/
 {
-    if (PySys_Audit("gc.get_referents", "(O)", args) < 0) {
+    PyObject *varargs = PyTuple_New(nargs);
+
+    if (!varargs) {
+        return NULL;
+    }
+    for (Py_ssize_t i = 0; i < nargs; i++) {
+        PyTuple_SET_ITEM(varargs, i, Py_NewRef(args[i]));
+    }
+
+    if (PySys_Audit("gc.get_referents", "(O)", varargs) < 0) {
+        Py_DECREF(varargs);
         return NULL;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *result = PyList_New(0);
 
-    if (result == NULL)
+    if (result == NULL) {
+        Py_DECREF(varargs);
         return NULL;
+    }
 
     // NOTE: stop the world is a no-op in default build
     _PyEval_StopTheWorld(interp);
-    int err = append_referrents(result, args);
+    int err = append_referrents(result, varargs);
     _PyEval_StartTheWorld(interp);
 
     if (err < 0) {
         Py_CLEAR(result);
     }
 
+    Py_DECREF(varargs);
     return result;
 }
 

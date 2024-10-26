@@ -8,6 +8,64 @@ preserve
 #endif
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
+PyDoc_STRVAR(math_gcd__doc__,
+"gcd($module, /, *integers)\n"
+"--\n"
+"\n"
+"Greatest Common Divisor.");
+
+#define MATH_GCD_METHODDEF    \
+    {"gcd", _PyCFunction_CAST(math_gcd), METH_FASTCALL, math_gcd__doc__},
+
+static PyObject *
+math_gcd_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args);
+
+static PyObject *
+math_gcd(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nvararg = nargs;
+    PyObject *const *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("gcd", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = args + 0;
+    return_value = math_gcd_impl(module, nvararg, __clinic_args);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(math_lcm__doc__,
+"lcm($module, /, *integers)\n"
+"--\n"
+"\n"
+"Least Common Multiple.");
+
+#define MATH_LCM_METHODDEF    \
+    {"lcm", _PyCFunction_CAST(math_lcm), METH_FASTCALL, math_lcm__doc__},
+
+static PyObject *
+math_lcm_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args);
+
+static PyObject *
+math_lcm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nvararg = nargs;
+    PyObject *const *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("lcm", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = args + 0;
+    return_value = math_lcm_impl(module, nvararg, __clinic_args);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(math_ceil__doc__,
 "ceil($module, x, /)\n"
 "--\n"
@@ -346,6 +404,46 @@ math_dist(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     p = args[0];
     q = args[1];
     return_value = math_dist_impl(module, p, q);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(math_hypot__doc__,
+"hypot($module, /, *coordinates)\n"
+"--\n"
+"\n"
+"Multidimensional Euclidean distance from the origin to a point.\n"
+"\n"
+"Roughly equivalent to:\n"
+"    sqrt(sum(x**2 for x in coordinates))\n"
+"\n"
+"For a two dimensional point (x, y), gives the hypotenuse\n"
+"using the Pythagorean theorem:  sqrt(x*x + y*y).\n"
+"\n"
+"For example, the hypotenuse of a 3/4/5 right triangle is:\n"
+"\n"
+"    >>> hypot(3.0, 4.0)\n"
+"    5.0");
+
+#define MATH_HYPOT_METHODDEF    \
+    {"hypot", _PyCFunction_CAST(math_hypot), METH_FASTCALL, math_hypot__doc__},
+
+static PyObject *
+math_hypot_impl(PyObject *module, Py_ssize_t nargs, PyObject *const *args);
+
+static PyObject *
+math_hypot(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nvararg = nargs;
+    PyObject *const *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("hypot", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = args + 0;
+    return_value = math_hypot_impl(module, nvararg, __clinic_args);
 
 exit:
     return return_value;
@@ -1011,4 +1109,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=755da3b1dbd9e45f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=69376c19d96a9c50 input=a9049054013a1b77]*/
