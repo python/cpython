@@ -657,16 +657,16 @@ class _TestProcess(BaseTestCase):
         p.daemon = True
         p.start()
         self.assertEqual(p.is_alive(), True)
+        self.assertFalse(p.closed)
         # Child is still alive, cannot close
         with self.assertRaises(ValueError):
-            self.assertFalse(p.closed)
             p.close()
-            self.assertTrue(p.closed)
 
         q.put(None)
         p.join()
         self.assertEqual(p.is_alive(), False)
         self.assertEqual(p.exitcode, 0)
+        self.assertFalse(p.closed)
         p.close()
         self.assertTrue(p.closed)
         with self.assertRaises(ValueError):
