@@ -3,7 +3,7 @@ import unittest.mock
 from test import support
 from test.support import (verbose, refcount_test,
                           cpython_only, requires_subprocess,
-                          requires_gil_enabled, suppress_immortalization,
+                          requires_gil_enabled,
                           Py_GIL_DISABLED)
 from test.support.import_helper import import_module
 from test.support.os_helper import temp_dir, TESTFN, unlink
@@ -110,7 +110,6 @@ class GCTests(unittest.TestCase):
         del l
         self.assertEqual(gc.collect(), 2)
 
-    @suppress_immortalization()
     def test_class(self):
         class A:
             pass
@@ -119,7 +118,6 @@ class GCTests(unittest.TestCase):
         del A
         self.assertNotEqual(gc.collect(), 0)
 
-    @suppress_immortalization()
     def test_newstyleclass(self):
         class A(object):
             pass
@@ -136,7 +134,6 @@ class GCTests(unittest.TestCase):
         del a
         self.assertNotEqual(gc.collect(), 0)
 
-    @suppress_immortalization()
     def test_newinstance(self):
         class A(object):
             pass
@@ -223,7 +220,6 @@ class GCTests(unittest.TestCase):
             self.fail("didn't find obj in garbage (finalizer)")
         gc.garbage.remove(obj)
 
-    @suppress_immortalization()
     def test_function(self):
         # Tricky: f -> d -> f, code should call d.clear() after the exec to
         # break the cycle.
@@ -566,7 +562,6 @@ class GCTests(unittest.TestCase):
 
         self.assertEqual(gc.get_referents(1, 'a', 4j), [])
 
-    @suppress_immortalization()
     def test_is_tracked(self):
         # Atomic built-in types are not tracked, user-defined objects and
         # mutable containers are.
@@ -604,9 +599,7 @@ class GCTests(unittest.TestCase):
         class UserIntSlots(int):
             __slots__ = ()
 
-        if not Py_GIL_DISABLED:
-            # gh-117783: modules may be immortalized in free-threaded build
-            self.assertTrue(gc.is_tracked(gc))
+        self.assertTrue(gc.is_tracked(gc))
         self.assertTrue(gc.is_tracked(UserClass))
         self.assertTrue(gc.is_tracked(UserClass()))
         self.assertTrue(gc.is_tracked(UserInt()))
@@ -1065,6 +1058,29 @@ class GCTests(unittest.TestCase):
         self.assertEqual(len(gc.get_referents(untracked_capsule)), 0)
         gc.get_referents(tracked_capsule)
 
+    @cpython_only
+    def test_get_objects_during_gc(self):
+        # gh-125859: Calling gc.get_objects() or gc.get_referrers() during a
+        # collection should not crash.
+        test = self
+        collected = False
+
+        class GetObjectsOnDel:
+            def __del__(self):
+                nonlocal collected
+                collected = True
+                objs = gc.get_objects()
+                # NB: can't use "in" here because some objects override __eq__
+                for obj in objs:
+                    test.assertTrue(obj is not self)
+                test.assertEqual(gc.get_referrers(self), [])
+
+        obj = GetObjectsOnDel()
+        obj.cycle = obj
+        del obj
+
+        gc.collect()
+        self.assertTrue(collected)
 
 
 class IncrementalGCTests(unittest.TestCase):
